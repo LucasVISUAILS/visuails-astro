@@ -1,0 +1,23 @@
+---
+// VISUAILS — ProductScene: the studio-card SVG placeholder for the rare
+// "plain product on white" catalog moment where no real photo exists (see
+// IMAGES.md). Ported from the SvelteKit ProductScene.svelte; icon symbols
+// (#p-bottle / #p-sneaker / #p-jar / #p-bag) are defined once in
+// Layout.astro's SVG sprite.
+interface Props {
+  icon?: 'bottle' | 'sneaker' | 'jar' | 'bag';
+  width?: string;
+  badge?: string;
+  wide?: boolean;
+}
+const { icon = 'bottle', width = '48%', badge, wide = false } = Astro.props;
+---
+
+<div class={`vis${wide ? ' wide' : ''}`}>
+  <div class="vis-glow" aria-hidden="true"></div>
+  <div class="vis-floor" aria-hidden="true"></div>
+  <div class="vis-obj" style={`width:${width}`}>
+    <svg aria-hidden="true"><use href={`#p-${icon}`}></use></svg>
+  </div>
+  {badge && <span class="vis-badge">{badge}</span>}
+</div>

@@ -1,0 +1,163 @@
+---
+// VISUAILS — shared template for the catalog style detail pages
+// (Classic / Custom Brand). Ported from the SvelteKit rebuild's
+// CatalogStylePage.svelte, driven by `style` entries from
+// src/data/catalogStyles.js (shared with catalog/index.astro). No real
+// "clean product on white" photography exists (see IMAGES.md), so this
+// stays ProductScene-led throughout, same as the original.
+import Layout from '../../layouts/Layout.astro';
+import ProductScene from '../../components/ProductScene.astro';
+import { catalogStyles } from '../../data/catalogStyles.js';
+
+export function getStaticPaths() {
+  return catalogStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
+}
+
+const { style } = Astro.props;
+const waName = style.name.replaceAll(' ', '%20');
+---
+
+<Layout
+  title={`${style.name} — Catalog style | VISUAILS`}
+  description={`${style.name}: a signature VISUAILS catalog style. ${style.metaPrice}. Produced in about 24 hours, every image checked by hand.`}
+>
+  <section class="page-hero">
+    <div class="container two-col" style="align-items:center">
+      <div class="reveal pending">
+        <span class="eyebrow-page"><a href="/catalog" style="color:inherit">Catalog styles</a></span>
+        <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
+        <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
+        <div class="flex" style="margin-top:1.8rem">
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">Order {style.name}</a></span></span>
+          <a href={`https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20the%20${waName}%20style.`} class="btn btn-wa" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+        <div class="trust-row" style="margin-top:2rem">
+          <span class="trust-item"><strong>{style.priceTrust}</strong> / visual</span>
+          <span class="trust-item"><strong>~24h</strong> delivery</span>
+          <span class="trust-item"><strong>100%</strong> checked by hand</span>
+        </div>
+      </div>
+      <div class="reveal pending">
+        <ProductScene icon={style.heroIcon} width={style.heroWidth} badge={`Catalog · ${style.name}`} wide />
+      </div>
+    </div>
+  </section>
+
+  <!-- Mood + how it's made, one photo-split section -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-split reveal pending">
+        <div class="photo-split-media"><ProductScene icon={style.cardIcon} width={style.cardWidth} badge={`Catalog · ${style.name}`} /></div>
+        <div>
+          <h2>What {style.name} <em>feels</em> like.</h2>
+          {style.moodParagraphs.map((p) => (
+            <p class="lead" style="margin-top:1rem">{p}</p>
+          ))}
+          <div class="steps" style="grid-template-columns:1fr;margin-top:1.8rem;gap:1.1rem">
+            {style.steps.map((s, i) => (
+              <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{s.title}</h3><p>{s.body}</p></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3x3 product-scene grid — the look, in one glance -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="grid grid-3">
+        {style.grid.map((g) => (
+          <div class="reveal pending">
+            <ProductScene icon={g.icon} width={g.width} badge={`Catalog · ${style.name}`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Real proof, not just illustration — the one genuine raw-to-catalog
+       pair in the asset library, framed for this style's own funnel step. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="text-align:center;margin-inline:auto">
+        <h2>What {style.name} does to a real photo.</h2>
+        <p style="margin-inline:auto">Drag to compare — one of your own product photos, treated exactly like this.</p>
+      </div>
+      <div style="max-width:640px;margin:2rem auto 0">
+        <div class="reveal-clip-wrap"><div class="reveal-clip-inner">
+          <div class="ba" aria-label={`Before and after: a raw phone photo transformed into a ${style.name} catalog visual`}>
+            <div class="ba-layer ba-before-scene" aria-hidden="true"><img src="/img/catalog-before.webp" alt="A raw phone photo of a t-shirt on a table before VISUAILS" /></div>
+            <div class="ba-layer ba-after" aria-hidden="true"><img src="/img/catalog-after.webp" alt={`The same t-shirt as a clean ${style.name} catalog visual after VISUAILS`} /></div>
+            <span class="ba-tag tag-before">Before</span><span class="ba-tag tag-after">After</span>
+            <div class="ba-handle" aria-hidden="true"></div>
+            <div class="ba-knob" aria-hidden="true"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Craft + why choose it, condensed into one section -->
+  <section>
+    <div class="container">
+      <h2 style="margin-bottom:2rem">What goes into every frame.</h2>
+      <div class="arrow-rows" style="grid-template-columns:repeat(2,1fr)">
+        {style.craft.map((c) => (
+          <div class="reveal pending"><h3>{c.title}</h3><p>{c.body}</p></div>
+        ))}
+      </div>
+      <div class="grid grid-3" style="margin-top:clamp(2.5rem,5vw,4rem)">
+        {style.why.map((w) => (
+          <div class="card reveal pending"><h3 style="font-size:1.1rem">{w.title}</h3><p style="margin-top:.6rem;font-size:.92rem;color:var(--ink-3)">{w.body}</p></div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Best for / what you get -->
+  <section class="section-tight">
+    <div class="container two-col" style="align-items:start">
+      <div class="reveal pending">
+        <h2 style="font-size:1.7rem">Best <em>for</em></h2>
+        <ul class="checklist" style="margin-top:1.2rem">
+          {style.bestFor.map((item) => (
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+          ))}
+        </ul>
+      </div>
+      <div class="reveal pending">
+        <h2 style="font-size:1.7rem">What you <em>get</em></h2>
+        <ul class="checklist" style="margin-top:1.2rem">
+          {style.whatYouGet.map((item) => (
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="cta-band reveal pending">
+        <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">Make {style.name} <em>yours.</em></h2>
+        <p class="lead" style="margin:1rem auto 0;text-align:center">Free test sample, or place your order today.</p>
+        <div class="flex" style="justify-content:center;margin-top:1.8rem">
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">Order {style.name}</a></span></span>
+          <a href="/test-sample" class="btn btn-ghost btn-lg">Free test sample</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
+  .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
+  .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
+  .step p { font-size: .9rem; color: var(--ink-3); }
+</style>

@@ -1,0 +1,42 @@
+---
+// VISUAILS — Cookie Policy. Ported verbatim from the SvelteKit
+// cookie-policy page (itself ported verbatim from static
+// /cookie-policy.html). Legal pages are deliberately plain/scannable,
+// not "designed" — no reveal animations or kickers, per the rebuild
+// brief. Body copy is untouched — only the wrapper markup is adapted to
+// Astro/Layout conventions.
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Cookie Policy — VISUAILS"
+  description="How VISUAILS uses cookies: essential cookies by default, analytics only with your consent."
+>
+  <section class="page-hero"><div class="container narrow">
+    <span class="eyebrow-page">Legal</span>
+    <h1 class="display" style="font-size:clamp(2.2rem,4.5vw,3.4rem)">Cookie Policy</h1>
+    <p style="margin-top:.8rem;color:var(--ink-3)">Last updated: July 2026</p>
+    <div class="legal-note" style="margin-top:1.4rem">This is a general template — please review it with a qualified legal professional before relying on it.</div>
+  </div></section>
+
+  <section class="section-tight"><div class="container narrow legal stack-lg">
+    <div><h2>What cookies are</h2><p style="margin-top:.6rem">Cookies are small text files a website can store on your device. They're commonly used to make sites work, remember preferences, and measure how a site is used.</p></div>
+    <div><h2>How we use them</h2><p style="margin-top:.6rem">The VISUAILS website is largely static. By default we only use <strong>essential</strong> cookies needed for the site to function and to remember your privacy choices. We do not load advertising or tracking cookies without your consent.</p>
+    <ul class="checklist" style="margin-top:1rem">
+      <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Essential</strong> — basic functionality and security. Always on.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Analytics</strong> — anonymous usage measurement. Only with your consent.</span></li>
+    </ul></div>
+    <div><h2>Managing cookies</h2><p style="margin-top:.6rem">You can accept or decline non-essential cookies when asked, and clear or block cookies at any time in your browser settings. Blocking essential cookies may affect how the site works.</p></div>
+    <div><h2>Contact</h2><p style="margin-top:.6rem">Questions about this policy? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a>. See also our <a href="/privacy">Privacy Policy</a>.</p></div>
+  </div></section>
+</Layout>
+
+<style>
+  /* Legal-text typography — page-scoped, plain and scannable by design. */
+  .narrow { max-width: 820px; }
+  .stack-lg { display: flex; flex-direction: column; gap: 2.2rem; }
+  .legal h2 { font-size: 1.3rem; }
+  .legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
+  .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+  .legal-note { padding: 0.9rem 1.1rem; border: 1px solid var(--line); border-left: 3px solid var(--accent-line); border-radius: var(--r-sm); font-size: 0.86rem; color: var(--ink-3); }
+</style>

@@ -1,0 +1,253 @@
+---
+// VISUAILS — root layout. Ports the SvelteKit v2 +layout.svelte chrome
+// (header/nav, mobile nav, footer, grain overlay, conversion bar) to Astro.
+// <ClientRouter /> turns this into an SPA-like app with native browser
+// View Transitions between pages — see src/scripts/interactions.js for the
+// astro:page-load re-init hook that keeps reveal/magnetic/etc. working
+// after a transition.
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+}
+
+const { title, description, ogImage = '/img/banners-05.webp' } = Astro.props;
+
+const services = [
+  { href: '/catalog', title: 'Catalog', desc: 'Clean, consistent product shots — from €19' },
+  { href: '/lifestyle', title: 'Lifestyle', desc: 'Styled scenes & models — from €35' },
+  { href: '/video', title: 'Video', desc: 'Short product videos that move' },
+  { href: '/models', title: 'Models', desc: 'Consistent faces across every visual' },
+  { href: '/custom-models', title: 'Custom Models', desc: 'A unique face, exclusively yours' },
+];
+
+const path = Astro.url.pathname;
+const isActive = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
+const year = new Date().getFullYear();
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,900;1,700&display=swap" rel="stylesheet" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <ClientRouter />
+</head>
+<body>
+  <!-- SVG sprite — gradients used by the .vis product-scene placeholder. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="gObj" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#b7c0d1"/><stop offset="0.5" stop-color="#8591a8"/><stop offset="1" stop-color="#525d75"/>
+      </linearGradient>
+      <linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#cdd5e1" stop-opacity="0.97"/><stop offset="1" stop-color="#7e8aa1" stop-opacity="0.9"/>
+      </linearGradient>
+    </defs>
+    <symbol id="p-bottle" viewBox="0 0 120 150">
+      <rect x="50" y="8" width="20" height="16" rx="3" fill="url(#gObj)"/>
+      <rect x="46" y="22" width="28" height="10" rx="2" fill="#aeb8ca"/>
+      <path d="M42 34 h36 a10 10 0 0 1 10 10 v82 a12 12 0 0 1 -12 12 h-32 a12 12 0 0 1 -12 -12 v-82 a10 10 0 0 1 10 -10 z" fill="url(#gGlass)"/>
+      <rect x="46" y="70" width="28" height="46" rx="6" fill="#ffffff" opacity="0.18"/>
+      <rect x="50" y="46" width="7" height="70" rx="3" fill="#ffffff" opacity="0.5"/>
+    </symbol>
+    <symbol id="p-sneaker" viewBox="0 0 160 110">
+      <path d="M14 78 q0 -30 26 -34 q10 -2 20 6 l26 20 q16 4 46 8 q14 2 14 14 v6 q0 6 -8 6 H20 q-8 0 -8 -8 z" fill="url(#gGlass)"/>
+      <path d="M40 46 q10 -4 20 4 l24 18" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
+      <path d="M14 92 h132 q0 10 -10 10 H22 q-8 0 -8 -10z" fill="#aeb8ca"/>
+      <circle cx="52" cy="60" r="3" fill="#fff" opacity="0.7"/><circle cx="66" cy="68" r="3" fill="#fff" opacity="0.7"/>
+    </symbol>
+    <symbol id="p-jar" viewBox="0 0 120 130">
+      <ellipse cx="60" cy="30" rx="34" ry="12" fill="#aeb8ca"/>
+      <rect x="26" y="30" width="68" height="16" fill="#aeb8ca"/>
+      <path d="M22 52 h76 v40 a20 20 0 0 1 -20 20 h-36 a20 20 0 0 1 -20 -20 z" fill="url(#gGlass)"/>
+      <ellipse cx="60" cy="52" rx="38" ry="12" fill="url(#gObj)"/>
+      <ellipse cx="60" cy="50" rx="24" ry="7" fill="#fff" opacity="0.35"/>
+    </symbol>
+    <symbol id="p-bag" viewBox="0 0 120 130">
+      <path d="M40 40 a20 20 0 0 1 40 0" fill="none" stroke="url(#gObj)" stroke-width="6"/>
+      <path d="M26 44 h68 l8 74 a6 6 0 0 1 -6 7 H24 a6 6 0 0 1 -6 -7 z" fill="url(#gGlass)"/>
+      <rect x="26" y="44" width="68" height="8" fill="#ffffff" opacity="0.25"/>
+      <circle cx="60" cy="82" r="7" fill="#fff" opacity="0.4"/>
+    </symbol>
+  </svg>
+
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="site-header" transition:persist>
+    <div class="container nav">
+      <a href="/" class="brand" aria-label="VISUAILS home">
+        <img src="/img/logo-wordmark-light.webp" alt="VISUAILS" class="brand-word-img" />
+      </a>
+      <nav aria-label="Primary" class="primary-nav">
+        <ul class="nav-links">
+          <li class="has-menu">
+            <button class="nav-trigger" aria-haspopup="true">Services
+              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-menu" role="menu">
+              {services.map((s) => (
+                <a href={s.href} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                  <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
+                </a>
+              ))}
+            </div>
+          </li>
+          <li><a href="/pricing" aria-current={isActive('/pricing') ? 'page' : undefined}>Pricing</a></li>
+          <li><a href="/gallery" aria-current={isActive('/gallery') ? 'page' : undefined}>Gallery</a></li>
+          <li><a href="/test-sample" aria-current={isActive('/test-sample') ? 'page' : undefined}>Test Sample</a></li>
+          <li><a href="/faq" aria-current={isActive('/faq') ? 'page' : undefined}>FAQ</a></li>
+          <li><a href="/contact" aria-current={isActive('/contact') ? 'page' : undefined}>Contact</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <a href="/order" class="btn btn-primary">Order now</a>
+        <button class="menu-toggle" aria-label="Open menu"><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mobile-nav" transition:persist>
+    <button class="mobile-close" aria-label="Close menu">&times;</button>
+    <img src="/img/logo-mark.webp" alt="VISUAILS" class="mobile-mark" width="30" height="30" />
+    {services.map((s) => (
+      <a href={s.href} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+    ))}
+    <a href="/pricing">Pricing</a>
+    <a href="/gallery">Gallery</a>
+    <a href="/test-sample">Test Sample</a>
+    <a href="/faq">FAQ</a>
+    <a href="/contact">Contact</a>
+    <div style="margin-top:1.5rem"><a href="/order" class="btn btn-primary btn-block">Order now</a></div>
+  </div>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="brand">
+            <img src="/img/logo-wordmark-light.webp" alt="VISUAILS" class="brand-word-img" />
+          </a>
+          <p>A product-visual studio for modern e-commerce brands — for founders who would rather grow than book another shoot.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Services</h5>
+          <ul>
+            {services.map((s) => <li><a href={s.href}>{s.title}</a></li>)}
+            <li><a href="/gallery">Gallery</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <ul>
+            <li><a href="/about">About</a></li>
+            <li><a href="/pricing">Pricing</a></li>
+            <li><a href="/how-it-works">How it works</a></li>
+            <li><a href="/faq">FAQ</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Get in touch</h5>
+          <ul>
+            <li><a href="mailto:hello@visuails.com">hello@visuails.com</a></li>
+            <li><a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a></li>
+            <li style="color:var(--ink-3)">Enschede, Netherlands</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; {year} VISUAILS &middot; KVK 99742993 &middot; VAT NL005407575B96</span>
+        <span style="display:flex;gap:1.2rem;flex-wrap:wrap">
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms of Service</a>
+          <a href="/cookie-policy">Cookies</a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="convbar" role="complementary" aria-label="Quick start" transition:persist>
+    <em>See it on your own product — free.</em>
+    <a class="cb-cta" href="/test-sample">Free test sample</a>
+    <button class="cb-close" type="button" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <script>
+    // Importing runs init() once immediately and registers the
+    // astro:page-load listener for every ClientRouter navigation after —
+    // see src/scripts/interactions.js.
+    import '../scripts/interactions.js';
+  </script>
+</body>
+</html>
+
+<style>
+  .site-header { position: sticky; top: 0; z-index: var(--z-sticky); transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .site-header.scrolled { background: rgba(15,14,12,.82); backdrop-filter: blur(16px); box-shadow: 0 1px 0 var(--line); }
+  .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
+  .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
+  .brand-word-img { height: 13px; width: auto; display: block; }
+  .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
+  .nav-links > li > a, .nav-trigger { display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .8rem; border-radius: var(--r-pill); font-size: .92rem; font-weight: 500; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color .22s var(--ease); font-family: var(--font-body); }
+  .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
+  .nav-links > li > a[aria-current="page"] { color: var(--ink); }
+  .nav-actions { display: flex; align-items: center; gap: .6rem; }
+  .has-menu { position: relative; }
+  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .26s var(--ease), transform .26s var(--ease), visibility .26s; box-shadow: 0 24px 80px rgba(0,0,0,.55); }
+  .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  .nav-menu a { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; border-radius: var(--r-sm); }
+  .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
+  .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: .92rem; }
+  .nav-menu .mi-desc { color: var(--ink-3); font-size: .8rem; line-height: 1.4; }
+  .menu-toggle { display: none; width: 44px; height: 44px; border-radius: var(--r-pill); align-items: center; justify-content: center; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
+  .menu-toggle span, .menu-toggle span::before, .menu-toggle span::after { content: ''; display: block; width: 18px; height: 2px; background: var(--ink); border-radius: 2px; }
+  .menu-toggle span::before { transform: translateY(-6px); } .menu-toggle span::after { transform: translateY(4px); }
+  .btn-block { width: 100%; }
+
+  .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform .4s var(--ease); overflow-y: auto; }
+  .mobile-nav.open { transform: translateX(0); }
+  .mobile-mark { width: 30px; height: 30px; display: block; margin-bottom: 1.6rem; }
+  .mobile-nav a { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
+  .mobile-close { position: absolute; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
+  @media (max-width: 940px) { .nav-links, .nav-actions .btn { display: none; } .menu-toggle { display: inline-flex; } }
+
+  .site-footer { position: relative; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
+  .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr; gap: 2rem; }
+  @media (max-width: 860px) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; } }
+  @media (max-width: 520px) { .footer-grid { grid-template-columns: 1fr; } }
+  .footer-brand p { color: var(--ink-3); font-size: .9rem; margin-top: .8rem; max-width: 34ch; }
+  .footer-col h5 { font-family: var(--font-body); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 1rem; font-weight: 600; }
+  .footer-col ul { display: flex; flex-direction: column; gap: .6rem; list-style: none; margin: 0; padding: 0; }
+  .footer-col a { color: var(--ink-2); font-size: .92rem; }
+  .footer-col a:hover { color: var(--ink); }
+  .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
+
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: var(--r-pill); background: rgba(21,19,17,.88); backdrop-filter: blur(14px); border: 1px solid var(--line-strong); box-shadow: 0 24px 80px rgba(0,0,0,.55); max-width: calc(100vw - 24px); transition: transform .4s var(--ease), opacity .4s var(--ease); pointer-events: none; }
+  .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+  .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+  .convbar .cb-cta { background: linear-gradient(180deg, #FF7346, #FF5B2E 70%); color: #fff; border-radius: var(--r-pill); padding: 10px 18px; font-size: .9rem; font-weight: 600; white-space: nowrap; }
+  .convbar .cb-close { width: 30px; height: 30px; border-radius: 50%; color: var(--ink-3); font-size: 1.1rem; background: none; border: none; cursor: pointer; }
+  @media (max-width: 600px) { .convbar em { display: none; } }
+</style>

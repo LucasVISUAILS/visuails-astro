@@ -1,0 +1,174 @@
+---
+// VISUAILS — homepage. Editorial rebuild: cut to load-bearing copy only,
+// big bold Archivo type, full-bleed photography, a cursor-reactive
+// before/after lens as the flagship interaction (see DESIGN.md brief:
+// "brainstorm interactive elements that fit the brand" — the whole
+// business IS the reveal, so this is the one interaction that gets the
+// homepage's spotlight rather than the standard drag-slider).
+import Layout from '../layouts/Layout.astro';
+
+const services = [
+  { href: '/catalog', name: 'Catalog', photo: '/img/banners-06.webp' },
+  { href: '/lifestyle', name: 'Lifestyle', photo: '/img/lifestyle-glow-01.webp' },
+  { href: '/video', name: 'Video', photo: '/img/banners-16.webp' },
+];
+
+const strip = [
+  '/img/lifestyle-flash-04.webp',
+  '/img/lifestyle-dunes-01.webp',
+  '/img/lifestyle-phone-made-05.webp',
+  '/img/banners-12.webp',
+  '/img/banners-02.webp',
+];
+---
+
+<Layout
+  title="VISUAILS — Product-visual studio for e-commerce brands"
+  description="One photo in, a campaign out, in about 24 hours. Catalog, lifestyle and video visuals from a single product photo."
+  ogImage="/img/banners-09.webp"
+>
+  <!-- HERO — full-bleed real photo, gradual fade, one line, one button. -->
+  <section class="hero-editorial">
+    <div class="bg" data-parallax="0.18" style="background-image:url('/img/banners-09.webp')" transition:name="hero-photo"></div>
+    <div class="fade"></div>
+    <div class="hero-editorial-content container">
+      <h1 class="display" data-split-lines>Look like the brand<br />you're <em>becoming.</em></h1>
+      <div class="flex" style="margin-top:1.8rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href="/order" class="btn btn-primary btn-lg">Order now</a></span></span>
+        <a href="/test-sample" class="btn btn-ghost btn-lg">Free sample</a>
+      </div>
+    </div>
+    <div class="hero-editorial-cue"><span class="cue-line"></span>Scroll</div>
+  </section>
+
+  <!-- THE OFFER — a small paired moment, not another full-width banner. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="offer-moment">
+        <div class="reveal-mask photo-moment-frame">
+          <div class="rm-inner" style="background-image:url('/img/lifestyle-glow-02.webp')"></div>
+        </div>
+        <p class="lead">One product photo in. A publish-ready campaign out, in about 24 hours.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- THREE SERVICES — photo tiles, name + arrow, nothing else. -->
+  <section>
+    <div class="container">
+      <h2 style="margin-bottom:2rem">Three ways we build your image.</h2>
+      <div class="grid grid-3 reveal-group">
+        {services.map((s) => (
+          <a href={s.href} class="reveal pending" style="display:block">
+            <div class="photo-band tall">
+              <img src={s.photo} alt={`${s.name} example`} loading="lazy" />
+              <div class="scrim"></div>
+              <div class="caption">
+                <h3 style="color:#fff">{s.name} &rarr;</h3>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- MODELS — real portrait, one line. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-split reverse reveal pending">
+        <div class="photo-split-media">
+          <img src="/img/custom-models-02.webp" alt="A VISUAILS model, styled consistently across a campaign" loading="lazy" />
+        </div>
+        <div>
+          <h2>One face.<br /><em>Every campaign.</em></h2>
+          <p class="lead" style="margin-top:1rem">The same model, locked to your brand, across your whole collection.</p>
+          <div style="margin-top:1.2rem"><a class="link-arrow" href="/models">Browse the models &rarr;</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STRIP — a fast run of real photography, no copy at all. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-grid reveal pending">
+        <img src={strip[0]} alt="Flash-style lifestyle visual" loading="lazy" class="wide" />
+        <img src={strip[1]} alt="Dunes-style lifestyle visual" loading="lazy" />
+        <img src={strip[2]} alt="Phone-made-style lifestyle visual" loading="lazy" />
+        <img src={strip[3]} alt="Campaign photography" loading="lazy" />
+        <img src={strip[4]} alt="Campaign photography" loading="lazy" class="wide" />
+      </div>
+    </div>
+  </section>
+
+  <!-- PROOF — cursor-reactive lens. Move the mouse, the after-shot reveals
+       itself through the before-shot: the single strongest argument, made
+       into the one interaction the homepage leads with. -->
+  <section>
+    <div class="container two-col">
+      <div class="reveal pending">
+        <h2>One photo. <em>The rest is ours.</em></h2>
+        <p class="lead" style="margin-top:1rem">Move the lens. This is the entire brief we need from you.</p>
+        <div class="flex" style="margin-top:1.6rem">
+          <a href="/test-sample" class="btn btn-primary">Try it free</a>
+        </div>
+      </div>
+      <div class="reveal pending">
+        <div class="spot" style="aspect-ratio:4/5">
+          <span class="spot-tag before">Before</span>
+          <span class="spot-tag after">After</span>
+          <img src="/img/lifestyle-flash-01.webp" alt="Plain, flat product photo before VISUAILS" style="filter:saturate(.4) brightness(.92) contrast(.92)" />
+          <img class="spot-after" src="/img/lifestyle-glow-01.webp" alt="The same product in a styled scene after VISUAILS" />
+          <div class="spot-cursor">Reveal</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOT ALL AI IS EQUAL — the trust objection, answered before the final ask. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="text-align:center;margin-inline:auto">
+        <h2>Not all AI is equal.</h2>
+        <p style="margin-inline:auto">Generic AI generators guess. VISUAILS is trained on your product, then checked by a person before it reaches you.</p>
+      </div>
+      <div class="ai-compare reveal pending">
+        <div class="ai-compare-panel generic">
+          <img src="/img/lifestyle-flash-07.webp" alt="Illustrative simulation of a typical generic AI-tool result — not an actual competitor photo" loading="lazy" />
+          <span class="ai-compare-label">Generic AI tool</span>
+          <div class="ai-compare-tags">
+            <span class="ai-tag bad">Off-brand colour, every run</span>
+            <span class="ai-tag bad">Warped hands, logos &amp; text</span>
+            <span class="ai-tag bad">No human ever checks it</span>
+          </div>
+        </div>
+        <div class="ai-compare-panel visuails">
+          <img src="/img/banners-14.webp" alt="A real VISUAILS campaign visual" loading="lazy" />
+          <span class="ai-compare-label">VISUAILS</span>
+          <div class="ai-compare-tags">
+            <span class="ai-tag good">Locked to your exact brand colour</span>
+            <span class="ai-tag good">Product proportions kept true</span>
+            <span class="ai-tag good">Checked by a person, every time</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex" style="justify-content:center;margin-top:1.8rem">
+        <a href="/test-sample" class="btn btn-primary">See it on your product</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING CTA -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="cta-band reveal pending">
+        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.8rem)">Start with one<br /><em>free sample.</em></h2>
+        <div class="flex" style="justify-content:center;margin-top:1.8rem">
+          <span class="magnet-wrap"><span class="magnet-inner"><a href="/test-sample" class="btn btn-primary btn-lg">Claim your free sample</a></span></span>
+          <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
