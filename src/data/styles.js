@@ -160,6 +160,44 @@ export const styles = [
     bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn't look like ads"],
     whatYouGet: ['Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one', '~24h delivery, checked by hand'],
   },
+  {
+    slug: 'custom',
+    name: 'Custom',
+    tagline: 'Your own world, built around your product.',
+    priceTrust: 'On request',
+    priceUnit: '',
+    heroPhoto: '/img/banners-13.webp',
+    cardPhoto: '/img/banners-13.webp',
+    cardIcon: 'bag',
+    cardDesc: 'Not one of our four moods — a bespoke lifestyle scene designed from your references.',
+    orderHref: '/order-custom',
+    orderLabel: 'Start a custom scene',
+    moodParagraphs: [
+      'Not one of our four moods — a scene designed from your references: the setting, styling and light that only your brand would use.',
+      'We build the world once, with you, then keep every future visual true to it.',
+    ],
+    steps: [
+      { title: 'Brief', body: 'Share references and the world you want your product to live in.' },
+      { title: 'Design', body: 'We shape a bespoke scene and styling direction, checked with you.' },
+      { title: 'Produce', body: 'Your custom lifestyle visuals, consistent from order to order.' },
+    ],
+    grid: grid(
+      ['/img/banners-14.webp'],
+      ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
+    ),
+    bestFor: [
+      'Brands with a specific world in mind',
+      "Concepts our four moods don't cover",
+      'Campaigns that need their own signature',
+      'Ranges where the scene is the story',
+    ],
+    whatYouGet: [
+      'A bespoke lifestyle concept, designed with you',
+      'Scene, styling and light matched to your brand',
+      'Consistent across every future order',
+      'A clear price, agreed before we start',
+    ],
+  },
 ];
 
 export function getStyle(slug) {

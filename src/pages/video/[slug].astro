@@ -32,6 +32,10 @@ const media: Record<string, { hero: string; strip: string[] }> = {
     hero: '/img/banners-08.webp',
     strip: ['/img/banners-03.webp', '/img/custom-models-01.webp', '/img/banners-07.webp', '/img/model-02.webp'],
   },
+  custom: {
+    hero: '/img/banners-13.webp',
+    strip: ['/img/banners-14.webp', '/img/lifestyle-glow-06.webp', '/img/banners-16.webp', '/img/lifestyle-flash-03.webp'],
+  },
 };
 const m = media[style.slug] ?? media.motion;
 ---
@@ -145,7 +149,7 @@ const m = media[style.slug] ?? media.motion;
     <div class="container">
       <div class="cta-band reveal pending">
         <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">Make {style.name} <em>yours.</em></h2>
-        <p class="lead" style="margin:1rem auto 0;text-align:center">Free test sample, or place your order today.</p>
+        <p class="lead" style="margin:1rem auto 0;text-align:center">Test sample, or place your order today.</p>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
           <span class="magnet-wrap">
             <span class="magnet-inner">
@@ -156,7 +160,7 @@ const m = media[style.slug] ?? media.motion;
               )}
             </span>
           </span>
-          <a href="/test-sample" class="btn btn-ghost btn-lg">Free test sample</a>
+          <a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a>
         </div>
       </div>
     </div>

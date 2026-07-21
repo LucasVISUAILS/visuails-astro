@@ -107,36 +107,56 @@ function initHeaderScroll() {
   if (!headerBound) { headerBound = true; window.addEventListener('scroll', onScroll, { passive: true }); }
 }
 
+// Mobile nav — document-level delegation so it works no matter when the
+// header mounts or how ClientRouter persists/swaps it. Binding listeners
+// directly to the (transition:persist) button was the fragile part that
+// could leave the burger dead after a navigation.
 let mobileNavBound = false;
 function initMobileNav() {
-  const toggle = document.querySelector('.menu-toggle');
-  const nav = document.querySelector('.mobile-nav');
-  const close = document.querySelector('.mobile-close');
-  if (!toggle || !nav || mobileNavBound) return;
+  if (mobileNavBound) return;
   mobileNavBound = true;
   const setOpen = (open) => {
+    const nav = document.querySelector('.mobile-nav');
+    if (!nav) return;
     nav.classList.toggle('open', open);
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    const toggle = document.querySelector('.menu-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
-  toggle.addEventListener('click', () => setOpen(true));
-  close?.addEventListener('click', () => setOpen(false));
-  nav.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('.menu-toggle')) { setOpen(true); return; }
+    if (t.closest('.mobile-close')) { setOpen(false); return; }
+    if (t.closest('.mobile-nav a')) { setOpen(false); return; }
+  });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
 }
 
+// Services dropdown — same delegation approach (click to toggle on touch /
+// keyboard; hover/focus-within still open it via CSS on desktop).
 let servicesBound = false;
 function initServicesMenu() {
-  const li = document.querySelector('.has-menu');
-  const trigger = li && li.querySelector('.nav-trigger');
-  if (!li || !trigger || servicesBound) return;
+  if (servicesBound) return;
   servicesBound = true;
-  const setOpen = (open) => {
+  const setOpen = (li, open) => {
+    if (!li) return;
     li.classList.toggle('menu-open', open);
-    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    const trigger = li.querySelector('.nav-trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
-  trigger.addEventListener('click', (e) => { e.preventDefault(); setOpen(!li.classList.contains('menu-open')); });
-  document.addEventListener('click', (e) => { if (!li.contains(e.target)) setOpen(false); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const trigger = t.closest('.nav-trigger');
+    if (trigger) {
+      e.preventDefault();
+      const li = trigger.closest('.has-menu');
+      setOpen(li, li ? !li.classList.contains('menu-open') : false);
+      return;
+    }
+    if (!t.closest('.has-menu')) setOpen(document.querySelector('.has-menu'), false);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(document.querySelector('.has-menu'), false); });
 }
 
 let convbarDismissed = false;

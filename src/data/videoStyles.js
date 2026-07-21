@@ -170,6 +170,54 @@ export const videoStyles = [
       'A clear, agreed price before work starts',
     ],
   },
+  {
+    slug: 'custom',
+    name: 'Custom',
+    tagline: 'A video concept built entirely around your brand.',
+    priceTrust: 'Quoted per project',
+    priceUnit: '',
+    ctaLabel: 'Discuss a custom video',
+    ctaHref: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20discuss%20a%20custom%20video.',
+    ctaExternal: true,
+    heroIcon: 'jar',
+    heroWidth: '26%',
+    cardIcon: 'jar',
+    cardWidth: '46%',
+    cardPrice: 'Custom quote',
+    cardDesc: 'Your own concept, pace and look — a video scoped entirely to your brief.',
+    moodTitle: 'What Custom feels like.',
+    moodParagraphs: [
+      'Beyond the three formats — a video concept scoped to your brief: your story, your pace, your look.',
+    ],
+    steps: [
+      { title: 'Brief', body: 'Tell us the idea and where it needs to run.' },
+      { title: 'Concept', body: 'We design a custom motion concept and scope it with you.' },
+      { title: 'Deliver', body: 'Every cut you need, graded as one.' },
+    ],
+    craft: [
+      { title: 'Built from your idea', body: 'No template — the concept starts from your brief and references.' },
+      { title: 'Scoped before we start', body: 'Shots, length and deliverables agreed up front, priced clearly.' },
+      { title: 'Any format, one grade', body: 'Feed, stories and site cuts, all sharing one look.' },
+      { title: 'Consistent with your stills', body: 'Colour and mood matched to your catalog and lifestyle set.' },
+    ],
+    why: [
+      { title: 'Exactly your idea', body: 'A concept shaped to your brand, not squeezed into a preset.' },
+      { title: 'One partner, one look', body: 'Stills and motion that clearly belong together.' },
+      { title: 'Priced before you commit', body: 'A clear quote, agreed before any work starts.' },
+    ],
+    bestFor: [
+      'Ideas the three formats don\'t cover',
+      'Launches with a specific story to tell',
+      'Brands that want a signature motion style',
+      'Anything scoped and quoted per project',
+    ],
+    whatYouGet: [
+      'A bespoke video concept, designed with you',
+      'Every cut your channels need',
+      'One grade across the whole piece',
+      'A clear, agreed price before work starts',
+    ],
+  },
 ];
 
 export function getVideoStyle(slug) {

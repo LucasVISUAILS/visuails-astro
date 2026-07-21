@@ -9,12 +9,14 @@ const videoStyles = [
   { slug: 'motion', name: 'Motion', cardPrice: 'From €49 / video' },
   { slug: 'lifestyle', name: 'Lifestyle Video', cardPrice: 'From €59 / video' },
   { slug: 'campaign', name: 'Campaign', cardPrice: 'Custom quote' },
+  { slug: 'custom', name: 'Custom', cardPrice: 'Custom quote' },
 ];
 
 const posters: Record<string, string> = {
   motion: '/img/banners-04.webp',
   lifestyle: '/img/lifestyle-glow-03.webp',
   campaign: '/img/banners-08.webp',
+  custom: '/img/banners-13.webp',
 };
 
 const strip = [
@@ -52,7 +54,7 @@ const strip = [
 
   <section>
     <div class="container">
-      <h2 style="margin-bottom:2rem">Three ways to add motion.</h2>
+      <h2 style="margin-bottom:2rem">Ways to add motion.</h2>
       <div class="grid grid-3 reveal-group">
         {videoStyles.map((s) => (
           <a href={`/video/${s.slug}`} class="reveal pending" style="display:block">

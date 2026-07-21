@@ -19,11 +19,14 @@ export function getStaticPaths() {
 }
 
 const { style } = Astro.props;
+// Preset styles are a fixed per-visual price; Custom is quoted, so fall back
+// to a per-style price when one is set.
+const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''}` : 'From €35 / visual';
 ---
 
 <Layout
   title={`${style.name} — Lifestyle style | VISUAILS`}
-  description={`${style.name}: a signature VISUAILS lifestyle style. From €35 / visual. Produced in about 24 hours, every image checked by hand.`}
+  description={`${style.name}: a signature VISUAILS lifestyle style. ${priceLine}. Produced in about 24 hours, every image checked by hand.`}
 >
   <section class="page-hero">
     <div class="container">
@@ -31,14 +34,14 @@ const { style } = Astro.props;
       <h1 class="display">{style.name}.</h1>
       <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
       <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href="/order-lifestyle" class="btn btn-primary btn-lg">Order {style.name}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/order-lifestyle'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
         <a href={`https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20the%20${style.name}%20style.`} class="btn btn-wa" target="_blank" rel="noopener">
           <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>
           WhatsApp
         </a>
       </div>
       <div class="trust-row" style="margin-top:2rem">
-        <span class="trust-item"><strong>€35</strong> / visual</span>
+        <span class="trust-item"><strong>{style.priceTrust ?? '€35'}</strong>{style.priceUnit ?? ' / visual'}</span>
         <span class="trust-item"><strong>~24h</strong> delivery</span>
         <span class="trust-item"><strong>100%</strong> checked by hand</span>
       </div>
@@ -152,8 +155,8 @@ const { style } = Astro.props;
       <div class="cta-band reveal pending">
         <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">Make {style.name} <em>yours.</em></h2>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href="/order-lifestyle" class="btn btn-primary btn-lg">Order {style.name}</a></span></span>
-          <a href="/test-sample" class="btn btn-ghost btn-lg">Free test sample</a>
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/order-lifestyle'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
+          <a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a>
         </div>
       </div>
     </div>

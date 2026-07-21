@@ -1,5 +1,5 @@
 ---
-// VISUAILS — free test sample. Ported from
+// VISUAILS — test sample. Ported from
 // /tmp/visuails-rebuild/src/routes/test-sample/+page.svelte: a 2-step
 // request wizard (style/model/product -> contact) inside one <form>.
 //
@@ -11,26 +11,26 @@
 import Layout from '../layouts/Layout.astro';
 
 const styles = [
-  { value: 'Phone-made', icon: 'bottle', vb: '0 0 120 150', w: '42%' },
-  { value: 'Glow', icon: 'jar', vb: '0 0 120 130', w: '46%' },
-  { value: 'Flash', icon: 'sneaker', vb: '0 0 160 110', w: '54%' },
-  { value: 'Dunes', icon: 'bag', vb: '0 0 120 130', w: '46%' },
+  { value: 'Phone-made', photo: '/img/lifestyle-phone-made-01.webp' },
+  { value: 'Glow', photo: '/img/lifestyle-glow-01.webp' },
+  { value: 'Flash', photo: '/img/lifestyle-flash-01.webp' },
+  { value: 'Dunes', photo: '/img/lifestyle-dunes-01.webp' },
 ];
 const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme'];
 ---
 
 <Layout
-  title="Test VISUAILS with 1 product — free sample"
-  description="Upload one product photo and let VISUAILS turn it into a professional e-commerce visual. See how it works before you order — 1 free sample per business, human quality-checked."
+  title="Test VISUAILS with 1 product — test sample"
+  description="Upload one product photo and let VISUAILS turn it into a professional e-commerce visual. See how it works before you order — 1 test sample per business, human quality-checked."
 >
   <!-- HERO -->
   <section class="page-hero"><div class="container">
-    <span class="eyebrow-page">Free test sample</span>
+    <span class="eyebrow-page">Test sample</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Test VISUAILS with <span class="accent-word">1 product</span></h1>
     <p class="lead" style="margin-top:1.2rem">Upload one product photo and see it become a publish-ready visual — before you order.</p>
     <div class="chip-row" style="margin-top:1.8rem">
       <span class="chip"><span class="dot"></span>1 sample per business</span>
-      <span class="chip"><span class="dot"></span>No card needed</span>
+      <span class="chip"><span class="dot"></span>Just €0.99 verification</span>
       <span class="chip"><span class="dot"></span>Human quality-checked</span>
     </div>
   </div></section>
@@ -45,7 +45,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
           <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>One high-resolution visual, delivered by email download link.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>A real look at our lighting, framing and finish.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>Reviewed by a person before it reaches you.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>No subscription, no card up front — 1 sample per business.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>No subscription — just a €0.99 verification, 1 sample per business.</span></li>
         </ul>
       </div>
       <div class="reveal pending">
@@ -108,7 +108,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   <section>
     <div class="container narrow">
       <div class="section-head">
-        <h2>Request your free sample</h2>
+        <h2>Request your test sample</h2>
         <p>Two quick steps. Tell us the look you want, then where to send it.</p>
       </div>
       <div class="card reveal pending" style="padding:clamp(1.4rem,3vw,2.4rem)">
@@ -127,7 +127,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                 {styles.map((s, i) => (
                   <label class="choice">
                     <input type="radio" name="style" value={s.value} required={i === 0} />
-                    <div class="choice-media vis"><div class="vis-glow"></div><div class="vis-obj" style={`width:${s.w}`}><svg viewBox={s.vb}><use href={`#p-${s.icon}`} /></svg></div><div class="vis-floor"></div></div>
+                    <div class="choice-media"><img src={s.photo} alt={`${s.value} lifestyle style`} loading="lazy" /></div>
                     <div class="choice-label">{s.value}</div>
                   </label>
                 ))}
@@ -138,16 +138,16 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
               <label>Choose a model <span class="req">*</span></label>
               <span class="hint" style="margin-bottom:.3rem">Optional for most products — handy for apparel and accessories.</span>
               <div class="choice-grid">
-                {roster.map((m, i) => (
+                {roster.map((m) => (
                   <label class="choice">
-                    <input type="radio" name="model" value={m} required={i === 0} />
-                    <div class="choice-media vis mono"><div class="vis-glow"></div><div class="mono-av">{m[0]}<small>{m}</small></div></div>
+                    <input type="radio" name="model" value={m} />
+                    <div class="choice-media"><img src={`/img/model-${m.toLowerCase()}.webp`} alt={m} loading="lazy" /></div>
                     <div class="choice-label">{m}</div>
                   </label>
                 ))}
                 <label class="choice">
                   <input type="radio" name="model" value="VISUAILS choose" />
-                  <div class="choice-media vis mono"><div class="vis-glow"></div><div class="mono-av"><svg viewBox="0 0 24 24" class="i" style="width:26px;height:26px;color:var(--accent-bright)"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z" /></svg></div></div>
+                  <div class="choice-media mono"><div class="mono-av"><svg viewBox="0 0 24 24" class="i" style="width:26px;height:26px;color:var(--accent-bright)"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z" /></svg></div></div>
                   <div class="choice-label">Let VISUAILS choose</div>
                 </label>
               </div>
@@ -217,7 +217,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
           </div>
         </form>
       </div>
-      <p class="hint" style="text-align:center;margin-top:1rem">Genuinely free &middot; one sample per business, verified by email to prevent abuse &middot; no card needed.</p>
+      <p class="hint" style="text-align:center;margin-top:1rem">One sample per business &middot; a small &euro;0.99 verification to prevent abuse &middot; that's all you pay for the sample.</p>
     </div>
   </section>
 
@@ -229,7 +229,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
         <p class="lead" style="margin:1.2rem auto 0;text-align:center">Send us your product on WhatsApp and we'll help you pick a style.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <a href="/order" class="btn btn-ghost btn-lg">Place a full order</a>
-          <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20try%20a%20free%20test%20sample." class="btn btn-wa btn-lg" target="_blank" rel="noopener">
+          <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20try%20a%20test%20sample." class="btn btn-wa btn-lg" target="_blank" rel="noopener">
             <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
             WhatsApp <span class="rec-badge">Fastest</span>
           </a>
@@ -245,7 +245,8 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
     // survives ClientRouter view-transition navigations.
     function initWizard() {
       const form = document.querySelector<HTMLFormElement>('form[data-wizard]');
-      if (!form) return;
+      if (!form || form.dataset.wizardBound) return;
+      form.dataset.wizardBound = '1';
       const step1 = form.querySelector<HTMLElement>('[data-wizard-step="1"]');
       const step2 = form.querySelector<HTMLElement>('[data-wizard-step="2"]');
       const progress = form.querySelector<HTMLElement>('[data-wizard-progress]');
@@ -253,14 +254,23 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
       const backBtn = form.querySelector<HTMLButtonElement>('[data-wizard-back]');
       if (!step1 || !step2 || !progress) return;
 
-      const setStep = (n: 1 | 2) => {
+      // Scroll the form back up on step change — otherwise on mobile the page
+      // is left scrolled into the empty space below the now-shorter step,
+      // making it look like nothing happened / the form is broken.
+      const scrollToForm = () => {
+        const y = form.getBoundingClientRect().top + window.scrollY - 90;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      };
+
+      const setStep = (n: 1 | 2, scroll = false) => {
         step1.classList.toggle('hidden-step', n !== 1);
         step2.classList.toggle('hidden-step', n !== 2);
         progress.style.width = `${(n / 2) * 100}%`;
+        if (scroll) scrollToForm();
       };
 
-      nextBtn?.addEventListener('click', () => setStep(2));
-      backBtn?.addEventListener('click', () => setStep(1));
+      nextBtn?.addEventListener('click', () => setStep(2, true));
+      backBtn?.addEventListener('click', () => setStep(1, true));
       setStep(1);
     }
     initWizard();
@@ -287,6 +297,8 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   .choice:hover { transform: translateY(-2px); border-color: var(--accent-line); }
   .choice input { position: absolute; opacity: 0; pointer-events: none; }
   .choice .choice-media { aspect-ratio: 1; }
+  .choice .choice-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .choice .choice-media.mono { display: grid; place-items: center; background: radial-gradient(125% 90% at 50% 6%, #FFFFFF, #F1EBE3 58%, #E2D9CD 100%); }
   .choice .choice-label { padding: 0.6rem 0.7rem; font-size: 0.85rem; color: var(--ink); font-weight: 500; }
   .choice:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   .choice:has(input:checked)::after { content: "\2713"; position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; z-index: 5; }

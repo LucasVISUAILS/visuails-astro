@@ -7,10 +7,11 @@ import Layout from '../../layouts/Layout.astro';
 import Compare from '../../components/Compare.astro';
 
 const styles = [
-  { slug: 'dunes', name: 'Dunes', cardPhoto: '/img/lifestyle-dunes-01.webp', tagline: 'Sun, sand and quiet luxury.' },
-  { slug: 'flash', name: 'Flash', cardPhoto: '/img/lifestyle-flash-02.webp', tagline: 'Direct flash. No apologies.' },
-  { slug: 'glow', name: 'Glow', cardPhoto: '/img/lifestyle-glow-01.webp', tagline: 'Golden hour, on demand.' },
-  { slug: 'phone-made', name: 'Phone-made', cardPhoto: '/img/lifestyle-phone-made-11.webp', tagline: "Looks effortless. Isn't." },
+  { slug: 'dunes', name: 'Dunes', cardPhoto: '/img/lifestyle-dunes-01.webp', tagline: 'Sun, sand and quiet luxury.', price: '€35 / visual' },
+  { slug: 'flash', name: 'Flash', cardPhoto: '/img/lifestyle-flash-02.webp', tagline: 'Direct flash. No apologies.', price: '€35 / visual' },
+  { slug: 'glow', name: 'Glow', cardPhoto: '/img/lifestyle-glow-01.webp', tagline: 'Golden hour, on demand.', price: '€35 / visual' },
+  { slug: 'phone-made', name: 'Phone-made', cardPhoto: '/img/lifestyle-phone-made-11.webp', tagline: "Looks effortless. Isn't.", price: '€35 / visual' },
+  { slug: 'custom', name: 'Custom', cardPhoto: '/img/banners-13.webp', tagline: 'Your own world.', price: 'On request' },
 ];
 
 const marqueeItems = [
@@ -48,7 +49,7 @@ const marqueeItems = [
 
   <section>
     <div class="container">
-      <h2 style="margin-bottom:2rem">Four moods. Pick yours.</h2>
+      <h2 style="margin-bottom:2rem">Four moods — or <em>your own.</em></h2>
       <div class="grid grid-2 reveal-group">
         {styles.map((s) => (
           <a href={`/lifestyle/${s.slug}`} class="reveal pending" style="display:block">
@@ -57,7 +58,7 @@ const marqueeItems = [
               <div class="scrim"></div>
               <div class="caption">
                 <h3 style="color:#fff;font-size:1.6rem"><em>{s.name}</em> &rarr;</h3>
-                <p style="font-size:.92rem">{s.tagline} &middot; €35 / visual</p>
+                <p style="font-size:.92rem">{s.tagline} &middot; {s.price}</p>
               </div>
             </div>
           </a>

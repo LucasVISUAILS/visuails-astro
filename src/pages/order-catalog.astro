@@ -71,7 +71,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                 {roster.map((m) => (
                   <label class="choice">
                     <input type="radio" name="model" value={m} />
-                    <div class="choice-media mono"><div class="mono-av">{m[0]}<small>{m}</small></div></div>
+                    <div class="choice-media"><img src={`/img/model-${m.toLowerCase()}.webp`} alt={m} loading="lazy" /></div>
                     <div class="choice-label">{m}</div>
                   </label>
                 ))}
@@ -231,4 +231,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   .choice .choice-media.mono { aspect-ratio: 1; display: grid; place-items: center; background: radial-gradient(125% 90% at 50% 6%, #FFFFFF, #F1EBE3 58%, #E2D9CD 100%); }
   .mono .mono-av { position: relative; display: grid; place-items: center; width: 100%; height: 100%; font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; color: var(--accent-bright); }
   .mono .mono-av small { position: absolute; bottom: 8px; font-size: .58rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-family: var(--font-body); }
+  /* Model tiles are portrait photos, not wide swatches — override the shared 2.4 ratio. */
+  .model-picker .choice .choice-media { aspect-ratio: 3 / 4; }
+  .model-picker .choice .choice-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 </style>

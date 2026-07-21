@@ -130,7 +130,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                 {roster.map((m, i) => (
                   <label class="choice">
                     <input type="radio" name="model" value={m} required={i === 0} />
-                    <div class="choice-media mono"><div class="mono-av">{m[0]}<small>{m}</small></div></div>
+                    <div class="choice-media"><img src={`/img/model-${m.toLowerCase()}.webp`} alt={m} loading="lazy" /></div>
                     <div class="choice-label">{m}</div>
                   </label>
                 ))}
@@ -227,6 +227,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   .choice:hover { transform: translateY(-2px); border-color: var(--accent-line); }
   .choice input { position: absolute; opacity: 0; pointer-events: none; }
   .choice .choice-media { position: relative; aspect-ratio: 1; background: var(--bg-deep); overflow: hidden; }
+  .choice .choice-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .choice .choice-label { padding: 0.6rem 0.7rem; font-size: 0.85rem; color: var(--ink); font-weight: 500; }
   .choice:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   .choice:has(input:checked)::after { content: "\2713"; position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; }
@@ -270,18 +271,26 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
     const qtySelect = document.querySelector<HTMLSelectElement>('#ls-qty');
     const totalSteps = panels.length || 3;
 
-    const showStep = (n: number) => {
+    // Scroll the form back into view on step change so mobile users aren't
+    // left staring at the empty space below a now-shorter step.
+    const scrollToForm = () => {
+      const y = form.getBoundingClientRect().top + window.scrollY - 90;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    };
+
+    const showStep = (n: number, scroll = false) => {
       panels.forEach((panel) => {
         panel.classList.toggle('hidden-step', Number(panel.dataset.step) !== n);
       });
       if (progressBar) progressBar.style.width = `${(n / totalSteps) * 100}%`;
+      if (scroll) scrollToForm();
     };
 
     form.querySelectorAll<HTMLButtonElement>('[data-step-next]').forEach((btn) => {
-      btn.addEventListener('click', () => showStep(Number(btn.dataset.stepNext)));
+      btn.addEventListener('click', () => showStep(Number(btn.dataset.stepNext), true));
     });
     form.querySelectorAll<HTMLButtonElement>('[data-step-prev]').forEach((btn) => {
-      btn.addEventListener('click', () => showStep(Number(btn.dataset.stepPrev)));
+      btn.addEventListener('click', () => showStep(Number(btn.dataset.stepPrev), true));
     });
 
     const calcTotal = () => {
