@@ -181,6 +181,60 @@ function initConvbar() {
   closeBtn?.addEventListener('click', () => { convbarDismissed = true; bar.classList.remove('show'); });
 }
 
+// Multi-step form wizards — handled here via document-level delegation so
+// they work reliably after ClientRouter navigations (a page-local <script>
+// wasn't running when the page was reached via in-site navigation, which is
+// why the test-sample form was dead on mobile). Covers the 2-step test-sample
+// wizard and the 3-step order-lifestyle wizard (incl. its running total).
+let wizardsBound = false;
+function initWizards() {
+  if (wizardsBound) return;
+  wizardsBound = true;
+
+  const scrollToForm = (form) => {
+    const y = form.getBoundingClientRect().top + window.scrollY - 90;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  };
+  const show2 = (form, n) => {
+    form.querySelectorAll('[data-wizard-step]').forEach((s) => {
+      s.classList.toggle('hidden-step', Number(s.dataset.wizardStep) !== n);
+    });
+    const prog = form.querySelector('[data-wizard-progress]');
+    if (prog) prog.style.width = `${(n / 2) * 100}%`;
+  };
+  const showN = (form, n) => {
+    const panels = form.querySelectorAll('.step-panel');
+    panels.forEach((p) => p.classList.toggle('hidden-step', Number(p.dataset.step) !== n));
+    const bar = form.querySelector('#ls-progress-bar');
+    if (bar) bar.style.width = `${(n / (panels.length || 3)) * 100}%`;
+  };
+  const lsTotal = (form) => {
+    const label = document.querySelector('#ls-total');
+    if (!label) return;
+    const qty = Number(form.querySelector('#ls-qty')?.value || '1');
+    const format = form.querySelector('input[name="format"]:checked')?.value;
+    const quality = form.querySelector('input[name="quality"]:checked')?.value;
+    const delivery = form.querySelector('input[name="delivery"]:checked')?.value;
+    const total = qty * 35 + (format === 'Multi Format Export' ? 19.99 : 0) + (quality === '4K' ? 9.99 : 0) + (delivery === 'Priority' ? 29.99 : 0);
+    label.textContent = `€${Number.isInteger(total) ? total : total.toFixed(2)}`;
+  };
+
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    let el;
+    if ((el = t.closest('[data-wizard-next]'))) { const f = el.closest('form'); if (f) { show2(f, 2); scrollToForm(f); } return; }
+    if ((el = t.closest('[data-wizard-back]'))) { const f = el.closest('form'); if (f) { show2(f, 1); scrollToForm(f); } return; }
+    if ((el = t.closest('[data-step-next]'))) { const f = el.closest('form'); if (f) { showN(f, Number(el.dataset.stepNext)); scrollToForm(f); } return; }
+    if ((el = t.closest('[data-step-prev]'))) { const f = el.closest('form'); if (f) { showN(f, Number(el.dataset.stepPrev)); scrollToForm(f); } return; }
+  });
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('#ls-form')) lsTotal(t.closest('#ls-form'));
+  });
+}
+
 export function init() {
   initReveal();
   initSplitLines();
@@ -191,6 +245,7 @@ export function init() {
   initMobileNav();
   initServicesMenu();
   initConvbar();
+  initWizards();
 }
 
 // First load.

@@ -237,45 +237,8 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
       </div>
     </div>
   </section>
-
-  <script>
-    // Vanilla re-implementation of the Svelte source's $state(step) wizard:
-    // both steps stay mounted (fields keep their values), only visibility
-    // and the progress bar change. Re-inits on astro:page-load so it
-    // survives ClientRouter view-transition navigations.
-    function initWizard() {
-      const form = document.querySelector<HTMLFormElement>('form[data-wizard]');
-      if (!form || form.dataset.wizardBound) return;
-      form.dataset.wizardBound = '1';
-      const step1 = form.querySelector<HTMLElement>('[data-wizard-step="1"]');
-      const step2 = form.querySelector<HTMLElement>('[data-wizard-step="2"]');
-      const progress = form.querySelector<HTMLElement>('[data-wizard-progress]');
-      const nextBtn = form.querySelector<HTMLButtonElement>('[data-wizard-next]');
-      const backBtn = form.querySelector<HTMLButtonElement>('[data-wizard-back]');
-      if (!step1 || !step2 || !progress) return;
-
-      // Scroll the form back up on step change — otherwise on mobile the page
-      // is left scrolled into the empty space below the now-shorter step,
-      // making it look like nothing happened / the form is broken.
-      const scrollToForm = () => {
-        const y = form.getBoundingClientRect().top + window.scrollY - 90;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      };
-
-      const setStep = (n: 1 | 2, scroll = false) => {
-        step1.classList.toggle('hidden-step', n !== 1);
-        step2.classList.toggle('hidden-step', n !== 2);
-        progress.style.width = `${(n / 2) * 100}%`;
-        if (scroll) scrollToForm();
-      };
-
-      nextBtn?.addEventListener('click', () => setStep(2, true));
-      backBtn?.addEventListener('click', () => setStep(1, true));
-      setStep(1);
-    }
-    initWizard();
-    document.addEventListener('astro:page-load', initWizard);
-  </script>
+  <!-- Wizard step navigation is handled globally in src/scripts/interactions.js
+       (document-level delegation) so it survives ClientRouter navigations. -->
 </Layout>
 
 <style>

@@ -71,7 +71,7 @@ const orgJsonLd = {
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
   <meta name="robots" content="index, follow, max-image-preview:large" />
-  <meta name="theme-color" content="#0F0E0C" />
+  <meta name="theme-color" content="#0E0E16" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -251,7 +251,7 @@ const orgJsonLd = {
 
 <style>
   .site-header { position: sticky; top: 0; z-index: var(--z-sticky); transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
-  .site-header.scrolled { background: rgba(15,14,12,.82); backdrop-filter: blur(16px); box-shadow: 0 1px 0 var(--line); }
+  .site-header.scrolled { background: rgba(13,13,20,.82); backdrop-filter: blur(16px); box-shadow: 0 1px 0 var(--line); }
   .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
   .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
   .brand-word-img { height: 13px; width: auto; display: block; }
@@ -290,11 +290,11 @@ const orgJsonLd = {
   .footer-col a:hover { color: var(--ink); }
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
 
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: var(--r-pill); background: rgba(21,19,17,.88); backdrop-filter: blur(14px); border: 1px solid var(--line-strong); box-shadow: 0 24px 80px rgba(0,0,0,.55); max-width: calc(100vw - 24px); transition: transform .4s var(--ease), opacity .4s var(--ease); pointer-events: none; }
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: var(--r-pill); background: rgba(19,19,28,.88); backdrop-filter: blur(14px); border: 1px solid var(--line-strong); box-shadow: 0 24px 80px rgba(0,0,0,.55); max-width: calc(100vw - 24px); transition: transform .4s var(--ease), opacity .4s var(--ease); pointer-events: none; }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
   .convbar .cb-logo { width: 22px; height: 22px; flex: 0 0 auto; display: block; }
   .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
-  .convbar .cb-cta { background: linear-gradient(180deg, #FF7346, #FF5B2E 70%); color: #fff; border-radius: var(--r-pill); padding: 10px 18px; font-size: .9rem; font-weight: 600; white-space: nowrap; }
+  .convbar .cb-cta { background: linear-gradient(160deg, #8B7BFF, #6D5CE7 72%); color: #fff; border-radius: var(--r-pill); padding: 10px 18px; font-size: .9rem; font-weight: 600; white-space: nowrap; }
   .convbar .cb-close { width: 30px; height: 30px; border-radius: 50%; color: var(--ink-3); font-size: 1.1rem; background: none; border: none; cursor: pointer; }
   @media (max-width: 600px) { .convbar em { display: none; } }
 </style>
