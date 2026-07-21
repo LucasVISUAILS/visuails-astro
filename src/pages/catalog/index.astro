@@ -6,6 +6,7 @@
 // cardWidth/cardPrice/cardDesc off each entry.
 import Layout from '../../layouts/Layout.astro';
 import ProductScene from '../../components/ProductScene.astro';
+import Compare from '../../components/Compare.astro';
 import { catalogStyles } from '../../data/catalogStyles.js';
 
 const faqs = [
@@ -40,6 +41,42 @@ const faqs = [
       </div>
       <div class="reveal pending">
         <ProductScene icon="bottle" width="42%" badge="Catalog visual, made consistent" wide />
+      </div>
+    </div>
+  </section>
+
+  <!-- Two presentation modes — spelled out so "on-model catalog" is never a
+       surprise. Both are orderable in the catalog flow. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="text-align:center;margin-inline:auto">
+        <h2>Two ways to show a product.</h2>
+        <p style="margin-inline:auto">Same clean catalog standard, either way — you choose per order.</p>
+      </div>
+      <div class="grid grid-2 reveal-group" style="margin-top:2rem">
+        <a href="/order-catalog" class="reveal pending" style="display:block">
+          <div class="photo-band tall">
+            <img src="/img/catalog-after.webp" alt="Product-only catalog visual on a plain background" loading="lazy" />
+            <div class="scrim"></div>
+            <div class="caption">
+              <h3 style="color:#fff">Product only</h3>
+              <p style="font-size:.92rem">Clean product on a plain or branded background — the classic marketplace shot. From €19.</p>
+            </div>
+          </div>
+        </a>
+        <a href="/order-catalog" class="reveal pending" style="display:block">
+          <div class="photo-band tall">
+            <img src="/img/custom-models-02.webp" alt="On-model catalog visual — the product worn by a model" loading="lazy" />
+            <div class="scrim"></div>
+            <div class="caption">
+              <h3 style="color:#fff">On a model</h3>
+              <p style="font-size:.92rem">The same catalog look, worn by a consistent model — for fit, drape and scale. Priced with your order.</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="flex" style="justify-content:center;margin-top:1.8rem">
+        <a href="/order-catalog" class="btn btn-primary">Order catalog visuals</a>
       </div>
     </div>
   </section>
@@ -107,17 +144,14 @@ const faqs = [
 
   <section class="section-tight">
     <div class="container">
-      <div class="section-head"><h2>One photo in. A clean visual out.</h2><p>Drag to compare.</p></div>
-      <div style="max-width:640px;margin:0 auto;text-align:center">
-        <div class="reveal-clip-wrap"><div class="reveal-clip-inner">
-          <div class="ba" aria-label="Before and after: a raw phone photo transformed into a clean catalog visual">
-            <div class="ba-layer ba-before-scene" aria-hidden="true"><img src="/img/catalog-before.webp" alt="A raw phone photo of a t-shirt on a table before VISUAILS" /></div>
-            <div class="ba-layer ba-after" aria-hidden="true"><img src="/img/catalog-after.webp" alt="The same t-shirt as a clean catalog visual after VISUAILS" /></div>
-            <span class="ba-tag tag-before">Before</span><span class="ba-tag tag-after">After</span>
-            <div class="ba-handle" aria-hidden="true"></div>
-            <div class="ba-knob" aria-hidden="true"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg></div>
-          </div>
-        </div></div>
+      <div class="section-head" style="text-align:center;margin-inline:auto"><h2>One photo in. A clean visual out.</h2><p style="margin-inline:auto">The exact raw phone photo a customer sent — and what came back.</p></div>
+      <div style="max-width:520px;margin:2rem auto 0">
+        <Compare
+          before="/img/catalog-before.webp"
+          after="/img/catalog-after.webp"
+          beforeAlt="A raw phone photo of a t-shirt on a table before VISUAILS"
+          afterAlt="The same t-shirt as a clean catalog visual after VISUAILS"
+        />
       </div>
     </div>
   </section>
@@ -125,35 +159,16 @@ const faqs = [
   <section class="section-tight">
     <div class="container two-col">
       <div class="reveal pending">
-        <div class="spot" style="aspect-ratio:4/5">
-          <span class="spot-tag before">Before</span>
-          <span class="spot-tag after">After</span>
-          <img src="/img/catalog-before.webp" alt="Close detail of the raw phone photo before VISUAILS" />
-          <img class="spot-after" src="/img/catalog-after.webp" alt="The same close detail, clean and catalog-ready after VISUAILS" />
-          <div class="spot-cursor">Zoom</div>
-        </div>
+        <div class="photo-split-media"><img src="/img/catalog-after.webp" alt="A clean, marketplace-ready catalog visual by VISUAILS" loading="lazy" /></div>
       </div>
       <div class="reveal pending">
         <h2>Fast means nothing if it isn't right.</h2>
-        <p class="lead" style="margin-top:1.2rem">Every visual is generated, then reviewed by a person before it reaches you. Move the lens — colour and texture hold up at any distance.</p>
+        <p class="lead" style="margin-top:1.2rem">Every visual is generated, then reviewed by a person before it reaches you — colour and detail held true, not left to chance.</p>
         <div class="chip-row" style="margin-top:1.6rem">
           <span class="chip"><span class="dot"></span>Consistent lighting &amp; framing</span>
           <span class="chip"><span class="dot"></span>Marketplace-ready</span>
           <span class="chip"><span class="dot"></span>Revisions included</span>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>Same garment. 11 minutes apart.</h2>
-        <p style="margin-inline:auto">No restyling, no new shoot — just the photo you already had.</p>
-      </div>
-      <div class="compare-static reveal pending" style="max-width:640px;margin:2rem auto 0">
-        <div><span class="cs-tag">Before · your phone</span><img src="/img/catalog-before.webp" alt="Raw phone photo of a t-shirt, before VISUAILS" loading="lazy" /></div>
-        <div><span class="cs-tag">After · ~24h later</span><img src="/img/catalog-after.webp" alt="Clean catalog visual of the same t-shirt, after VISUAILS" loading="lazy" /></div>
       </div>
     </div>
   </section>

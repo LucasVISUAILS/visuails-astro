@@ -66,10 +66,10 @@ import Layout from '../layouts/Layout.astro';
       <div class="reveal pending">
         <div class="card">
           <h2 style="font-size:1.5rem">Send a message</h2>
-          <p style="margin-top:.5rem;color:var(--ink-3);font-size:.95rem">We'll reply the same day, by your preferred channel.</p>
+          <p style="margin-top:.5rem;color:var(--ink-3);font-size:.95rem">We usually reply within the hour, by your preferred channel.</p>
 
           <!-- Static site, no backend: this form needs a real submit handler (e.g. a Cloudflare Pages Function, Formspree, or similar) wired up before launch. -->
-          <form action="/thank-you" method="get" style="margin-top:1.6rem" novalidate>
+          <form action="/thank-you" method="get" style="margin-top:1.6rem">
             <div class="field">
               <label for="c-name">Name <span class="req">*</span></label>
               <input class="input" type="text" id="c-name" name="name" required autocomplete="name" placeholder="Your name" />

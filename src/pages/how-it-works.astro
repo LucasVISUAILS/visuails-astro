@@ -3,6 +3,7 @@
 // as the supporting proof point, a details grid, and a closing CTA. Ported
 // from the SvelteKit how-it-works page.
 import Layout from '../layouts/Layout.astro';
+import Compare from '../components/Compare.astro';
 
 const details = [
   { title: 'Turnaround', body: 'About 24 hours from brief to download for standard orders.' },
@@ -40,15 +41,13 @@ const details = [
 
   <section class="section-tight"><div class="container two-col">
     <div class="reveal pending">
-      <div class="reveal-clip-wrap"><div class="reveal-clip-inner">
-        <div class="ba" aria-label="Before and after: a raw product photo transformed into a VISUAILS visual">
-          <div class="ba-layer ba-before-scene" aria-hidden="true"><img src="/img/lifestyle-phone-made-07.webp" alt="Plain, candid product photo before VISUAILS" /></div>
-          <div class="ba-layer ba-after" aria-hidden="true"><img src="/img/lifestyle-glow-06.webp" alt="The same product in a styled scene after VISUAILS" /></div>
-          <span class="ba-tag tag-before">Before</span><span class="ba-tag tag-after">After</span>
-          <div class="ba-handle" aria-hidden="true"></div>
-          <div class="ba-knob" aria-hidden="true"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg></div>
-        </div>
-      </div></div>
+      <Compare
+        grade
+        before="/img/lifestyle-glow-06.webp"
+        after="/img/lifestyle-glow-06.webp"
+        beforeAlt="A flat, ungraded product scene before VISUAILS finishing"
+        afterAlt="The same scene, finished and human-checked by VISUAILS"
+      />
     </div>
     <div class="reveal pending">
       <h2>A person signs off on every visual.</h2>

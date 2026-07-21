@@ -27,6 +27,32 @@ const services = [
 const path = Astro.url.pathname;
 const isActive = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
 const year = new Date().getFullYear();
+
+// SEO — absolute canonical + OG image built off the configured site origin.
+const SITE = 'https://visuails.com';
+const canonical = new URL(path, Astro.site ?? SITE).href;
+const ogImageAbs = new URL(ogImage, Astro.site ?? SITE).href;
+
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfessionalService',
+  name: 'VISUAILS',
+  description:
+    'Product-visual studio for e-commerce brands: catalog, lifestyle and video visuals from a single product photo, delivered in about 24 hours.',
+  url: SITE,
+  logo: `${SITE}/img/logo-mark.webp`,
+  image: `${SITE}/img/banners-09.webp`,
+  email: 'hello@visuails.com',
+  telephone: '+31625436130',
+  priceRange: '€€',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Enschede',
+    addressCountry: 'NL',
+  },
+  areaServed: 'Worldwide',
+  sameAs: ['https://wa.me/31625436130'],
+};
 ---
 
 <!DOCTYPE html>
@@ -40,14 +66,33 @@ const year = new Date().getFullYear();
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,900;1,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet" />
   <title>{title}</title>
   <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#0F0E0C" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content={ogImage} />
+  <meta property="og:image" content={ogImageAbs} />
+  <meta property="og:url" content={canonical} />
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="VISUAILS" />
+  <meta property="og:locale" content="en_US" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImageAbs} />
+  <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+  <noscript>
+    <style>
+      /* Without JS the IntersectionObserver never runs, so force every
+         reveal/split element to its visible state — crawlers and JS-off
+         users see full content, not blank sections. */
+      .reveal.pending, .split-word, .rm-inner { opacity: 1 !important; transform: none !important; }
+      .cmp .cmp-after { animation: none !important; clip-path: inset(0 0 0 50%) !important; }
+    </style>
+  </noscript>
   <ClientRouter />
 </head>
 <body>
@@ -99,7 +144,7 @@ const year = new Date().getFullYear();
       <nav aria-label="Primary" class="primary-nav">
         <ul class="nav-links">
           <li class="has-menu">
-            <button class="nav-trigger" aria-haspopup="true">Services
+            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Services
               <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-menu" role="menu">
@@ -119,12 +164,12 @@ const year = new Date().getFullYear();
       </nav>
       <div class="nav-actions">
         <a href="/order" class="btn btn-primary">Order now</a>
-        <button class="menu-toggle" aria-label="Open menu"><span></span></button>
+        <button class="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav"><span></span></button>
       </div>
     </div>
   </header>
 
-  <div class="mobile-nav" transition:persist>
+  <div class="mobile-nav" id="mobile-nav" transition:persist>
     <button class="mobile-close" aria-label="Close menu">&times;</button>
     <img src="/img/logo-mark.webp" alt="VISUAILS" class="mobile-mark" width="30" height="30" />
     {services.map((s) => (
@@ -189,6 +234,7 @@ const year = new Date().getFullYear();
   </footer>
 
   <div class="convbar" role="complementary" aria-label="Quick start" transition:persist>
+    <img class="cb-logo" src="/img/logo-mark.webp" alt="VISUAILS" width="22" height="22" />
     <em>See it on your own product — free.</em>
     <a class="cb-cta" href="/test-sample">Free test sample</a>
     <button class="cb-close" type="button" aria-label="Dismiss">&times;</button>
@@ -216,7 +262,7 @@ const year = new Date().getFullYear();
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
   .has-menu { position: relative; }
   .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .26s var(--ease), transform .26s var(--ease), visibility .26s; box-shadow: 0 24px 80px rgba(0,0,0,.55); }
-  .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   .nav-menu a { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; border-radius: var(--r-sm); }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
   .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: .92rem; }
@@ -246,6 +292,7 @@ const year = new Date().getFullYear();
 
   .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: var(--r-pill); background: rgba(21,19,17,.88); backdrop-filter: blur(14px); border: 1px solid var(--line-strong); box-shadow: 0 24px 80px rgba(0,0,0,.55); max-width: calc(100vw - 24px); transition: transform .4s var(--ease), opacity .4s var(--ease); pointer-events: none; }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+  .convbar .cb-logo { width: 22px; height: 22px; flex: 0 0 auto; display: block; }
   .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
   .convbar .cb-cta { background: linear-gradient(180deg, #FF7346, #FF5B2E 70%); color: #fff; border-radius: var(--r-pill); padding: 10px 18px; font-size: .9rem; font-weight: 600; white-space: nowrap; }
   .convbar .cb-close { width: 30px; height: 30px; border-radius: 50%; color: var(--ink-3); font-size: 1.1rem; background: none; border: none; cursor: pointer; }

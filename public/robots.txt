@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Post-conversion / utility pages — no SEO value, keep them out of the index.
+Disallow: /thank-you
+Disallow: /order-status
+
+Sitemap: https://visuails.com/sitemap.xml

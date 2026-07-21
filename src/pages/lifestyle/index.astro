@@ -4,6 +4,7 @@
 // $lib/data/styles.js (only the fields this page uses: slug, name,
 // cardPhoto, tagline).
 import Layout from '../../layouts/Layout.astro';
+import Compare from '../../components/Compare.astro';
 
 const styles = [
   { slug: 'dunes', name: 'Dunes', cardPhoto: '/img/lifestyle-dunes-01.webp', tagline: 'Sun, sand and quiet luxury.' },
@@ -84,25 +85,17 @@ const marqueeItems = [
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
         <h2>Four moods. Four transformations.</h2>
-        <p style="margin-inline:auto">Drag each one to compare — the same product, treated flat vs. treated like a VISUAILS style.</p>
+        <p style="margin-inline:auto">The same shot, flat vs. finished in each VISUAILS style.</p>
       </div>
       <div class="compare-grid reveal-group" style="margin-top:2.2rem">
         {[
-          { name: 'Dunes', before: '/img/lifestyle-dunes-02.webp', after: '/img/lifestyle-dunes-01.webp' },
-          { name: 'Flash', before: '/img/lifestyle-flash-03.webp', after: '/img/lifestyle-flash-06.webp' },
-          { name: 'Glow', before: '/img/lifestyle-glow-04.webp', after: '/img/lifestyle-glow-01.webp' },
-          { name: 'Phone-made', before: '/img/lifestyle-phone-made-08.webp', after: '/img/lifestyle-phone-made-11.webp' },
+          { name: 'Dunes', photo: '/img/lifestyle-dunes-01.webp' },
+          { name: 'Flash', photo: '/img/lifestyle-flash-01.webp' },
+          { name: 'Glow', photo: '/img/lifestyle-glow-01.webp' },
+          { name: 'Phone-made', photo: '/img/lifestyle-phone-made-01.webp' },
         ].map((c) => (
           <div class="reveal pending">
-            <div class="reveal-clip-wrap"><div class="reveal-clip-inner">
-              <div class="ba" aria-label={`Before and after: a flat product photo styled into the ${c.name} lifestyle look`}>
-                <div class="ba-layer ba-before-scene" aria-hidden="true"><img src={c.before} alt={`Flat, unstyled version of a ${c.name} scene`} /></div>
-                <div class="ba-layer ba-after" aria-hidden="true"><img src={c.after} alt={`The same scene styled in the ${c.name} lifestyle look`} /></div>
-                <span class="ba-tag tag-before">Before</span><span class="ba-tag tag-after">After</span>
-                <div class="ba-handle" aria-hidden="true"></div>
-                <div class="ba-knob" aria-hidden="true"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg></div>
-              </div>
-            </div></div>
+            <Compare grade before={c.photo} after={c.photo} beforeAlt={`A flat, ungraded ${c.name} scene`} afterAlt={`The same scene finished in the ${c.name} lifestyle look`} beforeLabel="Flat" afterLabel={c.name} />
             <p class="cc-label"><strong>{c.name}</strong> &middot; €35 / visual</p>
           </div>
         ))}

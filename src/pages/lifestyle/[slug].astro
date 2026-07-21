@@ -11,6 +11,7 @@
 // only supports the icon-driven placeholder).
 import Layout from '../../layouts/Layout.astro';
 import ProductScene from '../../components/ProductScene.astro';
+import Compare from '../../components/Compare.astro';
 import { styles } from '../../data/styles.js';
 
 export function getStaticPaths() {
@@ -73,18 +74,18 @@ const { style } = Astro.props;
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
         <h2>Flat vs. {style.name}.</h2>
-        <p style="margin-inline:auto">Drag to see what the treatment actually changes.</p>
+        <p style="margin-inline:auto">What the treatment actually changes.</p>
       </div>
-      <div style="max-width:640px;margin:2rem auto 0">
-        <div class="reveal-clip-wrap"><div class="reveal-clip-inner">
-          <div class="ba" aria-label={`Before and after: a flat product photo styled into the ${style.name} lifestyle look`}>
-            <div class="ba-layer ba-before-scene" aria-hidden="true"><img src={style.beforeAfter.before} alt={`Flat, unstyled version of a ${style.name} scene`} /></div>
-            <div class="ba-layer ba-after" aria-hidden="true"><img src={style.beforeAfter.after} alt={`The same scene styled in the ${style.name} lifestyle look`} /></div>
-            <span class="ba-tag tag-before">Before</span><span class="ba-tag tag-after">After</span>
-            <div class="ba-handle" aria-hidden="true"></div>
-            <div class="ba-knob" aria-hidden="true"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg></div>
-          </div>
-        </div></div>
+      <div style="max-width:520px;margin:2rem auto 0">
+        <Compare
+          grade
+          before={style.heroPhoto}
+          after={style.heroPhoto}
+          beforeAlt={`A flat, ungraded ${style.name} scene`}
+          afterAlt={`The same scene finished in the ${style.name} lifestyle look`}
+          beforeLabel="Flat"
+          afterLabel={style.name}
+        />
       </div>
     </div>
   </section>

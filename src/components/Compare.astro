@@ -1,0 +1,44 @@
+---
+// VISUAILS — Compare: the working before/after. Replaces the old drag-slider
+// (.ba) and cursor-lens (.spot), which shipped blank because they were gated
+// behind a scroll-reveal clip that didn't always fire. This one is always
+// visible and pure CSS: the divider drifts on a slow loop so it reads as a
+// comparison with no interaction needed; hovering pauses it (see global.css
+// .cmp). Two modes:
+//   • true pair  — pass a distinct `before` and `after` photo (e.g. the real
+//     raw-phone → catalog shot).
+//   • grade mode — pass `grade` with the same photo for both; the "before"
+//     is auto-flattened (desaturated) so it reads as an honest colour-grade
+//     before/after for the styles where we have one finished photo, not a
+//     separate raw one.
+interface Props {
+  before: string;
+  after: string;
+  beforeAlt?: string;
+  afterAlt?: string;
+  grade?: boolean;
+  ratio?: string;
+  beforeLabel?: string;
+  afterLabel?: string;
+}
+const {
+  before,
+  after,
+  beforeAlt = 'Before VISUAILS',
+  afterAlt = 'After VISUAILS',
+  grade = false,
+  ratio,
+  beforeLabel = 'Before',
+  afterLabel = 'After',
+} = Astro.props;
+---
+
+<div class:list={['cmp', grade && 'cmp-grade']} style={ratio ? `aspect-ratio:${ratio}` : undefined}>
+  <img class="cmp-before" src={before} alt={beforeAlt} loading="lazy" />
+  <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" />
+  <span class="cmp-tag before">{beforeLabel}</span>
+  <span class="cmp-tag after">{afterLabel}</span>
+  <span class="cmp-divider" aria-hidden="true">
+    <span class="cmp-knob"><svg viewBox="0 0 24 24"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5" /></svg></span>
+  </span>
+</div>

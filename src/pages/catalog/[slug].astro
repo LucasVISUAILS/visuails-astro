@@ -7,6 +7,7 @@
 // stays ProductScene-led throughout, same as the original.
 import Layout from '../../layouts/Layout.astro';
 import ProductScene from '../../components/ProductScene.astro';
+import Compare from '../../components/Compare.astro';
 import { catalogStyles } from '../../data/catalogStyles.js';
 
 export function getStaticPaths() {
@@ -85,18 +86,15 @@ const waName = style.name.replaceAll(' ', '%20');
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
         <h2>What {style.name} does to a real photo.</h2>
-        <p style="margin-inline:auto">Drag to compare — one of your own product photos, treated exactly like this.</p>
+        <p style="margin-inline:auto">One of your own product photos, treated exactly like this.</p>
       </div>
-      <div style="max-width:640px;margin:2rem auto 0">
-        <div class="reveal-clip-wrap"><div class="reveal-clip-inner">
-          <div class="ba" aria-label={`Before and after: a raw phone photo transformed into a ${style.name} catalog visual`}>
-            <div class="ba-layer ba-before-scene" aria-hidden="true"><img src="/img/catalog-before.webp" alt="A raw phone photo of a t-shirt on a table before VISUAILS" /></div>
-            <div class="ba-layer ba-after" aria-hidden="true"><img src="/img/catalog-after.webp" alt={`The same t-shirt as a clean ${style.name} catalog visual after VISUAILS`} /></div>
-            <span class="ba-tag tag-before">Before</span><span class="ba-tag tag-after">After</span>
-            <div class="ba-handle" aria-hidden="true"></div>
-            <div class="ba-knob" aria-hidden="true"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg></div>
-          </div>
-        </div></div>
+      <div style="max-width:520px;margin:2rem auto 0">
+        <Compare
+          before="/img/catalog-before.webp"
+          after="/img/catalog-after.webp"
+          beforeAlt="A raw phone photo of a t-shirt on a table before VISUAILS"
+          afterAlt={`The same t-shirt as a clean ${style.name} catalog visual after VISUAILS`}
+        />
       </div>
     </div>
   </section>

@@ -9,6 +9,10 @@
 // keeps the hex field hidden until "Custom colour" is selected. See <style>
 // below for `.bg-field:has(...)`.
 import Layout from '../layouts/Layout.astro';
+
+// Standard-model roster (matches /models). Only shown once "On a model" is
+// picked below — kept non-required so the hidden picker can never block submit.
+const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme'];
 ---
 
 <Layout
@@ -24,8 +28,8 @@ import Layout from '../layouts/Layout.astro';
   <section id="catalog" class="ord-anchor">
     <div class="container narrow">
       <div class="section-head">
-        <h2>Request catalog visuals</h2>
-        <p>Clean, consistent product images on a plain background. <strong style="color:var(--accent-bright)">From &euro;19 / visual.</strong></p>
+        <h1 style="font-size:var(--t-h2)">Request catalog visuals</h1>
+        <p>Clean, consistent product visuals — on a plain background, or worn by a model. <strong style="color:var(--accent-bright)">From &euro;19 / visual.</strong></p>
       </div>
       <div class="card reveal pending" style="padding:clamp(1.4rem,3vw,2.4rem)">
         <!-- TODO: wire this form to a real submit handler (Cloudflare Pages Function, Formspree, etc.) before launch — no backend in this static build yet -->
@@ -57,6 +61,30 @@ import Layout from '../layouts/Layout.astro';
             </select>
           </div>
 
+          <div class="field pres-field">
+            <label>How should your product be shown? <span class="req">*</span></label>
+            <label class="opt"><input type="radio" name="presentation" value="Product only" required checked /><span class="opt-main"><span class="opt-title">Product only</span><span class="opt-desc">Clean product on a plain background — the classic catalog shot. From &euro;19.</span></span></label>
+            <label class="opt"><input type="radio" name="presentation" value="On a model" /><span class="opt-main"><span class="opt-title">On a model</span><span class="opt-desc">The same clean catalog look, but worn by a consistent model. Exact price confirmed with your order.</span></span></label>
+            <div class="model-picker">
+              <label style="margin-top:.2rem">Pick a model <span class="hint" style="font-weight:400">— optional, or let us choose</span></label>
+              <div class="choice-grid" style="grid-template-columns:repeat(auto-fit,minmax(116px,1fr))">
+                {roster.map((m) => (
+                  <label class="choice">
+                    <input type="radio" name="model" value={m} />
+                    <div class="choice-media mono"><div class="mono-av">{m[0]}<small>{m}</small></div></div>
+                    <div class="choice-label">{m}</div>
+                  </label>
+                ))}
+                <label class="choice">
+                  <input type="radio" name="model" value="VISUAILS choose" />
+                  <div class="choice-media mono"><div class="mono-av">&#9733;</div></div>
+                  <div class="choice-label">Let VISUAILS choose</div>
+                </label>
+              </div>
+              <span class="hint">Want a face made only for your brand? That's a <a href="/custom-models" style="color:var(--accent-bright)">custom model</a>.</span>
+            </div>
+          </div>
+
           <div class="field bg-field">
             <label>Background colour <span class="req">*</span></label>
             <div class="choice-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
@@ -75,7 +103,7 @@ import Layout from '../layouts/Layout.astro';
               <label for="cat-bg-hex">Hex code <span class="req">*</span></label>
               <div style="display:flex;align-items:center;gap:.8rem">
                 <span class="sw" style="width:44px;height:44px;border-radius:10px;flex:none;background:#ffffff;border:1px solid var(--line-strong)"></span>
-                <input class="input" type="text" id="cat-bg-hex" name="background_hex" placeholder="#FFFFFF" pattern="^#?[0-9A-Fa-f]{6}$" maxlength="7" style="max-width:200px" required />
+                <input class="input" type="text" id="cat-bg-hex" name="background_hex" placeholder="#FFFFFF" pattern="^#?[0-9A-Fa-f]{6}$" maxlength="7" style="max-width:200px" />
               </div>
               <span class="hint">Enter your brand's exact background colour as a hex code — we'll match it precisely.</span>
             </div>
@@ -194,4 +222,13 @@ import Layout from '../layouts/Layout.astro';
      colour" is the checked radio in this field's choice-grid. */
   .bg-hex-field { display: none; }
   .bg-field:has(input[value="Custom colour"]:checked) .bg-hex-field { display: flex; }
+
+  /* On-model picker: same CSS-only :has() pattern — the model grid only
+     appears once "On a model" is chosen. Model radios stay non-required so a
+     hidden picker can never block form submission. */
+  .model-picker { display: none; margin-top: 1rem; }
+  .pres-field:has(input[value="On a model"]:checked) .model-picker { display: block; }
+  .choice .choice-media.mono { aspect-ratio: 1; display: grid; place-items: center; background: radial-gradient(125% 90% at 50% 6%, #FFFFFF, #F1EBE3 58%, #E2D9CD 100%); }
+  .mono .mono-av { position: relative; display: grid; place-items: center; width: 100%; height: 100%; font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; color: var(--accent-bright); }
+  .mono .mono-av small { position: absolute; bottom: 8px; font-size: .58rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-family: var(--font-body); }
 </style>

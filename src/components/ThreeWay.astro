@@ -1,0 +1,64 @@
+---
+// VISUAILS — three-way positioning table: Generic AI tool vs Traditional
+// photo shoot vs VISUAILS. The core "why us" argument: the speed and cost of
+// AI, the accuracy and human sign-off of a real shoot, without the downside
+// of either. VISUAILS column is highlighted; every row is framed so VISUAILS
+// is the resolved answer. Horizontally scrollable on small screens so the
+// matrix never squashes.
+interface Props {
+  heading?: string;
+  sub?: string;
+  cta?: boolean;
+}
+const {
+  heading = 'AI tool, photo shoot, or VISUAILS?',
+  sub = "The speed and price of AI. The accuracy and human sign-off of a real shoot. Neither compromise.",
+  cta = true,
+} = Astro.props;
+
+const rows = [
+  { label: 'Turnaround', ai: 'Minutes — but hit-or-miss', trad: '2–4 weeks', vis: '~24 hours' },
+  { label: 'Cost per visual', ai: 'Cheap — you pay in redos', trad: 'Hundreds per shoot', vis: 'From €19' },
+  { label: 'What you do', ai: 'Prompt, retry, repeat', trad: 'Ship samples, book a studio', vis: 'Send one photo' },
+  { label: 'Consistency', ai: 'Drifts every generation', trad: 'High, but per shoot', vis: 'Locked across your set' },
+  { label: 'Human quality check', ai: 'None', trad: 'Yes', vis: 'Yes — every image' },
+  { label: 'Models', ai: 'Random every time', trad: 'Hired & paid per shoot', vis: 'Consistent included; custom on request' },
+  { label: 'Brand accuracy', ai: 'Off-brand, warped logos', trad: 'Accurate', vis: 'Locked to your brand' },
+  { label: 'Scales with your catalog', ai: 'Yes — quality drops', trad: 'No — each is a project', vis: 'Yes — consistently' },
+];
+---
+
+<div class="tri-block">
+  <div class="section-head" style="text-align:center;margin-inline:auto">
+    <h2>{heading}</h2>
+    <p style="margin-inline:auto">{sub}</p>
+  </div>
+
+  <div class="tri-wrap reveal pending">
+    <div class="tri" role="table" aria-label="Comparison: generic AI tool vs traditional photo shoot vs VISUAILS">
+      <div class="tri-cell tri-head" role="columnheader"></div>
+      <div class="tri-cell tri-head" role="columnheader">Generic AI tool</div>
+      <div class="tri-cell tri-head" role="columnheader">Traditional shoot</div>
+      <div class="tri-cell tri-head tri-col-vis" role="columnheader">VISUAILS</div>
+
+      {rows.map((r) => (
+        <Fragment>
+          <div class="tri-cell tri-row-label" role="rowheader">{r.label}</div>
+          <div class="tri-cell tri-muted" role="cell">{r.ai}</div>
+          <div class="tri-cell tri-muted" role="cell">{r.trad}</div>
+          <div class="tri-cell tri-col-vis" role="cell">
+            <svg class="tri-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+            <span>{r.vis}</span>
+          </div>
+        </Fragment>
+      ))}
+    </div>
+  </div>
+
+  {cta && (
+    <div class="flex" style="justify-content:center;margin-top:1.8rem">
+      <a href="/test-sample" class="btn btn-primary">See it on your product — free</a>
+      <a href="/pricing" class="btn btn-ghost">See pricing</a>
+    </div>
+  )}
+</div>

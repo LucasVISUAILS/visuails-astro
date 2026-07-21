@@ -3,29 +3,34 @@
 I can't push to GitHub myself from here — this sandbox has no network access
 to github.com, and even if it did I don't hold your GitHub credentials (and
 never should). Everything below runs on your own machine, in Command Prompt,
-inside the `visuails-astro` folder. It's already a git repo with one commit —
-all 72 real photos are already inside it (`public/img/`), so unlike the old
-delivery there's no separate "copy your photos in" step this time.
+inside the `visuails-astro` folder. The files (including all 72 real photos
+in `public/img/`) were copied over one by one, which means the folder on your
+machine is **not yet a git repo** — there's no `.git` here even though there
+is one in the sandbox this was built in. The first push below creates it.
 
 ## 1. The GitHub repo
 
 Already created: https://github.com/LucasVISUAILS/visuails-astro.git — empty,
 no README/`.gitignore`/license (this project already has its own).
 
-## 2. Push what's already committed
+## 2. Turn this folder into a repo and push it
 
 In Command Prompt, in the `visuails-astro` folder:
 
 ```
+git init
 git remote add origin https://github.com/LucasVISUAILS/visuails-astro.git
 git branch -M main
+git add -A
+git commit -m "Initial commit"
 git push -u origin main
 ```
 
 If this is the first time you've pushed from this machine, Windows will pop up
 a browser window asking you to sign in to GitHub — that's normal, sign in and
 it'll continue. (Or just double-click `push-to-github.bat` in this folder —
-the repo URL is already filled in, no typing needed.)
+it detects there's no repo yet, runs `git init` for you, and pushes. Every
+run after that is just add + commit + push.)
 
 ## 3. Deploy to Cloudflare Pages
 
