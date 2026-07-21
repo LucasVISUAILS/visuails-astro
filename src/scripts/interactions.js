@@ -458,13 +458,14 @@ let hexPreviewBound = false;
 function initHexPreview() {
   if (hexPreviewBound) return;
   hexPreviewBound = true;
-  // Perceived brightness (0–1) of a #rgb / #rrggbb colour.
-  const brightness = (hex) => {
+  // RGB (0–255) of a #rgb / #rrggbb colour.
+  const toRgb = (hex) => {
     let h = hex.replace('#', '');
     if (h.length === 3) h = h.split('').map((c) => c + c).join('');
-    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
   };
+  const brightnessOf = ([r, g, b]) => (0.299 * r + 0.587 * g + 0.114 * b) / 255; // 0–1
+  const chromaOf = ([r, g, b]) => (Math.max(r, g, b) - Math.min(r, g, b)) / 255; // 0 = neutral grey
   document.addEventListener('input', (e) => {
     const t = e.target;
     if (!(t instanceof Element) || !t.matches('input[data-hex-preview]')) return;
@@ -478,15 +479,56 @@ function initHexPreview() {
     if (sw) sw.style.background = ok ? v : '#ffffff';
     if (label) label.textContent = ok ? v.toUpperCase() : 'Preview';
     if (advice) {
-      if (!ok) { advice.textContent = ''; advice.style.color = 'var(--ink-3)'; }
-      else if (brightness(v) >= 0.6) {
-        advice.textContent = '✓ A light background like this keeps products looking clean and professional.';
+      if (!ok) { advice.textContent = ''; advice.style.color = 'var(--ink-3)'; return; }
+      const rgb = toRgb(v);
+      const bright = brightnessOf(rgb);
+      const chroma = chromaOf(rgb);
+      // Recommended ONLY when it's a light, near-neutral: white, off-white,
+      // light grey or beige. Anything with real colour, or that's too dark, is
+      // advised against (the customer can still choose it).
+      const recommended = bright >= 0.82 && chroma <= 0.12;
+      if (recommended) {
+        advice.textContent = '✓ A light, neutral background like this keeps products looking clean and professional.';
         advice.style.color = 'var(--success, #4AD07F)';
+      } else if (chroma > 0.12) {
+        advice.textContent = 'We’d advise against a strong colour like this — light, neutral backgrounds (white, off-white, light grey or beige) look cleanest and most professional. The choice is yours.';
+        advice.style.color = 'var(--warn, #E0A43B)';
       } else {
-        advice.textContent = 'This is a darker background — it works, but a lighter colour usually looks more professional. Your call.';
-        advice.style.color = 'var(--ink-3)';
+        advice.textContent = 'That’s on the darker side — a lighter neutral (white, off-white, light grey or beige) usually looks cleaner and more professional. The choice is yours.';
+        advice.style.color = 'var(--warn, #E0A43B)';
       }
     }
+  });
+}
+
+// Preferred-contact-method → phone requirement. When the customer chooses
+// "Chat on WhatsApp" we need a number to reach them, so the phone field becomes
+// required; choosing "Contact by email" makes it optional again. Runs on each
+// page-load (to set the initial state) and via one delegated change listener.
+let contactPhoneBound = false;
+function initContactPhone() {
+  const apply = (form) => {
+    const method = form.querySelector('input[name="contact_method"]:checked');
+    if (!method) return;
+    const phone = form.querySelector('input[type="tel"], input[name="phone"]');
+    if (!phone) return;
+    const wa = method.value === 'WhatsApp';
+    phone.required = wa;
+    const ind = form.querySelector('[data-phone-indicator]');
+    if (ind) ind.innerHTML = wa ? '<span class="req">*</span>' : '<span class="hint" style="font-weight:400">— optional</span>';
+    const hint = form.querySelector('[data-phone-hint]');
+    if (hint) hint.textContent = wa
+      ? 'You chose WhatsApp, so a phone number is required — please include your country code.'
+      : 'We’ll reach you by email. Add a phone number if you’d rather we message you on WhatsApp.';
+  };
+  document.querySelectorAll('form').forEach((f) => { if (f.querySelector('input[name="contact_method"]')) apply(f); });
+  if (contactPhoneBound) return;
+  contactPhoneBound = true;
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element) || !t.matches('input[name="contact_method"]')) return;
+    const form = t.closest('form');
+    if (form) apply(form);
   });
 }
 
@@ -494,6 +536,7 @@ export function init() {
   initReveal();
   initSplitLines();
   initFormPrefill();
+  initContactPhone();
   initCompareDrag();
   initThankYou();
   initHexPreview();

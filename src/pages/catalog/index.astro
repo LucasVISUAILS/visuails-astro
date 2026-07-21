@@ -13,7 +13,7 @@ const faqs = [
   { q: 'What do I get for €39.99?', a: 'A full set for one product: four photos — front, back, a close-up of the logo or fabric, and one on-model shot. That works out to about €10 a photo.' },
   { q: 'Is the on-model shot really included?', a: 'Yes — one on-model photo is part of every product set, at no extra cost. Pick a model in the order form, or let us choose one that fits your brand.' },
   { q: 'How fast is turnaround?', a: '~24 hours, whether you order five products or five hundred.' },
-  { q: 'Can I choose the background colour?', a: 'Standard is pure white (#FFFFFF). You can also pick a soft pale white, or any hex code — applied behind every product you send.' },
+  { q: 'Can I choose the background colour?', a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send.' },
   { q: 'Are the visuals marketplace-compliant?', a: 'Yes — framed and exported for common marketplace requirements. Tell us your platform and we’ll match its specs.' },
   { q: 'What if I need changes?', a: 'Three revision rounds are included, no extra fee.' },
 ];
@@ -130,7 +130,6 @@ const faqs = [
         <ProductScene icon="bag" width="40%" badge="One colour, every product" wide />
         <div class="chip-row" style="margin-top:1.2rem">
           <span class="chip"><span class="dot"></span>White — standard</span>
-          <span class="chip"><span class="dot"></span>Pale white</span>
           <span class="chip"><span class="dot"></span>Custom colour — any hex code</span>
         </div>
       </div>
@@ -144,6 +143,7 @@ const faqs = [
         <Compare
           before="/img/catalog-before.webp"
           after="/img/catalog-after.webp"
+          ratio="1/1"
           beforeAlt="A raw phone photo of a t-shirt on a table before VISUAILS"
           afterAlt="The same t-shirt as a clean catalog visual after VISUAILS"
         />

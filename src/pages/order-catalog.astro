@@ -99,17 +99,12 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
 
           <div class="field bg-field">
             <label>Background colour <span class="req">*</span></label>
-            <span class="hint" style="margin:-.15rem 0 .35rem">We recommend a light background — it keeps products looking clean and professional. The choice is yours.</span>
+            <span class="hint" style="margin:-.15rem 0 .35rem">We recommend a light, neutral background — white, off-white, light grey or beige. Strong colours and dark backgrounds tend to look less professional. The choice is yours.</span>
             <div class="choice-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
               <label class="choice swatch">
                 <input type="radio" name="background" value="White" required checked />
                 <div class="choice-media"><span class="sw" style="position:absolute;inset:0;background:#FFFFFF"></span></div>
                 <div class="choice-label">White <span class="hint" style="font-weight:400">— standard (#FFFFFF)</span></div>
-              </label>
-              <label class="choice swatch">
-                <input type="radio" name="background" value="Pale White" />
-                <div class="choice-media"><span class="sw" style="position:absolute;inset:0;background:#F7F4EE"></span></div>
-                <div class="choice-label">Pale white</div>
               </label>
               <label class="choice swatch">
                 <input type="radio" name="background" value="Custom colour" />
@@ -162,11 +157,11 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
               <input class="input" type="email" id="cat-email" name="email" autocomplete="email" required />
             </div>
             <div class="field">
-              <label for="cat-phone">Phone <span class="hint" style="font-weight:400">— optional</span></label>
-              <input class="input" type="tel" id="cat-phone" name="phone" autocomplete="tel" placeholder="+31 6 &hellip;" />
+              <label for="cat-phone">Phone <span data-phone-indicator><span class="req">*</span></span></label>
+              <input class="input" type="tel" id="cat-phone" name="phone" autocomplete="tel" placeholder="+31 6 &hellip;" required />
             </div>
           </div>
-          <p class="hint" style="margin:-.4rem 0 1.2rem">We'll reach you by email. Add a phone number if you'd rather we message you on WhatsApp.</p>
+          <p class="hint" data-phone-hint style="margin:-.4rem 0 1.2rem">You chose WhatsApp, so a phone number is required — please include your country code.</p>
 
           <label class="opt" style="align-items:flex-start">
             <input type="checkbox" name="newsletter" value="yes" />
