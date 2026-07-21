@@ -8,7 +8,7 @@ import ProductScene from '../components/ProductScene.astro';
 import ThreeWay from '../components/ThreeWay.astro';
 
 const plans = [
-  { name: 'Catalog', price: '€19', unit: 'from / visual', accent: false, desc: 'Clean product shots on a controlled background.', features: ['Consistent lighting & background', 'Marketplace & webshop ready', '3 revision rounds'], cta: 'Order catalog' },
+  { name: 'Catalog', price: '€39.99', unit: '/ product', accent: false, desc: 'A full 4-photo set per product — about €10 a photo.', features: ['4 photos: front, back, detail & on-model', 'On-model shot included, no extra fee', '3 revision rounds'], cta: 'Order catalog' },
   { name: 'Lifestyle', price: '€35', unit: 'from / visual', accent: true, desc: 'Your product in styled, real-world scenes.', features: ['Natural light, styled scenes', 'Standard models included', '3 revision rounds'], cta: 'Order lifestyle' },
   { name: 'Video', price: '€49', unit: '/ video', accent: false, desc: 'Product videos with subtle motion for feeds and ads.', features: ['Motion from €49, Lifestyle from €59', 'Campaign videos quoted per project', 'Human review before delivery'], cta: 'Order a video' },
 ];
@@ -20,7 +20,7 @@ const addons = [
 ];
 
 const tiers = [
-  { n: '1–24', desc: 'Standard per-visual price' },
+  { n: '1–24', desc: 'Standard price' },
   { n: '25–99', desc: 'Volume discount available' },
   { n: '100+', desc: 'Best rate — contact for a quote' },
 ];
@@ -28,26 +28,26 @@ const tiers = [
 const included = ['Human review on every visual', '2K export', '~24h delivery', '3 revision rounds'];
 
 const faqs = [
-  { q: 'How and when do I pay?', a: "You only pay once you've approved the result — never upfront. We invoice you directly; iDEAL and other instant options are coming soon, so just let us know your preference when you order." },
+  { q: 'How and when do I pay?', a: "You only pay for your order once you've approved the result — never upfront. The one exception is the optional €0.99 test sample, charged upfront to keep it fair (one per business). We invoice you directly; iDEAL and other instant options are coming soon, so just let us know your preference when you order." },
   { q: 'How does VAT and reverse-charge work?', a: "We're based in the Netherlands (VAT NL005407575B96). EU businesses with a valid VAT number can add it at checkout for reverse-charge and faster invoicing." },
-  { q: 'What counts as one "visual"?', a: 'One finished image. Multi Format Export delivers it in several aspect ratios — still one visual, not four.' },
+  { q: 'What counts as one "visual"?', a: 'One finished image. Multi Format Export delivers it in several aspect ratios — still one visual, not four. Catalog is the exception: it\'s priced per product at €39.99 and always includes four photos (front, back, detail and on-model).' },
   { q: 'How does custom pricing work?', a: 'A custom style or model is a one-time design fee, then the normal per-visual price on every order after. Standard videos are fixed (Motion from €49, Lifestyle from €59); larger campaign videos are quoted per project over a short WhatsApp intake.' },
 ];
 ---
 
 <Layout
   title="VISUAILS — Simple, transparent pricing"
-  description="Pay per visual with VISUAILS — catalog from €19, lifestyle from €35, and custom video. No subscriptions, no hidden fees. Human review, 2K export, ~24h delivery and 3 revision rounds always included."
+  description="Simple pricing with VISUAILS — catalog €39.99 per product (a 4-photo set), lifestyle from €35 per visual, and custom video. No subscriptions, no hidden fees. Human review, 2K export, ~24h delivery and 3 revision rounds always included."
 >
   <section class="page-hero"><div class="container">
     <p class="eyebrow-page">Pricing</p>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Simple, transparent pricing</h1>
-    <p class="lead" style="margin-top:1.2rem">Pay per visual. No subscriptions, no hidden fees.</p>
+    <p class="lead" style="margin-top:1.2rem">Pay as you go — per product or per visual. No subscriptions, no hidden fees.</p>
     <div class="flex" style="margin-top:1.8rem"><a href="/order" class="btn btn-primary btn-lg">Order now</a><a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a></div>
   </div></section>
 
   <section><div class="container">
-    <div class="section-head"><h2>Pay per visual</h2><p>No subscriptions. Order five or five hundred at the same short wait.</p></div>
+    <div class="section-head"><h2>Pay as you go</h2><p>No subscriptions. Order five or five hundred at the same short wait.</p></div>
     <div class="grid grid-3 reveal-group">
       {plans.map((p) => (
         <div class="card plan-card reveal pending" style={p.accent ? 'border-color:var(--accent-line)' : undefined}>

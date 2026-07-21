@@ -10,8 +10,10 @@ import Compare from '../../components/Compare.astro';
 import { catalogStyles } from '../../data/catalogStyles.js';
 
 const faqs = [
+  { q: 'What do I get for €39.99?', a: 'A full set for one product: four photos — front, back, a close-up of the logo or fabric, and one on-model shot. That works out to about €10 a photo.' },
+  { q: 'Is the on-model shot really included?', a: 'Yes — one on-model photo is part of every product set, at no extra cost. Pick a model in the order form, or let us choose one that fits your brand.' },
   { q: 'How fast is turnaround?', a: '~24 hours, whether you order five products or five hundred.' },
-  { q: 'Can I choose the background colour?', a: 'Pale white, or any hex code — applied behind every product you send.' },
+  { q: 'Can I choose the background colour?', a: 'Standard is pure white (#FFFFFF). You can also pick a soft pale white, or any hex code — applied behind every product you send.' },
   { q: 'Are the visuals marketplace-compliant?', a: 'Yes — framed and exported for common marketplace requirements. Tell us your platform and we’ll match its specs.' },
   { q: 'What if I need changes?', a: 'Three revision rounds are included, no extra fee.' },
 ];
@@ -19,13 +21,13 @@ const faqs = [
 
 <Layout
   title="Catalog Images — clean, consistent product visuals | VISUAILS"
-  description="Clean, consistent catalog visuals with the same lighting, angles and background every time. Marketplace-ready, high-res, human-reviewed and delivered in ~24 hours — from €19 per visual."
+  description="One price per product: €39.99 for a full 4-photo set — front, back, a logo/fabric close-up and one on-model shot. Marketplace-ready, high-res, human-reviewed and delivered in ~24 hours."
 >
   <section class="page-hero">
     <div class="container two-col" style="align-items:center">
       <div class="reveal pending">
         <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Clean, consistent product visuals — built to scale.</h1>
-        <p class="lead" style="margin-top:1.2rem">Same lighting, angle and background. Every time. From €19.</p>
+        <p class="lead" style="margin-top:1.2rem">One product, one price: <strong>€39.99</strong> for a full 4-photo set — front, back, detail and one on-model shot.</p>
         <div class="flex" style="margin-top:1.8rem">
           <span class="magnet-wrap"><span class="magnet-inner"><a href="/order-catalog" class="btn btn-primary btn-lg">Order catalog visuals</a></span></span>
           <a href="/pricing" class="btn btn-ghost btn-lg">See pricing</a>
@@ -34,9 +36,9 @@ const faqs = [
           </a>
         </div>
         <div class="trust-row" style="margin-top:2.4rem">
-          <span class="trust-item"><strong>From €19</strong> per visual</span>
+          <span class="trust-item"><strong>€39.99</strong> per product</span>
+          <span class="trust-item"><strong>4 photos</strong> per product</span>
           <span class="trust-item"><strong>~24h</strong> delivery</span>
-          <span class="trust-item"><strong>100%</strong> human-reviewed</span>
         </div>
       </div>
       <div class="reveal pending">
@@ -45,38 +47,30 @@ const faqs = [
     </div>
   </section>
 
-  <!-- Two presentation modes — spelled out so "on-model catalog" is never a
-       surprise. Both are orderable in the catalog flow. -->
+  <!-- One product = a full 4-photo set. Spelled out so the €39.99 price and
+       the included on-model shot are never a surprise. -->
   <section class="section-tight">
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>Two ways to show a product.</h2>
-        <p style="margin-inline:auto">Same clean catalog standard, either way — you choose per order.</p>
+        <h2>One product. Four photos. €39.99.</h2>
+        <p style="margin-inline:auto">Every product comes back as a complete set — including a real on-model shot, not just flat-lays. About €10 a photo.</p>
       </div>
-      <div class="grid grid-2 reveal-group" style="margin-top:2rem">
-        <a href="/order-catalog" class="reveal pending" style="display:block">
-          <div class="photo-band tall">
-            <img src="/img/catalog-after.webp" alt="Product-only catalog visual on a plain background" loading="lazy" />
-            <div class="scrim"></div>
-            <div class="caption">
-              <h3 style="color:#fff">Product only</h3>
-              <p style="font-size:.92rem">Clean product on a plain or branded background — the classic marketplace shot. From €19.</p>
-            </div>
-          </div>
-        </a>
-        <a href="/order-catalog" class="reveal pending" style="display:block">
-          <div class="photo-band tall">
-            <img src="/img/custom-models-02.webp" alt="On-model catalog visual — the product worn by a model" loading="lazy" />
-            <div class="scrim"></div>
-            <div class="caption">
-              <h3 style="color:#fff">On a model</h3>
-              <p style="font-size:.92rem">The same catalog look, worn by a consistent model — for fit, drape and scale. Priced with your order.</p>
-            </div>
-          </div>
-        </a>
+      <div class="pack-row reveal-group" style="margin-top:2rem">
+        <div class="pack-card reveal pending">
+          <div class="photo-band"><img src="/img/catalog-after.webp" alt="Front catalog shot of the product" loading="lazy" /><span class="pack-badge">1 · Front</span></div>
+        </div>
+        <div class="pack-card reveal pending">
+          <div class="photo-band"><img src="/img/catalog-after.webp" alt="Back catalog shot of the product" loading="lazy" /><span class="pack-badge">2 · Back</span></div>
+        </div>
+        <div class="pack-card reveal pending">
+          <div class="photo-band"><img src="/img/catalog-before.webp" alt="Detail close-up of the logo or fabric" loading="lazy" /><span class="pack-badge">3 · Detail</span></div>
+        </div>
+        <div class="pack-card reveal pending">
+          <div class="photo-band"><img src="/img/custom-models-02.webp" alt="On-model shot of the product, worn for fit and scale" loading="lazy" /><span class="pack-badge">4 · On a model</span></div>
+        </div>
       </div>
       <div class="flex" style="justify-content:center;margin-top:1.8rem">
-        <a href="/order-catalog" class="btn btn-primary">Order catalog visuals</a>
+        <a href="/order-catalog" class="btn btn-primary">Order catalog visuals · €39.99 / product</a>
       </div>
     </div>
   </section>
@@ -135,6 +129,7 @@ const faqs = [
       <div class="reveal pending">
         <ProductScene icon="bag" width="40%" badge="One colour, every product" wide />
         <div class="chip-row" style="margin-top:1.2rem">
+          <span class="chip"><span class="dot"></span>White — standard</span>
           <span class="chip"><span class="dot"></span>Pale white</span>
           <span class="chip"><span class="dot"></span>Custom colour — any hex code</span>
         </div>
@@ -191,7 +186,7 @@ const faqs = [
     <div class="container">
       <div class="cta-band reveal pending">
         <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Build a catalog that<br>looks like one brand.</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">From €19 per visual, delivered in about a day.</p>
+        <p class="lead" style="margin:1.2rem auto 0;text-align:center">€39.99 per product — four photos, delivered in about a day.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <span class="magnet-wrap"><span class="magnet-inner"><a href="/order-catalog" class="btn btn-primary btn-lg">Order catalog visuals</a></span></span>
           <a href="/pricing" class="btn btn-ghost btn-lg">See pricing</a>
@@ -219,4 +214,11 @@ const faqs = [
   .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
   .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
   .step p { font-size: .9rem; color: var(--ink-3); }
+
+  /* The 4-photo product set. Four tiles on desktop, 2×2 on phones. */
+  .pack-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+  @media (max-width: 720px) { .pack-row { grid-template-columns: 1fr 1fr; } }
+  .pack-card .photo-band { position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); }
+  .pack-card .photo-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pack-badge { position: absolute; left: 10px; bottom: 10px; padding: .35rem .7rem; border-radius: var(--r-pill); background: rgba(13,13,20,.72); backdrop-filter: blur(8px); color: #fff; font-size: .78rem; font-weight: 600; }
 </style>

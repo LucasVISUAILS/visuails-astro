@@ -38,7 +38,7 @@ const {
   <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" />
   <span class="cmp-tag before">{beforeLabel}</span>
   <span class="cmp-tag after">{afterLabel}</span>
-  <span class="cmp-divider" aria-hidden="true">
-    <span class="cmp-knob"><svg viewBox="0 0 24 24"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5" /></svg></span>
+  <span class="cmp-divider">
+    <span class="cmp-knob" tabindex="0" role="slider" aria-label="Drag to compare before and after" aria-valuemin="0" aria-valuemax="100"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5" /></svg></span>
   </span>
 </div>

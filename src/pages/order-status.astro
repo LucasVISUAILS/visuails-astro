@@ -25,7 +25,7 @@ import Layout from '../layouts/Layout.astro';
   </div></section>
 
   <section class="section-tight"><div class="container narrow">
-    <form class="card reveal pending" onsubmit="return false;" style="margin-bottom:2rem">
+    <form class="card" onsubmit="return false;" style="margin-bottom:2rem">
       <div class="row-2">
         <div class="field"><label for="oid">Order ID <span class="req">*</span></label><input class="input" id="oid" name="oid" placeholder="e.g. VIS-10428" required /></div>
         <div class="field"><label for="omail">Email <span class="req">*</span></label><input class="input" id="omail" type="email" name="omail" placeholder="you@example.com" required /></div>
@@ -33,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
       <button type="button" class="btn btn-primary">Check status</button>
       <p class="hint" style="margin-top:.8rem">Preview only — full self-service tracking arrives with accounts. The timeline below shows how it works.</p>
     </form>
-    <div class="card reveal pending">
+    <div class="card">
       <h3>Example: order VIS-10428</h3>
       <div class="timeline">
         <div class="tl-step done"><div class="tl-marker"><div class="tl-dot"><svg viewBox="0 0 24 24" class="i" style="width:14px;height:14px"><path d="M20 6L9 17l-5-5" /></svg></div><div class="tl-line"></div></div><div class="tl-body"><h4>Received</h4><p>Your brief and photos are in. Thanks!</p></div></div>

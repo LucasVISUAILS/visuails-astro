@@ -110,6 +110,15 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .rec-badge { font-size: .58rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; padding: .22rem .5rem; border-radius: var(--r-pill); background: rgba(74,208,127,.15); color: #4AD07F; }
 
 .flex { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+/* On phones, CTA button groups stack full-width so they line up cleanly
+   instead of wrapping into ragged, differently-sized pills. Only .btn
+   children are affected — chips, trust items and text stay inline. */
+@media (max-width: 560px) {
+  .flex > .btn,
+  .flex > .magnet-wrap { width: 100%; }
+  .flex > .magnet-wrap .magnet-inner,
+  .flex > .magnet-wrap .btn { display: flex; width: 100%; }
+}
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem,5vw,4.5rem); align-items: center; }
 @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
@@ -210,7 +219,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   background-size: 170px;
 }
 
-.hero-editorial { position: relative; min-height: 100vh; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; margin-top: -76px; padding-top: 76px; padding-bottom: clamp(3rem, 7vw, 5.5rem); }
+.hero-editorial { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; margin-top: -76px; padding-top: 76px; padding-bottom: clamp(3rem, 7vw, 5.5rem); }
 .hero-editorial .bg { position: absolute; inset: -6% -6%; width: 112%; height: 112%; background-size: cover; background-position: center 32%; will-change: transform; }
 .hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,17,.5) 0%, rgba(9,9,17,.56) 42%, var(--bg) 96%); }
 .hero-editorial-content { position: relative; z-index: 2; }
@@ -219,7 +228,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .hero-editorial-cue { position: absolute; z-index: 2; bottom: clamp(1.4rem,3vw,2.2rem); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: .6rem; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
 .hero-editorial-cue .cue-line { width: 1px; height: 34px; background: linear-gradient(var(--ink-3), transparent); animation: heroCue 1.8s ease-in-out infinite; }
 @keyframes heroCue { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
-@media (max-width: 700px) { .hero-editorial { min-height: 92vh; } .hero-editorial-cue { display: none; } }
+@media (max-width: 700px) { .hero-editorial { min-height: 88svh; } .hero-editorial-cue { display: none; } }
 @media (prefers-reduced-motion: reduce) { .hero-editorial-cue .cue-line { animation: none; } .hero-editorial .bg { transform: none !important; } }
 
 .hero-editorial.compact { min-height: 70vh; }
@@ -337,25 +346,35 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    the SAME photo via a flatten filter (honest colour-grade comparison) for
    the many places we have one finished photo but no separate raw shot.
    ============================================================ */
-.cmp { position: relative; border-radius: var(--r-media); overflow: hidden; aspect-ratio: 4/5; background: var(--bg-deep); border: 1px solid var(--line); isolation: isolate; }
+/* Position is a single custom property so the auto-play animation AND the
+   manual drag both drive the same value. Registered with @property so it can
+   be animated (a plain custom property can't). Grabbing the handle adds
+   .cmp-drag → the animation stops and JS sets --cmp-pos (see initCompareDrag).
+   Only the handle captures touch; the image keeps default touch-action, so
+   scrolling vertically over it stays smooth and never sticks. */
+@property --cmp-pos { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
+.cmp { --cmp-pos: 50%; position: relative; border-radius: var(--r-media); overflow: hidden; aspect-ratio: 4/5; background: var(--bg-deep); border: 1px solid var(--line); isolation: isolate; animation: cmpAuto 7s var(--ease-in-out) infinite; }
 .cmp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.cmp .cmp-after { clip-path: inset(0 0 0 50%); animation: cmpWipe 7s var(--ease-in-out) infinite; z-index: 1; }
+.cmp .cmp-after { clip-path: inset(0 0 0 var(--cmp-pos)); z-index: 1; }
 .cmp.cmp-grade .cmp-before { filter: saturate(.3) brightness(.9) contrast(.9) grayscale(.14); }
-.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: rgba(255,255,255,.92); box-shadow: 0 0 16px rgba(0,0,0,.55); z-index: 3; animation: cmpDivide 7s var(--ease-in-out) infinite; }
-.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 42px; height: 42px; border-radius: 50%; background: #fff; color: #14100e; display: grid; place-items: center; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--cmp-pos); width: 2px; margin-left: -1px; background: rgba(255,255,255,.92); box-shadow: 0 0 16px rgba(0,0,0,.55); z-index: 3; touch-action: none; cursor: ew-resize; }
+/* widened invisible grab column so the thin line is easy to catch (esp. touch) */
+.cmp .cmp-divider::before { content: ""; position: absolute; top: 0; bottom: 0; left: -20px; right: -20px; }
+.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #14100e; display: grid; place-items: center; box-shadow: 0 6px 20px rgba(0,0,0,.4); cursor: ew-resize; touch-action: none; }
 .cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; border-radius: var(--r-pill); font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgba(10,9,8,.72); color: var(--ink); backdrop-filter: blur(4px); }
+.cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; border-radius: var(--r-pill); font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgba(10,9,8,.72); color: var(--ink); backdrop-filter: blur(4px); pointer-events: none; }
 .cmp .cmp-tag.before { left: 14px; }
 .cmp .cmp-tag.after { right: 14px; }
-.cmp:hover .cmp-after, .cmp:hover .cmp-divider { animation-play-state: paused; }
+/* auto-drift pauses on hover; once grabbed (.cmp-drag) it's a manual slider */
+.cmp:hover { animation-play-state: paused; }
+.cmp.cmp-drag { animation: none; }
 
-@keyframes cmpWipe { 0%,6% { clip-path: inset(0 0 0 66%); } 50%,56% { clip-path: inset(0 0 0 20%); } 100% { clip-path: inset(0 0 0 66%); } }
-@keyframes cmpDivide { 0%,6% { left: 66%; } 50%,56% { left: 20%; } 100% { left: 66%; } }
+@keyframes cmpAuto { 0%,6% { --cmp-pos: 66%; } 50%,56% { --cmp-pos: 20%; } 100% { --cmp-pos: 66%; } }
 /* desync the grid so four don't sweep in lockstep */
-.compare-grid > *:nth-child(even) .cmp-after, .compare-grid > *:nth-child(even) .cmp-divider { animation-delay: -3.5s; }
+.compare-grid > *:nth-child(even) .cmp { animation-delay: -3.5s; }
 @media (prefers-reduced-motion: reduce) {
-  .cmp .cmp-after { animation: none; clip-path: inset(0 0 0 50%); }
-  .cmp .cmp-divider { animation: none; left: 50%; }
+  .cmp { animation: none; --cmp-pos: 50%; }
 }
 
 /* ============================================================

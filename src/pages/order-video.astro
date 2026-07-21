@@ -20,12 +20,12 @@ import Layout from '../layouts/Layout.astro';
         <h1 style="font-size:var(--t-h2)">Order a product video</h1>
         <p>Standard videos are a fixed price from &euro;49. Bigger campaign? Quoted per project on WhatsApp.</p>
       </div>
-      <div class="card reveal pending" style="padding:clamp(1.4rem,3vw,2.4rem)">
+      <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
         <div class="vid-photo">
           <img src="/img/banners-03.webp" alt="Example VISUAILS product video still" loading="lazy" />
         </div>
         <!-- TODO: wire this form to a real submit handler (Cloudflare Pages Function, Formspree, etc.) before launch — no backend in this static build yet -->
-        <form action="/thank-you" method="get">
+        <form action="/thank-you" method="get" id="video-form">
           <div class="field">
             <label>Video type <span class="req">*</span></label>
             <label class="opt"><input type="radio" name="vtype" value="Motion Video" checked /><span class="opt-main"><span class="opt-title">Motion Video</span><span class="opt-desc">8-second clip, subtle motion, clean presentation</span></span><span class="opt-price">&euro;49</span></label>
@@ -55,14 +55,14 @@ import Layout from '../layouts/Layout.astro';
           </div>
           <div class="row-2">
             <div class="field"><label for="v-name">Name <span class="req">*</span></label><input class="input" id="v-name" name="name" type="text" autocomplete="name" required /></div>
-            <div class="field"><label for="v-comp">Company</label><input class="input" id="v-comp" name="company" type="text" autocomplete="organization" /></div>
+            <div class="field"><label for="v-comp">Brand or store name</label><input class="input" id="v-comp" name="brand" type="text" autocomplete="organization" /></div>
           </div>
           <div class="row-2">
             <div class="field"><label for="v-mail">Email <span class="req">*</span></label><input class="input" id="v-mail" name="email" type="email" autocomplete="email" required /></div>
-            <div class="field"><label for="v-phone">Phone <span class="req">*</span></label><input class="input" id="v-phone" name="phone" type="tel" autocomplete="tel" required /></div>
+            <div class="field"><label for="v-phone">Phone <span class="hint" style="font-weight:400">— optional</span></label><input class="input" id="v-phone" name="phone" type="tel" autocomplete="tel" /></div>
           </div>
           <div class="flex" style="margin-top:.4rem">
-            <button type="submit" class="btn btn-primary btn-lg">Submit video order</button>
+            <button type="submit" class="btn btn-primary btn-lg">Submit video order · <span id="video-total">€49</span></button>
             <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20a%20product%20video." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg> Order via WhatsApp</a>
           </div>
           <p class="hint" style="margin-top:1rem">Planning a bigger campaign video? <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20a%20quote%20for%20a%20campaign%20video." target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">Get a campaign quote on WhatsApp &rarr;</a></p>
@@ -103,7 +103,7 @@ import Layout from '../layouts/Layout.astro';
   .opt { display: flex; align-items: center; gap: 0.8rem; padding: 0.9rem 1.1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); cursor: pointer; transition: border-color 0.2s var(--ease), background 0.2s var(--ease); margin-bottom: 0.6rem; background: var(--surface); }
   .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
   .opt input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
-  .opt .opt-main { flex: 1; }
+  .opt .opt-main { flex: 1; display: flex; flex-direction: column; gap: .15rem; }
   .opt .opt-title { color: var(--ink); font-weight: 500; }
   .opt .opt-desc { font-size: 0.82rem; color: var(--ink-3); }
   .opt .opt-price { color: var(--accent-bright); font-weight: 700; font-size: 0.9rem; }

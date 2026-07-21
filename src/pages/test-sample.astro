@@ -111,9 +111,9 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
         <h2>Request your test sample</h2>
         <p>Two quick steps. Tell us the look you want, then where to send it.</p>
       </div>
-      <div class="card reveal pending" style="padding:clamp(1.4rem,3vw,2.4rem)">
+      <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
         <!-- Static site, no backend: this form needs a real submit handler (e.g. a Cloudflare Pages Function, Formspree, or similar) wired up before launch. -->
-        <form action="/thank-you" method="get" data-wizard>
+        <form action="/thank-you" method="get" data-wizard novalidate>
           <div class="progress" aria-hidden="true"><i data-wizard-progress style="width:50%"></i></div>
 
           <!-- STEP 1 -->
@@ -135,7 +135,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
             </div>
 
             <div class="field">
-              <label>Choose a model <span class="req">*</span></label>
+              <label>Choose a model</label>
               <span class="hint" style="margin-bottom:.3rem">Optional for most products — handy for apparel and accessories.</span>
               <div class="choice-grid">
                 {roster.map((m) => (
@@ -199,9 +199,9 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                 <input class="input" type="email" id="ts-email" name="email" autocomplete="email" required />
               </div>
               <div class="field">
-                <label for="ts-phone">Phone <span class="req">*</span></label>
-                <input class="input" type="tel" id="ts-phone" name="phone" autocomplete="tel" placeholder="+31 6 &hellip;" required />
-                <span class="hint">Please include your country code.</span>
+                <label for="ts-phone">Phone <span class="hint" style="font-weight:400">— optional</span></label>
+                <input class="input" type="tel" id="ts-phone" name="phone" autocomplete="tel" placeholder="+31 6 &hellip;" />
+                <span class="hint">Add it if you'd like us to message you on WhatsApp — include your country code.</span>
               </div>
             </div>
 

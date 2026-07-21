@@ -68,14 +68,14 @@ const modelPhotos = ['/img/model-01.webp', '/img/model-02.webp', '/img/model-03.
                 <span class="chip"><span class="dot"></span>{t}</span>
               ))}
             </div>
-            <a href="/order-lifestyle" class="link-arrow">Use this model <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a href={`/order?model=${encodeURIComponent(m.name)}`} class="link-arrow">Use this model <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
         ))}
         <div class="card card-hover model-card model-choose reveal pending">
           <div class="monogram monogram-accent" aria-hidden="true"><svg viewBox="0 0 24 24" class="i"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg></div>
           <h3>Let us choose</h3>
           <p style="font-size:.95rem;color:var(--ink-3)">Tell us your product and vibe — we'll match a model for you.</p>
-          <a href="/order-lifestyle" class="link-arrow" style="color:var(--accent-bright)">Let us pick <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a href="/order?model=VISUAILS%20choose" class="link-arrow" style="color:var(--accent-bright)">Let us pick <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
       </div>
       <p class="pill-note" style="margin-top:1.8rem">Standard models are included in your visual price — no extra fee.</p>

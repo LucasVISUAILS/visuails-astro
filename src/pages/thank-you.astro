@@ -17,6 +17,9 @@ import Layout from '../layouts/Layout.astro';
     <span class="eyebrow-page">Request received</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Thanks — we've got your request.</h1>
     <p class="lead" style="margin:1.2rem auto 0">We'll get back to you within about 24 hours — usually faster on WhatsApp.</p>
+    <!-- Filled client-side from the submitted query string (initThankYou in
+         interactions.js). Hidden automatically when there's nothing to show. -->
+    <div class="card ty-summary" id="ty-summary" style="display:none;text-align:left;margin:2rem auto 0;max-width:520px"></div>
     <div class="flex" style="justify-content:center;margin-top:2rem">
       <a href="/upload-guidelines" class="btn btn-primary btn-lg">Read upload guidelines</a>
       <a href="/" class="btn btn-ghost btn-lg">Back to home</a>
@@ -35,3 +38,14 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div></section>
 </Layout>
+
+<style>
+  .ty-summary h4 { font-size: 1rem; color: var(--ink); }
+  .ty-dl { display: flex; flex-direction: column; gap: 0; margin: 0; }
+  .ty-row { display: flex; justify-content: space-between; gap: 1.2rem; padding: .7rem 0; box-shadow: inset 0 -1px 0 var(--line); }
+  .ty-row:last-child { box-shadow: none; }
+  .ty-row dt { color: var(--ink-3); font-size: .88rem; flex: 0 0 auto; }
+  .ty-row dd { color: var(--ink); font-size: .92rem; font-weight: 500; margin: 0; text-align: right; word-break: break-word; }
+  .ty-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line-strong); vertical-align: middle; margin: 0 .35rem 0 .1rem; }
+  .ty-hex { color: var(--ink-3); font-size: .82rem; font-weight: 400; letter-spacing: .02em; }
+</style>

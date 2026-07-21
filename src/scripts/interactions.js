@@ -6,6 +6,33 @@
 // navigation. Per-element work (reveal/split) is guarded by a dataset flag so
 // only new, unbound elements get processed after a page swap.
 
+// Safety net for reveal-gated content. `.reveal.pending` starts at opacity:0
+// and only becomes visible once `.in` is added. If the per-page Intersection
+// observer never runs (e.g. init() didn't re-run after a ClientRouter nav on
+// mobile), that content would stay invisible forever — which is exactly what
+// hid the test-sample form. This runs at document level, bound once, and on
+// every scroll / page-load, so any reveal element in view is shown regardless
+// of per-page setup. Bulletproof, and still gives the scroll-in animation.
+function revealInView() {
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  document.querySelectorAll('.reveal.pending:not(.in), .reveal-mask:not(.in), .reveal-clip-wrap > .reveal-clip-inner:not(.in)').forEach((el) => {
+    const r = el.getBoundingClientRect();
+    if (r.top < vh * 0.96 && r.bottom > -40) {
+      el.classList.add('in');
+      const lines = el.querySelectorAll ? el.querySelectorAll('.split-line') : [];
+      lines.forEach((l) => l.classList.add('in'));
+    }
+  });
+}
+let revealNetBound = false;
+function bindRevealNet() {
+  revealInView();
+  if (revealNetBound) return;
+  revealNetBound = true;
+  window.addEventListener('scroll', revealInView, { passive: true });
+  window.addEventListener('resize', revealInView, { passive: true });
+}
+
 function initReveal() {
   const items = document.querySelectorAll('.reveal.pending:not([data-reveal-bound])');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -218,26 +245,258 @@ function initWizards() {
     const total = qty * 35 + (format === 'Multi Format Export' ? 19.99 : 0) + (quality === '4K' ? 9.99 : 0) + (delivery === 'Priority' ? 29.99 : 0);
     label.textContent = `€${Number.isInteger(total) ? total : total.toFixed(2)}`;
   };
+  const catalogTotal = (form) => {
+    const label = document.querySelector('#cat-total');
+    if (!label) return;
+    const sel = form.querySelector('#cat-qty');
+    const raw = (sel && sel.value) || '1';
+    const n = parseInt(raw, 10);
+    // "More than 10" (non-numeric value) → volume quote, no fixed total.
+    if (!n || Number.isNaN(n)) { label.textContent = 'Volume quote'; return; }
+    label.textContent = `€${(n * 39.99).toFixed(2)}`;
+  };
+  const videoTotal = (form) => {
+    const label = document.querySelector('#video-total');
+    if (!label) return;
+    const vtype = form.querySelector('input[name="vtype"]:checked');
+    const price = vtype && vtype.value === 'Lifestyle Video' ? 59 : 49;
+    const sel = form.querySelector('#v-qty');
+    const n = parseInt((sel && sel.value) || '1', 10) || 1;
+    label.textContent = `€${price * n}`;
+  };
+  // First invalid, validatable field in a container (or null).
+  const firstInvalid = (container) => {
+    const fs = container.querySelectorAll('input, select, textarea');
+    for (const f of fs) { if (f.willValidate && !f.checkValidity()) return f; }
+    return null;
+  };
+  const revealFor = (form, field) => {
+    const step = field.closest('[data-wizard-step], .step-panel');
+    if (!step) return;
+    if (step.hasAttribute('data-wizard-step')) show2(form, Number(step.dataset.wizardStep));
+    else showN(form, Number(step.dataset.step));
+    scrollToForm(form);
+  };
 
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
     let el;
-    if ((el = t.closest('[data-wizard-next]'))) { const f = el.closest('form'); if (f) { show2(f, 2); scrollToForm(f); } return; }
+    // "Next" gates on the current step's validity (don't advance past empty required fields).
+    if ((el = t.closest('[data-wizard-next]'))) {
+      const f = el.closest('form'); if (!f) return;
+      const cur = f.querySelector('[data-wizard-step]:not(.hidden-step)');
+      const bad = cur && firstInvalid(cur);
+      if (bad) { bad.reportValidity(); bad.focus && bad.focus(); return; }
+      show2(f, 2); scrollToForm(f); return;
+    }
     if ((el = t.closest('[data-wizard-back]'))) { const f = el.closest('form'); if (f) { show2(f, 1); scrollToForm(f); } return; }
-    if ((el = t.closest('[data-step-next]'))) { const f = el.closest('form'); if (f) { showN(f, Number(el.dataset.stepNext)); scrollToForm(f); } return; }
+    if ((el = t.closest('[data-step-next]'))) {
+      const f = el.closest('form'); if (!f) return;
+      const cur = f.querySelector('.step-panel:not(.hidden-step)');
+      const bad = cur && firstInvalid(cur);
+      if (bad) { bad.reportValidity(); bad.focus && bad.focus(); return; }
+      showN(f, Number(el.dataset.stepNext)); scrollToForm(f); return;
+    }
     if ((el = t.closest('[data-step-prev]'))) { const f = el.closest('form'); if (f) { showN(f, Number(el.dataset.stepPrev)); scrollToForm(f); } return; }
   });
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
     if (t.closest('#ls-form')) lsTotal(t.closest('#ls-form'));
+    if (t.closest('#video-form')) videoTotal(t.closest('#video-form'));
+    if (t.closest('#cat-form')) catalogTotal(t.closest('#cat-form'));
+  });
+  // Wizard forms are novalidate; validate in JS on submit so a required field in
+  // a hidden step reveals its step (avoids the silent "not-focusable" dead-end).
+  document.addEventListener('submit', (e) => {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    if (!form.matches('form[data-wizard], #ls-form')) return;
+    const bad = firstInvalid(form);
+    if (bad) { e.preventDefault(); revealFor(form, bad); bad.reportValidity(); bad.focus && bad.focus(); }
+  });
+}
+
+// Thank-you page: echo the submitted request from the query string so the
+// customer sees a confirmation of what they ordered (forms GET to /thank-you).
+function initThankYou() {
+  const box = document.querySelector('#ty-summary');
+  if (!box) return;
+  const p = new URLSearchParams(location.search);
+  const map = [
+    ['name', 'Name'], ['brand', 'Brand'], ['company', 'Brand'], ['email', 'Email'], ['phone', 'Phone'],
+    ['vtype', 'Video type'], ['style', 'Style'], ['presentation', 'Shown as'], ['model', 'Model'],
+    ['quantity', 'Quantity'], ['products', 'Products'], ['format', 'Format'], ['quality', 'Quality'],
+    ['delivery', 'Delivery'], ['background', 'Background'], ['message', 'Notes'], ['notes', 'Notes'],
+  ];
+  const esc = (s) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+  // Validated custom background hex (safe to inline into markup below).
+  const bgHex = (() => {
+    let x = (p.get('background_hex') || '').trim();
+    if (x && x[0] !== '#') x = '#' + x;
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(x) ? x.toUpperCase() : '';
+  })();
+  const rows = [];
+  const seen = new Set();
+  map.forEach(([key, label]) => {
+    const v = p.get(key);
+    if (!v || !v.trim() || seen.has(label)) return;
+    seen.add(label);
+    let valHtml = esc(v.trim());
+    // Subtly append the chosen colour to the Background row: a small swatch + hex.
+    if (key === 'background' && bgHex) {
+      valHtml += ` <span class="ty-swatch" style="background:${bgHex}"></span><span class="ty-hex">${bgHex}</span>`;
+    }
+    rows.push([label, valHtml]);
+  });
+  if (!rows.length) { box.style.display = 'none'; return; }
+  box.innerHTML = '<h4 style="margin-bottom:.9rem">Your request</h4><dl class="ty-dl">' +
+    rows.map(([l, v]) => `<div class="ty-row"><dt>${l}</dt><dd>${v}</dd></div>`).join('') +
+    '</dl>';
+  box.style.display = 'block';
+}
+
+// Carry a chosen model / presentation into the order forms via the URL.
+//  • /order?model=Elias           → hub shows a note + forwards the model into
+//    the Catalog (on-model) and Lifestyle service links.
+//  • /order-catalog?show=on-model  → preselects "On a model".
+//  • /order-catalog?model=Elias    → preselects on-model + that model.
+//  • /order-lifestyle?model=Elias  → preselects that model in step 2.
+// Runs each page-load (reads the current URL); idempotent.
+function initFormPrefill() {
+  const params = new URLSearchParams(location.search);
+  const model = params.get('model');
+  const show = params.get('show');
+
+  const presOnModel = document.querySelector('input[name="presentation"][value="On a model"]');
+  if (presOnModel && (show === 'on-model' || model)) {
+    presOnModel.checked = true;
+    presOnModel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  if (model) {
+    const esc = (window.CSS && CSS.escape) ? CSS.escape(model) : model.replace(/"/g, '\\"');
+    const r = document.querySelector(`input[name="model"][value="${esc}"]`);
+    if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
+
+  // Order hub: forward the model into the service links + show a note.
+  const hub = document.querySelector('.hub-grid');
+  if (model && hub) {
+    const enc = encodeURIComponent(model);
+    hub.querySelectorAll('a[href^="/order-catalog"]').forEach((a) => { a.href = `/order-catalog?show=on-model&model=${enc}`; });
+    hub.querySelectorAll('a[href^="/order-lifestyle"]').forEach((a) => { a.href = `/order-lifestyle?model=${enc}`; });
+    if (!document.querySelector('.model-carry-note')) {
+      const note = document.createElement('p');
+      note.className = 'model-carry-note';
+      note.style.cssText = 'margin:0 0 1.4rem;padding:.55rem 1.05rem;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:var(--r-pill);display:inline-flex;gap:.5rem;align-items:center;font-size:.88rem;color:var(--ink);';
+      const label = model === 'VISUAILS choose' ? 'Let VISUAILS choose the model' : `Model selected: ${model}`;
+      note.textContent = `${label} — now pick the service you'd like to use it for.`;
+      hub.parentNode.insertBefore(note, hub);
+    }
+  }
+}
+
+// Before/after Compare: make the handle draggable while keeping the auto-play.
+// Delegated + bound once, so it works on every page and after ClientRouter
+// navigations. Only the divider/knob start a drag (they have touch-action:none);
+// touching the image scrolls the page as normal — no sticking on the section.
+let compareDragBound = false;
+function initCompareDrag() {
+  if (compareDragBound) return;
+  compareDragBound = true;
+  let active = null;
+  const posOf = (cmp, clientX) => {
+    const r = cmp.getBoundingClientRect();
+    return Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100));
+  };
+  const setPos = (cmp, clientX) => {
+    cmp.classList.add('cmp-drag');
+    cmp.style.setProperty('--cmp-pos', posOf(cmp, clientX) + '%');
+  };
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const handle = t.closest('.cmp-divider, .cmp-knob');
+    if (!handle) return;
+    const cmp = handle.closest('.cmp');
+    if (!cmp) return;
+    active = cmp;
+    setPos(cmp, e.clientX);
+    handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (!active) return;
+    active.style.setProperty('--cmp-pos', posOf(active, e.clientX) + '%');
+    e.preventDefault();
+  }, { passive: false });
+  const end = () => { active = null; };
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', end);
+  // Keyboard: focus the knob, arrow keys nudge.
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const handle = t.closest('.cmp-knob, .cmp-divider');
+    if (!handle || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+    const cmp = handle.closest('.cmp');
+    if (!cmp) return;
+    cmp.classList.add('cmp-drag');
+    const cur = parseFloat(getComputedStyle(cmp).getPropertyValue('--cmp-pos')) || 50;
+    cmp.style.setProperty('--cmp-pos', Math.max(0, Math.min(100, cur + (e.key === 'ArrowRight' ? 5 : -5))) + '%');
+    e.preventDefault();
+  });
+}
+
+// Live hex-colour preview. Any `input[data-hex-preview="<selector>"]` updates
+// the swatch it points to as the user types a valid 3- or 6-digit hex, and
+// the optional `[data-hex-preview-label]` next to it shows the normalised code.
+// Delegated + bound once so it survives ClientRouter navigations.
+let hexPreviewBound = false;
+function initHexPreview() {
+  if (hexPreviewBound) return;
+  hexPreviewBound = true;
+  // Perceived brightness (0–1) of a #rgb / #rrggbb colour.
+  const brightness = (hex) => {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  };
+  document.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element) || !t.matches('input[data-hex-preview]')) return;
+    const sw = document.querySelector(t.getAttribute('data-hex-preview'));
+    const label = t.parentElement && t.parentElement.querySelector('[data-hex-preview-label]');
+    const scope = t.closest('.field') || document;
+    const advice = scope.querySelector('[data-hex-advice]');
+    let v = (t.value || '').trim();
+    if (v && v[0] !== '#') v = '#' + v;
+    const ok = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v);
+    if (sw) sw.style.background = ok ? v : '#ffffff';
+    if (label) label.textContent = ok ? v.toUpperCase() : 'Preview';
+    if (advice) {
+      if (!ok) { advice.textContent = ''; advice.style.color = 'var(--ink-3)'; }
+      else if (brightness(v) >= 0.6) {
+        advice.textContent = '✓ A light background like this keeps products looking clean and professional.';
+        advice.style.color = 'var(--success, #4AD07F)';
+      } else {
+        advice.textContent = 'This is a darker background — it works, but a lighter colour usually looks more professional. Your call.';
+        advice.style.color = 'var(--ink-3)';
+      }
+    }
   });
 }
 
 export function init() {
   initReveal();
   initSplitLines();
+  initFormPrefill();
+  initCompareDrag();
+  initThankYou();
+  initHexPreview();
   // Magnetic button-follow intentionally removed — CTAs stay put under the cursor.
   initParallax();
   initHeroParallax();
@@ -248,7 +507,11 @@ export function init() {
   initWizards();
 }
 
-// First load.
-init();
-// Every ClientRouter navigation (including bfcache-style restores).
-document.addEventListener('astro:page-load', init);
+// The reveal safety net is bound FIRST and unconditionally, so reveal-gated
+// content can never stay hidden — even if init() throws or doesn't re-run on a
+// given ClientRouter navigation. init() itself is guarded so a runtime error in
+// any sub-init can't break the rest of the page.
+bindRevealNet();
+document.addEventListener('astro:page-load', revealInView);
+document.addEventListener('astro:page-load', () => { try { init(); } catch (e) {} });
+try { init(); } catch (e) {}

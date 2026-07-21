@@ -17,7 +17,7 @@ interface Props {
 const { title, description, ogImage = '/img/banners-05.webp' } = Astro.props;
 
 const services = [
-  { href: '/catalog', title: 'Catalog', desc: 'Clean, consistent product shots — from €19' },
+  { href: '/catalog', title: 'Catalog', desc: '4 photos per product — €39.99' },
   { href: '/lifestyle', title: 'Lifestyle', desc: 'Styled scenes & models — from €35' },
   { href: '/video', title: 'Video', desc: 'Short product videos that move' },
   { href: '/models', title: 'Models', desc: 'Consistent faces across every visual' },
@@ -180,7 +180,13 @@ const orgJsonLd = {
     <a href="/test-sample">Test Sample</a>
     <a href="/faq">FAQ</a>
     <a href="/contact">Contact</a>
-    <div style="margin-top:1.5rem"><a href="/order" class="btn btn-primary btn-block">Order now</a></div>
+    <div class="mobile-cta">
+      <a href="/order" class="btn btn-primary btn-block btn-lg">Order now</a>
+      <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20some%20visuals." class="btn btn-wa btn-block" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Chat on WhatsApp
+      </a>
+      <span class="mobile-cta-hint">Not sure yet? <a href="/test-sample">Try a test sample &middot; &euro;0.99</a></span>
+    </div>
   </div>
 
   <main>
@@ -275,7 +281,14 @@ const orgJsonLd = {
   .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform .4s var(--ease); overflow-y: auto; }
   .mobile-nav.open { transform: translateX(0); }
   .mobile-mark { width: 30px; height: 30px; display: block; margin-bottom: 1.6rem; }
-  .mobile-nav a { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
+  /* Only the plain nav links get the large display styling. Scoped to direct
+     children so it never hijacks the CTA buttons (which live in .mobile-cta)
+     — that override was flattening "Order now" to a left-aligned block. */
+  .mobile-nav > a { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
+  .mobile-cta { display: flex; flex-direction: column; gap: .7rem; margin-top: 1.8rem; }
+  .mobile-cta .btn { font-size: 1.05rem; }
+  .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
+  .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
   .mobile-close { position: absolute; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
   @media (max-width: 940px) { .nav-links, .nav-actions .btn { display: none; } .menu-toggle { display: inline-flex; } }
 

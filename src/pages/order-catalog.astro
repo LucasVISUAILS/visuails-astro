@@ -5,7 +5,7 @@
 // The Svelte source used a `customBg` $state boolean, toggled by the two
 // background radios, to conditionally render the hex-code field. That's
 // cosmetic (a form field visibility toggle) so it's reproduced here with
-// pure CSS (:has()) instead of JS — the default-checked "Pale White" radio
+// pure CSS (:has()) instead of JS — the default-checked "White" radio
 // keeps the hex field hidden until "Custom colour" is selected. See <style>
 // below for `.bg-field:has(...)`.
 import Layout from '../layouts/Layout.astro';
@@ -17,7 +17,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
 
 <Layout
   title="Order catalog visuals — VISUAILS"
-  description="Request clean, consistent catalog visuals from €19 per visual. Delivered in about 24 hours, every image checked by hand."
+  description="One price per product: €39.99 for a full 4-photo set — front, back, a logo/fabric close-up and one on-model shot. Delivered in about 24 hours, every image checked by hand."
 >
   <section class="page-hero" style="padding-bottom:0">
     <div class="container">
@@ -29,11 +29,20 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
     <div class="container narrow">
       <div class="section-head">
         <h1 style="font-size:var(--t-h2)">Request catalog visuals</h1>
-        <p>Clean, consistent product visuals — on a plain background, or worn by a model. <strong style="color:var(--accent-bright)">From &euro;19 / visual.</strong></p>
+        <p>One price per product — <strong style="color:var(--accent-bright)">&euro;39.99</strong>, and you get a <strong>full 4-photo set</strong>. That's about &euro;10 a photo, with a real on-model shot included.</p>
       </div>
-      <div class="card reveal pending" style="padding:clamp(1.4rem,3vw,2.4rem)">
+
+      <!-- What one product gets you — set clearly before the form. -->
+      <ul class="pack-grid">
+        <li><span class="pack-n">1</span><div><strong>Front</strong><span>The hero catalog shot.</span></div></li>
+        <li><span class="pack-n">2</span><div><strong>Back</strong><span>The reverse, same lighting.</span></div></li>
+        <li><span class="pack-n">3</span><div><strong>Detail close-up</strong><span>Logo, print or fabric texture.</span></div></li>
+        <li><span class="pack-n">4</span><div><strong>On a model</strong><span>Worn, for fit &amp; scale.</span></div></li>
+      </ul>
+
+      <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
         <!-- TODO: wire this form to a real submit handler (Cloudflare Pages Function, Formspree, etc.) before launch — no backend in this static build yet -->
-        <form action="/thank-you" method="get">
+        <form action="/thank-you" method="get" id="cat-form">
           <div class="field">
             <label for="cat-name">Name <span class="req">*</span></label>
             <input class="input" type="text" id="cat-name" name="name" autocomplete="name" required />
@@ -52,22 +61,30 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
           <div class="field">
             <label for="cat-qty">How many products? <span class="req">*</span></label>
             <select class="select" id="cat-qty" name="products" required>
-              <option value="" disabled selected>Select a range&hellip;</option>
-              <option value="1-5">1&ndash;5</option>
-              <option value="5-10">5&ndash;10</option>
-              <option value="10-25">10&ndash;25</option>
-              <option value="25-50">25&ndash;50</option>
-              <option value="50+">50+</option>
+              <option value="1" selected>1 product</option>
+              <option value="2">2 products</option>
+              <option value="3">3 products</option>
+              <option value="4">4 products</option>
+              <option value="5">5 products</option>
+              <option value="6">6 products</option>
+              <option value="7">7 products</option>
+              <option value="8">8 products</option>
+              <option value="9">9 products</option>
+              <option value="10">10 products</option>
+              <option value="More than 10">More than 10 — get a volume quote</option>
             </select>
+            <span class="hint">&euro;39.99 per product · a 4-photo set each. Big range? Pick "More than 10" and we'll quote volume pricing.</span>
           </div>
 
-          <div class="field pres-field">
-            <label>How should your product be shown? <span class="req">*</span></label>
-            <label class="opt"><input type="radio" name="presentation" value="Product only" required checked /><span class="opt-main"><span class="opt-title">Product only</span><span class="opt-desc">Clean product on a plain background — the classic catalog shot. From &euro;19.</span></span></label>
-            <label class="opt"><input type="radio" name="presentation" value="On a model" /><span class="opt-main"><span class="opt-title">On a model</span><span class="opt-desc">The same clean catalog look, but worn by a consistent model. Exact price confirmed with your order.</span></span></label>
+          <div class="field">
+            <label>Model for the on-model shot <span class="hint" style="font-weight:400">— one of your four photos is worn by a model</span></label>
             <div class="model-picker">
-              <label style="margin-top:.2rem">Pick a model <span class="hint" style="font-weight:400">— optional, or let us choose</span></label>
               <div class="choice-grid" style="grid-template-columns:repeat(auto-fit,minmax(116px,1fr))">
+                <label class="choice">
+                  <input type="radio" name="model" value="VISUAILS choose" checked />
+                  <div class="choice-media mono"><div class="mono-av">&#9733;</div></div>
+                  <div class="choice-label">Let VISUAILS choose</div>
+                </label>
                 {roster.map((m) => (
                   <label class="choice">
                     <input type="radio" name="model" value={m} />
@@ -75,11 +92,6 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                     <div class="choice-label">{m}</div>
                   </label>
                 ))}
-                <label class="choice">
-                  <input type="radio" name="model" value="VISUAILS choose" />
-                  <div class="choice-media mono"><div class="mono-av">&#9733;</div></div>
-                  <div class="choice-label">Let VISUAILS choose</div>
-                </label>
               </div>
               <span class="hint">Want a face made only for your brand? That's a <a href="/custom-models" style="color:var(--accent-bright)">custom model</a>.</span>
             </div>
@@ -87,9 +99,15 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
 
           <div class="field bg-field">
             <label>Background colour <span class="req">*</span></label>
+            <span class="hint" style="margin:-.15rem 0 .35rem">We recommend a light background — it keeps products looking clean and professional. The choice is yours.</span>
             <div class="choice-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
               <label class="choice swatch">
-                <input type="radio" name="background" value="Pale White" required checked />
+                <input type="radio" name="background" value="White" required checked />
+                <div class="choice-media"><span class="sw" style="position:absolute;inset:0;background:#FFFFFF"></span></div>
+                <div class="choice-label">White <span class="hint" style="font-weight:400">— standard (#FFFFFF)</span></div>
+              </label>
+              <label class="choice swatch">
+                <input type="radio" name="background" value="Pale White" />
                 <div class="choice-media"><span class="sw" style="position:absolute;inset:0;background:#F7F4EE"></span></div>
                 <div class="choice-label">Pale white</div>
               </label>
@@ -102,10 +120,12 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
             <div class="field bg-hex-field" style="margin-top:1rem">
               <label for="cat-bg-hex">Hex code <span class="req">*</span></label>
               <div style="display:flex;align-items:center;gap:.8rem">
-                <span class="sw" style="width:44px;height:44px;border-radius:10px;flex:none;background:#ffffff;border:1px solid var(--line-strong)"></span>
-                <input class="input" type="text" id="cat-bg-hex" name="background_hex" placeholder="#FFFFFF" pattern="^#?[0-9A-Fa-f]{6}$" maxlength="7" style="max-width:200px" />
+                <span class="sw" id="cat-bg-swatch" style="width:44px;height:44px;border-radius:10px;flex:none;background:#ffffff;border:1px solid var(--line-strong)"></span>
+                <input class="input" type="text" id="cat-bg-hex" name="background_hex" placeholder="#FFFFFF" pattern="^#?[0-9A-Fa-f]{6}$" maxlength="7" style="max-width:200px" data-hex-preview="#cat-bg-swatch" />
+                <span class="hex-preview-label" data-hex-preview-label style="font-size:.82rem;color:var(--ink-3)">Preview</span>
               </div>
-              <span class="hint">Enter your brand's exact background colour as a hex code — we'll match it precisely.</span>
+              <span class="hint">Enter your brand's exact background colour as a hex code — we'll show a live preview and match it precisely.</span>
+              <span class="hint" data-hex-advice style="margin-top:.25rem"></span>
             </div>
           </div>
 
@@ -138,15 +158,15 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
 
           <div class="row-2">
             <div class="field">
-              <label for="cat-phone">Phone <span class="req">*</span></label>
-              <input class="input" type="tel" id="cat-phone" name="phone" autocomplete="tel" placeholder="+31 6 &hellip;" required />
-            </div>
-            <div class="field">
               <label for="cat-email">Email <span class="req">*</span></label>
               <input class="input" type="email" id="cat-email" name="email" autocomplete="email" required />
             </div>
+            <div class="field">
+              <label for="cat-phone">Phone <span class="hint" style="font-weight:400">— optional</span></label>
+              <input class="input" type="tel" id="cat-phone" name="phone" autocomplete="tel" placeholder="+31 6 &hellip;" />
+            </div>
           </div>
-          <p class="hint" style="margin:-.4rem 0 1.2rem">Both phone and email are required so we can reach you either way, whichever method you prefer.</p>
+          <p class="hint" style="margin:-.4rem 0 1.2rem">We'll reach you by email. Add a phone number if you'd rather we message you on WhatsApp.</p>
 
           <label class="opt" style="align-items:flex-start">
             <input type="checkbox" name="newsletter" value="yes" />
@@ -154,7 +174,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
           </label>
 
           <div class="flex" style="margin-top:1.4rem">
-            <button type="submit" class="btn btn-primary btn-lg">Submit request</button>
+            <button type="submit" class="btn btn-primary btn-lg">Submit request · <span id="cat-total">€39.99</span></button>
             <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20catalog%20visuals." class="btn btn-wa btn-lg" target="_blank" rel="noopener">
               <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
               Order via WhatsApp <span class="rec-badge">Fastest</span>
@@ -206,7 +226,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   .opt { display: flex; align-items: center; gap: 0.8rem; padding: 0.9rem 1.1rem; border-radius: var(--r-sm); border: 1px solid var(--line-strong); cursor: pointer; transition: border-color 0.2s var(--ease), background 0.2s var(--ease); margin-bottom: 0.6rem; background: var(--surface); }
   .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
   .opt input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
-  .opt .opt-main { flex: 1; }
+  .opt .opt-main { flex: 1; display: flex; flex-direction: column; gap: .15rem; }
   .opt .opt-title { color: var(--ink); font-weight: 500; }
   .opt .opt-desc { font-size: 0.82rem; color: var(--ink-3); }
   .dropzone { display: block; border-radius: var(--r-sm); padding: 1.8rem; text-align: center; color: var(--ink-3); border: 1.5px dashed var(--line-strong); transition: border-color 0.22s var(--ease), background 0.22s var(--ease); cursor: pointer; background: var(--surface); }
@@ -217,17 +237,24 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   a.chip:hover { border-color: var(--accent-line); color: var(--ink); }
   .ord-anchor { scroll-margin-top: 100px; }
 
+  /* "What one product gets you" — the 4-photo set, shown above the form. */
+  .pack-grid { list-style: none; margin: 0 0 1.6rem; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
+  @media (max-width: 640px) { .pack-grid { grid-template-columns: 1fr 1fr; } }
+  .pack-grid li { display: flex; gap: .7rem; align-items: flex-start; padding: .9rem 1rem; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface); }
+  .pack-grid .pack-n { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-bright); font-family: var(--font-display); font-weight: 900; font-size: .85rem; }
+  .pack-grid strong { display: block; color: var(--ink); font-size: .92rem; }
+  .pack-grid span { display: block; color: var(--ink-3); font-size: .8rem; margin-top: .15rem; line-height: 1.4; }
+
   /* Background-colour picker: CSS-only replacement for the Svelte
      `customBg` $state toggle — the hex field only appears once "Custom
      colour" is the checked radio in this field's choice-grid. */
   .bg-hex-field { display: none; }
   .bg-field:has(input[value="Custom colour"]:checked) .bg-hex-field { display: flex; }
 
-  /* On-model picker: same CSS-only :has() pattern — the model grid only
-     appears once "On a model" is chosen. Model radios stay non-required so a
-     hidden picker can never block form submission. */
-  .model-picker { display: none; margin-top: 1rem; }
-  .pres-field:has(input[value="On a model"]:checked) .model-picker { display: block; }
+  /* Model picker for the always-included on-model shot. Model radios stay
+     non-required (default "Let VISUAILS choose" is pre-checked), so the form
+     can never be blocked here. */
+  .model-picker { display: block; margin-top: .4rem; }
   .choice .choice-media.mono { aspect-ratio: 1; display: grid; place-items: center; background: radial-gradient(125% 90% at 50% 6%, #FFFFFF, #F1EBE3 58%, #E2D9CD 100%); }
   .mono .mono-av { position: relative; display: grid; place-items: center; width: 100%; height: 100%; font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; color: var(--accent-bright); }
   .mono .mono-av small { position: absolute; bottom: 8px; font-size: .58rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-family: var(--font-body); }
