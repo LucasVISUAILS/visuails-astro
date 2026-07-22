@@ -1,0 +1,173 @@
+---
+// VISUAILS — Prijzen (Nederlands). Vertaling van src/pages/pricing.astro.
+import Layout from '../../layouts/Layout.astro';
+import ProductScene from '../../components/ProductScene.astro';
+import ThreeWay from '../../components/ThreeWay.astro';
+
+const plans = [
+  { name: 'Catalog', price: '€39,99', unit: '/ product', accent: false, desc: 'Een volledige set van 4 foto’s per product — zo’n €10 per foto.', features: ['4 foto’s: voorkant, achterkant, detail & on-model', 'On-model shot inbegrepen, geen meerprijs', '3 revisierondes'], cta: 'Bestel catalog' },
+  { name: 'Lifestyle', price: '€35', unit: 'vanaf / visual', accent: true, desc: 'Je product in gestylde, realistische scènes.', features: ['Natuurlijk licht, gestylde scènes', 'Standaardmodellen inbegrepen', '3 revisierondes'], cta: 'Bestel lifestyle' },
+  { name: 'Video', price: '€49', unit: '/ video', accent: false, desc: 'Productvideo’s met subtiele beweging voor feeds en ads.', features: ['Motion vanaf €49, Lifestyle vanaf €59', 'Campagnevideo’s op offerte per project', 'Menselijke controle vóór levering'], cta: 'Bestel een video' },
+];
+
+const addons = [
+  { name: 'Multi-format export', desc: 'Geleverd in 1:1, 4:5, 9:16 en 16:9.', price: '+€19,99' },
+  { name: '4K-export', desc: 'Hogere resolutie in plaats van standaard 2K.', price: '+€9,99' },
+  { name: 'Priority-levering', desc: 'Voorrang bovenaan de wachtrij.', price: '+€29,99' },
+];
+
+const tiers = [
+  { n: '1–24', desc: 'Standaardprijs' },
+  { n: '25–99', desc: 'Volumekorting mogelijk' },
+  { n: '100+', desc: 'Beste tarief — vraag een offerte' },
+];
+
+const included = ['Menselijke controle op elke visual', '2K-export', 'Levering in ~24 uur', '3 revisierondes'];
+
+const faqs = [
+  { q: 'Hoe en wanneer betaal ik?', a: "Je betaalt je bestelling pas nadat je het resultaat hebt goedgekeurd — nooit vooraf. De enige uitzondering is de optionele proefvisual van €0,99, die vooraf wordt betaald om het eerlijk te houden (één per bedrijf). We factureren rechtstreeks; iDEAL en andere directe opties komen eraan, dus geef gewoon je voorkeur door bij je bestelling." },
+  { q: 'Hoe werkt btw en verlegging?', a: "We zijn gevestigd in Nederland (btw NL005407575B96). EU-bedrijven met een geldig btw-nummer kunnen dit bij het bestellen invullen voor btw-verlegging en snellere facturatie." },
+  { q: 'Wat telt als één "visual"?', a: 'Eén afgewerkt beeld. Multi-format export levert het in meerdere verhoudingen — nog steeds één visual, geen vier. Catalog is de uitzondering: die is geprijsd per product op €39,99 en bevat altijd vier foto’s (voorkant, achterkant, detail en on-model).' },
+  { q: 'Hoe werkt custom pricing?', a: 'Een eigen stijl of model is een eenmalige ontwerpkost, daarna de normale prijs per visual op elke bestelling erna. Standaardvideo’s hebben een vaste prijs (Motion vanaf €49, Lifestyle vanaf €59); grotere campagnevideo’s worden per project geoffreerd via een korte WhatsApp-intake.' },
+];
+---
+
+<Layout
+  title="VISUAILS — Eenvoudige, transparante prijzen"
+  description="Eenvoudige prijzen bij VISUAILS — catalog €39,99 per product (een set van 4 foto’s), lifestyle vanaf €35 per visual en custom video. Geen abonnementen, geen verborgen kosten. Menselijke controle, 2K-export, levering in ~24 uur en 3 revisierondes altijd inbegrepen."
+>
+  <section class="page-hero"><div class="container">
+    <p class="eyebrow-page">Prijzen</p>
+    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Eenvoudige, transparante prijzen</h1>
+    <p class="lead" style="margin-top:1.2rem">Betaal per keer — per product of per visual. Geen abonnementen, geen verborgen kosten.</p>
+    <div class="flex" style="margin-top:1.8rem"><a href="/nl/order" class="btn btn-primary btn-lg">Bestel nu</a><a href="/nl/test-sample" class="btn btn-ghost btn-lg">Proefvisual</a></div>
+  </div></section>
+
+  <section><div class="container">
+    <div class="section-head"><h2>Betaal per keer</h2><p>Geen abonnementen. Bestel vijf of vijfhonderd met dezelfde korte wachttijd.</p></div>
+    <div class="grid grid-3 reveal-group">
+      {plans.map((p) => (
+        <div class="card plan-card reveal pending" style={p.accent ? 'border-color:var(--accent-line)' : undefined}>
+          <h3>{p.name}</h3>
+          <div class="price-big">{p.price} <small>{p.unit}</small></div>
+          <p style="color:var(--ink-3)">{p.desc}</p>
+          <ul class="checklist" style="margin-top:1.2rem;margin-bottom:1.6rem">
+            {p.features.map((f) => (
+              <li><svg class="i" viewBox="0 0 24 24" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+            ))}
+          </ul>
+          <a href="/nl/order" class="btn btn-primary btn-block" style="margin-top:auto">{p.cta}</a>
+        </div>
+      ))}
+    </div>
+    <p class="pill-note" style="margin-top:1.8rem">Een eigen stijl of model is een eenmalige ontwerpkost, daarna de normale visualprijs.</p>
+  </div></section>
+
+  <section class="section-tight"><div class="container narrow">
+    <div class="section-head"><h2>Add-ons</h2></div>
+    <div class="addon-list reveal pending">
+      {addons.map((a) => (
+        <div class="addon">
+          <div>
+            <div style="font-weight:600">{a.name}</div>
+            <div style="font-size:.92rem;color:var(--ink-3)">{a.desc}</div>
+          </div>
+          <div class="addon-price">{a.price}</div>
+        </div>
+      ))}
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container narrow">
+    <div class="section-head"><h2>Volume</h2></div>
+    <div class="tier-row reveal pending">
+      {tiers.map((t) => (
+        <div class="tier">
+          <div class="tn">{t.n}</div>
+          <div style="font-size:.92rem;color:var(--ink-3)">{t.desc}</div>
+        </div>
+      ))}
+    </div>
+    <p class="pill-note" style="margin-top:1.4rem"><a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20wil%20graag%20een%20volumeofferte." class="link-arrow" style="font-size:1rem" target="_blank" rel="noopener">Vraag een volumeofferte aan <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+  </div></section>
+
+  <section><div class="container">
+    <div class="card reveal pending" style="padding:clamp(1.6rem,3vw,2.6rem)">
+      <div class="section-head" style="margin-bottom:1.4rem"><h2>Altijd inbegrepen</h2></div>
+      <div class="grid included-grid">
+        {included.map((item) => (
+          <div class="chip"><span class="dot"></span>{item}</div>
+        ))}
+      </div>
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <ThreeWay
+      heading="Waarom niet gewoon shooten — of gewoon een AI prompten?"
+      sub="Dit is de eerlijke afweging. VISUAILS is gebouwd om je de snelle, goedkope kant van AI te geven én de nauwkeurige, door mensen gecontroleerde kant van een echte shoot."
+      cta={false}
+    />
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="card reveal pending" style="border-color:var(--accent-line)">
+      <div class="two-col" style="align-items:center">
+        <div>
+          <h2>Proefvisual</h2>
+          <p class="measure" style="margin-top:1rem">Zie je eigen product getransformeerd voordat je iets vastlegt — voor slechts een verificatie van €0,99. Eén proef per bedrijf.</p>
+          <div class="flex" style="margin-top:1.6rem"><a href="/nl/test-sample" class="btn btn-primary">Vraag je proefvisual aan</a></div>
+        </div>
+        <div><ProductScene icon="bottle" width="42%" badge="1 proefvisual per bedrijf" wide /></div>
+      </div>
+    </div>
+    <p class="pill-note" style="margin-top:1.4rem">Heb je een btw-nummer? Je kunt het bij het bestellen invullen om de facturatie te versnellen — optioneel.</p>
+  </div></section>
+
+  <section><div class="container narrow">
+    <div class="section-head"><h2>Veelgestelde vragen over prijzen</h2></div>
+    <div class="acc reveal pending">
+      {faqs.map((f) => (
+        <details class="acc-item">
+          <summary class="acc-q"><span>{f.q}</span><span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" class="i" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <div class="acc-body-inner"><p>{f.a}</p></div>
+        </details>
+      ))}
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Transparante prijzen.<br />Geen <em>verrassingen.</em></h2>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <a href="/nl/test-sample" class="btn btn-primary btn-lg">Probeer een proefvisual van €0,99</a>
+        <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
+        <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20de%20prijzen." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
+      </div>
+    </div>
+  </div></section>
+</Layout>
+
+<style>
+  .container.narrow { max-width: 760px; }
+  .plan-card { display: flex; flex-direction: column; }
+  .price-big { font-family: var(--font-display); font-weight: 400; font-size: 2.6rem; line-height: 1; color: var(--ink); margin: .3rem 0 .2rem; }
+  .price-big small { font-family: var(--font-body); font-size: .85rem; font-weight: 500; color: var(--ink-3); }
+  .pill-note { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem 1rem; border-radius: var(--r-pill); border: 1px solid var(--line); color: var(--ink-3); font-size: .82rem; font-weight: 500; }
+  .measure { max-width: 60ch; }
+  .addon-list { display: flex; flex-direction: column; gap: .9rem; margin-top: 1.3rem; }
+  .addon { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-lg); }
+  .addon-price { font-family: var(--font-display); font-size: 1.1rem; color: var(--ink); white-space: nowrap; }
+  .tier-row { display: flex; gap: .8rem; flex-wrap: wrap; margin-top: 1.2rem; }
+  .tier { flex: 1 1 160px; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 1rem 1.2rem; }
+  .tier .tn { font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); }
+  .included-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .85rem; border-radius: var(--r-pill); border: 1px solid var(--line); font-size: .85rem; color: var(--ink-2); }
+  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .acc-item { box-shadow: inset 0 -1px 0 var(--line); }
+  .acc-q { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.35rem 0; text-align: left; font-family: var(--font-body); font-size: 1.05rem; font-weight: 600; color: var(--ink); cursor: pointer; list-style: none; }
+  .acc-q::-webkit-details-marker { display: none; }
+  .acc-icon { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; transition: transform .4s var(--ease), background .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease); }
+  .acc-item[open] .acc-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: #fff; }
+  .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }
+</style>

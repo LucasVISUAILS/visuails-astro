@@ -1,0 +1,276 @@
+---
+// VISUAILS — Startseite (Deutsch). Übersetzung von src/pages/index.astro.
+// Layout/Compare/ThreeWay sind sprachbewusst (Sprache aus der URL).
+import Layout from '../../layouts/Layout.astro';
+import Compare from '../../components/Compare.astro';
+import ThreeWay from '../../components/ThreeWay.astro';
+
+const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ich%20m%C3%B6chte%20gerne%20sehen%2C%20was%20ihr%20aus%20meinen%20Produktfotos%20machen%20k%C3%B6nnt.';
+
+const make = [
+  { href: '/de/catalog', name: 'Catalog', desc: 'Saubere, konsistente Produktfotos', photo: '/img/catalog-after.webp' },
+  { href: '/de/catalog', name: 'On-Model-Catalog', desc: 'Dein Produkt, getragen von einem Modell', photo: '/img/custom-models-02.webp' },
+  { href: '/de/lifestyle', name: 'Lifestyle', desc: 'Gestylte, realistische Szenen', photo: '/img/lifestyle-glow-01.webp' },
+  { href: '/de/video', name: 'Video', desc: 'Kurze Produktvideos mit Bewegung', photo: '/img/banners-16.webp', video: true },
+];
+
+const strip = [
+  '/img/lifestyle-flash-04.webp',
+  '/img/lifestyle-dunes-01.webp',
+  '/img/lifestyle-phone-made-05.webp',
+  '/img/banners-12.webp',
+  '/img/banners-02.webp',
+];
+
+const reqs = [
+  { n: '01', title: 'Vorder- & Rückseite', body: 'Das ganze Produkt von beiden Seiten, damit nichts geraten wird.' },
+  { n: '02', title: 'Eine Detail-Nahaufnahme', body: 'Logos, Nähte, Beschläge — die Dinge, die exakt bleiben müssen.' },
+  { n: '03', title: 'Der Stoff', body: 'Eine Nahaufnahme des Materials, damit Textur und Glanz echt wirken.' },
+  { n: '04', title: 'Getragen für die Passform', body: 'Jemand, der es wirklich trägt, damit die Passform stimmt.' },
+];
+---
+
+<Layout
+  title="VISUAILS — Studio für Produktvisuals für E-Commerce-Marken"
+  description="Sende ein Produktfoto und erhalte in etwa 24 Stunden eine komplette Kampagne zurück. Catalog-, On-Model-, Lifestyle- und Videovisuals — in deinem Markenstil, von Hand geprüft, ohne Fotoshooting."
+  ogImage="/img/banners-09.webp"
+>
+  <!-- HERO -->
+  <section class="hero-editorial">
+    <div class="bg" style="background-image:url('/img/banners-09.webp')" transition:name="hero-photo"></div>
+    <div class="fade"></div>
+    <div class="hero-editorial-content container">
+      <h1 class="display" data-split-lines>Sieh aus wie die Marke,<br />die du <em class="ital">wirst.</em></h1>
+      <p class="lead-ital">Ein Studio für Produktvisuals für E-Commerce-Marken. Ein Foto rein — eine veröffentlichungsfertige Kampagne aus Catalog, Lifestyle und Video raus, in etwa 24 Stunden.</p>
+      <div class="flex" style="margin-top:1.8rem">
+        <a href="/de/test-sample" class="btn btn-primary btn-lg">Test-Visual ausprobieren</a>
+        <a href="/de/order" class="btn btn-ghost btn-lg">Jetzt bestellen</a>
+        <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
+          WhatsApp
+        </a>
+      </div>
+      <ul class="hero-benefits">
+        <li>Lieferung in ~24 Stunden</li>
+        <li>Kein Fotoshooting</li>
+        <li>Von Hand geprüft</li>
+        <li>Catalog €39,99 / Produkt</li>
+      </ul>
+    </div>
+    <div class="hero-editorial-cue"><span class="cue-line"></span>Scroll</div>
+  </section>
+
+  <!-- WAS VISUAILS IST -->
+  <section class="section-tight">
+    <div class="container intro-split">
+      <p class="editorial-statement reveal pending">Für Marken, die lieber <em>wachsen</em> als noch ein Shooting zu buchen.</p>
+      <div class="mini-benefits reveal pending">
+        <div class="mini-benefit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+          <div><strong>Zurück in etwa einem Tag</strong><span>Sende heute ein Foto, veröffentliche morgen die Kampagne — nicht in drei Wochen.</span></div>
+        </div>
+        <div class="mini-benefit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+          <div><strong>Mehr als nur KI</strong><span>Wir finishen jedes Visual mit professionellen Editing-Tools und Colour Grading, und ein Mensch prüft es von Hand — nie automatisch verschickt.</span></div>
+        </div>
+        <div class="mini-benefit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7" /></svg>
+          <div><strong>Kein Studio, nichts verschicken</strong><span>Kein Fotograf zu buchen, kein Produkt zu versenden. Dein Foto ist das ganze Briefing.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WAS WIR MACHEN -->
+  <section>
+    <div class="container">
+      <div class="section-head" style="margin-bottom:2rem">
+        <h2>Aus einem Foto machen wir <em>alles.</em></h2>
+        <p>Catalog, On-Model, Lifestyle und Video — jedes Format, das dein Shop, deine Ads und Socials brauchen. Tippe, um jedes zu sehen.</p>
+      </div>
+      <div class="make-grid reveal-group">
+        {make.map((m) => (
+          <a href={m.href} class="make-tile reveal pending">
+            <img src={m.photo} alt={`${m.name} Beispiel von VISUAILS`} loading="lazy" />
+            <div class="scrim"></div>
+            {m.video && (
+              <span class="mt-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
+            )}
+            <div class="mt-body">
+              <span class="mt-name">{m.name} &rarr;</span>
+              <span class="mt-desc">{m.desc}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- BEWEIS -->
+  <section class="section-tight">
+    <div class="container two-col">
+      <div class="reveal pending">
+        <h2>Ein Foto rein. <em>Den Rest machen wir.</em></h2>
+        <p class="lead" style="margin-top:1rem">Das ist das ganze Briefing, das wir von dir brauchen — ein Handyfoto. Sieh, wie es zu einem sauberen, veröffentlichungsfertigen Visual wird.</p>
+        <div class="flex" style="margin-top:1.6rem">
+          <a href="/de/test-sample" class="btn btn-primary">Auf deinem Produkt testen</a>
+          <a href={WA} class="btn btn-wa" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
+            WhatsApp uns
+          </a>
+        </div>
+      </div>
+      <div class="reveal pending">
+        <Compare
+          before="/img/catalog-before.webp"
+          after="/img/catalog-after.webp"
+          ratio="1/1"
+          beforeAlt="Ein rohes Handyfoto eines Kleidungsstücks vor VISUAILS"
+          afterAlt="Dasselbe Kleidungsstück als sauberes Catalog-Visual nach VISUAILS"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- QUALITÄTSGARANTIE -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:2rem">
+        <h2>Je mehr du uns zeigst, <em>desto mehr garantieren wir.</em></h2>
+        <p>Ein klares Foto reicht für den Start. Aber weil wir dein Produkt meist nie in der Hand haben, lassen ein paar zusätzliche Winkel es uns exakt treffen — hier wird Qualität gewonnen.</p>
+      </div>
+      <div class="req-grid reveal-group">
+        {reqs.map((r) => (
+          <div class="req-card reveal pending">
+            <span class="rc-num">{r.n}</span>
+            <h4>{r.title}</h4>
+            <p>{r.body}</p>
+          </div>
+        ))}
+      </div>
+      <p class="req-note reveal pending"><strong>Nicht erforderlich — nur empfohlen.</strong> Wir können bereits aus einem einzigen Foto des ganzen Produkts liefern. Sende das komplette Set und wir garantieren, dass Passform, Farbe und Detail gleich beim ersten Mal stimmen.</p>
+    </div>
+  </section>
+
+  <!-- MODELLE -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-split reverse reveal pending">
+        <div class="photo-split-media">
+          <img src="/img/custom-models-02.webp" alt="Ein VISUAILS-Modell, konsistent durch eine ganze Kampagne gestylt" loading="lazy" />
+        </div>
+        <div>
+          <h2>Ein Gesicht.<br /><em>Jede Kampagne.</em></h2>
+          <p class="lead" style="margin-top:1rem">Dasselbe Modell, fest auf deine Marke, durch deine ganze Kollektion — oder ein eigenes Gesicht, nur für dich gemacht.</p>
+          <div style="margin-top:1.2rem"><a class="link-arrow" href="/de/models">Modelle ansehen &rarr;</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STRIP -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-grid reveal pending">
+        <img src={strip[0]} alt="Lifestyle-Visual im Flash-Stil" loading="lazy" class="wide" />
+        <img src={strip[1]} alt="Lifestyle-Visual im Dunes-Stil" loading="lazy" />
+        <img src={strip[2]} alt="Lifestyle-Visual im Phone-made-Stil" loading="lazy" />
+        <img src={strip[3]} alt="Kampagnenfotografie" loading="lazy" />
+        <img src={strip[4]} alt="Kampagnenfotografie" loading="lazy" class="wide" />
+      </div>
+    </div>
+  </section>
+
+  <!-- NICHT ALLE KI IST GLEICH -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="text-align:center;margin-inline:auto">
+        <h2>Nicht alle KI ist <em>gleich.</em></h2>
+        <p style="margin-inline:auto">Generische KI-Generatoren raten. VISUAILS baut auf deinem Produkt auf, wird mit professionellen Editing-Tools und Colour Grading finishet und von einem Menschen geprüft, bevor es dich erreicht.</p>
+      </div>
+      <div class="ai-compare reveal pending">
+        <div class="ai-compare-panel generic">
+          <img src="/img/lifestyle-flash-07.webp" alt="Illustrative Simulation eines typischen generischen KI-Ergebnisses — kein echtes Konkurrenzfoto" loading="lazy" />
+          <span class="ai-compare-label">Generisches KI-Tool</span>
+          <div class="ai-compare-tags">
+            <span class="ai-tag bad">Off-Brand-Farbe, jedes Mal</span>
+            <span class="ai-tag bad">Verzerrte Hände, Logos &amp; Text</span>
+            <span class="ai-tag bad">Kein Mensch prüft es</span>
+          </div>
+        </div>
+        <div class="ai-compare-panel visuails">
+          <img src="/img/banners-14.webp" alt="Ein echtes VISUAILS-Kampagnenvisual" loading="lazy" />
+          <span class="ai-compare-label">VISUAILS</span>
+          <div class="ai-compare-tags">
+            <span class="ai-tag good">Fest auf deine exakte Markenfarbe</span>
+            <span class="ai-tag good">Produktproportionen bleiben korrekt</span>
+            <span class="ai-tag good">Jedes Mal von einem Menschen geprüft</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DREI WEGE -->
+  <section class="section-tight">
+    <div class="container">
+      <ThreeWay />
+    </div>
+  </section>
+
+  <!-- VERSPRECHEN DES GRÜNDERS -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="promise">
+        <div class="promise-lead reveal pending">
+          <span class="promise-eyebrow">Ein neues Studio — das ist unser Versprechen</span>
+          <p class="editorial-statement">Noch keine Wand voller Bewertungen. <em>Also verdienen wir es auf die ehrliche Art.</em></p>
+          <p class="promise-quote">"Ich prüfe jedes Visual selbst, bevor es dich erreicht, und wir verfeinern weiter, bis es zu deiner Marke passt. Noch unsicher? Sieh es zuerst auf deinem eigenen Produkt für €0,99."</p>
+          <div class="promise-sign">
+            <img src="/img/logo-mark.webp" alt="" width="24" height="24" />
+            <span><strong>Lucas</strong> · Gründer, VISUAILS</span>
+          </div>
+        </div>
+        <div class="mini-benefits reveal pending">
+          <div class="mini-benefit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+            <div><strong>Sieh es zuerst für €0,99</strong><span>Ein Test-Visual auf deinem eigenen Produkt, bevor du eine volle Bestellung aufgibst.</span></div>
+          </div>
+          <div class="mini-benefit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+            <div><strong>Wir verfeinern, bis es stimmt</strong><span>Jede Bestellung enthält Revisionsrunden — wir machen weiter, bis es zu deiner Marke passt.</span></div>
+          </div>
+          <div class="mini-benefit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+            <div><strong>Erste Marken bekommen extra Aufmerksamkeit</strong><span>Komm früh dazu und du bekommst unsere volle Aufmerksamkeit bei jeder Bestellung.</span></div>
+          </div>
+        </div>
+      </div>
+      <ul class="trust-bar reveal pending">
+        <li>Gemacht in Enschede, NL</li>
+        <li>Eingetragenes Unternehmen (KVK)</li>
+        <li>Jedes Visual von Hand geprüft</li>
+        <li>Direkter Draht über WhatsApp</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ABSCHLIESSENDE CTA -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="cta-band reveal pending">
+        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.8rem)">Starte mit einem<br /><em class="ital">Test-Visual.</em></h2>
+        <p class="lead" style="margin:1.2rem auto 0;text-align:center">Sieh es auf deinem eigenen Produkt für nur €0,99 — bevor du bestellst.</p>
+        <div class="flex" style="justify-content:center;margin-top:1.8rem">
+          <a href="/de/test-sample" class="btn btn-primary btn-lg">Hol dir dein Test-Visual</a>
+          <a href="/de/order" class="btn btn-ghost btn-lg">Jetzt bestellen</a>
+          <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
+            WhatsApp
+          </a>
+        </div>
+        <p style="text-align:center;margin-top:1.1rem;font-size:.84rem;color:var(--ink-3)">Teste zuerst ein €0,99-Test-Visual auf deinem Produkt &middot; du gibst vor der finalen Lieferung dein OK.</p>
+      </div>
+    </div>
+  </section>
+</Layout>

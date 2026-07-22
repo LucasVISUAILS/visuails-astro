@@ -21,6 +21,10 @@ interface Props {
   beforeLabel?: string;
   afterLabel?: string;
 }
+// Locale-aware default labels (the visible BEFORE/AFTER tags).
+const _seg = (Astro.url.pathname || '/').split('/')[1];
+const _lang = _seg === 'nl' || _seg === 'de' ? _seg : 'en';
+const _lbl = { en: ['Before', 'After'], nl: ['Voor', 'Na'], de: ['Vorher', 'Nachher'] }[_lang];
 const {
   before,
   after,
@@ -28,8 +32,8 @@ const {
   afterAlt = 'After VISUAILS',
   grade = false,
   ratio,
-  beforeLabel = 'Before',
-  afterLabel = 'After',
+  beforeLabel = _lbl[0],
+  afterLabel = _lbl[1],
 } = Astro.props;
 ---
 

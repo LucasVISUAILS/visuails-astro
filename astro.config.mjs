@@ -11,6 +11,15 @@ export default defineConfig({
   site: 'https://visuails.com',
   output: 'static',
   trailingSlash: 'ignore',
+  // Trilingual: English at the root (/), Dutch at /nl, German at /de.
+  // prefixDefaultLocale:false keeps the existing English URLs unchanged;
+  // localized pages live in src/pages/nl and src/pages/de. See src/i18n/ui.js
+  // for the shared string dictionary and the Layout's language switcher/hreflang.
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'nl', 'de'],
+    routing: { prefixDefaultLocale: false },
+  },
   build: {
     format: 'directory',
   },

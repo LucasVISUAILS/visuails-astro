@@ -7,6 +7,7 @@
 // after a transition.
 import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
+import { ui, serviceHrefs, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 
 interface Props {
   title: string;
@@ -16,22 +17,31 @@ interface Props {
 
 const { title, description, ogImage = '/img/banners-05.webp' } = Astro.props;
 
-const services = [
-  { href: '/catalog', title: 'Catalog', desc: '4 photos per product — €39.99' },
-  { href: '/lifestyle', title: 'Lifestyle', desc: 'Styled scenes & models — from €35' },
-  { href: '/video', title: 'Video', desc: 'Short product videos that move' },
-  { href: '/models', title: 'Models', desc: 'Consistent faces across every visual' },
-  { href: '/custom-models', title: 'Custom Models', desc: 'A unique face, exclusively yours' },
-];
-
+// Language is derived from the URL: /nl/... → Dutch, /de/... → German, else English.
 const path = Astro.url.pathname;
-const isActive = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
+const lang = getLangFromPath(path);
+const t = useTranslations(lang);
+const lp = (p: string) => localizedPath(lang, p);   // localize a base path for this language
+const base = stripLang(path);                        // language-neutral path (for switcher + hreflang)
+
+const services = (ui[lang] || ui.en).services.map((s: string[], i: number) => ({ href: serviceHrefs[i], title: s[0], desc: s[1] }));
+
+const isActive = (href: string) => (href === '/' ? base === '/' : base === href || base.startsWith(href + '/'));
 const year = new Date().getFullYear();
 
 // SEO — absolute canonical + OG image built off the configured site origin.
 const SITE = 'https://visuails.com';
-const canonical = new URL(path, Astro.site ?? SITE).href;
+const canonical = new URL(lp(base), Astro.site ?? SITE).href;
 const ogImageAbs = new URL(ogImage, Astro.site ?? SITE).href;
+
+// hreflang alternates — the same page in each language, x-default → English.
+const alternates = [
+  { hreflang: 'en', href: new URL(base, Astro.site ?? SITE).href },
+  { hreflang: 'nl', href: new URL(localizedPath('nl', base), Astro.site ?? SITE).href },
+  { hreflang: 'de', href: new URL(localizedPath('de', base), Astro.site ?? SITE).href },
+  { hreflang: 'x-default', href: new URL(base, Astro.site ?? SITE).href },
+];
+const switchLangs = ['en', 'nl', 'de'];
 
 const orgJsonLd = {
   '@context': 'https://schema.org',
@@ -56,7 +66,7 @@ const orgJsonLd = {
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang={lang}>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -70,6 +80,7 @@ const orgJsonLd = {
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
+  {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="theme-color" content="#0E0E16" />
   <meta property="og:title" content={title} />
@@ -78,7 +89,7 @@ const orgJsonLd = {
   <meta property="og:url" content={canonical} />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="VISUAILS" />
-  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale" content={ogLocale[lang]} />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
@@ -138,32 +149,37 @@ const orgJsonLd = {
 
   <header class="site-header" transition:persist>
     <div class="container nav">
-      <a href="/" class="brand" aria-label="VISUAILS home">
+      <a href={lp('/')} class="brand" aria-label="VISUAILS home">
         <img src="/img/logo-wordmark-light.webp" alt="VISUAILS" class="brand-word-img" />
       </a>
       <nav aria-label="Primary" class="primary-nav">
         <ul class="nav-links">
           <li class="has-menu">
-            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Services
+            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_services')}
               <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-menu" role="menu">
               {services.map((s) => (
-                <a href={s.href} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
                   <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
                 </a>
               ))}
             </div>
           </li>
-          <li><a href="/pricing" aria-current={isActive('/pricing') ? 'page' : undefined}>Pricing</a></li>
-          <li><a href="/gallery" aria-current={isActive('/gallery') ? 'page' : undefined}>Gallery</a></li>
-          <li><a href="/test-sample" aria-current={isActive('/test-sample') ? 'page' : undefined}>Test Sample</a></li>
-          <li><a href="/faq" aria-current={isActive('/faq') ? 'page' : undefined}>FAQ</a></li>
-          <li><a href="/contact" aria-current={isActive('/contact') ? 'page' : undefined}>Contact</a></li>
+          <li><a href={lp('/pricing')} aria-current={isActive('/pricing') ? 'page' : undefined}>{t('nav_pricing')}</a></li>
+          <li><a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a></li>
+          <li><a href={lp('/test-sample')} aria-current={isActive('/test-sample') ? 'page' : undefined}>{t('nav_testsample')}</a></li>
+          <li><a href={lp('/faq')} aria-current={isActive('/faq') ? 'page' : undefined}>{t('nav_faq')}</a></li>
+          <li><a href={lp('/contact')} aria-current={isActive('/contact') ? 'page' : undefined}>{t('nav_contact')}</a></li>
         </ul>
       </nav>
       <div class="nav-actions">
-        <a href="/order" class="btn btn-primary">Order now</a>
+        <div class="lang-switch" role="group" aria-label={t('lang_label')}>
+          {switchLangs.map((l) => (
+            <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+          ))}
+        </div>
+        <a href={lp('/order')} class="btn btn-primary">{t('nav_ordernow')}</a>
         <button class="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav"><span></span></button>
       </div>
     </div>
@@ -173,19 +189,24 @@ const orgJsonLd = {
     <button class="mobile-close" aria-label="Close menu">&times;</button>
     <img src="/img/logo-mark.webp" alt="VISUAILS" class="mobile-mark" width="30" height="30" />
     {services.map((s) => (
-      <a href={s.href} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+      <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
     ))}
-    <a href="/pricing">Pricing</a>
-    <a href="/gallery">Gallery</a>
-    <a href="/test-sample">Test Sample</a>
-    <a href="/faq">FAQ</a>
-    <a href="/contact">Contact</a>
+    <a href={lp('/pricing')}>{t('nav_pricing')}</a>
+    <a href={lp('/gallery')}>{t('nav_gallery')}</a>
+    <a href={lp('/test-sample')}>{t('nav_testsample')}</a>
+    <a href={lp('/faq')}>{t('nav_faq')}</a>
+    <a href={lp('/contact')}>{t('nav_contact')}</a>
     <div class="mobile-cta">
-      <a href="/order" class="btn btn-primary btn-block btn-lg">Order now</a>
+      <a href={lp('/order')} class="btn btn-primary btn-block btn-lg">{t('nav_ordernow')}</a>
       <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20some%20visuals." class="btn btn-wa btn-block" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Chat on WhatsApp
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{t('mob_chat')}
       </a>
-      <span class="mobile-cta-hint">Not sure yet? <a href="/test-sample">Try a test sample &middot; &euro;0.99</a></span>
+      <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
+      <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
+        {switchLangs.map((l) => (
+          <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+        ))}
+      </div>
     </div>
   </div>
 
@@ -197,43 +218,44 @@ const orgJsonLd = {
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a href="/" class="brand">
+          <a href={lp('/')} class="brand">
             <img src="/img/logo-wordmark-light.webp" alt="VISUAILS" class="brand-word-img" />
           </a>
-          <p>A product-visual studio for modern e-commerce brands — for founders who would rather grow than book another shoot.</p>
+          <p>{t('foot_tagline')}</p>
         </div>
         <div class="footer-col">
-          <h5>Services</h5>
+          <h5>{t('foot_services')}</h5>
           <ul>
-            {services.map((s) => <li><a href={s.href}>{s.title}</a></li>)}
-            <li><a href="/gallery">Gallery</a></li>
+            {services.map((s) => <li><a href={lp(s.href)}>{s.title}</a></li>)}
+            <li><a href={lp('/gallery')}>{t('foot_gallery')}</a></li>
           </ul>
         </div>
         <div class="footer-col">
-          <h5>Company</h5>
+          <h5>{t('foot_company')}</h5>
           <ul>
-            <li><a href="/about">About</a></li>
-            <li><a href="/pricing">Pricing</a></li>
-            <li><a href="/how-it-works">How it works</a></li>
-            <li><a href="/faq">FAQ</a></li>
-            <li><a href="/contact">Contact</a></li>
+            <li><a href={lp('/about')}>{t('foot_about')}</a></li>
+            <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
+            <li><a href={lp('/how-it-works')}>{t('foot_how')}</a></li>
+            <li><a href={lp('/faq')}>{t('foot_faq')}</a></li>
+            <li><a href={lp('/contact')}>{t('foot_contact')}</a></li>
           </ul>
         </div>
         <div class="footer-col">
-          <h5>Get in touch</h5>
+          <h5>{t('foot_touch')}</h5>
           <ul>
             <li><a href="mailto:hello@visuails.com">hello@visuails.com</a></li>
             <li><a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a></li>
-            <li style="color:var(--ink-3)">Enschede, Netherlands</li>
+            <li style="color:var(--ink-3)">{t('foot_location')}</li>
+            {t('support_note') && <li style="color:var(--ink-3);font-size:.82rem;margin-top:.2rem">{t('support_note')}</li>}
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
         <span>&copy; {year} VISUAILS &middot; KVK 99742993 &middot; VAT NL005407575B96</span>
         <span style="display:flex;gap:1.2rem;flex-wrap:wrap">
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms of Service</a>
-          <a href="/cookie-policy">Cookies</a>
+          <a href={lp('/privacy')}>{t('foot_privacy')}</a>
+          <a href={lp('/terms')}>{t('foot_terms')}</a>
+          <a href={lp('/cookie-policy')}>{t('foot_cookies')}</a>
         </span>
       </div>
     </div>
@@ -241,8 +263,8 @@ const orgJsonLd = {
 
   <div class="convbar" role="complementary" aria-label="Quick start" transition:persist>
     <img class="cb-logo" src="/img/logo-mark.webp" alt="VISUAILS" width="22" height="22" />
-    <em>See it on your own product first.</em>
-    <a class="cb-cta" href="/test-sample">Test sample &middot; €0.99</a>
+    <em>{t('cb_text')}</em>
+    <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
     <button class="cb-close" type="button" aria-label="Dismiss">&times;</button>
   </div>
 
@@ -278,6 +300,14 @@ const orgJsonLd = {
   .menu-toggle span::before { transform: translateY(-6px); } .menu-toggle span::after { transform: translateY(4px); }
   .btn-block { width: 100%; }
 
+  /* Language switcher (EN · NL · DE). Desktop version lives in .nav-actions;
+     a second copy sits inside the mobile drawer (.mobile-lang). */
+  .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: 3px; }
+  .lang-switch .ls { font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; border-radius: var(--r-pill); transition: color .18s var(--ease), background .18s var(--ease); }
+  .lang-switch .ls:hover { color: var(--ink); }
+  .lang-switch .ls.on { color: var(--ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  .mobile-lang { align-self: center; margin-top: .5rem; }
+
   .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform .4s var(--ease); overflow-y: auto; }
   .mobile-nav.open { transform: translateX(0); }
   .mobile-mark { width: 30px; height: 30px; display: block; margin-bottom: 1.6rem; }
@@ -290,7 +320,7 @@ const orgJsonLd = {
   .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
   .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
   .mobile-close { position: absolute; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
-  @media (max-width: 940px) { .nav-links, .nav-actions .btn { display: none; } .menu-toggle { display: inline-flex; } }
+  @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch { display: none; } .menu-toggle { display: inline-flex; } }
 
   .site-footer { position: relative; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr; gap: 2rem; }
