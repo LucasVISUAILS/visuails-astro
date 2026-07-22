@@ -13,6 +13,42 @@
 // hid the test-sample form. This runs at document level, bound once, and on
 // every scroll / page-load, so any reveal element in view is shown regardless
 // of per-page setup. Bulletproof, and still gives the scroll-in animation.
+// ---- i18n microcopy for JS-injected strings (thank-you summary, form hints,
+// hex advice, live totals). Language is read from the URL: /nl, /de, else en. ----
+function pageLang() {
+  return (location.pathname || '/').split('/')[1] === 'nl' ? 'nl' : 'en';
+}
+function langPrefix() { const l = pageLang(); return l === 'en' ? '' : '/' + l; }
+const I18N = {
+  en: {
+    volumeQuote: 'Volume quote', tyTitle: 'Your request',
+    ty: { name: 'Name', brand: 'Brand', email: 'Email', phone: 'Phone', vtype: 'Video type', style: 'Style', presentation: 'Shown as', model: 'Model', quantity: 'Quantity', products: 'Products', format: 'Format', quality: 'Quality', delivery: 'Delivery', background: 'Background', notes: 'Notes' },
+    phoneOptional: '— optional',
+    phoneHintWa: 'You chose WhatsApp, so a phone number is required — please include your country code.',
+    phoneHintEmail: 'We’ll reach you by email. Add a phone number if you’d rather we message you on WhatsApp.',
+    hexRec: '✓ A light, neutral background like this keeps products looking clean and professional.',
+    hexStrong: 'We’d advise against a strong colour like this — light, neutral backgrounds (white, off-white, light grey or beige) look cleanest and most professional. The choice is yours.',
+    hexDark: 'That’s on the darker side — a lighter neutral (white, off-white, light grey or beige) usually looks cleaner and more professional. The choice is yours.',
+    carryChoose: 'Let VISUAILS choose the model', carrySelected: 'Model selected: ', carryTail: ' — now pick the service you’d like to use it for.',
+  },
+  nl: {
+    volumeQuote: 'Op aanvraag', tyTitle: 'Je aanvraag',
+    ty: { name: 'Naam', brand: 'Merk', email: 'E-mail', phone: 'Telefoon', vtype: 'Videotype', style: 'Stijl', presentation: 'Getoond als', model: 'Model', quantity: 'Aantal', products: 'Producten', format: 'Formaat', quality: 'Kwaliteit', delivery: 'Levering', background: 'Achtergrond', notes: 'Opmerkingen' },
+    phoneOptional: '— optioneel',
+    phoneHintWa: 'Je koos WhatsApp, dus een telefoonnummer is verplicht — vermeld je landcode.',
+    phoneHintEmail: 'We bereiken je per e-mail. Voeg een telefoonnummer toe als je liever een WhatsApp-bericht krijgt.',
+    hexRec: '✓ Een lichte, neutrale achtergrond zoals deze houdt producten strak en professioneel.',
+    hexStrong: 'We raden een sterke kleur als deze af — lichte, neutrale achtergronden (wit, off-white, licht grijs of beige) ogen het strakst en meest professioneel. De keuze is aan jou.',
+    hexDark: 'Dit is aan de donkere kant — een lichtere neutrale kleur (wit, off-white, licht grijs of beige) oogt meestal strakker en professioneler. De keuze is aan jou.',
+    carryChoose: 'Laat VISUAILS het model kiezen', carrySelected: 'Model gekozen: ', carryTail: ' — kies nu de dienst waarvoor je het wilt gebruiken.',
+  },
+};
+function t18() { return I18N[pageLang()] || I18N.en; }
+function money(n) {
+  const s = Number.isInteger(n) ? String(n) : n.toFixed(2);
+  return '€' + (pageLang() === 'en' ? s : s.replace('.', ','));
+}
+
 function revealInView() {
   const vh = window.innerHeight || document.documentElement.clientHeight;
   document.querySelectorAll('.reveal.pending:not(.in), .reveal-mask:not(.in), .reveal-clip-wrap > .reveal-clip-inner:not(.in)').forEach((el) => {
@@ -127,9 +163,10 @@ function initHeroParallax() {
 
 let headerBound = false;
 function initHeaderScroll() {
-  const header = document.querySelector('.site-header');
-  if (!header) return;
-  const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 20);
+  // Query the header inside the handler: it is no longer transition:persist
+  // (so it re-renders per page, in the right language), which means a captured
+  // reference would go stale after a navigation.
+  const onScroll = () => { const h = document.querySelector('.site-header'); if (h) h.classList.toggle('scrolled', window.scrollY > 20); };
   onScroll();
   if (!headerBound) { headerBound = true; window.addEventListener('scroll', onScroll, { passive: true }); }
 }
@@ -189,23 +226,31 @@ function initServicesMenu() {
 let convbarDismissed = false;
 let convbarBound = false;
 function initConvbar() {
-  const bar = document.querySelector('.convbar');
-  const closeBtn = document.querySelector('.cb-close');
-  if (!bar || convbarBound) return;
-  convbarBound = true;
-  // Don't nag on the pages that already ARE the conversion action. Evaluated
-  // live in the handler because the bar persists across ClientRouter swaps.
+  // The bar re-renders per page (no longer transition:persist, so its text is
+  // localized), so we query it fresh in the handler and delegate the close.
   const suppressed = () => {
-    const p = location.pathname;
+    let p = location.pathname;
+    if (p.startsWith('/nl')) p = p.slice(3) || '/';
     return p.startsWith('/test-sample') || p.startsWith('/order') || p.startsWith('/thank-you');
   };
   const sync = () => {
+    const bar = document.querySelector('.convbar');
+    if (!bar) return;
     if (convbarDismissed || suppressed()) { bar.classList.remove('show'); return; }
     bar.classList.toggle('show', window.scrollY > 640);
   };
+  sync();
+  if (convbarBound) return;
+  convbarBound = true;
   window.addEventListener('scroll', sync, { passive: true });
   document.addEventListener('astro:page-load', sync);
-  closeBtn?.addEventListener('click', () => { convbarDismissed = true; bar.classList.remove('show'); });
+  document.addEventListener('click', (e) => {
+    if (e.target instanceof Element && e.target.closest('.cb-close')) {
+      convbarDismissed = true;
+      const bar = document.querySelector('.convbar');
+      if (bar) bar.classList.remove('show');
+    }
+  });
 }
 
 // Multi-step form wizards — handled here via document-level delegation so
@@ -243,7 +288,7 @@ function initWizards() {
     const quality = form.querySelector('input[name="quality"]:checked')?.value;
     const delivery = form.querySelector('input[name="delivery"]:checked')?.value;
     const total = qty * 35 + (format === 'Multi Format Export' ? 19.99 : 0) + (quality === '4K' ? 9.99 : 0) + (delivery === 'Priority' ? 29.99 : 0);
-    label.textContent = `€${Number.isInteger(total) ? total : total.toFixed(2)}`;
+    label.textContent = money(total);
   };
   const catalogTotal = (form) => {
     const label = document.querySelector('#cat-total');
@@ -252,8 +297,8 @@ function initWizards() {
     const raw = (sel && sel.value) || '1';
     const n = parseInt(raw, 10);
     // "More than 10" (non-numeric value) → volume quote, no fixed total.
-    if (!n || Number.isNaN(n)) { label.textContent = 'Volume quote'; return; }
-    label.textContent = `€${(n * 39.99).toFixed(2)}`;
+    if (!n || Number.isNaN(n)) { label.textContent = t18().volumeQuote; return; }
+    label.textContent = money(n * 39.99);
   };
   const videoTotal = (form) => {
     const label = document.querySelector('#video-total');
@@ -262,7 +307,7 @@ function initWizards() {
     const price = vtype && vtype.value === 'Lifestyle Video' ? 59 : 49;
     const sel = form.querySelector('#v-qty');
     const n = parseInt((sel && sel.value) || '1', 10) || 1;
-    label.textContent = `€${price * n}`;
+    label.textContent = money(price * n);
   };
   // First invalid, validatable field in a container (or null).
   const firstInvalid = (container) => {
@@ -324,11 +369,12 @@ function initThankYou() {
   const box = document.querySelector('#ty-summary');
   if (!box) return;
   const p = new URLSearchParams(location.search);
+  const L = t18().ty;
   const map = [
-    ['name', 'Name'], ['brand', 'Brand'], ['company', 'Brand'], ['email', 'Email'], ['phone', 'Phone'],
-    ['vtype', 'Video type'], ['style', 'Style'], ['presentation', 'Shown as'], ['model', 'Model'],
-    ['quantity', 'Quantity'], ['products', 'Products'], ['format', 'Format'], ['quality', 'Quality'],
-    ['delivery', 'Delivery'], ['background', 'Background'], ['message', 'Notes'], ['notes', 'Notes'],
+    ['name', L.name], ['brand', L.brand], ['company', L.brand], ['email', L.email], ['phone', L.phone],
+    ['vtype', L.vtype], ['style', L.style], ['presentation', L.presentation], ['model', L.model],
+    ['quantity', L.quantity], ['products', L.products], ['format', L.format], ['quality', L.quality],
+    ['delivery', L.delivery], ['background', L.background], ['message', L.notes], ['notes', L.notes],
   ];
   const esc = (s) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
   // Validated custom background hex (safe to inline into markup below).
@@ -351,7 +397,7 @@ function initThankYou() {
     rows.push([label, valHtml]);
   });
   if (!rows.length) { box.style.display = 'none'; return; }
-  box.innerHTML = '<h4 style="margin-bottom:.9rem">Your request</h4><dl class="ty-dl">' +
+  box.innerHTML = `<h4 style="margin-bottom:.9rem">${t18().tyTitle}</h4><dl class="ty-dl">` +
     rows.map(([l, v]) => `<div class="ty-row"><dt>${l}</dt><dd>${v}</dd></div>`).join('') +
     '</dl>';
   box.style.display = 'block';
@@ -385,14 +431,16 @@ function initFormPrefill() {
   const hub = document.querySelector('.hub-grid');
   if (model && hub) {
     const enc = encodeURIComponent(model);
-    hub.querySelectorAll('a[href^="/order-catalog"]').forEach((a) => { a.href = `/order-catalog?show=on-model&model=${enc}`; });
-    hub.querySelectorAll('a[href^="/order-lifestyle"]').forEach((a) => { a.href = `/order-lifestyle?model=${enc}`; });
+    const pfx = langPrefix();
+    hub.querySelectorAll(`a[href^="${pfx}/order-catalog"]`).forEach((a) => { a.href = `${pfx}/order-catalog?show=on-model&model=${enc}`; });
+    hub.querySelectorAll(`a[href^="${pfx}/order-lifestyle"]`).forEach((a) => { a.href = `${pfx}/order-lifestyle?model=${enc}`; });
     if (!document.querySelector('.model-carry-note')) {
+      const d = t18();
       const note = document.createElement('p');
       note.className = 'model-carry-note';
       note.style.cssText = 'margin:0 0 1.4rem;padding:.55rem 1.05rem;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:var(--r-pill);display:inline-flex;gap:.5rem;align-items:center;font-size:.88rem;color:var(--ink);';
-      const label = model === 'VISUAILS choose' ? 'Let VISUAILS choose the model' : `Model selected: ${model}`;
-      note.textContent = `${label} — now pick the service you'd like to use it for.`;
+      const label = model === 'VISUAILS choose' ? d.carryChoose : d.carrySelected + model;
+      note.textContent = label + d.carryTail;
       hub.parentNode.insertBefore(note, hub);
     }
   }
@@ -487,14 +535,15 @@ function initHexPreview() {
       // light grey or beige. Anything with real colour, or that's too dark, is
       // advised against (the customer can still choose it).
       const recommended = bright >= 0.82 && chroma <= 0.12;
+      const d = t18();
       if (recommended) {
-        advice.textContent = '✓ A light, neutral background like this keeps products looking clean and professional.';
+        advice.textContent = d.hexRec;
         advice.style.color = 'var(--success, #4AD07F)';
       } else if (chroma > 0.12) {
-        advice.textContent = 'We’d advise against a strong colour like this — light, neutral backgrounds (white, off-white, light grey or beige) look cleanest and most professional. The choice is yours.';
+        advice.textContent = d.hexStrong;
         advice.style.color = 'var(--warn, #E0A43B)';
       } else {
-        advice.textContent = 'That’s on the darker side — a lighter neutral (white, off-white, light grey or beige) usually looks cleaner and more professional. The choice is yours.';
+        advice.textContent = d.hexDark;
         advice.style.color = 'var(--warn, #E0A43B)';
       }
     }
@@ -514,12 +563,11 @@ function initContactPhone() {
     if (!phone) return;
     const wa = method.value === 'WhatsApp';
     phone.required = wa;
+    const d = t18();
     const ind = form.querySelector('[data-phone-indicator]');
-    if (ind) ind.innerHTML = wa ? '<span class="req">*</span>' : '<span class="hint" style="font-weight:400">— optional</span>';
+    if (ind) ind.innerHTML = wa ? '<span class="req">*</span>' : `<span class="hint" style="font-weight:400">${d.phoneOptional}</span>`;
     const hint = form.querySelector('[data-phone-hint]');
-    if (hint) hint.textContent = wa
-      ? 'You chose WhatsApp, so a phone number is required — please include your country code.'
-      : 'We’ll reach you by email. Add a phone number if you’d rather we message you on WhatsApp.';
+    if (hint) hint.textContent = wa ? d.phoneHintWa : d.phoneHintEmail;
   };
   document.querySelectorAll('form').forEach((f) => { if (f.querySelector('input[name="contact_method"]')) apply(f); });
   if (contactPhoneBound) return;

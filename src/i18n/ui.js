@@ -5,9 +5,9 @@
 // files. Customer service is offered in English or Dutch only — the German
 // site carries a small note to set that expectation (see `support_note`).
 
-export const languages = { en: 'English', nl: 'Nederlands', de: 'Deutsch' };
-export const localeNames = { en: 'EN', nl: 'NL', de: 'DE' };
-export const ogLocale = { en: 'en_US', nl: 'nl_NL', de: 'de_DE' };
+export const languages = { en: 'English', nl: 'Nederlands' };
+export const localeNames = { en: 'EN', nl: 'NL' };
+export const ogLocale = { en: 'en_US', nl: 'nl_NL' };
 export const defaultLang = 'en';
 
 // Services list — href is a language-neutral base path (the Layout localizes it
@@ -89,54 +89,17 @@ export const ui = {
     lang_label: 'Taal',
     support_note: '',
   },
-  de: {
-    nav_services: 'Leistungen',
-    nav_pricing: 'Preise',
-    nav_gallery: 'Galerie',
-    nav_testsample: 'Test-Visual',
-    nav_faq: 'FAQ',
-    nav_contact: 'Kontakt',
-    nav_ordernow: 'Jetzt bestellen',
-    services: [
-      ['Catalog', '4 Fotos pro Produkt — €39,99'],
-      ['Lifestyle', 'Gestylte Szenen & Modelle — ab €35'],
-      ['Video', 'Kurze Produktvideos mit Bewegung'],
-      ['Modelle', 'Konsistente Gesichter auf jedem Visual'],
-      ['Eigene Modelle', 'Ein einzigartiges Gesicht, exklusiv für dich'],
-    ],
-    mob_chat: 'Per WhatsApp chatten',
-    mob_notsure: 'Noch unsicher?',
-    mob_try: 'Test-Visual ausprobieren · €0,99',
-    foot_tagline: 'Ein Studio für Produktvisuals für moderne E-Commerce-Marken — für Gründer, die lieber wachsen als noch ein Fotoshooting zu buchen.',
-    foot_services: 'Leistungen',
-    foot_company: 'Unternehmen',
-    foot_touch: 'Kontakt',
-    foot_about: 'Über uns',
-    foot_how: 'So funktioniert’s',
-    foot_gallery: 'Galerie',
-    foot_pricing: 'Preise',
-    foot_faq: 'FAQ',
-    foot_contact: 'Kontakt',
-    foot_privacy: 'Datenschutz',
-    foot_terms: 'AGB',
-    foot_cookies: 'Cookies',
-    foot_location: 'Enschede, Niederlande',
-    cb_text: 'Sieh es zuerst auf deinem eigenen Produkt.',
-    cb_cta: 'Test-Visual · €0,99',
-    lang_label: 'Sprache',
-    support_note: 'Hinweis: Unser Kundenservice ist auf Englisch oder Niederländisch verfügbar.',
-  },
 };
 
 export function getLangFromPath(pathname) {
   const seg = (pathname || '/').split('/')[1];
-  return seg === 'nl' || seg === 'de' ? seg : 'en';
+  return seg === 'nl' ? 'nl' : 'en';
 }
 
-// Strip a leading /nl or /de, returning the language-neutral base path ('/...').
+// Strip a leading /nl, returning the language-neutral base path ('/...').
 export function stripLang(pathname) {
   const seg = (pathname || '/').split('/')[1];
-  if (seg === 'nl' || seg === 'de') {
+  if (seg === 'nl') {
     const rest = pathname.slice(3);
     return rest === '' ? '/' : rest;
   }

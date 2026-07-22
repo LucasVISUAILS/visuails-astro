@@ -1,0 +1,201 @@
+// VISUAILS — lifestyle style data (Dutch / NL). Localized copy of
+// src/data/styles.js — same shape and exports, only the human-readable
+// strings are translated. Order paths are prefixed with /nl.
+
+function grid(photos, icons) {
+  const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
+  return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
+}
+
+export const styles = [
+  {
+    slug: 'dunes',
+    name: 'Dunes',
+    tagline: 'Zon, zand en ingetogen luxe.',
+    heroPhoto: '/img/lifestyle-dunes-01.webp',
+    cardPhoto: '/img/lifestyle-dunes-01.webp',
+    beforeAfter: { before: '/img/lifestyle-dunes-02.webp', after: '/img/lifestyle-dunes-01.webp' },
+    cardIcon: 'bag',
+    cardDesc: 'Warme, zonovergoten editorial-scènes met zacht natuurlijk licht en aardse, zandkleurige omgevingen — een verheven, aspirationele sfeer die premium producten flatteert.',
+    moodTitle: 'Hoe Dunes voelt.',
+    moodParagraphs: [
+      'Zonovergoten minimalisme, aardse tonen, lange zachte schaduwen. De look van ingetogen luxe.',
+      'Het geeft producten de ruimte om vanzelfsprekend te voelen. Woestijnlicht, linnentexturen, negatieve ruimte die het woord doet.',
+    ],
+    steps: [
+      { title: 'Vind de horizon', body: 'Brede, rustige composities met ademruimte rond het product.' },
+      { title: 'Laat schaduwen rekken', body: 'Lang, laaghoekig licht voor een premium, ongehaaste sfeer.' },
+      { title: 'Laat ruimte voor tekst', body: 'Kadering die ruimte houdt voor je eigen boodschap en layout.' },
+    ],
+    grid: grid(
+      ['/img/lifestyle-dunes-02.webp'],
+      ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
+    ),
+    craft: [
+      { title: 'Een ingehouden palet, streng bewaakt', body: 'Zand, bot, terracotta en schaduw. Alles wat luider is, wordt verwijderd voordat het in beeld komt.' },
+      { title: 'Geometrie van lang licht', body: 'Schaduwen vallen laag en lang, wat vlakke producten dimensie geeft en premium producten gewicht.' },
+      { title: 'Textuur als luxe', body: 'Steen, pleisterwerk en geweven oppervlakken worden weergegeven met de precisie die minimalisme duur laat voelen.' },
+      { title: 'Ruimte met opzet gelaten', body: 'Composities houden royale negatieve ruimte — klaar voor tekst, of voor stilte.' },
+    ],
+    why: [
+      { title: 'Ingetogen luxe, zonder de studiokosten', body: 'De ingetogenheid van een premium shoot, tegen gewone visualprijs.' },
+      { title: 'Gebouwd voor rust', body: 'Een sfeer die het product ondersteunt in plaats van ermee te concurreren.' },
+      { title: 'Campagne-flexibel', body: 'Negatieve ruimte die werkt voor advertenties, banners en verpakking.' },
+    ],
+    bestFor: ['Premium skincare, sieraden en lederwaren', 'Merken die rust verkopen, geen ruis', 'Campagnes met een ingehouden stem', 'Producten die een galeriebehandeling verdienen'],
+    whatYouGet: ['Zonovergoten, aardse minimalistische scènes', 'Premium belichting met lange schaduwen', 'Composities met ruimte voor je boodschap', 'Levering in ~24 uur, met de hand gecontroleerd'],
+  },
+  {
+    slug: 'flash',
+    name: 'Flash',
+    tagline: 'Directe flits. Geen excuses.',
+    heroPhoto: '/img/lifestyle-flash-01.webp',
+    cardPhoto: '/img/lifestyle-flash-02.webp',
+    beforeAfter: { before: '/img/lifestyle-flash-07.webp', after: '/img/lifestyle-flash-01.webp' },
+    cardIcon: 'sneaker',
+    cardDesc: 'Energieke flitsvisuals met een nightlife-/editorial-gevoel — pittig, contrastrijk, trendgedreven.',
+    moodTitle: 'Hoe Flash voelt.',
+    moodParagraphs: [
+      'Hard on-camera licht, diepe schaduwen, kleur die knalt. De nightlife-look, confronterend van opzet.',
+      'Verkeerd gedaan is het gewoon hard. Goed gedaan is het elektrisch. Wij hebben er een discipline van gemaakt.',
+    ],
+    steps: [
+      { title: 'Plaats hard licht', body: 'De flits zo geplaatst dat het product strak uit het donker wordt gesneden.' },
+      { title: 'Teken met schaduw', body: 'Negatieve ruimte met opzet gevormd — nooit per ongeluk leeg gelaten.' },
+      { title: 'Bescherm het product', body: 'Contrast hard opgevoerd zonder kleur of textuur te overbelichten.' },
+    ],
+    grid: grid(
+      ['/img/lifestyle-flash-01.webp', '/img/lifestyle-flash-02.webp', '/img/lifestyle-flash-03.webp', '/img/lifestyle-flash-04.webp', '/img/lifestyle-flash-05.webp', '/img/lifestyle-flash-06.webp', '/img/lifestyle-flash-07.webp', '/img/lifestyle-flash-08.webp'],
+      ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
+    ),
+    craft: [
+      { title: 'Hard licht, hard geplaatst', body: 'De afval van de flits wordt gecontroleerd zodat het product scherp blijft terwijl de wereld erachter wegvalt.' },
+      { title: 'Schaduw als compositie', body: 'Het zwart achter het onderwerp is niet leeg — het is getekend en bepaalt waar het oog landt.' },
+      { title: 'Contrast zonder slachtoffers', body: 'We voeren de kracht op terwijl we productkleur en textuur beschermen tegen overbelichting.' },
+      { title: 'Energie die zich herhaalt', body: 'De chaos is gesystematiseerd: je tiende Flash-visual raakt net zo hard als je eerste, en matcht hem.' },
+    ],
+    why: [
+      { title: 'Stopt het scrollen', body: 'Gebouwd voor feeds waar zacht, gelijkmatig licht meteen voorbij wordt gescrold.' },
+      { title: 'Een edge die zich herhaalt', body: 'Dezelfde intensiteit op visual één en visual honderd.' },
+      { title: 'Gebouwd voor drops', body: 'Getimede energie voor launches, bijbestellingen en hypemomenten.' },
+    ],
+    bestFor: ['Streetwear, sneakers en accessoires', 'Drops, launches en hypemomenten', 'Merken met een edge om te behouden', 'Social-advertenties die duimen moeten stoppen'],
+    whatYouGet: ['Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Consistente modellen, vastgezet op je merk', 'Levering in ~24 uur, met de hand gecontroleerd'],
+  },
+  {
+    slug: 'glow',
+    name: 'Glow',
+    tagline: 'Golden hour, op afroep.',
+    heroPhoto: '/img/lifestyle-glow-01.webp',
+    cardPhoto: '/img/lifestyle-glow-01.webp',
+    beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
+    cardIcon: 'jar',
+    cardDesc: 'Gedurfde visuals geïnspireerd op fashion-editorial — directe on-camera flits, scherp contrast, sterke schaduwen, moderne campagne-esthetiek.',
+    moodTitle: 'Hoe Glow voelt.',
+    moodParagraphs: [
+      'Laagstaande zon, zachte gloed, huid en product gehuld in hetzelfde amberkleurige licht. De look van een avond die goed verliep.',
+      'Editorial-merken gebruiken dit licht omdat het alles flatteert wat het raakt. Nu is het een instelling, geen locatieshoot van twee weken.',
+    ],
+    steps: [
+      { title: 'Jaag op golden hour', body: 'Warm, laaghoekig licht op elk kader, zonder uitzondering.' },
+      { title: 'Style de scène', body: 'Kleding, props en setting afgestemd om aspirationeel te voelen, niet geënsceneerd.' },
+      { title: 'Grade voor warmte', body: 'Een consistente, editorial kleurafwerking over de hele set.' },
+    ],
+    grid: grid(
+      ['/img/lifestyle-glow-01.webp', '/img/lifestyle-glow-02.webp', '/img/lifestyle-glow-03.webp', '/img/lifestyle-glow-04.webp', '/img/lifestyle-glow-05.webp', '/img/lifestyle-glow-06.webp'],
+      ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
+    ),
+    craft: [
+      { title: 'Een afgestemde warmtecurve', body: 'Onze gouden tint is geen filter — het is een gekalibreerde grade die de productkleur eerlijk houdt terwijl alles eromheen opwarmt.' },
+      { title: 'Gloed onder controle', body: 'De zachtheid van highlights wordt per materiaal gedoseerd: glas gloeit, stof vlekt niet, metaal houdt zijn scherpte.' },
+      { title: 'Scènes gebouwd voor schemering', body: 'Sets, oppervlakken en props zijn gekozen om laag licht geloofwaardig te maken — balkons, linnen, late interieurs.' },
+      { title: 'Harmonie tussen model en licht', body: 'Wanneer een model het product draagt, worden huidtint en producttint in dezelfde grade in balans gebracht, nooit botsend.' },
+    ],
+    why: [
+      { title: 'Verkoopt een gevoel, niet alleen een product', body: 'De sfeer waar beauty- en fashion-kopers echt op reageren.' },
+      { title: 'Campagnekwaliteit, elke bestelling', body: 'Geen aparte \'hero shot\'-laag — deze afwerking is de standaard.' },
+      { title: 'Eén consistente gloed', body: 'Dezelfde warmte over je hele feed, launch na launch.' },
+    ],
+    bestFor: ['Beauty, skincare en parfum', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een aspirationele feed bouwen'],
+    whatYouGet: ['Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elk beeld', 'Levering in ~24 uur, met de hand gecontroleerd'],
+  },
+  {
+    slug: 'phone-made',
+    name: 'Phone-made',
+    tagline: 'Ziet er moeiteloos uit. Is het niet.',
+    heroPhoto: '/img/lifestyle-phone-made-01.webp',
+    cardPhoto: '/img/lifestyle-phone-made-11.webp',
+    beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
+    cardIcon: 'bottle',
+    cardDesc: 'Minimalistische visuals die lijken op authentieke, alledaagse fotografie — natuurlijk, moeiteloos, als spontane smartphonefotografie.',
+    moodTitle: 'Hoe Phone-made voelt.',
+    moodParagraphs: [
+      'Daglicht door een raam, een product op een aanrecht, een licht imperfect kader. Het leest als echt.',
+      'Het is de stijl die feeds je laat vertrouwen. Geen studioglans, geen harde verkoop. Gewoon je product dat een geloofwaardig leven leidt.',
+    ],
+    steps: [
+      { title: 'Zet het licht', body: 'Eén raam of lamp, niets geënsceneerd — licht zoals het thuis echt valt.' },
+      { title: 'Houd het uit de hand', body: 'Natuurlijke hoeken en een vleugje imperfectie, zonder statiefstijfheid.' },
+      { title: 'Snijd uit voor de feed', body: 'Gekaderd voor het platform waar het landt, vanaf de allereerste versie.' },
+    ],
+    grid: grid(
+      ['/img/lifestyle-phone-made-02.webp', '/img/lifestyle-phone-made-03.webp', '/img/lifestyle-phone-made-04.webp', '/img/lifestyle-phone-made-05.webp', '/img/lifestyle-phone-made-06.webp', '/img/lifestyle-phone-made-07.webp', '/img/lifestyle-phone-made-08.webp', '/img/lifestyle-phone-made-09.webp', '/img/lifestyle-phone-made-10.webp'],
+      ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
+    ),
+    craft: [
+      { title: 'Geëngineerde imperfectie', body: 'Lichte kanteling, natuurlijke lichtafval, eerlijke schaduwen — elk \'ongelukje\' is bewust geplaatst, zodat het gevonden aanvoelt in plaats van geënsceneerd.' },
+      { title: 'Daglichtlogica', body: 'Elke scène gehoorzaamt aan één lichtbron en één tijdstip van de dag. Dat is wat geloofwaardig van griezelig scheidt.' },
+      { title: 'Aankleding die fluistert', body: 'Props zijn zo gekozen dat ze niets dateren en van niets afleiden. Het product blijft het luidste in beeld.' },
+      { title: 'Feed-first kadering', body: 'Vooraf gecomponeerd voor 4:5 en 9:16, zodat niets belangrijks sneuvelt in de uitsnede.' },
+    ],
+    why: [
+      { title: 'Leest als echt', body: 'Geen studioverklikker — gemaakt om naast UGC te staan zonder ooit op te vallen.' },
+      { title: 'Vertrouwen vóór glans', body: 'De look die presteert wanneer een publiek wantrouwig is tegenover alles wat te gestyled is.' },
+      { title: 'Feed-native vanaf het eerste kader', body: 'Geen aparte uitsneed-ronde nodig — het is klaar zoals geleverd.' },
+    ],
+    bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die vertrouwen bouwen vóór glans', 'Organische content die er niet als advertentie uit mag zien'],
+    whatYouGet: ['Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', 'Levering in ~24 uur, met de hand gecontroleerd'],
+  },
+  {
+    slug: 'custom',
+    name: 'Custom',
+    tagline: 'Je eigen wereld, gebouwd rond je product.',
+    priceTrust: 'Op aanvraag',
+    priceUnit: '',
+    heroPhoto: '/img/banners-13.webp',
+    cardPhoto: '/img/banners-13.webp',
+    cardIcon: 'bag',
+    cardDesc: 'Niet een van onze vier sferen — een lifestyle-scène op maat, ontworpen vanuit jouw referenties.',
+    orderHref: '/nl/order-custom',
+    orderLabel: 'Start een scène op maat',
+    moodParagraphs: [
+      'Niet een van onze vier sferen — een scène ontworpen vanuit jouw referenties: de setting, styling en het licht die alleen jouw merk zou gebruiken.',
+      'We bouwen de wereld één keer, samen met jou, en houden daarna elke toekomstige visual daaraan trouw.',
+    ],
+    steps: [
+      { title: 'Brief', body: 'Deel referenties en de wereld waarin je je product wilt laten leven.' },
+      { title: 'Ontwerp', body: 'We vormen een scène op maat en een stylingrichting, samen met jou gecontroleerd.' },
+      { title: 'Produceer', body: 'Je lifestyle-visuals op maat, consistent van bestelling tot bestelling.' },
+    ],
+    grid: grid(
+      ['/img/banners-14.webp'],
+      ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
+    ),
+    bestFor: [
+      'Merken met een specifieke wereld voor ogen',
+      'Concepten die onze vier sferen niet dekken',
+      'Campagnes die hun eigen handtekening nodig hebben',
+      'Assortimenten waar de scène het verhaal is',
+    ],
+    whatYouGet: [
+      'Een lifestyle-concept op maat, samen met jou ontworpen',
+      'Scène, styling en licht afgestemd op je merk',
+      'Consistent bij elke toekomstige bestelling',
+      'Een heldere prijs, afgesproken voordat we beginnen',
+    ],
+  },
+];
+
+export function getStyle(slug) {
+  return styles.find((s) => s.slug === slug);
+}

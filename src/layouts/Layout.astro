@@ -17,7 +17,7 @@ interface Props {
 
 const { title, description, ogImage = '/img/banners-05.webp' } = Astro.props;
 
-// Language is derived from the URL: /nl/... → Dutch, /de/... → German, else English.
+// Language is derived from the URL: /nl/... → Dutch, else English.
 const path = Astro.url.pathname;
 const lang = getLangFromPath(path);
 const t = useTranslations(lang);
@@ -38,10 +38,16 @@ const ogImageAbs = new URL(ogImage, Astro.site ?? SITE).href;
 const alternates = [
   { hreflang: 'en', href: new URL(base, Astro.site ?? SITE).href },
   { hreflang: 'nl', href: new URL(localizedPath('nl', base), Astro.site ?? SITE).href },
-  { hreflang: 'de', href: new URL(localizedPath('de', base), Astro.site ?? SITE).href },
   { hreflang: 'x-default', href: new URL(base, Astro.site ?? SITE).href },
 ];
-const switchLangs = ['en', 'nl', 'de'];
+const switchLangs = ['en', 'nl'];
+
+// Subtle inline-SVG flags for the language switcher (emoji flags don't render
+// on Windows). Wrapped in an overflow-hidden .flag box, so no clip-path ids.
+const flags = {
+  en: '<svg viewBox="0 0 60 30" preserveAspectRatio="xMidYMid slice"><rect width="60" height="30" fill="#012169"/><path d="M0,0 60,30M60,0 0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 60,30M60,0 0,30" stroke="#C8102E" stroke-width="3"/><path d="M30,0V30M0,15H60" stroke="#fff" stroke-width="10"/><path d="M30,0V30M0,15H60" stroke="#C8102E" stroke-width="6"/></svg>',
+  nl: '<svg viewBox="0 0 60 30"><rect width="60" height="10" fill="#AE1C28"/><rect y="10" width="60" height="10" fill="#fff"/><rect y="20" width="60" height="10" fill="#21468B"/></svg>',
+};
 
 const orgJsonLd = {
   '@context': 'https://schema.org',
@@ -147,7 +153,7 @@ const orgJsonLd = {
 
   <div class="grain" aria-hidden="true"></div>
 
-  <header class="site-header" transition:persist>
+  <header class="site-header">
     <div class="container nav">
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
         <img src="/img/logo-wordmark-light.webp" alt="VISUAILS" class="brand-word-img" />
@@ -176,7 +182,7 @@ const orgJsonLd = {
       <div class="nav-actions">
         <div class="lang-switch" role="group" aria-label={t('lang_label')}>
           {switchLangs.map((l) => (
-            <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+            <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}><span class="flag" set:html={flags[l]} />{localeNames[l]}</a>
           ))}
         </div>
         <a href={lp('/order')} class="btn btn-primary">{t('nav_ordernow')}</a>
@@ -185,7 +191,7 @@ const orgJsonLd = {
     </div>
   </header>
 
-  <div class="mobile-nav" id="mobile-nav" transition:persist>
+  <div class="mobile-nav" id="mobile-nav">
     <button class="mobile-close" aria-label="Close menu">&times;</button>
     <img src="/img/logo-mark.webp" alt="VISUAILS" class="mobile-mark" width="30" height="30" />
     {services.map((s) => (
@@ -204,7 +210,7 @@ const orgJsonLd = {
       <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
       <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
         {switchLangs.map((l) => (
-          <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
+          <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}><span class="flag" set:html={flags[l]} />{localeNames[l]}</a>
         ))}
       </div>
     </div>
@@ -261,7 +267,7 @@ const orgJsonLd = {
     </div>
   </footer>
 
-  <div class="convbar" role="complementary" aria-label="Quick start" transition:persist>
+  <div class="convbar" role="complementary" aria-label="Quick start">
     <img class="cb-logo" src="/img/logo-mark.webp" alt="VISUAILS" width="22" height="22" />
     <em>{t('cb_text')}</em>
     <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
@@ -303,9 +309,12 @@ const orgJsonLd = {
   /* Language switcher (EN · NL · DE). Desktop version lives in .nav-actions;
      a second copy sits inside the mobile drawer (.mobile-lang). */
   .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: 3px; }
-  .lang-switch .ls { font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; border-radius: var(--r-pill); transition: color .18s var(--ease), background .18s var(--ease); }
+  .lang-switch .ls { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; border-radius: var(--r-pill); transition: color .18s var(--ease), background .18s var(--ease); }
   .lang-switch .ls:hover { color: var(--ink); }
   .lang-switch .ls.on { color: var(--ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  .lang-switch .flag { width: 15px; height: 11px; border-radius: 2px; overflow: hidden; display: inline-block; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.25); opacity: .8; transition: opacity .18s var(--ease); }
+  .lang-switch .flag svg { width: 100%; height: 100%; display: block; }
+  .lang-switch .ls.on .flag, .lang-switch .ls:hover .flag { opacity: 1; }
   .mobile-lang { align-self: center; margin-top: .5rem; }
 
   .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform .4s var(--ease); overflow-y: auto; }

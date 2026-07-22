@@ -1,0 +1,96 @@
+---
+// VISUAILS — How it works. Three-step process, a before/after drag-compare
+// as the supporting proof point, a details grid, and a closing CTA. Ported
+// from the SvelteKit how-it-works page.
+import Layout from '../../layouts/Layout.astro';
+import Compare from '../../components/Compare.astro';
+
+const details = [
+  { title: 'Doorlooptijd', body: 'Ongeveer 24 uur van briefing tot download voor standaardbestellingen.' },
+  { title: 'Revisies', body: 'Drie rondes inbegrepen, zodat we het goed krijgen.' },
+  { title: 'Consistentie', body: 'Dezelfde belichting, hoek en kadrering, bestelling na bestelling.' },
+  { title: 'Twee manieren om te bestellen', body: 'Formulieren op de site, of WhatsApp — wat jou het beste past.' },
+  { title: 'Formaten & resolutie', body: 'Hoge resolutie, e-commerce-klare bestanden. 2K inbegrepen, 4K optioneel.' },
+];
+---
+
+<Layout
+  title="Hoe het werkt — VISUAILS"
+  description="Van één productfoto tot publicatieklare catalogus-, lifestyle- en videovisuals — gegenereerd, met de hand gecontroleerd en geleverd in ongeveer 24 uur."
+>
+  <section class="hero-editorial compact">
+    <div class="bg" style="background-image:url('/img/banners-04.webp')"></div>
+    <div class="fade"></div>
+    <div class="hero-editorial-content container">
+      <h1 class="display" data-split-lines>Eén foto erin.<br />Een campagne <em>eruit</em>.</h1>
+      <p class="lead" style="margin-top:1.2rem">Jij stuurt een productfoto. Wij regelen generatie, selectie en een menselijke controle. Jij krijgt bestanden die klaar zijn om te publiceren.</p>
+      <div class="flex" style="margin-top:1.8rem">
+        <a href="/nl/order" class="btn btn-primary btn-lg">Start een bestelling</a>
+        <a href="/nl/test-sample" class="btn btn-ghost btn-lg">Probeer een proefvisual</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight"><div class="container">
+    <div class="steps reveal-group">
+      <div class="step reveal pending"><div class="step-n">01</div><h3>Upload &amp; brief</h3><p>Een productfoto en een korte notitie over de look die je wilt. Vijf minuten, van begin tot eind. Bekijk onze <a href="/nl/upload-guidelines">uploadrichtlijnen</a>.</p></div>
+      <div class="step reveal pending"><div class="step-n">02</div><h3>Wij produceren &amp; werken af</h3><p>Gegenereerd in onze pipeline, daarna met de hand verfijnd in professionele bewerkingssoftware en color-graded naar jouw merk — en een echt persoon controleert elke afbeelding voordat die wordt verzonden.</p></div>
+      <div class="step reveal pending"><div class="step-n">03</div><h3>Download &amp; gebruik</h3><p>Hoge resolutie, e-commerce-klare bestanden, meestal binnen ongeveer 24 uur. Revisies inbegrepen.</p></div>
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container two-col">
+    <div class="reveal pending">
+      <Compare
+        grade
+        before="/img/lifestyle-glow-06.webp"
+        after="/img/lifestyle-glow-06.webp"
+        beforeAlt="Een vlakke, ongegradeerde productscène vóór de afwerking van VISUAILS"
+        afterAlt="Dezelfde scène, afgewerkt en met de hand gecontroleerd door VISUAILS"
+      />
+    </div>
+    <div class="reveal pending">
+      <h2>Meer dan AI. Met de hand afgewerkt.</h2>
+      <p class="lead" style="margin-top:1.1rem">AI doet het zware werk, maar dat is pas het begin. We werken elke visual af met professionele bewerkingssoftware en color grading, en een persoon controleert nauwkeurigheid, consistentie en kadrering voordat er iets wordt verzonden — het verschil tussen een ruwe AI-tool en iets dat je zou publiceren.</p>
+      <div class="chip-row" style="margin-top:1.4rem">
+        <span class="chip"><span class="dot"></span>Professionele bewerking &amp; retouche</span>
+        <span class="chip"><span class="dot"></span>Color grading naar jouw merk</span>
+        <span class="chip"><span class="dot"></span>Menselijke nauwkeurigheidscontrole</span>
+      </div>
+    </div>
+  </div></section>
+
+  <section><div class="container">
+    <div class="section-head"><h2>De details die ertoe doen</h2></div>
+    <div class="grid grid-auto reveal-group">
+      {details.map((d) => (
+        <div class="card reveal pending"><h3 style="font-size:1.05rem">{d.title}</h3><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{d.body}</p></div>
+      ))}
+      <div class="card reveal pending"><h3 style="font-size:1.05rem">Jouw rechten</h3><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Volledige commerciële gebruiksrechten op alles wat we leveren. Details in onze <a href="/nl/terms">voorwaarden</a>.</p></div>
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div style="text-align:center;max-width:60ch;margin:0 auto 1.4rem"><h2>Nog een vraag?</h2></div>
+    <div class="flex" style="justify-content:center"><a href="/nl/faq" class="btn btn-ghost btn-lg">Lees de FAQ</a></div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">Zie het op je eigen product.</h2>
+      <p class="lead" style="margin:1rem auto 0;text-align:center">Eén proefvisual per bedrijf — slechts €0,99, geen verplichting.</p>
+      <div class="flex" style="justify-content:center;margin-top:1.8rem">
+        <a href="/nl/test-sample" class="btn btn-primary btn-lg">Proefvisual</a>
+        <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
+        <a href="https://wa.me/31625436130" class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
+      </div>
+    </div>
+  </div></section>
+</Layout>
+
+<style>
+  .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border-radius: var(--r-pill); border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
+  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .grid-auto { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+</style>

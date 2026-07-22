@@ -1,0 +1,192 @@
+---
+// VISUAILS — /custom-models. Deep dive on the bespoke-model service.
+import Layout from '../../layouts/Layout.astro';
+
+const directions = [
+  { initial: 'E', name: 'Editorial minimal', body: 'Zurückhaltendes Studiolicht, ruhige Haltung, neutrale Garderobe.' },
+  { initial: 'S', name: 'Streetwear energy', body: 'Direkter Blick, kühne Pose, kontrastreiches Licht — für Drops und Hype.' },
+  { initial: 'Q', name: 'Quiet luxury', body: 'Weiche Neutraltöne, entspannte Haltung, edle Details.' },
+  { initial: 'W', name: 'Warm & nahbar', body: 'Offener Ausdruck, natürliches Licht, alltägliche Leichtigkeit.' },
+  { initial: 'H', name: 'High-fashion editorial', body: 'Skulpturale Pose, harter Schatten, Magazin-Intensität.' },
+  { initial: 'R', name: 'Retro Americana', body: 'Warme Filmtöne, nostalgisches Styling.' },
+  { initial: 'C', name: 'Coastal & sun-worn', body: 'Sonnengebleichte Wärme, Golden-Hour-Leichtigkeit — gebaut für Dunes.' },
+  { initial: 'M', name: 'Monochrome studio', body: 'Einfarbige Garderobe, grafischer Schatten.' },
+  { initial: 'B', name: 'Bold colour-block', body: 'Gesättigte Garderobe, unverkennbar in Thumbnail-Größe.' },
+];
+
+const examples = [
+  '/img/custom-models-01.webp',
+  '/img/custom-models-02.webp',
+  '/img/custom-models-03.webp',
+  '/img/custom-models-04.webp',
+  '/img/custom-models-05.webp',
+  '/img/model-raw-01.webp',
+  '/img/model-raw-02.webp',
+];
+
+const steps = [
+  { n: '01', title: 'Intake', body: 'Du teilst Referenzen und ein Briefing zum gewünschten Look.' },
+  { n: '02', title: '2–3 Richtungen', body: 'Wir entwerfen ein paar Richtungen, auf die du reagieren kannst.' },
+  { n: '03', title: 'Du wählst', body: 'Wähle das passende Gesicht, mit einer Runde Verfeinerung.' },
+  { n: '04', title: 'Festgelegt', body: 'Wir legen das Modell fest, damit es perfekt konsistent bleibt.' },
+  { n: '05', title: 'In jeder Bestellung genutzt', body: 'Dein Modell erscheint von da an in jedem Visual.' },
+];
+---
+
+<Layout
+  title="Custom Models — ein Gesicht exklusiv für dich | VISUAILS"
+  description="Gestalte ein eigenes Modell exklusiv für deine Marke: ein kurzes Intake, 2-3 Richtungen, eine Runde Verfeinerung, dann festgelegt und in jedem Visual wiederverwendet, das du bestellst."
+>
+  <section class="page-hero">
+    <div class="container two-col" style="align-items:center">
+      <div>
+        <p class="eyebrow-page"><a href="/de/models" style="color:inherit">&larr; Modelle</a></p>
+        <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Ein Gesicht, das <em>nur</em> für deine Marke existiert.</h1>
+        <p class="lead" style="margin-top:1.2rem">Gestalte ein Modell exklusiv für dich — es erscheint in jedem Visual, das du bestellst, in diesem Monat und im nächsten Jahr.</p>
+        <div class="flex" style="margin-top:1.8rem">
+          <span class="magnet-wrap"><span class="magnet-inner"><a href="/de/order-custom" class="btn btn-primary btn-lg">Starte dein eigenes Modell</a></span></span>
+          <a href="https://wa.me/31625436130?text=Hallo%20VISUAILS%2C%20ich%20möchte%20ein%20eigenes%20Modell%20für%20meine%20Marke%20besprechen." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Auf WhatsApp besprechen</a>
+        </div>
+        <div class="trust-row" style="margin-top:2.4rem">
+          <span class="trust-item"><strong>Einmalige</strong> Design-Gebühr</span>
+          <span class="trust-item"><strong>Exklusiv</strong> für deine Marke</span>
+          <span class="trust-item"><strong>Für immer</strong> festgelegt, kostenlos wiederverwendet</span>
+        </div>
+      </div>
+      <div class="photo-split-media"><img src="/img/custom-models-03.webp" alt="Ein Porträt eines eigenen VISUAILS-Modells" loading="lazy" /></div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-split reverse reveal pending">
+        <div class="photo-split-media"><img src="/img/model-03.webp" alt="Ein VISUAILS-Modellporträt" loading="lazy" /></div>
+        <div>
+          <h2>Dein Modell, nicht <em>ein</em> Modell.</h2>
+          <p class="lead" style="margin-top:1rem">Standardmodelle werden von mehreren Marken geteilt. Ein eigenes Modell wird einmal gestaltet, nur für dich, und erscheint nirgendwo sonst.</p>
+        </div>
+      </div>
+      <div class="arrow-rows reveal-group" style="grid-template-columns:repeat(2,1fr);margin-top:clamp(2.5rem,5vw,4rem)">
+        <div class="arow reveal pending"><h3>Aus deinem Briefing gebaut</h3><p>Alter, Stimmung, Styling, Do’s und Don’ts.</p></div>
+        <div class="arow reveal pending"><h3>Exklusiv, per Design</h3><p>Kein anderes Unternehmen kann dasselbe Gesicht bestellen.</p></div>
+        <div class="arow reveal pending"><h3>Konsistent, für immer</h3><p>Dasselbe Gesicht in jedem Visual, Bestellung für Bestellung.</p></div>
+        <div class="arow reveal pending"><h3>Ohne Zusatzkosten wiederverwendet</h3><p>Einmalige Gebühr. Jede weitere Bestellung läuft zum normalen Preis.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <h2 style="margin-bottom:.6rem">Ein paar Richtungen, um <em>Ideen zu wecken.</em></h2>
+      <p class="lead" style="margin-bottom:2rem">Anschauliche Ausgangspunkte, keine feste Auswahl — nenn uns deine Referenzen und wir entwerfen 2–3 echte Richtungen.</p>
+      <div class="grid models-grid reveal-group">
+        {directions.map((d) => (
+          <div class="card model-card reveal pending">
+            <div class="monogram">{d.initial}</div>
+            <h3>{d.name}</h3>
+            <p style="font-size:.9rem;color:var(--ink-3)">{d.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <h2 style="margin-bottom:2rem">Echtes Ergebnis, kein Mockup.</h2>
+      <div class="grid grid-3 reveal-group">
+        {examples.map((photo, i) => (
+          <div class="reveal pending">
+            <div class="photo-band square"><img src={photo} alt={`Beispiel eines eigenen Modells ${i + 1}`} loading="lazy" /></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="text-align:center;margin-inline:auto">
+        <h2>Warum nicht einfach ein generisches KI-Tool prompten?</h2>
+        <p style="margin-inline:auto">Weil Haut, Hände und Identität genau die Stellen sind, an denen generische Generatoren auseinanderfallen — und genau die, an denen wir das nicht tun.</p>
+      </div>
+      <div class="ai-compare reveal pending">
+        <div class="ai-compare-panel generic">
+          <img src="/img/model-raw-01.webp" alt="Anschauliche Simulation eines typischen generisch KI-generierten Gesichts — kein echtes Foto eines Wettbewerbers" loading="lazy" />
+          <span class="ai-compare-label">Generisches KI-Tool</span>
+          <div class="ai-compare-tags">
+            <span class="ai-tag bad">Plastisch wirkende, überglättete Haut</span>
+            <span class="ai-tag bad">Bei jeder Generierung ein anderes Gesicht</span>
+            <span class="ai-tag bad">Keine menschliche Prüfung vor der Lieferung</span>
+          </div>
+        </div>
+        <div class="ai-compare-panel visuails">
+          <img src="/img/model-raw-02.webp" alt="Ein eigenes VISUAILS-Modell, echte Hauttextur und Details" loading="lazy" />
+          <span class="ai-compare-label">VISUAILS</span>
+          <div class="ai-compare-tags">
+            <span class="ai-tag good">Echte Textur — Poren, Sommersprossen, Details</span>
+            <span class="ai-tag good">Ein Gesicht, festgelegt, Bestellung für Bestellung</span>
+            <span class="ai-tag good">Jedes Mal von einem Menschen geprüft</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <h2 style="margin-bottom:2rem">Wie ein eigenes Modell entsteht</h2>
+      <div class="steps reveal-group">
+        {steps.map((s) => (
+          <div class="step reveal pending">
+            <span class="step-n">{s.n}</span>
+            <h3>{s.title}</h3>
+            <p>{s.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container two-col" style="align-items:start">
+      <div class="card reveal pending">
+        <h3>Was du bereitstellst</h3>
+        <ul class="checklist" style="margin-top:1.2rem">
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Ein paar <strong>Referenzen</strong> für den Look.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Das gewünschte <strong>Alter, die Stimmung und den Look</strong>.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Jegliche <strong>Styling</strong>-Richtung.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Deine <strong>Do’s und Don’ts.</strong></span></li>
+        </ul>
+      </div>
+      <div class="card reveal pending" style="border-color:var(--accent-line)">
+        <h3>Preise &amp; Timing</h3>
+        <p class="measure" style="margin-top:1rem">Eine <strong>einmalige Design-Gebühr</strong>, danach für immer der normale Visual-Preis. Die erste Bestellung dauert etwas länger; jede weitere läuft in der üblichen Geschwindigkeit.</p>
+        <div class="flex" style="margin-top:1.6rem">
+          <a href="/de/order-custom" class="btn btn-primary">Starte dein eigenes Modell</a>
+          <a href="/de/pricing" class="link-arrow">Preise ansehen <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="cta-band reveal pending">
+        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Gestalte das Gesicht <em>deiner</em> Marke.</h2>
+        <div class="flex" style="justify-content:center;margin-top:2rem">
+          <a href="/de/order-custom" class="btn btn-primary btn-lg">Starte dein eigenes Modell</a>
+          <a href="/de/models" class="btn btn-ghost btn-lg">Standardmodelle durchsuchen</a>
+          <a href="https://wa.me/31625436130?text=Hallo%20VISUAILS%2C%20ich%20möchte%20ein%20eigenes%20Modell%20für%20meine%20Marke%20besprechen." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .models-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .model-card { display: flex; flex-direction: column; gap: .9rem; }
+  .monogram { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 1.3rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line-strong); }
+  .measure { max-width: 66ch; }
+</style>

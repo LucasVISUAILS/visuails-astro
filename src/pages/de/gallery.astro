@@ -1,0 +1,125 @@
+---
+// VISUAILS — Galerie (Deutsch). Übersetzung von src/pages/gallery.astro.
+import Layout from '../../layouts/Layout.astro';
+import Compare from '../../components/Compare.astro';
+
+const photos = [
+  ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/banners-0${i + 1}.webp`, tag: 'campaign', alt: `Kampagnenfotografie ${i + 1}` })),
+  { src: '/img/lifestyle-dunes-01.webp', tag: 'dunes', alt: 'Lifestyle-Visual im Dunes-Stil' },
+  { src: '/img/lifestyle-dunes-02.webp', tag: 'dunes', alt: 'Lifestyle-Visual im Dunes-Stil' },
+  ...Array.from({ length: 8 }, (_, i) => ({ src: `/img/lifestyle-flash-0${i + 1}.webp`, tag: 'flash', alt: `Lifestyle-Visual im Flash-Stil ${i + 1}` })),
+  ...Array.from({ length: 6 }, (_, i) => ({ src: `/img/lifestyle-glow-0${i + 1}.webp`, tag: 'glow', alt: `Lifestyle-Visual im Glow-Stil ${i + 1}` })),
+  ...Array.from({ length: 14 }, (_, i) => ({ src: `/img/lifestyle-phone-made-${String(i + 1).padStart(2, '0')}.webp`, tag: 'phone-made', alt: `Lifestyle-Visual im Phone-made-Stil ${i + 1}` })),
+].map((p, i) => ({ ...p, wide: i % 7 === 0 }));
+
+const filters = [
+  { key: 'all', label: 'Alle' },
+  { key: 'campaign', label: 'Kampagne' },
+  { key: 'dunes', label: 'Dunes' },
+  { key: 'flash', label: 'Flash' },
+  { key: 'glow', label: 'Glow' },
+  { key: 'phone-made', label: 'Phone-made' },
+];
+---
+
+<Layout
+  title="VISUAILS — Ein Blick auf die Stile, die wir produzieren"
+  description="Die echte VISUAILS-Fotobibliothek — Kampagne, Dunes, Flash, Glow und Phone-made Lifestyle-Visuals. Bekomme ein Gefühl für die Bandbreite und beginne mit einem Test-Visual."
+>
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow-page">Galerie</p>
+      <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Ein Blick auf die Stile, die wir produzieren</h1>
+      <div class="flex" style="margin-top:1.8rem">
+        <a href="/de/test-sample" class="btn btn-primary btn-lg">Test-Visual</a>
+        <a href="/de/order" class="btn btn-ghost btn-lg">Jetzt bestellen</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE LIBRARY -->
+  <section>
+    <div class="container">
+      <div class="filter-bar" role="group" aria-label="Stile filtern">
+        {filters.map((f) => (
+          <button type="button" data-filter-key={f.key} aria-pressed={f.key === 'all' ? 'true' : 'false'}>{f.label}</button>
+        ))}
+      </div>
+
+      <div class="photo-grid" data-filterable>
+        {photos.map((p) => (
+          <img src={p.src} alt={p.alt} loading="lazy" class={p.wide ? 'wide' : ''} data-tag={p.tag} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- BEFORE / AFTER — PLACEHOLDERS. Grade-mode Compare shows the same photo
+       flattened vs. finished until real raw-photo → final pairs are shot.
+       When they land, replace each item's before/after with the real pair
+       (and drop `grade`). -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="text-align:center;margin-inline:auto">
+        <h2>Vorher &amp; nachher.</h2>
+        <p style="margin-inline:auto">Ein flacher Input wird zu einem fertigen VISUAILS-Visual — es spielt von selbst, ohne Ziehen.</p>
+      </div>
+      <div class="compare-grid reveal-group" style="margin-top:2rem">
+        <div class="reveal pending"><Compare grade before="/img/lifestyle-glow-01.webp" after="/img/lifestyle-glow-01.webp" beforeAlt="Eine flache, ungegradete Produktszene" afterAlt="Das fertige Glow-Visual" beforeLabel="Flach" afterLabel="Glow" /></div>
+        <div class="reveal pending"><Compare grade before="/img/lifestyle-flash-02.webp" after="/img/lifestyle-flash-02.webp" beforeAlt="Eine flache, ungegradete Produktszene" afterAlt="Das fertige Flash-Visual" beforeLabel="Flach" afterLabel="Flash" /></div>
+        <div class="reveal pending"><Compare grade before="/img/lifestyle-phone-made-11.webp" after="/img/lifestyle-phone-made-11.webp" beforeAlt="Eine flache, ungegradete Produktszene" afterAlt="Das fertige Phone-made-Visual" beforeLabel="Flach" afterLabel="Phone-made" /></div>
+        <div class="reveal pending"><Compare grade before="/img/lifestyle-dunes-01.webp" after="/img/lifestyle-dunes-01.webp" beforeAlt="Eine flache, ungegradete Produktszene" afterAlt="Das fertige Dunes-Visual" beforeLabel="Flach" afterLabel="Dunes" /></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING CTA -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="cta-band reveal pending">
+        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Sieh dein eigenes Produkt<br />in <em>dieser Bandbreite.</em></h2>
+        <p class="lead" style="margin:1.2rem auto 0;text-align:center">Beginne mit einem Test-Visual — eines pro Unternehmen, nur eine Verifizierung für €0,99.</p>
+        <div class="flex" style="justify-content:center;margin-top:2rem">
+          <a href="/de/test-sample" class="btn btn-primary btn-lg">Test-Visual</a>
+          <a href="/de/order" class="btn btn-ghost btn-lg">Jetzt bestellen</a>
+          <a href="https://wa.me/31625436130?text=Hallo%20VISUAILS%2C%20ich%20w%C3%BCrde%20gerne%20ein%20Test-Visual%20f%C3%BCr%20mein%20Produkt%20sehen." class="btn btn-wa" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Client-side filter — the Svelte source used $state/$derived; this is
+    // the vanilla equivalent. Re-inits on astro:page-load so it survives
+    // ClientRouter view-transition navigations (see Layout.astro).
+    function initGalleryFilter() {
+      const buttons = document.querySelectorAll<HTMLButtonElement>('.filter-bar button[data-filter-key]');
+      const photos = document.querySelectorAll<HTMLImageElement>('.photo-grid[data-filterable] img');
+      if (!buttons.length) return;
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.filterKey;
+          buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+          photos.forEach((img) => {
+            const show = key === 'all' || img.dataset.tag === key;
+            img.style.display = show ? '' : 'none';
+          });
+        });
+      });
+    }
+    initGalleryFilter();
+    document.addEventListener('astro:page-load', initGalleryFilter);
+  </script>
+</Layout>
+
+<style>
+  /* Gallery-page-only patterns: filter pills. The tile grid itself is the
+     shared .photo-grid pattern from global.css. */
+  .filter-bar { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1.8rem; }
+  .filter-bar button { font: inherit; cursor: pointer; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: var(--r-pill); padding: .5rem 1.1rem; font-size: .9rem; font-weight: 500; transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease), background var(--dur) var(--ease); }
+  .filter-bar button:hover { color: var(--ink); border-color: var(--accent-line); }
+  .filter-bar button[aria-pressed="true"] { color: #fff; background: var(--accent); border-color: transparent; }
+</style>

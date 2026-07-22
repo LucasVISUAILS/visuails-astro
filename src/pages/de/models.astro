@@ -1,0 +1,168 @@
+---
+// VISUAILS — /models. Standard-model library plus a custom-model teaser.
+import Layout from '../../layouts/Layout.astro';
+
+const standardModels = [
+  { photo: '/img/model-aaron.webp', name: 'Aaron', traits: ['Warm', 'Nahbar'] },
+  { photo: '/img/model-ava.webp', name: 'Ava', traits: ['Editorial', 'Elegant'] },
+  { photo: '/img/model-elias.webp', name: 'Elias', traits: ['Kultiviert', 'Klassisch'] },
+  { photo: '/img/model-ryan.webp', name: 'Ryan', traits: ['Sportlich', 'Energiegeladen'] },
+  { photo: '/img/model-dana.webp', name: 'Dana', traits: ['Selbstbewusst', 'Modern'] },
+  { photo: '/img/model-lisa.webp', name: 'Lisa', traits: ['Natürlich', 'Nahbar'] },
+  { photo: '/img/model-maegan.webp', name: 'Maegan', traits: ['Mutig', 'Statement'] },
+  { photo: '/img/model-rae.webp', name: 'Rae', traits: ['Sanft', 'Zurückhaltend'] },
+  { photo: '/img/model-fabi.webp', name: 'Fabi', traits: ['Clean', 'Zeitgemäß'] },
+  { photo: '/img/model-seme.webp', name: 'Seme', traits: ['Scharf', 'Editorial'] },
+];
+
+const steps = [
+  { n: '01', title: 'Intake', body: "Du teilst Referenzen und ein Briefing zum gewünschten Look." },
+  { n: '02', title: '2–3 Richtungen', body: 'Wir entwerfen ein paar Richtungen, auf die du reagieren kannst.' },
+  { n: '03', title: 'Du wählst', body: 'Wähle das passende Gesicht, mit einer Runde Verfeinerung.' },
+  { n: '04', title: 'Festgelegt', body: 'Wir legen das Modell fest, damit es perfekt konsistent bleibt.' },
+  { n: '05', title: 'In jeder Bestellung genutzt', body: 'Dein Modell erscheint von da an in jedem Visual.' },
+];
+
+const modelPhotos = ['/img/model-01.webp', '/img/model-02.webp', '/img/model-03.webp'];
+---
+
+<Layout
+  title="VISUAILS — Konsistente Modelle in jedem Visual"
+  description="Wähle ein Standardmodell aus unserer Bibliothek oder beantrage ein eigenes Modell, das exklusiv dir gehört — dasselbe Gesicht und dieselbe Stimmung in jedem Katalog-, Lifestyle- und Video-Visual, das du bestellst."
+>
+  <section class="page-hero">
+    <div class="container two-col" style="align-items:center">
+      <div>
+        <p class="eyebrow-page">Modelle</p>
+        <h1 class="display" style="max-width:18ch">Ein Gesicht.<br />Jedes Visual.</h1>
+        <p class="lead" style="margin-top:1.2rem">Wähle ein Modell aus unserer Bibliothek oder gestalte eines, das exklusiv dir gehört.</p>
+        <div class="flex" style="margin-top:1.8rem">
+          <a href="#standard" class="btn btn-primary btn-lg">Modelle durchsuchen</a>
+          <a href="/de/order-custom" class="btn btn-ghost btn-lg">Eigenes Modell anfragen</a>
+        </div>
+      </div>
+      <div class="photo-split-media"><img src="/img/model-01.webp" alt="Ein VISUAILS-Modellporträt" loading="lazy" /></div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-grid reveal pending">
+        {modelPhotos.map((p, i) => (
+          <img src={p} alt={`VISUAILS-Modellporträt ${i + 1}`} loading="lazy" class={i === 0 ? 'wide' : ''} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="standard">
+    <div class="container">
+      <h2 style="margin-bottom:2rem">Standardmodelle</h2>
+      <div class="grid models-grid reveal-group">
+        {standardModels.map((m) => (
+          <div class="card card-hover model-card reveal pending">
+            <img src={m.photo} alt={`${m.name}, ein VISUAILS-Standardmodell`} loading="lazy" class="model-avatar" />
+            <h3>{m.name}</h3>
+            <div class="chip-row">
+              {m.traits.map((t) => (
+                <span class="chip"><span class="dot"></span>{t}</span>
+              ))}
+            </div>
+            <a href={`/de/order?model=${encodeURIComponent(m.name)}`} class="link-arrow">Dieses Modell verwenden <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </div>
+        ))}
+        <div class="card card-hover model-card model-choose reveal pending">
+          <div class="monogram monogram-accent" aria-hidden="true"><svg viewBox="0 0 24 24" class="i"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg></div>
+          <h3>Lass uns wählen</h3>
+          <p style="font-size:.95rem;color:var(--ink-3)">Nenn uns dein Produkt und deine Stimmung — wir finden ein passendes Modell für dich.</p>
+          <a href="/de/order?model=VISUAILS%20choose" class="link-arrow" style="color:var(--accent-bright)">Lass uns wählen <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </div>
+      <p class="pill-note" style="margin-top:1.8rem">Standardmodelle sind im Visual-Preis enthalten — keine Zusatzgebühr.</p>
+    </div>
+  </section>
+
+  <section id="custom" class="section-tight">
+    <div class="container two-col">
+      <div class="reveal pending">
+        <h2>Dein eigenes <em>Modell.</em></h2>
+        <p class="lead" style="margin-top:1rem">Ein exklusives Modell, gebaut für deine Marke, wiederverwendet in jedem Visual, das du bestellst.</p>
+        <div class="chip-row" style="margin-top:1.6rem">
+          <span class="chip"><span class="dot"></span>Exklusiv für deine Marke</span>
+          <span class="chip"><span class="dot"></span>Festgelegt für Konsistenz</span>
+        </div>
+        <div class="flex" style="margin-top:1.8rem">
+          <span class="magnet-wrap"><span class="magnet-inner"><a href="/de/order-custom" class="btn btn-primary">Starte dein eigenes Modell</a></span></span>
+          <a href="https://wa.me/31625436130?text=Hallo%20VISUAILS%2C%20ich%20möchte%20ein%20eigenes%20Modell%20für%20meine%20Marke%20besprechen." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Auf WhatsApp besprechen</a>
+        </div>
+        <div style="margin-top:1.2rem"><a class="link-arrow" href="/de/custom-models">Richtungen &amp; alle Details ansehen <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+      </div>
+      <div class="photo-split-media reveal pending"><img src="/img/custom-models-01.webp" alt="Ein Porträt eines eigenen VISUAILS-Modells" loading="lazy" /></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <h2 style="margin-bottom:2rem">Wie ein eigenes Modell entsteht</h2>
+      <div class="steps reveal-group">
+        {steps.map((s) => (
+          <div class="step reveal pending">
+            <span class="step-n">{s.n}</span>
+            <h3>{s.title}</h3>
+            <p>{s.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container two-col" style="align-items:start">
+      <div class="card reveal pending">
+        <h3>Was du bereitstellst</h3>
+        <ul class="checklist" style="margin-top:1.2rem">
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Ein paar <strong>Referenzen</strong> für den Look.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Das gewünschte <strong>Alter, die Stimmung und den Look</strong>.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Jegliche <strong>Styling</strong>-Richtung.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Deine <strong>Do’s und Don’ts.</strong></span></li>
+        </ul>
+      </div>
+      <div class="card reveal pending" style="border-color:var(--accent-line)">
+        <h3>Preise &amp; Timing</h3>
+        <p class="measure" style="margin-top:1rem">Eine <strong>einmalige Design-Gebühr</strong>, danach für immer der normale Visual-Preis. Die erste Bestellung dauert etwas länger; jede weitere läuft in der üblichen Geschwindigkeit.</p>
+        <div class="flex" style="margin-top:1.6rem">
+          <a href="/de/order-custom" class="btn btn-primary">Starte dein eigenes Modell</a>
+          <a href="/de/pricing" class="link-arrow">Preise ansehen <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="cta-band reveal pending">
+        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Ein Gesicht. Jedes Visual.<br />Perfekt <em>konsistent.</em></h2>
+        <div class="flex" style="justify-content:center;margin-top:2rem">
+          <a href="/de/order-custom" class="btn btn-primary btn-lg">Eigenes Modell anfragen</a>
+          <a href="#standard" class="btn btn-ghost btn-lg">Standardmodelle durchsuchen</a>
+          <a href="https://wa.me/31625436130?text=Hallo%20VISUAILS%2C%20ich%20möchte%20über%20Modelle%20für%20meine%20Marke%20sprechen." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .models-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .model-card { display: flex; flex-direction: column; gap: .9rem; }
+  .model-choose { border-color: var(--accent-line); }
+  .model-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line-strong); }
+  .monogram { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 1.3rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line-strong); }
+  .monogram-accent { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent-bright); }
+  .monogram-accent svg { width: 26px; height: 26px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .85rem; border-radius: var(--r-pill); border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
+  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .pill-note { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem 1rem; border-radius: var(--r-pill); border: 1px solid var(--line); color: var(--ink-3); font-size: .82rem; font-weight: 500; }
+  .measure { max-width: 66ch; }
+</style>

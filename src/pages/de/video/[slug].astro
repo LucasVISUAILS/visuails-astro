@@ -1,0 +1,171 @@
+---
+// VISUAILS — shared template for the video style detail pages (German / DE).
+// Localized copy of src/pages/video/[slug].astro — imports the DE data file
+// and prefixes every internal link with /de.
+import Layout from '../../../layouts/Layout.astro';
+import { videoStyles } from '../../../data/videoStyles.de.js';
+
+export function getStaticPaths() {
+  return videoStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
+}
+
+const { style } = Astro.props;
+const waName = style.name.replaceAll(' ', '%20');
+const metaPrice = `${style.priceTrust}${style.priceUnit}`;
+
+// Poster / strip photography per style — real stills standing in for video
+// thumbnails, ported verbatim from VideoStylePage.svelte's `media` map.
+const media: Record<string, { hero: string; strip: string[] }> = {
+  motion: {
+    hero: '/img/banners-04.webp',
+    strip: ['/img/banners-02.webp', '/img/banners-05.webp', '/img/banners-01.webp', '/img/banners-06.webp'],
+  },
+  lifestyle: {
+    hero: '/img/lifestyle-glow-03.webp',
+    strip: ['/img/lifestyle-glow-01.webp', '/img/lifestyle-glow-05.webp', '/img/lifestyle-flash-06.webp', '/img/lifestyle-dunes-01.webp'],
+  },
+  campaign: {
+    hero: '/img/banners-08.webp',
+    strip: ['/img/banners-03.webp', '/img/custom-models-01.webp', '/img/banners-07.webp', '/img/model-02.webp'],
+  },
+  custom: {
+    hero: '/img/banners-13.webp',
+    strip: ['/img/banners-14.webp', '/img/lifestyle-glow-06.webp', '/img/banners-16.webp', '/img/lifestyle-flash-03.webp'],
+  },
+};
+const m = media[style.slug] ?? media.motion;
+---
+
+<Layout
+  title={`${style.name} — Video-Stil | VISUAILS`}
+  description={`${style.name}: ein charakteristischer VISUAILS Video-Stil. ${metaPrice}. Produziert in etwa 24 Stunden, jedes Bild von Hand geprüft.`}
+>
+  <section class="page-hero">
+    <div class="container two-col" style="align-items:center">
+      <div class="reveal pending">
+        <span class="eyebrow-page"><a href="/de/video" style="color:inherit">Video-Stile</a></span>
+        <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
+        <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
+        <div class="flex" style="margin-top:1.8rem">
+          <span class="magnet-wrap">
+            <span class="magnet-inner">
+              {style.ctaExternal ? (
+                <a href={style.ctaHref} class="btn btn-primary btn-lg" target="_blank" rel="noopener">{style.ctaLabel}</a>
+              ) : (
+                <a href={style.ctaHref} class="btn btn-primary btn-lg">{style.ctaLabel}</a>
+              )}
+            </span>
+          </span>
+          <a href={`https://wa.me/31625436130?text=Hallo%20VISUAILS%2C%20ich%20m%C3%B6chte%20gerne%20%C3%BCber%20den%20${waName}-Stil%20sprechen.`} class="btn btn-wa" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+        <div class="trust-row" style="margin-top:2rem">
+          <span class="trust-item"><strong>{style.priceTrust}</strong>{style.priceUnit}</span>
+          <span class="trust-item"><strong>~24 Std.</strong> Lieferung</span>
+          <span class="trust-item"><strong>100%</strong> von Hand geprüft</span>
+        </div>
+      </div>
+      <div class="reveal-mask photo-moment-frame" style="aspect-ratio:4/5">
+        <div class="rm-inner" style={`background-image:url('${m.hero}')`}></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mood + how it's made -->
+  <section class="section-tight">
+    <div class="container two-col" style="align-items:start">
+      <div class="reveal pending">
+        <h2>Wie sich {style.name} <em>anfühlt</em>.</h2>
+        {style.moodParagraphs.map((p) => (
+          <p class="lead" style="margin-top:1rem">{p}</p>
+        ))}
+      </div>
+      <div class="steps" style="grid-template-columns:1fr;gap:1.1rem">
+        {style.steps.map((s, i) => (
+          <div class="reveal pending step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{s.title}</h3><p>{s.body}</p></div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Real photography strip — the style, in one glance -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-grid reveal pending">
+        {m.strip.map((src, i) => (
+          <img src={src} alt={`${style.name} Beispiel-Still`} loading="lazy" class={i === 0 || i === m.strip.length - 1 ? 'wide' : ''} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Craft + why choose it, condensed into one section -->
+  <section>
+    <div class="container">
+      <h2 style="margin-bottom:2rem">Was in jedes Bild einfließt.</h2>
+      <div class="arrow-rows" style="grid-template-columns:repeat(2,1fr)">
+        {style.craft.map((c) => (
+          <div class="reveal pending"><h3>{c.title}</h3><p>{c.body}</p></div>
+        ))}
+      </div>
+      <div class="grid grid-3" style="margin-top:clamp(2.5rem,5vw,4rem)">
+        {style.why.map((w) => (
+          <div class="card reveal pending"><h3 style="font-size:1.1rem">{w.title}</h3><p style="margin-top:.6rem;font-size:.92rem;color:var(--ink-3)">{w.body}</p></div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Best for / what you get -->
+  <section class="section-tight">
+    <div class="container two-col" style="align-items:start">
+      <div class="reveal pending">
+        <h2 style="font-size:1.7rem">Ideal <em>für</em></h2>
+        <ul class="checklist" style="margin-top:1.2rem">
+          {style.bestFor.map((item) => (
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+          ))}
+        </ul>
+      </div>
+      <div class="reveal pending">
+        <h2 style="font-size:1.7rem">Was du <em>bekommst</em></h2>
+        <ul class="checklist" style="margin-top:1.2rem">
+          {style.whatYouGet.map((item) => (
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="cta-band reveal pending">
+        <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">Mach {style.name} zu <em>deinem.</em></h2>
+        <p class="lead" style="margin:1rem auto 0;text-align:center">Fordere ein Test-Visual an oder bestelle noch heute.</p>
+        <div class="flex" style="justify-content:center;margin-top:1.8rem">
+          <span class="magnet-wrap">
+            <span class="magnet-inner">
+              {style.ctaExternal ? (
+                <a href={style.ctaHref} class="btn btn-primary btn-lg" target="_blank" rel="noopener">{style.ctaLabel}</a>
+              ) : (
+                <a href={style.ctaHref} class="btn btn-primary btn-lg">{style.ctaLabel}</a>
+              )}
+            </span>
+          </span>
+          <a href="/de/test-sample" class="btn btn-ghost btn-lg">Test-Visual</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
+  .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
+  .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
+  .step p { font-size: .9rem; color: var(--ink-3); }
+</style>
