@@ -364,8 +364,12 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; border-radius: var(--r-pill); font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgba(10,9,8,.72); color: var(--ink); backdrop-filter: blur(4px); pointer-events: none; }
-.cmp .cmp-tag.before { left: 14px; }
-.cmp .cmp-tag.after { right: 14px; }
+/* Each label fades out as its own side shrinks — i.e. as the divider (driven
+   by --cmp-pos, from both the auto-animation and manual drag) sweeps toward it.
+   opacity accepts a percentage; calc(...*6) means fully opaque until ~value
+   drops under ~25%, then a smooth fade to 0. Recomputes live per frame. */
+.cmp .cmp-tag.before { left: 14px; opacity: calc((var(--cmp-pos) - 8%) * 6); }
+.cmp .cmp-tag.after { right: 14px; opacity: calc((92% - var(--cmp-pos)) * 6); }
 /* auto-drift pauses on hover; once grabbed (.cmp-drag) it's a manual slider */
 .cmp:hover { animation-play-state: paused; }
 .cmp.cmp-drag { animation: none; }
