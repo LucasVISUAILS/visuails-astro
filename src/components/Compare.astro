@@ -20,6 +20,7 @@ interface Props {
   ratio?: string;
   beforeLabel?: string;
   afterLabel?: string;
+  objectPosition?: string;
 }
 // Locale-aware default labels (the visible BEFORE/AFTER tags).
 const _seg = (Astro.url.pathname || '/').split('/')[1];
@@ -34,12 +35,17 @@ const {
   ratio,
   beforeLabel = _lbl[0],
   afterLabel = _lbl[1],
+  objectPosition,
 } = Astro.props;
+// When before/after have different aspect ratios (e.g. a 3:4 raw phone photo
+// vs a 1:1 finished shot in a square frame), object-position lets the caller
+// re-centre the crop so the product isn't clipped at an edge.
+const posStyle = objectPosition ? `object-position:${objectPosition}` : undefined;
 ---
 
 <div class:list={['cmp', grade && 'cmp-grade']} style={ratio ? `aspect-ratio:${ratio}` : undefined}>
-  <img class="cmp-before" src={before} alt={beforeAlt} loading="lazy" />
-  <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" />
+  <img class="cmp-before" src={before} alt={beforeAlt} loading="lazy" style={posStyle} />
+  <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" style={posStyle} />
   <span class="cmp-tag before">{beforeLabel}</span>
   <span class="cmp-tag after">{afterLabel}</span>
   <span class="cmp-divider">
