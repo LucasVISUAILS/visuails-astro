@@ -1,25 +1,24 @@
 ---
-// VISUAILS — homepage, "editorial chapters" build. The page reads as chapters
-// of one film: a cinematic full-bleed hero with a glass services bar, centred
-// serif chapter heads (Bodoni Moda; dimmed second line — solid colours, no
-// gradient-clipped text), glass service cards, the pinned "develop" scene,
-// gallery tiles with italic serif labels, a film-strip marquee, the promise
-// split lit by the WebGL light field, a glow test-sample moment and a closing
-// plan chapter. All motion is progressive enhancement (src/scripts/motion.js);
-// every base state is fully designed without JS.
+// VISUAILS — homepage, "The Studio Issue". The page is built like a printed
+// studio magazine: masthead + cover, an outline-type ticker as service nav,
+// a services LEDGER (bold index rows with prices + a floating preview that
+// follows the cursor), the pinned "develop" scene, the €39.99 four-photo SET
+// as ruled frames, a contact-sheet SPREAD, a statement ticker, a numbered
+// PROCESS (a true sequence), the film-strip marquee, and the existing trust
+// sections. One voice: Archivo 900. All motion is progressive enhancement
+// (src/scripts/motion.js); every base state is fully designed without JS.
 import Layout from '../layouts/Layout.astro';
 import Compare from '../components/Compare.astro';
 import ThreeWay from '../components/ThreeWay.astro';
 
 const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20see%20what%20you%20can%20make%20from%20my%20product%20photos.';
 
-// Gallery tiles — the four things we make, as big imagery. Each links to its
-// service and shows a real output.
-const tiles = [
-  { href: '/catalog', label: 'Catalog', img: '/img/catalog-after.webp', alt: 'Clean catalog visual by VISUAILS' },
-  { href: '/catalog', label: 'On-model', img: '/img/custom-models-02.webp', alt: 'On-model catalog visual by VISUAILS' },
-  { href: '/lifestyle', label: 'Lifestyle', img: '/img/lifestyle-glow-01.webp', alt: 'Lifestyle visual in the Glow style' },
-  { href: '/video', label: 'Video', img: '/img/banners-16.webp', alt: 'Product video still by VISUAILS' },
+// The services ledger — number, name, deliverable, price, preview image.
+const ledger = [
+  { n: '01', name: 'Catalog', meta: 'A full 4-photo set per product: front, back, detail close-up and one on-model shot.', price: '€39.99 / product', href: '/catalog', order: '/order-catalog', img: '/img/catalog-after.webp' },
+  { n: '02', name: 'Lifestyle', meta: 'Styled, real-world scenes in four signature looks — consistent models included.', price: 'from €35 / visual', href: '/lifestyle', order: '/order-lifestyle', img: '/img/lifestyle-glow-01.webp' },
+  { n: '03', name: 'Video', meta: 'Short product films with subtle motion, built for feeds and ads.', price: 'from €49 / video', href: '/video', order: '/order-video', img: '/img/banners-16.webp' },
+  { n: '04', name: 'Custom', meta: 'Your own style or model, designed once for your brand — then normal pricing after.', price: 'on request', href: '/custom-models', order: '/order-custom', img: '/img/custom-models-02.webp' },
 ];
 
 const strip = [
@@ -42,34 +41,47 @@ const reqs = [
 <Layout
   title="VISUAILS — Product-visual studio for e-commerce brands"
   description="Send one product photo, get a full campaign back in about 24 hours. Catalog, on-model, lifestyle and video visuals — styled to your brand, human-checked, no photoshoot needed."
-  ogImage="/img/banners-09.webp"
+  ogImage="/img/banners-14.webp"
 >
-  <!-- CHAPTER 0 · CINEMA HERO — one film still, one serif line, one way in.
-       The glass bar at the bottom is the ecosystem: every service, one tap. -->
-  <section class="hero-cinema">
-    <div class="hc-bg"><img src="/img/banners-09.webp" alt="A VISUAILS campaign visual" fetchpriority="high" transition:name="hero-photo" /></div>
-    <div class="hc-scrim" aria-hidden="true"></div>
-    <div class="container hc-copy">
-      <h1><span class="ch-l">Look like the brand</span><span class="ch-l">you're <em>becoming.</em></span></h1>
-      <p class="hc-sub">A product-visual studio for e-commerce brands. One photo in — a publish-ready campaign of catalog, lifestyle and video out, in about 24 hours.</p>
-      <div class="ch-cta">
-        <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Try it on your product — €0.99</a>
-        <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
+  <!-- THE COVER — masthead, one bold statement over a real campaign still,
+       and the ticker docked at the bottom: every service, one glance. -->
+  <section class="hero-cover">
+    <div class="hc2-bg"><img src="/img/banners-14.webp" alt="A VISUAILS campaign visual" fetchpriority="high" transition:name="hero-photo" /></div>
+    <div class="hc2-scrim" aria-hidden="true"></div>
+    <div class="container cover-inner">
+      <div class="masthead">
+        <span>VISUAILS — Product-visual studio</span>
+        <span>Enschede, NL · ~24h delivery · Human-checked</span>
       </div>
-      <ul class="hc-benefits">
-        <li>~24-hour delivery</li>
-        <li>No photoshoot</li>
-        <li>Human-checked</li>
-        <li>Catalog €39.99 / product</li>
-      </ul>
+      <div class="cover-copy">
+        <h1 class="cover-title"><span class="ch-l">Look like the brand</span><span class="ch-l">you're <em>becoming.</em></span></h1>
+        <p class="cover-sub">One product photo in — a publish-ready campaign of catalog, lifestyle and video out, in about 24 hours. No photoshoot. No prompt-roulette.</p>
+        <div class="cover-cta">
+          <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Try it on your product — €0.99</a>
+          <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
+        </div>
+        <ul class="cover-benefits">
+          <li>Catalog €39.99 / product</li>
+          <li>Lifestyle from €35</li>
+          <li>Video from €49</li>
+          <li>Revisions included</li>
+        </ul>
+      </div>
     </div>
-    <nav class="hero-svcbar" aria-label="Services">
-      <a class="hsb-item" href="/catalog">Catalog</a>
-      <a class="hsb-item" href="/catalog">On-model</a>
-      <a class="hsb-item" href="/lifestyle">Lifestyle</a>
-      <a class="hsb-item" href="/video">Video</a>
-      <a class="hsb-item" href="/custom-models">Custom models</a>
-    </nav>
+    <div class="ticker" aria-label="Services">
+      <div class="tk-row">
+        <a class="tk-item" href="/catalog">Catalog</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/catalog">On-model</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/lifestyle">Lifestyle</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/video">Video</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/custom-models">Custom models</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/catalog" aria-hidden="true" tabindex="-1">Catalog</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/catalog" aria-hidden="true" tabindex="-1">On-model</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/lifestyle" aria-hidden="true" tabindex="-1">Lifestyle</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/video" aria-hidden="true" tabindex="-1">Video</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/custom-models" aria-hidden="true" tabindex="-1">Custom models</a><span class="tk-sep" aria-hidden="true">·</span>
+      </div>
+    </div>
   </section>
 
   <!-- WHAT VISUAILS IS — the editorial statement + small, concrete benefits. -->
@@ -93,55 +105,36 @@ const reqs = [
     </div>
   </section>
 
-  <!-- CHAPTER 1 · THE TOOLKIT — four glass cards, every service with its
-       price and both doors: learn or order. -->
+  <!-- THE LEDGER — services as an index: bold names, real deliverables, real
+       prices. Hover a row and the work floats up under your cursor. -->
   <section class="ch">
     <div class="container">
-      <div class="ch-head">
-        <span class="ch-orb" aria-hidden="true"></span>
-        <h2 class="ch-title"><span class="ch-l">Everything your store needs.</span><span class="ch-l dim">Done for you.</span></h2>
-        <p class="ch-sub">Four services, one brief: your product photo. Pay per product or per visual — no subscription.</p>
+      <div class="section-head" style="margin-bottom:1.6rem">
+        <h2>The services.</h2>
+        <p>Pay per product or per visual — no subscription. Every row is a door.</p>
       </div>
-      <div class="svc-row" data-cards>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span>
-          <h3>Catalog</h3>
-          <span class="sc-price">€39.99 / product — 4 photos</span>
-          <p>Front, back, detail close-up and one on-model shot. About €10 a photo, marketplace-ready.</p>
-          <div class="sc-links"><a class="sc-more" href="/catalog">Learn more</a><a class="sc-go" href="/order-catalog">Order</a></div>
-        </article>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
-          <h3>Lifestyle</h3>
-          <span class="sc-price">From €35 / visual</span>
-          <p>Styled, real-world scenes in four signature looks — with consistent models included.</p>
-          <div class="sc-links"><a class="sc-more" href="/lifestyle">Learn more</a><a class="sc-go" href="/order-lifestyle">Order</a></div>
-        </article>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
-          <h3>Video</h3>
-          <span class="sc-price">From €49 / video</span>
-          <p>Short product videos with subtle motion for feeds and ads. Campaigns quoted per project.</p>
-          <div class="sc-links"><a class="sc-more" href="/video">Learn more</a><a class="sc-go" href="/order-video">Order</a></div>
-        </article>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg></span>
-          <h3>Custom</h3>
-          <span class="sc-price">Your own style or model</span>
-          <p>A look, model or concept designed once for your brand — then normal per-visual pricing after.</p>
-          <div class="sc-links"><a class="sc-more" href="/custom-models">Learn more</a><a class="sc-go" href="/order-custom">Discuss</a></div>
-        </article>
+      <div class="svc-index" data-index>
+        <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
+        {ledger.map((s) => (
+          <div class="idx-row" data-img={s.img}>
+            <span class="idx-num">{s.n}</span>
+            <a class="idx-main" href={s.href}>{s.name}</a>
+            <p class="idx-meta">{s.meta}</p>
+            <span class="idx-price">{s.price}</span>
+            <a class="idx-order" href={s.order}>Order &rarr;</a>
+          </div>
+        ))}
       </div>
     </div>
   </section>
 
-  <!-- CHAPTER 2 · THE DEVELOP — on desktop, motion.js pins this section and
-       scroll itself develops the photo (scrubbing the Compare's --cmp-pos);
-       the slider stays draggable after. Mobile/no-JS: the auto comparison. -->
+  <!-- THE DEVELOP — on desktop, motion.js pins this section and scroll itself
+       develops the photo (scrubbing the Compare's --cmp-pos); the slider stays
+       draggable after. Mobile/no-JS: the auto comparison. -->
   <section class="section-tight" id="develop">
     <div class="container two-col">
       <div class="reveal pending">
-        <h2 class="serif-display">One photo in. <em>The rest is ours.</em></h2>
+        <h2>One photo in. <em>The rest is ours.</em></h2>
         <p class="lead" style="margin-top:1rem">This is the entire brief we need from you — a phone photo. Watch it become a clean, publish-ready visual.</p>
         <div class="dev-steps" aria-hidden="true">
           <p class="dev-step"><span class="dn">01</span>Raw phone photo — the entire brief</p>
@@ -171,39 +164,127 @@ const reqs = [
     </div>
   </section>
 
-  <!-- CHAPTER 3 · THE WORK — big imagery, italic serif labels, each tile a
-       door into its service. -->
+  <!-- THE SET — the €39.99 catalog pack as four ruled frames. -->
+  <section class="ch">
+    <div class="container">
+      <div class="ch-head">
+        <span class="ch-orb" aria-hidden="true"></span>
+        <h2 class="ch-title"><span class="ch-l">One product. Four photos.</span><span class="ch-l dim">€39.99. That's the deal.</span></h2>
+        <p class="ch-sub">Every catalog order comes back as a complete set — including a real on-model shot. About €10 a photo.</p>
+      </div>
+      <div class="set-strip" data-stagger>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Front catalog shot" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">01</span><b>Front</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Back catalog shot" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">02</span><b>Back</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/catalog-before.webp" alt="Detail close-up of logo or fabric" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">03</span><b>Detail</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/custom-models-02.webp" alt="On-model shot, worn for fit" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">04</span><b>On-model</b></figcaption>
+        </figure>
+      </div>
+      <div class="ch-cta">
+        <a href="/order-catalog" class="btn btn-primary btn-glow">Order catalog — €39.99 / product</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE SPREAD — a contact-sheet of real output, captions ruled like a
+       magazine. Each frame opens its service. -->
   <section class="ch">
     <div class="container">
       <div class="ch-head">
         <span class="ch-orb" aria-hidden="true"></span>
         <h2 class="ch-title"><span class="ch-l">Real output.</span><span class="ch-l dim">Zero photoshoots.</span></h2>
-        <p class="ch-sub">Catalog, on-model, lifestyle and video — every format your store, ads and socials need.</p>
       </div>
-      <div class="gallery-tiles" data-tiles>
-        {tiles.map((t) => (
-          <a class="gtile" href={t.href}>
-            <img src={t.img} alt={t.alt} loading="lazy" />
-            <span class="gt-label">{t.label}</span>
-            <span class="gt-go">Explore &rarr;</span>
-          </a>
-        ))}
+      <div class="spread" data-spread>
+        <a class="sp-item sp-a" href="/catalog">
+          <div class="sp-media"><img src="/img/custom-models-02.webp" alt="On-model catalog visual" loading="lazy" /></div>
+          <div class="sp-cap"><b>On-model</b><span>Included in every catalog set</span></div>
+        </a>
+        <a class="sp-item sp-b" href="/catalog">
+          <div class="sp-media"><img src="/img/catalog-after.webp" alt="Clean catalog visual" loading="lazy" /></div>
+          <div class="sp-cap"><b>Catalog</b><span>€39.99 / product</span></div>
+        </a>
+        <a class="sp-item sp-c" href="/lifestyle">
+          <div class="sp-media"><img src="/img/lifestyle-glow-01.webp" alt="Lifestyle visual in the Glow style" loading="lazy" /></div>
+          <div class="sp-cap"><b>Lifestyle</b><span>from €35 / visual</span></div>
+        </a>
+        <a class="sp-item sp-d" href="/video">
+          <div class="sp-media">
+            <img src="/img/banners-16.webp" alt="Product video still" loading="lazy" />
+            <span class="sp-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
+          </div>
+          <div class="sp-cap"><b>Video</b><span>from €49 / video</span></div>
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- FILM STRIP — two counter-drifting rows of real output (GSAP drives the
-       loop and leans the rows with scroll velocity; static rows without JS). -->
+  <!-- STATEMENT TICKER — the promise, set as a type band. -->
+  <div class="ticker" aria-hidden="true">
+    <div class="tk-row">
+      <span class="tk-item">One photo in</span><span class="tk-sep">·</span>
+      <span class="tk-item">Campaign out</span><span class="tk-sep">·</span>
+      <span class="tk-item">Human-checked</span><span class="tk-sep">·</span>
+      <span class="tk-item">~24 hours</span><span class="tk-sep">·</span>
+      <span class="tk-item">One photo in</span><span class="tk-sep">·</span>
+      <span class="tk-item">Campaign out</span><span class="tk-sep">·</span>
+      <span class="tk-item">Human-checked</span><span class="tk-sep">·</span>
+      <span class="tk-item">~24 hours</span><span class="tk-sep">·</span>
+    </div>
+  </div>
+
+  <!-- THE PROCESS — a true sequence, from photo to publish. -->
+  <section class="ch">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:0">
+        <h2>From photo to publish.</h2>
+        <p>Four steps, one working day. You only do the first one.</p>
+      </div>
+      <div class="process" data-stagger>
+        <div class="pr-step">
+          <span class="pr-num">01</span>
+          <h3 class="pr-t">Upload</h3>
+          <p class="pr-b">One clear photo of your product — that's the whole brief.</p>
+        </div>
+        <div class="pr-step">
+          <span class="pr-num">02</span>
+          <h3 class="pr-t">We build</h3>
+          <p class="pr-b">AI plus professional editing tools and colour grading, matched to your brand.</p>
+        </div>
+        <div class="pr-step">
+          <span class="pr-num">03</span>
+          <h3 class="pr-t">Human check</h3>
+          <p class="pr-b">A person approves every visual before it reaches you — never auto-shipped.</p>
+        </div>
+        <div class="pr-step">
+          <span class="pr-num">04</span>
+          <h3 class="pr-t">Publish</h3>
+          <p class="pr-b">~24 hours later: files ready for your shop, ads and socials.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILM STRIP — two counter-drifting rows of real output. -->
   <section class="section-tight">
     <div class="visual-marquee">
       <div class="vm-row">
         <img src={strip[0]} alt="Flash-style lifestyle visual" loading="lazy" />
         <img src={strip[1]} alt="Dunes-style lifestyle visual" loading="lazy" />
-        <img src="/img/banners-14.webp" alt="Campaign visual" loading="lazy" />
+        <img src="/img/banners-09.webp" alt="Campaign visual" loading="lazy" />
         <img src={strip[2]} alt="Phone-made-style lifestyle visual" loading="lazy" />
         <img src={strip[0]} alt="" aria-hidden="true" loading="lazy" />
         <img src={strip[1]} alt="" aria-hidden="true" loading="lazy" />
-        <img src="/img/banners-14.webp" alt="" aria-hidden="true" loading="lazy" />
+        <img src="/img/banners-09.webp" alt="" aria-hidden="true" loading="lazy" />
         <img src={strip[2]} alt="" aria-hidden="true" loading="lazy" />
       </div>
       <div class="vm-row">
@@ -223,7 +304,7 @@ const reqs = [
   <section class="section-tight">
     <div class="container">
       <div class="section-head" style="margin-bottom:2rem">
-        <h2 class="serif-display">The more you show us, <em>the more we guarantee.</em></h2>
+        <h2>The more you show us, <em>the more we guarantee.</em></h2>
         <p>One clear photo is enough to get started. But because we usually never hold your product, a few extra angles let us match it exactly — this is where quality is won.</p>
       </div>
       <div class="req-grid reveal-group">
@@ -247,7 +328,7 @@ const reqs = [
           <img src="/img/custom-models-02.webp" alt="A VISUAILS model, styled consistently across a campaign" loading="lazy" />
         </div>
         <div>
-          <h2 class="serif-display">One face.<br /><em>Every campaign.</em></h2>
+          <h2>One face.<br /><em>Every campaign.</em></h2>
           <p class="lead" style="margin-top:1rem">The same model, locked to your brand, across your whole collection — or a custom face made only for you.</p>
           <div style="margin-top:1.2rem"><a class="link-arrow" href="/models">Browse the models &rarr;</a></div>
         </div>
@@ -259,7 +340,7 @@ const reqs = [
   <section class="section-tight">
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2 class="serif-display">Not all AI is <em>equal.</em></h2>
+        <h2>Not all AI is <em>equal.</em></h2>
         <p style="margin-inline:auto">Generic AI generators guess. VISUAILS is built on your product, finished with professional editing tools and colour grading, then checked by a person before it reaches you.</p>
       </div>
       <div class="ai-compare reveal pending">
@@ -292,9 +373,7 @@ const reqs = [
     </div>
   </section>
 
-  <!-- CHAPTER 4 · THE PROMISE — the honest-trust split, lit from behind by
-       the WebGL light field (shader-hero.js mounts on #hero-shader; the CSS
-       fallback carries the look without WebGL). -->
+  <!-- THE PROMISE — the honest-trust split, lit by the WebGL light field. -->
   <section class="ch ch-promise">
     <div class="hero-fallback" aria-hidden="true"></div>
     <canvas id="hero-shader" aria-hidden="true"></canvas>
@@ -326,7 +405,7 @@ const reqs = [
     </div>
   </section>
 
-  <!-- CHAPTER 5 · THE TEST SAMPLE — the glow moment: one comet, one ask. -->
+  <!-- THE TEST SAMPLE — the glow moment: one comet, one ask. -->
   <section class="ch">
     <div class="container ch-head">
       <span class="ch-orb" aria-hidden="true"></span>
@@ -340,12 +419,12 @@ const reqs = [
     </div>
   </section>
 
-  <!-- CHAPTER 6 · FIND YOUR WAY IN — per product, or fully custom. -->
+  <!-- FIND YOUR WAY IN — per product, or fully custom. -->
   <section class="section-tight">
     <div class="container plan-grid">
       <div class="reveal pending">
         <h2 class="ch-title" style="text-align:left"><span class="ch-l">Find your way in.</span></h2>
-        <div class="plan-cols">
+        <div class="plan-cols" data-stagger>
           <div class="plan-col">
             <h3>Per product</h3>
             <p>Catalog at €39.99 per product (a 4-photo set), lifestyle from €35, video from €49. No subscription — order five or five hundred.</p>

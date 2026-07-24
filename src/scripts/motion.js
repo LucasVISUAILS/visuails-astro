@@ -1,13 +1,12 @@
-// VISUAILS — GSAP scroll choreography for the chapter system. This module
-// owns only what CSS/IO can't do well: the cinema-hero entrance, chapter-head
-// blooms, the pinned "develop" scrub, card/tile staggers, the comet draw and
-// the marquee's velocity lean. interactions.js keeps handling ordinary
-// reveals — the two layers never share targets (this binds to chapter/data
-// hooks only).
+// VISUAILS — GSAP choreography for "The Studio Issue" homepage. Owns only
+// what CSS/IO can't do well: the cover entrance, ticker loops, the ledger's
+// floating preview, the pinned develop scrub, spread/stagger arrivals, the
+// comet draw and the marquee's velocity lean. interactions.js keeps handling
+// ordinary reveals — layers never share targets (data/chapter hooks only).
 //
-// Lifecycle (ClientRouter): built inside a gsap.context, reverted on
+// Lifecycle (ClientRouter): built in a gsap.context, reverted on
 // astro:before-swap, rebuilt on astro:page-load. prefers-reduced-motion skips
-// everything; base states are fully designed without this file.
+// everything; every base state is fully designed without this file.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -17,67 +16,109 @@ let ctx = null;
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Cinema hero: slow settle on the film still, then the serif line rises out
-// of a blur, sub/benefits follow, the glass services bar docks last.
-function heroCinema() {
-  const hero = document.querySelector('.hero-cinema');
+// Cover: the film still settles while the masthead rules itself in, the 900
+// headline lines rise from a blur, then sub/CTAs/benefits and the ticker.
+function heroCover() {
+  const hero = document.querySelector('.hero-cover');
   if (!hero) return;
-  const bg = hero.querySelector('.hc-bg img');
-  if (bg) gsap.fromTo(bg, { scale: 1.14 }, { scale: 1, duration: 2.6, ease: 'power2.out' });
-  const lines = hero.querySelectorAll('.hc-copy h1 .ch-l');
-  if (lines.length) {
-    gsap.from(lines, { y: 54, opacity: 0, filter: 'blur(12px)', duration: 1.25, ease: 'power4.out', stagger: 0.14, delay: 0.1, clearProps: 'filter' });
-  }
-  gsap.from(hero.querySelectorAll('.hc-sub, .hc-copy .ch-cta, .hc-benefits'), {
-    y: 22, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.55, clearProps: 'all',
+  const bg = hero.querySelector('.hc2-bg img');
+  if (bg) gsap.fromTo(bg, { scale: 1.12 }, { scale: 1, duration: 2.4, ease: 'power2.out' });
+  const mast = hero.querySelector('.masthead');
+  if (mast) gsap.from(mast, { y: -14, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.1, clearProps: 'all' });
+  const lines = hero.querySelectorAll('.cover-title .ch-l');
+  if (lines.length) gsap.from(lines, { y: 56, opacity: 0, filter: 'blur(12px)', duration: 1.2, ease: 'power4.out', stagger: 0.13, delay: 0.18, clearProps: 'filter' });
+  gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta, .cover-benefits'), {
+    y: 22, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.6, clearProps: 'all',
   });
-  const bar = hero.querySelector('.hero-svcbar');
-  if (bar) gsap.from(bar, { y: 28, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.95, clearProps: 'all' });
+  const tick = hero.querySelector('.ticker');
+  if (tick) gsap.from(tick, { y: 24, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.95, clearProps: 'all' });
 }
 
-// Chapter heads: bloom swells behind while the serif lines rise from a blur,
-// bright line first, dimmed line trailing — the "metallic fade" in motion.
+// Tickers: seamless outline-type loops (row content is duplicated in markup).
+function tickers() {
+  gsap.utils.toArray('.tk-row').forEach((row, i) => {
+    const dir = i % 2 === 0 ? -1 : 1;
+    gsap.fromTo(row,
+      { xPercent: dir === 1 ? -50 : 0 },
+      { xPercent: dir === 1 ? 0 : -50, ease: 'none', duration: 34 + i * 8, repeat: -1 });
+  });
+}
+
+// Services ledger: rows rise in; on fine pointers a floating preview follows
+// the cursor, swapping to each row's image.
+function ledger() {
+  const idx = document.querySelector('[data-index]');
+  if (!idx) return;
+  const rows = gsap.utils.toArray(idx.querySelectorAll('.idx-row'));
+  if (rows.length) {
+    gsap.from(rows, {
+      y: 34, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, clearProps: 'all',
+      scrollTrigger: { trigger: idx, start: 'top 82%', once: true },
+    });
+  }
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+  const float = idx.querySelector('.idx-float');
+  if (!float) return;
+  const img = float.querySelector('img');
+  const xTo = gsap.quickTo(float, 'x', { duration: 0.5, ease: 'power3.out' });
+  const yTo = gsap.quickTo(float, 'y', { duration: 0.5, ease: 'power3.out' });
+  idx.addEventListener('pointermove', (e) => {
+    const r = idx.getBoundingClientRect();
+    xTo(e.clientX - r.left + 26);
+    yTo(e.clientY - r.top - 130);
+  }, { passive: true });
+  rows.forEach((row) => {
+    row.addEventListener('pointerenter', () => {
+      const src = row.getAttribute('data-img');
+      if (src && img && img.getAttribute('src') !== src) img.setAttribute('src', src);
+      gsap.to(float, { autoAlpha: 1, scale: 1, rotate: 3, duration: 0.35, ease: 'power3.out' });
+    });
+  });
+  idx.addEventListener('pointerleave', () => gsap.to(float, { autoAlpha: 0, scale: 0.92, duration: 0.3, ease: 'power3.in' }));
+  gsap.set(float, { autoAlpha: 0, scale: 0.92 });
+}
+
+// Chapter heads: bloom swells while the bold lines rise from a blur —
+// bright line first, dimmed line trailing.
 function chapterHeads() {
   gsap.utils.toArray('.ch-head').forEach((head) => {
-    const tl = gsap.timeline({
-      scrollTrigger: { trigger: head, start: 'top 80%', once: true },
-    });
+    const tl = gsap.timeline({ scrollTrigger: { trigger: head, start: 'top 80%', once: true } });
     const orb = head.querySelector('.ch-orb');
     if (orb) tl.from(orb, { scale: 0.55, opacity: 0, duration: 1.4, ease: 'power2.out' }, 0);
     const lines = head.querySelectorAll('.ch-l');
-    if (lines.length) tl.from(lines, { y: 44, opacity: 0, filter: 'blur(10px)', duration: 1.1, ease: 'power4.out', stagger: 0.13, clearProps: 'filter' }, 0.05);
+    if (lines.length) tl.from(lines, { y: 44, opacity: 0, filter: 'blur(10px)', duration: 1.05, ease: 'power4.out', stagger: 0.13, clearProps: 'filter' }, 0.05);
     const rest = head.querySelectorAll('.ch-sub, .ch-cta, .ch-kicker, .comet');
     if (rest.length) tl.from(rest, { y: 18, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.08, clearProps: 'all' }, 0.4);
   });
 }
 
-// Glass service cards + gallery tiles: staggered arrivals. Tiles open from a
-// clipped crop with their italic serif label sliding in after.
-function cardsAndTiles() {
-  const cards = gsap.utils.toArray('[data-cards] .svc-card');
-  if (cards.length) {
-    gsap.from(cards, {
-      y: 38, opacity: 0, duration: 0.95, ease: 'power3.out', stagger: 0.09, clearProps: 'all',
-      scrollTrigger: { trigger: '[data-cards]', start: 'top 82%', once: true },
+// Contact-sheet spread: frames open from a crop, captions rule in after.
+function spread() {
+  const grid = document.querySelector('[data-spread]');
+  if (!grid) return;
+  const items = gsap.utils.toArray(grid.querySelectorAll('.sp-media'));
+  const caps = gsap.utils.toArray(grid.querySelectorAll('.sp-cap'));
+  const tl = gsap.timeline({ scrollTrigger: { trigger: grid, start: 'top 80%', once: true } });
+  tl.from(items, {
+    clipPath: 'inset(52% 6% 6% 6% round 14px)', scale: 1.04, opacity: 0,
+    duration: 1.1, ease: 'power4.out', stagger: 0.1, clearProps: 'clipPath,scale,opacity',
+  }, 0)
+    .from(caps, { y: 14, opacity: 0, duration: 0.6, ease: 'power3.out', stagger: 0.08, clearProps: 'all' }, 0.45);
+}
+
+// Generic ruled-group arrivals (the set, the process, plan columns).
+function staggerGroups() {
+  gsap.utils.toArray('[data-stagger]').forEach((group) => {
+    gsap.from(group.children, {
+      y: 30, opacity: 0, duration: 0.85, ease: 'power3.out', stagger: 0.09, clearProps: 'all',
+      scrollTrigger: { trigger: group, start: 'top 84%', once: true },
     });
-  }
-  const tiles = gsap.utils.toArray('[data-tiles] .gtile');
-  if (tiles.length) {
-    const tl = gsap.timeline({ scrollTrigger: { trigger: '[data-tiles]', start: 'top 80%', once: true } });
-    tl.from(tiles, {
-      clipPath: 'inset(58% 8% 8% 8% round 18px)', scale: 1.04, opacity: 0,
-      duration: 1.15, ease: 'power4.out', stagger: 0.1, clearProps: 'clipPath,scale,opacity',
-    }, 0)
-      .from(gsap.utils.toArray('[data-tiles] .gt-label'), {
-        x: -26, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.1, clearProps: 'all',
-      }, 0.45);
-  }
+  });
 }
 
 // The signature scene: while #develop is pinned, scroll "develops" the raw
-// phone photo into the finished visual by scrubbing the SAME CSS variable
-// (--cmp-pos) the Compare component uses — the slider stays draggable after.
-// Desktop only; mobile / no-JS keeps the auto-drifting comparison.
+// phone photo into the finished visual by scrubbing the Compare's --cmp-pos;
+// the slider stays draggable after. Desktop only.
 function developScene() {
   const mm = gsap.matchMedia();
   mm.add('(min-width: 900px)', () => {
@@ -90,10 +131,7 @@ function developScene() {
     cmp.classList.add('cmp-drag');
     gsap.set(steps, { opacity: 0.3 });
     const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: sec, start: 'top top', end: '+=130%',
-        scrub: 0.55, pin: true, anticipatePin: 1,
-      },
+      scrollTrigger: { trigger: sec, start: 'top top', end: '+=130%', scrub: 0.55, pin: true, anticipatePin: 1 },
     });
     tl.fromTo(cmp, { '--cmp-pos': '94%' }, { '--cmp-pos': '10%', ease: 'none', duration: 1 }, 0);
     if (steps.length === 3) {
@@ -106,8 +144,7 @@ function developScene() {
   });
 }
 
-// Film-strip marquee: infinite counter-drift + a slight lean with scroll
-// velocity, like film reacting to the pull.
+// Film-strip marquee: counter-drift + a slight lean with scroll velocity.
 function marquee() {
   const rows = gsap.utils.toArray('.vm-row');
   if (!rows.length) return;
@@ -134,8 +171,7 @@ function marquee() {
   });
 }
 
-// The comet above the test-sample chapter: stroke draws itself in as the
-// chapter enters, the head sparking at the end of the arc.
+// The comet above the test-sample chapter draws itself in.
 function comet() {
   const path = document.querySelector('.comet path');
   if (!path || typeof path.getTotalLength !== 'function') return;
@@ -150,14 +186,16 @@ function comet() {
 function init() {
   if (reduced()) return;
   ctx = gsap.context(() => {
-    heroCinema();
+    heroCover();
+    tickers();
+    ledger();
     chapterHeads();
-    cardsAndTiles();
+    spread();
+    staggerGroups();
     developScene();
     marquee();
     comet();
   });
-  // Late-loading images shift pin math — refresh once everything settles.
   window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 }
 
@@ -166,7 +204,6 @@ function destroy() {
   ScrollTrigger.getAll().forEach((t) => t.kill());
 }
 
-// astro:page-load also fires on the initial load, so it is the single entry
-// point — no bare init() here (it would double-run the hero entrance).
+// astro:page-load also fires on the initial load — single entry point.
 document.addEventListener('astro:page-load', () => { destroy(); init(); });
 document.addEventListener('astro:before-swap', destroy);

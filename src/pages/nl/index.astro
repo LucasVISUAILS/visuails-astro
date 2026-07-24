@@ -1,5 +1,5 @@
 ---
-// VISUAILS — homepage (Nederlands), "editorial chapters" build. Spiegel van
+// VISUAILS — homepage (Nederlands), "The Studio Issue". Spiegel van
 // src/pages/index.astro; zie dat bestand voor de opzet. Motion/shader zijn
 // progressive enhancement — elke basisstaat is volledig ontworpen zonder JS.
 import Layout from '../../layouts/Layout.astro';
@@ -8,11 +8,11 @@ import ThreeWay from '../../components/ThreeWay.astro';
 
 const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20wil%20graag%20zien%20wat%20jullie%20van%20mijn%20productfoto%27s%20kunnen%20maken.';
 
-const tiles = [
-  { href: '/nl/catalog', label: 'Catalog', img: '/img/catalog-after.webp', alt: 'Strakke catalogvisual van VISUAILS' },
-  { href: '/nl/catalog', label: 'On-model', img: '/img/custom-models-02.webp', alt: 'On-model catalogvisual van VISUAILS' },
-  { href: '/nl/lifestyle', label: 'Lifestyle', img: '/img/lifestyle-glow-01.webp', alt: 'Lifestyle-visual in de Glow-stijl' },
-  { href: '/nl/video', label: 'Video', img: '/img/banners-16.webp', alt: 'Productvideo-still van VISUAILS' },
+const ledger = [
+  { n: '01', name: 'Catalog', meta: 'Een volledige set van 4 foto’s per product: voorkant, achterkant, detail-close-up en één on-model shot.', price: '€39,99 / product', href: '/nl/catalog', order: '/nl/order-catalog', img: '/img/catalog-after.webp' },
+  { n: '02', name: 'Lifestyle', meta: 'Gestylde, realistische scènes in vier signatuurstijlen — consistente modellen inbegrepen.', price: 'vanaf €35 / visual', href: '/nl/lifestyle', order: '/nl/order-lifestyle', img: '/img/lifestyle-glow-01.webp' },
+  { n: '03', name: 'Video', meta: 'Korte productfilms met subtiele beweging, gebouwd voor feeds en ads.', price: 'vanaf €49 / video', href: '/nl/video', order: '/nl/order-video', img: '/img/banners-16.webp' },
+  { n: '04', name: 'Custom', meta: 'Je eigen stijl of model, één keer ontworpen voor jouw merk — daarna de normale prijs.', price: 'op aanvraag', href: '/nl/custom-models', order: '/nl/order-custom', img: '/img/custom-models-02.webp' },
 ];
 
 const strip = [
@@ -34,33 +34,46 @@ const reqs = [
 <Layout
   title="VISUAILS — Studio voor productvisuals voor e-commerce merken"
   description="Stuur één productfoto en krijg binnen ongeveer 24 uur een complete campagne terug. Catalog-, on-model-, lifestyle- en videovisuals — in jouw merkstijl, met de hand gecontroleerd, zonder fotoshoot."
-  ogImage="/img/banners-09.webp"
+  ogImage="/img/banners-14.webp"
 >
-  <!-- HOOFDSTUK 0 · CINEMA-HERO -->
-  <section class="hero-cinema">
-    <div class="hc-bg"><img src="/img/banners-09.webp" alt="Een VISUAILS-campagnevisual" fetchpriority="high" transition:name="hero-photo" /></div>
-    <div class="hc-scrim" aria-hidden="true"></div>
-    <div class="container hc-copy">
-      <h1><span class="ch-l">Zie eruit als het merk</span><span class="ch-l">dat je <em>aan het worden bent.</em></span></h1>
-      <p class="hc-sub">Een studio voor productvisuals voor e-commerce merken. Eén foto erin — een publicatieklare campagne van catalog, lifestyle en video eruit, in ongeveer 24 uur.</p>
-      <div class="ch-cta">
-        <a href="/nl/test-sample" class="btn btn-primary btn-glow btn-lg">Probeer het op je product — €0,99</a>
-        <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
+  <!-- DE COVER -->
+  <section class="hero-cover">
+    <div class="hc2-bg"><img src="/img/banners-14.webp" alt="Een VISUAILS-campagnevisual" fetchpriority="high" transition:name="hero-photo" /></div>
+    <div class="hc2-scrim" aria-hidden="true"></div>
+    <div class="container cover-inner">
+      <div class="masthead">
+        <span>VISUAILS — Studio voor productvisuals</span>
+        <span>Enschede, NL · Levering in ~24 uur · Met de hand gecontroleerd</span>
       </div>
-      <ul class="hc-benefits">
-        <li>Levering in ~24 uur</li>
-        <li>Geen fotoshoot</li>
-        <li>Met de hand gecontroleerd</li>
-        <li>Catalog €39,99 / product</li>
-      </ul>
+      <div class="cover-copy">
+        <h1 class="cover-title"><span class="ch-l">Zie eruit als het merk</span><span class="ch-l">dat je <em>aan het worden bent.</em></span></h1>
+        <p class="cover-sub">Eén productfoto erin — een publicatieklare campagne van catalog, lifestyle en video eruit, in ongeveer 24 uur. Geen fotoshoot. Geen prompt-roulette.</p>
+        <div class="cover-cta">
+          <a href="/nl/test-sample" class="btn btn-primary btn-glow btn-lg">Probeer het op je product — €0,99</a>
+          <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
+        </div>
+        <ul class="cover-benefits">
+          <li>Catalog €39,99 / product</li>
+          <li>Lifestyle vanaf €35</li>
+          <li>Video vanaf €49</li>
+          <li>Revisies inbegrepen</li>
+        </ul>
+      </div>
     </div>
-    <nav class="hero-svcbar" aria-label="Diensten">
-      <a class="hsb-item" href="/nl/catalog">Catalog</a>
-      <a class="hsb-item" href="/nl/catalog">On-model</a>
-      <a class="hsb-item" href="/nl/lifestyle">Lifestyle</a>
-      <a class="hsb-item" href="/nl/video">Video</a>
-      <a class="hsb-item" href="/nl/custom-models">Eigen modellen</a>
-    </nav>
+    <div class="ticker" aria-label="Diensten">
+      <div class="tk-row">
+        <a class="tk-item" href="/nl/catalog">Catalog</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/nl/catalog">On-model</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/nl/lifestyle">Lifestyle</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/nl/video">Video</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/nl/custom-models">Eigen modellen</a><span class="tk-sep">·</span>
+        <a class="tk-item" href="/nl/catalog" aria-hidden="true" tabindex="-1">Catalog</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/nl/catalog" aria-hidden="true" tabindex="-1">On-model</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/nl/lifestyle" aria-hidden="true" tabindex="-1">Lifestyle</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/nl/video" aria-hidden="true" tabindex="-1">Video</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item" href="/nl/custom-models" aria-hidden="true" tabindex="-1">Eigen modellen</a><span class="tk-sep" aria-hidden="true">·</span>
+      </div>
+    </div>
   </section>
 
   <!-- WAT VISUAILS IS -->
@@ -84,52 +97,33 @@ const reqs = [
     </div>
   </section>
 
-  <!-- HOOFDSTUK 1 · DE TOOLKIT -->
+  <!-- DE LEDGER -->
   <section class="ch">
     <div class="container">
-      <div class="ch-head">
-        <span class="ch-orb" aria-hidden="true"></span>
-        <h2 class="ch-title"><span class="ch-l">Alles wat je shop nodig heeft.</span><span class="ch-l dim">Volledig uit handen.</span></h2>
-        <p class="ch-sub">Vier diensten, één briefing: jouw productfoto. Betaal per product of per visual — geen abonnement.</p>
+      <div class="section-head" style="margin-bottom:1.6rem">
+        <h2>De diensten.</h2>
+        <p>Betaal per product of per visual — geen abonnement. Elke rij is een deur.</p>
       </div>
-      <div class="svc-row" data-cards>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span>
-          <h3>Catalog</h3>
-          <span class="sc-price">€39,99 / product — 4 foto’s</span>
-          <p>Voorkant, achterkant, detail-close-up en één on-model shot. Zo’n €10 per foto, marktplaats-klaar.</p>
-          <div class="sc-links"><a class="sc-more" href="/nl/catalog">Meer info</a><a class="sc-go" href="/nl/order-catalog">Bestel</a></div>
-        </article>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
-          <h3>Lifestyle</h3>
-          <span class="sc-price">Vanaf €35 / visual</span>
-          <p>Gestylde, realistische scènes in vier signatuurstijlen — met consistente modellen inbegrepen.</p>
-          <div class="sc-links"><a class="sc-more" href="/nl/lifestyle">Meer info</a><a class="sc-go" href="/nl/order-lifestyle">Bestel</a></div>
-        </article>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
-          <h3>Video</h3>
-          <span class="sc-price">Vanaf €49 / video</span>
-          <p>Korte productvideo’s met subtiele beweging voor feeds en ads. Campagnes op offerte per project.</p>
-          <div class="sc-links"><a class="sc-more" href="/nl/video">Meer info</a><a class="sc-go" href="/nl/order-video">Bestel</a></div>
-        </article>
-        <article class="svc-card">
-          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg></span>
-          <h3>Custom</h3>
-          <span class="sc-price">Je eigen stijl of model</span>
-          <p>Een look, model of concept — één keer ontworpen voor jouw merk, daarna de normale visualprijs.</p>
-          <div class="sc-links"><a class="sc-more" href="/nl/custom-models">Meer info</a><a class="sc-go" href="/nl/order-custom">Bespreek</a></div>
-        </article>
+      <div class="svc-index" data-index>
+        <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
+        {ledger.map((s) => (
+          <div class="idx-row" data-img={s.img}>
+            <span class="idx-num">{s.n}</span>
+            <a class="idx-main" href={s.href}>{s.name}</a>
+            <p class="idx-meta">{s.meta}</p>
+            <span class="idx-price">{s.price}</span>
+            <a class="idx-order" href={s.order}>Bestel &rarr;</a>
+          </div>
+        ))}
       </div>
     </div>
   </section>
 
-  <!-- HOOFDSTUK 2 · DE ONTWIKKELING -->
+  <!-- DE ONTWIKKELING -->
   <section class="section-tight" id="develop">
     <div class="container two-col">
       <div class="reveal pending">
-        <h2 class="serif-display">Eén foto erin. <em>De rest is aan ons.</em></h2>
+        <h2>Eén foto erin. <em>De rest is aan ons.</em></h2>
         <p class="lead" style="margin-top:1rem">Dit is de hele briefing die we van je nodig hebben — een telefoonfoto. Zie hoe het een strakke, publicatieklare visual wordt.</p>
         <div class="dev-steps" aria-hidden="true">
           <p class="dev-step"><span class="dn">01</span>Ruwe telefoonfoto — de hele briefing</p>
@@ -159,22 +153,111 @@ const reqs = [
     </div>
   </section>
 
-  <!-- HOOFDSTUK 3 · HET WERK -->
+  <!-- DE SET -->
+  <section class="ch">
+    <div class="container">
+      <div class="ch-head">
+        <span class="ch-orb" aria-hidden="true"></span>
+        <h2 class="ch-title"><span class="ch-l">Eén product. Vier foto’s.</span><span class="ch-l dim">€39,99. Dat is de deal.</span></h2>
+        <p class="ch-sub">Elke catalogbestelling komt terug als een complete set — inclusief een echte on-model shot. Zo’n €10 per foto.</p>
+      </div>
+      <div class="set-strip" data-stagger>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Voorkant-catalogshot" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">01</span><b>Voorkant</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Achterkant-catalogshot" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">02</span><b>Achterkant</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/catalog-before.webp" alt="Detail-close-up van logo of stof" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">03</span><b>Detail</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media"><img src="/img/custom-models-02.webp" alt="On-model shot, gedragen voor pasvorm" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">04</span><b>On-model</b></figcaption>
+        </figure>
+      </div>
+      <div class="ch-cta">
+        <a href="/nl/order-catalog" class="btn btn-primary btn-glow">Bestel catalog — €39,99 / product</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- DE SPREAD -->
   <section class="ch">
     <div class="container">
       <div class="ch-head">
         <span class="ch-orb" aria-hidden="true"></span>
         <h2 class="ch-title"><span class="ch-l">Echt werk.</span><span class="ch-l dim">Nul fotoshoots.</span></h2>
-        <p class="ch-sub">Catalog, on-model, lifestyle en video — elk formaat dat je shop, ads en socials nodig hebben.</p>
       </div>
-      <div class="gallery-tiles" data-tiles>
-        {tiles.map((t) => (
-          <a class="gtile" href={t.href}>
-            <img src={t.img} alt={t.alt} loading="lazy" />
-            <span class="gt-label">{t.label}</span>
-            <span class="gt-go">Ontdek &rarr;</span>
-          </a>
-        ))}
+      <div class="spread" data-spread>
+        <a class="sp-item sp-a" href="/nl/catalog">
+          <div class="sp-media"><img src="/img/custom-models-02.webp" alt="On-model catalogvisual" loading="lazy" /></div>
+          <div class="sp-cap"><b>On-model</b><span>In elke catalogset inbegrepen</span></div>
+        </a>
+        <a class="sp-item sp-b" href="/nl/catalog">
+          <div class="sp-media"><img src="/img/catalog-after.webp" alt="Strakke catalogvisual" loading="lazy" /></div>
+          <div class="sp-cap"><b>Catalog</b><span>€39,99 / product</span></div>
+        </a>
+        <a class="sp-item sp-c" href="/nl/lifestyle">
+          <div class="sp-media"><img src="/img/lifestyle-glow-01.webp" alt="Lifestyle-visual in de Glow-stijl" loading="lazy" /></div>
+          <div class="sp-cap"><b>Lifestyle</b><span>vanaf €35 / visual</span></div>
+        </a>
+        <a class="sp-item sp-d" href="/nl/video">
+          <div class="sp-media">
+            <img src="/img/banners-16.webp" alt="Productvideo-still" loading="lazy" />
+            <span class="sp-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
+          </div>
+          <div class="sp-cap"><b>Video</b><span>vanaf €49 / video</span></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATEMENT-TICKER -->
+  <div class="ticker" aria-hidden="true">
+    <div class="tk-row">
+      <span class="tk-item">Eén foto erin</span><span class="tk-sep">·</span>
+      <span class="tk-item">Campagne eruit</span><span class="tk-sep">·</span>
+      <span class="tk-item">Met de hand gecontroleerd</span><span class="tk-sep">·</span>
+      <span class="tk-item">~24 uur</span><span class="tk-sep">·</span>
+      <span class="tk-item">Eén foto erin</span><span class="tk-sep">·</span>
+      <span class="tk-item">Campagne eruit</span><span class="tk-sep">·</span>
+      <span class="tk-item">Met de hand gecontroleerd</span><span class="tk-sep">·</span>
+      <span class="tk-item">~24 uur</span><span class="tk-sep">·</span>
+    </div>
+  </div>
+
+  <!-- HET PROCES -->
+  <section class="ch">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:0">
+        <h2>Van foto naar publicatie.</h2>
+        <p>Vier stappen, één werkdag. Jij doet alleen de eerste.</p>
+      </div>
+      <div class="process" data-stagger>
+        <div class="pr-step">
+          <span class="pr-num">01</span>
+          <h3 class="pr-t">Upload</h3>
+          <p class="pr-b">Eén duidelijke foto van je product — dat is de hele briefing.</p>
+        </div>
+        <div class="pr-step">
+          <span class="pr-num">02</span>
+          <h3 class="pr-t">Wij bouwen</h3>
+          <p class="pr-b">AI plus professionele editingtools en colour grading, afgestemd op jouw merk.</p>
+        </div>
+        <div class="pr-step">
+          <span class="pr-num">03</span>
+          <h3 class="pr-t">Menselijke check</h3>
+          <p class="pr-b">Een mens keurt elke visual goed voordat hij bij je komt — nooit automatisch verstuurd.</p>
+        </div>
+        <div class="pr-step">
+          <span class="pr-num">04</span>
+          <h3 class="pr-t">Publiceren</h3>
+          <p class="pr-b">~24 uur later: bestanden klaar voor je shop, ads en socials.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -185,11 +268,11 @@ const reqs = [
       <div class="vm-row">
         <img src={strip[0]} alt="Lifestyle-visual in Flash-stijl" loading="lazy" />
         <img src={strip[1]} alt="Lifestyle-visual in Dunes-stijl" loading="lazy" />
-        <img src="/img/banners-14.webp" alt="Campagnevisual" loading="lazy" />
+        <img src="/img/banners-09.webp" alt="Campagnevisual" loading="lazy" />
         <img src={strip[2]} alt="Lifestyle-visual in Phone-made-stijl" loading="lazy" />
         <img src={strip[0]} alt="" aria-hidden="true" loading="lazy" />
         <img src={strip[1]} alt="" aria-hidden="true" loading="lazy" />
-        <img src="/img/banners-14.webp" alt="" aria-hidden="true" loading="lazy" />
+        <img src="/img/banners-09.webp" alt="" aria-hidden="true" loading="lazy" />
         <img src={strip[2]} alt="" aria-hidden="true" loading="lazy" />
       </div>
       <div class="vm-row">
@@ -209,7 +292,7 @@ const reqs = [
   <section class="section-tight">
     <div class="container">
       <div class="section-head" style="margin-bottom:2rem">
-        <h2 class="serif-display">Hoe meer je ons laat zien, <em>hoe meer we garanderen.</em></h2>
+        <h2>Hoe meer je ons laat zien, <em>hoe meer we garanderen.</em></h2>
         <p>Eén duidelijke foto is genoeg om te starten. Maar omdat we je product meestal nooit in handen hebben, laten een paar extra hoeken ons het exact matchen — hier wordt kwaliteit gewonnen.</p>
       </div>
       <div class="req-grid reveal-group">
@@ -233,7 +316,7 @@ const reqs = [
           <img src="/img/custom-models-02.webp" alt="Een VISUAILS-model, consistent gestyled door een hele campagne" loading="lazy" />
         </div>
         <div>
-          <h2 class="serif-display">Eén gezicht.<br /><em>Elke campagne.</em></h2>
+          <h2>Eén gezicht.<br /><em>Elke campagne.</em></h2>
           <p class="lead" style="margin-top:1rem">Hetzelfde model, vastgezet op jouw merk, door je hele collectie — of een eigen gezicht dat alleen voor jou gemaakt is.</p>
           <div style="margin-top:1.2rem"><a class="link-arrow" href="/nl/models">Bekijk de modellen &rarr;</a></div>
         </div>
@@ -245,7 +328,7 @@ const reqs = [
   <section class="section-tight">
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2 class="serif-display">Niet alle AI is <em>gelijk.</em></h2>
+        <h2>Niet alle AI is <em>gelijk.</em></h2>
         <p style="margin-inline:auto">Generieke AI-generators gokken. VISUAILS is gebouwd op jouw product, afgewerkt met professionele editingtools en colour grading, en gecontroleerd door een mens voordat het bij je komt.</p>
       </div>
       <div class="ai-compare reveal pending">
@@ -278,7 +361,7 @@ const reqs = [
     </div>
   </section>
 
-  <!-- HOOFDSTUK 4 · DE BELOFTE — met het WebGL-lichtveld erachter. -->
+  <!-- DE BELOFTE — met het WebGL-lichtveld erachter. -->
   <section class="ch ch-promise">
     <div class="hero-fallback" aria-hidden="true"></div>
     <canvas id="hero-shader" aria-hidden="true"></canvas>
@@ -310,7 +393,7 @@ const reqs = [
     </div>
   </section>
 
-  <!-- HOOFDSTUK 5 · DE PROEFVISUAL — het gloeimoment. -->
+  <!-- DE PROEFVISUAL — het gloeimoment. -->
   <section class="ch">
     <div class="container ch-head">
       <span class="ch-orb" aria-hidden="true"></span>
@@ -324,12 +407,12 @@ const reqs = [
     </div>
   </section>
 
-  <!-- HOOFDSTUK 6 · VIND JOUW INGANG -->
+  <!-- VIND JOUW INGANG -->
   <section class="section-tight">
     <div class="container plan-grid">
       <div class="reveal pending">
         <h2 class="ch-title" style="text-align:left"><span class="ch-l">Vind jouw ingang.</span></h2>
-        <div class="plan-cols">
+        <div class="plan-cols" data-stagger>
           <div class="plan-col">
             <h3>Per product</h3>
             <p>Catalog voor €39,99 per product (een set van 4 foto’s), lifestyle vanaf €35, video vanaf €49. Geen abonnement — bestel er vijf of vijfhonderd.</p>
