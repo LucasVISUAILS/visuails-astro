@@ -20,8 +20,11 @@ From the project folder:
 ```bash
 npx wrangler d1 create visuails
 ```
-Copy the printed `database_id` into `wrangler.toml` (replace the placeholder).
-Then load the schema:
+You do **not** need to paste the `database_id` into `wrangler.toml` — the
+binding is set in the dashboard (step 4). Putting a database id in `wrangler.toml`
+is what causes the "Invalid database UUID" deploy error, so the binding blocks
+there stay commented out. Now load the schema (uses the database name, not the
+binding):
 ```bash
 npx wrangler d1 execute visuails --remote --file=./schema.sql
 ```

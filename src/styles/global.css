@@ -556,6 +556,35 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
   box-shadow: 0 30px 80px -20px rgba(0,0,0,.8), 0 0 0 1px rgba(238,240,246,.12); }
 .idx-float img { width: 100%; height: 100%; object-fit: cover; }
 
+/* Brand anatomy — the ledger cut the other way: by channel instead of by
+   service, so visitors see which visual lives where (shop / feed / ads /
+   everywhere) and how they add up to a brand. */
+.anatomy { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1rem, 2vw, 1.5rem); margin-top: clamp(2rem, 4vw, 3rem); }
+@media (max-width: 900px) { .anatomy { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .anatomy { grid-template-columns: 1fr; } }
+.anat-card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease); }
+.anat-card:hover { border-color: var(--accent-line); transform: translateY(-3px); }
+.anat-media { aspect-ratio: 4/5; overflow: hidden; }
+.anat-media img { width: 100%; height: 100%; object-fit: cover; }
+.anat-body { padding: 1rem 1.1rem 1.3rem; }
+.anat-where { display: inline-flex; align-items: center; gap: .4rem; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-bright); }
+.anat-body h3 { font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; letter-spacing: -0.02em; color: var(--ink); margin: .35rem 0 .5rem; }
+.anat-body p { font-size: .88rem; color: var(--ink-3); line-height: 1.5; }
+.anat-note { margin-top: clamp(1.4rem, 2.6vw, 2rem); max-width: 62ch; font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
+
+/* Service-page explainer — the SEO "where it fits" block: prose on the left,
+   a "where it lives" channel list on the right. Shared by every service hub. */
+.svc-explain { display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(1.6rem, 4vw, 3.5rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); align-items: start; }
+@media (max-width: 820px) { .svc-explain { grid-template-columns: 1fr; } }
+.svc-explain-main h3, .svc-explain-side h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); margin: 0 0 .7rem; letter-spacing: -0.01em; }
+.svc-explain-main p { color: var(--ink-2); line-height: 1.65; max-width: 64ch; margin: 0 0 1rem; }
+.svc-explain-main p:last-child { margin-bottom: 0; }
+.svc-explain-side { padding: clamp(1.2rem, 2.4vw, 1.6rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+.svc-where-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .8rem; }
+.svc-where-list li { font-size: .92rem; color: var(--ink-3); line-height: 1.5; padding-left: 1.1rem; position: relative; }
+.svc-where-list li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.svc-where-list strong { color: var(--ink); font-weight: 600; }
+
 /* Contact-sheet spread — asymmetric magazine grid with ruled captions. */
 .spread { display: grid; grid-template-columns: repeat(12, 1fr); gap: clamp(1rem, 2vw, 1.5rem); margin-top: clamp(2rem, 4vw, 3rem); }
 .sp-item { display: block; }

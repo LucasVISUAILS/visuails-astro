@@ -1,38 +1,43 @@
 # VISUAILS — Cloudflare Pages configuration.
-# The site itself stays fully static (Astro `output: 'static'` → dist/). This
-# file wires the serverless bits that live in /functions: the D1 database and
-# (for a later phase) the R2 bucket for uploads/deliverables.
+# The site stays fully static (Astro `output: 'static'` → dist/). The
+# serverless bits live in /functions.
 #
-# Bindings can also be set in the Cloudflare dashboard (Pages project →
-# Settings → Functions → Bindings). If you use the dashboard, this file is
-# optional — but keeping it in git documents the setup and lets you use the
-# Wrangler CLI (`wrangler pages deploy`, `wrangler d1 execute`, ...).
+# IMPORTANT: for a Pages project, bind D1 and R2 in the DASHBOARD
+# (your Pages project → Settings → Functions → Bindings), NOT here.
+# A binding block with a placeholder/real database_id in this file is read at
+# build time and makes "wrangler pages deploy" fail with
+# "Invalid database UUID" until it's a real id — so the blocks below stay
+# commented out and the dashboard is the single source of truth. Runtime
+# `env.DB` / `env.UPLOADS` come from the dashboard bindings regardless.
 
 name = "visuails"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-07-01"
 compatibility_flags = ["nodejs_compat"]
 
-# --- D1 (SQLite) database ---------------------------------------------------
-# Create it once:  wrangler d1 create visuails
-# then paste the printed database_id below (and bind it in the dashboard too).
-[[d1_databases]]
-binding = "DB"
-database_name = "visuails"
-database_id = "PASTE_DATABASE_ID_AFTER_wrangler_d1_create"
+# --- Bindings: set these in the dashboard --------------------------------------
+#   D1 database → variable name  DB        → database "visuails"
+#   R2 bucket   → variable name  UPLOADS   → bucket "visuails-uploads"
+#
+# Create the resources once from the CLI (these do NOT need the blocks below):
+#   wrangler d1 create visuails
+#   wrangler d1 execute visuails --remote --file=./schema.sql
+#   wrangler r2 bucket create visuails-uploads
+#
+# Only uncomment + fill these if you deploy purely via the Wrangler CLI and want
+# local `wrangler pages dev` to pick up the bindings. For dashboard/Git deploys,
+# leave them commented — the dashboard bindings are what run in production.
+#
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "visuails"
+# database_id = "your-real-d1-uuid-here"
+#
+# [[r2_buckets]]
+# binding = "UPLOADS"
+# bucket_name = "visuails-uploads"
 
-# --- R2 bucket (used from Phase 3: uploads + downloadable deliverables) ------
-# Create it once:  wrangler r2 bucket create visuails-uploads
-[[r2_buckets]]
-binding = "UPLOADS"
-bucket_name = "visuails-uploads"
-
-# --- Plain (non-secret) vars ------------------------------------------------
-[vars]
-NOTIFY_EMAIL = "hello@visuails.com"          # where order notifications land
-FROM_EMAIL   = "VISUAILS <orders@visuails.com>"  # must be on a Resend-verified domain
-
-# --- Secrets (DO NOT put here) ----------------------------------------------
-# Set these in the dashboard (Settings → Environment variables, "Encrypt")
-# or via the CLI:
-#   wrangler pages secret put RESEND_API_KEY
+# --- Environment variables: set these in the dashboard too ---------------------
+#   NOTIFY_EMAIL   = hello@visuails.com
+#   FROM_EMAIL     = VISUAILS <orders@visuails.com>   (on a Resend-verified domain)
+#   RESEND_API_KEY = <your key>  (mark as Secret / encrypted)
