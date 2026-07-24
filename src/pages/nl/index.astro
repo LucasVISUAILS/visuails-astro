@@ -34,11 +34,12 @@ const reqs = [
 <Layout
   title="VISUAILS — Studio voor productvisuals voor e-commerce merken"
   description="Stuur één productfoto en krijg binnen ongeveer 24 uur een complete campagne terug. Catalog-, on-model-, lifestyle- en videovisuals — in jouw merkstijl, met de hand gecontroleerd, zonder fotoshoot."
-  ogImage="/img/banners-14.webp"
+  ogImage="/img/hero-dunes.webp"
 >
-  <!-- DE COVER -->
+  <!-- DE COVER — één campagne-still (nergens geschoten, bij schemering, in de
+       duinen). Het beeld ís het argument: shoot-kwaliteit, zonder shoot. -->
   <section class="hero-cover">
-    <div class="hc2-bg"><img src="/img/banners-14.webp" alt="Een VISUAILS-campagnevisual" fetchpriority="high" transition:name="hero-photo" /></div>
+    <div class="hc2-bg"><img src="/img/hero-dunes.webp" alt="Een VISUAILS-campagnevisual — een model in de duinen bij schemering" fetchpriority="high" transition:name="hero-photo" /></div>
     <div class="hc2-scrim" aria-hidden="true"></div>
     <div class="container cover-inner">
       <div class="masthead">
@@ -46,32 +47,26 @@ const reqs = [
         <span>Enschede, NL · Levering in ~24 uur · Met de hand gecontroleerd</span>
       </div>
       <div class="cover-copy">
-        <h1 class="cover-title"><span class="ch-l">Zie eruit als het merk</span><span class="ch-l">dat je <em>aan het worden bent.</em></span></h1>
-        <p class="cover-sub">Eén productfoto erin — een publicatieklare campagne van catalog, lifestyle en video eruit, in ongeveer 24 uur. Geen fotoshoot. Geen prompt-roulette.</p>
+        <h1 class="cover-title"><span class="ch-l">De fotoshoot</span><span class="ch-l">is <em>voorbij.</em></span></h1>
+        <p class="cover-sub">Eén productfoto wordt een publicatieklare campagne — catalog, lifestyle en video, in jouw merkstijl, terug in ongeveer 24 uur.</p>
         <div class="cover-cta">
           <a href="/nl/test-sample" class="btn btn-primary btn-glow btn-lg">Probeer het op je product — €0,99</a>
           <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
         </div>
-        <ul class="cover-benefits">
-          <li>Catalog €39,99 / product</li>
-          <li>Lifestyle vanaf €35</li>
-          <li>Video vanaf €49</li>
-          <li>Revisies inbegrepen</li>
-        </ul>
       </div>
     </div>
     <div class="ticker" aria-label="Diensten">
       <div class="tk-row">
         <a class="tk-item" href="/nl/catalog">Catalog</a><span class="tk-sep">·</span>
-        <a class="tk-item" href="/nl/catalog">On-model</a><span class="tk-sep">·</span>
+        <a class="tk-item fill" href="/nl/catalog">On-model</a><span class="tk-sep">·</span>
         <a class="tk-item" href="/nl/lifestyle">Lifestyle</a><span class="tk-sep">·</span>
-        <a class="tk-item" href="/nl/video">Video</a><span class="tk-sep">·</span>
+        <a class="tk-item fill" href="/nl/video">Video</a><span class="tk-sep">·</span>
         <a class="tk-item" href="/nl/custom-models">Eigen modellen</a><span class="tk-sep">·</span>
-        <a class="tk-item" href="/nl/catalog" aria-hidden="true" tabindex="-1">Catalog</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item fill" href="/nl/catalog" aria-hidden="true" tabindex="-1">Catalog</a><span class="tk-sep" aria-hidden="true">·</span>
         <a class="tk-item" href="/nl/catalog" aria-hidden="true" tabindex="-1">On-model</a><span class="tk-sep" aria-hidden="true">·</span>
-        <a class="tk-item" href="/nl/lifestyle" aria-hidden="true" tabindex="-1">Lifestyle</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item fill" href="/nl/lifestyle" aria-hidden="true" tabindex="-1">Lifestyle</a><span class="tk-sep" aria-hidden="true">·</span>
         <a class="tk-item" href="/nl/video" aria-hidden="true" tabindex="-1">Video</a><span class="tk-sep" aria-hidden="true">·</span>
-        <a class="tk-item" href="/nl/custom-models" aria-hidden="true" tabindex="-1">Eigen modellen</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item fill" href="/nl/custom-models" aria-hidden="true" tabindex="-1">Eigen modellen</a><span class="tk-sep" aria-hidden="true">·</span>
       </div>
     </div>
   </section>
@@ -100,9 +95,12 @@ const reqs = [
   <!-- DE LEDGER -->
   <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:1.6rem">
-        <h2>De diensten.</h2>
-        <p>Betaal per product of per visual — geen abonnement. Elke rij is een deur.</p>
+      <div class="ed-head">
+        <span class="ed-meta">( Diensten )</span>
+        <div>
+          <h2>Vier manieren om groter te lijken dan je bent.</h2>
+          <p class="ed-sub">Betaal per product of per visual — geen abonnement. Elke rij is een deur.</p>
+        </div>
       </div>
       <div class="svc-index" data-index>
         <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
@@ -163,19 +161,19 @@ const reqs = [
       </div>
       <div class="set-strip" data-stagger>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Voorkant-catalogshot" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Voorkant-catalogshot" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">01</span><b>Voorkant</b></figcaption>
         </figure>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Achterkant-catalogshot" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Achterkant-catalogshot" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">02</span><b>Achterkant</b></figcaption>
         </figure>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/catalog-before.webp" alt="Detail-close-up van logo of stof" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/catalog-before.webp" alt="Detail-close-up van logo of stof" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">03</span><b>Detail</b></figcaption>
         </figure>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/custom-models-02.webp" alt="On-model shot, gedragen voor pasvorm" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/custom-models-02.webp" alt="On-model shot, gedragen voor pasvorm" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">04</span><b>On-model</b></figcaption>
         </figure>
       </div>
@@ -194,19 +192,19 @@ const reqs = [
       </div>
       <div class="spread" data-spread>
         <a class="sp-item sp-a" href="/nl/catalog">
-          <div class="sp-media"><img src="/img/custom-models-02.webp" alt="On-model catalogvisual" loading="lazy" /></div>
+          <div class="sp-media" data-zoom><img src="/img/custom-models-02.webp" alt="On-model catalogvisual" loading="lazy" /></div>
           <div class="sp-cap"><b>On-model</b><span>In elke catalogset inbegrepen</span></div>
         </a>
         <a class="sp-item sp-b" href="/nl/catalog">
-          <div class="sp-media"><img src="/img/catalog-after.webp" alt="Strakke catalogvisual" loading="lazy" /></div>
+          <div class="sp-media" data-zoom><img src="/img/catalog-after.webp" alt="Strakke catalogvisual" loading="lazy" /></div>
           <div class="sp-cap"><b>Catalog</b><span>€39,99 / product</span></div>
         </a>
         <a class="sp-item sp-c" href="/nl/lifestyle">
-          <div class="sp-media"><img src="/img/lifestyle-glow-01.webp" alt="Lifestyle-visual in de Glow-stijl" loading="lazy" /></div>
+          <div class="sp-media" data-zoom><img src="/img/lifestyle-glow-01.webp" alt="Lifestyle-visual in de Glow-stijl" loading="lazy" /></div>
           <div class="sp-cap"><b>Lifestyle</b><span>vanaf €35 / visual</span></div>
         </a>
         <a class="sp-item sp-d" href="/nl/video">
-          <div class="sp-media">
+          <div class="sp-media" data-zoom>
             <img src="/img/banners-16.webp" alt="Productvideo-still" loading="lazy" />
             <span class="sp-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
           </div>
@@ -220,22 +218,25 @@ const reqs = [
   <div class="ticker" aria-hidden="true">
     <div class="tk-row">
       <span class="tk-item">Eén foto erin</span><span class="tk-sep">·</span>
-      <span class="tk-item">Campagne eruit</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">Campagne eruit</span><span class="tk-sep">·</span>
       <span class="tk-item">Met de hand gecontroleerd</span><span class="tk-sep">·</span>
-      <span class="tk-item">~24 uur</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">~24 uur</span><span class="tk-sep">·</span>
       <span class="tk-item">Eén foto erin</span><span class="tk-sep">·</span>
-      <span class="tk-item">Campagne eruit</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">Campagne eruit</span><span class="tk-sep">·</span>
       <span class="tk-item">Met de hand gecontroleerd</span><span class="tk-sep">·</span>
-      <span class="tk-item">~24 uur</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">~24 uur</span><span class="tk-sep">·</span>
     </div>
   </div>
 
   <!-- HET PROCES -->
   <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:0">
-        <h2>Van foto naar publicatie.</h2>
-        <p>Vier stappen, één werkdag. Jij doet alleen de eerste.</p>
+      <div class="ed-head">
+        <span class="ed-meta">( Proces )</span>
+        <div>
+          <h2>Van foto naar publicatie.</h2>
+          <p class="ed-sub">Vier stappen, één werkdag. Jij doet alleen de eerste.</p>
+        </div>
       </div>
       <div class="process" data-stagger>
         <div class="pr-step">
@@ -291,9 +292,12 @@ const reqs = [
   <!-- KWALITEITSGARANTIE -->
   <section class="section-tight">
     <div class="container">
-      <div class="section-head" style="margin-bottom:2rem">
-        <h2>Hoe meer je ons laat zien, <em>hoe meer we garanderen.</em></h2>
-        <p>Eén duidelijke foto is genoeg om te starten. Maar omdat we je product meestal nooit in handen hebben, laten een paar extra hoeken ons het exact matchen — hier wordt kwaliteit gewonnen.</p>
+      <div class="ed-head" style="margin-bottom:clamp(2.4rem,4.5vw,3.6rem)">
+        <span class="ed-meta">( Kwaliteit )</span>
+        <div>
+          <h2>Hoe meer je ons laat zien, <em>hoe meer we garanderen.</em></h2>
+          <p class="ed-sub">Eén duidelijke foto is genoeg om te starten. Maar omdat we je product meestal nooit in handen hebben, laten een paar extra hoeken ons het exact matchen — hier wordt kwaliteit gewonnen.</p>
+        </div>
       </div>
       <div class="req-grid reveal-group">
         {reqs.map((r) => (
@@ -426,7 +430,7 @@ const reqs = [
         </div>
         <p style="margin-top:1.4rem;font-size:.84rem;color:var(--ink-3)">Volledig overzicht op de <a href="/nl/pricing" style="color:var(--accent-bright);text-decoration:underline">prijzenpagina</a>.</p>
       </div>
-      <div class="plan-photo reveal pending">
+      <div class="plan-photo reveal pending" data-zoom>
         <img src="/img/custom-models-03.webp" alt="Een VISUAILS custom-model portret" loading="lazy" />
       </div>
     </div>

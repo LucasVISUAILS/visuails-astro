@@ -27,7 +27,7 @@ function heroCover() {
   if (mast) gsap.from(mast, { y: -14, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.1, clearProps: 'all' });
   const lines = hero.querySelectorAll('.cover-title .ch-l');
   if (lines.length) gsap.from(lines, { y: 56, opacity: 0, filter: 'blur(12px)', duration: 1.2, ease: 'power4.out', stagger: 0.13, delay: 0.18, clearProps: 'filter' });
-  gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta, .cover-benefits'), {
+  gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta'), {
     y: 22, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.6, clearProps: 'all',
   });
   const tick = hero.querySelector('.ticker');
@@ -40,7 +40,21 @@ function tickers() {
     const dir = i % 2 === 0 ? -1 : 1;
     gsap.fromTo(row,
       { xPercent: dir === 1 ? -50 : 0 },
-      { xPercent: dir === 1 ? 0 : -50, ease: 'none', duration: 34 + i * 8, repeat: -1 });
+      { xPercent: dir === 1 ? 0 : -50, ease: 'none', duration: 52 + i * 10, repeat: -1 });
+  });
+}
+
+// Considered imagery: media inside [data-zoom] settles from a gentle
+// over-scale as it scrolls through the viewport — the editorial "breathing
+// photograph" move, scrubbed so it never fights the reader.
+function zoomMedia() {
+  gsap.utils.toArray('[data-zoom]').forEach((wrap) => {
+    const img = wrap.querySelector('img');
+    if (!img) return;
+    gsap.fromTo(img, { scale: 1.08 }, {
+      scale: 1, ease: 'none',
+      scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'bottom 30%', scrub: 0.6 },
+    });
   });
 }
 
@@ -191,6 +205,7 @@ function init() {
     ledger();
     chapterHeads();
     spread();
+    zoomMedia();
     staggerGroups();
     developScene();
     marquee();

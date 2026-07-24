@@ -41,12 +41,14 @@ const reqs = [
 <Layout
   title="VISUAILS — Product-visual studio for e-commerce brands"
   description="Send one product photo, get a full campaign back in about 24 hours. Catalog, on-model, lifestyle and video visuals — styled to your brand, human-checked, no photoshoot needed."
-  ogImage="/img/banners-14.webp"
+  ogImage="/img/hero-dunes.webp"
 >
-  <!-- THE COVER — masthead, one bold statement over a real campaign still,
-       and the ticker docked at the bottom: every service, one glance. -->
+  <!-- THE COVER — one campaign still (shot nowhere, at dusk, in the dunes),
+       a masthead rule, one declarative line, and the ticker docked at the
+       bottom: every service, one glance. The image IS the argument: this is
+       shoot-quality work, and no shoot happened. -->
   <section class="hero-cover">
-    <div class="hc2-bg"><img src="/img/banners-14.webp" alt="A VISUAILS campaign visual" fetchpriority="high" transition:name="hero-photo" /></div>
+    <div class="hc2-bg"><img src="/img/hero-dunes.webp" alt="A VISUAILS campaign visual — a model in the dunes at dusk" fetchpriority="high" transition:name="hero-photo" /></div>
     <div class="hc2-scrim" aria-hidden="true"></div>
     <div class="container cover-inner">
       <div class="masthead">
@@ -54,32 +56,26 @@ const reqs = [
         <span>Enschede, NL · ~24h delivery · Human-checked</span>
       </div>
       <div class="cover-copy">
-        <h1 class="cover-title"><span class="ch-l">Look like the brand</span><span class="ch-l">you're <em>becoming.</em></span></h1>
-        <p class="cover-sub">One product photo in — a publish-ready campaign of catalog, lifestyle and video out, in about 24 hours. No photoshoot. No prompt-roulette.</p>
+        <h1 class="cover-title"><span class="ch-l">The photoshoot</span><span class="ch-l">is <em>over.</em></span></h1>
+        <p class="cover-sub">One product photo becomes a publish-ready campaign — catalog, lifestyle and video, styled to your brand, back in about 24 hours.</p>
         <div class="cover-cta">
           <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Try it on your product — €0.99</a>
           <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
         </div>
-        <ul class="cover-benefits">
-          <li>Catalog €39.99 / product</li>
-          <li>Lifestyle from €35</li>
-          <li>Video from €49</li>
-          <li>Revisions included</li>
-        </ul>
       </div>
     </div>
     <div class="ticker" aria-label="Services">
       <div class="tk-row">
         <a class="tk-item" href="/catalog">Catalog</a><span class="tk-sep">·</span>
-        <a class="tk-item" href="/catalog">On-model</a><span class="tk-sep">·</span>
+        <a class="tk-item fill" href="/catalog">On-model</a><span class="tk-sep">·</span>
         <a class="tk-item" href="/lifestyle">Lifestyle</a><span class="tk-sep">·</span>
-        <a class="tk-item" href="/video">Video</a><span class="tk-sep">·</span>
+        <a class="tk-item fill" href="/video">Video</a><span class="tk-sep">·</span>
         <a class="tk-item" href="/custom-models">Custom models</a><span class="tk-sep">·</span>
-        <a class="tk-item" href="/catalog" aria-hidden="true" tabindex="-1">Catalog</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item fill" href="/catalog" aria-hidden="true" tabindex="-1">Catalog</a><span class="tk-sep" aria-hidden="true">·</span>
         <a class="tk-item" href="/catalog" aria-hidden="true" tabindex="-1">On-model</a><span class="tk-sep" aria-hidden="true">·</span>
-        <a class="tk-item" href="/lifestyle" aria-hidden="true" tabindex="-1">Lifestyle</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item fill" href="/lifestyle" aria-hidden="true" tabindex="-1">Lifestyle</a><span class="tk-sep" aria-hidden="true">·</span>
         <a class="tk-item" href="/video" aria-hidden="true" tabindex="-1">Video</a><span class="tk-sep" aria-hidden="true">·</span>
-        <a class="tk-item" href="/custom-models" aria-hidden="true" tabindex="-1">Custom models</a><span class="tk-sep" aria-hidden="true">·</span>
+        <a class="tk-item fill" href="/custom-models" aria-hidden="true" tabindex="-1">Custom models</a><span class="tk-sep" aria-hidden="true">·</span>
       </div>
     </div>
   </section>
@@ -109,9 +105,12 @@ const reqs = [
        prices. Hover a row and the work floats up under your cursor. -->
   <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:1.6rem">
-        <h2>The services.</h2>
-        <p>Pay per product or per visual — no subscription. Every row is a door.</p>
+      <div class="ed-head">
+        <span class="ed-meta">( Services )</span>
+        <div>
+          <h2>Four ways to look bigger than you are.</h2>
+          <p class="ed-sub">Pay per product or per visual — no subscription. Every row is a door.</p>
+        </div>
       </div>
       <div class="svc-index" data-index>
         <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
@@ -174,19 +173,19 @@ const reqs = [
       </div>
       <div class="set-strip" data-stagger>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Front catalog shot" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Front catalog shot" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">01</span><b>Front</b></figcaption>
         </figure>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/catalog-after.webp" alt="Back catalog shot" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Back catalog shot" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">02</span><b>Back</b></figcaption>
         </figure>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/catalog-before.webp" alt="Detail close-up of logo or fabric" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/catalog-before.webp" alt="Detail close-up of logo or fabric" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">03</span><b>Detail</b></figcaption>
         </figure>
         <figure class="set-frame">
-          <div class="sf-media"><img src="/img/custom-models-02.webp" alt="On-model shot, worn for fit" loading="lazy" /></div>
+          <div class="sf-media" data-zoom><img src="/img/custom-models-02.webp" alt="On-model shot, worn for fit" loading="lazy" /></div>
           <figcaption class="sf-cap"><span class="sfn">04</span><b>On-model</b></figcaption>
         </figure>
       </div>
@@ -206,19 +205,19 @@ const reqs = [
       </div>
       <div class="spread" data-spread>
         <a class="sp-item sp-a" href="/catalog">
-          <div class="sp-media"><img src="/img/custom-models-02.webp" alt="On-model catalog visual" loading="lazy" /></div>
+          <div class="sp-media" data-zoom><img src="/img/custom-models-02.webp" alt="On-model catalog visual" loading="lazy" /></div>
           <div class="sp-cap"><b>On-model</b><span>Included in every catalog set</span></div>
         </a>
         <a class="sp-item sp-b" href="/catalog">
-          <div class="sp-media"><img src="/img/catalog-after.webp" alt="Clean catalog visual" loading="lazy" /></div>
+          <div class="sp-media" data-zoom><img src="/img/catalog-after.webp" alt="Clean catalog visual" loading="lazy" /></div>
           <div class="sp-cap"><b>Catalog</b><span>€39.99 / product</span></div>
         </a>
         <a class="sp-item sp-c" href="/lifestyle">
-          <div class="sp-media"><img src="/img/lifestyle-glow-01.webp" alt="Lifestyle visual in the Glow style" loading="lazy" /></div>
+          <div class="sp-media" data-zoom><img src="/img/lifestyle-glow-01.webp" alt="Lifestyle visual in the Glow style" loading="lazy" /></div>
           <div class="sp-cap"><b>Lifestyle</b><span>from €35 / visual</span></div>
         </a>
         <a class="sp-item sp-d" href="/video">
-          <div class="sp-media">
+          <div class="sp-media" data-zoom>
             <img src="/img/banners-16.webp" alt="Product video still" loading="lazy" />
             <span class="sp-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
           </div>
@@ -232,22 +231,25 @@ const reqs = [
   <div class="ticker" aria-hidden="true">
     <div class="tk-row">
       <span class="tk-item">One photo in</span><span class="tk-sep">·</span>
-      <span class="tk-item">Campaign out</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">Campaign out</span><span class="tk-sep">·</span>
       <span class="tk-item">Human-checked</span><span class="tk-sep">·</span>
-      <span class="tk-item">~24 hours</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">~24 hours</span><span class="tk-sep">·</span>
       <span class="tk-item">One photo in</span><span class="tk-sep">·</span>
-      <span class="tk-item">Campaign out</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">Campaign out</span><span class="tk-sep">·</span>
       <span class="tk-item">Human-checked</span><span class="tk-sep">·</span>
-      <span class="tk-item">~24 hours</span><span class="tk-sep">·</span>
+      <span class="tk-item fill">~24 hours</span><span class="tk-sep">·</span>
     </div>
   </div>
 
   <!-- THE PROCESS — a true sequence, from photo to publish. -->
   <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:0">
-        <h2>From photo to publish.</h2>
-        <p>Four steps, one working day. You only do the first one.</p>
+      <div class="ed-head">
+        <span class="ed-meta">( Process )</span>
+        <div>
+          <h2>From photo to publish.</h2>
+          <p class="ed-sub">Four steps, one working day. You only do the first one.</p>
+        </div>
       </div>
       <div class="process" data-stagger>
         <div class="pr-step">
@@ -303,9 +305,12 @@ const reqs = [
   <!-- QUALITY GUARANTEE — the multi-photo story, sold as an upside. -->
   <section class="section-tight">
     <div class="container">
-      <div class="section-head" style="margin-bottom:2rem">
-        <h2>The more you show us, <em>the more we guarantee.</em></h2>
-        <p>One clear photo is enough to get started. But because we usually never hold your product, a few extra angles let us match it exactly — this is where quality is won.</p>
+      <div class="ed-head" style="margin-bottom:clamp(2.4rem,4.5vw,3.6rem)">
+        <span class="ed-meta">( Quality )</span>
+        <div>
+          <h2>The more you show us, <em>the more we guarantee.</em></h2>
+          <p class="ed-sub">One clear photo is enough to get started. But because we usually never hold your product, a few extra angles let us match it exactly — this is where quality is won.</p>
+        </div>
       </div>
       <div class="req-grid reveal-group">
         {reqs.map((r) => (
@@ -438,7 +443,7 @@ const reqs = [
         </div>
         <p style="margin-top:1.4rem;font-size:.84rem;color:var(--ink-3)">Full breakdown on the <a href="/pricing" style="color:var(--accent-bright);text-decoration:underline">pricing page</a>.</p>
       </div>
-      <div class="plan-photo reveal pending">
+      <div class="plan-photo reveal pending" data-zoom>
         <img src="/img/custom-models-03.webp" alt="A VISUAILS custom model portrait" loading="lazy" />
       </div>
     </div>
