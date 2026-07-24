@@ -21,7 +21,7 @@ export function getStaticPaths() {
 const { style } = Astro.props;
 // Preset styles are a fixed per-visual price; Custom is quoted, so fall back
 // to a per-style price when one is set.
-const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''}` : 'From €35 / visual';
+const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''}` : 'From €59.99 / product';
 ---
 
 <Layout
@@ -41,7 +41,7 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
         </a>
       </div>
       <div class="trust-row" style="margin-top:2rem">
-        <span class="trust-item"><strong>{style.priceTrust ?? '€35'}</strong>{style.priceUnit ?? ' / visual'}</span>
+        <span class="trust-item"><strong>{style.priceTrust ?? '€59.99'}</strong>{style.priceUnit ?? ' / product'}</span>
         <span class="trust-item"><strong>~24h</strong> delivery</span>
         <span class="trust-item"><strong>100%</strong> checked by hand</span>
       </div>

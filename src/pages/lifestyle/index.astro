@@ -7,10 +7,10 @@ import Layout from '../../layouts/Layout.astro';
 import Compare from '../../components/Compare.astro';
 
 const styles = [
-  { slug: 'dunes', name: 'Dunes', cardPhoto: '/img/lifestyle-dunes-01.webp', tagline: 'Sun, sand and quiet luxury.', price: '€35 / visual' },
-  { slug: 'flash', name: 'Flash', cardPhoto: '/img/lifestyle-flash-02.webp', tagline: 'Direct flash. No apologies.', price: '€35 / visual' },
-  { slug: 'glow', name: 'Glow', cardPhoto: '/img/lifestyle-glow-01.webp', tagline: 'Golden hour, on demand.', price: '€35 / visual' },
-  { slug: 'phone-made', name: 'Phone-made', cardPhoto: '/img/lifestyle-phone-made-11.webp', tagline: "Looks effortless. Isn't.", price: '€35 / visual' },
+  { slug: 'dunes', name: 'Dunes', cardPhoto: '/img/lifestyle-dunes-01.webp', tagline: 'Sun, sand and quiet luxury.', price: '€59.99 / product' },
+  { slug: 'flash', name: 'Flash', cardPhoto: '/img/lifestyle-flash-02.webp', tagline: 'Direct flash. No apologies.', price: '€59.99 / product' },
+  { slug: 'glow', name: 'Glow', cardPhoto: '/img/lifestyle-glow-01.webp', tagline: 'Golden hour, on demand.', price: '€59.99 / product' },
+  { slug: 'phone-made', name: 'Phone-made', cardPhoto: '/img/lifestyle-phone-made-11.webp', tagline: "Looks effortless. Isn't.", price: '€59.99 / product' },
   { slug: 'custom', name: 'Custom', cardPhoto: '/img/banners-13.webp', tagline: 'Your own world.', price: 'On request' },
 ];
 
@@ -25,14 +25,14 @@ const marqueeItems = [
 
 <Layout
   title="Lifestyle Images — your product in scenes that sell | VISUAILS"
-  description="Real, styled lifestyle scenes with natural lighting — and optional consistent models. High-res, e-commerce ready and human-reviewed, delivered in ~24 hours. From €35 per visual."
+  description="Real, styled lifestyle scenes with natural lighting — and optional consistent models. High-res, e-commerce ready and human-reviewed, delivered in ~24 hours. €59.99 per product — a ready-to-post carousel of three photos."
   ogImage="/img/lifestyle-glow-01.webp"
 >
   <section class="page-hero">
     <div class="container">
       <span class="eyebrow-page">Lifestyle Images</span>
       <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem">Your product, in scenes that sell</h1>
-      <p class="lead" style="margin-top:1.2rem">Four signature styles. From €35 per visual.</p>
+      <p class="lead" style="margin-top:1.2rem">Four signature looks. €59.99 per product — a 3-photo carousel.</p>
       <div class="flex" style="margin-top:1.8rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href="/order-lifestyle" class="btn btn-primary btn-lg">Order lifestyle visuals</a></span></span>
         <a href="/pricing" class="btn btn-ghost btn-lg">See pricing</a>
@@ -41,10 +41,22 @@ const marqueeItems = [
         </a>
       </div>
       <div class="trust-row" style="margin-top:2.4rem">
-        <span class="trust-item"><strong>From €35</strong> per visual</span>
+        <span class="trust-item"><strong>€59.99</strong> per product</span>
         <span class="trust-item"><strong>~24h</strong> delivery</span>
         <span class="trust-item"><strong>100%</strong> human-reviewed</span>
       </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head"><h2>One product. Three photos. <em>A carousel.</em></h2><p>Every Lifestyle order is your product in one styled look, delivered as three shots that belong together — ready to post as a carousel on Instagram, your shop and ads.</p></div>
+      <div class="grid grid-3 reveal-group">
+        <div class="card reveal pending"><span class="rc-num">01</span><h4>The scene</h4><p>Your product styled in a real-world setting — the atmosphere shot that stops the scroll.</p></div>
+        <div class="card reveal pending"><span class="rc-num">02</span><h4>On-model</h4><p>The same product worn or held, so people can picture it in their own life.</p></div>
+        <div class="card reveal pending"><span class="rc-num">03</span><h4>Logo close-up</h4><p>A tight detail shot — same vibe, same colour grade — that proves the quality.</p></div>
+      </div>
+      <p style="margin-top:1.4rem;font-size:.85rem;color:var(--ink-3)">One styled look per order · same colour grading · a different scene is a separate order.</p>
     </div>
   </section>
 
@@ -98,7 +110,7 @@ const marqueeItems = [
         ].map((c) => (
           <div class="reveal pending">
             <Compare grade before={c.photo} after={c.photo} beforeAlt={`A flat, ungraded ${c.name} scene`} afterAlt={`The same scene finished in the ${c.name} lifestyle look`} beforeLabel="Flat" afterLabel={c.name} />
-            <p class="cc-label"><strong>{c.name}</strong> &middot; €35 / visual</p>
+            <p class="cc-label"><strong>{c.name}</strong> &middot; €59.99 / product</p>
           </div>
         ))}
       </div>

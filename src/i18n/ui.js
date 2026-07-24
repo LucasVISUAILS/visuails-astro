@@ -25,7 +25,7 @@ export const ui = {
     nav_ordernow: 'Order now',
     services: [
       ['Catalog', '4 photos per product — €39.99'],
-      ['Lifestyle', 'Styled scenes & models — from €35'],
+      ['Lifestyle', '3-photo carousel per product — €59.99'],
       ['Video', 'Short product videos that move'],
       ['Models', 'Consistent faces across every visual'],
       ['Custom Models', 'A unique face, exclusively yours'],
@@ -64,7 +64,7 @@ export const ui = {
     nav_ordernow: 'Bestel nu',
     services: [
       ['Catalog', '4 foto’s per product — €39,99'],
-      ['Lifestyle', 'Gestylde scènes & modellen — vanaf €35'],
+      ['Lifestyle', 'Carousel van 3 foto’s per product — €59,99'],
       ['Video', 'Korte productvideo’s met beweging'],
       ['Modellen', 'Consistente gezichten op elke visual'],
       ['Eigen modellen', 'Een uniek gezicht, exclusief van jou'],

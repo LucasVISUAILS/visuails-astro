@@ -7,10 +7,10 @@ import Layout from '../../../layouts/Layout.astro';
 import Compare from '../../../components/Compare.astro';
 
 const styles = [
-  { slug: 'dunes', name: 'Dunes', cardPhoto: '/img/lifestyle-dunes-01.webp', tagline: 'Zon, zand en ingetogen luxe.', price: '€35 / visual' },
-  { slug: 'flash', name: 'Flash', cardPhoto: '/img/lifestyle-flash-02.webp', tagline: 'Directe flits. Zonder excuses.', price: '€35 / visual' },
-  { slug: 'glow', name: 'Glow', cardPhoto: '/img/lifestyle-glow-01.webp', tagline: 'Golden hour, op aanvraag.', price: '€35 / visual' },
-  { slug: 'phone-made', name: 'Phone-made', cardPhoto: '/img/lifestyle-phone-made-11.webp', tagline: 'Ziet er moeiteloos uit. Is het niet.', price: '€35 / visual' },
+  { slug: 'dunes', name: 'Dunes', cardPhoto: '/img/lifestyle-dunes-01.webp', tagline: 'Zon, zand en ingetogen luxe.', price: '€59,99 / product' },
+  { slug: 'flash', name: 'Flash', cardPhoto: '/img/lifestyle-flash-02.webp', tagline: 'Directe flits. Zonder excuses.', price: '€59,99 / product' },
+  { slug: 'glow', name: 'Glow', cardPhoto: '/img/lifestyle-glow-01.webp', tagline: 'Golden hour, op aanvraag.', price: '€59,99 / product' },
+  { slug: 'phone-made', name: 'Phone-made', cardPhoto: '/img/lifestyle-phone-made-11.webp', tagline: 'Ziet er moeiteloos uit. Is het niet.', price: '€59,99 / product' },
   { slug: 'custom', name: 'Custom', cardPhoto: '/img/banners-13.webp', tagline: 'Je eigen wereld.', price: 'Op aanvraag' },
 ];
 
@@ -25,14 +25,14 @@ const marqueeItems = [
 
 <Layout
   title="Lifestyle Images — jouw product in scènes die verkopen | VISUAILS"
-  description="Echte, gestylede lifestyle-scènes met natuurlijk licht — en optioneel consistente modellen. High-res, klaar voor e-commerce en met de hand gecontroleerd, geleverd in ~24 uur. Vanaf €35 per visual."
+  description="Echte, gestylede lifestyle-scènes met natuurlijk licht — en optioneel consistente modellen. High-res, klaar voor e-commerce en met de hand gecontroleerd, geleverd in ~24 uur. €59,99 per product — een carousel van drie foto’s klaar om te posten."
   ogImage="/img/lifestyle-glow-01.webp"
 >
   <section class="page-hero">
     <div class="container">
       <span class="eyebrow-page">Lifestyle Images</span>
       <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem">Jouw product, in scènes die verkopen</h1>
-      <p class="lead" style="margin-top:1.2rem">Vier signatuurstijlen. Vanaf €35 per visual.</p>
+      <p class="lead" style="margin-top:1.2rem">Vier signatuurlooks. €59,99 per product — een carousel van 3 foto’s.</p>
       <div class="flex" style="margin-top:1.8rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href="/nl/order-lifestyle" class="btn btn-primary btn-lg">Bestel Lifestyle-visuals</a></span></span>
         <a href="/nl/pricing" class="btn btn-ghost btn-lg">Bekijk prijzen</a>
@@ -41,10 +41,22 @@ const marqueeItems = [
         </a>
       </div>
       <div class="trust-row" style="margin-top:2.4rem">
-        <span class="trust-item"><strong>Vanaf €35</strong> per visual</span>
+        <span class="trust-item"><strong>€59,99</strong> per product</span>
         <span class="trust-item"><strong>~24 uur</strong> levering</span>
         <span class="trust-item"><strong>100%</strong> met de hand gecontroleerd</span>
       </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head"><h2>Eén product. Drie foto’s. <em>Een carousel.</em></h2><p>Elke Lifestyle-bestelling is je product in één gestylde look, geleverd als drie shots die bij elkaar horen — klaar om te posten als carousel op Instagram, je shop en ads.</p></div>
+      <div class="grid grid-3 reveal-group">
+        <div class="card reveal pending"><span class="rc-num">01</span><h4>De sfeer</h4><p>Je product gestyled in een realistische setting — het sfeerbeeld dat de scroll stopt.</p></div>
+        <div class="card reveal pending"><span class="rc-num">02</span><h4>On-model</h4><p>Hetzelfde product gedragen of vastgehouden, zodat mensen het in hun eigen leven zien.</p></div>
+        <div class="card reveal pending"><span class="rc-num">03</span><h4>Logo-close-up</h4><p>Een strakke detailshot — zelfde vibe, zelfde colour grade — die de kwaliteit bewijst.</p></div>
+      </div>
+      <p style="margin-top:1.4rem;font-size:.85rem;color:var(--ink-3)">Eén gestylde look per bestelling · zelfde colour grading · een andere scène is een aparte bestelling.</p>
     </div>
   </section>
 
@@ -98,7 +110,7 @@ const marqueeItems = [
         ].map((c) => (
           <div class="reveal pending">
             <Compare grade before={c.photo} after={c.photo} beforeAlt={`Een platte, ongecorrigeerde ${c.name}-scène`} afterAlt={`Dezelfde scène afgewerkt in de ${c.name} lifestyle-look`} beforeLabel="Plat" afterLabel={c.name} />
-            <p class="cc-label"><strong>{c.name}</strong> &middot; €35 / visual</p>
+            <p class="cc-label"><strong>{c.name}</strong> &middot; €59,99 / product</p>
           </div>
         ))}
       </div>

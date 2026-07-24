@@ -6,7 +6,7 @@ import ThreeWay from '../../components/ThreeWay.astro';
 
 const plans = [
   { name: 'Catalog', price: '€39,99', unit: '/ product', accent: false, desc: 'Een volledige set van 4 foto’s per product — zo’n €10 per foto.', features: ['4 foto’s: voorkant, achterkant, detail & on-model', 'On-model shot inbegrepen, geen meerprijs', '3 revisierondes'], cta: 'Bestel catalog' },
-  { name: 'Lifestyle', price: '€35', unit: 'vanaf / visual', accent: true, desc: 'Je product in gestylde, realistische scènes.', features: ['Natuurlijk licht, gestylde scènes', 'Standaardmodellen inbegrepen', '3 revisierondes'], cta: 'Bestel lifestyle' },
+  { name: 'Lifestyle', price: '€59,99', unit: '/ product', accent: true, desc: 'Drie foto’s van je product in één gestylde look — een carousel klaar om te posten.', features: ['3 foto’s: sfeer, on-model & logo-close-up', 'Eén gestylde look, zelfde colour grading', 'Modellen & 3 revisies inbegrepen'], cta: 'Bestel lifestyle' },
   { name: 'Video', price: '€49', unit: '/ video', accent: false, desc: 'Productvideo’s met subtiele beweging voor feeds en ads.', features: ['Motion vanaf €49, Lifestyle vanaf €59', 'Campagnevideo’s op offerte per project', 'Menselijke controle vóór levering'], cta: 'Bestel een video' },
 ];
 
@@ -27,19 +27,19 @@ const included = ['Menselijke controle op elke visual', '2K-export', 'Levering i
 const faqs = [
   { q: 'Hoe en wanneer betaal ik?', a: "Je betaalt je bestelling pas nadat je het resultaat hebt goedgekeurd — nooit vooraf. De enige uitzondering is de optionele proefvisual van €0,99, die vooraf wordt betaald om het eerlijk te houden (één per bedrijf). We factureren rechtstreeks; iDEAL en andere directe opties komen eraan, dus geef gewoon je voorkeur door bij je bestelling." },
   { q: 'Hoe werkt btw en verlegging?', a: "We zijn gevestigd in Nederland (btw NL005407575B96). EU-bedrijven met een geldig btw-nummer kunnen dit bij het bestellen invullen voor btw-verlegging en snellere facturatie." },
-  { q: 'Wat telt als één "visual"?', a: 'Eén afgewerkt beeld. Multi-format export levert het in meerdere verhoudingen — nog steeds één visual, geen vier. Catalog is de uitzondering: die is geprijsd per product op €39,99 en bevat altijd vier foto’s (voorkant, achterkant, detail en on-model).' },
+  { q: 'Wat telt als één "visual"?', a: 'Eén afgewerkt beeld. Multi-format export levert het in meerdere verhoudingen — nog steeds één visual. Catalog en Lifestyle zijn geprijsd per product: Catalog is €39,99 voor vier foto’s (voorkant, achterkant, detail en on-model), Lifestyle is €59,99 voor een carousel van drie foto’s (sfeer, on-model en een logo-close-up).' },
   { q: 'Hoe werkt custom pricing?', a: 'Een eigen stijl of model is een eenmalige ontwerpkost, daarna de normale prijs per visual op elke bestelling erna. Standaardvideo’s hebben een vaste prijs (Motion vanaf €49, Lifestyle vanaf €59); grotere campagnevideo’s worden per project geoffreerd via een korte WhatsApp-intake.' },
 ];
 ---
 
 <Layout
   title="VISUAILS — Eenvoudige, transparante prijzen"
-  description="Eenvoudige prijzen bij VISUAILS — catalog €39,99 per product (een set van 4 foto’s), lifestyle vanaf €35 per visual en custom video. Geen abonnementen, geen verborgen kosten. Menselijke controle, 2K-export, levering in ~24 uur en 3 revisierondes altijd inbegrepen."
+  description="Eenvoudige prijzen bij VISUAILS — catalog €39,99 per product (een set van 4 foto’s), lifestyle €59,99 per product (een carousel van 3 foto’s) en custom video. Geen abonnementen, geen verborgen kosten. Menselijke controle, 2K-export, levering in ~24 uur en 3 revisierondes altijd inbegrepen."
 >
   <section class="page-hero"><div class="container">
     <p class="eyebrow-page">Prijzen</p>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Eenvoudige, transparante prijzen</h1>
-    <p class="lead" style="margin-top:1.2rem">Betaal per keer — per product of per visual. Geen abonnementen, geen verborgen kosten.</p>
+    <p class="lead" style="margin-top:1.2rem">Betaal per keer — per product. Geen abonnementen, geen verborgen kosten.</p>
     <div class="flex" style="margin-top:1.8rem"><a href="/nl/order" class="btn btn-primary btn-lg">Bestel nu</a><a href="/nl/test-sample" class="btn btn-ghost btn-lg">Proefvisual</a></div>
   </div></section>
 

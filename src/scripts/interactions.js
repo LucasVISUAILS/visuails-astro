@@ -289,7 +289,7 @@ function initWizards() {
     const format = form.querySelector('input[name="format"]:checked')?.value;
     const quality = form.querySelector('input[name="quality"]:checked')?.value;
     const delivery = form.querySelector('input[name="delivery"]:checked')?.value;
-    const total = qty * 35 + (format === 'Multi Format Export' ? 19.99 : 0) + (quality === '4K' ? 9.99 : 0) + (delivery === 'Priority' ? 29.99 : 0);
+    const total = qty * 59.99 + (format === 'Multi Format Export' ? 19.99 : 0) + (quality === '4K' ? 9.99 : 0) + (delivery === 'Priority' ? 29.99 : 0);
     label.textContent = money(total);
   };
   const catalogTotal = (form) => {
