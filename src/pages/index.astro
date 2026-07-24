@@ -42,27 +42,40 @@ const reqs = [
   description="Send one product photo, get a full campaign back in about 24 hours. Catalog, on-model, lifestyle and video visuals — styled to your brand, human-checked, no photoshoot needed."
   ogImage="/img/banners-09.webp"
 >
-  <!-- HERO — full-bleed real photo, one editorial line, three ways in. -->
-  <section class="hero-editorial">
-    <div class="bg" style="background-image:url('/img/banners-09.webp')" transition:name="hero-photo"></div>
-    <div class="fade"></div>
-    <div class="hero-editorial-content container">
-      <h1 class="display" data-split-lines>Look like the brand<br />you're <em class="ital">becoming.</em></h1>
-      <p class="lead-ital">A product-visual studio for e-commerce brands. One photo in — a publish-ready campaign of catalog, lifestyle and video out, in about 24 hours.</p>
-      <div class="flex" style="margin-top:1.8rem">
-        <a href="/test-sample" class="btn btn-primary btn-lg">Try a test sample</a>
-        <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
-        <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
-          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
-          WhatsApp
-        </a>
+  <!-- HERO — "the studio": a live colour-grade light field (WebGL, with a
+       pure-CSS fallback behind it) and the actual work layered in front as
+       prints. The first viewport shows real output, not decoration. -->
+  <section class="hero-studio">
+    <div class="hero-fallback" aria-hidden="true"></div>
+    <canvas id="hero-shader" aria-hidden="true"></canvas>
+    <div class="container hero-studio-grid">
+      <div>
+        <h1 class="display" data-split-lines>Look like the brand<br />you're <em class="ital">becoming.</em></h1>
+        <p class="lead-ital">A product-visual studio for e-commerce brands. One photo in — a publish-ready campaign of catalog, lifestyle and video out, in about 24 hours.</p>
+        <div class="flex" style="margin-top:1.8rem">
+          <a href="/test-sample" class="btn btn-primary btn-lg">Try a test sample</a>
+          <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
+          <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
+            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
+            WhatsApp
+          </a>
+        </div>
+        <ul class="hero-benefits">
+          <li>~24-hour delivery</li>
+          <li>No photoshoot</li>
+          <li>Human-checked</li>
+          <li>Catalog €39.99 / product</li>
+        </ul>
       </div>
-      <ul class="hero-benefits">
-        <li>~24-hour delivery</li>
-        <li>No photoshoot</li>
-        <li>Human-checked</li>
-        <li>Catalog €39.99 / product</li>
-      </ul>
+      <div class="hero-visual" data-hero-card>
+        <figure class="hero-card" transition:name="hero-photo">
+          <img src="/img/banners-09.webp" alt="A VISUAILS campaign visual" fetchpriority="high" />
+          <figcaption class="hero-card-tag">Made from one product photo</figcaption>
+        </figure>
+        <figure class="hero-card hero-card-b">
+          <img src="/img/lifestyle-glow-01.webp" alt="A VISUAILS lifestyle visual in the Glow style" loading="lazy" />
+        </figure>
+      </div>
     </div>
     <div class="hero-editorial-cue"><span class="cue-line"></span>Scroll</div>
   </section>
@@ -113,12 +126,20 @@ const reqs = [
     </div>
   </section>
 
-  <!-- PROOF — the real raw-phone → catalog pair, in the working comparison. -->
-  <section class="section-tight">
+  <!-- PROOF / THE DEVELOP — the real raw-phone → catalog pair. On desktop,
+       motion.js pins this section and scroll itself "develops" the photo
+       (scrubbing the Compare's --cmp-pos); the slider stays draggable after.
+       Without JS / on mobile it's the auto-drifting comparison as before. -->
+  <section class="section-tight" id="develop">
     <div class="container two-col">
       <div class="reveal pending">
         <h2>One photo in. <em>The rest is ours.</em></h2>
         <p class="lead" style="margin-top:1rem">This is the entire brief we need from you — a phone photo. Watch it become a clean, publish-ready visual.</p>
+        <div class="dev-steps" aria-hidden="true">
+          <p class="dev-step"><span class="dn">01</span>Raw phone photo — the entire brief</p>
+          <p class="dev-step"><span class="dn">02</span>Background stripped · colour locked to your brand</p>
+          <p class="dev-step"><span class="dn">03</span>Human-checked · ready to publish</p>
+        </div>
         <div class="flex" style="margin-top:1.6rem">
           <a href="/test-sample" class="btn btn-primary">Try it on your product</a>
           <a href={WA} class="btn btn-wa" target="_blank" rel="noopener">
@@ -178,15 +199,30 @@ const reqs = [
     </div>
   </section>
 
-  <!-- STRIP — a fast run of real photography, no copy at all. -->
+  <!-- FILM STRIP — two counter-drifting rows of real output (GSAP drives the
+       loop and leans the rows with scroll velocity; static rows without JS).
+       Second copy of each row is the seamless-loop duplicate. -->
   <section class="section-tight">
-    <div class="container">
-      <div class="photo-grid reveal pending">
-        <img src={strip[0]} alt="Flash-style lifestyle visual" loading="lazy" class="wide" />
+    <div class="visual-marquee">
+      <div class="vm-row">
+        <img src={strip[0]} alt="Flash-style lifestyle visual" loading="lazy" />
         <img src={strip[1]} alt="Dunes-style lifestyle visual" loading="lazy" />
+        <img src="/img/banners-14.webp" alt="Campaign visual" loading="lazy" />
         <img src={strip[2]} alt="Phone-made-style lifestyle visual" loading="lazy" />
+        <img src={strip[0]} alt="" aria-hidden="true" loading="lazy" />
+        <img src={strip[1]} alt="" aria-hidden="true" loading="lazy" />
+        <img src="/img/banners-14.webp" alt="" aria-hidden="true" loading="lazy" />
+        <img src={strip[2]} alt="" aria-hidden="true" loading="lazy" />
+      </div>
+      <div class="vm-row">
         <img src={strip[3]} alt="Campaign photography" loading="lazy" />
-        <img src={strip[4]} alt="Campaign photography" loading="lazy" class="wide" />
+        <img src="/img/lifestyle-glow-05.webp" alt="Glow-style lifestyle visual" loading="lazy" />
+        <img src={strip[4]} alt="Campaign photography" loading="lazy" />
+        <img src="/img/lifestyle-flash-07.webp" alt="Flash-style lifestyle visual" loading="lazy" />
+        <img src={strip[3]} alt="" aria-hidden="true" loading="lazy" />
+        <img src="/img/lifestyle-glow-05.webp" alt="" aria-hidden="true" loading="lazy" />
+        <img src={strip[4]} alt="" aria-hidden="true" loading="lazy" />
+        <img src="/img/lifestyle-flash-07.webp" alt="" aria-hidden="true" loading="lazy" />
       </div>
     </div>
   </section>

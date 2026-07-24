@@ -8,8 +8,8 @@
    view-transition-name hooks used by ClientRouter (see Layout.astro).
    ============================================================ */
 
-/* Archivo is loaded via Google Fonts in Layout.astro's <head> (preconnect +
-   css2 link, weights 400/500/600/700/900) — matches the previous site. */
+/* Archivo is self-hosted via Fontsource (imported in Layout.astro) —
+   weights 400–900 + italic 400/700, font-display: swap. */
 
 :root {
   --bg:         #0E0E16;
@@ -454,3 +454,60 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .tri-col-vis:not(.tri-head) span { color: var(--ink); font-weight: 500; }
 .tri-check { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: var(--success); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 620px) { .tri-cell { padding: .8rem .85rem; font-size: .84rem; } }
+
+/* ============================================================
+   "The Develop" homepage system — shader hero, layered proof cards,
+   film-strip marquee, pinned develop scene. The shader canvas and GSAP
+   choreography (src/scripts/shader-hero.js, motion.js) are pure
+   enhancement: every base state below is fully designed without them.
+   ============================================================ */
+
+/* Hero — a dark studio: liquid-grade light behind, real work in front. */
+.hero-studio { position: relative; min-height: 100svh; display: flex; align-items: center; overflow: hidden; isolation: isolate; margin-top: -76px; padding-top: 76px; }
+#hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; display: block; }
+.hero-fallback { position: absolute; inset: 0; z-index: -2; background:
+  radial-gradient(70% 90% at 82% 30%, rgba(123,108,245,.26), transparent 62%),
+  radial-gradient(48% 60% at 68% 78%, rgba(95,227,240,.12), transparent 60%),
+  linear-gradient(180deg, #0B0B14 0%, var(--bg-deep) 100%); }
+.hero-studio::after { content: ""; position: absolute; inset: auto 0 0 0; height: 22%; z-index: 0; pointer-events: none; background: linear-gradient(180deg, transparent, var(--bg)); }
+.hero-studio-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(2rem, 5vw, 5rem); align-items: center; padding-block: clamp(5rem, 10vh, 7rem) clamp(4.5rem, 9vh, 6rem); }
+.hero-studio h1 { font-size: clamp(3rem, 6.6vw, 5.6rem); max-width: 14ch; }
+.hero-studio .lead-ital { font-style: italic; color: rgba(228,231,242,.9); max-width: 44ch; margin-top: 1.2rem; font-size: var(--t-lg); line-height: 1.55; }
+
+/* Layered proof cards — the work itself, framed like prints on a light table. */
+.hero-visual { position: relative; }
+.hero-card { position: relative; z-index: 1; aspect-ratio: 4/5; border-radius: 16px; overflow: hidden; margin: 0;
+  border: 1px solid rgba(238,240,246,.1);
+  box-shadow: 0 40px 90px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(9,9,17,.6), 0 24px 60px -20px rgba(123,108,245,.22);
+  transform: rotate(1.6deg); will-change: transform; background: var(--bg-deep); }
+.hero-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-card-b { position: absolute; z-index: 2; width: 42%; left: -9%; bottom: -7%; aspect-ratio: 3/4; transform: rotate(-5deg);
+  box-shadow: 0 30px 70px -24px rgba(0,0,0,.8), 0 0 0 1px rgba(9,9,17,.6); }
+.hero-card-tag { position: absolute; z-index: 3; bottom: 14px; right: 14px; font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ink); background: rgba(10,9,8,.72); backdrop-filter: blur(6px); padding: .34rem .75rem; border-radius: var(--r-pill); pointer-events: none; }
+@media (max-width: 900px) {
+  .hero-studio { min-height: auto; padding-bottom: 1rem; }
+  .hero-studio-grid { grid-template-columns: 1fr; gap: 2.6rem; padding-block: clamp(6rem, 14vh, 7.5rem) 4.5rem; }
+  .hero-visual { max-width: 420px; margin-inline: auto 0; }
+  .hero-card { transform: rotate(1.2deg); }
+}
+@media (max-width: 700px) { .hero-studio .hero-editorial-cue { display: none; } }
+
+/* Develop scene captions — three states of the same photograph. */
+.dev-steps { display: grid; gap: .65rem; margin-top: 1.7rem; max-width: 40ch; }
+.dev-step { display: flex; gap: .8rem; align-items: baseline; font-size: .92rem; color: var(--ink-2); }
+.dev-step .dn { font-family: var(--font-display); font-weight: 900; font-size: .78rem; color: var(--accent-bright); flex: 0 0 auto; letter-spacing: .04em; }
+
+/* Film-strip marquee — two counter-drifting rows of real output. Static rows
+   (no JS / reduced motion) still read as a designed photo band. */
+.visual-marquee { display: flex; flex-direction: column; gap: clamp(.8rem, 1.6vw, 1.2rem); overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+.vm-row { display: flex; gap: clamp(.8rem, 1.6vw, 1.2rem); width: max-content; will-change: transform; }
+.vm-row img { height: clamp(180px, 26vh, 300px); width: auto; border-radius: var(--r-media); border: 1px solid var(--line); display: block; }
+
+/* Desktop composition for the pinned develop scene — fills the viewport while
+   pinned so the scrub reads as one held frame. Mobile keeps normal flow. */
+@media (min-width: 900px) {
+  #develop { min-height: 92svh; display: flex; align-items: center; }
+  #develop .container { width: 100%; }
+}

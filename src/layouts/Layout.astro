@@ -7,6 +7,18 @@
 // after a transition.
 import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
+// Self-hosted Archivo (Fontsource) — served from our own build instead of
+// Google's servers (AVG/GDPR-clean, no third-party connection). Same weights
+// as the previous Google Fonts request so rendering is identical. font-display
+// is 'swap' by default in Fontsource, matching the old &display=swap.
+import '@fontsource/archivo/400.css';
+import '@fontsource/archivo/500.css';
+import '@fontsource/archivo/600.css';
+import '@fontsource/archivo/700.css';
+import '@fontsource/archivo/800.css';
+import '@fontsource/archivo/900.css';
+import '@fontsource/archivo/400-italic.css';
+import '@fontsource/archivo/700-italic.css';
 import { ui, serviceHrefs, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 
 interface Props {
@@ -80,9 +92,6 @@ const orgJsonLd = {
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
@@ -277,8 +286,12 @@ const orgJsonLd = {
   <script>
     // Importing runs init() once immediately and registers the
     // astro:page-load listener for every ClientRouter navigation after —
-    // see src/scripts/interactions.js.
+    // see src/scripts/interactions.js. The motion layer (GSAP scroll
+    // choreography) and the hero shader are separate modules with their own
+    // ClientRouter lifecycles; both no-op on pages without their hooks.
     import '../scripts/interactions.js';
+    import '../scripts/motion.js';
+    import '../scripts/shader-hero.js';
   </script>
 </body>
 </html>
