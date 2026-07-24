@@ -1,23 +1,25 @@
 ---
-// VISUAILS — homepage. Editorial rebuild, second pass: more feeling and
-// italic display type, a short "what we do" statement, small benefits, a
-// WhatsApp path, and — instead of the old weak one-line offer — a set of
-// clickable tiles showing exactly what we make from a customer's photo
-// (catalog, on-model catalog, lifestyle, video). Before/after now uses the
-// always-visible Compare component (the old .spot/.ba shipped blank).
+// VISUAILS — homepage, "editorial chapters" build. The page reads as chapters
+// of one film: a cinematic full-bleed hero with a glass services bar, centred
+// serif chapter heads (Bodoni Moda; dimmed second line — solid colours, no
+// gradient-clipped text), glass service cards, the pinned "develop" scene,
+// gallery tiles with italic serif labels, a film-strip marquee, the promise
+// split lit by the WebGL light field, a glow test-sample moment and a closing
+// plan chapter. All motion is progressive enhancement (src/scripts/motion.js);
+// every base state is fully designed without JS.
 import Layout from '../layouts/Layout.astro';
 import Compare from '../components/Compare.astro';
 import ThreeWay from '../components/ThreeWay.astro';
 
 const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20see%20what%20you%20can%20make%20from%20my%20product%20photos.';
 
-// What we make from one uploaded photo — the tiles that replace the old
-// "one photo in..." line. Each links to its service and shows a real output.
-const make = [
-  { href: '/catalog', name: 'Catalog', desc: 'Clean, consistent product shots', photo: '/img/catalog-after.webp' },
-  { href: '/catalog', name: 'On-model catalog', desc: 'Your product, worn by a model', photo: '/img/custom-models-02.webp' },
-  { href: '/lifestyle', name: 'Lifestyle', desc: 'Styled, real-world scenes', photo: '/img/lifestyle-glow-01.webp' },
-  { href: '/video', name: 'Video', desc: 'Short product videos that move', photo: '/img/banners-16.webp', video: true },
+// Gallery tiles — the four things we make, as big imagery. Each links to its
+// service and shows a real output.
+const tiles = [
+  { href: '/catalog', label: 'Catalog', img: '/img/catalog-after.webp', alt: 'Clean catalog visual by VISUAILS' },
+  { href: '/catalog', label: 'On-model', img: '/img/custom-models-02.webp', alt: 'On-model catalog visual by VISUAILS' },
+  { href: '/lifestyle', label: 'Lifestyle', img: '/img/lifestyle-glow-01.webp', alt: 'Lifestyle visual in the Glow style' },
+  { href: '/video', label: 'Video', img: '/img/banners-16.webp', alt: 'Product video still by VISUAILS' },
 ];
 
 const strip = [
@@ -42,42 +44,32 @@ const reqs = [
   description="Send one product photo, get a full campaign back in about 24 hours. Catalog, on-model, lifestyle and video visuals — styled to your brand, human-checked, no photoshoot needed."
   ogImage="/img/banners-09.webp"
 >
-  <!-- HERO — "the studio": a live colour-grade light field (WebGL, with a
-       pure-CSS fallback behind it) and the actual work layered in front as
-       prints. The first viewport shows real output, not decoration. -->
-  <section class="hero-studio">
-    <div class="hero-fallback" aria-hidden="true"></div>
-    <canvas id="hero-shader" aria-hidden="true"></canvas>
-    <div class="container hero-studio-grid">
-      <div>
-        <h1 class="display" data-split-lines>Look like the brand<br />you're <em class="ital">becoming.</em></h1>
-        <p class="lead-ital">A product-visual studio for e-commerce brands. One photo in — a publish-ready campaign of catalog, lifestyle and video out, in about 24 hours.</p>
-        <div class="flex" style="margin-top:1.8rem">
-          <a href="/test-sample" class="btn btn-primary btn-lg">Try a test sample</a>
-          <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
-          <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
-            WhatsApp
-          </a>
-        </div>
-        <ul class="hero-benefits">
-          <li>~24-hour delivery</li>
-          <li>No photoshoot</li>
-          <li>Human-checked</li>
-          <li>Catalog €39.99 / product</li>
-        </ul>
+  <!-- CHAPTER 0 · CINEMA HERO — one film still, one serif line, one way in.
+       The glass bar at the bottom is the ecosystem: every service, one tap. -->
+  <section class="hero-cinema">
+    <div class="hc-bg"><img src="/img/banners-09.webp" alt="A VISUAILS campaign visual" fetchpriority="high" transition:name="hero-photo" /></div>
+    <div class="hc-scrim" aria-hidden="true"></div>
+    <div class="container hc-copy">
+      <h1><span class="ch-l">Look like the brand</span><span class="ch-l">you're <em>becoming.</em></span></h1>
+      <p class="hc-sub">A product-visual studio for e-commerce brands. One photo in — a publish-ready campaign of catalog, lifestyle and video out, in about 24 hours.</p>
+      <div class="ch-cta">
+        <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Try it on your product — €0.99</a>
+        <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
       </div>
-      <div class="hero-visual" data-hero-card>
-        <figure class="hero-card" transition:name="hero-photo">
-          <img src="/img/banners-09.webp" alt="A VISUAILS campaign visual" fetchpriority="high" />
-          <figcaption class="hero-card-tag">Made from one product photo</figcaption>
-        </figure>
-        <figure class="hero-card hero-card-b">
-          <img src="/img/lifestyle-glow-01.webp" alt="A VISUAILS lifestyle visual in the Glow style" loading="lazy" />
-        </figure>
-      </div>
+      <ul class="hc-benefits">
+        <li>~24-hour delivery</li>
+        <li>No photoshoot</li>
+        <li>Human-checked</li>
+        <li>Catalog €39.99 / product</li>
+      </ul>
     </div>
-    <div class="hero-editorial-cue"><span class="cue-line"></span>Scroll</div>
+    <nav class="hero-svcbar" aria-label="Services">
+      <a class="hsb-item" href="/catalog">Catalog</a>
+      <a class="hsb-item" href="/catalog">On-model</a>
+      <a class="hsb-item" href="/lifestyle">Lifestyle</a>
+      <a class="hsb-item" href="/video">Video</a>
+      <a class="hsb-item" href="/custom-models">Custom models</a>
+    </nav>
   </section>
 
   <!-- WHAT VISUAILS IS — the editorial statement + small, concrete benefits. -->
@@ -101,39 +93,55 @@ const reqs = [
     </div>
   </section>
 
-  <!-- WHAT WE MAKE — clickable outputs from one photo. Replaces the old line. -->
-  <section>
+  <!-- CHAPTER 1 · THE TOOLKIT — four glass cards, every service with its
+       price and both doors: learn or order. -->
+  <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:2rem">
-        <h2>From one photo, we make <em>all of it.</em></h2>
-        <p>Catalog, on-model, lifestyle and video — every format your store, ads and socials need. Tap to see each one.</p>
+      <div class="ch-head">
+        <span class="ch-orb" aria-hidden="true"></span>
+        <h2 class="ch-title"><span class="ch-l">Everything your store needs.</span><span class="ch-l dim">Done for you.</span></h2>
+        <p class="ch-sub">Four services, one brief: your product photo. Pay per product or per visual — no subscription.</p>
       </div>
-      <div class="make-grid reveal-group">
-        {make.map((m) => (
-          <a href={m.href} class="make-tile reveal pending">
-            <img src={m.photo} alt={`${m.name} example by VISUAILS`} loading="lazy" />
-            <div class="scrim"></div>
-            {m.video && (
-              <span class="mt-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
-            )}
-            <div class="mt-body">
-              <span class="mt-name">{m.name} &rarr;</span>
-              <span class="mt-desc">{m.desc}</span>
-            </div>
-          </a>
-        ))}
+      <div class="svc-row" data-cards>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span>
+          <h3>Catalog</h3>
+          <span class="sc-price">€39.99 / product — 4 photos</span>
+          <p>Front, back, detail close-up and one on-model shot. About €10 a photo, marketplace-ready.</p>
+          <div class="sc-links"><a class="sc-more" href="/catalog">Learn more</a><a class="sc-go" href="/order-catalog">Order</a></div>
+        </article>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+          <h3>Lifestyle</h3>
+          <span class="sc-price">From €35 / visual</span>
+          <p>Styled, real-world scenes in four signature looks — with consistent models included.</p>
+          <div class="sc-links"><a class="sc-more" href="/lifestyle">Learn more</a><a class="sc-go" href="/order-lifestyle">Order</a></div>
+        </article>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+          <h3>Video</h3>
+          <span class="sc-price">From €49 / video</span>
+          <p>Short product videos with subtle motion for feeds and ads. Campaigns quoted per project.</p>
+          <div class="sc-links"><a class="sc-more" href="/video">Learn more</a><a class="sc-go" href="/order-video">Order</a></div>
+        </article>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg></span>
+          <h3>Custom</h3>
+          <span class="sc-price">Your own style or model</span>
+          <p>A look, model or concept designed once for your brand — then normal per-visual pricing after.</p>
+          <div class="sc-links"><a class="sc-more" href="/custom-models">Learn more</a><a class="sc-go" href="/order-custom">Discuss</a></div>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- PROOF / THE DEVELOP — the real raw-phone → catalog pair. On desktop,
-       motion.js pins this section and scroll itself "develops" the photo
-       (scrubbing the Compare's --cmp-pos); the slider stays draggable after.
-       Without JS / on mobile it's the auto-drifting comparison as before. -->
+  <!-- CHAPTER 2 · THE DEVELOP — on desktop, motion.js pins this section and
+       scroll itself develops the photo (scrubbing the Compare's --cmp-pos);
+       the slider stays draggable after. Mobile/no-JS: the auto comparison. -->
   <section class="section-tight" id="develop">
     <div class="container two-col">
       <div class="reveal pending">
-        <h2>One photo in. <em>The rest is ours.</em></h2>
+        <h2 class="serif-display">One photo in. <em>The rest is ours.</em></h2>
         <p class="lead" style="margin-top:1rem">This is the entire brief we need from you — a phone photo. Watch it become a clean, publish-ready visual.</p>
         <div class="dev-steps" aria-hidden="true">
           <p class="dev-step"><span class="dn">01</span>Raw phone photo — the entire brief</p>
@@ -163,45 +171,29 @@ const reqs = [
     </div>
   </section>
 
-  <!-- QUALITY GUARANTEE — the multi-photo story, sold as an upside. -->
-  <section class="section-tight">
+  <!-- CHAPTER 3 · THE WORK — big imagery, italic serif labels, each tile a
+       door into its service. -->
+  <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:2rem">
-        <h2>The more you show us, <em>the more we guarantee.</em></h2>
-        <p>One clear photo is enough to get started. But because we usually never hold your product, a few extra angles let us match it exactly — this is where quality is won.</p>
+      <div class="ch-head">
+        <span class="ch-orb" aria-hidden="true"></span>
+        <h2 class="ch-title"><span class="ch-l">Real output.</span><span class="ch-l dim">Zero photoshoots.</span></h2>
+        <p class="ch-sub">Catalog, on-model, lifestyle and video — every format your store, ads and socials need.</p>
       </div>
-      <div class="req-grid reveal-group">
-        {reqs.map((r) => (
-          <div class="req-card reveal pending">
-            <span class="rc-num">{r.n}</span>
-            <h4>{r.title}</h4>
-            <p>{r.body}</p>
-          </div>
+      <div class="gallery-tiles" data-tiles>
+        {tiles.map((t) => (
+          <a class="gtile" href={t.href}>
+            <img src={t.img} alt={t.alt} loading="lazy" />
+            <span class="gt-label">{t.label}</span>
+            <span class="gt-go">Explore &rarr;</span>
+          </a>
         ))}
-      </div>
-      <p class="req-note reveal pending"><strong>Not required — just recommended.</strong> We can already deliver from a single photo of the whole product. Send the full set and we can guarantee the fit, colour and detail come out right the first time.</p>
-    </div>
-  </section>
-
-  <!-- MODELS — real portrait, one line. -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-split reverse reveal pending">
-        <div class="photo-split-media">
-          <img src="/img/custom-models-02.webp" alt="A VISUAILS model, styled consistently across a campaign" loading="lazy" />
-        </div>
-        <div>
-          <h2>One face.<br /><em>Every campaign.</em></h2>
-          <p class="lead" style="margin-top:1rem">The same model, locked to your brand, across your whole collection — or a custom face made only for you.</p>
-          <div style="margin-top:1.2rem"><a class="link-arrow" href="/models">Browse the models &rarr;</a></div>
-        </div>
       </div>
     </div>
   </section>
 
   <!-- FILM STRIP — two counter-drifting rows of real output (GSAP drives the
-       loop and leans the rows with scroll velocity; static rows without JS).
-       Second copy of each row is the seamless-loop duplicate. -->
+       loop and leans the rows with scroll velocity; static rows without JS). -->
   <section class="section-tight">
     <div class="visual-marquee">
       <div class="vm-row">
@@ -227,11 +219,47 @@ const reqs = [
     </div>
   </section>
 
+  <!-- QUALITY GUARANTEE — the multi-photo story, sold as an upside. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:2rem">
+        <h2 class="serif-display">The more you show us, <em>the more we guarantee.</em></h2>
+        <p>One clear photo is enough to get started. But because we usually never hold your product, a few extra angles let us match it exactly — this is where quality is won.</p>
+      </div>
+      <div class="req-grid reveal-group">
+        {reqs.map((r) => (
+          <div class="req-card reveal pending">
+            <span class="rc-num">{r.n}</span>
+            <h4>{r.title}</h4>
+            <p>{r.body}</p>
+          </div>
+        ))}
+      </div>
+      <p class="req-note reveal pending"><strong>Not required — just recommended.</strong> We can already deliver from a single photo of the whole product. Send the full set and we can guarantee the fit, colour and detail come out right the first time.</p>
+    </div>
+  </section>
+
+  <!-- MODELS — real portrait, one line. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-split reverse reveal pending">
+        <div class="photo-split-media">
+          <img src="/img/custom-models-02.webp" alt="A VISUAILS model, styled consistently across a campaign" loading="lazy" />
+        </div>
+        <div>
+          <h2 class="serif-display">One face.<br /><em>Every campaign.</em></h2>
+          <p class="lead" style="margin-top:1rem">The same model, locked to your brand, across your whole collection — or a custom face made only for you.</p>
+          <div style="margin-top:1.2rem"><a class="link-arrow" href="/models">Browse the models &rarr;</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- NOT ALL AI IS EQUAL — the trust objection, answered before the ask. -->
   <section class="section-tight">
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>Not all AI is <em>equal.</em></h2>
+        <h2 class="serif-display">Not all AI is <em>equal.</em></h2>
         <p style="margin-inline:auto">Generic AI generators guess. VISUAILS is built on your product, finished with professional editing tools and colour grading, then checked by a person before it reaches you.</p>
       </div>
       <div class="ai-compare reveal pending">
@@ -264,33 +292,29 @@ const reqs = [
     </div>
   </section>
 
-  <!-- FOUNDER'S PROMISE — honest trust while the studio is new: risk reversal
-       and a personal guarantee instead of borrowed reviews. -->
-  <section class="section-tight">
+  <!-- CHAPTER 4 · THE PROMISE — the honest-trust split, lit from behind by
+       the WebGL light field (shader-hero.js mounts on #hero-shader; the CSS
+       fallback carries the look without WebGL). -->
+  <section class="ch ch-promise">
+    <div class="hero-fallback" aria-hidden="true"></div>
+    <canvas id="hero-shader" aria-hidden="true"></canvas>
     <div class="container">
-      <div class="promise">
-        <div class="promise-lead reveal pending">
+      <div class="promise-split">
+        <div class="reveal pending">
           <span class="promise-eyebrow">A new studio — here's our promise</span>
-          <p class="editorial-statement">No wall of reviews yet. <em>So we earn it the honest way.</em></p>
-          <p class="promise-quote">"I check every visual myself before it reaches you, and we keep refining until it matches your brand. Not sure yet? See it on your own product for €0.99 first."</p>
+          <h2 class="ch-title" style="text-align:left"><span class="ch-l">No wall of reviews yet.</span><span class="ch-l dim">So we earn it the honest way.</span></h2>
+          <p class="promise-quote" style="margin-top:1.4rem">"I check every visual myself before it reaches you, and we keep refining until it matches your brand. Not sure yet? See it on your own product for €0.99 first."</p>
           <div class="promise-sign">
             <img src="/img/logo-mark.webp" alt="" width="24" height="24" />
             <span><strong>Lucas</strong> · founder, VISUAILS</span>
           </div>
         </div>
-        <div class="mini-benefits reveal pending">
-          <div class="mini-benefit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            <div><strong>See it first for €0.99</strong><span>A test sample on your own product before you commit to a full order.</span></div>
-          </div>
-          <div class="mini-benefit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            <div><strong>We refine until it's right</strong><span>Every order includes revision rounds — we keep going until it matches your brand.</span></div>
-          </div>
-          <div class="mini-benefit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            <div><strong>Founding brands get extra care</strong><span>Come in early and you get our full attention on every single order.</span></div>
-          </div>
+        <div class="reveal pending">
+          <ul class="checklist">
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>See it first for €0.99</strong> — a test sample on your own product before you commit to a full order.</span></li>
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>We refine until it's right</strong> — every order includes revision rounds until it matches your brand.</span></li>
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>Founding brands get extra care</strong> — come in early and you get our full attention on every single order.</span></li>
+          </ul>
         </div>
       </div>
       <ul class="trust-bar reveal pending">
@@ -302,21 +326,41 @@ const reqs = [
     </div>
   </section>
 
-  <!-- CLOSING CTA -->
+  <!-- CHAPTER 5 · THE TEST SAMPLE — the glow moment: one comet, one ask. -->
+  <section class="ch">
+    <div class="container ch-head">
+      <span class="ch-orb" aria-hidden="true"></span>
+      <svg class="comet" viewBox="0 0 320 90" aria-hidden="true"><path d="M10 84 Q150 -26 306 58" /><circle cx="306" cy="58" r="3.5" /></svg>
+      <p class="ch-kicker">Test sample · €0.99</p>
+      <h2 class="ch-title glow-title"><span class="ch-l">See it on your own product first.</span></h2>
+      <p class="ch-sub">One visual, made from your photo, human-checked — for a €0.99 verification. One per business, and you approve before final delivery.</p>
+      <div class="ch-cta">
+        <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Get your test sample</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 6 · FIND YOUR WAY IN — per product, or fully custom. -->
   <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.8rem)">Start with one<br /><em class="ital">test sample.</em></h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">See it on your own product for just €0.99 — before you order.</p>
-        <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <a href="/test-sample" class="btn btn-primary btn-lg">Get your test sample</a>
-          <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
-          <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
-            WhatsApp
-          </a>
+    <div class="container plan-grid">
+      <div class="reveal pending">
+        <h2 class="ch-title" style="text-align:left"><span class="ch-l">Find your way in.</span></h2>
+        <div class="plan-cols">
+          <div class="plan-col">
+            <h3>Per product</h3>
+            <p>Catalog at €39.99 per product (a 4-photo set), lifestyle from €35, video from €49. No subscription — order five or five hundred.</p>
+            <a href="/order" class="btn btn-primary btn-glow">Order now</a>
+          </div>
+          <div class="plan-col">
+            <h3>Custom &amp; volume</h3>
+            <p>Your own style, your own model, campaigns and 25+ product ranges — designed once, then fast on every order after.</p>
+            <a href={WA} class="btn btn-ghost" target="_blank" rel="noopener">Talk it through</a>
+          </div>
         </div>
-        <p style="text-align:center;margin-top:1.1rem;font-size:.84rem;color:var(--ink-3)">Try a €0.99 test sample on your product first &middot; you approve before final delivery.</p>
+        <p style="margin-top:1.4rem;font-size:.84rem;color:var(--ink-3)">Full breakdown on the <a href="/pricing" style="color:var(--accent-bright);text-decoration:underline">pricing page</a>.</p>
+      </div>
+      <div class="plan-photo reveal pending">
+        <img src="/img/custom-models-03.webp" alt="A VISUAILS custom model portrait" loading="lazy" />
       </div>
     </div>
   </section>

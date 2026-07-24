@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fontsource/archivo": "^5.0.0",
+    "@fontsource/bodoni-moda": "^5.0.0",
     "astro": "^6.4.5",
     "gsap": "^3.13.0"
   }

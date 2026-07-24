@@ -511,3 +511,126 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
   #develop { min-height: 92svh; display: flex; align-items: center; }
   #develop .container { width: 100%; }
 }
+
+/* ============================================================
+   CHAPTER SYSTEM — the cinematic "editorial chapters" language for the
+   homepage (full-bleed cinema hero, centred serif chapter heads with a
+   dimmed second line + radial bloom, glass service cards, gallery tiles
+   with italic serif labels, glow CTA). Display serif is Bodoni Moda;
+   Archivo remains the UI/body voice. All base states are fully visible —
+   motion.js only enhances.
+   ============================================================ */
+:root { --font-serif: "Bodoni Moda", "Didot", "Playfair Display", Georgia, serif; }
+
+.serif-display { font-family: var(--font-serif); font-weight: 400; letter-spacing: -0.015em; line-height: 1.06; }
+.serif-display em, .serif-display .ital { font-family: var(--font-serif); font-style: italic; color: var(--accent-word); }
+
+/* Chapter head: centred serif title (line 2 dimmed = the metallic fade,
+   done with solid colours per line — no gradient-clipped text), one sub,
+   one CTA, soft bloom behind. */
+.ch { position: relative; }
+.ch-head { position: relative; text-align: center; max-width: 62rem; margin-inline: auto; }
+.ch-orb { position: absolute; left: 50%; top: -34%; transform: translateX(-50%); width: min(560px, 72vw); aspect-ratio: 1;
+  background: radial-gradient(closest-side, rgba(123,108,245,.26), rgba(95,227,240,.09) 46%, transparent 72%);
+  filter: blur(28px); pointer-events: none; z-index: -1; }
+.ch-title { font-family: var(--font-serif); font-weight: 400; letter-spacing: -0.015em; line-height: 1.05;
+  font-size: clamp(2.5rem, 5.4vw, 4.4rem); color: var(--ink); text-wrap: balance; margin: 0; }
+.ch-l { display: block; }
+.ch-l.dim { color: rgba(228,231,242,.44); }
+.ch-title em { font-style: italic; color: var(--accent-word); }
+.ch-sub { margin: 1.1rem auto 0; max-width: 52ch; color: var(--ink-2); font-size: var(--t-lg); line-height: 1.6; }
+.ch-cta { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.9rem; }
+.ch-kicker { font-size: .76rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: 1rem; }
+
+/* Glow CTA — the one bright pill per chapter. */
+.btn-glow { box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 1px rgba(155,140,255,.28), 0 16px 50px -10px rgba(123,108,245,.8); }
+.btn-glow:hover { filter: brightness(1.1); }
+
+/* Cinema hero — full-bleed real work, centred serif line, one CTA, and a
+   glass services bar docked at the bottom (the "ecosystem pill"). */
+.hero-cinema { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden;
+  margin-top: -76px; padding-top: 76px; isolation: isolate; }
+.hero-cinema .hc-bg { position: absolute; inset: 0; z-index: -2; }
+.hero-cinema .hc-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; transform-origin: center; }
+.hero-cinema .hc-scrim { position: absolute; inset: 0; z-index: -1; background:
+  radial-gradient(120% 90% at 50% 10%, transparent 40%, rgba(9,9,17,.55) 100%),
+  linear-gradient(180deg, rgba(9,9,17,.66) 0%, rgba(9,9,17,.28) 40%, rgba(9,9,17,.5) 72%, var(--bg) 98%); }
+.hc-copy { margin-block: auto; text-align: center; padding-block: clamp(3rem, 8vh, 5rem) 2rem; }
+.hc-copy h1 { font-family: var(--font-serif); font-weight: 400; letter-spacing: -0.012em; line-height: 1.04;
+  font-size: clamp(2.9rem, 6.8vw, 6rem); color: var(--ink); max-width: 18ch; margin-inline: auto; }
+.hc-copy h1 em { font-style: italic; color: var(--accent-word); }
+.hc-sub { margin: 1.3rem auto 0; max-width: 54ch; color: rgba(228,231,242,.88); font-size: var(--t-lg); line-height: 1.6; }
+.hc-benefits { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem 1.6rem; margin: 1.5rem 0 0; padding: 0; }
+.hc-benefits li { list-style: none; display: flex; align-items: center; gap: .5rem; color: rgba(228,231,242,.78); font-size: .84rem; }
+.hc-benefits li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-bright); }
+.hero-svcbar { display: flex; align-items: center; gap: .25rem; width: max-content; max-width: calc(100% - 2rem);
+  margin: 0 auto clamp(1.5rem, 4vh, 2.4rem); padding: .45rem; border-radius: var(--r-pill);
+  border: 1px solid rgba(238,240,246,.14); background: rgba(14,14,22,.46); backdrop-filter: blur(16px);
+  overflow-x: auto; scrollbar-width: none; }
+.hero-svcbar::-webkit-scrollbar { display: none; }
+.hsb-item { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem 1.05rem; border-radius: var(--r-pill);
+  font-size: .86rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; transition: background .2s var(--ease), color .2s var(--ease); }
+.hsb-item::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); opacity: .8; }
+.hsb-item:hover { background: rgba(238,240,246,.08); color: var(--ink); }
+
+/* Glass service cards — the 4-up "toolkit" row. */
+.svc-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: clamp(2rem, 4vw, 3rem); }
+.svc-card { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: .45rem; padding: 1.5rem 1.4rem 1.3rem;
+  border-radius: 18px; border: 1px solid rgba(238,240,246,.1);
+  background: linear-gradient(180deg, rgba(24,24,34,.72), rgba(14,14,22,.6));
+  backdrop-filter: blur(12px); transition: transform .35s var(--ease), border-color .35s var(--ease); }
+.svc-card:hover { transform: translateY(-4px); border-color: var(--accent-line); }
+.svc-card::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.06) 50%, transparent 58%);
+  transform: translateX(-130%); transition: transform .9s var(--ease); }
+.svc-card:hover::after { transform: translateX(130%); }
+.svc-card .sc-ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: var(--accent-soft); border: 1px solid var(--accent-line); margin-bottom: .5rem; }
+.svc-card .sc-ic svg { width: 19px; height: 19px; stroke: var(--accent-bright); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.svc-card h3 { font-size: 1.08rem; }
+.svc-card .sc-price { font-size: .82rem; font-weight: 700; color: var(--accent-bright); letter-spacing: .02em; }
+.svc-card p { font-size: .88rem; color: var(--ink-3); line-height: 1.5; flex: 1; }
+.svc-card .sc-links { display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-top: 1rem; }
+.svc-card .sc-more { font-size: .84rem; font-weight: 600; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+.svc-card .sc-more:hover { color: var(--ink); }
+.svc-card .sc-go { font-size: .8rem; font-weight: 600; padding: .5rem 1rem; border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong); color: var(--ink); transition: border-color .2s var(--ease), background .2s var(--ease); }
+.svc-card .sc-go:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Gallery tiles — big square imagery with italic serif labels (the
+   "stock catalog" move, carrying our real services). */
+.gallery-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: clamp(2rem, 4vw, 3rem); }
+@media (max-width: 980px) { .gallery-tiles { grid-template-columns: repeat(2, 1fr); } }
+.gtile { position: relative; display: block; aspect-ratio: 1; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); }
+.gtile img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
+.gtile:hover img { transform: scale(1.05); }
+.gtile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(200deg, transparent 46%, rgba(9,9,17,.72) 100%); }
+.gtile .gt-label { position: absolute; z-index: 2; left: 1.2rem; bottom: .95rem; font-family: var(--font-serif); font-style: italic;
+  font-weight: 400; font-size: clamp(1.5rem, 2.6vw, 2.2rem); color: #fff; text-shadow: 0 2px 26px rgba(0,0,0,.65); }
+.gtile .gt-go { position: absolute; z-index: 2; left: 1.3rem; bottom: .55rem; font-size: .74rem; font-weight: 600; color: rgba(238,240,246,.75);
+  opacity: 0; transform: translateY(4px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+.gtile:hover .gt-go { opacity: 1; transform: none; }
+
+/* Promise chapter — the split "founders choose us" scene; the WebGL light
+   field (shader canvas) lives behind it here. */
+.ch-promise { position: relative; overflow: hidden; isolation: isolate; }
+.ch-promise #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; opacity: .6; }
+.ch-promise .hero-fallback { z-index: -2; }
+.promise-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(2.4rem, 5vw, 4.5rem); align-items: center; }
+@media (max-width: 900px) { .promise-split { grid-template-columns: 1fr; } }
+
+/* Glow title moment (test sample) — solid text + shadow bloom, no gradient clip. */
+.glow-title { text-shadow: 0 0 18px rgba(238,240,246,.28), 0 0 70px rgba(123,108,245,.5); }
+.comet { width: min(340px, 60vw); margin: 0 auto .4rem; display: block; overflow: visible; }
+.comet path { fill: none; stroke: rgba(95,227,240,.85); stroke-width: 2; stroke-linecap: round; filter: drop-shadow(0 0 8px rgba(95,227,240,.75)); }
+.comet circle { fill: #fff; filter: drop-shadow(0 0 10px rgba(238,240,246,.95)); }
+
+/* Plan chapter — two paths + photo. */
+.plan-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(2.4rem, 5vw, 4.5rem); align-items: center; }
+@media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; } }
+.plan-cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.6rem, 3vw, 2.6rem); margin-top: 2.2rem; }
+@media (max-width: 620px) { .plan-cols { grid-template-columns: 1fr; } }
+.plan-col h3 { font-size: 1.25rem; margin-bottom: .6rem; }
+.plan-col p { font-size: .92rem; color: var(--ink-3); line-height: 1.6; margin-bottom: 1.2rem; }
+.plan-photo { border-radius: 18px; overflow: hidden; border: 1px solid var(--line); aspect-ratio: 4/5; }
+.plan-photo img { width: 100%; height: 100%; object-fit: cover; }

@@ -1,17 +1,18 @@
 ---
-// VISUAILS — homepage (Nederlands). Vertaling van src/pages/index.astro.
-// Layout/Compare/ThreeWay zijn taalbewust (ze lezen de taal uit de URL).
+// VISUAILS — homepage (Nederlands), "editorial chapters" build. Spiegel van
+// src/pages/index.astro; zie dat bestand voor de opzet. Motion/shader zijn
+// progressive enhancement — elke basisstaat is volledig ontworpen zonder JS.
 import Layout from '../../layouts/Layout.astro';
 import Compare from '../../components/Compare.astro';
 import ThreeWay from '../../components/ThreeWay.astro';
 
 const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20wil%20graag%20zien%20wat%20jullie%20van%20mijn%20productfoto%27s%20kunnen%20maken.';
 
-const make = [
-  { href: '/nl/catalog', name: 'Catalog', desc: 'Strakke, consistente productfoto’s', photo: '/img/catalog-after.webp' },
-  { href: '/nl/catalog', name: 'On-model catalog', desc: 'Je product, gedragen door een model', photo: '/img/custom-models-02.webp' },
-  { href: '/nl/lifestyle', name: 'Lifestyle', desc: 'Gestylde, realistische scènes', photo: '/img/lifestyle-glow-01.webp' },
-  { href: '/nl/video', name: 'Video', desc: 'Korte productvideo’s met beweging', photo: '/img/banners-16.webp', video: true },
+const tiles = [
+  { href: '/nl/catalog', label: 'Catalog', img: '/img/catalog-after.webp', alt: 'Strakke catalogvisual van VISUAILS' },
+  { href: '/nl/catalog', label: 'On-model', img: '/img/custom-models-02.webp', alt: 'On-model catalogvisual van VISUAILS' },
+  { href: '/nl/lifestyle', label: 'Lifestyle', img: '/img/lifestyle-glow-01.webp', alt: 'Lifestyle-visual in de Glow-stijl' },
+  { href: '/nl/video', label: 'Video', img: '/img/banners-16.webp', alt: 'Productvideo-still van VISUAILS' },
 ];
 
 const strip = [
@@ -35,40 +36,31 @@ const reqs = [
   description="Stuur één productfoto en krijg binnen ongeveer 24 uur een complete campagne terug. Catalog-, on-model-, lifestyle- en videovisuals — in jouw merkstijl, met de hand gecontroleerd, zonder fotoshoot."
   ogImage="/img/banners-09.webp"
 >
-  <!-- HERO -->
-  <section class="hero-studio">
-    <div class="hero-fallback" aria-hidden="true"></div>
-    <canvas id="hero-shader" aria-hidden="true"></canvas>
-    <div class="container hero-studio-grid">
-      <div>
-        <h1 class="display" data-split-lines>Zie eruit als het merk<br />dat je <em class="ital">aan het worden bent.</em></h1>
-        <p class="lead-ital">Een studio voor productvisuals voor e-commerce merken. Eén foto erin — een publicatieklare campagne van catalog, lifestyle en video eruit, in ongeveer 24 uur.</p>
-        <div class="flex" style="margin-top:1.8rem">
-          <a href="/nl/test-sample" class="btn btn-primary btn-lg">Probeer een proefvisual</a>
-          <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
-          <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
-            WhatsApp
-          </a>
-        </div>
-        <ul class="hero-benefits">
-          <li>Levering in ~24 uur</li>
-          <li>Geen fotoshoot</li>
-          <li>Met de hand gecontroleerd</li>
-          <li>Catalog €39,99 / product</li>
-        </ul>
+  <!-- HOOFDSTUK 0 · CINEMA-HERO -->
+  <section class="hero-cinema">
+    <div class="hc-bg"><img src="/img/banners-09.webp" alt="Een VISUAILS-campagnevisual" fetchpriority="high" transition:name="hero-photo" /></div>
+    <div class="hc-scrim" aria-hidden="true"></div>
+    <div class="container hc-copy">
+      <h1><span class="ch-l">Zie eruit als het merk</span><span class="ch-l">dat je <em>aan het worden bent.</em></span></h1>
+      <p class="hc-sub">Een studio voor productvisuals voor e-commerce merken. Eén foto erin — een publicatieklare campagne van catalog, lifestyle en video eruit, in ongeveer 24 uur.</p>
+      <div class="ch-cta">
+        <a href="/nl/test-sample" class="btn btn-primary btn-glow btn-lg">Probeer het op je product — €0,99</a>
+        <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
       </div>
-      <div class="hero-visual" data-hero-card>
-        <figure class="hero-card" transition:name="hero-photo">
-          <img src="/img/banners-09.webp" alt="Een VISUAILS-campagnevisual" fetchpriority="high" />
-          <figcaption class="hero-card-tag">Gemaakt van één productfoto</figcaption>
-        </figure>
-        <figure class="hero-card hero-card-b">
-          <img src="/img/lifestyle-glow-01.webp" alt="Een VISUAILS lifestyle-visual in de Glow-stijl" loading="lazy" />
-        </figure>
-      </div>
+      <ul class="hc-benefits">
+        <li>Levering in ~24 uur</li>
+        <li>Geen fotoshoot</li>
+        <li>Met de hand gecontroleerd</li>
+        <li>Catalog €39,99 / product</li>
+      </ul>
     </div>
-    <div class="hero-editorial-cue"><span class="cue-line"></span>Scroll</div>
+    <nav class="hero-svcbar" aria-label="Diensten">
+      <a class="hsb-item" href="/nl/catalog">Catalog</a>
+      <a class="hsb-item" href="/nl/catalog">On-model</a>
+      <a class="hsb-item" href="/nl/lifestyle">Lifestyle</a>
+      <a class="hsb-item" href="/nl/video">Video</a>
+      <a class="hsb-item" href="/nl/custom-models">Eigen modellen</a>
+    </nav>
   </section>
 
   <!-- WAT VISUAILS IS -->
@@ -92,38 +84,52 @@ const reqs = [
     </div>
   </section>
 
-  <!-- WAT WE MAKEN -->
-  <section>
+  <!-- HOOFDSTUK 1 · DE TOOLKIT -->
+  <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:2rem">
-        <h2>Van één foto maken we <em>alles.</em></h2>
-        <p>Catalog, on-model, lifestyle en video — elk formaat dat je shop, ads en socials nodig hebben. Tik om elk te zien.</p>
+      <div class="ch-head">
+        <span class="ch-orb" aria-hidden="true"></span>
+        <h2 class="ch-title"><span class="ch-l">Alles wat je shop nodig heeft.</span><span class="ch-l dim">Volledig uit handen.</span></h2>
+        <p class="ch-sub">Vier diensten, één briefing: jouw productfoto. Betaal per product of per visual — geen abonnement.</p>
       </div>
-      <div class="make-grid reveal-group">
-        {make.map((m) => (
-          <a href={m.href} class="make-tile reveal pending">
-            <img src={m.photo} alt={`${m.name} voorbeeld van VISUAILS`} loading="lazy" />
-            <div class="scrim"></div>
-            {m.video && (
-              <span class="mt-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>
-            )}
-            <div class="mt-body">
-              <span class="mt-name">{m.name} &rarr;</span>
-              <span class="mt-desc">{m.desc}</span>
-            </div>
-          </a>
-        ))}
+      <div class="svc-row" data-cards>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span>
+          <h3>Catalog</h3>
+          <span class="sc-price">€39,99 / product — 4 foto’s</span>
+          <p>Voorkant, achterkant, detail-close-up en één on-model shot. Zo’n €10 per foto, marktplaats-klaar.</p>
+          <div class="sc-links"><a class="sc-more" href="/nl/catalog">Meer info</a><a class="sc-go" href="/nl/order-catalog">Bestel</a></div>
+        </article>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+          <h3>Lifestyle</h3>
+          <span class="sc-price">Vanaf €35 / visual</span>
+          <p>Gestylde, realistische scènes in vier signatuurstijlen — met consistente modellen inbegrepen.</p>
+          <div class="sc-links"><a class="sc-more" href="/nl/lifestyle">Meer info</a><a class="sc-go" href="/nl/order-lifestyle">Bestel</a></div>
+        </article>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+          <h3>Video</h3>
+          <span class="sc-price">Vanaf €49 / video</span>
+          <p>Korte productvideo’s met subtiele beweging voor feeds en ads. Campagnes op offerte per project.</p>
+          <div class="sc-links"><a class="sc-more" href="/nl/video">Meer info</a><a class="sc-go" href="/nl/order-video">Bestel</a></div>
+        </article>
+        <article class="svc-card">
+          <span class="sc-ic"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg></span>
+          <h3>Custom</h3>
+          <span class="sc-price">Je eigen stijl of model</span>
+          <p>Een look, model of concept — één keer ontworpen voor jouw merk, daarna de normale visualprijs.</p>
+          <div class="sc-links"><a class="sc-more" href="/nl/custom-models">Meer info</a><a class="sc-go" href="/nl/order-custom">Bespreek</a></div>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- BEWIJS / DE ONTWIKKELING — op desktop pint motion.js deze sectie en
-       "ontwikkelt" het scrollen zelf de foto (via --cmp-pos van de Compare);
-       daarna blijft de slider gewoon sleepbaar. Mobiel/zonder JS: zoals het was. -->
+  <!-- HOOFDSTUK 2 · DE ONTWIKKELING -->
   <section class="section-tight" id="develop">
     <div class="container two-col">
       <div class="reveal pending">
-        <h2>Eén foto erin. <em>De rest is aan ons.</em></h2>
+        <h2 class="serif-display">Eén foto erin. <em>De rest is aan ons.</em></h2>
         <p class="lead" style="margin-top:1rem">Dit is de hele briefing die we van je nodig hebben — een telefoonfoto. Zie hoe het een strakke, publicatieklare visual wordt.</p>
         <div class="dev-steps" aria-hidden="true">
           <p class="dev-step"><span class="dn">01</span>Ruwe telefoonfoto — de hele briefing</p>
@@ -153,44 +159,27 @@ const reqs = [
     </div>
   </section>
 
-  <!-- KWALITEITSGARANTIE -->
-  <section class="section-tight">
+  <!-- HOOFDSTUK 3 · HET WERK -->
+  <section class="ch">
     <div class="container">
-      <div class="section-head" style="margin-bottom:2rem">
-        <h2>Hoe meer je ons laat zien, <em>hoe meer we garanderen.</em></h2>
-        <p>Eén duidelijke foto is genoeg om te starten. Maar omdat we je product meestal nooit in handen hebben, laten een paar extra hoeken ons het exact matchen — hier wordt kwaliteit gewonnen.</p>
+      <div class="ch-head">
+        <span class="ch-orb" aria-hidden="true"></span>
+        <h2 class="ch-title"><span class="ch-l">Echt werk.</span><span class="ch-l dim">Nul fotoshoots.</span></h2>
+        <p class="ch-sub">Catalog, on-model, lifestyle en video — elk formaat dat je shop, ads en socials nodig hebben.</p>
       </div>
-      <div class="req-grid reveal-group">
-        {reqs.map((r) => (
-          <div class="req-card reveal pending">
-            <span class="rc-num">{r.n}</span>
-            <h4>{r.title}</h4>
-            <p>{r.body}</p>
-          </div>
+      <div class="gallery-tiles" data-tiles>
+        {tiles.map((t) => (
+          <a class="gtile" href={t.href}>
+            <img src={t.img} alt={t.alt} loading="lazy" />
+            <span class="gt-label">{t.label}</span>
+            <span class="gt-go">Ontdek &rarr;</span>
+          </a>
         ))}
       </div>
-      <p class="req-note reveal pending"><strong>Niet verplicht — alleen aanbevolen.</strong> We kunnen al leveren met één foto van het hele product. Stuur de volledige set en we garanderen dat pasvorm, kleur en detail meteen goed uitkomen.</p>
     </div>
   </section>
 
-  <!-- MODELLEN -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-split reverse reveal pending">
-        <div class="photo-split-media">
-          <img src="/img/custom-models-02.webp" alt="Een VISUAILS-model, consistent gestyled door een hele campagne" loading="lazy" />
-        </div>
-        <div>
-          <h2>Eén gezicht.<br /><em>Elke campagne.</em></h2>
-          <p class="lead" style="margin-top:1rem">Hetzelfde model, vastgezet op jouw merk, door je hele collectie — of een eigen gezicht dat alleen voor jou gemaakt is.</p>
-          <div style="margin-top:1.2rem"><a class="link-arrow" href="/nl/models">Bekijk de modellen &rarr;</a></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FILMSTRIP — twee tegengesteld driftende rijen echt werk (GSAP stuurt de
-       loop; statisch zonder JS). De tweede set per rij is de naadloze-loop-kopie. -->
+  <!-- FILMSTRIP -->
   <section class="section-tight">
     <div class="visual-marquee">
       <div class="vm-row">
@@ -216,11 +205,47 @@ const reqs = [
     </div>
   </section>
 
+  <!-- KWALITEITSGARANTIE -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:2rem">
+        <h2 class="serif-display">Hoe meer je ons laat zien, <em>hoe meer we garanderen.</em></h2>
+        <p>Eén duidelijke foto is genoeg om te starten. Maar omdat we je product meestal nooit in handen hebben, laten een paar extra hoeken ons het exact matchen — hier wordt kwaliteit gewonnen.</p>
+      </div>
+      <div class="req-grid reveal-group">
+        {reqs.map((r) => (
+          <div class="req-card reveal pending">
+            <span class="rc-num">{r.n}</span>
+            <h4>{r.title}</h4>
+            <p>{r.body}</p>
+          </div>
+        ))}
+      </div>
+      <p class="req-note reveal pending"><strong>Niet verplicht — alleen aanbevolen.</strong> We kunnen al leveren met één foto van het hele product. Stuur de volledige set en we garanderen dat pasvorm, kleur en detail meteen goed uitkomen.</p>
+    </div>
+  </section>
+
+  <!-- MODELLEN -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="photo-split reverse reveal pending">
+        <div class="photo-split-media">
+          <img src="/img/custom-models-02.webp" alt="Een VISUAILS-model, consistent gestyled door een hele campagne" loading="lazy" />
+        </div>
+        <div>
+          <h2 class="serif-display">Eén gezicht.<br /><em>Elke campagne.</em></h2>
+          <p class="lead" style="margin-top:1rem">Hetzelfde model, vastgezet op jouw merk, door je hele collectie — of een eigen gezicht dat alleen voor jou gemaakt is.</p>
+          <div style="margin-top:1.2rem"><a class="link-arrow" href="/nl/models">Bekijk de modellen &rarr;</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- NIET ALLE AI IS GELIJK -->
   <section class="section-tight">
     <div class="container">
       <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>Niet alle AI is <em>gelijk.</em></h2>
+        <h2 class="serif-display">Niet alle AI is <em>gelijk.</em></h2>
         <p style="margin-inline:auto">Generieke AI-generators gokken. VISUAILS is gebouwd op jouw product, afgewerkt met professionele editingtools en colour grading, en gecontroleerd door een mens voordat het bij je komt.</p>
       </div>
       <div class="ai-compare reveal pending">
@@ -253,32 +278,27 @@ const reqs = [
     </div>
   </section>
 
-  <!-- BELOFTE VAN DE OPRICHTER -->
-  <section class="section-tight">
+  <!-- HOOFDSTUK 4 · DE BELOFTE — met het WebGL-lichtveld erachter. -->
+  <section class="ch ch-promise">
+    <div class="hero-fallback" aria-hidden="true"></div>
+    <canvas id="hero-shader" aria-hidden="true"></canvas>
     <div class="container">
-      <div class="promise">
-        <div class="promise-lead reveal pending">
+      <div class="promise-split">
+        <div class="reveal pending">
           <span class="promise-eyebrow">Een nieuwe studio — dit is onze belofte</span>
-          <p class="editorial-statement">Nog geen muur vol reviews. <em>Dus verdienen we het op de eerlijke manier.</em></p>
-          <p class="promise-quote">"Ik controleer elke visual zelf voordat hij bij je komt, en we blijven verfijnen tot het bij je merk past. Nog niet zeker? Zie het eerst op je eigen product voor €0,99."</p>
+          <h2 class="ch-title" style="text-align:left"><span class="ch-l">Nog geen muur vol reviews.</span><span class="ch-l dim">Dus verdienen we het eerlijk.</span></h2>
+          <p class="promise-quote" style="margin-top:1.4rem">"Ik controleer elke visual zelf voordat hij bij je komt, en we blijven verfijnen tot het bij je merk past. Nog niet zeker? Zie het eerst op je eigen product voor €0,99."</p>
           <div class="promise-sign">
             <img src="/img/logo-mark.webp" alt="" width="24" height="24" />
             <span><strong>Lucas</strong> · oprichter, VISUAILS</span>
           </div>
         </div>
-        <div class="mini-benefits reveal pending">
-          <div class="mini-benefit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            <div><strong>Zie het eerst voor €0,99</strong><span>Een proefvisual op je eigen product voordat je een volledige bestelling plaatst.</span></div>
-          </div>
-          <div class="mini-benefit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            <div><strong>We verfijnen tot het klopt</strong><span>Elke bestelling bevat revisierondes — we gaan door tot het bij je merk past.</span></div>
-          </div>
-          <div class="mini-benefit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            <div><strong>Eerste merken krijgen extra aandacht</strong><span>Kom vroeg binnen en je krijgt onze volledige aandacht op elke bestelling.</span></div>
-          </div>
+        <div class="reveal pending">
+          <ul class="checklist">
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>Zie het eerst voor €0,99</strong> — een proefvisual op je eigen product voordat je een volledige bestelling plaatst.</span></li>
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>We verfijnen tot het klopt</strong> — elke bestelling bevat revisierondes tot het bij je merk past.</span></li>
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>Eerste merken krijgen extra aandacht</strong> — kom vroeg binnen en je krijgt onze volledige aandacht op elke bestelling.</span></li>
+          </ul>
         </div>
       </div>
       <ul class="trust-bar reveal pending">
@@ -290,21 +310,41 @@ const reqs = [
     </div>
   </section>
 
-  <!-- AFSLUITENDE CTA -->
+  <!-- HOOFDSTUK 5 · DE PROEFVISUAL — het gloeimoment. -->
+  <section class="ch">
+    <div class="container ch-head">
+      <span class="ch-orb" aria-hidden="true"></span>
+      <svg class="comet" viewBox="0 0 320 90" aria-hidden="true"><path d="M10 84 Q150 -26 306 58" /><circle cx="306" cy="58" r="3.5" /></svg>
+      <p class="ch-kicker">Proefvisual · €0,99</p>
+      <h2 class="ch-title glow-title"><span class="ch-l">Zie het eerst op je eigen product.</span></h2>
+      <p class="ch-sub">Eén visual, gemaakt van jouw foto, met de hand gecontroleerd — voor een verificatie van €0,99. Eén per bedrijf, en jij keurt goed vóór de definitieve levering.</p>
+      <div class="ch-cta">
+        <a href="/nl/test-sample" class="btn btn-primary btn-glow btn-lg">Haal je proefvisual</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOOFDSTUK 6 · VIND JOUW INGANG -->
   <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.8rem)">Begin met één<br /><em class="ital">proefvisual.</em></h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">Zie het op je eigen product voor slechts €0,99 — voordat je bestelt.</p>
-        <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <a href="/nl/test-sample" class="btn btn-primary btn-lg">Haal je proefvisual</a>
-          <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
-          <a href={WA} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
-            WhatsApp
-          </a>
+    <div class="container plan-grid">
+      <div class="reveal pending">
+        <h2 class="ch-title" style="text-align:left"><span class="ch-l">Vind jouw ingang.</span></h2>
+        <div class="plan-cols">
+          <div class="plan-col">
+            <h3>Per product</h3>
+            <p>Catalog voor €39,99 per product (een set van 4 foto’s), lifestyle vanaf €35, video vanaf €49. Geen abonnement — bestel er vijf of vijfhonderd.</p>
+            <a href="/nl/order" class="btn btn-primary btn-glow">Bestel nu</a>
+          </div>
+          <div class="plan-col">
+            <h3>Custom &amp; volume</h3>
+            <p>Je eigen stijl, je eigen model, campagnes en assortimenten van 25+ producten — één keer ontworpen, daarna snel op elke bestelling.</p>
+            <a href={WA} class="btn btn-ghost" target="_blank" rel="noopener">Overleg even</a>
+          </div>
         </div>
-        <p style="text-align:center;margin-top:1.1rem;font-size:.84rem;color:var(--ink-3)">Probeer eerst een proefvisual van €0,99 op je product &middot; je keurt goed vóór de definitieve levering.</p>
+        <p style="margin-top:1.4rem;font-size:.84rem;color:var(--ink-3)">Volledig overzicht op de <a href="/nl/pricing" style="color:var(--accent-bright);text-decoration:underline">prijzenpagina</a>.</p>
+      </div>
+      <div class="plan-photo reveal pending">
+        <img src="/img/custom-models-03.webp" alt="Een VISUAILS custom-model portret" loading="lazy" />
       </div>
     </div>
   </section>

@@ -1,13 +1,13 @@
-// VISUAILS — GSAP scroll choreography. This module owns ONLY what vanilla
-// CSS/IO can't do well: the pinned "develop" scrub, the hero entrance/tilt
-// and the marquee's scroll-velocity response. The existing reveal system in
-// interactions.js keeps handling ordinary in-view reveals — the two layers
-// never target the same elements (this one binds via data-* hooks only).
+// VISUAILS — GSAP scroll choreography for the chapter system. This module
+// owns only what CSS/IO can't do well: the cinema-hero entrance, chapter-head
+// blooms, the pinned "develop" scrub, card/tile staggers, the comet draw and
+// the marquee's velocity lean. interactions.js keeps handling ordinary
+// reveals — the two layers never share targets (this binds to chapter/data
+// hooks only).
 //
-// Lifecycle (ClientRouter): everything is created inside a gsap.context and
-// reverted on astro:before-swap, then rebuilt on astro:page-load — no stacked
-// ScrollTriggers, no stale pins. prefers-reduced-motion skips all of it; the
-// page is fully designed without this file (base state is visible/static).
+// Lifecycle (ClientRouter): built inside a gsap.context, reverted on
+// astro:before-swap, rebuilt on astro:page-load. prefers-reduced-motion skips
+// everything; base states are fully designed without this file.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -17,45 +17,67 @@ let ctx = null;
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function heroEntrance() {
-  const cards = gsap.utils.toArray('[data-hero-card] .hero-card');
-  if (!cards.length) return;
-  gsap.from(cards, {
-    y: 64, opacity: 0, rotate: (i) => (i === 0 ? 2.5 : -4),
-    duration: 1.2, ease: 'power4.out', stagger: 0.14, delay: 0.15, clearProps: 'opacity',
+// Cinema hero: slow settle on the film still, then the serif line rises out
+// of a blur, sub/benefits follow, the glass services bar docks last.
+function heroCinema() {
+  const hero = document.querySelector('.hero-cinema');
+  if (!hero) return;
+  const bg = hero.querySelector('.hc-bg img');
+  if (bg) gsap.fromTo(bg, { scale: 1.14 }, { scale: 1, duration: 2.6, ease: 'power2.out' });
+  const lines = hero.querySelectorAll('.hc-copy h1 .ch-l');
+  if (lines.length) {
+    gsap.from(lines, { y: 54, opacity: 0, filter: 'blur(12px)', duration: 1.25, ease: 'power4.out', stagger: 0.14, delay: 0.1, clearProps: 'filter' });
+  }
+  gsap.from(hero.querySelectorAll('.hc-sub, .hc-copy .ch-cta, .hc-benefits'), {
+    y: 22, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.55, clearProps: 'all',
   });
-  gsap.from('.hero-studio .hero-benefits li', {
-    y: 14, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.07, delay: 0.55, clearProps: 'all',
+  const bar = hero.querySelector('.hero-svcbar');
+  if (bar) gsap.from(bar, { y: 28, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.95, clearProps: 'all' });
+}
+
+// Chapter heads: bloom swells behind while the serif lines rise from a blur,
+// bright line first, dimmed line trailing — the "metallic fade" in motion.
+function chapterHeads() {
+  gsap.utils.toArray('.ch-head').forEach((head) => {
+    const tl = gsap.timeline({
+      scrollTrigger: { trigger: head, start: 'top 80%', once: true },
+    });
+    const orb = head.querySelector('.ch-orb');
+    if (orb) tl.from(orb, { scale: 0.55, opacity: 0, duration: 1.4, ease: 'power2.out' }, 0);
+    const lines = head.querySelectorAll('.ch-l');
+    if (lines.length) tl.from(lines, { y: 44, opacity: 0, filter: 'blur(10px)', duration: 1.1, ease: 'power4.out', stagger: 0.13, clearProps: 'filter' }, 0.05);
+    const rest = head.querySelectorAll('.ch-sub, .ch-cta, .ch-kicker, .comet');
+    if (rest.length) tl.from(rest, { y: 18, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.08, clearProps: 'all' }, 0.4);
   });
 }
 
-function heroTilt() {
-  const wrap = document.querySelector('[data-hero-card]');
-  if (!wrap || window.matchMedia('(pointer: coarse)').matches) return;
-  const cards = wrap.querySelectorAll('.hero-card');
-  const setters = Array.from(cards).map((c) => ({
-    rx: gsap.quickTo(c, 'rotationX', { duration: 0.9, ease: 'power3.out' }),
-    ry: gsap.quickTo(c, 'rotationY', { duration: 0.9, ease: 'power3.out' }),
-  }));
-  gsap.set(cards, { transformPerspective: 900 });
-  const hero = document.querySelector('.hero-studio');
-  hero.addEventListener('pointermove', (e) => {
-    const r = hero.getBoundingClientRect();
-    const nx = (e.clientX - r.left) / r.width - 0.5;
-    const ny = (e.clientY - r.top) / r.height - 0.5;
-    setters.forEach((s, i) => {
-      const k = i === 0 ? 1 : 1.5;                  // back card moves a touch more
-      s.ry(nx * 4 * k); s.rx(-ny * 3 * k);
+// Glass service cards + gallery tiles: staggered arrivals. Tiles open from a
+// clipped crop with their italic serif label sliding in after.
+function cardsAndTiles() {
+  const cards = gsap.utils.toArray('[data-cards] .svc-card');
+  if (cards.length) {
+    gsap.from(cards, {
+      y: 38, opacity: 0, duration: 0.95, ease: 'power3.out', stagger: 0.09, clearProps: 'all',
+      scrollTrigger: { trigger: '[data-cards]', start: 'top 82%', once: true },
     });
-  }, { passive: true });
-  hero.addEventListener('pointerleave', () => setters.forEach((s) => { s.rx(0); s.ry(0); }), { passive: true });
+  }
+  const tiles = gsap.utils.toArray('[data-tiles] .gtile');
+  if (tiles.length) {
+    const tl = gsap.timeline({ scrollTrigger: { trigger: '[data-tiles]', start: 'top 80%', once: true } });
+    tl.from(tiles, {
+      clipPath: 'inset(58% 8% 8% 8% round 18px)', scale: 1.04, opacity: 0,
+      duration: 1.15, ease: 'power4.out', stagger: 0.1, clearProps: 'clipPath,scale,opacity',
+    }, 0)
+      .from(gsap.utils.toArray('[data-tiles] .gt-label'), {
+        x: -26, opacity: 0, duration: 0.7, ease: 'power3.out', stagger: 0.1, clearProps: 'all',
+      }, 0.45);
+  }
 }
 
 // The signature scene: while #develop is pinned, scroll "develops" the raw
 // phone photo into the finished visual by scrubbing the SAME CSS variable
-// (--cmp-pos) the Compare component already uses — so after the story plays,
-// the slider is still fully draggable. Desktop only; on mobile/reduced the
-// section behaves exactly as before (auto-drift + drag).
+// (--cmp-pos) the Compare component uses — the slider stays draggable after.
+// Desktop only; mobile / no-JS keeps the auto-drifting comparison.
 function developScene() {
   const mm = gsap.matchMedia();
   mm.add('(min-width: 900px)', () => {
@@ -65,8 +87,8 @@ function developScene() {
     const steps = gsap.utils.toArray(sec.querySelectorAll('.dev-step'));
     if (!cmp) return;
 
-    cmp.classList.add('cmp-drag');                  // stop the auto-drift; scroll owns it now
-    gsap.set(steps, { opacity: 0.3 });              // dimmed base — GSAP owns it, so no-JS stays fully visible
+    cmp.classList.add('cmp-drag');
+    gsap.set(steps, { opacity: 0.3 });
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: sec, start: 'top top', end: '+=130%',
@@ -84,9 +106,8 @@ function developScene() {
   });
 }
 
-// Dual-row visual marquee. GSAP drives the loop (xPercent -50 over duplicated
-// content) and scroll velocity leans the rows slightly — the film strip reacts
-// to how fast you move through it.
+// Film-strip marquee: infinite counter-drift + a slight lean with scroll
+// velocity, like film reacting to the pull.
 function marquee() {
   const rows = gsap.utils.toArray('.vm-row');
   if (!rows.length) return;
@@ -113,15 +134,30 @@ function marquee() {
   });
 }
 
+// The comet above the test-sample chapter: stroke draws itself in as the
+// chapter enters, the head sparking at the end of the arc.
+function comet() {
+  const path = document.querySelector('.comet path');
+  if (!path || typeof path.getTotalLength !== 'function') return;
+  const len = path.getTotalLength();
+  const head = document.querySelector('.comet circle');
+  gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
+  const tl = gsap.timeline({ scrollTrigger: { trigger: '.comet', start: 'top 85%', once: true } });
+  tl.to(path, { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, 0.1);
+  if (head) tl.from(head, { scale: 0, opacity: 0, transformOrigin: 'center', duration: 0.5, ease: 'back.out(2)' }, 1.45);
+}
+
 function init() {
   if (reduced()) return;
   ctx = gsap.context(() => {
-    heroEntrance();
-    heroTilt();
+    heroCinema();
+    chapterHeads();
+    cardsAndTiles();
     developScene();
     marquee();
+    comet();
   });
-  // Late-loading images shift pin math — refresh once everything has settled.
+  // Late-loading images shift pin math — refresh once everything settles.
   window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 }
 
