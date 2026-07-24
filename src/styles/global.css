@@ -65,17 +65,22 @@ body {
   margin: 0;
   font-family: var(--font-body); font-size: var(--t-body); line-height: 1.62;
   color: var(--ink-2);
-  /* Cool base + fixed cyan/purple colour washes behind everything (they show
-     through the many transparent sections); .grain sits over the top. */
+  /* Cool base; the cyan/purple colour washes live on the fixed ::before layer
+     below (they show through the many transparent sections); .grain on top. */
   background-color: var(--bg);
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+/* The colour washes as their own fixed, composited layer. This replaces
+   background-attachment: fixed on <body>, which forced the browser to repaint
+   the full-viewport gradients on every scroll frame — the single biggest
+   source of scroll jank. A fixed element is rasterised once and merely
+   composited while scrolling. */
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background-image:
     radial-gradient(58% 48% at 12% 8%, rgba(123,108,245,.20), transparent 60%),
     radial-gradient(52% 44% at 92% 16%, rgba(95,227,240,.15), transparent 60%),
     radial-gradient(75% 62% at 50% 108%, rgba(150,99,247,.18), transparent 62%);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  -webkit-font-smoothing: antialiased; overflow-x: hidden;
-}
+  background-repeat: no-repeat; }
 img, svg, video { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-decoration: none; }
 ::selection { background: rgba(123,108,245,.34); }
@@ -212,9 +217,12 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    state (added by src/scripts/interactions.js) is what animates.
    ============================================================ */
 
+/* Film grain. Plain alpha compositing — no mix-blend-mode: a full-viewport
+   blend layer forces the compositor to re-blend the whole page every scrolled
+   frame (a major jank source on Windows); a translucent tile is nearly free. */
 .grain {
   position: fixed; inset: 0; z-index: var(--z-grain); pointer-events: none;
-  opacity: .26; mix-blend-mode: overlay;
+  opacity: .07;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 170px;
 }
@@ -373,6 +381,10 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 /* auto-drift pauses on hover; once grabbed (.cmp-drag) it's a manual slider */
 .cmp:hover { animation-play-state: paused; }
 .cmp.cmp-drag { animation: none; }
+/* interactions.js parks the auto-sweep while a compare is off screen — the
+   clip-path animation costs a style+paint pass per frame, and pages like the
+   catalog have six of them. */
+.cmp.cmp-off { animation-play-state: paused; }
 
 @keyframes cmpAuto { 0%,6% { --cmp-pos: 66%; } 50%,56% { --cmp-pos: 20%; } 100% { --cmp-pos: 66%; } }
 /* desync the grid so four don't sweep in lockstep */
@@ -457,14 +469,14 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 
 /* ============================================================
    THE STUDIO ISSUE — homepage editorial system. One voice: Archivo 900.
-   Magazine furniture (masthead, hairline rules, outline-type tickers, a
+   Magazine furniture (hairline rules, outline-type tickers, a
    services ledger with floating previews, contact-sheet spreads, a numbered
    process) — service-forward, prices visible, everything a door. All base
    states are fully designed without JS; motion.js only enhances.
    ============================================================ */
 
-/* Cover — full-bleed campaign still, masthead on top, headline anchored low,
-   the ticker docked at the bottom edge as service navigation. */
+/* Cover — full-bleed campaign still, headline anchored low, the ticker
+   docked at the bottom edge as service navigation. */
 .hero-cover { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden;
   margin-top: -76px; padding-top: 76px; isolation: isolate; }
 .hero-cover .hc2-bg { position: absolute; inset: 0; z-index: -2; }
@@ -473,12 +485,9 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
   radial-gradient(90% 80% at 18% 88%, rgba(9,9,17,.82) 0%, rgba(9,9,17,.35) 55%, transparent 78%),
   linear-gradient(180deg, rgba(9,9,17,.62) 0%, rgba(9,9,17,.12) 22%, transparent 48%, rgba(9,9,17,.34) 78%, var(--bg) 99%); }
 .cover-inner { flex: 1; display: flex; flex-direction: column; width: 100%; }
-.masthead { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem 2rem; flex-wrap: wrap;
-  margin-top: clamp(1rem, 3vh, 1.8rem); padding-bottom: .7rem; border-bottom: 1px solid rgba(238,240,246,.22);
-  font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(238,240,246,.8); }
 .cover-copy { margin-top: auto; padding-block: 2rem clamp(2.8rem, 6vh, 4.2rem); max-width: 64rem; }
 .cover-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.028em; line-height: .96;
-  font-size: clamp(3.2rem, 7.8vw, 6rem); color: var(--ink); max-width: 13ch; }
+  font-size: clamp(2.4rem, 10.5vw, 6rem); color: var(--ink); max-width: 16ch; }
 .cover-title em { font-style: italic; color: var(--accent-word); }
 .cover-sub { margin-top: 1.5rem; max-width: 46ch; color: rgba(228,231,242,.88); font-size: var(--t-lg); line-height: 1.62; }
 .cover-cta { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2.2rem; }
@@ -487,8 +496,11 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 /* Ticker — outline display type on a hairline band. In the cover it is the
    service nav (every word a link); solid VISUAILS hues on hover. Static rows
    without JS / reduced motion still read as a designed type band. */
+/* No backdrop-filter here: blurring the moving hero behind a band whose own
+   content also moves would re-run the blur every frame. A slightly deeper
+   tint reads the same and costs nothing. */
 .ticker { overflow: hidden; border-block: 1px solid rgba(238,240,246,.16); padding-block: .85rem;
-  background: rgba(9,9,17,.36); backdrop-filter: blur(8px); }
+  background: rgba(9,9,17,.52); }
 .tk-row { display: flex; align-items: baseline; gap: clamp(1.6rem, 3vw, 2.8rem); width: max-content; will-change: transform; padding-inline: 1rem; }
 .tk-item { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em;
   font-size: clamp(1.5rem, 3.2vw, 2.5rem); line-height: 1.15; white-space: nowrap;
@@ -598,6 +610,31 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
   mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
 .vm-row { display: flex; gap: clamp(.8rem, 1.6vw, 1.2rem); width: max-content; will-change: transform; }
 .vm-row img { height: clamp(180px, 26vh, 300px); width: auto; border-radius: var(--r-media); border: 1px solid var(--line); display: block; }
+
+/* Lead magnet — the free briefing-photo checklist. Two-column band: pitch on
+   the left, a single-field email capture on the right. */
+.lead-magnet { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(1.8rem, 4vw, 3.5rem); align-items: center;
+  padding: clamp(1.8rem, 4vw, 3rem); border: 1px solid var(--accent-line); border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 70%); }
+.lm-kicker { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: .8rem; }
+.lm-copy h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); max-width: 18ch; }
+.lm-list { list-style: none; margin: 1.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.lm-list li { position: relative; padding-left: 1.5rem; font-size: .95rem; color: var(--ink-2); }
+.lm-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
+.lm-form { display: flex; flex-direction: column; }
+.lm-label { font-size: .9rem; font-weight: 600; color: var(--ink); margin-bottom: .6rem; }
+.lm-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+.lm-row input { flex: 1 1 200px; padding: .8rem 1rem; border-radius: var(--r-md); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 1rem; }
+.lm-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lm-row .btn { flex: 0 0 auto; }
+.lm-fine { margin-top: .8rem; font-size: .8rem; color: var(--ink-3); }
+@media (max-width: 760px) { .lead-magnet { grid-template-columns: 1fr; } .lm-row .btn { width: 100%; } }
+
+/* Order-form help line — a quiet "stuck? we'll help" reassurance that turns
+   the WhatsApp line into a conversion safety net inside every order wizard. */
+.form-help { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); line-height: 1.5; }
+.form-help a { color: var(--accent-bright); font-weight: 600; }
+.form-help a:hover { text-decoration: underline; }
 
 /* Promise chapter — split scene lit by the WebGL light field. */
 .ch-promise { position: relative; overflow: hidden; isolation: isolate; }

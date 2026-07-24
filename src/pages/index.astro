@@ -1,11 +1,13 @@
 ---
-// VISUAILS — homepage, "The Studio Issue". The page is built like a printed
-// studio magazine: masthead + cover, an outline-type ticker as service nav,
-// a services LEDGER (bold index rows with prices + a floating preview that
-// follows the cursor), the pinned "develop" scene, the €39.99 four-photo SET
-// as ruled frames, a contact-sheet SPREAD, a statement ticker, a numbered
-// PROCESS (a true sequence), the film-strip marquee, and the existing trust
-// sections. One voice: Archivo 900. All motion is progressive enhancement
+// VISUAILS — homepage, "The Studio Issue". Built like a printed studio
+// magazine, ordered like a sales conversation — each chapter answers the
+// visitor's next question:
+//   COVER (the dream, one line) → STATEMENT (what this is) → DEVELOP (watch
+//   the mechanism work) → SPREAD (real output) → LEDGER (the menu + prices) →
+//   SET (the flagship €39.99 pack, expanded) → PROCESS (how it works) →
+//   QUALITY (how we get it right) → MODELS / AI / THREE-WAY (objections) →
+//   PROMISE (trust) → PLANS (ways in) → TEST SAMPLE (the €0.99 close).
+// One voice: Archivo 900. All motion is progressive enhancement
 // (src/scripts/motion.js); every base state is fully designed without JS.
 import Layout from '../layouts/Layout.astro';
 import Compare from '../components/Compare.astro';
@@ -39,24 +41,20 @@ const reqs = [
 ---
 
 <Layout
-  title="VISUAILS — Product-visual studio for e-commerce brands"
+  title="Product photos for clothing brands, without a shoot | VISUAILS"
   description="Send one product photo, get a full campaign back in about 24 hours. Catalog, on-model, lifestyle and video visuals — styled to your brand, human-checked, no photoshoot needed."
   ogImage="/img/hero-dunes.webp"
 >
   <!-- THE COVER — one campaign still (shot nowhere, at dusk, in the dunes),
-       a masthead rule, one declarative line, and the ticker docked at the
-       bottom: every service, one glance. The image IS the argument: this is
+       one line that sells the dream, and the ticker docked at the bottom:
+       every service, one glance. The image IS the argument: this is
        shoot-quality work, and no shoot happened. -->
   <section class="hero-cover">
     <div class="hc2-bg"><img src="/img/hero-dunes.webp" alt="A VISUAILS campaign visual — a model in the dunes at dusk" fetchpriority="high" transition:name="hero-photo" /></div>
     <div class="hc2-scrim" aria-hidden="true"></div>
     <div class="container cover-inner">
-      <div class="masthead">
-        <span>VISUAILS — Product-visual studio</span>
-        <span>Enschede, NL · ~24h delivery · Human-checked</span>
-      </div>
       <div class="cover-copy">
-        <h1 class="cover-title"><span class="ch-l">The photoshoot</span><span class="ch-l">is <em>over.</em></span></h1>
+        <h1 class="cover-title"><span class="ch-l">The brand</span><span class="ch-l">you envisioned,</span><span class="ch-l"><em>visualized.</em></span></h1>
         <p class="cover-sub">One product photo becomes a publish-ready campaign — catalog, lifestyle and video, styled to your brand, back in about 24 hours.</p>
         <div class="cover-cta">
           <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Try it on your product — €0.99</a>
@@ -83,7 +81,7 @@ const reqs = [
   <!-- WHAT VISUAILS IS — the editorial statement + small, concrete benefits. -->
   <section class="section-tight">
     <div class="container intro-split">
-      <p class="editorial-statement reveal pending">For brands that would rather <em>grow</em> than book another shoot.</p>
+      <p class="editorial-statement reveal pending">For clothing brands that would rather <em>grow</em> than book another shoot. You've a drop to launch — not a week to lose on a studio.</p>
       <div class="mini-benefits reveal pending">
         <div class="mini-benefit">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
@@ -101,35 +99,10 @@ const reqs = [
     </div>
   </section>
 
-  <!-- THE LEDGER — services as an index: bold names, real deliverables, real
-       prices. Hover a row and the work floats up under your cursor. -->
-  <section class="ch">
-    <div class="container">
-      <div class="ed-head">
-        <span class="ed-meta">( Services )</span>
-        <div>
-          <h2>Four ways to look bigger than you are.</h2>
-          <p class="ed-sub">Pay per product or per visual — no subscription. Every row is a door.</p>
-        </div>
-      </div>
-      <div class="svc-index" data-index>
-        <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
-        {ledger.map((s) => (
-          <div class="idx-row" data-img={s.img}>
-            <span class="idx-num">{s.n}</span>
-            <a class="idx-main" href={s.href}>{s.name}</a>
-            <p class="idx-meta">{s.meta}</p>
-            <span class="idx-price">{s.price}</span>
-            <a class="idx-order" href={s.order}>Order &rarr;</a>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- THE DEVELOP — on desktop, motion.js pins this section and scroll itself
-       develops the photo (scrubbing the Compare's --cmp-pos); the slider stays
-       draggable after. Mobile/no-JS: the auto comparison. -->
+  <!-- THE DEVELOP — proof before the menu: on desktop, motion.js pins this
+       section and scroll itself develops the photo (scrubbing the Compare's
+       --cmp-pos); the slider stays draggable after. Mobile/no-JS: the auto
+       comparison. -->
   <section class="section-tight" id="develop">
     <div class="container two-col">
       <div class="reveal pending">
@@ -147,6 +120,7 @@ const reqs = [
             WhatsApp us
           </a>
         </div>
+        <p style="margin-top:.9rem;font-size:.82rem;color:var(--ink-3)">A real person, in Enschede — usually a reply within an hour on weekdays.</p>
       </div>
       <div class="reveal pending">
         <Compare
@@ -163,40 +137,8 @@ const reqs = [
     </div>
   </section>
 
-  <!-- THE SET — the €39.99 catalog pack as four ruled frames. -->
-  <section class="ch">
-    <div class="container">
-      <div class="ch-head">
-        <span class="ch-orb" aria-hidden="true"></span>
-        <h2 class="ch-title"><span class="ch-l">One product. Four photos.</span><span class="ch-l dim">€39.99. That's the deal.</span></h2>
-        <p class="ch-sub">Every catalog order comes back as a complete set — including a real on-model shot. About €10 a photo.</p>
-      </div>
-      <div class="set-strip" data-stagger>
-        <figure class="set-frame">
-          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Front catalog shot" loading="lazy" /></div>
-          <figcaption class="sf-cap"><span class="sfn">01</span><b>Front</b></figcaption>
-        </figure>
-        <figure class="set-frame">
-          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Back catalog shot" loading="lazy" /></div>
-          <figcaption class="sf-cap"><span class="sfn">02</span><b>Back</b></figcaption>
-        </figure>
-        <figure class="set-frame">
-          <div class="sf-media" data-zoom><img src="/img/catalog-before.webp" alt="Detail close-up of logo or fabric" loading="lazy" /></div>
-          <figcaption class="sf-cap"><span class="sfn">03</span><b>Detail</b></figcaption>
-        </figure>
-        <figure class="set-frame">
-          <div class="sf-media" data-zoom><img src="/img/custom-models-02.webp" alt="On-model shot, worn for fit" loading="lazy" /></div>
-          <figcaption class="sf-cap"><span class="sfn">04</span><b>On-model</b></figcaption>
-        </figure>
-      </div>
-      <div class="ch-cta">
-        <a href="/order-catalog" class="btn btn-primary btn-glow">Order catalog — €39.99 / product</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- THE SPREAD — a contact-sheet of real output, captions ruled like a
-       magazine. Each frame opens its service. -->
+  <!-- THE SPREAD — proof at scale: a contact-sheet of real output, captions
+       ruled like a magazine. Each frame opens its service. -->
   <section class="ch">
     <div class="container">
       <div class="ch-head">
@@ -227,19 +169,65 @@ const reqs = [
     </div>
   </section>
 
-  <!-- STATEMENT TICKER — the promise, set as a type band. -->
-  <div class="ticker" aria-hidden="true">
-    <div class="tk-row">
-      <span class="tk-item">One photo in</span><span class="tk-sep">·</span>
-      <span class="tk-item fill">Campaign out</span><span class="tk-sep">·</span>
-      <span class="tk-item">Human-checked</span><span class="tk-sep">·</span>
-      <span class="tk-item fill">~24 hours</span><span class="tk-sep">·</span>
-      <span class="tk-item">One photo in</span><span class="tk-sep">·</span>
-      <span class="tk-item fill">Campaign out</span><span class="tk-sep">·</span>
-      <span class="tk-item">Human-checked</span><span class="tk-sep">·</span>
-      <span class="tk-item fill">~24 hours</span><span class="tk-sep">·</span>
+  <!-- THE LEDGER — now that the work has spoken, the menu: bold names, real
+       deliverables, real prices. Hover a row and the work floats up under
+       your cursor. -->
+  <section class="ch">
+    <div class="container">
+      <div class="ed-head">
+        <span class="ed-meta">( Services )</span>
+        <div>
+          <h2>Four ways to look bigger than you are.</h2>
+          <p class="ed-sub">Pay per product or per visual — no subscription. Every row is a door.</p>
+        </div>
+      </div>
+      <div class="svc-index" data-index>
+        <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
+        {ledger.map((s) => (
+          <div class="idx-row" data-img={s.img}>
+            <span class="idx-num">{s.n}</span>
+            <a class="idx-main" href={s.href}>{s.name}</a>
+            <p class="idx-meta">{s.meta}</p>
+            <span class="idx-price">{s.price}</span>
+            <a class="idx-order" href={s.order}>Order &rarr;</a>
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- THE SET — ledger row 01, expanded: the €39.99 catalog pack as four
+       ruled frames. -->
+  <section class="ch">
+    <div class="container">
+      <div class="ch-head">
+        <span class="ch-orb" aria-hidden="true"></span>
+        <h2 class="ch-title"><span class="ch-l">One product. Four photos.</span><span class="ch-l dim">€39.99. That's the deal.</span></h2>
+        <p class="ch-sub">Every catalog order comes back as a complete set — including a real on-model shot. About €10 a photo, where a shoot day runs €1,000–2,000 — and you never leave your desk.</p>
+      </div>
+      <div class="set-strip" data-stagger>
+        <figure class="set-frame">
+          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Front catalog shot" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">01</span><b>Front</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media" data-zoom><img src="/img/catalog-after.webp" alt="Back catalog shot" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">02</span><b>Back</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media" data-zoom><img src="/img/catalog-before.webp" alt="Detail close-up of logo or fabric" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">03</span><b>Detail</b></figcaption>
+        </figure>
+        <figure class="set-frame">
+          <div class="sf-media" data-zoom><img src="/img/custom-models-02.webp" alt="On-model shot, worn for fit" loading="lazy" /></div>
+          <figcaption class="sf-cap"><span class="sfn">04</span><b>On-model</b></figcaption>
+        </figure>
+      </div>
+      <div class="ch-cta">
+        <a href="/order-catalog" class="btn btn-primary btn-glow">Order catalog — €39.99 / product</a>
+      </div>
+    </div>
+  </section>
 
   <!-- THE PROCESS — a true sequence, from photo to publish. -->
   <section class="ch">
@@ -325,6 +313,34 @@ const reqs = [
     </div>
   </section>
 
+  <!-- LEAD MAGNET — the free briefing-photo checklist. Captures an email while
+       giving something genuinely useful before anyone is a customer, and it
+       lifts the quality of what we're sent. -->
+  <section class="section-tight">
+    <div class="container">
+      <div class="lead-magnet reveal pending">
+        <div class="lm-copy">
+          <span class="lm-kicker">Free · the briefing-photo checklist</span>
+          <h2>The one-page checklist for a photo we can turn into a campaign.</h2>
+          <ul class="lm-list">
+            <li>The four angles that guarantee the result</li>
+            <li>Lighting and background in 30 seconds, with a phone</li>
+            <li>The mistakes that cost you a revision round</li>
+          </ul>
+        </div>
+        <form class="lm-form" action="/thank-you" method="get">
+          <input type="hidden" name="subscribe" value="briefing-checklist" />
+          <label class="lm-label" for="lm-email">Where should we send it?</label>
+          <div class="lm-row">
+            <input id="lm-email" type="email" name="email" required placeholder="you@yourbrand.com" autocomplete="email" />
+            <button type="submit" class="btn btn-primary" data-track="lead-magnet">Send me the checklist</button>
+          </div>
+          <p class="lm-fine">One email with the checklist and our best before/afters. No spam, unsubscribe anytime.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- MODELS — real portrait, one line. -->
   <section class="section-tight">
     <div class="container">
@@ -334,7 +350,7 @@ const reqs = [
         </div>
         <div>
           <h2>One face.<br /><em>Every campaign.</em></h2>
-          <p class="lead" style="margin-top:1rem">The same model, locked to your brand, across your whole collection — or a custom face made only for you.</p>
+          <p class="lead" style="margin-top:1rem">The same model, locked to your brand, across your whole collection — or a custom face made only for you. Once it's set, every next drop is just a photo away.</p>
           <div style="margin-top:1.2rem"><a class="link-arrow" href="/models">Browse the models &rarr;</a></div>
         </div>
       </div>
@@ -397,7 +413,7 @@ const reqs = [
           <ul class="checklist">
             <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>See it first for €0.99</strong> — a test sample on your own product before you commit to a full order.</span></li>
             <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>We refine until it's right</strong> — every order includes revision rounds until it matches your brand.</span></li>
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>Founding brands get extra care</strong> — come in early and you get our full attention on every single order.</span></li>
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span><strong>The first 25 brands get founding perks</strong> — a locked-in price and priority on every order, for as long as you're with us.</span></li>
           </ul>
         </div>
       </div>
@@ -407,20 +423,6 @@ const reqs = [
         <li>Human-checked, every visual</li>
         <li>Direct line on WhatsApp</li>
       </ul>
-    </div>
-  </section>
-
-  <!-- THE TEST SAMPLE — the glow moment: one comet, one ask. -->
-  <section class="ch">
-    <div class="container ch-head">
-      <span class="ch-orb" aria-hidden="true"></span>
-      <svg class="comet" viewBox="0 0 320 90" aria-hidden="true"><path d="M10 84 Q150 -26 306 58" /><circle cx="306" cy="58" r="3.5" /></svg>
-      <p class="ch-kicker">Test sample · €0.99</p>
-      <h2 class="ch-title glow-title"><span class="ch-l">See it on your own product first.</span></h2>
-      <p class="ch-sub">One visual, made from your photo, human-checked — for a €0.99 verification. One per business, and you approve before final delivery.</p>
-      <div class="ch-cta">
-        <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Get your test sample</a>
-      </div>
     </div>
   </section>
 
@@ -441,10 +443,24 @@ const reqs = [
             <a href={WA} class="btn btn-ghost" target="_blank" rel="noopener">Talk it through</a>
           </div>
         </div>
-        <p style="margin-top:1.4rem;font-size:.84rem;color:var(--ink-3)">Full breakdown on the <a href="/pricing" style="color:var(--accent-bright);text-decoration:underline">pricing page</a>.</p>
+        <p style="margin-top:1.4rem;font-size:.84rem;color:var(--ink-3)">Built for clothing — also great for beauty and accessories. Full breakdown on the <a href="/pricing" style="color:var(--accent-bright);text-decoration:underline">pricing page</a>.</p>
       </div>
       <div class="plan-photo reveal pending" data-zoom>
         <img src="/img/custom-models-03.webp" alt="A VISUAILS custom model portrait" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <!-- THE TEST SAMPLE — the close: still not sure? €0.99, one comet, one ask. -->
+  <section class="ch">
+    <div class="container ch-head">
+      <span class="ch-orb" aria-hidden="true"></span>
+      <svg class="comet" viewBox="0 0 320 90" aria-hidden="true"><path d="M10 84 Q150 -26 306 58" /><circle cx="306" cy="58" r="3.5" /></svg>
+      <p class="ch-kicker">Test sample · €0.99</p>
+      <h2 class="ch-title glow-title"><span class="ch-l">See it on your own product first.</span></h2>
+      <p class="ch-sub">One visual, made from your photo, human-checked — for a €0.99 verification. One per business, and you approve before final delivery.</p>
+      <div class="ch-cta">
+        <a href="/test-sample" class="btn btn-primary btn-glow btn-lg">Get your test sample</a>
       </div>
     </div>
   </section>

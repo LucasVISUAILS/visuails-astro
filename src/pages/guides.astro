@@ -1,0 +1,61 @@
+---
+// VISUAILS — Guides hub. The informational layer the site was missing: it
+// gives search intent one step earlier than the commercial pages a place to
+// land, and gathers the genuinely useful resources in one door. Each card
+// points at the best existing page; the hub itself is the SEO surface.
+import Layout from '../layouts/Layout.astro';
+
+const guides = [
+  { title: 'How to photograph your product with your phone', desc: 'The four angles, the lighting, the background — everything that turns a phone photo into a campaign-ready result. The single most useful thing to read before you order.', href: '/upload-guidelines', tag: 'Checklist' },
+  { title: 'From photo to publish — how it works', desc: 'What actually happens between sending one photo and getting a finished, human-checked visual back in about 24 hours.', href: '/how-it-works', tag: 'Process' },
+  { title: 'AI tools vs a done-for-you studio', desc: 'When a self-serve AI tool is genuinely enough — and where it quietly costs you in redos, off-brand colour and hours.', href: '/compare', tag: 'Compare' },
+  { title: 'What product visuals actually cost', desc: 'Catalog at €39.99 for a four-photo set, lifestyle from €35, video from €49 — and how that compares to a traditional shoot day.', href: '/pricing', tag: 'Pricing' },
+  { title: 'Questions, answered', desc: 'Payment, revisions, VAT, models, delivery — the practical things brands ask before their first order.', href: '/faq', tag: 'FAQ' },
+];
+---
+
+<Layout
+  title="Guides — product photography for clothing brands | VISUAILS"
+  description="Practical guides for clothing and e-commerce brands: how to photograph your product with a phone, how AI visuals compare to a shoot, what product visuals cost, and how VISUAILS works."
+>
+  <section class="page-hero"><div class="container">
+    <p class="eyebrow-page">Guides</p>
+    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Everything worth knowing <em>before you shoot.</em></h1>
+    <p class="lead" style="margin-top:1.2rem;max-width:60ch">Short, practical reads for founders getting their product visuals right — whether you order from us or not.</p>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="guide-grid reveal-group">
+      {guides.map((g) => (
+        <a class="guide-card reveal pending" href={g.href}>
+          <span class="guide-tag">{g.tag}</span>
+          <h2 class="guide-title">{g.title}</h2>
+          <p class="guide-desc">{g.desc}</p>
+          <span class="guide-more">Read <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+      ))}
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Ready when you are.</h2>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <a href="/test-sample" class="btn btn-primary btn-lg">Try a €0.99 test sample</a>
+        <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
+      </div>
+    </div>
+  </div></section>
+</Layout>
+
+<style>
+  .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
+  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease), background .25s var(--ease); }
+  .guide-card:hover { border-color: var(--accent-line); transform: translateY(-3px); background: var(--surface-2); }
+  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); border-radius: var(--r-pill); margin-bottom: 1rem; }
+  .guide-title { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.12; color: var(--ink); letter-spacing: -0.02em; }
+  .guide-desc { margin-top: .7rem; font-size: .95rem; color: var(--ink-3); line-height: 1.55; }
+  .guide-more { margin-top: 1.4rem; display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; font-weight: 600; color: var(--ink); }
+  .guide-more .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .guide-card:hover .guide-more { color: var(--accent-bright); }
+</style>

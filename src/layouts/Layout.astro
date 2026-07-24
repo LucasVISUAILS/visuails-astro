@@ -29,6 +29,15 @@ interface Props {
 
 const { title, description, ogImage = '/img/banners-05.webp' } = Astro.props;
 
+// Privacy-first analytics. Cloudflare Web Analytics is cookieless and needs no
+// consent banner (AVG/GDPR-clean). To switch it on: create a Web Analytics site
+// in the Cloudflare dashboard, copy the token, and paste it below — the beacon
+// only renders when a token is present, so the site ships analytics-ready with
+// nothing loading until you opt in. Custom events (CTA clicks, "how did you
+// find us?") are wired via track() in interactions.js and start reporting the
+// moment a tool that supports them (e.g. Plausible/Umami) is added.
+const CF_ANALYTICS_TOKEN = '';
+
 // Language is derived from the URL: /nl/... → Dutch, else English.
 const path = Astro.url.pathname;
 const lang = getLangFromPath(path);
@@ -251,6 +260,8 @@ const orgJsonLd = {
             <li><a href={lp('/about')}>{t('foot_about')}</a></li>
             <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
             <li><a href={lp('/how-it-works')}>{t('foot_how')}</a></li>
+            <li><a href={lp('/guides')}>{t('foot_guides')}</a></li>
+            <li><a href={lp('/compare')}>{t('foot_compare')}</a></li>
             <li><a href={lp('/faq')}>{t('foot_faq')}</a></li>
             <li><a href={lp('/contact')}>{t('foot_contact')}</a></li>
           </ul>
@@ -293,12 +304,22 @@ const orgJsonLd = {
     import '../scripts/motion.js';
     import '../scripts/shader-hero.js';
   </script>
+  {CF_ANALYTICS_TOKEN && (
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={`{"token": "${CF_ANALYTICS_TOKEN}"}`}
+    />
+  )}
 </body>
 </html>
 
 <style>
   .site-header { position: sticky; top: 0; z-index: var(--z-sticky); transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
-  .site-header.scrolled { background: rgba(13,13,20,.82); backdrop-filter: blur(16px); box-shadow: 0 1px 0 var(--line); }
+  /* blur(10): the scrolled header re-blurs its backdrop every frame while the
+     page moves under it — radius is the biggest cost factor, and 10 reads the
+     same on a 76px bar. */
+  .site-header.scrolled { background: rgba(13,13,20,.86); backdrop-filter: blur(10px); box-shadow: 0 1px 0 var(--line); }
   .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
   .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
   .brand-word-img { height: 13px; width: auto; display: block; }

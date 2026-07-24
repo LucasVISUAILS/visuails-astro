@@ -1,0 +1,58 @@
+---
+// VISUAILS — Gidsen-hub (Nederlands). Vertaling van src/pages/guides.astro.
+import Layout from '../../layouts/Layout.astro';
+
+const guides = [
+  { title: 'Zo fotografeer je je product met je telefoon', desc: 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', href: '/nl/upload-guidelines', tag: 'Checklist' },
+  { title: 'Van foto naar publicatie — hoe het werkt', desc: 'Wat er precies gebeurt tussen het sturen van één foto en een afgewerkte, met de hand gecontroleerde visual terug in ongeveer 24 uur.', href: '/nl/how-it-works', tag: 'Proces' },
+  { title: 'AI-tools vs een done-for-you studio', desc: 'Wanneer een self-serve AI-tool echt genoeg is — en waar hij je stilletjes geld kost aan overdoen, off-brand kleur en uren.', href: '/nl/compare', tag: 'Vergelijk' },
+  { title: 'Wat productvisuals echt kosten', desc: 'Catalog voor €39,99 voor een set van vier foto’s, lifestyle vanaf €35, video vanaf €49 — en hoe zich dat verhoudt tot een traditionele shootdag.', href: '/nl/pricing', tag: 'Prijzen' },
+  { title: 'Vragen, beantwoord', desc: 'Betaling, revisies, btw, modellen, levering — de praktische dingen die merken vragen vóór hun eerste bestelling.', href: '/nl/faq', tag: 'FAQ' },
+];
+---
+
+<Layout
+  title="Gidsen — productfotografie voor kledingmerken | VISUAILS"
+  description="Praktische gidsen voor kleding- en e-commerce merken: zo fotografeer je je product met een telefoon, hoe AI-visuals zich verhouden tot een shoot, wat productvisuals kosten, en hoe VISUAILS werkt."
+>
+  <section class="page-hero"><div class="container">
+    <p class="eyebrow-page">Gidsen</p>
+    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Alles wat de moeite waard is <em>vóór je shoot.</em></h1>
+    <p class="lead" style="margin-top:1.2rem;max-width:60ch">Korte, praktische reads voor ondernemers die hun productvisuals goed willen hebben — of je nu bij ons bestelt of niet.</p>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="guide-grid reveal-group">
+      {guides.map((g) => (
+        <a class="guide-card reveal pending" href={g.href}>
+          <span class="guide-tag">{g.tag}</span>
+          <h2 class="guide-title">{g.title}</h2>
+          <p class="guide-desc">{g.desc}</p>
+          <span class="guide-more">Lees <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+      ))}
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Klaar wanneer jij dat bent.</h2>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <a href="/nl/test-sample" class="btn btn-primary btn-lg">Probeer een proefvisual van €0,99</a>
+        <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
+      </div>
+    </div>
+  </div></section>
+</Layout>
+
+<style>
+  .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
+  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease), background .25s var(--ease); }
+  .guide-card:hover { border-color: var(--accent-line); transform: translateY(-3px); background: var(--surface-2); }
+  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); border-radius: var(--r-pill); margin-bottom: 1rem; }
+  .guide-title { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.12; color: var(--ink); letter-spacing: -0.02em; }
+  .guide-desc { margin-top: .7rem; font-size: .95rem; color: var(--ink-3); line-height: 1.55; }
+  .guide-more { margin-top: 1.4rem; display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; font-weight: 600; color: var(--ink); }
+  .guide-more .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .guide-card:hover .guide-more { color: var(--accent-bright); }
+</style>

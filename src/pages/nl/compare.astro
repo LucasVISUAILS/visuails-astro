@@ -1,0 +1,79 @@
+---
+// VISUAILS — "AI-tools vs VISUAILS" (Nederlands). Vertaling van
+// src/pages/compare.astro.
+import Layout from '../../layouts/Layout.astro';
+import ThreeWay from '../../components/ThreeWay.astro';
+
+const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20vergelijk%20jullie%20met%20het%20zelf%20doen%20met%20AI-tools.';
+
+const enough = [
+  { title: 'Je wilt alleen een snelle mock', body: 'Een ruwe visual om een idee te testen, een layout te schetsen of aan een vriend te laten zien — een gratis tool doet dat in een minuut.' },
+  { title: 'Off-brand is prima', body: 'De kleur hoeft niet exact te zijn en niemand controleert het logo. Als het niet voor klanten komt, is een tool ruim voldoende.' },
+  { title: 'Je vindt het gepruts leuk', body: 'Sommige ondernemers vinden het leuk om te prompten en opnieuw te rollen tot het klopt. Ben jij dat en heb je de tijd? Hou je credits.' },
+];
+
+const costs = [
+  { title: 'De overdoen-belasting', body: 'De creditprijs lijkt piepklein — tot je de tien generaties telt die nodig waren voor één bruikbare, plus de ronde waarin het logo vervormd uitkwam. Goedkoop per poging, duur per bruikbaar beeld.' },
+  { title: 'Je merkkleur wisselt', body: 'Generators benaderen. Elke run is een net iets andere tint, een net iets andere pasvorm. Over een hele catalogus is die inconsistentie precies wat een shop amateuristisch laat ogen.' },
+  { title: 'Niemand controleert het ooit', body: 'Een tool levert wat hij maakte — vervormde handen, verzonnen tekst, een kraag die niet bestaat. Er zit geen mens tussen het model en je shop. Bij ons altijd wel.' },
+  { title: 'Het kost nog steeds jouw middag', body: 'Prompten, opnieuw proberen, upscalen, croppen, exporteren — de "gratis" tool kost de uren die je liever aan je merk besteedt. Wij geven die uren terug.' },
+];
+---
+
+<Layout
+  title="AI-fototools vs een done-for-you studio — een eerlijke vergelijking | VISUAILS"
+  description="Twijfel je tussen een AI-tool voor je productfoto's en VISUAILS? Dit is de eerlijke vergelijking — wanneer een self-serve tool genoeg is, en waar hij je stilletjes geld kost aan overdoen, off-brand kleur en uren."
+>
+  <section class="page-hero"><div class="container">
+    <p class="eyebrow-page">Vergelijk</p>
+    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">AI-tools vs VISUAILS — <em>eerlijk.</em></h1>
+    <p class="lead" style="margin-top:1.2rem;max-width:60ch">Je kunt je productfoto's zelf met een AI-tool maken. Soms is dat de juiste keuze. Dit is de eerlijke versie van wanneer dat zo is — en wanneer het je stilletjes meer kost dan het bespaart.</p>
+    <div class="flex" style="margin-top:1.8rem"><a href="/nl/test-sample" class="btn btn-primary btn-lg" data-track="compare-test">Zie het op je product — €0,99</a><a href="/nl/pricing" class="btn btn-ghost btn-lg">Bekijk prijzen</a></div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="section-head"><h2>Wanneer een self-serve tool echt genoeg is</h2><p>We vertellen het je liever eerlijk. Herken je een van deze? Dan is een tool de slimme, goedkope keuze — geen bestelling nodig.</p></div>
+    <div class="grid grid-3 reveal-group">
+      {enough.map((e) => (
+        <div class="card reveal pending">
+          <h4>{e.title}</h4>
+          <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{e.body}</p>
+        </div>
+      ))}
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="section-head"><h2>Waar de tools je stilletjes geld kosten</h2><p>Zodra de visuals voor echte klanten komen, gaan vier dingen optellen.</p></div>
+    <div class="grid grid-2 reveal-group">
+      {costs.map((c) => (
+        <div class="card reveal pending">
+          <h4>{c.title}</h4>
+          <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{c.body}</p>
+        </div>
+      ))}
+    </div>
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <ThreeWay cta={false} />
+  </div></section>
+
+  <section class="section-tight"><div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Geloof ons niet — <em>test het.</em></h2>
+      <p style="margin:1rem auto 0;max-width:52ch;color:var(--ink-2)">Zie VISUAILS op je eigen product voor een verificatie van €0,99, en leg het naast wat een tool je gaf. Eén proef per bedrijf.</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <a href="/nl/test-sample" class="btn btn-primary btn-lg" data-track="compare-test-bottom">Probeer een proefvisual van €0,99</a>
+        <a href={WA} class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Vraag ons alles</a>
+      </div>
+      <p class="cta-reply">Meestal binnen een uur antwoord op werkdagen.</p>
+    </div>
+  </div></section>
+</Layout>
+
+<style>
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+  .cta-reply { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
+</style>

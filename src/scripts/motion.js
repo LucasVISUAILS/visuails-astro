@@ -11,22 +11,40 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
+// Mobile browsers resize the viewport when the URL bar hides; recalculating
+// every trigger for that is a scroll-jank source of its own.
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 let ctx = null;
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Cover: the film still settles while the masthead rules itself in, the 900
-// headline lines rise from a blur, then sub/CTAs/benefits and the ticker.
+// An endless drift loop that only spends frames while its band is on screen —
+// a loop the user can't see must not cost scroll time. Used by the ticker and
+// the film-strip marquee.
+function driftRow(row, dir, dur) {
+  const tween = gsap.fromTo(row,
+    { xPercent: dir === 1 ? -50 : 0 },
+    { xPercent: dir === 1 ? 0 : -50, ease: 'none', duration: dur, repeat: -1 });
+  const st = ScrollTrigger.create({
+    trigger: row.parentElement || row, start: 'top bottom', end: 'bottom top',
+    onToggle: (self) => tween.paused(!self.isActive),
+  });
+  tween.paused(!st.isActive);
+  return tween;
+}
+
+// Cover: the film still settles while the 900 headline lines rise, then
+// sub/CTAs and the ticker. Transform+opacity only — animating filter: blur()
+// re-rasterised the display type every frame during the heaviest moment of
+// the page (hero image decode + settle).
 function heroCover() {
   const hero = document.querySelector('.hero-cover');
   if (!hero) return;
   const bg = hero.querySelector('.hc2-bg img');
   if (bg) gsap.fromTo(bg, { scale: 1.12 }, { scale: 1, duration: 2.4, ease: 'power2.out' });
-  const mast = hero.querySelector('.masthead');
-  if (mast) gsap.from(mast, { y: -14, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.1, clearProps: 'all' });
   const lines = hero.querySelectorAll('.cover-title .ch-l');
-  if (lines.length) gsap.from(lines, { y: 56, opacity: 0, filter: 'blur(12px)', duration: 1.2, ease: 'power4.out', stagger: 0.13, delay: 0.18, clearProps: 'filter' });
+  if (lines.length) gsap.from(lines, { y: 56, opacity: 0, duration: 1.2, ease: 'power4.out', stagger: 0.13, delay: 0.18, clearProps: 'all' });
   gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta'), {
     y: 22, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.6, clearProps: 'all',
   });
@@ -36,12 +54,7 @@ function heroCover() {
 
 // Tickers: seamless outline-type loops (row content is duplicated in markup).
 function tickers() {
-  gsap.utils.toArray('.tk-row').forEach((row, i) => {
-    const dir = i % 2 === 0 ? -1 : 1;
-    gsap.fromTo(row,
-      { xPercent: dir === 1 ? -50 : 0 },
-      { xPercent: dir === 1 ? 0 : -50, ease: 'none', duration: 52 + i * 10, repeat: -1 });
-  });
+  gsap.utils.toArray('.tk-row').forEach((row, i) => driftRow(row, i % 2 === 0 ? -1 : 1, 52 + i * 10));
 }
 
 // Considered imagery: media inside [data-zoom] settles from a gentle
@@ -92,15 +105,16 @@ function ledger() {
   gsap.set(float, { autoAlpha: 0, scale: 0.92 });
 }
 
-// Chapter heads: bloom swells while the bold lines rise from a blur —
-// bright line first, dimmed line trailing.
+// Chapter heads: bloom swells while the bold lines rise — bright line first,
+// dimmed line trailing. No filter tweens: blurring display type mid-scroll
+// causes exactly the stutter this page was suffering from.
 function chapterHeads() {
   gsap.utils.toArray('.ch-head').forEach((head) => {
     const tl = gsap.timeline({ scrollTrigger: { trigger: head, start: 'top 80%', once: true } });
     const orb = head.querySelector('.ch-orb');
     if (orb) tl.from(orb, { scale: 0.55, opacity: 0, duration: 1.4, ease: 'power2.out' }, 0);
     const lines = head.querySelectorAll('.ch-l');
-    if (lines.length) tl.from(lines, { y: 44, opacity: 0, filter: 'blur(10px)', duration: 1.05, ease: 'power4.out', stagger: 0.13, clearProps: 'filter' }, 0.05);
+    if (lines.length) tl.from(lines, { y: 44, opacity: 0, duration: 1.05, ease: 'power4.out', stagger: 0.13, clearProps: 'all' }, 0.05);
     const rest = head.querySelectorAll('.ch-sub, .ch-cta, .ch-kicker, .comet');
     if (rest.length) tl.from(rest, { y: 18, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.08, clearProps: 'all' }, 0.4);
   });
@@ -162,12 +176,7 @@ function developScene() {
 function marquee() {
   const rows = gsap.utils.toArray('.vm-row');
   if (!rows.length) return;
-  rows.forEach((row, i) => {
-    const dir = i % 2 === 0 ? -1 : 1;
-    gsap.fromTo(row,
-      { xPercent: dir === 1 ? -50 : 0 },
-      { xPercent: dir === 1 ? 0 : -50, ease: 'none', duration: 42 + i * 12, repeat: -1 });
-  });
+  rows.forEach((row, i) => driftRow(row, i % 2 === 0 ? -1 : 1, 42 + i * 12));
   const proxy = { skew: 0 };
   const clamp = gsap.utils.clamp(-4, 4);
   ScrollTrigger.create({

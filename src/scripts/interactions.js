@@ -30,6 +30,7 @@ const I18N = {
     hexStrong: 'We’d advise against a strong colour like this — light, neutral backgrounds (white, off-white, light grey or beige) look cleanest and most professional. The choice is yours.',
     hexDark: 'That’s on the darker side — a lighter neutral (white, off-white, light grey or beige) usually looks cleaner and more professional. The choice is yours.',
     carryChoose: 'Let VISUAILS choose the model', carrySelected: 'Model selected: ', carryTail: ' — now pick the service you’d like to use it for.',
+    sourceThanks: 'Thanks — that helps us a lot.',
   },
   nl: {
     volumeQuote: 'Op aanvraag', tyTitle: 'Je aanvraag',
@@ -41,6 +42,7 @@ const I18N = {
     hexStrong: 'We raden een sterke kleur als deze af — lichte, neutrale achtergronden (wit, off-white, licht grijs of beige) ogen het strakst en meest professioneel. De keuze is aan jou.',
     hexDark: 'Dit is aan de donkere kant — een lichtere neutrale kleur (wit, off-white, licht grijs of beige) oogt meestal strakker en professioneler. De keuze is aan jou.',
     carryChoose: 'Laat VISUAILS het model kiezen', carrySelected: 'Model gekozen: ', carryTail: ' — kies nu de dienst waarvoor je het wilt gebruiken.',
+    sourceThanks: 'Bedankt — daar hebben we veel aan.',
   },
 };
 function t18() { return I18N[pageLang()] || I18N.en; }
@@ -446,6 +448,25 @@ function initFormPrefill() {
   }
 }
 
+// Park each compare's auto-sweep while it is off screen (.cmp-off pauses the
+// CSS animation). The sweep animates a registered custom property that drives
+// a clip-path, which costs a style+paint pass per frame — the catalog page has
+// six compares, and without this they all pay that cost on every frame no
+// matter where the visitor is. Elements are observed once (dataset flag);
+// after a ClientRouter swap the old nodes are gone and the new ones enroll.
+let cmpIdleIO = null;
+function initCompareIdle() {
+  if (!cmpIdleIO) {
+    cmpIdleIO = new IntersectionObserver((entries) => {
+      entries.forEach((en) => en.target.classList.toggle('cmp-off', !en.isIntersecting));
+    }, { rootMargin: '120px' });
+  }
+  document.querySelectorAll('.cmp:not([data-idle-bound])').forEach((el) => {
+    el.dataset.idleBound = '1';
+    cmpIdleIO.observe(el);
+  });
+}
+
 // Before/after Compare: make the handle draggable while keeping the auto-play.
 // Delegated + bound once, so it works on every page and after ClientRouter
 // navigations. Only the divider/knob start a drag (they have touch-action:none);
@@ -580,12 +601,62 @@ function initContactPhone() {
   });
 }
 
+// Lightweight, tool-agnostic event tracking. Whatever privacy-friendly
+// analytics the site ends up using (Plausible, Umami, or Cloudflare Web
+// Analytics' pageview beacon only) this calls it if present and no-ops
+// otherwise — so the events below are wired now and start reporting the
+// moment an analytics script is added, with zero code changes. Never throws.
+function track(name, props) {
+  try {
+    if (typeof window.plausible === 'function') window.plausible(name, props ? { props } : undefined);
+    if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, props || {});
+  } catch (e) {}
+}
+
+// Fire an event for any element carrying data-track="event name". Bound once,
+// delegated, so it covers CTAs added on any page and after ClientRouter swaps.
+let trackBound = false;
+function initTracking() {
+  if (trackBound) return;
+  trackBound = true;
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const el = t.closest('[data-track]');
+    if (el) track(el.getAttribute('data-track'));
+  });
+}
+
+// Thank-you page: a one-tap "How did you find us?" — cookieless attribution.
+// Records via track() (works the moment analytics is live) and, no matter what,
+// confirms to the visitor so the tap always feels acknowledged. Bound once.
+let sourceAskBound = false;
+function initSourceAsk() {
+  const ask = document.querySelector('[data-source-ask]');
+  if (!ask) return;
+  if (sourceAskBound) return;
+  sourceAskBound = true;
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const btn = t.closest('[data-source]');
+    if (!btn) return;
+    const wrap = btn.closest('[data-source-ask]');
+    if (!wrap) return;
+    track('source', { via: btn.getAttribute('data-source') });
+    wrap.innerHTML = `<p class="source-done">${t18().sourceThanks}</p>`;
+  });
+}
+
 export function init() {
   initReveal();
   initSplitLines();
   initFormPrefill();
   initContactPhone();
   initCompareDrag();
+  initCompareIdle();
+  initTracking();
+  initSourceAsk();
   initThankYou();
   initHexPreview();
   // Magnetic button-follow intentionally removed — CTAs stay put under the cursor.

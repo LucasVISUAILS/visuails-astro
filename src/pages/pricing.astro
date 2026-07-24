@@ -46,6 +46,31 @@ const faqs = [
     <div class="flex" style="margin-top:1.8rem"><a href="/order" class="btn btn-primary btn-lg">Order now</a><a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a></div>
   </div></section>
 
+  <section class="section-tight"><div class="container">
+    <div class="anchor-band reveal pending">
+      <div class="anchor-col was">
+        <span class="anchor-tag">A traditional shoot day</span>
+        <span class="anchor-price">€1,000–2,000<small>+ / day</small></span>
+        <ul class="anchor-list">
+          <li>Book a studio, photographer and model weeks ahead</li>
+          <li>Ship your samples, travel there, spend the day on set</li>
+          <li>Then wait ~3 weeks for edited photos</li>
+        </ul>
+      </div>
+      <div class="anchor-vs" aria-hidden="true">vs</div>
+      <div class="anchor-col now">
+        <span class="anchor-tag">VISUAILS</span>
+        <span class="anchor-price">€39.99<small> / product</small></span>
+        <ul class="anchor-list">
+          <li>Send one phone photo from wherever you are</li>
+          <li>Never leave your desk — no shoot to attend, nothing to ship</li>
+          <li>A full campaign back in about 24 hours</li>
+        </ul>
+      </div>
+    </div>
+    <p class="anchor-note reveal pending">You don't just save money. You save the day you'd have spent on set — time you put straight back into growing your brand while we make the visuals.</p>
+  </div></section>
+
   <section><div class="container">
     <div class="section-head"><h2>Pay as you go</h2><p>No subscriptions. Order five or five hundred at the same short wait.</p></div>
     <div class="grid grid-3 reveal-group">
@@ -153,6 +178,22 @@ const faqs = [
 
 <style>
   .container.narrow { max-width: 760px; }
+  .anchor-band { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 0; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  .anchor-col { padding: clamp(1.4rem, 3vw, 2.2rem); }
+  .anchor-col.was { background: var(--bg-deep); }
+  .anchor-col.now { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  .anchor-tag { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .anchor-col.now .anchor-tag { color: var(--accent-bright); }
+  .anchor-price { display: block; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.7rem, 3.4vw, 2.4rem); line-height: 1; color: var(--ink); margin: .5rem 0 1.1rem; }
+  .anchor-col.was .anchor-price { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .anchor-price small { font-family: var(--font-body); font-size: .82rem; font-weight: 500; -webkit-text-decoration: none; text-decoration: none; }
+  .anchor-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
+  .anchor-list li { position: relative; padding-left: 1.3rem; font-size: .92rem; color: var(--ink-2); line-height: 1.45; }
+  .anchor-list li::before { content: ""; position: absolute; left: 0; top: .5em; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); }
+  .anchor-col.now .anchor-list li::before { background: var(--accent); }
+  .anchor-vs { display: grid; place-items: center; padding: 0 1rem; font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--ink-faint); background: var(--surface); }
+  .anchor-note { max-width: 60ch; margin: 1.4rem auto 0; text-align: center; color: var(--ink-2); font-size: 1rem; }
+  @media (max-width: 680px) { .anchor-band { grid-template-columns: 1fr; } .anchor-vs { padding: .6rem; } }
   .plan-card { display: flex; flex-direction: column; }
   .price-big { font-family: var(--font-display); font-weight: 400; font-size: 2.6rem; line-height: 1; color: var(--ink); margin: .3rem 0 .2rem; }
   .price-big small { font-family: var(--font-body); font-size: .85rem; font-weight: 500; color: var(--ink-3); }
