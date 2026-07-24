@@ -42,7 +42,11 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
 
       <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
         <!-- TODO: wire this form to a real submit handler (Cloudflare Pages Function, Formspree, etc.) before launch — no backend in this static build yet -->
-        <form action="/thank-you" method="get" id="cat-form">
+        <form action="/api/order" method="post" id="cat-form">
+          <input type="hidden" name="service" value="catalog" />
+          <input type="hidden" name="redirect" value="/thank-you" />
+          <input type="hidden" name="lang" value="en" />
+          <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
           <div class="field">
             <label for="cat-name">Name <span class="req">*</span></label>
             <input class="input" type="text" id="cat-name" name="name" autocomplete="name" required />

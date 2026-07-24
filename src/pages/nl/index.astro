@@ -12,10 +12,22 @@ import ThreeWay from '../../components/ThreeWay.astro';
 const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20wil%20graag%20zien%20wat%20jullie%20van%20mijn%20productfoto%27s%20kunnen%20maken.';
 
 const ledger = [
-  { n: '01', name: 'Catalog', meta: 'Een volledige set van 4 foto’s per product: voorkant, achterkant, detail-close-up en één on-model shot.', price: '€39,99 / product', href: '/nl/catalog', order: '/nl/order-catalog', img: '/img/catalog-after.webp' },
-  { n: '02', name: 'Lifestyle', meta: 'Drie foto’s van je product in één gestylde look — sfeer, on-model en een logo-close-up, met dezelfde grade. Een carousel klaar om te posten.', price: '€59,99 / product', href: '/nl/lifestyle', order: '/nl/order-lifestyle', img: '/img/lifestyle-glow-01.webp' },
-  { n: '03', name: 'Video', meta: 'Korte productfilms met subtiele beweging, gebouwd voor feeds en ads.', price: 'vanaf €49 / video', href: '/nl/video', order: '/nl/order-video', img: '/img/banners-16.webp' },
-  { n: '04', name: 'Custom', meta: 'Je eigen stijl of model, één keer ontworpen voor jouw merk — daarna de normale prijs.', price: 'op aanvraag', href: '/nl/custom-models', order: '/nl/order-custom', img: '/img/custom-models-02.webp' },
+  { n: '01', name: 'Catalog', meta: 'Een volledige set van 4 foto’s per product: voorkant, achterkant, detail-close-up en één on-model shot.', price: '€39,99 / product', href: '/nl/catalog', order: '/nl/order-catalog', img: '/img/catalog-after.webp',
+    use: 'De strakke, consistente productshots waar je shop en marktplaatsen op draaien — de foto’s die een klein assortiment gevestigd laten lijken.',
+    where: ['Je webshop', 'Marktplaatsen', 'Productpagina’s'],
+    shots: ['/img/catalog-after.webp', '/img/catalog-before.webp', '/img/custom-models-02.webp'] },
+  { n: '02', name: 'Lifestyle', meta: 'Drie foto’s van je product in één gestylde look — sfeer, on-model en een logo-close-up, met dezelfde grade. Een carousel klaar om te posten.', price: '€59,99 / product', href: '/nl/lifestyle', order: '/nl/order-lifestyle', img: '/img/lifestyle-glow-01.webp',
+    use: 'De gestylde scènes in context die de scroll stoppen en het gevoel verkopen — je feed en je ads.',
+    where: ['Instagram', 'Ads', 'Lookbook'],
+    shots: ['/img/lifestyle-glow-01.webp', '/img/lifestyle-dunes-01.webp', '/img/lifestyle-flash-04.webp'] },
+  { n: '03', name: 'Video', meta: 'Korte productfilms met subtiele beweging, gebouwd voor feeds en ads.', price: 'vanaf €49 / video', href: '/nl/video', order: '/nl/order-video', img: '/img/banners-16.webp',
+    use: 'Subtiele beweging die de doorklik verhoogt waar een stilstaande foto stopt — gemaakt voor feeds en betaalde ads.',
+    where: ['Reels / TikTok', 'Ads', 'Productpagina’s'],
+    shots: ['/img/banners-16.webp', '/img/banners-09.webp', '/img/banners-12.webp'] },
+  { n: '04', name: 'Custom', meta: 'Je eigen stijl of model, één keer ontworpen voor jouw merk — daarna de normale prijs.', price: 'op aanvraag', href: '/nl/custom-models', order: '/nl/order-custom', img: '/img/custom-models-02.webp',
+    use: 'Eén exclusieve stijl of model, één keer ontworpen en daarna hergebruikt op elke visual — je hele merk, één consistent gezicht.',
+    where: ['Elk kanaal', 'Campagnes', '25+ producten'],
+    shots: ['/img/custom-models-02.webp', '/img/custom-models-03.webp', '/img/banners-14.webp'] },
 ];
 
 const strip = [
@@ -165,19 +177,36 @@ const reqs = [
         <span class="ed-meta">( Diensten )</span>
         <div>
           <h2>Vier manieren om groter te lijken dan je bent.</h2>
-          <p class="ed-sub">Betaal per product — geen abonnement. Elke rij is een deur.</p>
+          <p class="ed-sub">Betaal per product — geen abonnement. Klap een rij open om te zien waarvoor het is en waar het leeft.</p>
         </div>
       </div>
       <div class="svc-index" data-index>
         <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
         {ledger.map((s) => (
-          <div class="idx-row" data-img={s.img}>
-            <span class="idx-num">{s.n}</span>
-            <a class="idx-main" href={s.href}>{s.name}</a>
-            <p class="idx-meta">{s.meta}</p>
-            <span class="idx-price">{s.price}</span>
-            <a class="idx-order" href={s.order}>Bestel &rarr;</a>
-          </div>
+          <details class="idx-item">
+            <summary class="idx-row" data-img={s.img}>
+              <span class="idx-num">{s.n}</span>
+              <span class="idx-name">{s.name}</span>
+              <p class="idx-meta">{s.meta}</p>
+              <span class="idx-price">{s.price}</span>
+              <span class="idx-toggle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg></span>
+            </summary>
+            <div class="idx-panel">
+              <div class="idx-panel-in">
+                <div class="idx-panel-text">
+                  <p class="idx-use"><span class="idx-use-label">Waarvoor</span>{s.use}</p>
+                  <div class="idx-where">{s.where.map((w) => (<span class="idx-tag">{w}</span>))}</div>
+                  <div class="idx-actions">
+                    <a href={s.order} class="btn btn-primary">Bestel {s.name} &rarr;</a>
+                    <a href={s.href} class="link-arrow">Bekijk voorbeelden &rarr;</a>
+                  </div>
+                </div>
+                <div class="idx-shots">
+                  {s.shots.map((src) => (<img src={src} alt="" loading="lazy" />))}
+                </div>
+              </div>
+            </div>
+          </details>
         ))}
       </div>
     </div>
@@ -312,7 +341,11 @@ const reqs = [
             <li>De fouten die je een revisieronde kosten</li>
           </ul>
         </div>
-        <form class="lm-form" action="/nl/thank-you" method="get">
+        <form class="lm-form" action="/api/order" method="post">
+          <input type="hidden" name="service" value="subscribe" />
+          <input type="hidden" name="redirect" value="/nl/thank-you" />
+          <input type="hidden" name="lang" value="nl" />
+          <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
           <input type="hidden" name="subscribe" value="briefing-checklist" />
           <label class="lm-label" for="lm-email">Waar mogen we hem heen sturen?</label>
           <div class="lm-row">

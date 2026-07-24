@@ -17,10 +17,22 @@ const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%
 
 // The services ledger — number, name, deliverable, price, preview image.
 const ledger = [
-  { n: '01', name: 'Catalog', meta: 'A full 4-photo set per product: front, back, detail close-up and one on-model shot.', price: '€39.99 / product', href: '/catalog', order: '/order-catalog', img: '/img/catalog-after.webp' },
-  { n: '02', name: 'Lifestyle', meta: 'Three photos of your product in one styled look — scene, on-model and a logo close-up, matched in grade. A ready-to-post carousel.', price: '€59.99 / product', href: '/lifestyle', order: '/order-lifestyle', img: '/img/lifestyle-glow-01.webp' },
-  { n: '03', name: 'Video', meta: 'Short product films with subtle motion, built for feeds and ads.', price: 'from €49 / video', href: '/video', order: '/order-video', img: '/img/banners-16.webp' },
-  { n: '04', name: 'Custom', meta: 'Your own style or model, designed once for your brand — then normal pricing after.', price: 'on request', href: '/custom-models', order: '/order-custom', img: '/img/custom-models-02.webp' },
+  { n: '01', name: 'Catalog', meta: 'A full 4-photo set per product: front, back, detail close-up and one on-model shot.', price: '€39.99 / product', href: '/catalog', order: '/order-catalog', img: '/img/catalog-after.webp',
+    use: 'The clean, consistent product shots your shop and marketplaces run on — the ones that make a small range look established.',
+    where: ['Your webshop', 'Marketplaces', 'Product pages'],
+    shots: ['/img/catalog-after.webp', '/img/catalog-before.webp', '/img/custom-models-02.webp'] },
+  { n: '02', name: 'Lifestyle', meta: 'Three photos of your product in one styled look — scene, on-model and a logo close-up, matched in grade. A ready-to-post carousel.', price: '€59.99 / product', href: '/lifestyle', order: '/order-lifestyle', img: '/img/lifestyle-glow-01.webp',
+    use: 'The styled, in-context scenes that stop the scroll and sell the feeling — your feed and your ads.',
+    where: ['Instagram', 'Ads', 'Lookbook'],
+    shots: ['/img/lifestyle-glow-01.webp', '/img/lifestyle-dunes-01.webp', '/img/lifestyle-flash-04.webp'] },
+  { n: '03', name: 'Video', meta: 'Short product films with subtle motion, built for feeds and ads.', price: 'from €49 / video', href: '/video', order: '/order-video', img: '/img/banners-16.webp',
+    use: 'Subtle motion that lifts click-through where a still photo plateaus — made for feeds and paid ads.',
+    where: ['Reels / TikTok', 'Ads', 'Product pages'],
+    shots: ['/img/banners-16.webp', '/img/banners-09.webp', '/img/banners-12.webp'] },
+  { n: '04', name: 'Custom', meta: 'Your own style or model, designed once for your brand — then normal pricing after.', price: 'on request', href: '/custom-models', order: '/order-custom', img: '/img/custom-models-02.webp',
+    use: 'One exclusive style or model, designed once and reused across every visual after — your whole brand, one consistent face.',
+    where: ['Every channel', 'Campaigns', '25+ ranges'],
+    shots: ['/img/custom-models-02.webp', '/img/custom-models-03.webp', '/img/banners-14.webp'] },
 ];
 
 const strip = [
@@ -178,19 +190,36 @@ const reqs = [
         <span class="ed-meta">( Services )</span>
         <div>
           <h2>Four ways to look bigger than you are.</h2>
-          <p class="ed-sub">Pay per product — no subscription. Every row is a door.</p>
+          <p class="ed-sub">Pay per product — no subscription. Open a row to see what it's for and where it lives.</p>
         </div>
       </div>
       <div class="svc-index" data-index>
         <div class="idx-float" aria-hidden="true"><img src="/img/catalog-after.webp" alt="" /></div>
         {ledger.map((s) => (
-          <div class="idx-row" data-img={s.img}>
-            <span class="idx-num">{s.n}</span>
-            <a class="idx-main" href={s.href}>{s.name}</a>
-            <p class="idx-meta">{s.meta}</p>
-            <span class="idx-price">{s.price}</span>
-            <a class="idx-order" href={s.order}>Order &rarr;</a>
-          </div>
+          <details class="idx-item">
+            <summary class="idx-row" data-img={s.img}>
+              <span class="idx-num">{s.n}</span>
+              <span class="idx-name">{s.name}</span>
+              <p class="idx-meta">{s.meta}</p>
+              <span class="idx-price">{s.price}</span>
+              <span class="idx-toggle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg></span>
+            </summary>
+            <div class="idx-panel">
+              <div class="idx-panel-in">
+                <div class="idx-panel-text">
+                  <p class="idx-use"><span class="idx-use-label">Best for</span>{s.use}</p>
+                  <div class="idx-where">{s.where.map((w) => (<span class="idx-tag">{w}</span>))}</div>
+                  <div class="idx-actions">
+                    <a href={s.order} class="btn btn-primary">Order {s.name} &rarr;</a>
+                    <a href={s.href} class="link-arrow">See examples &rarr;</a>
+                  </div>
+                </div>
+                <div class="idx-shots">
+                  {s.shots.map((src) => (<img src={src} alt="" loading="lazy" />))}
+                </div>
+              </div>
+            </div>
+          </details>
         ))}
       </div>
     </div>
@@ -328,7 +357,11 @@ const reqs = [
             <li>The mistakes that cost you a revision round</li>
           </ul>
         </div>
-        <form class="lm-form" action="/thank-you" method="get">
+        <form class="lm-form" action="/api/order" method="post">
+          <input type="hidden" name="service" value="subscribe" />
+          <input type="hidden" name="redirect" value="/thank-you" />
+          <input type="hidden" name="lang" value="en" />
+          <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
           <input type="hidden" name="subscribe" value="briefing-checklist" />
           <label class="lm-label" for="lm-email">Where should we send it?</label>
           <div class="lm-row">

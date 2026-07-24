@@ -31,6 +31,7 @@ const I18N = {
     hexDark: 'That’s on the darker side — a lighter neutral (white, off-white, light grey or beige) usually looks cleaner and more professional. The choice is yours.',
     carryChoose: 'Let VISUAILS choose the model', carrySelected: 'Model selected: ', carryTail: ' — now pick the service you’d like to use it for.',
     sourceThanks: 'Thanks — that helps us a lot.',
+    tyRefTitle: 'Your reference', tyRefNote: 'Keep this handy — quote it if you message us about this order.',
   },
   nl: {
     volumeQuote: 'Op aanvraag', tyTitle: 'Je aanvraag',
@@ -43,6 +44,7 @@ const I18N = {
     hexDark: 'Dit is aan de donkere kant — een lichtere neutrale kleur (wit, off-white, licht grijs of beige) oogt meestal strakker en professioneler. De keuze is aan jou.',
     carryChoose: 'Laat VISUAILS het model kiezen', carrySelected: 'Model gekozen: ', carryTail: ' — kies nu de dienst waarvoor je het wilt gebruiken.',
     sourceThanks: 'Bedankt — daar hebben we veel aan.',
+    tyRefTitle: 'Je referentie', tyRefNote: 'Bewaar deze — vermeld hem als je ons over deze bestelling appt of mailt.',
   },
 };
 function t18() { return I18N[pageLang()] || I18N.en; }
@@ -371,6 +373,17 @@ function initThankYou() {
   const box = document.querySelector('#ty-summary');
   if (!box) return;
   const p = new URLSearchParams(location.search);
+  // New flow: forms POST to /api/order, which redirects here with a real order
+  // reference (no personal data in the URL). Show it prominently.
+  const ref = (p.get('ref') || '').trim();
+  if (/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) {
+    const d = t18();
+    box.innerHTML = `<h4 style="margin-bottom:.4rem">${d.tyRefTitle}</h4>`
+      + `<p style="margin:0;font-size:1.15rem;letter-spacing:.02em"><strong>${ref.toUpperCase()}</strong></p>`
+      + `<p style="margin:.55rem 0 0;color:var(--ink-3);font-size:.9rem">${d.tyRefNote}</p>`;
+    box.style.display = 'block';
+    return;
+  }
   const L = t18().ty;
   const map = [
     ['name', L.name], ['brand', L.brand], ['company', L.brand], ['email', L.email], ['phone', L.phone],

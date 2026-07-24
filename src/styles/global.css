@@ -508,30 +508,48 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--accent-bright); }
 .tk-sep { color: var(--accent); font-weight: 900; font-size: clamp(1rem, 2vw, 1.5rem); }
 
-/* Services ledger — the index. Full-width rows: number, bold name, deliverable,
-   price. Whole row opens the service (stretched link on .idx-main); the small
-   order link floats above it. A floating preview image follows the cursor
-   (motion.js, fine pointers only). */
+/* Services ledger — the index, as an accordion. Each row is a <summary> that
+   expands (native <details>, no JS) into a panel: what the service is, what
+   it's for, where it lives, and example shots. The explicit actions (Order /
+   See examples) live inside the panel, so tapping a row toggles it instead of
+   fighting a whole-row link. A floating preview still follows the cursor on
+   hover (motion.js, fine pointers only). */
 .svc-index { position: relative; }
+.idx-item { border-top: 1px solid var(--line-strong); }
+.idx-item:last-of-type { border-bottom: 1px solid var(--line-strong); }
 .idx-row { position: relative; display: grid; grid-template-columns: auto 1.1fr 1.3fr auto auto; gap: clamp(1rem, 2.5vw, 2.4rem);
-  align-items: center; padding-block: clamp(1.3rem, 2.6vw, 1.9rem); border-top: 1px solid var(--line-strong); }
-.idx-row:last-child { border-bottom: 1px solid var(--line-strong); }
+  align-items: center; padding-block: clamp(1.3rem, 2.6vw, 1.9rem); cursor: pointer; list-style: none; }
+.idx-row::-webkit-details-marker { display: none; }
 .idx-row::before { content: ""; position: absolute; inset: 0; background: var(--accent-soft); opacity: 0; transition: opacity .3s var(--ease); pointer-events: none; }
-.idx-row:hover::before { opacity: 1; }
+.idx-row:hover::before, .idx-item[open] .idx-row::before { opacity: 1; }
 .idx-num { font-size: .74rem; font-weight: 700; letter-spacing: .1em; color: var(--ink-faint); }
-.idx-main { position: static; font-family: var(--font-display); font-weight: 900; letter-spacing: -0.02em;
+.idx-name { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.02em;
   font-size: clamp(1.7rem, 3.4vw, 2.9rem); line-height: 1; color: var(--ink); transition: color .25s var(--ease); }
-.idx-main::after { content: ""; position: absolute; inset: 0; }
-.idx-row:hover .idx-main { color: var(--accent-2); }
+.idx-row:hover .idx-name, .idx-item[open] .idx-name { color: var(--accent-2); }
 .idx-meta { font-size: .93rem; color: var(--ink-3); line-height: 1.5; max-width: 44ch; }
 .idx-price { font-family: var(--font-display); font-weight: 900; font-size: clamp(1rem, 1.6vw, 1.25rem); color: var(--accent-bright); white-space: nowrap; text-align: right; }
-.idx-order { position: relative; z-index: 2; font-size: .8rem; font-weight: 700; padding: .5rem 1.05rem; border-radius: var(--r-pill);
-  border: 1px solid var(--line-strong); color: var(--ink); white-space: nowrap; transition: border-color .2s var(--ease), background .2s var(--ease); }
-.idx-order:hover { border-color: var(--accent); background: var(--accent-soft); }
+.idx-toggle { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--ink-2); transition: border-color .2s var(--ease), background .2s var(--ease); }
+.idx-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform .3s var(--ease); }
+.idx-row:hover .idx-toggle { border-color: var(--accent); background: var(--accent-soft); }
+.idx-item[open] .idx-toggle svg { transform: rotate(180deg); }
+.idx-panel { overflow: hidden; padding: 0 0 clamp(1.4rem, 2.6vw, 2rem); }
+.idx-item[open] .idx-panel { animation: idxPanelIn .4s var(--ease); }
+@keyframes idxPanelIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.idx-panel-in { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(1.4rem, 3vw, 2.6rem); align-items: center;
+  padding: clamp(1.2rem, 2.4vw, 1.8rem); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+.idx-panel-text { min-width: 0; }
+.idx-use { font-size: 1rem; color: var(--ink-2); line-height: 1.55; }
+.idx-use-label { display: block; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: .4rem; }
+.idx-where { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.idx-tag { font-size: .76rem; font-weight: 600; color: var(--ink-2); padding: .35rem .8rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); }
+.idx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.4rem; margin-top: 1.6rem; }
+.idx-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+.idx-shots img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
 @media (max-width: 860px) {
-  .idx-row { grid-template-columns: auto 1fr auto; grid-template-areas: "num name order" "num meta order" "num price order"; row-gap: .3rem; }
-  .idx-num { grid-area: num; } .idx-main { grid-area: name; } .idx-meta { grid-area: meta; }
-  .idx-price { grid-area: price; text-align: left; } .idx-order { grid-area: order; align-self: center; }
+  .idx-row { grid-template-columns: auto 1fr auto; grid-template-areas: "num name toggle" "num meta toggle" "num price toggle"; row-gap: .3rem; }
+  .idx-num { grid-area: num; } .idx-name { grid-area: name; } .idx-meta { grid-area: meta; }
+  .idx-price { grid-area: price; text-align: left; } .idx-toggle { grid-area: toggle; align-self: center; }
+  .idx-panel-in { grid-template-columns: 1fr; }
 }
 .idx-float { position: absolute; z-index: 6; top: 0; left: 0; width: clamp(160px, 18vw, 230px); aspect-ratio: 4/5;
   border-radius: 12px; overflow: hidden; pointer-events: none; opacity: 0; transform: rotate(3deg);
