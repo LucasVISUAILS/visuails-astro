@@ -69,7 +69,11 @@ import Layout from '../layouts/Layout.astro';
           <p style="margin-top:.5rem;color:var(--ink-3);font-size:.95rem">We usually reply within the hour, by your preferred channel.</p>
 
           <!-- Static site, no backend: this form needs a real submit handler (e.g. a Cloudflare Pages Function, Formspree, or similar) wired up before launch. -->
-          <form action="/thank-you" method="get" style="margin-top:1.6rem">
+          <form action="/api/order" method="post" style="margin-top:1.6rem">
+            <input type="hidden" name="service" value="contact" />
+            <input type="hidden" name="redirect" value="/thank-you" />
+            <input type="hidden" name="lang" value="en" />
+            <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
             <div class="field">
               <label for="c-name">Name <span class="req">*</span></label>
               <input class="input" type="text" id="c-name" name="name" required autocomplete="name" placeholder="Your name" />

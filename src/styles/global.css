@@ -585,6 +585,12 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
 .svc-where-list li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .svc-where-list strong { color: var(--ink); font-weight: 600; }
 
+/* Catalog style-cards (catalog hub) — these classes were used in markup but
+   never styled; give the media a gap and the price the standard accent label. */
+.svc-media { margin-bottom: 1.1rem; }
+.svc-body h3 { margin-bottom: .1rem; }
+.svc-price { display: block; font-family: var(--font-display); font-weight: 900; font-size: 1.05rem; color: var(--accent-bright); margin: .1rem 0 .5rem; letter-spacing: -0.01em; }
+
 /* Contact-sheet spread — asymmetric magazine grid with ruled captions. */
 .spread { display: grid; grid-template-columns: repeat(12, 1fr); gap: clamp(1rem, 2vw, 1.5rem); margin-top: clamp(2rem, 4vw, 3rem); }
 .sp-item { display: block; }

@@ -25,7 +25,11 @@ import Layout from '../../layouts/Layout.astro';
           <img src="/img/banners-03.webp" alt="Voorbeeld VISUAILS productvideo-still" loading="lazy" />
         </div>
         <!-- TODO: wire this form to a real submit handler (Cloudflare Pages Function, Formspree, etc.) before launch — no backend in this static build yet -->
-        <form action="/nl/thank-you" method="get" id="video-form">
+        <form action="/api/order" method="post" id="video-form">
+          <input type="hidden" name="service" value="video" />
+          <input type="hidden" name="redirect" value="/nl/thank-you" />
+          <input type="hidden" name="lang" value="nl" />
+          <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
           <div class="field">
             <label>Videotype <span class="req">*</span></label>
             <label class="opt"><input type="radio" name="vtype" value="Motion Video" checked /><span class="opt-main"><span class="opt-title">Motion Video</span><span class="opt-desc">Clip van 8 seconden, subtiele beweging, strakke presentatie</span></span><span class="opt-price">&euro;49</span></label>

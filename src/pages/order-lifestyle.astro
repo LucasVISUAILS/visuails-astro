@@ -47,7 +47,11 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
         </div>
 
         <!-- TODO: wire this form to a real submit handler (Cloudflare Pages Function, Formspree, etc.) before launch — no backend in this static build yet -->
-        <form action="/thank-you" method="get" id="ls-form" novalidate>
+        <form action="/api/order" method="post" id="ls-form" novalidate>
+          <input type="hidden" name="service" value="lifestyle" />
+          <input type="hidden" name="redirect" value="/thank-you" />
+          <input type="hidden" name="lang" value="en" />
+          <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
           <div class="progress" aria-hidden="true"><i id="ls-progress-bar" style="width:33.33%"></i></div>
 
           <!-- STEP 1 · Contact -->
