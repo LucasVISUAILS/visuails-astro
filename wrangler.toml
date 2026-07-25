@@ -1,43 +1,36 @@
 # VISUAILS — Cloudflare Pages configuration.
-# The site stays fully static (Astro `output: 'static'` → dist/). The
+# The site stays fully static (Astro `output: 'static'` -> dist/). The
 # serverless bits live in /functions.
 #
-# IMPORTANT: for a Pages project, bind D1 and R2 in the DASHBOARD
-# (your Pages project → Settings → Functions → Bindings), NOT here.
-# A binding block with a placeholder/real database_id in this file is read at
-# build time and makes "wrangler pages deploy" fail with
-# "Invalid database UUID" until it's a real id — so the blocks below stay
-# commented out and the dashboard is the single source of truth. Runtime
-# `env.DB` / `env.UPLOADS` come from the dashboard bindings regardless.
+# NOTE: this Pages project runs in "config file" mode. Because this
+# wrangler.toml exists, Cloudflare reads the bindings from HERE, not from the
+# dashboard (the dashboard Bindings UI is disabled and points back to this
+# file). So the D1 + R2 bindings and the non-secret vars live below.
+#
+# The RESEND_API_KEY is a SECRET and is deliberately NOT stored here (it would
+# leak into git). Set it separately with either:
+#   npx wrangler pages secret put RESEND_API_KEY
+# or in the dashboard: your Pages project -> Settings -> Variables and Secrets
+# -> add RESEND_API_KEY as an encrypted Secret.
 
 name = "visuails"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-07-01"
 compatibility_flags = ["nodejs_compat"]
 
-# --- Bindings: set these in the dashboard --------------------------------------
-#   D1 database → variable name  DB        → database "visuails"
-#   R2 bucket   → variable name  UPLOADS   → bucket "visuails-uploads"
-#
-# Create the resources once from the CLI (these do NOT need the blocks below):
-#   wrangler d1 create visuails
-#   wrangler d1 execute visuails --remote --file=./schema.sql
-#   wrangler r2 bucket create visuails-uploads
-#
-# Only uncomment + fill these if you deploy purely via the Wrangler CLI and want
-# local `wrangler pages dev` to pick up the bindings. For dashboard/Git deploys,
-# leave them commented — the dashboard bindings are what run in production.
-#
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "visuails"
-# database_id = "your-real-d1-uuid-here"
-#
-# [[r2_buckets]]
-# binding = "UPLOADS"
-# bucket_name = "visuails-uploads"
+# --- Bindings ------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "visuails"
+database_id = "941961a0-0180-4c41-9442-09a519584a95"
 
-# --- Environment variables: set these in the dashboard too ---------------------
-#   NOTIFY_EMAIL   = hello@visuails.com
-#   FROM_EMAIL     = VISUAILS <orders@visuails.com>   (on a Resend-verified domain)
-#   RESEND_API_KEY = <your key>  (mark as Secret / encrypted)
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "visuails-uploads"
+
+# --- Environment variables (non-secret) ----------------------------------------
+[vars]
+NOTIFY_EMAIL = "hello@visuails.com"
+FROM_EMAIL = "VISUAILS <orders@visuails.com>"
+# RESEND_API_KEY is intentionally NOT here -- it is a secret, set it separately
+# (see the note at the top of this file).
