@@ -12,25 +12,94 @@
    weights 400–900 + italic 400/700, font-display: swap. */
 
 :root {
-  --bg:         #0E0E16;
-  --bg-deep:    #090911;
-  --bg-raise:   #16161F;
-  --surface:    #181822;
-  --surface-2:  #20202C;
+  /* ---- ink & paper ------------------------------------------------------
+     The interface is ink on paper so that the product photography is the only
+     saturated thing on the screen. Two ramps, no third. Every value below is
+     authored in OKLCH and the sRGB hex in the comment is the computed result,
+     not an eyeballed approximation — the contrast table in DESIGN.md is
+     derived from these exact numbers and goes stale if they drift.
 
-  --ink:        #EEF0F6;
-  --ink-2:      rgba(228,231,242,.80);
-  --ink-3:      rgba(228,231,242,.64);
-  --ink-faint:  rgba(228,231,242,.58);
+     The paper band sits at chroma 0.002–0.004 on hue 85: a true off-white
+     carrying a trace of warmth. It is deliberately *below* the warm-neutral
+     cream/sand/parchment band. If paper chroma is ever pushed above 0.008 it
+     has drifted into that default and must come back. */
+  --ink-900:  oklch(0.16 0.006 265);   /* #0C0D10  text, dark ground        */
+  --ink-850:  oklch(0.22 0.006 265);   /* #191B1D  raised surface on dark   */
+  --ink-800:  oklch(0.27 0.005 265);   /* #252629  recessed surface on dark */
+  --ink-700:  oklch(0.32 0.005 265);   /* #323335  secondary text, UI edges */
+  --ink-500:  oklch(0.45 0.004 265);   /* #545557  muted text — PAPER ONLY  */
+  --ink-300:  oklch(0.72 0.003 265);   /* #A4A4A6  hairline; muted ON DARK  */
+  --ink-100:  oklch(0.89 0.002 265);   /* #DADBDC  hairline on paper        */
 
-  --brand:         #7B6CF5;
-  --accent:        #7B6CF5;
-  --accent-2:      #9B8CFF;
-  --accent-word:   #9B8CFF;
-  --accent-bright: #5FE3F0;
-  --accent-soft:   rgba(123,108,245,.14);
-  --accent-line:   rgba(123,108,245,.36);
-  --success:       #63C79A;
+  --paper:      oklch(0.97 0.004 85);  /* #F6F5F2  body ground              */
+  --paper-2:    oklch(0.94 0.004 85);  /* #ECEBE8  recessed / inset         */
+  --paper-lift: oklch(0.99 0.002 85);  /* #FCFCFA  raised                   */
+
+  /* ---- system colour — scoped, not decorative ---------------------------
+     --signal and --warn appear on /start, the client portal, and system
+     surfaces (capacity gate, order state, form validation) ONLY. They never
+     appear on a marketing page; marketing is ink, paper and photography.
+
+     The plain variants FAIL body text on paper (4.44 and 4.02). That is a
+     fail, not a rounding error: they are for fills, borders and text ≥18px.
+     The -ink variants are the ones that set body-size text. */
+  --signal:      oklch(0.55 0.07 255); /* #55749A  fill / border / ≥18px    */
+  --signal-ink:  oklch(0.45 0.09 255); /* #305686  system text — 6.83:1     */
+  --warn:        oklch(0.58 0.11 70);  /* #A36D24  fill / border / ≥18px    */
+  --warn-ink:    oklch(0.47 0.11 65);  /* #844B00  capacity text — 6.44:1   */
+
+  /* There is no success green. The previous --success (#63C79A) is gone and
+     every checklist tick is --ink-900 on paper. A green tick is a SaaS
+     onboarding signal, and it was the loudest remaining colour on pages that
+     are otherwise about photographs. */
+
+  /* ---- role aliases ------------------------------------------------------
+     The rest of the codebase addresses colour through these names. Keeping
+     them means the ramp above is the single place a value changes, and it is
+     why the dark-ground scope (.on-ink, below) can invert an entire section
+     by redeclaring nine custom properties instead of rewriting its rules. */
+  --bg:         var(--paper);
+  --bg-deep:    var(--ink-900);        /* media wells, footer — see .on-ink */
+  --bg-raise:   var(--paper-2);
+  --surface:    var(--paper-lift);
+  --surface-2:  var(--paper-2);
+
+  --ink:        var(--ink-900);
+  --ink-2:      var(--ink-700);
+  --ink-3:      var(--ink-500);
+  --ink-faint:  var(--ink-500);
+
+  /* --line is decorative (dividers, card edges). --line-ui is a control
+     boundary and has to carry meaning, so it sits at --ink-700: WCAG 2.2
+     1.4.11 wants 3:1 for a component edge, and --ink-100 at 1.28:1 is not a
+     border a user can find. */
+  --line:        var(--ink-100);
+  --line-strong: var(--ink-300);
+  --line-ui:     var(--ink-700);
+
+  /* There is no marketing accent. "Accent" resolves to ink: a primary button
+     is a black block with paper text, a hover state goes darker rather than
+     brighter, and a tint ground is paper-2 rather than a coloured wash.
+     --accent-on is the paired foreground and MUST be used instead of #fff, so
+     that a button dropped inside .on-ink still reads. */
+  --brand:         var(--ink-900);
+  --accent:        var(--ink-900);
+  --accent-on:     var(--paper);
+  --accent-2:      var(--ink-900);
+  --accent-word:   var(--ink-900);
+  --accent-bright: var(--ink-700);
+  --accent-soft:   var(--paper-2);
+  --accent-line:   var(--ink-300);
+
+  --focus-ring:    var(--ink-900);
+
+  /* The <select> caret, as a data URL rather than a token the SVG can read —
+     a `stroke` inside a data: URL cannot see var(). It was hardcoded #E4E7F2,
+     a pale blue-grey from the pre-monochrome palette, drawn on --surface
+     (#FCFCFA): 1.20:1. The caret has been invisible on every select the site
+     ships. Two ramps because the ink-ground remap below needs the inverse; the
+     hex must be written out in both, so they are kept adjacent to their ramp. */
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23323335' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
 
   --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -43,16 +112,147 @@
   --t-body:  1.0625rem;
 
   --container: 1240px;
-  --r-sm: 8px; --r-lg: 12px; --r-xl: 14px; --r-2xl: 20px; --r-pill: 999px; --r-media: 8px;
+  /* ---- radius ----
+     One token. Zero. There is no radius scale: no --r-sm / --r-lg / --r-pill,
+     no "small for inputs, larger for cards". A hard edge is the cheapest
+     visible proof of control, and control is the argument this studio makes in
+     place of testimonials it does not have. Reintroducing a scale here is how
+     rounded corners come back, so the scale does not exist. */
+  --radius: 0;
+
+
+  /* ---- chrome: the signature, and its fence ----
+     The one non-monochrome material in the system. It reads as brushed metal
+     because the lightness ramp reverses eight times instead of fading — a fade
+     is a gradient, a reversal is a reflection. Twelve stops, max chroma 0.012,
+     with a warm inflection at 62% on the paper hue so it ties to the page
+     ground instead of reading as cold steel.
+
+     Scope, and it is a fence, not a suggestion: the hero field and the
+     logotype. Not buttons, links, borders, dividers, icons, card grounds,
+     section grounds, badges, form controls, the nav bar, the footer, or
+     headings. background-clip: text on anything that is not the logotype is a
+     hard ban regardless of fill. A third chrome surface is not an extension of
+     the signature; it is the point at which the signature stops being one.
+
+     --chrome is the SURFACE calibration (the hero plane, and its static
+     fallback). The logotype uses #chromeInk / #chromePaper in Layout.astro's
+     sprite, which are the same stops remapped so a 17px word does not develop
+     holes — see the note there. */
+  --chrome:
+  linear-gradient(
+    105deg,
+    oklch(0.720 0.004 265)   0%,
+    oklch(0.880 0.006 265)   9%,
+    oklch(0.580 0.008 265)  17%,
+    oklch(0.940 0.003 250)  26%,
+    oklch(0.660 0.010 265)  35%,
+    oklch(0.410 0.006 265)  44%,
+    oklch(0.830 0.005 250)  53%,
+    oklch(0.970 0.002 85)  62%,
+    oklch(0.520 0.009 265)  71%,
+    oklch(0.760 0.004 265)  80%,
+    oklch(0.350 0.007 265)  89%,
+    oklch(0.610 0.012 265) 100%
+  );
+  /* Part of the material, not an afterthought: contrast sharpens the reversals
+     into visible bands, saturate pulls the residual chroma back so the metal
+     never tints. Applied to the chrome surface, never to its children. */
+  --chrome-filter: contrast(1.18) saturate(0.75);
+
+  /* The logotype fill, as a role alias — same mechanism as every other token
+     in this file, so .on-ink flips it with everything else rather than the
+     header and footer needing separate rules. Two aliases, not one, because
+     the word and the monogram have different aspect ratios and therefore
+     different gradient geometry; the RAMP behind both is identical. */
+  --wordmark-fill: url(#chromePaper);
+  --mark-fill: url(#chromePaperMark);
+
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.7, 0, 0.2, 1);
   --dur: 0.45s;
 
-  --line:        rgba(228,231,242,.1);
-  --line-strong: rgba(228,231,242,.18);
-
-  --z-base: 1; --z-sticky: 200; --z-bar: 250; --z-modal: 400; --z-grain: 300;
+  /* ---- z-index: semantic scale, never arbitrary 999/9999 ---- */
+  --z-base:         1;
+  --z-dropdown:   150;
+  --z-sticky:     200;
+  --z-bar:        250;
+  --z-grain:      300;   /* above the sticky bar, below any modal — deliberate */
+  --z-modal-back: 390;
+  --z-modal:      400;
+  --z-toast:      500;
+  --z-tooltip:    600;
 }
+
+/* ---- dark ground scope ---------------------------------------------------
+   An ink-on-paper system still needs ink grounds: the footer, media wells, and
+   the compare panels all read better as dark. Rather than authoring a second
+   set of rules for those regions, .on-ink redeclares the role aliases so every
+   existing rule inside it resolves to the dark side of the same ramp.
+
+   This is what stops the two most likely regressions. Without it, --ink-2
+   (#323335) lands on a --bg-deep (#0C0D10) footer at 1.53:1, and a
+   .btn-primary's hardcoded white text lands on a now-paper --accent. Both are
+   invisible in a diff and obvious on the page.
+
+   Note --ink-3 flips to --ink-300, not --ink-500: --ink-500 is 2.61:1 on ink
+   and --ink-300 is 2.27:1 on paper. They are not interchangeable "muted"
+   values, and swapping them is how a 2.3:1 ships.
+   -------------------------------------------------------------------------- */
+.on-ink,
+/* Photo wells and ink grounds opt in by name rather than by a class in markup:
+   every one of these paints text over a dark scrim or a dark fill, so they need
+   the dark side of the ramp for the same reason .on-ink exists. Listing them
+   here keeps the inversion in one rule instead of forty scattered overrides,
+   and keeps the components' own rules token-based. */
+.site-footer,
+.cta-band,
+.photo-band,
+.ba,
+.spot,
+.cmp,
+.make-tile,
+.hero-cover,
+.hero-editorial,
+.ch-promise,
+.convbar {
+  --bg:         var(--ink-900);
+  --bg-deep:    var(--ink-900);
+  --bg-raise:   var(--ink-850);
+  --surface:    var(--ink-850);
+  --surface-2:  var(--ink-800);
+
+  --ink:        var(--paper);
+  --ink-2:      var(--ink-100);
+  --ink-3:      var(--ink-300);
+  --ink-faint:  var(--ink-300);
+
+  --line:        oklch(0.97 0.004 85 / 0.12);
+  --line-strong: oklch(0.97 0.004 85 / 0.24);
+  --line-ui:     var(--ink-300);
+
+  --accent:        var(--paper);
+  --accent-on:     var(--ink-900);
+  --accent-2:      var(--paper);
+  --accent-word:   var(--paper);
+  --accent-bright: var(--paper);
+  --accent-soft:   oklch(0.97 0.004 85 / 0.10);
+  --accent-line:   oklch(0.97 0.004 85 / 0.28);
+
+  --focus-ring:    var(--paper);
+
+  /* --paper, matching --ink on this ground. */
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F6F5F2' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+
+  /* Bright metal on a dark ground; the header's is dark metal on paper. */
+  --wordmark-fill: url(#chromeInk);
+  --mark-fill: url(#chromeInkMark);
+}
+
+/* Only the generic utility paints itself. The named components above already
+   set their own ground (a photo, a scrim, or --bg-deep) and would be clobbered
+   by a background declaration here. */
+.on-ink { background: var(--ink-900); color: var(--ink-2); }
 
 /* ---- base ---- */
 * { box-sizing: border-box; }
@@ -65,26 +265,100 @@ body {
   margin: 0;
   font-family: var(--font-body); font-size: var(--t-body); line-height: 1.62;
   color: var(--ink-2);
-  /* Cool base; the cyan/purple colour washes live on the fixed ::before layer
-     below (they show through the many transparent sections); .grain on top. */
+  /* Flat paper. There is no wash layer: the three violet/cyan radial gradients
+     that used to sit on a fixed ::before are gone, not tuned down. A coloured
+     field behind the whole site competes with the photography for the one job
+     colour has here, and it was the loudest remaining AI-SaaS signal. */
   background-color: var(--bg);
   -webkit-font-smoothing: antialiased; overflow-x: hidden;
 }
-/* The colour washes as their own fixed, composited layer. This replaces
-   background-attachment: fixed on <body>, which forced the browser to repaint
-   the full-viewport gradients on every scroll frame — the single biggest
-   source of scroll jank. A fixed element is rasterised once and merely
-   composited while scrolling. */
-body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background-image:
-    radial-gradient(58% 48% at 12% 8%, rgba(123,108,245,.20), transparent 60%),
-    radial-gradient(52% 44% at 92% 16%, rgba(95,227,240,.15), transparent 60%),
-    radial-gradient(75% 62% at 50% 108%, rgba(150,99,247,.18), transparent 62%);
-  background-repeat: no-repeat; }
 img, svg, video { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-decoration: none; }
-::selection { background: rgba(123,108,245,.34); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+/* Selection is a hard ink block with paper text — an inversion, not a tint.
+   A translucent coloured selection was the last place the old violet survived. */
+::selection { background: var(--ink-900); color: var(--paper); }
+.on-ink ::selection { background: var(--paper); color: var(--ink-900); }
+
+/* ---- hard edges ----------------------------------------------------------
+   Every corner in the product is square. This block is the enforcement layer,
+   not a style choice made twice: the reset below catches anything a component
+   forgets, and the native-control rules below it exist because iOS Safari
+   re-rounds each control type independently — a blanket `appearance: none`
+   does not survive it, so search inputs, selects, buttons, range thumbs,
+   checkboxes and radios are each reset by name.
+   -------------------------------------------------------------------------- */
+*, *::before, *::after { border-radius: var(--radius); }
+
+/* Square focus ring. `outline` rather than `box-shadow`, so the ring stays
+   rectangular and survives on any ground, including inside overflow:hidden. */
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Native controls: strip the platform chrome per element type. */
+button,
+input,
+optgroup,
+select,
+textarea { font: inherit; color: inherit; border-radius: var(--radius); }
+
+input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
+input[type="number"], input[type="password"], input[type="search"],
+input[type="date"], input[type="time"], input[type="datetime-local"],
+textarea, select, button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+/* Square caret, drawn as a chevron with butt caps — no rounded joins. */
+select {
+  background-image: var(--select-caret);
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  padding-right: 2.4rem;
+}
+
+/* Checkbox — square box, hard-cornered check. */
+input[type="checkbox"], input[type="radio"] {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; flex: 0 0 auto; margin: 0;
+  display: inline-grid; place-content: center;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color .18s var(--ease), background .18s var(--ease);
+}
+input[type="checkbox"]:hover, input[type="radio"]:hover { border-color: var(--ink-3); }
+input[type="checkbox"]:checked, input[type="radio"]:checked {
+  background: var(--accent); border-color: var(--accent);
+}
+input[type="checkbox"]:checked::after {
+  content: ""; width: 5px; height: 10px;
+  border: solid var(--accent-on); border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+/* Radio stays square too, distinguished by a solid core rather than a check. */
+input[type="radio"]:checked::after { content: ""; width: 8px; height: 8px; background: var(--accent-on); }
+
+/* Range — square track, square thumb, no shadow. */
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 16px; background: transparent; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--line-strong); }
+input[type="range"]::-moz-range-track { height: 3px; background: var(--line-strong); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; margin-top: -5.5px;
+  background: var(--ink); border: none;
+}
+input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: var(--ink); border: none; }
+
+/* Progress — square bar, square fill. */
+progress { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border: none; background: var(--line-strong); }
+progress::-webkit-progress-bar { background: var(--line-strong); }
+progress::-webkit-progress-value { background: var(--accent); }
+progress::-moz-progress-bar { background: var(--accent); }
 
 h1, h2, .display { font-family: var(--font-display); color: var(--ink); font-weight: 900; line-height: 1.0; letter-spacing: -0.025em; text-wrap: balance; margin: 0; }
 h1 { font-size: var(--t-h1); }
@@ -102,17 +376,22 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .section-tight { padding-block: clamp(3rem, 6vw, 5.5rem); }
 
 /* Buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-family: var(--font-body); font-weight: 600; font-size: .95rem; padding: .85rem 1.6rem; border-radius: var(--r-pill); cursor: pointer; white-space: nowrap; line-height: 1; transition: transform var(--dur) var(--ease), filter var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
-.btn-primary { background: linear-gradient(160deg, #8B7BFF, #6D5CE7 72%); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 8px 22px -12px rgba(123,108,245,.3); }
-.btn-primary:hover { transform: translateY(-2px); filter: brightness(1.05); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-family: var(--font-body); font-weight: 600; font-size: .95rem; padding: .85rem 1.6rem; cursor: pointer; white-space: nowrap; line-height: 1; transition: transform var(--dur) var(--ease), filter var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+/* Flat fill, no gradient, no glow. Depth on a button is a claim the button
+   hasn't earned; the affordance is the block of colour and the hard edge. */
+.btn-primary { background: var(--accent); color: var(--accent-on); }
+.btn-primary:hover { transform: translateY(-2px); background: var(--ink-700); }
 .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
-.btn-ghost:hover { transform: translateY(-2px); border-color: rgba(228,231,242,.4); }
+.btn-ghost:hover { transform: translateY(-2px); border-color: var(--line-ui); }
 .btn-wa { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
-.btn-wa svg { color: #4AD07F; }
-.btn-wa:hover { transform: translateY(-2px); border-color: rgba(74,208,127,.5); }
+.btn-wa svg { color: var(--ink); }
+.btn-wa:hover { transform: translateY(-2px); border-color: var(--line-ui); }
 .btn-lg { padding: 1.05rem 2rem; font-size: 1.02rem; }
 .btn-block { width: 100%; }
-.rec-badge { font-size: .58rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; padding: .22rem .5rem; border-radius: var(--r-pill); background: rgba(74,208,127,.15); color: #4AD07F; }
+/* .rec-badge removed with its last markup usage (flag xvii). It labelled one
+   contact channel "Fastest" and one option "Recommended", which told the reader
+   every other choice was second-best — on pages whose whole job is to let them
+   pick. No consumers remain; re-adding the rule would be re-adding the pattern. */
 
 .flex { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
 /* On phones, CTA button groups stack full-width so they line up cleanly
@@ -128,32 +407,37 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
 .kicker { display: inline-flex; align-items: center; gap: .5rem; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.kicker::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.kicker::before { content: ""; width: 5px; height: 5px; background: var(--accent); }
 .eyebrow-page { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-3); font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1.2rem; }
-.eyebrow-page::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.eyebrow-page::before { content: ""; width: 5px; height: 5px; background: var(--accent); }
 
 .link-arrow { display: inline-flex; align-items: center; gap: .45rem; color: var(--ink); font-weight: 600; }
 .link-arrow:hover { color: var(--accent-bright); }
-.i { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Icons terminate square. `stroke-linecap: round` and `stroke-linejoin: round`
+   are the last place rounded corners survive after a border-radius sweep — they
+   are invisible in a grep for radius but plainly visible at 20px, and they are
+   what makes an otherwise hard-edged icon set read soft. Butt caps and miter
+   joins sitewide; the select caret data-URI above uses the same two values. */
+.i { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: butt; stroke-linejoin: miter; }
 
-.photo-band { position: relative; border-radius: var(--r-media); overflow: hidden; aspect-ratio: 16/10; }
+.photo-band { position: relative; overflow: hidden; aspect-ratio: 16/10; }
 .photo-band img { width: 100%; height: 100%; object-fit: cover; }
-.photo-band .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(10,9,8,.78) 100%); }
+.photo-band .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, oklch(0.16 0.006 265 / 0.78) 100%); }
 .photo-band .caption { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(1.4rem, 3vw, 2.4rem); z-index: 2; }
-.photo-band .caption h2, .photo-band .caption h3 { color: #fff; }
-.photo-band .caption p { color: rgba(255,255,255,.82); margin-top: .5rem; }
+.photo-band .caption h2, .photo-band .caption h3 { color: var(--paper); }
+.photo-band .caption p { color: var(--ink-100); margin-top: .5rem; }
 .photo-band.tall { aspect-ratio: 3/4; }
 .photo-band.square { aspect-ratio: 1/1; }
 
 .photo-split { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(2rem, 4vw, 3.5rem); align-items: center; }
 .photo-split.reverse { grid-template-columns: 1fr 1.1fr; }
 .photo-split.reverse .photo-split-media { order: 2; }
-.photo-split-media { border-radius: var(--r-media); overflow: hidden; aspect-ratio: 4/5; }
+.photo-split-media { overflow: hidden; aspect-ratio: 4/5; }
 .photo-split-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @media (max-width: 860px) { .photo-split, .photo-split.reverse { grid-template-columns: 1fr; } .photo-split.reverse .photo-split-media { order: 0; } }
 
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.6rem, 1.4vw, 1rem); }
-.photo-grid img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: var(--r-sm); aspect-ratio: 4/5; }
+.photo-grid img { width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 4/5; }
 .photo-grid .wide { grid-column: span 2; aspect-ratio: unset; }
 @media (max-width: 700px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } .photo-grid .wide { grid-column: span 2; } }
 
@@ -165,7 +449,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 860px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl); padding: clamp(1.4rem, 2.5vw, 2rem); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.card { background: var(--surface); border: 1px solid var(--line); padding: clamp(1.4rem, 2.5vw, 2rem); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
 .card-hover:hover { transform: translateY(-4px); border-color: var(--line-strong); }
 
 .trust-row { display: flex; flex-wrap: wrap; gap: 1.1rem 2.2rem; align-items: baseline; }
@@ -192,25 +476,26 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 .checklist { display: flex; flex-direction: column; gap: .75rem; list-style: none; margin: 0; padding: 0; }
 .checklist li { display: flex; gap: .7rem; align-items: flex-start; color: var(--ink-2); }
-.checklist svg { flex: 0 0 auto; width: 20px; height: 20px; margin-top: 2px; color: var(--success); }
+.checklist svg { flex: 0 0 auto; width: 20px; height: 20px; margin-top: 2px; color: var(--ink); }
 
-.cta-band { position: relative; overflow: hidden; border-radius: var(--r-2xl); border: 1px solid var(--line); padding: clamp(3rem, 7vw, 6rem); text-align: center; background: radial-gradient(70% 100% at 50% -20%, rgba(123,108,245,.26), transparent 60%), radial-gradient(50% 70% at 85% 110%, rgba(95,227,240,.12), transparent 60%), #121019; }
+.cta-band { position: relative; overflow: hidden; border: 1px solid var(--ink-900); padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
 .cta-band > * { position: relative; }
 
+/* #000 inside a mask-image is an alpha value (opaque), not a colour — these
+   two stops stay hex through any palette change. */
 .marquee { overflow: hidden; padding-block: clamp(1rem, 2vw, 1.6rem); -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
 .marquee-track { display: flex; gap: clamp(.9rem,1.4vw,1.3rem); width: max-content; }
-.marquee-item { width: clamp(280px, 26vw, 380px); aspect-ratio: 4/5; border-radius: var(--r-media); overflow: hidden; flex: 0 0 auto; border: 1px solid var(--line); }
+.marquee-item { width: clamp(280px, 26vw, 380px); aspect-ratio: 4/5; overflow: hidden; flex: 0 0 auto; border: 1px solid var(--line); }
 
 /* Product visual scenes ("vis") — placeholder for the rare spot with no
    real "clean product on white" photography (see IMAGES.md). */
-.vis { position: relative; aspect-ratio: 4/5; border-radius: var(--r-media); overflow: hidden; background: radial-gradient(125% 90% at 50% 6%, #FFFFFF, #F1EBE3 58%, #E2D9CD 100%); display: grid; place-items: center; isolation: isolate; }
+.vis { position: relative; aspect-ratio: 4/5; overflow: hidden; background: radial-gradient(125% 90% at 50% 6%, oklch(1 0 0), oklch(0.95 0.004 85) 58%, oklch(0.88 0.004 85) 100%); display: grid; place-items: center; isolation: isolate; }
 .vis.wide { aspect-ratio: 4/3; }
-.vis::before { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(70% 45% at 50% 2%, rgba(255,255,255,.7), transparent 55%); }
-.vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, rgba(80,45,25,.14)); }
-.vis .vis-glow { position: absolute; z-index: 0; width: 66%; height: 42%; left: 17%; top: 22%; border-radius: 50%; background: radial-gradient(closest-side, rgba(123,108,245,.09), transparent); filter: blur(26px); }
-.vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px rgba(70,40,20,.26)); }
+.vis::before { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(70% 45% at 50% 2%, oklch(1 0 0 / 0.7), transparent 55%); }
+.vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, oklch(0.16 0.006 265 / 0.13)); }
+.vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px oklch(0.16 0.006 265 / 0.24)); }
 .vis .vis-obj svg { width: 100%; height: auto; display: block; }
-.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #F4EFE7; background: rgba(10,9,8,.7); backdrop-filter: blur(6px); padding: .3rem .65rem; border-radius: var(--r-pill); }
+.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--paper); background: oklch(0.16 0.006 265 / 0.82); padding: .3rem .65rem; }
 
 /* ============================================================
    Editorial motion system. Base state is fully visible/static; the `.in`
@@ -229,10 +514,10 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 .hero-editorial { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; margin-top: -76px; padding-top: 76px; padding-bottom: clamp(3rem, 7vw, 5.5rem); }
 .hero-editorial .bg { position: absolute; inset: -6% -6%; width: 112%; height: 112%; background-size: cover; background-position: center 32%; will-change: transform; }
-.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,9,17,.5) 0%, rgba(9,9,17,.56) 42%, var(--bg) 96%); }
+.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.16 0.006 265 / 0.34) 0%, oklch(0.16 0.006 265 / 0.48) 44%, oklch(0.16 0.006 265 / 0.84) 100%); }
 .hero-editorial-content { position: relative; z-index: 2; }
 .hero-editorial-content h1 { font-size: clamp(3.2rem, 7.4vw, 6rem); max-width: 15ch; }
-.hero-editorial-content .lead { color: rgba(228,231,242,.86); max-width: 46ch; }
+.hero-editorial-content .lead { color: var(--ink-2); max-width: 46ch; }
 .hero-editorial-cue { position: absolute; z-index: 2; bottom: clamp(1.4rem,3vw,2.2rem); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: .6rem; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
 .hero-editorial-cue .cue-line { width: 1px; height: 34px; background: linear-gradient(var(--ink-3), transparent); animation: heroCue 1.8s ease-in-out infinite; }
 @keyframes heroCue { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
@@ -243,15 +528,18 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 @media (max-width: 700px) { .hero-editorial.compact { min-height: 64vh; } }
 
 .offer-moment { display: flex; align-items: center; gap: clamp(2rem, 5vw, 4rem); }
-.offer-moment .photo-moment-frame { flex: 0 0 clamp(220px, 30vw, 380px); aspect-ratio: 4/5; border-radius: var(--r-media); overflow: hidden; }
+.offer-moment .photo-moment-frame { flex: 0 0 clamp(220px, 30vw, 380px); aspect-ratio: 4/5; overflow: hidden; }
 .offer-moment .lead { flex: 1 1 auto; max-width: 38ch; margin-top: 0; }
 @media (max-width: 700px) { .offer-moment { flex-direction: column; align-items: flex-start; gap: 1.4rem; } .offer-moment .photo-moment-frame { flex-basis: auto; width: min(60vw, 320px); } }
 .reveal-mask { position: relative; overflow: hidden; }
 .reveal-mask .rm-inner { position: absolute; inset: 0; background-size: cover; background-position: center; transform: scale(1.18); transition: transform 1.4s var(--ease); }
 .reveal-mask.in .rm-inner { transform: scale(1); }
 
-.reveal-clip-inner { height: 100%; clip-path: inset(0 0 100% 0); transition: clip-path 1.3s cubic-bezier(.65,0,.15,1); }
-.reveal-clip-inner.in { clip-path: inset(0 0 0% 0); }
+/* (.reveal-clip-wrap / .reveal-clip-inner lived here — a second mask variant
+   that clipped upward instead of scaling. The editorial rework took its markup
+   and left the rule and the two selectors in interactions.js behind, so the
+   whole path had been unreachable from both ends since then. Removed with the
+   selectors. .reveal-mask is the surviving variant.) */
 
 /* Line-reveal display headings — each line clips and rises on load. Applied
    via data-split-lines on a heading; interactions.js wraps each line. */
@@ -269,32 +557,37 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    --stagger-i on each direct child before observing). */
 .reveal-group > * { transition-delay: calc(var(--stagger-i, 0) * 80ms); }
 
-.ba { position: relative; border-radius: var(--r-media); overflow: hidden; aspect-ratio: 4/5; user-select: none; touch-action: none; background: var(--bg-deep); border: 1px solid var(--line); }
+.ba { position: relative; overflow: hidden; aspect-ratio: 4/5; user-select: none; touch-action: none; background: var(--bg-deep); border: 1px solid var(--line); }
 .ba .ba-layer { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ba .ba-layer img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .ba .ba-after { clip-path: inset(0 0 0 var(--pos, 50%)); }
 .ba .ba-before-scene { filter: saturate(.4) brightness(.92) contrast(.92); }
-.ba .ba-handle { position: absolute; top: 0; bottom: 0; left: var(--pos, 50%); width: 2px; background: #fff; transform: translateX(-1px); }
-.ba .ba-knob { position: absolute; top: 50%; left: var(--pos, 50%); transform: translate(-50%, -50%); width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #111; display: grid; place-items: center; }
-.ba .ba-tag { position: absolute; bottom: 14px; padding: .3rem .75rem; border-radius: var(--r-pill); font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: rgba(10,9,8,.75); color: var(--ink); }
+.ba .ba-handle { position: absolute; top: 0; bottom: 0; left: var(--pos, 50%); width: 2px; background: var(--accent); transform: translateX(-1px); }
+.ba .ba-knob { position: absolute; top: 50%; left: var(--pos, 50%); transform: translate(-50%, -50%); width: 46px; height: 46px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; }
+.ba .ba-tag { position: absolute; bottom: 14px; padding: .3rem .75rem; font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: oklch(0.16 0.006 265 / 0.86); color: var(--ink); }
 .ba .tag-before { left: 14px; } .ba .tag-after { right: 14px; }
 
 /* Cursor-reactive spotlight compare — new interaction, brand-fit idea from
    the animation-examples demo: a circular lens follows the cursor and
    reveals the after-shot through the before-shot. Alternative to .ba on
    pages where a hover-driven reveal fits better than a drag handle. */
-.spot { position: relative; border-radius: var(--r-media); overflow: hidden; cursor: none; }
+.spot { position: relative; overflow: hidden; cursor: none; }
 .spot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .spot .spot-after { clip-path: circle(0px at 50% 50%); }
-.spot-cursor { position: absolute; width: 110px; height: 110px; border-radius: 50%; border: 1.5px solid var(--ink); pointer-events: none; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink); background: rgba(15,14,12,.25); backdrop-filter: blur(2px); opacity: 0; transition: opacity .25s; }
+.spot-cursor { position: absolute; width: 110px; height: 110px; border: 1.5px solid var(--ink); pointer-events: none; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink); background: oklch(0.16 0.006 265 / 0.30); opacity: 0; transition: opacity .25s; }
 .spot:hover .spot-cursor { opacity: 1; }
-.spot-tag { position: absolute; top: 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: .35rem .7rem; border-radius: var(--r-pill); background: rgba(15,14,12,.55); backdrop-filter: blur(4px); z-index: 3; color: var(--ink); }
+.spot-tag { position: absolute; top: 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: .35rem .7rem; background: oklch(0.16 0.006 265 / 0.86); z-index: 3; color: var(--ink); }
 .spot-tag.before { left: 1rem; } .spot-tag.after { right: 1rem; }
 
-/* Parallax photo — a scroll-linked translateY applied by interactions.js
-   to any element with data-parallax. Kept to a small offset (see JS: ±30px)
-   so it reads as depth, not a gimmick. */
-[data-parallax] { will-change: transform; }
+/* `[data-parallax] { will-change: transform; }` lived here, promoting anything
+   carrying the attribute to its own compositor layer for a scroll-linked
+   translateY. The generic driver it paired with was removed from
+   interactions.js (see the note at :124) once it turned out that no element in
+   the site had ever carried the attribute — and the rule outlived it: a
+   standing hint to the compositor about elements that do not exist. The
+   parallax that survives is .hero-editorial .bg, moved directly by
+   heroBgUpdate(), and its own will-change sits with the rest of its styles
+   where a reader looking at that element will find it. */
 
 /* View-transition durations — see Layout.astro for <ClientRouter /> and the
    transition:name values that pair pages together. */
@@ -306,8 +599,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 /* ============================================================
    Before/after proof — expanded set. `.ba` and `.spot` (above) already
    handle a single comparison; these add a multi-item gallery layout
-   (`.compare-grid`, catalog/lifestyle hubs) and a static two-panel
-   "generic AI vs VISUAILS" quality argument (`.ai-compare`).
+   (`.compare-grid`, catalog/lifestyle hubs).
    ============================================================ */
 
 .compare-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(1.1rem, 2.6vw, 2rem); }
@@ -319,32 +611,24 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 /* Small, static (non-draggable) side-by-side proof card — a lighter-weight
    companion to .ba for placing a second or third proof moment on a page
    without repeating the full drag interaction every time. */
-.compare-static { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-media); overflow: hidden; }
+.compare-static { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); border: 1px solid var(--line); overflow: hidden; }
 .compare-static > div { position: relative; aspect-ratio: 4/5; overflow: hidden; }
 .compare-static img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.compare-static .cs-tag { position: absolute; bottom: .8rem; left: .8rem; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; border-radius: var(--r-pill); background: rgba(10,9,8,.7); color: var(--ink); z-index: 2; }
+.compare-static .cs-tag { position: absolute; bottom: .8rem; left: .8rem; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; background: oklch(0.16 0.006 265 / 0.86); color: var(--ink); z-index: 2; }
 
-/* "Generic AI tool" vs "VISUAILS" — a static, clearly-illustrative quality
-   argument (not a literal competitor photo — the "generic" panel is a real
-   VISUAILS photo pushed through a filter to simulate common cheap-AI
-   tells: oversaturation, crushed shadows, a heavy vignette). Used on the
-   homepage and on /custom-models where the "will it look fake" objection
-   is sharpest. */
-.ai-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-media); overflow: hidden; }
-@media (max-width: 700px) { .ai-compare { grid-template-columns: 1fr; } }
-.ai-compare-panel { position: relative; aspect-ratio: 4/5; overflow: hidden; background: var(--bg-deep); }
-.ai-compare-panel img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ai-compare-panel.generic img { filter: saturate(1.4) contrast(1.3) brightness(.9) hue-rotate(-6deg) blur(.3px); }
-.ai-compare-panel.generic::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 70px 14px rgba(0,0,0,.6); pointer-events: none; }
-.ai-compare-label { position: absolute; top: 1rem; left: 1rem; z-index: 3; font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: .35rem .75rem; border-radius: var(--r-pill); background: rgba(15,14,12,.6); backdrop-filter: blur(4px); color: var(--ink); }
-.ai-compare-panel.visuails .ai-compare-label { background: var(--accent); color: #fff; }
-.ai-compare-tags { position: absolute; left: 1rem; right: 1rem; bottom: 1rem; z-index: 3; display: flex; flex-direction: column; gap: .4rem; }
-.ai-tag { display: flex; align-items: center; gap: .4rem; font-size: .72rem; font-weight: 600; padding: .4rem .65rem; border-radius: var(--r-sm); backdrop-filter: blur(6px); line-height: 1.3; }
-.ai-tag::before { flex: 0 0 auto; font-size: .85em; }
-.ai-tag.bad { background: rgba(90,20,20,.55); color: #ffdcd4; }
-.ai-tag.bad::before { content: "\2715"; color: #ff9d8c; }
-.ai-tag.good { background: rgba(18,58,40,.6); color: #d9ffe9; }
-.ai-tag.good::before { content: "\2713"; color: #7CE8AE; }
+/* `.ai-compare` / `.ai-compare-panel` / `.ai-compare-label` /
+   `.ai-compare-tags` / `.ai-tag` were deleted here, along with
+   `.ai-compare-panel`'s entry in the .on-ink scope list above.
+   They styled a two-panel "Generic AI tool vs VISUAILS" block whose left
+   panel was one of our own renders pushed through a saturate/contrast/
+   vignette filter and labelled as a competitor's output, with three
+   unmeasured failings tagged onto it. The brief's rule is "never invent
+   testimonials, client names, logos, metrics, or results", and a fabricated
+   picture of somebody else's work is an invented result even when the alt
+   text calls it a simulation. It came off the homepage first and off
+   /custom-models with the Brand Model merge; the tool comparison now lives
+   as prose on /compare (AUDIT-TASK-0.md §H·5), argued rather than staged.
+   Do not reintroduce these. */
 
 /* ============================================================
    Compare — the working before/after. Always visible (no reveal gating,
@@ -361,17 +645,17 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    Only the handle captures touch; the image keeps default touch-action, so
    scrolling vertically over it stays smooth and never sticks. */
 @property --cmp-pos { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
-.cmp { --cmp-pos: 50%; position: relative; border-radius: var(--r-media); overflow: hidden; aspect-ratio: 4/5; background: var(--bg-deep); border: 1px solid var(--line); isolation: isolate; animation: cmpAuto 7s var(--ease-in-out) infinite; }
+.cmp { --cmp-pos: 50%; position: relative; overflow: hidden; aspect-ratio: 4/5; background: var(--bg-deep); border: 1px solid var(--line); isolation: isolate; animation: cmpAuto 7s var(--ease-in-out) infinite; }
 .cmp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .cmp .cmp-after { clip-path: inset(0 0 0 var(--cmp-pos)); z-index: 1; }
 .cmp.cmp-grade .cmp-before { filter: saturate(.3) brightness(.9) contrast(.9) grayscale(.14); }
-.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--cmp-pos); width: 2px; margin-left: -1px; background: rgba(255,255,255,.92); box-shadow: 0 0 16px rgba(0,0,0,.55); z-index: 3; touch-action: none; cursor: ew-resize; }
+.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--cmp-pos); width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 1px 0 0 oklch(0.16 0.006 265 / 0.55), -1px 0 0 oklch(0.16 0.006 265 / 0.55); z-index: 3; touch-action: none; cursor: ew-resize; }
 /* widened invisible grab column so the thin line is easy to catch (esp. touch) */
 .cmp .cmp-divider::before { content: ""; position: absolute; top: 0; bottom: 0; left: -20px; right: -20px; }
-.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #14100e; display: grid; place-items: center; box-shadow: 0 6px 20px rgba(0,0,0,.4); cursor: ew-resize; touch-action: none; }
-.cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 oklch(0.16 0.006 265 / 0.35); cursor: ew-resize; touch-action: none; }
+.cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; }
 .cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; border-radius: var(--r-pill); font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgba(10,9,8,.72); color: var(--ink); backdrop-filter: blur(4px); pointer-events: none; }
+.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: oklch(0.16 0.006 265 / 0.86); color: var(--ink); pointer-events: none; }
 /* Each label fades out as its own side shrinks — i.e. as the divider (driven
    by --cmp-pos, from both the auto-animation and manual drag) sweeps toward it.
    opacity accepts a percentage; calc(...*6) means fully opaque until ~value
@@ -398,10 +682,10 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    ============================================================ */
 
 /* Hero editorial extras */
-.hero-editorial-content .lead-ital { font-style: italic; color: rgba(228,231,242,.9); max-width: 42ch; margin-top: 1.2rem; font-size: var(--t-lg); line-height: 1.5; }
+.hero-editorial-content .lead-ital { font-style: italic; color: var(--ink-2); max-width: 42ch; margin-top: 1.2rem; font-size: var(--t-lg); line-height: 1.5; }
 .hero-benefits { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 1.6rem 0 0; padding: 0; }
-.hero-benefits li { list-style: none; display: flex; align-items: center; gap: .5rem; color: rgba(228,231,242,.82); font-size: .84rem; }
-.hero-benefits li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
+.hero-benefits li { list-style: none; display: flex; align-items: center; gap: .5rem; color: var(--ink-2); font-size: .84rem; }
+.hero-benefits li::before { content: ""; width: 5px; height: 5px; background: var(--accent); flex: 0 0 auto; }
 h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 
 /* Editorial statement + mini benefits */
@@ -419,21 +703,21 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .make-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(.7rem,1.4vw,1.1rem); }
 @media (max-width: 900px) { .make-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 520px) { .make-grid { grid-template-columns: 1fr; } }
-.make-tile { position: relative; display: block; border-radius: var(--r-media); overflow: hidden; aspect-ratio: 3/4; background: var(--bg-deep); }
+.make-tile { position: relative; display: block; overflow: hidden; aspect-ratio: 3/4; background: var(--bg-deep); }
 .make-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
 .make-tile:hover img { transform: scale(1.05); }
-.make-tile .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 34%, rgba(10,9,8,.86) 100%); }
+.make-tile .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 34%, oklch(0.16 0.006 265 / 0.86) 100%); }
 .make-tile .mt-body { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(1rem,2vw,1.4rem); z-index: 2; }
-.make-tile .mt-name { color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 1.12rem; display: flex; align-items: center; gap: .4rem; }
-.make-tile .mt-desc { color: rgba(255,255,255,.74); font-size: .8rem; margin-top: .25rem; line-height: 1.4; }
-.make-tile .mt-play { position: absolute; top: 1rem; right: 1rem; width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.92); display: grid; place-items: center; z-index: 2; }
-.make-tile .mt-play svg { width: 18px; height: 18px; fill: #14100e; margin-left: 2px; }
+.make-tile .mt-name { color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1.12rem; display: flex; align-items: center; gap: .4rem; }
+.make-tile .mt-desc { color: var(--ink-2); font-size: .8rem; margin-top: .25rem; line-height: 1.4; }
+.make-tile .mt-play { position: absolute; top: 1rem; right: 1rem; width: 46px; height: 46px; background: var(--accent); display: grid; place-items: center; z-index: 2; }
+.make-tile .mt-play svg { width: 18px; height: 18px; fill: var(--accent-on); margin-left: 2px; }
 
 /* Multi-photo quality grid */
 .req-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(.8rem,1.6vw,1.2rem); }
 @media (max-width: 820px) { .req-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 460px) { .req-grid { grid-template-columns: 1fr; } }
-.req-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 1.3rem; height: 100%; }
+.req-card { background: var(--surface); border: 1px solid var(--line); padding: 1.3rem; height: 100%; }
 .req-card .rc-num { font-family: var(--font-display); font-weight: 900; color: var(--accent-bright); font-size: .95rem; }
 .req-card h4 { color: var(--ink); font-size: 1rem; margin: .55rem 0 .35rem; font-family: var(--font-body); font-weight: 700; }
 .req-card p { color: var(--ink-3); font-size: .86rem; line-height: 1.5; }
@@ -441,120 +725,50 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .req-note strong { color: var(--ink); font-weight: 600; }
 
 /* Founder's promise + trust bar — honest substitute for reviews while the
-   studio is new (risk reversal instead of borrowed credibility). */
-.promise { display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(2rem,5vw,4.5rem); align-items: center; }
-@media (max-width: 860px) { .promise { grid-template-columns: 1fr; } }
+   studio is new (risk reversal instead of borrowed credibility). The bare
+   `.promise` grid that used to wrap these is gone; the chapter now uses
+   `.promise-split` further down. */
 .promise-eyebrow { display: inline-block; font-size: .8rem; font-weight: 600; letter-spacing: .03em; color: var(--accent-bright); margin-bottom: 1rem; }
 .promise-quote { font-family: var(--font-display); font-style: italic; font-size: clamp(1.2rem,1.9vw,1.5rem); line-height: 1.45; color: var(--ink); margin: 1.4rem 0 0; }
 .promise-sign { display: flex; align-items: center; gap: .6rem; margin-top: 1.4rem; color: var(--ink-3); font-size: .92rem; }
-.promise-sign img { width: 24px; height: 24px; display: block; flex: 0 0 auto; }
+.promise-sign .promise-mark { height: 24px; flex: 0 0 auto; }
 .promise-sign strong { color: var(--ink); font-weight: 600; }
 .trust-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem 2rem; list-style: none; margin: clamp(2.5rem,5vw,4rem) 0 0; padding: 1.5rem 0 0; box-shadow: inset 0 1px 0 var(--line); }
 .trust-bar li { display: flex; align-items: center; gap: .5rem; color: var(--ink-2); font-size: .86rem; font-weight: 500; }
-.trust-bar li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--success); flex: 0 0 auto; }
-
-/* Three-way positioning table (AI vs traditional shoot vs VISUAILS) */
-.tri-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--r-lg); }
-.tri { display: grid; grid-template-columns: 1.35fr 1fr 1fr 1.15fr; min-width: 660px; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
-.tri-cell { padding: .95rem 1.1rem; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: .5rem; font-size: .9rem; color: var(--ink-2); line-height: 1.35; }
-.tri > .tri-cell:nth-last-child(-n+4) { border-bottom: none; }
-.tri-row-label { color: var(--ink); font-weight: 600; }
-.tri-muted { color: var(--ink-3); }
-.tri-head { font-family: var(--font-display); font-weight: 800; font-size: .98rem; color: var(--ink); background: var(--bg-raise); }
-.tri-col-vis { background: var(--accent-soft); }
-.tri-head.tri-col-vis { color: var(--accent-bright); box-shadow: inset 0 2px 0 var(--accent); }
-.tri-col-vis:not(.tri-head) span { color: var(--ink); font-weight: 500; }
-.tri-check { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: var(--success); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-@media (max-width: 620px) { .tri-cell { padding: .8rem .85rem; font-size: .84rem; } }
+.trust-bar li::before { content: ""; width: 6px; height: 6px; background: var(--ink); flex: 0 0 auto; }
 
 /* ============================================================
    THE STUDIO ISSUE — homepage editorial system. One voice: Archivo 900.
-   Magazine furniture (hairline rules, outline-type tickers, a
-   services ledger with floating previews, contact-sheet spreads, a numbered
-   process) — service-forward, prices visible, everything a door. All base
-   states are fully designed without JS; motion.js only enhances.
+   Magazine furniture (hairline rules, contact-sheet spreads, a numbered
+   process). All base states are fully designed without JS; motion.js only
+   enhances.
+
+   The services ledger, the price ticker and the €39.99 set strip that used to
+   live here are gone with the drop rewrite: the homepage sells one thing, and
+   a per-product price list on it would break section 13's rule that the
+   individual-product tier never appears on the homepage, in the nav or in a
+   hero. Their rules were deleted rather than left orphaned — a homepage-only
+   block that outlives its markup is how a stylesheet gets to 1,000 lines.
    ============================================================ */
 
-/* Cover — full-bleed campaign still, headline anchored low, the ticker
-   docked at the bottom edge as service navigation. */
+/* Cover — full-bleed campaign still, headline anchored low, the facts band
+   docked at the bottom edge. */
 .hero-cover { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden;
   margin-top: -76px; padding-top: 76px; isolation: isolate; }
 .hero-cover .hc2-bg { position: absolute; inset: 0; z-index: -2; }
 .hero-cover .hc2-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
 .hero-cover .hc2-scrim { position: absolute; inset: 0; z-index: -1; background:
-  radial-gradient(90% 80% at 18% 88%, rgba(9,9,17,.82) 0%, rgba(9,9,17,.35) 55%, transparent 78%),
-  linear-gradient(180deg, rgba(9,9,17,.62) 0%, rgba(9,9,17,.12) 22%, transparent 48%, rgba(9,9,17,.34) 78%, var(--bg) 99%); }
+  radial-gradient(90% 80% at 18% 88%, oklch(0.16 0.006 265 / 0.86) 0%, oklch(0.16 0.006 265 / 0.38) 55%, transparent 78%),
+  linear-gradient(180deg, oklch(0.16 0.006 265 / 0.62) 0%, oklch(0.16 0.006 265 / 0.14) 22%, transparent 48%, oklch(0.16 0.006 265 / 0.42) 82%, oklch(0.16 0.006 265 / 0.60) 100%); }
 .cover-inner { flex: 1; display: flex; flex-direction: column; width: 100%; }
 .cover-copy { margin-top: auto; padding-block: 2rem clamp(2.8rem, 6vh, 4.2rem); max-width: 64rem; }
 .cover-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.028em; line-height: .96;
   font-size: clamp(2.4rem, 10.5vw, 6rem); color: var(--ink); max-width: 16ch; }
 .cover-title em { font-style: italic; color: var(--accent-word); }
-.cover-sub { margin-top: 1.5rem; max-width: 46ch; color: rgba(228,231,242,.88); font-size: var(--t-lg); line-height: 1.62; }
+.cover-sub { margin-top: 1.5rem; max-width: 46ch; color: var(--ink-2); font-size: var(--t-lg); line-height: 1.62; }
 .cover-cta { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2.2rem; }
 @media (max-width: 560px) { .cover-cta > .btn { width: 100%; } }
 
-/* Ticker — outline display type on a hairline band. In the cover it is the
-   service nav (every word a link); solid VISUAILS hues on hover. Static rows
-   without JS / reduced motion still read as a designed type band. */
-/* No backdrop-filter here: blurring the moving hero behind a band whose own
-   content also moves would re-run the blur every frame. A slightly deeper
-   tint reads the same and costs nothing. */
-.ticker { overflow: hidden; border-block: 1px solid rgba(238,240,246,.16); padding-block: .85rem;
-  background: rgba(9,9,17,.52); }
-.tk-row { display: flex; align-items: baseline; gap: clamp(1.6rem, 3vw, 2.8rem); width: max-content; will-change: transform; padding-inline: 1rem; }
-.tk-item { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em;
-  font-size: clamp(1.5rem, 3.2vw, 2.5rem); line-height: 1.15; white-space: nowrap;
-  color: transparent; -webkit-text-stroke: 1px rgba(238,240,246,.5); transition: color .25s var(--ease), -webkit-text-stroke-color .25s var(--ease); }
-a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--accent-bright); }
-.tk-sep { color: var(--accent); font-weight: 900; font-size: clamp(1rem, 2vw, 1.5rem); }
-
-/* Services ledger — the index, as an accordion. Each row is a <summary> that
-   expands (native <details>, no JS) into a panel: what the service is, what
-   it's for, where it lives, and example shots. The explicit actions (Order /
-   See examples) live inside the panel, so tapping a row toggles it instead of
-   fighting a whole-row link. A floating preview still follows the cursor on
-   hover (motion.js, fine pointers only). */
-.svc-index { position: relative; }
-.idx-item { border-top: 1px solid var(--line-strong); }
-.idx-item:last-of-type { border-bottom: 1px solid var(--line-strong); }
-.idx-row { position: relative; display: grid; grid-template-columns: auto 1.1fr 1.3fr auto auto; gap: clamp(1rem, 2.5vw, 2.4rem);
-  align-items: center; padding-block: clamp(1.3rem, 2.6vw, 1.9rem); cursor: pointer; list-style: none; }
-.idx-row::-webkit-details-marker { display: none; }
-.idx-row::before { content: ""; position: absolute; inset: 0; background: var(--accent-soft); opacity: 0; transition: opacity .3s var(--ease); pointer-events: none; }
-.idx-row:hover::before, .idx-item[open] .idx-row::before { opacity: 1; }
-.idx-num { font-size: .74rem; font-weight: 700; letter-spacing: .1em; color: var(--ink-faint); }
-.idx-name { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.02em;
-  font-size: clamp(1.7rem, 3.4vw, 2.9rem); line-height: 1; color: var(--ink); transition: color .25s var(--ease); }
-.idx-row:hover .idx-name, .idx-item[open] .idx-name { color: var(--accent-2); }
-.idx-meta { font-size: .93rem; color: var(--ink-3); line-height: 1.5; max-width: 44ch; }
-.idx-price { font-family: var(--font-display); font-weight: 900; font-size: clamp(1rem, 1.6vw, 1.25rem); color: var(--accent-bright); white-space: nowrap; text-align: right; }
-.idx-toggle { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--ink-2); transition: border-color .2s var(--ease), background .2s var(--ease); }
-.idx-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform .3s var(--ease); }
-.idx-row:hover .idx-toggle { border-color: var(--accent); background: var(--accent-soft); }
-.idx-item[open] .idx-toggle svg { transform: rotate(180deg); }
-.idx-panel { overflow: hidden; padding: 0 0 clamp(1.4rem, 2.6vw, 2rem); }
-.idx-item[open] .idx-panel { animation: idxPanelIn .4s var(--ease); }
-@keyframes idxPanelIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-.idx-panel-in { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(1.4rem, 3vw, 2.6rem); align-items: center;
-  padding: clamp(1.2rem, 2.4vw, 1.8rem); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
-.idx-panel-text { min-width: 0; }
-.idx-use { font-size: 1rem; color: var(--ink-2); line-height: 1.55; }
-.idx-use-label { display: block; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: .4rem; }
-.idx-where { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
-.idx-tag { font-size: .76rem; font-weight: 600; color: var(--ink-2); padding: .35rem .8rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); }
-.idx-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.4rem; margin-top: 1.6rem; }
-.idx-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
-.idx-shots img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
-@media (max-width: 860px) {
-  .idx-row { grid-template-columns: auto 1fr auto; grid-template-areas: "num name toggle" "num meta toggle" "num price toggle"; row-gap: .3rem; }
-  .idx-num { grid-area: num; } .idx-name { grid-area: name; } .idx-meta { grid-area: meta; }
-  .idx-price { grid-area: price; text-align: left; } .idx-toggle { grid-area: toggle; align-self: center; }
-  .idx-panel-in { grid-template-columns: 1fr; }
-}
-.idx-float { position: absolute; z-index: 6; top: 0; left: 0; width: clamp(160px, 18vw, 230px); aspect-ratio: 4/5;
-  border-radius: 12px; overflow: hidden; pointer-events: none; opacity: 0; transform: rotate(3deg);
-  box-shadow: 0 30px 80px -20px rgba(0,0,0,.8), 0 0 0 1px rgba(238,240,246,.12); }
-.idx-float img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Brand anatomy — the ledger cut the other way: by channel instead of by
    service, so visitors see which visual lives where (shop / feed / ads /
@@ -562,7 +776,7 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
 .anatomy { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1rem, 2vw, 1.5rem); margin-top: clamp(2rem, 4vw, 3rem); }
 @media (max-width: 900px) { .anatomy { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 520px) { .anatomy { grid-template-columns: 1fr; } }
-.anat-card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease); }
+.anat-card { display: flex; flex-direction: column; border: 1px solid var(--line); overflow: hidden; background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease); }
 .anat-card:hover { border-color: var(--accent-line); transform: translateY(-3px); }
 .anat-media { aspect-ratio: 4/5; overflow: hidden; }
 .anat-media img { width: 100%; height: 100%; object-fit: cover; }
@@ -579,10 +793,10 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
 .svc-explain-main h3, .svc-explain-side h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); margin: 0 0 .7rem; letter-spacing: -0.01em; }
 .svc-explain-main p { color: var(--ink-2); line-height: 1.65; max-width: 64ch; margin: 0 0 1rem; }
 .svc-explain-main p:last-child { margin-bottom: 0; }
-.svc-explain-side { padding: clamp(1.2rem, 2.4vw, 1.6rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+.svc-explain-side { padding: clamp(1.2rem, 2.4vw, 1.6rem); border: 1px solid var(--line); background: var(--surface); }
 .svc-where-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .8rem; }
 .svc-where-list li { font-size: .92rem; color: var(--ink-3); line-height: 1.5; padding-left: 1.1rem; position: relative; }
-.svc-where-list li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.svc-where-list li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; background: var(--accent); }
 .svc-where-list strong { color: var(--ink); font-weight: 600; }
 
 /* Catalog style-cards (catalog hub) — these classes were used in markup but
@@ -597,29 +811,21 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
 .sp-a { grid-column: 1 / 8; grid-row: span 2; }
 .sp-b, .sp-c { grid-column: 8 / 13; }
 .sp-d { grid-column: 1 / 13; }
-.sp-media { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); position: relative; }
+.sp-media { overflow: hidden; border: 1px solid var(--line); position: relative; }
 .sp-a .sp-media { aspect-ratio: 4/5; }
 .sp-b .sp-media, .sp-c .sp-media { aspect-ratio: 4/3; }
 .sp-d .sp-media { aspect-ratio: 21/9; }
 .sp-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
 .sp-item:hover .sp-media img { transform: scale(1.04); }
-.sp-play { position: absolute; inset: 0; margin: auto; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
-  background: rgba(9,9,17,.6); border: 1px solid rgba(238,240,246,.35); backdrop-filter: blur(8px); }
-.sp-play svg { width: 20px; height: 20px; fill: #fff; margin-left: 3px; }
+.sp-play { position: absolute; inset: 0; margin: auto; width: 58px; height: 58px; display: grid; place-items: center;
+  background: oklch(0.16 0.006 265 / 0.78); border: 1px solid oklch(0.97 0.004 85 / 0.45); }
+.sp-play svg { width: 20px; height: 20px; fill: var(--paper); margin-left: 3px; }
 .sp-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
   margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--line-strong); }
 .sp-cap b { font-family: var(--font-display); font-weight: 900; font-size: .9rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink); }
 .sp-cap span { font-size: .8rem; color: var(--ink-3); white-space: nowrap; }
 @media (max-width: 900px) { .sp-a, .sp-b, .sp-c, .sp-d { grid-column: 1 / 13; grid-row: auto; } .sp-a .sp-media { aspect-ratio: 4/3; } }
 
-/* The set — the €39.99 catalog pack as four ruled frames. */
-.set-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1rem, 2vw, 1.4rem); margin-top: clamp(2rem, 4vw, 3rem); }
-@media (max-width: 760px) { .set-strip { grid-template-columns: repeat(2, 1fr); } }
-.sf-media { aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
-.sf-media img { width: 100%; height: 100%; object-fit: cover; }
-.sf-cap { display: flex; align-items: baseline; gap: .6rem; margin-top: .65rem; padding-top: .55rem; border-top: 1px solid var(--line-strong); }
-.sf-cap .sfn { font-weight: 700; font-size: .72rem; letter-spacing: .08em; color: var(--accent-bright); }
-.sf-cap b { font-family: var(--font-display); font-weight: 900; font-size: .84rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink); }
 
 /* Process — a true sequence: four outline numerals, bold titles. */
 .process { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1.6rem, 3vw, 2.6rem); margin-top: clamp(2rem, 4vw, 3rem); }
@@ -634,18 +840,20 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
 /* Chapter heads (bold voice): centred 900 title, dimmed second line, bloom. */
 .ch { position: relative; }
 .ch-head { position: relative; text-align: center; max-width: 64rem; margin-inline: auto; }
-.ch-orb { position: absolute; left: 50%; top: -34%; transform: translateX(-50%); width: min(560px, 72vw); aspect-ratio: 1;
-  background: radial-gradient(closest-side, rgba(123,108,245,.12), rgba(95,227,240,.04) 46%, transparent 72%);
-  filter: blur(28px); pointer-events: none; z-index: -1; }
+/* The .ch-orb bloom that sat behind every chapter head is gone — a blurred
+   violet/cyan halo is the SaaS-hero signal this brand is escaping, and on
+   paper it would read as a printing fault rather than as light. The markup
+   span is removed too; motion.js already guards on its absence. */
 .ch-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.025em; line-height: 1.0;
   font-size: clamp(2.4rem, 5.2vw, 4.2rem); color: var(--ink); text-wrap: balance; margin: 0; }
 .ch-l { display: block; }
-.ch-l.dim { color: rgba(228,231,242,.4); }
+.ch-l.dim { color: var(--ink-3); }
 .ch-title em { font-style: normal; color: var(--accent-word); }
 .ch-sub { margin: 1.1rem auto 0; max-width: 52ch; color: var(--ink-2); font-size: var(--t-lg); line-height: 1.6; }
 .ch-cta { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.9rem; }
 .ch-kicker { font-size: .76rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: 1rem; }
-.btn-glow { box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 10px 28px -14px rgba(123,108,245,.38); }
+/* .btn-glow kept as a hook so existing markup doesn't break, but the glow is
+   gone — a soft coloured halo is the SaaS signal this brand is escaping. */
 .btn-glow:hover { filter: brightness(1.05); }
 
 /* Develop scene captions + desktop composition for the pinned scrub. */
@@ -662,22 +870,22 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
 .vm-row { display: flex; gap: clamp(.8rem, 1.6vw, 1.2rem); width: max-content; will-change: transform; }
-.vm-row img { height: clamp(180px, 26vh, 300px); width: auto; border-radius: var(--r-media); border: 1px solid var(--line); display: block; }
+.vm-row img { height: clamp(180px, 26vh, 300px); width: auto; border: 1px solid var(--line); display: block; }
 
 /* Lead magnet — the free briefing-photo checklist. Two-column band: pitch on
    the left, a single-field email capture on the right. */
 .lead-magnet { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(1.8rem, 4vw, 3.5rem); align-items: center;
-  padding: clamp(1.8rem, 4vw, 3rem); border: 1px solid var(--accent-line); border-radius: var(--r-lg);
-  background: linear-gradient(135deg, var(--accent-soft), transparent 70%); }
+  padding: clamp(1.8rem, 4vw, 3rem); border: 1px solid var(--accent-line);
+  background: var(--accent-soft); }
 .lm-kicker { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: .8rem; }
 .lm-copy h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); max-width: 18ch; }
 .lm-list { list-style: none; margin: 1.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
 .lm-list li { position: relative; padding-left: 1.5rem; font-size: .95rem; color: var(--ink-2); }
-.lm-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
+.lm-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 8px; height: 8px; background: var(--accent); }
 .lm-form { display: flex; flex-direction: column; }
 .lm-label { font-size: .9rem; font-weight: 600; color: var(--ink); margin-bottom: .6rem; }
 .lm-row { display: flex; gap: .6rem; flex-wrap: wrap; }
-.lm-row input { flex: 1 1 200px; padding: .8rem 1rem; border-radius: var(--r-md); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 1rem; }
+.lm-row input { flex: 1 1 200px; padding: .8rem 1rem; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 1rem; }
 .lm-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .lm-row .btn { flex: 0 0 auto; }
 .lm-fine { margin-top: .8rem; font-size: .8rem; color: var(--ink-3); }
@@ -691,40 +899,75 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
 
 /* Promise chapter — split scene lit by the WebGL light field. */
 .ch-promise { position: relative; overflow: hidden; isolation: isolate; }
-.ch-promise #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; opacity: .38; }
-.ch-promise .hero-fallback { position: absolute; inset: 0; z-index: -2; background:
-  radial-gradient(70% 90% at 82% 30%, rgba(123,108,245,.26), transparent 62%),
-  radial-gradient(48% 60% at 68% 78%, rgba(95,227,240,.12), transparent 60%),
-  linear-gradient(180deg, #0B0B14 0%, var(--bg-deep) 100%); }
+/* Chrome surface #1. The plane is a real reflection — a fresnel term over a
+   domain-warped normal, sampling the chrome ramp — so opacity is doing less
+   work than it used to and can come up from .38 without the section shouting.
+   The rectangle is hard-bounded (overflow: hidden on .ch-promise, no feathered
+   edge, no vignette bleeding into the page) because a chrome plane with soft
+   edges is a glow, and a glow is the thing this system left behind. */
+.ch-promise #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; opacity: .55; }
+/* Fallback for the WebGL light field: what the section looks like when the
+   shader never initialises. It is a light *falloff*, not a coloured bloom —
+   one soft off-axis lift on the ink ramp, so the no-WebGL render is the same
+   scene under the same lighting rather than a different, cheaper design. */
+.ch-promise .hero-fallback { position: absolute; inset: 0; z-index: -2; filter: var(--chrome-filter); background:
+  /* The scrim is the first layer and the metal is under it: the copy sits on
+     the left, so the left half stays near-opaque ink and the metal is only
+     let through on the right, where there is nothing to read. Without this the
+     62% glint (L 0.97) lands under paper-coloured text at 1.09:1.
+     The opaque stop runs to 18% and the 0.90 stop to 44% because the copy
+     column is 1.05fr of a 2fr split plus the container gutter — at the earlier
+     6%/34% the byline at the bottom-left came in at 4.64:1 against a 4.5 floor,
+     which is not margin, it is luck. The 68% and 100% stops are untouched:
+     nothing on the right side moved. */
+  linear-gradient(100deg, var(--ink-900) 18%, oklch(0.16 0.006 265 / 0.90) 44%, oklch(0.16 0.006 265 / 0.62) 68%, oklch(0.16 0.006 265 / 0.46) 100%),
+  linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
+  var(--chrome); }
 .promise-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(2.4rem, 5vw, 4.5rem); align-items: center; }
-@media (max-width: 900px) { .promise-split { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .promise-split { grid-template-columns: 1fr; }
+  /* One column: the copy is now the full width, so the strip the metal was
+     living in does not exist any more. A directional scrim that assumes a
+     right-hand column is worse than useless here — it puts the brightest part
+     of the plate directly under the paragraph. Measured at 390px it took the
+     dim title line to 2.42:1 and the byline to 2.77:1.
+     So below the split the metal recedes to a sheen: a near-flat veil, and the
+     plane's own opacity comes down with it. This is the removability test
+     answering itself — where the chrome has no room to be a composition, it
+     stops being one rather than being one on top of the words. */
+  .ch-promise .hero-fallback { background:
+    linear-gradient(100deg, var(--ink-900) 22%, oklch(0.16 0.006 265 / 0.95) 55%, oklch(0.16 0.006 265 / 0.92) 100%),
+    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
+    var(--chrome); }
+  .ch-promise #hero-shader { opacity: .30; }
+}
+/* The band just above the split is the tightest case in the whole section: the
+   container has stopped growing but the viewport has not, so the copy column
+   is at its widest as a FRACTION of the plate — which is the only fraction a
+   percentage-stop gradient can see. Measured at 901px the byline sat at
+   4.71:1 against a 4.5 floor; the stops move right to buy real margin, and the
+   68%/100% end stays put so the metal keeps its side. */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .ch-promise .hero-fallback { background:
+    linear-gradient(100deg, var(--ink-900) 28%, oklch(0.16 0.006 265 / 0.90) 54%, oklch(0.16 0.006 265 / 0.62) 74%, oklch(0.16 0.006 265 / 0.46) 100%),
+    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
+    var(--chrome); }
+}
 
 /* Glow title + comet (test-sample moment). */
 .glow-title { text-shadow: none; }
 .comet { width: min(340px, 60vw); margin: 0 auto .4rem; display: block; overflow: visible; }
-.comet path { fill: none; stroke: rgba(95,227,240,.85); stroke-width: 2; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(95,227,240,.3)); }
-.comet circle { fill: #fff; filter: drop-shadow(0 0 4px rgba(95,227,240,.4)); }
+.comet path { fill: none; stroke: var(--line-strong); stroke-width: 2; stroke-linecap: butt; }
+.comet circle { fill: var(--ink); }
 
-/* Plan chapter — two paths + photo. */
-.plan-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(2.4rem, 5vw, 4.5rem); align-items: center; }
-@media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; } }
-.plan-cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.6rem, 3vw, 2.6rem); margin-top: 2.2rem; }
-@media (max-width: 620px) { .plan-cols { grid-template-columns: 1fr; } }
-.plan-col h3 { font-size: 1.25rem; margin-bottom: .6rem; }
-.plan-col p { font-size: .92rem; color: var(--ink-3); line-height: 1.6; margin-bottom: 1.2rem; }
-.plan-photo { border-radius: 18px; overflow: hidden; border: 1px solid var(--line); aspect-ratio: 4/5; }
-.plan-photo img { width: 100%; height: 100%; object-fit: cover; }
-.set-frame { margin: 0; }
 
 /* v3.1 — editorial air. Chapters breathe wider, intros become ruled two-col
-   editorial heads with parenthetical meta labels, the ticker gains texture,
-   the ledger gains weight. */
+   editorial heads with parenthetical meta labels. */
 .ch { padding-block: clamp(6rem, 11vw, 10.5rem); }
-.svc-index, .set-strip, .spread, .process { margin-top: clamp(3rem, 5.5vw, 4.6rem); }
+.spread, .process { margin-top: clamp(3rem, 5.5vw, 4.6rem); }
 .spread { gap: clamp(1.2rem, 2.4vw, 1.9rem); }
-.set-strip { gap: clamp(1.1rem, 2.2vw, 1.7rem); }
 .process { gap: clamp(2rem, 3.6vw, 3.2rem); }
-.ch-head + .svc-index, .ch-head + .set-strip, .ch-head + .spread { margin-top: clamp(3.4rem, 6vw, 5.2rem); }
+.ch-head + .spread { margin-top: clamp(3.4rem, 6vw, 5.2rem); }
 .ch .ch-cta { margin-top: clamp(2.6rem, 4.5vw, 3.6rem); }
 
 /* Editorial head — parenthetical meta left, statement right, on a hairline. */
@@ -735,12 +978,95 @@ a.tk-item:hover { color: var(--accent-bright); -webkit-text-stroke-color: var(--
 .ed-head .ed-sub { margin-top: 1rem; max-width: 52ch; color: var(--ink-3); font-size: 1rem; line-height: 1.6; }
 @media (max-width: 760px) { .ed-head { grid-template-columns: 1fr; gap: .8rem; } .ed-meta { padding-top: 0; } }
 
-/* Ticker texture: alternating filled-ghost and outline items. */
-.tk-row { gap: clamp(2rem, 4vw, 3.4rem); }
-.tk-item { -webkit-text-stroke: 1px rgba(238,240,246,.42); }
-.tk-item.fill { color: rgba(238,240,246,.14); -webkit-text-stroke: 0px transparent; }
-a.tk-item.fill:hover { color: var(--accent-bright); }
+/* ---- form primitives -----------------------------------------------------
+   One copy. These lived in five Astro <style> blocks — StartPage.astro,
+   test-sample.astro ×2, contact.astro ×2 — and had already drifted: the
+   textarea was 110px tall on two pages and 120px on three, and the
+   reduced-motion opt-out existed on /start alone, so the same four transitions
+   ran regardless of the setting on the other four pages.
 
-/* Ledger: taller rows, heavier names. */
-.idx-row { padding-block: clamp(1.8rem, 3.2vw, 2.5rem); }
-.idx-main { font-size: clamp(1.9rem, 3.8vw, 3.2rem); }
+   StartPage.astro's own comment set the condition for this move: "when those
+   pages retire in the redirect pass these move to global.css". They have.
+
+   Astro compiles a scoped `.input` to `.input:where(.astro-HASH)`, and
+   :where() contributes nothing, so every selector below keeps the exact
+   specificity it had while scoped. What changes is the count, not the weight.
+
+   Two conventions hold the seam: nothing here carries page-specific spacing
+   (a page that needs it uses a more specific selector, so cascade order never
+   decides), and .select re-states padding-right because the shorthand above it
+   would otherwise drop the 2.4rem the caret sits in.
+   -------------------------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: .45rem; margin-bottom: 1.1rem; }
+.field label { font-size: .88rem; font-weight: 600; color: var(--ink); }
+.req { color: var(--accent-bright); }
+.hint { font-size: .8rem; color: var(--ink-3); }
+
+.input, .textarea, .select {
+  width: 100%;
+  padding: .85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: .98rem;
+  transition: border-color .22s var(--ease), box-shadow .22s var(--ease);
+}
+.input::placeholder, .textarea::placeholder { color: var(--ink-3); }
+.input:focus, .textarea:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Restores what `select { padding-right: 2.4rem }` above declares and the
+   shorthand two rules up silently reset — that is the gap the caret sits in. */
+.select { padding-right: 2.4rem; }
+.select option { background: var(--surface); color: var(--ink); }
+.textarea { min-height: 120px; resize: vertical; }
+
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 620px) { .row-2 { grid-template-columns: 1fr; } }
+
+/* .opt carries no margin of its own — the stack owns the interval, so a page
+   that lays options out differently does not have to cancel one first. */
+.opt-stack { display: flex; flex-direction: column; gap: .6rem; }
+.opt {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .9rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color .2s var(--ease), background .2s var(--ease);
+}
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+.opt .opt-main { flex: 1; display: flex; flex-direction: column; gap: .15rem; }
+.opt .opt-title { color: var(--ink); font-weight: 500; }
+.opt .opt-desc { font-size: .82rem; color: var(--ink-3); }
+
+.dropzone {
+  display: block;
+  position: relative;
+  padding: 1.8rem;
+  text-align: center;
+  color: var(--ink-3);
+  border: 1.5px dashed var(--line-strong);
+  transition: border-color .22s var(--ease), background .22s var(--ease);
+  cursor: pointer;
+  background: var(--surface);
+}
+.dropzone:hover { border-color: var(--accent-line); background: var(--accent-soft); }
+
+/* The file input inside a .dropzone is opacity:0 but still tabbable, so the
+   zone has to show its own focus. Flag xlviii. */
+.dropzone:focus-within { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Was declared on /start only. The other four pages ran the same transitions
+   with the setting on. */
+@media (prefers-reduced-motion: reduce) {
+  .input, .textarea, .select,
+  .opt,
+  .dropzone { transition: none; }
+}

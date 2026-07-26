@@ -3,6 +3,16 @@
 // the /lifestyle/[slug] template (src/pages/lifestyle/[slug].astro) so
 // every style page is one shared data source.
 
+import { reviewClaim, turnaround } from './pricing.js';
+
+// No euro figure and no delivery time may be typed into this file.
+// Both used to live here as literals, which is how the hub cards and the
+// [slug] pages ended up quoting a turnaround the capacity gate had never
+// cleared — and how a video price that exists nowhere in pricing.js
+// survived a repricing nobody caught. Derive, never type.
+const TIMING = turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
+
 // grid: the 3x3 product-scene grid on each style page. `photo` is a real
 // asset path when the source page used one, otherwise null (renders the
 // SVG placeholder icon instead — same behavior as the static site).
@@ -47,7 +57,7 @@ export const styles = [
       { title: 'Campaign-flexible', body: 'Negative space that works for ads, banners and packaging alike.' },
     ],
     bestFor: ['Premium skincare, jewellery and leather goods', 'Brands selling calm, not noise', 'Campaigns with an understated voice', 'Products that deserve gallery treatment'],
-    whatYouGet: ['Sun-washed, earthy minimalist scenes', 'Long-shadow premium lighting', 'Compositions with space for messaging', '~24h delivery, checked by hand'],
+    whatYouGet: ['Sun-washed, earthy minimalist scenes', 'Long-shadow premium lighting', 'Compositions with space for messaging', TIMING, REVIEW],
   },
   {
     slug: 'flash',
@@ -84,7 +94,7 @@ export const styles = [
       { title: 'Built for drops', body: 'Timed energy for launches, restocks and hype moments.' },
     ],
     bestFor: ['Streetwear, sneakers and accessories', 'Drops, launches and hype moments', 'Brands with an edge to keep', 'Social ads that need to stop thumbs'],
-    whatYouGet: ['High-energy flash-lit scenes', 'Deep, deliberate shadow work', 'Consistent models, locked to your brand', '~24h delivery, checked by hand'],
+    whatYouGet: ['High-energy flash-lit scenes', 'Deep, deliberate shadow work', 'Consistent models, locked to your brand', TIMING, REVIEW],
   },
   {
     slug: 'glow',
@@ -121,7 +131,7 @@ export const styles = [
       { title: 'One consistent glow', body: 'The same warmth across your whole feed, launch after launch.' },
     ],
     bestFor: ['Beauty, skincare and fragrance', 'Fashion that sells a feeling', 'Campaigns and launches that need atmosphere', 'Brands building an aspirational feed'],
-    whatYouGet: ['Warm, editorial golden-hour scenes', 'Consistent models, locked to your brand', 'Campaign-grade finishing on every image', '~24h delivery, checked by hand'],
+    whatYouGet: ['Warm, editorial golden-hour scenes', 'Consistent models, locked to your brand', 'Campaign-grade finishing on every image', TIMING, REVIEW],
   },
   {
     slug: 'phone-made',
@@ -158,7 +168,7 @@ export const styles = [
       { title: 'Feed-native from frame one', body: "No separate cropping pass needed — it's ready as delivered." },
     ],
     bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn't look like ads"],
-    whatYouGet: ['Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one', '~24h delivery, checked by hand'],
+    whatYouGet: ['Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one', TIMING, REVIEW],
   },
   {
     slug: 'custom',
@@ -170,7 +180,7 @@ export const styles = [
     cardPhoto: '/img/banners-13.webp',
     cardIcon: 'bag',
     cardDesc: 'Not one of our four moods — a bespoke lifestyle scene designed from your references.',
-    orderHref: '/order-custom',
+    orderHref: '/start',
     orderLabel: 'Start a custom scene',
     moodParagraphs: [
       'Not one of our four moods — a scene designed from your references: the setting, styling and light that only your brand would use.',

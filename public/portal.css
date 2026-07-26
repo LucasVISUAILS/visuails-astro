@@ -1,0 +1,310 @@
+/* ============================================================
+   VISUAILS — the client portal at /o/<token>. Section 10.
+
+   WHY THIS FILE EXISTS AT ALL, RATHER THAN THE SITE'S STYLESHEET
+   The portal is rendered by a Cloudflare Pages Function, not by Astro, so it
+   cannot import global.css: Astro emits that with a content hash in the
+   filename and a Worker has no way to know what the hash is this build. It
+   could not use it even if it could name it — the site's bundle carries the
+   shader hero, GSAP, view transitions and eight font weights, and none of that
+   belongs on a page somebody opens on a phone to look at photographs.
+
+   So: a stable, unhashed file that Pages serves verbatim from public/, holding
+   only what this one page needs. The tokens below are copied from
+   src/styles/global.css and must stay in step with it — this is a duplicate,
+   and the honest thing is to say so rather than to pretend it is a system.
+
+   FONTS. Deliberately the fallback stack, not Archivo. The self-hosted faces
+   are emitted by Fontsource under hashed names for the same reason as above,
+   and pointing an @font-face at a guessed path would cost a 404 on every load
+   to arrive at the same fallback. To fix properly: copy archivo-latin-400 and
+   -700 .woff2 into public/fonts/, add two @font-face rules here, and the portal
+   matches the site exactly. That needs a local npm install, which this
+   environment does not have. FLAGGED.
+   ============================================================ */
+
+:root {
+  /* ink & paper — copied verbatim from global.css */
+  --ink-900:  oklch(0.16 0.006 265);
+  --ink-700:  oklch(0.32 0.005 265);
+  --ink-500:  oklch(0.45 0.004 265);
+  --ink-300:  oklch(0.72 0.003 265);
+  --ink-100:  oklch(0.89 0.002 265);
+
+  --paper:      oklch(0.97 0.004 85);
+  --paper-2:    oklch(0.94 0.004 85);
+  --paper-lift: oklch(0.99 0.002 85);
+
+  /* The system palette, which global.css scopes to "/start, the client portal,
+     and system surfaces". This is that second surface. The plain variants fail
+     body-size contrast on paper and are for fills, borders and text ≥18px; the
+     -ink variants set body text. */
+  --signal:     oklch(0.55 0.07 255);
+  --signal-ink: oklch(0.45 0.09 255);
+  --warn:       oklch(0.58 0.11 70);
+  --warn-ink:   oklch(0.47 0.11 65);
+
+  --ink:   var(--ink-900);
+  --ink-2: var(--ink-700);
+  --ink-3: var(--ink-500);
+  --line:        var(--ink-100);
+  --line-strong: var(--ink-300);
+  --line-ui:     var(--ink-700);
+
+  --font: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --radius: 0;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; border-radius: var(--radius); }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 5rem;
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  color: var(--ink-2);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+::selection { background: var(--ink-900); color: var(--paper); }
+
+.wrap { max-width: 940px; margin: 0 auto; }
+
+/* ---- masthead -----------------------------------------------------------
+   A wordmark and a reference, and nothing else. No navigation: this page is
+   reached from a link in an email and leads nowhere. Putting the marketing nav
+   here would invite a client mid-order back onto the sales pages. */
+.bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  padding: 1.6rem 0 1.4rem;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+.mark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
+.ref { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+/* ---- head ---------------------------------------------------------------- */
+.head { padding: clamp(2.2rem, 5vw, 3.4rem) 0 0; }
+h1 {
+  margin: 0 0 .6rem;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  font-weight: 900; line-height: 1.02; letter-spacing: -0.025em;
+  color: var(--ink); text-wrap: balance;
+}
+.lede { margin: 0; max-width: 62ch; font-size: 1.1rem; color: var(--ink-2); text-wrap: pretty; }
+
+/* ---- the order's facts --------------------------------------------------
+   A definition list, not a card grid. Four short facts do not need four boxes,
+   and boxing them is the reflex this design system spends its whole budget
+   avoiding.
+
+   Flex-wrap rather than the auto-fit grid this used to be. The grid fitted four
+   190px columns into the 940px column, and an attended order has five facts, so
+   Status sat alone on a second row with three empty cells beside it at every
+   desktop width — measured, not guessed. Narrowing the track only moves the
+   orphan: five items tile evenly into five columns or one, and nothing else, so
+   any fixed column count strands one somewhere.
+
+   Wrapping a flex row has no columns to leave empty. The facts pack to their own
+   widths, five across at desktop and raggedly at narrow widths, and a ragged
+   wrap reads as one line of metadata that ran out of room — which is what it is.
+   The strip ends up about the measure of the lede directly above it instead of
+   spanning the full column, and matching that measure is better than fighting
+   it. */
+.facts {
+  display: flex; flex-wrap: wrap;
+  gap: 1.5rem clamp(2rem, 4vw, 3.4rem); margin: clamp(2rem, 4vw, 2.8rem) 0 0;
+  padding-top: 1.6rem; box-shadow: inset 0 1px 0 var(--line);
+}
+.fact { min-width: 0; }
+.fact dt { font-size: .74rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.fact dd { margin: .35rem 0 0; color: var(--ink); font-weight: 500; }
+
+/* ---- system note --------------------------------------------------------
+   The one place colour is allowed on this page, and it is state, not
+   decoration.
+
+   This carried a 2px --signal left stripe until it was looked at next to the
+   rest of the site, and the earlier note here argued the stripe was a status
+   strip rather than the banned decorative accent. That argument does not
+   survive the comparison: every other border-left in this codebase is 1px and
+   neutral and separates two siblings in a row, so the stripe was not a
+   convention being followed, it was the only one of its kind. It was also the
+   third signal on a block that already had two — a tinted ground and coloured
+   text — and the two that remain are the ones carrying meaning.
+
+   A full hairline instead. It closes the block on four sides, which is what
+   this system does everywhere else, and it leaves the colour in the words,
+   where a reader can actually read it.
+
+   It is measured, like the lede. The Tier 0 aftercare line is the longest note
+   on this page and it was setting as a single 117-character line at 1280, where
+   the column is 940px and nothing was stopping it. The lede eight lines up has
+   been capped at 62ch all along, so the page was already making this argument;
+   the note just was not listening.
+
+   The cap is on the block, so the tinted ground stops with the words rather than
+   running on to the column edge with the text hugging its left. That matches the
+   facts strip above, where only the hairline spans the column and the content
+   sets to its own width. */
+.note {
+  margin: clamp(2rem, 4vw, 2.6rem) 0 0; padding: 1rem 1.2rem;
+  max-width: 68ch;
+  background: var(--paper-2); border: 1px solid var(--line);
+  font-size: .96rem; color: var(--signal-ink);
+}
+.note strong { color: inherit; }
+/* There is deliberately no .note.warn. The --warn ramp is used, by .state.revision
+   further down, but no note on this page is a warning: the one on the expired page
+   carries the remedy, not the problem, and a remedy set in amber reads as a fault
+   the client has committed. If a genuinely adverse note ever appears here, it is
+   two lines — adding it then beats shipping a rule no markup can produce. */
+
+/* ---- the work ------------------------------------------------------------
+   The photographs are the interface. They sit on the page at size with a
+   hairline beneath them, rather than inside bordered tiles: a frame around a
+   photograph is a second frame, and the photograph already has one. */
+.work { margin: clamp(2.6rem, 5vw, 4rem) 0 0; }
+.work h2 {
+  margin: 0 0 1.4rem; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
+  padding-bottom: .8rem; box-shadow: inset 0 -1px 0 var(--line);
+}
+
+/* The running count that sits inside that h2 — "8 of 20 approved". It is a
+   reading of the heading, not part of it, so it drops to body weight and the
+   quiet ink rather than being set as a second heading. Tabular figures because
+   the number changes on every approval and the line should not shift when it
+   does. The "·" separator is in the markup, not here: it is content, and a
+   screen reader announcing "8 of 20 approved" needs it spoken. */
+.tally { font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem 1.6rem; list-style: none; margin: 0; padding: 0; }
+.shot img { width: 100%; background: var(--paper-2); }
+.shot .name { display: block; margin: .7rem 0 .1rem; font-size: .9rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.shot .meta { font-size: .82rem; color: var(--ink-3); }
+
+/* State reads as a word, never as a colour alone — a colour-only state is
+   unreadable to anyone who cannot separate the two hues, and this one decides
+   whether a photograph ships. */
+.state { display: inline-block; margin-top: .5rem; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.state.approved { color: var(--ink); }
+.state.approved::before { content: "\2014\00a0"; }
+.state.revision { color: var(--warn-ink); }
+.state.revision::before { content: "\2014\00a0"; }
+.said { margin: .5rem 0 0; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .9rem; color: var(--ink-2); font-style: italic; }
+
+/* ---- controls ------------------------------------------------------------ */
+.acts { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
+/* text-decoration is reset here rather than left to the anchor rule above,
+   because Download is an <a> and Approve is a <button> and they sit side by side
+   in the same .acts row. One of them arriving underlined would make two controls
+   that do the same kind of thing look like two different kinds of thing.
+   .btn-quiet puts the underline back for itself, further down. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font); font-size: .88rem; font-weight: 600; line-height: 1;
+  padding: .7rem 1.1rem; cursor: pointer; border: 1px solid transparent;
+  text-decoration: none;
+  transition: transform .22s var(--ease), background-color .22s var(--ease), border-color .22s var(--ease);
+}
+.btn-primary { background: var(--ink-900); color: var(--paper); }
+.btn-primary:hover { background: var(--ink-700); transform: translateY(-2px); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn-ghost:hover { border-color: var(--line-ui); transform: translateY(-2px); }
+.btn-quiet { background: transparent; color: var(--ink-3); border-color: transparent; padding: .7rem 0; text-decoration: underline; text-underline-offset: 3px; }
+.btn-quiet:hover { color: var(--ink); }
+
+/* These come out 38px tall, which is fine under a cursor and mean under a thumb.
+   Approving a photograph is the whole job of this page and most clients will do
+   it on a phone, from the link in an email, so the controls get the 44px that
+   guidance asks for wherever the pointer is coarse. Keyed to the pointer rather
+   than the viewport on purpose: a small window on a laptop still has a mouse,
+   and a tablet at 1024px still has a thumb. */
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .btn-quiet { min-height: 44px; }
+}
+
+:where(a, button, input, textarea, summary):focus-visible {
+  outline: 2px solid var(--ink-900); outline-offset: 2px;
+}
+
+/* Native controls re-round themselves per type on iOS, so each is named. */
+input, textarea, button, select { font: inherit; border-radius: 0; -webkit-appearance: none; appearance: none; }
+textarea {
+  display: block; width: 100%; margin-top: .6rem; padding: .7rem .8rem;
+  background: var(--paper-lift); color: var(--ink);
+  border: 1px solid var(--line-strong); resize: vertical; min-height: 5.5rem; font-size: .95rem;
+}
+textarea:focus { border-color: var(--line-ui); outline: none; }
+
+/* The revision form is closed until asked for. <details> because it works with
+   no JavaScript — this page has none, and a client on hotel wifi should not be
+   waiting on a script to say what is wrong with a photograph. */
+details.ask { margin-top: .8rem; }
+details.ask > summary { cursor: pointer; font-size: .88rem; font-weight: 600; color: var(--ink); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
+details.ask > summary::-webkit-details-marker { display: none; }
+details.ask > summary:hover { color: var(--ink-700); }
+
+/* ---- the order's timeline -----------------------------------------------
+   Date in one column, what happened in the other, and the note underneath it
+   when there is one. Rules between the rows rather than around them: this is a
+   log, and a log is a sequence, not a stack of cards. */
+.log { list-style: none; margin: 0; padding: 0; }
+.log li {
+  display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: .2rem 1.6rem;
+  padding: .9rem 0; box-shadow: inset 0 -1px 0 var(--line);
+}
+.log li:last-child { box-shadow: none; padding-bottom: 0; }
+.log time {
+  font-size: .78rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3); font-variant-numeric: tabular-nums; padding-top: .18rem;
+}
+.log .what { color: var(--ink); font-weight: 500; }
+/* The note belongs to the event above it, so it sits under the event and not
+   under the date — which is why it is placed in column 2 explicitly. */
+.log .why { grid-column: 2; max-width: 68ch; font-size: .92rem; color: var(--ink-2); text-wrap: pretty; }
+
+/* Below roughly 30rem the date column is eating the half of the line the event
+   needs, so the two stack instead. */
+@media (max-width: 30rem) {
+  .log li { grid-template-columns: 1fr; gap: .15rem; }
+  .log .why { grid-column: 1; }
+  .log time { padding-top: 0; }
+}
+
+/* ---- foot ----------------------------------------------------------------
+   The paragraph here is the one that tells the client the URL is a key. It was
+   setting as a single 125-character line across the full 940px column, which is
+   the least readable sentence on the page carrying the most important thing on
+   it. Measured like everything else now. */
+.foot { margin: clamp(3rem, 6vw, 4.5rem) 0 0; padding-top: 1.4rem; box-shadow: inset 0 1px 0 var(--line); font-size: .88rem; color: var(--ink-3); }
+.foot p { max-width: 68ch; }
+.foot a { color: var(--ink-700); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---- the empty / refused states -----------------------------------------
+   Same typography, same spacing, same care. A page that says "this link has
+   expired" is still the studio talking to a client. */
+.plain { max-width: 46rem; padding: clamp(3.5rem, 9vw, 6rem) 0; }
+
+/* The revision textarea has a real <label>, shown only to screen readers: the
+   visible affordance is the <summary> above it ("Something is not right"), and
+   repeating that as a heading over the box would be saying the same sentence
+   twice to everyone who can see it. display:none would remove it from the
+   accessibility tree too, which is the opposite of the point. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden; white-space: nowrap; clip-path: inset(50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .001ms !important; animation-duration: .001ms !important; }
+  .btn:hover { transform: none; }
+}

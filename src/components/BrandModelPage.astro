@@ -1,0 +1,695 @@
+---
+// VISUAILS — /custom-models, "Your Brand Model".
+//
+// One component for both languages, same reason as StartPage / PricingPage /
+// HomePage: the brief requires every change to land in EN and NL together, and
+// one source file is the only way to guarantee that rather than merely intend
+// it.
+//
+// THIS PAGE IS A MERGE. /models and /custom-models were two pages telling one
+// story (AUDIT-TASK-0.md §D). §H·8 settled the direction: /custom-models keeps
+// the URL because it already carries the exclusive-face argument, the standard
+// roster folds in as a secondary block, and /models is a 301 here (both
+// languages; see public/_redirects). A third slug (/your-brand-model) would
+// have burned the equity of both. The old page's `#standard` fragment still
+// works: a fragment is never sent to the server, so it survives the 301.
+//
+// WHAT CHANGED IN THE MERGE, and why:
+//   · The "Why not just prompt a generic AI tool?" panel → REMOVED. It showed
+//     one of our own renders under the label "Generic AI tool" with three
+//     invented failings attached to it. The brief's rule is "never invent
+//     testimonials, client names, logos, metrics, or results", and a fabricated
+//     picture of a competitor's output is an invented result even when the alt
+//     text admits it is a simulation. The same construct came off the homepage
+//     for the same reason. The argument survives as prose about what we
+//     actually do, and /compare is the page that owns the tool comparison
+//     (§H·5 keeps that page's AI section alive precisely so this one does not
+//     have to fake it).
+//   · "A one-time design fee, then the normal visual price forever" → the real
+//     numbers, read from pricing.js: setup, and the credit that returns it.
+//     A page that says "a fee" without saying which fee is asking to be
+//     distrusted by a brand that is about to spend four figures.
+//   · Every CTA pointed at /order-custom. That page is deleted; the CTAs point
+//     at /start, and /order-custom is a 301 to it in public/_redirects.
+//   · /models' `#standard` roster is here in full. Its per-model links used to
+//     be /order?model=NAME query strings into a funnel that no longer exists;
+//     the roster is now a library you look at, and the order happens at /start.
+//     Nothing carries a model through a URL any more — /start's pipeline reads
+//     no query state at all, by design (src/scripts/pipeline.js).
+//   · The roster thumbnails were 60px squares in a card. They are portraits of
+//     people and they are the actual product, so they are shown at a size you
+//     can judge a face at. Square, never circular (§D).
+//
+// EVERY EURO ON THIS PAGE IS READ FROM src/data/pricing.js. Nothing is typed.
+import {
+  PACKAGES, AMOUNT, euro, BRAND_MODEL_CREDIT_DROPS,
+  FULL_DROP_MIN, FULL_DROP_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+// Keyed lookup rather than .find(): .find() is typed `T | undefined`, and this
+// template dereferences .price/.unit/.includes directly. Same pattern as
+// PricingPage. If the id ever disappears from pricing.js this throws at build
+// time instead of rendering an empty price band — which is the failure mode
+// you want on a page whose whole job is a number.
+const byId = Object.fromEntries(PACKAGES[lang].map((p) => [p.id, p]));
+const brandModel = byId['brand-model'];
+
+// The standard library. Names and traits are ours, not clients' — the "never
+// invent client names" rule is about attribution, and nothing here is
+// attributed to anyone. The photos are our own output.
+//
+// Traits are indices into COPY[lang].traits so the roster is translated
+// without duplicating the ten names, and so a trait can never exist in one
+// language and not the other.
+const ROSTER = [
+  { name: 'Aaron',  photo: '/img/model-aaron.webp',  traits: ['warm', 'approachable'] },
+  { name: 'Ava',    photo: '/img/model-ava.webp',    traits: ['editorial', 'elegant'] },
+  { name: 'Elias',  photo: '/img/model-elias.webp',  traits: ['refined', 'classic'] },
+  { name: 'Ryan',   photo: '/img/model-ryan.webp',   traits: ['sporty', 'energetic'] },
+  { name: 'Dana',   photo: '/img/model-dana.webp',   traits: ['confident', 'modern'] },
+  { name: 'Lisa',   photo: '/img/model-lisa.webp',   traits: ['natural', 'approachable'] },
+  { name: 'Maegan', photo: '/img/model-maegan.webp', traits: ['bold', 'statement'] },
+  { name: 'Rae',    photo: '/img/model-rae.webp',    traits: ['soft', 'understated'] },
+  { name: 'Fabi',   photo: '/img/model-fabi.webp',   traits: ['clean', 'contemporary'] },
+  { name: 'Seme',   photo: '/img/model-seme.webp',   traits: ['sharp', 'editorial'] },
+];
+
+// Our own finished work. Not before/afters, not client results — output.
+const EXAMPLES = [
+  '/img/custom-models-01.webp',
+  '/img/custom-models-02.webp',
+  '/img/custom-models-04.webp',
+  '/img/custom-models-05.webp',
+  '/img/model-raw-01.webp',
+  '/img/model-raw-02.webp',
+];
+
+// ── Copy ───────────────────────────────────────────────────────────────────
+// Prose only. Every euro, every count, every promise about the drop comes out
+// of pricing.js in both languages.
+//
+// No `as const`: COPY[lang] on a union of two readonly object literals gives
+// readonly tuple unions, and .map() on those is a TS error. See StartPage.
+const COPY = {
+  en: {
+    eyebrow: 'Your Brand Model',
+    h1a: 'One face. Every drop.',
+    h1b: 'Only yours.',
+    lead: 'A model designed once for your brand and booked by nobody else, ever. It carries every product, every drop, this season and next — so your range reads as one line instead of a folder of separate shoots.',
+    ctaPrimary: 'Start a drop',
+    ctaWa: 'Discuss it on WhatsApp',
+    waText: 'Hi%20VISUAILS%2C%20I%27d%20like%20to%20discuss%20a%20brand%20model.',
+    heroAlt: 'A VISUAILS brand model portrait',
+    trust: [
+      ['One-time', 'setup, then it is yours'],
+      ['Exclusive', 'to your brand, permanently'],
+      ['Credited back', 'across your first drops'],
+    ],
+
+    // NOT A MODEL
+    notAH: 'Your model, not <em>a</em> model.',
+    notALead: 'The standard library is shared: a face you like is a face another brand can pick tomorrow. A Brand Model is designed for you alone and never appears anywhere else.',
+    notAAlt: 'A VISUAILS model portrait',
+    props: [
+      ['Built from your brief', 'Age, styling, mood, the things you never want to see.'],
+      ['Exclusive by construction', 'No other brand can order this face. Not a promise — a property of how it is made.'],
+      ['Identical, drop after drop', 'The same person in the same skin, whether it is product four or product two hundred.'],
+      ['Yours to keep', 'Set up once. Every drop after runs at the normal drop price.'],
+    ],
+
+    // COST
+    costH: 'What it costs, and what comes back',
+    costSetupLabel: 'One-time setup',
+    costCreditLabel: 'Back to you',
+    costCreditUnit: `on each of your first ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    costIncludes: 'What the setup covers',
+    costMathH: 'The arithmetic, stated plainly',
+    // No ordinal ("by the fifth drop") anywhere in here: the count is derived
+    // from pricing.js, so a written-out ordinal would go stale the moment the
+    // setup or the credit moves and nobody would notice, because it reads as
+    // prose rather than as a figure.
+    costMath: `${euro(AMOUNT.brandModelCredit, 'en')} comes off each of your first ${BRAND_MODEL_CREDIT_DROPS} drops, so once you have run ${BRAND_MODEL_CREDIT_DROPS} drops the setup has returned in full and the face is still yours. Before that point you are paying for exclusivity, which is the honest way to describe it.`,
+    costFree: `You do not need a Brand Model to order a drop. Every drop already includes a model from the standard library at no extra cost — this is a decision about owning a face, not about getting one.`,
+    costCta: 'See the full price ladder',
+    costSequence: 'The model is designed and locked before your first drop is scheduled, so setup never eats into the reserved window.',
+
+    // WHERE IT FITS
+    fitMeta: '( Where it fits )',
+    fitH: 'One look, across everything you sell.',
+    fitSub: 'The thread that makes a range look like a brand.',
+    fitWhatH: 'What it is',
+    fitWhat: [
+      'A Brand Model is a signature designed once, exclusively for you — a face, a bearing, a way of standing that no other brand shares. Once it is locked, every visual in every drop is made with it, so your catalog and your feed hang together instead of looking assembled from separate sessions.',
+      'This is where visuals stop being photographs and start being brand equity. A consistent face is what turns a scroll-past into recognition: people know your images before they read your name. It works everywhere your brand appears, because being everywhere and being consistent is the whole point.',
+    ],
+    fitWhereH: 'Where it lives',
+    fitWhere: [
+      ['Every channel', 'shop, feed, ads and email, in one look.'],
+      ['Campaigns', 'seasonal stories with a face people already know.'],
+      ['Whole drops', `${FULL_DROP_MIN}–${FULL_DROP_MAX} products that have to feel like one line.`],
+      ['Your identity', 'the visual signature people remember you by.'],
+    ],
+
+    // DIRECTIONS
+    dirH: 'Nine directions, to argue with.',
+    dirLead: 'Illustrative starting points, not a menu. Send us your references and we design two or three real directions against your line.',
+
+    // OUTPUT
+    outH: 'Real output, not a mockup.',
+    outAlt: 'A VISUAILS brand model example',
+
+    // PROCESS
+    procH: 'How a Brand Model comes together',
+
+    // PROVIDE / GET
+    giveH: 'What you send us',
+    give: [
+      ['references', 'A few <strong>references</strong> for the look you are after.'],
+      ['spec', 'The <strong>age, bearing and styling</strong> you want.'],
+      ['range', 'A sense of <strong>the range</strong> the model has to carry.'],
+      ['nevers', 'Your <strong>do’s and don’ts</strong> — especially the don’ts.'],
+    ],
+    getH: 'What you get back',
+    get: [
+      ['locked', 'A <strong>locked model</strong>, exclusive to you, reused at no extra cost.'],
+      ['every', 'The same face in <strong>every visual of every drop</strong>.'],
+      ['current', '<strong>Kept current</strong> as your line and your styling change.'],
+      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'en')} back</strong> on each of your first ${BRAND_MODEL_CREDIT_DROPS} drops.`],
+    ],
+
+    // STANDARD LIBRARY
+    libMeta: '( Or start here )',
+    libH: 'The standard library',
+    libAlt: 'a VISUAILS standard model',
+    libLead: 'Ten models, shared across brands, included in every drop at no extra cost. Pick one, or let us match one to your product and your customer. You can move to a Brand Model later without redoing anything.',
+    libChooseH: 'Let us match one',
+    libChooseBody: 'Tell us the product and the customer when you start a drop, and we pick the model that fits — then keep using it.',
+    libNote: 'Standard models are included in the drop price. There is no per-model fee and no upgrade to unlock one.',
+    traits: {
+      warm: 'Warm', approachable: 'Approachable', editorial: 'Editorial', elegant: 'Elegant',
+      refined: 'Refined', classic: 'Classic', sporty: 'Sporty', energetic: 'Energetic',
+      confident: 'Confident', modern: 'Modern', natural: 'Natural', bold: 'Bold',
+      statement: 'Statement', soft: 'Soft', understated: 'Understated', clean: 'Clean',
+      contemporary: 'Contemporary', sharp: 'Sharp',
+    },
+
+    // WHY NOT A GENERATOR — the honest replacement for the deleted strawman.
+    genH: 'Why not just prompt a generator?',
+    genBody: [
+      'You can, and for a single image you probably should. The thing a prompt cannot give you is the same person twice. Ask any general-purpose generator for the same face across thirty products and you get thirty relatives — near-misses that a customer reads as sloppiness long before they can say why.',
+      'What we sell is not the generation. It is the lock: an identity fixed once, driven by your own product photos, and looked at by a person before anything reaches you. That is the part that survives a catalog.',
+    ],
+    genCta: 'The longer comparison, tools included',
+
+    // CTA
+    ctaH1: 'Design the face of',
+    ctaEm: 'your brand.',
+    ctaStart: 'Start a drop',
+    ctaPricing: 'See pricing',
+    ctaWaShort: 'WhatsApp',
+  },
+
+  nl: {
+    // "Jouw merkmodel", not "Your Brand Model": the NL nav, the NL footer and
+    // the NL pricing package all already call it that. A Dutch visitor who
+    // clicks "Jouw merkmodel" should not land on a page that renames it.
+    eyebrow: 'Jouw merkmodel',
+    h1a: 'Eén gezicht. Elke drop.',
+    h1b: 'Alleen van jou.',
+    lead: 'Een model dat één keer voor jouw merk ontworpen wordt en door niemand anders geboekt kan worden. Het draagt elk product, elke drop, dit seizoen en het volgende — zodat je assortiment als één lijn leest in plaats van als een map losse shoots.',
+    ctaPrimary: 'Start een drop',
+    ctaWa: 'Bespreek het op WhatsApp',
+    waText: 'Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20merkmodel%20bespreken.',
+    heroAlt: 'Een portret van een VISUAILS merkmodel',
+    trust: [
+      ['Eenmalige', 'setup, daarna is het van jou'],
+      ['Exclusief', 'voor jouw merk, permanent'],
+      ['Terugverdiend', 'over je eerste drops'],
+    ],
+
+    notAH: 'Jouw model, niet <em>een</em> model.',
+    notALead: 'De standaardbibliotheek is gedeeld: een gezicht dat jij mooi vindt, kan een ander merk morgen kiezen. Een merkmodel wordt alleen voor jou ontworpen en verschijnt nergens anders.',
+    notAAlt: 'Een VISUAILS-modelportret',
+    props: [
+      ['Gebouwd op jouw briefing', 'Leeftijd, styling, sfeer, en de dingen die je nooit wil zien.'],
+      ['Exclusief van constructie', 'Geen ander merk kan dit gezicht bestellen. Geen belofte — een eigenschap van hoe het gemaakt is.'],
+      ['Identiek, drop na drop', 'Dezelfde persoon in dezelfde huid, of het nu product vier is of product tweehonderd.'],
+      ['Van jou om te houden', 'Één keer opgezet. Elke drop daarna loopt tegen de normale dropprijs.'],
+    ],
+
+    costH: 'Wat het kost, en wat er terugkomt',
+    costSetupLabel: 'Eenmalige setup',
+    costCreditLabel: 'Terug naar jou',
+    costCreditUnit: `op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    costIncludes: 'Wat de setup dekt',
+    costMathH: 'De rekensom, gewoon uitgeschreven',
+    // Geen rangtelwoord ("bij de vijfde drop"): het aantal komt uit pricing.js,
+    // dus een uitgeschreven rangtelwoord veroudert stil zodra de setup of het
+    // krediet verandert.
+    costMath: `${euro(AMOUNT.brandModelCredit, 'nl')} gaat er af bij elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops, dus na ${BRAND_MODEL_CREDIT_DROPS} drops is de setup volledig terugverdiend en is het gezicht nog steeds van jou. Tot dat punt betaal je voor exclusiviteit, en dat is de eerlijke omschrijving.`,
+    costFree: `Je hebt geen merkmodel nodig om een drop te bestellen. Elke drop bevat al een model uit de standaardbibliotheek, zonder extra kosten — dit is een keuze over het bezitten van een gezicht, niet over het krijgen van een gezicht.`,
+    costCta: 'Bekijk de volledige prijsladder',
+    costSequence: 'Het model wordt ontworpen en vastgezet vóórdat je eerste drop ingepland wordt, zodat de setup nooit ten koste gaat van het gereserveerde venster.',
+
+    fitMeta: '( Waar het past )',
+    fitH: 'Eén look, door alles wat je verkoopt.',
+    fitSub: 'De rode draad die van een assortiment een merk maakt.',
+    fitWhatH: 'Wat het is',
+    fitWhat: [
+      'Een merkmodel is een signatuur die één keer ontworpen wordt, exclusief voor jou — een gezicht, een houding, een manier van staan die geen ander merk deelt. Eenmaal vastgezet wordt elke visual in elke drop ermee gemaakt, zodat je catalog en je feed samenhangen in plaats van uit losse sessies samengesteld te lijken.',
+      'Dit is waar visuals ophouden foto’s te zijn en merkwaarde worden. Een consistent gezicht verandert een scroll-voorbij in herkenning: mensen kennen je beelden voordat ze je naam lezen. Het werkt overal waar je merk verschijnt, want overal én consistent zijn is het hele punt.',
+    ],
+    fitWhereH: 'Waar het leeft',
+    fitWhere: [
+      ['Elk kanaal', 'shop, feed, ads en e-mail, in één look.'],
+      ['Campagnes', 'seizoensverhalen met een gezicht dat men al kent.'],
+      ['Hele drops', `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten die als één lijn moeten voelen.`],
+      ['Je identiteit', 'de visuele signatuur waaraan mensen je herkennen.'],
+    ],
+
+    dirH: 'Negen richtingen, om tegenin te gaan.',
+    dirLead: 'Illustratieve startpunten, geen menu. Stuur ons je referenties en we ontwerpen twee of drie echte richtingen tegen jouw lijn aan.',
+
+    outH: 'Echte output, geen mockup.',
+    outAlt: 'Een voorbeeld van een VISUAILS merkmodel',
+
+    procH: 'Hoe een merkmodel tot stand komt',
+
+    giveH: 'Wat jij ons stuurt',
+    give: [
+      ['references', 'Een paar <strong>referenties</strong> voor de look die je zoekt.'],
+      ['spec', 'De <strong>leeftijd, houding en styling</strong> die je wilt.'],
+      ['range', 'Een idee van <strong>het assortiment</strong> dat het model moet dragen.'],
+      ['nevers', 'Jouw <strong>do’s en don’ts</strong> — vooral de don’ts.'],
+    ],
+    getH: 'Wat je terugkrijgt',
+    get: [
+      ['locked', 'Een <strong>vastgezet model</strong>, exclusief van jou, hergebruikt zonder extra kosten.'],
+      ['every', 'Hetzelfde gezicht in <strong>elke visual van elke drop</strong>.'],
+      ['current', '<strong>Bijgehouden</strong> terwijl je lijn en je styling veranderen.'],
+      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'nl')} terug</strong> op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops.`],
+    ],
+
+    libMeta: '( Of begin hier )',
+    libH: 'De standaardbibliotheek',
+    libAlt: 'een VISUAILS-standaardmodel',
+    libLead: 'Tien modellen, gedeeld over merken, inbegrepen in elke drop zonder extra kosten. Kies er een, of laat ons er een matchen op jouw product en jouw klant. Je kunt later naar een merkmodel zonder iets over te doen.',
+    libChooseH: 'Laat ons matchen',
+    libChooseBody: 'Vertel ons het product en de klant wanneer je een drop start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
+    libNote: 'Standaardmodellen zitten in de dropprijs. Er is geen kost per model en geen upgrade om er een vrij te spelen.',
+    traits: {
+      warm: 'Warm', approachable: 'Toegankelijk', editorial: 'Editorial', elegant: 'Elegant',
+      refined: 'Verfijnd', classic: 'Klassiek', sporty: 'Sportief', energetic: 'Energiek',
+      confident: 'Zelfverzekerd', modern: 'Modern', natural: 'Natuurlijk', bold: 'Gedurfd',
+      statement: 'Statement', soft: 'Zacht', understated: 'Ingetogen', clean: 'Clean',
+      contemporary: 'Eigentijds', sharp: 'Scherp',
+    },
+
+    genH: 'Waarom niet gewoon een generator prompten?',
+    genBody: [
+      'Dat kan, en voor één beeld kun je dat waarschijnlijk beter doen. Wat een prompt je niet geeft, is twee keer dezelfde persoon. Vraag een algemene generator om hetzelfde gezicht over dertig producten en je krijgt dertig familieleden — bijna-treffers die een klant als slordigheid leest, lang voordat hij kan zeggen waarom.',
+      'Wat wij verkopen is niet de generatie. Het is de vergrendeling: een identiteit die één keer wordt vastgezet, gestuurd door je eigen productfoto’s, en bekeken door een mens voordat er iets naar je toe gaat. Dat is het deel dat een catalog overleeft.',
+    ],
+    genCta: 'De langere vergelijking, tools inbegrepen',
+
+    ctaH1: 'Ontwerp het gezicht van',
+    ctaEm: 'jouw merk.',
+    ctaStart: 'Start een drop',
+    ctaPricing: 'Bekijk prijzen',
+    ctaWaShort: 'WhatsApp',
+  },
+};
+
+// The nine directions. Kept out of COPY because the initial is shared across
+// languages and only the body is translated — duplicating the letters would be
+// two places for one fact.
+const DIRECTIONS = {
+  en: [
+    ['E', 'Editorial minimal', 'Restrained studio light, quiet posture, neutral wardrobe.'],
+    ['S', 'Streetwear energy', 'Direct gaze, bold stance, contrast light — for drops with noise.'],
+    ['Q', 'Quiet luxury', 'Soft neutrals, unhurried posture, refined detail.'],
+    ['W', 'Warm and approachable', 'Open expression, natural light, everyday ease.'],
+    ['H', 'High-fashion editorial', 'Sculptural pose, hard shadow, magazine intensity.'],
+    ['R', 'Retro Americana', 'Warm film tones, nostalgic styling.'],
+    ['C', 'Coastal and sun-worn', 'Sun-bleached warmth, golden-hour ease.'],
+    ['M', 'Monochrome studio', 'Single-tone wardrobe, graphic shadow.'],
+    ['B', 'Bold colour-block', 'Saturated wardrobe, unmistakable at thumbnail size.'],
+  ],
+  nl: [
+    ['E', 'Editorial minimal', 'Ingetogen studiolicht, rustige houding, neutrale garderobe.'],
+    ['S', 'Streetwear energy', 'Directe blik, gedurfde houding, contrastrijk licht — voor drops met lawaai.'],
+    ['Q', 'Quiet luxury', 'Zachte neutrale tinten, ontspannen houding, verfijnd detail.'],
+    ['W', 'Warm en toegankelijk', 'Open uitdrukking, natuurlijk licht, alledaags gemak.'],
+    ['H', 'High-fashion editorial', 'Sculpturale pose, harde schaduw, magazine-intensiteit.'],
+    ['R', 'Retro Americana', 'Warme filmtinten, nostalgische styling.'],
+    ['C', 'Coastal en sun-worn', 'Zonverbleekte warmte, gouden-uurgemak.'],
+    ['M', 'Monochrome studio', 'Garderobe in één tint, grafische schaduw.'],
+    ['B', 'Bold colour-block', 'Verzadigde garderobe, onmiskenbaar op thumbnailformaat.'],
+  ],
+};
+
+// The five steps. Numbers are positional, so they are generated rather than
+// typed: a hand-typed '03' that survives a deleted step is a classic stale
+// artefact.
+const STEPS = {
+  en: [
+    ['Intake', 'You send references and a brief on the look you want.'],
+    ['Directions', 'We design two or three directions for you to react to.'],
+    ['You choose', 'Pick the face that fits, with one round of refinement.'],
+    ['Locked', 'The model is fixed so it cannot drift between drops.'],
+    ['In every drop', 'From then on your model carries every visual we make.'],
+  ],
+  nl: [
+    ['Intake', 'Je stuurt referenties en een briefing over de look die je wilt.'],
+    ['Richtingen', 'We ontwerpen twee of drie richtingen waarop je kunt reageren.'],
+    ['Jij kiest', 'Kies het gezicht dat past, met één ronde verfijning.'],
+    ['Vastgezet', 'Het model wordt vastgelegd zodat het niet tussen drops kan afdrijven.'],
+    ['In elke drop', 'Vanaf dan draagt jouw model elke visual die we maken.'],
+  ],
+};
+
+const c = COPY[lang];
+const directions = DIRECTIONS[lang];
+const steps = STEPS[lang];
+const wa = `https://wa.me/31625436130?text=${c.waText}`;
+---
+
+<!-- HERO -->
+<section class="page-hero"><div class="container two-col bm-hero">
+  <div>
+    <p class="eyebrow-page">{c.eyebrow}</p>
+    <h1 class="display bm-h1">{c.h1a}<br /><em>{c.h1b}</em></h1>
+    <p class="lead bm-lead">{c.lead}</p>
+    <div class="flex bm-actions">
+      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.ctaWa}
+      </a>
+    </div>
+    <div class="trust-row bm-trust">
+      {c.trust.map((t) => (
+        <span class="trust-item"><strong>{t[0]}</strong> {t[1]}</span>
+      ))}
+    </div>
+  </div>
+  <div class="photo-split-media"><img src="/img/custom-models-03.webp" alt={c.heroAlt} width="900" height="1125" fetchpriority="high" /></div>
+</div></section>
+
+<!-- YOUR MODEL, NOT A MODEL -->
+<section class="section-tight"><div class="container">
+  <div class="photo-split reverse reveal pending">
+    <div class="photo-split-media"><img src="/img/model-03.webp" alt={c.notAAlt} loading="lazy" width="900" height="1125" /></div>
+    <div>
+      <h2 set:html={c.notAH} />
+      <p class="lead bm-lead">{c.notALead}</p>
+    </div>
+  </div>
+
+  <div class="arrow-rows reveal-group bm-props">
+    {c.props.map((p) => (
+      <div class="arow reveal pending"><h3>{p[0]}</h3><p>{p[1]}</p></div>
+    ))}
+  </div>
+</div></section>
+
+<!-- WHAT IT COSTS.
+     The number is stated before the argument for it, not after. A brand about
+     to spend four figures on exclusivity finds the price eventually; making
+     them hunt for it is the only thing that turns it into a shock. -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2>{c.costH}</h2></div>
+
+  <div class="bmcost reveal pending">
+    <div class="bmcost-figures">
+      <div class="bmcost-fig">
+        <span class="bmcost-key">{c.costSetupLabel}</span>
+        <span class="bmcost-amount">{brandModel.price}</span>
+        <span class="bmcost-unit">{brandModel.unit}</span>
+      </div>
+      <div class="bmcost-rule" aria-hidden="true"></div>
+      <div class="bmcost-fig">
+        <span class="bmcost-key">{c.costCreditLabel}</span>
+        <span class="bmcost-amount">&minus;{euro(AMOUNT.brandModelCredit, lang)}</span>
+        <span class="bmcost-unit">{c.costCreditUnit}</span>
+      </div>
+    </div>
+
+    <div class="bmcost-body">
+      <span class="bmcost-inc-h">{c.costIncludes}</span>
+      <ul class="checklist bmcost-inc">
+        {brandModel.includes.map((f) => (
+          <li><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+        ))}
+      </ul>
+      <p class="bmcost-seq">{c.costSequence}</p>
+    </div>
+  </div>
+
+  <div class="bmcost-notes reveal-group">
+    <div class="bmcost-note reveal pending">
+      <h3>{c.costMathH}</h3>
+      <p>{c.costMath}</p>
+    </div>
+    <div class="bmcost-note reveal pending">
+      <p class="bmcost-free">{c.costFree}</p>
+      <a href={lp('/pricing')} class="link-arrow">{c.costCta}
+        <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </div>
+</div></section>
+
+<!-- WHERE IT FITS -->
+<section class="section-tight"><div class="container">
+  <div class="ed-head">
+    <span class="ed-meta">{c.fitMeta}</span>
+    <div>
+      <h2>{c.fitH}</h2>
+      <p class="ed-sub">{c.fitSub}</p>
+    </div>
+  </div>
+  <div class="svc-explain">
+    <div class="svc-explain-main">
+      <h3>{c.fitWhatH}</h3>
+      {c.fitWhat.map((p) => <p>{p}</p>)}
+    </div>
+    <aside class="svc-explain-side">
+      <h3>{c.fitWhereH}</h3>
+      <ul class="svc-where-list">
+        {c.fitWhere.map((w) => (
+          <li><strong>{w[0]}</strong> — {w[1]}</li>
+        ))}
+      </ul>
+    </aside>
+  </div>
+</div></section>
+
+<!-- DIRECTIONS -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2>{c.dirH}</h2><p>{c.dirLead}</p></div>
+  <div class="grid bm-dirs reveal-group">
+    {directions.map((d) => (
+      <div class="card bm-dir reveal pending">
+        <div class="monogram" aria-hidden="true">{d[0]}</div>
+        <h3>{d[1]}</h3>
+        <p>{d[2]}</p>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- REAL OUTPUT -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2>{c.outH}</h2></div>
+  <div class="grid grid-3 reveal-group">
+    {EXAMPLES.map((photo, i) => (
+      <div class="reveal pending">
+        <div class="photo-band square"><img src={photo} alt={`${c.outAlt} ${i + 1}`} loading="lazy" width="900" height="900" /></div>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- HOW IT COMES TOGETHER -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2>{c.procH}</h2></div>
+  <div class="steps reveal-group">
+    {steps.map((s, i) => (
+      <div class="step reveal pending">
+        <span class="step-n">{String(i + 1).padStart(2, '0')}</span>
+        <h3>{s[0]}</h3>
+        <p>{s[1]}</p>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- WHAT YOU SEND / WHAT YOU GET -->
+<section class="section-tight"><div class="container two-col bm-exchange">
+  <div class="card reveal pending">
+    <h3>{c.giveH}</h3>
+    <ul class="checklist bm-exchange-list">
+      {c.give.map((g) => (
+        <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
+      ))}
+    </ul>
+  </div>
+  <div class="card bm-get reveal pending">
+    <h3>{c.getH}</h3>
+    <ul class="checklist bm-exchange-list">
+      {c.get.map((g) => (
+        <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
+      ))}
+    </ul>
+  </div>
+</div></section>
+
+<!-- THE STANDARD LIBRARY — folded in from /models (AUDIT-TASK-0.md §H·8).
+     It sits below the Brand Model argument rather than above it because this
+     page's job is the exclusive face; the library is the alternative you
+     already have, and saying so plainly is what makes the Brand Model an
+     honest upsell rather than a gate. -->
+<section class="section-tight" id="standard"><div class="container">
+  <div class="ed-head">
+    <span class="ed-meta">{c.libMeta}</span>
+    <div>
+      <h2>{c.libH}</h2>
+      <p class="ed-sub">{c.libLead}</p>
+    </div>
+  </div>
+
+  <div class="bm-roster reveal-group">
+    {ROSTER.map((m) => (
+      <figure class="bm-model reveal pending">
+        <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" width="600" height="750" />
+        <figcaption>
+          <span class="bm-model-name">{m.name}</span>
+          <span class="bm-model-traits">{m.traits.map((t) => c.traits[t]).join(' · ')}</span>
+        </figcaption>
+      </figure>
+    ))}
+    <div class="bm-model bm-model-choose reveal pending">
+      <div class="bm-choose-inner">
+        <h3>{c.libChooseH}</h3>
+        <p>{c.libChooseBody}</p>
+        <a href={lp('/start')} class="link-arrow">{c.ctaPrimary}
+          <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <p class="bm-lib-note">{c.libNote}</p>
+</div></section>
+
+<!-- WHY NOT A GENERATOR.
+     This replaces the two-panel "Generic AI tool vs VISUAILS" comparison. That
+     block put one of our own renders under a competitor's label and attached
+     three failings to it that no one measured — an invented result under the
+     brief's own rule, and unnecessary: the argument is stronger without a
+     strawman to knock over. /compare carries the tool comparison (§H·5). -->
+<section class="section-tight"><div class="container narrow">
+  <div class="section-head"><h2>{c.genH}</h2></div>
+  <div class="bm-gen reveal pending">
+    {c.genBody.map((p) => <p>{p}</p>)}
+    <a href={lp('/compare#ai-tools')} class="link-arrow">{c.genCta}
+      <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</div></section>
+
+<!-- CLOSING -->
+<section class="section-tight"><div class="container">
+  <div class="cta-band reveal pending">
+    <h2 class="display bm-cta-h">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
+    <div class="flex bm-cta-actions">
+      <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
+      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPricing}</a>
+      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.ctaWaShort}
+      </a>
+    </div>
+  </div>
+</div></section>
+
+<style>
+  /* Hard edges, hairlines, two ramps. No radius anywhere on this page — the
+     roster is the one place a radius would have crept back in, because round
+     avatars are the web's default for faces. Squares read as plates in a
+     lookbook, which is what they are. */
+  .container.narrow { max-width: 760px; }
+
+  .bm-hero { align-items: center; }
+  .bm-h1 { font-size: clamp(2.4rem, 5vw, 4rem); max-width: 16ch; }
+  .bm-lead { margin-top: 1.2rem; }
+  .bm-actions { margin-top: 1.8rem; }
+  .bm-trust { margin-top: 2.4rem; }
+  .bm-props { grid-template-columns: repeat(2, 1fr); margin-top: clamp(2.5rem, 5vw, 4rem); }
+  @media (max-width: 720px) { .bm-props { grid-template-columns: 1fr; } }
+
+  /* COST — the figures band. Two numbers, a hairline between them, then the
+     inclusions. The credit is shown as a negative so the pair reads as one
+     sum rather than as two unrelated prices. */
+  .bmcost { display: grid; grid-template-columns: minmax(280px, 26rem) 1fr; border: 1px solid var(--line-strong); }
+  .bmcost-figures { display: grid; grid-template-rows: 1fr auto 1fr; border-right: 1px solid var(--line-strong); }
+  .bmcost-fig { display: flex; flex-direction: column; gap: .35rem; padding: clamp(1.4rem, 3vw, 2.2rem); }
+  .bmcost-rule { height: 1px; background: var(--line-strong); }
+  .bmcost-key { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .bmcost-amount { font-family: var(--font-display); font-weight: 900; font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1; letter-spacing: -0.03em; color: var(--ink); }
+  .bmcost-unit { font-size: .92rem; color: var(--ink-3); }
+  .bmcost-body { padding: clamp(1.4rem, 3vw, 2.2rem); display: flex; flex-direction: column; gap: 1rem; }
+  .bmcost-inc-h { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .bmcost-inc { margin: 0; }
+  .bmcost-seq { font-size: .9rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; margin: auto 0 0; }
+  @media (max-width: 860px) {
+    .bmcost { grid-template-columns: 1fr; }
+    .bmcost-figures { grid-template-rows: none; border-right: 0; border-bottom: 1px solid var(--line-strong); }
+  }
+
+  .bmcost-notes { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(1.2rem, 3vw, 2.4rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  .bmcost-note h3 { font-size: 1.05rem; margin: 0 0 .5rem; }
+  .bmcost-note p { color: var(--ink-2); font-size: .96rem; line-height: 1.65; margin: 0; }
+  .bmcost-free { color: var(--ink-3); }
+  .bmcost-note .link-arrow { margin-top: .9rem; }
+  @media (max-width: 860px) { .bmcost-notes { grid-template-columns: 1fr; } }
+
+  /* DIRECTIONS */
+  .bm-dirs { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .bm-dir { display: flex; flex-direction: column; gap: .9rem; }
+  .bm-dir h3 { font-size: 1.05rem; margin: 0; }
+  .bm-dir p { font-size: .9rem; color: var(--ink-3); margin: 0; }
+  .monogram { width: 56px; height: 56px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 1.3rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line-strong); }
+
+  /* EXCHANGE */
+  .bm-exchange { align-items: start; }
+  .bm-exchange-list { margin-top: 1.2rem; }
+  .bm-get { border-color: var(--line-strong); }
+
+  /* THE ROSTER — square plates, name and read below the frame. Ten faces at a
+     size you can actually judge, not ten 60px thumbnails. */
+  .bm-roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: clamp(.8rem, 1.8vw, 1.4rem); margin-top: clamp(1.8rem, 4vw, 2.8rem); }
+  .bm-model { margin: 0; border: 1px solid var(--line); }
+  .bm-model img { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+  .bm-model figcaption { display: flex; flex-direction: column; gap: .25rem; padding: .85rem 1rem 1rem; border-top: 1px solid var(--line); }
+  .bm-model-name { font-family: var(--font-display); font-weight: 900; font-size: 1rem; letter-spacing: -0.01em; color: var(--ink); }
+  .bm-model-traits { font-size: .78rem; color: var(--ink-3); }
+  .bm-model-choose { border-color: var(--line-strong); display: grid; }
+  .bm-choose-inner { display: flex; flex-direction: column; gap: .55rem; padding: 1.2rem 1rem; justify-content: center; }
+  .bm-choose-inner h3 { font-size: 1rem; margin: 0; }
+  .bm-choose-inner p { font-size: .85rem; color: var(--ink-3); margin: 0; }
+  .bm-lib-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; }
+
+  /* THE GENERATOR ANSWER — prose, deliberately. The block it replaced was two
+     image panels; the whole point of removing it was that the argument does
+     not need a picture of a strawman. */
+  .bm-gen p { color: var(--ink-2); font-size: 1.02rem; line-height: 1.7; margin: 0 0 1rem; }
+  .bm-gen p:last-of-type { margin-bottom: 1.2rem; }
+
+  .bm-cta-h { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+  .bm-cta-actions { justify-content: center; margin-top: 2rem; }
+</style>

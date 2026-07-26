@@ -1,24 +1,47 @@
 ---
 // VISUAILS — thank-you / confirmation page. Ported from the SvelteKit
-// thank-you page (itself ported from static /thank-you.html). Every
-// order and sample-request form on the site lands here (order-catalog,
-// order-lifestyle, order-video, test-sample) — this page itself doesn't
-// read the query string, matching the static source, which also just
-// showed a fixed confirmation regardless of what was submitted. No
-// Astro.url.searchParams logic is needed as a result.
+// thank-you page (itself ported from static /thank-you.html).
+//
+// Every form on the site POSTs to /api/order, and /api/order redirects the
+// no-JS path here on success. The forms that land here today are /start's
+// pipeline, /test-sample, /contact and the homepage lead form. Three of the
+// four named in the original version of this comment — order-catalog,
+// order-lifestyle, order-video — were deleted in section 10 and now 301 to
+// /start (see public/_redirects).
+//
+// This page reads no query string of its own. The one parameter /api/order
+// ever appends is `ref`, and interactions.js reads that client-side to fill
+// #ty-summary. Nothing here needs Astro.url.searchParams.
 import Layout from '../../layouts/Layout.astro';
+import { TIERS, turnaround } from '../../data/pricing.js';
+
+// Elk formulier op de site komt hier uit en het zijn allemaal losse-product-
+// bestellingen, dus de doorlooptijd op deze pagina is die van Tier 0. Er stond
+// op drie plekken "ongeveer 24 uur" — meta-omschrijving, hero-lead en de
+// doorlooptijdkaart — geen daarvan goedgekeurd door de capaciteitspoort. De
+// hero noemt nu helemaal geen duur meer; één kaart noemt hem één keer, afgeleid.
+// De wachtrijregel staat er bewust bij: stap 13 wil dat verschil zichtbaar.
+const T0 = TIERS.unattended;
+const TIMING = turnaround('unattended', 'nl');
+
+const description =
+  `Je aanvraag is ontvangen. We bevestigen per e-mail of WhatsApp, en je ` +
+  `visuals volgen uit de standaard wachtrij — ${TIMING.toLowerCase()}.`;
 ---
 
 <Layout
   title="Bedankt — VISUAILS"
-  description="Je aanvraag is ontvangen. We nemen binnen ongeveer 24 uur contact met je op, sneller via WhatsApp."
+  description={description}
+  noindex
 >
   <section class="page-hero"><div class="container" style="max-width:720px;text-align:center;margin-inline:auto">
     <span class="eyebrow-page">Aanvraag ontvangen</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Bedankt — we hebben je aanvraag ontvangen.</h1>
-    <p class="lead" style="margin:1.2rem auto 0">We nemen binnen ongeveer 24 uur contact met je op — meestal sneller via WhatsApp.</p>
-    <!-- Filled client-side from the submitted query string (initThankYou in
-         interactions.js). Hidden automatically when there's nothing to show. -->
+    <p class="lead" style="margin:1.2rem auto 0">We bevestigen de details per e-mail — meestal sneller via WhatsApp.</p>
+    <!-- Filled client-side with the order reference /api/order redirected here
+         with (initThankYou in interactions.js). Ships hidden and stays hidden
+         unless there is a valid reference to show — a visitor who reaches this
+         page any other way simply doesn't get a summary box. -->
     <div class="card ty-summary" id="ty-summary" style="display:none;text-align:left;margin:2rem auto 0;max-width:520px"></div>
     <div class="source-ask" data-source-ask>
       <span class="source-q">Nog één ding — hoe kwam je bij ons terecht?</span>
@@ -42,7 +65,7 @@ import Layout from '../../layouts/Layout.astro';
   <section class="section-tight"><div class="container">
     <div class="grid grid-3 reveal-group">
       <div class="card reveal pending"><h4>Wat er nu gebeurt</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">We bekijken je briefing, maken je visuals klaar, en een persoon controleert elk resultaat met de hand voordat het je bereikt.</p></div>
-      <div class="card reveal pending"><h4>Gebruikelijke doorlooptijd</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Ongeveer 24 uur van briefing tot downloadlink — iets langer voor een gloednieuwe custom stijl.</p></div>
+      <div class="card reveal pending"><h4>Gebruikelijke doorlooptijd</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} van een complete briefing tot je downloadlink. {T0.queue.nl}; een gloednieuwe custom stijl kan iets langer duren.</p></div>
       <div class="card reveal pending"><h4>Wil je nog iets toevoegen?</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reageer op ons bericht op WhatsApp of mail <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> met eventuele extra details of referenties.</p></div>
     </div>
     <div class="card reveal pending ty-upsell">
@@ -60,19 +83,22 @@ import Layout from '../../layouts/Layout.astro';
 
 <style>
   .ty-summary h4 { font-size: 1rem; color: var(--ink); }
-  .ty-dl { display: flex; flex-direction: column; gap: 0; margin: 0; }
-  .ty-row { display: flex; justify-content: space-between; gap: 1.2rem; padding: .7rem 0; box-shadow: inset 0 -1px 0 var(--line); }
-  .ty-row:last-child { box-shadow: none; }
-  .ty-row dt { color: var(--ink-3); font-size: .88rem; flex: 0 0 auto; }
-  .ty-row dd { color: var(--ink); font-size: .92rem; font-weight: 500; margin: 0; text-align: right; word-break: break-word; }
-  .ty-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line-strong); vertical-align: middle; margin: 0 .35rem 0 .1rem; }
-  .ty-hex { color: var(--ink-3); font-size: .82rem; font-weight: 400; letter-spacing: .02em; }
+  /* .ty-dl / .ty-row / .ty-swatch / .ty-hex were removed in section 10. They
+     styled a definition list of the submitted answers that initThankYou() built
+     by reading the form fields back out of the query string — which only worked
+     while the order forms were GET forms. Every form on the site POSTs to
+     /api/order now, and the one parameter it puts on this URL is `ref`, so the
+     box holds a reference and two lines of prose. Nothing here emits a <dl>. */
   .source-ask { margin: 1.8rem auto 0; max-width: 520px; }
   .source-q { display: block; font-size: .9rem; color: var(--ink-3); margin-bottom: .7rem; }
   .source-btns { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
-  .source-btn { padding: .5rem 1rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: none; color: var(--ink-2); font-size: .88rem; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: border-color .2s var(--ease), background .2s var(--ease), color .2s var(--ease); }
+  .source-btn { padding: .5rem 1rem; border: 1px solid var(--line-strong); background: none; color: var(--ink-2); font-size: .88rem; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: border-color .2s var(--ease), background .2s var(--ease), color .2s var(--ease); }
   .source-btn:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
-  .source-done { font-size: .95rem; color: var(--success, #4AD07F); font-weight: 500; margin: 0; }
+  /* This confirmed a "how did you hear about us?" answer in a green that came
+     from the deleted --success token. There is no success green in the system,
+     and a one-line acknowledgement does not need one: the state change from a
+     row of buttons to a single settled line is already the feedback. */
+  .source-done { font-size: .95rem; color: var(--ink); font-weight: 600; margin: 0; }
   .ty-upsell { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.2rem; border-color: var(--accent-line); }
   .ty-upsell .btn { flex: 0 0 auto; }
   @media (max-width: 560px) { .ty-upsell .btn { width: 100%; } }

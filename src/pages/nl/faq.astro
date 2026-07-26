@@ -1,139 +1,17 @@
 ---
-// VISUAILS — FAQ page. Ported from
-// /tmp/visuails-rebuild/src/routes/faq/+page.svelte. Header/footer/nav live
-// in Layout.astro; this file is page content only.
-//
-// The accordion is built with native <details>/<summary> + page-scoped CSS
-// (matches the source, which deliberately avoided a hand-faked shadcn
-// component) — fully keyboard/screen-reader accessible out of the box.
+// VISUAILS — /nl/faq (Nederlands). De pagina-inhoud staat in FaqPage.astro,
+// zodat /faq en /nl/faq niet uit elkaar kunnen lopen; alleen de meta verschilt
+// hier.
 import Layout from '../../layouts/Layout.astro';
+import FaqPage from '../../components/FaqPage.astro';
+import { AMOUNT, euro, FULL_DROP_MIN, FULL_DROP_MAX } from '../../data/pricing.js';
 
-const groups = [
-  {
-    title: 'Aan de slag',
-    items: [
-      { q: 'Wat is VISUAILS?', a: 'VISUAILS maakt van één productfoto catalogus-, lifestyle- en videovisuals van studiokwaliteit. We gebruiken AI voor snelheid en schaal, en een echt persoon beoordeelt elke afbeelding voordat die bij jou aankomt.' },
-      { q: 'Wat heb ik nodig om te beginnen?', a: "Slechts één duidelijke productfoto of een screenshot. Een korte notitie over de look die je wilt helpt, maar is niet verplicht — we kunnen een richting voorstellen als je dat liever hebt." },
-      { q: 'Kan ik het eerst uitproberen?', a: "Ja. We bieden een proefvisual aan — één visual voor een kleine verificatie van €0,99 — zodat je de kwaliteit op je eigen product kunt beoordelen voordat je bestelt. Beperkt tot één per bedrijf." },
-    ],
-  },
-  {
-    title: 'Bestellen & stijlen',
-    items: [
-      { q: "Wat is het verschil tussen Catalogus en Lifestyle?", a: 'Catalogusvisuals zijn strakke, consistente productfoto’s — dezelfde belichting, hoek en achtergrond — gemaakt voor webshops en marktplaatsen. Lifestylevisuals plaatsen je product in gestylede, realistische scènes, met optionele modellen.' },
-      { q: 'Kan ik dezelfde stijl of hetzelfde model over bestellingen heen aanhouden?', a: 'Ja. Consistentie is een kernonderdeel van wat we doen — we kunnen dezelfde look, belichting en hetzelfde model over een heel assortiment vasthouden, zodat je catalogus samenhangend blijft, bestelling na bestelling.' },
-      { q: 'Bieden jullie eigen stijlen of modellen aan?', a: 'Ja. Eigen stijlen en modellen worden rechtstreeks via WhatsApp geregeld, zodat we de details goed krijgen voordat we beginnen.' },
-      { q: 'Kan ik via WhatsApp bestellen?', a: "Altijd. Je kunt elke bestelling via WhatsApp plaatsen — stuur je foto en een korte briefing, en wij nemen het vanaf daar over. Vaak is dat de snelste weg." },
-    ],
-  },
-  {
-    title: 'Levering & kwaliteit',
-    items: [
-      { q: 'Hoe snel is de levering?', a: "De meeste bestellingen worden in ongeveer 24 uur geleverd, van briefing tot download. De timing kan variëren met het volume en hoe custom de aanvraag is — we laten het je altijd weten als het anders is." },
-      { q: 'Wordt elke afbeelding echt door een persoon gecontroleerd?', a: "Ja — 100% menselijk beoordeeld. Een persoon selecteert en inspecteert elke visual op nauwkeurigheid, consistentie en artefacten voordat die wordt geleverd. Er gaat niets ongecontroleerd de deur uit." },
-      { q: 'Hoeveel revisies zijn inbegrepen?', a: 'Drie revisierondes zijn standaard inbegrepen. Jouw feedback vormt het eindresultaat, zodat we kunnen bijschaven tot het past.' },
-      { q: 'Welke bestandsformaten en resolutie krijg ik?', a: 'Hoge-resolutiebestanden, klaar voor e-commerce. 2K-resolutie is standaard inbegrepen, met 4K als optie beschikbaar.' },
-    ],
-  },
-  {
-    title: 'Prijzen & betaling',
-    items: [
-      { q: 'Hoeveel kost het?', html: 'Catalogus is €39,99 per product — een volledige set van vier foto’s (voorkant, achterkant, detail en één on-model shot), ongeveer €10 per foto. Lifestyle is €59,99 per product (een carousel van drie foto’s) en standaard Video vanaf €49 (grotere campagnevideo’s worden per project geoffreerd). Bekijk de <a href="/nl/pricing">prijzenpagina</a> voor de volledige uitsplitsing.' },
-      { q: 'Zijn er abonnementen?', a: "Nee. Er is geen abonnement en geen verborgen kosten — je betaalt gewoon voor de visuals die je bestelt." },
-      { q: 'Verwerken jullie btw / kan ik mijn btw-nummer toevoegen?', a: "Ja. Je kunt je btw-nummer toevoegen bij het afrekenen — het is optioneel, en het helpt bij B2B-facturatie binnen de EU." },
-      { q: 'Hoe zit het met volumekortingen?', a: "Volumekortingen zijn beschikbaar voor grotere bestellingen. Stuur ons een kort bericht met wat je nodig hebt en we stellen een offerte samen." },
-    ],
-  },
-  {
-    title: 'Rechten & gebruik',
-    items: [
-      { q: 'Mag ik de visuals commercieel gebruiken?', a: 'Ja. De visuals zijn gemaakt voor commercieel gebruik — je webshop, marktplaatsen, advertenties en socialmediafeeds.' },
-      { q: 'Wie is eigenaar van de resultaten?', a: 'De afgewerkte visuals zijn van jou om voor je bedrijf te gebruiken. Heb je een specifieke licentievraag, vraag het gerust en we bevestigen de details voor jouw geval.' },
-      { q: 'Gebruiken jullie mijn productfoto’s voor iets anders?', a: 'Nee. De foto’s die je stuurt, worden alleen gebruikt om jouw bestelling te produceren — niets anders.' },
-    ],
-  },
-];
+const description =
+  `Wat een drop is, wat die kost (${euro(AMOUNT.fullDrop, 'nl')} voor ` +
+  `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten), hoe de agenda werkt, ` +
+  `wat als iets niet klopt, rechten en betaling — helder beantwoord.`;
 ---
 
-<Layout
-  title="VISUAILS — Veelgestelde vragen"
-  description="Antwoorden over aan de slag gaan, bestellen, levering, prijzen en gebruiksrechten voor de AI-productvisuals van VISUAILS — eerlijk, helder en zonder kleine lettertjes."
->
-  <!-- HERO — real photo beside a short line, not a text wall. -->
-  <section class="page-hero">
-    <div class="container">
-      <div class="photo-split reverse">
-        <div class="photo-split-media">
-          <img src="/img/lifestyle-flash-05.webp" alt="Een VISUAILS-lifestylevisual" loading="lazy" />
-        </div>
-        <div>
-          <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Vragen, <em>beantwoord</em>.</h1>
-          <p class="lead" style="margin-top:1rem">Hoe het werkt, wat het kost, hoe snel het binnenkomt. Nog steeds onzeker? Stuur ons een bericht op WhatsApp.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section class="section-tight">
-    <div class="container faq-narrow">
-      {groups.map((g) => (
-        <>
-          <h2 style="margin-bottom:1.2rem">{g.title}</h2>
-          <div class="faq-stack" style="margin-bottom:2.6rem">
-            {g.items.map((item) => (
-              <details class="acc-item reveal pending">
-                <summary class="acc-q">
-                  <span>{item.q}</span>
-                  <span class="acc-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" class="i" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
-                  </span>
-                </summary>
-                <div class="acc-body-inner">
-                  {item.html ? <p set:html={item.html} /> : <p>{item.a}</p>}
-                </div>
-              </details>
-            ))}
-          </div>
-        </>
-      ))}
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Nog een <em>vraag</em>?</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">Stuur ons een bericht op WhatsApp — we reageren meestal binnen het uur.</p>
-        <div class="flex" style="justify-content:center;margin-top:2rem">
-          <a href="/nl/test-sample" class="btn btn-primary btn-lg">Proefvisual</a>
-          <a href="/nl/contact" class="btn btn-ghost btn-lg">Neem contact op</a>
-          <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20jullie%20dienst." class="btn btn-wa" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>
-            WhatsApp
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
+<Layout title="Veelgestelde vragen — VISUAILS" description={description}>
+  <FaqPage lang="nl" />
 </Layout>
-
-<style>
-  /* FAQ-only: narrower reading column + the accordion look (near-black
-     surface, hairline dividers, coral plus/chevron indicator). Native
-     <details>/<summary>. */
-  .faq-narrow { max-width: 820px; }
-  .faq-stack { display: flex; flex-direction: column; }
-
-  .acc-item { box-shadow: inset 0 -1px 0 var(--line); }
-  .acc-item summary { list-style: none; cursor: pointer; }
-  .acc-item summary::-webkit-details-marker { display: none; }
-  .acc-item summary::marker { content: ''; }
-  .acc-q { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.35rem 0; font-family: var(--font-body); font-size: 1.05rem; font-weight: 600; color: var(--ink); }
-  .acc-q:hover { color: var(--ink); }
-  .acc-icon { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--ink-3); display: grid; place-items: center; transition: transform .4s var(--ease), background .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease); }
-  .acc-item[open] .acc-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: #fff; }
-  .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }
-  .acc-body-inner a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
-</style>

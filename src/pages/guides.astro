@@ -4,19 +4,29 @@
 // land, and gathers the genuinely useful resources in one door. Each card
 // points at the best existing page; the hub itself is the SEO surface.
 import Layout from '../layouts/Layout.astro';
+import { perProduct, TEST_SAMPLE } from '../data/pricing.js';
+
+// The pricing card typed all three per-product figures by hand — including a
+// "video from €49" hedge the repricing had already retired — and the process
+// card promised a finished visual back "in about 24 hours". Both are facts
+// that live in pricing.js; typing them here is how a card outlives a reprice.
+const CAT = perProduct('catalog', 'en');
+const LIFE = perProduct('lifestyle', 'en');
+const VID = perProduct('video', 'en');
+const SAMPLE = TEST_SAMPLE.en;
 
 const guides = [
   { title: 'How to photograph your product with your phone', desc: 'The four angles, the lighting, the background — everything that turns a phone photo into a campaign-ready result. The single most useful thing to read before you order.', href: '/upload-guidelines', tag: 'Checklist' },
-  { title: 'From photo to publish — how it works', desc: 'What actually happens between sending one photo and getting a finished, human-checked visual back in about 24 hours.', href: '/how-it-works', tag: 'Process' },
+  { title: 'From photo to publish — how it works', desc: 'What actually happens between sending one photo and getting a finished, human-checked visual back.', href: '/how-it-works', tag: 'Process' },
   { title: 'AI tools vs a done-for-you studio', desc: 'When a self-serve AI tool is genuinely enough — and where it quietly costs you in redos, off-brand colour and hours.', href: '/compare', tag: 'Compare' },
-  { title: 'What product visuals actually cost', desc: 'Catalog at €39.99 for a four-photo set, lifestyle €59.99, video from €49 — and how that compares to a traditional shoot day.', href: '/pricing', tag: 'Pricing' },
-  { title: 'Questions, answered', desc: 'Payment, revisions, VAT, models, delivery — the practical things brands ask before their first order.', href: '/faq', tag: 'FAQ' },
+  { title: 'What product visuals actually cost', desc: `Catalog at ${CAT.price} for a four-photo set, lifestyle ${LIFE.price}, video ${VID.price} a clip — and how that compares to a traditional shoot day.`, href: '/pricing', tag: 'Pricing' },
+  { title: 'Questions, answered', desc: 'Payment, VAT, models, delivery, what if something is off — the practical things brands ask before their first order.', href: '/faq', tag: 'FAQ' },
 ];
 ---
 
 <Layout
   title="Guides — product photography for clothing brands | VISUAILS"
-  description="Practical guides for clothing and e-commerce brands: how to photograph your product with a phone, how AI visuals compare to a shoot, what product visuals cost, and how VISUAILS works."
+  description="Practical guides for clothing and e-commerce brands: photographing your product with a phone, AI visuals against a shoot, and what product visuals cost."
 >
   <section class="page-hero"><div class="container">
     <p class="eyebrow-page">Guides</p>
@@ -41,8 +51,8 @@ const guides = [
     <div class="cta-band reveal pending">
       <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Ready when you are.</h2>
       <div class="flex" style="justify-content:center;margin-top:2rem">
-        <a href="/test-sample" class="btn btn-primary btn-lg">Try a €0.99 test sample</a>
-        <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
+        <a href="/test-sample" class="btn btn-primary btn-lg">Try a {SAMPLE.price} test sample</a>
+        <a href="/start" class="btn btn-ghost btn-lg">Start an order</a>
       </div>
     </div>
   </div></section>
@@ -50,9 +60,9 @@ const guides = [
 
 <style>
   .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
-  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease), background .25s var(--ease); }
+  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease), background .25s var(--ease); }
   .guide-card:hover { border-color: var(--accent-line); transform: translateY(-3px); background: var(--surface-2); }
-  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); border-radius: var(--r-pill); margin-bottom: 1rem; }
+  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); margin-bottom: 1rem; }
   .guide-title { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.12; color: var(--ink); letter-spacing: -0.02em; }
   .guide-desc { margin-top: .7rem; font-size: .95rem; color: var(--ink-3); line-height: 1.55; }
   .guide-more { margin-top: 1.4rem; display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; font-weight: 600; color: var(--ink); }

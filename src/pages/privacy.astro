@@ -1,9 +1,56 @@
 ---
-// VISUAILS — Privacy Policy. Ported verbatim from the SvelteKit privacy
-// page (itself ported verbatim from static /privacy.html). Legal pages
-// are deliberately plain/scannable, not "designed" — no reveal
-// animations or kickers, per the rebuild brief. Body copy is untouched —
-// only the wrapper markup is adapted to Astro/Layout conventions.
+// VISUAILS — Privacy Policy. Ported from the SvelteKit privacy page (itself
+// ported from static /privacy.html). Legal pages are deliberately
+// plain/scannable, not "designed" — no reveal animations or kickers, per the
+// rebuild brief.
+//
+// §6 is the one section that is no longer the ported copy. AUDIT-TASK-0.md:171:
+// "Retention (90 days) and portal expiry (90 days) are the same number, so the
+// client's gallery dies with their source files. Deliveries should outlive
+// sources." The rewritten §6 states its clocks separately — because a single
+// "as long as it is needed" cannot express a promise a client can hold us to.
+// There are three of them now: source material 90 days, delivered visuals 12
+// months, and the private order link 90 days from order close. The third
+// arrived later, with the portal; the note further down explains why it had to
+// be split out of the second rather than left folded into it. If a fourth ever
+// joins them, the count in §6's own lead-in sentence has to move too — it is
+// prose, not a length, and nothing recomputes it.
+//
+// The tax period keeps its "for as long as Dutch and EU law requires" wording
+// with no year figure. Putting an unverified legal number on a legal page is
+// what the brief's "never invent" rule forbids, and the value of this section
+// is the 90-day/12-month split, not the tax number.
+//
+// AUDIT-TASK-0.md:127 also asks for a portal_token statement here. It used to be
+// missing on purpose — there was no token mechanism to describe, and a clause
+// about a feature that does not exist is worse than no clause. The section-10
+// portal shipped, so §9 now carries it, and every fact in it is checkable
+// against src/lib/token.js and src/lib/portal.js rather than asserted:
+// 256 bits from crypto.getRandomValues (token.js:37, above the brief's 128-bit
+// floor), stored only as a SHA-256 digest, no-referrer + noindex/nofollow/
+// noarchive + no-store on every portal response (portal.js:966-968, :928), and
+// rate-limited lookups (ratelimit.js). Nothing there is aspirational.
+//
+// Writing that clause surfaced a contradiction between this page and the
+// shipped code, so §6's second bullet changed too. It promised that "the link
+// you download them from" stays available for 12 months. It does not: the
+// portal returns 410 Gone once the token's 90 days are up (portal.js:295, and
+// that gate runs before the file is ever served), and the portal's own expiry
+// page has been telling clients 90 days all along (portal.js:145). The brief
+// pins the token at "expiring 90 days after order close", so the token is not
+// the thing to change — the sentence was. The two clocks are now stated
+// separately: we keep the delivered visuals for 12 months, and the self-service
+// link works for 90 days after the order closes. Past that the files still
+// exist and we re-issue a link on request, which is a mechanism that exists
+// (order_tokens.revoked_at + a fresh mintToken, the same path portal.js's
+// "we will send a new one" copy already offers). terms.astro §7 carried the
+// identical wrong sentence and was corrected with this one, in both languages.
+//
+// One honest limit on §9's last bullet: revoking and re-issuing is an operator
+// action, not a button. Nothing in the repo WRITES revoked_at — portal.js only
+// reads it, and the partial unique index on (order_id) WHERE revoked_at IS NULL
+// is what makes the replacement safe when it is run. So the copy says "tell us"
+// rather than describing self-service, which is what we actually do today.
 import Layout from '../layouts/Layout.astro';
 ---
 
@@ -74,7 +121,13 @@ import Layout from '../layouts/Layout.astro';
       <p>We do not sell your personal data, and we do not share it for third-party advertising.</p>
 
       <h2>6. How long we keep your data</h2>
-      <p>We keep your data only as long as it is needed. Order files and correspondence are retained for as long as necessary to deliver your order, handle revisions and provide support. Invoicing and tax records are kept for as long as the law requires. When data is no longer needed, we delete or anonymise it.</p>
+      <p>We keep your data only as long as it is needed. Three of those periods are fixed, because they are the three that affect you directly:</p>
+      <ul>
+        <li><strong>Source material</strong> — the product photos and files you upload are deleted 90 days after your order closes. If you need us to keep them longer, ask us in writing before then and we will agree it with you.</li>
+        <li><strong>Delivered visuals</strong> — we keep your finished visuals for 12 months from delivery, so a delivery outlives the material it was made from. Keep your own copy: after 12 months we cannot guarantee a re-download.</li>
+        <li><strong>Your order link</strong> — the private link you download from works for 90 days after your order closes, then it stops. That is shorter than the 12 months on purpose: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
+      </ul>
+      <p>Correspondence about an order is kept for as long as it is useful for that order and any follow-up. Invoicing and tax records are kept for as long as Dutch and EU law requires. When data is no longer needed, we delete or anonymise it.</p>
 
       <h2>7. Your GDPR rights</h2>
       <p>As a data subject in the EU, you have the right to:</p>
@@ -93,6 +146,14 @@ import Layout from '../layouts/Layout.astro';
 
       <h2>9. Security</h2>
       <p>We use appropriate technical and organisational measures to protect your data, including access controls, encrypted connections and limiting who can access your files. No system is completely secure, but we work to keep your data safe and to respond quickly if anything goes wrong.</p>
+      <p>Your order lives at a private web address we email you. There is no account and no password — the address itself is the key. That means anyone you forward it to can open your files, so treat it the way you would treat a key. Here is exactly how it is protected:</p>
+      <ul>
+        <li><strong>It cannot be guessed.</strong> The address carries 256 bits of randomness from a cryptographic random number generator. It is not a sequence, not your order number, and nothing derived from your details, so there is no next one to count up to.</li>
+        <li><strong>We do not store it.</strong> Our database holds only a one-way SHA-256 fingerprint of the address, never the address itself. It cannot be read back out of our systems — not by us, and not by anyone who obtained a copy of the database.</li>
+        <li><strong>It stays out of other people's records.</strong> Pages at that address ask search engines not to index, follow or archive them, send no referrer to any site you click through to, and are not stored by shared caches.</li>
+        <li><strong>It cannot be attacked by volume.</strong> We rate-limit requests to it, so guessing at scale fails before it starts.</li>
+        <li><strong>It ends, and it can be replaced.</strong> The address stops working 90 days after your order closes (see §6). If it ever goes somewhere it should not have, tell us: we retire that address and issue you a new one, and the old one stops working immediately.</li>
+      </ul>
 
       <h2>10. How to contact us</h2>
       <p>If you have any questions about this policy or how we handle your data, contact us at <a href="mailto:hello@visuails.com">hello@visuails.com</a> or via WhatsApp on <a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a>. We aim to respond promptly.</p>
@@ -127,6 +188,6 @@ import Layout from '../layouts/Layout.astro';
   .legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
   .legal ul li { list-style: disc; }
   .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
-  .legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line); border-left: 3px solid var(--accent-line); border-radius: var(--r-sm); font-size: 0.86rem; color: var(--ink-3); }
+  .legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
   .legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
 </style>

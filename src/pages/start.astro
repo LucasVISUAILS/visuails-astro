@@ -1,0 +1,13 @@
+---
+// VISUAILS — /start (English). The page body lives in StartPage.astro so that
+// /start and /nl/start cannot drift apart; only the meta differs here.
+import Layout from '../layouts/Layout.astro';
+import StartPage from '../components/StartPage.astro';
+---
+
+<Layout
+  title="Start — VISUAILS"
+  description="Two ways to work with VISUAILS: run a whole drop with a reserved window, or order individual products from the standard queue. Same pipeline either way."
+>
+  <StartPage lang="en" />
+</Layout>

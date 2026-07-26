@@ -1,0 +1,13 @@
+---
+// VISUAILS — /nl/start (Nederlands). De pagina-inhoud staat in
+// StartPage.astro, zodat /start en /nl/start niet uit elkaar kunnen lopen.
+import Layout from '../../layouts/Layout.astro';
+import StartPage from '../../components/StartPage.astro';
+---
+
+<Layout
+  title="Start — VISUAILS"
+  description="Twee manieren om met VISUAILS te werken: een hele drop met een gereserveerd venster, of losse producten uit de standaard wachtrij."
+>
+  <StartPage lang="nl" />
+</Layout>

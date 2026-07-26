@@ -1,6 +1,21 @@
-// VISUAILS — hero shader: "liquid grade". A slow, domain-warped colour field
-// in the brand's own hues (deep ink → violet #7B6CF5 → cyan #5FE3F0), like
-// colour-grading light moving through a dark room. Hand-written WebGL on a
+// VISUAILS — hero shader: chrome surface #1, one of exactly two places the
+// chrome signature is allowed to appear (the other is the logotype).
+//
+// A slow, domain-warped plane of brushed metal. The field is a height map; the
+// normal comes off its screen-space derivative; the colour is the chrome ramp
+// sampled by the REFLECTED view vector, weighted by a Schlick fresnel term so
+// reflectance rises toward grazing angles the way it does on a real surface.
+// That is the difference between chrome and a scrolling gradient texture: the
+// bands move because the surface turns, not because a background-position is
+// being animated.
+//
+// Two prior materials are visible in this file's history, and both were wrong
+// for the same reason: a violet -> cyan colour field (the largest source of
+// colour on a site whose whole argument is that the photograph is the only
+// colour), then a neutral ink light-field, which was correct monochrome but
+// had no signature in it at all. The geometry, the warp, and the timing have
+// survived all three — only the material changes.
+// Hand-written WebGL on a
 // fullscreen triangle — deliberately NOT Three.js: a single 2D field doesn't
 // justify ~150KB of scene graph, and raw GL keeps the page fast (Core Web
 // Vitals are part of the design).
@@ -23,6 +38,7 @@ void main(){ gl_Position = vec4(p, 0.0, 1.0); }
 `;
 
 const FRAG = `
+#extension GL_OES_standard_derivatives : enable
 precision mediump float;
 uniform vec2 u_res;
 uniform float u_time;
@@ -42,6 +58,28 @@ float fbm(vec2 p){
   return v;
 }
 
+/* The chrome ramp, sRGB fractions of the twelve stops in global.css's
+   --chrome. Kept in sync by hand: GLSL cannot read a custom property, so this
+   and the CSS token are the only duplicated palette in the project. Sequential
+   smoothstep mixes rather than a texture — twelve mixes are cheaper than a
+   texture fetch and there is no LUT to load before first paint. */
+vec3 chromeRamp(float t){
+  t = clamp(t, 0.0, 1.0);
+  vec3 c = vec3(0.640, 0.645, 0.655);                                  /*   0% */
+  c = mix(c, vec3(0.837, 0.845, 0.861), smoothstep(0.00, 0.09, t));    /*   9% */
+  c = mix(c, vec3(0.470, 0.480, 0.499), smoothstep(0.09, 0.17, t));    /*  17% */
+  c = mix(c, vec3(0.916, 0.922, 0.929), smoothstep(0.17, 0.26, t));    /*  26% */
+  c = mix(c, vec3(0.561, 0.573, 0.598), smoothstep(0.26, 0.35, t));    /*  35% */
+  c = mix(c, vec3(0.285, 0.291, 0.305), smoothstep(0.35, 0.44, t));    /*  44% */
+  c = mix(c, vec3(0.772, 0.782, 0.794), smoothstep(0.44, 0.53, t));    /*  53% */
+  c = mix(c, vec3(0.963, 0.960, 0.955), smoothstep(0.53, 0.62, t));    /*  62% warm glint */
+  c = mix(c, vec3(0.401, 0.411, 0.432), smoothstep(0.62, 0.71, t));    /*  71% */
+  c = mix(c, vec3(0.689, 0.694, 0.704), smoothstep(0.71, 0.80, t));    /*  80% */
+  c = mix(c, vec3(0.222, 0.229, 0.244), smoothstep(0.80, 0.89, t));    /*  89% */
+  c = mix(c, vec3(0.500, 0.514, 0.544), smoothstep(0.89, 1.00, t));    /* 100% */
+  return c;
+}
+
 void main(){
   vec2 uv = gl_FragCoord.xy / u_res;
   vec2 q = uv; q.x *= u_res.x / u_res.y;
@@ -55,16 +93,43 @@ void main(){
                  fbm(q + 2.2 * w1 - drift - t * 0.4 + 8.9));
   float field = fbm(q * 1.3 + 2.6 * w2);
 
-  /* brand palette */
-  vec3 ink    = vec3(0.035, 0.035, 0.066);        /* #090911-ish */
-  vec3 violet = vec3(0.484, 0.424, 0.961);        /* #7B6CF5 */
-  vec3 cyan   = vec3(0.373, 0.890, 0.941);        /* #5FE3F0 */
+  vec3 ink = vec3(0.047, 0.051, 0.063);           /* #0C0D10 — --ink-900 */
 
-  /* violet body, cyan only on the thin ridges of the field */
-  vec3 col = ink;
-  col = mix(col, violet * 0.55, smoothstep(0.42, 0.82, field));
-  float ridge = smoothstep(0.62, 0.7, field) * (1.0 - smoothstep(0.7, 0.86, field));
-  col = mix(col, cyan * 0.62, ridge * 0.55);
+  /* Treat the field as a height map and take its normal from the screen-space
+     derivative. This is the cheap part on purpose: re-evaluating the two-stage
+     warp at four offsets to get a gradient would triple the cost of the shader
+     for a surface that is 55% opaque behind a scrim. Where the extension is
+     missing, dFdx/dFdy return 0, the normal is flat, and the fresnel term
+     below still does its job off view angle alone — the plane reads as a
+     polished sheet instead of a rippled one, which degrades to something
+     deliberate rather than to nothing. */
+  vec2 grad = vec2(dFdx(field), dFdy(field)) * u_res * 0.055;
+  vec3 n = normalize(vec3(-grad, 1.0));
+
+  /* View vector for a plane at z=0 with the eye in front of it. The lateral
+     term grows toward the frame edges, which is what makes the fresnel rise at
+     grazing angles instead of being a uniform rim. */
+  vec2 c = (uv - 0.5) * vec2(u_res.x / u_res.y, 1.0);
+  vec3 v = normalize(vec3(-c * 1.35, 1.0));
+
+  /* Schlick. F0 is deliberately dielectric-low rather than the ~0.9 of a real
+     conductor: at metal F0 the whole plane sits at full reflectance and the
+     grazing rise — the entire point — becomes invisible. */
+  float F0 = 0.045;
+  float F = F0 + (1.0 - F0) * pow(1.0 - max(dot(n, v), 0.0), 5.0);
+
+  /* Sample the ramp by the reflected direction, not by the field. That is the
+     whole reason this reads as metal: the bands are anchored to where the
+     surface is POINTING, so a slow undulation sweeps the reflection across the
+     plane rather than sliding a texture over it. */
+  vec3 r = reflect(-v, n);
+  float refl = clamp(r.x * 0.78 + 0.5 + 0.06 * sin(u_time * 0.05), 0.0, 1.0);
+  vec3 env = chromeRamp(refl);
+
+  /* Reflectance weights the environment; the squared term is the thin bright
+     edge you get where the surface turns away hardest. */
+  vec3 col = env * mix(0.42, 1.0, F) + vec3(F * F) * 0.22;
+  col = mix(ink, col, 0.92);
 
   /* keep the copy zone (left) darkest; soften right where the photo cards sit */
   float sideShade = smoothstep(0.0, 0.62, uv.x);
@@ -99,6 +164,11 @@ function mount() {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
   if (!gl) return; // .hero-fallback carries the look
+
+  // Must be requested before compiling a shader that #extension-enables it.
+  // Not fatal if absent: the fragment shader guards for a flat normal and the
+  // fresnel term still runs, so the plane degrades to a polished sheet.
+  gl.getExtension('OES_standard_derivatives');
 
   const vs = compile(gl, gl.VERTEX_SHADER, VERT);
   const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);

@@ -9,6 +9,17 @@
 // unlike the lifestyle styles — there is no `heroPhoto` / `cardPhoto` here.
 // Icon fields drive ProductScene's placeholder rendering directly.
 
+import { perProduct, reviewClaim, turnaround } from './pricing.js';
+
+// No euro figure and no delivery time may be typed into this file.
+// Both used to live here as literals, which is how the hub cards and the
+// [slug] pages ended up quoting a turnaround the capacity gate had never
+// cleared — and how a video price that exists nowhere in pricing.js
+// survived a repricing nobody caught. Derive, never type.
+const CAT = perProduct('catalog', 'en');
+const TIMING = turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
+
 // grid: the 3x3 product-scene grid on each style page. Mirrors the helper in
 // src/data/styles.js — `photos` stays empty for catalog since the source
 // pages never wired real images into the grid.
@@ -22,16 +33,16 @@ export const catalogStyles = [
     slug: 'classic',
     name: 'Classic',
     tagline: 'Clean. Consistent. Relentlessly so.',
-    priceTrust: '€39.99',
+    priceTrust: CAT.price,
     priceUnit: ' / product',
-    metaPrice: '€39.99 / product — 4 photos',
-    orderHref: '/order-catalog',
+    metaPrice: `${CAT.price} / product — 4 photos`,
+    orderHref: '/start',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: '€39.99 / product',
-    cardDesc: 'A full set per product — front, back, detail and one on-model shot. €39.99, about €10 a photo.',
+    cardPrice: `${CAT.price} / product`,
+    cardDesc: 'A full set per product — front, back, detail and one on-model shot.',
     moodTitle: 'What Classic feels like.',
     moodParagraphs: [
       'Pure, even light and a frame that never moves — every product shot as if in the same studio, on the same morning.',
@@ -66,23 +77,24 @@ export const catalogStyles = [
       'Four photos per product: front, back, detail & on-model',
       'Consistent lighting, angle and background',
       'High-resolution, marketplace-ready files',
-      'Delivery in ~24 hours, checked by hand',
+      TIMING,
+      REVIEW,
     ],
   },
   {
     slug: 'custom',
     name: 'Custom Brand',
     tagline: 'A catalog look that is unmistakably yours.',
-    priceTrust: 'Designed once — then €39.99 / product',
+    priceTrust: `Designed once — then ${CAT.price} / product`,
     priceUnit: '',
-    metaPrice: 'Designed once — then €39.99 / product',
-    orderHref: '/order-custom',
+    metaPrice: `Designed once — then ${CAT.price} / product`,
+    orderHref: '/start',
     heroIcon: 'bag',
     heroWidth: '26%',
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Custom pricing',
-    cardDesc: 'A catalog look designed around your brand — then fast, at €39.99 per 4-photo product set.',
+    cardDesc: `A catalog look designed around your brand — then every product at ${CAT.price} for a four-photo set.`,
     moodTitle: 'What Custom Brand feels like.',
     moodParagraphs: [
       'A signature backdrop, shadow and prop language that says this is us — before the logo does.',

@@ -7,6 +7,17 @@
 // grid; the hero/strip photography for each style is real and is wired up
 // directly in the [slug] page template.
 
+import { perProduct, reviewClaim, turnaround } from './pricing.js';
+
+// No euro figure and no delivery time may be typed into this file.
+// Both used to live here as literals, which is how the hub cards and the
+// [slug] pages ended up quoting a turnaround the capacity gate had never
+// cleared — and how a video price that exists nowhere in pricing.js
+// survived a repricing nobody caught. Derive, never type.
+const VID = perProduct('video', 'en');
+const TIMING = turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
+
 // grid: the 3x3 product-scene grid on each style page.
 function grid(photos, icons) {
   const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
@@ -18,17 +29,17 @@ export const videoStyles = [
     slug: 'motion',
     name: 'Motion',
     tagline: 'Eight seconds of undivided attention.',
-    priceTrust: '€49',
-    priceUnit: ' / video',
+    priceTrust: VID.price,
+    priceUnit: ' / clip',
     ctaLabel: 'Order Motion',
-    ctaHref: '/order-video',
+    ctaHref: '/start',
     ctaExternal: false,
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: 'From €49 / video',
-    cardDesc: 'An 8-second clip, subtle motion, clean presentation. Fixed price. ~24h.',
+    cardPrice: `${VID.price} / clip`,
+    cardDesc: 'An 8-second clip, subtle motion, clean presentation. Fixed price.',
     moodTitle: 'What Motion feels like.',
     moodParagraphs: [
       'Eight seconds, one product, one clean move — enough to hold the eye, never enough to distract.',
@@ -63,24 +74,25 @@ export const videoStyles = [
       '8-second clean product film',
       'Seamless loop, subtle motion',
       'Format cut for your channel',
-      '~24h delivery, checked by hand',
+      TIMING,
+      REVIEW,
     ],
   },
   {
     slug: 'lifestyle',
     name: 'Lifestyle Video',
     tagline: 'The scene, set in motion.',
-    priceTrust: '€59',
-    priceUnit: ' / video',
+    priceTrust: VID.price,
+    priceUnit: ' / clip',
     ctaLabel: 'Order Lifestyle Video',
-    ctaHref: '/order-video',
+    ctaHref: '/start',
     ctaExternal: false,
     heroIcon: 'jar',
     heroWidth: '26%',
     cardIcon: 'jar',
     cardWidth: '46%',
-    cardPrice: 'From €59 / video',
-    cardDesc: 'A styled scene, in motion — for social and ads. Fixed price. ~24h.',
+    cardPrice: `${VID.price} / clip`,
+    cardDesc: 'A styled scene, in motion — for social and ads. Fixed price.',
     moodTitle: 'What Lifestyle Video feels like.',
     moodParagraphs: [
       'A styled scene, let loose: steam rising, light shifting, a model turning toward the lens.',
@@ -115,7 +127,8 @@ export const videoStyles = [
       'Short-form styled scene in motion',
       'Continuity with your lifestyle stills',
       'Consistent models available',
-      '~24h delivery, checked by hand',
+      TIMING,
+      REVIEW,
     ],
   },
   {

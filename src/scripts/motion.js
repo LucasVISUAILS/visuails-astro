@@ -1,8 +1,13 @@
 // VISUAILS — GSAP choreography for "The Studio Issue" homepage. Owns only
-// what CSS/IO can't do well: the cover entrance, ticker loops, the ledger's
-// floating preview, the pinned develop scrub, spread/stagger arrivals, the
-// comet draw and the marquee's velocity lean. interactions.js keeps handling
-// ordinary reveals — layers never share targets (data/chapter hooks only).
+// what CSS/IO can't do well: the cover entrance, the pinned develop scrub,
+// spread/stagger arrivals, the comet draw and the marquee's velocity lean.
+// interactions.js keeps handling ordinary reveals — layers never share
+// targets (data/chapter hooks only).
+//
+// The ticker loop and the services-ledger floating preview were removed with
+// the drop rewrite that took their markup off the homepage. Both were
+// null-guarded and would have failed silently forever; a guard that can never
+// be false is dead weight, not safety.
 //
 // Lifecycle (ClientRouter): built in a gsap.context, reverted on
 // astro:before-swap, rebuilt on astro:page-load. prefers-reduced-motion skips
@@ -20,8 +25,8 @@ let ctx = null;
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // An endless drift loop that only spends frames while its band is on screen —
-// a loop the user can't see must not cost scroll time. Used by the ticker and
-// the film-strip marquee.
+// a loop the user can't see must not cost scroll time. Used by the film-strip
+// marquee.
 function driftRow(row, dir, dur) {
   const tween = gsap.fromTo(row,
     { xPercent: dir === 1 ? -50 : 0 },
@@ -34,8 +39,8 @@ function driftRow(row, dir, dur) {
   return tween;
 }
 
-// Cover: the film still settles while the 900 headline lines rise, then
-// sub/CTAs and the ticker. Transform+opacity only — animating filter: blur()
+// Cover: the film still settles while the 900 headline lines rise, then the
+// sub and CTAs. Transform+opacity only — animating filter: blur()
 // re-rasterised the display type every frame during the heaviest moment of
 // the page (hero image decode + settle).
 function heroCover() {
@@ -48,13 +53,6 @@ function heroCover() {
   gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta'), {
     y: 22, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.6, clearProps: 'all',
   });
-  const tick = hero.querySelector('.ticker');
-  if (tick) gsap.from(tick, { y: 24, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.95, clearProps: 'all' });
-}
-
-// Tickers: seamless outline-type loops (row content is duplicated in markup).
-function tickers() {
-  gsap.utils.toArray('.tk-row').forEach((row, i) => driftRow(row, i % 2 === 0 ? -1 : 1, 52 + i * 10));
 }
 
 // Considered imagery: media inside [data-zoom] settles from a gentle
@@ -69,40 +67,6 @@ function zoomMedia() {
       scrollTrigger: { trigger: wrap, start: 'top 95%', end: 'bottom 30%', scrub: 0.6 },
     });
   });
-}
-
-// Services ledger: rows rise in; on fine pointers a floating preview follows
-// the cursor, swapping to each row's image.
-function ledger() {
-  const idx = document.querySelector('[data-index]');
-  if (!idx) return;
-  const rows = gsap.utils.toArray(idx.querySelectorAll('.idx-row'));
-  if (rows.length) {
-    gsap.from(rows, {
-      y: 34, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, clearProps: 'all',
-      scrollTrigger: { trigger: idx, start: 'top 82%', once: true },
-    });
-  }
-  if (!window.matchMedia('(pointer: fine)').matches) return;
-  const float = idx.querySelector('.idx-float');
-  if (!float) return;
-  const img = float.querySelector('img');
-  const xTo = gsap.quickTo(float, 'x', { duration: 0.5, ease: 'power3.out' });
-  const yTo = gsap.quickTo(float, 'y', { duration: 0.5, ease: 'power3.out' });
-  idx.addEventListener('pointermove', (e) => {
-    const r = idx.getBoundingClientRect();
-    xTo(e.clientX - r.left + 26);
-    yTo(e.clientY - r.top - 130);
-  }, { passive: true });
-  rows.forEach((row) => {
-    row.addEventListener('pointerenter', () => {
-      const src = row.getAttribute('data-img');
-      if (src && img && img.getAttribute('src') !== src) img.setAttribute('src', src);
-      gsap.to(float, { autoAlpha: 1, scale: 1, rotate: 3, duration: 0.35, ease: 'power3.out' });
-    });
-  });
-  idx.addEventListener('pointerleave', () => gsap.to(float, { autoAlpha: 0, scale: 0.92, duration: 0.3, ease: 'power3.in' }));
-  gsap.set(float, { autoAlpha: 0, scale: 0.92 });
 }
 
 // Chapter heads: bloom swells while the bold lines rise — bright line first,
@@ -210,8 +174,6 @@ function init() {
   if (reduced()) return;
   ctx = gsap.context(() => {
     heroCover();
-    tickers();
-    ledger();
     chapterHeads();
     spread();
     zoomMedia();

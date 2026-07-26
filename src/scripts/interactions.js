@@ -13,49 +13,41 @@
 // hid the test-sample form. This runs at document level, bound once, and on
 // every scroll / page-load, so any reveal element in view is shown regardless
 // of per-page setup. Bulletproof, and still gives the scroll-in animation.
-// ---- i18n microcopy for JS-injected strings (thank-you summary, form hints,
-// hex advice, live totals). Language is read from the URL: /nl, /de, else en. ----
+// ---- i18n microcopy for JS-injected strings. Language is read from the URL:
+// /nl, else en.
+//
+// This table is much shorter than it was. It used to carry the thank-you page's
+// full label set (`ty`), a `tyTitle`, three background-colour advice sentences
+// and three phone-hint sentences, plus a `volumeQuote` for a running total.
+// Section 10 deleted the pages that displayed every one of them; see the
+// removal notes above initThankYou() and above initTracking() for which
+// mechanism each belonged to. What is left is what a page still renders. ----
 function pageLang() {
   return (location.pathname || '/').split('/')[1] === 'nl' ? 'nl' : 'en';
 }
-function langPrefix() { const l = pageLang(); return l === 'en' ? '' : '/' + l; }
+// (langPrefix() lived here. It existed only to build /order-catalog and
+// /order-lifestyle URLs inside initFormPrefill(); both are gone with the
+// funnel — section 10. Nothing else in this file builds a localized URL: the
+// Astro side does that with localizedPath() at render time.)
 const I18N = {
   en: {
-    volumeQuote: 'Volume quote', tyTitle: 'Your request',
-    ty: { name: 'Name', brand: 'Brand', email: 'Email', phone: 'Phone', vtype: 'Video type', style: 'Style', presentation: 'Shown as', model: 'Model', quantity: 'Quantity', products: 'Products', format: 'Format', quality: 'Quality', delivery: 'Delivery', background: 'Background', notes: 'Notes' },
-    phoneOptional: '— optional',
-    phoneHintWa: 'You chose WhatsApp, so a phone number is required — please include your country code.',
-    phoneHintEmail: 'We’ll reach you by email. Add a phone number if you’d rather we message you on WhatsApp.',
-    hexRec: '✓ A light, neutral background like this keeps products looking clean and professional.',
-    hexStrong: 'We’d advise against a strong colour like this — light, neutral backgrounds (white, off-white, light grey or beige) look cleanest and most professional. The choice is yours.',
-    hexDark: 'That’s on the darker side — a lighter neutral (white, off-white, light grey or beige) usually looks cleaner and more professional. The choice is yours.',
-    carryChoose: 'Let VISUAILS choose the model', carrySelected: 'Model selected: ', carryTail: ' — now pick the service you’d like to use it for.',
     sourceThanks: 'Thanks — that helps us a lot.',
     tyRefTitle: 'Your reference', tyRefNote: 'Keep this handy — quote it if you message us about this order.',
   },
   nl: {
-    volumeQuote: 'Op aanvraag', tyTitle: 'Je aanvraag',
-    ty: { name: 'Naam', brand: 'Merk', email: 'E-mail', phone: 'Telefoon', vtype: 'Videotype', style: 'Stijl', presentation: 'Getoond als', model: 'Model', quantity: 'Aantal', products: 'Producten', format: 'Formaat', quality: 'Kwaliteit', delivery: 'Levering', background: 'Achtergrond', notes: 'Opmerkingen' },
-    phoneOptional: '— optioneel',
-    phoneHintWa: 'Je koos WhatsApp, dus een telefoonnummer is verplicht — vermeld je landcode.',
-    phoneHintEmail: 'We bereiken je per e-mail. Voeg een telefoonnummer toe als je liever een WhatsApp-bericht krijgt.',
-    hexRec: '✓ Een lichte, neutrale achtergrond zoals deze houdt producten strak en professioneel.',
-    hexStrong: 'We raden een sterke kleur als deze af — lichte, neutrale achtergronden (wit, off-white, licht grijs of beige) ogen het strakst en meest professioneel. De keuze is aan jou.',
-    hexDark: 'Dit is aan de donkere kant — een lichtere neutrale kleur (wit, off-white, licht grijs of beige) oogt meestal strakker en professioneler. De keuze is aan jou.',
-    carryChoose: 'Laat VISUAILS het model kiezen', carrySelected: 'Model gekozen: ', carryTail: ' — kies nu de dienst waarvoor je het wilt gebruiken.',
     sourceThanks: 'Bedankt — daar hebben we veel aan.',
     tyRefTitle: 'Je referentie', tyRefNote: 'Bewaar deze — vermeld hem als je ons over deze bestelling appt of mailt.',
   },
 };
 function t18() { return I18N[pageLang()] || I18N.en; }
-function money(n) {
-  const s = Number.isInteger(n) ? String(n) : n.toFixed(2);
-  return '€' + (pageLang() === 'en' ? s : s.replace('.', ','));
-}
+// (money() lived here — '€' + a comma for nl. Its only callers were the three
+// running totals in initWizards(), which went with the order pages. It never
+// grouped thousands, which is why pipeline.js carries its own euro() rather
+// than importing this one; that difference is now moot as well as invisible.)
 
 function revealInView() {
   const vh = window.innerHeight || document.documentElement.clientHeight;
-  document.querySelectorAll('.reveal.pending:not(.in), .reveal-mask:not(.in), .reveal-clip-wrap > .reveal-clip-inner:not(.in)').forEach((el) => {
+  document.querySelectorAll('.reveal.pending:not(.in), .reveal-mask:not(.in)').forEach((el) => {
     const r = el.getBoundingClientRect();
     if (r.top < vh * 0.96 && r.bottom > -40) {
       el.classList.add('in');
@@ -94,8 +86,11 @@ function initReveal() {
     items.forEach((el) => io.observe(el));
   }
 
-  // Mask / clip reveal variants (photo moments, style-page media bands).
-  document.querySelectorAll('.reveal-mask:not([data-reveal-bound]), .reveal-clip-wrap > .reveal-clip-inner:not([data-reveal-bound])').forEach((el) => {
+  // Mask reveal variant (photo moments, style-page media bands). A second
+  // variant, .reveal-clip-wrap > .reveal-clip-inner, was queried here and in
+  // revealInView until orphan_sweep.py pointed out that no page has produced
+  // that markup since the editorial rework; its CSS went with it.
+  document.querySelectorAll('.reveal-mask:not([data-reveal-bound])').forEach((el) => {
     el.dataset.revealBound = '1';
     if (reduce) { el.classList.add('in'); return; }
     const obs = new IntersectionObserver((entries) => {
@@ -129,40 +124,37 @@ function initSplitLines() {
   });
 }
 
-let parallaxBound = false, parallaxTicking = false;
-function runParallaxUpdate() {
-  document.querySelectorAll('[data-parallax]').forEach((el) => {
-    const strength = parseFloat(el.dataset.parallax) || 0.2;
-    const r = el.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const progress = (vh - r.top) / (vh + r.height);
-    const clamped = Math.max(0, Math.min(1, progress));
-    el.style.transform = `translateY(${(clamped - 0.5) * 100 * strength}px)`;
-  });
-  parallaxTicking = false;
-}
-function initParallax() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (!parallaxBound) {
-    parallaxBound = true;
-    window.addEventListener('scroll', () => {
-      if (!parallaxTicking) { requestAnimationFrame(runParallaxUpdate); parallaxTicking = true; }
-    }, { passive: true });
-  }
-  runParallaxUpdate();
-}
+// A generic [data-parallax] driver used to live here. No element in the site
+// ever carried the attribute, so it was a permanent scroll listener iterating
+// an empty NodeList on every page. Removed rather than guarded: motion.js is
+// the site's scroll-animation system (GSAP + ScrollTrigger, built in a context
+// and reverted on astro:before-swap), and a second hand-rolled scroll-parallax
+// path would be duplicate machinery the day anyone actually wanted the effect.
 
-let heroBgBound = false;
+let heroBgBound = false, heroBgTicking = false;
+function heroBgUpdate() {
+  heroBgTicking = false;
+  // Queried inside the handler, not captured at bind time: ClientRouter swaps
+  // the document on navigation, so a held reference points at a detached node.
+  const bg = document.querySelector('.hero-editorial .bg');
+  if (!bg) return;
+  const y = Math.min(window.scrollY, window.innerHeight);
+  bg.style.transform = `translateY(${y * 0.18}px)`;
+}
 function initHeroParallax() {
+  // Reduced motion is decided once, at bind time, so those users never install
+  // the listener at all — the old code bound it regardless and paid a
+  // matchMedia call on every scroll event to do nothing.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (heroBgBound) return;
   heroBgBound = true;
+  // rAF-throttled: the old version wrote style.transform straight from the
+  // scroll handler, which on a trackpad or smooth-scroll mouse fires far more
+  // often than the compositor can use.
   window.addEventListener('scroll', () => {
-    const bg = document.querySelector('.hero-editorial .bg');
-    if (!bg) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const y = Math.min(window.scrollY, window.innerHeight);
-    bg.style.transform = `translateY(${y * 0.18}px)`;
+    if (!heroBgTicking) { requestAnimationFrame(heroBgUpdate); heroBgTicking = true; }
   }, { passive: true });
+  heroBgUpdate();
 }
 
 let headerBound = false;
@@ -232,10 +224,16 @@ let convbarBound = false;
 function initConvbar() {
   // The bar re-renders per page (no longer transition:persist, so its text is
   // localized), so we query it fresh in the handler and delegate the close.
+  // Suppressed wherever the visitor is already doing the thing the bar is
+  // nagging them to do. /order was the old funnel; section 10 retired it, so
+  // the entry that matters now is /start — without it the bar floats over the
+  // pipeline's own submit button on every page past the fold, which is both
+  // an obstruction and an argument with itself. /o (the client portal) is a
+  // Pages Function, not an Astro route: this script never loads there.
   const suppressed = () => {
     let p = location.pathname;
     if (p.startsWith('/nl')) p = p.slice(3) || '/';
-    return p.startsWith('/test-sample') || p.startsWith('/order') || p.startsWith('/thank-you');
+    return p.startsWith('/test-sample') || p.startsWith('/start') || p.startsWith('/thank-you');
   };
   const sync = () => {
     const bar = document.querySelector('.convbar');
@@ -260,8 +258,22 @@ function initConvbar() {
 // Multi-step form wizards — handled here via document-level delegation so
 // they work reliably after ClientRouter navigations (a page-local <script>
 // wasn't running when the page was reached via in-site navigation, which is
-// why the test-sample form was dead on mobile). Covers the 2-step test-sample
-// wizard and the 3-step order-lifestyle wizard (incl. its running total).
+// why the test-sample form was dead on mobile).
+//
+// ONE wizard is left: the 2-step /test-sample form, driven by data-wizard-step
+// / -next / -back / -progress. A second, N-step machine used to live here for
+// /order-lifestyle's 3-step form — it read `.step-panel`, `data-step`,
+// `data-step-next` and `data-step-prev` — together with three running-total
+// calculators (#ls-total, #cat-total, #video-total) fed by a `data-unit-price`
+// attribute written at build time from src/data/pricing.js. Section 10 deleted
+// all five order pages, so every one of those selectors now matches nothing on
+// any page of the site, and they went with the markup. So did money() and the
+// `volumeQuote` string: those calculators were their only callers.
+//
+// Worth recording why the totals are not simply being re-pointed at /start.
+// The pipeline does quote a running figure, but it does it in pipeline.js
+// against numbers the capacity gate has already seen, through its own euro().
+// Two arithmetic paths over one price list is how a reprice ships half-applied.
 let wizardsBound = false;
 function initWizards() {
   if (wizardsBound) return;
@@ -278,41 +290,6 @@ function initWizards() {
     const prog = form.querySelector('[data-wizard-progress]');
     if (prog) prog.style.width = `${(n / 2) * 100}%`;
   };
-  const showN = (form, n) => {
-    const panels = form.querySelectorAll('.step-panel');
-    panels.forEach((p) => p.classList.toggle('hidden-step', Number(p.dataset.step) !== n));
-    const bar = form.querySelector('#ls-progress-bar');
-    if (bar) bar.style.width = `${(n / (panels.length || 3)) * 100}%`;
-  };
-  const lsTotal = (form) => {
-    const label = document.querySelector('#ls-total');
-    if (!label) return;
-    const qty = Number(form.querySelector('#ls-qty')?.value || '1');
-    const format = form.querySelector('input[name="format"]:checked')?.value;
-    const quality = form.querySelector('input[name="quality"]:checked')?.value;
-    const delivery = form.querySelector('input[name="delivery"]:checked')?.value;
-    const total = qty * 59.99 + (format === 'Multi Format Export' ? 19.99 : 0) + (quality === '4K' ? 9.99 : 0) + (delivery === 'Priority' ? 29.99 : 0);
-    label.textContent = money(total);
-  };
-  const catalogTotal = (form) => {
-    const label = document.querySelector('#cat-total');
-    if (!label) return;
-    const sel = form.querySelector('#cat-qty');
-    const raw = (sel && sel.value) || '1';
-    const n = parseInt(raw, 10);
-    // "More than 10" (non-numeric value) → volume quote, no fixed total.
-    if (!n || Number.isNaN(n)) { label.textContent = t18().volumeQuote; return; }
-    label.textContent = money(n * 39.99);
-  };
-  const videoTotal = (form) => {
-    const label = document.querySelector('#video-total');
-    if (!label) return;
-    const vtype = form.querySelector('input[name="vtype"]:checked');
-    const price = vtype && vtype.value === 'Lifestyle Video' ? 59 : 49;
-    const sel = form.querySelector('#v-qty');
-    const n = parseInt((sel && sel.value) || '1', 10) || 1;
-    label.textContent = money(price * n);
-  };
   // First invalid, validatable field in a container (or null).
   const firstInvalid = (container) => {
     const fs = container.querySelectorAll('input, select, textarea');
@@ -320,10 +297,9 @@ function initWizards() {
     return null;
   };
   const revealFor = (form, field) => {
-    const step = field.closest('[data-wizard-step], .step-panel');
+    const step = field.closest('[data-wizard-step]');
     if (!step) return;
-    if (step.hasAttribute('data-wizard-step')) show2(form, Number(step.dataset.wizardStep));
-    else showN(form, Number(step.dataset.step));
+    show2(form, Number(step.dataset.wizardStep));
     scrollToForm(form);
   };
 
@@ -340,126 +316,80 @@ function initWizards() {
       show2(f, 2); scrollToForm(f); return;
     }
     if ((el = t.closest('[data-wizard-back]'))) { const f = el.closest('form'); if (f) { show2(f, 1); scrollToForm(f); } return; }
-    if ((el = t.closest('[data-step-next]'))) {
-      const f = el.closest('form'); if (!f) return;
-      const cur = f.querySelector('.step-panel:not(.hidden-step)');
-      const bad = cur && firstInvalid(cur);
-      if (bad) { bad.reportValidity(); bad.focus && bad.focus(); return; }
-      showN(f, Number(el.dataset.stepNext)); scrollToForm(f); return;
-    }
-    if ((el = t.closest('[data-step-prev]'))) { const f = el.closest('form'); if (f) { showN(f, Number(el.dataset.stepPrev)); scrollToForm(f); } return; }
-  });
-  document.addEventListener('change', (e) => {
-    const t = e.target;
-    if (!(t instanceof Element)) return;
-    if (t.closest('#ls-form')) lsTotal(t.closest('#ls-form'));
-    if (t.closest('#video-form')) videoTotal(t.closest('#video-form'));
-    if (t.closest('#cat-form')) catalogTotal(t.closest('#cat-form'));
   });
   // Wizard forms are novalidate; validate in JS on submit so a required field in
   // a hidden step reveals its step (avoids the silent "not-focusable" dead-end).
+  // `#ls-form` used to be matched here too — /order-lifestyle's form was the one
+  // non-wizard form that needed the same rescue. It is gone; /start does its own
+  // validation in pipeline.js and must not be caught by this handler.
   document.addEventListener('submit', (e) => {
     const form = e.target;
     if (!(form instanceof HTMLFormElement)) return;
-    if (!form.matches('form[data-wizard], #ls-form')) return;
+    if (!form.matches('form[data-wizard]')) return;
     const bad = firstInvalid(form);
     if (bad) { e.preventDefault(); revealFor(form, bad); bad.reportValidity(); bad.focus && bad.focus(); }
   });
 }
 
-// Thank-you page: echo the submitted request from the query string so the
-// customer sees a confirmation of what they ordered (forms GET to /thank-you).
+// Thank-you page: show the order reference /api/order redirected here with.
+//
+// #ty-summary ships display:none and this is the only thing that ever reveals
+// it, so a page that never reaches the branch below simply doesn't show a
+// summary box — which is the correct fallback, not a defect.
+//
+// There used to be a second branch under this one that rebuilt a whole <dl> of
+// the submitted answers by reading ~16 named query parameters (name, brand,
+// style, quantity, background, background_hex …). It dated from when the order
+// forms were GET forms and their fields therefore landed in the URL. Every form
+// on the site now POSTs to /api/order — test-sample, contact, the homepage lead
+// form and /start's pipeline, checked one by one — and the only query parameter
+// that endpoint ever puts on a thank-you URL is `ref` (functions/api/order.js).
+// So the branch read parameters nothing produced, always found zero rows, and
+// re-hid a box that was already hidden. It went, and with it t18()'s `ty` label
+// table, `tyTitle`, and the .ty-dl / .ty-row / .ty-swatch / .ty-hex CSS in both
+// thank-you pages.
+//
+// Keeping personal data out of the URL is also the better behaviour on its own
+// terms: a query string is read by the referrer header, browser history, and
+// anything that logs URLs. A reference is the right thing to show, and the only
+// thing worth putting there.
 function initThankYou() {
   const box = document.querySelector('#ty-summary');
   if (!box) return;
-  const p = new URLSearchParams(location.search);
-  // New flow: forms POST to /api/order, which redirects here with a real order
-  // reference (no personal data in the URL). Show it prominently.
-  const ref = (p.get('ref') || '').trim();
-  if (/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) {
-    const d = t18();
-    box.innerHTML = `<h4 style="margin-bottom:.4rem">${d.tyRefTitle}</h4>`
-      + `<p style="margin:0;font-size:1.15rem;letter-spacing:.02em"><strong>${ref.toUpperCase()}</strong></p>`
-      + `<p style="margin:.55rem 0 0;color:var(--ink-3);font-size:.9rem">${d.tyRefNote}</p>`;
-    box.style.display = 'block';
-    return;
-  }
-  const L = t18().ty;
-  const map = [
-    ['name', L.name], ['brand', L.brand], ['company', L.brand], ['email', L.email], ['phone', L.phone],
-    ['vtype', L.vtype], ['style', L.style], ['presentation', L.presentation], ['model', L.model],
-    ['quantity', L.quantity], ['products', L.products], ['format', L.format], ['quality', L.quality],
-    ['delivery', L.delivery], ['background', L.background], ['message', L.notes], ['notes', L.notes],
-  ];
-  const esc = (s) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
-  // Validated custom background hex (safe to inline into markup below).
-  const bgHex = (() => {
-    let x = (p.get('background_hex') || '').trim();
-    if (x && x[0] !== '#') x = '#' + x;
-    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(x) ? x.toUpperCase() : '';
-  })();
-  const rows = [];
-  const seen = new Set();
-  map.forEach(([key, label]) => {
-    const v = p.get(key);
-    if (!v || !v.trim() || seen.has(label)) return;
-    seen.add(label);
-    let valHtml = esc(v.trim());
-    // Subtly append the chosen colour to the Background row: a small swatch + hex.
-    if (key === 'background' && bgHex) {
-      valHtml += ` <span class="ty-swatch" style="background:${bgHex}"></span><span class="ty-hex">${bgHex}</span>`;
-    }
-    rows.push([label, valHtml]);
-  });
-  if (!rows.length) { box.style.display = 'none'; return; }
-  box.innerHTML = `<h4 style="margin-bottom:.9rem">${t18().tyTitle}</h4><dl class="ty-dl">` +
-    rows.map(([l, v]) => `<div class="ty-row"><dt>${l}</dt><dd>${v}</dd></div>`).join('') +
-    '</dl>';
+  const ref = (new URLSearchParams(location.search).get('ref') || '').trim();
+  if (!/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) return;
+  const d = t18();
+  box.innerHTML = `<h4 style="margin-bottom:.4rem">${d.tyRefTitle}</h4>`
+    + `<p style="margin:0;font-size:1.15rem;letter-spacing:.02em"><strong>${ref.toUpperCase()}</strong></p>`
+    + `<p style="margin:.55rem 0 0;color:var(--ink-3);font-size:.9rem">${d.tyRefNote}</p>`;
   box.style.display = 'block';
 }
 
-// Carry a chosen model / presentation into the order forms via the URL.
-//  • /order?model=Elias           → hub shows a note + forwards the model into
-//    the Catalog (on-model) and Lifestyle service links.
-//  • /order-catalog?show=on-model  → preselects "On a model".
-//  • /order-catalog?model=Elias    → preselects on-model + that model.
-//  • /order-lifestyle?model=Elias  → preselects that model in step 2.
-// Runs each page-load (reads the current URL); idempotent.
-function initFormPrefill() {
-  const params = new URLSearchParams(location.search);
-  const model = params.get('model');
-  const show = params.get('show');
-
-  const presOnModel = document.querySelector('input[name="presentation"][value="On a model"]');
-  if (presOnModel && (show === 'on-model' || model)) {
-    presOnModel.checked = true;
-    presOnModel.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-
-  if (model) {
-    const esc = (window.CSS && CSS.escape) ? CSS.escape(model) : model.replace(/"/g, '\\"');
-    const r = document.querySelector(`input[name="model"][value="${esc}"]`);
-    if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
-  }
-
-  // Order hub: forward the model into the service links + show a note.
-  const hub = document.querySelector('.hub-grid');
-  if (model && hub) {
-    const enc = encodeURIComponent(model);
-    const pfx = langPrefix();
-    hub.querySelectorAll(`a[href^="${pfx}/order-catalog"]`).forEach((a) => { a.href = `${pfx}/order-catalog?show=on-model&model=${enc}`; });
-    hub.querySelectorAll(`a[href^="${pfx}/order-lifestyle"]`).forEach((a) => { a.href = `${pfx}/order-lifestyle?model=${enc}`; });
-    if (!document.querySelector('.model-carry-note')) {
-      const d = t18();
-      const note = document.createElement('p');
-      note.className = 'model-carry-note';
-      note.style.cssText = 'margin:0 0 1.4rem;padding:.55rem 1.05rem;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:var(--r-pill);display:inline-flex;gap:.5rem;align-items:center;font-size:.88rem;color:var(--ink);';
-      const label = model === 'VISUAILS choose' ? d.carryChoose : d.carrySelected + model;
-      note.textContent = label + d.carryTail;
-      hub.parentNode.insertBefore(note, hub);
-    }
-  }
-}
+// REMOVED IN SECTION 10 — initFormPrefill(), and why it is not worth keeping
+// a reduced version.
+//
+// It read ?model= and ?show= off the URL and carried a chosen face from the
+// model roster into whichever order form you landed on: it ticked "On a
+// model", ticked the model's own radio, rewrote the hub's service links to
+// forward the choice one hop further, and injected a .model-carry-note
+// explaining what had been carried.
+//
+// Every one of those targets is gone. .hub-grid was the /order hub;
+// input[name="presentation"] was /order-catalog; the forwarded links pointed
+// at /order-catalog and /order-lifestyle. All deleted. What survived the
+// funeral was the bare input[name="model"] preselect, which still has markup
+// to bite on — /test-sample has that radio group — and that is exactly why it
+// went too: nothing on the site emits a ?model= link any more — grep says so,
+// and BrandModelPage.astro's merge changelog (the `#standard` roster bullet)
+// says why the per-model links stopped being ?model= URLs. So the only way to
+// reach that branch is to type the query string by hand. A mechanism whose sole
+// caller is a hand-typed URL is not a feature, it is a maintenance cost with an
+// i18n tail — carryChoose / carrySelected / carryTail went with it.
+//
+// If a model ever needs carrying into /start, it will not come back as a
+// query string. pipeline.js reads no URL state at all, on purpose: the page
+// is a state machine over answered questions, and a URL that can preset one
+// answer is a URL that can produce a state the machine never navigated to.
 
 // Park each compare's auto-sweep while it is off screen (.cmp-off pauses the
 // CSS animation). The sweep animates a registered custom property that drives
@@ -532,87 +462,31 @@ function initCompareDrag() {
   });
 }
 
-// Live hex-colour preview. Any `input[data-hex-preview="<selector>"]` updates
-// the swatch it points to as the user types a valid 3- or 6-digit hex, and
-// the optional `[data-hex-preview-label]` next to it shows the normalised code.
-// Delegated + bound once so it survives ClientRouter navigations.
-let hexPreviewBound = false;
-function initHexPreview() {
-  if (hexPreviewBound) return;
-  hexPreviewBound = true;
-  // RGB (0–255) of a #rgb / #rrggbb colour.
-  const toRgb = (hex) => {
-    let h = hex.replace('#', '');
-    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-  };
-  const brightnessOf = ([r, g, b]) => (0.299 * r + 0.587 * g + 0.114 * b) / 255; // 0–1
-  const chromaOf = ([r, g, b]) => (Math.max(r, g, b) - Math.min(r, g, b)) / 255; // 0 = neutral grey
-  document.addEventListener('input', (e) => {
-    const t = e.target;
-    if (!(t instanceof Element) || !t.matches('input[data-hex-preview]')) return;
-    const sw = document.querySelector(t.getAttribute('data-hex-preview'));
-    const label = t.parentElement && t.parentElement.querySelector('[data-hex-preview-label]');
-    const scope = t.closest('.field') || document;
-    const advice = scope.querySelector('[data-hex-advice]');
-    let v = (t.value || '').trim();
-    if (v && v[0] !== '#') v = '#' + v;
-    const ok = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v);
-    if (sw) sw.style.background = ok ? v : '#ffffff';
-    if (label) label.textContent = ok ? v.toUpperCase() : 'Preview';
-    if (advice) {
-      if (!ok) { advice.textContent = ''; advice.style.color = 'var(--ink-3)'; return; }
-      const rgb = toRgb(v);
-      const bright = brightnessOf(rgb);
-      const chroma = chromaOf(rgb);
-      // Recommended ONLY when it's a light, near-neutral: white, off-white,
-      // light grey or beige. Anything with real colour, or that's too dark, is
-      // advised against (the customer can still choose it).
-      const recommended = bright >= 0.82 && chroma <= 0.12;
-      const d = t18();
-      if (recommended) {
-        advice.textContent = d.hexRec;
-        advice.style.color = 'var(--success, #4AD07F)';
-      } else if (chroma > 0.12) {
-        advice.textContent = d.hexStrong;
-        advice.style.color = 'var(--warn, #E0A43B)';
-      } else {
-        advice.textContent = d.hexDark;
-        advice.style.color = 'var(--warn, #E0A43B)';
-      }
-    }
-  });
-}
-
-// Preferred-contact-method → phone requirement. When the customer chooses
-// "Chat on WhatsApp" we need a number to reach them, so the phone field becomes
-// required; choosing "Contact by email" makes it optional again. Runs on each
-// page-load (to set the initial state) and via one delegated change listener.
-let contactPhoneBound = false;
-function initContactPhone() {
-  const apply = (form) => {
-    const method = form.querySelector('input[name="contact_method"]:checked');
-    if (!method) return;
-    const phone = form.querySelector('input[type="tel"], input[name="phone"]');
-    if (!phone) return;
-    const wa = method.value === 'WhatsApp';
-    phone.required = wa;
-    const d = t18();
-    const ind = form.querySelector('[data-phone-indicator]');
-    if (ind) ind.innerHTML = wa ? '<span class="req">*</span>' : `<span class="hint" style="font-weight:400">${d.phoneOptional}</span>`;
-    const hint = form.querySelector('[data-phone-hint]');
-    if (hint) hint.textContent = wa ? d.phoneHintWa : d.phoneHintEmail;
-  };
-  document.querySelectorAll('form').forEach((f) => { if (f.querySelector('input[name="contact_method"]')) apply(f); });
-  if (contactPhoneBound) return;
-  contactPhoneBound = true;
-  document.addEventListener('change', (e) => {
-    const t = e.target;
-    if (!(t instanceof Element) || !t.matches('input[name="contact_method"]')) return;
-    const form = t.closest('form');
-    if (form) apply(form);
-  });
-}
+// REMOVED IN SECTION 10 — initHexPreview() and initContactPhone().
+//
+// Both were funnel machinery whose markup went with the five order pages.
+//
+// initHexPreview() drove the custom-background colour picker on
+// /order-catalog: it read `input[data-hex-preview="<selector>"]`, painted the
+// swatch it pointed at, normalised the code into `[data-hex-preview-label]`,
+// and wrote a brightness/chroma judgement into `[data-hex-advice]` advising
+// against strong or dark backgrounds. No page emits any of those three
+// attributes now. The advice strings (hexRec / hexStrong / hexDark) went too.
+//
+// initContactPhone() made the phone field required when the visitor picked
+// "Chat on WhatsApp" from an `input[name="contact_method"]` radio group, and
+// rewrote `[data-phone-indicator]` / `[data-phone-hint]` to match. That radio
+// group only ever existed on the order forms. Read StartPage.astro's phone
+// field alongside this: the pipeline deliberately did NOT add a contact_method
+// radio, because this function bound globally and set phone.required behind the
+// pipeline's own syncRequired() — the two would have fought over one field on
+// every re-render. With this function deleted the collision is impossible
+// rather than merely dodged, and that comment now says so; what keeps the radio
+// out of /start from here on is the design argument, not the hazard.
+//
+// The judgement in the hex advice is not lost, only relocated: choosing a
+// background is a conversation about the product, and /start asks for it in
+// the brief rather than as a colour field with an opinion attached.
 
 // Lightweight, tool-agnostic event tracking. Whatever privacy-friendly
 // analytics the site ends up using (Plausible, Umami, or Cloudflare Web
@@ -664,16 +538,12 @@ function initSourceAsk() {
 export function init() {
   initReveal();
   initSplitLines();
-  initFormPrefill();
-  initContactPhone();
   initCompareDrag();
   initCompareIdle();
   initTracking();
   initSourceAsk();
   initThankYou();
-  initHexPreview();
   // Magnetic button-follow intentionally removed — CTAs stay put under the cursor.
-  initParallax();
   initHeroParallax();
   initHeaderScroll();
   initMobileNav();

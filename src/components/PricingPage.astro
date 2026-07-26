@@ -1,0 +1,769 @@
+---
+// VISUAILS — /pricing, the page that decides what the studio sells.
+//
+// One component for both languages, same reason as StartPage.astro: the brief
+// requires every change to land in EN and NL together, and one source file is
+// the only way to guarantee that rather than merely intend it.
+//
+// EVERY EURO ON THIS PAGE IS READ FROM src/data/pricing.js. Nothing is typed
+// into this markup — not a price, not a product count, not a turnaround, not a
+// revision count. If a number here is wrong, it is wrong in pricing.js, and
+// pricing.js fails the build before a broken ladder can ship.
+//
+// WHAT THIS REPLACED, and why (AUDIT-TASK-0.md §F + brief section 13):
+//   · Three per-product plan cards as the headline offer → the drop is the
+//     unit now, and the per-product tier moved to the bottom block where
+//     section 13 puts it.
+//   · "Priority delivery — jump to the top of the queue, +€29.99" → REMOVED.
+//     Section 13: Tier 0 "always yields to Tier 1 in the capacity gate." Selling
+//     a queue-jump on the tier that yields is selling a promise the gate is
+//     built to break.
+//   · "Multi Format Export +€19.99" and "4K Export +€9.99" → REMOVED. Neither
+//     price exists in pricing.js, so neither could be honoured by the ladder.
+//   · Volume bands 1–24 / 25–99 / 100+ → REMOVED. Invented offers ("never
+//     invent … metrics"), and superseded by the Full Drop band.
+//   · "€1,000–2,000+ / day" shoot anchor → SHOOT_DAY, itemised (flag 2).
+//   · "3 revision rounds" on per-product orders → REMOVED, and the count
+//     later went with it on both tiers. What each tier promises after
+//     delivery now comes off TIERS[…].aftercare; see src/data/pricing.js.
+//   · "~24h delivery" → retired (task #190). Timing comes from turnaround().
+//   · Every CTA pointed at /order. That page is deleted; the CTAs point at
+//     /start, and /order is a 301 to it in public/_redirects.
+//
+// The ThreeWay comparison block was dropped from this page rather than ported:
+// it still carries the retired 24-hour claim (task #190) and /compare is the
+// page that argument belongs on. The shoot-day anchor does that job here.
+import {
+  PACKAGES, PER_PRODUCT, SHOOT_DAY, TEST_SAMPLE, TIERS,
+  reviewClaim, euro, AMOUNT,
+  FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
+  FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
+  TIER0_PRODUCT, UPGRADE_BREAK_EVEN, BRAND_MODEL_CREDIT_DROPS,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import ProductScene from './ProductScene.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const attended = TIERS.attended;
+const unattended = TIERS.unattended;
+const sample = TEST_SAMPLE[lang];
+const shoot = SHOOT_DAY[lang];
+
+// The four packages, split by what they ARE rather than laid out as four
+// interchangeable cards. Two of them are ways to buy a drop; two of them
+// attach to a drop you are already buying. Rendering all four identically
+// would say they are four choices at the same level, which is false.
+const byId = Object.fromEntries(PACKAGES[lang].map((p) => [p.id, p]));
+const dropPackages = [byId['pilot'], byId['full-drop']];
+const addOnPackages = [byId['brand-model'], byId['retainer']];
+
+// ── Copy ───────────────────────────────────────────────────────────────────
+// Prose only. Every promise — timing, queue, delivery, revisions, review
+// level, every euro — is interpolated from pricing.js, in both languages,
+// out of the same objects.
+const COPY = {
+  en: {
+    eyebrow: 'Pricing',
+    h1: 'Priced by the drop, not by the image.',
+    lead: 'A drop is a collection going live: one deadline, one reserved window, one invoice. That is the unit a brand actually works in, so it is the unit this studio is priced in.',
+
+    dropsH: 'Two ways to run a drop',
+    dropsSub: 'Both hold a window in the studio calendar. What differs is how much of your line goes through it.',
+    onceOnlyTag: 'Once per brand',
+    productsLabel: 'Products',
+    dropCta: 'Start a drop',
+
+    anchorH: 'What a drop replaces',
+    anchorWasTag: 'A production day',
+    anchorNowTag: 'A Full Drop',
+    anchorNowMeta: `${FULL_DROP_MIN}–${FULL_DROP_MAX} products, catalog set and lifestyle carousel each`,
+    // Written "between X and Y" rather than as a dash range: the low figure
+    // carries cents and the high one does not, so euroRange() would have to
+    // round one of them, and a rounded price is a wrong price.
+    anchorPerProduct: `Between ${euro(FULL_DROP_PER_PRODUCT_MIN, 'en')} and ${euro(FULL_DROP_PER_PRODUCT_MAX, 'en')} per product, depending on how many you run`,
+    anchorNowList: [
+      'Nothing to ship, nowhere to travel, no day off the business',
+      'The output is defined before you pay for it',
+      'Run it again next season without rebooking anything',
+    ],
+    anchorNote: `Neither figure tells you what actually comes out of a shoot day — that depends on the day. ${shoot.caveat} What a drop fixes is that its output is agreed in advance.`,
+
+    addOnH: 'Added to a drop',
+    addOnSub: 'Neither of these is a way to buy visuals on its own. Both sit on top of a drop you are already running.',
+    addOnCta: 'Talk it through',
+    brandModelCta: 'See Your Brand Model',
+
+    inclH: 'In every drop',
+    gateLead: 'No date is printed until the calendar clears it.',
+    gateBody: 'A reserved window is confirmed before you pay, never after. If the week you need cannot be held, you are told that instead of being given an optimistic guess.',
+
+    t0Frame: 'Not every order is a drop. A few products, nothing waiting on them, no window to hold. Same pipeline, same review, without the reserved slot in the calendar — and the page says so rather than hiding it.',
+    t0Terms: 'How this tier runs',
+    t0RowKeys: ['Timing', 'Queue', 'Delivery', 'After delivery'],
+    t0Math: `One product at drop scope — a catalog set and a lifestyle carousel — is ${euro(TIER0_PRODUCT, 'en')}. A Full Drop costs less from ${UPGRADE_BREAK_EVEN} products on. Below that, ordering individually is the cheaper route, and there is no reason for us to pretend otherwise.`,
+    t0Cta: 'Order individual products',
+
+    sampleH: 'Before any of it',
+    sampleBody: `One product, ${sample.price}, ${sample.unit}. It runs through the same pipeline as a paid order, so what comes back is what you would get.`,
+    sampleCta: `Request a test sample · ${sample.price}`,
+
+    faqH: 'Pricing questions',
+    faqs: [
+      {
+        q: 'When do I pay?',
+        a: 'For a drop, after the capacity gate has confirmed your window and before production starts — the window is what you are reserving, so it is what you are paying for. Individual products are invoiced on delivery. The test sample is the one thing charged upfront, and it is one per business.',
+      },
+      {
+        q: 'How does VAT and reverse-charge work?',
+        a: 'We are based in the Netherlands (VAT NL005407575B96). EU businesses with a valid VAT number can supply it at checkout for reverse-charge and faster invoicing. It is optional.',
+      },
+      {
+        q: `What if my drop is more than ${FULL_DROP_MAX} products?`,
+        a: `The Full Drop band is ${FULL_DROP_MIN}–${FULL_DROP_MAX} because that is what fits one reserved window. A larger collection is run as consecutive drops, quoted before anything is booked. We will not squeeze it into one window and hope.`,
+      },
+      {
+        q: 'Why is there no delivery date on individual products?',
+        a: `Because a drop can never be pushed for a single order, and an individual order can. Quoting a date we would have to break is worse than not quoting one. "${unattended.turnaround.en}" is what the queue typically does — stated as typical, never as a date.`,
+      },
+      {
+        q: 'Does a video cost more inside a drop?',
+        a: `No. ${euro(AMOUNT.video, 'en')} a clip either way — on its own, or added to any drop. Video is priced the same because it is the same work.`,
+      },
+      {
+        q: 'Is there a subscription?',
+        a: `Only if you want one. The studio retainer is ${euro(AMOUNT.retainer, 'en')} a month for brands running a drop every month. Everything else is bought when you need it, with nothing recurring.`,
+      },
+    ],
+
+    ctaH1: 'See it on your',
+    ctaEm: 'own product.',
+    ctaSample: `Test sample · ${sample.price}`,
+    ctaStart: 'Start a drop',
+    ctaWa: 'WhatsApp',
+    waText: 'Hi%20VISUAILS%2C%20I%27ve%20got%20a%20question%20about%20pricing.',
+  },
+
+  nl: {
+    eyebrow: 'Prijzen',
+    h1: 'Geprijsd per drop, niet per beeld.',
+    lead: 'Een drop is een collectie die live gaat: één deadline, één gereserveerd venster, één factuur. Dat is de eenheid waarin een merk werkt, dus is het de eenheid waarin deze studio prijst.',
+
+    dropsH: 'Twee manieren om een drop te draaien',
+    dropsSub: 'Allebei houden ze een venster vrij in de studioagenda. Het verschil zit in hoeveel van je lijn erdoorheen gaat.',
+    onceOnlyTag: 'Eenmalig per merk',
+    productsLabel: 'Producten',
+    dropCta: 'Start een drop',
+
+    anchorH: 'Wat een drop vervangt',
+    anchorWasTag: 'Een productiedag',
+    anchorNowTag: 'Een Full Drop',
+    anchorNowMeta: `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten, catalogset en lifestyle-carousel per stuk`,
+    anchorPerProduct: `Tussen ${euro(FULL_DROP_PER_PRODUCT_MIN, 'nl')} en ${euro(FULL_DROP_PER_PRODUCT_MAX, 'nl')} per product, afhankelijk van hoeveel je draait`,
+    anchorNowList: [
+      'Niets opsturen, nergens naartoe, geen dag uit de zaak',
+      'Wat je krijgt staat vast voordat je betaalt',
+      'Volgend seizoen opnieuw draaien zonder iets opnieuw te boeken',
+    ],
+    anchorNote: `Geen van beide bedragen zegt iets over wat er uit een shootdag komt — dat hangt van de dag af. ${shoot.caveat} Wat een drop vastlegt, is dat de uitkomst vooraf is afgesproken.`,
+
+    addOnH: 'Toe te voegen aan een drop',
+    addOnSub: 'Geen van beide is op zichzelf een manier om visuals te kopen. Ze komen bovenop een drop die je al draait.',
+    addOnCta: 'Even overleggen',
+    brandModelCta: 'Bekijk Jouw merkmodel',
+
+    inclH: 'In elke drop',
+    gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
+    gateBody: 'Een gereserveerd venster wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — in plaats van een optimistische gok.',
+
+    t0Frame: 'Niet elke bestelling is een drop. Een paar producten, er wacht niets op, geen venster vrij te houden. Dezelfde pipeline, dezelfde controle, zonder de gereserveerde plek in de agenda — en dat staat er gewoon, in plaats van weggemoffeld.',
+    t0Terms: 'Hoe deze vorm werkt',
+    t0RowKeys: ['Timing', 'Wachtrij', 'Levering', 'Na levering'],
+    t0Math: `Eén product op dropniveau — een catalogset en een lifestyle-carousel — is ${euro(TIER0_PRODUCT, 'nl')}. Vanaf ${UPGRADE_BREAK_EVEN} producten is een Full Drop goedkoper. Daaronder ben je met losse bestellingen voordeliger uit, en er is geen reden om te doen alsof dat anders is.`,
+    t0Cta: 'Bestel losse producten',
+
+    sampleH: 'Voordat je iets vastlegt',
+    sampleBody: `Eén product, ${sample.price}, ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
+    sampleCta: `Vraag een proefvisual aan · ${sample.price}`,
+
+    faqH: 'Vragen over prijzen',
+    faqs: [
+      {
+        q: 'Wanneer betaal ik?',
+        a: 'Bij een drop nadat de capaciteitscheck je venster heeft bevestigd en voordat de productie start — je reserveert dat venster, dus daar betaal je voor. Losse producten worden bij levering gefactureerd. De proefvisual is het enige dat vooraf betaald wordt, en dat is er één per bedrijf.',
+      },
+      {
+        q: 'Hoe werkt btw en verlegging?',
+        a: 'We zijn gevestigd in Nederland (btw NL005407575B96). EU-bedrijven met een geldig btw-nummer kunnen dat bij het afrekenen invullen voor btw-verlegging en snellere facturatie. Het is optioneel.',
+      },
+      {
+        q: `En als mijn drop groter is dan ${FULL_DROP_MAX} producten?`,
+        a: `De Full Drop-band is ${FULL_DROP_MIN}–${FULL_DROP_MAX} omdat dat in één gereserveerd venster past. Een grotere collectie draaien we als opeenvolgende drops, geoffreerd voordat er iets geboekt wordt. We persen het niet in één venster en hopen er het beste van.`,
+      },
+      {
+        q: 'Waarom staat er geen leverdatum bij losse producten?',
+        a: `Omdat een drop nooit wijkt voor een losse bestelling, en een losse bestelling wel kan wijken. Een datum noemen die we zouden moeten breken is erger dan geen datum noemen. "${unattended.turnaround.nl}" is wat de wachtrij meestal doet — gezegd als gebruikelijk, nooit als datum.`,
+      },
+      {
+        q: 'Kost een video meer binnen een drop?',
+        a: `Nee. ${euro(AMOUNT.video, 'nl')} per clip, hoe dan ook — los of toegevoegd aan een drop. Video kost hetzelfde omdat het hetzelfde werk is.`,
+      },
+      {
+        q: 'Is er een abonnement?',
+        a: `Alleen als je dat wilt. De studio-retainer is ${euro(AMOUNT.retainer, 'nl')} per maand voor merken die elke maand een drop draaien. De rest koop je wanneer je het nodig hebt, zonder iets doorlopends.`,
+      },
+    ],
+
+    ctaH1: 'Zie het op je',
+    ctaEm: 'eigen product.',
+    ctaSample: `Proefvisual · ${sample.price}`,
+    ctaStart: 'Start een drop',
+    ctaWa: 'WhatsApp',
+    waText: 'Hoi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20de%20prijzen.',
+  },
+};
+
+const c = COPY[lang];
+
+// What is true of every attended order, read from the tier rather than typed.
+// reviewClaim() is section 13's "single content variable per tier" — flipping
+// TIERS.attended.reviewLevel changes this line and every other page at once.
+const included = [
+  reviewClaim('attended', lang),
+  attended.turnaround[lang],
+  attended.delivery[lang],
+  attended.aftercare[lang],
+  attended.queue[lang],
+  lang === 'nl'
+    ? 'Hoge resolutie en e-commerce-klaar, zonder licentie per gebruik'
+    : 'High-resolution and e-commerce-ready, with no per-use licence',
+];
+
+// Tier 0's own terms, stated at the same size as everything else on the page.
+// Section 13: "The difference must be VISIBLE, not hidden."
+const t0Rows = [
+  unattended.turnaround[lang],
+  unattended.queue[lang],
+  unattended.delivery[lang],
+  unattended.aftercare[lang],
+];
+---
+
+<!-- HERO -->
+<section class="page-hero"><div class="container">
+  <span class="eyebrow-page">{c.eyebrow}</span>
+  <h1 class="display">{c.h1}</h1>
+  <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+</div></section>
+
+<!-- THE TWO DROP PACKAGES -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2>{c.dropsH}</h2><p>{c.dropsSub}</p></div>
+
+  <div class="packs reveal-group">
+    {dropPackages.map((p) => (
+      <div class="pack reveal pending">
+        <div class="pack-top">
+          <h3 class="pack-name">{p.name}</h3>
+          {p.onceOnly && <span class="pack-tag">{c.onceOnlyTag}</span>}
+        </div>
+        <p class="pack-line">{p.line}</p>
+
+        <div class="pack-price">
+          <span class="pp-amount">{p.price}</span>
+          <span class="pp-unit">{p.unit}</span>
+        </div>
+        <div class="pack-count">
+          <span class="pc-key">{c.productsLabel}</span>
+          <span class="pc-val">{Array.isArray(p.products) ? `${p.products[0]}–${p.products[1]}` : p.products}</span>
+        </div>
+
+        <ul class="checklist pack-inc">
+          {p.includes.map((f) => (
+            <li><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+          ))}
+        </ul>
+
+        <a href={lp('/start')} class="btn btn-primary btn-block pack-cta">{c.dropCta}</a>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- THE ANCHOR — what a production day costs, itemised rather than narrowed.
+     AUDIT-TASK-0.md §H flag 2: the range is the brief's figure and is not
+     sourced, so it is presented as a full day with every line counted, the
+     lines are named without inventing a euro figure for any of them, and the
+     caveat travels with it. No strikethrough: crossing out someone else's
+     price is a discount-site gesture, and the comparison is strong enough
+     stated plainly. -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2>{c.anchorH}</h2></div>
+
+  <div class="anchor reveal pending">
+    <div class="anchor-col">
+      <span class="anchor-tag">{c.anchorWasTag}</span>
+      <span class="anchor-price">{shoot.range}</span>
+      <p class="anchor-meta">{shoot.basis}</p>
+      <ul class="anchor-list">
+        {shoot.items.map((it) => <li>{it}</li>)}
+      </ul>
+    </div>
+
+    <div class="anchor-rule" aria-hidden="true"></div>
+
+    <div class="anchor-col">
+      <span class="anchor-tag">{c.anchorNowTag}</span>
+      <span class="anchor-price">{euro(AMOUNT.fullDrop, lang)}</span>
+      <p class="anchor-meta">{c.anchorNowMeta}</p>
+      <ul class="anchor-list">
+        {c.anchorNowList.map((it) => <li>{it}</li>)}
+      </ul>
+      <p class="anchor-per">{c.anchorPerProduct}</p>
+    </div>
+  </div>
+
+  <p class="anchor-note reveal pending">{c.anchorNote}</p>
+</div></section>
+
+<!-- WHAT RIDES ON TOP OF A DROP -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2>{c.addOnH}</h2><p>{c.addOnSub}</p></div>
+
+  <div class="rides reveal-group">
+    {addOnPackages.map((p) => (
+      <div class="ride reveal pending">
+        <div>
+          <h3 class="ride-name">{p.name}</h3>
+          <p class="ride-line">{p.line}</p>
+          <div class="ride-price">
+            <span class="rp-amount">{p.price}</span>
+            <span class="rp-unit">{p.unit}</span>
+          </div>
+          {p.creditLine && <p class="ride-credit">{p.creditLine}</p>}
+          <a
+            href={p.id === 'brand-model' ? lp('/custom-models') : lp('/contact')}
+            class="link-arrow ride-cta"
+          >{p.id === 'brand-model' ? c.brandModelCta : c.addOnCta}
+            <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+        <ul class="checklist ride-inc">
+          {p.includes.map((f) => (
+            <li><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- WHAT EVERY DROP INCLUDES, AND THE CAPACITY GATE -->
+<section class="section-tight on-ink"><div class="container">
+  <h2>{c.inclH}</h2>
+  <ul class="incl-grid reveal-group">
+    {included.map((item) => (
+      <li class="incl reveal pending">{item}</li>
+    ))}
+  </ul>
+
+  {/* The gate, stated where the money is. The site never prints a date the
+      capacity gate has not cleared — that rule is the reason this note exists
+      on a pricing page at all. */}
+  <p class="gate-note"><strong>{c.gateLead}</strong> {c.gateBody}</p>
+</div></section>
+
+<!-- TIER 0 — INDIVIDUAL PRODUCTS.
+     Section 13 puts this block at the BOTTOM of /pricing and nowhere near the
+     homepage, the nav or any hero. It gets the same border, the same type
+     sizes and the same width as the drop packages above: it is a different
+     service model, not a lesser one, and a thinner or quieter block would say
+     "lesser" without using any of the words section 13 bans. -->
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2 id="individual-products">{unattended.label[lang]}</h2></div>
+  <p class="t0-frame">{c.t0Frame}</p>
+
+  <div class="t0 reveal pending">
+    <div class="t0-items">
+      {PER_PRODUCT[lang].map((p) => (
+        <div class="t0-item">
+          <div>
+            <h3 class="t0-name">{p.name}</h3>
+            <p class="t0-line">{p.line}</p>
+          </div>
+          <div class="t0-item-price">
+            <span class="t0-amount">{p.price}</span>
+            <span class="t0-unit">{p.unit}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="t0-terms">
+      <span class="t0-terms-h">{c.t0Terms}</span>
+      <dl class="t0-facts">
+        {c.t0RowKeys.map((k, i) => (
+          <div class="t0-row">
+            <dt>{k}</dt>
+            <dd>{t0Rows[i]}</dd>
+          </div>
+        ))}
+      </dl>
+      <a href={lp('/catalog')} class="btn btn-primary btn-block t0-cta">{c.t0Cta}</a>
+    </div>
+  </div>
+
+  {/* Factual, no pressure — the comparison form, not a saving. The arithmetic
+      is computed in pricing.js (UPGRADE_BREAK_EVEN), not asserted here, because
+      section 13's own example sentence gets this sum wrong. */}
+  <p class="t0-math reveal pending">{c.t0Math}</p>
+</div></section>
+
+<!-- TEST SAMPLE -->
+<section class="section-tight"><div class="container">
+  <div class="sample reveal pending">
+    <div>
+      <h2>{c.sampleH}</h2>
+      <p class="sample-body">{c.sampleBody}</p>
+      <div class="flex" style="margin-top:1.6rem">
+        <a href={lp('/test-sample')} class="btn btn-primary">{c.sampleCta}</a>
+      </div>
+    </div>
+    <div><ProductScene icon="bottle" width="42%" badge={sample.unit} wide /></div>
+  </div>
+</div></section>
+
+<!-- FAQ -->
+<section class="section-tight"><div class="container narrow">
+  <div class="section-head"><h2>{c.faqH}</h2></div>
+  <div class="acc reveal pending">
+    {c.faqs.map((f) => (
+      <details class="acc-item">
+        <summary class="acc-q">
+          <span>{f.q}</span>
+          <span class="acc-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="i" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </summary>
+        <div class="acc-body-inner"><p>{f.a}</p></div>
+      </details>
+    ))}
+  </div>
+</div></section>
+
+<!-- CLOSING -->
+<section class="section-tight"><div class="container">
+  <div class="cta-band reveal pending">
+    <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
+    <div class="flex" style="justify-content:center;margin-top:2rem">
+      <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.ctaSample}</a>
+      <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.ctaStart}</a>
+      <a href={`https://wa.me/31625436130?text=${c.waText}`} class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.ctaWa}
+      </a>
+    </div>
+  </div>
+</div></section>
+
+<style>
+  .container.narrow { max-width: 760px; }
+
+  /* ── The two drop packages ───────────────────────────────────────────────
+     One frame, one dividing rule, equal columns. No shadow, no elevation,
+     no "most popular" ring — the old page put an accent border on Lifestyle
+     to nudge, and there is no marketing accent in this system to nudge with. */
+  .packs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line-strong);
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+  }
+  .pack {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.6rem, 3vw, 2.6rem);
+  }
+  .pack + .pack { border-left: 1px solid var(--line-strong); }
+
+  .pack-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .pack-name { font-size: var(--t-h3); line-height: 1.2; }
+  .pack-tag {
+    flex: 0 0 auto;
+    padding: .22rem .6rem;
+    border: 1px solid var(--line-strong);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .pack-line {
+    margin-top: .7rem;
+    color: var(--ink-3);
+    font-size: .95rem;
+    line-height: 1.6;
+    max-width: 38ch;
+    min-height: 4.8em;   /* keeps both price blocks on the same line */
+  }
+
+  .pack-price { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .pp-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2rem, 3.4vw, 2.7rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .pp-unit { font-size: .88rem; color: var(--ink-3); }
+
+  .pack-count {
+    display: flex;
+    align-items: baseline;
+    gap: .8rem;
+    margin-top: 1.1rem;
+    padding: .7rem 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .pc-key {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .pc-val { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+
+  .pack-inc { margin-top: 1.4rem; margin-bottom: 1.8rem; font-size: .93rem; }
+  .pack-cta { margin-top: auto; }
+
+  /* ── The anchor ──────────────────────────────────────────────────────── */
+  .anchor {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    border: 1px solid var(--line-strong);
+    margin-top: clamp(1.4rem, 3vw, 2.2rem);
+  }
+  .anchor-col { padding: clamp(1.5rem, 3vw, 2.4rem); display: flex; flex-direction: column; }
+  .anchor-rule { background: var(--line-strong); }
+  .anchor-tag {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .anchor-price {
+    display: block;
+    margin: .5rem 0 .5rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .anchor-meta { font-size: .9rem; color: var(--ink-3); line-height: 1.5; max-width: 34ch; min-height: 3em; }
+  .anchor-list { list-style: none; margin: 1.1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
+  .anchor-list li { position: relative; padding-left: 1.25rem; font-size: .92rem; color: var(--ink-2); line-height: 1.5; }
+  .anchor-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .55em;
+    width: 6px;
+    height: 6px;
+    background: var(--ink-faint);
+  }
+  .anchor-per { margin-top: auto; padding-top: 1.2rem; font-size: .88rem; color: var(--ink-3); }
+  .anchor-note { max-width: 74ch; margin-top: 1.4rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; }
+
+  /* ── What rides on top ───────────────────────────────────────────────────
+     Deliberately NOT a third and fourth card. These attach to a drop, so they
+     read as full-width rows: identity on the left, what it contains on the
+     right. Structure carries the relationship the copy is claiming. */
+  .rides { margin-top: clamp(1.4rem, 3vw, 2.2rem); border-top: 1px solid var(--line-strong); }
+  .ride {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    padding: clamp(1.6rem, 3.2vw, 2.6rem) 0;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .ride-name { font-size: var(--t-h3); line-height: 1.2; }
+  .ride-line { margin-top: .55rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; }
+  .ride-price { margin-top: 1.1rem; display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
+  .rp-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.7rem, 2.8vw, 2.2rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .rp-unit { font-size: .86rem; color: var(--ink-3); }
+  .ride-credit { margin-top: .8rem; font-size: .9rem; color: var(--ink-2); max-width: 40ch; line-height: 1.55; }
+  .ride-cta { display: inline-flex; align-items: center; gap: .4rem; margin-top: 1.2rem; }
+  .ride-inc { font-size: .93rem; align-self: center; }
+
+  /* ── In every drop ───────────────────────────────────────────────────── */
+  .incl-grid {
+    list-style: none;
+    margin: clamp(1.6rem, 3vw, 2.4rem) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0 clamp(1.5rem, 3vw, 3rem);
+  }
+  .incl {
+    padding: 1rem 0;
+    border-top: 1px solid var(--line);
+    color: var(--ink-2);
+    font-size: .95rem;
+    line-height: 1.5;
+  }
+
+  .gate-note {
+    margin-top: clamp(1.8rem, 3vw, 2.4rem);
+    padding: 1.05rem 1.25rem;
+    /* Neutral here, unlike the same note on /start. The system palette
+       (--signal) is scoped to /start, the client portal and system surfaces —
+       /pricing is a marketing surface, so the note earns its emphasis from the
+       rule and the bold lead rather than from hue. It would also fail contrast
+       against ink on this dark ground. */
+    border: 1px solid var(--line-strong);
+    font-size: .95rem;
+    line-height: 1.55;
+    max-width: 78ch;
+    color: var(--ink-2);
+  }
+  .gate-note strong { color: var(--ink); font-weight: 700; }
+
+  /* ── Tier 0 ──────────────────────────────────────────────────────────── */
+  .t0-frame { max-width: 70ch; color: var(--ink-3); margin-top: .4rem; line-height: 1.65; }
+  .t0 {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    border: 1px solid var(--line-strong);
+    margin-top: clamp(1.4rem, 3vw, 2.2rem);
+  }
+  .t0-items { display: flex; flex-direction: column; }
+  .t0-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    padding: clamp(1.3rem, 2.6vw, 1.9rem) clamp(1.5rem, 3vw, 2.4rem);
+  }
+  .t0-item + .t0-item { border-top: 1px solid var(--line); }
+  .t0-name { font-size: 1.1rem; line-height: 1.25; }
+  .t0-line { margin-top: .4rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; max-width: 42ch; }
+  .t0-item-price { text-align: right; flex: 0 0 auto; }
+  .t0-amount {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .t0-unit { display: block; margin-top: .35rem; font-size: .8rem; color: var(--ink-3); }
+
+  .t0-terms {
+    border-left: 1px solid var(--line-strong);
+    background: var(--paper-2);
+    padding: clamp(1.5rem, 3vw, 2.4rem);
+    display: flex;
+    flex-direction: column;
+  }
+  .t0-terms-h {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .t0-facts { margin: 1rem 0 1.6rem; }
+  .t0-row { padding: .8rem 0; border-top: 1px solid var(--line); }
+  .t0-row dt {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .t0-row dd { margin: .3rem 0 0; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
+  .t0-cta { margin-top: auto; }
+  .t0-math { max-width: 74ch; margin-top: 1.4rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; }
+
+  /* ── Test sample ─────────────────────────────────────────────────────── */
+  .sample {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1.6rem, 4vw, 3.5rem);
+    align-items: center;
+    border: 1px solid var(--line-strong);
+    padding: clamp(1.6rem, 3vw, 2.6rem);
+  }
+  .sample-body { margin-top: .9rem; color: var(--ink-3); max-width: 46ch; line-height: 1.65; }
+
+  /* ── FAQ ─────────────────────────────────────────────────────────────────
+     .acc-item carries only a bottom rule, so without a rule here the first
+     question has no line above it and the list reads as unclosed at the top. */
+  .acc { border-top: 1px solid var(--line); margin-top: clamp(1rem, 2vw, 1.6rem); }
+  .acc-item { box-shadow: inset 0 -1px 0 var(--line); }
+  .acc-q {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.35rem 0;
+    text-align: left;
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    list-style: none;
+  }
+  .acc-q::-webkit-details-marker { display: none; }
+  .acc-q::marker { content: ''; }
+  .acc-icon {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--line-strong);
+    /* Without this the glyph inherits .acc-q's var(--ink) and the plus reads
+       full-black here while the identical accordion on /faq draws it muted.
+       Same component, same page system — it must not differ by page. */
+    color: var(--ink-3);
+    display: grid;
+    place-items: center;
+    transition: transform .4s var(--ease), background .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease);
+  }
+  .acc-item[open] .acc-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+  .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }
+
+  /* ── Responsive ──────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .packs { grid-template-columns: 1fr; }
+    .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
+    .pack-line { min-height: 0; }
+    .anchor { grid-template-columns: 1fr; }
+    .anchor-rule { height: 1px; }
+    .anchor-meta { min-height: 0; }
+    .anchor-per { margin-top: 1.2rem; }
+    .ride { grid-template-columns: 1fr; }
+    .ride-inc { align-self: start; }
+    .t0 { grid-template-columns: 1fr; }
+    .t0-terms { border-left: 0; border-top: 1px solid var(--line-strong); }
+    .sample { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .pack-top { flex-direction: column; align-items: flex-start; gap: .6rem; }
+    .t0-item { flex-direction: column; align-items: flex-start; gap: .8rem; }
+    .t0-item-price { text-align: left; }
+  }
+</style>

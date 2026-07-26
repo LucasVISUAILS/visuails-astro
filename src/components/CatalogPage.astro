@@ -1,0 +1,520 @@
+---
+// VISUAILS — /catalog and /nl/catalog share this body.
+//
+// Before this rewrite the two locales were separate 256-line inline pages
+// that happened to agree. They agreed because nobody had touched them since
+// the port; the moment one locale got a price change the other would have
+// silently kept the old figure. Every other rewritten page in this project
+// now takes a `lang` prop for exactly that reason — /start, /pricing, the
+// homepage, /custom-models, /compare, /how-it-works and /faq — so EN/NL
+// parity is a property of the file layout rather than of anyone's diligence.
+//
+// Every euro on this page comes from src/data/pricing.js and every timing
+// string from turnaround(). Nothing here is typed by hand. The one thing a
+// page rewrite cannot fix is a price sitting in a <meta> tag, so the two
+// wrappers build their description from pricing.js too.
+//
+// SEQUENCING: this is a Tier 0 surface — "order individual products" in the
+// language of brief section 13. The full Tier 0 framing block (the explicit
+// side-by-side against running a drop) belongs to step 13, which lands after
+// step 12. What this file does now is make every claim on the page true
+// under the new tier model, and leave a marked slot for that block.
+// This component is a page BODY, not a page. The two thin wrappers in
+// src/pages own the <Layout> and the meta — importing Layout here would
+// nest a second <html> inside the first.
+import {
+  TIERS, perProduct, reviewClaim, turnaround,
+  FULL_DROP_MIN, FULL_DROP_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import ProductScene from './ProductScene.astro';
+import Compare from './Compare.astro';
+import { catalogStyles as catalogStylesEn } from '../data/catalogStyles.js';
+import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const styles = lang === 'nl' ? catalogStylesNl : catalogStylesEn;
+
+// The per-product entry, not a literal. `catalog` is a Tier 0 line item, so
+// its timing and review claims come off TIERS.unattended — not off whatever
+// the page used to promise.
+const item = perProduct('catalog', lang);
+const t0 = TIERS.unattended;
+const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+
+// The four photos, named. This used to be prose in three different places
+// with three slightly different orderings; it is one list now.
+const SHOTS = {
+  en: [
+    { n: '1', label: 'Front', img: '/img/catalog-after.webp', alt: 'Front catalog shot of the product' },
+    { n: '2', label: 'Back', img: '/img/catalog-after.webp', alt: 'Back catalog shot of the product' },
+    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', alt: 'Detail close-up of the logo or fabric' },
+    { n: '4', label: 'On a model', img: '/img/custom-models-02.webp', alt: 'On-model shot of the product, worn for fit and scale' },
+  ],
+  nl: [
+    { n: '1', label: 'Voorkant', img: '/img/catalog-after.webp', alt: 'Voorkant-shot van het product voor de catalogus' },
+    { n: '2', label: 'Achterkant', img: '/img/catalog-after.webp', alt: 'Achterkant-shot van het product voor de catalogus' },
+    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', alt: 'Detailclose-up van het logo of de stof' },
+    { n: '4', label: 'Op een model', img: '/img/custom-models-02.webp', alt: 'On-model shot van het product, gedragen voor pasvorm en schaal' },
+  ],
+};
+
+// No `as const`. COPY[lang] on a const-asserted object gives a union of
+// readonly tuples, and .map() on that union is a TS error — the same footgun
+// every other page component in this project deliberately avoids.
+const COPY = {
+  en: {
+    eyebrow: 'Catalog',
+    h1: 'Clean, consistent product visuals — built to scale.',
+    lead: `One product, one price: <strong>${item.price}</strong> for a full 4-photo set — front, back, detail and one on-model shot.`,
+    ctaPrimary: 'Order individual products',
+    ctaSecondary: 'See pricing',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20catalog%20visuals%20for%20my%20products.',
+    waLabel: 'WhatsApp',
+    trust: [
+      [item.price, 'per product'],
+      ['4 photos', 'per product'],
+    ],
+    // The queue line is deliberately in the trust row rather than buried in
+    // small print. Section 13: the difference between the two service models
+    // must be VISIBLE. A visitor should not be able to leave this page
+    // believing a date was promised.
+    queueNote: t0.queue.en + '.',
+    packH: `One product. Four photos. ${item.price}.`,
+    packP: 'Every product comes back as a complete set — including a real on-model shot, not just flat-lays.',
+    packCta: `Order individual products · ${item.price} / product`,
+    edMeta: '( Where it fits )',
+    edH: 'Catalog photography: clarity that closes the sale.',
+    edSub: 'The clean product pages your shop and marketplaces run on.',
+    whatH: 'What it is',
+    whatP: [
+      "Catalog photography is the straight, clean product imagery a shopper judges the product by — front, back, a detail close-up and one on-model shot, all on a consistent background. It isn't there to set a mood; it's there to show exactly what someone is buying, with nothing left to guess.",
+      'It is also where a small brand quietly starts to look established. When every product in your range is shot the same way — same framing, same light, same colour — the collection reads as one considered line instead of a mix of phone photos. That consistency builds trust, and trust is what lifts conversion.',
+    ],
+    whereH: 'Where it lives',
+    where: [
+      ['Your webshop', 'the product pages people decide on.'],
+      ['Marketplaces', 'Bol, Amazon and listings that demand clean, consistent shots.'],
+      ['Shopping feeds', 'Google Shopping and comparison sites.'],
+      ['Wholesale & linesheets', 'where buyers need to see the product plainly.'],
+    ],
+    stylesH: 'Pick your catalog style.',
+    exploreLabel: (n: string) => `Explore ${n}`,
+    stepsH: 'Three steps to a clean grid.',
+    steps: [
+      ['Upload a photo', 'We take it from there.'],
+      ['We make it consistent', 'Same lighting, angle, background — every time.'],
+      // Timing comes from the tier, never from a literal. This step used to
+      // read "Delivered in ~24h" — a promise the capacity gate never cleared.
+      [turnaround('unattended', 'en'), 'Ready for your site, ads and social.'],
+    ],
+    checkH: 'Everything a listing needs.',
+    check: [
+      'Consistent lighting & angles',
+      'Neutral or your chosen background',
+      'Marketplace-ready framing',
+      'High-res export',
+      reviewClaim('unattended', 'en'),
+    ],
+    chipsBg: ['White — standard', 'Custom colour — any hex code'],
+    baH: 'One photo in. A clean visual out.',
+    baP: 'The exact raw phone photo a customer sent — and what came back.',
+    baBefore: 'Your photo',
+    baBeforeAlt: 'A raw phone photo of a t-shirt on a table before VISUAILS',
+    baAfterAlt: 'The same t-shirt as a clean catalog visual after VISUAILS',
+    reviewH: "Fast means nothing if it isn't right.",
+    reviewP: 'Every visual is generated, then reviewed by a person before it reaches you — colour and detail held true, not left to chance.',
+    reviewChips: ['Consistent lighting & framing', 'Marketplace-ready', reviewClaim('unattended', 'en')],
+    reviewAlt: 'A clean, marketplace-ready catalog visual by VISUAILS',
+    dropH: 'Running a whole collection?',
+    dropP: `Individual products are billed per product and move through the standard queue. A drop is the other way to work: ${scope} products produced together as one release, on a window reserved before you pay, with a portal to approve each image.`,
+    dropCta: 'See how a drop works',
+    faqH: 'Catalog questions, answered',
+    faqs: [
+      {
+        q: `What do I get for ${item.price}?`,
+        a: `A full set for one product: four photos — front, back, a close-up of the logo or fabric, and one on-model shot.`,
+      },
+      {
+        q: 'Is the on-model shot really included?',
+        a: 'Yes — one on-model photo is part of every product set, at no extra cost. Pick a model when you order, or let us choose one that fits your brand.',
+      },
+      {
+        q: 'How long does it take?',
+        // Both halves of the timing promise, in the order a buyer needs them:
+        // the typical span first, then the fact that it is not a date.
+        a: `${turnaround('unattended', 'en')}. ${t0.queue.en} — a drop that is already scheduled takes priority in the queue, so a busy week can move an individual order.`,
+      },
+      {
+        q: 'Can I choose the background colour?',
+        a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send.',
+      },
+      {
+        q: 'Are the visuals marketplace-compliant?',
+        a: "Yes — framed and exported for common marketplace requirements. Tell us your platform and we'll match its specs.",
+      },
+      {
+        q: 'What if I need changes?',
+        // This answer used to read "Three revision rounds are included."
+        // That was the drop's guarantee and not this one — and there is no
+        // count on either tier now. What we would agree instead is in
+        // /terms §10 and stays there; see src/data/pricing.js for why.
+        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+      },
+    ],
+    ctaH: 'Build a catalog that<br>looks like one brand.',
+    ctaP: `${item.price} per product, ${turnaround('unattended', 'en').toLowerCase()}.`,
+  },
+  nl: {
+    eyebrow: 'Catalog',
+    h1: 'Strakke, consistente productvisuals — gebouwd om te schalen.',
+    lead: `Eén product, één prijs: <strong>${item.price}</strong> voor een complete set van 4 foto’s — voorkant, achterkant, detail en één on-model shot.`,
+    ctaPrimary: 'Bestel losse producten',
+    ctaSecondary: 'Bekijk prijzen',
+    wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Catalog-visuals%20bestellen%20voor%20mijn%20producten.',
+    waLabel: 'WhatsApp',
+    trust: [
+      [item.price, 'per product'],
+      ['4 foto’s', 'per product'],
+    ],
+    queueNote: t0.queue.nl + '.',
+    packH: `Eén product. Vier foto’s. ${item.price}.`,
+    packP: 'Elk product komt terug als een complete set — inclusief een echte on-model shot, niet alleen flat-lays.',
+    packCta: `Bestel losse producten · ${item.price} / product`,
+    edMeta: '( Waar het past )',
+    edH: 'Catalogfotografie: helderheid die de verkoop sluit.',
+    edSub: 'De strakke productpagina’s waar je shop en marktplaatsen op draaien.',
+    whatH: 'Wat het is',
+    whatP: [
+      'Catalogfotografie is het rechte, strakke productbeeld waar een klant het product op beoordeelt — voorkant, achterkant, een detail-close-up en één on-model shot, allemaal op een consistente achtergrond. Het is er niet om sfeer te maken; het laat precies zien wat iemand koopt, zonder dat er iets geraden wordt.',
+      'Het is ook waar een klein merk stilletjes gevestigd begint te ogen. Als elk product in je assortiment op dezelfde manier is geschoten — zelfde kader, zelfde licht, zelfde kleur — leest de collectie als één doordachte lijn in plaats van een mix van telefoonfoto’s. Die consistentie bouwt vertrouwen, en vertrouwen verhoogt de conversie.',
+    ],
+    whereH: 'Waar het leeft',
+    where: [
+      ['Je webshop', 'de productpagina’s waar mensen beslissen.'],
+      ['Marktplaatsen', 'Bol, Amazon en listings die strakke, consistente shots eisen.'],
+      ['Shopping-feeds', 'Google Shopping en vergelijkingssites.'],
+      ['Wholesale & linesheets', 'waar inkopers het product helder moeten zien.'],
+    ],
+    stylesH: 'Kies je Catalog-stijl.',
+    exploreLabel: (n: string) => `Ontdek ${n}`,
+    stepsH: 'Drie stappen naar een strakke grid.',
+    steps: [
+      ['Upload een foto', 'Wij nemen het daarna over.'],
+      ['Wij maken het consistent', 'Zelfde belichting, hoek, achtergrond — elke keer.'],
+      [turnaround('unattended', 'nl'), 'Klaar voor je site, advertenties en social.'],
+    ],
+    checkH: 'Alles wat een listing nodig heeft.',
+    check: [
+      'Consistente belichting & hoeken',
+      'Neutrale of je gekozen achtergrond',
+      'Uitsnede klaar voor marktplaatsen',
+      'High-res export',
+      reviewClaim('unattended', 'nl'),
+    ],
+    chipsBg: ['Wit — standaard', 'Aangepaste kleur — elke hexcode'],
+    baH: 'Eén foto erin. Een strakke visual eruit.',
+    baP: 'Precies de ruwe telefoonfoto die een klant stuurde — en wat er terugkwam.',
+    baBefore: 'Jouw foto',
+    baBeforeAlt: 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS',
+    baAfterAlt: 'Hetzelfde t-shirt als een strakke Catalog-visual na VISUAILS',
+    reviewH: 'Snel betekent niets als het niet klopt.',
+    reviewP: 'Elke visual wordt gegenereerd en daarna door een mens gecontroleerd voordat je hem krijgt — kleur en detail blijven kloppen, niets aan het toeval overgelaten.',
+    reviewChips: ['Consistente belichting & uitsnede', 'Klaar voor marktplaatsen', reviewClaim('unattended', 'nl')],
+    reviewAlt: 'Een strakke, voor marktplaatsen klare Catalog-visual van VISUAILS',
+    dropH: 'Een hele collectie draaien?',
+    dropP: `Losse producten reken je per product af en gaan door de standaard wachtrij. Een drop werkt anders: ${scope} producten samen geproduceerd als één release, in een venster dat is gereserveerd voordat je betaalt, met een portaal om elk beeld goed te keuren.`,
+    dropCta: 'Bekijk hoe een drop werkt',
+    faqH: 'Catalog-vragen, beantwoord',
+    faqs: [
+      {
+        q: `Wat krijg ik voor ${item.price}?`,
+        a: 'Een complete set voor één product: vier foto’s — voorkant, achterkant, een close-up van het logo of de stof, en één on-model shot.',
+      },
+      {
+        q: 'Zit de on-model shot echt inbegrepen?',
+        a: 'Ja — één on-model foto hoort bij elke productset, zonder extra kosten. Kies een model bij je bestelling, of laat ons er een kiezen die bij je merk past.',
+      },
+      {
+        q: 'Hoe lang duurt het?',
+        a: `${turnaround('unattended', 'nl')}. ${t0.queue.nl} — een drop die al ingepland staat heeft voorrang in de wachtrij, dus een drukke week kan een losse bestelling verschuiven.`,
+      },
+      {
+        q: 'Kan ik de achtergrondkleur kiezen?',
+        a: 'Standaard is puur wit (#FFFFFF). Je kunt ook elke hexcode invoeren — een lichte, neutrale kleur werkt het best — toegepast achter elk product dat je opstuurt.',
+      },
+      {
+        q: 'Voldoen de visuals aan de eisen van marktplaatsen?',
+        a: 'Ja — uitgesneden en geëxporteerd volgens de gangbare eisen van marktplaatsen. Vertel ons je platform en we passen de specificaties daarop aan.',
+      },
+      {
+        q: 'Wat als ik wijzigingen nodig heb?',
+        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+      },
+    ],
+    ctaH: 'Bouw een catalogus die<br>eruitziet als één merk.',
+    ctaP: `${item.price} per product, ${turnaround('unattended', 'nl').toLowerCase()}.`,
+  },
+};
+
+const c = COPY[lang];
+const shots = SHOTS[lang];
+---
+
+<section class="page-hero">
+  <div class="container two-col" style="align-items:center">
+    <div class="reveal pending">
+      <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">{c.h1}</h1>
+      <p class="lead" style="margin-top:1.2rem" set:html={c.lead} />
+      <div class="flex" style="margin-top:1.8rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+        </a>
+      </div>
+      <div class="trust-row" style="margin-top:2.4rem">
+        {c.trust.map(([strong, rest]) => (
+          <span class="trust-item"><strong>{strong}</strong> {rest}</span>
+        ))}
+        <span class="trust-item"><strong>{turnaround('unattended', lang)}</strong></span>
+      </div>
+      <p class="queue-note">{c.queueNote}</p>
+    </div>
+    <div class="reveal pending">
+      <ProductScene icon="bottle" width="42%" badge={c.eyebrow} wide />
+    </div>
+  </div>
+</section>
+
+<!-- One product = a full 4-photo set. Spelled out so the price and the
+     included on-model shot are never a surprise. The per-photo maths that
+     used to sit here ("about €10 a photo") is gone: it invited a comparison
+     with stock rates the rest of the site is deliberately not competing on. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head" style="text-align:center;margin-inline:auto">
+      <h2>{c.packH}</h2>
+      <p style="margin-inline:auto">{c.packP}</p>
+    </div>
+    <div class="pack-row reveal-group" style="margin-top:2rem">
+      {shots.map((s) => (
+        <div class="pack-card reveal pending">
+          <div class="photo-band"><img src={s.img} alt={s.alt} loading="lazy" /><span class="pack-badge">{s.n} · {s.label}</span></div>
+        </div>
+      ))}
+    </div>
+    <div class="flex" style="justify-content:center;margin-top:1.8rem">
+      <a href={lp('/start')} class="btn btn-primary">{c.packCta}</a>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="ed-head">
+      <span class="ed-meta">{c.edMeta}</span>
+      <div>
+        <h2>{c.edH}</h2>
+        <p class="ed-sub">{c.edSub}</p>
+      </div>
+    </div>
+    <div class="svc-explain">
+      <div class="svc-explain-main">
+        <h3>{c.whatH}</h3>
+        {c.whatP.map((p) => <p>{p}</p>)}
+      </div>
+      <aside class="svc-explain-side">
+        <h3>{c.whereH}</h3>
+        <ul class="svc-where-list">
+          {c.where.map(([strong, rest]) => (
+            <li><strong>{strong}</strong> — {rest}</li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 style="margin-bottom:2rem">{c.stylesH}</h2>
+    <div class="grid grid-2">
+      {styles.map((s) => (
+        <div class="card card-hover reveal pending">
+          <div class="svc-media">
+            <ProductScene icon={s.cardIcon} width={s.cardWidth} badge={`Catalog · ${s.name}`} wide />
+          </div>
+          <div class="svc-body">
+            <h3>{s.name}</h3>
+            <span class="svc-price">{s.cardPrice}</span>
+            <p>{s.cardDesc}</p>
+            <div class="flex" style="margin-top:1.2rem">
+              <a href={lp(`/catalog/${s.slug}`)} class="btn btn-primary">{c.exploreLabel(s.name)}</a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="photo-split reveal pending">
+      <div class="photo-split-media"><ProductScene icon="jar" width="40%" badge={c.baH} /></div>
+      <div>
+        <h2>{c.stepsH}</h2>
+        <div class="steps" style="grid-template-columns:1fr;margin-top:1.6rem;gap:1.1rem">
+          {c.steps.map(([h, p], i) => (
+            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container two-col">
+    <div class="reveal pending">
+      <h2>{c.checkH}</h2>
+      <ul class="checklist" style="margin-top:1.4rem">
+        {c.check.map((li) => (
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
+        ))}
+      </ul>
+    </div>
+    <div class="reveal pending">
+      <ProductScene icon="bag" width="40%" badge={c.eyebrow} wide />
+      <div class="chip-row" style="margin-top:1.2rem">
+        {c.chipsBg.map((chip) => (
+          <span class="chip"><span class="dot"></span>{chip}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head" style="text-align:center;margin-inline:auto"><h2>{c.baH}</h2><p style="margin-inline:auto">{c.baP}</p></div>
+    <div style="max-width:520px;margin:2rem auto 0">
+      <Compare
+        before="/img/catalog-before.webp"
+        after="/img/catalog-after.webp"
+        ratio="1/1"
+        objectPosition="50% 62%"
+        beforeLabel={c.baBefore}
+        afterLabel="VISUAILS"
+        beforeAlt={c.baBeforeAlt}
+        afterAlt={c.baAfterAlt}
+      />
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container two-col">
+    <div class="reveal pending">
+      <div class="photo-split-media"><img src="/img/catalog-after.webp" alt={c.reviewAlt} loading="lazy" /></div>
+    </div>
+    <div class="reveal pending">
+      <h2>{c.reviewH}</h2>
+      <p class="lead" style="margin-top:1.2rem">{c.reviewP}</p>
+      <div class="chip-row" style="margin-top:1.6rem">
+        {c.reviewChips.map((chip) => (
+          <span class="chip"><span class="dot"></span>{chip}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 13 SLOT — the explicit "order individual products" vs "run a whole
+     drop" block lands here, after step 12. What sits here now is the honest
+     minimum: a visitor on a Tier 0 page is told the other service model
+     exists and where to read about it, rather than being left to assume this
+     page is the whole offer. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="drop-note reveal pending">
+      <div>
+        <h2>{c.dropH}</h2>
+        <p>{c.dropP}</p>
+      </div>
+      <a href={lp('/pricing')} class="link-arrow">{c.dropCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container" style="max-width:760px">
+    <h2 style="margin-bottom:1.8rem">{c.faqH}</h2>
+    <div class="faq-stack">
+      {c.faqs.map((f) => (
+        <details class="faq-item">
+          <summary>{f.q}</summary>
+          <p>{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)" set:html={c.ctaH} />
+      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The queue disclosure. Section 13 requires the "no fixed delivery date"
+     half of the promise to be visible, not hidden — so it is set at body
+     weight directly under the trust row rather than as footnote-sized grey. */
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .chip { display: inline-flex; align-items: center; gap: .5rem; font-size: .84rem; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); padding: .45rem .9rem; }
+  .chip .dot { width: 6px; height: 6px; background: var(--accent); flex: 0 0 auto; }
+
+  /* The cross-link to the other service model. A full border rather than a
+     side stripe, and no card nesting — it sits directly on the page. */
+  .drop-note { border: 1px solid var(--line-strong); padding: clamp(1.6rem, 3vw, 2.4rem); display: grid; gap: 1.4rem; }
+  .drop-note h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+  .drop-note p { margin-top: .7rem; color: var(--ink-2); max-width: 68ch; }
+
+  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
+  .faq-item { background: var(--surface); border: 1px solid var(--line); padding: 1.1rem 1.3rem; }
+  .faq-item summary { cursor: pointer; list-style: none; font-weight: 600; color: var(--ink); font-size: .98rem; }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::marker { content: ''; }
+  .faq-item summary::after { content: '+'; float: right; color: var(--ink-3); font-family: var(--font-display); font-size: 1.2rem; }
+  .faq-item[open] summary::after { content: '\2212'; }
+  .faq-item p { margin-top: .8rem; color: var(--ink-3); font-size: .92rem; line-height: 1.6; }
+
+  .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
+  .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--ink-3); }
+  .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
+  .step p { font-size: .9rem; color: var(--ink-3); }
+
+  /* The 4-photo product set. Four tiles on desktop, 2×2 on phones. */
+  .pack-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+  @media (max-width: 720px) { .pack-row { grid-template-columns: 1fr 1fr; } }
+  .pack-card .photo-band { position: relative; aspect-ratio: 3 / 4; overflow: hidden; border: 1px solid var(--line); }
+  .pack-card .photo-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pack-badge { position: absolute; left: 10px; bottom: 10px; padding: .35rem .7rem; background: oklch(0.16 0.006 265 / 0.86); color: var(--paper); font-size: .78rem; font-weight: 600; }
+</style>

@@ -14,15 +14,69 @@
 //   • The customer row is upserted by email on every order, so the account /
 //     profile-prefill phase has data to work with from day one.
 //
-// Bindings (see wrangler.toml): env.DB (D1), env.UPLOADS (R2, later),
+// Bindings (see wrangler.toml): env.DB (D1), env.UPLOADS (R2),
 // env.RESEND_API_KEY (secret), env.NOTIFY_EMAIL, env.FROM_EMAIL.
+//
+// The confirmation email reads its timing from the tier model in
+// src/data/pricing.js rather than typing it. It used to promise "within about
+// 24 hours" — the exact claim the repositioning retired — and it survived every
+// sweep because every sweep was scoped to src/. An email is the one surface a
+// customer keeps, so it is the last place a stale promise should be allowed to
+// live, and the only way to guarantee that is to stop it having its own copy.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 10 · THIS ENDPOINT IS NOW THE BOOKING PATH
+//
+// /start's pipeline posts here with { tier, products, window_start, window_end,
+// upload_batch }. Three things follow from that, and they are the reason this
+// file grew:
+//
+//  1. THE GATE RUNS AGAIN, HERE, SERVER-SIDE. /api/capacity is a cacheable
+//     public read and cannot reserve anything — its own header says so: "Nothing
+//     here is a reservation. The reservation is orders.window_start." Two people
+//     can be looking at the same last window at the same instant, and the client
+//     could have had that page open for an hour. So the window arriving in this
+//     request is a REQUEST for a date, never a grant of one, and it is checked
+//     against live rows before it is written.
+//
+//  2. A WINDOW IS WRITTEN ONLY IF clearedWindows() STILL RETURNS IT. Not "if it
+//     looks close", not "if it used to fit". The brief's one absolute rule about
+//     time is "never promise a delivery date the capacity gate hasn't cleared",
+//     and the only way to make that a property of the database rather than of
+//     our own discipline is for this to be the single place window_start is ever
+//     assigned, from the single function allowed to produce a date.
+//
+//  3. FAILING CLOSED ON DATES IS NOT THE SAME AS FAILING THE ORDER. If D1 is
+//     unreachable the window is not written — but the order still is, and the
+//     confirmation says we will come back with the dates. Losing a client's
+//     order to protect a calendar would be the wrong thing to protect.
+// ─────────────────────────────────────────────────────────────────────────────
 
-const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample']);
+import { aftercare, turnaround } from '../../src/data/pricing.js';
+import {
+  ATTENDED_PER_WINDOW,
+  HORIZON_DAYS,
+  addDays,
+  bookedFromRows,
+  clearedWindows,
+} from '../../src/data/capacity.js';
+import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
+
+const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
 
 // Fields we lift into their own columns; everything else goes to details_json.
-const TOP_FIELDS = ['service', 'redirect', 'lang', 'name', 'brand', 'company', 'email', 'phone', 'vat', 'website', 'company_hp'];
+//
+// `source` was always read into a column and was ALSO landing in details_json,
+// which is the same duplication the section-10 fields would have caused. It is
+// listed here now for the same reason they are.
+const TOP_FIELDS = [
+  'service', 'redirect', 'lang', 'name', 'brand', 'company', 'email', 'phone', 'vat', 'website',
+  'company_hp', 'source',
+  // ── section 10 · the pipeline's own fields ──
+  'tier', 'products', 'window_start', 'window_end', 'upload_batch', 'mode',
+];
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   let form;
   try {
     form = await request.formData();
@@ -30,17 +84,28 @@ export async function onRequestPost({ request, env }) {
     return redirect('/thank-you');
   }
 
-  const get = (k) => (form.get(k) || '').toString().trim();
+  // A multipart field is either a string or a File, and toString() on a File
+  // gives the literal "[object File]" — a value that would then be stored,
+  // emailed and compared as if the client had typed it. The details loop below
+  // guards the same way. Behaviour is unchanged for a string or a missing key.
+  const get = (k) => { const v = form.get(k); return typeof v === 'string' ? v.trim() : ''; };
 
   const service = get('service') || 'catalog';
   const lang = get('lang') === 'nl' ? 'nl' : 'en';
   const back = safeRedirect(get('redirect'), lang);
 
+  // The pipeline posts with fetch and wants an answer it can act on — "that
+  // window has gone, here are the ones that are left" is useless as a 303 to a
+  // thank-you page. Every other form on the site posts without JS and keeps the
+  // redirect. One endpoint, two response shapes, chosen by the caller.
+  const wantsJson = get('mode') === 'json';
+
   // Honeypot: a hidden field real users never see. Bots fill it. Pretend success.
-  if (get('company_hp')) return redirect(back);
+  if (get('company_hp')) return wantsJson ? json({ ok: true, redirect: back }) : redirect(back);
 
   const email = get('email');
   if (!isEmail(email)) {
+    if (wantsJson) return json({ ok: false, error: 'email' }, 400);
     // JS validation normally blocks this; for JS-off users, bounce back to the
     // form they came from (same-origin Referer), not the thank-you page.
     let dest = back;
@@ -63,8 +128,15 @@ export async function onRequestPost({ request, env }) {
   const details = {};
   for (const [k, v] of form.entries()) {
     if (TOP_FIELDS.includes(k)) continue;
-    const val = (v || '').toString();
-    if (val) details[k] = val;
+    // A FILE IS NOT AN ANSWER. Every order form carries <input type="file">, and
+    // a browser submits an entry for it whether or not anything was picked. The
+    // old line here was `(v || '').toString()`, which on a File yields the
+    // literal string "[object File]" — so every order ever placed stored
+    // photos:"[object File]" in details_json and printed it in the studio's
+    // notification email. Files are handled by /api/upload and land in the files
+    // table further down; they have no business in this record at all.
+    if (typeof v !== 'string') continue;
+    if (v) details[k] = v;
   }
 
   // ---- subscribe (lead magnet) --------------------------------------------
@@ -82,7 +154,8 @@ export async function onRequestPost({ request, env }) {
       subject: `Checklist signup — ${email}`,
       html: `<p>New checklist signup:</p><p><strong>${esc(email)}</strong></p>`,
     }));
-    return redirect(back + (back.includes('?') ? '&' : '?') + 'ok=1');
+    const okUrl = back + (back.includes('?') ? '&' : '?') + 'ok=1';
+    return wantsJson ? json({ ok: true, redirect: okUrl }) : redirect(okUrl);
   }
 
   // ---- contact -------------------------------------------------------------
@@ -98,44 +171,312 @@ export async function onRequestPost({ request, env }) {
       subject: `Contact — ${name || email}`,
       html: `<p>Contact message from <strong>${esc(name || email)}</strong> (${esc(email)}):</p><p>${esc(body).replace(/\n/g, '<br>')}</p>`,
     }));
-    return redirect(back + (back.includes('?') ? '&' : '?') + 'ok=1');
+    const okUrl = back + (back.includes('?') ? '&' : '?') + 'ok=1';
+    return wantsJson ? json({ ok: true, redirect: okUrl }) : redirect(okUrl);
   }
 
   // ---- order ---------------------------------------------------------------
   const svc = ORDER_SERVICES.has(service) ? service : 'catalog';
   const ref = makeRef();
+
+  // 'attended' on an exact match and on nothing else. Every form that predates
+  // the pipeline sends no tier at all and is Tier 0, which is also the D1
+  // default — so a typo, an empty string or a bot's guess all land on the tier
+  // that reserves nothing, which is the direction a mistake should fall.
+  const tier = get('tier') === 'attended' ? 'attended' : 'unattended';
+  const products = countOf(get('products'));
+
+  // Staged reference material, if the client uploaded any. Read before the
+  // insert so the count can go into details_json with everything else; the rows
+  // themselves cannot exist until the order does (files.order_id is NOT NULL).
+  const batch = get('upload_batch');
+  const staged = isWellFormedBatch(batch) ? await listBatch(env, batch) : [];
+  if (staged.length) {
+    details.uploads = String(staged.length);
+    details.upload_batch = batch;
+  }
+
+  // THE GATE, AGAIN, AGAINST LIVE ROWS. See note 1 at the top of this file.
+  const asked = { start: get('window_start'), end: get('window_end') };
+  const gate = await clearRequestedWindow(env, { tier, products, asked });
+
+  // The window the client chose filled while they were filling in the form. In
+  // the pipeline this is recoverable and worth recovering: their answers are
+  // still on screen, so hand back the windows that ARE clear and let them pick
+  // again rather than booking them onto nothing and emailing an apology. No
+  // order row is written, so a second submit is a first order.
+  //
+  // Without JS there is nowhere to hand it back TO, so that path falls through
+  // and creates the order undated — the confirmation then says we will come
+  // back with the dates, which is true and is the same thing a human would say.
+  if (wantsJson && gate.reason === 'gone') {
+    return json({ ok: false, error: 'window-gone', windows: gate.windows, reason: gate.listReason }, 409);
+  }
+
   let customerId = null;
   await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat }); });
 
+  // `lang` is stored, not just used. This request is the last moment the client's
+  // language is known for free — every later message (the portal, the delivery
+  // mail, an aftercare check-in) arrives with no form attached and would have to
+  // guess.
+  //
+  // window_start being non-null IS the reservation, and gate.window is the only
+  // value that ever reaches it. Nothing else in this function may assign it.
   await safe(() => env.DB && env.DB
-    .prepare(`INSERT INTO orders (ref, customer_id, service, name, brand, email, phone, vat_number, details_json, source)
-              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)`)
+    .prepare(`INSERT INTO orders (ref, customer_id, service, name, brand, email, phone, vat_number, details_json, source, lang,
+                                  tier, product_count, window_start, window_end)
+              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)`)
     .bind(ref, customerId, svc, name || null, brand || null, email, phone || null, vat || null,
-          JSON.stringify(details), get('source') || null).run());
+          JSON.stringify(details), get('source') || null, lang,
+          tier, products, gate.window?.start || null, gate.window?.end || null).run());
 
+  let orderId = null;
   await safe(async () => {
     const row = await env.DB?.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first();
-    if (row?.id) await env.DB.prepare('INSERT INTO order_events (order_id, status, note) VALUES (?1, ?2, ?3)')
-      .bind(row.id, 'received', 'Order submitted via website').run();
+    orderId = row?.id ?? null;
   });
+
+  // TWO PEOPLE, ONE LAST WINDOW, THE SAME INSTANT. Both passed the gate above,
+  // because both read the calendar before either had written to it. Resolving it
+  // here — after the write, when the rows exist — is what makes the outcome a
+  // fact rather than a guess. See loseRaceIfOversold for why the lower id wins.
+  let raced = false;
+  if (gate.window && orderId) {
+    raced = await loseRaceIfOversold(env, { orderId, products, window: gate.window });
+  }
+  const finalWindow = raced ? null : gate.window;
+
+  await safe(async () => {
+    if (!orderId || !env.DB) return;
+    await env.DB.prepare('INSERT INTO order_events (order_id, status, note) VALUES (?1, ?2, ?3)')
+      .bind(orderId, 'received', eventNote({ tier, window: finalWindow, raced, uploads: staged.length })).run();
+  });
+
+  // The staged objects become rows now that there is an order to hang them on.
+  // They keep the key they were uploaded under; nothing is copied or moved,
+  // because a 25 MB copy per photograph to make a prefix prettier is a cost the
+  // client pays in latency for no benefit at all.
+  if (orderId && staged.length) await safe(() => attachUploads(env, orderId, staged));
 
   await safe(() => sendMail(env, {
     to: env.NOTIFY_EMAIL || 'hello@visuails.com',
-    subject: `New ${svc} order — ${ref}`,
-    html: notifyEmail(ref, svc, { name, brand, email, phone, vat, website }, details),
+    subject: `${raced ? '[WINDOW LOST] ' : ''}New ${svc} order — ${ref}`,
+    html: notifyEmail(ref, svc, { name, brand, email, phone, vat, website }, details, {
+      tier, products, window: finalWindow, raced, asked, uploads: staged.length,
+    }),
   }));
   await safe(() => sendMail(env, {
     to: email,
     subject: lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`,
-    html: customerEmail(lang, ref, svc, name),
+    html: customerEmail(lang, ref, svc, name, { tier, window: finalWindow }),
   }));
 
-  return redirect(back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref));
+  const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
+  if (wantsJson) {
+    return json({
+      ok: true,
+      ref,
+      tier,
+      window: finalWindow,
+      // The client screen has to say something different when this is true, and
+      // it must not be inferred from `window: null` — an attended order that
+      // never asked for a date looks identical from the outside.
+      windowLost: raced,
+      redirect: done,
+    });
+  }
+  return redirect(done);
 }
 
 // GET on this route → send people to the order hub rather than a blank 405.
+// Points at /start, not /order: section 10 retires /order and its four siblings,
+// and a redirect into a redirect is a loop.
 export function onRequestGet() {
-  return redirect('/order');
+  return redirect('/start');
+}
+
+// ---------- the capacity gate, server side -----------------------------------
+
+/**
+ * Is the window this request asked for still clear, right now?
+ *
+ * Returns { window, reason, windows, listReason }:
+ *   • window     the range that may be written to orders, or null. NEVER a range
+ *                clearedWindows() did not just return.
+ *   • reason     'queue' Tier 0, which has no window by definition
+ *                'none'  nothing was asked for
+ *                'ok'    asked for, and still clear
+ *                'gone'  asked for, and no longer clear
+ *                'unavailable' the calendar could not be read
+ *   • windows    what IS clear, so a caller can offer them instead
+ *
+ * FAILING CLOSED ON DATES. If D1 cannot be read this returns no window. That is
+ * the one place in this file that refuses rather than degrades, and it is the
+ * same choice /api/capacity makes for the same reason: a date invented while the
+ * calendar is unreadable is exactly the promise the gate exists to prevent. The
+ * order itself is unaffected — see note 3 at the top.
+ */
+async function clearRequestedWindow(env, { tier, products, asked }) {
+  const empty = { window: null, windows: [], listReason: null };
+  if (tier !== 'attended') return { ...empty, reason: 'queue' };
+  if (!asked?.start) return { ...empty, reason: 'none' };
+  if (!env?.DB) return { ...empty, reason: 'unavailable' };
+  // A count the gate cannot use costs no database read. Both verdicts about the
+  // count alone are reached before clearedWindows looks at a calendar, so asking
+  // it with none — `limit: 0` yields no windows and does no window work — is the
+  // exact classification rather than an approximation of it.
+  //
+  // The classification is DELEGATED, never repeated. Re-deriving it here is what
+  // flattened 'too-large' into 'invalid', which capacity.js's own docstring
+  // forbids: the caller "must not flatten them into one 'sorry'". A count larger
+  // than one window and a count that is not a number are different facts and
+  // /start has a different panel for each. Only the "is this worth the I/O"
+  // decision is local; if the classification ever moves, this follows it.
+  const early = clearedWindows({ today: todayUTC(), products, limit: 0 }).reason;
+  if (early === 'invalid' || early === 'too-large') {
+    return { ...empty, reason: 'gone', listReason: early };
+  }
+
+  try {
+    const today = todayUTC();
+    const { blackouts, booked } = await readCalendar(env, today);
+
+    // A wider limit than the six /api/capacity offers. The client can only have
+    // chosen from those six, and windows never appear EARLIER than one already
+    // offered — time does not run backwards — so six would in fact be enough.
+    // Twelve costs one more loop iteration and removes that argument from the
+    // list of things this correctness depends on.
+    const { windows, reason } = clearedWindows({ today, products, booked, blackouts, limit: 12 });
+
+    const match = windows.find(
+      (w) => w.start === asked.start && (!asked.end || w.end === asked.end)
+    );
+    if (!match) return { window: null, windows, reason: 'gone', listReason: reason };
+
+    // The stored pair is the gate's own answer, not the client's echo of it.
+    return { window: { start: match.start, end: match.end }, windows, reason: 'ok', listReason: reason };
+  } catch {
+    return { ...empty, reason: 'unavailable' };
+  }
+}
+
+/**
+ * The calendar the gate reads. Mirrors readCalendar in functions/api/capacity.js
+ * deliberately and exactly — same filters, same horizon — because a booking that
+ * measured capacity differently from the page that offered it would clear
+ * windows the page had already sold.
+ *
+ * `beforeId`, when set, counts only orders written before this one. That is the
+ * race resolution and nothing else; see loseRaceIfOversold.
+ */
+async function readCalendar(env, today, beforeId = null) {
+  const horizonEnd = addDays(today, HORIZON_DAYS + 14);
+  const orderSql =
+    `SELECT window_start, window_end, product_count
+       FROM orders
+      WHERE tier = 'attended'
+        AND window_start IS NOT NULL
+        AND status <> 'cancelled'
+        AND COALESCE(window_end, window_start) >= ?1` + (beforeId ? ' AND id < ?2' : '');
+
+  const orderStmt = beforeId
+    ? env.DB.prepare(orderSql).bind(today, beforeId)
+    : env.DB.prepare(orderSql).bind(today);
+
+  const [blackoutRows, orderRows] = await Promise.all([
+    env.DB.prepare('SELECT day FROM blackout_days WHERE day >= ?1 AND day <= ?2').bind(today, horizonEnd).all(),
+    orderStmt.all(),
+  ]);
+
+  const blackouts = new Set((blackoutRows.results || []).map((r) => r.day));
+  return { blackouts, booked: bookedFromRows(orderRows.results || [], blackouts) };
+}
+
+/**
+ * Did this order lose a race for the window it just wrote? If so, give it back.
+ *
+ * WHY LOWER ID WINS, AND WHY THAT IS THE WHOLE DESIGN
+ * Two orders can both pass the gate and both write the same window: each read
+ * the calendar before either had written to it. Detecting that afterwards is
+ * easy; deciding WHICH one backs off is the part that has to be got right,
+ * because the obvious implementations are all wrong in the same way. "Back off
+ * if the window is oversold" makes both back off, and the window is now free and
+ * nobody has it. "Back off if someone else is in it" is the same bug wearing a
+ * different sentence.
+ *
+ * So the rule is a total order that every racer computes identically: measure
+ * yourself against the orders written BEFORE you, and only those. The earlier
+ * order sees a calendar without the later one and keeps its window. The later
+ * order sees the earlier one and finds it no longer fits. Exactly one survives,
+ * both agree on which, and neither needs a lock or a transaction to know it.
+ *
+ * The test is windowFits' own test — clearedWindows against a calendar that
+ * excludes this order — and not a cheaper sum against ATTENDED_PER_WINDOW,
+ * because capacity is per-day and a window's days are shared with its
+ * neighbours' days. Re-asking the gate is the only check that cannot drift from
+ * what the gate would have said.
+ *
+ * Returns true if the window was surrendered.
+ */
+async function loseRaceIfOversold(env, { orderId, products, window }) {
+  if (!env?.DB || !orderId || !window?.start) return false;
+  try {
+    const today = todayUTC();
+    const { blackouts, booked } = await readCalendar(env, today, orderId);
+    const { windows } = clearedWindows({ today, products, booked, blackouts, limit: 12 });
+    if (windows.some((w) => w.start === window.start && w.end === window.end)) return false;
+
+    await env.DB.prepare('UPDATE orders SET window_start = NULL, window_end = NULL WHERE id = ?1')
+      .bind(orderId).run();
+    return true;
+  } catch {
+    // A failure here leaves the window written. That is the right way round: the
+    // check is a correction to a rare double-book, and dropping a client's
+    // reserved date because a follow-up query timed out would be a far more
+    // common and far worse outcome than the double-book it is guarding.
+    return false;
+  }
+}
+
+/** The day the gate treats as today. UTC, matching every date in capacity.js. */
+function todayUTC() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * A product count, or null.
+ *
+ * Deliberately strict about what a number is, and deliberately quiet when it is
+ * not one. The pipeline sends an integer; the older forms send a <select> whose
+ * last option is "More than 10", which is not a count and must not be guessed at
+ * — an invented count is capacity the gate would then reserve against.
+ */
+function countOf(raw) {
+  const n = Number.parseInt(String(raw || '').trim(), 10);
+  return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
+}
+
+// ---------- uploads ----------------------------------------------------------
+
+/**
+ * Turn a staged batch into files rows.
+ *
+ * kind='upload' matters: the portal's serveFile filters on kind='delivery', so
+ * a client's own reference photographs are recorded against the order and are
+ * not re-served from it. They are input, not output.
+ */
+async function attachUploads(env, orderId, staged) {
+  if (!env?.DB || !staged.length) return;
+  const sql = `INSERT INTO files (order_id, kind, r2_key, filename, bytes) VALUES (?1, 'upload', ?2, ?3, ?4)`;
+  const rows = staged.map((f) => [orderId, f.key, f.name || null, f.bytes || null]);
+
+  if (typeof env.DB.batch === 'function') {
+    const stmt = env.DB.prepare(sql);
+    await env.DB.batch(rows.map((r) => stmt.bind(...r)));
+    return;
+  }
+  for (const r of rows) await env.DB.prepare(sql).bind(...r).run();
 }
 
 // ---------- helpers ----------------------------------------------------------
@@ -180,6 +521,17 @@ function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
 
 function redirect(location, status = 303) { return new Response(null, { status, headers: { Location: location } }); }
 
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+}
+
 // Only allow same-site thank-you targets, and match the language.
 function safeRedirect(raw, lang) {
   if (raw && raw.startsWith('/') && !raw.startsWith('//') && raw.includes('thank-you')) return raw;
@@ -194,31 +546,122 @@ function detailRows(obj) {
   ).join('');
 }
 
-function notifyEmail(ref, service, top, details) {
+/** What went into order_events. Short, and true about what was actually reserved. */
+function eventNote({ tier, window, raced, uploads }) {
+  const bits = [`Order submitted via website (${tier})`];
+  if (window) bits.push(`window ${window.start}→${window.end}`);
+  else if (tier === 'attended') bits.push(raced ? 'window lost to a concurrent booking' : 'no window reserved');
+  if (uploads) bits.push(`${uploads} file${uploads === 1 ? '' : 's'} uploaded`);
+  return bits.join(' · ');
+}
+
+/**
+ * The studio's copy. This one is allowed to say things the client's must not —
+ * what was asked for versus what was cleared, and loudly when those differ.
+ */
+function notifyEmail(ref, service, top, details, gate = {}) {
   const rows = detailRows({ ...top, ...details });
+  const { tier, products, window, raced, asked, uploads } = gate;
+
+  const banner = raced
+    ? `<p style="margin:0 0 16px;padding:12px;background:#844B00;color:#fff;font-size:14px">
+         <strong>Window lost.</strong> This order asked for
+         ${esc(asked?.start || '?')}&nbsp;→&nbsp;${esc(asked?.end || '?')} and passed the gate, but a
+         concurrent booking took it first, so no date is reserved. The client has been told we will
+         come back with the dates. <strong>Call them.</strong>
+       </p>`
+    : '';
+
+  const reserved = window
+    ? `<p style="margin:0 0 16px">Window reserved: <strong>${esc(window.start)} → ${esc(window.end)}</strong></p>`
+    : tier === 'attended'
+      ? `<p style="margin:0 0 16px;color:#844B00">Attended order with <strong>no reserved window</strong>.</p>`
+      : `<p style="margin:0 0 16px;color:#666">Standard queue — no window, by design.</p>`;
+
+  const meta = [
+    tier ? `tier <strong>${esc(tier)}</strong>` : null,
+    products ? `${esc(products)} products` : null,
+    uploads ? `${esc(uploads)} uploaded file${uploads === 1 ? '' : 's'}` : null,
+  ].filter(Boolean).join(' · ');
+
   return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
+    ${banner}
     <h2 style="margin:0 0 8px">New ${esc(service)} order</h2>
-    <p style="margin:0 0 16px">Reference <strong>${esc(ref)}</strong></p>
+    <p style="margin:0 0 4px">Reference <strong>${esc(ref)}</strong></p>
+    ${meta ? `<p style="margin:0 0 12px;color:#666;font-size:13px">${meta}</p>` : ''}
+    ${reserved}
     <table style="border-collapse:collapse;font-size:14px">${rows}</table>
   </div>`;
 }
 
-function customerEmail(lang, ref, service, name) {
-  const hi = name ? `${lang === 'nl' ? 'Hi' : 'Hi'} ${esc(name)},` : (lang === 'nl' ? 'Hi,' : 'Hi,');
-  if (lang === 'nl') {
-    return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
-      <p>${hi}</p>
-      <p>Bedankt — we hebben je ${esc(service)}-aanvraag ontvangen. Je referentie is <strong>${esc(ref)}</strong>.</p>
-      <p>We nemen binnen ongeveer 24 uur contact met je op, meestal sneller via WhatsApp. Een mens controleert elke visual voordat hij bij je komt.</p>
-      <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL · hello@visuails.com</p>
-    </div>`;
+/**
+ * The order confirmation.
+ *
+ * The timing paragraph is assembled from TIERS in src/data/pricing.js and is
+ * never typed here. That is the whole point: this email said "within about 24
+ * hours" for months after the site stopped saying it, because an email is the
+ * one surface nobody greps.
+ *
+ * THE DATE RULE, IN THE PLACE IT MATTERS MOST. A window is named only when one
+ * was actually reserved — `window` is written from orders.window_start /
+ * window_end, which only ever hold a range clearedWindows() returned. An
+ * attended order without a reserved window says so and names nothing. An
+ * unattended order can never reach the date branch at all, because Tier 0 has a
+ * queue span, not a date: "NO named delivery date — show 'typically 2-4 working
+ * days,' never a date."
+ */
+function customerEmail(lang, ref, service, name, { tier = 'unattended', window = null } = {}) {
+  const nl = lang === 'nl';
+  const hi = name ? `Hi ${esc(name)},` : 'Hi,';
+  const attended = tier === 'attended';
+  const dated = attended && window && window.start && window.end;
+
+  const received = nl
+    ? `Bedankt — we hebben je ${esc(service)}-aanvraag ontvangen. Je referentie is <strong>${esc(ref)}</strong>.`
+    : `Thanks — we've received your ${esc(service)} request. Your reference is <strong>${esc(ref)}</strong>.`;
+
+  let timing;
+  if (dated) {
+    const from = formatDay(window.start, lang);
+    const to = formatDay(window.end, lang);
+    timing = nl
+      ? `Je venster staat gereserveerd: ${esc(from)} tot en met ${esc(to)}.`
+      : `Your window is reserved: ${esc(from)} to ${esc(to)}.`;
+  } else if (attended) {
+    timing = nl
+      ? `${turnaround('attended', 'nl')}. We komen bij je terug met de exacte data — zolang die niet bevestigd zijn, noemen we er geen.`
+      : `${turnaround('attended', 'en')}. We'll come back with the exact dates — until they're confirmed, we won't name one.`;
+  } else {
+    timing = nl
+      ? 'Standaard wachtrij, geen vaste leverdatum. Meestal 2–4 werkdagen.'
+      : 'Standard queue, no fixed delivery date. Typically 2–4 working days.';
   }
+
+  const care = nl
+    ? `Een mens controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}.`
+    : `A person checks every visual before it reaches you. ${aftercare(tier, 'en')}.`;
+
   return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
     <p>${hi}</p>
-    <p>Thanks — we've received your ${esc(service)} request. Your reference is <strong>${esc(ref)}</strong>.</p>
-    <p>We'll get back to you within about 24 hours, usually faster on WhatsApp. A person checks every visual before it reaches you.</p>
+    <p>${received}</p>
+    <p>${timing}</p>
+    <p>${care}</p>
     <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL · hello@visuails.com</p>
   </div>`;
+}
+
+/** A reserved date, written the way a person reads one. UTC, to match the gate. */
+function formatDay(iso, lang) {
+  try {
+    return new Intl.DateTimeFormat(lang === 'nl' ? 'nl-NL' : 'en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'UTC',
+    }).format(new Date(`${iso}T00:00:00Z`));
+  } catch {
+    return iso;
+  }
 }
 
 function subscriberEmail(lang) {

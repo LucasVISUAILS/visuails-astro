@@ -1,0 +1,21 @@
+# Line endings.
+#
+# Only one rule, and only for one reason: cmd.exe is the only consumer in this
+# repository that cares. It reads a .bat file by byte offset while it executes
+# it, and its handling of LF-only files is unreliable around exactly the two
+# constructs cleanup-stale-files.bat is built from — multi-line `if (...)`
+# blocks and `for %%F in (...) do (...)` loops. A batch file that misparses is
+# a batch file that does not delete the forty-five stale files it exists to
+# delete, and the failure is silent: the window closes and the folder looks
+# fine.
+#
+# `text` normalises to LF inside the repository, `eol=crlf` writes CRLF into
+# the working tree on checkout. So the stored bytes stay diffable and the file
+# on a Windows disk is always the form cmd.exe parses reliably, no matter which
+# machine or editor produced it.
+#
+# Deliberately narrow. `* text=auto` would renormalise every file in the
+# project, which on a repository this size is a diff nobody can read and a
+# whole class of risk taken on to solve a problem that only exists in two
+# files.
+*.bat text eol=crlf

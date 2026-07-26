@@ -1,221 +1,33 @@
 ---
-// VISUAILS — /custom-models. Deep dive on the bespoke-model service.
+// VISUAILS — /nl/custom-models, "Jouw merkmodel". De pagina-inhoud staat in
+// BrandModelPage.astro, zodat /custom-models en /nl/custom-models niet uit
+// elkaar kunnen lopen; alleen de meta verschilt hier.
+//
+// De URL blijft /custom-models na het samenvoegen van /models en
+// /custom-models (AUDIT-TASK-0.md §H·8): deze pagina droeg het
+// exclusiviteitsverhaal al, dus die houdt zijn waarde en /nl/models
+// verwijst hierheen. Zie src/i18n/ui.js → brandModelHref.
+//
+// De description komt uit pricing.js en wordt niet ingetypt: een prijs in een
+// <meta>-tag is de enige plek waar een verouderd bedrag een herschreven
+// pagina overleeft.
 import Layout from '../../layouts/Layout.astro';
+import BrandModelPage from '../../components/BrandModelPage.astro';
+import { euro, AMOUNT, BRAND_MODEL_CREDIT_DROPS } from '../../data/pricing.js';
 
-const directions = [
-  { initial: 'E', name: 'Editorial minimal', body: 'Ingetogen studiolicht, rustige houding, neutrale garderobe.' },
-  { initial: 'S', name: 'Streetwear energy', body: 'Directe blik, gedurfde houding, contrastrijk licht — voor drops en hype.' },
-  { initial: 'Q', name: 'Quiet luxury', body: 'Zachte neutrale tinten, ontspannen houding, verfijnd detail.' },
-  { initial: 'W', name: 'Warm & toegankelijk', body: 'Open uitdrukking, natuurlijk licht, alledaags gemak.' },
-  { initial: 'H', name: 'High-fashion editorial', body: 'Sculpturale pose, harde schaduw, magazine-intensiteit.' },
-  { initial: 'R', name: 'Retro Americana', body: 'Warme filmtinten, nostalgische styling.' },
-  { initial: 'C', name: 'Coastal & sun-worn', body: 'Zonverbleekte warmte, gouden-uurgemak — gebouwd voor Dunes.' },
-  { initial: 'M', name: 'Monochrome studio', body: 'Garderobe in één tint, grafische schaduw.' },
-  { initial: 'B', name: 'Bold colour-block', body: 'Verzadigde garderobe, onmiskenbaar op thumbnailformaat.' },
-];
-
-const examples = [
-  '/img/custom-models-01.webp',
-  '/img/custom-models-02.webp',
-  '/img/custom-models-03.webp',
-  '/img/custom-models-04.webp',
-  '/img/custom-models-05.webp',
-  '/img/model-raw-01.webp',
-  '/img/model-raw-02.webp',
-];
-
-const steps = [
-  { n: '01', title: 'Intake', body: 'Je deelt referenties en een briefing over de look die je wilt.' },
-  { n: '02', title: '2–3 richtingen', body: 'We ontwerpen een paar richtingen waarop je kunt reageren.' },
-  { n: '03', title: 'Jij kiest', body: 'Kies het gezicht dat past, met één ronde verfijning.' },
-  { n: '04', title: 'Vastgezet', body: 'We zetten het model vast zodat het perfect consistent blijft.' },
-  { n: '05', title: 'Gebruikt in elke bestelling', body: 'Jouw model verschijnt vanaf dan in elke visual.' },
-];
+// Onder de 160 tekens zodat Google hem heel toont. De vorige description was
+// 171 tekens en werd afgekapt.
+const description =
+  `Eén gezicht, alleen voor jouw merk ontworpen — op elk product, elke drop. ` +
+  `${euro(AMOUNT.brandModel, 'nl')} eenmalige setup, ` +
+  `${euro(AMOUNT.brandModelCredit, 'nl')} terug bij elk van je eerste ` +
+  `${BRAND_MODEL_CREDIT_DROPS} drops.`;
 ---
 
 <Layout
-  title="Custom Models — een gezicht exclusief van jou | VISUAILS"
-  description="Ontwerp een eigen model exclusief voor jouw merk: een korte intake, 2-3 richtingen, één ronde verfijning, daarna vastgezet en hergebruikt in elke visual die je bestelt."
-  ogImage="/img/custom-models-02.webp"
+  title="Jouw merkmodel — één gezicht, elke drop | VISUAILS"
+  description={description}
+  ogImage="/img/custom-models-03.webp"
 >
-  <section class="page-hero">
-    <div class="container two-col" style="align-items:center">
-      <div>
-        <p class="eyebrow-page"><a href="/nl/models" style="color:inherit">&larr; Modellen</a></p>
-        <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Een gezicht dat <em>alleen</em> voor jouw merk bestaat.</h1>
-        <p class="lead" style="margin-top:1.2rem">Ontwerp een model exclusief voor jou — het verschijnt in elke visual die je bestelt, deze maand en volgend jaar.</p>
-        <div class="flex" style="margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href="/nl/order-custom" class="btn btn-primary btn-lg">Start je eigen model</a></span></span>
-          <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20eigen%20model%20voor%20mijn%20merk%20bespreken." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Bespreek op WhatsApp</a>
-        </div>
-        <div class="trust-row" style="margin-top:2.4rem">
-          <span class="trust-item"><strong>Eenmalige</strong> ontwerpkost</span>
-          <span class="trust-item"><strong>Exclusief</strong> voor jouw merk</span>
-          <span class="trust-item"><strong>Voor altijd</strong> vastgezet, gratis hergebruikt</span>
-        </div>
-      </div>
-      <div class="photo-split-media"><img src="/img/custom-models-03.webp" alt="Een portret van een VISUAILS eigen model" loading="lazy" /></div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-split reverse reveal pending">
-        <div class="photo-split-media"><img src="/img/model-03.webp" alt="Een VISUAILS-modelportret" loading="lazy" /></div>
-        <div>
-          <h2>Jouw model, niet <em>een</em> model.</h2>
-          <p class="lead" style="margin-top:1rem">Standaardmodellen worden gedeeld over merken. Een eigen model wordt één keer ontworpen, alleen voor jou, en verschijnt nergens anders.</p>
-        </div>
-      </div>
-      <div class="arrow-rows reveal-group" style="grid-template-columns:repeat(2,1fr);margin-top:clamp(2.5rem,5vw,4rem)">
-        <div class="arow reveal pending"><h3>Gebouwd op basis van jouw briefing</h3><p>Leeftijd, sfeer, styling, do’s en don’ts.</p></div>
-        <div class="arow reveal pending"><h3>Exclusief, van nature</h3><p>Geen ander bedrijf kan hetzelfde gezicht bestellen.</p></div>
-        <div class="arow reveal pending"><h3>Consistent, voor altijd</h3><p>Hetzelfde gezicht in elke visual, bestelling na bestelling.</p></div>
-        <div class="arow reveal pending"><h3>Hergebruikt zonder extra kosten</h3><p>Eenmalige kost. Elke bestelling daarna verloopt tegen de normale prijs.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="ed-head">
-        <span class="ed-meta">( Waar het past )</span>
-        <div>
-          <h2>Een eigen model of stijl: één look, door je hele merk.</h2>
-          <p class="ed-sub">De rode draad die alles onmiskenbaar van jou maakt.</p>
-        </div>
-      </div>
-      <div class="svc-explain">
-        <div class="svc-explain-main">
-          <h3>Wat het is</h3>
-          <p>Een eigen model of stijl is een signatuur die één keer ontworpen wordt, exclusief voor jou — een gezicht, een sfeer, een kleurwereld die geen enkel ander merk deelt. Eenmaal vastgezet is elke visual die je bestelt (catalog, lifestyle of video) in die look gemaakt, zodat je assortiment samenhangt in plaats van uit stock samengesteld te lijken.</p>
-          <p>Dit is waar visuals ophouden foto’s te zijn en merkwaarde worden. Een herkenbare, consistente look is wat een scroll-voorbij verandert in herkenning — mensen kennen je beelden voordat ze je naam lezen. Het leeft overal waar je merk verschijnt, want overal én consistent zijn is het hele punt.</p>
-        </div>
-        <aside class="svc-explain-side">
-          <h3>Waar het leeft</h3>
-          <ul class="svc-where-list">
-            <li><strong>Elk kanaal</strong> — shop, feed, ads en e-mail, in één look.</li>
-            <li><strong>Campagnes</strong> — seizoensverhalen met een vertrouwd gezicht.</li>
-            <li><strong>Grotere assortimenten</strong> — 25+ producten die als één lijn moeten voelen.</li>
-            <li><strong>Je merkidentiteit</strong> — de visuele signatuur die mensen onthouden.</li>
-          </ul>
-        </aside>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="container">
-      <h2 style="margin-bottom:.6rem">Een paar richtingen om <em>ideeën te wekken.</em></h2>
-      <p class="lead" style="margin-bottom:2rem">Illustratieve startpunten, geen vast menu — vertel ons je referenties en we ontwerpen 2–3 echte richtingen.</p>
-      <div class="grid models-grid reveal-group">
-        {directions.map((d) => (
-          <div class="card model-card reveal pending">
-            <div class="monogram">{d.initial}</div>
-            <h3>{d.name}</h3>
-            <p style="font-size:.9rem;color:var(--ink-3)">{d.body}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <h2 style="margin-bottom:2rem">Echte output, geen mockup.</h2>
-      <div class="grid grid-3 reveal-group">
-        {examples.map((photo, i) => (
-          <div class="reveal pending">
-            <div class="photo-band square"><img src={photo} alt={`Voorbeeld van een eigen model ${i + 1}`} loading="lazy" /></div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>Waarom niet gewoon een generieke AI-tool prompten?</h2>
-        <p style="margin-inline:auto">Omdat huid, handen en identiteit precies zijn waar generieke generatoren uit elkaar vallen — en precies waar wij dat niet doen.</p>
-      </div>
-      <div class="ai-compare reveal pending">
-        <div class="ai-compare-panel generic">
-          <img src="/img/model-raw-01.webp" alt="Illustratieve simulatie van een typisch generiek AI-gegenereerd gezicht — geen echte foto van een concurrent" loading="lazy" />
-          <span class="ai-compare-label">Generieke AI-tool</span>
-          <div class="ai-compare-tags">
-            <span class="ai-tag bad">Plastic-ogende, te glad gemaakte huid</span>
-            <span class="ai-tag bad">Elke generatie een ander gezicht</span>
-            <span class="ai-tag bad">Geen menselijke controle vóór levering</span>
-          </div>
-        </div>
-        <div class="ai-compare-panel visuails">
-          <img src="/img/model-raw-02.webp" alt="Een VISUAILS eigen model, echte huidtextuur en detail" loading="lazy" />
-          <span class="ai-compare-label">VISUAILS</span>
-          <div class="ai-compare-tags">
-            <span class="ai-tag good">Echte textuur — poriën, sproeten, detail</span>
-            <span class="ai-tag good">Eén gezicht, vastgezet, bestelling na bestelling</span>
-            <span class="ai-tag good">Elke keer door een persoon gecontroleerd</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <h2 style="margin-bottom:2rem">Hoe een eigen model tot stand komt</h2>
-      <div class="steps reveal-group">
-        {steps.map((s) => (
-          <div class="step reveal pending">
-            <span class="step-n">{s.n}</span>
-            <h3>{s.title}</h3>
-            <p>{s.body}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container two-col" style="align-items:start">
-      <div class="card reveal pending">
-        <h3>Wat jij aanlevert</h3>
-        <ul class="checklist" style="margin-top:1.2rem">
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Een paar <strong>referenties</strong> voor de look.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>De <strong>leeftijd, sfeer en look</strong> die je wilt.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Eventuele <strong>styling</strong>-richting.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Jouw <strong>do’s en don’ts.</strong></span></li>
-        </ul>
-      </div>
-      <div class="card reveal pending" style="border-color:var(--accent-line)">
-        <h3>Prijzen &amp; timing</h3>
-        <p class="measure" style="margin-top:1rem">Een <strong>eenmalige ontwerpkost</strong>, daarna voor altijd de normale visualprijs. De eerste bestelling duurt iets langer; elke daaropvolgende verloopt op de gebruikelijke snelheid.</p>
-        <div class="flex" style="margin-top:1.6rem">
-          <a href="/nl/order-custom" class="btn btn-primary">Start je eigen model</a>
-          <a href="/nl/pricing" class="link-arrow">Bekijk prijzen <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Ontwerp het gezicht van <em>jouw</em> merk.</h2>
-        <div class="flex" style="justify-content:center;margin-top:2rem">
-          <a href="/nl/order-custom" class="btn btn-primary btn-lg">Start je eigen model</a>
-          <a href="/nl/models" class="btn btn-ghost btn-lg">Bekijk standaardmodellen</a>
-          <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20eigen%20model%20voor%20mijn%20merk%20bespreken." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <BrandModelPage lang="nl" />
 </Layout>
-
-<style>
-  .models-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-  .model-card { display: flex; flex-direction: column; gap: .9rem; }
-  .monogram { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 900; font-size: 1.3rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line-strong); }
-  .measure { max-width: 66ch; }
-</style>

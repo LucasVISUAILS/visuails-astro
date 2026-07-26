@@ -13,20 +13,42 @@ import Layout from '../../layouts/Layout.astro';
 import ProductScene from '../../components/ProductScene.astro';
 import Compare from '../../components/Compare.astro';
 import { styles } from '../../data/styles.js';
+import { perProduct, reviewClaim, turnaround, TIERS } from '../../data/pricing.js';
+import { metaDescription } from '../../data/meta.js';
 
 export function getStaticPaths() {
   return styles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
 
 const { style } = Astro.props;
-// Preset styles are a fixed per-visual price; Custom is quoted, so fall back
-// to a per-style price when one is set.
-const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''}` : 'From €59.99 / product';
+
+// Timing, review level and queue behaviour are tier facts, not per-style
+// copy. They come from pricing.js so a capacity change cannot leave a
+// promise stranded on a detail page — which is exactly what "~24h delivery"
+// and "Produced in about 24 hours" were doing here.
+const TIMING = turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
+const QUEUE = TIERS.unattended.queue.en;
+
+// Four of the five lifestyle styles carry no priceTrust of their own, so the
+// fallback below is what actually renders on most of these pages — it used to
+// be the string '€59.99', typed twice. Custom is quoted, so it keeps its own.
+const item = perProduct('lifestyle', 'en');
+const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''}` : `${item.price} / product`;
+
+// The description used to be one template literal, so its length was whatever
+// the data happened to make it. metaDescription drops the trailing tier
+// clauses instead of running past 160 — see src/data/meta.js.
 ---
 
 <Layout
   title={`${style.name} — Lifestyle style | VISUAILS`}
-  description={`${style.name}: a signature VISUAILS lifestyle style. ${priceLine}. Produced in about 24 hours, every image checked by hand.`}
+  description={metaDescription([
+    `${style.name}: a signature VISUAILS lifestyle style`,
+    priceLine,
+    TIMING,
+    REVIEW,
+  ])}
 >
   <section class="page-hero">
     <div class="container">
@@ -34,24 +56,25 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
       <h1 class="display">{style.name}.</h1>
       <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
       <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/order-lifestyle'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
         <a href={`https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20the%20${style.name}%20style.`} class="btn btn-wa" target="_blank" rel="noopener">
           <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>
           WhatsApp
         </a>
       </div>
       <div class="trust-row" style="margin-top:2rem">
-        <span class="trust-item"><strong>{style.priceTrust ?? '€59.99'}</strong>{style.priceUnit ?? ' / product'}</span>
-        <span class="trust-item"><strong>~24h</strong> delivery</span>
-        <span class="trust-item"><strong>100%</strong> checked by hand</span>
+        <span class="trust-item"><strong>{style.priceTrust ?? item.price}</strong>{style.priceUnit ?? ' / product'}</span>
+        <span class="trust-item"><strong>{TIMING}</strong></span>
+        <span class="trust-item"><strong>{REVIEW}</strong></span>
       </div>
+      <p class="queue-note">{QUEUE}</p>
     </div>
   </section>
 
   <!-- Media band — mask reveal on the signature photo -->
   <section class="section-tight">
     <div class="container">
-      <div class="reveal-mask" style="aspect-ratio:21/10;border-radius:var(--r-media);overflow:hidden">
+      <div class="reveal-mask" style="aspect-ratio:21/10;overflow:hidden">
         <div class="rm-inner" style={`background-image:url('${style.heroPhoto}')`}></div>
       </div>
     </div>
@@ -134,7 +157,7 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
         <h2 style="font-size:1.7rem">Best <em>for</em></h2>
         <ul class="checklist" style="margin-top:1.2rem">
           {style.bestFor.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
       </div>
@@ -142,7 +165,7 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
         <h2 style="font-size:1.7rem">What you <em>get</em></h2>
         <ul class="checklist" style="margin-top:1.2rem">
           {style.whatYouGet.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
       </div>
@@ -155,7 +178,7 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
       <div class="cta-band reveal pending">
         <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">Make {style.name} <em>yours.</em></h2>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/order-lifestyle'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
           <a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a>
         </div>
       </div>
@@ -168,4 +191,9 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
      — v2 has no italics anywhere, so it's overridden locally rather than
      touched globally. */
   .step-n { font-style: normal; }
+  /* Mirrors .queue-note on the hub components. Astro scopes <style> to a
+     component's own template, so a shared visual pattern has to be repeated
+     per file; consolidating these into global.css is logged as a follow-up. */
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
 </style>

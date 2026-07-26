@@ -1,96 +1,23 @@
 ---
-// VISUAILS — How it works. Three-step process, a before/after drag-compare
-// as the supporting proof point, a details grid, and a closing CTA. Ported
-// from the SvelteKit how-it-works page.
+// VISUAILS — /how-it-works (English). The page body lives in
+// HowItWorksPage.astro so that /how-it-works and /nl/how-it-works cannot drift
+// apart; only the meta differs here.
+//
+// AUDIT-TASK-0.md §F: "REWRITE. 'One photo in. A campaign out.' → drop-shaped.
+// All ~24h claims corrected." §B·3: "'One photo in' is the per-product story;
+// the drop story is 'one folder in'." The old description promised delivery
+// "in about 24 hours" — task #190 retires that claim, so the timing here comes
+// from turnaround() like every other timing string on the site.
 import Layout from '../layouts/Layout.astro';
-import Compare from '../components/Compare.astro';
+import HowItWorksPage from '../components/HowItWorksPage.astro';
+import { FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
 
-const details = [
-  { title: 'Turnaround', body: 'About 24 hours from brief to download for standard orders.' },
-  { title: 'Revisions', body: 'Three rounds included, so we get it right.' },
-  { title: 'Consistency', body: 'Same lighting, angle and framing, order after order.' },
-  { title: 'Two ways to order', body: 'On-site forms, or WhatsApp — whichever suits you.' },
-  { title: 'Formats & resolution', body: 'High-resolution, e-commerce-ready files. 2K included, 4K optional.' },
-];
+const description =
+  `You send the products. We check capacity, confirm a window, then produce ` +
+  `and hand-check every visual. Shop-ready files for ` +
+  `${FULL_DROP_MIN}–${FULL_DROP_MAX} products.`;
 ---
 
-<Layout
-  title="How it works — VISUAILS"
-  description="From one product photo to publish-ready catalog, lifestyle and video visuals — generated, human-reviewed and delivered in about 24 hours."
->
-  <section class="hero-editorial compact">
-    <div class="bg" style="background-image:url('/img/banners-04.webp')"></div>
-    <div class="fade"></div>
-    <div class="hero-editorial-content container">
-      <h1 class="display" data-split-lines>One photo in.<br />A campaign <em>out</em>.</h1>
-      <p class="lead" style="margin-top:1.2rem">You send a product photo. We handle generation, selection and a human check. You get files ready to publish.</p>
-      <div class="flex" style="margin-top:1.8rem">
-        <a href="/order" class="btn btn-primary btn-lg">Start an order</a>
-        <a href="/test-sample" class="btn btn-ghost btn-lg">Try a test sample</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight"><div class="container">
-    <div class="steps reveal-group">
-      <div class="step reveal pending"><div class="step-n">01</div><h3>Upload &amp; brief</h3><p>A product photo and a short note on the look you want. Five minutes, start to finish. See our <a href="/upload-guidelines">upload guidelines</a>.</p></div>
-      <div class="step reveal pending"><div class="step-n">02</div><h3>We produce &amp; finish</h3><p>Generated in our pipeline, then refined by hand in professional editing tools and colour-graded to your brand — and a real person checks every image before it ships.</p></div>
-      <div class="step reveal pending"><div class="step-n">03</div><h3>Download &amp; use</h3><p>High-resolution, e-commerce-ready files, typically within about 24 hours. Revisions included.</p></div>
-    </div>
-  </div></section>
-
-  <section class="section-tight"><div class="container two-col">
-    <div class="reveal pending">
-      <Compare
-        grade
-        before="/img/lifestyle-glow-06.webp"
-        after="/img/lifestyle-glow-06.webp"
-        beforeAlt="A flat, ungraded product scene before VISUAILS finishing"
-        afterAlt="The same scene, finished and human-checked by VISUAILS"
-      />
-    </div>
-    <div class="reveal pending">
-      <h2>More than AI. Finished by hand.</h2>
-      <p class="lead" style="margin-top:1.1rem">AI does the heavy lifting, but it's only the start. We finish every visual with professional editing tools and colour grading, and a person checks accuracy, consistency and framing before anything ships — the difference between a raw AI tool and something you'd publish.</p>
-      <div class="chip-row" style="margin-top:1.4rem">
-        <span class="chip"><span class="dot"></span>Professional editing &amp; retouch</span>
-        <span class="chip"><span class="dot"></span>Colour grading to your brand</span>
-        <span class="chip"><span class="dot"></span>Human accuracy check</span>
-      </div>
-    </div>
-  </div></section>
-
-  <section><div class="container">
-    <div class="section-head"><h2>The details that matter</h2></div>
-    <div class="grid grid-auto reveal-group">
-      {details.map((d) => (
-        <div class="card reveal pending"><h3 style="font-size:1.05rem">{d.title}</h3><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{d.body}</p></div>
-      ))}
-      <div class="card reveal pending"><h3 style="font-size:1.05rem">Your rights</h3><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Full commercial usage rights to everything we deliver. Details in our <a href="/terms">terms</a>.</p></div>
-    </div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div style="text-align:center;max-width:60ch;margin:0 auto 1.4rem"><h2>Still have a question?</h2></div>
-    <div class="flex" style="justify-content:center"><a href="/faq" class="btn btn-ghost btn-lg">Read the FAQ</a></div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">See it on your own product.</h2>
-      <p class="lead" style="margin:1rem auto 0;text-align:center">One test sample per business — just €0.99, no commitment.</p>
-      <div class="flex" style="justify-content:center;margin-top:1.8rem">
-        <a href="/test-sample" class="btn btn-primary btn-lg">Test sample</a>
-        <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
-        <a href="https://wa.me/31625436130" class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
-      </div>
-    </div>
-  </div></section>
+<Layout title="How it works — VISUAILS" description={description}>
+  <HowItWorksPage lang="en" />
 </Layout>
-
-<style>
-  .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border-radius: var(--r-pill); border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
-  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
-  .grid-auto { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-</style>

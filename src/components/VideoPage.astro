@@ -1,0 +1,336 @@
+---
+// VISUAILS — /video and /nl/video share this body.
+//
+// Same conversion as CatalogPage.astro and LifestylePage.astro: two 156-line
+// inline pages, each holding its own copy of the prices, replaced by one body
+// taking a `lang` prop. EN/NL parity becomes a property of the file layout.
+//
+// This page carried the worst price defect on the site. Its inline
+// `videoStyles` literal — and src/data/videoStyles.js behind it — priced
+// Lifestyle Video at €59, a figure that appears nowhere in pricing.js and
+// never has. The sitewide price scan missed it for months because "€59" is a
+// string prefix of "€59.99", so every occurrence was folded into the catalog
+// lifestyle tally. There is one clip rate now and it comes from PER_PRODUCT.
+//
+// SEQUENCING: a Tier 0 surface. Section 13's full "order individual products
+// vs run a whole drop" block lands at step 13, after step 12; the slot is
+// marked below.
+import {
+  TIERS, perProduct, reviewClaim, turnaround,
+  FULL_DROP_MIN, FULL_DROP_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
+import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const kinds = lang === 'nl' ? videoStylesNl : videoStylesEn;
+
+const item = perProduct('video', lang);
+const t0 = TIERS.unattended;
+const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+
+// Motion and Lifestyle Video are the two fixed-rate clips; Campaign and
+// Custom are scoped and quoted. Keeping the rule here rather than in
+// videoStyles.js means no euro figure lives in the style data at all — which
+// is exactly how the stale €59 survived as long as it did.
+const QUOTED = new Set(['campaign', 'custom']);
+
+const posters: Record<string, string> = {
+  motion: '/img/banners-04.webp',
+  lifestyle: '/img/lifestyle-glow-03.webp',
+  campaign: '/img/banners-08.webp',
+  custom: '/img/banners-13.webp',
+};
+
+const strip = [
+  { src: '/img/banners-01.webp', wide: true, key: 'campaign' },
+  { src: '/img/lifestyle-flash-02.webp', wide: false, key: 'flash' },
+  { src: '/img/lifestyle-phone-made-09.webp', wide: false, key: 'phone' },
+  { src: '/img/lifestyle-dunes-02.webp', wide: false, key: 'dunes' },
+  { src: '/img/banners-06.webp', wide: true, key: 'campaign' },
+];
+
+// No `as const` — COPY[lang] on a const-asserted object gives a union of
+// readonly tuples and .map() on that union is a TS error.
+const COPY = {
+  en: {
+    h1: 'Short product videos<br />that <em>move</em>.',
+    lead: `8 seconds, subtle motion. ${item.price} per clip.`,
+    ctaPrimary: 'Order individual products',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20a%20product%20video.',
+    waQuote: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20a%20quote%20for%20a%20campaign%20video.',
+    waLabel: 'WhatsApp',
+    waQuoteLabel: 'Quote a campaign',
+    trust: [
+      ['8s', 'clean product videos'],
+      [item.price, 'per clip'],
+    ],
+    // Visible, not buried. Section 13: a visitor must not be able to leave a
+    // Tier 0 page believing a delivery date was promised.
+    queueNote: t0.queue.en + '.',
+    reviewNote: reviewClaim('unattended', 'en'),
+    kindsH: 'Ways to add motion.',
+    perClip: `${item.price} / clip`,
+    quoted: 'Quoted per project',
+    exampleAlt: (n: string) => `${n} example`,
+    edMeta: '( Where it fits )',
+    edH: 'Product video: motion where a still photo plateaus.',
+    edSub: 'A few seconds of movement, made for feeds and ads.',
+    whatH: 'What it is',
+    whatP: [
+      'A product video is a short, clean film with subtle motion — a slow turn, a drape, a catch of light — built to give a product life without a full production. On a feed tuned for movement, a few seconds of motion earns attention a static image can’t, and holds it long enough to land the message.',
+      "It isn't a replacement for your photos; it's the layer on top that lifts them where it counts. The same product that sits still on your shop can move in your ads and socials, where dwell time and click-through decide whether people stop — or keep scrolling.",
+    ],
+    whereH: 'Where it lives',
+    where: [
+      ['Reels, TikTok & Shorts', 'where motion is the native language.'],
+      ['Paid ads', 'higher dwell time and click-through.'],
+      ['Product pages', 'an autoplay clip beside the stills.'],
+      ['Email & landing pages', 'a moment of life above the fold.'],
+    ],
+    cleanH: 'Clean motion, ready to publish.',
+    clean: [
+      '8-second video with subtle motion',
+      'Sized for pages, social and ads',
+      'Consistent style across your range',
+      reviewClaim('unattended', 'en'),
+    ],
+    buyH: 'Two ways to buy video',
+    // "The same rate on its own or added to a drop" is the line from
+    // pricing.js, and it is the whole point of the clip price: a video does
+    // not get more expensive because it arrives with a collection.
+    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${item.price} per clip, on its own or added to a drop.`,
+    buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
+    stripAlt: {
+      campaign: 'Campaign photography',
+      flash: 'Flash-style lifestyle visual',
+      phone: 'Phone-made-style lifestyle visual',
+      dunes: 'Dunes-style lifestyle visual',
+    },
+    dropH: 'Running a whole collection?',
+    dropP: `Clips are billed per clip and move through the standard queue. A drop is the other way to work: ${scope} products produced together as one release, on a window reserved before you pay, with a portal to approve each image — and video keeps the same rate inside it.`,
+    dropCta: 'See how a drop works',
+    ctaH: 'Give your product<br>a little movement.',
+    ctaP: `${item.price} per clip, ${turnaround('unattended', 'en').toLowerCase()}.`,
+    ctaSecondary: 'Contact us',
+  },
+  nl: {
+    h1: 'Korte productvideo’s<br />die <em>bewegen</em>.',
+    lead: `8 seconden, subtiele beweging. ${item.price} per clip.`,
+    ctaPrimary: 'Bestel losse producten',
+    wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20een%20productvideo.',
+    waQuote: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20offerte%20voor%20een%20campagnevideo.',
+    waLabel: 'WhatsApp',
+    waQuoteLabel: 'Offerte voor een campagne',
+    trust: [
+      ['8s', 'strakke productvideo’s'],
+      [item.price, 'per clip'],
+    ],
+    queueNote: t0.queue.nl + '.',
+    reviewNote: reviewClaim('unattended', 'nl'),
+    kindsH: 'Manieren om beweging toe te voegen.',
+    perClip: `${item.price} / clip`,
+    quoted: 'Offerte per project',
+    exampleAlt: (n: string) => `${n} voorbeeld`,
+    edMeta: '( Waar het past )',
+    edH: 'Productvideo: beweging waar een stilstaande foto stopt.',
+    edSub: 'Een paar seconden beweging, gemaakt voor feeds en ads.',
+    whatH: 'Wat het is',
+    whatP: [
+      'Een productvideo is een korte, strakke film met subtiele beweging — een langzame draai, een val van stof, een lichtvonk — gemaakt om een product leven te geven zonder een volledige productie. Op een feed die op beweging is afgestemd, verdienen een paar seconden motion aandacht die een stilstaand beeld niet krijgt, en houden ze die lang genoeg vast om de boodschap te laten landen.',
+      'Het is geen vervanging van je foto’s; het is de laag erbovenop die ze optilt waar het telt. Hetzelfde product dat stil staat op je shop kan bewegen in je ads en socials, waar kijktijd en doorklik bepalen of mensen stoppen — of verder scrollen.',
+    ],
+    whereH: 'Waar het leeft',
+    where: [
+      ['Reels, TikTok & Shorts', 'waar beweging de moedertaal is.'],
+      ['Betaalde ads', 'hogere kijktijd en doorklik.'],
+      ['Productpagina’s', 'een autoplay-clip naast de stills.'],
+      ['E-mail & landingspagina’s', 'een moment van leven boven de vouw.'],
+    ],
+    cleanH: 'Strakke beweging, klaar om te publiceren.',
+    clean: [
+      'Video van 8 seconden met subtiele beweging',
+      'Op maat voor pagina’s, social en advertenties',
+      'Consistente stijl door je hele assortiment',
+      reviewClaim('unattended', 'nl'),
+    ],
+    buyH: 'Twee manieren om video te kopen',
+    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${item.price} per clip, los of toegevoegd aan een drop.`,
+    buyQuote: '<strong>Campaign</strong> — groter, meerdere shots, offerte per project.',
+    stripAlt: {
+      campaign: 'Campagnefotografie',
+      flash: 'Lifestyle-visual in Flash-stijl',
+      phone: 'Lifestyle-visual in Phone-made-stijl',
+      dunes: 'Lifestyle-visual in Dunes-stijl',
+    },
+    dropH: 'Een hele collectie draaien?',
+    dropP: `Clips reken je per clip af en gaan door de standaard wachtrij. Een drop werkt anders: ${scope} producten samen geproduceerd als één release, in een venster dat is gereserveerd voordat je betaalt, met een portaal om elk beeld goed te keuren — en video houdt daarbinnen hetzelfde tarief.`,
+    dropCta: 'Bekijk hoe een drop werkt',
+    ctaH: 'Geef je product<br>een beetje beweging.',
+    ctaP: `${item.price} per clip, ${turnaround('unattended', 'nl').toLowerCase()}.`,
+    ctaSecondary: 'Neem contact op',
+  },
+};
+
+const c = COPY[lang];
+const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
+---
+
+<section class="hero-editorial compact">
+  <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
+  <div class="fade"></div>
+  <div class="hero-editorial-content container">
+    <h1 class="display" style="font-size:clamp(2.8rem,6.5vw,5.4rem)" set:html={c.h1} />
+    <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+    <div class="flex" style="margin-top:1.8rem">
+      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+      </a>
+    </div>
+    <div class="trust-row" style="margin-top:2.2rem">
+      {c.trust.map(([strong, rest]) => (
+        <span class="trust-item"><strong>{strong}</strong> {rest}</span>
+      ))}
+      <span class="trust-item"><strong>{turnaround('unattended', lang)}</strong></span>
+      <span class="trust-item"><strong>{c.reviewNote}</strong></span>
+    </div>
+    <p class="queue-note">{c.queueNote}</p>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 style="margin-bottom:2rem">{c.kindsH}</h2>
+    <div class="grid grid-3 reveal-group">
+      {kinds.map((s) => (
+        <a href={lp(`/video/${s.slug}`)} class="reveal pending" style="display:block">
+          <div class="photo-band tall">
+            <img src={posters[s.slug]} alt={c.exampleAlt(s.name)} loading="lazy" />
+            <div class="scrim"></div>
+            <div class="caption">
+              <h3>{s.name} &rarr;</h3>
+              <p style="font-size:.9rem;margin-top:.35rem">{kindPrice(s.slug)}</p>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="ed-head">
+      <span class="ed-meta">{c.edMeta}</span>
+      <div>
+        <h2>{c.edH}</h2>
+        <p class="ed-sub">{c.edSub}</p>
+      </div>
+    </div>
+    <div class="svc-explain">
+      <div class="svc-explain-main">
+        <h3>{c.whatH}</h3>
+        {c.whatP.map((p) => <p>{p}</p>)}
+      </div>
+      <aside class="svc-explain-side">
+        <h3>{c.whereH}</h3>
+        <ul class="svc-where-list">
+          {c.where.map(([strong, rest]) => (
+            <li><strong>{strong}</strong> — {rest}</li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container two-col">
+    <div class="reveal pending">
+      <h2>{c.cleanH}</h2>
+      <ul class="checklist" style="margin-top:1.4rem">
+        {c.clean.map((li) => (
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
+        ))}
+      </ul>
+    </div>
+    <div class="reveal pending buy-note">
+      <h3>{c.buyH}</h3>
+      <p set:html={c.buyFixed} />
+      <p set:html={c.buyQuote} />
+      <div class="flex" style="margin-top:1.4rem">
+        <a href={lp('/start')} class="btn btn-primary">{c.ctaPrimary}</a>
+        <a href={c.waQuote} class="btn btn-wa" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waQuoteLabel}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="photo-grid reveal pending">
+      {strip.map((s) => (
+        <img src={s.src} alt={c.stripAlt[s.key]} loading="lazy" class={s.wide ? 'wide' : undefined} />
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- STEP 13 SLOT — the explicit "order individual products" vs "run a whole
+     drop" block lands here, after step 12. What sits here now is the honest
+     minimum: a visitor on a Tier 0 page is told the other service model
+     exists and where to read about it, rather than being left to assume this
+     page is the whole offer. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="drop-note reveal pending">
+      <div>
+        <h2>{c.dropH}</h2>
+        <p>{c.dropP}</p>
+      </div>
+      <a href={lp('/pricing')} class="link-arrow">{c.dropCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)" set:html={c.ctaH} />
+      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/contact')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The queue disclosure. Section 13 requires the "no fixed delivery date"
+     half of the promise to be visible, not hidden — so it is set at body
+     weight directly under the trust row rather than as footnote-sized grey. */
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  /* This block used to be a `.card` with an overridden border colour sitting
+     inside a two-column grid, i.e. a card nested in a layout that already
+     framed it. Full border, no nesting, no accent tint. */
+  .buy-note { border: 1px solid var(--line-strong); padding: clamp(1.4rem, 3vw, 2rem); }
+  .buy-note h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
+  .buy-note p { margin-top: .8rem; color: var(--ink-2); }
+  .buy-note p strong { color: var(--ink); font-weight: 600; }
+
+  .drop-note { border: 1px solid var(--line-strong); padding: clamp(1.6rem, 3vw, 2.4rem); display: grid; gap: 1.4rem; }
+  .drop-note h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+  .drop-note p { margin-top: .7rem; color: var(--ink-2); max-width: 68ch; }
+</style>

@@ -9,6 +9,8 @@ import Layout from '../../layouts/Layout.astro';
 import ProductScene from '../../components/ProductScene.astro';
 import Compare from '../../components/Compare.astro';
 import { catalogStyles } from '../../data/catalogStyles.js';
+import { reviewClaim, turnaround, TIERS } from '../../data/pricing.js';
+import { metaDescription } from '../../data/meta.js';
 
 export function getStaticPaths() {
   return catalogStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
@@ -16,11 +18,28 @@ export function getStaticPaths() {
 
 const { style } = Astro.props;
 const waName = style.name.replaceAll(' ', '%20');
+
+// Timing, review level and queue behaviour are tier facts, not per-style
+// copy. They come from pricing.js so a capacity change cannot leave a
+// promise stranded on a detail page — which is exactly what "~24h delivery"
+// and "Produced in about 24 hours" were doing here.
+const TIMING = turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
+const QUEUE = TIERS.unattended.queue.en;
+
+// The description used to be one template literal, so its length was whatever
+// the data happened to make it. metaDescription drops the trailing tier
+// clauses instead of running past 160 — see src/data/meta.js.
 ---
 
 <Layout
   title={`${style.name} — Catalog style | VISUAILS`}
-  description={`${style.name}: a signature VISUAILS catalog style. ${style.metaPrice}. Produced in about 24 hours, every image checked by hand.`}
+  description={metaDescription([
+    `${style.name}: a signature VISUAILS catalog style`,
+    style.metaPrice,
+    TIMING,
+    REVIEW,
+  ])}
 >
   <section class="page-hero">
     <div class="container two-col" style="align-items:center">
@@ -37,9 +56,10 @@ const waName = style.name.replaceAll(' ', '%20');
         </div>
         <div class="trust-row" style="margin-top:2rem">
           <span class="trust-item"><strong>{style.priceTrust}</strong>{style.priceUnit ?? ' / visual'}</span>
-          <span class="trust-item"><strong>~24h</strong> delivery</span>
-          <span class="trust-item"><strong>100%</strong> checked by hand</span>
+          <span class="trust-item"><strong>{TIMING}</strong></span>
+          <span class="trust-item"><strong>{REVIEW}</strong></span>
         </div>
+        <p class="queue-note">{QUEUE}</p>
       </div>
       <div class="reveal pending">
         <ProductScene icon={style.heroIcon} width={style.heroWidth} badge={`Catalog · ${style.name}`} wide />
@@ -127,7 +147,7 @@ const waName = style.name.replaceAll(' ', '%20');
         <h2 style="font-size:1.7rem">Best <em>for</em></h2>
         <ul class="checklist" style="margin-top:1.2rem">
           {style.bestFor.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
       </div>
@@ -135,7 +155,7 @@ const waName = style.name.replaceAll(' ', '%20');
         <h2 style="font-size:1.7rem">What you <em>get</em></h2>
         <ul class="checklist" style="margin-top:1.2rem">
           {style.whatYouGet.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
       </div>
@@ -162,4 +182,9 @@ const waName = style.name.replaceAll(' ', '%20');
   .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
   .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
   .step p { font-size: .9rem; color: var(--ink-3); }
+  /* Mirrors .queue-note on the hub components. Astro scopes <style> to a
+     component's own template, so a shared visual pattern has to be repeated
+     per file; consolidating these into global.css is logged as a follow-up. */
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
 </style>

@@ -1,0 +1,295 @@
+---
+// VISUAILS — /ai-act. AUDIT-TASK-0.md §F: "NEW /ai-act — BUILD. Copy supplied
+// in the brief; hard constraints respected."
+//
+// The constraints, verbatim from the brief, and how each one is met here:
+//
+//   "never turn AI Act page into a fear pitch"
+//     There is no penalty, no fine, no risk framing, and no sales CTA. §6 is
+//     an explicit list of the things this page refuses to say, including
+//     "we will not use the Act as a reason to buy from us". The page sits in
+//     the footer alongside Privacy and Terms — not in the nav, not in a hero,
+//     not behind a CTA — and is set in the same plain legal-document type as
+//     those pages. Two in-content links point here: the fitting-room small
+//     print on the homepage and one FAQ item, both at the moment the question
+//     arises rather than as a prompt to act. A document, not a landing page.
+//
+//   "do not call ordinary AI product imagery a deepfake"
+//     §3 names the term because a reader of the Act will meet it and would
+//     notice its absence, quotes the Act's own narrow definition, and then
+//     declines to apply it in either direction. It never attaches the word to
+//     VISUAILS work.
+//
+//   "do not assert where legal liability sits"
+//     §1's third bullet is deliberately passive — "the Act requires
+//     disclosure" — rather than naming who discloses, because naming the
+//     actor is the assertion. §6 refuses the role question outright.
+//
+// §H·9 governs §5: "every approval and revision is timestamped and exportable
+// as a PDF record of human review — factual, no claim about what it
+// satisfies." Two departures from that line, both for accuracy:
+//   1. There is no PDF export, and §5 does not say there is. What the portal
+//      does have shipped in section 10 and is stated here in the present tense
+//      because it is now true: every approval and every revision request sits
+//      against the individual image with the date it was made (files
+//      .review_state / .review_note / .reviewed_at, plus the order_events
+//      timeline), and the client can read it back from their own link. What
+//      does not exist is a button that turns that log into a document — grep
+//      the project for "pdf" and the only hit outside this file is a MIME-type
+//      entry in portal.js. So §5 promises the record and not the file format,
+//      and the "exportable" half of §H·9 is carried by the written record on
+//      request, which a person writes. Saying "exports as a PDF" would invent
+//      a feature, which is the one thing a transparency page cannot do.
+//   2. Tier 0 is portal: false, so the approval log never applies to it. §5
+//      splits by SCOPE — what any order gets, what a drop gets — rather than
+//      implying every order carries one.
+// §5 ends on the §H·9 discipline stated outright: we describe what the record
+// contains, not what it satisfies.
+//
+// §5 used to split by TIME instead ("Today" against "Being built"), because the
+// portal was section 10 work and TIERS.attended.portal described a capability
+// that was not live. It is live. That entry's own closing sentence — "It is not
+// live yet. When it is, this page will say so." — is why this section had to be
+// rewritten the moment the portal shipped rather than whenever it next came up.
+// A promise a page makes about itself is still a promise.
+//
+// §4 is deliberately incomplete. Whether the standard-library faces depict
+// identifiable real people is a fact about the pipeline, not a copy decision,
+// and "never invent" forbids answering it here. Rather than publish a blanket
+// claim, §4 offers a per-model answer in writing. FLAGGED for Lucas: if there
+// is a definite answer, it belongs here and is worth more than the offer.
+//
+// Facts in §1 were verified against the Act and current commentary in July
+// 2026: Regulation (EU) 2024/1689 in force 1 August 2024, Article 50
+// transparency applying 2 August 2026, technical guidance still in progress.
+// The Digital Omnibus is deliberately not mentioned — it postpones high-risk
+// deadlines that do not apply here, its Article 50 effect is an upstream
+// provider grace period, and as of writing it was agreed but not yet formally
+// adopted. Naming an unadopted instrument on a trust page is the opposite of
+// what the page is for.
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+// No `as const`: COPY[lang] would resolve to a union of readonly tuple arrays
+// and .map() on that union is a TS error. Every page component omits it.
+const COPY = {
+  en: {
+    eyebrow: 'Transparency',
+    h1: 'AI Act',
+    lead: 'The EU AI Act asks the people who use AI-generated images to be straight about it. That suits us. This page sets out what we make, how we make it, and what we can put in writing for you — without telling you what the law asks of your business.',
+    updated: 'Last updated: July 2026',
+    note: 'This page describes our own practice. It is not legal advice. For what the Act asks of your business, ask a qualified adviser.',
+
+    s1H: '1. What the Act asks for',
+    s1P: 'Regulation (EU) 2024/1689 — the AI Act — entered into force on 1 August 2024. Its transparency rules sit in Article 50 and apply from 2 August 2026. Three of them touch images:',
+    s1Items: [
+      ['Systems that talk to people', 'An AI system that interacts with a person has to make clear that it is a system, unless that is already obvious from the situation.'],
+      ['Marking generated output', 'A provider of an AI system that generates synthetic images must mark its output in a machine-readable format, so the output can be detected as artificially generated. That duty sits with whoever provides the generation system.'],
+      ['Disclosing a deep fake', 'Where AI-generated or manipulated image content is a deep fake — defined in the Act as content resembling existing persons, objects, places or events that would falsely appear to be authentic — the Act requires disclosure that the content was artificially generated or manipulated.'],
+    ],
+    s1Tail: 'The detailed technical guidance — how marking is done, in which format, by whom — is still being written. We will update this page as it settles, and we will date the change.',
+
+    s2H: '2. What a VISUAILS visual is',
+    s2P: [
+      'Every visual starts from photographs of your real product — taken by you, or supplied by you. From those, an AI image pipeline builds the rest of the frame: the lighting, the background, the model, the motion. A person then finishes the result and checks it before it leaves.',
+      'So a VISUAILS visual is a made image. It is not a photograph of a shoot that happened, and we do not describe it as one — not to you, and not in the copy on our own site. Fit, fabric and colour are matched to the product you actually ship, because a visual that flatters a garment into something it is not comes back as a parcel.',
+      'That is the whole disclosure. There is no version of our process that we would describe one way to a client and another way to a regulator.',
+      'One thing we do not do: we add no provenance metadata of our own to the files we deliver, and we will not tell you that a delivered file carries any. If a marketplace or your own policy needs a particular provenance format, say so before the order and we will tell you plainly whether we can produce it.',
+    ],
+
+    s3H: '3. About the phrase “deep fake”',
+    s3P: [
+      'You will meet it reading the Act, so it is worth saying where we stand.',
+      'The definition is narrow. It covers content resembling existing persons, objects, places or events that would falsely appear to be authentic, and it was drafted with fabricated recordings of real people and real events in view.',
+      'A studio photograph of a jacket has always been a constructed image: lit, styled, retouched, shot against a background that is not a place. Whether the disclosure rule reaches ordinary commercial product imagery, and in what form, is being worked out by people better placed than us to say.',
+      'We are not going to characterise your listing images for you, in either direction. What we will do is tell you precisely how yours were made, so that whoever advises you is working from something accurate.',
+    ],
+
+    s4H: '4. The faces',
+    s4P: [
+      'Every drop includes a model from the standard library at no extra cost. That library is shared — a face you pick can appear on another brand next month. A Brand Model is designed once, for you, and is used nowhere else.',
+      'If you need a written statement about a specific face — whether it depicts an identifiable real person, and what sits behind it — ask before you order and we will answer for that model, in writing. We would rather answer that once and precisely than publish a blanket claim here.',
+    ],
+
+    s5H: '5. What we can put in writing',
+    s5P: 'For any order, the material that describes it already exists on our side: the files you sent, what was produced from them, when, and the fact that a person reviewed it. Ask, and we will write it out for you.',
+    s5Items: [
+      ['For any order', 'A written record on request — source files supplied, visuals produced, dates, and confirmation that each visual was checked by a person before delivery. A person writes that record. There is no button here that generates one, and we are not going to imply there is.'],
+      ['For a drop', 'The client portal holds the review itself. Every approval and every revision request sits against the individual image, with the date it was made, and you can read the sequence back at any time from your own link. Ask, and it goes into the written record above.'],
+    ],
+    s5Tail: 'We describe what that record contains. We do not tell you what it satisfies.',
+
+    s6H: '6. What we will not tell you',
+    s6P: 'There is a version of this page that would be easier to write and worth more in sales, and we are not writing it. Specifically:',
+    s6Items: [
+      'We will not tell you that using VISUAILS makes you compliant with anything. No supplier can put that in your file for you.',
+      'We will not tell you which role you occupy under the Act for a given image, or what follows from it. That turns on facts about your business we do not have.',
+      'We will not use the Act as a reason to buy from us. If a page has to make you nervous before it can sell you something, the something is the problem.',
+    ],
+    s6Tail: 'What we will do is answer a direct question with a direct answer, including “we do not know”.',
+
+    ctaH: 'Ask us something specific.',
+    ctaP: 'A direct question about how a visual was made, or about what we can put in writing, gets a direct answer.',
+    ctaBtn: 'Contact us',
+    wa: 'WhatsApp',
+    waText: 'Hi VISUAILS, I have a question about how your visuals are made.',
+  },
+
+  nl: {
+    eyebrow: 'Transparantie',
+    h1: 'AI Act',
+    lead: 'De Europese AI-verordening vraagt van iedereen die AI-gegenereerde beelden gebruikt om daar open over te zijn. Dat komt ons goed uit. Deze pagina zet uiteen wat we maken, hoe we het maken en wat we voor je op papier kunnen zetten — zonder je te vertellen wat de wet van jouw bedrijf vraagt.',
+    updated: 'Laatst bijgewerkt: juli 2026',
+    note: 'Deze pagina beschrijft onze eigen werkwijze. Het is geen juridisch advies. Raadpleeg een gekwalificeerd adviseur voor wat de verordening van jouw bedrijf vraagt.',
+
+    s1H: '1. Wat de verordening vraagt',
+    s1P: 'Verordening (EU) 2024/1689 — de AI-verordening — is op 1 augustus 2024 in werking getreden. De transparantieregels staan in artikel 50 en gelden vanaf 2 augustus 2026. Drie daarvan raken beeld:',
+    s1Items: [
+      ['Systemen die met mensen praten', 'Een AI-systeem dat met een persoon communiceert, moet duidelijk maken dat het een systeem is, tenzij dat uit de situatie al blijkt.'],
+      ['Gegenereerde output markeren', 'Een aanbieder van een AI-systeem dat synthetische beelden genereert, moet de output machineleesbaar markeren, zodat te detecteren is dat die kunstmatig is gegenereerd. Die plicht ligt bij wie het generatiesysteem levert.'],
+      ['Een deepfake bekendmaken', 'Waar AI-gegenereerde of gemanipuleerde beeldinhoud een deepfake is — in de verordening omschreven als inhoud die bestaande personen, voorwerpen, plaatsen of gebeurtenissen nabootst en ten onrechte authentiek zou lijken — vraagt de verordening om bekendmaking dat de inhoud kunstmatig is gegenereerd of gemanipuleerd.'],
+    ],
+    s1Tail: 'De technische uitwerking — hoe er gemarkeerd wordt, in welk formaat, door wie — wordt nog geschreven. We werken deze pagina bij zodra dat is uitgekristalliseerd, met de datum erbij.',
+
+    s2H: '2. Wat een VISUAILS-visual is',
+    s2P: [
+      'Elke visual begint bij foto’s van jouw echte product — door jou gemaakt of door jou aangeleverd. Daaruit bouwt een AI-beeldpijplijn de rest van het kader op: het licht, de achtergrond, het model, de beweging. Daarna werkt een mens het resultaat af en controleert het voordat het de deur uitgaat.',
+      'Een VISUAILS-visual is dus een gemaakt beeld. Het is geen foto van een shoot die heeft plaatsgevonden, en we omschrijven het ook niet zo — niet tegenover jou, en niet in de teksten op onze eigen site. Pasvorm, stof en kleur worden gematcht op het product dat je daadwerkelijk verstuurt, want een visual die een kledingstuk mooier maakt dan het is, komt terug als pakket.',
+      'Dat is de hele bekendmaking. Er is geen versie van ons proces die we anders zouden beschrijven tegenover een klant dan tegenover een toezichthouder.',
+      'Eén ding doen we niet: we voegen geen eigen herkomstmetadata toe aan de bestanden die we leveren, en we beweren niet dat een geleverd bestand die bevat. Heeft een marktplaats of je eigen beleid een bepaald herkomstformaat nodig, zeg het dan vóór de bestelling — dan zeggen we ronduit of we dat kunnen leveren.',
+    ],
+
+    s3H: '3. Over het woord “deepfake”',
+    s3P: [
+      'Je komt het tegen als je de verordening leest, dus het is goed om te zeggen waar wij staan.',
+      'De definitie is smal. Ze gaat over inhoud die bestaande personen, voorwerpen, plaatsen of gebeurtenissen nabootst en ten onrechte authentiek zou lijken, en ze is opgesteld met verzonnen opnamen van echte mensen en echte gebeurtenissen voor ogen.',
+      'Een studiofoto van een jack is altijd al een geconstrueerd beeld geweest: uitgelicht, gestyled, geretoucheerd, opgenomen tegen een achtergrond die geen plaats is. Of de bekendmakingsregel gewone commerciële productbeelden raakt, en in welke vorm, wordt uitgewerkt door mensen die daar beter over kunnen oordelen dan wij.',
+      'We gaan jouw productbeelden niet voor je kwalificeren, in geen van beide richtingen. Wat we wél doen is precies vertellen hoe de jouwe gemaakt zijn, zodat wie jou adviseert met iets accuraats werkt.',
+    ],
+
+    s4H: '4. De gezichten',
+    s4P: [
+      'Elke drop bevat een model uit de standaardbibliotheek, zonder extra kosten. Die bibliotheek is gedeeld — een gezicht dat jij kiest, kan volgende maand bij een ander merk staan. Een merkmodel wordt één keer ontworpen, voor jou, en wordt nergens anders gebruikt.',
+      'Heb je een schriftelijke verklaring nodig over een specifiek gezicht — of het een identificeerbare, echte persoon weergeeft en wat daarachter zit — vraag het dan vóór je bestelt, dan beantwoorden we dat voor dat model, op schrift. We beantwoorden die vraag liever één keer precies dan hier met een algemene claim.',
+    ],
+
+    s5H: '5. Wat we op papier kunnen zetten',
+    s5P: 'Voor elke bestelling bestaat het materiaal dat haar beschrijft al aan onze kant: de bestanden die je stuurde, wat daaruit is gemaakt, wanneer, en het feit dat een mens het heeft gecontroleerd. Vraag ernaar en we schrijven het voor je uit.',
+    s5Items: [
+      ['Bij elke bestelling', 'Op verzoek een schriftelijk overzicht — aangeleverde bronbestanden, geproduceerde visuals, data, en de bevestiging dat elke visual vóór levering door een mens is gecontroleerd. Dat overzicht schrijft een mens. Er zit hier geen knop die er een genereert, en we doen ook niet alsof.'],
+      ['Bij een drop', 'In het klantportaal staat de beoordeling zelf. Elke goedkeuring en elk revisieverzoek staat bij het betreffende beeld, met de datum waarop het is gedaan, en je kunt de reeks op elk moment teruglezen via je eigen link. Vraag ernaar en die reeks gaat mee in het schriftelijke overzicht hierboven.'],
+    ],
+    s5Tail: 'We beschrijven wat dat overzicht bevat. We vertellen je niet waaraan het voldoet.',
+
+    s6H: '6. Wat we je niet vertellen',
+    s6P: 'Er bestaat een versie van deze pagina die makkelijker te schrijven is en meer opbrengt in verkoop, en die schrijven we niet. Concreet:',
+    s6Items: [
+      'We vertellen je niet dat je door VISUAILS te gebruiken aan wat dan ook voldoet. Geen enkele leverancier kan dat in jouw dossier zetten.',
+      'We vertellen je niet welke rol jij onder de verordening vervult bij een bepaald beeld, of wat daaruit volgt. Dat hangt af van feiten over jouw bedrijf die wij niet hebben.',
+      'We gebruiken de verordening niet als reden om bij ons te kopen. Als een pagina je eerst nerveus moet maken voordat ze je iets kan verkopen, is dat iets het probleem.',
+    ],
+    s6Tail: 'Wat we wél doen is een directe vraag direct beantwoorden, inclusief “dat weten we niet”.',
+
+    ctaH: 'Stel ons een concrete vraag.',
+    ctaP: 'Een directe vraag over hoe een visual gemaakt is, of over wat we op papier kunnen zetten, krijgt een direct antwoord.',
+    ctaBtn: 'Neem contact op',
+    wa: 'WhatsApp',
+    waText: 'Hoi VISUAILS, ik heb een vraag over hoe jullie visuals gemaakt worden.',
+  },
+};
+
+const c = COPY[lang];
+const waHref = `https://wa.me/31625436130?text=${encodeURIComponent(c.waText)}`;
+---
+
+<section class="page-hero">
+  <div class="container narrow">
+    <span class="eyebrow-page">{c.eyebrow}</span>
+    <h1 class="display">{c.h1}</h1>
+    <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+    <p class="legal-meta">{c.updated}</p>
+    <p class="legal-note">{c.note}</p>
+  </div>
+</section>
+
+{/* The legal pages carry no reveal animation and this one matches them. A
+    trust document that fades in on scroll is performing, and the brief's
+    "not a fear pitch" reads on tone as much as on wording. */}
+<section class="section-tight">
+  <div class="container narrow legal">
+
+    <h2>{c.s1H}</h2>
+    <p>{c.s1P}</p>
+    <dl class="legal-dl">
+      {c.s1Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
+    </dl>
+    <p>{c.s1Tail}</p>
+
+    <h2>{c.s2H}</h2>
+    {c.s2P.map((p) => (<p>{p}</p>))}
+
+    <h2>{c.s3H}</h2>
+    {c.s3P.map((p) => (<p>{p}</p>))}
+
+    <h2>{c.s4H}</h2>
+    {c.s4P.map((p) => (<p>{p}</p>))}
+
+    <h2>{c.s5H}</h2>
+    <p>{c.s5P}</p>
+    <dl class="legal-dl">
+      {c.s5Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
+    </dl>
+    <p>{c.s5Tail}</p>
+
+    <h2>{c.s6H}</h2>
+    <p>{c.s6P}</p>
+    <ul>
+      {c.s6Items.map((i) => (<li>{i}</li>))}
+    </ul>
+    <p>{c.s6Tail}</p>
+
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="cta-band">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">{c.ctaH}</h2>
+      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaBtn}</a>
+        <a href={waHref} class="btn btn-wa" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
+          {c.wa}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Legal-text typography, matching /privacy, /terms and /cookie-policy so the
+     page reads as one of that set. Astro scopes these selectors to this
+     component, so they have to be restated here rather than inherited. */
+  .legal h2 { margin-top: 2.6rem; font-size: 1.5rem; }
+  .legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
+  .legal p { margin-top: 0.9rem; }
+  .legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .legal ul li { list-style: disc; }
+  .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+  .legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
+
+  /* Full hairline border, not a left stripe. A >1px coloured side border is an
+     absolute ban in the design system; /privacy, /terms and /cookie-policy
+     carried one on this same class and were corrected in the same pass. */
+  .legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
+
+  /* Term/definition rows for §1 and §5. A <dl> rather than a two-column grid:
+     at these text lengths a grid puts one word beside six lines. */
+  .legal-dl { margin-top: 1.4rem; border-top: 1px solid var(--line); }
+  .legal-dl dt { padding-top: 1rem; font-weight: 700; color: var(--ink); font-size: 0.95rem; }
+  .legal-dl dd { margin: 0.4rem 0 0; padding-bottom: 1rem; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.7; }
+</style>

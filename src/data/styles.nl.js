@@ -2,6 +2,16 @@
 // src/data/styles.js — same shape and exports, only the human-readable
 // strings are translated. Order paths are prefixed with /nl.
 
+import { reviewClaim, turnaround } from './pricing.js';
+
+// No euro figure and no delivery time may be typed into this file.
+// Both used to live here as literals, which is how the hub cards and the
+// [slug] pages ended up quoting a turnaround the capacity gate had never
+// cleared — and how a video price that exists nowhere in pricing.js
+// survived a repricing nobody caught. Derive, never type.
+const TIMING = turnaround('unattended', 'nl');
+const REVIEW = reviewClaim('unattended', 'nl');
+
 function grid(photos, icons) {
   const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
@@ -43,7 +53,7 @@ export const styles = [
       { title: 'Campagne-flexibel', body: 'Negatieve ruimte die werkt voor advertenties, banners en verpakking.' },
     ],
     bestFor: ['Premium skincare, sieraden en lederwaren', 'Merken die rust verkopen, geen ruis', 'Campagnes met een ingehouden stem', 'Producten die een galeriebehandeling verdienen'],
-    whatYouGet: ['Zonovergoten, aardse minimalistische scènes', 'Premium belichting met lange schaduwen', 'Composities met ruimte voor je boodschap', 'Levering in ~24 uur, met de hand gecontroleerd'],
+    whatYouGet: ['Zonovergoten, aardse minimalistische scènes', 'Premium belichting met lange schaduwen', 'Composities met ruimte voor je boodschap', TIMING, REVIEW],
   },
   {
     slug: 'flash',
@@ -80,7 +90,7 @@ export const styles = [
       { title: 'Gebouwd voor drops', body: 'Getimede energie voor launches, bijbestellingen en hypemomenten.' },
     ],
     bestFor: ['Streetwear, sneakers en accessoires', 'Drops, launches en hypemomenten', 'Merken met een edge om te behouden', 'Social-advertenties die duimen moeten stoppen'],
-    whatYouGet: ['Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Consistente modellen, vastgezet op je merk', 'Levering in ~24 uur, met de hand gecontroleerd'],
+    whatYouGet: ['Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Consistente modellen, vastgezet op je merk', TIMING, REVIEW],
   },
   {
     slug: 'glow',
@@ -117,7 +127,7 @@ export const styles = [
       { title: 'Eén consistente gloed', body: 'Dezelfde warmte over je hele feed, launch na launch.' },
     ],
     bestFor: ['Beauty, skincare en parfum', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een aspirationele feed bouwen'],
-    whatYouGet: ['Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elk beeld', 'Levering in ~24 uur, met de hand gecontroleerd'],
+    whatYouGet: ['Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elk beeld', TIMING, REVIEW],
   },
   {
     slug: 'phone-made',
@@ -154,7 +164,7 @@ export const styles = [
       { title: 'Feed-native vanaf het eerste kader', body: 'Geen aparte uitsneed-ronde nodig — het is klaar zoals geleverd.' },
     ],
     bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die vertrouwen bouwen vóór glans', 'Organische content die er niet als advertentie uit mag zien'],
-    whatYouGet: ['Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', 'Levering in ~24 uur, met de hand gecontroleerd'],
+    whatYouGet: ['Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', TIMING, REVIEW],
   },
   {
     slug: 'custom',
@@ -166,7 +176,7 @@ export const styles = [
     cardPhoto: '/img/banners-13.webp',
     cardIcon: 'bag',
     cardDesc: 'Niet een van onze vier sferen — een lifestyle-scène op maat, ontworpen vanuit jouw referenties.',
-    orderHref: '/nl/order-custom',
+    orderHref: '/nl/start',
     orderLabel: 'Start een scène op maat',
     moodParagraphs: [
       'Niet een van onze vier sferen — een scène ontworpen vanuit jouw referenties: de setting, styling en het licht die alleen jouw merk zou gebruiken.',

@@ -1,0 +1,424 @@
+---
+// VISUAILS — /faq, rewritten. AUDIT-TASK-0.md §F: "REWRITE selectively.
+// Contains 'about €10 a photo' and 24h claims."
+//
+// What changed and why:
+//   • Every price is interpolated from pricing.js. The old page typed them,
+//     including a derived "about €10 a photo" that no longer holds and that
+//     nothing would have caught if it drifted again.
+//   • Every timing answer comes from turnaround(), one string per tier
+//     (task #190). No answer on this page states a number of hours.
+//   • The revision answer is gone, question and all. It said "three rounds
+//     included as standard" with no qualifier — a promise the individual
+//     -product route never made — and then, briefly, a count per tier. There
+//     is no count on either tier now, so the question became "what if the
+//     visuals are not right" and the answer is the check-in from pricing.js.
+//   • The volume-discount answer described an offer that no longer exists.
+//     Replaced with the true answer: the ladder IS the volume answer.
+//   • The subscription answer said "no subscription" — the studio retainer
+//     now exists, so that answer was factually wrong.
+//   • A capacity-gate question was added. It is the site's most load-bearing
+//     promise and the FAQ is where a sceptical buyer goes looking for it.
+//   • The 4K claim is gone: the 4K export add-on was removed from /pricing,
+//     so offering it here would sell something that cannot be bought.
+//
+// Markup note: the accordion is native <details>/<summary>, and the list now
+// sits inside an .acc wrapper. Without it the first question has no rule above
+// it (.acc-item carries only a bottom rule) and the group reads as unclosed at
+// the top — the same fix PricingPage.astro documents.
+//
+// The last item under "Rights and usage" links to /ai-act. The question there
+// is a fact question — are the visuals AI-generated — which we answer. It is
+// deliberately not "do I have to disclose this", because that is the question
+// /ai-act refuses to answer for a client, and asking it here would put the
+// fear pitch back in through the door the brief closed.
+import {
+  AMOUNT, TIERS, PER_PRODUCT, TEST_SAMPLE, euro, reviewClaim, turnaround, aftercare,
+  FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
+  FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const perProductById = Object.fromEntries(PER_PRODUCT[lang].map((p) => [p.id, p]));
+const sample = TEST_SAMPLE[lang];
+const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+// euroRange() rounds; €61.67 must survive intact.
+const dropPerProduct = `${euro(FULL_DROP_PER_PRODUCT_MIN, lang)}–${euro(FULL_DROP_PER_PRODUCT_MAX, lang).slice(1)}`;
+
+const COPY = {
+  en: {
+    h1a: 'Questions, ',
+    h1em: 'answered',
+    h1b: '.',
+    lead: 'How a drop works, what it costs, when it lands, and what happens if the week you need cannot be held. Still unsure? Message us on WhatsApp.',
+    heroAlt: 'A VISUAILS lifestyle visual',
+
+    groups: [
+      {
+        title: 'Getting started',
+        items: [
+          {
+            q: 'What is VISUAILS?',
+            a: 'VISUAILS turns a folder of product photos into catalog sets, lifestyle carousels and video for a whole product line. The pipeline does the production at scale; a person checks every visual before it reaches you.',
+          },
+          {
+            q: 'What is a drop?',
+            a: `A drop is ${scope} products run as one job — one brief, one window, one invoice — with a catalog set and a lifestyle carousel for each. It is how a season's worth of product imagery gets made in one pass instead of product by product.`,
+          },
+          {
+            q: 'What do I need to send you?',
+            a: 'One clear photo per product and a short note on the look you want. That is it. Five minutes, whether it is one product or thirty — the effort does not scale with the size of the drop.',
+          },
+          {
+            q: 'Can I try it before committing to a drop?',
+            a: `Two ways. A ${sample.price} test sample on one of your own products, ${sample.unit} — it runs through the same pipeline as a paid order, so what you see is what you would get. Or a Drop Pilot: exactly ${PILOT_PRODUCTS} products at ${euro(AMOUNT.dropPilot, 'en')}, once per brand, to see what we do with your line before you hand us all of it.`,
+          },
+        ],
+      },
+      {
+        title: 'Ordering and scope',
+        items: [
+          {
+            q: 'What is the difference between catalog and lifestyle?',
+            // The name is separated from its line by a full stop, not a colon
+            // or a dash. Both of those collide with punctuation the line
+            // already owns: catalog.line contains a colon ("Four photos:
+            // front, back, …") and lifestyle.line contains an em-dash. A full
+            // stop is the only separator that cannot clash with a string this
+            // file does not control — and it means the line keeps its own
+            // capital, so no .toLowerCase() is needed. That matters: lowercasing
+            // a data string is how "WhatsApp" became "whatsapp" elsewhere.
+            a: `${perProductById.catalog.name}. ${perProductById.catalog.line} Clean, consistent, built for shop listings and marketplaces. ${perProductById.lifestyle.name}. ${perProductById.lifestyle.line} A styled scene rather than a product on a background. A drop includes both for every product.`,
+          },
+          {
+            q: 'Can I keep the same style and model across orders?',
+            a: 'Yes, and that is most of the point. The same lighting, angle, grade and model can be held across a whole drop and across the drops that follow, so a catalog stays coherent as the line grows.',
+          },
+          {
+            q: 'Can I have a model that is only mine?',
+            a: 'Yes. Your Brand Model is a face built for your brand and used by no one else, kept consistent across every product and every drop. Every drop already includes a model from the standard library, so this is an upgrade rather than a requirement.',
+            linkText: 'See Your Brand Model',
+            linkHref: '/custom-models',
+          },
+          {
+            q: 'Can I order over WhatsApp?',
+            a: 'Always. Send the photos and a short brief and we take it from there. Same pipeline, same checks, same capacity rules — WhatsApp is a door, not a shortcut past anything.',
+          },
+        ],
+      },
+      {
+        title: 'Delivery and the calendar',
+        items: [
+          {
+            q: 'How fast is it?',
+            a: `A drop gets ${turnaround('attended', lang).toLowerCase()}. Individual products go through the standard queue: ${turnaround('unattended', lang).toLowerCase()}, with no fixed delivery date.`,
+          },
+          {
+            q: 'What if the week I need cannot be held?',
+            a: 'Then we tell you that, before you pay, instead of giving you a date and hoping. A reserved window is confirmed against the calendar before it is offered — never after. A drop already in the calendar is never pushed to make room for a later one.',
+          },
+          {
+            q: 'Is every image really checked by a person?',
+            a: `${reviewClaim('attended', lang)} — a person selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, on either route in.`,
+          },
+          {
+            q: 'What if the visuals are not right?',
+            // The question changed with the answer. "How many revisions do I
+            // get" only has an answer if something is being counted, and
+            // putting the number back in the reader's mouth is the same
+            // insecurity one step removed. The remedies — revision, refund,
+            // credit — are named once, in /terms §10, deliberately not here.
+            a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you — what we agree depends on the problem. On a drop: ${aftercare('attended', 'en').toLowerCase()}, per image in the portal, so one image going back does not hold up the rest.`,
+          },
+          {
+            q: 'How do I actually receive the files?',
+            // The tier strings are noun phrases. Bare-appending "for a drop"
+            // garden-paths ("…or request-revision for a drop"); the comma plus
+            // a conditional clause keeps the qualifier unambiguous. The
+            // strings themselves are never lowercased — one of them contains
+            // "WhatsApp", which .toLowerCase() would mangle.
+            a: `${TIERS.attended.delivery.en}, if you run a drop. ${TIERS.unattended.delivery.en}, if you order individual products. Either way they are high-resolution and e-commerce-ready, sized for shop listings, marketplaces and ads.`,
+          },
+        ],
+      },
+      {
+        title: 'Pricing and payment',
+        items: [
+          {
+            q: 'What does it cost?',
+            html: `A Full Drop is <strong>${euro(AMOUNT.fullDrop, 'en')}</strong> for ${scope} products — ${dropPerProduct} per product, catalog and lifestyle included for each. Individually: ${perProductById.catalog.name.toLowerCase()} ${perProductById.catalog.price} per product, ${perProductById.lifestyle.name.toLowerCase()} ${perProductById.lifestyle.price} per product, video ${perProductById.video.price} per clip. Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
+          },
+          {
+            q: 'Are there volume discounts?',
+            a: `There are no stacked discount bands — the ladder is the volume answer. Ordering products individually is ${euro(AMOUNT.catalog + AMOUNT.lifestyle, 'en')} per product at drop scope; a Full Drop is ${dropPerProduct} per product for the same work. The saving is in running them together, and it is on the pricing page rather than behind a negotiation.`,
+          },
+          {
+            q: 'Is there a subscription?',
+            a: `Not one you need. A drop is a one-off: one job, one invoice, no standing commitment. There is a studio retainer at ${euro(AMOUNT.retainer, 'en')} a month for brands shipping a drop every month, but it is an option, not the default.`,
+          },
+          {
+            q: 'Can I add my VAT number?',
+            a: 'Yes. You can add it at checkout — optional, and useful for B2B invoicing inside the EU.',
+          },
+        ],
+      },
+      {
+        title: 'Rights and usage',
+        items: [
+          {
+            q: 'Can I use the visuals commercially?',
+            a: 'Yes. They are made for commercial use — your shop, marketplaces, paid ads and social feeds. No per-use licence and no extra fee for using them somewhere else.',
+          },
+          {
+            q: 'Who owns the results?',
+            a: 'The finished visuals are yours to use for your business. If you have a specific licensing question, ask and we will confirm the details for your case in writing.',
+            linkText: 'Read the terms',
+            linkHref: '/terms',
+          },
+          {
+            q: 'Do you use my product photos for anything else?',
+            a: 'No. The photos you send are used to produce your order and nothing else.',
+          },
+          {
+            q: 'Are the visuals AI-generated?',
+            a: 'Yes, and we say so plainly. Every visual is generated from photographs of your real product and finished by hand before it is delivered — a made image, not a photograph of a shoot that happened. We will describe exactly how yours were made. We will not tell you what that means for your business.',
+            linkText: 'Read our AI Act page',
+            linkHref: '/ai-act',
+          },
+        ],
+      },
+    ],
+
+    ctaH: 'Still have a ',
+    ctaEm: 'question',
+    ctaH2: '?',
+    ctaBody: 'Message us on WhatsApp — usually a reply within an hour on weekdays.',
+    ctaSample: 'Test sample',
+    ctaContact: 'Get in touch',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20your%20service.',
+  },
+
+  nl: {
+    h1a: 'Vragen, ',
+    h1em: 'beantwoord',
+    h1b: '.',
+    lead: 'Hoe een drop werkt, wat het kost, wanneer het er is, en wat er gebeurt als de week die je nodig hebt niet kan. Nog steeds onzeker? Stuur ons een bericht op WhatsApp.',
+    heroAlt: 'Een VISUAILS-lifestylevisual',
+
+    groups: [
+      {
+        title: 'Aan de slag',
+        items: [
+          {
+            q: 'Wat is VISUAILS?',
+            a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestyle-carousels en video voor een hele productlijn. De pipeline doet de productie op schaal; een mens controleert elke visual voordat die bij jou aankomt.',
+          },
+          {
+            q: 'Wat is een drop?',
+            a: `Een drop is ${scope} producten als één opdracht — één briefing, één venster, één factuur — met een catalogset en een lifestyle-carousel voor elk product. Zo maak je een seizoen aan productbeeld in één keer, in plaats van product voor product.`,
+          },
+          {
+            q: 'Wat moet ik opsturen?',
+            a: 'Eén duidelijke foto per product en een korte notitie over de look die je wilt. Meer niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de drop.',
+          },
+          {
+            q: 'Kan ik het proberen voordat ik een hele drop bestel?',
+            a: `Op twee manieren. Een proefvisual van ${sample.price} op je eigen product, ${sample.unit} — die loopt door dezelfde pipeline als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of een Drop Pilot: precies ${PILOT_PRODUCTS} producten voor ${euro(AMOUNT.dropPilot, 'nl')}, eenmalig per merk, om te zien wat we met jouw lijn doen voordat je ons de hele collectie geeft.`,
+          },
+        ],
+      },
+      {
+        title: 'Bestellen en omvang',
+        items: [
+          {
+            q: 'Wat is het verschil tussen catalog en lifestyle?',
+            a: `${perProductById.catalog.name}. ${perProductById.catalog.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${perProductById.lifestyle.name}. ${perProductById.lifestyle.line} Een gestylede scène in plaats van een product op een achtergrond. Een drop bevat allebei, voor elk product.`,
+          },
+          {
+            q: 'Kan ik dezelfde stijl en hetzelfde model over bestellingen heen aanhouden?',
+            a: 'Ja, en dat is grotendeels het punt. Dezelfde belichting, hoek, grade en hetzelfde model kunnen over een hele drop worden vastgehouden, en over de drops daarna, zodat een catalogus samenhangend blijft terwijl de lijn groeit.',
+          },
+          {
+            q: 'Kan ik een model dat alleen van mij is?',
+            a: 'Ja. Jouw merkmodel is een gezicht dat voor jouw merk is gebouwd en door niemand anders wordt gebruikt, consistent over elk product en elke drop. Elke drop bevat al een model uit de standaardbibliotheek, dus dit is een upgrade en geen vereiste.',
+            linkText: 'Bekijk Jouw merkmodel',
+            linkHref: '/custom-models',
+          },
+          {
+            q: 'Kan ik via WhatsApp bestellen?',
+            a: 'Altijd. Stuur de foto’s en een korte briefing en wij nemen het over. Dezelfde pipeline, dezelfde controles, dezelfde capaciteitsregels — WhatsApp is een ingang, geen sluiproute.',
+          },
+        ],
+      },
+      {
+        title: 'Levering en de agenda',
+        items: [
+          {
+            q: 'Hoe snel is het?',
+            a: `Een drop krijgt ${turnaround('attended', lang).toLowerCase()}. Losse producten gaan door de standaard wachtrij: ${turnaround('unattended', lang).toLowerCase()}, zonder vaste leverdatum.`,
+          },
+          {
+            q: 'Wat als de week die ik nodig heb niet kan?',
+            a: 'Dan zeggen we dat, voordat je betaalt, in plaats van je een datum te geven en te hopen. Een gereserveerd venster wordt tegen de agenda gehouden voordat het wordt aangeboden — nooit erna. Een drop die al in de agenda staat, wijkt nooit voor een latere.',
+          },
+          {
+            q: 'Wordt elk beeld echt door een mens gecontroleerd?',
+            a: `${reviewClaim('attended', lang)} — een mens selecteert en inspecteert elk beeld op nauwkeurigheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
+          },
+          {
+            q: 'Wat als de visuals niet kloppen?',
+            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. Bij een drop: ${aftercare('attended', 'nl').toLowerCase()}, per beeld in het portaal, zodat één beeld dat terugmoet de rest niet ophoudt.`,
+          },
+          {
+            q: 'Hoe krijg ik de bestanden precies?',
+            a: `${TIERS.attended.delivery.nl}, als je een drop draait. ${TIERS.unattended.delivery.nl}, als je losse producten bestelt. Hoe dan ook zijn ze hoge resolutie en e-commerce-klaar, op maat voor shoplistings, marktplaatsen en advertenties.`,
+          },
+        ],
+      },
+      {
+        title: 'Prijzen en betaling',
+        items: [
+          {
+            q: 'Wat kost het?',
+            html: `Een Full Drop is <strong>${euro(AMOUNT.fullDrop, 'nl')}</strong> voor ${scope} producten — ${dropPerProduct} per product, met catalog en lifestyle voor elk. Los: ${perProductById.catalog.name.toLowerCase()} ${perProductById.catalog.price} per product, ${perProductById.lifestyle.name.toLowerCase()} ${perProductById.lifestyle.price} per product, video ${perProductById.video.price} per clip. De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
+          },
+          {
+            q: 'Zijn er volumekortingen?',
+            a: `Er zijn geen gestapelde kortingsstaffels — de ladder is het antwoord op volume. Losse producten bestellen kost ${euro(AMOUNT.catalog + AMOUNT.lifestyle, 'nl')} per product op dropschaal; een Full Drop is ${dropPerProduct} per product voor hetzelfde werk. De besparing zit in het samen draaien, en staat op de prijzenpagina in plaats van achter een onderhandeling.`,
+          },
+          {
+            q: 'Is er een abonnement?',
+            a: `Niet een dat je nodig hebt. Een drop is eenmalig: één opdracht, één factuur, geen doorlopende verplichting. Er is een studio retainer van ${euro(AMOUNT.retainer, 'nl')} per maand voor merken die elke maand een drop uitbrengen, maar dat is een optie, geen standaard.`,
+          },
+          {
+            q: 'Kan ik mijn btw-nummer toevoegen?',
+            a: 'Ja. Je kunt het toevoegen bij het afrekenen — optioneel, en handig voor B2B-facturatie binnen de EU.',
+          },
+        ],
+      },
+      {
+        title: 'Rechten en gebruik',
+        items: [
+          {
+            q: 'Mag ik de visuals commercieel gebruiken?',
+            a: 'Ja. Ze zijn gemaakt voor commercieel gebruik — je shop, marktplaatsen, betaalde advertenties en socialmediafeeds. Geen licentie per gebruik en geen extra kosten om ze ergens anders in te zetten.',
+          },
+          {
+            q: 'Wie is eigenaar van de resultaten?',
+            a: 'De afgewerkte visuals zijn van jou om voor je bedrijf te gebruiken. Heb je een specifieke licentievraag, stel hem gerust en we bevestigen de details voor jouw geval op schrift.',
+            linkText: 'Lees de voorwaarden',
+            linkHref: '/terms',
+          },
+          {
+            q: 'Gebruiken jullie mijn productfoto’s voor iets anders?',
+            a: 'Nee. De foto’s die je stuurt worden alleen gebruikt om jouw bestelling te produceren, en verder niets.',
+          },
+          {
+            q: 'Zijn de visuals AI-gegenereerd?',
+            a: 'Ja, en dat zeggen we gewoon. Elke visual wordt gegenereerd uit foto’s van jouw echte product en met de hand afgewerkt voordat die wordt geleverd — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. We beschrijven precies hoe die van jou gemaakt zijn. We vertellen je niet wat dat voor jouw bedrijf betekent.',
+            linkText: 'Lees onze AI Act-pagina',
+            linkHref: '/ai-act',
+          },
+        ],
+      },
+    ],
+
+    ctaH: 'Nog een ',
+    ctaEm: 'vraag',
+    ctaH2: '?',
+    ctaBody: 'Stuur ons een bericht op WhatsApp — meestal binnen een uur antwoord op werkdagen.',
+    ctaSample: 'Proefvisual',
+    ctaContact: 'Neem contact op',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20jullie%20dienst.',
+  },
+};
+
+const c = COPY[lang];
+---
+
+<!-- HERO — a real photo beside a short line, not a text wall. -->
+<section class="page-hero">
+  <div class="container">
+    <div class="photo-split reverse">
+      <div class="photo-split-media">
+        <img src="/img/lifestyle-flash-05.webp" alt={c.heroAlt} loading="lazy" />
+      </div>
+      <div>
+        <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">{c.h1a}<em>{c.h1em}</em>{c.h1b}</h1>
+        <p class="lead" style="margin-top:1rem">{c.lead}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE ACCORDION -->
+<section class="section-tight">
+  <div class="container faq-narrow">
+    {c.groups.map((g) => (
+      <div class="faq-group">
+        <h2>{g.title}</h2>
+        <div class="acc">
+          {g.items.map((item) => (
+            <details class="acc-item reveal pending">
+              <summary class="acc-q">
+                <span>{item.q}</span>
+                <span class="acc-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" class="i" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+                </span>
+              </summary>
+              <div class="acc-body-inner">
+                {item.html ? <p set:html={item.html} /> : <p>{item.a}</p>}
+                {item.linkText ? <p class="acc-more"><a href={lp(item.linkHref)} class="link-arrow">{item.linkText} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p> : null}
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section-tight">
+  <div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">{c.ctaH}<em>{c.ctaEm}</em>{c.ctaH2}</h2>
+      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaBody}</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <a href={lp('/test-sample')} class="btn btn-primary btn-lg" data-track="faq-sample">{c.ctaSample}</a>
+        <a href={lp('/contact')} class="btn btn-ghost btn-lg">{c.ctaContact}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>
+          WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Narrower reading column + the accordion. Native <details>/<summary>, so
+     keyboard and screen-reader behaviour is free. */
+  .faq-narrow { max-width: 820px; }
+  .faq-group + .faq-group { margin-top: clamp(2.4rem, 5vw, 3.4rem); }
+
+  /* .acc-item carries only a bottom rule, so without a rule here the first
+     question of each group has no line above it and the list reads as
+     unclosed at the top. This is the wrapper the old page was missing. */
+  .acc { border-top: 1px solid var(--line); margin-top: clamp(1rem, 2vw, 1.4rem); }
+  .acc-item { box-shadow: inset 0 -1px 0 var(--line); }
+  .acc-item summary { list-style: none; cursor: pointer; }
+  .acc-item summary::-webkit-details-marker { display: none; }
+  .acc-item summary::marker { content: ''; }
+  .acc-q { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.35rem 0; text-align: left; font-family: var(--font-body); font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+  .acc-icon { flex: 0 0 auto; width: 28px; height: 28px; border: 1px solid var(--line-strong); color: var(--ink-3); display: grid; place-items: center; transition: transform .4s var(--ease), background .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease); }
+  .acc-item[open] .acc-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+  .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }
+  .acc-body-inner a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+  .acc-more { margin-top: .8rem; }
+  .acc-more a { text-decoration: none; }
+</style>

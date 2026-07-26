@@ -14,7 +14,9 @@ const { icon = 'bottle', width = '48%', badge, wide = false } = Astro.props;
 ---
 
 <div class={`vis${wide ? ' wide' : ''}`}>
-  <div class="vis-glow" aria-hidden="true"></div>
+  {/* The violet bloom that used to sit behind the object is gone with the rest
+      of the colour washes — a studio backdrop is lit, not glowing. The sweep on
+      .vis and the .vis-floor falloff carry the light on their own. */}
   <div class="vis-floor" aria-hidden="true"></div>
   <div class="vis-obj" style={`width:${width}`}>
     <svg aria-hidden="true"><use href={`#p-${icon}`}></use></svg>

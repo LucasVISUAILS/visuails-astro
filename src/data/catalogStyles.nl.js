@@ -2,6 +2,17 @@
 // src/data/catalogStyles.js — same shape and exports, only the
 // human-readable strings are translated. Order paths are prefixed with /nl.
 
+import { perProduct, reviewClaim, turnaround } from './pricing.js';
+
+// No euro figure and no delivery time may be typed into this file.
+// Both used to live here as literals, which is how the hub cards and the
+// [slug] pages ended up quoting a turnaround the capacity gate had never
+// cleared — and how a video price that exists nowhere in pricing.js
+// survived a repricing nobody caught. Derive, never type.
+const CAT = perProduct('catalog', 'nl');
+const TIMING = turnaround('unattended', 'nl');
+const REVIEW = reviewClaim('unattended', 'nl');
+
 function grid(photos, icons) {
   const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
@@ -12,16 +23,16 @@ export const catalogStyles = [
     slug: 'classic',
     name: 'Classic',
     tagline: 'Strak. Consistent. Zonder concessies.',
-    priceTrust: '€39,99',
+    priceTrust: CAT.price,
     priceUnit: ' / product',
-    metaPrice: '€39,99 / product — 4 foto\'s',
-    orderHref: '/nl/order-catalog',
+    metaPrice: `${CAT.price} / product — 4 foto's`,
+    orderHref: '/nl/start',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: '€39,99 / product',
-    cardDesc: 'Een complete set per product — voorkant, achterkant, detail en één on-model shot. €39,99, ongeveer €10 per foto.',
+    cardPrice: `${CAT.price} / product`,
+    cardDesc: 'Een complete set per product — voorkant, achterkant, detail en één on-model shot.',
     moodTitle: 'Hoe Classic voelt.',
     moodParagraphs: [
       'Puur, gelijkmatig licht en een kader dat nooit verschuift — elk product gefotografeerd alsof het in dezelfde studio was, op dezelfde ochtend.',
@@ -56,23 +67,24 @@ export const catalogStyles = [
       'Vier foto\'s per product: voorkant, achterkant, detail & on-model',
       'Consistente belichting, hoek en achtergrond',
       'Hoge-resolutie, marktplaats-klare bestanden',
-      'Levering in ~24 uur, met de hand gecontroleerd',
+      TIMING,
+      REVIEW,
     ],
   },
   {
     slug: 'custom',
     name: 'Eigen merk',
     tagline: 'Een catalogus-look die onmiskenbaar van jou is.',
-    priceTrust: 'Eén keer ontworpen — daarna €39,99 / product',
+    priceTrust: `Eén keer ontworpen — daarna ${CAT.price} / product`,
     priceUnit: '',
-    metaPrice: 'Eén keer ontworpen — daarna €39,99 / product',
-    orderHref: '/nl/order-custom',
+    metaPrice: `Eén keer ontworpen — daarna ${CAT.price} / product`,
+    orderHref: '/nl/start',
     heroIcon: 'bag',
     heroWidth: '26%',
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
-    cardDesc: 'Een catalogus-look ontworpen rond jouw merk — daarna snel, voor €39,99 per productset van 4 foto\'s.',
+    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product voor ${CAT.price} per set van vier foto's.`,
     moodTitle: 'Hoe Eigen merk voelt.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',

@@ -5,6 +5,11 @@
 // scenes rather than a real photo (there's no real "bad vs. good" photo
 // pair for this exact moment in IMAGES.md), so that's kept as-is here.
 import Layout from '../layouts/Layout.astro';
+import { TEST_SAMPLE } from '../data/pricing.js';
+
+// The test-sample fee was typed here too. It is a tier fact, so it comes from
+// pricing.js — see src/pages/test-sample.astro for the same correction.
+const SAMPLE = TEST_SAMPLE.en;
 import ProductScene from '../components/ProductScene.astro';
 ---
 
@@ -18,20 +23,20 @@ import ProductScene from '../components/ProductScene.astro';
     <p class="lead" style="margin-top:1.1rem">You don't need a studio — just a clear photo and a few simple habits.</p>
     <div class="flex" style="margin-top:1.8rem">
       <a href="/test-sample" class="btn btn-primary btn-lg">Try a test sample</a>
-      <a href="/order" class="btn btn-ghost btn-lg">Start an order</a>
+      <a href="/start" class="btn btn-ghost btn-lg">Start an order</a>
     </div>
   </div></section>
 
   <section><div class="container">
     <div class="grid grid-2 reveal-group">
       <div class="card reveal pending">
-        <h3 style="color:var(--success)">Do</h3>
+        <h3 style="color:var(--ink)">Do</h3>
         <ul class="checklist" style="margin-top:1rem">
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>Keep it clear &amp; sharp — in focus, no motion blur.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>Use a neutral, uncluttered background.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>Light it well and evenly — daylight works great.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>Show the full product, plus a few close-ups of key details.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5" /></svg><span>Send the highest resolution you have.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Keep it clear &amp; sharp — in focus, no motion blur.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Use a neutral, uncluttered background.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Light it well and evenly — daylight works great.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Show the full product, plus a few close-ups of key details.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Send the highest resolution you have.</span></li>
         </ul>
       </div>
       <div class="card reveal pending" style="border-color:oklch(0.7 0.14 25 / 0.35)">
@@ -67,16 +72,16 @@ import ProductScene from '../components/ProductScene.astro';
         <div class="req-card reveal pending"><span class="rc-num">03</span><h4>The fabric</h4><p>A close shot of the material so texture, weave and sheen read true.</p></div>
         <div class="req-card reveal pending"><span class="rc-num">04</span><h4>Worn for fit</h4><p>Someone actually wearing it, so we can reproduce the real-world fit and drape.</p></div>
       </div>
-      <p class="req-note reveal pending"><strong>Not required — just recommended.</strong> One clear photo of the whole product is enough for us to get started and deliver. Send the full set and we can guarantee the fit, colour and detail come out right the first time, with fewer revisions.</p>
+      <p class="req-note reveal pending"><strong>Not required — just recommended.</strong> One clear photo of the whole product is enough for us to get started and deliver. Send the full set and we can guarantee the fit, colour and detail come out right the first time.</p>
     </div>
   </section>
 
   <section class="section-tight"><div class="container"><div class="cta-band reveal pending">
     <h2 class="display" style="font-size:clamp(2rem,4.5vw,3rem)">Got a photo ready? Let's see it transformed.</h2>
-    <p class="lead" style="margin:1rem auto 0;text-align:center">Start with one test sample — just a €0.99 verification.</p>
+    <p class="lead" style="margin:1rem auto 0;text-align:center">Start with one test sample — just a {SAMPLE.price} verification.</p>
     <div class="flex" style="justify-content:center;margin-top:1.8rem">
       <a href="/test-sample" class="btn btn-primary btn-lg">Test sample</a>
-      <a href="/order" class="btn btn-ghost btn-lg">Order now</a>
+      <a href="/start" class="btn btn-ghost btn-lg">Start an order</a>
     </div>
   </div></div></section>
 </Layout>

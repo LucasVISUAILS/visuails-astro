@@ -3,6 +3,17 @@
 // strip of real photography, closing CTA. Ported from the SvelteKit about
 // page — see IMAGES.md for the photo strip and hero.
 import Layout from '../layouts/Layout.astro';
+import { perProduct, reviewClaim, turnaround } from '../data/pricing.js';
+
+// This page carried four separate delivery promises — the meta description,
+// the hero lead, the body lead and a chip — every one of them saying "about a
+// day" or "~24h", none of which the capacity gate has ever cleared. They are
+// tier facts, so they come from pricing.js now. "No subscription" went with
+// them: it stopped being true the day the Studio retainer shipped, and the
+// FAQ answer that made the same claim was already rewritten for that reason.
+const CAT = perProduct('catalog', 'en');
+const TIMING = turnaround('unattended', 'en');
+const REVIEW = reviewClaim('unattended', 'en');
 
 const strip = [
   '/img/lifestyle-glow-05.webp',
@@ -15,14 +26,14 @@ const strip = [
 
 <Layout
   title="VISUAILS — About us"
-  description="VISUAILS is a product-visual studio that combines modern production speed with human judgement, so any brand can get studio-quality product visuals in about a day. Based in Enschede, Netherlands."
+  description="VISUAILS is a product-visual studio in Enschede, Netherlands — modern production speed with human judgement on every visual we deliver."
 >
   <section class="hero-editorial compact">
     <div class="bg" style="background-image:url('/img/banners-13.webp')"></div>
     <div class="fade"></div>
     <div class="hero-editorial-content container">
       <h1 class="display" data-split-lines>Great visuals,<br />without the <em>studio</em>.</h1>
-      <p class="lead" style="margin-top:1.2rem">Studio-quality product visuals in about a day — modern speed, checked by real people.</p>
+      <p class="lead" style="margin-top:1.2rem">Studio-quality product visuals — modern speed, checked by real people.</p>
       <div class="flex" style="margin-top:1.8rem">
         <a href="/test-sample" class="btn btn-primary btn-lg">Test sample</a>
         <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20learn%20more%20about%20you." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
@@ -35,11 +46,11 @@ const strip = [
       <div class="photo-split-media"><img src="/img/custom-models-01.webp" alt="A VISUAILS campaign scene, styled and shot for a client brand" loading="lazy" /></div>
       <div>
         <h2>Speed and judgement, <em>together</em>.</h2>
-        <p class="lead" style="margin-top:1rem">A small team in Enschede, Netherlands. One photo becomes a full set in about a day — and a real person reviews every image before it reaches you.</p>
+        <p class="lead" style="margin-top:1rem">A small team in Enschede, Netherlands. One photo becomes a full set — and a real person reviews every image before it reaches you.</p>
         <div class="chip-row" style="margin-top:1.4rem">
           <span class="chip"><span class="dot"></span>Enschede, NL</span>
-          <span class="chip"><span class="dot"></span>100% human-reviewed</span>
-          <span class="chip"><span class="dot"></span>~24h delivery</span>
+          <span class="chip"><span class="dot"></span>{REVIEW}</span>
+          <span class="chip"><span class="dot"></span>{TIMING}</span>
         </div>
       </div>
     </div>
@@ -50,7 +61,7 @@ const strip = [
     <div class="grid grid-3 reveal-group">
       <div class="card card-hover reveal pending"><h3>Speed, without the shortcut</h3><p style="margin-top:.6rem;color:var(--ink-3)">Fast delivery, and still worth publishing.</p></div>
       <div class="card card-hover reveal pending"><h3>Consistency wins</h3><p style="margin-top:.6rem;color:var(--ink-3)">One coherent look, across your whole range.</p></div>
-      <div class="card card-hover reveal pending"><h3>Open to everyone</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog from &euro;39.99 per product. No subscription.</p></div>
+      <div class="card card-hover reveal pending"><h3>Open to everyone</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog at {CAT.price} per product. Order one, or run a whole drop.</p></div>
     </div>
   </div></section>
 
@@ -78,6 +89,6 @@ const strip = [
 
 <style>
   .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border-radius: var(--r-pill); border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
-  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
+  .chip .dot { width: 5px; height: 5px; background: var(--accent); }
 </style>

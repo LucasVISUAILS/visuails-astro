@@ -1,19 +1,29 @@
 ---
 // VISUAILS — Gidsen-hub (Nederlands). Vertaling van src/pages/guides.astro.
 import Layout from '../../layouts/Layout.astro';
+import { perProduct, TEST_SAMPLE } from '../../data/pricing.js';
+
+// De prijzenkaart typte alle drie de per-productbedragen met de hand — inclusief
+// een "video vanaf €49" die de herprijzing al had ingetrokken — en de proceskaart
+// beloofde een afgewerkte visual terug "in ongeveer 24 uur". Beide zijn feiten
+// uit pricing.js; hier uitgetypt overleeft een kaart elke prijswijziging.
+const CAT = perProduct('catalog', 'nl');
+const LIFE = perProduct('lifestyle', 'nl');
+const VID = perProduct('video', 'nl');
+const SAMPLE = TEST_SAMPLE.nl;
 
 const guides = [
   { title: 'Zo fotografeer je je product met je telefoon', desc: 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', href: '/nl/upload-guidelines', tag: 'Checklist' },
-  { title: 'Van foto naar publicatie — hoe het werkt', desc: 'Wat er precies gebeurt tussen het sturen van één foto en een afgewerkte, met de hand gecontroleerde visual terug in ongeveer 24 uur.', href: '/nl/how-it-works', tag: 'Proces' },
+  { title: 'Van foto naar publicatie — hoe het werkt', desc: 'Wat er precies gebeurt tussen het sturen van één foto en het terugkrijgen van een afgewerkte, met de hand gecontroleerde visual.', href: '/nl/how-it-works', tag: 'Proces' },
   { title: 'AI-tools vs een done-for-you studio', desc: 'Wanneer een self-serve AI-tool echt genoeg is — en waar hij je stilletjes geld kost aan overdoen, off-brand kleur en uren.', href: '/nl/compare', tag: 'Vergelijk' },
-  { title: 'Wat productvisuals echt kosten', desc: 'Catalog voor €39,99 voor een set van vier foto’s, lifestyle €59,99, video vanaf €49 — en hoe zich dat verhoudt tot een traditionele shootdag.', href: '/nl/pricing', tag: 'Prijzen' },
-  { title: 'Vragen, beantwoord', desc: 'Betaling, revisies, btw, modellen, levering — de praktische dingen die merken vragen vóór hun eerste bestelling.', href: '/nl/faq', tag: 'FAQ' },
+  { title: 'Wat productvisuals echt kosten', desc: `Catalog voor ${CAT.price} per set van vier foto’s, lifestyle ${LIFE.price}, video ${VID.price} per clip — en hoe zich dat verhoudt tot een traditionele shootdag.`, href: '/nl/pricing', tag: 'Prijzen' },
+  { title: 'Vragen, beantwoord', desc: 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', href: '/nl/faq', tag: 'FAQ' },
 ];
 ---
 
 <Layout
   title="Gidsen — productfotografie voor kledingmerken | VISUAILS"
-  description="Praktische gidsen voor kleding- en e-commerce merken: zo fotografeer je je product met een telefoon, hoe AI-visuals zich verhouden tot een shoot, wat productvisuals kosten, en hoe VISUAILS werkt."
+  description="Praktische gidsen voor kleding- en e-commerce merken: je product fotograferen met een telefoon, AI-visuals tegenover een shoot, en wat productvisuals kosten."
 >
   <section class="page-hero"><div class="container">
     <p class="eyebrow-page">Gidsen</p>
@@ -38,8 +48,8 @@ const guides = [
     <div class="cta-band reveal pending">
       <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Klaar wanneer jij dat bent.</h2>
       <div class="flex" style="justify-content:center;margin-top:2rem">
-        <a href="/nl/test-sample" class="btn btn-primary btn-lg">Probeer een proefvisual van €0,99</a>
-        <a href="/nl/order" class="btn btn-ghost btn-lg">Bestel nu</a>
+        <a href="/nl/test-sample" class="btn btn-primary btn-lg">Probeer een proefvisual van {SAMPLE.price}</a>
+        <a href="/nl/start" class="btn btn-ghost btn-lg">Start een bestelling</a>
       </div>
     </div>
   </div></section>
@@ -47,9 +57,9 @@ const guides = [
 
 <style>
   .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
-  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease), background .25s var(--ease); }
+  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease), background .25s var(--ease); }
   .guide-card:hover { border-color: var(--accent-line); transform: translateY(-3px); background: var(--surface-2); }
-  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); border-radius: var(--r-pill); margin-bottom: 1rem; }
+  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); margin-bottom: 1rem; }
   .guide-title { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.12; color: var(--ink); letter-spacing: -0.02em; }
   .guide-desc { margin-top: .7rem; font-size: .95rem; color: var(--ink-3); line-height: 1.55; }
   .guide-more { margin-top: 1.4rem; display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; font-weight: 600; color: var(--ink); }

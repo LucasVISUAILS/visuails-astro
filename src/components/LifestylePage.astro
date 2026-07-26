@@ -1,0 +1,385 @@
+---
+// VISUAILS — /lifestyle and /nl/lifestyle share this body.
+//
+// Same reasoning as CatalogPage.astro: the two locales were separate 181-line
+// inline pages holding their own copies of the price. They agreed only
+// because nobody had edited either since the port. A `lang` prop makes EN/NL
+// parity a property of the file layout instead of anyone's diligence.
+//
+// Two data sources were also inlined here and are now imported: the four
+// moods came from a five-entry literal that duplicated src/data/styles.js,
+// and the price on every one of those entries was typed by hand. The moods
+// now come from the shared module and the euro comes from pricing.js.
+//
+// SEQUENCING: a Tier 0 surface. Section 13's full "order individual products
+// vs run a whole drop" block lands at step 13, after step 12. Everything
+// here is made true under the tier model now; the slot is marked below.
+import {
+  TIERS, perProduct, reviewClaim, turnaround,
+  FULL_DROP_MIN, FULL_DROP_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import Compare from './Compare.astro';
+import { styles as stylesEn } from '../data/styles.js';
+import { styles as stylesNl } from '../data/styles.nl.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const moods = lang === 'nl' ? stylesNl : stylesEn;
+
+const item = perProduct('lifestyle', lang);
+const t0 = TIERS.unattended;
+const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+
+// The before/after row. Photo paths only — the labels come out of `moods` so
+// a renamed style can never drift between the grid and the comparison row.
+const GRADES = [
+  { slug: 'dunes', photo: '/img/lifestyle-dunes-01.webp' },
+  { slug: 'flash', photo: '/img/lifestyle-flash-01.webp' },
+  { slug: 'glow', photo: '/img/lifestyle-glow-01.webp' },
+  { slug: 'phone-made', photo: '/img/lifestyle-phone-made-01.webp' },
+];
+const moodBySlug = Object.fromEntries(moods.map((s) => [s.slug, s]));
+const grades = GRADES.map((g) => ({ ...g, name: moodBySlug[g.slug].name }));
+
+const marqueeItems = [
+  { src: '/img/lifestyle-phone-made-06.webp', label: 'Phone-made' },
+  { src: '/img/lifestyle-glow-03.webp', label: 'Glow' },
+  { src: '/img/lifestyle-flash-05.webp', label: 'Flash' },
+  { src: '/img/lifestyle-dunes-02.webp', label: 'Dunes' },
+  { src: '/img/banners-02.webp', label: 'Campaign' },
+];
+
+// No `as const` — COPY[lang] on a const-asserted object gives a union of
+// readonly tuples and .map() on that union is a TS error.
+const COPY = {
+  en: {
+    eyebrow: 'Lifestyle',
+    h1: 'Your product, in scenes that sell',
+    lead: `Four signature looks. ${item.price} per product — a 3-photo carousel.`,
+    ctaPrimary: 'Order individual products',
+    ctaSecondary: 'See pricing',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20lifestyle%20visuals%20for%20my%20products.',
+    waTalk: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20lifestyle%20visuals%20for%20my%20brand.',
+    waLabel: 'WhatsApp',
+    trust: [
+      [item.price, 'per product'],
+      ['3 photos', 'per product'],
+    ],
+    // Visible, not buried. Section 13: a visitor must not be able to leave a
+    // Tier 0 page believing a delivery date was promised.
+    queueNote: t0.queue.en + '.',
+    setH: 'One product. Three photos. <em>A carousel.</em>',
+    setP: 'Every lifestyle order is your product in one styled look, delivered as three shots that belong together — ready to post as a carousel on Instagram, your shop and ads.',
+    // Numbered because a carousel genuinely is an ordered sequence: this is
+    // the order the three photos are meant to be posted in.
+    set: [
+      ['The scene', 'Your product styled in a real-world setting — the atmosphere shot that stops the scroll.'],
+      ['On-model', 'The same product worn or held, so people can picture it in their own life.'],
+      ['Logo close-up', 'A tight detail shot — same vibe, same colour grade — that proves the quality.'],
+    ],
+    setNote: 'One styled look per order · same colour grading · a different scene is a separate order.',
+    moodsH: 'Four moods — or <em>your own.</em>',
+    onRequest: 'On request',
+    unitLabel: `${item.price} / product`,
+    edMeta: '( Where it fits )',
+    edH: 'Lifestyle photography: desire, in context.',
+    edSub: 'The scenes that create want, not just clarity.',
+    whatH: 'What it is',
+    whatP: [
+      'Where catalog shows the product plainly, lifestyle photography puts it in a world — styled, lit and shot as a scene someone wants to step into. A VISUAILS lifestyle order is three photos of one product in a single look: a scene shot, an on-model shot and a detail close-up, all matched in grade, so they read as one story and post straight to a feed as a carousel.',
+      "This is the imagery that does the emotional work. It doesn't just say what the product is; it shows people who they'd be with it. That's why it belongs where people scroll for inspiration rather than specs — and why it's often the difference between a listing that gets browsed and a brand that gets followed.",
+    ],
+    whereH: 'Where it lives',
+    where: [
+      ['Instagram & TikTok', 'feed posts, carousels and Reels covers.'],
+      ['Paid ads', 'creative built to stop the scroll.'],
+      ['Your homepage', 'hero and lookbook moments.'],
+      ['Email & campaigns', 'seasonal drops and newsletters.'],
+    ],
+    modelH: 'Add a consistent <em>model.</em>',
+    modelP: 'Same face, across your whole collection — or let us choose one that fits.',
+    modelAlt: 'A VISUAILS model, styled consistently across a campaign',
+    modelCta: 'Explore models',
+    gradeH: 'Four moods. Four transformations.',
+    gradeP: 'The same shot, flat vs. finished in each VISUAILS style.',
+    gradeFlat: 'Flat',
+    gradeBeforeAlt: (n: string) => `A flat, ungraded ${n} scene`,
+    gradeAfterAlt: (n: string) => `The same scene finished in the ${n} lifestyle look`,
+    rangeH: 'The range, in motion',
+    rangeCta: 'See the full gallery',
+    exampleAlt: (n: string) => `${n} lifestyle example`,
+    dropH: 'Running a whole collection?',
+    dropP: `Individual products are billed per product and move through the standard queue. A drop is the other way to work: ${scope} products produced together as one release, on a window reserved before you pay, with a portal to approve each image.`,
+    dropCta: 'See how a drop works',
+    reviewNote: reviewClaim('unattended', 'en'),
+    ctaH: 'Put your product<br>in a scene that sells.',
+    ctaP: `${item.price} per product, ${turnaround('unattended', 'en').toLowerCase()}.`,
+  },
+  nl: {
+    eyebrow: 'Lifestyle',
+    h1: 'Jouw product, in scènes die verkopen',
+    lead: `Vier signatuurlooks. ${item.price} per product — een carousel van 3 foto’s.`,
+    ctaPrimary: 'Bestel losse producten',
+    ctaSecondary: 'Bekijk prijzen',
+    wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Lifestyle-visuals%20bestellen%20voor%20mijn%20producten.',
+    waTalk: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20Lifestyle-visuals%20voor%20mijn%20merk.',
+    waLabel: 'WhatsApp',
+    trust: [
+      [item.price, 'per product'],
+      ['3 foto’s', 'per product'],
+    ],
+    queueNote: t0.queue.nl + '.',
+    setH: 'Eén product. Drie foto’s. <em>Een carousel.</em>',
+    setP: 'Elke lifestyle-bestelling is je product in één gestylede look, geleverd als drie shots die bij elkaar horen — klaar om te posten als carousel op Instagram, je shop en ads.',
+    set: [
+      ['De sfeer', 'Je product gestyled in een realistische setting — het sfeerbeeld dat de scroll stopt.'],
+      ['On-model', 'Hetzelfde product gedragen of vastgehouden, zodat mensen het in hun eigen leven zien.'],
+      ['Logo-close-up', 'Een strakke detailshot — zelfde vibe, zelfde colour grade — die de kwaliteit bewijst.'],
+    ],
+    setNote: 'Eén gestylede look per bestelling · zelfde colour grading · een andere scène is een aparte bestelling.',
+    moodsH: 'Vier sferen — of <em>je eigen.</em>',
+    onRequest: 'Op aanvraag',
+    unitLabel: `${item.price} / product`,
+    edMeta: '( Waar het past )',
+    edH: 'Lifestylefotografie: verlangen, in context.',
+    edSub: 'De scènes die verlangen wekken, niet alleen helderheid.',
+    whatH: 'Wat het is',
+    whatP: [
+      'Waar catalog het product helder toont, zet lifestylefotografie het in een wereld — gestyled, belicht en geschoten als een scène waar iemand in wil stappen. Een VISUAILS lifestyle-bestelling is drie foto’s van één product in één look: een sfeershot, een on-model shot en een detail-close-up, met dezelfde grade, zodat ze als één verhaal lezen en direct als carousel op een feed te posten zijn.',
+      'Dit is het beeld dat het emotionele werk doet. Het zegt niet alleen wat het product is; het laat mensen zien wie ze ermee zouden zijn. Daarom hoort het waar mensen scrollen voor inspiratie in plaats van specificaties — en daarom is het vaak het verschil tussen een listing die bekeken wordt en een merk dat gevolgd wordt.',
+    ],
+    whereH: 'Waar het leeft',
+    where: [
+      ['Instagram & TikTok', 'feedposts, carousels en Reels-covers.'],
+      ['Betaalde ads', 'creatives die de scroll stoppen.'],
+      ['Je homepage', 'hero- en lookbook-momenten.'],
+      ['E-mail & campagnes', 'seizoensdrops en nieuwsbrieven.'],
+    ],
+    modelH: 'Voeg een consistent <em>model</em> toe.',
+    modelP: 'Hetzelfde gezicht, door je hele collectie — of laat ons er een kiezen die past.',
+    modelAlt: 'Een VISUAILS-model, consistent gestyled door een hele campagne',
+    modelCta: 'Ontdek modellen',
+    gradeH: 'Vier sferen. Vier transformaties.',
+    gradeP: 'Dezelfde shot, plat versus afgewerkt in elke VISUAILS-stijl.',
+    gradeFlat: 'Plat',
+    gradeBeforeAlt: (n: string) => `Een platte, ongecorrigeerde ${n}-scène`,
+    gradeAfterAlt: (n: string) => `Dezelfde scène afgewerkt in de ${n} lifestyle-look`,
+    rangeH: 'Het assortiment, in beweging',
+    rangeCta: 'Bekijk de volledige galerij',
+    exampleAlt: (n: string) => `${n} lifestyle-voorbeeld`,
+    dropH: 'Een hele collectie draaien?',
+    dropP: `Losse producten reken je per product af en gaan door de standaard wachtrij. Een drop werkt anders: ${scope} producten samen geproduceerd als één release, in een venster dat is gereserveerd voordat je betaalt, met een portaal om elk beeld goed te keuren.`,
+    dropCta: 'Bekijk hoe een drop werkt',
+    reviewNote: reviewClaim('unattended', 'nl'),
+    ctaH: 'Zet je product<br>in een scène die verkoopt.',
+    ctaP: `${item.price} per product, ${turnaround('unattended', 'nl').toLowerCase()}.`,
+  },
+};
+
+const c = COPY[lang];
+// The custom mood is quoted, not listed — everything else is a Tier 0 line
+// item at the per-product price. Keeping this rule here rather than in
+// styles.js means no euro figure ever enters the style data.
+const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLabel);
+---
+
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow-page">{c.eyebrow}</span>
+    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem">{c.h1}</h1>
+    <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+    <div class="flex" style="margin-top:1.8rem">
+      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
+      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+      </a>
+    </div>
+    <div class="trust-row" style="margin-top:2.4rem">
+      {c.trust.map(([strong, rest]) => (
+        <span class="trust-item"><strong>{strong}</strong> {rest}</span>
+      ))}
+      <span class="trust-item"><strong>{turnaround('unattended', lang)}</strong></span>
+      <span class="trust-item"><strong>{c.reviewNote}</strong></span>
+    </div>
+    <p class="queue-note">{c.queueNote}</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head"><h2 set:html={c.setH} /><p>{c.setP}</p></div>
+    <div class="grid grid-3 reveal-group">
+      {c.set.map(([h, p], i) => (
+        <div class="card reveal pending">
+          <span class="shot-n">{String(i + 1).padStart(2, '0')}</span>
+          <h4>{h}</h4>
+          <p>{p}</p>
+        </div>
+      ))}
+    </div>
+    <p class="set-note">{c.setNote}</p>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 style="margin-bottom:2rem" set:html={c.moodsH} />
+    <div class="grid grid-2 reveal-group">
+      {moods.map((s) => (
+        <a href={lp(`/lifestyle/${s.slug}`)} class="reveal pending" style="display:block">
+          <div class="photo-band tall">
+            <img src={s.cardPhoto} alt={c.exampleAlt(s.name)} loading="lazy" />
+            <div class="scrim"></div>
+            <div class="caption">
+              <h3 style="font-size:1.6rem"><em>{s.name}</em> &rarr;</h3>
+              <p style="font-size:.92rem">{s.tagline} &middot; {moodPrice(s.slug)}</p>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="ed-head">
+      <span class="ed-meta">{c.edMeta}</span>
+      <div>
+        <h2>{c.edH}</h2>
+        <p class="ed-sub">{c.edSub}</p>
+      </div>
+    </div>
+    <div class="svc-explain">
+      <div class="svc-explain-main">
+        <h3>{c.whatH}</h3>
+        {c.whatP.map((p) => <p>{p}</p>)}
+      </div>
+      <aside class="svc-explain-side">
+        <h3>{c.whereH}</h3>
+        <ul class="svc-where-list">
+          {c.where.map(([strong, rest]) => (
+            <li><strong>{strong}</strong> — {rest}</li>
+          ))}
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="photo-split reveal pending">
+      <div class="photo-split-media">
+        <img src="/img/model-02.webp" alt={c.modelAlt} loading="lazy" />
+      </div>
+      <div>
+        <h2 set:html={c.modelH} />
+        <p class="lead" style="margin-top:1rem">{c.modelP}</p>
+        <!-- /models merged into /custom-models (AUDIT-TASK-0.md §H·8). The
+             roster kept its #standard anchor precisely so links written for
+             "browse the faces" still land on the faces and not on the Brand
+             Model pitch above them. -->
+        <div class="flex" style="margin-top:1.4rem"><a href={`${lp('/custom-models')}#standard`} class="btn btn-primary">{c.modelCta}</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head" style="text-align:center;margin-inline:auto">
+      <h2>{c.gradeH}</h2>
+      <p style="margin-inline:auto">{c.gradeP}</p>
+    </div>
+    <div class="compare-grid reveal-group" style="margin-top:2.2rem">
+      {grades.map((g) => (
+        <div class="reveal pending">
+          <Compare
+            grade
+            before={g.photo}
+            after={g.photo}
+            beforeAlt={c.gradeBeforeAlt(g.name)}
+            afterAlt={c.gradeAfterAlt(g.name)}
+            beforeLabel={c.gradeFlat}
+            afterLabel={g.name}
+          />
+          <p class="cc-label"><strong>{g.name}</strong> &middot; {c.unitLabel}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head" style="margin-bottom:1.8rem">
+      <h2>{c.rangeH}</h2>
+      <p><a href={lp('/gallery')} class="link-arrow" style="font-size:1rem">{c.rangeCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </div>
+  <div class="marquee"><div class="marquee-track">
+    {marqueeItems.map((m) => (
+      <div class="marquee-item">
+        <img src={m.src} alt={c.exampleAlt(m.label)} loading="lazy" style="width:100%;height:100%;object-fit:cover" />
+      </div>
+    ))}
+  </div></div>
+</section>
+
+<!-- STEP 13 SLOT — the explicit "order individual products" vs "run a whole
+     drop" block lands here, after step 12. What sits here now is the honest
+     minimum: a visitor on a Tier 0 page is told the other service model
+     exists and where to read about it, rather than being left to assume this
+     page is the whole offer. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="drop-note reveal pending">
+      <div>
+        <h2>{c.dropH}</h2>
+        <p>{c.dropP}</p>
+      </div>
+      <a href={lp('/pricing')} class="link-arrow">{c.dropCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="cta-band reveal pending">
+      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)" set:html={c.ctaH} />
+      <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
+      <div class="flex" style="justify-content:center;margin-top:2rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={`${lp('/custom-models')}#standard`} class="btn btn-ghost btn-lg">{c.modelCta}</a>
+        <a href={c.waTalk} class="btn btn-wa" target="_blank" rel="noopener">
+          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The queue disclosure. Section 13 requires the "no fixed delivery date"
+     half of the promise to be visible, not hidden — so it is set at body
+     weight directly under the trust row rather than as footnote-sized grey. */
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  .set-note { margin-top: 1.4rem; font-size: .85rem; color: var(--ink-3); }
+
+  /* The three carousel shots were numbered with `.rc-num`, which is only
+     styled under `.req-card` in global.css — so on this page the numerals
+     rendered as unstyled body text. Same treatment as `.step-n` elsewhere. */
+  .shot-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--ink-3); display: block; margin-bottom: .5rem; }
+
+  /* The cross-link to the other service model. A full border rather than a
+     side stripe, and no card nesting — it sits directly on the page. */
+  .drop-note { border: 1px solid var(--line-strong); padding: clamp(1.6rem, 3vw, 2.4rem); display: grid; gap: 1.4rem; }
+  .drop-note h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+  .drop-note p { margin-top: .7rem; color: var(--ink-2); max-width: 68ch; }
+</style>

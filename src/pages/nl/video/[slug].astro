@@ -4,6 +4,8 @@
 // and prefixes every internal link with /nl.
 import Layout from '../../../layouts/Layout.astro';
 import { videoStyles } from '../../../data/videoStyles.nl.js';
+import { reviewClaim, turnaround, TIERS } from '../../../data/pricing.js';
+import { metaDescription } from '../../../data/meta.js';
 
 export function getStaticPaths() {
   return videoStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
@@ -12,6 +14,14 @@ export function getStaticPaths() {
 const { style } = Astro.props;
 const waName = style.name.replaceAll(' ', '%20');
 const metaPrice = `${style.priceTrust}${style.priceUnit}`;
+
+// Timing, review level and queue behaviour are tier facts, not per-style
+// copy. They come from pricing.js so a capacity change cannot leave a
+// promise stranded on a detail page — which is exactly what "~24h delivery"
+// and "Produced in about 24 hours" were doing here.
+const TIMING = turnaround('unattended', 'nl');
+const REVIEW = reviewClaim('unattended', 'nl');
+const QUEUE = TIERS.unattended.queue.nl;
 
 // Poster / strip photography per style — real stills standing in for video
 // thumbnails, ported verbatim from VideoStylePage.svelte's `media` map.
@@ -34,11 +44,20 @@ const media: Record<string, { hero: string; strip: string[] }> = {
   },
 };
 const m = media[style.slug] ?? media.motion;
+
+// De description was één template literal, dus de lengte was wat de data er
+// toevallig van maakte. metaDescription laat de tier-clausules vallen in
+// plaats van over de 160 heen te gaan — zie src/data/meta.js.
 ---
 
 <Layout
   title={`${style.name} — Video-stijl | VISUAILS`}
-  description={`${style.name}: een kenmerkende VISUAILS video-stijl. ${metaPrice}. Geproduceerd in ongeveer 24 uur, elk beeld met de hand gecontroleerd.`}
+  description={metaDescription([
+    `${style.name}: een kenmerkende VISUAILS video-stijl`,
+    metaPrice,
+    TIMING,
+    REVIEW,
+  ])}
 >
   <section class="page-hero">
     <div class="container two-col" style="align-items:center">
@@ -63,9 +82,10 @@ const m = media[style.slug] ?? media.motion;
         </div>
         <div class="trust-row" style="margin-top:2rem">
           <span class="trust-item"><strong>{style.priceTrust}</strong>{style.priceUnit}</span>
-          <span class="trust-item"><strong>~24 uur</strong> levering</span>
-          <span class="trust-item"><strong>100%</strong> met de hand gecontroleerd</span>
+          <span class="trust-item"><strong>{TIMING}</strong></span>
+          <span class="trust-item"><strong>{REVIEW}</strong></span>
         </div>
+        <p class="queue-note">{QUEUE}</p>
       </div>
       <div class="reveal-mask photo-moment-frame" style="aspect-ratio:4/5">
         <div class="rm-inner" style={`background-image:url('${m.hero}')`}></div>
@@ -125,7 +145,7 @@ const m = media[style.slug] ?? media.motion;
         <h2 style="font-size:1.7rem">Ideaal <em>voor</em></h2>
         <ul class="checklist" style="margin-top:1.2rem">
           {style.bestFor.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
       </div>
@@ -133,7 +153,7 @@ const m = media[style.slug] ?? media.motion;
         <h2 style="font-size:1.7rem">Wat je <em>krijgt</em></h2>
         <ul class="checklist" style="margin-top:1.2rem">
           {style.whatYouGet.map((item) => (
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
+            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
       </div>
@@ -168,4 +188,9 @@ const m = media[style.slug] ?? media.motion;
   .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
   .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
   .step p { font-size: .9rem; color: var(--ink-3); }
+  /* Mirrors .queue-note on the hub components. Astro scopes <style> to a
+     component's own template, so a shared visual pattern has to be repeated
+     per file; consolidating these into global.css is logged as a follow-up. */
+  .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
 </style>

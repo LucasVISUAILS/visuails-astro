@@ -1,0 +1,20 @@
+---
+// VISUAILS — /nl/ai-act (Nederlands). De pagina-inhoud staat in
+// AiActPage.astro, zodat /ai-act en /nl/ai-act niet uit elkaar kunnen lopen;
+// alleen de meta verschilt hier.
+//
+// De description is bewust proza en loopt niet via metaDescription(): die
+// module is voor opsommingen van clausules, en een vertrouwenspagina met een
+// snippet als een specsheet werkt tegen zichzelf. Vaste tekst, dus vaste
+// lengte — ruim onder de 160 tekens die Google toont.
+import Layout from '../../layouts/Layout.astro';
+import AiActPage from '../../components/AiActPage.astro';
+
+const description =
+  'Hoe VISUAILS-visuals gemaakt worden, wat we over een bestelling op papier ' +
+  'kunnen zetten, en wat we onder de AI-verordening niet namens jou claimen.';
+---
+
+<Layout title="Transparantie en de AI Act — VISUAILS" description={description}>
+  <AiActPage lang="nl" />
+</Layout>

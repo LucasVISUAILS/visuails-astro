@@ -1,82 +1,25 @@
 ---
-// VISUAILS — "AI tools vs VISUAILS" comparison page. The high-intent visitor
-// who is actively weighing a self-serve AI generator against a done-for-you
-// studio. Written to be ruthlessly honest about when a tool is enough — that
-// candour is what makes the page credible and lets it win the doubter. Reuses
-// the ThreeWay matrix (the shared AI/shoot/VISUAILS argument).
+// VISUAILS — /compare (English). The page body lives in ComparePage.astro so
+// that /compare and /nl/compare cannot drift apart; only the meta differs here.
+//
+// AUDIT-TASK-0.md §F: "REWRITE, URL kept. Becomes 'Shoot day vs VISUAILS'."
+// The AI-tools argument is not dropped from the site — it survives as the
+// #ai-tools section inside ComparePage, which /custom-models links into, and
+// the title still carries the "AI" search intent alongside the new one.
+//
+// The meta description is built from pricing.js: a price typed into a <meta>
+// tag is the one place a stale figure survives a page rewrite. The old
+// description was 207 characters — well past the ~160 Google renders.
 import Layout from '../layouts/Layout.astro';
-import ThreeWay from '../components/ThreeWay.astro';
+import ComparePage from '../components/ComparePage.astro';
+import { AMOUNT, SHOOT_DAY, euro, FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
 
-const WA = 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27m%20comparing%20you%20to%20doing%20it%20myself%20with%20AI%20tools.';
-
-const enough = [
-  { title: 'You just need a quick mock', body: 'A rough visual to test an idea, sketch a layout, or show a friend — a free tool does that in a minute.' },
-  { title: 'Off-brand is fine', body: "The colour doesn't have to be exact and no one's checking the logo. If it's not going in front of customers, a tool is plenty." },
-  { title: 'You enjoy the tinkering', body: 'Some founders like prompting and re-rolling until it clicks. If that\'s you and you have the time, keep the credits.' },
-];
-
-const costs = [
-  { title: 'The redo tax', body: 'The credit price looks tiny — until you count the ten generations it took to get one you could use, and the round where the logo came out warped. Cheap per try, expensive per keeper.' },
-  { title: 'Your brand colour drifts', body: 'Generators approximate. Every run is a slightly different shade, a slightly different fit. Across a full catalog that inconsistency is what makes a shop look amateur.' },
-  { title: 'No one ever checks it', body: 'A tool ships whatever it made — warped hands, invented text, a collar that doesn\'t exist. There is no person between the model and your storefront. With us there always is.' },
-  { title: 'It\'s still your afternoon', body: 'Prompting, retrying, upscaling, cropping, exporting — the "free" tool costs the hours you\'d rather spend growing the brand. We give those hours back.' },
-];
+const description =
+  `A production day runs ${SHOOT_DAY.en.range}. A drop is ${euro(AMOUNT.fullDrop, 'en')} ` +
+  `for ${FULL_DROP_MIN}–${FULL_DROP_MAX} products. The honest comparison, ` +
+  `including where a shoot day still wins.`;
 ---
 
-<Layout
-  title="AI photo tools vs a done-for-you studio — an honest comparison | VISUAILS"
-  description="Thinking of using an AI tool for your product photos instead of VISUAILS? Here's the honest comparison — when a self-serve tool is enough, and where it quietly costs you in redos, off-brand colour and hours."
->
-  <section class="page-hero"><div class="container">
-    <p class="eyebrow-page">Compare</p>
-    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">AI tools vs VISUAILS — <em>honestly.</em></h1>
-    <p class="lead" style="margin-top:1.2rem;max-width:60ch">You can generate product photos yourself with an AI tool. Sometimes that's the right call. Here's the straight version of when it is — and when it quietly costs you more than it saves.</p>
-    <div class="flex" style="margin-top:1.8rem"><a href="/test-sample" class="btn btn-primary btn-lg" data-track="compare-test">See it on your product — €0.99</a><a href="/pricing" class="btn btn-ghost btn-lg">See pricing</a></div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div class="section-head"><h2>When a self-serve tool is genuinely enough</h2><p>We'd rather you knew. If any of these is you, a tool is the smart, cheap choice — no need to order.</p></div>
-    <div class="grid grid-3 reveal-group">
-      {enough.map((e) => (
-        <div class="card reveal pending">
-          <h4>{e.title}</h4>
-          <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{e.body}</p>
-        </div>
-      ))}
-    </div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div class="section-head"><h2>Where the tools quietly cost you</h2><p>The moment the visuals go in front of real customers, four things start to add up.</p></div>
-    <div class="grid grid-2 reveal-group">
-      {costs.map((c) => (
-        <div class="card reveal pending">
-          <h4>{c.title}</h4>
-          <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{c.body}</p>
-        </div>
-      ))}
-    </div>
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <ThreeWay cta={false} />
-  </div></section>
-
-  <section class="section-tight"><div class="container">
-    <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Don't take our word — <em>test it.</em></h2>
-      <p style="margin:1rem auto 0;max-width:52ch;color:var(--ink-2)">See VISUAILS on your own product for a €0.99 verification, and compare it to whatever a tool gave you. One sample per business.</p>
-      <div class="flex" style="justify-content:center;margin-top:2rem">
-        <a href="/test-sample" class="btn btn-primary btn-lg" data-track="compare-test-bottom">Try a €0.99 test sample</a>
-        <a href={WA} class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Ask us anything</a>
-      </div>
-      <p class="cta-reply">Usually a reply within an hour on weekdays.</p>
-    </div>
-  </div></section>
+<Layout title="Shoot day vs VISUAILS — the honest comparison" description={description}>
+  <ComparePage lang="en" />
 </Layout>
-
-<style>
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
-  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
-  .cta-reply { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
-</style>

@@ -1,156 +1,22 @@
 ---
-// VISUAILS — Video hub. Ported from the SvelteKit v2 site's /video
-// +page.svelte. `videoStyles` data ported verbatim from
-// $lib/data/videoStyles.js (only the fields this page uses: slug, name,
-// cardPrice).
+// VISUAILS — /nl/video (Nederlands). De pagina-inhoud staat in
+// VideoPage.astro, zodat /video en /nl/video niet uit elkaar kunnen lopen;
+// alleen de meta verschilt hier.
 import Layout from '../../../layouts/Layout.astro';
+import VideoPage from '../../../components/VideoPage.astro';
+import { perProduct, turnaround } from '../../../data/pricing.js';
 
-const videoStyles = [
-  { slug: 'motion', name: 'Motion', cardPrice: 'Vanaf €49 / video' },
-  { slug: 'lifestyle', name: 'Lifestyle Video', cardPrice: 'Vanaf €59 / video' },
-  { slug: 'campaign', name: 'Campaign', cardPrice: 'Offerte op maat' },
-  { slug: 'custom', name: 'Custom', cardPrice: 'Offerte op maat' },
-];
+const item = perProduct('video', 'nl');
 
-const posters: Record<string, string> = {
-  motion: '/img/banners-04.webp',
-  lifestyle: '/img/lifestyle-glow-03.webp',
-  campaign: '/img/banners-08.webp',
-  custom: '/img/banners-13.webp',
-};
-
-const strip = [
-  '/img/banners-01.webp',
-  '/img/lifestyle-flash-02.webp',
-  '/img/lifestyle-phone-made-09.webp',
-  '/img/lifestyle-dunes-02.webp',
-  '/img/banners-06.webp',
-];
+const description =
+  `Acht seconden subtiele beweging, voor productpagina’s, social en eenvoudige ` +
+  `advertenties. ${item.price} per clip. ${turnaround('unattended', 'nl')}.`;
 ---
 
 <Layout
   title="Product- & Campagnevideo's — korte productvideo's die bewegen | VISUAILS"
-  description="Strakke productvideo's van 8 seconden met subtiele beweging — gemaakt voor productpagina's, social en eenvoudige advertenties. Met de hand gecontroleerd en geleverd in ~24 uur. Standaard productvideo's vanaf €49; grotere campagnes op aanvraag."
+  description={description}
   ogImage="/img/banners-16.webp"
 >
-  <section class="hero-editorial compact">
-    <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
-    <div class="fade"></div>
-    <div class="hero-editorial-content container">
-      <h1 class="display" style="font-size:clamp(2.8rem,6.5vw,5.4rem)">Korte productvideo's<br />die <em>bewegen</em>.</h1>
-      <p class="lead" style="margin-top:1.2rem;color:rgba(228,231,242,.86)">8 seconden, subtiele beweging. Vanaf €49.</p>
-      <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href="/nl/order-video" class="btn btn-primary btn-lg">Bestel visuals</a></span></span>
-        <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20een%20productvideo." class="btn btn-wa" target="_blank" rel="noopener">
-          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp <span class="rec-badge">Snelst</span>
-        </a>
-      </div>
-      <div class="trust-row" style="margin-top:2.2rem">
-        <span class="trust-item"><strong>8s</strong> strakke productvideo's</span>
-        <span class="trust-item"><strong>~24 uur</strong> levering</span>
-        <span class="trust-item"><strong>100%</strong> met de hand gecontroleerd</span>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="container">
-      <h2 style="margin-bottom:2rem">Manieren om beweging toe te voegen.</h2>
-      <div class="grid grid-3 reveal-group">
-        {videoStyles.map((s) => (
-          <a href={`/nl/video/${s.slug}`} class="reveal pending" style="display:block">
-            <div class="photo-band tall">
-              <img src={posters[s.slug]} alt={`${s.name} voorbeeld`} loading="lazy" />
-              <div class="scrim"></div>
-              <div class="caption">
-                <h3 style="color:#fff">{s.name} &rarr;</h3>
-                <p style="color:rgba(255,255,255,.82);font-size:.9rem;margin-top:.35rem">{s.cardPrice}</p>
-              </div>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="ed-head">
-        <span class="ed-meta">( Waar het past )</span>
-        <div>
-          <h2>Productvideo: beweging waar een stilstaande foto stopt.</h2>
-          <p class="ed-sub">Een paar seconden beweging, gemaakt voor feeds en ads.</p>
-        </div>
-      </div>
-      <div class="svc-explain">
-        <div class="svc-explain-main">
-          <h3>Wat het is</h3>
-          <p>Een productvideo is een korte, strakke film met subtiele beweging — een langzame draai, een val van stof, een lichtvonk — gemaakt om een product leven te geven zonder een volledige productie. Op een feed die op beweging is afgestemd, verdienen een paar seconden motion aandacht die een stilstaand beeld niet krijgt, en houden ze die lang genoeg vast om de boodschap te laten landen.</p>
-          <p>Het is geen vervanging van je foto’s; het is de laag erbovenop die ze optilt waar het telt. Hetzelfde product dat stil staat op je shop kan bewegen in je ads en socials, waar kijktijd en doorklik bepalen of mensen stoppen — of verder scrollen.</p>
-        </div>
-        <aside class="svc-explain-side">
-          <h3>Waar het leeft</h3>
-          <ul class="svc-where-list">
-            <li><strong>Reels, TikTok &amp; Shorts</strong> — waar beweging de moedertaal is.</li>
-            <li><strong>Betaalde ads</strong> — hogere kijktijd en doorklik.</li>
-            <li><strong>Productpagina’s</strong> — een autoplay-clip naast de stills.</li>
-            <li><strong>E-mail &amp; landingspagina’s</strong> — een moment van leven boven de vouw.</li>
-          </ul>
-        </aside>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container two-col">
-      <div class="reveal pending">
-        <h2>Strakke beweging, klaar om te publiceren.</h2>
-        <ul class="checklist" style="margin-top:1.4rem">
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Video van 8 seconden met subtiele beweging</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Op maat voor pagina's, social en advertenties</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Consistente stijl door je hele assortiment</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>~24 uur levering, met de hand gecontroleerd</span></li>
-        </ul>
-      </div>
-      <div class="reveal pending card" style="border-color:var(--accent-line)">
-        <h3>Twee manieren om video te kopen</h3>
-        <p style="margin-top:.8rem;color:var(--ink-2)"><strong>Motion &amp; Lifestyle</strong> — vaste prijs, bestel zoals afbeeldingen, vanaf €49.</p>
-        <p style="margin-top:.6rem;color:var(--ink-2)"><strong>Campaign</strong> — groter, meerdere shots, offerte per project.</p>
-        <div class="flex" style="margin-top:1.4rem">
-          <a href="/nl/order-video" class="btn btn-primary">Bestel een productvideo</a>
-          <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20offerte%20voor%20een%20campagnevideo." class="btn btn-wa" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>Offerte voor een campagne
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-grid reveal pending">
-        <img src={strip[0]} alt="Campagnefotografie" loading="lazy" class="wide" />
-        <img src={strip[1]} alt="Lifestyle-visual in Flash-stijl" loading="lazy" />
-        <img src={strip[2]} alt="Lifestyle-visual in Phone-made-stijl" loading="lazy" />
-        <img src={strip[3]} alt="Lifestyle-visual in Dunes-stijl" loading="lazy" />
-        <img src={strip[4]} alt="Campagnefotografie" loading="lazy" class="wide" />
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Geef je product<br>een beetje beweging.</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">Vanaf €49, geleverd in ongeveer een dag.</p>
-        <div class="flex" style="justify-content:center;margin-top:2rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href="/nl/order-video" class="btn btn-primary btn-lg">Bestel visuals</a></span></span>
-          <a href="/nl/contact" class="btn btn-ghost btn-lg">Neem contact op</a>
-          <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20een%20productvideo." class="btn btn-wa" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <VideoPage lang="nl" />
 </Layout>

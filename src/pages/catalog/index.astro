@@ -1,256 +1,32 @@
 ---
-// VISUAILS — Catalog hub. Ported from the SvelteKit v2 site's /catalog
-// +page.svelte. `catalogStyles` data ported verbatim into
-// src/data/catalogStyles.js (shared with catalog/[slug].astro) — see that
-// file for the full field set; this page only reads name/slug/cardIcon/
-// cardWidth/cardPrice/cardDesc off each entry.
+// VISUAILS — /catalog (English). The page body lives in CatalogPage.astro so
+// that /catalog and /nl/catalog cannot drift apart; only the meta differs here.
+//
+// This file used to be a 256-line inline page, with a byte-identical twin under
+// src/pages/nl/. They agreed only because nobody had edited either since the
+// port — and both carried the same four defects: a hardcoded €39.99, a "~24
+// hours" promise the capacity gate never cleared, a link to /order-catalog, and
+// a "three revision rounds are included" line that belongs to a drop, not to a
+// single product order.
+//
+// The description is built from pricing.js: a price typed into a <meta> tag is
+// the one place a stale figure survives a page rewrite. The old one was 185
+// characters — past the ~160 Google renders — and named a delivery time.
 import Layout from '../../layouts/Layout.astro';
-import ProductScene from '../../components/ProductScene.astro';
-import Compare from '../../components/Compare.astro';
-import { catalogStyles } from '../../data/catalogStyles.js';
+import CatalogPage from '../../components/CatalogPage.astro';
+import { perProduct, turnaround } from '../../data/pricing.js';
 
-const faqs = [
-  { q: 'What do I get for €39.99?', a: 'A full set for one product: four photos — front, back, a close-up of the logo or fabric, and one on-model shot. That works out to about €10 a photo.' },
-  { q: 'Is the on-model shot really included?', a: 'Yes — one on-model photo is part of every product set, at no extra cost. Pick a model in the order form, or let us choose one that fits your brand.' },
-  { q: 'How fast is turnaround?', a: '~24 hours, whether you order five products or five hundred.' },
-  { q: 'Can I choose the background colour?', a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send.' },
-  { q: 'Are the visuals marketplace-compliant?', a: 'Yes — framed and exported for common marketplace requirements. Tell us your platform and we’ll match its specs.' },
-  { q: 'What if I need changes?', a: 'Three revision rounds are included, no extra fee.' },
-];
+const item = perProduct('catalog', 'en');
+
+const description =
+  `${item.price} per product: four photos — front, back, a fabric or logo ` +
+  `close-up, and one on-model shot. ${turnaround('unattended', 'en')}.`;
 ---
 
 <Layout
   title="Catalog Images — clean, consistent product visuals | VISUAILS"
-  description="One price per product: €39.99 for a full 4-photo set — front, back, a logo/fabric close-up and one on-model shot. Marketplace-ready, high-res, human-reviewed and delivered in ~24 hours."
+  description={description}
   ogImage="/img/catalog-after.webp"
 >
-  <section class="page-hero">
-    <div class="container two-col" style="align-items:center">
-      <div class="reveal pending">
-        <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Clean, consistent product visuals — built to scale.</h1>
-        <p class="lead" style="margin-top:1.2rem">One product, one price: <strong>€39.99</strong> for a full 4-photo set — front, back, detail and one on-model shot.</p>
-        <div class="flex" style="margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href="/order-catalog" class="btn btn-primary btn-lg">Order catalog visuals</a></span></span>
-          <a href="/pricing" class="btn btn-ghost btn-lg">See pricing</a>
-          <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20catalog%20visuals%20for%20my%20products." class="btn btn-wa" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp <span class="rec-badge">Fastest</span>
-          </a>
-        </div>
-        <div class="trust-row" style="margin-top:2.4rem">
-          <span class="trust-item"><strong>€39.99</strong> per product</span>
-          <span class="trust-item"><strong>4 photos</strong> per product</span>
-          <span class="trust-item"><strong>~24h</strong> delivery</span>
-        </div>
-      </div>
-      <div class="reveal pending">
-        <ProductScene icon="bottle" width="42%" badge="Catalog visual, made consistent" wide />
-      </div>
-    </div>
-  </section>
-
-  <!-- One product = a full 4-photo set. Spelled out so the €39.99 price and
-       the included on-model shot are never a surprise. -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>One product. Four photos. €39.99.</h2>
-        <p style="margin-inline:auto">Every product comes back as a complete set — including a real on-model shot, not just flat-lays. About €10 a photo.</p>
-      </div>
-      <div class="pack-row reveal-group" style="margin-top:2rem">
-        <div class="pack-card reveal pending">
-          <div class="photo-band"><img src="/img/catalog-after.webp" alt="Front catalog shot of the product" loading="lazy" /><span class="pack-badge">1 · Front</span></div>
-        </div>
-        <div class="pack-card reveal pending">
-          <div class="photo-band"><img src="/img/catalog-after.webp" alt="Back catalog shot of the product" loading="lazy" /><span class="pack-badge">2 · Back</span></div>
-        </div>
-        <div class="pack-card reveal pending">
-          <div class="photo-band"><img src="/img/catalog-before.webp" alt="Detail close-up of the logo or fabric" loading="lazy" /><span class="pack-badge">3 · Detail</span></div>
-        </div>
-        <div class="pack-card reveal pending">
-          <div class="photo-band"><img src="/img/custom-models-02.webp" alt="On-model shot of the product, worn for fit and scale" loading="lazy" /><span class="pack-badge">4 · On a model</span></div>
-        </div>
-      </div>
-      <div class="flex" style="justify-content:center;margin-top:1.8rem">
-        <a href="/order-catalog" class="btn btn-primary">Order catalog visuals · €39.99 / product</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="ed-head">
-        <span class="ed-meta">( Where it fits )</span>
-        <div>
-          <h2>Catalog photography: clarity that closes the sale.</h2>
-          <p class="ed-sub">The clean product pages your shop and marketplaces run on.</p>
-        </div>
-      </div>
-      <div class="svc-explain">
-        <div class="svc-explain-main">
-          <h3>What it is</h3>
-          <p>Catalog photography is the straight, clean product imagery a shopper judges the product by — front, back, a detail close-up and one on-model shot, all on a consistent background. It isn't there to set a mood; it's there to show exactly what someone is buying, with nothing left to guess.</p>
-          <p>It's also where a small brand quietly starts to look established. When every product in your range is shot the same way — same framing, same light, same colour — the collection reads as one considered line instead of a mix of phone photos. That consistency builds trust, and trust is what lifts conversion.</p>
-        </div>
-        <aside class="svc-explain-side">
-          <h3>Where it lives</h3>
-          <ul class="svc-where-list">
-            <li><strong>Your webshop</strong> — the product pages people decide on.</li>
-            <li><strong>Marketplaces</strong> — Bol, Amazon and listings that demand clean, consistent shots.</li>
-            <li><strong>Shopping feeds</strong> — Google Shopping and comparison sites.</li>
-            <li><strong>Wholesale &amp; linesheets</strong> — where buyers need to see the product plainly.</li>
-          </ul>
-        </aside>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="container">
-      <h2 style="margin-bottom:2rem">Pick your catalog style.</h2>
-      <div class="grid grid-2">
-        {catalogStyles.map((s) => (
-          <div class="card card-hover reveal pending">
-            <div class="svc-media">
-              <ProductScene icon={s.cardIcon} width={s.cardWidth} badge={`Catalog · ${s.name}`} wide />
-            </div>
-            <div class="svc-body">
-              <h3>{s.name}</h3>
-              <span class="svc-price">{s.cardPrice}</span>
-              <p>{s.cardDesc}</p>
-              <div class="flex" style="margin-top:1.2rem">
-                <a href={`/catalog/${s.slug}`} class="btn btn-primary">Explore {s.name}</a>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="photo-split reveal pending">
-        <div class="photo-split-media"><ProductScene icon="jar" width="40%" badge="One photo in, a clean set out" /></div>
-        <div>
-          <h2>Three steps to a clean grid.</h2>
-          <div class="steps" style="grid-template-columns:1fr;margin-top:1.6rem;gap:1.1rem">
-            <div class="step"><span class="step-n">01</span><h3>Upload a photo</h3><p>We take it from there.</p></div>
-            <div class="step"><span class="step-n">02</span><h3>We make it consistent</h3><p>Same lighting, angle, background — every time.</p></div>
-            <div class="step"><span class="step-n">03</span><h3>Delivered in ~24h</h3><p>Ready for your site, ads and social.</p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container two-col">
-      <div class="reveal pending">
-        <h2>Everything a listing needs.</h2>
-        <ul class="checklist" style="margin-top:1.4rem">
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Consistent lighting &amp; angles</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Neutral or your chosen background</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>Marketplace-ready framing</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>High-res export</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--success)"><path d="M20 6L9 17l-5-5"/></svg><span>~24h delivery, human-reviewed</span></li>
-        </ul>
-      </div>
-      <div class="reveal pending">
-        <ProductScene icon="bag" width="40%" badge="One colour, every product" wide />
-        <div class="chip-row" style="margin-top:1.2rem">
-          <span class="chip"><span class="dot"></span>White — standard</span>
-          <span class="chip"><span class="dot"></span>Custom colour — any hex code</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="section-head" style="text-align:center;margin-inline:auto"><h2>One photo in. A clean visual out.</h2><p style="margin-inline:auto">The exact raw phone photo a customer sent — and what came back.</p></div>
-      <div style="max-width:520px;margin:2rem auto 0">
-        <Compare
-          before="/img/catalog-before.webp"
-          after="/img/catalog-after.webp"
-          ratio="1/1"
-          objectPosition="50% 62%"
-          beforeLabel="Your photo"
-          afterLabel="VISUAILS"
-          beforeAlt="A raw phone photo of a t-shirt on a table before VISUAILS"
-          afterAlt="The same t-shirt as a clean catalog visual after VISUAILS"
-        />
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container two-col">
-      <div class="reveal pending">
-        <div class="photo-split-media"><img src="/img/catalog-after.webp" alt="A clean, marketplace-ready catalog visual by VISUAILS" loading="lazy" /></div>
-      </div>
-      <div class="reveal pending">
-        <h2>Fast means nothing if it isn't right.</h2>
-        <p class="lead" style="margin-top:1.2rem">Every visual is generated, then reviewed by a person before it reaches you — colour and detail held true, not left to chance.</p>
-        <div class="chip-row" style="margin-top:1.6rem">
-          <span class="chip"><span class="dot"></span>Consistent lighting &amp; framing</span>
-          <span class="chip"><span class="dot"></span>Marketplace-ready</span>
-          <span class="chip"><span class="dot"></span>Revisions included</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="container" style="max-width:760px">
-      <h2 style="margin-bottom:1.8rem">Catalog questions, answered</h2>
-      <div class="faq-stack">
-        {faqs.map((f) => (
-          <details class="faq-item">
-            <summary>{f.q}</summary>
-            <p>{f.a}</p>
-          </details>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="section-tight">
-    <div class="container">
-      <div class="cta-band reveal pending">
-        <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">Build a catalog that<br>looks like one brand.</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">€39.99 per product — four photos, delivered in about a day.</p>
-        <div class="flex" style="justify-content:center;margin-top:2rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href="/order-catalog" class="btn btn-primary btn-lg">Order catalog visuals</a></span></span>
-          <a href="/pricing" class="btn btn-ghost btn-lg">See pricing</a>
-          <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20catalog%20visuals%20for%20my%20products." class="btn btn-wa" target="_blank" rel="noopener">
-            <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
+  <CatalogPage lang="en" />
 </Layout>
-
-<style>
-  .chip-row { display: flex; flex-wrap: wrap; gap: .6rem; }
-  .chip { display: inline-flex; align-items: center; gap: .5rem; font-size: .84rem; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); padding: .45rem .9rem; }
-  .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
-  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
-  .faq-item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 1.1rem 1.3rem; }
-  .faq-item summary { cursor: pointer; list-style: none; font-weight: 600; color: var(--ink); font-size: .98rem; }
-  .faq-item summary::-webkit-details-marker { display: none; }
-  .faq-item summary::after { content: '+'; float: right; color: var(--accent-bright); font-family: var(--font-display); font-size: 1.2rem; }
-  .faq-item[open] summary::after { content: '\2212'; }
-  .faq-item p { margin-top: .8rem; color: var(--ink-3); font-size: .92rem; line-height: 1.6; }
-  .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
-  .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--accent-bright); }
-  .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
-  .step p { font-size: .9rem; color: var(--ink-3); }
-
-  /* The 4-photo product set. Four tiles on desktop, 2×2 on phones. */
-  .pack-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-  @media (max-width: 720px) { .pack-row { grid-template-columns: 1fr 1fr; } }
-  .pack-card .photo-band { position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); }
-  .pack-card .photo-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .pack-badge { position: absolute; left: 10px; bottom: 10px; padding: .35rem .7rem; border-radius: var(--r-pill); background: rgba(13,13,20,.72); backdrop-filter: blur(8px); color: #fff; font-size: .78rem; font-weight: 600; }
-</style>

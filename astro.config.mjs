@@ -23,5 +23,19 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
+  // NO `redirects` BLOCK HERE — deliberately. Retired routes are 301s in
+  // public/_redirects, which Cloudflare Pages applies at the edge.
+  //
+  // Astro's `redirects` option does work in a static build, but what it emits
+  // is a meta-refresh + canonical stub: a 200 OK HTML page that bounces the
+  // browser. That is enough to keep a visitor off a 404 and not much more.
+  // Link equity passes murkily, a crawler pays for a fetch and a parse to
+  // learn the page moved, and anything that follows redirects without running
+  // HTML sees a success. Section 10 replaced the stubs with real 301s; see the
+  // header comment in public/_redirects for the routes and the reasoning.
+  //
+  // If a route needs retiring later, add it there, not here. Two mechanisms
+  // for one job is how a stub and a 301 end up disagreeing about a
+  // destination.
   compressHTML: true,
 });

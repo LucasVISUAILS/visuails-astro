@@ -3,6 +3,17 @@
 // strings are translated. Internal CTA paths are prefixed with /nl; external
 // wa.me links keep their domain, their ?text= message is translated.
 
+import { perProduct, reviewClaim, turnaround } from './pricing.js';
+
+// No euro figure and no delivery time may be typed into this file.
+// Both used to live here as literals, which is how the hub cards and the
+// [slug] pages ended up quoting a turnaround the capacity gate had never
+// cleared — and how a video price that exists nowhere in pricing.js
+// survived a repricing nobody caught. Derive, never type.
+const VID = perProduct('video', 'nl');
+const TIMING = turnaround('unattended', 'nl');
+const REVIEW = reviewClaim('unattended', 'nl');
+
 function grid(photos, icons) {
   const widths = { bottle: '42%', sneaker: '54%', jar: '46%', bag: '46%' };
   return icons.map((icon, i) => ({ photo: photos[i] ?? null, icon, width: widths[icon] }));
@@ -13,17 +24,17 @@ export const videoStyles = [
     slug: 'motion',
     name: 'Motion',
     tagline: 'Acht seconden onverdeelde aandacht.',
-    priceTrust: '€49',
-    priceUnit: ' / video',
+    priceTrust: VID.price,
+    priceUnit: ' / clip',
     ctaLabel: 'Bestel Motion',
-    ctaHref: '/nl/order-video',
+    ctaHref: '/nl/start',
     ctaExternal: false,
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: 'Vanaf €49 / video',
-    cardDesc: 'Een clip van 8 seconden, subtiele beweging, strakke presentatie. Vaste prijs. ~24 uur.',
+    cardPrice: `${VID.price} / clip`,
+    cardDesc: 'Een clip van 8 seconden, subtiele beweging, strakke presentatie. Vaste prijs.',
     moodTitle: 'Hoe Motion voelt.',
     moodParagraphs: [
       'Acht seconden, één product, één strakke beweging — genoeg om het oog vast te houden, nooit genoeg om af te leiden.',
@@ -58,24 +69,25 @@ export const videoStyles = [
       'Strakke productfilm van 8 seconden',
       'Naadloze loop, subtiele beweging',
       'Formaat gemonteerd voor jouw kanaal',
-      'Levering in ~24 uur, met de hand gecontroleerd',
+      TIMING,
+      REVIEW,
     ],
   },
   {
     slug: 'lifestyle',
     name: 'Lifestyle Video',
     tagline: 'De scène, in beweging gezet.',
-    priceTrust: '€59',
-    priceUnit: ' / video',
+    priceTrust: VID.price,
+    priceUnit: ' / clip',
     ctaLabel: 'Bestel Lifestyle Video',
-    ctaHref: '/nl/order-video',
+    ctaHref: '/nl/start',
     ctaExternal: false,
     heroIcon: 'jar',
     heroWidth: '26%',
     cardIcon: 'jar',
     cardWidth: '46%',
-    cardPrice: 'Vanaf €59 / video',
-    cardDesc: 'Een gestylede scène, in beweging — voor social en advertenties. Vaste prijs. ~24 uur.',
+    cardPrice: `${VID.price} / clip`,
+    cardDesc: 'Een gestylede scène, in beweging — voor social en advertenties. Vaste prijs.',
     moodTitle: 'Hoe Lifestyle Video voelt.',
     moodParagraphs: [
       'Een gestylede scène, losgelaten: opstijgende stoom, verschuivend licht, een model dat zich naar de lens draait.',
@@ -110,7 +122,8 @@ export const videoStyles = [
       'Gestylede short-form scène in beweging',
       'Continuïteit met je lifestyle-stills',
       'Consistente modellen beschikbaar',
-      'Levering in ~24 uur, met de hand gecontroleerd',
+      TIMING,
+      REVIEW,
     ],
   },
   {

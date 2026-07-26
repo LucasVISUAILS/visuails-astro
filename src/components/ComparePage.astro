@@ -1,0 +1,403 @@
+---
+// VISUAILS — /compare, rewritten. AUDIT-TASK-0.md §F: "REWRITE, URL kept.
+// Becomes 'Shoot day vs VISUAILS'."
+//
+// Two things govern this page.
+//
+// §H flag 2 — the €2,500–8,000 anchor "is high enough to cost trust". The
+// answer taken there was to itemise it rather than narrow it: it is labelled a
+// full production DAY, every line that makes up the day is named, no euro
+// figure is invented for any individual line, and shoot.caveat travels with
+// the number wherever it appears. All of that lives in pricing.js SHOOT_DAY,
+// so this page renders the anchor rather than restating it. /pricing already
+// renders the same data as a standalone block; here it is one column of a
+// comparison, which is a different argument, not a duplicated one.
+//
+// §H flag 5 — rewriting this page to "shoot day vs VISUAILS" would abandon the
+// live "AI photo tools vs done-for-you" search intent, "and the honest tone of
+// that page is one of the site's better assets". So the AI-tools argument stays
+// on the page as a compressed section (#ai-tools) rather than being deleted
+// from the site. /custom-models links straight to it from its "why not just
+// prompt a generator?" block, so that anchor is load-bearing.
+//
+// The old ThreeWay component is NOT ported: it carried the retired 24-hour
+// claim and per-photo pricing (task #190), and its three-column argument is
+// what the matrix below now does with current numbers.
+import {
+  AMOUNT, SHOOT_DAY, euro, reviewClaim, turnaround, aftercare,
+  FULL_DROP_MIN, FULL_DROP_MAX,
+  FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const shoot = SHOOT_DAY[lang];
+// euroRange() rounds, and €61.67 must not become €62 — so the per-product
+// range is assembled from two euro() calls, dropping the repeated symbol the
+// way euroRange() does.
+const perProduct = `${euro(FULL_DROP_PER_PRODUCT_MIN, lang)}–${euro(FULL_DROP_PER_PRODUCT_MAX, lang).slice(1)}`;
+const drop = euro(AMOUNT.fullDrop, lang);
+const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+
+// No `as const`: COPY[lang] would otherwise widen to a union of readonly tuple
+// types and .map() below would stop type-checking (project convention, see
+// PricingPage.astro).
+const COPY = {
+  en: {
+    eyebrow: 'Compare',
+    h1a: 'A shoot day, or ',
+    h1b: 'a drop',
+    h1c: '.',
+    lead: 'Both get a season of product images made. They cost different money, different hours, and they fail in different ways. Here is the comparison with nothing hidden on either side.',
+    ctaPrimary: 'Start a drop',
+    ctaGhost: 'See pricing',
+
+    matrixLabel: 'A production day compared with a VISUAILS drop',
+    colLabel: 'What',
+    colA: 'A production day',
+    colB: 'A VISUAILS drop',
+
+    rows: [
+      {
+        label: 'What you get',
+        a: "One day of everyone's time, and whatever fits inside it.",
+        b: `${scope} products — a catalog set and a lifestyle carousel for each.`,
+      },
+      {
+        label: 'What it costs',
+        a: `${shoot.range} · ${shoot.basis.toLowerCase()}.`,
+        b: `${drop} for the drop — ${perProduct} per product at that scope.`,
+      },
+      {
+        label: 'When it lands',
+        a: 'Weeks. A studio, a model and your own calendar have to agree on a date before anyone shoots, and the retouching starts after the day ends.',
+        b: `${turnaround('attended', lang)}. The window is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
+      },
+      {
+        label: 'Who checks it',
+        a: 'You, on the day. Then whoever retouches, on their own schedule.',
+        b: `${reviewClaim('attended', lang)} — then you, image by image, in the portal.`,
+      },
+      {
+        label: 'If something is wrong',
+        a: 'A reshoot is another day. The studio, the model and the calendar, again.',
+        b: `${aftercare('attended', lang)} — one image at a time, in the portal. Nobody has to be rebooked.`,
+      },
+      {
+        label: 'What you organise',
+        a: shoot.items.join(' · ') + '.',
+        b: 'A folder of product photos and a short note on the look.',
+      },
+    ],
+    caveat: shoot.caveat,
+    caveatNote: 'That is a real range for a real day, not a strawman: it is what the whole day costs once every line above is counted, and the low end is a modest city studio where you do a lot of it yourself.',
+
+    winsHead: 'Where a shoot day still wins',
+    winsSub: 'We would rather you knew. If any of these is the job, book the day — a drop is the wrong tool for it.',
+    wins: [
+      { t: 'A material that has to be in the room', b: 'Some finishes only read right when a person lights them by eye — a weave that shifts as it moves, a coating that catches at one specific angle. If the whole sell is the hand-feel, put a camera on it.' },
+      { t: 'A campaign built around one real person', b: 'A founder, an athlete, a face your audience already follows by name. That is a person, not a model. Photograph them.' },
+      { t: 'Documentation, not depiction', b: 'Press images, provenance shots, anything where the point is that a camera was actually there and someone will be asked to prove it.' },
+      { t: 'You want the day itself', b: 'A shoot is also a team day, a behind-the-scenes reel, a launch moment. If that is worth the budget on its own, it is worth the budget.' },
+    ],
+
+    toolHead: 'And if you are weighing a self-serve tool',
+    toolSub: 'The other honest comparison, kept short. You can generate product images yourself. Sometimes that is the right call.',
+    enoughHead: 'A tool is genuinely enough when',
+    enough: [
+      'You want a quick mock to test an idea or sketch a layout.',
+      'It is not going in front of a customer, so off-brand is fine.',
+      'You like the prompting, and you have the afternoon.',
+    ],
+    costsHead: 'It quietly costs you when',
+    costs: [
+      'It takes ten generations to get one keeper. Cheap per try, expensive per usable image.',
+      'Your brand colour drifts a little on every run. Across a full catalog that is what makes a shop look amateur.',
+      'Nothing is checked. A tool ships warped hands and invented text straight to your storefront.',
+      'Prompting, retrying, upscaling, cropping and exporting is still your afternoon.',
+    ],
+    toolClose: 'If a tool is enough, use the tool. If it is not, the only test worth anything is your own product.',
+    toolCta: 'Try it on your product',
+
+    ctaHead: "Don't take our word — ",
+    ctaHeadEm: 'test it',
+    ctaBody: 'See VISUAILS on your own product first, then put it next to whatever else you were considering.',
+    ctaSample: 'Test sample',
+    ctaStart: 'Start a drop',
+    ctaWa: 'Ask us anything',
+    ctaReply: 'Usually a reply within an hour on weekdays.',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27m%20comparing%20a%20shoot%20day%20to%20a%20drop.',
+  },
+
+  nl: {
+    eyebrow: 'Vergelijk',
+    h1a: 'Een shootdag, of ',
+    h1b: 'een drop',
+    h1c: '.',
+    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Ze kosten ander geld, andere uren, en ze gaan op andere manieren mis. Dit is de vergelijking met aan geen van beide kanten iets verstopt.',
+    ctaPrimary: 'Start een drop',
+    ctaGhost: 'Bekijk prijzen',
+
+    matrixLabel: 'Een productiedag vergeleken met een VISUAILS-drop',
+    colLabel: 'Wat',
+    colA: 'Een productiedag',
+    colB: 'Een VISUAILS-drop',
+
+    rows: [
+      {
+        label: 'Wat je krijgt',
+        a: 'Eén dag van ieders tijd, en wat daar precies in past.',
+        b: `${scope} producten — een catalogset en een lifestyle-carousel voor elk.`,
+      },
+      {
+        label: 'Wat het kost',
+        a: `${shoot.range} · ${shoot.basis.toLowerCase()}.`,
+        b: `${drop} voor de drop — ${perProduct} per product op die schaal.`,
+      },
+      {
+        label: 'Wanneer het er is',
+        a: 'Weken. Een studio, een model en je eigen agenda moeten het eerst over een datum eens worden, en de retouche begint pas als de dag voorbij is.',
+        b: `${turnaround('attended', lang)}. Het venster wordt eerst tegen de agenda gehouden — kan de week die je nodig hebt niet, dan hoor je dat, in plaats van een datum.`,
+      },
+      {
+        label: 'Wie het controleert',
+        a: 'Jij, op de dag zelf. Daarna degene die retoucheert, op zijn eigen tempo.',
+        b: `${reviewClaim('attended', lang)} — en daarna jij, beeld voor beeld, in het portaal.`,
+      },
+      {
+        label: 'Als er iets mis is',
+        a: 'Opnieuw schieten is opnieuw een dag. De studio, het model en de agenda, nog een keer.',
+        b: `${aftercare('attended', lang)} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
+      },
+      {
+        label: 'Wat jij regelt',
+        a: shoot.items.join(' · ') + '.',
+        b: 'Een map met productfoto’s en een korte notitie over de look.',
+      },
+    ],
+    caveat: shoot.caveat,
+    caveatNote: 'Dat is een echt bereik voor een echte dag, geen stroman: het is wat de hele dag kost zodra elke regel hierboven is meegeteld, en de onderkant is een bescheiden stadsstudio waar je veel zelf doet.',
+
+    winsHead: 'Waar een shootdag nog steeds wint',
+    winsSub: 'We vertellen het je liever eerlijk. Is dit de opdracht? Boek dan de dag — een drop is er het verkeerde gereedschap voor.',
+    wins: [
+      { t: 'Een materiaal dat in de ruimte moet liggen', b: 'Sommige afwerkingen kloppen alleen als iemand ze met het oog uitlicht — een weefsel dat meebeweegt, een coating die maar op één hoek vangt. Draait de hele verkoop om het gevoel, zet er dan een camera op.' },
+      { t: 'Een campagne rond één echt persoon', b: 'Een oprichter, een sporter, een gezicht dat je publiek al bij naam volgt. Dat is een mens, geen model. Fotografeer die.' },
+      { t: 'Documentatie, geen verbeelding', b: 'Persbeelden, herkomstfoto’s, alles waarbij het punt is dat er echt een camera bij was en iemand daarnaar gaat vragen.' },
+      { t: 'Je wilt de dag zelf', b: 'Een shoot is ook een teamdag, een behind-the-scenes reel, een lanceringsmoment. Is dat het budget op zichzelf waard, dan is het het budget waard.' },
+    ],
+
+    toolHead: 'En als je een self-serve tool overweegt',
+    toolSub: 'De andere eerlijke vergelijking, kort gehouden. Je kunt productbeelden zelf genereren. Soms is dat de juiste keuze.',
+    enoughHead: 'Een tool is echt genoeg als',
+    enough: [
+      'Je een snelle mock wilt om een idee te testen of een layout te schetsen.',
+      'Het niet voor klanten komt, dus off-brand is prima.',
+      'Je het prompten leuk vindt, en de middag hebt.',
+    ],
+    costsHead: 'Hij kost je stilletjes geld als',
+    costs: [
+      'Er tien generaties nodig zijn voor één bruikbare. Goedkoop per poging, duur per bruikbaar beeld.',
+      'Je merkkleur bij elke run een beetje verschuift. Over een hele catalogus is dat precies wat een shop amateuristisch laat ogen.',
+      'Er niets gecontroleerd wordt. Een tool levert vervormde handen en verzonnen tekst rechtstreeks aan je shop.',
+      'Prompten, opnieuw proberen, upscalen, croppen en exporteren nog steeds jouw middag is.',
+    ],
+    toolClose: 'Is een tool genoeg, gebruik dan de tool. Is hij dat niet, dan is de enige test die iets waard is je eigen product.',
+    toolCta: 'Probeer het op je product',
+
+    ctaHead: 'Geloof ons niet — ',
+    ctaHeadEm: 'test het',
+    ctaBody: 'Zie VISUAILS eerst op je eigen product, en leg het daarna naast wat je verder overwoog.',
+    ctaSample: 'Proefvisual',
+    ctaStart: 'Start een drop',
+    ctaWa: 'Vraag ons alles',
+    ctaReply: 'Meestal binnen een uur antwoord op werkdagen.',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20vergelijk%20een%20shootdag%20met%20een%20drop.',
+  },
+};
+
+const t = COPY[lang];
+---
+
+<!-- HERO -->
+<section class="page-hero"><div class="container">
+  <p class="eyebrow-page">{t.eyebrow}</p>
+  <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">{t.h1a}<em>{t.h1b}</em>{t.h1c}</h1>
+  <p class="lead" style="margin-top:1.2rem;max-width:62ch">{t.lead}</p>
+  <div class="flex" style="margin-top:1.8rem">
+    <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg" data-track="compare-start">{t.ctaPrimary}</a></span></span>
+    <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{t.ctaGhost}</a>
+  </div>
+</div></section>
+
+<!-- THE MATRIX.
+     A three-column grid on desktop (row label · production day · drop). Below
+     760px each row becomes its own stacked block and the two answers pick up
+     their column name from data-col via ::before, so the comparison survives
+     the collapse instead of turning into two unlabelled paragraphs. -->
+<section class="section-tight"><div class="container">
+  <!-- ARIA table roles rather than aria-hidden on the header: without them a
+       screen reader hears the row label and then two unattributed answers,
+       which is the one reading of this section that is actively misleading.
+       Below 760px the header row is display:none — out of the a11y tree — and
+       the column name comes back per cell through the data-col ::before. -->
+  <div class="vs reveal pending" role="table" aria-label={t.matrixLabel}>
+    <div class="vs-head" role="row">
+      <span class="vs-label" role="columnheader">{t.colLabel}</span>
+      <span class="vs-col" role="columnheader">{t.colA}</span>
+      <span class="vs-col vs-col-us" role="columnheader">{t.colB}</span>
+    </div>
+    {t.rows.map((r) => (
+      <div class="vs-row" role="row">
+        <span class="vs-label" role="rowheader">{r.label}</span>
+        <span class="vs-cell" role="cell" data-col={t.colA}>{r.a}</span>
+        <span class="vs-cell vs-cell-us" role="cell" data-col={t.colB}>{r.b}</span>
+      </div>
+    ))}
+  </div>
+  <!-- shoot.caveat travels with the number wherever the number goes (§H·2). -->
+  <p class="vs-caveat">{t.caveat} {t.caveatNote}</p>
+</div></section>
+
+<!-- WHERE A SHOOT DAY STILL WINS — the page is not credible without it. -->
+<section class="section-tight"><div class="container">
+  <div class="section-head">
+    <h2>{t.winsHead}</h2>
+    <p>{t.winsSub}</p>
+  </div>
+  <div class="wins reveal-group">
+    {t.wins.map((w) => (
+      <div class="card reveal pending">
+        <h4>{w.t}</h4>
+        <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{w.b}</p>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- THE SELF-SERVE TOOL SECTION (§H·5). Compressed to two lists rather than
+     seven cards: it is a real argument the page has to keep, but it is no
+     longer the page's subject. #ai-tools is linked from /custom-models. -->
+<section class="section-tight" id="ai-tools"><div class="container narrow">
+  <div class="section-head">
+    <h2>{t.toolHead}</h2>
+    <p>{t.toolSub}</p>
+  </div>
+  <div class="tool-split">
+    <div>
+      <h3 class="tool-h">{t.enoughHead}</h3>
+      <ul class="tool-list">
+        {t.enough.map((line) => <li>{line}</li>)}
+      </ul>
+    </div>
+    <div>
+      <h3 class="tool-h">{t.costsHead}</h3>
+      <ul class="tool-list">
+        {t.costs.map((line) => <li>{line}</li>)}
+      </ul>
+    </div>
+  </div>
+  <p class="tool-close">{t.toolClose}</p>
+  <a href={lp('/test-sample')} class="link-arrow" data-track="compare-tool-sample">{t.toolCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div></section>
+
+<!-- CTA -->
+<section class="section-tight"><div class="container">
+  <div class="cta-band reveal pending">
+    <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">{t.ctaHead}<em>{t.ctaHeadEm}</em>.</h2>
+    <p style="margin:1rem auto 0;max-width:52ch;color:var(--ink-2)">{t.ctaBody}</p>
+    <div class="flex" style="justify-content:center;margin-top:2rem">
+      <a href={lp('/test-sample')} class="btn btn-primary btn-lg" data-track="compare-test-bottom">{t.ctaSample}</a>
+      <a href={lp('/start')} class="btn btn-ghost btn-lg">{t.ctaStart}</a>
+      <a href={t.wa} class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{t.ctaWa}</a>
+    </div>
+    <p class="cta-reply">{t.ctaReply}</p>
+  </div>
+</div></section>
+
+<style>
+  /* ── THE MATRIX ────────────────────────────────────────────────────────── */
+  .vs { border-top: 1px solid var(--line-strong); }
+  .vs-head,
+  .vs-row {
+    display: grid;
+    grid-template-columns: minmax(7rem, .7fr) 1fr 1fr;
+    gap: clamp(1rem, 2.4vw, 2.4rem);
+    align-items: start;
+    padding: 1.25rem 0;
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .vs-head { padding: .9rem 0 1rem; box-shadow: inset 0 -1px 0 var(--line-strong); }
+  .vs-label {
+    font-family: var(--font-body);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .vs-col { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+  /* The only weight given to our own column: the label is set solid, the cells
+     take ink rather than ink-2. No colour, no highlight fill — the argument is
+     the rows, not a chosen-plan flourish. */
+  .vs-col-us { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+  .vs-cell { font-size: .95rem; line-height: 1.55; color: var(--ink-3); }
+  .vs-cell-us { color: var(--ink-2); }
+  .vs-caveat { margin-top: 1.1rem; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 78ch; }
+
+  @media (max-width: 760px) {
+    .vs { border-top: none; }
+    .vs-head { display: none; }
+    .vs-row {
+      display: block;
+      padding: 1.4rem 0;
+    }
+    .vs-row .vs-label { display: block; margin-bottom: .7rem; color: var(--ink); }
+    .vs-cell { display: block; }
+    .vs-cell + .vs-cell { margin-top: .9rem; }
+    /* The column name has to come back once the columns are gone. */
+    .vs-cell::before {
+      content: attr(data-col);
+      display: block;
+      font-family: var(--font-body);
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: .25rem;
+    }
+  }
+
+  /* ── WHERE A SHOOT DAY WINS ────────────────────────────────────────────── */
+  .wins { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 760px) { .wins { grid-template-columns: 1fr; } }
+
+  /* ── SELF-SERVE TOOL ───────────────────────────────────────────────────── */
+  .tool-split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.6rem, 4vw, 3.2rem); }
+  @media (max-width: 760px) { .tool-split { grid-template-columns: 1fr; } }
+  .tool-h {
+    font-family: var(--font-body);
+    font-size: .82rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-bottom: .8rem;
+    box-shadow: inset 0 -1px 0 var(--line-strong);
+  }
+  .tool-list { list-style: none; margin: 0; padding: 0; }
+  .tool-list li {
+    padding: .85rem 0;
+    font-size: .95rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .tool-close { margin: 1.8rem 0 1rem; font-size: 1.05rem; color: var(--ink); max-width: 60ch; }
+
+  .cta-reply { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
+</style>

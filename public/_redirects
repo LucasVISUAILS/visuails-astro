@@ -1,0 +1,101 @@
+# VISUAILS — host-level redirects (Cloudflare Pages). Section 10.
+#
+# WHY THIS FILE EXISTS
+# The order funnel used to be six separate pages: a hub at /order and one form
+# per service. Section 10 replaces all of it with a single pipeline at /start
+# that asks the questions in one pass and runs them through the capacity gate.
+# The old pages are deleted, so every URL below now has nowhere to land, and
+# some of them are in people's inboxes, in the sitemap Google already crawled,
+# and in the footer of quotes sent months ago.
+#
+# astro.config.mjs used to carry these as a `redirects` block. In a static
+# build that emits a meta-refresh + canonical stub per route — a client-side
+# redirect. It stops visitors hitting a 404, but it is not a 301: link equity
+# passes murkily, the stub is a real HTML page a crawler has to fetch and
+# parse, and anything that follows redirects without executing HTML (curl, a
+# link checker, most crawlers that aren't Google) sees a 200 and stops. This
+# file is the real answer, so the config block is gone.
+#
+# RULES OF THIS FILE — the two that will bite if forgotten
+#
+#  1. The default status code is 302, not 301. Every line below therefore
+#     writes `301` explicitly. A retired route that 302s tells search engines
+#     to keep the old URL indexed, which is the opposite of the point.
+#
+#  2. "Redirects are always followed, regardless of whether or not an asset
+#     matches the incoming request." A rule here OUTRANKS a real page. So no
+#     source path below may name a route the site actually serves — a typo of
+#     /start or /custom-models in the left column takes that page off the air
+#     with no build error and no 404 to notice it by. Check the left column
+#     against `src/pages/` before adding a line.
+#
+# Two smaller ones, recorded so nobody re-derives them:
+#
+#  •  Trailing and non-trailing paths are distinct sources to Cloudflare, and
+#     the site is built with `trailingSlash: 'ignore'`, so links in the wild
+#     exist in both shapes. Each route is listed twice.
+#
+#  •  This file does not apply to requests served by Pages Functions. That is
+#     fine for the destinations — a 301 to /o is a fresh request the Function
+#     then answers — but it does mean a source path under /o or /api would
+#     never fire. None are.
+#
+# No splats. `/order/* /start 301` would tidy this list and would also match
+# any future route beginning /order/, silently, forever. Exact sources only:
+# they are auditable against src/pages/ by eye.
+
+
+# ── the retired order funnel → the pipeline ────────────────────────────────
+# All five service forms and the hub collapse into one page. /start opens on
+# the same first question the hub used to ask (which service), so a visitor
+# arriving from a deep link to /order-video is one answer from where they were
+# going, not dropped at a generic front door.
+/order                  /start              301
+/order/                 /start              301
+/order-catalog          /start              301
+/order-catalog/         /start              301
+/order-custom           /start              301
+/order-custom/          /start              301
+/order-lifestyle        /start              301
+/order-lifestyle/       /start              301
+/order-video            /start              301
+/order-video/           /start              301
+
+/nl/order               /nl/start           301
+/nl/order/              /nl/start           301
+/nl/order-catalog       /nl/start           301
+/nl/order-catalog/      /nl/start           301
+/nl/order-custom        /nl/start           301
+/nl/order-custom/       /nl/start           301
+/nl/order-lifestyle     /nl/start           301
+/nl/order-lifestyle/    /nl/start           301
+/nl/order-video         /nl/start           301
+/nl/order-video/        /nl/start           301
+
+
+# ── order status → the client portal ───────────────────────────────────────
+# /order-status was a form asking for an order reference. The portal replaces
+# it: the link in the confirmation email carries the token, and /o without a
+# token renders the "you need the link from your email" page rather than a
+# 404 — which is exactly what someone arriving on an old bookmark needs to
+# read. functions/o/index.js exists for this redirect.
+#
+# Both languages land on /o. There is no /nl/o: the portal is one Function
+# that reads the order's own `lang` column, so it answers in the language the
+# order was placed in rather than the language of the URL that reached it.
+/order-status           /o                  301
+/order-status/          /o                  301
+/nl/order-status        /o                  301
+/nl/order-status/       /o                  301
+
+
+# ── the merged model pages ─────────────────────────────────────────────────
+# /models and /custom-models were one story told twice (AUDIT-TASK-0.md §D).
+# /custom-models won the merge because it already carried the exclusive-face
+# argument (§H·8); the standard roster now lives inside it under the same
+# #standard anchor the old page used, so deep links keep their fragment — the
+# fragment is never sent to the server and survives the 301 untouched.
+/models                 /custom-models      301
+/models/                /custom-models      301
+/nl/models              /nl/custom-models   301
+/nl/models/             /nl/custom-models   301

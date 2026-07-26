@@ -1,0 +1,27 @@
+---
+// VISUAILS — /ai-act (English). The page body lives in AiActPage.astro so that
+// /ai-act and /nl/ai-act cannot drift apart; only the meta differs here.
+//
+// AUDIT-TASK-0.md §F: "NEW /ai-act — BUILD." The brief's constraints and the
+// reasoning behind each section are documented in AiActPage.astro's frontmatter.
+//
+// The description is written as prose rather than assembled through
+// metaDescription(): that module's own docstring restricts it to clause lists,
+// and a trust page whose snippet reads like a spec sheet is working against
+// itself. It is a fixed string, so its length is fixed too — 136 characters,
+// verified below the 160 Google renders.
+//
+// No price is imported here, and none appears on the page. The brief forbids
+// turning this into a fear pitch; a snippet that opens on a figure would make
+// it a sales page in the one place a reader sees before they arrive.
+import Layout from '../layouts/Layout.astro';
+import AiActPage from '../components/AiActPage.astro';
+
+const description =
+  'How VISUAILS visuals are made, what we can put in writing about an order, ' +
+  'and what we will not claim on your behalf under the EU AI Act.';
+---
+
+<Layout title="AI Act transparency — VISUAILS" description={description}>
+  <AiActPage lang="en" />
+</Layout>

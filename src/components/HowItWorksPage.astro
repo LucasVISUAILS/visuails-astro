@@ -1,0 +1,321 @@
+---
+// VISUAILS — /how-it-works, rewritten. AUDIT-TASK-0.md §F: "REWRITE. 'One
+// photo in. A campaign out.' → drop-shaped. All ~24h claims corrected."
+//
+// §B·3 supplies the new frame: "'One photo in' is the per-product story; the
+// drop story is 'one folder in'." So the page is now shaped around a whole
+// drop moving through the pipeline, not a single upload.
+//
+// Two rules govern every timing claim below:
+//   • Task #190 — the ~24-hour promise is retired. Nothing here types a
+//     duration; the two sanctioned strings come from turnaround() in
+//     pricing.js, one per tier.
+//   • The brief's capacity rule — "never promise a delivery date the capacity
+//     gate hasn't cleared". The gate is not a footnote on this page, it is
+//     step 02 and then a block of its own, because it is the promise that
+//     makes every other promise here believable.
+//
+// The four steps deliberately echo StartPage.astro's `flow` array rather than
+// reinventing the account: /start and /how-it-works describe one pipeline and
+// must not drift apart. Where the wording expands here, it expands — it never
+// contradicts.
+import Compare from './Compare.astro';
+import {
+  TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
+  FULL_DROP_MIN, FULL_DROP_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+const sample = euro(AMOUNT.testSample, lang);
+
+// No `as const` — see PricingPage.astro for why (union-of-tuples breaks .map).
+const COPY = {
+  en: {
+    h1a: 'One folder in.',
+    h1b: 'A whole ',
+    h1em: 'drop',
+    h1c: ' out.',
+    lead: `You send a folder of product photos and a short note. We give the drop a window the calendar can actually hold, produce it, check it by hand, and hand it back image by image.`,
+    ctaStart: 'Start a drop',
+    ctaSample: 'Try a test sample',
+
+    steps: [
+      {
+        n: '01',
+        h: 'You send the products',
+        b: 'Photos and a short note on the look. Five minutes, however many products you have — the effort does not scale with the size of the drop.',
+        linkText: 'See the upload guidelines',
+        linkHref: '/upload-guidelines',
+      },
+      {
+        n: '02',
+        h: 'We check capacity',
+        b: 'Before anything is charged. A drop is only given a window the calendar can actually hold — and if it cannot be held, you are told that instead of a date.',
+      },
+      {
+        n: '03',
+        h: 'We produce and check',
+        b: 'Generated in the pipeline, finished by hand in professional editing tools, colour-graded to your brand, and looked at by a person before it leaves.',
+      },
+      {
+        n: '04',
+        h: 'You get the files',
+        b: `A drop lands in a portal you approve image by image. Individual products arrive as a download link.`,
+      },
+    ],
+
+    gateLead: 'No date is printed until the calendar clears it.',
+    gateBody: 'A reserved window is confirmed before you pay, never after. If the week you need cannot be held, you hear that — not an optimistic guess. It is the one promise on this site we would rather lose an order over than break.',
+
+    craftH: 'More than AI. Finished by hand.',
+    craftBody: "The pipeline does the heavy lifting, but it is only the start. Every visual is finished in professional editing tools and colour-graded to your brand, and a person checks accuracy, consistency and framing before anything ships — the difference between a raw generator and something you would publish.",
+    chips: ['Professional editing & retouch', 'Colour grading to your brand', reviewClaim('attended', lang)],
+    beforeAlt: 'A flat, ungraded product scene before VISUAILS finishing',
+    afterAlt: 'The same scene, finished and human-checked by VISUAILS',
+
+    portalH: 'You approve it, image by image.',
+    portalBody: `A drop does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}`,
+    portalList: [
+      'Every image in one place, the moment it is ready.',
+      'Approve it, or request a revision on that image alone — the rest of the drop keeps moving.',
+      'Nothing is final until you have approved it.',
+      'Download the approved set at full resolution when you are done.',
+    ],
+    portalNote: `Individual products work differently and more simply. ${TIERS.unattended.delivery.en}.`,
+
+    detailsH: 'The details that matter',
+    details: [
+      { t: 'Turnaround', b: `A drop: ${turnaround('attended', lang).toLowerCase()}. Individual products: ${turnaround('unattended', lang).toLowerCase()}, ${TIERS.unattended.queue.en.toLowerCase()}.` },
+      { t: 'If something is off', b: `On a drop: ${aftercare('attended', 'en').toLowerCase()}. On individual products: ${aftercare('unattended', 'en').toLowerCase()}.` },
+      { t: 'Consistency', b: `Same lighting, same angle, same grade across all ${scope} products. Running them together is what makes that possible.` },
+      { t: 'Two ways in', b: 'On-site, or WhatsApp — whichever suits you. The same pipeline either way.' },
+      { t: 'Files', b: 'High-resolution, e-commerce-ready files, sized for shop listings, marketplaces and ads.' },
+      { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
+    ],
+
+    faqH: 'Still have a question?',
+    faqCta: 'Read the FAQ',
+
+    ctaH: 'See it on your own product.',
+    ctaBody: `One test sample per business — ${sample}, no commitment. It runs through the same pipeline as a paid order.`,
+    ctaSampleBtn: 'Test sample',
+    ctaStartBtn: 'Start a drop',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20how%20a%20drop%20works.',
+  },
+
+  nl: {
+    h1a: 'Eén map erin.',
+    h1b: 'Een hele ',
+    h1em: 'drop',
+    h1c: ' eruit.',
+    lead: 'Jij stuurt een map met productfoto’s en een korte notitie. Wij geven de drop een venster dat de agenda ook echt kan vasthouden, produceren hem, controleren met de hand, en geven hem beeld voor beeld terug.',
+    ctaStart: 'Start een drop',
+    ctaSample: 'Probeer een proefvisual',
+
+    steps: [
+      {
+        n: '01',
+        h: 'Jij stuurt de producten',
+        b: 'Foto’s en een korte notitie over de look. Vijf minuten, hoeveel producten het ook zijn — de moeite groeit niet mee met de omvang van de drop.',
+        linkText: 'Bekijk de uploadrichtlijnen',
+        linkHref: '/upload-guidelines',
+      },
+      {
+        n: '02',
+        h: 'Wij checken de capaciteit',
+        b: 'Voordat er iets betaald wordt. Een drop krijgt alleen een venster dat de agenda ook echt kan vasthouden — en kan die week niet, dan hoor je dat in plaats van een datum.',
+      },
+      {
+        n: '03',
+        h: 'Wij produceren en controleren',
+        b: 'Gegenereerd in de pipeline, met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en door een mens bekeken voordat het weggaat.',
+      },
+      {
+        n: '04',
+        h: 'Jij krijgt de bestanden',
+        b: 'Een drop komt in een portaal waar je beeld voor beeld goedkeurt. Losse producten komen als downloadlink.',
+      },
+    ],
+
+    gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
+    gateBody: 'Een gereserveerd venster wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — geen optimistische gok. Het is de ene belofte op deze site waarvoor we liever een bestelling verliezen dan haar te breken.',
+
+    craftH: 'Meer dan AI. Met de hand afgewerkt.',
+    craftBody: 'De pipeline doet het zware werk, maar dat is pas het begin. Elke visual wordt afgewerkt in professionele editingtools en kleurgecorrigeerd naar je merk, en een mens controleert nauwkeurigheid, consistentie en kadrering voordat er iets weggaat — het verschil tussen een kale generator en iets dat je zou publiceren.',
+    chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', lang)],
+    beforeAlt: 'Een platte, ongecorrigeerde productscène vóór de afwerking van VISUAILS',
+    afterAlt: 'Dezelfde scène, afgewerkt en met de hand gecontroleerd door VISUAILS',
+
+    portalH: 'Jij keurt goed, beeld voor beeld.',
+    portalBody: `Een drop komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}`,
+    portalList: [
+      'Elk beeld op één plek, zodra het klaar is.',
+      'Keur het goed, of vraag een revisie aan op dat ene beeld — de rest van de drop loopt gewoon door.',
+      'Niets is definitief tot jij het hebt goedgekeurd.',
+      'Download de goedgekeurde set in volledige resolutie wanneer je klaar bent.',
+    ],
+    portalNote: `Losse producten werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
+
+    detailsH: 'De details die ertoe doen',
+    details: [
+      { t: 'Levertijd', b: `Een drop: ${turnaround('attended', lang).toLowerCase()}. Losse producten: ${turnaround('unattended', lang).toLowerCase()}, ${TIERS.unattended.queue.nl.toLowerCase()}.` },
+      { t: 'Als iets niet klopt', b: `Bij een drop: ${aftercare('attended', 'nl').toLowerCase()}. Bij losse producten: ${aftercare('unattended', 'nl').toLowerCase()}.` },
+      { t: 'Consistentie', b: `Dezelfde belichting, dezelfde hoek, dezelfde grade over alle ${scope} producten. Dat ze samen door de pipeline gaan is precies wat dat mogelijk maakt.` },
+      { t: 'Twee ingangen', b: 'Via de site of via WhatsApp — wat jou uitkomt. Dezelfde pipeline in beide gevallen.' },
+      { t: 'Bestanden', b: 'Hoge-resolutiebestanden, klaar voor e-commerce, op maat voor shoplistings, marktplaatsen en advertenties.' },
+      { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
+    ],
+
+    faqH: 'Nog een vraag?',
+    faqCta: 'Lees de FAQ',
+
+    ctaH: 'Zie het op je eigen product.',
+    ctaBody: `Eén proefvisual per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde pipeline als een betaalde bestelling.`,
+    ctaSampleBtn: 'Proefvisual',
+    ctaStartBtn: 'Start een drop',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20hoe%20een%20drop%20werkt.',
+  },
+};
+
+const c = COPY[lang];
+---
+
+<!-- HERO -->
+<section class="hero-editorial compact">
+  <div class="bg" style="background-image:url('/img/banners-04.webp')"></div>
+  <div class="fade"></div>
+  <div class="hero-editorial-content container">
+    <h1 class="display" data-split-lines>{c.h1a}<br />{c.h1b}<em>{c.h1em}</em>{c.h1c}</h1>
+    <p class="lead" style="margin-top:1.2rem;max-width:60ch">{c.lead}</p>
+    <div class="flex" style="margin-top:1.8rem">
+      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg" data-track="hiw-start">{c.ctaStart}</a></span></span>
+      <a href={lp('/test-sample')} class="btn btn-ghost btn-lg">{c.ctaSample}</a>
+    </div>
+  </div>
+</section>
+
+<!-- THE FOUR STEPS. Four, not three: the capacity check is a step, not a
+     disclaimer, and hiding it inside "we produce" is how a studio ends up
+     promising a week it cannot hold. -->
+<section class="section-tight"><div class="container">
+  <div class="steps four reveal-group">
+    {c.steps.map((s) => (
+      <div class="step reveal pending">
+        <div class="step-n">{s.n}</div>
+        <h3>{s.h}</h3>
+        <p>{s.b}{s.linkText ? <> <a href={lp(s.linkHref)}>{s.linkText}</a>.</> : null}</p>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- THE CAPACITY GATE. Same promise as /start, stated once more where the
+     process is being explained rather than chosen. -->
+<section class="section-tight"><div class="container narrow">
+  <div class="gate reveal pending">
+    <p class="editorial-statement">{c.gateLead}</p>
+    <p class="gate-body">{c.gateBody}</p>
+  </div>
+</div></section>
+
+<!-- FINISHED BY HAND -->
+<section class="section-tight"><div class="container two-col">
+  <div class="reveal pending">
+    <Compare
+      grade
+      before="/img/lifestyle-glow-06.webp"
+      after="/img/lifestyle-glow-06.webp"
+      beforeAlt={c.beforeAlt}
+      afterAlt={c.afterAlt}
+    />
+  </div>
+  <div class="reveal pending">
+    <h2>{c.craftH}</h2>
+    <p class="lead" style="margin-top:1.1rem">{c.craftBody}</p>
+    <div class="chip-row" style="margin-top:1.4rem">
+      {c.chips.map((chip) => (
+        <span class="chip"><span class="dot"></span>{chip}</span>
+      ))}
+    </div>
+  </div>
+</div></section>
+
+<!-- THE PORTAL -->
+<section class="section-tight"><div class="container two-col">
+  <div class="reveal pending">
+    <h2>{c.portalH}</h2>
+    <p class="lead" style="margin-top:1.1rem">{c.portalBody}</p>
+    <p class="portal-note">{c.portalNote}</p>
+  </div>
+  <div class="reveal pending">
+    <ul class="checklist">
+      {c.portalList.map((line) => (
+        <li>
+          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+          <span>{line}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div></section>
+
+<!-- THE DETAILS -->
+<section><div class="container">
+  <div class="section-head"><h2>{c.detailsH}</h2></div>
+  <div class="grid grid-auto reveal-group">
+    {c.details.map((d) => (
+      <div class="card reveal pending">
+        <h3 style="font-size:1.05rem">{d.t}</h3>
+        <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{d.b}{d.linkText ? <> <a href={lp(d.linkHref)}>{d.linkText}</a>.</> : null}</p>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- FAQ -->
+<section class="section-tight"><div class="container">
+  <div style="text-align:center;max-width:60ch;margin:0 auto 1.4rem"><h2>{c.faqH}</h2></div>
+  <div class="flex" style="justify-content:center"><a href={lp('/faq')} class="btn btn-ghost btn-lg">{c.faqCta}</a></div>
+</div></section>
+
+<!-- CTA -->
+<section class="section-tight"><div class="container">
+  <div class="cta-band reveal pending">
+    <h2 class="display" style="font-size:clamp(2rem,4.5vw,3.2rem)">{c.ctaH}</h2>
+    <p class="lead" style="margin:1rem auto 0;text-align:center">{c.ctaBody}</p>
+    <div class="flex" style="justify-content:center;margin-top:1.8rem">
+      <a href={lp('/test-sample')} class="btn btn-primary btn-lg" data-track="hiw-sample">{c.ctaSampleBtn}</a>
+      <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.ctaStartBtn}</a>
+      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
+    </div>
+  </div>
+</div></section>
+
+<style>
+  /* Global .steps is a 3-up grid; this page has four steps and a 3+1 orphan
+     row reads as a mistake. Two classes beat the global one selector, so
+     these win at every width including inside the global 860px rule. */
+  .steps.four { grid-template-columns: repeat(4, 1fr); gap: clamp(1.2rem, 2.4vw, 2.2rem); }
+  @media (max-width: 1100px) { .steps.four { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .steps.four { grid-template-columns: 1fr; } }
+  .step p a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* The capacity gate. A single heavy rule above it and nothing else — the
+     sentence is the design. */
+  .gate { border-top: 2px solid var(--ink); padding-top: clamp(1.4rem, 3vw, 2.2rem); }
+  .gate-body { margin-top: 1.1rem; color: var(--ink-2); max-width: 66ch; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
+  .chip .dot { width: 5px; height: 5px; background: var(--accent); }
+
+  .portal-note { margin-top: 1.1rem; font-size: .9rem; color: var(--ink-3); max-width: 60ch; }
+
+  .grid-auto { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  .card p a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+</style>

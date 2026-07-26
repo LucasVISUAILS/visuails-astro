@@ -3,6 +3,16 @@
 // strip of real photography, closing CTA. Ported from the SvelteKit about
 // page — see IMAGES.md for the photo strip and hero.
 import Layout from '../../layouts/Layout.astro';
+import { perProduct, reviewClaim, turnaround } from '../../data/pricing.js';
+
+// Deze pagina bevatte vier losse leverbeloftes — de meta-beschrijving, de
+// hero-lead, de body-lead en een chip — allemaal "in ongeveer een dag" of
+// "~24u", en geen enkele daarvan is ooit door de capaciteitspoort gekomen.
+// Het zijn tier-feiten, dus ze komen nu uit pricing.js. "Geen abonnement" gaat
+// mee: dat klopt niet meer sinds het Studio-retainer live is.
+const CAT = perProduct('catalog', 'nl');
+const TIMING = turnaround('unattended', 'nl');
+const REVIEW = reviewClaim('unattended', 'nl');
 
 const strip = [
   '/img/lifestyle-glow-05.webp',
@@ -15,14 +25,14 @@ const strip = [
 
 <Layout
   title="VISUAILS — Over ons"
-  description="VISUAILS is een studio voor productvisuals die moderne productiesnelheid combineert met menselijk oordeel, zodat elk merk in ongeveer een dag productvisuals van studiokwaliteit krijgt. Gevestigd in Enschede, Nederland."
+  description="VISUAILS is een studio voor productvisuals in Enschede, Nederland — moderne productiesnelheid met menselijk oordeel op elke visual die we leveren."
 >
   <section class="hero-editorial compact">
     <div class="bg" style="background-image:url('/img/banners-13.webp')"></div>
     <div class="fade"></div>
     <div class="hero-editorial-content container">
       <h1 class="display" data-split-lines>Geweldige visuals,<br />zonder de <em>studio</em>.</h1>
-      <p class="lead" style="margin-top:1.2rem">Productvisuals van studiokwaliteit in ongeveer een dag — moderne snelheid, gecontroleerd door echte mensen.</p>
+      <p class="lead" style="margin-top:1.2rem">Productvisuals van studiokwaliteit — moderne snelheid, gecontroleerd door echte mensen.</p>
       <div class="flex" style="margin-top:1.8rem">
         <a href="/nl/test-sample" class="btn btn-primary btn-lg">Proefvisual</a>
         <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20meer%20over%20jullie%20weten." class="btn btn-wa" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>WhatsApp</a>
@@ -35,11 +45,11 @@ const strip = [
       <div class="photo-split-media"><img src="/img/custom-models-01.webp" alt="Een VISUAILS-campagnescène, gestyled en geschoten voor een klantmerk" loading="lazy" /></div>
       <div>
         <h2>Snelheid en oordeel, <em>samen</em>.</h2>
-        <p class="lead" style="margin-top:1rem">Een klein team in Enschede, Nederland. Eén foto wordt in ongeveer een dag een volledige set — en een echt persoon beoordeelt elke afbeelding voordat die bij jou aankomt.</p>
+        <p class="lead" style="margin-top:1rem">Een klein team in Enschede, Nederland. Eén foto wordt een volledige set — en een echt persoon beoordeelt elke afbeelding voordat die bij jou aankomt.</p>
         <div class="chip-row" style="margin-top:1.4rem">
           <span class="chip"><span class="dot"></span>Enschede, NL</span>
-          <span class="chip"><span class="dot"></span>100% menselijk beoordeeld</span>
-          <span class="chip"><span class="dot"></span>~24u levering</span>
+          <span class="chip"><span class="dot"></span>{REVIEW}</span>
+          <span class="chip"><span class="dot"></span>{TIMING}</span>
         </div>
       </div>
     </div>
@@ -50,7 +60,7 @@ const strip = [
     <div class="grid grid-3 reveal-group">
       <div class="card card-hover reveal pending"><h3>Snelheid, zonder de shortcut</h3><p style="margin-top:.6rem;color:var(--ink-3)">Snelle levering, en toch de moeite waard om te publiceren.</p></div>
       <div class="card card-hover reveal pending"><h3>Consistentie wint</h3><p style="margin-top:.6rem;color:var(--ink-3)">Eén samenhangende look, over je hele assortiment.</p></div>
-      <div class="card card-hover reveal pending"><h3>Toegankelijk voor iedereen</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalogus vanaf &euro;39,99 per product. Geen abonnement.</p></div>
+      <div class="card card-hover reveal pending"><h3>Toegankelijk voor iedereen</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog {CAT.price} per product. Bestel er één, of draai een hele drop.</p></div>
     </div>
   </div></section>
 
@@ -78,6 +88,6 @@ const strip = [
 
 <style>
   .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border-radius: var(--r-pill); border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
-  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
+  .chip .dot { width: 5px; height: 5px; background: var(--accent); }
 </style>
