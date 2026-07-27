@@ -1,0 +1,35 @@
+-- VISUAILS — migration 0002. Section 13: the Tier 0 upgrade path.
+--
+-- Brings an EXISTING database up to the shape schema.sql now describes. A fresh
+-- database does not need this file — load schema.sql instead. See 0001 for why
+-- the two cannot be the same statements.
+--
+-- Run it with:
+--   wrangler d1 execute visuails --local  --file=./migrations/0002-section-13-upgrade-prompt.sql
+--   wrangler d1 execute visuails --remote --file=./migrations/0002-section-13-upgrade-prompt.sql
+--
+-- RUNNING IT TWICE IS SAFE, AND IT WILL LOOK LIKE A FAILURE — same as 0001. On a
+-- second run you get
+--
+--   duplicate column name: upgrade_prompt_at
+--
+-- which is the migration telling you it has already been applied.
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ONE COLUMN, AND DELIBERATELY NOT A COUNTER.
+--
+-- Section 13 asks for per-brand per-product order volume in a rolling quarter.
+-- That volume is SUMMED from orders on demand, not stored — orders already holds
+-- customer_id, tier, product_count and created_at, and a denormalised total is a
+-- second source of truth that goes wrong the first time an order is cancelled by
+-- hand. The sum costs one read on idx_orders_customer, which already exists.
+--
+-- What cannot be derived is whether the brand has ALREADY been shown the prompt
+-- this quarter, because nothing about an email is recorded in orders. That is
+-- this column, and it is the only new state section 13's upgrade path needs.
+--
+-- NULL means "never shown", which is the correct backfill for every existing
+-- row: the prompt did not exist when they were written.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+ALTER TABLE customers ADD COLUMN upgrade_prompt_at TEXT;

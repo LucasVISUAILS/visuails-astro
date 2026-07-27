@@ -35,6 +35,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import {
   TIERS, reviewClaim, AMOUNT, euro, PILOT_PRODUCTS,
+  TIER_ROWS, tierRow, tierRowLabels,
   FULL_DROP_MIN, FULL_DROP_MAX, TEST_SAMPLE,
 } from '../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
@@ -58,7 +59,6 @@ const COPY = {
     eyebrow: 'Start',
     h1: 'Two ways in.',
     lead: 'The line between them is not how much you order. It is whether a window in the studio calendar is reserved for you — that is the part a one-person studio can genuinely run out of.',
-    rowKeys: ['Timing', 'Queue', 'Delivery', 'After delivery'],
     priceLead: 'From',
     attendedFrame: 'A collection is going live and there is a date attached to it.',
     // The two \u00A0 are load-bearing. .dp-note is 36ch wide, which puts a line
@@ -96,7 +96,6 @@ const COPY = {
     eyebrow: 'Start',
     h1: 'Twee ingangen.',
     lead: 'Het verschil zit niet in hoeveel je bestelt. Het zit in de vraag of er een venster in de studioagenda voor jou wordt vrijgehouden — dat is wat er in een eenmansstudio echt op kan raken.',
-    rowKeys: ['Timing', 'Wachtrij', 'Levering', 'Na levering'],
     priceLead: 'Vanaf',
     attendedFrame: 'Er gaat een collectie live en daar hangt een datum aan.',
     attendedNote: `Drop\u00A0Pilot, ${PILOT_PRODUCTS} producten, eenmalig per merk. Full\u00A0Drop ${euro(AMOUNT.fullDrop, 'nl')} voor ${FULL_DROP_MIN}–${FULL_DROP_MAX}.`,
@@ -487,12 +486,26 @@ const countLabel = (n: number) => `${n} ${n === 1 ? 'product' : lang === 'nl' ? 
 // card. It is a different SERVICE MODEL, not a worse product." The headings
 // are section 13's own framing — "run a whole drop" against "order individual
 // products" — read straight out of TIERS.
+//
+// The row set is TIER_ROWS, the same five facts in the same order that
+// /pricing's Tier 0 block and the TierCompare section on /catalog, /lifestyle
+// and /video print. It was four rows hand-listed here, with the labels typed
+// beside them, and the Dutch list read ['Timing', 'Wachtrij', 'Levering', 'Na
+// levering'] — the first label still in English on a live Dutch page. That
+// exact list had been copied to /pricing, which is how one typo became two.
+//
+// Review is the row that was missing, and it is the one row that reads the
+// SAME on both doors. That is not padding: this is the screen where a visitor
+// decides, and "human-checked, every visual" appearing identically on both
+// sides is what says the cheaper route is not the unchecked one. Section 13:
+// "Keep that promise across BOTH tiers for now."
+const rowLabels = tierRowLabels(lang);
 const doors = [
   {
     value: 'drop',
     heading: attended.label[lang],
     frame: c.attendedFrame,
-    values: [attended.turnaround[lang], attended.queue[lang], attended.delivery[lang], attended.aftercare[lang]],
+    values: TIER_ROWS.map((r) => tierRow('attended', r.key, lang)),
     price: euro(AMOUNT.dropPilot, lang),
     note: c.attendedNote,
   },
@@ -500,7 +513,7 @@ const doors = [
     value: 'single',
     heading: unattended.label[lang],
     frame: c.unattendedFrame,
-    values: [unattended.turnaround[lang], unattended.queue[lang], unattended.delivery[lang], unattended.aftercare[lang]],
+    values: TIER_ROWS.map((r) => tierRow('unattended', r.key, lang)),
     price: euro(AMOUNT.catalog, lang),
     note: c.unattendedNote,
   },
@@ -601,15 +614,22 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
       <fieldset class="pl-fieldset">
         <legend class="pl-sr">{f.s1.legend}</legend>
         <div class="doors">
+          {/* Each door below is a div, not a label. The content model of a
+              label element is phrasing content, and this card holds a heading,
+              a paragraph, a description list and a div — wrapping it in a label
+              is invalid, and worse, it makes the radio's accessible name the
+              entire card, which a screen reader then reads out in full before
+              saying "radio button". The label is on the heading alone;
+              .door-label::after stretches the hit area back over the card so a
+              click anywhere still picks the door.
+
+              This note sat inside the .map() body until HomePage.astro proved
+              what that costs: a brace-wrapped block comment is a comment only
+              as a CHILD OF MARKUP, and an arrow function's parenthesised body
+              is JavaScript, so the braces reach esbuild verbatim and the build
+              dies on "Expected ) but found $render". Here it is a child of
+              .doors, which is markup. */}
           {doors.map((d, i) => (
-            {/* A div, not a label. The content model of a label element is
-                phrasing content, and this card holds a heading, a paragraph, a
-                description list and a div — wrapping it in a label is invalid,
-                and worse, it makes the radio's accessible name the entire card,
-                which a screen reader then reads out in full before saying
-                "radio button". The label is on the heading alone;
-                .door-label::after stretches the hit area back over the card so a
-                click anywhere still picks the door. */}
             <div class="door">
               {/* data-pl-req is not decoration: syncRequired() rewrites .required
                   on every field from this attribute alone, so a control that
@@ -620,7 +640,7 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
               <h3 class="door-h"><label class="door-label" for={`pl-scope-${d.value}`}>{d.heading}</label></h3>
               <p class="door-frame">{d.frame}</p>
               <dl class="door-facts">
-                {c.rowKeys.map((k, j) => (
+                {rowLabels.map((k, j) => (
                   <div class="door-row">
                     <dt>{k}</dt>
                     <dd>{d.values[j]}</dd>
@@ -1103,7 +1123,7 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
     font: inherit;
     text-align: left;
     color: var(--ink-3);
-    transition: background .2s var(--ease), color .2s var(--ease);
+    transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
   }
   .pl-rail-item.is-done { cursor: pointer; color: var(--ink-2); }
   .pl-rail-item.is-current { background: var(--accent-soft); color: var(--ink); }
@@ -1126,7 +1146,7 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
     flex-direction: column;
     padding: clamp(1.6rem, 3vw, 2.6rem);
     position: relative;
-    transition: background .22s var(--ease), box-shadow .22s var(--ease);
+    transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
   }
   .door + .door { border-left: 1px solid var(--line-strong); }
   /* Identical on both columns. The selected state is the only difference the
@@ -1284,7 +1304,7 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
   }
   .pl-droplist :global(.pl-file-act:disabled) { color: var(--ink-3); cursor: default; text-decoration: none; }
   .pl-droplist :global(.pl-file-bar) { grid-column: 1 / -1; display: block; height: 2px; background: var(--line); }
-  .pl-droplist :global(.pl-file-bar > i) { display: block; height: 100%; width: 0; background: var(--accent); transition: width .18s linear; }
+  .pl-droplist :global(.pl-file-bar > i) { display: block; height: 100%; width: 100%; transform: scaleX(0); transform-origin: left; background: var(--accent); transition: transform var(--dur-1) var(--ease); }
   .pl-droplist :global(.pl-file-msg) { grid-column: 1 / -1; font-size: .8rem; color: var(--ink-3); }
   .pl-droplist :global(.pl-file.is-done .pl-file-bar > i) { background: var(--signal); }
   .pl-droplist :global(.pl-file.is-done .pl-file-msg) { color: var(--signal-ink); }
@@ -1343,7 +1363,7 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
     font: inherit;
     text-align: left;
     cursor: pointer;
-    transition: border-color .2s var(--ease), background .2s var(--ease);
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .pl-windows :global(.pl-window:hover) { border-color: var(--accent-line); }
   .pl-windows :global(.pl-window.is-picked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }

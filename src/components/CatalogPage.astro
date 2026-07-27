@@ -22,13 +22,11 @@
 // This component is a page BODY, not a page. The two thin wrappers in
 // src/pages own the <Layout> and the meta — importing Layout here would
 // nest a second <html> inside the first.
-import {
-  TIERS, perProduct, reviewClaim, turnaround,
-  FULL_DROP_MIN, FULL_DROP_MAX,
-} from '../data/pricing.js';
+import { TIERS, perProduct, reviewClaim, turnaround } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
+import TierCompare from './TierCompare.astro';
 import { catalogStyles as catalogStylesEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
 
@@ -43,7 +41,6 @@ const styles = lang === 'nl' ? catalogStylesNl : catalogStylesEn;
 // the page used to promise.
 const item = perProduct('catalog', lang);
 const t0 = TIERS.unattended;
-const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
 
 // The four photos, named. This used to be prose in three different places
 // with three slightly different orderings; it is one list now.
@@ -70,7 +67,15 @@ const COPY = {
     eyebrow: 'Catalog',
     h1: 'Clean, consistent product visuals — built to scale.',
     lead: `One product, one price: <strong>${item.price}</strong> for a full 4-photo set — front, back, detail and one on-model shot.`,
-    ctaPrimary: 'Order individual products',
+    // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
+    // read the tier label verbatim ("Order individual products"), which put the
+    // Tier 0 offer in the hero of all three service pages. It was also slightly
+    // untrue: the link lands on /start, where step 1 is a fork between a whole
+    // drop and a single product, so naming one route on the button prejudged a
+    // choice the page had not yet explained. The neutral verb keeps the fork
+    // open. The tier IS named further down, where section 13 wants it — on the
+    // price block and in the TierCompare section.
+    ctaPrimary: 'Start an order',
     ctaSecondary: 'See pricing',
     wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20catalog%20visuals%20for%20my%20products.',
     waLabel: 'WhatsApp',
@@ -85,7 +90,10 @@ const COPY = {
     queueNote: t0.queue.en + '.',
     packH: `One product. Four photos. ${item.price}.`,
     packP: 'Every product comes back as a complete set — including a real on-model shot, not just flat-lays.',
-    packCta: `Order individual products · ${item.price} / product`,
+    // The tier IS named here — this is the per-product price block, a body
+    // section on a page section 13 lists as a Tier 0 surface. Read from the
+    // tier rather than typed, so the label cannot drift from /pricing's.
+    packCta: `${TIERS.unattended.label.en} · ${item.price} / product`,
     edMeta: '( Where it fits )',
     edH: 'Catalog photography: clarity that closes the sale.',
     edSub: 'The clean product pages your shop and marketplaces run on.',
@@ -129,9 +137,6 @@ const COPY = {
     reviewP: 'Every visual is generated, then reviewed by a person before it reaches you — colour and detail held true, not left to chance.',
     reviewChips: ['Consistent lighting & framing', 'Marketplace-ready', reviewClaim('unattended', 'en')],
     reviewAlt: 'A clean, marketplace-ready catalog visual by VISUAILS',
-    dropH: 'Running a whole collection?',
-    dropP: `Individual products are billed per product and move through the standard queue. A drop is the other way to work: ${scope} products produced together as one release, on a window reserved before you pay, with a portal to approve each image.`,
-    dropCta: 'See how a drop works',
     faqH: 'Catalog questions, answered',
     faqs: [
       {
@@ -172,7 +177,7 @@ const COPY = {
     eyebrow: 'Catalog',
     h1: 'Strakke, consistente productvisuals — gebouwd om te schalen.',
     lead: `Eén product, één prijs: <strong>${item.price}</strong> voor een complete set van 4 foto’s — voorkant, achterkant, detail en één on-model shot.`,
-    ctaPrimary: 'Bestel losse producten',
+    ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk prijzen',
     wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Catalog-visuals%20bestellen%20voor%20mijn%20producten.',
     waLabel: 'WhatsApp',
@@ -183,7 +188,7 @@ const COPY = {
     queueNote: t0.queue.nl + '.',
     packH: `Eén product. Vier foto’s. ${item.price}.`,
     packP: 'Elk product komt terug als een complete set — inclusief een echte on-model shot, niet alleen flat-lays.',
-    packCta: `Bestel losse producten · ${item.price} / product`,
+    packCta: `${TIERS.unattended.label.nl} · ${item.price} / product`,
     edMeta: '( Waar het past )',
     edH: 'Catalogfotografie: helderheid die de verkoop sluit.',
     edSub: 'De strakke productpagina’s waar je shop en marktplaatsen op draaien.',
@@ -225,9 +230,6 @@ const COPY = {
     reviewP: 'Elke visual wordt gegenereerd en daarna door een mens gecontroleerd voordat je hem krijgt — kleur en detail blijven kloppen, niets aan het toeval overgelaten.',
     reviewChips: ['Consistente belichting & uitsnede', 'Klaar voor marktplaatsen', reviewClaim('unattended', 'nl')],
     reviewAlt: 'Een strakke, voor marktplaatsen klare Catalog-visual van VISUAILS',
-    dropH: 'Een hele collectie draaien?',
-    dropP: `Losse producten reken je per product af en gaan door de standaard wachtrij. Een drop werkt anders: ${scope} producten samen geproduceerd als één release, in een venster dat is gereserveerd voordat je betaalt, met een portaal om elk beeld goed te keuren.`,
-    dropCta: 'Bekijk hoe een drop werkt',
     faqH: 'Catalog-vragen, beantwoord',
     faqs: [
       {
@@ -434,20 +436,14 @@ const shots = SHOTS[lang];
   </div>
 </section>
 
-<!-- STEP 13 SLOT — the explicit "order individual products" vs "run a whole
-     drop" block lands here, after step 12. What sits here now is the honest
-     minimum: a visitor on a Tier 0 page is told the other service model
-     exists and where to read about it, rather than being left to assume this
-     page is the whole offer. -->
+<!-- SECTION 13 — "order individual products" against "run a whole drop".
+     One shared component, not a paragraph pasted into each service page: the
+     tier facts it prints all come from pricing.js accessors, so /catalog,
+     /lifestyle, /video and /pricing cannot drift apart in either language.
+     See TierCompare.astro for why both columns are styled identically. -->
 <section class="section-tight">
   <div class="container">
-    <div class="drop-note reveal pending">
-      <div>
-        <h2>{c.dropH}</h2>
-        <p>{c.dropP}</p>
-      </div>
-      <a href={lp('/pricing')} class="link-arrow">{c.dropCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-    </div>
+    <TierCompare lang={lang} />
   </div>
 </section>
 
@@ -491,11 +487,9 @@ const shots = SHOTS[lang];
   .chip { display: inline-flex; align-items: center; gap: .5rem; font-size: .84rem; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); padding: .45rem .9rem; }
   .chip .dot { width: 6px; height: 6px; background: var(--accent); flex: 0 0 auto; }
 
-  /* The cross-link to the other service model. A full border rather than a
-     side stripe, and no card nesting — it sits directly on the page. */
-  .drop-note { border: 1px solid var(--line-strong); padding: clamp(1.6rem, 3vw, 2.4rem); display: grid; gap: 1.4rem; }
-  .drop-note h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
-  .drop-note p { margin-top: .7rem; color: var(--ink-2); max-width: 68ch; }
+  /* `.drop-note` lived here, and identically in LifestylePage.astro and
+     VideoPage.astro. Three copies of one block is what TierCompare.astro
+     replaced; its styles are scoped to that component now. */
 
   .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
   .faq-item { background: var(--surface); border: 1px solid var(--line); padding: 1.1rem 1.3rem; }

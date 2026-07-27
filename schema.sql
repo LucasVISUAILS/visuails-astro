@@ -32,6 +32,22 @@ CREATE TABLE IF NOT EXISTS customers (
   auth_provider TEXT,            -- 'passkey' | 'password' | null
   password_hash TEXT,            -- only if password auth is chosen; never plaintext
   email_verified INTEGER NOT NULL DEFAULT 0,
+
+  -- ── Section 13 · the Tier 0 upgrade path ───────────────────────────────────
+  -- When this brand was last shown the "a Full Drop covers 25–30 products"
+  -- line in an order confirmation. NULL means never.
+  --
+  -- The VOLUME that triggers the prompt is not stored anywhere: it is summed
+  -- from orders (customer_id + tier='unattended' + created_at within three
+  -- months) at the moment the order is written, because a counter column is a
+  -- second source of truth that drifts the first time an order is cancelled by
+  -- hand. This column holds the one fact the orders table cannot answer —
+  -- whether an email has already gone out this quarter — and it is what makes
+  -- section 13's "once per quarter maximum" enforceable rather than hoped for.
+  -- /api/order writes it as a compare-and-set, so two orders arriving together
+  -- cannot both claim the quarter.
+  upgrade_prompt_at TEXT,
+
   created_at    TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );

@@ -45,6 +45,12 @@ function t18() { return I18N[pageLang()] || I18N.en; }
 // grouped thousands, which is why pipeline.js carries its own euro() rather
 // than importing this one; that difference is now moot as well as invisible.)
 
+// Read at call time, never cached. The setting can change mid-session, and the
+// three older inline matchMedia() reads in this file already evaluate per call
+// for that reason — this is the same check with a name, so the next caller does
+// not have to remember the media string.
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 function revealInView() {
   const vh = window.innerHeight || document.documentElement.clientHeight;
   document.querySelectorAll('.reveal.pending:not(.in), .reveal-mask:not(.in)').forEach((el) => {
@@ -279,16 +285,26 @@ function initWizards() {
   if (wizardsBound) return;
   wizardsBound = true;
 
+  // `behavior: 'smooth'` in the options object OVERRIDES the CSS
+  // scroll-behavior, including the `auto` the reduced-motion block sets — so
+  // the global media query that neuters every animation on the site did not
+  // touch this one call, and a user who asked for less motion got the page
+  // flung several hundred pixels under them on every wizard step. Large
+  // involuntary scroll is the exact motion that setting exists to stop; it is
+  // worse than the transitions that were already being suppressed, not milder.
+  // pipeline.js guards both of its scrolls this way; this one was missed.
   const scrollToForm = (form) => {
     const y = form.getBoundingClientRect().top + window.scrollY - 90;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    window.scrollTo({ top: y, behavior: reduced() ? 'auto' : 'smooth' });
   };
   const show2 = (form, n) => {
     form.querySelectorAll('[data-wizard-step]').forEach((s) => {
       s.classList.toggle('hidden-step', Number(s.dataset.wizardStep) !== n);
     });
     const prog = form.querySelector('[data-wizard-progress]');
-    if (prog) prog.style.width = `${(n / 2) * 100}%`;
+    // scaleX, not width — see setBar in pipeline.js. The server renders
+    // scaleX(.5) inline, so step 1 is already right before this ever runs.
+    if (prog) prog.style.transform = `scaleX(${n / 2})`;
   };
   // First invalid, validatable field in a container (or null).
   const firstInvalid = (container) => {
@@ -557,6 +573,14 @@ export function init() {
 // given ClientRouter navigation. init() itself is guarded so a runtime error in
 // any sub-init can't break the rest of the page.
 bindRevealNet();
+// Signing in to the gate in Layout.astro's <head>. That script hides 203
+// elements before first paint on the promise that this file will uncover
+// them; this line is the promise being kept, and it is placed immediately
+// after bindRevealNet() rather than at the top of the module on purpose — it
+// should assert that the reveal net is bound, not merely that the file
+// started parsing. If this never runs, the gate times out and the whole site
+// renders visible and unanimated, which is the correct way to fail.
+window.__vRevealLive = 1;
 document.addEventListener('astro:page-load', revealInView);
 document.addEventListener('astro:page-load', () => { try { init(); } catch (e) {} });
 try { init(); } catch (e) {}

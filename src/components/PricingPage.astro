@@ -36,6 +36,7 @@
 import {
   PACKAGES, PER_PRODUCT, SHOOT_DAY, TEST_SAMPLE, TIERS,
   reviewClaim, euro, AMOUNT,
+  TIER_ROWS, tierRow, tierRowLabels,
   FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
   FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
   TIER0_PRODUCT, UPGRADE_BREAK_EVEN, BRAND_MODEL_CREDIT_DROPS,
@@ -102,7 +103,6 @@ const COPY = {
 
     t0Frame: 'Not every order is a drop. A few products, nothing waiting on them, no window to hold. Same pipeline, same review, without the reserved slot in the calendar — and the page says so rather than hiding it.',
     t0Terms: 'How this tier runs',
-    t0RowKeys: ['Timing', 'Queue', 'Delivery', 'After delivery'],
     t0Math: `One product at drop scope — a catalog set and a lifestyle carousel — is ${euro(TIER0_PRODUCT, 'en')}. A Full Drop costs less from ${UPGRADE_BREAK_EVEN} products on. Below that, ordering individually is the cheaper route, and there is no reason for us to pretend otherwise.`,
     t0Cta: 'Order individual products',
 
@@ -180,7 +180,6 @@ const COPY = {
 
     t0Frame: 'Niet elke bestelling is een drop. Een paar producten, er wacht niets op, geen venster vrij te houden. Dezelfde pipeline, dezelfde controle, zonder de gereserveerde plek in de agenda — en dat staat er gewoon, in plaats van weggemoffeld.',
     t0Terms: 'Hoe deze vorm werkt',
-    t0RowKeys: ['Timing', 'Wachtrij', 'Levering', 'Na levering'],
     t0Math: `Eén product op dropniveau — een catalogset en een lifestyle-carousel — is ${euro(TIER0_PRODUCT, 'nl')}. Vanaf ${UPGRADE_BREAK_EVEN} producten is een Full Drop goedkoper. Daaronder ben je met losse bestellingen voordeliger uit, en er is geen reden om te doen alsof dat anders is.`,
     t0Cta: 'Bestel losse producten',
 
@@ -243,12 +242,22 @@ const included = [
 
 // Tier 0's own terms, stated at the same size as everything else on the page.
 // Section 13: "The difference must be VISIBLE, not hidden."
-const t0Rows = [
-  unattended.turnaround[lang],
-  unattended.queue[lang],
-  unattended.delivery[lang],
-  unattended.aftercare[lang],
-];
+//
+// The set is TIER_ROWS, whole — the same five facts, in the same order, that
+// TierCompare prints on /catalog, /lifestyle and /video. It used to be four
+// hand-listed rows with Review missing, which mattered because `included`
+// eighty lines up opens with reviewClaim('attended'). Human review was
+// therefore stated for the drop and silent for Tier 0, on the one page where
+// the two sit closest together, and a fact that is present for one tier and
+// absent for the other reads as an entitlement the cheaper tier does not get.
+// That is exactly the "never style it as a lesser card" failure, arrived at
+// through an omission rather than a design choice — which is how it survived.
+//
+// Labels come from the same list rather than being typed beside them. The
+// Dutch set here read ['Timing', 'Wachtrij', 'Levering', 'Na levering'], with
+// the first label still in English on a live Dutch page.
+const t0RowLabels = tierRowLabels(lang);
+const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
 ---
 
 <!-- HERO -->
@@ -404,10 +413,10 @@ const t0Rows = [
     <div class="t0-terms">
       <span class="t0-terms-h">{c.t0Terms}</span>
       <dl class="t0-facts">
-        {c.t0RowKeys.map((k, i) => (
+        {t0Rows.map((v, i) => (
           <div class="t0-row">
-            <dt>{k}</dt>
-            <dd>{t0Rows[i]}</dd>
+            <dt>{t0RowLabels[i]}</dt>
+            <dd>{v}</dd>
           </div>
         ))}
       </dl>
@@ -741,7 +750,7 @@ const t0Rows = [
     color: var(--ink-3);
     display: grid;
     place-items: center;
-    transition: transform .4s var(--ease), background .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease);
+    transition: transform var(--dur-2) var(--ease), background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
   }
   .acc-item[open] .acc-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
   .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }

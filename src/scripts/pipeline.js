@@ -503,9 +503,13 @@ function addRow(file) {
   return row;
 }
 
+// scaleX rather than width. Width relayouts the whole row on every progress
+// event — and there is one per chunk, per file, in parallel — where a transform
+// is composited. The bar is an empty <i> with a background, so the two are
+// pixel-identical. DESIGN.md bans animating layout properties; this was one.
 function setBar(row, pct) {
   const bar = row.querySelector('.pl-file-bar > i');
-  if (bar) bar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+  if (bar) bar.style.transform = `scaleX(${Math.max(0, Math.min(100, pct)) / 100})`;
 }
 
 function setMsg(row, text, state) {

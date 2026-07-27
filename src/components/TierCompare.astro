@@ -1,0 +1,202 @@
+---
+// VISUAILS — the section 13 service-tier block.
+//
+// "Order individual products" against "run a whole drop", stated side by side.
+// Brief section 13, verbatim in BRIEF-13-SERVICE-TIERS.md:
+//
+//   "Do not use words like 'basic,' 'lite,' or 'starter' for Tier 0, and never
+//    style it as a lesser card. It is a different SERVICE MODEL, not a worse
+//    product. Frame it as 'order individual products' against 'run a whole
+//    drop.'"
+//
+// Two consequences for this file specifically.
+//
+// FIRST, the two columns are typographically and structurally identical. Same
+// heading size, same border, same padding, same row set, same link treatment.
+// There is no "recommended" ribbon, no scale difference, no accent on one side.
+// A comparison block styles the thing it wants you to pick, and the whole point
+// of this section is that neither is the thing you should pick — the right one
+// depends on whether you need a date. If a future pass adds emphasis to one
+// column it will have re-broken the section's central instruction.
+//
+// SECOND, every cell AND every row label is read from src/data/pricing.js, not
+// typed here. Section 13: "put the review-level claim in a single content
+// variable per tier, not hardcoded across pages." That rule is written about
+// the review claim and it applies with equal force to the other four rows —
+// this component renders on /catalog, /lifestyle and /video in two languages,
+// and the same five rows are printed again by the Tier 0 block on /pricing.
+// The labels are shared for a reason that is not theoretical: when they were
+// typed per page the Dutch pair had already drifted, with /pricing printing
+// "Timing" in English on a Dutch page.
+//
+// THE CONSTRAINT THAT OUTRANKS EVERYTHING ELSE HERE: the unattended column's
+// timing row reads "Typically 2–4 working days" and its queue row reads
+// "Standard queue, no fixed delivery date". It never shows a date, and there
+// is no prop on this component that could make it show one. Section 13 calls
+// that "the single most important constraint in this section."
+//
+// This block replaced a `.drop-note` prose paragraph that was pasted into all
+// three service pages, along with three identical copies of its CSS. That
+// duplication is why this is a component rather than a fourth paste.
+import {
+  TIERS, TIER_ROWS, tierRow, tierRowLabels,
+  FULL_DROP_MIN, FULL_DROP_MAX,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  /** Where the unattended column points. /start step 1 offers "a single product". */
+  href0?: string;
+  /** Where the attended column points. Defaults to /pricing; pass another path on /pricing itself. */
+  href1?: string;
+  /** Drop the heading block when the host section already has one. */
+  compact?: boolean;
+}
+
+const { lang, href0 = '/start', href1 = '/pricing', compact = false } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+// The heading is section 13's own first sentence, not a summary of it: "The
+// dividing line is not order size, it is whether a human commits to a
+// deadline." Saying that out loud is what stops the cheaper column reading as
+// the smaller one.
+//
+// The drop's product count is named in the paragraph and deliberately NOT
+// given a row of its own. A "how many products" row would build an order-size
+// comparison directly underneath a heading that says order size is not the
+// comparison. Naming it once, in prose, answers "what is a drop" for a first
+// visit without turning the block into the thing it argues against.
+const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+
+const t = lang === 'nl'
+  ? {
+      h: 'Het verschil is niet de ordergrootte',
+      p: `Het gaat erom of er een datum aan je wordt toegezegd voordat je betaalt. Een drop is ${scope} producten die samen uitkomen; beide routes lopen door dezelfde productie en dezelfde controle.`,
+      cta0: 'Bestel één product',
+      cta1: 'Bekijk hoe een drop werkt',
+    }
+  : {
+      h: 'The difference is not order size',
+      p: `It is whether a date is committed to you before you pay. A drop is ${scope} products released together; both routes run through the same production and the same check.`,
+      cta0: 'Order a single product',
+      cta1: 'See how a drop works',
+    };
+
+// The row labels are NOT typed in `t` above with the rest of the copy. They
+// live in pricing.js (TIER_ROWS) because the Tier 0 block on /pricing prints
+// the same five labels, and when they were typed per page the Dutch pair fell
+// out of step — /pricing's Dutch list read "Timing" where this one read
+// "Levertijd", in English, on a live Dutch page. One list, two consumers.
+const rowLabels = tierRowLabels(lang);
+
+// Built once, in tier order, so the two columns cannot drift apart in row
+// count or row order — a comparison where the rows do not line up is not a
+// comparison. Order is unattended-first because that is the order the frame is
+// stated in ("order individual products" against "run a whole drop"), not
+// because it is lesser.
+//
+// Cells are mapped over the same TIER_ROWS that produced the labels, so a row
+// added to pricing.js appears in both columns with its label already attached;
+// there is no index in this file that could drift against the label list.
+const columns = (['unattended', 'attended'] as const).map((id) => ({
+  id,
+  label: TIERS[id].label[lang],
+  href: id === 'unattended' ? lp(href0) : lp(href1),
+  cta: id === 'unattended' ? t.cta0 : t.cta1,
+  cells: TIER_ROWS.map((r) => tierRow(id, r.key, lang)),
+}));
+---
+
+<div class="tierc reveal pending">
+  {!compact && (
+    <div class="tierc-head">
+      <h2>{t.h}</h2>
+      <p>{t.p}</p>
+    </div>
+  )}
+
+  <div class="tierc-grid">
+    {columns.map((col) => (
+      <div class="tierc-col">
+        <h3>{col.label}</h3>
+        <dl class="tierc-rows">
+          {col.cells.map((cell, i) => (
+            <div class="tierc-row">
+              <dt>{rowLabels[i]}</dt>
+              <dd>{cell}</dd>
+            </div>
+          ))}
+        </dl>
+        <a href={col.href} class="link-arrow tierc-cta">
+          {col.cta}
+          <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .tierc-head { max-width: 68ch; }
+  .tierc-head h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+  .tierc-head p { margin-top: .7rem; color: var(--ink-2); }
+
+  /* The 1px gap over a --line ground is the site's hairline trick (see
+     .compare-static): one background showing through the grid gutter, so the
+     rule between the columns is a real 1px at every zoom level rather than two
+     adjacent borders that render as 2px on some. */
+  .tierc-grid {
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line-strong);
+    border: 1px solid var(--line-strong);
+  }
+
+  .tierc-col {
+    background: var(--bg);
+    padding: clamp(1.4rem, 2.6vw, 2rem);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Identical on both columns. See the file header — the moment one of these
+     grows a larger font, an accent colour or a ribbon, the block is arguing for
+     a tier instead of describing two. */
+  .tierc-col h3 {
+    font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+    line-height: 1.25;
+  }
+
+  .tierc-rows { margin-top: 1.3rem; flex: 1; }
+  .tierc-row { padding: .85rem 0; border-top: 1px solid var(--line); }
+  .tierc-row:first-child { border-top: 0; padding-top: 0; }
+
+  .tierc-row dt {
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+  .tierc-row dd {
+    margin: .3rem 0 0;
+    color: var(--ink);
+    font-size: .95rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  /* No `.i` override here on purpose. The site's arrow is 20px at
+     stroke-width 1.8 with butt caps (global.css `.i`), and it is the same
+     arrow in every link-arrow on every page. A local resize would make this
+     one block's arrow subtly wrong. */
+  .tierc-cta { margin-top: 1.5rem; align-self: start; }
+
+  /* One column below the point where two 5-row stacks stop being scannable
+     side by side. The row labels repeat in each column rather than living in a
+     shared rail, which is what makes the stacked state readable at all. */
+  @media (max-width: 760px) {
+    .tierc-grid { grid-template-columns: 1fr; }
+  }
+</style>

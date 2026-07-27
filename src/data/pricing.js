@@ -182,6 +182,16 @@ export const TIERS = {
     reviewLevel: 'full',
     committedDate: false,
     portal: false,
+    // DOCUMENTATION, NOT A SWITCH. Nothing reads this field — grep it. It records
+    // section 13's "always yields to Tier 1 in the capacity gate" next to the tier
+    // it describes, because that is where a reader looks for it; the yielding
+    // itself is QUEUE_FLOOR_PER_DAY in src/data/capacity.js, which reserves
+    // throughput no attended window may take.
+    //
+    // Left in place rather than deleted because it names a real property of the
+    // tier, and a reader who finds only the number in capacity.js has to
+    // reconstruct which direction it protects. Flipping it changes nothing —
+    // if you came here to change how the gate behaves, change the floor.
     yieldsToAttended: true,
     label: { en: 'Order individual products', nl: 'Bestel losse producten' },
     // The ONLY sanctioned timing language for this tier. No date, no "24
@@ -216,6 +226,7 @@ export const TIERS = {
     reviewLevel: 'full',
     committedDate: true,
     portal: true,
+    // Also unread. See the note on unattended.yieldsToAttended above.
     yieldsToAttended: false,
     label: { en: 'Run a whole drop', nl: 'Draai een hele drop' },
     // A committed window, cleared by the capacity gate before it is offered.
@@ -272,6 +283,78 @@ export function aftercare(tierId, lang = 'en') {
   return tier.aftercare[lang] || tier.aftercare.en;
 }
 
+/**
+ * The five facts that describe a service tier, in the order they are shown,
+ * with their column labels in both languages.
+ *
+ * WHY THIS IS HERE AND NOT IN THE PAGES. Two surfaces render this set —
+ * TierCompare.astro (on /catalog, /lifestyle and /video) and the Tier 0 block
+ * on /pricing — which meant two copies of the labels in two languages, four
+ * lists to keep in step. They had already fallen out of step: /pricing's Dutch
+ * list read `['Timing', 'Wachtrij', 'Levering', 'Na levering']`, with the
+ * first label left in English on a live Dutch page. Nothing could have caught
+ * that, because there was nothing to compare it against. There is now.
+ *
+ * Section 13 states the rule about the review claim specifically — "put the
+ * review-level claim in a single content variable per tier, not hardcoded
+ * across pages" — and the reasoning does not stop at that one row.
+ *
+ * ORDER IS PART OF THE DATA. The two tier columns sit side by side and a
+ * comparison whose rows do not line up is not a comparison, so the sequence
+ * lives here rather than being re-typed per page.
+ */
+export const TIER_ROWS = [
+  { key: 'turnaround', label: { en: 'Timing', nl: 'Levertijd' } },
+  { key: 'queue', label: { en: 'Queue', nl: 'Wachtrij' } },
+  { key: 'delivery', label: { en: 'Delivery', nl: 'Levering' } },
+  { key: 'review', label: { en: 'Review', nl: 'Controle' } },
+  { key: 'aftercare', label: { en: 'After delivery', nl: 'Na levering' } },
+];
+
+/**
+ * One cell of the tier table.
+ *
+ * DELEGATES RATHER THAN RE-READS. Three of the five rows already had a named
+ * accessor before this table existed — reviewClaim(), turnaround(), aftercare()
+ * — each written because the promise it returns is one the studio is held to,
+ * and each documented as "pages use this, never a literal". Reading
+ * `tier.turnaround[lang]` here instead would have produced the same string
+ * today while quietly creating a second path to it, so a guard added to the
+ * accessor tomorrow would cover the pages and miss the table. The two rows
+ * without an accessor (queue, delivery) fall through to the plain read.
+ *
+ * `review` in particular is not stored on the tier at all — it is derived from
+ * the tier's review LEVEL — and that indirection is what lets Tier 0 be
+ * degraded to a spot-check later without a copy rewrite, which section 13 asks
+ * for explicitly.
+ *
+ * Throws on an unknown key rather than returning undefined: a silently empty
+ * cell in a comparison table reads as "this tier does not get that", which is
+ * the single worst thing this block could say by accident.
+ */
+const ROW_ACCESSOR = {
+  review: reviewClaim,
+  turnaround,
+  aftercare,
+};
+
+export function tierRow(tierId, key, lang = 'en') {
+  const tier = TIERS[tierId];
+  if (!tier) throw new Error(`pricing.js: unknown tier "${tierId}"`);
+  if (!TIER_ROWS.some((r) => r.key === key)) {
+    throw new Error(`pricing.js: "${key}" is not a tier row`);
+  }
+  const accessor = ROW_ACCESSOR[key];
+  if (accessor) return accessor(tierId, lang);
+  return tier[key][lang] || tier[key].en;
+}
+
+/** The row labels for one language, in order. */
+export function tierRowLabels(lang = 'en', keys = null) {
+  const rows = keys ? TIER_ROWS.filter((r) => keys.includes(r.key)) : TIER_ROWS;
+  return rows.map((r) => r.label[lang] || r.label.en);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 4 · DERIVED ARITHMETIC — computed, never typed.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -285,22 +368,89 @@ export const FULL_DROP_PER_PRODUCT_MIN = AMOUNT.fullDrop / FULL_DROP_MAX; // che
 
 /**
  * How many Tier 0 products a brand must order in a quarter before a Full Drop
- * is genuinely cheaper than what they are already spending.
+ * is cheaper than what they are already spending.
  *
- * FLAGGED: section 13's example upgrade prompt reads "You've ordered 14
+ * FLAGGED (1) — section 13's example upgrade prompt reads "You've ordered 14
  * products this quarter. A Full Drop covers 25 for less." That sentence is not
  * true at the trigger it is attached to. 14 products at drop scope is
  * 14 × €99.98 = €1,399.72, which is LESS than €1,850, not more — and if the
- * brand ordered catalog sets only it is €559.86. The break-even is 19 products
- * at drop scope. The upgrade prompt (built in step 13, after step 12) must
- * therefore either fire at this threshold, or be written as a comparison
- * rather than a saving. Section 13's own instruction — "Factual, no pressure"
- * — points at the comparison.
+ * brand ordered catalog sets only it is €559.86. The prompt is therefore
+ * written as a comparison rather than a saving, which is what section 13's own
+ * "Factual, no pressure" asks for.
+ *
+ * FLAGGED (2) — THIS NUMBER IS 19 AND THE LIKE-FOR-LIKE ANSWER IS 23. Both are
+ * correct; they answer different questions, and the difference is VAT.
+ *
+ *   19  €1,850 ÷ €99.98. The two figures as the site prints them today.
+ *   23  €1,850 ÷ (€99.98 ÷ 1.21) = €1,850 ÷ €82.63 = 22.39 → 23. The same sum
+ *       with both sides ex-VAT.
+ *
+ * Section 14 sets the rule that produces the gap: Tier 1 prices are quoted
+ * EXCLUSIVE of VAT and Tier 0 prices INCLUSIVE. So 19 divides a VAT-inclusive
+ * price into a VAT-exclusive one, and a business customer reclaiming VAT does
+ * not reach the crossover until 23.
+ *
+ * The constant stays at the nominal 19 deliberately: it is the number a reader
+ * gets by dividing the two prices printed on /pricing, and a page that showed
+ * 23 next to those two prices would look like it could not do arithmetic. No
+ * VAT divisor is introduced here — section 14 owns the VAT module and has not
+ * been built, and pre-empting it with a rate constant in this file is how two
+ * sources of truth start. Revisit when 14 lands.
+ *
+ * Neither number decides where the prompt FIRES; that is
+ * UPGRADE_TRIGGER_PRODUCTS, and it comes from section 13 rather than from this
+ * sum. See FLAGS.md · lxxxv.
  */
 export const UPGRADE_BREAK_EVEN = Math.ceil(AMOUNT.fullDrop / TIER0_PRODUCT);
 
 /** The trigger section 13 specifies for the upgrade prompt. */
 export const UPGRADE_TRIGGER_PRODUCTS = 12;
+
+/**
+ * Has this brand ordered enough individual products in the window to be told
+ * what a Full Drop costs?
+ *
+ * `>=` rather than `>`. Section 13 says "when a brand crosses 12 individual
+ * products in a rolling quarter", which reads both ways; a constant named
+ * UPGRADE_TRIGGER_PRODUCTS that fires at thirteen is a bug someone eventually
+ * writes, and one product either side of the line changes nothing about whether
+ * the sentence is worth sending. FLAGGED, and a one-character change.
+ */
+export function shouldPromptUpgrade(products) {
+  return Number.isInteger(products) && products >= UPGRADE_TRIGGER_PRODUCTS;
+}
+
+/**
+ * The upgrade prompt itself. One line, in the client's language, or null.
+ *
+ * IT IS A COMPARISON, NOT A SAVING CLAIM. Section 13's example reads "You've
+ * ordered 14 products this quarter. A Full Drop covers 25 for less." At the
+ * trigger that sentence is false: fourteen products at drop scope is
+ * 14 × €99.98 = €1,399.72, which is LESS than €1,850, not more. Section 13 also
+ * asks for "factual, no pressure", and its own example does not meet its own
+ * standard — this follows the standard, because a prompt a client can disprove
+ * with a calculator costs more than it earns.
+ *
+ * IT MAKES NO CLAIM ABOUT WHAT THEY SPENT, AT ANY COUNT. Saying "less than you
+ * spent" would be safe above UPGRADE_BREAK_EVEN — assertLadder() keeps that
+ * arithmetic true — but only in the numbers the site prints today. Section 14
+ * quotes Tier 1 EXCLUSIVE of VAT and Tier 0 INCLUSIVE, so the like-for-like
+ * crossover for a business that reclaims is 23, not 19, and a saving claim made
+ * anywhere between the two is wrong for precisely the customer most likely to
+ * check it. Naming the crossover is true under both readings, so there is no
+ * version of section 14 that can turn this sentence into a lie.
+ *
+ * Below the trigger it returns null, so a caller has one thing to test rather
+ * than a threshold to re-derive.
+ */
+export function upgradePrompt(products, lang = 'en') {
+  if (!shouldPromptUpgrade(products)) return null;
+  const price = euro(AMOUNT.fullDrop, lang);
+  const band = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+  return lang === 'nl'
+    ? `Je hebt dit kwartaal ${products} producten besteld. Ter info: een Full Drop dekt ${band} producten voor ${price}, en vanaf ${UPGRADE_BREAK_EVEN} producten is dat goedkoper.`
+    : `You've ordered ${products} products this quarter. For reference, a Full Drop covers ${band} products for ${price}, and costs less from ${UPGRADE_BREAK_EVEN} products on.`;
+}
 
 /** Brand Model setup is fully creditable across five drops: 5 × €250 = €1,250. */
 export const BRAND_MODEL_CREDIT_DROPS = AMOUNT.brandModel / AMOUNT.brandModelCredit;
@@ -353,6 +503,23 @@ function assertLadder() {
     );
   }
 
+  // The upgrade prompt names UPGRADE_BREAK_EVEN as the count from which a Full
+  // Drop "costs less". That has to be true AT that count and not merely after
+  // it: Math.ceil returns the first integer where the drop is cheaper OR EQUAL,
+  // and "costs less" is false at equal. It cannot happen at today's numbers —
+  // €1,850 / €99.98 is not a whole number — which is exactly why it needs an
+  // assertion rather than a reader's confidence. If this fires, the fix is the
+  // definition, not the copy.
+  if (UPGRADE_BREAK_EVEN * TIER0_PRODUCT <= AMOUNT.fullDrop) {
+    throw new Error(
+      `pricing.js: the upgrade prompt says a Full Drop costs less from ` +
+      `${UPGRADE_BREAK_EVEN} products on, but ${UPGRADE_BREAK_EVEN} products à ` +
+      `la carte is ${(UPGRADE_BREAK_EVEN * TIER0_PRODUCT).toFixed(2)}, which does ` +
+      `not exceed the Full Drop at ${AMOUNT.fullDrop}. Define UPGRADE_BREAK_EVEN ` +
+      `as Math.floor(fullDrop / TIER0_PRODUCT) + 1, and do not soften the copy.`
+    );
+  }
+
   // Tier 0 must never be the expensive door for a whole drop's worth of work.
   if (TIER0_PRODUCT * FULL_DROP_MIN <= AMOUNT.fullDrop) {
     throw new Error(
@@ -373,6 +540,16 @@ assertLadder();
 // entitlement, and the last one left on the site after section 3 removed the
 // count from the tier model. A package's inclusions and the tier it belongs to
 // are now the same sentence, so they cannot drift apart again.
+//
+// The timing bullet is the same principle, applied late: it was typed out four
+// times ("A reserved 48-hour window, confirmed before you pay" ×2, its Dutch
+// twin ×2) while turnaround() sat twenty lines up documented as "Pages use
+// this, never a literal." The count bullet was worse — `products:
+// PILOT_PRODUCTS` and `'Exactly 8 products'` on the SAME object, twenty lines
+// above a Full Drop that does it correctly with `${FULL_DROP_MIN}–…`. Both are
+// now derived. What remains typed here is prose that reads a number as a word
+// ("Eight products, one committed window"), which check_promises.py holds to
+// PILOT_PRODUCTS from the outside.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const PACKAGES = {
@@ -391,9 +568,9 @@ export const PACKAGES = {
       // business rule, so the site already sets this expectation.
       onceOnly: true,
       includes: [
-        'Exactly 8 products',
+        `Exactly ${PILOT_PRODUCTS} products`,
         'Catalog set and lifestyle carousel for each',
-        'A reserved 48-hour window, confirmed before you pay',
+        turnaround('attended', 'en'),
         'Client portal, approve or request a revision per image',
         aftercare('attended', 'en'),
       ],
@@ -409,7 +586,7 @@ export const PACKAGES = {
       includes: [
         `${FULL_DROP_MIN}–${FULL_DROP_MAX} products`,
         'Catalog set and lifestyle carousel for each',
-        'A reserved 48-hour window, confirmed before you pay',
+        turnaround('attended', 'en'),
         'Client portal, approve or request a revision per image',
         aftercare('attended', 'en'),
         `Video clips at ${euro(AMOUNT.video, 'en')} each, added to any drop`,
@@ -460,9 +637,9 @@ export const PACKAGES = {
       line: 'Acht producten, één vastgelegd venster. Zo ontdek je wat we met jouw lijn doen voordat je ons de hele collectie geeft.',
       onceOnly: true,
       includes: [
-        'Precies 8 producten',
+        `Precies ${PILOT_PRODUCTS} producten`,
         'Catalogset en lifestyle-carousel voor elk product',
-        'Een gereserveerd venster van 48 uur, bevestigd voordat je betaalt',
+        turnaround('attended', 'nl'),
         'Klantportaal, per beeld goedkeuren of een revisie aanvragen',
         aftercare('attended', 'nl'),
       ],
@@ -478,7 +655,7 @@ export const PACKAGES = {
       includes: [
         `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten`,
         'Catalogset en lifestyle-carousel voor elk product',
-        'Een gereserveerd venster van 48 uur, bevestigd voordat je betaalt',
+        turnaround('attended', 'nl'),
         'Klantportaal, per beeld goedkeuren of een revisie aanvragen',
         aftercare('attended', 'nl'),
         `Videoclips voor ${euro(AMOUNT.video, 'nl')} per stuk, toe te voegen aan elke drop`,

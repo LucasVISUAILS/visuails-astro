@@ -54,6 +54,15 @@
   --font: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --radius: 0;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* The four-step duration scale, copied from global.css for the same reason
+     as the palette above: this page is served by a Worker and never loads the
+     site bundle, so a var(--dur-1) it does not define here resolves to
+     nothing — and an unresolved var() in a shorthand does not fall back, it
+     invalidates the declaration. The transition would simply stop existing. */
+  --dur-1: 120ms;   /* state: hover, focus, press */
+  --dur-2: 240ms;   /* element: reveal, expand, swap */
+  --dur-3: 450ms;   /* section */
+  --dur-4: 900ms;   /* chrome */
 }
 
 *, *::before, *::after { box-sizing: border-box; border-radius: var(--radius); }
@@ -211,7 +220,7 @@ h1 {
   font-family: var(--font); font-size: .88rem; font-weight: 600; line-height: 1;
   padding: .7rem 1.1rem; cursor: pointer; border: 1px solid transparent;
   text-decoration: none;
-  transition: transform .22s var(--ease), background-color .22s var(--ease), border-color .22s var(--ease);
+  transition: transform var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 .btn-primary { background: var(--ink-900); color: var(--paper); }
 .btn-primary:hover { background: var(--ink-700); transform: translateY(-2px); }

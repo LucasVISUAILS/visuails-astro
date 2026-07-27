@@ -115,7 +115,7 @@ const COPY = {
         items: [
           {
             q: 'How fast is it?',
-            a: `A drop gets ${turnaround('attended', lang).toLowerCase()}. Individual products go through the standard queue: ${turnaround('unattended', lang).toLowerCase()}, with no fixed delivery date.`,
+            a: `A drop gets ${turnaround('attended', 'en').toLowerCase()}. Individual products go through the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date.`,
           },
           {
             q: 'What if the week I need cannot be held?',
@@ -123,7 +123,7 @@ const COPY = {
           },
           {
             q: 'Is every image really checked by a person?',
-            a: `${reviewClaim('attended', lang)} — a person selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, on either route in.`,
+            a: `${reviewClaim('attended', 'en')} — a person selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, on either route in.`,
           },
           {
             q: 'What if the visuals are not right?',
@@ -259,7 +259,7 @@ const COPY = {
         items: [
           {
             q: 'Hoe snel is het?',
-            a: `Een drop krijgt ${turnaround('attended', lang).toLowerCase()}. Losse producten gaan door de standaard wachtrij: ${turnaround('unattended', lang).toLowerCase()}, zonder vaste leverdatum.`,
+            a: `Een drop krijgt ${turnaround('attended', 'nl').toLowerCase()}. Losse producten gaan door de standaard wachtrij: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum.`,
           },
           {
             q: 'Wat als de week die ik nodig heb niet kan?',
@@ -267,7 +267,7 @@ const COPY = {
           },
           {
             q: 'Wordt elk beeld echt door een mens gecontroleerd?',
-            a: `${reviewClaim('attended', lang)} — een mens selecteert en inspecteert elk beeld op nauwkeurigheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
+            a: `${reviewClaim('attended', 'nl')} — een mens selecteert en inspecteert elk beeld op nauwkeurigheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
           },
           {
             q: 'Wat als de visuals niet kloppen?',
@@ -415,7 +415,7 @@ const c = COPY[lang];
   .acc-item summary::-webkit-details-marker { display: none; }
   .acc-item summary::marker { content: ''; }
   .acc-q { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.35rem 0; text-align: left; font-family: var(--font-body); font-size: 1.05rem; font-weight: 600; color: var(--ink); }
-  .acc-icon { flex: 0 0 auto; width: 28px; height: 28px; border: 1px solid var(--line-strong); color: var(--ink-3); display: grid; place-items: center; transition: transform .4s var(--ease), background .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease); }
+  .acc-icon { flex: 0 0 auto; width: 28px; height: 28px; border: 1px solid var(--line-strong); color: var(--ink-3); display: grid; place-items: center; transition: transform var(--dur-2) var(--ease), background var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease); }
   .acc-item[open] .acc-icon { transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
   .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }
   .acc-body-inner a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }

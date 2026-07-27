@@ -14,12 +14,10 @@
 // SEQUENCING: a Tier 0 surface. Section 13's full "order individual products
 // vs run a whole drop" block lands at step 13, after step 12. Everything
 // here is made true under the tier model now; the slot is marked below.
-import {
-  TIERS, perProduct, reviewClaim, turnaround,
-  FULL_DROP_MIN, FULL_DROP_MAX,
-} from '../data/pricing.js';
+import { TIERS, perProduct, reviewClaim, turnaround } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
+import TierCompare from './TierCompare.astro';
 import { styles as stylesEn } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
 
@@ -31,7 +29,6 @@ const moods = lang === 'nl' ? stylesNl : stylesEn;
 
 const item = perProduct('lifestyle', lang);
 const t0 = TIERS.unattended;
-const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
 
 // The before/after row. Photo paths only — the labels come out of `moods` so
 // a renamed style can never drift between the grid and the comparison row.
@@ -59,7 +56,10 @@ const COPY = {
     eyebrow: 'Lifestyle',
     h1: 'Your product, in scenes that sell',
     lead: `Four signature looks. ${item.price} per product — a 3-photo carousel.`,
-    ctaPrimary: 'Order individual products',
+    // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
+    // the full note — this button carried the tier label verbatim, in the hero,
+    // on a link that lands on /start's two-way fork.
+    ctaPrimary: 'Start an order',
     ctaSecondary: 'See pricing',
     wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20lifestyle%20visuals%20for%20my%20products.',
     waTalk: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20lifestyle%20visuals%20for%20my%20brand.',
@@ -111,9 +111,6 @@ const COPY = {
     rangeH: 'The range, in motion',
     rangeCta: 'See the full gallery',
     exampleAlt: (n: string) => `${n} lifestyle example`,
-    dropH: 'Running a whole collection?',
-    dropP: `Individual products are billed per product and move through the standard queue. A drop is the other way to work: ${scope} products produced together as one release, on a window reserved before you pay, with a portal to approve each image.`,
-    dropCta: 'See how a drop works',
     reviewNote: reviewClaim('unattended', 'en'),
     ctaH: 'Put your product<br>in a scene that sells.',
     ctaP: `${item.price} per product, ${turnaround('unattended', 'en').toLowerCase()}.`,
@@ -122,7 +119,7 @@ const COPY = {
     eyebrow: 'Lifestyle',
     h1: 'Jouw product, in scènes die verkopen',
     lead: `Vier signatuurlooks. ${item.price} per product — een carousel van 3 foto’s.`,
-    ctaPrimary: 'Bestel losse producten',
+    ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk prijzen',
     wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Lifestyle-visuals%20bestellen%20voor%20mijn%20producten.',
     waTalk: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20Lifestyle-visuals%20voor%20mijn%20merk.',
@@ -170,9 +167,6 @@ const COPY = {
     rangeH: 'Het assortiment, in beweging',
     rangeCta: 'Bekijk de volledige galerij',
     exampleAlt: (n: string) => `${n} lifestyle-voorbeeld`,
-    dropH: 'Een hele collectie draaien?',
-    dropP: `Losse producten reken je per product af en gaan door de standaard wachtrij. Een drop werkt anders: ${scope} producten samen geproduceerd als één release, in een venster dat is gereserveerd voordat je betaalt, met een portaal om elk beeld goed te keuren.`,
-    dropCta: 'Bekijk hoe een drop werkt',
     reviewNote: reviewClaim('unattended', 'nl'),
     ctaH: 'Zet je product<br>in een scène die verkoopt.',
     ctaP: `${item.price} per product, ${turnaround('unattended', 'nl').toLowerCase()}.`,
@@ -331,20 +325,14 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   </div></div>
 </section>
 
-<!-- STEP 13 SLOT — the explicit "order individual products" vs "run a whole
-     drop" block lands here, after step 12. What sits here now is the honest
-     minimum: a visitor on a Tier 0 page is told the other service model
-     exists and where to read about it, rather than being left to assume this
-     page is the whole offer. -->
+<!-- SECTION 13 — "order individual products" against "run a whole drop".
+     One shared component, not a paragraph pasted into each service page: the
+     tier facts it prints all come from pricing.js accessors, so /catalog,
+     /lifestyle, /video and /pricing cannot drift apart in either language.
+     See TierCompare.astro for why both columns are styled identically. -->
 <section class="section-tight">
   <div class="container">
-    <div class="drop-note reveal pending">
-      <div>
-        <h2>{c.dropH}</h2>
-        <p>{c.dropP}</p>
-      </div>
-      <a href={lp('/pricing')} class="link-arrow">{c.dropCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-    </div>
+    <TierCompare lang={lang} />
   </div>
 </section>
 
@@ -377,9 +365,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
      rendered as unstyled body text. Same treatment as `.step-n` elsewhere. */
   .shot-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--ink-3); display: block; margin-bottom: .5rem; }
 
-  /* The cross-link to the other service model. A full border rather than a
-     side stripe, and no card nesting — it sits directly on the page. */
-  .drop-note { border: 1px solid var(--line-strong); padding: clamp(1.6rem, 3vw, 2.4rem); display: grid; gap: 1.4rem; }
-  .drop-note h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
-  .drop-note p { margin-top: .7rem; color: var(--ink-2); max-width: 68ch; }
+  /* `.drop-note` lived here, and identically in CatalogPage.astro and
+     VideoPage.astro. Three copies of one block is what TierCompare.astro
+     replaced; its styles are scoped to that component now. */
 </style>

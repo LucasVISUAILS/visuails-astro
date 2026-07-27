@@ -52,7 +52,7 @@
 //     order to protect a calendar would be the wrong thing to protect.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { aftercare, turnaround } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt } from '../../src/data/pricing.js';
 import {
   ATTENDED_PER_WINDOW,
   HORIZON_DAYS,
@@ -247,10 +247,19 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
   const finalWindow = raced ? null : gate.window;
 
+  // SECTION 13 · THE UPGRADE PATH. Only ever on a Tier 0 order — a brand that
+  // has just booked a drop does not need to be told what a drop costs, and
+  // asking would burn their once-a-quarter slot to say nothing. The claim runs
+  // after the insert so the order in hand is part of the count it reports.
+  const upgradeCount = tier === 'unattended' ? await claimUpgradePrompt(env, customerId) : null;
+  const upgradeLine = upgradeCount ? upgradePrompt(upgradeCount, lang) : null;
+
   await safe(async () => {
     if (!orderId || !env.DB) return;
     await env.DB.prepare('INSERT INTO order_events (order_id, status, note) VALUES (?1, ?2, ?3)')
-      .bind(orderId, 'received', eventNote({ tier, window: finalWindow, raced, uploads: staged.length })).run();
+      .bind(orderId, 'received', eventNote({
+        tier, window: finalWindow, raced, uploads: staged.length, upgrade: upgradeCount,
+      })).run();
   });
 
   // The staged objects become rows now that there is an order to hang them on.
@@ -264,12 +273,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
     subject: `${raced ? '[WINDOW LOST] ' : ''}New ${svc} order — ${ref}`,
     html: notifyEmail(ref, svc, { name, brand, email, phone, vat, website }, details, {
       tier, products, window: finalWindow, raced, asked, uploads: staged.length,
+      upgrade: upgradeCount,
     }),
   }));
   await safe(() => sendMail(env, {
     to: email,
     subject: lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`,
-    html: customerEmail(lang, ref, svc, name, { tier, window: finalWindow }),
+    html: customerEmail(lang, ref, svc, name, { tier, window: finalWindow, upgrade: upgradeLine }),
   }));
 
   const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
@@ -444,6 +454,88 @@ function todayUTC() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// ---------- section 13 · the upgrade path -------------------------------------
+
+/**
+ * Has this brand ordered enough individual products this quarter to be told what
+ * a Full Drop costs — and is this the first time they would be told this
+ * quarter? Returns the product count to name in the line, or null for "say
+ * nothing".
+ *
+ * Section 13: "Track per-brand per-product order volume in D1. When a brand
+ * crosses 12 individual products in a rolling quarter, surface a one-line prompt
+ * in their confirmation [...] Factual, no pressure, once per quarter maximum."
+ * And, on why the tier earns its place at all: "Tier 0's job is not revenue. It
+ * is portfolio material, catching brands before they grow, and filling gaps
+ * between committed drops."
+ *
+ * THE VOLUME IS SUMMED, NOT COUNTED, and there is no counter column. The orders
+ * table already holds every fact the sum needs; a stored total is a second
+ * source of truth that goes wrong the first time an order is cancelled by hand,
+ * and it would go wrong silently, in the direction of nagging a client who has
+ * spent less than the number claims. One read on idx_orders_customer is cheaper
+ * than being wrong about that.
+ *
+ * A NULL product_count CONTRIBUTES NOTHING, which is the right direction to be
+ * wrong in. countOf() deliberately refuses to guess at "More than 10", so some
+ * genuine Tier 0 orders carry no count — those brands reach the threshold later
+ * than their real volume, or not at all. Under-prompting is a missed
+ * conversation; over-prompting is a sentence with a number in it the client
+ * knows is wrong.
+ *
+ * ONCE PER QUARTER IS ENFORCED BY THE WRITE, NOT BY THE READ. The UPDATE is a
+ * compare-and-set — it touches the row only if the last prompt is older than a
+ * quarter, and `changes` says whether we were the ones who claimed it. Two
+ * orders arriving in the same second therefore cannot both print the line, with
+ * no lock and no transaction. Same shape, and the same reason, as
+ * loseRaceIfOversold above: make the outcome a fact rather than a guess.
+ *
+ * THE SLOT IS CLAIMED BEFORE THE EMAIL IS SENT, deliberately. If the send then
+ * fails the brand does not see the prompt this quarter — which is what happened
+ * every quarter before this existed, so it costs nothing anyone had. Claiming
+ * afterwards would risk printing it twice, and "once per quarter maximum" is the
+ * constraint section 13 actually wrote down.
+ *
+ * A FAILURE HERE IS SILENT AND THE ORDER IS UNAFFECTED. This is a marketing
+ * line; nothing about it is worth risking a confirmation email over.
+ */
+async function claimUpgradePrompt(env, customerId) {
+  if (!env?.DB || !customerId) return null;
+  try {
+    // test-sample is excluded on purpose: it is one per business, charged
+    // upfront, and explicitly a trial rather than volume. It sends no count
+    // today, so this changes nothing today — it is here so that the day that
+    // form gains a quantity, a free trial does not start pushing brands over a
+    // threshold about what they have bought.
+    const row = await env.DB.prepare(
+      `SELECT COALESCE(SUM(product_count), 0) AS n
+         FROM orders
+        WHERE customer_id = ?1
+          AND tier = 'unattended'
+          AND service <> 'test-sample'
+          AND status <> 'cancelled'
+          AND created_at >= datetime('now', '-3 months')`
+    ).bind(customerId).first();
+
+    const products = Number(row?.n) || 0;
+    // The threshold lives in pricing.js with the arithmetic it belongs to, so
+    // this file never has a number in it that could disagree with the sentence.
+    if (!shouldPromptUpgrade(products)) return null;
+
+    const claimed = await env.DB.prepare(
+      `UPDATE customers
+          SET upgrade_prompt_at = datetime('now')
+        WHERE id = ?1
+          AND (upgrade_prompt_at IS NULL
+               OR upgrade_prompt_at < datetime('now', '-3 months'))`
+    ).bind(customerId).run();
+
+    return claimed?.meta?.changes ? products : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * A product count, or null.
  *
@@ -546,12 +638,21 @@ function detailRows(obj) {
   ).join('');
 }
 
-/** What went into order_events. Short, and true about what was actually reserved. */
-function eventNote({ tier, window, raced, uploads }) {
+/**
+ * What went into order_events. Short, and true about what was actually reserved.
+ *
+ * `upgrade` is the product count claimPromptUpgrade() decided to name, or null.
+ * It is recorded because customers.upgrade_prompt_at only remembers WHEN the
+ * quarter was claimed, never at what volume, and "why did this brand get the
+ * line at 12 when the next got it at 19" is the first question anyone asks of a
+ * prompt that fired. The event log is the only place that answer can live.
+ */
+function eventNote({ tier, window, raced, uploads, upgrade }) {
   const bits = [`Order submitted via website (${tier})`];
   if (window) bits.push(`window ${window.start}→${window.end}`);
   else if (tier === 'attended') bits.push(raced ? 'window lost to a concurrent booking' : 'no window reserved');
   if (uploads) bits.push(`${uploads} file${uploads === 1 ? '' : 's'} uploaded`);
+  if (upgrade) bits.push(`upgrade prompt shown (${upgrade} products this quarter)`);
   return bits.join(' · ');
 }
 
@@ -561,7 +662,7 @@ function eventNote({ tier, window, raced, uploads }) {
  */
 function notifyEmail(ref, service, top, details, gate = {}) {
   const rows = detailRows({ ...top, ...details });
-  const { tier, products, window, raced, asked, uploads } = gate;
+  const { tier, products, window, raced, asked, uploads, upgrade } = gate;
 
   const banner = raced
     ? `<p style="margin:0 0 16px;padding:12px;background:#844B00;color:#fff;font-size:14px">
@@ -578,6 +679,24 @@ function notifyEmail(ref, service, top, details, gate = {}) {
       ? `<p style="margin:0 0 16px;color:#844B00">Attended order with <strong>no reserved window</strong>.</p>`
       : `<p style="margin:0 0 16px;color:#666">Standard queue — no window, by design.</p>`;
 
+  // SECTION 13 · the upgrade path, from the studio's side. Deliberately its own
+  // line rather than a fact buried in `meta`: a brand that has put 12+ products
+  // through the queue in a quarter is the exact brand section 13 built Tier 0 to
+  // catch — "catching brands before they grow" — and that is a conversation, not
+  // a statistic. It is also the only notice that the client's once-a-quarter
+  // slot has now been spent, so a second nudge this quarter has to be a human one.
+  //
+  // NOT styled as an alert. The raced banner above is an emergency and looks like
+  // one; this is an opportunity, and dressing it the same way would train the eye
+  // to skip both.
+  const upgradeNote = upgrade
+    ? `<p style="margin:0 0 16px;padding:10px 12px;background:#f4f4f8;color:#333;font-size:14px">
+         <strong>Upgrade prompt sent.</strong> ${esc(upgrade)} individual products in the last
+         rolling quarter, so the confirmation names what a Full Drop covers. Their once-a-quarter
+         slot is now spent — anything further this quarter is a conversation, not an automation.
+       </p>`
+    : '';
+
   const meta = [
     tier ? `tier <strong>${esc(tier)}</strong>` : null,
     products ? `${esc(products)} products` : null,
@@ -590,6 +709,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     <p style="margin:0 0 4px">Reference <strong>${esc(ref)}</strong></p>
     ${meta ? `<p style="margin:0 0 12px;color:#666;font-size:13px">${meta}</p>` : ''}
     ${reserved}
+    ${upgradeNote}
     <table style="border-collapse:collapse;font-size:14px">${rows}</table>
   </div>`;
 }
@@ -609,8 +729,14 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  * unattended order can never reach the date branch at all, because Tier 0 has a
  * queue span, not a date: "NO named delivery date — show 'typically 2-4 working
  * days,' never a date."
+ *
+ * `upgrade` is section 13's upgrade prompt — one already-composed sentence, or
+ * null. This function does not decide whether to send it, what it says, or which
+ * language it is in; upgradePrompt() in pricing.js owns all three, and
+ * claimUpgradePrompt() owns whether the quarter was free. All that happens here
+ * is placement, which is the one thing the copy cannot carry itself.
  */
-function customerEmail(lang, ref, service, name, { tier = 'unattended', window = null } = {}) {
+function customerEmail(lang, ref, service, name, { tier = 'unattended', window = null, upgrade = null } = {}) {
   const nl = lang === 'nl';
   const hi = name ? `Hi ${esc(name)},` : 'Hi,';
   const attended = tier === 'attended';
@@ -632,20 +758,42 @@ function customerEmail(lang, ref, service, name, { tier = 'unattended', window =
       ? `${turnaround('attended', 'nl')}. We komen bij je terug met de exacte data — zolang die niet bevestigd zijn, noemen we er geen.`
       : `${turnaround('attended', 'en')}. We'll come back with the exact dates — until they're confirmed, we won't name one.`;
   } else {
-    timing = nl
-      ? 'Standaard wachtrij, geen vaste leverdatum. Meestal 2–4 werkdagen.'
-      : 'Standard queue, no fixed delivery date. Typically 2–4 working days.';
+    // THIS WAS TWO STRING LITERALS, and the docstring above already claimed it
+    // was not. They happened to match TIERS.unattended byte-for-byte — verified
+    // before the swap, in both languages — so this changes nothing a client
+    // reads. It changes who owns the sentence. Every other timing branch in this
+    // file already goes through pricing.js; this one being copy meant the tier's
+    // only sanctioned timing language existed in two places, and the second one
+    // was inside an email, which is precisely the surface the docstring above
+    // names as "the one surface nobody greps".
+    timing = `${tierRow('unattended', 'queue', lang)}. ${turnaround('unattended', lang)}.`;
   }
 
   const care = nl
     ? `Een mens controleert elke visual voordat hij bij je komt. ${aftercare(tier, 'nl')}.`
     : `A person checks every visual before it reaches you. ${aftercare(tier, 'en')}.`;
 
+  // SECTION 13 · "Factual, no pressure, once per quarter maximum." The styling
+  // IS the "no pressure" half, and it is the half a copy review cannot enforce:
+  // the same true sentence set at body weight directly under the confirmation
+  // reads as an upsell, and the client is right to read it that way. Below a rule,
+  // smaller and muted, it reads as what it is — a note that the cheaper door
+  // exists, placed where someone looking for it will find it and someone who only
+  // wanted their order confirmed will not trip over it.
+  //
+  // AFTER `care`, not before. The last thing a confirmation should say is that a
+  // person checks the work; a price comparison must not be allowed to take that
+  // position.
+  const upgradeNote = upgrade
+    ? `<p style="margin:16px 0 0;padding-top:14px;border-top:1px solid #e6e6ee;color:#555;font-size:13px">${esc(upgrade)}</p>`
+    : '';
+
   return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
     <p>${hi}</p>
     <p>${received}</p>
     <p>${timing}</p>
     <p>${care}</p>
+    ${upgradeNote}
     <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL · hello@visuails.com</p>
   </div>`;
 }

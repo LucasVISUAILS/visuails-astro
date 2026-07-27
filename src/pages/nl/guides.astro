@@ -57,7 +57,7 @@ const guides = [
 
 <style>
   .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
-  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); background: var(--surface); transition: border-color .25s var(--ease), transform .25s var(--ease), background .25s var(--ease); }
+  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); background: var(--surface); transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .guide-card:hover { border-color: var(--accent-line); transform: translateY(-3px); background: var(--surface-2); }
   .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); margin-bottom: 1rem; }
   .guide-title { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.12; color: var(--ink); letter-spacing: -0.02em; }

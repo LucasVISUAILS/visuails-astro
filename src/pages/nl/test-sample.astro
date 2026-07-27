@@ -128,7 +128,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
           <input type="hidden" name="redirect" value="/nl/thank-you" />
           <input type="hidden" name="lang" value="nl" />
           <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
-          <div class="progress" aria-hidden="true"><i data-wizard-progress style="width:50%"></i></div>
+          <div class="progress" aria-hidden="true"><i data-wizard-progress style="transform:scaleX(.5)"></i></div>
 
           <!-- STEP 1 -->
           <div data-wizard-step="1">
@@ -266,7 +266,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   .narrow { max-width: 820px; }
   .hidden-step { display: none; }
   .choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; }
-  .choice { position: relative; overflow: hidden; cursor: pointer; border: 1px solid var(--line-strong); transition: transform 0.24s var(--ease), border-color 0.24s var(--ease); background: var(--surface); display: block; }
+  .choice { position: relative; overflow: hidden; cursor: pointer; border: 1px solid var(--line-strong); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); background: var(--surface); display: block; }
   .choice:hover { transform: translateY(-2px); border-color: var(--accent-line); }
   .choice input { position: absolute; opacity: 0; pointer-events: none; }
   .choice .choice-media { aspect-ratio: 1; }
@@ -280,7 +280,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   /* .dropzone / :hover are global; the icon inside it is only on this page. */
   .dropzone svg { width: 30px; height: 30px; margin: 0 auto 0.6rem; color: var(--accent-bright); }
   .progress { height: 3px; background: var(--surface-2); overflow: hidden; margin-bottom: 1.6rem; }
-  .progress > i { display: block; height: 100%; background: var(--accent); transition: width 0.5s var(--ease); }
+  .progress > i { display: block; height: 100%; width: 100%; transform-origin: left; background: var(--accent); transition: transform var(--dur-1) var(--ease); }
   .chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .chip { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.4rem 0.9rem; border: 1px solid var(--line); font-size: 0.8rem; color: var(--ink-2); }
   .chip .dot { width: 5px; height: 5px; background: var(--accent); }

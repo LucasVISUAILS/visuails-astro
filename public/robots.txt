@@ -1,8 +1,22 @@
 User-agent: *
 Allow: /
 
-# Post-conversion / utility pages — no SEO value, keep them out of the index.
+# Post-conversion pages — no SEO value, keep them out of the index.
 Disallow: /thank-you
-Disallow: /order-status
+
+# NOT LISTED, DELIBERATELY:
+#
+# /order-status was here until section 10 retired it. It is now a 301 to /o
+# (public/_redirects). A Disallow on a redirect SOURCE strands it: the crawler
+# is forbidden to fetch the URL, so it never sees the 301 and never learns the
+# page moved, which is the one thing a 301 exists to tell it.
+#
+# /o is not listed either, and that is the same mistake in reverse. The portal
+# protects itself at the response — src/lib/portal.js sends
+# `x-robots-tag: noindex, nofollow` on every route under /o, plus a robots meta
+# tag in the body. A Disallow would forbid the fetch that carries that header,
+# so a portal URL leaked into a link somewhere could still be indexed as a
+# bare URL. Letting the crawler in to be told "no" is stronger than keeping it
+# out and hoping.
 
 Sitemap: https://visuails.com/sitemap.xml

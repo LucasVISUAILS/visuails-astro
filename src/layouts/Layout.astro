@@ -137,12 +137,61 @@ const orgJsonLd = {
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImageAbs} />
   <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+  <!-- The reveal gate.
+
+       203 elements across this site ship `class="reveal pending"` from the
+       server, and global.css only hides them when <html> carries `js`. This
+       is the script that puts it there, and the only reason it is inline and
+       in <head> is timing: it has to run before first paint or the page
+       flashes its content and then hides it.
+
+       There used to be a <noscript> override undoing the hiding instead. That
+       covered JS being switched off. It did nothing about the likelier
+       failure — JS on, bundle never arrives — where <noscript> is inert and
+       the visitor gets a fully styled page with no content in it. Hence the
+       last two lines: interactions.js sets __vRevealLive when its reveal net
+       is bound, and if that has not happened shortly after load, the gate
+       comes off and the page is simply visible with no animation. A reveal
+       that fails should degrade to "no animation", never to "no page".
+
+       astro:after-swap is not optional. Astro's ClientRouter removes every
+       attribute from <html> on a soft navigation and copies the incoming
+       document's attributes over — class included — so without that line the
+       reveals would work on the first page and silently stop on every page
+       after it. -->
+  <script is:inline>
+    (function () {
+      if (window.__vRevealGate) return;
+      window.__vRevealGate = 1;
+      var root = document.documentElement;
+      var abandoned = false;
+      // Someone who asked for reduced motion should never see the hidden
+      // state at all — not even for the moment between this script and the
+      // module that uncovers it. Read per call, not cached: the setting can
+      // change mid-session and this runs again on every soft navigation.
+      function motionOK() {
+        return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      }
+      function on() { if (!abandoned && motionOK()) root.classList.add('js'); }
+      function check() {
+        if (abandoned || window.__vRevealLive) return;
+        abandoned = true;
+        root.classList.remove('js');
+      }
+      on();
+      document.addEventListener('astro:after-swap', on);
+      window.addEventListener('load', function () { setTimeout(check, 600); });
+      setTimeout(check, 5000);
+    })();
+  </script>
   <noscript>
     <style>
-      /* Without JS the IntersectionObserver never runs, so force every
-         reveal/split element to its visible state — crawlers and JS-off
-         users see full content, not blank sections. */
-      .reveal.pending, .split-word, .rm-inner { opacity: 1 !important; transform: none !important; }
+      /* The reveals no longer need a line here — with no JS there is no `js`
+         class, so global.css never hides them in the first place. What is
+         left is the compare slider, whose idle demo is a pure CSS animation
+         and so runs happily without the drag handling that gives it a point.
+         Pinned at the halfway mark instead: a control that cannot be moved
+         should not spend all day advertising that it moves. */
       .cmp .cmp-after { animation: none !important; clip-path: inset(0 0 0 50%) !important; }
     </style>
   </noscript>
@@ -463,7 +512,7 @@ const orgJsonLd = {
 </html>
 
 <style>
-  .site-header { position: sticky; top: 0; z-index: var(--z-sticky); transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .site-header { position: sticky; top: 0; z-index: var(--z-sticky); transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
   /* The scrolled bar was a translucent dark pane with backdrop-filter: blur(10).
      Both are gone. The blur re-rendered its backdrop every frame while the page
      moved under it — the single most expensive thing in the sticky header — and
@@ -493,12 +542,12 @@ const orgJsonLd = {
   @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; filter: none; } }
   @media print { .brand-word, .brand-mark { fill: #000; filter: none; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
-  .nav-links > li > a, .nav-trigger { display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .8rem; font-size: .92rem; font-weight: 500; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color .22s var(--ease); font-family: var(--font-body); }
+  .nav-links > li > a, .nav-trigger { display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .8rem; font-size: .92rem; font-weight: 500; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); font-family: var(--font-body); }
   .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
   .nav-links > li > a[aria-current="page"] { color: var(--ink); }
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
   .has-menu { position: relative; }
-  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .26s var(--ease), transform .26s var(--ease), visibility .26s; box-shadow: 6px 6px 0 0 oklch(0.16 0.006 265 / 0.16); }
+  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 265 / 0.16); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   .nav-menu a { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
@@ -512,12 +561,12 @@ const orgJsonLd = {
   /* Language switcher (EN · NL · DE). Desktop version lives in .nav-actions;
      a second copy sits inside the mobile drawer (.mobile-lang). */
   .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; }
-  .lang-switch .ls { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; transition: color .18s var(--ease), background .18s var(--ease); }
+  .lang-switch .ls { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .lang-switch .ls:hover { color: var(--ink); }
   .lang-switch .ls.on { color: var(--ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
   .mobile-lang { align-self: center; margin-top: .5rem; }
 
-  .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform .4s var(--ease); overflow-y: auto; }
+  .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform var(--dur-3) var(--ease); overflow-y: auto; }
   .mobile-nav.open { transform: translateX(0); }
   /* Height only. The monogram is 639x655, not square, and the old <img> was
      forced to 30x30 — a 2.4% horizontal squash nobody would name but the eye
@@ -545,7 +594,7 @@ const orgJsonLd = {
   .footer-col a:hover { color: var(--ink); }
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
 
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--ink-900); border: 1px solid var(--line-strong); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 265 / 0.22); max-width: calc(100vw - 24px); transition: transform .4s var(--ease), opacity .4s var(--ease); pointer-events: none; }
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--ink-900); border: 1px solid var(--line-strong); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 265 / 0.22); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
   .convbar .cb-logo { height: 22px; flex: 0 0 auto; }
   .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
@@ -558,21 +607,29 @@ const orgJsonLd = {
      expands on pointer devices and stays available to screen readers on
      touch, where only the mark shows. */
   .wa-launcher { position: fixed; left: 20px; bottom: 20px; z-index: var(--z-bar);
-    display: inline-flex; align-items: center; gap: 0;
-    min-width: 48px; min-height: 48px; padding: 0 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; padding: 0;
     background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
     font-size: .88rem; font-weight: 600; line-height: 1; white-space: nowrap;
-    transition: border-color .2s var(--ease), background .2s var(--ease); }
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .wa-launcher:hover { border-color: var(--ink-3); background: var(--surface-2); }
   .wa-launcher-i { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; }
-  .wa-launcher-label { max-width: 0; overflow: hidden; opacity: 0;
-    transition: max-width .32s var(--ease), opacity .24s var(--ease), margin-left .32s var(--ease); }
+  /* Clipped, not squeezed. The old rule transitioned max-width and margin-left,
+     which is layout animation — banned outright by DESIGN.md — and it moved the
+     mark out from under the pointer as the label arrived. The label is now a
+     pill abutting the square's right edge, wiped open from the left. It stays in
+     the accessibility tree on touch, where it is the control's only name. */
+  .wa-launcher-label { position: absolute; left: calc(100% - 1px); top: -1px; bottom: -1px;
+    display: flex; align-items: center; padding: 0 14px;
+    background: var(--surface); border: 1px solid var(--line-strong); border-left: 0;
+    clip-path: inset(0 100% 0 0); opacity: 0;
+    transition: clip-path var(--dur-2) var(--ease), opacity var(--dur-1) var(--ease); }
   @media (hover: hover) and (pointer: fine) {
     .wa-launcher:hover .wa-launcher-label,
-    .wa-launcher:focus-visible .wa-launcher-label { max-width: 14ch; opacity: 1; margin-left: .55rem; }
+    .wa-launcher:focus-visible .wa-launcher-label { clip-path: inset(0 0 0 0); opacity: 1; }
   }
   @media (prefers-reduced-motion: reduce) {
     .wa-launcher-label { transition: none; }
   }
-  @media (max-width: 600px) { .wa-launcher { left: 12px; bottom: 12px; padding: 0; justify-content: center; } }
+  @media (max-width: 600px) { .wa-launcher { left: 12px; bottom: 12px; } }
 </style>

@@ -20,6 +20,31 @@ gsap.registerPlugin(ScrollTrigger);
 // every trigger for that is a scroll-jank source of its own.
 ScrollTrigger.config({ ignoreMobileResize: true });
 
+// ── the ease vocabulary ─────────────────────────────────────────────────────
+// Three curves, and they are the SAME three curves the stylesheet declares —
+// GSAP's powerN.out is the polynomial the corresponding cubic-bezier
+// approximates, so these are not "close enough", they are the pair:
+//
+//   EASE.quart  power3.out  ==  --ease-out-quart  cubic-bezier(0.25, 1, 0.50, 1)
+//   EASE.quint  power4.out  ==  --ease-out-quint  cubic-bezier(0.22, 1, 0.36, 1)
+//   EASE.expo   expo.out    ==  --ease-out-expo   cubic-bezier(0.16, 1, 0.30, 1)
+//
+// (GSAP numbers its power eases from quad: power1 quad, power2 cubic,
+// power3 quart, power4 quint. The off-by-one is the reason this comment
+// exists — power4.out is quint, not quart, and reading it as quart is how the
+// two layers drift apart.)
+//
+// Everything that arrives uses one of these. Nothing overshoots: there is no
+// back/elastic/bounce entry here on purpose, so reaching for one means
+// writing the string by hand and answering for it. `'none'` is the fourth
+// legal value and means something different — constant velocity, for
+// mechanical motion that is scrubbed or looping rather than arriving.
+const EASE = {
+  quart: 'power3.out',
+  quint: 'power4.out',
+  expo: 'expo.out',
+};
+
 let ctx = null;
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -47,11 +72,11 @@ function heroCover() {
   const hero = document.querySelector('.hero-cover');
   if (!hero) return;
   const bg = hero.querySelector('.hc2-bg img');
-  if (bg) gsap.fromTo(bg, { scale: 1.12 }, { scale: 1, duration: 2.4, ease: 'power2.out' });
+  if (bg) gsap.fromTo(bg, { scale: 1.12 }, { scale: 1, duration: 2.4, ease: EASE.quart });
   const lines = hero.querySelectorAll('.cover-title .ch-l');
-  if (lines.length) gsap.from(lines, { y: 56, opacity: 0, duration: 1.2, ease: 'power4.out', stagger: 0.13, delay: 0.18, clearProps: 'all' });
+  if (lines.length) gsap.from(lines, { y: 56, opacity: 0, duration: 1.2, ease: EASE.quint, stagger: 0.13, delay: 0.18, clearProps: 'all' });
   gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta'), {
-    y: 22, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.6, clearProps: 'all',
+    y: 22, opacity: 0, duration: 0.9, ease: EASE.quart, stagger: 0.1, delay: 0.6, clearProps: 'all',
   });
 }
 
@@ -69,22 +94,34 @@ function zoomMedia() {
   });
 }
 
-// Chapter heads: bloom swells while the bold lines rise — bright line first,
-// dimmed line trailing. No filter tweens: blurring display type mid-scroll
-// causes exactly the stutter this page was suffering from.
+// Chapter heads: the bold lines rise, then everything hanging off them.
+// No filter tweens: blurring display type mid-scroll causes exactly the
+// stutter this page was suffering from.
+//
+// The bloom is gone. It used to swell behind each head from a .ch-orb, and
+// global.css:875 records why it was cut — but the tween outlived the markup
+// and the stylesheet, guarded by `if (orb)` against an element no page has
+// produced since. That is the same dead-guard this file's header says was
+// swept out with the drop rewrite; it was missed. Removed rather than
+// re-pointed: a guard that can never be true reads as a feature under a
+// condition, and there is no condition.
 function chapterHeads() {
   gsap.utils.toArray('.ch-head').forEach((head) => {
     const tl = gsap.timeline({ scrollTrigger: { trigger: head, start: 'top 80%', once: true } });
-    const orb = head.querySelector('.ch-orb');
-    if (orb) tl.from(orb, { scale: 0.55, opacity: 0, duration: 1.4, ease: 'power2.out' }, 0);
     const lines = head.querySelectorAll('.ch-l');
-    if (lines.length) tl.from(lines, { y: 44, opacity: 0, duration: 1.05, ease: 'power4.out', stagger: 0.13, clearProps: 'all' }, 0.05);
+    if (lines.length) tl.from(lines, { y: 44, opacity: 0, duration: 1.05, ease: EASE.quint, stagger: 0.13, clearProps: 'all' }, 0.05);
     const rest = head.querySelectorAll('.ch-sub, .ch-cta, .ch-kicker, .comet');
-    if (rest.length) tl.from(rest, { y: 18, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.08, clearProps: 'all' }, 0.4);
+    if (rest.length) tl.from(rest, { y: 18, opacity: 0, duration: 0.8, ease: EASE.quart, stagger: 0.08, clearProps: 'all' }, 0.4);
   });
 }
 
 // Contact-sheet spread: frames open from a crop, captions rule in after.
+//
+// The crop is square. It used to carry `round 14px`, which put a 14px radius
+// on every frame for the 1.1s it took to open — a rounded corner is not less
+// of a rounded corner for being temporary, and radius 0 is section 1 of the
+// system, not a styling preference. The static state was already correct; the
+// animation was the only place in the build where the radius came back.
 function spread() {
   const grid = document.querySelector('[data-spread]');
   if (!grid) return;
@@ -92,17 +129,17 @@ function spread() {
   const caps = gsap.utils.toArray(grid.querySelectorAll('.sp-cap'));
   const tl = gsap.timeline({ scrollTrigger: { trigger: grid, start: 'top 80%', once: true } });
   tl.from(items, {
-    clipPath: 'inset(52% 6% 6% 6% round 14px)', scale: 1.04, opacity: 0,
-    duration: 1.1, ease: 'power4.out', stagger: 0.1, clearProps: 'clipPath,scale,opacity',
+    clipPath: 'inset(52% 6% 6% 6%)', scale: 1.04, opacity: 0,
+    duration: 1.1, ease: EASE.quint, stagger: 0.1, clearProps: 'clipPath,scale,opacity',
   }, 0)
-    .from(caps, { y: 14, opacity: 0, duration: 0.6, ease: 'power3.out', stagger: 0.08, clearProps: 'all' }, 0.45);
+    .from(caps, { y: 14, opacity: 0, duration: 0.6, ease: EASE.quart, stagger: 0.08, clearProps: 'all' }, 0.45);
 }
 
 // Generic ruled-group arrivals (the set, the process, plan columns).
 function staggerGroups() {
   gsap.utils.toArray('[data-stagger]').forEach((group) => {
     gsap.from(group.children, {
-      y: 30, opacity: 0, duration: 0.85, ease: 'power3.out', stagger: 0.09, clearProps: 'all',
+      y: 30, opacity: 0, duration: 0.85, ease: EASE.quart, stagger: 0.09, clearProps: 'all',
       scrollTrigger: { trigger: group, start: 'top 84%', once: true },
     });
   });
@@ -150,7 +187,7 @@ function marquee() {
       if (Math.abs(skew) > Math.abs(proxy.skew)) {
         proxy.skew = skew;
         gsap.to(proxy, {
-          skew: 0, duration: 0.9, ease: 'power3.out', overwrite: true,
+          skew: 0, duration: 0.9, ease: EASE.quart, overwrite: true,
           onUpdate: () => rows.forEach((r) => gsap.set(r, { skewX: proxy.skew })),
         });
       }
@@ -159,6 +196,21 @@ function marquee() {
 }
 
 // The comet above the test-sample chapter draws itself in.
+//
+// Two eases replaced here, and they were the file's only two rule breaks.
+//
+// The stroke ran on power2.inOut — an ease-in-out on an entrance, which the
+// system bans outright: easing IN means the line starts by accelerating away
+// from nothing, and the eye reads that as a thing sliding on from off-stage.
+// It is `'none'` now rather than an ease-out, because a line drawing itself
+// is a mechanism and not an arrival — the same reason the marquee drift and
+// the develop scrub are linear. A pen moves at the speed it moves; a tip
+// that decelerates over the last third reads as the stroke running out.
+//
+// The head ran on back.out(2), which overshoots to roughly 1.3× and settles
+// back. Overshoot is the single thing the motion section names twice, and it
+// is a dot the size of a full stop — the bounce was the only part of it
+// anyone would ever have noticed.
 function comet() {
   const path = document.querySelector('.comet path');
   if (!path || typeof path.getTotalLength !== 'function') return;
@@ -166,8 +218,8 @@ function comet() {
   const head = document.querySelector('.comet circle');
   gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
   const tl = gsap.timeline({ scrollTrigger: { trigger: '.comet', start: 'top 85%', once: true } });
-  tl.to(path, { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, 0.1);
-  if (head) tl.from(head, { scale: 0, opacity: 0, transformOrigin: 'center', duration: 0.5, ease: 'back.out(2)' }, 1.45);
+  tl.to(path, { strokeDashoffset: 0, duration: 1.6, ease: 'none' }, 0.1);
+  if (head) tl.from(head, { scale: 0, opacity: 0, transformOrigin: 'center', duration: 0.5, ease: EASE.quart }, 1.45);
 }
 
 function init() {

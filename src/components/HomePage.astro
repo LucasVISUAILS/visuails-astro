@@ -561,7 +561,20 @@ const dropImgs = [
 {/* ── THE SPREAD ────────────────────────────────────────────────────────────
     Proof at scale. The captions used to carry the per-product price list;
     they now say where each visual lives, which is the more useful half of
-    what they were doing anyway. */}
+    what they were doing anyway.
+
+    The slot class below is written out in full rather than assembled as
+    `sp-${...}`: .sp-a–.sp-d are grid-placement rules in global.css, and a
+    class glued together from fragments is not greppable — a deleted rule
+    would go unnoticed by both a reader and the dead-CSS check. Four whole
+    strings cost nothing and stay findable.
+
+    That note lived inside the .map() body until the first compile, which it
+    killed. A brace-wrapped block comment is a comment only as a CHILD OF
+    MARKUP; in the parenthesised body of an arrow function the context is
+    already JavaScript, so Astro emitted the braces verbatim and esbuild read
+    an empty object literal followed by a tagged template — "Expected ) but
+    found $render". It is up here because up here is markup. */}
 <section class="ch">
   <div class="container">
     <div class="ch-head">
@@ -569,11 +582,6 @@ const dropImgs = [
     </div>
     <div class="spread" data-spread>
       {spreadImgs.map(([img, href], i) => (
-        {/* The slot class is written out in full rather than assembled as
-            `sp-${...}`: .sp-a–.sp-d are grid-placement rules in global.css,
-            and a class glued together from fragments is not greppable — a
-            deleted rule would go unnoticed by both a reader and the dead-CSS
-            check. Four whole strings cost nothing and stay findable. */}
         <a class={['sp-item sp-a', 'sp-item sp-b', 'sp-item sp-c', 'sp-item sp-d'][i]} href={lp(href)}>
           <div class="sp-media" data-zoom>
             <img src={img} alt={`${c.spreadCaps[i][0]} — ${c.spreadCaps[i][1]}`} loading="lazy" />
