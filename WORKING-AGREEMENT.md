@@ -259,11 +259,14 @@ wins and the reversal gets recorded rather than silently applied.
 `FLAGS.md` carries the full register. Four things there need you rather than me:
 
 **The upgrade-prompt trigger number.** `UPGRADE_TRIGGER_PRODUCTS = 12`, from your
-section 13 text. The actual break-even against a Drop Pilot is now **23** products
-(flag lxxxv) — the docstring in `pricing.js` still says 19 and is wrong. Prompting
-at 12 is honest but early; prompting at 23 is arithmetic. I have not chosen, and
-the section 13 rule — *"Factual, no pressure, once per quarter maximum"* — reads
-like it wants the arithmetic. Your call.
+section 13 text. After the 2026-07-27 catalog/lifestyle increase the break-even
+against a Full Drop is **9** nominally, **11** like-for-like ex-VAT (flag lxxxv,
+recomputed — it used to be 19/23, before that increase). The docstring in
+`pricing.js` is current as of this edit. Prompting at 12 is now arithmetic on
+both readings, where it used to be early on both. I have not chosen whether it
+should move, and the section 13 rule — *"Factual, no pressure, once per quarter
+maximum"* — read like it wanted the arithmetic even before the numbers crossed;
+now they have crossed on their own, without anyone deciding it. Your call.
 
 **Whether the motion retimings survive review** (flags cxi, cxviii, cxxii).
 Aesthetic, visible, and already built. `REPORT-SECTION-11.md` §8.

@@ -22,14 +22,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const AMOUNT = {
-  // Tier 0 · unattended, per product. Section 13 fixes these at their current
-  // values and gives the reason in its first line: "Small brands are NOT being
-  // priced out." An earlier decision in this project raised them to €89/€129;
-  // section 13 reverses that. Do not re-raise them without re-reading it.
+  // Tier 0 · unattended, per product.
+  //
+  // RAISED BACK, DELIBERATELY, AND THIS TIME THE REASON IS ON RECORD. Section
+  // 13 fixed these low — €39.99 / €59.99 — specifically so Tier 0 stayed an
+  // accessible entry point for small brands ("Small brands are NOT being
+  // priced out"), and the comment that used to sit here told a future editor
+  // not to re-raise them without re-reading that reasoning. This IS that
+  // re-read: Lucas asked explicitly (2026-07-27) to raise the à la carte
+  // prices so the drop packages read as the obviously better deal, accepting
+  // that this trades away some of Tier 0's small-brand accessibility in
+  // exchange for a clearer nudge toward Tier 1. Catalog and lifestyle are the
+  // two DROP_INCLUDES prices — the ones that compound into TIER0_PRODUCT below
+  // and therefore into every "is the drop cheaper yet" comparison — so those
+  // are the two that moved. Video did not: it is priced identically inside or
+  // outside a drop by design (see its own comment), so raising it would not
+  // make the drop look any more attractive relative to buying à la carte, it
+  // would just cost every client more everywhere. If that should change too,
+  // it is a separate decision — say so and it moves on its own line.
   testSample: 0.99,
-  catalog: 39.99,   // 4-photo set, one product
-  lifestyle: 59.99, // 3-photo carousel, one product
-  video: 49,        // one clip — same rate standalone or added to a drop
+  catalog: 89.99,   // 4-photo set, one product — was €39.99 under section 13
+  lifestyle: 129.99, // 3-photo carousel, one product — was €59.99 under section 13
+  video: 49,        // one clip — same rate standalone or added to a drop, left alone
 
   // Tier 1 · attended packages.
   dropPilot: 650,   // exactly 8 products, once per brand
@@ -370,36 +384,54 @@ export const FULL_DROP_PER_PRODUCT_MIN = AMOUNT.fullDrop / FULL_DROP_MAX; // che
  * How many Tier 0 products a brand must order in a quarter before a Full Drop
  * is cheaper than what they are already spending.
  *
- * FLAGGED (1) — section 13's example upgrade prompt reads "You've ordered 14
- * products this quarter. A Full Drop covers 25 for less." That sentence is not
- * true at the trigger it is attached to. 14 products at drop scope is
- * 14 × €99.98 = €1,399.72, which is LESS than €1,850, not more — and if the
- * brand ordered catalog sets only it is €559.86. The prompt is therefore
- * written as a comparison rather than a saving, which is what section 13's own
- * "Factual, no pressure" asks for.
+ * RECOMPUTED when catalog/lifestyle were raised (2026-07-27). TIER0_PRODUCT
+ * went from €99.98 to €219.98, which moves both numbers below — worth reading
+ * again rather than trusting the old ones, because FLAG (1)'s conclusion does
+ * not just shift, it flips.
  *
- * FLAGGED (2) — THIS NUMBER IS 19 AND THE LIKE-FOR-LIKE ANSWER IS 23. Both are
+ * FLAGGED (1) — section 13's example upgrade prompt reads "You've ordered 14
+ * products this quarter. A Full Drop covers 25 for less." At the OLD prices
+ * that sentence was false at the trigger: 14 products at drop scope was
+ * 14 × €99.98 = €1,399.72, less than €1,850. At the new prices it is now TRUE
+ * at 14 — 14 × €219.98 = €3,079.72, well past the Full Drop's €1,850 — so the
+ * brief's own example stopped being wrong by accident of a price change, not
+ * by design. That is not license to make it a saving claim, because it is
+ * still false for the narrower case section 13's sentence does not
+ * distinguish: a brand ordering CATALOG SETS ONLY, no lifestyle, at 14
+ * products pays 14 × €89.99 = €1,259.86 — still under €1,850. The prompt
+ * stays written as a comparison rather than a saving for exactly that reason:
+ * "drop scope" and "catalog only" disagree about whether 14 is past the line,
+ * and the code cannot know which one a given brand has been buying without
+ * asserting something that is true for one mix and false for the other.
+ *
+ * FLAGGED (2) — THIS NUMBER IS 9 AND THE LIKE-FOR-LIKE ANSWER IS 11. Both are
  * correct; they answer different questions, and the difference is VAT.
  *
- *   19  €1,850 ÷ €99.98. The two figures as the site prints them today.
- *   23  €1,850 ÷ (€99.98 ÷ 1.21) = €1,850 ÷ €82.63 = 22.39 → 23. The same sum
- *       with both sides ex-VAT.
+ *    9  €1,850 ÷ €219.98 = 8.41 → 9. The two figures as the site prints them
+ *       today.
+ *   11  €1,850 ÷ (€219.98 ÷ 1.21) = €1,850 ÷ €181.80 = 10.18 → 11. The same
+ *       sum with both sides ex-VAT.
  *
  * Section 14 sets the rule that produces the gap: Tier 1 prices are quoted
- * EXCLUSIVE of VAT and Tier 0 prices INCLUSIVE. So 19 divides a VAT-inclusive
+ * EXCLUSIVE of VAT and Tier 0 prices INCLUSIVE. So 9 divides a VAT-inclusive
  * price into a VAT-exclusive one, and a business customer reclaiming VAT does
- * not reach the crossover until 23.
+ * not reach the crossover until 11.
  *
- * The constant stays at the nominal 19 deliberately: it is the number a reader
- * gets by dividing the two prices printed on /pricing, and a page that showed
- * 23 next to those two prices would look like it could not do arithmetic. No
- * VAT divisor is introduced here — section 14 owns the VAT module and has not
- * been built, and pre-empting it with a rate constant in this file is how two
- * sources of truth start. Revisit when 14 lands.
+ * The constant stays at the nominal figure deliberately: it is the number a
+ * reader gets by dividing the two prices printed on /pricing, and a page that
+ * showed the ex-VAT figure next to those two prices would look like it could
+ * not do arithmetic. No VAT divisor is introduced here — section 14 is
+ * explicitly out of scope for now (Lucas: no KOR, files a normal return), and
+ * pre-empting it with a rate constant in this file is how two sources of
+ * truth start. Revisit if and when VAT handling is built.
  *
  * Neither number decides where the prompt FIRES; that is
  * UPGRADE_TRIGGER_PRODUCTS, and it comes from section 13 rather than from this
- * sum. See FLAGS.md · lxxxv.
+ * sum. See FLAGS.md · lxxxv. It is worth noting the trigger (12) now fires
+ * AFTER the nominal break-even (9) rather than before it — a brand that gets
+ * the prompt has already been past the "a drop would be cheaper" line for a
+ * few products, which the prompt's own wording ("costs less from N products
+ * on") still states honestly since N is named, not implied.
  */
 export const UPGRADE_BREAK_EVEN = Math.ceil(AMOUNT.fullDrop / TIER0_PRODUCT);
 
@@ -424,12 +456,15 @@ export function shouldPromptUpgrade(products) {
  * The upgrade prompt itself. One line, in the client's language, or null.
  *
  * IT IS A COMPARISON, NOT A SAVING CLAIM. Section 13's example reads "You've
- * ordered 14 products this quarter. A Full Drop covers 25 for less." At the
- * trigger that sentence is false: fourteen products at drop scope is
- * 14 × €99.98 = €1,399.72, which is LESS than €1,850, not more. Section 13 also
- * asks for "factual, no pressure", and its own example does not meet its own
- * standard — this follows the standard, because a prompt a client can disprove
- * with a calculator costs more than it earns.
+ * ordered 14 products this quarter. A Full Drop covers 25 for less." At
+ * today's prices that sentence happens to be true at drop scope — fourteen
+ * products is 14 × €219.98 = €3,079.72, more than €1,850 — but it is still
+ * false for a brand that has only been ordering catalog sets: 14 × €89.99 =
+ * €1,259.86, under €1,850. Section 13 asks for "factual, no pressure," and a
+ * claim that is true for one buying pattern and false for another is not
+ * factual for the general case — this follows the standard, because a prompt
+ * a client can disprove with a calculator costs more than it earns. See the
+ * FLAGGED comment on UPGRADE_BREAK_EVEN above for the full arithmetic.
  *
  * IT MAKES NO CLAIM ABOUT WHAT THEY SPENT, AT ANY COUNT. Saying "less than you
  * spent" would be safe above UPGRADE_BREAK_EVEN — assertLadder() keeps that
@@ -507,7 +542,7 @@ function assertLadder() {
   // Drop "costs less". That has to be true AT that count and not merely after
   // it: Math.ceil returns the first integer where the drop is cheaper OR EQUAL,
   // and "costs less" is false at equal. It cannot happen at today's numbers —
-  // €1,850 / €99.98 is not a whole number — which is exactly why it needs an
+  // €1,850 / €219.98 is not a whole number — which is exactly why it needs an
   // assertion rather than a reader's confidence. If this fires, the fix is the
   // definition, not the copy.
   if (UPGRADE_BREAK_EVEN * TIER0_PRODUCT <= AMOUNT.fullDrop) {

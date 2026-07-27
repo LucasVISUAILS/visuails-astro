@@ -34,17 +34,22 @@ models rather than volume bands. **What is not answered is whether the resulting
 numbers are the ones you want.** They are in `src/data/pricing.js` and nothing has
 had your eyes on it since section 13 arrived.
 
-**lxxxv · The upgrade break-even is 23 products, not 19, and the prompt fires
-at 12.** `UPGRADE_TRIGGER_PRODUCTS = 12` comes from your section 13 text. The real
-break-even against a Drop Pilot is 23. Which number the prompt fires on is yours.
-Section 13 says *"Factual, no pressure, once per quarter maximum"*, which reads
-like it wants 23.
+**lxxxv · The upgrade break-even is 11 products, not 9, and the prompt fires
+at 12.** `UPGRADE_TRIGGER_PRODUCTS = 12` comes from your section 13 text. The
+nominal break-even is 9 (€1,850 ÷ €219.98); the like-for-like, ex-VAT figure is
+11. Which number the prompt fires on is yours. Section 13 says *"Factual, no
+pressure, once per quarter maximum,"* which reads like it wants the trigger at
+or after the break-even either way — and after the 2026-07-27 catalog/lifestyle
+increase, 12 now sits past BOTH readings (it used to sit before them, at 19/23),
+so this flag has quietly resolved itself in one direction without anyone
+deciding it on purpose.
 
 The half of this that was mine is fixed: the `UPGRADE_BREAK_EVEN` docstring in
-`pricing.js` no longer claims 19 is the answer, and the prompt itself now sidesteps
-the question — it names the crossover instead of claiming a saving, so it is true
-at 12 and at 30 and under either VAT reading. See cxxix. What is still yours is
-whether a brand at twelve products should be hearing from us at all.
+`pricing.js` no longer claims a single number is the answer, and the prompt
+itself sidesteps the question — it names the crossover instead of claiming a
+saving, so it is true at 12 and at 30 and under either VAT reading. See cxxix.
+What is still yours is whether a brand at twelve products should be hearing
+from us at all.
 
 **cxxii · `.btn` and `.card` hover and press went 450ms → 120ms; `.site-header`
 450 → 240ms.** The most-touched elements on the site and the most noticeable
@@ -184,14 +189,20 @@ flagged rather than wired — wiring it would mean two places to change the gate
 
 **cxxix · The upgrade prompt deliberately does not say what section 13 says.**
 Your example sentence is *"You've ordered 14 products this quarter. A Full Drop
-covers 25 for less."* At the trigger that is false — 14 × €99.98 is €1,399.72,
-which is less than €1,850, not more — so the built sentence names the crossover
-instead: *"…costs less from 23 products on."* This also survives section 14: Tier 1
-is quoted excl. VAT and Tier 0 incl., so the like-for-like crossover for a business
-that reclaims is 23 rather than 19, and any saving claim between the two would be
-wrong for exactly the customer most likely to check it with a calculator. The
-substitution is mine, it contradicts your text, and it is one sentence to change
-back if you would rather have yours.
+covers 25 for less."* Before the 2026-07-27 catalog/lifestyle increase that was
+false at the trigger — 14 × €99.98 was €1,399.72, less than €1,850 — so the built
+sentence named the crossover instead: *"…costs less from 23 products on."* After
+the increase the example is true at drop scope (14 × €219.98 = €3,079.72) but
+still false for a catalog-only buyer (14 × €89.99 = €1,259.86), so the built
+sentence still names the crossover rather than asserting a saving — now
+*"…costs less from 9 products on"* nominally, 11 like-for-like. This also
+survives section 14 if it is ever built: Tier 1 would be quoted excl. VAT and
+Tier 0 incl., so the like-for-like crossover for a business that reclaims stays
+the higher of the two figures, and any saving claim between them would be wrong
+for exactly the customer most likely to check it with a calculator. Section 14
+itself is out of scope for now (Lucas: no KOR, normal return). The substitution
+is mine, it contradicts your text, and it is one sentence to change back if you
+would rather have yours.
 
 **cxxx · The once-per-quarter rule is held down by review, not by a test.** The
 prompt fires at most once per brand per quarter, and the thing enforcing it is the
