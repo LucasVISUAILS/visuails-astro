@@ -1,0 +1,198 @@
+---
+// VISUAILS — FigPipeline: the drop's route, drawn instead of listed.
+//
+// This REPLACES /how-it-works' four-up grid of numbered step cards; it does
+// not sit beside it. Both would be the same account told twice, which is the
+// complaint that started this work — "veel tekst om te lezen".
+//
+// The written steps said the capacity check happens second. The figure says
+// something the words could not: that it is a GATE — a thing with two sides,
+// which work has to pass through, and which can refuse. That is the promise
+// the rest of the page depends on, and a numbered heading in a four-up grid
+// gave it exactly the same visual weight as "you send the products", which is
+// wrong.
+//
+// WHAT THE STOPS MAY SAY. /start's rail is a different list — Scope, Material,
+// Brief, Timing, Confirm — because that is the ORDER FORM's five steps, not
+// the service's four. The two accounts are adjacent, not identical: form steps
+// 1–3 are all inside "you send the products", step 4 is the gate, step 5
+// precedes production. So the stops passed in here must stay the four service
+// steps this page already published, worded as they already were. Renaming a
+// stop to match a rail label on /start would not be a merge, it would be a
+// third account.
+//
+// So the gate node is not a node. Every other stop on the rail is a filled
+// ink square; the gate is two heavy uprights with the rail running between
+// them — a doorway. You read it before you read the label.
+//
+// Deliberately no photographs and no fake screenshot. This is a diagram of a
+// process, and a diagram that dresses itself up as a product screenshot is
+// inventing proof. Ink, hairlines, one heavy weight for the thing that
+// matters.
+//
+// <ol> rather than <ul> because this genuinely is a sequence and the order
+// carries information — the one case DESIGN.md's rejection of "01 / 02 / 03
+// scaffolding" explicitly exempts. The numbers are not printed: the rail is
+// the ordering, and printing them too would be the scaffolding reflex wearing
+// a different hat.
+//
+// All copy is passed in from the calling page's bilingual COPY table, so
+// check_lang_parity covers EN/NL parity on it. No language lives in here.
+//
+// linkHref arrives ALREADY LOCALISED — the calling page runs it through
+// localizedPath() before passing it. This component does not import the i18n
+// helper and must not: it has no `lang` prop, so the only way it could build a
+// localised path is by guessing one, and a figure that guesses a URL prefix is
+// how /nl/ pages end up linking into the English tree.
+interface Stop {
+  t: string;
+  b?: string;
+  gate?: boolean;
+  linkText?: string;
+  linkHref?: string;
+}
+interface Props {
+  stops: Stop[];
+  note?: string;
+}
+const { stops, note } = Astro.props;
+---
+
+<figure class="pl">
+  <ol class="pl-rail">
+    {stops.map((s) => (
+      <li class:list={['pl-node', s.gate && 'is-gate']}>
+        <span class="pl-mark" aria-hidden="true"></span>
+        <span class="pl-t">{s.t}</span>
+        {s.b && <span class="pl-b">{s.b}</span>}
+        {s.linkText && s.linkHref && <a class="pl-link" href={s.linkHref}>{s.linkText}</a>}
+      </li>
+    ))}
+  </ol>
+  {note && <figcaption class="pl-note">{note}</figcaption>}
+</figure>
+
+<style>
+  .pl { margin: 0; }
+
+  /* No gap: each node's rail segment runs from its own centre to the next
+     node's centre, so a gap here would leave the rail short by exactly that
+     much. The breathing room is padding inside the node instead. */
+  .pl-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .pl-node { position: relative; padding: 30px 1.2rem 0 0; }
+  .pl-node::before {
+    content: '';
+    position: absolute;
+    top: 9px;
+    left: 9px;
+    right: 0;
+    height: 1px;
+    background: var(--line-strong);
+  }
+  .pl-node:last-child::before { display: none; }
+
+  /* Filled, so the mark never depends on knowing the ground behind it. */
+  .pl-mark {
+    position: absolute;
+    top: 2px;
+    left: 3px;
+    width: 13px;
+    height: 13px;
+    background: var(--ink);
+  }
+
+  .is-gate .pl-mark {
+    top: -4px;
+    left: 0;
+    width: 19px;
+    height: 27px;
+    background: none;
+  }
+  .is-gate .pl-mark::before,
+  .is-gate .pl-mark::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--ink);
+  }
+  .is-gate .pl-mark::before { left: 0; }
+  .is-gate .pl-mark::after { right: 0; }
+
+  .pl-t {
+    display: block;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--ink);
+    max-width: 22ch;
+  }
+  .is-gate .pl-t { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+  .pl-b {
+    display: block;
+    margin-top: .4rem;
+    font-size: .82rem;
+    line-height: 1.45;
+    color: var(--ink-3);
+    max-width: 26ch;
+  }
+
+  /* display:block so the link starts its own line rather than trailing the
+     body text — inside a 26ch column an inline link wraps into the paragraph
+     and stops looking clickable. */
+  .pl-link {
+    display: block;
+    margin-top: .5rem;
+    font-size: .82rem;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .pl-note {
+    margin-top: 1.4rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+    color: var(--ink-3);
+    max-width: 62ch;
+  }
+
+  /* Vertical below the fold-point: the rail turns, the gate's uprights turn
+     with it into crossbars. Same drawing, rotated — not a different figure. */
+  @media (max-width: 780px) {
+    .pl-rail { grid-auto-flow: row; grid-auto-columns: auto; }
+    .pl-node { padding: 0 0 1.5rem 2rem; }
+    .pl-node::before {
+      top: 9px;
+      bottom: -9px;
+      left: 9px;
+      right: auto;
+      width: 1px;
+      height: auto;
+    }
+    .pl-mark { top: 3px; left: 3px; }
+    .is-gate .pl-mark { top: 0; left: -4px; width: 27px; height: 19px; }
+    .is-gate .pl-mark::before,
+    .is-gate .pl-mark::after {
+      top: auto;
+      bottom: auto;
+      left: 0;
+      right: 0;
+      width: auto;
+      height: 2px;
+    }
+    .is-gate .pl-mark::before { top: 0; }
+    .is-gate .pl-mark::after { bottom: 0; }
+    .pl-t, .pl-b, .pl-link { max-width: 48ch; }
+  }
+</style>

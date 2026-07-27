@@ -1,0 +1,145 @@
+---
+// VISUAILS — FigCapacity: what the gate actually does, including the half of
+// it that loses orders.
+//
+// The written promise on /how-it-works is "no date is printed until the
+// calendar clears it", and in prose that reads like every other studio's
+// boilerplate. It is not boilerplate here, and the thing that makes it not
+// boilerplate is the second case: sometimes the answer is no. Prose cannot
+// show two outcomes at once. Two tracks side by side can.
+//
+// WHY THIS IS NOT A CALENDAR. A grid of day cells would let a reader count
+// them, and a counted run of cells is a duration — which is precisely what
+// task #190 retired from this site. Every sanctioned duration string comes
+// from turnaround() in pricing.js and nowhere else, so a figure that implies
+// one by drawing it would be a promise made in pixels to route around the one
+// place promises are allowed to live. The tracks are therefore uneven blocks
+// of committed work, deliberately non-uniform so there is nothing to count.
+//
+// The segment pattern is hardcoded here rather than passed in, because it is
+// drawing, not data: no number in this file means anything, and none of it may
+// ever come to mean anything. Only the labels arrive as props, from the
+// calling page's bilingual COPY table, so check_lang_parity holds EN and NL in
+// step on the words while the drawing stays language-free.
+interface Case {
+  label: string;
+  verdict: string;
+  slot?: string;
+}
+interface Props {
+  cases: Case[];
+  note?: string;
+}
+const { cases, note } = Astro.props;
+
+// Committed blocks, in flex units. Uneven on purpose — see above. The `slot`
+// case gets an opening spliced into the middle of the same pattern so the two
+// tracks read as the same calendar in two states, not as two diagrams.
+const BLOCKS = [3, 2, 4, 2, 3, 2];
+const OPEN_AT = 3;
+
+// Built in the frontmatter rather than branched inside the template: a
+// conditional fragment nested in a .map() is the shape that produced this
+// repo's only build failure (see check_astro_expr's docstring), and a plain
+// array of {open, w} needs no cleverness in the markup at all.
+const segments = (hasSlot: boolean) => {
+  const out: { open: boolean; w: number }[] = [];
+  BLOCKS.forEach((w, i) => {
+    if (hasSlot && i === OPEN_AT) out.push({ open: true, w: 3 });
+    out.push({ open: false, w });
+  });
+  return out;
+};
+---
+
+<figure class="cap">
+  <div class="cap-rows">
+    {cases.map((k) => (
+      <div class="cap-case">
+        <p class="cap-lab">{k.label}</p>
+        <div class="cap-track">
+          {segments(Boolean(k.slot)).map((s) => (
+            s.open
+              ? <span class="cap-open" style={`flex:${s.w}`}><span class="cap-open-t">{k.slot}</span></span>
+              : <span class="cap-block" style={`flex:${s.w}`}></span>
+          ))}
+        </div>
+        <p class="cap-verdict">{k.verdict}</p>
+      </div>
+    ))}
+  </div>
+  {note && <figcaption class="cap-note">{note}</figcaption>}
+</figure>
+
+<style>
+  .cap { margin: 0; }
+  .cap-rows { display: grid; gap: clamp(1.6rem, 3.5vw, 2.6rem); }
+  @media (min-width: 860px) { .cap-rows { grid-template-columns: 1fr 1fr; } }
+
+  /* min-width:0 because a grid item's default min-width is auto, which means
+     it refuses to shrink below its content — and the content here is a flex
+     track of blocks that will happily push the two columns wider than the
+     grid. Without this the right-hand case overflows its column instead of
+     the tracks getting shorter, which is the failure verify3 [5] flagged this
+     class for being unable to rule out: an emitted class with no rule at all
+     is a hook nobody has decided the behaviour of. */
+  .cap-case { min-width: 0; }
+
+  .cap-lab { font-size: .95rem; font-weight: 600; color: var(--ink); }
+
+  .cap-track {
+    display: flex;
+    gap: 3px;
+    height: 46px;
+    margin-top: .8rem;
+    border-top: 1px solid var(--line-strong);
+    border-bottom: 1px solid var(--line-strong);
+    padding-block: 4px;
+  }
+
+  /* Hatching means committed — the same thing it means on a floor plan, and
+     the reason it is a repeating-linear-gradient is that CSS has no hatch
+     primitive. Not a gradient in DESIGN.md's sense: nothing here is being made
+     to look richer, the pattern carries the meaning. */
+  .cap-block {
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 5px,
+      var(--line-strong) 5px 6px
+    );
+    border: 1px solid var(--line);
+  }
+
+  .cap-open {
+    position: relative;
+    border: 2px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cap-open-t {
+    font-size: .68rem;
+    font-weight: 600;
+    line-height: 1.1;
+    text-align: center;
+    color: var(--ink);
+    padding-inline: .2rem;
+  }
+
+  .cap-verdict {
+    margin-top: .9rem;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 40ch;
+  }
+
+  .cap-note {
+    margin-top: 1.4rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+    color: var(--ink-3);
+    max-width: 62ch;
+  }
+</style>

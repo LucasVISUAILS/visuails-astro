@@ -1,0 +1,204 @@
+---
+// VISUAILS — FigFanOut: the first of the explanatory figures (task #246).
+//
+// WHY THESE EXIST. Measured on the tree before this file: three pages carried
+// 600+ words and not one picture, and /how-it-works — the page whose entire
+// job is to explain the service — gave 505 words against two images, one of
+// which was a hero background. The site was telling instead of showing, and
+// DESIGN.md's own "What this system rejects" already forbade the two devices
+// it reached for instead (identical card grids; 01/02/03 scaffolding on
+// sections that are not sequences). These figures are the showing.
+//
+// WHY THEY LIVE FLAT IN src/components/ AND NOT IN A figures/ SUBFOLDER.
+// verify3.py:37 and verify4.py:35 read the component set with
+// (SRC/'components').glob('*.astro') — NON-recursive. A src/components/figures/
+// directory would have dropped every file in it out of two verifiers in
+// silence, which is the exact failure mode this repo is built to refuse: a
+// checker that reports zero because it looked at nothing. Both globs are now
+// rglob as belt-and-braces, but the naming convention (Fig* prefix, flat) is
+// the thing that does not depend on anybody remembering.
+//
+// THE HONESTY RULE, which is the whole design of this component.
+// The site's brief forbids inventing proof. So the two photographs here are
+// the ONE pair on disk that is a genuine derivation: catalog-before.webp is a
+// real phone snapshot — a washed tee laid flat on an office table, window
+// light, office chairs in frame — and catalog-after.webp is that same garment,
+// cut out and lit on white. Anyone can see it is the same shirt. That pair is
+// already the site's own vetted claim (HomePage's <Compare> labels it "Your
+// photo" → "VISUAILS").
+//
+// The remaining output cells are therefore DRAWN, not photographed. Filling
+// them with finished shots of OTHER products under an arrow from this shirt
+// would read as "this shirt became these", which is not true. A labelled empty
+// frame claims only what it is: another slot in the same delivery. Lucas
+// authorised exactly this ("place holders zijn voor nu prima"). When a real
+// on-model / lifestyle / banner render of THIS garment exists, drop it into
+// `slots[n].photo` and the cell stops being a placeholder without any other
+// change.
+//
+// All copy arrives as props from the calling page's bilingual COPY table, so
+// check_lang_parity enforces EN/NL parity on figure text for free — the figure
+// itself contains no language.
+interface Slot {
+  t: string;
+  photo?: string;
+  alt?: string;
+}
+interface Props {
+  photo: string;
+  photoAlt: string;
+  made: string;
+  madeAlt: string;
+  inLabel: string;
+  outLabel: string;
+  slots: Slot[];
+  note?: string;
+}
+const { photo, photoAlt, made, madeAlt, inLabel, outLabel, slots, note } = Astro.props;
+---
+
+<figure class="fan">
+  <div class="fan-side">
+    <div class="fan-stack">
+      <img src={photo} alt={photoAlt} loading="lazy" width="600" height="800" />
+    </div>
+    <p class="fan-lab">{inLabel}</p>
+  </div>
+
+  <div class="fan-arrow" aria-hidden="true">
+    <svg viewBox="0 0 32 24"><path d="M2 12h25M20 4l8 8-8 8" /></svg>
+  </div>
+
+  <div class="fan-side">
+    <div class="fan-grid">
+      <div class="fan-cell">
+        <img src={made} alt={madeAlt} loading="lazy" width="600" height="600" />
+      </div>
+      {slots.map((s) => (
+        <div class="fan-cell fan-slot">
+          {s.photo
+            ? <img src={s.photo} alt={s.alt || s.t} loading="lazy" width="600" height="600" />
+            : <span class="fan-hatch" aria-hidden="true"></span>}
+          <span class="fan-slot-t">{s.t}</span>
+        </div>
+      ))}
+    </div>
+    <p class="fan-lab">{outLabel}</p>
+  </div>
+
+  {note && <figcaption class="fan-note">{note}</figcaption>}
+</figure>
+
+<style>
+  .fan {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) auto minmax(0, 1.15fr);
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2.4rem);
+    margin: 0;
+  }
+
+  /* The offset outlines behind the input photo are the folder: three sheets,
+     one on top. Drawn as borders, not shadows — depth here is a stack of
+     edges, which is what a stack of photos actually is. */
+  .fan-stack { position: relative; margin: 18px 18px 0 0; }
+  .fan-stack::before,
+  .fan-stack::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--line-strong);
+  }
+  .fan-stack::before { transform: translate(9px, -9px); }
+  .fan-stack::after { transform: translate(18px, -18px); }
+  .fan-stack img {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border: 1px solid var(--ink);
+    background: var(--surface);
+  }
+
+  /* Same reason as FigCapacity's .cap-case: a grid item defaults to
+     min-width:auto and will not shrink below its content, so the photo stack
+     and the output grid would push the three columns past the container
+     rather than scaling down inside it. The minmax(0, …) on .fan handles the
+     track; this handles the item. */
+  .fan-side { min-width: 0; }
+
+  .fan-arrow { display: flex; justify-content: center; }
+  .fan-arrow svg {
+    width: clamp(30px, 4.5vw, 52px);
+    height: auto;
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-linecap: butt;
+    stroke-linejoin: miter;
+  }
+
+  .fan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.5rem, 1.4vw, .9rem); }
+  .fan-cell {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .fan-cell img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .fan-cell:first-child { border-color: var(--ink); }
+
+  /* A hatch, not a gradient-as-decoration. DESIGN.md rejects gradients used to
+     make UI look richer; this is a fill pattern that means "reserved, nothing
+     in it yet" — the same thing hatching means on a floor plan. It is drawn
+     with repeating-linear-gradient because CSS has no other hatch primitive. */
+  .fan-hatch {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 6px,
+      var(--line-strong) 6px 7px
+    );
+    opacity: .55;
+  }
+  .fan-slot-t {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: .45rem .55rem;
+    font-size: .72rem;
+    line-height: 1.25;
+    color: var(--ink-2);
+    background: var(--surface);
+    border-top: 1px solid var(--line-strong);
+  }
+  /* When a real render lands in a slot the label needs to sit ON the photo,
+     so it keeps its own ground rather than inheriting the empty-frame one. */
+  .fan-slot:has(img) .fan-slot-t { color: var(--ink); }
+
+  .fan-lab {
+    margin-top: .9rem;
+    font-size: .82rem;
+    color: var(--ink-3);
+  }
+  .fan-note {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+    color: var(--ink-3);
+    max-width: 62ch;
+  }
+
+  @media (max-width: 760px) {
+    .fan { grid-template-columns: 1fr; gap: 1.2rem; }
+    .fan-arrow svg { transform: rotate(90deg); }
+    .fan-stack { margin-right: 0; max-width: 62%; }
+  }
+</style>

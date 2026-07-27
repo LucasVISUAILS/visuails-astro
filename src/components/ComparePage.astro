@@ -23,12 +23,47 @@
 // The old ThreeWay component is NOT ported: it carried the retired 24-hour
 // claim and per-photo pricing (task #190), and its three-column argument is
 // what the matrix below now does with current numbers.
+//
+// ── ONE FIGURE (task #246), AND THE NUMBERS THAT DO NOT FLATTER IT ──────────
+//
+// Lucas: the sections lack variation, so the site reads long-winded, and the
+// services need showing rather than only telling. This page got FigConverge,
+// placed between the matrix and the wins grid. Measured with rhythm_probe.py
+// and copy_census.py against HEAD, not estimated:
+//
+//   sections 5 → 6 · figure kinds 0 → 1 · image refs 0 → 0
+//   EN visible 628 → 753: alt 8 → 8, figcaptions 0 → 25, body prose 620 → 720
+//   NL visible 612 → 742: alt 6 → 6, figcaptions 0 → 26, body prose 606 → 710
+//
+// So this page got a hundred words LONGER in the column the complaint is about,
+// and that is the honest headline. /how-it-works could answer the same task
+// with body prose near flat because its figures REPLACED things — four step
+// cards became a rail, a checklist became a diagram. Nothing here was replaced.
+// Two matrix cells were trimmed where the drawing now says the same thing (13
+// words each language, and the reasoning sits on each cell), and that is all
+// the give there was: the matrix is the page's argument and shortening it to
+// improve a count would be optimising the measurement instead of the page.
+//
+// The case for adding the words anyway, stated so it can be argued with: a
+// hundred words as four lane labels, three step boxes, two outcome lines and a
+// caption is not met as a hundred words of prose. It is met as a picture with
+// writing on it, and the two matrix rows it draws — "When it lands" and "If
+// something is wrong" — were one fact the table could only state twice. If that
+// case is wrong, the figure is wrong, and the number above is the evidence
+// against it rather than something the number was chosen to hide.
+//
+// The lede above the figure is `.fig-lede`, NOT `.section-head`, and the reason
+// is measured too: at HEAD the last three sections opened section-head,
+// section-head, cta-band. Introducing the drawing with a fourth section-head
+// would have put three identical openings in a row at the exact point the task
+// asks for variation. The CSS block at the bottom carries the same note.
 import {
   AMOUNT, SHOOT_DAY, euro, reviewClaim, turnaround, aftercare,
   FULL_DROP_MIN, FULL_DROP_MAX,
   FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
+import FigConverge from './FigConverge.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -73,7 +108,13 @@ const COPY = {
       },
       {
         label: 'When it lands',
-        a: 'Weeks. A studio, a model and your own calendar have to agree on a date before anyone shoots, and the retouching starts after the day ends.',
+        // Trimmed with the figure below, not for the sake of a word count: the
+        // enumeration that used to sit here — "a studio, a model and your own
+        // calendar have to agree on a date" — is now four labelled lanes
+        // meeting a rule, and a table cell repeating what the drawing states is
+        // the exact reflex #246 is about. What stays is the part a picture
+        // cannot say: how long, and that the retouching is after.
+        a: 'Weeks. A date has to be agreed before anyone shoots, and the retouching starts after the day ends.',
         b: `${turnaround('attended', 'en')}. The window is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
       },
       {
@@ -83,7 +124,10 @@ const COPY = {
       },
       {
         label: 'If something is wrong',
-        a: 'A reshoot is another day. The studio, the model and the calendar, again.',
+        // Same trim, and this cell was the more duplicated of the two: the
+        // figure's own outcome line reads "A reshoot is the same four things,
+        // agreeing again", which is this sentence's second half drawn.
+        a: 'A reshoot is another day, booked from scratch.',
         b: `${aftercare('attended', 'en')} — one image at a time, in the portal. Nobody has to be rebooked.`,
       },
       {
@@ -94,6 +138,37 @@ const COPY = {
     ],
     caveat: shoot.caveat,
     caveatNote: 'That is a real range for a real day, not a strawman: it is what the whole day costs once every line above is counted, and the low end is a modest city studio where you do a lot of it yourself.',
+
+    // FigConverge (task #246). The matrix rows "When it lands" and "If
+    // something is wrong" are one fact stated twice: a day needs four
+    // schedules to meet, so a reshoot is that meeting again. The figure draws
+    // it once and the second row stops needing to be argued.
+    //
+    // Every label here is a noun phrase, not a claim, and that is deliberate.
+    // The lead promises "the comparison with nothing hidden on either side"
+    // and section 3 is four cards on where a shoot day wins; a figure that
+    // editorialised in its labels would undo both, because a reader argues
+    // with a sentence and absorbs a diagram. "A studio, on a date" is what a
+    // production day IS — a studio would write it the same way.
+    convergeH: 'What has to line up',
+    convergeSub: 'Not a cost or a schedule — just what has to agree with what before an image exists.',
+    convTitle: 'A production day',
+    convLanes: [
+      { label: 'A studio, on a date' },
+      { label: 'A model, on that date' },
+      { label: 'Your own calendar, on that date' },
+      { label: 'The product, in the room, by then' },
+    ],
+    convMeet: 'One date',
+    convOut: 'Everything is made on that day. A reshoot is the same four things, agreeing again.',
+    seqTitle: 'A VISUAILS drop',
+    seqSteps: [
+      'You send a folder of product photos.',
+      'The week is checked against the calendar, and held or refused.',
+      'Images are made, and land as each one is ready.',
+    ],
+    seqOut: 'Nothing has to be in one place at one time. A revision is one image, not another arrangement.',
+    convNote: 'The bars are uneven because four schedules do not naturally line up, and they are not to scale — there is nothing here to measure.',
 
     winsHead: 'Where a shoot day still wins',
     winsSub: 'We would rather you knew. If any of these is the job, book the day — a drop is the wrong tool for it.',
@@ -159,7 +234,7 @@ const COPY = {
       },
       {
         label: 'Wanneer het er is',
-        a: 'Weken. Een studio, een model en je eigen agenda moeten het eerst over een datum eens worden, en de retouche begint pas als de dag voorbij is.',
+        a: 'Weken. Er moet eerst een datum vastliggen voordat er iemand fotografeert, en de retouche begint pas als de dag voorbij is.',
         b: `${turnaround('attended', 'nl')}. Het venster wordt eerst tegen de agenda gehouden — kan de week die je nodig hebt niet, dan hoor je dat, in plaats van een datum.`,
       },
       {
@@ -169,7 +244,7 @@ const COPY = {
       },
       {
         label: 'Als er iets mis is',
-        a: 'Opnieuw schieten is opnieuw een dag. De studio, het model en de agenda, nog een keer.',
+        a: 'Opnieuw schieten is opnieuw een dag, vanaf nul geboekt.',
         b: `${aftercare('attended', 'nl')} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
       },
       {
@@ -180,6 +255,31 @@ const COPY = {
     ],
     caveat: shoot.caveat,
     caveatNote: 'Dat is een echt bereik voor een echte dag, geen stroman: het is wat de hele dag kost zodra elke regel hierboven is meegeteld, en de onderkant is een bescheiden stadsstudio waar je veel zelf doet.',
+
+    // FigConverge (taak #246) — zie de EN-tak hierboven voor waarom de labels
+    // naamwoordgroepen zijn en geen stellingen. convTitle en seqTitle zijn
+    // woordelijk colA en colB, zodat de figuur en de matrix hetzelfde ding
+    // hetzelfde noemen; wijkt er één af, dan leest de figuur als een derde
+    // partij in plaats van als dezelfde twee kolommen, getekend.
+    convergeH: 'Wat op één lijn moet komen',
+    convergeSub: 'Geen kosten en geen planning — alleen wat het met wat eens moet worden voordat er een beeld bestaat.',
+    convTitle: 'Een productiedag',
+    convLanes: [
+      { label: 'Een studio, op een datum' },
+      { label: 'Een model, op die datum' },
+      { label: 'Je eigen agenda, op die datum' },
+      { label: 'Het product, in de ruimte, tegen die tijd' },
+    ],
+    convMeet: 'Eén datum',
+    convOut: 'Alles wordt op die dag gemaakt. Opnieuw schieten is dezelfde vier dingen, opnieuw op één lijn.',
+    seqTitle: 'Een VISUAILS-drop',
+    seqSteps: [
+      'Je stuurt een map met productfoto’s.',
+      'De week wordt tegen de agenda gehouden, en vastgezet of geweigerd.',
+      'Beelden worden gemaakt, en komen binnen zodra elk beeld klaar is.',
+    ],
+    seqOut: 'Niets hoeft op één plek op één moment te zijn. Een revisie is één beeld, niet opnieuw die hele afstemming.',
+    convNote: 'De balken zijn ongelijk omdat vier planningen niet vanzelf op één lijn liggen, en ze staan niet op schaal — er valt hier niets te meten.',
 
     winsHead: 'Waar een shootdag nog steeds wint',
     winsSub: 'We vertellen het je liever eerlijk. Is dit de opdracht? Boek dan de dag — een drop is er het verkeerde gereedschap voor.',
@@ -260,6 +360,36 @@ const t = COPY[lang];
   </div>
   <!-- shoot.caveat travels with the number wherever the number goes (§H·2). -->
   <p class="vs-caveat">{t.caveat} {t.caveatNote}</p>
+</div></section>
+
+<!-- WHAT HAS TO LINE UP (task #246). Two of the matrix rows above — "When it
+     lands" and "If something is wrong" — are one fact stated twice: a day needs
+     four separate schedules to meet on one date, so a reshoot is that meeting
+     again. The table can only ever say it twice. Drawn once, the second row
+     stops needing an argument.
+     It sits HERE, immediately after the matrix, for two reasons. It is those
+     rows and no others, so putting it anywhere else would make it a third
+     argument instead of a reading of the second. And the matrix is the densest
+     text on the page while everything below it is more text — a table, then
+     cards, then two lists; a change of medium at this exact point is the whole
+     of what #246 asks for. -->
+<section class="section-tight"><div class="container">
+  <div class="fig-lede">
+    <h2>{t.convergeH}</h2>
+    <p>{t.convergeSub}</p>
+  </div>
+  <div class="reveal pending">
+    <FigConverge
+      convergeTitle={t.convTitle}
+      lanes={t.convLanes}
+      meetLabel={t.convMeet}
+      convergeOut={t.convOut}
+      seqTitle={t.seqTitle}
+      seqSteps={t.seqSteps}
+      seqOut={t.seqOut}
+      note={t.convNote}
+    />
+  </div>
 </div></section>
 
 <!-- WHERE A SHOOT DAY STILL WINS — the page is not credible without it. -->
@@ -370,6 +500,35 @@ const t = COPY[lang];
       color: var(--ink-3);
       margin-bottom: .25rem;
     }
+  }
+
+  /* ── WHAT HAS TO LINE UP ───────────────────────────────────────────────── */
+  /* Deliberately NOT .section-head, and that is the whole point of the class.
+     Both sections below this one already open with that stack — h2 over a 62ch
+     paragraph — so introducing the drawing the same way would put three
+     identical openings in a row and make the page MORE uniform at the exact
+     spot #246 asks for variation. This is a horizontal band instead: heading
+     left, sentence right, one rule under both, so the shape differs before a
+     word of it is read.
+     The 880px breakpoint is FigConverge's own, not a round number picked here:
+     the lede goes two-column at the moment the figure it introduces does, so
+     the pair never sits in the state where one is split and the other is not. */
+  .fig-lede {
+    display: grid;
+    gap: .8rem clamp(1.6rem, 4vw, 3.2rem);
+    align-items: end;
+    padding-bottom: 1.2rem;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+    box-shadow: inset 0 -1px 0 var(--line-strong);
+  }
+  @media (min-width: 880px) {
+    .fig-lede { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  }
+  .fig-lede p {
+    font-size: .95rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+    max-width: 56ch;
   }
 
   /* ── WHERE A SHOOT DAY WINS ────────────────────────────────────────────── */

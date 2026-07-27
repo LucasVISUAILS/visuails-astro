@@ -122,11 +122,16 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
         <p>Two quick steps. Tell us the look you want, then where to send it.</p>
       </div>
       <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
-        <!-- Static site, no backend: this form needs a real submit handler (e.g. a Cloudflare Pages Function, Formspree, or similar) wired up before launch. -->
         <form action="/api/order" method="post" data-wizard novalidate>
           <input type="hidden" name="service" value="test-sample" />
           <input type="hidden" name="redirect" value="/thank-you" />
           <input type="hidden" name="lang" value="en" />
+          <!-- The photographs do NOT travel in this POST. /api/order refuses to
+               read File entries by design, so they are staged into R2 by
+               /api/upload first and this field carries the batch id that ties
+               them to the order. initTestSampleUpload() in interactions.js
+               writes it; empty here is the correct initial state. -->
+          <input type="hidden" name="upload_batch" value="" />
           <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
           <div class="progress" aria-hidden="true"><i data-wizard-progress style="transform:scaleX(.5)"></i></div>
 
@@ -173,8 +178,16 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                 <svg viewBox="0 0 24 24" class="i"><path d="M12 16V4M6 10l6-6 6 6M4 20h16" /></svg>
                 <div><strong>Click to upload</strong> or drag photos here</div>
                 <div class="hint" style="margin-top:.4rem">One clear photo works — but front, back, a detail and the fabric give the best result.</div>
-                <input type="file" id="ts-upload" name="photo" accept="image/*" multiple hidden />
+                <!-- No `name`, for the same reason /start's file input has none:
+                     nothing about this control belongs in the form POST.
+                     Visually hidden via .ts-file-input rather than `hidden`:
+                     a display:none input cannot be focused or activated, so the
+                     picker was unreachable by keyboard entirely. -->
+                <input type="file" id="ts-upload" accept="image/*" multiple class="ts-file-input" />
               </label>
+              <ul class="ts-list" data-ts-list></ul>
+              <p class="ts-count" data-ts-count aria-live="polite"></p>
+              <p class="ts-msg" data-ts-msg role="status"></p>
               <span class="hint">More angles help us match your product exactly — see <a href="/upload-guidelines" style="color:var(--accent-bright)">what to send</a>.</span>
             </div>
 
@@ -271,7 +284,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   .choice input { position: absolute; opacity: 0; pointer-events: none; }
   .choice .choice-media { aspect-ratio: 1; }
   .choice .choice-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .choice .choice-media.mono { display: grid; place-items: center; background: radial-gradient(125% 90% at 50% 6%, oklch(1 0 0), oklch(0.95 0.004 85) 58%, oklch(0.88 0.004 85) 100%); }
+  .choice .choice-media.mono { display: grid; place-items: center; background: radial-gradient(125% 90% at 50% 6%, oklch(1 0 0), oklch(0.95 0.004 255) 58%, oklch(0.88 0.004 255) 100%); }
   .choice .choice-label { padding: 0.6rem 0.7rem; font-size: 0.85rem; color: var(--ink); font-weight: 500; }
   .choice:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   .choice:has(input:checked)::after { content: "\2713"; position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; z-index: 5; }

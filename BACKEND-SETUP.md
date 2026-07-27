@@ -98,14 +98,22 @@ Eleven tables — `app_settings`, `blackout_days`, `custom_models`, `customers`,
 `subscribers` — and you are current. Fewer, and you need the migrations.
 
 Every SQL statement any of the Functions can issue has been compiled against
-`schema.sql`: **30 `.prepare()` call sites resolving to 29 distinct
-statements**, and all 29 resolve. They were found by walking all eleven files
+`schema.sql`: **31 `.prepare()` call sites resolving to 28 distinct
+statements**, and all 28 resolve. They were found by walking all eleven files
 reachable from `functions/` rather than by listing the ones that looked
 relevant — the queries turn out to live in only four of those files, and two of
 the four are library modules the function files import rather than function
 files themselves. A column name that doesn't exist would not show up in a build
 log or a test run; it would be a 500 on your first real order, with the customer
 already reading the thank-you page.
+
+Those two numbers are further apart than they look because four of the call
+sites take a variable rather than a literal, and once you resolve them one pair
+collapses: the calendar `SELECT` in `functions/api/order.js` and the one in
+`functions/api/capacity.js` are the *same string*, which is that file's
+"mirrors readCalendar deliberately and exactly" comment being true byte for
+byte rather than approximately. Recount by resolving `orderSql` and the `files`
+insert before de-duplicating, or the second number comes out too high.
 
 ## 2 · The storage bucket (R2)
 
@@ -195,9 +203,12 @@ So verify from the database, in this order:
      --command "SELECT order_id, status, note, created_at FROM order_events ORDER BY id DESC LIMIT 5"
    ```
 5. Submit the homepage checklist signup and confirm a row in `subscribers`.
-6. Hit `/api/capacity` in a browser. It should return JSON with a window. If it
-   500s, the `DB` binding is wrong — that endpoint throws deliberately rather
-   than inventing a calendar out of nothing.
+6. Hit `/api/capacity?products=12&tier=attended` in a browser. It should return
+   JSON with a `windows` array. A **503** carrying `"reason": "unavailable"`
+   means the `DB` binding is missing or wrong — that endpoint refuses
+   deliberately rather than inventing a calendar out of nothing. A **404** means
+   you are not looking at a Pages deployment at all; see *The calendar did not
+   answer* below.
 
 Because failures are swallowed and logged rather than shown, the log is where
 they live:
@@ -218,8 +229,93 @@ API key is wrong, or `FROM_EMAIL` isn't on the verified domain. The order is
 safe: mail is sent after the database writes, so a Resend outage costs you the
 notification and nothing else.
 
-*`/start` shows no delivery window* — `/api/capacity` is failing, which is the
-`DB` binding again.
+*`/start` shows no delivery window* — `/api/capacity` is failing. See the next
+section, which is about exactly this.
+
+---
+
+## 7 · "The calendar did not answer"
+
+Step 3 of `/start` can show this instead of a list of windows:
+
+> **The calendar did not answer**
+> That is our problem, not yours. Try again, or send the order and we will
+> confirm a window by email. No date is assumed either way.
+
+**This is not a bug in the page.** It is the page correctly reporting that
+`/api/capacity` gave it no windows and told it why. The brief's rule is *never
+promise a delivery date the capacity gate hasn't cleared*, and the failure mode
+that rule is really about is the database being unreachable — an endpoint that
+shrugs and treats a failed query as "nothing is booked" hands back a wide-open
+calendar at the moment it knows least. So `functions/api/capacity.js` throws on
+a missing `DB` binding on purpose (`readCalendar()`, line 122) and the handler
+turns that into a `503` with `"reason": "unavailable"` and an empty `windows`
+array. `/start` renders that reason as the message above. Every part of that
+chain is behaving as designed.
+
+There are two reasons you would see it, and they are told apart by what
+`/api/capacity` returns when you open it directly.
+
+**A · 404 — nothing is serving the functions.**
+
+`npm run preview` is `astro preview`. It serves the contents of `dist/` and
+nothing else; it has never heard of `functions/`, so every `/api/*` route 404s
+and the whole backend appears dead. The same is true of any plain static server
+you point at `dist/`. This is the likeliest cause if you are looking at the site
+on your own machine.
+
+To run the real thing locally, build first and then serve it with Wrangler,
+which does execute `functions/`:
+
+```bash
+npm run build
+npx wrangler pages dev dist --d1 DB --r2 UPLOADS
+```
+
+`--d1 DB` and `--r2 UPLOADS` create **local** stand-ins — a SQLite file and a
+folder under `.wrangler/`, not your live data. The local database starts empty,
+so apply the migrations to it once:
+
+```bash
+npx wrangler d1 execute DB --local --file migrations/0001-section-10-pipeline.sql
+npx wrangler d1 execute DB --local --file migrations/0002-section-13-upgrade-prompt.sql
+```
+
+Email is the one part that will not work locally: `RESEND_API_KEY` is not set,
+so the order handler logs the send failure and carries on. The order still
+writes. If you want mail locally too, put the three mail variables in a
+`.dev.vars` file next to `wrangler.toml` — and keep that file out of git.
+
+**B · 503 with `"reason": "unavailable"` — the functions run, D1 does not.**
+
+The deployment is serving `functions/`, but the `DB` binding is not reaching a
+database. Check, in this order:
+
+1. **Pages → Settings → Functions → D1 database bindings.** The variable name
+   must be exactly `DB`. A binding called `d1`, `DATABASE` or `visuails` is not
+   picked up — the code reads `env.DB` and nothing else.
+2. **The binding exists on the right environment.** Production and Preview are
+   configured separately. A binding added to Production only will leave every
+   `*.pages.dev` preview URL showing this message while the live domain is fine.
+3. **A deployment happened after the binding was added.** Bindings attach at
+   deploy time. Adding one to an already-deployed project changes nothing until
+   you redeploy.
+4. **The schema is actually in that database.** A binding pointing at an empty
+   D1 fails on the first query. Re-run the two migration files against it and
+   confirm:
+   ```bash
+   npx wrangler d1 execute visuails --remote \
+     --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+   ```
+   Eleven tables should come back.
+
+`npx wrangler pages deployment tail` shows the throw as it happens.
+
+**What it is not.** It is not a broken date picker, a timezone problem, or the
+studio being full. "Full" is a different reason with different copy — the
+endpoint distinguishes `ok`, `full`, `too-large`, `invalid` and `unavailable`
+precisely so the page never flattens them into one apology. If you are seeing
+*this* text, the page never got as far as looking at the calendar.
 
 ---
 
@@ -231,13 +327,25 @@ choice is still open (flag **xlii**). Section 14, the VAT and reverse-charge
 work, is deferred behind it and is a substantial piece in its own right:
 server-side determination, VIES validation, sequential invoice numbers.
 
-**Portal token issuance.** The portal is finished and a client cannot reach it.
-Tokens are minted, hashed, expired and validated correctly, and `order_tokens`
-is read on every lookup — but nothing in the codebase ever writes a row to it,
-so there is no link to send. Whatever closes an order needs to mint a token,
-store its SHA-256, and put the URL in the delivery mail. Flag **xxxviii** —
-which of the two readings of the brief's *"single-use on issue"* you meant — is
-a decision that has to land first, because it changes what that code does.
+**Portal token issuance — done, and worth knowing how it behaves.** Until
+recently the portal was finished and unreachable: nothing wrote an
+`order_tokens` row, so the table stayed empty, every lookup missed, and no
+confirmation ever carried a link. `functions/api/order.js` now mints one on
+every order that gets an id, stores its SHA-256, and puts the URL in the
+confirmation mail.
+
+Two consequences follow from the design and neither is a fault:
+
+- **The link cannot be re-derived.** The database holds the hash, never the
+  token. If a client loses the email, you issue a *new* token; you cannot look
+  the old one up.
+- **A mint failure costs the link, not the order.** The whole block is wrapped
+  in `safe()`, so a D1 hiccup at that moment sends a confirmation without a
+  portal link rather than losing the order.
+
+Flag **xxxviii** — which of the two readings of the brief's *"single-use on
+issue"* you meant — is still open, and it decides whether a token dies on first
+use or stays valid until it expires. Today it is the second.
 
 **The twelve-month retention promise** is published in ten places across the
 privacy and terms pages in both languages, and nothing deletes anything.

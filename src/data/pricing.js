@@ -599,7 +599,15 @@ export const PACKAGES = {
       price: euro(AMOUNT.brandModel, 'en'),
       unit: 'one-time setup',
       line: 'One face. Every drop. Only yours.',
-      creditLine: `${euro(AMOUNT.brandModelCredit, 'en')} credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} drops — the setup pays itself back.`,
+      // `creditLine` used to sit here: "€250 credited against each of your
+      // first 5 drops — the setup pays itself back." It was rendered in
+      // exactly one place, /pricing, and task #246 is about that page asking
+      // to be read rather than looked at. The clause after the dash was a sum
+      // the reader had to do in their head — 250 × 5 against a setup price two
+      // lines above — so FigPayback draws the sum, and the clause before the
+      // dash became that figure's run label. Nothing was dropped; one sentence
+      // stopped being a sentence. The credit itself is still stated in
+      // `includes` below, which is what /custom-models prints.
       includes: [
         'A model built for your brand, used by no one else',
         'Consistent across every product and every drop',
@@ -668,7 +676,8 @@ export const PACKAGES = {
       price: euro(AMOUNT.brandModel, 'nl'),
       unit: 'eenmalige setup',
       line: 'Eén gezicht. Elke drop. Alleen van jou.',
-      creditLine: `${euro(AMOUNT.brandModelCredit, 'nl')} verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops — de setup verdient zichzelf terug.`,
+      // `creditLine` — zie de EN-tak hierboven. Beide talen verliezen dezelfde
+      // zin op hetzelfde moment, want de tekening spreekt geen van beide.
       includes: [
         'Een model gebouwd voor jouw merk, door niemand anders gebruikt',
         'Consistent op elk product en in elke drop',

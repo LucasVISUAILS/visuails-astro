@@ -209,13 +209,20 @@ no `DB` binding will not error visibly — it is written to always show the
 customer the thank-you page — so "it looked fine" is not evidence. The
 verification query in that document is.
 
-**Three things are built, correct, and still not usable by a client:**
+**The portal is reachable now.** This page used to say the opposite, and the
+correction is worth reading rather than skipping: `functions/api/order.js` mints
+a token on every order that gets an id, stores its SHA-256 in `order_tokens`,
+and puts the URL in the confirmation mail. Flag **cxxxvi** is closed. Two
+properties of that design will look like faults the first time you meet them
+and are not: the database holds only the hash, so a lost email means issuing a
+*new* token rather than looking the old one up; and the mint is wrapped in
+`safe()`, so a D1 hiccup at that moment costs the link, not the order — the
+customer gets a confirmation without a portal URL instead of losing the order.
+Flag **xxxviii** is still open and decides whether a token dies on first use or
+stays valid until it expires; today it is the second.
 
-- **Nothing issues a portal token.** `functions/o/[[token]].js` validates them,
-  `src/lib/token.js` mints and hashes them, `order_tokens` exists and is read —
-  but no code path ever writes a row to it. A Tier 1 client cannot reach the
-  portal, because there is no link to send them. This is the one gap on this
-  page that will bite the first time you deliver real work. Flag **cxxxvi**.
+**Two things are built, correct, and still not usable by a client:**
+
 - **There is no payment processor.** Flag **xlii** is a decision waiting on you,
   and section 14 (VAT) is deferred behind it. Nothing on the site takes money.
 - **`PRODUCTS_PER_DAY = 18`** in the capacity gate is a placeholder that has

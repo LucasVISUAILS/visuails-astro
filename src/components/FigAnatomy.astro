@@ -1,0 +1,283 @@
+---
+// VISUAILS — FigAnatomy: what one delivered visual is made of.
+//
+// This is the /ai-act page's §2 disclosure, drawn. §2 says a visual starts from
+// photographs of the client's real product, that an AI pipeline builds the rest
+// of the frame — light, background, model, motion — and that a person finishes
+// and checks the result. Four prose paragraphs to establish one fact about
+// provenance: which part of the picture was photographed and which part was
+// made. That fact is spatial. It belongs in a drawing, and it is the single
+// clearest case on the site of task #246's "meer visuele uitleg".
+//
+// EVERY OTHER FIGURE IN THIS SET DRAWS A PROCESS — a rail, a fan, a track, a
+// bar cut into repayments. This one draws the OUTPUT, which is why it does not
+// read as any of them and why it could not have been assembled out of the parts
+// they already have. A process diagram here would answer "how is it made",
+// which /how-it-works already answers twice. The question this page is asked is
+// "what am I looking at", and the honest answer is a picture of the thing with
+// its parts named.
+//
+// THE MARKS, AND WHY EACH ONE MEANS WHAT IT MEANS:
+//
+//   Solid ink        the photographed part — the client's own product. Solid
+//                    because it is the one region that was not invented, and
+//                    the eye should find it first without being told to.
+//   Hatch            the built part. Hatching is the floor-plan mark for "this
+//                    region is filled in", used the same way in FigCapacity. It
+//                    is a repeating-linear-gradient because CSS has no hatch
+//                    primitive — not a gradient in DESIGN.md's sense, since
+//                    nothing is being made to look richer and the pattern is
+//                    carrying the meaning.
+//   Crop marks       the human pass. Registration marks at two corners are what
+//                    a person puts on an image that has been framed and passed
+//                    for output; they are a production mark, not an ornament,
+//                    which is why they sit on the frame rather than inside it.
+//                    They surround BOTH regions on purpose: §2's claim is that
+//                    a person checks the result, not that a person checks the
+//                    generated half.
+//
+// WHAT THIS FIGURE MUST NOT DO. The brief's constraint on this page is "never
+// turn AI Act page into a fear pitch", and a drawing can breach that more
+// quietly than a sentence can. So: no red, no warning mark, no scale or meter
+// implying a quantity of artificiality, no before/after pair implying something
+// was got away with. Two regions, named, at equal weight. The page's own §6
+// refuses to characterise the client's images in either direction, and a
+// diagram that visually editorialised would say what §6 declines to say.
+//
+// NO PHOTOGRAPH IN HERE, deliberately, and this is the one figure where that
+// choice carries an argument rather than a house style. A real product photo
+// dropped into the solid region would make the drawing prettier and would also
+// make it a specimen — a claim about one actual image — when what it needs to
+// be is a claim about the shape of every image. The abstraction is the honesty.
+//
+// NO MOTION AND NO REVEAL. /ai-act carries no reveal animation because the
+// legal pages it sits with carry none, and the page's own markup comment says
+// why: a trust document that fades in on scroll is performing. A figure that
+// animated in would break that on the one page where tone is the subject.
+//
+// All copy is passed in from the calling page's bilingual COPY table, so
+// check_lang_parity covers EN/NL parity on it for free and no language lives in
+// this file. Same contract as every other Fig* component.
+//
+// The key rows carry an explicit `mark` and the markup tests it three times
+// against literal strings rather than building a class name with a template
+// literal. That is not clumsiness. class_census, verify3 and orphan_sweep read
+// the markup statically; an interpolated `is-${k.mark}` is invisible to all
+// three, so the three styles below would be reported as dead and the three
+// classes above as unstyled. The idiom here matches FigPipeline's `s.gate &&
+// 'is-gate'` for the same reason.
+//
+// `mark` is typed `string` rather than 'real' | 'built' | 'checked', and that is
+// forced by the calling page rather than preferred here. AiActPage's COPY table
+// carries no `as const` — its own comment says why: with it, COPY[lang] resolves
+// to a union of readonly tuple types and .map() on that union is a TS error, so
+// every page component omits it. Without it every string in the table widens to
+// `string`, and a literal union in this interface would reject the very table
+// this component is fed from. The three values are enforced by the three literal
+// comparisons in the markup instead, and an unrecognised mark therefore draws no
+// swatch at all — a visible blank beside a term rather than a wrong mark beside
+// it. That is the right way for this particular figure to fail. A key row that
+// silently drew the solid ink block next to "Built" would be a false provenance
+// claim, which is the one error this page cannot afford to make.
+interface Key {
+  mark: string;
+  t: string;
+  b: string;
+}
+interface Props {
+  realLabel: string;
+  builtLabel: string;
+  keys: Key[];
+  note?: string;
+}
+const { realLabel, builtLabel, keys, note } = Astro.props;
+---
+
+<figure class="an">
+  <div class="an-row">
+
+    {/* Not aria-hidden: the two labels inside it are real text and they carry
+        the whole point of the drawing. Only the marks that repeat what the text
+        already says are hidden from the accessibility tree. */}
+    <div class="an-plate">
+      <div class="an-frame">
+        <span class="an-built-lab">{builtLabel}</span>
+        <div class="an-real">
+          <span class="an-real-lab">{realLabel}</span>
+        </div>
+      </div>
+    </div>
+
+    <ul class="an-keys">
+      {keys.map((k) => (
+        <li class="an-key">
+          <span
+            class:list={[
+              'an-mark',
+              k.mark === 'real' && 'is-real',
+              k.mark === 'built' && 'is-built',
+              k.mark === 'checked' && 'is-checked',
+            ]}
+            aria-hidden="true"
+          ></span>
+          <span class="an-key-t">{k.t}</span>
+          <span class="an-key-b">{k.b}</span>
+        </li>
+      ))}
+    </ul>
+
+  </div>
+  {note && <figcaption class="an-note">{note}</figcaption>}
+</figure>
+
+<style>
+  .an { margin: 0; }
+
+  .an-row {
+    display: grid;
+    grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+    gap: clamp(1.4rem, 4vw, 3rem);
+    align-items: start;
+  }
+
+  /* The crop marks live on the plate rather than on the frame so they sit
+     OUTSIDE the frame's own border, which is where a registration mark goes.
+     Two opposite corners, not four: two is enough to read as registration and
+     four starts to look like a decorative bracket, which is the thing this
+     page cannot afford. */
+  .an-plate { position: relative; padding: 9px; }
+  .an-plate::before,
+  .an-plate::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 0 solid var(--ink);
+  }
+  .an-plate::before { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; }
+  .an-plate::after { right: 0; bottom: 0; border-right-width: 2px; border-bottom-width: 2px; }
+
+  /* 4/5 is the ratio the site's own product placeholders use, so the rectangle
+     reads as a delivered visual rather than as a generic box. */
+  .an-frame {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border: 1px solid var(--line-strong);
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 5px,
+      var(--line-strong) 5px 6px
+    );
+    overflow: hidden;
+  }
+
+  /* Knocked out of the hatch with a solid ground behind it — the drafting
+     convention for a label over hatching, and the only way small type stays
+     readable on a 6px pitch. */
+  .an-built-lab {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    max-width: calc(100% - 16px);
+    padding: 3px 6px;
+    background: var(--bg);
+    font-size: .72rem;
+    line-height: 1.25;
+    color: var(--ink-2);
+  }
+
+  /* Standing on the floor of the frame, centred, occupying a minority of it.
+     The proportion is the claim: most of what you are looking at was built,
+     and the part that was not is the product itself. */
+  .an-real {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 46%;
+    height: 58%;
+    background: var(--ink);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 8px;
+  }
+  .an-real-lab {
+    font-size: .72rem;
+    line-height: 1.25;
+    text-align: center;
+    color: var(--bg);
+  }
+
+  .an-keys {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 2.4vw, 1.5rem);
+  }
+
+  /* Two columns: the mark keeps its own gutter so the three terms align on one
+     edge regardless of how wide each mark is drawn. */
+  .an-key {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    column-gap: .9rem;
+    align-items: start;
+  }
+
+  .an-mark { width: 22px; height: 22px; grid-row: span 2; }
+  .is-real { background: var(--ink); }
+  .is-built {
+    border: 1px solid var(--line);
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 4px,
+      var(--line-strong) 4px 5px
+    );
+  }
+
+  /* The same two-corner registration mark as the plate, at swatch size, so the
+     key is drawn with the mark it is explaining rather than with a stand-in. */
+  .is-checked { position: relative; }
+  .is-checked::before,
+  .is-checked::after {
+    content: '';
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border: 0 solid var(--ink);
+  }
+  .is-checked::before { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; }
+  .is-checked::after { right: 0; bottom: 0; border-right-width: 2px; border-bottom-width: 2px; }
+
+  .an-key-t { font-size: .95rem; font-weight: 600; color: var(--ink); }
+  .an-key-b {
+    grid-column: 2;
+    margin-top: .3rem;
+    font-size: .85rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 46ch;
+  }
+
+  .an-note {
+    margin-top: 1.4rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+    line-height: 1.6;
+    color: var(--ink-3);
+    max-width: 62ch;
+  }
+
+  /* Below the fold-point the frame goes full width and the key follows it. The
+     frame keeps its ratio, so it is capped rather than left to grow to the full
+     column — a page-tall rectangle of hatching would be the drawing shouting,
+     and this page in particular must not. */
+  @media (max-width: 720px) {
+    .an-row { grid-template-columns: 1fr; }
+    .an-plate { max-width: 300px; }
+  }
+</style>

@@ -61,8 +61,30 @@ import {
   clearedWindows,
 } from '../../src/data/capacity.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
+import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOW MUCH OF THE CLIENT'S UPLOAD RIDES ALONG IN THE STUDIO'S EMAIL
+//
+// The count was not enough. "3 uploaded files" told the studio that something
+// arrived and nothing about what, so the only way to SEE a client's reference
+// photographs was the R2 dashboard with a batch prefix typed in by hand. The
+// photographs now travel with the notice.
+//
+// Not all of them, and that is deliberate. A batch may legally hold 80 files of
+// 25 MB — two gigabytes — and Resend refuses a message over 40 MB outright, so
+// an unbounded attach would turn a large order into NO notification at all.
+// That is strictly worse than the count it replaces. So: a hard budget, the
+// files that fit are attached, and EVERY file is listed by name, size and key
+// whether it was attached or not. The email is never the only copy; R2 is.
+//
+// Base64 inflates by 4/3, so 8 MB of photographs is ~11 MB on the wire — well
+// inside Resend's limit with room for a second thought later.
+// ─────────────────────────────────────────────────────────────────────────────
+const MAIL_ATTACH_MAX_BYTES = 8 * 1024 * 1024;
+const MAIL_ATTACH_MAX_FILES = 10;
 
 // Fields we lift into their own columns; everything else goes to details_json.
 //
@@ -268,18 +290,76 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // client pays in latency for no benefit at all.
   if (orderId && staged.length) await safe(() => attachUploads(env, orderId, staged));
 
-  await safe(() => sendMail(env, {
-    to: env.NOTIFY_EMAIL || 'hello@visuails.com',
-    subject: `${raced ? '[WINDOW LOST] ' : ''}New ${svc} order — ${ref}`,
-    html: notifyEmail(ref, svc, { name, brand, email, phone, vat, website }, details, {
+  // ───────────────────────────────────────────────────────────────────────────
+  // SECTION 10 · THE LINK THAT MAKES THE PORTAL REACHABLE.
+  //
+  // /o/<token> has been finished, rate-limited and tested since section 10, and
+  // it had never once been reachable. Nothing in the shipping codebase wrote an
+  // order_tokens row, so the table stayed permanently empty, every lookup
+  // missed, portalUrl() had no callers, and no confirmation ever carried a
+  // link. A portal nobody can open is the same thing as no portal.
+  //
+  // This is the only moment both halves exist at once: an order row to hang the
+  // token on, and an address to send it to. The raw token lives in this scope
+  // and in the client's inbox; what reaches the database is its SHA-256. See
+  // src/lib/token.js — that asymmetry is the whole design, and it is why the
+  // link cannot be re-derived later from the row. It goes out now or never.
+  //
+  // Wrapped in safe(), like every other side effect here. If the mint or the
+  // insert fails, the client still gets a confirmation — without a link, which
+  // is a worse email but is still an email. The order is what must survive.
+  // ───────────────────────────────────────────────────────────────────────────
+  let portalLink = null;
+  if (orderId) {
+    await safe(async () => {
+      if (!env.DB) return;
+      const token = mintToken();
+      await env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
+        .bind(orderId, await hashToken(token)).run();
+      portalLink = portalUrl(token, requestOrigin(request));
+    });
+  }
+
+  // The photographs themselves, not a count of them. Awaited rather than
+  // deferred: the notice that an order exists is the one message in this
+  // function that has no second delivery path, and a waitUntil that is dropped
+  // by the runtime loses it silently. The cost is a bounded read from R2 in the
+  // same network, and only on orders that actually carried files.
+  const packed = staged.length ? await packAttachments(env, staged) : { attachments: [], keys: [] };
+
+  await safe(async () => {
+    const to = env.NOTIFY_EMAIL || 'hello@visuails.com';
+    const subject = `${raced ? '[WINDOW LOST] ' : ''}New ${svc} order — ${ref}`;
+    const body = (attached) => notifyEmail(ref, svc, { name, brand, email, phone, vat, website }, details, {
       tier, products, window: finalWindow, raced, asked, uploads: staged.length,
-      upgrade: upgradeCount,
-    }),
-  }));
+      upgrade: upgradeCount, files: staged, attached, portal: portalLink,
+    });
+    try {
+      await sendMail(env, { to, subject, html: body(packed.keys), attachments: packed.attachments });
+    } catch (e) {
+      // A REFUSED ATTACHMENT MUST NOT COST THE NOTIFICATION. Resend can reject
+      // the whole message for a reason that belongs to the files — total size,
+      // a type it will not carry — and losing the order notice to save the
+      // photographs is exactly backwards. Retry once, plain, with copy that
+      // matches what actually went: the second body says nothing was attached,
+      // because nothing was, and the keys are in the table either way.
+      //
+      // ONLY when something was actually attached. A message with no files that
+      // Resend refused was refused for a reason the retry cannot change — the
+      // service is down, the key is wrong — and sending it a second time is one
+      // more failed request and, on the day Resend is merely slow rather than
+      // broken, one duplicate in the studio's inbox. Rethrow instead and let
+      // safe() log it, which is what every other unattached send here does.
+      if (!packed.attachments.length) throw e;
+      console.error('[order] notify with attachments refused, retrying plain —', e && e.message ? e.message : e);
+      await sendMail(env, { to, subject, html: body([]) });
+    }
+  });
   await safe(() => sendMail(env, {
     to: email,
     subject: lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`,
-    html: customerEmail(lang, ref, svc, name, { tier, window: finalWindow, upgrade: upgradeLine }),
+    html: customerEmail(lang, ref, svc, name,
+      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink }),
   }));
 
   const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
@@ -571,7 +651,108 @@ async function attachUploads(env, orderId, staged) {
   for (const r of rows) await env.DB.prepare(sql).bind(...r).run();
 }
 
+/**
+ * The client's uploads, ready for Resend's attachments array, under a hard budget.
+ *
+ * Returns { attachments, keys } — `keys` is the r2_key of everything that
+ * actually travelled, so the email can mark each row of its file table rather
+ * than assume the first N fit. They are not always the first N: a 20 MB file is
+ * stepped over and a 200 kB one after it still rides along, which is the right
+ * use of a fixed budget and the wrong thing to describe with a count.
+ *
+ * Order is listBatch's order, oldest first — the four angles arrive in the
+ * order they were shot, not sorted by size.
+ *
+ * Never throws, and never lets one unreadable object stop the rest. An R2
+ * outage here costs the studio the pictures in that one email, not the notice
+ * that there is an order at all; the objects and the files rows both survive it.
+ */
+async function packAttachments(env, staged) {
+  const out = { attachments: [], keys: [] };
+  if (!env?.UPLOADS || typeof env.UPLOADS.get !== 'function') return out;
+
+  let budget = MAIL_ATTACH_MAX_BYTES;
+  for (const f of staged) {
+    if (out.attachments.length >= MAIL_ATTACH_MAX_FILES) break;
+    if (!f || !f.key) continue;
+    // Cheap rejection first, on the size R2 already told us, so a file that
+    // cannot fit is never pulled across the network to find that out.
+    if (Number(f.bytes) > budget) continue;
+
+    const obj = await safe(() => env.UPLOADS.get(f.key));
+    if (!obj || typeof obj.arrayBuffer !== 'function') continue;
+    const buf = await safe(() => obj.arrayBuffer());
+    // The measured length is the authority, not customMetadata and not the
+    // listing: `bytes` can arrive as 0 from a bucket that did not report a size,
+    // and a budget checked against 0 is not a budget.
+    if (!buf || buf.byteLength > budget) continue;
+
+    budget -= buf.byteLength;
+    out.attachments.push({ filename: mailFilename(f.name, out.attachments.length), content: toBase64(buf) });
+    out.keys.push(f.key);
+  }
+  return out;
+}
+
+/**
+ * A filename an email client can be handed.
+ *
+ * The source is customMetadata.original, which is whatever the visitor's browser
+ * put in the multipart part — client-controlled, so path separators, control
+ * characters and quotes come off before it is written into a MIME header. The
+ * tail is kept rather than the head, because the extension is the part a mail
+ * client reads.
+ */
+function mailFilename(name, index) {
+  const cleaned = String(name || '')
+    .replace(/[/\\]/g, '-')
+    .replace(/[\u0000-\u001f\u007f"']/g, '')
+    .trim()
+    .slice(-120);
+  return cleaned || `upload-${index + 1}`;
+}
+
+/**
+ * Bytes → base64, in chunks.
+ *
+ * String.fromCharCode(...bytes) on a 25 MB photograph is a stack overflow, not a
+ * slow path — the spread becomes one call with 25 million arguments. 32 kB at a
+ * time is well under every engine's argument limit and costs one concatenation
+ * per chunk.
+ */
+function toBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  const CHUNK = 0x8000;
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
+}
+
 // ---------- helpers ----------------------------------------------------------
+
+/**
+ * The origin the request actually arrived on, for links read outside a browser.
+ *
+ * Not hardcoded: a preview deployment then mails preview links and a local
+ * `wrangler pages dev` mails localhost ones, so the portal link is followable
+ * from the environment that sent it. A link you cannot click in staging is a
+ * link nobody tests until a client has it. Falls back to the canonical host,
+ * which is what portalUrl() would have used on its own.
+ */
+function requestOrigin(request) {
+  try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; }
+}
+
+/** A file size a person reads at a glance. '' for nothing, so the cell stays empty. */
+function fileSize(bytes) {
+  const n = Number(bytes) || 0;
+  if (!n) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} kB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 async function upsertCustomer(env, c) {
   if (!env.DB) return null;
@@ -590,13 +771,23 @@ async function upsertCustomer(env, c) {
   return row?.id ?? null;
 }
 
-async function sendMail(env, { to, subject, html }) {
+/**
+ * One message out through Resend.
+ *
+ * `attachments` is omitted from the payload entirely when there are none, rather
+ * than sent as []. Every message this endpoint has ever sent is unattached, and
+ * an empty array is a new key on all of them — a difference in the wire format
+ * that buys nothing and would have to be explained to anyone reading a log.
+ */
+async function sendMail(env, { to, subject, html, attachments }) {
   if (!env.RESEND_API_KEY) return;                 // not configured yet → skip quietly
   const from = env.FROM_EMAIL || 'VISUAILS <orders@visuails.com>';
+  const payload = { from, to, subject, html, reply_to: 'hello@visuails.com' };
+  if (attachments && attachments.length) payload.attachments = attachments;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to, subject, html, reply_to: 'hello@visuails.com' }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
 }
@@ -632,9 +823,27 @@ function safeRedirect(raw, lang) {
 
 function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
 
+// PALETTE, HAND-CARRIED. Every hex in the mail HTML below is a literal on
+// purpose: a mail client cannot resolve a custom property, and half of them
+// strip <style> too, so var(--warn-ink) in an inline style is a dead
+// declaration and the text renders in whatever the client's default is. That
+// makes this file a generated-asset dependency on global.css in the same way
+// the logo raster and the shader's vec3 are — when a token moves, these move
+// by hand or the studio mail keeps the old palette.
+//
+// The live set, and what each one is:
+//   #8F4023  --warn-ink   the lost-window banner and the no-window line
+//   #0F5F6F  --signal-ink "attached", the affirmative state in the file table
+//   #8F8C87  muted label  keys in the detail table, "R2 only", the R2 key
+// #666, #333 and #f4f4f8 elsewhere are generic mail greys with no token
+// behind them and are deliberately left alone. #8F8C87 is NOT one of those:
+// it used to be #8a8aa0, a grey-VIOLET tinted toward the old blue-black ink,
+// which is now the one wrong temperature on the page. It was retinted to the
+// warm ink hue at the same luminance (Y 0.261 -> 0.264), so nothing about its
+// legibility changed — only which family it belongs to.
 function detailRows(obj) {
   return Object.entries(obj).map(([k, v]) =>
-    `<tr><td style="padding:4px 12px 4px 0;color:#8a8aa0">${esc(k)}</td><td style="padding:4px 0"><strong>${esc(v)}</strong></td></tr>`
+    `<tr><td style="padding:4px 12px 4px 0;color:#8F8C87">${esc(k)}</td><td style="padding:4px 0"><strong>${esc(v)}</strong></td></tr>`
   ).join('');
 }
 
@@ -662,10 +871,12 @@ function eventNote({ tier, window, raced, uploads, upgrade }) {
  */
 function notifyEmail(ref, service, top, details, gate = {}) {
   const rows = detailRows({ ...top, ...details });
-  const { tier, products, window, raced, asked, uploads, upgrade } = gate;
+  const { tier, products, window, raced, asked, uploads, upgrade, portal } = gate;
+  const files = gate.files || [];
+  const attached = gate.attached || [];
 
   const banner = raced
-    ? `<p style="margin:0 0 16px;padding:12px;background:#844B00;color:#fff;font-size:14px">
+    ? `<p style="margin:0 0 16px;padding:12px;background:#8F4023;color:#fff;font-size:14px">
          <strong>Window lost.</strong> This order asked for
          ${esc(asked?.start || '?')}&nbsp;→&nbsp;${esc(asked?.end || '?')} and passed the gate, but a
          concurrent booking took it first, so no date is reserved. The client has been told we will
@@ -676,7 +887,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   const reserved = window
     ? `<p style="margin:0 0 16px">Window reserved: <strong>${esc(window.start)} → ${esc(window.end)}</strong></p>`
     : tier === 'attended'
-      ? `<p style="margin:0 0 16px;color:#844B00">Attended order with <strong>no reserved window</strong>.</p>`
+      ? `<p style="margin:0 0 16px;color:#8F4023">Attended order with <strong>no reserved window</strong>.</p>`
       : `<p style="margin:0 0 16px;color:#666">Standard queue — no window, by design.</p>`;
 
   // SECTION 13 · the upgrade path, from the studio's side. Deliberately its own
@@ -697,6 +908,46 @@ function notifyEmail(ref, service, top, details, gate = {}) {
        </p>`
     : '';
 
+  // THE LINK, ON THE STUDIO'S COPY TOO. Same URL the client got, and there is no
+  // second copy of it anywhere: the database holds a hash, so if this email is
+  // deleted the only way back into that order is to issue a new token. Worth
+  // saying once, here, rather than discovering it the first time it matters.
+  const portalNote = portal
+    ? `<p style="margin:0 0 16px">
+         <a href="${esc(portal)}">Open the client's order page →</a><br>
+         <span style="color:#666;font-size:12px">
+           The same link the client received, and the only copy — the database stores a hash of it.
+         </span>
+       </p>`
+    : '';
+
+  // WHAT THE CLIENT SENT, NOT HOW MANY THINGS THEY SENT.
+  //
+  // This was one clause in `meta` reading "3 uploaded files". The photographs
+  // were in R2 and in the files table the whole time; the studio's only route to
+  // them was the R2 dashboard with a batch prefix typed in by hand, which is not
+  // a route, it is a scavenger hunt. Every file is named, sized and keyed here
+  // whether or not it fit in the attachment budget, so the row is useful even
+  // when the picture did not travel.
+  const fileTable = files.length
+    ? `<h3 style="margin:20px 0 6px;font-size:14px">Client uploads (${files.length})</h3>
+       <p style="margin:0 0 8px;color:#666;font-size:12px">${
+         attached.length
+           ? `${esc(attached.length)} of ${esc(files.length)} attached to this email. The rest are in R2 under the keys below.`
+           : 'Nothing attached — over the mail budget, or the bucket was unreachable. All of them are in R2 under the keys below.'
+       }</p>
+       <table style="border-collapse:collapse;font-size:13px">${
+         files.map((f) => `<tr>
+           <td style="padding:3px 12px 3px 0;color:${attached.includes(f.key) ? '#0F5F6F' : '#8F8C87'}">${
+             attached.includes(f.key) ? 'attached' : 'R2 only'
+           }</td>
+           <td style="padding:3px 12px 3px 0"><strong>${esc(f.name || '—')}</strong></td>
+           <td style="padding:3px 12px 3px 0;color:#666;white-space:nowrap">${esc(fileSize(f.bytes))}</td>
+           <td style="padding:3px 0;color:#8F8C87;font-family:ui-monospace,Menlo,monospace;font-size:11px">${esc(f.key || '')}</td>
+         </tr>`).join('')
+       }</table>`
+    : '';
+
   const meta = [
     tier ? `tier <strong>${esc(tier)}</strong>` : null,
     products ? `${esc(products)} products` : null,
@@ -709,8 +960,10 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     <p style="margin:0 0 4px">Reference <strong>${esc(ref)}</strong></p>
     ${meta ? `<p style="margin:0 0 12px;color:#666;font-size:13px">${meta}</p>` : ''}
     ${reserved}
+    ${portalNote}
     ${upgradeNote}
     <table style="border-collapse:collapse;font-size:14px">${rows}</table>
+    ${fileTable}
   </div>`;
 }
 
@@ -736,7 +989,8 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  * claimUpgradePrompt() owns whether the quarter was free. All that happens here
  * is placement, which is the one thing the copy cannot carry itself.
  */
-function customerEmail(lang, ref, service, name, { tier = 'unattended', window = null, upgrade = null } = {}) {
+function customerEmail(lang, ref, service, name,
+  { tier = 'unattended', window = null, upgrade = null, portal = null } = {}) {
   const nl = lang === 'nl';
   const hi = name ? `Hi ${esc(name)},` : 'Hi,';
   const attended = tier === 'attended';
@@ -788,10 +1042,32 @@ function customerEmail(lang, ref, service, name, { tier = 'unattended', window =
     ? `<p style="margin:16px 0 0;padding-top:14px;border-top:1px solid #e6e6ee;color:#555;font-size:13px">${esc(upgrade)}</p>`
     : '';
 
+  // THE PORTAL LINK. After the timing and before the aftercare line, because it
+  // answers the question the timing sentence just raised — so where do I watch
+  // this happen — and because the last thing a confirmation should say is still
+  // that a person checks the work.
+  //
+  // The warning under it is not boilerplate and is not legal cover. This URL is
+  // the only thing between the order and the internet: there is no password to
+  // add later, and a client who forwards it to a supplier has handed over the
+  // gallery. They can only weigh that if we tell them, in the message that
+  // carries the link, at the moment they first have it.
+  //
+  // The URL is printed as well as linked. Mail clients that strip anchors, and
+  // people who read on a phone and continue on a desktop, both need the text.
+  const portalNote = portal
+    ? (nl
+      ? `<p>Je order staat hier: <a href="${esc(portal)}">${esc(portal)}</a><br>
+         <span style="color:#666;font-size:13px">Deze link is de sleutel tot je order — iedereen die hem heeft, kan meekijken. Houd hem binnen je team.</span></p>`
+      : `<p>Your order lives here: <a href="${esc(portal)}">${esc(portal)}</a><br>
+         <span style="color:#666;font-size:13px">This link is the key to your order — anyone who has it can see it. Keep it inside your team.</span></p>`)
+    : '';
+
   return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
     <p>${hi}</p>
     <p>${received}</p>
     <p>${timing}</p>
+    ${portalNote}
     <p>${care}</p>
     ${upgradeNote}
     <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL · hello@visuails.com</p>

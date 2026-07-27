@@ -1,0 +1,228 @@
+---
+// VISUAILS — FigConverge: what has to agree with what before anything is made.
+//
+// /compare states this across two matrix rows — "When it lands" and "If
+// something is wrong" — and both of them are really the same fact wearing two
+// hats: a production day needs four separate schedules to meet on one date, so
+// everything downstream hangs off that meeting, so a reshoot is not a repair,
+// it is the meeting again. A table can only ever say that twice in prose. Four
+// lines converging on one mark says it once, and says why the second row
+// follows from the first without the page having to claim it.
+//
+// THIS FIGURE MUST NOT SCORE A POINT, and that is a harder constraint here
+// than on any other figure in the repo. /compare is built even-handed on
+// purpose: its lead promises "the comparison with nothing hidden on either
+// side", and section 3 is four cards on where a shoot day genuinely wins.
+// A drawing that made one column look like the answer would take that apart
+// faster than any sentence, because a reader argues with a sentence and
+// absorbs a diagram.
+//
+// So the figure draws STRUCTURE and refuses VERDICT. Four calendars meeting at
+// a point versus one folder arriving is a fact a studio would state the same
+// way we do — it is what a production day IS, not a weakness someone hid. The
+// converging side is drawn first, at full weight, with no visual apology. What
+// the reader concludes from it is the reader's business, and the page has
+// already told them the cases where the answer is "book the day".
+//
+// NO TIME AXIS, and for the same reason FigCapacity has no calendar grid: task
+// #190 retired every duration claim from this site, and the only sanctioned
+// duration strings come from turnaround() in pricing.js. A horizontal line
+// that a reader can measure is a duration whatever the label says, so the
+// lanes here are ordered but not scaled. Their lengths differ because four
+// independent schedules do not naturally line up — that unevenness is the
+// content — and any edit that makes them regular, or adds a tick, or lets a
+// reader count anything, has quietly reintroduced the promise those two tasks
+// spent two rounds removing.
+//
+// Every word arrives as a prop from ComparePage's bilingual COPY table, so
+// check_lang_parity holds EN and NL in step on it. Nothing in this file is
+// language-dependent, and nothing in it is data: the lane widths below are
+// drawing, and no number here means anything.
+interface Lane {
+  label: string;
+}
+interface Props {
+  // The converging side: several independent things that must meet.
+  convergeTitle: string;
+  lanes: Lane[];
+  meetLabel: string;
+  convergeOut: string;
+  // The sequential side: one thing arrives, then the next.
+  seqTitle: string;
+  seqSteps: string[];
+  seqOut: string;
+  note?: string;
+}
+const {
+  convergeTitle, lanes, meetLabel, convergeOut,
+  seqTitle, seqSteps, seqOut, note,
+} = Astro.props;
+
+// Uneven on purpose — see the header. Cycled rather than indexed so the
+// component does not care how many lanes the page passes; a fifth lane gets a
+// width from the same pattern instead of an undefined, which would collapse
+// the lane to zero and read as "this one takes no arranging".
+const LANE_W = [86, 62, 74, 55];
+---
+
+<figure class="cv">
+  <div class="cv-cols">
+
+    <div class="cv-side">
+      <p class="cv-title">{convergeTitle}</p>
+      <div class="cv-conv">
+        <div class="cv-lanes">
+          {lanes.map((l, i) => (
+            <div class="cv-lane">
+              <span class="cv-lane-l">{l.label}</span>
+              <span class="cv-lane-bar" style={`width:${LANE_W[i % LANE_W.length]}%`}></span>
+            </div>
+          ))}
+        </div>
+        <div class="cv-meet"><span class="cv-meet-t">{meetLabel}</span></div>
+      </div>
+      <p class="cv-out">{convergeOut}</p>
+    </div>
+
+    <div class="cv-side">
+      <p class="cv-title">{seqTitle}</p>
+      <ol class="cv-seq">
+        {seqSteps.map((s) => (
+          <li class="cv-step"><span class="cv-step-t">{s}</span></li>
+        ))}
+      </ol>
+      <p class="cv-out">{seqOut}</p>
+    </div>
+
+  </div>
+  {note && <figcaption class="cv-note">{note}</figcaption>}
+</figure>
+
+<style>
+  .cv { margin: 0; }
+
+  .cv-cols { display: grid; gap: clamp(2.2rem, 5vw, 3.4rem); }
+  @media (min-width: 880px) { .cv-cols { grid-template-columns: 1fr 1fr; } }
+
+  /* min-width:0 for the reason spelled out in FigCapacity: a grid item will
+     not shrink below its content by default, and the content here is a stack
+     of percentage-width bars that would otherwise widen the column rather
+     than getting shorter. */
+  .cv-side { min-width: 0; }
+
+  .cv-title {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--ink);
+    padding-bottom: .7rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  /* The convergence. The lanes sit left, the meeting rule sits right, and the
+     lanes stop short of it by different amounts — which is what makes the rule
+     read as something they were brought to rather than something they reach on
+     their own. */
+  .cv-conv {
+    display: flex;
+    align-items: stretch;
+    gap: .9rem;
+    margin-top: 1.4rem;
+  }
+
+  .cv-lanes { flex: 1; min-width: 0; display: grid; gap: .8rem; }
+
+  .cv-lane { display: grid; gap: .3rem; }
+
+  .cv-lane-l {
+    font-size: .78rem;
+    line-height: 1.3;
+    color: var(--ink-2);
+  }
+
+  /* Hatched for the same reason FigCapacity's blocks are: it is the floor-plan
+     convention for "spoken for", and CSS has no hatch primitive so a repeating
+     gradient is the only way to draw one. Not decoration — remove the pattern
+     and the bar reads as a progress bar, which would put a scale back on an
+     axis that deliberately has none. */
+  .cv-lane-bar {
+    display: block;
+    height: 11px;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 5px,
+      var(--line-strong) 5px 6px
+    );
+    border: 1px solid var(--line);
+  }
+
+  /* The one date. A solid rule the full height of the lane stack, so every
+     lane visibly terminates on the same thing. */
+  .cv-meet {
+    position: relative;
+    flex: 0 0 auto;
+    width: 2px;
+    background: var(--ink);
+  }
+  .cv-meet-t {
+    position: absolute;
+    left: .55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .7rem;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  /* The sequential side. An <ol> because it genuinely is one — each step waits
+     on the one above it — and the ordinal is carried by the element, not
+     printed: markers off, and the left padding holds the connector rail below
+     rather than a number. A sequence is the one place DESIGN.md's rejection of
+     01/02/03 would NOT apply, so drawing them was available and was not taken.
+     Two boxes and a tick between them is already ordered to a reader; adding
+     "1." would be labelling the ordering twice, and the second label is the
+     one that starts to look like scaffolding. */
+  .cv-seq {
+    list-style: none;
+    margin: 1.4rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: .55rem;
+  }
+  .cv-step {
+    position: relative;
+    padding: .6rem .8rem .6rem 1.9rem;
+    border: 1px solid var(--line-strong);
+  }
+  .cv-step + .cv-step::after {
+    content: '';
+    position: absolute;
+    left: 1.05rem;
+    top: -.55rem;
+    height: .55rem;
+    border-left: 1px solid var(--line-strong);
+  }
+  .cv-step-t {
+    font-size: .8rem;
+    line-height: 1.4;
+    color: var(--ink-2);
+  }
+
+  .cv-out {
+    margin-top: 1.1rem;
+    font-size: .85rem;
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 42ch;
+  }
+
+  .cv-note {
+    margin-top: 1.6rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+    color: var(--ink-3);
+    max-width: 62ch;
+  }
+</style>

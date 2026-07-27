@@ -43,6 +43,7 @@ import {
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
+import FigPayback from './FigPayback.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -57,9 +58,20 @@ const shoot = SHOOT_DAY[lang];
 // interchangeable cards. Two of them are ways to buy a drop; two of them
 // attach to a drop you are already buying. Rendering all four identically
 // would say they are four choices at the same level, which is false.
+//
+// THAT INTENT WAS STATED HERE FOR A YEAR AND THE MARKUP DID NOT KEEP IT. The
+// add-ons were a second array through a second .map(), which produced a second
+// priced-card grid — different class names, identical shape. check_rhythm.py
+// measures sections by shape rather than by name and read sections 2 and 4 as
+// one device used twice, which is the whole of Lucas's complaint in task #246
+// arriving as a number. So the two add-ons stop being a list here: a list is a
+// set of things you choose between, and these two are not that. One of them is
+// a sum the reader has to do; the other is a list of what is inside it. They
+// are named, and section 4 below gives each the shape its own claim needs.
 const byId = Object.fromEntries(PACKAGES[lang].map((p) => [p.id, p]));
 const dropPackages = [byId['pilot'], byId['full-drop']];
-const addOnPackages = [byId['brand-model'], byId['retainer']];
+const brandModel = byId['brand-model'];
+const retainer = byId['retainer'];
 
 // ── Copy ───────────────────────────────────────────────────────────────────
 // Prose only. Every promise — timing, queue, delivery, revisions, review
@@ -96,6 +108,15 @@ const COPY = {
     addOnSub: 'Neither of these is a way to buy visuals on its own. Both sit on top of a drop you are already running.',
     addOnCta: 'Talk it through',
     brandModelCta: 'See Your Brand Model',
+    // FigPayback's three labels. They are copy, so they live in the COPY table
+    // and travel through check_lang_parity like every other string; the drawing
+    // itself holds no language and no number. `pbRunLabel` is the first half of
+    // the sentence that used to be `creditLine` in pricing.js — the half that
+    // states a fact. The half that asked the reader to multiply is the picture.
+    pbTotalLabel: 'Setup',
+    pbRunLabel: `Credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    pbEndLabel: 'Setup repaid',
+    retainerIncH: 'Every month, this:',
 
     inclH: 'In every drop',
     gateLead: 'No date is printed until the calendar clears it.',
@@ -173,6 +194,10 @@ const COPY = {
     addOnSub: 'Geen van beide is op zichzelf een manier om visuals te kopen. Ze komen bovenop een drop die je al draait.',
     addOnCta: 'Even overleggen',
     brandModelCta: 'Bekijk Jouw merkmodel',
+    pbTotalLabel: 'Setup',
+    pbRunLabel: `Verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    pbEndLabel: 'Setup terugverdiend',
+    retainerIncH: 'Elke maand dit:',
 
     inclH: 'In elke drop',
     gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
@@ -337,35 +362,68 @@ const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
   <p class="anchor-note reveal pending">{c.anchorNote}</p>
 </div></section>
 
-<!-- WHAT RIDES ON TOP OF A DROP -->
+<!-- WHAT RIDES ON TOP OF A DROP.
+     Two products, two shapes, and the asymmetry is the argument. A Brand Model
+     is a one-time price whose interesting property is arithmetic: it is exactly
+     five credits, so it cancels itself over five drops. That is drawn, because
+     a drawing is how you show a sum. A retainer is a standing order whose
+     interesting property is its contents, and a list of contents is a list —
+     so it stays one, and gets no picture, because there is no sum to show.
+
+     WHAT THE BRAND MODEL BLOCK DOES NOT CARRY, on purpose: its four inclusions.
+     They are one click away on /custom-models, which is a page about the
+     product; this is a page about the money, and the four bullets were the
+     third statement of the credit on a page that already had two. Removing
+     text a reader can reach in one click is the literal ask in task #246.
+     The retainer keeps its list for the opposite reason — there is no retainer
+     page, so this list is the only place the offer is described. -->
 <section class="section-tight"><div class="container">
   <div class="section-head"><h2>{c.addOnH}</h2><p>{c.addOnSub}</p></div>
 
-  <div class="rides reveal-group">
-    {addOnPackages.map((p) => (
-      <div class="ride reveal pending">
-        <div>
-          <h3 class="ride-name">{p.name}</h3>
-          <p class="ride-line">{p.line}</p>
-          <div class="ride-price">
-            <span class="rp-amount">{p.price}</span>
-            <span class="rp-unit">{p.unit}</span>
-          </div>
-          {p.creditLine && <p class="ride-credit">{p.creditLine}</p>}
-          <a
-            href={p.id === 'brand-model' ? lp('/custom-models') : lp('/contact')}
-            class="link-arrow ride-cta"
-          >{p.id === 'brand-model' ? c.brandModelCta : c.addOnCta}
-            <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-        </div>
-        <ul class="checklist ride-inc">
-          {p.includes.map((f) => (
-            <li><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
-          ))}
-        </ul>
-      </div>
-    ))}
+  <div class="addon reveal pending">
+    <div class="addon-id">
+      <h3 class="addon-name">{brandModel.name}</h3>
+      <p class="addon-line">{brandModel.line}</p>
+    </div>
+    <p class="addon-price">
+      <span class="ap-amount">{brandModel.price}</span>
+      <span class="ap-unit">{brandModel.unit}</span>
+    </p>
+
+    <div class="addon-fig">
+      <FigPayback
+        totalLabel={c.pbTotalLabel}
+        total={brandModel.price}
+        credit={euro(AMOUNT.brandModelCredit, lang)}
+        steps={BRAND_MODEL_CREDIT_DROPS}
+        runLabel={c.pbRunLabel}
+        endLabel={c.pbEndLabel}
+      />
+    </div>
+
+    <a href={lp('/custom-models')} class="link-arrow addon-cta">{c.brandModelCta}
+      <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+
+  <div class="standing reveal pending">
+    <div class="standing-id">
+      <h3 class="standing-name">{retainer.name}</h3>
+      <p class="standing-line">{retainer.line}</p>
+      <p class="standing-price">
+        <span class="sp-amount">{retainer.price}</span>
+        <span class="sp-unit">{retainer.unit}</span>
+      </p>
+      <a href={lp('/contact')} class="link-arrow standing-cta">{c.addOnCta}
+        <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+    <div class="standing-inc">
+      <span class="standing-inc-h">{c.retainerIncH}</span>
+      <ul class="standing-list">
+        {retainer.includes.map((f) => <li>{f}</li>)}
+      </ul>
+    </div>
   </div>
 </div></section>
 
@@ -590,31 +648,94 @@ const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
   .anchor-note { max-width: 74ch; margin-top: 1.4rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; }
 
   /* ── What rides on top ───────────────────────────────────────────────────
-     Deliberately NOT a third and fourth card. These attach to a drop, so they
-     read as full-width rows: identity on the left, what it contains on the
-     right. Structure carries the relationship the copy is claiming. */
-  .rides { margin-top: clamp(1.4rem, 3vw, 2.2rem); border-top: 1px solid var(--line-strong); }
-  .ride {
+     THE COMMENT THAT USED TO SIT HERE SAID THESE WERE "deliberately NOT a
+     third and fourth card", and it was not true. Both blocks came out of one
+     .map() over one array, so whatever the class names claimed, the markup
+     said "two more of the same thing" — and check_rhythm.py, which reads shape
+     and cannot read intentions, scored section 4 as section 2's device used a
+     second time. That measurement is task #246 arriving as a number.
+
+     So the two shapes now differ because the two claims differ. The add-on is
+     a price with a drawing underneath, because what is interesting about it is
+     arithmetic and arithmetic is a thing you show. The retainer is a price
+     beside a list, because what is interesting about it is its contents and a
+     list of contents is a list. Neither layout would work for the other
+     product, which is the test this section previously failed. */
+  .addon {
+    margin-top: clamp(1.4rem, 3vw, 2.2rem);
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(1.5rem, 4vw, 4rem);
-    padding: clamp(1.6rem, 3.2vw, 2.6rem) 0;
-    border-bottom: 1px solid var(--line-strong);
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: clamp(1.1rem, 2.6vw, 1.9rem) clamp(1.5rem, 4vw, 4rem);
+    padding: clamp(1.6rem, 3.2vw, 2.6rem);
+    border: 1px solid var(--line-strong);
   }
-  .ride-name { font-size: var(--t-h3); line-height: 1.2; }
-  .ride-line { margin-top: .55rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; }
-  .ride-price { margin-top: 1.1rem; display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
-  .rp-amount {
+  /* A grid item, so it needs the min-width reset: the default `min-width:auto`
+     makes a 1fr track refuse to shrink below its longest word, and the longest
+     word here is a product name that gets translated. Without this, a long NL
+     name pushes the price column off the right edge instead of wrapping. */
+  .addon-id { min-width: 0; }
+  .addon-name { font-size: var(--t-h3); line-height: 1.2; }
+  .addon-line { margin-top: .55rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; }
+  .addon-price { display: flex; align-items: baseline; justify-content: flex-end; gap: .55rem; flex-wrap: wrap; }
+  .ap-amount {
     font-family: var(--font-display);
     font-weight: 800;
     font-size: clamp(1.7rem, 2.8vw, 2.2rem);
     line-height: 1;
     letter-spacing: -0.03em;
   }
-  .rp-unit { font-size: .86rem; color: var(--ink-3); }
-  .ride-credit { margin-top: .8rem; font-size: .9rem; color: var(--ink-2); max-width: 40ch; line-height: 1.55; }
-  .ride-cta { display: inline-flex; align-items: center; gap: .4rem; margin-top: 1.2rem; }
-  .ride-inc { font-size: .93rem; align-self: center; }
+  .ap-unit { font-size: .86rem; color: var(--ink-3); }
+
+  /* Full width, under both the name and the price, because the figure is about
+     the relationship between them: it is that price, cut into the parts that
+     repay it. Boxing it into one column would make it an illustration beside
+     the claim rather than the claim itself. */
+  .addon-fig { grid-column: 1 / -1; }
+  .addon-cta { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: .4rem; }
+
+  /* Two panels inside one frame, split by a border rather than a gap: the
+     retainer's price and what the price buys are one offer, and a gap between
+     them would read as two. Same framing device as .packs above, at a
+     different rhythm — one row, not three columns. */
+  .standing {
+    margin-top: clamp(1rem, 2.4vw, 1.6rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line-strong);
+  }
+  .standing-id, .standing-inc { padding: clamp(1.5rem, 3vw, 2.4rem); }
+  .standing-id { display: flex; flex-direction: column; }
+  .standing-inc { border-left: 1px solid var(--line-strong); }
+  .standing-name { font-size: var(--t-h3); line-height: 1.2; }
+  .standing-line { margin-top: .55rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; }
+  .standing-price { margin-top: 1.1rem; display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
+  .sp-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.7rem, 2.8vw, 2.2rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .sp-unit { font-size: .86rem; color: var(--ink-3); }
+  .standing-cta { margin-top: auto; padding-top: 1.2rem; align-self: start; display: inline-flex; align-items: center; gap: .4rem; }
+
+  /* Sentence case and quiet. The copy this carries is "Every month, this:",
+     which is a sentence with a colon in it; setting a sentence in tracked
+     uppercase is how a label stops being readable and starts being decoration,
+     and DESIGN.md rejects that mark anyway. */
+  .standing-inc-h { display: block; font-size: .9rem; color: var(--ink-3); }
+  .standing-list { list-style: none; margin: .9rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
+  .standing-list li { position: relative; padding-left: 1.25rem; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
+  .standing-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .55em;
+    width: 6px;
+    height: 6px;
+    background: var(--ink-faint);
+  }
 
   /* ── In every drop ───────────────────────────────────────────────────── */
   .incl-grid {
@@ -764,8 +885,12 @@ const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
     .anchor-rule { height: 1px; }
     .anchor-meta { min-height: 0; }
     .anchor-per { margin-top: 1.2rem; }
-    .ride { grid-template-columns: 1fr; }
-    .ride-inc { align-self: start; }
+    .addon { grid-template-columns: 1fr; }
+    /* Stacked, the price is no longer opposite anything, so right-aligning it
+       would leave it floating against an edge with nothing across from it. */
+    .addon-price { justify-content: flex-start; }
+    .standing { grid-template-columns: 1fr; }
+    .standing-inc { border-left: 0; border-top: 1px solid var(--line-strong); }
     .t0 { grid-template-columns: 1fr; }
     .t0-terms { border-left: 0; border-top: 1px solid var(--line-strong); }
     .sample { grid-template-columns: 1fr; }

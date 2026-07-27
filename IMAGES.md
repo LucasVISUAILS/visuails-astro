@@ -38,13 +38,43 @@ real photo.
   garment as a clean catalog flat-lay (after). Use for `.ba` (drag compare)
   or `.spot` (cursor-lens compare, see global.css) wherever this exact
   moment appears.
-- **`logo-mark.webp`** — the real orange VISUAILS "V" mark, transparent
-  background. Use small (~20px) next to the wordmark in header/footer.
-- **`logo-wordmark.webp`** — the real VISUAILS wordmark, black text,
-  transparent background. Use on light surfaces only.
-- **`logo-wordmark-light.webp`** — the same wordmark recolored to `--ink`
-  (off-white) for use on the dark theme (header/footer). This is the one
-  Layout.astro actually uses.
+### The three logo rasters — one is generated, two are dead
+
+The live logotype is not a raster at all any more. It is an inline SVG sprite in
+`Layout.astro` (`<symbol id="wordmark">` and `<symbol id="markglyph">`), drawn
+through `<use>` and filled with `fill: var(--ink)`, so it takes the ink of
+whatever ground it lands on. Do not reintroduce a raster logo into a page.
+
+- **`logo-mark.webp`** (4654 b, 512×512, RGB, **no alpha**) — a **generated**
+  file, not a source file. Flat `--ink` monogram on a `--paper` square. Its one
+  job is `Layout.astro:98`, the schema.org `logo:` field: search results and
+  social cards draw a raster and cannot resolve an SVG `<use>` or a custom
+  property, so the mark has to exist as pixels for them specifically. The square
+  paper ground is deliberate — that is what a search card composites onto, and a
+  transparent PNG of dark ink disappears on a dark card.
+
+  **Regenerate it, never hand-edit it.** `/tmp/render_logo.mjs` renders it from
+  the shipped sprite and the shipped stylesheet via headless Chromium, asserts
+  the computed fill equals the page's own `--ink`, and PIL encodes the result.
+  Rendering from the real sources is the whole point: the raster cannot then
+  disagree with the site. It has been regenerated twice for exactly this reason
+  — once when a cyan-to-periwinkle mark went monochrome, once when the chrome
+  ramp went flat. If the logotype changes a third time, this file changes with
+  it or the search card keeps showing a logo the site no longer has.
+
+- **`logo-wordmark.webp`** (41270 b, 1646×276, RGBA) — black wordmark on
+  transparency. **Referenced by nothing.** Not by a page, not by a component,
+  not by the sprite; the only mention left in the repo is this line. Superseded
+  by the outlined SVG paths. Deletion candidate, kept for now only because it is
+  the last artefact of the original letterforms.
+
+- **`logo-wordmark-light.webp`** (8010 b, 1646×276, RGBA) — the same wordmark in
+  off-white for dark grounds. **Also dead**: the only thing naming it is a
+  comment at `Layout.astro:252` recording what the SVG replaced. It is worth
+  understanding *why* it is dead rather than just that it is, because the reason
+  is the argument against ever going back: a two-file light/dark pair is two
+  assets to keep in step, and neither of them can follow `--ink` when a ground
+  changes. One `<use>` with one fill does both and cannot drift.
 
 ## Compare interactions — two options, pick per context
 

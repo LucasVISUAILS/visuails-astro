@@ -35,14 +35,20 @@ import ProductScene from '../../components/ProductScene.astro';
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Stuur de hoogste resolutie die je hebt.</span></li>
         </ul>
       </div>
-      <div class="card reveal pending" style="border-color:oklch(0.7 0.14 25 / 0.35)">
-        <h3 style="color:oklch(0.78 0.15 25)">Vermijden</h3>
+      {/* Zie de Engelse pagina voor de volledige toelichting. Kort: de rode
+          oklch(0.78 0.15 25) viel buiten sRGB, haalde met 2.02:1 op papier de
+          WCAG-drempel voor een h3 niet, en was de enige verzadigde kleur op een
+          marketingpagina — tegen de afspraak in global.css in. Deze kaart zegt
+          "minder" nu zoals .not-ideal dat verderop op deze pagina al doet: door
+          de ondergrond te laten zakken. De ✕ tegenover de ✓ draagt de betekenis. */}
+      <div class="card reveal pending" style="background:var(--surface-2)">
+        <h3 style="color:var(--ink)">Vermijden</h3>
         <ul class="checklist" style="margin-top:1rem">
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Wazige, donkere of slecht belichte foto's.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Drukke of afleidende achtergronden.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Zware filters of sterke kleurzweem.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Kleine schermafbeeldingen met lage resolutie.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Een deel van het product buiten beeld snijden.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Wazige, donkere of slecht belichte foto's.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Drukke of afleidende achtergronden.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Zware filters of sterke kleurzweem.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Kleine schermafbeeldingen met lage resolutie.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Een deel van het product buiten beeld snijden.</span></li>
         </ul>
       </div>
     </div>

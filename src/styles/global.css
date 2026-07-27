@@ -19,34 +19,60 @@
      not an eyeballed approximation — the contrast table in DESIGN.md is
      derived from these exact numbers and goes stale if they drift.
 
-     The paper band sits at chroma 0.002–0.004 on hue 85: a true off-white
-     carrying a trace of warmth. It is deliberately *below* the warm-neutral
-     cream/sand/parchment band. If paper chroma is ever pushed above 0.008 it
-     has drifted into that default and must come back. */
-  --ink-900:  oklch(0.16 0.006 265);   /* #0C0D10  text, dark ground        */
-  --ink-850:  oklch(0.22 0.006 265);   /* #191B1D  raised surface on dark   */
-  --ink-800:  oklch(0.27 0.005 265);   /* #252629  recessed surface on dark */
-  --ink-700:  oklch(0.32 0.005 265);   /* #323335  secondary text, UI edges */
-  --ink-500:  oklch(0.45 0.004 265);   /* #545557  muted text — PAPER ONLY  */
-  --ink-300:  oklch(0.72 0.003 265);   /* #A4A4A6  hairline; muted ON DARK  */
-  --ink-100:  oklch(0.89 0.002 265);   /* #DADBDC  hairline on paper        */
+     The two ramps run at OPPOSITE temperatures and the crossing is the whole
+     system: ink is warm (hue 75 — a graphite that reads as iron, soot and
+     concrete), paper is cool (hue 255 — a true off-white that reads as a
+     photographic grey card or a studio wall). It used to be the other way
+     round, and that was the one place this palette agreed with the default:
+     a warm near-white body ground sits inside the cream/sand/parchment band
+     that every generated site of 2026 lands on. Cool paper leaves that band,
+     and warm ink is what stops the dark ground reading as blue-black screen.
 
-  --paper:      oklch(0.97 0.004 85);  /* #F6F5F2  body ground              */
-  --paper-2:    oklch(0.94 0.004 85);  /* #ECEBE8  recessed / inset         */
-  --paper-lift: oklch(0.99 0.002 85);  /* #FCFCFA  raised                   */
+     The paper band sits at chroma 0.002–0.005. If paper chroma is ever pushed
+     above 0.008 it has drifted back toward that default and must come back.
+
+     Every value here is also inside sRGB, checked UNCLAMPED. An out-of-gamut
+     oklch() is not an error, it is silently mapped by the browser — so the
+     shipped colour quietly stops equalling the hex on its own line, and the
+     promise made three sentences up is broken without anything going red. */
+  --ink-900:  oklch(0.16 0.006 75);    /* #0F0D0A  text, dark ground        */
+  --ink-850:  oklch(0.22 0.006 75);    /* #1C1A18  raised surface on dark   */
+  --ink-800:  oklch(0.27 0.005 75);    /* #282624  recessed surface on dark */
+  --ink-700:  oklch(0.32 0.005 75);    /* #343230  secondary text, UI edges */
+  --ink-500:  oklch(0.45 0.004 75);    /* #575553  muted text — PAPER ONLY  */
+  --ink-300:  oklch(0.72 0.003 75);    /* #A6A4A2  rules; muted ON DARK     */
+  --ink-200:  oklch(0.84 0.003 75);    /* #CCCAC8  hairline on paper        */
+  --ink-100:  oklch(0.89 0.002 75);    /* #DBDAD9  body text ON DARK        */
+
+  --paper:      oklch(0.97 0.004 255); /* #F3F5F8  body ground              */
+  --paper-2:    oklch(0.94 0.005 255); /* #E9EBEE  recessed / inset         */
+  --paper-lift: oklch(0.99 0.002 255); /* #FBFCFD  raised                   */
 
   /* ---- system colour — scoped, not decorative ---------------------------
      --signal and --warn appear on /start, the client portal, and system
      surfaces (capacity gate, order state, form validation) ONLY. They never
      appear on a marketing page; marketing is ink, paper and photography.
 
-     The plain variants FAIL body text on paper (4.44 and 4.02). That is a
+     Both rotated with the ramps rather than being left behind. --signal was a
+     blue sitting a few degrees off the old blue-black ink, which made it read
+     as a link; it is now a petrol that reads as an instrument marking. --warn
+     was amber, the one loud colour left on the page; it is now a rust that
+     belongs to the warm ink family instead of shouting across it.
+
+     The plain variants FAIL body text on paper (4.33 and 4.11). That is a
      fail, not a rounding error: they are for fills, borders and text ≥18px.
-     The -ink variants are the ones that set body-size text. */
-  --signal:      oklch(0.55 0.07 255); /* #55749A  fill / border / ≥18px    */
-  --signal-ink:  oklch(0.45 0.09 255); /* #305686  system text — 6.83:1     */
-  --warn:        oklch(0.58 0.11 70);  /* #A36D24  fill / border / ≥18px    */
-  --warn-ink:    oklch(0.47 0.11 65);  /* #844B00  capacity text — 6.44:1   */
+     The -ink variants are the ones that set body-size text.
+
+     --warn-ink was oklch(0.47 0.11 65), and that value was OUTSIDE sRGB by
+     -0.003 on blue. Nothing reported it, because a browser gamut-maps rather
+     than errors: the #844B00 documented on this line was never the colour
+     that shipped, and the 6.44:1 was arithmetic performed on a number no
+     screen ever displayed. Both replacements sit well inside the gamut
+     (ceilings 0.080 and 0.149 at their L and hue). */
+  --signal:      oklch(0.55 0.075 215); /* #357D8D  fill / border / ≥18px   */
+  --signal-ink:  oklch(0.45 0.075 215); /* #0F5F6F  system text — 6.63:1    */
+  --warn:        oklch(0.58 0.115 45);  /* #B1623D  fill / border / ≥18px   */
+  --warn-ink:    oklch(0.47 0.115 40);  /* #8F4023  capacity text — 6.59:1  */
 
   /* There is no success green. The previous --success (#63C79A) is gone and
      every checklist tick is --ink-900 on paper. A green tick is a SaaS
@@ -71,9 +97,22 @@
 
   /* --line is decorative (dividers, card edges). --line-ui is a control
      boundary and has to carry meaning, so it sits at --ink-700: WCAG 2.2
-     1.4.11 wants 3:1 for a component edge, and --ink-100 at 1.28:1 is not a
-     border a user can find. */
-  --line:        var(--ink-100);
+     1.4.11 wants 3:1 for a component edge, and a 1.5:1 hairline is not a
+     border a user can find.
+
+     --line now resolves to --ink-200, a step added to the ramp for it. It was
+     --ink-100 at 1.28:1, which against a cool paper is close to not being
+     drawn at all; --ink-200 puts it at 1.50:1 — still a hairline, still
+     decorative, but present. It is a firmer rule, and a firmer rule is most
+     of what reads as "tougher" in a system with no colour to spend.
+
+     The step had to be added rather than --ink-100 simply darkened, because
+     --ink-100 is also --ink-2 inside .on-ink: the body text colour on every
+     dark ground on the site. Darkening it would have bought a better line on
+     paper by paying for it in reading on ink. "Two ramps, no third" is a rule
+     about ink versus paper; another step inside the ink ramp is not a third
+     ramp. */
+  --line:        var(--ink-200);
   --line-strong: var(--ink-300);
   --line-ui:     var(--ink-700);
 
@@ -94,12 +133,15 @@
   --focus-ring:    var(--ink-900);
 
   /* The <select> caret, as a data URL rather than a token the SVG can read —
-     a `stroke` inside a data: URL cannot see var(). It was hardcoded #E4E7F2,
-     a pale blue-grey from the pre-monochrome palette, drawn on --surface
-     (#FCFCFA): 1.20:1. The caret has been invisible on every select the site
-     ships. Two ramps because the ink-ground remap below needs the inverse; the
-     hex must be written out in both, so they are kept adjacent to their ramp. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23323335' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+     a `stroke` inside a data: URL cannot see var(). It was once hardcoded
+     #E4E7F2, a pale blue-grey from the pre-monochrome palette, drawn on a
+     near-white --surface at roughly 1.2:1: the caret was invisible on every
+     select the site shipped. Two ramps because the ink-ground remap below
+     needs the inverse; the hex has to be written out in both, so each is kept
+     adjacent to the ramp it belongs to. Both are hand-copies of a token and
+     will not follow it — when --ink-700 or --paper moves, these move by hand
+     or the caret silently stops matching its own ramp. */
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23343230' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
 
   --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -121,52 +163,62 @@
   --radius: 0;
 
 
-  /* ---- chrome: the signature, and its fence ----
+  /* ---- chrome: one surface, and its fence ----
      The one non-monochrome material in the system. It reads as brushed metal
      because the lightness ramp reverses eight times instead of fading — a fade
      is a gradient, a reversal is a reflection. Twelve stops, max chroma 0.012,
-     with a warm inflection at 62% on the paper hue so it ties to the page
-     ground instead of reading as cold steel.
+     running on the ink hue so the metal reads as iron rather than as plating,
+     with a single inflection at 62% on the paper hue: one cool reflection in
+     a warm surface is what keeps it from flattening into a tint. Both hues
+     moved when the ramps swapped temperature, and the ramp had to move with
+     them — a chrome that stayed on the old ink hue would have been the only
+     blue-black object left on a warm-ink page, which is exactly the "second
+     chrome surface" failure this fence exists to prevent, arriving by drift
+     instead of by decision.
 
-     Scope, and it is a fence, not a suggestion: the hero field and the
-     logotype. Not buttons, links, borders, dividers, icons, card grounds,
-     section grounds, badges, form controls, the nav bar, the footer, or
-     headings. background-clip: text on anything that is not the logotype is a
-     hard ban regardless of fill. A third chrome surface is not an extension of
-     the signature; it is the point at which the signature stops being one.
+     Scope, and it is a fence, not a suggestion: the hero field, and nothing
+     else. NOT the logotype. The logotype was the second chrome surface until
+     the client saw it rendered and read the metal as cheap rather than as
+     expensive; DESIGN.md's own Removability test says a signature you can
+     delete without the page stopping being this brand was decoration, and this
+     half of it deleted clean. Not buttons, links, borders, dividers, icons,
+     card grounds, section grounds, badges, form controls, the nav bar, the
+     footer, or headings either. background-clip: text is now banned with no
+     exception at all, because the one thing it was excepted for is gone. A
+     second chrome surface is not an extension of the signature; it is the
+     point at which the signature stops being one.
 
-     --chrome is the SURFACE calibration (the hero plane, and its static
-     fallback). The logotype uses #chromeInk / #chromePaper in Layout.astro's
-     sprite, which are the same stops remapped so a 17px word does not develop
-     holes — see the note there. */
+     --chrome is the SURFACE calibration: the live hero plane and its static
+     fallback, .ch-promise .hero-fallback, which is now the only rule in the
+     codebase that reads --chrome-filter. */
   --chrome:
   linear-gradient(
     105deg,
-    oklch(0.720 0.004 265)   0%,
-    oklch(0.880 0.006 265)   9%,
-    oklch(0.580 0.008 265)  17%,
-    oklch(0.940 0.003 250)  26%,
-    oklch(0.660 0.010 265)  35%,
-    oklch(0.410 0.006 265)  44%,
-    oklch(0.830 0.005 250)  53%,
-    oklch(0.970 0.002 85)  62%,
-    oklch(0.520 0.009 265)  71%,
-    oklch(0.760 0.004 265)  80%,
-    oklch(0.350 0.007 265)  89%,
-    oklch(0.610 0.012 265) 100%
+    oklch(0.720 0.004 75)   0%,
+    oklch(0.880 0.006 75)   9%,
+    oklch(0.580 0.008 75)  17%,
+    oklch(0.940 0.003 60)  26%,
+    oklch(0.660 0.010 75)  35%,
+    oklch(0.410 0.006 75)  44%,
+    oklch(0.830 0.005 60)  53%,
+    oklch(0.970 0.002 255)  62%,
+    oklch(0.520 0.009 75)  71%,
+    oklch(0.760 0.004 75)  80%,
+    oklch(0.350 0.007 75)  89%,
+    oklch(0.610 0.012 75) 100%
   );
   /* Part of the material, not an afterthought: contrast sharpens the reversals
      into visible bands, saturate pulls the residual chroma back so the metal
      never tints. Applied to the chrome surface, never to its children. */
   --chrome-filter: contrast(1.18) saturate(0.75);
 
-  /* The logotype fill, as a role alias — same mechanism as every other token
-     in this file, so .on-ink flips it with everything else rather than the
-     header and footer needing separate rules. Two aliases, not one, because
-     the word and the monogram have different aspect ratios and therefore
-     different gradient geometry; the RAMP behind both is identical. */
-  --wordmark-fill: url(#chromePaper);
-  --mark-fill: url(#chromePaperMark);
+  /* There is deliberately no --wordmark-fill / --mark-fill any more, and the
+     absence is the point. Those two aliases existed because a gradient url()
+     is not something --ink can express, so they had to be redeclared inside
+     .on-ink in parallel with --ink and stay in step with it by hand. A flat
+     logotype simply IS --ink, so .brand-word and .brand-mark read --ink
+     directly: one value to keep in sync instead of three, and a dark ground
+     added to the list below cannot flip the text and leave the logo behind. */
 
   /* ---- motion ---------------------------------------------------------
      Ease-out only. Nothing overshoots: overshoot is playfulness, and this
@@ -233,7 +285,7 @@
    existing rule inside it resolves to the dark side of the same ramp.
 
    This is what stops the two most likely regressions. Without it, --ink-2
-   (#323335) lands on a --bg-deep (#0C0D10) footer at 1.53:1, and a
+   (#343230) lands on a --bg-deep (#0F0D0A) footer at 1.53:1, and a
    .btn-primary's hardcoded white text lands on a now-paper --accent. Both are
    invisible in a diff and obvious on the page.
 
@@ -269,8 +321,19 @@
   --ink-3:      var(--ink-300);
   --ink-faint:  var(--ink-300);
 
-  --line:        oklch(0.97 0.004 85 / 0.12);
-  --line-strong: oklch(0.97 0.004 85 / 0.24);
+  /* These four are longhand --paper with alpha, because a token cannot carry
+     one. They are hand-copies and do not follow --paper; when it moves, they
+     move here or the dark grounds keep the old temperature.
+
+     The alphas are chosen so a rule weighs the SAME on both grounds rather
+     than being eyeballed: --line is 1.50:1 on paper (--ink-200), and paper at
+     0.16 over --ink-900 is 1.52:1. --line-strong is 2.28:1 on paper
+     (--ink-300), and paper at 0.28 is 2.34:1 — which is also why it moved off
+     0.24. --line-strong and --accent-line both resolve to --ink-300 on paper,
+     so a dark ground that gave them 0.24 and 0.28 was splitting one value in
+     two for no reason anybody had written down. */
+  --line:        oklch(0.97 0.004 255 / 0.16);
+  --line-strong: oklch(0.97 0.004 255 / 0.28);
   --line-ui:     var(--ink-300);
 
   --accent:        var(--paper);
@@ -278,17 +341,13 @@
   --accent-2:      var(--paper);
   --accent-word:   var(--paper);
   --accent-bright: var(--paper);
-  --accent-soft:   oklch(0.97 0.004 85 / 0.10);
-  --accent-line:   oklch(0.97 0.004 85 / 0.28);
+  --accent-soft:   oklch(0.97 0.004 255 / 0.10);
+  --accent-line:   oklch(0.97 0.004 255 / 0.28);
 
   --focus-ring:    var(--paper);
 
   /* --paper, matching --ink on this ground. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F6F5F2' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
-
-  /* Bright metal on a dark ground; the header's is dark metal on paper. */
-  --wordmark-fill: url(#chromeInk);
-  --mark-fill: url(#chromeInkMark);
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F3F5F8' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
 }
 
 /* Only the generic utility paints itself. The named components above already
@@ -489,7 +548,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 .photo-band { position: relative; overflow: hidden; aspect-ratio: 16/10; }
 .photo-band img { width: 100%; height: 100%; object-fit: cover; }
-.photo-band .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, oklch(0.16 0.006 265 / 0.78) 100%); }
+.photo-band .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, oklch(0.16 0.006 75 / 0.78) 100%); }
 .photo-band .caption { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(1.4rem, 3vw, 2.4rem); z-index: 2; }
 .photo-band .caption h2, .photo-band .caption h3 { color: var(--paper); }
 .photo-band .caption p { color: var(--ink-100); margin-top: .5rem; }
@@ -556,13 +615,13 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 /* Product visual scenes ("vis") — placeholder for the rare spot with no
    real "clean product on white" photography (see IMAGES.md). */
-.vis { position: relative; aspect-ratio: 4/5; overflow: hidden; background: radial-gradient(125% 90% at 50% 6%, oklch(1 0 0), oklch(0.95 0.004 85) 58%, oklch(0.88 0.004 85) 100%); display: grid; place-items: center; isolation: isolate; }
+.vis { position: relative; aspect-ratio: 4/5; overflow: hidden; background: radial-gradient(125% 90% at 50% 6%, oklch(1 0 0), oklch(0.95 0.004 255) 58%, oklch(0.88 0.004 255) 100%); display: grid; place-items: center; isolation: isolate; }
 .vis.wide { aspect-ratio: 4/3; }
 .vis::before { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(70% 45% at 50% 2%, oklch(1 0 0 / 0.7), transparent 55%); }
-.vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, oklch(0.16 0.006 265 / 0.13)); }
-.vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px oklch(0.16 0.006 265 / 0.24)); }
+.vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, oklch(0.16 0.006 75 / 0.13)); }
+.vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px oklch(0.16 0.006 75 / 0.24)); }
 .vis .vis-obj svg { width: 100%; height: auto; display: block; }
-.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--paper); background: oklch(0.16 0.006 265 / 0.82); padding: .3rem .65rem; }
+.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--paper); background: oklch(0.16 0.006 75 / 0.82); padding: .3rem .65rem; }
 
 /* ============================================================
    Editorial motion system. Base state is fully visible/static; the `.in`
@@ -581,7 +640,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 .hero-editorial { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; margin-top: -76px; padding-top: 76px; padding-bottom: clamp(3rem, 7vw, 5.5rem); }
 .hero-editorial .bg { position: absolute; inset: -6% -6%; width: 112%; height: 112%; background-size: cover; background-position: center 32%; will-change: transform; }
-.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.16 0.006 265 / 0.34) 0%, oklch(0.16 0.006 265 / 0.48) 44%, oklch(0.16 0.006 265 / 0.84) 100%); }
+.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.16 0.006 75 / 0.34) 0%, oklch(0.16 0.006 75 / 0.48) 44%, oklch(0.16 0.006 75 / 0.84) 100%); }
 .hero-editorial-content { position: relative; z-index: 2; }
 .hero-editorial-content h1 { font-size: clamp(3.2rem, 7.4vw, 6rem); max-width: 15ch; }
 .hero-editorial-content .lead { color: var(--ink-2); max-width: 46ch; }
@@ -710,7 +769,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .ba .ba-before-scene { filter: saturate(.4) brightness(.92) contrast(.92); }
 .ba .ba-handle { position: absolute; top: 0; bottom: 0; left: var(--pos, 50%); width: 2px; background: var(--accent); transform: translateX(-1px); }
 .ba .ba-knob { position: absolute; top: 50%; left: var(--pos, 50%); transform: translate(-50%, -50%); width: 46px; height: 46px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; }
-.ba .ba-tag { position: absolute; bottom: 14px; padding: .3rem .75rem; font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: oklch(0.16 0.006 265 / 0.86); color: var(--ink); }
+.ba .ba-tag { position: absolute; bottom: 14px; padding: .3rem .75rem; font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: oklch(0.16 0.006 75 / 0.86); color: var(--ink); }
 .ba .tag-before { left: 14px; } .ba .tag-after { right: 14px; }
 
 /* Cursor-reactive spotlight compare — new interaction, brand-fit idea from
@@ -720,9 +779,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .spot { position: relative; overflow: hidden; cursor: none; }
 .spot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .spot .spot-after { clip-path: circle(0px at 50% 50%); }
-.spot-cursor { position: absolute; width: 110px; height: 110px; border: 1.5px solid var(--ink); pointer-events: none; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink); background: oklch(0.16 0.006 265 / 0.30); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
+.spot-cursor { position: absolute; width: 110px; height: 110px; border: 1.5px solid var(--ink); pointer-events: none; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink); background: oklch(0.16 0.006 75 / 0.30); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
 .spot:hover .spot-cursor { opacity: 1; }
-.spot-tag { position: absolute; top: 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: .35rem .7rem; background: oklch(0.16 0.006 265 / 0.86); z-index: 3; color: var(--ink); }
+.spot-tag { position: absolute; top: 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: .35rem .7rem; background: oklch(0.16 0.006 75 / 0.86); z-index: 3; color: var(--ink); }
 .spot-tag.before { left: 1rem; } .spot-tag.after { right: 1rem; }
 
 /* `[data-parallax] { will-change: transform; }` lived here, promoting anything
@@ -771,7 +830,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .compare-static { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); border: 1px solid var(--line); overflow: hidden; }
 .compare-static > div { position: relative; aspect-ratio: 4/5; overflow: hidden; }
 .compare-static img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.compare-static .cs-tag { position: absolute; bottom: .8rem; left: .8rem; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; background: oklch(0.16 0.006 265 / 0.86); color: var(--ink); z-index: 2; }
+.compare-static .cs-tag { position: absolute; bottom: .8rem; left: .8rem; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; background: oklch(0.16 0.006 75 / 0.86); color: var(--ink); z-index: 2; }
 
 /* `.ai-compare` / `.ai-compare-panel` / `.ai-compare-label` /
    `.ai-compare-tags` / `.ai-tag` were deleted here, along with
@@ -806,13 +865,13 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .cmp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .cmp .cmp-after { clip-path: inset(0 0 0 var(--cmp-pos)); z-index: 1; }
 .cmp.cmp-grade .cmp-before { filter: saturate(.3) brightness(.9) contrast(.9) grayscale(.14); }
-.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--cmp-pos); width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 1px 0 0 oklch(0.16 0.006 265 / 0.55), -1px 0 0 oklch(0.16 0.006 265 / 0.55); z-index: 3; touch-action: none; cursor: ew-resize; }
+.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--cmp-pos); width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 1px 0 0 oklch(0.16 0.006 75 / 0.55), -1px 0 0 oklch(0.16 0.006 75 / 0.55); z-index: 3; touch-action: none; cursor: ew-resize; }
 /* widened invisible grab column so the thin line is easy to catch (esp. touch) */
 .cmp .cmp-divider::before { content: ""; position: absolute; top: 0; bottom: 0; left: -20px; right: -20px; }
-.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 oklch(0.16 0.006 265 / 0.35); cursor: ew-resize; touch-action: none; }
+.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 oklch(0.16 0.006 75 / 0.35); cursor: ew-resize; touch-action: none; }
 .cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; }
 .cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: oklch(0.16 0.006 265 / 0.86); color: var(--ink); pointer-events: none; }
+.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: oklch(0.16 0.006 75 / 0.86); color: var(--ink); pointer-events: none; }
 /* Each label fades out as its own side shrinks — i.e. as the divider (driven
    by --cmp-pos, from both the auto-animation and manual drag) sweeps toward it.
    opacity accepts a percentage; calc(...*6) means fully opaque until ~value
@@ -863,7 +922,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .make-tile { position: relative; display: block; overflow: hidden; aspect-ratio: 3/4; background: var(--bg-deep); }
 .make-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-4) var(--ease); }
 .make-tile:hover img { transform: scale(1.05); }
-.make-tile .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 34%, oklch(0.16 0.006 265 / 0.86) 100%); }
+.make-tile .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 34%, oklch(0.16 0.006 75 / 0.86) 100%); }
 .make-tile .mt-body { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(1rem,2vw,1.4rem); z-index: 2; }
 .make-tile .mt-name { color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1.12rem; display: flex; align-items: center; gap: .4rem; }
 .make-tile .mt-desc { color: var(--ink-2); font-size: .8rem; margin-top: .25rem; line-height: 1.4; }
@@ -915,8 +974,8 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .hero-cover .hc2-bg { position: absolute; inset: 0; z-index: -2; }
 .hero-cover .hc2-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
 .hero-cover .hc2-scrim { position: absolute; inset: 0; z-index: -1; background:
-  radial-gradient(90% 80% at 18% 88%, oklch(0.16 0.006 265 / 0.86) 0%, oklch(0.16 0.006 265 / 0.38) 55%, transparent 78%),
-  linear-gradient(180deg, oklch(0.16 0.006 265 / 0.62) 0%, oklch(0.16 0.006 265 / 0.14) 22%, transparent 48%, oklch(0.16 0.006 265 / 0.42) 82%, oklch(0.16 0.006 265 / 0.60) 100%); }
+  radial-gradient(90% 80% at 18% 88%, oklch(0.16 0.006 75 / 0.86) 0%, oklch(0.16 0.006 75 / 0.38) 55%, transparent 78%),
+  linear-gradient(180deg, oklch(0.16 0.006 75 / 0.62) 0%, oklch(0.16 0.006 75 / 0.14) 22%, transparent 48%, oklch(0.16 0.006 75 / 0.42) 82%, oklch(0.16 0.006 75 / 0.60) 100%); }
 .cover-inner { flex: 1; display: flex; flex-direction: column; width: 100%; }
 .cover-copy { margin-top: auto; padding-block: 2rem clamp(2.8rem, 6vh, 4.2rem); max-width: 64rem; }
 .cover-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.028em; line-height: .96;
@@ -975,7 +1034,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .sp-media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-4) var(--ease); }
 .sp-item:hover .sp-media img { transform: scale(1.04); }
 .sp-play { position: absolute; inset: 0; margin: auto; width: 58px; height: 58px; display: grid; place-items: center;
-  background: oklch(0.16 0.006 265 / 0.78); border: 1px solid oklch(0.97 0.004 85 / 0.45); }
+  background: oklch(0.16 0.006 75 / 0.78); border: 1px solid oklch(0.97 0.004 255 / 0.45); }
 .sp-play svg { width: 20px; height: 20px; fill: var(--paper); margin-left: 3px; }
 .sp-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
   margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--line-strong); }
@@ -1077,7 +1136,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
      6%/34% the byline at the bottom-left came in at 4.64:1 against a 4.5 floor,
      which is not margin, it is luck. The 68% and 100% stops are untouched:
      nothing on the right side moved. */
-  linear-gradient(100deg, var(--ink-900) 18%, oklch(0.16 0.006 265 / 0.90) 44%, oklch(0.16 0.006 265 / 0.62) 68%, oklch(0.16 0.006 265 / 0.46) 100%),
+  linear-gradient(100deg, var(--ink-900) 18%, oklch(0.16 0.006 75 / 0.90) 44%, oklch(0.16 0.006 75 / 0.62) 68%, oklch(0.16 0.006 75 / 0.46) 100%),
   linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
   var(--chrome); }
 .promise-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(2.4rem, 5vw, 4.5rem); align-items: center; }
@@ -1093,7 +1152,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
      answering itself — where the chrome has no room to be a composition, it
      stops being one rather than being one on top of the words. */
   .ch-promise .hero-fallback { background:
-    linear-gradient(100deg, var(--ink-900) 22%, oklch(0.16 0.006 265 / 0.95) 55%, oklch(0.16 0.006 265 / 0.92) 100%),
+    linear-gradient(100deg, var(--ink-900) 22%, oklch(0.16 0.006 75 / 0.95) 55%, oklch(0.16 0.006 75 / 0.92) 100%),
     linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
     var(--chrome); }
   .ch-promise #hero-shader { opacity: .30; }
@@ -1106,7 +1165,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    68%/100% end stays put so the metal keeps its side. */
 @media (min-width: 901px) and (max-width: 1200px) {
   .ch-promise .hero-fallback { background:
-    linear-gradient(100deg, var(--ink-900) 28%, oklch(0.16 0.006 265 / 0.90) 54%, oklch(0.16 0.006 265 / 0.62) 74%, oklch(0.16 0.006 265 / 0.46) 100%),
+    linear-gradient(100deg, var(--ink-900) 28%, oklch(0.16 0.006 75 / 0.90) 54%, oklch(0.16 0.006 75 / 0.62) 74%, oklch(0.16 0.006 75 / 0.46) 100%),
     linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
     var(--chrome); }
 }
@@ -1220,6 +1279,12 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    zone has to show its own focus. Flag xlviii. */
 .dropzone:focus-within { border-color: var(--accent); background: var(--accent-soft); }
 
+/* Both after :hover and :focus-within on purpose. All four selectors weigh
+   0-2-0, so source order is the whole tiebreak: a dragged-over or refused zone
+   under the cursor must not be repainted by the hover rule. */
+.dropzone.is-dragover { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.dropzone.is-error { border-color: var(--warn); }
+
 /* Was declared on /start only. The other four pages ran the same transitions
    with the setting on. */
 @media (prefers-reduced-motion: reduce) {
@@ -1227,3 +1292,59 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
   .opt,
   .dropzone { transition: none; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   /test-sample uploader.
+   The twin of /start's .pl-* family, which lives in StartPage.astro's scoped
+   <style>. This one is global because its markup is written out by two page
+   files — test-sample.astro and nl/test-sample.astro — and a scoped block in
+   either would style only its own copy. The rows themselves are built by
+   tsRow() in interactions.js, so the class names here are a contract with that
+   function, not decoration: check_dom_contract's DEAD-TOGGLE rule goes red if
+   is-error, is-done or is-failed stop being styled.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Visually hidden, NOT `hidden`. A display:none input is neither focusable nor
+   activatable, so a keyboard or screen-reader user could not open the picker at
+   all — which is what this page shipped with, and what made the .dropzone
+   :focus-within rule above a dead letter here. Same shape as /start's
+   .pl-file-input. */
+.ts-file-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+
+.ts-list { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.ts-count { margin-top: .8rem; font-size: .85rem; color: var(--ink-3); }
+.ts-count:empty { display: none; }
+.ts-msg { margin-top: .5rem; font-size: .85rem; color: var(--ink-3); }
+.ts-msg:empty { display: none; }
+.ts-msg.is-error { color: var(--warn-ink); }
+
+/* DOM order out of tsRow() is name, size, msg; the Remove button is appended
+   last, so it is placed explicitly — left to auto-placement it would drop onto
+   a row of its own below the message. */
+.ts-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: .35rem .9rem;
+  padding: .75rem 1rem .85rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.ts-file-name {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: .92rem; color: var(--ink);
+}
+.ts-file-size { font-size: .8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ts-file-msg { grid-column: 1 / -1; font-size: .8rem; color: var(--ink-3); }
+.ts-file-act {
+  grid-column: 3; grid-row: 1; justify-self: end;
+  background: none; border: 0; padding: 0;
+  font: inherit; font-size: .8rem;
+  color: var(--accent-bright);
+  text-decoration: underline; text-underline-offset: 3px;
+  cursor: pointer;
+}
+.ts-file-act:disabled { color: var(--ink-3); cursor: default; text-decoration: none; }
+.ts-file.is-done .ts-file-msg { color: var(--signal-ink); }
+.ts-file.is-failed { border-color: var(--warn); }
+.ts-file.is-failed .ts-file-msg { color: var(--warn-ink); }

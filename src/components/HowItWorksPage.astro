@@ -15,11 +15,135 @@
 //     step 02 and then a block of its own, because it is the promise that
 //     makes every other promise here believable.
 //
-// The four steps deliberately echo StartPage.astro's `flow` array rather than
-// reinventing the account: /start and /how-it-works describe one pipeline and
-// must not drift apart. Where the wording expands here, it expands — it never
-// contradicts.
+// The four steps deliberately echo /start rather than reinventing the account:
+// /start and /how-it-works describe one pipeline and must not drift apart.
+// Where the wording expands here, it expands — it never contradicts.
+//
+// A CORRECTION TO THAT PARAGRAPH, which used to name "StartPage.astro's `flow`
+// array". There is no `flow` array in StartPage.astro. What is there is
+// FORM.rail — ['Scope', 'Material', 'Brief', 'Timing', 'Confirm'] — and those
+// are the ORDER FORM's five steps, not the service's four. The two lists are
+// adjacent, not the same: rail 1–3 all happen inside "you send the products",
+// rail 4 is the capacity gate, and rail 5 comes before any production starts.
+// So the rule this comment states was pointing at a name that could not be
+// checked, which is the same as not pointing anywhere. It names the real thing
+// now, and the rule itself is unchanged and still binding.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// THE FIGURES (task #246). Lucas: the sections lack variation, the page reads
+// long, and the site explains its services in words where it should be showing
+// them.
+//
+// This paragraph used to open "measured before this change: 8 sections, 4 of
+// them structurally identical to a neighbour, 505 words against 2 images — one
+// of which is a hero background". One of those claims is false and it is
+// corrected here rather than dropped, because a comment quietly losing a claim
+// reads the same as a claim that was always true:
+//
+//   • "4 structurally identical to a neighbour" — FALSE, and it flattered the
+//     change. Signing each section by its layout, container shape then which
+//     devices it carries (heading band, card grid, two-column split, figure,
+//     CTA band), the page at HEAD had EIGHT distinct signatures and ZERO
+//     adjacent repeats. The sections were not repeating each other; they were
+//     all prose in a container, which is a different complaint and the one
+//     Lucas made. Writing "identical" was me reaching for the DESIGN.md phrase
+//     "identical card grids" because it was nearby, not because I had looked.
+//
+//   • "8 sections" and "2 images, one a hero background" — both true. HEAD
+//     referenced exactly two files: /img/banners-04.webp behind the hero, and
+//     /img/lifestyle-glow-06.webp, passed to <Compare> as both before AND
+//     after. That second one is not a copy-paste slip: the call passes `grade`,
+//     and Compare.astro's own header defines grade mode as one photo for both
+//     sides with the before auto-desaturated, "for the styles where we have one
+//     finished photo, not a separate raw one". /gallery uses it four more
+//     times. I had this drafted as a logged defect before reading the
+//     component.
+//
+//   • "505 words" — near enough. A recount gives 482, and the gap is method,
+//     not error: this one counts every string in COPY.en of twelve characters
+//     or more, a crude floor that keeps class names and hrefs out and takes a
+//     few short lines with them. Quoted as "words of visible copy" for that
+//     reason, and any comparison has to be run the same way on both sides.
+//
+// Correcting that one claim produced two more before it landed, and they
+// belong in the block whose whole subject is comments outliving the checking
+// behind them. I first wrote that HEAD "referenced no images at all", from a
+// probe reporting zero — it matched an allow-list of attribute spellings
+// (photo=, made=, src=, image=) and HEAD's two references are a CSS url() and
+// props called before=/after=, so both read as absence. Then I wrote the
+// duplicate before/after up as a defect, which took twelve lines of
+// Compare.astro to disprove — twelve lines I had not read when I wrote it.
+//
+// One shape under all three: a claim about the code, written from something
+// adjacent to the code — a phrase from DESIGN.md, a tool's silence, an
+// asymmetry that looked wrong. The silence is the dangerous one and the fix is
+// filed in rhythm_probe.py: match the DESTINATION, /img/, not the syntax
+// around it, because a checker enumerating the spellings it knows reports
+// every unknown one as nothing-there, and nothing-there is the answer nobody
+// goes back to verify.
+//
+// What was true and stays true: the page had no explanatory figure of any
+// kind. It has five now, and two of them REPLACE prose rather than sitting
+// beside it — FigPipeline takes over the four numbered step cards (which also
+// retires the 01/02/03/04 scaffolding DESIGN.md rejects), and FigApproval
+// takes over the portal's four-item checklist. That is 57 words of prose
+// deleted. Section count 8 → 9, adjacent repeats 0 → 0, image files 2 → 4.
+//
+// The sentence that followed — "adding pictures while keeping every word would
+// have made the page longer, which is the opposite of what was asked for" —
+// implied the page ended up shorter. It did not, and the same count says so.
+// EN, HEAD → now: visible copy 482 → 639. Split by what a reader actually
+// meets: alt text 16 → 49, figcaptions 0 → 101, body prose 466 → 489. NL moves
+// the same way, 501 → 671, with alt 19 → 46, figcaptions 0 → 109 and body
+// prose 482 → 516.
+//
+// FOUR OF THOSE EIGHT NUMBERS ARE CORRECTIONS, and the correction is worth more
+// than the numbers. The first version of this paragraph read "alt text 16 → 56,
+// figcaptions 8 → 109, body prose 458 → 474", straight off copy_census.py,
+// which at the time sorted a string into a bucket by the SHAPE OF ITS KEY —
+// anything matching (alt|aria|label) was accessibility surface, anything
+// matching (note|caption) was a figure's note. That is a vocabulary rule
+// wearing a heuristic's clothes, and it broke on the next page it met:
+// /compare reported 50 words of alt text on a page with no alt text on it, and
+// 42 of those 50 are the matrix's visible row headers and a figure's visible
+// lane labels, both called `label`. Here it was milder and in the same
+// direction — "figcaptions 8" at HEAD, on a revision with no figures in it at
+// all, is `portalNote`, a paragraph under the portal section that a suffix
+// mistook for a drawing's caption. The census now asks the TEMPLATE which
+// attribute a key is bound to, so the buckets follow use rather than naming.
+//
+// The direction is the part to keep: every one of those errors moved words OUT
+// of body prose, which is the column #246 is judged on, so the page read as
+// leaner than it was. A tool that is wrong in the flattering direction is one
+// nobody has a reason to go back and check.
+//
+// So the honest position on the half of #246 that says "too much text": body
+// prose is close to flat, +23 words EN and +34 NL, and the growth is +101 words
+// of figcaption. +33 of the rest is alt text, which no sighted reader meets and
+// which five new figures necessarily add.
+//
+// The +101 is already the trimmed number. The first drafts of these captions
+// came to 188 words — a picture, then a paragraph explaining the picture,
+// which is the reflex this task exists to answer — and that 188 is the one
+// figure on this page nobody can re-measure, because the drafts were never
+// committed. Take it as the note it is, not as a number like the others. What
+// survives the trim is only what a drawing cannot say about itself, and the
+// reasoning for each cut sits above its caption in COPY, where it can be
+// argued with.
+//
+// Anyone re-measuring should split the same three ways before comparing, or a
+// page will look like it grew when what grew was its accessibility surface.
+//
+// All figure copy lives in the COPY table below, in both branches, so
+// check_lang_parity holds EN/NL parity on it exactly as it does for prose.
+// Drawing constants — ratios, block widths, tile patterns, glyph paths — live
+// inside the figure components, because they are the same in every language.
 import Compare from './Compare.astro';
+import FigFanOut from './FigFanOut.astro';
+import FigPipeline from './FigPipeline.astro';
+import FigCapacity from './FigCapacity.astro';
+import FigApproval from './FigApproval.astro';
+import FigFormats from './FigFormats.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
   FULL_DROP_MIN, FULL_DROP_MAX,
@@ -44,33 +168,80 @@ const COPY = {
     ctaStart: 'Start a drop',
     ctaSample: 'Try a test sample',
 
+    // FigFanOut, straight after the hero: the H1 drawn. "One folder in, a whole
+    // drop out" is a shape, and a shape is the one thing a sentence cannot show.
+    fanIn: 'What you send',
+    fanOut: 'What comes back, per product',
+    fanPhotoAlt: 'A washed T-shirt photographed flat on an office table in window light',
+    fanMadeAlt: 'The same T-shirt, cut out and lit on a plain white ground',
+    fanSlots: [
+      { t: 'On a model' },
+      { t: 'In a scene' },
+      { t: 'Sized for ads' },
+    ],
+    // Every figcaption on this page was written twice: once at the length the
+    // argument wanted, and once at the length a caption is allowed to be. The
+    // first drafts came to 188 words across five figures — a picture, then a
+    // paragraph explaining the picture, which is the reflex that produced the
+    // complaint this whole task exists to answer. What survives is only what the
+    // drawing genuinely cannot say: here, that three of the four output frames
+    // are DRAWN and not photographed. That is a disclosure, not commentary; drop
+    // it and the figure quietly claims four real results where it has one.
+    fanNote: 'One product, photographed once. The white-ground pair is real — the other three frames are drawn, because they are slots in the delivery, not results this shirt has produced.',
+
+    // `n` is gone and is not coming back: FigPipeline's rail IS the ordering, so
+    // printing 01/02/03/04 beside it would be the scaffolding reflex DESIGN.md
+    // rejects, wearing the numbers twice. `gate` is what step 02 needs instead —
+    // it draws a doorway rather than a dot, so the refusal is visible before the
+    // label is read.
     steps: [
       {
-        n: '01',
         h: 'You send the products',
         b: 'Photos and a short note on the look. Five minutes, however many products you have — the effort does not scale with the size of the drop.',
         linkText: 'See the upload guidelines',
         linkHref: '/upload-guidelines',
       },
       {
-        n: '02',
         h: 'We check capacity',
         b: 'Before anything is charged. A drop is only given a window the calendar can actually hold — and if it cannot be held, you are told that instead of a date.',
+        gate: true,
       },
       {
-        n: '03',
         h: 'We produce and check',
         b: 'Generated in the pipeline, finished by hand in professional editing tools, colour-graded to your brand, and looked at by a person before it leaves.',
       },
       {
-        n: '04',
         h: 'You get the files',
         b: `A drop lands in a portal you approve image by image. Individual products arrive as a download link.`,
       },
     ],
+    pipeNote: 'Four stops, and the second one can say no. That is the only reason the other three are worth anything.',
 
     gateLead: 'No date is printed until the calendar clears it.',
     gateBody: 'A reserved window is confirmed before you pay, never after. If the week you need cannot be held, you hear that — not an optimistic guess. It is the one promise on this site we would rather lose an order over than break.',
+    // FigCapacity draws both answers. The paragraph above can only assert the
+    // refusal happens; two tracks side by side show it, and showing the losing
+    // case is the whole reason this claim is not boilerplate.
+    capCases: [
+      {
+        label: 'The week you need can be held',
+        slot: 'Your drop',
+        verdict: 'The window is reserved, and confirmed in writing before anything is charged.',
+      },
+      {
+        label: 'It cannot',
+        verdict: 'You are told so, and offered the first window that can hold it. No date is invented to keep the order.',
+      },
+    ],
+    // The cut clause read "no figure on this site prints a duration, and the two
+    // sanctioned ones are further down this page". True, binding, and none of a
+    // reader's business — it is a rule this repo keeps, so it belongs here in a
+    // comment where it still binds whoever edits FigCapacity next, rather than on
+    // the page where it spent 22 words telling a customer about our own policy.
+    // The rule, stated once: the bands are unlabelled and uncountable on purpose,
+    // and any edit that gives them a scale is reintroducing the delivery-time
+    // claim that tasks #190 and #198 spent two rounds removing.
+    capNote: 'The bands are work already committed. They are deliberately uneven — there is nothing here to count.',
 
     craftH: 'More than AI. Finished by hand.',
     craftBody: "The pipeline does the heavy lifting, but it is only the start. Every visual is finished in professional editing tools and colour-graded to your brand, and a person checks accuracy, consistency and framing before anything ships — the difference between a raw generator and something you would publish.",
@@ -80,12 +251,19 @@ const COPY = {
 
     portalH: 'You approve it, image by image.',
     portalBody: `A drop does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}`,
-    portalList: [
-      'Every image in one place, the moment it is ready.',
-      'Approve it, or request a revision on that image alone — the rest of the drop keeps moving.',
-      'Nothing is final until you have approved it.',
-      'Download the approved set at full resolution when you are done.',
-    ],
+    // These four strings replace the four-item checklist that used to sit here.
+    // The claim the list was making — "a revision on that image alone, the rest
+    // of the drop keeps moving" — is about PARALLELISM, and a column of bullets
+    // is a picture of the opposite. Three states visible at once is the claim.
+    apvHead: 'Your drop, in the portal',
+    apvOk: 'Approved by you',
+    apvRev: 'Revision requested — this image only',
+    apvWait: 'Still coming',
+    // "Every image appears the moment it is ready" went: the drawing shows three
+    // states side by side, which IS that sentence. The disclosure stays for the
+    // same reason as fanNote's — a diagram that lets itself be read as a
+    // screenshot is inventing proof.
+    apvNote: 'A drawing of the portal, not a screenshot. Nothing is final until you approve it, and the approved set downloads at full resolution.',
     portalNote: `Individual products work differently and more simply. ${TIERS.unattended.delivery.en}.`,
 
     detailsH: 'The details that matter',
@@ -94,9 +272,27 @@ const COPY = {
       { t: 'If something is off', b: `On a drop: ${aftercare('attended', 'en').toLowerCase()}. On individual products: ${aftercare('unattended', 'en').toLowerCase()}.` },
       { t: 'Consistency', b: `Same lighting, same angle, same grade across all ${scope} products. Running them together is what makes that possible.` },
       { t: 'Two ways in', b: 'On-site, or WhatsApp — whichever suits you. The same pipeline either way.' },
-      { t: 'Files', b: 'High-resolution, e-commerce-ready files, sized for shop listings, marketplaces and ads.' },
       { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
     ],
+    // The sixth card used to read: "Files — high-resolution, e-commerce-ready
+    // files, sized for shop listings, marketplaces and ads." A true sentence
+    // that shows a reader nothing, in a six-up grid of identical cards, which
+    // is the other device DESIGN.md rejects. FigFormats makes the same claim by
+    // being the shapes, and the grid is five cards now instead of six.
+    formatsH: 'One visual, every shape a channel asks for',
+    fmtAlt: 'One product visual cropped to five different aspect ratios',
+    fmtFrames: [
+      { t: 'Shop listing' },
+      { t: 'Feed post' },
+      { t: 'Reel or story' },
+      { t: 'Banner' },
+      { t: 'Marketplace' },
+    ],
+    // First sentence is load-bearing — it is the whole of the deleted "Files"
+    // card, and removing a card while dropping its claim would be losing content,
+    // not compressing it. The rest said "the drawing is the claim" in words,
+    // which is a figure arguing for itself instead of doing its job.
+    fmtNote: 'High-resolution, e-commerce-ready files. Each frame is the ratio it is labelled with.',
 
     faqH: 'Still have a question?',
     faqCta: 'Read the FAQ',
@@ -117,33 +313,54 @@ const COPY = {
     ctaStart: 'Start een drop',
     ctaSample: 'Probeer een proefvisual',
 
+    fanIn: 'Wat jij stuurt',
+    fanOut: 'Wat je terugkrijgt, per product',
+    fanPhotoAlt: 'Een gewassen T-shirt, plat gefotografeerd op een kantoortafel bij daglicht',
+    fanMadeAlt: 'Hetzelfde T-shirt, uitgesneden en belicht op een egale witte ondergrond',
+    fanSlots: [
+      { t: 'Op een model' },
+      { t: 'In een scène' },
+      { t: 'Op advertentieformaat' },
+    ],
+    fanNote: 'Eén product, één keer gefotografeerd. Het kader op wit is een echt paar — de andere drie zijn getekend, want het zijn plekken in de levering, geen resultaten die dit shirt heeft opgeleverd.',
+
     steps: [
       {
-        n: '01',
         h: 'Jij stuurt de producten',
         b: 'Foto’s en een korte notitie over de look. Vijf minuten, hoeveel producten het ook zijn — de moeite groeit niet mee met de omvang van de drop.',
         linkText: 'Bekijk de uploadrichtlijnen',
         linkHref: '/upload-guidelines',
       },
       {
-        n: '02',
         h: 'Wij checken de capaciteit',
         b: 'Voordat er iets betaald wordt. Een drop krijgt alleen een venster dat de agenda ook echt kan vasthouden — en kan die week niet, dan hoor je dat in plaats van een datum.',
+        gate: true,
       },
       {
-        n: '03',
         h: 'Wij produceren en controleren',
         b: 'Gegenereerd in de pipeline, met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en door een mens bekeken voordat het weggaat.',
       },
       {
-        n: '04',
         h: 'Jij krijgt de bestanden',
         b: 'Een drop komt in een portaal waar je beeld voor beeld goedkeurt. Losse producten komen als downloadlink.',
       },
     ],
+    pipeNote: 'Vier haltes, en de tweede kan nee zeggen. Dat is de enige reden dat de andere drie iets waard zijn.',
 
     gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
     gateBody: 'Een gereserveerd venster wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — geen optimistische gok. Het is de ene belofte op deze site waarvoor we liever een bestelling verliezen dan haar te breken.',
+    capCases: [
+      {
+        label: 'De week die je nodig hebt kan worden vastgehouden',
+        slot: 'Jouw drop',
+        verdict: 'Het venster wordt gereserveerd en schriftelijk bevestigd voordat er iets in rekening wordt gebracht.',
+      },
+      {
+        label: 'Die week kan niet',
+        verdict: 'Dan hoor je dat, met het eerstvolgende venster dat het wél kan vasthouden. Er wordt geen datum verzonnen om de bestelling binnen te houden.',
+      },
+    ],
+    capNote: 'De banden zijn werk dat al vastligt. Ze zijn met opzet ongelijk — er valt hier niets te tellen.',
 
     craftH: 'Meer dan AI. Met de hand afgewerkt.',
     craftBody: 'De pipeline doet het zware werk, maar dat is pas het begin. Elke visual wordt afgewerkt in professionele editingtools en kleurgecorrigeerd naar je merk, en een mens controleert nauwkeurigheid, consistentie en kadrering voordat er iets weggaat — het verschil tussen een kale generator en iets dat je zou publiceren.',
@@ -153,12 +370,11 @@ const COPY = {
 
     portalH: 'Jij keurt goed, beeld voor beeld.',
     portalBody: `Een drop komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}`,
-    portalList: [
-      'Elk beeld op één plek, zodra het klaar is.',
-      'Keur het goed, of vraag een revisie aan op dat ene beeld — de rest van de drop loopt gewoon door.',
-      'Niets is definitief tot jij het hebt goedgekeurd.',
-      'Download de goedgekeurde set in volledige resolutie wanneer je klaar bent.',
-    ],
+    apvHead: 'Jouw drop, in het portaal',
+    apvOk: 'Door jou goedgekeurd',
+    apvRev: 'Revisie aangevraagd — alleen dit beeld',
+    apvWait: 'Nog onderweg',
+    apvNote: 'Een tekening van het portaal, geen schermafbeelding. Niets is definitief tot jij het goedkeurt, en de goedgekeurde set download je in volledige resolutie.',
     portalNote: `Losse producten werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
 
     detailsH: 'De details die ertoe doen',
@@ -167,9 +383,18 @@ const COPY = {
       { t: 'Als iets niet klopt', b: `Bij een drop: ${aftercare('attended', 'nl').toLowerCase()}. Bij losse producten: ${aftercare('unattended', 'nl').toLowerCase()}.` },
       { t: 'Consistentie', b: `Dezelfde belichting, dezelfde hoek, dezelfde grade over alle ${scope} producten. Dat ze samen door de pipeline gaan is precies wat dat mogelijk maakt.` },
       { t: 'Twee ingangen', b: 'Via de site of via WhatsApp — wat jou uitkomt. Dezelfde pipeline in beide gevallen.' },
-      { t: 'Bestanden', b: 'Hoge-resolutiebestanden, klaar voor e-commerce, op maat voor shoplistings, marktplaatsen en advertenties.' },
       { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
     ],
+    formatsH: 'Eén visual, elke vorm die een kanaal vraagt',
+    fmtAlt: 'Eén productvisual bijgesneden naar vijf verschillende beeldverhoudingen',
+    fmtFrames: [
+      { t: 'Shoplisting' },
+      { t: 'Feedpost' },
+      { t: 'Reel of story' },
+      { t: 'Banner' },
+      { t: 'Marktplaats' },
+    ],
+    fmtNote: 'Hoge-resolutiebestanden, klaar voor e-commerce. Elk kader ís de verhouding waar het label bij staat.',
 
     faqH: 'Nog een vraag?',
     faqCta: 'Lees de FAQ',
@@ -183,6 +408,26 @@ const COPY = {
 };
 
 const c = COPY[lang];
+
+// Built here rather than inline in the <FigPipeline> attribute, and the reason
+// is not taste. An arrow function inside a JSX attribute puts a `>` (the one in
+// `=>`) inside the opening tag, and check_tags — which scans for tag
+// boundaries, not JS — closed <FigPipeline> on it and then reported the next
+// </div> as a mismatch against an unclosed `figpipeline`. The report was
+// correct about what it could see. Same principle as FigCapacity's segments()
+// helper: static analysis is the entire safety net in this repo (npm is
+// blocked, nothing can be built or screenshotted), so markup that the checkers
+// cannot parse is markup with no checker on it.
+//
+// The href is localised here too. FigPipeline has no `lang` prop and must not
+// grow one — see its header comment.
+const pipeStops = c.steps.map((s) => ({
+  t: s.h,
+  b: s.b,
+  gate: s.gate,
+  linkText: s.linkText,
+  linkHref: s.linkHref ? lp(s.linkHref) : undefined,
+}));
 ---
 
 <!-- HERO -->
@@ -199,27 +444,47 @@ const c = COPY[lang];
   </div>
 </section>
 
-<!-- THE FOUR STEPS. Four, not three: the capacity check is a step, not a
-     disclaimer, and hiding it inside "we produce" is how a studio ends up
-     promising a week it cannot hold. -->
+<!-- ONE FOLDER IN, A DROP OUT — the H1, drawn. It sits directly under the hero
+     because it is the same sentence: the hero says it, this shows it, and a
+     reader who scrolls past the words still gets the account. -->
 <section class="section-tight"><div class="container">
-  <div class="steps four reveal-group">
-    {c.steps.map((s) => (
-      <div class="step reveal pending">
-        <div class="step-n">{s.n}</div>
-        <h3>{s.h}</h3>
-        <p>{s.b}{s.linkText ? <> <a href={lp(s.linkHref)}>{s.linkText}</a>.</> : null}</p>
-      </div>
-    ))}
+  <div class="reveal pending">
+    <FigFanOut
+      photo="/img/catalog-before.webp"
+      photoAlt={c.fanPhotoAlt}
+      made="/img/catalog-after.webp"
+      madeAlt={c.fanMadeAlt}
+      inLabel={c.fanIn}
+      outLabel={c.fanOut}
+      slots={c.fanSlots}
+      note={c.fanNote}
+    />
+  </div>
+</div></section>
+
+<!-- THE FOUR STEPS, as a rail rather than four cards. Four, not three: the
+     capacity check is a step, not a disclaimer, and hiding it inside "we
+     produce" is how a studio ends up promising a week it cannot hold. The
+     gate stop is drawn as a doorway, which is the one thing the old numbered
+     grid could not say — it gave the refusal the same weight as "you send us
+     photos". The hrefs are localised HERE, not inside the figure. -->
+<section class="section-tight"><div class="container">
+  <div class="reveal pending">
+    <FigPipeline stops={pipeStops} note={c.pipeNote} />
   </div>
 </div></section>
 
 <!-- THE CAPACITY GATE. Same promise as /start, stated once more where the
-     process is being explained rather than chosen. -->
+     process is being explained rather than chosen — and then drawn, because
+     the half of this promise that matters is the half where the answer is no,
+     and prose can only tell you that happens. -->
 <section class="section-tight"><div class="container narrow">
   <div class="gate reveal pending">
     <p class="editorial-statement">{c.gateLead}</p>
     <p class="gate-body">{c.gateBody}</p>
+  </div>
+  <div class="gate-fig reveal pending">
+    <FigCapacity cases={c.capCases} note={c.capNote} />
   </div>
 </div></section>
 
@@ -253,19 +518,29 @@ const c = COPY[lang];
     <p class="portal-note">{c.portalNote}</p>
   </div>
   <div class="reveal pending">
-    <ul class="checklist">
-      {c.portalList.map((line) => (
-        <li>
-          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-          <span>{line}</span>
-        </li>
-      ))}
-    </ul>
+    <FigApproval
+      head={c.apvHead}
+      okLabel={c.apvOk}
+      revLabel={c.apvRev}
+      waitLabel={c.apvWait}
+      note={c.apvNote}
+    />
   </div>
 </div></section>
 
-<!-- THE DETAILS -->
+<!-- THE DETAILS. The figure opens the section and the cards follow, so the
+     band is not another uninterrupted run of identical boxes — and the "Files"
+     claim that used to be the sixth box is now the thing you can see. -->
 <section><div class="container">
+  <div class="section-head"><h2>{c.formatsH}</h2></div>
+  <div class="reveal pending" style="margin-bottom:clamp(3rem,6vw,4.5rem)">
+    <FigFormats
+      photo="/img/catalog-after.webp"
+      alt={c.fmtAlt}
+      frames={c.fmtFrames}
+      note={c.fmtNote}
+    />
+  </div>
   <div class="section-head"><h2>{c.detailsH}</h2></div>
   <div class="grid grid-auto reveal-group">
     {c.details.map((d) => (
@@ -297,18 +572,21 @@ const c = COPY[lang];
 </div></section>
 
 <style>
-  /* Global .steps is a 3-up grid; this page has four steps and a 3+1 orphan
-     row reads as a mistake. Two classes beat the global one selector, so
-     these win at every width including inside the global 860px rule. */
-  .steps.four { grid-template-columns: repeat(4, 1fr); gap: clamp(1.2rem, 2.4vw, 2.2rem); }
-  @media (max-width: 1100px) { .steps.four { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 640px) { .steps.four { grid-template-columns: 1fr; } }
-  .step p a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+  /* The `.steps.four` override and `.step p a` that used to live here are gone
+     with the markup they styled — FigPipeline replaced the four step cards, so
+     the rules had nothing left to select. Deleting them is not tidying: an
+     emitted-nowhere CSS rule is exactly what verify3 [5] reports as dead, and
+     leaving it would have cost a real finding to make room for a false one.
+     Global .steps / .step / .step-n stay put — six other pages use them. */
 
   /* The capacity gate. A single heavy rule above it and nothing else — the
      sentence is the design. */
   .gate { border-top: 2px solid var(--ink); padding-top: clamp(1.4rem, 3vw, 2.2rem); }
   .gate-body { margin-top: 1.1rem; color: var(--ink-2); max-width: 66ch; }
+  /* The figure is part of the gate block, not a new thought, so it sits inside
+     the same narrow container under one rule rather than starting its own
+     section with its own heading. */
+  .gate-fig { margin-top: clamp(2rem, 4.5vw, 3.2rem); }
 
   .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
   .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }

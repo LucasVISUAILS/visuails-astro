@@ -201,22 +201,6 @@ mutation that relaxes that guard is invisible to it — the one mutation the blo
 would most like to make. Everything *around* the query is covered; the query's own
 condition is not. Written down rather than papered over.
 
-**cxxxvi · The client portal is finished and no client can reach it.** Nothing in
-the codebase ever writes a row to `order_tokens`. The table is created by
-`0001-section-10-pipeline.sql:36`, read on every lookup at `src/lib/portal.js:447`,
-and its use counter incremented at `:483` — the read side is complete and correct.
-The write side does not exist. `mintToken()` at `src/lib/token.js:60` is real and
-sound, but its only caller is `src/lib/uploads.js:81`, where it generates upload
-*batch* ids, not portal tokens. So the sequence is: order lands, order closes,
-and there is no URL to put in the delivery mail. This does not block the deploy —
-the site, the order pipeline and the capacity gate are all unaffected — it blocks
-the first real delivery to a Tier 1 client, which is a different and later day.
-Whatever closes an order has to mint a token, store its SHA-256, and put the URL
-in the mail; flag **xxxviii** (which reading of *"single-use on issue"* was meant)
-has to land first, because it changes what that code does. Found by walking every
-table in the schema and asking which ones nothing writes to, rather than by
-reading the portal, which looks complete from the inside.
-
 **Low priority:** **lv** `.opt` radios paint as squares in some engines · **lvii**
 `shoot_start.py` never regenerates `slices/` · **lxvi** the dead `.ba*` slider
 family is still in the tree (`.ba-knob` is load-bearing for a mutation-harness
@@ -244,8 +228,12 @@ in the opening tag and skips self-closing tags — and is already in use in
 
 **lxix ·** `class_census.py` has no mutation harness.
 
-**verify2.py has no mutation harness**, and now carries an unharnessed fix
-(cxxiv). New this section.
+**verify2.py is harnessed in one section of seven.** `mutate_verify2_logo.py`
+covers §7 (the retired chrome logotype, cxxxix) with seven rejecting cases, each
+requiring its own message rather than any red exit — necessary there because
+every clause of §7 asserts an *absence*, and an absence is also what a typo'd
+regex or a wrong path produces, so green would otherwise prove nothing.
+**Sections 1–6 remain unharnessed, including the cxxiv fix.**
 
 **lxxiii ·** `pipeline.js`'s selectors are swept by no verifier. Partially
 addressed.
@@ -291,6 +279,26 @@ lying**, and `check_report14.py` is the only file that holds any of them. The
 other reports cite nothing by line number today; if one starts to, it needs its
 own checker or it will rot the same way. Related to **xcvii**, which is the same
 hazard pointed the other way.
+
+**The class recurred immediately, and exposed a blind spot in the checker
+itself.** Retiring the chrome logotype (cxxxix) deleted four `<linearGradient>`
+defs from `Layout.astro`'s sprite, moving everything below up 74 lines — the
+reveal-gate `+49` from `claim()`'s docstring, in the other direction. `:460`
+became `:386` and `check_report14` went red, correctly, on the first run after
+the edit. Which is the checker working.
+
+What it could not see was itself. `claim()` proves the pin in `check_report14.py`
+points at the right line; **nothing proved the report's prose carried the same
+number.** Fixing only the pin — the tempting move, since that is the file the
+failure names — restores green while leaving the report citing a line that has
+moved, which is precisely the defect cxxxiv is about, surviving in the one place
+the checker was blind. Closed by adding `bind('footer-ids-cite', …)`, which reads
+the number out of the report's own sentence and compares it to the pin;
+negative-controlled in both directions before being trusted (number drifts →
+`report says (460,), repository says (386,)`; sentence reworded → the dead-pattern
+branch, not silence). **A checker that verifies citations needs an assertion that
+its own citation is cited correctly.** The other thirteen `claim()` entries still
+have no such cross-check.
 
 **cxxxv · A checker skipped the one case it was written for, and said nothing
 while it did.** `check_lang_parity.py` pairs each `en:` object literal with the
@@ -366,6 +374,95 @@ to a drop — but see **xc**, which is the residue. **H7** retention split: sour
 `/custom-models` kept as the live URL, `/models` 301s to it. **H9** the AI Act
 compliance claim rewritten to the factual version. **H10** the radius and
 `--success` sweeps completed.
+
+**cxxxix · The chrome logotype is retired. This is an override of the brief, on
+Lucas's call, and it is not open for re-litigation.** Recorded here for the same
+reason the revision-rounds decision is recorded in `REPORT-SECTIONS-4-9.md` §2:
+the brief still says the opposite in writing, so without this entry a later pass
+reads the spec, sees the shipped logo disagreeing with it, and "fixes" it back.
+
+**What the brief said.** Chrome is the signature material, on exactly two
+surfaces: the hero field and the logotype. `DESIGN.md` carried a blocking
+dependency saying surface #2 could not ship until the wordmark existed as SVG
+paths rather than a raster.
+
+**What Lucas said**, after seeing it rendered:
+
+> *"Ook de logo's zou ik gewoon 1 kleur willen maken want de chrome look laat
+> het wat goedkoop eruit zien."*
+
+**Why the evidence is on his side, not merely his preference.** `DESIGN.md`'s own
+Removability test says: delete the chrome logotype fill, and if the page is still
+clearly this brand, the chrome was a signature rather than the identity. He ran
+half that test on a live page and returned the answer — the page is still clearly
+this brand. And the material's whole job in this system is to say *expensive*; a
+surface that reads as cheap at the size it is most often seen is not an
+under-executed signature, it is the signature working against itself. The
+dependency, meanwhile, was cleared and then made moot: the SVG conversion it
+demanded did happen, the gradient it was demanded for was withdrawn, so the
+premise held while the conclusion inverted. The SVG stays — it is what lets the
+mark take the ink of whatever ground it lands on, which the raster never could,
+and it is why one flat value works on both paper and dark without a second asset.
+
+**What shipped.** `.brand-word` and `.brand-mark` take `fill: var(--ink)`. Four
+`<linearGradient id="chrome*">` defs deleted from the sprite (`gObj` / `gGlass`
+stay — different family, they light the product placeholders). The tokens
+`--wordmark-fill` and `--mark-fill` deleted outright rather than repointed,
+including their `.on-ink` overrides, because a logo-specific token has to be kept
+in step with `--ink` by hand and `--ink` already expresses the value on every
+ground.
+
+**Four things it staled, all handled** — the reason this entry is long:
+
+1. `public/img/logo-mark.webp`, a **generated** raster with the chrome ramp baked
+   in, pointed at by `Layout.astro:98`'s schema.org `logo:` field. Not CSS, not
+   the sprite — the actual pixels a search result and a social card draw.
+   Regenerated flat. Missing it would have shipped a chrome logo everywhere the
+   site is *quoted* while the site itself went flat. **Grep for generated assets,
+   not only for the token that generates them.**
+2. `verify2.py` §7, which asserted the four duplicated chrome ramps had not
+   drifted apart. **Inverted rather than deleted**, so a revert goes red. Left
+   alone it would not have gone quiet either — it would have gone red on an
+   absence it was never written to judge, which is worse than silence. Backed by
+   the new `mutate_verify2_logo.py`, seven cases, each requiring its own message.
+3. `mark_check.mjs` and `wordmark_check.mjs`, which measured whether a twelve-stop
+   gradient put holes in the letterforms. Both now **throw** on this tree, by
+   their own guards. Left throwing on purpose: a question one flat `--ink`
+   answers by construction, and a reinstated chrome logotype wants them back
+   unchanged. Recorded in `run_suite.sh`'s not-wired header so nobody deletes them
+   as rot.
+4. `DESIGN.md` in six places, and `IMAGES.md`'s three logo-raster entries, all of
+   which described the orange/chrome era.
+
+**`--chrome-filter` was NOT part of this and stays declared.** It reads like
+logotype machinery and is not: `.ch-promise .hero-fallback` is a *surface*, the
+hero plane's static fallback, and is now its only reader. verify2 §7 asserts that
+reader still exists precisely so the token cannot be swept later "for tidiness."
+**A token name that looks single-purpose may not be.**
+
+**cxxxvi · CLOSED, and its own prognosis was wrong.** Reported as *"the client
+portal is finished and no client can reach it"* — accurate: nothing wrote a row
+to `order_tokens`, so every lookup missed and no confirmation carried a link.
+`functions/api/order.js` now mints a token on every order that gets an id,
+stores its SHA-256, and puts the URL in the mail.
+
+The part worth keeping is the part the flag got wrong. It said flag **xxxviii**
+— which of the two readings of the brief's *"single-use on issue"* was meant —
+*"has to land first, because it changes what that code does."* It did not have
+to land first. The two readings differ in what a lookup does to a token it has
+already served; they agree completely on the mint, which is the only thing that
+was missing. Shipping the mint under the valid-until-expiry reading leaves
+xxxviii exactly as open as it was and costs nothing if the answer turns out to
+be the other one. **A blocking dependency asserted at report time is a
+prediction, and it is worth re-testing before it is obeyed** — this one had
+held the fix for the whole time it stood.
+
+Landing it staled three separate document claims: `BACKEND-SETUP.md`'s "portal
+token issuance" block, `DEPLOY.md`'s "nothing issues a portal token" bullet, and
+`BACKEND-SETUP.md`'s prepared-statement count, which is a different sentence in
+the same file as the first. All three are fixed. **A code fix can go stale a
+document in more than one place, including more than one place in the document
+you have already fixed.**
 
 **cv · CORRECTED, not merely closed.** Reported as *"the site renders blank
 without JavaScript."* That was **overstated.** The site rendered correctly with JS

@@ -124,7 +124,10 @@ const orgJsonLd = {
   <link rel="canonical" href={canonical} />
   {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
   <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'} />
-  <meta name="theme-color" content="#F6F5F2" />
+  {/* --paper, by hand. verify2 §6 allowlists `theme-color`, so this is the one
+      palette value in the codebase that no check can see drift — it is listed
+      in DESIGN.md's swap checklist for that reason and nowhere else. */}
+  <meta name="theme-color" content="#F3F5F8" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -199,107 +202,48 @@ const orgJsonLd = {
 </head>
 <body>
   <!-- SVG sprite — product-scene placeholder symbols, the chrome gradients and
-       the outlined logotype. The product-scene gradient
-       stops were blue-grey (#b7c0d1 / #8591a8 / #525d75); they are now cut from
-       the same ink ramp as the interface, so the placeholder object reads as an
-       unlit neutral form rather than a second, competing colour temperature.
-       The white fills below are specular highlights on the object and stay
-       white — that is how a lit surface behaves, not a palette leak. -->
+       the outlined logotype. The six greys below (three gObj stops, two gGlass
+       stops, one flat #B9B7B4 used for caps and soles) are cut from the SAME
+       ink ramp as the interface, so the placeholder object reads as an unlit
+       neutral form rather than a second, competing colour temperature.
+
+       They have been re-cut twice, and the second time is the lesson. Round
+       one took them off a blue-grey of their own (#b7c0d1 / #8591a8 / #525d75)
+       and onto the then-current ink ramp, which was hue 265. Round two is the
+       temperature swap: the interface ramp rotated to hue 75 and these did not
+       follow it, so for one revision this comment claimed a shared ramp that
+       had stopped being shared — the sprite was the competing temperature the
+       sentence above exists to forbid. Nothing enumerated it, because it is a
+       hand-carried literal in markup rather than a token. It is row 10 of
+       DESIGN.md's "Changing the palette" checklist now, which is the only
+       thing that will catch it the third time.
+
+       Every value is the old L and C at hue 75, so the object's modelling is
+       untouched — the largest luminance move across all six is +0.0012, which
+       is below one 8-bit step. The white fills are specular highlights on the
+       object and stay white — that is how a lit surface behaves, not a
+       palette leak. -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <linearGradient id="gObj" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#B0B1B4"/><stop offset="0.5" stop-color="#7F8083"/><stop offset="1" stop-color="#4C4D4F"/>
+        <stop offset="0" stop-color="#B3B1AE"/><stop offset="0.5" stop-color="#82807D"/><stop offset="1" stop-color="#4E4D4B"/>
       </linearGradient>
       <linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#D3D4D6" stop-opacity="0.97"/><stop offset="1" stop-color="#797A7D" stop-opacity="0.9"/>
+        <stop offset="0" stop-color="#D5D4D2" stop-opacity="0.97"/><stop offset="1" stop-color="#7C7A77" stop-opacity="0.9"/>
       </linearGradient>
-      <!-- Chrome, the logotype calibration. DESIGN.md's twelve stops are tuned
-           for a SURFACE (the hero plane), where a band going nearly black on a
-           nearly black ground is a reflection. A 17px word is not a surface:
-           measured post --chrome-filter, the spec ramp puts 7 of 12 stops under
-           3:1 on paper and 2 under 3:1 on ink, i.e. holes in the letterforms.
-           These two keep the spec's stop positions, hues and all eight
-           lightness reversals, with lightness remapped per ground.
-           They are solved to 3.25:1, not to the 3:1 floor. The 0.25 is not
-           padding: it is the gap between the model and the browser — three
-           decimals of oklch, the browser's own conversion, gradient
-           interpolation, 8-bit quantisation. Solved at exactly 3.0 the paper
-           ramp measured 2.97:1 on the rendered mark, which is a fail by less
-           than the rounding and a fail all the same. Same material, two
-           calibrations, because one ground is light and one is dark. -->
-      <linearGradient id="chromeInk" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1646" y2="441">
-        <stop offset="0%" stop-color="oklch(0.789 0.004 265)"/>
-        <stop offset="9%" stop-color="oklch(0.905 0.006 265)"/>
-        <stop offset="17%" stop-color="oklch(0.687 0.008 265)"/>
-        <stop offset="26%" stop-color="oklch(0.948 0.003 250)"/>
-        <stop offset="35%" stop-color="oklch(0.745 0.010 265)"/>
-        <stop offset="44%" stop-color="oklch(0.564 0.006 265)"/>
-        <stop offset="53%" stop-color="oklch(0.868 0.005 250)"/>
-        <stop offset="62%" stop-color="oklch(0.970 0.002 85)"/>
-        <stop offset="71%" stop-color="oklch(0.643 0.009 265)"/>
-        <stop offset="80%" stop-color="oklch(0.818 0.004 265)"/>
-        <stop offset="89%" stop-color="oklch(0.520 0.007 265)"/>
-        <stop offset="100%" stop-color="oklch(0.709 0.012 265)"/>
-      </linearGradient>
-      <linearGradient id="chromePaper" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1646" y2="441">
-        <stop offset="0%" stop-color="oklch(0.394 0.004 265)"/>
-        <stop offset="9%" stop-color="oklch(0.539 0.006 265)"/>
-        <stop offset="17%" stop-color="oklch(0.268 0.008 265)"/>
-        <stop offset="26%" stop-color="oklch(0.593 0.003 250)"/>
-        <stop offset="35%" stop-color="oklch(0.340 0.010 265)"/>
-        <stop offset="44%" stop-color="oklch(0.114 0.006 265)"/>
-        <stop offset="53%" stop-color="oklch(0.494 0.005 250)"/>
-        <stop offset="62%" stop-color="oklch(0.620 0.002 85)"/>
-        <stop offset="71%" stop-color="oklch(0.214 0.009 265)"/>
-        <stop offset="80%" stop-color="oklch(0.430 0.004 265)"/>
-        <stop offset="89%" stop-color="oklch(0.060 0.007 265)"/>
-        <stop offset="100%" stop-color="oklch(0.295 0.012 265)"/>
-      </linearGradient>
-      <!-- Same two ramps, second geometry. The monogram is near-square and the
-           wordmark is 6:1, so one userSpaceOnUse gradient line cannot serve
-           both: at the wordmark's length the whole monogram would sample the
-           first third of the ramp and stop being metal. The DIRECTION is
-           constant (15deg below horizontal, the surface's 105deg as a vector)
-           because the light in this material has one direction; only the
-           length changes, and it is the projection of each mark's own box onto
-           that direction so the ramp lands inside the artwork rather than
-           pad-clamping at a corner. Stops are duplicated, not inherited via
-           href: gradient template inheritance is SVG2, its non-Chromium
-           support is not something that can be verified here, and the failure
-           mode is an invisible logo. Both copies are emitted by
-           chrome_ramp.py, so the ramp still has one source. -->
-      <linearGradient id="chromeInkMark" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="760" y2="203">
-        <stop offset="0%" stop-color="oklch(0.789 0.004 265)"/>
-        <stop offset="9%" stop-color="oklch(0.905 0.006 265)"/>
-        <stop offset="17%" stop-color="oklch(0.687 0.008 265)"/>
-        <stop offset="26%" stop-color="oklch(0.948 0.003 250)"/>
-        <stop offset="35%" stop-color="oklch(0.745 0.010 265)"/>
-        <stop offset="44%" stop-color="oklch(0.564 0.006 265)"/>
-        <stop offset="53%" stop-color="oklch(0.868 0.005 250)"/>
-        <stop offset="62%" stop-color="oklch(0.970 0.002 85)"/>
-        <stop offset="71%" stop-color="oklch(0.643 0.009 265)"/>
-        <stop offset="80%" stop-color="oklch(0.818 0.004 265)"/>
-        <stop offset="89%" stop-color="oklch(0.520 0.007 265)"/>
-        <stop offset="100%" stop-color="oklch(0.709 0.012 265)"/>
-      </linearGradient>
-      <linearGradient id="chromePaperMark" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="760" y2="203">
-        <stop offset="0%" stop-color="oklch(0.394 0.004 265)"/>
-        <stop offset="9%" stop-color="oklch(0.539 0.006 265)"/>
-        <stop offset="17%" stop-color="oklch(0.268 0.008 265)"/>
-        <stop offset="26%" stop-color="oklch(0.593 0.003 250)"/>
-        <stop offset="35%" stop-color="oklch(0.340 0.010 265)"/>
-        <stop offset="44%" stop-color="oklch(0.114 0.006 265)"/>
-        <stop offset="53%" stop-color="oklch(0.494 0.005 250)"/>
-        <stop offset="62%" stop-color="oklch(0.620 0.002 85)"/>
-        <stop offset="71%" stop-color="oklch(0.214 0.009 265)"/>
-        <stop offset="80%" stop-color="oklch(0.430 0.004 265)"/>
-        <stop offset="89%" stop-color="oklch(0.060 0.007 265)"/>
-        <stop offset="100%" stop-color="oklch(0.295 0.012 265)"/>
-      </linearGradient>
+      <!-- Four <linearGradient>s used to sit here: chromeInk / chromePaper and
+           their near-square chromeInkMark / chromePaperMark twins, the twelve
+           spec stops remapped per ground and solved to 3.25:1 so a 17px word
+           did not develop holes in its letterforms. They are gone with the
+           chrome logotype, and the two that remain above are not part of that
+           family — gObj and gGlass light the placeholder product shapes and
+           have nothing to do with the wordmark. If a chrome logotype is ever
+           reinstated, chrome_ramp.py still emits all four; it was the ramp's
+           single source and was never deleted. -->
     </defs>
     <symbol id="p-bottle" viewBox="0 0 120 150">
       <rect x="50" y="8" width="20" height="16" rx="3" fill="url(#gObj)"/>
-      <rect x="46" y="22" width="28" height="10" rx="2" fill="#B6B7BA"/>
+      <rect x="46" y="22" width="28" height="10" rx="2" fill="#B9B7B4"/>
       <path d="M42 34 h36 a10 10 0 0 1 10 10 v82 a12 12 0 0 1 -12 12 h-32 a12 12 0 0 1 -12 -12 v-82 a10 10 0 0 1 10 -10 z" fill="url(#gGlass)"/>
       <rect x="46" y="70" width="28" height="46" rx="6" fill="#ffffff" opacity="0.18"/>
       <rect x="50" y="46" width="7" height="70" rx="3" fill="#ffffff" opacity="0.5"/>
@@ -307,12 +251,12 @@ const orgJsonLd = {
     <symbol id="p-sneaker" viewBox="0 0 160 110">
       <path d="M14 78 q0 -30 26 -34 q10 -2 20 6 l26 20 q16 4 46 8 q14 2 14 14 v6 q0 6 -8 6 H20 q-8 0 -8 -8 z" fill="url(#gGlass)"/>
       <path d="M40 46 q10 -4 20 4 l24 18" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
-      <path d="M14 92 h132 q0 10 -10 10 H22 q-8 0 -8 -10z" fill="#B6B7BA"/>
+      <path d="M14 92 h132 q0 10 -10 10 H22 q-8 0 -8 -10z" fill="#B9B7B4"/>
       <circle cx="52" cy="60" r="3" fill="#fff" opacity="0.7"/><circle cx="66" cy="68" r="3" fill="#fff" opacity="0.7"/>
     </symbol>
     <symbol id="p-jar" viewBox="0 0 120 130">
-      <ellipse cx="60" cy="30" rx="34" ry="12" fill="#B6B7BA"/>
-      <rect x="26" y="30" width="68" height="16" fill="#B6B7BA"/>
+      <ellipse cx="60" cy="30" rx="34" ry="12" fill="#B9B7B4"/>
+      <rect x="26" y="30" width="68" height="16" fill="#B9B7B4"/>
       <path d="M22 52 h76 v40 a20 20 0 0 1 -20 20 h-36 a20 20 0 0 1 -20 -20 z" fill="url(#gGlass)"/>
       <ellipse cx="60" cy="52" rx="38" ry="12" fill="url(#gObj)"/>
       <ellipse cx="60" cy="50" rx="24" ry="7" fill="#fff" opacity="0.35"/>
@@ -326,8 +270,11 @@ const orgJsonLd = {
     <!-- The logotype, outlined. It was public/img/logo-wordmark-light.webp,
          a near-white raster — which (a) cannot take a gradient fill, so the
          chrome signature had nowhere to live, and (b) had gone invisible the
-         moment the palette flipped to a paper ground: #EEF0F6 ink on #F6F5F2
-         paper is 1.05:1. The paths below are traced from that exact file
+         moment the palette flipped to a paper ground: #EEF0F6 ink on the
+         #F6F5F2 paper of the day is 1.05:1 (paper is #F3F5F8 now; the number
+         is quoted as it stood, not re-derived, because it is the reason the
+         file was retired rather than a live measurement).
+         The paths below are traced from that exact file
          (99.59% coverage match, no structural deviation), so the letterforms
          are unchanged; only the material they are made of is. The path carries
          no fill attribute on purpose — fill is an inherited SVG property, so
@@ -522,32 +469,44 @@ const orgJsonLd = {
   .site-header.scrolled { background: var(--paper); box-shadow: 0 1px 0 var(--line-strong); }
   .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
   .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
-  /* The logotype. 13px was smaller than the cap height of the nav labels beside
-     it, and at that size the chrome bands are finer than the letter stems — the
-     fill reads as dirt, not metal. 17px in a 76px bar is still restrained and
-     lets twelve bands resolve across the word. The footer gets 24px because
-     that is where the signature has room to be looked at. */
-  .brand-word { height: 17px; width: auto; display: block; fill: var(--wordmark-fill); filter: var(--chrome-filter); }
+  /* The logotype, flat. It was chrome-filled — the same twelve-stop ramp as the
+     hero plane, remapped per ground — and it is now one ink, on the client's
+     call: at logo size the metal read as cheap rather than as expensive, which
+     is the opposite of what the material was there to say. Nothing about the
+     size reasoning changed with it. 13px was smaller than the cap height of the
+     nav labels beside it; 17px in a 76px bar is still restrained and now sits
+     level with them. The footer gets 24px because that is where the mark has
+     room to be looked at.
+
+     fill: var(--ink) rather than a logotype-specific token, and that is a
+     deliberate simplification rather than laziness — see the note in
+     global.css where those two tokens used to be declared. */
+  .brand-word { height: 17px; width: auto; display: block; fill: var(--ink); }
   .site-footer .brand-word { height: 24px; }
   /* The monogram is the same material as the word, so it is the same mechanism:
-     a fill-less symbol, a role-alias fill that .on-ink flips, and the chrome
-     filter. It replaces logo-mark.webp, which was a cyan-to-periwinkle raster —
-     the last saturated colour left on the site after the monochrome pass, and
-     measured at 1.39:1 against the mobile drawer's paper ground, i.e. a logo
-     you cannot see. A raster also cannot take a gradient fill or flip per
-     ground, so this could not be fixed by recolouring the file. */
-  .brand-mark { width: auto; display: block; fill: var(--mark-fill); filter: var(--chrome-filter); }
-  /* Forced-colours and print both flatten or drop the gradient, so name the
-     single-ink fallback rather than letting the mark disappear. */
-  @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; filter: none; } }
-  @media print { .brand-word, .brand-mark { fill: #000; filter: none; } }
+     a fill-less symbol taking --ink from whatever ground it lands on. It
+     replaces logo-mark.webp, which was a cyan-to-periwinkle raster — the last
+     saturated colour left on the site after the monochrome pass, and measured
+     at 1.39:1 against the mobile drawer's paper ground, i.e. a logo you cannot
+     see. A raster also cannot flip per ground, so that could not be fixed by
+     recolouring the file, and going flat does not bring the problem back: flat
+     here means --ink, which is the one value on this site that is guaranteed
+     to be legible on the ground it is sitting on. */
+  .brand-mark { width: auto; display: block; fill: var(--ink); }
+  /* SVG fill is not force-adjusted by the browser the way `color` is, so
+     forced-colours still has to be told the ink by name or the mark keeps a
+     colour the user asked to be rid of. Print is named separately because a
+     footer mark resolves --ink to paper, and paper ink on a background the
+     printer drops is an invisible logo. */
+  @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; } }
+  @media print { .brand-word, .brand-mark { fill: #000; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
   .nav-links > li > a, .nav-trigger { display: inline-flex; align-items: center; gap: .35rem; padding: .55rem .8rem; font-size: .92rem; font-weight: 500; color: var(--ink-2); background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease); font-family: var(--font-body); }
   .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
   .nav-links > li > a[aria-current="page"] { color: var(--ink); }
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
   .has-menu { position: relative; }
-  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 265 / 0.16); }
+  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 75 / 0.16); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   .nav-menu a { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
@@ -594,7 +553,7 @@ const orgJsonLd = {
   .footer-col a:hover { color: var(--ink); }
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
 
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--ink-900); border: 1px solid var(--line-strong); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 265 / 0.22); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; }
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--ink-900); border: 1px solid var(--line-strong); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 75 / 0.22); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
   .convbar .cb-logo { height: 22px; flex: 0 0 auto; }
   .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }

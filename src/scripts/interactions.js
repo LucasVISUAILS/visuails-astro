@@ -33,10 +33,40 @@ const I18N = {
   en: {
     sourceThanks: 'Thanks — that helps us a lot.',
     tyRefTitle: 'Your reference', tyRefNote: 'Keep this handy — quote it if you message us about this order.',
+    tsSending: 'Uploading…',
+    tsDone: 'Uploaded',
+    tsRemove: 'Remove',
+    tsNeedFile: 'Add at least one product photo — we cannot make a sample without one.',
+    tsWaiting: 'One moment — your photos are still uploading.',
+    tsErr: {
+      unavailable: 'Uploads are unavailable right now. Send the form anyway and we will email you for the photos.',
+      rate: 'That was a lot at once. Wait a moment, then try again.',
+      'bad-type': 'That file type will not open here. JPEG, PNG, WebP or HEIC.',
+      'too-large': 'Too large. Send a file under 25 MB.',
+      empty: 'That file is empty.',
+      'batch-full': 'That is as many files as one request will take.',
+      network: 'The upload did not reach us. Check the connection and retry.',
+      generic: 'That upload did not go through. Try it again.',
+    },
   },
   nl: {
     sourceThanks: 'Bedankt — daar hebben we veel aan.',
     tyRefTitle: 'Je referentie', tyRefNote: 'Bewaar deze — vermeld hem als je ons over deze bestelling appt of mailt.',
+    tsSending: 'Uploaden…',
+    tsDone: 'Geüpload',
+    tsRemove: 'Verwijderen',
+    tsNeedFile: 'Voeg minstens één productfoto toe — zonder foto kunnen we geen sample maken.',
+    tsWaiting: 'Momentje — je foto’s worden nog geüpload.',
+    tsErr: {
+      unavailable: 'Uploaden lukt nu niet. Stuur het formulier gerust op, dan mailen we je voor de foto’s.',
+      rate: 'Dat waren er veel tegelijk. Wacht even en probeer het opnieuw.',
+      'bad-type': 'Dit bestandstype opent hier niet. JPEG, PNG, WebP of HEIC.',
+      'too-large': 'Te groot. Stuur een bestand onder 25 MB.',
+      empty: 'Dit bestand is leeg.',
+      'batch-full': 'Meer bestanden gaan er niet in één aanvraag.',
+      network: 'De upload bereikte ons niet. Controleer de verbinding en probeer het opnieuw.',
+      generic: 'Deze upload is niet doorgekomen. Probeer het nog eens.',
+    },
   },
 };
 function t18() { return I18N[pageLang()] || I18N.en; }
@@ -280,6 +310,274 @@ function initConvbar() {
 // The pipeline does quote a running figure, but it does it in pipeline.js
 // against numbers the capacity gate has already seen, through its own euro().
 // Two arithmetic paths over one price list is how a reprice ships half-applied.
+// ─────────────────────────────────────────────────────────────────────────────
+// /test-sample · THE UPLOAD FIELD THAT WAS NEVER CONNECTED TO ANYTHING.
+//
+// The page shipped a dropzone, a required asterisk, and an <input type="file">
+// that nothing in the codebase ever read. A visitor could pick four photographs,
+// watch the label sit there, press through both steps and submit — and the order
+// arrived with no pictures at all. Two independent reasons, and fixing either
+// one alone would not have helped:
+//
+//   1. NOTHING BOUND THE INPUT. /start does its uploading in pipeline.js, which
+//      is imported by /start and by nothing else. There was no equivalent here.
+//   2. THE FORM COULD NOT HAVE CARRIED THE BYTES ANYWAY. It posts to /api/order,
+//      and that endpoint deliberately refuses to read File entries — see section
+//      4 of test_order_race.mjs, "no File is ever stringified into a column".
+//      Photographs reach an order through R2: /api/upload stages them under a
+//      batch id, and the order carries the id in a hidden `upload_batch` field.
+//
+// So adding enctype="multipart/form-data" — the obvious one-line fix, and the
+// one this file's author would have reached for — would have been WORSE than
+// leaving it broken. The bytes would have crossed the wire, been dropped on
+// arrival, and the visitor would have had every reason to believe they arrived.
+// The fix is the batch, not the encoding, and the file input carries no `name`
+// for the same reason /start's does not: nothing about it belongs in the POST.
+//
+// This lives here rather than in a page-local <script> because a page-local
+// script does not run when the page is reached through a ClientRouter
+// navigation — which is the bug that already killed this same form once, and is
+// recorded in the comment above initWizards().
+// ─────────────────────────────────────────────────────────────────────────────
+const ts = { batch: '', pending: 0, staged: [], off: false, form: null };
+
+function tsBytes(n) {
+  const v = Number(n) || 0;
+  if (v >= 1024 * 1024) {
+    const s = (v / (1024 * 1024)).toFixed(v >= 10 * 1024 * 1024 ? 0 : 1);
+    return `${pageLang() === 'nl' ? s.replace('.', ',') : s} MB`;
+  }
+  return `${Math.max(1, Math.round(v / 1024))} kB`;
+}
+
+// Written into textContent, never innerHTML: `name` is whatever the visitor's
+// filesystem hands over, and this is the one place on the page where a string
+// the visitor controls reaches the DOM.
+function tsSay(text, isError) {
+  const box = document.querySelector('[data-ts-msg]');
+  if (!box) return;
+  box.textContent = text || '';
+  box.classList.toggle('is-error', !!isError && !!text);
+}
+
+function tsCount() {
+  const el = document.querySelector('[data-ts-count]');
+  if (!el) return;
+  const n = ts.staged.length;
+  el.textContent = n ? (pageLang() === 'nl'
+    ? `${n} foto${n === 1 ? '' : '’s'} klaar om mee te sturen`
+    : `${n} photo${n === 1 ? '' : 's'} ready to send`) : '';
+}
+
+function tsSetBatch(b) {
+  if (!b) return;
+  ts.batch = b;
+  const input = ts.form && ts.form.querySelector('input[name="upload_batch"]');
+  if (input) input.value = b;
+}
+
+function tsRow(file) {
+  const list = document.querySelector('[data-ts-list]');
+  if (!list) return null;
+  const li = document.createElement('li');
+  li.className = 'ts-file';
+  const name = document.createElement('span');
+  name.className = 'ts-file-name';
+  name.textContent = file.name;
+  const size = document.createElement('span');
+  size.className = 'ts-file-size';
+  size.textContent = tsBytes(file.size);
+  const msg = document.createElement('span');
+  msg.className = 'ts-file-msg';
+  msg.textContent = t18().tsSending;
+  li.append(name, size, msg);
+  list.appendChild(li);
+  return li;
+}
+
+function tsSetRow(row, text, state) {
+  if (!row) return;
+  const msg = row.querySelector('.ts-file-msg');
+  if (msg) msg.textContent = text || '';
+  row.classList.remove('is-done', 'is-failed');
+  if (state) row.classList.add(state);
+}
+
+// A staged file can be taken back off. Without this the only way to undo a
+// mis-picked photograph is to reload the page, which also throws away the batch
+// and everything else already uploaded into it.
+function tsAddRemove(row, key) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'ts-file-act';
+  b.textContent = t18().tsRemove;
+  b.addEventListener('click', () => {
+    b.disabled = true;
+    fetch(`/api/upload?batch=${encodeURIComponent(ts.batch)}&key=${encodeURIComponent(key)}`,
+          { method: 'DELETE' })
+      .catch(() => {})
+      .finally(() => {
+        // The row goes whatever the endpoint said. A DELETE that failed leaves
+        // an object in R2 that no order references, which the bucket's own
+        // lifecycle rule clears; refusing to remove the row would instead leave
+        // the visitor looking at a photograph they have told us twice to drop.
+        ts.staged = ts.staged.filter((s) => s.key !== key);
+        row.remove();
+        tsCount();
+        tsSay('', false);
+      });
+  });
+  row.appendChild(b);
+}
+
+function tsError(code, body) {
+  const e = t18().tsErr;
+  if (code === 'too-large' && body && body.max) {
+    return pageLang() === 'nl'
+      ? `Te groot. Stuur een bestand onder ${tsBytes(body.max)}.`
+      : `Too large. Send a file under ${tsBytes(body.max)}.`;
+  }
+  return e[code] || e.generic;
+}
+
+function tsSend(file) {
+  const row = tsRow(file);
+  // A photograph is now on its way, so any earlier complaint about there being
+  // none is stale before the request even resolves.
+  tsMarkZone(false);
+  ts.pending += 1;
+  const fd = new FormData();
+  fd.append('file', file);
+  if (ts.batch) fd.append('batch', ts.batch);
+
+  return fetch('/api/upload', { method: 'POST', body: fd })
+    .then((res) => res.json().then((body) => ({ res, body })).catch(() => ({ res, body: null })))
+    .then(({ res, body }) => {
+      if (res.ok && body && body.ok && body.file) {
+        tsSetBatch(body.batch || ts.batch);
+        tsSetRow(row, t18().tsDone, 'is-done');
+        ts.staged.push({ key: body.file.key, name: body.file.name });
+        tsAddRemove(row, body.file.key);
+        tsSay('', false);
+        return;
+      }
+      const code = (body && body.error) || 'generic';
+      tsSetRow(row, tsError(code, body), 'is-failed');
+      // A dead bucket is not this file's problem, it is every file's problem —
+      // and, unlike on /start, it must not become the visitor's problem either.
+      // A test sample is the top of the funnel; refusing the request because R2
+      // is down would cost the lead to save the photographs, which is backwards.
+      // The gate below stands down and the copy tells them what happens next.
+      if (code === 'unavailable') {
+        ts.off = true;
+        tsSay(t18().tsErr.unavailable, false);
+      }
+    })
+    .catch(() => { tsSetRow(row, t18().tsErr.network, 'is-failed'); })
+    .finally(() => { ts.pending = Math.max(0, ts.pending - 1); tsCount(); });
+}
+
+// True when the visitor may move on: something was staged, or the bucket is
+// down and holding them there would achieve nothing.
+function tsSatisfied() { return ts.staged.length > 0 || ts.off; }
+
+function tsMarkZone(on) {
+  const z = document.querySelector('form[data-wizard] .dropzone');
+  if (z) z.classList.toggle('is-error', !!on);
+}
+
+// THE GATE THAT MAKES THE ASTERISK HONEST.
+//
+// The label has said "Upload product photos *" since the page was written, and
+// the asterisk was a lie: nothing enforced it. `required` cannot enforce it
+// either — for two reasons, one of which has since stopped being true, and the
+// distinction matters because the one that expired is the one that used to be
+// written here.
+//
+// EXPIRED. The input used to be `hidden`. `required` on a display:none control
+// is worse than useless: Chrome refuses to submit and reports "An invalid form
+// control with name='' is not focusable", a dead end with no visible cause.
+// That is no longer the situation. The input is visually hidden by
+// .ts-file-input (global.css) instead, which keeps it in the focus order and
+// lets its own <label class="dropzone" for="ts-upload"> operate it — the same
+// change that made the picker reachable by keyboard at all.
+//
+// STANDING. The form carries `novalidate` (test-sample.astro:125 in both
+// languages), so the browser runs no constraint validation on it whatsoever;
+// `required` would sit there inert. And the input carries no `name`, so it is
+// not in the POST to begin with — the bytes travel out-of-band to /api/upload
+// and are joined to the order by the upload_batch id, which is the whole
+// reason /api/order refuses to read File entries.
+//
+// So the requirement has to be asserted in JS, here.
+//
+// `scope` is the step being left on Next, or the whole form on submit: a step
+// that does not contain the input has nothing to say about it, which is what
+// keeps this from firing on step 2's Back button or on any future wizard.
+// Returns true when the form may proceed. The caller owns revealing/scrolling,
+// because only the caller knows which step it is moving away from.
+function tsGate(form, scope) {
+  if (!(scope || form).querySelector('#ts-upload')) return true;
+  if (tsSatisfied()) { tsMarkZone(false); return true; }
+  tsSay(ts.pending > 0 ? t18().tsWaiting : t18().tsNeedFile, true);
+  tsMarkZone(true);
+  return false;
+}
+
+let tsInputBound = false;
+function initTestSampleUpload() {
+  const input = document.querySelector('#ts-upload');
+  if (!input) { ts.form = null; return; }
+
+  // Per-element, so a ClientRouter navigation back onto this page starts from a
+  // clean batch rather than appending to the previous visitor's — the module
+  // outlives the DOM, the batch must not.
+  if (!input.dataset.tsBound) {
+    input.dataset.tsBound = '1';
+    ts.batch = ''; ts.pending = 0; ts.staged = []; ts.off = false;
+    input.addEventListener('change', () => {
+      const files = Array.from(input.files || []);
+      // Cleared here, not after the sends resolve: the same File cannot be
+      // picked twice in a row otherwise, because `change` does not fire when the
+      // value is unchanged.
+      input.value = '';
+      if (!files.length) return;
+      tsSay('', false);
+      files.forEach((f) => { tsSend(f); });
+    });
+  }
+  ts.form = input.closest('form');
+
+  // Drag-and-drop, because the dropzone says "or drag photos here" and until now
+  // that sentence was decoration: dropping a file on a page with no dragover
+  // handler navigates the browser to it, losing the form.
+  if (!tsInputBound) {
+    tsInputBound = true;
+    const zone = () => document.querySelector('form[data-wizard] .dropzone');
+    document.addEventListener('dragover', (e) => {
+      const z = zone();
+      if (!z || !z.contains(e.target)) return;
+      e.preventDefault();
+      z.classList.add('is-dragover');
+    });
+    document.addEventListener('dragleave', (e) => {
+      const z = zone();
+      if (z && z.contains(e.target)) z.classList.remove('is-dragover');
+    });
+    document.addEventListener('drop', (e) => {
+      const z = zone();
+      if (!z || !z.contains(e.target)) return;
+      e.preventDefault();
+      z.classList.remove('is-dragover');
+      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || [])
+        .filter((f) => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+      if (!files.length) return;
+      tsSay('', false);
+      files.forEach((f) => { tsSend(f); });
+    });
+  }
+}
+
 let wizardsBound = false;
 function initWizards() {
   if (wizardsBound) return;
@@ -329,6 +627,9 @@ function initWizards() {
       const cur = f.querySelector('[data-wizard-step]:not(.hidden-step)');
       const bad = cur && firstInvalid(cur);
       if (bad) { bad.reportValidity(); bad.focus && bad.focus(); return; }
+      // No scroll on refusal: the dropzone and its message are directly above
+      // this button, so the visitor is already looking at the answer.
+      if (!tsGate(f, cur)) return;
       show2(f, 2); scrollToForm(f); return;
     }
     if ((el = t.closest('[data-wizard-back]'))) { const f = el.closest('form'); if (f) { show2(f, 1); scrollToForm(f); } return; }
@@ -343,7 +644,19 @@ function initWizards() {
     if (!(form instanceof HTMLFormElement)) return;
     if (!form.matches('form[data-wizard]')) return;
     const bad = firstInvalid(form);
-    if (bad) { e.preventDefault(); revealFor(form, bad); bad.reportValidity(); bad.focus && bad.focus(); }
+    if (bad) { e.preventDefault(); revealFor(form, bad); bad.reportValidity(); bad.focus && bad.focus(); return; }
+    // Checked here as well as on Next, and not only because a visitor can reach
+    // step 2 while an upload is still in flight: the no-JS path posts straight
+    // from step 1 with both steps visible, so Next is not a chokepoint the way
+    // it looks like one. The reveal is deliberate — the dropzone lives on step 1
+    // and submit is pressed from step 2, so refusing without going back would
+    // put the complaint on a screen the visitor cannot see.
+    if (!tsGate(form, form)) {
+      e.preventDefault();
+      const zone = form.querySelector('.dropzone');
+      const step = zone && zone.closest('[data-wizard-step]');
+      if (step) { show2(form, Number(step.dataset.wizardStep)); scrollToForm(form); }
+    }
   });
 }
 
@@ -565,6 +878,7 @@ export function init() {
   initMobileNav();
   initServicesMenu();
   initConvbar();
+  initTestSampleUpload();
   initWizards();
 }
 

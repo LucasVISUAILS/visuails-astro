@@ -1,0 +1,193 @@
+---
+// VISUAILS — FigApproval: what "you approve it, image by image" looks like.
+//
+// The sentence the portal section leans on is "request a revision on that
+// image alone — the rest of the drop keeps moving". That is a claim about
+// PARALLELISM, and parallelism is the one thing a bulleted list is worst at
+// showing: a list puts every item on its own line in a column, which is a
+// picture of exactly the opposite. A grid with three states visible at once
+// shows it in a glance — some done, one gone back, the rest still coming, and
+// none of them waiting on each other.
+//
+// EXPLICITLY A DIAGRAM, NOT A SCREENSHOT. No window chrome, no fake buttons,
+// no invented UI. The brief forbids inventing proof, and a mocked-up product
+// screenshot is an invented proof of a product state that has not happened.
+// A hairline panel with a text header is a drawing of a portal, and reads as
+// one. The calling page's `note` says so in words as well.
+//
+// WHY THE EIGHT TILES ARE WRITTEN OUT LONGHAND instead of mapped over a
+// TILES array. Two reasons, and the second one is the load-bearing one.
+//
+//   1. The tile pattern is DRAWING, not data — the header comment above says
+//      so, and mapping it out of an array is the shape you use for data. Two
+//      approved, one back for revision, two approved, one still coming: that
+//      composition is the picture. Written out, you can read it in the source.
+//
+//   2. Class names built by interpolation are invisible to every static
+//      checker in this repo. The first draft of this file did
+//      `class:list={['apv-tile', \`is-${s}\`]}`, and verify3 [5] duly reported
+//      `is-`, `s`, `length` and `KEY_STATE` as markup classes with no CSS rule
+//      (it can only read string literals out of a class expression) AND
+//      `is-ok`, `is-rev`, `is-wait` as dead CSS. Both reports were wrong, and
+//      both were the checker's only honest answer: it could not see the names.
+//      In a repo whose entire safety net is static analysis — npm is blocked,
+//      nothing here can be built or screenshotted — writing class names the
+//      checkers cannot read is not a style choice, it is switching the alarm
+//      off in the room you are working in.
+//
+// The three state labels arrive as three NAMED props rather than a keys[]
+// array indexed by position. An array would let a page pass two labels, or
+// four, and this file would have gone on rendering something plausible with a
+// modulo — a silent wrong answer. Three names cannot be passed in the wrong
+// order without it being visible at the call site, and check_lang_parity sees
+// three separate strings in each of the EN and NL COPY branches.
+//
+// The grid is aria-hidden because an eight-cell run of empty spans announces
+// nothing useful; the legend beneath it and the caption carry the whole
+// meaning in text, which is the accessible version of this figure rather than
+// a degraded one.
+interface Props {
+  head: string;
+  okLabel: string;
+  revLabel: string;
+  waitLabel: string;
+  note?: string;
+}
+const { head, okLabel, revLabel, waitLabel, note } = Astro.props;
+
+// Glyph paths, named once. These are geometry, not copy: they are identical in
+// every language and must never travel through a COPY table.
+const OK_D = 'M20 6L9 17l-5-5';
+const REV_D = 'M21 12a9 9 0 1 1-2.6-6.3M21 3.5V8h-4.5';
+---
+
+<figure class="apv">
+  <div class="apv-panel">
+    <p class="apv-head">{head}</p>
+
+    <div class="apv-grid" aria-hidden="true">
+      <span class="apv-tile is-ok"><svg class="apv-i" viewBox="0 0 24 24"><path d={OK_D} /></svg></span>
+      <span class="apv-tile is-ok"><svg class="apv-i" viewBox="0 0 24 24"><path d={OK_D} /></svg></span>
+      <span class="apv-tile is-rev"><svg class="apv-i" viewBox="0 0 24 24"><path d={REV_D} /></svg></span>
+      <span class="apv-tile is-ok"><svg class="apv-i" viewBox="0 0 24 24"><path d={OK_D} /></svg></span>
+      <span class="apv-tile is-ok"><svg class="apv-i" viewBox="0 0 24 24"><path d={OK_D} /></svg></span>
+      <span class="apv-tile is-wait"></span>
+      <span class="apv-tile is-ok"><svg class="apv-i" viewBox="0 0 24 24"><path d={OK_D} /></svg></span>
+      <span class="apv-tile is-wait"></span>
+    </div>
+  </div>
+
+  <ul class="apv-key">
+    <li>
+      <span class="apv-kmark is-ok" aria-hidden="true"><svg class="apv-i" viewBox="0 0 24 24"><path d={OK_D} /></svg></span>
+      <span>{okLabel}</span>
+    </li>
+    <li>
+      <span class="apv-kmark is-rev" aria-hidden="true"><svg class="apv-i" viewBox="0 0 24 24"><path d={REV_D} /></svg></span>
+      <span>{revLabel}</span>
+    </li>
+    <li>
+      <span class="apv-kmark is-wait" aria-hidden="true"></span>
+      <span>{waitLabel}</span>
+    </li>
+  </ul>
+
+  {note && <figcaption class="apv-note">{note}</figcaption>}
+</figure>
+
+<style>
+  .apv { margin: 0; }
+
+  .apv-panel { border: 1px solid var(--line-strong); background: var(--surface); }
+  .apv-head {
+    padding: .7rem clamp(.8rem, 2vw, 1.1rem);
+    border-bottom: 1px solid var(--line-strong);
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .apv-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(.5rem, 1.4vw, .8rem);
+    padding: clamp(.8rem, 2vw, 1.1rem);
+  }
+  @media (max-width: 520px) { .apv-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .apv-tile {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border: 1px solid var(--line-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Approved: the ground goes solid. Nothing is pending about it any more. */
+  .apv-tile.is-ok { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+  /* Revision asked: the heavy outline says it is still live and still yours.
+     Deliberately NOT red — --warn is scoped away from marketing pages, and a
+     revision is not an error. */
+  .apv-tile.is-rev { border: 2px solid var(--ink); color: var(--ink); }
+
+  /* Waiting: hatched, which is what hatching means everywhere else in these
+     figures — reserved, not filled yet. */
+  .apv-tile.is-wait {
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 5px,
+      var(--line-strong) 5px 6px
+    );
+  }
+
+  .apv-i {
+    width: 42%;
+    max-width: 26px;
+    height: auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: butt;
+    stroke-linejoin: miter;
+  }
+
+  .apv-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem 1.4rem;
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+  }
+  .apv-key li { display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--ink-2); }
+  .apv-kmark {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line-strong);
+  }
+  .apv-kmark.is-ok { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .apv-kmark.is-rev { border: 2px solid var(--ink); color: var(--ink); }
+  .apv-kmark.is-wait {
+    background: repeating-linear-gradient(
+      45deg,
+      transparent 0 3px,
+      var(--line-strong) 3px 4px
+    );
+  }
+  .apv-kmark .apv-i { width: 72%; max-width: 13px; stroke-width: 2.4; }
+
+  .apv-note {
+    margin-top: 1.2rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+    color: var(--ink-3);
+    max-width: 62ch;
+  }
+</style>

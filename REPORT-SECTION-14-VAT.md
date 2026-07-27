@@ -52,7 +52,7 @@ section 14 inverts rather than adjusts.
 
 One good side-effect of this: **section 14 asks for our VAT number and KVK number
 on every invoice, and I do not need you to supply them.** They are already in the
-codebase. They should move out of `Layout.astro:460` into a data module so they
+codebase. They should move out of `Layout.astro:407` into a data module so they
 are typed once rather than six times, but that is our problem, not yours.
 
 ---
@@ -82,7 +82,7 @@ needed whichever one we pick. But it means section 14 is not an amendment to
 payment handling. It is the specification for building payment handling, with a
 VAT layer on top, and it should be sized that way.
 
-**And the processor is not decided.** `BACKEND-SETUP.md:229` says "Mollie for
+**And the processor is not decided.** `BACKEND-SETUP.md:325` says "Mollie for
 iDEAL, or Stripe". `DESIGN.md:35` and `AUDIT-TASK-0.md:110` both assume Stripe
 Elements with `borderRadius: '0px'`. So the design system has picked one by
 implication and the backend plan has not picked at all. For a Dutch,
@@ -146,7 +146,7 @@ specifically for the consumer-facing prices, which is the exact case EU consumer
 law is about. §4 has to be split per tier.
 
 **The VAT number is described as optional and inconsequential, in four places.**
-`FaqPage.astro:164` (EN) and `:298` (NL): *"Yes. You can add it at checkout —
+`FaqPage.astro:196` (EN) and `:344` (NL): *"Yes. You can add it at checkout —
 optional, and useful for B2B invoicing inside the EU."* `PricingPage.astro:121`
 (EN) and `:198` (NL): *"It is optional."* And `StartPage.astro:793` renders the
 field with an explicit "optional" chip beside the label. Under section 14 it is
@@ -199,8 +199,8 @@ naming a product the pricing model has dropped.
 
 **€2,238.50 is right.** 1,850 × 1.21. The worked example in the brief checks out.
 
-**The 132 price call sites are one problem, not 132.** *"Never show an unlabelled
-price"* touches **132 calls to `euro()` / `euroRange()` / `perProduct()` across 40
+**The 131 price call sites are one problem, not 131.** *"Never show an unlabelled
+price"* touches **131 calls to `euro()` / `euroRange()` / `perProduct()` across 40
 files**, which sounds like a sitewide edit. It is not: every one of them goes
 through `euro()`, `euroRange()`, or a pre-formatted string in `PACKAGES` /
 `PER_PRODUCT` / `TEST_SAMPLE` / `SHOOT_DAY`, all in `src/data/pricing.js`. The
@@ -209,14 +209,14 @@ in a single content variable per tier, not hardcoded across pages."*
 
 A note on that number, because I first wrote a different one and the correction is
 more interesting than the digit. The figure I originally quoted came from
-`grep -rn 'euro(' src functions | wc -l`, which returns **131**. That command
+`grep -rn 'euro(' src functions | wc -l`, which returns **130**. That command
 answers a question nobody asked. It counts **lines containing at least one match**,
 so five files that put two calls on one line contribute one each; and it counts
 **prose**, because a comment explaining why `euroRange()` rounds looks exactly like
-a call to it. Correcting only the first error gives 140 across 41 files, which is
+a call to it. Correcting only the first error gives 139 across 41 files, which is
 what I nearly sent you.
 
-The honest number strips comments first and then counts occurrences: **132 across
+The honest number strips comments first and then counts occurrences: **131 across
 40 files.** The eight-call gap is entirely explanatory comments in
 `ComparePage.astro` (3), `interactions.js` (2), and one each in `FaqPage.astro`,
 `PricingPage.astro` and `pipeline.js`. `interactions.js` mentions `euro()` twice
@@ -227,7 +227,7 @@ surface at all, which is the entire difference between 41 and 40.
 and raw, occurrences and lines — and fails if the report and the repository
 disagree in either direction. That is the only reason this got caught: the report
 and the checker were both written by me, and the checker was the one that had to
-open the files. **None of the 132 are in `functions/`.** The whole surface is
+open the files. **None of the 131 are in `functions/`.** The whole surface is
 render-side, which is why one change at the formatting chokepoint reaches all of
 it.
 

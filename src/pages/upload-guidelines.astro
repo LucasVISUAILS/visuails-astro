@@ -39,14 +39,26 @@ import ProductScene from '../components/ProductScene.astro';
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Send the highest resolution you have.</span></li>
         </ul>
       </div>
-      <div class="card reveal pending" style="border-color:oklch(0.7 0.14 25 / 0.35)">
-        <h3 style="color:oklch(0.78 0.15 25)">Avoid</h3>
+      {/* This card used to carry a bespoke red — oklch(0.78 0.15 25) on the
+          heading and every icon. Three things were wrong with it at once. It
+          was outside sRGB by 0.096, so the browser gamut-mapped it and the
+          colour that shipped was never the one authored. At 2.02:1 on paper it
+          failed WCAG on an h3 outright. And it was the only saturated colour
+          on any marketing page, against global.css's own fence: system colour
+          never appears here, marketing is ink, paper and photography.
+
+          The replacement says "lesser" the way this page already says it forty
+          lines down, where .not-ideal desaturates and dims the weaker
+          ProductScene rather than labelling it red: recess the ground. The ✕
+          against the ✓ and the heading carry the meaning; they always did. */}
+      <div class="card reveal pending" style="background:var(--surface-2)">
+        <h3 style="color:var(--ink)">Avoid</h3>
         <ul class="checklist" style="margin-top:1rem">
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Blurry, dark or low-light shots.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Busy or distracting backgrounds.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Heavy filters or strong colour casts.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Tiny, low-res screenshots.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" style="stroke:oklch(0.78 0.15 25)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Cropping part of the product out of frame.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Blurry, dark or low-light shots.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Busy or distracting backgrounds.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Heavy filters or strong colour casts.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Tiny, low-res screenshots.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Cropping part of the product out of frame.</span></li>
         </ul>
       </div>
     </div>

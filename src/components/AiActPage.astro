@@ -68,6 +68,7 @@
 // adopted. Naming an unadopted instrument on a trust page is the opposite of
 // what the page is for.
 import { localizedPath } from '../i18n/ui.js';
+import FigAnatomy from './FigAnatomy.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -99,6 +100,26 @@ const COPY = {
       'That is the whole disclosure. There is no version of our process that we would describe one way to a client and another way to a regulator.',
       'One thing we do not do: we add no provenance metadata of our own to the files we deliver, and we will not tell you that a delivered file carries any. If a marketplace or your own policy needs a particular provenance format, say so before the order and we will tell you plainly whether we can produce it.',
     ],
+
+    // Copy for the §2 figure. It lives here rather than in FigAnatomy.astro for
+    // the reason every figure's copy does: check_lang_parity walks this table,
+    // so keeping the strings in it makes EN/NL parity on the drawing automatic
+    // and keeps the component free of language. The two in-frame labels are
+    // deliberately parallel in construction — thing, then verb — because the
+    // figure's whole constraint is that the two regions are named at equal
+    // weight, and a label that ran long on one side would editorialise.
+    s2FigReal: 'Your product — photographed',
+    s2FigBuilt: 'Light, background, model — built',
+    s2FigKeys: [
+      { mark: 'real', t: 'Photographed', b: 'The product itself, out of the files you supply. This is the one region of the frame that was not invented, and it is the part your customer actually receives.' },
+      { mark: 'built', t: 'Built', b: 'The lighting, the background, the model, the motion. An AI image pipeline makes all of it. None of it is a place that exists or a shoot that happened.' },
+      { mark: 'checked', t: 'Checked by a person', b: 'Before anything leaves, a person finishes the frame and looks at it against the product you ship. That pass covers the whole image, not only the built half of it.' },
+    ],
+    // The caveat is not decoration. A diagram states a proportion whether or not
+    // it means to, and this one must not be read as a measurement — §6 refuses
+    // to characterise a client's images, and a figure that quietly quantified
+    // them would say what §6 declines to say.
+    s2FigNote: 'The drawing is a shape, not a specimen. The photographed part is not always a block in the middle, and the proportion is not a measurement — how much of a given frame is your own product depends on the product and on the shot.',
 
     s3H: '3. About the phrase “deep fake”',
     s3P: [
@@ -161,6 +182,15 @@ const COPY = {
       'Dat is de hele bekendmaking. Er is geen versie van ons proces die we anders zouden beschrijven tegenover een klant dan tegenover een toezichthouder.',
       'Eén ding doen we niet: we voegen geen eigen herkomstmetadata toe aan de bestanden die we leveren, en we beweren niet dat een geleverd bestand die bevat. Heeft een marktplaats of je eigen beleid een bepaald herkomstformaat nodig, zeg het dan vóór de bestelling — dan zeggen we ronduit of we dat kunnen leveren.',
     ],
+
+    s2FigReal: 'Jouw product — gefotografeerd',
+    s2FigBuilt: 'Licht, achtergrond, model — gebouwd',
+    s2FigKeys: [
+      { mark: 'real', t: 'Gefotografeerd', b: 'Het product zelf, uit de bestanden die jij aanlevert. Dit is het enige deel van het kader dat niet verzonnen is, en het is het deel dat je klant daadwerkelijk ontvangt.' },
+      { mark: 'built', t: 'Gebouwd', b: 'Het licht, de achtergrond, het model, de beweging. Een AI-beeldpijplijn maakt dat allemaal. Niets daarvan is een plek die bestaat of een shoot die heeft plaatsgevonden.' },
+      { mark: 'checked', t: 'Door een mens gecontroleerd', b: 'Voordat er iets de deur uitgaat, werkt een mens het kader af en legt het naast het product dat je verstuurt. Die controle geldt het hele beeld, niet alleen de gebouwde helft ervan.' },
+    ],
+    s2FigNote: 'De tekening is een vorm, geen exemplaar. Het gefotografeerde deel staat niet altijd als blok in het midden, en de verhouding is geen meting — hoeveel van een kader jouw eigen product is, hangt af van het product en van de opname.',
 
     s3H: '3. Over het woord “deepfake”',
     s3P: [
@@ -228,8 +258,28 @@ const waHref = `https://wa.me/31625436130?text=${encodeURIComponent(c.waText)}`;
     </dl>
     <p>{c.s1Tail}</p>
 
+    {/* §2 is the one claim on this page that is spatial: which part of the
+        picture was photographed and which part was made. Four paragraphs
+        establish it in prose, and the drawing states it once. It goes after the
+        first paragraph rather than after the last because the first paragraph
+        is the one it draws — the three that follow are consequences of it, and
+        a figure parked at the foot of them would read as a summary of an
+        argument instead of an illustration of a fact. s2P stays one array and
+        one four-movement argument; nothing is split out to make room. */}
     <h2>{c.s2H}</h2>
-    {c.s2P.map((p) => (<p>{p}</p>))}
+    {c.s2P.map((p, i) => (<>
+      <p>{p}</p>
+      {i === 0 && (
+        <div class="legal-fig">
+          <FigAnatomy
+            realLabel={c.s2FigReal}
+            builtLabel={c.s2FigBuilt}
+            keys={c.s2FigKeys}
+            note={c.s2FigNote}
+          />
+        </div>
+      )}
+    </>))}
 
     <h2>{c.s3H}</h2>
     {c.s3P.map((p) => (<p>{p}</p>))}
@@ -286,6 +336,15 @@ const waHref = `https://wa.me/31625436130?text=${encodeURIComponent(c.waText)}`;
      absolute ban in the design system; /privacy, /terms and /cookie-policy
      carried one on this same class and were corrected in the same pass. */
   .legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
+
+  /* Placement only, for the §2 figure. The wrapper exists because Astro scopes
+     these selectors to this component and a component tag is not an element it
+     can reach — FigAnatomy's own `.an` is out of range from here, and writing a
+     rule for it would be a dead selector by every static check in the suite.
+     PricingPage's `.addon-fig` wraps FigPayback for the same reason. Deliberately
+     not `reveal pending`: this page carries no reveal animation, and the figure
+     is the last place to start one. */
+  .legal-fig { margin: 2.2rem 0 0.6rem; }
 
   /* Term/definition rows for §1 and §5. A <dl> rather than a two-column grid:
      at these text lengths a grid puts one word beside six lines. */
