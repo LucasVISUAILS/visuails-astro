@@ -7,19 +7,24 @@ would have had you skip the R2 bucket the upload endpoint needs and skip the
 migrations folder entirely.*
 
 The site itself stays fully static. Everything server-side lives in `functions/`,
-which is five files:
+which is six files:
 
 | Route | File | What it does |
 |---|---|---|
-| `POST /api/order` | `functions/api/order.js` | Receives the pipeline's submission, runs the capacity gate, writes the order, emails you and the customer |
+| `POST /api/order` | `functions/api/order.js` | Receives the pipeline's submission, runs the capacity gate, writes the order, emails you and the customer, and — for a `test-sample` order, once `STRIPE_SECRET_KEY` is set — starts its Stripe Checkout |
 | `GET /api/capacity` | `functions/api/capacity.js` | Serves the live delivery window the `/start` widget shows |
 | `POST · DELETE /api/upload` | `functions/api/upload.js` | Takes the customer's product photos into R2 before the order is placed; `DELETE` is how they remove one again mid-form |
 | `GET · POST /o/<token>` | `functions/o/[[token]].js` | The client portal |
 | `GET /o` | `functions/o/index.js` | The "you need the link from your email" page, and where `/order-status` redirects |
+| `POST /api/webhook/stripe` | `functions/api/webhook/stripe.js` | Stripe telling us a Checkout Session was paid; marks the order paid |
 
-They read exactly **five** bindings between them — `DB`, `UPLOADS`,
-`FROM_EMAIL`, `NOTIFY_EMAIL`, `RESEND_API_KEY` — and one optional override,
-`PORTAL_SALT`, which you should leave unset (§4).
+They read exactly **seven** bindings between them — `DB`, `UPLOADS`,
+`FROM_EMAIL`, `NOTIFY_EMAIL`, `RESEND_API_KEY`, `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET` — and one optional override, `PORTAL_SALT`, which you
+should leave unset (§4). The two Stripe secrets are conditional in a way the
+other five aren't: unset, `order.js` skips the Stripe branch entirely and a
+test-sample order behaves exactly as it did before this addition — created,
+emailed, straight to thank-you, unpaid. See §9.
 
 ## What you need
 
@@ -179,11 +184,17 @@ and **Environment variables**:
 | Variable | `NOTIFY_EMAIL` | `hello@visuails.com` |
 | Variable | `FROM_EMAIL` | `VISUAILS <orders@visuails.com>` |
 | **Secret** | `RESEND_API_KEY` | the key — mark it encrypted |
+| **Secret** | `STRIPE_SECRET_KEY` | from Stripe → Developers → API keys — optional; see §9 |
+| **Secret** | `STRIPE_WEBHOOK_SECRET` | from Stripe → Developers → Webhooks, once the endpoint exists — optional; see §9 |
 
 That is the complete list. It was derived by reading every `env.*` access in
-every file reachable from `functions/`, not from memory, so if a sixth one ever
-appears in the code it will be missing from here rather than silently undefined
-in production.
+every file reachable from `functions/`, not from memory, so if an eighth one
+ever appears in the code it will be missing from here rather than silently
+undefined in production. The two Stripe rows are marked optional because
+`functions/api/order.js` and `functions/api/webhook/stripe.js` both check for
+them before using them — leaving them unset does not break anything that
+worked before §9's checkout landed, it just means the test sample stays
+unpaid the way every order has been until now.
 
 **One deliberate omission.** `src/lib/ratelimit.js` will use `env.PORTAL_SALT`
 if you set it, and you should not set it. The rate limiter hashes visitor IPs so
@@ -403,8 +414,9 @@ Stripe. **Creating the accounts is independent of the checkout code landing**
    secret key somewhere safe immediately, because Stripe will not show it
    again; if it's lost, roll it and issue a new one rather than trying to
    recover the old value.
-4. Also needed once the webhook handler exists: **Developers → Webhooks →
-   Add endpoint**, pointed at
+4. The webhook handler now exists in the code
+   (`functions/api/webhook/stripe.js`), so this step can be done any time:
+   **Developers → Webhooks → Add endpoint**, pointed at
    `https://visuails.com/api/webhook/stripe` — Stripe gives you a **signing
    secret** (`whsec_…`) at that point, which is what proves a webhook call
    actually came from Stripe and not from anyone who found the URL.
@@ -419,10 +431,59 @@ the repo:**
 | `STRIPE_SECRET_KEY` | Stripe → Developers → API keys |
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → Webhooks, after the endpoint exists |
 
-These are not read by any code yet — task #258, the checkout and webhook
-handlers, is still ahead — so §4's binding table above does not list them
-yet either. They will be added there, and to the code that reads them, in the
-same change.
+`MOLLIE_API_KEY` is not read by any code yet — Mollie/iDEAL checkout is still
+ahead. The two Stripe secrets ARE read now, by `functions/api/order.js` (via
+`src/lib/stripe.js`) and `functions/api/webhook/stripe.js`, and §4's binding
+table above already lists them. Set `STRIPE_SECRET_KEY` and
+`STRIPE_WEBHOOK_SECRET` and the test sample starts taking real payment on the
+next deploy — nothing else to flip.
+
+**What this actually covers today: the €0.99 test sample only.** A
+`test-sample` order is the only thing `order.js` sends to Stripe — every
+other service (`catalog`, `lifestyle`, `video`, `custom`, `drop`) still ends
+at the thank-you page unpaid, on purpose. Wiring those needs a server-side
+price computation from `src/data/pricing.js`'s tier/package/per-product model
+first, so that a Checkout Session is never built from an amount the client
+sent — see the comment above the Stripe call in `order.js` and the header of
+`src/lib/stripe.js`. That is separate work, not yet started.
+
+**Testing it, once both secrets are set.** Use Stripe's own test card,
+`4242 4242 4242 4242`, any future expiry, any CVC. Submit a test-sample order
+on the live site or via `wrangler pages dev` (§7 explains why `astro preview`
+alone won't serve `/api/webhook/stripe`); you should land on Stripe's
+Checkout page for €0.99, and completing it redirects to `/thank-you` with the
+order's `ref`. Then confirm the payment actually landed, the same way §6
+verifies an order — from the database, not from the page you're looking at:
+
+```bash
+npx wrangler d1 execute visuails --remote \
+  --command "SELECT ref, payment_status, payment_ref, paid_at FROM orders WHERE ref = 'VIS-...'"
+npx wrangler d1 execute visuails --remote \
+  --command "SELECT provider, external_id, status, amount_cents FROM payments ORDER BY id DESC LIMIT 5"
+```
+
+`payment_status` should read `paid`, and there should be exactly one
+`payments` row for that order even if you refresh the success page or Stripe
+retries the webhook — see the idempotency note in
+`functions/api/webhook/stripe.js` for why a second delivery of the same event
+is silently a no-op rather than a duplicate payment. If `payment_status`
+stays `unpaid` after a completed Checkout, check
+`npx wrangler pages deployment tail` for a `[stripe-webhook]` line — the
+likeliest cause is the webhook endpoint not yet added in Stripe's dashboard
+(step 4 above), or `STRIPE_WEBHOOK_SECRET` not matching the endpoint that
+actually fired.
+
+Locally, `wrangler pages dev` cannot receive a real webhook from Stripe (your
+machine has no public URL), so use the
+[Stripe CLI](https://docs.stripe.com/stripe-cli) to forward events instead:
+
+```bash
+stripe listen --forward-to localhost:8788/api/webhook/stripe
+```
+
+`stripe listen` prints its own `whsec_…` — use that one for local testing,
+not the dashboard endpoint's secret; they're different values for the same
+reason a preview deploy and production have separate bindings in §4.
 
 ---
 
@@ -438,15 +499,25 @@ nowhere to surface on the studio's side before this. See **"Your admin
 login"** below to create the one row (`admin_users`) this needs before it
 works at all; nothing bootstraps it for you.
 
-**Payments — Mollie AND Stripe, decided 2026-07-27** (closes flag **xlii**).
-Nothing on the site takes money yet; both processors are being wired rather
-than one, so a client can pay by iDEAL (Mollie) or card (Stripe). The €0.99
-test sample and real orders both need this before either can go live. Section
-14, the VAT and reverse-charge work, stays out of scope — Lucas: no KOR,
-files a normal return — but a standard 21% is still added and shown on the
-receipt regardless; that is not section 14, which was specifically about
-VIES validation and reverse-charge for EU business buyers, not about charging
-VAT at all. See **"Connecting Mollie and Stripe"** below for account setup.
+**Payments — Mollie AND Stripe, decided 2026-07-27** (closes flag **xlii** —
+the processor was undecided; it no longer is). Both processors are being
+wired rather than one, so a client will eventually pay by iDEAL (Mollie) or
+card (Stripe). **The €0.99 test sample takes real payment today, through
+Stripe**, once `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set (§9) —
+`functions/api/order.js` starts a Checkout Session for it and
+`functions/api/webhook/stripe.js` marks the order paid. **Real orders — every
+other service, and Mollie/iDEAL entirely — still take no payment**, because
+nothing server-side computes what a real order costs yet (tiers, packages,
+per-product, VAT); building that price function is what unblocks the rest,
+not the Stripe or Mollie plumbing itself, which is either done (Stripe) or a
+known, separate piece of work (Mollie). Section 14, the VAT and
+reverse-charge work, stays out of scope — Lucas: no KOR, files a normal
+return — but a standard 21% will still need to be added and shown on the
+receipt regardless, once real orders take payment; that is not section 14,
+which was specifically about VIES validation and reverse-charge for EU
+business buyers, not about charging VAT at all. See **"Connecting Mollie and
+Stripe"** above for account setup and **§9's testing note** for how to verify
+the test-sample checkout.
 
 **Accounts — done.** `/account` (`src/lib/account.js`, task #257, 2026-07-27):
 sign in with a magic link to the email an order was placed under — no

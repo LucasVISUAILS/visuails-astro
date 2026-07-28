@@ -63,6 +63,7 @@ import {
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail } from '../../src/lib/mail.js';
+import { createTestSampleCheckoutSession } from '../../src/lib/stripe.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
 
@@ -364,6 +365,42 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }));
 
   const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // STRIPE · THE TEST SAMPLE'S CHECKOUT.
+  //
+  // The €0.99 test sample is the one product that takes payment today — see
+  // src/lib/stripe.js for why the full order pricing model (tiers, packages,
+  // per-product, VAT) isn't wired in yet: nothing server-side computes that
+  // amount, and a Checkout Session must never be built from a number the
+  // client sent. AMOUNT.testSample has no such problem, which is what makes
+  // it safe to ship on its own.
+  //
+  // env.STRIPE_SECRET_KEY unset (the ordinary state until Lucas hands the
+  // keys over, per BACKEND-SETUP.md §9) means this whole block is skipped and
+  // the order behaves exactly as it does today: created, confirmed, thank-you.
+  // Once the key exists, a Stripe outage — not a missing key, an actual
+  // failure — falls back the same way rather than losing the order, matching
+  // the "the order must survive a downstream failure" rule the Resend retry
+  // above already follows. The client lands on the thank-you page either way;
+  // an order that took payment gets there via Stripe, one that couldn't set
+  // up payment gets there directly and is chased for payment by hand.
+  let checkoutUrl = null;
+  if (svc === 'test-sample' && orderId && env.STRIPE_SECRET_KEY) {
+    try {
+      const session = await createTestSampleCheckoutSession(env, {
+        ref,
+        email,
+        lang,
+        successUrl: requestOrigin(request) + done,
+        cancelUrl: requestOrigin(request) + back,
+      });
+      checkoutUrl = session.url;
+    } catch (e) {
+      console.error('[order] stripe checkout session failed —', e && e.message ? e.message : e);
+    }
+  }
+
   if (wantsJson) {
     return json({
       ok: true,
@@ -374,10 +411,10 @@ export async function onRequestPost({ request, env, waitUntil }) {
       // it must not be inferred from `window: null` — an attended order that
       // never asked for a date looks identical from the outside.
       windowLost: raced,
-      redirect: done,
+      redirect: checkoutUrl || done,
     });
   }
-  return redirect(done);
+  return redirect(checkoutUrl || done);
 }
 
 // GET on this route → send people to the order hub rather than a blank 405.

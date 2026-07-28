@@ -40,6 +40,13 @@ export const ui = {
     nav_gallery: 'Gallery',
     nav_contact: 'Contact',
     nav_start: 'Start',
+    // Customer accounts (task #257) had no entry point anywhere in the
+    // chrome — the dashboard, magic-link login and downloads all existed at
+    // /account, reachable only if you already knew the URL. One small text
+    // link, not a second CTA button: nav_start is the one door into a new
+    // order (see the comment above it in Layout.astro) and this must not
+    // compete with it for weight.
+    nav_account: 'Log in',
     // No prices here. Section 13 of the brief puts the per-product tier on
     // /pricing, /catalog, /lifestyle and /video only — never in the nav — so
     // these descriptions say what the work is, not what one product costs.
@@ -87,6 +94,7 @@ export const ui = {
     nav_gallery: 'Galerij',
     nav_contact: 'Contact',
     nav_start: 'Start',
+    nav_account: 'Inloggen',
     drops: [
       ['Catalog', 'Voorkant, achterkant, detail en on-model, voor elk product'],
       ['Lifestyle', 'Je product in een gestylede scène, klaar om te posten'],

@@ -315,6 +315,13 @@ const orgJsonLd = {
         </ul>
       </nav>
       <div class="nav-actions">
+        {/* The customer dashboard at /account (task #257) had no entry point
+            anywhere on the site until Lucas flagged it — a returning customer
+            had to already know the URL. A plain text link, not a second
+            button: nav_start above is the one door into a NEW order and must
+            keep all the visual weight; this is for someone who already has
+            one. */}
+        <a href={lp('/account')} class="nav-account-link" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
         <div class="lang-switch" role="group" aria-label={t('lang_label')}>
           {switchLangs.map((l) => (
             <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
@@ -348,6 +355,7 @@ const orgJsonLd = {
         <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{t('mob_chat')}
       </a>
       <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
+      <a href={lp('/account')} class="mobile-account-link">{t('nav_account')}</a>
       <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
         {switchLangs.map((l) => (
           <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
@@ -505,6 +513,12 @@ const orgJsonLd = {
   .nav-links > li > a:hover, .nav-trigger:hover { color: var(--ink); }
   .nav-links > li > a[aria-current="page"] { color: var(--ink); }
   .nav-actions { display: flex; align-items: center; gap: .6rem; }
+  /* Returning-customer entry point into /account (task #257/#259) — a plain
+     text link so it never competes with nav_start's button weight. Hidden at
+     the mobile breakpoint alongside .btn/.lang-switch below; the drawer
+     carries its own copy (.mobile-account-link). */
+  .nav-account-link { font-size: .88rem; font-weight: 500; color: var(--ink-3); padding: .55rem .4rem; transition: color var(--dur-1) var(--ease); }
+  .nav-account-link:hover, .nav-account-link[aria-current="page"] { color: var(--ink); }
   .has-menu { position: relative; }
   .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 75 / 0.16); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
@@ -539,8 +553,9 @@ const orgJsonLd = {
   .mobile-cta .btn { font-size: 1.05rem; }
   .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
   .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
+  .mobile-account-link { display: block; margin-top: .9rem; text-align: center; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
   .mobile-close { position: absolute; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
-  @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch { display: none; } .menu-toggle { display: inline-flex; } }
+  @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link { display: none; } .menu-toggle { display: inline-flex; } }
 
   .site-footer { position: relative; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr; gap: 2rem; }

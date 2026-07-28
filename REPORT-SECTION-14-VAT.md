@@ -52,7 +52,7 @@ section 14 inverts rather than adjusts.
 
 One good side-effect of this: **section 14 asks for our VAT number and KVK number
 on every invoice, and I do not need you to supply them.** They are already in the
-codebase. They should move out of `Layout.astro:407` into a data module so they
+codebase. They should move out of `Layout.astro:415` into a data module so they
 are typed once rather than six times, but that is our problem, not yours.
 
 ---
