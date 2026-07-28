@@ -63,6 +63,13 @@ export async function createTestSampleCheckoutSession(env, { ref, email, lang, s
     headers: {
       Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      // Stripe's own edge sits behind bot protection that has, in practice,
+      // quietly rejected requests with no User-Agent before they ever reach
+      // the application layer — a blank 400 that never shows up in the
+      // dashboard's request log, because it was never logged as a request.
+      // A Workers `fetch()` sends none by default, so one is set explicitly.
+      'User-Agent': 'VISUAILS/1.0 (+https://visuails.com)',
+      Accept: 'application/json',
     },
     body: params.toString(),
   });
@@ -71,11 +78,14 @@ export async function createTestSampleCheckoutSession(env, { ref, email, lang, s
   if (!res.ok) {
     // Surface everything Stripe sent back — code, param, and the raw body if
     // it didn't even parse as JSON — so a failure shows up in the deployment
-    // log as an actionable message instead of a generic "it failed".
+    // log as an actionable message instead of a generic "it failed". Response
+    // headers too: a request-id here is the one thing that would let Stripe
+    // support trace a request their own dashboard log never recorded.
+    const reqId = res.headers.get('request-id') || res.headers.get('cf-ray') || 'n/a';
     const detail = body?.error
       ? `${body.error.type || ''} ${body.error.code || ''} (param: ${body.error.param || 'n/a'}) — ${body.error.message || ''}`
-      : raw.slice(0, 500);
-    throw new Error(`Stripe ${res.status}: ${detail}`);
+      : raw.slice(0, 500) || '(empty body)';
+    throw new Error(`Stripe ${res.status} [req:${reqId}]: ${detail}`);
   }
   return body; // { id, url, ... } — .url is where the browser goes next.
 }
