@@ -12,25 +12,16 @@
 #   npx wrangler pages secret put RESEND_API_KEY
 # or in the dashboard: your Pages project -> Settings -> Variables and Secrets
 # -> add RESEND_API_KEY as an encrypted Secret.
-#
-# STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are secrets too, set the same
-# way once you have them (BACKEND-SETUP.md §9). CONFIRMED 2026-07-28: `name`
-# below does NOT match the actual Cloudflare Pages project name, which is
-# "visuails-astro" (the .pages.dev subdomain gives it away). `wrangler pages
-# secret put/delete` needs the REAL project name or it fails with
-# `Project "visuails" does not exist.` — pass it explicitly:
-#   npx wrangler pages secret put STRIPE_SECRET_KEY     --project-name visuails-astro
-#   npx wrangler pages secret put STRIPE_WEBHOOK_SECRET --project-name visuails-astro
-# (RESEND_API_KEY was presumably set the same way, or from the dashboard,
-# where this mismatch doesn't come up.)
-# Until STRIPE_SECRET_KEY is set, functions/api/order.js skips Stripe entirely
-# and the test-sample order behaves as it always has — no checkout, straight
-# to thank-you. See src/lib/stripe.js and functions/api/webhook/stripe.js.
 
 name = "visuails"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-07-01"
-compatibility_flags = ["nodejs_compat"]
+# nodejs_compat tijdelijk uit — wordt nergens in functions/ of src/ gebruikt
+# (geen Buffer/process/node:-imports gevonden), en staat onder verdenking als
+# oorzaak van de kale/lege 400-responses die elk verzoek naar api.stripe.com
+# krijgt, zelfs een simpele GET. Zet 'm terug als iets anders 'm alsnog nodig
+# blijkt te hebben.
+# compatibility_flags = ["nodejs_compat"]
 
 # --- Bindings ------------------------------------------------------------------
 [[d1_databases]]
