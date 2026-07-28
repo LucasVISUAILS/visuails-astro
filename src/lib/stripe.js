@@ -66,8 +66,17 @@ export async function createTestSampleCheckoutSession(env, { ref, email, lang, s
     },
     body: params.toString(),
   });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(`Stripe ${res.status}: ${body?.error?.message || 'checkout session create failed'}`);
+  const raw = await res.text();
+  const body = (() => { try { return JSON.parse(raw); } catch { return null; } })();
+  if (!res.ok) {
+    // Surface everything Stripe sent back — code, param, and the raw body if
+    // it didn't even parse as JSON — so a failure shows up in the deployment
+    // log as an actionable message instead of a generic "it failed".
+    const detail = body?.error
+      ? `${body.error.type || ''} ${body.error.code || ''} (param: ${body.error.param || 'n/a'}) — ${body.error.message || ''}`
+      : raw.slice(0, 500);
+    throw new Error(`Stripe ${res.status}: ${detail}`);
+  }
   return body; // { id, url, ... } — .url is where the browser goes next.
 }
 
