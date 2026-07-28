@@ -133,7 +133,7 @@ async function handleLogin({ request, env }) {
   // never-matching PBKDF2 string — cheap to keep around, expensive to skip.
   const ok = row
     ? await verifyPassword(password, row.password_hash)
-    : await verifyPassword(password, DUMMY_HASH);
+    : await verifyPassword(password, await dummyHash());
 
   if (!ok || !row) {
     return html(page({ title: 'Sign in', body: loginBody('Wrong email or password.') }), 401);
@@ -154,8 +154,29 @@ async function handleLogout({ request, env }, admin) {
 
 // A fixed PBKDF2 hash (100000 iterations) of a string nobody will ever type,
 // so a login attempt against an unknown email still pays the same hashing
-// cost as one against a real row. Precomputed at module load, once.
-const DUMMY_HASH = await hashPassword('vis-admin-dummy-hash-constant-time-decoy');
+// cost as one against a real row.
+//
+// NOT precomputed at module load — that was the original shape of this and it
+// shipped a real deploy failure: "Uncaught Error: Disallowed operation called
+// within global scope... at hashPassword". Cloudflare Workers explicitly
+// forbid asynchronous I/O, timers, and random-value generation while a module
+// is still being evaluated — hashPassword() does both (crypto.getRandomValues
+// for the salt, crypto.subtle.deriveBits to derive) — and a top-level `await`
+// runs during that evaluation, before any request exists to run it inside of.
+// Plain node has no such restriction, which is why test_admin.mjs never
+// caught this: everything in this suite runs under node, and node was happy
+// to await it at import time.
+//
+// ratelimit.js's getSalt() already solved this exact shape of problem, for
+// the same reason (its salt is also crypto.getRandomValues output): a
+// per-isolate cache, computed lazily on first USE — inside a request handler,
+// where async work is allowed — rather than at load. This is that pattern.
+let dummyHashCache = null;
+async function dummyHash() {
+  if (dummyHashCache) return dummyHashCache;
+  dummyHashCache = await hashPassword('vis-admin-dummy-hash-constant-time-decoy');
+  return dummyHashCache;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STATUS UPDATE
