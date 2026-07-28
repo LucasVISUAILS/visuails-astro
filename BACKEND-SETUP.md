@@ -438,6 +438,24 @@ table above already lists them. Set `STRIPE_SECRET_KEY` and
 `STRIPE_WEBHOOK_SECRET` and the test sample starts taking real payment on the
 next deploy — nothing else to flip.
 
+**`--project-name`, confirmed 2026-07-28.** `name = "visuails"` in
+`wrangler.toml` does not match the actual Cloudflare Pages project, which is
+named `visuails-astro` — `wrangler pages secret put STRIPE_SECRET_KEY` alone
+fails with `Project "visuails" does not exist.` Pass the real name explicitly:
+```bash
+npx wrangler pages secret put STRIPE_SECRET_KEY     --project-name visuails-astro
+npx wrangler pages secret put STRIPE_WEBHOOK_SECRET --project-name visuails-astro
+```
+Also worth knowing before you type either command: the argument after `put`
+is the secret's **name**, not its value — `wrangler` asks for the value on
+its own, hidden line (`Enter a secret value:`) right after. Typing the actual
+`sk_test_…` / `whsec_…` string as the argument creates a secret literally
+named that string, which the code never reads. If that happens, remove it
+before moving on:
+```bash
+npx wrangler pages secret delete <the-string-that-became-a-name> --project-name visuails-astro
+```
+
 **What this actually covers today: the €0.99 test sample only.** A
 `test-sample` order is the only thing `order.js` sends to Stripe — every
 other service (`catalog`, `lifestyle`, `video`, `custom`, `drop`) still ends
