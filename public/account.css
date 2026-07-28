@@ -66,10 +66,90 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* The sidebar shell (task #259's second follow-up) owns its own edges and its
+   own min-height:100vh — the page-level padding above exists for the single
+   centered .wrap column (login, check-email, the bad-link page, the generic
+   error) and would just add unwanted gutters around a sidebar that is meant
+   to reach the viewport's own edge. See page()'s `full` flag in account.js. */
+body.has-shell { padding: 0; }
+
 a { color: inherit; }
 ::selection { background: var(--ink-900); color: var(--paper); }
 
 .wrap { max-width: 940px; margin: 0 auto; }
+
+/* Stroke icons for the sidebar nav — same convention Layout.astro's own nav
+   uses (global.css's `.i`): 24-unit viewBox, no fill, sharp joins. Duplicated
+   rather than imported for the same reason every token in this file is
+   duplicated from portal.css — see the file header. */
+.i { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: butt; stroke-linejoin: miter; }
+
+/* ---- the sidebar shell (task #259, second follow-up) -----------------------
+   Every section past login shares this one frame: a fixed-width sidebar
+   (identity, nav, sign-out) and a flexible main column, rather than each
+   section drawing its own bar — see shellBody() in account.js. Sharp corners,
+   a hairline border rather than a shadow, same elevation rule DESIGN.md sets
+   for the rest of the site (see this file's own header on why: no box-shadow
+   depth here, only hairlines and paper-value). */
+.shell { display: flex; min-height: 100vh; align-items: stretch; }
+
+.sidebar {
+  flex: 0 0 232px;
+  display: flex;
+  flex-direction: column;
+  padding: 1.6rem 1.3rem;
+  border-right: 1px solid var(--line);
+  background: var(--paper-lift);
+}
+.sidebrand { margin-bottom: 2rem; }
+.sidebrand .mark { display: inline-block; }
+.sidebrand-sub { display: block; margin-top: .2rem; font-size: .78rem; color: var(--ink-3); }
+
+.sidenav { display: flex; flex-direction: column; gap: .1rem; flex: 1 0 auto; }
+.navlink {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .65rem .7rem;
+  font-size: .92rem; font-weight: 500; color: var(--ink-2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.navlink:hover { background: var(--paper-2); color: var(--ink); }
+.navlink.is-active { color: var(--ink); font-weight: 600; background: var(--paper-2); border-left-color: var(--ink-900); }
+/* The one deliberate exception to "no side-stripe borders": this is a 2px
+   active-tab indicator on a nav item, the same role an underline plays on a
+   tab strip, not a decorative accent — it exists on exactly one item at a
+   time and never on a card, list row, or callout. */
+
+.sideuser {
+  margin-top: 1.6rem; padding-top: 1.2rem;
+  box-shadow: inset 0 1px 0 var(--line);
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.sideuser-name { font-size: .88rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.sideuser-email { font-size: .8rem; color: var(--ink-3); overflow-wrap: anywhere; }
+.sideuser form { margin-top: .8rem; }
+.btn-block { display: flex; width: 100%; }
+
+.main { flex: 1 1 auto; min-width: 0; padding: clamp(1.8rem, 4vw, 3rem) clamp(1.4rem, 4vw, 3.2rem) 5rem; }
+.main h1 { margin-top: 0; }
+
+/* Below this, a fixed sidebar competes with the main column for width a
+   phone does not have — it becomes a horizontal top bar instead, same
+   "stack, do not shrink" answer Layout.astro's own mobile nav uses. */
+@media (max-width: 780px) {
+  .shell { flex-direction: column; min-height: 0; }
+  .sidebar { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 1rem 1.1rem; border-right: none; box-shadow: inset 0 -1px 0 var(--line); }
+  .sidebrand { margin-bottom: 0; margin-right: 1.2rem; }
+  .sidenav { flex-direction: row; flex-wrap: wrap; gap: .2rem; order: 3; width: 100%; margin-top: .8rem; }
+  .navlink { padding: .5rem .6rem; border-left: none; border-bottom: 2px solid transparent; }
+  .navlink.is-active { border-left-color: transparent; border-bottom-color: var(--ink-900); }
+  .sideuser { margin-top: 0; margin-left: auto; padding-top: 0; box-shadow: none; flex-direction: row; align-items: center; gap: .8rem; }
+  .sideuser-email { display: none; }
+  .sideuser form { margin-top: 0; }
+  .btn-block { width: auto; }
+  .main { padding: 1.6rem 1.1rem 4rem; }
+}
 
 .bar {
   display: flex; align-items: baseline; justify-content: space-between;
@@ -107,6 +187,31 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
    not decoration: it is the one number a returning customer actually wants
    before reading the list. */
 .h2-count { color: var(--ink-3); font-weight: 500; }
+
+/* ---- overview --------------------------------------------------------------
+   Task #259's second follow-up. Stat counts are real, all-time totals — see
+   account.js's overviewBody() comment on why there is no fabricated "this
+   month" figure — so they render as plain numbers, not progress bars against
+   a quota that does not exist. */
+.ovhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+.ovhead h1 { margin-top: 0; }
+
+.statrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin: 2rem 0 0; border: 1px solid var(--line); background: var(--line); }
+.stat { display: flex; flex-direction: column; gap: .3rem; padding: 1.1rem 1.3rem; background: var(--paper-lift); }
+.stat-n { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.stat-label { font-size: .82rem; color: var(--ink-3); }
+
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: clamp(2.6rem, 5vw, 3.6rem) 0 1.2rem; padding-bottom: .7rem; box-shadow: inset 0 -1px 0 var(--line); }
+.section-head h2 { margin: 0; padding-bottom: 0; box-shadow: none; }
+.viewall { font-size: .86rem; color: var(--ink-700); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+
+.activity { list-style: none; margin: 0; padding: 0; }
+.activity li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: .9rem 0; box-shadow: inset 0 -1px 0 var(--line); }
+.activity li:last-child { box-shadow: none; padding-bottom: 0; }
+.activity-link { display: flex; flex-direction: column; gap: .2rem; text-decoration: none; min-width: 0; }
+.activity-link .ref { text-transform: none; letter-spacing: 0; font-size: .96rem; font-weight: 600; color: var(--ink); }
+.activity-link:hover .ref { text-decoration: underline; text-underline-offset: 2px; }
+.activity-link .meta { font-size: .84rem; }
 
 /* ---- order cards -----------------------------------------------------------
    A card per order, the same "list of records with a status" shape admin.css
@@ -155,6 +260,46 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .file-info { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; min-width: 0; }
 .file-info .name { font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
 .file-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+
+/* ---- per-file review (task #259, second follow-up) --------------------------
+   Approve / request-a-revision / Undo — the cookie-authenticated twin of
+   portal.js's shot(). Same class names as portal.css on purpose: .state,
+   .said, details.ask, .btn-quiet are the exact same visual vocabulary a
+   client already saw on the emailed order-status link, so the same decision
+   looks and behaves the same way in both places (reference/product.md's
+   "consistent affordances" rule). No new colours: approved reads in plain
+   ink (this site has no success-green, see DESIGN.md), revision-requested
+   reuses --warn-ink, the same ramp the human_check pill already uses. */
+.state { display: block; width: 100%; margin-top: .3rem; font-size: .78rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.state.approved { color: var(--ink); }
+.state.approved::before { content: "\2014\00a0"; }
+.state.revision { color: var(--warn-ink); }
+.state.revision::before { content: "\2014\00a0"; }
+.said { margin: .3rem 0 0; width: 100%; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .88rem; color: var(--ink-2); font-style: italic; }
+
+.review-form { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; width: 100%; margin-top: .5rem; }
+/* .btn-quiet itself is defined down with the other .btn variants — it only
+   overrides deltas on top of .btn (class="btn btn-quiet" in the markup, same
+   as portal.css), so it has to come AFTER .btn in the cascade or .btn's own
+   padding/text-decoration would win back. */
+
+details.ask { flex-basis: 100%; margin-top: .3rem; }
+details.ask > summary { cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--ink-3); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
+details.ask > summary::-webkit-details-marker { display: none; }
+details.ask > summary:hover { color: var(--ink); }
+details.ask textarea { display: block; width: 100%; max-width: 32rem; margin-top: .6rem; }
+details.ask .btn { margin-top: .6rem; }
+
+textarea {
+  font: inherit; padding: .7rem .8rem; background: var(--paper-lift); color: var(--ink);
+  border: 1px solid var(--line-strong); resize: vertical; min-height: 5rem; font-size: .92rem; -webkit-appearance: none; appearance: none;
+}
+textarea:focus { border-color: var(--line-ui); outline: none; }
+
+/* The revision textarea has a real <label>, shown only to screen readers —
+   same reasoning, same rule, as portal.css's own .sr-only: the visible
+   affordance is the <summary> above it. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; white-space: nowrap; clip-path: inset(50%); }
 
 /* ---- forms & controls ------------------------------------------------------ */
 .controls { display: flex; align-items: center; gap: .6rem; margin-top: .6rem; flex-wrap: wrap; }
@@ -208,12 +353,20 @@ form.login input[type="email"] {
 .btn-primary:hover { background: var(--ink-700); transform: translateY(-2px); }
 .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
 .btn-ghost:hover { border-color: var(--line-ui); transform: translateY(-2px); }
+/* text-decoration is reset to none on .btn itself above rather than left per
+   variant, because Approve is a <button> and View/Download are <a> sitting in
+   the same row — one of them arriving underlined would read as two different
+   kinds of control. .btn-quiet puts the underline back for itself, same
+   reasoning portal.css states for its own identical rule. */
+.btn-quiet { background: transparent; color: var(--ink-3); border-color: transparent; padding: .7rem 0; text-decoration: underline; text-underline-offset: 3px; }
+.btn-quiet:hover { color: var(--ink); }
 
 @media (pointer: coarse) {
   .btn { min-height: 44px; }
+  .btn-quiet { min-height: 44px; }
 }
 
-:where(a, button, input, textarea, select):focus-visible {
+:where(a, button, input, textarea, select, summary):focus-visible {
   outline: 2px solid var(--ink-900); outline-offset: 2px;
 }
 

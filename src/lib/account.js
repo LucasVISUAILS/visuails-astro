@@ -69,10 +69,11 @@ const VERIFY_LIMIT = 20;
 const PAGE_LIMIT = 60;
 /** File reads get their own, larger budget — one dashboard view can trigger several. */
 const FILE_LIMIT = 300;
-/** Logout and the lock form. */
+/** Logout, the lock form, and per-file review actions. */
 const POST_LIMIT = 20;
 
-/** Longest revision-style free text this file accepts. Unused today but kept for parity with portal.js's NOTE_MAX shape, should a note field land here. */
+/** Longest revision note this file accepts — same cap as portal.js's NOTE_MAX, so a client typing the same note in either place never hits a different wall. */
+const NOTE_MAX = 2000;
 
 /**
  * Which styles a brand can lock a custom model to. Read off PER_PRODUCT rather
@@ -104,10 +105,14 @@ const COPY = {
     badLinkTitle: 'This link does not work',
     badLinkBody: 'It may have expired, already been used, or been mistyped. Request a new one below.',
 
+    // Sits under the wordmark in the sidebar (shellBody) — dashTitle/dashLede
+    // from the single-page dashboard are gone; Overview has its own welcome
+    // copy now (ovWelcome/ovLede below) that says more than a static subtitle
+    // could.
     dashSub: 'Studio Dashboard',
-    dashTitle: 'Your account',
-    dashLede: 'Your orders, your files, and how your brand should look every time.',
 
+    // Doubles as the Orders sidebar nav label — see shellBody — so there is
+    // one word for "Orders" in this file, not two that could drift apart.
     ordersHeading: 'Orders',
     emptyOrders: 'Nothing here yet — your first order will show up the moment it comes in.',
     fRef: 'Reference',
@@ -122,11 +127,57 @@ const COPY = {
     bView: 'View',
     bDownload: 'Download',
 
-    lockHeading: 'Brand lock',
+    // lockHeading ('Brand lock') from task #257 is gone — navBrandKit below
+    // is now both the nav label AND the Brand kit page's <h1>. Lucas's own
+    // brief for this rebuild named the section "Brand kit"; keeping a second,
+    // older heading that said "Brand lock" one line down would have the page
+    // disagree with its own nav item about what it is called.
     lockLede: 'Pick the custom model each style should always use. Leave a style unset and we ask per order, as usual.',
     lockNoModels: 'No custom models on your account yet — nothing to lock to. Ask us to set one up.',
     lockUnset: '— not locked —',
     lockSave: 'Save',
+
+    navOverview: 'Overview',
+    navNewRequest: 'New request',
+    navBrandKit: 'Brand kit',
+    navPlan: 'Plan & billing',
+
+    // Overview — the landing section. Counts are real, all-time totals, not
+    // a monthly figure: there is no billing cycle to anchor "this month" to
+    // (see planLede below), and a fabricated period reads as a promise this
+    // site cannot keep.
+    ovWelcome: 'Welcome back',
+    ovLede: 'A quick look at your orders and files.',
+    ovInProduction: 'In production',
+    ovHumanCheck: 'In human check',
+    ovDelivered: 'Delivered',
+    ovTotal: 'Orders total',
+    ovRecent: 'Recent activity',
+    ovViewAll: 'View all orders',
+    ovNewCta: 'New request',
+
+    ordersLede: 'Every order, start to finish.',
+
+    // Per-file review — same action, same copy, as the emailed order-status
+    // link (portal.js's shot()). Reusing the exact wording rather than
+    // rephrasing it: a client who has clicked "Approve" from an email should
+    // not have to learn a second verb for the same action here.
+    bApprove: 'Approve',
+    bUndo: 'Undo',
+    bCancel: 'Cancel this request',
+    bSend: 'Send this',
+    askSummary: 'Something is not right',
+    askLabel: 'What should change?',
+    askHint: 'In your own words. The more specific, the faster we get it right.',
+    stApproved: 'Approved',
+    stRevision: 'Revision requested',
+
+    planHeading: 'Plan & billing',
+    planLede: 'You are billed per order — there is no subscription to manage yet.',
+    planAccountLabel: 'Account',
+    planEmailLabel: 'Email',
+    planBrandLabel: 'Brand',
+    planNote: 'Questions about pricing or an invoice? Reply to any order email, or reach us at hello@visuails.com.',
 
     signOut: 'Sign out',
     footAsk: 'Anything else,',
@@ -148,8 +199,6 @@ const COPY = {
     badLinkBody: 'Mogelijk is hij verlopen, al gebruikt, of verkeerd overgetypt. Vraag hieronder een nieuwe aan.',
 
     dashSub: 'Studio-dashboard',
-    dashTitle: 'Jouw account',
-    dashLede: 'Jouw bestellingen, jouw bestanden, en hoe je merk er iedere keer uit moet zien.',
 
     ordersHeading: 'Bestellingen',
     emptyOrders: 'Hier staat nog niets — je eerste bestelling verschijnt zodra hij binnenkomt.',
@@ -165,11 +214,44 @@ const COPY = {
     bView: 'Bekijken',
     bDownload: 'Downloaden',
 
-    lockHeading: 'Brand lock',
     lockLede: 'Kies het merkmodel dat elke style altijd moet gebruiken. Laat een style leeg en we vragen het per bestelling, zoals gebruikelijk.',
     lockNoModels: 'Nog geen merkmodellen op je account — niets om aan vast te zetten. Vraag ons er een in te stellen.',
     lockUnset: '— niet vastgezet —',
     lockSave: 'Opslaan',
+
+    navOverview: 'Overzicht',
+    navNewRequest: 'Nieuwe aanvraag',
+    navBrandKit: 'Brand kit',
+    navPlan: 'Abonnement & facturering',
+
+    ovWelcome: 'Welkom terug',
+    ovLede: 'Een snel overzicht van je bestellingen en bestanden.',
+    ovInProduction: 'In productie',
+    ovHumanCheck: 'In menselijke controle',
+    ovDelivered: 'Geleverd',
+    ovTotal: 'Bestellingen totaal',
+    ovRecent: 'Recente activiteit',
+    ovViewAll: 'Alle bestellingen bekijken',
+    ovNewCta: 'Nieuwe aanvraag',
+
+    ordersLede: 'Elke bestelling, van start tot levering.',
+
+    bApprove: 'Goedkeuren',
+    bUndo: 'Ongedaan maken',
+    bCancel: 'Aanvraag intrekken',
+    bSend: 'Versturen',
+    askSummary: 'Er klopt iets niet',
+    askLabel: 'Wat moet er anders?',
+    askHint: 'In je eigen woorden. Hoe specifieker, hoe sneller het klopt.',
+    stApproved: 'Goedgekeurd',
+    stRevision: 'Revisie aangevraagd',
+
+    planHeading: 'Abonnement & facturering',
+    planLede: 'Je betaalt per bestelling — er is nog geen abonnement om te beheren.',
+    planAccountLabel: 'Account',
+    planEmailLabel: 'E-mail',
+    planBrandLabel: 'Merk',
+    planNote: 'Vragen over prijzen of een factuur? Reageer op een bestel-e-mail, of mail hello@visuails.com.',
 
     signOut: 'Uitloggen',
     footAsk: 'Verder iets,',
@@ -250,7 +332,10 @@ export async function accountGet(context) {
   const customer = await currentCustomer(env, request);
   if (!customer) return seeOther('/account/login');
 
-  if (path === '/account') return dashboardGet(context, customer);
+  if (path === '/account') return sectionGet(context, customer, 'overview');
+  if (path === '/account/orders') return sectionGet(context, customer, 'orders');
+  if (path === '/account/brand-kit') return sectionGet(context, customer, 'brand');
+  if (path === '/account/plan') return sectionGet(context, customer, 'plan');
 
   const lang = negotiate(request);
   return html(page({ lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
@@ -285,6 +370,7 @@ export async function accountPost(context) {
 
   if (path === '/account/logout') return handleLogout(context, customer);
   if (path === '/account/lock') return handleLockUpdate(context, customer);
+  if (path === '/account/review') return handleFileReview(context, customer);
 
   const lang = negotiate(request);
   return html(page({ lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
@@ -397,7 +483,19 @@ function accountSessionExpiry(fromDate = new Date()) {
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function dashboardGet(context, customer) {
+/**
+ * One data load, four possible pages — task #259's second follow-up: Lucas
+ * asked for the single-scroll dashboard to become a real sidebar app (a
+ * "Studio Dashboard" shape, his own reference) with Overview / Orders /
+ * Brand kit / Plan & billing as their own sections. All four need overlapping
+ * slices of the same four queries (orders feed both Overview's counts and the
+ * Orders list; files feed both), so this stays ONE Promise.all — same
+ * reasoning dashboardGet always had — and only the render step branches on
+ * `section`. Explicitly NOT a credits/subscription system: Lucas chose "the
+ * shape, not the plan" when asked, so Plan & billing renders real account
+ * facts and a per-order-billing note, never a fabricated quota.
+ */
+async function sectionGet(context, customer, section) {
   const { env, request } = context;
   let orders, files, models, locks;
   try {
@@ -424,8 +522,23 @@ async function dashboardGet(context, customer) {
   const filesByOrder = groupFilesByOrder(files);
   const lockByStyle = Object.fromEntries(locks.map((l) => [l.style, l.custom_model_id]));
 
-  const body = dashboardBody(t, lang, customer, orders, filesByOrder, models, lockByStyle);
-  return html(page({ lang, title: t.dashTitle, body }));
+  let inner, title;
+  if (section === 'orders') {
+    inner = ordersBody(t, lang, orders, filesByOrder);
+    title = t.ordersHeading;
+  } else if (section === 'brand') {
+    inner = brandKitBody(t, models, lockByStyle);
+    title = t.navBrandKit;
+  } else if (section === 'plan') {
+    inner = planBody(t, customer);
+    title = t.planHeading;
+  } else {
+    inner = overviewBody(t, lang, customer, orders, filesByOrder);
+    title = t.navOverview;
+  }
+
+  const body = shellBody(t, lang, customer, section, inner);
+  return html(page({ lang, title, body, full: true }));
 }
 
 async function currentCustomer(env, request) {
@@ -460,13 +573,30 @@ async function currentCustomer(env, request) {
 /** All orders this customer has placed, most recent first. */
 async function loadOrders(env, customerId) {
   const res = await env.DB.prepare(
-    `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at
+    `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at
        FROM orders
       WHERE customer_id = ?1
       ORDER BY created_at DESC, id DESC
       LIMIT 200`
   ).bind(customerId).all();
   return res.results || [];
+}
+
+/**
+ * Can this order's files be approved / flagged for revision from here?
+ * Mirrors portal.js's own `review`/`history` split on the same two columns —
+ * see shot()'s header there for the full reasoning. Tier 0 ('unattended')
+ * never had a review step to begin with; a closed order still SHOWS what was
+ * decided (history) but no longer accepts new decisions (review). Duplicated
+ * rather than imported: this is two booleans over fields both files already
+ * read, not enough shared logic to justify a cross-file dependency between
+ * the token-authenticated portal and the cookie-authenticated dashboard.
+ */
+function canReview(o) {
+  return o.tier === 'attended' && !o.closed_at;
+}
+function canSeeReviewHistory(o) {
+  return o.tier === 'attended';
 }
 
 /**
@@ -477,7 +607,7 @@ async function loadOrders(env, customerId) {
  */
 async function loadCustomerFiles(env, customerId) {
   const res = await env.DB.prepare(
-    `SELECT f.id, f.order_id, f.filename, f.bytes, f.expires_at
+    `SELECT f.id, f.order_id, f.filename, f.bytes, f.expires_at, f.review_state, f.review_note, f.reviewed_at
        FROM files f JOIN orders o ON o.id = f.order_id
       WHERE o.customer_id = ?1 AND f.kind = 'delivery'
       ORDER BY f.order_id, f.id`
@@ -512,23 +642,29 @@ async function loadStyleLocks(env, customerId) {
 // BRAND LOCK
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Every redirect here lands back on /account/brand-kit, not the bare
+// /account overview — task #259's second follow-up split the single-page
+// dashboard into sections, and a form on one section should return the
+// customer to that same section, not to the section that now happens to be
+// first (see the same choice for handleFileReview, just below).
 async function handleLockUpdate({ request, env }, customer) {
   const form = await request.formData().catch(() => null);
   const style = String(form?.get('style') || '');
   const raw = String(form?.get('custom_model_id') || '');
+  const home = '/account/brand-kit';
 
-  if (!STYLES.includes(style)) return seeOther('/account');
+  if (!STYLES.includes(style)) return seeOther(home);
 
   if (raw === '') {
     // Explicitly clearing the lock — back to "ask per order, as usual."
     await env.DB.prepare(
       'DELETE FROM customer_style_locks WHERE customer_id = ?1 AND style = ?2'
     ).bind(customer.customer_id, style).run();
-    return seeOther('/account');
+    return seeOther(home);
   }
 
   const modelId = Number.parseInt(raw, 10);
-  if (!Number.isInteger(modelId)) return seeOther('/account');
+  if (!Number.isInteger(modelId)) return seeOther(home);
 
   // The model must belong to THIS customer — without this, a forged form post
   // could lock a style to another brand's custom_models row. Same "owned?"
@@ -536,7 +672,7 @@ async function handleLockUpdate({ request, env }, customer) {
   const owned = await env.DB.prepare(
     'SELECT id FROM custom_models WHERE id = ?1 AND customer_id = ?2'
   ).bind(modelId, customer.customer_id).first();
-  if (!owned) return seeOther('/account');
+  if (!owned) return seeOther(home);
 
   await env.DB.prepare(
     `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, updated_at)
@@ -546,7 +682,72 @@ async function handleLockUpdate({ request, env }, customer) {
        updated_at = datetime('now')`
   ).bind(customer.customer_id, style, modelId).run();
 
-  return seeOther('/account');
+  return seeOther(home);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PER-FILE REVIEW — approve / request a revision / undo either.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /account/review — the cookie-authenticated twin of portal.js's
+ * portalPost() review branch. Same three actions, same columns, same
+ * reversible-undo reasoning (see portal.js's handler for the full argument);
+ * the only real difference is how ownership is proven — a live session
+ * checked against orders.customer_id here, a URL token checked against
+ * order_tokens there — because this file's customer is already authenticated
+ * by the time any POST reaches this far (see accountPost's shared Origin
+ * check above every route past /account/login).
+ */
+async function handleFileReview({ request, env }, customer) {
+  const home = '/account/orders';
+  const form = await request.formData().catch(() => null);
+  const fileId = Number.parseInt(String(form?.get('file') || ''), 10);
+  const action = String(form?.get('action') || '');
+  if (!Number.isInteger(fileId) || !['approve', 'revise', 'undo'].includes(action)) return seeOther(home);
+
+  // The file must belong to an order THIS customer owns, that order must
+  // still be under review (tier 'attended', not yet closed) — mirrors
+  // canReview() above and portal.js's own ownership + tier + closed_at gate,
+  // so a forged post cannot review another brand's files, and a stale form
+  // left open in a tab cannot revive a decision on a job that already closed.
+  let owned;
+  try {
+    owned = await env.DB.prepare(
+      `SELECT f.id FROM files f JOIN orders o ON o.id = f.order_id
+        WHERE f.id = ?1 AND o.customer_id = ?2 AND f.kind = 'delivery'
+          AND o.tier = 'attended' AND o.closed_at IS NULL`
+    ).bind(fileId, customer.customer_id).first();
+  } catch {
+    return seeOther(home);
+  }
+  if (!owned) return seeOther(home);
+
+  const anchor = `${home}#f${fileId}`;
+
+  try {
+    if (action === 'approve') {
+      await env.DB.prepare(
+        `UPDATE files SET review_state = 'approved', review_note = NULL, reviewed_at = datetime('now') WHERE id = ?1`
+      ).bind(fileId).run();
+    } else if (action === 'undo') {
+      // Reversible on purpose — same reasoning as portal.js: a mis-tapped
+      // Approve must not strand a client with a decision they cannot take back.
+      await env.DB.prepare(
+        `UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1`
+      ).bind(fileId).run();
+    } else {
+      const note = String(form.get('note') || '').trim().slice(0, NOTE_MAX);
+      if (!note) return seeOther(anchor); // nothing said, nothing changed
+      await env.DB.prepare(
+        `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
+      ).bind(fileId, note).run();
+    }
+  } catch {
+    return seeOther(home);
+  }
+
+  return seeOther(anchor);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -738,27 +939,147 @@ function badLinkBody(t) {
 </div>`;
 }
 
-function dashboardBody(t, lang, customer, orders, filesByOrder, models, lockByStyle) {
+// Sidebar icons — 24x24, stroke-only, sharp joins: the same `.i` convention
+// Layout.astro already uses for the site's own nav (see global.css's `.i`
+// rule, duplicated into account.css for the reason account.css's own header
+// gives for every token it duplicates). Five, one per nav item, kept as
+// constants rather than a lookup built at render time — there are exactly
+// five and that will not change without a design decision, not a data one.
+const ICON_OVERVIEW = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
+const ICON_NEW = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+const ICON_ORDERS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+const ICON_BRAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="12"/><rect x="8" y="8" width="12" height="12"/></svg>';
+const ICON_PLAN = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="13"/><path d="M2 11h20"/></svg>';
+
+/**
+ * The sidebar app shell — task #259's second follow-up. Wraps whichever
+ * section's markup is passed in as `inner`; every section shares this one
+ * shell rather than each re-drawing its own nav, which is the whole point of
+ * a shell (see reference/product.md's "consistent affordances" rule: the
+ * nav, the sign-out control, and the account identity must be the SAME
+ * element regardless of which page put them on screen).
+ *
+ * "New request" points straight at /start — the site's existing intake
+ * pipeline (Section 10) — rather than a page under /account. Lucas already
+ * has one working intake flow; a second one living here would be two forms
+ * answering the same question, and the one this project already hardened
+ * (capacity gate, blackout days, rate limits) is the one that should run.
+ */
+function shellBody(t, lang, customer, active, inner) {
+  const items = [
+    { key: 'overview', href: '/account', label: t.navOverview, icon: ICON_OVERVIEW },
+    { key: 'new', href: '/start', label: t.navNewRequest, icon: ICON_NEW },
+    { key: 'orders', href: '/account/orders', label: t.ordersHeading, icon: ICON_ORDERS },
+    { key: 'brand', href: '/account/brand-kit', label: t.navBrandKit, icon: ICON_BRAND },
+    { key: 'plan', href: '/account/plan', label: t.navPlan, icon: ICON_PLAN },
+  ];
+  const nav = items.map((n) => {
+    const isActive = n.key === active;
+    return `<a class="navlink${isActive ? ' is-active' : ''}" href="${esc(n.href)}"${isActive ? ' aria-current="page"' : ''}>${n.icon}<span>${esc(n.label)}</span></a>`;
+  }).join('');
+
   return `
-<div class="bar">
-  <div class="bar-left">
-    <a class="mark" href="/">VISUAILS</a>
-    <span class="bar-sub">${esc(t.dashSub)}</span>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebrand">
+      <a class="mark" href="/">VISUAILS</a>
+      <span class="sidebrand-sub">${esc(t.dashSub)}</span>
+    </div>
+    <nav class="sidenav" aria-label="Account">${nav}</nav>
+    <div class="sideuser">
+      <span class="sideuser-name">${esc(customer.brand || customer.name || customer.email)}</span>
+      <span class="sideuser-email">${esc(customer.email)}</span>
+      <form method="post" action="/account/logout"><button class="btn btn-ghost btn-block" type="submit">${esc(t.signOut)}</button></form>
+    </div>
+  </aside>
+  <main class="main">${inner}</main>
+</div>`;
+}
+
+/**
+ * Overview — the section that lands after login. Counts are real, all-time
+ * totals read straight off `orders`, never a fabricated monthly figure: see
+ * sectionGet's header on why this dashboard has no billing cycle to anchor
+ * "this month" to. Recent activity is the five newest orders, each linking
+ * to its full card on the Orders page rather than repeating that card here.
+ */
+function overviewBody(t, lang, customer, orders, filesByOrder) {
+  const name = customer.brand || customer.name || customer.email;
+  const stats = [
+    [t.ovInProduction, orders.filter((o) => o.status === 'in_production').length],
+    [t.ovHumanCheck, orders.filter((o) => o.status === 'human_check').length],
+    [t.ovDelivered, orders.filter((o) => o.status === 'delivered').length],
+    [t.ovTotal, orders.length],
+  ];
+  const recent = orders.slice(0, 5);
+
+  return `
+<div class="ovhead">
+  <div>
+    <h1>${esc(t.ovWelcome)}, ${esc(name)}</h1>
+    <p class="lede">${esc(t.ovLede)}</p>
   </div>
-  <div class="bar-right">
-    <span>${esc(customer.brand || customer.name || customer.email)}</span>
-    <form method="post" action="/account/logout"><button class="btn btn-ghost" type="submit">${esc(t.signOut)}</button></form>
-  </div>
+  <a class="btn btn-primary" href="/start">${esc(t.ovNewCta)}</a>
 </div>
-<h1>${esc(t.dashTitle)}</h1>
-<p class="lede">${esc(t.dashLede)}</p>
 
-<h2>${esc(t.lockHeading)}</h2>
-<p class="lede">${esc(t.lockLede)}</p>
-${lockSection(t, models, lockByStyle)}
+<div class="statrow">
+  ${stats.map(([label, n]) => `<div class="stat"><span class="stat-n">${n}</span><span class="stat-label">${esc(label)}</span></div>`).join('')}
+</div>
 
-<h2>${esc(t.ordersHeading)}${orders.length ? ` <span class="h2-count">(${orders.length})</span>` : ''}</h2>
+<div class="section-head">
+  <h2>${esc(t.ovRecent)}</h2>
+  ${orders.length ? `<a class="viewall" href="/account/orders">${esc(t.ovViewAll)}</a>` : ''}
+</div>
+${recent.length
+  ? `<ul class="activity">${recent.map((o) => activityRow(t, lang, o)).join('')}</ul>`
+  : `<p class="empty">${esc(t.emptyOrders)}</p>`}`;
+}
+
+function activityRow(t, lang, o) {
+  return `<li>
+  <a class="activity-link" href="/account/orders#order-${o.id}">
+    <span class="ref">${esc(o.ref)}</span>
+    <span class="meta">${esc(serviceLabel(o.service, lang) || o.service)}${o.created_at ? ` · ${esc(String(o.created_at).slice(0, 10))}` : ''}</span>
+  </a>
+  <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
+</li>`;
+}
+
+function ordersBody(t, lang, orders, filesByOrder) {
+  return `
+<h1>${esc(t.ordersHeading)}${orders.length ? ` <span class="h2-count">(${orders.length})</span>` : ''}</h1>
+<p class="lede">${esc(t.ordersLede)}</p>
 ${orders.length ? orders.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [])).join('') : `<p class="empty">${esc(t.emptyOrders)}</p>`}`;
+}
+
+function brandKitBody(t, models, lockByStyle) {
+  return `
+<h1>${esc(t.navBrandKit)}</h1>
+<p class="lede">${esc(t.lockLede)}</p>
+${lockSection(t, models, lockByStyle)}`;
+}
+
+/**
+ * Plan & billing — deliberately the thinnest section here. Lucas chose "the
+ * shape, not a real credit system" when asked (task #259, second follow-up):
+ * there is no subscription model behind this site, orders are billed one at
+ * a time, and payments are not even wired up yet (task #258). Rendering a
+ * fake "12 days until renewal" counter would be lying to a client with a
+ * real invoice question. This shows what is real — the account identity —
+ * and points anything else at a human, same as portal.js's own foot note does.
+ */
+function planBody(t, customer) {
+  return `
+<h1>${esc(t.planHeading)}</h1>
+<p class="lede">${esc(t.planLede)}</p>
+<div class="card">
+  <h3>${esc(t.planAccountLabel)}</h3>
+  <dl class="facts">
+    <div class="fact"><dt>${esc(t.planEmailLabel)}</dt><dd>${esc(customer.email)}</dd></div>
+    ${customer.brand ? `<div class="fact"><dt>${esc(t.planBrandLabel)}</dt><dd>${esc(customer.brand)}</dd></div>` : ''}
+  </dl>
+  <p class="meta">${esc(t.planNote)}</p>
+</div>`;
 }
 
 // One panel, one row per style — was three separate .card+.controls forms
@@ -807,11 +1128,11 @@ function orderCard(t, lang, o, files) {
   ].filter(Boolean);
 
   const fileList = files.length
-    ? `<ul class="files">${files.map((f) => fileRow(t, f)).join('')}</ul>`
+    ? `<ul class="files">${files.map((f) => fileRow(t, f, o)).join('')}</ul>`
     : `<p class="meta">${esc(t.emptyFiles)}</p>`;
 
   return `
-<div class="card">
+<div class="card" id="order-${o.id}">
   <div class="row-head">
     <span class="ref">${esc(o.ref)}</span>
     <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
@@ -823,22 +1144,71 @@ function orderCard(t, lang, o, files) {
 </div>`;
 }
 
-// Two flex groups per row — .file-info (name + size) left, .file-actions
-// (View/Download) right — rather than one flat run of four inline elements
-// that used to wrap mid-sentence on narrow screens. See account.css.
-function fileRow(t, f) {
+/**
+ * One delivered file, with Approve / request-a-revision / Undo when its
+ * order is eligible (see canReview/canSeeReviewHistory above — the same
+ * tier + closed_at gate portal.js's shot() applies, so a client sees the
+ * identical set of controls whether they got here from the emailed link or
+ * from here). `o` is the file's own order, passed down from orderCard rather
+ * than looked up again — the caller already has it.
+ *
+ * View/Download stay plain <a> links outside any <form>; the review actions
+ * are their own <form method="post" action="/account/review"> sitting next
+ * to them — two forms of control, not one form with mixed intents, same
+ * "one form, two submits" shape portal.js's shot() uses for approve/revise.
+ */
+function fileRow(t, f, o) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
   const size = f.bytes ? formatBytes(f.bytes) : '';
   const info = `<span class="file-info"><span class="name">${esc(f.filename || `#${f.id}`)}</span>${size ? `<span class="meta">${esc(size)}</span>` : ''}</span>`;
+
   if (gone) {
-    return `<li>${info}</li>`;
+    return `<li id="f${f.id}">${info}</li>`;
   }
-  return `<li>
-  ${info}
-  <span class="file-actions">
+
+  const actions = `<span class="file-actions">
     <a class="btn btn-ghost" href="/account/files/${f.id}/f">${esc(t.bView)}</a>
     <a class="btn btn-ghost" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>
-  </span>
+  </span>`;
+
+  let state = '';
+  if (canSeeReviewHistory(o)) {
+    if (f.review_state === 'approved') {
+      state = `<span class="state approved">${esc(t.stApproved)}</span>`;
+    } else if (f.review_state === 'revision_requested') {
+      state = `<span class="state revision">${esc(t.stRevision)}</span>${f.review_note ? `<p class="said">${esc(f.review_note)}</p>` : ''}`;
+    }
+  }
+
+  let review = '';
+  if (canReview(o)) {
+    if (f.review_state === 'approved' || f.review_state === 'revision_requested') {
+      const label = f.review_state === 'approved' ? t.bUndo : t.bCancel;
+      review = `<form class="review-form" method="post" action="/account/review">
+    <input type="hidden" name="file" value="${f.id}">
+    <button class="btn btn-quiet" type="submit" name="action" value="undo">${esc(label)}</button>
+  </form>`;
+    } else {
+      // formnovalidate on Approve so the required note in the <details> below
+      // cannot block it — the two submits are alternatives, not steps.
+      review = `<form class="review-form" method="post" action="/account/review">
+    <input type="hidden" name="file" value="${f.id}">
+    <button class="btn btn-primary" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
+    <details class="ask">
+      <summary>${esc(t.askSummary)}</summary>
+      <label class="sr-only" for="n${f.id}">${esc(t.askLabel)}</label>
+      <textarea id="n${f.id}" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.askHint)}" required></textarea>
+      <button class="btn btn-ghost" type="submit" name="action" value="revise">${esc(t.bSend)}</button>
+    </details>
+  </form>`;
+    }
+  }
+
+  return `<li id="f${f.id}">
+  ${info}
+  ${state}
+  ${actions}
+  ${review}
 </li>`;
 }
 
@@ -846,7 +1216,14 @@ function errorBody(t, message = null) {
   return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error" style="margin-top:2rem">${esc(message || (t && t.dbDown) || 'Something went wrong.')}</p>`;
 }
 
-function page({ lang, title, body }) {
+// `full` swaps the centered 940px `.wrap` column for the edge-to-edge shell
+// layout — shellBody() already draws its own sidebar + main flex frame with
+// its own min-height:100vh, and nesting that inside `.wrap`'s max-width would
+// squeeze the sidebar into the same narrow column as a login card. Login,
+// check-email and the bad-link page keep `.wrap`: they are single centered
+// cards, not the app shell, same distinction account.css's own header draws
+// between .authcard and everything sectionGet renders.
+function page({ lang, title, body, full = false }) {
   return `<!doctype html>
 <html lang="${lang}">
 <head>
@@ -858,10 +1235,8 @@ function page({ lang, title, body }) {
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/account.css">
 </head>
-<body>
-<div class="wrap">
-${body}
-</div>
+<body${full ? ' class="has-shell"' : ''}>
+${full ? body : `<div class="wrap">\n${body}\n</div>`}
 </body>
 </html>`;
 }
