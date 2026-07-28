@@ -39,6 +39,30 @@ const STRIPE_API = 'https://api.stripe.com/v1';
 export async function createTestSampleCheckoutSession(env, { ref, email, lang, successUrl, cancelUrl }) {
   if (!env.STRIPE_SECRET_KEY) throw new Error('stripe: STRIPE_SECRET_KEY not configured');
 
+  // TEMPORARY DIAGNOSTIC — a bare GET that needs nothing but the key, run
+  // before the real call. Every real HTTP response, success or error, carries
+  // a request-id header; if THIS also comes back with no headers and an
+  // empty body, the problem is this Worker reaching api.stripe.com at all,
+  // not anything about checkout sessions specifically. Remove once the real
+  // 400 is explained — this line alone is not the fix.
+  try {
+    const probe = await fetch(`${STRIPE_API}/balance`, {
+      headers: {
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'User-Agent': 'VISUAILS/1.0 (+https://visuails.com)',
+        Accept: 'application/json',
+      },
+    });
+    const probeRaw = await probe.text();
+    console.log('[stripe-probe]', JSON.stringify({
+      status: probe.status,
+      headers: [...probe.headers.entries()],
+      bodyPreview: probeRaw.slice(0, 300),
+    }));
+  } catch (e) {
+    console.log('[stripe-probe] threw —', e && e.message ? e.message : String(e));
+  }
+
   const params = new URLSearchParams();
   params.set('mode', 'payment');
   params.append('payment_method_types[]', 'card');
@@ -82,6 +106,7 @@ export async function createTestSampleCheckoutSession(env, { ref, email, lang, s
     // headers too: a request-id here is the one thing that would let Stripe
     // support trace a request their own dashboard log never recorded.
     const reqId = res.headers.get('request-id') || res.headers.get('cf-ray') || 'n/a';
+    console.log('[stripe-checkout]', JSON.stringify({ status: res.status, headers: [...res.headers.entries()] }));
     const detail = body?.error
       ? `${body.error.type || ''} ${body.error.code || ''} (param: ${body.error.param || 'n/a'}) — ${body.error.message || ''}`
       : raw.slice(0, 500) || '(empty body)';
