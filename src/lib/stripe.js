@@ -45,22 +45,28 @@ export async function createTestSampleCheckoutSession(env, { ref, email, lang, s
   // empty body, the problem is this Worker reaching api.stripe.com at all,
   // not anything about checkout sessions specifically. Remove once the real
   // 400 is explained — this line alone is not the fix.
-  try {
-    const probe = await fetch(`${STRIPE_API}/balance`, {
-      headers: {
-        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-        'User-Agent': 'VISUAILS/1.0 (+https://visuails.com)',
-        Accept: 'application/json',
-      },
-    });
-    const probeRaw = await probe.text();
-    console.log('[stripe-probe]', JSON.stringify({
-      status: probe.status,
-      headers: [...probe.headers.entries()],
-      bodyPreview: probeRaw.slice(0, 300),
-    }));
-  } catch (e) {
-    console.log('[stripe-probe] threw —', e && e.message ? e.message : String(e));
+  // Two variants, run back to back: bare-minimum headers, and the fuller set
+  // this file normally sends. If only one of them comes back with real
+  // Stripe headers, the extra header is the culprit; if both come back kale
+  // (connection/content-length/date only, nothing else), it isn't a header
+  // at all and the problem is the connection itself.
+  for (const [label, extraHeaders] of [
+    ['bare', {}],
+    ['full', { 'User-Agent': 'VISUAILS/1.0 (+https://visuails.com)', Accept: 'application/json' }],
+  ]) {
+    try {
+      const probe = await fetch(`${STRIPE_API}/balance`, {
+        headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, ...extraHeaders },
+      });
+      const probeRaw = await probe.text();
+      console.log(`[stripe-probe:${label}]`, JSON.stringify({
+        status: probe.status,
+        headers: [...probe.headers.entries()],
+        bodyPreview: probeRaw.slice(0, 300),
+      }));
+    } catch (e) {
+      console.log(`[stripe-probe:${label}] threw —`, e && e.message ? e.message : String(e));
+    }
   }
 
   const params = new URLSearchParams();

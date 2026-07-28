@@ -16,12 +16,11 @@
 name = "visuails"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-07-01"
-# nodejs_compat tijdelijk uit — wordt nergens in functions/ of src/ gebruikt
-# (geen Buffer/process/node:-imports gevonden), en staat onder verdenking als
-# oorzaak van de kale/lege 400-responses die elk verzoek naar api.stripe.com
-# krijgt, zelfs een simpele GET. Zet 'm terug als iets anders 'm alsnog nodig
-# blijkt te hebben.
-# compatibility_flags = ["nodejs_compat"]
+# Confirmed required: removing this broke the build with
+# "No such module 'node:stream'" — something in a dependency imports it
+# transitively, even though nothing in functions/ or src/ does directly.
+# Ruled out as the cause of the empty Stripe 400s; do not remove again.
+compatibility_flags = ["nodejs_compat"]
 
 # --- Bindings ------------------------------------------------------------------
 [[d1_databases]]
