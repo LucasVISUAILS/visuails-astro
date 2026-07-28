@@ -80,6 +80,14 @@ a { color: inherit; }
 .mark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
 .ref { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 .bar-right { display: flex; align-items: center; gap: 1rem; font-size: .9rem; color: var(--ink-3); }
+/* Product-name suffix beside the wordmark — "VISUAILS · Studio Dashboard",
+   the same shape as any tool naming itself next to its parent brand. Only on
+   the dashboard itself (dashboardBody), not on login/check-email/bad-link —
+   those are entry/status screens, not "the dashboard" yet. Deliberately not
+   uppercase/tracked: that reads as the eyebrow trope DESIGN.md bans; this
+   reads as a label, sitting in normal case at --ink-3. */
+.bar-left { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.bar-sub { font-size: .82rem; font-weight: 500; color: var(--ink-3); }
 
 h1 {
   margin: clamp(2.2rem, 5vw, 3.4rem) 0 .6rem;
@@ -94,6 +102,11 @@ h2 {
 }
 h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--ink); }
 .lede { margin: 0; max-width: 62ch; font-size: 1.1rem; color: var(--ink-2); text-wrap: pretty; }
+/* Record count beside a section heading — "Orders (4)" — not an eyebrow (it
+   sits inline after the heading text, at heading baseline, not above it) and
+   not decoration: it is the one number a returning customer actually wants
+   before reading the list. */
+.h2-count { color: var(--ink-3); font-weight: 500; }
 
 /* ---- order cards -----------------------------------------------------------
    A card per order, the same "list of records with a status" shape admin.css
@@ -130,13 +143,18 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .fact dt { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
 .fact dd { margin: .3rem 0 0; color: var(--ink); font-weight: 500; }
 
+/* Each <li> splits into two flex groups — file identity on the left, actions
+   on the right — rather than one flat run of name/size/View/Download that
+   wraps mid-sentence on narrow screens. */
 .files { list-style: none; margin: .6rem 0 0; padding: 0; }
 .files li {
-  display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+  display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap;
   padding: .6rem 0; box-shadow: inset 0 -1px 0 var(--line);
 }
 .files li:last-child { box-shadow: none; padding-bottom: 0; }
-.files .name { font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.file-info { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; min-width: 0; }
+.file-info .name { font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.file-actions { display: flex; gap: .5rem; flex-shrink: 0; }
 
 /* ---- forms & controls ------------------------------------------------------ */
 .controls { display: flex; align-items: center; gap: .6rem; margin-top: .6rem; flex-wrap: wrap; }
@@ -146,7 +164,30 @@ select {
 }
 input, textarea, button, select { font: inherit; border-radius: 0; -webkit-appearance: none; appearance: none; }
 
-form.login { max-width: 360px; margin: 3rem auto 0; display: grid; gap: .9rem; }
+/* ---- brand lock: one panel, one row per style ------------------------------
+   Was three separate .card+.controls forms stacked with their own margins —
+   three visually distinct boxes for what is conceptually one settings list.
+   A single bordered panel with a hairline between rows reads as ONE control,
+   the same shape .files already uses for "several records, one list". */
+.lockpanel { border: 1px solid var(--line); background: var(--paper-lift); }
+.lockrow {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  padding: 1rem 1.4rem; box-shadow: inset 0 -1px 0 var(--line);
+}
+.lockrow:last-child { box-shadow: none; }
+.lockrow-name { font-size: .96rem; font-weight: 600; color: var(--ink); }
+.lockrow-controls { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+
+/* ---- login / check-email / bad-link: one framed card, not a bare form ----- */
+.authcard {
+  max-width: 420px; margin: clamp(2rem, 6vw, 4rem) auto 0;
+  padding: clamp(1.6rem, 4vw, 2.4rem);
+  border: 1px solid var(--line); background: var(--paper-lift);
+}
+.authcard h1 { margin-top: 0; font-size: clamp(1.6rem, 3.4vw, 2.1rem); }
+.authcard .lede { font-size: 1rem; }
+form.login { max-width: none; margin: 1.6rem 0 0; display: grid; gap: .9rem; }
 form.login input[type="email"] {
   padding: .8rem .9rem; border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
   font-size: 1rem;

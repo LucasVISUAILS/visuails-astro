@@ -104,6 +104,7 @@ const COPY = {
     badLinkTitle: 'This link does not work',
     badLinkBody: 'It may have expired, already been used, or been mistyped. Request a new one below.',
 
+    dashSub: 'Studio Dashboard',
     dashTitle: 'Your account',
     dashLede: 'Your orders, your files, and how your brand should look every time.',
 
@@ -111,7 +112,7 @@ const COPY = {
     emptyOrders: 'Nothing here yet — your first order will show up the moment it comes in.',
     fRef: 'Reference',
     fService: 'Service',
-    fStatus: 'Status',
+    fPlaced: 'Placed',
     fWindow: 'Window',
     fProducts: 'Products',
     windowPending: 'Being scheduled',
@@ -146,6 +147,7 @@ const COPY = {
     badLinkTitle: 'Deze link werkt niet',
     badLinkBody: 'Mogelijk is hij verlopen, al gebruikt, of verkeerd overgetypt. Vraag hieronder een nieuwe aan.',
 
+    dashSub: 'Studio-dashboard',
     dashTitle: 'Jouw account',
     dashLede: 'Jouw bestellingen, jouw bestanden, en hoe je merk er iedere keer uit moet zien.',
 
@@ -153,7 +155,7 @@ const COPY = {
     emptyOrders: 'Hier staat nog niets — je eerste bestelling verschijnt zodra hij binnenkomt.',
     fRef: 'Referentie',
     fService: 'Dienst',
-    fStatus: 'Status',
+    fPlaced: 'Geplaatst',
     fWindow: 'Venster',
     fProducts: 'Producten',
     windowPending: 'Wordt ingepland',
@@ -697,38 +699,52 @@ function originIsSelf(request) {
 // RENDERING
 // ─────────────────────────────────────────────────────────────────────────────
 
+// login/check-email/bad-link share one framed .authcard (account.css) rather
+// than a bare form floating on the page — these are the first thing a
+// customer sees of the account system, before there is a dashboard bar or
+// any brand/order context to anchor the page, so the card itself has to do
+// that job.
 function loginBody(t, lang, error = null) {
   return `
 <div class="bar"><a class="mark" href="/">VISUAILS</a></div>
-<h1>${esc(t.loginTitle)}</h1>
-<p class="lede">${esc(t.loginLede)}</p>
-${error ? `<p class="error">${esc(error)}</p>` : ''}
-<form class="login" method="post" action="/account/login">
-  <input type="hidden" name="lang" value="${esc(lang)}">
-  <input type="email" name="email" placeholder="${esc(t.loginEmailLabel)}" autocomplete="email" required>
-  <button class="btn btn-primary" type="submit">${esc(t.loginSubmit)}</button>
-</form>`;
+<div class="authcard">
+  <h1>${esc(t.loginTitle)}</h1>
+  <p class="lede">${esc(t.loginLede)}</p>
+  ${error ? `<p class="error">${esc(error)}</p>` : ''}
+  <form class="login" method="post" action="/account/login">
+    <input type="hidden" name="lang" value="${esc(lang)}">
+    <input type="email" name="email" placeholder="${esc(t.loginEmailLabel)}" autocomplete="email" required>
+    <button class="btn btn-primary" type="submit">${esc(t.loginSubmit)}</button>
+  </form>
+</div>`;
 }
 
 function checkEmailBody(t) {
   return `
 <div class="bar"><a class="mark" href="/">VISUAILS</a></div>
-<h1>${esc(t.checkTitle)}</h1>
-<p class="lede">${esc(t.checkBody)}</p>`;
+<div class="authcard">
+  <h1>${esc(t.checkTitle)}</h1>
+  <p class="lede">${esc(t.checkBody)}</p>
+</div>`;
 }
 
 function badLinkBody(t) {
   return `
 <div class="bar"><a class="mark" href="/">VISUAILS</a></div>
-<h1>${esc(t.badLinkTitle)}</h1>
-<p class="lede">${esc(t.badLinkBody)}</p>
-<p class="note"><a href="/account/login">${esc(t.loginSubmit)}</a></p>`;
+<div class="authcard">
+  <h1>${esc(t.badLinkTitle)}</h1>
+  <p class="lede">${esc(t.badLinkBody)}</p>
+  <p class="note"><a href="/account/login">${esc(t.loginSubmit)}</a></p>
+</div>`;
 }
 
 function dashboardBody(t, lang, customer, orders, filesByOrder, models, lockByStyle) {
   return `
 <div class="bar">
-  <a class="mark" href="/">VISUAILS</a>
+  <div class="bar-left">
+    <a class="mark" href="/">VISUAILS</a>
+    <span class="bar-sub">${esc(t.dashSub)}</span>
+  </div>
   <div class="bar-right">
     <span>${esc(customer.brand || customer.name || customer.email)}</span>
     <form method="post" action="/account/logout"><button class="btn btn-ghost" type="submit">${esc(t.signOut)}</button></form>
@@ -741,10 +757,13 @@ function dashboardBody(t, lang, customer, orders, filesByOrder, models, lockBySt
 <p class="lede">${esc(t.lockLede)}</p>
 ${lockSection(t, models, lockByStyle)}
 
-<h2>${esc(t.ordersHeading)}</h2>
+<h2>${esc(t.ordersHeading)}${orders.length ? ` <span class="h2-count">(${orders.length})</span>` : ''}</h2>
 ${orders.length ? orders.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [])).join('') : `<p class="empty">${esc(t.emptyOrders)}</p>`}`;
 }
 
+// One panel, one row per style — was three separate .card+.controls forms
+// stacked with their own margins, three visually distinct boxes for what is
+// conceptually one settings list (see account.css's .lockpanel comment).
 function lockSection(t, models, lockByStyle) {
   if (!models.length) return `<p class="empty">${esc(t.lockNoModels)}</p>`;
 
@@ -754,15 +773,17 @@ function lockSection(t, models, lockByStyle) {
       `<option value=""${current === '' ? ' selected' : ''}>${esc(t.lockUnset)}</option>` +
       models.map((m) => `<option value="${m.id}"${String(m.id) === String(current) ? ' selected' : ''}>${esc(m.label)}</option>`).join('');
     return `
-<form class="controls" method="post" action="/account/lock">
+<form class="lockrow" method="post" action="/account/lock">
   <input type="hidden" name="style" value="${esc(style)}">
-  <span class="ref">${esc(styleLabel(style))}</span>
-  <select name="custom_model_id">${options}</select>
-  <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
+  <span class="lockrow-name">${esc(styleLabel(style))}</span>
+  <span class="lockrow-controls">
+    <select name="custom_model_id">${options}</select>
+    <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
+  </span>
 </form>`;
   }).join('');
 
-  return `<div class="card">${rows}</div>`;
+  return `<div class="lockpanel">${rows}</div>`;
 }
 
 function styleLabel(style) {
@@ -774,11 +795,15 @@ function styleLabel(style) {
 
 function orderCard(t, lang, o, files) {
   const window = o.window_start ? `${esc(o.window_start)} → ${esc(o.window_end || '—')}` : t.windowPending;
+  // Status is not repeated here — it already has the pill in row-head, and a
+  // second plain-text copy of the same word two lines down read as clutter
+  // rather than information. Placed (the order date) replaces it: real,
+  // useful, and nowhere else on the card.
   const facts = [
     [t.fRef, o.ref],
     [t.fService, serviceLabel(o.service, lang) || o.service],
     o.product_count ? [t.fProducts, String(o.product_count)] : null,
-    [t.fStatus, statusLabel(o.status, lang) || o.status],
+    o.created_at ? [t.fPlaced, String(o.created_at).slice(0, 10)] : null,
   ].filter(Boolean);
 
   const fileList = files.length
@@ -798,17 +823,22 @@ function orderCard(t, lang, o, files) {
 </div>`;
 }
 
+// Two flex groups per row — .file-info (name + size) left, .file-actions
+// (View/Download) right — rather than one flat run of four inline elements
+// that used to wrap mid-sentence on narrow screens. See account.css.
 function fileRow(t, f) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
   const size = f.bytes ? formatBytes(f.bytes) : '';
+  const info = `<span class="file-info"><span class="name">${esc(f.filename || `#${f.id}`)}</span>${size ? `<span class="meta">${esc(size)}</span>` : ''}</span>`;
   if (gone) {
-    return `<li><span class="name">${esc(f.filename || `#${f.id}`)}</span>${size ? ` <span class="meta">${esc(size)}</span>` : ''}</li>`;
+    return `<li>${info}</li>`;
   }
   return `<li>
-  <span class="name">${esc(f.filename || `#${f.id}`)}</span>
-  ${size ? `<span class="meta">${esc(size)}</span>` : ''}
-  <a class="btn btn-ghost" href="/account/files/${f.id}/f">${esc(t.bView)}</a>
-  <a class="btn btn-ghost" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>
+  ${info}
+  <span class="file-actions">
+    <a class="btn btn-ghost" href="/account/files/${f.id}/f">${esc(t.bView)}</a>
+    <a class="btn btn-ghost" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>
+  </span>
 </li>`;
 }
 
