@@ -62,6 +62,7 @@ import {
 } from '../../src/data/capacity.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
+import { sendMail } from '../../src/lib/mail.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
 
@@ -771,26 +772,8 @@ async function upsertCustomer(env, c) {
   return row?.id ?? null;
 }
 
-/**
- * One message out through Resend.
- *
- * `attachments` is omitted from the payload entirely when there are none, rather
- * than sent as []. Every message this endpoint has ever sent is unattached, and
- * an empty array is a new key on all of them — a difference in the wire format
- * that buys nothing and would have to be explained to anyone reading a log.
- */
-async function sendMail(env, { to, subject, html, attachments }) {
-  if (!env.RESEND_API_KEY) return;                 // not configured yet → skip quietly
-  const from = env.FROM_EMAIL || 'VISUAILS <orders@visuails.com>';
-  const payload = { from, to, subject, html, reply_to: 'hello@visuails.com' };
-  if (attachments && attachments.length) payload.attachments = attachments;
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
-}
+// sendMail() moved to src/lib/mail.js on 2026-07-27 — see that file's header
+// for why. Imported above, alongside token.js/uploads.js.
 
 async function safe(fn) { try { return await fn(); } catch (e) { console.error('[order]', e && e.message ? e.message : e); } }
 

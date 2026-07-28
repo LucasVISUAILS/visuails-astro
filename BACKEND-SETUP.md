@@ -46,19 +46,21 @@ database is new.**
 
 *A database you just created*, or any database that has never had this project's
 tables in it, needs `schema.sql` and nothing else. It is the full current shape:
-eleven tables, all indexes, all comments.
+seventeen tables, all indexes, all comments.
 
 ```bash
 npx wrangler d1 execute visuails --remote --file=./schema.sql
 ```
 
-*A database that predates section 10* — one you set up from the older version of
-this document — already has the early tables and needs the two migrations, in
-order, instead:
+*A database that predates section 10, section 13, or the 2026-07-27
+admin/accounts/payments addition* — one you set up from an older version of
+this document — already has the early tables and needs the migrations it is
+missing, in order:
 
 ```bash
 npx wrangler d1 execute visuails --remote --file=./migrations/0001-section-10-pipeline.sql
 npx wrangler d1 execute visuails --remote --file=./migrations/0002-section-13-upgrade-prompt.sql
+npx wrangler d1 execute visuails --remote --file=./migrations/0003-admin-accounts-payments.sql
 ```
 
 `0001` adds the pipeline: `blackout_days`, `order_tokens`, `rate_limits` and
@@ -66,6 +68,11 @@ npx wrangler d1 execute visuails --remote --file=./migrations/0002-section-13-up
 `window_end` and `closed_at` columns on `orders` and the four review columns on
 `files`. `0002` adds one column, `customers.upgrade_prompt_at`, which is how
 section 13's upgrade prompt knows it has already been shown this quarter.
+`0003` adds `admin_users`, `admin_sessions`, `account_tokens`,
+`account_sessions`, `customer_style_locks` and `payments`, plus the
+`payment_provider`, `payment_status`, `payment_ref` and `paid_at` columns on
+`orders` and the `actor` column on `order_events` — the admin dashboard, the
+customer account dashboard and payments, all from Lucas's 2026-07-27 request.
 
 **Running a migration twice is safe and it looks like a failure.** SQLite has no
 `ADD COLUMN IF NOT EXISTS`, so the second run stops at the first column that
@@ -76,15 +83,21 @@ gives you
 duplicate column name: tier
 ```
 
-and re-running `0002` gives you
+re-running `0002` gives you
 
 ```
 duplicate column name: upgrade_prompt_at
 ```
 
-Both mean *already applied*. Everything before the failing statement in each
-file is `CREATE TABLE IF NOT EXISTS` or `CREATE INDEX IF NOT EXISTS`, so nothing
-is half-written and no data is touched.
+and re-running `0003` gives you
+
+```
+duplicate column name: payment_provider
+```
+
+All three mean *already applied*. Everything before the failing statement in
+each file is `CREATE TABLE IF NOT EXISTS` or `CREATE INDEX IF NOT EXISTS`, so
+nothing is half-written and no data is touched.
 
 If you are not sure which case you're in, ask the database:
 
@@ -93,19 +106,36 @@ npx wrangler d1 execute visuails --remote \
   --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
 ```
 
-Eleven tables — `app_settings`, `blackout_days`, `custom_models`, `customers`,
-`files`, `messages`, `order_events`, `order_tokens`, `orders`, `rate_limits`,
-`subscribers` — and you are current. Fewer, and you need the migrations.
+Seventeen tables — `account_sessions`, `account_tokens`, `admin_sessions`,
+`admin_users`, `app_settings`, `blackout_days`, `custom_models`,
+`customer_style_locks`, `customers`, `files`, `messages`, `order_events`,
+`order_tokens`, `orders`, `payments`, `rate_limits`, `subscribers` — and you
+are current. Fewer, and you need the migrations you are missing.
 
 Every SQL statement any of the Functions can issue has been compiled against
-`schema.sql`: **31 `.prepare()` call sites resolving to 28 distinct
-statements**, and all 28 resolve. They were found by walking all eleven files
+`schema.sql`: **41 `.prepare()` call sites resolving to at least 38 distinct
+statements**, and all resolve. They were found by walking all fourteen files
 reachable from `functions/` rather than by listing the ones that looked
-relevant — the queries turn out to live in only four of those files, and two of
-the four are library modules the function files import rather than function
+relevant — the queries turn out to live in only five of those files, and three
+of the five are library modules the function files import rather than function
 files themselves. A column name that doesn't exist would not show up in a build
 log or a test run; it would be a 500 on your first real order, with the customer
 already reading the thank-you page.
+
+Before 2026-07-27 this was 31 call sites resolving to 28 distinct statements,
+walking eleven files with four query-bearing (`functions/api/order.js`,
+`functions/api/capacity.js`, `src/lib/portal.js`, `src/lib/ratelimit.js`).
+`src/lib/admin.js` (task #256) added ten call sites, all of them new tables
+this migration introduces (`admin_users`, `admin_sessions`, `order_events`
+with an `actor` column, and so on) — none of the ten can collide with anything
+that existed before, so the new floor is the old 28 plus all ten, no dedup
+required to state it as a floor. **"At least"** rather than a second exact
+count because the harder half of the old number — four call sites that pass a
+variable rather than a literal, one of which collapses against another file's
+statement — was resolved by hand once and is not being re-derived from
+scratch here; if the true count matters again, resolving `orderSql` and the
+`files` insert the way the paragraph below always has is still the way to get
+it, not arithmetic on this one.
 
 Those two numbers are further apart than they look because four of the call
 sites take a variable rather than a literal, and once you resolve them one pair
@@ -301,13 +331,13 @@ database. Check, in this order:
    deploy time. Adding one to an already-deployed project changes nothing until
    you redeploy.
 4. **The schema is actually in that database.** A binding pointing at an empty
-   D1 fails on the first query. Re-run the two migration files against it and
+   D1 fails on the first query. Re-run the migration files against it and
    confirm:
    ```bash
    npx wrangler d1 execute visuails --remote \
      --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
    ```
-   Eleven tables should come back.
+   Seventeen tables should come back.
 
 `npx wrangler pages deployment tail` shows the throw as it happens.
 
@@ -319,13 +349,115 @@ precisely so the page never flattens them into one apology. If you are seeing
 
 ---
 
+## 8 · Your admin login
+
+`/admin` has no signup page on purpose — a public "create an admin account"
+form is a hole on a site with exactly one studio and one login, not a
+feature. Instead, create your own row once with the helper script:
+
+```bash
+node scripts/hash-admin-password.mjs you@visuails.com "a real password, 12+ characters"
+```
+
+It prints a `wrangler d1 execute` command with the password already hashed —
+nothing sensitive crosses the network until you run the command it gives you,
+and nothing is written until then either. Run the same command again any time
+to change your password; it replaces the row rather than failing on the
+`UNIQUE` constraint on `email`.
+
+Then sign in at `https://visuails.com/admin/login`. The session cookie is
+`HttpOnly`, `Secure` and `SameSite=Strict`, and lasts 14 days
+(`ADMIN_SESSION_TTL_DAYS` in `src/lib/adminAuth.js`) before you need to sign
+in again.
+
+No new Cloudflare binding or secret is needed for this — `/admin` only reads
+`env.DB`, which §4 above already connects.
+
+## 9 · Connecting Mollie and Stripe
+
+Both processors, decided 2026-07-27: iDEAL through Mollie, cards through
+Stripe. **Creating the accounts is independent of the checkout code landing**
+— do this whenever, and hand over the keys when it's ready.
+
+**Mollie.**
+
+1. Sign up at [mollie.com](https://www.mollie.com) and create a website
+   profile for VISUAILS — Mollie organises API keys per profile, so this
+   comes before the keys exist.
+2. In the dashboard, go to **Developers → API keys**. You get a **Test** key
+   immediately; the **Live** key activates once Mollie has verified the
+   business (KVK number, IBAN, ID verification — their onboarding flow asks
+   for these directly, nothing to prepare in advance).
+3. Use the test key while this integration is being built and checked; swap
+   in the live key only once real orders are meant to charge real cards.
+
+**Stripe.**
+
+1. Sign up at [stripe.com](https://stripe.com) or sign in if VISUAILS already
+   has an account for anything else.
+2. **Dashboard → Developers → API keys**
+   (`dashboard.stripe.com/apikeys`). Requires Administrator permission on the
+   account, which the account creator has by default.
+3. Test-mode keys (`pk_test_…` / `sk_test_…`) are visible any time. Live keys
+   (`pk_live_…` / `sk_live_…`) are shown **once**, at creation — copy the
+   secret key somewhere safe immediately, because Stripe will not show it
+   again; if it's lost, roll it and issue a new one rather than trying to
+   recover the old value.
+4. Also needed once the webhook handler exists: **Developers → Webhooks →
+   Add endpoint**, pointed at
+   `https://visuails.com/api/webhook/stripe` — Stripe gives you a **signing
+   secret** (`whsec_…`) at that point, which is what proves a webhook call
+   actually came from Stripe and not from anyone who found the URL.
+
+**What to hand over, once you have it — as Cloudflare Pages secrets, the same
+way `RESEND_API_KEY` was set up in §4, not pasted into chat or committed to
+the repo:**
+
+| Secret | From |
+|---|---|
+| `MOLLIE_API_KEY` | Mollie → Developers → API keys |
+| `STRIPE_SECRET_KEY` | Stripe → Developers → API keys |
+| `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → Webhooks, after the endpoint exists |
+
+These are not read by any code yet — task #258, the checkout and webhook
+handlers, is still ahead — so §4's binding table above does not list them
+yet either. They will be added there, and to the code that reads them, in the
+same change.
+
+---
+
 ## What is still ahead
 
-**Payments.** Nothing on the site takes money yet. The €0.99 test sample and
-real orders both need a processor — Mollie for iDEAL, or Stripe — and that
-choice is still open (flag **xlii**). Section 14, the VAT and reverse-charge
-work, is deferred behind it and is a substantial piece in its own right:
-server-side determination, VIES validation, sequential invoice numbers.
+**Admin dashboard — done.** `/admin` (`src/lib/admin.js`, task #256,
+2026-07-27): password login, an order overview with a working status control
+(`received → in_production → human_check → delivered/cancelled`, writing both
+`orders.status` and an `order_events` row so the client's own portal timeline
+moves too), and a revision inbox reading `files.review_state =
+'revision_requested'` — the notes clients leave in their portal, which had
+nowhere to surface on the studio's side before this. See **"Your admin
+login"** below to create the one row (`admin_users`) this needs before it
+works at all; nothing bootstraps it for you.
+
+**Payments — Mollie AND Stripe, decided 2026-07-27** (closes flag **xlii**).
+Nothing on the site takes money yet; both processors are being wired rather
+than one, so a client can pay by iDEAL (Mollie) or card (Stripe). The €0.99
+test sample and real orders both need this before either can go live. Section
+14, the VAT and reverse-charge work, stays out of scope — Lucas: no KOR,
+files a normal return — but a standard 21% is still added and shown on the
+receipt regardless; that is not section 14, which was specifically about
+VIES validation and reverse-charge for EU business buyers, not about charging
+VAT at all. See **"Connecting Mollie and Stripe"** below for account setup.
+
+**Accounts — done.** `/account` (`src/lib/account.js`, task #257, 2026-07-27):
+sign in with a magic link to the email an order was placed under — no
+password, see that file's header for why customers get a different design
+from Lucas's own login. Once in: an order history with download links for
+every delivered file, and a per-style (catalog / lifestyle / video) brand-lock
+picker backed by `customer_style_locks`, so a repeat client's shoots keep
+using the same custom model without being asked each time. There is
+deliberately no signup page — an account already exists the moment a first
+order does, the same "no public admin-signup route" reasoning `src/lib/admin.js`
+documents for Lucas's own login.
 
 **Portal token issuance — done, and worth knowing how it behaves.** Until
 recently the portal was finished and unreachable: nothing wrote an
@@ -351,7 +483,3 @@ use or stays valid until it expires. Today it is the second.
 privacy and terms pages in both languages, and nothing deletes anything.
 Cloudflare Pages Functions has no cron triggers, so today this promise is kept
 by hand. Flag **lxiii**.
-
-**Accounts.** Login, profile-prefill of contact and VAT details, a per-account
-custom-model roster. `custom_models` is the one table in the schema that no code
-touches yet; it is there for this.

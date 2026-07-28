@@ -1,0 +1,143 @@
+/* ============================================================
+   VISUAILS — /admin, Lucas's own dashboard. 2026-07-27.
+
+   Same reason public/portal.css exists rather than importing global.css: this
+   is rendered by a Cloudflare Pages Function, not by Astro, so it cannot reach
+   a hashed build asset. Tokens below are copied from portal.css (which copied
+   them from global.css) rather than re-derived — see portal.css's own header
+   for why that duplication is honest rather than a system.
+
+   REGISTER: this is a tool Lucas uses on himself, not a brand surface a client
+   ever sees — plainer than portal.css on purpose. No motion beyond the
+   .btn hover portal.css already establishes, no marketing type scale.
+   ============================================================ */
+
+:root {
+  --ink-900:  oklch(0.16 0.006 75);
+  --ink-700:  oklch(0.32 0.005 75);
+  --ink-500:  oklch(0.45 0.004 75);
+  --ink-300:  oklch(0.72 0.003 75);
+  --ink-200:  oklch(0.84 0.003 75);
+  --ink-100:  oklch(0.89 0.002 75);
+
+  --paper:      oklch(0.97 0.004 255);
+  --paper-2:    oklch(0.94 0.005 255);
+  --paper-lift: oklch(0.99 0.002 255);
+
+  --signal:     oklch(0.55 0.075 215);
+  --signal-ink: oklch(0.45 0.075 215);
+  --warn:       oklch(0.58 0.115 45);
+  --warn-ink:   oklch(0.47 0.115 40);
+
+  --ink:   var(--ink-900);
+  --ink-2: var(--ink-700);
+  --ink-3: var(--ink-500);
+  --line:        var(--ink-200);
+  --line-strong: var(--ink-300);
+  --line-ui:     var(--ink-700);
+
+  --font: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --radius: 0;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; border-radius: var(--radius); }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 5rem;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+::selection { background: var(--ink-900); color: var(--paper); }
+
+.wrap { max-width: 1080px; margin: 0 auto; }
+
+.bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  padding: 1.6rem 0 1.4rem;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+.mark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.1rem; color: var(--ink); text-decoration: none; }
+.bar-right { display: flex; align-items: center; gap: 1rem; font-size: .85rem; color: var(--ink-3); }
+
+h1 { margin: 1.6rem 0 .3rem; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+h2 { margin: 2.4rem 0 .8rem; font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+.lede { margin: 0 0 1.2rem; color: var(--ink-3); font-size: .92rem; }
+
+.card {
+  border: 1px solid var(--line);
+  background: var(--paper-lift);
+  padding: 1.1rem 1.2rem;
+  margin-bottom: .8rem;
+}
+/* oklch(0.97 0.02 45) clips sRGB (r = 1.023, +0.023 over) — gamut_sweep.py
+   caught it. L dropped one notch to 0.96, which sits inside the gamut with
+   room to spare (ceiling ~0.0214 at this L/H) and reads the same at a glance. */
+.card.is-attention { border-color: var(--warn-ink); background: oklch(0.96 0.02 45); }
+
+.row-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: .8rem; flex-wrap: wrap; margin-bottom: .5rem;
+}
+.ref { font-family: ui-monospace, Menlo, monospace; font-size: .85rem; font-weight: 700; color: var(--ink); }
+.meta { font-size: .82rem; color: var(--ink-3); }
+.pill {
+  display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: .2rem .55rem; border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+}
+.pill.is-received     { border-color: var(--line-strong); color: var(--ink-2); }
+.pill.is-in_production{ border-color: var(--signal-ink); color: var(--signal-ink); }
+.pill.is-human_check  { border-color: var(--warn-ink); color: var(--warn-ink); }
+.pill.is-delivered    { border-color: var(--ink-700); color: var(--ink-700); background: var(--ink-100); }
+.pill.is-cancelled    { border-color: var(--ink-300); color: var(--ink-300); text-decoration: line-through; }
+
+.note {
+  margin: .5rem 0 0; padding: .7rem .8rem; background: var(--paper-2);
+  border-left: 2px solid var(--warn-ink); font-size: .9rem; white-space: pre-wrap;
+}
+
+.controls { display: flex; align-items: center; gap: .6rem; margin-top: .7rem; flex-wrap: wrap; }
+select {
+  font: inherit; font-size: .88rem; padding: .5rem .6rem; border: 1px solid var(--line-strong);
+  background: var(--paper-lift); color: var(--ink); -webkit-appearance: none; appearance: none;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font); font-size: .85rem; font-weight: 600; line-height: 1;
+  padding: .55rem .9rem; cursor: pointer; border: 1px solid transparent;
+  text-decoration: none;
+  transition: transform var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.btn-primary { background: var(--ink-900); color: var(--paper); }
+.btn-primary:hover { background: var(--ink-700); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn-ghost:hover { border-color: var(--line-ui); }
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--ink-900); outline-offset: 2px;
+}
+input, textarea, button, select { font: inherit; border-radius: 0; -webkit-appearance: none; appearance: none; }
+
+.empty { padding: 2rem 0; color: var(--ink-3); font-size: .92rem; }
+
+form.login { max-width: 340px; margin: 3rem auto 0; display: grid; gap: .8rem; }
+form.login input[type="email"], form.login input[type="password"] {
+  padding: .7rem .8rem; border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
+}
+.error { color: var(--warn-ink); font-size: .88rem; margin: 0 0 .4rem; }
+
+.tabs { display: flex; gap: 1.2rem; margin: 1.4rem 0 0; border-bottom: 1px solid var(--line); }
+.tabs a { padding-bottom: .6rem; font-size: .9rem; color: var(--ink-3); text-decoration: none; }
+.tabs a.is-active { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink-900); }

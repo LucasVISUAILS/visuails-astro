@@ -1,0 +1,182 @@
+/* ============================================================
+   VISUAILS — /account, the customer dashboard. Task #257, 2026-07-27.
+
+   WHY THIS IS ITS OWN FILE RATHER THAN portal.css OR admin.css
+   Same root reason portal.css exists apart from global.css: this is rendered
+   by a Cloudflare Pages Function, not by Astro, so it cannot reach a hashed
+   build asset. See portal.css's own header for the fuller argument; the
+   tokens below are copied from it (which copied them from global.css) rather
+   than re-derived, for the same "honest duplication, not a system" reason.
+
+   Not admin.css, on purpose. admin.css's own header says why it is plainer
+   than portal.css: it is a tool Lucas uses on himself, never a brand surface
+   a client sees. This page IS a brand surface a client sees — the same
+   population portal.css was written for — so it inherits portal.css's
+   register (the Archivo stack, the same spacing scale, the same .btn/.facts/
+   .bar it already defines) rather than admin.css's plainer one. What this
+   file adds beyond portal.css is structural: a card list for orders, a status
+   pill, and a form control row — three things portal.css never needed because
+   a single order's page never had to summarize many orders at once. Those
+   three are copied from admin.css's shapes (same .card/.pill/.controls
+   classes) since Lucas's dashboard already solved "list of orders with a
+   status" — but every color and spacing value below is portal.css's, not
+   admin.css's, so the two pages that share a population look like it. */
+
+:root {
+  --ink-900:  oklch(0.16 0.006 75);
+  --ink-700:  oklch(0.32 0.005 75);
+  --ink-500:  oklch(0.45 0.004 75);
+  --ink-300:  oklch(0.72 0.003 75);
+  --ink-200:  oklch(0.84 0.003 75);
+  --ink-100:  oklch(0.89 0.002 75);
+
+  --paper:      oklch(0.97 0.004 255);
+  --paper-2:    oklch(0.94 0.005 255);
+  --paper-lift: oklch(0.99 0.002 255);
+
+  --signal:     oklch(0.55 0.075 215);
+  --signal-ink: oklch(0.45 0.075 215);
+  --warn:       oklch(0.58 0.115 45);
+  --warn-ink:   oklch(0.47 0.115 40);
+
+  --ink:   var(--ink-900);
+  --ink-2: var(--ink-700);
+  --ink-3: var(--ink-500);
+  --line:        var(--ink-200);
+  --line-strong: var(--ink-300);
+  --line-ui:     var(--ink-700);
+
+  --font: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --radius: 0;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; border-radius: var(--radius); }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 5rem;
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  color: var(--ink-2);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+::selection { background: var(--ink-900); color: var(--paper); }
+
+.wrap { max-width: 940px; margin: 0 auto; }
+
+.bar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  padding: 1.6rem 0 1.4rem;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+.mark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
+.ref { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.bar-right { display: flex; align-items: center; gap: 1rem; font-size: .9rem; color: var(--ink-3); }
+
+h1 {
+  margin: clamp(2.2rem, 5vw, 3.4rem) 0 .6rem;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  font-weight: 900; line-height: 1.02; letter-spacing: -0.025em;
+  color: var(--ink); text-wrap: balance;
+}
+h2 {
+  margin: clamp(2.6rem, 5vw, 3.6rem) 0 1.2rem;
+  font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; color: var(--ink);
+  padding-bottom: .7rem; box-shadow: inset 0 -1px 0 var(--line);
+}
+h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--ink); }
+.lede { margin: 0; max-width: 62ch; font-size: 1.1rem; color: var(--ink-2); text-wrap: pretty; }
+
+/* ---- order cards -----------------------------------------------------------
+   A card per order, the same "list of records with a status" shape admin.css
+   solved for Lucas's dashboard — the only place in this codebase that shape
+   was needed before. Colors are portal.css's own, not copied from admin.css. */
+.card {
+  border: 1px solid var(--line);
+  background: var(--paper-lift);
+  padding: 1.3rem 1.4rem;
+  margin-bottom: 1rem;
+}
+.row-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: .8rem; flex-wrap: wrap; margin-bottom: .6rem;
+}
+.meta { font-size: .86rem; color: var(--ink-3); }
+.pill {
+  display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: .2rem .55rem; border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+}
+.pill.is-received      { border-color: var(--line-strong); color: var(--ink-2); }
+.pill.is-in_production { border-color: var(--signal-ink); color: var(--signal-ink); }
+.pill.is-human_check   { border-color: var(--warn-ink); color: var(--warn-ink); }
+.pill.is-delivered     { border-color: var(--ink-700); color: var(--ink-700); background: var(--ink-100); }
+.pill.is-cancelled     { border-color: var(--ink-300); color: var(--ink-300); text-decoration: line-through; }
+
+.facts {
+  display: flex; flex-wrap: wrap;
+  gap: 1rem 2rem; margin: .8rem 0 0;
+  padding-top: 1rem; box-shadow: inset 0 1px 0 var(--line);
+}
+.fact { min-width: 0; }
+.fact dt { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.fact dd { margin: .3rem 0 0; color: var(--ink); font-weight: 500; }
+
+.files { list-style: none; margin: .6rem 0 0; padding: 0; }
+.files li {
+  display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+  padding: .6rem 0; box-shadow: inset 0 -1px 0 var(--line);
+}
+.files li:last-child { box-shadow: none; padding-bottom: 0; }
+.files .name { font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+
+/* ---- forms & controls ------------------------------------------------------ */
+.controls { display: flex; align-items: center; gap: .6rem; margin-top: .6rem; flex-wrap: wrap; }
+select {
+  font: inherit; font-size: .92rem; padding: .55rem .65rem; border: 1px solid var(--line-strong);
+  background: var(--paper-lift); color: var(--ink); -webkit-appearance: none; appearance: none;
+}
+input, textarea, button, select { font: inherit; border-radius: 0; -webkit-appearance: none; appearance: none; }
+
+form.login { max-width: 360px; margin: 3rem auto 0; display: grid; gap: .9rem; }
+form.login input[type="email"] {
+  padding: .8rem .9rem; border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
+  font-size: 1rem;
+}
+.error { color: var(--warn-ink); font-size: .92rem; margin: 0 0 .6rem; }
+.note { margin: .8rem 0 0; padding: .9rem 1rem; max-width: 68ch; background: var(--paper-2); border: 1px solid var(--line); font-size: .96rem; color: var(--signal-ink); }
+.empty { padding: 1.4rem 0; color: var(--ink-3); font-size: .96rem; }
+
+/* ---- buttons ---------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font); font-size: .88rem; font-weight: 600; line-height: 1;
+  padding: .7rem 1.1rem; cursor: pointer; border: 1px solid transparent;
+  text-decoration: none;
+  transition: transform var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.btn-primary { background: var(--ink-900); color: var(--paper); }
+.btn-primary:hover { background: var(--ink-700); transform: translateY(-2px); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn-ghost:hover { border-color: var(--line-ui); transform: translateY(-2px); }
+
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--ink-900); outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .001ms !important; animation-duration: .001ms !important; }
+  .btn:hover { transform: none; }
+}

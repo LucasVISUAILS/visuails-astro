@@ -255,3 +255,122 @@ CREATE TABLE IF NOT EXISTS app_settings (
   value      TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ADMIN LOGIN, CUSTOMER ACCOUNTS, AND PAYMENTS — Lucas, 2026-07-27
+--
+-- Not a numbered brief section like 10/13/14 above; this is not from the
+-- original brief. Labelled by request date instead of inventing a section
+-- number that would misrepresent where it came from.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Lucas's own login to /admin. A real table with a real (hashed) password
+-- rather than a bare env-var check, because this is access control, not a
+-- privacy-preserving salt — see app_settings above for why those two get
+-- different treatment. One row today; more than one is just another INSERT if
+-- the studio ever has a second person who needs in.
+CREATE TABLE IF NOT EXISTS admin_users (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  email         TEXT NOT NULL UNIQUE,
+  -- PBKDF2-SHA256 via WebCrypto (Workers has no bcrypt), stored as
+  -- "iterations:saltHex:hashHex". See src/lib/adminAuth.js.
+  password_hash TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- The admin session cookie. Same shape and the same reasoning as order_tokens
+-- below: a hash is stored, never the token, and the raw value lives only in
+-- the cookie the browser holds.
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id     INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+  token_hash   TEXT NOT NULL UNIQUE,
+  issued_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at   TEXT NOT NULL,
+  last_used_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_admin ON admin_sessions(admin_id);
+
+-- Customer account login: magic link by email, chosen over a password so
+-- there is nothing of the client's to hash, reset or leak. Two tables, on
+-- purpose, not one — the emailed link and the logged-in session are different
+-- lifetimes wearing the same token pattern. account_tokens is what goes in the
+-- email: short-lived (issued expecting use within minutes) and single-use,
+-- because it exists to prove "this inbox belongs to this brand" exactly once.
+-- account_sessions is what that proof buys: a much longer-lived cookie so the
+-- client is not sent back to their inbox on every page load. This mirrors, and
+-- deliberately does not reuse, order_tokens below — a portal link is mailed
+-- once and stays live for the life of the order; a login link is mailed on
+-- every sign-in and dies the moment it is used or the moment it goes stale,
+-- whichever comes first.
+CREATE TABLE IF NOT EXISTS account_tokens (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL UNIQUE,
+  issued_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at  TEXT NOT NULL,   -- short: minutes, not days
+  used_at     TEXT             -- set the moment the link is redeemed; a used link is dead
+);
+CREATE INDEX IF NOT EXISTS idx_account_tokens_customer ON account_tokens(customer_id);
+
+CREATE TABLE IF NOT EXISTS account_sessions (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  token_hash   TEXT NOT NULL UNIQUE,
+  issued_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at   TEXT NOT NULL,   -- long: weeks, refreshed on use
+  last_used_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_account_sessions_customer ON account_sessions(customer_id);
+
+-- A brand's locked-in custom model per style. "Style" is the same vocabulary
+-- as PER_PRODUCT ids in src/data/pricing.js (catalog | lifestyle | video), not
+-- a new enum invented for this table — so the account dashboard and the order
+-- form agree on what a "style" is without a translation layer between them.
+-- One lock per (customer, style): setting a new one for a style replaces the
+-- old row rather than accumulating a history nobody asked for.
+CREATE TABLE IF NOT EXISTS customer_style_locks (
+  customer_id     INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  style           TEXT NOT NULL,     -- 'catalog' | 'lifestyle' | 'video'
+  custom_model_id INTEGER NOT NULL REFERENCES custom_models(id) ON DELETE CASCADE,
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (customer_id, style)
+);
+
+-- Payment fields on orders. Nullable / defaulted so every existing order row
+-- reads as "unpaid, no provider" without a backfill — accurate, since nothing
+-- on the site has ever taken money yet.
+ALTER TABLE orders ADD COLUMN payment_provider TEXT;          -- 'mollie' | 'stripe' | NULL
+ALTER TABLE orders ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'unpaid';
+  -- unpaid | pending | paid | failed | refunded
+ALTER TABLE orders ADD COLUMN payment_ref TEXT;                -- provider's payment/session id
+ALTER TABLE orders ADD COLUMN paid_at TEXT;
+
+-- One row per payment EVENT, not per order — a webhook can fire more than
+-- once for the same attempt (retries) and a client can retry a failed
+-- payment, so this is a log the order's own payment_status is folded from,
+-- not a second copy of it. idx_payments_external is what makes a webhook
+-- handler idempotent: the same (provider, external_id) arriving twice is a
+-- constraint violation, not a double-counted payment.
+CREATE TABLE IF NOT EXISTS payments (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id     INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  provider     TEXT NOT NULL,        -- 'mollie' | 'stripe'
+  external_id  TEXT NOT NULL,        -- Mollie payment id / Stripe session or intent id
+  status       TEXT NOT NULL,        -- the provider's own status string, stored verbatim
+  amount_cents INTEGER NOT NULL,
+  currency     TEXT NOT NULL DEFAULT 'EUR',
+  raw_payload  TEXT,                 -- the webhook body, kept for reconciliation and disputes
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_external ON payments(provider, external_id);
+
+-- order_events gets an actor, so the admin dashboard (and the client portal
+-- timeline, later) can tell a row the system wrote at order creation from one
+-- Lucas typed by hand after moving an order's status. Defaulted to 'system'
+-- so every existing row reads correctly with no backfill: every order_events
+-- row written before this column existed was, in fact, system-written — the
+-- order-creation insert in functions/api/order.js is the only writer today.
+ALTER TABLE order_events ADD COLUMN actor TEXT NOT NULL DEFAULT 'system';
+  -- 'system' | 'admin'
