@@ -89,13 +89,12 @@
 /nl/order-status/       /o                  301
 
 
-# ── the merged model pages ─────────────────────────────────────────────────
-# /models and /custom-models were one story told twice (AUDIT-TASK-0.md §D).
-# /custom-models won the merge because it already carried the exclusive-face
-# argument (§H·8); the standard roster now lives inside it under the same
-# #standard anchor the old page used, so deep links keep their fragment — the
-# fragment is never sent to the server and survives the 301 untouched.
-/models                 /custom-models      301
-/models/                /custom-models      301
-/nl/models              /nl/custom-models   301
-/nl/models/             /nl/custom-models   301
+# ── the model pages, un-merged (task #270, 2026-07-29) ─────────────────────
+# /models and /custom-models were one story told twice (AUDIT-TASK-0.md §D);
+# §H·8 merged them here with a 301, and that 301 lived at this exact spot for
+# months. Lucas asked the standard-models page back (see AUDIT-TASK-0.md §H·8's
+# own 2026-07-29 addendum) — /models is a real route again, sharing its roster
+# data with /custom-models via src/data/models.js rather than duplicating it,
+# so there is no 301 to write here any more. Left as a comment, not deleted
+# outright, so the next person who greps "models" for a stale redirect finds
+# the reasoning instead of nothing.

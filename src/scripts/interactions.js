@@ -752,9 +752,21 @@ function initCompareDrag() {
     const r = cmp.getBoundingClientRect();
     return Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100));
   };
+  // role="slider" requires aria-valuenow to track the actual value — found
+  // missing entirely in the 2026-07-28 audit (task #263). The static markup
+  // now ships aria-valuenow="50" to match --cmp-pos's own default; this keeps
+  // it in sync for every way the value can change afterwards; a screen reader
+  // user tabbing to the knob and pressing an arrow key must hear the value
+  // that press actually produced, not the value it shipped with.
+  const setValueNow = (cmp, pct) => {
+    const knob = cmp.querySelector('.cmp-knob');
+    if (knob) knob.setAttribute('aria-valuenow', String(Math.round(pct)));
+  };
   const setPos = (cmp, clientX) => {
     cmp.classList.add('cmp-drag');
-    cmp.style.setProperty('--cmp-pos', posOf(cmp, clientX) + '%');
+    const pct = posOf(cmp, clientX);
+    cmp.style.setProperty('--cmp-pos', pct + '%');
+    setValueNow(cmp, pct);
   };
   document.addEventListener('pointerdown', (e) => {
     const t = e.target;
@@ -770,7 +782,9 @@ function initCompareDrag() {
   });
   document.addEventListener('pointermove', (e) => {
     if (!active) return;
-    active.style.setProperty('--cmp-pos', posOf(active, e.clientX) + '%');
+    const pct = posOf(active, e.clientX);
+    active.style.setProperty('--cmp-pos', pct + '%');
+    setValueNow(active, pct);
     e.preventDefault();
   }, { passive: false });
   const end = () => { active = null; };
@@ -786,7 +800,9 @@ function initCompareDrag() {
     if (!cmp) return;
     cmp.classList.add('cmp-drag');
     const cur = parseFloat(getComputedStyle(cmp).getPropertyValue('--cmp-pos')) || 50;
-    cmp.style.setProperty('--cmp-pos', Math.max(0, Math.min(100, cur + (e.key === 'ArrowRight' ? 5 : -5))) + '%');
+    const pct = Math.max(0, Math.min(100, cur + (e.key === 'ArrowRight' ? 5 : -5)));
+    cmp.style.setProperty('--cmp-pos', pct + '%');
+    setValueNow(cmp, pct);
     e.preventDefault();
   });
 }
@@ -864,6 +880,48 @@ function initSourceAsk() {
   });
 }
 
+// Homepage "drop or single product" tabs (task #268) — a standard WAI-ARIA
+// tabs pattern: click or arrow-key between two tt-tab buttons, one tt-panel
+// shown via [hidden] at a time. Delegated at document level like the other
+// click handlers in this file, so it survives ClientRouter navigation without
+// re-querying [data-tier-toggle] on every page load.
+let tierToggleBound = false;
+function initTierToggle() {
+  if (tierToggleBound) return;
+  tierToggleBound = true;
+  const select = (toggle, tab) => {
+    toggle.querySelectorAll('.tt-tab').forEach((btn) => {
+      const on = btn === tab;
+      btn.setAttribute('aria-selected', String(on));
+      btn.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(btn.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !on;
+    });
+  };
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    const tab = t.closest('.tt-tab');
+    if (!tab) return;
+    const toggle = tab.closest('[data-tier-toggle]');
+    if (!toggle) return;
+    select(toggle, tab);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const t = e.target;
+    if (!(t instanceof Element) || !t.classList.contains('tt-tab')) return;
+    const toggle = t.closest('[data-tier-toggle]');
+    if (!toggle) return;
+    const tabs = Array.from(toggle.querySelectorAll('.tt-tab'));
+    const i = tabs.indexOf(t);
+    const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+    select(toggle, next);
+    next.focus();
+    e.preventDefault();
+  });
+}
+
 export function init() {
   initReveal();
   initSplitLines();
@@ -871,6 +929,7 @@ export function init() {
   initCompareIdle();
   initTracking();
   initSourceAsk();
+  initTierToggle();
   initThankYou();
   // Magnetic button-follow intentionally removed — CTAs stay put under the cursor.
   initHeroParallax();

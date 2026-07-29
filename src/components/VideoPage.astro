@@ -178,7 +178,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
   <div class="fade"></div>
   <div class="hero-editorial-content container">
-    <h1 class="display" style="font-size:clamp(2.8rem,6.5vw,5.4rem)" set:html={c.h1} />
+    <h1 class="display vid-h1" style="font-size:clamp(2.8rem,6.5vw,5.4rem)" set:html={c.h1} />
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
     <div class="flex" style="margin-top:1.8rem">
       <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -190,8 +190,8 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       {c.trust.map(([strong, rest]) => (
         <span class="trust-item"><strong>{strong}</strong> {rest}</span>
       ))}
-      <span class="trust-item"><strong>{turnaround('unattended', lang)}</strong></span>
-      <span class="trust-item"><strong>{c.reviewNote}</strong></span>
+      <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
+      <span class="trust-item tf-verify"><strong>{c.reviewNote}</strong></span>
     </div>
     <p class="queue-note">{c.queueNote}</p>
   </div>
@@ -307,6 +307,11 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 </section>
 
 <style>
+  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
+     --font-editorial comment. Same emphasis-word treatment as the other
+     hero H1s. */
+  .vid-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+
   /* The queue disclosure. Section 13 requires the "no fixed delivery date"
      half of the promise to be visible, not hidden — so it is set at body
      weight directly under the trust row rather than as footnote-sized grey. */

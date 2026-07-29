@@ -1,0 +1,32 @@
+---
+// VISUAILS — de 404 van de site. Toegevoegd 2026-07-28 (audit taak #263,
+// live-site steekproef, bevinding 7 — de ernstigste van de hele lijst).
+//
+// Zie 404.astro (Engels) voor de volledige uitleg. Kort: Cloudflare Pages
+// serveert zonder een eigen 404.html de homepage (200, geen fout) voor elk
+// pad dat nergens op matcht — bevestigd live op visuails.com. Astro bouwt een
+// pagina die exact 404.astro heet altijd naar /404.html, ongeacht
+// trailingSlash/build.format, precies omdat hosts naar die bestandsnaam
+// zoeken. Deze /nl/404.astro doet hetzelfde voor alles onder /nl — Cloudflare
+// Pages serveert per map de dichtstbijzijnde 404.html.
+import Layout from '../../layouts/Layout.astro';
+
+const description =
+  'Deze pagina bestaat niet. De link is misschien verouderd, of het adres is verkeerd getypt — ga terug naar de homepage of bekijk Catalog, Lifestyle en Video.';
+---
+
+<Layout title="Pagina niet gevonden — VISUAILS" description={description} noindex>
+  <section class="page-hero"><div class="container" style="max-width:640px;text-align:center;margin-inline:auto">
+    <span class="eyebrow-page">404</span>
+    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Deze pagina bestaat niet.</h1>
+    <p class="lead" style="margin:1.2rem auto 0">De link is misschien verouderd, of het adres is verkeerd getypt. Hier kun je verder.</p>
+    <div class="flex" style="justify-content:center;margin-top:2rem">
+      <a href="/nl" class="btn btn-primary btn-lg">Terug naar home</a>
+      <a href="/nl/start" class="btn btn-ghost btn-lg">Start een aanvraag</a>
+      <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20volgde%20een%20link%20die%20niet%20werkte." class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
+        Meld wat er stuk is
+      </a>
+    </div>
+  </div></section>
+</Layout>

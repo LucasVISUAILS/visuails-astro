@@ -19,6 +19,14 @@ import '@fontsource/archivo/800.css';
 import '@fontsource/archivo/900.css';
 import '@fontsource/archivo/400-italic.css';
 import '@fontsource/archivo/700-italic.css';
+// Bodoni Moda italic (task #271b) — same self-hosting reason as Archivo
+// above: AVG/GDPR-clean, no third-party font request. Two weights only —
+// 500 for quote-weight prose, 700 for the heavier heading-emphasis word —
+// because the whole point of this accent is that it appears in a few
+// specific places (see global.css's --font-editorial comment), not as a
+// general-purpose family with a full weight range to pick from.
+import '@fontsource/bodoni-moda/500-italic.css';
+import '@fontsource/bodoni-moda/700-italic.css';
 import { ui, dropHrefs, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 
 interface Props {
@@ -196,6 +204,15 @@ const orgJsonLd = {
          Pinned at the halfway mark instead: a control that cannot be moved
          should not spend all day advertising that it moves. */
       .cmp .cmp-after { animation: none !important; clip-path: inset(0 0 0 50%) !important; }
+
+      /* Homepage "drop or single product" tabs (task #268) — interactions.js
+         is what shows/hides the two tt-panel elements, so with no JS the
+         second one would stay server-rendered `hidden` forever and that
+         content would simply not exist for a no-JS visitor. Un-hide both and
+         disable the now-inert tab buttons rather than leave one path silent. */
+      .tt-tab { pointer-events: none; }
+      .tt-panel[hidden] { display: grid !important; }
+      .tt-panel + .tt-panel { margin-top: 1.4rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
     </style>
   </noscript>
   <ClientRouter />
@@ -320,8 +337,21 @@ const orgJsonLd = {
             had to already know the URL. A plain text link, not a second
             button: nav_start above is the one door into a NEW order and must
             keep all the visual weight; this is for someone who already has
-            one. */}
-        <a href={lp('/account')} class="nav-account-link" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
+            one.
+
+            href is the literal "/account", NOT lp('/account') — a bug found
+            and fixed 2026-07-28. /account is one Cloudflare Pages Function
+            that reads its own language from the customer's data (their most
+            recent order), the same "no /nl/o" choice portal.js's header
+            explains for the client portal; there never was a Dutch route to
+            localize to. lp() ran anyway and sent every /nl/* visitor's click
+            to /nl/account, which no route answers — a site-wide 404 on the
+            login link for the entire Dutch site, live since task #259's nav
+            entry point shipped. isActive('/account') is unaffected: it
+            already compares against `base` (language-stripped), so aria-current
+            still correctly marks this link active from /nl/account's 404 or
+            not. */}
+        <a href="/account" class="nav-account-link" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
         <div class="lang-switch" role="group" aria-label={t('lang_label')}>
           {switchLangs.map((l) => (
             <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
@@ -355,7 +385,11 @@ const orgJsonLd = {
         <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{t('mob_chat')}
       </a>
       <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
-      <a href={lp('/account')} class="mobile-account-link">{t('nav_account')}</a>
+      {/* Literal "/account", not lp('/account') — see the desktop nav link's
+          comment above for why: /account has no /nl/ counterpart to localize
+          to, and lp() sending Dutch visitors to a 404 was live from task
+          #259 until this fix. */}
+      <a href="/account" class="mobile-account-link">{t('nav_account')}</a>
       <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
         {switchLangs.map((l) => (
           <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>

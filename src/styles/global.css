@@ -9,7 +9,19 @@
    ============================================================ */
 
 /* Archivo is self-hosted via Fontsource (imported in Layout.astro) —
-   weights 400–900 + italic 400/700, font-display: swap. */
+   weights 400–900 + italic 400/700, font-display: swap.
+
+   Bodoni Moda italic joins it the same way (task #271b, 2026-07-29, Lucas's
+   own request — three font-pairing references, "editorial texten... fonts
+   moeten mooi op elkaar aansluiten"): a single high-contrast serif italic
+   used ONLY for the emphasis word inside a display heading and a small set
+   of quote-like moments, on the homepage and the service pages he asked for
+   (custom-models, models, catalog, lifestyle, video). It is scoped per
+   component rather than added to the global `h1 em, h2 em, .display em`
+   rule below, on purpose: that rule fires on every page site-wide (pricing,
+   faq, about, ...), and Lucas confirmed the smaller scope, not "overal waar
+   passend". Widening it later is a one-line change in that shared rule —
+   see each component's own <style> block for its `em`/quote override. */
 
 :root {
   /* ---- ink & paper ------------------------------------------------------
@@ -73,6 +85,29 @@
   --signal-ink:  oklch(0.45 0.075 215); /* #0F5F6F  system text — 6.63:1    */
   --warn:        oklch(0.58 0.115 45);  /* #B1623D  fill / border / ≥18px   */
   --warn-ink:    oklch(0.47 0.115 40);  /* #8F4023  capacity text — 6.59:1  */
+
+  /* ---- Verify / Flag — the SAME two colours, aliased for marketing use ----
+     Task #271c, 2026-07-29, Lucas's own request: a 4-colour scheme (ink,
+     paper, plus two accents), presented as a mockup ("Registration marks" —
+     the calibration strips a printer checks a proof against before a run
+     ships) and approved at the lightest of the four dosages shown ("C —
+     Gekaderd": colour as a rule/underline under a specific fact, never as a
+     fill that competes with the photography).
+     This is a DELIBERATE, SCOPED amendment to the rule immediately above —
+     "--signal and --warn... never appear on a marketing page" — not a
+     reversal of it. No new hues were invented: Verify IS --signal and Flag
+     IS --warn, aliased under names that carry the story (Verify = "a human
+     checked this", Flag = "this is time-bound") rather than the system's
+     internal ones. The underlying tokens, their scoping to /start/the portal,
+     and every contrast number above are untouched — widening WHERE they may
+     appear does not change WHAT they are. Live on: the homepage and the
+     service pages (custom-models, models, catalog, lifestyle, video) —
+     wherever the page already states a review claim or a delivery window in
+     its own copy, never invented for a page that doesn't make that claim. */
+  --verify:      var(--signal);
+  --verify-ink:  var(--signal-ink);
+  --flag:        var(--warn);
+  --flag-ink:    var(--warn-ink);
 
   /* There is no success green. The previous --success (#63C79A) is gone and
      every checklist tick is --ink-900 on paper. A green tick is a SaaS
@@ -145,6 +180,11 @@
 
   --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* The editorial accent (task #271b) — high-contrast serif italic, used
+     nowhere near body text. Georgia/Times New Roman are the fallback stack
+     so a slow font load still reads as "a serif", not as Archivo pretending
+     to be italic. */
+  --font-editorial: "Bodoni Moda", Georgia, "Times New Roman", serif;
 
   --t-hero:  clamp(3.2rem, 7.4vw, 6rem);
   --t-h1:    clamp(2.5rem, 5.2vw, 4.2rem);
@@ -581,6 +621,16 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .trust-row { display: flex; flex-wrap: wrap; gap: 1.1rem 2.2rem; align-items: baseline; }
 .trust-item { display: flex; align-items: baseline; gap: .5rem; color: var(--ink-3); font-size: .9rem; }
 .trust-item strong { font-family: var(--font-display); font-size: 1.3rem; font-weight: 400; color: var(--ink); }
+
+/* Task #271c, 2026-07-29 — "C, Gekaderd": colour as a rule under one fact,
+   never as a fill. Only applied to a .trust-item whose own claim is a review
+   (tf-verify) or a delivery window (tf-flag) — added per-page only where the
+   page's copy already makes that claim, never decorative. The rule sits under
+   the number/word (strong); the small label stays --ink-3 as normal. */
+.trust-item.tf-verify strong,
+.trust-item.tf-flag strong { border-bottom: 3px solid; padding-bottom: .15rem; }
+.trust-item.tf-verify strong { color: var(--verify-ink); border-color: var(--verify); }
+.trust-item.tf-flag strong { color: var(--flag-ink); border-color: var(--flag); }
 
 .page-hero { padding-top: clamp(3rem, 6vw, 5rem); padding-bottom: clamp(2rem, 4vw, 3rem); position: relative; }
 .page-hero .display { max-width: 22ch; }
@@ -1042,6 +1092,26 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .sp-cap span { font-size: .8rem; color: var(--ink-3); white-space: nowrap; }
 @media (max-width: 900px) { .sp-a, .sp-b, .sp-c, .sp-d { grid-column: 1 / 13; grid-row: auto; } .sp-a .sp-media { aspect-ratio: 4/3; } }
 
+/* Task #268 — one line of "why this exists" under each spread tile, shown on
+   hover or keyboard focus. A dark scrim from the bottom edge only, not a
+   full-tile overlay, so the image stays the point and the copy reads as a
+   caption rather than a takeover. */
+.sp-reveal { position: absolute; inset: auto 0 0 0; padding: 1.1rem clamp(.9rem, 2vw, 1.3rem) .9rem;
+  background: linear-gradient(180deg, transparent, oklch(0.16 0.006 75 / 0.82) 55%);
+  color: var(--paper); font-size: .84rem; line-height: 1.45;
+  transform: translateY(100%); opacity: 0;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease); }
+.sp-item:hover .sp-reveal, .sp-item:focus-visible .sp-reveal { transform: translateY(0); opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .sp-media img { transition: none; }
+  .sp-item:hover .sp-media img { transform: none; }
+  /* No bespoke transition here: the site-wide reduced-motion rule above
+     already clamps every transition-duration to .001ms. Only the starting
+     position needs to change, so the reveal fades in near-instantly on its
+     own token-based transition instead of sliding. */
+  .sp-reveal { transform: translateY(0); }
+}
+
 
 /* Process — a true sequence: four outline numerals, bold titles. */
 .process { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1.6rem, 3vw, 2.6rem); margin-top: clamp(2rem, 4vw, 3rem); }
@@ -1348,3 +1418,23 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .ts-file.is-done .ts-file-msg { color: var(--signal-ink); }
 .ts-file.is-failed { border-color: var(--warn); }
 .ts-file.is-failed .ts-file-msg { color: var(--warn-ink); }
+
+/* ============================================================
+   Standard model roster — square plates, name and traits below the frame.
+   Ten faces at a size you can actually judge, not ten 60px thumbnails.
+   Moved here from BrandModelPage.astro's own scoped <style> (task #268,
+   2026-07-29): /models now renders the same grid at full roster size, and
+   /custom-models renders a four-model taste of it under #standard, so the
+   rules need to reach both instead of living inside one component.
+   ============================================================ */
+.bm-roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: clamp(.8rem, 1.8vw, 1.4rem); margin-top: clamp(1.8rem, 4vw, 2.8rem); }
+.bm-model { margin: 0; border: 1px solid var(--line); }
+.bm-model img { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+.bm-model figcaption { display: flex; flex-direction: column; gap: .25rem; padding: .85rem 1rem 1rem; border-top: 1px solid var(--line); }
+.bm-model-name { font-family: var(--font-display); font-weight: 900; font-size: 1rem; letter-spacing: -0.01em; color: var(--ink); }
+.bm-model-traits { font-size: .78rem; color: var(--ink-3); }
+.bm-model-choose { border-color: var(--line-strong); display: grid; }
+.bm-choose-inner { display: flex; flex-direction: column; gap: .55rem; padding: 1.2rem 1rem; justify-content: center; }
+.bm-choose-inner h3 { font-size: 1rem; margin: 0; }
+.bm-choose-inner p { font-size: .85rem; color: var(--ink-3); margin: 0; }
+.bm-lib-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; }

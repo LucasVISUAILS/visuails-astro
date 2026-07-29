@@ -65,7 +65,10 @@ const SHOTS = {
 const COPY = {
   en: {
     eyebrow: 'Catalog',
-    h1: 'Clean, consistent product visuals — built to scale.',
+    // <em> added task #271b (Lucas's own request, editorial accent) — same
+    // closing-word-emphasis convention already used on the other hero H1s
+    // (homepage's "visualized.", custom-models' "Only yours.").
+    h1: 'Clean, consistent product visuals — <em>built to scale.</em>',
     lead: `One product, one price: <strong>${item.price}</strong> for a full 4-photo set — front, back, detail and one on-model shot.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
     // read the tier label verbatim ("Order individual products"), which put the
@@ -175,7 +178,7 @@ const COPY = {
   },
   nl: {
     eyebrow: 'Catalog',
-    h1: 'Strakke, consistente productvisuals — gebouwd om te schalen.',
+    h1: 'Strakke, consistente productvisuals — <em>gebouwd om te schalen.</em>',
     lead: `Eén product, één prijs: <strong>${item.price}</strong> voor een complete set van 4 foto’s — voorkant, achterkant, detail en één on-model shot.`,
     ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk prijzen',
@@ -269,7 +272,7 @@ const shots = SHOTS[lang];
 <section class="page-hero">
   <div class="container two-col" style="align-items:center">
     <div class="reveal pending">
-      <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">{c.h1}</h1>
+      <h1 class="display cat-h1" style="font-size:clamp(2.4rem,5vw,4rem)" set:html={c.h1} />
       <p class="lead" style="margin-top:1.2rem" set:html={c.lead} />
       <div class="flex" style="margin-top:1.8rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -282,7 +285,7 @@ const shots = SHOTS[lang];
         {c.trust.map(([strong, rest]) => (
           <span class="trust-item"><strong>{strong}</strong> {rest}</span>
         ))}
-        <span class="trust-item"><strong>{turnaround('unattended', lang)}</strong></span>
+        <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
       </div>
       <p class="queue-note">{c.queueNote}</p>
     </div>
@@ -478,6 +481,11 @@ const shots = SHOTS[lang];
 </section>
 
 <style>
+  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
+     --font-editorial comment. Same closing-word treatment as the other hero
+     H1s on the homepage and the model pages. */
+  .cat-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+
   /* The queue disclosure. Section 13 requires the "no fixed delivery date"
      half of the promise to be visible, not hidden — so it is set at body
      weight directly under the trust row rather than as footnote-sized grey. */

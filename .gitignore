@@ -2,3 +2,9 @@ node_modules/
 dist/
 .astro/
 .DS_Store
+
+# Nooit een secret hardcoden en committen — task #271d, 2026-07-29, na een
+# geblokkeerde push door GitHub's push protection (Stripe test key in
+# stripe-local-test.js). Het script leest de sleutel nu uit een env var, maar
+# dit bestand blijft sowieso genegeerd als extra vangnet.
+stripe-local-test.js

@@ -71,12 +71,12 @@ export async function adminGet(context) {
   if (!env?.DB) return html(page({ title: 'Admin', body: errorBody('The database is not reachable. Check the DB binding.') }), 503);
 
   if (path === '/admin/login') {
-    const admin = await currentAdmin(env, request);
+    const admin = await currentAdmin(context);
     if (admin) return seeOther('/admin');
     return html(page({ title: 'Sign in', body: loginBody() }));
   }
 
-  const admin = await currentAdmin(env, request);
+  const admin = await currentAdmin(context);
   if (!admin) return seeOther('/admin/login');
 
   if (path === '/admin') {
@@ -98,7 +98,7 @@ export async function adminPost(context) {
 
   // Everything past this point changes state and requires both a live session
   // AND an Origin that matches this site — see the file header.
-  const admin = await currentAdmin(env, request);
+  const admin = await currentAdmin(context);
   if (!admin) return seeOther('/admin/login');
   if (!originIsSelf(request)) return html(page({ title: 'Admin', body: errorBody('Request origin did not match. Try again from the dashboard itself.') }), 403);
 
@@ -216,7 +216,8 @@ async function handleStatusUpdate({ request, env }, orderId) {
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function currentAdmin(env, request) {
+async function currentAdmin(context) {
+  const { env, request, waitUntil } = context;
   const token = readSessionCookie(request);
   if (!token) return null;
   const hash = await hashToken(token);
@@ -227,10 +228,24 @@ async function currentAdmin(env, request) {
   ).bind(hash).first();
   if (!row) return null;
   if (Date.parse(normalizeStamp(row.expires_at)) <= Date.now()) return null;
-  // Best-effort touch; a failed write here should not cost the request a 500.
-  env.DB.prepare('UPDATE admin_sessions SET last_used_at = datetime(\'now\') WHERE id = ?1')
-    .bind(row.session_id).run().catch(() => {});
+  // Best-effort touch; a failed write here should not cost the request a 500,
+  // hence the .catch() swallowing it. That alone was not enough: an unawaited
+  // promise with nowhere else holding it can be dropped mid-flight the moment
+  // this isolate finishes handing back the response — Workers make no promise
+  // that a request handler's side effects outlive the response it returns.
+  // portal.js's identical touch (bumpUse, in its own currentAdmin-equivalent
+  // path) has always gone through `later(context, promise)` for exactly this
+  // reason; this one didn't, found in the 2026-07-28 audit (task #263). Same
+  // fix, same reasoning: register it with waitUntil so the runtime keeps the
+  // isolate alive long enough for the UPDATE to actually land.
+  later(waitUntil, env.DB.prepare('UPDATE admin_sessions SET last_used_at = datetime(\'now\') WHERE id = ?1')
+    .bind(row.session_id).run().catch(() => {}));
   return row;
+}
+
+/** Fire-and-forget, when the runtime offers it. Mirrors portal.js's later(). */
+function later(waitUntil, promise) {
+  if (typeof waitUntil === 'function') waitUntil(promise);
 }
 
 /**

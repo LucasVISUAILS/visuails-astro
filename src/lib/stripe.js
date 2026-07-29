@@ -39,6 +39,18 @@ const STRIPE_API = 'https://api.stripe.com/v1';
 export async function createTestSampleCheckoutSession(env, { ref, email, lang, successUrl, cancelUrl }) {
   if (!env.STRIPE_SECRET_KEY) throw new Error('stripe: STRIPE_SECRET_KEY not configured');
 
+  // TEMPORARY DIAGNOSTIC — Stripe support asked which egress IP this
+  // Worker's outbound requests use, so their networking team can search for
+  // it on their side. This hits a plain IP-echo service (nothing to do with
+  // Stripe) right before the real calls, so the logged IP is the one used
+  // for the requests timestamped right after it in the same log.
+  try {
+    const ipRes = await fetch('https://api.ipify.org?format=json');
+    console.log('[egress-ip]', await ipRes.text());
+  } catch (e) {
+    console.log('[egress-ip] threw —', e && e.message ? e.message : String(e));
+  }
+
   // TEMPORARY DIAGNOSTIC — a bare GET that needs nothing but the key, run
   // before the real call. Every real HTTP response, success or error, carries
   // a request-id header; if THIS also comes back with no headers and an

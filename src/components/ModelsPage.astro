@@ -1,0 +1,241 @@
+---
+// VISUAILS — /models, "The standard library".
+//
+// One component for both languages, same reason as every other paired page:
+// the brief requires EN and NL to change together, and one source file is the
+// only way to guarantee that rather than merely intend it.
+//
+// WHY THIS FILE EXISTS AGAIN. /models used to be its own page, then
+// AUDIT-TASK-0.md §H·8 folded it into /custom-models as a #standard block and
+// 301'd this URL there (task, pre-#268) — the standard roster and the
+// exclusive Brand Model were "one story told twice" (§D) and /custom-models
+// told it better. That reasoning still holds for the STORY. It stopped
+// holding for the PAGE: /custom-models' hero, H1 and eyebrow all argue the
+// exclusive case, so a visitor who only wants the ten shared models has to
+// read past an upsell to reach them, and the only way back to them is a
+// fragment link nobody types from a search result. Lucas asked the entry
+// point back (task #268/#270, 2026-07-29 — see §H·8's own addendum for the
+// full account). This page is that entry point.
+//
+// NOT A DUPLICATE OF /custom-models#standard. Two pages indexing the same ten
+// portraits under the same argument would be exactly the duplicate-content
+// problem §D named. So the roster itself moved to src/data/models.js as a
+// shared source (both pages import ROSTER; neither types a name or a photo
+// path twice), and the two pages now argue different things: /custom-models
+// makes the case FOR paying once for an exclusive face; this page makes the
+// case that you do not have to — the ten here are already paid for, in every
+// drop, by everyone. /custom-models keeps a four-model taste of the roster
+// under #standard with a link here for the rest; this page closes with a link
+// the other way, to /custom-models, for the visitor who reads all ten and
+// wants one nobody else can have.
+//
+// EVERY EURO ON THIS PAGE, IF ANY EVER LANDS HERE, COMES FROM
+// src/data/pricing.js. As shipped this page states that the roster carries no
+// separate fee rather than stating a number — Section 13 of the brief keeps
+// per-product tier pricing off pages that are not /pricing, /catalog,
+// /lifestyle or /video, and this is not one of those four.
+import { localizedPath } from '../i18n/ui.js';
+import { ROSTER, TRAITS } from '../data/models.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const COPY = {
+  en: {
+    eyebrow: 'The standard library',
+    h1a: 'Ten faces.',
+    h1b: 'Already included.',
+    lead: 'Shared across every brand we work with, and included in every drop at no extra cost. Pick one yourself, or tell us the product and the customer and we match one for you.',
+    ctaPrimary: 'Start a drop',
+    ctaWa: 'Discuss it on WhatsApp',
+    waText: 'Hi%20VISUAILS%2C%20I%27d%20like%20to%20ask%20about%20the%20standard%20models.',
+    heroAlt: 'A VISUAILS standard model',
+    trust: [
+      ['No fee', 'per model, ever'],
+      ['Ten faces', 'shared across brands'],
+      ['Swap freely', 'drop to drop'],
+    ],
+
+    rosterMeta: '( All ten )',
+    rosterH: 'The full roster',
+    rosterSub: 'At a size you can actually judge a face at — square plates, not sixty-pixel thumbnails.',
+    modelAlt: 'a VISUAILS standard model',
+    chooseH: 'Let us match one',
+    chooseBody: 'Tell us the product and the customer when you start a drop, and we pick the model that fits — then keep using it.',
+
+    incMeta: '( What it costs )',
+    incH: 'Included, not upsold.',
+    incBody: 'Every drop already includes a model from this roster. There is no per-model fee and no upgrade to unlock one — the price on /pricing is the whole price.',
+    incCta: 'See the full price ladder',
+
+    doorH: 'Want a face that’s only yours?',
+    doorBody: 'A Brand Model is designed once, exclusively for your brand, and never appears anywhere else — the ten above are shared; that one would not be.',
+    doorCta: 'Explore Your Brand Model',
+
+    ctaH1: 'Pick a face,',
+    ctaEm: 'start a drop.',
+    ctaStart: 'Start a drop',
+    ctaPricing: 'See pricing',
+    ctaWaShort: 'WhatsApp',
+  },
+  nl: {
+    eyebrow: 'De standaardbibliotheek',
+    h1a: 'Tien gezichten.',
+    h1b: 'Al inbegrepen.',
+    lead: 'Gedeeld over elk merk waarmee we werken, en inbegrepen in elke drop zonder extra kosten. Kies er zelf een, of vertel ons het product en de klant en wij matchen er een voor je.',
+    ctaPrimary: 'Start een drop',
+    ctaWa: 'Bespreek het op WhatsApp',
+    waText: 'Hoi%20VISUAILS%2C%20ik%20wil%20graag%20iets%20vragen%20over%20de%20standaardmodellen.',
+    heroAlt: 'Een VISUAILS-standaardmodel',
+    trust: [
+      ['Geen kosten', 'per model, nooit'],
+      ['Tien gezichten', 'gedeeld over merken'],
+      ['Vrij wisselen', 'van drop tot drop'],
+    ],
+
+    rosterMeta: '( Alle tien )',
+    rosterH: 'De volledige bibliotheek',
+    rosterSub: 'Op een formaat waarop je een gezicht echt kunt beoordelen — vierkante platen, geen thumbnails van zestig pixels.',
+    modelAlt: 'een VISUAILS-standaardmodel',
+    chooseH: 'Laat ons matchen',
+    chooseBody: 'Vertel ons het product en de klant wanneer je een drop start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
+
+    incMeta: '( Wat het kost )',
+    incH: 'Inbegrepen, niet aangeboden als upsell.',
+    incBody: 'Elke drop bevat al een model uit deze bibliotheek. Er is geen kost per model en geen upgrade om er een vrij te spelen — de prijs op /pricing is de hele prijs.',
+    incCta: 'Bekijk de volledige prijsladder',
+
+    doorH: 'Wil je een gezicht dat alleen van jou is?',
+    doorBody: 'Een merkmodel wordt één keer ontworpen, exclusief voor jouw merk, en verschijnt nergens anders — de tien hierboven zijn gedeeld; dat model zou dat niet zijn.',
+    doorCta: 'Ontdek jouw merkmodel',
+
+    ctaH1: 'Kies een gezicht,',
+    ctaEm: 'start een drop.',
+    ctaStart: 'Start een drop',
+    ctaPricing: 'Bekijk prijzen',
+    ctaWaShort: 'WhatsApp',
+  },
+};
+
+const c = COPY[lang];
+const traits = TRAITS[lang];
+const wa = `https://wa.me/31625436130?text=${c.waText}`;
+---
+
+<!-- HERO -->
+<section class="page-hero"><div class="container two-col mp-hero">
+  <div>
+    <p class="eyebrow-page">{c.eyebrow}</p>
+    <h1 class="display mp-h1">{c.h1a}<br /><em>{c.h1b}</em></h1>
+    <p class="lead mp-lead">{c.lead}</p>
+    <div class="flex mp-actions">
+      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.ctaWa}
+      </a>
+    </div>
+    <div class="trust-row mp-trust">
+      {c.trust.map((t) => (
+        <span class="trust-item"><strong>{t[0]}</strong> {t[1]}</span>
+      ))}
+    </div>
+  </div>
+  <div class="photo-split-media"><img src="/img/model-01.webp" alt={c.heroAlt} width="900" height="1125" fetchpriority="high" /></div>
+</div></section>
+
+<!-- THE FULL ROSTER -->
+<section class="section-tight"><div class="container">
+  <div class="ed-head">
+    <span class="ed-meta">{c.rosterMeta}</span>
+    <div>
+      <h2>{c.rosterH}</h2>
+      <p class="ed-sub">{c.rosterSub}</p>
+    </div>
+  </div>
+
+  <div class="bm-roster reveal-group">
+    {ROSTER.map((m) => (
+      <figure class="bm-model reveal pending">
+        <img src={m.photo} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" width="600" height="750" />
+        <figcaption>
+          <span class="bm-model-name">{m.name}</span>
+          <span class="bm-model-traits">{m.traits.map((t) => traits[t]).join(' · ')}</span>
+        </figcaption>
+      </figure>
+    ))}
+    <div class="bm-model bm-model-choose reveal pending">
+      <div class="bm-choose-inner">
+        <h3>{c.chooseH}</h3>
+        <p>{c.chooseBody}</p>
+        <a href={lp('/start')} class="link-arrow">{c.ctaPrimary}
+          <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- INCLUDED, NOT UPSOLD — and the door back to the exclusive story. Two
+     blocks, not one, so the section's shape differs from the roster grid
+     above: prose left, a single card right, rather than another repeat. -->
+<section class="section-tight"><div class="container">
+  <div class="ed-head">
+    <span class="ed-meta">{c.incMeta}</span>
+    <div>
+      <h2>{c.incH}</h2>
+    </div>
+  </div>
+  <div class="mp-split">
+    <div class="mp-inc reveal pending">
+      <p>{c.incBody}</p>
+      <a href={lp('/pricing')} class="link-arrow">{c.incCta}
+        <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+    <div class="card mp-door reveal pending">
+      <h3>{c.doorH}</h3>
+      <p>{c.doorBody}</p>
+      <a href={lp('/custom-models')} class="link-arrow">{c.doorCta}
+        <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </div>
+</div></section>
+
+<!-- CLOSING -->
+<section class="section-tight"><div class="container">
+  <div class="cta-band reveal pending">
+    <h2 class="display mp-cta-h">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
+    <div class="flex mp-cta-actions">
+      <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
+      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPricing}</a>
+      <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.ctaWaShort}
+      </a>
+    </div>
+  </div>
+</div></section>
+
+<style>
+  /* Hard edges, hairlines — same discipline as BrandModelPage. No radius. */
+  .mp-hero { align-items: center; }
+  .mp-h1 { font-size: clamp(2.4rem, 5vw, 4rem); max-width: 16ch; }
+  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
+     --font-editorial comment. Same scoped treatment as the h1 em word on
+     /custom-models and the homepage. */
+  .mp-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+  .mp-lead { margin-top: 1.2rem; }
+  .mp-actions { margin-top: 1.8rem; }
+  .mp-trust { margin-top: 2.4rem; }
+
+  .mp-split { display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(1.4rem, 3vw, 2.4rem); align-items: start; margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  .mp-inc p { color: var(--ink-2); font-size: 1.02rem; line-height: 1.7; margin: 0 0 1rem; }
+  .mp-door { border-color: var(--line-strong); }
+  .mp-door h3 { font-size: 1.05rem; margin: 0 0 .5rem; }
+  .mp-door p { color: var(--ink-3); font-size: .92rem; margin: 0 0 1rem; }
+  @media (max-width: 720px) { .mp-split { grid-template-columns: 1fr; } }
+
+  .mp-cta-h { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+  .mp-cta-actions { justify-content: center; margin-top: 2rem; }
+</style>

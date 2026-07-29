@@ -118,6 +118,35 @@ const COPY = {
       ['Lifestyle', 'Your feed and your ads'],
       ['Video', 'Reels, TikTok, paid'],
     ],
+    // Hover/focus-reveal copy for the same four tiles — task #268. One line
+    // each, saying why that visual exists rather than just naming it, so the
+    // section demonstrates the range instead of only listing it.
+    spreadReveal: [
+      'Every drop ships with on-model shots included — no separate shoot to book, no model schedule to work around.',
+      'Ready for your shop and marketplaces as delivered — no further editing needed.',
+      'Built for your feed and your ads — same house style, different format.',
+      'Reels, TikTok and paid video, cut from the same set — no extra shoot.',
+    ],
+
+    // DROP OR SINGLE PRODUCT — new, task #268. Section 13 keeps the
+    // per-product tier's own price ladder off the homepage (see the file
+    // header, rule 1); this panel names what that tier gets in words and
+    // sends its one sanctioned price — the €0.99 sample, already this page's
+    // own CTA — to /pricing for the rest, rather than printing catalog /
+    // lifestyle / video prices here.
+    compareH: ['One drop,', 'or one product first.'],
+    compareTabsLabel: 'Drop or single product',
+    compareRowLabels: ['What you get', 'Who it’s for', 'Turnaround', 'From'],
+    compareDrop: [
+      'The whole collection in one house style — a catalog set and lifestyle carousel for every product, delivered together.',
+      'Brands launching by season or collection who want everything to look like one story.',
+    ],
+    compareSingle: [
+      'One product at a time — no collection to plan, no launch date to hit.',
+      'Brands that need something quickly, or want to see the result before booking a whole drop.',
+    ],
+    compareSingleNote: 'as a verification sample on your own product.',
+    comparePricingLink: 'See full per-product pricing',
 
     // THE OFFER — replaces the ledger accordion (AUDIT §B7).
     offerH: ['One drop.', 'One deadline. One invoice.'],
@@ -192,11 +221,32 @@ const COPY = {
     lmButton: 'Send me the checklist',
     lmFine: 'One email with the checklist and our best before/afters. No spam, unsubscribe anytime.',
 
-    // MODELS — promoted and rewritten (AUDIT §B13).
-    modelsAlt: 'A VISUAILS brand model, styled consistently across a collection',
-    modelsH: ['One face. Every drop.', 'Only yours.'],
-    modelsLead: 'The same model across the whole collection — or a face designed once for your brand and booked by nobody else, ever. Set it up once and every drop after is just a folder away.',
-    modelsCta: 'See Your Brand Model',
+    // MODELS — was one photo-split arguing only the Brand Model case, with a
+    // lead paragraph that tried to also describe the shared roster in the
+    // same breath and the same single link. Task #271, 2026-07-29: now that
+    // /models is a real page again (AUDIT-TASK-0.md §H·8's own addendum), two
+    // doors stated plainly beat one door doing two jobs.
+    doorMeta: '( Every drop needs one )',
+    doorH: 'Standard models, or your own.',
+    doorSub: 'Every drop already includes a model. Whether it’s shared or exclusively yours is the only decision left.',
+    doors: [
+      {
+        h: 'The standard library',
+        body: 'Ten models, shared across brands, included in every drop at no extra cost. Pick one, or let us match one to your product.',
+        cta: 'See the models',
+        href: '/models',
+        img: '/img/model-01.webp',
+        alt: 'A VISUAILS standard model',
+      },
+      {
+        h: 'Your Brand Model',
+        body: 'One face, designed once for your brand and booked by nobody else, ever. Set it up once and every drop after is just a folder away.',
+        cta: 'See Your Brand Model',
+        href: '/custom-models',
+        img: '/img/custom-models-03.webp',
+        alt: 'A VISUAILS brand model portrait',
+      },
+    ],
 
     // WHAT IS INSIDE A DROP — the protected heading (AUDIT §B5) over the
     // channel grid, demoted below the models section and reframed as the
@@ -310,6 +360,26 @@ const COPY = {
       ['Lifestyle', 'Je feed en je ads'],
       ['Video', 'Reels, TikTok, betaald'],
     ],
+    spreadReveal: [
+      'Elke drop komt inclusief on-model beelden — geen losse shoot te boeken, geen modelplanning.',
+      'Direct te gebruiken op je shop en marktplaatsen, zoals geleverd — geen verdere bewerking nodig.',
+      'Gebouwd voor je feed en je advertenties — dezelfde huisstijl, ander formaat.',
+      'Reels, TikTok en betaalde video, uit dezelfde set — geen extra opname.',
+    ],
+
+    compareH: ['Eén drop,', 'of eerst één product.'],
+    compareTabsLabel: 'Drop of los product',
+    compareRowLabels: ['Wat je krijgt', 'Voor wie', 'Doorlooptijd', 'Vanaf'],
+    compareDrop: [
+      'De hele collectie in één huisstijl — een catalogset en lifestyle-carousel per product, in één keer geleverd.',
+      'Merken die per seizoen of collectie lanceren en alles gelijk willen laten ogen.',
+    ],
+    compareSingle: [
+      'Eén product tegelijk — geen collectie te plannen, geen lanceerdatum om te halen.',
+      'Merken die snel iets nodig hebben, of eerst het resultaat willen zien voordat ze een hele drop boeken.',
+    ],
+    compareSingleNote: 'als proefvisual op je eigen product.',
+    comparePricingLink: 'Bekijk volledige per-productprijzen',
 
     offerH: ['Eén drop.', 'Eén deadline. Eén factuur.'],
     offerSub: 'Een drop is de eenheid. Geen foto, geen pakketje foto’s — de hele lancering, één keer geoffreerd en één keer gedateerd.',
@@ -378,10 +448,27 @@ const COPY = {
     lmButton: 'Stuur mij de checklist',
     lmFine: 'Eén e-mail met de checklist en onze beste voor/na’s. Geen spam, altijd uitschrijfbaar.',
 
-    modelsAlt: 'Een VISUAILS merkmodel, consistent gestyled over een hele collectie',
-    modelsH: ['Eén gezicht. Elke drop.', 'Alleen van jou.'],
-    modelsLead: 'Hetzelfde model over de hele collectie — of een gezicht dat één keer voor jouw merk is ontworpen en door niemand anders geboekt kan worden. Eén keer instellen en elke drop daarna is nog maar één map ver.',
-    modelsCta: 'Bekijk jouw merkmodel',
+    doorMeta: '( Elke drop heeft er een nodig )',
+    doorH: 'Standaardmodellen, of je eigen.',
+    doorSub: 'Elke drop bevat al een model. Of die gedeeld is of alleen van jou, is de enige keuze die overblijft.',
+    doors: [
+      {
+        h: 'De standaardbibliotheek',
+        body: 'Tien modellen, gedeeld over merken, inbegrepen in elke drop zonder extra kosten. Kies er een, of laat ons er een matchen op jouw product.',
+        cta: 'Bekijk de modellen',
+        href: '/models',
+        img: '/img/model-01.webp',
+        alt: 'Een VISUAILS-standaardmodel',
+      },
+      {
+        h: 'Jouw merkmodel',
+        body: 'Eén gezicht, één keer voor jouw merk ontworpen en door niemand anders geboekt. Eén keer instellen en elke drop daarna is nog maar één map ver.',
+        cta: 'Bekijk jouw merkmodel',
+        href: '/custom-models',
+        img: '/img/custom-models-03.webp',
+        alt: 'Een portret van een VISUAILS-merkmodel',
+      },
+    ],
 
     dropMeta: '( In een drop )',
     dropH: 'Vier manieren om groter te lijken dan je bent.',
@@ -431,8 +518,12 @@ const strip = [
   '/img/banners-02.webp',
 ];
 
+// custom-models-02.webp was an extreme close-up face crop that read as a
+// headshot, not a product photo — flagged live 2026-07-29 (task #268) as the
+// concrete case behind "not clean" on this section. banners-05.webp is an
+// on-model garment shot already in the library; no new photography needed.
 const spreadImgs = [
-  ['/img/custom-models-02.webp', '/catalog'],
+  ['/img/banners-05.webp', '/catalog'],
   ['/img/catalog-after.webp', '/catalog'],
   ['/img/lifestyle-glow-01.webp', '/lifestyle'],
   ['/img/banners-16.webp', '/video'],
@@ -468,8 +559,8 @@ const dropImgs = [
   </div>
   <div class="cover-facts">
     <dl class="container cf-row">
-      {c.coverFacts.map(([k, v]) => (
-        <div class="cf-item"><dt class="cf-k">{k}</dt><dd class="cf-v">{v}</dd></div>
+      {c.coverFacts.map(([k, v], i) => (
+        <div class={`cf-item ${i === 0 ? 'tf-flag' : i === 1 ? 'tf-verify' : ''}`}><dt class="cf-k">{k}</dt><dd class="cf-v">{v}</dd></div>
       ))}
     </dl>
   </div>
@@ -586,10 +677,55 @@ const dropImgs = [
           <div class="sp-media" data-zoom>
             <img src={img} alt={`${c.spreadCaps[i][0]} — ${c.spreadCaps[i][1]}`} loading="lazy" />
             {i === 3 && <span class="sp-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>}
+            {/* Hover/focus-reveal — task #268. A crossfade under
+                prefers-reduced-motion (global.css), not a slide. */}
+            <div class="sp-reveal">{c.spreadReveal[i]}</div>
           </div>
           <div class="sp-cap"><b>{c.spreadCaps[i][0]}</b><span>{c.spreadCaps[i][1]}</span></div>
         </a>
       ))}
+    </div>
+  </div>
+</section>
+
+{/* ── DROP OR SINGLE PRODUCT ────────────────────────────────────────────────
+    New, task #268 — addresses "ik zou als klant een beetje verdwalen in de
+    informatie": until this section existed, a visitor who did not want a
+    whole drop had no way to learn that ordering a single product is even
+    possible without leaving this page. Section 13 still governs what this
+    page may print about that tier (file header, rule 1): no catalog /
+    lifestyle / video price ladder here. The one number this panel shows is
+    the €0.99 sample, which is already this page's own CTA elsewhere — the
+    rest of that tier's pricing lives on /pricing, one click away. */}
+<section class="ch">
+  <div class="container">
+    <div class="ch-head">
+      <h2 class="ch-title"><span class="ch-l">{c.compareH[0]}</span><span class="ch-l dim">{c.compareH[1]}</span></h2>
+    </div>
+    <div class="tier-toggle" data-tier-toggle>
+      <div class="tt-tabs" role="tablist" aria-label={c.compareTabsLabel}>
+        <button type="button" class="tt-tab" role="tab" id="tt-tab-drop" aria-selected="true" aria-controls="tt-panel-drop">
+          {attended.label[lang]}
+        </button>
+        <button type="button" class="tt-tab" role="tab" id="tt-tab-single" aria-selected="false" aria-controls="tt-panel-single" tabindex="-1">
+          {TIERS.unattended.label[lang]}
+        </button>
+      </div>
+      <div class="tt-panels">
+        <dl class="tt-panel" id="tt-panel-drop" role="tabpanel" aria-labelledby="tt-tab-drop">
+          <div class="tt-row"><dt>{c.compareRowLabels[0]}</dt><dd>{c.compareDrop[0]}</dd></div>
+          <div class="tt-row"><dt>{c.compareRowLabels[1]}</dt><dd>{c.compareDrop[1]}</dd></div>
+          <div class="tt-row"><dt>{c.compareRowLabels[2]}</dt><dd>{turnaround('attended', lang)} — {attended.queue[lang]}</dd></div>
+          <div class="tt-row tt-price"><dt>{c.compareRowLabels[3]}</dt><dd>{euro(AMOUNT.dropPilot, lang)} <span>{c.doorPilotBasis}</span></dd></div>
+        </dl>
+        <dl class="tt-panel" id="tt-panel-single" role="tabpanel" aria-labelledby="tt-tab-single" hidden>
+          <div class="tt-row"><dt>{c.compareRowLabels[0]}</dt><dd>{c.compareSingle[0]}</dd></div>
+          <div class="tt-row"><dt>{c.compareRowLabels[1]}</dt><dd>{c.compareSingle[1]}</dd></div>
+          <div class="tt-row"><dt>{c.compareRowLabels[2]}</dt><dd>{turnaround('unattended', lang)} — {TIERS.unattended.queue[lang]}</dd></div>
+          <div class="tt-row tt-price"><dt>{c.compareRowLabels[3]}</dt><dd>{TEST_SAMPLE[lang].price} <span>{c.compareSingleNote}</span></dd></div>
+        </dl>
+      </div>
+      <p class="tt-foot"><a class="link-arrow" href={lp('/pricing')}>{c.comparePricingLink} &rarr;</a></p>
     </div>
   </div>
 </section>
@@ -771,22 +907,39 @@ const dropImgs = [
   </div>
 </section>
 
-{/* ── YOUR BRAND MODEL ──────────────────────────────────────────────────────
-    Promoted above the channel grid and rewritten to the drop. The link goes
-    to /custom-models, which is the surviving URL of the two model pages
-    (AUDIT-TASK-0.md §H·8). /models is deleted and 301s there, both
-    languages, in public/_redirects. */}
+{/* ── STANDARD MODELS, OR YOUR OWN — two doors, not one ─────────────────────
+    Task #268/#271, 2026-07-29: this used to be a single photo-split that only
+    argued the exclusive Brand Model case, with a lead paragraph that also
+    tried to describe the shared roster in the same breath and pointed both
+    ideas at one link. That is a version of the "getting lost in the
+    information" complaint AUDIT-TASK-0.md §H·8's own addendum records — one
+    door doing two jobs reads as neither clearly. /models is a real page
+    again now, so this states both doors plainly and lets each link speak for
+    itself: the shared library costs nothing extra and needs no setup; a
+    Brand Model is exclusive and paid for once. Section 13 stays satisfied —
+    neither door prints a per-product price, only the shape of the offer. */}
 <section class="section-tight">
   <div class="container">
-    <div class="photo-split reveal pending">
-      <div class="photo-split-media" data-zoom>
-        <img src="/img/custom-models-02.webp" alt={c.modelsAlt} loading="lazy" />
-      </div>
+    <div class="ed-head">
+      <span class="ed-meta">{c.doorMeta}</span>
       <div>
-        <h2>{c.modelsH[0]}<br /><em>{c.modelsH[1]}</em></h2>
-        <p class="lead" style="margin-top:1rem">{c.modelsLead}</p>
-        <div style="margin-top:1.2rem"><a class="link-arrow" href={lp('/custom-models')}>{c.modelsCta} &rarr;</a></div>
+        <h2>{c.doorH}</h2>
+        <p class="ed-sub">{c.doorSub}</p>
       </div>
+    </div>
+    <div class="grid grid-2 hm-doors reveal-group">
+      {c.doors.map((d) => (
+        <div class="card hm-door reveal pending">
+          <div class="hm-door-media"><img src={d.img} alt={d.alt} loading="lazy" width="600" height="750" /></div>
+          <div class="hm-door-body">
+            <h3>{d.h}</h3>
+            <p>{d.body}</p>
+            <a class="link-arrow" href={lp(d.href)}>{d.cta}
+              <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+        </div>
+      ))}
     </div>
   </div>
 </section>
@@ -908,7 +1061,14 @@ const dropImgs = [
 
   /* ── Cover facts — the band the service ticker used to occupy. It inherits
      the dark scope from .hero-cover (global.css lists it in the .on-ink
-     group), so no colour is declared here that is not a role token. */
+     group). Task #271c, 2026-07-29: the Window (turnaround) and Review items
+     now carry the same --flag/--verify rule global.css's .trust-item uses —
+     a coloured border under the value only, never the text colour itself,
+     because these raw (non -ink) tokens are documented as "large text and
+     fills only" on this dark ground (DESIGN.md's contrast table: 4.12/4.33
+     against --ink-900, a border passing the same non-text 3:1 bar). Studio
+     (the third item) stays a plain role-token neutral — it isn't a review or
+     delivery claim, so it gets no rule, same logic as every other page. */
   .cover-facts { border-top: 1px solid var(--line-strong); background: oklch(0.16 0.006 75 / 0.52); }
   .cf-row { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding-block: 1rem; }
   .cf-item { padding-inline: clamp(0rem, 1.4vw, 1.2rem); }
@@ -916,6 +1076,10 @@ const dropImgs = [
   .cf-item:first-child { padding-left: 0; }
   .cf-k { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
   .cf-v { margin: .3rem 0 0; font-size: .86rem; line-height: 1.4; color: var(--ink); }
+  .cf-item.tf-flag .cf-v,
+  .cf-item.tf-verify .cf-v { display: inline-block; border-bottom: 3px solid; padding-bottom: .2rem; }
+  .cf-item.tf-flag .cf-v { border-color: var(--flag); }
+  .cf-item.tf-verify .cf-v { border-color: var(--verify); }
   @media (max-width: 700px) {
     .cf-row { grid-template-columns: 1fr; padding-block: .5rem; }
     .cf-item { padding: .55rem 0; }
@@ -949,6 +1113,45 @@ const dropImgs = [
   }
 
   .dev-note { margin-top: .9rem; font-size: .82rem; color: var(--ink-3); }
+
+  /* ── Drop or single product — task #268. Two tabs on a hairline, one panel
+     of facts below, same grammar as .offer-facts so it reads as part of the
+     same page rather than a bolted-on widget. The active tab is marked with
+     a 2px underline in --accent, not a filled background — a filled "pill"
+     tab is closer to a generic SaaS toggle than this system's flat, bordered
+     furniture, and .btn-primary already owns solid-fill emphasis on this
+     page. */
+  .tier-toggle { border: 1px solid var(--line-strong); margin-top: clamp(2.2rem, 4.5vw, 3.2rem); }
+  .tt-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .tt-tab { appearance: none; background: none; cursor: pointer; text-align: left; font-family: var(--font-display);
+    font-weight: 900; font-size: clamp(1.02rem, 1.6vw, 1.22rem); letter-spacing: -0.01em; color: var(--ink-3);
+    padding: clamp(1.1rem, 2vw, 1.5rem) clamp(1.2rem, 2.4vw, 1.8rem); border: none; border-bottom: 2px solid var(--line-strong);
+    transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); }
+  .tt-tab + .tt-tab { border-left: 1px solid var(--line-strong); }
+  .tt-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tt-tab:hover { color: var(--ink); }
+  .tt-panels { padding: clamp(1.6rem, 3vw, 2.4rem) clamp(1.2rem, 2.4vw, 1.8rem) clamp(.6rem, 1.4vw, 1rem); }
+  .tt-panel { margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .tt-panel[hidden] { display: none; }
+  .tt-row { padding-right: clamp(0rem, 1.6vw, 1.4rem); }
+  .tt-row + .tt-row { border-left: 1px solid var(--line); padding-left: clamp(0rem, 1.6vw, 1.4rem); }
+  .tt-row dt { font-family: var(--font-display); font-weight: 900; font-size: .8rem; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--ink-3); }
+  .tt-row dd { margin: .5rem 0 0; font-size: .9rem; line-height: 1.5; color: var(--ink-2); }
+  .tt-price dd { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 2.3vw, 1.8rem);
+    letter-spacing: -0.02em; color: var(--ink); }
+  .tt-price dd span { display: block; margin-top: .35rem; font-family: var(--font-body); font-weight: 400;
+    font-size: .78rem; letter-spacing: normal; text-transform: none; color: var(--ink-3); }
+  .tt-foot { margin: 0; padding: 0 clamp(1.2rem, 2.4vw, 1.8rem) clamp(1.3rem, 2.4vw, 1.7rem); font-size: .88rem; color: var(--ink-3); }
+  @media (max-width: 820px) {
+    .tt-tab { font-size: 1rem; padding: 1rem 1.1rem; }
+    .tt-panels { padding: 1.4rem 1.1rem .4rem; }
+    .tt-panel { grid-template-columns: 1fr; }
+    .tt-row { padding: 1rem 0; }
+    .tt-row:first-child { padding-top: 0; }
+    .tt-row + .tt-row { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; }
+    .tt-foot { padding: 0 1.1rem 1.3rem; }
+  }
 
   /* ── The offer. Three facts on a hairline rule, then two doors in one
      frame — the same construction as /start, so the two pages read as one
@@ -1032,4 +1235,27 @@ const dropImgs = [
     .case-slot + .case-slot { border-left: 0; border-top: 1px solid var(--line); }
     .case-offer .btn { width: 100%; }
   }
+
+  /* ── The two model doors (task #271). Same card + hard-edge discipline as
+     the rest of the page: square media on top, prose below, one CTA. No
+     radius, same as everywhere else on this page. */
+  .hm-doors { margin-top: clamp(1.8rem, 4vw, 2.8rem); }
+  .hm-door { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .hm-door-media img { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+  .hm-door-body { padding: clamp(1.2rem, 2.5vw, 1.8rem); display: flex; flex-direction: column; gap: .6rem; }
+  .hm-door-body h3 { font-size: 1.15rem; margin: 0; }
+  .hm-door-body p { font-size: .92rem; color: var(--ink-3); margin: 0; }
+  .hm-door-body .link-arrow { margin-top: .4rem; }
+
+  /* ── The editorial accent (task #271b, Lucas's own request — see
+     global.css's --font-editorial comment for the full reasoning). Scoped
+     here rather than added to the shared .editorial-statement /
+     .promise-quote / .cover-title rules in global.css, because those
+     classes are also used on /how-it-works and a site-wide change was
+     explicitly declined in favour of "homepage + servicepagina's". Astro's
+     per-component style scoping means these three selectors only ever match
+     elements this page itself renders. */
+  .cover-title em { font-family: var(--font-editorial); font-weight: 700; }
+  .editorial-statement em { font-family: var(--font-editorial); font-weight: 700; }
+  .promise-quote { font-family: var(--font-editorial); font-weight: 500; }
 </style>

@@ -63,9 +63,37 @@ import {
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail } from '../../src/lib/mail.js';
-import { createTestSampleCheckoutSession } from '../../src/lib/stripe.js';
+import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RATE LIMITING — found missing in the 2026-07-28 site audit (task #263).
+//
+// portal.js and its /o/<token> have carried a limiter since section 10; this
+// endpoint, the one every form on the site posts to, had none. That is a
+// sharper gap here than it would be on a page view. /o's limiter defends a
+// database from being queried for free (see ratelimit.js's own header); this
+// endpoint's unlimited cost was never just database load:
+//
+//   • EVERY submission sends at least one email (studio notify) and 'order' /
+//     'subscribe' send a SECOND one to whatever address the caller typed —
+//     and nothing before this line confirms the caller owns that address.
+//     Unlimited, this was a free tool for putting a stranger's inbox on
+//     repeat, not merely a capacity problem.
+//   • Every submission is at least one D1 write (upsertCustomer, the orders /
+//     subscribers / messages insert, the order_events row, the token mint) —
+//     several times what a /o page view costs, and /o's page view already
+//     gets one.
+//
+// One shared bucket across subscribe/contact/order: same cost shape, same
+// abuse shape, and an attacker is not required to pick one flow to spam — a
+// limiter scoped to only 'order' would leave 'contact' and 'subscribe' wide
+// open to the exact same two costs above. checkRate() fails OPEN on a D1
+// outage, same as everywhere else it's used — a broken limiter must not be
+// the reason a real client's order never arrives.
+const INTAKE_LIMIT = 8;
+const INTAKE_WINDOW_SECONDS = 60;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HOW MUCH OF THE CLIENT'S UPLOAD RIDES ALONG IN THE STUDIO'S EMAIL
@@ -142,6 +170,34 @@ export async function onRequestPost({ request, env, waitUntil }) {
     } catch {}
     return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=email');
   }
+
+  // THE GATE. See the header note above for what this defends and why it is
+  // one bucket for all three flows. Placed after the free checks (honeypot,
+  // email shape) and before anything that touches D1 or sends mail — same
+  // ordering rule portalGet uses: cheapest check first, the D1 write next,
+  // the expensive work last.
+  const rateGate = await checkRate(env, {
+    ip: clientIp(request),
+    action: 'order-intake',
+    limit: INTAKE_LIMIT,
+    windowSeconds: INTAKE_WINDOW_SECONDS,
+  });
+  if (env?.DB && shouldSweep()) later(waitUntil, sweepRateLimits(env));
+  if (!rateGate.allowed) {
+    if (wantsJson) {
+      return json({ ok: false, error: 'rate-limited', retryAfter: rateGate.retryAfter }, 429);
+    }
+    let dest = back;
+    try {
+      const ref = request.headers.get('Referer');
+      if (ref) {
+        const u = new URL(ref);
+        if (u.origin === new URL(request.url).origin) dest = u.pathname + u.search;
+      }
+    } catch {}
+    return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=busy', 303);
+  }
+
   const name = get('name');
   const brand = get('brand') || get('company');
   const phone = get('phone');
@@ -365,37 +421,6 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }));
 
   const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // STRIPE — TEST SAMPLE ONLY (see BACKEND-SETUP.md §9). The order row above
-  // is already written with payment_status defaulting to whatever schema.sql
-  // says; this branch sends the client to pay before they ever see the
-  // thank-you page. Scoped deliberately to svc === 'test-sample': every other
-  // service still has no server-side price to charge against, so they keep
-  // going straight to the free-flow thank-you page below.
-  //
-  // Failing OPEN, not closed: if Stripe or the env var is unavailable, the
-  // order still exists and the client still gets a confirmation — they just
-  // don't get a payment link this one time. Losing the order to protect the
-  // checkout step would be exactly the mistake this file already refuses to
-  // make everywhere else (see the file header).
-  // ───────────────────────────────────────────────────────────────────────────
-  if (svc === 'test-sample' && env.STRIPE_SECRET_KEY) {
-    const checkoutUrl = await safe(() => createTestSampleCheckoutSession(env, {
-      ref,
-      email,
-      lang,
-      successUrl: requestOrigin(request) + done,
-      cancelUrl: requestOrigin(request) + back,
-    }));
-    if (checkoutUrl) {
-      if (wantsJson) {
-        return json({ ok: true, ref, tier, window: finalWindow, windowLost: raced, redirect: checkoutUrl });
-      }
-      return redirect(checkoutUrl);
-    }
-  }
-
   if (wantsJson) {
     return json({
       ok: true,
@@ -789,6 +814,21 @@ function fileSize(bytes) {
 
 async function upsertCustomer(env, c) {
   if (!env.DB) return null;
+  // Lowercased here, and ONLY here — this is the one place a customers row is
+  // ever written (grep confirms it; account.js's UPDATE ... email_verified
+  // touches a different column). customers.email is `TEXT NOT NULL UNIQUE`
+  // with no COLLATE NOCASE (schema.sql), so "Foo@x.com" and "foo@x.com" are
+  // two different values to both the UNIQUE index and to a plain `= ?1`
+  // lookup. get('email') above only trims, it never lowercases — so an order
+  // placed as "Luunkans@gmail.com" used to create a row that
+  // account.js's sendLoginLink() (which does lowercase its input, see that
+  // file) could never find: same customer, two spellings, zero rows matched,
+  // and the login page shows its generic "check your email" success screen
+  // either way (by design, against enumeration — see account.js's header) so
+  // the mismatch produced no error anywhere, just silence. Found 2026-07-28
+  // after a real customer (luunkans@gmail.com, order placed, login link
+  // never arriving) turned out to be exactly this.
+  const email = String(c.email || '').trim().toLowerCase();
   await env.DB.prepare(
     `INSERT INTO customers (email, name, brand, phone, website, vat_number)
      VALUES (?1,?2,?3,?4,?5,?6)
@@ -799,8 +839,8 @@ async function upsertCustomer(env, c) {
        website=COALESCE(excluded.website, customers.website),
        vat_number=COALESCE(excluded.vat_number, customers.vat_number),
        updated_at=datetime('now')`
-  ).bind(c.email, c.name || null, c.brand || null, c.phone || null, c.website || null, c.vat || null).run();
-  const row = await env.DB.prepare('SELECT id FROM customers WHERE email = ?1').bind(c.email).first();
+  ).bind(email, c.name || null, c.brand || null, c.phone || null, c.website || null, c.vat || null).run();
+  const row = await env.DB.prepare('SELECT id FROM customers WHERE email = ?1').bind(email).first();
   return row?.id ?? null;
 }
 
@@ -808,6 +848,17 @@ async function upsertCustomer(env, c) {
 // for why. Imported above, alongside token.js/uploads.js.
 
 async function safe(fn) { try { return await fn(); } catch (e) { console.error('[order]', e && e.message ? e.message : e); } }
+
+/**
+ * Fire-and-forget, when the runtime offers it and harmlessly inline when it
+ * does not. Mirrors portal.js's `later(context, promise)` exactly, except this
+ * file's onRequestPost destructures `waitUntil` straight off the context
+ * rather than keeping the whole context object — so this takes the function
+ * itself, not a context to read one off of.
+ */
+function later(waitUntil, promise) {
+  if (typeof waitUntil === 'function') waitUntil(promise);
+}
 
 function makeRef() {
   const t = Date.now().toString(36).toUpperCase().slice(-4);

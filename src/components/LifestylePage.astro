@@ -54,7 +54,9 @@ const marqueeItems = [
 const COPY = {
   en: {
     eyebrow: 'Lifestyle',
-    h1: 'Your product, in scenes that sell',
+    // <em> added task #271b (Lucas's own request, editorial accent) — same
+    // closing-phrase-emphasis convention as the other hero H1s.
+    h1: 'Your product, in scenes <em>that sell.</em>',
     lead: `Four signature looks. ${item.price} per product — a 3-photo carousel.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note — this button carried the tier label verbatim, in the hero,
@@ -117,7 +119,7 @@ const COPY = {
   },
   nl: {
     eyebrow: 'Lifestyle',
-    h1: 'Jouw product, in scènes die verkopen',
+    h1: 'Jouw product, in scènes <em>die verkopen.</em>',
     lead: `Vier signatuurlooks. ${item.price} per product — een carousel van 3 foto’s.`,
     ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk prijzen',
@@ -183,7 +185,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
 <section class="page-hero">
   <div class="container">
     <span class="eyebrow-page">{c.eyebrow}</span>
-    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem">{c.h1}</h1>
+    <h1 class="display ls-h1" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem" set:html={c.h1} />
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
     <div class="flex" style="margin-top:1.8rem">
       <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -196,8 +198,8 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
       {c.trust.map(([strong, rest]) => (
         <span class="trust-item"><strong>{strong}</strong> {rest}</span>
       ))}
-      <span class="trust-item"><strong>{turnaround('unattended', lang)}</strong></span>
-      <span class="trust-item"><strong>{c.reviewNote}</strong></span>
+      <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
+      <span class="trust-item tf-verify"><strong>{c.reviewNote}</strong></span>
     </div>
     <p class="queue-note">{c.queueNote}</p>
   </div>
@@ -353,6 +355,11 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
 </section>
 
 <style>
+  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
+     --font-editorial comment. Same closing-phrase treatment as the other
+     hero H1s. */
+  .ls-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+
   /* The queue disclosure. Section 13 requires the "no fixed delivery date"
      half of the promise to be visible, not hidden — so it is set at body
      weight directly under the trust row rather than as footnote-sized grey. */

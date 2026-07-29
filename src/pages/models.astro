@@ -1,0 +1,27 @@
+---
+// VISUAILS — /models, "The standard library" (English). The page body lives
+// in ModelsPage.astro so that /models and /nl/models cannot drift apart; only
+// the meta differs here.
+//
+// This URL used to 301 to /custom-models (AUDIT-TASK-0.md §H·8). As of task
+// #270 it is a real route again — see §H·8's own 2026-07-29 addendum for why,
+// and public/_redirects for the removed 301.
+//
+// No price in the description: this page's whole point is that the roster
+// carries no separate fee, and Section 13 keeps per-product tier pricing off
+// pages other than /pricing, /catalog, /lifestyle and /video.
+import Layout from '../layouts/Layout.astro';
+import ModelsPage from '../components/ModelsPage.astro';
+
+const description =
+  'Ten standard models, shared across every brand and included in every drop ' +
+  'at no extra cost. Pick one, or let us match one to your product.';
+---
+
+<Layout
+  title="The standard library — ten models, included in every drop | VISUAILS"
+  description={description}
+  ogImage="/img/model-01.webp"
+>
+  <ModelsPage lang="en" />
+</Layout>

@@ -267,6 +267,12 @@ const SERVICE = {
   video: { en: 'Video', nl: 'Video' },
   custom: { en: 'Your Brand Model', nl: 'Jouw merkmodel' },
   'test-sample': { en: 'Test sample', nl: 'Proefvisual' },
+  // Same gap portal.js's own SERVICE map had — found and fixed there in the
+  // same audit pass. This copy had it too: 'drop' (StartPage.astro's
+  // attended-tier door, ORDER_SERVICES in order.js) was never named, so
+  // every Full Drop / Drop Pilot order showed no service label in the
+  // dashboard's order list either.
+  drop: { en: 'Full Drop', nl: 'Volledige drop' },
 };
 
 /** orders.status, in words. Mirrors portal.js's/admin.js's own copies. */

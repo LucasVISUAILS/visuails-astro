@@ -6,17 +6,15 @@ echo =====================================================
 echo  VISUAILS - stale bestanden opruimen
 echo =====================================================
 echo.
-echo Deze map bevat 45 bestanden die niet meer bij het
+echo Deze map bevat 43 bestanden die niet meer bij het
 echo project horen. push-to-github.bat doet "git add -A",
 echo dus die gaan nu MEE naar GitHub en Cloudflare bouwt ze.
 echo.
-echo GROEP 1 - nooit meegekomen (33 bestanden):
+echo GROEP 1 - nooit meegekomen (31 bestanden):
 echo.
 echo   src\pages\de\           (27 bestanden - Duitse site,
 echo                            prijzen van juli 2025)
 echo   src\data\*.de.js        (3 bestanden - Duitse teksten)
-echo   src\pages\models.astro
-echo   src\pages\nl\models.astro
 echo   src\components\ThreeWay.astro
 echo.
 echo GROEP 2 - de oude bestelpagina's (12 bestanden):
@@ -109,8 +107,6 @@ for %%F in (
     "src\data\catalogStyles.de.js"
     "src\data\styles.de.js"
     "src\data\videoStyles.de.js"
-    "src\pages\models.astro"
-    "src\pages\nl\models.astro"
     "src\components\ThreeWay.astro"
 ) do (
     if exist %%F (

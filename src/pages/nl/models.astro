@@ -1,0 +1,27 @@
+---
+// VISUAILS — /nl/models, "De standaardbibliotheek". De pagina-inhoud staat in
+// ModelsPage.astro, zodat /models en /nl/models niet uit elkaar kunnen lopen;
+// alleen de meta verschilt hier.
+//
+// Deze URL verwees vroeger via een 301 naar /custom-models (AUDIT-TASK-0.md
+// §H·8). Sinds taak #270 is dit weer een echte route — zie de addendum van
+// 2026-07-29 bij §H·8, en public/_redirects voor de verwijderde 301.
+//
+// Geen prijs in de description: het hele punt van deze pagina is dat de
+// bibliotheek geen aparte kost heeft, en sectie 13 houdt prijzen per product
+// buiten pagina's anders dan /pricing, /catalog, /lifestyle en /video.
+import Layout from '../../layouts/Layout.astro';
+import ModelsPage from '../../components/ModelsPage.astro';
+
+const description =
+  'Tien standaardmodellen, gedeeld over elk merk en inbegrepen in elke drop ' +
+  'zonder extra kosten. Kies er een, of laat ons er een matchen op je product.';
+---
+
+<Layout
+  title="De standaardbibliotheek — tien modellen, inbegrepen in elke drop | VISUAILS"
+  description={description}
+  ogImage="/img/model-01.webp"
+>
+  <ModelsPage lang="nl" />
+</Layout>

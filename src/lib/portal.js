@@ -233,6 +233,16 @@ const SERVICE = {
   video: { en: 'Video', nl: 'Video' },
   custom: { en: 'Your Brand Model', nl: 'Jouw merkmodel' },
   'test-sample': { en: TEST_SAMPLE.en.name, nl: TEST_SAMPLE.nl.name },
+  // Found missing in the 2026-07-28 site audit (task #263): functions/api/
+  // order.js's ORDER_SERVICES has always included 'drop' — the value
+  // StartPage.astro's attended-tier door posts (see its `value: 'drop'`) —
+  // but this map never named it, so serviceLabel() fell through to its own
+  // documented "the real fix is to add it to the map" case and every Full
+  // Drop / Drop Pilot order showed no Order type at all on the portal. One
+  // label for both: 'drop' covers the fixed 8-product Drop Pilot package and
+  // a larger custom drop alike, which pricing.js's own AMOUNT.dropPilot
+  // constant already treats as the same tier, not two different services.
+  drop: { en: 'Full Drop', nl: 'Volledige drop' },
 };
 
 /** orders.status, in words. The column's own comment lists the values. */

@@ -29,7 +29,11 @@ export const defaultLang = 'en';
 // the top level of the nav rather than inside a dropdown.
 export const dropHrefs = ['/catalog', '/lifestyle', '/video'];
 
-// Your Brand Model's live URL. /models 301s here — see AUDIT-TASK-0.md §H·8.
+// Your Brand Model's live URL. /models used to 301 here (AUDIT-TASK-0.md
+// §H·8); as of task #270 it's a real page of its own again (§H·8's own
+// 2026-07-29 addendum), reached from this page's #standard block and from the
+// homepage rather than through the nav — see that addendum for why no
+// nav_models slot was added here.
 export const brandModelHref = '/custom-models';
 
 export const ui = {

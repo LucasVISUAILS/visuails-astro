@@ -6,13 +6,18 @@
 // one source file is the only way to guarantee that rather than merely intend
 // it.
 //
-// THIS PAGE IS A MERGE. /models and /custom-models were two pages telling one
-// story (AUDIT-TASK-0.md §D). §H·8 settled the direction: /custom-models keeps
-// the URL because it already carries the exclusive-face argument, the standard
-// roster folds in as a secondary block, and /models is a 301 here (both
-// languages; see public/_redirects). A third slug (/your-brand-model) would
-// have burned the equity of both. The old page's `#standard` fragment still
-// works: a fragment is never sent to the server, so it survives the 301.
+// THIS PAGE WAS A MERGE, and no longer entirely is. /models and
+// /custom-models were two pages telling one story (AUDIT-TASK-0.md §D); §H·8
+// folded /models into this page as a secondary #standard block and 301'd the
+// old URL here. Lucas asked it back as its own page (task #268, 2026-07-29 —
+// see AUDIT-TASK-0.md §H·8's own addendum for the full reasoning): the
+// standard roster is now ALSO its own page at /models, sharing this page's
+// roster data (src/data/models.js) rather than duplicating it. This page
+// keeps a four-model taste of that roster under #standard, still reachable
+// by the old fragment link, with a link to the full ten at /models — a
+// visitor who wants the exclusive argument this page makes is not forced
+// through the whole roster to get it, and a visitor who wants the roster
+// is not forced through the whole exclusive argument either.
 //
 // WHAT CHANGED IN THE MERGE, and why:
 //   · The "Why not just prompt a generic AI tool?" panel → REMOVED. It showed
@@ -31,8 +36,9 @@
 //     distrusted by a brand that is about to spend four figures.
 //   · Every CTA pointed at /order-custom. That page is deleted; the CTAs point
 //     at /start, and /order-custom is a 301 to it in public/_redirects.
-//   · /models' `#standard` roster is here in full. Its per-model links used to
-//     be /order?model=NAME query strings into a funnel that no longer exists;
+//   · /models' `#standard` roster lives here as a four-model taste (the full
+//     ten moved to /models itself, task #268). Its per-model links used to be
+//     /order?model=NAME query strings into a funnel that no longer exists;
 //     the roster is now a library you look at, and the order happens at /start.
 //     Nothing carries a model through a URL any more — /start's pipeline reads
 //     no query state at all, by design (src/scripts/pipeline.js).
@@ -45,6 +51,7 @@ import {
   PACKAGES, AMOUNT, euro, BRAND_MODEL_CREDIT_DROPS,
   FULL_DROP_MIN, FULL_DROP_MAX,
 } from '../data/pricing.js';
+import { ROSTER } from '../data/models.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -59,25 +66,16 @@ const lp = (p: string) => localizedPath(lang, p);
 const byId = Object.fromEntries(PACKAGES[lang].map((p) => [p.id, p]));
 const brandModel = byId['brand-model'];
 
-// The standard library. Names and traits are ours, not clients' — the "never
-// invent client names" rule is about attribution, and nothing here is
-// attributed to anyone. The photos are our own output.
+// The standard library. Was defined inline here; moved to src/data/models.js
+// (task #268) the day /models became a real page again, so both pages read
+// the same ten names and photo paths instead of maintaining two copies.
+// ROSTER's own trait KEYS are shared too — only the label translation
+// (COPY[lang].traits below) still lives per-page, because that half really
+// is page-local UI copy, not a fact about the roster.
 //
-// Traits are indices into COPY[lang].traits so the roster is translated
-// without duplicating the ten names, and so a trait can never exist in one
-// language and not the other.
-const ROSTER = [
-  { name: 'Aaron',  photo: '/img/model-aaron.webp',  traits: ['warm', 'approachable'] },
-  { name: 'Ava',    photo: '/img/model-ava.webp',    traits: ['editorial', 'elegant'] },
-  { name: 'Elias',  photo: '/img/model-elias.webp',  traits: ['refined', 'classic'] },
-  { name: 'Ryan',   photo: '/img/model-ryan.webp',   traits: ['sporty', 'energetic'] },
-  { name: 'Dana',   photo: '/img/model-dana.webp',   traits: ['confident', 'modern'] },
-  { name: 'Lisa',   photo: '/img/model-lisa.webp',   traits: ['natural', 'approachable'] },
-  { name: 'Maegan', photo: '/img/model-maegan.webp', traits: ['bold', 'statement'] },
-  { name: 'Rae',    photo: '/img/model-rae.webp',    traits: ['soft', 'understated'] },
-  { name: 'Fabi',   photo: '/img/model-fabi.webp',   traits: ['clean', 'contemporary'] },
-  { name: 'Seme',   photo: '/img/model-seme.webp',   traits: ['sharp', 'editorial'] },
-];
+// Below the fold on THIS page, ROSTER is sliced to a four-model taste — see
+// the #standard section — so the two pages are not indexing the same ten
+// portraits twice; the full ten live at /models now.
 
 // Our own finished work. Not before/afters, not client results — output.
 const EXAMPLES = [
@@ -190,6 +188,7 @@ const COPY = {
     libChooseH: 'Let us match one',
     libChooseBody: 'Tell us the product and the customer when you start a drop, and we pick the model that fits — then keep using it.',
     libNote: 'Standard models are included in the drop price. There is no per-model fee and no upgrade to unlock one.',
+    libAllCta: 'See all ten',
     traits: {
       warm: 'Warm', approachable: 'Approachable', editorial: 'Editorial', elegant: 'Elegant',
       refined: 'Refined', classic: 'Classic', sporty: 'Sporty', energetic: 'Energetic',
@@ -302,6 +301,7 @@ const COPY = {
     libChooseH: 'Laat ons matchen',
     libChooseBody: 'Vertel ons het product en de klant wanneer je een drop start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
     libNote: 'Standaardmodellen zitten in de dropprijs. Er is geen kost per model en geen upgrade om er een vrij te spelen.',
+    libAllCta: 'Bekijk alle tien',
     traits: {
       warm: 'Warm', approachable: 'Toegankelijk', editorial: 'Editorial', elegant: 'Elegant',
       refined: 'Verfijnd', classic: 'Klassiek', sporty: 'Sportief', energetic: 'Energiek',
@@ -549,11 +549,14 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   </div>
 </div></section>
 
-<!-- THE STANDARD LIBRARY — folded in from /models (AUDIT-TASK-0.md §H·8).
-     It sits below the Brand Model argument rather than above it because this
-     page's job is the exclusive face; the library is the alternative you
-     already have, and saying so plainly is what makes the Brand Model an
-     honest upsell rather than a gate. -->
+<!-- THE STANDARD LIBRARY — a taste, not the full roster (task #268; see the
+     file header for why). It sits below the Brand Model argument rather than
+     above it because this page's job is the exclusive face; the library is
+     the alternative you already have, and saying so plainly is what makes
+     the Brand Model an honest upsell rather than a gate. Four of the ten,
+     not all ten: the full roster now has its own page at /models, and
+     showing all ten here again would put the same ten portraits on two
+     pages for search engines to index as duplicate content. -->
 <section class="section-tight" id="standard"><div class="container">
   <div class="ed-head">
     <span class="ed-meta">{c.libMeta}</span>
@@ -564,7 +567,7 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   </div>
 
   <div class="bm-roster reveal-group">
-    {ROSTER.map((m) => (
+    {ROSTER.slice(0, 4).map((m) => (
       <figure class="bm-model reveal pending">
         <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" width="600" height="750" />
         <figcaption>
@@ -584,7 +587,7 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
     </div>
   </div>
 
-  <p class="bm-lib-note">{c.libNote}</p>
+  <p class="bm-lib-note">{c.libNote} <a class="link-arrow" href={lp('/models')}>{c.libAllCta} &rarr;</a></p>
 </div></section>
 
 <!-- WHY NOT A GENERATOR.
@@ -626,6 +629,10 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
 
   .bm-hero { align-items: center; }
   .bm-h1 { font-size: clamp(2.4rem, 5vw, 4rem); max-width: 16ch; }
+  /* Editorial accent (task #271b, Lucas's own request) — see global.css's
+     --font-editorial comment. Scoped to this page's own h1 em, same reasoning
+     as HomePage.astro's equivalent override. */
+  .bm-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
   .bm-lead { margin-top: 1.2rem; }
   .bm-actions { margin-top: 1.8rem; }
   .bm-trust { margin-top: 2.4rem; }
@@ -670,19 +677,9 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   .bm-exchange-list { margin-top: 1.2rem; }
   .bm-get { border-color: var(--line-strong); }
 
-  /* THE ROSTER — square plates, name and read below the frame. Ten faces at a
-     size you can actually judge, not ten 60px thumbnails. */
-  .bm-roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: clamp(.8rem, 1.8vw, 1.4rem); margin-top: clamp(1.8rem, 4vw, 2.8rem); }
-  .bm-model { margin: 0; border: 1px solid var(--line); }
-  .bm-model img { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; }
-  .bm-model figcaption { display: flex; flex-direction: column; gap: .25rem; padding: .85rem 1rem 1rem; border-top: 1px solid var(--line); }
-  .bm-model-name { font-family: var(--font-display); font-weight: 900; font-size: 1rem; letter-spacing: -0.01em; color: var(--ink); }
-  .bm-model-traits { font-size: .78rem; color: var(--ink-3); }
-  .bm-model-choose { border-color: var(--line-strong); display: grid; }
-  .bm-choose-inner { display: flex; flex-direction: column; gap: .55rem; padding: 1.2rem 1rem; justify-content: center; }
-  .bm-choose-inner h3 { font-size: 1rem; margin: 0; }
-  .bm-choose-inner p { font-size: .85rem; color: var(--ink-3); margin: 0; }
-  .bm-lib-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; }
+  /* THE ROSTER — .bm-roster/.bm-model/etc. moved to global.css (task #268):
+     /models now renders the same roster grid, so the rules live where both
+     pages can reach them instead of only here. */
 
   /* THE GENERATOR ANSWER — prose, deliberately. The block it replaced was two
      image panels; the whole point of removing it was that the argument does

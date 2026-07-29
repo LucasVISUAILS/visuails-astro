@@ -89,6 +89,24 @@ loudest remaining colour on pages that are otherwise about photographs.
 and system surfaces (capacity gate, order state, form validation). They never appear on a
 marketing page. Marketing pages are ink, paper, and photography.
 
+> **Addendum, task #271c, 2026-07-29 — this rule is deliberately, narrowly widened, not
+> reversed.** Lucas asked for a 4-colour scheme on top of the existing black/white/paper
+> system, referencing a moodboard palette. Rather than invent new hues — which would break
+> "the photograph is the only colour" above — the two new accents reuse `--signal` and
+> `--warn` themselves, aliased as `--verify`/`--flag` in `global.css`, so no new value enters
+> the gamut sweep or the contrast table on this page. They now also appear on the homepage
+> and the four service pages (`/custom-models`, `/models`, `/catalog`, `/lifestyle`,
+> `/video`) — but only as a coloured rule under one fact the page's own copy already states
+> (a delivery window = Flag, a review/QC claim = Verify), never as a fill, never as body
+> text, and never invented for a page whose copy makes neither claim. `/custom-models` and
+> `/models` (`BrandModelPage.astro`, `ModelsPage.astro`) were checked against this test and
+> left uncoloured: their trust-rows state pricing and positioning, not a window or a review,
+> so colouring them would be decoration, not meaning — the one thing `colorize` rules out.
+> The underlying tokens, their `/start`/portal scoping, and every contrast number in this
+> file are untouched; only WHERE the same two colours may be *quoted* has widened, and only
+> as a rule, per the "large text and fills only" constraint two sections below. See
+> `global.css`'s `--verify`/`--flag` comment for the full reasoning.
+
 #### Measured contrast — the rules these numbers force
 
 Computed WCAG 2.1 ratios, sRGB, from the OKLCH values above.
