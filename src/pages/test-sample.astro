@@ -27,19 +27,6 @@ const styles = [
   { value: 'Dunes', photo: '/img/lifestyle-dunes-01.webp' },
 ];
 const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme'];
-
-// Lucas, 2026-07-30: let a sample requester pick catalog or lifestyle before
-// they pick a look — one choice, made once, of whichever result matters most
-// to their shop right now. The sample is the clearest demonstration VISUAILS
-// has of how little friction is involved, so a request that visibly answers a
-// visitor's own pain point converts better than one that shows a style they
-// did not ask for. Server-side this needs no new handling at all: /api/order
-// already writes every field that is not one of its named columns into
-// details_json verbatim, the same way `style` and `model` below already do.
-const sampleTypes = [
-  { value: 'catalog', label: 'Catalog', photo: '/img/catalog-after.webp', alt: 'Example catalog-style product photo, on a plain ground' },
-  { value: 'lifestyle', label: 'Lifestyle', photo: '/img/lifestyle-glow-03.webp', alt: 'Example lifestyle-style product photo, styled in a scene' },
-];
 ---
 
 <Layout
@@ -135,7 +122,18 @@ const sampleTypes = [
         <p>Two quick steps. Tell us the look you want, then where to send it.</p>
       </div>
       <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
-        <form action="/api/order" method="post" data-wizard novalidate>
+        <!-- data-astro-reload: this is the one form on the site whose POST can
+             come back with a redirect to a different origin (Stripe Checkout,
+             functions/api/order.js). Layout.astro's <ClientRouter /> intercepts
+             POST forms by default and follows redirects itself via fetch() —
+             which cannot hand a cross-origin Location off to the browser, so it
+             was quietly landing back on this same route instead of ever
+             reaching Stripe (seen as a bounce to /start, from order.js's
+             onRequestGet fallback). data-astro-reload makes the browser do a
+             real, native submit for this form so a 303 to checkout.stripe.com
+             is followed the normal way. Every other form on the site only ever
+             redirects same-origin, so they don't need this. -->
+        <form action="/api/order" method="post" data-wizard data-astro-reload novalidate>
           <input type="hidden" name="service" value="test-sample" />
           <input type="hidden" name="redirect" value="/thank-you" />
           <input type="hidden" name="lang" value="en" />
@@ -154,26 +152,11 @@ const sampleTypes = [
             <p class="hint" style="margin-bottom:1.4rem">Choose the look you're after and upload your product photo.</p>
 
             <div class="field">
-              <label>What would you like to see? <span class="req">*</span></label>
+              <label>Choose a style <span class="req">*</span></label>
               <div class="choice-grid">
-                {sampleTypes.map((t, i) => (
+                {styles.map((s, i) => (
                   <label class="choice">
-                    <input type="radio" name="sample_type" value={t.value} required={i === 0} />
-                    <div class="choice-media"><img src={t.photo} alt={t.alt} loading="lazy" /></div>
-                    <div class="choice-label">{t.label}</div>
-                  </label>
-                ))}
-              </div>
-              <span class="hint" style="margin-top:.3rem">Catalog is a clean shot of the product on its own. Lifestyle is the product styled in a scene, on a model. Whichever matters most for your shop right now — that's the one worth testing.</span>
-            </div>
-
-            <div class="field">
-              <label>Choose a look</label>
-              <span class="hint" style="margin-bottom:.3rem">For a lifestyle sample. Skip this if you picked catalog above — a catalog sample runs on a plain ground, not one of these looks.</span>
-              <div class="choice-grid">
-                {styles.map((s) => (
-                  <label class="choice">
-                    <input type="radio" name="style" value={s.value} />
+                    <input type="radio" name="style" value={s.value} required={i === 0} />
                     <div class="choice-media"><img src={s.photo} alt={`${s.value} lifestyle style`} loading="lazy" /></div>
                     <div class="choice-label">{s.value}</div>
                   </label>
