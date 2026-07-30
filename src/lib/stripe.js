@@ -39,48 +39,6 @@ const STRIPE_API = 'https://api.stripe.com/v1';
 export async function createTestSampleCheckoutSession(env, { ref, email, lang, successUrl, cancelUrl }) {
   if (!env.STRIPE_SECRET_KEY) throw new Error('stripe: STRIPE_SECRET_KEY not configured');
 
-  // TEMPORARY DIAGNOSTIC — Stripe support asked which egress IP this
-  // Worker's outbound requests use, so their networking team can search for
-  // it on their side. This hits a plain IP-echo service (nothing to do with
-  // Stripe) right before the real calls, so the logged IP is the one used
-  // for the requests timestamped right after it in the same log.
-  try {
-    const ipRes = await fetch('https://api.ipify.org?format=json');
-    console.log('[egress-ip]', await ipRes.text());
-  } catch (e) {
-    console.log('[egress-ip] threw —', e && e.message ? e.message : String(e));
-  }
-
-  // TEMPORARY DIAGNOSTIC — a bare GET that needs nothing but the key, run
-  // before the real call. Every real HTTP response, success or error, carries
-  // a request-id header; if THIS also comes back with no headers and an
-  // empty body, the problem is this Worker reaching api.stripe.com at all,
-  // not anything about checkout sessions specifically. Remove once the real
-  // 400 is explained — this line alone is not the fix.
-  // Two variants, run back to back: bare-minimum headers, and the fuller set
-  // this file normally sends. If only one of them comes back with real
-  // Stripe headers, the extra header is the culprit; if both come back kale
-  // (connection/content-length/date only, nothing else), it isn't a header
-  // at all and the problem is the connection itself.
-  for (const [label, extraHeaders] of [
-    ['bare', {}],
-    ['full', { 'User-Agent': 'VISUAILS/1.0 (+https://visuails.com)', Accept: 'application/json' }],
-  ]) {
-    try {
-      const probe = await fetch(`${STRIPE_API}/balance`, {
-        headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, ...extraHeaders },
-      });
-      const probeRaw = await probe.text();
-      console.log(`[stripe-probe:${label}]`, JSON.stringify({
-        status: probe.status,
-        headers: [...probe.headers.entries()],
-        bodyPreview: probeRaw.slice(0, 300),
-      }));
-    } catch (e) {
-      console.log(`[stripe-probe:${label}] threw —`, e && e.message ? e.message : String(e));
-    }
-  }
-
   const params = new URLSearchParams();
   params.set('mode', 'payment');
   params.append('payment_method_types[]', 'card');

@@ -380,19 +380,20 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // checkout step would be exactly the mistake this file already refuses to
   // make everywhere else (see the file header).
   // ───────────────────────────────────────────────────────────────────────────
-  console.log('[order] stripe-branch-check', JSON.stringify({
-    svc,
-    hasKey: !!env.STRIPE_SECRET_KEY,
-    keyPrefix: env.STRIPE_SECRET_KEY ? String(env.STRIPE_SECRET_KEY).slice(0, 7) : null,
-  }));
   if (svc === 'test-sample' && env.STRIPE_SECRET_KEY) {
-    const checkoutUrl = await safe(() => createTestSampleCheckoutSession(env, {
+    // createTestSampleCheckoutSession() resolves the whole Stripe session
+    // object ({ id, url, ... }), not a URL string — .url is what the browser
+    // actually needs to go to. Redirecting with the raw object stringifies
+    // it to the literal text "[object Object]", which is what sent us to
+    // /api/[object%20Object] instead of Stripe's checkout page.
+    const session = await safe(() => createTestSampleCheckoutSession(env, {
       ref,
       email,
       lang,
       successUrl: requestOrigin(request) + done,
       cancelUrl: requestOrigin(request) + back,
     }));
+    const checkoutUrl = session?.url;
     if (checkoutUrl) {
       if (wantsJson) {
         return json({ ok: true, ref, tier, window: finalWindow, windowLost: raced, redirect: checkoutUrl });
