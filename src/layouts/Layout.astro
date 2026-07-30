@@ -512,7 +512,7 @@ const orgJsonLd = {
   .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
   .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
   /* The logotype, flat. It was chrome-filled — the same twelve-stop ramp as the
-     hero plane, remapped per ground — and it is now one ink, on the client's
+     hero plane, remapped per ground — and it went to one ink, on the client's
      call: at logo size the metal read as cheap rather than as expensive, which
      is the opposite of what the material was there to say. Nothing about the
      size reasoning changed with it. 13px was smaller than the cap height of the
@@ -520,26 +520,35 @@ const orgJsonLd = {
      level with them. The footer gets 24px because that is where the mark has
      room to be looked at.
 
-     fill: var(--ink) rather than a logotype-specific token, and that is a
-     deliberate simplification rather than laziness — see the note in
-     global.css where those two tokens used to be declared. */
-  .brand-word { height: 17px; width: auto; display: block; fill: var(--ink); }
+     Task #272, 2026-07-30: fill: var(--brand), not var(--ink) any more — the
+     harbor style guide's teal, one flat colour in the same slot the flat ink
+     used to sit in. This is not the chrome reversal the paragraph above warns
+     about; it is still one solid fill, not two and not a gradient, so the
+     "read as cheap" failure that killed chrome has nothing to attach to here.
+     --brand existed already, aliased to --ink-900, reserved and unread until
+     now — see global.css for the value, the contrast numbers, and why
+     --accent (the actual "no marketing accent" rule) is untouched. */
+  .brand-word { height: 17px; width: auto; display: block; fill: var(--brand); }
   .site-footer .brand-word { height: 24px; }
   /* The monogram is the same material as the word, so it is the same mechanism:
-     a fill-less symbol taking --ink from whatever ground it lands on. It
+     a fill-less symbol taking --brand from whatever ground it lands on. It
      replaces logo-mark.webp, which was a cyan-to-periwinkle raster — the last
      saturated colour left on the site after the monochrome pass, and measured
      at 1.39:1 against the mobile drawer's paper ground, i.e. a logo you cannot
      see. A raster also cannot flip per ground, so that could not be fixed by
-     recolouring the file, and going flat does not bring the problem back: flat
-     here means --ink, which is the one value on this site that is guaranteed
-     to be legible on the ground it is sitting on. */
-  .brand-mark { width: auto; display: block; fill: var(--ink); }
+     recolouring the file. --brand is a single fixed value rather than a
+     ground-flipping one like --ink, which is why it was checked against BOTH
+     grounds directly (5.41:1 on --paper, 3.29:1 on --ink-900 — every dark
+     ground on this site, .on-ink's whole point, shares that one background)
+     instead of being assumed safe the way --ink's flip guarantees. */
+  .brand-mark { width: auto; display: block; fill: var(--brand); }
   /* SVG fill is not force-adjusted by the browser the way `color` is, so
      forced-colours still has to be told the ink by name or the mark keeps a
-     colour the user asked to be rid of. Print is named separately because a
-     footer mark resolves --ink to paper, and paper ink on a background the
-     printer drops is an invisible logo. */
+     colour the user asked to be rid of — CanvasText, not CanvasText via
+     --brand, because a forced-colours user has already opted out of the
+     site's palette entirely and --brand is exactly that. Print stays #000 for
+     the same reason it always did: a printer lays down black reliably, and a
+     printed page has no dark ground to resolve a footer mark against. */
   @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; } }
   @media print { .brand-word, .brand-mark { fill: #000; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }

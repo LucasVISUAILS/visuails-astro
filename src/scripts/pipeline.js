@@ -70,6 +70,7 @@
 //           [data-pl-panel="drop"|"single"]      sub-panels, toggled
 //           [data-pl-count="pilot"|"free"]       the two count presentations
 //           [data-pl-total] [data-pl-total-note]
+//           [data-pl-outfit] input[name=outfit_count]   task #271f — full outfit
 //
 //   step 2  input[type=file][data-pl-file]       NO name attribute, deliberately
 //           [data-pl-droplist]                   the file rows land here
@@ -323,7 +324,20 @@ function bindScope() {
     r.addEventListener('change', syncScope);
   });
   const count = q('select[name="products"]');
-  if (count) count.addEventListener('change', syncTotal);
+  if (count) count.addEventListener('change', onProductsChange);
+  // Task #271f.
+  const outfit = q('select[name="outfit_count"]');
+  if (outfit) outfit.addEventListener('change', syncTotal);
+}
+
+// The products select can change without a scope/kind radio firing, and the
+// outfit field's own cap (see syncOutfit()'s comment) depends on that count —
+// so this, unlike every other listener above, has to re-run syncOutfit() too,
+// not just the total.
+function onProductsChange() {
+  const scope = scopeValue();
+  syncOutfit(scope, currentKind(scope));
+  syncTotal();
 }
 
 function scopeValue() {
@@ -334,6 +348,15 @@ function scopeValue() {
 function pickedIn(name) {
   const r = q(`input[name="${name}"]:checked`);
   return r ? r.value : '';
+}
+
+/** The chosen package/product kind for a scope — 'pilot'/'full' under 'drop',
+ * 'catalog'/'lifestyle'/'video'/'custom' under 'single'. Three call sites
+ * (syncScope, syncTotal, renderSummary) computed this the same way inline;
+ * task #271f added a fourth (onProductsChange) and gave the other three one
+ * shared definition rather than a fourth copy of the ternary. */
+function currentKind(scope) {
+  return scope === 'drop' ? pickedIn('drop_scope') : pickedIn('product_type');
 }
 
 function syncScope() {
@@ -348,11 +371,12 @@ function syncScope() {
 
   // service / tier are what the server reads. Everything else on this step is
   // presentation; these two are the order.
-  const kind = drop ? pickedIn('drop_scope') : pickedIn('product_type');
+  const kind = currentKind(scope);
   setHidden('tier', drop ? 'attended' : 'unattended');
   setHidden('service', drop ? 'drop' : kind || 'catalog');
 
   syncCount(scope, kind);
+  syncOutfit(scope, kind);
   syncTotal();
   syncRequired();
 }
@@ -395,6 +419,56 @@ function syncCount(scope, kind) {
 }
 
 /**
+ * Task #271f — Single Product/Full outfit. Shown whenever the current
+ * scope/kind has a rate to attach a surcharge to: every single-panel kind
+ * except "custom" (a quote already covers whatever the shot needs), and both
+ * drop packages (a fixed price either way). Narrowed the same way
+ * syncCount() narrows the products select just above: an outfit count can
+ * never exceed MAX_OUTFIT_PRODUCTS, and on a single-panel order it can never
+ * exceed the number of products actually being ordered — the surcharge is
+ * per product styled as an outfit, so it cannot outnumber the products.
+ */
+function syncOutfit(scope, kind) {
+  const field = q('[data-pl-outfit]');
+  const select = q('select[name="outfit_count"]');
+  if (!field || !select) return;
+
+  const applies = scope === 'drop' ? (kind === 'pilot' || kind === 'full') : !!kind && kind !== 'custom';
+  field.hidden = !applies;
+  if (!applies) {
+    select.value = '0';
+    return;
+  }
+
+  const productsSelect = q('select[name="products"]');
+  const n = productsSelect ? Number.parseInt(productsSelect.value, 10) : NaN;
+  const cap = scope === 'single' && Number.isInteger(n)
+    ? Math.min(Number(cfg.maxOutfit), n)
+    : Number(cfg.maxOutfit);
+
+  let firstAllowed = null;
+  [...select.options].forEach((o) => {
+    const v = Number.parseInt(o.value, 10);
+    const allowed = Number.isInteger(v) && v <= cap;
+    o.hidden = !allowed;
+    o.disabled = !allowed;
+    if (allowed && firstAllowed === null) firstAllowed = o.value;
+  });
+
+  const chosen = select.options[select.selectedIndex];
+  if (!chosen || chosen.disabled) select.value = firstAllowed === null ? '0' : firstAllowed;
+}
+
+/** How many products this order marks as a full outfit. Never negative, never
+ * unparseable — a select with a bad value falls back to 0 ("single product"),
+ * the same direction every other count on this page fails safe in. */
+function outfitCount() {
+  const select = q('select[name="outfit_count"]');
+  const n = select ? Number.parseInt(select.value, 10) : 0;
+  return Number.isInteger(n) && n > 0 ? n : 0;
+}
+
+/**
  * The running total.
  *
  * A drop is a fixed price for the whole thing — the count inside it changes
@@ -409,7 +483,7 @@ function syncTotal() {
   if (!out) return;
 
   const scope = scopeValue();
-  const kind = scope === 'drop' ? pickedIn('drop_scope') : pickedIn('product_type');
+  const kind = currentKind(scope);
   const select = q('select[name="products"]');
   const raw = select ? select.value : '';
   const n = Number.parseInt(raw, 10);
@@ -430,6 +504,16 @@ function syncTotal() {
     noteText = c('total.each', { price: euro(cfg.prices[kind]), n });
   } else if (scope === 'single' && kind) {
     noteText = c('total.quote');
+  }
+
+  // Task #271f — additive, on top of whatever the block above produced.
+  // Never on its own: a surcharge with no base price to attach to
+  // (kind === 'custom', or nothing chosen yet) is meaningless, so this only
+  // fires when `amount` is already a real number.
+  const outfitN = outfitCount();
+  if (amount !== null && outfitN > 0) {
+    amount = round2(amount + outfitN * cfg.outfitSurcharge);
+    noteText += c('total.outfit', { price: euro(cfg.outfitSurcharge), n: outfitN });
   }
 
   out.textContent = amount === null ? c('total.onRequest') : euro(amount);
@@ -838,7 +922,7 @@ function renderSummary() {
 
   const scope = scopeValue();
   const drop = scope === 'drop';
-  const kind = drop ? pickedIn('drop_scope') : pickedIn('product_type');
+  const kind = currentKind(scope);
   const select = q('select[name="products"]');
   const count = select ? select.options[select.selectedIndex] : null;
 
@@ -846,6 +930,10 @@ function renderSummary() {
   rows.push([c('sum.scope'), c(`scope.${scope || 'none'}`)]);
   if (kind) rows.push([c('sum.kind'), c(`kind.${kind}`)]);
   if (count && count.value) rows.push([c('sum.count'), count.textContent.trim()]);
+
+  // Task #271f.
+  const outfitN = outfitCount();
+  if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);
 
   const total = q('[data-pl-total]');
   if (total && total.textContent) rows.push([c('sum.total'), total.textContent]);

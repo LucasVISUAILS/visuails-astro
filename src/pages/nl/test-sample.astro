@@ -27,6 +27,15 @@ const styles = [
   { value: 'Dunes', photo: '/img/lifestyle-dunes-01.webp' },
 ];
 const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme'];
+
+// Lucas, 2026-07-30: zie de Engelse tak voor de volledige toelichting — deze
+// keuze (catalog of lifestyle, één keer gemaakt) heeft geen eigen backend
+// nodig. /api/order schrijft elk veld dat geen eigen kolom heeft al naar
+// details_json, precies zoals `style` en `model` hieronder al doen.
+const sampleTypes = [
+  { value: 'catalog', label: 'Catalog', photo: '/img/catalog-after.webp', alt: 'Voorbeeld van een catalog-productfoto, op een egale ondergrond' },
+  { value: 'lifestyle', label: 'Lifestyle', photo: '/img/lifestyle-glow-03.webp', alt: 'Voorbeeld van een lifestyle-productfoto, gestyled in een scène' },
+];
 ---
 
 <Layout
@@ -141,11 +150,26 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
             <p class="hint" style="margin-bottom:1.4rem">Kies de look die je zoekt en upload je productfoto.</p>
 
             <div class="field">
-              <label>Kies een stijl <span class="req">*</span></label>
+              <label>Wat wil je zien? <span class="req">*</span></label>
               <div class="choice-grid">
-                {styles.map((s, i) => (
+                {sampleTypes.map((t, i) => (
                   <label class="choice">
-                    <input type="radio" name="style" value={s.value} required={i === 0} />
+                    <input type="radio" name="sample_type" value={t.value} required={i === 0} />
+                    <div class="choice-media"><img src={t.photo} alt={t.alt} loading="lazy" /></div>
+                    <div class="choice-label">{t.label}</div>
+                  </label>
+                ))}
+              </div>
+              <span class="hint" style="margin-top:.3rem">Catalog is een strakke foto van het product op zichzelf. Lifestyle is het product gestyled in een scène, op een model. Wat voor jouw shop nu het meest van belang is — dat is degene die het waard is om te testen.</span>
+            </div>
+
+            <div class="field">
+              <label>Kies een look</label>
+              <span class="hint" style="margin-bottom:.3rem">Voor een lifestyle-proef. Sla dit over als je hierboven catalog koos — een catalogproef loopt op een egale ondergrond, niet op een van deze looks.</span>
+              <div class="choice-grid">
+                {styles.map((s) => (
+                  <label class="choice">
+                    <input type="radio" name="style" value={s.value} />
                     <div class="choice-media"><img src={s.photo} alt={`${s.value} lifestylestijl`} loading="lazy" /></div>
                     <div class="choice-label">{s.value}</div>
                   </label>

@@ -155,8 +155,34 @@
      is a black block with paper text, a hover state goes darker rather than
      brighter, and a tint ground is paper-2 rather than a coloured wash.
      --accent-on is the paired foreground and MUST be used instead of #fff, so
-     that a button dropped inside .on-ink still reads. */
-  --brand:         var(--ink-900);
+     that a button dropped inside .on-ink still reads.
+
+     --brand is the ONE deliberate exception, and it is scoped exactly the way
+     Verify/Flag were (task #271c): a named amendment to the rule above, not a
+     reversal of it. It existed already, aliased to --ink-900 and read by
+     nothing — reserved for exactly this and never spent. Task #272,
+     2026-07-30, Lucas's own request, gave it a real value: the wordmark and
+     monogram (`.brand-word` / `.brand-mark` in Layout.astro) now take
+     `fill: var(--brand)` instead of `fill: var(--ink)`, and nothing else on
+     the site reads this token — --accent and its aliases below are untouched,
+     so every button on the site is still a black block on paper.
+
+     The colour is the harbor style guide's teal, one flat value on purpose:
+     DESIGN.md's "logotype was surface #2, and it was withdrawn" section is
+     the reason two-tone was not on the table again — a duotone or gradient
+     logotype was tried once, read as cheap at logo size, and was pulled. This
+     is not that: one solid fill, same shape as the flat --ink version it
+     replaces, just a different colour in that one slot. oklch(0.499 0.054
+     214.5) round-trips to #3C6B76 exactly (checked against gamut_sweep.py's
+     own converter, not eyeballed) and sits in the same hue-215 petrol family
+     as --signal without being --signal — a status colour and an identity
+     colour happening to share a hue is a coincidence worth noting, not a
+     reason to collapse them into one token. Contrast: 5.41:1 on --paper
+     (clears 4.5:1 body-text with room to spare) and 3.29:1 on --ink-900
+     (clears the 3:1 WCAG 1.4.11 floor a graphic needs, which is what the
+     footer mark actually is) — both added to verify2.py §3's non-text tables
+     alongside --signal and --warn. */
+  --brand:         oklch(0.499 0.054 214.5); /* #3C6B76 */
   --accent:        var(--ink-900);
   --accent-on:     var(--paper);
   --accent-2:      var(--ink-900);

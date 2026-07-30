@@ -52,7 +52,7 @@
 //     order to protect a calendar would be the wrong thing to protect.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt, MAX_OUTFIT_PRODUCTS } from '../../src/data/pricing.js';
 import {
   ATTENDED_PER_WINDOW,
   HORIZON_DAYS,
@@ -266,6 +266,24 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const tier = get('tier') === 'attended' ? 'attended' : 'unattended';
   const products = countOf(get('products'));
 
+  // ── task #271f · Single Product/Full outfit ──────────────────────────────
+  // outfit_count is not a real column (see the TOP_FIELDS comment above) — it
+  // rides in details_json alongside style, notes and every other free-form
+  // answer, the same way test-sample's `style`/`model` already do. It IS
+  // validated here, though, for the same reason `products` is: a raw client
+  // value ("999", "-1", "banana") must not sit in the studio's inbox and the
+  // order record as if it were a real count. CLAMPED, not rejected — this is
+  // not the capacity gate, and an over-eager click on the running total is
+  // not a reason to lose the rest of the order. The cap is MAX_OUTFIT_PRODUCTS
+  // (Lucas: "Max 3 producten"), narrowed further to the order's own product
+  // count when that count is known — an outfit count can never outnumber the
+  // products it styles.
+  const outfitRaw = Number.parseInt(get('outfit_count'), 10);
+  const outfitCap = Number.isInteger(products) ? Math.min(MAX_OUTFIT_PRODUCTS, products) : MAX_OUTFIT_PRODUCTS;
+  const outfitCount = Number.isInteger(outfitRaw) && outfitRaw > 0 ? Math.min(outfitRaw, outfitCap) : 0;
+  if (outfitCount > 0) details.outfit_count = String(outfitCount);
+  else delete details.outfit_count;
+
   // Staged reference material, if the client uploaded any. Read before the
   // insert so the count can go into details_json with everything else; the rows
   // themselves cannot exist until the order does (files.order_id is NOT NULL).
@@ -338,7 +356,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (!orderId || !env.DB) return;
     await env.DB.prepare('INSERT INTO order_events (order_id, status, note) VALUES (?1, ?2, ?3)')
       .bind(orderId, 'received', eventNote({
-        tier, window: finalWindow, raced, uploads: staged.length, upgrade: upgradeCount,
+        tier, window: finalWindow, raced, uploads: staged.length, upgrade: upgradeCount, outfit: outfitCount,
       })).run();
   });
 
@@ -922,12 +940,14 @@ function detailRows(obj) {
  * line at 12 when the next got it at 19" is the first question anyone asks of a
  * prompt that fired. The event log is the only place that answer can live.
  */
-function eventNote({ tier, window, raced, uploads, upgrade }) {
+function eventNote({ tier, window, raced, uploads, upgrade, outfit }) {
   const bits = [`Order submitted via website (${tier})`];
   if (window) bits.push(`window ${window.start}→${window.end}`);
   else if (tier === 'attended') bits.push(raced ? 'window lost to a concurrent booking' : 'no window reserved');
   if (uploads) bits.push(`${uploads} file${uploads === 1 ? '' : 's'} uploaded`);
   if (upgrade) bits.push(`upgrade prompt shown (${upgrade} products this quarter)`);
+  // Task #271f.
+  if (outfit) bits.push(`${outfit} product${outfit === 1 ? '' : 's'} marked full outfit`);
   return bits.join(' · ');
 }
 

@@ -43,7 +43,22 @@ export const AMOUNT = {
   testSample: 0.99,
   catalog: 89.99,   // 4-photo set, one product — was €39.99 under section 13
   lifestyle: 129.99, // 3-photo carousel, one product — was €59.99 under section 13
-  video: 49,        // one clip — same rate standalone or added to a drop, left alone
+  // RAISED, TASK #271f, 2026-07-30. Was €49, "left alone" by the comment
+  // above — that held until Lucas asked for the opposite: video must rise
+  // above €49 regardless of the Single Product/Full outfit feature this task
+  // also adds ("video moet sowieso duurder worden dan €49"), and the exact
+  // figure was explicitly delegated to me ("bedenk een passende prijs"). €69
+  // is that decision, stated here so Lucas can correct it if it's wrong: a
+  // clean round number, a ~41% rise, and it keeps the ladder's existing order
+  // — video cheapest, then catalog, then lifestyle — so it doesn't disturb the
+  // "is the drop the better deal" comparison the block above is protecting.
+  // Still priced identically inside or outside a drop, on purpose — see
+  // PACKAGES below, which quotes this same AMOUNT.video for a drop's add-on.
+  // check_report14.py freezes the OLD figure ('49') against
+  // REPORT-SECTION-14-VAT.md's own frozen arithmetic, the same treatment
+  // CATALOG_AT_WRITING / LIFESTYLE_AT_WRITING already get in that checker —
+  // updated alongside this change.
+  video: 69,
 
   // Tier 1 · attended packages.
   dropPilot: 650,   // exactly 8 products, once per brand
@@ -80,6 +95,44 @@ export const FULL_DROP_MAX = 30;
 // block on the same page. Video is NOT included — it is an add-on at the same
 // rate inside or outside a drop, which is what makes that rate quotable.
 export const DROP_INCLUDES = ['catalog', 'lifestyle'];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1b · FULL OUTFIT — task #271f, 2026-07-30.
+//
+// Lucas: "Ik moet voor alle services een optie hebben: Single Product/Full
+// outfit" — a shot can show one product, or several products styled together
+// on the same model (e.g. trousers and a t-shirt worn together), and the
+// second is real extra work for him, so it has to cost more than the first.
+//
+// THREE STRUCTURAL DECISIONS, ALL LUCAS'S OWN, FROM TWO ROUNDS OF QUESTIONS:
+//   1. Applies to BOTH tiers — Tier 0 (per product) and Tier 1 (drops) — not
+//      just one. "Beide."
+//   2. Priced as a FLAT SURCHARGE PER SHOT, not a percentage of the order and
+//      not a separate line item with its own base price. "Vaste toeslag per
+//      shot."
+//   3. Capped at 3 products per order. "Max 3 producten." Past that point it
+//      is no longer "a couple of pieces styled together" and belongs in a
+//      conversation, the same reasoning FULL_DROP_MIN/MAX already applies to
+//      "more than a form can hold."
+//
+// €50 is Lucas's own figure too (confirmed against catalog €139.99 = 89.99 +
+// 50, and lifestyle €179.99 = 129.99 + 50). Applied the same way to video —
+// video's outfit price is AMOUNT.video + OUTFIT_SURCHARGE, following the same
+// "priced the same as every other style" rule the AMOUNT.video comment above
+// states for the base rate.
+export const OUTFIT_SURCHARGE = 50;
+export const MAX_OUTFIT_PRODUCTS = 3;
+
+// The one thing NOT delegated to me: why it costs more. Lucas was explicit
+// that this has to be explained, and explained factually rather than
+// defensively ("Leg dit uit maar niet verdedigend") — so this is a statement
+// of what the extra work actually is, not a justification offered because the
+// price was questioned. Read wherever the outfit choice is offered (the /start
+// step 1 field today; a service page is a reasonable next place to reuse it).
+export const OUTFIT_COPY = {
+  en: 'A full outfit means every product in the shot is checked for fit against the others and matched to how it would really look worn together — not composited separately and placed side by side. That check is the extra work behind the price.',
+  nl: 'Een full outfit betekent dat elk product in het shot wordt gecontroleerd op pasvorm ten opzichte van de andere producten, en zo precies mogelijk wordt nagebootst zoals het er in het echt uit zou zien als je het samen draagt — niet los samengesteld en naast elkaar gezet. Die controle is het extra werk achter de prijs.',
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2 · FORMATTING — hand-rolled, not Intl, so the output is identical on every
@@ -746,16 +799,21 @@ export const PACKAGES = {
 // must NOT appear on the homepage, in the nav, or in any hero.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// `outfitPrice` — task #271f: the Single Product/Full outfit surcharge,
+// pre-added and pre-formatted the same way `price` is, so a page prints it
+// without doing its own arithmetic. 'custom' has no PER_PRODUCT row at all
+// (it is a quote, not a rate) and so has no outfit price either — the quote
+// covers whatever the shot needs.
 export const PER_PRODUCT = {
   en: [
-    { id: 'catalog', tier: 'unattended', name: 'Catalog set', price: euro(AMOUNT.catalog, 'en'), unit: 'per product', line: 'Four photos: front, back, a fabric or logo close-up, and one on-model shot.' },
-    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle carousel', price: euro(AMOUNT.lifestyle, 'en'), unit: 'per product', line: 'Three photos of one product in one styled look — a carousel ready to post.' },
-    { id: 'video', tier: 'unattended', name: 'Video clip', price: euro(AMOUNT.video, 'en'), unit: 'per clip', line: 'One short clip. The same rate on its own or added to a drop.' },
+    { id: 'catalog', tier: 'unattended', name: 'Catalog set', price: euro(AMOUNT.catalog, 'en'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Four photos: front, back, a fabric or logo close-up, and one on-model shot.' },
+    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle carousel', price: euro(AMOUNT.lifestyle, 'en'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Three photos of one product in one styled look — a carousel ready to post.' },
+    { id: 'video', tier: 'unattended', name: 'Video clip', price: euro(AMOUNT.video, 'en'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'en'), unit: 'per clip', line: 'One short clip. The same rate on its own or added to a drop.' },
   ],
   nl: [
-    { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), unit: 'per product', line: 'Vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot.' },
-    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle-carousel', price: euro(AMOUNT.lifestyle, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carousel klaar om te posten.' },
-    { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een drop.' },
+    { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot.' },
+    { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle-carousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carousel klaar om te posten.' },
+    { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een drop.' },
   ],
 };
 
@@ -826,6 +884,10 @@ export function getPricing(lang = 'en') {
     turnaround: (tierId) => turnaround(tierId, l),
     aftercare: (tierId) => aftercare(tierId, l),
     euro: (n) => euro(n, l),
+    // Task #271f — Single Product/Full outfit.
+    outfitSurcharge: OUTFIT_SURCHARGE,
+    maxOutfitProducts: MAX_OUTFIT_PRODUCTS,
+    outfitCopy: OUTFIT_COPY[l],
   };
 }
 

@@ -199,8 +199,8 @@ naming a product the pricing model has dropped.
 
 **€2,238.50 is right.** 1,850 × 1.21. The worked example in the brief checks out.
 
-**The 132 price call sites are one problem, not 132.** *"Never show an unlabelled
-price"* touches **132 calls to `euro()` / `euroRange()` / `perProduct()` across 40
+**The 142 price call sites are one problem, not 142.** *"Never show an unlabelled
+price"* touches **142 calls to `euro()` / `euroRange()` / `perProduct()` across 40
 files**, which sounds like a sitewide edit. It is not: every one of them goes
 through `euro()`, `euroRange()`, or a pre-formatted string in `PACKAGES` /
 `PER_PRODUCT` / `TEST_SAMPLE` / `SHOOT_DAY`, all in `src/data/pricing.js`. The
@@ -209,14 +209,14 @@ in a single content variable per tier, not hardcoded across pages."*
 
 A note on that number, because I first wrote a different one and the correction is
 more interesting than the digit. The figure I originally quoted came from
-`grep -rn 'euro(' src functions | wc -l`, which returns **131**. That command
+`grep -rn 'euro(' src functions | wc -l`, which returns **135**. That command
 answers a question nobody asked. It counts **lines containing at least one match**,
 so five files that put two calls on one line contribute one each; and it counts
 **prose**, because a comment explaining why `euroRange()` rounds looks exactly like
-a call to it. Correcting only the first error gives 140 across 41 files, which is
+a call to it. Correcting only the first error gives 150 across 41 files, which is
 what I nearly sent you.
 
-The honest number strips comments first and then counts occurrences: **132 across
+The honest number strips comments first and then counts occurrences: **142 across
 40 files.** The eight-call gap is entirely explanatory comments in
 `ComparePage.astro` (3), `interactions.js` (2), and one each in `FaqPage.astro`,
 `PricingPage.astro` and `pipeline.js`. `interactions.js` mentions `euro()` twice
@@ -227,7 +227,7 @@ surface at all, which is the entire difference between 41 and 40.
 and raw, occurrences and lines — and fails if the report and the repository
 disagree in either direction. That is the only reason this got caught: the report
 and the checker were both written by me, and the checker was the one that had to
-open the files. **None of the 132 are in `functions/`.** The whole surface is
+open the files. **None of the 142 are in `functions/`.** The whole surface is
 render-side, which is why one change at the formatting chokepoint reaches all of
 it.
 
@@ -256,6 +256,23 @@ used sparingly on the homepage and the service pages), self-hosted the same
 way Archivo already is — two more `@fontsource` imports and a comment above
 the footer, no pricing surface touched. Census figures unchanged; only the
 footer citation moved.
+
+Every figure moved by ten on 2026-07-30 (task #271f, the Single Product/Full
+outfit option), and this one is the first that is not a single new sentence
+somewhere. `PER_PRODUCT` in `pricing.js` gained an `outfitPrice` field on all
+six of its rows (catalog/lifestyle/video, EN and NL) — six existing lines each
+picked up a second `euro()` call, so six calls arrived with zero new lines.
+`StartPage.astro`'s new outfit-choice hint (EN and NL) each call
+`euro(OUTFIT_SURCHARGE, lang)` once, on a new line apiece — two calls, two
+lines. `pipeline.js`'s running total and its step-5 summary each print the
+outfit surcharge through `euro(cfg.outfitSurcharge)` once, on a new line
+apiece — two more calls, two more lines. Six plus two plus two is ten calls;
+zero plus two plus two is four lines — the same shape as every earlier
+entry in this section, an existing price surface printing one more sentence,
+not a new one starting to. File counts held at 40 and 41 for exactly that
+reason: `pricing.js`, `StartPage.astro` and `pipeline.js` all already priced
+things. The raw/code gap held at 8 too — every line this task added was real
+code, none of it comment.
 
 That checker is in the suite under the same rule as everything else in it: 28
 deliberately broken copies of the repository are fed to it and it has to object

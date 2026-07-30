@@ -37,6 +37,7 @@ import {
   TIERS, reviewClaim, AMOUNT, euro, PILOT_PRODUCTS,
   TIER_ROWS, tierRow, tierRowLabels,
   FULL_DROP_MIN, FULL_DROP_MAX, TEST_SAMPLE,
+  OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
 } from '../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES } from '../lib/uploads.js';
@@ -144,6 +145,8 @@ const PIPE = {
       each: '{price} per product × {n}.',
       quote: 'Choose how many products and the total appears here.',
       onRequest: '—',
+      // Task #271f — appended to whichever note above already applies.
+      outfit: ' Plus {price} × {n} for full outfit.',
     },
     scope: {
       drop: 'A whole drop',
@@ -162,6 +165,9 @@ const PIPE = {
       scope: 'Scope',
       kind: 'Package',
       count: 'Products',
+      // Task #271f.
+      outfit: 'Full outfit',
+      outfitN: '{price} extra × {n}',
       total: 'Total',
       files: 'Reference material',
       noFiles: 'Nothing sent yet — you can email it afterwards',
@@ -212,6 +218,8 @@ const PIPE = {
       each: '{price} per product × {n}.',
       quote: 'Kies hoeveel producten en het totaal verschijnt hier.',
       onRequest: '—',
+      // Taak #271f.
+      outfit: ' Plus {price} × {n} voor full outfit.',
     },
     scope: {
       drop: 'Een hele drop',
@@ -230,6 +238,9 @@ const PIPE = {
       scope: 'Omvang',
       kind: 'Pakket',
       count: 'Producten',
+      // Taak #271f.
+      outfit: 'Full outfit',
+      outfitN: '{price} extra × {n}',
       total: 'Totaal',
       files: 'Referentiemateriaal',
       noFiles: 'Nog niets gestuurd — je kunt het later mailen',
@@ -304,6 +315,13 @@ const FORM = {
       countHint: 'Rough is fine — we confirm the count before anything is invoiced.',
       more: 'More than 10',
       totalLabel: 'Running total',
+      // Task #271f — Single Product/Full outfit. Shown for catalog, lifestyle
+      // and video (single) and for both drop packages; hidden for "custom",
+      // which is a quote and already covers whatever the shot needs.
+      outfitLabel: 'Any of these a full outfit?',
+      outfitHint: `Several products styled together on one shot — trousers and a t-shirt on the same model, for example — instead of one product on its own. Adds ${euro(OUTFIT_SURCHARGE, 'en')} per product styled this way, up to ${MAX_OUTFIT_PRODUCTS}. ${OUTFIT_COPY.en}`,
+      outfitNone: 'None — single product',
+      outfitCount: (n: number) => `${n} full outfit${n === 1 ? '' : 's'}`,
     },
     s2: {
       h: 'Send the product photos',
@@ -412,6 +430,13 @@ const FORM = {
       countHint: 'Een schatting volstaat — we bevestigen het aantal voordat er iets gefactureerd wordt.',
       more: 'Meer dan 10',
       totalLabel: 'Lopend totaal',
+      // Taak #271f — Single Product/Full outfit. Getoond bij catalog, lifestyle
+      // en video (losse producten) en bij beide dropverpakkingen; verborgen bij
+      // "iets anders", dat een offerte is en al dekt wat het shot nodig heeft.
+      outfitLabel: 'Zitten hier full outfits bij?',
+      outfitHint: `Meerdere producten samen gestyled op één shot — bijvoorbeeld een broek en een t-shirt op hetzelfde model — in plaats van één los product. ${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}. ${OUTFIT_COPY.nl}`,
+      outfitNone: 'Geen — los product',
+      outfitCount: (n: number) => `${n} full outfit${n === 1 ? '' : 's'}`,
     },
     s2: {
       h: 'Stuur de productfoto’s',
@@ -544,6 +569,9 @@ const config = {
     pilot: AMOUNT.dropPilot,
     full: AMOUNT.fullDrop,
   },
+  // Task #271f.
+  outfitSurcharge: OUTFIT_SURCHARGE,
+  maxOutfit: MAX_OUTFIT_PRODUCTS,
   copy: PIPE[lang],
 };
 // JSON inside a <script> element ends at the first literal "</script>", and a
@@ -557,6 +585,13 @@ const configJson = JSON.stringify(config).replace(/</g, '\\u003c');
 // an integer or /api/order's countOf() would silently record the wrong number.
 const singleCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_, i) => FULL_DROP_MIN + i);
+
+// Task #271f — 0 (the default, "single product") through MAX_OUTFIT_PRODUCTS.
+// syncOutfit() in pipeline.js narrows this the same way syncCount() narrows
+// the products select above: it hides options past whatever the current
+// products count allows, so the form can never submit an outfit count larger
+// than the order itself.
+const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i);
 ---
 
 <!-- HERO -->
@@ -709,6 +744,21 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
           <option value="More than 10">{f.s1.more}</option>
         </select>
         <span class="hint">{f.s1.countHint}</span>
+      </div>
+
+      {/* Task #271f — Single Product/Full outfit. One select, shared by both
+          doors and every single-panel kind that has a rate to surcharge
+          (not "custom", which is a quote). syncOutfit() in pipeline.js shows
+          or hides this and narrows the option list to what the current scope
+          and product count allow. Not [data-pl-req]: 0 ("single product") is
+          always a valid answer, so this field is never required. */}
+      <div class="field" data-pl-outfit hidden>
+        <label for="pl-outfit">{f.s1.outfitLabel}</label>
+        <select id="pl-outfit" class="select" name="outfit_count">
+          <option value="0">{f.s1.outfitNone}</option>
+          {outfitCounts.slice(1).map((n) => <option value={String(n)}>{f.s1.outfitCount(n)}</option>)}
+        </select>
+        <span class="hint">{f.s1.outfitHint}</span>
       </div>
 
       <div class="pl-total">
