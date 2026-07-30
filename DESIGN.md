@@ -438,51 +438,23 @@ The old note said the flat version had to be legible on its own or the chrome wa
 decoration propping up a weak mark. It is legible on its own, and it is now the only
 version there is.
 
-### The logotype gained a colour back — task #272
+Task #272 tried giving this one flat value a colour — harbor teal, on Lucas's own request
+after the harbor style guide — and shipped it briefly (`--brand` carrying `oklch(0.499
+0.054 214.5)`, `.brand-word`/`.brand-mark` reading it). Reverted the same day, 2026-07-30:
+seeing it live alongside the rest of a fuller colour pass, the preference was for the
+logotype to stay neutral — white on dark, ink on light — while colour does its work
+elsewhere on the page. `--brand` is back to aliasing `--ink-900`, unread, exactly as it
+was before task #272 and available again for whatever the next deliberate exception turns
+out to be.
 
-Not a reopening of the section above. That section's verdict was about *two colours in one
-mark reading as cheap at logo size* — a duotone or gradient logotype — and nothing here
-brings that back. `.brand-word` and `.brand-mark` are still exactly one solid `fill`, no
-`filter`, no `url()`; `verify2.py` §7 still fails the build if either of those comes back,
-it just checks for `var(--brand)` where it used to check for `var(--ink)`.
-
-Lucas's own request, 2026-07-30, after seeing the harbor style guide (a recoloured,
-sharp-cornered variant of the CapCut mechanics document, teal and clay drawn from the
-inno100 reference photo but not copied from it): give the logo one colour from that
-scheme. Confirmed scope was a single flat fill — not the wordmark one colour and the
-monogram another, not a two-tone treatment — applied live everywhere the mark ships:
-header, footer, favicon.
-
-`--brand` already existed for exactly this and had never been spent: declared in `:root`,
-aliased to `--ink-900`, read by nothing. Task #271c's Verify/Flag is the precedent for how
-a token gets a scoped exception without touching the rule it's an exception to — `--brand`
-now works the same way. It took its own value, `oklch(0.499 0.054 214.5)` / `#3C6B76`, the
-harbor teal, and nothing that reads `--accent` moved: every button on the site is still a
-black block on paper, because buttons read `--accent`, not `--brand`, and `--accent` is
-untouched. One token changed meaning; the "no marketing accent" rule it used to alias
-still holds everywhere else.
-
-`--brand` sits in the same hue-215 petrol family as `--signal` without being `--signal` —
-close by coincidence (both are "a teal that isn't a link, isn't chrome"), not by a shared
-token, because a status colour and an identity colour drifting apart later should not have
-to fight over one variable. Contrast was checked on both grounds rather than assumed, since
-`--brand` is one fixed value and does not flip inside `.on-ink` the way `--ink` does: 5.41:1
-on `--paper` (clears the 4.5:1 body-text floor, though the mark is graphical and only needs
-3:1) and 3.29:1 on `--ink-900` (clears that 3:1 WCAG 1.4.11 non-text floor, and every dark
-ground on this site — `.on-ink`'s whole point — shares that one background, so this single
-check covers the footer, the convbar, and every other dark surface the mark can land on).
-Both pairs are now in `verify2.py` §3's non-text tables beside `--signal` and `--warn`.
-
-Two rasters had to follow by hand, per the ten-places checklist earlier in this document.
-`public/img/logo-mark.webp` — the schema.org `logo:` field's asset, what a search result or
-a social card actually draws — was regenerated flat in the new teal from the same SVG path
-data the live mark uses, on the site's real `--paper` ground. The favicon set
-(`favicon.ico`, `favicon-32/48/192/512.png`) turned out to still be the *original*
-cyan-to-periwinkle gradient — a gap the monochrome pass never closed, discovered while
-regenerating the logo-mark raster for this task rather than something this task set out to
-fix. It is fixed now, flat teal, same source paths, rendered and resized from the live SVG
-rather than hand-edited, consistent with the same "raster; regenerate, never hand-edit"
-rule the checklist states for `logo-mark.webp`.
+One correction survived the revert on purpose rather than being rolled back with it:
+`public/favicon.ico` and `favicon-32/48/192/512.png` were still the *original*
+cyan-to-periwinkle gradient when task #272 started — a gap the monochrome pass never
+closed, unrelated to whether the logotype is flat ink or flat teal. Reverting the colour
+literally (`git revert`) would have put that stale gradient back. It didn't: the favicon
+set was regenerated a second time, flat `#0F0D0A` (`--ink-900`) from the same SVG path
+data, so the found-and-fixed inconsistency stays fixed independent of which colour
+decision is currently live.
 
 ### Degradation
 
