@@ -81,7 +81,8 @@ export async function adminGet(context) {
 
   if (path === '/admin') {
     const [revisions, orders] = await Promise.all([loadRevisionInbox(env), loadOrders(env)]);
-    return html(page({ title: 'Dashboard', body: dashboardBody(revisions, orders) }));
+    const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
+    return html(page({ title: 'Dashboard', body: dashboardBody(revisions, orders, modelsByCustomer) }));
   }
 
   return html(page({ title: 'Not found', body: errorBody('Not found.') }), 404);
@@ -100,12 +101,24 @@ export async function adminPost(context) {
   // AND an Origin that matches this site — see the file header.
   const admin = await currentAdmin(context);
   if (!admin) return seeOther('/admin/login');
-  if (!originIsSelf(request)) return html(page({ title: 'Admin', body: errorBody('Request origin did not match. Try again from the dashboard itself.') }), 403);
+  if (!originIsSelf(request, env)) {
+    // Task #271e, 2026-07-29: this used to say only "try again from the
+    // dashboard itself" — true, but useless if the cause is a genuine host
+    // mismatch, because there was nothing to look at to tell which one it
+    // was. Only Lucas, already authenticated, ever sees this page, so the
+    // raw values are safe to print — see originMismatchDetail()'s header.
+    return html(page({ title: 'Admin', body: errorBody(
+      `Request origin did not match. Try again from the dashboard itself. ${originMismatchDetail(request)}`
+    ) }), 403);
+  }
 
   if (path === '/admin/logout') return handleLogout(context, admin);
 
   const statusMatch = path.match(/^\/admin\/orders\/(\d+)\/status$/);
   if (statusMatch) return handleStatusUpdate(context, Number(statusMatch[1]));
+
+  const modelMatch = path.match(/^\/admin\/orders\/(\d+)\/models$/);
+  if (modelMatch) return handleAddCustomModel(context, Number(modelMatch[1]));
 
   return html(page({ title: 'Not found', body: errorBody('Not found.') }), 404);
 }
@@ -213,6 +226,53 @@ async function handleStatusUpdate({ request, env }, orderId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM MODELS — task #271e, 2026-07-29
+//
+// custom_models had a reader (account.js's brand-lock picker, and the
+// "owned?" check on the lock POST) but no writer anywhere in the codebase —
+// grep for `INSERT INTO custom_models` before this change returns nothing.
+// A brand could never have anything to lock a style to, and the portal's own
+// "No custom models on your account yet — ask us to set one up" message had
+// no admin-side action behind the "ask us" it names. This is that action:
+// the smallest thing that unblocks it — a label, tied to the order's
+// customer — not a redesign of whatever the eventual "custom-models flow"
+// (the one schema.sql's own comment on this table alludes to, that promotes
+// a row from 'in_design' to 'approved' to 'locked') turns out to need.
+// Every row created here starts 'in_design', schema.sql's own default;
+// nothing here writes 'approved' or 'locked' — those two remain unreachable
+// from any UI until that flow is actually designed, which is a separate,
+// bigger decision than "let Lucas create the row" and is not made here.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleAddCustomModel({ request, env }, orderId) {
+  const form = await request.formData().catch(() => null);
+  const label = String(form?.get('label') || '').trim().slice(0, 200);
+
+  if (!Number.isInteger(orderId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+  }
+  if (!label) {
+    return html(page({ title: 'Admin', body: errorBody('A label is required to add a custom model.') }), 400);
+  }
+
+  const order = await env.DB.prepare('SELECT customer_id FROM orders WHERE id = ?1').bind(orderId).first();
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order.customer_id) {
+    // Real, if rare: upsertCustomer() in functions/api/order.js runs inside a
+    // safe() wrapper, so a DB hiccup at order time can leave orders.customer_id
+    // NULL without failing the order itself. Nothing to attach a model to
+    // until that's fixed by hand — surfacing it beats a foreign-key 500.
+    return html(page({ title: 'Admin', body: errorBody('This order has no linked customer account (customer_id is empty), so there is no brand to attach a custom model to.') }), 409);
+  }
+
+  await env.DB.prepare(
+    "INSERT INTO custom_models (customer_id, label, status) VALUES (?1, ?2, 'in_design')"
+  ).bind(order.customer_id, label).run();
+
+  return seeOther('/admin');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -268,7 +328,7 @@ async function loadRevisionInbox(env) {
 /** Recent orders, active ones first — "duidelijk overzicht van wat er gedaan moet worden." */
 async function loadOrders(env) {
   const res = await env.DB.prepare(
-    `SELECT id, ref, service, status, tier, brand, email, product_count,
+    `SELECT id, customer_id, ref, service, status, tier, brand, email, product_count,
             window_start, window_end, payment_status, created_at
        FROM orders
       ORDER BY
@@ -279,6 +339,34 @@ async function loadOrders(env) {
       LIMIT 200`
   ).all();
   return res.results || [];
+}
+
+/**
+ * Every custom_models row for the customers behind this page's orders, keyed
+ * by customer_id — one query, grouped in JS, the same shape account.js's
+ * groupFilesByOrder() already uses for the identical "N orders, each with
+ * their own child rows" problem. `customerIds` carries duplicates (several
+ * orders can share a customer) and NULLs (orders.customer_id is nullable —
+ * see handleAddCustomModel's comment); both are filtered before the query so
+ * neither becomes a wasted IN() slot or, worse, a NULL bind.
+ */
+async function loadCustomModelsByCustomer(env, customerIds) {
+  const ids = [...new Set(customerIds.filter((id) => Number.isInteger(id)))];
+  const byCustomer = new Map();
+  if (!ids.length) return byCustomer;
+
+  const placeholders = ids.map((_, i) => `?${i + 1}`).join(',');
+  const res = await env.DB.prepare(
+    `SELECT customer_id, id, label, status FROM custom_models
+      WHERE customer_id IN (${placeholders})
+      ORDER BY created_at DESC`
+  ).bind(...ids).all();
+
+  for (const row of res.results || []) {
+    if (!byCustomer.has(row.customer_id)) byCustomer.set(row.customer_id, []);
+    byCustomer.get(row.customer_id).push(row);
+  }
+  return byCustomer;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,15 +399,40 @@ function clearSessionCookie() {
  * because "no Origin" is also what a handful of ancient or misbehaving
  * clients send, and admitting that gap for their sake would reopen the one
  * this check exists to close.
+ *
+ * Task #271e, 2026-07-29: checked against request.url's own host first (the
+ * original, and still the common, case), then against ALLOWED_ORIGIN_HOSTS —
+ * a comma-separated env var — if that misses. This exists because a same-site
+ * browser POST from a hostname this exact Worker legitimately answers under
+ * is not a forged request, and Cloudflare Pages can legitimately put more
+ * than one live hostname in front of the same deployment (an apex/www pair,
+ * or the project's own *.pages.dev domain alongside a custom domain) — cases
+ * request.url alone cannot see because it only ever reflects the ONE host the
+ * current request happened to arrive on. Unset, this is byte-for-byte the
+ * original behaviour: nothing here narrows what used to pass.
  */
-function originIsSelf(request) {
+function originIsSelf(request, env) {
   const origin = request.headers.get('Origin');
   if (!origin) return false;
+  let originHost;
   try {
-    return new URL(origin).host === new URL(request.url).host;
+    originHost = new URL(origin).host;
   } catch {
     return false;
   }
+  if (originHost === new URL(request.url).host) return true;
+  const allowed = String(env?.ALLOWED_ORIGIN_HOSTS || '')
+    .split(',').map((s) => s.trim()).filter(Boolean);
+  return allowed.includes(originHost);
+}
+
+/** The two values behind an origin-mismatch 403 — same shape both call sites
+ * need to build a message a human can act on instead of a dead end. */
+function originMismatchDetail(request) {
+  const origin = request.headers.get('Origin') || '(no Origin header sent)';
+  let host = '(unreadable)';
+  try { host = new URL(request.url).host; } catch { /* leave the placeholder */ }
+  return `Seen Origin: ${origin}. Expected host: ${host}.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -337,7 +450,7 @@ function loginBody(error = null) {
 </form>`;
 }
 
-function dashboardBody(revisions, orders) {
+function dashboardBody(revisions, orders, modelsByCustomer) {
   return `
 <div class="bar">
   <a class="mark" href="/">VISUAILS</a>
@@ -353,7 +466,7 @@ function dashboardBody(revisions, orders) {
 ${revisions.length ? revisions.map(revisionCard).join('') : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
 
 <h2>Orders</h2>
-${orders.length ? orders.map(orderCard).join('') : '<p class="empty">No orders yet.</p>'}`;
+${orders.length ? orders.map((o) => orderCard(o, modelsByCustomer.get(o.customer_id) || [])).join('') : '<p class="empty">No orders yet.</p>'}`;
 }
 
 function revisionCard(r) {
@@ -367,11 +480,17 @@ function revisionCard(r) {
 </div>`;
 }
 
-function orderCard(o) {
+function orderCard(o, models) {
   const options = STATUSES.map(
     (s) => `<option value="${s}"${s === o.status ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
   ).join('');
   const window = o.window_start ? `${esc(o.window_start)} → ${esc(o.window_end)}` : '—';
+  // Task #271e: custom_models for this order's customer, read-only, so Lucas
+  // can see what a brand already has before adding another with the same
+  // name by accident — see loadCustomModelsByCustomer()'s header.
+  const modelList = models.length
+    ? `<p class="meta">Custom models: ${models.map((m) => `${esc(m.label)} (${esc(m.status)})`).join(', ')}</p>`
+    : '';
   return `
 <div class="card">
   <div class="row-head">
@@ -385,6 +504,11 @@ function orderCard(o) {
     <select name="status">${options}</select>
     <input type="text" name="note" placeholder="Note (optional, goes on the client's timeline too)" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);">
     <button class="btn btn-primary" type="submit">Update</button>
+  </form>
+  ${modelList}
+  <form class="controls" method="post" action="/admin/orders/${o.id}/models">
+    <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);" required>
+    <button class="btn btn-ghost" type="submit">Add custom model</button>
   </form>
 </div>`;
 }

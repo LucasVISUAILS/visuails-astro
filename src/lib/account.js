@@ -295,6 +295,12 @@ export async function accountGet(context) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/account';
 
+  // Routed before the generic DB-down branch below, on purpose: that branch
+  // returns an HTML error page, and /account/me's one caller is a fetch()
+  // expecting JSON (see handleMe()) — handing it an HTML body either way
+  // would be a caller-visible content-type lie, not a graceful degradation.
+  if (path === '/account/me') return handleMe(context);
+
   if (!env?.DB) {
     const lang = negotiate(request);
     return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
@@ -364,11 +370,19 @@ export async function accountPost(context) {
 
   const customer = await currentCustomer(env, request);
   if (!customer) return seeOther('/account/login');
-  if (!originIsSelf(request)) {
+  if (!originIsSelf(request, env)) {
     const lang = negotiate(request);
-    return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang], lang === 'nl'
+    // Task #271e, 2026-07-29: appended the same raw Origin/host detail
+    // admin.js now prints. This page is customer-facing, unlike admin's, but
+    // the two values are just the requesting browser's own header and this
+    // site's own hostname — nothing about another customer or the account
+    // itself — so showing them here is what makes a real mismatch (as
+    // opposed to a forged request, which this check still blocks) fixable by
+    // whoever hits it instead of a dead end.
+    const detail = originMismatchDetail(request);
+    return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang], (lang === 'nl'
       ? 'De herkomst van dit verzoek klopte niet. Probeer het opnieuw vanaf je accountpagina.'
-      : 'Request origin did not match. Try again from your account page.') }), 403);
+      : 'Request origin did not match. Try again from your account page.') + ' ' + detail) }), 403);
   }
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-post', limit: POST_LIMIT });
@@ -574,6 +588,59 @@ async function currentCustomer(env, request) {
     .bind(row.session_id, accountSessionExpiry()).run().catch(() => {});
 
   return row;
+}
+
+/**
+ * GET /account/me — task #271e, 2026-07-29. JSON, not a page: the one caller
+ * is /start's client-side prefill fetch (pipeline.js's bindPrefill()), not a
+ * browser navigation. See that file's header for why this has to be a fetch
+ * at all — /start is a static build, not a Pages Function, so there is no
+ * per-request point on that page to read a cookie from.
+ *
+ * No Origin check: a GET changes nothing, same reasoning as every other GET
+ * in this file and in admin.js. 401 with an empty body for "not signed in" —
+ * not a redirect, and not currentCustomer()'s usual seeOther('/account/login')
+ * — because the caller is a fetch(), and redirecting a fetch to an HTML login
+ * page would hand pipeline.js a login page's markup as if it were JSON.
+ *
+ * customers.email/name/brand/phone/website/vat_number map directly onto
+ * StartPage.astro step 3's six input[name] values (see pipeline.js's DOM
+ * CONTRACT) — vat_number renamed to vat here so the response can be applied
+ * with zero translation on the client, keyed by the same `name` the form
+ * already uses. billing_address/country are real columns on this table
+ * (schema.sql) but step 3 has no address field to fill, so they are not
+ * queried — no benign extra data returned means no code says "why is that
+ * column here" later.
+ */
+async function handleMe({ request, env }) {
+  if (!env?.DB) return json({}, 503); // currentCustomer() would throw on env.DB.prepare — fail as JSON, not a 500
+
+  // Same bucket, same limit, as every other GET in this file (see accountGet's
+  // shared gate below) — this route sits outside that shared code only
+  // because it must answer JSON even when env.DB is down (see accountGet's
+  // routing comment), not because it should go unmetered. It runs
+  // automatically on every /start page load, logged in or not, so it is if
+  // anything a MORE likely target for the abuse this gate exists for, not
+  // less.
+  const gate = await checkRate(env, { ip: clientIp(request), action: 'account-page', limit: PAGE_LIMIT });
+  if (!gate.allowed) return json({}, 429);
+
+  const customer = await currentCustomer(env, request);
+  if (!customer) return json({}, 401);
+
+  const row = await env.DB.prepare(
+    'SELECT email, name, brand, phone, website, vat_number FROM customers WHERE id = ?1'
+  ).bind(customer.customer_id).first();
+  if (!row) return json({}, 401); // the session outlived its own customer row — treat it as signed out, not a 500
+
+  return json({
+    email: row.email || '',
+    name: row.name || '',
+    brand: row.brand || '',
+    phone: row.phone || '',
+    website: row.website || '',
+    vat: row.vat_number || '',
+  });
 }
 
 /** All orders this customer has placed, most recent first. */
@@ -891,15 +958,32 @@ function clearSessionCookie() {
   return `${SESSION_COOKIE}=; Path=/account; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
 }
 
-/** Same check, same reasoning, as admin.js's originIsSelf() — see that file's header. */
-function originIsSelf(request) {
+/**
+ * Same check, same reasoning, as admin.js's originIsSelf() — see that file's
+ * header, including task #271e's 2026-07-29 widening (request.url's own host,
+ * then env.ALLOWED_ORIGIN_HOSTS if that misses — unset, this is unchanged).
+ */
+function originIsSelf(request, env) {
   const origin = request.headers.get('Origin');
   if (!origin) return false;
+  let originHost;
   try {
-    return new URL(origin).host === new URL(request.url).host;
+    originHost = new URL(origin).host;
   } catch {
     return false;
   }
+  if (originHost === new URL(request.url).host) return true;
+  const allowed = String(env?.ALLOWED_ORIGIN_HOSTS || '')
+    .split(',').map((s) => s.trim()).filter(Boolean);
+  return allowed.includes(originHost);
+}
+
+/** Same shape as admin.js's originMismatchDetail() — see that file. */
+function originMismatchDetail(request) {
+  const origin = request.headers.get('Origin') || '(no Origin header sent)';
+  let host = '(unreadable)';
+  try { host = new URL(request.url).host; } catch { /* leave the placeholder */ }
+  return `Seen Origin: ${origin}. Expected host: ${host}.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1266,6 +1350,20 @@ function seeOther(location, setCookies = []) {
   const headers = new Headers({ Location: location, 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' });
   for (const c of setCookies) headers.append('Set-Cookie', c);
   return new Response(null, { status: 303, headers });
+}
+
+/** Same shape as functions/api/order.js's json() — see handleMe() for the one caller. */
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'referrer-policy': 'no-referrer',
+      'x-robots-tag': 'noindex, nofollow',
+      'x-content-type-options': 'nosniff',
+    },
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

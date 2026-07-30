@@ -75,6 +75,9 @@
 //           [data-pl-droplist]                   the file rows land here
 //           [data-pl-upload-note="off"]          shown when uploads are down
 //
+//   step 3  input[name=name|brand|email|phone|website|vat]
+//           [data-pl-prefill-note]               task #271e — see bindPrefill()
+//
 //   step 4  [data-pl-gate="queue|ok|full|too-large|invalid|unavailable|checking"]
 //           [data-pl-windows]                    inside the "ok" panel
 //           [data-max]                           filled with the server's number
@@ -161,6 +164,7 @@ function init(el) {
   bindUploads();
   bindGate();
   bindSubmit();
+  bindPrefill();
 
   syncScope();
   show(1, { focus: false });
@@ -626,6 +630,71 @@ function addRemove(row, key) {
 function renderCount() {
   const out = q('[data-pl-filecount]');
   if (out) out.textContent = staged.length ? c('upload.count', { n: staged.length, max: cfg.maxBatchFiles }) : '';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP 3 · PREFILL — task #271e, 2026-07-29
+//
+// schema.sql's own header, written the day the customers table was designed,
+// says what this is: "the account then prefills the contact + VAT fields into
+// order forms." functions/api/order.js has upserted that table on every order
+// since Phase 1; nothing ever read it back until now, so a returning,
+// signed-in brand still retyped its own name and VAT number every time —
+// Lucas's own words for this, verbatim: information that should be
+// unnecessary once you're logged in.
+//
+// Why this is client-side JS and not server-rendered, unlike admin.js's and
+// account.js's own pages: /start is output:'static' (wrangler.toml's own
+// comment), built once and served from disk, not a per-request Pages
+// Function — there is no request to read a cookie from at render time. A
+// fetch is the only place left to do this.
+//
+// GET /account/me (account.js) answers with the signed-in customer's known
+// fields, or 401 if no one is signed in — see that file for why a GET needs
+// no Origin check (nothing here changes state) and why the account session
+// cookie reaches this call from a page that isn't /account/*: cookies attach
+// to the REQUEST's own path against the cookie's Path=/account, not to
+// whichever page's script sent the fetch.
+//
+// Every field stays a normal, editable <input> — nothing here is locked or
+// read-only, and nothing overwrites a field that already has a value (typed
+// by hand, kept from a back-navigation, or filled by the browser's own
+// autofill before this fetch resolved). This is a head start, not a form the
+// visitor no longer controls.
+function bindPrefill() {
+  const note = q('[data-pl-prefill-note]');
+
+  fetch('/account/me', { headers: { Accept: 'application/json' } })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((me) => {
+      if (!me || !form) return;
+
+      // name/email/brand/phone/website/vat — the six fields step 3 actually
+      // has (see the DOM CONTRACT above); a seventh key in the response, if
+      // one is ever added, is simply not among the inputs found and does
+      // nothing, rather than needing a matching change here. email is filled
+      // like every other field here — it is also read separately below for
+      // the note text, which needs it regardless of whether the input itself
+      // was already non-empty.
+      const filled = Object.entries(me)
+        .filter(([, value]) => typeof value === 'string' && value)
+        .map(([key, value]) => {
+          const input = q(`[name="${CSS.escape(key)}"]`);
+          if (!input || input.value) return null; // never overwrite
+          input.value = value;
+          return key;
+        })
+        .filter(Boolean);
+
+      // The note names what happened, not just who's signed in — a signed-in
+      // account with nothing on file yet (a first order) gets no note at
+      // all, because nothing on the visible form actually changed.
+      if (filled.length && note) {
+        note.textContent = c('s3.prefillNote', { email: me.email || '' });
+        note.hidden = false;
+      }
+    })
+    .catch(() => {}); // no account, offline, or /account/me unreachable — the form is already fine empty
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

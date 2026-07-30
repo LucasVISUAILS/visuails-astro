@@ -316,6 +316,11 @@ const FORM = {
     s3: {
       h: 'Who is this for?',
       lead: 'Enough to invoice it and come back to you. Nothing here is used for anything else.',
+      // Task #271e, 2026-07-29: shown only when pipeline.js's prefill fetch
+      // (GET /account/me) finds a signed-in account and actually fills a
+      // field — see that file's bindPrefill() for why "signed in" alone isn't
+      // enough to show this. {email} is the one var c() already supports.
+      prefillNote: 'Filled in from your account ({email}) — change anything that’s out of date.',
       name: 'Your name',
       brand: 'Brand or shop name',
       email: 'Email',
@@ -419,6 +424,7 @@ const FORM = {
     s3: {
       h: 'Voor wie is dit?',
       lead: 'Genoeg om te factureren en bij je terug te komen. Verder wordt hier niets mee gedaan.',
+      prefillNote: 'Ingevuld vanuit je account ({email}) — pas aan wat niet meer klopt.',
       name: 'Je naam',
       brand: 'Merk- of shopnaam',
       email: 'E-mail',
@@ -748,6 +754,12 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
     <section class="pl-step" data-pl-step="3">
       <h2 class="pl-h" data-pl-head>{f.s3.h}</h2>
       <p class="pl-lead">{f.s3.lead}</p>
+      {/* Task #271e, 2026-07-29: hidden by default — no JS, no signed-in
+          account, or a signed-in account with nothing on file all leave this
+          exactly as it was. pipeline.js's bindPrefill() fills the text and
+          un-hides it only once it has actually written a value into a field
+          below, never just because someone is logged in. See that file. */}
+      <p class="pl-lead pl-prefill-note" data-pl-prefill-note hidden></p>
 
       <div class="row-2">
         <div class="field">
@@ -1080,6 +1092,15 @@ const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_,
   .pl-h:focus { outline: none; }
   .pl-h:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
   .pl-lead { margin-top: .7rem; color: var(--ink-3); max-width: 62ch; }
+  /* Task #271e, 2026-07-29: distinct from .pl-lead only in weight and size —
+     smaller and italic, the way a caption reads next to a heading, not a
+     second sentence of the same lead. It says what pipeline.js's
+     bindPrefill() did (see that file), not a claim from the design system's
+     Verify/Flag pair (DESIGN.md's dated addendum, task #271c): "your details
+     were filled in" is neither a review claim nor a delivery window, so it
+     gets no rule/colour from that system — reaching for it here would be the
+     decorative use colorize.md explicitly bans. */
+  .pl-prefill-note { font-size: .82rem; font-style: italic; margin-top: .35rem; }
   .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
   .pl-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
 

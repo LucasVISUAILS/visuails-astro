@@ -8,6 +8,7 @@
 //   POST /account/lock              set/clear a per-style brand lock
 //   GET  /account/files/<id>/f      inline view of a delivered file
 //   GET  /account/files/<id>/d      download a delivered file
+//   GET  /account/me                JSON, for /start's prefill fetch — task #271e
 //
 // WHY THIS FILE IS FOUR LINES
 // Same reason functions/admin/[[path]].js is four lines — see that file's
