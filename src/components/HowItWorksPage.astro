@@ -281,12 +281,15 @@ const COPY = {
     // being the shapes, and the grid is five cards now instead of six.
     formatsH: 'One visual, every shape a channel asks for',
     fmtAlt: 'One product visual cropped to five different aspect ratios',
+    // Frame 0 takes fmtAlt; 1..4 carry their own, because each crop is
+    // different evidence, not a decorative repeat. Order is coupled to
+    // FigFormats' RATIOS (1:1, 4:5, 9:16, 16:9, 3:4) like the labels are.
     fmtFrames: [
       { t: 'Shop listing' },
-      { t: 'Feed post' },
-      { t: 'Reel or story' },
-      { t: 'Banner' },
-      { t: 'Marketplace' },
+      { t: 'Feed post', alt: 'The same catalog visual cropped to a tall 4:5 feed post' },
+      { t: 'Reel or story', alt: 'The same catalog visual cropped to a full-height 9:16 reel or story' },
+      { t: 'Banner', alt: 'The same catalog visual cropped to a wide 16:9 banner' },
+      { t: 'Marketplace', alt: 'The same catalog visual cropped to a 3:4 marketplace listing' },
     ],
     // First sentence is load-bearing — it is the whole of the deleted "Files"
     // card, and removing a card while dropping its claim would be losing content,
@@ -295,6 +298,10 @@ const COPY = {
     fmtNote: 'High-resolution, e-commerce-ready files. Each frame is the ratio it is labelled with.',
 
     faqH: 'Still have a question?',
+    // The second inbound link to /guides (brief §1 — it had none in any page
+    // body). It sits under the FAQ heading because that is where someone with
+    // a question already is, and it says which questions the FAQ does not take.
+    faqGuides: `The FAQ answers the practical ones; the longer reads — how to shoot the photo you send us, what a shoot day actually costs — are in the <a href="${lp('/guides')}">guides</a>.`,
     faqCta: 'Read the FAQ',
 
     ctaH: 'See it on your own product.',
@@ -389,14 +396,15 @@ const COPY = {
     fmtAlt: 'Eén productvisual bijgesneden naar vijf verschillende beeldverhoudingen',
     fmtFrames: [
       { t: 'Shoplisting' },
-      { t: 'Feedpost' },
-      { t: 'Reel of story' },
-      { t: 'Banner' },
-      { t: 'Marktplaats' },
+      { t: 'Feedpost', alt: 'Dezelfde catalogvisual bijgesneden naar een staande 4:5-feedpost' },
+      { t: 'Reel of story', alt: 'Dezelfde catalogvisual bijgesneden naar een schermvullende 9:16-reel of -story' },
+      { t: 'Banner', alt: 'Dezelfde catalogvisual bijgesneden naar een brede 16:9-banner' },
+      { t: 'Marktplaats', alt: 'Dezelfde catalogvisual bijgesneden naar een 3:4-vermelding op een marktplaats' },
     ],
     fmtNote: 'Hoge-resolutiebestanden, klaar voor e-commerce. Elk kader ís de verhouding waar het label bij staat.',
 
     faqH: 'Nog een vraag?',
+    faqGuides: `De FAQ beantwoordt de praktische vragen; de langere stukken — hoe je de foto maakt die je ons stuurt, wat een shootdag echt kost — staan bij de <a href="${lp('/guides')}">gidsen</a>.`,
     faqCta: 'Lees de FAQ',
 
     ctaH: 'Zie het op je eigen product.',
@@ -537,6 +545,8 @@ const pipeStops = c.steps.map((s) => ({
     <FigFormats
       photo="/img/catalog-after.webp"
       alt={c.fmtAlt}
+      width={1800}
+      height={1800}
       frames={c.fmtFrames}
       note={c.fmtNote}
     />
@@ -554,7 +564,10 @@ const pipeStops = c.steps.map((s) => ({
 
 <!-- FAQ -->
 <section class="section-tight"><div class="container">
-  <div style="text-align:center;max-width:60ch;margin:0 auto 1.4rem"><h2>{c.faqH}</h2></div>
+  <div style="text-align:center;max-width:60ch;margin:0 auto 1.4rem">
+    <h2>{c.faqH}</h2>
+    <p class="faq-guides" set:html={c.faqGuides} />
+  </div>
   <div class="flex" style="justify-content:center"><a href={lp('/faq')} class="btn btn-ghost btn-lg">{c.faqCta}</a></div>
 </div></section>
 
@@ -596,4 +609,10 @@ const pipeStops = c.steps.map((s) => ({
 
   .grid-auto { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
   .card p a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* The line to the guides hub under the FAQ heading. Its anchor arrives
+     through set:html and carries no scope attribute, so :global() is what
+     reaches it. */
+  .faq-guides { margin-top: .9rem; font-size: .92rem; color: var(--ink-3); line-height: 1.6; }
+  .faq-guides :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 </style>

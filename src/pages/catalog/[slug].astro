@@ -158,6 +158,11 @@ const QUEUE = TIERS.unattended.queue.en;
             <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
+        {/* Brief §1 — every drop-content page links to /custom-models. One
+            line in the template reaches both catalog styles, and it sits
+            under "What you get" because the model is part of what you get:
+            every catalog set includes an on-model shot. */}
+        <p class="model-note">The on-model shot in every {style.name} set can use a face from the standard roster — or <a href="/custom-models">a Brand Model made only for you</a>, so the same person carries your whole range.</p>
       </div>
     </div>
   </section>
@@ -187,4 +192,8 @@ const QUEUE = TIERS.unattended.queue.en;
      per file; consolidating these into global.css is logged as a follow-up. */
   .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
 
+  /* The Brand Model line under "What you get" — body copy, not a callout.
+     A box or a tint here would turn one honest sentence into an ad slot. */
+  .model-note { margin-top: 1.2rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
+  .model-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 </style>

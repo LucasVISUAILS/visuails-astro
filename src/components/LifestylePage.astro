@@ -41,13 +41,33 @@ const GRADES = [
 const moodBySlug = Object.fromEntries(moods.map((s) => [s.slug, s]));
 const grades = GRADES.map((g) => ({ ...g, name: moodBySlug[g.slug].name }));
 
+// w/h are the intrinsic pixel size of each file in public/img. .marquee-item
+// is a fixed 4/5 box and the image covers it, so these change nothing you can
+// see — they stop the row reflowing as each photo arrives (§12).
 const marqueeItems = [
-  { src: '/img/lifestyle-phone-made-06.webp', label: 'Phone-made' },
-  { src: '/img/lifestyle-glow-03.webp', label: 'Glow' },
-  { src: '/img/lifestyle-flash-05.webp', label: 'Flash' },
-  { src: '/img/lifestyle-dunes-02.webp', label: 'Dunes' },
-  { src: '/img/banners-02.webp', label: 'Campaign' },
+  { src: '/img/lifestyle-phone-made-06.webp', label: 'Phone-made', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-glow-03.webp', label: 'Glow', w: 768, h: 1376 },
+  { src: '/img/lifestyle-flash-05.webp', label: 'Flash', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-dunes-02.webp', label: 'Dunes', w: 928, h: 1152 },
+  { src: '/img/banners-02.webp', label: 'Campaign', w: 928, h: 1152 },
 ];
+
+// The mood cards render `cardPhoto` straight off src/data/styles.js, which
+// carries paths and no sizes. Their intrinsic size is recorded here — read off
+// the files, not off the .photo-band box they crop into. Unlisted throws, so a
+// restyled card cannot quietly ship without its aspect-ratio box.
+const CARD_INTRINSIC: Record<string, [number, number]> = {
+  '/img/banners-13.webp': [2400, 1792],
+  '/img/lifestyle-dunes-01.webp': [928, 1152],
+  '/img/lifestyle-flash-02.webp': [1340, 2400],
+  '/img/lifestyle-glow-01.webp': [1340, 2400],
+  '/img/lifestyle-phone-made-11.webp': [2400, 1792],
+};
+const cardSize = (src: string): [number, number] => {
+  const d = CARD_INTRINSIC[src];
+  if (!d) throw new Error(`LifestylePage.astro: no intrinsic size on record for ${src} — add it to CARD_INTRINSIC.`);
+  return d;
+};
 
 // No `as const` — COPY[lang] on a const-asserted object gives a union of
 // readonly tuples and .map() on that union is a TS error.
@@ -228,7 +248,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
       {moods.map((s) => (
         <a href={lp(`/lifestyle/${s.slug}`)} class="reveal pending" style="display:block">
           <div class="photo-band tall">
-            <img src={s.cardPhoto} alt={c.exampleAlt(s.name)} loading="lazy" />
+            <img src={s.cardPhoto} alt={c.exampleAlt(s.name)} loading="lazy" decoding="async" width={cardSize(s.cardPhoto)[0]} height={cardSize(s.cardPhoto)[1]} />
             <div class="scrim"></div>
             <div class="caption">
               <h3 style="font-size:1.6rem"><em>{s.name}</em> &rarr;</h3>
@@ -271,7 +291,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   <div class="container">
     <div class="photo-split reveal pending">
       <div class="photo-split-media">
-        <img src="/img/model-02.webp" alt={c.modelAlt} loading="lazy" />
+        <img src="/img/model-02.webp" alt={c.modelAlt} loading="lazy" decoding="async" width="800" height="1071" />
       </div>
       <div>
         <h2 set:html={c.modelH} />
@@ -321,7 +341,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   <div class="marquee"><div class="marquee-track">
     {marqueeItems.map((m) => (
       <div class="marquee-item">
-        <img src={m.src} alt={c.exampleAlt(m.label)} loading="lazy" style="width:100%;height:100%;object-fit:cover" />
+        <img src={m.src} alt={c.exampleAlt(m.label)} loading="lazy" decoding="async" width={m.w} height={m.h} style="width:100%;height:100%;object-fit:cover" />
       </div>
     ))}
   </div></div>

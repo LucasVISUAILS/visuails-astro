@@ -222,6 +222,80 @@ function comet() {
   if (head) tl.from(head, { scale: 0, opacity: 0, transformOrigin: 'center', duration: 0.5, ease: EASE.quart }, 1.45);
 }
 
+// Refresh discipline. ScrollTrigger measures every start/end once and caches
+// the pixel values; anything that changes layout after that measurement leaves
+// every trigger pointing at the wrong scroll position — the pinned #develop
+// scene being the loudest case. Section 8: "Every ScrollTrigger needs a
+// resize-refresh handler."
+//
+// This replaces a single `window.addEventListener('load', …, {once:true})`,
+// which was wrong twice over. It was not a resize handler at all, and because
+// init() re-runs on every astro:page-load, from the second (client-side)
+// navigation onward the `load` event had already fired and never came again —
+// so the refresh silently stopped happening while a fresh dead listener was
+// added per navigation.
+//
+// Three sources, one debounced refresh:
+//
+//  1. resize — debounced 150ms. ScrollTrigger.config({ignoreMobileResize:true})
+//     above stays: it exists precisely because a mobile URL bar showing or
+//     hiding fires a resize with a new viewport HEIGHT and no layout change
+//     worth re-measuring, and refreshing there is a scroll-jank source. So
+//     this handler applies the same rule itself — on a coarse-pointer device a
+//     resize that leaves innerWidth untouched is treated as URL-bar chrome and
+//     ignored. Width changes always refresh; on desktop (fine pointer) a
+//     height-only resize is a real window resize and refreshes too.
+//  2. orientationchange — always a real re-layout.
+//  3. a one-shot after webfonts swap in. document.fonts.ready beats `load`
+//     here: it resolves on client-side navigation as well (an already-settled
+//     font set resolves immediately), where `load` fires exactly once per full
+//     document. Late-decoding images feed the same debounce via a capture-phase
+//     `load` listener, since that event does not bubble.
+//
+// Every listener is returned as a teardown closure from the gsap.context body,
+// so context.revert() in destroy() removes them on astro:before-swap. Nothing
+// here outlives the page it was built for.
+function bindRefresh() {
+  let timer = 0;
+  let alive = true;
+  let lastW = window.innerWidth;
+  const coarse = window.matchMedia('(hover: none) and (pointer: coarse)');
+
+  const flush = () => {
+    if (!alive) return;
+    lastW = window.innerWidth;
+    ScrollTrigger.refresh();
+  };
+  const schedule = (delay = 150) => {
+    clearTimeout(timer);
+    timer = setTimeout(flush, delay);
+  };
+  const onResize = () => {
+    // Height-only resize on a touch device == the URL bar, not a re-layout.
+    if (coarse.matches && window.innerWidth === lastW) return;
+    schedule();
+  };
+  const onOrientation = () => schedule(300);
+  const onMediaLoad = (e) => {
+    const el = e.target;
+    if (el instanceof HTMLImageElement || el instanceof HTMLVideoElement) schedule(200);
+  };
+
+  window.addEventListener('resize', onResize, { passive: true });
+  window.addEventListener('orientationchange', onOrientation, { passive: true });
+  document.addEventListener('load', onMediaLoad, true);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(flush);
+  else schedule(300);
+
+  return () => {
+    alive = false;
+    clearTimeout(timer);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('orientationchange', onOrientation);
+    document.removeEventListener('load', onMediaLoad, true);
+  };
+}
+
 function init() {
   if (reduced()) return;
   ctx = gsap.context(() => {
@@ -233,8 +307,10 @@ function init() {
     developScene();
     marquee();
     comet();
+    // A function returned from a context body is its cleanup — run by
+    // ctx.revert(), i.e. by destroy(), i.e. on astro:before-swap.
+    return bindRefresh();
   });
-  window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 }
 
 function destroy() {

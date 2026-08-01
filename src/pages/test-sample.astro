@@ -20,13 +20,23 @@ import { TEST_SAMPLE, turnaround } from '../data/pricing.js';
 const SAMPLE = TEST_SAMPLE.en;
 const TIMING = turnaround('unattended', 'en');
 
+// w/h are the intrinsic pixel size of each file in public/img — the .choice
+// tile crops with object-fit, so these only reserve the aspect-ratio box.
 const styles = [
-  { value: 'Phone-made', photo: '/img/lifestyle-phone-made-01.webp' },
-  { value: 'Glow', photo: '/img/lifestyle-glow-01.webp' },
-  { value: 'Flash', photo: '/img/lifestyle-flash-01.webp' },
-  { value: 'Dunes', photo: '/img/lifestyle-dunes-01.webp' },
+  { value: 'Phone-made', photo: '/img/lifestyle-phone-made-01.webp', w: 2400, h: 1792 },
+  { value: 'Glow', photo: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400 },
+  { value: 'Flash', photo: '/img/lifestyle-flash-01.webp', w: 928, h: 1152 },
+  { value: 'Dunes', photo: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
 ];
-const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme'];
+// Nine of the ten roster headshots were produced at 1195x1600; model-rae.webp
+// is the exception at 800x1071. Assuming one size for the family would have
+// put a wrong box under Rae, so the exception is named.
+const ROSTER_ODD: Record<string, [number, number]> = { Rae: [800, 1071] };
+const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme']
+  .map((name) => {
+    const [w, h] = ROSTER_ODD[name] ?? [1195, 1600];
+    return { name, photo: `/img/model-${name.toLowerCase()}.webp`, w, h };
+  });
 ---
 
 <Layout
@@ -60,7 +70,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
       </div>
       <div class="reveal pending">
         <div class="photo-band">
-          <img src="/img/lifestyle-glow-03.webp" alt="Example VISUAILS visual, Glow style" loading="lazy" />
+          <img src="/img/lifestyle-glow-03.webp" alt="Example VISUAILS visual, Glow style" loading="lazy" decoding="async" width="768" height="1376" />
           <div class="scrim"></div>
           <div class="caption"><p style="margin:0">Your sample, human-checked</p></div>
         </div>
@@ -157,7 +167,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                 {styles.map((s, i) => (
                   <label class="choice">
                     <input type="radio" name="style" value={s.value} required={i === 0} />
-                    <div class="choice-media"><img src={s.photo} alt={`${s.value} lifestyle style`} loading="lazy" /></div>
+                    <div class="choice-media"><img src={s.photo} alt={`${s.value} lifestyle style`} loading="lazy" decoding="async" width={s.w} height={s.h} /></div>
                     <div class="choice-label">{s.value}</div>
                   </label>
                 ))}
@@ -170,9 +180,9 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
               <div class="choice-grid">
                 {roster.map((m) => (
                   <label class="choice">
-                    <input type="radio" name="model" value={m} />
-                    <div class="choice-media"><img src={`/img/model-${m.toLowerCase()}.webp`} alt={m} loading="lazy" /></div>
-                    <div class="choice-label">{m}</div>
+                    <input type="radio" name="model" value={m.name} />
+                    <div class="choice-media"><img src={m.photo} alt={m.name} loading="lazy" decoding="async" width={m.w} height={m.h} /></div>
+                    <div class="choice-label">{m.name}</div>
                   </label>
                 ))}
                 <label class="choice">

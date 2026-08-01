@@ -8,17 +8,31 @@
 import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 // Self-hosted Archivo (Fontsource) — served from our own build instead of
-// Google's servers (AVG/GDPR-clean, no third-party connection). Same weights
-// as the previous Google Fonts request so rendering is identical. font-display
+// Google's servers (AVG/GDPR-clean, no third-party connection). font-display
 // is 'swap' by default in Fontsource, matching the old &display=swap.
-import '@fontsource/archivo/400.css';
-import '@fontsource/archivo/500.css';
-import '@fontsource/archivo/600.css';
-import '@fontsource/archivo/700.css';
-import '@fontsource/archivo/800.css';
-import '@fontsource/archivo/900.css';
-import '@fontsource/archivo/400-italic.css';
-import '@fontsource/archivo/700-italic.css';
+//
+// ONE VARIABLE FILE, NOT EIGHT STATIC CUTS. This used to import 400 / 500 /
+// 600 / 700 / 800 / 900 / 400-italic / 700-italic — eight woff2 requests per
+// subset, on the critical path, against a budget of "LCP under 2.5s on mobile
+// 4G with the shader running". Measured on a 1.6Mbps / 150ms / 4x-CPU mobile
+// profile, /catalog's LCP element was its own H1 at 3372ms: the page was
+// waiting on fonts, not on the shader. The weight axis covers 100–900 in one
+// file, so every weight the site already uses (including the 500s, 600s and
+// 800s scattered through the components) keeps rendering — DESIGN.md called
+// for exactly this swap and it had not been made.
+//
+// The wght axis, not the wdth build: nothing in the system varies width, and
+// the wdth file is a second axis nobody reads.
+import '@fontsource-variable/archivo/wght.css';
+import '@fontsource-variable/archivo/wght-italic.css';
+// The latin roman is the only font file on the critical path — it sets the H1
+// that is the LCP element on most pages. Measured: /catalog's LCP was 2840ms
+// on the mobile profile purely waiting for it to arrive, because a woff2
+// referenced from inside a stylesheet is not discoverable until that
+// stylesheet has been fetched and parsed. Preloading it moves the request to
+// the first byte of the document. Only this one file — preloading a font the
+// page may never use costs the same bandwidth as one it does.
+import archivoRoman from '@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2?url';
 // Bodoni Moda italic (task #271b) — same self-hosting reason as Archivo
 // above: AVG/GDPR-clean, no third-party font request. Two weights only —
 // 500 for quote-weight prose, 700 for the heavier heading-emphasis word —
@@ -28,6 +42,7 @@ import '@fontsource/archivo/700-italic.css';
 import '@fontsource/bodoni-moda/500-italic.css';
 import '@fontsource/bodoni-moda/700-italic.css';
 import { ui, dropHrefs, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
+import { graphJson } from '../data/schema.js';
 
 interface Props {
   title: string;
@@ -91,31 +106,19 @@ const switchLangs = ['en', 'nl'];
 // locale abbreviation (EN / NL from localeNames), which is unambiguous, needs
 // no flag-to-language mapping, and does not equate a language with a country.
 
-// Structured data. The description used to end "delivered in about 24 hours".
-// Section 13 of the brief removes every named delivery promise from anything
-// that is not a capacity-gated Tier 1 order, and structured data is read by
-// search engines and quoted back in results — it is the last place a stale
-// promise should survive. It now says what the studio makes, not how fast.
-const orgJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'ProfessionalService',
-  name: 'VISUAILS',
-  description:
-    'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals built from a single product photo — a whole drop, or one product at a time.',
-  url: SITE,
-  logo: `${SITE}/img/logo-mark.webp`,
-  image: `${SITE}/img/banners-09.webp`,
-  email: 'hello@visuails.com',
-  telephone: '+31625436130',
-  priceRange: '€€',
-  address: {
-    '@type': 'PostalAddress',
-    addressLocality: 'Enschede',
-    addressCountry: 'NL',
-  },
-  areaServed: 'Worldwide',
-  sameAs: ['https://wa.me/31625436130'],
-};
+// Structured data. One hand-written ProfessionalService node used to sit here
+// and go out on all 68 pages. Section 3 of the brief forbids LocalBusiness
+// schema and ProfessionalService is a LocalBusiness subtype, so the node is
+// gone — along with its `priceRange`, which is a LocalBusiness property and
+// which the real Offers replace with exact figures. The graph is now built per
+// route in src/data/schema.js: Organization everywhere, Service on the pillar
+// pages, Product/Offer on the priced pages, FAQPage where the questions are.
+// See that file for the rules it is held to — no invented facts, no delivery
+// promise, no typed number.
+//
+// It takes the canonical URL rather than rebuilding one, so every @id in the
+// graph matches the <link rel="canonical"> below it exactly.
+const jsonLd = graphJson({ path: base, lang, url: canonical });
 ---
 
 <!DOCTYPE html>
@@ -123,6 +126,7 @@ const orgJsonLd = {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />
   <link rel="icon" href="/favicon.ico" sizes="32x32" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
@@ -147,7 +151,7 @@ const orgJsonLd = {
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImageAbs} />
-  <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+  <script type="application/ld+json" set:html={jsonLd} />
   <!-- The reveal gate.
 
        203 elements across this site ship `class="reveal pending"` from the
@@ -403,6 +407,20 @@ const orgJsonLd = {
   </main>
 
   <footer class="site-footer">
+    {/* Watermark finale — brief §7. The wordmark at page scale, clipped by the
+        footer's own bottom edge so it reads as a printed register mark the
+        page runs off, not as a decorative logo. It is aria-hidden: the real
+        wordmark is the linked one in the brand column above, and a screen
+        reader hearing "VISUAILS" twice in a footer learns nothing.
+
+        The teal glow is the ONE place §7 sanctions a soft edge — it says
+        "giant clipped wordmark + a harbor-teal glow" in as many words. Every
+        other feathered edge on this site is banned by §8, so this one is
+        fenced here rather than made available as a utility class. */}
+    <div class="foot-finale" aria-hidden="true">
+      <span class="foot-glow"></span>
+      <svg class="foot-watermark" viewBox="0 0 1646 274" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
+    </div>
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
@@ -509,6 +527,66 @@ const orgJsonLd = {
      paper bar with a hairline under it is cheaper, hard-edged, and legible over
      any content, including a photograph. */
   .site-header.scrolled { background: var(--paper); box-shadow: 0 1px 0 var(--line-strong); }
+
+  /* ---- the header over a dark hero -------------------------------------
+     MEASURED BUG, not a refinement: on every page that opens with a
+     photographic hero, the un-scrolled header kept the PAPER side of the ink
+     ramp and painted it onto the photograph. Sampled against the rendered
+     pixels behind each link, the nav ran at 1.29–1.74:1. It is the one
+     element on the site a contrast checker cannot catch by reading tokens,
+     because by token it is correct — --ink-2 on --bg is 5.75:1, and --bg is
+     simply not what is behind it.
+
+     The header carries no ground of its own until it scrolls, so the fix is
+     to give it the ground's ramp for as long as it is standing on one. The
+     scrim under it is what supplies the plate; these tokens supply the ink.
+
+     :has() rather than a JS class, because a nav that is only legible once a
+     script has run is a nav that is illegible for the first paint and for
+     anyone with JS off. The @supports fallback below trades the transparent
+     look for a solid bar — less handsome, still readable, which is the right
+     way round for a fallback. */
+  body:has(.hero-cover, .hero-editorial) .site-header:not(.scrolled) {
+    /* ONE ink tier, not three. Measured against the actual rendered pixels
+       behind each link (text hidden, screenshot sampled, worst pixel taken),
+       the second tier ran 1.62–4.09:1 and the third 2.78:1. A 76px bar over a
+       photograph the studio does not control the exposure of has room for one
+       legible value, and hierarchy in the nav comes from weight and position
+       instead. This is the one place on the site where a ramp is deliberately
+       flattened, and it is flattened because the ground is unknowable. */
+    --ink:        var(--paper-on-dark);
+    --ink-2:      var(--paper-on-dark);
+    --ink-3:      var(--paper-on-dark);
+    --ink-faint:  var(--paper-soft-on-dark);
+    /* The language switcher is a filled chip: without these it kept a paper
+       fill while its label flipped to paper — white on white, 1.05:1, on the
+       control that tells you which language you are reading. */
+    /* An INK alpha, not a paper one. A paper-alpha shell lightens whatever
+       photograph is behind it, which is the wrong direction: it lifted the
+       ground under the inactive chip to 3.77:1 against its own paper label.
+       Darkening the shell instead helps both chips at once. */
+    --surface:    rgb(25 21 16 / 0.44);
+    --surface-2:  rgb(25 21 16 / 0.30);
+    --line:        rgb(246 241 233 / 0.16);
+    --line-strong: rgb(246 241 233 / 0.30);
+    --line-ui:     var(--paper-muted-on-dark);
+    --brand:       var(--paper-on-dark);
+    --focus-ring:  var(--paper-on-dark);
+    --ghost:       rgb(246 241 233 / 0.12);
+    --btn-ghost-fill:       rgb(246 241 233 / 0.12);
+    --btn-ghost-fill-hover: rgb(246 241 233 / 0.20);
+    --accent-soft: rgb(246 241 233 / 0.14);
+    --accent-line: rgb(246 241 233 / 0.34);
+    /* SOLID paper, not another alpha. Two stacked paper alphas (the switcher
+       shell at 0.14 and the chip at 0.16) composited to a mid grey and put
+       paper text on it at 2.03–2.20:1. A selected chip on a dark ground is
+       the inverse of the ground, not a slightly-lighter version of it. */
+    --chip-fill:   var(--paper-on-dark);
+    --chip-ink:    var(--ink-900);
+  }
+  @supports not selector(:has(*)) {
+    .site-header { background: var(--paper); box-shadow: 0 1px 0 var(--line-strong); }
+  }
   .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
   .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
   /* The logotype, flat. It was chrome-filled — the same twelve-stop ramp as the
@@ -579,7 +657,12 @@ const orgJsonLd = {
   .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; }
   .lang-switch .ls { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .lang-switch .ls:hover { color: var(--ink); }
-  .lang-switch .ls.on { color: var(--ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  /* The active chip reads --accent-soft, which is a MIST TINT on the paper
+     side. Inside the dark-hero header scope --ink flips to paper-on-dark and
+     the fill does not, so the selected language measured 1.06:1 — the chip
+     that tells you which language you are reading was the least legible thing
+     on the page. The fill is scoped with the ramp instead. */
+  .lang-switch .ls.on { color: var(--chip-ink, var(--ink)); background: var(--chip-fill, var(--accent-soft)); box-shadow: inset 0 0 0 1px var(--accent-line); }
   .mobile-lang { align-self: center; margin-top: .5rem; }
 
   .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform var(--dur-3) var(--ease); overflow-y: auto; }
@@ -600,7 +683,28 @@ const orgJsonLd = {
   .mobile-close { position: absolute; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
   @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link { display: none; } .menu-toggle { display: inline-flex; } }
 
-  .site-footer { position: relative; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
+  .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
+  .site-footer > .container { position: relative; z-index: 1; }
+
+  /* The finale sits behind the columns and is clipped by the footer, so the
+     wordmark's baseline is cut by the page edge rather than by a mask. */
+  .foot-finale { position: absolute; inset: auto 0 0 0; height: 100%; pointer-events: none; }
+  .foot-watermark {
+    position: absolute; left: 50%; bottom: -8%;
+    width: min(150%, 2100px); transform: translateX(-50%);
+    fill: var(--paper-on-dark); opacity: .05;
+  }
+  .foot-glow {
+    position: absolute; left: 50%; bottom: -34%;
+    width: min(120%, 1500px); aspect-ratio: 2 / 1; transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 100%, rgb(60 107 118 / 0.55) 0%, rgb(60 107 118 / 0.22) 38%, rgb(60 107 118 / 0) 70%);
+  }
+  @media (max-width: 700px) {
+    .foot-watermark { width: 190%; bottom: -4%; opacity: .045; }
+  }
+  /* prefers-reduced-data: the glow is a large composited layer for decoration
+     only, so it goes rather than being made cheaper. */
+  @media (prefers-reduced-data: reduce) { .foot-glow { display: none; } }
   .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr; gap: 2rem; }
   @media (max-width: 860px) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; } }
   @media (max-width: 520px) { .footer-grid { grid-template-columns: 1fr; } }

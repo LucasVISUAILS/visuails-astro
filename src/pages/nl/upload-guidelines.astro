@@ -17,6 +17,10 @@ import ProductScene from '../../components/ProductScene.astro';
     <span class="eyebrow-page">De beste resultaten halen</span>
     <h1 class="display">Zo maak je foto's waar wij magie mee kunnen doen</h1>
     <p class="lead" style="margin-top:1.1rem">Je hebt geen studio nodig — alleen een scherpe foto en een paar eenvoudige gewoontes.</p>
+    {/* /guides kreeg nergens in de body van de site een inkomende link (brief
+        §1 hangt hem in de keten), en dit is de pagina waar de hub als eerste
+        naar wijst. */}
+    <p class="hub-note">Van alles in de <a href="/nl/guides">gidsen</a> is dit het stuk om te lezen vóór je bestelt — elke stap daarna werkt beter als de foto die erin gaat klopt.</p>
     <div class="flex" style="margin-top:1.8rem">
       <a href="/nl/test-sample" class="btn btn-primary btn-lg">Probeer een proefvisual</a>
       <a href="/nl/start" class="btn btn-ghost btn-lg">Start een bestelling</a>
@@ -92,4 +96,8 @@ import ProductScene from '../../components/ProductScene.astro';
   /* Desaturated treatment for the "not ideal" example — mirrors the static
      site's .ba-before-scene filter, scoped here since it's only used once. */
   :global(.not-ideal) { filter: saturate(.4) brightness(.92) contrast(.92); }
+
+  /* De regel terug naar de gidsen-hub. Bodytekst onder de lead, geen badge. */
+  .hub-note { margin-top: .9rem; max-width: 62ch; font-size: .92rem; color: var(--ink-3); line-height: 1.6; }
+  .hub-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 </style>

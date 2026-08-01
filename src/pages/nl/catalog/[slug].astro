@@ -155,6 +155,9 @@ const QUEUE = TIERS.unattended.queue.nl;
             <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{item}</span></li>
           ))}
         </ul>
+        {/* Brief §1 — elke drop-contentpagina linkt naar /custom-models. Eén
+            regel in de template bedient beide catalog-stijlen. */}
+        <p class="model-note">De on-model shot in elke {style.name}-set kan een gezicht uit de standaardroster gebruiken — of <a href="/nl/custom-models">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.</p>
       </div>
     </div>
   </section>
@@ -184,4 +187,7 @@ const QUEUE = TIERS.unattended.queue.nl;
      per file; consolidating these into global.css is logged as a follow-up. */
   .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
 
+  /* De merkmodel-regel onder "Wat je krijgt" — bodytekst, geen callout. */
+  .model-note { margin-top: 1.2rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
+  .model-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 </style>

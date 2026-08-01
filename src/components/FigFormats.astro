@@ -20,15 +20,26 @@
 // page supplies only the words — where each shape goes — and check_lang_parity
 // covers those. `frames` is indexed against RATIOS, so a page that passes
 // more labels than there are ratios wraps rather than rendering undefined.
-interface Frame { t: string; }
+//
+// EVERY FRAME CARRIES ITS OWN ALT. Frames 2..n used to render alt={''}, which
+// Astro serialises as a valueless `alt` — four of them per locale on
+// /how-it-works. A repeated decorative crop could legitimately be alt="", but
+// these five frames are not decoration: each one is the evidence for the
+// caption under it ("Shop listing", "Reel or story"), so each says what its
+// crop shows. `frames[].alt` supplies that; the top-level `alt` is the
+// fallback so no frame can ever fall back to empty again.
+interface Frame { t: string; alt?: string; }
 interface Props {
   photo: string;
   alt: string;
+  /** Intrinsic pixel size of `photo` — the real file, not the frame box. */
+  width: number;
+  height: number;
   frames: Frame[];
   objectPosition?: string;
   note?: string;
 }
-const { photo, alt, frames, objectPosition = '50% 50%', note } = Astro.props;
+const { photo, alt, width, height, frames, objectPosition = '50% 50%', note } = Astro.props;
 
 const RATIOS = [
   { css: '1 / 1',  label: '1:1' },
@@ -44,7 +55,7 @@ const RATIOS = [
     {frames.map((f, i) => (
       <div class="fmt-item">
         <div class="fmt-frame" style={`aspect-ratio:${RATIOS[i % RATIOS.length].css}`}>
-          <img src={photo} alt={i === 0 ? alt : ''} loading="lazy" style={`object-position:${objectPosition}`} />
+          <img src={photo} alt={i === 0 ? alt : (f.alt ?? alt)} loading="lazy" decoding="async" width={width} height={height} style={`object-position:${objectPosition}`} />
         </div>
         <p class="fmt-cap">
           <span class="fmt-r">{RATIOS[i % RATIOS.length].label}</span>

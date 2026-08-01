@@ -24,103 +24,131 @@
    see each component's own <style> block for its `em`/quote override. */
 
 :root {
-  /* ---- ink & paper ------------------------------------------------------
-     The interface is ink on paper so that the product photography is the only
-     saturated thing on the screen. Two ramps, no third. Every value below is
-     authored in OKLCH and the sRGB hex in the comment is the computed result,
-     not an eyeballed approximation — the contrast table in DESIGN.md is
-     derived from these exact numbers and goes stale if they drift.
+  /* ══════════════════════════════════════════════════════════════════════
+     VISUAILS harbor — brief §7. Replaces the OKLCH ink/paper ramp that
+     shipped through sections 1–14.
 
-     The two ramps run at OPPOSITE temperatures and the crossing is the whole
-     system: ink is warm (hue 75 — a graphite that reads as iron, soot and
-     concrete), paper is cool (hue 255 — a true off-white that reads as a
-     photographic grey card or a studio wall). It used to be the other way
-     round, and that was the one place this palette agreed with the default:
-     a warm near-white body ground sits inside the cream/sand/parchment band
-     that every generated site of 2026 lands on. Cool paper leaves that band,
-     and warm ink is what stops the dark ground reading as blue-black screen.
+     WHAT CHANGED, AND WHY IT IS A REVERSAL WORTH NAMING: the previous system
+     said "the photograph is the only colour" and resolved every accent to
+     ink, so a primary button was a black block. Harbor spends exactly one
+     colour on exactly two things — the primary action and one headline word —
+     and holds a second (clay) back to one stat or one chip at a time. That is
+     a narrower licence than a normal accent, not a wider one, but it IS a
+     licence the old system refused. Recorded here rather than applied
+     quietly.
 
-     The paper band sits at chroma 0.002–0.005. If paper chroma is ever pushed
-     above 0.008 it has drifted back toward that default and must come back.
+     THREE VALUES IN THE BRIEF DO NOT CLEAR WCAG 2.2 AA AND WERE MOVED. Each
+     move is the smallest one that clears the floor, and each is flagged:
 
-     Every value here is also inside sRGB, checked UNCLAMPED. An out-of-gamut
-     oklch() is not an error, it is silently mapped by the browser — so the
-     shipped colour quietly stops equalling the hex on its own line, and the
-     promise made three sentences up is broken without anything going red. */
-  --ink-900:  oklch(0.16 0.006 75);    /* #0F0D0A  text, dark ground        */
-  --ink-850:  oklch(0.22 0.006 75);    /* #1C1A18  raised surface on dark   */
-  --ink-800:  oklch(0.27 0.005 75);    /* #282624  recessed surface on dark */
-  --ink-700:  oklch(0.32 0.005 75);    /* #343230  secondary text, UI edges */
-  --ink-500:  oklch(0.45 0.004 75);    /* #575553  muted text — PAPER ONLY  */
-  --ink-300:  oklch(0.72 0.003 75);    /* #A6A4A2  rules; muted ON DARK     */
-  --ink-200:  oklch(0.84 0.003 75);    /* #CCCAC8  hairline on paper        */
-  --ink-100:  oklch(0.89 0.002 75);    /* #DBDAD9  body text ON DARK        */
+       muted   brief rgba(30,25,18,.50) = 3.28:1 on paper — FAILS body.
+               Shipped at .64. Not .62: .62 clears 4.5:1 on --paper (4.74)
+               and then FAILS at 4.36–4.41 on the mist tints and the neutral
+               surface fill, which is where half the muted text on this site
+               actually sits. The floor has to be measured on the DARKEST
+               ground a token lands on, not the lightest. At .64 the worst
+               ground is 4.62:1 (clay mist).
+       faint   brief rgba(34,29,21,.38) = 2.31:1 — fails body AND large.
+               Shipped at the brief's own value but DEMOTED to a non-text
+               role (rules, disabled, decorative). Captions and microcopy
+               resolve to --ink-500 (muted) instead. A caption is text.
+       CTA     brief gradient #3C6B76 → #4A7A85. The light end carries
+               #F6F1E9 label text at 4.23:1 — a fail, and a 17px/700 label
+               is NOT "large text" under WCAG (that floor is 18.66px bold).
+               Shipped end stop #467580 = 4.54:1. Two steps darker; the
+               gradient still reads as a gradient.
 
-  --paper:      oklch(0.97 0.004 255); /* #F3F5F8  body ground              */
-  --paper-2:    oklch(0.94 0.005 255); /* #E9EBEE  recessed / inset         */
-  --paper-lift: oklch(0.99 0.002 255); /* #FBFCFD  raised                   */
+     Everything else is the brief's value, unmodified. Ink is warm and alpha
+     built from ONE ramp — the alphas are composited to solids here because a
+     token has to survive being painted on a photograph, a mist tint and an
+     espresso bar, and an alpha ink vanishes on the last one. .on-ink (below)
+     carries the inverse ramp for dark grounds. */
 
-  /* ---- system colour — scoped, not decorative ---------------------------
-     --signal and --warn appear on /start, the client portal, and system
-     surfaces (capacity gate, order state, form validation) ONLY. They never
-     appear on a marketing page; marketing is ink, paper and photography.
+  /* ---- ink — warm, one ramp, no second grey family --------------------- */
+  --ink-900:  #191510;                 /* full ink                          */
+  --ink-700:  rgb(98 95 90);           /* #625F5A  ink .68 — soft/secondary */
+  --ink-500:  rgb(106 104 99);         /* #6A6863  ink .64 — muted/footer   */
+  --ink-300:  rgb(162 162 159);        /* #A2A29F  ink .38 — NON-TEXT only  */
+  --ink-200:  rgb(205 204 202);        /* hairline on paper                 */
+  --ink-100:  #F6F1E9;                 /* paper-on-dark body text           */
 
-     Both rotated with the ramps rather than being left behind. --signal was a
-     blue sitting a few degrees off the old blue-black ink, which made it read
-     as a link; it is now a petrol that reads as an instrument marking. --warn
-     was amber, the one loud colour left on the page; it is now a rust that
-     belongs to the warm ink family instead of shouting across it.
+  /* Espresso — the dark bar/nav ground, and the raised step above full ink. */
+  --ink-850:  #1B1712;                 /* espresso: nav, bar, raised-on-dark */
+  --ink-800:  #241F19;                 /* recessed-on-dark                   */
 
-     The plain variants FAIL body text on paper (4.33 and 4.11). That is a
-     fail, not a rounding error: they are for fills, borders and text ≥18px.
-     The -ink variants are the ones that set body-size text.
+  /* ---- paper — cool off-white, never pure #FFFFFF ---------------------- */
+  --paper:      #F1F4F4;               /* body ground                       */
+  --paper-2:    #E7EBEA;               /* neutral surface fill / recessed   */
+  --paper-lift: #F7F9F9;               /* raised — still not white          */
+  --paper-on-dark: #F6F1E9;            /* text on espresso / ink            */
 
-     --warn-ink was oklch(0.47 0.11 65), and that value was OUTSIDE sRGB by
-     -0.003 on blue. Nothing reported it, because a browser gamut-maps rather
-     than errors: the #844B00 documented on this line was never the colour
-     that shipped, and the 6.44:1 was arithmetic performed on a number no
-     screen ever displayed. Both replacements sit well inside the gamut
-     (ceilings 0.080 and 0.149 at their L and hue). */
-  --signal:      oklch(0.55 0.075 215); /* #357D8D  fill / border / ≥18px   */
-  --signal-ink:  oklch(0.45 0.075 215); /* #0F5F6F  system text — 6.63:1    */
-  --warn:        oklch(0.58 0.115 45);  /* #B1623D  fill / border / ≥18px   */
-  --warn-ink:    oklch(0.47 0.115 40);  /* #8F4023  capacity text — 6.59:1  */
+  /* Paper stepped down for dark grounds, so a dark section has the same
+     three-step reading hierarchy paper has, not one flat white. */
+  --paper-soft-on-dark:  #C6C1BA;      /* 9.97:1 on espresso                */
+  --paper-muted-on-dark: #A39E97;      /* 6.70:1 on espresso                */
 
-  /* ---- Verify / Flag — the SAME two colours, aliased for marketing use ----
-     Task #271c, 2026-07-29, Lucas's own request: a 4-colour scheme (ink,
-     paper, plus two accents), presented as a mockup ("Registration marks" —
-     the calibration strips a printer checks a proof against before a run
-     ships) and approved at the lightest of the four dosages shown ("C —
-     Gekaderd": colour as a rule/underline under a specific fact, never as a
-     fill that competes with the photography).
-     This is a DELIBERATE, SCOPED amendment to the rule immediately above —
-     "--signal and --warn... never appear on a marketing page" — not a
-     reversal of it. No new hues were invented: Verify IS --signal and Flag
-     IS --warn, aliased under names that carry the story (Verify = "a human
-     checked this", Flag = "this is time-bound") rather than the system's
-     internal ones. The underlying tokens, their scoping to /start/the portal,
-     and every contrast number above are untouched — widening WHERE they may
-     appear does not change WHAT they are. Live on: the homepage and the
-     service pages (custom-models, models, catalog, lifestyle, video) —
-     wherever the page already states a review claim or a delivery window in
-     its own copy, never invented for a page that doesn't make that claim. */
+  /* ---- mist tints — section separation INSTEAD of borders or shadows ---- */
+  --mist-teal:  #E6EDEC;
+  --mist-clay:  #F1E8E5;
+  --mist-slate: #E9ECED;
+  --mist-stone: #EFEBE4;
+
+  /* ---- accent one: harbor teal ----------------------------------------
+     Spent on the primary action and one headline word. Nowhere else.
+     --teal        5.34:1 on paper, 3.09:1 on ink — fill/border/large text
+     --teal-grad   the CTA gradient's far stop, AA-corrected (see above)
+     --teal-hover  one step darker; a primary hover goes down, never brighter
+     --teal-text   8.16:1 on paper — the headline word, and system text
+     --teal-deep  11.88:1 on paper — chips and stats at low alpha           */
+  --teal:       #3C6B76;
+  --teal-grad:  #43717C;
+  --teal-hover: #33606A;
+  --teal-text:  #2A4E57;
+  --teal-deep:  #1A343B;
+
+  /* ---- accent two: clay ------------------------------------------------
+     One stat or one chip at a time. NEVER a second CTA colour.
+     --clay       3.49:1 — fill and large text only
+     --clay-text  6.60:1 — the text-safe cut                                */
+  --clay:       #9C7A72;
+  --clay-text:  #6E4F49;
+
+  /* Ghost fill for secondary and small buttons. */
+  --ghost:      rgb(25 21 16 / 0.06);
+
+  /* Button surfaces as TOKENS, not as `.on-ink .btn-ghost` descendant rules.
+     The dark grounds on this site are not all spelled `.on-ink` — .hero-cover,
+     .site-footer, .cta-band and six others opt in by name in the same rule and
+     never carry the class — so a descendant selector silently misses them and
+     ships a paper-filled secondary button on a photograph. Custom properties
+     inherit; selectors don't. Anything a dark ground has to change goes here. */
+  --btn-ghost-fill:        var(--ghost);
+  --btn-ghost-fill-hover:  rgb(25 21 16 / 0.12);
+  --btn-2nd-fill:          var(--paper-lift);
+  --btn-2nd-fill-hover:    var(--paper-2);
+  --btn-2nd-ink:           var(--ink-900);
+  --btn-2nd-border:        rgb(25 21 16 / 0.22);
+  --btn-2nd-border-hover:  rgb(25 21 16 / 0.40);
+
+  /* ---- system colour — collapsed into the two harbor accents -----------
+     /start, the client portal and system surfaces (capacity gate, order
+     state, form validation) used to carry their own petrol and rust. Harbor
+     has exactly two accents, so a third and fourth hue for system state is a
+     second colour system. Signal IS teal and warn IS clay; the -ink variants
+     are the ones allowed to set body-size text, exactly as before. Colour is
+     never the sole carrier of state — every capacity, validation and order
+     status still carries a word. */
+  --signal:      var(--teal);
+  --signal-ink:  var(--teal-text);
+  --warn:        var(--clay);
+  --warn-ink:    var(--clay-text);
   --verify:      var(--signal);
   --verify-ink:  var(--signal-ink);
   --flag:        var(--warn);
   --flag-ink:    var(--warn-ink);
 
-  /* There is no success green. The previous --success (#63C79A) is gone and
-     every checklist tick is --ink-900 on paper. A green tick is a SaaS
-     onboarding signal, and it was the loudest remaining colour on pages that
-     are otherwise about photographs. */
-
-  /* ---- role aliases ------------------------------------------------------
-     The rest of the codebase addresses colour through these names. Keeping
-     them means the ramp above is the single place a value changes, and it is
-     why the dark-ground scope (.on-ink, below) can invert an entire section
-     by redeclaring nine custom properties instead of rewriting its rules. */
+  /* ---- role aliases ---------------------------------------------------- */
   --bg:         var(--paper);
-  --bg-deep:    var(--ink-900);        /* media wells, footer — see .on-ink */
+  --bg-deep:    var(--ink-900);
   --bg-raise:   var(--paper-2);
   --surface:    var(--paper-lift);
   --surface-2:  var(--paper-2);
@@ -128,84 +156,40 @@
   --ink:        var(--ink-900);
   --ink-2:      var(--ink-700);
   --ink-3:      var(--ink-500);
+  /* Captions and microcopy resolve to MUTED, not faint. --ink-300 is the
+     brief's faint value and it is 2.31:1: a rule, not a sentence. */
   --ink-faint:  var(--ink-500);
 
-  /* --line is decorative (dividers, card edges). --line-ui is a control
-     boundary and has to carry meaning, so it sits at --ink-700: WCAG 2.2
-     1.4.11 wants 3:1 for a component edge, and a 1.5:1 hairline is not a
-     border a user can find.
-
-     --line now resolves to --ink-200, a step added to the ramp for it. It was
-     --ink-100 at 1.28:1, which against a cool paper is close to not being
-     drawn at all; --ink-200 puts it at 1.50:1 — still a hairline, still
-     decorative, but present. It is a firmer rule, and a firmer rule is most
-     of what reads as "tougher" in a system with no colour to spend.
-
-     The step had to be added rather than --ink-100 simply darkened, because
-     --ink-100 is also --ink-2 inside .on-ink: the body text colour on every
-     dark ground on the site. Darkening it would have bought a better line on
-     paper by paying for it in reading on ink. "Two ramps, no third" is a rule
-     about ink versus paper; another step inside the ink ramp is not a third
-     ramp. */
   --line:        var(--ink-200);
   --line-strong: var(--ink-300);
   --line-ui:     var(--ink-700);
 
-  /* There is no marketing accent. "Accent" resolves to ink: a primary button
-     is a black block with paper text, a hover state goes darker rather than
-     brighter, and a tint ground is paper-2 rather than a coloured wash.
-     --accent-on is the paired foreground and MUST be used instead of #fff, so
-     that a button dropped inside .on-ink still reads.
+  /* The logotype stays neutral ink. It carried harbor teal briefly (task
+     #272) and was reverted the same day on Lucas's own call. With teal now
+     the sitewide CTA fill, a teal logotype would put the accent on the one
+     surface that appears in the nav, the footer and the conversion bar of
+     every page — which is the opposite of "spent on the primary action and
+     one headline word only". */
+  --brand:         var(--ink-900);
 
-     --brand is the ONE deliberate exception, and it is scoped exactly the way
-     Verify/Flag were (task #271c): a named amendment to the rule above, not a
-     reversal of it. It existed already, aliased to --ink-900 and read by
-     nothing — reserved for exactly this and never spent. Task #272,
-     2026-07-30, Lucas's own request, gave it a real value: the wordmark and
-     monogram (`.brand-word` / `.brand-mark` in Layout.astro) now take
-     `fill: var(--brand)` instead of `fill: var(--ink)`, and nothing else on
-     the site reads this token — --accent and its aliases below are untouched,
-     so every button on the site is still a black block on paper.
-
-     The colour is the harbor style guide's teal, one flat value on purpose:
-     DESIGN.md's "logotype was surface #2, and it was withdrawn" section is
-     the reason two-tone was not on the table again — a duotone or gradient
-     logotype was tried once, read as cheap at logo size, and was pulled. This
-     is not that: one solid fill, same shape as the flat --ink version it
-     replaces, just a different colour in that one slot. oklch(0.499 0.054
-     214.5) round-trips to #3C6B76 exactly (checked against gamut_sweep.py's
-     own converter, not eyeballed) and sits in the same hue-215 petrol family
-     as --signal without being --signal — a status colour and an identity
-     colour happening to share a hue is a coincidence worth noting, not a
-     reason to collapse them into one token. Contrast: 5.41:1 on --paper
-     (clears 4.5:1 body-text with room to spare) and 3.29:1 on --ink-900
-     (clears the 3:1 WCAG 1.4.11 floor a graphic needs, which is what the
-     footer mark actually is) — both added to verify2.py §3's non-text tables
-     alongside --signal and --warn. */
-  --brand:         oklch(0.499 0.054 214.5); /* #3C6B76 */
-  --accent:        var(--ink-900);
-  --accent-on:     var(--paper);
-  --accent-2:      var(--ink-900);
-  --accent-word:   var(--ink-900);
-  --accent-bright: var(--ink-700);
-  --accent-soft:   var(--paper-2);
+  --accent:        var(--teal);
+  --accent-on:     var(--paper-on-dark);
+  --accent-2:      var(--teal-text);
+  --accent-word:   var(--teal-text);
+  --accent-bright: var(--teal-hover);
+  --accent-soft:   var(--mist-teal);
   --accent-line:   var(--ink-300);
 
   --focus-ring:    var(--ink-900);
 
   /* The <select> caret, as a data URL rather than a token the SVG can read —
-     a `stroke` inside a data: URL cannot see var(). It was once hardcoded
-     #E4E7F2, a pale blue-grey from the pre-monochrome palette, drawn on a
-     near-white --surface at roughly 1.2:1: the caret was invisible on every
-     select the site shipped. Two ramps because the ink-ground remap below
-     needs the inverse; the hex has to be written out in both, so each is kept
-     adjacent to the ramp it belongs to. Both are hand-copies of a token and
-     will not follow it — when --ink-700 or --paper moves, these move by hand
-     or the caret silently stops matching its own ramp. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23343230' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+     a `stroke` inside a data: URL cannot see var(). Hand-copy of --ink-700;
+     when that moves, this moves with it or the caret stops matching its ramp.
+     The .on-ink block below carries the paper-side twin under the same name. */
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23625F5A' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
 
-  --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   /* The editorial accent (task #271b) — high-contrast serif italic, used
      nowhere near body text. Georgia/Times New Roman are the fallback stack
      so a slow font load still reads as "a serif", not as Archivo pretending
@@ -382,10 +366,20 @@
   --surface:    var(--ink-850);
   --surface-2:  var(--ink-800);
 
-  --ink:        var(--paper);
-  --ink-2:      var(--ink-100);
-  --ink-3:      var(--ink-300);
-  --ink-faint:  var(--ink-300);
+  /* Harbor's paper-on-dark, stepped the same three ways paper is stepped on
+     the light side, so a dark section reads with hierarchy rather than as one
+     flat white. Measured on espresso (--ink-850), the lightest dark ground
+     any of these lands on, so the numbers are the worst case:
+       --ink    #F6F1E9  15.86:1
+       --ink-2  #C6C1BA   9.97:1
+       --ink-3  #A39E97   6.70:1
+     --ink-300 is NOT used here. It is 2.31:1 on paper and it is the faint
+     rule value; on a dark ground it would be a different colour doing a
+     different job under the same name, which is exactly how a 2.6:1 ships. */
+  --ink:        var(--paper-on-dark);
+  --ink-2:      var(--paper-soft-on-dark);
+  --ink-3:      var(--paper-muted-on-dark);
+  --ink-faint:  var(--paper-muted-on-dark);
 
   /* These four are longhand --paper with alpha, because a token cannot carry
      one. They are hand-copies and do not follow --paper; when it moves, they
@@ -398,22 +392,47 @@
      0.24. --line-strong and --accent-line both resolve to --ink-300 on paper,
      so a dark ground that gave them 0.24 and 0.28 was splitting one value in
      two for no reason anybody had written down. */
-  --line:        oklch(0.97 0.004 255 / 0.16);
-  --line-strong: oklch(0.97 0.004 255 / 0.28);
-  --line-ui:     var(--ink-300);
+  --line:        rgb(246 241 233 / 0.16);
+  --line-strong: rgb(246 241 233 / 0.28);
+  --line-ui:     var(--paper-muted-on-dark);
 
-  --accent:        var(--paper);
-  --accent-on:     var(--ink-900);
-  --accent-2:      var(--paper);
-  --accent-word:   var(--paper);
-  --accent-bright: var(--paper);
-  --accent-soft:   oklch(0.97 0.004 255 / 0.10);
-  --accent-line:   oklch(0.97 0.004 255 / 0.28);
+  /* The primary action does NOT flip to paper on a dark ground. Harbor gives
+     teal to one thing sitewide — the primary action — and a button that is
+     teal on paper and white on ink is two primary buttons. Teal fill on
+     --ink-900 is 3.09:1 (clears the 3:1 a non-text boundary needs) and
+     carries its #F6F1E9 label at 5.25:1. The headline word flips, because
+     --teal-text is 1.9:1 on ink and unreadable; on a dark ground the
+     highlight is carried by paper against soft paper instead. */
+  --accent:        var(--teal);
+  --accent-on:     var(--paper-on-dark);
+  --accent-2:      var(--paper-on-dark);
+  --accent-word:   var(--paper-on-dark);
+  --accent-bright: var(--teal-grad);
+  --accent-soft:   rgb(246 241 233 / 0.10);
+  --accent-line:   rgb(246 241 233 / 0.28);
 
-  --focus-ring:    var(--paper);
+  --focus-ring:    var(--paper-on-dark);
+
+  /* The logotype is one flat value that has to be legible on BOTH grounds, so
+     it flips with the ramp exactly like --ink does. It resolved to --ink-900
+     sitewide for one build and the footer wordmark went ink-on-ink: invisible,
+     and invisible in a way no contrast checker reports, because a checker
+     looks at text and this is an <svg>. */
+  --brand:         var(--paper-on-dark);
+
+  /* Secondary on a dark ground is an outline, not a paper block: a paper fill
+     over a photograph is a second primary button competing with the teal one.
+     The 6% ink ghost fill is invisible here, so it becomes a paper alpha. */
+  --btn-ghost-fill:        rgb(246 241 233 / 0.12);
+  --btn-ghost-fill-hover:  rgb(246 241 233 / 0.20);
+  --btn-2nd-fill:          rgb(246 241 233 / 0.08);
+  --btn-2nd-fill-hover:    rgb(246 241 233 / 0.16);
+  --btn-2nd-ink:           var(--paper-on-dark);
+  --btn-2nd-border:        rgb(246 241 233 / 0.42);
+  --btn-2nd-border-hover:  rgb(246 241 233 / 0.70);
 
   /* --paper, matching --ink on this ground. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F3F5F8' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F6F1E9' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
 }
 
 /* Only the generic utility paints itself. The named components above already
@@ -567,18 +586,97 @@ p { text-wrap: pretty; margin: 0; }
 section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .section-tight { padding-block: clamp(3rem, 6vw, 5.5rem); }
 
+/* ---- mist tints — brief §7 --------------------------------------------
+   "Mist tints for section/demo-card separation INSTEAD of borders or
+   shadows." Four near-neutral grounds, each a couple of points off paper and
+   each carrying a different temperature, so consecutive sections separate by
+   value and hue rather than by a rule between them. They are grounds, not
+   accents: ink measures 15.06–15.30:1 on all four and muted measures
+   4.62–4.69:1, so nothing that sits on one has to change colour.
+
+   Use them alternating, never two of the same in a row, and never with a
+   border on top — the tint IS the separation. */
+.mist-teal  { background: var(--mist-teal); }
+.mist-clay  { background: var(--mist-clay); }
+.mist-slate { background: var(--mist-slate); }
+.mist-stone { background: var(--mist-stone); }
+.mist-teal, .mist-clay, .mist-slate, .mist-stone { --bg: currentcolor; }
+.mist-teal  { --bg: var(--mist-teal); }
+.mist-clay  { --bg: var(--mist-clay); }
+.mist-slate { --bg: var(--mist-slate); }
+.mist-stone { --bg: var(--mist-stone); }
+/* A card or well sitting ON a mist has to step off it, not repeat it: on a
+   tinted ground the neutral surface fill is what reads as "raised". */
+.mist-teal .card, .mist-clay .card, .mist-slate .card, .mist-stone .card,
+.mist-teal .well, .mist-clay .well, .mist-slate .well, .mist-stone .well {
+  --surface: var(--paper-lift);
+  --surface-2: var(--paper);
+}
+
 /* Buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-family: var(--font-body); font-weight: 600; font-size: .95rem; padding: .85rem 1.6rem; cursor: pointer; white-space: nowrap; line-height: 1; transition: transform var(--dur-1) var(--ease), filter var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease); }
-/* Flat fill, no gradient, no glow. Depth on a button is a claim the button
-   hasn't earned; the affordance is the block of colour and the hard edge. */
-.btn-primary { background: var(--accent); color: var(--accent-on); }
-.btn-primary:hover { transform: translateY(-2px); background: var(--ink-700); }
-.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
-.btn-ghost:hover { transform: translateY(-2px); border-color: var(--line-ui); }
-.btn-wa { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
-.btn-wa svg { color: var(--ink); }
-.btn-wa:hover { transform: translateY(-2px); border-color: var(--line-ui); }
-.btn-lg { padding: 1.05rem 2rem; font-size: 1.02rem; }
+/* ---- buttons — brief §7: two sizes, three fills, all sharp-cornered -------
+   TWO SIZES, and the size is a fixed HEIGHT rather than padding arithmetic,
+   because "58px" is a number the brief states and padding + line-height +
+   font-size is three numbers that have to agree to produce it. min-height
+   rather than height so a wrapped label grows the block instead of
+   overflowing it.
+
+     .btn      small — 38px / 14px · 700
+     .btn-lg   large — 58px / 17px · 700
+
+   THREE FILLS:
+     .btn-primary   teal gradient #3C6B76 → #467580, paper-on-dark label.
+                    The ONLY gradient on a UI surface in the system, and it is
+                    here because the brief puts it here. The far stop is two
+                    steps darker than the brief's #4A7A85 so the label clears
+                    4.5:1 at the light end — see the palette note.
+     .btn-ghost     small: the 6%-alpha ink fill.
+                    large: paper fill with a 1px ink-alpha INSET border, which
+                    is what the brief calls the secondary. One class, because
+                    in markup it is one role — "the other button next to the
+                    primary" — and the size already says which is meant.
+     .btn-dark      espresso fill. The small dark button.
+
+   No transform on hover. A button that lifts 2px is a shadow argument made
+   with motion, and this system removed shadow as a depth signal; the hover
+   goes darker instead, which is the same argument made with value. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  font-family: var(--font-body); font-weight: 700; font-size: .875rem;
+  min-height: 38px; padding: 0 1.15rem;
+  cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
+  background: var(--ghost); color: var(--ink); border: 0;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
+              border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
+}
+.btn-lg { min-height: 58px; font-size: 1.0625rem; padding: 0 1.9rem; }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--teal) 0%, var(--teal-grad) 100%);
+  color: var(--paper-on-dark);
+}
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background: linear-gradient(180deg, var(--teal-hover) 0%, var(--teal) 100%);
+}
+
+.btn-ghost { background: var(--btn-ghost-fill); color: var(--ink); }
+.btn-ghost:hover, .btn-ghost:focus-visible { background: var(--btn-ghost-fill-hover); }
+.btn-lg.btn-ghost {
+  background: var(--btn-2nd-fill); color: var(--btn-2nd-ink);
+  box-shadow: inset 0 0 0 1px var(--btn-2nd-border);
+}
+.btn-lg.btn-ghost:hover, .btn-lg.btn-ghost:focus-visible {
+  background: var(--btn-2nd-fill-hover); box-shadow: inset 0 0 0 1px var(--btn-2nd-border-hover);
+}
+
+.btn-dark { background: var(--ink-850); color: var(--paper-on-dark); }
+.btn-dark:hover, .btn-dark:focus-visible { background: var(--ink-900); }
+
+.btn-wa { background: var(--btn-ghost-fill); color: var(--ink); }
+.btn-wa svg { color: currentColor; }
+.btn-wa:hover, .btn-wa:focus-visible { background: var(--btn-ghost-fill-hover); }
+
 .btn-block { width: 100%; }
 /* .rec-badge removed with its last markup usage (flag xvii). It labelled one
    contact channel "Fastest" and one option "Recommended", which told the reader
@@ -683,9 +781,13 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .cta-band { position: relative; overflow: hidden; border: 1px solid var(--ink-900); padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
 .cta-band > * { position: relative; }
 
-/* #000 inside a mask-image is an alpha value (opaque), not a colour — these
-   two stops stay hex through any palette change. */
-.marquee { overflow: hidden; padding-block: clamp(1rem, 2vw, 1.6rem); -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+/* §8 bans feathered or blurred mask edges everywhere outside the chrome
+   field: a soft fade is the same kind of softness a border-radius is, and it
+   undoes the hard-edge system in the one place the eye is following motion.
+   Both marquee strips used to fade out at 5%/7% with a gradient mask. They now
+   end on a hard edge — the strip is clipped by its own overflow and the row
+   simply stops, which is what a film strip actually does. */
+.marquee { overflow: hidden; padding-block: clamp(1rem, 2vw, 1.6rem); }
 .marquee-track { display: flex; gap: clamp(.9rem,1.4vw,1.3rem); width: max-content; }
 .marquee-item { width: clamp(280px, 26vw, 380px); aspect-ratio: 4/5; overflow: hidden; flex: 0 0 auto; border: 1px solid var(--line); }
 
@@ -716,7 +818,12 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 .hero-editorial { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; margin-top: -76px; padding-top: 76px; padding-bottom: clamp(3rem, 7vw, 5.5rem); }
 .hero-editorial .bg { position: absolute; inset: -6% -6%; width: 112%; height: 112%; background-size: cover; background-position: center 32%; will-change: transform; }
-.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, oklch(0.16 0.006 75 / 0.34) 0%, oklch(0.16 0.006 75 / 0.48) 44%, oklch(0.16 0.006 75 / 0.84) 100%); }
+/* The top stop went 0.34 -> 0.74. This gradient is not decoration: it is the
+   plate the sticky nav stands on, and at 0.34 the link cluster measured
+   1.62–1.88:1 against the brightest pixel of the photograph behind it. The
+   0.44 and 1.0 stops are unchanged — only the band the header occupies
+   moved. */
+.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(25 21 16 / 0.74) 0%, rgb(25 21 16 / 0.46) 14%, rgb(25 21 16 / 0.40) 30%, rgb(25 21 16 / 0.48) 44%, rgb(25 21 16 / 0.84) 100%); }
 .hero-editorial-content { position: relative; z-index: 2; }
 .hero-editorial-content h1 { font-size: clamp(3.2rem, 7.4vw, 6rem); max-width: 15ch; }
 .hero-editorial-content .lead { color: var(--ink-2); max-width: 46ch; }
@@ -1047,11 +1154,58 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    docked at the bottom edge. */
 .hero-cover { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden;
   margin-top: -76px; padding-top: 76px; isolation: isolate; }
-.hero-cover .hc2-bg { position: absolute; inset: 0; z-index: -2; }
+/* ---- the hero field: chrome ground + hard-edged garment plate ----------
+   FIRST ATTEMPT, AND WHY IT WAS THROWN AWAY: the chrome was made the whole
+   hero ground with the photograph as a plate over its right 62%. It rendered
+   as flat dark. The copy needs a ~0.94 ink scrim to clear 4.5:1 over a moving
+   metal ground, and a 0.94 scrim is opaque — so the surface that is this
+   brand's signature was invisible in the exact place §8 asks for it. "Never
+   under live text without a solid ink plate behind it" and "put it behind the
+   headline" are one sentence asking for two things at once.
+
+   WHAT SHIPS: the chrome is the hero's ground and the photograph is a plate
+   over it, inset from the left, so the field reads as a hard vertical column
+   running the whole height of the hero — through the copy band AND through
+   the facts plinth, which is what makes it a ground rather than a stripe. No
+   live text ever crosses it, so it carries no scrim and the metal is at full
+   strength. The plate's left edge is hard: no feather, no vignette. Two
+   materials, one seam.
+
+   Below 900px the plate goes full-bleed. There is no room for two materials
+   on a phone, and the garment is the one that has to win — the first-screen
+   test the design system sets is "what do I remember, the chrome or a
+   garment?", and the answer has to stay the garment. */
+/* The column has to be wide enough to show the ramp REVERSE at least twice,
+   or the metal reads as a dark stripe: a twelve-stop gradient sampled through
+   a 100px window is one stop. 190px is where the light-dark-light cycle
+   becomes legible as a reflection at 1440. */
+.hero-cover { --hero-field-w: clamp(64px, 12vw, 190px); }
+.hero-cover .hero-field { position: absolute; inset: 0; z-index: -4; background: var(--chrome); filter: var(--chrome-filter); }
+/* A hard hairline where the two materials meet. The seam is the point. */
+.hero-cover .hc2-bg::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 1px; background: rgb(246 241 233 / 0.22); z-index: 1; }
+.hero-cover #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -3; }
+.hero-cover .hc2-bg { position: absolute; inset: 0 0 0 var(--hero-field-w); z-index: -2; }
 .hero-cover .hc2-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
-.hero-cover .hc2-scrim { position: absolute; inset: 0; z-index: -1; background:
-  radial-gradient(90% 80% at 18% 88%, oklch(0.16 0.006 75 / 0.86) 0%, oklch(0.16 0.006 75 / 0.38) 55%, transparent 78%),
-  linear-gradient(180deg, oklch(0.16 0.006 75 / 0.62) 0%, oklch(0.16 0.006 75 / 0.14) 22%, transparent 48%, oklch(0.16 0.006 75 / 0.42) 82%, oklch(0.16 0.006 75 / 0.60) 100%); }
+@media (max-width: 900px) {
+  .hero-cover { --hero-field-w: 0px; }
+  .hero-cover .hc2-bg::before { display: none; }
+  /* A sliver of the field survives on the plinth so the material is still
+     present rather than switched off entirely. */
+  .hero-cover .cover-facts { margin-left: 40px; }
+}
+/* The scrim is what makes the copy legible, so it is not decoration and its
+   stops are not taste. Harbor ink replaces the old ramp's hue here; the left
+   radial is what puts a solid ink plate under the headline (§8), and it now
+   has to cover the chrome as well as the photograph, so it runs to full
+   opacity on the left third instead of falling off at 86%. */
+.hero-cover .hc2-scrim { position: absolute; inset: 0 0 0 var(--hero-field-w); z-index: -1; background:
+  radial-gradient(90% 80% at 18% 88%, rgb(25 21 16 / 0.86) 0%, rgb(25 21 16 / 0.38) 55%, transparent 78%),
+  /* The top band carries the sticky nav, which is live text on a photograph
+     the studio does not control the exposure of — this frame happens to put a
+     bright sky exactly where the link cluster sits. 0.74 to 26% is measured
+     against the lightest pixel in that band, not chosen by eye. */
+  linear-gradient(180deg, rgb(25 21 16 / 0.74) 0%, rgb(25 21 16 / 0.52) 12%, rgb(25 21 16 / 0.16) 26%, transparent 50%, rgb(25 21 16 / 0.42) 82%, rgb(25 21 16 / 0.60) 100%); }
+@media (max-width: 900px) { .hero-cover .hc2-scrim { inset: 0; } }
 .cover-inner { flex: 1; display: flex; flex-direction: column; width: 100%; }
 .cover-copy { margin-top: auto; padding-block: 2rem clamp(2.8rem, 6vh, 4.2rem); max-width: 64rem; }
 .cover-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.028em; line-height: .96;
@@ -1179,8 +1333,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 
 /* Film-strip marquee — counter-drifting rows of real output. */
 .visual-marquee { display: flex; flex-direction: column; gap: clamp(.8rem, 1.6vw, 1.2rem); overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+  /* Hard edge, no gradient mask — see the .marquee note above. */ }
 .vm-row { display: flex; gap: clamp(.8rem, 1.6vw, 1.2rem); width: max-content; will-change: transform; }
 .vm-row img { height: clamp(180px, 26vh, 300px); width: auto; border: 1px solid var(--line); display: block; }
 

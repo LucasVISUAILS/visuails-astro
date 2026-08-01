@@ -48,11 +48,41 @@ const {
 // vs a 1:1 finished shot in a square frame), object-position lets the caller
 // re-centre the crop so the product isn't clipped at an edge.
 const posStyle = objectPosition ? `object-position:${objectPosition}` : undefined;
+
+// Intrinsic pixel size of every photo any caller hands this component, read
+// from the files in public/img — NOT the displayed size. The .cmp box is
+// absolutely positioned and object-fit: cover, so these attributes never
+// change what you see; they exist so the browser knows the aspect ratio
+// before the bytes land (§12: LCP under 2.5s on 4G, no shift).
+//
+// Deliberately a hard lookup, not a lookup-with-fallback: pass a photo that
+// isn't listed and the build stops, which is the only way a new call site
+// can't quietly reintroduce a width-less <img>. Add the entry, don't soften
+// the throw.
+const INTRINSIC: Record<string, [number, number]> = {
+  '/img/banners-13.webp': [2400, 1792],
+  '/img/catalog-after.webp': [1800, 1800],
+  '/img/catalog-before.webp': [1350, 1800],
+  '/img/lifestyle-dunes-01.webp': [928, 1152],
+  '/img/lifestyle-flash-01.webp': [928, 1152],
+  '/img/lifestyle-flash-02.webp': [1340, 2400],
+  '/img/lifestyle-glow-01.webp': [1340, 2400],
+  '/img/lifestyle-glow-06.webp': [2400, 1792],
+  '/img/lifestyle-phone-made-01.webp': [2400, 1792],
+  '/img/lifestyle-phone-made-11.webp': [2400, 1792],
+};
+const size = (src: string): [number, number] => {
+  const d = INTRINSIC[src];
+  if (!d) throw new Error(`Compare.astro: no intrinsic size on record for ${src} — add it to INTRINSIC.`);
+  return d;
+};
+const [beforeW, beforeH] = size(before);
+const [afterW, afterH] = size(after);
 ---
 
 <div class:list={['cmp', grade && 'cmp-grade']} style={ratio ? `aspect-ratio:${ratio}` : undefined}>
-  <img class="cmp-before" src={before} alt={beforeAlt} loading="lazy" style={posStyle} />
-  <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" style={posStyle} />
+  <img class="cmp-before" src={before} alt={beforeAlt} loading="lazy" decoding="async" width={beforeW} height={beforeH} style={posStyle} />
+  <img class="cmp-after" src={after} alt={afterAlt} loading="lazy" decoding="async" width={afterW} height={afterH} style={posStyle} />
   <span class="cmp-tag before">{beforeLabel}</span>
   <span class="cmp-tag after">{afterLabel}</span>
   <span class="cmp-divider">

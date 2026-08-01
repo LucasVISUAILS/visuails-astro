@@ -22,7 +22,12 @@
 // thank-you). Those descriptions are prose sentences, not a list of clauses,
 // and joining them on '. ' would read like a spec sheet.
 
-export const META_LIMIT = 160;
+// 152, not 160. Google's snippet cut sits around 155–160 and this file's own
+// header records nl/cat/custom landing on exactly 160 — zero margin, with the
+// length set by content variables nobody edits with a character counter in
+// hand. Dropping the ceiling below the cliff is what makes the margin real;
+// the assembly drops a trailing clause instead of shipping a truncation.
+export const META_LIMIT = 152;
 
 /**
  * Join clause parts into a meta description that cannot exceed `limit`.

@@ -11,18 +11,19 @@ import Layout from '../layouts/Layout.astro';
 import HomePage from '../components/HomePage.astro';
 import { euro, AMOUNT, FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
 
-// Kept under 160 characters so Google shows all of it: this is the one
-// description that has to survive truncation intact, and the €0.99 hook is
-// the last clause.
+// Kept under 152 characters — META_LIMIT, and below Google's snippet cut
+// rather than level with it. This is the one description that has to survive
+// truncation intact, and the €0.99 hook is the last clause, so it is the
+// clause a cut would take.
 const description =
-  `Catalog and lifestyle visuals for clothing brands — made from your product ` +
-  `photos, no shoot. A drop of ${FULL_DROP_MIN}–${FULL_DROP_MAX} products, ` +
+  `Catalog and lifestyle visuals for clothing brands, from your own product ` +
+  `photos. No shoot. ${FULL_DROP_MIN}–${FULL_DROP_MAX} products for ` +
   `${euro(AMOUNT.fullDrop, 'en')}. See it on yours for ` +
-  `${euro(AMOUNT.testSample, 'en')} first.`;
+  `${euro(AMOUNT.testSample, 'en')}.`;
 ---
 
 <Layout
-  title="Product visuals for clothing brands, without a shoot | VISUAILS"
+  title="Product visuals for clothing brands, no shoot | VISUAILS"
   description={description}
   ogImage="/img/hero-dunes.webp"
 >

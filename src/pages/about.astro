@@ -15,12 +15,15 @@ const CAT = perProduct('catalog', 'en');
 const TIMING = turnaround('unattended', 'en');
 const REVIEW = reviewClaim('unattended', 'en');
 
+// w/h are the INTRINSIC pixel size of each file in public/img, not the size
+// it renders at — .photo-grid's own aspect-ratio decides that. They are here
+// so the browser can reserve the box before the bytes arrive (§12).
 const strip = [
-  '/img/lifestyle-glow-05.webp',
-  '/img/lifestyle-flash-06.webp',
-  '/img/lifestyle-dunes-02.webp',
-  '/img/lifestyle-phone-made-09.webp',
-  '/img/banners-08.webp',
+  { src: '/img/lifestyle-glow-05.webp', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-flash-06.webp', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-dunes-02.webp', w: 928, h: 1152 },
+  { src: '/img/lifestyle-phone-made-09.webp', w: 2400, h: 1792 },
+  { src: '/img/banners-08.webp', w: 928, h: 1152 },
 ];
 ---
 
@@ -43,7 +46,7 @@ const strip = [
 
   <section class="section-tight"><div class="container">
     <div class="photo-split reveal pending">
-      <div class="photo-split-media"><img src="/img/custom-models-01.webp" alt="A VISUAILS campaign scene, styled and shot for a client brand" loading="lazy" /></div>
+      <div class="photo-split-media"><img src="/img/custom-models-01.webp" alt="A VISUAILS campaign scene, styled and shot for a client brand" loading="lazy" decoding="async" width="800" height="1071" /></div>
       <div>
         <h2>Speed and judgement, <em>together</em>.</h2>
         <p class="lead" style="margin-top:1rem">A small team in Enschede, Netherlands. One photo becomes a full set — and a real person reviews every image before it reaches you.</p>
@@ -67,11 +70,11 @@ const strip = [
 
   <section class="section-tight"><div class="container">
     <div class="photo-grid reveal pending">
-      <img src={strip[0]} alt="Glow-style lifestyle visual" loading="lazy" class="wide" />
-      <img src={strip[1]} alt="Flash-style lifestyle visual" loading="lazy" />
-      <img src={strip[2]} alt="Dunes-style lifestyle visual" loading="lazy" />
-      <img src={strip[3]} alt="Phone-made-style lifestyle visual" loading="lazy" />
-      <img src={strip[4]} alt="Campaign photography" loading="lazy" class="wide" />
+      <img src={strip[0].src} alt="Glow-style lifestyle visual" loading="lazy" decoding="async" width={strip[0].w} height={strip[0].h} class="wide" />
+      <img src={strip[1].src} alt="Flash-style lifestyle visual" loading="lazy" decoding="async" width={strip[1].w} height={strip[1].h} />
+      <img src={strip[2].src} alt="Dunes-style lifestyle visual" loading="lazy" decoding="async" width={strip[2].w} height={strip[2].h} />
+      <img src={strip[3].src} alt="Phone-made-style lifestyle visual" loading="lazy" decoding="async" width={strip[3].w} height={strip[3].h} />
+      <img src={strip[4].src} alt="Campaign photography" loading="lazy" decoding="async" width={strip[4].w} height={strip[4].h} class="wide" />
     </div>
   </div></section>
 

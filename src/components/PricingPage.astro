@@ -41,6 +41,12 @@ import {
   FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
   TIER0_PRODUCT, UPGRADE_BREAK_EVEN, BRAND_MODEL_CREDIT_DROPS,
 } from '../data/pricing.js';
+// The six pricing questions are NOT in this file. They live in
+// src/data/faq.js, because src/data/schema.js emits them a second time as this
+// page's FAQPage JSON-LD, and an answer written twice is an answer that will
+// eventually be updated once. `faqH` — the heading above them — stays here: it
+// is page furniture, not a question.
+import { pricingFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
 import FigPayback from './FigPayback.astro';
@@ -102,7 +108,11 @@ const COPY = {
       'The output is defined before you pay for it',
       'Run it again next season without rebooking anything',
     ],
-    anchorNote: `Neither figure tells you what actually comes out of a shoot day — that depends on the day. ${shoot.caveat} What a drop fixes is that its output is agreed in advance.`,
+    // The last sentence carries the only body link on this page to /compare —
+    // the page that runs this same comparison at full length. It is written
+    // into the note rather than added as a related-page block because this is
+    // the exact paragraph where a reader starts wanting the rest of it.
+    anchorNote: `Neither figure tells you what actually comes out of a shoot day — that depends on the day. ${shoot.caveat} What a drop fixes is that its output is agreed in advance. The rest of that comparison — the hours, the risk, what each one leaves you holding — is <a href="${lp('/compare')}">set out side by side</a>.`,
 
     addOnH: 'Added to a drop',
     addOnSub: 'Neither of these is a way to buy visuals on its own. Both sit on top of a drop you are already running.',
@@ -132,32 +142,6 @@ const COPY = {
     sampleCta: `Request a test sample · ${sample.price}`,
 
     faqH: 'Pricing questions',
-    faqs: [
-      {
-        q: 'When do I pay?',
-        a: 'For a drop, after the capacity gate has confirmed your window and before production starts — the window is what you are reserving, so it is what you are paying for. Individual products are invoiced on delivery. The test sample is the one thing charged upfront, and it is one per business.',
-      },
-      {
-        q: 'How does VAT and reverse-charge work?',
-        a: 'We are based in the Netherlands (VAT NL005407575B96). EU businesses with a valid VAT number can supply it at checkout for reverse-charge and faster invoicing. It is optional.',
-      },
-      {
-        q: `What if my drop is more than ${FULL_DROP_MAX} products?`,
-        a: `The Full Drop band is ${FULL_DROP_MIN}–${FULL_DROP_MAX} because that is what fits one reserved window. A larger collection is run as consecutive drops, quoted before anything is booked. We will not squeeze it into one window and hope.`,
-      },
-      {
-        q: 'Why is there no delivery date on individual products?',
-        a: `Because a drop can never be pushed for a single order, and an individual order can. Quoting a date we would have to break is worse than not quoting one. "${unattended.turnaround.en}" is what the queue typically does — stated as typical, never as a date.`,
-      },
-      {
-        q: 'Does a video cost more inside a drop?',
-        a: `No. ${euro(AMOUNT.video, 'en')} a clip either way — on its own, or added to any drop. Video is priced the same because it is the same work.`,
-      },
-      {
-        q: 'Is there a subscription?',
-        a: `Only if you want one. The studio retainer is ${euro(AMOUNT.retainer, 'en')} a month for brands running a drop every month. Everything else is bought when you need it, with nothing recurring.`,
-      },
-    ],
 
     ctaH1: 'See it on your',
     ctaEm: 'own product.',
@@ -188,7 +172,7 @@ const COPY = {
       'Wat je krijgt staat vast voordat je betaalt',
       'Volgend seizoen opnieuw draaien zonder iets opnieuw te boeken',
     ],
-    anchorNote: `Geen van beide bedragen zegt iets over wat er uit een shootdag komt — dat hangt van de dag af. ${shoot.caveat} Wat een drop vastlegt, is dat de uitkomst vooraf is afgesproken.`,
+    anchorNote: `Geen van beide bedragen zegt iets over wat er uit een shootdag komt — dat hangt van de dag af. ${shoot.caveat} Wat een drop vastlegt, is dat de uitkomst vooraf is afgesproken. De rest van die vergelijking — de uren, het risico, wat je aan elk van beide overhoudt — staat <a href="${lp('/compare')}">naast elkaar uitgeschreven</a>.`,
 
     addOnH: 'Toe te voegen aan een drop',
     addOnSub: 'Geen van beide is op zichzelf een manier om visuals te kopen. Ze komen bovenop een drop die je al draait.',
@@ -213,32 +197,6 @@ const COPY = {
     sampleCta: `Vraag een proefvisual aan · ${sample.price}`,
 
     faqH: 'Vragen over prijzen',
-    faqs: [
-      {
-        q: 'Wanneer betaal ik?',
-        a: 'Bij een drop nadat de capaciteitscheck je venster heeft bevestigd en voordat de productie start — je reserveert dat venster, dus daar betaal je voor. Losse producten worden bij levering gefactureerd. De proefvisual is het enige dat vooraf betaald wordt, en dat is er één per bedrijf.',
-      },
-      {
-        q: 'Hoe werkt btw en verlegging?',
-        a: 'We zijn gevestigd in Nederland (btw NL005407575B96). EU-bedrijven met een geldig btw-nummer kunnen dat bij het afrekenen invullen voor btw-verlegging en snellere facturatie. Het is optioneel.',
-      },
-      {
-        q: `En als mijn drop groter is dan ${FULL_DROP_MAX} producten?`,
-        a: `De Full Drop-band is ${FULL_DROP_MIN}–${FULL_DROP_MAX} omdat dat in één gereserveerd venster past. Een grotere collectie draaien we als opeenvolgende drops, geoffreerd voordat er iets geboekt wordt. We persen het niet in één venster en hopen er het beste van.`,
-      },
-      {
-        q: 'Waarom staat er geen leverdatum bij losse producten?',
-        a: `Omdat een drop nooit wijkt voor een losse bestelling, en een losse bestelling wel kan wijken. Een datum noemen die we zouden moeten breken is erger dan geen datum noemen. "${unattended.turnaround.nl}" is wat de wachtrij meestal doet — gezegd als gebruikelijk, nooit als datum.`,
-      },
-      {
-        q: 'Kost een video meer binnen een drop?',
-        a: `Nee. ${euro(AMOUNT.video, 'nl')} per clip, hoe dan ook — los of toegevoegd aan een drop. Video kost hetzelfde omdat het hetzelfde werk is.`,
-      },
-      {
-        q: 'Is er een abonnement?',
-        a: `Alleen als je dat wilt. De studio-retainer is ${euro(AMOUNT.retainer, 'nl')} per maand voor merken die elke maand een drop draaien. De rest koop je wanneer je het nodig hebt, zonder iets doorlopends.`,
-      },
-    ],
 
     ctaH1: 'Zie het op je',
     ctaEm: 'eigen product.',
@@ -249,7 +207,7 @@ const COPY = {
   },
 };
 
-const c = COPY[lang];
+const c = { ...COPY[lang], faqs: pricingFaqs(lang) };
 
 // What is true of every attended order, read from the tier rather than typed.
 // reviewClaim() is section 13's "single content variable per tier" — flipping
@@ -283,6 +241,23 @@ const included = [
 // the first label still in English on a live Dutch page.
 const t0RowLabels = tierRowLabels(lang);
 const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
+
+// Each Tier 0 line item is one of the three pillar pages under another name,
+// and this page was naming all three while linking only to /catalog — the
+// brief's own internal-linking rule (§1) run half way. The lookup throws
+// rather than emitting a dead href: a PER_PRODUCT id with no page behind it is
+// a routing mistake, and a 404 discovered by a visitor is the expensive way to
+// find out.
+const T0_PAGE: Record<string, string> = {
+  catalog: '/catalog',
+  lifestyle: '/lifestyle',
+  video: '/video',
+};
+const t0Href = (id: string) => {
+  const href = T0_PAGE[id];
+  if (!href) throw new Error(`PricingPage.astro: no pillar page for per-product id "${id}" — add it to T0_PAGE.`);
+  return href;
+};
 ---
 
 <!-- HERO -->
@@ -359,7 +334,7 @@ const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
     </div>
   </div>
 
-  <p class="anchor-note reveal pending">{c.anchorNote}</p>
+  <p class="anchor-note reveal pending" set:html={c.anchorNote} />
 </div></section>
 
 <!-- WHAT RIDES ON TOP OF A DROP.
@@ -457,7 +432,12 @@ const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
       {PER_PRODUCT[lang].map((p) => (
         <div class="t0-item">
           <div>
-            <h3 class="t0-name">{p.name}</h3>
+            {/* The three names ARE the three pillar pages, so they link to
+                them rather than a row of "learn more" chips underneath. The
+                href is built from the item's own id — PER_PRODUCT's ids and
+                the pillar routes are the same three words, and the map below
+                stops the build if that ever stops being true. */}
+            <h3 class="t0-name"><a href={lp(t0Href(p.id))}>{p.name}</a></h3>
             <p class="t0-line">{p.line}</p>
           </div>
           <div class="t0-item-price">
@@ -646,6 +626,9 @@ const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
   }
   .anchor-per { margin-top: auto; padding-top: 1.2rem; font-size: .88rem; color: var(--ink-3); }
   .anchor-note { max-width: 74ch; margin-top: 1.4rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; }
+  /* The /compare link inside the note arrives through set:html and carries no
+     scope attribute, so the descendant needs :global() to be reached. */
+  .anchor-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 
   /* ── What rides on top ───────────────────────────────────────────────────
      THE COMMENT THAT USED TO SIT HERE SAID THESE WERE "deliberately NOT a
@@ -788,6 +771,19 @@ const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
   }
   .t0-item + .t0-item { border-top: 1px solid var(--line); }
   .t0-name { font-size: 1.1rem; line-height: 1.25; }
+  /* The name is a link to its own pillar page. It stays ink — a teal heading
+     would be a second accent colour on a page that spends its one on the CTA
+     — and the underline appears on hover and on focus, where the affordance
+     is actually needed. */
+  /* A link inside running text needs a cue at REST, not only on hover: with
+     no colour and no underline until the pointer arrives, nothing tells a
+     reader — or a keyboard user scanning, or anyone who cannot perceive the
+     hover state — that these three tier names are the way to the pages that
+     explain them. WCAG 1.4.1 is about not relying on colour; relying on a
+     pointer is worse. A hairline underline at rest, thickened on interaction,
+     keeps the page's one accent colour on the CTA where §7 puts it. */
+  .t0-name a { text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
+  .t0-name a:hover, .t0-name a:focus-visible { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
   .t0-line { margin-top: .4rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; max-width: 42ch; }
   .t0-item-price { text-align: right; flex: 0 0 auto; }
   .t0-amount {

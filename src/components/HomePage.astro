@@ -302,6 +302,20 @@ const COPY = {
     // with no approval step in between. Cut rather than reworded — every true
     // fact about the sample is already in the sentence, and filling the gap
     // would have meant inventing a sixth.
+    // STATS ROW — brief §7. Four numbers, and every one is a fact about THIS
+    // studio's own operation, which the working agreement allows; a number
+    // describing a client's business is a testimonial and is not available to
+    // us. Nothing here is a delivery date: the 48 hours is the length of a
+    // window the capacity gate has to clear before it is ever offered, not a
+    // promise this section makes on its own.
+    statsH: 'What the numbers actually are.',
+    stats: [
+      ['48h', 'the reserved window a drop is finished inside, once the gate has cleared it'],
+      ['25–30', `products in a Full Drop — ${euro(AMOUNT.fullDrop, 'en')}, one deadline, one invoice`],
+      ['4', 'house styles to choose from: Glow, Dunes, Flash and Phone-made'],
+      [TEST_SAMPLE.en.price, 'to see it on your own product before you commit to anything'],
+    ],
+
     closeKicker: `Test sample · ${TEST_SAMPLE.en.price}`,
     closeH: 'See it on your own product first.',
     closeSub: `One visual, made from your photo, human-checked — for a ${TEST_SAMPLE.en.price} verification. One per business.`,
@@ -500,6 +514,16 @@ const COPY = {
     ],
     trust: ['Gemaakt in Enschede, NL', 'KVK-geregistreerd bedrijf', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
 
+    // STATSRIJ — brief §7. Zie de Engelse noot: elk getal gaat over de eigen
+    // werking van deze studio, nooit over het resultaat van een klant.
+    statsH: 'Wat de getallen werkelijk zijn.',
+    stats: [
+      ['48u', 'het gereserveerde venster waarbinnen een drop af is, zodra de planning het heeft vrijgegeven'],
+      ['25–30', `producten in een Full Drop — ${euro(AMOUNT.fullDrop, 'nl')}, één deadline, één factuur`],
+      ['4', 'huisstijlen om uit te kiezen: Glow, Dunes, Flash en Phone-made'],
+      [TEST_SAMPLE.nl.price, 'om het op je eigen product te zien voordat je je ergens aan vastlegt'],
+    ],
+
     closeKicker: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
     closeH: 'Zie het eerst op je eigen product.',
     closeSub: `Eén visual, gemaakt van jouw foto, met de hand gecontroleerd — voor een verificatie van ${TEST_SAMPLE.nl.price}. Eén per bedrijf.`,
@@ -510,30 +534,40 @@ const COPY = {
 const c = COPY[lang];
 
 // The film strip: real output, no captions, no claims attached.
+//
+// w/h here are the INTRINSIC pixel size of each file in public/img. The strip
+// is the one place on the site where they are load-bearing rather than just
+// good hygiene: .vm-row img is `height: clamp(180px, 26vh, 300px); width:
+// auto`, so the browser derives each frame's width from the aspect ratio. With
+// no attributes it can only do that once the file has decoded — which is why
+// the marquee snapped wider mid-scroll. The values must therefore be the real
+// ones; a "close enough" 4/5 here would visibly re-cut the strip.
 const strip = [
-  '/img/lifestyle-flash-04.webp',
-  '/img/lifestyle-dunes-01.webp',
-  '/img/lifestyle-phone-made-05.webp',
-  '/img/banners-12.webp',
-  '/img/banners-02.webp',
+  { src: '/img/lifestyle-flash-04.webp', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
+  { src: '/img/lifestyle-phone-made-05.webp', w: 2400, h: 1792 },
+  { src: '/img/banners-12.webp', w: 2400, h: 1792 },
+  { src: '/img/banners-02.webp', w: 928, h: 1152 },
 ];
 
 // custom-models-02.webp was an extreme close-up face crop that read as a
 // headshot, not a product photo — flagged live 2026-07-29 (task #268) as the
 // concrete case behind "not clean" on this section. banners-05.webp is an
 // on-model garment shot already in the library; no new photography needed.
+// [path, href, intrinsic width, intrinsic height]. The .sp-media boxes pin
+// their own aspect-ratios (4/5, 4/3, 21/9), so the sizes only reserve the box.
 const spreadImgs = [
-  ['/img/banners-05.webp', '/catalog'],
-  ['/img/catalog-after.webp', '/catalog'],
-  ['/img/lifestyle-glow-01.webp', '/lifestyle'],
-  ['/img/banners-16.webp', '/video'],
-];
+  ['/img/banners-05.webp', '/catalog', 928, 1152],
+  ['/img/catalog-after.webp', '/catalog', 1800, 1800],
+  ['/img/lifestyle-glow-01.webp', '/lifestyle', 1340, 2400],
+  ['/img/banners-16.webp', '/video', 2400, 1792],
+] as Array<[string, string, number, number]>;
 
 const dropImgs = [
-  '/img/catalog-after.webp',
-  '/img/lifestyle-glow-01.webp',
-  '/img/banners-16.webp',
-  '/img/custom-models-02.webp',
+  { src: '/img/catalog-after.webp', w: 1800, h: 1800 },
+  { src: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400 },
+  { src: '/img/banners-16.webp', w: 2400, h: 1792 },
+  { src: '/img/custom-models-02.webp', w: 800, h: 1071 },
 ];
 ---
 
@@ -543,7 +577,24 @@ const dropImgs = [
     section 13 rules out twice over. In its place, three facts that are true
     before anyone talks to us — all three read out of pricing.js. */}
 <section class="hero-cover">
-  <div class="hc2-bg"><img src="/img/hero-dunes.webp" alt={c.heroAlt} fetchpriority="high" transition:name="hero-photo" /></div>
+  {/* THE HERO FIELD — brief §8, and Lucas's answer to open decision #2: the
+      WebGL chrome shader, not the CSS haze.
+
+      It is the hero's GROUND, not its subject. The garment plate keeps the
+      right of the frame, because "show the work before the claim" is the
+      first design principle this site has and the first-screen test the
+      design system sets is "what do I remember — the chrome, or a garment?"
+      The correct answer is still the garment; the metal is the surface it is
+      pinned to. The plate's left edge is hard — no feather, no vignette —
+      which is what makes the two materials read as two materials.
+
+      .hero-field is the static chrome that renders when WebGL never
+      initialises, and it is also what the shader draws on top of, so the
+      rectangle is never empty and never reflows. Live copy sits on
+      .cover-plate, a solid ink plate, per §8. */}
+  <div class="hero-field" aria-hidden="true"></div>
+  <canvas id="hero-shader" aria-hidden="true"></canvas>
+  <div class="hc2-bg"><img src="/img/hero-dunes.webp" alt={c.heroAlt} decoding="sync" fetchpriority="high" width="2200" height="1228" transition:name="hero-photo" /></div>
   <div class="hc2-scrim" aria-hidden="true"></div>
   <div class="container cover-inner">
     <div class="cover-copy">
@@ -597,7 +648,7 @@ const dropImgs = [
     than an anchor inside the paragraph: a reader satisfied by the print stops
     where the print stops, and one who wants the long version has somewhere to
     go. It is a link, not a warning. */}
-<section class="section-tight">
+<section class="section-tight mist-teal">
   <div class="container fitting reveal pending">
     <p class="fit-kicker">{c.fitKicker}</p>
     <h2 class="fit-h">{c.fitH}</h2>
@@ -672,10 +723,10 @@ const dropImgs = [
       <h2 class="ch-title"><span class="ch-l">{c.spreadH[0]}</span><span class="ch-l dim">{c.spreadH[1]}</span></h2>
     </div>
     <div class="spread" data-spread>
-      {spreadImgs.map(([img, href], i) => (
+      {spreadImgs.map(([img, href, iw, ih], i) => (
         <a class={['sp-item sp-a', 'sp-item sp-b', 'sp-item sp-c', 'sp-item sp-d'][i]} href={lp(href)}>
           <div class="sp-media" data-zoom>
-            <img src={img} alt={`${c.spreadCaps[i][0]} — ${c.spreadCaps[i][1]}`} loading="lazy" />
+            <img src={img} alt={`${c.spreadCaps[i][0]} — ${c.spreadCaps[i][1]}`} loading="lazy" decoding="async" width={iw} height={ih} />
             {i === 3 && <span class="sp-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></span>}
             {/* Hover/focus-reveal — task #268. A crossfade under
                 prefers-reduced-motion (global.css), not a slide. */}
@@ -833,27 +884,27 @@ const dropImgs = [
 </section>
 
 {/* ── FILM STRIP ────────────────────────────────────────────────────────── */}
-<section class="section-tight">
+<section class="section-tight mist-clay">
   <div class="visual-marquee">
     <div class="vm-row">
-      <img src={strip[0]} alt="Flash-style lifestyle visual" loading="lazy" />
-      <img src={strip[1]} alt="Dunes-style lifestyle visual" loading="lazy" />
-      <img src="/img/banners-09.webp" alt="Campaign visual" loading="lazy" />
-      <img src={strip[2]} alt="Phone-made-style lifestyle visual" loading="lazy" />
-      <img src={strip[0]} alt="" aria-hidden="true" loading="lazy" />
-      <img src={strip[1]} alt="" aria-hidden="true" loading="lazy" />
-      <img src="/img/banners-09.webp" alt="" aria-hidden="true" loading="lazy" />
-      <img src={strip[2]} alt="" aria-hidden="true" loading="lazy" />
+      <img src={strip[0].src} alt="Flash-style lifestyle visual" loading="lazy" decoding="async" width={strip[0].w} height={strip[0].h} />
+      <img src={strip[1].src} alt="Dunes-style lifestyle visual" loading="lazy" decoding="async" width={strip[1].w} height={strip[1].h} />
+      <img src="/img/banners-09.webp" alt="Campaign visual" loading="lazy" decoding="async" width="2400" height="1792" />
+      <img src={strip[2].src} alt="Phone-made-style lifestyle visual" loading="lazy" decoding="async" width={strip[2].w} height={strip[2].h} />
+      <img src={strip[0].src} alt="" aria-hidden="true" loading="lazy" decoding="async" width={strip[0].w} height={strip[0].h} />
+      <img src={strip[1].src} alt="" aria-hidden="true" loading="lazy" decoding="async" width={strip[1].w} height={strip[1].h} />
+      <img src="/img/banners-09.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="2400" height="1792" />
+      <img src={strip[2].src} alt="" aria-hidden="true" loading="lazy" decoding="async" width={strip[2].w} height={strip[2].h} />
     </div>
     <div class="vm-row">
-      <img src={strip[3]} alt="Campaign photography" loading="lazy" />
-      <img src="/img/lifestyle-glow-05.webp" alt="Glow-style lifestyle visual" loading="lazy" />
-      <img src={strip[4]} alt="Campaign photography" loading="lazy" />
-      <img src="/img/lifestyle-flash-07.webp" alt="Flash-style lifestyle visual" loading="lazy" />
-      <img src={strip[3]} alt="" aria-hidden="true" loading="lazy" />
-      <img src="/img/lifestyle-glow-05.webp" alt="" aria-hidden="true" loading="lazy" />
-      <img src={strip[4]} alt="" aria-hidden="true" loading="lazy" />
-      <img src="/img/lifestyle-flash-07.webp" alt="" aria-hidden="true" loading="lazy" />
+      <img src={strip[3].src} alt="Campaign photography" loading="lazy" decoding="async" width={strip[3].w} height={strip[3].h} />
+      <img src="/img/lifestyle-glow-05.webp" alt="Glow-style lifestyle visual" loading="lazy" decoding="async" width="2400" height="1792" />
+      <img src={strip[4].src} alt="Campaign photography" loading="lazy" decoding="async" width={strip[4].w} height={strip[4].h} />
+      <img src="/img/lifestyle-flash-07.webp" alt="Flash-style lifestyle visual" loading="lazy" decoding="async" width="2400" height="1792" />
+      <img src={strip[3].src} alt="" aria-hidden="true" loading="lazy" decoding="async" width={strip[3].w} height={strip[3].h} />
+      <img src="/img/lifestyle-glow-05.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="2400" height="1792" />
+      <img src={strip[4].src} alt="" aria-hidden="true" loading="lazy" decoding="async" width={strip[4].w} height={strip[4].h} />
+      <img src="/img/lifestyle-flash-07.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="2400" height="1792" />
     </div>
   </div>
 </section>
@@ -882,7 +933,7 @@ const dropImgs = [
 </section>
 
 {/* ── LEAD MAGNET ───────────────────────────────────────────────────────── */}
-<section class="section-tight">
+<section class="section-tight mist-slate">
   <div class="container">
     <div class="lead-magnet reveal pending">
       <div class="lm-copy">
@@ -930,7 +981,7 @@ const dropImgs = [
     <div class="grid grid-2 hm-doors reveal-group">
       {c.doors.map((d) => (
         <div class="card hm-door reveal pending">
-          <div class="hm-door-media"><img src={d.img} alt={d.alt} loading="lazy" width="600" height="750" /></div>
+          <div class="hm-door-media"><img src={d.img} alt={d.alt} loading="lazy" decoding="async" width="600" height="750" /></div>
           <div class="hm-door-body">
             <h3>{d.h}</h3>
             <p>{d.body}</p>
@@ -951,7 +1002,7 @@ const dropImgs = [
     order pages that no longer exist. The footnote states plainly which of
     the four are actually in a drop, because DROP_INCLUDES says catalog and
     lifestyle and a page that implied otherwise would be selling air. */}
-<section class="section-tight">
+<section class="section-tight mist-teal">
   <div class="container">
     <div class="ed-head">
       <span class="ed-meta">{c.dropMeta}</span>
@@ -963,7 +1014,7 @@ const dropImgs = [
     <div class="anatomy" data-stagger>
       {c.dropCards.map(([where, name, body, href], i) => (
         <a class="anat-card" href={lp(href)}>
-          <div class="anat-media" data-zoom><img src={dropImgs[i]} alt={`${name} — ${where}`} loading="lazy" /></div>
+          <div class="anat-media" data-zoom><img src={dropImgs[i].src} alt={`${name} — ${where}`} loading="lazy" decoding="async" width={dropImgs[i].w} height={dropImgs[i].h} /></div>
           <div class="anat-body"><span class="anat-where">{where}</span><h3>{name}</h3><p>{body}</p></div>
         </a>
       ))}
@@ -1005,14 +1056,39 @@ const dropImgs = [
   </div>
 </section>
 
+{/* ── STATS ROW ─────────────────────────────────────────────────────────────
+    Brief §7: four numbers at 50px/900 with faint labels. Two things keep it
+    off the "hero-metric template" the design system bans: it is not a hero,
+    and there is no supporting-stat tier under it — four numbers, four
+    sentences, one hairline between each, no cards. The labels run at --ink-3
+    rather than at the brief's faint value, because the faint value is 2.31:1
+    and a label is a sentence someone has to read. */}
+<section class="section-tight mist-stone stats-band">
+  <div class="container">
+    <h2 class="stats-h">{c.statsH}</h2>
+    <dl class="stats-row" data-stagger>
+      {c.stats.map(([n, l]) => (
+        <div class="stat">
+          <dt class="stat-n">{n}</dt>
+          <dd class="stat-l">{l}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
 {/* ── THE PROMISE ───────────────────────────────────────────────────────────
     Lit by the WebGL chrome field; .hero-fallback carries the same scene when
     the shader never initialises. Both are section 3's work — see global.css.
     Two lines moved: the unbounded revision promise became the check-in that
     ends every order, and the founding-perks line became the free pilot. */}
 <section class="ch ch-promise">
+  {/* The canvas moved to the hero (§8: the shader's surface is the hero
+      field). This section keeps the static chrome plate it always had as its
+      ground — one surface, one canvas, sitewide: shader-hero.js mounts by id
+      and two elements with that id would silently give the second one
+      nothing. */}
   <div class="hero-fallback" aria-hidden="true"></div>
-  <canvas id="hero-shader" aria-hidden="true"></canvas>
   <div class="container">
     <div class="promise-split">
       <div class="reveal pending">
@@ -1069,7 +1145,16 @@ const dropImgs = [
      against --ink-900, a border passing the same non-text 3:1 bar). Studio
      (the third item) stays a plain role-token neutral — it isn't a review or
      delivery claim, so it gets no rule, same logic as every other page. */
-  .cover-facts { border-top: 1px solid var(--line-strong); background: oklch(0.16 0.006 75 / 0.52); }
+  .cover-facts {
+    border-top: 1px solid var(--line-strong);
+    /* Harbor ink at 0.86, not the old ramp's 0.52. This bar sits on a
+       photograph, so its ground is whatever the photograph happens to be
+       under it — the alpha has to be chosen against the LIGHTEST pixel the
+       image can put there, not against a comfortable one. At 0.52 the label
+       row measured 1.58:1. At 0.86 the worst case tested (a #C9CAC7 sky) is
+       5.06:1 for the muted label and 11.97:1 for the value. */
+    background: rgb(25 21 16 / 0.86);
+  }
   .cf-row { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding-block: 1rem; }
   .cf-item { padding-inline: clamp(0rem, 1.4vw, 1.2rem); }
   .cf-item + .cf-item { border-left: 1px solid var(--line); }
@@ -1219,6 +1304,28 @@ const dropImgs = [
   .case-slot { padding: 1.3rem clamp(0rem, 1.8vw, 1.6rem) 1.4rem; display: flex; flex-direction: column; gap: .5rem; }
   .case-slot + .case-slot { border-left: 1px solid var(--line); }
   .case-slot:first-child { padding-left: 0; }
+  /* ---- stats row ---- */
+  .stats-h { font-size: var(--t-h3); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 clamp(1.6rem, 3vw, 2.4rem); max-width: 30ch; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 0; }
+  .stats-row .stat { padding: 0 clamp(1rem, 2vw, 1.8rem); }
+  .stats-row .stat:first-child { padding-left: 0; }
+  .stats-row .stat + .stat { border-left: 1px solid var(--line); }
+  .stat-n { font-family: var(--font-display); font-weight: 900; font-size: clamp(2.4rem, 4.2vw, 3.125rem); line-height: 1; letter-spacing: -0.035em; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+  /* Exactly one clay moment on the page — §7 holds clay to one stat or one
+     chip at a time, so it goes on the number the whole offer turns on. */
+  .stats-row .stat:last-child .stat-n { color: var(--clay-text); }
+  .stat-l { margin: .75rem 0 0; font-size: .875rem; line-height: 1.5; color: var(--ink-3); max-width: 26ch; }
+  @media (max-width: 880px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); row-gap: clamp(1.6rem, 4vw, 2.4rem); }
+    .stats-row .stat:nth-child(odd) { padding-left: 0; }
+    .stats-row .stat:nth-child(odd) { border-left: 0; }
+  }
+  @media (max-width: 460px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .stats-row .stat { padding: 0; border-left: 0; }
+    .stats-row .stat + .stat { padding-top: 1.4rem; border-top: 1px solid var(--line); }
+  }
+
   .cs-n { font-family: var(--font-display); font-weight: 900; font-size: 2.2rem; line-height: 1;
     color: transparent; -webkit-text-stroke: 1.5px var(--accent-line); }
   .cs-state { font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }

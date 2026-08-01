@@ -5,6 +5,11 @@
 // the whole SPA session — otherwise listeners would stack up on every
 // navigation. Per-element work (reveal/split) is guarded by a dataset flag so
 // only new, unbound elements get processed after a page swap.
+//
+// The one import: GSAP, for the Compare slider's edge snap. It is the same
+// already-installed bundle motion.js runs on and the same chunk the layout
+// already ships on every page — no new dependency and no second payload.
+import gsap from 'gsap';
 
 // Safety net for reveal-gated content. `.reveal.pending` starts at opacity:0
 // and only becomes visible once `.in` is added. If the per-page Intersection
@@ -743,6 +748,16 @@ function initCompareIdle() {
 // Delegated + bound once, so it works on every page and after ClientRouter
 // navigations. Only the divider/knob start a drag (they have touch-action:none);
 // touching the image scrolls the page as normal — no sticking on the section.
+//
+// Edge snapping (section 8: "snap to edges"). Position was clamped to 0–100
+// but release did nothing, so the slider could rest at 2% or 98% — a two-pixel
+// sliver of the other image, which reads as a rendering fault rather than a
+// choice. Within SNAP_EDGE of either end the value now travels the rest of the
+// way on its own.
+const SNAP_EDGE = 6;
+// GSAP is already the page's motion layer (see motion.js); this is the same
+// bundle, not a new dependency.
+const cmpSnapProxy = new WeakMap();
 let compareDragBound = false;
 function initCompareDrag() {
   if (compareDragBound) return;
@@ -762,11 +777,51 @@ function initCompareDrag() {
     const knob = cmp.querySelector('.cmp-knob');
     if (knob) knob.setAttribute('aria-valuenow', String(Math.round(pct)));
   };
-  const setPos = (cmp, clientX) => {
-    cmp.classList.add('cmp-drag');
-    const pct = posOf(cmp, clientX);
+  const write = (cmp, pct) => {
     cmp.style.setProperty('--cmp-pos', pct + '%');
     setValueNow(cmp, pct);
+  };
+  const setPos = (cmp, clientX) => {
+    cmp.classList.add('cmp-drag');
+    write(cmp, posOf(cmp, clientX));
+  };
+  const readPos = (cmp) => {
+    const inline = parseFloat(cmp.style.getPropertyValue('--cmp-pos'));
+    if (!Number.isNaN(inline)) return inline;
+    return parseFloat(getComputedStyle(cmp).getPropertyValue('--cmp-pos')) || 50;
+  };
+  // The tween runs on a plain proxy object rather than on --cmp-pos directly:
+  // the custom property is registered (@property, syntax "<percentage>"), so
+  // reading it back per frame means a getComputedStyle parse per frame on an
+  // element that is simultaneously repainting a clip-path. One number in JS,
+  // one style write per frame instead.
+  const stopSnap = (cmp) => {
+    const p = cmpSnapProxy.get(cmp);
+    if (p) gsap.killTweensOf(p);
+  };
+  // `edge` may be forced (keyboard, below); otherwise whichever end is inside
+  // the threshold wins. Returns nothing — snapping is a side effect.
+  const snapToEdge = (cmp, pct, edge) => {
+    let target = null;
+    if (edge === 0 || edge === 100) {
+      if (Math.abs(pct - edge) <= SNAP_EDGE) target = edge;
+    } else if (pct <= SNAP_EDGE) target = 0;
+    else if (pct >= 100 - SNAP_EDGE) target = 100;
+    if (target === null || pct === target) return;
+    stopSnap(cmp);
+    // prefers-reduced-motion: the value still snaps, it just doesn't travel.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      write(cmp, target);
+      return;
+    }
+    let proxy = cmpSnapProxy.get(cmp);
+    if (!proxy) { proxy = { v: pct }; cmpSnapProxy.set(cmp, proxy); }
+    proxy.v = pct;
+    gsap.to(proxy, {
+      v: target, duration: 0.34, ease: 'power3.out', overwrite: true,
+      onUpdate: () => write(cmp, proxy.v),
+      onComplete: () => write(cmp, target),
+    });
   };
   document.addEventListener('pointerdown', (e) => {
     const t = e.target;
@@ -776,21 +831,32 @@ function initCompareDrag() {
     const cmp = handle.closest('.cmp');
     if (!cmp) return;
     active = cmp;
+    stopSnap(cmp); // grabbing mid-snap hands control straight back to the finger
     setPos(cmp, e.clientX);
     handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
     e.preventDefault();
   });
   document.addEventListener('pointermove', (e) => {
     if (!active) return;
-    const pct = posOf(active, e.clientX);
-    active.style.setProperty('--cmp-pos', pct + '%');
-    setValueNow(active, pct);
+    write(active, posOf(active, e.clientX));
     e.preventDefault();
   }, { passive: false });
-  const end = () => { active = null; };
+  // Release is where the snap happens — never mid-drag, which would fight the
+  // finger for the last 6% of the track.
+  const end = () => {
+    if (active) snapToEdge(active, readPos(active));
+    active = null;
+  };
   document.addEventListener('pointerup', end);
   document.addEventListener('pointercancel', end);
-  // Keyboard: focus the knob, arrow keys nudge.
+  // Keyboard: focus the knob, arrow keys nudge ±5%.
+  //
+  // The snap is direction-aware here, and only here. Symmetric snapping would
+  // trap the keyboard at an edge: sitting at 0 and pressing ArrowRight gives 5,
+  // 5 is inside the 6% threshold, and it would be pulled straight back to 0 —
+  // the slider would be unmovable by keyboard once it reached either end. So a
+  // press only snaps toward the edge it is travelling toward; stepping away
+  // from an edge always lands on the plain ±5 value.
   document.addEventListener('keydown', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
@@ -799,10 +865,12 @@ function initCompareDrag() {
     const cmp = handle.closest('.cmp');
     if (!cmp) return;
     cmp.classList.add('cmp-drag');
-    const cur = parseFloat(getComputedStyle(cmp).getPropertyValue('--cmp-pos')) || 50;
-    const pct = Math.max(0, Math.min(100, cur + (e.key === 'ArrowRight' ? 5 : -5)));
-    cmp.style.setProperty('--cmp-pos', pct + '%');
-    setValueNow(cmp, pct);
+    stopSnap(cmp);
+    const right = e.key === 'ArrowRight';
+    const cur = readPos(cmp);
+    const pct = Math.max(0, Math.min(100, cur + (right ? 5 : -5)));
+    write(cmp, pct);
+    snapToEdge(cmp, pct, right ? 100 : 0);
     e.preventDefault();
   });
 }

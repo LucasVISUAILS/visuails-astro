@@ -309,7 +309,15 @@ const FORM = {
         ['custom', 'Something else', 'Tell us what you need. Quoted after we have seen the products.'],
       ],
       dropLink: 'What a drop includes',
-      singleLink: 'Examples of per-product work',
+      // Brief §1 wants /start wired to the pillar pages, and this is the one
+      // moment on the form where a visitor is genuinely choosing between them
+      // — so the three names in the radio list above become the three links,
+      // in a sentence that answers the question the list raises rather than a
+      // row of "learn more" chips under it.
+      singleLink: `A <a href="${lp('/catalog')}">catalog set</a> is the clean product page, a <a href="${lp('/lifestyle')}">lifestyle carousel</a> is the same product in a scene, and a <a href="${lp('/video')}">video clip</a> is eight seconds of it moving.`,
+      // The Brand Model is the one thing that attaches to a drop and changes
+      // every drop after it, so it belongs at the moment the drop is picked.
+      dropModel: `Either one can run on <a href="${lp('/custom-models')}">a Brand Model</a> — one face, made only for you, so every drop after this one is recognisably yours.`,
       countLabel: 'How many products?',
       countPilot: `A Drop Pilot is ${PILOT_PRODUCTS} products. That number is the package, not a minimum.`,
       countHint: 'Rough is fine — we confirm the count before anything is invoiced.',
@@ -424,7 +432,8 @@ const FORM = {
         ['custom', 'Iets anders', 'Vertel wat je nodig hebt. Prijs volgt nadat we de producten hebben gezien.'],
       ],
       dropLink: 'Wat een drop bevat',
-      singleLink: 'Voorbeelden van werk per product',
+      singleLink: `Een <a href="${lp('/catalog')}">catalogset</a> is de strakke productpagina, een <a href="${lp('/lifestyle')}">lifestyle-carousel</a> is hetzelfde product in een scène, en een <a href="${lp('/video')}">videoclip</a> is acht seconden waarin het beweegt.`,
+      dropModel: `Allebei kunnen ze draaien op <a href="${lp('/custom-models')}">een merkmodel</a> — één gezicht, alleen voor jou gemaakt, zodat elke drop hierna herkenbaar van jou is.`,
       countLabel: 'Hoeveel producten?',
       countPilot: `Een Drop Pilot is ${PILOT_PRODUCTS} producten. Dat aantal is het pakket, geen minimum.`,
       countHint: 'Een schatting volstaat — we bevestigen het aantal voordat er iets gefactureerd wordt.',
@@ -714,6 +723,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           </label>
         ))}
         <p class="pl-panel-link"><a href={lp('/pricing')}>{f.s1.dropLink} →</a></p>
+        <p class="pl-panel-note" set:html={f.s1.dropModel} />
       </div>
 
       <div class="pl-panel" data-pl-panel="single">
@@ -727,7 +737,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             </span>
           </label>
         ))}
-        <p class="pl-panel-link"><a href={lp('/catalog')}>{f.s1.singleLink} →</a></p>
+        <p class="pl-panel-note" set:html={f.s1.singleLink} />
       </div>
 
       {/* One select, one name, both doors — see syncCount()'s comment. The
@@ -1291,6 +1301,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-panel .pl-sub-h { margin-bottom: .9rem; }
   .pl-panel-link { margin-top: .2rem; font-size: .9rem; }
   .pl-panel-link a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* The two prose lines under the panels — one naming the three pillar pages,
+     one naming the Brand Model. They come through set:html and so carry no
+     scope attribute of their own; :global() on the descendant is what reaches
+     the anchors. Sized under the option list, not level with it: they are an
+     aside for someone still deciding, not another thing to answer. */
+  .pl-panel-note { margin-top: .55rem; font-size: .86rem; color: var(--ink-3); line-height: 1.55; }
+  .pl-panel-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 
   /* The two doors' count controls are the same beat in the same rhythm and have
      to be spaced like it. They were not: this one carried 1.4rem (22px) and the

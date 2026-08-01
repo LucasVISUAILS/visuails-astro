@@ -63,7 +63,7 @@
   --line-strong: var(--ink-300);
   --line-ui:     var(--ink-700);
 
-  --font: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --radius: 0;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* The four-step duration scale, copied from global.css for the same reason

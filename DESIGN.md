@@ -1,14 +1,85 @@
 # Design
 
-> **Status: target system, not shipped system.**
-> This file describes the system the repositioning brief specifies, ahead of the build.
-> The code in `src/styles/global.css` still carries the previous violet/rounded system
-> (`--brand: #7B6CF5`, 52 `border-radius` declarations, 154 more inline in page files).
-> Sections 1–3 of the build replace it.
+> **Status, as of section 15: the COLOUR system in this file is superseded.**
+> Sections "Colour", its two contrast tables, and the typography note below describe
+> the OKLCH ink/paper system that shipped through sections 1–14. Section 15 replaced
+> it with **VISUAILS harbor**, per §7 of the build prompt. The authoritative palette
+> is now the `:root` block in `src/styles/global.css` and the summary immediately
+> below; the measured numbers are in `REPORT-SECTION-15.md` §2.
 >
-> **Do not run `/impeccable document` before sections 1–3 land.** It reads the existing
-> code and would capture the old system — the exact opposite of the reposition. Re-run it
-> *after* section 3 to snapshot the shipped tokens against this target.
+> Everything else in this file — the radius rule, elevation, focus, the chrome fence,
+> motion, layout, z-index, accessibility, and the rejection list — still holds and was
+> re-verified in section 15.
+>
+> This header replaces the original "target system, not shipped system" note, which
+> described a violet/rounded system that no longer exists in the tree.
+
+---
+
+## Harbor — the shipped palette (section 15)
+
+Warm ink, cool paper, espresso for the dark bar, one teal spent on the primary action
+and one headline word, one clay held to a single stat or chip at a time, four mist
+tints doing the work borders and shadows are not allowed to do.
+
+| Token | Value | Role | Measured |
+|---|---|---|---|
+| `--ink-900` | `#191510` | Full ink; text, dark ground | 16.42:1 on paper |
+| `--ink-700` | `#625F5A` | Soft / secondary text (ink .68) | 5.75:1 |
+| `--ink-500` | `#6A6863` | Muted / footer (ink **.64**, not the brief's .50) | 4.62:1 worst ground |
+| `--ink-300` | `#A2A29F` | Faint (ink .38) — **rules and disabled only, never text** | 2.31:1 |
+| `--ink-200` | `#CDCCCA` | Hairline on paper | — |
+| `--ink-850` | `#1B1712` | Espresso: nav, bar, raised-on-dark | — |
+| `--ink-800` | `#241F19` | Recessed-on-dark | — |
+| `--paper` | `#F1F4F4` | Body ground | — |
+| `--paper-2` | `#E7EBEA` | Neutral surface fill / recessed | — |
+| `--paper-lift` | `#F7F9F9` | Raised — still not white | — |
+| `--paper-on-dark` | `#F6F1E9` | Text on espresso / ink | 15.86:1 on espresso |
+| `--paper-soft-on-dark` | `#C6C1BA` | Secondary on dark | 9.97:1 |
+| `--paper-muted-on-dark` | `#A39E97` | Muted on dark | 6.70:1 |
+| `--mist-teal` | `#E6EDEC` | Section ground | ink 15.30:1 |
+| `--mist-clay` | `#F1E8E5` | Section ground | ink 15.06:1 |
+| `--mist-slate` | `#E9ECED` | Section ground | ink 15.30:1 |
+| `--mist-stone` | `#EFEBE4` | Section ground | ink 15.29:1 |
+| `--teal` | `#3C6B76` | Primary CTA fill; fills, borders, large text | 5.34:1 on paper, 3.09:1 on ink |
+| `--teal-grad` | `#43717C` | CTA gradient far stop (**not** the brief's `#4A7A85`) | label 4.62:1, measured |
+| `--teal-hover` | `#33606A` | Primary hover — down, never brighter | 6.28:1 |
+| `--teal-text` | `#2A4E57` | The one headline word; system text | 8.16:1 |
+| `--teal-deep` | `#1A343B` | Chips and stats at low alpha | 11.88:1 |
+| `--clay` | `#9C7A72` | Fill and large text only | 3.49:1 |
+| `--clay-text` | `#6E4F49` | The text-safe cut | 6.60:1 |
+| `--ghost` | `rgb(25 21 16 / .06)` | Secondary and small button fill | — |
+
+**Three rules fall out of this table and are not negotiable.**
+
+1. **`--ink-300` is not a text colour.** It is the brief's faint value and it is
+   2.31:1 — a rule, not a sentence. Captions and microcopy resolve to `--ink-500`.
+   `--ink-faint` is aliased to `--ink-500` for exactly this reason.
+2. **`--teal` and `--clay` never set body text.** The `-text` variants exist for
+   that. 3.49:1 is a fail, not a rounding error.
+3. **A muted value is measured on the DARKEST ground it lands on.** `.62` clears
+   4.5:1 on `--paper` and fails at 4.36 on the mist tints, which is where half the
+   muted text on this site sits. That is how `.62` became `.64`.
+
+**System colour collapsed into the two accents.** `--signal` is `--teal` and
+`--warn` is `--clay`; `--verify`/`--flag` alias them as before. Harbor has two
+accents, so a third and fourth hue for `/start` and the portal would be a second
+colour system. Colour is still never the sole carrier of state — every capacity,
+validation and order status carries a word as well as a fill.
+
+**The dark-ground inversion (`.on-ink`) now uses the paper ramp, not `--ink-300`.**
+`--ink-300` on a dark ground would be a different colour doing a different job
+under the same name, which is exactly how a 2.6:1 ships.
+
+**One place the ramp is deliberately flattened: the sticky nav over a hero.** The
+header has one ink tier there, not three. Measured against the rendered pixels, the
+second tier ran 1.62–4.09:1 and the third 2.78:1. A 76px bar standing on a
+photograph whose exposure the studio does not control has room for one legible
+value; hierarchy comes from weight and position instead. See
+`REPORT-SECTION-15.md` §4 — this is the defect class a token-based checker cannot
+see, because by token the header was correct.
+
+---
 
 ---
 
@@ -265,7 +336,10 @@ brand arguing engineered control. Replacing it would be change for its own sake.
 
 Two changes, both functional:
 
-**1. Move from eight static cuts to one variable file.** `@fontsource/archivo` currently
+**1. Move from eight static cuts to one variable file. — DONE, section 15.**
+`@fontsource-variable/archivo/wght.css` replaced the eight imports, and the latin
+roman is preloaded. `/catalog`'s LCP was 3372ms waiting on fonts and is now 2068ms.
+The `wdth` axis was not taken: nothing in the system varies width. `@fontsource/archivo` currently
 loads `400 / 500 / 600 / 700 / 800 / 900 / 400-italic / 700-italic` — eight requests on
 every page, against an LCP budget of under 2.5s on mobile 4G with a WebGL field running.
 `@fontsource-variable/archivo` is one file across the whole weight axis. Preload the
@@ -375,7 +449,14 @@ metal never tints. Applied to the chrome surface, never to its children.
 
 ### Exactly one surface
 
-**The hero field** — a WebGL plane behind the homepage hero (EN `/` and NL `/nl`), with
+**The hero field** — and as of section 15 it is *actually* the hero. It had been
+mounted on `.ch-promise` ("No wall of reviews yet"), not on the hero at all. It is
+now the hero's ground, with the photograph as a hard-edged plate inset from the
+left so the field reads as a column running the full height. It carries no scrim,
+because the first version — chrome as the whole ground, photo over its right 62% —
+needed a 0.94 ink scrim for the headline and a 0.94 scrim is opaque: the signature
+was invisible in the one place §8 puts it. A WebGL plane behind the homepage hero
+(EN `/` and NL `/nl`), with
 real fresnel: reflectance rising toward grazing angles, not a scrolling gradient texture.
 Hard rectangular bounds, no feathered edge, no vignette bleed into the page.
 

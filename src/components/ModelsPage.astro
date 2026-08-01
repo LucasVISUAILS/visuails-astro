@@ -141,7 +141,7 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
       ))}
     </div>
   </div>
-  <div class="photo-split-media"><img src="/img/model-01.webp" alt={c.heroAlt} width="900" height="1125" fetchpriority="high" /></div>
+  <div class="photo-split-media"><img src="/img/model-01.webp" alt={c.heroAlt} decoding="sync" width="900" height="1125" fetchpriority="high" /></div>
 </div></section>
 
 <!-- THE FULL ROSTER -->
@@ -157,7 +157,7 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   <div class="bm-roster reveal-group">
     {ROSTER.map((m) => (
       <figure class="bm-model reveal pending">
-        <img src={m.photo} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" width="600" height="750" />
+        <img src={m.photo} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width="600" height="750" />
         <figcaption>
           <span class="bm-model-name">{m.name}</span>
           <span class="bm-model-traits">{m.traits.map((t) => traits[t]).join(' · ')}</span>

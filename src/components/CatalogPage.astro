@@ -44,18 +44,23 @@ const t0 = TIERS.unattended;
 
 // The four photos, named. This used to be prose in three different places
 // with three slightly different orderings; it is one list now.
+// w/h are the intrinsic pixel size of the file in public/img, EN and NL alike
+// — a photo's size is not copy, but repeating it here keeps the two branches
+// structurally identical, which is what check_lang_parity reads. The
+// .photo-band box crops them, so nothing moves; they just stop the row
+// reflowing as each file arrives (§12).
 const SHOTS = {
   en: [
-    { n: '1', label: 'Front', img: '/img/catalog-after.webp', alt: 'Front catalog shot of the product' },
-    { n: '2', label: 'Back', img: '/img/catalog-after.webp', alt: 'Back catalog shot of the product' },
-    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', alt: 'Detail close-up of the logo or fabric' },
-    { n: '4', label: 'On a model', img: '/img/custom-models-02.webp', alt: 'On-model shot of the product, worn for fit and scale' },
+    { n: '1', label: 'Front', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Front catalog shot of the product' },
+    { n: '2', label: 'Back', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Back catalog shot of the product' },
+    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', w: 1350, h: 1800, alt: 'Detail close-up of the logo or fabric' },
+    { n: '4', label: 'On a model', img: '/img/custom-models-02.webp', w: 800, h: 1071, alt: 'On-model shot of the product, worn for fit and scale' },
   ],
   nl: [
-    { n: '1', label: 'Voorkant', img: '/img/catalog-after.webp', alt: 'Voorkant-shot van het product voor de catalogus' },
-    { n: '2', label: 'Achterkant', img: '/img/catalog-after.webp', alt: 'Achterkant-shot van het product voor de catalogus' },
-    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', alt: 'Detailclose-up van het logo of de stof' },
-    { n: '4', label: 'Op een model', img: '/img/custom-models-02.webp', alt: 'On-model shot van het product, gedragen voor pasvorm en schaal' },
+    { n: '1', label: 'Voorkant', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Voorkant-shot van het product voor de catalogus' },
+    { n: '2', label: 'Achterkant', img: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Achterkant-shot van het product voor de catalogus' },
+    { n: '3', label: 'Detail', img: '/img/catalog-before.webp', w: 1350, h: 1800, alt: 'Detailclose-up van het logo of de stof' },
+    { n: '4', label: 'Op een model', img: '/img/custom-models-02.webp', w: 800, h: 1071, alt: 'On-model shot van het product, gedragen voor pasvorm en schaal' },
   ],
 };
 
@@ -92,7 +97,11 @@ const COPY = {
     // believing a date was promised.
     queueNote: t0.queue.en + '.',
     packH: `One product. Four photos. ${item.price}.`,
-    packP: 'Every product comes back as a complete set — including a real on-model shot, not just flat-lays.',
+    // The on-model shot is the one line on this page where the Brand Model is
+    // the obvious next question, so the upsell is woven into the sentence that
+    // already raises it rather than parked in a block of its own. §1 of the
+    // brief: every drop-content page links to /custom-models.
+    packP: `Every product comes back as a complete set — including a real on-model shot, not just flat-lays. That shot can use a face from the standard roster, or <a href="${lp('/custom-models')}">a Brand Model made only for you</a>, so the same person carries your whole range.`,
     // The tier IS named here — this is the per-product price block, a body
     // section on a page section 13 lists as a Tier 0 surface. Read from the
     // tier rather than typed, so the label cannot drift from /pricing's.
@@ -190,7 +199,7 @@ const COPY = {
     ],
     queueNote: t0.queue.nl + '.',
     packH: `Eén product. Vier foto’s. ${item.price}.`,
-    packP: 'Elk product komt terug als een complete set — inclusief een echte on-model shot, niet alleen flat-lays.',
+    packP: `Elk product komt terug als een complete set — inclusief een echte on-model shot, niet alleen flat-lays. Die shot kan een gezicht uit de standaardroster gebruiken, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
     packCta: `${TIERS.unattended.label.nl} · ${item.price} / product`,
     edMeta: '( Waar het past )',
     edH: 'Catalogfotografie: helderheid die de verkoop sluit.',
@@ -303,12 +312,12 @@ const shots = SHOTS[lang];
   <div class="container">
     <div class="section-head" style="text-align:center;margin-inline:auto">
       <h2>{c.packH}</h2>
-      <p style="margin-inline:auto">{c.packP}</p>
+      <p class="pack-p" style="margin-inline:auto" set:html={c.packP} />
     </div>
     <div class="pack-row reveal-group" style="margin-top:2rem">
       {shots.map((s) => (
         <div class="pack-card reveal pending">
-          <div class="photo-band"><img src={s.img} alt={s.alt} loading="lazy" /><span class="pack-badge">{s.n} · {s.label}</span></div>
+          <div class="photo-band"><img src={s.img} alt={s.alt} loading="lazy" decoding="async" width={s.w} height={s.h} /><span class="pack-badge">{s.n} · {s.label}</span></div>
         </div>
       ))}
     </div>
@@ -425,7 +434,7 @@ const shots = SHOTS[lang];
 <section class="section-tight">
   <div class="container two-col">
     <div class="reveal pending">
-      <div class="photo-split-media"><img src="/img/catalog-after.webp" alt={c.reviewAlt} loading="lazy" /></div>
+      <div class="photo-split-media"><img src="/img/catalog-after.webp" alt={c.reviewAlt} loading="lazy" decoding="async" width="1800" height="1800" /></div>
     </div>
     <div class="reveal pending">
       <h2>{c.reviewH}</h2>
@@ -512,6 +521,12 @@ const shots = SHOTS[lang];
   .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--ink-3); }
   .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
   .step p { font-size: .9rem; color: var(--ink-3); }
+
+  /* The Brand Model link inside packP. It arrives through set:html, so it
+     carries no scope attribute and a plain `.pack-p a` rule would not reach
+     it — hence :global() on the descendant. Same treatment every other inline
+     prose link on the site gets (see .legal a, .pl-panel-link a). */
+  .pack-p :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 
   /* The 4-photo product set. Four tiles on desktop, 2×2 on phones. */
   .pack-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }

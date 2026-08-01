@@ -36,19 +36,23 @@ const t0 = TIERS.unattended;
 // is exactly how the stale €59 survived as long as it did.
 const QUOTED = new Set(['campaign', 'custom']);
 
-const posters: Record<string, string> = {
-  motion: '/img/banners-04.webp',
-  lifestyle: '/img/lifestyle-glow-03.webp',
-  campaign: '/img/banners-08.webp',
-  custom: '/img/banners-13.webp',
+// w/h on both tables are the intrinsic pixel size of the file in public/img —
+// the real photo, not the .photo-band / .photo-grid box it crops into. They
+// are attributes, not layout: the browser needs the aspect ratio before the
+// bytes arrive or the grid reflows under the reader (§12).
+const posters: Record<string, { src: string; w: number; h: number }> = {
+  motion: { src: '/img/banners-04.webp', w: 928, h: 1152 },
+  lifestyle: { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376 },
+  campaign: { src: '/img/banners-08.webp', w: 928, h: 1152 },
+  custom: { src: '/img/banners-13.webp', w: 2400, h: 1792 },
 };
 
 const strip = [
-  { src: '/img/banners-01.webp', wide: true, key: 'campaign' },
-  { src: '/img/lifestyle-flash-02.webp', wide: false, key: 'flash' },
-  { src: '/img/lifestyle-phone-made-09.webp', wide: false, key: 'phone' },
-  { src: '/img/lifestyle-dunes-02.webp', wide: false, key: 'dunes' },
-  { src: '/img/banners-06.webp', wide: true, key: 'campaign' },
+  { src: '/img/banners-01.webp', wide: true, key: 'campaign', w: 928, h: 1152 },
+  { src: '/img/lifestyle-flash-02.webp', wide: false, key: 'flash', w: 1340, h: 2400 },
+  { src: '/img/lifestyle-phone-made-09.webp', wide: false, key: 'phone', w: 2400, h: 1792 },
+  { src: '/img/lifestyle-dunes-02.webp', wide: false, key: 'dunes', w: 928, h: 1152 },
+  { src: '/img/banners-06.webp', wide: true, key: 'campaign', w: 928, h: 1152 },
 ];
 
 // No `as const` — COPY[lang] on a const-asserted object gives a union of
@@ -85,6 +89,10 @@ const COPY = {
       'A product video is a short, clean film with subtle motion — a slow turn, a drape, a catch of light — built to give a product life without a full production. On a feed tuned for movement, a few seconds of motion earns attention a static image can’t, and holds it long enough to land the message.',
       "It isn't a replacement for your photos; it's the layer on top that lifts them where it counts. The same product that sits still on your shop can move in your ads and socials, where dwell time and click-through decide whether people stop — or keep scrolling.",
     ],
+    // Brief §1: every drop-content page links to /custom-models. It goes here,
+    // in the paragraph about what a clip is, because "who is in it" is a real
+    // question a clip raises and the answer is the same face as the stills.
+    modelNote: `Where a person appears in the clip, that person can be <a href="${lp('/custom-models')}">a Brand Model made only for you</a> — the same face your catalog and lifestyle sets already run on.`,
     whereH: 'Where it lives',
     where: [
       ['Reels, TikTok & Shorts', 'where motion is the native language.'],
@@ -141,6 +149,7 @@ const COPY = {
       'Een productvideo is een korte, strakke film met subtiele beweging — een langzame draai, een val van stof, een lichtvonk — gemaakt om een product leven te geven zonder een volledige productie. Op een feed die op beweging is afgestemd, verdienen een paar seconden motion aandacht die een stilstaand beeld niet krijgt, en houden ze die lang genoeg vast om de boodschap te laten landen.',
       'Het is geen vervanging van je foto’s; het is de laag erbovenop die ze optilt waar het telt. Hetzelfde product dat stil staat op je shop kan bewegen in je ads en socials, waar kijktijd en doorklik bepalen of mensen stoppen — of verder scrollen.',
     ],
+    modelNote: `Waar er een persoon in de clip verschijnt, kan dat <a href="${lp('/custom-models')}">een merkmodel zijn dat alleen voor jou gemaakt is</a> — hetzelfde gezicht waar je catalog- en lifestylesets al op draaien.`,
     whereH: 'Waar het leeft',
     where: [
       ['Reels, TikTok & Shorts', 'waar beweging de moedertaal is.'],
@@ -204,7 +213,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       {kinds.map((s) => (
         <a href={lp(`/video/${s.slug}`)} class="reveal pending" style="display:block">
           <div class="photo-band tall">
-            <img src={posters[s.slug]} alt={c.exampleAlt(s.name)} loading="lazy" />
+            <img src={posters[s.slug].src} alt={c.exampleAlt(s.name)} loading="lazy" decoding="async" width={posters[s.slug].w} height={posters[s.slug].h} />
             <div class="scrim"></div>
             <div class="caption">
               <h3>{s.name} &rarr;</h3>
@@ -230,6 +239,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       <div class="svc-explain-main">
         <h3>{c.whatH}</h3>
         {c.whatP.map((p) => <p>{p}</p>)}
+        <p class="model-note" set:html={c.modelNote} />
       </div>
       <aside class="svc-explain-side">
         <h3>{c.whereH}</h3>
@@ -273,7 +283,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   <div class="container">
     <div class="photo-grid reveal pending">
       {strip.map((s) => (
-        <img src={s.src} alt={c.stripAlt[s.key]} loading="lazy" class={s.wide ? 'wide' : undefined} />
+        <img src={s.src} alt={c.stripAlt[s.key]} loading="lazy" decoding="async" width={s.w} height={s.h} class={s.wide ? 'wide' : undefined} />
       ))}
     </div>
   </div>
@@ -316,6 +326,11 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
      half of the promise to be visible, not hidden — so it is set at body
      weight directly under the trust row rather than as footnote-sized grey. */
   .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  /* The Brand Model link in the "What it is" column. It arrives through
+     set:html and so carries no scope attribute — :global() on the descendant
+     is what reaches it. Same treatment as every other inline prose link. */
+  .model-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 
   /* This block used to be a `.card` with an overridden border colour sitting
      inside a two-column grid, i.e. a card nested in a layout that already

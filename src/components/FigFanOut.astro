@@ -60,7 +60,7 @@ const { photo, photoAlt, made, madeAlt, inLabel, outLabel, slots, note } = Astro
 <figure class="fan">
   <div class="fan-side">
     <div class="fan-stack">
-      <img src={photo} alt={photoAlt} loading="lazy" width="600" height="800" />
+      <img src={photo} alt={photoAlt} loading="lazy" decoding="async" width="600" height="800" />
     </div>
     <p class="fan-lab">{inLabel}</p>
   </div>
@@ -72,12 +72,12 @@ const { photo, photoAlt, made, madeAlt, inLabel, outLabel, slots, note } = Astro
   <div class="fan-side">
     <div class="fan-grid">
       <div class="fan-cell">
-        <img src={made} alt={madeAlt} loading="lazy" width="600" height="600" />
+        <img src={made} alt={madeAlt} loading="lazy" decoding="async" width="600" height="600" />
       </div>
       {slots.map((s) => (
         <div class="fan-cell fan-slot">
           {s.photo
-            ? <img src={s.photo} alt={s.alt || s.t} loading="lazy" width="600" height="600" />
+            ? <img src={s.photo} alt={s.alt || s.t} loading="lazy" decoding="async" width="600" height="600" />
             : <span class="fan-hatch" aria-hidden="true"></span>}
           <span class="fan-slot-t">{s.t}</span>
         </div>
