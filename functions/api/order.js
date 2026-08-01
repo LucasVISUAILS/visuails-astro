@@ -63,7 +63,7 @@ import {
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail } from '../../src/lib/mail.js';
-import { createTestSampleCheckoutSession } from '../../src/lib/stripe.js';
+import { createTestSampleMolliePayment } from '../../src/lib/mollie.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
 
@@ -367,33 +367,47 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // STRIPE — TEST SAMPLE ONLY (see BACKEND-SETUP.md §9). The order row above
+  // MOLLIE — TEST SAMPLE ONLY (see BACKEND-SETUP.md §9). The order row above
   // is already written with payment_status defaulting to whatever schema.sql
   // says; this branch sends the client to pay before they ever see the
   // thank-you page. Scoped deliberately to svc === 'test-sample': every other
   // service still has no server-side price to charge against, so they keep
   // going straight to the free-flow thank-you page below.
   //
-  // Failing OPEN, not closed: if Stripe or the env var is unavailable, the
+  // This replaces an earlier Stripe integration: Checkout Session creation
+  // from this Pages Function was coming back as a blank HTTP 400 specifically
+  // when called from Cloudflare (never from Stripe's own CLI, never from a
+  // local Node test) — a networking-layer failure between Cloudflare and
+  // api.stripe.com that neither Stripe's nor Cloudflare's support had
+  // resolved. See BACKEND-SETUP.md §9 for the history; src/lib/stripe.js is
+  // left in place rather than deleted in case that gets resolved later.
+  //
+  // Failing OPEN, not closed: if Mollie or the env var is unavailable, the
   // order still exists and the client still gets a confirmation — they just
   // don't get a payment link this one time. Losing the order to protect the
   // checkout step would be exactly the mistake this file already refuses to
   // make everywhere else (see the file header).
+  //
+  // TODO(payment status): this only sends the customer to pay — nothing yet
+  // marks the order paid when Mollie confirms it. That needs a webhook
+  // handler at the URL below, still to be built, mirroring however the
+  // (also not-yet-wired) Stripe webhook was meant to update `orders` and
+  // `payments`. Don't treat "customer reached Mollie's checkout page" as
+  // "order is paid" anywhere downstream until that exists.
   // ───────────────────────────────────────────────────────────────────────────
-  if (svc === 'test-sample' && env.STRIPE_SECRET_KEY) {
-    // createTestSampleCheckoutSession() resolves the whole Stripe session
-    // object ({ id, url, ... }), not a URL string — .url is what the browser
-    // actually needs to go to. Redirecting with the raw object stringifies
-    // it to the literal text "[object Object]", which is what sent us to
-    // /api/[object%20Object] instead of Stripe's checkout page.
-    const session = await safe(() => createTestSampleCheckoutSession(env, {
+  if (svc === 'test-sample' && env.MOLLIE_API_KEY) {
+    // createTestSampleMolliePayment() resolves the whole Mollie payment
+    // object ({ id, status, _links, ... }), not a URL string —
+    // _links.checkout.href is what the browser actually needs to go to. Same
+    // [object Object] trap as the Stripe version had if this were redirected
+    // to directly instead of pulling the URL out first.
+    const payment = await safe(() => createTestSampleMolliePayment(env, {
       ref,
-      email,
       lang,
       successUrl: requestOrigin(request) + done,
-      cancelUrl: requestOrigin(request) + back,
+      webhookUrl: requestOrigin(request) + '/api/webhooks/mollie',
     }));
-    const checkoutUrl = session?.url;
+    const checkoutUrl = payment?._links?.checkout?.href;
     if (checkoutUrl) {
       if (wantsJson) {
         return json({ ok: true, ref, tier, window: finalWindow, windowLost: raced, redirect: checkoutUrl });
