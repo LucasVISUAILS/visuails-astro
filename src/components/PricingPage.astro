@@ -6,40 +6,59 @@
 // the only way to guarantee that rather than merely intend it.
 //
 // EVERY EURO ON THIS PAGE IS READ FROM src/data/pricing.js. Nothing is typed
-// into this markup — not a price, not a product count, not a turnaround, not a
-// revision count. If a number here is wrong, it is wrong in pricing.js, and
-// pricing.js fails the build before a broken ladder can ship.
+// into this markup — not a price, not a product count, not a turnaround. If a
+// number here is wrong, it is wrong in pricing.js, and pricing.js fails the
+// build before a broken ladder can ship.
 //
-// WHAT THIS REPLACED, and why (AUDIT-TASK-0.md §F + brief section 13):
-//   · Three per-product plan cards as the headline offer → the drop is the
-//     unit now, and the per-product tier moved to the bottom block where
-//     section 13 puts it.
-//   · "Priority delivery — jump to the top of the queue, +€29.99" → REMOVED.
-//     Section 13: Tier 0 "always yields to Tier 1 in the capacity gate." Selling
-//     a queue-jump on the tier that yields is selling a promise the gate is
-//     built to break.
-//   · "Multi Format Export +€19.99" and "4K Export +€9.99" → REMOVED. Neither
-//     price exists in pricing.js, so neither could be honoured by the ladder.
-//   · Volume bands 1–24 / 25–99 / 100+ → REMOVED. Invented offers ("never
-//     invent … metrics"), and superseded by the Full Drop band.
+// AND EVERY PRINTED PRICE SAYS WHETHER VAT IS IN IT, using vatLabel(). Never a
+// typed "excl. VAT" — that string has to be translatable and it has to move if
+// the rule moves, and BRIEF-14 calls this its hardest rule for the good reason
+// that a page which prints one net figure and one gross figure without saying
+// which is which has quoted two different prices for the same thing. The net
+// figure leads everywhere on this page, because that is what a business pays;
+// the gross figure sits beside it, because that is what leaves the account.
+//
+// WHAT THIS REPLACED, and why (see section 0 of src/data/pricing.js, which is
+// the governing document for the new model):
+//   · The two drop PACKAGES as the headline offer → THE LADDER. The packages
+//     asked the buyer for a size and a service level at once, and left a hole
+//     between 8 and 25 products where the à la carte route cost more than the
+//     bigger package. A rate per product that only ever falls cannot open that
+//     hole again: every count has a price, and no count is punished.
+//   · The Drop Pilot → FIRST_ORDER_DISCOUNT. The Pilot was a discount with a
+//     fixed size and a "once per brand" rule bolted on. A plain percentage off
+//     a first order is the same incentive at every size, with nothing to
+//     explain.
+//   · The Tier 0 block at the bottom → THE PLANS. Tier 0 was a second price
+//     list for the same work; the ladder already covers small counts, so what
+//     the bottom of the page needed was the other axis — buying the same
+//     output every month, cheaper, instead of order by order.
+//   · The studio retainer → the top plan, which is the same offer with its
+//     arithmetic shown.
+//   · "Priority delivery, +€29.99", "Multi Format Export", "4K Export",
+//     invented volume bands → all REMOVED in the previous pass, and none of
+//     them come back with the ladder: the ladder IS the volume answer.
 //   · "€1,000–2,000+ / day" shoot anchor → SHOOT_DAY, itemised (flag 2).
-//   · "3 revision rounds" on per-product orders → REMOVED, and the count
-//     later went with it on both tiers. What each tier promises after
-//     delivery now comes off TIERS[…].aftercare; see src/data/pricing.js.
-//   · "~24h delivery" → retired (task #190). Timing comes from turnaround().
 //   · Every CTA pointed at /order. That page is deleted; the CTAs point at
 //     /start, and /order is a 301 to it in public/_redirects.
+//
+// THE WORD "DROP" IS NOT WHAT WE SELL ANY MORE, on this page or anywhere. It
+// means a collection going live — that is what it means to the people we sell
+// to, and using it for a work order made one word carry two meanings in the
+// same sentence. What we sell is an order, or a batch; in Dutch, een
+// bestelling. The word survives only where the CLIENT's launch is meant.
 //
 // The ThreeWay comparison block was dropped from this page rather than ported:
 // it still carries the retired 24-hour claim (task #190) and /compare is the
 // page that argument belongs on. The shoot-day anchor does that job here.
 import {
-  PACKAGES, PER_PRODUCT, SHOOT_DAY, TEST_SAMPLE, TIERS,
-  reviewClaim, euro, AMOUNT,
+  LADDER, ladderRate, quote, FIRST_ORDER_DISCOUNT,
+  plans, PLAN_AMOUNT, PLAN_CLIPS,
+  SHOOT_DAY, TEST_SAMPLE,
+  reviewClaim, aftercare, euro, AMOUNT,
   TIER_ROWS, tierRow, tierRowLabels,
-  FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
-  FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
-  TIER0_PRODUCT, UPGRADE_BREAK_EVEN, BRAND_MODEL_CREDIT_DROPS,
+  WINDOW_THRESHOLD, vatLabel, withVat,
+  BRAND_MODEL_CREDIT_DROPS,
 } from '../data/pricing.js';
 // The six pricing questions are NOT in this file. They live in
 // src/data/faq.js, because src/data/schema.js emits them a second time as this
@@ -55,54 +74,118 @@ interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
-const attended = TIERS.attended;
-const unattended = TIERS.unattended;
+// The two tiers are no longer read as objects here. Everything this page says
+// about either of them goes through the accessors — reviewClaim(), aftercare(),
+// tierRow() — which is what pricing.js asks for ("pages use this, never a
+// literal"), and what lets a promise be tightened in one place.
 const sample = TEST_SAMPLE[lang];
 const shoot = SHOOT_DAY[lang];
 
-// The four packages, split by what they ARE rather than laid out as four
-// interchangeable cards. Two of them are ways to buy a drop; two of them
-// attach to a drop you are already buying. Rendering all four identically
-// would say they are four choices at the same level, which is false.
+// ── The ladder table ───────────────────────────────────────────────────────
+// The three kinds, in the order the table reads them. Complete first because
+// it is the scope everything else on the page quotes — the two singles are
+// what you buy when you want half of it, not the default.
+const KIND_IDS = ['complete', 'catalog', 'lifestyle'] as const;
+
+// Two of the three kinds are a pillar page under another name, so the column
+// heading is the link — the brief's internal-linking rule (§1) without a row
+// of "learn more" chips underneath. `complete` has no page of its own: it is
+// both of the others bought together, so linking it anywhere would send a
+// reader to half of what the column describes.
+const KIND_PAGE: Record<string, string | null> = {
+  complete: null,
+  catalog: '/catalog',
+  lifestyle: '/lifestyle',
+};
+
+// The rung bounds are read off ONE kind and reused for all three columns,
+// which is only honest if all three kinds break at the same counts. They do —
+// see LADDER in pricing.js, where the three lists are deliberately parallel —
+// but a table whose row labels come from one column and whose rates come from
+// three is exactly the kind of quiet lie that survives a price change. So it
+// is checked here rather than trusted, and the build stops if a future edit
+// gives one kind its own bands.
+const rungs = LADDER.complete.map(([lo, hi]) => ({
+  lo,
+  hi,
+  // The count to ask ladderRate() for. The bottom of the band, because that is
+  // the count the label promises the rate from.
+  at: lo,
+  label: hi === null ? `${lo}+` : `${lo}–${hi}`,
+}));
+for (const id of KIND_IDS) {
+  const shape = LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
+  const expected = LADDER.complete.map(([lo, hi]) => `${lo}:${hi}`).join(',');
+  if (shape !== expected) {
+    throw new Error(
+      `PricingPage.astro: the "${id}" ladder does not break at the same counts ` +
+      `as "complete" (${shape} vs ${expected}). The rate table prints one set ` +
+      `of row labels across all three columns, so it would be quoting ${id} ` +
+      `rates against the wrong product counts. Give the table its own labels ` +
+      `per column, or put the ladders back in step.`
+    );
+  }
+}
+
+// Three worked totals, so the reader does not have to multiply.
 //
-// THAT INTENT WAS STATED HERE FOR A YEAR AND THE MARKUP DID NOT KEEP IT. The
-// add-ons were a second array through a second .map(), which produced a second
-// priced-card grid — different class names, identical shape. check_rhythm.py
-// measures sections by shape rather than by name and read sections 2 and 4 as
-// one device used twice, which is the whole of Lucas's complaint in task #246
-// arriving as a number. So the two add-ons stop being a list here: a list is a
-// set of things you choose between, and these two are not that. One of them is
-// a sum the reader has to do; the other is a list of what is inside it. They
-// are named, and section 4 below gives each the shape its own claim needs.
-const byId = Object.fromEntries(PACKAGES[lang].map((p) => [p.id, p]));
-const dropPackages = [byId['pilot'], byId['full-drop']];
-const brandModel = byId['brand-model'];
-const retainer = byId['retainer'];
+// THE THREE COUNTS ARE A CHOICE, and this is the reasoning, because the next
+// editor will want to change them: 5 is the first count off the entry rung —
+// the smallest order that is already cheaper per product than a single one;
+// the middle count is the one the old package model had no answer for, where a
+// brand paid à la carte because it fell between the Pilot and the Full Drop,
+// and it is the count this whole model exists to price properly; the last is a
+// full collection, and it is also what the anchor below compares against a
+// production day, so the two sections cannot quote different sizes.
+const WORKED = [5, 14, 30];
+const ANCHOR_PRODUCTS = WORKED[WORKED.length - 1];
+
+// The first-order discount as a percentage, computed rather than written. A
+// typed "20%" beside a constant of 0.20 is two sources of truth for one
+// number, and the typed one is the one that gets missed.
+const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
+// The worked example under the discount — the same middle count as the tiles,
+// list price and first-order price, both from quote() so the subtraction is
+// the module's and not this page's.
+const firstEg = quote('complete', WORKED[1], { firstOrder: true });
+
+// The plans, and the one card that needs to be named in another section's copy.
+const planList = plans(lang);
+const planById = Object.fromEntries(planList.map((p) => [p.id, p]));
 
 // ── Copy ───────────────────────────────────────────────────────────────────
-// Prose only. Every promise — timing, queue, delivery, revisions, review
-// level, every euro — is interpolated from pricing.js, in both languages,
+// Prose only. Every promise — timing, queue, delivery, review level, every
+// euro, every VAT label — is interpolated from pricing.js, in both languages,
 // out of the same objects.
 const COPY = {
   en: {
     eyebrow: 'Pricing',
-    h1: 'Priced by the drop, not by the image.',
-    lead: 'A drop is a collection going live: one deadline, one reserved window, one invoice. That is the unit a brand actually works in, so it is the unit this studio is priced in.',
+    h1: 'Priced per product. The rate falls as the count rises.',
+    lead: `One unit: a product. One rate, and it only ever moves down a rung. Every count has a price, so no order costs more per product than a smaller one — and there is no package to squeeze your line into.`,
 
-    dropsH: 'Two ways to run a drop',
-    dropsSub: 'Both hold a window in the studio calendar. What differs is how much of your line goes through it.',
-    onceOnlyTag: 'Once per brand',
-    productsLabel: 'Products',
-    dropCta: 'Start a drop',
+    ladderH: 'The ladder',
+    ladderSub: 'Pick the scope, count your products, read the rate. The rate applies to every product in the order, not only the ones past the rung.',
+    ladderProductsCol: 'Products',
+    kinds: {
+      complete: { name: 'Complete', sub: 'Catalog set and lifestyle carousel — seven images per product' },
+      catalog: { name: 'Catalog set', sub: 'Four images per product' },
+      lifestyle: { name: 'Lifestyle carousel', sub: 'Three images per product' },
+    },
 
-    anchorH: 'What a drop replaces',
+    workedH: 'What that comes to',
+    workedSub: 'Three counts on the complete scope, multiplied out, so the table is not homework.',
+    workedUnit: 'products',
+    perProduct: 'per product',
+
+    firstLead: `Your first order is ${firstPct} off.`,
+    firstBody: `Once per brand, at any size. It is what the pilot package used to be, without the fixed count: ${WORKED[1]} complete products is ${euro(firstEg.listTotal, 'en')} ${vatLabel('excl', 'en')}, and on a first order that is ${euro(firstEg.net, 'en')} ${vatLabel('excl', 'en')} — ${euro(firstEg.gross, 'en')} ${vatLabel('incl', 'en')}.`,
+    ladderCta: 'Start an order',
+
+    anchorH: 'What this replaces',
     anchorWasTag: 'A production day',
-    anchorNowTag: 'A Full Drop',
-    anchorNowMeta: `${FULL_DROP_MIN}–${FULL_DROP_MAX} products, catalog set and lifestyle carousel each`,
-    // Written "between X and Y" rather than as a dash range: the low figure
-    // carries cents and the high one does not, so euroRange() would have to
-    // round one of them, and a rounded price is a wrong price.
-    anchorPerProduct: `Between ${euro(FULL_DROP_PER_PRODUCT_MIN, 'en')} and ${euro(FULL_DROP_PER_PRODUCT_MAX, 'en')} per product, depending on how many you run`,
+    anchorNowTag: `${ANCHOR_PRODUCTS} products here`,
+    anchorNowMeta: 'Catalog set and lifestyle carousel for each, one briefing, one invoice',
+    anchorPerProduct: `${euro(ladderRate('complete', ANCHOR_PRODUCTS), 'en')} per product at that count · ${vatLabel('excl', 'en')}`,
     anchorNowList: [
       'Nothing to ship, nowhere to travel, no day off the business',
       'The output is defined before you pay for it',
@@ -112,96 +195,138 @@ const COPY = {
     // the page that runs this same comparison at full length. It is written
     // into the note rather than added as a related-page block because this is
     // the exact paragraph where a reader starts wanting the rest of it.
-    anchorNote: `Neither figure tells you what actually comes out of a shoot day — that depends on the day. ${shoot.caveat} What a drop fixes is that its output is agreed in advance. The rest of that comparison — the hours, the risk, what each one leaves you holding — is <a href="${lp('/compare')}">set out side by side</a>.`,
+    anchorNote: `Neither figure tells you what actually comes out of a shoot day — that depends on the day. ${shoot.caveat} What an order here fixes is that its output is agreed before you pay for it. The rest of that comparison — the hours, the risk, what each one leaves you holding — is <a href="${lp('/compare')}">set out side by side</a>.`,
 
-    addOnH: 'Added to a drop',
-    addOnSub: 'Neither of these is a way to buy visuals on its own. Both sit on top of a drop you are already running.',
-    addOnCta: 'Talk it through',
+    addOnH: 'Added to an order',
+    addOnSub: 'Neither of these is a way to buy visuals on its own. Both sit on top of an order you are already running.',
+    brandModelName: 'Your Brand Model',
+    brandModelLine: 'One face. Every order. Only yours.',
+    brandModelUnit: 'one-time setup',
     brandModelCta: 'See Your Brand Model',
     // FigPayback's three labels. They are copy, so they live in the COPY table
     // and travel through check_lang_parity like every other string; the drawing
-    // itself holds no language and no number. `pbRunLabel` is the first half of
-    // the sentence that used to be `creditLine` in pricing.js — the half that
-    // states a fact. The half that asked the reader to multiply is the picture.
-    pbTotalLabel: 'Setup',
-    pbRunLabel: `Credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    // itself holds no language and no number. The VAT label rides on the plate
+    // label because the plate is where the figure is: the drawing prints a
+    // price, so the drawing says which price it is.
+    pbTotalLabel: `Setup, ${vatLabel('excl', 'en')}`,
+    // The credit cells print a price too, so the run label carries the label
+    // for them — the plate's own says nothing about the five figures beside it.
+    pbRunLabel: `Credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} orders · ${vatLabel('excl', 'en')}`,
     pbEndLabel: 'Setup repaid',
-    retainerIncH: 'Every month, this:',
+    videoName: 'Video clip',
+    videoLine: 'One short clip. The same rate on its own or added to any order.',
+    videoUnit: 'per clip',
+    videoIncH: 'How it is priced:',
+    videoList: [
+      'The same rate inside an order as on its own — it is the same work',
+      `${PLAN_CLIPS.studio} clips a month are included in the ${planById.studio.name} plan`,
+      'Made from the same product photos as the rest of the order',
+    ],
+    videoCta: 'See what a clip is',
 
-    inclH: 'In every drop',
+    inclH: 'In every order',
+    svcLead: 'Service level follows size.',
+    svcBody: `From ${WINDOW_THRESHOLD} products an order goes into the capacity calendar and gets the reserved window. Below that it runs in the standard queue. One line to cross, rather than a second question to answer.`,
+    svcFromTag: `From ${WINDOW_THRESHOLD} products`,
+    svcUnderTag: `Under ${WINDOW_THRESHOLD} products`,
     gateLead: 'No date is printed until the calendar clears it.',
     gateBody: 'A reserved window is confirmed before you pay, never after. If the week you need cannot be held, you are told that instead of being given an optimistic guess.',
 
-    t0Frame: 'Not every order is a drop. A few products, nothing waiting on them, no window to hold. Same pipeline, same review, without the reserved slot in the calendar — and the page says so rather than hiding it.',
-    t0Terms: 'How this tier runs',
-    t0Math: `One product at drop scope — a catalog set and a lifestyle carousel — is ${euro(TIER0_PRODUCT, 'en')}. A Full Drop costs less from ${UPGRADE_BREAK_EVEN} products on. Below that, ordering individually is the cheaper route, and there is no reason for us to pretend otherwise.`,
-    t0Cta: 'Order individual products',
+    plansH: 'The plans',
+    plansSub: 'If the same output comes round every month, buying it by the month costs less than buying it order by order. That is all a plan is — not a bigger package, the same products at a lower price for committing to the month. Each card shows the difference against the ladder above.',
+    plansCta: 'Set up a plan',
 
     sampleH: 'Before any of it',
-    sampleBody: `One product, ${sample.price}, ${sample.unit}. It runs through the same pipeline as a paid order, so what comes back is what you would get.`,
-    sampleCta: `Request a test sample · ${sample.price}`,
+    sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${euro(withVat(AMOUNT.testSample), 'en')} ${vatLabel('incl', 'en')} — ${sample.unit}. It runs through the same pipeline as a paid order, so what comes back is what you would get.`,
+    sampleCta: `Request a test sample · ${sample.price} ${vatLabel('excl', 'en')}`,
 
     faqH: 'Pricing questions',
 
     ctaH1: 'See it on your',
     ctaEm: 'own product.',
-    ctaSample: `Test sample · ${sample.price}`,
-    ctaStart: 'Start a drop',
+    ctaSample: `Test sample · ${sample.price} ${vatLabel('excl', 'en')}`,
+    ctaStart: 'Start an order',
     ctaWa: 'WhatsApp',
     waText: 'Hi%20VISUAILS%2C%20I%27ve%20got%20a%20question%20about%20pricing.',
   },
 
   nl: {
     eyebrow: 'Prijzen',
-    h1: 'Geprijsd per drop, niet per beeld.',
-    lead: 'Een drop is een collectie die live gaat: één deadline, één gereserveerd venster, één factuur. Dat is de eenheid waarin een merk werkt, dus is het de eenheid waarin deze studio prijst.',
+    h1: 'Geprijsd per product. Het tarief daalt naarmate het aantal stijgt.',
+    lead: `Eén eenheid: een product. Eén tarief, en dat gaat alleen maar een trede omlaag. Elk aantal heeft een prijs, dus geen bestelling kost per product meer dan een kleinere — en er is geen pakket waar je lijn in moet passen.`,
 
-    dropsH: 'Twee manieren om een drop te draaien',
-    dropsSub: 'Allebei houden ze een venster vrij in de studioagenda. Het verschil zit in hoeveel van je lijn erdoorheen gaat.',
-    onceOnlyTag: 'Eenmalig per merk',
-    productsLabel: 'Producten',
-    dropCta: 'Start een drop',
+    ladderH: 'De staffel',
+    ladderSub: 'Kies de scope, tel je producten, lees het tarief. Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede.',
+    ladderProductsCol: 'Producten',
+    kinds: {
+      complete: { name: 'Compleet', sub: 'Catalogset en lifestyle-carousel — zeven beelden per product' },
+      catalog: { name: 'Catalogset', sub: 'Vier beelden per product' },
+      lifestyle: { name: 'Lifestyle-carousel', sub: 'Drie beelden per product' },
+    },
 
-    anchorH: 'Wat een drop vervangt',
+    workedH: 'Wat dat wordt',
+    workedSub: 'Drie aantallen op de complete scope, uitgerekend, zodat de tabel geen huiswerk is.',
+    workedUnit: 'producten',
+    perProduct: 'per product',
+
+    firstLead: `Je eerste bestelling is ${firstPct} goedkoper.`,
+    firstBody: `Eenmalig per merk, bij elke omvang. Het is wat het pilotpakket was, zonder het vaste aantal: ${WORKED[1]} complete producten is ${euro(firstEg.listTotal, 'nl')} ${vatLabel('excl', 'nl')}, en bij een eerste bestelling is dat ${euro(firstEg.net, 'nl')} ${vatLabel('excl', 'nl')} — ${euro(firstEg.gross, 'nl')} ${vatLabel('incl', 'nl')}.`,
+    ladderCta: 'Start een bestelling',
+
+    anchorH: 'Wat dit vervangt',
     anchorWasTag: 'Een productiedag',
-    anchorNowTag: 'Een Full Drop',
-    anchorNowMeta: `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten, catalogset en lifestyle-carousel per stuk`,
-    anchorPerProduct: `Tussen ${euro(FULL_DROP_PER_PRODUCT_MIN, 'nl')} en ${euro(FULL_DROP_PER_PRODUCT_MAX, 'nl')} per product, afhankelijk van hoeveel je draait`,
+    anchorNowTag: `${ANCHOR_PRODUCTS} producten hier`,
+    anchorNowMeta: 'Catalogset en lifestyle-carousel per stuk, één briefing, één factuur',
+    anchorPerProduct: `${euro(ladderRate('complete', ANCHOR_PRODUCTS), 'nl')} per product bij dat aantal · ${vatLabel('excl', 'nl')}`,
     anchorNowList: [
       'Niets opsturen, nergens naartoe, geen dag uit de zaak',
       'Wat je krijgt staat vast voordat je betaalt',
       'Volgend seizoen opnieuw draaien zonder iets opnieuw te boeken',
     ],
-    anchorNote: `Geen van beide bedragen zegt iets over wat er uit een shootdag komt — dat hangt van de dag af. ${shoot.caveat} Wat een drop vastlegt, is dat de uitkomst vooraf is afgesproken. De rest van die vergelijking — de uren, het risico, wat je aan elk van beide overhoudt — staat <a href="${lp('/compare')}">naast elkaar uitgeschreven</a>.`,
+    anchorNote: `Geen van beide bedragen zegt iets over wat er uit een shootdag komt — dat hangt van de dag af. ${shoot.caveat} Wat een bestelling hier vastlegt, is dat de uitkomst vaststaat voordat je betaalt. De rest van die vergelijking — de uren, het risico, wat je aan elk van beide overhoudt — staat <a href="${lp('/compare')}">naast elkaar uitgeschreven</a>.`,
 
-    addOnH: 'Toe te voegen aan een drop',
-    addOnSub: 'Geen van beide is op zichzelf een manier om visuals te kopen. Ze komen bovenop een drop die je al draait.',
-    addOnCta: 'Even overleggen',
+    addOnH: 'Toe te voegen aan een bestelling',
+    addOnSub: 'Geen van beide is op zichzelf een manier om visuals te kopen. Ze komen bovenop een bestelling die je al draait.',
+    brandModelName: 'Jouw merkmodel',
+    brandModelLine: 'Eén gezicht. Elke bestelling. Alleen van jou.',
+    brandModelUnit: 'eenmalige setup',
     brandModelCta: 'Bekijk Jouw merkmodel',
-    pbTotalLabel: 'Setup',
-    pbRunLabel: `Verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    pbTotalLabel: `Setup, ${vatLabel('excl', 'nl')}`,
+    pbRunLabel: `Verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen · ${vatLabel('excl', 'nl')}`,
     pbEndLabel: 'Setup terugverdiend',
-    retainerIncH: 'Elke maand dit:',
+    videoName: 'Videoclip',
+    videoLine: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
+    videoUnit: 'per clip',
+    videoIncH: 'Hoe het geprijsd is:',
+    videoList: [
+      'Binnen een bestelling hetzelfde tarief als los — het is hetzelfde werk',
+      `${PLAN_CLIPS.studio} clips per maand zitten in het ${planById.studio.name}-plan`,
+      'Gemaakt van dezelfde productfoto’s als de rest van de bestelling',
+    ],
+    videoCta: 'Bekijk wat een clip is',
 
-    inclH: 'In elke drop',
+    inclH: 'In elke bestelling',
+    svcLead: 'Het serviceniveau volgt de omvang.',
+    svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster. Daaronder loopt hij in de standaard wachtrij. Eén grens om over te gaan, in plaats van een tweede vraag om te beantwoorden.`,
+    svcFromTag: `Vanaf ${WINDOW_THRESHOLD} producten`,
+    svcUnderTag: `Onder ${WINDOW_THRESHOLD} producten`,
     gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
     gateBody: 'Een gereserveerd venster wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — in plaats van een optimistische gok.',
 
-    t0Frame: 'Niet elke bestelling is een drop. Een paar producten, er wacht niets op, geen venster vrij te houden. Dezelfde pipeline, dezelfde controle, zonder de gereserveerde plek in de agenda — en dat staat er gewoon, in plaats van weggemoffeld.',
-    t0Terms: 'Hoe deze vorm werkt',
-    t0Math: `Eén product op dropniveau — een catalogset en een lifestyle-carousel — is ${euro(TIER0_PRODUCT, 'nl')}. Vanaf ${UPGRADE_BREAK_EVEN} producten is een Full Drop goedkoper. Daaronder ben je met losse bestellingen voordeliger uit, en er is geen reden om te doen alsof dat anders is.`,
-    t0Cta: 'Bestel losse producten',
+    plansH: 'De plannen',
+    plansSub: 'Komt dezelfde output elke maand terug, dan is per maand kopen goedkoper dan bestelling voor bestelling. Meer is een plan niet — geen groter pakket, dezelfde producten voor een lagere prijs omdat je je aan de maand verbindt. Elke kaart laat het verschil met de staffel hierboven zien.',
+    plansCta: 'Een plan opzetten',
 
     sampleH: 'Voordat je iets vastlegt',
-    sampleBody: `Eén product, ${sample.price}, ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
-    sampleCta: `Vraag een proefvisual aan · ${sample.price}`,
+    sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${euro(withVat(AMOUNT.testSample), 'nl')} ${vatLabel('incl', 'nl')} — ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
+    sampleCta: `Vraag een proefvisual aan · ${sample.price} ${vatLabel('excl', 'nl')}`,
 
     faqH: 'Vragen over prijzen',
 
     ctaH1: 'Zie het op je',
     ctaEm: 'eigen product.',
-    ctaSample: `Proefvisual · ${sample.price}`,
-    ctaStart: 'Start een drop',
+    ctaSample: `Proefvisual · ${sample.price} ${vatLabel('excl', 'nl')}`,
+    ctaStart: 'Start een bestelling',
     ctaWa: 'WhatsApp',
     waText: 'Hoi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20de%20prijzen.',
   },
@@ -209,55 +334,42 @@ const COPY = {
 
 const c = { ...COPY[lang], faqs: pricingFaqs(lang) };
 
-// What is true of every attended order, read from the tier rather than typed.
-// reviewClaim() is section 13's "single content variable per tier" — flipping
-// TIERS.attended.reviewLevel changes this line and every other page at once.
+// What is true of EVERY order, whatever its size — read from the tier rather
+// than typed, and read from the SMALLER tier on purpose.
+//
+// Under the packages this list described an attended order, because an
+// attended order was the only thing the top of the page sold. The ladder sells
+// one product at a time upward, so a promise printed here has to hold for an
+// order of one. reviewClaim() and aftercare() are identical on both tiers
+// today — that is the point of them, section 13's "a different service model,
+// not a worse product" — but reading them off `unattended` means this list
+// stays true by construction if that ever stops being the case, instead of
+// quietly over-promising to the smallest orders.
 const included = [
-  reviewClaim('attended', lang),
-  attended.turnaround[lang],
-  attended.delivery[lang],
-  attended.aftercare[lang],
-  attended.queue[lang],
+  reviewClaim('unattended', lang),
+  aftercare('unattended', lang),
   lang === 'nl'
     ? 'Hoge resolutie en e-commerce-klaar, zonder licentie per gebruik'
     : 'High-resolution and e-commerce-ready, with no per-use licence',
+  lang === 'nl'
+    ? 'Eén briefing, één factuur, ongeacht het aantal'
+    : 'One briefing, one invoice, whatever the count',
+  lang === 'nl'
+    ? 'Hetzelfde tarief op elk product in de bestelling'
+    : 'The same rate on every product in the order',
 ];
 
-// Tier 0's own terms, stated at the same size as everything else on the page.
-// Section 13: "The difference must be VISIBLE, not hidden."
+// The three facts that DIFFER by order size, side by side.
 //
-// The set is TIER_ROWS, whole — the same five facts, in the same order, that
-// TierCompare prints on /catalog, /lifestyle and /video. It used to be four
-// hand-listed rows with Review missing, which mattered because `included`
-// eighty lines up opens with reviewClaim('attended'). Human review was
-// therefore stated for the drop and silent for Tier 0, on the one page where
-// the two sit closest together, and a fact that is present for one tier and
-// absent for the other reads as an entitlement the cheaper tier does not get.
-// That is exactly the "never style it as a lesser card" failure, arrived at
-// through an omission rather than a design choice — which is how it survived.
-//
-// Labels come from the same list rather than being typed beside them. The
-// Dutch set here read ['Timing', 'Wachtrij', 'Levering', 'Na levering'], with
-// the first label still in English on a live Dutch page.
-const t0RowLabels = tierRowLabels(lang);
-const t0Rows = TIER_ROWS.map((r) => tierRow('unattended', r.key, lang));
-
-// Each Tier 0 line item is one of the three pillar pages under another name,
-// and this page was naming all three while linking only to /catalog — the
-// brief's own internal-linking rule (§1) run half way. The lookup throws
-// rather than emitting a dead href: a PER_PRODUCT id with no page behind it is
-// a routing mistake, and a 404 discovered by a visitor is the expensive way to
-// find out.
-const T0_PAGE: Record<string, string> = {
-  catalog: '/catalog',
-  lifestyle: '/lifestyle',
-  video: '/video',
-};
-const t0Href = (id: string) => {
-  const href = T0_PAGE[id];
-  if (!href) throw new Error(`PricingPage.astro: no pillar page for per-product id "${id}" — add it to T0_PAGE.`);
-  return href;
-};
+// Not all five TIER_ROWS: `review` and `aftercare` are identical on both tiers
+// and are stated once in `included` above instead. A comparison table exists to
+// show a difference, and a row that reads the same on both sides invites the
+// reader to hunt for the difference that is not there — worse here than
+// elsewhere, because the two rows in question are the two the smaller order
+// most needs to be believed about.
+const SVC_KEYS = ['turnaround', 'queue', 'delivery'];
+const svcLabels = tierRowLabels(lang, SVC_KEYS);
+const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
 ---
 
 <!-- HERO -->
@@ -267,37 +379,81 @@ const t0Href = (id: string) => {
   <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
 </div></section>
 
-<!-- THE TWO DROP PACKAGES -->
+<!-- THE LADDER.
+     A real table, because this is a rate card and a rate card is tabular data:
+     a reader who wants to know what 12 lifestyle-only products cost should be
+     able to find the row and the column and stop reading. Cards would have
+     forced one card per rung per kind — fifteen of them — which is how the old
+     page ended up with two packages and a hole between them.
+
+     Every cell prints the net rate large and the VAT-inclusive rate under it.
+     Fifteen pairs is a lot of small type, and it is still the right call: this
+     is the one table on the site a Dutch business will read with a calculator,
+     and the alternative — one footnote saying "all prices excl. VAT" — is the
+     typed string BRIEF-14 exists to remove. -->
 <section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.dropsH}</h2><p>{c.dropsSub}</p></div>
+  <div class="section-head"><h2>{c.ladderH}</h2><p>{c.ladderSub}</p></div>
 
-  <div class="packs reveal-group">
-    {dropPackages.map((p) => (
-      <div class="pack reveal pending">
-        <div class="pack-top">
-          <h3 class="pack-name">{p.name}</h3>
-          {p.onceOnly && <span class="pack-tag">{c.onceOnlyTag}</span>}
-        </div>
-        <p class="pack-line">{p.line}</p>
-
-        <div class="pack-price">
-          <span class="pp-amount">{p.price}</span>
-          <span class="pp-unit">{p.unit}</span>
-        </div>
-        <div class="pack-count">
-          <span class="pc-key">{c.productsLabel}</span>
-          <span class="pc-val">{Array.isArray(p.products) ? `${p.products[0]}–${p.products[1]}` : p.products}</span>
-        </div>
-
-        <ul class="checklist pack-inc">
-          {p.includes.map((f) => (
-            <li><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+  <div class="ladder-wrap reveal pending">
+    <table class="ladder">
+      <thead>
+        <tr>
+          <th scope="col" class="lad-corner">{c.ladderProductsCol}</th>
+          {KIND_IDS.map((id) => (
+            <th scope="col">
+              <span class="lad-kind">
+                {KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id] as string)}>{c.kinds[id].name}</a> : c.kinds[id].name}
+              </span>
+              <span class="lad-kind-sub">{c.kinds[id].sub}</span>
+              <span class="lad-kind-vat">{c.perProduct} · {vatLabel('excl', lang)}</span>
+            </th>
           ))}
-        </ul>
+        </tr>
+      </thead>
+      <tbody>
+        {rungs.map((r) => (
+          <tr>
+            <th scope="row">{r.label}</th>
+            {KIND_IDS.map((id) => (
+              <td>
+                <span class="lad-rate">{euro(ladderRate(id, r.at), lang)}</span>
+                <span class="lad-incl">{euro(withVat(ladderRate(id, r.at)), lang)} {vatLabel('incl', lang)}</span>
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 
-        <a href={lp('/start')} class="btn btn-primary btn-block pack-cta">{c.dropCta}</a>
-      </div>
-    ))}
+  <!-- The multiplication, done. Three counts, and the middle one carries the
+       grid's one coloured plate — the fence in global.css is at most two per
+       grid and this page spends one. It is on the middle count because that is
+       the count the old model had no price for. -->
+  <div class="worked-head"><h3>{c.workedH}</h3><p>{c.workedSub}</p></div>
+  <div class="tiles worked reveal-group">
+    {WORKED.map((n, i) => {
+      const q = quote('complete', n);
+      return (
+        <div class={`tile s-4 reveal pending${i === 1 ? ' on-bright tile-c-blue' : ''}`}>
+          <div class="tile-body">
+            <p class="tile-k">{n} {c.workedUnit}</p>
+            <p class="tile-v">{euro(q.net, lang)}</p>
+            <p class="worked-vat">{vatLabel('excl', lang)} · {euro(q.gross, lang)} {vatLabel('incl', lang)}</p>
+            <p class="tile-n">{euro(q.rate, lang)} {c.perProduct} · {vatLabel('excl', lang)}</p>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <!-- The first-order discount, stated once. It is the whole of what the Drop
+       Pilot was, so it gets the Pilot's old job: one reason to place a first
+       order, at any size, with nothing to explain beyond the sentence. -->
+  <p class="gate-note first-note reveal pending"><strong>{c.firstLead}</strong> {c.firstBody}</p>
+
+  <div class="flex ladder-cta">
+    <a href={lp('/start')} class="btn btn-primary">{c.ladderCta}</a>
   </div>
 </div></section>
 
@@ -307,7 +463,12 @@ const t0Href = (id: string) => {
      lines are named without inventing a euro figure for any of them, and the
      caveat travels with it. No strikethrough: crossing out someone else's
      price is a discount-site gesture, and the comparison is strong enough
-     stated plainly. -->
+     stated plainly.
+
+     BOTH COLUMNS CARRY A VAT LABEL, including the one that is not our price.
+     A net figure set against a gross one is a comparison that flatters us by
+     a fifth, and the reader cannot see that it has happened. Saying "excl."
+     under both is the only way the two columns are the same kind of number. -->
 <section class="section-tight"><div class="container">
   <div class="section-head"><h2>{c.anchorH}</h2></div>
 
@@ -315,6 +476,7 @@ const t0Href = (id: string) => {
     <div class="anchor-col">
       <span class="anchor-tag">{c.anchorWasTag}</span>
       <span class="anchor-price">{shoot.range}</span>
+      <span class="anchor-vat">{vatLabel('excl', lang)}</span>
       <p class="anchor-meta">{shoot.basis}</p>
       <ul class="anchor-list">
         {shoot.items.map((it) => <li>{it}</li>)}
@@ -325,7 +487,8 @@ const t0Href = (id: string) => {
 
     <div class="anchor-col">
       <span class="anchor-tag">{c.anchorNowTag}</span>
-      <span class="anchor-price">{euro(AMOUNT.fullDrop, lang)}</span>
+      <span class="anchor-price">{euro(quote('complete', ANCHOR_PRODUCTS).net, lang)}</span>
+      <span class="anchor-vat">{vatLabel('excl', lang)} · {euro(quote('complete', ANCHOR_PRODUCTS).gross, lang)} {vatLabel('incl', lang)}</span>
       <p class="anchor-meta">{c.anchorNowMeta}</p>
       <ul class="anchor-list">
         {c.anchorNowList.map((it) => <li>{it}</li>)}
@@ -337,38 +500,38 @@ const t0Href = (id: string) => {
   <p class="anchor-note reveal pending" set:html={c.anchorNote} />
 </div></section>
 
-<!-- WHAT RIDES ON TOP OF A DROP.
+<!-- WHAT RIDES ON TOP OF AN ORDER.
      Two products, two shapes, and the asymmetry is the argument. A Brand Model
      is a one-time price whose interesting property is arithmetic: it is exactly
-     five credits, so it cancels itself over five drops. That is drawn, because
-     a drawing is how you show a sum. A retainer is a standing order whose
-     interesting property is its contents, and a list of contents is a list —
-     so it stays one, and gets no picture, because there is no sum to show.
+     five credits, so it cancels itself over five orders. That is drawn, because
+     a drawing is how you show a sum. A video clip is a rate whose interesting
+     property is that it does not move — the same figure inside an order as on
+     its own — and a rate that does not move is a short list of the places it
+     does not move in. Neither layout would work for the other product, which
+     is the test this section used to fail when both were one .map().
 
      WHAT THE BRAND MODEL BLOCK DOES NOT CARRY, on purpose: its four inclusions.
      They are one click away on /custom-models, which is a page about the
      product; this is a page about the money, and the four bullets were the
-     third statement of the credit on a page that already had two. Removing
-     text a reader can reach in one click is the literal ask in task #246.
-     The retainer keeps its list for the opposite reason — there is no retainer
-     page, so this list is the only place the offer is described. -->
+     third statement of the credit on a page that already had two. -->
 <section class="section-tight"><div class="container">
   <div class="section-head"><h2>{c.addOnH}</h2><p>{c.addOnSub}</p></div>
 
   <div class="addon reveal pending">
     <div class="addon-id">
-      <h3 class="addon-name">{brandModel.name}</h3>
-      <p class="addon-line">{brandModel.line}</p>
+      <h3 class="addon-name">{c.brandModelName}</h3>
+      <p class="addon-line">{c.brandModelLine}</p>
     </div>
     <p class="addon-price">
-      <span class="ap-amount">{brandModel.price}</span>
-      <span class="ap-unit">{brandModel.unit}</span>
+      <span class="ap-amount">{euro(AMOUNT.brandModel, lang)}</span>
+      <span class="ap-unit">{c.brandModelUnit}</span>
+      <span class="ap-vat">{vatLabel('excl', lang)} · {euro(withVat(AMOUNT.brandModel), lang)} {vatLabel('incl', lang)}</span>
     </p>
 
     <div class="addon-fig">
       <FigPayback
         totalLabel={c.pbTotalLabel}
-        total={brandModel.price}
+        total={euro(AMOUNT.brandModel, lang)}
         credit={euro(AMOUNT.brandModelCredit, lang)}
         steps={BRAND_MODEL_CREDIT_DROPS}
         runLabel={c.pbRunLabel}
@@ -383,26 +546,27 @@ const t0Href = (id: string) => {
 
   <div class="standing reveal pending">
     <div class="standing-id">
-      <h3 class="standing-name">{retainer.name}</h3>
-      <p class="standing-line">{retainer.line}</p>
+      <h3 class="standing-name"><a href={lp('/video')}>{c.videoName}</a></h3>
+      <p class="standing-line">{c.videoLine}</p>
       <p class="standing-price">
-        <span class="sp-amount">{retainer.price}</span>
-        <span class="sp-unit">{retainer.unit}</span>
+        <span class="sp-amount">{euro(AMOUNT.video, lang)}</span>
+        <span class="sp-unit">{c.videoUnit}</span>
+        <span class="sp-vat">{vatLabel('excl', lang)} · {euro(withVat(AMOUNT.video), lang)} {vatLabel('incl', lang)}</span>
       </p>
-      <a href={lp('/contact')} class="link-arrow standing-cta">{c.addOnCta}
+      <a href={lp('/video')} class="link-arrow standing-cta">{c.videoCta}
         <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </a>
     </div>
     <div class="standing-inc">
-      <span class="standing-inc-h">{c.retainerIncH}</span>
+      <span class="standing-inc-h">{c.videoIncH}</span>
       <ul class="standing-list">
-        {retainer.includes.map((f) => <li>{f}</li>)}
+        {c.videoList.map((f) => <li>{f}</li>)}
       </ul>
     </div>
   </div>
 </div></section>
 
-<!-- WHAT EVERY DROP INCLUDES, AND THE CAPACITY GATE -->
+<!-- WHAT EVERY ORDER INCLUDES, AND WHERE THE RESERVED WINDOW STARTS -->
 <section class="section-tight on-ink"><div class="container">
   <h2>{c.inclH}</h2>
   <ul class="incl-grid reveal-group">
@@ -411,61 +575,97 @@ const t0Href = (id: string) => {
     ))}
   </ul>
 
+  {/* The old page asked this as a second question — pick a size, then pick a
+      service level — and priced the two axes on one list. Size decides it now,
+      so this block states the line rather than offering a choice, and the
+      three facts that actually change across it are shown side by side. The
+      cheaper side is set at the same size, in the same frame, with the same
+      type: it is a different service model, not a lesser one, and a thinner
+      column would say "lesser" without using any of the words section 13
+      bans. */}
+  <p class="svc-lead"><strong>{c.svcLead}</strong> {c.svcBody}</p>
+
+  <div class="anchor svc reveal pending">
+    <div class="anchor-col">
+      <span class="anchor-tag">{c.svcFromTag}</span>
+      <dl class="svc-facts">
+        {svcRows.map((r, i) => (
+          <div class="svc-row">
+            <dt>{svcLabels[i]}</dt>
+            <dd>{tierRow('attended', r.key, lang)}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+
+    <div class="anchor-rule" aria-hidden="true"></div>
+
+    <div class="anchor-col">
+      <span class="anchor-tag">{c.svcUnderTag}</span>
+      <dl class="svc-facts">
+        {svcRows.map((r, i) => (
+          <div class="svc-row">
+            <dt>{svcLabels[i]}</dt>
+            <dd>{tierRow('unattended', r.key, lang)}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </div>
+
   {/* The gate, stated where the money is. The site never prints a date the
       capacity gate has not cleared — that rule is the reason this note exists
       on a pricing page at all. */}
   <p class="gate-note"><strong>{c.gateLead}</strong> {c.gateBody}</p>
 </div></section>
 
-<!-- TIER 0 — INDIVIDUAL PRODUCTS.
-     Section 13 puts this block at the BOTTOM of /pricing and nowhere near the
-     homepage, the nav or any hero. It gets the same border, the same type
-     sizes and the same width as the drop packages above: it is a different
-     service model, not a lesser one, and a thinner or quieter block would say
-     "lesser" without using any of the words section 13 bans. -->
+<!-- THE PLANS.
+     The bottom of this page used to hold a second price list (Tier 0, per
+     product) for work the top of the page also sold. The ladder covers small
+     counts now, so the bottom is free for the other axis: the same output,
+     bought monthly, cheaper than the ladder.
+
+     THE SAVING LINE IS NOT A MARKETING CLAIM, it is a subtraction — pricing.js
+     asserts at build time that every plan costs less than the same products on
+     the ladder, so a reader who does the sum finds what the card says. If that
+     assertion ever fails, the fix is the price, not this copy. -->
 <section class="section-tight"><div class="container">
-  <div class="section-head"><h2 id="individual-products">{unattended.label[lang]}</h2></div>
-  <p class="t0-frame">{c.t0Frame}</p>
+  <div class="section-head"><h2 id="plans">{c.plansH}</h2><p>{c.plansSub}</p></div>
 
-  <div class="t0 reveal pending">
-    <div class="t0-items">
-      {PER_PRODUCT[lang].map((p) => (
-        <div class="t0-item">
-          <div>
-            {/* The three names ARE the three pillar pages, so they link to
-                them rather than a row of "learn more" chips underneath. The
-                href is built from the item's own id — PER_PRODUCT's ids and
-                the pillar routes are the same three words, and the map below
-                stops the build if that ever stops being true. */}
-            <h3 class="t0-name"><a href={lp(t0Href(p.id))}>{p.name}</a></h3>
-            <p class="t0-line">{p.line}</p>
-          </div>
-          <div class="t0-item-price">
-            <span class="t0-amount">{p.price}</span>
-            <span class="t0-unit">{p.unit}</span>
-          </div>
+  <div class="packs plans-3 reveal-group">
+    {planList.map((p) => (
+      <div class="pack reveal pending">
+        <div class="pack-top">
+          <h3 class="pack-name">{p.name}</h3>
         </div>
-      ))}
-    </div>
+        <p class="pack-line">{p.line}</p>
 
-    <div class="t0-terms">
-      <span class="t0-terms-h">{c.t0Terms}</span>
-      <dl class="t0-facts">
-        {t0Rows.map((v, i) => (
-          <div class="t0-row">
-            <dt>{t0RowLabels[i]}</dt>
-            <dd>{v}</dd>
-          </div>
-        ))}
-      </dl>
-      <a href={lp('/catalog')} class="btn btn-primary btn-block t0-cta">{c.t0Cta}</a>
-    </div>
+        <div class="pack-price">
+          <span class="pp-amount">{p.price}</span>
+          <span class="pp-unit">{p.unit}</span>
+          <span class="pp-vat">{vatLabel('excl', lang)} · {euro(withVat(PLAN_AMOUNT[p.id]), lang)} {vatLabel('incl', lang)}</span>
+        </div>
+
+        <ul class="checklist pack-inc">
+          {p.includes.map((f) => (
+            <li><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+          ))}
+        </ul>
+
+        {/* The saving sentence comes out of pricing.js with two euro figures in
+            it and no VAT label — it is prose, and prose cannot know which page
+            it lands on. The label is appended here rather than added to the
+            module, because it belongs to the surface that prints the price.
+            Parenthesised so it reads as a qualifier on the sentence rather than
+            as a fragment after it. */}
+        {p.saving && (
+          <p class="pack-saving">{p.saving} <span class="pack-saving-vat">{`(${vatLabel('excl', lang)})`}</span></p>
+        )}
+
+        <a href={lp('/contact')} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
+      </div>
+    ))}
   </div>
-
-  {/* Factual, no pressure — the comparison form, not a saving. The arithmetic
-      is computed in pricing.js (UPGRADE_BREAK_EVEN), not asserted here, because
-      section 13's own example sentence gets this sum wrong. */}
-  <p class="t0-math reveal pending">{c.t0Math}</p>
 </div></section>
 
 <!-- TEST SAMPLE -->
@@ -517,29 +717,72 @@ const t0Href = (id: string) => {
 <style>
   .container.narrow { max-width: 760px; }
 
-  /* ── The two drop packages ───────────────────────────────────────────────
-     One frame, one dividing rule, equal columns. No shadow, no elevation,
-     no "most popular" ring — the old page put an accent border on Lifestyle
-     to nudge, and there is no marketing accent in this system to nudge with. */
-  .packs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--line-strong);
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-  }
-  .pack {
-    display: flex;
-    flex-direction: column;
-    padding: clamp(1.6rem, 3vw, 2.6rem);
-  }
-  .pack + .pack { border-left: 1px solid var(--line-strong); }
+  /* ── The ladder ──────────────────────────────────────────────────────────
+     The one new device on this page, and the only place new classes were
+     added. It carries a radius where the framed blocks below it do not,
+     because it sits directly above the .tile grid of worked totals, which is
+     16px by the system — a hard-edged frame butting a rounded one reads as
+     two systems, and the table is the newer of the two. --r-md, not --r-lg:
+     the tiles are the objects, the table is the surface they explain.
 
-  .pack-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-  .pack-name { font-size: var(--t-h3); line-height: 1.2; }
-  .pack-tag {
-    flex: 0 0 auto;
-    padding: .22rem .6rem;
+     The wrapper scrolls rather than the table reflowing: four columns of
+     tabular numbers stacked into cards stop being comparable, which is the
+     one thing this table is for. */
+  .ladder-wrap {
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
     border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    overflow-x: auto;
+  }
+  .ladder {
+    width: 100%;
+    border-collapse: collapse;
+    /* Lining, tabular: rates in a column have to line up on the decimal or
+       the column stops being scannable, which is the whole reason it is a
+       table and not a paragraph. */
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .ladder th, .ladder td {
+    padding: clamp(.85rem, 1.6vw, 1.15rem) clamp(.9rem, 2vw, 1.5rem);
+    text-align: right;
+    vertical-align: top;
+  }
+  .ladder thead th { vertical-align: bottom; border-bottom: 1px solid var(--line-strong); }
+  .ladder tbody tr + tr th, .ladder tbody tr + tr td { border-top: 1px solid var(--line); }
+  .ladder thead th:first-child, .ladder tbody th { text-align: left; }
+  .lad-corner {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .lad-kind { display: block; font-size: .98rem; font-weight: 700; color: var(--ink); }
+  /* Two of the three headings are links to their pillar pages, and a link in a
+     table header needs a cue at REST — a reader scanning columns is not going
+     to hover each one to discover which are clickable. Hairline underline,
+     thickened and accented on interaction, so the page's one accent colour
+     stays on the CTA where §7 puts it. */
+  .lad-kind a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 4px;
+  }
+  .lad-kind a:hover, .lad-kind a:focus-visible { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
+  .lad-kind-sub {
+    display: block;
+    margin: .35rem 0 0 auto;
+    max-width: 24ch;
+    font-size: .8rem;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--ink-3);
+  }
+  .lad-kind-vat {
+    display: block;
+    margin-top: .5rem;
     font-size: .68rem;
     font-weight: 700;
     letter-spacing: .07em;
@@ -547,45 +790,26 @@ const t0Href = (id: string) => {
     color: var(--ink-3);
     white-space: nowrap;
   }
-  .pack-line {
-    margin-top: .7rem;
-    color: var(--ink-3);
-    font-size: .95rem;
-    line-height: 1.6;
-    max-width: 38ch;
-    min-height: 4.8em;   /* keeps both price blocks on the same line */
-  }
-
-  .pack-price { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-  .pp-amount {
+  .ladder tbody th { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap; }
+  .lad-rate {
+    display: block;
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(2rem, 3.4vw, 2.7rem);
+    font-size: clamp(1.05rem, 1.7vw, 1.3rem);
     line-height: 1;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
   }
-  .pp-unit { font-size: .88rem; color: var(--ink-3); }
+  .lad-incl { display: block; margin-top: .3rem; font-size: .75rem; color: var(--ink-3); white-space: nowrap; }
 
-  .pack-count {
-    display: flex;
-    align-items: baseline;
-    gap: .8rem;
-    margin-top: 1.1rem;
-    padding: .7rem 0;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-  }
-  .pc-key {
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .pc-val { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+  /* ── The worked totals ───────────────────────────────────────────────── */
+  .worked-head { margin-top: clamp(2rem, 4vw, 3rem); }
+  .worked-head h3 { font-size: var(--t-h3); line-height: 1.2; }
+  .worked-head p { margin-top: .5rem; color: var(--ink-3); font-size: .95rem; max-width: 60ch; }
+  .worked { margin-top: clamp(1rem, 2vw, 1.4rem); }
+  .worked-vat { margin: .5rem 0 0; font-size: .8rem; color: var(--ink-3); }
 
-  .pack-inc { margin-top: 1.4rem; margin-bottom: 1.8rem; font-size: .93rem; }
-  .pack-cta { margin-top: auto; }
+  .first-note { max-width: 78ch; }
+  .ladder-cta { margin-top: clamp(1.2rem, 2.4vw, 1.6rem); }
 
   /* ── The anchor ──────────────────────────────────────────────────────── */
   .anchor {
@@ -605,13 +829,18 @@ const t0Href = (id: string) => {
   }
   .anchor-price {
     display: block;
-    margin: .5rem 0 .5rem;
+    margin: .5rem 0 .35rem;
     font-family: var(--font-display);
     font-weight: 800;
     font-size: clamp(1.8rem, 3.4vw, 2.5rem);
     line-height: 1;
     letter-spacing: -0.03em;
   }
+  /* The VAT line sits under the figure rather than beside it: at this type
+     size a trailing "excl. VAT" would either shrink the price or wrap, and the
+     label has to be readable — an unreadable VAT label is the same failure as
+     no VAT label. */
+  .anchor-vat { display: block; margin-bottom: .6rem; font-size: .78rem; color: var(--ink-3); }
   .anchor-meta { font-size: .9rem; color: var(--ink-3); line-height: 1.5; max-width: 34ch; min-height: 3em; }
   .anchor-list { list-style: none; margin: 1.1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
   .anchor-list li { position: relative; padding-left: 1.25rem; font-size: .92rem; color: var(--ink-2); line-height: 1.5; }
@@ -631,19 +860,12 @@ const t0Href = (id: string) => {
   .anchor-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 
   /* ── What rides on top ───────────────────────────────────────────────────
-     THE COMMENT THAT USED TO SIT HERE SAID THESE WERE "deliberately NOT a
-     third and fourth card", and it was not true. Both blocks came out of one
-     .map() over one array, so whatever the class names claimed, the markup
-     said "two more of the same thing" — and check_rhythm.py, which reads shape
-     and cannot read intentions, scored section 4 as section 2's device used a
-     second time. That measurement is task #246 arriving as a number.
-
-     So the two shapes now differ because the two claims differ. The add-on is
-     a price with a drawing underneath, because what is interesting about it is
-     arithmetic and arithmetic is a thing you show. The retainer is a price
-     beside a list, because what is interesting about it is its contents and a
-     list of contents is a list. Neither layout would work for the other
-     product, which is the test this section previously failed. */
+     Two shapes, because two claims. The add-on is a price with a drawing
+     underneath, because what is interesting about it is arithmetic and
+     arithmetic is a thing you show. The clip is a price beside a list, because
+     what is interesting about it is where the rate does NOT change, and that
+     is a list. Neither layout would work for the other product, which is the
+     test this section previously failed by rendering both from one .map(). */
   .addon {
     margin-top: clamp(1.4rem, 3vw, 2.2rem);
     display: grid;
@@ -669,6 +891,10 @@ const t0Href = (id: string) => {
     letter-spacing: -0.03em;
   }
   .ap-unit { font-size: .86rem; color: var(--ink-3); }
+  /* Full-width in the flex row, so the VAT pair always lands on its own line
+     under the figure instead of wrapping unpredictably between the two. */
+  .ap-vat, .sp-vat, .pp-vat { flex: 0 0 100%; font-size: .78rem; color: var(--ink-3); }
+  .addon-price .ap-vat { text-align: right; }
 
   /* Full width, under both the name and the price, because the figure is about
      the relationship between them: it is that price, cut into the parts that
@@ -678,9 +904,9 @@ const t0Href = (id: string) => {
   .addon-cta { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: .4rem; }
 
   /* Two panels inside one frame, split by a border rather than a gap: the
-     retainer's price and what the price buys are one offer, and a gap between
-     them would read as two. Same framing device as .packs above, at a
-     different rhythm — one row, not three columns. */
+     clip's rate and where that rate holds are one offer, and a gap between
+     them would read as two. Same framing device as .packs, at a different
+     rhythm — one row, not three columns. */
   .standing {
     margin-top: clamp(1rem, 2.4vw, 1.6rem);
     display: grid;
@@ -691,6 +917,13 @@ const t0Href = (id: string) => {
   .standing-id { display: flex; flex-direction: column; }
   .standing-inc { border-left: 1px solid var(--line-strong); }
   .standing-name { font-size: var(--t-h3); line-height: 1.2; }
+  .standing-name a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 4px;
+  }
+  .standing-name a:hover, .standing-name a:focus-visible { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
   .standing-line { margin-top: .55rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; }
   .standing-price { margin-top: 1.1rem; display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
   .sp-amount {
@@ -703,7 +936,7 @@ const t0Href = (id: string) => {
   .sp-unit { font-size: .86rem; color: var(--ink-3); }
   .standing-cta { margin-top: auto; padding-top: 1.2rem; align-self: start; display: inline-flex; align-items: center; gap: .4rem; }
 
-  /* Sentence case and quiet. The copy this carries is "Every month, this:",
+  /* Sentence case and quiet. The copy this carries is "How it is priced:",
      which is a sentence with a colon in it; setting a sentence in tracked
      uppercase is how a label stops being readable and starts being decoration,
      and DESIGN.md rejects that mark anyway. */
@@ -720,7 +953,7 @@ const t0Href = (id: string) => {
     background: var(--ink-faint);
   }
 
-  /* ── In every drop ───────────────────────────────────────────────────── */
+  /* ── In every order ──────────────────────────────────────────────────── */
   .incl-grid {
     list-style: none;
     margin: clamp(1.6rem, 3vw, 2.4rem) 0 0;
@@ -736,6 +969,20 @@ const t0Href = (id: string) => {
     font-size: .95rem;
     line-height: 1.5;
   }
+
+  .svc-lead { margin-top: clamp(1.8rem, 3vw, 2.4rem); max-width: 78ch; color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
+  .svc-lead strong { color: var(--ink); font-weight: 700; }
+  .svc { margin-top: clamp(1rem, 2vw, 1.4rem); }
+  .svc-facts { margin: 1rem 0 0; }
+  .svc-row { padding: .8rem 0; border-top: 1px solid var(--line); }
+  .svc-row dt {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .svc-row dd { margin: .3rem 0 0; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
 
   .gate-note {
     margin-top: clamp(1.8rem, 3vw, 2.4rem);
@@ -753,75 +1000,60 @@ const t0Href = (id: string) => {
   }
   .gate-note strong { color: var(--ink); font-weight: 700; }
 
-  /* ── Tier 0 ──────────────────────────────────────────────────────────── */
-  .t0-frame { max-width: 70ch; color: var(--ink-3); margin-top: .4rem; line-height: 1.65; }
-  .t0 {
+  /* ── The plans ───────────────────────────────────────────────────────────
+     Same frame, same dividing rules, same type as the packages this replaced.
+     No shadow, no "most popular" ring: the middle plan is not recommended by a
+     border, and the only thing on this page allowed to say a plan is the
+     better buy is the saving line, which is a subtraction. */
+  .packs {
     display: grid;
-    grid-template-columns: 1.25fr 1fr;
+    grid-template-columns: 1fr 1fr;
     border: 1px solid var(--line-strong);
-    margin-top: clamp(1.4rem, 3vw, 2.2rem);
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
   }
-  .t0-items { display: flex; flex-direction: column; }
-  .t0-item {
+  .plans-3 { grid-template-columns: repeat(3, 1fr); }
+  .pack {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: clamp(1rem, 3vw, 2.5rem);
-    padding: clamp(1.3rem, 2.6vw, 1.9rem) clamp(1.5rem, 3vw, 2.4rem);
+    flex-direction: column;
+    padding: clamp(1.6rem, 3vw, 2.6rem);
   }
-  .t0-item + .t0-item { border-top: 1px solid var(--line); }
-  .t0-name { font-size: 1.1rem; line-height: 1.25; }
-  /* The name is a link to its own pillar page. It stays ink — a teal heading
-     would be a second accent colour on a page that spends its one on the CTA
-     — and the underline appears on hover and on focus, where the affordance
-     is actually needed. */
-  /* A link inside running text needs a cue at REST, not only on hover: with
-     no colour and no underline until the pointer arrives, nothing tells a
-     reader — or a keyboard user scanning, or anyone who cannot perceive the
-     hover state — that these three tier names are the way to the pages that
-     explain them. WCAG 1.4.1 is about not relying on colour; relying on a
-     pointer is worse. A hairline underline at rest, thickened on interaction,
-     keeps the page's one accent colour on the CTA where §7 puts it. */
-  .t0-name a { text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
-  .t0-name a:hover, .t0-name a:focus-visible { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
-  .t0-line { margin-top: .4rem; font-size: .92rem; color: var(--ink-3); line-height: 1.55; max-width: 42ch; }
-  .t0-item-price { text-align: right; flex: 0 0 auto; }
-  .t0-amount {
-    display: block;
+  .pack + .pack { border-left: 1px solid var(--line-strong); }
+
+  .pack-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .pack-name { font-size: var(--t-h3); line-height: 1.2; }
+  .pack-line {
+    margin-top: .7rem;
+    color: var(--ink-3);
+    font-size: .95rem;
+    line-height: 1.6;
+    max-width: 38ch;
+    min-height: 4.8em;   /* keeps all three price blocks on the same line */
+  }
+
+  .pack-price { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .pp-amount {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+    font-size: clamp(2rem, 3.4vw, 2.7rem);
     line-height: 1;
     letter-spacing: -0.03em;
   }
-  .t0-unit { display: block; margin-top: .35rem; font-size: .8rem; color: var(--ink-3); }
+  .pp-unit { font-size: .88rem; color: var(--ink-3); }
 
-  .t0-terms {
-    border-left: 1px solid var(--line-strong);
-    background: var(--paper-2);
-    padding: clamp(1.5rem, 3vw, 2.4rem);
-    display: flex;
-    flex-direction: column;
+  .pack-inc { margin-top: 1.4rem; font-size: .93rem; }
+  /* The saving sits BELOW what the plan contains, not above it. Above the
+     list it would be the card's headline, which turns a subtraction into a
+     sales line; below it, it is the last thing read and it is still a fact. */
+  .pack-saving {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--ink-2);
   }
-  .t0-terms-h {
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .t0-facts { margin: 1rem 0 1.6rem; }
-  .t0-row { padding: .8rem 0; border-top: 1px solid var(--line); }
-  .t0-row dt {
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
-  .t0-row dd { margin: .3rem 0 0; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
-  .t0-cta { margin-top: auto; }
-  .t0-math { max-width: 74ch; margin-top: 1.4rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; }
+  .pack-saving-vat { color: var(--ink-3); }
+  .pack-cta { margin-top: 1.8rem; }
 
   /* ── Test sample ─────────────────────────────────────────────────────── */
   .sample {
@@ -873,6 +1105,13 @@ const t0Href = (id: string) => {
   .acc-body-inner { padding-bottom: 1.35rem; color: var(--ink-2); max-width: 70ch; }
 
   /* ── Responsive ──────────────────────────────────────────────────────── */
+  @media (max-width: 1040px) {
+    /* Three plan columns give up first — before the two-column blocks below,
+       because they run out of room first. */
+    .plans-3 { grid-template-columns: 1fr; }
+    .plans-3 .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
+    .plans-3 .pack-line { min-height: 0; }
+  }
   @media (max-width: 900px) {
     .packs { grid-template-columns: 1fr; }
     .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
@@ -885,15 +1124,17 @@ const t0Href = (id: string) => {
     /* Stacked, the price is no longer opposite anything, so right-aligning it
        would leave it floating against an edge with nothing across from it. */
     .addon-price { justify-content: flex-start; }
+    .addon-price .ap-vat { text-align: left; }
     .standing { grid-template-columns: 1fr; }
     .standing-inc { border-left: 0; border-top: 1px solid var(--line-strong); }
-    .t0 { grid-template-columns: 1fr; }
-    .t0-terms { border-left: 0; border-top: 1px solid var(--line-strong); }
     .sample { grid-template-columns: 1fr; }
   }
   @media (max-width: 560px) {
     .pack-top { flex-direction: column; align-items: flex-start; gap: .6rem; }
-    .t0-item { flex-direction: column; align-items: flex-start; gap: .8rem; }
-    .t0-item-price { text-align: left; }
+    /* The table keeps its shape and scrolls sideways instead of reflowing —
+       see .ladder-wrap. What gives way is the column descriptions, which are
+       explanation rather than data, and the padding. */
+    .ladder th, .ladder td { padding: .75rem .8rem; }
+    .lad-kind-sub { display: none; }
   }
 </style>

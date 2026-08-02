@@ -14,7 +14,7 @@ import { TEST_SAMPLE, turnaround } from '../data/pricing.js';
 // The verification fee was typed in four separate places and the delivery step
 // promised "~24 hours" — a figure the capacity gate has never cleared. Both are
 // tier facts, so they come from pricing.js now. "No subscription" went with
-// them: it stopped being true the day the Studio retainer shipped, and /faq and
+// them: it stopped being true the day the monthly plans shipped, and /faq and
 // /about were already corrected for exactly that reason. The sample runs the
 // per-product lane, so it states that lane's turnaround and nothing faster.
 const SAMPLE = TEST_SAMPLE.en;
@@ -32,6 +32,16 @@ const styles = [
 // is the exception at 800x1071. Assuming one size for the family would have
 // put a wrong box under Rae, so the exception is named.
 const ROSTER_ODD: Record<string, [number, number]> = { Rae: [800, 1071] };
+// LOCALE PARITY, and the reason this block is here at all: /nl/test-sample has
+// asked "catalog or lifestyle?" as a required first question since it was
+// written, and this page never did. The two locales therefore POSTed different
+// payloads to the same /api/order endpoint — every English sample arrived with
+// no sample_type at all, so the studio had to guess which of the two products
+// the customer was actually testing.
+const sampleTypes = [
+  { value: 'catalog', label: 'Catalog', photo: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'An example catalog product photo, on a plain surface' },
+  { value: 'lifestyle', label: 'Lifestyle', photo: '/img/lifestyle-glow-03.webp', w: 768, h: 1376, alt: 'An example lifestyle product photo, styled in a scene' },
+];
 const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme']
   .map((name) => {
     const [w, h] = ROSTER_ODD[name] ?? [1195, 1600];
@@ -161,12 +171,33 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
             <h3 style="margin-bottom:.4rem">Step 1 &middot; Style, model &amp; product</h3>
             <p class="hint" style="margin-bottom:1.4rem">Choose the look you're after and upload your product photo.</p>
 
+            {/* A <label> with no `for` and no wrapped control labels nothing —
+                it is a heading wearing a form element's tag, and a screen
+                reader announces the radios below it as unlabelled. /contact
+                already does this correctly; these three groups now match it:
+                a real heading, and role="radiogroup" + aria-labelledby to tie
+                the options to it. */}
             <div class="field">
-              <label>Choose a style <span class="req">*</span></label>
-              <div class="choice-grid">
-                {styles.map((s, i) => (
+              <p class="ts-group-h" id="ts-type-h">What do you want to see? <span class="req">*</span></p>
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-type-h">
+                {sampleTypes.map((t, i) => (
                   <label class="choice">
-                    <input type="radio" name="style" value={s.value} required={i === 0} />
+                    <input type="radio" name="sample_type" value={t.value} required={i === 0} />
+                    <div class="choice-media"><img src={t.photo} alt={t.alt} loading="lazy" decoding="async" width={t.w} height={t.h} /></div>
+                    <div class="choice-label">{t.label}</div>
+                  </label>
+                ))}
+              </div>
+              <span class="hint" style="margin-top:.3rem">Catalog is a clean photo of the product on its own. Lifestyle is the product styled in a scene, on a model. Whichever matters most to your shop right now is the one worth testing.</span>
+            </div>
+
+            <div class="field">
+              <p class="ts-group-h" id="ts-style-h">Choose a look</p>
+              <span class="hint" style="margin-bottom:.3rem">For a lifestyle sample. Skip it if you chose catalog above — a catalog sample runs on a plain surface, not on one of these looks.</span>
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-style-h">
+                {styles.map((s) => (
+                  <label class="choice">
+                    <input type="radio" name="style" value={s.value} />
                     <div class="choice-media"><img src={s.photo} alt={`${s.value} lifestyle style`} loading="lazy" decoding="async" width={s.w} height={s.h} /></div>
                     <div class="choice-label">{s.value}</div>
                   </label>
@@ -175,9 +206,9 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
             </div>
 
             <div class="field">
-              <label>Choose a model</label>
+              <p class="ts-group-h" id="ts-model-h">Choose a model</p>
               <span class="hint" style="margin-bottom:.3rem">Optional for most products — handy for apparel and accessories.</span>
-              <div class="choice-grid">
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-model-h">
                 {roster.map((m) => (
                   <label class="choice">
                     <input type="radio" name="model" value={m.name} />

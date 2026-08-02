@@ -2,9 +2,36 @@
 // VISUAILS — /how-it-works, rewritten. AUDIT-TASK-0.md §F: "REWRITE. 'One
 // photo in. A campaign out.' → drop-shaped. All ~24h claims corrected."
 //
-// §B·3 supplies the new frame: "'One photo in' is the per-product story; the
-// drop story is 'one folder in'." So the page is now shaped around a whole
-// drop moving through the pipeline, not a single upload.
+// §B·3 supplies the frame: "'One photo in' is the per-product story; the batch
+// story is 'one folder in'." So the page is shaped around a whole order moving
+// through the pipeline, not a single upload.
+//
+// ── WHAT THE AUGUST 2026 PRICING MODEL CHANGED ON THIS PAGE ────────────────
+//
+// Section 0 of src/data/pricing.js is the governing document. Two things here
+// were falsified by it, and both were structural rather than cosmetic:
+//
+//   1 · THE PAGE PRESENTED TWO PRODUCTS. "A drop" did one thing and "individual
+//       products" did another — a portal against a download link, a reserved
+//       window against a queue — and the reader was left to work out which of
+//       the two they were buying. That was accurate under the package model,
+//       where the buyer picked a size and a service level as two separate
+//       questions. It is wrong now. There is ONE thing to order, and the
+//       service level follows its size: from WINDOW_THRESHOLD products the
+//       order is in the capacity calendar with the reserved window, below it
+//       the standard queue. Every place this page used to name two products it
+//       now names one line, read from WINDOW_THRESHOLD rather than described,
+//       so /pricing and this page cannot give different accounts of the same
+//       gate.
+//   2 · The scope constant (a Full Drop's 25–30 products) is gone with the
+//       package it described. Where the page needed it — the consistency claim
+//       — it now says "every product in the order", which is true at any count
+//       and does not have to be re-edited when a band moves.
+//
+// The word "drop" itself is retired from the copy: it means a collection going
+// live to the brands we sell to, and this page used it for a work order in its
+// own H1. EN says an order or a batch; NL says een bestelling. It survives only
+// where a CLIENT's launch is meant, which on this page is nowhere.
 //
 // Two rules govern every timing claim below:
 //   • Task #190 — the ~24-hour promise is retired. Nothing here types a
@@ -146,7 +173,7 @@ import FigApproval from './FigApproval.astro';
 import FigFormats from './FigFormats.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
-  FULL_DROP_MIN, FULL_DROP_MAX,
+  WINDOW_THRESHOLD, vatLabel, withVat,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -154,22 +181,27 @@ interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
-const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
-const sample = euro(AMOUNT.testSample, lang);
+// The test sample is the only price this page prints, and it now prints with a
+// VAT label attached — BRIEF-14's rule, and it was being broken here quietly:
+// a bare €0.99 next to "no commitment" reads as the whole of what leaves the
+// account, and it is not. Both figures are built here rather than in the copy
+// table so neither branch can print one without the other.
+const sample = `${euro(AMOUNT.testSample, lang)} ${vatLabel('excl', lang)}`;
+const sampleGross = `${euro(withVat(AMOUNT.testSample), lang)} ${vatLabel('incl', lang)}`;
 
 // No `as const` — see PricingPage.astro for why (union-of-tuples breaks .map).
 const COPY = {
   en: {
     h1a: 'One folder in.',
     h1b: 'A whole ',
-    h1em: 'drop',
+    h1em: 'batch',
     h1c: ' out.',
-    lead: `You send a folder of product photos and a short note. We give the drop a window the calendar can actually hold, produce it, check it by hand, and hand it back image by image.`,
-    ctaStart: 'Start a drop',
+    lead: `You send a folder of product photos and a short note. We give the order a window the calendar can actually hold, produce it, check it by hand, and hand it back image by image.`,
+    ctaStart: 'Start an order',
     ctaSample: 'Try a test sample',
 
     // FigFanOut, straight after the hero: the H1 drawn. "One folder in, a whole
-    // drop out" is a shape, and a shape is the one thing a sentence cannot show.
+    // batch out" is a shape, and a shape is the one thing a sentence cannot show.
     fanIn: 'What you send',
     fanOut: 'What comes back, per product',
     fanPhotoAlt: 'A washed T-shirt photographed flat on an office table in window light',
@@ -197,13 +229,13 @@ const COPY = {
     steps: [
       {
         h: 'You send the products',
-        b: 'Photos and a short note on the look. Five minutes, however many products you have — the effort does not scale with the size of the drop.',
+        b: 'Photos and a short note on the look. Five minutes, however many products you have — the effort does not scale with the size of the order.',
         linkText: 'See the upload guidelines',
         linkHref: '/upload-guidelines',
       },
       {
         h: 'We check capacity',
-        b: 'Before anything is charged. A drop is only given a window the calendar can actually hold — and if it cannot be held, you are told that instead of a date.',
+        b: `Before anything is charged. From ${WINDOW_THRESHOLD} products an order is only given a window the calendar can actually hold — and if it cannot be held, you are told that instead of a date.`,
         gate: true,
       },
       {
@@ -212,7 +244,9 @@ const COPY = {
       },
       {
         h: 'You get the files',
-        b: `A drop lands in a portal you approve image by image. Individual products arrive as a download link.`,
+        // One product, one line, stated as the threshold rather than as two
+        // things to choose between — see the header note.
+        b: `From ${WINDOW_THRESHOLD} products an order lands in a portal you approve image by image. Below that it arrives as a download link.`,
       },
     ],
     pipeNote: 'Four stops, and the second one can say no. That is the only reason the other three are worth anything.',
@@ -225,7 +259,7 @@ const COPY = {
     capCases: [
       {
         label: 'The week you need can be held',
-        slot: 'Your drop',
+        slot: 'Your order',
         verdict: 'The window is reserved, and confirmed in writing before anything is charged.',
       },
       {
@@ -250,12 +284,12 @@ const COPY = {
     afterAlt: 'The same scene, finished and human-checked by VISUAILS',
 
     portalH: 'You approve it, image by image.',
-    portalBody: `A drop does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}`,
+    portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}`,
     // These four strings replace the four-item checklist that used to sit here.
     // The claim the list was making — "a revision on that image alone, the rest
-    // of the drop keeps moving" — is about PARALLELISM, and a column of bullets
-    // is a picture of the opposite. Three states visible at once is the claim.
-    apvHead: 'Your drop, in the portal',
+    // of the order keeps moving" — is about PARALLELISM, and a column of
+    // bullets is a picture of the opposite. Three states at once is the claim.
+    apvHead: 'Your order, in the portal',
     apvOk: 'Approved by you',
     apvRev: 'Revision requested — this image only',
     apvWait: 'Still coming',
@@ -264,13 +298,15 @@ const COPY = {
     // same reason as fanNote's — a diagram that lets itself be read as a
     // screenshot is inventing proof.
     apvNote: 'A drawing of the portal, not a screenshot. Nothing is final until you approve it, and the approved set downloads at full resolution.',
-    portalNote: `Individual products work differently and more simply. ${TIERS.unattended.delivery.en}.`,
+    portalNote: `Smaller orders work differently and more simply. ${TIERS.unattended.delivery.en}.`,
 
     detailsH: 'The details that matter',
     details: [
-      { t: 'Turnaround', b: `A drop: ${turnaround('attended', 'en').toLowerCase()}. Individual products: ${turnaround('unattended', 'en').toLowerCase()}, ${TIERS.unattended.queue.en.toLowerCase()}.` },
-      { t: 'If something is off', b: `On a drop: ${aftercare('attended', 'en').toLowerCase()}. On individual products: ${aftercare('unattended', 'en').toLowerCase()}.` },
-      { t: 'Consistency', b: `Same lighting, same angle, same grade across all ${scope} products. Running them together is what makes that possible.` },
+      { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${turnaround('attended', 'en').toLowerCase()}. Below that: ${turnaround('unattended', 'en').toLowerCase()}, ${TIERS.unattended.queue.en.toLowerCase()}.` },
+      { t: 'If something is off', b: `From ${WINDOW_THRESHOLD} products: ${aftercare('attended', 'en').toLowerCase()}. Below that: ${aftercare('unattended', 'en').toLowerCase()}.` },
+      // No product band any more: the count is whatever you ordered, and the
+      // claim is true at every count, so naming one would only date the page.
+      { t: 'Consistency', b: 'Same lighting, same angle, same grade across every product in the order. Running them together is what makes that possible.' },
       { t: 'Two ways in', b: 'On-site, or WhatsApp — whichever suits you. The same pipeline either way.' },
       { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
     ],
@@ -305,19 +341,19 @@ const COPY = {
     faqCta: 'Read the FAQ',
 
     ctaH: 'See it on your own product.',
-    ctaBody: `One test sample per business — ${sample}, no commitment. It runs through the same pipeline as a paid order.`,
+    ctaBody: `One test sample per business — ${sample}, ${sampleGross}, no commitment. It runs through the same pipeline as a paid order.`,
     ctaSampleBtn: 'Test sample',
-    ctaStartBtn: 'Start a drop',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20how%20a%20drop%20works.',
+    ctaStartBtn: 'Start an order',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20how%20an%20order%20works.',
   },
 
   nl: {
     h1a: 'Eén map erin.',
     h1b: 'Een hele ',
-    h1em: 'drop',
+    h1em: 'bestelling',
     h1c: ' eruit.',
-    lead: 'Jij stuurt een map met productfoto’s en een korte notitie. Wij geven de drop een venster dat de agenda ook echt kan vasthouden, produceren hem, controleren met de hand, en geven hem beeld voor beeld terug.',
-    ctaStart: 'Start een drop',
+    lead: 'Jij stuurt een map met productfoto’s en een korte notitie. Wij geven de bestelling een venster dat de agenda ook echt kan vasthouden, produceren hem, controleren met de hand, en geven hem beeld voor beeld terug.',
+    ctaStart: 'Start een bestelling',
     ctaSample: 'Probeer een proefvisual',
 
     fanIn: 'Wat jij stuurt',
@@ -334,13 +370,13 @@ const COPY = {
     steps: [
       {
         h: 'Jij stuurt de producten',
-        b: 'Foto’s en een korte notitie over de look. Vijf minuten, hoeveel producten het ook zijn — de moeite groeit niet mee met de omvang van de drop.',
+        b: 'Foto’s en een korte notitie over de look. Vijf minuten, hoeveel producten het ook zijn — de moeite groeit niet mee met de omvang van de bestelling.',
         linkText: 'Bekijk de uploadrichtlijnen',
         linkHref: '/upload-guidelines',
       },
       {
         h: 'Wij checken de capaciteit',
-        b: 'Voordat er iets betaald wordt. Een drop krijgt alleen een venster dat de agenda ook echt kan vasthouden — en kan die week niet, dan hoor je dat in plaats van een datum.',
+        b: `Voordat er iets betaald wordt. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling alleen een venster dat de agenda ook echt kan vasthouden — en kan die week niet, dan hoor je dat in plaats van een datum.`,
         gate: true,
       },
       {
@@ -349,7 +385,8 @@ const COPY = {
       },
       {
         h: 'Jij krijgt de bestanden',
-        b: 'Een drop komt in een portaal waar je beeld voor beeld goedkeurt. Losse producten komen als downloadlink.',
+        // Zie de EN-tak: één grens, geen twee producten om uit te kiezen.
+        b: `Vanaf ${WINDOW_THRESHOLD} producten komt een bestelling in een portaal waar je beeld voor beeld goedkeurt. Daaronder komt hij als downloadlink.`,
       },
     ],
     pipeNote: 'Vier haltes, en de tweede kan nee zeggen. Dat is de enige reden dat de andere drie iets waard zijn.',
@@ -359,7 +396,7 @@ const COPY = {
     capCases: [
       {
         label: 'De week die je nodig hebt kan worden vastgehouden',
-        slot: 'Jouw drop',
+        slot: 'Jouw bestelling',
         verdict: 'Het venster wordt gereserveerd en schriftelijk bevestigd voordat er iets in rekening wordt gebracht.',
       },
       {
@@ -376,19 +413,20 @@ const COPY = {
     afterAlt: 'Dezelfde scène, afgewerkt en met de hand gecontroleerd door VISUAILS',
 
     portalH: 'Jij keurt goed, beeld voor beeld.',
-    portalBody: `Een drop komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}`,
-    apvHead: 'Jouw drop, in het portaal',
+    portalBody: `Een bestelling van ${WINDOW_THRESHOLD} producten of meer komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}`,
+    apvHead: 'Jouw bestelling, in het portaal',
     apvOk: 'Door jou goedgekeurd',
     apvRev: 'Revisie aangevraagd — alleen dit beeld',
     apvWait: 'Nog onderweg',
     apvNote: 'Een tekening van het portaal, geen schermafbeelding. Niets is definitief tot jij het goedkeurt, en de goedgekeurde set download je in volledige resolutie.',
-    portalNote: `Losse producten werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
+    portalNote: `Kleinere bestellingen werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
 
     detailsH: 'De details die ertoe doen',
     details: [
-      { t: 'Levertijd', b: `Een drop: ${turnaround('attended', 'nl').toLowerCase()}. Losse producten: ${turnaround('unattended', 'nl').toLowerCase()}, ${TIERS.unattended.queue.nl.toLowerCase()}.` },
-      { t: 'Als iets niet klopt', b: `Bij een drop: ${aftercare('attended', 'nl').toLowerCase()}. Bij losse producten: ${aftercare('unattended', 'nl').toLowerCase()}.` },
-      { t: 'Consistentie', b: `Dezelfde belichting, dezelfde hoek, dezelfde grade over alle ${scope} producten. Dat ze samen door de pipeline gaan is precies wat dat mogelijk maakt.` },
+      { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${turnaround('attended', 'nl').toLowerCase()}. Daaronder: ${turnaround('unattended', 'nl').toLowerCase()}, ${TIERS.unattended.queue.nl.toLowerCase()}.` },
+      { t: 'Als iets niet klopt', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${aftercare('attended', 'nl').toLowerCase()}. Daaronder: ${aftercare('unattended', 'nl').toLowerCase()}.` },
+      // Zie de EN-tak: geen productbereik meer, de claim klopt bij elk aantal.
+      { t: 'Consistentie', b: 'Dezelfde belichting, dezelfde hoek, dezelfde grade over elk product in de bestelling. Dat ze samen door de pipeline gaan is precies wat dat mogelijk maakt.' },
       { t: 'Twee ingangen', b: 'Via de site of via WhatsApp — wat jou uitkomt. Dezelfde pipeline in beide gevallen.' },
       { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
     ],
@@ -408,10 +446,10 @@ const COPY = {
     faqCta: 'Lees de FAQ',
 
     ctaH: 'Zie het op je eigen product.',
-    ctaBody: `Eén proefvisual per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde pipeline als een betaalde bestelling.`,
+    ctaBody: `Eén proefvisual per bedrijf — ${sample}, ${sampleGross}, zonder verplichting. Hij loopt door dezelfde pipeline als een betaalde bestelling.`,
     ctaSampleBtn: 'Proefvisual',
-    ctaStartBtn: 'Start een drop',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20hoe%20een%20drop%20werkt.',
+    ctaStartBtn: 'Start een bestelling',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20hoe%20een%20bestelling%20werkt.',
   },
 };
 
@@ -452,7 +490,7 @@ const pipeStops = c.steps.map((s) => ({
   </div>
 </section>
 
-<!-- ONE FOLDER IN, A DROP OUT — the H1, drawn. It sits directly under the hero
+<!-- ONE FOLDER IN, A BATCH OUT — the H1, drawn. It sits directly under the hero
      because it is the same sentence: the hero says it, this shows it, and a
      reader who scrolls past the words still gets the account. -->
 <section class="section-tight"><div class="container">

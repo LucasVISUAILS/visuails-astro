@@ -1,7 +1,7 @@
 ---
 // VISUAILS — Algemene voorwaarden (Nederlands). Vertaling van src/pages/terms.astro.
-// De redenering achter §2 ("Drop"), het nieuwe §7, de 50/50-alinea in §9 en de
-// herschreven §4, §6 en §10 staat in dat bestand. Kort samengevat: §6 beloofde
+// De redenering achter §2 ("gereserveerde bestelling"), het nieuwe §7, de
+// 50/50-alinea in §9 en de herschreven §4, §6 en §10 staat in dat bestand. Kort samengevat: §6 beloofde
 // iedereen levering "binnen ongeveer 24 uur" en "maximaal 3 revisierondes",
 // terwijl een losse bestelling in de standaard wachtrij loopt en geen enkele
 // bestelling nog een rondetelling kent. §6 gaat nu alleen over levering en
@@ -11,11 +11,23 @@
 // twee: bronmateriaal 90 dagen, geleverde visuals 12 maanden, en de privé-
 // bestellink 90 dagen na afsluiting. Die laatste zat eerst verstopt in de
 // 12-maandenzin, terwijl het portaal die link nooit zo lang heeft opengehouden.
+//
+// Augustus 2026: §2 definieerde "Drop" — "één bestelling voor een hele
+// collectie of lancering" — en die definitie is met de pakketten verdwenen. In
+// een contract woog vooral het tweede bezwaar: "in plaats van losse producten"
+// trok een grens die de prijslijst niet meer trekt, want elk aantal heeft nu
+// een prijs. De grens die er wél is, is WINDOW_THRESHOLD, en dat is precies de
+// term die §6 en §9 nodig hebben. §4 noemt geen vast tarief meer, maar de twee
+// uiteinden van de staffel.
 import Layout from '../../layouts/Layout.astro';
-import { AMOUNT, euro, turnaround } from '../../data/pricing.js';
+import {
+  euro, turnaround, ladderRate, ladderFloor, LADDER, WINDOW_THRESHOLD,
+} from '../../data/pricing.js';
 
 const t0 = turnaround('unattended', 'nl').toLowerCase();
 const t1 = turnaround('attended', 'nl').toLowerCase();
+
+const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 ---
 
 <Layout
@@ -45,19 +57,20 @@ const t1 = turnaround('attended', 'nl').toLowerCase();
         <li><strong>"Visual"</strong> — een afbeelding of video die we voor je maken.</li>
         <li><strong>"Bronmateriaal"</strong> — de productfoto's, afbeeldingen en informatie die je aanlevert.</li>
         <li><strong>"Bestelling"</strong> — een aanvraag voor een of meer visuals onder deze voorwaarden.</li>
-        <li><strong>"Drop"</strong> — één bestelling voor een hele collectie of lancering, in plaats van losse producten.</li>
+        <li><strong>"Gereserveerde bestelling"</strong> — een bestelling van {WINDOW_THRESHOLD} producten of meer, die in onze capaciteitsagenda wordt ingepland en een gereserveerd leveringsvenster krijgt.</li>
       </ul>
 
       <h2>3. De dienst</h2>
       <p>VISUAILS maakt AI-ondersteunde, door mensen gecontroleerde productvisuals — catalogusbeelden, lifestyle-scènes en video — op basis van het bronmateriaal dat je aanlevert. Elke visual wordt via ons proces gegenereerd en door een persoon gecontroleerd vóór levering. We streven naar consistente, publicatieklare resultaten, maar visuals zijn creatief werk en de exacte uitkomsten kunnen variëren.</p>
 
       <h2>4. Bestellingen &amp; prijzen</h2>
-      <p>Indicatieve prijzen zijn:</p>
+      <p>Visuals worden geprijsd per product, en het tarief daalt naarmate het aantal producten in de bestelling stijgt. Indicatieve tarieven zijn:</p>
       <ul>
-        <li><strong>Catalog</strong> — {euro(AMOUNT.catalog, 'nl')} per product, inclusief een set van vier foto's (voorkant, achterkant, een detail-close-up en één on-model shot).</li>
-        <li><strong>Lifestyle-visuals</strong> — {euro(AMOUNT.lifestyle, 'nl')} per product (een carousel van drie foto's).</li>
-        <li><strong>Drops, video en maatwerk</strong> — individueel geoffreerd voordat je je verbindt.</li>
-        <li><strong>Brand Model en het studio-abonnement</strong> — komen bovenop een drop en worden vooraf geoffreerd. Geen van beide is bij het afrekenen te koop.</li>
+        <li><strong>Catalog</strong> — {euro(ladderRate('catalog', 1), 'nl')} per product, dalend tot {euro(ladderFloor('catalog'), 'nl')} vanaf {FLOOR_FROM} producten. Een set van vier foto’s (voorkant, achterkant, een detail-close-up en één on-model shot).</li>
+        <li><strong>Lifestyle-visuals</strong> — {euro(ladderRate('lifestyle', 1), 'nl')} per product, dalend tot {euro(ladderFloor('lifestyle'), 'nl')} vanaf {FLOOR_FROM} producten. Een carousel van drie foto’s.</li>
+        <li><strong>Het tarief daartussen</strong> — volledig uitgeschreven op onze <a href="/nl/pricing">prijzenpagina</a>. Het tarief dat geldt, is dat van het totale aantal producten in je bestelling, en het geldt voor elk product daarin.</li>
+        <li><strong>Video, maatwerk en maandplannen</strong> — individueel geoffreerd voordat je je verbindt.</li>
+        <li><strong>Brand Model</strong> — komt bovenop een bestelling en wordt vooraf geoffreerd. Het is bij het afrekenen niet te koop.</li>
       </ul>
       <p>Nieuwe bedrijven kunnen één proefvisual per bedrijf aanvragen, zodat je onze kwaliteit kunt beoordelen voordat je bestelt. Prijzen worden bevestigd op het moment van bestellen. Tenzij anders vermeld, zijn prijzen exclusief btw waar van toepassing.</p>
 
@@ -71,7 +84,7 @@ const t1 = turnaround('attended', 'nl').toLowerCase();
       <p>We kunnen elke bestelling weigeren of het werk eraan stopzetten die deze voorwaarden lijkt te schenden.</p>
 
       <h2>6. Levering</h2>
-      <p>Hoe lang een bestelling duurt, hangt af van hoe je bestelt. Losse producten lopen in de standaard wachtrij: {t0} vanaf een volledige briefing. We noemen voor een los product geen leverdatum, want een datum waarvoor we geen capaciteit hebben vrijgehouden is geen datum. Een drop loopt in {t1}, en houdt die plek terwijl losse bestellingen eromheen schuiven.</p>
+      <p>Hoe lang een bestelling duurt, hangt af van hoe je bestelt. Losse producten lopen in de standaard wachtrij: {t0} vanaf een volledige briefing. We noemen voor een los product geen leverdatum, want een datum waarvoor we geen capaciteit hebben vrijgehouden is geen datum. Een gereserveerde bestelling loopt in {t1}, en houdt die plek terwijl kleinere bestellingen eromheen schuiven.</p>
       <p>Tijden kunnen nog steeds verschuiven met de omvang en complexiteit van een bestelling. Gaat een levering verschuiven, dan laten we het weten — we zeggen het liever dan dat we een datum stil voorbij laten gaan.</p>
 
       <h2>7. Je bestanden &amp; hoe lang we ze bewaren</h2>
@@ -88,7 +101,7 @@ const t1 = turnaround('attended', 'nl').toLowerCase();
 
       <h2>9. Betaling &amp; btw</h2>
       <p>Betaling verloopt via onze betaalprovider. Facturen worden uitgereikt voor je administratie. Voor zakelijke klanten in de EU met een geldig btw-nummer kan de btw-verleggingsregeling van toepassing zijn wanneer aan de voorwaarden is voldaan; anders gelden de Nederlandse btw-regels. Je bent verantwoordelijk voor het aanleveren van correcte facturatie- en btw-gegevens.</p>
-      <p>Losse producten en proefvisuals betaal je volledig bij het afrekenen. Een drop of maatwerk wordt niet bij het afrekenen in rekening gebracht maar gefactureerd, in twee delen: 50% bij bevestiging — dat is wat je productieplek reserveert — en 50% voordat de afgeronde bestanden worden vrijgegeven. Het werk start niet, en er wordt geen plek vastgehouden, tot de eerste termijn is betaald.</p>
+      <p>Kleine bestellingen en proefvisuals betaal je volledig bij het afrekenen. Een gereserveerde bestelling of maatwerk wordt niet bij het afrekenen in rekening gebracht maar gefactureerd, in twee delen: 50% bij bevestiging — dat is wat je productieplek reserveert — en 50% voordat de afgeronde bestanden worden vrijgegeven. Het werk start niet, en er wordt geen plek vastgehouden, tot de eerste termijn is betaald.</p>
 
       <h2>10. Annuleringen, terugbetalingen en herstel</h2>
       <p>Omdat visuals worden gemaakt volgens je specifieke briefing, kan werk dat al is gestart of geleverd doorgaans niet worden geannuleerd voor een terugbetaling.</p>

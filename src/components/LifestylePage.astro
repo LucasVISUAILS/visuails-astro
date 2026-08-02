@@ -11,10 +11,31 @@
 // and the price on every one of those entries was typed by hand. The moods
 // now come from the shared module and the euro comes from pricing.js.
 //
-// SEQUENCING: a Tier 0 surface. Section 13's full "order individual products
-// vs run a whole drop" block lands at step 13, after step 12. Everything
-// here is made true under the tier model now; the slot is marked below.
-import { TIERS, perProduct, reviewClaim, turnaround } from '../data/pricing.js';
+// THE PRICE IS A LADDER NOW, not a flat rate (August 2026 — section 0 of
+// src/data/pricing.js is the governing document). A lifestyle carousel used to
+// be one figure per product, printed in the hero, the trust row, every mood
+// card and the closing band. The rate starts at the entry rung and falls as
+// the count rises, so one figure would be quoting what a SINGLE product costs
+// as though it were the price of a season. Every mention now names the entry
+// rate and the floor together, and the rung list under the set block prints
+// the whole thing.
+//
+// EVERY PRINTED PRICE CARRIES A VAT LABEL, from vatLabel() — BRIEF-14's
+// hardest rule, and never a typed "excl. VAT", because that string has to
+// translate and it has to move if the rule moves.
+//
+// "DROP" IS NOT WHAT WE SELL. It means a collection going live, which is what
+// it means to the brands we sell to; a work order is an order, or a batch —
+// in Dutch, een bestelling. The word survives on this page only where the
+// CLIENT's own launch is meant (the `where` list's "seasonal drops").
+//
+// SERVICE LEVEL FOLLOWS SIZE: from WINDOW_THRESHOLD products an order gets the
+// reserved window, below it the standard queue. The timing strings still come
+// from turnaround(); what changed is that this page names the count.
+import {
+  TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
+  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, reviewClaim, turnaround,
+} from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
 import TierCompare from './TierCompare.astro';
@@ -27,8 +48,24 @@ const lp = (p: string) => localizedPath(lang, p);
 
 const moods = lang === 'nl' ? stylesNl : stylesEn;
 
-const item = perProduct('lifestyle', lang);
+// The ladder for this page's one kind, read rather than typed. Both ends are
+// needed wherever a rate is quoted: the entry rate alone makes a fifty-product
+// order look three times more expensive than it is, and the floor alone quotes
+// a price almost nobody's first order pays.
+const KIND = 'lifestyle';
+const entry = ladderRate(KIND, 1);
+const floor = ladderFloor(KIND);
+const rungs = LADDER[KIND];
+const floorFrom = rungs[rungs.length - 1][0];
+const rungRows = rungs.map(([lo, hi, rate]) => ({
+  label: hi === null ? `${lo}+` : `${lo}–${hi}`,
+  rate: euro(rate, lang),
+}));
 const t0 = TIERS.unattended;
+
+// Computed, never typed — a "20%" written beside a constant of 0.20 is two
+// sources of truth for one number, and the typed one is the one that rots.
+const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 // The before/after row. Photo paths only — the labels come out of `moods` so
 // a renamed style can never drift between the grid and the comparison row.
@@ -77,7 +114,7 @@ const COPY = {
     // <em> added task #271b (Lucas's own request, editorial accent) — same
     // closing-phrase-emphasis convention as the other hero H1s.
     h1: 'Your product, in scenes <em>that sell.</em>',
-    lead: `Four signature looks. ${item.price} per product — a 3-photo carousel.`,
+    lead: `Four signature looks. A 3-photo carousel per product — ${euro(entry, 'en')} ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note — this button carried the tier label verbatim, in the hero,
     // on a link that lands on /start's two-way fork.
@@ -86,13 +123,16 @@ const COPY = {
     wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20lifestyle%20visuals%20for%20my%20products.',
     waTalk: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20lifestyle%20visuals%20for%20my%20brand.',
     waLabel: 'WhatsApp',
+    // Two figures, not one. A single rate here is the exact claim the ladder
+    // retired — see the note at the top of this file.
     trust: [
-      [item.price, 'per product'],
+      [`${euro(entry, 'en')} – ${euro(floor, 'en')}`, `per product · ${vatLabel('excl', 'en')}`],
       ['3 photos', 'per product'],
     ],
-    // Visible, not buried. Section 13: a visitor must not be able to leave a
-    // Tier 0 page believing a delivery date was promised.
-    queueNote: t0.queue.en + '.',
+    // Visible, not buried. Section 13: a visitor must not be able to leave
+    // this page believing a delivery date was promised — and now that size
+    // decides the service level, the line names the count as well.
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, the order goes into the capacity calendar and gets the reserved window.`,
     setH: 'One product. Three photos. <em>A carousel.</em>',
     setP: 'Every lifestyle order is your product in one styled look, delivered as three shots that belong together — ready to post as a carousel on Instagram, your shop and ads.',
     // Numbered because a carousel genuinely is an ordered sequence: this is
@@ -103,9 +143,15 @@ const COPY = {
       ['Logo close-up', 'A tight detail shot — same vibe, same colour grade — that proves the quality.'],
     ],
     setNote: 'One styled look per order · same colour grading · a different scene is a separate order.',
+    ladderH: 'What a carousel costs',
+    ladderProductsCol: 'Products',
+    ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
+    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them. Your first order with us is ${firstPct} off on top of it.`,
     moodsH: 'Four moods — or <em>your own.</em>',
     onRequest: 'On request',
-    unitLabel: `${item.price} / product`,
+    // The mood cards are small, so they carry the two ends of the ladder and
+    // nothing else — the full rung list is one section above them.
+    unitLabel: `${euro(entry, 'en')} – ${euro(floor, 'en')} / product · ${vatLabel('excl', 'en')}`,
     edMeta: '( Where it fits )',
     edH: 'Lifestyle photography: desire, in context.',
     edSub: 'The scenes that create want, not just clarity.',
@@ -135,22 +181,22 @@ const COPY = {
     exampleAlt: (n: string) => `${n} lifestyle example`,
     reviewNote: reviewClaim('unattended', 'en'),
     ctaH: 'Put your product<br>in a scene that sells.',
-    ctaP: `${item.price} per product, ${turnaround('unattended', 'en').toLowerCase()}.`,
+    ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
   },
   nl: {
     eyebrow: 'Lifestyle',
     h1: 'Jouw product, in scènes <em>die verkopen.</em>',
-    lead: `Vier signatuurlooks. ${item.price} per product — een carousel van 3 foto’s.`,
+    lead: `Vier signatuurlooks. Een carousel van 3 foto’s per product — ${euro(entry, 'nl')} ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
     ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk prijzen',
     wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Lifestyle-visuals%20bestellen%20voor%20mijn%20producten.',
     waTalk: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20Lifestyle-visuals%20voor%20mijn%20merk.',
     waLabel: 'WhatsApp',
     trust: [
-      [item.price, 'per product'],
+      [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['3 foto’s', 'per product'],
     ],
-    queueNote: t0.queue.nl + '.',
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster.`,
     setH: 'Eén product. Drie foto’s. <em>Een carousel.</em>',
     setP: 'Elke lifestyle-bestelling is je product in één gestylede look, geleverd als drie shots die bij elkaar horen — klaar om te posten als carousel op Instagram, je shop en ads.',
     set: [
@@ -159,9 +205,13 @@ const COPY = {
       ['Logo-close-up', 'Een strakke detailshot — zelfde vibe, zelfde colour grade — die de kwaliteit bewijst.'],
     ],
     setNote: 'Eén gestylede look per bestelling · zelfde colour grading · een andere scène is een aparte bestelling.',
+    ladderH: 'Wat een carousel kost',
+    ladderProductsCol: 'Producten',
+    ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
+    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Je eerste bestelling is daar nog eens ${firstPct} goedkoper op.`,
     moodsH: 'Vier sferen — of <em>je eigen.</em>',
     onRequest: 'Op aanvraag',
-    unitLabel: `${item.price} / product`,
+    unitLabel: `${euro(entry, 'nl')} – ${euro(floor, 'nl')} / product · ${vatLabel('excl', 'nl')}`,
     edMeta: '( Waar het past )',
     edH: 'Lifestylefotografie: verlangen, in context.',
     edSub: 'De scènes die verlangen wekken, niet alleen helderheid.',
@@ -191,7 +241,7 @@ const COPY = {
     exampleAlt: (n: string) => `${n} lifestyle-voorbeeld`,
     reviewNote: reviewClaim('unattended', 'nl'),
     ctaH: 'Zet je product<br>in een scène die verkoopt.',
-    ctaP: `${item.price} per product, ${turnaround('unattended', 'nl').toLowerCase()}.`,
+    ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
   },
 };
 
@@ -238,6 +288,30 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
       ))}
     </div>
     <p class="set-note">{c.setNote}</p>
+
+    <!-- THE RUNG LIST. The whole ladder rather than a "from €x": this page
+         sells one kind of thing, so it has the room, and a reader who wants
+         to know what twelve products cost each can find the row and stop
+         reading. The VAT label is a column heading — one column, one kind of
+         number, so the label belongs to the column rather than to every
+         cell. -->
+    <div class="rungs reveal pending">
+      <span class="rungs-h">{c.ladderH}</span>
+      <table class="rung-table">
+        <thead>
+          <tr>
+            <th scope="col">{c.ladderProductsCol}</th>
+            <th scope="col">{c.ladderRateCol}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rungRows.map((r) => (
+            <tr><th scope="row">{r.label}</th><td>{r.rate}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="rungs-note">{c.ladderNote}</p>
+    </div>
   </div>
 </section>
 
@@ -347,7 +421,10 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   </div></div>
 </section>
 
-<!-- SECTION 13 — "order individual products" against "run a whole drop".
+<!-- WHAT CHANGES AT WINDOW_THRESHOLD PRODUCTS. This block used to be section
+     13's two doors — "order individual products" against "run a whole drop" —
+     a choice the buyer made. Size makes it now, so the component states a line
+     rather than offering a fork; see TierCompare.astro's own header.
      One shared component, not a paragraph pasted into each service page: the
      tier facts it prints all come from pricing.js accessors, so /catalog,
      /lifestyle, /video and /pricing cannot drift apart in either language.
@@ -386,6 +463,34 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
 
   .set-note { margin-top: 1.4rem; font-size: .85rem; color: var(--ink-3); }
+
+  /* ── The rung list ────────────────────────────────────────────────────────
+     A real table, for the same reason /pricing's ladder is one: a rate card is
+     tabular data. Narrow and centred because it has two columns, not four —
+     stretched full width it would put a metre of white space between a count
+     and its rate, which is the one relationship it exists to show. */
+  .rungs { max-width: 460px; margin: 2.4rem auto 0; }
+  .rungs-h { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .rung-table {
+    width: 100%;
+    margin-top: .8rem;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .rung-table th, .rung-table td { padding: .7rem .2rem; text-align: right; }
+  .rung-table thead th {
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .rung-table thead th:first-child, .rung-table tbody th { text-align: left; }
+  .rung-table tbody tr + tr th, .rung-table tbody tr + tr td { border-top: 1px solid var(--line); }
+  .rung-table tbody th { font-family: var(--font-display); font-weight: 700; font-size: .98rem; color: var(--ink); white-space: nowrap; }
+  .rung-table tbody td { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--ink); }
+  .rungs-note { margin-top: 1rem; font-size: .88rem; line-height: 1.55; color: var(--ink-3); }
 
   /* The three carousel shots were numbered with `.rc-num`, which is only
      styled under `.req-card` in global.css — so on this page the numerals

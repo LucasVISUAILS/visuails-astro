@@ -2,7 +2,7 @@
 // src/data/catalogStyles.js — same shape and exports, only the
 // human-readable strings are translated. Order paths are prefixed with /nl.
 
-import { perProduct, reviewClaim, turnaround } from './pricing.js';
+import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -10,6 +10,13 @@ import { perProduct, reviewClaim, turnaround } from './pricing.js';
 // cleared — and how a video price that exists nowhere in pricing.js
 // survived a repricing nobody caught. Derive, never type.
 const CAT = perProduct('catalog', 'nl');
+// The rate is a LADDER now, not a flat fee, so a bare figure on a style card
+// would read as the price at any count when it is only the price at one to
+// four. Every card prints the entry rung with "from" and a VAT label — the
+// same shape /catalog's own rung table uses, so the card and the table cannot
+// disagree.
+const CAT_FROM = `vanaf ${euro(ladderRate('catalog', 1), 'nl')}`;
+const CAT_VAT = vatLabel('excl', 'nl');
 const TIMING = turnaround('unattended', 'nl');
 const REVIEW = reviewClaim('unattended', 'nl');
 
@@ -23,15 +30,15 @@ export const catalogStyles = [
     slug: 'classic',
     name: 'Classic',
     tagline: 'Strak. Consistent. Zonder concessies.',
-    priceTrust: CAT.price,
+    priceTrust: CAT_FROM,
     priceUnit: ' / product',
-    metaPrice: `${CAT.price} / product — 4 foto's`,
+    metaPrice: `${CAT_FROM} / product — 4 foto's`,
     orderHref: '/nl/start',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: `${CAT.price} / product`,
+    cardPrice: `${CAT_FROM} / product ${CAT_VAT}`,
     cardDesc: 'Een complete set per product — voorkant, achterkant, detail en één on-model shot.',
     moodTitle: 'Hoe Classic voelt.',
     moodParagraphs: [
@@ -75,16 +82,16 @@ export const catalogStyles = [
     slug: 'custom',
     name: 'Eigen merk',
     tagline: 'Een catalogus-look die onmiskenbaar van jou is.',
-    priceTrust: `Eén keer ontworpen — daarna ${CAT.price} / product`,
+    priceTrust: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
     priceUnit: '',
-    metaPrice: `Eén keer ontworpen — daarna ${CAT.price} / product`,
+    metaPrice: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
     orderHref: '/nl/start',
     heroIcon: 'bag',
     heroWidth: '26%',
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
-    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product voor ${CAT.price} per set van vier foto's.`,
+    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product voor ${CAT_FROM} per set van vier foto's.`,
     moodTitle: 'Hoe Eigen merk voelt.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',

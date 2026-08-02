@@ -12,12 +12,17 @@
 // languages, in public/_redirects. Nothing in src/ links to them any more.
 //
 // SCOPE, read before editing:
-//   · This is section 10's five-step pipeline: scope → material → brief →
+//   · This is section 10's five-step pipeline: order → material → brief →
 //     capacity gate → confirm. src/scripts/pipeline.js drives it and this
 //     file is the DOM contract that script queries. Every [data-pl-*] hook
 //     below is load-bearing; renaming one silently disables a step.
-//   · Section 13 supplies every promise on this page. Tier 0 is reachable
-//     from step 1 as "individual products" — that is the second door below.
+//   · Step 1 used to ask TWO questions — a "door" (a drop, or single products)
+//     and then a package inside it. The package model is gone (see section 0 of
+//     src/data/pricing.js): there is one ladder, priced per product, and the
+//     service level FOLLOWS the count rather than being a second thing the
+//     buyer answers. So step 1 asks what we make per product, and how many.
+//   · Section 13 still supplies every promise on this page; which set of
+//     promises applies is now decided by tierFor(count), not by a radio.
 //
 // Every fact about a tier is read from src/data/pricing.js. No price, queue
 // position, promise or turnaround is typed into this markup. If a
@@ -28,15 +33,23 @@
 // All five steps render at once as one long form that posts to /api/order the
 // same way the five retired order pages did. What is lost is real, and is
 // stated in the <noscript> rather than hidden: no file upload (the endpoint is
-// XHR-driven), no capacity check, and no reserved window — those are settled by
-// email instead. The hidden `service` field also stays on its default, so a
-// no-JS drop arrives labelled `catalog` with the real scope in details_json.
-// FLAGGED rather than papered over; the studio reads the scope row either way.
+// XHR-driven), no capacity check, no reserved window and no running total —
+// those are settled by email instead.
+//
+// What is NOT lost any more: the thing we make. `service` used to be a hidden
+// input on a safe default, so a no-JS order for a whole collection arrived
+// labelled `catalog` with the truth buried in details_json. The step 1 radio
+// group IS that field now — its three values are the three the server already
+// accepts (ORDER_SERVICES in functions/api/order.js) — so a no-JS post carries
+// the real answer. `tier` is still a hidden input written by the script, and
+// still defaults to `unattended`: the tier that reserves nothing is the one it
+// is safe to arrive on.
 // ─────────────────────────────────────────────────────────────────────────────
 import {
-  TIERS, reviewClaim, AMOUNT, euro, PILOT_PRODUCTS,
-  TIER_ROWS, tierRow, tierRowLabels,
-  FULL_DROP_MIN, FULL_DROP_MAX, TEST_SAMPLE,
+  TIERS, reviewClaim, AMOUNT, euro, TEST_SAMPLE,
+  TIER_ROWS, tierRow, tierRowLabels, turnaround,
+  ladderRate, ladderFloor, LADDER, VAT_RATE, vatLabel,
+  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
 } from '../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
@@ -47,7 +60,9 @@ interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
-const attended = TIERS.attended;
+// Only the unattended tier is read by name here (its queue line is quoted
+// verbatim on step 4). The attended tier reaches this file through turnaround()
+// and tierRow(), which is what those accessors exist for.
 const unattended = TIERS.unattended;
 const sample = TEST_SAMPLE[lang];
 
@@ -58,66 +73,45 @@ const sample = TEST_SAMPLE[lang];
 const COPY = {
   en: {
     eyebrow: 'Start',
-    h1: 'Two ways in.',
-    lead: 'The line between them is not how much you order. It is whether a window in the studio calendar is reserved for you — that is the part a one-person studio can genuinely run out of.',
-    priceLead: 'From',
-    attendedFrame: 'A collection is going live and there is a date attached to it.',
-    // The two \u00A0 are load-bearing. .dp-note is 36ch wide, which puts a line
-    // break inside "Full Drop" and leaves line two opening on the word "Drop" —
-    // a different product than the one it names. Binding both service names
-    // moves the break to the sentence boundary instead, where it belongs.
-    attendedNote: `Drop\u00A0Pilot, ${PILOT_PRODUCTS} products, once per brand. Full\u00A0Drop ${euro(AMOUNT.fullDrop, 'en')} for ${FULL_DROP_MIN}–${FULL_DROP_MAX}.`,
-    attendedCta: 'See what a drop includes',
-    unattendedFrame: 'A few products need visuals and nothing is waiting on them.',
-    // Same reason: the break fell between the price and the dash, leaving an em
-    // dash alone at the head of line two.
-    unattendedNote: `Catalog ${euro(AMOUNT.catalog, 'en')}, lifestyle ${euro(AMOUNT.lifestyle, 'en')}, video ${euro(AMOUNT.video, 'en')}\u00A0— per product.`,
-    unattendedCta: 'See the per-product work',
-    // Both doors read this, so it has to be true of both. The line it replaces
-    // described only the reserved window, which meant a visitor ordering one
-    // product was being reassured about a mechanism their order never touches.
-    // Section 13 asks for the difference between the two service models to be
-    // visible rather than hidden; the honest way to hold that here is to name
-    // what each door actually gets, in the same breath, and let the contrast do
-    // the work.
+    h1: 'What we make, and how many.',
+    // The two facts the ladder replaced two price lists with. Both figures are
+    // read, never typed: the range comes from the ladder's own first and last
+    // rung, and the threshold from WINDOW_THRESHOLD, which is also what
+    // tierFor() reads.
+    lead: `One rate per product, and it falls as the count rises — from ${euro(ladderRate('complete', 1), 'en')} down to ${euro(ladderFloor('complete'), 'en')} a product. From ${WINDOW_THRESHOLD} products the order goes into the studio calendar and gets a reserved window; below that it runs in the standard queue.`,
+    // Both service levels read this, so it has to be true of both. Section 13
+    // asks for the difference between them to be visible rather than hidden,
+    // and the honest way to hold that here is to name what each one gets, in
+    // the same breath, and let the contrast do the work. What changed under the
+    // ladder is only what decides which you get: the count, not a radio.
     gateLead: 'No date is printed until the calendar clears it.',
-    gateBody: 'A drop gets a reserved window, confirmed in writing before you pay and never after. Individual products run in the standard queue, with no date attached at all. Neither answer is an optimistic guess.',
-    sharedH: 'What is identical either way',
+    gateBody: `From ${WINDOW_THRESHOLD} products an order is put in the capacity calendar and gets a reserved window, confirmed in writing before you pay and never after. A smaller order runs in the standard queue, with no date attached at all. Neither answer is an optimistic guess.`,
+    sharedH: 'What is identical at every count',
     shared: [
-      ['The pipeline', 'The same production run, whichever door you come through. There is no second-rate lane.'],
-      ['The review', `${reviewClaim('unattended', 'en')}. Both ways in, no exceptions.`],
+      ['The pipeline', `The same production run at one product and at ${ATTENDED_PER_WINDOW}. There is no second-rate lane.`],
+      ['The review', `${reviewClaim('unattended', 'en')}. At every count, no exceptions.`],
       ['The files', 'High-resolution and e-commerce-ready. Yours to use anywhere, with no per-use licence.'],
     ],
-    footH: 'Not ready to pick a door?',
+    footH: 'Not ready to order?',
     footBody: `${sample.line} One product, ${sample.price}, ${sample.unit}. It runs through the same pipeline as a paid order, so what you see is what you would get.`,
     footCta: `Try a test sample · ${sample.price}`,
     footWa: 'Ask on WhatsApp',
   },
   nl: {
     eyebrow: 'Start',
-    h1: 'Twee ingangen.',
-    lead: 'Het verschil zit niet in hoeveel je bestelt. Het zit in de vraag of er een venster in de studioagenda voor jou wordt vrijgehouden — dat is wat er in een eenmansstudio echt op kan raken.',
-    priceLead: 'Vanaf',
-    attendedFrame: 'Er gaat een collectie live en daar hangt een datum aan.',
-    attendedNote: `Drop\u00A0Pilot, ${PILOT_PRODUCTS} producten, eenmalig per merk. Full\u00A0Drop ${euro(AMOUNT.fullDrop, 'nl')} voor ${FULL_DROP_MIN}–${FULL_DROP_MAX}.`,
-    attendedCta: 'Bekijk wat een drop bevat',
-    unattendedFrame: 'Een paar producten hebben visuals nodig en er wacht niets op.',
-    unattendedNote: `Catalog ${euro(AMOUNT.catalog, 'nl')}, lifestyle ${euro(AMOUNT.lifestyle, 'nl')}, video ${euro(AMOUNT.video, 'nl')}\u00A0— per product.`,
-    unattendedCta: 'Bekijk het werk per product',
+    h1: 'Wat we maken, en hoeveel.',
+    lead: `Eén tarief per product, en dat daalt naarmate het aantal stijgt — van ${euro(ladderRate('complete', 1), 'nl')} naar ${euro(ladderFloor('complete'), 'nl')} per product. Vanaf ${WINDOW_THRESHOLD} producten gaat de bestelling in de studioagenda met een gereserveerd venster; daaronder loopt ze mee in de standaard wachtrij.`,
     gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
-    gateBody: 'Een drop krijgt een gereserveerd venster, schriftelijk bevestigd voordat je betaalt en nooit erna. Losse producten lopen mee in de standaard wachtrij, zonder datum eraan. Geen van beide is een optimistische gok.',
-    sharedH: 'Wat in beide gevallen hetzelfde is',
+    gateBody: `Vanaf ${WINDOW_THRESHOLD} producten komt een bestelling in de capaciteitsagenda en krijgt ze een gereserveerd venster, schriftelijk bevestigd voordat je betaalt en nooit erna. Een kleinere bestelling loopt mee in de standaard wachtrij, zonder datum eraan. Geen van beide is een optimistische gok.`,
+    sharedH: 'Wat bij elk aantal hetzelfde is',
     shared: [
-      ['De pipeline', 'Dezelfde productie, via welke ingang je ook binnenkomt. Er is geen tweederangs baan.'],
-      ['De controle', `${reviewClaim('unattended', 'nl')}. Bij allebei, zonder uitzondering.`],
+      ['De pipeline', `Dezelfde productie bij één product en bij ${ATTENDED_PER_WINDOW}. Er is geen tweederangs baan.`],
+      ['De controle', `${reviewClaim('unattended', 'nl')}. Bij elk aantal, zonder uitzondering.`],
       ['De bestanden', 'Hoge resolutie en e-commerce-klaar. Van jou, overal te gebruiken, zonder licentie per gebruik.'],
     ],
-    // Not 'Nog geen ingang gekozen?'. That asserts a fact the same screen
-    // disproves: this block sits under a step 1 with a door visibly selected,
-    // and under a step 5 whose own summary reads "OMVANG — Een hele drop". The
-    // English is an invitation rather than a claim about state; the Dutch now
-    // says the same thing.
-    footH: 'Nog niet klaar om een ingang te kiezen?',
+    // An invitation, not a claim about state: this block also sits under a
+    // step 5 whose summary already reads a finished order back.
+    footH: 'Nog niet klaar om te bestellen?',
     footBody: `${sample.line} Eén product, ${sample.price}, ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat je ziet is wat je zou krijgen.`,
     footCta: `Probeer een proefvisual · ${sample.price}`,
     footWa: 'Vraag het via WhatsApp',
@@ -139,41 +133,57 @@ const c = COPY[lang];
 const PIPE = {
   en: {
     total: {
-      pilot: 'Drop Pilot — {n} products, one fixed price.',
-      full: 'Full Drop — {min}–{max} products, one fixed price.',
-      custom: 'Quoted once we have seen the products. Nothing is owed for asking.',
-      each: '{price} per product × {n}.',
+      // The rate is the LADDER's rate at this count, never a package price:
+      // change the count and this line has to change with it.
+      each: `{rate} per product × {n}, ${vatLabel('excl', 'en')}.`,
+      more: 'That is more than one reserved window holds, so it is planned with you rather than priced by a form. Send this and we come back with the same ladder in writing.',
       quote: 'Choose how many products and the total appears here.',
       onRequest: '—',
       // Task #271f — appended to whichever note above already applies.
       outfit: ' Plus {price} × {n} for full outfit.',
     },
-    scope: {
-      drop: 'A whole drop',
-      single: 'Individual products',
-      none: 'Not chosen yet',
+    // THE LADDER'S OWN UPSELL. Both totals are computed from the ladder before
+    // this sentence is written — see syncTotal() in pipeline.js — because a
+    // rounded or estimated "you would save about" is a number a client can
+    // disprove with a calculator, and this one is offered unprompted.
+    rung: {
+      // NOT "{then} instead of {now}". {then} is the total for MORE products,
+      // so it is the larger number — reading it as a saving is exactly wrong,
+      // and a prospect who spots that stops trusting every other figure on the
+      // page. The comparison that is actually true is per product: the rate
+      // falls, and the sentence says so before it names any total.
+      one: `One more product and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
+      many: `{add} more products and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
+    },
+    // Which service level this count earns. The promises themselves are
+    // turnaround() and the queue line out of pricing.js; only the sentence
+    // around them is written here.
+    level: {
+      attended: `${WINDOW_THRESHOLD} products or more, so this order goes in the capacity calendar. ${turnaround('attended', 'en')}.`,
+      unattended: `${TIERS.unattended.queue.en}. From ${WINDOW_THRESHOLD} products an order is put in the capacity calendar and gets a reserved window instead.`,
     },
     kind: {
-      pilot: 'Drop Pilot',
-      full: 'Full Drop',
-      catalog: 'Catalog',
-      lifestyle: 'Lifestyle',
-      video: 'Video',
-      custom: 'Something else',
+      complete: 'Catalog set and lifestyle carousel',
+      catalog: 'Catalog set',
+      lifestyle: 'Lifestyle carousel',
     },
     sum: {
-      scope: 'Scope',
-      kind: 'Package',
+      kind: 'What we make',
       count: 'Products',
       // Task #271f.
       outfit: 'Full outfit',
       outfitN: '{price} extra × {n}',
-      total: 'Total',
+      // Three rows, never one. BRIEF-14: no price is printed without saying
+      // which side of VAT it is on, and a single "Total" on a confirm screen is
+      // exactly where that rule gets broken.
+      net: `Order value (${vatLabel('excl', 'en')})`,
+      vat: vatLabel('rate', 'en'),
+      total: `Total (${vatLabel('incl', 'en')})`,
       files: 'Reference material',
       noFiles: 'Nothing sent yet — you can email it afterwards',
       window: 'Delivery',
       windowLater: 'Window still to be reserved',
-      queue: unattended.queue.en,
+      queue: TIERS.unattended.queue.en,
       email: 'Email',
     },
     upload: {
@@ -226,41 +236,40 @@ const PIPE = {
   },
   nl: {
     total: {
-      pilot: 'Drop Pilot — {n} producten, één vaste prijs.',
-      full: 'Full Drop — {min}–{max} producten, één vaste prijs.',
-      custom: 'Prijs volgt zodra we de producten hebben gezien. Vragen kost niets.',
-      each: '{price} per product × {n}.',
+      each: `{rate} per product × {n}, ${vatLabel('excl', 'nl')}.`,
+      more: 'Dat is meer dan één gereserveerd venster aankan, dus dat plannen we samen in plaats van het door een formulier te laten prijzen. Stuur dit en we komen op schrift terug met dezelfde staffel.',
       quote: 'Kies hoeveel producten en het totaal verschijnt hier.',
       onRequest: '—',
       // Taak #271f.
       outfit: ' Plus {price} × {n} voor full outfit.',
     },
-    scope: {
-      drop: 'Een hele drop',
-      single: 'Losse producten',
-      none: 'Nog niet gekozen',
+    rung: {
+      one: `Nog één product en elk product zakt van {now} naar {rate} — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
+      many: `Nog {add} producten en elk product zakt van {now} naar {rate} — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
+    },
+    level: {
+      attended: `${WINDOW_THRESHOLD} producten of meer, dus deze bestelling gaat in de capaciteitsagenda. ${turnaround('attended', 'nl')}.`,
+      unattended: `${TIERS.unattended.queue.nl}. Vanaf ${WINDOW_THRESHOLD} producten komt een bestelling in de capaciteitsagenda en krijgt ze in plaats daarvan een gereserveerd venster.`,
     },
     kind: {
-      pilot: 'Drop Pilot',
-      full: 'Full Drop',
-      catalog: 'Catalog',
-      lifestyle: 'Lifestyle',
-      video: 'Video',
-      custom: 'Iets anders',
+      complete: 'Catalogset en lifestyle-carousel',
+      catalog: 'Catalogset',
+      lifestyle: 'Lifestyle-carousel',
     },
     sum: {
-      scope: 'Omvang',
-      kind: 'Pakket',
+      kind: 'Wat we maken',
       count: 'Producten',
       // Taak #271f.
       outfit: 'Full outfit',
       outfitN: '{price} extra × {n}',
-      total: 'Totaal',
+      net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
+      vat: vatLabel('rate', 'nl'),
+      total: `Totaal (${vatLabel('incl', 'nl')})`,
       files: 'Referentiemateriaal',
       noFiles: 'Nog niets gestuurd — je kunt het later mailen',
       window: 'Levering',
       windowLater: 'Venster wordt nog gereserveerd',
-      queue: unattended.queue.nl,
+      queue: TIERS.unattended.queue.nl,
       email: 'E-mail',
     },
     upload: {
@@ -313,11 +322,12 @@ const PIPE = {
 // Adding a c() call to pipeline.js means adding its path here. That is the
 // point: the two files are one contract and this is where it is written down.
 const REQUIRED_COPY = [
-  'total.pilot', 'total.full', 'total.custom', 'total.each', 'total.quote',
-  'total.onRequest', 'total.outfit',
-  'scope.drop', 'scope.single', 'scope.none',
-  'kind.pilot', 'kind.full', 'kind.catalog', 'kind.lifestyle', 'kind.video', 'kind.custom',
-  'sum.scope', 'sum.kind', 'sum.count', 'sum.outfit', 'sum.outfitN', 'sum.total',
+  'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.outfit',
+  'rung.one', 'rung.many',
+  'level.attended', 'level.unattended',
+  'kind.complete', 'kind.catalog', 'kind.lifestyle',
+  'sum.kind', 'sum.count', 'sum.outfit', 'sum.outfitN',
+  'sum.net', 'sum.vat', 'sum.total',
   'sum.files', 'sum.noFiles', 'sum.window', 'sum.windowLater', 'sum.queue', 'sum.email',
   'upload.sending', 'upload.done', 'upload.retry', 'upload.remove', 'upload.count',
   // Every code functions/api/upload.js can answer with, plus the generic
@@ -353,44 +363,66 @@ for (const l of ['en', 'nl'] as const) {
 const FORM = {
   en: {
     railLabel: 'Order steps',
-    rail: ['Scope', 'Material', 'Brief', 'Timing', 'Confirm'],
+    rail: ['Order', 'Material', 'Brief', 'Timing', 'Confirm'],
     next: 'Continue',
     back: 'Back',
     optional: 'optional',
     s1: {
       h: 'What are we making?',
-      lead: 'Pick a door. Everything after this is the same either way — the same pipeline, the same review, the same files.',
-      legend: 'Scope',
-      dropH: 'Which drop?',
-      singleH: 'Which kind of work?',
-      dropOptions: [
-        ['pilot', 'Drop Pilot', `${PILOT_PRODUCTS} products, ${euro(AMOUNT.dropPilot, 'en')}. Once per brand — this is how a first drop starts.`],
-        ['full', 'Full Drop', `${FULL_DROP_MIN}–${FULL_DROP_MAX} products, ${euro(AMOUNT.fullDrop, 'en')}. One reserved window for the whole collection.`],
+      lead: 'Two answers: what each product gets, and how many products there are. The rate follows from the second one, and so does whether a window in the calendar is reserved for you.',
+      legend: 'What we make',
+      kindH: 'What does each product get?',
+      // [wire value, ladder kind, title, description]
+      //
+      // THE VALUE IS THE WIRE FORMAT, NOT THE MODEL'S NAME. These three are
+      // what functions/api/order.js already accepts (ORDER_SERVICES) and what
+      // the D1 `service` column already stores — which is why this radio group
+      // can BE the `service` field and a no-JS post can carry the real answer.
+      // `drop` is the stored name for "a catalog set and a lifestyle carousel";
+      // renaming it to `complete` is a server change and a migration, not a
+      // form change, so the ladder's own kind travels beside it in data-pl-kind
+      // and pipeline.js prices from that.
+      //
+      // Every rate here is read from the ladder. The first is what ONE product
+      // costs and the second is where the rate stops falling, so the pair says
+      // what a single figure could not: this is a range you move along.
+      kindOptions: [
+        ['drop', 'complete', 'Catalog set and lifestyle carousel',
+          `Seven finished images a product — the four catalog shots and the three-image carousel. ${euro(ladderRate('complete', 1), 'en')} a product, down to ${euro(ladderFloor('complete'), 'en')} as the count rises.`],
+        ['catalog', 'catalog', 'Catalog set only',
+          `Four images a product: front, back, a fabric or logo close-up, and one on-model shot. ${euro(ladderRate('catalog', 1), 'en')} a product, down to ${euro(ladderFloor('catalog'), 'en')}.`],
+        ['lifestyle', 'lifestyle', 'Lifestyle carousel only',
+          `Three images a product in one styled look, ready to post. ${euro(ladderRate('lifestyle', 1), 'en')} a product, down to ${euro(ladderFloor('lifestyle'), 'en')}.`],
       ],
-      singleOptions: [
-        ['catalog', 'Catalog', `Clean product shots on a plain ground. ${euro(AMOUNT.catalog, 'en')} per product.`],
-        ['lifestyle', 'Lifestyle', `The product worn or placed in a scene. ${euro(AMOUNT.lifestyle, 'en')} per product.`],
-        ['video', 'Video', `A short clip built from the same product. ${euro(AMOUNT.video, 'en')} per product.`],
-        ['custom', 'Something else', 'Tell us what you need. Quoted after we have seen the products.'],
-      ],
-      dropLink: 'What a drop includes',
       // Brief §1 wants /start wired to the pillar pages, and this is the one
       // moment on the form where a visitor is genuinely choosing between them
-      // — so the three names in the radio list above become the three links,
-      // in a sentence that answers the question the list raises rather than a
-      // row of "learn more" chips under it.
-      singleLink: `A <a href="${lp('/catalog')}">catalog set</a> is the clean product page, a <a href="${lp('/lifestyle')}">lifestyle carousel</a> is the same product in a scene, and a <a href="${lp('/video')}">video clip</a> is eight seconds of it moving.`,
-      // The Brand Model is the one thing that attaches to a drop and changes
-      // every drop after it, so it belongs at the moment the drop is picked.
-      dropModel: `Either one can run on <a href="${lp('/custom-models')}">a Brand Model</a> — one face, made only for you, so every drop after this one is recognisably yours.`,
+      // — so the names in the radio list above become the links, in a sentence
+      // that answers the question the list raises rather than a row of "learn
+      // more" chips under it.
+      kindLink: `A <a href="${lp('/catalog')}">catalog set</a> is the clean product page and a <a href="${lp('/lifestyle')}">lifestyle carousel</a> is the same product in a scene. <a href="${lp('/pricing')}">The whole ladder is on the pricing page</a>.`,
+      // The Brand Model attaches to an order and changes every order after it,
+      // so it belongs at the moment the work is picked.
+      brandModel: `Any order can run on <a href="${lp('/custom-models')}">a Brand Model</a> — one face, made only for you, so every order after this one is recognisably yours.`,
+      videoNote: `Video clips are ${euro(AMOUNT.video, 'en')} each, ${vatLabel('excl', 'en')}. Say how many in the brief and they go on the same invoice.`,
       countLabel: 'How many products?',
-      countPilot: `A Drop Pilot is ${PILOT_PRODUCTS} products. That number is the package, not a minimum.`,
-      countHint: 'Rough is fine — we confirm the count before anything is invoiced.',
-      more: 'More than 10',
+      countHint: `Every count has a rate and the rate only ever falls. More than ${ATTENDED_PER_WINDOW} is more than one reserved window holds — take the last option and we plan it with you.`,
+      more: `More than ${ATTENDED_PER_WINDOW}`,
       totalLabel: 'Running total',
-      // Task #271f — Single Product/Full outfit. Shown for catalog, lifestyle
-      // and video (single) and for both drop packages; hidden for "custom",
-      // which is a quote and already covers whatever the shot needs.
+      // Three rows, never one number. BRIEF-14's hardest rule is that no price
+      // is printed without saying which side of VAT it is on, and the labels
+      // come from vatLabel() so "excl. VAT" has one home sitewide.
+      netLabel: `Order value (${vatLabel('excl', 'en')})`,
+      vatRowLabel: vatLabel('rate', 'en'),
+      grossLabel: `Total (${vatLabel('incl', 'en')})`,
+      firstOrder: `First order for a brand: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% comes off the order value. It is applied on the invoice, so it is not in the figures above.`,
+      // Said out loud rather than only in a code comment. The client-side sum
+      // is a display; the invoice is derived server-side from the same ladder,
+      // and nothing the browser posts decides what anything costs.
+      displayNote: 'These figures are worked out in your browser as a preview. The invoice is calculated again on our side, from the same ladder.',
+      levelsH: 'What this count earns',
+      levelAttended: ['Reserved window', `From ${WINDOW_THRESHOLD} products`],
+      levelUnattended: ['Standard queue', `Up to ${WINDOW_THRESHOLD - 1} products`],
+      // Task #271f — Single Product/Full outfit.
       outfitLabel: 'Any of these a full outfit?',
       outfitHint: `Several products styled together on one shot — trousers and a t-shirt on the same model, for example — instead of one product on its own. Adds ${euro(OUTFIT_SURCHARGE, 'en')} per product styled this way, up to ${MAX_OUTFIT_PRODUCTS}. ${OUTFIT_COPY.en}`,
       outfitNone: 'None — single product',
@@ -433,13 +465,13 @@ const FORM = {
       // calendar go — and frames Tier 0 as a different service model rather
       // than a shorter version of the other one.
       queueH: 'This order does not need a reserved window',
-      queueBody: 'Individual products are produced in the order they arrive. That is what keeps the per-product price what it is, and it is why nothing here names a day.',
+      queueBody: 'Orders under the threshold are produced in the order they arrive. That is what keeps the rate what it is, and it is why nothing here names a day.',
       okH: 'These windows can be held for you',
       okBody: 'Pick one. Nothing is reserved by looking at it — the window is held when this order arrives, and confirmed back to you before anything is invoiced.',
       okMax: 'One window covers up to',
       okMaxTail: 'products.',
       fullH: 'Nothing free inside the planning horizon',
-      fullBody: 'The calendar has no window left that could hold this. Send the order anyway and you get the first window that opens, in writing, before anything is invoiced — or take the standard queue instead by going back and ordering the products individually.',
+      fullBody: 'The calendar has no window left that could hold this. Send the order anyway and you get the first window that opens, in writing, before anything is invoiced. Nothing is charged until that window is confirmed.',
       tooLargeH: 'Larger than one window holds',
       tooLargeBody: 'A single window covers up to',
       tooLargeTail: 'products. More than that is two windows and a conversation, not a form. Send this and we will plan it with you.',
@@ -458,10 +490,10 @@ const FORM = {
       afterH: 'What happens after you press send',
       after: [
         'You get a confirmation with a reference, immediately.',
-        'A drop is invoiced once the window is confirmed and before production starts. Individual products are invoiced on delivery.',
-        'A drop lands in a portal you approve image by image. Individual products arrive as a download link.',
+        'An order with a reserved window is invoiced once that window is confirmed and before production starts. A queue order is invoiced on delivery.',
+        'An order with a reserved window lands in a portal you approve image by image. A queue order arrives as a download link.',
       ],
-      payNote: 'There is no card form here on purpose. You are confirming an order, not paying for one — the invoice follows, and for a drop it follows the confirmed window.',
+      payNote: 'There is no card form here on purpose. You are confirming an order, not paying for one — the invoice follows, and where a window is reserved it follows that confirmed window.',
       submit: 'Send this order',
       // The order exists; its window did not survive the insert. A different
       // sentence from s4.lostH, which is the case where nothing was created.
@@ -469,41 +501,45 @@ const FORM = {
       lostBody: 'It arrived a moment after that window filled. Nothing is lost and nothing is invoiced: the order is recorded under its reference, and we come back with the first window that fits, in writing.',
       lostGo: 'Go to the confirmation',
     },
-    noscript: 'JavaScript is off, so this page shows all five steps at once. Two things it cannot do that way: take your files, and check the calendar. Send the form and we will ask for the material by email and confirm a window in writing — nothing is invoiced before that.',
+    noscript: 'JavaScript is off, so this page shows all five steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for the material by email, confirm a window in writing, and invoice the ladder rate for the count you pick — nothing is invoiced before that.',
   },
   nl: {
     railLabel: 'Stappen',
-    rail: ['Omvang', 'Materiaal', 'Briefing', 'Timing', 'Bevestigen'],
+    rail: ['Bestelling', 'Materiaal', 'Briefing', 'Timing', 'Bevestigen'],
     next: 'Verder',
     back: 'Terug',
     optional: 'optioneel',
     s1: {
       h: 'Wat gaan we maken?',
-      lead: 'Kies een ingang. Alles daarna is hetzelfde — dezelfde pipeline, dezelfde controle, dezelfde bestanden.',
-      legend: 'Omvang',
-      dropH: 'Welke drop?',
-      singleH: 'Wat voor werk?',
-      dropOptions: [
-        ['pilot', 'Drop Pilot', `${PILOT_PRODUCTS} producten, ${euro(AMOUNT.dropPilot, 'nl')}. Eenmalig per merk — zo begint een eerste drop.`],
-        ['full', 'Full Drop', `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten, ${euro(AMOUNT.fullDrop, 'nl')}. Eén gereserveerd venster voor de hele collectie.`],
+      lead: 'Twee antwoorden: wat elk product krijgt, en om hoeveel producten het gaat. Het tarief volgt uit het tweede, en of er een venster in de agenda voor je wordt vrijgehouden ook.',
+      legend: 'Wat we maken',
+      kindH: 'Wat krijgt elk product?',
+      // Zie de Engelse tak hierboven voor waarom de waarde `drop` heet en de
+      // staffelsoort ernaast in data-pl-kind meereist.
+      kindOptions: [
+        ['drop', 'complete', 'Catalogset en lifestyle-carousel',
+          `Zeven afgewerkte beelden per product — de vier catalogshots en de carousel van drie. ${euro(ladderRate('complete', 1), 'nl')} per product, tot ${euro(ladderFloor('complete'), 'nl')} naarmate het aantal stijgt.`],
+        ['catalog', 'catalog', 'Alleen de catalogset',
+          `Vier beelden per product: voorkant, achterkant, een stof- of logodetail, en één on-model shot. ${euro(ladderRate('catalog', 1), 'nl')} per product, tot ${euro(ladderFloor('catalog'), 'nl')}.`],
+        ['lifestyle', 'lifestyle', 'Alleen de lifestyle-carousel',
+          `Drie beelden per product in één gestylede look, klaar om te posten. ${euro(ladderRate('lifestyle', 1), 'nl')} per product, tot ${euro(ladderFloor('lifestyle'), 'nl')}.`],
       ],
-      singleOptions: [
-        ['catalog', 'Catalog', `Strakke productbeelden op een egale ondergrond. ${euro(AMOUNT.catalog, 'nl')} per product.`],
-        ['lifestyle', 'Lifestyle', `Het product gedragen of in een scène. ${euro(AMOUNT.lifestyle, 'nl')} per product.`],
-        ['video', 'Video', `Een korte clip opgebouwd uit hetzelfde product. ${euro(AMOUNT.video, 'nl')} per product.`],
-        ['custom', 'Iets anders', 'Vertel wat je nodig hebt. Prijs volgt nadat we de producten hebben gezien.'],
-      ],
-      dropLink: 'Wat een drop bevat',
-      singleLink: `Een <a href="${lp('/catalog')}">catalogset</a> is de strakke productpagina, een <a href="${lp('/lifestyle')}">lifestyle-carousel</a> is hetzelfde product in een scène, en een <a href="${lp('/video')}">videoclip</a> is acht seconden waarin het beweegt.`,
-      dropModel: `Allebei kunnen ze draaien op <a href="${lp('/custom-models')}">een merkmodel</a> — één gezicht, alleen voor jou gemaakt, zodat elke drop hierna herkenbaar van jou is.`,
+      kindLink: `Een <a href="${lp('/catalog')}">catalogset</a> is de strakke productpagina en een <a href="${lp('/lifestyle')}">lifestyle-carousel</a> is hetzelfde product in een scène. <a href="${lp('/pricing')}">De hele staffel staat op de prijspagina</a>.`,
+      brandModel: `Elke bestelling kan draaien op <a href="${lp('/custom-models')}">een merkmodel</a> — één gezicht, alleen voor jou gemaakt, zodat elke bestelling hierna herkenbaar van jou is.`,
+      videoNote: `Videoclips kosten ${euro(AMOUNT.video, 'nl')} per stuk, ${vatLabel('excl', 'nl')}. Noem in de briefing hoeveel je er wilt, dan gaan ze op dezelfde factuur.`,
       countLabel: 'Hoeveel producten?',
-      countPilot: `Een Drop Pilot is ${PILOT_PRODUCTS} producten. Dat aantal is het pakket, geen minimum.`,
-      countHint: 'Een schatting volstaat — we bevestigen het aantal voordat er iets gefactureerd wordt.',
-      more: 'Meer dan 10',
+      countHint: `Elk aantal heeft een tarief en dat tarief daalt alleen maar. Meer dan ${ATTENDED_PER_WINDOW} is meer dan één gereserveerd venster aankan — kies de laatste optie, dan plannen we het samen.`,
+      more: `Meer dan ${ATTENDED_PER_WINDOW}`,
       totalLabel: 'Lopend totaal',
-      // Taak #271f — Single Product/Full outfit. Getoond bij catalog, lifestyle
-      // en video (losse producten) en bij beide dropverpakkingen; verborgen bij
-      // "iets anders", dat een offerte is en al dekt wat het shot nodig heeft.
+      netLabel: `Orderbedrag (${vatLabel('excl', 'nl')})`,
+      vatRowLabel: vatLabel('rate', 'nl'),
+      grossLabel: `Totaal (${vatLabel('incl', 'nl')})`,
+      firstOrder: `Eerste bestelling van een merk: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% gaat er van het orderbedrag af. Dat wordt op de factuur verrekend en zit dus niet in de bedragen hierboven.`,
+      displayNote: 'Deze bedragen worden in je browser uitgerekend als voorbeeld. De factuur wordt aan onze kant opnieuw berekend, uit dezelfde staffel.',
+      levelsH: 'Wat dit aantal oplevert',
+      levelAttended: ['Gereserveerd venster', `Vanaf ${WINDOW_THRESHOLD} producten`],
+      levelUnattended: ['Standaard wachtrij', `Tot en met ${WINDOW_THRESHOLD - 1} producten`],
+      // Taak #271f — Single Product/Full outfit.
       outfitLabel: 'Zitten hier full outfits bij?',
       outfitHint: `Meerdere producten samen gestyled op één shot — bijvoorbeeld een broek en een t-shirt op hetzelfde model — in plaats van één los product. ${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}. ${OUTFIT_COPY.nl}`,
       outfitNone: 'Geen — los product',
@@ -538,13 +574,13 @@ const FORM = {
       lead: 'Dit is de stap waar een eenmansstudio echt vol kan zitten, dus hij wordt tegen de echte agenda gecheckt in plaats van beloofd.',
       checking: 'Agenda checken…',
       queueH: 'Deze bestelling heeft geen gereserveerd venster nodig',
-      queueBody: 'Losse producten worden gemaakt in de volgorde waarin ze binnenkomen. Dat is wat de prijs per product mogelijk maakt, en daarom staat hier geen dag genoemd.',
+      queueBody: 'Bestellingen onder de grens worden gemaakt in de volgorde waarin ze binnenkomen. Dat is wat het tarief mogelijk maakt, en daarom staat hier geen dag genoemd.',
       okH: 'Deze vensters kunnen voor je worden vastgehouden',
       okBody: 'Kies er één. Er wordt niets gereserveerd door ernaar te kijken — het venster wordt vastgehouden zodra deze bestelling binnenkomt, en bevestigd voordat er iets gefactureerd wordt.',
       okMax: 'Eén venster telt maximaal',
       okMaxTail: 'producten.',
       fullH: 'Niets vrij binnen de planningshorizon',
-      fullBody: 'De agenda heeft geen venster meer dat dit kan vasthouden. Stuur de bestelling toch: je krijgt het eerste venster dat vrijkomt, op schrift, voordat er iets gefactureerd wordt — of neem de standaard wachtrij door terug te gaan en de producten los te bestellen.',
+      fullBody: 'De agenda heeft geen venster meer dat dit kan vasthouden. Stuur de bestelling toch: je krijgt het eerste venster dat vrijkomt, op schrift, voordat er iets gefactureerd wordt. Er wordt niets in rekening gebracht voordat dat venster bevestigd is.',
       tooLargeH: 'Groter dan één venster aankan',
       tooLargeBody: 'Eén venster telt maximaal',
       tooLargeTail: 'producten. Meer dan dat zijn twee vensters en een gesprek, geen formulier. Stuur dit en we plannen het samen.',
@@ -563,16 +599,16 @@ const FORM = {
       afterH: 'Wat er gebeurt nadat je op versturen drukt',
       after: [
         'Je krijgt direct een bevestiging met een referentie.',
-        'Een drop wordt gefactureerd zodra het venster bevestigd is en voordat de productie start. Losse producten worden bij levering gefactureerd.',
-        'Een drop komt in een portaal waar je beeld voor beeld goedkeurt. Losse producten komen als downloadlink.',
+        'Een bestelling met een gereserveerd venster wordt gefactureerd zodra dat venster bevestigd is en voordat de productie start. Een wachtrijbestelling wordt bij levering gefactureerd.',
+        'Een bestelling met een gereserveerd venster komt in een portaal waar je beeld voor beeld goedkeurt. Een wachtrijbestelling komt als downloadlink.',
       ],
-      payNote: 'Hier staat met opzet geen betaalformulier. Je bevestigt een bestelling, je betaalt er nog niet voor — de factuur volgt, en bij een drop volgt die op het bevestigde venster.',
+      payNote: 'Hier staat met opzet geen betaalformulier. Je bevestigt een bestelling, je betaalt er nog niet voor — de factuur volgt, en als er een venster gereserveerd is volgt die op dat bevestigde venster.',
       submit: 'Verstuur deze bestelling',
       lostH: 'Je bestelling staat er — het venster niet',
       lostBody: 'Hij kwam net binnen nadat dat venster volliep. Er gaat niets verloren en er wordt niets gefactureerd: de bestelling staat onder haar referentie geregistreerd en we komen op schrift terug met het eerste venster dat past.',
       lostGo: 'Naar de bevestiging',
     },
-    noscript: 'JavaScript staat uit, dus deze pagina toont alle vijf stappen tegelijk. Twee dingen kunnen zo niet: je bestanden aannemen en de agenda checken. Verstuur het formulier, dan vragen we het materiaal per e-mail op en bevestigen we een venster op schrift — daarvoor wordt er niets gefactureerd.',
+    noscript: 'JavaScript staat uit, dus deze pagina toont alle vijf stappen tegelijk. Drie dingen kunnen zo niet: je bestanden aannemen, de agenda checken en het totaal meerekenen. Verstuur het formulier, dan vragen we het materiaal per e-mail op, bevestigen we een venster op schrift en factureren we het staffeltarief bij het aantal dat je kiest — daarvoor wordt er niets gefactureerd.',
   },
 };
 
@@ -582,12 +618,19 @@ const f = FORM[lang];
 // text back, so this label is what a client sees on the confirm screen too.
 const countLabel = (n: number) => `${n} ${n === 1 ? 'product' : lang === 'nl' ? 'producten' : 'products'}`;
 
-// ── The two doors ──────────────────────────────────────────────────────────
+// ── The two service levels ─────────────────────────────────────────────────
+// NOT a question any more. Under the package model these were two radio
+// buttons and the buyer picked one; under the ladder the level FOLLOWS the
+// count (tierFor(), WINDOW_THRESHOLD), so this block is a statement of what
+// the current count earns rather than a control. pipeline.js puts .is-current
+// on one of the two columns and updates it as the count changes.
+//
 // Content differs; visual weight does not. Section 13: "Do not use words like
 // 'basic,' 'lite,' or 'starter' for Tier 0, and never style it as a lesser
-// card. It is a different SERVICE MODEL, not a worse product." The headings
-// are section 13's own framing — "run a whole drop" against "order individual
-// products" — read straight out of TIERS.
+// card. It is a different SERVICE MODEL, not a worse product." Equal columns
+// are what holds that up now that the reader is not choosing between them —
+// a narrower or lighter queue column would read as a penalty for ordering
+// nine products instead of ten.
 //
 // The row set is TIER_ROWS, the same five facts in the same order that
 // /pricing's Tier 0 block and the TierCompare section on /catalog, /lifestyle
@@ -596,28 +639,23 @@ const countLabel = (n: number) => `${n} ${n === 1 ? 'product' : lang === 'nl' ? 
 // levering'] — the first label still in English on a live Dutch page. That
 // exact list had been copied to /pricing, which is how one typo became two.
 //
-// Review is the row that was missing, and it is the one row that reads the
-// SAME on both doors. That is not padding: this is the screen where a visitor
-// decides, and "human-checked, every visual" appearing identically on both
-// sides is what says the cheaper route is not the unchecked one. Section 13:
-// "Keep that promise across BOTH tiers for now."
+// Review is the row that reads the SAME in both columns. That is not padding:
+// "human-checked, every visual" appearing identically on both sides is what
+// says the cheaper count is not the unchecked one. Section 13: "Keep that
+// promise across BOTH tiers for now."
 const rowLabels = tierRowLabels(lang);
-const doors = [
+const levels = [
   {
-    value: 'drop',
-    heading: attended.label[lang],
-    frame: c.attendedFrame,
-    values: TIER_ROWS.map((r) => tierRow('attended', r.key, lang)),
-    price: euro(AMOUNT.dropPilot, lang),
-    note: c.attendedNote,
+    tier: 'unattended',
+    heading: f.s1.levelUnattended[0],
+    band: f.s1.levelUnattended[1],
+    values: TIER_ROWS.map((r) => tierRow('unattended', r.key, lang)),
   },
   {
-    value: 'single',
-    heading: unattended.label[lang],
-    frame: c.unattendedFrame,
-    values: TIER_ROWS.map((r) => tierRow('unattended', r.key, lang)),
-    price: euro(AMOUNT.catalog, lang),
-    note: c.unattendedNote,
+    tier: 'attended',
+    heading: f.s1.levelAttended[0],
+    band: f.s1.levelAttended[1],
+    values: TIER_ROWS.map((r) => tierRow('attended', r.key, lang)),
   },
 ];
 
@@ -625,27 +663,30 @@ const doors = [
 // Every number the script needs, from the module that owns it. The caps come
 // from src/lib/uploads.js and pipeline.js's preflight() checks a file against
 // all three of them before it opens the XHR, so the browser refuses exactly
-// what /api/upload refuses — the sentence below used to claim that and only
-// the error messages were reading them. The prices come from pricing.js so the
-// running total and the invoice cannot disagree. Nothing here is typed twice.
+// what /api/upload refuses. The LADDER comes from pricing.js, whole, so the
+// running total and the invoice cannot disagree — and so that no euro figure
+// is written down in a file that runs in a browser. Nothing here is typed
+// twice, and nothing here is authoritative: the server re-derives every price.
 const config = {
   lang,
-  pilotProducts: PILOT_PRODUCTS,
-  fullMin: FULL_DROP_MIN,
-  fullMax: FULL_DROP_MAX,
+  // The rungs themselves, not a flattened per-kind rate: the whole point of
+  // the ladder is that the rate is a function of the count, and a script that
+  // was handed one number could only ever price one rung.
+  ladder: LADDER,
+  vatRate: VAT_RATE,
+  // From this count up an order is put in the capacity calendar. tierFor()'s
+  // threshold, so the page and pricing.js cannot disagree about where the line
+  // is — the script re-implements the comparison, never the number.
+  windowThreshold: WINDOW_THRESHOLD,
+  // What one reserved window holds, and therefore the largest count this form
+  // is willing to price. Above it the gate's own 'too-large' answer applies.
+  maxProducts: ATTENDED_PER_WINDOW,
   maxFileBytes: MAX_FILE_BYTES,
   maxBatchFiles: MAX_BATCH_FILES,
   // The extension table's own keys — the list /api/upload matches on, not a
   // second list of image formats written out by hand. accept="image/*" on the
   // input is a hint to the file picker; this is the rule.
   uploadExt: Object.keys(UPLOAD_TYPES),
-  prices: {
-    catalog: AMOUNT.catalog,
-    lifestyle: AMOUNT.lifestyle,
-    video: AMOUNT.video,
-    pilot: AMOUNT.dropPilot,
-    full: AMOUNT.fullDrop,
-  },
   // Task #271f.
   outfitSurcharge: OUTFIT_SURCHARGE,
   maxOutfit: MAX_OUTFIT_PRODUCTS,
@@ -656,18 +697,20 @@ const config = {
 // this blob safe to write with set:html.
 const configJson = JSON.stringify(config).replace(/</g, '\\u003c');
 
-// The count select's option list is the union of both doors' ranges, because
-// there is one select and the script hides what the current scope disallows.
-// Ascending, with the catch-all last: "More than 10" must not be parseable as
-// an integer or /api/order's countOf() would silently record the wrong number.
-const singleCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const fullCounts = Array.from({ length: FULL_DROP_MAX - FULL_DROP_MIN + 1 }, (_, i) => FULL_DROP_MIN + i);
+// The count select. One option per count, all the way up, because under the
+// ladder the count IS the price — a select that offered 25 and 30 but not 27
+// would quote a brand with 27 products for something they did not order.
+//
+// It stops at what a single reserved window holds (capacity.js), and the
+// catch-all past it is deliberately NOT parseable as an integer: countOf() in
+// /api/order would read "30+" as thirty and record a number nobody chose. That
+// last option is the conversation, and the gate has a panel for it.
+const counts = Array.from({ length: ATTENDED_PER_WINDOW }, (_, i) => i + 1);
 
 // Task #271f — 0 (the default, "single product") through MAX_OUTFIT_PRODUCTS.
-// syncOutfit() in pipeline.js narrows this the same way syncCount() narrows
-// the products select above: it hides options past whatever the current
-// products count allows, so the form can never submit an outfit count larger
-// than the order itself.
+// syncOutfit() in pipeline.js hides options past whatever the current products
+// count allows, so the form can never submit an outfit count larger than the
+// order itself.
 const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i);
 ---
 
@@ -690,12 +733,16 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   >
     <script type="application/json" data-pipeline-config is:inline set:html={configJson}></script>
 
-    {/* Written by the script, read by /api/order. `service` starts on the
-        safe value: without JS a drop arrives labelled catalog rather than a
-        drop that was never capacity-checked. `tier` starts unattended for the
-        same reason — the tier that promises less is the one it is safe to
-        default to. */}
-    <input type="hidden" name="service" value="catalog" />
+    {/* `service` IS the step 1 radio group now — see f.s1.kindOptions and the
+        note there. It is deliberately not a hidden input any more: as one it
+        sat on a safe default that no-JS orders never left, so an order for a
+        whole collection arrived labelled `catalog`. A field the visitor
+        actually answers cannot be stale.
+
+        `tier` stays hidden and stays written by the script, because it is
+        derived (tierFor(count)) rather than answered. Its default is the tier
+        that reserves nothing: a no-JS order arrives in the queue and the
+        window is agreed by email, which is what the <noscript> promises. */}
     <input type="hidden" name="tier" value="unattended" />
     <input type="hidden" name="redirect" value={lp('/thank-you')} />
     <input type="hidden" name="lang" value={lang} />
@@ -724,113 +771,74 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         it and sets all five on init; writing aria-hidden="true" here would hide
         four fifths of the form from a screen reader on the no-JS path, where
         all five steps are the page. */}
-    <!-- STEP 1 · SCOPE -->
+    <!-- STEP 1 · THE ORDER -->
     <section class="pl-step" data-pl-step="1">
       <h2 class="pl-h" data-pl-head>{f.s1.h}</h2>
       <p class="pl-lead">{f.s1.lead}</p>
 
+      {/* ONE question, three answers. It used to be two questions — a scope
+          door, then a package or a product kind inside it — and the second one
+          only existed because the price list had two shapes. The ladder has
+          one shape, so this has one question, and the answer is the ladder's
+          own kind.
+
+          Nothing here is hidden and nothing is toggled: with JavaScript off
+          this is a plain radio group with a default already checked, so the
+          form posts a coherent order. The sub-panels that used to be visible
+          for exactly that reason are gone with the door they belonged to. */}
       <fieldset class="pl-fieldset">
         <legend class="pl-sr">{f.s1.legend}</legend>
-        <div class="doors">
-          {/* Each door below is a div, not a label. The content model of a
-              label element is phrasing content, and this card holds a heading,
-              a paragraph, a description list and a div — wrapping it in a label
-              is invalid, and worse, it makes the radio's accessible name the
-              entire card, which a screen reader then reads out in full before
-              saying "radio button". The label is on the heading alone;
-              .door-label::after stretches the hit area back over the card so a
-              click anywhere still picks the door.
+        <h3 class="pl-sub-h">{f.s1.kindH}</h3>
+        <div class="opt-stack">
+          {/* data-pl-req is not decoration: syncRequired() rewrites .required
+              on every field from this attribute alone, so a control that
+              carries `required` without it goes optional the moment the script
+              initialises. One radio marked required makes the whole group
+              required natively, which is why only the first has it.
 
-              This note sat inside the .map() body until HomePage.astro proved
-              what that costs: a brace-wrapped block comment is a comment only
-              as a CHILD OF MARKUP, and an arrow function's parenthesised body
-              is JavaScript, so the braces reach esbuild verbatim and the build
-              dies on "Expected ) but found $render". Here it is a child of
-              .doors, which is markup. */}
-          {doors.map((d, i) => (
-            <div class="door">
-              {/* data-pl-req is not decoration: syncRequired() rewrites .required
-                  on every field from this attribute alone, so a control that
-                  carries `required` without it goes optional the moment the
-                  script initialises. One radio marked required makes the whole
-                  group required natively, which is why only the first has it. */}
-              <input type="radio" id={`pl-scope-${d.value}`} name="scope" value={d.value} required={i === 0} data-pl-req={i === 0 ? '1' : undefined} class="pl-radio" />
-              <h3 class="door-h"><label class="door-label" for={`pl-scope-${d.value}`}>{d.heading}</label></h3>
-              <p class="door-frame">{d.frame}</p>
-              <dl class="door-facts">
-                {rowLabels.map((k, j) => (
-                  <div class="door-row">
-                    <dt>{k}</dt>
-                    <dd>{d.values[j]}</dd>
-                  </div>
-                ))}
-              </dl>
-              <div class="door-price">
-                <span class="dp-lead">{c.priceLead}</span>
-                <span class="dp-amount">{d.price}</span>
-                <p class="dp-note">{d.note}</p>
-              </div>
-            </div>
+              data-pl-kind is the ladder kind; the value is what the server
+              stores. pipeline.js prices from the former and never parses the
+              latter — see kindOf() there. */}
+          {f.s1.kindOptions.map(([v, kind, title, desc], i) => (
+            <label class="opt">
+              <input
+                type="radio"
+                name="service"
+                value={v}
+                data-pl-kind={kind}
+                checked={i === 0}
+                required={i === 0}
+                data-pl-req={i === 0 ? '1' : undefined}
+              />
+              <span class="opt-main">
+                <span class="opt-title">{title}</span>
+                <span class="opt-desc">{desc}</span>
+              </span>
+            </label>
           ))}
         </div>
+        <p class="pl-panel-note" set:html={f.s1.kindLink} />
+        <p class="pl-panel-note" set:html={f.s1.brandModel} />
+        <p class="pl-panel-note">{f.s1.videoNote}</p>
       </fieldset>
 
-      {/* The two sub-panels. Neither is hidden in the markup: without JS both
-          are visible and both are answerable, which is the only way a no-JS
-          order arrives with its real scope attached. syncScope() closes the
-          wrong one on init. */}
-      <div class="pl-panel" data-pl-panel="drop">
-        <h3 class="pl-sub-h">{f.s1.dropH}</h3>
-        {f.s1.dropOptions.map(([v, title, desc], i) => (
-          <label class="opt">
-            <input type="radio" name="drop_scope" value={v} checked={i === 0} />
-            <span class="opt-main">
-              <span class="opt-title">{title}</span>
-              <span class="opt-desc">{desc}</span>
-            </span>
-          </label>
-        ))}
-        <p class="pl-panel-link"><a href={lp('/pricing')}>{f.s1.dropLink} →</a></p>
-        <p class="pl-panel-note" set:html={f.s1.dropModel} />
-      </div>
-
-      <div class="pl-panel" data-pl-panel="single">
-        <h3 class="pl-sub-h">{f.s1.singleH}</h3>
-        {f.s1.singleOptions.map(([v, title, desc], i) => (
-          <label class="opt">
-            <input type="radio" name="product_type" value={v} checked={i === 0} />
-            <span class="opt-main">
-              <span class="opt-title">{title}</span>
-              <span class="opt-desc">{desc}</span>
-            </span>
-          </label>
-        ))}
-        <p class="pl-panel-note" set:html={f.s1.singleLink} />
-      </div>
-
-      {/* One select, one name, both doors — see syncCount()'s comment. The
-          option list is the union of the ranges and the script narrows it. */}
-      <p class="pl-count-fixed" data-pl-count="pilot">{f.s1.countPilot}</p>
-
-      <div class="field" data-pl-count="free">
+      {/* One select, one name. Every option is a real count and the last one
+          deliberately is not — see the `counts` note in the frontmatter. */}
+      <div class="field">
         <label for="pl-products">{f.s1.countLabel} <span class="req">*</span></label>
         <select id="pl-products" class="select" name="products" required data-pl-req="1">
-          {singleCounts.map((n) => <option value={String(n)}>{countLabel(n)}</option>)}
-          {fullCounts.map((n) => <option value={String(n)}>{countLabel(n)}</option>)}
-          {/* Not integer-parseable, deliberately: countOf() in /api/order would
-              read "10+" as ten and record a number nobody chose. */}
-          <option value="More than 10">{f.s1.more}</option>
+          {counts.map((n) => <option value={String(n)}>{countLabel(n)}</option>)}
+          <option value={f.s1.more}>{f.s1.more}</option>
         </select>
         <span class="hint">{f.s1.countHint}</span>
       </div>
 
-      {/* Task #271f — Single Product/Full outfit. One select, shared by both
-          doors and every single-panel kind that has a rate to surcharge
-          (not "custom", which is a quote). syncOutfit() in pipeline.js shows
-          or hides this and narrows the option list to what the current scope
-          and product count allow. Not [data-pl-req]: 0 ("single product") is
-          always a valid answer, so this field is never required. */}
-      <div class="field" data-pl-outfit hidden>
+      {/* Task #271f — Single Product/Full outfit. One select, every kind on the
+          ladder has a rate to surcharge. syncOutfit() in pipeline.js narrows
+          the option list to what the current product count allows. Not
+          [data-pl-req]: 0 ("single product") is always a valid answer, so this
+          field is never required. */}
+      <div class="field" data-pl-outfit>
         <label for="pl-outfit">{f.s1.outfitLabel}</label>
         <select id="pl-outfit" class="select" name="outfit_count">
           <option value="0">{f.s1.outfitNone}</option>
@@ -839,10 +847,63 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <span class="hint">{f.s1.outfitHint}</span>
       </div>
 
+      {/* THREE LINES, NEVER ONE. A bare total cannot say which side of VAT it
+          is on, and BRIEF-14's hardest rule is that no price is printed without
+          saying so. [data-pl-total] stays on the gross figure because that is
+          the number a client reads as "the total" — the net and the VAT line
+          are what make it readable.
+
+          None of it is authoritative. It is a preview computed in the browser
+          from the ladder in the config blob; the invoice is derived again
+          server-side, and nothing this form posts carries an amount at all. */}
       <div class="pl-total">
         <span class="pl-total-label">{f.s1.totalLabel}</span>
-        <span class="pl-total-amount" data-pl-total></span>
-        <span class="pl-total-note" data-pl-total-note></span>
+        <dl class="pl-total-lines">
+          <div class="pl-total-row">
+            <dt>{f.s1.netLabel}</dt>
+            <dd data-pl-total-net></dd>
+          </div>
+          <div class="pl-total-row">
+            <dt>{f.s1.vatRowLabel}</dt>
+            <dd data-pl-total-vat></dd>
+          </div>
+          <div class="pl-total-row is-gross">
+            <dt>{f.s1.grossLabel}</dt>
+            <dd data-pl-total></dd>
+          </div>
+        </dl>
+        <p class="pl-total-note" data-pl-total-note></p>
+        {/* The ladder's own upsell, written by syncTotal() from two computed
+            totals. Hidden until there is a rung within reach. */}
+        <p class="pl-total-rung" data-pl-rung hidden></p>
+        <p class="pl-total-first">{f.s1.firstOrder}</p>
+        <p class="pl-total-display">{f.s1.displayNote}</p>
+      </div>
+
+      {/* What the count earns. Not a control — see the `levels` note in the
+          frontmatter. pipeline.js marks one column and writes the line under
+          it; without JS both columns stand as a plain statement of the two
+          service models, which is what section 13 asks the page to make
+          visible either way. */}
+      <div class="pl-levels">
+        <h3 class="pl-sub-h">{f.s1.levelsH}</h3>
+        <div class="levels">
+          {levels.map((d) => (
+            <div class="level" data-pl-level={d.tier}>
+              <h4 class="level-h">{d.heading}</h4>
+              <p class="level-band">{d.band}</p>
+              <dl class="level-facts">
+                {rowLabels.map((k, j) => (
+                  <div class="level-row">
+                    <dt>{k}</dt>
+                    <dd>{d.values[j]}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </div>
+        <p class="pl-level-note" data-pl-level-note></p>
       </div>
 
       <div class="pl-nav">
@@ -1160,13 +1221,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      used to sit here said they would move "when those pages retire in the
      redirect pass"; they have.
 
-     What stays is the one thing that is genuinely about this page: the options
-     here are direct children of .pl-panel rather than an .opt-stack, so the
-     interval between them is a margin, not a gap. Written as .pl-panel > .opt
-     (0-2-0) and not .opt (0-1-0) so it outranks the global rule on specificity
-     — a same-weight override would depend on which stylesheet the build emits
-     first, which is not something this file can see. */
-  .pl-panel > .opt { margin-bottom: .6rem; }
+     The three kind options are a plain .opt-stack now, which is the global
+     rule and needs nothing here. The override that used to live at this spot
+     (.pl-panel > .opt) belonged to the sub-panels the scope door opened, and
+     went with them. */
 
   /* ── Step frame ───────────────────────────────────────────────────────────
      global.css puts clamp(4.5rem, 9vw, 9rem) of padding on every <section>,
@@ -1279,141 +1337,135 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-rail-n { font-family: var(--font-display); font-weight: 800; font-size: .8rem; }
   .pl-rail-t { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
 
-  /* ── Step 1 · the two doors ───────────────────────────────────────────────
-     One rule between them: no floating cards, no shadow, no elevation
-     difference. Equal column widths are load-bearing. Section 13 forbids
-     styling Tier 0 as the lesser option, and a narrower, lighter or
-     shorter column would say exactly that without using any of the words
-     it bans. */
-  .doors {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--line-strong);
-  }
-  .door {
-    display: flex;
-    flex-direction: column;
-    padding: clamp(1.6rem, 3vw, 2.6rem);
-    position: relative;
-    transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
-  }
-  .door + .door { border-left: 1px solid var(--line-strong); }
-  /* Identical on both columns. The selected state is the only difference the
-     two doors are ever allowed to have. */
-  .door:has(input:checked) { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
-  .door:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--focus-ring); }
+  /* ── Step 1 · the kind options and the two service levels ─────────────────
+     The options are the global .opt-stack; only the prose under them is here.
 
-  /* The radio is visually gone but still focusable and still in the a11y tree;
-     display:none would take it out of both and break the group. */
-  .pl-radio {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1px; height: 1px;
-    margin: 0;
-    border: 0;
-    opacity: 0;
-    pointer-events: none;
-  }
-  /* The label names the heading and nothing else — that is the accessible name
-     of the radio. ::after then puts the hit area back over the whole card, so
-     the pointer target is the door while the announced name stays one line. */
-  .door-label { cursor: pointer; }
-  .door-label::after { content: ''; position: absolute; inset: 0; cursor: pointer; }
-
-  .door-h { font-size: var(--t-h3); line-height: 1.25; text-wrap: balance; }
-  /* min-height holds both columns' first rule on the same line */
-  .door-frame { margin-top: .7rem; color: var(--ink-3); font-size: .95rem; max-width: 34ch; min-height: 3.4em; }
-  .door-facts { margin-top: 1.6rem; border-top: 1px solid var(--line); }
-  /* min-height for the same reason .door-frame has one, and it is the same
-     class of problem: the two fact lists sit either side of a vertical rule and
-     the reader compares them ROW BY ROW — turnaround against turnaround, queue
-     against queue. One value wrapping to two lines while its opposite number
-     fits on one pushes every row below it out of step, and the comparison the
-     doors exist to make stops being readable at a glance.
-
-     Two lines is the ceiling, measured rather than assumed: the longest value in
-     either language is 72 characters (NL queue) and dd fits ~44 characters per
-     line at the narrowest two-up width, so nothing reaches a third line. Pinning
-     every row to the two-line height therefore costs ~23px of air on the short
-     rows and buys exact alignment on all of them.
-
-     The arithmetic, term by term, all three from declarations in this rule and
-     the dd rule below: 2 lines × line-height 1.5 × font-size .95rem, + .85rem
-     padding top and bottom, + the 1px bottom rule. box-sizing is border-box
-     sitewide (global.css:247), so min-height has to carry the last two. */
-  .door-row {
-    display: grid;
-    grid-template-columns: 7.5rem 1fr;
-    gap: 1rem;
-    padding: .85rem 0;
-    border-bottom: 1px solid var(--line);
-    min-height: calc(2 * 1.5 * .95rem + 1.7rem + 1px);
-  }
-  .door-row dt {
-    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase; color: var(--ink-3); padding-top: .18rem;
-  }
-  .door-row dd { margin: 0; font-size: .95rem; color: var(--ink-2); line-height: 1.5; }
-  /* margin-top:auto rather than a fixed gap: the two fact lists are different
-     lengths and the prices still have to land on the same line. */
-  .door-price { margin-top: auto; padding-top: 1.6rem; }
-  .dp-lead { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-  .dp-amount {
-    display: block; margin-top: .35rem;
-    font-family: var(--font-display); font-weight: 800;
-    font-size: clamp(2rem, 3.4vw, 2.7rem); line-height: 1; letter-spacing: -0.03em;
-  }
-  .dp-note { margin-top: .6rem; font-size: .88rem; color: var(--ink-3); max-width: 36ch; }
-
-  .pl-panel { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
-  .pl-panel .pl-sub-h { margin-bottom: .9rem; }
-  .pl-panel-link { margin-top: .2rem; font-size: .9rem; }
-  .pl-panel-link a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
-
-  /* The two prose lines under the panels — one naming the three pillar pages,
-     one naming the Brand Model. They come through set:html and so carry no
-     scope attribute of their own; :global() on the descendant is what reaches
-     the anchors. Sized under the option list, not level with it: they are an
-     aside for someone still deciding, not another thing to answer. */
+     They come through set:html and so carry no scope attribute of their own;
+     :global() on the descendant is what reaches the anchors. Sized under the
+     option list, not level with it: they are an aside for someone still
+     deciding, not another thing to answer. */
   .pl-panel-note { margin-top: .55rem; font-size: .86rem; color: var(--ink-3); line-height: 1.55; }
   .pl-panel-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+  .pl-fieldset .pl-sub-h { margin-bottom: .9rem; }
+  .pl-fieldset .opt-stack + .pl-panel-note { margin-top: .8rem; }
 
-  /* The two doors' count controls are the same beat in the same rhythm and have
-     to be spaced like it. They were not: this one carried 1.4rem (22px) and the
-     free-count .field beside it carried nothing at all, so the identical visual
-     step — panel link, then count control — measured 22px in one door and ~0 in
-     the other. Both now take .pl-panel's own top margin, which is the interval
-     the rest of step 1 already moves in. */
-  .pl-count-fixed,
-  .pl-step[data-pl-step="1"] > .field { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
-
-  .pl-count-fixed {
-    padding: .9rem 1.1rem;
-    border: 1px solid var(--line-strong);
-    background: var(--surface);
-    color: var(--ink-2);
-    font-size: .95rem;
-  }
+  /* Every block in step 1 moves in one interval, so the count field, the
+     outfit field, the total and the levels table read as one column of
+     answers rather than four things that happen to follow each other. */
+  .pl-step[data-pl-step="1"] > .field,
+  .pl-levels { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
 
   /* Live-only: nothing fills it without JS, and a box labelled "running total"
      showing nothing is worse than no box. */
   .pl-total {
     display: none;
-    grid-template-columns: 1fr auto;
-    gap: .2rem 1rem;
-    align-items: baseline;
     margin-top: clamp(1.6rem, 3vw, 2.2rem);
     padding-top: 1.2rem;
     border-top: 1px solid var(--line-strong);
   }
-  .pl-form.is-live .pl-total { display: grid; }
-  .pl-total-label { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-  .pl-total-amount {
-    grid-column: 2; grid-row: 1; justify-self: end;
+  .pl-form.is-live .pl-total { display: block; }
+  .pl-total-label { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* Three rows, and the third is the one a client reads as the total — so it
+     is the one that gets the display face. The first two are the same size as
+     each other on purpose: net and VAT are two halves of one statement, and
+     setting the net figure large would be the "big number, asterisk, plus VAT
+     in small type" trick with better typography. */
+  .pl-total-lines { margin: .8rem 0 0; }
+  .pl-total-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: baseline;
+    padding: .45rem 0;
+  }
+  .pl-total-row dt { font-size: .9rem; color: var(--ink-3); }
+  .pl-total-row dd { margin: 0; font-size: .95rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .pl-total-row.is-gross { border-top: 1px solid var(--line); padding-top: .8rem; margin-top: .3rem; }
+  .pl-total-row.is-gross dt { color: var(--ink); font-weight: 500; }
+  .pl-total-row.is-gross dd {
     font-family: var(--font-display); font-weight: 800;
     font-size: clamp(1.5rem, 2.6vw, 2rem); line-height: 1; letter-spacing: -0.03em;
+    color: var(--ink);
   }
-  .pl-total-note { grid-column: 1 / -1; font-size: .85rem; color: var(--ink-3); line-height: 1.5; }
+
+  .pl-total-note { margin-top: .8rem; font-size: .85rem; color: var(--ink-3); line-height: 1.5; }
+  /* The one line on this step that is an offer rather than a fact, so it is
+     the one line that carries the system colour — the same treatment the gate
+     note gets, for the same reason: it is a statement of how the ladder works,
+     not a scarcity badge. */
+  .pl-total-rung {
+    margin-top: .8rem;
+    padding: .75rem .95rem;
+    border: 1px solid var(--signal);
+    background: var(--paper-2);
+    color: var(--signal-ink);
+    font-size: .9rem;
+    line-height: 1.5;
+  }
+  .pl-total-first,
+  .pl-total-display { margin-top: .6rem; font-size: .82rem; color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
+  .pl-total-display { font-style: italic; }
+
+  /* The two service levels. One rule between them: no floating cards, no
+     shadow, no elevation difference. Equal column widths are load-bearing.
+     Section 13 forbids styling Tier 0 as the lesser option, and a narrower,
+     lighter or shorter column would say exactly that without using any of the
+     words it bans — which matters more now that the reader is not choosing
+     between them but being told which one their count landed on. */
+  .levels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line-strong);
+    margin-top: .9rem;
+  }
+  .level {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.2rem, 2.4vw, 2rem);
+    transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+  }
+  .level + .level { border-left: 1px solid var(--line-strong); }
+  /* Written by pipeline.js from the count. Identical treatment on either
+     column — which one is marked is the only difference the two are allowed
+     to have. */
+  .level.is-current { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+
+  .level-h { font-size: 1.15rem; line-height: 1.25; text-wrap: balance; }
+  .level-band { margin-top: .3rem; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .level-facts { margin-top: 1.2rem; border-top: 1px solid var(--line); }
+  /* min-height is the same class of problem it solved on the doors this block
+     replaced: the two fact lists sit either side of a vertical rule and the
+     reader compares them ROW BY ROW — turnaround against turnaround, queue
+     against queue. One value wrapping to two lines while its opposite number
+     fits on one pushes every row below it out of step.
+
+     Two lines is the ceiling, measured rather than assumed: the longest value
+     in either language is 72 characters (NL queue) and dd fits ~44 characters
+     per line at the narrowest two-up width. The arithmetic, term by term, from
+     declarations in this rule and the dd rule below: 2 lines × line-height 1.5
+     × font-size .9rem, + .75rem padding top and bottom, + the 1px bottom rule.
+     box-sizing is border-box sitewide (global.css:247), so min-height has to
+     carry the last two. */
+  .level-row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: .9rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--line);
+    min-height: calc(2 * 1.5 * .9rem + 1.5rem + 1px);
+  }
+  .level-row dt {
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3); padding-top: .18rem;
+  }
+  .level-row dd { margin: 0; font-size: .9rem; color: var(--ink-2); line-height: 1.5; }
+
+  /* Written by pipeline.js, so it is empty without JS — where both columns
+     already say everything and a sentence naming one of them would be a claim
+     about a count nothing has read. */
+  .pl-level-note { margin-top: .9rem; font-size: .9rem; color: var(--ink-2); line-height: 1.6; max-width: 70ch; }
+  .pl-level-note:empty { display: none; }
 
   /* ── Step 2 · material ────────────────────────────────────────────────────
      The file input carries no name attribute, so without JS this whole block
@@ -1666,14 +1718,13 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
   /* ── Breakpoints ─────────────────────────────────────────────────────────*/
   @media (max-width: 900px) {
-    .doors { grid-template-columns: 1fr; }
-    .door + .door { border-left: 0; border-top: 1px solid var(--line-strong); }
-    /* One column, so there is no second price to align with — and no second
-       fact list either. Stacked, the rows are read in sequence rather than
-       compared across a rule, so holding them to a two-line height would be
-       pure whitespace with nothing to line up against. */
-    .door-frame { min-height: 0; }
-    .door-row { min-height: 0; }
+    .levels { grid-template-columns: 1fr; }
+    .level + .level { border-left: 0; border-top: 1px solid var(--line-strong); }
+    /* One column, so there is no second fact list beside this one. Stacked,
+       the rows are read in sequence rather than compared across a rule, so
+       holding them to a two-line height would be pure whitespace with nothing
+       to line up against. */
+    .level-row { min-height: 0; }
     .start-foot { grid-template-columns: 1fr; }
   }
 
@@ -1690,7 +1741,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   /* .row-2's 620px collapse is in global.css with the rule it collapses. */
 
   @media (max-width: 560px) {
-    .door-row { grid-template-columns: 1fr; gap: .25rem; }
+    .level-row { grid-template-columns: 1fr; gap: .25rem; }
     .pl-summary { grid-template-columns: 1fr; }
     .pl-summary :global(dt) { border-bottom: 0; padding: .8rem 0 0; }
     .pl-summary :global(dd) { padding-top: .25rem; }
@@ -1702,7 +1753,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      moving, and removing it would leave a static bar and a silent wait. It is
      informational, not vestibular, so it stays. */
   @media (prefers-reduced-motion: reduce) {
-    .door,
+    .level,
     .pl-rail-item { transition: none; }
     .pl-windows :global(.pl-window) { transition: none; }
     /* .input, .textarea, .select, .opt and .dropzone are opted out in

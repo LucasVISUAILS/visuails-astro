@@ -7,19 +7,25 @@
 // behind it — priced Lifestyle Video at €59, a figure that appears nowhere in
 // pricing.js and never has. The sitewide price scan missed it for months
 // because "€59" is a string prefix of "€59.99". There is one clip rate now and
-// it comes from PER_PRODUCT.
+// it comes from AMOUNT.video.
 //
 // The old description was ~245 characters, named a delivery time, and hedged
 // the price with "from".
+//
+// UNLIKE /catalog AND /lifestyle, THIS ONE FIGURE IS STILL THE WHOLE PRICE. A
+// clip is not on the per-product ladder — it is a flat rate, the same inside
+// an order as on its own — so the description says the rate is flat rather
+// than quoting two ends of a ladder that does not apply. The turnaround gives
+// way for the clause that carries the VAT label: it is a tier fact, restated
+// in the trust row, and only true under WINDOW_THRESHOLD products.
 import Layout from '../../layouts/Layout.astro';
 import VideoPage from '../../components/VideoPage.astro';
-import { perProduct, turnaround } from '../../data/pricing.js';
-
-const item = perProduct('video', 'en');
+import { euro, AMOUNT, vatLabel } from '../../data/pricing.js';
 
 const description =
   `Eight seconds of subtle motion, for product pages, social and simple ads. ` +
-  `${item.price} per clip. ${turnaround('unattended', 'en')}.`;
+  `${euro(AMOUNT.video, 'en')} a clip ${vatLabel('excl', 'en')} — the same ` +
+  `rate on its own or inside an order.`;
 ---
 
 <Layout

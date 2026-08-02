@@ -21,6 +21,147 @@
 // 1 · AMOUNTS — the only place a number is written down.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 0 · THE LADDER, THE PLANS, AND VAT — the model, August 2026.
+//
+// WHAT CHANGED AND WHY. Until now the offer was package-shaped: a Drop Pilot of
+// exactly 8 products, a Full Drop of 25–30, and per-product rates for anything
+// else. Lucas called it confusing, and so did people he showed it to, and the
+// numbers agreed with them:
+//
+//   · "Drop" already means something in fashion — a collection going live. The
+//     site used it for a work order of 25–30 products, so one word carried two
+//     meanings in the same sentence.
+//   · The buyer had to pick a SIZE and a SERVICE LEVEL at the same time. Two
+//     independent axes stacked on one price list.
+//   · And there was a hole between them. The Pilot stopped at 8, the Full Drop
+//     started at 25, so a brand with 14 products paid à la carte —
+//     14 × €219.98 = €3,079.72, twelve hundred euro MORE than a Full Drop of
+//     thirty. /pricing admitted this in its own copy. A ladder whose best
+//     advice is "pretend you have 25 products" is not a ladder.
+//
+// THE REPLACEMENT is two doors rather than three tiers, and it is the hybrid
+// Lucas picked out of PRICING-MODEL-OPTIONS.md:
+//
+//   Front door — LADDER. One unit: a product. One rate, which falls as the
+//   count rises. Every count has a price and the price only ever improves, so
+//   the hole cannot come back. The falling rate is also the honest upsell: the
+//   order form can say "two more products and every product drops a rung."
+//
+//   Back door — PLANS. A monthly amount for a monthly output. Every plan is
+//   priced strictly below the ladder total for the same number of products
+//   (asserted at the bottom of this file), so the upgrade prompt is arithmetic
+//   rather than persuasion.
+//
+// The old drop constants below are DERIVED from this ladder now rather than
+// typed, so the pages that have not been migrated yet keep printing numbers
+// that are arithmetically true while they wait their turn.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Rungs are [minProducts, maxProducts | null, ratePerProduct]. `null` is the
+// open top rung. Three kinds, and the ratio between them is deliberate and
+// constant: catalog-only is 60% of a complete product and lifestyle-only is
+// 75%, so buying both separately costs 135% of the bundle. That 26% bundle
+// saving is the same at every rung, which is what makes it explainable in one
+// sentence instead of a table of exceptions.
+// The legacy Pilot size, kept only so the deprecated AMOUNT.dropPilot below
+// has something to multiply. PILOT_PRODUCTS re-exports it further down.
+const PILOT_PRODUCTS_LEGACY = 8;
+
+export const LADDER = {
+  // Catalog set AND lifestyle carousel — seven finished images per product.
+  complete: [[1, 4, 149], [5, 9, 109], [10, 19, 85], [20, 34, 65], [35, null, 55]],
+  // Catalog set only — four images.
+  catalog: [[1, 4, 89], [5, 9, 65], [10, 19, 51], [20, 34, 39], [35, null, 33]],
+  // Lifestyle carousel only — three images.
+  lifestyle: [[1, 4, 112], [5, 9, 82], [10, 19, 64], [20, 34, 49], [35, null, 41]],
+};
+
+/** The per-product rate for a kind at a given product count. */
+export function ladderRate(kind, products = 1) {
+  const rungs = LADDER[kind];
+  if (!rungs) throw new Error(`pricing.js: unknown ladder kind "${kind}"`);
+  const n = Math.max(1, Math.floor(Number(products) || 1));
+  const rung = rungs.find(([lo, hi]) => n >= lo && (hi === null || n <= hi));
+  // Unreachable while the top rung is open-ended; thrown rather than defaulted
+  // because a silent fallback here would quote the wrong price, not no price.
+  if (!rung) throw new Error(`pricing.js: no ladder rung covers ${n} products`);
+  return rung[2];
+}
+
+/** What `products` of `kind` cost in total, before VAT and before any discount. */
+export function ladderTotal(kind, products) {
+  const n = Math.max(0, Math.floor(Number(products) || 0));
+  return n === 0 ? 0 : n * ladderRate(kind, n);
+}
+
+/** The lowest rate a kind ever reaches — what "from €x" means on a page. */
+export function ladderFloor(kind) {
+  const rungs = LADDER[kind];
+  if (!rungs) throw new Error(`pricing.js: unknown ladder kind "${kind}"`);
+  return rungs[rungs.length - 1][2];
+}
+
+// FIRST ORDER, once per brand. This replaces the Drop Pilot rather than
+// sitting beside it: the Pilot was a loss-leader wearing a package's clothes,
+// with a size (exactly 8) and a rule ("once per brand") that both had to be
+// explained. A plain percentage off a first order is the same incentive with
+// nothing to explain, and it works at every order size instead of one.
+export const FIRST_ORDER_DISCOUNT = 0.20;
+
+/** The monthly plans — the back door. Products per month, and what is included. */
+export const PLAN_AMOUNT = { starter: 390, studio: 790, brand: 1690 };
+export const PLAN_PRODUCTS = { starter: 5, studio: 12, brand: 30 };
+/** Video clips included in a plan, per month. */
+export const PLAN_CLIPS = { starter: 0, studio: 2, brand: 0 };
+/** Minimum term, in months, and how long an unused product rolls over. */
+export const PLAN_MIN_MONTHS = 3;
+export const PLAN_ROLLOVER_MONTHS = 1;
+
+// WHICH ORDERS GET THE RESERVED WINDOW.
+//
+// The package model asked the buyer two questions at once: how big is your
+// order, and do you want a committed date. Two axes, one price list. Under the
+// ladder the service level FOLLOWS the size instead of being a second choice —
+// from this many products up, the order is put in the capacity calendar and
+// gets the reserved 48-hour window; below it, it runs in the standard queue at
+// 2–4 working days. Ten because that is where the ladder's third rung starts,
+// so the buyer crosses one line, not two.
+export const WINDOW_THRESHOLD = 10;
+// TIERS' labels below are template strings evaluated at module load, before the
+// export above is in scope from their point of view — so the two read the same
+// literal through this one alias rather than a typed 10 in three places.
+const WINDOW_THRESHOLD_LABEL = 10;
+
+/** 'attended' | 'unattended' — which tier's promises an order of this size gets. */
+export function tierFor(products) {
+  return (Math.floor(Number(products) || 0) >= WINDOW_THRESHOLD) ? 'attended' : 'unattended';
+}
+
+// ── VAT ──────────────────────────────────────────────────────────────────────
+// Dutch VAT, and the interim model Lucas chose (Aug 2026): charge 21% to
+// everyone at checkout and correct EU B2B reverse charge afterwards on the
+// invoice. BRIEF-14-VAT-BTW.md specifies live VIES validation instead; that is
+// deliberately NOT what this implements, and the trade is stated here so the
+// next reader does not think it was forgotten. Over-collecting VAT is never a
+// penalty; under-collecting is. VIES goes down, has per-member-state quirks,
+// and would be half the build.
+//
+// Every figure in this file is NET. Nothing anywhere should print a price
+// without saying which of the two it is — that is BRIEF-14's hardest rule and
+// the reason vatLabel() exists rather than a string typed per page.
+export const VAT_RATE = 0.21;
+export const vatOf = (net) => Math.round(net * VAT_RATE * 100) / 100;
+export const withVat = (net) => Math.round(net * (1 + VAT_RATE) * 100) / 100;
+
+/** "excl. VAT" / "incl. VAT", in the reader's language. Never typed on a page. */
+export function vatLabel(kind = 'excl', lang = 'en') {
+  const nl = lang === 'nl';
+  if (kind === 'incl') return nl ? 'incl. btw' : 'incl. VAT';
+  if (kind === 'rate') return nl ? '21% btw' : '21% VAT';
+  return nl ? 'excl. btw' : 'excl. VAT';
+}
+
 export const AMOUNT = {
   // Tier 0 · unattended, per product.
   //
@@ -41,8 +182,14 @@ export const AMOUNT = {
   // would just cost every client more everywhere. If that should change too,
   // it is a separate decision — say so and it moves on its own line.
   testSample: 0.99,
-  catalog: 89.99,   // 4-photo set, one product — was €39.99 under section 13
-  lifestyle: 129.99, // 3-photo carousel, one product — was €59.99 under section 13
+  // THE ENTRY RUNG, not a flat rate any more. A page that prints one number for
+  // "a catalog set" is now printing what ONE costs; the rate falls from here as
+  // the count rises (LADDER above). Pages that can show the whole ladder should
+  // — ladderRate() / ladderTotal() / ladderFloor() are for exactly that — and
+  // any page still printing a single figure should say "from".
+  catalog: LADDER.catalog[0][2],       // €89 at 1–4 products, €33 at 35+
+  lifestyle: LADDER.lifestyle[0][2],   // €112 at 1–4 products, €41 at 35+
+  complete: LADDER.complete[0][2],     // €149 at 1–4 products, €55 at 35+
   // RAISED, TASK #271f, 2026-07-30. Was €49, "left alone" by the comment
   // above — that held until Lucas asked for the opposite: video must rise
   // above €49 regardless of the Single Product/Full outfit feature this task
@@ -60,12 +207,22 @@ export const AMOUNT = {
   // updated alongside this change.
   video: 69,
 
-  // Tier 1 · attended packages.
-  dropPilot: 650,   // exactly 8 products, once per brand
-  fullDrop: 1850,   // see FULL_DROP_MIN / MAX below
+  // ── DEPRECATED, AND DERIVED RATHER THAN DELETED ──────────────────────────
+  // These three used to be the offer: two packages and a retainer, each a
+  // typed figure. The offer is now the ladder plus the plans (section 0), and
+  // roughly fifty pages still read these names. Deleting them would break the
+  // build; leaving them typed would leave fifty pages quoting a price list
+  // that no longer exists. Derived is the third option: every one of them is
+  // now a real total under the new model, so an unmigrated page prints a
+  // number that is still arithmetically true while it waits its turn.
+  //
+  // When the last consumer is migrated, delete these three lines and the build
+  // will tell you who is left.
+  dropPilot: ladderTotal('complete', PILOT_PRODUCTS_LEGACY),  // 8 products on the ladder
+  fullDrop: ladderTotal('complete', 30),                      // 30 products on the ladder
   brandModel: 1250, // one-time setup
   brandModelCredit: 250, // credited against each of your first five drops
-  retainer: 2200,   // per month
+  retainer: PLAN_AMOUNT.brand,  // the top monthly plan
 
   // The anchor VISUAILS is measured against.
   shootDayLow: 2500,
@@ -73,7 +230,7 @@ export const AMOUNT = {
 };
 
 // Drop Pilot is a fixed count, not a range.
-export const PILOT_PRODUCTS = 8;
+export const PILOT_PRODUCTS = PILOT_PRODUCTS_LEGACY;
 
 // Full Drop product band.
 //
@@ -260,7 +417,7 @@ export const TIERS = {
     // reconstruct which direction it protects. Flipping it changes nothing —
     // if you came here to change how the gate behaves, change the floor.
     yieldsToAttended: true,
-    label: { en: 'Order individual products', nl: 'Bestel losse producten' },
+    label: { en: `Under ${WINDOW_THRESHOLD_LABEL} products`, nl: `Onder ${WINDOW_THRESHOLD_LABEL} producten` },
     // The ONLY sanctioned timing language for this tier. No date, no "24
     // hours", no "next day" — section 13 supplies this exact substitute.
     turnaround: {
@@ -295,7 +452,7 @@ export const TIERS = {
     portal: true,
     // Also unread. See the note on unattended.yieldsToAttended above.
     yieldsToAttended: false,
-    label: { en: 'Run a whole drop', nl: 'Draai een hele drop' },
+    label: { en: `From ${WINDOW_THRESHOLD_LABEL} products`, nl: `Vanaf ${WINDOW_THRESHOLD_LABEL} producten` },
     // A committed window, cleared by the capacity gate before it is offered.
     // The site must never print a date the gate has not cleared.
     turnaround: {
@@ -303,8 +460,12 @@ export const TIERS = {
       nl: 'Een gereserveerd venster van 48 uur, bevestigd voordat je betaalt',
     },
     queue: {
-      en: 'Priority in the queue — a drop is never pushed for a single order',
-      nl: 'Voorrang in de wachtrij — een drop wijkt nooit voor een losse bestelling',
+      // Reworded with the model, and the promise is now about SIZE rather than
+      // about a product the buyer picked: an order past WINDOW_THRESHOLD holds
+      // its slot against anything smaller arriving after it. Same guarantee,
+      // stated in the terms the ladder actually uses.
+      en: 'Priority in the queue — a booked window is never given up for a later, smaller order',
+      nl: 'Voorrang in de wachtrij — een geboekt venster wijkt nooit voor een latere, kleinere bestelling',
     },
     delivery: {
       en: 'Client portal with per-image approve or request-revision',
@@ -533,11 +694,119 @@ export function shouldPromptUpgrade(products) {
  */
 export function upgradePrompt(products, lang = 'en') {
   if (!shouldPromptUpgrade(products)) return null;
-  const price = euro(AMOUNT.fullDrop, lang);
-  const band = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+  // The plan that would have covered this quarter's rate of ordering, and what
+  // the same output costs on the ladder. Both figures are computed, and
+  // assertLadder() guarantees the plan is the cheaper of the two — so this is a
+  // subtraction the client can repeat, not a claim they have to believe.
+  const perMonth = Math.ceil(products / 3);
+  const id = planFor(perMonth) || 'brand';
+  const s = planSaving(id);
+  const name = plans(lang).find((p) => p.id === id)?.name || id;
+  const price = euro(PLAN_AMOUNT[id], lang);
   return lang === 'nl'
-    ? `Je hebt dit kwartaal ${products} producten besteld. Ter info: een Full Drop dekt ${band} producten voor ${price}, en vanaf ${UPGRADE_BREAK_EVEN} producten is dat goedkoper.`
-    : `You've ordered ${products} products this quarter. For reference, a Full Drop covers ${band} products for ${price}, and costs less from ${UPGRADE_BREAK_EVEN} products on.`;
+    ? `Je hebt dit kwartaal ${products} producten besteld — ongeveer ${perMonth} per maand. Het ${name}-plan dekt ${PLAN_PRODUCTS[id]} producten per maand voor ${price}; op losse bestellingen is dat ${euro(s.onLadder, lang)}.`
+    : `You've ordered ${products} products this quarter — about ${perMonth} a month. The ${name} plan covers ${PLAN_PRODUCTS[id]} products a month for ${price}; the same output ordered one at a time is ${euro(s.onLadder, lang)}.`;
+}
+
+/**
+ * A full quote for `products` of `kind`, net / VAT / gross, plus the rate that
+ * produced it and the next rung if there is one.
+ *
+ * ONE function, because the alternative is every page doing its own
+ * multiplication — and BRIEF-14's rule is that no price may be printed without
+ * saying whether VAT is in it. A page that computes its own total will
+ * eventually print one without the label.
+ *
+ * `firstOrder` applies FIRST_ORDER_DISCOUNT, which is the whole of what used to
+ * be the Drop Pilot.
+ */
+export function quote(kind, products, { firstOrder = false } = {}) {
+  const n = Math.max(0, Math.floor(Number(products) || 0));
+  const rate = n === 0 ? ladderRate(kind, 1) : ladderRate(kind, n);
+  const gross0 = ladderTotal(kind, n);
+  const discount = firstOrder ? Math.round(gross0 * FIRST_ORDER_DISCOUNT * 100) / 100 : 0;
+  const net = Math.round((gross0 - discount) * 100) / 100;
+  // The next rung, so a page can say "two more and every product drops to €65".
+  const rungs = LADDER[kind];
+  const idx = rungs.findIndex(([lo, hi]) => n >= lo && (hi === null || n <= hi));
+  const next = idx >= 0 && idx < rungs.length - 1 ? rungs[idx + 1] : null;
+  return {
+    products: n,
+    rate,
+    listTotal: gross0,
+    discount,
+    net,
+    vat: vatOf(net),
+    gross: withVat(net),
+    nextRung: next ? { at: next[0], rate: next[2], addProducts: Math.max(0, next[0] - n) } : null,
+  };
+}
+
+/**
+ * What a plan would have saved, against the same output bought on the ladder.
+ * Returns null when the plan does not win, which cannot happen — assertLadder()
+ * fails the build first — but a caller should not have to know that.
+ */
+export function planSaving(id) {
+  if (!(id in PLAN_AMOUNT)) throw new Error(`pricing.js: unknown plan "${id}"`);
+  const onLadder = ladderTotal('complete', PLAN_PRODUCTS[id]) + PLAN_CLIPS[id] * AMOUNT.video;
+  const saving = Math.round((onLadder - PLAN_AMOUNT[id]) * 100) / 100;
+  return saving > 0 ? { onLadder, price: PLAN_AMOUNT[id], saving } : null;
+}
+
+/** The cheapest plan that covers this many products a month, or null. */
+export function planFor(productsPerMonth) {
+  const n = Math.floor(Number(productsPerMonth) || 0);
+  const ids = Object.keys(PLAN_PRODUCTS).sort((a, b) => PLAN_PRODUCTS[a] - PLAN_PRODUCTS[b]);
+  return ids.find((id) => PLAN_PRODUCTS[id] >= n) || null;
+}
+
+/** The plans, as copy. Same shape as PACKAGES so a page can swap one for the other. */
+export function plans(lang = 'en') {
+  const l = lang === 'nl' ? 'nl' : 'en';
+  const nlx = l === 'nl';
+  const meta = {
+    starter: {
+      name: 'Starter',
+      line: nlx ? 'Genoeg om elke maand iets nieuws te laten zien.' : 'Enough to have something new to show every month.',
+    },
+    studio: {
+      name: 'Studio',
+      line: nlx ? 'Voor merken die continu posten, niet alleen bij een lancering.' : 'For brands posting continuously, not only at a launch.',
+    },
+    brand: {
+      name: nlx ? 'Merk' : 'Brand',
+      line: nlx ? 'Een hele collectie per maand, met je eigen gezicht erbij.' : 'A whole collection a month, with your own face on it.',
+    },
+  };
+  return Object.keys(PLAN_AMOUNT).map((id) => {
+    const saving = planSaving(id);
+    const products = PLAN_PRODUCTS[id];
+    const clips = PLAN_CLIPS[id];
+    return {
+      id,
+      name: meta[id].name,
+      line: meta[id].line,
+      price: euro(PLAN_AMOUNT[id], l),
+      unit: nlx ? 'per maand' : 'per month',
+      products,
+      includes: [
+        nlx ? `${products} producten per maand` : `${products} products a month`,
+        nlx ? 'Catalogset en lifestyle-carousel voor elk' : 'A catalog set and a lifestyle carousel for each',
+        ...(clips ? [nlx ? `${clips} videoclips per maand` : `${clips} video clips a month`] : []),
+        ...(id === 'brand' ? [nlx ? 'Je merkmodel inbegrepen' : 'Your Brand Model included'] : []),
+        turnaround('attended', l),
+        nlx
+          ? `Minimaal ${PLAN_MIN_MONTHS} maanden, ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door`
+          : `${PLAN_MIN_MONTHS} months minimum, unused products roll over ${PLAN_ROLLOVER_MONTHS} month`,
+      ],
+      saving: saving
+        ? (nlx
+            ? `Op de staffel zou dit ${euro(saving.onLadder, l)} kosten — ${euro(saving.saving, l)} per maand verschil.`
+            : `The same output on the ladder is ${euro(saving.onLadder, l)} — ${euro(saving.saving, l)} a month more.`)
+        : null,
+    };
+  });
 }
 
 /** Brand Model setup is fully creditable across five drops: 5 × €250 = €1,250. */
@@ -582,13 +851,41 @@ function assertLadder() {
     );
   }
 
-  // The retainer must cost more than the drop it contains, or it is a discount
-  // on nothing.
-  if (AMOUNT.retainer <= AMOUNT.fullDrop) {
-    throw new Error(
-      `pricing.js: the monthly retainer (${AMOUNT.retainer}) does not exceed the ` +
-      `Full Drop it includes (${AMOUNT.fullDrop}).`
-    );
+  // EVERY PLAN MUST BEAT THE LADDER. This replaces the old "the retainer must
+  // cost more than the drop it contains" check, which asserted the opposite
+  // relationship and fired the moment the plans were priced: under the package
+  // model the retainer was a bundle sold ABOVE its contents, and under this one
+  // a plan is the cheaper way to buy the same output. That is not a style
+  // preference — upgradePrompt() below tells a client, in euros, what a plan
+  // would have saved them, and a prompt whose arithmetic a client can disprove
+  // with a calculator costs more than it earns. So the saving is asserted at
+  // build time rather than trusted.
+  for (const id of Object.keys(PLAN_AMOUNT)) {
+    const onLadder = ladderTotal('complete', PLAN_PRODUCTS[id]) + PLAN_CLIPS[id] * AMOUNT.video;
+    if (!(PLAN_AMOUNT[id] < onLadder)) {
+      throw new Error(
+        `pricing.js: the ${id} plan costs ${PLAN_AMOUNT[id]} for ` +
+        `${PLAN_PRODUCTS[id]} products, which is ${onLadder} on the ladder — a ` +
+        `plan that does not beat the ladder is a worse deal wearing a ` +
+        `subscription's clothes, and upgradePrompt() would be lying.`
+      );
+    }
+  }
+
+  // The ladder itself has to fall. A rung that costs more per product than the
+  // one below it is the exact failure the old package model shipped with (8
+  // products at €81.25 against 20 at €92.50), and it is invisible until a
+  // prospect divides.
+  for (const [kind, rungs] of Object.entries(LADDER)) {
+    for (let i = 1; i < rungs.length; i++) {
+      if (!(rungs[i][2] < rungs[i - 1][2])) {
+        throw new Error(
+          `pricing.js: the ${kind} ladder is inverted at rung ${i} — ` +
+          `${rungs[i][2]} is not less than ${rungs[i - 1][2]}. Buying more must ` +
+          `always cost less per product.`
+        );
+      }
+    }
   }
 
   // The upgrade prompt names UPGRADE_BREAK_EVEN as the count from which a Full

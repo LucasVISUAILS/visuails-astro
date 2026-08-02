@@ -4,12 +4,18 @@
 // elkaar kunnen lopen; alleen de meta verschilt hier.
 import Layout from '../../layouts/Layout.astro';
 import HowItWorksPage from '../../components/HowItWorksPage.astro';
-import { FULL_DROP_MIN, FULL_DROP_MAX } from '../../data/pricing.js';
+//
+// De laatste zin noemde een pakketband — "voor 25–30 producten" — en dat
+// pakket bestaat niet meer. Het aantal dat op een procespagina telt, is het
+// aantal waarop het proces verandert: vanaf WINDOW_THRESHOLD producten gaat
+// een bestelling in de capaciteitsagenda en krijgt hij het gereserveerde
+// venster.
+import { WINDOW_THRESHOLD } from '../../data/pricing.js';
 
 const description =
   `Jij stuurt de producten. Wij bevestigen een venster, produceren en ` +
-  `controleren elke visual met de hand. Shopklare bestanden voor ` +
-  `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten.`;
+  `controleren elke visual met de hand. Vanaf ${WINDOW_THRESHOLD} producten ` +
+  `is dat venster gereserveerd.`;
 ---
 
 <Layout title="Hoe het werkt — VISUAILS" description={description}>

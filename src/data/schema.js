@@ -22,9 +22,31 @@
 // WHAT IS EMITTED
 //   Organization  — every page. One node, one @id, referenced by everything.
 //   Service       — the four pillar pages, EN and NL (8 pages).
-//   Product/Offer — the seven pricing tiers on /pricing, the €0.99 sample on
-//                   /test-sample, EN and NL (4 pages).
+//   Product/Offer — what /pricing sells: the three ladder scopes, the three
+//                   monthly plans and the two add-ons; plus the test sample on
+//                   /test-sample. EN and NL (4 pages).
 //   FAQPage       — /faq and /pricing, EN and NL (4 pages).
+//
+// MIGRATED TO THE LADDER AND THE PLANS (August 2026). This file used to build
+// its Offers out of PACKAGES and PER_PRODUCT — a Drop Pilot at a fixed count, a
+// Full Drop at a band, a retainer. Section 0 of src/data/pricing.js retired all
+// three, so the Offers are built from LADDER and plans() instead. Two rules
+// came out of that and both are load-bearing:
+//
+//   · AN OFFER'S `price` IS THE LADDER'S ENTRY RUNG, never its floor. The floor
+//     is real but it is only real from TOP_RUNG products up, and a search
+//     result that shows the cheapest rung as THE price has quoted a number a
+//     visitor cannot buy at. The rest of the ladder rides along as one
+//     UnitPriceSpecification per rung, each carrying the product count it
+//     applies to, which is exactly what the rate table on /pricing prints.
+//   · NO PRICE APPEARS HERE THAT THE VISIBLE PAGE DOES NOT ALSO SHOW. Every
+//     rung, every plan amount, the Brand Model setup and the clip rate are all
+//     printed on /pricing. A JSON-LD price that disagrees with the page is the
+//     mismatch src/data/faq.js's header warns about, arriving from the other
+//     direction.
+//
+// And the word "drop" is not what this studio sells any more — it means the
+// client's own collection going live. What is sold is an order.
 //
 // HOW A PAGE GETS ITS GRAPH
 // From its URL, not from a prop. Layout.astro already derives the
@@ -49,8 +71,9 @@
 //     pages render from, so the markup cannot drift from the copy.
 
 import {
-  AMOUNT, PACKAGES, PER_PRODUCT, TEST_SAMPLE,
-  FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
+  AMOUNT, TEST_SAMPLE, perProduct,
+  LADDER, ladderRate,
+  plans, PLAN_AMOUNT,
   BRAND_MODEL_CREDIT_DROPS, euro,
 } from './pricing.js';
 import { pricingFaqs, faqPageItems } from './faq.js';
@@ -117,8 +140,12 @@ function htmlToText(html) {
 // languages depending on which page you crawled is a contradiction about a
 // single node. The locale-specific copy lives on the page-scoped nodes below,
 // which have locale-specific @ids and so can differ honestly.
+//
+// "a whole drop" used to end this sentence. It does not any more: "drop" means
+// the client's collection going live, and using it for a work order is the
+// collision that retired the package model. See section 0 of pricing.js.
 const ORG_DESCRIPTION =
-  'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals built from a single product photo — a whole drop, or one product at a time.';
+  'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals built from a single product photo — a whole collection in one order, or one product at a time.';
 
 function organizationNode() {
   return {
@@ -142,67 +169,109 @@ function organizationNode() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// COPY THIS FILE OWNS, AND WHY IT OWNS IT.
+//
+// Everything below reads its euros from pricing.js and its questions from
+// faq.js. Three short strings per language are typed here instead, and each one
+// has a reason a future editor should know before "fixing" it:
+//
+//   · `serviceType` — schema.org wants a short classification of the work and
+//     pricing.js holds none. A product name ("Catalog set") is not a service
+//     type ("Product photography").
+//   · The COMPLETE scope's name, and the Brand Model's name and one-liner.
+//     These came out of PACKAGES, which section 0 of pricing.js retired. Their
+//     visible twins are the COPY tables in PricingPage.astro (`kinds.complete`,
+//     `brandModelName`) and BrandModelPage.astro. When those two pages are
+//     migrated off PACKAGES, the right move is to give pricing.js one home for
+//     these names and delete this block — not to add a fourth copy.
+//   · The video one-liner. perProduct('video').line still ends "added to a
+//     drop", and this file may not say that; /pricing's own videoLine already
+//     says "any order", so this matches that.
+//
+// NOTHING HERE IS A NUMBER, and nothing here is a delivery promise.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const COMPLETE_NAME = { en: 'Complete', nl: 'Compleet' };
+
+const COMPLETE_LEAD = {
+  en: 'A catalog set and a lifestyle carousel for every product in the order.',
+  nl: 'Voor elk product in de bestelling een catalogset en een lifestyle-carousel.',
+};
+
+const VIDEO_LINE = {
+  en: 'One short clip. The same rate on its own or added to any order.',
+  nl: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
+};
+
+const BRAND_MODEL_NAME = { en: 'Your Brand Model', nl: 'Jouw merkmodel' };
+const BRAND_MODEL_LINE = {
+  en: 'One face. Every order. Only yours.',
+  nl: 'Eén gezicht. Elke bestelling. Alleen van jou.',
+};
+const BRAND_MODEL_UNIT = { en: 'one-time setup', nl: 'eenmalige setup' };
+
+/** "Starter plan" / "Starter-plan" — the joiner differs, so it is not a concat. */
+const PLAN_NAME = { en: (n) => `${n} plan`, nl: (n) => `${n}-plan` };
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SERVICE — the four pillar pages.
 //
-// `source` says which pricing.js table the name, one-liner, unit and price come
-// from, so nothing here is typed. What IS typed is `serviceType`: schema.org
-// wants a short classification of the work, and neither table holds one — a
-// product name ("Catalog set") is not a service type ("Product photography").
+// `kind` points at a ladder in pricing.js; `amount` at a flat AMOUNT key. A
+// pillar has one or the other, never both.
+//
+// THE PRICE ON A PILLAR SERVICE IS THE ENTRY RUNG, and only the entry rung.
+// /catalog, /lifestyle and /video each print one figure — perProduct().price,
+// which IS ladderRate(kind, 1) — and none of them shows the rate table. The
+// whole ladder belongs to /pricing, which does show it, so this node quotes the
+// one number its own page quotes and nothing more.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PILLARS = {
   '/catalog': {
-    source: 'perProduct',
     id: 'catalog',
-    amount: 'catalog',
+    kind: 'catalog',
     name: { en: 'Catalog visuals for e-commerce', nl: 'Catalogbeeld voor e-commerce' },
     serviceType: { en: 'Product photography', nl: 'Productfotografie' },
   },
   '/lifestyle': {
-    source: 'perProduct',
     id: 'lifestyle',
-    amount: 'lifestyle',
+    kind: 'lifestyle',
     name: { en: 'Lifestyle visuals for e-commerce', nl: 'Lifestylebeeld voor e-commerce' },
     serviceType: { en: 'Lifestyle product photography', nl: 'Lifestyle-productfotografie' },
   },
   '/video': {
-    source: 'perProduct',
     id: 'video',
     amount: 'video',
+    description: VIDEO_LINE,
     name: { en: 'Product video clips', nl: 'Productvideoclips' },
     serviceType: { en: 'Product video production', nl: 'Productvideoproductie' },
   },
   '/custom-models': {
-    source: 'package',
-    id: 'brand-model',
     amount: 'brandModel',
+    description: BRAND_MODEL_LINE,
+    unit: BRAND_MODEL_UNIT,
+    name: BRAND_MODEL_NAME,
     serviceType: { en: 'Brand model creation', nl: 'Merkmodel-creatie' },
   },
 };
 
-/** The pricing.js row a pillar or product entry points at. */
-function rowFor(entry, lang) {
-  const l = norm(lang);
-  const table = entry.source === 'package' ? PACKAGES[l] : PER_PRODUCT[l];
-  const row = table.find((r) => r.id === entry.id);
-  if (!row) {
-    throw new Error(`schema.js: no ${entry.source} row "${entry.id}" in pricing.js (${l})`);
-  }
-  return row;
-}
-
 function serviceNode(path, lang, url) {
   const entry = PILLARS[path];
   const l = norm(lang);
-  const row = rowFor(entry, l);
-  const amount = AMOUNT[entry.amount];
+  // The three pillars that are a per-product line item still read their
+  // one-liner and their unit label from pricing.js's own accessor, so the
+  // Service description and the sentence on the page are one string.
+  const row = entry.id && entry.id !== 'video' ? perProduct(entry.id, l) : null;
+  const amount = entry.kind ? ladderRate(entry.kind, 1) : AMOUNT[entry.amount];
+  const unit = entry.unit ? entry.unit[l] : (row ? row.unit : perProduct('video', l).unit);
+  const description = entry.description ? entry.description[l] : row.line;
 
   return {
     '@type': 'Service',
     '@id': `${url}#service`,
-    name: entry.name ? entry.name[l] : row.name,
+    name: entry.name[l],
     serviceType: entry.serviceType[l],
-    description: row.line,
+    description,
     url,
     inLanguage: l,
     provider: { '@id': ORG_ID },
@@ -219,77 +288,84 @@ function serviceNode(path, lang, url) {
         '@type': 'UnitPriceSpecification',
         price: priceValue(amount),
         priceCurrency: 'EUR',
+        // Every figure in pricing.js is net. Saying so is the machine-readable
+        // half of vatLabel() — a page that prints "excl. VAT" beside a number
+        // and a graph that stays silent about it are quoting two prices.
+        valueAddedTaxIncluded: false,
         // "per product" / "per clip" / "one-time setup" — pricing.js's own
         // unit label, so the machine-readable unit and the printed one agree.
-        unitText: row.unit,
+        unitText: unit,
       },
     },
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRODUCT / OFFER — the seven tiers on /pricing, plus the sample.
+// PRODUCT / OFFER — what /pricing sells, plus the sample.
 //
-// Order follows section 3 of the brief. `quantity` is the only thing stated
-// here that pricing.js does not already carry on the row, and both figures are
-// read from pricing.js constants rather than typed.
+// Order follows the page: the three ladder scopes first, then the two add-ons
+// that sit on top of an order, then the three monthly plans. Nothing is typed
+// but the names above — every euro and every product count is read.
+//
+// A NOTE ON `price` VS `priceSpecification`, because the two say different
+// things and it would be easy to collapse them. `price` is the single figure a
+// consumer shows when it has room for one: for a ladder scope that is the ENTRY
+// rung, what one product costs, because that is the only rung a visitor can buy
+// at without qualifying for it. `priceSpecification` is then the whole ladder —
+// one UnitPriceSpecification per rung, each with the product count it applies
+// to in `eligibleQuantity`. That is the same table /pricing prints, rung for
+// rung, which is what keeps the graph and the page from quoting each other's
+// numbers back differently.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PRICING_TIERS = [
-  {
-    slug: 'drop-pilot',
-    source: 'package',
-    id: 'pilot',
-    amount: 'dropPilot',
-    quantity: { '@type': 'QuantitativeValue', value: PILOT_PRODUCTS, unitText: 'products' },
-  },
-  {
-    slug: 'full-drop',
-    source: 'package',
-    id: 'full-drop',
-    amount: 'fullDrop',
-    quantity: {
-      '@type': 'QuantitativeValue',
-      minValue: FULL_DROP_MIN,
-      maxValue: FULL_DROP_MAX,
-      unitText: 'products',
-    },
-  },
-  { slug: 'catalog-set', source: 'perProduct', id: 'catalog', amount: 'catalog' },
-  { slug: 'lifestyle-carousel', source: 'perProduct', id: 'lifestyle', amount: 'lifestyle' },
-  { slug: 'video-clip', source: 'perProduct', id: 'video', amount: 'video' },
-  { slug: 'brand-model', source: 'package', id: 'brand-model', amount: 'brandModel' },
-  {
-    slug: 'studio-retainer',
-    source: 'package',
-    id: 'retainer',
-    amount: 'retainer',
-    // A monthly rate, said in the way a machine can read it. UN/CEFACT MON =
-    // months; the human-readable "per month" is already on unitText.
-    reference: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' },
-  },
+/** The three ladder scopes, in the order /pricing's rate table reads them. */
+const LADDER_SCOPES = [
+  { slug: 'complete', kind: 'complete' },
+  { slug: 'catalog-set', kind: 'catalog' },
+  { slug: 'lifestyle-carousel', kind: 'lifestyle' },
 ];
 
 // The one fact in this file that pricing.js states only as a bullet inside a
-// package's `includes` list — and that list is not usable here, because it also
+// plan's `includes` list — and that list is not usable here, because it also
 // contains the reserved-window promise this file is forbidden to quote. So the
 // credit is restated as one sentence per language, with BOTH numbers read from
-// pricing.js: change the credit or the number of drops it covers and this
-// sentence changes with them.
+// pricing.js: change the credit or the number of orders it covers and this
+// sentence changes with them. ("drops" was the word here until the ladder
+// replaced the packages; it is orders now, everywhere.)
 const BRAND_MODEL_CREDIT = {
-  en: `${euro(AMOUNT.brandModelCredit, 'en')} is credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} drops.`,
-  nl: `${euro(AMOUNT.brandModelCredit, 'nl')} wordt verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops.`,
+  en: `${euro(AMOUNT.brandModelCredit, 'en')} is credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
+  nl: `${euro(AMOUNT.brandModelCredit, 'nl')} wordt verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
 };
 
-function productNode({ slug, name, description, amount, unitText, url, lang, quantity, reference }) {
+function productNode({ slug, name, description, amount, unitText, url, lang, quantity, reference, rungs }) {
   const l = norm(lang);
-  const priceSpec = {
+  const spec = (price, unit) => ({
     '@type': 'UnitPriceSpecification',
-    price: priceValue(amount),
+    price: priceValue(price),
     priceCurrency: 'EUR',
-    unitText,
-  };
-  if (reference) priceSpec.referenceQuantity = reference;
+    // pricing.js holds net figures only. Stating that here is the
+    // machine-readable half of vatLabel(): a page that prints "excl. VAT" and a
+    // graph that says nothing have quoted two different prices for one thing.
+    valueAddedTaxIncluded: false,
+    unitText: unit,
+  });
+
+  let priceSpecification;
+  if (rungs) {
+    // One specification per rung. `eligibleQuantity` is what makes a falling
+    // rate readable rather than contradictory: without it this would be five
+    // prices for one product and no way to tell which applies.
+    priceSpecification = rungs.map(([lo, hi, rate]) => {
+      const s = spec(rate, unitText);
+      s.eligibleQuantity = hi === null
+        ? { '@type': 'QuantitativeValue', minValue: lo, unitText: 'products' }
+        : { '@type': 'QuantitativeValue', minValue: lo, maxValue: hi, unitText: 'products' };
+      return s;
+    });
+  } else {
+    priceSpecification = spec(amount, unitText);
+    if (reference) priceSpecification.referenceQuantity = reference;
+  }
 
   const offer = {
     '@type': 'Offer',
@@ -299,7 +375,7 @@ function productNode({ slug, name, description, amount, unitText, url, lang, qua
     url,
     availability: 'https://schema.org/InStock',
     seller: { '@id': ORG_ID },
-    priceSpecification: priceSpec,
+    priceSpecification,
   };
   if (quantity) offer.eligibleQuantity = quantity;
 
@@ -316,22 +392,76 @@ function productNode({ slug, name, description, amount, unitText, url, lang, qua
 
 function pricingProductNodes(lang, url) {
   const l = norm(lang);
-  return PRICING_TIERS.map((tier) => {
-    const row = rowFor(tier, l);
-    const description =
-      tier.id === 'brand-model' ? `${row.line} ${BRAND_MODEL_CREDIT[l]}` : row.line;
-    return productNode({
-      slug: tier.slug,
-      name: row.name,
+  const nodes = [];
+
+  // ── The ladder ────────────────────────────────────────────────────────────
+  // The unit label is read off a per-product row rather than typed, so the
+  // machine-readable unit is the one the pillar pages print. All three scopes
+  // are sold by the product, so all three share it.
+  const perProductUnit = perProduct('catalog', l).unit;
+  for (const scope of LADDER_SCOPES) {
+    const rungs = LADDER[scope.kind];
+    const isComplete = scope.kind === 'complete';
+    // The complete scope has no per-product row of its own — it IS the other
+    // two bought together — so its description is built from both of theirs
+    // behind one typed lead sentence.
+    const description = isComplete
+      ? `${COMPLETE_LEAD[l]} ${perProduct('catalog', l).line} ${perProduct('lifestyle', l).line}`
+      : perProduct(scope.kind, l).line;
+    nodes.push(productNode({
+      slug: scope.slug,
+      name: isComplete ? COMPLETE_NAME[l] : perProduct(scope.kind, l).name,
       description,
-      amount: AMOUNT[tier.amount],
-      unitText: row.unit,
+      // The entry rung, and only the entry rung — see the block comment above.
+      amount: ladderRate(scope.kind, 1),
+      unitText: perProductUnit,
       url,
       lang: l,
-      quantity: tier.quantity,
-      reference: tier.reference,
-    });
-  });
+      rungs,
+    }));
+  }
+
+  // ── The two add-ons ───────────────────────────────────────────────────────
+  nodes.push(productNode({
+    slug: 'brand-model',
+    name: BRAND_MODEL_NAME[l],
+    description: `${BRAND_MODEL_LINE[l]} ${BRAND_MODEL_CREDIT[l]}`,
+    amount: AMOUNT.brandModel,
+    unitText: BRAND_MODEL_UNIT[l],
+    url,
+    lang: l,
+  }));
+  nodes.push(productNode({
+    slug: 'video-clip',
+    name: perProduct('video', l).name,
+    description: VIDEO_LINE[l],
+    amount: AMOUNT.video,
+    unitText: perProduct('video', l).unit,
+    url,
+    lang: l,
+  }));
+
+  // ── The plans ─────────────────────────────────────────────────────────────
+  // One Offer per plan, because a plan is a fixed monthly amount for a fixed
+  // monthly output — there is no rate to fall, so nothing to specify a range
+  // over. The included-products line comes from plans(), so the count in the
+  // description and the count the page lists are the same string.
+  for (const plan of plans(l)) {
+    nodes.push(productNode({
+      slug: `plan-${plan.id}`,
+      name: PLAN_NAME[l](plan.name),
+      description: `${plan.line} ${plan.includes[0]}.`,
+      amount: PLAN_AMOUNT[plan.id],
+      unitText: plan.unit,
+      url,
+      lang: l,
+      // A monthly rate, said in the way a machine can read it. UN/CEFACT MON =
+      // months; the human-readable "per month" is already on unitText.
+      reference: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' },
+    }));
+  }
+
+  return nodes;
 }
 
 function testSampleNode(lang, url) {

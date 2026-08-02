@@ -26,9 +26,9 @@
 // system has no radius at all.
 import {
   AMOUNT, euro, euroRange, TEST_SAMPLE, SHOOT_DAY,
-  FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
-  FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
-  BRAND_MODEL_CREDIT_DROPS,
+  BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim,
+  ladderRate, ladderFloor, quote, plans, vatLabel, withVat,
+  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
@@ -69,37 +69,58 @@ const MADE_IMG = [
 const FACES = ROSTER;
 
 // VISUALS PER PRODUCT, derived rather than typed. A catalog set is four photos
-// and a lifestyle carousel is three — both stated in PER_PRODUCT's `line` in
-// pricing.js, and both are what DROP_INCLUDES puts in every drop. The channel
-// band multiplies this by the drop size, and a figure like "175–210 images" is
-// exactly the kind of number that goes stale silently if it is typed by hand.
+// and a lifestyle carousel is three, which is what one product on the
+// `complete` ladder gets. The channel band multiplies this by an example count,
+// and a figure like "210 images" is exactly the kind of number that goes stale
+// silently if it is typed by hand.
 const PER_PRODUCT_VISUALS = 4 + 3;
-const DROP_VISUALS_MIN = PER_PRODUCT_VISUALS * FULL_DROP_MIN;
-const DROP_VISUALS_MAX = PER_PRODUCT_VISUALS * FULL_DROP_MAX;
+
+// THE TWO WORKED EXAMPLES this page uses, and the same two /pricing uses, so
+// the homepage and the price list cannot quote different sizes.
+//   14 — the count the old packages had no price for at all. A brand with
+//        fourteen products fell between a Pilot of eight and a Full Drop of
+//        twenty-five and paid à la carte: more than a Full Drop of thirty.
+//        Naming it here is the shortest way to show the hole is gone.
+//   30 — a full season, and the size the old Full Drop covered, so a returning
+//        visitor can compare like for like.
+const EX_SMALL = 14;
+const EX_FULL = 30;
+const Q_SMALL = quote('complete', EX_SMALL);
+const Q_FULL = quote('complete', EX_FULL);
+const ENTRY_RATE = ladderRate('complete', 1);
+const FLOOR_RATE = ladderFloor('complete');
+const FIRST_ORDER_PCT = Math.round(FIRST_ORDER_DISCOUNT * 100);
+const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 
 const COPY = {
   en: {
     heroAlt: 'A VISUAILS campaign visual — a model in the dunes at dusk',
     h1: ['The brand', 'you envisioned,', 'visualized.'],
-    heroLede: 'One folder of product photos becomes a whole drop — catalog, lifestyle and video in a single house style, finished inside a window reserved for you.',
-    ctaStart: 'Start a drop',
+    heroLede: 'One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style, priced per product, and the rate falls the more you run.',
+    ctaStart: 'Start an order',
     ctaSample: `See it first — ${sample.price}`,
     facts: [
-      ['Window', 'A reserved 48-hour window, confirmed before you pay'],
-      ['Review', 'Human-checked, every visual'],
+      // NOT typed. pricing.js's own header says "pages use this, never a
+      // literal" and this file broke that rule in four places — which is
+      // exactly how the NL copy below ended up saying "bevestigd voor je
+      // betaalt" while the other six NL pages said "voordat je betaalt", and
+      // "door mensen nagekeken" against the roster's "met de hand
+      // gecontroleerd". Two promises, two wordings, one studio.
+      ['Window', turnaround('attended', 'en')],
+      ['Review', reviewClaim('attended', 'en')],
       ['Studio', 'Enschede, NL'],
     ],
 
-    dropH: ['One drop. One deadline.', 'One invoice.'],
-    dropLede: 'A drop is a collection going live. That is the unit a brand actually works in, so it is the unit this studio is priced and judged in — not the photo, and not the hour.',
-    dropSpecK: 'A full drop',
-    dropSpecV: `${FULL_DROP_MIN}–${FULL_DROP_MAX} products`,
-    dropSpecP: euro(AMOUNT.fullDrop, 'en'),
-    dropSpecN: `Catalog set and lifestyle carousel for each. Between ${euro(FULL_DROP_PER_PRODUCT_MIN, 'en')} and ${euro(FULL_DROP_PER_PRODUCT_MAX, 'en')} per product, depending on how many you run.`,
+    dropH: ['One price per product.', 'It falls as you add.'],
+    dropLede: `A product is the unit — a catalog set and a lifestyle carousel, ${PER_PRODUCT_VISUALS} finished images. The rate starts at ${euro(ENTRY_RATE, 'en')} and comes down to ${euro(FLOOR_RATE, 'en')}, so there is no size that is the wrong size to order and nothing to work out before you can.`,
+    dropSpecK: `${EX_SMALL} products`,
+    dropSpecV: `${euro(Q_SMALL.rate, 'en')} each`,
+    dropSpecP: euro(Q_SMALL.net, 'en'),
+    dropSpecN: `${vatLabel('excl', 'en')} — ${euro(Q_SMALL.gross, 'en')} ${vatLabel('incl', 'en')}. A first order is ${FIRST_ORDER_PCT}% off, once per brand.`,
     dropWinK: 'The window',
     dropWinV: '48h',
-    dropWinN: 'Reserved in the studio calendar before you pay, and never offered until the calendar has cleared it. Nothing else in the studio is allowed to push it.',
-    dropPlateCap: 'A drop, as delivered',
+    dropWinN: `From ${WINDOW_THRESHOLD} products up, the order goes into the studio calendar and gets a reserved window — confirmed before you pay, and never offered until the calendar has cleared it. Below that it runs in the standard queue.`,
+    dropPlateCap: 'An order, as delivered',
     dropPlateSub: 'Catalog set · from a phone photo',
     dropPlateAlt: 'A finished VISUAILS catalog visual',
 
@@ -129,7 +150,7 @@ const COPY = {
     whoLede: 'Four situations this studio is priced for. If one of them is yours, the arithmetic already works.',
     who: [
       ['The first collection', 'You have the samples and no budget for a shoot. The range has to look like it belongs next to labels ten years older than you.'],
-      ['A drop every season', 'Four to six launches a year, and each one currently starts with finding a photographer, a model and a day everyone is free.'],
+      ['A launch every season', 'Four to six of them a year, and each one currently starts with finding a photographer, a model and a day everyone is free.'],
       ['Marketplaces to feed', 'Zalando, Amazon and bol want clean product images to a fixed spec. Getting them right is nobody’s favourite afternoon.'],
       ['More SKUs than hours', 'The range grew faster than the production around it, and photography is the part that keeps slipping.'],
     ],
@@ -137,7 +158,7 @@ const COPY = {
     notFor: [
       'you want one hero campaign image with contracted talent, rather than a whole range',
       'the brand direction still moves every few weeks — a house style needs something to be consistent with',
-      'you sell a single product, and a drop would be mostly empty',
+      'you sell a single product, so a house style has nothing to be consistent across',
       'you need a signed release for a named face you already work with',
     ],
 
@@ -149,7 +170,7 @@ const COPY = {
     baAfterAlt: 'The finished VISUAILS catalog visual made from it',
     baPoints: [
       ['The garment is unchanged', 'Cut, colour, print and hardware stay exactly as they are on the sample. That is the only part of the image that is not up for negotiation.'],
-      ['The rest is built', 'Light, background, model and crop are made around it, to whichever house style the drop is running.'],
+      ['The rest is built', 'Light, background, model and crop are made around it, to whichever house style the order is running.'],
       ['A person signs it off', 'Before it reaches you, the finished frame is put next to your original photo and checked against it.'],
     ],
     baNote: 'A phone photo in daylight is enough to start. If yours are worse than this one, send it anyway and you will get an honest answer.',
@@ -158,14 +179,14 @@ const COPY = {
     dreamKicker: 'What it is all actually for',
     dreamH: 'A small label that never looked small.',
     dreamLede: 'Nobody scrolling your page knows how many people work here. They only see whether the images look like a brand that has its act together — and that judgement is made in about two seconds. It is also the one part of looking established that a young label can simply go and buy.',
-    dreamCta: 'See a drop in full',
+    dreamCta: 'See an order in full',
     dreamAlt: 'A VISUAILS lifestyle visual — a styled campaign scene',
 
     weekH: 'The week you get back.',
     weekLede: 'A shoot is not one day. It is the week around it: the casting, the booking, the shipping, the reschedule when it rains, the two evenings spent culling frames. Here is what that week looks like instead.',
     week: [
       ['Monday', 'You drop a folder of product photos into the portal. Twenty minutes, and most of that is renaming folders to your SKUs.'],
-      ['Wednesday', 'The drop lands. You go through it in the portal, approve what is right and flag what is not.'],
+      ['Wednesday', 'The order lands. You go through it in the portal, approve what is right and flag what is not.'],
       ['Friday', 'Product pages are live and the carousels are scheduled. You were not in a studio once.'],
     ],
     backH: 'What that frees up',
@@ -176,35 +197,35 @@ const COPY = {
       ['No cull, no retouch queue', 'You get finished visuals, not four hundred frames to sort through on a Sunday.'],
     ],
 
-    vsH: 'What a drop replaces.',
+    vsH: 'What an order replaces.',
     vsLede: 'Not to scare you off a shoot — a good one is still the best thing that can happen to a garment. But a day is a day, and it is worth counting what is in it.',
     vsAK: 'A production day',
     vsAV: shoot.range,
     vsAN: shoot.basis,
     vsAList: shoot.items,
-    vsBK: 'A full drop',
-    vsBV: euro(AMOUNT.fullDrop, 'en'),
-    vsBN: `${FULL_DROP_MIN}–${FULL_DROP_MAX} products, everything counted`,
+    vsBK: `${EX_FULL} products`,
+    vsBV: euro(Q_FULL.net, 'en'),
+    vsBN: `${vatLabel('excl', 'en')}, everything counted — ${euro(Q_FULL.rate, 'en')} a product`,
     vsBList: ['Nothing to ship, nowhere to travel', 'No day off the business', 'The output is agreed before you pay', 'Run it again next season without rebooking'],
     vsNote: shoot.caveat,
 
     madeH: 'Four ways to look bigger than you are.',
-    madeLede: 'Catalog and lifestyle are in every drop. Video is quoted per clip and can be added to one. Your Brand Model is set up once and then belongs to you.',
+    madeLede: 'Catalog and lifestyle are what a product gets. Video is quoted per clip and can be added to any order. Your Brand Model is set up once and then belongs to you.',
     made: [
-      ['Catalog', 'Clean, consistent product pages that make a young range look established.', '/catalog', euro(AMOUNT.catalog, 'en') + ' / product'],
-      ['Lifestyle', 'Styled scenes in context that stop the scroll and sell the feeling.', '/lifestyle', euro(AMOUNT.lifestyle, 'en') + ' / product'],
+      ['Catalog', 'Clean, consistent product pages that make a young range look established.', '/catalog', `from ${euro(ladderRate('catalog', 1), 'en')} / product`],
+      ['Lifestyle', 'Styled scenes in context that stop the scroll and sell the feeling.', '/lifestyle', `from ${euro(ladderRate('lifestyle', 1), 'en')} / product`],
       ['Video', 'Subtle motion that lifts click-through where a still photo plateaus.', '/video', euro(AMOUNT.video, 'en') + ' / clip'],
-      ['Your Brand Model', 'One face, made only for you, keeping every drop unmistakably yours.', '/custom-models', euro(AMOUNT.brandModel, 'en') + ' once'],
+      ['Your Brand Model', 'One face, made only for you, keeping every order unmistakably yours.', '/custom-models', euro(AMOUNT.brandModel, 'en') + ' once'],
     ],
 
-    chH: 'One drop, every place it has to go.',
-    chLede: `A full drop is ${FULL_DROP_MIN}–${FULL_DROP_MAX} products at ${PER_PRODUCT_VISUALS} visuals each — ${DROP_VISUALS_MIN}–${DROP_VISUALS_MAX} finished images, cut for the places they actually have to sit.`,
+    chH: 'One order, every place it has to go.',
+    chLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} visuals each — ${EX_VISUALS} finished images, cut for the places they actually have to sit.`,
     ch: [
       ['Product page hero', 'The first frame on the page, on white or in scene'],
       ['Product page grid', 'Front, back and a fabric detail, consistent across the range'],
       ['On-model shot', 'In every catalog set, so nobody has to guess at fit'],
       ['Instagram carousel', 'Three styled frames per product, ready to post'],
-      ['Reels and TikTok', 'Vertical clips, quoted per clip and added to a drop'],
+      ['Reels and TikTok', 'Vertical clips, quoted per clip and added to any order'],
       ['Paid social', 'The same look in ad crops, so the click matches the landing page'],
       ['Marketplaces', 'Clean product images for the likes of Zalando, Amazon and bol'],
       ['Email and linesheets', 'Wide crops for newsletters and wholesale sheets'],
@@ -212,18 +233,13 @@ const COPY = {
     chNote: 'Downloads arrive sized per channel in the portal, with a provenance manifest beside them.',
 
     bmH: ['One face,', 'and it is only yours.'],
-    bmLede: `The roster below is who you can pick from today, and any of them can appear in your drop. Your Brand Model is the other route: a face made for your brand alone, set up once for ${euro(AMOUNT.brandModel, 'en')} and never used for anyone else — with ${euro(AMOUNT.brandModelCredit, 'en')} of it credited back on each of your first ${BRAND_MODEL_CREDIT_DROPS} drops.`,
+    bmLede: `The roster below is who you can pick from today, and any of them can appear in your drop. Your Brand Model is the other route: a face made for your brand alone, set up once for ${euro(AMOUNT.brandModel, 'en')} and never used for anyone else — with ${euro(AMOUNT.brandModelCredit, 'en')} of it credited back on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
     bmNote: 'A returning face is the cheapest continuity a brand can buy. It is the same reason catalogues have used the same model for years — recognition does the work that a bigger budget would otherwise have to.',
     bmCta: 'How Your Brand Model works',
 
-    prH: 'Three ways to work with the studio.',
-    prLede: 'Each one is a fixed figure agreed before anything starts. No credit system, no per-image billing, and no number you only find out at the end.',
-    pr: [
-      ['Drop Pilot', euro(AMOUNT.dropPilot, 'en'), `${PILOT_PRODUCTS} products, once per brand`, 'How most brands start. A real drop at a smaller size, so you see the whole process before you commit a season to it.'],
-      ['Full Drop', euro(AMOUNT.fullDrop, 'en'), `${FULL_DROP_MIN}–${FULL_DROP_MAX} products`, 'A season in one pass. A catalog set and a lifestyle carousel for every product, one deadline, one invoice.'],
-      ['Studio', `${euro(AMOUNT.retainer, 'en')} / month`, 'a Full Drop every month', 'For brands that never stop dropping. Your Brand Model is included and your work sits at the front of the queue.'],
-    ],
-    prNote: `Not ready for a whole drop? Loose products run at ${euro(AMOUNT.catalog, 'en')} for a catalog set and ${euro(AMOUNT.lifestyle, 'en')} for a lifestyle carousel — or see it on your own product for ${sample.price} first.`,
+    prH: 'Or put it on a monthly plan.',
+    prLede: `The ladder is for when you need it. A plan is for when you need it every month — and it is priced below the ladder for the same output, which is the only reason to offer one. Every figure here is ${vatLabel('excl', 'en')}.`,
+    prNote: `No plan, no problem: an order on the ladder starts at ${euro(ENTRY_RATE, 'en')} a product and comes down to ${euro(FLOOR_RATE, 'en')}, with ${FIRST_ORDER_PCT}% off a first order. Or see it on your own product for ${sample.price} first.`,
     prCta: 'The full price list',
 
     plH: 'Work back from your launch date.',
@@ -233,20 +249,20 @@ const COPY = {
       ['Minus 48 hours', 'The reserved window. Once the calendar has cleared it, nothing else in the studio is allowed to push it.'],
       ['Minus one folder', 'The day you send the photos. That is your part finished — the date is already locked by then.'],
     ],
-    plNote: 'Drop weeks are booked one at a time, and a full week is offered as full rather than as a longer wait. Season launches cluster, so the weeks around them go first.',
+    plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait. Season launches cluster, so the weeks around them go first.',
     plCta: 'See which weeks are open',
 
     dashH: ['What happens', 'after you order.'],
-    dashLede: 'A drop is not a file that lands in your inbox. It runs on two screens — one you get, one we work in — and both of them are the reason a date can be promised at all.',
+    dashLede: 'An order is not a file that lands in your inbox. It runs on two screens — one you get, one we work in — and both of them are the reason a date can be promised at all.',
     dashPortalK: 'Your portal',
-    dashPortalN: 'A private link, no password. Order summary, status and the delivery date with a countdown. When the drop lands: the full gallery, approve or request a revision image by image, and downloads sized per channel — shop, social, ads — with a provenance manifest beside them.',
+    dashPortalN: 'A private link, no password. Order summary, status and the delivery date with a countdown. When the order lands: the full gallery, approve or request a revision image by image, and downloads sized per channel — shop, social, ads — with a provenance manifest beside them.',
     dashPortalCta: 'See the client portal',
     dashPortalPh: 'Client portal · delivery gallery',
     dashPortalSpec: 'Screenshot to place · 16:10 · /img/portal-gallery.webp',
     dashPortalNote: 'The approve / request-revision screen, with one image selected.',
     dashStudioK: 'The studio side',
     dashStudioN: 'Every order, its status and the capacity calendar the date picker reads from. A status change writes the client-visible timeline in the same move, which is why the portal is never out of date with the studio.',
-    dashStudioCta: 'See how a drop is run',
+    dashStudioCta: 'See how an order is run',
     dashStudioPh: 'Studio dashboard · capacity calendar',
     dashStudioSpec: 'Screenshot to place · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'The order table with the week that is full marked as full.',
@@ -256,8 +272,8 @@ const COPY = {
 
     statsH: 'What the numbers actually are.',
     stats: [
-      ['48h', 'the reserved window a drop is finished inside, once the calendar has cleared it'],
-      [`${FULL_DROP_MIN}–${FULL_DROP_MAX}`, `products in a full drop — ${euro(AMOUNT.fullDrop, 'en')}, one deadline, one invoice`],
+      ['48h', `the reserved window an order of ${WINDOW_THRESHOLD} products or more is finished inside, once the calendar has cleared it`],
+      [euro(FLOOR_RATE, 'en'), `the lowest the per-product rate goes, ${vatLabel('excl', 'en')} — it starts at ${euro(ENTRY_RATE, 'en')} and falls the more you run`],
       ['4', 'house styles to choose from: Glow, Dunes, Flash and Phone-made'],
       [sample.price, 'to see it on your own product before you commit to anything'],
     ],
@@ -268,9 +284,9 @@ const COPY = {
     promiseChecks: [
       [`See it first for ${sample.price}`, 'a test sample on your own product before you commit to anything.'],
       ['We ask before we call it done', 'every order ends with the same question: are these right? If they are not, we go through it with you.'],
-      ['The first three brands, free', `a Drop Pilot — ${PILOT_PRODUCTS} products, ${euro(AMOUNT.dropPilot, 'en')} — at no charge, in exchange for a published case study.`],
+      ['The first three brands, free', `a first order of up to ${EX_SMALL} products at no charge, in exchange for a published case study.`],
     ],
-    trust: ['Made in Enschede, NL', 'KVK-registered business', 'Human-checked, every visual', 'Direct line on WhatsApp'],
+    trust: ['Made in Enschede, NL', 'KVK-registered business', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
 
     obH: 'The things you would ask on a call.',
     obLede: 'Four answers that usually take a phone call to get out of a supplier. They are the same four either way, so they may as well be here.',
@@ -288,31 +304,31 @@ const COPY = {
     closeH: 'See it on your own product first.',
     closeLede: `One visual, made from your photo, human-checked — for a ${sample.price} verification. One per business.`,
     closeCta: 'Get your test sample',
-    closeAlt: 'Start a drop instead',
+    closeAlt: 'Start an order instead',
   },
 
   nl: {
     heroAlt: 'Een VISUAILS campagnebeeld — een model in de duinen bij schemering',
     h1: ['Het merk', 'dat je voor je zag,', 'in beeld.'],
-    heroLede: 'Eén map met productfoto’s wordt een hele drop — catalog, lifestyle en video in één huisstijl, af binnen een venster dat voor jou is vrijgehouden.',
-    ctaStart: 'Start een drop',
+    heroLede: 'Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl, geprijsd per product, en het tarief zakt naarmate je er meer doet.',
+    ctaStart: 'Start een bestelling',
     ctaSample: `Zie het eerst — ${sample.price}`,
     facts: [
-      ['Venster', 'Een gereserveerd venster van 48 uur, bevestigd voor je betaalt'],
-      ['Controle', 'Door mensen nagekeken, elk beeld'],
+      ['Venster', turnaround('attended', 'nl')],
+      ['Controle', reviewClaim('attended', 'nl')],
       ['Studio', 'Enschede, NL'],
     ],
 
-    dropH: ['Eén drop. Eén deadline.', 'Eén factuur.'],
-    dropLede: 'Een drop is een collectie die live gaat. Dat is de eenheid waarin een merk werkelijk werkt, dus is het de eenheid waarin deze studio geprijsd en beoordeeld wordt — niet de foto, en niet het uur.',
-    dropSpecK: 'Een volledige drop',
-    dropSpecV: `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten`,
-    dropSpecP: euro(AMOUNT.fullDrop, 'nl'),
-    dropSpecN: `Voor elk een catalogset en een lifestyle-carousel. Tussen ${euro(FULL_DROP_PER_PRODUCT_MIN, 'nl')} en ${euro(FULL_DROP_PER_PRODUCT_MAX, 'nl')} per product, afhankelijk van hoeveel je er doet.`,
+    dropH: ['Eén prijs per product.', 'Die zakt als je er meer doet.'],
+    dropLede: `Een product is de eenheid — een catalogset en een lifestyle-carousel, ${PER_PRODUCT_VISUALS} afgewerkte beelden. Het tarief begint bij ${euro(ENTRY_RATE, 'nl')} en zakt naar ${euro(FLOOR_RATE, 'nl')}, dus er is geen aantal dat het verkeerde aantal is en niets om eerst uit te rekenen.`,
+    dropSpecK: `${EX_SMALL} producten`,
+    dropSpecV: `${euro(Q_SMALL.rate, 'nl')} per stuk`,
+    dropSpecP: euro(Q_SMALL.net, 'nl'),
+    dropSpecN: `${vatLabel('excl', 'nl')} — ${euro(Q_SMALL.gross, 'nl')} ${vatLabel('incl', 'nl')}. Je eerste bestelling is ${FIRST_ORDER_PCT}% goedkoper, één keer per merk.`,
     dropWinK: 'Het venster',
     dropWinV: '48u',
-    dropWinN: 'Vastgelegd in de studioplanning voordat je betaalt, en nooit aangeboden voordat de planning het heeft vrijgegeven. Niets anders in de studio mag eroverheen.',
-    dropPlateCap: 'Een drop, zoals geleverd',
+    dropWinN: `Vanaf ${WINDOW_THRESHOLD} producten gaat de bestelling in de studioplanning en krijgt hij een gereserveerd venster — bevestigd voordat je betaalt, en nooit aangeboden voordat de planning het heeft vrijgegeven. Daaronder loopt hij in de gewone wachtrij.`,
+    dropPlateCap: 'Een bestelling, zoals geleverd',
     dropPlateSub: 'Catalogset · uit een telefoonfoto',
     dropPlateAlt: 'Een afgewerkt VISUAILS catalogbeeld',
 
@@ -342,7 +358,7 @@ const COPY = {
     whoLede: 'Vier situaties waar deze studio op geprijsd is. Zit die van jou ertussen, dan klopt de rekensom al.',
     who: [
       ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De lijn moet eruitzien alsof hij thuishoort naast labels die tien jaar ouder zijn.'],
-      ['Elk seizoen een drop', 'Vier tot zes lanceringen per jaar, en elke keer begint het met een fotograaf zoeken, een model regelen en een dag vinden waarop iedereen kan.'],
+      ['Elk seizoen een lancering', 'Vier tot zes per jaar, en elke keer begint het met een fotograaf zoeken, een model regelen en een dag vinden waarop iedereen kan.'],
       ['Marktplaatsen voeden', 'Zalando, Amazon en bol willen schone productbeelden volgens een vaste spec. Dat goed krijgen is niemands favoriete middag.'],
       ['Meer SKU’s dan uren', 'De collectie groeide harder dan de productie eromheen, en de fotografie is het stuk dat blijft doorschuiven.'],
     ],
@@ -350,7 +366,7 @@ const COPY = {
     notFor: [
       'je één campagnebeeld wilt met vastgelegde modellen, en niet een hele lijn',
       'de merkrichting nog om de paar weken verschuift — een huisstijl moet ergens consistent mee kunnen zijn',
-      'je één product verkoopt, en een drop grotendeels leeg zou blijven',
+      'je één product verkoopt, waardoor een huisstijl nergens consistent over kan zijn',
       'je een getekende release nodig hebt voor een gezicht waar je al mee werkt',
     ],
 
@@ -362,7 +378,7 @@ const COPY = {
     baAfterAlt: 'Het afgewerkte VISUAILS-catalogbeeld dat daaruit is gemaakt',
     baPoints: [
       ['Het kledingstuk blijft zoals het is', 'Snit, kleur, print en fournituren blijven precies zoals ze op het sample zitten. Dat is het enige deel van het beeld waar niet over te onderhandelen valt.'],
-      ['De rest wordt eromheen gebouwd', 'Licht, achtergrond, model en uitsnede worden eromheen gemaakt, in de huisstijl waarin de drop draait.'],
+      ['De rest wordt eromheen gebouwd', 'Licht, achtergrond, model en uitsnede worden eromheen gemaakt, in de huisstijl waarin de bestelling draait.'],
       ['Een mens tekent het af', 'Voordat het naar je toe gaat, wordt het eindbeeld naast jouw originele foto gelegd en ertegen gecontroleerd.'],
     ],
     baNote: 'Een telefoonfoto bij daglicht is genoeg om te beginnen. Zijn die van jou slechter dan deze, stuur er dan toch één en je krijgt een eerlijk antwoord.',
@@ -371,14 +387,14 @@ const COPY = {
     dreamKicker: 'Waar het uiteindelijk allemaal om gaat',
     dreamH: 'Een klein label dat er nooit klein uitzag.',
     dreamLede: 'Niemand die je pagina scrolt weet hoeveel mensen hier werken. Ze zien alleen of de beelden van een merk zijn dat het voor elkaar heeft — en dat oordeel valt in ongeveer twee seconden. Het is ook het enige deel van gevestigd overkomen dat een jong label gewoon kan kopen.',
-    dreamCta: 'Bekijk een hele drop',
+    dreamCta: 'Bekijk een hele bestelling',
     dreamAlt: 'Een VISUAILS lifestyle-beeld — een gestylede campagnescène',
 
     weekH: 'De week die je terugkrijgt.',
     weekLede: 'Een shoot is niet één dag. Het is de week eromheen: de casting, de boeking, het opsturen, het verzetten als het regent, de twee avonden foto’s uitzoeken. Zo ziet die week er in plaats daarvan uit.',
     week: [
       ['Maandag', 'Je zet een map met productfoto’s in het portaal. Twintig minuten, en het meeste daarvan is mappen hernoemen naar je SKU’s.'],
-      ['Woensdag', 'De drop landt. Je loopt hem door in het portaal, keurt goed wat klopt en markeert wat niet klopt.'],
+      ['Woensdag', 'De bestelling landt. Je loopt hem door in het portaal, keurt goed wat klopt en markeert wat niet klopt.'],
       ['Vrijdag', 'De productpagina’s staan live en de carousels zijn ingepland. Je bent geen moment in een studio geweest.'],
     ],
     backH: 'Wat dat vrijmaakt',
@@ -389,35 +405,35 @@ const COPY = {
       ['Geen selectie, geen retoucheerlijst', 'Je krijgt afgewerkte beelden, geen vierhonderd frames om op een zondag door te spitten.'],
     ],
 
-    vsH: 'Wat een drop vervangt.',
+    vsH: 'Wat een bestelling vervangt.',
     vsLede: 'Niet om je van een shoot af te houden — een goede is nog altijd het beste wat een kledingstuk kan overkomen. Maar een dag is een dag, en het is de moeite waard om te tellen wat erin zit.',
     vsAK: 'Een productiedag',
     vsAV: shoot.range,
     vsAN: shoot.basis,
     vsAList: shoot.items,
-    vsBK: 'Een volledige drop',
-    vsBV: euro(AMOUNT.fullDrop, 'nl'),
-    vsBN: `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten, alles meegerekend`,
+    vsBK: `${EX_FULL} producten`,
+    vsBV: euro(Q_FULL.net, 'nl'),
+    vsBN: `${vatLabel('excl', 'nl')}, alles meegerekend — ${euro(Q_FULL.rate, 'nl')} per product`,
     vsBList: ['Niets op te sturen, nergens heen te reizen', 'Geen dag uit de zaak', 'De uitkomst staat vast voor je betaalt', 'Volgend seizoen opnieuw, zonder iets te herboeken'],
     vsNote: shoot.caveat,
 
     madeH: 'Vier manieren om groter te lijken dan je bent.',
-    madeLede: 'Catalog en lifestyle zitten in elke drop. Video wordt per clip geoffreerd en kan eraan worden toegevoegd. Je merkmodel wordt één keer opgezet en is daarna van jou.',
+    madeLede: 'Catalog en lifestyle zijn wat een product krijgt. Video wordt per clip geoffreerd en kan aan elke bestelling worden toegevoegd. Je merkmodel wordt één keer opgezet en is daarna van jou.',
     made: [
-      ['Catalog', 'Strakke, consistente productpagina’s die een jonge lijn gevestigd laten lijken.', '/catalog', euro(AMOUNT.catalog, 'nl') + ' / product'],
-      ['Lifestyle', 'Gestileerde scènes in context die de scroll stoppen en het gevoel verkopen.', '/lifestyle', euro(AMOUNT.lifestyle, 'nl') + ' / product'],
+      ['Catalog', 'Strakke, consistente productpagina’s die een jonge lijn gevestigd laten lijken.', '/catalog', `vanaf ${euro(ladderRate('catalog', 1), 'nl')} / product`],
+      ['Lifestyle', 'Gestileerde scènes in context die de scroll stoppen en het gevoel verkopen.', '/lifestyle', `vanaf ${euro(ladderRate('lifestyle', 1), 'nl')} / product`],
       ['Video', 'Subtiele beweging die doorklik oplevert waar een stilstaand beeld blijft steken.', '/video', euro(AMOUNT.video, 'nl') + ' / clip'],
-      ['Je merkmodel', 'Eén gezicht, alleen voor jou gemaakt, waardoor elke drop onmiskenbaar van jou is.', '/custom-models', euro(AMOUNT.brandModel, 'nl') + ' eenmalig'],
+      ['Je merkmodel', 'Eén gezicht, alleen voor jou gemaakt, waardoor elke bestelling onmiskenbaar van jou is.', '/custom-models', euro(AMOUNT.brandModel, 'nl') + ' eenmalig'],
     ],
 
-    chH: 'Eén drop, overal waar hij heen moet.',
-    chLede: `Een volledige drop is ${FULL_DROP_MIN}–${FULL_DROP_MAX} producten van ${PER_PRODUCT_VISUALS} beelden per stuk — ${DROP_VISUALS_MIN}–${DROP_VISUALS_MAX} afgewerkte beelden, uitgesneden voor de plekken waar ze echt moeten staan.`,
+    chH: 'Eén bestelling, overal waar hij heen moet.',
+    chLede: `Een seizoen van ${EX_FULL} producten is ${PER_PRODUCT_VISUALS} beelden per stuk — ${EX_VISUALS} afgewerkte beelden, uitgesneden voor de plekken waar ze echt moeten staan.`,
     ch: [
       ['Hero op de productpagina', 'Het eerste beeld op de pagina, op wit of in scène'],
       ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail, consistent over de hele lijn'],
       ['On-model beeld', 'In elke catalogset, zodat niemand naar de pasvorm hoeft te raden'],
       ['Instagram-carousel', 'Drie gestylede beelden per product, klaar om te posten'],
-      ['Reels en TikTok', 'Verticale clips, per clip geoffreerd en toe te voegen aan een drop'],
+      ['Reels en TikTok', 'Verticale clips, per clip geoffreerd en toe te voegen aan elke bestelling'],
       ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes, zodat de klik bij de landingspagina past'],
       ['Marktplaatsen', 'Schone productbeelden voor partijen als Zalando, Amazon en bol'],
       ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale-overzichten'],
@@ -425,18 +441,13 @@ const COPY = {
     chNote: 'De downloads staan per kanaal op maat klaar in het portaal, met een herkomstmanifest ernaast.',
 
     bmH: ['Eén gezicht,', 'en het is alleen van jou.'],
-    bmLede: `De rij hieronder is waar je vandaag uit kunt kiezen, en elk van hen kan in jouw drop verschijnen. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is, één keer opgezet voor ${euro(AMOUNT.brandModel, 'nl')} en nooit voor iemand anders gebruikt — waarvan ${euro(AMOUNT.brandModelCredit, 'nl')} terugkomt op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops.`,
+    bmLede: `De rij hieronder is waar je vandaag uit kunt kiezen, en elk van hen kan in jouw drop verschijnen. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is, één keer opgezet voor ${euro(AMOUNT.brandModel, 'nl')} en nooit voor iemand anders gebruikt — waarvan ${euro(AMOUNT.brandModelCredit, 'nl')} terugkomt op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
     bmNote: 'Een terugkerend gezicht is de goedkoopste continuïteit die een merk kan kopen. Het is dezelfde reden waarom catalogi al jaren hetzelfde model gebruiken — herkenning doet het werk waar anders een groter budget voor nodig is.',
     bmCta: 'Zo werkt je merkmodel',
 
-    prH: 'Drie manieren om met de studio te werken.',
-    prLede: 'Alle drie een vast bedrag dat vaststaat voordat er iets begint. Geen creditsysteem, geen facturatie per beeld, en geen bedrag dat je pas achteraf te horen krijgt.',
-    pr: [
-      ['Drop Pilot', euro(AMOUNT.dropPilot, 'nl'), `${PILOT_PRODUCTS} producten, één keer per merk`, 'Zo beginnen de meeste merken. Een echte drop op kleiner formaat, zodat je het hele proces ziet voor je er een seizoen aan vastknoopt.'],
-      ['Full Drop', euro(AMOUNT.fullDrop, 'nl'), `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten`, 'Een seizoen in één keer. Voor elk product een catalogset en een lifestyle-carousel, één deadline, één factuur.'],
-      ['Studio', `${euro(AMOUNT.retainer, 'nl')} / maand`, 'elke maand een Full Drop', 'Voor merken die blijven droppen. Je merkmodel zit erbij en jouw werk staat vooraan in de rij.'],
-    ],
-    prNote: `Nog niet toe aan een hele drop? Losse producten kosten ${euro(AMOUNT.catalog, 'nl')} voor een catalogset en ${euro(AMOUNT.lifestyle, 'nl')} voor een lifestyle-carousel — of zie het eerst op je eigen product voor ${sample.price}.`,
+    prH: 'Of zet het op een maandplan.',
+    prLede: `De staffel is voor als je het nodig hebt. Een plan is voor als je het elke maand nodig hebt — en het is voor dezelfde output goedkoper dan de staffel, want dat is de enige reden om er een aan te bieden. Alle bedragen hier zijn ${vatLabel('excl', 'nl')}.`,
+    prNote: `Liever geen plan: een bestelling op de staffel begint bij ${euro(ENTRY_RATE, 'nl')} per product en zakt naar ${euro(FLOOR_RATE, 'nl')}, met ${FIRST_ORDER_PCT}% korting op je eerste bestelling. Of zie het eerst op je eigen product voor ${sample.price}.`,
     prCta: 'De volledige prijslijst',
 
     plH: 'Reken terug vanaf je livegangdatum.',
@@ -446,20 +457,20 @@ const COPY = {
       ['Min 48 uur', 'Het gereserveerde venster. Zodra de planning het heeft vrijgegeven, mag niets anders in de studio eroverheen.'],
       ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar — de datum staat op dat moment al vast.'],
     ],
-    plNote: 'Dropweken worden één voor één geboekt, en een volle week wordt als vol aangeboden in plaats van als langere wachttijd. Seizoenslanceringen klonteren samen, dus de weken eromheen gaan het eerst.',
+    plNote: 'Weken worden één voor één geboekt, en een volle week wordt als vol aangeboden in plaats van als langere wachttijd. Seizoenslanceringen klonteren samen, dus de weken eromheen gaan het eerst.',
     plCta: 'Kijk welke weken open staan',
 
     dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
-    dashLede: 'Een drop is geen bestand dat in je inbox valt. Hij draait op twee schermen — één dat jij krijgt, één waarin wij werken — en samen zijn ze de reden dat er überhaupt een datum beloofd kan worden.',
+    dashLede: 'Een bestelling is geen bestand dat in je inbox valt. Hij draait op twee schermen — één dat jij krijgt, één waarin wij werken — en samen zijn ze de reden dat er überhaupt een datum beloofd kan worden.',
     dashPortalK: 'Jouw portaal',
-    dashPortalN: 'Een privélink, zonder wachtwoord. Ordersamenvatting, status en de leverdatum met een aftelling. Zodra de drop landt: de volledige galerij, per beeld goedkeuren of een revisie aanvragen, en downloads op maat per kanaal — shop, social, ads — met een herkomstmanifest ernaast.',
+    dashPortalN: 'Een privélink, zonder wachtwoord. Ordersamenvatting, status en de leverdatum met een aftelling. Zodra de bestelling landt: de volledige galerij, per beeld goedkeuren of een revisie aanvragen, en downloads op maat per kanaal — shop, social, ads — met een herkomstmanifest ernaast.',
     dashPortalCta: 'Bekijk het klantportaal',
     dashPortalPh: 'Klantportaal · leveringsgalerij',
     dashPortalSpec: 'Screenshot te plaatsen · 16:10 · /img/portal-gallery.webp',
     dashPortalNote: 'Het scherm voor goedkeuren en revisie aanvragen, met één beeld geselecteerd.',
     dashStudioK: 'De studiokant',
     dashStudioN: 'Elke order, de status ervan en de capaciteitskalender waar de datumkiezer uit leest. Een statuswijziging schrijft in dezelfde beweging de tijdlijn die de klant ziet — daarom loopt het portaal nooit achter op de studio.',
-    dashStudioCta: 'Zie hoe een drop draait',
+    dashStudioCta: 'Zie hoe een bestelling draait',
     dashStudioPh: 'Studiodashboard · capaciteitskalender',
     dashStudioSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'De ordertabel, met de volle week als vol gemarkeerd.',
@@ -469,8 +480,8 @@ const COPY = {
 
     statsH: 'Wat de getallen werkelijk zijn.',
     stats: [
-      ['48u', 'het gereserveerde venster waarbinnen een drop af is, zodra de planning het heeft vrijgegeven'],
-      [`${FULL_DROP_MIN}–${FULL_DROP_MAX}`, `producten in een volledige drop — ${euro(AMOUNT.fullDrop, 'nl')}, één deadline, één factuur`],
+      ['48u', `het gereserveerde venster waarbinnen een bestelling van ${WINDOW_THRESHOLD} producten of meer af is, zodra de planning het heeft vrijgegeven`],
+      [euro(FLOOR_RATE, 'nl'), `het laagste dat het tarief per product wordt, ${vatLabel('excl', 'nl')} — het begint bij ${euro(ENTRY_RATE, 'nl')} en zakt naarmate je er meer doet`],
       ['4', 'huisstijlen om uit te kiezen: Glow, Dunes, Flash en Phone-made'],
       [sample.price, 'om het op je eigen product te zien voordat je je ergens aan vastlegt'],
     ],
@@ -481,9 +492,9 @@ const COPY = {
     promiseChecks: [
       [`Zie het eerst voor ${sample.price}`, 'een proefvisual op je eigen product voordat je je ergens aan vastlegt.'],
       ['We vragen het voordat we het af noemen', 'elke order eindigt met dezelfde vraag: kloppen ze? Zo niet, dan gaan we het samen na.'],
-      ['De eerste drie merken, gratis', `een Drop Pilot — ${PILOT_PRODUCTS} producten, ${euro(AMOUNT.dropPilot, 'nl')} — kosteloos, in ruil voor een gepubliceerde case.`],
+      ['De eerste drie merken, gratis', `een eerste bestelling van maximaal ${EX_SMALL} producten kosteloos, in ruil voor een gepubliceerde case.`],
     ],
-    trust: ['Gemaakt in Enschede, NL', 'KVK-geregistreerd bedrijf', 'Door mensen nagekeken, elk beeld', 'Directe lijn via WhatsApp'],
+    trust: ['Gemaakt in Enschede, NL', 'KVK-geregistreerd bedrijf', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
 
     obH: 'De dingen die je aan de telefoon zou vragen.',
     obLede: 'Vier antwoorden waar je bij een leverancier meestal een belletje voor nodig hebt. Het zijn toch elke keer dezelfde vier, dus staan ze net zo goed hier.',
@@ -501,9 +512,17 @@ const COPY = {
     closeH: 'Zie het eerst op je eigen product.',
     closeLede: `Eén beeld, gemaakt van jouw foto, door een mens nagekeken — voor een verificatie van ${sample.price}. Eén per bedrijf.`,
     closeCta: 'Vraag je proefvisual aan',
-    closeAlt: 'Of start meteen een drop',
+    closeAlt: 'Of start meteen een bestelling',
   },
 };
+
+const PLANS = plans(lang);
+// The incl.-VAT twin of a plan's price. plans() returns the net figure because
+// every figure in pricing.js is net; BRIEF-14's rule is that no price is
+// printed without saying which it is, so the label and the gross figure travel
+// together and neither is typed.
+const withVatLabel = (plan) =>
+  `${euro(withVat(PLAN_AMOUNT[plan.id]), lang)} ${vatLabel('incl', lang)}`;
 
 const c = COPY[lang];
 
@@ -898,7 +917,7 @@ const FAQ_PICK = [
     <div class="rail hv-faces" data-rail>
       {FACES.map((m) => (
         <a class="hv-face" href={lp('/models')}>
-          <span class="plate"><img src={m.photo} alt={`${m.name} — ${m.traits.join(', ')}`} width="800" height="1071" loading="lazy" decoding="async" /></span>
+          <span class="plate"><img src={m.photo} alt={`${m.name} — ${m.traits.join(', ')}`} width={m.w} height={m.h} loading="lazy" decoding="async" /></span>
           <span class="plate-cap"><b>{m.name}</b><span>{m.traits.join(' · ')}</span></span>
         </a>
       ))}
@@ -981,14 +1000,21 @@ const FAQ_PICK = [
       <h2>{c.prH}</h2>
       <p class="lede">{c.prLede}</p>
     </div>
+    {/* Read from plans() rather than from a copy tuple in this file. The plan
+        names, prices, inclusions and — critically — the saving line are all
+        computed in pricing.js, and the saving is asserted at build time to be
+        real. A homepage that typed its own version of that sentence is a
+        homepage that would eventually claim a saving the price list denies. */}
     <div class="tiles hv-pr-tiles">
-      {c.pr.map(([k, v, sub, n], i) => (
+      {PLANS.map((plan, i) => (
         <div class={`tile s-4${i === 1 ? ' on-bright tile-c-blue' : ''}`}>
           <div class="tile-body">
-            <p class="tile-k">{k}</p>
-            <p class="tile-v">{v}</p>
-            <p class="hv-tile-sub">{sub}</p>
-            <p class="tile-n">{n}</p>
+            <p class="tile-k">{plan.name}</p>
+            <p class="tile-v">{plan.price}</p>
+            <p class="hv-tile-sub">{plan.unit} · {withVatLabel(plan)}</p>
+            <p class="tile-n">{plan.line}</p>
+            <ul class="hv-pr-inc">{plan.includes.map((x) => (<li>{x}</li>))}</ul>
+            {plan.saving && <p class="hv-pr-saving">{plan.saving}</p>}
           </div>
         </div>
       ))}
@@ -1424,6 +1450,12 @@ const FAQ_PICK = [
 
   /* ── the three tiers ───────────────────────────────────────────────────── */
   .hv-pr-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  .hv-pr-inc { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .45rem; }
+  .hv-pr-inc li { position: relative; padding-left: 1.1rem; font-size: .84rem; line-height: 1.5; color: var(--ink-3); }
+  .hv-pr-inc li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 1px; background: var(--line-ui); }
+  /* The saving line is the plan's whole argument, so it sits apart from the
+     inclusions rather than as one more bullet among them. */
+  .hv-pr-saving { margin: 1.1rem 0 0; padding-top: .9rem; box-shadow: inset 0 1px 0 var(--line); font-size: .84rem; line-height: 1.5; font-weight: 700; color: var(--ink-2); }
   .hv-pr-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
   .hv-pr-foot p { margin: 0; max-width: 62ch; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
 

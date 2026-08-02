@@ -1,22 +1,31 @@
 ---
 // VISUAILS — Gidsen-hub (Nederlands). Vertaling van src/pages/guides.astro.
 import Layout from '../../layouts/Layout.astro';
-import { perProduct, TEST_SAMPLE } from '../../data/pricing.js';
+import {
+  euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel, TEST_SAMPLE,
+} from '../../data/pricing.js';
 
 // De prijzenkaart typte alle drie de per-productbedragen met de hand — inclusief
 // een "video vanaf €49" die de herprijzing al had ingetrokken — en de proceskaart
 // beloofde een afgewerkte visual terug "in ongeveer 24 uur". Beide zijn feiten
 // uit pricing.js; hier uitgetypt overleeft een kaart elke prijswijziging.
-const CAT = perProduct('catalog', 'nl');
-const LIFE = perProduct('lifestyle', 'nl');
-const VID = perProduct('video', 'nl');
+//
+// Twee van de drie bedragen zijn sinds augustus 2026 geen enkel bedrag meer:
+// foto’s zitten op een staffel die daalt met het aantal. Een clip staat daar
+// niet op — dat is één vast tarief, los of binnen een bestelling — dus die
+// houdt zijn ene bedrag, en de kaart zegt welk van de twee soorten het is.
+const CAT_ENTRY = euro(ladderRate('catalog', 1), 'nl');
+const CAT_FLOOR = euro(ladderFloor('catalog'), 'nl');
+const LIFE_ENTRY = euro(ladderRate('lifestyle', 1), 'nl');
+const VID = euro(AMOUNT.video, 'nl');
+const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 const SAMPLE = TEST_SAMPLE.nl;
 
 const guides = [
   { title: 'Zo fotografeer je je product met je telefoon', desc: 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', href: '/nl/upload-guidelines', tag: 'Checklist' },
   { title: 'Van foto naar publicatie — hoe het werkt', desc: 'Wat er precies gebeurt tussen het sturen van één foto en het terugkrijgen van een afgewerkte, met de hand gecontroleerde visual.', href: '/nl/how-it-works', tag: 'Proces' },
   { title: 'AI-tools vs een done-for-you studio', desc: 'Wanneer een self-serve AI-tool echt genoeg is — en waar hij je stilletjes geld kost aan overdoen, off-brand kleur en uren.', href: '/nl/compare', tag: 'Vergelijk' },
-  { title: 'Wat productvisuals echt kosten', desc: `Catalog voor ${CAT.price} per set van vier foto’s, lifestyle ${LIFE.price}, video ${VID.price} per clip — en hoe zich dat verhoudt tot een traditionele shootdag.`, href: '/nl/pricing', tag: 'Prijzen' },
+  { title: 'Wat productvisuals echt kosten', desc: `Catalog vanaf ${CAT_ENTRY} per set van vier foto’s en lifestyle vanaf ${LIFE_ENTRY}, allebei dalend tot ${CAT_FLOOR} en lager vanaf ${FLOOR_FROM} producten; video een vaste ${VID} per clip. Alles ${vatLabel('excl', 'nl')}.`, href: '/nl/pricing', tag: 'Prijzen' },
   { title: 'Vragen, beantwoord', desc: 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', href: '/nl/faq', tag: 'FAQ' },
 ];
 ---

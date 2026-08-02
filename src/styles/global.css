@@ -382,8 +382,6 @@
 .site-footer,
 .cta-band,
 .photo-band,
-.ba,
-.spot,
 .cmp,
 .make-tile,
 .hero-cover,
@@ -847,6 +845,14 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 /* 1 · BAND — the unit of vertical rhythm. Three weights, deliberately not
    evenly spaced: a specification band sits tighter than a photograph. */
+/* .section-tight — the pre-band name for the same idea, and until now a class
+   that existed only in markup. 38 source files put it on a <section>; nothing
+   anywhere defined it, so every "tight" section on /pricing, /how-it-works,
+   /compare, /faq and the rest has been rendering at the full 4.5–9rem default.
+   Aliased to .band-tight rather than given its own number: two spacing scales
+   is how a system stops being one. New markup should use .band-tight. */
+.section-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
+
 .band       { padding-block: clamp(4.5rem, 9vw, 9rem); }
 .band-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
 .band-tall  { padding-block: clamp(6.5rem, 13vw, 13rem); }
@@ -1397,27 +1403,16 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 }
 .js .reveal-group > .reveal.pending.in { transform: none; }
 
-.ba { position: relative; overflow: hidden; aspect-ratio: 4/5; user-select: none; touch-action: none; background: var(--bg-deep); border: 1px solid var(--line); }
-.ba .ba-layer { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ba .ba-layer img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.ba .ba-after { clip-path: inset(0 0 0 var(--pos, 50%)); }
-.ba .ba-before-scene { filter: saturate(.4) brightness(.92) contrast(.92); }
-.ba .ba-handle { position: absolute; top: 0; bottom: 0; left: var(--pos, 50%); width: 2px; background: var(--accent); transform: translateX(-1px); }
-.ba .ba-knob { position: absolute; top: 50%; left: var(--pos, 50%); transform: translate(-50%, -50%); width: 46px; height: 46px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; }
-.ba .ba-tag { position: absolute; bottom: 14px; padding: .3rem .75rem; font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: rgb(var(--scrim) / 0.86); color: var(--ink); }
-.ba .tag-before { left: 14px; } .ba .tag-after { right: 14px; }
+/* `.ba` (the drag-slider before/after) and `.spot` (the cursor-lens reveal)
+   were deleted here, along with their entries in the .on-ink scope list above
+   and the `.compare-grid .ba` rule below. Both shipped blank — they were gated
+   behind a scroll-reveal clip that did not always fire — and Compare.astro
+   (`.cmp`, further down) replaced them with a version that is always visible
+   and needs no interaction to read. Nothing in src/ has referenced either
+   class since; the only remaining mentions are the comments explaining why.
+   If a draggable comparison is wanted again, add it to .cmp, which already
+   has the drag handling. */
 
-/* Cursor-reactive spotlight compare — new interaction, brand-fit idea from
-   the animation-examples demo: a circular lens follows the cursor and
-   reveals the after-shot through the before-shot. Alternative to .ba on
-   pages where a hover-driven reveal fits better than a drag handle. */
-.spot { position: relative; overflow: hidden; cursor: none; }
-.spot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.spot .spot-after { clip-path: circle(0px at 50% 50%); }
-.spot-cursor { position: absolute; width: 110px; height: 110px; border: 1.5px solid var(--ink); pointer-events: none; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink); background: rgb(var(--scrim) / 0.30); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
-.spot:hover .spot-cursor { opacity: 1; }
-.spot-tag { position: absolute; top: 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: .35rem .7rem; background: rgb(var(--scrim) / 0.86); z-index: 3; color: var(--ink); }
-.spot-tag.before { left: 1rem; } .spot-tag.after { right: 1rem; }
 
 /* `[data-parallax] { will-change: transform; }` lived here, promoting anything
    carrying the attribute to its own compositor layer for a scroll-linked
@@ -1448,24 +1443,16 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 }
 
 /* ============================================================
-   Before/after proof — expanded set. `.ba` and `.spot` (above) already
+   Before/after proof — expanded set. `.cmp` (below) already
    handle a single comparison; these add a multi-item gallery layout
    (`.compare-grid`, catalog/lifestyle hubs).
    ============================================================ */
 
 .compare-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(1.1rem, 2.6vw, 2rem); }
 @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
-.compare-grid .ba { aspect-ratio: 4/5; }
 .cc-label { margin-top: .85rem; text-align: center; font-size: .86rem; color: var(--ink-3); }
 .cc-label strong { color: var(--ink); font-weight: 600; }
 
-/* Small, static (non-draggable) side-by-side proof card — a lighter-weight
-   companion to .ba for placing a second or third proof moment on a page
-   without repeating the full drag interaction every time. */
-.compare-static { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); border: 1px solid var(--line); overflow: hidden; }
-.compare-static > div { position: relative; aspect-ratio: 4/5; overflow: hidden; }
-.compare-static img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.compare-static .cs-tag { position: absolute; bottom: .8rem; left: .8rem; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; background: rgb(var(--scrim) / 0.86); color: var(--ink); z-index: 2; }
 
 /* `.ai-compare` / `.ai-compare-panel` / `.ai-compare-label` /
    `.ai-compare-tags` / `.ai-tag` were deleted here, along with
@@ -1915,6 +1902,12 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    -------------------------------------------------------------------------- */
 .field { display: flex; flex-direction: column; gap: .45rem; margin-bottom: 1.1rem; }
 .field label { font-size: .88rem; font-weight: 600; color: var(--ink); }
+/* The heading above a radio GROUP. Identical to .field label on purpose — it
+   replaced five <label> elements on /test-sample that wrapped no control and
+   carried no `for`, which is markup that looks like a label, styles like a
+   label, and labels nothing. Same pixels, different element, real semantics
+   (the group carries role="radiogroup" + aria-labelledby to this id). */
+.ts-group-h { margin: 0; font-size: .88rem; font-weight: 600; color: var(--ink); }
 .req { color: var(--accent-bright); }
 .hint { font-size: .8rem; color: var(--ink-3); }
 

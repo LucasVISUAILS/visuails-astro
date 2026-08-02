@@ -14,15 +14,37 @@
 // page rewrite cannot fix is a price sitting in a <meta> tag, so the two
 // wrappers build their description from pricing.js too.
 //
-// SEQUENCING: this is a Tier 0 surface — "order individual products" in the
-// language of brief section 13. The full Tier 0 framing block (the explicit
-// side-by-side against running a drop) belongs to step 13, which lands after
-// step 12. What this file does now is make every claim on the page true
-// under the new tier model, and leave a marked slot for that block.
+// THE PRICE ON THIS PAGE IS NO LONGER ONE NUMBER (August 2026 — section 0 of
+// src/data/pricing.js is the governing document). A catalog set used to be a
+// flat rate per product, quoted five times on this page as a single figure.
+// It is a LADDER now: the rate starts at the entry rung and falls as the count
+// rises, and a page that prints one figure for it is printing what ONE product
+// costs while implying that is what fifty cost each. So the rung list below is
+// rendered in full — this page has the room for it, and five rows say the
+// thing a "from €x" would only gesture at — and every other mention names the
+// entry rate AND the floor together.
+//
+// EVERY PRINTED PRICE CARRIES A VAT LABEL, from vatLabel(). Never a typed
+// "excl. VAT": BRIEF-14's hardest rule, and this page prints rates in a hero,
+// a rung list, a FAQ answer and a closing band, which is four chances to quote
+// a net figure as if it were gross.
+//
+// "DROP" IS NOT WHAT WE SELL. It means a collection going live to the brands
+// we sell to; using it for a work order made one word carry two meanings. What
+// we sell is an order, or a batch — in Dutch, een bestelling.
+//
+// SERVICE LEVEL FOLLOWS SIZE now rather than being a second choice: from
+// WINDOW_THRESHOLD products an order gets the reserved window, below it the
+// standard queue. The timing strings still come from turnaround(); what
+// changed is that this page has to say WHICH orders get which, instead of
+// describing itself as a tier.
 // This component is a page BODY, not a page. The two thin wrappers in
 // src/pages own the <Layout> and the meta — importing Layout here would
 // nest a second <html> inside the first.
-import { TIERS, perProduct, reviewClaim, turnaround } from '../data/pricing.js';
+import {
+  TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
+  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, reviewClaim, turnaround,
+} from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
@@ -36,11 +58,29 @@ const lp = (p: string) => localizedPath(lang, p);
 
 const styles = lang === 'nl' ? catalogStylesNl : catalogStylesEn;
 
-// The per-product entry, not a literal. `catalog` is a Tier 0 line item, so
-// its timing and review claims come off TIERS.unattended — not off whatever
-// the page used to promise.
-const item = perProduct('catalog', lang);
+// The ladder for this page's one kind, read rather than typed. `entry` is what
+// a single product costs and `floor` is the lowest the rate ever reaches —
+// both are needed wherever a rate is quoted in prose, because either one on
+// its own is a half-truth: the entry rate alone makes a fifty-product order
+// look four times more expensive than it is, and the floor alone quotes a
+// price almost nobody's first order pays.
+const KIND = 'catalog';
+const entry = ladderRate(KIND, 1);
+const floor = ladderFloor(KIND);
+const rungs = LADDER[KIND];
+const floorFrom = rungs[rungs.length - 1][0];
+// The whole ladder, formatted once for the block that renders it.
+const rungRows = rungs.map(([lo, hi, rate]) => ({
+  label: hi === null ? `${lo}+` : `${lo}–${hi}`,
+  rate: euro(rate, lang),
+}));
 const t0 = TIERS.unattended;
+
+// The first-order discount as a percentage, computed rather than written. A
+// typed "20%" beside a constant of 0.20 is two sources of truth for one
+// number, and the typed one is the one that gets missed. Same derivation as
+// /pricing, which is where the discount is explained at length.
+const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 // The four photos, named. This used to be prose in three different places
 // with three slightly different orderings; it is one list now.
@@ -74,38 +114,47 @@ const COPY = {
     // closing-word-emphasis convention already used on the other hero H1s
     // (homepage's "visualized.", custom-models' "Only yours.").
     h1: 'Clean, consistent product visuals — <em>built to scale.</em>',
-    lead: `One product, one price: <strong>${item.price}</strong> for a full 4-photo set — front, back, detail and one on-model shot.`,
+    lead: `A full 4-photo set per product — front, back, detail and one on-model shot. <strong>${euro(entry, 'en')} per product</strong> ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
     // read the tier label verbatim ("Order individual products"), which put the
     // Tier 0 offer in the hero of all three service pages. It was also slightly
-    // untrue: the link lands on /start, where step 1 is a fork between a whole
-    // drop and a single product, so naming one route on the button prejudged a
-    // choice the page had not yet explained. The neutral verb keeps the fork
-    // open. The tier IS named further down, where section 13 wants it — on the
-    // price block and in the TierCompare section.
+    // untrue: it named one of two routes the buyer was being asked to choose
+    // between, before the page had explained either. There is no choice left
+    // to prejudge — size decides the service level now — so the neutral verb
+    // is simply correct rather than diplomatic, and where the line falls is
+    // stated further down, on the queue note and in the TierCompare block.
     ctaPrimary: 'Start an order',
     ctaSecondary: 'See pricing',
     wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20catalog%20visuals%20for%20my%20products.',
     waLabel: 'WhatsApp',
+    // Two figures, not one. A single rate in a trust row is the exact claim
+    // the ladder retired — see the note at the top of this file.
     trust: [
-      [item.price, 'per product'],
+      [`${euro(entry, 'en')} – ${euro(floor, 'en')}`, `per product · ${vatLabel('excl', 'en')}`],
       ['4 photos', 'per product'],
     ],
     // The queue line is deliberately in the trust row rather than buried in
     // small print. Section 13: the difference between the two service models
-    // must be VISIBLE. A visitor should not be able to leave this page
-    // believing a date was promised.
-    queueNote: t0.queue.en + '.',
-    packH: `One product. Four photos. ${item.price}.`,
+    // must be VISIBLE, and it is a bigger difference now that size decides it
+    // — so this line names the count as well as the promise. A visitor should
+    // not be able to leave this page believing a date was promised.
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, the order goes into the capacity calendar and gets the reserved window.`,
+    packH: 'One product. Four photos. The rate falls as the count rises.',
+    ladderH: 'What a catalog set costs',
+    ladderProductsCol: 'Products',
+    ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
+    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them. Your first order with us is ${firstPct} off on top of it.`,
     // The on-model shot is the one line on this page where the Brand Model is
     // the obvious next question, so the upsell is woven into the sentence that
     // already raises it rather than parked in a block of its own. §1 of the
-    // brief: every drop-content page links to /custom-models.
+    // brief: every service page links to /custom-models.
     packP: `Every product comes back as a complete set — including a real on-model shot, not just flat-lays. That shot can use a face from the standard roster, or <a href="${lp('/custom-models')}">a Brand Model made only for you</a>, so the same person carries your whole range.`,
-    // The tier IS named here — this is the per-product price block, a body
-    // section on a page section 13 lists as a Tier 0 surface. Read from the
-    // tier rather than typed, so the label cannot drift from /pricing's.
-    packCta: `${TIERS.unattended.label.en} · ${item.price} / product`,
+    // The button used to carry the tier label and one flat rate — "Order
+    // individual products · €89 / product". Both halves are retired: the tier
+    // is a consequence of size now rather than a thing you pick, and one rate
+    // is not what a catalog set costs. The rung list sits directly above this
+    // button, so the button only has to be a verb.
+    packCta: 'Start an order',
     edMeta: '( Where it fits )',
     edH: 'Catalog photography: clarity that closes the sale.',
     edSub: 'The clean product pages your shop and marketplaces run on.',
@@ -152,8 +201,8 @@ const COPY = {
     faqH: 'Catalog questions, answered',
     faqs: [
       {
-        q: `What do I get for ${item.price}?`,
-        a: `A full set for one product: four photos — front, back, a close-up of the logo or fabric, and one on-model shot.`,
+        q: 'What does a catalog set cost?',
+        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a rung at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a set is four photos — front, back, a close-up of the logo or fabric, and one on-model shot.`,
       },
       {
         q: 'Is the on-model shot really included?',
@@ -163,7 +212,7 @@ const COPY = {
         q: 'How long does it take?',
         // Both halves of the timing promise, in the order a buyer needs them:
         // the typical span first, then the fact that it is not a date.
-        a: `${turnaround('unattended', 'en')}. ${t0.queue.en} — a drop that is already scheduled takes priority in the queue, so a busy week can move an individual order.`,
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more is already booked into the calendar and holds its window, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one holding a window: ${turnaround('attended', 'en').toLowerCase()}.`,
       },
       {
         q: 'Can I choose the background colour?',
@@ -176,31 +225,35 @@ const COPY = {
       {
         q: 'What if I need changes?',
         // This answer used to read "Three revision rounds are included."
-        // That was the drop's guarantee and not this one — and there is no
+        // That was a package's guarantee and not this one — and there is no
         // count on either tier now. What we would agree instead is in
         // /terms §10 and stays there; see src/data/pricing.js for why.
         a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
       },
     ],
     ctaH: 'Build a catalog that<br>looks like one brand.',
-    ctaP: `${item.price} per product, ${turnaround('unattended', 'en').toLowerCase()}.`,
+    ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
   },
   nl: {
     eyebrow: 'Catalog',
     h1: 'Strakke, consistente productvisuals — <em>gebouwd om te schalen.</em>',
-    lead: `Eén product, één prijs: <strong>${item.price}</strong> voor een complete set van 4 foto’s — voorkant, achterkant, detail en één on-model shot.`,
+    lead: `Een complete set van 4 foto’s per product — voorkant, achterkant, detail en één on-model shot. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
     ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk prijzen',
     wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Catalog-visuals%20bestellen%20voor%20mijn%20producten.',
     waLabel: 'WhatsApp',
     trust: [
-      [item.price, 'per product'],
+      [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['4 foto’s', 'per product'],
     ],
-    queueNote: t0.queue.nl + '.',
-    packH: `Eén product. Vier foto’s. ${item.price}.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster.`,
+    packH: 'Eén product. Vier foto’s. Het tarief daalt naarmate het aantal stijgt.',
+    ladderH: 'Wat een catalogset kost',
+    ladderProductsCol: 'Producten',
+    ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
+    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Je eerste bestelling is daar nog eens ${firstPct} goedkoper op.`,
     packP: `Elk product komt terug als een complete set — inclusief een echte on-model shot, niet alleen flat-lays. Die shot kan een gezicht uit de standaardroster gebruiken, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
-    packCta: `${TIERS.unattended.label.nl} · ${item.price} / product`,
+    packCta: 'Start een bestelling',
     edMeta: '( Waar het past )',
     edH: 'Catalogfotografie: helderheid die de verkoop sluit.',
     edSub: 'De strakke productpagina’s waar je shop en marktplaatsen op draaien.',
@@ -245,8 +298,8 @@ const COPY = {
     faqH: 'Catalog-vragen, beantwoord',
     faqs: [
       {
-        q: `Wat krijg ik voor ${item.price}?`,
-        a: 'Een complete set voor één product: vier foto’s — voorkant, achterkant, een close-up van het logo of de stof, en één on-model shot.',
+        q: 'Wat kost een catalogset?',
+        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en het tarief zakt trede voor trede naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een set vier foto’s — voorkant, achterkant, een close-up van het logo of de stof, en één on-model shot.`,
       },
       {
         q: 'Zit de on-model shot echt inbegrepen?',
@@ -254,7 +307,7 @@ const COPY = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `${turnaround('unattended', 'nl')}. ${t0.queue.nl} — een drop die al ingepland staat heeft voorrang in de wachtrij, dus een drukke week kan een losse bestelling verschuiven.`,
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn venster vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met het venster: ${turnaround('attended', 'nl').toLowerCase()}.`,
       },
       {
         q: 'Kan ik de achtergrondkleur kiezen?',
@@ -270,7 +323,7 @@ const COPY = {
       },
     ],
     ctaH: 'Bouw een catalogus die<br>eruitziet als één merk.',
-    ctaP: `${item.price} per product, ${turnaround('unattended', 'nl').toLowerCase()}.`,
+    ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
   },
 };
 
@@ -321,6 +374,30 @@ const shots = SHOTS[lang];
         </div>
       ))}
     </div>
+    <!-- THE RUNG LIST. Five rows, not a "from €x": this page sells one kind
+         of thing, so it has the room to print the whole ladder, and a reader
+         who wants to know what twelve products cost each should be able to
+         find the row and stop reading. The VAT label is a column heading
+         rather than a repeat on every cell — one column, one kind of number,
+         so the label belongs to the column. -->
+    <div class="rungs reveal pending">
+      <span class="rungs-h">{c.ladderH}</span>
+      <table class="rung-table">
+        <thead>
+          <tr>
+            <th scope="col">{c.ladderProductsCol}</th>
+            <th scope="col">{c.ladderRateCol}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rungRows.map((r) => (
+            <tr><th scope="row">{r.label}</th><td>{r.rate}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="rungs-note">{c.ladderNote}</p>
+    </div>
+
     <div class="flex" style="justify-content:center;margin-top:1.8rem">
       <a href={lp('/start')} class="btn btn-primary">{c.packCta}</a>
     </div>
@@ -448,7 +525,10 @@ const shots = SHOTS[lang];
   </div>
 </section>
 
-<!-- SECTION 13 — "order individual products" against "run a whole drop".
+<!-- WHAT CHANGES AT WINDOW_THRESHOLD PRODUCTS. This block used to be section
+     13's two doors — "order individual products" against "run a whole drop" —
+     a choice the buyer made. Size makes it now, so the component states a line
+     rather than offering a fork; see TierCompare.astro's own header.
      One shared component, not a paragraph pasted into each service page: the
      tier facts it prints all come from pricing.js accessors, so /catalog,
      /lifestyle, /video and /pricing cannot drift apart in either language.
@@ -499,6 +579,35 @@ const shots = SHOTS[lang];
      half of the promise to be visible, not hidden — so it is set at body
      weight directly under the trust row rather than as footnote-sized grey. */
   .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
+
+  /* ── The rung list ────────────────────────────────────────────────────────
+     A real table, for the same reason /pricing's ladder is one: a rate card is
+     tabular data. It is narrow and centred because it has two columns rather
+     than four — a full-width two-column table puts a metre of white space
+     between the count and its rate, which is the one relationship it exists to
+     show. Tabular figures so the rates line up in the column. */
+  .rungs { max-width: 460px; margin: 2.4rem auto 0; }
+  .rungs-h { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .rung-table {
+    width: 100%;
+    margin-top: .8rem;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .rung-table th, .rung-table td { padding: .7rem .2rem; text-align: right; }
+  .rung-table thead th {
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .rung-table thead th:first-child, .rung-table tbody th { text-align: left; }
+  .rung-table tbody tr + tr th, .rung-table tbody tr + tr td { border-top: 1px solid var(--line); }
+  .rung-table tbody th { font-family: var(--font-display); font-weight: 700; font-size: .98rem; color: var(--ink); white-space: nowrap; }
+  .rung-table tbody td { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--ink); }
+  .rungs-note { margin-top: 1rem; font-size: .88rem; line-height: 1.55; color: var(--ink-3); }
 
   .chip-row { display: flex; flex-wrap: wrap; gap: .6rem; }
   .chip { display: inline-flex; align-items: center; gap: .5rem; font-size: .84rem; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); padding: .45rem .9rem; }

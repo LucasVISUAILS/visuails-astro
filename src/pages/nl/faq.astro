@@ -4,12 +4,18 @@
 // hier.
 import Layout from '../../layouts/Layout.astro';
 import FaqPage from '../../components/FaqPage.astro';
-import { AMOUNT, euro, FULL_DROP_MIN, FULL_DROP_MAX } from '../../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
+
+// De band en de pakketprijs zijn samen met het pakket verdwenen. Wat ervoor in
+// de plaats komt zijn de twee uiteinden van de staffel — elk aantal ertussen
+// heeft nu een prijs.
+const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
 
 const description =
-  `Wat een drop is, wat die kost (${euro(AMOUNT.fullDrop, 'nl')} voor ` +
-  `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten), hoe de agenda werkt, ` +
-  `wat als iets niet klopt, rechten en betaling — helder beantwoord.`;
+  `Wat een bestelling kost (${euro(ladderRate('complete', 1), 'nl')} per product, ` +
+  `${euro(ladderFloor('complete'), 'nl')} vanaf ${FLOOR_FROM}, ` +
+  `${vatLabel('excl', 'nl')}), hoe de agenda werkt, rechten en betaling — ` +
+  `helder beantwoord.`;
 ---
 
 <Layout title="Veelgestelde vragen — VISUAILS" description={description}>

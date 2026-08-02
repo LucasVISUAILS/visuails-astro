@@ -1,21 +1,31 @@
 ---
-// VISUAILS — /nl (Nederlands). De pagina-inhoud staat in HomePage.astro,
+// VISUAILS — /nl (Nederlands). De pagina-inhoud staat in HomeV2.astro,
 // zodat / en /nl niet uit elkaar kunnen lopen; alleen de meta verschilt hier.
 //
 // De description komt uit pricing.js en wordt niet ingetypt: een prijs of een
 // levertijd in een <meta>-tag is een belofte die de ladder niet kan afdwingen.
 // De oude tekst hier beloofde levering "binnen ongeveer 24 uur" — een datum
 // die de capaciteitscheck nooit heeft goedgekeurd.
+//
+// De oude tekst verkocht een pakket — "een drop van 25–30 producten" — en dat
+// pakket bestaat niet meer (sectie 0 van src/data/pricing.js). Er komen twee
+// bedragen voor terug, en dat moeten er twee zijn: het instaptarief is wat
+// één product kost en de bodem is wat een hele collectie per product kost.
 import Layout from '../../layouts/Layout.astro';
 import HomeV2 from '../../components/HomeV2.astro';
-import { euro, AMOUNT, FULL_DROP_MIN, FULL_DROP_MAX } from '../../data/pricing.js';
+import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
-// Onder de 160 tekens, zodat Google hem heel toont: dit is de description
-// die niet afgekapt mag worden, en de €0,99-haak staat achteraan.
+// `complete` is de scope die de homepage verkoopt — per product een catalogset
+// én een lifestyle-carousel — dus dat is de staffel die hier staat.
+const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
+
+// Onder de 152 tekens (META_LIMIT), zodat Google hem heel toont: dit is de
+// description die niet afgekapt mag worden, en de €0,99-haak staat achteraan.
 const description =
-  `Catalogbeelden en lifestyle voor kledingmerken, van je eigen productfoto’s ` +
-  `— zonder fotoshoot. Een drop van ${FULL_DROP_MIN}–${FULL_DROP_MAX} producten: ` +
-  `${euro(AMOUNT.fullDrop, 'nl')}. Eerst zien voor ${euro(AMOUNT.testSample, 'nl')}.`;
+  `Catalogbeelden en lifestyle voor kledingmerken, van je eigen productfoto’s. ` +
+  `${euro(ladderRate('complete', 1), 'nl')} per product, ` +
+  `${euro(ladderFloor('complete'), 'nl')} vanaf ${FLOOR_FROM}, ` +
+  `${vatLabel('excl', 'nl')}. Eerst zien voor ${euro(AMOUNT.testSample, 'nl')}.`;
 ---
 
 <Layout

@@ -10,12 +10,32 @@
 // Lifestyle Video at €59, a figure that appears nowhere in pricing.js and
 // never has. The sitewide price scan missed it for months because "€59" is a
 // string prefix of "€59.99", so every occurrence was folded into the catalog
-// lifestyle tally. There is one clip rate now and it comes from PER_PRODUCT.
+// lifestyle tally. There is one clip rate now and it comes from AMOUNT.video.
 //
-// SEQUENCING: a Tier 0 surface. Section 13's full "order individual products
-// vs run a whole drop" block lands at step 13, after step 12; the slot is
-// marked below.
-import { TIERS, perProduct, reviewClaim, turnaround } from '../data/pricing.js';
+// WHY THIS PAGE STILL PRINTS ONE FIGURE WHERE /catalog AND /lifestyle PRINT A
+// LADDER (August 2026 — section 0 of src/data/pricing.js). A catalog set and a
+// lifestyle carousel are priced per PRODUCT and their rate falls as the count
+// rises. A clip is not on that ladder: it is a flat rate per clip, the same
+// inside an order as on its own, and that flatness is the claim this page has
+// always made about it. So the figure here is genuinely one number — but it is
+// one number that now has to say so, because a reader arriving from /pricing
+// has just been shown a falling rate and will assume this one falls too.
+//
+// EVERY PRINTED PRICE CARRIES A VAT LABEL, from vatLabel() — BRIEF-14's
+// hardest rule, and never a typed "excl. VAT".
+//
+// "DROP" IS NOT WHAT WE SELL. It means a collection going live to the brands
+// we sell to; a work order is an order — in Dutch, een bestelling. "The same
+// rate on its own or added to a drop" was the one line on this page that used
+// the word for a work order, and it is the line the change matters most on,
+// because it is the sentence about the price.
+//
+// SERVICE LEVEL FOLLOWS SIZE: from WINDOW_THRESHOLD products an order gets the
+// reserved window, below it the standard queue.
+import {
+  TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD, PLAN_CLIPS, plans,
+  reviewClaim, turnaround,
+} from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import TierCompare from './TierCompare.astro';
 import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
@@ -27,8 +47,15 @@ const lp = (p: string) => localizedPath(lang, p);
 
 const kinds = lang === 'nl' ? videoStylesNl : videoStylesEn;
 
-const item = perProduct('video', lang);
+// One rate, flat. Formatted once here rather than at every call site, so the
+// clip price and its VAT label cannot get separated by an edit.
+const clip = euro(AMOUNT.video, lang);
 const t0 = TIERS.unattended;
+
+// The plan that includes clips, named rather than typed — /pricing says the
+// same thing off the same two constants, so the two pages cannot disagree
+// about how many clips a Studio month carries.
+const studioPlan = plans(lang).find((pl) => pl.id === 'studio');
 
 // Motion and Lifestyle Video are the two fixed-rate clips; Campaign and
 // Custom are scoped and quoted. Keeping the rule here rather than in
@@ -60,7 +87,7 @@ const strip = [
 const COPY = {
   en: {
     h1: 'Short product videos<br />that <em>move</em>.',
-    lead: `8 seconds, subtle motion. ${item.price} per clip.`,
+    lead: `8 seconds, subtle motion. ${clip} per clip, ${vatLabel('excl', 'en')} — the same rate whether it is one clip or twenty.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note. Used in the hero and the closing band; the buy block lower
     // down names the tier from TIERS.unattended.label instead.
@@ -71,14 +98,15 @@ const COPY = {
     waQuoteLabel: 'Quote a campaign',
     trust: [
       ['8s', 'clean product videos'],
-      [item.price, 'per clip'],
+      [clip, `per clip · ${vatLabel('excl', 'en')}`],
     ],
-    // Visible, not buried. Section 13: a visitor must not be able to leave a
-    // Tier 0 page believing a delivery date was promised.
-    queueNote: t0.queue.en + '.',
+    // Visible, not buried. Section 13: a visitor must not be able to leave
+    // this page believing a delivery date was promised — and now that size
+    // decides the service level, the line names the count as well.
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, the order goes into the capacity calendar and gets the reserved window.`,
     reviewNote: reviewClaim('unattended', 'en'),
     kindsH: 'Ways to add motion.',
-    perClip: `${item.price} / clip`,
+    perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
     quoted: 'Quoted per project',
     exampleAlt: (n: string) => `${n} example`,
     edMeta: '( Where it fits )',
@@ -89,10 +117,11 @@ const COPY = {
       'A product video is a short, clean film with subtle motion — a slow turn, a drape, a catch of light — built to give a product life without a full production. On a feed tuned for movement, a few seconds of motion earns attention a static image can’t, and holds it long enough to land the message.',
       "It isn't a replacement for your photos; it's the layer on top that lifts them where it counts. The same product that sits still on your shop can move in your ads and socials, where dwell time and click-through decide whether people stop — or keep scrolling.",
     ],
-    // Brief §1: every drop-content page links to /custom-models. It goes here,
+    // Brief §1: every service page links to /custom-models. It goes here,
     // in the paragraph about what a clip is, because "who is in it" is a real
     // question a clip raises and the answer is the same face as the stills.
     modelNote: `Where a person appears in the clip, that person can be <a href="${lp('/custom-models')}">a Brand Model made only for you</a> — the same face your catalog and lifestyle sets already run on.`,
+    buyFlatH: 'Why the clip rate does not fall',
     whereH: 'Where it lives',
     where: [
       ['Reels, TikTok & Shorts', 'where motion is the native language.'],
@@ -108,11 +137,14 @@ const COPY = {
       reviewClaim('unattended', 'en'),
     ],
     buyH: 'Two ways to buy video',
-    // "The same rate on its own or added to a drop" is the line from
-    // pricing.js, and it is the whole point of the clip price: a video does
-    // not get more expensive because it arrives with a collection.
-    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${item.price} per clip, on its own or added to a drop.`,
+    // The whole point of the clip price: a video does not get cheaper or more
+    // expensive for arriving with a collection. Photos are priced per product
+    // on a falling ladder; a clip is priced per clip and stays put, which is
+    // the difference this block now has to state out loud rather than imply.
+    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}, on its own or added to any order.`,
     buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
+    buyFlat: `Catalog and lifestyle photos are priced per product and the rate falls as the count rises. A clip does not sit on that ladder: it is one rate, whatever else is in the order. ${studioPlan ? `${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
+    buyCta: 'Start an order',
     stripAlt: {
       campaign: 'Campaign photography',
       flash: 'Flash-style lifestyle visual',
@@ -120,12 +152,12 @@ const COPY = {
       dunes: 'Dunes-style lifestyle visual',
     },
     ctaH: 'Give your product<br>a little movement.',
-    ctaP: `${item.price} per clip, ${turnaround('unattended', 'en').toLowerCase()}.`,
+    ctaP: `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()} under ${WINDOW_THRESHOLD} products.`,
     ctaSecondary: 'Contact us',
   },
   nl: {
     h1: 'Korte productvideo’s<br />die <em>bewegen</em>.',
-    lead: `8 seconden, subtiele beweging. ${item.price} per clip.`,
+    lead: `8 seconden, subtiele beweging. ${clip} per clip, ${vatLabel('excl', 'nl')} — hetzelfde tarief of het er nu één is of twintig.`,
     ctaPrimary: 'Start een bestelling',
     wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20een%20productvideo.',
     waQuote: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20offerte%20voor%20een%20campagnevideo.',
@@ -133,12 +165,12 @@ const COPY = {
     waQuoteLabel: 'Offerte voor een campagne',
     trust: [
       ['8s', 'strakke productvideo’s'],
-      [item.price, 'per clip'],
+      [clip, `per clip · ${vatLabel('excl', 'nl')}`],
     ],
-    queueNote: t0.queue.nl + '.',
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster.`,
     reviewNote: reviewClaim('unattended', 'nl'),
     kindsH: 'Manieren om beweging toe te voegen.',
-    perClip: `${item.price} / clip`,
+    perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
     quoted: 'Offerte per project',
     exampleAlt: (n: string) => `${n} voorbeeld`,
     edMeta: '( Waar het past )',
@@ -150,6 +182,7 @@ const COPY = {
       'Het is geen vervanging van je foto’s; het is de laag erbovenop die ze optilt waar het telt. Hetzelfde product dat stil staat op je shop kan bewegen in je ads en socials, waar kijktijd en doorklik bepalen of mensen stoppen — of verder scrollen.',
     ],
     modelNote: `Waar er een persoon in de clip verschijnt, kan dat <a href="${lp('/custom-models')}">een merkmodel zijn dat alleen voor jou gemaakt is</a> — hetzelfde gezicht waar je catalog- en lifestylesets al op draaien.`,
+    buyFlatH: 'Waarom het cliptarief niet daalt',
     whereH: 'Waar het leeft',
     where: [
       ['Reels, TikTok & Shorts', 'waar beweging de moedertaal is.'],
@@ -165,8 +198,10 @@ const COPY = {
       reviewClaim('unattended', 'nl'),
     ],
     buyH: 'Twee manieren om video te kopen',
-    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${item.price} per clip, los of toegevoegd aan een drop.`,
+    buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}, los of toegevoegd aan elke bestelling.`,
     buyQuote: '<strong>Campaign</strong> — groter, meerdere shots, offerte per project.',
+    buyFlat: `Catalog- en lifestylefoto’s zijn geprijsd per product en dat tarief daalt naarmate het aantal stijgt. Een clip staat niet op die staffel: het is één tarief, wat er verder ook in de bestelling zit. ${studioPlan ? `${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
+    buyCta: 'Start een bestelling',
     stripAlt: {
       campaign: 'Campagnefotografie',
       flash: 'Lifestyle-visual in Flash-stijl',
@@ -174,7 +209,7 @@ const COPY = {
       dunes: 'Lifestyle-visual in Dunes-stijl',
     },
     ctaH: 'Geef je product<br>een beetje beweging.',
-    ctaP: `${item.price} per clip, ${turnaround('unattended', 'nl').toLowerCase()}.`,
+    ctaP: `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()} onder ${WINDOW_THRESHOLD} producten.`,
     ctaSecondary: 'Neem contact op',
   },
 };
@@ -267,10 +302,16 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       <h3>{c.buyH}</h3>
       <p set:html={c.buyFixed} />
       <p set:html={c.buyQuote} />
+      {/* The flatness, stated rather than implied. A reader arriving from
+          /pricing has just read a rate that falls with volume; without this
+          they will assume the clip rate falls too and find out at checkout
+          that it does not. */}
+      <p class="buy-flat"><strong>{c.buyFlatH}</strong> {c.buyFlat}</p>
       <div class="flex" style="margin-top:1.4rem">
-        {/* Body block, not the hero — section 13 wants the tier named here, and
-            names it from the tier so /pricing and this page cannot disagree. */}
-        <a href={lp('/start')} class="btn btn-primary">{t0.label[lang]}</a>
+        {/* The button used to print the tier label — "Order individual
+            products" — which was a door the buyer picked between. Size picks
+            the service level now, so the button is a verb. */}
+        <a href={lp('/start')} class="btn btn-primary">{c.buyCta}</a>
         <a href={c.waQuote} class="btn btn-wa" target="_blank" rel="noopener">
           <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waQuoteLabel}
         </a>
@@ -289,7 +330,10 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   </div>
 </section>
 
-<!-- SECTION 13 — "order individual products" against "run a whole drop".
+<!-- WHAT CHANGES AT WINDOW_THRESHOLD PRODUCTS. This block used to be section
+     13's two doors — "order individual products" against "run a whole drop" —
+     a choice the buyer made. Size makes it now, so the component states a line
+     rather than offering a fork; see TierCompare.astro's own header.
      One shared component, not a paragraph pasted into each service page: the
      tier facts it prints all come from pricing.js accessors, so /catalog,
      /lifestyle, /video and /pricing cannot drift apart in either language.
@@ -339,6 +383,17 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   .buy-note h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
   .buy-note p { margin-top: .8rem; color: var(--ink-2); }
   .buy-note p strong { color: var(--ink); font-weight: 600; }
+  /* Ruled off rather than boxed: it is a note ON the two lines above it, not a
+     third way to buy, and a second frame inside .buy-note would read as one. */
+  .buy-note .buy-flat {
+    margin-top: 1.1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--ink-3);
+  }
+  .buy-note .buy-flat strong { color: var(--ink); font-weight: 700; }
 
   /* `.drop-note` lived here, and identically in CatalogPage.astro and
      LifestylePage.astro. Three copies of one block is what TierCompare.astro

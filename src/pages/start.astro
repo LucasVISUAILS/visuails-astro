@@ -1,13 +1,26 @@
 ---
 // VISUAILS — /start (English). The page body lives in StartPage.astro so that
 // /start and /nl/start cannot drift apart; only the meta differs here.
+//
+// The description used to offer TWO DOORS — "run a whole drop with a reserved
+// window, or order individual products from the standard queue" — which is the
+// choice the August 2026 model removed (section 0 of src/data/pricing.js).
+// Size decides the service level now, so the description describes one door
+// and what happens as you go through it. WINDOW_THRESHOLD is read rather than
+// typed for the same reason every euro on the site is.
 import Layout from '../layouts/Layout.astro';
 import StartPage from '../components/StartPage.astro';
+import { WINDOW_THRESHOLD } from '../data/pricing.js';
+
+const description =
+  `One way in, whatever the size: tell us what you have, and the rate and the ` +
+  `service follow the count. From ${WINDOW_THRESHOLD} products the window is ` +
+  `reserved.`;
 ---
 
 <Layout
   title="Start an order — VISUAILS"
-  description="Two ways to work with VISUAILS: run a whole drop with a reserved window, or order individual products from the standard queue. Same pipeline either way."
+  description={description}
 >
   <StartPage lang="en" />
 </Layout>

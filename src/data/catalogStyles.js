@@ -9,7 +9,7 @@
 // unlike the lifestyle styles — there is no `heroPhoto` / `cardPhoto` here.
 // Icon fields drive ProductScene's placeholder rendering directly.
 
-import { perProduct, reviewClaim, turnaround } from './pricing.js';
+import { perProduct, reviewClaim, turnaround, ladderRate, euro, vatLabel } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -17,6 +17,13 @@ import { perProduct, reviewClaim, turnaround } from './pricing.js';
 // cleared — and how a video price that exists nowhere in pricing.js
 // survived a repricing nobody caught. Derive, never type.
 const CAT = perProduct('catalog', 'en');
+// The rate is a LADDER now, not a flat fee, so a bare figure on a style card
+// would read as the price at any count when it is only the price at one to
+// four. Every card prints the entry rung with "from" and a VAT label — the
+// same shape /catalog's own rung table uses, so the card and the table cannot
+// disagree.
+const CAT_FROM = `from ${euro(ladderRate('catalog', 1), 'en')}`;
+const CAT_VAT = vatLabel('excl', 'en');
 const TIMING = turnaround('unattended', 'en');
 const REVIEW = reviewClaim('unattended', 'en');
 
@@ -33,15 +40,15 @@ export const catalogStyles = [
     slug: 'classic',
     name: 'Classic',
     tagline: 'Clean. Consistent. Relentlessly so.',
-    priceTrust: CAT.price,
+    priceTrust: CAT_FROM,
     priceUnit: ' / product',
-    metaPrice: `${CAT.price} / product — 4 photos`,
+    metaPrice: `${CAT_FROM} / product ${CAT_VAT} — 4 photos`,
     orderHref: '/start',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
     cardWidth: '42%',
-    cardPrice: `${CAT.price} / product`,
+    cardPrice: `${CAT_FROM} / product ${CAT_VAT}`,
     cardDesc: 'A full set per product — front, back, detail and one on-model shot.',
     moodTitle: 'What Classic feels like.',
     moodParagraphs: [
@@ -85,16 +92,16 @@ export const catalogStyles = [
     slug: 'custom',
     name: 'Custom Brand',
     tagline: 'A catalog look that is unmistakably yours.',
-    priceTrust: `Designed once — then ${CAT.price} / product`,
+    priceTrust: `Designed once — then ${CAT_FROM} / product`,
     priceUnit: '',
-    metaPrice: `Designed once — then ${CAT.price} / product`,
+    metaPrice: `Designed once — then ${CAT_FROM} / product`,
     orderHref: '/start',
     heroIcon: 'bag',
     heroWidth: '26%',
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Custom pricing',
-    cardDesc: `A catalog look designed around your brand — then every product at ${CAT.price} for a four-photo set.`,
+    cardDesc: `A catalog look designed around your brand — then every product at ${CAT_FROM} for a four-photo set.`,
     moodTitle: 'What Custom Brand feels like.',
     moodParagraphs: [
       'A signature backdrop, shadow and prop language that says this is us — before the logo does.',

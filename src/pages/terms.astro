@@ -6,8 +6,20 @@
 //
 // Three places are no longer the ported copy:
 //
-//   §2  "Drop" is defined, so §9's deposit clause has a defined term to attach
-//       to rather than a marketing word.
+//   §2  A "reserved order" is defined, so §9's deposit clause has a defined
+//       term to attach to rather than a marketing word.
+//
+//       IT USED TO DEFINE "DROP" — "a single order covering a whole collection
+//       or launch, rather than individual products" — and that definition died
+//       with the packages in August 2026 (section 0 of src/data/pricing.js).
+//       Two things were wrong with it under the new model, and the second is
+//       the one that mattered in a contract: the word means a collection going
+//       live to the brands we sell to, so a contract that redefines it is
+//       redefining their word; and "rather than individual products" drew a
+//       line the price list no longer draws, because every count is priced now.
+//       The line the site DOES draw is WINDOW_THRESHOLD, which is exactly what
+//       §6 and §9 need a defined term for — one is about the window, the other
+//       about the deposit that reserves it.
 //
 //   §7  "Your files & how long we keep them" — new, per AUDIT-TASK-0.md:171.
 //       The same clocks as the Privacy Policy's §6, stated here because a
@@ -59,16 +71,31 @@
 //       one file still holding its own copy. The add-on bullet went with them:
 //       it described optional extras "shown before checkout", and the three
 //       checkout add-ons (multi-format export, 4K, priority) were removed from
-//       /pricing. What is left sits on top of a drop and is quoted, not sold at
-//       a checkout step.
+//       /pricing. What is left sits on top of an order and is quoted, not sold
+//       at a checkout step.
+//
+//       §4 ALSO STOPPED QUOTING A FLAT RATE. It printed AMOUNT.catalog and
+//       AMOUNT.lifestyle as if each were the price of a product; they are the
+//       ENTRY RUNG of a ladder now, and a contract that names one figure for
+//       something priced on a sliding scale is the worst version of that
+//       mistake. Both ends are named, the fall is stated, and /pricing is
+//       linked for the rungs in between — which is also where a client goes to
+//       check the figure they were quoted.
 //
 // AUDIT-TASK-0.md:128's capacity/delivery-window wording is what §6 now
 // carries. It was blocked on this decision and is no longer blocked.
 import Layout from '../layouts/Layout.astro';
-import { AMOUNT, euro, turnaround } from '../data/pricing.js';
+import {
+  euro, turnaround, ladderRate, ladderFloor, LADDER, WINDOW_THRESHOLD,
+} from '../data/pricing.js';
 
 const t0 = turnaround('unattended', 'en').toLowerCase();
 const t1 = turnaround('attended', 'en').toLowerCase();
+
+// The two ends of each ladder §4 quotes, and the count the floor starts at.
+// Read, never typed — the one file on the site where a stale price is actually
+// enforceable is the last file that should hold its own copy of one.
+const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 ---
 
 <Layout
@@ -98,19 +125,20 @@ const t1 = turnaround('attended', 'en').toLowerCase();
         <li><strong>"Visual"</strong> — an image or video we produce for you.</li>
         <li><strong>"Source material"</strong> — the product photos, images and information you provide.</li>
         <li><strong>"Order"</strong> — a request for one or more visuals under these terms.</li>
-        <li><strong>"Drop"</strong> — a single order covering a whole collection or launch, rather than individual products.</li>
+        <li><strong>"Reserved order"</strong> — an order of {WINDOW_THRESHOLD} products or more, which is booked into our capacity calendar and given a reserved delivery window.</li>
       </ul>
 
       <h2>3. The service</h2>
       <p>VISUAILS produces AI-assisted, human-reviewed product visuals — catalog images, lifestyle scenes, and video — from the source material you supply. Every visual is generated through our pipeline and checked by a person before delivery. We aim for consistent, publish-ready results, but visuals are creative work and exact outcomes can vary.</p>
 
       <h2>4. Orders &amp; pricing</h2>
-      <p>Indicative prices are:</p>
+      <p>Visuals are priced per product, and the rate falls as the number of products in the order rises. Indicative rates are:</p>
       <ul>
-        <li><strong>Catalog</strong> — {euro(AMOUNT.catalog, 'en')} per product, which includes a set of four photos (front, back, a detail close-up and one on-model shot).</li>
-        <li><strong>Lifestyle visuals</strong> — {euro(AMOUNT.lifestyle, 'en')} per product (a three-photo carousel).</li>
-        <li><strong>Drops, video and custom work</strong> — quoted individually before you commit.</li>
-        <li><strong>Brand Model and the studio retainer</strong> — added on top of a drop and quoted in advance. Neither is sold at checkout.</li>
+        <li><strong>Catalog</strong> — {euro(ladderRate('catalog', 1), 'en')} per product, falling to {euro(ladderFloor('catalog'), 'en')} from {FLOOR_FROM} products up. A set of four photos (front, back, a detail close-up and one on-model shot).</li>
+        <li><strong>Lifestyle visuals</strong> — {euro(ladderRate('lifestyle', 1), 'en')} per product, falling to {euro(ladderFloor('lifestyle'), 'en')} from {FLOOR_FROM} products up. A three-photo carousel.</li>
+        <li><strong>The rate between those ends</strong> — set out in full on our <a href="/pricing">pricing page</a>. The rate that applies is the one for the total number of products in your order, and it applies to every product in it.</li>
+        <li><strong>Video, custom work and monthly plans</strong> — quoted individually before you commit.</li>
+        <li><strong>Brand Model</strong> — added on top of an order and quoted in advance. It is not sold at checkout.</li>
       </ul>
       <p>New businesses can request one test sample per business, so you can judge our quality before ordering. Prices are confirmed at the time of order. Unless stated otherwise, prices are exclusive of VAT where applicable.</p>
 
@@ -124,7 +152,7 @@ const t1 = turnaround('attended', 'en').toLowerCase();
       <p>We may decline or stop work on any order that appears to breach these conditions.</p>
 
       <h2>6. Delivery</h2>
-      <p>How long an order takes depends on how you order. Individual products run in the standard queue: {t0} from a complete brief. We do not name a delivery date for an individual product, because a date we have not reserved capacity for is not a date. A drop runs in {t1}, and it holds that place while individual orders move around it.</p>
+      <p>How long an order takes depends on how you order. Individual products run in the standard queue: {t0} from a complete brief. We do not name a delivery date for an individual product, because a date we have not reserved capacity for is not a date. A reserved order runs in {t1}, and it holds that place while smaller orders move around it.</p>
       <p>Times can still shift with the size and complexity of an order. If a delivery is going to move, we tell you — we would rather say so than let a date pass in silence.</p>
 
       <h2>7. Your files &amp; how long we keep them</h2>
@@ -141,7 +169,7 @@ const t1 = turnaround('attended', 'en').toLowerCase();
 
       <h2>9. Payment &amp; VAT</h2>
       <p>Payment is handled through our payment provider. Invoices are issued for your records. For EU business customers with a valid VAT number, the reverse-charge mechanism may apply where the conditions are met; otherwise Dutch VAT rules apply. You are responsible for providing accurate billing and VAT details.</p>
-      <p>Individual products and test samples are paid in full at checkout. A drop or custom work is invoiced rather than charged at checkout, in two parts: 50% on confirmation, which is what reserves your production slot, and 50% before the finished files are released. Work does not start, and no slot is held, until the first instalment is paid.</p>
+      <p>Small orders and test samples are paid in full at checkout. A reserved order or custom work is invoiced rather than charged at checkout, in two parts: 50% on confirmation, which is what reserves your production slot, and 50% before the finished files are released. Work does not start, and no slot is held, until the first instalment is paid.</p>
 
       <h2>10. Cancellations, refunds and putting it right</h2>
       <p>Because visuals are produced to your specific brief, work that has already started or been delivered generally cannot be cancelled for a refund.</p>

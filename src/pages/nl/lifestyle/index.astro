@@ -2,15 +2,21 @@
 // VISUAILS — /nl/lifestyle (Nederlands). De pagina-inhoud staat in
 // LifestylePage.astro, zodat /lifestyle en /nl/lifestyle niet uit elkaar
 // kunnen lopen; alleen de meta verschilt hier.
+//
+// Eén tarief werd twee: een lifestyle-carousel zit sinds augustus 2026 op een
+// staffel. De levertijd wijkt daarvoor — dat is een tier-feit dat verderop op
+// de pagina staat en alleen onder WINDOW_THRESHOLD producten geldt.
 import Layout from '../../../layouts/Layout.astro';
 import LifestylePage from '../../../components/LifestylePage.astro';
-import { perProduct, turnaround } from '../../../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../../data/pricing.js';
 
-const item = perProduct('lifestyle', 'nl');
+const FLOOR_FROM = LADDER.lifestyle[LADDER.lifestyle.length - 1][0];
 
 const description =
   `Drie foto’s van één product in één gestylede look — een carousel klaar om ` +
-  `te posten. ${item.price} per product. ${turnaround('unattended', 'nl')}.`;
+  `te posten. ${euro(ladderRate('lifestyle', 1), 'nl')} per product, ` +
+  `${euro(ladderFloor('lifestyle'), 'nl')} vanaf ${FLOOR_FROM}, ` +
+  `${vatLabel('excl', 'nl')}.`;
 ---
 
 <Layout

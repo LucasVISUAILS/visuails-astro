@@ -232,7 +232,14 @@ const LANE_W = [86, 62, 74, 55];
     max-width: 62ch;
   }
 
-  @media (max-width: 620px) {
+  /* 900, not 620. The label is absolutely positioned off the left edge of a 2px
+     rule, so it hangs outside the lane's own box — and between about 621px and
+     880px the lane sits far enough right that the label's right edge lands past
+     the viewport: measured 791px of content in a 768px window on /compare, and
+     799px on /nl/compare where the string is a character longer. body has
+     overflow-x: hidden, so the page did not show a scrollbar; it just reflowed
+     wider than the screen. The flip already existed, it stopped ~260px short. */
+  @media (max-width: 900px) {
     .cv-meet-t { left: auto; right: .55rem; text-align: right; }
   }
 </style>

@@ -1,6 +1,21 @@
 // VISUAILS — /start, the five-step order pipeline. Section 10 of the brief.
 //
-// scope → upload → brief → capacity gate → confirm.
+// order → upload → brief → capacity gate → confirm.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// THE MONEY IS A DISPLAY. IT IS NEVER AN INPUT.
+// Step 1 adds up a running total from the ladder in the config blob. That total
+// is a preview and nothing else: it is written into the DOM, read back only to
+// be shown again on the confirm screen, and never posted. There is no amount
+// field on this form, and there must not be one — the invoice is derived
+// server-side from `service` and `products`, which are answers, not prices. If
+// a future change needs a figure to travel with the order, it belongs in a
+// server-side calculation keyed to those two, not in a hidden input a console
+// can edit.
+//
+// What the browser IS trusted with is arithmetic it can be checked on: the
+// rungs come from pricing.js by way of the page, so a total shown here and a
+// total invoiced later come from the same table.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // THE ONE RULE THIS FILE EXISTS TO KEEP
@@ -64,12 +79,17 @@
 //     [data-pl-next] [data-pl-back]    navigation buttons (type=button)
 //     [data-pl-submit]                 the submit button
 //
-//   step 1  input[name=scope][value=drop|single]
-//           input[name=drop_scope][value=pilot|full]
-//           input[name=product_type][value=catalog|lifestyle|video|custom]
-//           [data-pl-panel="drop"|"single"]      sub-panels, toggled
-//           [data-pl-count="pilot"|"free"]       the two count presentations
-//           [data-pl-total] [data-pl-total-note]
+//   step 1  input[name=service][data-pl-kind=complete|catalog|lifestyle]
+//                                                the one kind question; the
+//                                                VALUE is the server's own
+//                                                service name, the data
+//                                                attribute is the ladder kind
+//           select[name=products]                every count, plus one option
+//                                                that is not a number
+//           [data-pl-total-net] [data-pl-total-vat] [data-pl-total]
+//                                                net / VAT / gross, three lines
+//           [data-pl-total-note] [data-pl-rung]  the rate line and the upsell
+//           [data-pl-level="attended"|"unattended"] [data-pl-level-note]
 //           [data-pl-outfit] input[name=outfit_count]   task #271f — full outfit
 //
 //   step 2  input[type=file][data-pl-file]       NO name attribute, deliberately
@@ -161,13 +181,13 @@ function init(el) {
   form.classList.add('is-live');
 
   bindNav();
-  bindScope();
+  bindOrder();
   bindUploads();
   bindGate();
   bindSubmit();
   bindPrefill();
 
-  syncScope();
+  syncOrder();
   show(1, { focus: false });
 }
 
@@ -344,140 +364,102 @@ function validateStep(n) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STEP 1 · SCOPE
+// STEP 1 · THE ORDER
+//
+// One question about the work and one about the count, and everything else on
+// this step is derived from those two: the rate, the total, whether another
+// rung is within reach, and which service level the order earns.
+//
+// THE SERVICE LEVEL IS DERIVED, NOT ASKED. It used to be the first question on
+// the page — a "door" the visitor picked before they knew what they wanted —
+// and pricing.js's section 0 says why that had to go: two independent axes
+// stacked on one price list. tierFor() lives in pricing.js and its threshold
+// reaches this file in the config blob, so the comparison is re-implemented
+// here but the number never is.
 //
 // Section 13 forbids styling Tier 0 as the lesser option; the CSS holds up that
 // half. This half is the part that is easy to get wrong in behaviour rather
-// than in paint: both doors reach the same five steps, the same upload, the
+// than in paint: every count reaches the same five steps, the same upload, the
 // same brief and the same submit. There is no second flow.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function bindScope() {
-  qa('input[name="scope"], input[name="drop_scope"], input[name="product_type"]').forEach((r) => {
-    r.addEventListener('change', syncScope);
+function bindOrder() {
+  qa('input[name="service"]').forEach((r) => {
+    r.addEventListener('change', syncOrder);
   });
   const count = q('select[name="products"]');
-  if (count) count.addEventListener('change', onProductsChange);
+  if (count) count.addEventListener('change', syncOrder);
   // Task #271f.
   const outfit = q('select[name="outfit_count"]');
   if (outfit) outfit.addEventListener('change', syncTotal);
 }
 
-// The products select can change without a scope/kind radio firing, and the
-// outfit field's own cap (see syncOutfit()'s comment) depends on that count —
-// so this, unlike every other listener above, has to re-run syncOutfit() too,
-// not just the total.
-function onProductsChange() {
-  const scope = scopeValue();
-  syncOutfit(scope, currentKind(scope));
+/**
+ * The ladder kind for the checked option — 'complete' | 'catalog' | 'lifestyle'.
+ *
+ * Read off the radio's data attribute rather than mapped from its value. The
+ * value is the wire format (`drop` is what /api/order's ORDER_SERVICES and the
+ * D1 `service` column call a catalog set plus a lifestyle carousel), the data
+ * attribute is what pricing.js calls it, and a lookup table in this file would
+ * be a third place that has to agree with both.
+ */
+function kindOf() {
+  const r = q('input[name="service"]:checked');
+  const kind = r ? r.dataset.plKind : '';
+  return kind && cfg.ladder && cfg.ladder[kind] ? kind : '';
+}
+
+/** The chosen count, or NaN — "more than N" is deliberately not a number. */
+function productCount() {
+  const select = q('select[name="products"]');
+  return Number.parseInt(select ? select.value : '', 10);
+}
+
+function syncOrder() {
+  const kind = kindOf();
+  const n = productCount();
+
+  // `tier` is the one field on this step the server reads that the visitor
+  // does not answer. It follows the count — tierFor() in pricing.js — and the
+  // "more than one window holds" option is above the threshold by definition,
+  // so it earns the reserved window too even though the gate cannot date it.
+  const select = q('select[name="products"]');
+  const chosen = select ? select.value : '';
+  const attended = Number.isInteger(n)
+    ? n >= Number(cfg.windowThreshold)
+    : !!chosen; // the escape hatch: more than one window holds is more than the threshold
+  setHidden('tier', attended ? 'attended' : 'unattended');
+
+  syncOutfit(kind);
   syncTotal();
-}
-
-function scopeValue() {
-  const r = q('input[name="scope"]:checked');
-  return r ? r.value : '';
-}
-
-function pickedIn(name) {
-  const r = q(`input[name="${name}"]:checked`);
-  return r ? r.value : '';
-}
-
-/** The chosen package/product kind for a scope — 'pilot'/'full' under 'drop',
- * 'catalog'/'lifestyle'/'video'/'custom' under 'single'. Three call sites
- * (syncScope, syncTotal, renderSummary) computed this the same way inline;
- * task #271f added a fourth (onProductsChange) and gave the other three one
- * shared definition rather than a fourth copy of the ternary. */
-function currentKind(scope) {
-  return scope === 'drop' ? pickedIn('drop_scope') : pickedIn('product_type');
-}
-
-function syncScope() {
-  const scope = scopeValue();
-  const drop = scope === 'drop';
-  const single = scope === 'single';
-
-  const dropPanel = q('[data-pl-panel="drop"]');
-  const singlePanel = q('[data-pl-panel="single"]');
-  if (dropPanel) dropPanel.hidden = !drop;
-  if (singlePanel) singlePanel.hidden = !single;
-
-  // service / tier are what the server reads. Everything else on this step is
-  // presentation; these two are the order.
-  const kind = currentKind(scope);
-  setHidden('tier', drop ? 'attended' : 'unattended');
-  setHidden('service', drop ? 'drop' : kind || 'catalog');
-
-  syncCount(scope, kind);
-  syncOutfit(scope, kind);
-  syncTotal();
+  syncLevel(attended, chosen);
   syncRequired();
 }
 
 /**
- * The count select is one control with one name, because /api/order reads one
- * `products` field and a form with three of them would depend on which one the
- * browser serialised first. JS narrows the option list to the range the chosen
- * scope allows; without JS the whole list is there with a hint saying so.
+ * Task #271f — Single Product/Full outfit. Every kind on the ladder has a rate
+ * to attach the surcharge to, so this field no longer appears and disappears;
+ * what is still narrowed is its option list. An outfit count can never exceed
+ * MAX_OUTFIT_PRODUCTS, and it can never exceed the number of products actually
+ * being ordered — the surcharge is per product styled as an outfit, so it
+ * cannot outnumber the products.
  */
-function syncCount(scope, kind) {
-  const select = q('select[name="products"]');
-  const fixed = q('[data-pl-count="pilot"]');
-  const free = q('[data-pl-count="free"]');
-  if (!select) return;
-
-  const pilot = scope === 'drop' && kind === 'pilot';
-  const full = scope === 'drop' && kind === 'full';
-
-  if (fixed) fixed.hidden = !pilot;
-  if (free) free.hidden = pilot || !scope;
-
-  const min = full ? Number(cfg.fullMin) : 1;
-  const max = full ? Number(cfg.fullMax) : 10;
-
-  let firstAllowed = null;
-  [...select.options].forEach((o) => {
-    const n = Number.parseInt(o.value, 10);
-    let allowed;
-    if (pilot) allowed = n === Number(cfg.pilotProducts);
-    else if (Number.isInteger(n)) allowed = n >= min && n <= max;
-    else allowed = !full; // "more than N" — a volume quote, never a full drop
-    o.hidden = !allowed;
-    o.disabled = !allowed;
-    if (allowed && firstAllowed === null) firstAllowed = o.value;
-  });
-
-  const chosen = select.options[select.selectedIndex];
-  if (!chosen || chosen.disabled) select.value = firstAllowed === null ? '' : firstAllowed;
-}
-
-/**
- * Task #271f — Single Product/Full outfit. Shown whenever the current
- * scope/kind has a rate to attach a surcharge to: every single-panel kind
- * except "custom" (a quote already covers whatever the shot needs), and both
- * drop packages (a fixed price either way). Narrowed the same way
- * syncCount() narrows the products select just above: an outfit count can
- * never exceed MAX_OUTFIT_PRODUCTS, and on a single-panel order it can never
- * exceed the number of products actually being ordered — the surcharge is
- * per product styled as an outfit, so it cannot outnumber the products.
- */
-function syncOutfit(scope, kind) {
+function syncOutfit(kind) {
   const field = q('[data-pl-outfit]');
   const select = q('select[name="outfit_count"]');
   if (!field || !select) return;
 
-  const applies = scope === 'drop' ? (kind === 'pilot' || kind === 'full') : !!kind && kind !== 'custom';
+  // Nothing chosen at all (which the browser prevents, but a stale form
+  // restored by the back button does not) leaves nothing to surcharge.
+  const applies = !!kind;
   field.hidden = !applies;
   if (!applies) {
     select.value = '0';
     return;
   }
 
-  const productsSelect = q('select[name="products"]');
-  const n = productsSelect ? Number.parseInt(productsSelect.value, 10) : NaN;
-  const cap = scope === 'single' && Number.isInteger(n)
-    ? Math.min(Number(cfg.maxOutfit), n)
-    : Number(cfg.maxOutfit);
+  const n = productCount();
+  const cap = Number.isInteger(n) ? Math.min(Number(cfg.maxOutfit), n) : Number(cfg.maxOutfit);
 
   let firstAllowed = null;
   [...select.options].forEach((o) => {
@@ -501,56 +483,141 @@ function outfitCount() {
   return Number.isInteger(n) && n > 0 ? n : 0;
 }
 
+// ── THE LADDER, IN THE BROWSER ───────────────────────────────────────────────
+// Three functions that mirror ladderRate(), ladderTotal() and quote() in
+// src/data/pricing.js. They are mirrored rather than imported because this file
+// runs in a browser and that one is a build-time module; what stops them
+// drifting is that the RUNGS are not copied — cfg.ladder is pricing.js's own
+// LADDER, serialised by the page. No euro figure is written down in this file,
+// which is the same rule the rest of the site keeps.
+
+/** The rate for a kind at a count, or null if the ladder cannot cover it. */
+function rateFor(kind, n) {
+  const rungs = (cfg.ladder && cfg.ladder[kind]) || null;
+  if (!rungs || !Number.isInteger(n) || n < 1) return null;
+  const rung = rungs.find(([lo, hi]) => n >= lo && (hi === null || n <= hi));
+  return rung ? rung[2] : null;
+}
+
+/** The rung above the one this count sits on, or null at the top. */
+function nextRung(kind, n) {
+  const rungs = (cfg.ladder && cfg.ladder[kind]) || null;
+  if (!rungs || !Number.isInteger(n) || n < 1) return null;
+  const i = rungs.findIndex(([lo, hi]) => n >= lo && (hi === null || n <= hi));
+  const next = i >= 0 && i < rungs.length - 1 ? rungs[i + 1] : null;
+  if (!next) return null;
+  // The rung has to be REACHABLE. There is no point telling someone that
+  // thirty-five products cost less each when the form stops at what one window
+  // holds — that is an upsell to a conversation they cannot have on this page.
+  if (Number(cfg.maxProducts) > 0 && next[0] > Number(cfg.maxProducts)) return null;
+  return { at: next[0], rate: next[2], addProducts: Math.max(0, next[0] - n) };
+}
+
 /**
- * The running total.
+ * net / VAT / gross for a count of a kind, plus the surcharge.
  *
- * A drop is a fixed price for the whole thing — the count inside it changes
- * what we do, not what it costs — so it is never printed as a per-product
- * multiplication. Section 13's whole framing is that the two doors are
- * different service models; a per-unit divide on the drop side would put them
- * back on one axis and invite the comparison it exists to avoid.
+ * Mirrors quote() + vatOf() + withVat() in pricing.js, rounding the same way at
+ * the same points. Every figure in pricing.js is NET, including the outfit
+ * surcharge, so VAT is taken once at the end over the whole order value.
+ *
+ * The first-order discount is deliberately NOT applied here: whether a brand
+ * has ordered before is not something this form knows, and a total that guessed
+ * would be wrong for whichever way it guessed. The page says in words that it
+ * is applied on the invoice.
+ */
+function quoteFor(kind, n, outfits) {
+  const rate = rateFor(kind, n);
+  if (rate === null) return null;
+  const net = round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0));
+  return {
+    rate,
+    net,
+    vat: round2(net * Number(cfg.vatRate)),
+    gross: round2(net * (1 + Number(cfg.vatRate))),
+  };
+}
+
+/**
+ * The running total: three lines, and the sentence that explains them.
+ *
+ * THREE LINES, NEVER ONE. BRIEF-14's rule is that no price is printed without
+ * saying which side of VAT it is on, and a single number in a box labelled
+ * "total" is exactly where that rule breaks. Net, the VAT line and the gross
+ * total are written together or not at all.
+ *
+ * NOTHING HERE IS AUTHORITATIVE. See the note at the top of this file: this is
+ * a preview, the invoice is derived server-side, and no amount is ever posted.
  */
 function syncTotal() {
-  const out = q('[data-pl-total]');
-  const note = q('[data-pl-total-note]');
-  if (!out) return;
+  const kind = kindOf();
+  const n = productCount();
+  const outfits = outfitCount();
+  const quote = kind ? quoteFor(kind, n, outfits) : null;
 
-  const scope = scopeValue();
-  const kind = currentKind(scope);
-  const select = q('select[name="products"]');
-  const raw = select ? select.value : '';
-  const n = Number.parseInt(raw, 10);
+  const dash = c('total.onRequest');
+  setText('[data-pl-total-net]', quote ? euro(quote.net) : dash);
+  setText('[data-pl-total-vat]', quote ? euro(quote.vat) : dash);
+  setText('[data-pl-total]', quote ? euro(quote.gross) : dash);
 
-  let amount = null;
   let noteText = '';
-
-  if (scope === 'drop' && kind === 'pilot') {
-    amount = cfg.prices.pilot;
-    noteText = c('total.pilot', { n: cfg.pilotProducts });
-  } else if (scope === 'drop' && kind === 'full') {
-    amount = cfg.prices.full;
-    noteText = c('total.full', { min: cfg.fullMin, max: cfg.fullMax });
-  } else if (scope === 'single' && kind === 'custom') {
-    noteText = c('total.custom');
-  } else if (scope === 'single' && kind && Number.isInteger(n)) {
-    amount = round2(cfg.prices[kind] * n);
-    noteText = c('total.each', { price: euro(cfg.prices[kind]), n });
-  } else if (scope === 'single' && kind) {
+  if (quote) {
+    noteText = c('total.each', { rate: euro(quote.rate), n });
+    // Task #271f — additive, on top of the rate line. Never on its own: a
+    // surcharge with no base price to attach to is meaningless.
+    if (outfits > 0) noteText += c('total.outfit', { price: euro(cfg.outfitSurcharge), n: outfits });
+  } else if (kind && !Number.isInteger(n) && q('select[name="products"]')?.value) {
+    // The escape hatch. Not a failure to price — a count this form is not
+    // willing to guess at, which the gate has its own panel for.
+    noteText = c('total.more');
+  } else {
     noteText = c('total.quote');
   }
+  setText('[data-pl-total-note]', noteText);
 
-  // Task #271f — additive, on top of whatever the block above produced.
-  // Never on its own: a surcharge with no base price to attach to
-  // (kind === 'custom', or nothing chosen yet) is meaningless, so this only
-  // fires when `amount` is already a real number.
-  const outfitN = outfitCount();
-  if (amount !== null && outfitN > 0) {
-    amount = round2(amount + outfitN * cfg.outfitSurcharge);
-    noteText += c('total.outfit', { price: euro(cfg.outfitSurcharge), n: outfitN });
+  // THE LADDER'S OWN UPSELL, and it has to be honest: both totals are computed
+  // from the ladder rather than estimated, so a client with a calculator finds
+  // exactly the two numbers this sentence names. Net on both sides, and the
+  // copy says so — comparing a net figure against a gross one would understate
+  // the saving by 21% and be wrong in the client's favour, which is still wrong.
+  const rung = q('[data-pl-rung]');
+  if (rung) {
+    const next = kind && quote ? nextRung(kind, n) : null;
+    if (next && next.addProducts > 0) {
+      const then = quoteFor(kind, next.at, Math.min(outfits, next.at));
+      // `now` is the CURRENT RATE, not the current total. The sentence used to
+      // read "{then} instead of {now}" with two totals in it, which put the
+      // larger number on the "instead of" side — more products for more money,
+      // phrased as if it were a saving. What actually falls is the per-product
+      // rate, so that is what the two figures compare, and the totals are
+      // stated as what they are: this many products for this much.
+      rung.textContent = c(next.addProducts === 1 ? 'rung.one' : 'rung.many', {
+        add: next.addProducts,
+        rate: euro(next.rate),
+        then: euro(then.net),
+        now: euro(quote.rate),
+        count: String(next.at),
+      });
+      rung.hidden = false;
+    } else {
+      rung.textContent = '';
+      rung.hidden = true;
+    }
   }
+}
 
-  out.textContent = amount === null ? c('total.onRequest') : euro(amount);
-  if (note) note.textContent = noteText;
+/**
+ * Which service level this count earns, marked on the table and said in words.
+ *
+ * `chosen` is the raw select value: with nothing picked at all there is no
+ * count to earn anything, and marking a column would be a claim about an order
+ * that does not exist yet.
+ */
+function syncLevel(attended, chosen) {
+  const tier = attended ? 'attended' : 'unattended';
+  qa('[data-pl-level]').forEach((col) => {
+    col.classList.toggle('is-current', !!chosen && col.dataset.plLevel === tier);
+  });
+  setText('[data-pl-level-note]', chosen ? c(`level.${tier}`) : '');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -910,7 +977,10 @@ function clearWindow() {
 }
 
 function runGate() {
-  const attended = scopeValue() === 'drop';
+  // The tier the count earned, read back from the field the server will read.
+  // Not re-derived: two places deciding which orders get a window is how one of
+  // them ends up asking the calendar a question the other never sends.
+  const attended = value('tier') === 'attended';
   clearWindow();
 
   if (!attended) {
@@ -923,7 +993,18 @@ function runGate() {
   const select = q('select[name="products"]');
   const products = Number.parseInt(select ? select.value : '', 10);
   if (!Number.isInteger(products) || products < 1) {
-    gateShow('invalid');
+    // Two different facts, and they must not be flattened into one panel. An
+    // empty select is "no count has been given". The escape hatch is a count
+    // that was given and is larger than a single window holds — which is the
+    // gate's own 'too-large' answer, so it gets that panel and the maximum it
+    // quotes, rather than being told to go back and pick a number it already
+    // deliberately declined to pick.
+    if (select && select.value) {
+      qa('[data-max]').forEach((el) => { el.textContent = String(cfg.maxProducts); });
+      gateShow('too-large');
+    } else {
+      gateShow('invalid');
+    }
     return;
   }
 
@@ -1006,9 +1087,10 @@ function renderWindows(windows) {
 // FLAGGED, and stated on the page rather than worked around: this is a confirm
 // step, not a payment step. The project has no payment processor — no SDK, no
 // key, no endpoint — so a card form here would be a form that cannot take a
-// card. What the site already promises on /pricing is that a drop is paid after
-// the window is confirmed and before production starts, and that individual
-// products are invoiced on delivery. This step confirms; the invoice follows.
+// card. What the site already promises on /pricing is that an order with a
+// reserved window is paid after that window is confirmed and before production
+// starts, and that a queue order is invoiced on delivery. This step confirms;
+// the invoice follows.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function renderSummary() {
@@ -1016,23 +1098,30 @@ function renderSummary() {
   if (!host) return;
   host.textContent = '';
 
-  const scope = scopeValue();
-  const drop = scope === 'drop';
-  const kind = currentKind(scope);
+  const kind = kindOf();
+  const n = productCount();
+  const attended = value('tier') === 'attended';
   const select = q('select[name="products"]');
   const count = select ? select.options[select.selectedIndex] : null;
+  const outfitN = outfitCount();
 
   const rows = [];
-  rows.push([c('sum.scope'), c(`scope.${scope || 'none'}`)]);
   if (kind) rows.push([c('sum.kind'), c(`kind.${kind}`)]);
   if (count && count.value) rows.push([c('sum.count'), count.textContent.trim()]);
 
   // Task #271f.
-  const outfitN = outfitCount();
   if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);
 
-  const total = q('[data-pl-total]');
-  if (total && total.textContent) rows.push([c('sum.total'), total.textContent]);
+  // Three rows again, computed again — NOT scraped back off step 1. Reading the
+  // rendered total would make the confirm screen a copy of a copy, and a client
+  // who changed the count and came straight here would confirm the old figure.
+  // Same rule as step 1: never one bare number, and never authoritative.
+  const quote = kind ? quoteFor(kind, n, outfitN) : null;
+  if (quote) {
+    rows.push([c('sum.net'), euro(quote.net)]);
+    rows.push([c('sum.vat'), euro(quote.vat)]);
+    rows.push([c('sum.total'), euro(quote.gross)]);
+  }
 
   rows.push([c('sum.files'), staged.length ? c('upload.count', { n: staged.length, max: cfg.maxBatchFiles }) : c('sum.noFiles')]);
 
@@ -1040,8 +1129,8 @@ function renderSummary() {
   // it there. Everything else says what actually happens next instead.
   const ws = value('window_start');
   const we = value('window_end');
-  if (drop && ws) rows.push([c('sum.window'), we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws)]);
-  else if (drop) rows.push([c('sum.window'), c('sum.windowLater')]);
+  if (attended && ws) rows.push([c('sum.window'), we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws)]);
+  else if (attended) rows.push([c('sum.window'), c('sum.windowLater')]);
   else rows.push([c('sum.window'), c('sum.queue')]);
 
   const email = q('input[name="email"]');
@@ -1208,6 +1297,13 @@ function setHidden(name, val) {
   if (el) el.value = val;
 }
 
+/** Write text into a hook if the page has it. A missing hook degrades that one
+ * line and nothing else — the same contract every other selector here keeps. */
+function setText(sel, text) {
+  const el = q(sel);
+  if (el) el.textContent = text || '';
+}
+
 function value(name) {
   const el = q(`input[name="${name}"]`);
   return el ? el.value : '';
@@ -1226,10 +1322,10 @@ function button(label, cls) {
  *
  * interactions.js has its own money() and it is NOT reused here: it omits the
  * grouping separator, which nothing on the site noticed while every figure it
- * touched was under a thousand. A drop is €1,850, so a client would have read
- * "€1850" in the running total and "€1.850" on the invoice. Duplicating twelve
- * lines is the cheaper of the two mistakes; a verifier asserts the two agree
- * across every total this page can reach.
+ * touched was under a thousand. Thirty products on the ladder is well past
+ * that, so a client would have read the total one way here and another way on
+ * the invoice. Duplicating twelve lines is the cheaper of the two mistakes; a
+ * verifier asserts the two agree across every total this page can reach.
  */
 function euro(amount) {
   const nl = cfg.lang === 'nl';

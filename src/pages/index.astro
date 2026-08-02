@@ -1,25 +1,39 @@
 ---
-// VISUAILS — / (English). The page body lives in HomePage.astro so that / and
-// /nl cannot drift apart; only the meta differs here.
+// VISUAILS — / (English). The page body lives in HomeV2.astro so that / and
+// /nl cannot drift apart; only the meta differs here. (It said HomePage.astro
+// until that file was deleted — it had been dead since the section-17 rebuild
+// and nothing imported it, but 1,347 lines of stale prices read as live to
+// anyone who opened it.)
 //
 // The description is built from pricing.js rather than typed, for the same
 // reason /pricing's is: a price or a turnaround typed into a <meta> tag is a
 // claim the ladder cannot enforce, and it is the one place a stale figure
 // survives a page rewrite. The old description here promised delivery "in
 // about 24 hours" — a named window the capacity gate never cleared.
+//
+// IT ALSO QUOTED A PACKAGE — "25–30 products for €1,850" — which is the offer
+// the August 2026 model retired (section 0 of src/data/pricing.js). Two
+// figures replace it, and it has to be two: the ladder's entry rung is what
+// one product costs and its floor is what a full collection costs each, and
+// either number alone is a different page's price. The band is gone with the
+// package, because every count has a price now.
 import Layout from '../layouts/Layout.astro';
 import HomeV2 from '../components/HomeV2.astro';
-import { euro, AMOUNT, FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
+import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
+
+// `complete` is the scope the homepage sells — a catalog set and a lifestyle
+// carousel per product — so it is the ladder this description quotes.
+const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
 
 // Kept under 152 characters — META_LIMIT, and below Google's snippet cut
 // rather than level with it. This is the one description that has to survive
 // truncation intact, and the €0.99 hook is the last clause, so it is the
 // clause a cut would take.
 const description =
-  `Catalog and lifestyle visuals for clothing brands, from your own product ` +
-  `photos. No shoot. ${FULL_DROP_MIN}–${FULL_DROP_MAX} products for ` +
-  `${euro(AMOUNT.fullDrop, 'en')}. See it on yours for ` +
-  `${euro(AMOUNT.testSample, 'en')}.`;
+  `Catalog and lifestyle visuals for clothing brands, from your own photos. ` +
+  `No shoot. ${euro(ladderRate('complete', 1), 'en')} a product, ` +
+  `${euro(ladderFloor('complete'), 'en')} from ${FLOOR_FROM} up, ` +
+  `${vatLabel('excl', 'en')}. Try one for ${euro(AMOUNT.testSample, 'en')}.`;
 ---
 
 <Layout

@@ -1,54 +1,71 @@
 ---
-// VISUAILS — the section 13 service-tier block.
+// VISUAILS — the service-level block: what changes at WINDOW_THRESHOLD products.
 //
-// "Order individual products" against "run a whole drop", stated side by side.
-// Brief section 13, verbatim in BRIEF-13-SERVICE-TIERS.md:
+// WHAT THIS BLOCK USED TO BE, AND WHY IT IS NOT THAT ANY MORE. It used to be a
+// CHOICE: "order individual products" against "run a whole drop", two doors the
+// buyer picked between, under a heading taken from brief section 13 — "the
+// dividing line is not order size, it is whether a human commits to a deadline."
 //
-//   "Do not use words like 'basic,' 'lite,' or 'starter' for Tier 0, and never
-//    style it as a lesser card. It is a different SERVICE MODEL, not a worse
-//    product. Frame it as 'order individual products' against 'run a whole
-//    drop.'"
+// The August 2026 model falsifies exactly that sentence and nothing else about
+// this file. Under the ladder (see section 0 of src/data/pricing.js, the
+// governing document) the buyer no longer picks a service level at all: size
+// picks it. From WINDOW_THRESHOLD products an order goes into the capacity
+// calendar and gets the reserved window; below it, the standard queue. So this
+// block stopped being a comparison of two things you choose between and became
+// a statement of what changes when your order crosses one line. The old heading
+// is not softened here, it is reversed, because a page that still asks the
+// buyer to weigh two service models is describing a price list we no longer
+// sell.
 //
-// Two consequences for this file specifically.
+// The number is the SAME line the rate crosses — WINDOW_THRESHOLD is the count
+// at which the ladder's third rung starts — and that coincidence is deliberate
+// in pricing.js. It is why the paragraph can say "one line, not two", and why
+// this block does not need to print a rate to make its point.
+//
+// THREE THINGS THAT SURVIVED THE CHANGE UNALTERED, because the reasoning behind
+// them still holds and each is easy to undo by accident.
 //
 // FIRST, the two columns are typographically and structurally identical. Same
 // heading size, same border, same padding, same row set, same link treatment.
 // There is no "recommended" ribbon, no scale difference, no accent on one side.
-// A comparison block styles the thing it wants you to pick, and the whole point
-// of this section is that neither is the thing you should pick — the right one
-// depends on whether you need a date. If a future pass adds emphasis to one
-// column it will have re-broken the section's central instruction.
+// The old reason was section 13's — "It is a different SERVICE MODEL, not a
+// worse product [...] never style it as a lesser card." The new model makes
+// that rule STRONGER rather than retiring it: styling one column as the better
+// one would tell a reader they can pick it, and they cannot. Their order size
+// already did. If a future pass adds emphasis to one column it will have put a
+// choice back on a page whose whole subject is that there isn't one.
 //
 // SECOND, every cell AND every row label is read from src/data/pricing.js, not
 // typed here. Section 13: "put the review-level claim in a single content
 // variable per tier, not hardcoded across pages." That rule is written about
 // the review claim and it applies with equal force to the other four rows —
 // this component renders on /catalog, /lifestyle and /video in two languages,
-// and the same five rows are printed again by the Tier 0 block on /pricing.
-// The labels are shared for a reason that is not theoretical: when they were
-// typed per page the Dutch pair had already drifted, with /pricing printing
-// "Timing" in English on a Dutch page.
+// and the same rows are printed again by the service block on /pricing. The
+// labels are shared for a reason that is not theoretical: when they were typed
+// per page the Dutch pair had already drifted, with /pricing printing "Timing"
+// in English on a Dutch page.
 //
-// THE CONSTRAINT THAT OUTRANKS EVERYTHING ELSE HERE: the unattended column's
-// timing row reads "Typically 2–4 working days" and its queue row reads
-// "Standard queue, no fixed delivery date". It never shows a date, and there
-// is no prop on this component that could make it show one. Section 13 calls
-// that "the single most important constraint in this section."
+// THIRD, THE CONSTRAINT THAT OUTRANKS EVERYTHING ELSE HERE: the unattended
+// column's timing row reads "Typically 2–4 working days" and its queue row
+// reads "Standard queue, no fixed delivery date". It never shows a date, and
+// there is no prop on this component that could make it show one. Section 13
+// calls that "the single most important constraint in this section", and the
+// new model does not touch it — it only changes WHICH orders land in that
+// column.
 //
-// This block replaced a `.drop-note` prose paragraph that was pasted into all
-// three service pages, along with three identical copies of its CSS. That
-// duplication is why this is a component rather than a fourth paste.
+// This block replaced a prose paragraph that was pasted into all three service
+// pages, along with three identical copies of its CSS. That duplication is why
+// this is a component rather than a fourth paste.
 import {
-  TIERS, TIER_ROWS, tierRow, tierRowLabels,
-  FULL_DROP_MIN, FULL_DROP_MAX,
+  TIER_ROWS, tierRow, tierRowLabels, WINDOW_THRESHOLD,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props {
   lang: 'en' | 'nl';
-  /** Where the unattended column points. /start step 1 offers "a single product". */
+  /** Where the under-threshold column points. /start takes any size. */
   href0?: string;
-  /** Where the attended column points. Defaults to /pricing; pass another path on /pricing itself. */
+  /** Where the at-threshold column points. Defaults to /pricing; pass another path on /pricing itself. */
   href1?: string;
   /** Drop the heading block when the host section already has one. */
   compact?: boolean;
@@ -57,30 +74,36 @@ interface Props {
 const { lang, href0 = '/start', href1 = '/pricing', compact = false } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
-// The heading is section 13's own first sentence, not a summary of it: "The
-// dividing line is not order size, it is whether a human commits to a
-// deadline." Saying that out loud is what stops the cheaper column reading as
-// the smaller one.
-//
-// The drop's product count is named in the paragraph and deliberately NOT
-// given a row of its own. A "how many products" row would build an order-size
-// comparison directly underneath a heading that says order size is not the
-// comparison. Naming it once, in prose, answers "what is a drop" for a first
-// visit without turning the block into the thing it argues against.
-const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+// The column headings are NOT TIERS[id].label any more. Those two strings still
+// read "Order individual products" / "Run a whole drop" — the names of the two
+// doors a buyer used to choose between — and printing them over these columns
+// would re-offer the choice in the header while the paragraph above says there
+// isn't one. The headings are the two sides of the line instead, built from the
+// threshold itself, so they cannot disagree with the number in the copy.
+// (/pricing's service block names its columns the same way, for the same
+// reason.)
+const label = lang === 'nl'
+  ? { unattended: `Onder ${WINDOW_THRESHOLD} producten`, attended: `Vanaf ${WINDOW_THRESHOLD} producten` }
+  : { unattended: `Under ${WINDOW_THRESHOLD} products`, attended: `From ${WINDOW_THRESHOLD} products` };
 
+// No product count is given a row of its own, and that is unchanged from the
+// version this replaced — but the reason flipped with the model. It used to be
+// that a size row would build an order-size comparison under a heading denying
+// order size was the comparison. Now order size IS the comparison, and it is
+// already in both column headings; a third statement of it would be the only
+// row in the table that says the same thing twice.
 const t = lang === 'nl'
   ? {
-      h: 'Het verschil is niet de ordergrootte',
-      p: `Het gaat erom of er een datum aan je wordt toegezegd voordat je betaalt. Een drop is ${scope} producten die samen uitkomen; beide routes lopen door dezelfde productie en dezelfde controle.`,
-      cta0: 'Bestel één product',
-      cta1: 'Bekijk hoe een drop werkt',
+      h: `Wat er verandert bij ${WINDOW_THRESHOLD} producten`,
+      p: `Je kiest geen serviceniveau — de omvang van je bestelling bepaalt het. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster; daaronder loopt hij in de standaard wachtrij. Dat is ook precies het aantal waarbij het tarief per product een trede zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
+      cta0: 'Start een bestelling',
+      cta1: 'Bekijk de staffel',
     }
   : {
-      h: 'The difference is not order size',
-      p: `It is whether a date is committed to you before you pay. A drop is ${scope} products released together; both routes run through the same production and the same check.`,
-      cta0: 'Order a single product',
-      cta1: 'See how a drop works',
+      h: `What changes at ${WINDOW_THRESHOLD} products`,
+      p: `You do not pick a service level — the size of your order sets it. From ${WINDOW_THRESHOLD} products an order goes into the capacity calendar and gets the reserved window; below that it runs in the standard queue. That is also the count at which the rate per product drops a rung, so there is one line to cross rather than two. Both run through the same production and the same check.`,
+      cta0: 'Start an order',
+      cta1: 'See the price ladder',
     };
 
 // The row labels are NOT typed in `t` above with the rest of the copy. They
@@ -92,16 +115,16 @@ const rowLabels = tierRowLabels(lang);
 
 // Built once, in tier order, so the two columns cannot drift apart in row
 // count or row order — a comparison where the rows do not line up is not a
-// comparison. Order is unattended-first because that is the order the frame is
-// stated in ("order individual products" against "run a whole drop"), not
-// because it is lesser.
+// comparison. Order is unattended-first because that is now the order of the
+// NUMBER LINE — under the threshold, then from it — not because it is lesser.
+// Reversing it would make the columns count downwards.
 //
 // Cells are mapped over the same TIER_ROWS that produced the labels, so a row
 // added to pricing.js appears in both columns with its label already attached;
 // there is no index in this file that could drift against the label list.
 const columns = (['unattended', 'attended'] as const).map((id) => ({
   id,
-  label: TIERS[id].label[lang],
+  label: label[id],
   href: id === 'unattended' ? lp(href0) : lp(href1),
   cta: id === 'unattended' ? t.cta0 : t.cta1,
   cells: TIER_ROWS.map((r) => tierRow(id, r.key, lang)),

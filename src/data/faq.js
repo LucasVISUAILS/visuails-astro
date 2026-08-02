@@ -20,6 +20,41 @@
 // Every euro figure and every timing promise is still interpolated from
 // src/data/pricing.js — this file holds prose, never a number.
 //
+// ── MIGRATED TO THE LADDER AND THE PLANS (August 2026) ───────────────────────
+// Section 0 of src/data/pricing.js is the governing document. What these
+// answers used to describe — a Drop Pilot of exactly eight products, a Full
+// Drop of 25–30, a studio retainer, and flat per-product rates underneath them
+// — no longer exists. What replaced it, and therefore what these answers now
+// have to be able to explain:
+//
+//   · A LADDER. One unit, a product; one rate, which only ever falls as the
+//     count rises. Every count has a price, so the old hole between the two
+//     packages cannot reopen.
+//   · A FIRST ORDER DISCOUNT, once per brand, at any size. This IS the Drop
+//     Pilot now — same incentive, no fixed count to explain.
+//   · THREE MONTHLY PLANS, each priced below the ladder total for the same
+//     output (pricing.js asserts that at build time), with unused products
+//     rolling over PLAN_ROLLOVER_MONTHS.
+//   · SERVICE LEVEL FOLLOWS SIZE. From WINDOW_THRESHOLD products up, an order
+//     gets the reserved window and the capacity calendar; below it, the
+//     standard queue. It is no longer a second question the buyer answers.
+//   · VAT IS ALWAYS LABELLED. BRIEF-14's hardest rule: no price is printed
+//     without saying which side of the 21% it is on, and the label comes from
+//     vatLabel() so it translates and moves in one place.
+//
+// TWO RULES A FUTURE EDITOR COULD UNDO BY ACCIDENT, so they are written down:
+//
+//   1 · WE DO NOT SELL A "DROP". In fashion the word means a collection going
+//       live — the client's own launch — and the site used it for a work order
+//       at the same time, which is half the reason the model changed at all.
+//       EN says "an order" or "a batch"; NL says "een bestelling". The word
+//       survives in exactly one place below, in the answer that explains the
+//       collision, and it is talking about the CLIENT's drop there.
+//   2 · NO EURO AMOUNT IS TYPED HERE. Not one, in either language. Everything
+//       comes through euro(), quote(), ladderRate(), PLAN_AMOUNT and friends,
+//       so a price change in pricing.js rewrites these answers instead of
+//       leaving them quoting a price list that no longer exists.
+//
 // SHAPE
 //   { q, a }                 — a question and a plain-text answer.
 //   { q, html }              — an answer that contains a link or emphasis. The
@@ -31,54 +66,98 @@
 //                              localizes it.
 
 import {
-  AMOUNT, TIERS, PER_PRODUCT, TEST_SAMPLE, euro, reviewClaim, turnaround, aftercare,
-  FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
-  FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
+  AMOUNT, TIERS, TEST_SAMPLE, euro, reviewClaim, turnaround, aftercare, perProduct,
+  LADDER, ladderRate, ladderFloor, quote, FIRST_ORDER_DISCOUNT,
+  plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
+  PLAN_MIN_MONTHS, PLAN_ROLLOVER_MONTHS,
+  WINDOW_THRESHOLD, vatLabel, withVat,
 } from './pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
 const norm = (lang) => (lang === 'nl' ? 'nl' : 'en');
 
-const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+// ── The two ends of the ladder, read off LADDER rather than named ────────────
+// The RUNG BOUNDS are read as well as the rates. An answer that says "from 35
+// products" while pricing.js has re-cut the top rung to 40 is a wrong answer
+// that no build step can catch, because 35 would still be a perfectly valid
+// number. Reading the bound means re-cutting the ladder rewrites the sentence.
+const COMPLETE_RUNGS = LADDER.complete;
+const TOP_RUNG_AT = COMPLETE_RUNGS[COMPLETE_RUNGS.length - 1][0];
+// The last count still on the entry rung, and the first count off it. Used to
+// show the rate falling with the smallest possible step — one more product.
+const ENTRY_RUNG_LAST = COMPLETE_RUNGS[0][1];
+const SECOND_RUNG_AT = COMPLETE_RUNGS[1][0];
 
-// euroRange() rounds; €61.67 must survive intact.
-function dropPerProduct(lang) {
-  return `${euro(FULL_DROP_PER_PRODUCT_MIN, lang)}–${euro(FULL_DROP_PER_PRODUCT_MAX, lang).slice(1)}`;
+// The discount as a percentage, computed rather than typed. A written "20%"
+// beside a constant of 0.20 is two sources of truth for one number, and the
+// written one is the one that gets missed.
+const FIRST_PCT = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
+
+// The worked example under the first-order discount. The SAME count
+// PricingPage.astro uses for its own worked example, deliberately: this answer
+// renders directly underneath that block on /pricing, and two different worked
+// examples on one page read as two different offers.
+const FIRST_EG_PRODUCTS = 14;
+
+/** A net price with its VAT label. Nothing in this file prints one without. */
+function ex(amount, lang) {
+  return `${euro(amount, lang)} ${vatLabel('excl', lang)}`;
+}
+
+/** Net and gross side by side, for the few answers that quote a total to pay. */
+function exIncl(amount, lang) {
+  return `${ex(amount, lang)} — ${euro(withVat(amount), lang)} ${vatLabel('incl', lang)}`;
 }
 
 /**
- * The pricing-page FAQ — six questions, rendered under "Pricing questions" on
- * /pricing and /nl/pricing and emitted as that page's FAQPage node.
+ * The pricing-page FAQ — eight questions, rendered under "Pricing questions"
+ * on /pricing and /nl/pricing and emitted as that page's FAQPage node.
+ *
+ * It was six under the packages. The three questions the ladder and the plans
+ * create — how the rate falls, whether a plan beats ordering ad hoc, what
+ * happens to plan products nobody used — are the ones a reader now arrives
+ * with, and answering them anywhere but here would mean answering them twice.
  */
 export function pricingFaqs(lang = 'en') {
   const l = norm(lang);
-  const unattended = TIERS.unattended;
+  const planList = plans(l);
+  const planName = Object.fromEntries(planList.map((p) => [p.id, p.name]));
+  const studioSaving = planSaving('studio');
+  const firstEg = quote('complete', FIRST_EG_PRODUCTS, { firstOrder: true });
 
   if (l === 'nl') {
     return [
       {
         q: 'Wanneer betaal ik?',
-        a: 'Bij een drop nadat de capaciteitscheck je venster heeft bevestigd en voordat de productie start — je reserveert dat venster, dus daar betaal je voor. Losse producten worden bij levering gefactureerd. De proefvisual is het enige dat vooraf betaald wordt, en dat is er één per bedrijf.',
+        a: `Vanaf ${WINDOW_THRESHOLD} producten nadat de capaciteitscheck je venster heeft bevestigd en voordat de productie start — je reserveert dat venster, dus daar betaal je voor. Kleinere bestellingen worden bij levering gefactureerd. De proefvisual is het enige dat vooraf betaald wordt, en dat is er één per bedrijf.`,
       },
       {
-        q: 'Hoe werkt btw en verlegging?',
-        a: 'We zijn gevestigd in Nederland (btw NL005407575B96). EU-bedrijven met een geldig btw-nummer kunnen dat bij het afrekenen invullen voor btw-verlegging en snellere facturatie. Het is optioneel.',
+        q: 'Is mijn eerste bestelling goedkoper?',
+        a: `Ja — ${FIRST_PCT} eraf, eenmalig per merk, bij elke omvang. Het is wat het pilotpakket was, zonder het vaste aantal: ${FIRST_EG_PRODUCTS} complete producten is ${ex(firstEg.listTotal, 'nl')}, en bij een eerste bestelling is dat ${exIncl(firstEg.net, 'nl')}.`,
       },
       {
-        q: `En als mijn drop groter is dan ${FULL_DROP_MAX} producten?`,
-        a: `De Full Drop-band is ${FULL_DROP_MIN}–${FULL_DROP_MAX} omdat dat in één gereserveerd venster past. Een grotere collectie draaien we als opeenvolgende drops, geoffreerd voordat er iets geboekt wordt. We persen het niet in één venster en hopen er het beste van.`,
+        q: 'Hoe daalt het tarief?',
+        a: `Elk product in de bestelling gaat tegen hetzelfde tarief, en dat tarief wordt bepaald door hoeveel producten erin zitten. Eén compleet product is ${ex(ladderRate('complete', 1), 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product ${ex(ladderFloor('complete'), 'nl')}. Omdat het tarief voor de hele bestelling geldt, verlaagt een trede omlaag de prijs van álle producten erin — niet alleen die voorbij de grens. Bij ${ENTRY_RUNG_LAST} producten betaal je ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}.`,
       },
       {
-        q: 'Waarom staat er geen leverdatum bij losse producten?',
-        a: `Omdat een drop nooit wijkt voor een losse bestelling, en een losse bestelling wel kan wijken. Een datum noemen die we zouden moeten breken is erger dan geen datum noemen. "${unattended.turnaround.nl}" is wat de wachtrij meestal doet — gezegd als gebruikelijk, nooit als datum.`,
+        q: 'Is een plan goedkoper dan bestellen wanneer ik het nodig heb?',
+        a: `Alleen als dezelfde output elke maand terugkomt. Het ${planName.studio}-plan is ${ex(PLAN_AMOUNT.studio, 'nl')} per maand voor ${PLAN_PRODUCTS.studio} producten en ${PLAN_CLIPS.studio} clips; op de staffel kost diezelfde output ${ex(studioSaving.onLadder, 'nl')}. Bestel je seizoensgebonden in plaats van maandelijks, dan is de staffel de goedkopere deur — een plan dat je niet volmaakt is geen besparing.`,
       },
       {
-        q: 'Kost een video meer binnen een drop?',
-        a: `Nee. ${euro(AMOUNT.video, 'nl')} per clip, hoe dan ook — los of toegevoegd aan een drop. Video kost hetzelfde omdat het hetzelfde werk is.`,
+        q: 'Wat gebeurt er met planproducten die ik niet gebruik?',
+        a: `Die schuiven ${PLAN_ROLLOVER_MONTHS} maand door: wat je deze maand niet besteld hebt, kun je volgende maand alsnog bestellen. Verder stapelen ze niet op, want een plan is gereserveerde capaciteit in de agenda en niet-opgevraagde capaciteit is een maand die al voorbij is. Een plan loopt minimaal ${PLAN_MIN_MONTHS} maanden.`,
       },
       {
-        q: 'Is er een abonnement?',
-        a: `Alleen als je dat wilt. De studio-retainer is ${euro(AMOUNT.retainer, 'nl')} per maand voor merken die elke maand een drop draaien. De rest koop je wanneer je het nodig hebt, zonder iets doorlopends.`,
+        q: 'Waarom staat er geen leverdatum bij een kleine bestelling?',
+        a: `Omdat het serviceniveau de omvang volgt. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de capaciteitsagenda en krijgt hij ${turnaround('attended', 'nl').toLowerCase()}. Daaronder loopt hij in de standaard wachtrij: ${turnaround('unattended', 'nl').toLowerCase()}, gezegd als gebruikelijk en nooit als datum. Een datum noemen die we zouden moeten breken is erger dan geen datum noemen, en een bestelling die al in de agenda staat wijkt nooit voor een bestelling die er niet in staat.`,
+      },
+      {
+        q: 'Kost een video meer binnen een bestelling?',
+        a: `Nee. ${ex(AMOUNT.video, 'nl')} per clip, hoe dan ook — los of toegevoegd aan elke bestelling. Video kost hetzelfde omdat het hetzelfde werk is.`,
+      },
+      {
+        q: 'Hoe wordt btw getoond?',
+        a: `Elk bedrag op deze pagina begint met het nettobedrag met ${vatLabel('excl', 'nl')} ernaast, en het bedrag ${vatLabel('incl', 'nl')} staat er direct naast. ${vatLabel('rate', 'nl')} wordt bij het afrekenen aan iedereen berekend, ook aan EU-bedrijven. We zijn gevestigd in Nederland (btw NL005407575B96); ben je een EU-bedrijf met een geldig btw-nummer, geef het door, dan wordt de verlegging achteraf op de factuur rechtgezet.`,
       },
     ];
   }
@@ -86,27 +165,35 @@ export function pricingFaqs(lang = 'en') {
   return [
     {
       q: 'When do I pay?',
-      a: 'For a drop, after the capacity gate has confirmed your window and before production starts — the window is what you are reserving, so it is what you are paying for. Individual products are invoiced on delivery. The test sample is the one thing charged upfront, and it is one per business.',
+      a: `From ${WINDOW_THRESHOLD} products, after the capacity check has confirmed your window and before production starts — the window is what you are reserving, so it is what you are paying for. Smaller orders are invoiced on delivery. The test sample is the one thing charged upfront, and it is one per business.`,
     },
     {
-      q: 'How does VAT and reverse-charge work?',
-      a: 'We are based in the Netherlands (VAT NL005407575B96). EU businesses with a valid VAT number can supply it at checkout for reverse-charge and faster invoicing. It is optional.',
+      q: 'Is my first order cheaper?',
+      a: `Yes — ${FIRST_PCT} off, once per brand, at any size. It is what the pilot package used to be, without the fixed count: ${FIRST_EG_PRODUCTS} complete products is ${ex(firstEg.listTotal, 'en')}, and on a first order that is ${exIncl(firstEg.net, 'en')}.`,
     },
     {
-      q: `What if my drop is more than ${FULL_DROP_MAX} products?`,
-      a: `The Full Drop band is ${FULL_DROP_MIN}–${FULL_DROP_MAX} because that is what fits one reserved window. A larger collection is run as consecutive drops, quoted before anything is booked. We will not squeeze it into one window and hope.`,
+      q: 'How does the rate fall?',
+      a: `Every product in the order is charged at the same rate, and that rate is set by how many products are in it. One complete product is ${ex(ladderRate('complete', 1), 'en')}; from ${TOP_RUNG_AT} products the same product is ${ex(ladderFloor('complete'), 'en')}. Because the rate applies to the whole order, crossing onto the next rung lowers the price of every product in it, not only the ones past the line: ${ENTRY_RUNG_LAST} products is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, and ${SECOND_RUNG_AT} is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each.`,
     },
     {
-      q: 'Why is there no delivery date on individual products?',
-      a: `Because a drop can never be pushed for a single order, and an individual order can. Quoting a date we would have to break is worse than not quoting one. "${unattended.turnaround.en}" is what the queue typically does — stated as typical, never as a date.`,
+      q: 'Is a plan cheaper than ordering when I need it?',
+      a: `Only if the same output comes round every month. The ${planName.studio} plan is ${ex(PLAN_AMOUNT.studio, 'en')} a month for ${PLAN_PRODUCTS.studio} products and ${PLAN_CLIPS.studio} clips; the same output on the ladder is ${ex(studioSaving.onLadder, 'en')}. If your ordering is seasonal rather than monthly, the ladder is the cheaper door — a plan you do not fill is not a saving.`,
     },
     {
-      q: 'Does a video cost more inside a drop?',
-      a: `No. ${euro(AMOUNT.video, 'en')} a clip either way — on its own, or added to any drop. Video is priced the same because it is the same work.`,
+      q: 'What happens to plan products I do not use?',
+      a: `They roll over ${PLAN_ROLLOVER_MONTHS} month — what you did not order this month can be ordered next month. They do not stack up beyond that, because a plan is capacity reserved in the calendar and capacity nobody claimed is a month that has already gone by. A plan runs for a minimum of ${PLAN_MIN_MONTHS} months.`,
     },
     {
-      q: 'Is there a subscription?',
-      a: `Only if you want one. The studio retainer is ${euro(AMOUNT.retainer, 'en')} a month for brands running a drop every month. Everything else is bought when you need it, with nothing recurring.`,
+      q: 'Why is there no delivery date on a small order?',
+      a: `Because the service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the capacity calendar and gets ${turnaround('attended', 'en').toLowerCase()}. Below that it runs in the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, stated as typical and never as a date. Quoting a date we would have to break is worse than not quoting one, and an order already in the calendar is never pushed for one that is not.`,
+    },
+    {
+      q: 'Does a video cost more inside an order?',
+      a: `No. ${ex(AMOUNT.video, 'en')} a clip either way — on its own, or added to any order. Video is priced the same because it is the same work.`,
+    },
+    {
+      q: 'How is VAT shown?',
+      a: `Every figure on this page leads with the net amount and says ${vatLabel('excl', 'en')} beside it, with the ${vatLabel('incl', 'en')} figure next to it. ${vatLabel('rate', 'en')} is charged at checkout to everyone, EU businesses included. We are based in the Netherlands (VAT NL005407575B96); if you are an EU business with a valid VAT number, give it to us and the reverse charge is corrected afterwards on your invoice.`,
     },
   ];
 }
@@ -116,13 +203,18 @@ export function pricingFaqs(lang = 'en') {
  *
  * The group ORDER is part of the data: FaqPage.astro pairs it index-for-index
  * with GROUP_ANCHORS so that /faq#pricing lands in the same place in both
- * languages, and throws at build time if the two lengths disagree.
+ * languages, and throws at build time if the two lengths disagree. HomeV2.astro
+ * also picks five questions by group and item INDEX, so moving a question
+ * between groups moves it on the homepage too.
  */
 export function faqPageGroups(lang = 'en') {
   const l = norm(lang);
-  const perProductById = Object.fromEntries(PER_PRODUCT[l].map((p) => [p.id, p]));
+  const cat = perProduct('catalog', l);
+  const life = perProduct('lifestyle', l);
   const sample = TEST_SAMPLE[l];
-  const perProduct = dropPerProduct(l);
+  const planList = plans(l);
+  const planName = Object.fromEntries(planList.map((p) => [p.id, p.name]));
+  const planNames = planList.map((p) => p.name).join(', ');
 
   if (l === 'nl') {
     return [
@@ -134,16 +226,19 @@ export function faqPageGroups(lang = 'en') {
             a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestyle-carousels en video voor een hele productlijn. De pipeline doet de productie op schaal; een mens controleert elke visual voordat die bij jou aankomt.',
           },
           {
-            q: 'Wat is een drop?',
-            a: `Een drop is ${scope} producten als één opdracht — één briefing, één venster, één factuur — met een catalogset en een lifestyle-carousel voor elk product. Zo maak je een seizoen aan productbeeld in één keer, in plaats van product voor product.`,
+            // DE ENIGE PLEK waar het woord "drop" nog staat, en het gaat daar
+            // over de lancering van de KLANT — precies de botsing die het
+            // prijsmodel heeft veranderd. Zie de kop van dit bestand.
+            q: 'Wat is een bestelling?',
+            a: `Een bestelling is zoveel producten als je in één keer aanlevert — één briefing, één tarief, één factuur — met de scope die je kiest voor elk product: een catalogset, een lifestyle-carousel, of allebei. Er is geen pakket waar je lijn in moet passen en geen minimum; het tarief per product daalt naarmate het aantal stijgt. En over het woord "drop": in mode is dat jouw collectie die live gaat. Daarom noemen we onze eigen werkopdracht zo niet meer. De drop is van jou. Wat je bij ons koopt is een bestelling.`,
           },
           {
             q: 'Wat moet ik opsturen?',
-            a: 'Eén duidelijke foto per product en een korte notitie over de look die je wilt. Meer niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de drop.',
+            a: 'Eén duidelijke foto per product en een korte notitie over de look die je wilt. Meer niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de bestelling.',
           },
           {
-            q: 'Kan ik het proberen voordat ik een hele drop bestel?',
-            a: `Op twee manieren. Een proefvisual van ${sample.price} op je eigen product, ${sample.unit} — die loopt door dezelfde pipeline als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of een Drop Pilot: precies ${PILOT_PRODUCTS} producten voor ${euro(AMOUNT.dropPilot, 'nl')}, eenmalig per merk, om te zien wat we met jouw lijn doen voordat je ons de hele collectie geeft.`,
+            q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
+            a: `Op twee manieren. Een proefvisual van ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit} — die loopt door dezelfde pipeline als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn — en een eerste bestelling is ${FIRST_PCT} goedkoper, hoe groot of klein die ook is, eenmalig per merk.`,
           },
         ],
       },
@@ -152,27 +247,27 @@ export function faqPageGroups(lang = 'en') {
         items: [
           {
             q: 'Wat is het verschil tussen catalog en lifestyle?',
-            a: `${perProductById.catalog.name}. ${perProductById.catalog.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${perProductById.lifestyle.name}. ${perProductById.lifestyle.line} Een gestylede scène in plaats van een product op een achtergrond. Een drop bevat allebei, voor elk product.`,
+            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je allebei, dan heet dat op de staffel de complete scope — voor elk product beide.`,
             photos: [
               {
                 src: '/img/catalog-after.webp',
                 alt: 'Een catalogusvisual: één kledingstuk, vierkant, op een egale achtergrond.',
-                cap: perProductById.catalog.name,
+                cap: cat.name,
               },
               {
                 src: '/img/lifestyle-glow-06.webp',
                 alt: 'Een lifestylevisual: een kledingstuk gedragen door een model op een gestylede locatie.',
-                cap: perProductById.lifestyle.name,
+                cap: life.name,
               },
             ],
           },
           {
             q: 'Kan ik dezelfde stijl en hetzelfde model over bestellingen heen aanhouden?',
-            a: 'Ja, en dat is grotendeels het punt. Dezelfde belichting, hoek, grade en hetzelfde model kunnen over een hele drop worden vastgehouden, en over de drops daarna, zodat een catalogus samenhangend blijft terwijl de lijn groeit.',
+            a: 'Ja, en dat is grotendeels het punt. Dezelfde belichting, hoek, grade en hetzelfde model kunnen over een hele bestelling worden vastgehouden, en over de bestellingen daarna, zodat een catalogus samenhangend blijft terwijl de lijn groeit.',
           },
           {
             q: 'Kan ik een model dat alleen van mij is?',
-            a: 'Ja. Jouw merkmodel is een gezicht dat voor jouw merk is gebouwd en door niemand anders wordt gebruikt, consistent over elk product en elke drop. Elke drop bevat al een model uit de standaardbibliotheek, dus dit is een upgrade en geen vereiste.',
+            a: `Ja. Jouw merkmodel is een gezicht dat voor jouw merk is gebouwd en door niemand anders wordt gebruikt, consistent over elk product en elke bestelling. Elke bestelling bevat al een model uit de standaardbibliotheek, dus dit is een upgrade en geen vereiste — en in het ${planName.brand}-plan zit het inbegrepen.`,
             linkText: 'Bekijk Jouw merkmodel',
             linkHref: '/custom-models',
           },
@@ -187,11 +282,11 @@ export function faqPageGroups(lang = 'en') {
         items: [
           {
             q: 'Hoe snel is het?',
-            a: `Een drop krijgt ${turnaround('attended', 'nl').toLowerCase()}. Losse producten gaan door de standaard wachtrij: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum.`,
+            a: `Het serviceniveau volgt de omvang. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de capaciteitsagenda en krijgt hij ${turnaround('attended', 'nl').toLowerCase()}. Daaronder loopt hij in de standaard wachtrij: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum.`,
           },
           {
             q: 'Wat als de week die ik nodig heb niet kan?',
-            a: 'Dan zeggen we dat, voordat je betaalt, in plaats van je een datum te geven en te hopen. Een gereserveerd venster wordt tegen de agenda gehouden voordat het wordt aangeboden — nooit erna. Een drop die al in de agenda staat, wijkt nooit voor een latere.',
+            a: 'Dan zeggen we dat, voordat je betaalt, in plaats van je een datum te geven en te hopen. Een gereserveerd venster wordt tegen de agenda gehouden voordat het wordt aangeboden — nooit erna. Een bestelling die al in de agenda staat, wijkt nooit voor een latere.',
           },
           {
             q: 'Wordt elk beeld echt door een mens gecontroleerd?',
@@ -199,11 +294,11 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Wat als de visuals niet kloppen?',
-            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. Bij een drop: ${aftercare('attended', 'nl').toLowerCase()}, per beeld in het portaal, zodat één beeld dat terugmoet de rest niet ophoudt.`,
+            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. Bij een bestelling met een gereserveerd venster: ${aftercare('attended', 'nl').toLowerCase()}, per beeld in het portaal, zodat één beeld dat terugmoet de rest niet ophoudt.`,
           },
           {
             q: 'Hoe krijg ik de bestanden precies?',
-            a: `${TIERS.attended.delivery.nl}, als je een drop draait. ${TIERS.unattended.delivery.nl}, als je losse producten bestelt. Hoe dan ook zijn ze hoge resolutie en e-commerce-klaar, op maat voor shoplistings, marktplaatsen en advertenties.`,
+            a: `${TIERS.attended.delivery.nl}, vanaf ${WINDOW_THRESHOLD} producten. ${TIERS.unattended.delivery.nl}, daaronder. Hoe dan ook zijn ze hoge resolutie en e-commerce-klaar, op maat voor shoplistings, marktplaatsen en advertenties.`,
           },
         ],
       },
@@ -212,19 +307,19 @@ export function faqPageGroups(lang = 'en') {
         items: [
           {
             q: 'Wat kost het?',
-            html: `Een Full Drop is <strong>${euro(AMOUNT.fullDrop, 'nl')}</strong> voor ${scope} producten — ${perProduct} per product, met catalog en lifestyle voor elk. Los: ${perProductById.catalog.name.toLowerCase()} ${perProductById.catalog.price} per product, ${perProductById.lifestyle.name.toLowerCase()} ${perProductById.lifestyle.price} per product, video ${perProductById.video.price} per clip. De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
+            html: `Geprijsd per product, en het tarief daalt naarmate het aantal stijgt. Eén compleet product — een catalogset én een lifestyle-carousel — is <strong>${euro(ladderRate('complete', 1), 'nl')}</strong> ${vatLabel('excl', 'nl')}; vanaf ${TOP_RUNG_AT} producten is datzelfde product <strong>${euro(ladderFloor('complete'), 'nl')}</strong> ${vatLabel('excl', 'nl')}. Wil je maar één van beide, dan heeft die zijn eigen staffel: catalog vanaf ${ex(ladderFloor('catalog'), 'nl')} per product en lifestyle vanaf ${ex(ladderFloor('lifestyle'), 'nl')} per product. Video is ${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')} per clip. De volledige uitsplitsing staat op de <a href="${localizedPath('nl', '/pricing')}">prijzenpagina</a>.`,
           },
           {
             q: 'Zijn er volumekortingen?',
-            a: `Er zijn geen gestapelde kortingsstaffels — de ladder is het antwoord op volume. Losse producten bestellen kost ${euro(AMOUNT.catalog + AMOUNT.lifestyle, 'nl')} per product op dropschaal; een Full Drop is ${perProduct} per product voor hetzelfde werk. De besparing zit in het samen draaien, en staat op de prijzenpagina in plaats van achter een onderhandeling.`,
+            a: `De staffel ís het antwoord op volume — er komt niets bovenop en er valt niets te onderhandelen. Het tarief geldt voor elk product in de bestelling, dus een trede omlaag verlaagt de prijs van allemaal: bij ${ENTRY_RUNG_LAST} producten is dat ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}. Daarbovenop is je eerste bestelling ${FIRST_PCT} goedkoper, eenmalig per merk.`,
           },
           {
             q: 'Is er een abonnement?',
-            a: `Niet een dat je nodig hebt. Een drop is eenmalig: één opdracht, één factuur, geen doorlopende verplichting. Er is een studio retainer van ${euro(AMOUNT.retainer, 'nl')} per maand voor merken die elke maand een drop uitbrengen, maar dat is een optie, geen standaard.`,
+            a: `Alleen als dezelfde output elke maand terugkomt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan diezelfde output op de staffel, loopt minimaal ${PLAN_MIN_MONTHS} maanden, en ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door. Bestel je zonder plan, dan loopt er niets door.`,
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
-            a: 'Ja. Je kunt het toevoegen bij het afrekenen — optioneel, en handig voor B2B-facturatie binnen de EU.',
+            a: `Ja, en dat is de moeite waard. ${vatLabel('rate', 'nl')} wordt bij het afrekenen aan iedereen berekend — de prijzen op de site zijn netto, gemarkeerd met ${vatLabel('excl', 'nl')} — en voor een EU-bedrijf met een geldig btw-nummer wordt de verlegging achteraf op de factuur rechtgezet. We zijn gevestigd in Nederland (btw NL005407575B96).`,
           },
         ],
       },
@@ -265,16 +360,20 @@ export function faqPageGroups(lang = 'en') {
           a: 'VISUAILS turns a folder of product photos into catalog sets, lifestyle carousels and video for a whole product line. The pipeline does the production at scale; a person checks every visual before it reaches you.',
         },
         {
-          q: 'What is a drop?',
-          a: `A drop is ${scope} products run as one job — one brief, one window, one invoice — with a catalog set and a lifestyle carousel for each. It is how a season's worth of product imagery gets made in one pass instead of product by product.`,
+          // THE ONE PLACE the word "drop" still appears, and there it means the
+          // CLIENT's launch — the exact collision that changed the pricing
+          // model. See this file's header. Do not reintroduce it as a name for
+          // what we sell; that is what "an order" and "a batch" are for.
+          q: 'What is an order?',
+          a: `An order is however many products you send in one go — one brief, one rate, one invoice — with the scope you choose applied to each: a catalog set, a lifestyle carousel, or both. There is no package to fit your line into and no minimum, and the rate per product falls as the count rises. About the word "drop": in fashion it means your collection going live, so we stopped using it for our own work order. The drop is yours. What you buy from us is an order.`,
         },
         {
           q: 'What do I need to send you?',
-          a: 'One clear photo per product and a short note on the look you want. That is it. Five minutes, whether it is one product or thirty — the effort does not scale with the size of the drop.',
+          a: 'One clear photo per product and a short note on the look you want. That is it. Five minutes, whether it is one product or thirty — the effort does not scale with the size of the order.',
         },
         {
-          q: 'Can I try it before committing to a drop?',
-          a: `Two ways. A ${sample.price} test sample on one of your own products, ${sample.unit} — it runs through the same pipeline as a paid order, so what you see is what you would get. Or a Drop Pilot: exactly ${PILOT_PRODUCTS} products at ${euro(AMOUNT.dropPilot, 'en')}, once per brand, to see what we do with your line before you hand us all of it.`,
+          q: 'Can I try it before ordering a whole collection?',
+          a: `Two ways. A ${sample.price} ${vatLabel('excl', 'en')} test sample on one of your own products, ${sample.unit} — it runs through the same pipeline as a paid order, so what you see is what you would get. Or simply start small: the rate is per product, so a first order can be a handful of pieces — and a first order is ${FIRST_PCT} off whatever its size, once per brand.`,
         },
       ],
     },
@@ -291,7 +390,12 @@ export function faqPageGroups(lang = 'en') {
           // file does not control — and it means the line keeps its own
           // capital, so no .toLowerCase() is needed. That matters: lowercasing
           // a data string is how "WhatsApp" became "whatsapp" elsewhere.
-          a: `${perProductById.catalog.name}. ${perProductById.catalog.line} Clean, consistent, built for shop listings and marketplaces. ${perProductById.lifestyle.name}. ${perProductById.lifestyle.line} A styled scene rather than a product on a background. A drop includes both for every product.`,
+          //
+          // The names and lines come through perProduct(), pricing.js's own
+          // accessor, so they are the same strings /catalog and /lifestyle
+          // render. Only the name and the line are read — never the price,
+          // which is an entry rung now and belongs on the ladder, not here.
+          a: `${cat.name}. ${cat.line} Clean, consistent, built for shop listings and marketplaces. ${life.name}. ${life.line} A styled scene rather than a product on a background. Take both and the ladder calls that the complete scope — both of them, for every product in the order.`,
           // The only answer on this page whose subject is literally "these two
           // things look different", so it is the only one where a pair of
           // photographs does the explaining better than the paragraph above
@@ -316,22 +420,22 @@ export function faqPageGroups(lang = 'en') {
             {
               src: '/img/catalog-after.webp',
               alt: 'A catalog visual: one garment, square, on a plain even ground.',
-              cap: perProductById.catalog.name,
+              cap: cat.name,
             },
             {
               src: '/img/lifestyle-glow-06.webp',
               alt: 'A lifestyle visual: a garment worn by a model in a styled location.',
-              cap: perProductById.lifestyle.name,
+              cap: life.name,
             },
           ],
         },
         {
           q: 'Can I keep the same style and model across orders?',
-          a: 'Yes, and that is most of the point. The same lighting, angle, grade and model can be held across a whole drop and across the drops that follow, so a catalog stays coherent as the line grows.',
+          a: 'Yes, and that is most of the point. The same lighting, angle, grade and model can be held across a whole order and across the orders that follow, so a catalog stays coherent as the line grows.',
         },
         {
           q: 'Can I have a model that is only mine?',
-          a: 'Yes. Your Brand Model is a face built for your brand and used by no one else, kept consistent across every product and every drop. Every drop already includes a model from the standard library, so this is an upgrade rather than a requirement.',
+          a: `Yes. Your Brand Model is a face built for your brand and used by no one else, kept consistent across every product and every order. Every order already includes a model from the standard library, so this is an upgrade rather than a requirement — and it is included in the ${planName.brand} plan.`,
           linkText: 'See Your Brand Model',
           linkHref: '/custom-models',
         },
@@ -346,11 +450,14 @@ export function faqPageGroups(lang = 'en') {
       items: [
         {
           q: 'How fast is it?',
-          a: `A drop gets ${turnaround('attended', 'en').toLowerCase()}. Individual products go through the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date.`,
+          // Service level FOLLOWS size now — it is not a second question the
+          // buyer answers, and this answer must not put it back into their
+          // hands by describing two things to choose between.
+          a: `The service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the capacity calendar and gets ${turnaround('attended', 'en').toLowerCase()}. Below that it runs in the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date.`,
         },
         {
           q: 'What if the week I need cannot be held?',
-          a: 'Then we tell you that, before you pay, instead of giving you a date and hoping. A reserved window is confirmed against the calendar before it is offered — never after. A drop already in the calendar is never pushed to make room for a later one.',
+          a: 'Then we tell you that, before you pay, instead of giving you a date and hoping. A reserved window is confirmed against the calendar before it is offered — never after. An order already in the calendar is never pushed to make room for a later one.',
         },
         {
           q: 'Is every image really checked by a person?',
@@ -363,16 +470,16 @@ export function faqPageGroups(lang = 'en') {
           // putting the number back in the reader's mouth is the same
           // insecurity one step removed. The remedies — revision, refund,
           // credit — are named once, in /terms §10, deliberately not here.
-          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you — what we agree depends on the problem. On a drop: ${aftercare('attended', 'en').toLowerCase()}, per image in the portal, so one image going back does not hold up the rest.`,
+          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you — what we agree depends on the problem. On an order with a reserved window: ${aftercare('attended', 'en').toLowerCase()}, per image in the portal, so one image going back does not hold up the rest.`,
         },
         {
           q: 'How do I actually receive the files?',
-          // The tier strings are noun phrases. Bare-appending "for a drop"
-          // garden-paths ("…or request-revision for a drop"); the comma plus
-          // a conditional clause keeps the qualifier unambiguous. The
-          // strings themselves are never lowercased — one of them contains
-          // "WhatsApp", which .toLowerCase() would mangle.
-          a: `${TIERS.attended.delivery.en}, if you run a drop. ${TIERS.unattended.delivery.en}, if you order individual products. Either way they are high-resolution and e-commerce-ready, sized for shop listings, marketplaces and ads.`,
+          // The tier strings are noun phrases. Bare-appending a qualifier
+          // garden-paths ("…or request-revision from 10 products"); the comma
+          // plus a size clause keeps it unambiguous. The strings themselves
+          // are never lowercased — one of them contains "WhatsApp", which
+          // .toLowerCase() would mangle.
+          a: `${TIERS.attended.delivery.en}, from ${WINDOW_THRESHOLD} products. ${TIERS.unattended.delivery.en}, below that. Either way they are high-resolution and e-commerce-ready, sized for shop listings, marketplaces and ads.`,
         },
       ],
     },
@@ -381,19 +488,19 @@ export function faqPageGroups(lang = 'en') {
       items: [
         {
           q: 'What does it cost?',
-          html: `A Full Drop is <strong>${euro(AMOUNT.fullDrop, 'en')}</strong> for ${scope} products — ${perProduct} per product, catalog and lifestyle included for each. Individually: ${perProductById.catalog.name.toLowerCase()} ${perProductById.catalog.price} per product, ${perProductById.lifestyle.name.toLowerCase()} ${perProductById.lifestyle.price} per product, video ${perProductById.video.price} per clip. Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
+          html: `It is priced per product, and the rate falls as the count rises. One complete product — a catalog set and a lifestyle carousel — is <strong>${euro(ladderRate('complete', 1), 'en')}</strong> ${vatLabel('excl', 'en')}; from ${TOP_RUNG_AT} products the same product is <strong>${euro(ladderFloor('complete'), 'en')}</strong> ${vatLabel('excl', 'en')}. If you want only one of the two it has its own ladder: catalog from ${ex(ladderFloor('catalog'), 'en')} per product and lifestyle from ${ex(ladderFloor('lifestyle'), 'en')} per product. Video is ${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')} a clip. Full breakdown on the <a href="${localizedPath('en', '/pricing')}">pricing page</a>.`,
         },
         {
           q: 'Are there volume discounts?',
-          a: `There are no stacked discount bands — the ladder is the volume answer. Ordering products individually is ${euro(AMOUNT.catalog + AMOUNT.lifestyle, 'en')} per product at drop scope; a Full Drop is ${perProduct} per product for the same work. The saving is in running them together, and it is on the pricing page rather than behind a negotiation.`,
+          a: `The ladder is the volume answer — nothing is stacked on top of it and there is nothing to negotiate. The rate applies to every product in the order, so crossing onto the next rung lowers the price of all of them: at ${ENTRY_RUNG_LAST} products it is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, at ${SECOND_RUNG_AT} it is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each. On top of that, a first order is ${FIRST_PCT} off, once per brand.`,
         },
         {
           q: 'Is there a subscription?',
-          a: `Not one you need. A drop is a one-off: one job, one invoice, no standing commitment. There is a studio retainer at ${euro(AMOUNT.retainer, 'en')} a month for brands shipping a drop every month, but it is an option, not the default.`,
+          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Every plan costs less than the same output on the ladder, runs for a minimum of ${PLAN_MIN_MONTHS} months, and rolls an unused product over ${PLAN_ROLLOVER_MONTHS} month. Order without one and nothing recurs.`,
         },
         {
           q: 'Can I add my VAT number?',
-          a: 'Yes. You can add it at checkout — optional, and useful for B2B invoicing inside the EU.',
+          a: `Yes, and it is worth doing. ${vatLabel('rate', 'en')} is charged at checkout to everyone — the prices on the site are net, marked ${vatLabel('excl', 'en')} — and for an EU business with a valid VAT number the reverse charge is corrected afterwards on the invoice. We are based in the Netherlands (VAT NL005407575B96).`,
         },
       ],
     },

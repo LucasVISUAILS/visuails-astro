@@ -3,7 +3,7 @@
 // strings are translated. Internal CTA paths are prefixed with /nl; external
 // wa.me links keep their domain, their ?text= message is translated.
 
-import { perProduct, reviewClaim, turnaround } from './pricing.js';
+import { perProduct, reviewClaim, turnaround, vatLabel } from './pricing.js';
 
 // No euro figure and no delivery time may be typed into this file.
 // Both used to live here as literals, which is how the hub cards and the
@@ -11,6 +11,11 @@ import { perProduct, reviewClaim, turnaround } from './pricing.js';
 // cleared — and how a video price that exists nowhere in pricing.js
 // survived a repricing nobody caught. Derive, never type.
 const VID = perProduct('video', 'nl');
+// A clip is NOT on the ladder — it is the same rate at one clip and at fifty,
+// which is what makes it quotable inside or outside an order. So this one keeps
+// a flat figure; it just no longer prints it without saying which side of VAT
+// it sits on.
+const VID_VAT = vatLabel('excl', 'nl');
 const TIMING = turnaround('unattended', 'nl');
 const REVIEW = reviewClaim('unattended', 'nl');
 

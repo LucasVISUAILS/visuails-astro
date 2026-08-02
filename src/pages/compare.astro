@@ -10,14 +10,28 @@
 // The meta description is built from pricing.js: a price typed into a <meta>
 // tag is the one place a stale figure survives a page rewrite. The old
 // description was 207 characters — well past the ~160 Google renders.
+//
+// It also quoted a package against a day — "a drop is €1,850 for 25–30
+// products" — and there is no package now (section 0 of src/data/pricing.js).
+// A falling rate cannot be set against a day's cost without naming a count, so
+// this quotes the same WORKED EXAMPLE the page body's right-hand column does,
+// at the same count, from quote(). If ANCHOR_PRODUCTS moves in
+// ComparePage.astro, it moves here.
+//
+// BOTH SIDES CARRY ONE VAT LABEL. Every figure in pricing.js is net, including
+// the shoot-day range, so one label covers the pair — and a comparison that
+// prints a net figure beside a gross one flatters us by a fifth without the
+// reader being able to see it happen.
 import Layout from '../layouts/Layout.astro';
 import ComparePage from '../components/ComparePage.astro';
-import { AMOUNT, SHOOT_DAY, euro, FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
+import { SHOOT_DAY, euro, quote, vatLabel } from '../data/pricing.js';
+
+const ANCHOR_PRODUCTS = 30;
 
 const description =
-  `A production day runs ${SHOOT_DAY.en.range}. A drop is ${euro(AMOUNT.fullDrop, 'en')} ` +
-  `for ${FULL_DROP_MIN}–${FULL_DROP_MAX} products. The honest comparison, ` +
-  `including where a shoot day still wins.`;
+  `A production day runs ${SHOOT_DAY.en.range}. ${ANCHOR_PRODUCTS} products ` +
+  `here is ${euro(quote('complete', ANCHOR_PRODUCTS).net, 'en')}, both ` +
+  `${vatLabel('excl', 'en')}. Including where a shoot day still wins.`;
 ---
 
 <Layout title="Shoot day vs VISUAILS — the honest comparison" description={description}>

@@ -6,21 +6,31 @@
 // src/pages/nl/. They agreed only because nobody had edited either since the
 // port — and both carried the same four defects: a hardcoded €39.99, a "~24
 // hours" promise the capacity gate never cleared, a link to /order-catalog, and
-// a "three revision rounds are included" line that belongs to a drop, not to a
-// single product order.
+// a "three revision rounds are included" line that belonged to a package, not
+// to a single product order — and there is no round count on any order now.
 //
 // The description is built from pricing.js: a price typed into a <meta> tag is
 // the one place a stale figure survives a page rewrite. The old one was 185
 // characters — past the ~160 Google renders — and named a delivery time.
+//
+// IT QUOTED ONE RATE, which stopped being true in August 2026: a catalog set
+// is priced on a ladder now (section 0 of src/data/pricing.js) and one figure
+// is what a SINGLE product costs. Both ends are named here, and neither can be
+// dropped for length — the entry rate alone reads as expensive to a brand with
+// a collection, and the floor alone is a price their first order will not pay.
+// The turnaround gave way instead: it is a tier fact, restated in the trust
+// row a few lines into the page, and it is only true under WINDOW_THRESHOLD.
 import Layout from '../../layouts/Layout.astro';
 import CatalogPage from '../../components/CatalogPage.astro';
-import { perProduct, turnaround } from '../../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
-const item = perProduct('catalog', 'en');
+const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
 const description =
-  `${item.price} per product: four photos — front, back, a fabric or logo ` +
-  `close-up, and one on-model shot. ${turnaround('unattended', 'en')}.`;
+  `Four photos per product — front, back, a fabric or logo close-up, one ` +
+  `on-model shot. ${euro(ladderRate('catalog', 1), 'en')} a product, ` +
+  `${euro(ladderFloor('catalog'), 'en')} from ${FLOOR_FROM} up, ` +
+  `${vatLabel('excl', 'en')}.`;
 ---
 
 <Layout

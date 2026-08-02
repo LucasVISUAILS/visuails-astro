@@ -10,12 +10,18 @@
 // from turnaround() like every other timing string on the site.
 import Layout from '../layouts/Layout.astro';
 import HowItWorksPage from '../components/HowItWorksPage.astro';
-import { FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
+//
+// The old last clause named a package band — "for 25–30 products" — which is
+// the offer section 0 of src/data/pricing.js retired. The count that matters
+// on a page about PROCESS is not a package size, it is the one where the
+// process changes: from WINDOW_THRESHOLD products an order is booked into the
+// capacity calendar and gets the reserved window.
+import { WINDOW_THRESHOLD } from '../data/pricing.js';
 
 const description =
   `You send the products. We check capacity, confirm a window, then produce ` +
-  `and hand-check every visual. Shop-ready files for ` +
-  `${FULL_DROP_MIN}–${FULL_DROP_MAX} products.`;
+  `and hand-check every visual. From ${WINDOW_THRESHOLD} products, the window ` +
+  `is reserved.`;
 ---
 
 <Layout title="How it works — VISUAILS" description={description}>

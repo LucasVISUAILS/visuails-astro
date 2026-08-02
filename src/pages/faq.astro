@@ -8,12 +8,18 @@
 // rule so a repriced ladder cannot leave a stale figure in the <head>.
 import Layout from '../layouts/Layout.astro';
 import FaqPage from '../components/FaqPage.astro';
-import { AMOUNT, euro, FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
+
+// The band and the package price are gone with the package. What replaces them
+// is the two ends of the ladder — every count between has a price now, so a
+// range is the honest shape for this clause rather than a product name.
+const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
 
 const description =
-  `What a drop is, what it costs (${euro(AMOUNT.fullDrop, 'en')} for ` +
-  `${FULL_DROP_MIN}–${FULL_DROP_MAX} products), how the calendar works, ` +
-  `what if something is off, rights and payment — answered plainly.`;
+  `What an order costs (${euro(ladderRate('complete', 1), 'en')} a product, ` +
+  `${euro(ladderFloor('complete'), 'en')} from ${FLOOR_FROM} up, ` +
+  `${vatLabel('excl', 'en')}), how the calendar works, rights and payment — ` +
+  `answered plainly.`;
 ---
 
 <Layout title="Frequently asked questions — VISUAILS" description={description}>

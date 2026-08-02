@@ -2,15 +2,23 @@
 // VISUAILS — /nl/catalog (Nederlands). De pagina-inhoud staat in
 // CatalogPage.astro, zodat /catalog en /nl/catalog niet uit elkaar kunnen
 // lopen; alleen de meta verschilt hier.
+//
+// De description noemde één tarief, en dat klopt sinds augustus 2026 niet
+// meer: een catalogset zit op een staffel en één bedrag is wat ÉÉN product
+// kost. Beide uiteinden staan er nu, en geen van beide mag weg voor de lengte.
+// De levertijd is wat wijkt: dat is een tier-feit dat een paar regels verderop
+// in de trust-rij herhaald wordt.
 import Layout from '../../../layouts/Layout.astro';
 import CatalogPage from '../../../components/CatalogPage.astro';
-import { perProduct, turnaround } from '../../../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../../data/pricing.js';
 
-const item = perProduct('catalog', 'nl');
+const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
 const description =
-  `${item.price} per product: vier foto’s — voorkant, achterkant, een stof- of ` +
-  `logo-close-up en één on-model shot. ${turnaround('unattended', 'nl')}.`;
+  `Vier foto’s per product — voorkant, achterkant, een stof- of logo-close-up ` +
+  `en één on-model shot. ${euro(ladderRate('catalog', 1), 'nl')} per product, ` +
+  `${euro(ladderFloor('catalog'), 'nl')} vanaf ${FLOOR_FROM}, ` +
+  `${vatLabel('excl', 'nl')}.`;
 ---
 
 <Layout

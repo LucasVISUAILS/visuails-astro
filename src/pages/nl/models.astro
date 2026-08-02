@@ -13,13 +13,16 @@
 import Layout from '../../layouts/Layout.astro';
 import ModelsPage from '../../components/ModelsPage.astro';
 
+// 152 tekens is de grens (META_LIMIT). "Bestelling" is vijf tekens langer dan
+// "drop", waardoor deze er met 154 net overheen ging; de laatste zin geeft
+// daarom een woord op, in plaats van dat het woord wordt teruggedraaid.
 const description =
-  'Tien standaardmodellen, gedeeld over elk merk en inbegrepen in elke drop ' +
-  'zonder extra kosten. Kies er een, of laat ons er een matchen op je product.';
+  'Tien standaardmodellen, gedeeld over elk merk en inbegrepen in elke bestelling ' +
+  'zonder extra kosten. Kies er een, of laat ons er een kiezen.';
 ---
 
 <Layout
-  title="Tien standaardmodellen, in elke drop | VISUAILS"
+  title="Tien standaardmodellen, in elke bestelling | VISUAILS"
   description={description}
   ogImage="/img/model-01.webp"
 >

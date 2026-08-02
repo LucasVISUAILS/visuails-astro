@@ -46,10 +46,33 @@
 //     people and they are the actual product, so they are shown at a size you
 //     can judge a face at. Square, never circular (§D).
 //
-// EVERY EURO ON THIS PAGE IS READ FROM src/data/pricing.js. Nothing is typed.
+// EVERY EURO ON THIS PAGE IS READ FROM src/data/pricing.js. Nothing is typed,
+// and every printed price carries a VAT label from vatLabel() — BRIEF-14's
+// hardest rule, and this page prints four figures.
+//
+// WHAT THE AUGUST 2026 MODEL CHANGED HERE, AND WHAT IT DID NOT (section 0 of
+// src/data/pricing.js is the governing document):
+//
+//   · THE PRODUCT IS UNCHANGED. A Brand Model is still a one-time setup at
+//     AMOUNT.brandModel with AMOUNT.brandModelCredit coming back on each of
+//     your first BRAND_MODEL_CREDIT_DROPS orders, and it still cancels itself
+//     exactly. None of the argument on this page is retired by the ladder.
+//   · WHERE THE NUMBERS CAME FROM IS NOT. They were read out of PACKAGES —
+//     the two drop packages and the retainer — via a byId lookup, and PACKAGES
+//     describes a price list we no longer sell. The setup fee, its unit and
+//     its four inclusions are now built here from AMOUNT and the credit count,
+//     which is where they were always really from; PACKAGES only wrapped them.
+//   · "Whole drops — 25–30 products" was a package band. There is no band now;
+//     the ladder prices every count. The row names the count at which an order
+//     gets the reserved window instead, because that is the real line an order
+//     crosses.
+//   · THE WORD "DROP" IS GONE from everything we sell. It means a collection
+//     going live to the brands we sell to, and this page used it for a work
+//     order eleven times over — including in the H1. What we sell is an order;
+//     in Dutch, een bestelling. The client's own launch keeps the word.
 import {
-  PACKAGES, AMOUNT, euro, BRAND_MODEL_CREDIT_DROPS,
-  FULL_DROP_MIN, FULL_DROP_MAX,
+  AMOUNT, euro, vatLabel, withVat, BRAND_MODEL_CREDIT_DROPS,
+  WINDOW_THRESHOLD,
 } from '../data/pricing.js';
 import { ROSTER } from '../data/models.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -58,13 +81,32 @@ interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
-// Keyed lookup rather than .find(): .find() is typed `T | undefined`, and this
-// template dereferences .price/.unit/.includes directly. Same pattern as
-// PricingPage. If the id ever disappears from pricing.js this throws at build
-// time instead of rendering an empty price band — which is the failure mode
-// you want on a page whose whole job is a number.
-const byId = Object.fromEntries(PACKAGES[lang].map((p) => [p.id, p]));
-const brandModel = byId['brand-model'];
+// The Brand Model, assembled here rather than looked up out of PACKAGES.
+//
+// It used to be `byId['brand-model']` off the package list, which meant this
+// page's headline number arrived via a table of two drop packages and a
+// retainer — none of which exist any more. The three facts it actually needs
+// are the setup fee, its unit and its inclusions, and all three are either an
+// AMOUNT or a sentence about the product. Built as one object so the template
+// below is unchanged in shape, and so a missing piece is a build error rather
+// than an empty price band on a page whose whole job is a number.
+const brandModel = {
+  price: euro(AMOUNT.brandModel, lang),
+  unit: lang === 'nl' ? 'eenmalige setup' : 'one-time setup',
+  includes: lang === 'nl'
+    ? [
+        'Een model gebouwd voor jouw merk, door niemand anders gebruikt',
+        'Consistent op elk product en in elke bestelling',
+        `${euro(AMOUNT.brandModelCredit, 'nl')} terug op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
+        'Bijgehouden terwijl je lijn verandert',
+      ]
+    : [
+        'A model built for your brand, used by no one else',
+        'Consistent across every product and every order',
+        `${euro(AMOUNT.brandModelCredit, 'en')} back on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders`,
+        'Kept current as your line changes',
+      ],
+};
 
 // The standard library. Was defined inline here; moved to src/data/models.js
 // (task #268) the day /models became a real page again, so both pages read
@@ -78,17 +120,20 @@ const brandModel = byId['brand-model'];
 // portraits twice; the full ten live at /models now.
 
 // Our own finished work. Not before/afters, not client results — output.
+// Intrinsic sizes, per photo, because these four are NOT all the same shape:
+// 01 and 02 are 800x1071, 04 and 05 are 1200x1200. One shared width/height on
+// the <img> reserved a square box for two portraits, which is layout shift.
 const EXAMPLES = [
-  '/img/custom-models-01.webp',
-  '/img/custom-models-02.webp',
-  '/img/custom-models-04.webp',
-  '/img/custom-models-05.webp',
+  { src: '/img/custom-models-01.webp', w: 800, h: 1071 },
+  { src: '/img/custom-models-02.webp', w: 800, h: 1071 },
+  { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
+  { src: '/img/custom-models-05.webp', w: 1200, h: 1200 },
   '/img/model-raw-01.webp',
   '/img/model-raw-02.webp',
 ];
 
 // ── Copy ───────────────────────────────────────────────────────────────────
-// Prose only. Every euro, every count, every promise about the drop comes out
+// Prose only. Every euro, every count, every promise about an order comes out
 // of pricing.js in both languages.
 //
 // No `as const`: COPY[lang] on a union of two readonly object literals gives
@@ -96,17 +141,17 @@ const EXAMPLES = [
 const COPY = {
   en: {
     eyebrow: 'Your Brand Model',
-    h1a: 'One face. Every drop.',
+    h1a: 'One face. Every order.',
     h1b: 'Only yours.',
-    lead: 'A model designed once for your brand and booked by nobody else, ever. It carries every product, every drop, this season and next — so your range reads as one line instead of a folder of separate shoots.',
-    ctaPrimary: 'Start a drop',
+    lead: 'A model designed once for your brand and booked by nobody else, ever. It carries every product, every order, this season and next — so your range reads as one line instead of a folder of separate shoots.',
+    ctaPrimary: 'Start an order',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hi%20VISUAILS%2C%20I%27d%20like%20to%20discuss%20a%20brand%20model.',
     heroAlt: 'A VISUAILS brand model portrait',
     trust: [
       ['One-time', 'setup, then it is yours'],
       ['Exclusive', 'to your brand, permanently'],
-      ['Credited back', 'across your first drops'],
+      ['Credited back', 'across your first orders'],
     ],
 
     // NOT A MODEL
@@ -116,25 +161,30 @@ const COPY = {
     props: [
       ['Built from your brief', 'Age, styling, mood, the things you never want to see.'],
       ['Exclusive by construction', 'No other brand can order this face. Not a promise — a property of how it is made.'],
-      ['Identical, drop after drop', 'The same person in the same skin, whether it is product four or product two hundred.'],
-      ['Yours to keep', 'Set up once. Every drop after runs at the normal drop price.'],
+      ['Identical, order after order', 'The same person in the same skin, whether it is product four or product two hundred.'],
+      ['Yours to keep', 'Set up once. Every order after runs at the normal ladder rate for its size.'],
     ],
 
     // COST
     costH: 'What it costs, and what comes back',
     costSetupLabel: 'One-time setup',
     costCreditLabel: 'Back to you',
-    costCreditUnit: `on each of your first ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    costCreditUnit: `on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders`,
+    // Both figures on this block are net, like every figure in pricing.js, and
+    // both say so. The setup is the one a brand will put in a spreadsheet, so
+    // it carries the gross figure beside it as well.
+    costSetupVat: `${vatLabel('excl', 'en')} · ${euro(withVat(AMOUNT.brandModel), 'en')} ${vatLabel('incl', 'en')}`,
+    costCreditVat: vatLabel('excl', 'en'),
     costIncludes: 'What the setup covers',
     costMathH: 'The arithmetic, stated plainly',
-    // No ordinal ("by the fifth drop") anywhere in here: the count is derived
+    // No ordinal ("by the fifth order") anywhere in here: the count is derived
     // from pricing.js, so a written-out ordinal would go stale the moment the
     // setup or the credit moves and nobody would notice, because it reads as
     // prose rather than as a figure.
-    costMath: `${euro(AMOUNT.brandModelCredit, 'en')} comes off each of your first ${BRAND_MODEL_CREDIT_DROPS} drops, so once you have run ${BRAND_MODEL_CREDIT_DROPS} drops the setup has returned in full and the face is still yours. Before that point you are paying for exclusivity, which is the honest way to describe it.`,
-    costFree: `You do not need a Brand Model to order a drop. Every drop already includes a model from the standard library at no extra cost — this is a decision about owning a face, not about getting one.`,
+    costMath: `${euro(AMOUNT.brandModelCredit, 'en')} ${vatLabel('excl', 'en')} comes off each of your first ${BRAND_MODEL_CREDIT_DROPS} orders, so once you have run ${BRAND_MODEL_CREDIT_DROPS} orders the setup has returned in full and the face is still yours. Before that point you are paying for exclusivity, which is the honest way to describe it.`,
+    costFree: `You do not need a Brand Model to place an order. Every order already includes a model from the standard library at no extra cost — this is a decision about owning a face, not about getting one.`,
     costCta: 'See the full price ladder',
-    costSequence: 'The model is designed and locked before your first drop is scheduled, so setup never eats into the reserved window.',
+    costSequence: `The model is designed and locked before your first order is scheduled, so setup never eats into the reserved window an order of ${WINDOW_THRESHOLD} products or more is given.`,
 
     // WHERE IT FITS
     fitMeta: '( Where it fits )',
@@ -142,14 +192,14 @@ const COPY = {
     fitSub: 'The thread that makes a range look like a brand.',
     fitWhatH: 'What it is',
     fitWhat: [
-      'A Brand Model is a signature designed once, exclusively for you — a face, a bearing, a way of standing that no other brand shares. Once it is locked, every visual in every drop is made with it, so your catalog and your feed hang together instead of looking assembled from separate sessions.',
+      'A Brand Model is a signature designed once, exclusively for you — a face, a bearing, a way of standing that no other brand shares. Once it is locked, every visual in every order is made with it, so your catalog and your feed hang together instead of looking assembled from separate sessions.',
       'This is where visuals stop being photographs and start being brand equity. A consistent face is what turns a scroll-past into recognition: people know your images before they read your name. It works everywhere your brand appears, because being everywhere and being consistent is the whole point.',
     ],
     fitWhereH: 'Where it lives',
     fitWhere: [
       ['Every channel', 'shop, feed, ads and email, in one look.'],
       ['Campaigns', 'seasonal stories with a face people already know.'],
-      ['Whole drops', `${FULL_DROP_MIN}–${FULL_DROP_MAX} products that have to feel like one line.`],
+      ['Whole collections', `${WINDOW_THRESHOLD} products or two hundred, in one order that has to read as one line.`],
       ['Your identity', 'the visual signature people remember you by.'],
     ],
 
@@ -175,19 +225,19 @@ const COPY = {
     getH: 'What you get back',
     get: [
       ['locked', 'A <strong>locked model</strong>, exclusive to you, reused at no extra cost.'],
-      ['every', 'The same face in <strong>every visual of every drop</strong>.'],
+      ['every', 'The same face in <strong>every visual of every order</strong>.'],
       ['current', '<strong>Kept current</strong> as your line and your styling change.'],
-      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'en')} back</strong> on each of your first ${BRAND_MODEL_CREDIT_DROPS} drops.`],
+      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'en')} back</strong> ${vatLabel('excl', 'en')} on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`],
     ],
 
     // STANDARD LIBRARY
     libMeta: '( Or start here )',
     libH: 'The standard library',
     libAlt: 'a VISUAILS standard model',
-    libLead: 'Ten models, shared across brands, included in every drop at no extra cost. Pick one, or let us match one to your product and your customer. You can move to a Brand Model later without redoing anything.',
+    libLead: 'Ten models, shared across brands, included in every order at no extra cost. Pick one, or let us match one to your product and your customer. You can move to a Brand Model later without redoing anything.',
     libChooseH: 'Let us match one',
-    libChooseBody: 'Tell us the product and the customer when you start a drop, and we pick the model that fits — then keep using it.',
-    libNote: 'Standard models are included in the drop price. There is no per-model fee and no upgrade to unlock one.',
+    libChooseBody: 'Tell us the product and the customer when you start an order, and we pick the model that fits — then keep using it.',
+    libNote: 'Standard models are included in the rate you already pay per product. There is no per-model fee and no upgrade to unlock one.',
     libAllCta: 'See all ten',
     traits: {
       warm: 'Warm', approachable: 'Approachable', editorial: 'Editorial', elegant: 'Elegant',
@@ -208,7 +258,7 @@ const COPY = {
     // CTA
     ctaH1: 'Design the face of',
     ctaEm: 'your brand.',
-    ctaStart: 'Start a drop',
+    ctaStart: 'Start an order',
     ctaPricing: 'See pricing',
     ctaWaShort: 'WhatsApp',
   },
@@ -218,17 +268,17 @@ const COPY = {
     // the NL pricing package all already call it that. A Dutch visitor who
     // clicks "Jouw merkmodel" should not land on a page that renames it.
     eyebrow: 'Jouw merkmodel',
-    h1a: 'Eén gezicht. Elke drop.',
+    h1a: 'Eén gezicht. Elke bestelling.',
     h1b: 'Alleen van jou.',
-    lead: 'Een model dat één keer voor jouw merk ontworpen wordt en door niemand anders geboekt kan worden. Het draagt elk product, elke drop, dit seizoen en het volgende — zodat je assortiment als één lijn leest in plaats van als een map losse shoots.',
-    ctaPrimary: 'Start een drop',
+    lead: 'Een model dat één keer voor jouw merk ontworpen wordt en door niemand anders geboekt kan worden. Het draagt elk product, elke bestelling, dit seizoen en het volgende — zodat je assortiment als één lijn leest in plaats van als een map losse shoots.',
+    ctaPrimary: 'Start een bestelling',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20merkmodel%20bespreken.',
     heroAlt: 'Een portret van een VISUAILS merkmodel',
     trust: [
       ['Eenmalige', 'setup, daarna is het van jou'],
       ['Exclusief', 'voor jouw merk, permanent'],
-      ['Terugverdiend', 'over je eerste drops'],
+      ['Terugverdiend', 'over je eerste bestellingen'],
     ],
 
     notAH: 'Jouw model, niet <em>een</em> model.',
@@ -237,37 +287,39 @@ const COPY = {
     props: [
       ['Gebouwd op jouw briefing', 'Leeftijd, styling, sfeer, en de dingen die je nooit wil zien.'],
       ['Exclusief van constructie', 'Geen ander merk kan dit gezicht bestellen. Geen belofte — een eigenschap van hoe het gemaakt is.'],
-      ['Identiek, drop na drop', 'Dezelfde persoon in dezelfde huid, of het nu product vier is of product tweehonderd.'],
-      ['Van jou om te houden', 'Één keer opgezet. Elke drop daarna loopt tegen de normale dropprijs.'],
+      ['Identiek, bestelling na bestelling', 'Dezelfde persoon in dezelfde huid, of het nu product vier is of product tweehonderd.'],
+      ['Van jou om te houden', 'Één keer opgezet. Elke bestelling daarna loopt tegen het normale stafeltarief voor die omvang.'],
     ],
 
     costH: 'Wat het kost, en wat er terugkomt',
     costSetupLabel: 'Eenmalige setup',
     costCreditLabel: 'Terug naar jou',
-    costCreditUnit: `op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops`,
+    costCreditUnit: `op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
+    costSetupVat: `${vatLabel('excl', 'nl')} · ${euro(withVat(AMOUNT.brandModel), 'nl')} ${vatLabel('incl', 'nl')}`,
+    costCreditVat: vatLabel('excl', 'nl'),
     costIncludes: 'Wat de setup dekt',
     costMathH: 'De rekensom, gewoon uitgeschreven',
-    // Geen rangtelwoord ("bij de vijfde drop"): het aantal komt uit pricing.js,
+    // Geen rangtelwoord ("bij de vijfde bestelling"): het aantal komt uit pricing.js,
     // dus een uitgeschreven rangtelwoord veroudert stil zodra de setup of het
     // krediet verandert.
-    costMath: `${euro(AMOUNT.brandModelCredit, 'nl')} gaat er af bij elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops, dus na ${BRAND_MODEL_CREDIT_DROPS} drops is de setup volledig terugverdiend en is het gezicht nog steeds van jou. Tot dat punt betaal je voor exclusiviteit, en dat is de eerlijke omschrijving.`,
-    costFree: `Je hebt geen merkmodel nodig om een drop te bestellen. Elke drop bevat al een model uit de standaardbibliotheek, zonder extra kosten — dit is een keuze over het bezitten van een gezicht, niet over het krijgen van een gezicht.`,
+    costMath: `${euro(AMOUNT.brandModelCredit, 'nl')} ${vatLabel('excl', 'nl')} gaat er af bij elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen, dus na ${BRAND_MODEL_CREDIT_DROPS} bestellingen is de setup volledig terugverdiend en is het gezicht nog steeds van jou. Tot dat punt betaal je voor exclusiviteit, en dat is de eerlijke omschrijving.`,
+    costFree: `Je hebt geen merkmodel nodig om te bestellen. Elke bestelling bevat al een model uit de standaardbibliotheek, zonder extra kosten — dit is een keuze over het bezitten van een gezicht, niet over het krijgen van een gezicht.`,
     costCta: 'Bekijk de volledige prijsladder',
-    costSequence: 'Het model wordt ontworpen en vastgezet vóórdat je eerste drop ingepland wordt, zodat de setup nooit ten koste gaat van het gereserveerde venster.',
+    costSequence: `Het model wordt ontworpen en vastgezet vóórdat je eerste bestelling ingepland wordt, zodat de setup nooit ten koste gaat van het gereserveerde venster dat een bestelling vanaf ${WINDOW_THRESHOLD} producten krijgt.`,
 
     fitMeta: '( Waar het past )',
     fitH: 'Eén look, door alles wat je verkoopt.',
     fitSub: 'De rode draad die van een assortiment een merk maakt.',
     fitWhatH: 'Wat het is',
     fitWhat: [
-      'Een merkmodel is een signatuur die één keer ontworpen wordt, exclusief voor jou — een gezicht, een houding, een manier van staan die geen ander merk deelt. Eenmaal vastgezet wordt elke visual in elke drop ermee gemaakt, zodat je catalog en je feed samenhangen in plaats van uit losse sessies samengesteld te lijken.',
+      'Een merkmodel is een signatuur die één keer ontworpen wordt, exclusief voor jou — een gezicht, een houding, een manier van staan die geen ander merk deelt. Eenmaal vastgezet wordt elke visual in elke bestelling ermee gemaakt, zodat je catalog en je feed samenhangen in plaats van uit losse sessies samengesteld te lijken.',
       'Dit is waar visuals ophouden foto’s te zijn en merkwaarde worden. Een consistent gezicht verandert een scroll-voorbij in herkenning: mensen kennen je beelden voordat ze je naam lezen. Het werkt overal waar je merk verschijnt, want overal én consistent zijn is het hele punt.',
     ],
     fitWhereH: 'Waar het leeft',
     fitWhere: [
       ['Elk kanaal', 'shop, feed, ads en e-mail, in één look.'],
       ['Campagnes', 'seizoensverhalen met een gezicht dat men al kent.'],
-      ['Hele drops', `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten die als één lijn moeten voelen.`],
+      ['Hele collecties', `${WINDOW_THRESHOLD} producten of tweehonderd, in één bestelling die als één lijn moet lezen.`],
       ['Je identiteit', 'de visuele signatuur waaraan mensen je herkennen.'],
     ],
 
@@ -289,18 +341,18 @@ const COPY = {
     getH: 'Wat je terugkrijgt',
     get: [
       ['locked', 'Een <strong>vastgezet model</strong>, exclusief van jou, hergebruikt zonder extra kosten.'],
-      ['every', 'Hetzelfde gezicht in <strong>elke visual van elke drop</strong>.'],
+      ['every', 'Hetzelfde gezicht in <strong>elke visual van elke bestelling</strong>.'],
       ['current', '<strong>Bijgehouden</strong> terwijl je lijn en je styling veranderen.'],
-      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'nl')} terug</strong> op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops.`],
+      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'nl')} terug</strong> ${vatLabel('excl', 'nl')} op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`],
     ],
 
     libMeta: '( Of begin hier )',
     libH: 'De standaardbibliotheek',
     libAlt: 'een VISUAILS-standaardmodel',
-    libLead: 'Tien modellen, gedeeld over merken, inbegrepen in elke drop zonder extra kosten. Kies er een, of laat ons er een matchen op jouw product en jouw klant. Je kunt later naar een merkmodel zonder iets over te doen.',
+    libLead: 'Tien modellen, gedeeld over merken, inbegrepen in elke bestelling zonder extra kosten. Kies er een, of laat ons er een matchen op jouw product en jouw klant. Je kunt later naar een merkmodel zonder iets over te doen.',
     libChooseH: 'Laat ons matchen',
-    libChooseBody: 'Vertel ons het product en de klant wanneer je een drop start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
-    libNote: 'Standaardmodellen zitten in de dropprijs. Er is geen kost per model en geen upgrade om er een vrij te spelen.',
+    libChooseBody: 'Vertel ons het product en de klant wanneer je een bestelling start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
+    libNote: 'Standaardmodellen zitten in het tarief dat je al per product betaalt. Er is geen kost per model en geen upgrade om er een vrij te spelen.',
     libAllCta: 'Bekijk alle tien',
     traits: {
       warm: 'Warm', approachable: 'Toegankelijk', editorial: 'Editorial', elegant: 'Elegant',
@@ -319,7 +371,7 @@ const COPY = {
 
     ctaH1: 'Ontwerp het gezicht van',
     ctaEm: 'jouw merk.',
-    ctaStart: 'Start een drop',
+    ctaStart: 'Start een bestelling',
     ctaPricing: 'Bekijk prijzen',
     ctaWaShort: 'WhatsApp',
   },
@@ -361,15 +413,15 @@ const STEPS = {
     ['Intake', 'You send references and a brief on the look you want.'],
     ['Directions', 'We design two or three directions for you to react to.'],
     ['You choose', 'Pick the face that fits, with one round of refinement.'],
-    ['Locked', 'The model is fixed so it cannot drift between drops.'],
-    ['In every drop', 'From then on your model carries every visual we make.'],
+    ['Locked', 'The model is fixed so it cannot drift between orders.'],
+    ['In every order', 'From then on your model carries every visual we make.'],
   ],
   nl: [
     ['Intake', 'Je stuurt referenties en een briefing over de look die je wilt.'],
     ['Richtingen', 'We ontwerpen twee of drie richtingen waarop je kunt reageren.'],
     ['Jij kiest', 'Kies het gezicht dat past, met één ronde verfijning.'],
-    ['Vastgezet', 'Het model wordt vastgelegd zodat het niet tussen drops kan afdrijven.'],
-    ['In elke drop', 'Vanaf dan draagt jouw model elke visual die we maken.'],
+    ['Vastgezet', 'Het model wordt vastgelegd zodat het niet tussen bestellingen kan afdrijven.'],
+    ['In elke bestelling', 'Vanaf dan draagt jouw model elke visual die we maken.'],
   ],
 };
 
@@ -397,13 +449,13 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
       ))}
     </div>
   </div>
-  <div class="photo-split-media"><img src="/img/custom-models-03.webp" alt={c.heroAlt} decoding="sync" width="900" height="1125" fetchpriority="high" /></div>
+  <div class="photo-split-media"><img src="/img/custom-models-03.webp" alt={c.heroAlt} decoding="sync" width="800" height="1071" fetchpriority="high" /></div>
 </div></section>
 
 <!-- YOUR MODEL, NOT A MODEL -->
 <section class="section-tight"><div class="container">
   <div class="photo-split reverse reveal pending">
-    <div class="photo-split-media"><img src="/img/model-03.webp" alt={c.notAAlt} loading="lazy" decoding="async" width="900" height="1125" /></div>
+    <div class="photo-split-media"><img src="/img/model-03.webp" alt={c.notAAlt} loading="lazy" decoding="async" width="800" height="1071" /></div>
     <div>
       <h2 set:html={c.notAH} />
       <p class="lead bm-lead">{c.notALead}</p>
@@ -430,12 +482,14 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
         <span class="bmcost-key">{c.costSetupLabel}</span>
         <span class="bmcost-amount">{brandModel.price}</span>
         <span class="bmcost-unit">{brandModel.unit}</span>
+        <span class="bmcost-vat">{c.costSetupVat}</span>
       </div>
       <div class="bmcost-rule" aria-hidden="true"></div>
       <div class="bmcost-fig">
         <span class="bmcost-key">{c.costCreditLabel}</span>
         <span class="bmcost-amount">&minus;{euro(AMOUNT.brandModelCredit, lang)}</span>
         <span class="bmcost-unit">{c.costCreditUnit}</span>
+        <span class="bmcost-vat">{c.costCreditVat}</span>
       </div>
     </div>
 
@@ -509,7 +563,7 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   <div class="grid grid-3 reveal-group">
     {EXAMPLES.map((photo, i) => (
       <div class="reveal pending">
-        <div class="photo-band square"><img src={photo} alt={`${c.outAlt} ${i + 1}`} loading="lazy" decoding="async" width="900" height="900" /></div>
+        <div class="photo-band square"><img src={photo.src} alt={`${c.outAlt} ${i + 1}`} loading="lazy" decoding="async" width={photo.w} height={photo.h} /></div>
       </div>
     ))}
   </div>
@@ -569,7 +623,7 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   <div class="bm-roster reveal-group">
     {ROSTER.slice(0, 4).map((m) => (
       <figure class="bm-model reveal pending">
-        <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width="600" height="750" />
+        <img src={m.photo} alt={`${m.name} — ${c.libAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
         <figcaption>
           <span class="bm-model-name">{m.name}</span>
           <span class="bm-model-traits">{m.traits.map((t) => c.traits[t]).join(' · ')}</span>
@@ -649,6 +703,10 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   .bmcost-key { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
   .bmcost-amount { font-family: var(--font-display); font-weight: 900; font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1; letter-spacing: -0.03em; color: var(--ink); }
   .bmcost-unit { font-size: .92rem; color: var(--ink-3); }
+  /* Under the figure, not beside it: at this type size a trailing "excl. VAT"
+     either shrinks the price or wraps, and an unreadable VAT label is the same
+     failure as no VAT label. Same call /pricing's .anchor-vat makes. */
+  .bmcost-vat { display: block; margin-top: .45rem; font-size: .78rem; color: var(--ink-3); }
   .bmcost-body { padding: clamp(1.4rem, 3vw, 2.2rem); display: flex; flex-direction: column; gap: 1rem; }
   .bmcost-inc-h { font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
   .bmcost-inc { margin: 0; }

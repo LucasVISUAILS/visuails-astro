@@ -13,19 +13,24 @@
 // body gets corrected and the search result keeps quoting the old number.
 import Layout from '../layouts/Layout.astro';
 import BrandModelPage from '../components/BrandModelPage.astro';
-import { euro, AMOUNT, BRAND_MODEL_CREDIT_DROPS } from '../data/pricing.js';
+import { euro, AMOUNT, vatLabel, BRAND_MODEL_CREDIT_DROPS } from '../data/pricing.js';
 
-// Under 160 characters so Google shows all of it. The description this
-// replaces ran to 167 and lost its last clause.
+// Under 152 characters (META_LIMIT) so Google shows all of it. The description
+// this replaces ran to 167 and lost its last clause.
+//
+// The product did not change in August 2026 — the setup fee and the credit are
+// the same, and they still cancel each other exactly. The word did: "drop"
+// means a collection going live to the brands we sell to, and we were using it
+// for a work order. An order is an order.
 const description =
-  `One face, designed for your brand alone — on every product, every drop. ` +
-  `${euro(AMOUNT.brandModel, 'en')} one-time setup, ` +
-  `${euro(AMOUNT.brandModelCredit, 'en')} back on each of your first ` +
-  `${BRAND_MODEL_CREDIT_DROPS} drops.`;
+  `One face, designed for your brand alone — on every product, every order. ` +
+  `${euro(AMOUNT.brandModel, 'en')} setup ${vatLabel('excl', 'en')}, ` +
+  `${euro(AMOUNT.brandModelCredit, 'en')} back on your first ` +
+  `${BRAND_MODEL_CREDIT_DROPS} orders.`;
 ---
 
 <Layout
-  title="Your Brand Model — one face, every drop | VISUAILS"
+  title="Your Brand Model — one face, every order | VISUAILS"
   description={description}
   ogImage="/img/custom-models-03.webp"
 >

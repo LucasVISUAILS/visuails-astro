@@ -158,8 +158,28 @@ const t = useTranslations(lang);
 
   @media (max-width: 720px) {
     .cc-in { flex-direction: column; align-items: stretch; gap: .9rem; }
+    /* THE BUG THIS LINE FIXES, because it will look redundant later and it is
+       not. `.cc-copy` carries `flex: 1 1 26rem` for the desktop row, where a
+       flex-basis is a WIDTH. The moment this query flips the container to
+       `column`, the main axis becomes vertical and that same 26rem starts
+       meaning 416px of HEIGHT — so the bar rendered 546px tall on a 740px
+       phone, three quarters of the viewport, with a wall of empty space
+       between the sentence and the buttons. Worse, consent.js copies
+       offsetHeight into --cc-h, so the conversion bar was being pushed 546px
+       up the screen with it. Basis goes back to content-sized here. */
+    .cc-copy { flex: 0 1 auto; }
     .cc-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    /* Grid items default to min-width:auto, which for a nowrap label means
+       "never smaller than the text" — that is what pushed the accept button
+       past the right edge at 360px. They may shrink; the padding gives way
+       before the label does. */
+    .cc-btn { min-width: 0; padding: 0 .7rem; }
     .cc-link { grid-column: 1 / -1; text-align: center; }
+  }
+  /* Below ~380px the two labels genuinely do not fit side by side. They stack,
+     and they stack TOGETHER — same width, same order, neither promoted. */
+  @media (max-width: 380px) {
+    .cc-actions { grid-template-columns: 1fr; }
   }
 
   /* ---- preferences ---- */
@@ -190,8 +210,16 @@ const t = useTranslations(lang);
   .cc-prefs-actions { display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap; margin-top: .4rem; }
 
   /* The conversion bar and this cannot occupy the same 20px. While the consent
-     bar is up, the conversion bar sits above it. */
+     bar is up, the conversion bar sits above it.
+     The WhatsApp launcher needed the same treatment and never got it: measured
+     at 360x740 its 48px square overlapped the "only what is necessary" button
+     by 41x34px, and elementFromPoint at the button's right end returned the
+     launcher — so a tap meant to REJECT cookies opened WhatsApp instead. It
+     reads its own resting offset from --wa-bottom (set in Layout.astro, which
+     moves it per breakpoint) so this rule does not have to know about any of
+     those breakpoints. */
   :global(body:has(#cc-bar:not([hidden])) .convbar) { bottom: calc(20px + var(--cc-h, 88px)); }
+  :global(body:has(#cc-bar:not([hidden])) .wa-launcher) { bottom: calc(var(--wa-bottom, 20px) + var(--cc-h, 88px)); }
 
   @media (prefers-reduced-motion: no-preference) {
     .cc { animation: cc-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }

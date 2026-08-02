@@ -13,7 +13,10 @@ import Layout from '../../layouts/Layout.astro';
 import ProductScene from '../../components/ProductScene.astro';
 import Compare from '../../components/Compare.astro';
 import { styles } from '../../data/styles.js';
-import { perProduct, reviewClaim, turnaround, TIERS } from '../../data/pricing.js';
+import {
+  euro, ladderRate, ladderFloor, LADDER, vatLabel,
+  reviewClaim, turnaround, TIERS,
+} from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
 
 export function getStaticPaths() {
@@ -47,9 +50,15 @@ const QUEUE = TIERS.unattended.queue.en;
 
 // Four of the five lifestyle styles carry no priceTrust of their own, so the
 // fallback below is what actually renders on most of these pages — it used to
-// be the string '€59.99', typed twice. Custom is quoted, so it keeps its own.
-const item = perProduct('lifestyle', 'en');
-const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''}` : `${item.price} / product`;
+// be the string '€59.99', typed twice, and then one flat rate off PER_PRODUCT.
+// It is two figures now: a lifestyle carousel is priced on a ladder that falls
+// with the count (section 0 of src/data/pricing.js), so a single rate here
+// would be quoting the price of ONE product on a page a brand reaches while
+// choosing a look for a whole range. Custom is quoted, so it keeps its own.
+const LIFE_FLOOR_FROM = LADDER.lifestyle[LADDER.lifestyle.length - 1][0];
+const priceLine = style.priceTrust
+  ? `${style.priceTrust}${style.priceUnit ?? ''}`
+  : `${euro(ladderRate('lifestyle', 1), 'en')} / product, ${euro(ladderFloor('lifestyle'), 'en')} from ${LIFE_FLOOR_FROM} up (${vatLabel('excl', 'en')})`;
 
 // The description used to be one template literal, so its length was whatever
 // the data happened to make it. metaDescription drops the trailing tier
@@ -78,7 +87,10 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
         </a>
       </div>
       <div class="trust-row" style="margin-top:2rem">
-        <span class="trust-item"><strong>{style.priceTrust ?? item.price}</strong>{style.priceUnit ?? ' / product'}</span>
+        {/* One source for the rate on this page: priceLine already resolves
+            the style's own priceTrust or the two ends of the ladder, so the
+            trust row cannot quote a different figure from the meta. */}
+        <span class="trust-item"><strong>{priceLine}</strong></span>
         <span class="trust-item"><strong>{TIMING}</strong></span>
         <span class="trust-item"><strong>{REVIEW}</strong></span>
       </div>
@@ -187,7 +199,7 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
             line in the template reaches all five lifestyle styles. Written as
             a conditional ("worn rather than placed") because not every
             lifestyle scene has a person in it. */}
-        <p class="model-note">When a {style.name} scene is worn rather than placed, the model can come from the standard roster — or be <a href="/custom-models">a Brand Model made only for you</a>, so the same face carries every drop.</p>
+        <p class="model-note">When a {style.name} scene is worn rather than placed, the model can come from the standard roster — or be <a href="/custom-models">a Brand Model made only for you</a>, so the same face carries every order.</p>
       </div>
     </div>
   </section>

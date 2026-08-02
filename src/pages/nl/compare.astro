@@ -2,14 +2,22 @@
 // VISUAILS — /nl/compare (Nederlands). De pagina-inhoud staat in
 // ComparePage.astro, zodat /compare en /nl/compare niet uit elkaar kunnen
 // lopen; alleen de meta verschilt hier.
+//
+// De oude tekst zette een pakket tegenover een dag — "een drop is €1.850 voor
+// 25–30 producten" — en dat pakket bestaat niet meer. Een dalend tarief kun je
+// niet tegenover een dagprijs zetten zonder een aantal te noemen, dus hier
+// staat hetzelfde uitgewerkte voorbeeld als in de rechterkolom van de pagina.
+// Beide bedragen zijn netto, en dat staat er één keer bij.
 import Layout from '../../layouts/Layout.astro';
 import ComparePage from '../../components/ComparePage.astro';
-import { AMOUNT, SHOOT_DAY, euro, FULL_DROP_MIN, FULL_DROP_MAX } from '../../data/pricing.js';
+import { SHOOT_DAY, euro, quote, vatLabel } from '../../data/pricing.js';
+
+const ANCHOR_PRODUCTS = 30;
 
 const description =
-  `Een productiedag kost ${SHOOT_DAY.nl.range}. Een drop is ${euro(AMOUNT.fullDrop, 'nl')} ` +
-  `voor ${FULL_DROP_MIN}–${FULL_DROP_MAX} producten. De eerlijke vergelijking, ` +
-  `inclusief waar een shootdag nog steeds wint.`;
+  `Een productiedag kost ${SHOOT_DAY.nl.range}. ${ANCHOR_PRODUCTS} producten ` +
+  `hier is ${euro(quote('complete', ANCHOR_PRODUCTS).net, 'nl')}, beide ` +
+  `${vatLabel('excl', 'nl')}. Inclusief waar een shootdag nog steeds wint.`;
 ---
 
 <Layout title="Shootdag vs VISUAILS — de eerlijke vergelijking" description={description}>

@@ -6,7 +6,10 @@ import Layout from '../../../layouts/Layout.astro';
 import ProductScene from '../../../components/ProductScene.astro';
 import Compare from '../../../components/Compare.astro';
 import { styles } from '../../../data/styles.nl.js';
-import { perProduct, reviewClaim, turnaround, TIERS } from '../../../data/pricing.js';
+import {
+  euro, ladderRate, ladderFloor, LADDER, vatLabel,
+  reviewClaim, turnaround, TIERS,
+} from '../../../data/pricing.js';
 import { metaDescription } from '../../../data/meta.js';
 
 export function getStaticPaths() {
@@ -40,9 +43,15 @@ const QUEUE = TIERS.unattended.queue.nl;
 
 // Vier van de vijf lifestyle-stijlen hebben zelf geen priceTrust, dus de
 // fallback hieronder is wat op de meeste pagina's daadwerkelijk rendert — dat
-// was de string '€59,99', twee keer ingetypt. Custom houdt zijn eigen tekst.
-const item = perProduct('lifestyle', 'nl');
-const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''}` : `${item.price} / product`;
+// was de string '€59,99', twee keer ingetypt, en daarna één vast tarief. Het
+// zijn nu twee bedragen: een lifestyle-carousel zit op een staffel die daalt
+// met het aantal, en één tarief zou hier de prijs van ÉÉN product noemen op
+// een pagina waar iemand een look voor een heel assortiment kiest. Custom
+// houdt zijn eigen tekst.
+const LIFE_FLOOR_FROM = LADDER.lifestyle[LADDER.lifestyle.length - 1][0];
+const priceLine = style.priceTrust
+  ? `${style.priceTrust}${style.priceUnit ?? ''}`
+  : `${euro(ladderRate('lifestyle', 1), 'nl')} / product, ${euro(ladderFloor('lifestyle'), 'nl')} vanaf ${LIFE_FLOOR_FROM} (${vatLabel('excl', 'nl')})`;
 
 // De description was één template literal, dus de lengte was wat de data er
 // toevallig van maakte. metaDescription laat de tier-clausules vallen in
@@ -71,7 +80,9 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
         </a>
       </div>
       <div class="trust-row" style="margin-top:2rem">
-        <span class="trust-item"><strong>{style.priceTrust ?? item.price}</strong>{style.priceUnit ?? ' / product'}</span>
+        {/* Eén bron voor het tarief op deze pagina: priceLine bevat al de
+            eigen priceTrust van de stijl of de twee uiteinden van de staffel. */}
+        <span class="trust-item"><strong>{priceLine}</strong></span>
         <span class="trust-item"><strong>{TIMING}</strong></span>
         <span class="trust-item"><strong>{REVIEW}</strong></span>
       </div>
@@ -178,7 +189,7 @@ const priceLine = style.priceTrust ? `${style.priceTrust}${style.priceUnit ?? ''
         </ul>
         {/* Brief §1 — elke drop-contentpagina linkt naar /custom-models. Eén
             regel in de template bedient alle vijf lifestyle-stijlen. */}
-        <p class="model-note">Wordt een {style.name}-scène gedragen in plaats van geplaatst, dan kan het model uit de standaardroster komen — of <a href="/nl/custom-models">een merkmodel dat alleen voor jou gemaakt is</a>, zodat hetzelfde gezicht elke drop draagt.</p>
+        <p class="model-note">Wordt een {style.name}-scène gedragen in plaats van geplaatst, dan kan het model uit de standaardroster komen — of <a href="/nl/custom-models">een merkmodel dat alleen voor jou gemaakt is</a>, zodat hetzelfde gezicht elke bestelling draagt.</p>
       </div>
     </div>
   </section>

@@ -14,6 +14,23 @@
 // writes the client-visible timeline in the same move, so the portal is never
 // behind the studio. If a notifier is built later, this page gains a sentence;
 // it does not have to lose one.
+//
+// WHAT THE AUGUST 2026 PRICING MODEL CHANGED HERE, and what it did not. This
+// page prints no price and it still prints none — the mechanism is the subject,
+// so there is nothing on it to re-quote. One paragraph was load-bearing and had
+// to move: the capacity rule used to read "drops outrank loose products", which
+// described a PRIORITY BETWEEN TWO PRODUCTS the buyer chose between. Under the
+// ladder (section 0 of src/data/pricing.js) there is no such choice — service
+// level follows order size, and WINDOW_THRESHOLD is the whole of the rule. So
+// the rule is stated as the threshold now, read from pricing.js rather than
+// described in prose, which is also what stops this page and /pricing giving
+// two different accounts of the same gate.
+//
+// The word "drop" is gone from the copy for the reason pricing.js gives: to the
+// brands we sell to it means a collection going live, and using it for a work
+// order made one word carry two meanings. What the studio runs is an order —
+// een bestelling.
+import { WINDOW_THRESHOLD } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -24,15 +41,17 @@ const COPY = {
   en: {
     h1: ['A date is a promise.', 'This is the machine behind it.'],
     lede: 'Anyone can put "48 hours" on a website. The question is what happens on the week it is not true. Here is the part of the studio that answers that, and the reason a date is never offered before it has been checked.',
-    ctaStart: 'Start a drop',
+    ctaStart: 'Start an order',
     ctaPortal: 'See what you get',
 
     gateH: 'The calendar refuses before the copy promises.',
     gateLede: 'The date picker on the order form does not show a list of dates. It asks the calendar what the studio has actually committed to that week, and removes anything the studio cannot hold — then offers the first week it can.',
     gate: [
-      ['Load, not availability', 'Capacity is counted in products, not in orders. Thirty products in one drop weigh thirty, because that is what they cost to make.'],
+      ['Load, not availability', 'Capacity is counted in products, not in orders. Thirty products in one order weigh thirty, because that is what they cost to make.'],
       ['One ceiling, one place', 'The limit is a single configurable number. There is no second rule anywhere that can quietly disagree with it.'],
-      ['Drops outrank loose products', 'A drop holds a committed date. Loose products run in a standard queue and yield to it, which is what makes the committed date committed.'],
+      // Size, not product type. See the header note: this used to say "drops
+      // outrank loose products", which named two things a buyer picked between.
+      [`Size decides, at ${WINDOW_THRESHOLD} products`, `From ${WINDOW_THRESHOLD} products an order goes into the calendar and holds a committed date. Smaller orders run in a standard queue and yield to it, which is what makes the committed date committed.`],
       ['Nothing is promised twice', 'A week that has been offered and taken is gone from the picker before the next person sees it.'],
     ],
     gatePh: 'Studio dashboard · capacity calendar',
@@ -40,7 +59,7 @@ const COPY = {
     gateSpec: 'Screenshot to place · 16:10 · /img/admin-capacity.webp',
 
     boardH: 'One table, every order.',
-    boardLede: 'The studio side is deliberately boring: a list of orders, the state each one is in, and the calendar the picker reads from. There is no dashboard of graphs, because a graph has never told anyone which drop is late.',
+    boardLede: 'The studio side is deliberately boring: a list of orders, the state each one is in, and the calendar the picker reads from. There is no dashboard of graphs, because a graph has never told anyone which order is late.',
     board: [
       ['Every order, one row', 'Reference, brand, product count, the committed date and the state it is in.'],
       ['Revisions come to the top', 'A revision request from a client portal lands in its own list, with the note the client wrote, in their words.'],
@@ -51,7 +70,7 @@ const COPY = {
     boardSpec: 'Screenshot to place · 16:10 · /img/admin-orders.webp',
 
     humanH: 'The last step is a person.',
-    humanLede: 'Nothing is auto-delivered. Every visual in every drop is looked at before it goes out, and the looking is a state the order has to pass through rather than a claim on a page.',
+    humanLede: 'Nothing is auto-delivered. Every visual in every order is looked at before it goes out, and the looking is a state the order has to pass through rather than a claim on a page.',
     humanNote: 'That review is also what the log records. Each approval and revision is stamped with a time, and that record is the human-oversight documentation the EU AI Act asks for — the same mechanism, doing both jobs.',
     humanCta: 'Read the AI Act page',
 
@@ -59,28 +78,29 @@ const COPY = {
     honestLede: 'Worth saying plainly, because a page about a mechanism that only lists what works is a brochure.',
     honest: [
       ['It does not guarantee a week it has not cleared', 'If the calendar is full, you are offered the next week that is not. You will not be told yes and then rescheduled.'],
-      ['It does not rush a drop past the review', 'The reserved window is the window the work fits in, not a target the studio sprints at. A drop that is not right does not ship on time; it ships right.'],
+      ['It does not rush an order past the review', 'The reserved window is the window the work fits in, not a target the studio sprints at. An order that is not right does not ship on time; it ships right.'],
       ['It does not scale by hiring', 'The ceiling is a real number and it stays a real number. When the studio is full it says so, which is the only version of this that is worth anything.'],
     ],
 
     closeH: 'Book a week the calendar has cleared.',
     closeLede: 'The date you are offered is one the studio has already checked it can keep.',
-    closeCta: 'Start a drop',
+    closeCta: 'Start an order',
     closeAlt: 'See it on your own product first',
   },
 
   nl: {
     h1: ['Een datum is een belofte.', 'Dit is de machine erachter.'],
     lede: 'Iedereen kan "48 uur" op een website zetten. De vraag is wat er gebeurt in de week dat het niet waar is. Dit is het deel van de studio dat die vraag beantwoordt, en de reden dat een datum nooit wordt aangeboden voordat hij gecontroleerd is.',
-    ctaStart: 'Start een drop',
+    ctaStart: 'Start een bestelling',
     ctaPortal: 'Zie wat je krijgt',
 
     gateH: 'De planning weigert voordat de tekst belooft.',
     gateLede: 'De datumkiezer in het bestelformulier toont geen lijstje datums. Hij vraagt de planning waar de studio zich die week werkelijk aan verbonden heeft, haalt weg wat de studio niet kan vasthouden, en biedt de eerste week aan die dat wel kan.',
     gate: [
-      ['Belasting, geen beschikbaarheid', 'Capaciteit wordt in producten geteld, niet in orders. Dertig producten in één drop wegen dertig, want dat is wat ze kosten om te maken.'],
+      ['Belasting, geen beschikbaarheid', 'Capaciteit wordt in producten geteld, niet in orders. Dertig producten in één bestelling wegen dertig, want dat is wat ze kosten om te maken.'],
       ['Eén plafond, één plek', 'De limiet is één instelbaar getal. Er is nergens een tweede regel die er stilletjes van kan afwijken.'],
-      ['Drops gaan voor losse producten', 'Een drop houdt een vastgelegde datum. Losse producten draaien in een gewone wachtrij en wijken ervoor — precies dat maakt de vastgelegde datum vastgelegd.'],
+      // Zie de EN-tak: omvang beslist, niet het soort bestelling.
+      [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling de agenda in en houdt hij een vastgelegde datum. Kleinere bestellingen draaien in een gewone wachtrij en wijken ervoor — precies dat maakt de vastgelegde datum vastgelegd.`],
       ['Niets wordt twee keer beloofd', 'Een week die is aangeboden en gepakt, is uit de kiezer verdwenen voordat de volgende hem ziet.'],
     ],
     gatePh: 'Studiodashboard · capaciteitskalender',
@@ -88,7 +108,7 @@ const COPY = {
     gateSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-capacity.webp',
 
     boardH: 'Eén tabel, elke order.',
-    boardLede: 'De studiokant is met opzet saai: een lijst orders, de staat waarin elke order zit, en de kalender waar de kiezer uit leest. Geen dashboard vol grafieken, want een grafiek heeft nog nooit iemand verteld welke drop te laat is.',
+    boardLede: 'De studiokant is met opzet saai: een lijst orders, de staat waarin elke order zit, en de kalender waar de kiezer uit leest. Geen dashboard vol grafieken, want een grafiek heeft nog nooit iemand verteld welke bestelling te laat is.',
     board: [
       ['Elke order, één regel', 'Kenmerk, merk, aantal producten, de vastgelegde datum en de staat waarin hij zit.'],
       ['Revisies komen bovenaan', 'Een revisieverzoek uit een klantportaal komt in een eigen lijst binnen, met de notitie die de klant schreef, in diens eigen woorden.'],
@@ -99,7 +119,7 @@ const COPY = {
     boardSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-orders.webp',
 
     humanH: 'De laatste stap is een mens.',
-    humanLede: 'Er wordt niets automatisch geleverd. Elk beeld in elke drop wordt bekeken voordat het weggaat, en dat kijken is een staat waar de order doorheen moet — geen bewering op een pagina.',
+    humanLede: 'Er wordt niets automatisch geleverd. Elk beeld in elke bestelling wordt bekeken voordat het weggaat, en dat kijken is een staat waar de order doorheen moet — geen bewering op een pagina.',
     humanNote: 'Die controle is ook wat het logboek vastlegt. Elke goedkeuring en revisie krijgt een tijdstempel, en dat register is precies het menselijk toezicht dat de EU AI Act vraagt — hetzelfde mechanisme, twee taken.',
     humanCta: 'Lees de AI Act-pagina',
 
@@ -107,13 +127,13 @@ const COPY = {
     honestLede: 'Het waard om ronduit te zeggen, want een pagina over een mechanisme die alleen opsomt wat werkt, is een folder.',
     honest: [
       ['Het garandeert geen week die niet is vrijgegeven', 'Zit de planning vol, dan krijg je de eerstvolgende week die dat niet is. Je krijgt geen ja om daarna verzet te worden.'],
-      ['Het jaagt een drop niet langs de controle', 'Het gereserveerde venster is het venster waarin het werk past, geen doel waar de studio naartoe sprint. Een drop die niet klopt gaat niet op tijd weg; die gaat goed weg.'],
+      ['Het jaagt een bestelling niet langs de controle', 'Het gereserveerde venster is het venster waarin het werk past, geen doel waar de studio naartoe sprint. Een bestelling die niet klopt gaat niet op tijd weg; die gaat goed weg.'],
       ['Het schaalt niet door aan te nemen', 'Het plafond is een echt getal en blijft een echt getal. Als de studio vol zit, zegt hij dat — de enige versie hiervan die iets waard is.'],
     ],
 
     closeH: 'Boek een week die de planning heeft vrijgegeven.',
     closeLede: 'De datum die je krijgt aangeboden, is er een waarvan de studio al heeft gecontroleerd dat hij hem kan houden.',
-    closeCta: 'Start een drop',
+    closeCta: 'Start een bestelling',
     closeAlt: 'Zie het eerst op je eigen product',
   },
 };

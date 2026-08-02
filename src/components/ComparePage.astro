@@ -57,10 +57,41 @@
 // section-head, cta-band. Introducing the drawing with a fourth section-head
 // would have put three identical openings in a row at the exact point the task
 // asks for variation. The CSS block at the bottom carries the same note.
+//
+// ── THE ARGUMENT SURVIVED THE PRICING CHANGE; THE FIGURES DID NOT ───────────
+//
+// August 2026, section 0 of src/data/pricing.js. This page's whole subject — a
+// production day set against what we do, with nothing hidden on either side —
+// is untouched by the new model, and none of the reasoning above is retired by
+// it. What changed is the right-hand column of the matrix, in three ways:
+//
+//   · It used to quote a Full Drop: one package, one flat price, a 25–30
+//     product band, and a per-product range derived by dividing the first by
+//     the second. There is no
+//     package to quote now. The column quotes a WORKED EXAMPLE at one count
+//     instead, straight out of quote(), and says so — the count is named in the
+//     cell, because a rate that falls with volume cannot be represented by a
+//     single number without one.
+//   · Both money cells now carry a VAT label. They did not before, and the
+//     comparison was the worse for it: a shoot-day range and a package price
+//     printed side by side with neither stated is two numbers a reader assumes
+//     are like for like without either of them saying so. BRIEF-14's rule is
+//     that no price is printed without saying which it is, and a page whose
+//     entire job is a side-by-side is the last place to bend it. Both sides are
+//     NET — every figure in pricing.js is — so the comparison is like for like,
+//     and now it says that out loud.
+//   · The word "drop" is gone. It means a collection going live to the brands
+//     we sell to, and this page used it for a work order, in a headline, next
+//     to the thing it is being compared against. What we sell is an order.
+//
+// The word counts quoted above were measured before all of that and are not
+// re-measured here: the sections, figure kinds and image refs they compare are
+// unchanged, and the prose deltas are a handful of words in either direction.
+// Anyone re-running rhythm_probe.py should expect small drift, not a new shape.
 import {
-  AMOUNT, SHOOT_DAY, euro, reviewClaim, turnaround, aftercare,
-  FULL_DROP_MIN, FULL_DROP_MAX,
-  FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
+  SHOOT_DAY, euro, quote, ladderFloor, tierFor,
+  reviewClaim, turnaround, aftercare,
+  FIRST_ORDER_DISCOUNT, vatLabel,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigConverge from './FigConverge.astro';
@@ -70,12 +101,34 @@ const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
 const shoot = SHOOT_DAY[lang];
-// euroRange() rounds, and €61.67 must not become €62 — so the per-product
-// range is assembled from two euro() calls, dropping the repeated symbol the
-// way euroRange() does.
-const perProduct = `${euro(FULL_DROP_PER_PRODUCT_MIN, lang)}–${euro(FULL_DROP_PER_PRODUCT_MAX, lang).slice(1)}`;
-const drop = euro(AMOUNT.fullDrop, lang);
-const scope = `${FULL_DROP_MIN}–${FULL_DROP_MAX}`;
+
+// THE COUNT THE RIGHT-HAND COLUMN IS PRICED AT, and it is a choice worth
+// stating because the next editor will want to move it.
+//
+// A production day is the unit on the left: one day, everything counted. There
+// is no per-product number on that side to compare against, so the right side
+// has to be a whole season's worth of work or the two columns are not the same
+// question. Thirty is what /pricing anchors its own shoot-day comparison at —
+// the two pages must not quote different sizes at the same argument, which is
+// the exact drift pricing.js exists to prevent. If this moves, move it there.
+//
+// It is also comfortably past WINDOW_THRESHOLD, which is why every service
+// promise in the matrix below is read at `tier` rather than typed as
+// 'attended': under the new model the service level is a CONSEQUENCE of this
+// count, not a second thing the buyer picked, and deriving it here is what
+// keeps the two facts from being stated as independent.
+const ANCHOR_PRODUCTS = 30;
+const q = quote('complete', ANCHOR_PRODUCTS);
+const tier = tierFor(ANCHOR_PRODUCTS);
+
+// Every money string on this page is assembled once, here, so a cell cannot
+// print a figure without its VAT label — the two travel together or not at all.
+const orderNet = `${euro(q.net, lang)} ${vatLabel('excl', lang)}`;
+const orderGross = `${euro(q.gross, lang)} ${vatLabel('incl', lang)}`;
+const orderRate = euro(q.rate, lang);
+const shootNet = `${shoot.range} ${vatLabel('excl', lang)}`;
+const floorRate = euro(ladderFloor('complete'), lang);
+const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 // No `as const`: COPY[lang] would otherwise widen to a union of readonly tuple
 // types and .map() below would stop type-checking (project convention, see
@@ -84,27 +137,32 @@ const COPY = {
   en: {
     eyebrow: 'Compare',
     h1a: 'A shoot day, or ',
-    h1b: 'a drop',
+    h1b: 'an order',
     h1c: '.',
     lead: 'Both get a season of product images made. They cost different money, different hours, and they fail in different ways. Here is the comparison with nothing hidden on either side.',
-    ctaPrimary: 'Start a drop',
+    ctaPrimary: 'Start an order',
     ctaGhost: 'See pricing',
 
-    matrixLabel: 'A production day compared with a VISUAILS drop',
+    matrixLabel: 'A production day compared with a VISUAILS order',
     colLabel: 'What',
     colA: 'A production day',
-    colB: 'A VISUAILS drop',
+    colB: 'A VISUAILS order',
 
     rows: [
       {
         label: 'What you get',
         a: "One day of everyone's time, and whatever fits inside it.",
-        b: `${scope} products — a catalog set and a lifestyle carousel for each.`,
+        // The count is named because it has to be: the rate falls as the count
+        // rises, so the column below is one worked example rather than a price.
+        b: `${ANCHOR_PRODUCTS} products — a catalog set and a lifestyle carousel for each. Any count works; this is the size the day on the left is being measured against.`,
       },
       {
         label: 'What it costs',
-        a: `${shoot.range} · ${shoot.basis.toLowerCase()}.`,
-        b: `${drop} for the drop — ${perProduct} per product at that scope.`,
+        // Net against net, and both say so. See the header block: this is the
+        // one row where an unlabelled figure would make the whole page a
+        // comparison of two things that were never the same kind of number.
+        a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
+        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product, falling to ${floorRate} at the top of the ladder. ${orderGross}. A first order is ${firstPct} off.`,
       },
       {
         label: 'When it lands',
@@ -115,12 +173,12 @@ const COPY = {
         // the exact reflex #246 is about. What stays is the part a picture
         // cannot say: how long, and that the retouching is after.
         a: 'Weeks. A date has to be agreed before anyone shoots, and the retouching starts after the day ends.',
-        b: `${turnaround('attended', 'en')}. The window is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
+        b: `${turnaround(tier, 'en')}. The window is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
       },
       {
         label: 'Who checks it',
         a: 'You, on the day. Then whoever retouches, on their own schedule.',
-        b: `${reviewClaim('attended', 'en')} — then you, image by image, in the portal.`,
+        b: `${reviewClaim(tier, 'en')} — then you, image by image, in the portal.`,
       },
       {
         label: 'If something is wrong',
@@ -128,7 +186,7 @@ const COPY = {
         // figure's own outcome line reads "A reshoot is the same four things,
         // agreeing again", which is this sentence's second half drawn.
         a: 'A reshoot is another day, booked from scratch.',
-        b: `${aftercare('attended', 'en')} — one image at a time, in the portal. Nobody has to be rebooked.`,
+        b: `${aftercare(tier, 'en')} — one image at a time, in the portal. Nobody has to be rebooked.`,
       },
       {
         label: 'What you organise',
@@ -137,7 +195,7 @@ const COPY = {
       },
     ],
     caveat: shoot.caveat,
-    caveatNote: 'That is a real range for a real day, not a strawman: it is what the whole day costs once every line above is counted, and the low end is a modest city studio where you do a lot of it yourself.',
+    caveatNote: 'That is a real range for a real day, not a strawman: it is what the whole day costs once every line above is counted, and the low end is a modest city studio where you do a lot of it yourself. Both figures in that row are net, so they are the same kind of number.',
 
     // FigConverge (task #246). The matrix rows "When it lands" and "If
     // something is wrong" are one fact stated twice: a day needs four
@@ -161,7 +219,7 @@ const COPY = {
     ],
     convMeet: 'One date',
     convOut: 'Everything is made on that day. A reshoot is the same four things, agreeing again.',
-    seqTitle: 'A VISUAILS drop',
+    seqTitle: 'A VISUAILS order',
     seqSteps: [
       'You send a folder of product photos.',
       'The week is checked against the calendar, and held or refused.',
@@ -171,7 +229,7 @@ const COPY = {
     convNote: 'The bars are uneven because four schedules do not naturally line up, and they are not to scale — there is nothing here to measure.',
 
     winsHead: 'Where a shoot day still wins',
-    winsSub: 'We would rather you knew. If any of these is the job, book the day — a drop is the wrong tool for it.',
+    winsSub: 'We would rather you knew. If any of these is the job, book the day — an order with us is the wrong tool for it.',
     wins: [
       { t: 'A material that has to be in the room', b: 'Some finishes only read right when a person lights them by eye — a weave that shifts as it moves, a coating that catches at one specific angle. If the whole sell is the hand-feel, put a camera on it.' },
       { t: 'A campaign built around one real person', b: 'A founder, an athlete, a face your audience already follows by name. That is a person, not a model. Photograph them.' },
@@ -201,51 +259,53 @@ const COPY = {
     ctaHeadEm: 'test it',
     ctaBody: 'See VISUAILS on your own product first, then put it next to whatever else you were considering.',
     ctaSample: 'Test sample',
-    ctaStart: 'Start a drop',
+    ctaStart: 'Start an order',
     ctaWa: 'Ask us anything',
     ctaReply: 'Usually a reply within an hour on weekdays.',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27m%20comparing%20a%20shoot%20day%20to%20a%20drop.',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27m%20comparing%20a%20shoot%20day%20to%20an%20order.',
   },
 
   nl: {
     eyebrow: 'Vergelijk',
     h1a: 'Een shootdag, of ',
-    h1b: 'een drop',
+    h1b: 'een bestelling',
     h1c: '.',
     lead: 'Allebei leveren ze een seizoen aan productbeelden op. Ze kosten ander geld, andere uren, en ze gaan op andere manieren mis. Dit is de vergelijking met aan geen van beide kanten iets verstopt.',
-    ctaPrimary: 'Start een drop',
+    ctaPrimary: 'Start een bestelling',
     ctaGhost: 'Bekijk prijzen',
 
-    matrixLabel: 'Een productiedag vergeleken met een VISUAILS-drop',
+    matrixLabel: 'Een productiedag vergeleken met een VISUAILS-bestelling',
     colLabel: 'Wat',
     colA: 'Een productiedag',
-    colB: 'Een VISUAILS-drop',
+    colB: 'Een VISUAILS-bestelling',
 
     rows: [
       {
         label: 'Wat je krijgt',
         a: 'Eén dag van ieders tijd, en wat daar precies in past.',
-        b: `${scope} producten — een catalogset en een lifestyle-carousel voor elk.`,
+        // Zie de EN-tak: het aantal staat erbij omdat het tarief met de omvang
+        // meezakt, dus dit is één uitgewerkt voorbeeld en geen pakketprijs.
+        b: `${ANCHOR_PRODUCTS} producten — een catalogset en een lifestyle-carousel voor elk. Elk aantal kan; dit is de omvang waarmee de dag hiernaast wordt vergeleken.`,
       },
       {
         label: 'Wat het kost',
-        a: `${shoot.range} · ${shoot.basis.toLowerCase()}.`,
-        b: `${drop} voor de drop — ${perProduct} per product op die schaal.`,
+        a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
+        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product, aflopend tot ${floorRate} boven aan de staffel. ${orderGross}. Een eerste bestelling krijgt ${firstPct} korting.`,
       },
       {
         label: 'Wanneer het er is',
         a: 'Weken. Er moet eerst een datum vastliggen voordat er iemand fotografeert, en de retouche begint pas als de dag voorbij is.',
-        b: `${turnaround('attended', 'nl')}. Het venster wordt eerst tegen de agenda gehouden — kan de week die je nodig hebt niet, dan hoor je dat, in plaats van een datum.`,
+        b: `${turnaround(tier, 'nl')}. Het venster wordt eerst tegen de agenda gehouden — kan de week die je nodig hebt niet, dan hoor je dat, in plaats van een datum.`,
       },
       {
         label: 'Wie het controleert',
         a: 'Jij, op de dag zelf. Daarna degene die retoucheert, op zijn eigen tempo.',
-        b: `${reviewClaim('attended', 'nl')} — en daarna jij, beeld voor beeld, in het portaal.`,
+        b: `${reviewClaim(tier, 'nl')} — en daarna jij, beeld voor beeld, in het portaal.`,
       },
       {
         label: 'Als er iets mis is',
         a: 'Opnieuw schieten is opnieuw een dag, vanaf nul geboekt.',
-        b: `${aftercare('attended', 'nl')} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
+        b: `${aftercare(tier, 'nl')} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
       },
       {
         label: 'Wat jij regelt',
@@ -254,7 +314,7 @@ const COPY = {
       },
     ],
     caveat: shoot.caveat,
-    caveatNote: 'Dat is een echt bereik voor een echte dag, geen stroman: het is wat de hele dag kost zodra elke regel hierboven is meegeteld, en de onderkant is een bescheiden stadsstudio waar je veel zelf doet.',
+    caveatNote: 'Dat is een echt bereik voor een echte dag, geen stroman: het is wat de hele dag kost zodra elke regel hierboven is meegeteld, en de onderkant is een bescheiden stadsstudio waar je veel zelf doet. Beide bedragen in die regel zijn netto, dus het zijn dezelfde soort getallen.',
 
     // FigConverge (taak #246) — zie de EN-tak hierboven voor waarom de labels
     // naamwoordgroepen zijn en geen stellingen. convTitle en seqTitle zijn
@@ -272,7 +332,7 @@ const COPY = {
     ],
     convMeet: 'Eén datum',
     convOut: 'Alles wordt op die dag gemaakt. Opnieuw schieten is dezelfde vier dingen, opnieuw op één lijn.',
-    seqTitle: 'Een VISUAILS-drop',
+    seqTitle: 'Een VISUAILS-bestelling',
     seqSteps: [
       'Je stuurt een map met productfoto’s.',
       'De week wordt tegen de agenda gehouden, en vastgezet of geweigerd.',
@@ -282,7 +342,7 @@ const COPY = {
     convNote: 'De balken zijn ongelijk omdat vier planningen niet vanzelf op één lijn liggen, en ze staan niet op schaal — er valt hier niets te meten.',
 
     winsHead: 'Waar een shootdag nog steeds wint',
-    winsSub: 'We vertellen het je liever eerlijk. Is dit de opdracht? Boek dan de dag — een drop is er het verkeerde gereedschap voor.',
+    winsSub: 'We vertellen het je liever eerlijk. Is dit de opdracht? Boek dan de dag — een bestelling bij ons is er het verkeerde gereedschap voor.',
     wins: [
       { t: 'Een materiaal dat in de ruimte moet liggen', b: 'Sommige afwerkingen kloppen alleen als iemand ze met het oog uitlicht — een weefsel dat meebeweegt, een coating die maar op één hoek vangt. Draait de hele verkoop om het gevoel, zet er dan een camera op.' },
       { t: 'Een campagne rond één echt persoon', b: 'Een oprichter, een sporter, een gezicht dat je publiek al bij naam volgt. Dat is een mens, geen model. Fotografeer die.' },
@@ -312,10 +372,10 @@ const COPY = {
     ctaHeadEm: 'test het',
     ctaBody: 'Zie VISUAILS eerst op je eigen product, en leg het daarna naast wat je verder overwoog.',
     ctaSample: 'Proefvisual',
-    ctaStart: 'Start een drop',
+    ctaStart: 'Start een bestelling',
     ctaWa: 'Vraag ons alles',
     ctaReply: 'Meestal binnen een uur antwoord op werkdagen.',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20vergelijk%20een%20shootdag%20met%20een%20drop.',
+    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20vergelijk%20een%20shootdag%20met%20een%20bestelling.',
   },
 };
 
@@ -334,7 +394,7 @@ const t = COPY[lang];
 </div></section>
 
 <!-- THE MATRIX.
-     A three-column grid on desktop (row label · production day · drop). Below
+     A three-column grid on desktop (row label · production day · order). Below
      760px each row becomes its own stacked block and the two answers pick up
      their column name from data-col via ::before, so the comparison survives
      the collapse instead of turning into two unlabelled paragraphs. -->

@@ -2,15 +2,18 @@
 // VISUAILS — /nl/video (Nederlands). De pagina-inhoud staat in
 // VideoPage.astro, zodat /video en /nl/video niet uit elkaar kunnen lopen;
 // alleen de meta verschilt hier.
+//
+// Anders dan /catalog en /lifestyle is dit ene bedrag nog steeds de hele
+// prijs: een clip staat niet op de staffel per product, het is één vast
+// tarief, los of binnen een bestelling. Dat staat er nu bij, met de btw-vlag.
 import Layout from '../../../layouts/Layout.astro';
 import VideoPage from '../../../components/VideoPage.astro';
-import { perProduct, turnaround } from '../../../data/pricing.js';
-
-const item = perProduct('video', 'nl');
+import { euro, AMOUNT, vatLabel } from '../../../data/pricing.js';
 
 const description =
-  `Acht seconden subtiele beweging, voor productpagina’s, social en eenvoudige ` +
-  `advertenties. ${item.price} per clip. ${turnaround('unattended', 'nl')}.`;
+  `Acht seconden subtiele beweging, voor productpagina’s, social en ads. ` +
+  `${euro(AMOUNT.video, 'nl')} per clip ${vatLabel('excl', 'nl')} — hetzelfde ` +
+  `tarief los of binnen een bestelling.`;
 ---
 
 <Layout

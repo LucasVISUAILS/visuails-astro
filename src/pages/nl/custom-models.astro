@@ -14,19 +14,23 @@
 // pagina overleeft.
 import Layout from '../../layouts/Layout.astro';
 import BrandModelPage from '../../components/BrandModelPage.astro';
-import { euro, AMOUNT, BRAND_MODEL_CREDIT_DROPS } from '../../data/pricing.js';
+import { euro, AMOUNT, vatLabel, BRAND_MODEL_CREDIT_DROPS } from '../../data/pricing.js';
 
-// Onder de 160 tekens zodat Google hem heel toont. De vorige description was
-// 171 tekens en werd afgekapt.
+// Onder de 152 tekens (META_LIMIT) zodat Google hem heel toont. De vorige
+// description was 171 tekens en werd afgekapt.
+//
+// Het product veranderde in augustus 2026 niet — de setup en het krediet zijn
+// gelijk gebleven. Het woord wel: een "drop" is een collectie die live gaat,
+// en wij gebruikten het voor een werkopdracht. Dat is een bestelling.
 const description =
-  `Eén gezicht, alleen voor jouw merk ontworpen — op elk product, elke drop. ` +
-  `${euro(AMOUNT.brandModel, 'nl')} eenmalige setup, ` +
-  `${euro(AMOUNT.brandModelCredit, 'nl')} terug bij elk van je eerste ` +
-  `${BRAND_MODEL_CREDIT_DROPS} drops.`;
+  `Eén gezicht, alleen voor jouw merk — op elk product, elke bestelling. ` +
+  `${euro(AMOUNT.brandModel, 'nl')} setup ${vatLabel('excl', 'nl')}, ` +
+  `${euro(AMOUNT.brandModelCredit, 'nl')} terug op je eerste ` +
+  `${BRAND_MODEL_CREDIT_DROPS} bestellingen.`;
 ---
 
 <Layout
-  title="Jouw merkmodel — één gezicht, elke drop | VISUAILS"
+  title="Jouw merkmodel — één gezicht, elke bestelling | VISUAILS"
   description={description}
   ogImage="/img/custom-models-03.webp"
 >

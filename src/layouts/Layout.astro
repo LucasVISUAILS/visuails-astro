@@ -492,7 +492,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   </header>
 
   <div class="mobile-nav" id="mobile-nav">
-    <button class="mobile-close" aria-label="Close menu">&times;</button>
+    <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
     <svg class="brand-mark mobile-mark" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
     {drops.map((s) => (
       <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
@@ -839,7 +839,25 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .lang-switch .ls.on { color: var(--chip-ink, var(--ink)); background: var(--chip-fill, var(--accent-soft)); box-shadow: inset 0 0 0 1px var(--accent-line); }
   .mobile-lang { align-self: center; margin-top: .5rem; }
 
-  .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--bg); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform var(--dur-3) var(--ease); overflow-y: auto; }
+  /* THE DRAWER DID NOT FIT AND DID NOT SAY SO. Its content is 967px tall; a
+     740px phone therefore hid "Log in" and the EN/NL switcher below the fold.
+     It has always had overflow-y: auto, so it always scrolled — there was just
+     nothing on screen suggesting it could. Three changes: the last background
+     layer is a scroll shadow (background-attachment: local, so it fades out
+     exactly when you reach the end), the close button is pinned rather than
+     scrolling away with the list, and short viewports get a smaller type scale
+     so most phones need no scrolling at all. */
+  .mobile-nav { position: fixed; inset: 0; z-index: var(--z-modal); padding: 90px clamp(1.2rem,5vw,2.5rem) 2rem; transform: translateX(100%); transition: transform var(--dur-3) var(--ease); overflow-y: auto; overscroll-behavior: contain;
+    background:
+      linear-gradient(to top, var(--bg), transparent) bottom / 100% 48px no-repeat local,
+      radial-gradient(farthest-side at 50% 100%, rgb(255 255 255 / 0.16), transparent) bottom / 100% 16px no-repeat scroll,
+      var(--bg); }
+  @media (max-height: 820px) {
+    .mobile-nav { padding-top: 74px; }
+    .mobile-nav > a { font-size: 1.35rem; padding: .62rem 0; }
+    .mobile-mark { height: 26px; margin-bottom: 1rem; }
+    .mobile-cta { margin-top: 1.2rem; }
+  }
   .mobile-nav.open { transform: translateX(0); }
   /* Height only. The monogram is 639x655, not square, and the old <img> was
      forced to 30x30 — a 2.4% horizontal squash nobody would name but the eye
@@ -854,7 +872,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
   .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
   .mobile-account-link { display: block; margin-top: .9rem; text-align: center; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
-  .mobile-close { position: absolute; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
+  .mobile-close { position: fixed; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
   @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link { display: none; } .menu-toggle { display: inline-flex; } }
 
   .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
@@ -903,20 +921,30 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .foot-cc { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
   .foot-cc:hover, .foot-cc:focus-visible { color: var(--ink); }
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
+  /* THE LAST ROW OF THE FOOTER WAS UNREACHABLE. .convbar is fixed 20px off the
+     bottom and this row is the last thing on the page, so at maximum scroll the
+     bar sat on top of it: measured at 360x740 it covered 65% of the "Cookie
+     preferences" button and elementFromPoint at that button's centre returned
+     the convbar. The one control the AP's rules require to be permanently
+     available was permanently behind something else on every phone.
+     Reserved unconditionally rather than under body:has(.convbar.show) — the
+     bar appears on scroll, and a padding change at that moment would shift the
+     footer under the reader's thumb. Space costs nothing here; a jump does. */
+  @media (max-width: 1100px) { .footer-bottom { padding-bottom: 84px; } }
 
   .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
   .convbar .cb-logo { height: 22px; flex: 0 0 auto; }
   .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
   .convbar .cb-cta { background: var(--accent); color: var(--accent-on); padding: 10px 18px; font-size: .9rem; font-weight: 600; white-space: nowrap; }
-  .convbar .cb-close { width: 30px; height: 30px; color: var(--ink-3); font-size: 1.1rem; background: none; border: none; cursor: pointer; }
+  .convbar .cb-close { width: 40px; height: 40px; color: var(--ink-3); font-size: 1.1rem; background: none; border: none; cursor: pointer; }
   @media (max-width: 600px) { .convbar em { display: none; } }
 
   /* WhatsApp launcher — a square block pinned to the left rail, so it never
      collides with the centred .convbar. 48px hit area at minimum; the label
      expands on pointer devices and stays available to screen readers on
      touch, where only the mark shows. */
-  .wa-launcher { position: fixed; left: 20px; bottom: 20px; z-index: var(--z-bar);
+  .wa-launcher { position: fixed; left: 20px; --wa-bottom: 20px; bottom: var(--wa-bottom); z-index: var(--z-bar);
     display: inline-flex; align-items: center; justify-content: center;
     width: 48px; height: 48px; padding: 0;
     background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
@@ -952,7 +980,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      by a pixel — the convbar is centred and grows toward both edges as the
      viewport shrinks, so "beside" is only true down to about 380px. Stacking
      is true at every width. */
-  @media (max-width: 600px) { .wa-launcher { left: auto; right: 12px; bottom: 12px; } }
-  @media (max-width: 620px) { .wa-launcher { bottom: 96px; } }
+  @media (max-width: 600px) { .wa-launcher { left: auto; right: 12px; --wa-bottom: 12px; } }
+  @media (max-width: 620px) { .wa-launcher { --wa-bottom: 96px; } }
   @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

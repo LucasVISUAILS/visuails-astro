@@ -3,14 +3,21 @@
 // strip of real photography, closing CTA. Ported from the SvelteKit about
 // page — see IMAGES.md for the photo strip and hero.
 import Layout from '../../layouts/Layout.astro';
-import { perProduct, reviewClaim, turnaround } from '../../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel, reviewClaim, turnaround } from '../../data/pricing.js';
 
 // Deze pagina bevatte vier losse leverbeloftes — de meta-beschrijving, de
 // hero-lead, de body-lead en een chip — allemaal "in ongeveer een dag" of
 // "~24u", en geen enkele daarvan is ooit door de capaciteitspoort gekomen.
 // Het zijn tier-feiten, dus ze komen nu uit pricing.js. "Geen abonnement" gaat
-// mee: dat klopt niet meer sinds het Studio-retainer live is.
-const CAT = perProduct('catalog', 'nl');
+// mee: dat klopt niet meer sinds de maandplannen live zijn.
+//
+// De ene prijs op deze pagina was een vast tarief per product. Dat is nu de
+// eerste trede van een staffel, en de kaart eronder heet "Toegankelijk voor
+// iedereen" — precies de claim die het instaptarief alleen zou ondergraven.
+// Dus staan beide uiteinden er.
+const CAT_ENTRY = euro(ladderRate('catalog', 1), 'nl');
+const CAT_FLOOR = euro(ladderFloor('catalog'), 'nl');
+const CAT_FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 const TIMING = turnaround('unattended', 'nl');
 const REVIEW = reviewClaim('unattended', 'nl');
 
@@ -63,7 +70,7 @@ const strip = [
     <div class="grid grid-3 reveal-group">
       <div class="card card-hover reveal pending"><h3>Snelheid, zonder de shortcut</h3><p style="margin-top:.6rem;color:var(--ink-3)">Snelle levering, en toch de moeite waard om te publiceren.</p></div>
       <div class="card card-hover reveal pending"><h3>Consistentie wint</h3><p style="margin-top:.6rem;color:var(--ink-3)">Eén samenhangende look, over je hele assortiment.</p></div>
-      <div class="card card-hover reveal pending"><h3>Toegankelijk voor iedereen</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog {CAT.price} per product. Bestel er één, of draai een hele drop.</p></div>
+      <div class="card card-hover reveal pending"><h3>Toegankelijk voor iedereen</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog {CAT_ENTRY} per product, {CAT_FLOOR} vanaf {CAT_FLOOR_FROM} ({vatLabel('excl', 'nl')}). Bestel er één, of een hele collectie.</p></div>
     </div>
   </div></section>
 

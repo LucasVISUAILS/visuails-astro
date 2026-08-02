@@ -3,15 +3,23 @@
 // strip of real photography, closing CTA. Ported from the SvelteKit about
 // page — see IMAGES.md for the photo strip and hero.
 import Layout from '../layouts/Layout.astro';
-import { perProduct, reviewClaim, turnaround } from '../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel, reviewClaim, turnaround } from '../data/pricing.js';
 
 // This page carried four separate delivery promises — the meta description,
 // the hero lead, the body lead and a chip — every one of them saying "about a
 // day" or "~24h", none of which the capacity gate has ever cleared. They are
 // tier facts, so they come from pricing.js now. "No subscription" went with
-// them: it stopped being true the day the Studio retainer shipped, and the
-// FAQ answer that made the same claim was already rewritten for that reason.
-const CAT = perProduct('catalog', 'en');
+// them: it stopped being true the day monthly plans shipped, and the FAQ
+// answer that made the same claim was already rewritten for that reason.
+//
+// The one price on this page used to be a flat per-product rate. It is the
+// entry rung of a ladder now (section 0 of src/data/pricing.js), and the card
+// it sits on is headed "Open to everyone" — the exact claim the entry rate
+// alone would undersell, since the point of a falling rate is that a bigger
+// range costs less per product rather than more. So both ends are named.
+const CAT_ENTRY = euro(ladderRate('catalog', 1), 'en');
+const CAT_FLOOR = euro(ladderFloor('catalog'), 'en');
+const CAT_FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 const TIMING = turnaround('unattended', 'en');
 const REVIEW = reviewClaim('unattended', 'en');
 
@@ -64,7 +72,7 @@ const strip = [
     <div class="grid grid-3 reveal-group">
       <div class="card card-hover reveal pending"><h3>Speed, without the shortcut</h3><p style="margin-top:.6rem;color:var(--ink-3)">Fast delivery, and still worth publishing.</p></div>
       <div class="card card-hover reveal pending"><h3>Consistency wins</h3><p style="margin-top:.6rem;color:var(--ink-3)">One coherent look, across your whole range.</p></div>
-      <div class="card card-hover reveal pending"><h3>Open to everyone</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog at {CAT.price} per product. Order one, or run a whole drop.</p></div>
+      <div class="card card-hover reveal pending"><h3>Open to everyone</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog at {CAT_ENTRY} per product, {CAT_FLOOR} from {CAT_FLOOR_FROM} up ({vatLabel('excl', 'en')}). Order one, or a whole collection.</p></div>
     </div>
   </div></section>
 

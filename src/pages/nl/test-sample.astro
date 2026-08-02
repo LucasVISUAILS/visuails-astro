@@ -14,7 +14,7 @@ import { TEST_SAMPLE, turnaround } from '../../data/pricing.js';
 // De verificatiekosten stonden op vier plekken ingetypt en de leverstap beloofde
 // "~24 uur" — een cijfer dat de capaciteitspoort nooit heeft goedgekeurd. Het
 // zijn tier-feiten, dus ze komen nu uit pricing.js. "Geen abonnement" ging mee:
-// dat klopt niet meer sinds het Studio-retainer live ging, en /faq en /about
+// dat klopt niet meer sinds de maandplannen live gingen, en /faq en /about
 // zijn om precies die reden al gecorrigeerd. De proef loopt via de losse-
 // producten-lane en noemt dus die doorlooptijd, niets snellers.
 const SAMPLE = TEST_SAMPLE.nl;
@@ -160,8 +160,8 @@ const sampleTypes = [
             <p class="hint" style="margin-bottom:1.4rem">Kies de look die je zoekt en upload je productfoto.</p>
 
             <div class="field">
-              <label>Wat wil je zien? <span class="req">*</span></label>
-              <div class="choice-grid">
+              <p class="ts-group-h" id="ts-type-h">Wat wil je zien? <span class="req">*</span></p>
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-type-h">
                 {sampleTypes.map((t, i) => (
                   <label class="choice">
                     <input type="radio" name="sample_type" value={t.value} required={i === 0} />
@@ -174,9 +174,9 @@ const sampleTypes = [
             </div>
 
             <div class="field">
-              <label>Kies een look</label>
+              <p class="ts-group-h" id="ts-style-h">Kies een look</p>
               <span class="hint" style="margin-bottom:.3rem">Voor een lifestyle-proef. Sla dit over als je hierboven catalog koos — een catalogproef loopt op een egale ondergrond, niet op een van deze looks.</span>
-              <div class="choice-grid">
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-style-h">
                 {styles.map((s) => (
                   <label class="choice">
                     <input type="radio" name="style" value={s.value} />
@@ -188,9 +188,9 @@ const sampleTypes = [
             </div>
 
             <div class="field">
-              <label>Kies een model</label>
+              <p class="ts-group-h" id="ts-model-h">Kies een model</p>
               <span class="hint" style="margin-bottom:.3rem">Optioneel voor de meeste producten — handig voor kleding en accessoires.</span>
-              <div class="choice-grid">
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-model-h">
                 {roster.map((m) => (
                   <label class="choice">
                     <input type="radio" name="model" value={m.name} />

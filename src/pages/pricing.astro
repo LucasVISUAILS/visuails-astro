@@ -7,12 +7,22 @@
 // enforce, and it is the one place a stale figure survives a page rewrite.
 import Layout from '../layouts/Layout.astro';
 import PricingPage from '../components/PricingPage.astro';
-import { euro, AMOUNT, FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
+//
+// It named the two packages until August 2026. It names the shape of the
+// ladder now (section 0 of src/data/pricing.js): the entry rate, the floor,
+// and the fact that the fall is what the page is about. The first-order
+// discount is the last clause because it is the one a snippet can afford to
+// lose — the two rates cannot be.
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel, FIRST_ORDER_DISCOUNT } from '../data/pricing.js';
+
+const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
+const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 const description =
-  `Priced by the drop — Drop Pilot ${euro(AMOUNT.dropPilot, 'en')}, Full Drop ` +
-  `${euro(AMOUNT.fullDrop, 'en')} for ${FULL_DROP_MIN}–${FULL_DROP_MAX} products. ` +
-  `Individual products from ${euro(AMOUNT.catalog, 'en')}.`;
+  `Priced per product, and the rate falls as the count rises: ` +
+  `${euro(ladderRate('complete', 1), 'en')} down to ` +
+  `${euro(ladderFloor('complete'), 'en')} from ${FLOOR_FROM} products, ` +
+  `${vatLabel('excl', 'en')}. First order ${firstPct} off.`;
 ---
 
 <Layout title="Pricing — VISUAILS" description={description}>

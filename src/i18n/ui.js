@@ -38,7 +38,12 @@ export const brandModelHref = '/custom-models';
 
 export const ui = {
   en: {
-    nav_drops: 'Drops',
+    // WAS 'Drops', in both the nav and the footer, and that is the label that
+    // taught every visitor the word before they reached a page that could
+    // explain it. "Drop" already means a collection going live; the studio
+    // used it for a work order, and the chrome repeated the collision on all
+    // 72 pages. 'What we make' names the menu by its contents instead.
+    nav_drops: 'What we make',
     nav_brandmodel: 'Your Brand Model',
     nav_pricing: 'Pricing',
     nav_gallery: 'Gallery',
@@ -57,13 +62,13 @@ export const ui = {
     drops: [
       ['Catalog', 'Front, back, detail and on-model, for every product'],
       ['Lifestyle', 'Your product in a styled scene, ready to post'],
-      ['Video', 'Short clips that move, on any product in the drop'],
+      ['Video', 'Short clips that move, on any product in the order'],
     ],
     mob_chat: 'Chat on WhatsApp',
     mob_notsure: 'Not sure yet?',
     mob_try: `Try a test sample · ${TEST_SAMPLE.en.price}`,
     foot_tagline: 'The visual studio for clothing brands and modern e-commerce — for founders who would rather grow than book another shoot.',
-    foot_drops: 'Drops',
+    foot_drops: 'What we make',
     foot_brandmodel: 'Your Brand Model',
     foot_aiact: 'AI Act',
     foot_company: 'Company',
@@ -71,7 +76,7 @@ export const ui = {
     foot_about: 'About',
     foot_how: 'How it works',
     foot_portal: 'The client portal',
-    foot_studio: 'How a drop is run',
+    foot_studio: 'How an order is run',
     foot_guides: 'Guides',
     // /compare is now "a shoot day, or a drop" (AUDIT §F). The AI-tools
     // argument still lives on that page at #ai-tools and in its <title>, so
@@ -89,6 +94,10 @@ export const ui = {
     // Deliberately plain. A banner that explains itself in one sentence and
     // offers two equal buttons is both the lawful shape and the one that gets
     // read; the "we value your privacy" preamble is neither.
+    // The mobile drawer's close button. It was an inline aria-label in
+    // Layout.astro and so shipped as English on all 36 NL pages — the only
+    // untranslated string left in the tree.
+    nav_close: 'Close menu',
     cc_title: 'Cookies on this site',
     cc_body: 'We use only what the site needs to work. Nothing that measures you is switched on unless you say so.',
     cc_accept: 'Accept analytics',
@@ -115,7 +124,7 @@ export const ui = {
     support_note: '',
   },
   nl: {
-    nav_drops: 'Drops',
+    nav_drops: 'Wat we maken',
     nav_brandmodel: 'Jouw merkmodel',
     nav_pricing: 'Prijzen',
     nav_gallery: 'Galerij',
@@ -125,13 +134,13 @@ export const ui = {
     drops: [
       ['Catalog', 'Voorkant, achterkant, detail en on-model, voor elk product'],
       ['Lifestyle', 'Je product in een gestylede scène, klaar om te posten'],
-      ['Video', 'Korte clips met beweging, op elk product in de drop'],
+      ['Video', 'Korte clips met beweging, op elk product in de bestelling'],
     ],
     mob_chat: 'Chat via WhatsApp',
     mob_notsure: 'Nog niet zeker?',
     mob_try: `Probeer een proefvisual · ${TEST_SAMPLE.nl.price}`,
     foot_tagline: 'De studio voor productvisuals voor kledingmerken en moderne e-commerce — voor ondernemers die liever groeien dan nóg een fotoshoot boeken.',
-    foot_drops: 'Drops',
+    foot_drops: 'Wat we maken',
     foot_brandmodel: 'Jouw merkmodel',
     foot_aiact: 'AI Act',
     foot_company: 'Bedrijf',
@@ -139,7 +148,7 @@ export const ui = {
     foot_about: 'Over ons',
     foot_how: 'Hoe het werkt',
     foot_portal: 'Het klantportaal',
-    foot_studio: 'Hoe een drop draait',
+    foot_studio: 'Hoe een bestelling draait',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
     foot_gallery: 'Galerij',
@@ -149,6 +158,7 @@ export const ui = {
     foot_privacy: 'Privacy',
     foot_terms: 'Algemene voorwaarden',
     foot_cookies: 'Cookies',
+    nav_close: 'Menu sluiten',
     cc_title: 'Cookies op deze site',
     cc_body: 'We gebruiken alleen wat de site nodig heeft om te werken. Niets dat jou meet staat aan, tenzij je dat zelf zegt.',
     cc_accept: 'Analytics accepteren',

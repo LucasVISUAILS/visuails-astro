@@ -4,22 +4,33 @@
 // land, and gathers the genuinely useful resources in one door. Each card
 // points at the best existing page; the hub itself is the SEO surface.
 import Layout from '../layouts/Layout.astro';
-import { perProduct, TEST_SAMPLE } from '../data/pricing.js';
+import {
+  euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel, TEST_SAMPLE,
+} from '../data/pricing.js';
 
 // The pricing card typed all three per-product figures by hand — including a
 // "video from €49" hedge the repricing had already retired — and the process
 // card promised a finished visual back "in about 24 hours". Both are facts
 // that live in pricing.js; typing them here is how a card outlives a reprice.
-const CAT = perProduct('catalog', 'en');
-const LIFE = perProduct('lifestyle', 'en');
-const VID = perProduct('video', 'en');
+//
+// Two of the three figures stopped being single figures in August 2026: photos
+// are priced on a ladder that falls with the count (section 0 of
+// src/data/pricing.js), and a hub card that names one rate for them is naming
+// the price of one product. A clip is NOT on that ladder — it is a flat rate,
+// the same inside an order as on its own — so it keeps its single figure, and
+// the card says which of the two kinds each one is.
+const CAT_ENTRY = euro(ladderRate('catalog', 1), 'en');
+const CAT_FLOOR = euro(ladderFloor('catalog'), 'en');
+const LIFE_ENTRY = euro(ladderRate('lifestyle', 1), 'en');
+const VID = euro(AMOUNT.video, 'en');
+const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 const SAMPLE = TEST_SAMPLE.en;
 
 const guides = [
   { title: 'How to photograph your product with your phone', desc: 'The four angles, the lighting, the background — everything that turns a phone photo into a campaign-ready result. The single most useful thing to read before you order.', href: '/upload-guidelines', tag: 'Checklist' },
   { title: 'From photo to publish — how it works', desc: 'What actually happens between sending one photo and getting a finished, human-checked visual back.', href: '/how-it-works', tag: 'Process' },
   { title: 'AI tools vs a done-for-you studio', desc: 'When a self-serve AI tool is genuinely enough — and where it quietly costs you in redos, off-brand colour and hours.', href: '/compare', tag: 'Compare' },
-  { title: 'What product visuals actually cost', desc: `Catalog at ${CAT.price} for a four-photo set, lifestyle ${LIFE.price}, video ${VID.price} a clip — and how that compares to a traditional shoot day.`, href: '/pricing', tag: 'Pricing' },
+  { title: 'What product visuals actually cost', desc: `Catalog from ${CAT_ENTRY} for a four-photo set and lifestyle from ${LIFE_ENTRY}, both falling to ${CAT_FLOOR} and below from ${FLOOR_FROM} products up; video a flat ${VID} a clip. All ${vatLabel('excl', 'en')}.`, href: '/pricing', tag: 'Pricing' },
   { title: 'Questions, answered', desc: 'Payment, VAT, models, delivery, what if something is off — the practical things brands ask before their first order.', href: '/faq', tag: 'FAQ' },
 ];
 ---

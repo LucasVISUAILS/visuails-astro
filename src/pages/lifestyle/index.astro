@@ -10,15 +10,22 @@
 //
 // The old description was 219 characters (the site's second worst) and named a
 // delivery time. It is built from pricing.js now.
+//
+// It quoted one rate until August 2026. A lifestyle carousel is priced on a
+// ladder now (section 0 of src/data/pricing.js), so both ends are named and
+// the turnaround gives way instead — it is a tier fact, restated in the trust
+// row, and only true under WINDOW_THRESHOLD products.
 import Layout from '../../layouts/Layout.astro';
 import LifestylePage from '../../components/LifestylePage.astro';
-import { perProduct, turnaround } from '../../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
-const item = perProduct('lifestyle', 'en');
+const FLOOR_FROM = LADDER.lifestyle[LADDER.lifestyle.length - 1][0];
 
 const description =
   `Three photos of one product in one styled look — a carousel ready to post. ` +
-  `${item.price} per product. ${turnaround('unattended', 'en')}.`;
+  `${euro(ladderRate('lifestyle', 1), 'en')} a product, ` +
+  `${euro(ladderFloor('lifestyle'), 'en')} from ${FLOOR_FROM} up, ` +
+  `${vatLabel('excl', 'en')}.`;
 ---
 
 <Layout

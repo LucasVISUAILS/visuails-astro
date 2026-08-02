@@ -14,17 +14,26 @@
 // Names and traits are ours, not clients' — the "never invent client names"
 // rule is about attribution, and nothing here is attributed to anyone. The
 // photos are our own output.
+// `w`/`h` are the file's INTRINSIC pixel size, and they are here rather than
+// typed at each call site because they were being typed at each call site and
+// getting it wrong: /models declared 600x750 for a 1195x1600 file, the
+// homepage rail declared 800x1071 for all ten when only Rae is that size.
+// Nothing looked squashed — every one of them is object-fit: cover — but the
+// box the browser reserved before the bytes landed had the wrong aspect ratio,
+// which is layout shift on exactly the images a visitor is looking at.
+// Rae is genuinely a different size from the other nine. That is the reason
+// this cannot be one shared constant.
 export const ROSTER = [
-  { name: 'Aaron',  photo: '/img/model-aaron.webp',  traits: ['warm', 'approachable'] },
-  { name: 'Ava',    photo: '/img/model-ava.webp',    traits: ['editorial', 'elegant'] },
-  { name: 'Elias',  photo: '/img/model-elias.webp',  traits: ['refined', 'classic'] },
-  { name: 'Ryan',   photo: '/img/model-ryan.webp',   traits: ['sporty', 'energetic'] },
-  { name: 'Dana',   photo: '/img/model-dana.webp',   traits: ['confident', 'modern'] },
-  { name: 'Lisa',   photo: '/img/model-lisa.webp',   traits: ['natural', 'approachable'] },
-  { name: 'Maegan', photo: '/img/model-maegan.webp', traits: ['bold', 'statement'] },
-  { name: 'Rae',    photo: '/img/model-rae.webp',    traits: ['soft', 'understated'] },
-  { name: 'Fabi',   photo: '/img/model-fabi.webp',   traits: ['clean', 'contemporary'] },
-  { name: 'Seme',   photo: '/img/model-seme.webp',   traits: ['sharp', 'editorial'] },
+  { name: 'Aaron',  photo: '/img/model-aaron.webp',  traits: ['warm', 'approachable'], w: 1195, h: 1600 },
+  { name: 'Ava',    photo: '/img/model-ava.webp',    traits: ['editorial', 'elegant'], w: 1195, h: 1600 },
+  { name: 'Elias',  photo: '/img/model-elias.webp',  traits: ['refined', 'classic'], w: 1195, h: 1600 },
+  { name: 'Ryan',   photo: '/img/model-ryan.webp',   traits: ['sporty', 'energetic'], w: 1195, h: 1600 },
+  { name: 'Dana',   photo: '/img/model-dana.webp',   traits: ['confident', 'modern'], w: 1195, h: 1600 },
+  { name: 'Lisa',   photo: '/img/model-lisa.webp',   traits: ['natural', 'approachable'], w: 1195, h: 1600 },
+  { name: 'Maegan', photo: '/img/model-maegan.webp', traits: ['bold', 'statement'], w: 1195, h: 1600 },
+  { name: 'Rae',    photo: '/img/model-rae.webp',    traits: ['soft', 'understated'], w: 800, h: 1071 },
+  { name: 'Fabi',   photo: '/img/model-fabi.webp',   traits: ['clean', 'contemporary'], w: 1195, h: 1600 },
+  { name: 'Seme',   photo: '/img/model-seme.webp',   traits: ['sharp', 'editorial'], w: 1195, h: 1600 },
 ];
 
 // Trait keys -> label, per language. Kept here rather than duplicated in
