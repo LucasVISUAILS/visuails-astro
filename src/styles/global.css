@@ -89,6 +89,37 @@
   --grad-2: linear-gradient(135deg, #9A6BF5 0%, #E86BB0 55%, #F2955C 100%);
   --grad-ink: #08090B;
 
+  /* ---- the bright tile fills --------------------------------------------
+     Lucas: *"de tegels (met bijvoorbeeld headers en uitleg) vellere kleuren"*,
+     like OPP. Four, and they are the gradients' own hues so the two devices
+     read as one family rather than as two palettes.
+
+     THEY ARE LIGHTER THAN THE GRADIENT STOPS THEY COME FROM, AND THAT IS
+     MEASURED, NOT TASTE. A tile carries a heading AND body copy, so it needs a
+     three-step ink ramp, not just a legible headline. Near-black at 0.68 alpha
+     — the muted step — only clears 4.5:1 once the fill itself is about 8:1
+     against near-black. The gradient stops are 5.41 (#5B7CFA) and 5.50
+     (#9A6BF5): beautiful, and they fail body copy by a full step. Lifting L in
+     OKLCH with hue and chroma held fixes that without changing the colour's
+     identity.
+
+     Measured on each fill, ink-1 / ink at .82 / ink at .68, and the fill
+     against the page ground:
+       blue   #7CA2FF   8.03 · 6.20 · 4.55  ·  8.03 on ground
+       violet #BC8FFF   8.07 · 6.23 · 4.57  ·  8.07
+       pink   #F678BD   7.91 · 6.18 · 4.56  ·  7.91
+       coral  #E98D54   7.97 · 6.20 · 4.56  ·  7.97
+     Every one carries the full ramp, and every one clears 3:1 against the
+     ground so it reads as an object rather than as a stain.
+
+     SPARINGLY. At most two coloured tiles in one grid — see the fence on
+     .tile-c* below. Four vivid tiles in a row is a colour swatch, not a page,
+     and this brand's whole argument is control. */
+  --fill-blue:   #7CA2FF;
+  --fill-violet: #BC8FFF;
+  --fill-pink:   #F678BD;
+  --fill-coral:  #E98D54;
+
   /* ---- radius: three steps, and only three ------------------------------
      16 / 8 / 4. There is no pill: Lucas asked for moderate rather than
      OPP-exact, and a fully round control next to an 8px input is the
@@ -629,11 +660,34 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    ------------------------------------------------------------------------ */
 .ground-espresso { background: var(--bg); color: var(--ink-2); }
 
-.on-paper {
-  background: var(--bg-raise);
-  --bg: var(--bg-raise);
-  --surface: var(--surface-2);
-  box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
+/* ---- ONE GROUND, AND THE BANDS THAT USED TO INTERRUPT IT -------------------
+   Lucas: *"ik wil dat de achtergrond van de website 1 kleur wordt"*.
+
+   The page was three values deep: --bg-0 for most of it, --bg-raise for a
+   banded section, #000 for the footer, plus four mist tints that had already
+   collapsed onto the raise. Each step was small enough to read as a seam
+   rather than as a decision — a slightly-different dark is not a device, it is
+   a rendering doubt.
+
+   So every full-width GROUND is now --bg-0 and nothing else. What used to
+   separate sections is now carried by the objects on top of them: a tile has a
+   fill, a panel has a gradient, and the space between sections is space.
+
+   The classes stay rather than being deleted from sixty markup files, and they
+   are no-ops on purpose — a removed class still sitting in the markup is a
+   silent trap for whoever reads it next. They come out with the pages.
+
+   NOTE FOR THE NEXT PERSON: if a section needs to be distinguished from the
+   one above it, the answer is not to re-introduce a second ground. It is a
+   tile, a panel, a rule, or more space. That is the whole point of this
+   block. */
+.on-paper,
+.well-deep,
+.well-raise,
+.mist-teal, .mist-clay, .mist-slate, .mist-stone {
+  background: var(--bg-0);
+  --bg: var(--bg-0);
+  box-shadow: none;
 }
 
 /* ---- the gradient panel ----------------------------------------------------
@@ -653,8 +707,21 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
    Scope, and it is a fence: closing panels and at most one or two tiles per
    page. Two gradient panels in one viewport is a background, not an accent. */
+/* ---- .on-bright — ONE inversion, worn by every bright surface -------------
+   Everything below .panel-grad used to be .panel-grad's private business: a
+   bright ground inverts the whole ink ramp, so a gradient panel restated the
+   inks, the lines, the accent and all six button tokens.
+
+   The coloured tiles need exactly the same restatement. Copying that block a
+   second time is how the two drift — one gets a fixed line value, the other
+   does not, and six weeks later a tile has an invisible hairline nobody can
+   explain. So the inversion is its own scope now, and both wear it.
+
+   Read it as: "the ground under me is BRIGHT; recompute everything that
+   assumed near-black". It sets no background of its own — what colour the
+   bright thing is, is the caller's business. */
+.on-bright,
 .panel-grad {
-  background: var(--grad-1);
   color: rgb(8 9 11 / 0.82);
 
   --bg:          transparent;
@@ -694,13 +761,71 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --btn-2nd-border:        rgb(8 9 11 / 0.42);
   --btn-2nd-border-hover:  rgb(8 9 11 / 0.70);
 }
+.panel-grad   { background: var(--grad-1); }
 .panel-grad-2 { background: var(--grad-2); }
 
-/* Two named dark steps for a band that wants separation without a scope. */
-.well-deep  { background: var(--bg-deep);   --bg: var(--bg-deep); }
-.well-raise { background: var(--bg-raise);  --bg: var(--bg-raise); }
-/* The old mist classes still appear in markup; they resolve to the raise. */
-.mist-teal, .mist-clay, .mist-slate, .mist-stone { background: var(--bg-raise); --bg: var(--bg-raise); }
+/* ---- the coloured tiles ----------------------------------------------------
+   A tile with a heading and a paragraph, on one of the four bright fills. It
+   inherits the whole inversion from .on-bright, so the only thing each class
+   below does is name a colour — which is the test of whether that scope was
+   factored correctly.
+
+   THE FENCE, and it is the reason this reads as OPP rather than as a paint
+   chart: **at most two coloured tiles in one grid, and never two of the same
+   hue.** OPP's grids are mostly dark with one or two bright plates carrying
+   the thing they most want read. Colour here is emphasis, and emphasis that is
+   applied to everything is applied to nothing.
+
+   Photography stays on dark tiles. A vivid fill behind a photograph competes
+   with it, and the photograph is what this studio is selling. */
+/* DOUBLED CLASS, DELIBERATELY: `.tile.tile-c-blue`, not `.tile-c-blue`.
+   `.tile` sets `background: var(--surface)` and lives LOWER in this file, so at
+   equal specificity it wins on source order and a coloured tile renders dark
+   with near-black text on it — unreadable, and it looks like the scope failed
+   rather than the background. That exact bug shipped once here already
+   (.hv-clay losing to .hv-tile-v, section 18), so this does not rely on
+   ordering: the doubled class outranks .tile wherever either one moves to. */
+.tile.tile-c-blue   { background: var(--fill-blue); }
+.tile.tile-c-violet { background: var(--fill-violet); }
+.tile.tile-c-pink   { background: var(--fill-pink); }
+.tile.tile-c-coral  { background: var(--fill-coral); }
+.tile.tile-c-grad   { background: var(--grad-1); }
+.tile.tile-c-grad-2 { background: var(--grad-2); }
+
+/* A bright tile's own caption rule. --line inside .on-bright is already an ink
+   alpha, so this needs no override — it is here to say that out loud, because
+   the instinct on seeing a bright tile is to hand it a white hairline. */
+.on-bright .tile-foot { box-shadow: inset 0 1px 0 var(--line); margin-top: auto; }
+
+/* ---- coloured words, the way OPP colours a headline ------------------------
+   Their hero reads "Split, charge, hold en release fondsen" with the first
+   four words in four different colours. It works because the colours land on
+   the words that carry the meaning, and the rest of the line stays white.
+
+   These are the FILL values used as INK, which is only legal on the dark
+   ground: #7CA2FF measures 8.03:1 there, #BC8FFF 8.07, #F678BD 7.91,
+   #E98D54 7.97 — all well past the 4.5 body floor, let alone the 3.0 a
+   display heading needs. On a bright tile they would be invisible, which is
+   why they are scoped OUT of .on-bright below rather than left to be
+   discovered. */
+/* DOUBLED, for the same reason .tile.tile-c-* is: these have to win against
+   component rules like `.hv-stat dt { color: var(--ink) }`, which is a
+   descendant selector and therefore outranks a single class. `.w-blue.w-blue`
+   is (0,2,0) and clears it without reaching for !important — which would win
+   the argument and then lose the next one, inside .on-bright, where these have
+   to give way. */
+.w-blue.w-blue     { color: var(--fill-blue); }
+.w-violet.w-violet { color: var(--fill-violet); }
+.w-pink.w-pink     { color: var(--fill-pink); }
+.w-coral.w-coral   { color: var(--fill-coral); }
+.on-bright .w-blue.w-blue,
+.on-bright .w-violet.w-violet,
+.on-bright .w-pink.w-pink,
+.on-bright .w-coral.w-coral { color: inherit; }
+
+/* .well-deep / .well-raise / .mist-* are declared with .on-paper above, all
+   resolving to the one ground. They are not repeated here; a second
+   declaration lower in the file is exactly how the radius bug happened. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SECTION PRIMITIVES — section 17
@@ -930,22 +1055,12 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
    Use them alternating, never two of the same in a row, and never with a
    border on top — the tint IS the separation. */
-.mist-teal  { background: var(--mist-teal); }
-.mist-clay  { background: var(--mist-clay); }
-.mist-slate { background: var(--mist-slate); }
-.mist-stone { background: var(--mist-stone); }
-.mist-teal, .mist-clay, .mist-slate, .mist-stone { --bg: currentcolor; }
-.mist-teal  { --bg: var(--mist-teal); }
-.mist-clay  { --bg: var(--mist-clay); }
-.mist-slate { --bg: var(--mist-slate); }
-.mist-stone { --bg: var(--mist-stone); }
-/* A card or well sitting ON a mist has to step off it, not repeat it: on a
-   tinted ground the neutral surface fill is what reads as "raised". */
-.mist-teal .card, .mist-clay .card, .mist-slate .card, .mist-stone .card,
-.mist-teal .well, .mist-clay .well, .mist-slate .well, .mist-stone .well {
-  --surface: var(--paper-lift);
-  --surface-2: var(--paper);
-}
+/* SUPERSEDED. The four tints were four grounds; there is one ground now, and
+   these four classes are declared with .on-paper near the top of this file as
+   no-ops. The block that used to set four backgrounds and four --bg values
+   here is gone rather than left to fight with that one — two declarations of
+   the same class in one file, the lower one winning silently, is precisely how
+   the whole site shipped hard-edged for a build. */
 
 /* Buttons */
 /* ---- buttons — brief §7: two sizes, three fills, all sharp-cornered -------

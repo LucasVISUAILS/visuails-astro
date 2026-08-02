@@ -159,8 +159,40 @@ export async function onRequestGet(context) {
   out.probes.D_realPayment = await probe('POST', '/payments', key, fullBody);
   out.probes.D_realPayment.urlsSent = { redirectUrl: fullBody.redirectUrl, webhookUrl: fullBody.webhookUrl };
 
+  // ── WHICH METHODS, AND AT WHICH AMOUNT ────────────────────────────────────
+  // Added because the checkout showed two rows and that looked thin. It is a
+  // fair worry and the answer is not a guess, it is a query: Mollie filters the
+  // method list BY AMOUNT, because most methods have a minimum. €0.99 is the
+  // smallest payment the site ever makes, so the test sample is the worst case
+  // the list will ever look — a €1,850 drop is a different question entirely.
+  //
+  // Asking it both ways turns "are there too few methods?" into a comparison
+  // Lucas can read off his own account instead of taking my word for it.
+  out.methods = {
+    note: 'Mollie filters methods by amount. The test sample is the smallest payment the site makes, so this is the shortest the list ever gets.',
+    at_0_99: await methodList(key, AMOUNT.testSample.toFixed(2)),
+    at_full_drop: await methodList(key, AMOUNT.fullDrop.toFixed(2)),
+  };
+
   out.reading = read(out);
   return json(out);
+}
+
+/** The methods Mollie would actually offer for a payment of this size. */
+async function methodList(key, value) {
+  const res = await probe('GET', `/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, key);
+  if (res.threw || res.status !== 200) return { amount: value, error: res.error || `HTTP ${res.status}` };
+  // probe() summarises the body; ask again for the names, which is the only
+  // thing worth reading here.
+  const full = await fetch(`${MOLLIE_API}/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, {
+    headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+  }).then((r) => r.json()).catch(() => null);
+  const list = full?._embedded?.methods || [];
+  return {
+    amount: `€${value}`,
+    count: list.length,
+    methods: list.map((m) => `${m.description} (${m.id})`),
+  };
 }
 
 async function probe(method, path, key, body) {
@@ -218,25 +250,46 @@ function read(out) {
     return `The stored key has a problem before anything is sent: ${out.key.problems.join('; ')}. ` +
       `Set it again — preferably from the Cloudflare dashboard rather than a terminal — then redeploy and reload this.`;
   }
+  // WHAT MAKES A PROBE "GOOD" IS A STRUCTURED ANSWER, NOT A PARTICULAR STATUS.
+  // This first read on `A` keyed on 401, on the assumption that a wrong key
+  // gets you "Unauthorized". It does not: Mollie answers a syntactically
+  // unacceptable key with **400 "Invalid Authorization header"** in JSON. So
+  // the real check came back with every probe green and the verdict
+  // "Inconclusive", which is the least useful thing a diagnostic can do.
+  //
+  // The distinction that actually matters here is not 400-vs-401. It is
+  // WHETHER MOLLIE'S APPLICATION ANSWERED AT ALL — a JSON body means the
+  // request got through the front door and was judged on its merits; an empty
+  // body means it was refused before that. `isJson` is that question, and the
+  // logic below asks it instead.
+  const reached = (p) => p && !p.threw && p.isJson;
+  const refused = (p) => p && !p.threw && !p.isJson;
+
   if (A && A.threw) return `Could not reach api.mollie.com from this Function at all (${A.error}). This is a connectivity problem, not a payment one.`;
-  if (empty400(A)) {
-    return 'Probe A got an EMPTY 400 with a key that is deliberately wrong — so it is not our key and not our payload. ' +
-      'Requests from this Pages Function are being rejected before Mollie sees them. This is the same shape as the old ' +
-      'Stripe failure and belongs in a Cloudflare support ticket, with the cf-ray above.';
+  if (refused(A)) {
+    return `Probe A was refused with a ${A.status} and no JSON, using a key that is deliberately wrong — so it is neither our key nor our payload. ` +
+      `Requests from this Pages Function are being rejected before Mollie's application sees them. Headers: ${A.headers}. ` +
+      `That is the same shape as the old Stripe failure; take the cf-ray to Cloudflare.`;
   }
-  if (A && A.status === 401) {
-    if (empty400(B)) return 'Transport is fine (A got a clean 401) but the real key produces an empty 400 — the key itself is carrying something the wire will not accept. Re-paste it by typing rather than pasting, then redeploy.';
-    if (B && B.status === 401) return 'The key is rejected by Mollie as unauthorised. It is well-formed but not valid for this account — check you copied the right one, and that the account is activated.';
-    if (B && B.status === 200) {
-      if (empty400(C)) return 'Auth works (B is 200) but even a minimal payment gets an empty 400 — the POST body or the POST itself is the problem, not the key.';
-      if (C && C.status >= 400) return `A minimal payment was refused: ${JSON.stringify(C.body)}. That is Mollie telling us what is wrong — read the field.`;
-      if (C && C.status === 201) {
-        if (empty400(D)) return 'A minimal payment works, the real one gets an empty 400 — so it is one of the three fields the real one adds: webhookUrl, locale or metadata. The URLs actually sent are in D.urlsSent.';
-        if (D && D.status >= 400) return `The real payload was refused: ${JSON.stringify(D.body)}. Field to look at: ${D.body?.field || 'see detail'}.`;
-        if (D && D.status === 201) return 'All four probes pass. Mollie is working from this deployment right now — whatever caused the earlier 400 is not reproducing. Check whether the failing attempt ran on an older deployment, or before the key was set.';
-      }
-    }
+
+  // A reached Mollie. Everything from here is about our own key and payload.
+  if (refused(B)) return `Transport is fine — A got a structured ${A.status} back — but the real key is refused with a ${B.status} and no JSON. The key is carrying a character the wire will not accept. Re-set it from the Cloudflare dashboard and redeploy.`;
+  if (B && B.status === 401) return 'Mollie reached, but the key is not valid for this account. Check you copied the right one and that the account is activated.';
+  if (B && B.status >= 400) return `Mollie refused the key: ${JSON.stringify(B.body)}.`;
+  if (B && B.status !== 200) return `Unexpected ${B.status} on a plain authenticated read. Body: ${JSON.stringify(B.body)}.`;
+
+  if (refused(C)) return 'Auth works, but even a minimal payment is refused with no JSON — the POST itself is the problem, not the key.';
+  if (C && C.status >= 400) return `A minimal payment was refused: ${JSON.stringify(C.body)}. That is Mollie telling us what is wrong — read the field.`;
+  if (refused(D)) return 'A minimal payment works; the real one is refused with no JSON. So it is one of the three fields the real one adds: webhookUrl, locale or metadata. The URLs actually sent are in D.urlsSent.';
+  if (D && D.status >= 400) return `The real payload was refused: ${JSON.stringify(D.body)}. Field to look at: ${D.body?.field || 'see detail'}.`;
+
+  if (C?.status === 201 && D?.status === 201) {
+    return `All four probes pass and Mollie created both test payments (${C.body?.id}, ${D.body?.id}, mode ${D.body?.mode}). ` +
+      `Payment creation works from this deployment. Those two are diagnostic payments — they sit "open" in your Mollie dashboard, ` +
+      `nobody will pay them, and they expire on their own. Next step is a real run through /test-sample; this endpoint has done its job ` +
+      `and can be deleted.`;
   }
+
   return 'Inconclusive — send the whole of this JSON over and I will read it.';
 }
 

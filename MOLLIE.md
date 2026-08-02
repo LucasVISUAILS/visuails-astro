@@ -172,7 +172,37 @@ so Mollie's edge rejected the request at the HTTP layer — before Mollie's
 application ran, and therefore without Mollie's JSON error shape. **400 Bad
 Request, empty body.** Exactly the symptom, for exactly the predicted reason.
 
-### This is almost certainly the Stripe story too
+### Confirmed on 2 August 2026, 09:30, after re-setting the key
+
+All four probes green from production, and two of the numbers settle the story
+rather than merely passing:
+
+| Probe | Result |
+|---|---|
+| A · a deliberately wrong key | **400** `Invalid Authorization header`, **as JSON**, `server=cloudflare` |
+| B · the real key, GET | **200**, 3 payment methods enabled |
+| C · minimal payment | **201** `tr_L2iT…` mode `test` |
+| D · the exact production payload | **201** `tr_rNy2…` mode `test` |
+
+**Probe A is the proof.** A key that is wrong but *well-formed* gets a
+structured JSON answer naming the problem. The failure being chased returned
+nothing at all. Same endpoint, same Function, same deployment — the only
+difference was a byte that is illegal in a header. That is the difference
+between "Mollie judged our request and refused it" and "our request never
+reached Mollie to be judged".
+
+**`server=cloudflare` on every probe** — Mollie's own API sits behind
+Cloudflare. So the empty 400 was Cloudflare's edge in front of Mollie rejecting
+a malformed header, which is exactly the layer that answers with no body.
+
+Two side notes from the same run. `RESEND_API_KEY` is intact (36 chars, `re_`,
+all printable), so the confirmation emails were never affected. And
+`PORTAL_SALT` reads as *not set*, which is **correct** — `src/lib/ratelimit.js`
+generates it once and stores it in `app_settings` precisely so that forgetting
+an environment variable cannot silently weaken the portal; the env var only
+exists as an override.
+
+### And this is almost certainly the Stripe story too
 
 The Stripe integration on this project died with "blank HTTP 400s when called
 from Cloudflare, never from Stripe's CLI, never from local Node", was escalated
@@ -196,6 +226,16 @@ secret only reaches deployments created after it.
 If you would rather stay in a terminal, do not use `cmd.exe` with Ctrl+V. Use
 **right-click** to paste in `cmd.exe`, or use Windows Terminal / PowerShell,
 where Ctrl+V is a real paste.
+
+### When to delete the diagnostic
+
+`functions/admin/debug-mollie.js` has done its job once the €0.99 walkthrough
+above passes **and** you have read `methods.at_full_drop` once. It is admin-gated and leaks nothing, so there is no urgency — but
+a debug endpoint that outlives its question is one nobody remembers the purpose
+of. Delete it, and `functions/api/debug-egress-ip.js` with it: that one was
+opened for the Stripe support ticket that this finding retires.
+
+`tests/debug-mollie-reading.test.mjs` goes with it.
 
 ### What now stops it happening quietly again
 
@@ -311,6 +351,62 @@ than the secret; a secret only reaches deployments created after it.
 
 ---
 
+## The checkout page — what is Mollie's, what is yours
+
+The page the customer lands on is **Mollie's hosted checkout**, on
+`mollie.com`, not a page this site controls. Two things about it come up
+immediately and they have different answers.
+
+### "It looks like a test page"
+
+Only one element of it is: the orange **"Note: this is a testmode payment"**
+banner. That is gone in live mode. Everything else — the layout, the merchant
+name at the top, the amount, the method rows — is exactly what a paying
+customer sees.
+
+Which means the sparseness is not a test artefact, it is an unconfigured
+profile. What is configurable, in the Mollie web app under the profile's
+checkout settings, with a live preview before publishing:
+
+- **a logo** — currently absent, which is most of why it reads as generic
+- **the payment button colour**
+- **legal links** — terms and privacy, which this site has at `/terms` and
+  `/privacy` and which a first-time buyer being asked for card details will
+  look for
+
+And the merchant name currently renders as **"Visuails"**, not VISUAILS. That
+is the profile name in Mollie, and it is the brand's own name set wrong on the
+one page where a stranger decides whether to trust it. Fix that first; it costs
+nothing.
+
+If the checkout ever needs to happen on `visuails.com` itself rather than on
+Mollie's domain, that is **Mollie Components** — card fields embedded in our own
+page. It is a real option and a real amount of work, and it moves this site into
+PCI scope in a way the hosted page deliberately avoids. Not now, and not for a
+€0.99 sample.
+
+### "There are only two payment methods"
+
+Partly the amount, partly the account.
+
+**Mollie filters the method list by amount**, because most methods have a
+minimum. €0.99 is the smallest payment this site ever makes, so the test sample
+is the *shortest that list will ever be*. A €1,850 full drop is a different
+question, and `/admin/debug-mollie` now answers it by asking Mollie both ways —
+`methods.at_0_99` against `methods.at_full_drop`, straight from the account, no
+guessing.
+
+**And live mode is not test mode.** Test mode makes methods available
+immediately; in live mode each one is enabled — and for several, applied for
+and approved — per account in the dashboard. Bancontact, PayPal, Apple Pay,
+Google Pay, pay-later and the country-specific bank methods are all things to
+turn on deliberately. For a Dutch fashion brand selling into the EU, iDEAL and
+cards carry the domestic traffic; Bancontact matters the moment a Belgian buys,
+and pay-later is worth considering at drop prices where €1,850 is a real
+decision rather than an impulse.
+
+---
+
 ## What the handler does with each status
 
 `paid` is the only one that touches the order.
@@ -380,8 +476,13 @@ Run it after touching either file. It needs no network and no credentials.
 1. Swap the secret for the `live_` key and redeploy. That is the only code-side
    change — the same endpoints serve both modes.
 2. Enable the payment methods you want in Mollie's dashboard. Test mode
-   activates them all; live mode does not.
-3. Do one real €0.99 payment against your own card or iDEAL and confirm the
+   activates them all; live mode does not — several need applying for. Check
+   what you actually have with `methods.at_full_drop` in the diagnostic before
+   assuming.
+3. Set the profile's checkout branding — logo, button colour, legal links —
+   and correct the merchant name from "Visuails" to VISUAILS. See "The checkout
+   page" above.
+4. Do one real €0.99 payment against your own card or iDEAL and confirm the
    timeline event has **no** `TEST MODE` suffix. That absence is the check.
-4. Existing test rows in D1 stay `paid` and stay labelled. Clear them out if a
+5. Existing test rows in D1 stay `paid` and stay labelled. Clear them out if a
    clean payment history matters to you.

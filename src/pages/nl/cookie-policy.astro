@@ -21,7 +21,14 @@ import Layout from '../../layouts/Layout.astro';
       <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Essentieel</strong> — basisfunctionaliteit en beveiliging. Altijd aan.</span></li>
       <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Analytics</strong> — anonieme gebruiksmeting. Alleen met jouw toestemming.</span></li>
     </ul></div>
-    <div><h2>Cookies beheren</h2><p style="margin-top:.6rem">Je kunt niet-essentiële cookies accepteren of weigeren wanneer daarom wordt gevraagd, en cookies op elk moment wissen of blokkeren in je browserinstellingen. Het blokkeren van essentiële cookies kan invloed hebben op hoe de site werkt.</p></div>
+    <div><h2>Wat we vandaag daadwerkelijk plaatsen</h2><p style="margin-top:.6rem">Ze bij naam noemen zegt meer dan categorieën beschrijven, dus hier staan ze voluit. Dit is de volledige lijst.</p>
+    <ul class="checklist" style="margin-top:1rem">
+      <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_account</code></strong> — houdt je ingelogd in het klantenportaal nadat je je magic link hebt gevolgd. Noodzakelijk. Verloopt met de sessie.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_admin</code></strong> — de login van het studiodashboard zelf. Noodzakelijk. Wordt nooit op het apparaat van een bezoeker gezet.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — onthoudt je keuze uit de cookiebanner, zodat we ophouden met vragen. Noodzakelijk, en de reden dat een weigering blijft staan. Verloopt na 12 maanden, waarna we het opnieuw vragen.</span></li>
+    </ul>
+    <p style="margin-top:1rem">Dat zijn ze alle drie. Geen advertentiecookies, geen trackingpixels, geen embeds van derden, en geen analytics tenzij jij die aanzet — en dan is het Cloudflare Web Analytics, dat zelf cookieloos is en niets op je apparaat plaatst. We delen met niemand iets.</p></div>
+    <div><h2>Cookies beheren</h2><p style="margin-top:.6rem">Gebruik de link <button type="button" class="legal-cc" data-cc-reopen>cookievoorkeuren</button> — die staat in de voettekst van elke pagina — om je antwoord op elk moment te wijzigen, inclusief het intrekken van een ja. Weigeren is precies zo makkelijk als accepteren en kost je niets: de site werkt in beide gevallen identiek. Je kunt cookies ook wissen of blokkeren in je browserinstellingen, al zorgt het blokkeren van de noodzakelijke ervoor dat het klantenportaal je niet meer onthoudt.</p></div>
     <div><h2>Contact</h2><p style="margin-top:.6rem">Vragen over dit beleid? Mail <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Zie ook ons <a href="/nl/privacy">Privacybeleid</a>.</p></div>
   </div></section>
 </Layout>
@@ -33,5 +40,9 @@ import Layout from '../../layouts/Layout.astro';
   .legal h2 { font-size: 1.3rem; }
   .legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
   .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+  /* The withdrawal control inside body copy. It is a <button> because it opens
+     a panel, and it is styled as the link beside it because a button that
+     looks like a button in the middle of a sentence reads as an advert. */
+  .legal-cc { background: none; border: 0; padding: 0; font: inherit; color: var(--fill-blue); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
   .legal-note { padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
 </style>

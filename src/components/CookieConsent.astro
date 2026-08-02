@@ -1,0 +1,200 @@
+---
+// VISUAILS — cookie consent. Section 19.
+//
+// ── WHAT THIS SITE ACTUALLY SETS, WHICH IS THE POINT ────────────────────────
+// Two cookies, both strictly necessary: `vis_admin` (studio dashboard session)
+// and `vis_account` (client magic-link session). No localStorage anywhere. No
+// third-party embeds. The Cloudflare Web Analytics beacon exists in Layout.astro
+// but its token is empty, so it does not load.
+//
+// Strictly necessary cookies need no consent, so at the moment this banner is
+// not legally required — and the honest response to that is NOT to skip it,
+// because `/cookie-policy` already promises the visitor "you can accept or
+// decline non-essential cookies when asked". The policy described a mechanism
+// that did not exist. Either the policy or the site was lying; this is the site
+// catching up.
+//
+// It is also not theatre. The analytics beacon is gated on the answer: paste a
+// token into CF_ANALYTICS_TOKEN and it will not load for anyone who has not
+// said yes. A banner whose answer changes nothing is worse than no banner,
+// because it trains people that the question is fake.
+//
+// ── THE RULES IT IS BUILT TO, AND WHERE THEY COME FROM ──────────────────────
+// The Dutch AP (Autoriteit Persoonsgegevens) has been writing to organisations
+// about misleading banners. Their requirements, and how each is met here:
+//
+//   "The reject button shouldn't be less prominent than the button to accept."
+//        Both buttons are the same size, the same weight, the same shape, side
+//        by side, in the same visual tier. Neither is a text link. Reject is
+//        FIRST in the DOM, so it is also first for a screen reader and for the
+//        tab order.
+//   "Consent can't be pre-selected."
+//        The analytics switch is off, and off is what "no answer yet" means.
+//   "Non-essential cookies may only be placed if the visitor has given consent."
+//        The beacon is written by JS after a yes, never rendered server-side.
+//   "Accepting cookies may not be a condition for using the website."
+//        No overlay, no scroll lock, no dismissal requirement. It is a bar at
+//        the bottom of a page that works exactly the same whether you answer it
+//        or ignore it forever.
+//   "It must be possible to easily withdraw consent at any time."
+//        A permanent "Cookie preferences" link in the footer reopens it, and
+//        the dialog shows the current state rather than a fresh form.
+//
+// Plus: consent is stored for 12 months and then re-asked, and the choice is
+// versioned — CONSENT_VERSION below — so adding a purpose later re-asks
+// everyone rather than silently inheriting a yes given to a different question.
+//
+// ── WHY IT IS NOT A <dialog> FOR THE BAR ────────────────────────────────────
+// A modal <dialog> makes the page inert, which is a cookie wall by mechanism
+// even when the copy is polite. The bar is an ordinary landmark. The PREFERENCES
+// panel is a real modal <dialog> — by then the visitor has chosen to open it.
+import { useTranslations } from '../i18n/ui.js';
+
+interface Props { lang: string; policyHref: string; }
+const { lang, policyHref } = Astro.props;
+const t = useTranslations(lang);
+---
+
+{/* hidden until the script decides — see the no-JS note in the style block */}
+<aside class="cc" id="cc-bar" data-cc-bar hidden aria-label={t('cc_title')}>
+  <div class="cc-in">
+    <p class="cc-copy">
+      <b>{t('cc_title')}</b>
+      <span>{t('cc_body')} <a href={policyHref}>{t('cc_policy')}</a></span>
+    </p>
+    <div class="cc-actions">
+      {/* Reject first, in the DOM and in the tab order. Same class as accept:
+          if one ever grows a style the other does not, that is the bug. */}
+      <button type="button" class="btn cc-btn" data-cc="reject">{t('cc_reject')}</button>
+      <button type="button" class="btn cc-btn" data-cc="accept">{t('cc_accept')}</button>
+      <button type="button" class="cc-link" data-cc="open">{t('cc_manage')}</button>
+    </div>
+  </div>
+</aside>
+
+<dialog class="cc-dialog" id="cc-prefs" aria-labelledby="cc-prefs-h">
+  <form method="dialog" class="cc-prefs">
+    <h2 id="cc-prefs-h">{t('cc_prefs_title')}</h2>
+    <p class="cc-prefs-intro">{t('cc_prefs_intro')}</p>
+
+    <div class="cc-row">
+      <div>
+        <b>{t('cc_nec_h')}</b>
+        <p>{t('cc_nec_n')}</p>
+      </div>
+      {/* Not a disabled checkbox pretending to be a choice — a stated fact.
+          A greyed-out ticked box reads as "we ticked this for you". */}
+      <span class="cc-always">{t('cc_always')}</span>
+    </div>
+
+    <div class="cc-row">
+      <div>
+        <label for="cc-analytics"><b>{t('cc_ana_h')}</b></label>
+        <p>{t('cc_ana_n')}</p>
+      </div>
+      <input type="checkbox" id="cc-analytics" class="cc-check" data-cc-analytics />
+    </div>
+
+    <div class="cc-prefs-actions">
+      <button type="button" class="btn cc-btn" data-cc="close">{t('cc_cancel')}</button>
+      <button type="button" class="btn cc-btn cc-btn-primary" data-cc="save">{t('cc_save')}</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+  /* The bar sits above the conversion bar but below a modal — see the z scale
+     in global.css. It is `position: fixed` at the bottom on desktop and the
+     full width on mobile; it never covers the page's own controls because it
+     is short and the conversion bar moves up to clear it (rule at the end). */
+  .cc {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: var(--z-bar);
+    background: var(--surface-2);
+    box-shadow: inset 0 1px 0 var(--line-strong), 0 -18px 40px -20px rgb(0 0 0 / 0.7);
+    padding: clamp(.9rem, 2vw, 1.15rem) 0;
+  }
+  .cc[hidden] { display: none; }
+  .cc-in {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 clamp(1.2rem, 5vw, 2.5rem);
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    flex-wrap: wrap;
+  }
+  .cc-copy { margin: 0; flex: 1 1 26rem; min-width: 0; font-size: .875rem; line-height: 1.5; color: var(--ink-2); }
+  .cc-copy b { display: block; color: var(--ink); font-size: .95rem; margin-bottom: .15rem; }
+  .cc-copy a { color: var(--fill-blue); text-decoration: underline; text-underline-offset: 2px; }
+
+  .cc-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  /* ONE class for both answers. Equal prominence is not a thing to remember,
+     it is a thing to make structurally impossible to get wrong. */
+  .cc-btn {
+    min-height: 42px;
+    padding: 0 1.1rem;
+    font-size: .875rem;
+    font-weight: 700;
+    background: var(--btn-ghost-fill);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .cc-btn:hover, .cc-btn:focus-visible { background: var(--btn-ghost-fill-hover); }
+  .cc-btn-primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .cc-btn-primary:hover, .cc-btn-primary:focus-visible { background: var(--accent-dim); }
+  /* The third option is a link because it is a third option, not a third
+     answer. It opens a panel; it does not consent to anything. */
+  .cc-link {
+    background: none; border: 0; padding: .4rem .2rem; cursor: pointer;
+    font-size: .85rem; font-weight: 600; color: var(--ink-3);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .cc-link:hover, .cc-link:focus-visible { color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .cc-in { flex-direction: column; align-items: stretch; gap: .9rem; }
+    .cc-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .cc-link { grid-column: 1 / -1; text-align: center; }
+  }
+
+  /* ---- preferences ---- */
+  .cc-dialog {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    color: var(--ink-2);
+    padding: 0;
+    max-width: 34rem;
+    width: calc(100vw - 2rem);
+  }
+  .cc-dialog::backdrop { background: rgb(var(--scrim) / 0.72); }
+  .cc-prefs { padding: clamp(1.4rem, 3vw, 2rem); display: flex; flex-direction: column; gap: 1.1rem; }
+  .cc-prefs h2 { margin: 0; font-size: 1.25rem; color: var(--ink); }
+  .cc-prefs-intro { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
+  .cc-row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1.2rem;
+    padding-top: 1.1rem; box-shadow: inset 0 1px 0 var(--line);
+  }
+  .cc-row b { color: var(--ink); font-size: .95rem; }
+  .cc-row p { margin: .3rem 0 0; font-size: .84rem; line-height: 1.5; color: var(--ink-3); max-width: 42ch; }
+  .cc-always { flex: 0 0 auto; font-size: .78rem; font-weight: 700; color: var(--ink-3); padding-top: .15rem; white-space: nowrap; }
+  .cc-check {
+    flex: 0 0 auto; width: 22px; height: 22px; margin-top: .1rem;
+    accent-color: var(--accent); cursor: pointer;
+  }
+  .cc-prefs-actions { display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap; margin-top: .4rem; }
+
+  /* The conversion bar and this cannot occupy the same 20px. While the consent
+     bar is up, the conversion bar sits above it. */
+  :global(body:has(#cc-bar:not([hidden])) .convbar) { bottom: calc(20px + var(--cc-h, 88px)); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cc { animation: cc-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes cc-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  }
+</style>

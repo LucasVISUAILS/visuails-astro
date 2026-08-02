@@ -26,7 +26,14 @@ import Layout from '../layouts/Layout.astro';
       <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Essential</strong> — basic functionality and security. Always on.</span></li>
       <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong>Analytics</strong> — anonymous usage measurement. Only with your consent.</span></li>
     </ul></div>
-    <div><h2>Managing cookies</h2><p style="margin-top:.6rem">You can accept or decline non-essential cookies when asked, and clear or block cookies at any time in your browser settings. Blocking essential cookies may affect how the site works.</p></div>
+    <div><h2>What we actually set today</h2><p style="margin-top:.6rem">Naming them is more useful than describing categories, so here they are in full. This is the complete list.</p>
+    <ul class="checklist" style="margin-top:1rem">
+      <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_account</code></strong> — keeps you signed in to the client portal after you follow your magic link. Essential. Expires with the session.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_admin</code></strong> — the studio's own dashboard login. Essential. Never set on a visitor's device.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — remembers the choice you made in the cookie banner, so we stop asking. Essential, and the reason a refusal sticks. Expires after 12 months, when we ask again.</span></li>
+    </ul>
+    <p style="margin-top:1rem">That is all three. No advertising cookies, no tracking pixels, no third-party embeds, and no analytics unless you switch it on — at which point it is Cloudflare Web Analytics, which is itself cookieless and sets nothing on your device. We share nothing with anyone.</p></div>
+    <div><h2>Managing cookies</h2><p style="margin-top:.6rem">Use the <button type="button" class="legal-cc" data-cc-reopen>cookie preferences</button> link — it is in the footer of every page — to change your answer at any time, including withdrawing a yes. Refusing is exactly as easy as accepting and costs you nothing: the site works identically either way. You can also clear or block cookies in your browser settings, though blocking the essential ones will stop the client portal remembering you.</p></div>
     <div><h2>Contact</h2><p style="margin-top:.6rem">Questions about this policy? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a>. See also our <a href="/privacy">Privacy Policy</a>.</p></div>
   </div></section>
 </Layout>
@@ -38,5 +45,9 @@ import Layout from '../layouts/Layout.astro';
   .legal h2 { font-size: 1.3rem; }
   .legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
   .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+  /* The withdrawal control inside body copy. It is a <button> because it opens
+     a panel, and it is styled as the link beside it because a button that
+     looks like a button in the middle of a sentence reads as an advert. */
+  .legal-cc { background: none; border: 0; padding: 0; font: inherit; color: var(--fill-blue); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
   .legal-note { padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
 </style>

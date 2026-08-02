@@ -343,10 +343,13 @@ const c = COPY[lang];
           <span class="tile-cap"><b>{c.dropPlateCap}</b><span>{c.dropPlateSub}</span></span>
         </div>
       </div>
-      <div class="tile s-4">
+      {/* THE one coloured tile in this grid, and it is on the deadline
+          because the deadline is the thing being sold. .on-bright recomputes
+          the ink ramp; .tile-c-blue only names the colour. */}
+      <div class="tile s-4 on-bright tile-c-blue">
         <div class="tile-body">
           <p class="tile-k">{c.dropWinK}</p>
-          <p class="tile-v hv-clay">{c.dropWinV}</p>
+          <p class="tile-v">{c.dropWinV}</p>
           <p class="tile-n">{c.dropWinN}</p>
         </div>
       </div>
@@ -395,7 +398,7 @@ const c = COPY[lang];
     <ol class="hv-pipe">
       {c.pipe.map(([t, b], i) => (
         <li>
-          <span class="hv-pipe-n">{String(i + 1).padStart(2, '0')}</span>
+          <span class={`hv-pipe-n ${['s-blue', 's-violet', 's-pink', 's-coral'][i] || ''}`}>{String(i + 1).padStart(2, '0')}</span>
           <h3>{t}</h3>
           <p>{b}</p>
         </li>
@@ -517,9 +520,14 @@ const c = COPY[lang];
   <div class="container">
     <h2 class="hv-stats-h">{c.statsH}</h2>
     <dl class="hv-stats">
+      {/* One hue per figure, in the palette's own order. OPP does exactly
+          this and it is the cheapest colour on the page: no fill, no plate,
+          just the number carrying it. The labels stay muted so the figure is
+          what the eye lands on. All four measure 7.91–8.07:1 on this ground —
+          see the --fill-* note in global.css. */}
       {c.stats.map(([n, l], i) => (
         <div class="hv-stat">
-          <dt class={i === 3 ? 'hv-clay' : ''}>{n}</dt>
+          <dt class={['w-blue', 'w-violet', 'w-coral', 'w-pink'][i] || ''}>{n}</dt>
           <dd>{l}</dd>
         </div>
       ))}
@@ -622,8 +630,11 @@ const c = COPY[lang];
      ground --teal-text is unreadable, so the highlight is carried by full
      paper against the soft paper the rest of the line runs at — value rather
      than hue, which is the same idea in the material the ground allows. */
-  .hv-accent { font-style: normal; color: var(--paper-on-dark); }
-  .on-paper .hv-accent { color: var(--teal-text); }
+  /* The accent word in a section heading. It was paper-on-paper — the same
+     white as the rest of the line, so "accent" meant italics-turned-off and
+     nothing else. It is the palette's blue now, which is what OPP does with
+     the word that carries the sentence. */
+  .hv-accent { font-style: normal; color: var(--fill-blue); }
 
 
   /* ── tiles ─────────────────────────────────────────────────────────────── */
@@ -660,7 +671,14 @@ const c = COPY[lang];
   .hv-pipe-head { max-width: 40rem; }
   .hv-pipe { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1px; background: var(--line); }
   .hv-pipe > li { background: var(--bg); padding: clamp(1.25rem, 2.2vw, 1.9rem); }
+  /* Outlined numerals: the colour is the STROKE, because a filled 2.4rem 900
+     numeral in four hues would out-shout the step it labels. The four are
+     7.91–8.07:1 on this ground, well past the 3:1 a large glyph needs. */
   .hv-pipe-n { font-family: var(--font-display); font-weight: 900; font-size: 2.4rem; line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--line-ui); display: block; }
+  .hv-pipe-n.s-blue   { -webkit-text-stroke-color: var(--fill-blue); }
+  .hv-pipe-n.s-violet { -webkit-text-stroke-color: var(--fill-violet); }
+  .hv-pipe-n.s-pink   { -webkit-text-stroke-color: var(--fill-pink); }
+  .hv-pipe-n.s-coral  { -webkit-text-stroke-color: var(--fill-coral); }
   .hv-pipe h3 { margin: 1rem 0 .45rem; font-size: 1.02rem; font-weight: 700; color: var(--ink); }
   .hv-pipe p { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
 
@@ -706,6 +724,15 @@ const c = COPY[lang];
   .hv-stat:first-child { padding-left: 0; }
   .hv-stat + .hv-stat { border-left: 1px solid var(--line); }
   .hv-stat dt { font-family: var(--font-display); font-weight: 900; font-size: clamp(2.4rem, 4.2vw, 3.125rem); line-height: 1; letter-spacing: -0.035em; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+  /* The coloured figure, set HERE rather than relying on the global .w-*
+     utility. Astro scopes this block with a [data-astro-cid] attribute, so
+     `.hv-stat dt` renders as (0,3,1) and outranks any global class utility no
+     matter how many times it is doubled. A scoped stylesheet always wins; the
+     override has to live in the same scope that caused the conflict. */
+  .hv-stat dt.w-blue   { color: var(--fill-blue); }
+  .hv-stat dt.w-violet { color: var(--fill-violet); }
+  .hv-stat dt.w-pink   { color: var(--fill-pink); }
+  .hv-stat dt.w-coral  { color: var(--fill-coral); }
   .hv-stat dd { margin: .75rem 0 0; font-size: .875rem; line-height: 1.5; color: var(--ink-3); max-width: 26ch; }
   @media (max-width: 880px) {
     .hv-stats { grid-template-columns: repeat(2, 1fr); row-gap: clamp(1.6rem, 4vw, 2.4rem); }

@@ -43,6 +43,7 @@ import '@fontsource/bodoni-moda/500-italic.css';
 import '@fontsource/bodoni-moda/700-italic.css';
 import { ui, dropHrefs, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 import { graphJson } from '../data/schema.js';
+import CookieConsent from '../components/CookieConsent.astro';
 
 interface Props {
   title: string;
@@ -72,14 +73,32 @@ interface Props {
 // read by something that parses HTML. See src/lib/portal.js.
 const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper' } = Astro.props;
 
-// Privacy-first analytics. Cloudflare Web Analytics is cookieless and needs no
-// consent banner (AVG/GDPR-clean). To switch it on: create a Web Analytics site
-// in the Cloudflare dashboard, copy the token, and paste it below — the beacon
-// only renders when a token is present, so the site ships analytics-ready with
-// nothing loading until you opt in. Custom events (CTA clicks, "how did you
-// find us?") are wired via track() in interactions.js and start reporting the
-// moment a tool that supports them (e.g. Plausible/Umami) is added.
-const CF_ANALYTICS_TOKEN = '';
+// Privacy-first analytics — Cloudflare Web Analytics, which is cookieless and
+// sets nothing on the visitor's device.
+//
+// TURNING IT ON IS A BUILD SETTING, NOT A CODE EDIT. Set
+// PUBLIC_CF_ANALYTICS_TOKEN in the Pages project (Settings → Variables and
+// Secrets → **plaintext Variable**, not a Secret) and redeploy. The token is
+// public by design — it ends up in the page source of every site that uses it —
+// so it is not a credential and a Secret would only make it harder to read
+// back. The empty default means an unconfigured build ships with analytics
+// simply absent.
+//
+// This used to be a literal on this line, which meant switching analytics on
+// required editing a source file and pushing a commit. That is fine once and
+// annoying forever, and it puts a value that belongs to the deployment inside
+// the thing being deployed.
+//
+// NOTE THE PREVIOUS COMMENT WAS WRONG about consent: it said cookieless
+// analytics "needs no consent banner". Cookieless means no cookie-storage
+// consent under ePrivacy, which is not the same as no consent at all, and the
+// safe side of that argument is cheap. The beacon is gated on the banner —
+// see src/scripts/consent.js — and does not load until someone says yes.
+//
+// Custom events (CTA clicks, "how did you find us?") are wired via track() in
+// interactions.js and start reporting the moment a tool that supports them
+// (e.g. Plausible/Umami) is added.
+const CF_ANALYTICS_TOKEN = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN ?? '';
 
 // Language is derived from the URL: /nl/... → Dutch, else English.
 const path = Astro.url.pathname;
@@ -570,10 +589,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <a href={lp('/privacy')}>{t('foot_privacy')}</a>
           <a href={lp('/terms')}>{t('foot_terms')}</a>
           <a href={lp('/cookie-policy')}>{t('foot_cookies')}</a>
+          {/* Withdrawal has to be as easy as consent, so it lives with the
+              other legal links and is present on every page. A <button> rather
+              than a link because it opens a panel and goes nowhere. */}
+          <button type="button" class="foot-cc" data-cc-reopen>{t('cc_reopen')}</button>
         </span>
       </div>
     </div>
   </footer>
+
+  <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
 
   <div class="convbar" role="complementary" aria-label="Quick start">
     <svg class="brand-mark cb-logo" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
@@ -609,13 +634,21 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     import '../scripts/motion.js';
     import '../scripts/shader-hero.js';
   </script>
-  {CF_ANALYTICS_TOKEN && (
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon={`{"token": "${CF_ANALYTICS_TOKEN}"}`}
-    />
-  )}
+  {/* THE BEACON IS NOT RENDERED HERE ANY MORE, and that is the whole point of
+      the consent banner. A <script> in the HTML fires before any script can
+      have an opinion about it, which would make the banner decorative. The
+      token is handed to consent.js instead, which appends the beacon only
+      after an explicit yes — so "no" and "not answered yet" both mean the
+      request is never made. See src/scripts/consent.js. */}
+  <script is:inline define:vars={{ token: CF_ANALYTICS_TOKEN }}>
+    window.__VIS_CF_TOKEN = token || '';
+  </script>
+  <script>
+    import { initConsent } from '../scripts/consent.js';
+    const boot = () => initConsent(window.__VIS_CF_TOKEN);
+    boot();
+    document.addEventListener('astro:page-load', boot);
+  </script>
 </body>
 </html>
 
@@ -864,6 +897,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .footer-col ul { display: flex; flex-direction: column; gap: .6rem; list-style: none; margin: 0; padding: 0; }
   .footer-col a { color: var(--ink-2); font-size: .92rem; }
   .footer-col a:hover { color: var(--ink); }
+  /* Matches the anchors beside it exactly — a withdrawal route that looks
+     like a button among links reads as an ad, and one that is quieter than the
+     links reads as hidden. */
+  .foot-cc { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .foot-cc:hover, .foot-cc:focus-visible { color: var(--ink); }
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
 
   .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }

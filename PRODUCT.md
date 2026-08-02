@@ -52,7 +52,17 @@ Precise, exact, engineered. A visitor should feel they are looking at an instrum
 
 **Never borrow credibility we haven't earned.** No invented testimonials, client names, logos, metrics or results. Figures from the wider industry are labelled as such. Dates are only promised when the capacity gate has cleared them.
 
-**The photograph is the only colour.** The interface is ink and paper so that the product photography is the only saturated thing on the screen.
+**Colour marks the point; the photograph still carries it.** *(Revised Aug 2026 — this
+principle used to read "the photograph is the only colour", and the site stopped obeying
+it the day the palette moved to the OPP-derived scheme. A principle the tree contradicts
+is worse than no principle, so it is restated rather than quietly ignored.)*
+
+The interface is near-black so the photography stays the most saturated thing on the
+screen — that part is unchanged and is why photographic tiles are never given a coloured
+fill. What changed is that colour is now allowed to do one job: marking the single thing
+in a section that must be read. One vivid tile per grid, the accent word in a heading,
+the figures in the stat row. Applied to everything it would be applied to nothing, and
+the photography would be competing with the furniture.
 
 **Say the number.** Prices, deadlines, what is included and what is not — stated in the open, in body copy, not deferred to a quote.
 

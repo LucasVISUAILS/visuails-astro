@@ -102,6 +102,89 @@ And there is exactly one place the scale is written — a second `--radius: 0` s
 below the alias in the same `:root` silently squared the entire site while the scale
 above it looked correct in the file.
 
+### Section 19 — one ground, and colour as emphasis
+
+Two instructions: *"ik wil dat de achtergrond van de website 1 kleur wordt"* and *"de
+tegels … vellere kleuren"*, again pointing at onlinepaymentplatform.com.
+
+**One ground.** The page was `--bg-0` for most of it, `--bg-raise` for a banded section,
+`#000` for the footer, plus four mist tints. Each step was small enough to read as a seam
+rather than a decision. Every full-width ground is `--bg-0` now; `.on-paper`,
+`.well-deep`, `.well-raise` and the four `.mist-*` classes are declared together as
+no-ops in one block. **If a section needs distinguishing, the answer is a tile, a panel, a
+rule or more space — not a second ground.**
+
+**Four bright fills, and they are lighter than the gradient stops they come from.**
+
+| Token | Value | ink-1 | ink @ .82 | ink @ .68 | on ground |
+|---|---|---|---|---|---|
+| `--fill-blue` | `#7CA2FF` | 8.03 | 6.20 | 4.55 | 8.03 |
+| `--fill-violet` | `#BC8FFF` | 8.07 | 6.23 | 4.57 | 8.07 |
+| `--fill-pink` | `#F678BD` | 7.91 | 6.18 | 4.56 | 7.91 |
+| `--fill-coral` | `#E98D54` | 7.97 | 6.20 | 4.56 | 7.97 |
+
+The gradient stops themselves (`#5B7CFA` at 5.41, `#9A6BF5` at 5.50) **cannot carry body
+copy**: near-black at the muted step lands at 3.57 and 3.62 against a 4.5 floor. A tile
+has a paragraph in it, not just a headline, so the fills were lifted in OKLCH with hue and
+chroma held until the third ink step cleared. A fill needs roughly **8:1 against
+near-black** before a full three-step ramp holds on it — that is the number to reuse.
+
+**`.on-bright` is the inversion, worn by both devices.** `.panel-grad` used to own the
+whole ink/line/accent/button restatement privately. The coloured tiles need exactly the
+same, so it is a scope now and both wear it; each `.tile-c-*` class does nothing but name
+a colour, which is the test of whether the factoring was right.
+
+**Specificity, twice, and both were real bugs caught in the browser.** `.tile.tile-c-blue`
+is doubled because `.tile { background: var(--surface) }` sits lower in the file and wins
+on source order — a coloured tile rendered dark with near-black text on it. `.w-blue.w-blue`
+is doubled because `.hv-stat dt` is a descendant selector and outranks a single class.
+And the stat-row override still had to move **into HomeV2's own scoped block**, because
+Astro compiles component styles with a `[data-astro-cid]` attribute: a scoped rule always
+outranks a global utility, however many times you double it. The override has to live in
+the scope that caused the conflict.
+
+**The fence:** at most two coloured tiles per grid, never two of the same hue, and never
+behind a photograph.
+
+### Section 19 — cookie consent
+
+`src/components/CookieConsent.astro` + `src/scripts/consent.js`. Built to the Dutch AP's
+stated requirements, each one structural rather than remembered:
+
+- **Reject as prominent as accept** — one shared `.cc-btn` class, so they cannot diverge;
+  reject is first in the DOM and in the tab order. Asserted in the test from the *computed*
+  height, weight, size, radius and background of both buttons.
+- **Nothing pre-ticked** — the analytics box is off, and off is also what "no answer yet"
+  means.
+- **No cookies before consent** — the analytics beacon is no longer rendered in
+  `Layout.astro` at all; `consent.js` appends it after a yes. Verified with a real token:
+  0 requests before an answer, 0 after a refusal, 1 after a yes.
+- **No cookie wall** — a bottom bar, not a modal. The page scrolls and works identically
+  whether it is answered or ignored. Asserted by scrolling with the bar up.
+- **Withdrawal as easy as consent** — a "Cookie preferences" control in the footer of
+  every page and inside the cookie policy, showing the current answer rather than a blank
+  form.
+- Consent is **versioned and expires at 12 months**; bumping `CONSENT_VERSION` invalidates
+  every stored answer, because a yes to one question is not a yes to a different one.
+
+**Switching analytics on is a build setting, not a code edit.** Set
+`PUBLIC_CF_ANALYTICS_TOKEN` in the Pages project as a **plaintext Variable** (not a
+Secret — a Cloudflare Web Analytics token is public by design and ends up in the page
+source of every site that uses it) and redeploy. It used to be a literal in
+`Layout.astro`, which meant a deployment-owned value lived inside the thing being
+deployed. Verified with the variable set: 0 beacon requests before an answer, 0 after a
+refusal, 1 after a yes; and a build without the variable carries no token at all.
+
+The old comment on that line claimed cookieless analytics "needs no consent banner".
+Cookieless means no cookie-storage consent under ePrivacy, which is not the same as no
+consent at all — and the safe side of that argument costs one banner that was going to
+exist anyway.
+
+The site sets three cookies and `/cookie-policy` now names all three rather than
+describing categories. Worth stating plainly: **none of this was legally required today** —
+the only cookies are strictly necessary. It was built because the policy already promised
+it, and because the analytics switch needs a lawful gate the day it is turned on.
+
 ### Section 18 amendments to the rest of this document
 
 - **The chrome fence still stands**, but the ramp moved hue: harbor ran it warm (75) with
