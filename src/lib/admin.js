@@ -276,6 +276,32 @@ async function handleAddCustomModel({ request, env }, orderId) {
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Is this request carrying a live admin session? Exported so a diagnostic
+ * endpoint outside this file can stand behind the same login rather than
+ * inventing a second, weaker gate — a debug route that reports on a payment
+ * provider is not something to leave open to the internet, and a second shared
+ * secret is one more thing to leak.
+ *
+ * Read-only by design: it deliberately does NOT touch last_used_at, because
+ * hitting a debug page is not the admin using the dashboard and should not
+ * extend a session's idle life.
+ */
+export async function hasAdminSession(context) {
+  try {
+    const { env, request } = context;
+    if (!env?.DB) return false;
+    const token = readSessionCookie(request);
+    if (!token) return false;
+    const row = await env.DB.prepare(
+      'SELECT expires_at FROM admin_sessions WHERE token_hash = ?1'
+    ).bind(await hashToken(token)).first();
+    return !!row && Date.parse(normalizeStamp(row.expires_at)) > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 async function currentAdmin(context) {
   const { env, request, waitUntil } = context;
   const token = readSessionCookie(request);

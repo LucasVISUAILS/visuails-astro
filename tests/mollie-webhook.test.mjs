@@ -218,6 +218,36 @@ await check('metadata as a JSON string → still resolves the order', async () =
   return { status: r.status, writes: d.writes.map((w) => w[0]) };
 }, { status: 200, writes: ['payments', 'orders', 'event'] });
 
+// 12 · the key guard — the thing that turns a blank 400 into a readable error
+{
+  const { mollieKey, mollieKeyProblems } = await import('../src/lib/mollie.js');
+  const GOOD = 'test_dHar4XY7LxsDOtmnkVtjNVWXLSlXsMabcd';
+  const cases = [
+    ['clean key passes through', GOOD, GOOD, null],
+    ['trailing newline is stripped', GOOD + '\n', GOOD, ['leading or trailing whitespace', '1 non-printable character(s): U+000A']],
+    // The one that matters: U+00A0 survives Fetch's header normalisation and
+    // goes onto the wire as a raw 0xA0, which is not a legal header byte.
+    ['non-breaking space is stripped', GOOD + '\u00a0', GOOD, ['leading or trailing whitespace', '1 non-printable character(s): U+00A0']],
+    ['zero-width space is stripped', 'test_dHar4XY7LxsDOtmnkVtjNVWXLSlXsM\u200babcd', GOOD, ['1 non-printable character(s): U+200B']],
+  ];
+  for (const [name, input, expectKey, expectProblems] of cases) {
+    let got = null, threw = null;
+    try { got = mollieKey({ MOLLIE_API_KEY: input }); } catch (e) { threw = e.message; }
+    const problems = mollieKeyProblems({ MOLLIE_API_KEY: input });
+    const pass = got === expectKey && JSON.stringify(problems) === JSON.stringify(expectProblems);
+    results.push({ name, expected: expectKey.slice(0, 12) + '…', got: threw || (got || '').slice(0, 12) + '…', pass });
+  }
+  for (const [name, input] of [['unset key throws', undefined], ['short key throws', 'test_abc'], ['key with no prefix throws', 'dHar4XY7LxsDOtmnkVtjNVWXLSlXsMabcd']]) {
+    let threw = false;
+    try { mollieKey(input === undefined ? {} : { MOLLIE_API_KEY: input }); } catch { threw = true; }
+    results.push({ name, expected: 'throws', got: threw ? 'throws' : 'returned a key', pass: threw });
+  }
+  // The error must never contain the key.
+  let msg = '';
+  try { mollieKey({ MOLLIE_API_KEY: 'test_abc' }); } catch (e) { msg = e.message; }
+  results.push({ name: 'key guard error does not leak the key', expected: true, got: !msg.includes('test_abc'), pass: !msg.includes('test_abc') });
+}
+
 // 12 · GET is a liveness answer, not part of the protocol
 await check('GET → 200 and reveals no configuration', async () => {
   const r = onRequestGet();

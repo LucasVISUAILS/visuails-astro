@@ -140,6 +140,94 @@ that, and it times out a single call at 15 seconds.
 
 ---
 
+## When payment creation fails with `Mollie 400: (empty body)`
+
+This happened on 2 August 2026, on production, at the *first* step — creating
+the payment, before the customer ever reaches Mollie:
+
+```
+POST https://visuails.com/api/order - Ok
+ (error) [order] Mollie 400: (empty body)
+```
+
+**The one fact that narrows it down:** Mollie answers every application-level
+error with a JSON body — `{status, title, detail, field}`. So a 400 with
+*nothing* in it did not come from Mollie's application. Something in front of
+Mollie refused the request before Mollie parsed it, which is what happens when
+a request is malformed at the HTTP layer rather than merely wrong at the API
+layer.
+
+It is also the exact symptom that killed the Stripe integration on this project
+— "blank HTTP 400s when called from Cloudflare, never from the CLI, never from
+local Node" — which was never resolved and is why Mollie was adopted in the
+first place. Two different providers failing identically from the same Pages
+Function says the cause is on our side of the connection.
+
+### What has been done about it
+
+**One candidate is now ruled out permanently.** `mollieKey()` in
+`src/lib/mollie.js` strips every non-printable character from the key before it
+goes into a header and rejects anything that is not `test_…`/`live_…`. This is
+not cosmetic. A secret is delivered by pasting, and paste carries invisible
+passengers:
+
+| what got pasted | what reaches the wire |
+|---|---|
+| trailing newline | stripped by the Fetch spec — harmless |
+| leading/trailing space | stripped — harmless |
+| **U+00A0 non-breaking space** | **survives, sent as raw byte `0xA0`** |
+| U+200B zero-width space | `fetch` throws a TypeError |
+
+That third row is the dangerous one, and it is a realistic accident: copying a
+key out of a styled dashboard page can pick up an NBSP. A byte outside
+printable ASCII is not legal inside a header value, so the receiving end
+rejects the whole request at the HTTP layer — **400, empty body**, which is
+precisely the symptom. (Verified on the wire against a raw socket, not assumed.)
+
+Whether that is *the* cause here is not yet known. It is now impossible.
+
+**The error message now says who answered.** An empty body no longer logs as
+`(empty body)` but as `(EMPTY BODY — not a Mollie application error. Response
+headers: server=… cf-ray=…)`. `server` and `cf-ray` together identify whether
+the answer came from Mollie, from a WAF in front of Mollie, or from
+Cloudflare's own edge — the first question, and until now an unanswerable one.
+
+### The diagnostic: `/api/debug-mollie`
+
+Sign in at `/admin`, then open **`https://visuails.com/api/debug-mollie`** in
+the same browser. It runs four probes and returns JSON. Each isolates one
+variable, and **the first one that misbehaves is the answer**:
+
+| Probe | What it sends | What it proves |
+|---|---|---|
+| **A · transport** | a well-formed but deliberately *wrong* key | Should be a clean JSON **401**. If A is an empty 400, it is not our key and not our payload — it is the connection, and that is a Cloudflare support ticket with the `cf-ray` attached. |
+| **B · auth** | the real key, GET, no body | Isolates the `Authorization` header. A passing but B empty-400 = the key is carrying something the wire rejects. |
+| **C · minimal POST** | amount + description + redirectUrl only | B passing but C failing = the body, not the key. |
+| **D · the real POST** | byte-for-byte what `order.js` sends | C passing but D failing = one of the three fields D adds: `webhookUrl`, `locale`, `metadata`. D also echoes the exact URLs it sent. |
+
+It ends with a `reading` field that states what to do next in one sentence.
+
+It reveals no secret — the key's length, its five-character prefix (`test_` /
+`live_`, which is not secret and is the single most useful thing to know) and a
+list of any invisible characters in it, never the key itself. It is behind the
+`/admin` login rather than open, and it is marked **delete after use** at the
+top of the file, the same way `debug-egress-ip.js` was.
+
+Probes C and D create real payments. On a `test_` key those are free and fake;
+on a `live_` key they are genuine but unpaid €0.99 payments nobody will
+complete. Both are described as `VISUAILS DIAGNOSTIC — ignore` so they are
+obvious in the dashboard.
+
+### Before running it, check the cheap thing
+
+The order in the log **succeeded** — `POST /api/order - Ok`. That is the design:
+`order.js` fails open, so a Mollie failure costs the payment link and not the
+order. Which also means a run from before the secret was set, or from an older
+deployment, looks exactly like this. Confirm the deployment you tested is newer
+than the secret; a secret only reaches deployments created after it.
+
+---
+
 ## What the handler does with each status
 
 `paid` is the only one that touches the order.

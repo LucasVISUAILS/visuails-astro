@@ -39,6 +39,74 @@ import { AMOUNT } from '../data/pricing.js';
 const MOLLIE_API = 'https://api.mollie.com/v2';
 
 /**
+ * The API key, cleaned and checked before it is ever put in a header.
+ *
+ * WHY THIS IS NOT JUST `env.MOLLIE_API_KEY`
+ * A secret arrives by being pasted into a terminal or a dashboard field, and
+ * paste is lossy in ways that are invisible in a text box: a trailing newline
+ * from hitting Enter, a leading space, or — the nasty one — a NON-BREAKING
+ * SPACE (U+00A0) picked up from copying out of a styled web page. Ordinary
+ * spaces and newlines are stripped by the Fetch spec's header normalisation
+ * and do no harm. U+00A0 is not whitespace to that rule: it survives, gets
+ * encoded as the raw byte 0xA0, and goes onto the wire inside the header
+ * value. A byte outside the printable ASCII range is not legal in a header
+ * value, so the receiving end rejects the whole request at the HTTP layer —
+ * which is to say **400 Bad Request with an empty body**, before any of
+ * Mollie's own code runs and therefore with none of Mollie's own JSON error
+ * shape. Verified on the wire: `Bearer test_abc ` is transmitted intact,
+ * where `Bearer test_abc\n` and `Bearer test_abc ` are silently trimmed.
+ *
+ * That is a specific, checkable cause for a symptom that has otherwise been
+ * chased twice on this project — see the Stripe history in this file's header,
+ * which is the same empty 400 from a different provider. It may not be THE
+ * cause. It is cheap to rule out permanently, and the alternative is a stray
+ * byte that no log will ever name.
+ *
+ * So: strip anything that is not a printable ASCII character, then insist on
+ * the shape Mollie documents (`test_` or `live_` followed by alphanumerics).
+ * A key that fails that check throws HERE, with a message that says what is
+ * wrong with it, instead of becoming a blank 400 forty milliseconds later.
+ */
+export function mollieKey(env) {
+  const raw = env?.MOLLIE_API_KEY;
+  if (!raw) throw new Error('mollie: MOLLIE_API_KEY not configured');
+
+  const cleaned = String(raw).replace(/[^\x21-\x7E]/g, '');
+  if (!/^(test|live)_[A-Za-z0-9]{20,}$/.test(cleaned)) {
+    // The key itself never appears in an error. Its length and its first five
+    // characters do: `test_` / `live_` is not a secret and is the single most
+    // useful thing to know when a payment fails on the wrong environment.
+    throw new Error(
+      `mollie: MOLLIE_API_KEY does not look like a Mollie key ` +
+      `(${cleaned.length} usable chars, starts "${cleaned.slice(0, 5)}", ` +
+      `${String(raw).length - cleaned.length} character(s) stripped as non-printable). ` +
+      `Expected test_… or live_… — re-paste it, and mind invisible characters.`
+    );
+  }
+  return cleaned;
+}
+
+/** What was wrong with the stored key, for a diagnostic to report without ever
+ *  showing the key. Returns null when it is clean. */
+export function mollieKeyProblems(env) {
+  const raw = env?.MOLLIE_API_KEY;
+  if (!raw) return ['not set'];
+  const s = String(raw);
+  const bad = [];
+  if (s !== s.trim()) bad.push('leading or trailing whitespace');
+  const nonAscii = [...s].filter((c) => c.charCodeAt(0) < 0x21 || c.charCodeAt(0) > 0x7e);
+  if (nonAscii.length) {
+    bad.push(`${nonAscii.length} non-printable character(s): ` +
+      nonAscii.map((c) => 'U+' + c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')).join(', '));
+  }
+  if (!/^(test|live)_/.test(s.trim())) bad.push('does not start with test_ or live_');
+  // Length last, so a key that is BOTH dirty and short reports both rather
+  // than only the one that happens to be checked first.
+  if (s.replace(/[^\x21-\x7E]/g, '').length < 25) bad.push('too short to be a Mollie key');
+  return bad.length ? bad : null;
+}
+
+/**
  * A Payment for exactly the test sample. AMOUNT.testSample is imported, not
  * repeated, for the same reason nothing else on the site hardcodes a price —
  * see the header of src/data/pricing.js. Mollie wants the amount as a
@@ -51,7 +119,7 @@ const MOLLIE_API = 'https://api.mollie.com/v2';
  * the order, this function does not swallow it.
  */
 export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl }) {
-  if (!env.MOLLIE_API_KEY) throw new Error('mollie: MOLLIE_API_KEY not configured');
+  const key = mollieKey(env);
 
   const body = {
     amount: {
@@ -73,7 +141,7 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
   const res = await fetch(`${MOLLIE_API}/payments`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.MOLLIE_API_KEY}`,
+      Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
@@ -85,9 +153,16 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
     // Surface everything Mollie sent back so a failure shows up in the
     // deployment log as an actionable message instead of a generic "it
     // failed" — same reasoning as the equivalent block in stripe.js.
+    // An EMPTY body is itself the diagnosis and has to be reported as one.
+    // Mollie answers every application-level error with JSON — a 400 with
+    // nothing in it did not come from Mollie's application at all, it came
+    // from whatever sits in front of it rejecting the request before it got
+    // there. The response headers are the only evidence of who that was, so
+    // they go in the message rather than being thrown away. Chasing this
+    // without them is what made the identical Stripe failure unfixable.
     const detail = parsed?.title
       ? `${parsed.title} (field: ${parsed.field || 'n/a'}) — ${parsed.detail || ''}`
-      : raw.slice(0, 500) || '(empty body)';
+      : raw.slice(0, 500) || `(EMPTY BODY — not a Mollie application error. Response headers: ${describeHeaders(res)})`;
     throw new Error(`Mollie ${res.status}: ${detail}`);
   }
   return parsed; // { id, status, _links: { checkout: { href } }, ... } — _links.checkout.href is where the browser goes next.
@@ -110,12 +185,12 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
  * parsing the message.
  */
 export async function getMolliePayment(env, id) {
-  if (!env.MOLLIE_API_KEY) throw new Error('mollie: MOLLIE_API_KEY not configured');
+  const key = mollieKey(env);
   if (!isMolliePaymentId(id)) throw new Error(`mollie: refusing to fetch a malformed payment id (${String(id).slice(0, 40)})`);
 
   const res = await fetch(`${MOLLIE_API}/payments/${encodeURIComponent(id)}`, {
     headers: {
-      Authorization: `Bearer ${env.MOLLIE_API_KEY}`,
+      Authorization: `Bearer ${key}`,
       Accept: 'application/json',
     },
   });
@@ -156,4 +231,20 @@ export function mollieAmountToCents(amount) {
   const value = amount && typeof amount.value === 'string' ? amount.value : null;
   if (!value || !/^\d+\.\d{2}$/.test(value)) return null;
   return Math.round(Number(value) * 100);
+}
+
+/**
+ * The handful of response headers worth having in a log line when a request
+ * fails with nothing in the body. `server` and `cf-ray` between them say
+ * whether an answer came from Mollie, from a WAF in front of Mollie, or from
+ * Cloudflare's own edge — which is the first question and, without this, an
+ * unanswerable one.
+ */
+export function describeHeaders(res) {
+  const want = ['server', 'cf-ray', 'content-type', 'content-length', 'x-request-id', 'retry-after'];
+  const got = want
+    .map((h) => [h, res.headers.get(h)])
+    .filter(([, v]) => v)
+    .map(([h, v]) => `${h}=${v}`);
+  return got.length ? got.join(' ') : '(none of interest)';
 }
