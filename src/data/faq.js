@@ -70,7 +70,7 @@ import {
   LADDER, ladderRate, ladderFloor, quote, FIRST_ORDER_DISCOUNT,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
   PLAN_MIN_MONTHS, PLAN_ROLLOVER_MONTHS,
-  WINDOW_THRESHOLD, vatLabel, withVat,
+  WINDOW_THRESHOLD, vatLabel, vatNote,
 } from './pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -104,10 +104,10 @@ function ex(amount, lang) {
   return `${euro(amount, lang)} ${vatLabel('excl', lang)}`;
 }
 
-/** Net and gross side by side, for the few answers that quote a total to pay. */
-function exIncl(amount, lang) {
-  return `${ex(amount, lang)} — ${euro(withVat(amount), lang)} ${vatLabel('incl', lang)}`;
-}
+// exIncl() used to return "net — gross". It now returns net alone and is kept
+// only so its several call sites read the same; see the note above vatNote()
+// in pricing.js for why no page prints a gross figure any more.
+const exIncl = ex;
 
 /**
  * The pricing-page FAQ — eight questions, rendered under "Pricing questions"
@@ -157,7 +157,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Hoe wordt btw getoond?',
-        a: `Elk bedrag op deze pagina begint met het nettobedrag met ${vatLabel('excl', 'nl')} ernaast, en het bedrag ${vatLabel('incl', 'nl')} staat er direct naast. ${vatLabel('rate', 'nl')} wordt bij het afrekenen aan iedereen berekend, ook aan EU-bedrijven. We zijn gevestigd in Nederland (btw NL005407575B96); ben je een EU-bedrijf met een geldig btw-nummer, geef het door, dan wordt de verlegging achteraf op de factuur rechtgezet.`,
+        a: `Elk bedrag op de site is netto, met ${vatLabel('excl', 'nl')} erbij. Er staat bewust geen bedrag inclusief btw naast: het btw-tarief verschilt per land, dus één inclusief bedrag zou alleen voor Nederlandse lezers kloppen. ${vatNote('nl')} We zijn gevestigd in Nederland, btw-nummer NL005407575B96.`,
       },
     ];
   }
@@ -193,7 +193,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'How is VAT shown?',
-      a: `Every figure on this page leads with the net amount and says ${vatLabel('excl', 'en')} beside it, with the ${vatLabel('incl', 'en')} figure next to it. ${vatLabel('rate', 'en')} is charged at checkout to everyone, EU businesses included. We are based in the Netherlands (VAT NL005407575B96); if you are an EU business with a valid VAT number, give it to us and the reverse charge is corrected afterwards on your invoice.`,
+      a: `Every figure on the site is net, with ${vatLabel('excl', 'en')} beside it. There is deliberately no incl.-VAT figure next to it: the rate differs per country, so a single gross number would only be true for a Dutch reader. ${vatNote('en')} We are based in the Netherlands, VAT number NL005407575B96.`,
     },
   ];
 }

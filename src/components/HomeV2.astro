@@ -27,8 +27,8 @@
 import {
   AMOUNT, euro, euroRange, TEST_SAMPLE, SHOOT_DAY,
   BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim,
-  ladderRate, ladderFloor, quote, plans, vatLabel, withVat,
-  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT,
+  ladderRate, ladderFloor, quote, plans, vatLabel, vatNote,
+  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT, PLAN_PRODUCTS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
@@ -41,26 +41,25 @@ const lp = (p: string) => localizedPath(lang, p);
 const sample = TEST_SAMPLE[lang];
 const shoot = SHOOT_DAY[lang];
 
-// The output rail. Real photographs, not placeholders — the studio has 73 of
-// them and "show the work before the claim" is this brand's first design
-// principle. Placeholders are only for the surfaces nothing exists for yet,
-// which on this page is the dashboard band and nothing else.
-const RAIL = [
-  { src: '/img/catalog-after.webp', w: 1800, h: 1800, href: '/catalog' },
-  { src: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400, href: '/lifestyle' },
-  { src: '/img/banners-16.webp', w: 2400, h: 1792, href: '/video' },
-  { src: '/img/custom-models-02.webp', w: 800, h: 1071, href: '/custom-models' },
-  { src: '/img/lifestyle-flash-02.webp', w: 1340, h: 2400, href: '/lifestyle' },
-  { src: '/img/banners-05.webp', w: 928, h: 1152, href: '/catalog' },
-];
-
-// One image per deliverable tile. Real output, again — the four things this
-// studio sells are the four things it can show.
-const MADE_IMG = [
-  { src: '/img/catalog-after.webp', w: 1800, h: 1800 },
-  { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376 },
-  { src: '/img/banners-09.webp', w: 2400, h: 1792 },
-  { src: '/img/custom-models-02.webp', w: 800, h: 1071 },
+// One photograph per service. Real output, not placeholders — the studio has
+// 73 real images and "show the work before the claim" is this brand's first
+// design principle. Placeholders are only for the surfaces nothing exists for
+// yet, which on this page is the dashboard band and nothing else.
+//
+// WHY THE CATALOG TILE IS NOT catalog-after.webp, WHICH WOULD BE THE OBVIOUS
+// PICK. That flat-lay is already on this page twice — the plate in the band
+// directly above this one, and the "after" half of the before/after compare —
+// and a third appearance one fold below the second reads as the page having
+// run out of work to show. banners-11 is a garment worn against a plain wall,
+// which is the fourth image in every catalog set, so the tile is still showing
+// the thing it is selling. If the studio ever shoots a second flat-lay, this
+// is the slot it belongs in.
+const SERVICE_IMG = [
+  { src: '/img/banners-11.webp', w: 1200, h: 896 },
+  { src: '/img/lifestyle-glow-02.webp', w: 2400, h: 1792 },
+  { src: '/img/banners-16.webp', w: 2400, h: 1792 },
+  { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
+  { src: '/img/lifestyle-phone-made-09.webp', w: 2400, h: 1792 },
 ];
 
 // The roster rail in the Brand Model band. Every face here is a real entry in
@@ -73,7 +72,14 @@ const FACES = ROSTER;
 // `complete` ladder gets. The channel band multiplies this by an example count,
 // and a figure like "210 images" is exactly the kind of number that goes stale
 // silently if it is typed by hand.
-const PER_PRODUCT_VISUALS = 4 + 3;
+//
+// The two counts are named because the services band states them one by one
+// ("4 images per product") and the channel band states their sum. They were the
+// same two numbers typed in two places until the services band arrived; one
+// source is why the two bands cannot end up promising six images and seven.
+const CATALOG_IMAGES = 4;
+const LIFESTYLE_IMAGES = 3;
+const PER_PRODUCT_VISUALS = CATALOG_IMAGES + LIFESTYLE_IMAGES;
 
 // THE TWO WORKED EXAMPLES this page uses, and the same two /pricing uses, so
 // the homepage and the price list cannot quote different sizes.
@@ -91,6 +97,30 @@ const ENTRY_RATE = ladderRate('complete', 1);
 const FLOOR_RATE = ladderFloor('complete');
 const FIRST_ORDER_PCT = Math.round(FIRST_ORDER_DISCOUNT * 100);
 const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
+
+// ── THE SERVICES BAND'S FIGURES ────────────────────────────────────────────
+// Both ends of each ladder, because a single figure is the one thing this
+// band must not print: the offer is a rate that FALLS, and "€89 per product"
+// with no second number is the flat rate the ladder was built to replace.
+// Every service therefore carries an entry rate and a floor, and both come
+// from pricing.js.
+const CATALOG_FROM = ladderRate('catalog', 1);
+const CATALOG_TO = ladderFloor('catalog');
+const LIFESTYLE_FROM = ladderRate('lifestyle', 1);
+const LIFESTYLE_TO = ladderFloor('lifestyle');
+// The bundle, and what the same two bought separately would cost at each end.
+// pricing.js prices catalog at 60% and lifestyle at 75% of a complete product
+// on purpose, so this comparison is a property of the ladder rather than an
+// offer — which is why it is subtracted here rather than claimed in copy.
+const SEPARATE_FROM = CATALOG_FROM + LIFESTYLE_FROM;
+const SEPARATE_TO = CATALOG_TO + LIFESTYLE_TO;
+// The plans get one line and one figure here, not a second set of plan tiles —
+// the pricing band further down this page already renders plans() in full, and
+// two plan grids on one page is the page arguing with itself about which is
+// the real one.
+const PLAN_FROM = Math.min(...Object.values(PLAN_AMOUNT));
+const PLAN_LOW = Math.min(...Object.values(PLAN_PRODUCTS));
+const PLAN_HIGH = Math.max(...Object.values(PLAN_PRODUCTS));
 
 const COPY = {
   en: {
@@ -116,7 +146,7 @@ const COPY = {
     dropSpecK: `${EX_SMALL} products`,
     dropSpecV: `${euro(Q_SMALL.rate, 'en')} each`,
     dropSpecP: euro(Q_SMALL.net, 'en'),
-    dropSpecN: `${vatLabel('excl', 'en')} — ${euro(Q_SMALL.gross, 'en')} ${vatLabel('incl', 'en')}. A first order is ${FIRST_ORDER_PCT}% off, once per brand.`,
+    dropSpecN: `${vatLabel('excl', 'en')}. A first order is ${FIRST_ORDER_PCT}% off, once per brand.`,
     dropWinK: 'The window',
     dropWinV: '48h',
     dropWinN: `From ${WINDOW_THRESHOLD} products up, the order goes into the studio calendar and gets a reserved window — confirmed before you pay, and never offered until the calendar has cleared it. Below that it runs in the standard queue.`,
@@ -124,18 +154,62 @@ const COPY = {
     dropPlateSub: 'Catalog set · from a phone photo',
     dropPlateAlt: 'A finished VISUAILS catalog visual',
 
-    railH: ['Real output.', 'Zero photoshoots.'],
-    railLede: 'Every image here came out of a folder someone sent us. Nothing was shot for it.',
-    railCaps: [
-      ['Catalog', 'Your shop and marketplaces'],
-      ['Lifestyle', 'Your feed and your ads'],
-      ['Video', 'Reels, TikTok, paid'],
-      ['Your Brand Model', 'One face, across everything'],
-      ['Lifestyle', 'Flash, after dark'],
-      ['On-model', 'In every catalog set'],
-    ],
+    // The rail's two arrow labels survive its deletion: the Brand Model band
+    // further down renders the same .rail-nav buttons and reads these keys.
     railPrev: 'Previous',
     railNext: 'Next',
+
+    svcH: ['Everything the studio makes,', 'and what it costs.'],
+    svcLede: `Four things you can order and one way to keep ordering them. Catalog and lifestyle are priced per product and the rate falls the more you run; a video clip is priced per clip; your Brand Model is set up once. Every figure here is ${vatLabel('excl', 'en')}.`,
+    // [name, what it is, what you receive, price, the price's terms, href]
+    svc: [
+      [
+        'Catalog set',
+        'Clean, consistent product pages that make a young range look established.',
+        `${CATALOG_IMAGES} images per product: front, back, a fabric or logo close-up, and one worn on a model.`,
+        `from ${euro(CATALOG_FROM, 'en')}`,
+        `per product, ${vatLabel('excl', 'en')} — down to ${euro(CATALOG_TO, 'en')} as the count rises`,
+        '/catalog',
+      ],
+      [
+        'Lifestyle carousel',
+        'Styled scenes in context that stop the scroll and sell the feeling.',
+        `${LIFESTYLE_IMAGES} images per product: one styled look, cut for a carousel and ready to post.`,
+        `from ${euro(LIFESTYLE_FROM, 'en')}`,
+        `per product, ${vatLabel('excl', 'en')} — down to ${euro(LIFESTYLE_TO, 'en')} as the count rises`,
+        '/lifestyle',
+      ],
+      [
+        'Video clip',
+        'Subtle motion that lifts click-through where a still photo plateaus.',
+        'One short vertical clip, cut for Reels, TikTok and paid. Added to any order, or ordered on its own.',
+        euro(AMOUNT.video, 'en'),
+        // NOT a "from", and the one price on this page that does not fall.
+        // pricing.js prices a clip the same inside an order as outside one on
+        // purpose — that is what makes the figure quotable — so inventing a
+        // volume rate here would contradict the file the number comes from.
+        `per clip, ${vatLabel('excl', 'en')} — the same rate inside an order or on its own`,
+        '/video',
+      ],
+      [
+        'Your Brand Model',
+        'One face, made only for your brand and used by no one else.',
+        `Set up once, then in every order you run. ${euro(AMOUNT.brandModelCredit, 'en')} of the setup comes back on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
+        euro(AMOUNT.brandModel, 'en'),
+        `one-time setup, ${vatLabel('excl', 'en')} — credited back in full over ${BRAND_MODEL_CREDIT_DROPS} orders`,
+        '/custom-models',
+      ],
+      [
+        'A monthly plan',
+        'For when it is not one launch but every month of the year.',
+        `${PLAN_LOW}–${PLAN_HIGH} products a month for one monthly amount, priced below the ladder for the same output.`,
+        `from ${euro(PLAN_FROM, 'en')}`,
+        `per month, ${vatLabel('excl', 'en')} — three plans, set out in full on the price list`,
+        '/pricing',
+      ],
+    ],
+    svcNote: `Catalog and lifestyle on the same product is one rate rather than two: ${euro(ENTRY_RATE, 'en')} a product coming down to ${euro(FLOOR_RATE, 'en')}, against ${euro(SEPARATE_FROM, 'en')} down to ${euro(SEPARATE_TO, 'en')} bought separately. ${vatNote('en')}`,
+    svcCta: 'Start an order',
 
     pipeH: 'From folder to launch.',
     pipeLede: 'Four steps, and you are only in two of them.',
@@ -208,15 +282,6 @@ const COPY = {
     vsBN: `${vatLabel('excl', 'en')}, everything counted — ${euro(Q_FULL.rate, 'en')} a product`,
     vsBList: ['Nothing to ship, nowhere to travel', 'No day off the business', 'The output is agreed before you pay', 'Run it again next season without rebooking'],
     vsNote: shoot.caveat,
-
-    madeH: 'Four ways to look bigger than you are.',
-    madeLede: 'Catalog and lifestyle are what a product gets. Video is quoted per clip and can be added to any order. Your Brand Model is set up once and then belongs to you.',
-    made: [
-      ['Catalog', 'Clean, consistent product pages that make a young range look established.', '/catalog', `from ${euro(ladderRate('catalog', 1), 'en')} / product`],
-      ['Lifestyle', 'Styled scenes in context that stop the scroll and sell the feeling.', '/lifestyle', `from ${euro(ladderRate('lifestyle', 1), 'en')} / product`],
-      ['Video', 'Subtle motion that lifts click-through where a still photo plateaus.', '/video', euro(AMOUNT.video, 'en') + ' / clip'],
-      ['Your Brand Model', 'One face, made only for you, keeping every order unmistakably yours.', '/custom-models', euro(AMOUNT.brandModel, 'en') + ' once'],
-    ],
 
     chH: 'One order, every place it has to go.',
     chLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} visuals each — ${EX_VISUALS} finished images, cut for the places they actually have to sit.`,
@@ -324,7 +389,7 @@ const COPY = {
     dropSpecK: `${EX_SMALL} producten`,
     dropSpecV: `${euro(Q_SMALL.rate, 'nl')} per stuk`,
     dropSpecP: euro(Q_SMALL.net, 'nl'),
-    dropSpecN: `${vatLabel('excl', 'nl')} — ${euro(Q_SMALL.gross, 'nl')} ${vatLabel('incl', 'nl')}. Je eerste bestelling is ${FIRST_ORDER_PCT}% goedkoper, één keer per merk.`,
+    dropSpecN: `${vatLabel('excl', 'nl')}. Je eerste bestelling is ${FIRST_ORDER_PCT}% goedkoper, één keer per merk.`,
     dropWinK: 'Het venster',
     dropWinV: '48u',
     dropWinN: `Vanaf ${WINDOW_THRESHOLD} producten gaat de bestelling in de studioplanning en krijgt hij een gereserveerd venster — bevestigd voordat je betaalt, en nooit aangeboden voordat de planning het heeft vrijgegeven. Daaronder loopt hij in de gewone wachtrij.`,
@@ -332,18 +397,56 @@ const COPY = {
     dropPlateSub: 'Catalogset · uit een telefoonfoto',
     dropPlateAlt: 'Een afgewerkt VISUAILS catalogbeeld',
 
-    railH: ['Echt werk.', 'Nul fotoshoots.'],
-    railLede: 'Elk beeld hier kwam uit een map die iemand ons stuurde. Er is niets voor gefotografeerd.',
-    railCaps: [
-      ['Catalog', 'Je webshop en marktplaatsen'],
-      ['Lifestyle', 'Je feed en je advertenties'],
-      ['Video', 'Reels, TikTok, paid'],
-      ['Je merkmodel', 'Eén gezicht, overal'],
-      ['Lifestyle', 'Flash, na zonsondergang'],
-      ['On-model', 'In elke catalogset'],
-    ],
+    // Zie de EN-tabel: deze twee blijven staan voor de merkmodel-rail verderop.
     railPrev: 'Vorige',
     railNext: 'Volgende',
+
+    svcH: ['Alles wat de studio maakt,', 'en wat het kost.'],
+    svcLede: `Vier dingen die je kunt bestellen en één manier om ze te blijven bestellen. Catalog en lifestyle zijn per product geprijsd en het tarief zakt naarmate je er meer doet; een videoclip gaat per clip; je merkmodel wordt één keer opgezet. Alle bedragen hier zijn ${vatLabel('excl', 'nl')}.`,
+    svc: [
+      [
+        'Catalogset',
+        'Strakke, consistente productpagina’s die een jonge lijn gevestigd laten lijken.',
+        `${CATALOG_IMAGES} beelden per product: voorkant, achterkant, een close-up van de stof of het logo, en één gedragen op een model.`,
+        `vanaf ${euro(CATALOG_FROM, 'nl')}`,
+        `per product, ${vatLabel('excl', 'nl')} — zakt naar ${euro(CATALOG_TO, 'nl')} naarmate je er meer doet`,
+        '/catalog',
+      ],
+      [
+        'Lifestyle-carousel',
+        'Gestileerde scènes in context die de scroll stoppen en het gevoel verkopen.',
+        `${LIFESTYLE_IMAGES} beelden per product: één gestylede look, uitgesneden voor een carousel en klaar om te posten.`,
+        `vanaf ${euro(LIFESTYLE_FROM, 'nl')}`,
+        `per product, ${vatLabel('excl', 'nl')} — zakt naar ${euro(LIFESTYLE_TO, 'nl')} naarmate je er meer doet`,
+        '/lifestyle',
+      ],
+      [
+        'Videoclip',
+        'Subtiele beweging die doorklik oplevert waar een stilstaand beeld blijft steken.',
+        'Eén korte verticale clip, gesneden voor Reels, TikTok en paid. Toe te voegen aan elke bestelling, of los te bestellen.',
+        euro(AMOUNT.video, 'nl'),
+        `per clip, ${vatLabel('excl', 'nl')} — hetzelfde tarief binnen een bestelling of los`,
+        '/video',
+      ],
+      [
+        'Je merkmodel',
+        'Eén gezicht, alleen voor jouw merk gemaakt en door niemand anders gebruikt.',
+        `Eén keer opgezet, daarna in elke bestelling die je doet. ${euro(AMOUNT.brandModelCredit, 'nl')} van de opzet komt terug op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
+        euro(AMOUNT.brandModel, 'nl'),
+        `eenmalige opzet, ${vatLabel('excl', 'nl')} — volledig terug over ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
+        '/custom-models',
+      ],
+      [
+        'Een maandplan',
+        'Voor als het niet één lancering is maar elke maand van het jaar.',
+        `${PLAN_LOW}–${PLAN_HIGH} producten per maand voor één maandbedrag, goedkoper dan de staffel voor dezelfde output.`,
+        `vanaf ${euro(PLAN_FROM, 'nl')}`,
+        `per maand, ${vatLabel('excl', 'nl')} — drie plannen, volledig uitgewerkt op de prijslijst`,
+        '/pricing',
+      ],
+    ],
+    svcNote: `Catalog en lifestyle op hetzelfde product is één tarief in plaats van twee: ${euro(ENTRY_RATE, 'nl')} per product, zakkend naar ${euro(FLOOR_RATE, 'nl')}, tegenover ${euro(SEPARATE_FROM, 'nl')} tot ${euro(SEPARATE_TO, 'nl')} als je ze los koopt. ${vatNote('nl')}`,
+    svcCta: 'Start een bestelling',
 
     pipeH: 'Van map tot lancering.',
     pipeLede: 'Vier stappen, en in twee ervan zit jij.',
@@ -416,15 +519,6 @@ const COPY = {
     vsBN: `${vatLabel('excl', 'nl')}, alles meegerekend — ${euro(Q_FULL.rate, 'nl')} per product`,
     vsBList: ['Niets op te sturen, nergens heen te reizen', 'Geen dag uit de zaak', 'De uitkomst staat vast voor je betaalt', 'Volgend seizoen opnieuw, zonder iets te herboeken'],
     vsNote: shoot.caveat,
-
-    madeH: 'Vier manieren om groter te lijken dan je bent.',
-    madeLede: 'Catalog en lifestyle zijn wat een product krijgt. Video wordt per clip geoffreerd en kan aan elke bestelling worden toegevoegd. Je merkmodel wordt één keer opgezet en is daarna van jou.',
-    made: [
-      ['Catalog', 'Strakke, consistente productpagina’s die een jonge lijn gevestigd laten lijken.', '/catalog', `vanaf ${euro(ladderRate('catalog', 1), 'nl')} / product`],
-      ['Lifestyle', 'Gestileerde scènes in context die de scroll stoppen en het gevoel verkopen.', '/lifestyle', `vanaf ${euro(ladderRate('lifestyle', 1), 'nl')} / product`],
-      ['Video', 'Subtiele beweging die doorklik oplevert waar een stilstaand beeld blijft steken.', '/video', euro(AMOUNT.video, 'nl') + ' / clip'],
-      ['Je merkmodel', 'Eén gezicht, alleen voor jou gemaakt, waardoor elke bestelling onmiskenbaar van jou is.', '/custom-models', euro(AMOUNT.brandModel, 'nl') + ' eenmalig'],
-    ],
 
     chH: 'Eén bestelling, overal waar hij heen moet.',
     chLede: `Een seizoen van ${EX_FULL} producten is ${PER_PRODUCT_VISUALS} beelden per stuk — ${EX_VISUALS} afgewerkte beelden, uitgesneden voor de plekken waar ze echt moeten staan.`,
@@ -521,8 +615,10 @@ const PLANS = plans(lang);
 // every figure in pricing.js is net; BRIEF-14's rule is that no price is
 // printed without saying which it is, so the label and the gross figure travel
 // together and neither is typed.
-const withVatLabel = (plan) =>
-  `${euro(withVat(PLAN_AMOUNT[plan.id]), lang)} ${vatLabel('incl', lang)}`;
+// Net only — see the note above vatNote() in pricing.js for why the gross
+// twin came off every page: VAT is not one rate, so a second figure printed
+// beside the first is only true for a Dutch reader.
+const netLabel = vatLabel('excl', lang);
 
 const c = COPY[lang];
 
@@ -615,30 +711,58 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 3 · THE OUTPUT RAIL ────────────────────────────────────────────────────
-    Show the work before the claim. Six real photographs, pushed sideways,
-    each one a link to the page that explains it. */}
-<section class="band-tight hv-rail-band">
+{/* ── 3 · THE SERVICES ───────────────────────────────────────────────────────
+    WHAT WAS HERE AND WHY IT WENT. A horizontal rail of six photographs headed
+    "Real output. Zero photoshoots." It showed the work, which is this brand's
+    first principle, but it was the third band on a page whose next four bands
+    are also photographs — so it was proof stacked on proof, and the one thing
+    a visitor could not find anywhere above the fold was the actual offer. That
+    had to be inferred from four tiles eleven bands down.
+
+    THIS BAND REPLACES BOTH. It is the whole offer in one place: what each
+    service is, what you receive, what it costs, and a photograph of it. The
+    "four deliverables" band that used to sit at section 6 IS DELETED rather
+    than reduced — it named the same four services, linked to the same four
+    pages and carried the same four prices, and two bands saying that on one
+    page leaves a reader deciding which is the real price list. What it had
+    that this does not is the "look bigger than you are" framing, and that
+    argument is already made in full by the Dream band at 4c.
+
+    FIVE TILES, TWO WEIGHTS. Catalog and lifestyle take half the row each
+    because they are what a product actually gets; the other three are
+    additions to that, and a grid of five equal tiles would say they are five
+    equal choices. The plans tile is a pointer, not a plan grid — the pricing
+    band at 7b renders plans() in full and this one only says they exist. */}
+<section class="band hv-svc-band">
   <div class="container">
-    <div class="rail-head">
-      <div class="statement statement-left">
-        <h2>{c.railH[0]} <em class="hv-accent">{c.railH[1]}</em></h2>
-        <p class="lede">{c.railLede}</p>
-      </div>
-      <div class="rail-nav">
-        <button type="button" data-rail-prev aria-label={c.railPrev}><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" /></svg></button>
-        <button type="button" data-rail-next aria-label={c.railNext}><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg></button>
-      </div>
+    <div class="statement">
+      <h2>{c.svcH[0]} <em class="hv-accent">{c.svcH[1]}</em></h2>
+      <p class="lede">{c.svcLede}</p>
     </div>
-  </div>
-  <div class="container">
-    <div class="rail" data-rail>
-      {RAIL.map((r, i) => (
-        <a class="hv-rail-item" href={lp(r.href)}>
-          <span class="plate"><img src={r.src} alt={`${c.railCaps[i][0]} — ${c.railCaps[i][1]}`} width={r.w} height={r.h} loading="lazy" decoding="async" /></span>
-          <span class="plate-cap"><b>{c.railCaps[i][0]}</b><span>{c.railCaps[i][1]}</span></span>
+    <div class="tiles hv-svc-tiles">
+      {c.svc.map(([name, line, get, price, terms, href], i) => (
+        <a class={`tile ${i < 2 ? 's-6' : 's-4'} hv-svc-tile`} href={lp(href)}>
+          <span class={`tile-media hv-svc-media${i < 2 ? ' is-wide' : ''}`}>
+            <img src={SERVICE_IMG[i].src} alt={`${name} — ${line}`} width={SERVICE_IMG[i].w} height={SERVICE_IMG[i].h} loading="lazy" decoding="async" />
+          </span>
+          <span class="tile-body hv-svc-body">
+            <span class="tile-h">{name}</span>
+            <span class="hv-svc-line">{line}</span>
+            {/* The inset plate is what you RECEIVE, kept visually separate from
+                what the service is — a reader comparing five services compares
+                this line and nothing else, so it may not read as more prose. */}
+            <span class="hv-svc-get">{get}</span>
+            <span class="hv-svc-price">
+              <b>{price}</b>
+              <span>{terms}</span>
+            </span>
+          </span>
         </a>
       ))}
+    </div>
+    <div class="hv-svc-foot">
+      <p>{c.svcNote}</p>
+      <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
     </div>
   </div>
 </section>
@@ -837,42 +961,22 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 6 · THE FOUR DELIVERABLES ──────────────────────────────────────────── */}
-<section class="band">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.madeH}</h2>
-      <p class="lede">{c.madeLede}</p>
-    </div>
-    <div class="tiles hv-made-tiles">
-      {c.made.map(([t, b, href, price], i) => (
-        <a class="tile s-3 hv-made-tile" href={lp(href)}>
-          <span class="tile-media hv-made-media">
-            <img src={MADE_IMG[i].src} alt={`${t} — ${b}`} width={MADE_IMG[i].w} height={MADE_IMG[i].h} loading="lazy" decoding="async" />
-          </span>
-          <span class="tile-body">
-            <span class="tile-h">{t}</span>
-            <span class="tile-n">{b}</span>
-            <span class="tile-foot">{price}</span>
-          </span>
-        </a>
-      ))}
-    </div>
-  </div>
-</section>
+{/* ── 6 · WHERE THE VISUALS LAND ─────────────────────────────────────────────
+    This used to sit directly under a "four deliverables" band, which named the
+    same four services the services band at section 3 now names. That band is
+    gone — see the note at section 3 for why one of the two had to be — and
+    this one keeps its place: it is the only band that answers what you DO with
+    the visuals, which is the question the services band stops one short of.
 
-{/* ── 6b · WHERE THE VISUALS LAND ────────────────────────────────────────────
-    Directly under the four deliverables, because "catalog, lifestyle, video,
-    brand model" is what is BOUGHT and this is where it GOES — the deliverable
-    tiles answer what you get and stop one question short of what you do with
-    it. It also converts the drop price into unit economics without a discount:
+    It also converts the drop price into unit economics without a discount:
     the €1,850 stops being a number and becomes a number divided by roughly two
     hundred placements.
 
-    Every count here is derived from pricing.js, not typed. The two figures a
-    reader could check — 4 catalog photos, 3 lifestyle photos — are stated in
-    PER_PRODUCT's own copy, so the arithmetic in the lede is the arithmetic the
-    rest of the site already promises. */}
+    Every count here is derived, not typed. The two figures a reader could
+    check — 4 catalog photos, 3 lifestyle photos — are CATALOG_IMAGES and
+    LIFESTYLE_IMAGES, the same two constants the services band prints one by
+    one, so the sum in this lede cannot disagree with the counts stated up
+    there. */}
 <section class="band-tight hv-ch-band">
   <div class="container">
     <div class="statement">
@@ -1011,7 +1115,7 @@ const FAQ_PICK = [
           <div class="tile-body">
             <p class="tile-k">{plan.name}</p>
             <p class="tile-v">{plan.price}</p>
-            <p class="hv-tile-sub">{plan.unit} · {withVatLabel(plan)}</p>
+            <p class="hv-tile-sub">{plan.unit} · {netLabel}</p>
             <p class="tile-n">{plan.line}</p>
             <ul class="hv-pr-inc">{plan.includes.map((x) => (<li>{x}</li>))}</ul>
             {plan.saving && <p class="hv-pr-saving">{plan.saving}</p>}
@@ -1249,16 +1353,52 @@ const FAQ_PICK = [
      at a time; on this page it is the window figure and the €0.99. */
   .tile-v.hv-clay, .hv-stat dt.hv-clay { color: var(--clay); }
   .on-paper .tile-v.hv-clay, .on-paper .hv-stat dt.hv-clay { color: var(--clay-text); }
-  .hv-drop-tiles, .hv-made-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  .hv-drop-tiles, .hv-svc-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
 
-  /* ── rail ──────────────────────────────────────────────────────────────── */
-  .hv-rail-band .rail-head { align-items: flex-end; }
-  .hv-rail-band .statement-left { max-width: 34rem; }
-  .hv-rail-item { display: block; color: inherit; }
-  .hv-rail-item .plate { display: block; aspect-ratio: 4 / 5; }
-  .hv-rail-item:hover .plate img { transform: scale(1.02); }
-  .hv-rail-item .plate img { transition: transform var(--dur-3) var(--ease); }
-  @media (prefers-reduced-motion: reduce) { .hv-rail-item .plate img { transition: none; } .hv-rail-item:hover .plate img { transform: none; } }
+  /* ── the services ──────────────────────────────────────────────────────────
+     A whole-tile link, so the target is the card and not a word inside it.
+     Radii are inherited: .tile carries --r-lg and clips its own media, which
+     is why nothing here sets a corner except the inset .hv-svc-get plate —
+     that one is a surface of its own and takes --r-md, the step below the
+     card that contains it. Nothing in this band is allowed a hard corner. */
+  .hv-svc-tile { color: inherit; transition: background var(--dur-1) var(--ease); }
+  .hv-svc-tile:hover { background: var(--bg-raise); }
+  /* Two aspect ratios for two tile widths. A 4/3 crop inside a half-row tile
+     is 480px of photograph before a word is read; the wide pair get 16/9 so
+     the copy under them still starts above the fold of the tile. */
+  .hv-svc-media { aspect-ratio: 4 / 3; }
+  .hv-svc-media.is-wide { aspect-ratio: 16 / 9; }
+  .hv-svc-media img { transition: transform var(--dur-3) var(--ease); }
+  .hv-svc-tile:hover .hv-svc-media img { transform: scale(1.03); }
+  @media (prefers-reduced-motion: reduce) {
+    .hv-svc-media img, .hv-svc-tile:hover .hv-svc-media img { transition: none; transform: none; }
+  }
+  .hv-svc-body { gap: 0; }
+  .hv-svc-line { font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
+  .hv-svc-get {
+    margin-top: 1rem;
+    padding: .7rem .85rem;
+    background: var(--surface-2);
+    border-radius: var(--r-md);
+    font-size: .82rem; line-height: 1.5; color: var(--ink-2);
+  }
+  /* The price sits on the tile's floor with a rule above it, so five tiles of
+     unequal copy length still line their figures up with each other. */
+  .hv-svc-price { margin-top: auto; padding-top: 1.2rem; display: block; }
+  .hv-svc-price b {
+    display: block;
+    font-family: var(--font-display); font-weight: 900;
+    font-size: clamp(1.5rem, 2.4vw, 1.9rem); line-height: 1; letter-spacing: -0.03em;
+    color: var(--ink); font-variant-numeric: tabular-nums lining-nums;
+  }
+  .hv-svc-price span { display: block; margin-top: .4rem; font-size: .78rem; line-height: 1.45; color: var(--ink-3); }
+  /* The one sentence about VAT on this page, plus the bundle arithmetic. Left
+     as prose rather than a tile: it qualifies all five figures above it and a
+     sixth card would read as a sixth service. */
+  .hv-svc-foot { margin-top: clamp(1.6rem, 3vw, 2.4rem); display: flex; align-items: flex-start; justify-content: space-between; gap: clamp(1.2rem, 3vw, 2.5rem); flex-wrap: wrap; }
+  .hv-svc-foot p { margin: 0; max-width: 62ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-svc-foot .btn { flex: 0 0 auto; }
+
   @media (max-width: 700px) {
     .rail-nav { display: none; }
     /* Two cards fit inside 390px, separated by the rail's 1px rule — which
@@ -1296,16 +1436,6 @@ const FAQ_PICK = [
   .hv-vs-note { margin: 1.4rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 64ch; }
   .hv-vs-note a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
   .hv-vs-note a:hover { text-decoration-color: var(--accent); }
-
-  /* ── the four deliverables ─────────────────────────────────────────────── */
-  .hv-made-tile { color: inherit; transition: background var(--dur-1) var(--ease); }
-  .hv-made-tile:hover { background: var(--bg-raise); }
-  .hv-made-media { aspect-ratio: 4 / 3; }
-  .hv-made-media img { transition: transform var(--dur-3) var(--ease); }
-  .hv-made-tile:hover .hv-made-media img { transform: scale(1.03); }
-  @media (prefers-reduced-motion: reduce) {
-    .hv-made-media img, .hv-made-tile:hover .hv-made-media img { transition: none; transform: none; }
-  }
 
   /* ── the dashboard band ────────────────────────────────────────────────── */
   .hv-dash { margin-top: clamp(2.6rem, 5vw, 4rem); display: grid; gap: 1px; background: var(--line); }

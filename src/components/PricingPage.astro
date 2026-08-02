@@ -57,7 +57,7 @@ import {
   SHOOT_DAY, TEST_SAMPLE,
   reviewClaim, aftercare, euro, AMOUNT,
   TIER_ROWS, tierRow, tierRowLabels,
-  WINDOW_THRESHOLD, vatLabel, withVat,
+  WINDOW_THRESHOLD, vatLabel, vatNote,
   BRAND_MODEL_CREDIT_DROPS,
 } from '../data/pricing.js';
 // The six pricing questions are NOT in this file. They live in
@@ -178,7 +178,7 @@ const COPY = {
     perProduct: 'per product',
 
     firstLead: `Your first order is ${firstPct} off.`,
-    firstBody: `Once per brand, at any size. It is what the pilot package used to be, without the fixed count: ${WORKED[1]} complete products is ${euro(firstEg.listTotal, 'en')} ${vatLabel('excl', 'en')}, and on a first order that is ${euro(firstEg.net, 'en')} ${vatLabel('excl', 'en')} — ${euro(firstEg.gross, 'en')} ${vatLabel('incl', 'en')}.`,
+    firstBody: `Once per brand, at any size. It is what the pilot package used to be, without the fixed count: ${WORKED[1]} complete products is ${euro(firstEg.listTotal, 'en')} ${vatLabel('excl', 'en')}, and on a first order that is ${euro(firstEg.net, 'en')} ${vatLabel('excl', 'en')}.`,
     ladderCta: 'Start an order',
 
     anchorH: 'What this replaces',
@@ -237,7 +237,7 @@ const COPY = {
     plansCta: 'Set up a plan',
 
     sampleH: 'Before any of it',
-    sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${euro(withVat(AMOUNT.testSample), 'en')} ${vatLabel('incl', 'en')} — ${sample.unit}. It runs through the same pipeline as a paid order, so what comes back is what you would get.`,
+    sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${sample.unit}. It runs through the same pipeline as a paid order, so what comes back is what you would get.`,
     sampleCta: `Request a test sample · ${sample.price} ${vatLabel('excl', 'en')}`,
 
     faqH: 'Pricing questions',
@@ -270,7 +270,7 @@ const COPY = {
     perProduct: 'per product',
 
     firstLead: `Je eerste bestelling is ${firstPct} goedkoper.`,
-    firstBody: `Eenmalig per merk, bij elke omvang. Het is wat het pilotpakket was, zonder het vaste aantal: ${WORKED[1]} complete producten is ${euro(firstEg.listTotal, 'nl')} ${vatLabel('excl', 'nl')}, en bij een eerste bestelling is dat ${euro(firstEg.net, 'nl')} ${vatLabel('excl', 'nl')} — ${euro(firstEg.gross, 'nl')} ${vatLabel('incl', 'nl')}.`,
+    firstBody: `Eenmalig per merk, bij elke omvang. Het is wat het pilotpakket was, zonder het vaste aantal: ${WORKED[1]} complete producten is ${euro(firstEg.listTotal, 'nl')} ${vatLabel('excl', 'nl')}, en bij een eerste bestelling is dat ${euro(firstEg.net, 'nl')} ${vatLabel('excl', 'nl')}.`,
     ladderCta: 'Start een bestelling',
 
     anchorH: 'Wat dit vervangt',
@@ -318,7 +318,7 @@ const COPY = {
     plansCta: 'Een plan opzetten',
 
     sampleH: 'Voordat je iets vastlegt',
-    sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${euro(withVat(AMOUNT.testSample), 'nl')} ${vatLabel('incl', 'nl')} — ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
+    sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
     sampleCta: `Vraag een proefvisual aan · ${sample.price} ${vatLabel('excl', 'nl')}`,
 
     faqH: 'Vragen over prijzen',
@@ -417,7 +417,6 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
             {KIND_IDS.map((id) => (
               <td>
                 <span class="lad-rate">{euro(ladderRate(id, r.at), lang)}</span>
-                <span class="lad-incl">{euro(withVat(ladderRate(id, r.at)), lang)} {vatLabel('incl', lang)}</span>
               </td>
             ))}
           </tr>
@@ -439,7 +438,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
           <div class="tile-body">
             <p class="tile-k">{n} {c.workedUnit}</p>
             <p class="tile-v">{euro(q.net, lang)}</p>
-            <p class="worked-vat">{vatLabel('excl', lang)} · {euro(q.gross, lang)} {vatLabel('incl', lang)}</p>
+            <p class="worked-vat">{vatLabel('excl', lang)}</p>
             <p class="tile-n">{euro(q.rate, lang)} {c.perProduct} · {vatLabel('excl', lang)}</p>
           </div>
         </div>
@@ -488,7 +487,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     <div class="anchor-col">
       <span class="anchor-tag">{c.anchorNowTag}</span>
       <span class="anchor-price">{euro(quote('complete', ANCHOR_PRODUCTS).net, lang)}</span>
-      <span class="anchor-vat">{vatLabel('excl', lang)} · {euro(quote('complete', ANCHOR_PRODUCTS).gross, lang)} {vatLabel('incl', lang)}</span>
+      <span class="anchor-vat">{vatLabel('excl', lang)}</span>
       <p class="anchor-meta">{c.anchorNowMeta}</p>
       <ul class="anchor-list">
         {c.anchorNowList.map((it) => <li>{it}</li>)}
@@ -525,7 +524,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     <p class="addon-price">
       <span class="ap-amount">{euro(AMOUNT.brandModel, lang)}</span>
       <span class="ap-unit">{c.brandModelUnit}</span>
-      <span class="ap-vat">{vatLabel('excl', lang)} · {euro(withVat(AMOUNT.brandModel), lang)} {vatLabel('incl', lang)}</span>
+      <span class="ap-vat">{vatLabel('excl', lang)}</span>
     </p>
 
     <div class="addon-fig">
@@ -551,7 +550,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
       <p class="standing-price">
         <span class="sp-amount">{euro(AMOUNT.video, lang)}</span>
         <span class="sp-unit">{c.videoUnit}</span>
-        <span class="sp-vat">{vatLabel('excl', lang)} · {euro(withVat(AMOUNT.video), lang)} {vatLabel('incl', lang)}</span>
+        <span class="sp-vat">{vatLabel('excl', lang)}</span>
       </p>
       <a href={lp('/video')} class="link-arrow standing-cta">{c.videoCta}
         <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -643,7 +642,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
         <div class="pack-price">
           <span class="pp-amount">{p.price}</span>
           <span class="pp-unit">{p.unit}</span>
-          <span class="pp-vat">{vatLabel('excl', lang)} · {euro(withVat(PLAN_AMOUNT[p.id]), lang)} {vatLabel('incl', lang)}</span>
+          <span class="pp-vat">{vatLabel('excl', lang)}</span>
         </div>
 
         <ul class="checklist pack-inc">

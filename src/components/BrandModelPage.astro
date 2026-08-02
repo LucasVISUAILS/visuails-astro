@@ -71,7 +71,7 @@
 //     order eleven times over — including in the H1. What we sell is an order;
 //     in Dutch, een bestelling. The client's own launch keeps the word.
 import {
-  AMOUNT, euro, vatLabel, withVat, BRAND_MODEL_CREDIT_DROPS,
+  AMOUNT, euro, vatLabel, BRAND_MODEL_CREDIT_DROPS,
   WINDOW_THRESHOLD,
 } from '../data/pricing.js';
 import { ROSTER } from '../data/models.js';
@@ -173,7 +173,7 @@ const COPY = {
     // Both figures on this block are net, like every figure in pricing.js, and
     // both say so. The setup is the one a brand will put in a spreadsheet, so
     // it carries the gross figure beside it as well.
-    costSetupVat: `${vatLabel('excl', 'en')} · ${euro(withVat(AMOUNT.brandModel), 'en')} ${vatLabel('incl', 'en')}`,
+    costSetupVat: vatLabel('excl', 'en'),
     costCreditVat: vatLabel('excl', 'en'),
     costIncludes: 'What the setup covers',
     costMathH: 'The arithmetic, stated plainly',
@@ -295,7 +295,7 @@ const COPY = {
     costSetupLabel: 'Eenmalige setup',
     costCreditLabel: 'Terug naar jou',
     costCreditUnit: `op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
-    costSetupVat: `${vatLabel('excl', 'nl')} · ${euro(withVat(AMOUNT.brandModel), 'nl')} ${vatLabel('incl', 'nl')}`,
+    costSetupVat: vatLabel('excl', 'nl'),
     costCreditVat: vatLabel('excl', 'nl'),
     costIncludes: 'Wat de setup dekt',
     costMathH: 'De rekensom, gewoon uitgeschreven',

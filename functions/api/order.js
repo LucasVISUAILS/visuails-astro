@@ -814,17 +814,53 @@ function fileSize(bytes) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/**
+ * The customer row behind an order. Created on a first order and topped up on
+ * every one after — this is why /account has anything to show and why
+ * /account/me has anything to prefill.
+ *
+ * WHOSE VALUE WINS, AND WHY IT DEPENDS ON details_saved_at (August 2026).
+ *
+ * The old rule was "the newest order wins": COALESCE(excluded.x, customers.x)
+ * overwrites any field this order supplied and leaves alone any it did not.
+ * That is still exactly what happens for a customer who has never saved their
+ * details — the behaviour below is unchanged for them, and they are everyone
+ * who existed before this column did.
+ *
+ * For a customer who HAS saved their details, it inverts: the saved value wins
+ * and the order can only fill a blank. The reason is a specific, reachable bug
+ * rather than a preference. /start now collapses its brief step for these
+ * customers and offers an edit affordance labelled "change for this order" —
+ * so a brand that ships one order to a different contact name would, under the
+ * old rule, silently rewrite the standing default they explicitly asked us to
+ * keep, and every later order would then be prefilled with the exception. A
+ * setting a form can overwrite from the side is not a setting.
+ *
+ * Changing a saved detail for good is therefore one place only: POST
+ * /account/details, behind the session cookie, from the dashboard or from the
+ * end-of-order opt-in. See src/lib/account.js's handleDetails().
+ */
 async function upsertCustomer(env, c) {
   if (!env.DB) return null;
   await env.DB.prepare(
     `INSERT INTO customers (email, name, brand, phone, website, vat_number)
      VALUES (?1,?2,?3,?4,?5,?6)
      ON CONFLICT(email) DO UPDATE SET
-       name=COALESCE(excluded.name, customers.name),
-       brand=COALESCE(excluded.brand, customers.brand),
-       phone=COALESCE(excluded.phone, customers.phone),
-       website=COALESCE(excluded.website, customers.website),
-       vat_number=COALESCE(excluded.vat_number, customers.vat_number),
+       name=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.name, customers.name)
+                 ELSE COALESCE(customers.name, excluded.name) END,
+       brand=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.brand, customers.brand)
+                 ELSE COALESCE(customers.brand, excluded.brand) END,
+       phone=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.phone, customers.phone)
+                 ELSE COALESCE(customers.phone, excluded.phone) END,
+       website=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.website, customers.website)
+                 ELSE COALESCE(customers.website, excluded.website) END,
+       vat_number=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.vat_number, customers.vat_number)
+                 ELSE COALESCE(customers.vat_number, excluded.vat_number) END,
        updated_at=datetime('now')`
   ).bind(c.email, c.name || null, c.brand || null, c.phone || null, c.website || null, c.vat || null).run();
   const row = await env.DB.prepare('SELECT id FROM customers WHERE email = ?1').bind(c.email).first();

@@ -48,6 +48,33 @@ CREATE TABLE IF NOT EXISTS customers (
   -- cannot both claim the quarter.
   upgrade_prompt_at TEXT,
 
+  -- ── Saved order details (migrations/0004) ──────────────────────────────────
+  -- Lucas, August 2026: a signed-in customer should be able to save the answers
+  -- that do not change between orders and skip the steps they cover. Six of
+  -- those seven fields are already columns above — name, brand, email, phone,
+  -- website, vat_number — so the saved record IS this row rather than a second
+  -- table that would have to be kept in step with it. These three are what the
+  -- row could not already answer.
+  --
+  -- The background the brand orders against: a RECOMMENDED id from
+  -- src/data/backgrounds.js ('white' | 'off-white' | 'light-grey' | 'beige') or
+  -- CUSTOM_ID ('custom'). NULL means no default and /start asks as usual.
+  default_background TEXT,
+  -- The resolved six-digit hex, stored rather than looked up from the id: for
+  -- 'custom' there is no id to look up, and for the four recommended values
+  -- backgrounds.js calls its hexes "the contract" — what the studio renders
+  -- against — so a later palette edit must not silently change what a brand's
+  -- saved default means.
+  default_background_hex TEXT,
+  -- The difference between "we happen to know your phone number because you
+  -- ordered once" and "you asked us to keep it". Every customer with an order
+  -- has contact fields on file already; nobody chose that. NULL means never
+  -- saved. Three behaviours read it: /start only collapses its brief step for a
+  -- customer who opted in, the end-of-order offer to save appears only while it
+  -- is NULL, and upsertCustomer() in functions/api/order.js stops letting a
+  -- later order overwrite a saved value. See migrations/0004 for the argument.
+  details_saved_at TEXT,
+
   created_at    TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );

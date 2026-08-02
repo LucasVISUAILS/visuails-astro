@@ -1,0 +1,71 @@
+-- VISUAILS — migration 0004. Saved order details on a customer account.
+--
+-- Not a numbered brief section — this came from Lucas directly, August 2026,
+-- verbatim: "Als iemand is ingelogd op de site wil ik dat hij ook echt op de
+-- site is ingelogd, waarna hij zijn gegevens kan opslaan voor een volgende
+-- bestelling en veel stappen over kan slaan." The "gegevens opslaan" half is
+-- what needs a schema change; the rest is chrome and /start behaviour.
+--
+-- Brings an EXISTING database up to the shape schema.sql now describes. A
+-- fresh database does not need this file — load schema.sql instead. See 0001
+-- for why the two cannot be the same statements.
+--
+-- Run it with:
+--   wrangler d1 execute visuails --local  --file=./migrations/0004-saved-details.sql
+--   wrangler d1 execute visuails --remote --file=./migrations/0004-saved-details.sql
+--
+-- RUNNING IT TWICE IS SAFE, AND IT WILL LOOK LIKE A FAILURE — same as 0001,
+-- 0002 and 0003. SQLite has no ADD COLUMN IF NOT EXISTS, so a second run stops
+-- at the first ALTER TABLE and reports
+--
+--   duplicate column name: default_background
+--
+-- which is the migration telling you it has already been applied.
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ONLY THREE COLUMNS, BECAUSE SIX OF THE SEVEN FIELDS ALREADY EXIST.
+--
+-- name, brand, email, phone, website and vat_number have been on `customers`
+-- since Phase 1 — functions/api/order.js's upsertCustomer() has written them on
+-- every order from the start, and GET /account/me has read them back for
+-- /start's prefill since task #271e. Adding a second, parallel "saved details"
+-- table for the same six values would be two rows that have to agree about one
+-- brand's phone number, and nothing would keep them in step. So the saved
+-- record IS the customer row, and this migration only adds what that row cannot
+-- already answer.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- The background this brand orders against, so /start does not ask a returning
+-- customer the one question their own product grid already answered. Holds a
+-- RECOMMENDED id from src/data/backgrounds.js ('white' | 'off-white' |
+-- 'light-grey' | 'beige') or CUSTOM_ID ('custom'); NULL means no default and
+-- /start asks as usual.
+ALTER TABLE customers ADD COLUMN default_background TEXT;
+
+-- The resolved six-digit hex, and the reason it is a SECOND column rather than
+-- being looked up from the id at read time: for 'custom' there is no id to look
+-- up — the value IS the answer — and for the four recommended ids the hex in
+-- backgrounds.js is documented there as "the contract", the value the studio
+-- actually renders against. Storing what was resolved at save time means a
+-- palette edit cannot silently change what a brand's saved default means.
+ALTER TABLE customers ADD COLUMN default_background_hex TEXT;
+
+-- WHY A FLAG AND NOT "THE FIELDS ARE NON-EMPTY".
+--
+-- Every customer with an order already has name/brand/email on file, because
+-- upsertCustomer() put them there — nobody chose that, it is a side effect of
+-- ordering. This column is the difference between "we happen to know your
+-- phone number" and "you asked us to keep it", and the whole feature turns on
+-- it:
+--
+--   · /start only COLLAPSES step 3 into a summary when this is set. Without it
+--     the fields are prefilled and fully visible, exactly as they have been
+--     since #271e — a customer who never opted in sees no change at all.
+--   · The end-of-order offer to save is shown only when this is NULL, so it is
+--     asked once and never nags a customer who already answered.
+--   · upsertCustomer() stops overwriting a saved record from a later order (see
+--     that function): a field changed for one order must not silently rewrite
+--     the standing default.
+--
+-- NULL means never saved. A timestamp means saved, and when.
+ALTER TABLE customers ADD COLUMN details_saved_at TEXT;

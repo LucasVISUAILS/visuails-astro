@@ -86,11 +86,19 @@
 //                                                attribute is the ladder kind
 //           select[name=products]                every count, plus one option
 //                                                that is not a number
-//           [data-pl-total-net] [data-pl-total-vat] [data-pl-total]
-//                                                net / VAT / gross, three lines
+//           [data-pl-total]                      the net order value, one line
 //           [data-pl-total-note] [data-pl-rung]  the rate line and the upsell
 //           [data-pl-level="attended"|"unattended"] [data-pl-level-note]
 //           [data-pl-outfit] input[name=outfit_count]   task #271f — full outfit
+//           [data-pl-bg]                         the background fieldset; hidden
+//                                                AND disabled for lifestyle-only
+//             input[name=background][data-pl-bg-hex][data-pl-bg-name]
+//             input[name=background][data-pl-bg-custom]  the fifth option
+//             [data-pl-bg-preview] [data-pl-bg-shown]    the custom swatch
+//             [data-pl-bg-panel]                 the custom colour fields
+//             [data-pl-bg-color] [data-pl-bg-text]       kept in sync
+//             [data-pl-bg-warn] [data-pl-bg-note]
+//             input[name=background_hex][data-pl-bg-value]  the resolved value
 //
 //   step 2  input[type=file][data-pl-file]       NO name attribute, deliberately
 //           [data-pl-droplist]                   the file rows land here
@@ -98,6 +106,12 @@
 //
 //   step 3  input[name=name|brand|email|phone|website|vat]
 //           [data-pl-prefill-note]               task #271e — see bindPrefill()
+//           [data-pl-s3-fields]                  the six fields, as one block
+//           [data-pl-saved]                      the collapsed summary, hidden
+//             [data-pl-saved-list] [data-pl-saved-edit]
+//
+//   step 5  [data-pl-save-offer]                 the opt-in, hidden
+//             input[data-pl-save-check]          NO name attribute, deliberately
 //
 //   step 4  [data-pl-gate="queue|ok|full|too-large|invalid|unavailable|checking"]
 //           [data-pl-windows]                    inside the "ok" panel
@@ -392,6 +406,7 @@ function bindOrder() {
   // Task #271f.
   const outfit = q('select[name="outfit_count"]');
   if (outfit) outfit.addEventListener('change', syncTotal);
+  bindBackground();
 }
 
 /**
@@ -431,9 +446,164 @@ function syncOrder() {
   setHidden('tier', attended ? 'attended' : 'unattended');
 
   syncOutfit(kind);
+  syncBackground(kind);
   syncTotal();
   syncLevel(attended, chosen);
   syncRequired();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP 1 · THE BACKGROUND
+//
+// Lucas, August 2026: a customer ordering catalog images picks the ground their
+// products sit on, and we recommend a light one — because a brand that already
+// has product photos has a background already, and new products have to look
+// like they belong beside the old ones. src/data/backgrounds.js holds the four
+// values, the reasoning, and every word this section writes to the screen.
+//
+// THIS SECTION NEVER REFUSES A COLOUR. A custom value darker than the data
+// module's threshold gets a sentence saying what that costs — no marketplace
+// main image, no shadow under the product — and then the order carries it.
+// `warn` is phrased as a consequence and this code treats it as one: it is
+// shown, it is not a validation state, and nothing here can block a submit.
+//
+// SCOPE. A lifestyle carousel is a styled scene, not a product on a ground, so
+// the whole fieldset goes for the lifestyle-only answer. It is hidden AND
+// disabled, and the second half is the one that matters: `hidden` is paint, and
+// a hidden field still submits — a lifestyle order would otherwise arrive
+// carrying a background nobody chose.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function bindBackground() {
+  qa('input[name="background"]').forEach((r) => {
+    r.addEventListener('change', () => syncBackground(kindOf()));
+  });
+
+  const color = q('[data-pl-bg-color]');
+  const text = q('[data-pl-bg-text]');
+
+  // The two fields are one answer in two shapes: a customer who knows their hex
+  // pastes it, one who does not picks it, and neither should have to discover
+  // the other. Typing or picking also SELECTS the custom option — reaching for
+  // a colour is the same act as choosing to use one, and making someone click
+  // the radio afterwards is a form asking them to confirm what they just did.
+  if (color) {
+    color.addEventListener('input', () => {
+      if (text) text.value = normalizeHex(color.value) || color.value;
+      pickCustom();
+    });
+  }
+  if (text) {
+    text.addEventListener('input', () => {
+      const hex = normalizeHex(text.value);
+      if (hex && color) color.value = hex;
+      pickCustom();
+    });
+  }
+}
+
+/** Check the custom radio (if it is not already) and re-render from it. */
+function pickCustom() {
+  const custom = q('input[name="background"][data-pl-bg-custom]');
+  if (custom && !custom.checked) custom.checked = true;
+  syncBackground(kindOf());
+}
+
+/**
+ * A 6-digit uppercase hex, or ''.
+ *
+ * Three digits are expanded rather than refused: #EEE is a hex a brand's own
+ * style guide will happily be written in, and luminance() in backgrounds.js
+ * only reads six. Everything else — a colour name, half a paste, an empty
+ * field — comes back '' and is simply not an answer yet.
+ */
+function normalizeHex(v) {
+  const s = String(v || '').trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(s)) return `#${s.split('').map((ch) => ch + ch).join('').toUpperCase()}`;
+  if (/^[0-9a-f]{6}$/i.test(s)) return `#${s.toUpperCase()}`;
+  return '';
+}
+
+/**
+ * Mirrors luminance() + isLight() in src/data/backgrounds.js — WCAG's relative
+ * luminance, so "dark" means the same thing here as it does in the module that
+ * defines it.
+ *
+ * The FORMULA is duplicated, the THRESHOLD is not: cfg.bg.lightThreshold is
+ * LIGHT_THRESHOLD itself, serialised by the page, the same arrangement the
+ * ladder uses two hundred lines up. A number typed here could drift; a formula
+ * that is a published standard cannot.
+ */
+function isLight(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(hex || ''));
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const l = 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  return l >= Number(cfg.bg && cfg.bg.lightThreshold);
+}
+
+/** Catalog work has a background. A lifestyle carousel is a scene. */
+function bgApplies(kind) {
+  return kind === 'complete' || kind === 'catalog';
+}
+
+function syncBackground(kind) {
+  const field = q('[data-pl-bg]');
+  if (!field) return;
+
+  const applies = bgApplies(kind);
+  field.hidden = !applies;
+  field.disabled = !applies; // a <fieldset> takes its whole subtree out of the post
+  if (!applies) {
+    setHidden('background_hex', '');
+    return;
+  }
+
+  const checked = q('input[name="background"]:checked');
+  const custom = !!(checked && checked.dataset.plBgCustom !== undefined);
+  const typed = normalizeHex(q('[data-pl-bg-text]') ? q('[data-pl-bg-text]').value : '');
+
+  // The custom fields, revealed by the option that uses them. Disabled as well
+  // as hidden for the same reason the fieldset is: an abandoned hex typed
+  // before the customer settled on off-white must not travel with the order.
+  const panel = q('[data-pl-bg-panel]');
+  if (panel) {
+    panel.hidden = !custom;
+    const text = q('[data-pl-bg-text]');
+    if (text) text.disabled = !custom;
+  }
+
+  // The fifth swatch shows the colour it stands for, at the same size as the
+  // four beside it, so the comparison the picker exists for is possible.
+  const preview = q('[data-pl-bg-preview]');
+  if (preview) {
+    preview.style.setProperty('--swatch', typed || '');
+    preview.classList.toggle('is-empty', !typed);
+  }
+  setText('[data-pl-bg-shown]', custom ? typed : '');
+
+  // One note, for the option in hand. c() returns '' for a key that is not
+  // there, and an id with no note is a data change rather than a broken page,
+  // so the line simply empties.
+  const id = checked ? checked.value : '';
+  setText('[data-pl-bg-note]', id ? c(`bg.note.${id}`) : '');
+
+  // Information, not a block. Shown only for a custom colour that is actually
+  // dark — isLight() answers null for "not a colour yet", which is not the same
+  // as light and must not warn.
+  const warn = q('[data-pl-bg-warn]');
+  if (warn) warn.hidden = !(custom && typed && isLight(typed) === false);
+
+  // THE RESOLVED VALUE, which is the whole point: the studio reads one field
+  // and never has to look an id up. A custom option with nothing typed in it
+  // yet resolves to nothing rather than to a guess — `background` still says
+  // `custom`, which is true, and the hex follows when there is one.
+  const hex = custom ? typed : (checked && checked.dataset.plBgHex) || '';
+  setHidden('background_hex', hex);
 }
 
 /**
@@ -514,11 +684,17 @@ function nextRung(kind, n) {
 }
 
 /**
- * net / VAT / gross for a count of a kind, plus the surcharge.
+ * The net order value for a count of a kind, plus the surcharge.
  *
- * Mirrors quote() + vatOf() + withVat() in pricing.js, rounding the same way at
- * the same points. Every figure in pricing.js is NET, including the outfit
- * surcharge, so VAT is taken once at the end over the whole order value.
+ * Mirrors quote() in pricing.js, rounding the same way at the same points.
+ * Every figure in pricing.js is NET, including the outfit surcharge.
+ *
+ * NET AND NOTHING ELSE. This used to return vat and gross as well, computed at
+ * the Dutch rate, and both were printed. VAT is charged at the rate of the
+ * CUSTOMER's country — so a German brand read a 21% line and a gross total that
+ * would never appear on their invoice. The rows are gone from both the running
+ * total and the confirm screen; vatNote() on step 1 says once how VAT is
+ * actually handled, and it says it in the reader's language.
  *
  * The first-order discount is deliberately NOT applied here: whether a brand
  * has ordered before is not something this form knows, and a total that guessed
@@ -528,22 +704,16 @@ function nextRung(kind, n) {
 function quoteFor(kind, n, outfits) {
   const rate = rateFor(kind, n);
   if (rate === null) return null;
-  const net = round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0));
-  return {
-    rate,
-    net,
-    vat: round2(net * Number(cfg.vatRate)),
-    gross: round2(net * (1 + Number(cfg.vatRate))),
-  };
+  return { rate, net: round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0)) };
 }
 
 /**
- * The running total: three lines, and the sentence that explains them.
+ * The running total: one figure, and the sentence that explains it.
  *
- * THREE LINES, NEVER ONE. BRIEF-14's rule is that no price is printed without
- * saying which side of VAT it is on, and a single number in a box labelled
- * "total" is exactly where that rule breaks. Net, the VAT line and the gross
- * total are written together or not at all.
+ * THE LABEL CARRIES THE SIDE OF VAT. BRIEF-14's rule is that no price is
+ * printed without saying which side of VAT it is on; the page's own label does
+ * that (vatLabel('excl')), which is why one honest row is enough and a second
+ * row at somebody else's rate would be worse than none.
  *
  * NOTHING HERE IS AUTHORITATIVE. See the note at the top of this file: this is
  * a preview, the invoice is derived server-side, and no amount is ever posted.
@@ -555,9 +725,9 @@ function syncTotal() {
   const quote = kind ? quoteFor(kind, n, outfits) : null;
 
   const dash = c('total.onRequest');
-  setText('[data-pl-total-net]', quote ? euro(quote.net) : dash);
-  setText('[data-pl-total-vat]', quote ? euro(quote.vat) : dash);
-  setText('[data-pl-total]', quote ? euro(quote.gross) : dash);
+  // NET, not gross. The gross figure would be the Dutch 21% shown to a buyer
+  // who is charged their own country's rate — see vatNote() in pricing.js.
+  setText('[data-pl-total]', quote ? euro(quote.net) : dash);
 
   let noteText = '';
   if (quote) {
@@ -900,48 +1070,279 @@ function renderCount() {
 // by hand, kept from a back-navigation, or filled by the browser's own
 // autofill before this fetch resolved). This is a head start, not a form the
 // visitor no longer controls.
-function bindPrefill() {
-  const note = q('[data-pl-prefill-note]');
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// AUGUST 2026 — SKIPPING THE STEP, NOT JUST FILLING IT IN
+//
+// Lucas: "waarna hij zijn gegevens kan opslaan voor een volgende bestelling en
+// veel stappen over kan slaan." Prefilling was half of that and it shipped in
+// #271e. This is the other half: a customer who explicitly SAVED their details
+// (customers.details_saved_at — see src/lib/account.js) does not have six
+// filled boxes to scroll past, they have one line saying which details are
+// being used and a button to change them for this order.
+//
+// THE OPT-IN IS THE WHOLE DESIGN, and `me.saved` is where it lives. Every
+// customer with an order has contact fields on file, because /api/order put
+// them there; nobody chose that. So:
+//
+//   · saved === false → exactly the behaviour that has shipped since #271e.
+//     Fields prefilled, all visible, note above them. Nothing collapses.
+//   · saved === true  → the brief step collapses into the summary.
+//
+// A 401, a network failure, an empty response or JS being off all leave this
+// form precisely as it is built. There is no state of this code that removes
+// something the visitor has not first asked us to remember.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  fetch('/account/me', { headers: { Accept: 'application/json' } })
-    .then((r) => (r.ok ? r.json() : null))
+/**
+ * The six text inputs a saved record fills, named explicitly rather than
+ * derived from the response's own keys.
+ *
+ * It USED to iterate Object.entries(me) and match each key to [name=key],
+ * which was fine while the response held six strings and became a live hazard
+ * the moment it held more: /account/me now also answers `background`, and step
+ * 1 has an input[name="background"] — a radio. Assigning to a radio's .value
+ * does not select it, it rewrites what that button MEANS, silently turning the
+ * white swatch into a button that posts the customer's saved id. A whitelist
+ * cannot do that, whatever the endpoint grows next.
+ */
+const PREFILL_FIELDS = ['name', 'brand', 'email', 'phone', 'website', 'vat'];
+
+/** The three the form cannot go without — nothing collapses unless all three are filled. */
+const REQUIRED_DETAILS = ['name', 'brand', 'email'];
+
+function bindPrefill() {
+  accountMe()
     .then((me) => {
       if (!me || !form) return;
-
-      // name/email/brand/phone/website/vat — the six fields step 3 actually
-      // has (see the DOM CONTRACT above); a seventh key in the response, if
-      // one is ever added, is simply not among the inputs found and does
-      // nothing, rather than needing a matching change here. email is filled
-      // like every other field here — it is also read separately below for
-      // the note text, which needs it regardless of whether the input itself
-      // was already non-empty.
-      const filled = Object.entries(me)
-        .filter(([, value]) => typeof value === 'string' && value)
-        .map(([key, value]) => {
-          const input = q(`[name="${CSS.escape(key)}"]`);
-          if (!input || input.value) return null; // never overwrite
-          input.value = value;
-          return key;
-        })
-        .filter(Boolean);
-
-      // The note names what happened, not just who's signed in — a signed-in
-      // account with nothing on file yet (a first order) gets no note at
-      // all, because nothing on the visible form actually changed.
-      // Un-hidden only once there is something to read. The note ships `hidden`
-      // and empty, and the copy lookup can legitimately come back empty — that
-      // is what shipped an empty italic paragraph to every returning customer
-      // for a month. An element with no content stays hidden; c() has already
-      // said so in the console.
-      if (filled.length && note) {
-        const text = c('s3.prefillNote', { email: me.email || '' });
-        if (text) {
-          note.textContent = text;
-          note.hidden = false;
-        }
-      }
+      applyAccount(me);
     })
     .catch(() => {}); // no account, offline, or /account/me unreachable — the form is already fine empty
+}
+
+/**
+ * Who is signed in, asked once per page load.
+ *
+ * Layout.astro's chrome needs the same answer on every page and gets it first;
+ * window.visAccount() is its memoised promise, so on /start this call joins a
+ * request already in flight rather than making a second one. The fallback path
+ * exists because this module must not depend on a script in another file
+ * having run — /start is the one page that would break, and it would break
+ * silently.
+ */
+function accountMe() {
+  if (typeof window.visAccount === 'function') return window.visAccount();
+  return fetch('/account/me', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((me) => (me && me.email ? me : null));
+}
+
+function applyAccount(me) {
+  const filled = PREFILL_FIELDS.map((key) => {
+    const value = me[key];
+    if (typeof value !== 'string' || !value) return null;
+    const input = q(`input[name="${key}"]`);
+    if (!input || input.value) return null; // never overwrite
+    input.value = value;
+    return key;
+  }).filter(Boolean);
+
+  applySavedBackground(me);
+
+  // The collapse needs the fields it hides to actually be filled. A saved
+  // record missing a name is a saved record that cannot answer step 3, and
+  // hiding an empty required field behind a summary is how a form gets stuck
+  // on a validation error pointing at a control nobody can see.
+  const complete = REQUIRED_DETAILS.every((k) => {
+    const input = q(`input[name="${k}"]`);
+    return input && input.value.trim();
+  });
+
+  // The summary already says which details are being used, so the note that
+  // says the same thing in a sentence would be saying it twice. It is the
+  // fallback, not a companion — including when collapseBrief() declines
+  // because the page has no summary hooks.
+  const collapsed = !!(me.saved && complete && collapseBrief(me));
+
+  if (!collapsed && filled.length) {
+    // The note names what happened, not just who's signed in — a signed-in
+    // account with nothing on file yet (a first order) gets no note at
+    // all, because nothing on the visible form actually changed.
+    // Un-hidden only once there is something to read. The note ships `hidden`
+    // and empty, and the copy lookup can legitimately come back empty — that
+    // is what shipped an empty italic paragraph to every returning customer
+    // for a month. An element with no content stays hidden; c() has already
+    // said so in the console.
+    const note = q('[data-pl-prefill-note]');
+    if (note) {
+      const text = c('s3.prefillNote', { email: me.email || '' });
+      if (text) {
+        note.textContent = text;
+        note.hidden = false;
+      }
+    }
+  }
+
+  // Offered to a signed-in customer with nothing stored, and to nobody else:
+  // someone who already saved has nothing to opt into, and someone signed out
+  // has no account to save to. It ships hidden and unchecked and is never
+  // pre-ticked — see bindSaveOffer().
+  if (!me.saved) bindSaveOffer();
+}
+
+/**
+ * The saved default background, applied to step 1's picker.
+ *
+ * ONLY OVER THE BUILT-IN DEFAULT. `defaultChecked` is true for exactly the one
+ * radio the page shipped `checked` (backgrounds.js's DEFAULT_ID). If anything
+ * else is selected, the visitor or the browser's back button put it there and
+ * it outranks a stored preference — same rule the text fields keep, expressed
+ * the only way a radio group can express it.
+ */
+function applySavedBackground(me) {
+  const id = typeof me.background === 'string' ? me.background : '';
+  if (!id) return;
+
+  const checked = q('input[name="background"]:checked');
+  if (checked && !checked.defaultChecked) return;
+
+  const target = qa('input[name="background"]').find((r) => r.value === id);
+  if (!target) return; // a colour that left backgrounds.js — the picker's own default stands
+
+  target.checked = true;
+
+  // The custom option carries its value in two fields rather than in the radio,
+  // so restoring it means restoring those too — otherwise the order arrives
+  // saying 'custom' with no colour, which is exactly the "resolves to nothing
+  // rather than to a guess" case syncBackground() describes.
+  const hex = normalizeHex(me.backgroundHex);
+  if (target.dataset.plBgCustom !== undefined && hex) {
+    const text = q('[data-pl-bg-text]');
+    const color = q('[data-pl-bg-color]');
+    if (text) text.value = hex;
+    if (color) color.value = hex;
+  }
+
+  syncBackground(kindOf());
+}
+
+/**
+ * Step 3, collapsed. Returns false if the page has no summary hooks, in which
+ * case the caller falls back to the plain prefill note — every hook in this
+ * file is optional at runtime and this one is no exception.
+ *
+ * The fields are hidden, NOT removed and NOT disabled: a hidden input still
+ * posts, so the order carries the same six answers it always did, and
+ * syncRequired() already skips anything off screen (isShown()), so the
+ * required attributes on name/brand/email cannot trap a submit behind a
+ * control nobody can see. Disabling them instead would drop them from the POST
+ * and send an order with no customer on it.
+ */
+function collapseBrief(me) {
+  const panel = q('[data-pl-saved]');
+  const fields = q('[data-pl-s3-fields]');
+  const list = q('[data-pl-saved-list]');
+  if (!panel || !fields || !list) return false;
+
+  list.textContent = '';
+  PREFILL_FIELDS.forEach((key) => {
+    const input = q(`input[name="${key}"]`);
+    const val = input && input.value.trim();
+    if (!val) return;
+    const li = document.createElement('li');
+    li.textContent = val;
+    list.appendChild(li);
+  });
+  if (!list.children.length) return false;
+
+  fields.hidden = true;
+  panel.hidden = false;
+
+  const edit = q('[data-pl-saved-edit]');
+  if (edit) {
+    edit.type = 'button';
+    edit.addEventListener('click', () => {
+      // One way only. Re-collapsing after an edit would take a field away from
+      // someone in the middle of correcting it.
+      fields.hidden = false;
+      panel.hidden = true;
+      syncRequired();
+      const first = q('input[name="name"]');
+      if (first) first.focus();
+    }, { once: true });
+  }
+
+  syncRequired();
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP 5 · THE OFFER TO SAVE
+//
+// Shown only to a signed-in customer who has never saved (see applyAccount).
+// OPT-IN, and that is a requirement rather than a preference: the checkbox
+// ships unchecked in the markup, nothing here ticks it, and the POST below
+// happens only if the visitor ticked it themselves. It also carries no `name`
+// attribute — the same rule step 2's file input follows — so it can never
+// travel with the order to /api/order and be mistaken for an answer to it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function bindSaveOffer() {
+  const offer = q('[data-pl-save-offer]');
+  const box = q('[data-pl-save-check]');
+  if (!offer || !box) return;
+  box.checked = false; // a bfcache restore can bring a tick back with it
+  offer.hidden = false;
+}
+
+/**
+ * Save the details, once the order they came with has actually gone through.
+ *
+ * WHY keepalive. This fires on the success path, a line before the page
+ * navigates to /thank-you, and a normal fetch is cancelled when its document
+ * goes away. keepalive is the browser API for exactly this — a request that
+ * outlives the page that sent it. Small body, well inside the 64 kB the spec
+ * allows for one.
+ *
+ * WHY IT IS FIRE-AND-FORGET. There is no screen left to report a failure on,
+ * and nothing about the order depends on it: the details are saved or they are
+ * not, and the customer can save them from /account either way. The one thing
+ * that must not happen is this holding up the redirect to their confirmation.
+ *
+ * The POST carries no customer id and could not use one if it did —
+ * /account/details reads whose record to write from the session cookie and
+ * from nothing else. See src/lib/account.js's handleDetails().
+ */
+function saveDetailsIfAsked() {
+  const box = q('[data-pl-save-check]');
+  if (!box || !box.checked) return;
+
+  const fd = new FormData();
+  PREFILL_FIELDS.forEach((key) => {
+    if (key === 'email') return; // the account email is not editable — see account.js
+    const input = q(`input[name="${key}"]`);
+    if (input) fd.set(key, input.value.trim());
+  });
+  const bg = q('input[name="background"]:checked');
+  const bgField = q('[data-pl-bg]');
+  // A lifestyle-only order has no background — the fieldset is disabled and
+  // nobody chose one, so there is nothing to store as a standing preference.
+  if (bg && bgField && !bgField.disabled) {
+    fd.set('background', bg.value);
+    fd.set('background_custom', value('background_hex'));
+  }
+
+  try {
+    fetch('/account/details', {
+      method: 'POST',
+      body: fd,
+      keepalive: true,
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    }).catch(() => {});
+  } catch {
+    /* keepalive unsupported, or the body was refused — the order is unaffected */
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1109,19 +1510,27 @@ function renderSummary() {
   if (kind) rows.push([c('sum.kind'), c(`kind.${kind}`)]);
   if (count && count.value) rows.push([c('sum.count'), count.textContent.trim()]);
 
+  // The background, read back as the name AND the value — the two things a
+  // client would check on a confirm screen, and the two things the studio is
+  // about to be sent. Only when the scope has one: syncBackground() empties the
+  // resolved field for a lifestyle-only order, so an empty field here is the
+  // absence of a question rather than an unanswered one.
+  const bgHex = value('background_hex');
+  if (bgHex) {
+    const picked = q('input[name="background"]:checked');
+    const bgName = picked ? picked.dataset.plBgName : '';
+    rows.push([c('sum.bg'), bgName ? `${bgName} — ${bgHex}` : bgHex]);
+  }
+
   // Task #271f.
   if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);
 
-  // Three rows again, computed again — NOT scraped back off step 1. Reading the
-  // rendered total would make the confirm screen a copy of a copy, and a client
-  // who changed the count and came straight here would confirm the old figure.
-  // Same rule as step 1: never one bare number, and never authoritative.
+  // Computed again — NOT scraped back off step 1. Reading the rendered total
+  // would make the confirm screen a copy of a copy, and a client who changed
+  // the count and came straight here would confirm the old figure. Same rule as
+  // step 1: net, labelled, and never authoritative.
   const quote = kind ? quoteFor(kind, n, outfitN) : null;
-  if (quote) {
-    rows.push([c('sum.net'), euro(quote.net)]);
-    rows.push([c('sum.vat'), euro(quote.vat)]);
-    rows.push([c('sum.total'), euro(quote.gross)]);
-  }
+  if (quote) rows.push([c('sum.net'), euro(quote.net)]);
 
   rows.push([c('sum.files'), staged.length ? c('upload.count', { n: staged.length, max: cfg.maxBatchFiles }) : c('sum.noFiles')]);
 
@@ -1206,6 +1615,13 @@ function finishSubmit(status, body) {
   };
 
   if (status >= 200 && status < 300 && body && body.ok && body.redirect) {
+    // AFTER the order landed, and only then: an opt-in offered at the end of an
+    // order should not save anything if the order itself never happened. It is
+    // sent with keepalive so the navigation two lines down cannot cancel it —
+    // see saveDetailsIfAsked(). Does nothing at all if the box was not ticked,
+    // which is the state it is always in unless the visitor ticked it.
+    saveDetailsIfAsked();
+
     if (body.windowLost) {
       // The order exists and has no window. Saying so here is the only honest
       // move: the alternative is a thank-you page that shows a date the gate

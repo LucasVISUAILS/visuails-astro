@@ -38,6 +38,32 @@
 // there can do is make this endpoint send a login email to an address the
 // attacker could have entered directly anyway.
 //
+// SAVED DETAILS (August 2026) — WHY THE ACCOUNT ROW IS THE SAVED RECORD
+// Lucas, verbatim: "waarna hij zijn gegevens kan opslaan voor een volgende
+// bestelling en veel stappen over kan slaan." The seven fields an order asks
+// for that do not change between orders are name, brand, email, phone,
+// website, VAT number and the background the brand orders against. Six of
+// those are already columns on `customers` — upsertCustomer() in
+// functions/api/order.js has written them since Phase 1 — so saving details
+// adds three columns (migrations/0004) rather than a second table that would
+// have to agree with this one about a brand's phone number.
+//
+// customers.details_saved_at is the whole hinge, and it is not decoration:
+// having a phone number on file because you once ordered is not the same as
+// asking us to keep it. Only an explicit save sets it, only a customer who set
+// it gets /start's brief step collapsed, and only a customer who has NOT set it
+// is offered the checkbox at the end of an order. That is what makes this
+// opt-in rather than a default we turned on for everyone who ever ordered.
+//
+// THE ACCOUNT EMAIL IS NOT EDITABLE HERE, and that is a security decision, not
+// an omission. customers.email is UNIQUE and it is the ONLY credential this
+// file authenticates against — sendLoginLink() looks a customer up by it.
+// Accepting a new email on this endpoint would let anyone holding one session
+// point it at another brand's address (or take an address a future customer
+// will order under) and then mail themselves a login link for it. The address
+// is shown, it is returned by /account/me so the order form can fill it in,
+// and it changes only where it always has: by placing an order under it.
+//
 // TWO TOKEN TABLES, ON PURPOSE
 // account_tokens is the emailed link: minutes-scale TTL, single-use, dead the
 // moment it is clicked. account_sessions is the resulting logged-in cookie:
@@ -52,6 +78,7 @@ import { hashToken, isWellFormedToken, mintToken, isExpired } from './token.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { sendMail } from './mail.js';
 import { PER_PRODUCT } from '../data/pricing.js';
+import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
 const LOGIN_TOKEN_TTL_MINUTES = 30;
@@ -82,6 +109,23 @@ const NOTE_MAX = 2000;
  * Typing a second list here would be a second place for the two to drift.
  */
 const STYLES = PER_PRODUCT.en.map((p) => p.id);
+
+/**
+ * Every value customers.default_background may hold, read off backgrounds.js
+ * for the same reason STYLES is read off pricing.js: a second list typed here
+ * is a second thing to keep in step. The empty string is the fifth answer and
+ * the default one — "no standing preference, ask me per order" — which is why
+ * saveDetails() treats anything not in here as that rather than as an error.
+ */
+const BG_IDS = [...BACKGROUNDS.map((b) => b.id), BG_CUSTOM];
+
+/**
+ * Longest saved detail this file will store. Generous for a VAT number and a
+ * shop URL, short enough that the endpoint cannot be used as free storage —
+ * same reasoning as NOTE_MAX above, different number because these are single
+ * lines and that is a paragraph.
+ */
+const DETAIL_MAX = 200;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COPY — bilingual, like every client-facing surface. See portal.js's own note:
@@ -132,10 +176,39 @@ const COPY = {
     // brief for this rebuild named the section "Brand kit"; keeping a second,
     // older heading that said "Brand lock" one line down would have the page
     // disagree with its own nav item about what it is called.
+    // Brand kit now has two panels — details, then this — so the lock half
+    // needs a heading of its own. NOT "Brand kit" again (that is the page's
+    // h1 and its nav label) and deliberately not the old "Brand lock" either,
+    // for the reason the note below still gives. It names what the panel
+    // does.
+    lockH: 'Model per style',
     lockLede: 'Pick the custom model each style should always use. Leave a style unset and we ask per order, as usual.',
     lockNoModels: 'No custom models on your account yet — nothing to lock to. Ask us to set one up.',
     lockUnset: '— not locked —',
     lockSave: 'Save',
+
+    // Saved order details, August 2026. Lives on Brand kit rather than on its
+    // own nav item: these ARE the brand's standing answers, next to the
+    // standing model choice, and a sixth sidebar entry for six text fields
+    // would be a section a customer visits once.
+    detH: 'Your details',
+    detLede: 'Saved once, filled in on every order. Change anything here and the next order picks it up.',
+    detName: 'Your name',
+    detBrand: 'Brand or shop name',
+    detEmail: 'Email',
+    // Says WHY the field above it is not editable, in the customer's terms.
+    // See the file header: this address is the login credential.
+    detEmailNote: 'This is what you sign in with, so it changes only by ordering under a new address. Email us and we will move it.',
+    detPhone: 'Phone or WhatsApp',
+    detWebsite: 'Website or shop link',
+    detVat: 'VAT number',
+    detBg: 'Default background',
+    detBgUnset: '— ask me per order —',
+    detBgHex: 'Your own colour (hex)',
+    detBgHexHint: 'Only used when “Your own colour” is picked above.',
+    detSave: 'Save details',
+    detSaved: 'Saved. Your next order starts filled in.',
+    detOptional: 'optional',
 
     navOverview: 'Overview',
     navNewRequest: 'New request',
@@ -214,10 +287,30 @@ const COPY = {
     bView: 'Bekijken',
     bDownload: 'Downloaden',
 
+    lockH: 'Model per style',
     lockLede: 'Kies het merkmodel dat elke style altijd moet gebruiken. Laat een style leeg en we vragen het per bestelling, zoals gebruikelijk.',
     lockNoModels: 'Nog geen merkmodellen op je account — niets om aan vast te zetten. Vraag ons er een in te stellen.',
     lockUnset: '— niet vastgezet —',
     lockSave: 'Opslaan',
+
+    // Zie de Engelse tak voor waarom dit op Brand kit staat en niet in een
+    // eigen menu-item.
+    detH: 'Je gegevens',
+    detLede: 'Eén keer opslaan, daarna bij elke bestelling ingevuld. Pas hier iets aan en de volgende bestelling neemt het over.',
+    detName: 'Je naam',
+    detBrand: 'Merk- of winkelnaam',
+    detEmail: 'E-mail',
+    detEmailNote: 'Hiermee log je in, dus dit verandert alleen door onder een nieuw adres te bestellen. Mail ons en we zetten het om.',
+    detPhone: 'Telefoon of WhatsApp',
+    detWebsite: 'Website of winkellink',
+    detVat: 'Btw-nummer',
+    detBg: 'Standaardachtergrond',
+    detBgUnset: '— vraag het per bestelling —',
+    detBgHex: 'Je eigen kleur (hex)',
+    detBgHexHint: 'Wordt alleen gebruikt als hierboven “Je eigen kleur” is gekozen.',
+    detSave: 'Gegevens opslaan',
+    detSaved: 'Opgeslagen. Je volgende bestelling begint ingevuld.',
+    detOptional: 'optioneel',
 
     navOverview: 'Overzicht',
     navNewRequest: 'Nieuwe aanvraag',
@@ -358,8 +451,20 @@ export async function accountPost(context) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '');
 
+  // ONE GUARD SEQUENCE, TWO REPLY SHAPES. /account/details (August 2026) is
+  // posted from two places: the dashboard's own <form>, which is a browser
+  // navigation and wants HTML plus a 303, and /start's fetch, which wants JSON.
+  // The temptation was to dispatch the JSON route early with its own copy of
+  // the checks below — which is exactly how a second, subtly weaker auth path
+  // gets built. So the checks stay here, in one place, run in one order, for
+  // every caller; only the FORM of the refusal is negotiated, and only from the
+  // Accept header the browser or the fetch already sends. A caller cannot talk
+  // its way past a check by asking for JSON, it can only be refused in JSON.
+  const asJson = wantsJson(request);
+
   if (!env?.DB) {
     const lang = negotiate(request);
+    if (asJson) return json({ error: 'unavailable' }, 503);
     return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang]) }), 503);
   }
 
@@ -369,9 +474,14 @@ export async function accountPost(context) {
   if (path === '/account/login') return handleLoginPost(context);
 
   const customer = await currentCustomer(env, request);
-  if (!customer) return seeOther('/account/login');
+  // 401, not a redirect, for the fetch caller — for the same reason handleMe()
+  // gives: a fetch that follows a 303 to /account/login gets a login PAGE's
+  // markup and a 200, which is precisely the empty-but-successful shape a
+  // caller could mistake for "signed in with nothing saved".
+  if (!customer) return asJson ? json({ error: 'auth' }, 401) : seeOther('/account/login');
   if (!originIsSelf(request, env)) {
     const lang = negotiate(request);
+    if (asJson) return json({ error: 'origin' }, 403);
     // Task #271e, 2026-07-29: appended the same raw Origin/host detail
     // admin.js now prints. This page is customer-facing, unlike admin's, but
     // the two values are just the requesting browser's own header and this
@@ -386,14 +496,37 @@ export async function accountPost(context) {
   }
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-post', limit: POST_LIMIT });
-  if (!gate.allowed) return new Response(null, { status: 429, headers: { 'retry-after': String(Math.max(1, gate.retryAfter || 60)), 'content-type': 'text/plain' } });
+  if (!gate.allowed) {
+    if (asJson) return json({ error: 'rate' }, 429);
+    return new Response(null, { status: 429, headers: { 'retry-after': String(Math.max(1, gate.retryAfter || 60)), 'content-type': 'text/plain' } });
+  }
 
   if (path === '/account/logout') return handleLogout(context, customer);
   if (path === '/account/lock') return handleLockUpdate(context, customer);
   if (path === '/account/review') return handleFileReview(context, customer);
+  if (path === '/account/details') return handleDetails(context, customer, asJson);
 
   const lang = negotiate(request);
+  if (asJson) return json({ error: 'not-found' }, 404);
   return html(page({ lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
+}
+
+/**
+ * Does this caller want JSON back? Read from Accept and nothing else.
+ *
+ * NOT from a `mode=json` form field, which is how functions/api/order.js makes
+ * the same decision — and the difference is worth writing down rather than
+ * looking like an inconsistency. That form has a no-JS path: the same <form>
+ * element is posted by the browser AND by a fetch, so the distinction has to
+ * travel in the body, where the fetch can add it to a FormData copy. Here the
+ * two callers are different code — a dashboard <form> and pipeline.js's fetch
+ * — and the Accept header is set by whichever one it is without either having
+ * to say so. It is also read BEFORE the body, which is what lets the guards
+ * above negotiate their replies without consuming a stream a handler still
+ * needs.
+ */
+function wantsJson(request) {
+  return /application\/json/i.test(request.headers.get('accept') || '');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -517,13 +650,18 @@ function accountSessionExpiry(fromDate = new Date()) {
  */
 async function sectionGet(context, customer, section) {
   const { env, request } = context;
-  let orders, files, models, locks;
+  let orders, files, models, locks, details;
   try {
-    [orders, files, models, locks] = await Promise.all([
+    // `details` joins the same Promise.all rather than being fetched inside
+    // brandKitBody(): one round of queries, four possible pages, is what this
+    // function has always been — and a query issued from a render function is
+    // one a future section reordering can accidentally run twice.
+    [orders, files, models, locks, details] = await Promise.all([
       loadOrders(env, customer.customer_id),
       loadCustomerFiles(env, customer.customer_id),
       loadCustomModels(env, customer.customer_id),
       loadStyleLocks(env, customer.customer_id),
+      detailsRow(env, customer.customer_id),
     ]);
   } catch {
     const lang = negotiate(request);
@@ -547,7 +685,12 @@ async function sectionGet(context, customer, section) {
     inner = ordersBody(t, lang, orders, filesByOrder);
     title = t.ordersHeading;
   } else if (section === 'brand') {
-    inner = brandKitBody(t, models, lockByStyle);
+    // ?saved=1 is set by handleDetails' own redirect and by nothing else. It
+    // decides one sentence of confirmation and can decide nothing else — it is
+    // a query string, i.e. anyone's to type.
+    let justSaved = false;
+    try { justSaved = new URL(request.url).searchParams.get('saved') === '1'; } catch { /* keep false */ }
+    inner = brandKitBody(t, lang, models, lockByStyle, details, justSaved);
     title = t.navBrandKit;
   } else if (section === 'plan') {
     inner = planBody(t, customer);
@@ -557,8 +700,14 @@ async function sectionGet(context, customer, section) {
     title = t.navOverview;
   }
 
+  // Every section gets the nonce and the style block, not just Brand kit: the
+  // CSP header and the <style> it admits are set in two different functions,
+  // and a per-section conditional is the shape where the two drift and the
+  // panel silently loses its rules. One extra empty-ish <style> on three pages
+  // is cheaper than that class of bug.
+  const nonce = makeNonce();
   const body = shellBody(t, lang, customer, section, inner);
-  return html(page({ lang, title, body, full: true }));
+  return html(page({ lang, title, body, full: true, nonce }), 200, [], nonce);
 }
 
 async function currentCustomer(env, request) {
@@ -611,6 +760,31 @@ async function currentCustomer(env, request) {
  * (schema.sql) but step 3 has no address field to fill, so they are not
  * queried — no benign extra data returned means no code says "why is that
  * column here" later.
+ *
+ * AUGUST 2026 — TWO MORE CALLERS AND THREE MORE KEYS. This is now also what
+ * Layout.astro's chrome asks to find out whether the visitor is signed in (the
+ * site is a static build; there is no other way for a page to know), and what
+ * /start asks before deciding whether to collapse its brief step. It answers:
+ *
+ *   { email, name, brand, phone, website, vat,     — unchanged, #271e
+ *     background, backgroundHex,                    — the saved default, or ''
+ *     saved: true|false,                            — details_saved_at IS NOT NULL
+ *     label }                                       — brand || name || email
+ *
+ * `label` is computed here rather than in three clients, because shellBody()
+ * above already picks the same fallback chain for the sidebar and the nav must
+ * not disagree with the dashboard about what this account is called.
+ *
+ * `saved` is a real boolean and not "are the fields non-empty", and the whole
+ * opt-in rests on that: see the file header. A signed-in customer who never
+ * saved anything gets saved:false with their fields populated — /start prefills
+ * exactly as it did before and collapses nothing.
+ *
+ * STILL 401 ON NO SESSION, and now that the chrome reads this on every page,
+ * that matters more than it did: the one thing this endpoint must never do is
+ * answer 200 with an empty object, because a caller cannot tell that apart from
+ * "signed in, nothing on file" without reading the status — and the difference
+ * is whether a stranger's browser draws a signed-in nav bar.
  */
 async function handleMe({ request, env }) {
   if (!env?.DB) return json({}, 503); // currentCustomer() would throw on env.DB.prepare — fail as JSON, not a 500
@@ -628,9 +802,15 @@ async function handleMe({ request, env }) {
   const customer = await currentCustomer(env, request);
   if (!customer) return json({}, 401);
 
-  const row = await env.DB.prepare(
-    'SELECT email, name, brand, phone, website, vat_number FROM customers WHERE id = ?1'
-  ).bind(customer.customer_id).first();
+  // ?1 is currentCustomer()'s id — the one the session cookie resolved to, never
+  // anything the caller sent. There is no id in this request to trust: the URL
+  // carries none and a query string naming one would be ignored.
+  let row;
+  try {
+    row = await detailsRow(env, customer.customer_id);
+  } catch {
+    return json({ error: 'unavailable' }, 503); // a failed read is not "signed out"
+  }
   if (!row) return json({}, 401); // the session outlived its own customer row — treat it as signed out, not a 500
 
   return json({
@@ -640,7 +820,109 @@ async function handleMe({ request, env }) {
     phone: row.phone || '',
     website: row.website || '',
     vat: row.vat_number || '',
+    background: row.default_background || '',
+    backgroundHex: row.default_background_hex || '',
+    saved: !!row.details_saved_at,
+    label: row.brand || row.name || row.email || '',
   });
+}
+
+/** The saved-details row, one query, used by /account/me and by Brand kit. */
+function detailsRow(env, customerId) {
+  return env.DB.prepare(
+    `SELECT email, name, brand, phone, website, vat_number,
+            default_background, default_background_hex, details_saved_at
+       FROM customers WHERE id = ?1`
+  ).bind(customerId).first();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SAVED DETAILS — POST /account/details
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Save the answers that do not change between orders. Two callers, one
+ * handler: the Brand kit form (browser POST, 303 back to the section) and
+ * /start's end-of-order opt-in (fetch, JSON). See wantsJson() for why the two
+ * are told apart by Accept rather than by a field in the body.
+ *
+ * WHOSE RECORD THIS WRITES IS NOT NEGOTIABLE. `customer` is what the session
+ * cookie resolved to in accountPost above, via the same currentCustomer() every
+ * other authenticated route in this file uses. Nothing in the posted form names
+ * a customer, and if a future field did it would still not be read here — the
+ * bind below takes customer.customer_id and there is no branch that could take
+ * anything else. Same rule handleLockUpdate() keeps when it checks a model is
+ * this brand's before locking to it.
+ *
+ * EMAIL IS NOT AMONG THE FIELDS. See the file header: it is the login
+ * credential, it is UNIQUE, and a session that could rewrite it is a session
+ * that could point itself at another brand's inbox.
+ *
+ * EVERY FIELD IS OPTIONAL AND AN EMPTY ONE CLEARS. A customer removing their
+ * phone number from the form means they want it gone, not that the field was
+ * skipped — this is a settings screen, not the order form, and there is exactly
+ * one way to read a blank box on a settings screen.
+ */
+async function handleDetails({ request, env }, customer, asJson) {
+  const form = await request.formData().catch(() => null);
+  const home = '/account/brand-kit';
+
+  if (!form) return asJson ? json({ error: 'bad-request' }, 400) : seeOther(home);
+
+  const one = (k) => {
+    const v = String(form.get(k) ?? '').trim().slice(0, DETAIL_MAX);
+    return v || null;
+  };
+
+  // Anything not on the list is the empty answer — "ask me per order" — rather
+  // than a 400. BG_IDS comes from backgrounds.js, so a fifth recommended colour
+  // becomes storable by adding it there and nowhere else.
+  const rawBg = String(form.get('background') || '');
+  const background = BG_IDS.includes(rawBg) ? rawBg : null;
+
+  // The hex is kept only for the option that has no id to resolve from. A
+  // recommended id already carries its own contract value in backgrounds.js;
+  // storing a second, client-supplied hex beside it would be a way for the two
+  // to disagree about what 'beige' means.
+  const hex = background === BG_CUSTOM ? normalizeHex(form.get('background_custom') || form.get('background_hex')) : null;
+
+  try {
+    await env.DB.prepare(
+      `UPDATE customers SET
+         name = ?2, brand = ?3, phone = ?4, website = ?5, vat_number = ?6,
+         default_background = ?7, default_background_hex = ?8,
+         details_saved_at = datetime('now'),
+         updated_at = datetime('now')
+       WHERE id = ?1`
+    ).bind(
+      customer.customer_id,
+      one('name'), one('brand'), one('phone'), one('website'), one('vat'),
+      background, hex
+    ).run();
+  } catch {
+    return asJson ? json({ error: 'unavailable' }, 503) : seeOther(home);
+  }
+
+  // 303 back to the section the form lives on, same rule handleLockUpdate and
+  // handleFileReview follow. ?saved=1 is what draws the confirmation line —
+  // a settings form that redirects to a page identical to the one it left is
+  // a form the customer presses twice.
+  return asJson ? json({ ok: true }) : seeOther(`${home}?saved=1#details`);
+}
+
+/**
+ * A six-digit uppercase hex, or null. Mirrors normalizeHex() in
+ * src/scripts/pipeline.js — including expanding #EEE, which a brand's own
+ * style guide is perfectly likely to be written in — because the value this
+ * stores and the value that form resolves have to be the same string. Anything
+ * else (a colour name, half a paste, an empty box) is not an answer yet and is
+ * stored as none rather than as itself.
+ */
+function normalizeHex(v) {
+  const s = String(v || '').trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(s)) return `#${s.split('').map((ch) => ch + ch).join('').toUpperCase()}`;
+  if (/^[0-9a-f]{6}$/i.test(s)) return `#${s.toUpperCase()}`;
+  return null;
 }
 
 /** All orders this customer has placed, most recent first. */
@@ -1173,11 +1455,93 @@ function ordersBody(t, lang, orders, filesByOrder) {
 ${orders.length ? orders.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [])).join('') : `<p class="empty">${esc(t.emptyOrders)}</p>`}`;
 }
 
-function brandKitBody(t, models, lockByStyle) {
+/**
+ * Brand kit — the standing answers. Two panels, in the order a customer meets
+ * them: the details every order asks for (August 2026), then the per-style
+ * model lock (task #257). Details come FIRST because they are the ones every
+ * customer has, whereas the lock panel is empty for a brand with no custom
+ * models — leading a page with an empty state is how a section reads as
+ * unfinished.
+ *
+ * Lucas's ask was that details be editable here and not only mid-order: a
+ * customer whose VAT number changed should not have to start an order they do
+ * not want in order to correct it.
+ */
+function brandKitBody(t, lang, models, lockByStyle, details, justSaved) {
   return `
 <h1>${esc(t.navBrandKit)}</h1>
+${detailsSection(t, lang, details, justSaved)}
+<h2 class="det-h2">${esc(t.lockH)}</h2>
 <p class="lede">${esc(t.lockLede)}</p>
 ${lockSection(t, models, lockByStyle)}`;
+}
+
+/**
+ * The saved-details form. A plain <form method="post">, no script anywhere on
+ * this page — same as every other control in this file, and the reason the CSP
+ * in html() can keep saying default-src 'none' as a fact rather than a wish.
+ *
+ * Email is rendered as text, not as a disabled input: a disabled input looks
+ * like a field that could be enabled, and this one never can. The line beneath
+ * it says why, in the customer's terms. See the file header for the security
+ * half of that answer.
+ *
+ * `details` can be null if the row vanished between the session check and this
+ * query, which is a signed-out state one request late rather than a crash —
+ * every value below is read off `d` with a fallback for exactly that reason.
+ */
+function detailsSection(t, lang, details, justSaved) {
+  const d = details || {};
+  const bg = d.default_background || '';
+  const options = [`<option value=""${bg === '' ? ' selected' : ''}>${esc(t.detBgUnset)}</option>`]
+    // Names come from backgrounds.js in the customer's own language — the same
+    // words /start's swatches use, so the default set here and the option seen
+    // there are recognisably the same choice.
+    .concat(BACKGROUNDS.map((b) => `<option value="${esc(b.id)}"${bg === b.id ? ' selected' : ''}>${esc(b.name[lang] || b.name.en)} · ${esc(b.hex)}</option>`))
+    .concat([`<option value="${esc(BG_CUSTOM)}"${bg === BG_CUSTOM ? ' selected' : ''}>${esc(t.detBgHex)}</option>`])
+    .join('');
+
+  const field = (name, label, value, opts = {}) => `
+    <div class="det-field">
+      <label for="det-${esc(name)}">${esc(label)}${opts.optional ? ` <span class="det-opt">${esc(t.detOptional)}</span>` : ''}</label>
+      <input id="det-${esc(name)}" name="${esc(name)}" type="${esc(opts.type || 'text')}" value="${esc(value || '')}" maxlength="${DETAIL_MAX}"${opts.placeholder ? ` placeholder="${esc(opts.placeholder)}"` : ''} autocomplete="${esc(opts.auto || 'off')}">
+      ${opts.hint ? `<span class="det-hint">${esc(opts.hint)}</span>` : ''}
+    </div>`;
+
+  return `
+<section class="detpanel" id="details">
+  <h2 class="det-h2">${esc(t.detH)}</h2>
+  <p class="lede">${esc(t.detLede)}</p>
+  ${justSaved ? `<p class="det-ok" role="status">${esc(t.detSaved)}</p>` : ''}
+  <form class="detform" method="post" action="/account/details">
+    <div class="det-grid">
+      ${field('name', t.detName, d.name, { auto: 'name' })}
+      ${field('brand', t.detBrand, d.brand, { auto: 'organization' })}
+    </div>
+    <div class="det-field">
+      <span class="det-label">${esc(t.detEmail)}</span>
+      <p class="det-fixed">${esc(d.email || '')}</p>
+      <span class="det-hint">${esc(t.detEmailNote)}</span>
+    </div>
+    <div class="det-grid">
+      ${field('phone', t.detPhone, d.phone, { type: 'tel', auto: 'tel', optional: true })}
+      ${field('website', t.detWebsite, d.website, { type: 'url', placeholder: 'https://', auto: 'url', optional: true })}
+    </div>
+    <div class="det-grid">
+      ${field('vat', t.detVat, d.vat_number, { placeholder: 'NL000000000B00', optional: true })}
+      <div class="det-field">
+        <label for="det-bg">${esc(t.detBg)}</label>
+        <select id="det-bg" name="background">${options}</select>
+      </div>
+    </div>
+    <div class="det-field">
+      <label for="det-bghex">${esc(t.detBgHex)} <span class="det-opt">${esc(t.detOptional)}</span></label>
+      <input id="det-bghex" name="background_custom" type="text" value="${esc(d.default_background_hex || '')}" placeholder="#RRGGBB" maxlength="7" pattern="#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" autocomplete="off" spellcheck="false">
+      <span class="det-hint">${esc(t.detBgHexHint)}</span>
+    </div>
+    <button class="btn btn-primary" type="submit">${esc(t.detSave)}</button>
+  </form>
+</section>`;
 }
 
 /**
@@ -1344,7 +1708,7 @@ function errorBody(t, message = null) {
 // check-email and the bad-link page keep `.wrap`: they are single centered
 // cards, not the app shell, same distinction account.css's own header draws
 // between .authcard and everything sectionGet renders.
-function page({ lang, title, body, full = false }) {
+function page({ lang, title, body, full = false, nonce = '' }) {
   return `<!doctype html>
 <html lang="${lang}">
 <head>
@@ -1355,6 +1719,7 @@ function page({ lang, title, body, full = false }) {
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/account.css">
+${nonce ? `<style nonce="${esc(nonce)}">${DETAILS_CSS}</style>` : ''}
 </head>
 <body${full ? ' class="has-shell"' : ''}>
 ${full ? body : `<div class="wrap">\n${body}\n</div>`}
@@ -1362,8 +1727,51 @@ ${full ? body : `<div class="wrap">\n${body}\n</div>`}
 </html>`;
 }
 
+/**
+ * The saved-details panel's own rules, and WHY they are here rather than in
+ * public/account.css where every other rule on this page lives.
+ *
+ * They are in this file because this file is the only one this task owns; the
+ * stylesheet is not ours to edit. That is a constraint, not a design, and the
+ * next person free to touch account.css should move this block there verbatim
+ * and delete the nonce plumbing with it.
+ *
+ * WHAT THE NONCE IS FOR. style-src is 'self' — an inline <style> is refused,
+ * silently, and the panel would render as unstyled boxes with no error anyone
+ * would see. The fix is a per-response nonce, NOT 'unsafe-inline': a nonce
+ * admits exactly this one block and still refuses every injected style
+ * attribute, which is the property 'self' was there for in the first place.
+ *
+ * CORNERS. --r-lg on the panel, --r-md on the fields, --r-sm on nothing
+ * smaller — the three tokens account.css defines at :root and applies per
+ * primitive further down. Nothing here is square.
+ */
+const DETAILS_CSS = `
+.detpanel { margin: 0 0 clamp(2.4rem,5vw,3.4rem); padding: clamp(1.3rem,3vw,1.8rem); border: 1px solid var(--line); background: var(--paper-lift); border-radius: var(--r-lg); }
+.detpanel .lede { font-size: 1rem; }
+.det-h2 { margin-top: 0; }
+.detform { display: grid; gap: 1.1rem; margin-top: 1.4rem; }
+.det-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.det-field { display: grid; gap: .35rem; min-width: 0; }
+.det-field label, .det-label { font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; font-weight: 600; color: var(--ink-3); }
+.det-field input {
+  width: 100%; padding: .7rem .8rem; font-size: .96rem;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface); color: var(--ink);
+}
+.det-field select { width: 100%; padding: .7rem 2.2rem .7rem .8rem; border-radius: var(--r-md); }
+.det-opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); }
+.det-hint { font-size: .84rem; color: var(--ink-3); text-wrap: pretty; }
+/* The account email, shown and not editable — see handleDetails(). It is
+   deliberately not a disabled <input>: a greyed-out field reads as one that
+   could be switched on, and this one never can. */
+.det-fixed { margin: 0; padding: .7rem .8rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); background: var(--paper-2); color: var(--ink); font-size: .96rem; overflow-wrap: anywhere; }
+.det-ok { margin: .9rem 0 0; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-2); color: var(--signal-ink); font-size: .92rem; }
+.detform .btn { justify-self: start; }
+`;
+
 /** Same header set and reasoning as portal.js's html() — no script on this page, so default-src 'none' is a fact, not an aspiration. */
-function html(body, status = 200, extraSetCookies = []) {
+function html(body, status = 200, extraSetCookies = [], nonce = '') {
   const headers = new Headers({
     'content-type': 'text/html; charset=utf-8',
     'cache-control': 'no-store',
@@ -1371,10 +1779,22 @@ function html(body, status = 200, extraSetCookies = []) {
     'x-robots-tag': 'noindex, nofollow',
     'x-content-type-options': 'nosniff',
     'content-security-policy':
-      "default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+      `default-src 'none'; img-src 'self'; style-src 'self'${nonce ? ` 'nonce-${nonce}'` : ''}; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
   });
   for (const c of extraSetCookies) headers.append('Set-Cookie', c);
   return new Response(body, { status, headers });
+}
+
+/**
+ * A fresh nonce per response. Must be unpredictable and must never be reused
+ * across responses — a nonce that repeats is 'unsafe-inline' with extra steps.
+ * crypto.getRandomValues is the same source mintToken() draws on (token.js).
+ */
+function makeNonce() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/=+$/, '');
 }
 
 function seeOther(location, setCookies = []) {

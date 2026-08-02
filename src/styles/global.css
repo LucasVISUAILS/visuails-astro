@@ -469,6 +469,86 @@
    by a background declaration here. */
 .on-ink { background: var(--ink-900); color: var(--ink-2); }
 
+/* ── CORNERS — ONE PLACE, BECAUSE THEY WERE EVERYWHERE ───────────────────────
+   HISTORY, so this block is not undone by someone reading an old comment. The
+   first VISUAILS design system was "hard-edge: zero border-radius everywhere",
+   and every component built under it set no radius at all. Lucas reversed that
+   rule ("voeg ronde hoeken toe") and a 16/8/4 scale was added — but only new
+   work picked it up. A measured sweep of nineteen routes found 140 distinct
+   square-cornered surfaces still shipping: media plates, cards, hairline
+   grids, chips, the language chip, the conversion-bar CTA.
+
+   The fix is here rather than in forty component files because the shapes
+   repeat. Three families, three radii:
+
+     · MEDIA — anything showing a photograph gets --r-lg. A picture with a
+       square corner inside a rounded card is the tell that the system was
+       applied by hand.
+     · SURFACES — cards, panels, columns, wells: --r-md.
+     · MARKS — chips, badges, tags, small controls: --r-sm.
+
+   HAIRLINE GRIDS need both a radius AND overflow: hidden. Several components
+   draw their 1px rules by giving the container a --line background and the
+   children a --bg one with a 1px gap. Rounding only the container leaves four
+   square child corners poking through it, which looks worse than leaving it
+   square. Clipping is what makes the trick survive a radius.
+
+   Astro's scoped styles win on specificity when they set border-radius
+   themselves; none of the components below do, they simply never set it. So
+   these apply. If a component ever needs a different corner, it says so in its
+   own <style> and that wins — which is the correct precedence. */
+
+/* media */
+.photo-band, .photo-split-media, .vis, .cmp, .tile-media, .hv-svc-media,
+.card > img, .card-media, figure.bm-model, .bm-model {
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+/* A media box that abuts a tile body is half of one shape — it keeps the
+   tile's outer corners and squares off where the two meet. That rule already
+   existed further down for .tile-media; this is the same idea stated once. */
+.tile > .tile-media:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.tile > .tile-media:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+
+/* surfaces */
+.card, .step, .anchor, .addon, .svc-explain-side, .ed-head, .tierc-col,
+.hv-vs-col, .hv-dash-row, .hv-dash-log, .hv-ob-item, .hv-faq-item,
+.pl-total, .acc-item {
+  border-radius: var(--r-md);
+}
+
+/* hairline grids — radius plus clipping, per the note above */
+.hv-pipe, .hv-week, .hv-ch, .hv-vs, .hv-dash, .hv-ob, .hv-faq, .tierc-grid,
+.compare-grid, .lad-table-wrap {
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+/* second pass — the named surfaces the first sweep left square. Measured, not
+   guessed: the audit script re-ran after the block above and these are what it
+   still returned with a visible fill, border or clip. Text-level elements
+   (li, a, strong, dd, figcaption, svg, .split-line) are deliberately absent —
+   they came back square because they carry a background for a highlight, and a
+   rounded run of inline text reads as a bug. */
+.pack, .packs, .standing, .standing-inc, .pb-plate, .pb-bar, .svc-row,
+.gate-note, .incl, .hv-stat-card, .lad-table, .tile-media-fill,
+.hv-ba-media, .hv-dream-inner .btn, .ts-file, .dropzone, .opt, .door,
+.choice, .pl-panel, .pl-swatch, .summary-row {
+  border-radius: var(--r-md);
+}
+/* Photographs that sit on their own rather than inside a plate. Scoped to
+   content contexts on purpose — a blanket `img { border-radius }` would round
+   the logotype and every inline icon. */
+figure > img, .card img, .grid img, .reveal > img, img.wide {
+  border-radius: var(--r-lg);
+}
+
+/* marks */
+.chip, .vis-badge, .cmp-tag, .cmp-knob, .acc-icon, .tile-cap, .plate-cap,
+.ls, .cb-cta, .wa-launcher-label, .hv-pl-dot {
+  border-radius: var(--r-sm);
+}
+
 /* ---- base ---- */
 * { box-sizing: border-box; }
 /* scroll-behavior: smooth is deliberately NOT set here, and the omission is
@@ -963,7 +1043,8 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .tile-body { padding: clamp(1.25rem, 2.2vw, 1.9rem); display: flex; flex-direction: column; flex: 1; }
 .tile-media { position: relative; overflow: hidden; }
 /* A media block that is NOT the whole tile keeps its own corner. */
-.tile-body + .tile-media, .tile-media + .tile-body { border-radius: 0; }
+/* Superseded by the .tile > .tile-media corner rules in the corners block
+   above, which round the OUTER edges and square only the seam. */
 .tile-media > img, .tile-media > video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .tile-media-fill { flex: 1; min-height: 12rem; }
 

@@ -173,7 +173,7 @@ import FigApproval from './FigApproval.astro';
 import FigFormats from './FigFormats.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
-  WINDOW_THRESHOLD, vatLabel, withVat,
+  WINDOW_THRESHOLD, vatLabel, vatNote,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -187,7 +187,6 @@ const lp = (p: string) => localizedPath(lang, p);
 // account, and it is not. Both figures are built here rather than in the copy
 // table so neither branch can print one without the other.
 const sample = `${euro(AMOUNT.testSample, lang)} ${vatLabel('excl', lang)}`;
-const sampleGross = `${euro(withVat(AMOUNT.testSample), lang)} ${vatLabel('incl', lang)}`;
 
 // No `as const` — see PricingPage.astro for why (union-of-tuples breaks .map).
 const COPY = {
@@ -341,7 +340,7 @@ const COPY = {
     faqCta: 'Read the FAQ',
 
     ctaH: 'See it on your own product.',
-    ctaBody: `One test sample per business — ${sample}, ${sampleGross}, no commitment. It runs through the same pipeline as a paid order.`,
+    ctaBody: `One test sample per business — ${sample} ${vatLabel('excl', lang)}, no commitment. It runs through the same pipeline as a paid order.`,
     ctaSampleBtn: 'Test sample',
     ctaStartBtn: 'Start an order',
     wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20how%20an%20order%20works.',
@@ -446,7 +445,7 @@ const COPY = {
     faqCta: 'Lees de FAQ',
 
     ctaH: 'Zie het op je eigen product.',
-    ctaBody: `Eén proefvisual per bedrijf — ${sample}, ${sampleGross}, zonder verplichting. Hij loopt door dezelfde pipeline als een betaalde bestelling.`,
+    ctaBody: `Eén proefvisual per bedrijf — ${sample} ${vatLabel('excl', lang)}, zonder verplichting. Hij loopt door dezelfde pipeline als een betaalde bestelling.`,
     ctaSampleBtn: 'Proefvisual',
     ctaStartBtn: 'Start een bestelling',
     wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20hoe%20een%20bestelling%20werkt.',

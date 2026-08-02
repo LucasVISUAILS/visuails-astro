@@ -109,6 +109,31 @@ const base = stripLang(path);                        // language-neutral path (f
 
 const drops = (ui[lang] || ui.en).drops.map((s: string[], i: number) => ({ href: dropHrefs[i], title: s[0], desc: s[1] }));
 
+// ── The signed-in chrome's own copy ─────────────────────────────────────────
+// Everything else in this header comes from t() / src/i18n/ui.js, and these
+// three strings belong there too. They are HERE because ui.js was outside the
+// set of files this task was allowed to edit — that is the whole reason, and it
+// is not a pattern to copy. The next person free to touch ui.js should move
+// ACCOUNT_UI into it as nav_signout / nav_account_label / nav_account_aria and
+// delete this block; nothing else reads it.
+//
+// nav_account itself ('Log in' / 'Inloggen') stays in ui.js and stays the
+// SIGNED-OUT text, because that is what a static build has to ship — see the
+// script at the foot of this file.
+const ACCOUNT_UI = {
+  en: {
+    signout: 'Sign out',
+    // Screen-reader name for the link that becomes the brand's own name. On
+    // its own "VISUAILS" in a nav bar does not say it is an account link.
+    aria: 'Your account',
+  },
+  nl: {
+    signout: 'Uitloggen',
+    aria: 'Je account',
+  },
+};
+const acct = ACCOUNT_UI[lang === 'nl' ? 'nl' : 'en'];
+
 const isActive = (href: string) => (href === '/' ? base === '/' : base === href || base.startsWith(href + '/'));
 const year = new Date().getFullYear();
 
@@ -473,7 +498,34 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             already compares against `base` (language-stripped), so aria-current
             still correctly marks this link active from /nl/account's 404 or
             not. */}
-        <a href="/account" class="nav-account-link" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
+        {/* SIGNED OUT IS WHAT SHIPS. This site is output:'static' — every page
+            is built once and served from disk, byte-identical to every visitor
+            — so there is no request at render time to read the session cookie
+            from and no server-side branch to make here. The signed-out link is
+            the HTML; the signed-in pair below it ships `hidden`, and the script
+            at the foot of this file swaps which one is on screen after asking
+            /account/me. With JS off, or with the fetch failing, this link is
+            all there is and it still works: it goes to /account, which answers
+            with the dashboard for a session and the login form without one.
+
+            Both states are rendered in the markup rather than built by that
+            script for a reason that is easy to trip over: Astro scopes the
+            styles below to the elements it sees at BUILD time, so a node
+            created in JS carries no scope attribute and gets none of them. */}
+        <a href="/account" class="nav-account-link" data-acct="out" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
+        <span class="nav-account-in" data-acct="in" hidden>
+          <a href="/account" class="nav-account-link nav-account-name" data-acct-label aria-label={acct.aria} aria-current={isActive('/account') ? 'page' : undefined}></a>
+          {/* A form, not a link: signing out is a state change and it has to be
+              a POST — /account/logout deletes the session row, and account.js
+              checks Origin on every POST behind a session. The cookie is
+              HttpOnly and Path=/account, so script on this page cannot clear it
+              itself even if it wanted to; the server is the only thing that
+              can, which is the correct arrangement. SameSite=Strict lets this
+              same-origin post carry the cookie. */}
+          <form method="post" action="/account/logout" class="nav-signout" data-acct-signout>
+            <button type="submit" class="nav-signout-btn">{acct.signout}</button>
+          </form>
+        </span>
         <div class="lang-switch" role="group" aria-label={t('lang_label')}>
           {switchLangs.map((l) => (
             <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
@@ -511,7 +563,17 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           comment above for why: /account has no /nl/ counterpart to localize
           to, and lp() sending Dutch visitors to a 404 was live from task
           #259 until this fix. */}
-      <a href="/account" class="mobile-account-link">{t('nav_account')}</a>
+      <a href="/account" class="mobile-account-link" data-acct="out">{t('nav_account')}</a>
+      {/* The drawer's own copy of the signed-in state. Not a second mechanism:
+          the script at the foot of this file fills every [data-acct-label] and
+          toggles every [data-acct] on the page in one pass, so the drawer and
+          the desktop bar cannot end up disagreeing about who is signed in. */}
+      <div class="mobile-account-in" data-acct="in" hidden>
+        <a href="/account" class="mobile-account-link" data-acct-label aria-label={acct.aria}></a>
+        <form method="post" action="/account/logout" class="mobile-signout" data-acct-signout>
+          <button type="submit" class="nav-signout-btn">{acct.signout}</button>
+        </form>
+      </div>
       <div class="lang-switch mobile-lang" role="group" aria-label={t('lang_label')}>
         {switchLangs.map((l) => (
           <a href={localizedPath(l, base)} hreflang={l} class:list={['ls', l === lang && 'on']} aria-current={l === lang ? 'true' : undefined}>{localeNames[l]}</a>
@@ -519,6 +581,136 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       </div>
     </div>
   </div>
+
+  {/* ── THE CHROME KNOWS WHO IS SIGNED IN ──────────────────────────────────
+      Lucas, August 2026: "Als iemand is ingelogd op de site wil ik dat hij ook
+      echt op de site is ingelogd." Until now the nav said "Log in" to everyone,
+      including a customer with a live session, because this site is
+      output:'static' — one build, one HTML file per page, handed unchanged to
+      every visitor. There is no request at render time to read a cookie from.
+      Session state can therefore only be applied AFTER load, on the client,
+      and this is the script that does it.
+
+      WHY IT IS is:inline AND SITS HERE, not in a module at the foot of the
+      page. A module is deferred: it runs after the document is parsed, which
+      is after the header has painted, which is a visible flash of "Log in" on
+      every page for a signed-in customer. An inline script placed directly
+      after the markup it edits runs while the parser is still working, before
+      that region is painted — so with a warm cache the correct state is the
+      first one drawn.
+
+      WHAT SHIPS IS THE SIGNED-OUT STATE, and that is not a compromise: it is
+      the only state a static file CAN carry, it is what a crawler and a
+      JS-less browser get, and it is correct for the overwhelming majority of
+      visitors. Everything here is an enhancement on top of a nav that already
+      works.
+
+      ONE FETCH PER PAGE LOAD, AT MOST. window.visAccount() memoises its own
+      promise, so /start's pipeline.js asking for the same answer costs nothing
+      extra (see bindPrefill there). Between page loads a small snapshot in
+      sessionStorage — signed in or not, and the label to draw, never the phone
+      number or the VAT number — lets the chrome paint immediately and skip the
+      network entirely while it is fresh. Two minutes is short enough that a
+      sign-out in another tab corrects itself quickly and long enough that
+      clicking through the site is not a request per click: /account/me is rate
+      limited per IP, and an office behind one address browsing normally must
+      not be able to exhaust that between them. */}
+  <script is:inline define:vars={{ accountFresh: 120000 }}>
+    (function () {
+      if (window.__visAcct) return;
+      window.__visAcct = 1;
+
+      var KEY = 'vis_acct';
+      var pending = null; // this page load's in-flight/settled request
+
+      function snapshot() {
+        try {
+          var raw = sessionStorage.getItem(KEY);
+          if (!raw) return null;
+          var s = JSON.parse(raw);
+          if (!s || s.v !== 1) return null;
+          return Date.now() - s.at < accountFresh ? s : null;
+        } catch (e) { return null; }
+      }
+
+      function remember(me) {
+        try {
+          sessionStorage.setItem(KEY, JSON.stringify({
+            v: 1, at: Date.now(), in: !!me, label: me ? (me.label || me.email || '') : '',
+          }));
+        } catch (e) { /* private mode, quota, disabled — the fetch still works */ }
+      }
+
+      function forget() {
+        try { sessionStorage.removeItem(KEY); } catch (e) { /* nothing to undo */ }
+      }
+
+      /**
+       * The one place this site asks who is signed in.
+       * Resolves to the /account/me payload, or null for "nobody" — including
+       * for a network failure or a 429, because the honest fallback for "we
+       * could not tell" is the state that reveals nothing about anyone.
+       */
+      window.visAccount = function () {
+        if (pending) return pending;
+        pending = fetch('/account/me', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (me) {
+            // A 200 with no email is not a session. account.js answers 401 for
+            // that and this is the belt to its braces: nothing downstream may
+            // treat an empty-but-successful body as someone being signed in.
+            var ok = me && typeof me === 'object' && me.email ? me : null;
+            remember(ok);
+            return ok;
+          })
+          .catch(function () { return null; });
+        return pending;
+      };
+
+      /** Draw one state or the other. `label` is only read when signed in. */
+      function paint(signedIn, label) {
+        var nodes = document.querySelectorAll('[data-acct]');
+        for (var i = 0; i < nodes.length; i += 1) {
+          nodes[i].hidden = (nodes[i].getAttribute('data-acct') === 'in') !== signedIn;
+        }
+        if (!signedIn) return;
+        var labels = document.querySelectorAll('[data-acct-label]');
+        for (var j = 0; j < labels.length; j += 1) labels[j].textContent = label || '';
+      }
+
+      function boot() {
+        // Signing out has to drop the snapshot with it, or the next page draws
+        // a signed-in bar from a cache that outlived the session.
+        var outs = document.querySelectorAll('[data-acct-signout]');
+        for (var i = 0; i < outs.length; i += 1) outs[i].addEventListener('submit', forget);
+
+        var s = snapshot();
+        // Coming back from /account — a fresh sign-in, or a sign-out — makes
+        // any snapshot suspect regardless of its age. Ask again.
+        var fromAccount = false;
+        try {
+          fromAccount = !!document.referrer
+            && new URL(document.referrer).origin === location.origin
+            && new URL(document.referrer).pathname.indexOf('/account') === 0;
+        } catch (e) { /* an opaque referrer is simply not a reason to refetch */ }
+
+        if (s && !fromAccount) {
+          paint(s.in, s.label);
+          return; // fresh enough to trust, so this page load costs no request
+        }
+        if (s) paint(s.in, s.label); // draw the stale guess, then correct it
+        window.visAccount().then(function (me) { paint(!!me, me ? (me.label || me.email) : ''); });
+      }
+
+      boot();
+      // ClientRouter swaps the whole document on a soft navigation, which
+      // replaces the nav nodes this just painted and drops the submit
+      // listeners with them. Re-running per page is the same lifecycle every
+      // other script in this layout keeps; `pending` survives, so a soft
+      // navigation costs no second request at all.
+      document.addEventListener('astro:page-load', boot);
+    })();
+  </script>
 
   <main>
     <slot />
@@ -814,6 +1006,39 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      carries its own copy (.mobile-account-link). */
   .nav-account-link { font-size: .88rem; font-weight: 500; color: var(--ink-3); padding: .55rem .4rem; transition: color var(--dur-1) var(--ease); }
   .nav-account-link:hover, .nav-account-link[aria-current="page"] { color: var(--ink); }
+
+  /* ---- the signed-in chrome ------------------------------------------------
+     Both states are in the markup and one of them is `hidden` (see the nav).
+     The UA rule for [hidden] sits in the user-agent origin, where any
+     `display` declared here beats it — so every rule below has to exclude the
+     hidden state itself or the two states would draw on top of each other.
+     That is what :not([hidden]) is doing, and it is load-bearing rather than
+     defensive. */
+  .nav-account-in { display: none; align-items: center; gap: .1rem; }
+  .nav-account-in:not([hidden]) { display: inline-flex; }
+  /* The brand's own name, so it can be long. Truncated rather than allowed to
+     push the CTA off the bar — the name is confirmation of who you are, not
+     something anyone reads word by word here; the dashboard prints it in full. */
+  .nav-account-name { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-weight: 600; }
+  .nav-signout { display: inline-flex; margin: 0; }
+  /* A quiet control beside a quiet link. Sign out must be reachable — Lucas's
+     ask was that the site knows you are signed in, and a state you cannot
+     leave from the chrome is not really chrome that knows. It takes --r-sm,
+     the smallest of the three tokens, because it is the smallest thing here;
+     nothing on this site is allowed a square corner. */
+  .nav-signout-btn {
+    font: inherit; font-size: .78rem; font-weight: 500; letter-spacing: .02em;
+    color: var(--ink-3); background: none; border: 0; cursor: pointer;
+    padding: .5rem .45rem; border-radius: var(--r-sm);
+    text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+    transition: color var(--dur-1) var(--ease);
+  }
+  .nav-signout-btn:hover { color: var(--ink); }
+  .mobile-account-in { display: none; flex-direction: column; align-items: center; gap: .2rem; }
+  .mobile-account-in:not([hidden]) { display: flex; }
+  .mobile-account-in .mobile-account-link { color: var(--ink); }
+  .mobile-signout { margin: 0; }
+  .mobile-signout .nav-signout-btn { font-size: .9rem; }
   .has-menu { position: relative; }
   .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
@@ -873,7 +1098,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
   .mobile-account-link { display: block; margin-top: .9rem; text-align: center; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
   .mobile-close { position: fixed; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
-  @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link { display: none; } .menu-toggle { display: inline-flex; } }
+  /* The signed-in pair goes with the link it replaces — the drawer carries its
+     own copy (.mobile-account-in). :not([hidden]) is repeated here for the same
+     reason it exists above: without it, the rule that shows the signed-in state
+     would out-specify this one and leave a sign-out button floating in a
+     collapsed bar. */
+  @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link, .nav-account-in, .nav-account-in:not([hidden]) { display: none; } .menu-toggle { display: inline-flex; } }
 
   .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   /* The gap above the footer is breathing room after a dark section that ended

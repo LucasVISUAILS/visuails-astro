@@ -154,6 +154,23 @@ export const VAT_RATE = 0.21;
 export const vatOf = (net) => Math.round(net * VAT_RATE * 100) / 100;
 export const withVat = (net) => Math.round(net * (1 + VAT_RATE) * 100) / 100;
 
+// PAGES PRINT NET ONLY. There was a gross figure beside every net one until
+// Lucas pointed out the flaw: VAT is not one rate. A French or German buyer is
+// charged their own country's rate, so "€1,190 excl. VAT — €1,439.90 incl.
+// VAT" is a number that is only true for a Dutch reader, printed to everyone.
+// A wrong price shown confidently is worse than no price shown at all.
+//
+// So `withVat()` and `vatOf()` stay — the checkout still has to compute a real
+// amount, and that computation is server-side where the country is known — but
+// nothing rendered to a visitor may use them. Every price carries
+// vatLabel('excl') and the page states vatNote() once.
+/** One sentence on how VAT is handled, said once per page rather than per price. */
+export function vatNote(lang = 'en') {
+  return lang === 'nl'
+    ? 'Alle bedragen zijn excl. btw. De btw wordt bij het afrekenen toegevoegd tegen het tarief van jouw land. Ben je een EU-bedrijf met een geldig btw-nummer, geef het door en de verlegging wordt op de factuur rechtgezet.'
+    : 'All figures are excl. VAT. VAT is added at checkout at the rate of your own country. If you are an EU business with a valid VAT number, give it to us and the reverse charge is settled on your invoice.';
+}
+
 /** "excl. VAT" / "incl. VAT", in the reader's language. Never typed on a page. */
 export function vatLabel(kind = 'excl', lang = 'en') {
   const nl = lang === 'nl';
