@@ -28,8 +28,12 @@ import {
   AMOUNT, euro, euroRange, TEST_SAMPLE, SHOOT_DAY,
   FULL_DROP_MIN, FULL_DROP_MAX, PILOT_PRODUCTS,
   FULL_DROP_PER_PRODUCT_MIN, FULL_DROP_PER_PRODUCT_MAX,
+  BRAND_MODEL_CREDIT_DROPS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
+import Compare from './Compare.astro';
+import { ROSTER } from '../data/models.js';
+import { faqPageGroups } from '../data/faq.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -58,6 +62,20 @@ const MADE_IMG = [
   { src: '/img/banners-09.webp', w: 2400, h: 1792 },
   { src: '/img/custom-models-02.webp', w: 800, h: 1071 },
 ];
+
+// The roster rail in the Brand Model band. Every face here is a real entry in
+// src/data/models.js, which is the same list /models and /custom-models read —
+// so the homepage cannot end up advertising a face the roster no longer has.
+const FACES = ROSTER;
+
+// VISUALS PER PRODUCT, derived rather than typed. A catalog set is four photos
+// and a lifestyle carousel is three — both stated in PER_PRODUCT's `line` in
+// pricing.js, and both are what DROP_INCLUDES puts in every drop. The channel
+// band multiplies this by the drop size, and a figure like "175–210 images" is
+// exactly the kind of number that goes stale silently if it is typed by hand.
+const PER_PRODUCT_VISUALS = 4 + 3;
+const DROP_VISUALS_MIN = PER_PRODUCT_VISUALS * FULL_DROP_MIN;
+const DROP_VISUALS_MAX = PER_PRODUCT_VISUALS * FULL_DROP_MAX;
 
 const COPY = {
   en: {
@@ -107,6 +125,57 @@ const COPY = {
       ['A person checks it', 'Every visual is looked at before it ships. Nothing is auto-delivered.'],
     ],
 
+    whoH: 'For brands with more products than shoot days.',
+    whoLede: 'Four situations this studio is priced for. If one of them is yours, the arithmetic already works.',
+    who: [
+      ['The first collection', 'You have the samples and no budget for a shoot. The range has to look like it belongs next to labels ten years older than you.'],
+      ['A drop every season', 'Four to six launches a year, and each one currently starts with finding a photographer, a model and a day everyone is free.'],
+      ['Marketplaces to feed', 'Zalando, Amazon and bol want clean product images to a fixed spec. Getting them right is nobody’s favourite afternoon.'],
+      ['More SKUs than hours', 'The range grew faster than the production around it, and photography is the part that keeps slipping.'],
+    ],
+    notForH: 'Probably not for you if',
+    notFor: [
+      'you want one hero campaign image with contracted talent, rather than a whole range',
+      'the brand direction still moves every few weeks — a house style needs something to be consistent with',
+      'you sell a single product, and a drop would be mostly empty',
+      'you need a signed release for a named face you already work with',
+    ],
+
+    baH: ['This is what came in.', 'This is what went out.'],
+    baLede: 'One photo, taken on a phone, on a table. Nothing was reshot, restyled, or sent anywhere.',
+    baBefore: 'Sent in',
+    baAfter: 'Delivered',
+    baBeforeAlt: 'The raw phone photo a client sent in',
+    baAfterAlt: 'The finished VISUAILS catalog visual made from it',
+    baPoints: [
+      ['The garment is unchanged', 'Cut, colour, print and hardware stay exactly as they are on the sample. That is the only part of the image that is not up for negotiation.'],
+      ['The rest is built', 'Light, background, model and crop are made around it, to whichever house style the drop is running.'],
+      ['A person signs it off', 'Before it reaches you, the finished frame is put next to your original photo and checked against it.'],
+    ],
+    baNote: 'A phone photo in daylight is enough to start. If yours are worse than this one, send it anyway and you will get an honest answer.',
+    baNoteLink: 'What makes a usable photo',
+
+    dreamKicker: 'What it is all actually for',
+    dreamH: 'A small label that never looked small.',
+    dreamLede: 'Nobody scrolling your page knows how many people work here. They only see whether the images look like a brand that has its act together — and that judgement is made in about two seconds. It is also the one part of looking established that a young label can simply go and buy.',
+    dreamCta: 'See a drop in full',
+    dreamAlt: 'A VISUAILS lifestyle visual — a styled campaign scene',
+
+    weekH: 'The week you get back.',
+    weekLede: 'A shoot is not one day. It is the week around it: the casting, the booking, the shipping, the reschedule when it rains, the two evenings spent culling frames. Here is what that week looks like instead.',
+    week: [
+      ['Monday', 'You drop a folder of product photos into the portal. Twenty minutes, and most of that is renaming folders to your SKUs.'],
+      ['Wednesday', 'The drop lands. You go through it in the portal, approve what is right and flag what is not.'],
+      ['Friday', 'Product pages are live and the carousels are scheduled. You were not in a studio once.'],
+    ],
+    backH: 'What that frees up',
+    back: [
+      ['No casting, no booking', 'No model, no photographer, no studio, and no single day everyone has to be free at the same time.'],
+      ['Nothing leaves your stockroom', 'Samples stay where they are. Nothing is shipped out and nothing comes back creased.'],
+      ['No day off the business', 'A shoot day is a day you are not buying, selling, or building anything.'],
+      ['No cull, no retouch queue', 'You get finished visuals, not four hundred frames to sort through on a Sunday.'],
+    ],
+
     vsH: 'What a drop replaces.',
     vsLede: 'Not to scare you off a shoot — a good one is still the best thing that can happen to a garment. But a day is a day, and it is worth counting what is in it.',
     vsAK: 'A production day',
@@ -127,6 +196,45 @@ const COPY = {
       ['Video', 'Subtle motion that lifts click-through where a still photo plateaus.', '/video', euro(AMOUNT.video, 'en') + ' / clip'],
       ['Your Brand Model', 'One face, made only for you, keeping every drop unmistakably yours.', '/custom-models', euro(AMOUNT.brandModel, 'en') + ' once'],
     ],
+
+    chH: 'One drop, every place it has to go.',
+    chLede: `A full drop is ${FULL_DROP_MIN}–${FULL_DROP_MAX} products at ${PER_PRODUCT_VISUALS} visuals each — ${DROP_VISUALS_MIN}–${DROP_VISUALS_MAX} finished images, cut for the places they actually have to sit.`,
+    ch: [
+      ['Product page hero', 'The first frame on the page, on white or in scene'],
+      ['Product page grid', 'Front, back and a fabric detail, consistent across the range'],
+      ['On-model shot', 'In every catalog set, so nobody has to guess at fit'],
+      ['Instagram carousel', 'Three styled frames per product, ready to post'],
+      ['Reels and TikTok', 'Vertical clips, quoted per clip and added to a drop'],
+      ['Paid social', 'The same look in ad crops, so the click matches the landing page'],
+      ['Marketplaces', 'Clean product images for the likes of Zalando, Amazon and bol'],
+      ['Email and linesheets', 'Wide crops for newsletters and wholesale sheets'],
+    ],
+    chNote: 'Downloads arrive sized per channel in the portal, with a provenance manifest beside them.',
+
+    bmH: ['One face,', 'and it is only yours.'],
+    bmLede: `The roster below is who you can pick from today, and any of them can appear in your drop. Your Brand Model is the other route: a face made for your brand alone, set up once for ${euro(AMOUNT.brandModel, 'en')} and never used for anyone else — with ${euro(AMOUNT.brandModelCredit, 'en')} of it credited back on each of your first ${BRAND_MODEL_CREDIT_DROPS} drops.`,
+    bmNote: 'A returning face is the cheapest continuity a brand can buy. It is the same reason catalogues have used the same model for years — recognition does the work that a bigger budget would otherwise have to.',
+    bmCta: 'How Your Brand Model works',
+
+    prH: 'Three ways to work with the studio.',
+    prLede: 'Each one is a fixed figure agreed before anything starts. No credit system, no per-image billing, and no number you only find out at the end.',
+    pr: [
+      ['Drop Pilot', euro(AMOUNT.dropPilot, 'en'), `${PILOT_PRODUCTS} products, once per brand`, 'How most brands start. A real drop at a smaller size, so you see the whole process before you commit a season to it.'],
+      ['Full Drop', euro(AMOUNT.fullDrop, 'en'), `${FULL_DROP_MIN}–${FULL_DROP_MAX} products`, 'A season in one pass. A catalog set and a lifestyle carousel for every product, one deadline, one invoice.'],
+      ['Studio', `${euro(AMOUNT.retainer, 'en')} / month`, 'a Full Drop every month', 'For brands that never stop dropping. Your Brand Model is included and your work sits at the front of the queue.'],
+    ],
+    prNote: `Not ready for a whole drop? Loose products run at ${euro(AMOUNT.catalog, 'en')} for a catalog set and ${euro(AMOUNT.lifestyle, 'en')} for a lifestyle carousel — or see it on your own product for ${sample.price} first.`,
+    prCta: 'The full price list',
+
+    plH: 'Work back from your launch date.',
+    plLede: 'The window is reserved capacity, not a place in a queue. That is why it can be promised at all — and why it runs out. Three dates decide the whole thing.',
+    pl: [
+      ['Your launch date', 'The day the collection has to be live and posting. Everything else is counted backwards from here.'],
+      ['Minus 48 hours', 'The reserved window. Once the calendar has cleared it, nothing else in the studio is allowed to push it.'],
+      ['Minus one folder', 'The day you send the photos. That is your part finished — the date is already locked by then.'],
+    ],
+    plNote: 'Drop weeks are booked one at a time, and a full week is offered as full rather than as a longer wait. Season launches cluster, so the weeks around them go first.',
+    plCta: 'See which weeks are open',
 
     dashH: ['What happens', 'after you order.'],
     dashLede: 'A drop is not a file that lands in your inbox. It runs on two screens — one you get, one we work in — and both of them are the reason a date can be promised at all.',
@@ -163,6 +271,19 @@ const COPY = {
       ['The first three brands, free', `a Drop Pilot — ${PILOT_PRODUCTS} products, ${euro(AMOUNT.dropPilot, 'en')} — at no charge, in exchange for a published case study.`],
     ],
     trust: ['Made in Enschede, NL', 'KVK-registered business', 'Human-checked, every visual', 'Direct line on WhatsApp'],
+
+    obH: 'The things you would ask on a call.',
+    obLede: 'Four answers that usually take a phone call to get out of a supplier. They are the same four either way, so they may as well be here.',
+    ob: [
+      ['Who owns the visuals?', 'You do. They are made for commercial use — your shop, marketplaces, paid ads and social feeds. No licence per use, and no extra fee for putting them somewhere else.', null, null],
+      ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve or request a revision image by image.', 'See the client portal', '/portal'],
+      ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is generated from photographs of your real product and finished by hand — a made image, not a photograph of a shoot that happened. The files come with a provenance manifest.', 'Read the AI Act page', '/ai-act'],
+      ['My own photos are bad.', 'A phone photo in daylight on a plain surface is enough to start. The guidelines run to two pages and are mostly about light.', 'What makes a usable photo', '/upload-guidelines'],
+    ],
+
+    faqH: 'Still deciding.',
+    faqLede: 'The five that get asked most, and the rest on their own page.',
+    faqCta: 'Every question, answered',
 
     closeH: 'See it on your own product first.',
     closeLede: `One visual, made from your photo, human-checked — for a ${sample.price} verification. One per business.`,
@@ -217,6 +338,57 @@ const COPY = {
       ['Een mens kijkt ernaar', 'Elk beeld wordt bekeken voordat het weggaat. Er wordt niets automatisch geleverd.'],
     ],
 
+    whoH: 'Voor merken met meer producten dan shootdagen.',
+    whoLede: 'Vier situaties waar deze studio op geprijsd is. Zit die van jou ertussen, dan klopt de rekensom al.',
+    who: [
+      ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De lijn moet eruitzien alsof hij thuishoort naast labels die tien jaar ouder zijn.'],
+      ['Elk seizoen een drop', 'Vier tot zes lanceringen per jaar, en elke keer begint het met een fotograaf zoeken, een model regelen en een dag vinden waarop iedereen kan.'],
+      ['Marktplaatsen voeden', 'Zalando, Amazon en bol willen schone productbeelden volgens een vaste spec. Dat goed krijgen is niemands favoriete middag.'],
+      ['Meer SKU’s dan uren', 'De collectie groeide harder dan de productie eromheen, en de fotografie is het stuk dat blijft doorschuiven.'],
+    ],
+    notForH: 'Waarschijnlijk niets voor je als',
+    notFor: [
+      'je één campagnebeeld wilt met vastgelegde modellen, en niet een hele lijn',
+      'de merkrichting nog om de paar weken verschuift — een huisstijl moet ergens consistent mee kunnen zijn',
+      'je één product verkoopt, en een drop grotendeels leeg zou blijven',
+      'je een getekende release nodig hebt voor een gezicht waar je al mee werkt',
+    ],
+
+    baH: ['Dit kwam binnen.', 'Dit ging eruit.'],
+    baLede: 'Eén foto, met een telefoon gemaakt, op een tafel. Er is niets opnieuw gefotografeerd, opnieuw gestyled of ergens heen gestuurd.',
+    baBefore: 'Ingestuurd',
+    baAfter: 'Geleverd',
+    baBeforeAlt: 'De ruwe telefoonfoto die een klant instuurde',
+    baAfterAlt: 'Het afgewerkte VISUAILS-catalogbeeld dat daaruit is gemaakt',
+    baPoints: [
+      ['Het kledingstuk blijft zoals het is', 'Snit, kleur, print en fournituren blijven precies zoals ze op het sample zitten. Dat is het enige deel van het beeld waar niet over te onderhandelen valt.'],
+      ['De rest wordt eromheen gebouwd', 'Licht, achtergrond, model en uitsnede worden eromheen gemaakt, in de huisstijl waarin de drop draait.'],
+      ['Een mens tekent het af', 'Voordat het naar je toe gaat, wordt het eindbeeld naast jouw originele foto gelegd en ertegen gecontroleerd.'],
+    ],
+    baNote: 'Een telefoonfoto bij daglicht is genoeg om te beginnen. Zijn die van jou slechter dan deze, stuur er dan toch één en je krijgt een eerlijk antwoord.',
+    baNoteLink: 'Wat een bruikbare foto is',
+
+    dreamKicker: 'Waar het uiteindelijk allemaal om gaat',
+    dreamH: 'Een klein label dat er nooit klein uitzag.',
+    dreamLede: 'Niemand die je pagina scrolt weet hoeveel mensen hier werken. Ze zien alleen of de beelden van een merk zijn dat het voor elkaar heeft — en dat oordeel valt in ongeveer twee seconden. Het is ook het enige deel van gevestigd overkomen dat een jong label gewoon kan kopen.',
+    dreamCta: 'Bekijk een hele drop',
+    dreamAlt: 'Een VISUAILS lifestyle-beeld — een gestylede campagnescène',
+
+    weekH: 'De week die je terugkrijgt.',
+    weekLede: 'Een shoot is niet één dag. Het is de week eromheen: de casting, de boeking, het opsturen, het verzetten als het regent, de twee avonden foto’s uitzoeken. Zo ziet die week er in plaats daarvan uit.',
+    week: [
+      ['Maandag', 'Je zet een map met productfoto’s in het portaal. Twintig minuten, en het meeste daarvan is mappen hernoemen naar je SKU’s.'],
+      ['Woensdag', 'De drop landt. Je loopt hem door in het portaal, keurt goed wat klopt en markeert wat niet klopt.'],
+      ['Vrijdag', 'De productpagina’s staan live en de carousels zijn ingepland. Je bent geen moment in een studio geweest.'],
+    ],
+    backH: 'Wat dat vrijmaakt',
+    back: [
+      ['Geen casting, geen boeking', 'Geen model, geen fotograaf, geen studio, en geen dag waarop iedereen tegelijk vrij moet zijn.'],
+      ['Er gaat niets de voorraad uit', 'Samples blijven waar ze liggen. Er wordt niets opgestuurd en er komt niets gekreukt terug.'],
+      ['Geen dag uit de zaak', 'Een shootdag is een dag waarop je niets inkoopt, niets verkoopt en niets opbouwt.'],
+      ['Geen selectie, geen retoucheerlijst', 'Je krijgt afgewerkte beelden, geen vierhonderd frames om op een zondag door te spitten.'],
+    ],
+
     vsH: 'Wat een drop vervangt.',
     vsLede: 'Niet om je van een shoot af te houden — een goede is nog altijd het beste wat een kledingstuk kan overkomen. Maar een dag is een dag, en het is de moeite waard om te tellen wat erin zit.',
     vsAK: 'Een productiedag',
@@ -237,6 +409,45 @@ const COPY = {
       ['Video', 'Subtiele beweging die doorklik oplevert waar een stilstaand beeld blijft steken.', '/video', euro(AMOUNT.video, 'nl') + ' / clip'],
       ['Je merkmodel', 'Eén gezicht, alleen voor jou gemaakt, waardoor elke drop onmiskenbaar van jou is.', '/custom-models', euro(AMOUNT.brandModel, 'nl') + ' eenmalig'],
     ],
+
+    chH: 'Eén drop, overal waar hij heen moet.',
+    chLede: `Een volledige drop is ${FULL_DROP_MIN}–${FULL_DROP_MAX} producten van ${PER_PRODUCT_VISUALS} beelden per stuk — ${DROP_VISUALS_MIN}–${DROP_VISUALS_MAX} afgewerkte beelden, uitgesneden voor de plekken waar ze echt moeten staan.`,
+    ch: [
+      ['Hero op de productpagina', 'Het eerste beeld op de pagina, op wit of in scène'],
+      ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail, consistent over de hele lijn'],
+      ['On-model beeld', 'In elke catalogset, zodat niemand naar de pasvorm hoeft te raden'],
+      ['Instagram-carousel', 'Drie gestylede beelden per product, klaar om te posten'],
+      ['Reels en TikTok', 'Verticale clips, per clip geoffreerd en toe te voegen aan een drop'],
+      ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes, zodat de klik bij de landingspagina past'],
+      ['Marktplaatsen', 'Schone productbeelden voor partijen als Zalando, Amazon en bol'],
+      ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale-overzichten'],
+    ],
+    chNote: 'De downloads staan per kanaal op maat klaar in het portaal, met een herkomstmanifest ernaast.',
+
+    bmH: ['Eén gezicht,', 'en het is alleen van jou.'],
+    bmLede: `De rij hieronder is waar je vandaag uit kunt kiezen, en elk van hen kan in jouw drop verschijnen. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is, één keer opgezet voor ${euro(AMOUNT.brandModel, 'nl')} en nooit voor iemand anders gebruikt — waarvan ${euro(AMOUNT.brandModelCredit, 'nl')} terugkomt op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops.`,
+    bmNote: 'Een terugkerend gezicht is de goedkoopste continuïteit die een merk kan kopen. Het is dezelfde reden waarom catalogi al jaren hetzelfde model gebruiken — herkenning doet het werk waar anders een groter budget voor nodig is.',
+    bmCta: 'Zo werkt je merkmodel',
+
+    prH: 'Drie manieren om met de studio te werken.',
+    prLede: 'Alle drie een vast bedrag dat vaststaat voordat er iets begint. Geen creditsysteem, geen facturatie per beeld, en geen bedrag dat je pas achteraf te horen krijgt.',
+    pr: [
+      ['Drop Pilot', euro(AMOUNT.dropPilot, 'nl'), `${PILOT_PRODUCTS} producten, één keer per merk`, 'Zo beginnen de meeste merken. Een echte drop op kleiner formaat, zodat je het hele proces ziet voor je er een seizoen aan vastknoopt.'],
+      ['Full Drop', euro(AMOUNT.fullDrop, 'nl'), `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten`, 'Een seizoen in één keer. Voor elk product een catalogset en een lifestyle-carousel, één deadline, één factuur.'],
+      ['Studio', `${euro(AMOUNT.retainer, 'nl')} / maand`, 'elke maand een Full Drop', 'Voor merken die blijven droppen. Je merkmodel zit erbij en jouw werk staat vooraan in de rij.'],
+    ],
+    prNote: `Nog niet toe aan een hele drop? Losse producten kosten ${euro(AMOUNT.catalog, 'nl')} voor een catalogset en ${euro(AMOUNT.lifestyle, 'nl')} voor een lifestyle-carousel — of zie het eerst op je eigen product voor ${sample.price}.`,
+    prCta: 'De volledige prijslijst',
+
+    plH: 'Reken terug vanaf je livegangdatum.',
+    plLede: 'Het venster is gereserveerde capaciteit, geen plek in een wachtrij. Daarom kan het überhaupt beloofd worden — en daarom raakt het op. Drie data bepalen het hele verhaal.',
+    pl: [
+      ['Je livegangdatum', 'De dag waarop de collectie live moet staan en gepost moet worden. Al het andere wordt hiervandaan teruggeteld.'],
+      ['Min 48 uur', 'Het gereserveerde venster. Zodra de planning het heeft vrijgegeven, mag niets anders in de studio eroverheen.'],
+      ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar — de datum staat op dat moment al vast.'],
+    ],
+    plNote: 'Dropweken worden één voor één geboekt, en een volle week wordt als vol aangeboden in plaats van als langere wachttijd. Seizoenslanceringen klonteren samen, dus de weken eromheen gaan het eerst.',
+    plCta: 'Kijk welke weken open staan',
 
     dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
     dashLede: 'Een drop is geen bestand dat in je inbox valt. Hij draait op twee schermen — één dat jij krijgt, één waarin wij werken — en samen zijn ze de reden dat er überhaupt een datum beloofd kan worden.',
@@ -274,6 +485,19 @@ const COPY = {
     ],
     trust: ['Gemaakt in Enschede, NL', 'KVK-geregistreerd bedrijf', 'Door mensen nagekeken, elk beeld', 'Directe lijn via WhatsApp'],
 
+    obH: 'De dingen die je aan de telefoon zou vragen.',
+    obLede: 'Vier antwoorden waar je bij een leverancier meestal een belletje voor nodig hebt. Het zijn toch elke keer dezelfde vier, dus staan ze net zo goed hier.',
+    ob: [
+      ['Van wie zijn de beelden?', 'Van jou. Ze zijn gemaakt voor commercieel gebruik — je shop, marktplaatsen, betaalde advertenties en socialmediafeeds. Geen licentie per gebruik, en geen extra kosten om ze ergens anders in te zetten.', null, null],
+      ['En als ze niet goed zijn?', 'Er wordt niets automatisch geleverd. Een mens bekijkt elk beeld eerst, en in het portaal keur je per beeld goed of vraag je een revisie aan.', 'Bekijk het klantportaal', '/portal'],
+      ['Ziet een klant dat het AI is?', 'Ze zijn AI-gegenereerd en dat zeggen we gewoon. Elk beeld wordt gegenereerd uit foto’s van jouw echte product en met de hand afgewerkt — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. Bij de bestanden zit een herkomstmanifest.', 'Lees de AI Act-pagina', '/ai-act'],
+      ['Mijn eigen foto’s zijn slecht.', 'Een telefoonfoto bij daglicht op een egale ondergrond is genoeg om te beginnen. De richtlijnen zijn twee pagina’s en gaan vooral over licht.', 'Wat een bruikbare foto is', '/upload-guidelines'],
+    ],
+
+    faqH: 'Nog aan het twijfelen.',
+    faqLede: 'De vijf die het vaakst gesteld worden, en de rest op een eigen pagina.',
+    faqCta: 'Alle vragen, beantwoord',
+
     closeH: 'Zie het eerst op je eigen product.',
     closeLede: `Eén beeld, gemaakt van jouw foto, door een mens nagekeken — voor een verificatie van ${sample.price}. Eén per bedrijf.`,
     closeCta: 'Vraag je proefvisual aan',
@@ -282,6 +506,21 @@ const COPY = {
 };
 
 const c = COPY[lang];
+
+// The five questions the FAQ band shows, picked one group at a time rather
+// than sliced off the front of the flattened list. Two reasons: the front of
+// the list is all "getting started", which is the one thing a visitor who has
+// scrolled this far no longer needs; and the "rights and usage" group is
+// deliberately left out because the objection band above it already answers
+// those in full — a page that asks the same question twice reads as padding.
+const FAQ_GROUPS = faqPageGroups(lang);
+const FAQ_PICK = [
+  FAQ_GROUPS[0]?.items[0],
+  FAQ_GROUPS[0]?.items[1],
+  FAQ_GROUPS[1]?.items[0],
+  FAQ_GROUPS[2]?.items[0],
+  FAQ_GROUPS[3]?.items[0],
+].filter(Boolean);
 ---
 
 {/* ── 1 · HERO ───────────────────────────────────────────────────────────────
@@ -385,6 +624,41 @@ const c = COPY[lang];
   </div>
 </section>
 
+{/* ── 3b · WHO IT IS FOR ─────────────────────────────────────────────────────
+    Placed directly after the proof rail, which is the first point on the page
+    where a visitor has seen enough to ask "but is this for me". Four
+    situations rather than four personas: a persona ("ambitious founder") is a
+    flattering description a reader agrees with and takes nothing from, a
+    situation is something they either recognise or do not.
+
+    The disqualification list under it is the part that does the work. It is
+    standard on strong productized-service pages and it is the cheapest
+    credibility a vendor with no testimonials can buy: naming who should not
+    buy is a claim only someone confident of the rest can afford to make. */}
+<section class="band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.whoH}</h2>
+      <p class="lede">{c.whoLede}</p>
+    </div>
+    <div class="tiles hv-who-tiles">
+      {c.who.map(([t, b], i) => (
+        <div class="tile s-3">
+          <div class="tile-body">
+            <span class={`hv-who-i ${['w-blue', 'w-violet', 'w-pink', 'w-coral'][i] || ''}`}>{String(i + 1).padStart(2, '0')}</span>
+            <p class="tile-h">{t}</p>
+            <p class="tile-n">{b}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div class="hv-notfor">
+      <p class="hv-notfor-h">{c.notForH}</p>
+      <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
+    </div>
+  </div>
+</section>
+
 {/* ── 4 · THE PIPELINE ───────────────────────────────────────────────────────
     A real ordered sequence, so it is the one place on the page numbers are
     allowed — see DESIGN.md on why 01/02/03 above every section is scaffolding
@@ -404,6 +678,115 @@ const c = COPY[lang];
         </li>
       ))}
     </ol>
+  </div>
+</section>
+
+{/* ── 4b · BEFORE / AFTER ────────────────────────────────────────────────────
+    The single most persuasive asset the studio owns and it was sitting unused:
+    catalog-before.webp is a real client phone photo, catalog-after.webp is
+    what was delivered from it. Everything else on this page is output; this is
+    the only place a visitor sees the INPUT, which is the thing they are
+    actually being asked to believe ("a phone photo is enough").
+
+    Deliberately placed four bands below the drop tiles that also show
+    catalog-after — close enough to be the same story, far enough that the
+    photograph does not read as repeated.
+
+    Compare.astro rather than a hand-rolled slider: it is already on /catalog
+    and /gallery, it drifts on its own so the comparison is legible without
+    interaction, and it throws at build time on an image with no intrinsic
+    size on record. */}
+<section class="band well-deep">
+  <div class="container">
+    <div class="statement statement-left hv-ba-head">
+      <h2>{c.baH[0]} <em class="hv-accent">{c.baH[1]}</em></h2>
+      <p class="lede">{c.baLede}</p>
+    </div>
+    <div class="hv-ba">
+      <div class="hv-ba-media">
+        <Compare
+          before="/img/catalog-before.webp"
+          after="/img/catalog-after.webp"
+          beforeAlt={c.baBeforeAlt}
+          afterAlt={c.baAfterAlt}
+          beforeLabel={c.baBefore}
+          afterLabel={c.baAfter}
+          ratio="4/5"
+        />
+      </div>
+      <div class="hv-ba-copy">
+        <ol class="hv-ba-points">
+          {c.baPoints.map(([t, b]) => (
+            <li>
+              <h3>{t}</h3>
+              <p>{b}</p>
+            </li>
+          ))}
+        </ol>
+        <p class="hv-ba-note">
+          {c.baNote} <a href={lp('/upload-guidelines')}>{c.baNoteLink}</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ── 4c · THE DREAM ─────────────────────────────────────────────────────────
+    Lucas asked for this one by name: the page explains the mechanism well and
+    never once says what the mechanism is FOR. Full-bleed photograph, one
+    sentence, no tiles and no figures — the only band on the page with nothing
+    to compare or count, which is what makes it read as a pause rather than
+    another argument.
+
+    The claim is deliberately about perception rather than results ("looks like
+    a brand that has its act together", not "sells more"), because a conversion
+    claim here would be a number this studio cannot yet evidence. */}
+<section class="hv-dream">
+  <img class="hv-dream-bg" src="/img/lifestyle-glow-06.webp" alt={c.dreamAlt} width="2400" height="1792" loading="lazy" decoding="async" />
+  <div class="hv-dream-scrim" aria-hidden="true"></div>
+  <div class="container hv-dream-inner">
+    <p class="hv-kicker">{c.dreamKicker}</p>
+    <h2 class="hv-dream-h">{c.dreamH}</h2>
+    <p class="hv-dream-lede">{c.dreamLede}</p>
+    <a class="btn btn-primary btn-lg" href={lp('/gallery')}>{c.dreamCta}</a>
+  </div>
+</section>
+
+{/* ── 4d · THE WEEK YOU GET BACK ─────────────────────────────────────────────
+    The second thing Lucas asked for: time, expressed as time rather than as
+    money. The cost band below this one already argues the euros, and putting
+    the two next to each other is intentional — a shoot costs a day AND a fee,
+    and only one of those two is on the invoice.
+
+    Three weekdays rather than a duration ("saves you 20 hours") because an
+    hours-saved figure is a claim about the reader's business that this studio
+    has no way to know. A named Monday is a story; a saved hour is arithmetic
+    someone else did. */}
+<section class="band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.weekH}</h2>
+      <p class="lede">{c.weekLede}</p>
+    </div>
+    <ol class="hv-week">
+      {c.week.map(([d, b], i) => (
+        <li>
+          <span class={`hv-week-d ${['w-blue', 'w-violet', 'w-coral'][i] || ''}`}>{d}</span>
+          <p>{b}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="hv-back">
+      <p class="hv-back-h">{c.backH}</p>
+      <dl class="hv-back-list">
+        {c.back.map(([t, b]) => (
+          <div>
+            <dt>{t}</dt>
+            <dd>{b}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   </div>
 </section>
 
@@ -455,6 +838,76 @@ const c = COPY[lang];
           </span>
         </a>
       ))}
+    </div>
+  </div>
+</section>
+
+{/* ── 6b · WHERE THE VISUALS LAND ────────────────────────────────────────────
+    Directly under the four deliverables, because "catalog, lifestyle, video,
+    brand model" is what is BOUGHT and this is where it GOES — the deliverable
+    tiles answer what you get and stop one question short of what you do with
+    it. It also converts the drop price into unit economics without a discount:
+    the €1,850 stops being a number and becomes a number divided by roughly two
+    hundred placements.
+
+    Every count here is derived from pricing.js, not typed. The two figures a
+    reader could check — 4 catalog photos, 3 lifestyle photos — are stated in
+    PER_PRODUCT's own copy, so the arithmetic in the lede is the arithmetic the
+    rest of the site already promises. */}
+<section class="band-tight hv-ch-band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.chH}</h2>
+      <p class="lede">{c.chLede}</p>
+    </div>
+    <ul class="hv-ch">
+      {c.ch.map(([t, b]) => (
+        <li>
+          <span class="hv-ch-t">{t}</span>
+          <span class="hv-ch-n">{b}</span>
+        </li>
+      ))}
+    </ul>
+    <p class="hv-ch-note">{c.chNote}</p>
+  </div>
+</section>
+
+{/* ── 6c · THE ROSTER AND YOUR BRAND MODEL ───────────────────────────────────
+    Your Brand Model is the most expensive single line the studio sells and,
+    until this band, the homepage sold it with a price in the corner of a tile.
+    Faces are the one thing that cannot be argued in prose, so the rail is the
+    argument and the copy underneath is the offer.
+
+    Read straight from ROSTER in src/data/models.js — the same source /models
+    and /custom-models use, so the homepage cannot advertise a face that has
+    been retired from the roster. */}
+<section class="band-tight hv-bm-band">
+  <div class="container">
+    <div class="rail-head">
+      <div class="statement statement-left">
+        <h2>{c.bmH[0]} <em class="hv-accent">{c.bmH[1]}</em></h2>
+        <p class="lede">{c.bmLede}</p>
+      </div>
+      <div class="rail-nav">
+        <button type="button" data-rail-prev aria-label={c.railPrev}><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" /></svg></button>
+        <button type="button" data-rail-next aria-label={c.railNext}><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="rail hv-faces" data-rail>
+      {FACES.map((m) => (
+        <a class="hv-face" href={lp('/models')}>
+          <span class="plate"><img src={m.photo} alt={`${m.name} — ${m.traits.join(', ')}`} width="800" height="1071" loading="lazy" decoding="async" /></span>
+          <span class="plate-cap"><b>{m.name}</b><span>{m.traits.join(' · ')}</span></span>
+        </a>
+      ))}
+    </div>
+  </div>
+  <div class="container">
+    <div class="hv-bm-foot">
+      <p>{c.bmNote}</p>
+      <a class="btn btn-ghost" href={lp('/custom-models')}>{c.bmCta}</a>
     </div>
   </div>
 </section>
@@ -513,6 +966,72 @@ const c = COPY[lang];
   </div>
 </section>
 
+{/* ── 7b · THE THREE TIERS ───────────────────────────────────────────────────
+    The homepage quoted the Full Drop and the per-product rates and left the
+    entry point and the retainer invisible to anyone who did not click through
+    to /pricing — which is to say, invisible to most people. Three figures, the
+    middle one carrying the page's one coloured plate because it is the one the
+    studio is built around.
+
+    Only ONE bright tile in this grid, per the same rule the drop band follows:
+    two coloured plates in one grid is a palette, one is an instruction. */}
+<section class="band hv-pr-band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.prH}</h2>
+      <p class="lede">{c.prLede}</p>
+    </div>
+    <div class="tiles hv-pr-tiles">
+      {c.pr.map(([k, v, sub, n], i) => (
+        <div class={`tile s-4${i === 1 ? ' on-bright tile-c-blue' : ''}`}>
+          <div class="tile-body">
+            <p class="tile-k">{k}</p>
+            <p class="tile-v">{v}</p>
+            <p class="hv-tile-sub">{sub}</p>
+            <p class="tile-n">{n}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div class="hv-pr-foot">
+      <p>{c.prNote}</p>
+      <a class="btn btn-ghost" href={lp('/pricing')}>{c.prCta}</a>
+    </div>
+  </div>
+</section>
+
+{/* ── 7c · PLANNING BACKWARDS ────────────────────────────────────────────────
+    The urgency band, and the only honest version of one available here: the
+    scarcity is real (one person, a capacity gate that already refuses weeks)
+    and it is stated as capacity rather than as a countdown. No "3 spots left"
+    — that is a number the page cannot verify against the D1 calendar, and a
+    scarcity claim a visitor can disprove is worse than none.
+
+    It reads as a service to the reader rather than pressure: a launch date is
+    the one date they already have in their head, and this band does the
+    subtraction for them. */}
+<section class="band-tight">
+  <div class="container">
+    <div class="statement statement-left hv-pl-head">
+      <h2>{c.plH}</h2>
+      <p class="lede">{c.plLede}</p>
+    </div>
+    <ol class="hv-pl">
+      {c.pl.map(([t, b], i) => (
+        <li>
+          <span class="hv-pl-dot" aria-hidden="true"></span>
+          <h3 class={['w-blue', 'w-violet', 'w-coral'][i] || ''}>{t}</h3>
+          <p>{b}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="hv-pl-foot">
+      <p>{c.plNote}</p>
+      <a class="btn btn-ghost" href={lp('/start')}>{c.plCta}</a>
+    </div>
+  </div>
+</section>
+
 {/* ── 8 · STATS ─────────────────────────────────────────────────────────────
     Every figure is about this studio's own operation. A number describing a
     client's business is a testimonial and there are none. */}
@@ -532,6 +1051,65 @@ const c = COPY[lang];
         </div>
       ))}
     </dl>
+  </div>
+</section>
+
+{/* ── 8b · THE OBJECTIONS ────────────────────────────────────────────────────
+    Four risk questions, answered where the risk is felt rather than two clicks
+    away on /faq. The wording is lifted from the answers already in
+    src/data/faq.js rather than rewritten, so the homepage cannot end up
+    promising something the FAQ page contradicts — the rights answer in
+    particular is one a customer could hold the studio to.
+
+    Risk here, logistics in the accordion below: these four are the ones that
+    stop a purchase, which is why they get cards and not a summary row. */}
+<section class="band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.obH}</h2>
+      <p class="lede">{c.obLede}</p>
+    </div>
+    <div class="hv-ob">
+      {c.ob.map(([q, a, linkText, href]) => (
+        <div class="hv-ob-item">
+          <h3>{q}</h3>
+          <p>{a}</p>
+          {linkText && href && (<a class="hv-ob-link" href={lp(href)}>{linkText}</a>)}
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+{/* ── 8c · FAQ ───────────────────────────────────────────────────────────────
+    Native <details>/<summary>, so it opens with JavaScript off and is
+    keyboard-operable without a line of script. Five questions read from
+    faq.js — the same objects /faq renders and src/data/schema.js turns into
+    FAQPage JSON-LD. No schema is emitted here on purpose: two pages emitting
+    FAQPage nodes for the same questions is the duplication faq.js's own header
+    warns about. */}
+<section class="band-tight hv-faq-band">
+  <div class="container narrow">
+    <div class="statement">
+      <h2>{c.faqH}</h2>
+      <p class="lede">{c.faqLede}</p>
+    </div>
+    <div class="hv-faq">
+      {FAQ_PICK.map((item) => (
+        <details class="hv-faq-item">
+          <summary>
+            <span>{item.q}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          </summary>
+          {item.html
+            ? (<div class="hv-faq-a" set:html={item.html} />)
+            : (<div class="hv-faq-a"><p>{item.a}</p></div>)}
+        </details>
+      ))}
+    </div>
+    <div class="hv-faq-foot">
+      <a class="btn btn-ghost" href={lp('/faq')}>{c.faqCta}</a>
+    </div>
   </div>
 </section>
 
@@ -758,6 +1336,136 @@ const c = COPY[lang];
   .hv-checks svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--ink-2); stroke-width: 2; }
   .hv-trust { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; margin: clamp(2.2rem, 4vw, 3rem) 0 0; padding: clamp(1.4rem, 2.5vw, 2rem) 0 0; box-shadow: inset 0 1px 0 var(--line); font-size: .82rem; color: var(--ink-3); }
 
+  /* ── who it is for ─────────────────────────────────────────────────────── */
+  .hv-who-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  /* The index is a label, not a step: the four situations are alternatives, so
+     it is set small and coloured rather than drawn as the stroked numerals the
+     pipeline uses — those mean sequence, and reusing them here would promise an
+     order that does not exist. */
+  .hv-who-i { display: block; font-family: var(--font-display); font-weight: 900; font-size: .74rem; letter-spacing: .14em; margin-bottom: 1.1rem; }
+  .hv-notfor { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); gap: clamp(1rem, 3vw, 3rem); }
+  .hv-notfor-h { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .hv-notfor ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .65rem; }
+  .hv-notfor li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
+  /* Coral, not the blue accent: this is the one list on the page that is a
+     warning rather than an offer, and the palette already reserves coral for
+     the figure that is being counted against you. */
+  .hv-notfor li::before { content: ''; position: absolute; left: 0; top: .64em; width: 9px; height: 1px; background: var(--fill-coral); }
+  @media (max-width: 720px) { .hv-notfor { grid-template-columns: 1fr; } }
+
+  /* ── before / after ────────────────────────────────────────────────────── */
+  .hv-ba-head { max-width: 44rem; }
+  .hv-ba { margin-top: clamp(2.2rem, 4.5vw, 3.4rem); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(1.6rem, 4vw, 3.4rem); align-items: center; }
+  /* :global because .cmp is rendered inside Compare.astro and carries that
+     component's scope attribute, not this one's. */
+  .hv-ba-media :global(.cmp) { border-radius: var(--r-lg); }
+  .hv-ba-points { list-style: none; margin: 0; padding: 0; }
+  .hv-ba-points li { padding: clamp(1rem, 2vw, 1.4rem) 0; }
+  .hv-ba-points li:first-child { padding-top: 0; }
+  .hv-ba-points li + li { box-shadow: inset 0 1px 0 var(--line); }
+  .hv-ba-points h3 { margin: 0 0 .4rem; font-size: 1.02rem; font-weight: 700; color: var(--ink); }
+  .hv-ba-points p { margin: 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-ba-note { margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0; padding-top: clamp(1.1rem, 2vw, 1.5rem); box-shadow: inset 0 1px 0 var(--line); font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-ba-note a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--line-strong); white-space: nowrap; }
+  .hv-ba-note a:hover { text-decoration-color: var(--accent); }
+  @media (max-width: 900px) { .hv-ba { grid-template-columns: 1fr; } }
+
+  /* ── the dream ─────────────────────────────────────────────────────────── */
+  /* The page's second full-bleed photograph, and the only band with nothing to
+     count. The scrim is horizontal rather than the hero's vertical one so the
+     photograph stays open on the right where there is no copy over it — the
+     picture is the argument, the text just names it. */
+  .hv-dream { position: relative; isolation: isolate; overflow: hidden; display: grid; align-items: center; min-height: min(84svh, 44rem); padding-block: clamp(4.5rem, 10vw, 8rem); background: var(--ink-900); }
+  .hv-dream-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+  .hv-dream-scrim { position: absolute; inset: 0; z-index: -1; background:
+    linear-gradient(90deg, rgb(var(--scrim) / 0.94) 0%, rgb(var(--scrim) / 0.78) 44%, rgb(var(--scrim) / 0.24) 100%); }
+  .hv-kicker { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fill-blue); }
+  .hv-dream-h { margin: .9rem 0 0; max-width: 15ch; font-size: var(--t-hero); line-height: .98; letter-spacing: -0.04em; color: var(--paper-on-dark); text-wrap: balance; }
+  .hv-dream-lede { margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0; max-width: 50ch; font-size: var(--t-lg); line-height: 1.6; color: var(--paper-soft-on-dark); }
+  .hv-dream .btn { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
+  @media (max-width: 700px) {
+    .hv-dream-scrim { background: linear-gradient(180deg, rgb(var(--scrim) / 0.60) 0%, rgb(var(--scrim) / 0.92) 55%); }
+  }
+
+  /* ── the week you get back ─────────────────────────────────────────────── */
+  .hv-week { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1px; background: var(--line); }
+  .hv-week > li { background: var(--bg); padding: clamp(1.3rem, 2.4vw, 2rem); }
+  .hv-week-d { display: block; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.5rem, 2.4vw, 1.9rem); line-height: 1; letter-spacing: -0.03em; }
+  .hv-week p { margin: .9rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-back { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
+  .hv-back-h { margin: 0 0 clamp(1.2rem, 2.4vw, 1.8rem); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .hv-back-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: clamp(1.2rem, 3vw, 2.4rem); margin: 0; }
+  .hv-back-list dt { margin: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
+  .hv-back-list dd { margin: .45rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
+
+  /* ── where the visuals land ────────────────────────────────────────────── */
+  .hv-ch { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1px; background: var(--line); }
+  .hv-ch > li { background: var(--bg); padding: clamp(1.1rem, 2vw, 1.5rem); display: grid; gap: .35rem; align-content: start; }
+  .hv-ch-t { font-size: .95rem; font-weight: 700; color: var(--ink); }
+  .hv-ch-n { font-size: .84rem; line-height: 1.5; color: var(--ink-3); }
+  .hv-ch-note { margin: 1.4rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
+
+  /* ── the roster and your brand model ───────────────────────────────────── */
+  .hv-bm-band .statement-left { max-width: 46rem; }
+  .hv-faces { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
+  /* Narrower than the output rail on purpose: a face needs less width than a
+     garment, and ten of them at rail width would be a scroll with no end. */
+  .hv-faces > * { flex: 0 0 clamp(8.5rem, 14vw, 11.5rem); }
+  .hv-face { display: block; color: inherit; }
+  .hv-face .plate { display: block; aspect-ratio: 3 / 4; }
+  .hv-face .plate img { transition: transform var(--dur-3) var(--ease); }
+  .hv-face:hover .plate img { transform: scale(1.03); }
+  .hv-face .plate-cap span { text-transform: lowercase; }
+  .hv-bm-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .hv-bm-foot p { margin: 0; max-width: 58ch; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  @media (prefers-reduced-motion: reduce) {
+    .hv-face .plate img, .hv-face:hover .plate img { transition: none; transform: none; }
+  }
+
+  /* ── the three tiers ───────────────────────────────────────────────────── */
+  .hv-pr-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  .hv-pr-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .hv-pr-foot p { margin: 0; max-width: 62ch; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+
+  /* ── planning backwards ────────────────────────────────────────────────── */
+  .hv-pl-head { max-width: 42rem; }
+  .hv-pl { list-style: none; margin: clamp(2.2rem, 4.5vw, 3.2rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: clamp(1.4rem, 3vw, 2.6rem); }
+  .hv-pl > li { position: relative; padding-top: 1.6rem; box-shadow: inset 0 1px 0 var(--line); }
+  /* One dot per date, sitting on the rule — the closest this system gets to a
+     timeline without drawing a connector that would be wrong the moment the
+     grid wraps to one column. */
+  .hv-pl-dot { position: absolute; top: -4px; left: 0; width: 9px; height: 9px; background: var(--ink-1); }
+  .hv-pl h3 { margin: 0 0 .45rem; font-size: 1.02rem; font-weight: 700; }
+  .hv-pl p { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-pl-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .hv-pl-foot p { margin: 0; max-width: 66ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
+
+  /* ── the objections ────────────────────────────────────────────────────── */
+  .hv-ob { margin-top: clamp(2.4rem, 5vw, 4rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1px; background: var(--line); }
+  .hv-ob-item { background: var(--surface); padding: clamp(1.4rem, 2.6vw, 2.1rem); display: flex; flex-direction: column; }
+  .hv-ob-item h3 { margin: 0 0 .7rem; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
+  .hv-ob-item p { margin: 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-ob-link { margin-top: auto; padding-top: 1.2rem; font-size: .85rem; font-weight: 700; color: var(--accent); }
+  .hv-ob-link:hover { color: var(--accent-dim); }
+
+  /* ── faq ───────────────────────────────────────────────────────────────── */
+  .hv-faq { margin-top: clamp(2rem, 4vw, 3rem); border-top: 1px solid var(--line); }
+  .hv-faq-item { border-bottom: 1px solid var(--line); }
+  .hv-faq-item summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.1rem 0; font-size: 1rem; font-weight: 700; color: var(--ink); }
+  .hv-faq-item summary::-webkit-details-marker { display: none; }
+  .hv-faq-item summary:hover { color: var(--accent); }
+  .hv-faq-item summary svg { flex: 0 0 auto; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; transition: transform var(--dur-2) var(--ease); }
+  .hv-faq-item[open] summary svg { transform: rotate(45deg); }
+  .hv-faq-a { padding: 0 0 1.3rem; }
+  /* :global — an answer carrying {html} is injected with set:html, so its <p>
+     and <a> never receive this component's scope attribute. */
+  .hv-faq-a :global(p) { margin: 0; font-size: .92rem; line-height: 1.65; color: var(--ink-3); max-width: 64ch; }
+  .hv-faq-a :global(a) { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .hv-faq-foot { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
+  @media (prefers-reduced-motion: reduce) {
+    .hv-faq-item summary svg { transition: none; }
+  }
+
   /* ── closing ───────────────────────────────────────────────────────────── */
   /* The closing panel is the page's one gradient ground — see .panel-grad in
      global.css for what that scope restates and why it has to. The only thing
@@ -765,3 +1473,59 @@ const c = COPY[lang];
      its top edge alone, where it meets the dark page above it. */
   .hv-close { border-radius: var(--r-lg) var(--r-lg) 0 0; }
 </style>
+
+<script>
+  // THE RAILS. Both horizontal scrollers on this page — the output rail and the
+  // model roster — are native overflow-x with scroll-snap, so they already work
+  // by drag, wheel and keyboard with no script at all. This adds the arrows.
+  //
+  // WHY IT EXISTS AT ALL: the output rail has shipped with a prev/next pair
+  // since the page was written and nothing was ever bound to them. They were
+  // two dead buttons with aria-labels, which is worse than no buttons — a
+  // screen reader announces a control that does nothing. Adding a second rail
+  // was the point at which that had to be fixed rather than duplicated.
+  //
+  // Buttons are found within the rail's own <section>, not as siblings: the
+  // head and the rail sit in two different .container wrappers so that the rail
+  // can bleed wider than the copy above it.
+  function initRails() {
+    document.querySelectorAll('[data-rail]:not([data-rail-bound])').forEach((rail) => {
+      const scope = rail.closest('section');
+      if (!scope) return;
+      const prev = scope.querySelector('[data-rail-prev]');
+      const next = scope.querySelector('[data-rail-next]');
+      if (!prev && !next) return;
+      rail.setAttribute('data-rail-bound', '');
+
+      // One card plus one gap, measured rather than assumed — every rail on the
+      // site sizes its items in clamp(), so there is no constant to hard-code.
+      const step = () => {
+        const first = rail.firstElementChild;
+        if (!first) return rail.clientWidth * 0.8;
+        const gap = parseFloat(getComputedStyle(rail).columnGap || '0') || 0;
+        return first.getBoundingClientRect().width + gap;
+      };
+
+      // Disable at the ends rather than wrapping around: a rail that jumps back
+      // to the start reads as a carousel, and this is a shelf.
+      const sync = () => {
+        const max = rail.scrollWidth - rail.clientWidth - 2;
+        if (prev) prev.disabled = rail.scrollLeft <= 2;
+        if (next) next.disabled = rail.scrollLeft >= max;
+      };
+
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const go = (dir) => rail.scrollBy({ left: dir * step(), behavior: reduce ? 'auto' : 'smooth' });
+      if (prev) prev.addEventListener('click', () => go(-1));
+      if (next) next.addEventListener('click', () => go(1));
+      rail.addEventListener('scroll', sync, { passive: true });
+      window.addEventListener('resize', sync);
+      sync();
+    });
+  }
+
+  initRails();
+  // ClientRouter swaps the document without reloading, so first paint is not
+  // enough — same hook every other init on this site uses.
+  document.addEventListener('astro:page-load', initRails);
+</script>
