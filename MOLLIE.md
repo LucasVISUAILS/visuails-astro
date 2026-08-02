@@ -192,11 +192,19 @@ headers: server=… cf-ray=…)`. `server` and `cf-ray` together identify whethe
 the answer came from Mollie, from a WAF in front of Mollie, or from
 Cloudflare's own edge — the first question, and until now an unanswerable one.
 
-### The diagnostic: `/api/debug-mollie`
+### The diagnostic: `/admin/debug-mollie`
 
-Sign in at `/admin`, then open **`https://visuails.com/api/debug-mollie`** in
-the same browser. It runs four probes and returns JSON. Each isolates one
-variable, and **the first one that misbehaves is the answer**:
+Sign in at `/admin`, then open **`https://visuails.com/admin/debug-mollie`** in
+the same browser.
+
+It lives *under* `/admin` rather than under `/api`, and that is not tidiness:
+the admin session cookie is set with `Path=/admin`, so the browser will not
+attach it to anything outside that path. An `/api/…` version of this page
+answers "sign in first" to a browser that is visibly signed in. The endpoint
+moved; the cookie's scope stayed narrow, which is the right way round.
+
+It runs four probes and returns JSON. Each isolates one variable, and **the
+first one that misbehaves is the answer**:
 
 | Probe | What it sends | What it proves |
 |---|---|---|

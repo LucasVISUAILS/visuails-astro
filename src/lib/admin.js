@@ -409,6 +409,14 @@ function readSessionCookie(request) {
   return null;
 }
 
+// PATH=/admin IS LOAD-BEARING, AND IT CATCHES PEOPLE OUT.
+// The browser attaches this cookie to `/admin/...` and to nothing else. That is
+// the point — an ambient credential should travel as narrowly as it can — but
+// it means **any new route that wants to authenticate as the admin has to live
+// under /admin**. A route at `/api/whatever` will not receive this cookie, will
+// see no session, and will tell a visibly-signed-in browser to sign in. That
+// happened once already (functions/admin/debug-mollie.js, which started life at
+// /api/debug-mollie). Move the route; do not widen the path.
 function setSessionCookie(token) {
   const maxAge = 14 * 86400; // ADMIN_SESSION_TTL_DAYS, in seconds — kept in step by hand, see adminAuth.js
   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/admin; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;

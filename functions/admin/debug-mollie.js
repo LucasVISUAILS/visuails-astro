@@ -1,6 +1,23 @@
 // TEMPORARY DIAGNOSTIC — delete this file once the empty 400 is understood.
 //
-// GET /api/debug-mollie   (requires a live /admin session)
+// GET /admin/debug-mollie   (requires a live /admin session)
+//
+// ── WHY IT LIVES UNDER /admin AND NOT UNDER /api ────────────────────────────
+// It was at /api/debug-mollie first and answered "Sign in at /admin first" to
+// a browser that was, visibly, signed in at /admin. Not a bug in the session
+// check — the session cookie is set with `Path=/admin` (see setSessionCookie
+// in src/lib/admin.js), so the browser correctly declines to attach it to
+// anything outside that path. The endpoint never saw a cookie because it was
+// never sent one.
+//
+// The fix is to move the endpoint, NOT to widen the cookie. `Path=/admin` is
+// a deliberate narrowing of where an ambient credential travels, and trading a
+// standing security property for the convenience of a file that is meant to be
+// deleted next week is the wrong way round.
+//
+// A static route beats a catch-all in Pages Functions, so this file wins over
+// functions/admin/[[path]].js for this one path. If you ever see the admin's
+// own "Not found" page here instead of JSON, that precedence is what changed.
 //
 // WHY IT EXISTS
 // `/api/order` failed with:
@@ -63,7 +80,11 @@ export async function onRequestGet(context) {
 
   // Behind the same login as the dashboard — see hasAdminSession's own note.
   if (!(await hasAdminSession(context))) {
-    return json({ error: 'Sign in at /admin first, then reload this URL.' }, 403);
+    return json({
+      error: 'No admin session on this request.',
+      hint: 'Sign in at /admin, then reload THIS url — it must be /admin/debug-mollie, not /api/debug-mollie. '
+        + 'The session cookie is scoped Path=/admin, so anything outside that path never receives it.',
+    }, 403);
   }
 
   const raw = env?.MOLLIE_API_KEY;
