@@ -24,47 +24,170 @@
    ============================================================ */
 
 :root {
-  /* ink & paper — copied verbatim from global.css. Ink runs WARM (hue 75) and
-     paper runs COOL (hue 255); they are deliberately at opposite temperatures
-     and that crossing is the system. If you are editing one of these, the
-     value you want is in global.css's :root — copy it, do not re-derive it. */
-  --ink-900:  oklch(0.16 0.006 75);
-  --ink-700:  oklch(0.32 0.005 75);
-  --ink-500:  oklch(0.45 0.004 75);
-  --ink-300:  oklch(0.72 0.003 75);
-  --ink-200:  oklch(0.84 0.003 75);
-  --ink-100:  oklch(0.89 0.002 75);
+  /* ---- palette ----------------------------------------------------------
+     Hand-copied from src/styles/global.css's :root. This is a duplicate and
+     the file header says so; what keeps it honest is that the NAMES here are
+     the same names global.css uses, so a value that drifts is visible as a
+     value, not as a renamed concept.
 
-  --paper:      oklch(0.97 0.004 255);
-  --paper-2:    oklch(0.94 0.005 255);
-  --paper-lift: oklch(0.99 0.002 255);
+     The scheme is cool near-black with one light-blue accent and two panel
+     gradients. It replaced a warm paper-and-harbor-teal scheme, and the port
+     is not a find-and-replace: three of the names below changed ROLE, not just
+     value, and each is called out where it sits.
 
-  /* The system palette, which global.css scopes to "/start, the client portal,
-     and system surfaces". This is that second surface. The plain variants fail
-     body-size contrast on paper and are for fills, borders and text ≥18px; the
-     -ink variants set body text.
+     Ramps, with their measured worst case on the darkest ground they land on
+     (--surface, #17191E):
+       --ink-900  #FFFFFF                    16.75:1
+       --ink-700  white 80%                  10.94:1
+       --ink-500  white 66%                   7.53:1
+       --ink-300  white 22%   RULE ONLY — never text
+     and the accent, #90BEFF, at 10.43:1 on the page ground both as text and
+     as a fill carrying near-black text. */
 
-     --warn-ink used to be oklch(0.47 0.11 65) here and in global.css, and that
-     value was OUTSIDE sRGB — the browser gamut-mapped it, so the colour that
-     shipped was never the one documented. Both replacements are inside. */
-  --signal:     oklch(0.55 0.075 215);
-  --signal-ink: oklch(0.45 0.075 215);
-  --warn:       oklch(0.58 0.115 45);
-  --warn-ink:   oklch(0.47 0.115 40);
+  /* ---- grounds ----
+     "paper" is the ground, and the ground is now dark. The name is kept
+     because forty rules in this file read it; what it means is "the surface
+     the page is printed on", which is the role it always had. */
+  --paper:      #08090B;               /* body ground                       */
+  --paper-2:    #101216;               /* recessed / banded                 */
+  --paper-lift: #17191E;               /* raised — a card off the ground    */
 
-  --ink:   var(--ink-900);
-  --ink-2: var(--ink-700);
-  --ink-3: var(--ink-500);
-  /* --line is --ink-200, not --ink-100: --ink-100 is 1.28:1 on paper, which is
-     a rule you have to look for. --ink-200 is 1.50:1 — still a hairline, but
-     one that draws. --ink-100 could not simply be darkened because it is the
-     body text colour on dark grounds. */
+  /* Espresso's two names, kept as aliases so .btn-dark and the raised panels
+     keep resolving. There is no espresso any more; these are the two surface
+     steps above the ground. */
+  --ink-850:  #17191E;
+  --ink-800:  #1F2229;
+
+  /* ---- ink ----
+     Light on dark, as alphas rather than as mixed greys, so a step lands the
+     same way on every one of the three surfaces above. */
+  --ink-900:  #FFFFFF;
+  --ink-700:  rgb(255 255 255 / 0.80);
+  --ink-500:  rgb(255 255 255 / 0.66);
+  --ink-300:  rgb(255 255 255 / 0.22);  /* rules, never text */
+  --ink-200:  rgb(255 255 255 / 0.12);  /* hairlines */
+  --ink-100:  #FFFFFF;
+
+  /* The three "on dark" names are now the same values as the ink ramp, because
+     every ground is dark. They stay as separate names rather than being
+     collapsed: the rules that read them are the rules that would break first
+     if a light ground ever came back. */
+  --paper-on-dark:       #FFFFFF;
+  --paper-soft-on-dark:  rgb(255 255 255 / 0.80);
+  --paper-muted-on-dark: rgb(255 255 255 / 0.66);
+
+  /* ---- mist tints ----
+     Four warm/cool separator tints under the old scheme. On a near-black
+     ground a tint is a lighter surface, and four of them would be four
+     surfaces nobody can tell apart, so all four resolve to the one raised
+     step. Kept as four names because the markup reads them by meaning. */
+  --mist-teal:  #101216;
+  --mist-clay:  #101216;
+  --mist-slate: #101216;
+  --mist-stone: #101216;
+
+  /* ---- accent ----
+     One light blue. Under harbor these five names were five DARKENING steps
+     of a teal that had to survive on paper; on a dark ground the direction
+     reverses and the text-safe cut is the accent itself. --teal-grad and
+     --teal-hover are the one step DOWN a hover is allowed to take. */
+  --teal:       #90BEFF;
+  --teal-grad:  #6E9BE0;
+  --teal-hover: #6E9BE0;
+  --teal-text:  #90BEFF;
+  --teal-deep:  #90BEFF;
+
+  /* Second accent — the pink end of the panel gradients, used for state, not
+     for surface. 6.36:1 on the page ground. */
+  --clay:       #E86BB0;
+  --clay-text:  #E86BB0;
+
+  /* Ghost fill for secondary and small buttons — a paper alpha now, not an
+     ink alpha. An ink alpha on a near-black ground is invisible. */
+  --ghost:      rgb(255 255 255 / 0.08);
+
+  /* Button surfaces as TOKENS, not as descendant rules — see global.css. */
+  --btn-ghost-fill:        var(--ghost);
+  --btn-ghost-fill-hover:  rgb(255 255 255 / 0.16);
+  --btn-2nd-fill:          transparent;
+  --btn-2nd-fill-hover:    rgb(255 255 255 / 0.08);
+  --btn-2nd-ink:           #FFFFFF;
+  --btn-2nd-border:        rgb(255 255 255 / 0.28);
+  --btn-2nd-border-hover:  rgb(255 255 255 / 0.55);
+
+  /* ---- system colour ----
+     Still two hues, still never the sole carrier of state — every status
+     carries a word. The -ink variants are the ones allowed to set body text,
+     and on this ground both cuts clear 4.5:1, so they equal their fills. */
+  --signal:      var(--teal);
+  --signal-ink:  var(--teal);
+  --warn:        var(--clay);
+  --warn-ink:    var(--clay);
+  --verify:      var(--signal);
+  --verify-ink:  var(--signal-ink);
+  --flag:        var(--warn);
+  --flag-ink:    var(--warn-ink);
+
+  /* ---- role aliases ---------------------------------------------------- */
+  --bg:         var(--paper);
+  /* NOT --ink-900. --ink-900 is white now; under harbor it was both the
+     darkest ink and, by coincidence of value, the dark ground — and every
+     rule that used it as a ground went white the moment the ramp flipped.
+     The deep ground is stated as a ground. */
+  --bg-deep:    #000000;
+  --bg-raise:   var(--paper-2);
+  --surface:    var(--paper-lift);
+  --surface-2:  var(--paper-2);
+  --surface-3:  var(--paper-2);
+
+  --ink:        var(--ink-900);
+  --ink-2:      var(--ink-700);
+  --ink-3:      var(--ink-500);
+  --ink-4:      var(--ink-300);
+  /* Captions and microcopy resolve to MUTED, not faint: --ink-300 is the rule
+     value and it is 2.4:1 here — a hairline, not a sentence. */
+  --ink-faint:  var(--ink-500);
+
   --line:        var(--ink-200);
   --line-strong: var(--ink-300);
-  --line-ui:     var(--ink-700);
+  /* The border a focused field takes: strong enough to read as "this one",
+     which on a dark ground means brighter, not darker. */
+  --line-ui:     rgb(255 255 255 / 0.55);
+
+  --brand:         var(--ink-900);
+  --accent:        var(--teal);
+  /* The label ON the accent. It was paper-on-dark, because the accent was a
+     dark teal; the accent is a light blue now, so the label is the ground.
+     10.43:1. */
+  --accent-on:     #08090B;
+  --accent-ink:    #08090B;
+  --accent-2:      var(--teal-text);
+  --accent-word:   var(--teal-text);
+  --accent-bright: var(--teal-hover);
+  --accent-soft:   rgb(144 190 255 / 0.14);
+  --accent-line:   var(--ink-300);
+
+  --focus-ring:    var(--teal);
+
+  /* The <select> caret, as a data URL rather than a token the SVG can read —
+     a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
+     ramp's top step; when that moves, this moves with it or the caret stops
+     matching. */
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   --font: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --radius: 0;
+
+  /* ---- radius ----
+     There IS a scale now, and there is exactly one place it is written. The
+     blanket `*, *::before, *::after { border-radius: var(--radius) }` that
+     used to sit under this block is gone with it: a reset that paints every
+     element is how a radius ends up on a table cell and a horizontal rule.
+     Radius is applied per primitive, below. */
+  --r-lg: 16px;   /* cards, panels, tiles */
+  --r-md: 8px;    /* buttons, fields, pills */
+  --r-sm: 4px;    /* the small stuff inside them */
+  --radius: var(--r-md);
+
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* The four-step duration scale, copied from global.css for the same reason
      as the palette above: this page is served by a Worker and never loads the
@@ -77,7 +200,9 @@
   --dur-4: 900ms;   /* chrome */
 }
 
-*, *::before, *::after { box-sizing: border-box; border-radius: var(--radius); }
+/* box-sizing only. The radius half of this reset is gone — see the radius
+   note in :root. */
+*, *::before, *::after { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
 
@@ -94,7 +219,7 @@ body {
 
 img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; }
-::selection { background: var(--ink-900); color: var(--paper); }
+::selection { background: var(--accent); color: var(--accent-ink); }
 
 .wrap { max-width: 940px; margin: 0 auto; }
 
@@ -226,20 +351,66 @@ h1 {
    because Download is an <a> and Approve is a <button> and they sit side by side
    in the same .acts row. One of them arriving underlined would make two controls
    that do the same kind of thing look like two different kinds of thing.
-   .btn-quiet puts the underline back for itself, further down. */
+   .btn-quiet puts the underline back for itself, further down.
+
+   ---- the button system, hand-copied from global.css ------------------------
+   Two sizes and three fills, so a control measures and reads the same here as
+   it does on /pricing. The size is a fixed min-height, not padding arithmetic:
+   "38px" is one number, and padding + line-height + font-size is three numbers
+   that have to agree to produce it. min-height rather than height so a wrapped
+   label grows the block instead of overflowing it.
+
+     .btn      small — 38px / 14px · 700
+     .btn-lg   large — 58px / 17px · 700
+     .btn-primary  teal gradient, --paper-on-dark label
+     .btn-ghost    small: the 6%-alpha ink fill
+                   large: paper fill with a 1px ink-alpha INSET border
+     .btn-dark     espresso fill
+
+   No transform on hover. A button that lifts 2px is a shadow argument made
+   with motion, and this system removed shadow as a depth signal; the hover
+   goes darker instead, which is the same argument made with value. */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--font); font-size: .88rem; font-weight: 600; line-height: 1;
-  padding: .7rem 1.1rem; cursor: pointer; border: 1px solid transparent;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  font-family: var(--font); font-weight: 700; font-size: .875rem;
+  min-height: 38px; padding: 0 1.15rem;
+  cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
+  background: var(--ghost); color: var(--ink); border: 0;
   text-decoration: none;
-  transition: transform var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
+              border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
 }
-.btn-primary { background: var(--ink-900); color: var(--paper); }
-.btn-primary:hover { background: var(--ink-700); transform: translateY(-2px); }
-.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
-.btn-ghost:hover { border-color: var(--line-ui); transform: translateY(-2px); }
-.btn-quiet { background: transparent; color: var(--ink-3); border-color: transparent; padding: .7rem 0; text-decoration: underline; text-underline-offset: 3px; }
-.btn-quiet:hover { color: var(--ink); }
+.btn-lg { min-height: 58px; font-size: 1.0625rem; padding: 0 1.9rem; }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+.btn-primary:hover, .btn-primary:focus-visible {
+  background: var(--teal-hover);
+}
+
+.btn-ghost { background: var(--btn-ghost-fill); color: var(--ink); }
+.btn-ghost:hover, .btn-ghost:focus-visible { background: var(--btn-ghost-fill-hover); }
+.btn-lg.btn-ghost {
+  background: var(--btn-2nd-fill); color: var(--btn-2nd-ink);
+  box-shadow: inset 0 0 0 1px var(--btn-2nd-border);
+}
+.btn-lg.btn-ghost:hover, .btn-lg.btn-ghost:focus-visible {
+  background: var(--btn-2nd-fill-hover); box-shadow: inset 0 0 0 1px var(--btn-2nd-border-hover);
+}
+
+.btn-dark { background: var(--ink-850); color: var(--paper-on-dark); }
+.btn-dark:hover, .btn-dark:focus-visible { background: var(--ink-800); }
+
+/* .btn-quiet is this file's own — global.css has no fourth fill, and this is
+   not one: it is the lowest-weight control in an .acts row (Undo, Cancel this
+   request), and it stays a text control rather than a filled one. So it drops
+   .btn's ghost fill and horizontal padding and keeps the underline, while
+   inheriting .btn's height and weight so it lines up with the buttons beside
+   it. --ink-3, never --ink-300: this is text, and --ink-300 is 2.31:1. */
+.btn-quiet { background: none; color: var(--ink-3); padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+.btn-quiet:hover, .btn-quiet:focus-visible { background: none; color: var(--ink); }
 
 /* These come out 38px tall, which is fine under a cursor and mean under a thumb.
    Approving a photograph is the whole job of this page and most clients will do
@@ -253,17 +424,21 @@ h1 {
 }
 
 :where(a, button, input, textarea, summary):focus-visible {
-  outline: 2px solid var(--ink-900); outline-offset: 2px;
+  outline: 2px solid var(--focus-ring); outline-offset: 2px;
 }
 
 /* Native controls re-round themselves per type on iOS, so each is named. */
-input, textarea, button, select { font: inherit; border-radius: 0; -webkit-appearance: none; appearance: none; }
+input, textarea, button, select { font: inherit; -webkit-appearance: none; appearance: none; }
 textarea {
   display: block; width: 100%; margin-top: .6rem; padding: .7rem .8rem;
-  background: var(--paper-lift); color: var(--ink);
+  background: var(--surface); color: var(--ink);
   border: 1px solid var(--line-strong); resize: vertical; min-height: 5.5rem; font-size: .95rem;
 }
 textarea:focus { border-color: var(--line-ui); outline: none; }
+/* The UA default placeholder is #757575, which lands at 4.49:1 on --surface —
+   a fail by one hundredth. Named here so it is a token on the ramp instead,
+   and --ink-3 (5.27:1 on --surface), never --ink-300. */
+::placeholder { color: var(--ink-3); opacity: 1; }
 
 /* The revision form is closed until asked for. <details> because it works with
    no JavaScript — this page has none, and a client on hotel wifi should not be
@@ -325,7 +500,17 @@ details.ask > summary:hover { color: var(--ink-700); }
   overflow: hidden; white-space: nowrap; clip-path: inset(50%);
 }
 
+/* The `.btn:hover { transform: none }` that used to live here went with the
+   translateY: the button system no longer moves on hover at all, so there is
+   nothing left for reduced-motion to cancel. */
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .001ms !important; animation-duration: .001ms !important; }
-  .btn:hover { transform: none; }
 }
+
+/* ---- radius, applied per primitive -----------------------------------------
+   The blanket reset is gone (see :root). These are the surfaces the scale is
+   for, and nothing else takes a corner: not a table cell, not a rule, not a
+   bare <img> that is already clipped by its frame. */
+.card, .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg); }
+.btn, input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md); }
+.btn-quiet { border-radius: 0; }

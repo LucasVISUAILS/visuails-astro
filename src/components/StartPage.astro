@@ -40,7 +40,7 @@ import {
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
 } from '../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
-import { MAX_BATCH_FILES, MAX_FILE_BYTES } from '../lib/uploads.js';
+import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../lib/uploads.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -196,6 +196,20 @@ const PIPE = {
         'bad-request': 'This one did not go through.',
       },
     },
+    s3: {
+      // Task #271e, 2026-07-29. Shown only when pipeline.js's prefill fetch
+      // (GET /account/me) finds a signed-in account and actually fills a field
+      // — see that file's bindPrefill() for why "signed in" alone isn't enough
+      // to show this. {email} is the one var c() already supports.
+      //
+      // It lived in FORM.en.s3 until now, and that was the whole bug: FORM is
+      // markup labels and never reaches the browser, PIPE is what the config
+      // blob carries. c('s3.prefillNote') looked here, found no `s3` at all,
+      // and returned ''. It is a string the SCRIPT writes, so it belongs in the
+      // script's own table — and REQUIRED_COPY below now fails the build if it
+      // ever leaves again.
+      prefillNote: "Filled in from your account ({email}) — change anything that's out of date.",
+    },
     gate: {
       // Not "Reserved window". These cards are candidates: the paragraph two
       // lines above them says outright that nothing is reserved by looking at
@@ -269,6 +283,9 @@ const PIPE = {
         'bad-request': 'Deze is niet doorgekomen.',
       },
     },
+    s3: {
+      prefillNote: 'Ingevuld vanuit je account ({email}) — pas aan wat niet meer klopt.',
+    },
     gate: {
       windowSub: 'Beschikbaar venster',
     },
@@ -280,6 +297,54 @@ const PIPE = {
     },
   },
 };
+
+// ── The contract, enforced at build time ───────────────────────────────────
+// Every dotted path src/scripts/pipeline.js passes to c(), in both languages.
+// A key that is missing, empty, or filed in the wrong table fails `npm run
+// build` here rather than reaching a visitor as an empty string.
+//
+// This list exists because that is exactly what happened. Task #271e added
+// s3.prefillNote to FORM — the markup table, which is never serialised — so
+// c('s3.prefillNote') resolved to '' and bindPrefill() un-hid an empty
+// paragraph on step 3 for every returning signed-in customer. Nothing broke,
+// nothing logged, and nothing could have caught it except reading the two
+// tables side by side. Now the build reads them.
+//
+// Adding a c() call to pipeline.js means adding its path here. That is the
+// point: the two files are one contract and this is where it is written down.
+const REQUIRED_COPY = [
+  'total.pilot', 'total.full', 'total.custom', 'total.each', 'total.quote',
+  'total.onRequest', 'total.outfit',
+  'scope.drop', 'scope.single', 'scope.none',
+  'kind.pilot', 'kind.full', 'kind.catalog', 'kind.lifestyle', 'kind.video', 'kind.custom',
+  'sum.scope', 'sum.kind', 'sum.count', 'sum.outfit', 'sum.outfitN', 'sum.total',
+  'sum.files', 'sum.noFiles', 'sum.window', 'sum.windowLater', 'sum.queue', 'sum.email',
+  'upload.sending', 'upload.done', 'upload.retry', 'upload.remove', 'upload.count',
+  // Every code functions/api/upload.js can answer with, plus the generic
+  // fallback uploadError() reaches for when it answers with something else.
+  'upload.err.too-large', 'upload.err.batch-full', 'upload.err.rate',
+  'upload.err.unavailable', 'upload.err.network', 'upload.err.generic',
+  'upload.err.bad-type', 'upload.err.empty', 'upload.err.no-file',
+  'upload.err.bad-batch', 'upload.err.bad-request',
+  's3.prefillNote',
+  'gate.windowSub',
+  'submit.sending', 'submit.email', 'submit.network', 'submit.generic',
+];
+
+for (const l of ['en', 'nl'] as const) {
+  for (const path of REQUIRED_COPY) {
+    let node: unknown = PIPE[l];
+    for (const key of path.split('.')) {
+      node = node && typeof node === 'object' ? (node as Record<string, unknown>)[key] : undefined;
+    }
+    if (typeof node !== 'string' || !node.trim()) {
+      throw new Error(
+        `StartPage.astro: PIPE.${l}.${path} is missing or empty, and src/scripts/pipeline.js reads it. `
+        + 'Script copy belongs in PIPE, not in FORM — FORM is markup labels and is never sent to the browser.'
+      );
+    }
+  }
+}
 
 // ── The form's own copy ────────────────────────────────────────────────────
 // Markup labels, kept apart from PIPE above so the config blob the browser
@@ -342,11 +407,8 @@ const FORM = {
     s3: {
       h: 'Who is this for?',
       lead: 'Enough to invoice it and come back to you. Nothing here is used for anything else.',
-      // Task #271e, 2026-07-29: shown only when pipeline.js's prefill fetch
-      // (GET /account/me) finds a signed-in account and actually fills a
-      // field — see that file's bindPrefill() for why "signed in" alone isn't
-      // enough to show this. {email} is the one var c() already supports.
-      prefillNote: 'Filled in from your account ({email}) — change anything that’s out of date.',
+      // prefillNote is NOT here. It is written by pipeline.js, not by this
+      // markup, so it lives in PIPE.en.s3 with the rest of the script's copy.
       name: 'Your name',
       brand: 'Brand or shop name',
       email: 'Email',
@@ -458,7 +520,7 @@ const FORM = {
     s3: {
       h: 'Voor wie is dit?',
       lead: 'Genoeg om te factureren en bij je terug te komen. Verder wordt hier niets mee gedaan.',
-      prefillNote: 'Ingevuld vanuit je account ({email}) — pas aan wat niet meer klopt.',
+      // prefillNote staat in PIPE.nl.s3 — zie de Engelse noot daar.
       name: 'Je naam',
       brand: 'Merk- of shopnaam',
       email: 'E-mail',
@@ -561,9 +623,11 @@ const doors = [
 
 // ── The config blob ────────────────────────────────────────────────────────
 // Every number the script needs, from the module that owns it. The caps come
-// from src/lib/uploads.js so the browser refuses exactly what /api/upload
-// refuses; the prices come from pricing.js so the running total and the
-// invoice cannot disagree. Nothing here is typed twice.
+// from src/lib/uploads.js and pipeline.js's preflight() checks a file against
+// all three of them before it opens the XHR, so the browser refuses exactly
+// what /api/upload refuses — the sentence below used to claim that and only
+// the error messages were reading them. The prices come from pricing.js so the
+// running total and the invoice cannot disagree. Nothing here is typed twice.
 const config = {
   lang,
   pilotProducts: PILOT_PRODUCTS,
@@ -571,6 +635,10 @@ const config = {
   fullMax: FULL_DROP_MAX,
   maxFileBytes: MAX_FILE_BYTES,
   maxBatchFiles: MAX_BATCH_FILES,
+  // The extension table's own keys — the list /api/upload matches on, not a
+  // second list of image formats written out by hand. accept="image/*" on the
+  // input is a hint to the file picker; this is the rule.
+  uploadExt: Object.keys(UPLOAD_TYPES),
   prices: {
     catalog: AMOUNT.catalog,
     lifestyle: AMOUNT.lifestyle,

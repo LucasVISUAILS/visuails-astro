@@ -196,16 +196,49 @@ function qa(sel, root) {
   return [...(root || form).querySelectorAll(sel)];
 }
 
-/** Copy lookup by dotted path. Returns '' for anything missing, never undefined. */
+/**
+ * Copy lookup by dotted path. Returns '' for anything missing, never undefined.
+ *
+ * The '' used to be the end of the story, and that is how c('s3.prefillNote')
+ * shipped: task #271e put the string in StartPage.astro's FORM table, which is
+ * markup labels, instead of PIPE, which is what gets serialised into the config
+ * blob this function reads. The lookup found nothing, returned '', and
+ * bindPrefill() wrote the empty string into the note and un-hid it — so every
+ * returning customer got a blank italic paragraph and nothing anywhere said
+ * why.
+ *
+ * Two things stop that recurring. StartPage.astro now asserts at BUILD time
+ * that every path listed below exists in both languages, so a missing key fails
+ * `npm run build` rather than reaching a visitor. And this function says so out
+ * loud if one ever gets past that, instead of handing back a silent ''. Callers
+ * that can leave an element empty must still check the return — see
+ * bindPrefill() — because '' is a legitimate answer for an optional string.
+ */
 function c(path, vars) {
-  let node = cfg && cfg.copy;
-  for (const key of String(path).split('.')) {
-    if (!node || typeof node !== 'object') return '';
-    node = node[key];
+  const node = lookup(path);
+  if (typeof node !== 'string') {
+    // eslint-disable-next-line no-console
+    console.warn(`pipeline.js: no copy at "${path}" — StartPage.astro's PIPE table is missing this key`);
+    return '';
   }
-  let out = typeof node === 'string' ? node : '';
+  let out = node;
   if (vars) for (const [k, v] of Object.entries(vars)) out = out.split(`{${k}}`).join(String(v));
   return out;
+}
+
+/** The raw node at a dotted path, or undefined. Silent — c() is the loud one. */
+function lookup(path) {
+  let node = cfg && cfg.copy;
+  for (const key of String(path).split('.')) {
+    if (!node || typeof node !== 'object') return undefined;
+    node = node[key];
+  }
+  return node;
+}
+
+/** Is there a string here? Used where a missing key is an expected branch. */
+function hasCopy(path) {
+  return typeof lookup(path) === 'string';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -566,10 +599,62 @@ function bindUploads() {
 
 let chain = Promise.resolve();
 
+// ── PRE-FLIGHT ───────────────────────────────────────────────────────────────
+// The caps were in the config blob from the day it was written and nothing read
+// them except the error-message interpolation — so the browser accepted every
+// file, and a 40 MB HEIC climbed the whole way up a phone connection before
+// /api/upload answered 400 too-large. The visitor paid for that upload in time
+// and in data to learn something that was knowable the moment they picked it.
+//
+// cfg.maxFileBytes / cfg.maxBatchFiles / cfg.uploadExt all come from
+// src/lib/uploads.js by way of StartPage.astro, which is the same module
+// /api/upload enforces with — so this refuses exactly what the endpoint
+// refuses, and cannot drift from it without the page config changing too.
+// Nothing here is authoritative: the server re-checks all three.
+
+/** Lowercase extension, or ''. Mirrors extensionOf() in src/lib/uploads.js. */
+function extOf(name) {
+  const s = String(name || '');
+  const i = s.lastIndexOf('.');
+  if (i <= 0 || i === s.length - 1) return '';
+  return s.slice(i + 1).toLowerCase();
+}
+
+/**
+ * Why this file cannot be sent, or null.
+ *
+ * `queued` is how many files this same drop has already accepted, so a drop of
+ * 200 files refuses the 81st onwards rather than sending all of them and
+ * letting the server decide one by one.
+ */
+function preflight(file, queued) {
+  const exts = Array.isArray(cfg.uploadExt) ? cfg.uploadExt : [];
+  if (exts.length && exts.indexOf(extOf(file.name)) === -1) return { code: 'bad-type' };
+  if (!file.size) return { code: 'empty' };
+  if (Number(cfg.maxFileBytes) > 0 && file.size > Number(cfg.maxFileBytes)) {
+    return { code: 'too-large', max: Number(cfg.maxFileBytes) };
+  }
+  if (Number(cfg.maxBatchFiles) > 0 && staged.length + queued >= Number(cfg.maxBatchFiles)) {
+    return { code: 'batch-full', max: Number(cfg.maxBatchFiles) };
+  }
+  return null;
+}
+
 function queue(files) {
   if (!files.length || uploadsOff) return;
+  let queued = 0;
   files.forEach((file) => {
     const row = addRow(file);
+    // The row is added either way. A file that disappears without a word is
+    // worse than one that visibly failed, and this is the only place the reason
+    // can be said.
+    const bad = preflight(file, queued);
+    if (bad) {
+      setBar(row, 0);
+      setMsg(row, uploadError(bad.code, bad), 'is-failed');
+      return;
+    }
+    queued += 1;
     chain = chain.then(() => sendOne(file, row)).catch(() => {});
   });
 }
@@ -676,7 +761,10 @@ function uploadError(code, body) {
   if (code === 'too-large') return c('upload.err.too-large', { max: bytes(Number((body && body.max) || cfg.maxFileBytes)) });
   if (code === 'batch-full') return c('upload.err.batch-full', { max: Number((body && body.max) || cfg.maxBatchFiles) });
   if (code === 'rate') return c('upload.err.rate');
-  return c(`upload.err.${code}`) || c('upload.err.generic');
+  // hasCopy, not `c(...) || c('upload.err.generic')`: a code the server invents
+  // tomorrow is an expected miss here, not a broken copy table, and it must not
+  // spend a console warning to fall back to the sentence that already covers it.
+  return hasCopy(`upload.err.${code}`) ? c(`upload.err.${code}`) : c('upload.err.generic');
 }
 
 function addRetry(row, file) {
@@ -773,9 +861,17 @@ function bindPrefill() {
       // The note names what happened, not just who's signed in — a signed-in
       // account with nothing on file yet (a first order) gets no note at
       // all, because nothing on the visible form actually changed.
+      // Un-hidden only once there is something to read. The note ships `hidden`
+      // and empty, and the copy lookup can legitimately come back empty — that
+      // is what shipped an empty italic paragraph to every returning customer
+      // for a month. An element with no content stays hidden; c() has already
+      // said so in the console.
       if (filled.length && note) {
-        note.textContent = c('s3.prefillNote', { email: me.email || '' });
-        note.hidden = false;
+        const text = c('s3.prefillNote', { email: me.email || '' });
+        if (text) {
+          note.textContent = text;
+          note.hidden = false;
+        }
       }
     })
     .catch(() => {}); // no account, offline, or /account/me unreachable — the form is already fine empty

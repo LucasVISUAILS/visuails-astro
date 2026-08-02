@@ -49,6 +49,13 @@ interface Props {
   description: string;
   ogImage?: string;
   noindex?: boolean;
+  /** Opt this page onto the espresso ground (section 17's rebuild). Per-page
+   *  rather than global on purpose: 60-odd pages were composed for a light
+   *  ground and go dark with no other change, which is a regression that
+   *  happens to be intentional. Pages move across as they are rebuilt; when
+   *  the last one is over, .ground-espresso's contents become :root and this
+   *  prop is deleted. The migration lives in the markup, not in a head. */
+  ground?: 'paper' | 'espresso';
 }
 
 // noindex is for the pages that exist to be arrived at, not found. Two use it:
@@ -63,7 +70,7 @@ interface Props {
 // `noindex, nofollow, noarchive` as a meta tag AND an x-robots-tag response
 // header, because a portal URL contains a token and a meta tag alone is only
 // read by something that parses HTML. See src/lib/portal.js.
-const { title, description, ogImage = '/img/banners-05.webp', noindex = false } = Astro.props;
+const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper' } = Astro.props;
 
 // Privacy-first analytics. Cloudflare Web Analytics is cookieless and needs no
 // consent banner (AVG/GDPR-clean). To switch it on: create a Web Analytics site
@@ -127,19 +134,39 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />
+  {/* Favicons. All five files are rendered from the SAME traced path as
+      <symbol id="markglyph"> further down this file — the V mark in white on
+      the page ground, so the tab icon and the mark in the header cannot drift
+      apart. The generator is scripts/make-favicons.mjs; re-run it after any
+      change to the glyph or to --bg-0.
+
+      White on a #08090B square, NOT white on transparent: a transparent white
+      mark is invisible on Chrome and Safari's light tab strip, which is the
+      default most people are looking at.
+
+      Order matters. A browser takes the LAST icon link it understands, so the
+      .ico goes first as the floor and the SVG last as the ceiling: anything
+      modern renders the vector and stays crisp at 16px on a scaled display,
+      anything old falls back down the list. */}
   <link rel="icon" href="/favicon.ico" sizes="32x32" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  {/* Full-bleed square, no rounded corners: iOS applies its own mask and does
+      not honour transparency, so a pre-rounded tile gets rounded twice and
+      shows dark slivers in the corners. */}
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
   {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
   <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'} />
-  {/* --paper, by hand. verify2 §6 allowlists `theme-color`, so this is the one
+  {/* --bg-0, by hand. verify2 §6 allowlists `theme-color`, so this is the one
       palette value in the codebase that no check can see drift — it is listed
-      in DESIGN.md's swap checklist for that reason and nowhere else. */}
-  <meta name="theme-color" content="#F3F5F8" />
+      in DESIGN.md's swap checklist for that reason and nowhere else. It was
+      still the retired paper value (#F3F5F8) after section 18, which painted a
+      near-white address bar above a near-black page on Android Chrome. */}
+  <meta name="theme-color" content="#08090B" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -221,7 +248,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   </noscript>
   <ClientRouter />
 </head>
-<body>
+<body class={ground === "espresso" ? "ground-espresso" : undefined}>
   <!-- SVG sprite — product-scene placeholder symbols, the chrome gradients and
        the outlined logotype. The six greys below (three gObj stops, two gGlass
        stops, one flat #B9B7B4 used for caps and soles) are cut from the SAME
@@ -288,23 +315,95 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
       <rect x="26" y="44" width="68" height="8" fill="#ffffff" opacity="0.25"/>
       <circle cx="60" cy="82" r="7" fill="#fff" opacity="0.4"/>
     </symbol>
-    <!-- The logotype, outlined. It was public/img/logo-wordmark-light.webp,
-         a near-white raster — which (a) cannot take a gradient fill, so the
-         chrome signature had nowhere to live, and (b) had gone invisible the
-         moment the palette flipped to a paper ground: #EEF0F6 ink on the
-         #F6F5F2 paper of the day is 1.05:1 (paper is #F3F5F8 now; the number
-         is quoted as it stood, not re-derived, because it is the reason the
-         file was retired rather than a live measurement).
-         The paths below are traced from that exact file
-         (99.59% coverage match, no structural deviation), so the letterforms
-         are unchanged; only the material they are made of is. The path carries
-         no fill attribute on purpose — fill is an inherited SVG property, so
-         each <use> site sets it and the same symbol serves both grounds. -->
-    <symbol id="wordmark" viewBox="0 0 1646 274">
-      <path d="M580 78L530 78C528.3 75.5 528 71.9 526.8 69.2C523.3 60.4 515.4 53.9 507 50C486.9 40.9 444 42.6 435.9 67.9C434.5 72.3 433.9 76.6 434.9 81.1C439.5 101.8 472.5 106.6 490 111C525.4 119.8 570.2 128.1 583.4 167.6C587.9 181.3 588.6 197.1 585.2 211.2C574.7 254.1 534.9 269.9 495.1 273.1C488.2 273.6 495 273.6 488 274C460.3 275.5 421.9 267.1 400.3 248.7C384.8 235.5 373.9 217.1 371.3 196.7C370.9 193.6 371.6 190.1 371 187C382.3 187 393.7 187 405 187C410.2 187 415.8 186.4 420.9 187.1C422.3 187.2 423.6 188 425 188C425.4 188.9 425 190 425.2 191C425.8 196.2 428 201.8 430.8 206.2C441.1 222.7 464.5 229.6 483 229C501.5 228.3 525.1 222.3 531.4 202.4C532.8 197.8 533.5 193.2 532.5 188.5C529.4 172.9 514.1 167.2 500.6 163.4C492.2 160.9 483.8 158.6 475.2 156.8C468.8 155.4 462.6 153.4 456.2 151.8C422.8 143.5 388.3 130.4 381.9 92.1C380.3 83 380.6 73.3 382.3 64.3C389 28.9 421.6 7.5 455.3 2.3C460.2 1.5 465 1.3 469.9 0.9C476.8 0.4 470 0.4 477 0C482.2 -0.3 487 0.5 492.1 0.9C513.6 2.7 535.8 8 553.1 21.9C565.9 32.1 575.1 46.6 578.4 62.6C579.1 66 579.6 69.6 579.9 73.1C580.1 74.7 579.7 76.4 580 78ZM1640 78L1590 78C1589.7 77.5 1588.3 72.4 1588.1 71.9C1584.9 61.5 1577.2 53.9 1567.3 49.7C1547.2 41.2 1510.9 42.7 1498.7 63.7C1495.7 68.8 1494.4 74.7 1495.4 80.6C1498.3 97.1 1517.8 102.5 1531.6 106.4C1540 108.8 1548.4 111.3 1556.9 113.1C1599.6 122.2 1646 138.1 1646 190C1646 197.9 1645.7 205.2 1643.9 212.9C1627.5 286.2 1509 288 1460.9 248.1C1447.1 236.8 1437.2 219.3 1434.3 201.7C1433.5 197.3 1433.9 192.3 1433 188C1434.1 188 1435 187.2 1436.1 187.1C1441.2 186.4 1446.9 187 1452 187C1463.3 187 1474.7 187 1486 187C1487 189.1 1486.6 191.6 1487.1 193.9C1489.4 204.3 1496 213.3 1505.1 218.9C1527.8 233 1575.2 234.6 1589.3 207.3C1592.1 201.9 1593.5 196.3 1592.8 190.2C1590.2 166.5 1554.3 162 1535.8 157.2C1501.4 148.3 1458.7 140.6 1445.9 102.1C1442 90.6 1441.7 79.3 1443.3 67.3C1445.2 52.6 1452.4 39.1 1462.8 28.8C1493.2 -1.7 1546.7 -6.2 1586.1 6.9C1597.1 10.5 1607.3 16.5 1616.1 23.9C1628.3 33.9 1636.2 50 1638.6 65.4C1639.2 69.5 1639.2 73.9 1640 78ZM0 5C13.3 5 26.7 5 40 5C45.2 5 50.8 4.4 55.9 5.1C57.3 5.2 58.6 6 60 6C82 73.2 104.6 140.3 128 207C128.3 206.1 129.2 205.5 129.6 204.6C132.8 198.1 134.4 190.6 136.7 183.7C142.2 167.8 147.1 151.6 152.6 135.6C167.6 92.4 181.2 48.6 195 5C212.3 5 230.9 4 248 5C249.7 5.1 251.3 5.9 253 6C241.3 37.1 230.4 68.6 218.8 99.8C198 156 178 212.5 158 269L95 269C79.3 225.9 64.8 182.3 48.6 139.4C40.1 117 32.3 94.4 24.1 71.9C18.8 57.3 13.3 42.7 7.8 28.2C5.7 22.4 3.1 16.7 1.2 10.8C0.6 8.9 0.6 6.9 0 5ZM281 5L333 5C335.9 85.3 331.8 -80.1 334 12C334.7 40 334 68 334 96C334 153.3 334 210.7 334 268C253.7 270.9 419.1 266.8 327 269C311.4 269.4 295.7 269 280 269L280 6L281 5ZM622 5L674 5C676.9 85.3 672.8 -80.1 675 12C675.4 27 675 42 675 57C675 87 675 117 675 147C675 167.7 672 192.6 686.3 209.7C697.2 222.7 712.6 227 729 227C751.9 227 772.9 219.9 781.7 196.7C788.5 178.9 786 150.5 786 131C786 89.3 786 47.7 786 6C866.3 3.1 700.9 7.2 793 5C808.3 4.6 823.7 5 839 5C839 51.3 839 97.7 839 144C839 171.1 841.5 199.6 828.6 224.6C820 241.6 804.7 255.6 787.4 263.4C774 269.4 759.6 271.7 745.2 273.2C705.5 277.1 656.6 267.2 635 230C619.5 203.1 621 172.9 621 143C621 97.3 621 51.7 621 6L622 5ZM1019 6C1040.9 69 1064.5 131.4 1086.6 194.4C1095.4 219.4 1105.2 244 1114 269L1055 269C1054 266 1053.5 262.7 1052.4 259.6C1046.9 244.1 1041.3 228.6 1036 213L934 213L916 269L858 269C888.6 181.2 922.1 94.4 951 6C1031.3 3.1 865.9 7.2 958 5C975.9 4.6 994.1 4.6 1012 5C1104.1 7.2 938.7 3.1 1019 6ZM1142 5L1194 5C1196.9 85.3 1192.8 -80.1 1195 12C1195.7 40 1195 68 1195 96C1195 153.7 1195 211.3 1195 269L1142 269C1139.1 188.7 1143.2 354.1 1141 262C1140.3 234 1141 206 1141 178C1141 120.7 1141 63.3 1141 6L1142 5ZM1240 5L1293 5C1295.9 85.3 1291.8 -80.1 1294 12C1294.5 35 1294 58 1294 81C1294 128.3 1294 175.7 1294 223L1416 223C1418.9 303.3 1414.8 137.9 1417 230C1417.3 243 1417 256 1417 269L1239 269L1239 6L1240 5ZM984 62L949 170L1021 170L985 62L984 62Z"/>
+    <!-- The two brand marks, outlined.
+
+         Source: the two PNGs Lucas supplied (the V glyph and the VISUAILS
+         logotype). Both arrived as flat two-colour rasters on a transparent
+         ground, which a raster cannot survive here for two reasons: a fixed
+         ink colour goes invisible the first time the palette moves (the
+         previous wordmark raster was #EEF0F6, which measured 1.05:1 the day
+         the ground turned pale — invisible in a way no contrast checker
+         reports, because a checker looks at text and this is an image), and a
+         raster cannot take a gradient or a scope-inherited fill at all.
+         So each PNG was thresholded, cropped to its ink bounding box, and
+         traced to a single path. The V glyph's ink occupied 308,280→945,933 of
+         its source, hence the 642×658 viewBox; the logotype's 114,270→1759,543,
+         hence 1650×278. Cropping to the ink is what makes `height:` alone a
+         reliable sizing lever — there is no invisible padding baked in.
+
+         Neither path carries a fill attribute, on purpose. `fill` is an
+         inherited SVG property, so every <use> site sets it from a token
+         (`.brand-word`/`.brand-mark` read --brand, which flips with the ink
+         ramp) and one symbol serves every ground. Do not add fill="currentColor"
+         here: it would win over the inherited value and freeze both marks to
+         whatever `color` happened to be.
+
+         The marks are never placed together — see the brand lockup guard in
+         scripts/brand-lockup-guard.mjs, which fails the build if they are. -->
+    <symbol id="wordmark" viewBox="0 0 1650 278">
+      <g transform="translate(0.000000,278.000000) scale(0.100000,-0.100000)"
+ stroke="none">
+<path d="M4675 2750 c-380 -41 -648 -202 -775 -465 -92 -191 -93 -439 -3 -625
+27 -56 56 -94 113 -151 133 -131 283 -194 724 -305 347 -88 434 -117 505 -169
+78 -57 106 -114 106 -210 -1 -92 -31 -161 -97 -220 -102 -92 -220 -129 -413
+-128 -202 0 -327 42 -442 146 -58 54 -108 144 -121 217 l-8 45 -267 3 -267 2
+0 -40 c0 -62 27 -180 59 -258 99 -239 303 -414 586 -501 194 -60 406 -81 619
+-62 478 44 787 263 878 622 17 69 19 103 15 218 -4 115 -9 148 -32 214 -50
+142 -157 268 -300 353 -131 78 -206 104 -595 204 -381 98 -456 126 -526 194
+-44 43 -54 59 -64 108 -14 68 -6 117 28 181 31 58 65 88 145 128 124 63 341
+76 488 30 135 -43 241 -142 271 -253 l12 -48 254 0 255 0 -7 69 c-30 300 -236
+539 -553 641 -172 55 -408 79 -588 60z M15268 2749 c-393 -49 -686 -250 -784
+-539 -82 -243 -37 -509 116 -683 124 -141 292 -214 775 -338 321 -82 382 -102
+454 -150 76 -51 111 -106 118 -187 16 -169 -113 -312 -327 -363 -91 -22 -281
+-17 -375 10 -206 58 -323 168 -356 334 l-12 57 -265 0 -265 0 7 -76 c8 -84 44
+-211 83 -289 138 -275 437 -451 845 -495 320 -34 653 28 858 161 224 145 340
+366 340 647 -1 300 -123 494 -398 631 -111 56 -209 87 -512 165 -140 36 -288
+76 -328 90 -197 68 -284 164 -269 298 22 182 225 298 497 285 229 -11 380
+-104 430 -265 l18 -57 248 0 249 0 -4 60 c-17 291 -224 543 -531 645 -161 54
+-438 81 -612 59z M20 2700 c0 -6 60 -174 134 -373 74 -199 164 -445 201 -547
+37 -102 113 -313 170 -470 57 -157 160 -445 230 -640 69 -195 146 -409 170
+-475 l43 -120 315 -3 315 -2 22 56 c11 32 95 267 186 523 139 392 333 927 675
+1869 32 90 59 170 59 178 0 20 -568 21 -575 2 -2 -7 -47 -150 -100 -318 -162
+-513 -556 -1702 -563 -1696 -8 8 -80 219 -408 1194 -150 447 -276 817 -279
+822 -9 14 -595 13 -595 0z M2827 2703 c-4 -3 -7 -597 -7 -1320 l0 -1313 268 2
+267 3 0 1315 0 1315 -261 3 c-143 1 -263 -1 -267 -5z M6237 2703 c-11 -11 -8
+-1696 3 -1814 39 -414 265 -696 645 -807 149 -44 242 -56 440 -56 207 0 308
+13 456 60 267 84 472 272 559 512 68 187 65 139 65 1172 l0 935 -260 0 -260 0
+-5 -900 c-5 -800 -8 -906 -22 -954 -76 -244 -251 -361 -542 -361 -278 0 -443
+111 -522 350 -17 51 -19 118 -24 960 l-5 905 -261 3 c-143 1 -263 -1 -267 -5z
+M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
+-94 -260 -152 -425 -59 -165 -183 -507 -275 -760 -92 -253 -171 -470 -175
+-482 l-6 -23 290 0 289 0 94 280 93 280 509 -2 508 -3 75 -215 c41 -118 84
+-243 96 -277 l21 -63 293 0 c161 0 293 2 293 4 0 2 -59 163 -131 358 -284 768
+-740 2031 -794 2198 -10 30 -22 61 -28 68 -7 9 -87 12 -338 12 -303 0 -329 -1
+-337 -17z m411 -778 c127 -372 287 -847 287 -851 0 -2 -162 -4 -360 -4 -198 0
+-360 3 -360 6 0 5 115 360 313 964 34 103 42 120 48 100 4 -14 37 -110 72
+-215z M11435 2698 c-3 -7 -4 -600 -3 -1318 l3 -1305 268 -3 267 -2 -2 1317 -3
+1318 -263 3 c-205 2 -264 0 -267 -10z M12417 2703 c-4 -3 -7 -597 -7 -1320 l0
+-1313 890 0 890 0 -2 228 -3 227 -612 3 -613 2 -2 1088 -3 1087 -266 3 c-146
+1 -268 -1 -272 -5z"/>
+      </g>
     </symbol>
-    <symbol id="markglyph" viewBox="0 0 639 655">
-      <path d="M639 1C633.7 27.3 627.6 53.4 621.6 79.6C615.4 106.9 607.8 134.4 595.7 159.7C593.8 163.5 592.4 167.5 590.3 171.3C582 186.2 571.9 199.1 560.8 211.8C557.6 215.3 554.8 219.1 551.2 222.2C529.3 241.5 504.9 255.5 478.3 267.3C475.2 268.7 470.6 269.3 469 270C468.5 268.9 467.3 268.3 466.7 267.3C463.9 262.7 461.7 255.3 459.9 250.1C450.6 224.6 445 198.1 442.9 171.1C438.5 114.7 450.3 71.3 497 36C508.7 27.2 521.8 20.5 535.6 15.6C559.5 7.2 583.9 3 609.1 1.1C618.9 0.3 629.1 1 639 1ZM413 430C413.6 429.2 414.6 428.9 415.2 428.2C415.3 428.1 419.1 422.3 419.2 422.2C424.6 414.3 430.1 406.4 435.6 398.6C449.3 379.1 463.7 360 477.6 340.6C490.7 322.2 503.5 303.3 517.9 285.9C520.8 282.2 523.9 278.6 527.2 275.2C528.4 274 529.9 273.2 531 272L372 655C371.4 654 370.1 653.6 369.3 652.6C367 649.9 357.2 631.8 354.7 627.3C339.6 600.8 324.2 574.4 309.3 547.7C296.3 524.3 282.6 501.1 269 478C263.5 468.4 258.4 458.6 253 449C230.7 409.7 208.2 370.4 186 331C159.4 284.2 132.5 237.7 106.3 190.7C95.6 171.5 84.2 152.6 73.7 133.3C58.4 105.5 41.9 78.2 26.7 50.3C19 36.4 10.2 23.1 3 9C2.2 7.4 1.8 5.6 1 4C3.1 3.8 5 2.4 7.2 2.2C17.2 1 27.9 2 38 2C47.3 2 56.7 1.5 66 2C100.5 4 136.1 13.3 164.7 33.3C171.3 37.9 181.3 45.5 186.7 51.3C203.4 68.9 214.8 90.4 226.7 111.3C237.5 130.4 249 149.1 259.7 168.3C279.8 204.5 301.8 239.7 322.3 275.7C334.3 296.9 347.4 317.5 359.3 338.7C376.6 369.4 394.7 399.8 413 430Z"/>
+    <symbol id="markglyph" viewBox="0 0 642 658">
+      <g transform="translate(0.000000,658.000000) scale(0.100000,-0.100000)"
+ stroke="none">
+<path d="M6045 6553 c-449 -37 -816 -157 -1077 -353 -283 -212 -452 -484 -515
+-825 -24 -134 -25 -507 0 -671 25 -170 64 -345 108 -484 75 -237 123 -350 149
+-350 9 0 57 18 106 39 712 309 1083 733 1313 1501 67 226 202 792 266 1118 l7
+32 -159 -2 c-87 -1 -176 -3 -198 -5z M47 6543 c-22 -3 -28 -9 -24 -22 2 -10
+111 -206 242 -437 132 -230 323 -567 425 -749 103 -181 224 -395 270 -475 83
+-144 110 -192 207 -365 50 -89 206 -364 403 -710 56 -99 139 -245 184 -325 46
+-80 141 -248 213 -375 72 -126 214 -376 315 -555 102 -179 205 -361 230 -405
+86 -148 1121 -1959 1162 -2032 23 -40 44 -73 48 -73 3 0 34 66 68 148 34 81
+97 230 140 332 113 268 437 1047 515 1240 37 91 77 190 90 220 13 30 68 161
+121 290 86 209 331 797 481 1155 30 72 82 195 114 275 33 80 63 151 66 158 13
+29 -16 6 -69 -56 -53 -63 -275 -354 -344 -453 -17 -24 -62 -87 -100 -139 -144
+-198 -425 -591 -539 -755 -65 -93 -119 -171 -120 -172 -1 -3 -120 196 -269
+452 -49 83 -110 186 -136 230 -26 44 -87 148 -135 230 -48 83 -118 202 -156
+265 -81 138 -360 616 -437 750 -30 52 -138 239 -240 415 -102 176 -266 460
+-365 630 -376 648 -406 694 -541 828 -268 265 -617 420 -1062 472 -121 14
+-677 20 -757 8z"/>
+      </g>
     </symbol>
   </svg>
 
@@ -313,7 +412,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   <header class="site-header">
     <div class="container nav">
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
-        <svg class="brand-word" viewBox="0 0 1646 274" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
+        <svg class="brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
       </a>
       <nav aria-label="Primary" class="primary-nav">
         <ul class="nav-links">
@@ -375,7 +474,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
 
   <div class="mobile-nav" id="mobile-nav">
     <button class="mobile-close" aria-label="Close menu">&times;</button>
-    <svg class="brand-mark mobile-mark" viewBox="0 0 639 655" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
+    <svg class="brand-mark mobile-mark" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
     {drops.map((s) => (
       <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
     ))}
@@ -419,13 +518,13 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
         fenced here rather than made available as a utility class. */}
     <div class="foot-finale" aria-hidden="true">
       <span class="foot-glow"></span>
-      <svg class="foot-watermark" viewBox="0 0 1646 274" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
+      <svg class="foot-watermark" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
     </div>
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
           <a href={lp('/')} class="brand">
-            <svg class="brand-word" viewBox="0 0 1646 274" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
+            <svg class="brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
           </a>
           <p>{t('foot_tagline')}</p>
         </div>
@@ -443,6 +542,8 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
             <li><a href={lp('/about')}>{t('foot_about')}</a></li>
             <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
             <li><a href={lp('/how-it-works')}>{t('foot_how')}</a></li>
+            <li><a href={lp('/portal')}>{t('foot_portal')}</a></li>
+            <li><a href={lp('/studio')}>{t('foot_studio')}</a></li>
             <li><a href={lp('/guides')}>{t('foot_guides')}</a></li>
             <li><a href={lp('/compare')}>{t('foot_compare')}</a></li>
             <li><a href={lp('/faq')}>{t('foot_faq')}</a></li>
@@ -475,7 +576,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   </footer>
 
   <div class="convbar" role="complementary" aria-label="Quick start">
-    <svg class="brand-mark cb-logo" viewBox="0 0 639 655" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
+    <svg class="brand-mark cb-logo" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
     <em>{t('cb_text')}</em>
     <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
     <button class="cb-close" type="button" aria-label="Dismiss">&times;</button>
@@ -519,14 +620,47 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
 </html>
 
 <style>
-  .site-header { position: sticky; top: 0; z-index: var(--z-sticky); transition: background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
+  /* NO TRANSITION ON THE BACKGROUND, and that is a fix rather than an
+     omission. The bar's legibility depends on two things agreeing: the ground
+     (a background, which a transition animates over 240ms) and the ink (a set
+     of custom properties, which flip in one frame because custom properties
+     do not transition). While they disagree the nav is paper-on-paper — and
+     under rAF throttling, which is exactly when a scroll is being animated,
+     that window stretches. Observed on the live site: a paper bar with
+     near-invisible links. Two mechanisms with different clocks cannot be
+     tuned into agreement; they can only be collapsed into one. So the ground
+     switches in the same frame the ink does. */
+  .site-header { position: sticky; top: 0; z-index: var(--z-sticky); }
+  /* And the ink is instant too, for the same reason: a colour transition on
+     the links is a 120ms nicety, and during it the ink is somewhere between
+     the two ramps while the ground has already committed to one of them. One
+     frame of paper-on-paper is not perceptible, but it is the same defect in
+     miniature, and there is nothing to weigh against removing it. The hover
+     transition stays — hover does not change the ground. */
+  .site-header.scrolled .nav-links > li > a,
+  .site-header.scrolled .nav-trigger,
+  .site-header.scrolled .nav-account-link,
+  .site-header.scrolled .lang-switch .ls,
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-links > li > a,
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-trigger,
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .nav-account-link,
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) .lang-switch .ls { transition: none; border-radius: var(--r-sm); }
   /* The scrolled bar was a translucent dark pane with backdrop-filter: blur(10).
      Both are gone. The blur re-rendered its backdrop every frame while the page
      moved under it — the single most expensive thing in the sticky header — and
      a frosted pane is the glassmorphism default this system rejects. A solid
      paper bar with a hairline under it is cheaper, hard-edged, and legible over
      any content, including a photograph. */
-  .site-header.scrolled { background: var(--paper); box-shadow: 0 1px 0 var(--line-strong); }
+  .site-header.scrolled { background: rgb(8 9 11 / 0.86); backdrop-filter: saturate(140%) blur(14px); box-shadow: 0 1px 0 var(--line); }
+  /* The espresso ground's scrolled bar. This lives HERE, beside the rule it
+     overrides, rather than in global.css — Astro adds a data-astro-cid
+     attribute to every selector in this block, so a plain
+     `.ground-espresso .site-header.scrolled` in global.css has the same
+     specificity as the scoped rule above and loses on order. Measured: a
+     white slab with paper ink on it, invisible for the whole page rather
+     than for one frame. Same class of defect as section 16's, in a new
+     place, caught the same way — by reading the rendered colour. */
+  :global(body.ground-espresso) .site-header.scrolled { background: rgb(8 9 11 / 0.86); box-shadow: 0 1px 0 var(--line); }
 
   /* ---- the header over a dark hero -------------------------------------
      MEASURED BUG, not a refinement: on every page that opens with a
@@ -545,8 +679,15 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
      script has run is a nav that is illegible for the first paint and for
      anyone with JS off. The @supports fallback below trades the transparent
      look for a solid bar — less handsome, still readable, which is the right
-     way round for a fallback. */
-  body:has(.hero-cover, .hero-editorial) .site-header:not(.scrolled) {
+     way round for a fallback.
+
+     THE SELECTOR IS A LIST OF HERO CLASS NAMES, which is a maintenance edge
+     worth naming: section 17's rebuilt hero is .hv-hero, and until it was
+     added here the account link measured 2.73:1 against the brightest pixel
+     of the photograph — the fix was in place and simply did not know about
+     the new hero. Any future full-bleed hero goes in this list on the same
+     commit that creates it. */
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled) {
     /* ONE ink tier, not three. Measured against the actual rendered pixels
        behind each link (text hidden, screenshot sampled, worst pixel taken),
        the second tier ran 1.62–4.09:1 and the third 2.78:1. A 76px bar over a
@@ -565,18 +706,18 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
        photograph is behind it, which is the wrong direction: it lifted the
        ground under the inactive chip to 3.77:1 against its own paper label.
        Darkening the shell instead helps both chips at once. */
-    --surface:    rgb(25 21 16 / 0.44);
-    --surface-2:  rgb(25 21 16 / 0.30);
-    --line:        rgb(246 241 233 / 0.16);
-    --line-strong: rgb(246 241 233 / 0.30);
+    --surface:    rgb(var(--scrim) / 0.44);
+    --surface-2:  rgb(var(--scrim) / 0.30);
+    --line:        rgb(255 255 255 / 0.16);
+    --line-strong: rgb(255 255 255 / 0.30);
     --line-ui:     var(--paper-muted-on-dark);
     --brand:       var(--paper-on-dark);
     --focus-ring:  var(--paper-on-dark);
-    --ghost:       rgb(246 241 233 / 0.12);
-    --btn-ghost-fill:       rgb(246 241 233 / 0.12);
-    --btn-ghost-fill-hover: rgb(246 241 233 / 0.20);
-    --accent-soft: rgb(246 241 233 / 0.14);
-    --accent-line: rgb(246 241 233 / 0.34);
+    --ghost:       rgb(255 255 255 / 0.12);
+    --btn-ghost-fill:       rgb(255 255 255 / 0.12);
+    --btn-ghost-fill-hover: rgb(255 255 255 / 0.20);
+    --accent-soft: rgb(255 255 255 / 0.14);
+    --accent-line: rgb(255 255 255 / 0.34);
     /* SOLID paper, not another alpha. Two stacked paper alphas (the switcher
        shell at 0.14 and the chip at 0.16) composited to a mid grey and put
        paper text on it at 2.03–2.20:1. A selected chip on a dark ground is
@@ -641,7 +782,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   .nav-account-link { font-size: .88rem; font-weight: 500; color: var(--ink-3); padding: .55rem .4rem; transition: color var(--dur-1) var(--ease); }
   .nav-account-link:hover, .nav-account-link[aria-current="page"] { color: var(--ink); }
   .has-menu { position: relative; }
-  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 75 / 0.16); }
+  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   .nav-menu a { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
@@ -654,7 +795,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
 
   /* Language switcher (EN · NL · DE). Desktop version lives in .nav-actions;
      a second copy sits inside the mobile drawer (.mobile-lang). */
-  .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; }
+  .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; border-radius: var(--r-md); }
   .lang-switch .ls { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .lang-switch .ls:hover { color: var(--ink); }
   /* The active chip reads --accent-soft, which is a MIST TINT on the paper
@@ -684,6 +825,12 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link { display: none; } .menu-toggle { display: inline-flex; } }
 
   .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
+  /* The gap above the footer is breathing room after a dark section that ended
+     on its own terms. After a gradient panel it is not breathing room, it is a
+     strip of leftover page between two finished blocks — the panel's bottom
+     edge and the footer's top edge with nothing in between doing any work. So
+     when the panel is the last thing on the page, the footer meets it. */
+  main:has(> .panel-grad:last-child) + .site-footer { margin-top: 0; }
   .site-footer > .container { position: relative; z-index: 1; }
 
   /* The finale sits behind the columns and is clipped by the footer, so the
@@ -697,7 +844,11 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   .foot-glow {
     position: absolute; left: 50%; bottom: -34%;
     width: min(120%, 1500px); aspect-ratio: 2 / 1; transform: translateX(-50%);
-    background: radial-gradient(ellipse at 50% 100%, rgb(60 107 118 / 0.55) 0%, rgb(60 107 118 / 0.22) 38%, rgb(60 107 118 / 0) 70%);
+    /* Was harbor teal, hand-written as rgb() because a gradient stop cannot
+       take a token with a separate alpha. It still cannot — so this is the
+       accent's channels, quoted once, with a comment saying where they come
+       from. If --accent moves, these three stops move with it by hand. */
+    background: radial-gradient(ellipse at 50% 100%, rgb(91 124 250 / 0.30) 0%, rgb(154 107 245 / 0.14) 38%, rgb(154 107 245 / 0) 70%);
   }
   @media (max-width: 700px) {
     .foot-watermark { width: 190%; bottom: -4%; opacity: .045; }
@@ -715,7 +866,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   .footer-col a:hover { color: var(--ink); }
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
 
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--ink-900); border: 1px solid var(--line-strong); box-shadow: 6px 6px 0 0 oklch(0.16 0.006 75 / 0.22); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; }
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
   .convbar .cb-logo { height: 22px; flex: 0 0 auto; }
   .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
@@ -732,7 +883,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
     width: 48px; height: 48px; padding: 0;
     background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
     font-size: .88rem; font-weight: 600; line-height: 1; white-space: nowrap;
-    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); border-radius: var(--r-md); }
   .wa-launcher:hover { border-color: var(--ink-3); background: var(--surface-2); }
   .wa-launcher-i { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; }
   /* Clipped, not squeezed. The old rule transitioned max-width and margin-left,
@@ -752,5 +903,18 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   @media (prefers-reduced-motion: reduce) {
     .wa-launcher-label { transition: none; }
   }
-  @media (max-width: 600px) { .wa-launcher { left: 12px; bottom: 12px; } }
+  /* Bottom-RIGHT on a phone, not bottom-left. A fixed launcher always covers
+     whatever is in its corner, and on the rebuilt homepage that corner is
+     where the hero plinth stacks its third fact — measured with
+     elementFromPoint: "Studio · Enschede, NL" was under the launcher on first
+     paint. Every band on the site sets its text left, so the right corner is
+     the one that is reliably empty. It still clears the centred conversion
+     bar, which hides its own copy below 600px and is narrower than the gap. */
+  /* And ABOVE the conversion bar, not beside it. At 360px the two overlapped
+     by a pixel — the convbar is centred and grows toward both edges as the
+     viewport shrinks, so "beside" is only true down to about 380px. Stacking
+     is true at every width. */
+  @media (max-width: 600px) { .wa-launcher { left: auto; right: 12px; bottom: 12px; } }
+  @media (max-width: 620px) { .wa-launcher { bottom: 96px; } }
+  @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

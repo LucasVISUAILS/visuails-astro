@@ -1,87 +1,150 @@
 # Design
 
-> **Status, as of section 15: the COLOUR system in this file is superseded.**
-> Sections "Colour", its two contrast tables, and the typography note below describe
-> the OKLCH ink/paper system that shipped through sections 1–14. Section 15 replaced
-> it with **VISUAILS harbor**, per §7 of the build prompt. The authoritative palette
-> is now the `:root` block in `src/styles/global.css` and the summary immediately
-> below; the measured numbers are in `REPORT-SECTION-15.md` §2.
+> **Status, as of section 18: the COLOUR system AND the radius rule in this file are
+> superseded.** Read this note before you read anything below it.
 >
-> Everything else in this file — the radius rule, elevation, focus, the chrome fence,
-> motion, layout, z-index, accessibility, and the rejection list — still holds and was
-> re-verified in section 15.
+> This file has now described three palettes. Sections 1–14 shipped an OKLCH ink/paper
+> system; section 15 replaced it with **VISUAILS harbor** (warm ink, cool paper,
+> espresso, teal and clay); section 18 replaced *that*, on Lucas's instruction, with a
+> **cool near-black scheme modelled on onlinepaymentplatform.com** — and reversed the
+> hard-edge rule at the same time, so the "Radius — zero, one token, no exceptions"
+> section below is wrong twice over: there is a scale now, and it is not zero.
 >
-> This header replaces the original "target system, not shipped system" note, which
-> described a violet/rounded system that no longer exists in the tree.
+> The authoritative palette is the `:root` block in `src/styles/global.css`. The
+> summary immediately below is section 18's; the harbor table that used to sit here is
+> gone rather than kept for reference, because a superseded palette in a design file is
+> a palette somebody will copy a value out of.
+>
+> Everything else in this file — elevation, focus, the chrome fence, motion, layout,
+> z-index, accessibility, and the rejection list — still holds, with two amendments
+> recorded in "Section 18 amendments" below.
 
 ---
 
-## Harbor — the shipped palette (section 15)
+## The shipped palette (section 18)
 
-Warm ink, cool paper, espresso for the dark bar, one teal spent on the primary action
-and one headline word, one clay held to a single stat or chip at a time, four mist
-tints doing the work borders and shadows are not allowed to do.
+Cool near-black as the base surface, white ink in four alpha steps, one light-blue
+accent that works as text *and* as a fill, and two decorative gradients that are
+allowed on panels and never under body copy.
 
 | Token | Value | Role | Measured |
 |---|---|---|---|
-| `--ink-900` | `#191510` | Full ink; text, dark ground | 16.42:1 on paper |
-| `--ink-700` | `#625F5A` | Soft / secondary text (ink .68) | 5.75:1 |
-| `--ink-500` | `#6A6863` | Muted / footer (ink **.64**, not the brief's .50) | 4.62:1 worst ground |
-| `--ink-300` | `#A2A29F` | Faint (ink .38) — **rules and disabled only, never text** | 2.31:1 |
-| `--ink-200` | `#CDCCCA` | Hairline on paper | — |
-| `--ink-850` | `#1B1712` | Espresso: nav, bar, raised-on-dark | — |
-| `--ink-800` | `#241F19` | Recessed-on-dark | — |
-| `--paper` | `#F1F4F4` | Body ground | — |
-| `--paper-2` | `#E7EBEA` | Neutral surface fill / recessed | — |
-| `--paper-lift` | `#F7F9F9` | Raised — still not white | — |
-| `--paper-on-dark` | `#F6F1E9` | Text on espresso / ink | 15.86:1 on espresso |
-| `--paper-soft-on-dark` | `#C6C1BA` | Secondary on dark | 9.97:1 |
-| `--paper-muted-on-dark` | `#A39E97` | Muted on dark | 6.70:1 |
-| `--mist-teal` | `#E6EDEC` | Section ground | ink 15.30:1 |
-| `--mist-clay` | `#F1E8E5` | Section ground | ink 15.06:1 |
-| `--mist-slate` | `#E9ECED` | Section ground | ink 15.30:1 |
-| `--mist-stone` | `#EFEBE4` | Section ground | ink 15.29:1 |
-| `--teal` | `#3C6B76` | Primary CTA fill; fills, borders, large text | 5.34:1 on paper, 3.09:1 on ink |
-| `--teal-grad` | `#43717C` | CTA gradient far stop (**not** the brief's `#4A7A85`) | label 4.62:1, measured |
-| `--teal-hover` | `#33606A` | Primary hover — down, never brighter | 6.28:1 |
-| `--teal-text` | `#2A4E57` | The one headline word; system text | 8.16:1 |
-| `--teal-deep` | `#1A343B` | Chips and stats at low alpha | 11.88:1 |
-| `--clay` | `#9C7A72` | Fill and large text only | 3.49:1 |
-| `--clay-text` | `#6E4F49` | The text-safe cut | 6.60:1 |
-| `--ghost` | `rgb(25 21 16 / .06)` | Secondary and small button fill | — |
+| `--bg-0` | `#08090B` | The page ground | — |
+| `--bg-raise` | `#101216` | Raised band, recessed panel | — |
+| `--surface` | `#17191E` | A card off the ground | — |
+| `--surface-2` | `#1F2229` | The step above that | — |
+| `--ink-1` | `#FFFFFF` | Headings and primary text | 16.75:1 on `--surface` |
+| `--ink-2` | white 80% | Body / secondary | 10.94:1 |
+| `--ink-3` | white 66% | Muted, captions | 7.53:1 |
+| `--ink-4` | white 52% | Faint | 4.62:1 |
+| `--line` | white 12% | Hairline | — |
+| `--line-strong` | white 22% | Rule, control border — **never text** | — |
+| `--accent` | `#90BEFF` | Primary fill, links, the accent word | 10.43:1 both directions |
+| `--accent-ink` | `#08090B` | What sits ON an accent fill | white on the accent is 1.91:1 and is never correct |
+| `--accent-dim` | `#6E9BE0` | Hover / pressed | — |
+| `--grad-1` | `#5B7CFA → #9A6BF5 → #E86BB0` | Panel ground | every stop 5.41–8.75:1 against `--grad-ink` |
+| `--grad-2` | `#9A6BF5 → #E86BB0 → #F2955C` | Panel ground, second | as above |
+| `--grad-ink` | `#08090B` | What sits ON a gradient panel | white on these stops is 2.28–3.68:1 |
+| `--scrim` | `8 9 11` (channels) | Every veil over a photograph | see below |
 
-**Three rules fall out of this table and are not negotiable.**
+Two things about this table are counter-intuitive and are the reason it is written down:
 
-1. **`--ink-300` is not a text colour.** It is the brief's faint value and it is
-   2.31:1 — a rule, not a sentence. Captions and microcopy resolve to `--ink-500`.
-   `--ink-faint` is aliased to `--ink-500` for exactly this reason.
-2. **`--teal` and `--clay` never set body text.** The `-text` variants exist for
-   that. 3.49:1 is a fail, not a rounding error.
-3. **A muted value is measured on the DARKEST ground it lands on.** `.62` clears
-   4.5:1 on `--paper` and fails at 4.36 on the mist tints, which is where half the
-   muted text on this site sits. That is how `.62` became `.64`.
+**The accent carries near-black, not white.** `#90BEFF` is a light blue. The instinct is
+white text on it; white is 1.91:1. Everything set on an accent fill takes `--accent-ink`.
 
-**System colour collapsed into the two accents.** `--signal` is `--teal` and
-`--warn` is `--clay`; `--verify`/`--flag` alias them as before. Harbor has two
-accents, so a third and fourth hue for `/start` and the portal would be a second
-colour system. Colour is still never the sole carrier of state — every capacity,
-validation and order status carries a word as well as a fill.
+**So do the gradients.** Every stop of both gradients is more legible under near-black
+than under white, by a factor of two. `.panel-grad` in `global.css` is a scope that
+restates the entire ink ramp, the line values, the accent and all six button tokens for
+exactly this reason — a gradient panel is not a background change, it is an inversion,
+and doing it by hand produces white body copy at 2.28:1 every time.
 
-**The dark-ground inversion (`.on-ink`) now uses the paper ramp, not `--ink-300`.**
-`--ink-300` on a dark ground would be a different colour doing a different job
-under the same name, which is exactly how a 2.6:1 ships.
+**`--scrim` is channels, not a colour.** A gradient stop cannot take a colour token and
+apply its own alpha to it, so scrims read `rgb(var(--scrim) / 0.62)`. Before section 18
+the same espresso was hand-written in two notations — `oklch(0.16 0.006 75 / a)` and
+`rgb(25 21 16 / a)` — in forty places that did not know they were the same colour.
 
-**One place the ramp is deliberately flattened: the sticky nav over a hero.** The
-header has one ink tier there, not three. Measured against the rendered pixels, the
-second tier ran 1.62–4.09:1 and the third 2.78:1. A 76px bar standing on a
-photograph whose exposure the studio does not control has room for one legible
-value; hierarchy comes from weight and position instead. See
-`REPORT-SECTION-15.md` §4 — this is the defect class a token-based checker cannot
-see, because by token the header was correct.
+### The three names that changed ROLE, not value
+
+A palette swap that only changes values is a find-and-replace. Three names in this
+codebase were doing two jobs each, and the second job is invisible until it breaks:
+
+- **`--ink-900`** was the darkest ink *and*, by coincidence of value, the token every
+  dark section used as its **ground** — `.on-ink`, the hero scrims, `.cta-band`,
+  `.convbar`, `::selection`. Aliased to white (the obvious reading of the name) it turned
+  the footer, the conversion bar and three hero scrims white in one line. It is the
+  ground. It resolves to `--bg-0`.
+- **`--paper`** was the light ground *and* the "light ink on a dark scrim" value, used as
+  `color: var(--paper)` on five badge and caption rules. Those now read
+  `--paper-on-dark`.
+- **`::selection`** inverted ink and paper, and needed a second rule for the dark scope.
+  On a near-black-everywhere palette that inversion collapses — both values are
+  near-black. Selection is the accent now, and there is one rule.
+
+### Radius — a three-step scale, and one place it is written
+
+Section 18 reversed the hard-edge rule on Lucas's instruction ("voeg ronde hoeken toe").
+The section below titled "Radius — zero, one token, no exceptions" describes the retired
+rule and is kept only because the *reasoning* in it is still the reason the scale is
+small.
+
+```css
+--r-lg: 16px;   /* cards, panels, tiles      */
+--r-md: 8px;    /* buttons, fields, pills    */
+--r-sm: 4px;    /* the small stuff inside    */
+--radius: var(--r-md);   /* legacy alias */
+```
+
+Three steps and no pill: a fully round control beside an 8px input is the undecided look.
+
+**There is no blanket reset.** `*, *::before, *::after { border-radius: … }` is how a
+radius ends up on a table cell and a horizontal rule; radius is applied per primitive.
+And there is exactly one place the scale is written — a second `--radius: 0` sitting
+below the alias in the same `:root` silently squared the entire site while the scale
+above it looked correct in the file.
+
+### Section 18 amendments to the rest of this document
+
+- **The chrome fence still stands**, but the ramp moved hue: harbor ran it warm (75) with
+  one cool inflection; it runs cool (255) with one warm inflection now. The rule is that
+  the ramp runs on the ink hue with a single opposing reflection — not the numbers.
+- **The chrome scrim was on the wrong layer.** `.ch-promise`'s directional scrim was the
+  first background layer of `.hero-fallback`, i.e. *under* the canvas. Every visitor
+  whose browser ran the shader saw the copy on raw metal. The scrim is its own layer
+  above both paths now (`.ch-promise::before`).
+- **The two brand marks are never placed together.** The V glyph and the logotype are
+  alternative signatures, not a lockup. Enforced as a build failure —
+  `scripts/brand-lockup-guard.mjs` fails `astro build` if a wordmark and a glyph share
+  any ancestor below `<body>`.
 
 ---
 
----
+## Harbor — the retired palette (section 15, superseded by section 18)
+
+The value table that sat here is deleted. A superseded palette in a design file is a
+palette somebody copies a value out of, and this file has now carried two of them.
+Harbor's values are in git history and in `REPORT-SECTION-15.md`; the section-18 table
+above is the live one.
+
+What survives harbor, because it is about *method* rather than about warm ink:
+
+1. **A faint value is not a text colour.** Harbor's `--ink-300` was 2.31:1; the current
+   `--line-strong` is white at 22%. Both are rules. Captions and microcopy resolve to
+   the muted step, and `--ink-faint` is aliased to it for exactly this reason.
+2. **An accent does not set body text until it has been measured setting body text.**
+   Harbor needed a separate `-text` cut for both accents; `#90BEFF` does not, and that
+   is a property of the value, not a licence.
+3. **A muted value is measured on the DARKEST ground it lands on.** Harbor's `.62`
+   cleared 4.5:1 on paper and failed at 4.36 on the mist tints, which is where half the
+   muted text sat. That is how `.62` became `.64`, and it is why section 18's ramp was
+   measured on `--surface` rather than on `--bg-0`.
+4. **Colour is never the sole carrier of state.** Every capacity, validation and order
+   status carries a word as well as a fill.
+5. **The sticky nav over a hero has ONE ink tier, not three.** Measured against rendered
+   pixels the second tier ran 1.62–4.09:1. A 76px bar standing on a photograph whose
+   exposure the studio does not control has room for one legible value; hierarchy comes
+   from weight and position. This is the one place the ramp is deliberately flattened,
+   and it is invisible to a token-walking contrast audit by construction — which is why
+   there is a pixel-sampling audit as well.
 
 ## Foundations
 
@@ -235,45 +298,66 @@ grounds it is `--ink-2`, the body text colour — dragging it down would have co
 legibility to buy a harder hairline. Adding a step inside the ink ramp is not a third
 ramp; "two ramps, no third" is a rule about ink versus paper.
 
-#### Changing the palette — the ten places a colour is hand-carried
+#### Changing the palette — the places a colour is hand-carried
 
-Editing `:root` in `global.css` does **not** change the palette. Ten colours live outside
-it, in languages that cannot read a custom property, and each one silently keeps the old
-value until somebody moves it by hand. This list is the checklist; work it top to bottom
-and nothing is left behind.
+Editing `:root` in `global.css` does **not** change the palette. A dozen colours live
+outside it, in languages that cannot read a custom property, and each one silently keeps
+the old value until somebody moves it by hand. This list is the checklist; work it top to
+bottom and nothing is left behind.
+
+Section 18 proved why it exists and where it was incomplete: `theme-color` was still the
+retired paper value two builds after the ground turned near-black, painting a near-white
+address bar above a near-black page on Android Chrome, and nothing in the tree could see
+it. The rows added since are marked.
 
 | Where | What | Why it cannot be a `var()` |
 |---|---|---|
-| `global.css` `.on-ink` | four longhand `--paper` values with alpha | a custom property cannot carry an alpha; `color-mix` is used nowhere in this codebase |
+| `global.css` `.on-ink` | four longhand paper values with alpha | a custom property cannot carry an alpha; `color-mix` is used nowhere in this codebase |
 | `global.css` `--select-caret` ×2 | two URL-encoded SVG strokes | a `data:` URI is an opaque string to CSS |
 | `global.css` chrome ramp | twelve gradient stops | fenced separately — see the chrome section |
 | `global.css` `.vis` placeholder | two ramp stops | inside a gradient, same as above |
+| `global.css` `--scrim` **(new, §18)** | three channel numbers | a gradient stop cannot take a token AND apply its own alpha, so what is tokenised is the channels — every scrim reads `rgb(var(--scrim) / a)` and follows this one row |
+| `global.css` `.panel-grad` **(new, §18)** | ~14 longhand `rgb(8 9 11 / a)` values | same alpha problem, inverted: the panel's ink is near-black on a bright ground |
+| `global.css` `--grad-1` / `--grad-2` **(new, §18)** | six gradient stops | inside a gradient |
 | `Layout.astro` `<meta name="theme-color">` | one hex | an HTML attribute, not CSS at all |
+| `Layout.astro` `.foot-glow` **(new, §18)** | two radial stops | inside a gradient |
 | `Layout.astro` SVG sprite | six greys — three `gObj` stops, two `gGlass` stops, one flat fill | SVG presentation attributes in markup, not styled elements |
 | `shader-hero.js` | one `vec3` | GLSL has no access to the document |
 | `functions/api/order.js` | three mail hexes | mail clients strip `<style>` and cannot resolve properties |
-| `public/img/logo-mark.webp` | rendered pixels | a raster; regenerate, never hand-edit |
-| `public/portal.css` `:root` | the whole token block | served by a Worker that cannot import a hashed stylesheet |
+| `scripts/make-favicons.mjs` **(new, §18)** | `GROUND` and `INK` | a build script, not a stylesheet — but it emits SEVEN files (`favicon.ico`, `favicon.svg`, four PNGs, `apple-touch-icon.png`), so this one row covers all seven **and re-running `npm run favicons` is the whole update** |
+| `public/portal.css` · `account.css` · `admin.css` | the whole token block, ×3 | served by Workers that cannot import a hashed stylesheet |
 
-The `--select-caret` row says "×2" rather than naming a second token, because there is no
-second token: `global.css` declares `--select-caret` **twice under the same name**, once in
-`:root` with a `%23343230` stroke and once in `.on-ink` with `%23F3F5F8`, so the caret
-flips with the ground by scope rather than by a second variable. An earlier draft of this
-table invented a `--select-caret-ink` to sit beside it. It never existed. A checklist that
-names a token that is not there sends the next reader looking for a declaration to update,
-finds nothing, and teaches them the checklist is unreliable — which is worse than the
-omission it was trying to fix.
+Three rows are worth reading twice.
 
-`theme-color` and the sprite are the two rows nothing else can catch. `verify2` §6
+**`--select-caret` says "×2" rather than naming a second token, because there is no second
+token.** `global.css` declares `--select-caret` **twice under the same name**, once in
+`:root` and once in `.on-ink`, so the caret flips with the ground by scope rather than by
+a second variable. (Both currently carry the same white stroke, because every ground is
+dark — the second declaration is not redundant, it is the thing that stops being redundant
+the moment a light ground returns.) An earlier draft of this table invented a
+`--select-caret-ink` to sit beside it. It never existed. A checklist that names a token
+that is not there sends the next reader looking for a declaration to update, finds
+nothing, and teaches them the checklist is unreliable — which is worse than the omission
+it was trying to fix.
+
+**The favicon row replaced a raster row.** It used to read `public/img/logo-mark.webp` —
+"a raster; regenerate, never hand-edit" — and the honest problem with that instruction is
+that it did not say *how*. The mark is an inline `<symbol>` now, and the icons are
+generated from that same symbol by `npm run favicons`, so the mark in the header and the
+mark in the tab are the same path by construction rather than by somebody remembering to
+re-export both.
+
+**`theme-color` and the sprite are the two rows nothing else can catch.** `verify2` §6
 allowlists the `theme-color` attribute by name, so the literal is legal there and no other
-tool reads it; this row is its only guard. The sprite is guarded, but only because it was
-missed once: its six greys were re-cut onto the ink ramp when the ramp was hue 265, then
-sat unchanged through the rotation to hue 75 while the comment above them went on claiming
-they shared the interface ramp. `verify2` §6 now allowlists the flat fill **by value and in
-both directions** — the sweep goes red if the sprite carries a grey the allowlist does not
-name, and a companion check goes red if the allowlist names a grey the sprite does not
-carry — so neither half can be updated alone. The five gradient stops are still on this
-row's honour system, because `stop-color` is allowlisted wholesale.
+tool reads it; this row is its only guard, and §18 is the proof that a row alone is not
+enough — it was on the list and it still went stale. The sprite is guarded, but only
+because it was missed once: its six greys were re-cut onto the ink ramp at one hue, then
+sat unchanged through a rotation while the comment above them went on claiming they shared
+the interface ramp. `verify2` §6 now allowlists the flat fill **by value and in both
+directions** — the sweep goes red if the sprite carries a grey the allowlist does not name,
+and a companion check goes red if the allowlist names a grey the sprite does not carry —
+so neither half can be updated alone. The five gradient stops are still on this row's
+honour system, because `stop-color` is allowlisted wholesale.
 
 Verifying the result is two commands, not one. `verify2` §3 proves contrast and §5 proves
 the paper band, but its converter clamps to sRGB and therefore cannot see an out-of-gamut

@@ -10,6 +10,11 @@
 // already-installed bundle motion.js runs on and the same chunk the layout
 // already ships on every page — no new dependency and no second payload.
 import gsap from 'gsap';
+// The upload caps, from the module /api/upload enforces them with. Imported
+// rather than retyped so the browser refuses exactly what the endpoint refuses
+// — see tsPreflight(). /start reads the same three facts out of its config
+// blob; this page has no blob, so it reads them straight from the source.
+import { MAX_FILE_BYTES, MAX_BATCH_FILES, typeFor } from '../lib/uploads.js';
 
 // Safety net for reveal-gated content. `.reveal.pending` starts at opacity:0
 // and only becomes visible once `.in` is added. If the per-page Intersection
@@ -43,15 +48,29 @@ const I18N = {
     tsRemove: 'Remove',
     tsNeedFile: 'Add at least one product photo — we cannot make a sample without one.',
     tsWaiting: 'One moment — your photos are still uploading.',
+    // Said when an upload failed for a reason the visitor cannot act on — a
+    // dead bucket, a 404, a rate limit, a connection that dropped. Same promise
+    // as tsErr.unavailable, which is the case the server names outright.
+    tsOffNote: 'That upload did not go through. Send the form anyway and we will email you for the photos.',
     tsErr: {
       unavailable: 'Uploads are unavailable right now. Send the form anyway and we will email you for the photos.',
       rate: 'That was a lot at once. Wait a moment, then try again.',
-      'bad-type': 'That file type will not open here. JPEG, PNG, WebP or HEIC.',
-      'too-large': 'Too large. Send a file under 25 MB.',
+      'bad-type': 'Not an image we can read. JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF.',
+      'too-large': 'Too large. Send a file under {max}.',
       empty: 'That file is empty.',
-      'batch-full': 'That is as many files as one request will take.',
+      'batch-full': 'That is as many files as one request will take ({max}).',
       network: 'The upload did not reach us. Check the connection and retry.',
       generic: 'That upload did not go through. Try it again.',
+    },
+    // The gate's reason for stopping, when the only thing that went wrong is
+    // something the visitor can fix. Each one names the actual problem and, where
+    // there is one, the actual limit — never "add at least one photo", which is
+    // both untrue (they added one) and no help.
+    tsBlocked: {
+      'bad-type': 'That file type will not open here. Add a JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF to carry on.',
+      'too-large': 'That photo is over {max}, which is the most one file can be. Add a smaller one to carry on.',
+      empty: 'That file came through empty. Add a photo with something in it to carry on.',
+      'batch-full': 'That is as many files as one request will take ({max}). Remove one to carry on.',
     },
   },
   nl: {
@@ -62,15 +81,22 @@ const I18N = {
     tsRemove: 'Verwijderen',
     tsNeedFile: 'Voeg minstens één productfoto toe — zonder foto kunnen we geen sample maken.',
     tsWaiting: 'Momentje — je foto’s worden nog geüpload.',
+    tsOffNote: 'Deze upload is niet doorgekomen. Stuur het formulier gerust op, dan mailen we je voor de foto’s.',
     tsErr: {
       unavailable: 'Uploaden lukt nu niet. Stuur het formulier gerust op, dan mailen we je voor de foto’s.',
       rate: 'Dat waren er veel tegelijk. Wacht even en probeer het opnieuw.',
-      'bad-type': 'Dit bestandstype opent hier niet. JPEG, PNG, WebP of HEIC.',
-      'too-large': 'Te groot. Stuur een bestand onder 25 MB.',
+      'bad-type': 'Geen beeld dat we kunnen lezen. JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF.',
+      'too-large': 'Te groot. Stuur een bestand onder {max}.',
       empty: 'Dit bestand is leeg.',
-      'batch-full': 'Meer bestanden gaan er niet in één aanvraag.',
+      'batch-full': 'Meer bestanden gaan er niet in één aanvraag ({max}).',
       network: 'De upload bereikte ons niet. Controleer de verbinding en probeer het opnieuw.',
       generic: 'Deze upload is niet doorgekomen. Probeer het nog eens.',
+    },
+    tsBlocked: {
+      'bad-type': 'Dit bestandstype opent hier niet. Voeg een JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF toe om verder te gaan.',
+      'too-large': 'Die foto is groter dan {max}, het maximum per bestand. Voeg een kleinere toe om verder te gaan.',
+      empty: 'Dit bestand kwam leeg binnen. Voeg een foto met inhoud toe om verder te gaan.',
+      'batch-full': 'Meer bestanden gaan er niet in één aanvraag ({max}). Haal er één weg om verder te gaan.',
     },
   },
 };
@@ -344,7 +370,13 @@ function initConvbar() {
 // navigation — which is the bug that already killed this same form once, and is
 // recorded in the comment above initWizards().
 // ─────────────────────────────────────────────────────────────────────────────
-const ts = { batch: '', pending: 0, staged: [], off: false, form: null };
+// `off`   — an upload failed for a reason the visitor cannot act on, so the
+//           gate stands down and the note says the photos will be asked for by
+//           email. See tsFailed() for what counts.
+// `blocked` — the code of the last failure the visitor CAN act on (wrong type,
+//           too large, empty, batch full). The gate keeps standing for those,
+//           and this is what it names when it does.
+const ts = { batch: '', pending: 0, staged: [], off: false, blocked: '', blockedMax: null, form: null };
 
 function tsBytes(n) {
   const v = Number(n) || 0;
@@ -435,17 +467,77 @@ function tsAddRemove(row, key) {
   row.appendChild(b);
 }
 
+// {max} is a byte count on `too-large` and a file count on `batch-full`. The
+// server's own number wins when it sent one; otherwise it is the cap this build
+// was compiled against, which is the same constant /api/upload enforces.
 function tsError(code, body) {
   const e = t18().tsErr;
-  if (code === 'too-large' && body && body.max) {
-    return pageLang() === 'nl'
-      ? `Te groot. Stuur een bestand onder ${tsBytes(body.max)}.`
-      : `Too large. Send a file under ${tsBytes(body.max)}.`;
+  const text = e[code] || e.generic;
+  return tsMax(text, code, body);
+}
+
+function tsMax(text, code, body) {
+  if (typeof text !== 'string' || text.indexOf('{max}') === -1) return text || '';
+  const raw = body && body.max ? Number(body.max) : (code === 'batch-full' ? MAX_BATCH_FILES : MAX_FILE_BYTES);
+  return text.split('{max}').join(code === 'batch-full' ? String(raw) : tsBytes(raw));
+}
+
+// ── PRE-FLIGHT ───────────────────────────────────────────────────────────────
+// The same four checks /api/upload runs, in the same order (upload.js:75–97),
+// run before the bytes leave the device. Without this a 40 MB photo climbs all
+// the way up a 4G connection only
+// to come back as 400 too-large — the visitor pays for the whole upload and
+// then gets refused for something that was knowable the instant they picked it.
+// typeFor() is /api/upload's own extension table, imported, not a second list.
+function tsPreflight(file) {
+  if (!typeFor(file.name)) return { code: 'bad-type' };
+  if (!file.size) return { code: 'empty' };
+  if (file.size > MAX_FILE_BYTES) return { code: 'too-large', max: MAX_FILE_BYTES };
+  if (ts.staged.length + ts.pending >= MAX_BATCH_FILES) return { code: 'batch-full', max: MAX_BATCH_FILES };
+  return null;
+}
+
+// Which failures stop the visitor and which ones stop us.
+//
+// A wrong file type, a file over the ceiling, an empty file, a full batch: the
+// visitor picked those and the visitor can pick again, so the gate keeps
+// standing and says which of the four it was.
+//
+// EVERYTHING ELSE — a dead bucket, a 404, a rate limit, a request that never
+// came back — is our failure, and holding the visitor on step 1 for it achieves
+// nothing except losing the lead. `unavailable` has always been treated this
+// way (the comment below says why); the others were not, which meant a 404 left
+// the Next button dead and told the visitor to add a photo they had already
+// added. They are all the same case.
+const TS_FIXABLE = { 'bad-type': 1, 'too-large': 1, empty: 1, 'batch-full': 1 };
+
+function tsFailed(code, body) {
+  if (TS_FIXABLE[code]) {
+    ts.blocked = code;
+    ts.blockedMax = body && body.max ? body.max : null;
+    return;
   }
-  return e[code] || e.generic;
+  // A dead bucket is not this file's problem, it is every file's problem —
+  // and, unlike on /start, it must not become the visitor's problem either.
+  // A test sample is the top of the funnel; refusing the request because the
+  // upload failed would cost the lead to save the photographs, which is
+  // backwards. The gate stands down and the copy tells them what happens next.
+  ts.off = true;
+  tsSay(code === 'unavailable' ? t18().tsErr.unavailable : t18().tsOffNote, false);
 }
 
 function tsSend(file) {
+  // Refused here, before the request exists. The row still appears and still
+  // names the reason — a file that vanishes silently is worse than one that
+  // fails visibly.
+  const bad = tsPreflight(file);
+  if (bad) {
+    tsSetRow(tsRow(file), tsError(bad.code, bad), 'is-failed');
+    tsFailed(bad.code, bad);
+    tsCount();
+    return Promise.resolve();
+  }
+
   const row = tsRow(file);
   // A photograph is now on its way, so any earlier complaint about there being
   // none is stale before the request even resolves.
@@ -462,28 +554,23 @@ function tsSend(file) {
         tsSetBatch(body.batch || ts.batch);
         tsSetRow(row, t18().tsDone, 'is-done');
         ts.staged.push({ key: body.file.key, name: body.file.name });
+        ts.blocked = '';
         tsAddRemove(row, body.file.key);
         tsSay('', false);
         return;
       }
       const code = (body && body.error) || 'generic';
       tsSetRow(row, tsError(code, body), 'is-failed');
-      // A dead bucket is not this file's problem, it is every file's problem —
-      // and, unlike on /start, it must not become the visitor's problem either.
-      // A test sample is the top of the funnel; refusing the request because R2
-      // is down would cost the lead to save the photographs, which is backwards.
-      // The gate below stands down and the copy tells them what happens next.
-      if (code === 'unavailable') {
-        ts.off = true;
-        tsSay(t18().tsErr.unavailable, false);
-      }
+      tsFailed(code, body);
     })
-    .catch(() => { tsSetRow(row, t18().tsErr.network, 'is-failed'); })
+    // A request that never came back is the same case as a 404: nothing the
+    // visitor did, and nothing they can do.
+    .catch(() => { tsSetRow(row, t18().tsErr.network, 'is-failed'); tsFailed('network', null); })
     .finally(() => { ts.pending = Math.max(0, ts.pending - 1); tsCount(); });
 }
 
-// True when the visitor may move on: something was staged, or the bucket is
-// down and holding them there would achieve nothing.
+// True when the visitor may move on: something was staged, or an upload failed
+// in a way they cannot act on and holding them there would achieve nothing.
 function tsSatisfied() { return ts.staged.length > 0 || ts.off; }
 
 function tsMarkZone(on) {
@@ -524,9 +611,21 @@ function tsMarkZone(on) {
 function tsGate(form, scope) {
   if (!(scope || form).querySelector('#ts-upload')) return true;
   if (tsSatisfied()) { tsMarkZone(false); return true; }
-  tsSay(ts.pending > 0 ? t18().tsWaiting : t18().tsNeedFile, true);
+  tsSay(tsGateMsg(), true);
   tsMarkZone(true);
   return false;
+}
+
+// Why the gate is standing, in the visitor's terms. "Add at least one product
+// photo" is only the right sentence when they have not added one; if they added
+// one and it bounced for something they can fix, the sentence has to be about
+// that instead — the file type, or the size and the ceiling it went over.
+function tsGateMsg() {
+  const d = t18();
+  if (ts.pending > 0) return d.tsWaiting;
+  const blocked = ts.blocked && d.tsBlocked[ts.blocked];
+  if (blocked) return tsMax(blocked, ts.blocked, ts.blockedMax ? { max: ts.blockedMax } : null);
+  return d.tsNeedFile;
 }
 
 let tsInputBound = false;
@@ -539,7 +638,7 @@ function initTestSampleUpload() {
   // outlives the DOM, the batch must not.
   if (!input.dataset.tsBound) {
     input.dataset.tsBound = '1';
-    ts.batch = ''; ts.pending = 0; ts.staged = []; ts.off = false;
+    ts.batch = ''; ts.pending = 0; ts.staged = []; ts.off = false; ts.blocked = ''; ts.blockedMax = null;
     input.addEventListener('change', () => {
       const files = Array.from(input.files || []);
       // Cleared here, not after the sends resolve: the same File cannot be
@@ -547,6 +646,9 @@ function initTestSampleUpload() {
       // value is unchanged.
       input.value = '';
       if (!files.length) return;
+      // A fresh pick answers whatever the last one was refused for; the sends
+      // below re-raise it if it is still true.
+      ts.blocked = '';
       tsSay('', false);
       files.forEach((f) => { tsSend(f); });
     });
@@ -574,9 +676,14 @@ function initTestSampleUpload() {
       if (!z || !z.contains(e.target)) return;
       e.preventDefault();
       z.classList.remove('is-dragover');
-      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || [])
-        .filter((f) => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+      // Not filtered by a second, shorter type list before it gets here. That
+      // list disagreed with /api/upload's (it dropped AVIF, GIF and TIFF, which
+      // the endpoint accepts) and it swallowed anything else without a word, so
+      // a dropped .txt simply did nothing. tsPreflight() is the one table now,
+      // and it says which file it refused and why.
+      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
       if (!files.length) return;
+      ts.blocked = '';
       tsSay('', false);
       files.forEach((f) => { tsSend(f); });
     });

@@ -163,6 +163,12 @@ const LANE_W = [86, 62, 74, 55];
     width: 2px;
     background: var(--ink);
   }
+  /* The label hangs to the RIGHT of the 2px rule, which is the last thing in
+     the lane stack — so on a narrow viewport it hangs off the page. Measured
+     at 390px: the document went to 424px (EN "One date") and 433px (NL "Eén
+     datum"). body's overflow-x: hidden hid the scrollbar and not the problem.
+     Below 620px it moves inside the stack instead, which is the only side
+     there is room on. */
   .cv-meet-t {
     position: absolute;
     left: .55rem;
@@ -224,5 +230,9 @@ const LANE_W = [86, 62, 74, 55];
     font-size: .82rem;
     color: var(--ink-3);
     max-width: 62ch;
+  }
+
+  @media (max-width: 620px) {
+    .cv-meet-t { left: auto; right: .55rem; text-align: right; }
   }
 </style>

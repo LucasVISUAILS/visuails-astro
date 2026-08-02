@@ -42,7 +42,9 @@
 // client at all. A hidden field would add ceremony and defend nothing.
 //
 // The real risk in a secret-in-the-URL design is the URL leaking outward, which
-// is what Referrer-Policy: no-referrer on every response is for.
+// is what Referrer-Policy on every response is for. It says `same-origin`
+// rather than `no-referrer`, and the difference is not cosmetic — see the
+// header block above seeOther() and admin.js's originIsSelf().
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { TEST_SAMPLE, TIERS, aftercare, turnaround } from '../data/pricing.js';
@@ -588,7 +590,7 @@ function fileHeaders() {
     // private, so a shared cache never holds one client's photographs; long, so
     // a returning client re-downloads nothing. The page itself stays no-store.
     'cache-control': 'private, max-age=3600',
-    'referrer-policy': 'no-referrer',
+    'referrer-policy': 'same-origin',
     'x-robots-tag': 'noindex, nofollow',
     'x-content-type-options': 'nosniff',
   };
@@ -952,7 +954,7 @@ ${body}
 /**
  * The response headers, and why each one is load-bearing.
  *
- *   referrer-policy: no-referrer   The token is in the URL path. Without this,
+ *   referrer-policy: same-origin   The token is in the URL path. Without a policy,
  *                                  every outbound click hands it to a third
  *                                  party in the Referer header. There are no
  *                                  outbound links on this page today, and this
@@ -974,7 +976,7 @@ function html(body, status = 200) {
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'no-store',
-      'referrer-policy': 'no-referrer',
+      'referrer-policy': 'same-origin',
       'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',
       'content-security-policy':
@@ -986,7 +988,7 @@ function html(body, status = 200) {
 function seeOther(location) {
   return new Response(null, {
     status: 303,
-    headers: { Location: location, 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
+    headers: { Location: location, 'cache-control': 'no-store', 'referrer-policy': 'same-origin' },
   });
 }
 

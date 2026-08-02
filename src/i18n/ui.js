@@ -70,6 +70,8 @@ export const ui = {
     foot_touch: 'Get in touch',
     foot_about: 'About',
     foot_how: 'How it works',
+    foot_portal: 'The client portal',
+    foot_studio: 'How a drop is run',
     foot_guides: 'Guides',
     // /compare is now "a shoot day, or a drop" (AUDIT §F). The AI-tools
     // argument still lives on that page at #ai-tools and in its <title>, so
@@ -115,6 +117,8 @@ export const ui = {
     foot_touch: 'Contact',
     foot_about: 'Over ons',
     foot_how: 'Hoe het werkt',
+    foot_portal: 'Het klantportaal',
+    foot_studio: 'Hoe een drop draait',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
     foot_gallery: 'Galerij',

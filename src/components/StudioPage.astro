@@ -1,0 +1,253 @@
+---
+// VISUAILS — /studio, the public page for the studio side. Section 17.
+//
+// THE ARGUMENT THIS PAGE MAKES. Everywhere else on the site the studio says
+// "a reserved window, confirmed before you pay". That is a promise, and a
+// promise is only worth the mechanism behind it. This page is the mechanism:
+// the capacity calendar, what it refuses, and why a date offered here is one
+// the studio has already checked it can keep. It is the page a sceptical buyer
+// reads when they have heard "48 hours" from someone before.
+//
+// WHAT IT DOES NOT CLAIM. Flag 15i: no notification of any kind fires on a
+// status change — no WhatsApp, no email. So nothing here says you will be
+// told. What is true, and what the copy points at instead, is that the change
+// writes the client-visible timeline in the same move, so the portal is never
+// behind the studio. If a notifier is built later, this page gains a sentence;
+// it does not have to lose one.
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const COPY = {
+  en: {
+    h1: ['A date is a promise.', 'This is the machine behind it.'],
+    lede: 'Anyone can put "48 hours" on a website. The question is what happens on the week it is not true. Here is the part of the studio that answers that, and the reason a date is never offered before it has been checked.',
+    ctaStart: 'Start a drop',
+    ctaPortal: 'See what you get',
+
+    gateH: 'The calendar refuses before the copy promises.',
+    gateLede: 'The date picker on the order form does not show a list of dates. It asks the calendar what the studio has actually committed to that week, and removes anything the studio cannot hold — then offers the first week it can.',
+    gate: [
+      ['Load, not availability', 'Capacity is counted in products, not in orders. Thirty products in one drop weigh thirty, because that is what they cost to make.'],
+      ['One ceiling, one place', 'The limit is a single configurable number. There is no second rule anywhere that can quietly disagree with it.'],
+      ['Drops outrank loose products', 'A drop holds a committed date. Loose products run in a standard queue and yield to it, which is what makes the committed date committed.'],
+      ['Nothing is promised twice', 'A week that has been offered and taken is gone from the picker before the next person sees it.'],
+    ],
+    gatePh: 'Studio dashboard · capacity calendar',
+    gateNote: 'The week view with load per week, and a full week marked as unavailable.',
+    gateSpec: 'Screenshot to place · 16:10 · /img/admin-capacity.webp',
+
+    boardH: 'One table, every order.',
+    boardLede: 'The studio side is deliberately boring: a list of orders, the state each one is in, and the calendar the picker reads from. There is no dashboard of graphs, because a graph has never told anyone which drop is late.',
+    board: [
+      ['Every order, one row', 'Reference, brand, product count, the committed date and the state it is in.'],
+      ['Revisions come to the top', 'A revision request from a client portal lands in its own list, with the note the client wrote, in their words.'],
+      ['A state change writes both sides', 'Moving an order writes the studio record and the client-visible timeline in the same move — which is why the portal is never out of date with the studio.'],
+    ],
+    boardPh: 'Studio dashboard · order table',
+    boardNote: 'The order list with one revision request open.',
+    boardSpec: 'Screenshot to place · 16:10 · /img/admin-orders.webp',
+
+    humanH: 'The last step is a person.',
+    humanLede: 'Nothing is auto-delivered. Every visual in every drop is looked at before it goes out, and the looking is a state the order has to pass through rather than a claim on a page.',
+    humanNote: 'That review is also what the log records. Each approval and revision is stamped with a time, and that record is the human-oversight documentation the EU AI Act asks for — the same mechanism, doing both jobs.',
+    humanCta: 'Read the AI Act page',
+
+    honestH: 'What this does not do.',
+    honestLede: 'Worth saying plainly, because a page about a mechanism that only lists what works is a brochure.',
+    honest: [
+      ['It does not guarantee a week it has not cleared', 'If the calendar is full, you are offered the next week that is not. You will not be told yes and then rescheduled.'],
+      ['It does not rush a drop past the review', 'The reserved window is the window the work fits in, not a target the studio sprints at. A drop that is not right does not ship on time; it ships right.'],
+      ['It does not scale by hiring', 'The ceiling is a real number and it stays a real number. When the studio is full it says so, which is the only version of this that is worth anything.'],
+    ],
+
+    closeH: 'Book a week the calendar has cleared.',
+    closeLede: 'The date you are offered is one the studio has already checked it can keep.',
+    closeCta: 'Start a drop',
+    closeAlt: 'See it on your own product first',
+  },
+
+  nl: {
+    h1: ['Een datum is een belofte.', 'Dit is de machine erachter.'],
+    lede: 'Iedereen kan "48 uur" op een website zetten. De vraag is wat er gebeurt in de week dat het niet waar is. Dit is het deel van de studio dat die vraag beantwoordt, en de reden dat een datum nooit wordt aangeboden voordat hij gecontroleerd is.',
+    ctaStart: 'Start een drop',
+    ctaPortal: 'Zie wat je krijgt',
+
+    gateH: 'De planning weigert voordat de tekst belooft.',
+    gateLede: 'De datumkiezer in het bestelformulier toont geen lijstje datums. Hij vraagt de planning waar de studio zich die week werkelijk aan verbonden heeft, haalt weg wat de studio niet kan vasthouden, en biedt de eerste week aan die dat wel kan.',
+    gate: [
+      ['Belasting, geen beschikbaarheid', 'Capaciteit wordt in producten geteld, niet in orders. Dertig producten in één drop wegen dertig, want dat is wat ze kosten om te maken.'],
+      ['Eén plafond, één plek', 'De limiet is één instelbaar getal. Er is nergens een tweede regel die er stilletjes van kan afwijken.'],
+      ['Drops gaan voor losse producten', 'Een drop houdt een vastgelegde datum. Losse producten draaien in een gewone wachtrij en wijken ervoor — precies dat maakt de vastgelegde datum vastgelegd.'],
+      ['Niets wordt twee keer beloofd', 'Een week die is aangeboden en gepakt, is uit de kiezer verdwenen voordat de volgende hem ziet.'],
+    ],
+    gatePh: 'Studiodashboard · capaciteitskalender',
+    gateNote: 'Het weekoverzicht met de belasting per week, en een volle week als niet-beschikbaar gemarkeerd.',
+    gateSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-capacity.webp',
+
+    boardH: 'Eén tabel, elke order.',
+    boardLede: 'De studiokant is met opzet saai: een lijst orders, de staat waarin elke order zit, en de kalender waar de kiezer uit leest. Geen dashboard vol grafieken, want een grafiek heeft nog nooit iemand verteld welke drop te laat is.',
+    board: [
+      ['Elke order, één regel', 'Kenmerk, merk, aantal producten, de vastgelegde datum en de staat waarin hij zit.'],
+      ['Revisies komen bovenaan', 'Een revisieverzoek uit een klantportaal komt in een eigen lijst binnen, met de notitie die de klant schreef, in diens eigen woorden.'],
+      ['Een statuswissel schrijft beide kanten', 'Een order verplaatsen schrijft het studiodossier en de tijdlijn die de klant ziet in dezelfde beweging — daarom loopt het portaal nooit achter op de studio.'],
+    ],
+    boardPh: 'Studiodashboard · ordertabel',
+    boardNote: 'De orderlijst met één revisieverzoek open.',
+    boardSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-orders.webp',
+
+    humanH: 'De laatste stap is een mens.',
+    humanLede: 'Er wordt niets automatisch geleverd. Elk beeld in elke drop wordt bekeken voordat het weggaat, en dat kijken is een staat waar de order doorheen moet — geen bewering op een pagina.',
+    humanNote: 'Die controle is ook wat het logboek vastlegt. Elke goedkeuring en revisie krijgt een tijdstempel, en dat register is precies het menselijk toezicht dat de EU AI Act vraagt — hetzelfde mechanisme, twee taken.',
+    humanCta: 'Lees de AI Act-pagina',
+
+    honestH: 'Wat dit niet doet.',
+    honestLede: 'Het waard om ronduit te zeggen, want een pagina over een mechanisme die alleen opsomt wat werkt, is een folder.',
+    honest: [
+      ['Het garandeert geen week die niet is vrijgegeven', 'Zit de planning vol, dan krijg je de eerstvolgende week die dat niet is. Je krijgt geen ja om daarna verzet te worden.'],
+      ['Het jaagt een drop niet langs de controle', 'Het gereserveerde venster is het venster waarin het werk past, geen doel waar de studio naartoe sprint. Een drop die niet klopt gaat niet op tijd weg; die gaat goed weg.'],
+      ['Het schaalt niet door aan te nemen', 'Het plafond is een echt getal en blijft een echt getal. Als de studio vol zit, zegt hij dat — de enige versie hiervan die iets waard is.'],
+    ],
+
+    closeH: 'Boek een week die de planning heeft vrijgegeven.',
+    closeLede: 'De datum die je krijgt aangeboden, is er een waarvan de studio al heeft gecontroleerd dat hij hem kan houden.',
+    closeCta: 'Start een drop',
+    closeAlt: 'Zie het eerst op je eigen product',
+  },
+};
+
+const c = COPY[lang];
+---
+
+<section class="band-tall sp-hero">
+  <div class="container">
+    <div class="statement statement-left">
+      <h1>{c.h1[0]} <em class="sp-accent">{c.h1[1]}</em></h1>
+      <p class="lede">{c.lede}</p>
+      <div class="actions">
+        <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
+        <a href={lp('/portal')} class="btn btn-ghost btn-lg">{c.ctaPortal}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ── the capacity gate ──────────────────────────────────────────────────── */}
+<section class="band well-deep">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.gateH}</h2>
+      <p class="lede">{c.gateLede}</p>
+    </div>
+    <div class="sp-split">
+      <div class="sp-rules">
+        {c.gate.map(([k, v]) => (
+          <div class="tile"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
+        ))}
+      </div>
+      <div class="ph" style="--ph-ratio: 4 / 5">
+        <div>
+          <p class="ph-label">{c.gatePh}</p>
+          <p class="ph-note">{c.gateNote}</p>
+          <p class="ph-spec">{c.gateSpec}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ── the order board ────────────────────────────────────────────────────── */}
+<section class="band">
+  <div class="container">
+    <div class="sp-split is-flip">
+      <div>
+        <h2 class="sp-h2">{c.boardH}</h2>
+        <p class="sp-lede">{c.boardLede}</p>
+        <dl class="sp-defs">
+          {c.board.map(([k, v]) => (<div><dt>{k}</dt><dd>{v}</dd></div>))}
+        </dl>
+      </div>
+      <div class="ph" style="--ph-ratio: 16 / 10">
+        <div>
+          <p class="ph-label">{c.boardPh}</p>
+          <p class="ph-note">{c.boardNote}</p>
+          <p class="ph-spec">{c.boardSpec}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ── the human step ────────────────────────────────────────────────────── */}
+<section class="band-tight well-deep">
+  <div class="container">
+    <div class="statement statement-left sp-head">
+      <h2>{c.humanH}</h2>
+      <p class="lede">{c.humanLede}</p>
+      <p class="sp-note">{c.humanNote}</p>
+      <div class="actions">
+        <a href={lp('/ai-act')} class="btn btn-ghost">{c.humanCta}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ── what it does not do, on paper: the part that has to be read ────────── */}
+<section class="band on-paper">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.honestH}</h2>
+      <p class="lede">{c.honestLede}</p>
+    </div>
+    <div class="tiles sp-honest-tiles">
+      {c.honest.map(([k, v]) => (
+        <div class="tile s-4"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="band-tall sp-close">
+  <div class="container closing">
+    <div>
+      <h2>{c.closeH}</h2>
+      <p class="lede">{c.closeLede}</p>
+      <div class="statement actions">
+        <a href={lp('/start')} class="btn btn-primary btn-lg">{c.closeCta}</a>
+        <a href={lp('/test-sample')} class="btn btn-ghost btn-lg">{c.closeAlt}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sp-hero { background: var(--ink-900); }
+  .sp-hero .statement-left { max-width: 46rem; }
+  .sp-hero h1 { font-size: var(--t-h1); line-height: 1.02; letter-spacing: -0.038em; max-width: 20ch; }
+  .sp-accent { font-style: normal; color: var(--ink-3); }
+  .on-paper .sp-accent { color: var(--teal-text); }
+
+  .sp-head { max-width: 46rem; }
+  .sp-h2 { font-size: var(--t-h2); line-height: 1.05; letter-spacing: -0.035em; margin: 0 0 1rem; max-width: 16ch; }
+  .sp-lede { margin: 0 0 1.6rem; font-size: var(--t-lg); line-height: 1.55; color: var(--ink-2); max-width: 52ch; }
+  .sp-note { margin: 1.2rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }
+
+  .sp-split { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); gap: clamp(1.8rem, 4vw, 3.5rem); align-items: center; margin-top: clamp(2.4rem, 5vw, 3.5rem); }
+  .sp-split.is-flip > *:first-child { order: 2; }
+  @media (max-width: 860px) {
+    .sp-split { grid-template-columns: 1fr; }
+    .sp-split.is-flip > *:first-child { order: 0; }
+  }
+
+  .sp-rules { display: grid; gap: clamp(1rem, 1.7vw, 1.5rem); }
+
+  .sp-defs { margin: 0; display: grid; gap: 1.1rem; }
+  .sp-defs dt { font-weight: 700; font-size: .95rem; color: var(--ink); }
+  .sp-defs dd { margin: .25rem 0 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
+
+  .sp-honest-tiles { margin-top: clamp(2.4rem, 5vw, 3.5rem); }
+
+  .sp-close { background: var(--ink-900); }
+</style>

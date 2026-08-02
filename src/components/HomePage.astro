@@ -577,23 +577,6 @@ const dropImgs = [
     section 13 rules out twice over. In its place, three facts that are true
     before anyone talks to us — all three read out of pricing.js. */}
 <section class="hero-cover">
-  {/* THE HERO FIELD — brief §8, and Lucas's answer to open decision #2: the
-      WebGL chrome shader, not the CSS haze.
-
-      It is the hero's GROUND, not its subject. The garment plate keeps the
-      right of the frame, because "show the work before the claim" is the
-      first design principle this site has and the first-screen test the
-      design system sets is "what do I remember — the chrome, or a garment?"
-      The correct answer is still the garment; the metal is the surface it is
-      pinned to. The plate's left edge is hard — no feather, no vignette —
-      which is what makes the two materials read as two materials.
-
-      .hero-field is the static chrome that renders when WebGL never
-      initialises, and it is also what the shader draws on top of, so the
-      rectangle is never empty and never reflows. Live copy sits on
-      .cover-plate, a solid ink plate, per §8. */}
-  <div class="hero-field" aria-hidden="true"></div>
-  <canvas id="hero-shader" aria-hidden="true"></canvas>
   <div class="hc2-bg"><img src="/img/hero-dunes.webp" alt={c.heroAlt} decoding="sync" fetchpriority="high" width="2200" height="1228" transition:name="hero-photo" /></div>
   <div class="hc2-scrim" aria-hidden="true"></div>
   <div class="container cover-inner">
@@ -1083,12 +1066,8 @@ const dropImgs = [
     Two lines moved: the unbounded revision promise became the check-in that
     ends every order, and the founding-perks line became the free pilot. */}
 <section class="ch ch-promise">
-  {/* The canvas moved to the hero (§8: the shader's surface is the hero
-      field). This section keeps the static chrome plate it always had as its
-      ground — one surface, one canvas, sitewide: shader-hero.js mounts by id
-      and two elements with that id would silently give the second one
-      nothing. */}
   <div class="hero-fallback" aria-hidden="true"></div>
+  <canvas id="hero-shader" aria-hidden="true"></canvas>
   <div class="container">
     <div class="promise-split">
       <div class="reveal pending">
@@ -1096,7 +1075,7 @@ const dropImgs = [
         <h2 class="ch-title" style="text-align:left"><span class="ch-l">{c.promiseH[0]}</span><span class="ch-l dim">{c.promiseH[1]}</span></h2>
         <p class="promise-quote" style="margin-top:1.4rem">{c.promiseQuote}</p>
         <div class="promise-sign">
-          <svg class="brand-mark promise-mark" viewBox="0 0 639 655" aria-hidden="true"><use href="#markglyph" /></svg>
+          <svg class="brand-mark promise-mark" viewBox="0 0 642 658" aria-hidden="true"><use href="#markglyph" /></svg>
           <span><strong>Lucas</strong> · {c.promiseSign}</span>
         </div>
       </div>
@@ -1153,7 +1132,7 @@ const dropImgs = [
        image can put there, not against a comfortable one. At 0.52 the label
        row measured 1.58:1. At 0.86 the worst case tested (a #C9CAC7 sky) is
        5.06:1 for the muted label and 11.97:1 for the value. */
-    background: rgb(25 21 16 / 0.86);
+    background: rgb(var(--scrim) / 0.86);
   }
   .cf-row { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding-block: 1rem; }
   .cf-item { padding-inline: clamp(0rem, 1.4vw, 1.2rem); }

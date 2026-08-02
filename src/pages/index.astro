@@ -8,7 +8,7 @@
 // survives a page rewrite. The old description here promised delivery "in
 // about 24 hours" — a named window the capacity gate never cleared.
 import Layout from '../layouts/Layout.astro';
-import HomePage from '../components/HomePage.astro';
+import HomeV2 from '../components/HomeV2.astro';
 import { euro, AMOUNT, FULL_DROP_MIN, FULL_DROP_MAX } from '../data/pricing.js';
 
 // Kept under 152 characters — META_LIMIT, and below Google's snippet cut
@@ -26,6 +26,7 @@ const description =
   title="Product visuals for clothing brands, no shoot | VISUAILS"
   description={description}
   ogImage="/img/hero-dunes.webp"
+  ground="espresso"
 >
-  <HomePage lang="en" />
+  <HomeV2 lang="en" />
 </Layout>

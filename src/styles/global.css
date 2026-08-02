@@ -24,169 +24,165 @@
    see each component's own <style> block for its `em`/quote override. */
 
 :root {
-  /* ══════════════════════════════════════════════════════════════════════
-     VISUAILS harbor — brief §7. Replaces the OKLCH ink/paper ramp that
-     shipped through sections 1–14.
+  /* ═══════════════════════════════════════════════════════════════════════
+     SECTION 18 — the OPP palette, and the end of the hard-edge rule.
+     ═══════════════════════════════════════════════════════════════════════
+     Two of this system's load-bearing rules are retired here on Lucas's
+     instruction, and both are worth recording rather than quietly deleting:
 
-     WHAT CHANGED, AND WHY IT IS A REVERSAL WORTH NAMING: the previous system
-     said "the photograph is the only colour" and resolved every accent to
-     ink, so a primary button was a black block. Harbor spends exactly one
-     colour on exactly two things — the primary action and one headline word —
-     and holds a second (clay) back to one stat or one chip at a time. That is
-     a narrower licence than a normal accent, not a wider one, but it IS a
-     licence the old system refused. Recorded here rather than applied
-     quietly.
+       · "Zero border-radius everywhere, no exceptions." Replaced by a three
+         step scale. He asked for moderate: 16px on tiles, panels and media,
+         8px on controls.
+       · "The photograph is the only colour." Replaced by an accent that does
+         real work, plus decorative gradient panels. The harbor palette —
+         warm ink, cool paper, teal and clay — is gone entirely.
 
-     THREE VALUES IN THE BRIEF DO NOT CLEAR WCAG 2.2 AA AND WERE MOVED. Each
-     move is the smallest one that clears the floor, and each is flagged:
+     The values are MEASURED off onlinepaymentplatform.com's live page rather
+     than eyeballed from a screenshot: their page ground is rgb(0,0,0), their
+     section ground rgb(8,8,8), their tiles rgb(23,23,23), and their signature
+     accent is rgb(144,190,255). That blue is used here unchanged, because
+     picking "a similar blue" is how a reference becomes a bad copy.
 
-       muted   brief rgba(30,25,18,.50) = 3.28:1 on paper — FAILS body.
-               Shipped at .64. Not .62: .62 clears 4.5:1 on --paper (4.74)
-               and then FAILS at 4.36–4.41 on the mist tints and the neutral
-               surface fill, which is where half the muted text on this site
-               actually sits. The floor has to be measured on the DARKEST
-               ground a token lands on, not the lightest. At .64 the worst
-               ground is 4.62:1 (clay mist).
-       faint   brief rgba(34,29,21,.38) = 2.31:1 — fails body AND large.
-               Shipped at the brief's own value but DEMOTED to a non-text
-               role (rules, disabled, decorative). Captions and microcopy
-               resolve to --ink-500 (muted) instead. A caption is text.
-       CTA     brief gradient #3C6B76 → #4A7A85. The light end carries
-               #F6F1E9 label text at 4.23:1 — a fail, and a 17px/700 label
-               is NOT "large text" under WCAG (that floor is 18.66px bold).
-               Shipped end stop #467580 = 4.54:1. Two steps darker; the
-               gradient still reads as a gradient.
+     The grounds carry a whisper of blue (2-4 points) where OPP's are exactly
+     neutral. Neutral near-black next to a saturated blue accent reads faintly
+     brown by simultaneous contrast; a couple of points of the accent's own
+     hue in the ground stops that without being visible as colour. */
 
-     Everything else is the brief's value, unmodified. Ink is warm and alpha
-     built from ONE ramp — the alphas are composited to solids here because a
-     token has to survive being painted on a photograph, a mist tint and an
-     espresso bar, and an alpha ink vanishes on the last one. .on-ink (below)
-     carries the inverse ramp for dark grounds. */
+  /* ---- grounds: cool near-black, four steps ---------------------------- */
+  --bg-0:        #08090B;   /* page ground                                  */
+  --bg-raise:    #101216;   /* a band that lifts off the page               */
+  --surface:     #17191E;   /* tiles and panels                             */
+  --surface-2:   #1F2229;   /* an inset, or a tile on a tile                */
 
-  /* ---- ink — warm, one ramp, no second grey family --------------------- */
-  --ink-900:  #191510;                 /* full ink                          */
-  --ink-700:  rgb(98 95 90);           /* #625F5A  ink .68 — soft/secondary */
-  --ink-500:  rgb(106 104 99);         /* #6A6863  ink .64 — muted/footer   */
-  --ink-300:  rgb(162 162 159);        /* #A2A29F  ink .38 — NON-TEXT only  */
-  --ink-200:  rgb(205 204 202);        /* hairline on paper                 */
-  --ink-100:  #F6F1E9;                 /* paper-on-dark body text           */
+  /* ---- ink: white at four alphas ---------------------------------------
+     Alphas rather than solids so the ramp composites correctly on any of the
+     four grounds AND on a photograph. Measured on --surface-2, the lightest
+     ground any of them lands on, so these are worst-case numbers:
+       --ink    #FFFFFF  15.92:1
+       --ink-2  .80      10.62:1
+       --ink-3  .66       7.67:1
+       --ink-4  .52       5.30:1
+     All four clear 4.5:1, which is the point of stopping at four. */
+  --ink-1:       #FFFFFF;
+  --ink-2:       rgb(255 255 255 / 0.80);
+  --ink-3:       rgb(255 255 255 / 0.66);
+  --ink-4:       rgb(255 255 255 / 0.52);
+  --line:        rgb(255 255 255 / 0.12);
+  --line-strong: rgb(255 255 255 / 0.22);
+  --line-ui:     rgb(255 255 255 / 0.42);
 
-  /* Espresso — the dark bar/nav ground, and the raised step above full ink. */
-  --ink-850:  #1B1712;                 /* espresso: nav, bar, raised-on-dark */
-  --ink-800:  #241F19;                 /* recessed-on-dark                   */
+  /* ---- the accent — OPP's own #90BEFF ----------------------------------
+     10.43:1 on the page ground, and 10.43:1 the other way round as a fill
+     carrying near-black text. It is the rare accent that works as text, as a
+     rule and as a button fill without a second variant. White on it is 1.91:1
+     and is never correct. */
+  --accent:      #90BEFF;
+  --accent-ink:  #08090B;   /* what sits ON an accent fill                  */
+  --accent-dim:  #6E9BE0;   /* hover / pressed, one step down               */
 
-  /* ---- paper — cool off-white, never pure #FFFFFF ---------------------- */
-  --paper:      #F1F4F4;               /* body ground                       */
-  --paper-2:    #E7EBEA;               /* neutral surface fill / recessed   */
-  --paper-lift: #F7F9F9;               /* raised — still not white          */
-  --paper-on-dark: #F6F1E9;            /* text on espresso / ink            */
+  /* ---- decorative gradients ---------------------------------------------
+     Panels and one or two tiles. NEVER under body copy: measured, every stop
+     carries near-black better than white (5.41–8.75 against 2.28–3.68), so
+     anything set on one of these takes --grad-ink, not white. That is the
+     opposite of the instinct, which is why it is written down. */
+  --grad-1: linear-gradient(135deg, #5B7CFA 0%, #9A6BF5 52%, #E86BB0 100%);
+  --grad-2: linear-gradient(135deg, #9A6BF5 0%, #E86BB0 55%, #F2955C 100%);
+  --grad-ink: #08090B;
 
-  /* Paper stepped down for dark grounds, so a dark section has the same
-     three-step reading hierarchy paper has, not one flat white. */
-  --paper-soft-on-dark:  #C6C1BA;      /* 9.97:1 on espresso                */
-  --paper-muted-on-dark: #A39E97;      /* 6.70:1 on espresso                */
+  /* ---- radius: three steps, and only three ------------------------------
+     16 / 8 / 4. There is no pill: Lucas asked for moderate rather than
+     OPP-exact, and a fully round control next to an 8px input is the
+     undecided look he was warned about. */
+  --r-lg: 16px;
+  --r-md: 8px;
+  --r-sm: 4px;
+  --radius: var(--r-md);   /* legacy alias — components still read this */
 
-  /* ---- mist tints — section separation INSTEAD of borders or shadows ---- */
-  --mist-teal:  #E6EDEC;
-  --mist-clay:  #F1E8E5;
-  --mist-slate: #E9ECED;
-  --mist-stone: #EFEBE4;
+  /* ---- role aliases -----------------------------------------------------
+     The rest of the codebase addresses colour through these, which is what
+     made replacing the palette a change to this block rather than to 100 kB
+     of stylesheet. */
+  --bg:          var(--bg-0);
+  --bg-deep:     #000000;
+  --surface-3:   var(--surface-2);
 
-  /* ---- accent one: harbor teal ----------------------------------------
-     Spent on the primary action and one headline word. Nowhere else.
-     --teal        5.34:1 on paper, 3.09:1 on ink — fill/border/large text
-     --teal-grad   the CTA gradient's far stop, AA-corrected (see above)
-     --teal-hover  one step darker; a primary hover goes down, never brighter
-     --teal-text   8.16:1 on paper — the headline word, and system text
-     --teal-deep  11.88:1 on paper — chips and stats at low alpha           */
-  --teal:       #3C6B76;
-  --teal-grad:  #43717C;
-  --teal-hover: #33606A;
-  --teal-text:  #2A4E57;
-  --teal-deep:  #1A343B;
+  --ink:         var(--ink-1);
+  /* --ink-900 is the one legacy name that is NOT an ink. In harbor it was the
+     darkest step of the ink ramp AND, because the two happened to be the same
+     colour, the token every dark section used as its GROUND: .on-ink, the
+     hero scrims, .cta-band, .convbar, ::selection. Aliasing it to --ink-1
+     (white, the obvious reading of the name) turned every one of those
+     grounds white — the footer, the conversion bar and three hero scrims went
+     paper-on-paper in a single line. It is the ground. It stays the ground. */
+  --ink-900:     var(--bg-0);
+  --ink-700:     var(--ink-2);
+  --ink-500:     var(--ink-3);
+  --ink-300:     var(--ink-4);
+  --ink-200:     var(--line);
+  --ink-100:     var(--ink-1);
+  --ink-850:     var(--surface);
+  --ink-800:     var(--surface-2);
+  --ink-faint:   var(--ink-4);
 
-  /* ---- accent two: clay ------------------------------------------------
-     One stat or one chip at a time. NEVER a second CTA colour.
-     --clay       3.49:1 — fill and large text only
-     --clay-text  6.60:1 — the text-safe cut                                */
-  --clay:       #9C7A72;
-  --clay-text:  #6E4F49;
+  /* Scrim channels. Every dark veil over a photograph — hero fades, tile
+     caption gradients, badge pills, the spread reveal — used to hand-write the
+     harbor espresso, in two different notations (`oklch(0.16 0.006 75 / a)`
+     and `rgb(25 21 16 / a)`) that were the same colour and did not know it.
+     A gradient stop cannot take a colour token and apply its own alpha, so
+     what is tokenised is the CHANNELS; every scrim reads
+     `rgb(var(--scrim) / a)` and the whole family moves with the palette. */
+  --scrim:            8 9 11;
 
-  /* Ghost fill for secondary and small buttons. */
-  --ghost:      rgb(25 21 16 / 0.06);
+  --paper:            var(--bg-0);
+  --paper-2:          var(--bg-raise);
+  --paper-lift:       var(--surface);
+  --paper-on-dark:    var(--ink-1);
+  --paper-soft-on-dark:  var(--ink-2);
+  --paper-muted-on-dark: var(--ink-3);
 
-  /* Button surfaces as TOKENS, not as `.on-ink .btn-ghost` descendant rules.
-     The dark grounds on this site are not all spelled `.on-ink` — .hero-cover,
-     .site-footer, .cta-band and six others opt in by name in the same rule and
-     never carry the class — so a descendant selector silently misses them and
-     ships a paper-filled secondary button on a photograph. Custom properties
-     inherit; selectors don't. Anything a dark ground has to change goes here. */
-  --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(25 21 16 / 0.12);
-  --btn-2nd-fill:          var(--paper-lift);
-  --btn-2nd-fill-hover:    var(--paper-2);
-  --btn-2nd-ink:           var(--ink-900);
-  --btn-2nd-border:        rgb(25 21 16 / 0.22);
-  --btn-2nd-border-hover:  rgb(25 21 16 / 0.40);
+  /* The harbor names still resolve, because portal.css, account.css,
+     admin.css and a dozen components read them. They now point at the new
+     system instead of carrying the old values. */
+  --teal:        var(--accent);
+  --teal-grad:   var(--accent-dim);
+  --teal-hover:  var(--accent-dim);
+  --teal-text:   var(--accent);
+  --teal-deep:   var(--accent);
+  --clay:        #E86BB0;
+  --clay-text:   #E86BB0;
+  --mist-teal:   var(--bg-raise);
+  --mist-clay:   var(--bg-raise);
+  --mist-slate:  var(--bg-raise);
+  --mist-stone:  var(--bg-raise);
 
-  /* ---- system colour — collapsed into the two harbor accents -----------
-     /start, the client portal and system surfaces (capacity gate, order
-     state, form validation) used to carry their own petrol and rust. Harbor
-     has exactly two accents, so a third and fourth hue for system state is a
-     second colour system. Signal IS teal and warn IS clay; the -ink variants
-     are the ones allowed to set body-size text, exactly as before. Colour is
-     never the sole carrier of state — every capacity, validation and order
-     status still carries a word. */
-  --signal:      var(--teal);
-  --signal-ink:  var(--teal-text);
-  --warn:        var(--clay);
-  --warn-ink:    var(--clay-text);
-  --verify:      var(--signal);
-  --verify-ink:  var(--signal-ink);
-  --flag:        var(--warn);
-  --flag-ink:    var(--warn-ink);
+  --signal:      var(--accent);
+  --signal-ink:  var(--accent);
+  --warn:        #F2955C;
+  --warn-ink:    #F2955C;
+  --verify:      var(--accent);
+  --verify-ink:  var(--accent);
+  --flag:        var(--clay);
+  --flag-ink:    var(--clay);
 
-  /* ---- role aliases ---------------------------------------------------- */
-  --bg:         var(--paper);
-  --bg-deep:    var(--ink-900);
-  --bg-raise:   var(--paper-2);
-  --surface:    var(--paper-lift);
-  --surface-2:  var(--paper-2);
+  --brand:       var(--ink-1);
+  --accent-on:   var(--accent-ink);
+  --accent-2:    var(--accent);
+  --accent-word: var(--accent);
+  --accent-bright: var(--accent-dim);
+  --accent-soft: rgb(144 190 255 / 0.14);
+  --accent-line: var(--line-strong);
+  --focus-ring:  var(--accent);
 
-  --ink:        var(--ink-900);
-  --ink-2:      var(--ink-700);
-  --ink-3:      var(--ink-500);
-  /* Captions and microcopy resolve to MUTED, not faint. --ink-300 is the
-     brief's faint value and it is 2.31:1: a rule, not a sentence. */
-  --ink-faint:  var(--ink-500);
+  --ghost:                 rgb(255 255 255 / 0.08);
+  --btn-ghost-fill:        rgb(255 255 255 / 0.08);
+  --btn-ghost-fill-hover:  rgb(255 255 255 / 0.16);
+  --btn-2nd-fill:          transparent;
+  --btn-2nd-fill-hover:    rgb(255 255 255 / 0.08);
+  --btn-2nd-ink:           var(--ink-1);
+  --btn-2nd-border:        rgb(255 255 255 / 0.28);
+  --btn-2nd-border-hover:  rgb(255 255 255 / 0.55);
 
-  --line:        var(--ink-200);
-  --line-strong: var(--ink-300);
-  --line-ui:     var(--ink-700);
-
-  /* The logotype stays neutral ink. It carried harbor teal briefly (task
-     #272) and was reverted the same day on Lucas's own call. With teal now
-     the sitewide CTA fill, a teal logotype would put the accent on the one
-     surface that appears in the nav, the footer and the conversion bar of
-     every page — which is the opposite of "spent on the primary action and
-     one headline word only". */
-  --brand:         var(--ink-900);
-
-  --accent:        var(--teal);
-  --accent-on:     var(--paper-on-dark);
-  --accent-2:      var(--teal-text);
-  --accent-word:   var(--teal-text);
-  --accent-bright: var(--teal-hover);
-  --accent-soft:   var(--mist-teal);
-  --accent-line:   var(--ink-300);
-
-  --focus-ring:    var(--ink-900);
-
-  /* The <select> caret, as a data URL rather than a token the SVG can read —
-     a `stroke` inside a data: URL cannot see var(). Hand-copy of --ink-700;
-     when that moves, this moves with it or the caret stops matching its ramp.
-     The .on-ink block below carries the paper-side twin under the same name. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23625F5A' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   --font-display: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -205,12 +201,12 @@
 
   --container: 1240px;
   /* ---- radius ----
-     One token. Zero. There is no radius scale: no --r-sm / --r-lg / --r-pill,
-     no "small for inputs, larger for cards". A hard edge is the cheapest
-     visible proof of control, and control is the argument this studio makes in
-     place of testimonials it does not have. Reintroducing a scale here is how
-     rounded corners come back, so the scale does not exist. */
-  --radius: 0;
+     The scale lives at the top of this block (--r-lg / --r-md / --r-sm) and
+     --radius aliases --r-md for the components that still read the old name.
+     A second `--radius: 0` used to sit HERE, below the alias, and later
+     declarations win — so the whole site rendered hard-edged while the scale
+     above it looked correct in the file. If you are re-adding a radius rule,
+     add it to the scale at the top; there is exactly one place. */
 
 
   /* ---- chrome: one surface, and its fence ----
@@ -218,13 +214,16 @@
      because the lightness ramp reverses eight times instead of fading — a fade
      is a gradient, a reversal is a reflection. Twelve stops, max chroma 0.012,
      running on the ink hue so the metal reads as iron rather than as plating,
-     with a single inflection at 62% on the paper hue: one cool reflection in
-     a warm surface is what keeps it from flattening into a tint. Both hues
-     moved when the ramps swapped temperature, and the ramp had to move with
-     them — a chrome that stayed on the old ink hue would have been the only
-     blue-black object left on a warm-ink page, which is exactly the "second
-     chrome surface" failure this fence exists to prevent, arriving by drift
-     instead of by decision.
+     with a single inflection at 62% on the opposing hue: one reflection that
+     disagrees with the surface is what keeps it from flattening into a tint.
+     The hues move whenever the ramps swap temperature, and they have now done
+     so twice. Harbor ran the ramp warm (hue 75) with a cool inflection; the
+     palette is cool near-black now, so the ramp runs on 255 and the single
+     inflection is the warm one. The rule, not the numbers, is what to keep:
+     a chrome left on the retired hue would be the only object on the page
+     from the old palette — which is exactly the "second chrome surface"
+     failure this fence exists to prevent, arriving by drift instead of by
+     decision.
 
      Scope, and it is a fence, not a suggestion: the hero field, and nothing
      else. NOT the logotype. The logotype was the second chrome surface until
@@ -244,18 +243,18 @@
   --chrome:
   linear-gradient(
     105deg,
-    oklch(0.720 0.004 75)   0%,
-    oklch(0.880 0.006 75)   9%,
-    oklch(0.580 0.008 75)  17%,
-    oklch(0.940 0.003 60)  26%,
-    oklch(0.660 0.010 75)  35%,
-    oklch(0.410 0.006 75)  44%,
-    oklch(0.830 0.005 60)  53%,
-    oklch(0.970 0.002 255)  62%,
-    oklch(0.520 0.009 75)  71%,
-    oklch(0.760 0.004 75)  80%,
-    oklch(0.350 0.007 75)  89%,
-    oklch(0.610 0.012 75) 100%
+    oklch(0.720 0.004 255)   0%,
+    oklch(0.880 0.006 255)   9%,
+    oklch(0.580 0.008 255)  17%,
+    oklch(0.940 0.003 265)  26%,
+    oklch(0.660 0.010 255)  35%,
+    oklch(0.410 0.006 255)  44%,
+    oklch(0.830 0.005 265)  53%,
+    oklch(0.970 0.002 60)   62%,
+    oklch(0.520 0.009 255)  71%,
+    oklch(0.760 0.004 255)  80%,
+    oklch(0.350 0.007 255)  89%,
+    oklch(0.610 0.012 255) 100%
   );
   /* Part of the material, not an afterthought: contrast sharpens the reversals
      into visible bands, saturate pulls the residual chroma back so the metal
@@ -392,24 +391,25 @@
      0.24. --line-strong and --accent-line both resolve to --ink-300 on paper,
      so a dark ground that gave them 0.24 and 0.28 was splitting one value in
      two for no reason anybody had written down. */
-  --line:        rgb(246 241 233 / 0.16);
-  --line-strong: rgb(246 241 233 / 0.28);
+  --line:        rgb(255 255 255 / 0.16);
+  --line-strong: rgb(255 255 255 / 0.28);
   --line-ui:     var(--paper-muted-on-dark);
 
-  /* The primary action does NOT flip to paper on a dark ground. Harbor gives
-     teal to one thing sitewide — the primary action — and a button that is
-     teal on paper and white on ink is two primary buttons. Teal fill on
-     --ink-900 is 3.09:1 (clears the 3:1 a non-text boundary needs) and
-     carries its #F6F1E9 label at 5.25:1. The headline word flips, because
-     --teal-text is 1.9:1 on ink and unreadable; on a dark ground the
-     highlight is carried by paper against soft paper instead. */
+  /* The primary action does NOT flip on a dark ground: one accent, one primary
+     button, sitewide. What DID have to change here is the label on it.
+     Harbor's accent was a dark teal, so the label was paper — and this scope
+     said so. The accent is a light blue now, and paper on it is 1.91:1: the
+     conversion bar's CTA measured exactly that on all 68 pages, because
+     .convbar opts into this scope by name. The label is the ground, in every
+     scope, with no exception — which is why --accent-on and --accent-ink are
+     now the same value everywhere and this block no longer overrides them. */
   --accent:        var(--teal);
-  --accent-on:     var(--paper-on-dark);
-  --accent-2:      var(--paper-on-dark);
-  --accent-word:   var(--paper-on-dark);
-  --accent-bright: var(--teal-grad);
-  --accent-soft:   rgb(246 241 233 / 0.10);
-  --accent-line:   rgb(246 241 233 / 0.28);
+  --accent-on:     var(--accent-ink);
+  --accent-2:      var(--accent);
+  --accent-word:   var(--accent);
+  --accent-bright: var(--accent);
+  --accent-soft:   rgb(255 255 255 / 0.10);
+  --accent-line:   rgb(255 255 255 / 0.28);
 
   --focus-ring:    var(--paper-on-dark);
 
@@ -423,16 +423,16 @@
   /* Secondary on a dark ground is an outline, not a paper block: a paper fill
      over a photograph is a second primary button competing with the teal one.
      The 6% ink ghost fill is invisible here, so it becomes a paper alpha. */
-  --btn-ghost-fill:        rgb(246 241 233 / 0.12);
-  --btn-ghost-fill-hover:  rgb(246 241 233 / 0.20);
-  --btn-2nd-fill:          rgb(246 241 233 / 0.08);
-  --btn-2nd-fill-hover:    rgb(246 241 233 / 0.16);
+  --btn-ghost-fill:        rgb(255 255 255 / 0.12);
+  --btn-ghost-fill-hover:  rgb(255 255 255 / 0.20);
+  --btn-2nd-fill:          rgb(255 255 255 / 0.08);
+  --btn-2nd-fill-hover:    rgb(255 255 255 / 0.16);
   --btn-2nd-ink:           var(--paper-on-dark);
-  --btn-2nd-border:        rgb(246 241 233 / 0.42);
-  --btn-2nd-border-hover:  rgb(246 241 233 / 0.70);
+  --btn-2nd-border:        rgb(255 255 255 / 0.42);
+  --btn-2nd-border-hover:  rgb(255 255 255 / 0.70);
 
   /* --paper, matching --ink on this ground. */
-  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23F6F1E9' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
 }
 
 /* Only the generic utility paints itself. The named components above already
@@ -485,23 +485,35 @@ body {
 }
 img, svg, video { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-decoration: none; }
-/* Selection is a hard ink block with paper text — an inversion, not a tint.
-   A translucent coloured selection was the last place the old violet survived. */
-::selection { background: var(--ink-900); color: var(--paper); }
-.on-ink ::selection { background: var(--paper); color: var(--ink-900); }
+/* Selection is a solid block, not a tint. On the harbor palette that block was
+   the ink and the text was the paper, and the two grounds needed opposite
+   rules. On a near-black-everywhere palette that inversion collapses: ink and
+   paper are both near-black now, so ink-on-paper selection is invisible and
+   there is no second ground to write a second rule for. The accent is the only
+   value on the site that is bright on every surface we have, and --accent-ink
+   is the near-black it was contrast-picked against (10.43:1). One rule. */
+::selection { background: var(--accent); color: var(--accent-ink); }
 
-/* ---- hard edges ----------------------------------------------------------
-   Every corner in the product is square. This block is the enforcement layer,
-   not a style choice made twice: the reset below catches anything a component
-   forgets, and the native-control rules below it exist because iOS Safari
-   re-rounds each control type independently — a blanket `appearance: none`
-   does not survive it, so search inputs, selects, buttons, range thumbs,
-   checkboxes and radios are each reset by name.
+/* ---- corners --------------------------------------------------------------
+   THE BLANKET RESET IS GONE, and its absence is the design decision. It used
+   to read `*, *::before, *::after { border-radius: 0 }` — an enforcement layer
+   for a rule that no longer exists. Pointing that same selector at 8px would
+   have been worse than useless: it would put a radius on every rule, divider,
+   scrim, marquee row and pseudo-element on the site, including the ones whose
+   whole job is to be a straight line.
+
+   So radius is applied where it means something and nowhere else. Three
+   values, and a component picks one:
+     --r-lg 16px  tiles, panels, media, placeholders, the nav, the conv bar
+     --r-md  8px  buttons, inputs, selects, chips, small controls
+     --r-sm  4px  marks and micro-elements
+   The native-control rules below still exist for the original reason: iOS
+   Safari re-rounds each control type independently, so `appearance: none` has
+   to be written per element rather than once.
    -------------------------------------------------------------------------- */
-*, *::before, *::after { border-radius: var(--radius); }
 
-/* Square focus ring. `outline` rather than `box-shadow`, so the ring stays
-   rectangular and survives on any ground, including inside overflow:hidden. */
+/* Focus ring. `outline` rather than `box-shadow`, so it follows the element's
+   own radius, survives inside overflow:hidden, and never needs its own. */
 :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 /* Native controls: strip the platform chrome per element type. */
@@ -509,7 +521,7 @@ button,
 input,
 optgroup,
 select,
-textarea { font: inherit; color: inherit; border-radius: var(--radius); }
+textarea { font: inherit; color: inherit; border-radius: var(--r-md); }
 
 input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
 input[type="number"], input[type="password"], input[type="search"],
@@ -571,6 +583,22 @@ progress::-webkit-progress-bar { background: var(--line-strong); }
 progress::-webkit-progress-value { background: var(--accent); }
 progress::-moz-progress-bar { background: var(--accent); }
 
+/* THE VIEWPORT IS PART OF THE DESIGN, and Dutch is what proves it. At 390px
+   "Aansprakelijkheidsbeperkingen" — one 29-character compound in an <h2> on
+   /nl/terms — pushed the document to 412px wide. body has overflow-x: hidden,
+   so it did not show as a scrollbar; it showed as a page whose right edge is
+   somewhere the reader cannot reach. Every heading on the site is one long
+   compound away from the same thing, and NL builds them by grammar rather
+   than by accident, so this is a rule and not a patch on one word.
+
+   hyphens: auto rather than a hard break, because <html lang> is set on every
+   page and the browser then breaks at real syllable boundaries; break-word is
+   the floor under it for the case where the dictionary has nothing to say. */
+h1, h2, h3, h4, h5, .display, .cover-title, .ch-title {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
 h1, h2, .display { font-family: var(--font-display); color: var(--ink); font-weight: 900; line-height: 1.0; letter-spacing: -0.025em; text-wrap: balance; margin: 0; }
 h1 { font-size: var(--t-h1); }
 h2 { font-size: var(--t-h2); }
@@ -584,7 +612,313 @@ p { text-wrap: pretty; margin: 0; }
 .container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: clamp(1.2rem, 4vw, 2.6rem); }
 .container.narrow { max-width: 760px; }
 section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
-.section-tight { padding-block: clamp(3rem, 6vw, 5.5rem); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GROUND SCOPES — section 18
+   ═══════════════════════════════════════════════════════════════════════════
+   The dark ground is now :root, so .ground-espresso has nothing left to do.
+   It stays as a no-op rather than being deleted, because four page files set
+   it and a removed class that is still in the markup is a silent trap the
+   next person has to go and discover. It will come out with those pages.
+
+   .on-paper was a WHITE band used as an interruption — a specification the
+   reader has to sit with rather than look at. A white band in a page that is
+   otherwise near-black is no longer an interruption, it is a hole. So the
+   same device now works by LIFTING: a raised dark band with its own inset
+   hairline. Same job, same class name, same places in the markup.
+   ------------------------------------------------------------------------ */
+.ground-espresso { background: var(--bg); color: var(--ink-2); }
+
+.on-paper {
+  background: var(--bg-raise);
+  --bg: var(--bg-raise);
+  --surface: var(--surface-2);
+  box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
+}
+
+/* ---- the gradient panel ----------------------------------------------------
+   The one place the two decorative gradients are allowed to be a GROUND, and
+   the reason it is a scope rather than a background declaration: a gradient
+   panel inverts the whole ink ramp, and the ramp is the thing everything else
+   in this file reads. Put --grad-1 on a section by hand and you get white body
+   copy on a lilac plate at 2.28:1, white buttons that vanish, and hairlines
+   that were designed as white alphas sitting invisibly on a light ground.
+
+   So the panel restates every token it breaks. Ink goes near-black in three
+   steps of alpha (the stops measure 5.41–8.75:1 against near-black and
+   2.28–3.68:1 against white — the opposite of the instinct, which is why the
+   palette note says so and why this scope exists to enforce it). Lines become
+   ink alphas. The primary button inverts to a near-black fill with the panel
+   showing through its label, and the secondary becomes a near-black outline.
+
+   Scope, and it is a fence: closing panels and at most one or two tiles per
+   page. Two gradient panels in one viewport is a background, not an accent. */
+.panel-grad {
+  background: var(--grad-1);
+  color: rgb(8 9 11 / 0.82);
+
+  --bg:          transparent;
+  --ink:         var(--grad-ink);
+  --ink-1:       var(--grad-ink);
+  --ink-2:       rgb(8 9 11 / 0.82);
+  --ink-3:       rgb(8 9 11 / 0.68);
+  --ink-4:       rgb(8 9 11 / 0.55);
+  --ink-faint:   rgb(8 9 11 / 0.68);
+  --paper-on-dark:       var(--grad-ink);
+  --paper-soft-on-dark:  rgb(8 9 11 / 0.82);
+  --paper-muted-on-dark: rgb(8 9 11 / 0.68);
+
+  --line:        rgb(8 9 11 / 0.16);
+  --line-strong: rgb(8 9 11 / 0.30);
+  --line-ui:     rgb(8 9 11 / 0.55);
+
+  /* The accent cannot be itself here: #90BEFF on this plate is 1.6:1. The
+     panel's own accent is the ink, and the CTA carries the colour by being
+     the dark object on a bright ground rather than the bright one on a dark. */
+  --accent:      var(--grad-ink);
+  --accent-ink:  #FFFFFF;
+  --accent-on:   #FFFFFF;
+  --accent-dim:  rgb(8 9 11 / 0.84);
+  --accent-2:    var(--grad-ink);
+  --accent-word: var(--grad-ink);
+  --accent-bright: var(--grad-ink);
+  --accent-soft: rgb(8 9 11 / 0.10);
+  --accent-line: rgb(8 9 11 / 0.30);
+  --focus-ring:  var(--grad-ink);
+
+  --btn-ghost-fill:        rgb(8 9 11 / 0.08);
+  --btn-ghost-fill-hover:  rgb(8 9 11 / 0.16);
+  --btn-2nd-fill:          transparent;
+  --btn-2nd-fill-hover:    rgb(8 9 11 / 0.10);
+  --btn-2nd-ink:           var(--grad-ink);
+  --btn-2nd-border:        rgb(8 9 11 / 0.42);
+  --btn-2nd-border-hover:  rgb(8 9 11 / 0.70);
+}
+.panel-grad-2 { background: var(--grad-2); }
+
+/* Two named dark steps for a band that wants separation without a scope. */
+.well-deep  { background: var(--bg-deep);   --bg: var(--bg-deep); }
+.well-raise { background: var(--bg-raise);  --bg: var(--bg-raise); }
+/* The old mist classes still appear in markup; they resolve to the raise. */
+.mist-teal, .mist-clay, .mist-slate, .mist-stone { background: var(--bg-raise); --bg: var(--bg-raise); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION PRIMITIVES — section 17
+   ═══════════════════════════════════════════════════════════════════════════
+   A small set of shapes the rebuilt pages compose from, so that "the site
+   feels like one thing" is a property of the stylesheet rather than of how
+   carefully each page was hand-assembled. Seven shapes. If a page needs an
+   eighth, that is a design decision worth making on purpose — adding one here
+   is cheap, inventing one inline is how 68 pages drift apart again.
+
+   The rhythm is taken from onlinepaymentplatform.com, which is the reference
+   Lucas gave: full-bleed bands, one dominant idea per fold, a centred
+   statement that lands before anything is explained, tiles of unequal weight,
+   a rail you push sideways, and a closing panel that is the whole viewport.
+   The GEOMETRY is not taken from it: OPP is built out of pills and 24px radii
+   and this system has no radius at all. What carries over is pacing, not
+   shape.
+   ------------------------------------------------------------------------ */
+
+/* 1 · BAND — the unit of vertical rhythm. Three weights, deliberately not
+   evenly spaced: a specification band sits tighter than a photograph. */
+.band       { padding-block: clamp(4.5rem, 9vw, 9rem); }
+.band-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
+.band-tall  { padding-block: clamp(6.5rem, 13vw, 13rem); }
+/* Emptiness costs nothing on the dark ground — it reads as air. On a gradient
+   plate it is 400px of saturated colour with nothing in it, which reads as a
+   mistake. A panel keeps the tall band's intent and half its measure. */
+.panel-grad.band-tall { padding-block: clamp(4rem, 7vw, 6.5rem); }
+.panel-grad .closing { min-height: 0; }
+.band + .band, .band-tight + .band-tight { box-shadow: inset 0 1px 0 var(--line); }
+
+/* 2 · STATEMENT — centred headline, one accent word, one line of lede. OPP's
+   signature move and the one that does most of the work: it gives a fold a
+   single idea and lets the thing under it be the evidence. Measure is capped
+   in ch, not px, so it holds at every size. */
+.statement { text-align: center; max-width: 46rem; margin-inline: auto; }
+.statement h2, .statement h1 {
+  font-size: var(--t-h1); line-height: 1.04; letter-spacing: -0.035em;
+  max-width: 18ch; margin: 0 auto; text-wrap: balance;
+}
+.statement .lede {
+  margin: clamp(1.1rem, 2vw, 1.6rem) auto 0; max-width: 54ch;
+  font-size: var(--t-lg); line-height: 1.55; color: var(--ink-2); text-wrap: pretty;
+}
+.statement .actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+.statement-left { text-align: left; margin-inline: 0; }
+.statement-left h2, .statement-left h1, .statement-left .lede { margin-inline: 0; }
+.statement-left .actions { justify-content: flex-start; }
+
+/* 3 · PLATE — a hard-edged media rectangle. Wrapper AND element both take the
+   zero radius, because a rounded <img> inside a square box is the single most
+   common way a radius comes back. */
+.plate { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--r-lg); }
+.plate > img, .plate > video, .plate > canvas, .plate > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Stacked and left-aligned, not spread. space-between pushed the note to the
+   card's right edge, which reads as belonging to whatever is next to it. */
+.plate-cap {
+  display: flex; flex-direction: column; gap: .1rem;
+  margin-top: .7rem; font-size: .8rem; line-height: 1.4; color: var(--ink-3);
+}
+.plate-cap b { font-weight: 700; font-size: .9rem; color: var(--ink); }
+
+/* 4 · PLACEHOLDER — for slots where the asset does not exist yet.
+   IT MUST NEVER LOOK FINISHED. That is the whole specification. A neutral
+   rectangle that reads as a design element is worse than an obvious gap,
+   because it stops anyone from filling it. So: a flat well, a hairline, a
+   registration cross in the corner, and a label saying what belongs there and
+   at what ratio.
+   This is NOT the answer for photography — the studio has 73 real product
+   images and the brand's first argument is "show the work before the claim".
+   Placeholders are for the surfaces nothing exists for yet: the portal and
+   admin screens on the product pages. */
+.ph {
+  position: relative; display: grid; place-items: center;
+  aspect-ratio: var(--ph-ratio, 16 / 10);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  border-radius: var(--r-lg);
+  color: var(--ink-3); text-align: center; padding: 1.5rem;
+}
+.ph::before, .ph::after {
+  content: ''; position: absolute; background: var(--line-strong);
+}
+/* A registration cross, top-left. Two hairlines, no glyph, no icon font. */
+.ph::before { left: 12px; top: 12px; width: 14px; height: 1px; }
+.ph::after  { left: 18px; top: 6px;  width: 1px;  height: 13px; }
+.ph-label { font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+.ph-note  { margin: .4rem 0 0; font-size: .78rem; line-height: 1.45; max-width: 34ch; }
+.ph-spec  { margin: .55rem 0 0; font-size: .72rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* 5 · TILES — discrete objects on the ground, not a divided sheet.
+   REBUILT after checking how onlinepaymentplatform.com actually builds theirs,
+   because the first version got the idea wrong. Measured on their live page:
+   a 3-column grid at 24px gap, tiles at 24px radius, `overflow: hidden`,
+   padding 0 on the tile itself, NO border and NO box-shadow — the tile exists
+   purely because its fill differs from the ground, and media bleeds to its
+   edge. Backgrounds are a solid raise (rgb(23,23,23) on black), a gradient, or
+   a photograph.
+
+   My first pass used a 1px gap and gave every tile the ground's own
+   background, so the gaps read as rules and the whole thing read as one sheet
+   divided up. That is a different device — correct for a sequence, wrong for a
+   set of objects — and it is what was missing.
+
+   What carries over: the real gap, the raised fill, no border, no shadow, and
+   media that bleeds. What does not: the radius. A 24px corner is their
+   geometry; this system's is a hard edge, and that is the one thing the
+   brief fences off completely. The tile still reads as an object because the
+   VALUE step does that work, which is also what the elevation model here has
+   always said — depth is which paper a surface sits on, not a shadow under
+   it. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(1rem, 1.7vw, 1.5rem);
+}
+.tile {
+  grid-column: span 12;
+  background: var(--surface);
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* The padded interior. Separate from .tile so that a media tile can bleed to
+   the edge and a copy tile can breathe, without either needing an override. */
+.tile-body { padding: clamp(1.25rem, 2.2vw, 1.9rem); display: flex; flex-direction: column; flex: 1; }
+.tile-media { position: relative; overflow: hidden; }
+/* A media block that is NOT the whole tile keeps its own corner. */
+.tile-body + .tile-media, .tile-media + .tile-body { border-radius: 0; }
+.tile-media > img, .tile-media > video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tile-media-fill { flex: 1; min-height: 12rem; }
+
+/* An overlay caption on a photo tile — the only place a gradient is allowed
+   on a UI surface, and it is here for legibility rather than for decoration:
+   text on a photograph needs a plate and this is the plate. */
+.tile-cap {
+  position: absolute; inset: auto 0 0 0;
+  padding: clamp(.9rem, 1.6vw, 1.25rem);
+  background: linear-gradient(180deg, rgb(var(--scrim) / 0) 0%, rgb(var(--scrim) / 0.55) 42%, rgb(var(--scrim) / 0.86) 100%);
+  color: var(--paper-on-dark);
+}
+.tile-cap b { display: block; font-size: .95rem; font-weight: 700; }
+.tile-cap span { display: block; margin-top: .15rem; font-size: .8rem; color: var(--paper-soft-on-dark); }
+
+/* An accent tile: one per grid at most. Teal is the primary action's colour,
+   so a teal tile is only correct where the tile IS the action. */
+.tile-accent { background: var(--teal); color: var(--paper-on-dark); }
+.tile-accent .tile-k, .tile-accent .tile-n { color: rgb(255 255 255 / 0.82); }
+.tile-accent .tile-v { color: var(--paper-on-dark); }
+
+/* Tile interior type, so a stat tile and a spec tile agree without each page
+   inventing its own scale. */
+.tile-k { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.tile-v { margin: .6rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.9rem, 3.2vw, 2.6rem); line-height: 1; letter-spacing: -0.035em; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+.tile-h { margin: 0 0 .5rem; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
+.tile-n { margin: .8rem 0 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
+.tile-foot { margin-top: auto; padding-top: 1.2rem; font-weight: 700; font-size: .875rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.tile.s-3 { grid-column: span 3; }
+.tile.s-4 { grid-column: span 4; }
+.tile.s-5 { grid-column: span 5; }
+.tile.s-6 { grid-column: span 6; }
+.tile.s-7 { grid-column: span 7; }
+.tile.s-8 { grid-column: span 8; }
+.tile.r-2 { grid-row: span 2; }
+@media (max-width: 980px) {
+  .tile.s-3, .tile.s-4, .tile.s-5, .tile.s-7, .tile.s-8 { grid-column: span 6; }
+  .tile.r-2 { grid-row: span 1; }
+}
+@media (max-width: 620px) {
+  .tile { grid-column: span 12 !important; }
+}
+
+/* The hairline-divided sheet is NOT deleted — it is the right device for a
+   SEQUENCE, where the items are steps in one thing rather than objects beside
+   each other. OPP uses both too. Keeping the two named apart is what stops
+   the next page picking one by accident. */
+.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1px; background: var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.sheet > * { background: var(--bg); padding: clamp(1.2rem, 2.2vw, 1.8rem); }
+
+/* 6 · RAIL — a row you push sideways. Snap points so it always lands on a
+   card edge, square nav buttons, and a square scrollbar rather than a hidden
+   one: a rail whose scrollbar is hidden is a rail nobody knows is a rail. */
+.rail-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; margin-bottom: clamp(1.4rem, 2.5vw, 2rem); }
+.rail-nav { display: flex; gap: .4rem; flex: 0 0 auto; }
+.rail-nav button {
+  width: 44px; height: 44px; border-radius: var(--r-md); display: grid; place-items: center;
+  background: var(--ghost); color: var(--ink); border: 0; cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+.rail-nav button:hover:not(:disabled) { background: var(--btn-ghost-fill-hover); }
+.rail-nav button:disabled { opacity: .35; cursor: default; }
+.rail-nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+/* The gap matches .tiles. It was 1px, which put one card's caption hard
+   against the next card's label with nothing between them — the same mistake
+   the bento made, in a row instead of a grid. A rail is a row of objects. */
+.rail {
+  display: flex; gap: clamp(1rem, 1.7vw, 1.5rem); overflow-x: auto; scroll-snap-type: x mandatory;
+  scrollbar-width: thin; overscroll-behavior-x: contain;
+  padding-bottom: .75rem;
+}
+.rail > * { flex: 0 0 clamp(15rem, 26vw, 21rem); scroll-snap-align: start; }
+.rail::-webkit-scrollbar { height: 6px; }
+.rail::-webkit-scrollbar-track { background: var(--line); border-radius: 99px; }
+.rail::-webkit-scrollbar-thumb { background: var(--line-ui); border-radius: 99px; }
+
+/* 7 · CLOSING — the last fold. One idea, one action, the whole viewport. */
+.closing { text-align: center; display: grid; place-items: center; min-height: min(78svh, 44rem); }
+.closing h2 { font-size: var(--t-hero); line-height: 1.0; letter-spacing: -0.04em; max-width: 14ch; margin: 0 auto; text-wrap: balance; }
+.closing .lede { margin: clamp(1.1rem, 2vw, 1.6rem) auto 0; max-width: 46ch; font-size: var(--t-lg); color: var(--ink-2); }
+
+/* Section headings inside a band do not each get a kicker. One named kicker
+   per page at most — see DESIGN.md on why an eyebrow above every section is
+   scaffolding rather than voice. */
+
 
 /* ---- mist tints — brief §7 --------------------------------------------
    "Mist tints for section/demo-card separation INSTEAD of borders or
@@ -625,11 +959,14 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      .btn-lg   large — 58px / 17px · 700
 
    THREE FILLS:
-     .btn-primary   teal gradient #3C6B76 → #467580, paper-on-dark label.
-                    The ONLY gradient on a UI surface in the system, and it is
-                    here because the brief puts it here. The far stop is two
-                    steps darker than the brief's #4A7A85 so the label clears
-                    4.5:1 at the light end — see the palette note.
+     .btn-primary   solid --accent (#90BEFF) with a near-black label
+                    (--accent-ink, #08090B) at 10.43:1. It was a teal gradient
+                    under harbor, on the reasoning that the brief asked for
+                    one; on a near-black ground a gradient button is a second
+                    light source and the two stops each need their own contrast
+                    proof. The gradients live on panels now (--grad-1/--grad-2),
+                    where nothing sits on top of them but near-black text that
+                    was measured against every stop.
      .btn-ghost     small: the 6%-alpha ink fill.
                     large: paper fill with a 1px ink-alpha INSET border, which
                     is what the brief calls the secondary. One class, because
@@ -645,20 +982,17 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   font-family: var(--font-body); font-weight: 700; font-size: .875rem;
   min-height: 38px; padding: 0 1.15rem;
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
-  background: var(--ghost); color: var(--ink); border: 0;
+  background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--r-md);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
               border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
 }
 .btn-lg { min-height: 58px; font-size: 1.0625rem; padding: 0 1.9rem; }
 
-.btn-primary {
-  background: linear-gradient(180deg, var(--teal) 0%, var(--teal-grad) 100%);
-  color: var(--paper-on-dark);
-}
-.btn-primary:hover,
-.btn-primary:focus-visible {
-  background: linear-gradient(180deg, var(--teal-hover) 0%, var(--teal) 100%);
-}
+/* Flat accent fill, near-black label. Measured 10.43:1 — the accent is the
+   rare colour that works as a fill AND as text, so the primary button needs no
+   second variant. White on it is 1.91:1 and is never correct. */
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover, .btn-primary:focus-visible { background: var(--accent-dim); }
 
 .btn-ghost { background: var(--btn-ghost-fill); color: var(--ink); }
 .btn-ghost:hover, .btn-ghost:focus-visible { background: var(--btn-ghost-fill-hover); }
@@ -712,9 +1046,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 .photo-band { position: relative; overflow: hidden; aspect-ratio: 16/10; }
 .photo-band img { width: 100%; height: 100%; object-fit: cover; }
-.photo-band .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, oklch(0.16 0.006 75 / 0.78) 100%); }
+.photo-band .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgb(var(--scrim) / 0.78) 100%); }
 .photo-band .caption { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(1.4rem, 3vw, 2.4rem); z-index: 2; }
-.photo-band .caption h2, .photo-band .caption h3 { color: var(--paper); }
+.photo-band .caption h2, .photo-band .caption h3 { color: var(--paper-on-dark); }
 .photo-band .caption p { color: var(--ink-100); margin-top: .5rem; }
 .photo-band.tall { aspect-ratio: 3/4; }
 .photo-band.square { aspect-ratio: 1/1; }
@@ -778,7 +1112,10 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .checklist li { display: flex; gap: .7rem; align-items: flex-start; color: var(--ink-2); }
 .checklist svg { flex: 0 0 auto; width: 20px; height: 20px; margin-top: 2px; color: var(--ink); }
 
-.cta-band { position: relative; overflow: hidden; border: 1px solid var(--ink-900); padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
+/* The border was --ink-900, i.e. the same value as the fill. On paper that
+   read as a crisp edge around a dark block; on a dark ground it is a band with
+   an invisible outline, so the edge comes from --line like every other one. */
+.cta-band { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-lg); padding: clamp(3rem, 7vw, 6rem); text-align: center; background: var(--ink-900); }
 .cta-band > * { position: relative; }
 
 /* §8 bans feathered or blurred mask edges everywhere outside the chrome
@@ -796,10 +1133,10 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .vis { position: relative; aspect-ratio: 4/5; overflow: hidden; background: radial-gradient(125% 90% at 50% 6%, oklch(1 0 0), oklch(0.95 0.004 255) 58%, oklch(0.88 0.004 255) 100%); display: grid; place-items: center; isolation: isolate; }
 .vis.wide { aspect-ratio: 4/3; }
 .vis::before { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(70% 45% at 50% 2%, oklch(1 0 0 / 0.7), transparent 55%); }
-.vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, oklch(0.16 0.006 75 / 0.13)); }
-.vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px oklch(0.16 0.006 75 / 0.24)); }
+.vis .vis-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; z-index: 1; background: linear-gradient(180deg, transparent, rgb(var(--scrim) / 0.13)); }
+.vis .vis-obj { position: relative; z-index: 2; width: 52%; filter: drop-shadow(0 26px 22px rgb(var(--scrim) / 0.24)); }
 .vis .vis-obj svg { width: 100%; height: auto; display: block; }
-.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--paper); background: oklch(0.16 0.006 75 / 0.82); padding: .3rem .65rem; }
+.vis .vis-badge { position: absolute; z-index: 5; bottom: 12px; left: 12px; font-size: .64rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--paper-on-dark); background: rgb(var(--scrim) / 0.82); padding: .3rem .65rem; }
 
 /* ============================================================
    Editorial motion system. Base state is fully visible/static; the `.in`
@@ -823,7 +1160,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    1.62–1.88:1 against the brightest pixel of the photograph behind it. The
    0.44 and 1.0 stops are unchanged — only the band the header occupies
    moved. */
-.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(25 21 16 / 0.74) 0%, rgb(25 21 16 / 0.46) 14%, rgb(25 21 16 / 0.40) 30%, rgb(25 21 16 / 0.48) 44%, rgb(25 21 16 / 0.84) 100%); }
+.hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(var(--scrim) / 0.74) 0%, rgb(var(--scrim) / 0.46) 14%, rgb(var(--scrim) / 0.40) 30%, rgb(var(--scrim) / 0.48) 44%, rgb(var(--scrim) / 0.84) 100%); }
 .hero-editorial-content { position: relative; z-index: 2; }
 .hero-editorial-content h1 { font-size: clamp(3.2rem, 7.4vw, 6rem); max-width: 15ch; }
 .hero-editorial-content .lead { color: var(--ink-2); max-width: 46ch; }
@@ -952,7 +1289,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .ba .ba-before-scene { filter: saturate(.4) brightness(.92) contrast(.92); }
 .ba .ba-handle { position: absolute; top: 0; bottom: 0; left: var(--pos, 50%); width: 2px; background: var(--accent); transform: translateX(-1px); }
 .ba .ba-knob { position: absolute; top: 50%; left: var(--pos, 50%); transform: translate(-50%, -50%); width: 46px; height: 46px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; }
-.ba .ba-tag { position: absolute; bottom: 14px; padding: .3rem .75rem; font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: oklch(0.16 0.006 75 / 0.86); color: var(--ink); }
+.ba .ba-tag { position: absolute; bottom: 14px; padding: .3rem .75rem; font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: rgb(var(--scrim) / 0.86); color: var(--ink); }
 .ba .tag-before { left: 14px; } .ba .tag-after { right: 14px; }
 
 /* Cursor-reactive spotlight compare — new interaction, brand-fit idea from
@@ -962,9 +1299,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .spot { position: relative; overflow: hidden; cursor: none; }
 .spot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .spot .spot-after { clip-path: circle(0px at 50% 50%); }
-.spot-cursor { position: absolute; width: 110px; height: 110px; border: 1.5px solid var(--ink); pointer-events: none; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink); background: oklch(0.16 0.006 75 / 0.30); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
+.spot-cursor { position: absolute; width: 110px; height: 110px; border: 1.5px solid var(--ink); pointer-events: none; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink); background: rgb(var(--scrim) / 0.30); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
 .spot:hover .spot-cursor { opacity: 1; }
-.spot-tag { position: absolute; top: 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: .35rem .7rem; background: oklch(0.16 0.006 75 / 0.86); z-index: 3; color: var(--ink); }
+.spot-tag { position: absolute; top: 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: .35rem .7rem; background: rgb(var(--scrim) / 0.86); z-index: 3; color: var(--ink); }
 .spot-tag.before { left: 1rem; } .spot-tag.after { right: 1rem; }
 
 /* `[data-parallax] { will-change: transform; }` lived here, promoting anything
@@ -1013,7 +1350,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .compare-static { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); border: 1px solid var(--line); overflow: hidden; }
 .compare-static > div { position: relative; aspect-ratio: 4/5; overflow: hidden; }
 .compare-static img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.compare-static .cs-tag { position: absolute; bottom: .8rem; left: .8rem; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; background: oklch(0.16 0.006 75 / 0.86); color: var(--ink); z-index: 2; }
+.compare-static .cs-tag { position: absolute; bottom: .8rem; left: .8rem; font-size: .64rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; background: rgb(var(--scrim) / 0.86); color: var(--ink); z-index: 2; }
 
 /* `.ai-compare` / `.ai-compare-panel` / `.ai-compare-label` /
    `.ai-compare-tags` / `.ai-tag` were deleted here, along with
@@ -1048,13 +1385,13 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .cmp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .cmp .cmp-after { clip-path: inset(0 0 0 var(--cmp-pos)); z-index: 1; }
 .cmp.cmp-grade .cmp-before { filter: saturate(.3) brightness(.9) contrast(.9) grayscale(.14); }
-.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--cmp-pos); width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 1px 0 0 oklch(0.16 0.006 75 / 0.55), -1px 0 0 oklch(0.16 0.006 75 / 0.55); z-index: 3; touch-action: none; cursor: ew-resize; }
+.cmp .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--cmp-pos); width: 2px; margin-left: -1px; background: var(--accent); box-shadow: 1px 0 0 rgb(var(--scrim) / 0.55), -1px 0 0 rgb(var(--scrim) / 0.55); z-index: 3; touch-action: none; cursor: ew-resize; }
 /* widened invisible grab column so the thin line is easy to catch (esp. touch) */
 .cmp .cmp-divider::before { content: ""; position: absolute; top: 0; bottom: 0; left: -20px; right: -20px; }
-.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 oklch(0.16 0.006 75 / 0.35); cursor: ew-resize; touch-action: none; }
+.cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 rgb(var(--scrim) / 0.35); cursor: ew-resize; touch-action: none; }
 .cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; }
 .cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: oklch(0.16 0.006 75 / 0.86); color: var(--ink); pointer-events: none; }
+.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: .64rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgb(var(--scrim) / 0.86); color: var(--ink); pointer-events: none; }
 /* Each label fades out as its own side shrinks — i.e. as the divider (driven
    by --cmp-pos, from both the auto-animation and manual drag) sweeps toward it.
    opacity accepts a percentage; calc(...*6) means fully opaque until ~value
@@ -1105,7 +1442,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .make-tile { position: relative; display: block; overflow: hidden; aspect-ratio: 3/4; background: var(--bg-deep); }
 .make-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-4) var(--ease); }
 .make-tile:hover img { transform: scale(1.05); }
-.make-tile .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 34%, oklch(0.16 0.006 75 / 0.86) 100%); }
+.make-tile .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 34%, rgb(var(--scrim) / 0.86) 100%); }
 .make-tile .mt-body { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(1rem,2vw,1.4rem); z-index: 2; }
 .make-tile .mt-name { color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1.12rem; display: flex; align-items: center; gap: .4rem; }
 .make-tile .mt-desc { color: var(--ink-2); font-size: .8rem; margin-top: .25rem; line-height: 1.4; }
@@ -1154,58 +1491,38 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    docked at the bottom edge. */
 .hero-cover { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden;
   margin-top: -76px; padding-top: 76px; isolation: isolate; }
-/* ---- the hero field: chrome ground + hard-edged garment plate ----------
-   FIRST ATTEMPT, AND WHY IT WAS THROWN AWAY: the chrome was made the whole
-   hero ground with the photograph as a plate over its right 62%. It rendered
-   as flat dark. The copy needs a ~0.94 ink scrim to clear 4.5:1 over a moving
-   metal ground, and a 0.94 scrim is opaque — so the surface that is this
-   brand's signature was invisible in the exact place §8 asks for it. "Never
-   under live text without a solid ink plate behind it" and "put it behind the
-   headline" are one sentence asking for two things at once.
+/* ---- the hero photograph ------------------------------------------------
+   THE CHROME COLUMN IS GONE, and the reason is worth keeping. §8 asks for the
+   shader on the hero field. It was tried twice. First as the whole hero
+   ground with the photograph plated over its right 62%: the headline needs a
+   ~0.94 ink scrim to clear 4.5:1 over moving metal, and a 0.94 scrim is
+   opaque, so the signature was invisible in the one place the brief puts it.
+   Then as a hard-edged column down the left, wide enough to show the ramp
+   reverse twice. Rendered, that column read as an oily smear rather than as
+   brushed metal — a narrow strip samples mostly the dark end of a twelve-stop
+   gradient, and --chrome-filter, which is what makes the material read as
+   metal at all, is on the static fallback and not on the canvas — while the
+   seam against the photograph's bright sky landed as a stray blue line.
+   Reported as a glitch on the live site, which is the correct read: it looked
+   like a rendering fault rather than a decision.
 
-   WHAT SHIPS: the chrome is the hero's ground and the photograph is a plate
-   over it, inset from the left, so the field reads as a hard vertical column
-   running the whole height of the hero — through the copy band AND through
-   the facts plinth, which is what makes it a ground rather than a stripe. No
-   live text ever crosses it, so it carries no scrim and the metal is at full
-   strength. The plate's left edge is hard: no feather, no vignette. Two
-   materials, one seam.
-
-   Below 900px the plate goes full-bleed. There is no room for two materials
-   on a phone, and the garment is the one that has to win — the first-screen
-   test the design system sets is "what do I remember, the chrome or a
-   garment?", and the answer has to stay the garment. */
-/* The column has to be wide enough to show the ramp REVERSE at least twice,
-   or the metal reads as a dark stripe: a twelve-stop gradient sampled through
-   a 100px window is one stop. 190px is where the light-dark-light cycle
-   becomes legible as a reflection at 1440. */
-.hero-cover { --hero-field-w: clamp(64px, 12vw, 190px); }
-.hero-cover .hero-field { position: absolute; inset: 0; z-index: -4; background: var(--chrome); filter: var(--chrome-filter); }
-/* A hard hairline where the two materials meet. The seam is the point. */
-.hero-cover .hc2-bg::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 1px; background: rgb(246 241 233 / 0.22); z-index: 1; }
-.hero-cover #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -3; }
-.hero-cover .hc2-bg { position: absolute; inset: 0 0 0 var(--hero-field-w); z-index: -2; }
+   So the photograph is full-bleed again and the shader is back on
+   .ch-promise, the surface it was designed and contrast-verified for. Where
+   the hero mechanic finally lands is a question for the espresso-dominant
+   rebuild, not for a bug pass: a hero that is about to be redesigned is not
+   worth polishing twice. */
+.hero-cover .hc2-bg { position: absolute; inset: 0; z-index: -2; }
 .hero-cover .hc2-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
-@media (max-width: 900px) {
-  .hero-cover { --hero-field-w: 0px; }
-  .hero-cover .hc2-bg::before { display: none; }
-  /* A sliver of the field survives on the plinth so the material is still
-     present rather than switched off entirely. */
-  .hero-cover .cover-facts { margin-left: 40px; }
-}
-/* The scrim is what makes the copy legible, so it is not decoration and its
-   stops are not taste. Harbor ink replaces the old ramp's hue here; the left
-   radial is what puts a solid ink plate under the headline (§8), and it now
-   has to cover the chrome as well as the photograph, so it runs to full
-   opacity on the left third instead of falling off at 86%. */
-.hero-cover .hc2-scrim { position: absolute; inset: 0 0 0 var(--hero-field-w); z-index: -1; background:
-  radial-gradient(90% 80% at 18% 88%, rgb(25 21 16 / 0.86) 0%, rgb(25 21 16 / 0.38) 55%, transparent 78%),
-  /* The top band carries the sticky nav, which is live text on a photograph
-     the studio does not control the exposure of — this frame happens to put a
-     bright sky exactly where the link cluster sits. 0.74 to 26% is measured
-     against the lightest pixel in that band, not chosen by eye. */
-  linear-gradient(180deg, rgb(25 21 16 / 0.74) 0%, rgb(25 21 16 / 0.52) 12%, rgb(25 21 16 / 0.16) 26%, transparent 50%, rgb(25 21 16 / 0.42) 82%, rgb(25 21 16 / 0.60) 100%); }
-@media (max-width: 900px) { .hero-cover .hc2-scrim { inset: 0; } }
+/* The scrim is what makes the copy legible, so its stops are not taste. Only
+   the hue moved to harbor ink; the geometry was measured against this
+   photograph and this headline, and neither changed. The top band carries the
+   sticky nav, which is live text over a photograph whose exposure the studio
+   does not control — this frame puts a bright sky exactly where the link
+   cluster sits, so 0.74 down to 26% is measured against the lightest pixel in
+   that band rather than chosen by eye. */
+.hero-cover .hc2-scrim { position: absolute; inset: 0; z-index: -1; background:
+  radial-gradient(90% 80% at 18% 88%, rgb(var(--scrim) / 0.86) 0%, rgb(var(--scrim) / 0.38) 55%, transparent 78%),
+  linear-gradient(180deg, rgb(var(--scrim) / 0.74) 0%, rgb(var(--scrim) / 0.52) 12%, rgb(var(--scrim) / 0.16) 26%, transparent 50%, rgb(var(--scrim) / 0.42) 82%, rgb(var(--scrim) / 0.60) 100%); }
 .cover-inner { flex: 1; display: flex; flex-direction: column; width: 100%; }
 .cover-copy { margin-top: auto; padding-block: 2rem clamp(2.8rem, 6vh, 4.2rem); max-width: 64rem; }
 .cover-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.028em; line-height: .96;
@@ -1264,8 +1581,8 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .sp-media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-4) var(--ease); }
 .sp-item:hover .sp-media img { transform: scale(1.04); }
 .sp-play { position: absolute; inset: 0; margin: auto; width: 58px; height: 58px; display: grid; place-items: center;
-  background: oklch(0.16 0.006 75 / 0.78); border: 1px solid oklch(0.97 0.004 255 / 0.45); }
-.sp-play svg { width: 20px; height: 20px; fill: var(--paper); margin-left: 3px; }
+  background: rgb(var(--scrim) / 0.78); border: 1px solid rgb(255 255 255 / 0.45); }
+.sp-play svg { width: 20px; height: 20px; fill: var(--paper-on-dark); margin-left: 3px; }
 .sp-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
   margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--line-strong); }
 .sp-cap b { font-family: var(--font-display); font-weight: 900; font-size: .9rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink); }
@@ -1277,8 +1594,8 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    full-tile overlay, so the image stays the point and the copy reads as a
    caption rather than a takeover. */
 .sp-reveal { position: absolute; inset: auto 0 0 0; padding: 1.1rem clamp(.9rem, 2vw, 1.3rem) .9rem;
-  background: linear-gradient(180deg, transparent, oklch(0.16 0.006 75 / 0.82) 55%);
-  color: var(--paper); font-size: .84rem; line-height: 1.45;
+  background: linear-gradient(180deg, transparent, rgb(var(--scrim) / 0.82) 55%);
+  color: var(--paper-on-dark); font-size: .84rem; line-height: 1.45;
   transform: translateY(100%); opacity: 0;
   transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease); }
 .sp-item:hover .sp-reveal, .sp-item:focus-visible .sp-reveal { transform: translateY(0); opacity: 1; }
@@ -1365,29 +1682,41 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 /* Promise chapter — split scene lit by the WebGL light field. */
 .ch-promise { position: relative; overflow: hidden; isolation: isolate; }
 /* Chrome surface #1. The plane is a real reflection — a fresnel term over a
-   domain-warped normal, sampling the chrome ramp — so opacity is doing less
-   work than it used to and can come up from .38 without the section shouting.
-   The rectangle is hard-bounded (overflow: hidden on .ch-promise, no feathered
-   edge, no vignette bleeding into the page) because a chrome plane with soft
-   edges is a glow, and a glow is the thing this system left behind. */
-.ch-promise #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; opacity: .55; }
+   domain-warped normal, sampling the chrome ramp. The rectangle is
+   hard-bounded (overflow: hidden on .ch-promise, no feathered edge, no
+   vignette bleeding into the page) because a chrome plane with soft edges is a
+   glow, and a glow is the thing this system left behind. */
+.ch-promise #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; opacity: .55; }
 /* Fallback for the WebGL light field: what the section looks like when the
-   shader never initialises. It is a light *falloff*, not a coloured bloom —
-   one soft off-axis lift on the ink ramp, so the no-WebGL render is the same
-   scene under the same lighting rather than a different, cheaper design. */
-.ch-promise .hero-fallback { position: absolute; inset: 0; z-index: -2; filter: var(--chrome-filter); background:
-  /* The scrim is the first layer and the metal is under it: the copy sits on
-     the left, so the left half stays near-opaque ink and the metal is only
-     let through on the right, where there is nothing to read. Without this the
-     62% glint (L 0.97) lands under paper-coloured text at 1.09:1.
-     The opaque stop runs to 18% and the 0.90 stop to 44% because the copy
-     column is 1.05fr of a 2fr split plus the container gutter — at the earlier
-     6%/34% the byline at the bottom-left came in at 4.64:1 against a 4.5 floor,
-     which is not margin, it is luck. The 68% and 100% stops are untouched:
-     nothing on the right side moved. */
-  linear-gradient(100deg, var(--ink-900) 18%, oklch(0.16 0.006 75 / 0.90) 44%, oklch(0.16 0.006 75 / 0.62) 68%, oklch(0.16 0.006 75 / 0.46) 100%),
-  linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
-  var(--chrome); }
+   shader never initialises. Same scene, same lighting, no canvas. */
+.ch-promise .hero-fallback { position: absolute; inset: 0; z-index: -3; filter: var(--chrome-filter); background: var(--chrome); }
+
+/* THE SCRIM IS ITS OWN LAYER, and that is a fix, not a refactor.
+   It used to be the first background layer of .hero-fallback — i.e. UNDER the
+   canvas, at z-index -2 against the canvas's -1. So it only ever darkened the
+   fallback. Every visitor whose browser actually ran the shader got the
+   headline, the founder quote and the byline sitting directly on raw metal
+   with no scrim at all, and the three careful media queries below were tuning
+   a plate almost nobody was looking at. The section read as an oily smear
+   because that is what unscrimmed chrome under text looks like.
+
+   Now: canvas at -2, fallback at -3, scrim at -1 — above whichever of the two
+   is painting, below the copy. One declaration governs both paths, so the
+   measured stops mean what they say in both.
+
+   The stops themselves are unchanged and the reasoning stands: the copy sits
+   on the left, so the left stays near-opaque and the metal is only let through
+   on the right where there is nothing to read. Without it the 62% glint
+   (L 0.97) lands under paper-coloured text at 1.09:1. The opaque stop runs to
+   18% and the 0.90 stop to 44% because the copy column is 1.05fr of a 2fr
+   split plus the container gutter — at the earlier 6%/34% the byline came in
+   at 4.64:1 against a 4.5 floor, which is not margin, it is luck. */
+.ch-promise::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(100deg, var(--ink-900) 18%, rgb(var(--scrim) / 0.90) 44%, rgb(var(--scrim) / 0.62) 68%, rgb(var(--scrim) / 0.46) 100%),
+    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%);
+}
 .promise-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(2.4rem, 5vw, 4.5rem); align-items: center; }
 @media (max-width: 900px) {
   .promise-split { grid-template-columns: 1fr; }
@@ -1400,10 +1729,9 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
      plane's own opacity comes down with it. This is the removability test
      answering itself — where the chrome has no room to be a composition, it
      stops being one rather than being one on top of the words. */
-  .ch-promise .hero-fallback { background:
-    linear-gradient(100deg, var(--ink-900) 22%, oklch(0.16 0.006 75 / 0.95) 55%, oklch(0.16 0.006 75 / 0.92) 100%),
-    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
-    var(--chrome); }
+  .ch-promise::before { background:
+    linear-gradient(100deg, var(--ink-900) 22%, rgb(var(--scrim) / 0.95) 55%, rgb(var(--scrim) / 0.92) 100%),
+    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%); }
   .ch-promise #hero-shader { opacity: .30; }
 }
 /* The band just above the split is the tightest case in the whole section: the
@@ -1413,10 +1741,9 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    4.71:1 against a 4.5 floor; the stops move right to buy real margin, and the
    68%/100% end stays put so the metal keeps its side. */
 @media (min-width: 901px) and (max-width: 1200px) {
-  .ch-promise .hero-fallback { background:
-    linear-gradient(100deg, var(--ink-900) 28%, oklch(0.16 0.006 75 / 0.90) 54%, oklch(0.16 0.006 75 / 0.62) 74%, oklch(0.16 0.006 75 / 0.46) 100%),
-    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%),
-    var(--chrome); }
+  .ch-promise::before { background:
+    linear-gradient(100deg, var(--ink-900) 28%, rgb(var(--scrim) / 0.90) 54%, rgb(var(--scrim) / 0.62) 74%, rgb(var(--scrim) / 0.46) 100%),
+    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%); }
 }
 
 /* Glow title + comet (test-sample moment). */
@@ -1438,6 +1765,15 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 /* Editorial head — parenthetical meta left, statement right, on a hairline. */
 .ed-head { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 1.5rem clamp(2rem, 4vw, 4rem);
   align-items: start; padding-top: 1.1rem; border-top: 1px solid var(--line-strong); }
+/* A `1fr` track's automatic minimum is min-content, not zero, so ONE long word
+   anywhere in the column makes the track wider than the grid that contains it —
+   and the whole page then scrolls sideways by that difference. It showed up as
+   a 1px overflow on /nl/custom-models/ only: Dutch builds compound nouns by
+   grammar rather than by accident, so this is a class of bug the English copy
+   will basically never surface. min-width: 0 lets the track shrink and the word
+   wrap. Same reasoning as the `hyphens: auto` rule on headings; different
+   mechanism, because this one is the grid algorithm rather than the text. */
+.ed-head > * { min-width: 0; overflow-wrap: break-word; }
 .ed-meta { font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); padding-top: .5rem; }
 .ed-head h2 { max-width: 18ch; }
 .ed-head .ed-sub { margin-top: 1rem; max-width: 52ch; color: var(--ink-3); font-size: 1rem; line-height: 1.6; }

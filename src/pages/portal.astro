@@ -1,0 +1,15 @@
+---
+// VISUAILS — /portal (English). Body in PortalPage.astro so EN and NL cannot
+// drift; only the meta differs here.
+import Layout from '../layouts/Layout.astro';
+import PortalPage from '../components/PortalPage.astro';
+---
+
+<Layout
+  title="The client portal — one link, your whole drop | VISUAILS"
+  description="Every drop comes with a private link: status, delivery date, the full gallery, approve or ask for a revision per image, and downloads cut per channel."
+  ogImage="/img/banners-09.webp"
+  ground="espresso"
+>
+  <PortalPage lang="en" />
+</Layout>

@@ -412,8 +412,38 @@ function clearSessionCookie() {
  * original behaviour: nothing here narrows what used to pass.
  */
 function originIsSelf(request, env) {
+  // Sec-Fetch-Site FIRST, and this ordering is the whole fix.
+  //
+  // THE BUG THIS REPLACES, because it is worth writing down: every response
+  // from this file carried `Referrer-Policy: no-referrer`, for a good reason
+  // (portal tokens live in the URL path and must not leak through Referer).
+  // Under `no-referrer` Chrome does not merely strip Referer — it also sends
+  // `Origin: null` on a same-origin form POST. So this function, whose entire
+  // job is to compare Origin against our own host, was handed the string
+  // "null", `new URL('null')` threw, and it returned false. Every
+  // state-changing POST behind this gate answered 403 in production: sign out
+  // on /admin and /account, the order status change, adding a custom model,
+  // the brand lock, and file review. Login was unaffected because it is
+  // dispatched before the gate — which is exactly why the dashboard could be
+  // entered and then did nothing. Diagnosed 2026-08-01 by POSTing to a route
+  // that matches nothing, which prints "Seen Origin: null" and changes no
+  // state.
+  //
+  // The policy is now `same-origin`: full referrer to ourselves, nothing at
+  // all cross-origin, so the token still cannot leak and Origin survives.
+  //
+  // Sec-Fetch-Site is checked first anyway, because it is the better signal.
+  // It is set by the browser, script cannot forge it, and it is not affected
+  // by Referrer-Policy — so it keeps working even if some future policy
+  // change suppresses Origin again. `cross-site` is a hard reject; anything
+  // else falls through to the Origin comparison, which still covers browsers
+  // that send neither header.
+  const site = request.headers.get('Sec-Fetch-Site');
+  if (site === 'same-origin') return true;
+  if (site === 'cross-site') return false;
+
   const origin = request.headers.get('Origin');
-  if (!origin) return false;
+  if (!origin || origin === 'null') return false;
   let originHost;
   try {
     originHost = new URL(origin).host;
@@ -547,7 +577,7 @@ function html(body, status = 200, extraSetCookies = []) {
   const headers = new Headers({
     'content-type': 'text/html; charset=utf-8',
     'cache-control': 'no-store',
-    'referrer-policy': 'no-referrer',
+    'referrer-policy': 'same-origin',
     'x-robots-tag': 'noindex, nofollow',
     'x-content-type-options': 'nosniff',
     'content-security-policy':
@@ -558,7 +588,7 @@ function html(body, status = 200, extraSetCookies = []) {
 }
 
 function seeOther(location, setCookies = []) {
-  const headers = new Headers({ Location: location, 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' });
+  const headers = new Headers({ Location: location, 'cache-control': 'no-store', 'referrer-policy': 'same-origin' });
   for (const c of setCookies) headers.append('Set-Cookie', c);
   return new Response(null, { status: 303, headers });
 }

@@ -74,10 +74,12 @@ function heroCover() {
   const bg = hero.querySelector('.hc2-bg img');
   if (bg) gsap.fromTo(bg, { scale: 1.12 }, { scale: 1, duration: 2.4, ease: EASE.quart });
   const lines = hero.querySelectorAll('.cover-title .ch-l');
-  if (lines.length) gsap.from(lines, { y: 56, opacity: 0, duration: 1.2, ease: EASE.quint, stagger: 0.13, delay: 0.18, clearProps: 'all' });
-  gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta'), {
+  // Both registered with the entrance watchdog — see init(). These two are
+  // the only tweens on the site that hold the H1 and the primary CTA.
+  if (lines.length) entrance(gsap.from(lines, { y: 56, opacity: 0, duration: 1.2, ease: EASE.quint, stagger: 0.13, delay: 0.18, clearProps: 'all' }));
+  entrance(gsap.from(hero.querySelectorAll('.cover-sub, .cover-cta'), {
     y: 22, opacity: 0, duration: 0.9, ease: EASE.quart, stagger: 0.1, delay: 0.6, clearProps: 'all',
-  });
+  }));
 }
 
 // Considered imagery: media inside [data-zoom] settles from a gentle
@@ -296,10 +298,60 @@ function bindRefresh() {
   };
 }
 
+// ── the entrance watchdog ───────────────────────────────────────────────────
+// An entrance tween that animates opacity FROM 0 is, for as long as it is
+// running, the only thing standing between the reader and a blank headline.
+// The design system's rule is that a reveal enhances an already-visible
+// default and never gates visibility — and `gsap.from({opacity: 0})` gates it,
+// because the start state is written by JS.
+//
+// Normally that is fine: the tween finishes in ~1.7s and clears its props. It
+// is NOT fine when the browser throttles requestAnimationFrame, which it does
+// whenever the tab is not the foreground one. GSAP's ticker is rAF-driven, so
+// at ~1Hz a 1.2s tween takes over a minute, and the H1 sits at a fractional
+// opacity the whole time. Observed live on 2026-08-01: the hero's three lines
+// frozen at 0.93 / 0.83 / 0.66 with residual translateY, six seconds after
+// load, on a page that had finished loading. It reads as a rendering fault,
+// because it is one.
+//
+// Two guards, and they are deliberately blunt:
+//   1. If the document is not visible when init runs, do not start the
+//      entrance at all. There is nobody to show it to, and the base state is
+//      fully designed without it.
+//   2. If it started and the document goes hidden, or if wall-clock time says
+//      it should have finished and it has not, jump every entrance tween to
+//      its end. Wall-clock, via setTimeout, because setTimeout is not
+//      rAF-throttled the way the ticker is — that is the whole point.
+// Scroll-driven reveals are not covered by either: they are supposed to wait.
+const entrances = [];
+
+function entrance(tween) {
+  if (tween) entrances.push(tween);
+  return tween;
+}
+
+function settleEntrances() {
+  for (const t of entrances) {
+    if (t && t.isActive && t.isActive()) t.progress(1, false);
+  }
+}
+
+function guardEntrances() {
+  // 2.6s is comfortably past the longest entrance here (1.2s + 0.6s delay).
+  const timer = setTimeout(settleEntrances, 2600);
+  const onHide = () => { if (document.visibilityState === 'hidden') settleEntrances(); };
+  document.addEventListener('visibilitychange', onHide);
+  return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onHide); };
+}
+
 function init() {
   if (reduced()) return;
+  entrances.length = 0;
+  // Guard 1. Nothing has been hidden yet at this point, so returning early
+  // leaves the page in its designed base state — visible.
+  const canAnimateEntrance = document.visibilityState === 'visible';
   ctx = gsap.context(() => {
-    heroCover();
+    if (canAnimateEntrance) heroCover();
     chapterHeads();
     spread();
     zoomMedia();
@@ -307,9 +359,11 @@ function init() {
     developScene();
     marquee();
     comet();
-    // A function returned from a context body is its cleanup — run by
-    // ctx.revert(), i.e. by destroy(), i.e. on astro:before-swap.
-    return bindRefresh();
+    // Two functions returned from a context body would be one too many — the
+    // context takes a single cleanup — so they are composed here.
+    const unbindRefresh = bindRefresh();
+    const unguard = guardEntrances();
+    return () => { unbindRefresh(); unguard(); };
   });
 }
 

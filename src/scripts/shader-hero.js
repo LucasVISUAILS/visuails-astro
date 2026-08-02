@@ -96,7 +96,7 @@ void main(){
   /* --ink-900, hand-carried. GLSL cannot read a custom property, so this is a
      generated-asset dependency like the logo raster: when --ink-900 moves,
      this moves with it or the hero plane keeps the old palette's black. */
-  vec3 ink = vec3(0.059, 0.051, 0.039);           /* #0F0D0A — --ink-900 */
+  vec3 ink = vec3(0.031, 0.035, 0.043);           /* #08090B — --ink-900 */
 
   /* Treat the field as a height map and take its normal from the screen-space
      derivative. This is the cheap part on purpose: re-evaluating the two-stage

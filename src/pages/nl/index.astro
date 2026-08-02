@@ -7,7 +7,7 @@
 // De oude tekst hier beloofde levering "binnen ongeveer 24 uur" — een datum
 // die de capaciteitscheck nooit heeft goedgekeurd.
 import Layout from '../../layouts/Layout.astro';
-import HomePage from '../../components/HomePage.astro';
+import HomeV2 from '../../components/HomeV2.astro';
 import { euro, AMOUNT, FULL_DROP_MIN, FULL_DROP_MAX } from '../../data/pricing.js';
 
 // Onder de 160 tekens, zodat Google hem heel toont: dit is de description
@@ -22,6 +22,7 @@ const description =
   title="Productbeelden zonder fotoshoot | VISUAILS"
   description={description}
   ogImage="/img/hero-dunes.webp"
+  ground="espresso"
 >
-  <HomePage lang="nl" />
+  <HomeV2 lang="nl" />
 </Layout>

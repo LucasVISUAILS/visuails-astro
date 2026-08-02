@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import brandLockupGuard from './scripts/brand-lockup-guard.mjs';
 
 // VISUAILS — Astro v2 rebuild. Fully static output (Cloudflare Pages serves
 // the build/ output directly, same deploy shape as the previous SvelteKit
@@ -38,4 +39,9 @@ export default defineConfig({
   // for one job is how a stub and a 301 end up disagreeing about a
   // destination.
   compressHTML: true,
+  // The one brand rule that markup can break silently: the V glyph and the
+  // wordmark are two alternative signatures, never a lockup. Checked on the
+  // built HTML, so it holds for every page and every component that renders
+  // one. See scripts/brand-lockup-guard.mjs for the exact formulation.
+  integrations: [brandLockupGuard()],
 });
