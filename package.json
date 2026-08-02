@@ -9,6 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "favicons": "node scripts/make-favicons.mjs",
+    "test:mollie": "node tests/mollie-webhook.test.mjs",
     "audit:nav": "node pixnav.mjs"
   },
   "dependencies": {

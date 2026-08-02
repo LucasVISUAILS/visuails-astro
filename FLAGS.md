@@ -72,17 +72,41 @@ image zooms → 900ms. `REPORT-SECTION-11.md` §8.
 the small-business scheme. If that is wrong, everything in section 14 inverts.
 Half-closed: you deferred section 14, so it is not blocking today.
 
-**xlii · The payment processor is undecided.** Blocks section 14 and blocks
-anything that takes money.
+**xlii · The payment processor is undecided.** `PARTLY ANSWERED, Aug 2026.`
+Mollie is the one that is actually wired, and as of the webhook work it is
+wired in both directions — but only for the €0.99 test sample. Section 14 and
+everything else that takes money are still blocked, and now on something more
+specific than "which processor": see **cxl** below. `src/lib/stripe.js` and
+its webhook are still in the tree, called by nothing.
 
 **xxxviii · "single-use on issue" has two readings.** The portal token is
 generated once and reused for the life of the order (what is built), or it is
 consumed by first use (what the phrase can also mean). If you meant the second,
 the portal is wrong.
 
+**cxl · Nothing but the €0.99 sample can be charged for, and the two things
+blocking that are yours.** The webhook loop works end to end now, so the
+mechanism is not the problem. What is missing before a drop can be paid for:
+**server-side price computation** (a payment must never be created from an
+amount the browser can influence, so the price has to be derived from the order
+row, not read off the form), and then **two decisions** — deposit or full
+amount up front, and how BTW is applied per customer. `BRIEF-14-VAT-BTW.md`
+holds the VAT rules; no code implements them. Neither is a thing I should pick
+for you.
+
 ---
 
 ## OPEN — known, unfixed, not blocking
+
+**cxli · A refunded order still reads as paid.** Mollie re-calls the same
+webhook when a payment is refunded or charged back, and that delivery is
+currently recognised as a duplicate and skipped — so nothing is corrupted, but
+`orders.payment_status` stays `paid` until somebody changes it by hand. Worth
+building when the first refund happens, not before. See `MOLLIE.md`.
+
+**cxlii · The customer cannot see whether their payment landed.** `/o/<token>`
+and the thank-you page never read `payment_status`; `/admin` is the only
+surface that shows it.
 
 **xix ·** `.rc-num` numerals are unstyled — they inherit body figures where the
 rest of the site uses tabular.

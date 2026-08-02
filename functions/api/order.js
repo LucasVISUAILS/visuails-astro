@@ -388,12 +388,19 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // checkout step would be exactly the mistake this file already refuses to
   // make everywhere else (see the file header).
   //
-  // TODO(payment status): this only sends the customer to pay — nothing yet
-  // marks the order paid when Mollie confirms it. That needs a webhook
-  // handler at the URL below, still to be built, mirroring however the
-  // (also not-yet-wired) Stripe webhook was meant to update `orders` and
-  // `payments`. Don't treat "customer reached Mollie's checkout page" as
-  // "order is paid" anywhere downstream until that exists.
+  // The webhook at the URL below now exists (functions/api/webhook/mollie.js)
+  // and is what actually moves the order to paid. This branch still only sends
+  // the customer to Mollie — reaching the checkout page is not paying, and the
+  // redirect below fires whether they complete the payment or close the tab.
+  // Nothing downstream should read "we redirected them" as "the order is
+  // paid"; read orders.payment_status, which only the webhook writes.
+  //
+  // NOTE ON THE PATH: this used to say `/api/webhooks/mollie`, plural, while
+  // the Stripe handler sat at `/api/webhook/stripe`, singular — two sibling
+  // directories one letter apart, and the plural one had nothing in it. They
+  // are one directory now. Nothing was live on the old path, so nothing broke;
+  // if a test payment created before this change is still being retried by
+  // Mollie it will 404 for its 26-hour window and then stop.
   // ───────────────────────────────────────────────────────────────────────────
   if (svc === 'test-sample' && env.MOLLIE_API_KEY) {
     // createTestSampleMolliePayment() resolves the whole Mollie payment
@@ -405,7 +412,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
       ref,
       lang,
       successUrl: requestOrigin(request) + done,
-      webhookUrl: requestOrigin(request) + '/api/webhooks/mollie',
+      webhookUrl: requestOrigin(request) + '/api/webhook/mollie',
     }));
     const checkoutUrl = payment?._links?.checkout?.href;
     if (checkoutUrl) {
