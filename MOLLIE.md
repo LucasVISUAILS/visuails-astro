@@ -49,15 +49,21 @@ I do not handle those.
 are two, and they are distinguishable at a glance: the test one starts with
 `test_`, the live one with `live_`. Take the `test_` one.
 
-**2 · Put it in Cloudflare.** It is a secret, so it must **not** go in
-`wrangler.toml` — that file is in git. Either:
+**2 · Put it in Cloudflare, from the DASHBOARD.** Your Pages project →
+*Settings* → *Variables and Secrets* → add `MOLLIE_API_KEY` as an encrypted
+**Secret**, not a plaintext variable. It must not go in `wrangler.toml` — that
+file is in git.
 
-```
-npx wrangler pages secret put MOLLIE_API_KEY
-```
+The dashboard rather than the terminal, and that is not a preference. Setting
+this key from `cmd.exe` with `npx wrangler pages secret put` is what cost this
+project two payment integrations: `cmd.exe` does not paste on Ctrl+V unless it
+is configured to, it types the SYN control character instead, and the stored
+"key" was one invisible byte. See "The empty 400, and what it actually was"
+below. The dashboard field is an ordinary web input where paste behaves.
 
-or the dashboard: your Pages project → *Settings* → *Variables and Secrets* →
-add `MOLLIE_API_KEY` as an encrypted **Secret**, not a plaintext variable.
+If you do use a terminal, use Windows Terminal or PowerShell — or right-click
+to paste in `cmd.exe` — and then verify with `/admin/debug-mollie` rather than
+assuming.
 
 **3 · Redeploy.** A newly-added secret only reaches a new deployment.
 
@@ -140,10 +146,80 @@ that, and it times out a single call at 15 seconds.
 
 ---
 
-## When payment creation fails with `Mollie 400: (empty body)`
+## The empty 400, and what it actually was
 
-This happened on 2 August 2026, on production, at the *first* step — creating
-the payment, before the customer ever reaches Mollie:
+**Answered, 2 August 2026: `MOLLIE_API_KEY` was one character long, and that
+character was U+0016.**
+
+The diagnostic's first block said it before a single probe ran:
+
+```json
+"key": { "set": true, "rawLength": 1, "usableLength": 0, "prefix": "",
+         "mode": "unrecognised",
+         "problems": ["1 non-printable character(s): U+0016", ...] }
+```
+
+U+0016 is **SYN**, an ASCII control character. It is what Windows `cmd.exe`
+types when you press **Ctrl+V** and the console is not configured to treat that
+as paste — it echoes `^V` and inserts the control code. So the sequence was:
+`wrangler pages secret put MOLLIE_API_KEY` prompted for a value, Ctrl+V typed a
+SYN instead of pasting the key, Enter stored it. The key never left the
+clipboard.
+
+Everything downstream follows mechanically. `Bearer \x16` is a header value
+containing a C0 control character, which is not legal in an HTTP header value,
+so Mollie's edge rejected the request at the HTTP layer — before Mollie's
+application ran, and therefore without Mollie's JSON error shape. **400 Bad
+Request, empty body.** Exactly the symptom, for exactly the predicted reason.
+
+### This is almost certainly the Stripe story too
+
+The Stripe integration on this project died with "blank HTTP 400s when called
+from Cloudflare, never from Stripe's CLI, never from local Node", was escalated
+to both Stripe and Cloudflare support, was never resolved, and is the entire
+reason Mollie was adopted. Same machine, same terminal, same paste, same class
+of secret — and "works from the CLI and from local Node" is precisely what you
+would expect, because those read the key from somewhere else.
+
+It was written up as *"a networking-layer failure between Cloudflare and
+api.stripe.com"*. It was a keystroke. If Stripe is ever revisited, check
+`STRIPE_SECRET_KEY`'s shape before assuming anything else — the diagnostic
+reports it.
+
+### The fix, and how not to reproduce it
+
+**Set the secret from the Cloudflare dashboard**, not from `cmd.exe`: your
+Pages project → *Settings* → *Variables and Secrets* → `MOLLIE_API_KEY` as an
+encrypted **Secret**. It is a web form; Ctrl+V behaves. Then redeploy — a
+secret only reaches deployments created after it.
+
+If you would rather stay in a terminal, do not use `cmd.exe` with Ctrl+V. Use
+**right-click** to paste in `cmd.exe`, or use Windows Terminal / PowerShell,
+where Ctrl+V is a real paste.
+
+### What now stops it happening quietly again
+
+`mollieKey()` in `src/lib/mollie.js` strips non-printable characters and
+rejects anything that is not `test_…`/`live_…`, so a mangled key now fails with
+a message that names the problem instead of becoming a blank 400 forty
+milliseconds later. That guard is what turned this from an unfixable symptom
+into a one-line answer.
+
+The diagnostic also reports the **shape of every other secret** —
+`RESEND_API_KEY`, `PORTAL_SALT`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` —
+length, whether every character is printable, and any control characters, never
+values. Two of those fail *silently*: `sendMail()` is wrapped in `safe()`, so a
+corrupted `RESEND_API_KEY` means order confirmations never arrive and nothing
+anywhere says so. If several secrets were set in the same sitting, they were
+probably set the same way.
+
+---
+
+## If it ever comes back: `Mollie 400: (empty body)`
+
+The general shape of the problem, kept because the reasoning is what found it
+and would find the next one. It first appeared on production at the *first*
+step — creating the payment, before the customer ever reaches Mollie:
 
 ```
 POST https://visuails.com/api/order - Ok
@@ -163,9 +239,9 @@ local Node" — which was never resolved and is why Mollie was adopted in the
 first place. Two different providers failing identically from the same Pages
 Function says the cause is on our side of the connection.
 
-### What has been done about it
+### The candidates, and how to tell them apart
 
-**One candidate is now ruled out permanently.** `mollieKey()` in
+**The key.** `mollieKey()` in
 `src/lib/mollie.js` strips every non-printable character from the key before it
 goes into a header and rejects anything that is not `test_…`/`live_…`. This is
 not cosmetic. A secret is delivered by pasting, and paste carries invisible
@@ -176,15 +252,14 @@ passengers:
 | trailing newline | stripped by the Fetch spec — harmless |
 | leading/trailing space | stripped — harmless |
 | **U+00A0 non-breaking space** | **survives, sent as raw byte `0xA0`** |
+| **U+0016 SYN (`cmd.exe` Ctrl+V)** | **survives, sent as raw byte `0x16`** ← this one |
 | U+200B zero-width space | `fetch` throws a TypeError |
 
-That third row is the dangerous one, and it is a realistic accident: copying a
-key out of a styled dashboard page can pick up an NBSP. A byte outside
-printable ASCII is not legal inside a header value, so the receiving end
-rejects the whole request at the HTTP layer — **400, empty body**, which is
-precisely the symptom. (Verified on the wire against a raw socket, not assumed.)
-
-Whether that is *the* cause here is not yet known. It is now impossible.
+The bottom two rows are the dangerous ones — and U+0016 from `cmd.exe`, the
+actual culprit here, belongs with them. A byte outside printable ASCII is not
+legal inside a header value, so the receiving end rejects the whole request at
+the HTTP layer: **400, empty body**. (Verified on the wire against a raw
+socket, not assumed.)
 
 **The error message now says who answered.** An empty body no longer logs as
 `(empty body)` but as `(EMPTY BODY — not a Mollie application error. Response

@@ -99,6 +99,23 @@ export async function onRequestGet(context) {
       mode: raw ? (String(raw).trim().startsWith('live_') ? 'LIVE' : String(raw).trim().startsWith('test_') ? 'test' : 'unrecognised') : null,
       problems: mollieKeyProblems(env),
     },
+    // ── EVERY OTHER SECRET, SHAPE ONLY ────────────────────────────────────
+    // Added after MOLLIE_API_KEY turned out to be a single U+0016 — the SYN
+    // character Windows cmd.exe inserts when you press Ctrl+V and it is not
+    // configured to treat that as paste. Whoever set that secret that way
+    // probably set the others in the same sitting, the same way. Two of them
+    // fail SILENTLY if they are corrupt: sendMail() is wrapped in safe(), so a
+    // broken RESEND_API_KEY means order confirmations simply never arrive and
+    // nothing anywhere says so.
+    //
+    // Values are never read. Length, whether every character is printable
+    // ASCII, and a prefix ONLY where that prefix is a documented public marker
+    // (test_ / live_ / re_) — which is exactly the information that
+    // distinguishes "set correctly" from "set to a control character".
+    secrets: Object.fromEntries(
+      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
+        .map((name) => [name, shapeOf(env?.[name])])
+    ),
     probes: {},
     reading: null,
   };
@@ -188,8 +205,18 @@ function read(out) {
   const empty400 = (p) => p && !p.threw && p.status === 400 && p.bodyBytes === 0;
 
   if (out.key.problems) {
+    const s = out.secrets?.MOLLIE_API_KEY;
+    // The specific case, called by name, because the generic advice
+    // ("re-paste it") is what put the wrong value there in the first place.
+    if (s?.set && s.length <= 3 && s.controlChars?.length) {
+      return `MOLLIE_API_KEY is ${s.length} character(s) long and contains ${s.controlChars.join(', ')}. ` +
+        `That is not a truncated key — U+0016 is the SYN control character Windows cmd.exe inserts when Ctrl+V ` +
+        `is pressed and the console is not set to treat it as paste. The key was never pasted; a control code was. ` +
+        `Set it again from the Cloudflare dashboard (Settings → Variables and Secrets), where paste works normally, ` +
+        `then redeploy. Check the other secrets in this response too — they were probably set the same way.`;
+    }
     return `The stored key has a problem before anything is sent: ${out.key.problems.join('; ')}. ` +
-      `Re-paste it (wrangler pages secret put MOLLIE_API_KEY), redeploy, and run this again.`;
+      `Set it again — preferably from the Cloudflare dashboard rather than a terminal — then redeploy and reload this.`;
   }
   if (A && A.threw) return `Could not reach api.mollie.com from this Function at all (${A.error}). This is a connectivity problem, not a payment one.`;
   if (empty400(A)) {
@@ -211,6 +238,34 @@ function read(out) {
     }
   }
   return 'Inconclusive — send the whole of this JSON over and I will read it.';
+}
+
+/**
+ * A secret's shape, never its value. `looksPasted` is the specific tell this
+ * whole endpoint was built to catch: a value one or two characters long, made
+ * of control characters, is not a truncated key — it is a terminal that typed
+ * a control code instead of pasting.
+ */
+function shapeOf(value) {
+  if (value === undefined || value === null || value === '') return { set: false };
+  const s = String(value);
+  const control = [...s].filter((c) => c.charCodeAt(0) < 0x20 || c.charCodeAt(0) === 0x7f);
+  const out = {
+    set: true,
+    length: s.length,
+    allPrintable: control.length === 0 && s === s.trim(),
+  };
+  if (control.length) {
+    out.controlChars = control.map((c) => 'U+' + c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0'));
+  }
+  // Public prefixes only. Mollie and Resend both put the environment in the
+  // clear at the front of the key precisely so it can be read at a glance.
+  const m = s.match(/^(test_|live_|re_|sk_test_|sk_live_|whsec_)/);
+  if (m) out.prefix = m[1];
+  if (s.length <= 3) out.verdict = 'FAR too short — this is a stray keystroke, not a key';
+  else if (control.length) out.verdict = 'contains control characters — re-set it';
+  else if (s !== s.trim()) out.verdict = 'has leading or trailing whitespace';
+  return out;
 }
 
 function json(obj, status = 200) {

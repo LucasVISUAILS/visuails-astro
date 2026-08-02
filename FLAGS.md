@@ -72,12 +72,23 @@ image zooms → 900ms. `REPORT-SECTION-11.md` §8.
 the small-business scheme. If that is wrong, everything in section 14 inverts.
 Half-closed: you deferred section 14, so it is not blocking today.
 
-**xlii · The payment processor is undecided.** `PARTLY ANSWERED, Aug 2026.`
-Mollie is the one that is actually wired, and as of the webhook work it is
-wired in both directions — but only for the €0.99 test sample. Section 14 and
-everything else that takes money are still blocked, and now on something more
-specific than "which processor": see **cxl** below. `src/lib/stripe.js` and
-its webhook are still in the tree, called by nothing.
+**xlii · The payment processor is undecided.** `ANSWERED — AND THE REASON IT
+WAS EVER A QUESTION WAS A KEYSTROKE, 2 Aug 2026.` Stripe was abandoned on this
+project because Checkout Session creation returned blank HTTP 400s from
+Cloudflare and from nowhere else; that was escalated to Stripe and to
+Cloudflare, never resolved, and written up as a networking-layer failure
+between the two. Mollie then failed identically. The diagnostic at
+`/admin/debug-mollie` found `MOLLIE_API_KEY` stored as a **single U+0016** —
+the SYN control character `cmd.exe` types when Ctrl+V is pressed and the
+console is not set to paste. A control byte in an `Authorization` header is
+rejected at the HTTP layer, which is exactly a 400 with an empty body.
+`STRIPE_SECRET_KEY` was almost certainly set the same way in the same sitting.
+**Nothing was ever wrong with either provider, or with Cloudflare.** If Stripe
+is ever revisited, check the secret's shape first. See `MOLLIE.md`.
+Mollie is wired in both directions, but only for the €0.99 test sample —
+section 14 and everything else that takes money are still blocked, on something
+more specific than "which processor": see **cxl** below. `src/lib/stripe.js`
+and its webhook are still in the tree, called by nothing.
 
 **xxxviii · "single-use on issue" has two readings.** The portal token is
 generated once and reused for the life of the order (what is built), or it is
@@ -97,6 +108,15 @@ for you.
 ---
 
 ## OPEN — known, unfixed, not blocking
+
+**cxliii · Other secrets may be corrupt in the same way, silently.**
+`MOLLIE_API_KEY` was a single control character. Whoever set it that way
+probably set the others in the same sitting. Two fail without saying anything:
+`sendMail()` is wrapped in `safe()`, so a broken `RESEND_API_KEY` means order
+confirmations never arrive and nothing anywhere reports it — and 41 orders have
+gone through since. `/admin/debug-mollie` now reports the shape of every secret
+(length, control characters, public prefix; never values). Check it, and check
+whether the confirmation emails for those orders actually landed.
 
 **cxli · A refunded order still reads as paid.** Mollie re-calls the same
 webhook when a payment is refunded or charged back, and that delivery is
