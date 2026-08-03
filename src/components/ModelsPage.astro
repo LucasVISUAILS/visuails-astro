@@ -157,7 +157,12 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
   <div class="bm-roster reveal-group">
     {ROSTER.map((m) => (
       <figure class="bm-model reveal pending">
-        <img src={m.photo} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.w} height={m.h} />
+        {/* thumb/tw/th, not photo/w/h: this grid draws a portrait at 211 CSS
+            px on a desktop and 350 on a phone, and the 1195px original was ten
+            files of pixels the browser downloaded to discard. The pair travels
+            together from src/data/models.js so the declared size can never
+            describe the other file. */}
+        <img src={m.thumb} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.tw} height={m.th} />
         <figcaption>
           <span class="bm-model-name">{m.name}</span>
           <span class="bm-model-traits">{m.traits.map((t) => traits[t]).join(' · ')}</span>

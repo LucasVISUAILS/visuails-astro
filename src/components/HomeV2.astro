@@ -24,10 +24,19 @@
 // of unequal weight, a rail you push sideways, a closing panel that takes the
 // viewport. The geometry is not theirs — OPP is pills and 24px radii, this
 // system has no radius at all.
+//
+// SECTION 19 · THE PRICE IS SAID ONCE. This page used to explain what it costs
+// four separate times, in four bands that were not next to each other — "One
+// price per product" (123 words), "Everything the studio makes, and what it
+// costs" (360), "Or put it on a monthly plan" (278) and "What the numbers
+// actually are" (69). 830 words on one subject, and a reader who wanted the
+// number had to assemble it from four places and hope they agreed. They are
+// ONE band now, at section 2, and the three that were folded into it are
+// listed at the top of that band with what became of each line.
 import {
-  AMOUNT, euro, euroRange, TEST_SAMPLE, SHOOT_DAY,
+  AMOUNT, euro, TEST_SAMPLE,
   BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim,
-  ladderRate, ladderFloor, quote, plans, vatLabel, vatNote,
+  LADDER, ladderRate, quote, vatLabel, vatNote,
   WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT, PLAN_PRODUCTS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -39,7 +48,8 @@ interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 const sample = TEST_SAMPLE[lang];
-const shoot = SHOOT_DAY[lang];
+// SHOOT_DAY came out with the "What an order replaces" band — see the comment
+// where that band used to be, above the week band.
 
 // One photograph per service. Real output, not placeholders — the studio has
 // 73 real images and "show the work before the claim" is this brand's first
@@ -54,12 +64,17 @@ const shoot = SHOOT_DAY[lang];
 // which is the fourth image in every catalog set, so the tile is still showing
 // the thing it is selling. If the studio ever shoots a second flat-lay, this
 // is the slot it belongs in.
+//
+// FOUR, not five. The fifth was "A monthly plan", which is not a thing the
+// studio MAKES — it is a way of paying for the other four, and it now says so
+// once in the price band. Its photograph (lifestyle-phone-made-09) is off this
+// page rather than reassigned: every tile here shows the service it names, and
+// a stock lifestyle frame over a plan tile was the one that did not.
 const SERVICE_IMG = [
   { src: '/img/banners-11.webp', w: 1200, h: 896 },
   { src: '/img/lifestyle-glow-02.webp', w: 2400, h: 1792 },
   { src: '/img/banners-16.webp', w: 2400, h: 1792 },
   { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
-  { src: '/img/lifestyle-phone-made-09.webp', w: 2400, h: 1792 },
 ];
 
 // The roster rail in the Brand Model band. Every face here is a real entry in
@@ -81,43 +96,67 @@ const CATALOG_IMAGES = 4;
 const LIFESTYLE_IMAGES = 3;
 const PER_PRODUCT_VISUALS = CATALOG_IMAGES + LIFESTYLE_IMAGES;
 
-// THE TWO WORKED EXAMPLES this page uses, and the same two /pricing uses, so
-// the homepage and the price list cannot quote different sizes.
+// THE THREE WORKED EXAMPLES the price band shows, so nobody has to multiply.
+//   5  — the smallest monthly plan's product count. Putting it on the ladder
+//        too is what makes the plan pointer checkable rather than claimed: a
+//        reader can see what five costs order-by-order and what the plan asks.
 //   14 — the count the old packages had no price for at all. A brand with
 //        fourteen products fell between a Pilot of eight and a Full Drop of
 //        twenty-five and paid à la carte: more than a Full Drop of thirty.
 //        Naming it here is the shortest way to show the hole is gone.
 //   30 — a full season, and the size the old Full Drop covered, so a returning
-//        visitor can compare like for like.
+//        visitor can compare like for like. It is also /pricing's own top
+//        worked example, so the two pages cannot quote different sizes.
+const EX_ENTRY = Math.min(...Object.values(PLAN_PRODUCTS));
 const EX_SMALL = 14;
 const EX_FULL = 30;
+const WORKED = [EX_ENTRY, EX_SMALL, EX_FULL];
 const Q_SMALL = quote('complete', EX_SMALL);
-const Q_FULL = quote('complete', EX_FULL);
-const ENTRY_RATE = ladderRate('complete', 1);
-const FLOOR_RATE = ladderFloor('complete');
+const Q_SMALL_FIRST = quote('complete', EX_SMALL, { firstOrder: true });
+// ENTRY_RATE (ladderRate('complete', 1)) and FLOOR_RATE (ladderFloor('complete'))
+// were here and are gone with the prose they fed: "from €149 per product, down
+// to €55" was the entry rung and the floor rung SAID, and the merged band shows
+// both as the top and bottom rows of the table instead. Do not reintroduce them
+// to write that sentence again — the table already is the sentence. ladderFloor
+// left the import with them; ladderRate stays, because the table calls it.
 const FIRST_ORDER_PCT = Math.round(FIRST_ORDER_DISCOUNT * 100);
 const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 
-// ── THE SERVICES BAND'S FIGURES ────────────────────────────────────────────
-// Both ends of each ladder, because a single figure is the one thing this
-// band must not print: the offer is a rate that FALLS, and "€89 per product"
-// with no second number is the flat rate the ladder was built to replace.
-// Every service therefore carries an entry rate and a floor, and both come
-// from pricing.js.
-const CATALOG_FROM = ladderRate('catalog', 1);
-const CATALOG_TO = ladderFloor('catalog');
-const LIFESTYLE_FROM = ladderRate('lifestyle', 1);
-const LIFESTYLE_TO = ladderFloor('lifestyle');
-// The bundle, and what the same two bought separately would cost at each end.
-// pricing.js prices catalog at 60% and lifestyle at 75% of a complete product
-// on purpose, so this comparison is a property of the ladder rather than an
-// offer — which is why it is subtracted here rather than claimed in copy.
-const SEPARATE_FROM = CATALOG_FROM + LIFESTYLE_FROM;
-const SEPARATE_TO = CATALOG_TO + LIFESTYLE_TO;
-// The plans get one line and one figure here, not a second set of plan tiles —
-// the pricing band further down this page already renders plans() in full, and
-// two plan grids on one page is the page arguing with itself about which is
-// the real one.
+// ── THE LADDER, AS A TABLE ─────────────────────────────────────────────────
+// The band used to print each service's entry rate and floor as prose — "from
+// €89 per product, down to €33 as the count rises", five times over. That is a
+// rate card written out in sentences, and it cost 360 words to say what a
+// fifteen-cell table says without a verb. Same shape as /pricing's, three
+// columns and five rungs, because a reader who has seen one should recognise
+// the other.
+const KIND_IDS = ['complete', 'catalog', 'lifestyle'] as const;
+// Two of the three are a pillar page under another name, so the column heading
+// is the link — the brief's internal-linking rule without a row of chips.
+// `complete` is both of the others bought together and has no page of its own.
+const KIND_PAGE: Record<string, string | null> = {
+  complete: null,
+  catalog: '/catalog',
+  lifestyle: '/lifestyle',
+};
+// Row labels come off ONE kind and are reused for all three columns, which is
+// only honest if the three break at the same counts. They do — see LADDER in
+// pricing.js — but /pricing asserts it rather than trusting it, and a homepage
+// that quietly disagreed with the price list would be the worse of the two
+// places to find out. Same check, same reason.
+const RUNGS = LADDER.complete.map(([lo, hi]) => ({
+  at: lo,
+  label: hi === null ? `${lo}+` : `${lo}–${hi}`,
+}));
+for (const id of KIND_IDS) {
+  const shape = LADDER[id].map(([lo, hi]) => `${lo}:${hi}`).join(',');
+  if (shape !== LADDER.complete.map(([lo, hi]) => `${lo}:${hi}`).join(',')) {
+    throw new Error(`HomeV2: ladder kind "${id}" breaks at different counts than "complete" — the shared row labels would lie.`);
+  }
+}
+
+// The plans get one line and one figure on this page, not a plan grid. The
+// grid was 278 words to say what /pricing says in full three clicks' worth of
+// detail better; the homepage's job is to say that the other axis exists.
 const PLAN_FROM = Math.min(...Object.values(PLAN_AMOUNT));
 const PLAN_LOW = Math.min(...Object.values(PLAN_PRODUCTS));
 const PLAN_HIGH = Math.max(...Object.values(PLAN_PRODUCTS));
@@ -141,74 +180,80 @@ const COPY = {
       ['Studio', 'Enschede, NL'],
     ],
 
-    dropH: ['One price per product.', 'It falls as you add.'],
-    dropLede: `A product is the unit — a catalog set and a lifestyle carousel, ${PER_PRODUCT_VISUALS} finished images. The rate starts at ${euro(ENTRY_RATE, 'en')} and comes down to ${euro(FLOOR_RATE, 'en')}, so there is no size that is the wrong size to order and nothing to work out before you can.`,
-    dropSpecK: `${EX_SMALL} products`,
-    dropSpecV: `${euro(Q_SMALL.rate, 'en')} each`,
-    dropSpecP: euro(Q_SMALL.net, 'en'),
-    dropSpecN: `${vatLabel('excl', 'en')}. A first order is ${FIRST_ORDER_PCT}% off, once per brand.`,
-    dropWinK: 'The window',
-    dropWinV: '48h',
-    dropWinN: `From ${WINDOW_THRESHOLD} products up, the order goes into the studio calendar and gets a reserved window — confirmed before you pay, and never offered until the calendar has cleared it. Below that it runs in the standard queue.`,
-    dropPlateCap: 'An order, as delivered',
-    dropPlateSub: 'Catalog set · from a phone photo',
-    dropPlateAlt: 'A finished VISUAILS catalog visual',
+    // ── THE PRICE BAND ────────────────────────────────────────────────────
+    // Everything this page says about money is in these keys and nowhere else.
+    // The heading is the old drop band's, kept word for word: it was already
+    // the shortest true statement of the model, and a merged band that renamed
+    // itself would read to a returning visitor as a new offer.
+    priceH: ['One price per product.', 'It falls as you add.'],
+    priceLede: `A product is the unit — a catalog set and a lifestyle carousel, ${PER_PRODUCT_VISUALS} finished images. Take the pair or either half, and the rate comes down as the count goes up.`,
+    // The ONE VAT statement for this band. Block level, above everything it
+    // qualifies, rather than appended to each of the fifteen rates and three
+    // totals below it — which is what "excl. VAT" ×8 in one band looked like.
+    priceVat: `Every figure in this section is ${vatLabel('excl', 'en')}.`,
+    ladCountCol: 'Products',
+    // [column heading, what one product of that kind gets]
+    ladKinds: [
+      ['Complete', `${PER_PRODUCT_VISUALS} images`],
+      ['Catalog set', `${CATALOG_IMAGES} images`],
+      ['Lifestyle', `${LIFESTYLE_IMAGES} images`],
+    ],
+    ladPer: 'per product',
+    // The bundle argument, without the arithmetic: the table prints all three
+    // rates in one row, so a reader who wants to check that the pair is cheaper
+    // than the halves can read across instead of being told the subtraction.
+    ladNote: 'Both on the same product is one rate, not the two added together.',
+    workedH: 'What that comes to',
+    workedUnit: 'products',
+    workedEach: 'each',
+    firstLead: `First order: ${FIRST_ORDER_PCT}% off.`,
+    firstBody: `Once per brand, at any size — ${EX_SMALL} complete products is ${euro(Q_SMALL.net, 'en')}, and ${euro(Q_SMALL_FIRST.net, 'en')} the first time.`,
+    addOnNote: `A video clip is ${euro(AMOUNT.video, 'en')}, the same rate inside an order or on its own. Your Brand Model is ${euro(AMOUNT.brandModel, 'en')} once, credited back over your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
+    planNote: `Ordering every month rather than every season? Three monthly plans, from ${euro(PLAN_FROM, 'en')} for ${PLAN_LOW}–${PLAN_HIGH} products a month, each priced below the ladder for the same output.`,
+    vatSummary: 'How VAT is handled',
+    priceCta: 'Start an order',
+    priceCta2: 'The full price list',
 
     // The rail's two arrow labels survive its deletion: the Brand Model band
     // further down renders the same .rail-nav buttons and reads these keys.
     railPrev: 'Previous',
     railNext: 'Next',
 
-    svcH: ['Everything the studio makes,', 'and what it costs.'],
-    svcLede: `Four things you can order and one way to keep ordering them. Catalog and lifestyle are priced per product and the rate falls the more you run; a video clip is priced per clip; your Brand Model is set up once. Every figure here is ${vatLabel('excl', 'en')}.`,
-    // [name, what it is, what you receive, price, the price's terms, href]
+    // ── THE SERVICES BAND, WITH THE PRICES TAKEN OUT ──────────────────────
+    // Each tile used to carry a figure and a terms line, which is where 8 of
+    // the page's 14 "excl. VAT" labels lived. Both are gone: the band above
+    // prices all four in one table. What is left is the half a reader cannot
+    // get anywhere else on this page — what each service IS and what lands in
+    // the folder — next to a photograph of it.
+    svcH: ['Four things the studio makes,', 'and what you get back.'],
+    svcLede: 'Catalog and lifestyle are what a product gets. A video clip and your Brand Model ride on top of an order, or stand on their own.',
+    // [name, what it is, what you receive, href]
     svc: [
       [
         'Catalog set',
         'Clean, consistent product pages that make a young range look established.',
         `${CATALOG_IMAGES} images per product: front, back, a fabric or logo close-up, and one worn on a model.`,
-        `from ${euro(CATALOG_FROM, 'en')}`,
-        `per product, ${vatLabel('excl', 'en')} — down to ${euro(CATALOG_TO, 'en')} as the count rises`,
         '/catalog',
       ],
       [
         'Lifestyle carousel',
         'Styled scenes in context that stop the scroll and sell the feeling.',
         `${LIFESTYLE_IMAGES} images per product: one styled look, cut for a carousel and ready to post.`,
-        `from ${euro(LIFESTYLE_FROM, 'en')}`,
-        `per product, ${vatLabel('excl', 'en')} — down to ${euro(LIFESTYLE_TO, 'en')} as the count rises`,
         '/lifestyle',
       ],
       [
         'Video clip',
         'Subtle motion that lifts click-through where a still photo plateaus.',
-        'One short vertical clip, cut for Reels, TikTok and paid. Added to any order, or ordered on its own.',
-        euro(AMOUNT.video, 'en'),
-        // NOT a "from", and the one price on this page that does not fall.
-        // pricing.js prices a clip the same inside an order as outside one on
-        // purpose — that is what makes the figure quotable — so inventing a
-        // volume rate here would contradict the file the number comes from.
-        `per clip, ${vatLabel('excl', 'en')} — the same rate inside an order or on its own`,
+        'One short vertical clip, cut for Reels, TikTok and paid.',
         '/video',
       ],
       [
         'Your Brand Model',
         'One face, made only for your brand and used by no one else.',
-        `Set up once, then in every order you run. ${euro(AMOUNT.brandModelCredit, 'en')} of the setup comes back on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
-        euro(AMOUNT.brandModel, 'en'),
-        `one-time setup, ${vatLabel('excl', 'en')} — credited back in full over ${BRAND_MODEL_CREDIT_DROPS} orders`,
+        'Set up once, then in every order you run.',
         '/custom-models',
       ],
-      [
-        'A monthly plan',
-        'For when it is not one launch but every month of the year.',
-        `${PLAN_LOW}–${PLAN_HIGH} products a month for one monthly amount, priced below the ladder for the same output.`,
-        `from ${euro(PLAN_FROM, 'en')}`,
-        `per month, ${vatLabel('excl', 'en')} — three plans, set out in full on the price list`,
-        '/pricing',
-      ],
     ],
-    svcNote: `Catalog and lifestyle on the same product is one rate rather than two: ${euro(ENTRY_RATE, 'en')} a product coming down to ${euro(FLOOR_RATE, 'en')}, against ${euro(SEPARATE_FROM, 'en')} down to ${euro(SEPARATE_TO, 'en')} bought separately. ${vatNote('en')}`,
     svcCta: 'Start an order',
 
     pipeH: 'From folder to launch.',
@@ -216,17 +261,20 @@ const COPY = {
     pipe: [
       ['You send a folder', 'One folder per product, folder name is the SKU. A phone photo is enough to start.'],
       ['The date is cleared', 'The calendar is checked against real capacity. If the week is full you are offered the next one that is not.'],
-      ['The studio runs', 'Catalog, lifestyle and video in one house style, finished with professional editing and colour grading.'],
+      // The four house styles are named HERE now. They were a stat in the
+      // "What the numbers actually are" band, which went with the price merge;
+      // this is the step they describe, so it is where they belong anyway.
+      ['The studio runs', 'Catalog, lifestyle and video in one house style — Glow, Dunes, Flash or Phone-made — with the editing and grading finished.'],
       ['A person checks it', 'Every visual is looked at before it ships. Nothing is auto-delivered.'],
     ],
 
     whoH: 'For brands with more products than shoot days.',
-    whoLede: 'Four situations this studio is priced for. If one of them is yours, the arithmetic already works.',
+    whoLede: 'Four situations this studio is priced for. If one is yours, the arithmetic already works.',
     who: [
-      ['The first collection', 'You have the samples and no budget for a shoot. The range has to look like it belongs next to labels ten years older than you.'],
-      ['A launch every season', 'Four to six of them a year, and each one currently starts with finding a photographer, a model and a day everyone is free.'],
-      ['Marketplaces to feed', 'Zalando, Amazon and bol want clean product images to a fixed spec. Getting them right is nobody’s favourite afternoon.'],
-      ['More SKUs than hours', 'The range grew faster than the production around it, and photography is the part that keeps slipping.'],
+      ['The first collection', 'You have the samples and no budget for a shoot, and the range still has to look like it belongs next to labels ten years older.'],
+      ['A launch every season', 'Four to six a year, each one starting with a photographer, a model and a day everyone is free.'],
+      ['Marketplaces to feed', 'Zalando, Amazon and bol want clean images to a fixed spec, and getting them right is nobody’s favourite afternoon.'],
+      ['More SKUs than hours', 'The range grew faster than the production around it, and photography keeps slipping.'],
     ],
     notForH: 'Probably not for you if',
     notFor: [
@@ -243,122 +291,117 @@ const COPY = {
     baBeforeAlt: 'The raw phone photo a client sent in',
     baAfterAlt: 'The finished VISUAILS catalog visual made from it',
     baPoints: [
-      ['The garment is unchanged', 'Cut, colour, print and hardware stay exactly as they are on the sample. That is the only part of the image that is not up for negotiation.'],
+      ['The garment is unchanged', 'Cut, colour, print and hardware stay exactly as they are on the sample. That is the one part of the image not up for negotiation.'],
       ['The rest is built', 'Light, background, model and crop are made around it, to whichever house style the order is running.'],
-      ['A person signs it off', 'Before it reaches you, the finished frame is put next to your original photo and checked against it.'],
+      ['A person signs it off', 'The finished frame is put next to your original photo and checked against it before it reaches you.'],
     ],
-    baNote: 'A phone photo in daylight is enough to start. If yours are worse than this one, send it anyway and you will get an honest answer.',
+    baNote: 'A phone photo in daylight is enough to start. If yours are worse than this one, send it anyway for an honest answer.',
     baNoteLink: 'What makes a usable photo',
 
     dreamKicker: 'What it is all actually for',
     dreamH: 'A small label that never looked small.',
-    dreamLede: 'Nobody scrolling your page knows how many people work here. They only see whether the images look like a brand that has its act together — and that judgement is made in about two seconds. It is also the one part of looking established that a young label can simply go and buy.',
+    dreamLede: 'Nobody scrolling your page knows how many people work here. They only see whether the images look like a brand that has its act together, and that judgement takes two seconds. It is the one part of looking established a young label can simply go and buy.',
     dreamCta: 'See an order in full',
     dreamAlt: 'A VISUAILS lifestyle visual — a styled campaign scene',
 
     weekH: 'The week you get back.',
-    weekLede: 'A shoot is not one day. It is the week around it: the casting, the booking, the shipping, the reschedule when it rains, the two evenings spent culling frames. Here is what that week looks like instead.',
+    weekLede: 'A shoot is not one day. It is the week around it: the casting, the booking, the shipping, the reschedule when it rains, the two evenings culling frames. Here is that week instead.',
     week: [
-      ['Monday', 'You drop a folder of product photos into the portal. Twenty minutes, and most of that is renaming folders to your SKUs.'],
-      ['Wednesday', 'The order lands. You go through it in the portal, approve what is right and flag what is not.'],
-      ['Friday', 'Product pages are live and the carousels are scheduled. You were not in a studio once.'],
+      ['Monday', 'You drop a folder of product photos into the portal. Twenty minutes, most of it renaming folders to your SKUs.'],
+      ['Wednesday', 'The order lands. You approve what is right in the portal and flag what is not.'],
+      ['Friday', 'Product pages are live, carousels scheduled. You were not in a studio once.'],
     ],
     backH: 'What that frees up',
     back: [
-      ['No casting, no booking', 'No model, no photographer, no studio, and no single day everyone has to be free at the same time.'],
-      ['Nothing leaves your stockroom', 'Samples stay where they are. Nothing is shipped out and nothing comes back creased.'],
-      ['No day off the business', 'A shoot day is a day you are not buying, selling, or building anything.'],
-      ['No cull, no retouch queue', 'You get finished visuals, not four hundred frames to sort through on a Sunday.'],
+      ['No casting, no booking', 'No model, no photographer, no studio, no shared free day.'],
+      ['Nothing leaves your stockroom', 'Nothing is shipped and nothing comes back creased.'],
+      ['No day off the business', 'A shoot day is a day you sell nothing.'],
+      ['No cull, no retouch queue', 'Finished visuals, not four hundred frames to sort on a Sunday.'],
     ],
-
-    vsH: 'What an order replaces.',
-    vsLede: 'Not to scare you off a shoot — a good one is still the best thing that can happen to a garment. But a day is a day, and it is worth counting what is in it.',
-    vsAK: 'A production day',
-    vsAV: shoot.range,
-    vsAN: shoot.basis,
-    vsAList: shoot.items,
-    vsBK: `${EX_FULL} products`,
-    vsBV: euro(Q_FULL.net, 'en'),
-    vsBN: `${vatLabel('excl', 'en')}, everything counted — ${euro(Q_FULL.rate, 'en')} a product`,
-    vsBList: ['Nothing to ship, nowhere to travel', 'No day off the business', 'The output is agreed before you pay', 'Run it again next season without rebooking'],
-    vsNote: shoot.caveat,
+    // The one sentence left over from the deleted "What an order replaces"
+    // band: the euros against a shoot day are /compare's and /pricing's
+    // argument, and this band is the same argument in hours. The link is the
+    // handover.
+    backNote: 'A shoot costs a day as well as a fee, and only one of those two is on the invoice.',
+    backNoteLink: 'What an order replaces, counted',
 
     chH: 'One order, every place it has to go.',
-    chLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} visuals each — ${EX_VISUALS} finished images, cut for the places they actually have to sit.`,
+    chLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} visuals each — ${EX_VISUALS} finished images, cut for where they have to sit.`,
+    // Eight destinations, one line each. The second line was a sentence per
+    // channel until this pass; a list a reader scans does not need one.
     ch: [
-      ['Product page hero', 'The first frame on the page, on white or in scene'],
-      ['Product page grid', 'Front, back and a fabric detail, consistent across the range'],
-      ['On-model shot', 'In every catalog set, so nobody has to guess at fit'],
-      ['Instagram carousel', 'Three styled frames per product, ready to post'],
-      ['Reels and TikTok', 'Vertical clips, quoted per clip and added to any order'],
-      ['Paid social', 'The same look in ad crops, so the click matches the landing page'],
-      ['Marketplaces', 'Clean product images for the likes of Zalando, Amazon and bol'],
-      ['Email and linesheets', 'Wide crops for newsletters and wholesale sheets'],
+      ['Product page hero', 'On white or in scene'],
+      ['Product page grid', 'Front, back and a fabric detail'],
+      ['On-model shot', 'In every catalog set'],
+      ['Instagram carousel', 'Three styled frames per product'],
+      ['Reels and TikTok', 'Vertical clips, added to any order'],
+      ['Paid social', 'The same look in ad crops'],
+      ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
+      ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
     ],
     chNote: 'Downloads arrive sized per channel in the portal, with a provenance manifest beside them.',
 
+    // NO FIGURES IN THIS BAND ANY MORE. The setup price and the credit are in
+    // the price band, said once; repeating them here was the fourth and fifth
+    // time the page priced the same product. What is left is the argument the
+    // price cannot make — that the face is yours and nobody else's.
     bmH: ['One face,', 'and it is only yours.'],
-    bmLede: `The roster below is who you can pick from today, and any of them can appear in your drop. Your Brand Model is the other route: a face made for your brand alone, set up once for ${euro(AMOUNT.brandModel, 'en')} and never used for anyone else — with ${euro(AMOUNT.brandModelCredit, 'en')} of it credited back on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
-    bmNote: 'A returning face is the cheapest continuity a brand can buy. It is the same reason catalogues have used the same model for years — recognition does the work that a bigger budget would otherwise have to.',
+    bmLede: 'The roster below is who you can pick from today, and any of them can appear in your order. Your Brand Model is the other route: a face made for your brand alone, used by nobody else.',
+    bmNote: 'A returning face is the cheapest continuity a brand can buy — it is why catalogues have used the same model for years.',
     bmCta: 'How Your Brand Model works',
 
-    prH: 'Or put it on a monthly plan.',
-    prLede: `The ladder is for when you need it. A plan is for when you need it every month — and it is priced below the ladder for the same output, which is the only reason to offer one. Every figure here is ${vatLabel('excl', 'en')}.`,
-    prNote: `No plan, no problem: an order on the ladder starts at ${euro(ENTRY_RATE, 'en')} a product and comes down to ${euro(FLOOR_RATE, 'en')}, with ${FIRST_ORDER_PCT}% off a first order. Or see it on your own product for ${sample.price} first.`,
-    prCta: 'The full price list',
-
     plH: 'Work back from your launch date.',
-    plLede: 'The window is reserved capacity, not a place in a queue. That is why it can be promised at all — and why it runs out. Three dates decide the whole thing.',
+    plLede: 'The window is reserved capacity, not a place in a queue. That is why it can be promised at all — and why it runs out.',
     pl: [
-      ['Your launch date', 'The day the collection has to be live and posting. Everything else is counted backwards from here.'],
-      ['Minus 48 hours', 'The reserved window. Once the calendar has cleared it, nothing else in the studio is allowed to push it.'],
-      ['Minus one folder', 'The day you send the photos. That is your part finished — the date is already locked by then.'],
+      ['Your launch date', 'The day the collection has to be live. Everything else is counted backwards from here.'],
+      // WINDOW_THRESHOLD moved here from the deleted price tile in the old drop
+      // band. It is the condition on the window, and this is the band about the
+      // window — it had no business being stated beside a per-product rate.
+      ['Minus 48 hours', `The reserved window, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it; below that count an order runs in the standard queue.`],
+      ['Minus one folder', 'The day you send the photos. That is your part finished, and the date is already locked.'],
     ],
-    plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait. Season launches cluster, so the weeks around them go first.',
+    plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait.',
     plCta: 'See which weeks are open',
 
     dashH: ['What happens', 'after you order.'],
-    dashLede: 'An order is not a file that lands in your inbox. It runs on two screens — one you get, one we work in — and both of them are the reason a date can be promised at all.',
+    dashLede: 'Two screens — one you get, one we work in — and both are the reason a date can be promised at all.',
     dashPortalK: 'Your portal',
-    dashPortalN: 'A private link, no password. Order summary, status and the delivery date with a countdown. When the order lands: the full gallery, approve or request a revision image by image, and downloads sized per channel — shop, social, ads — with a provenance manifest beside them.',
+    dashPortalN: 'A private link, no password. Status and the delivery date with a countdown, then the full gallery: approve or request a revision image by image, and download sized per channel.',
     dashPortalCta: 'See the client portal',
     dashPortalPh: 'Client portal · delivery gallery',
     dashPortalSpec: 'Screenshot to place · 16:10 · /img/portal-gallery.webp',
     dashPortalNote: 'The approve / request-revision screen, with one image selected.',
     dashStudioK: 'The studio side',
-    dashStudioN: 'Every order, its status and the capacity calendar the date picker reads from. A status change writes the client-visible timeline in the same move, which is why the portal is never out of date with the studio.',
+    dashStudioN: 'Every order and the capacity calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
     dashStudioCta: 'See how an order is run',
     dashStudioPh: 'Studio dashboard · capacity calendar',
     dashStudioSpec: 'Screenshot to place · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'The order table with the week that is full marked as full.',
     dashLogK: 'The log is the paperwork',
-    dashLogN: 'Every approval and revision is stamped with a time. That log is the human-review record the EU AI Act asks for, and it exports as a PDF — so the thing that keeps you in control is the same thing that keeps the file compliant.',
+    dashLogN: 'Every approval and revision is stamped with a time, and the log exports as a PDF. It is the human-review record the EU AI Act asks for: what keeps you in control keeps the file compliant.',
     dashLogCta: 'Read the AI Act page',
-
-    statsH: 'What the numbers actually are.',
-    stats: [
-      ['48h', `the reserved window an order of ${WINDOW_THRESHOLD} products or more is finished inside, once the calendar has cleared it`],
-      [euro(FLOOR_RATE, 'en'), `the lowest the per-product rate goes, ${vatLabel('excl', 'en')} — it starts at ${euro(ENTRY_RATE, 'en')} and falls the more you run`],
-      ['4', 'house styles to choose from: Glow, Dunes, Flash and Phone-made'],
-      [sample.price, 'to see it on your own product before you commit to anything'],
-    ],
 
     promiseH: ['No wall of reviews yet.', 'So we earn it the honest way.'],
     promiseQuote: `"I check every visual myself before it reaches you, and I would rather redo one than ship it. Not sure yet? See it on your own product for ${sample.price} first."`,
     promiseSign: 'founder, VISUAILS',
+    // The test sample was the first check as well as the last line of the
+    // quote directly above it — the same offer twice inside one panel. The
+    // three checks are three different promises now.
     promiseChecks: [
-      [`See it first for ${sample.price}`, 'a test sample on your own product before you commit to anything.'],
-      ['We ask before we call it done', 'every order ends with the same question: are these right? If they are not, we go through it with you.'],
+      ['We ask before we call it done', 'every order ends with the same question: are these right? If not, we go through it with you.'],
+      ['You own what you get', 'commercial use across your shop, marketplaces, ads and feeds. No licence per use.'],
       ['The first three brands, free', `a first order of up to ${EX_SMALL} products at no charge, in exchange for a published case study.`],
     ],
     trust: ['Made in Enschede, NL', 'KVK-registered business', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
 
     obH: 'The things you would ask on a call.',
-    obLede: 'Four answers that usually take a phone call to get out of a supplier. They are the same four either way, so they may as well be here.',
+    obLede: 'Three answers that usually take a phone call to get out of a supplier.',
+    // THREE, not four. "Who owns the visuals?" is now one of the promise
+    // checks below, where it sits beside the other things the studio commits
+    // to rather than as a risk to be talked down. It is not said twice.
     ob: [
-      ['Who owns the visuals?', 'You do. They are made for commercial use — your shop, marketplaces, paid ads and social feeds. No licence per use, and no extra fee for putting them somewhere else.', null, null],
       ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve or request a revision image by image.', 'See the client portal', '/portal'],
-      ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is generated from photographs of your real product and finished by hand — a made image, not a photograph of a shoot that happened. The files come with a provenance manifest.', 'Read the AI Act page', '/ai-act'],
+      ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is made from photographs of your real product and finished by hand, and the files come with a provenance manifest.', 'Read the AI Act page', '/ai-act'],
       ['My own photos are bad.', 'A phone photo in daylight on a plain surface is enough to start. The guidelines run to two pages and are mostly about light.', 'What makes a usable photo', '/upload-guidelines'],
     ],
 
@@ -384,68 +427,64 @@ const COPY = {
       ['Studio', 'Enschede, NL'],
     ],
 
-    dropH: ['Eén prijs per product.', 'Die zakt als je er meer doet.'],
-    dropLede: `Een product is de eenheid — een catalogset en een lifestyle-carousel, ${PER_PRODUCT_VISUALS} afgewerkte beelden. Het tarief begint bij ${euro(ENTRY_RATE, 'nl')} en zakt naar ${euro(FLOOR_RATE, 'nl')}, dus er is geen aantal dat het verkeerde aantal is en niets om eerst uit te rekenen.`,
-    dropSpecK: `${EX_SMALL} producten`,
-    dropSpecV: `${euro(Q_SMALL.rate, 'nl')} per stuk`,
-    dropSpecP: euro(Q_SMALL.net, 'nl'),
-    dropSpecN: `${vatLabel('excl', 'nl')}. Je eerste bestelling is ${FIRST_ORDER_PCT}% goedkoper, één keer per merk.`,
-    dropWinK: 'Het venster',
-    dropWinV: '48u',
-    dropWinN: `Vanaf ${WINDOW_THRESHOLD} producten gaat de bestelling in de studioplanning en krijgt hij een gereserveerd venster — bevestigd voordat je betaalt, en nooit aangeboden voordat de planning het heeft vrijgegeven. Daaronder loopt hij in de gewone wachtrij.`,
-    dropPlateCap: 'Een bestelling, zoals geleverd',
-    dropPlateSub: 'Catalogset · uit een telefoonfoto',
-    dropPlateAlt: 'Een afgewerkt VISUAILS catalogbeeld',
+    // Zie de EN-tabel voor waarom deze band er is: vier prijsbanden zijn er één
+    // geworden en alles wat deze pagina over geld zegt, staat in deze keys.
+    priceH: ['Eén prijs per product.', 'Die zakt als je er meer doet.'],
+    priceLede: `Een product is de eenheid — een catalogset en een lifestyle-carousel, ${PER_PRODUCT_VISUALS} afgewerkte beelden. Neem het paar of één van de twee helften, en het tarief zakt naarmate het aantal stijgt.`,
+    priceVat: `Alle bedragen in dit blok zijn ${vatLabel('excl', 'nl')}.`,
+    ladCountCol: 'Producten',
+    ladKinds: [
+      ['Compleet', `${PER_PRODUCT_VISUALS} beelden`],
+      ['Catalogset', `${CATALOG_IMAGES} beelden`],
+      ['Lifestyle', `${LIFESTYLE_IMAGES} beelden`],
+    ],
+    ladPer: 'per product',
+    ladNote: 'Allebei op hetzelfde product is één tarief, niet de twee bij elkaar opgeteld.',
+    workedH: 'Wat dat wordt',
+    workedUnit: 'producten',
+    workedEach: 'per stuk',
+    firstLead: `Eerste bestelling: ${FIRST_ORDER_PCT}% korting.`,
+    firstBody: `Eén keer per merk, bij elk aantal — ${EX_SMALL} complete producten is ${euro(Q_SMALL.net, 'nl')}, en ${euro(Q_SMALL_FIRST.net, 'nl')} de eerste keer.`,
+    addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')}, verrekend over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
+    planNote: `Bestel je elke maand in plaats van elk seizoen? Drie maandplannen, vanaf ${euro(PLAN_FROM, 'nl')} voor ${PLAN_LOW}–${PLAN_HIGH} producten per maand, en elk goedkoper dan de staffel voor dezelfde output.`,
+    vatSummary: 'Hoe de btw werkt',
+    priceCta: 'Start een bestelling',
+    priceCta2: 'De volledige prijslijst',
 
     // Zie de EN-tabel: deze twee blijven staan voor de merkmodel-rail verderop.
     railPrev: 'Vorige',
     railNext: 'Volgende',
 
-    svcH: ['Alles wat de studio maakt,', 'en wat het kost.'],
-    svcLede: `Vier dingen die je kunt bestellen en één manier om ze te blijven bestellen. Catalog en lifestyle zijn per product geprijsd en het tarief zakt naarmate je er meer doet; een videoclip gaat per clip; je merkmodel wordt één keer opgezet. Alle bedragen hier zijn ${vatLabel('excl', 'nl')}.`,
+    // De prijzen zijn uit deze band gehaald — die staan één keer in de band
+    // hierboven. Wat blijft is wat een dienst IS en wat je terugkrijgt.
+    svcH: ['Vier dingen die de studio maakt,', 'en wat je terugkrijgt.'],
+    svcLede: 'Catalog en lifestyle zijn wat een product krijgt. Een videoclip en je merkmodel komen daarbovenop, of staan op zichzelf.',
     svc: [
       [
         'Catalogset',
         'Strakke, consistente productpagina’s die een jonge lijn gevestigd laten lijken.',
         `${CATALOG_IMAGES} beelden per product: voorkant, achterkant, een close-up van de stof of het logo, en één gedragen op een model.`,
-        `vanaf ${euro(CATALOG_FROM, 'nl')}`,
-        `per product, ${vatLabel('excl', 'nl')} — zakt naar ${euro(CATALOG_TO, 'nl')} naarmate je er meer doet`,
         '/catalog',
       ],
       [
         'Lifestyle-carousel',
         'Gestileerde scènes in context die de scroll stoppen en het gevoel verkopen.',
         `${LIFESTYLE_IMAGES} beelden per product: één gestylede look, uitgesneden voor een carousel en klaar om te posten.`,
-        `vanaf ${euro(LIFESTYLE_FROM, 'nl')}`,
-        `per product, ${vatLabel('excl', 'nl')} — zakt naar ${euro(LIFESTYLE_TO, 'nl')} naarmate je er meer doet`,
         '/lifestyle',
       ],
       [
         'Videoclip',
         'Subtiele beweging die doorklik oplevert waar een stilstaand beeld blijft steken.',
-        'Eén korte verticale clip, gesneden voor Reels, TikTok en paid. Toe te voegen aan elke bestelling, of los te bestellen.',
-        euro(AMOUNT.video, 'nl'),
-        `per clip, ${vatLabel('excl', 'nl')} — hetzelfde tarief binnen een bestelling of los`,
+        'Eén korte verticale clip, gesneden voor Reels, TikTok en paid.',
         '/video',
       ],
       [
         'Je merkmodel',
         'Eén gezicht, alleen voor jouw merk gemaakt en door niemand anders gebruikt.',
-        `Eén keer opgezet, daarna in elke bestelling die je doet. ${euro(AMOUNT.brandModelCredit, 'nl')} van de opzet komt terug op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
-        euro(AMOUNT.brandModel, 'nl'),
-        `eenmalige opzet, ${vatLabel('excl', 'nl')} — volledig terug over ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
+        'Eén keer opgezet, daarna in elke bestelling die je doet.',
         '/custom-models',
       ],
-      [
-        'Een maandplan',
-        'Voor als het niet één lancering is maar elke maand van het jaar.',
-        `${PLAN_LOW}–${PLAN_HIGH} producten per maand voor één maandbedrag, goedkoper dan de staffel voor dezelfde output.`,
-        `vanaf ${euro(PLAN_FROM, 'nl')}`,
-        `per maand, ${vatLabel('excl', 'nl')} — drie plannen, volledig uitgewerkt op de prijslijst`,
-        '/pricing',
-      ],
     ],
-    svcNote: `Catalog en lifestyle op hetzelfde product is één tarief in plaats van twee: ${euro(ENTRY_RATE, 'nl')} per product, zakkend naar ${euro(FLOOR_RATE, 'nl')}, tegenover ${euro(SEPARATE_FROM, 'nl')} tot ${euro(SEPARATE_TO, 'nl')} als je ze los koopt. ${vatNote('nl')}`,
     svcCta: 'Start een bestelling',
 
     pipeH: 'Van map tot lancering.',
@@ -453,17 +492,19 @@ const COPY = {
     pipe: [
       ['Jij stuurt een map', 'Eén map per product, de mapnaam is de SKU. Een telefoonfoto is genoeg om te beginnen.'],
       ['De datum wordt vrijgegeven', 'De planning wordt tegen de echte capaciteit gelegd. Zit de week vol, dan krijg je de eerstvolgende die dat niet is.'],
-      ['De studio draait', 'Catalog, lifestyle en video in één huisstijl, afgewerkt met professionele bewerking en kleurcorrectie.'],
+      // De vier huisstijlen staan nu hier — ze waren een cijfer in de band
+      // "Wat de getallen werkelijk zijn", die met de prijsfusie is vervallen.
+      ['De studio draait', 'Catalog, lifestyle en video in één huisstijl — Glow, Dunes, Flash of Phone-made — bewerking en kleurcorrectie afgewerkt.'],
       ['Een mens kijkt ernaar', 'Elk beeld wordt bekeken voordat het weggaat. Er wordt niets automatisch geleverd.'],
     ],
 
     whoH: 'Voor merken met meer producten dan shootdagen.',
-    whoLede: 'Vier situaties waar deze studio op geprijsd is. Zit die van jou ertussen, dan klopt de rekensom al.',
+    whoLede: 'Vier situaties waar deze studio op geprijsd is. Zit die van jou ertussen, dan klopt de rekensom.',
     who: [
       ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De lijn moet eruitzien alsof hij thuishoort naast labels die tien jaar ouder zijn.'],
-      ['Elk seizoen een lancering', 'Vier tot zes per jaar, en elke keer begint het met een fotograaf zoeken, een model regelen en een dag vinden waarop iedereen kan.'],
-      ['Marktplaatsen voeden', 'Zalando, Amazon en bol willen schone productbeelden volgens een vaste spec. Dat goed krijgen is niemands favoriete middag.'],
-      ['Meer SKU’s dan uren', 'De collectie groeide harder dan de productie eromheen, en de fotografie is het stuk dat blijft doorschuiven.'],
+      ['Elk seizoen een lancering', 'Vier tot zes per jaar, en elke keer begint het met een fotograaf, een model en een dag waarop iedereen kan.'],
+      ['Marktplaatsen voeden', 'Zalando, Amazon en bol willen schone beelden volgens een vaste spec, en dat goed krijgen is niemands favoriete middag.'],
+      ['Meer SKU’s dan uren', 'De collectie groeide harder dan de productie eromheen, en de fotografie blijft doorschuiven.'],
     ],
     notForH: 'Waarschijnlijk niets voor je als',
     notFor: [
@@ -480,122 +521,107 @@ const COPY = {
     baBeforeAlt: 'De ruwe telefoonfoto die een klant instuurde',
     baAfterAlt: 'Het afgewerkte VISUAILS-catalogbeeld dat daaruit is gemaakt',
     baPoints: [
-      ['Het kledingstuk blijft zoals het is', 'Snit, kleur, print en fournituren blijven precies zoals ze op het sample zitten. Dat is het enige deel van het beeld waar niet over te onderhandelen valt.'],
+      ['Het kledingstuk blijft zoals het is', 'Snit, kleur, print en fournituren blijven precies zoals ze op het sample zitten — het enige deel van het beeld waar niet over te onderhandelen valt.'],
       ['De rest wordt eromheen gebouwd', 'Licht, achtergrond, model en uitsnede worden eromheen gemaakt, in de huisstijl waarin de bestelling draait.'],
-      ['Een mens tekent het af', 'Voordat het naar je toe gaat, wordt het eindbeeld naast jouw originele foto gelegd en ertegen gecontroleerd.'],
+      ['Een mens tekent het af', 'Het eindbeeld wordt naast jouw originele foto gelegd en ertegen gecontroleerd voordat het weggaat.'],
     ],
-    baNote: 'Een telefoonfoto bij daglicht is genoeg om te beginnen. Zijn die van jou slechter dan deze, stuur er dan toch één en je krijgt een eerlijk antwoord.',
+    baNote: 'Een telefoonfoto bij daglicht is genoeg om te beginnen. Zijn die van jou slechter dan deze, stuur er dan toch één voor een eerlijk antwoord.',
     baNoteLink: 'Wat een bruikbare foto is',
 
     dreamKicker: 'Waar het uiteindelijk allemaal om gaat',
     dreamH: 'Een klein label dat er nooit klein uitzag.',
-    dreamLede: 'Niemand die je pagina scrolt weet hoeveel mensen hier werken. Ze zien alleen of de beelden van een merk zijn dat het voor elkaar heeft — en dat oordeel valt in ongeveer twee seconden. Het is ook het enige deel van gevestigd overkomen dat een jong label gewoon kan kopen.',
+    dreamLede: 'Niemand die je pagina scrolt weet hoeveel mensen hier werken. Ze zien alleen of de beelden van een merk zijn dat het voor elkaar heeft, en dat oordeel valt in twee seconden. Het is het enige deel van gevestigd overkomen dat een jong label gewoon kan kopen.',
     dreamCta: 'Bekijk een hele bestelling',
     dreamAlt: 'Een VISUAILS lifestyle-beeld — een gestylede campagnescène',
 
     weekH: 'De week die je terugkrijgt.',
-    weekLede: 'Een shoot is niet één dag. Het is de week eromheen: de casting, de boeking, het opsturen, het verzetten als het regent, de twee avonden foto’s uitzoeken. Zo ziet die week er in plaats daarvan uit.',
+    weekLede: 'Een shoot is niet één dag. Het is de week eromheen: de casting, de boeking, het opsturen, het verzetten als het regent, de twee avonden foto’s uitzoeken. Zo ziet die week er nu uit.',
     week: [
-      ['Maandag', 'Je zet een map met productfoto’s in het portaal. Twintig minuten, en het meeste daarvan is mappen hernoemen naar je SKU’s.'],
-      ['Woensdag', 'De bestelling landt. Je loopt hem door in het portaal, keurt goed wat klopt en markeert wat niet klopt.'],
-      ['Vrijdag', 'De productpagina’s staan live en de carousels zijn ingepland. Je bent geen moment in een studio geweest.'],
+      ['Maandag', 'Je zet een map met productfoto’s in het portaal. Twintig minuten, grotendeels mappen hernoemen naar je SKU’s.'],
+      ['Woensdag', 'De bestelling landt. In het portaal keur je goed wat klopt en markeer je wat niet klopt.'],
+      ['Vrijdag', 'De productpagina’s staan live, de carousels ingepland. Je bent geen moment in een studio geweest.'],
     ],
     backH: 'Wat dat vrijmaakt',
     back: [
-      ['Geen casting, geen boeking', 'Geen model, geen fotograaf, geen studio, en geen dag waarop iedereen tegelijk vrij moet zijn.'],
-      ['Er gaat niets de voorraad uit', 'Samples blijven waar ze liggen. Er wordt niets opgestuurd en er komt niets gekreukt terug.'],
-      ['Geen dag uit de zaak', 'Een shootdag is een dag waarop je niets inkoopt, niets verkoopt en niets opbouwt.'],
-      ['Geen selectie, geen retoucheerlijst', 'Je krijgt afgewerkte beelden, geen vierhonderd frames om op een zondag door te spitten.'],
+      ['Geen casting, geen boeking', 'Geen model, geen fotograaf, geen studio, geen gedeelde vrije dag.'],
+      ['Er gaat niets de voorraad uit', 'Er wordt niets opgestuurd en er komt niets gekreukt terug.'],
+      ['Geen dag uit de zaak', 'Een shootdag is een dag waarop je niets verkoopt.'],
+      ['Geen selectie, geen retoucheerlijst', 'Afgewerkte beelden, geen vierhonderd frames voor op zondag.'],
     ],
-
-    vsH: 'Wat een bestelling vervangt.',
-    vsLede: 'Niet om je van een shoot af te houden — een goede is nog altijd het beste wat een kledingstuk kan overkomen. Maar een dag is een dag, en het is de moeite waard om te tellen wat erin zit.',
-    vsAK: 'Een productiedag',
-    vsAV: shoot.range,
-    vsAN: shoot.basis,
-    vsAList: shoot.items,
-    vsBK: `${EX_FULL} producten`,
-    vsBV: euro(Q_FULL.net, 'nl'),
-    vsBN: `${vatLabel('excl', 'nl')}, alles meegerekend — ${euro(Q_FULL.rate, 'nl')} per product`,
-    vsBList: ['Niets op te sturen, nergens heen te reizen', 'Geen dag uit de zaak', 'De uitkomst staat vast voor je betaalt', 'Volgend seizoen opnieuw, zonder iets te herboeken'],
-    vsNote: shoot.caveat,
+    // Wat overblijft van de geschrapte band "Wat een bestelling vervangt": de
+    // euro’s tegenover een shootdag staan op /compare en /pricing, deze band
+    // voert hetzelfde argument in uren. De link is de overdracht.
+    backNote: 'Een shoot kost een dag én een bedrag, en maar één van die twee staat op de factuur.',
+    backNoteLink: 'Wat een bestelling vervangt, uitgeteld',
 
     chH: 'Eén bestelling, overal waar hij heen moet.',
-    chLede: `Een seizoen van ${EX_FULL} producten is ${PER_PRODUCT_VISUALS} beelden per stuk — ${EX_VISUALS} afgewerkte beelden, uitgesneden voor de plekken waar ze echt moeten staan.`,
+    chLede: `Een seizoen van ${EX_FULL} producten is ${PER_PRODUCT_VISUALS} beelden per stuk — ${EX_VISUALS} afgewerkte beelden, uitgesneden voor waar ze moeten staan.`,
     ch: [
-      ['Hero op de productpagina', 'Het eerste beeld op de pagina, op wit of in scène'],
-      ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail, consistent over de hele lijn'],
-      ['On-model beeld', 'In elke catalogset, zodat niemand naar de pasvorm hoeft te raden'],
-      ['Instagram-carousel', 'Drie gestylede beelden per product, klaar om te posten'],
-      ['Reels en TikTok', 'Verticale clips, per clip geoffreerd en toe te voegen aan elke bestelling'],
-      ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes, zodat de klik bij de landingspagina past'],
-      ['Marktplaatsen', 'Schone productbeelden voor partijen als Zalando, Amazon en bol'],
-      ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale-overzichten'],
+      ['Hero op de productpagina', 'Op wit of in scène'],
+      ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail'],
+      ['On-model beeld', 'In elke catalogset'],
+      ['Instagram-carousel', 'Drie gestylede beelden per product'],
+      ['Reels en TikTok', 'Verticale clips, bij elke bestelling'],
+      ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes'],
+      ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
+      ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
     ],
     chNote: 'De downloads staan per kanaal op maat klaar in het portaal, met een herkomstmanifest ernaast.',
 
+    // Geen bedragen meer in deze band — die staan één keer in de prijsband.
     bmH: ['Eén gezicht,', 'en het is alleen van jou.'],
-    bmLede: `De rij hieronder is waar je vandaag uit kunt kiezen, en elk van hen kan in jouw drop verschijnen. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is, één keer opgezet voor ${euro(AMOUNT.brandModel, 'nl')} en nooit voor iemand anders gebruikt — waarvan ${euro(AMOUNT.brandModelCredit, 'nl')} terugkomt op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
-    bmNote: 'Een terugkerend gezicht is de goedkoopste continuïteit die een merk kan kopen. Het is dezelfde reden waarom catalogi al jaren hetzelfde model gebruiken — herkenning doet het werk waar anders een groter budget voor nodig is.',
+    bmLede: 'De rij hieronder is waar je vandaag uit kunt kiezen, en elk van hen kan in jouw bestelling verschijnen. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is en door niemand anders gebruikt wordt.',
+    bmNote: 'Een terugkerend gezicht is de goedkoopste continuïteit die een merk kan kopen — daarom gebruiken catalogi al jaren hetzelfde model.',
     bmCta: 'Zo werkt je merkmodel',
 
-    prH: 'Of zet het op een maandplan.',
-    prLede: `De staffel is voor als je het nodig hebt. Een plan is voor als je het elke maand nodig hebt — en het is voor dezelfde output goedkoper dan de staffel, want dat is de enige reden om er een aan te bieden. Alle bedragen hier zijn ${vatLabel('excl', 'nl')}.`,
-    prNote: `Liever geen plan: een bestelling op de staffel begint bij ${euro(ENTRY_RATE, 'nl')} per product en zakt naar ${euro(FLOOR_RATE, 'nl')}, met ${FIRST_ORDER_PCT}% korting op je eerste bestelling. Of zie het eerst op je eigen product voor ${sample.price}.`,
-    prCta: 'De volledige prijslijst',
-
     plH: 'Reken terug vanaf je livegangdatum.',
-    plLede: 'Het venster is gereserveerde capaciteit, geen plek in een wachtrij. Daarom kan het überhaupt beloofd worden — en daarom raakt het op. Drie data bepalen het hele verhaal.',
+    plLede: 'Het venster is gereserveerde capaciteit, geen plek in een wachtrij. Daarom kan het überhaupt beloofd worden — en daarom raakt het op.',
     pl: [
-      ['Je livegangdatum', 'De dag waarop de collectie live moet staan en gepost moet worden. Al het andere wordt hiervandaan teruggeteld.'],
-      ['Min 48 uur', 'Het gereserveerde venster. Zodra de planning het heeft vrijgegeven, mag niets anders in de studio eroverheen.'],
-      ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar — de datum staat op dat moment al vast.'],
+      ['Je livegangdatum', 'De dag waarop de collectie live moet staan. Al het andere wordt hiervandaan teruggeteld.'],
+      // WINDOW_THRESHOLD staat nu hier, niet meer naast een tarief per product.
+      ['Min 48 uur', `Het gereserveerde venster, bij bestellingen van ${WINDOW_THRESHOLD} producten of meer. Zodra de planning het heeft vrijgegeven, mag niets anders in de studio eroverheen; daaronder loopt een bestelling in de gewone wachtrij.`],
+      ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar, en de datum staat al vast.'],
     ],
-    plNote: 'Weken worden één voor één geboekt, en een volle week wordt als vol aangeboden in plaats van als langere wachttijd. Seizoenslanceringen klonteren samen, dus de weken eromheen gaan het eerst.',
+    plNote: 'Weken worden één voor één geboekt, en een volle week wordt als vol aangeboden in plaats van als langere wachttijd.',
     plCta: 'Kijk welke weken open staan',
 
     dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
-    dashLede: 'Een bestelling is geen bestand dat in je inbox valt. Hij draait op twee schermen — één dat jij krijgt, één waarin wij werken — en samen zijn ze de reden dat er überhaupt een datum beloofd kan worden.',
+    dashLede: 'Twee schermen — één dat jij krijgt, één waarin wij werken — en samen zijn ze de reden dat er überhaupt een datum beloofd kan worden.',
     dashPortalK: 'Jouw portaal',
-    dashPortalN: 'Een privélink, zonder wachtwoord. Ordersamenvatting, status en de leverdatum met een aftelling. Zodra de bestelling landt: de volledige galerij, per beeld goedkeuren of een revisie aanvragen, en downloads op maat per kanaal — shop, social, ads — met een herkomstmanifest ernaast.',
+    dashPortalN: 'Een privélink, zonder wachtwoord. Status en de leverdatum met een aftelling, daarna de volledige galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
     dashPortalCta: 'Bekijk het klantportaal',
     dashPortalPh: 'Klantportaal · leveringsgalerij',
     dashPortalSpec: 'Screenshot te plaatsen · 16:10 · /img/portal-gallery.webp',
     dashPortalNote: 'Het scherm voor goedkeuren en revisie aanvragen, met één beeld geselecteerd.',
     dashStudioK: 'De studiokant',
-    dashStudioN: 'Elke order, de status ervan en de capaciteitskalender waar de datumkiezer uit leest. Een statuswijziging schrijft in dezelfde beweging de tijdlijn die de klant ziet — daarom loopt het portaal nooit achter op de studio.',
+    dashStudioN: 'Elke bestelling en de capaciteitskalender waar de datumkiezer uit leest. Een statuswijziging schrijft in dezelfde beweging de tijdlijn die jij ziet, dus het portaal loopt nooit achter op de studio.',
     dashStudioCta: 'Zie hoe een bestelling draait',
     dashStudioPh: 'Studiodashboard · capaciteitskalender',
     dashStudioSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'De ordertabel, met de volle week als vol gemarkeerd.',
     dashLogK: 'Het logboek is de papierwinkel',
-    dashLogN: 'Elke goedkeuring en revisie krijgt een tijdstempel. Dat logboek is precies de menselijke controle die de EU AI Act vraagt, en het exporteert als pdf — dus wat jou de controle geeft, is hetzelfde wat het dossier op orde houdt.',
+    dashLogN: 'Elke goedkeuring en revisie krijgt een tijdstempel, en het logboek exporteert als pdf. Het is precies de menselijke controle die de EU AI Act vraagt: wat jou de controle geeft, houdt het dossier op orde.',
     dashLogCta: 'Lees de AI Act-pagina',
-
-    statsH: 'Wat de getallen werkelijk zijn.',
-    stats: [
-      ['48u', `het gereserveerde venster waarbinnen een bestelling van ${WINDOW_THRESHOLD} producten of meer af is, zodra de planning het heeft vrijgegeven`],
-      [euro(FLOOR_RATE, 'nl'), `het laagste dat het tarief per product wordt, ${vatLabel('excl', 'nl')} — het begint bij ${euro(ENTRY_RATE, 'nl')} en zakt naarmate je er meer doet`],
-      ['4', 'huisstijlen om uit te kiezen: Glow, Dunes, Flash en Phone-made'],
-      [sample.price, 'om het op je eigen product te zien voordat je je ergens aan vastlegt'],
-    ],
 
     promiseH: ['Nog geen muur vol reviews.', 'Dus verdienen we het eerlijk.'],
     promiseQuote: `"Ik bekijk elk beeld zelf voordat het naar je toe gaat, en ik doe er liever één over dan dat ik hem verstuur. Nog niet zeker? Zie het eerst op je eigen product voor ${sample.price}."`,
     promiseSign: 'oprichter, VISUAILS',
+    // De proefvisual stond hier én in het citaat erboven — hetzelfde aanbod
+    // twee keer in één paneel. Drie beloftes, drie verschillende dingen.
     promiseChecks: [
-      [`Zie het eerst voor ${sample.price}`, 'een proefvisual op je eigen product voordat je je ergens aan vastlegt.'],
-      ['We vragen het voordat we het af noemen', 'elke order eindigt met dezelfde vraag: kloppen ze? Zo niet, dan gaan we het samen na.'],
+      ['We vragen het voordat we het af noemen', 'elke bestelling eindigt met dezelfde vraag: kloppen ze? Zo niet, dan gaan we het samen na.'],
+      ['De beelden zijn van jou', 'commercieel te gebruiken in je shop, op marktplaatsen, in advertenties en feeds. Geen licentie per gebruik.'],
       ['De eerste drie merken, gratis', `een eerste bestelling van maximaal ${EX_SMALL} producten kosteloos, in ruil voor een gepubliceerde case.`],
     ],
     trust: ['Gemaakt in Enschede, NL', 'KVK-geregistreerd bedrijf', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
 
     obH: 'De dingen die je aan de telefoon zou vragen.',
-    obLede: 'Vier antwoorden waar je bij een leverancier meestal een belletje voor nodig hebt. Het zijn toch elke keer dezelfde vier, dus staan ze net zo goed hier.',
+    obLede: 'Drie antwoorden waar je bij een leverancier meestal een belletje voor nodig hebt.',
+    // DRIE, niet vier: "Van wie zijn de beelden?" staat nu bij de beloftes
+    // hierboven, en dus niet twee keer op één pagina.
     ob: [
-      ['Van wie zijn de beelden?', 'Van jou. Ze zijn gemaakt voor commercieel gebruik — je shop, marktplaatsen, betaalde advertenties en socialmediafeeds. Geen licentie per gebruik, en geen extra kosten om ze ergens anders in te zetten.', null, null],
       ['En als ze niet goed zijn?', 'Er wordt niets automatisch geleverd. Een mens bekijkt elk beeld eerst, en in het portaal keur je per beeld goed of vraag je een revisie aan.', 'Bekijk het klantportaal', '/portal'],
-      ['Ziet een klant dat het AI is?', 'Ze zijn AI-gegenereerd en dat zeggen we gewoon. Elk beeld wordt gegenereerd uit foto’s van jouw echte product en met de hand afgewerkt — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. Bij de bestanden zit een herkomstmanifest.', 'Lees de AI Act-pagina', '/ai-act'],
+      ['Ziet een klant dat het AI is?', 'Ze zijn AI-gegenereerd en dat zeggen we gewoon. Elk beeld wordt gemaakt uit foto’s van jouw echte product en met de hand afgewerkt, en bij de bestanden zit een herkomstmanifest.', 'Lees de AI Act-pagina', '/ai-act'],
       ['Mijn eigen foto’s zijn slecht.', 'Een telefoonfoto bij daglicht op een egale ondergrond is genoeg om te beginnen. De richtlijnen zijn twee pagina’s en gaan vooral over licht.', 'Wat een bruikbare foto is', '/upload-guidelines'],
     ],
 
@@ -609,16 +635,6 @@ const COPY = {
     closeAlt: 'Of start meteen een bestelling',
   },
 };
-
-const PLANS = plans(lang);
-// The incl.-VAT twin of a plan's price. plans() returns the net figure because
-// every figure in pricing.js is net; BRIEF-14's rule is that no price is
-// printed without saying which it is, so the label and the gross figure travel
-// together and neither is typed.
-// Net only — see the note above vatNote() in pricing.js for why the gross
-// twin came off every page: VAT is not one rate, so a second figure printed
-// beside the first is only true for a Dutch reader.
-const netLabel = vatLabel('excl', lang);
 
 const c = COPY[lang];
 
@@ -670,69 +686,144 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 2 · WHAT A DROP IS ─────────────────────────────────────────────────────
-    A statement, then the evidence for it as three tiles of unequal weight on
-    one plate. The middle tile is a photograph rather than a claim. */}
-<section class="band">
+{/* ── 2 · THE PRICE, ONCE ────────────────────────────────────────────────────
+    FOUR BANDS WENT INTO THIS ONE. The page explained what it costs in four
+    places that were not next to each other, and a reader who wanted the number
+    had to assemble it from all four:
+
+      · "One price per product. It falls as you add." (was here, 123 words) —
+        its heading and its lede SURVIVE as this band's. The 14-product tile is
+        one of the three worked totals below. The 48-hour tile moved to the
+        planning band at 7c, which is the band about the window; it was stating
+        a service level beside a rate, which is the two-axis confusion the
+        ladder exists to remove.
+      · "Everything the studio makes, and what it costs." (360 words) — its
+        five prices and five terms lines are the table below. What each service
+        IS stayed where it was, as the band directly under this one, with the
+        figures taken out.
+      · "Or put it on a monthly plan." (278 words) — a full plan grid, read
+        from plans(), duplicating /pricing's. It is one sentence now. The
+        homepage's job is to say the other axis exists; /pricing sells it.
+      · "What the numbers actually are." (69 words) — four stats, three of
+        which were restatements. The floor rate is the bottom row of the table,
+        the 48-hour window is at 7c, the four house styles are named in the
+        pipeline at 4, and the test sample is in the closing panel.
+
+    ONE VAT LABEL, above everything it qualifies. Eight of the page's fourteen
+    "excl. VAT" labels lived in the services band, one per figure, because the
+    VAT migration appended the string to every price line it found. Fifteen
+    rates and three totals are all net, so it is said once, at the top, as a
+    block qualifier — and vatNote() says how VAT is actually handled, once, in
+    a disclosure rather than as forty words of small print nobody reads until
+    they need it. That is the same <details> pattern /faq and /start use. */}
+<section class="band hv-price-band">
   <div class="container">
     <div class="statement">
-      <h2>{c.dropH[0]} <em class="hv-accent">{c.dropH[1]}</em></h2>
-      <p class="lede">{c.dropLede}</p>
+      <h2>{c.priceH[0]} <em class="hv-accent">{c.priceH[1]}</em></h2>
+      <p class="lede">{c.priceLede}</p>
     </div>
-    <div class="tiles hv-drop-tiles">
-      <div class="tile s-4">
-        <div class="tile-body">
-          <p class="tile-k">{c.dropSpecK}</p>
-          <p class="tile-v">{c.dropSpecP}</p>
-          <p class="hv-tile-sub">{c.dropSpecV}</p>
-          <p class="tile-n">{c.dropSpecN}</p>
-        </div>
+
+    <p class="hv-price-vat">{c.priceVat}</p>
+
+    {/* A real table, for the reason /pricing gives: a rate card is tabular
+        data, and a reader who wants to know what 12 lifestyle-only products
+        cost should be able to find the row and the column and stop reading.
+        The rungs are read off LADDER, and the assertion in the frontmatter is
+        what allows one set of row labels to head three columns. */}
+    <div class="hv-lad-wrap">
+      <table class="hv-lad">
+        <thead>
+          <tr>
+            <th scope="col" class="hv-lad-corner">{c.ladCountCol}</th>
+            {KIND_IDS.map((id, i) => (
+              <th scope="col">
+                <span class="hv-lad-kind">
+                  {KIND_PAGE[id] ? <a href={lp(KIND_PAGE[id] as string)}>{c.ladKinds[i][0]}</a> : c.ladKinds[i][0]}
+                </span>
+                <span class="hv-lad-sub">{c.ladKinds[i][1]} · {c.ladPer}</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {RUNGS.map((r) => (
+            <tr>
+              <th scope="row">{r.label}</th>
+              {KIND_IDS.map((id) => (<td>{euro(ladderRate(id, r.at), lang)}</td>))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="hv-lad-note">{c.ladNote}</p>
+
+    {/* The multiplication, done — three counts, so nobody has to reach for a
+        calculator to find out what an order is. The middle one carries this
+        grid's one coloured plate, per the same rule the page follows
+        everywhere: two coloured plates in one grid is a palette, one is an
+        instruction. It is on 14 because 14 is the count the old packages had
+        no price for at all. */}
+    <h3 class="hv-worked-h">{c.workedH}</h3>
+    <div class="tiles hv-worked-tiles">
+      {WORKED.map((n, i) => {
+        const q = quote('complete', n);
+        return (
+          <div class={`tile s-4${i === 1 ? ' on-bright tile-c-blue' : ''}`}>
+            <div class="tile-body">
+              <p class="tile-k">{n} {c.workedUnit}</p>
+              <p class="tile-v">{euro(q.net, lang)}</p>
+              <p class="hv-tile-sub">{euro(q.rate, lang)} {c.workedEach}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {/* The first-order discount, stated ONCE. It was in the old drop tile's
+        note and again in the plan band's footer, in two different wordings. */}
+    <p class="hv-price-first"><strong>{c.firstLead}</strong> {c.firstBody}</p>
+
+    <div class="hv-price-foot">
+      <div class="hv-price-notes">
+        <p>{c.addOnNote}</p>
+        <p>{c.planNote}</p>
+        <details class="hv-vat">
+          <summary>{c.vatSummary}</summary>
+          <p>{vatNote(lang)}</p>
+        </details>
       </div>
-      {/* Media bleeds to the tile's edge and the caption sits on it — the one
-          gradient the system allows, and it is a legibility plate rather than
-          decoration. */}
-      <div class="tile s-4">
-        <div class="tile-media tile-media-fill">
-          <img src="/img/catalog-after.webp" alt={c.dropPlateAlt} width="1800" height="1800" loading="lazy" decoding="async" />
-          <span class="tile-cap"><b>{c.dropPlateCap}</b><span>{c.dropPlateSub}</span></span>
-        </div>
-      </div>
-      {/* THE one coloured tile in this grid, and it is on the deadline
-          because the deadline is the thing being sold. .on-bright recomputes
-          the ink ramp; .tile-c-blue only names the colour. */}
-      <div class="tile s-4 on-bright tile-c-blue">
-        <div class="tile-body">
-          <p class="tile-k">{c.dropWinK}</p>
-          <p class="tile-v">{c.dropWinV}</p>
-          <p class="tile-n">{c.dropWinN}</p>
-        </div>
+      <div class="hv-price-cta">
+        <a class="btn btn-primary" href={lp('/start')}>{c.priceCta}</a>
+        <a class="btn btn-ghost" href={lp('/pricing')}>{c.priceCta2}</a>
       </div>
     </div>
   </div>
 </section>
 
 {/* ── 3 · THE SERVICES ───────────────────────────────────────────────────────
-    WHAT WAS HERE AND WHY IT WENT. A horizontal rail of six photographs headed
+    WHAT WAS HERE BEFORE THIS BAND. A horizontal rail of six photographs headed
     "Real output. Zero photoshoots." It showed the work, which is this brand's
-    first principle, but it was the third band on a page whose next four bands
-    are also photographs — so it was proof stacked on proof, and the one thing
-    a visitor could not find anywhere above the fold was the actual offer. That
-    had to be inferred from four tiles eleven bands down.
+    first principle, but it was proof stacked on proof — and the one thing a
+    visitor could not find above the fold was the actual offer.
 
-    THIS BAND REPLACES BOTH. It is the whole offer in one place: what each
-    service is, what you receive, what it costs, and a photograph of it. The
-    "four deliverables" band that used to sit at section 6 IS DELETED rather
-    than reduced — it named the same four services, linked to the same four
-    pages and carried the same four prices, and two bands saying that on one
-    page leaves a reader deciding which is the real price list. What it had
-    that this does not is the "look bigger than you are" framing, and that
-    argument is already made in full by the Dream band at 4c.
+    WHAT THIS BAND IS NOW. It was "Everything the studio makes, and what it
+    costs", and the second half of that promise has moved one band up. Every
+    price, every "from", every terms line and the plans tile are gone; the band
+    above prices all four services in one table, and a fifth tile selling a
+    PAYMENT SHAPE next to four tiles selling WORK was a category error anyway.
 
-    FIVE TILES, TWO WEIGHTS. Catalog and lifestyle take half the row each
-    because they are what a product actually gets; the other three are
-    additions to that, and a grid of five equal tiles would say they are five
-    equal choices. The plans tile is a pointer, not a plan grid — the pricing
-    band at 7b renders plans() in full and this one only says they exist. */}
+    THE SERVICE CONTENT STAYS RATHER THAN FOLDING INTO THE PRICE BAND, and the
+    call is deliberate: what a catalog set, a lifestyle carousel, a clip and a
+    Brand Model actually are is the one thing on this subject a reader cannot
+    get from the table — a table can say €85 and cannot say "four images:
+    front, back, a fabric close-up and one worn on a model". Folding it in
+    would have rebuilt the 360-word band inside the price band under a new
+    name. Prices are a rate card and belong in a table; deliverables are a
+    photograph and a sentence and belong beside the photograph.
+
+    FOUR TILES, ONE WEIGHT. It was five at two weights, which said catalog and
+    lifestyle mattered more than a clip. They do, and the band above says so by
+    pricing them per product — this one is a shelf, and a shelf is even. */}
 <section class="band hv-svc-band">
   <div class="container">
     <div class="statement">
@@ -740,28 +831,23 @@ const FAQ_PICK = [
       <p class="lede">{c.svcLede}</p>
     </div>
     <div class="tiles hv-svc-tiles">
-      {c.svc.map(([name, line, get, price, terms, href], i) => (
-        <a class={`tile ${i < 2 ? 's-6' : 's-4'} hv-svc-tile`} href={lp(href)}>
-          <span class={`tile-media hv-svc-media${i < 2 ? ' is-wide' : ''}`}>
+      {c.svc.map(([name, line, get, href], i) => (
+        <a class="tile s-6 hv-svc-tile" href={lp(href)}>
+          <span class="tile-media hv-svc-media">
             <img src={SERVICE_IMG[i].src} alt={`${name} — ${line}`} width={SERVICE_IMG[i].w} height={SERVICE_IMG[i].h} loading="lazy" decoding="async" />
           </span>
           <span class="tile-body hv-svc-body">
             <span class="tile-h">{name}</span>
             <span class="hv-svc-line">{line}</span>
             {/* The inset plate is what you RECEIVE, kept visually separate from
-                what the service is — a reader comparing five services compares
+                what the service is — a reader comparing four services compares
                 this line and nothing else, so it may not read as more prose. */}
             <span class="hv-svc-get">{get}</span>
-            <span class="hv-svc-price">
-              <b>{price}</b>
-              <span>{terms}</span>
-            </span>
           </span>
         </a>
       ))}
     </div>
     <div class="hv-svc-foot">
-      <p>{c.svcNote}</p>
       <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
     </div>
   </div>
@@ -795,10 +881,19 @@ const FAQ_PICK = [
         </div>
       ))}
     </div>
-    <div class="hv-notfor">
-      <p class="hv-notfor-h">{c.notForH}</p>
+    {/* THE DISQUALIFICATION LIST IS A DISCLOSURE NOW, not a deletion. Naming
+        who should not buy is the cheapest credibility a vendor with no
+        testimonials can buy, and that claim is made by the SUMMARY — it is in
+        plain sight, under four tiles saying who this is for, and a reader who
+        suspects they are the exception opens it. The four cases underneath are
+        four negative sentences that only one reader in several needs, which is
+        what <details> is for and what /faq and /start already use it for.
+        Keep the summary visible if this is ever rebuilt: the admission is the
+        argument, the four cases are only the evidence for it. */}
+    <details class="hv-notfor">
+      <summary class="hv-notfor-h">{c.notForH}</summary>
       <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
-    </div>
+    </details>
   </div>
 </section>
 
@@ -897,9 +992,10 @@ const FAQ_PICK = [
 
 {/* ── 4d · THE WEEK YOU GET BACK ─────────────────────────────────────────────
     The second thing Lucas asked for: time, expressed as time rather than as
-    money. The cost band below this one already argues the euros, and putting
-    the two next to each other is intentional — a shoot costs a day AND a fee,
-    and only one of those two is on the invoice.
+    money. It used to be the first half of a pair — the band under it argued the
+    same case in euros, because a shoot costs a day AND a fee and only one of
+    those is on the invoice. That sentence is now the last line of this band and
+    the second half is a link, for the reason in the note below.
 
     Three weekdays rather than a duration ("saves you 20 hours") because an
     hours-saved figure is a claim about the reader's business that this studio
@@ -929,37 +1025,29 @@ const FAQ_PICK = [
           </div>
         ))}
       </dl>
+      <p class="hv-back-note">{c.backNote} <a href={lp('/compare')}>{c.backNoteLink}</a></p>
     </div>
   </div>
 </section>
 
-{/* ── 5 · WHAT IT REPLACES — the one paper interruption on this page ─────────
-    A paper band has to earn itself: this is a specification the reader has to
-    sit with and compare, which is reading rather than looking. Two figures,
-    itemised, no invented per-line euros. */}
-<section class="band on-paper">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.vsH}</h2>
-      <p class="lede">{c.vsLede}</p>
-    </div>
-    <div class="hv-vs">
-      <div class="hv-vs-col">
-        <p class="hv-tile-k">{c.vsAK}</p>
-        <p class="hv-tile-v">{c.vsAV}</p>
-        <p class="hv-tile-sub">{c.vsAN}</p>
-        <ul class="hv-vs-list">{c.vsAList.map((x) => (<li>{x}</li>))}</ul>
-      </div>
-      <div class="hv-vs-col is-drop">
-        <p class="hv-tile-k">{c.vsBK}</p>
-        <p class="hv-tile-v">{c.vsBV}</p>
-        <p class="hv-tile-sub">{c.vsBN}</p>
-        <ul class="hv-vs-list">{c.vsBList.map((x) => (<li>{x}</li>))}</ul>
-      </div>
-    </div>
-    <p class="hv-vs-note">{c.vsNote} <a href={lp('/compare')}>{lang === 'nl' ? 'De hele vergelijking staat naast elkaar uitgeschreven.' : 'The whole comparison is set out side by side.'}</a></p>
-  </div>
-</section>
+{/* ── 5 · WHAT AN ORDER REPLACES — DELETED, and this note is what it left ────
+    The band was a shoot day's cost (SHOOT_DAY, itemised) beside a 30-product
+    order's total, with a link to /compare underneath. 121 words, and every one
+    of them is on a page that argues it better: /compare is the whole
+    side-by-side, and /pricing carries the same shoot-day anchor with the same
+    caveat and the same itemisation. It was the third place on this page that
+    printed a euro figure against the studio's own work.
+
+    WHAT SURVIVES AND WHERE. The time half of the argument is the week band
+    directly above, which is the version that only lives here — nothing else on
+    the site counts a shoot in weekdays. Its closing sentence carries the euro
+    half in one line and hands off to /compare, so the internal link the brief
+    asks for is kept and the argument is not made twice.
+
+    The band was also the page's only .on-paper section, which is a no-op class
+    since the ground collapsed to one value (see global.css §18) — so nothing
+    visual went with it. If a band ever needs distinguishing again, that note
+    says the answer is a tile, a rule or space, not a second ground. */}
 
 {/* ── 6 · WHERE THE VISUALS LAND ─────────────────────────────────────────────
     This used to sit directly under a "four deliverables" band, which named the
@@ -968,9 +1056,11 @@ const FAQ_PICK = [
     this one keeps its place: it is the only band that answers what you DO with
     the visuals, which is the question the services band stops one short of.
 
-    It also converts the drop price into unit economics without a discount:
-    the €1,850 stops being a number and becomes a number divided by roughly two
-    hundred placements.
+    It also converts the price into unit economics without a discount: a season's
+    total stops being a number and becomes a number divided by roughly two
+    hundred placements. It names no euro figure itself — that is the merged
+    price band's job at section 2, and this band deliberately does not become
+    the fifth place the page prices anything.
 
     Every count here is derived, not typed. The two figures a reader could
     check — 4 catalog photos, 3 lifestyle photos — are CATALOG_IMAGES and
@@ -1089,46 +1179,22 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 7b · THE THREE TIERS ───────────────────────────────────────────────────
-    The homepage quoted the Full Drop and the per-product rates and left the
-    entry point and the retainer invisible to anyone who did not click through
-    to /pricing — which is to say, invisible to most people. Three figures, the
-    middle one carrying the page's one coloured plate because it is the one the
-    studio is built around.
+{/* ── 7b · "OR PUT IT ON A MONTHLY PLAN" — DELETED ───────────────────────────
+    A full plan grid read from plans(): three tiles, each with a price, a unit,
+    a VAT label, a line of copy, five or six inclusions and a saving sentence.
+    278 words and three of the page's fourteen VAT labels, eleven bands away
+    from the other place the page priced anything.
 
-    Only ONE bright tile in this grid, per the same rule the drop band follows:
-    two coloured plates in one grid is a palette, one is an instruction. */}
-<section class="band hv-pr-band">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.prH}</h2>
-      <p class="lede">{c.prLede}</p>
-    </div>
-    {/* Read from plans() rather than from a copy tuple in this file. The plan
-        names, prices, inclusions and — critically — the saving line are all
-        computed in pricing.js, and the saving is asserted at build time to be
-        real. A homepage that typed its own version of that sentence is a
-        homepage that would eventually claim a saving the price list denies. */}
-    <div class="tiles hv-pr-tiles">
-      {PLANS.map((plan, i) => (
-        <div class={`tile s-4${i === 1 ? ' on-bright tile-c-blue' : ''}`}>
-          <div class="tile-body">
-            <p class="tile-k">{plan.name}</p>
-            <p class="tile-v">{plan.price}</p>
-            <p class="hv-tile-sub">{plan.unit} · {netLabel}</p>
-            <p class="tile-n">{plan.line}</p>
-            <ul class="hv-pr-inc">{plan.includes.map((x) => (<li>{x}</li>))}</ul>
-            {plan.saving && <p class="hv-pr-saving">{plan.saving}</p>}
-          </div>
-        </div>
-      ))}
-    </div>
-    <div class="hv-pr-foot">
-      <p>{c.prNote}</p>
-      <a class="btn btn-ghost" href={lp('/pricing')}>{c.prCta}</a>
-    </div>
-  </div>
-</section>
+    It is one sentence in the price band at section 2 now — the amount, the
+    product range and the fact that a plan beats the ladder for the same output
+    — with the link to /pricing beside it. The homepage's job on this subject
+    is to say the second axis exists; the price list is where it is sold, and
+    /pricing renders the same plans() output with the inclusions and the
+    build-asserted saving line in full. Two plan grids on one site is one grid
+    too many, and the homepage was the copy that would go stale.
+
+    The plans() import went with it. If a plan grid is ever wanted back here,
+    import plans() again — do NOT type the figures. */}
 
 {/* ── 7c · PLANNING BACKWARDS ────────────────────────────────────────────────
     The urgency band, and the only honest version of one available here: the
@@ -1162,27 +1228,24 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 8 · STATS ─────────────────────────────────────────────────────────────
-    Every figure is about this studio's own operation. A number describing a
-    client's business is a testimonial and there are none. */}
-<section class="band-tight">
-  <div class="container">
-    <h2 class="hv-stats-h">{c.statsH}</h2>
-    <dl class="hv-stats">
-      {/* One hue per figure, in the palette's own order. OPP does exactly
-          this and it is the cheapest colour on the page: no fill, no plate,
-          just the number carrying it. The labels stay muted so the figure is
-          what the eye lands on. All four measure 7.91–8.07:1 on this ground —
-          see the --fill-* note in global.css. */}
-      {c.stats.map(([n, l], i) => (
-        <div class="hv-stat">
-          <dt class={['w-blue', 'w-violet', 'w-coral', 'w-pink'][i] || ''}>{n}</dt>
-          <dd>{l}</dd>
-        </div>
-      ))}
-    </dl>
-  </div>
-</section>
+{/* ── 8 · "WHAT THE NUMBERS ACTUALLY ARE" — DELETED ──────────────────────────
+    Four coloured figures, and three of them were already on the page:
+
+      · the floor rate — now the bottom row of the ladder table at section 2,
+        where it sits under the four rates above it and shows what "it falls as
+        you add" means instead of asserting it;
+      · the 48-hour window — the hero plinth's first fact, and the middle step
+        of the planning band at 7c, which now carries WINDOW_THRESHOLD too;
+      · the test sample price — the promise quote and the closing panel.
+
+    Only "4 house styles: Glow, Dunes, Flash and Phone-made" was said nowhere
+    else, and it is a description of what the studio DOES, not a statistic. It
+    is in the pipeline at section 4 now, in the step that describes the run.
+
+    A stats band is a summary of the page above it, which is a thing a page
+    only needs when it is too long to hold in the head — the fix was the length,
+    not a recap. Nothing here was lost; do not restore it as a fifth pricing
+    surface. */}
 
 {/* ── 8b · THE OBJECTIONS ────────────────────────────────────────────────────
     Four risk questions, answered where the risk is felt rather than two clicks
@@ -1347,13 +1410,82 @@ const FAQ_PICK = [
 
   /* ── tiles ─────────────────────────────────────────────────────────────── */
   .hv-tile-sub { margin: .45rem 0 0; font-size: .9rem; color: var(--ink-2); }
-  /* Declared AFTER .hv-tile-v, which also sets colour at the same specificity —
-     source order is the whole difference and it silently made the one clay
-     moment on the page render as paper. §7 holds clay to one stat or one chip
-     at a time; on this page it is the window figure and the €0.99. */
-  .tile-v.hv-clay, .hv-stat dt.hv-clay { color: var(--clay); }
-  .on-paper .tile-v.hv-clay, .on-paper .hv-stat dt.hv-clay { color: var(--clay-text); }
-  .hv-drop-tiles, .hv-svc-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  .hv-worked-tiles, .hv-svc-tiles { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+
+  /* ── the price band ────────────────────────────────────────────────────────
+     THE ONE VAT LINE. It is a block qualifier, so it has to read as governing
+     what comes after it rather than as the end of the lede — hence the rule
+     above it and the uppercase tracking, which is the same treatment the
+     .lad-kind-vat cell gets on /pricing — minus its uppercase, because that
+     cell is two words and this is a sentence, and a sentence in caps shouts.
+     It sits between the statement and the table on purpose: a qualifier under
+     the figures is a footnote, and a footnote is what "excl. VAT" ×8 was
+     trying to avoid being. */
+  .hv-price-vat {
+    margin: clamp(2rem, 4vw, 3rem) 0 0;
+    padding-top: clamp(1rem, 2vw, 1.4rem);
+    box-shadow: inset 0 1px 0 var(--line);
+    font-size: .82rem; font-weight: 700; letter-spacing: .01em; color: var(--ink-2);
+  }
+  /* The rate card. Radius on the wrapper rather than the table, because a
+     table cannot clip its own corners and --r-md is the step this system gives
+     a surface inside a band. overflow-x so four columns survive a 320px
+     screen without the page itself scrolling sideways. */
+  .hv-lad-wrap {
+    margin-top: clamp(1rem, 2vw, 1.4rem);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    overflow-x: auto;
+  }
+  /* Lining, tabular: rates in a column have to line up or the column stops
+     being scannable, which is the whole reason this is a table. */
+  .hv-lad { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums lining-nums; }
+  .hv-lad th, .hv-lad td { padding: clamp(.7rem, 1.4vw, 1rem) clamp(.7rem, 1.6vw, 1.3rem); text-align: right; vertical-align: top; }
+  .hv-lad thead th { vertical-align: bottom; border-bottom: 1px solid var(--line-strong); }
+  .hv-lad tbody tr + tr th, .hv-lad tbody tr + tr td { border-top: 1px solid var(--line); }
+  .hv-lad thead th:first-child, .hv-lad tbody th { text-align: left; }
+  .hv-lad-corner { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+  .hv-lad-kind { display: block; font-size: .95rem; font-weight: 700; color: var(--ink); }
+  /* A link in a table header needs a cue AT REST — nobody hovers five columns
+     to find out which two are clickable. Hairline underline, accented on
+     interaction, so the page's accent stays on the CTA. */
+  .hv-lad-kind a { text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
+  .hv-lad-kind a:hover, .hv-lad-kind a:focus-visible { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
+  .hv-lad-sub { display: block; margin-top: .3rem; font-size: .74rem; font-weight: 400; line-height: 1.4; color: var(--ink-3); }
+  .hv-lad tbody th { font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--ink); white-space: nowrap; }
+  .hv-lad td { font-family: var(--font-display); font-weight: 800; font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1; letter-spacing: -0.02em; color: var(--ink); }
+  .hv-lad-note { margin: 1rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }
+  .hv-worked-h { margin: clamp(2rem, 4vw, 3rem) 0 0; font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
+  /* The discount, on its own line with a rule above it, because it is a
+     condition on every figure in the band and not a fourth worked example. */
+  .hv-price-first {
+    margin: clamp(1.6rem, 3vw, 2.2rem) 0 0;
+    padding-top: clamp(1.1rem, 2vw, 1.5rem);
+    box-shadow: inset 0 1px 0 var(--line);
+    font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 66ch;
+  }
+  .hv-price-first strong { color: var(--ink); font-weight: 700; }
+  .hv-price-foot { margin-top: clamp(1.4rem, 2.6vw, 2rem); display: flex; align-items: flex-start; justify-content: space-between; gap: clamp(1.2rem, 3vw, 2.5rem); flex-wrap: wrap; }
+  .hv-price-notes { flex: 1 1 28rem; display: grid; gap: .7rem; }
+  .hv-price-notes p { margin: 0; max-width: 62ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-price-cta { flex: 0 0 auto; display: flex; gap: .75rem; flex-wrap: wrap; }
+  /* vatNote() as a disclosure rather than as small print. It is forty words
+     that matter enormously to the one reader in ten who is about to check
+     whether reverse charge applies, and are noise to the other nine — which is
+     exactly what <details> is for, and the pattern /faq and /start already use.
+     The label above still says "excl. VAT" in plain sight; this is only the
+     mechanism. Do not inline it back: that is how a price band grows a
+     paragraph of tax law between the rate card and the button. */
+  .hv-vat > summary {
+    list-style: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-size: .82rem; font-weight: 700; color: var(--ink-2);
+  }
+  .hv-vat > summary::-webkit-details-marker { display: none; }
+  .hv-vat > summary::before { content: '+'; font-family: var(--font-display); font-weight: 900; color: var(--ink-3); }
+  .hv-vat[open] > summary::before { content: '–'; }
+  .hv-vat > summary:hover { color: var(--accent); }
+  .hv-vat p { margin: .6rem 0 0; max-width: 62ch; font-size: .82rem; line-height: 1.6; color: var(--ink-3); }
 
   /* ── the services ──────────────────────────────────────────────────────────
      A whole-tile link, so the target is the card and not a word inside it.
@@ -1363,11 +1495,11 @@ const FAQ_PICK = [
      card that contains it. Nothing in this band is allowed a hard corner. */
   .hv-svc-tile { color: inherit; transition: background var(--dur-1) var(--ease); }
   .hv-svc-tile:hover { background: var(--bg-raise); }
-  /* Two aspect ratios for two tile widths. A 4/3 crop inside a half-row tile
-     is 480px of photograph before a word is read; the wide pair get 16/9 so
-     the copy under them still starts above the fold of the tile. */
-  .hv-svc-media { aspect-ratio: 4 / 3; }
-  .hv-svc-media.is-wide { aspect-ratio: 16 / 9; }
+  /* One aspect ratio, now that all four tiles are one width. 16/9 rather than
+     the 4/3 the narrow tiles used to take: a 4/3 crop inside a half-row tile
+     is 480px of photograph before a word is read, and on a phone — where the
+     four stack — that was most of what made this band four viewports tall. */
+  .hv-svc-media { aspect-ratio: 16 / 9; }
   .hv-svc-media img { transition: transform var(--dur-3) var(--ease); }
   .hv-svc-tile:hover .hv-svc-media img { transform: scale(1.03); }
   @media (prefers-reduced-motion: reduce) {
@@ -1382,22 +1514,10 @@ const FAQ_PICK = [
     border-radius: var(--r-md);
     font-size: .82rem; line-height: 1.5; color: var(--ink-2);
   }
-  /* The price sits on the tile's floor with a rule above it, so five tiles of
-     unequal copy length still line their figures up with each other. */
-  .hv-svc-price { margin-top: auto; padding-top: 1.2rem; display: block; }
-  .hv-svc-price b {
-    display: block;
-    font-family: var(--font-display); font-weight: 900;
-    font-size: clamp(1.5rem, 2.4vw, 1.9rem); line-height: 1; letter-spacing: -0.03em;
-    color: var(--ink); font-variant-numeric: tabular-nums lining-nums;
-  }
-  .hv-svc-price span { display: block; margin-top: .4rem; font-size: .78rem; line-height: 1.45; color: var(--ink-3); }
-  /* The one sentence about VAT on this page, plus the bundle arithmetic. Left
-     as prose rather than a tile: it qualifies all five figures above it and a
-     sixth card would read as a sixth service. */
-  .hv-svc-foot { margin-top: clamp(1.6rem, 3vw, 2.4rem); display: flex; align-items: flex-start; justify-content: space-between; gap: clamp(1.2rem, 3vw, 2.5rem); flex-wrap: wrap; }
-  .hv-svc-foot p { margin: 0; max-width: 62ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
-  .hv-svc-foot .btn { flex: 0 0 auto; }
+  /* .hv-svc-price and .hv-svc-get's "figures line up across tiles" rule came
+     out with the prices — see the band's own comment. The inset plate above is
+     now the last thing in a tile, and it does not need a floor. */
+  .hv-svc-foot { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
 
   @media (max-width: 700px) {
     .rail-nav { display: none; }
@@ -1426,16 +1546,8 @@ const FAQ_PICK = [
   .hv-pipe h3 { margin: 1rem 0 .45rem; font-size: 1.02rem; font-weight: 700; color: var(--ink); }
   .hv-pipe p { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
 
-  /* ── the comparison ────────────────────────────────────────────────────── */
-  .hv-vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1px; background: var(--line); margin-top: clamp(2.4rem, 5vw, 3.5rem); }
-  .hv-vs-col { background: var(--bg); padding: clamp(1.4rem, 2.6vw, 2.2rem); }
-  .hv-vs-col.is-drop { background: var(--surface); }
-  .hv-vs-list { list-style: none; margin: 1.2rem 0 0; padding: 0; display: grid; gap: .5rem; }
-  .hv-vs-list li { position: relative; padding-left: 1.1rem; font-size: .875rem; line-height: 1.5; color: var(--ink-2); }
-  .hv-vs-list li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 1px; background: var(--line-ui); }
-  .hv-vs-note { margin: 1.4rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 64ch; }
-  .hv-vs-note a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
-  .hv-vs-note a:hover { text-decoration-color: var(--accent); }
+  /* The .hv-vs* rules went with the "What an order replaces" band — see the
+     note where that band used to be, above section 6. */
 
   /* ── the dashboard band ────────────────────────────────────────────────── */
   .hv-dash { margin-top: clamp(2.6rem, 5vw, 4rem); display: grid; gap: 1px; background: var(--line); }
@@ -1451,32 +1563,8 @@ const FAQ_PICK = [
     .hv-dash-row.is-flip .hv-dash-copy { order: 0; }
   }
 
-  /* ── stats ─────────────────────────────────────────────────────────────── */
-  .hv-stats-h { font-size: var(--t-h3); font-weight: 700; margin: 0 0 clamp(1.6rem, 3vw, 2.4rem); max-width: 30ch; color: var(--ink); }
-  .hv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 0; }
-  .hv-stat { padding: 0 clamp(1rem, 2vw, 1.8rem); }
-  .hv-stat:first-child { padding-left: 0; }
-  .hv-stat + .hv-stat { border-left: 1px solid var(--line); }
-  .hv-stat dt { font-family: var(--font-display); font-weight: 900; font-size: clamp(2.4rem, 4.2vw, 3.125rem); line-height: 1; letter-spacing: -0.035em; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
-  /* The coloured figure, set HERE rather than relying on the global .w-*
-     utility. Astro scopes this block with a [data-astro-cid] attribute, so
-     `.hv-stat dt` renders as (0,3,1) and outranks any global class utility no
-     matter how many times it is doubled. A scoped stylesheet always wins; the
-     override has to live in the same scope that caused the conflict. */
-  .hv-stat dt.w-blue   { color: var(--fill-blue); }
-  .hv-stat dt.w-violet { color: var(--fill-violet); }
-  .hv-stat dt.w-pink   { color: var(--fill-pink); }
-  .hv-stat dt.w-coral  { color: var(--fill-coral); }
-  .hv-stat dd { margin: .75rem 0 0; font-size: .875rem; line-height: 1.5; color: var(--ink-3); max-width: 26ch; }
-  @media (max-width: 880px) {
-    .hv-stats { grid-template-columns: repeat(2, 1fr); row-gap: clamp(1.6rem, 4vw, 2.4rem); }
-    .hv-stat:nth-child(odd) { padding-left: 0; border-left: 0; }
-  }
-  @media (max-width: 460px) {
-    .hv-stats { grid-template-columns: 1fr; }
-    .hv-stat { padding: 0; border-left: 0; }
-    .hv-stat + .hv-stat { padding-top: 1.4rem; border-top: 1px solid var(--line); }
-  }
+  /* The .hv-stat* rules went with the "What the numbers actually are" band —
+     see the note where that band used to be, above section 8b. */
 
   /* ── the promise ───────────────────────────────────────────────────────── */
   .hv-promise { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: clamp(2rem, 5vw, 4rem); align-items: start; }
@@ -1499,15 +1587,27 @@ const FAQ_PICK = [
      pipeline uses — those mean sequence, and reusing them here would promise an
      order that does not exist. */
   .hv-who-i { display: block; font-family: var(--font-display); font-weight: 900; font-size: .74rem; letter-spacing: .14em; margin-bottom: 1.1rem; }
-  .hv-notfor { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); gap: clamp(1rem, 3vw, 3rem); }
-  .hv-notfor-h { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-  .hv-notfor ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .65rem; }
+  /* A <details>, so the grid that used to put the label beside the list is
+     gone: a disclosure has to open downwards or the summary stops looking like
+     a control. The rule above it stays — it is what separates the four
+     situations from the admission under them. */
+  .hv-notfor { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
+  .hv-notfor-h {
+    margin: 0; list-style: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .hv-notfor-h::-webkit-details-marker { display: none; }
+  .hv-notfor-h::after { content: '+'; font-family: var(--font-display); font-weight: 900; letter-spacing: 0; }
+  .hv-notfor[open] .hv-notfor-h::after { content: '–'; }
+  .hv-notfor-h:hover { color: var(--ink-2); }
+  .hv-notfor ul { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .65rem; max-width: 62ch; }
   .hv-notfor li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
   /* Coral, not the blue accent: this is the one list on the page that is a
      warning rather than an offer, and the palette already reserves coral for
      the figure that is being counted against you. */
   .hv-notfor li::before { content: ''; position: absolute; left: 0; top: .64em; width: 9px; height: 1px; background: var(--fill-coral); }
-  @media (max-width: 720px) { .hv-notfor { grid-template-columns: 1fr; } }
 
   /* ── before / after ────────────────────────────────────────────────────── */
   .hv-ba-head { max-width: 44rem; }
@@ -1553,6 +1653,12 @@ const FAQ_PICK = [
   .hv-back-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: clamp(1.2rem, 3vw, 2.4rem); margin: 0; }
   .hv-back-list dt { margin: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
   .hv-back-list dd { margin: .45rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
+  /* The euro half of the shoot-day argument, in one line, handing off to
+     /compare. Same treatment the deleted .hv-vs-note had, because it is the
+     same sentence doing the same job in a quarter of the space. */
+  .hv-back-note { margin: clamp(1.4rem, 2.6vw, 2rem) 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 64ch; }
+  .hv-back-note a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+  .hv-back-note a:hover { text-decoration-color: var(--accent); }
 
   /* ── where the visuals land ────────────────────────────────────────────── */
   .hv-ch { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1px; background: var(--line); }
@@ -1578,16 +1684,8 @@ const FAQ_PICK = [
     .hv-face .plate img, .hv-face:hover .plate img { transition: none; transform: none; }
   }
 
-  /* ── the three tiers ───────────────────────────────────────────────────── */
-  .hv-pr-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
-  .hv-pr-inc { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .45rem; }
-  .hv-pr-inc li { position: relative; padding-left: 1.1rem; font-size: .84rem; line-height: 1.5; color: var(--ink-3); }
-  .hv-pr-inc li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 1px; background: var(--line-ui); }
-  /* The saving line is the plan's whole argument, so it sits apart from the
-     inclusions rather than as one more bullet among them. */
-  .hv-pr-saving { margin: 1.1rem 0 0; padding-top: .9rem; box-shadow: inset 0 1px 0 var(--line); font-size: .84rem; line-height: 1.5; font-weight: 700; color: var(--ink-2); }
-  .hv-pr-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
-  .hv-pr-foot p { margin: 0; max-width: 62ch; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  /* The .hv-pr* rules went with the monthly-plan grid — see the note where
+     that band used to be, above section 7c. */
 
   /* ── planning backwards ────────────────────────────────────────────────── */
   .hv-pl-head { max-width: 42rem; }

@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS customers (
   -- row could not already answer.
   --
   -- The background the brand orders against: a RECOMMENDED id from
-  -- src/data/backgrounds.js ('white' | 'off-white' | 'light-grey' | 'beige') or
+  -- src/data/backgrounds.js ('white' | 'off-white' | 'beige') or
   -- CUSTOM_ID ('custom'). NULL means no default and /start asks as usual.
   default_background TEXT,
   -- The resolved six-digit hex, stored rather than looked up from the id: for

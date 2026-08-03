@@ -13,7 +13,7 @@ const CAT = perProduct('catalog', 'nl');
 // The rate is a LADDER now, not a flat fee, so a bare figure on a style card
 // would read as the price at any count when it is only the price at one to
 // four. Every card prints the entry rung with "from" and a VAT label — the
-// same shape /catalog's own rung table uses, so the card and the table cannot
+// same shape /catalog’s own rung table uses, so the card and the table cannot
 // disagree.
 const CAT_FROM = `vanaf ${euro(ladderRate('catalog', 1), 'nl')}`;
 const CAT_VAT = vatLabel('excl', 'nl');
@@ -32,7 +32,7 @@ export const catalogStyles = [
     tagline: 'Strak. Consistent. Zonder concessies.',
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
-    metaPrice: `${CAT_FROM} / product — 4 foto's`,
+    metaPrice: `${CAT_FROM} / product — 4 foto’s`,
     orderHref: '/nl/start',
     heroIcon: 'bottle',
     heroWidth: '26%',
@@ -91,7 +91,7 @@ export const catalogStyles = [
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
-    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product voor ${CAT_FROM} per set van vier foto's.`,
+    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product voor ${CAT_FROM} per set van vier foto’s.`,
     moodTitle: 'Hoe Eigen merk voelt.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',

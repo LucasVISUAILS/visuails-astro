@@ -35,8 +35,19 @@ const INTRINSIC: Record<string, [number, number]> = {
   '/img/lifestyle-flash-01.webp': [928, 1152],
   '/img/lifestyle-glow-01.webp': [1340, 2400],
   '/img/lifestyle-phone-made-02.webp': [2400, 1792],
+  // Added when the mood photo stopped being allowed to repeat the hero:
+  // Flash and Glow now take grid[1] instead of grid[0].
+  '/img/lifestyle-flash-02.webp': [1340, 2400],
+  '/img/lifestyle-glow-02.webp': [2400, 1792],
 };
-const moodPhoto = style.grid[0].photo;
+// THE MOOD PHOTO MUST NOT BE THE HERO PHOTO. On Flash and Glow, grid[0] IS the
+// hero, so the same photograph carried the hero band and the mood band two
+// folds apart, and on a page whose whole job is to show what one look actually
+// produces that reads as "there is only one picture of this". The other eight
+// grid entries are style-correct photographs of the same look, so the fix is to
+// take the first one that is not already on screen. Falls back to grid[0] if a
+// style ever ships with a single photo, which is the old behaviour.
+const moodPhoto = (style.grid.find((g) => g.photo && g.photo !== style.heroPhoto) || style.grid[0]).photo;
 const moodSize = INTRINSIC[moodPhoto];
 if (!moodSize) throw new Error(`lifestyle/[slug]: no intrinsic size on record for ${moodPhoto} — add it to INTRINSIC.`);
 

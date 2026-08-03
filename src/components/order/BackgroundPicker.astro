@@ -1,0 +1,279 @@
+---
+// VISUAILS — the background picker, step 1 of the catalog and complete flows.
+//
+// It was a block inside a 2,300-line page. It is a component because the split
+// gave it a condition: a catalog set and a complete order have a ground the
+// product sits on; a lifestyle carousel is a styled scene and does not. That
+// used to be a runtime hide-AND-disable on one shared fieldset — hidden alone
+// would still have posted a background nobody chose — and the honest version of
+// that is simply not to render it. OrderFlow.astro leaves the choice to the
+// page: catalog and complete slot this in, lifestyle slots in StylePicker.
+//
+// Everything a colour MEANS is in src/data/backgrounds.js — the values, the
+// recommendation, the reason it is light, and every string here. This file lays
+// them out and posts what was chosen.
+//
+// WHAT THIS POSTS. `background` is the id (white / off-white / beige /
+// custom), which is the studio's own vocabulary. `background_hex` is written by
+// pipeline.js and is the RESOLVED value, so the studio never has to look one
+// up. Neither is in TOP_FIELDS, so both land in details_json
+// (functions/api/order.js). Without JS, `background` still carries the answer
+// and `background_custom` still carries a typed hex; only the resolved field is
+// empty, and /api/order drops empty values rather than storing a stale one.
+import {
+  RECOMMENDED as BACKGROUNDS, CUSTOM_ID, DEFAULT_ID, background,
+  isLight, LIGHT_THRESHOLD, copy as bgCopy,
+} from '../../data/backgrounds.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+
+// The recommendation is "light", and the claim is checked rather than trusted:
+// a value added to RECOMMENDED darker than LIGHT_THRESHOLD would make the
+// picker recommend the thing its own warning warns about, so the build stops.
+for (const b of BACKGROUNDS) {
+  if (!isLight(b.hex)) {
+    throw new Error(
+      `BackgroundPicker.astro: background "${b.id}" (${b.hex}) is darker than LIGHT_THRESHOLD `
+      + `(${LIGHT_THRESHOLD}), so it cannot sit under "what we recommend" — see src/data/backgrounds.js.`
+    );
+  }
+}
+
+const bgc = bgCopy(lang);
+// The colour input needs a valid value to open on, and it is the default
+// swatch's own hex rather than a colour typed here — backgrounds.js's header is
+// explicit that the hex values are the contract and live only there.
+const bgDefaultHex = background(DEFAULT_ID).hex;
+
+// bgc.hint is the reason the picker exists and it is 40 words long. It was in
+// front of everyone; it is now behind a summary, because the swatches answer
+// the question for most people without it and the note under the selected one
+// (written by pipeline.js from backgrounds.js) answers the rest.
+const WHY = { en: 'Why this matters', nl: 'Waarom dit uitmaakt' };
+const FIELD = {
+  en: { pick: 'Pick a colour', hex: 'Hex value' },
+  nl: { pick: 'Kies een kleur', hex: 'Hexwaarde' },
+};
+const fl = FIELD[lang];
+---
+
+<fieldset class="pl-fieldset pl-bg" data-pl-bg>
+  <legend class="pl-sr">{bgc.label}</legend>
+  <h3 class="pl-sub-h" id="pl-bg-h">{bgc.label}</h3>
+
+  <div class="bg-grid" role="radiogroup" aria-labelledby="pl-bg-h">
+    {BACKGROUNDS.map((b) => (
+      <label class="bg-opt">
+        <span class="bg-swatch" style={`--swatch:${b.hex}`}></span>
+        <span class="bg-row">
+          <input type="radio" name="background" value={b.id} data-pl-bg-hex={b.hex} data-pl-bg-name={b.name[lang]} checked={b.id === DEFAULT_ID} />
+          <span class="bg-name">{b.name[lang]}</span>
+        </span>
+        <span class="bg-hex">{b.hex}</span>
+      </label>
+    ))}
+    {/* The fourth option. Its swatch is the live preview of whatever is in the
+        two fields below — pipeline.js writes --swatch on it — so the customer
+        sees their colour on the same row as the three we put forward, at the
+        same size, and can compare them. */}
+    <label class="bg-opt is-custom">
+      <span class="bg-swatch is-empty" data-pl-bg-preview></span>
+      <span class="bg-row">
+        <input type="radio" name="background" value={CUSTOM_ID} data-pl-bg-custom data-pl-bg-name={bgc.customH} />
+        <span class="bg-name">{bgc.customH}</span>
+      </span>
+      <span class="bg-hex" data-pl-bg-shown></span>
+    </label>
+  </div>
+
+  {/* Written by pipeline.js for whichever option is selected — one line at a
+      time, where four notes side by side would be four paragraphs. */}
+  <p class="pl-bg-note" data-pl-bg-note></p>
+
+  {/* Hidden and disabled by pipeline.js until the custom option is selected;
+      visible without JS, where there is nothing to reveal it. The colour input
+      carries NO name attribute on purpose — a type="color" control posts
+      #000000 whether or not it was ever touched, and the text field beside it
+      is the one that carries the answer. */}
+  <div class="bg-custom" data-pl-bg-panel>
+    <div class="bg-custom-fields">
+      <div class="field bg-field-pick">
+        <label for="pl-bg-color">{fl.pick}</label>
+        <input type="color" id="pl-bg-color" class="bg-color" value={bgDefaultHex} data-pl-bg-color />
+      </div>
+      <div class="field bg-field-hex">
+        <label for="pl-bg-hex">{fl.hex}</label>
+        {/* pattern is the no-JS guard and the typo guard. Never `required` — an
+            empty custom field is a customer who has not decided yet. */}
+        <input
+          class="input bg-hexinput"
+          type="text"
+          id="pl-bg-hex"
+          name="background_custom"
+          data-pl-bg-text
+          placeholder="#RRGGBB"
+          pattern="#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"
+          maxlength="7"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+      </div>
+    </div>
+    {/* Information, never a refusal. isLight() decides when it appears;
+        nothing anywhere rejects the colour. */}
+    <p class="pl-note bg-warn" data-pl-bg-warn hidden>{bgc.warn}</p>
+  </div>
+
+  <details class="pl-why">
+    <summary>{WHY[lang]}</summary>
+    <p>{bgc.hint}</p>
+    <p>{bgc.matchNote}</p>
+  </details>
+
+  {/* Written by pipeline.js. Empty without JS, where `background` and
+      `background_custom` already carry the answer. */}
+  <input type="hidden" name="background_hex" value="" data-pl-bg-value />
+</fieldset>
+<style>
+  /* pipeline.js hides things by setting el.hidden, and the UA's own
+     [hidden] rule loses to ANY author rule — .field is display:flex in
+     global.css. Same guard the form's own sheet keeps. */
+  [hidden] { display: none !important; }
+
+  /* ── The background ───────────────────────────────────────────────────────
+     Five swatches, one of them the customer's own. Capped at the measure like
+     every other block on this step — it is a .pl-fieldset, and the full-bleed
+     rule above is meant for the three-column comparison, not for a row of
+     colour chips that would be 90px tall and 300px wide each at 1600px. */
+  .pl-bg { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
+  .pl-bg .pl-sub-h { margin-bottom: .35rem; }
+  .pl-bg-hint { display: block; max-width: 66ch; }
+  .pl-bg-cap {
+    margin-top: 1rem;
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .bg-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; margin-top: .5rem; }
+  .bg-opt {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    padding: .55rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .bg-opt:hover { border-color: var(--accent-line); }
+  .bg-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .bg-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  /* The swatch IS the value, so it gets the largest area on the tile and a
+     hairline of its own — white on a white card is otherwise an empty box.
+     --swatch is written by the markup for the four we recommend and by
+     pipeline.js for the fifth. */
+  .bg-swatch {
+    display: block;
+    height: 62px;
+    border-radius: var(--r-md);
+    background: var(--swatch, var(--surface-2));
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+  /* Before a custom colour exists there is no value to show, and showing a
+     grey would be showing a fifth recommendation. A spectrum says "any colour"
+     — it is decoration and contains no hex, because hexes are backgrounds.js's
+     contract with the studio and a gradient is not one of them. */
+  .bg-swatch.is-empty {
+    background: conic-gradient(
+      hsl(0 55% 72%), hsl(60 55% 72%), hsl(120 55% 72%),
+      hsl(180 55% 72%), hsl(240 55% 72%), hsl(300 55% 72%), hsl(360 55% 72%)
+    );
+  }
+  .bg-row { display: flex; align-items: center; gap: .45rem; }
+  .bg-row input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+  .bg-name { font-size: .82rem; color: var(--ink); line-height: 1.2; }
+  .bg-hex { font-size: .7rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .bg-hex:empty { display: none; }
+
+  /* One note at a time, for whichever swatch is selected. Four of them side by
+     side under four tiles is the wall of text this whole pass removed. */
+  .pl-bg-note { margin-top: .7rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+  .pl-bg-note:empty { display: none; }
+
+  .bg-custom { margin-top: .9rem; }
+  /* align-items:start, so the two labels sit on one line. Aligning the CONTROLS
+     instead would step the labels above them, because a colour well and a text
+     input are not the same height. The well is sized to the input's own box
+     (.input's padding plus its line box) so the bottoms land together too. */
+  .bg-custom-fields { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .9rem; align-items: start; max-width: 24rem; }
+  .bg-custom-fields .field { margin-bottom: 0; }
+  /* Live-only, and hidden the same way .pl-upload is: without JS the picker
+     and the text field cannot be kept in sync, so the picker would be a
+     control that changes nothing. The text field alone still works. */
+  :global(.pl-form) .bg-field-pick { display: none; }
+  :global(.pl-form.is-live) .bg-field-pick { display: flex; }
+  .bg-color {
+    width: 3.6rem; height: 3.15rem;
+    padding: .25rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  /* The native swatch inside the control keeps its own square corners unless
+     both engines' pseudo-elements are told otherwise. */
+  .bg-color::-webkit-color-swatch-wrapper { padding: 0; }
+  .bg-color::-webkit-color-swatch { border: 0; border-radius: var(--r-sm); }
+  .bg-color::-moz-color-swatch { border: 0; border-radius: var(--r-sm); }
+  .bg-hexinput { text-transform: uppercase; font-variant-numeric: tabular-nums; }
+  /* A consequence, not a refusal — so it is the warn colour and not an error
+     box, and nothing about it blocks the form. */
+  .bg-warn { margin: .9rem 0 0; border-radius: var(--r-md); max-width: 70ch; }
+  .pl-bg-match { display: block; margin-top: .8rem; max-width: 70ch; }
+  /* Moved out of the page sheet with the markup — Astro scopes a component's
+     styles to that component, so a rule left behind in OrderFlow.astro would
+     match nothing here. Two rules are new: the disclosure this picker now folds
+     its 40-word rationale into, and the four-up grid (it was five swatches
+     before light grey came out of backgrounds.js). */
+  .bg-grid { grid-template-columns: repeat(4, 1fr); }
+  .pl-sr {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
+  /* NOT `margin: 0`. This reset sits BELOW `.pl-bg { margin-top: … }` in the
+     sheet, and both are one class deep, so the shorthand won on source order
+     and zeroed the picker's own top margin — the swatches ended up flush
+     against the last line of the running total with no gap at all. Only the
+     three sides a fieldset actually needs resetting are reset here. */
+  .pl-fieldset { border: 0; padding: 0; margin-bottom: 0; min-width: 0; }
+  .pl-note {
+    margin: .9rem 0 0;
+    padding: .85rem 1.05rem;
+    border: 1px solid var(--warn);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    color: var(--warn-ink);
+    font-size: .9rem;
+    line-height: 1.55;
+  }
+  .pl-why { margin-top: 1rem; }
+  .pl-why > summary {
+    width: max-content;
+    cursor: pointer;
+    font-size: .8rem;
+    color: var(--accent-bright);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    border-radius: var(--r-sm);
+  }
+  .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+  .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+
+  @media (max-width: 900px) { .bg-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 560px) { .bg-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (prefers-reduced-motion: reduce) { .bg-opt { transition: none; } }
+</style>

@@ -2,20 +2,19 @@
 // VISUAILS — /start (English). The page body lives in StartPage.astro so that
 // /start and /nl/start cannot drift apart; only the meta differs here.
 //
-// The description used to offer TWO DOORS — "run a whole drop with a reserved
-// window, or order individual products from the standard queue" — which is the
-// choice the August 2026 model removed (section 0 of src/data/pricing.js).
-// Size decides the service level now, so the description describes one door
-// and what happens as you go through it. WINDOW_THRESHOLD is read rather than
-// typed for the same reason every euro on the site is.
+// This used to be the order form itself, and the description said so: "one way
+// in, whatever the size." There are six ways in — three that check out and
+// three that do not yet — and pretending otherwise is what left video off the
+// only page whose job is to take an order. /start is the chooser now; each
+// service owns its own route under /start/.
 import Layout from '../layouts/Layout.astro';
 import StartPage from '../components/StartPage.astro';
 import { WINDOW_THRESHOLD } from '../data/pricing.js';
 
 const description =
-  `One way in, whatever the size: tell us what you have, and the rate and the ` +
-  `service follow the count. From ${WINDOW_THRESHOLD} products the window is ` +
-  `reserved.`;
+  `Pick the work and the flow follows it: catalog sets, lifestyle carousels, ` +
+  `or both. The rate per product falls as the count rises, and from ` +
+  `${WINDOW_THRESHOLD} products the window is reserved.`;
 ---
 
 <Layout

@@ -2,18 +2,19 @@
 // VISUAILS — /nl/start (Nederlands). De pagina-inhoud staat in
 // StartPage.astro, zodat /start en /nl/start niet uit elkaar kunnen lopen.
 //
-// De description bood twee deuren aan — "een hele drop met een gereserveerd
-// venster, of losse producten uit de standaard wachtrij" — en dat is precies
-// de keuze die het model van augustus 2026 heeft weggehaald. De omvang bepaalt
-// het serviceniveau nu, dus er staat één deur beschreven.
+// Dit wás het bestelformulier zelf, en de description zei dat ook: één ingang.
+// Er zijn zes ingangen — drie waar je direct kunt bestellen en drie nog niet —
+// en doen alsof dat niet zo is, is precies waarom video ontbrak op de enige
+// pagina die bestellingen aanneemt. /start is nu de keuze; elke dienst heeft
+// een eigen route onder /start/.
 import Layout from '../../layouts/Layout.astro';
 import StartPage from '../../components/StartPage.astro';
 import { WINDOW_THRESHOLD } from '../../data/pricing.js';
 
 const description =
-  `Eén ingang, bij elke omvang: vertel ons wat je hebt, en het tarief en de ` +
-  `service volgen het aantal. Vanaf ${WINDOW_THRESHOLD} producten is het ` +
-  `venster gereserveerd.`;
+  `Kies het werk, dan volgt de flow: catalogsets, lifestyle-carousels of ` +
+  `allebei. Het tarief per product daalt naarmate het aantal stijgt, en vanaf ` +
+  `${WINDOW_THRESHOLD} producten is het venster gereserveerd.`;
 ---
 
 <Layout

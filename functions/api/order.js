@@ -203,12 +203,25 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const svc = ORDER_SERVICES.has(service) ? service : 'catalog';
   const ref = makeRef();
 
-  // 'attended' on an exact match and on nothing else. Every form that predates
-  // the pipeline sends no tier at all and is Tier 0, which is also the D1
-  // default — so a typo, an empty string or a bot's guess all land on the tier
-  // that reserves nothing, which is the direction a mistake should fall.
-  const tier = get('tier') === 'attended' ? 'attended' : 'unattended';
   const products = countOf(get('products'));
+
+  // DERIVED, NOT POSTED. This used to read `get('tier') === 'attended'`, which
+  // let the browser tell the server which service level the order gets. Under
+  // the ladder that is no longer a choice a customer makes — it follows from
+  // the product count (tierFor() in src/data/pricing.js, WINDOW_THRESHOLD) —
+  // so a posted `tier` is at best redundant and at worst a crafted
+  // `products=30&tier=unattended`, which would book a full order into the
+  // queue that reserves nothing AND miscount it in the upgrade-prompt query
+  // further down, which selects on tier.
+  //
+  // The form still posts `tier`; it is ignored here on purpose rather than
+  // removed there, because a hidden field that vanishes from the markup is a
+  // change a future editor can make by accident, and one that is read and
+  // discarded is a change they have to make deliberately.
+  //
+  // Falls to 'unattended' whenever the count is unknown — the tier that
+  // reserves nothing is the direction a mistake should fall.
+  const tier = tierForProducts(products);
 
   // Staged reference material, if the client uploaded any. Read before the
   // insert so the count can go into details_json with everything else; the rows
@@ -879,6 +892,18 @@ function makeRef() {
 }
 
 function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+
+// The server's copy of pricing.js's tierFor(). NOT an import: this file runs as
+// a Cloudflare Pages Function and pulling in the whole pricing module — with its
+// build-time assertions and its bilingual copy tables — to read one threshold
+// would be a lot of module for one comparison. The threshold is duplicated on
+// purpose and named here so a grep for WINDOW_THRESHOLD finds both halves.
+// pricing.js: export const WINDOW_THRESHOLD = 10.
+const WINDOW_THRESHOLD = 10;
+function tierForProducts(products) {
+  const n = Number(products);
+  return Number.isFinite(n) && Math.floor(n) >= WINDOW_THRESHOLD ? 'attended' : 'unattended';
+}
 
 function redirect(location, status = 303) { return new Response(null, { status, headers: { Location: location } }); }
 

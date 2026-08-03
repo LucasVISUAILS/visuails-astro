@@ -6,10 +6,12 @@
 // navigation. Per-element work (reveal/split) is guarded by a dataset flag so
 // only new, unbound elements get processed after a page swap.
 //
-// The one import: GSAP, for the Compare slider's edge snap. It is the same
-// already-installed bundle motion.js runs on and the same chunk the layout
-// already ships on every page — no new dependency and no second payload.
-import gsap from 'gsap';
+// This file used to import GSAP for one thing — the Compare slider's edge
+// snap — on the grounds that motion.js already shipped the bundle sitewide.
+// motion.js has been deleted (every hook it queried was dead on all 84 pages),
+// so that import would have become a ~70 KB dependency for a single 340ms
+// tween. The snap is now ~10 lines of requestAnimationFrame on the identical
+// curve; see SNAP_EDGE below. This module has no runtime dependencies.
 // The upload caps, from the module /api/upload enforces them with. Imported
 // rather than retyped so the browser refuses exactly what the endpoint refuses
 // — see tsPreflight(). /start reads the same three facts out of its config
@@ -246,6 +248,17 @@ function initMobileNav() {
     const nav = document.querySelector('.mobile-nav');
     if (!nav) return;
     nav.classList.toggle('open', open);
+    // THE DRAWER IS OFF SCREEN, NOT ABSENT. It is translated 100% to the right,
+    // which hides it from the eye and from nobody else: an audit counted the
+    // closed drawer as tab stops 11–24 on every page at every viewport, so a
+    // keyboard user reached the page's own content on stop 25, after fourteen
+    // controls they could not see. `inert` removes it from the tab order, from
+    // the accessibility tree and from hit-testing in one attribute; aria-hidden
+    // rides along for the browsers that do not have inert yet. Both are set
+    // here rather than in CSS because visibility:hidden would break the slide
+    // transition, which is the reason it was translated in the first place.
+    nav.toggleAttribute('inert', !open);
+    nav.setAttribute('aria-hidden', open ? 'false' : 'true');
     const toggle = document.querySelector('.menu-toggle');
     if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
@@ -862,9 +875,20 @@ function initCompareIdle() {
 // choice. Within SNAP_EDGE of either end the value now travels the rest of the
 // way on its own.
 const SNAP_EDGE = 6;
-// GSAP is already the page's motion layer (see motion.js); this is the same
-// bundle, not a new dependency.
-const cmpSnapProxy = new WeakMap();
+// This snap used to run through gsap.to() on a proxy object, on the argument
+// that GSAP was "the same bundle, not a new dependency" because motion.js
+// shipped it on every page anyway. motion.js is gone — every hook it queried
+// was dead — so that argument is gone with it, and keeping the import would
+// mean pulling ~70 KB of gsap + ScrollTrigger into all 84 pages to move one
+// number for 340ms. Below is that tween written out: same 0.34s, same curve
+// (GSAP's power3.out IS 1-(1-t)^4 — it numbers powers from quad), same
+// per-frame write path, so aria-valuenow still tracks every frame.
+//
+// Deliberately NOT a CSS transition on --cmp-pos: the property is rewritten on
+// every pointermove during a drag, so a transition would make the divider lag
+// the finger for the whole drag, not just the release.
+const cmpSnapRaf = new WeakMap();
+const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
 let compareDragBound = false;
 function initCompareDrag() {
   if (compareDragBound) return;
@@ -897,14 +921,14 @@ function initCompareDrag() {
     if (!Number.isNaN(inline)) return inline;
     return parseFloat(getComputedStyle(cmp).getPropertyValue('--cmp-pos')) || 50;
   };
-  // The tween runs on a plain proxy object rather than on --cmp-pos directly:
-  // the custom property is registered (@property, syntax "<percentage>"), so
-  // reading it back per frame means a getComputedStyle parse per frame on an
+  // The tween carries its own number rather than reading --cmp-pos back per
+  // frame: the custom property is registered (@property, syntax "<percentage>"),
+  // so reading it back would mean a getComputedStyle parse per frame on an
   // element that is simultaneously repainting a clip-path. One number in JS,
   // one style write per frame instead.
   const stopSnap = (cmp) => {
-    const p = cmpSnapProxy.get(cmp);
-    if (p) gsap.killTweensOf(p);
+    const id = cmpSnapRaf.get(cmp);
+    if (id) { cancelAnimationFrame(id); cmpSnapRaf.delete(cmp); }
   };
   // `edge` may be forced (keyboard, below); otherwise whichever end is inside
   // the threshold wins. Returns nothing — snapping is a side effect.
@@ -921,14 +945,17 @@ function initCompareDrag() {
       write(cmp, target);
       return;
     }
-    let proxy = cmpSnapProxy.get(cmp);
-    if (!proxy) { proxy = { v: pct }; cmpSnapProxy.set(cmp, proxy); }
-    proxy.v = pct;
-    gsap.to(proxy, {
-      v: target, duration: 0.34, ease: 'power3.out', overwrite: true,
-      onUpdate: () => write(cmp, proxy.v),
-      onComplete: () => write(cmp, target),
-    });
+    // overwrite: true — stopSnap() above already cancelled any frame in flight.
+    const from = pct;
+    const delta = target - from;
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / 340);
+      if (p >= 1) { cmpSnapRaf.delete(cmp); write(cmp, target); return; }
+      write(cmp, from + delta * easeOutQuart(p));
+      cmpSnapRaf.set(cmp, requestAnimationFrame(step));
+    };
+    cmpSnapRaf.set(cmp, requestAnimationFrame(step));
   };
   document.addEventListener('pointerdown', (e) => {
     const t = e.target;

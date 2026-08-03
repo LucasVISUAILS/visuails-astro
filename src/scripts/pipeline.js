@@ -1,6 +1,12 @@
-// VISUAILS — /start, the five-step order pipeline. Section 10 of the brief.
+// VISUAILS — the five-step order pipeline. Section 10 of the brief.
 //
 // order → upload → brief → capacity gate → confirm.
+//
+// It drove one page (/start) and now drives three (/start/catalog,
+// /start/lifestyle, /start/complete). NOTHING in this file branches on which:
+// the service arrives as `service` in the config blob the page renders, the way
+// every other fact about a page already does. There is no URL parsing here and
+// there must not be — a route rename would otherwise reprice orders in silence.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // THE MONEY IS A DISPLAY. IT IS NEVER AN INPUT.
@@ -69,7 +75,9 @@
 // get a JSON body rendered as a page.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// DOM CONTRACT — StartPage.astro must supply exactly these hooks.
+// DOM CONTRACT — OrderFlow.astro must supply exactly these hooks. (It was
+// StartPage.astro until the flow was split per service; StartPage.astro is the
+// chooser now and renders no form at all.)
 //
 //   form[data-pipeline]                the form itself; also carries the config
 //     script[data-pipeline-config]     type="application/json", the blob below
@@ -78,12 +86,15 @@
 //     [data-pl-rail-item="1".."5"]     progress rail entries
 //     [data-pl-next] [data-pl-back]    navigation buttons (type=button)
 //     [data-pl-submit]                 the submit button
+//     [data-pl-step-error]             one per step, hidden, with an id
+//     [data-pl-err-msg] on any field   what to say when THAT field is missing
 //
-//   step 1  input[name=service][data-pl-kind=complete|catalog|lifestyle]
-//                                                the one kind question; the
-//                                                VALUE is the server's own
-//                                                service name, the data
-//                                                attribute is the ladder kind
+//   step 1  input[name=service]                  the wire name, hidden. The
+//                                                LADDER KIND comes from the
+//                                                config blob's own `service`;
+//                                                a radio may still carry it in
+//                                                [data-pl-kind] and wins if so.
+//                                                The URL is never read.
 //           select[name=products]                every count, plus one option
 //                                                that is not a number
 //           [data-pl-total]                      the net order value, one line
@@ -99,6 +110,9 @@
 //             [data-pl-bg-color] [data-pl-bg-text]       kept in sync
 //             [data-pl-bg-warn] [data-pl-bg-note]
 //             input[name=background_hex][data-pl-bg-value]  the resolved value
+//           input[name=style][data-pl-style-name]  the lifestyle flow's look
+//                                                picker; read back on step 5
+//                                                and posted into details_json
 //
 //   step 2  input[type=file][data-pl-file]       NO name attribute, deliberately
 //           [data-pl-droplist]                   the file rows land here
@@ -195,6 +209,7 @@ function init(el) {
   form.classList.add('is-live');
 
   bindNav();
+  bindErrors();
   bindOrder();
   bindUploads();
   bindGate();
@@ -234,14 +249,14 @@ function qa(sel, root) {
  * Copy lookup by dotted path. Returns '' for anything missing, never undefined.
  *
  * The '' used to be the end of the story, and that is how c('s3.prefillNote')
- * shipped: task #271e put the string in StartPage.astro's FORM table, which is
+ * shipped: task #271e put the string in the page's FORM table, which is
  * markup labels, instead of PIPE, which is what gets serialised into the config
  * blob this function reads. The lookup found nothing, returned '', and
  * bindPrefill() wrote the empty string into the note and un-hid it — so every
  * returning customer got a blank italic paragraph and nothing anywhere said
  * why.
  *
- * Two things stop that recurring. StartPage.astro now asserts at BUILD time
+ * Two things stop that recurring. OrderFlow.astro now asserts at BUILD time
  * that every path listed below exists in both languages, so a missing key fails
  * `npm run build` rather than reaching a visitor. And this function says so out
  * loud if one ever gets past that, instead of handing back a silent ''. Callers
@@ -252,7 +267,7 @@ function c(path, vars) {
   const node = lookup(path);
   if (typeof node !== 'string') {
     // eslint-disable-next-line no-console
-    console.warn(`pipeline.js: no copy at "${path}" — StartPage.astro's PIPE table is missing this key`);
+    console.warn(`pipeline.js: no copy at "${path}" — OrderFlow.astro's PIPE table is missing this key`);
     return '';
   }
   let out = node;
@@ -341,6 +356,22 @@ function isShown(el) {
   return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
 }
 
+/**
+ * An error is a statement about the form as it was a moment ago. The moment the
+ * client answers, it stops being true — so it comes off on the first input or
+ * change inside the step it belongs to, rather than surviving until the next
+ * press of Continue. One delegated pair of listeners, because the fields it has
+ * to cover include ones pipeline.js itself reveals later.
+ */
+function bindErrors() {
+  const clear = (e) => {
+    const step = e.target && e.target.closest ? e.target.closest('[data-pl-step]') : null;
+    if (step) clearStepError(step);
+  };
+  form.addEventListener('input', clear);
+  form.addEventListener('change', clear);
+}
+
 function bindNav() {
   qa('[data-pl-next]').forEach((b) => {
     b.type = 'button';
@@ -366,15 +397,72 @@ function bindNav() {
   });
 }
 
-/** Native validation, scoped to what the client can actually see and fix. */
+/**
+ * Native validation, scoped to what the client can actually see and fix, plus
+ * a message that stays on the screen.
+ *
+ * WHAT WAS WRONG. This function used to end at reportValidity(). That call
+ * paints the browser's own bubble, which disappears on the next click, is
+ * unstyled, is not in the accessibility tree in any dependable way, and — the
+ * part an audit could measure — leaves the DOM completely unchanged: no
+ * [aria-invalid] anywhere on the page and no [aria-describedby]. A screen
+ * reader that had already moved past the field heard nothing at all, and a
+ * sighted client who looked away for a second saw a Continue button that
+ * simply did not work.
+ *
+ * WHAT IT DOES NOW. The offending field is marked invalid, the step's own error
+ * box is filled with THAT FIELD'S message — [data-pl-err-msg], written by the
+ * page next to the field it describes, so the sentence names the thing that is
+ * missing rather than saying "check the form" — and the field points at the box
+ * with aria-describedby. The native bubble is still called for, because it is
+ * the fastest signal for a mouse user and costs nothing.
+ */
 function validateStep(n) {
   const node = stepNode(n);
   if (!node) return true;
   syncRequired();
+  clearStepError(node);
   const bad = qa('input, select, textarea', node).find((f) => isShown(f) && !f.checkValidity());
   if (!bad) return true;
+  showStepError(node, bad);
   bad.reportValidity();
   return false;
+}
+
+/** Fill the step's error box and tie it to the field that caused it. */
+function showStepError(node, field) {
+  const box = q('[data-pl-step-error]', node);
+  field.setAttribute('aria-invalid', 'true');
+  if (!box) return;
+  box.textContent = field.dataset.plErrMsg || c('err.generic');
+  box.hidden = false;
+  // role is set here rather than in the markup on purpose: an element that is
+  // role="alert" from page load announces itself the moment it is un-hidden AND
+  // again on every text change. Setting both at once is one announcement.
+  box.setAttribute('role', 'alert');
+  if (box.id) {
+    // A radio group is invalid as a group; describing every member is what
+    // makes the message reachable whichever one has focus.
+    const group = field.name
+      ? qa(`[name="${field.name}"]`, node)
+      : [field];
+    (group.length ? group : [field]).forEach((el) => el.setAttribute('aria-describedby', box.id));
+  }
+}
+
+/** Take the state back off. Called before every re-validation and on any edit. */
+function clearStepError(node) {
+  if (!node) return;
+  const box = q('[data-pl-step-error]', node);
+  if (box) {
+    box.hidden = true;
+    box.textContent = '';
+    box.removeAttribute('role');
+  }
+  qa('[aria-invalid]', node).forEach((el) => el.removeAttribute('aria-invalid'));
+  if (box && box.id) {
+    qa(`[aria-describedby="${box.id}"]`, node).forEach((el) => el.removeAttribute('aria-describedby'));
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -410,17 +498,23 @@ function bindOrder() {
 }
 
 /**
- * The ladder kind for the checked option — 'complete' | 'catalog' | 'lifestyle'.
+ * The ladder kind — 'complete' | 'catalog' | 'lifestyle'.
  *
- * Read off the radio's data attribute rather than mapped from its value. The
- * value is the wire format (`drop` is what /api/order's ORDER_SERVICES and the
- * D1 `service` column call a catalog set plus a lifestyle carousel), the data
- * attribute is what pricing.js calls it, and a lookup table in this file would
- * be a third place that has to agree with both.
+ * TWO SOURCES, IN ORDER, AND NEITHER IS THE URL. A radio's data attribute if
+ * the page asks the question (nothing ships that way today, but a page is
+ * allowed to), and otherwise `service` out of the config blob, which is what
+ * every per-service flow renders. The value on the wire is NOT parsed for it:
+ * `drop` is what /api/order's ORDER_SERVICES and the D1 `service` column call a
+ * catalog set plus a lifestyle carousel, and a lookup table in this file would
+ * be a third place that has to agree with pricing.js and the server both.
+ *
+ * Reading the pathname would be the obvious shortcut and it is the one thing
+ * this must not do: renaming /start/complete would then silently reprice every
+ * order placed through it. The page says what it is.
  */
 function kindOf() {
   const r = q('input[name="service"]:checked');
-  const kind = r ? r.dataset.plKind : '';
+  const kind = (r && r.dataset.plKind) || (cfg && cfg.service) || '';
   return kind && cfg.ladder && cfg.ladder[kind] ? kind : '';
 }
 
@@ -844,7 +938,7 @@ let chain = Promise.resolve();
 // and in data to learn something that was knowable the moment they picked it.
 //
 // cfg.maxFileBytes / cfg.maxBatchFiles / cfg.uploadExt all come from
-// src/lib/uploads.js by way of StartPage.astro, which is the same module
+// src/lib/uploads.js by way of OrderFlow.astro, which is the same module
 // /api/upload enforces with — so this refuses exactly what the endpoint
 // refuses, and cannot drift from it without the page config changing too.
 // Nothing here is authoritative: the server re-checks all three.
@@ -1521,6 +1615,12 @@ function renderSummary() {
     const bgName = picked ? picked.dataset.plBgName : '';
     rows.push([c('sum.bg'), bgName ? `${bgName} — ${bgHex}` : bgHex]);
   }
+
+  // The look, on the lifestyle flow. Same rule as the background above: only
+  // when the flow HAS the question. There is no picker on a catalog order, so
+  // an empty answer here is the absence of a question rather than a skipped one.
+  const look = q('input[name="style"]:checked');
+  if (look) rows.push([c('sum.style'), look.dataset.plStyleName || look.value]);
 
   // Task #271f.
   if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);

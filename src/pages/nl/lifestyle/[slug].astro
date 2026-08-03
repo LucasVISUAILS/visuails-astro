@@ -28,8 +28,19 @@ const INTRINSIC: Record<string, [number, number]> = {
   '/img/lifestyle-flash-01.webp': [928, 1152],
   '/img/lifestyle-glow-01.webp': [1340, 2400],
   '/img/lifestyle-phone-made-02.webp': [2400, 1792],
+  // Added when the mood photo stopped being allowed to repeat the hero:
+  // Flash and Glow now take grid[1] instead of grid[0].
+  '/img/lifestyle-flash-02.webp': [1340, 2400],
+  '/img/lifestyle-glow-02.webp': [2400, 1792],
 };
-const moodPhoto = style.grid[0].photo;
+// THE MOOD PHOTO MUST NOT BE THE HERO PHOTO. On Flash and Glow, grid[0] IS the
+// hero, so the same photograph carried the hero band and the mood band two
+// folds apart, and on a page whose whole job is to show what one look actually
+// produces that reads as "there is only one picture of this". The other eight
+// grid entries are style-correct photographs of the same look, so the fix is to
+// take the first one that is not already on screen. Falls back to grid[0] if a
+// style ever ships with a single photo, which is the old behaviour.
+const moodPhoto = (style.grid.find((g) => g.photo && g.photo !== style.heroPhoto) || style.grid[0]).photo;
 const moodSize = INTRINSIC[moodPhoto];
 if (!moodSize) throw new Error(`lifestyle/[slug]: no intrinsic size on record for ${moodPhoto} — add it to INTRINSIC.`);
 
@@ -42,7 +53,7 @@ const REVIEW = reviewClaim('unattended', 'nl');
 const QUEUE = TIERS.unattended.queue.nl;
 
 // Vier van de vijf lifestyle-stijlen hebben zelf geen priceTrust, dus de
-// fallback hieronder is wat op de meeste pagina's daadwerkelijk rendert — dat
+// fallback hieronder is wat op de meeste pagina’s daadwerkelijk rendert — dat
 // was de string '€59,99', twee keer ingetypt, en daarna één vast tarief. Het
 // zijn nu twee bedragen: een lifestyle-carousel zit op een staffel die daalt
 // met het aantal, en één tarief zou hier de prijs van ÉÉN product noemen op
@@ -209,12 +220,12 @@ const priceLine = style.priceTrust
 </Layout>
 
 <style>
-  /* app.css's shared .step-n carries an italic mark from the v1 serif system
-     — v2 has no italics anywhere, so it's overridden locally rather than
+  /* app.css’s shared .step-n carries an italic mark from the v1 serif system
+     — v2 has no italics anywhere, so it’s overridden locally rather than
      touched globally. */
   .step-n { font-style: normal; }
   /* Mirrors .queue-note on the hub components. Astro scopes <style> to a
-     component's own template, so a shared visual pattern has to be repeated
+     component’s own template, so a shared visual pattern has to be repeated
      per file; consolidating these into global.css is logged as a follow-up. */
   .queue-note { margin-top: .9rem; font-size: .88rem; color: var(--ink-3); }
 

@@ -64,10 +64,6 @@
 // 75%, so buying both separately costs 135% of the bundle. That 26% bundle
 // saving is the same at every rung, which is what makes it explainable in one
 // sentence instead of a table of exceptions.
-// The legacy Pilot size, kept only so the deprecated AMOUNT.dropPilot below
-// has something to multiply. PILOT_PRODUCTS re-exports it further down.
-const PILOT_PRODUCTS_LEGACY = 8;
-
 export const LADDER = {
   // Catalog set AND lifestyle carousel — seven finished images per product.
   complete: [[1, 4, 149], [5, 9, 109], [10, 19, 85], [20, 34, 65], [35, null, 55]],
@@ -224,19 +220,12 @@ export const AMOUNT = {
   // updated alongside this change.
   video: 69,
 
-  // ── DEPRECATED, AND DERIVED RATHER THAN DELETED ──────────────────────────
-  // These three used to be the offer: two packages and a retainer, each a
-  // typed figure. The offer is now the ladder plus the plans (section 0), and
-  // roughly fifty pages still read these names. Deleting them would break the
-  // build; leaving them typed would leave fifty pages quoting a price list
-  // that no longer exists. Derived is the third option: every one of them is
-  // now a real total under the new model, so an unmigrated page prints a
-  // number that is still arithmetically true while it waits its turn.
-  //
-  // When the last consumer is migrated, delete these three lines and the build
-  // will tell you who is left.
-  dropPilot: ladderTotal('complete', PILOT_PRODUCTS_LEGACY),  // 8 products on the ladder
-  fullDrop: ladderTotal('complete', 30),                      // 30 products on the ladder
+  // The three package amounts that used to sit here — dropPilot, fullDrop and
+  // retainer — are gone. They were kept as ladder-derived values through the
+  // migration so unmigrated pages kept printing arithmetically true numbers;
+  // every one of those pages has since moved, and the last two consumers
+  // (functions/admin/debug-mollie.js, src/data/capacity.js) now read the
+  // ladder and WINDOW_THRESHOLD directly.
   brandModel: 1250, // one-time setup
   brandModelCredit: 250, // credited against each of your first five drops
   retainer: PLAN_AMOUNT.brand,  // the top monthly plan
@@ -247,7 +236,7 @@ export const AMOUNT = {
 };
 
 // Drop Pilot is a fixed count, not a range.
-export const PILOT_PRODUCTS = PILOT_PRODUCTS_LEGACY;
+
 
 // Full Drop product band.
 //
@@ -260,15 +249,15 @@ export const PILOT_PRODUCTS = PILOT_PRODUCTS_LEGACY;
 // set to 25 because section 13's own upgrade-path copy uses 25 as the Full
 // Drop's product count ("A Full Drop covers 25 for less"). At 25 the ladder is
 // strictly monotonic — see LADDER below, which asserts this at build time.
-export const FULL_DROP_MIN = 25;
-export const FULL_DROP_MAX = 30;
+
+
 
 // A drop product includes the catalog set AND the lifestyle carousel. This is
 // the resolution to flag 1 in AUDIT-TASK-0.md §H: without it, a drop is simply
 // a more expensive way to buy the same catalog sets that sit in the Tier 0
 // block on the same page. Video is NOT included — it is an add-on at the same
 // rate inside or outside a drop, which is what makes that rate quotable.
-export const DROP_INCLUDES = ['catalog', 'lifestyle'];
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1b · FULL OUTFIT — task #271f, 2026-07-30.
@@ -605,66 +594,14 @@ export function tierRowLabels(lang = 'en', keys = null) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** What one product costs à la carte at Tier 0, at drop scope (catalog + lifestyle). */
-export const TIER0_PRODUCT = DROP_INCLUDES.reduce((sum, k) => sum + AMOUNT[k], 0);
-
-export const PILOT_PER_PRODUCT = AMOUNT.dropPilot / PILOT_PRODUCTS;
-export const FULL_DROP_PER_PRODUCT_MAX = AMOUNT.fullDrop / FULL_DROP_MIN; // most expensive
-export const FULL_DROP_PER_PRODUCT_MIN = AMOUNT.fullDrop / FULL_DROP_MAX; // cheapest
-
-/**
- * How many Tier 0 products a brand must order in a quarter before a Full Drop
- * is cheaper than what they are already spending.
- *
- * RECOMPUTED when catalog/lifestyle were raised (2026-07-27). TIER0_PRODUCT
- * went from €99.98 to €219.98, which moves both numbers below — worth reading
- * again rather than trusting the old ones, because FLAG (1)'s conclusion does
- * not just shift, it flips.
- *
- * FLAGGED (1) — section 13's example upgrade prompt reads "You've ordered 14
- * products this quarter. A Full Drop covers 25 for less." At the OLD prices
- * that sentence was false at the trigger: 14 products at drop scope was
- * 14 × €99.98 = €1,399.72, less than €1,850. At the new prices it is now TRUE
- * at 14 — 14 × €219.98 = €3,079.72, well past the Full Drop's €1,850 — so the
- * brief's own example stopped being wrong by accident of a price change, not
- * by design. That is not license to make it a saving claim, because it is
- * still false for the narrower case section 13's sentence does not
- * distinguish: a brand ordering CATALOG SETS ONLY, no lifestyle, at 14
- * products pays 14 × €89.99 = €1,259.86 — still under €1,850. The prompt
- * stays written as a comparison rather than a saving for exactly that reason:
- * "drop scope" and "catalog only" disagree about whether 14 is past the line,
- * and the code cannot know which one a given brand has been buying without
- * asserting something that is true for one mix and false for the other.
- *
- * FLAGGED (2) — THIS NUMBER IS 9 AND THE LIKE-FOR-LIKE ANSWER IS 11. Both are
- * correct; they answer different questions, and the difference is VAT.
- *
- *    9  €1,850 ÷ €219.98 = 8.41 → 9. The two figures as the site prints them
- *       today.
- *   11  €1,850 ÷ (€219.98 ÷ 1.21) = €1,850 ÷ €181.80 = 10.18 → 11. The same
- *       sum with both sides ex-VAT.
- *
- * Section 14 sets the rule that produces the gap: Tier 1 prices are quoted
- * EXCLUSIVE of VAT and Tier 0 prices INCLUSIVE. So 9 divides a VAT-inclusive
- * price into a VAT-exclusive one, and a business customer reclaiming VAT does
- * not reach the crossover until 11.
- *
- * The constant stays at the nominal figure deliberately: it is the number a
- * reader gets by dividing the two prices printed on /pricing, and a page that
- * showed the ex-VAT figure next to those two prices would look like it could
- * not do arithmetic. No VAT divisor is introduced here — section 14 is
- * explicitly out of scope for now (Lucas: no KOR, files a normal return), and
- * pre-empting it with a rate constant in this file is how two sources of
- * truth start. Revisit if and when VAT handling is built.
- *
- * Neither number decides where the prompt FIRES; that is
- * UPGRADE_TRIGGER_PRODUCTS, and it comes from section 13 rather than from this
- * sum. See FLAGS.md · lxxxv. It is worth noting the trigger (12) now fires
- * AFTER the nominal break-even (9) rather than before it — a brand that gets
- * the prompt has already been past the "a drop would be cheaper" line for a
- * few products, which the prompt's own wording ("costs less from N products
- * on") still states honestly since N is named, not implied.
- */
-export const UPGRADE_BREAK_EVEN = Math.ceil(AMOUNT.fullDrop / TIER0_PRODUCT);
+// TIER0_PRODUCT, PILOT_PER_PRODUCT, FULL_DROP_PER_PRODUCT_MIN/MAX and
+// UPGRADE_BREAK_EVEN were here, with about eighty lines of comment arguing the
+// arithmetic between them. All five were derived from a package price divided
+// by a package size, and both halves of every one of those divisions has been
+// deleted. What they were FOR — telling a client at what point ordering
+// differently is cheaper — is now planSaving() and upgradePrompt(), which
+// subtract two figures the client can recompute rather than naming a crossover
+// they have to take on trust.
 
 /** The trigger section 13 specifies for the upgrade prompt. */
 export const UPGRADE_TRIGGER_PRODUCTS = 12;
@@ -840,24 +777,12 @@ export const BRAND_MODEL_CREDIT_DROPS = AMOUNT.brandModel / AMOUNT.brandModelCre
 // ─────────────────────────────────────────────────────────────────────────────
 
 function assertLadder() {
-  const rungs = [
-    ['Tier 0 à la carte, per product', TIER0_PRODUCT],
-    ['Drop Pilot, per product', PILOT_PER_PRODUCT],
-    [`Full Drop at ${FULL_DROP_MIN} products`, FULL_DROP_PER_PRODUCT_MAX],
-    [`Full Drop at ${FULL_DROP_MAX} products`, FULL_DROP_PER_PRODUCT_MIN],
-  ];
-  for (let i = 1; i < rungs.length; i++) {
-    const [prevName, prev] = rungs[i - 1];
-    const [name, cur] = rungs[i];
-    if (!(cur < prev)) {
-      throw new Error(
-        `pricing.js: the ladder is inverted. "${name}" costs ${cur.toFixed(2)} ` +
-        `per product but "${prevName}" costs ${prev.toFixed(2)} — buying more ` +
-        `must always cost less per product, or the packages argue against ` +
-        `themselves. See AUDIT-TASK-0.md §H flag 1.`
-      );
-    }
-  }
+  // The package-ladder rungs that used to open this function are gone with the
+  // packages: they asserted that Tier 0 per-product > Pilot per-product > Full
+  // Drop per-product, an ordering that only meant anything while those three
+  // things existed. The ladder's own monotonicity is asserted at the bottom of
+  // this function instead, per kind, which is the same guarantee applied to the
+  // thing that actually sets prices now.
 
   // The Brand Model credit must retire the setup fee in a whole number of
   // drops, or "credited against each of your first five drops" is untrue.
@@ -905,219 +830,69 @@ function assertLadder() {
     }
   }
 
-  // The upgrade prompt names UPGRADE_BREAK_EVEN as the count from which a Full
-  // Drop "costs less". That has to be true AT that count and not merely after
-  // it: Math.ceil returns the first integer where the drop is cheaper OR EQUAL,
-  // and "costs less" is false at equal. It cannot happen at today's numbers —
-  // €1,850 / €219.98 is not a whole number — which is exactly why it needs an
-  // assertion rather than a reader's confidence. If this fires, the fix is the
-  // definition, not the copy.
-  if (UPGRADE_BREAK_EVEN * TIER0_PRODUCT <= AMOUNT.fullDrop) {
-    throw new Error(
-      `pricing.js: the upgrade prompt says a Full Drop costs less from ` +
-      `${UPGRADE_BREAK_EVEN} products on, but ${UPGRADE_BREAK_EVEN} products à ` +
-      `la carte is ${(UPGRADE_BREAK_EVEN * TIER0_PRODUCT).toFixed(2)}, which does ` +
-      `not exceed the Full Drop at ${AMOUNT.fullDrop}. Define UPGRADE_BREAK_EVEN ` +
-      `as Math.floor(fullDrop / TIER0_PRODUCT) + 1, and do not soften the copy.`
-    );
+  // Two assertions about the package crossover were here — that
+  // UPGRADE_BREAK_EVEN products à la carte really did cost more than a Full
+  // Drop, and that FULL_DROP_MIN products à la carte did too. Both compared a
+  // package price against a flat per-product price, and neither of those
+  // exists now: the ladder has no crossover to assert because there is nothing
+  // to cross over to. What replaced them is the plan check below.
+
+  // EVERY PLAN MUST BEAT THE LADDER. This replaces the old "the retainer must
+  // cost more than the drop it contains" check, which asserted the opposite
+  // relationship and fired the moment the plans were priced: under the package
+  // model the retainer was a bundle sold ABOVE its contents, and under this one
+  // a plan is the cheaper way to buy the same output. That is not a style
+  // preference — upgradePrompt() below tells a client, in euros, what a plan
+  // would have saved them, and a prompt whose arithmetic a client can disprove
+  // with a calculator costs more than it earns. So the saving is asserted at
+  // build time rather than trusted.
+  for (const id of Object.keys(PLAN_AMOUNT)) {
+    const onLadder = ladderTotal('complete', PLAN_PRODUCTS[id]) + PLAN_CLIPS[id] * AMOUNT.video;
+    if (!(PLAN_AMOUNT[id] < onLadder)) {
+      throw new Error(
+        `pricing.js: the ${id} plan costs ${PLAN_AMOUNT[id]} for ` +
+        `${PLAN_PRODUCTS[id]} products, which is ${onLadder} on the ladder — a ` +
+        `plan that does not beat the ladder is a worse deal wearing a ` +
+        `subscription's clothes, and upgradePrompt() would be lying.`
+      );
+    }
   }
 
-  // Tier 0 must never be the expensive door for a whole drop's worth of work.
-  if (TIER0_PRODUCT * FULL_DROP_MIN <= AMOUNT.fullDrop) {
-    throw new Error(
-      `pricing.js: buying ${FULL_DROP_MIN} products à la carte costs ` +
-      `${(TIER0_PRODUCT * FULL_DROP_MIN).toFixed(2)}, which is not more than the ` +
-      `Full Drop at ${AMOUNT.fullDrop}. The drop has to be the cheaper door.`
-    );
+  // The ladder itself has to fall. A rung that costs more per product than the
+  // one below it is the exact failure the old package model shipped with (8
+  // products at €81.25 against 20 at €92.50), and it is invisible until a
+  // prospect divides.
+  for (const [kind, rungs] of Object.entries(LADDER)) {
+    for (let i = 1; i < rungs.length; i++) {
+      if (!(rungs[i][2] < rungs[i - 1][2])) {
+        throw new Error(
+          `pricing.js: the ${kind} ladder is inverted at rung ${i} — ` +
+          `${rungs[i][2]} is not less than ${rungs[i - 1][2]}. Buying more must ` +
+          `always cost less per product.`
+        );
+      }
+    }
   }
+
+  // Two package-crossover assertions were here — that UPGRADE_BREAK_EVEN
+  // products à la carte cost more than a Full Drop, and that FULL_DROP_MIN
+  // products did too. Both compared a package price against a flat
+  // per-product price, and neither of those things exists now: a ladder has
+  // no crossover to assert, because there is nothing on the other side to
+  // cross to. The plan check above is what carries that duty now.
 }
 
 assertLadder();
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 6 · THE PACKAGES — Tier 1.
-//
-// The last bullet of each attended package reads from aftercare() rather than
-// being typed. It used to say "Revision rounds included" — a countable
-// entitlement, and the last one left on the site after section 3 removed the
-// count from the tier model. A package's inclusions and the tier it belongs to
-// are now the same sentence, so they cannot drift apart again.
-//
-// The timing bullet is the same principle, applied late: it was typed out four
-// times ("A reserved 48-hour window, confirmed before you pay" ×2, its Dutch
-// twin ×2) while turnaround() sat twenty lines up documented as "Pages use
-// this, never a literal." The count bullet was worse — `products:
-// PILOT_PRODUCTS` and `'Exactly 8 products'` on the SAME object, twenty lines
-// above a Full Drop that does it correctly with `${FULL_DROP_MIN}–…`. Both are
-// now derived. What remains typed here is prose that reads a number as a word
-// ("Eight products, one committed window"), which check_promises.py holds to
-// PILOT_PRODUCTS from the outside.
-// ─────────────────────────────────────────────────────────────────────────────
+// PACKAGES WAS HERE — the Drop Pilot, the Full Drop, the Brand Model and the
+// Studio retainer as a bilingual price list, roughly 230 lines of it. It went
+// with the package model: nothing had imported it since /pricing,
+// /custom-models and schema.js were migrated to the ladder, and a retired
+// price list left inside the file that is meant to be the single source of
+// truth is worse than no file at all — the next reader finds "Drop Pilot,
+// €650, 8 products" written out in full with no way to tell it is a ghost.
+// plans() further up is what replaced it.
 
-export const PACKAGES = {
-  en: [
-    {
-      id: 'pilot',
-      tier: 'attended',
-      name: 'Drop Pilot',
-      price: euro(AMOUNT.dropPilot, 'en'),
-      unit: 'once per brand',
-      products: PILOT_PRODUCTS,
-      line: 'Eight products, one committed window. The way to find out what we do with your line before you hand us the whole thing.',
-      // "Once per brand" is structural, not a marketing flourish: it is what
-      // stops the Pilot being a cheaper per-product substitute for the Full
-      // Drop bought repeatedly. Parallel to the existing one-test-sample-per-
-      // business rule, so the site already sets this expectation.
-      onceOnly: true,
-      includes: [
-        `Exactly ${PILOT_PRODUCTS} products`,
-        'Catalog set and lifestyle carousel for each',
-        turnaround('attended', 'en'),
-        'Client portal, approve or request a revision per image',
-        aftercare('attended', 'en'),
-      ],
-    },
-    {
-      id: 'full-drop',
-      tier: 'attended',
-      name: 'Full Drop',
-      price: euro(AMOUNT.fullDrop, 'en'),
-      unit: 'per drop',
-      products: [FULL_DROP_MIN, FULL_DROP_MAX],
-      line: 'One drop. One deadline. One invoice.',
-      includes: [
-        `${FULL_DROP_MIN}–${FULL_DROP_MAX} products`,
-        'Catalog set and lifestyle carousel for each',
-        turnaround('attended', 'en'),
-        'Client portal, approve or request a revision per image',
-        aftercare('attended', 'en'),
-        `Video clips at ${euro(AMOUNT.video, 'en')} each, added to any drop`,
-      ],
-    },
-    {
-      id: 'brand-model',
-      tier: 'attended',
-      name: 'Your Brand Model',
-      price: euro(AMOUNT.brandModel, 'en'),
-      unit: 'one-time setup',
-      line: 'One face. Every drop. Only yours.',
-      // `creditLine` used to sit here: "€250 credited against each of your
-      // first 5 drops — the setup pays itself back." It was rendered in
-      // exactly one place, /pricing, and task #246 is about that page asking
-      // to be read rather than looked at. The clause after the dash was a sum
-      // the reader had to do in their head — 250 × 5 against a setup price two
-      // lines above — so FigPayback draws the sum, and the clause before the
-      // dash became that figure's run label. Nothing was dropped; one sentence
-      // stopped being a sentence. The credit itself is still stated in
-      // `includes` below, which is what /custom-models prints.
-      includes: [
-        'A model built for your brand, used by no one else',
-        'Consistent across every product and every drop',
-        `${euro(AMOUNT.brandModelCredit, 'en')} back on each of your first ${BRAND_MODEL_CREDIT_DROPS} drops`,
-        'Kept current as your line changes',
-      ],
-    },
-    {
-      id: 'retainer',
-      tier: 'attended',
-      name: 'Studio retainer',
-      price: euro(AMOUNT.retainer, 'en'),
-      unit: 'per month',
-      line: 'The studio, on standing order.',
-      // PROPOSED, NOT BRIEFED. The brief gives the price and the name but never
-      // defines what a retainer includes. These inclusions are a proposal and
-      // are flagged as such to the user; if they change, they change here only.
-      proposed: true,
-      includes: [
-        'One Full Drop every month',
-        'Your Brand Model included and kept current',
-        'First position in the capacity queue',
-        aftercare('attended', 'en'),
-      ],
-    },
-  ],
-  nl: [
-    {
-      id: 'pilot',
-      tier: 'attended',
-      name: 'Drop Pilot',
-      price: euro(AMOUNT.dropPilot, 'nl'),
-      unit: 'eenmalig per merk',
-      products: PILOT_PRODUCTS,
-      line: 'Acht producten, één vastgelegd venster. Zo ontdek je wat we met jouw lijn doen voordat je ons de hele collectie geeft.',
-      onceOnly: true,
-      includes: [
-        `Precies ${PILOT_PRODUCTS} producten`,
-        'Catalogset en lifestyle-carousel voor elk product',
-        turnaround('attended', 'nl'),
-        'Klantportaal, per beeld goedkeuren of een revisie aanvragen',
-        aftercare('attended', 'nl'),
-      ],
-    },
-    {
-      id: 'full-drop',
-      tier: 'attended',
-      name: 'Full Drop',
-      price: euro(AMOUNT.fullDrop, 'nl'),
-      unit: 'per drop',
-      products: [FULL_DROP_MIN, FULL_DROP_MAX],
-      line: 'Eén drop. Eén deadline. Eén factuur.',
-      includes: [
-        `${FULL_DROP_MIN}–${FULL_DROP_MAX} producten`,
-        'Catalogset en lifestyle-carousel voor elk product',
-        turnaround('attended', 'nl'),
-        'Klantportaal, per beeld goedkeuren of een revisie aanvragen',
-        aftercare('attended', 'nl'),
-        `Videoclips voor ${euro(AMOUNT.video, 'nl')} per stuk, toe te voegen aan elke drop`,
-      ],
-    },
-    {
-      id: 'brand-model',
-      tier: 'attended',
-      name: 'Jouw merkmodel',
-      price: euro(AMOUNT.brandModel, 'nl'),
-      unit: 'eenmalige setup',
-      line: 'Eén gezicht. Elke drop. Alleen van jou.',
-      // `creditLine` — zie de EN-tak hierboven. Beide talen verliezen dezelfde
-      // zin op hetzelfde moment, want de tekening spreekt geen van beide.
-      includes: [
-        'Een model gebouwd voor jouw merk, door niemand anders gebruikt',
-        'Consistent op elk product en in elke drop',
-        `${euro(AMOUNT.brandModelCredit, 'nl')} terug op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} drops`,
-        'Bijgehouden terwijl je lijn verandert',
-      ],
-    },
-    {
-      id: 'retainer',
-      tier: 'attended',
-      name: 'Studio-retainer',
-      price: euro(AMOUNT.retainer, 'nl'),
-      unit: 'per maand',
-      line: 'De studio, op vaste afspraak.',
-      proposed: true,
-      includes: [
-        'Elke maand één Full Drop',
-        'Jouw merkmodel inbegrepen en bijgehouden',
-        'Eerste plaats in de capaciteitswachtrij',
-        aftercare('attended', 'nl'),
-      ],
-    },
-  ],
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 7 · PER-PRODUCT — Tier 0.
-//
-// Section 13: this block lives on /pricing (bottom), on /catalog, /lifestyle
-// and /video, and is reachable from /start step 1 as "a single product." It
-// must NOT appear on the homepage, in the nav, or in any hero.
-// ─────────────────────────────────────────────────────────────────────────────
-
-// `outfitPrice` — task #271f: the Single Product/Full outfit surcharge,
-// pre-added and pre-formatted the same way `price` is, so a page prints it
-// without doing its own arithmetic. 'custom' has no PER_PRODUCT row at all
-// (it is a quote, not a rate) and so has no outfit price either — the quote
-// covers whatever the shot needs.
 export const PER_PRODUCT = {
   en: [
     { id: 'catalog', tier: 'unattended', name: 'Catalog set', price: euro(AMOUNT.catalog, 'en'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Four photos: front, back, a fabric or logo close-up, and one on-model shot.' },
@@ -1185,24 +960,6 @@ export const SHOOT_DAY = {
 // 9 · THE ACCESSOR — what pages import.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function getPricing(lang = 'en') {
-  const l = lang === 'nl' ? 'nl' : 'en';
-  return {
-    lang: l,
-    packages: PACKAGES[l],
-    perProduct: PER_PRODUCT[l],
-    testSample: TEST_SAMPLE[l],
-    shootDay: SHOOT_DAY[l],
-    tiers: TIERS,
-    review: (tierId) => reviewClaim(tierId, l),
-    turnaround: (tierId) => turnaround(tierId, l),
-    aftercare: (tierId) => aftercare(tierId, l),
-    euro: (n) => euro(n, l),
-    // Task #271f — Single Product/Full outfit.
-    outfitSurcharge: OUTFIT_SURCHARGE,
-    maxOutfitProducts: MAX_OUTFIT_PRODUCTS,
-    outfitCopy: OUTFIT_COPY[l],
-  };
-}
-
-export default getPricing;
+// getPricing() and `export default getPricing` were here. getPricing() existed
+// to bundle PACKAGES and PER_PRODUCT for a caller that never arrived; with
+// PACKAGES gone it bundled one thing, and nothing imported either.

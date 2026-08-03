@@ -35,7 +35,7 @@
 // fitting inside the window it is sold with.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { FULL_DROP_MAX, PILOT_PRODUCTS } from './pricing.js';
+import { WINDOW_THRESHOLD } from './pricing.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 · THE CEILING
@@ -311,16 +311,20 @@ function assertCapacity() {
   if (QUEUE_FLOOR_PER_DAY >= PRODUCTS_PER_DAY) {
     throw new Error('capacity.js: QUEUE_FLOOR_PER_DAY leaves no attended capacity at all.');
   }
-  if (ATTENDED_PER_WINDOW < FULL_DROP_MAX) {
+  // RESTATED IN LADDER TERMS. These two checks used to read FULL_DROP_MAX and
+  // PILOT_PRODUCTS — the largest and smallest package — and asked whether each
+  // fitted in one reserved window. There are no packages any more, so the
+  // invariant that survives is the one the site actually promises: from
+  // WINDOW_THRESHOLD products up we say an order gets a reserved window, and a
+  // window that cannot hold that many makes the promise unkeepable at the very
+  // count where it starts being made.
+  if (ATTENDED_PER_WINDOW < WINDOW_THRESHOLD) {
     throw new Error(
-      `capacity.js: a Full Drop is sold at up to ${FULL_DROP_MAX} products in one reserved ` +
-      `window, but a window only holds ${ATTENDED_PER_WINDOW}. Either raise PRODUCTS_PER_DAY, ` +
-      `lower QUEUE_FLOOR_PER_DAY, or lower FULL_DROP_MAX in pricing.js — the site must not ` +
-      `offer a package the gate can never clear.`
+      `capacity.js: the site promises a reserved window from ${WINDOW_THRESHOLD} products ` +
+      `(WINDOW_THRESHOLD in pricing.js), but one window only holds ${ATTENDED_PER_WINDOW}. ` +
+      `Either raise PRODUCTS_PER_DAY, lower QUEUE_FLOOR_PER_DAY, or raise WINDOW_THRESHOLD — ` +
+      `the site must not promise a window the gate can never clear.`
     );
-  }
-  if (PILOT_PRODUCTS > ATTENDED_PER_WINDOW) {
-    throw new Error('capacity.js: the Drop Pilot does not fit inside one reserved window.');
   }
   if (QUEUE_DAYS_MIN >= QUEUE_DAYS_MAX) {
     throw new Error('capacity.js: the queue span is inverted.');

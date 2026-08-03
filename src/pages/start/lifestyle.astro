@@ -1,0 +1,16 @@
+---
+// VISUAILS — /start/lifestyle.
+// The page is four imports and a service name. Everything else — the five
+// steps, the copy in both languages, the config blob pipeline.js reads — is
+// OrderFlow.astro, which is the whole reason the split did not turn into five
+// near-identical files. The ONE block that differs is passed in as the slot.
+import Layout from '../../layouts/Layout.astro';
+import OrderFlow from '../../components/order/OrderFlow.astro';
+import StylePicker from '../../components/order/StylePicker.astro';
+---
+
+<Layout title="Order lifestyle carousels — VISUAILS" description="Your product in a styled scene, three images per product. Pick the look and the count; the rate falls as the count rises.">
+  <OrderFlow lang="en" service="lifestyle">
+    <StylePicker lang="en" />
+  </OrderFlow>
+</Layout>

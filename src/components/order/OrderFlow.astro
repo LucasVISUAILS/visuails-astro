@@ -1,0 +1,1813 @@
+---
+// VISUAILS — the order pipeline, shared by every service that has a real flow.
+//
+// WHY THIS IS A COMPONENT AND NOT A PAGE
+// /start used to be one page holding one form that asked, as its first
+// question, which of three things you wanted made. That question was already
+// answered everywhere it was asked FROM: /catalog links to "order catalog
+// sets", and the visitor arriving from it had to answer it again. So /start is
+// now a chooser (StartPage.astro) and each service has its own route:
+//
+//   /start/catalog     · catalog sets           · background picker
+//   /start/lifestyle   · lifestyle carousels    · style picker, no background
+//   /start/complete    · both                   · background picker
+//
+// Only step 1 differs between them, and inside step 1 only ONE block does: the
+// question that is specific to the work. That block is the default <slot> of
+// this component; everything else — the count, the outfit surcharge, the
+// running total, the upload, the brief, the capacity gate, the confirm screen —
+// is here, once, in one language pair. A per-service page is ~40 lines.
+//
+// Everything the old file's header said still applies and is not repeated:
+// src/scripts/pipeline.js drives this markup through the [data-pl-*] hooks, no
+// price is typed anywhere, and the whole thing posts to /api/order with
+// JavaScript switched off. Two things ARE new and are worth stating:
+//
+//   · THE SERVICE IS A HIDDEN INPUT, NOT A RADIO. Its value is still the wire
+//     name /api/order already accepts (ORDER_SERVICES: `drop` is a catalog set
+//     plus a lifestyle carousel), and the ladder kind now travels in the config
+//     blob as `service` rather than on a radio's data attribute — pipeline.js's
+//     kindOf() reads the blob when there is no radio to read. The URL is never
+//     parsed; the page tells the script what it is.
+//   · THE COUNT STARTS UNANSWERED. It used to default to "1 product", which
+//     meant the copy that says "choose how many and the total appears here" was
+//     never once on screen, and a distracted visitor could order one product by
+//     not answering. It is now an explicit choice, and it is the first thing
+//     the new error state has to say something about.
+import {
+  TIERS, reviewClaim, euro, TEST_SAMPLE,
+  TIER_ROWS, tierRow, tierRowLabels, turnaround,
+  ladderRate, ladderFloor, LADDER, vatLabel, vatNote,
+  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT,
+  OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
+} from '../../data/pricing.js';
+import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
+import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
+import { localizedPath } from '../../i18n/ui.js';
+import {
+  RECOMMENDED as BACKGROUNDS, CUSTOM_ID, LIGHT_THRESHOLD, copy as bgCopy,
+} from '../../data/backgrounds.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  /** The ladder kind. Also what the config blob calls the service. */
+  service: 'complete' | 'catalog' | 'lifestyle';
+}
+const { lang, service } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+if (!LADDER[service]) {
+  throw new Error(`OrderFlow.astro: "${service}" is not a kind on the ladder in src/data/pricing.js.`);
+}
+
+// The wire format, which is NOT the ladder's vocabulary. `drop` is what
+// /api/order's ORDER_SERVICES and the D1 `service` column call a catalog set
+// plus a lifestyle carousel; renaming it is a migration, not a form change.
+const WIRE = { complete: 'drop', catalog: 'catalog', lifestyle: 'lifestyle' } as const;
+const wire = WIRE[service];
+
+// A lifestyle carousel is a styled scene, not a product on a ground, so it has
+// no background to choose. The picker is simply not rendered for it — the old
+// page hid AND disabled the fieldset at runtime, which was the right fix while
+// one page served all three services and is dead weight now that it does not.
+const bgApplies = service !== 'lifestyle';
+
+const unattended = TIERS.unattended;
+const sample = TEST_SAMPLE[lang];
+
+// ── What each service IS, in one line ──────────────────────────────────────
+// The three-option radio grid with seven photographs in it is gone: the
+// chooser at /start showed the pictures, and repeating them here would ask a
+// visitor to re-decide something they decided one click ago. What survives is
+// the one sentence a confirmation needs — what you picked, and what it buys —
+// plus a way back to the chooser for someone who picked wrong.
+const SERVICE = {
+  en: {
+    complete: {
+      title: 'Catalog sets and lifestyle carousels',
+      gets: '7 images per product — 4 catalog, 3 lifestyle',
+      lead: `The rate falls as the count rises, from ${euro(ladderRate('complete', 1), 'en')} to ${euro(ladderFloor('complete'), 'en')} a product.`,
+    },
+    catalog: {
+      title: 'Catalog sets',
+      gets: '4 images per product — front, back, detail, on model',
+      lead: `The rate falls as the count rises, from ${euro(ladderRate('catalog', 1), 'en')} to ${euro(ladderFloor('catalog'), 'en')} a product.`,
+    },
+    lifestyle: {
+      title: 'Lifestyle carousels',
+      gets: '3 images per product — one styled look, ready to post',
+      lead: `The rate falls as the count rises, from ${euro(ladderRate('lifestyle', 1), 'en')} to ${euro(ladderFloor('lifestyle'), 'en')} a product.`,
+    },
+    change: 'Order something else',
+  },
+  nl: {
+    complete: {
+      title: 'Catalogsets en lifestyle-carousels',
+      gets: '7 beelden per product — 4 catalog, 3 lifestyle',
+      lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('complete', 1), 'nl')} naar ${euro(ladderFloor('complete'), 'nl')} per product.`,
+    },
+    catalog: {
+      title: 'Catalogsets',
+      gets: '4 beelden per product — voor, achter, detail, op model',
+      lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('catalog', 1), 'nl')} naar ${euro(ladderFloor('catalog'), 'nl')} per product.`,
+    },
+    lifestyle: {
+      title: 'Lifestyle-carousels',
+      gets: '3 beelden per product — één gestylede look, klaar om te posten',
+      lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('lifestyle', 1), 'nl')} naar ${euro(ladderFloor('lifestyle'), 'nl')} per product.`,
+    },
+    change: 'Iets anders bestellen',
+  },
+};
+const svc = SERVICE[lang][service];
+
+// ── The copy pipeline.js reads ─────────────────────────────────────────────
+// Serialised into the config blob and reached by dotted path from the script.
+// Unchanged from the single-page version except for `err`, which is new: the
+// form had no rendered error state at all, so pressing Continue with nothing
+// answered left the step looking exactly as it had a moment before.
+const PIPE = {
+  en: {
+    total: {
+      each: `{rate} per product × {n}, ${vatLabel('excl', 'en')}.`,
+      more: 'That is more than one reserved window holds, so it is planned with you rather than priced by a form.',
+      quote: 'Choose how many products and the total appears here.',
+      onRequest: '—',
+      outfit: ' Plus {price} × {n} for full outfit.',
+    },
+    // NOT "{then} instead of {now}" — see the note this line kept in the old
+    // file: what falls is the per-product rate, so that is what is compared.
+    rung: {
+      one: `One more product and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
+      many: `{add} more products and every product drops from {now} to {rate} — {count} for {then}, ${vatLabel('excl', 'en')}.`,
+    },
+    level: {
+      attended: `${WINDOW_THRESHOLD} products or more, so this order goes in the capacity calendar. ${turnaround('attended', 'en')}.`,
+      unattended: `${TIERS.unattended.queue.en}. From ${WINDOW_THRESHOLD} products an order gets a reserved window instead.`,
+    },
+    kind: {
+      complete: 'Catalog set and lifestyle carousel',
+      catalog: 'Catalog set',
+      lifestyle: 'Lifestyle carousel',
+    },
+    // The last resort when a field carries no message of its own. Every field
+    // that can actually fail has one in [data-pl-err-msg]; this is what a
+    // future field gets before anybody writes it one.
+    err: { generic: 'This still needs an answer before you can continue.' },
+    sum: {
+      kind: 'What we make',
+      count: 'Products',
+      bg: 'Background',
+      style: 'Look',
+      outfit: 'Full outfit',
+      outfitN: '{price} extra × {n}',
+      net: `Order value (${vatLabel('excl', 'en')})`,
+      files: 'Reference material',
+      noFiles: 'Nothing sent yet — you can email it afterwards',
+      window: 'Delivery',
+      windowLater: 'Window still to be reserved',
+      queue: TIERS.unattended.queue.en,
+      email: 'Email',
+    },
+    upload: {
+      sending: 'Sending…',
+      done: 'Sent',
+      retry: 'Try again',
+      remove: 'Remove',
+      count: '{n} of {max} uploaded',
+      err: {
+        'too-large': 'Too large — {max} per file is the ceiling.',
+        'batch-full': 'That is {max} files, which is the ceiling for one order.',
+        rate: 'Too many at once. Wait a moment, then try again.',
+        unavailable: 'We could not take files just now.',
+        network: 'The connection dropped before this one arrived.',
+        generic: 'This one did not go through.',
+        'bad-type': 'Not an image we can read. JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF.',
+        empty: 'This file is empty.',
+        'no-file': 'Nothing arrived with that one.',
+        'bad-batch': 'This upload session lost its place. Reload the page and pick the files again.',
+        'bad-request': 'This one did not go through.',
+      },
+    },
+    s3: {
+      prefillNote: "Filled in from your account ({email}) — change anything that's out of date.",
+    },
+    gate: { windowSub: 'Available window' },
+    submit: {
+      sending: 'Sending…',
+      email: 'That email address did not go through. Check it and send again.',
+      network: 'The request did not finish, and we cannot tell whether it reached us. Rather than send it twice, email hello@visuails.com and we will confirm what arrived.',
+      generic: 'Something went wrong at our end. Nothing has been charged. Try again, or email hello@visuails.com.',
+    },
+  },
+  nl: {
+    total: {
+      each: `{rate} per product × {n}, ${vatLabel('excl', 'nl')}.`,
+      more: 'Dat is meer dan één gereserveerd venster aankan, dus dat plannen we samen in plaats van het door een formulier te laten prijzen.',
+      quote: 'Kies hoeveel producten en het totaal verschijnt hier.',
+      onRequest: '—',
+      outfit: ' Plus {price} × {n} voor full outfit.',
+    },
+    rung: {
+      one: `Nog één product en elk product zakt van {now} naar {rate} — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
+      many: `Nog {add} producten en elk product zakt van {now} naar {rate} — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
+    },
+    level: {
+      attended: `${WINDOW_THRESHOLD} producten of meer, dus deze bestelling gaat in de capaciteitsagenda. ${turnaround('attended', 'nl')}.`,
+      unattended: `${TIERS.unattended.queue.nl}. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling in plaats daarvan een gereserveerd venster.`,
+    },
+    kind: {
+      complete: 'Catalogset en lifestyle-carousel',
+      catalog: 'Catalogset',
+      lifestyle: 'Lifestyle-carousel',
+    },
+    err: { generic: 'Hier moet nog een antwoord staan voordat je verder kunt.' },
+    sum: {
+      kind: 'Wat we maken',
+      count: 'Producten',
+      bg: 'Achtergrond',
+      style: 'Look',
+      outfit: 'Full outfit',
+      outfitN: '{price} extra × {n}',
+      net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
+      files: 'Referentiemateriaal',
+      noFiles: 'Nog niets gestuurd — je kunt het later mailen',
+      window: 'Levering',
+      windowLater: 'Venster wordt nog gereserveerd',
+      queue: TIERS.unattended.queue.nl,
+      email: 'E-mail',
+    },
+    upload: {
+      sending: 'Versturen…',
+      done: 'Verstuurd',
+      retry: 'Opnieuw',
+      remove: 'Verwijderen',
+      count: '{n} van {max} geüpload',
+      err: {
+        'too-large': 'Te groot — {max} per bestand is het maximum.',
+        'batch-full': 'Dat zijn {max} bestanden, het maximum voor één bestelling.',
+        rate: 'Te veel tegelijk. Wacht even en probeer het opnieuw.',
+        unavailable: 'We konden nu geen bestanden aannemen.',
+        network: 'De verbinding viel weg voordat deze binnen was.',
+        generic: 'Deze is niet doorgekomen.',
+        'bad-type': 'Geen beeld dat we kunnen lezen. JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF.',
+        empty: 'Dit bestand is leeg.',
+        'no-file': 'Er kwam niets mee.',
+        'bad-batch': 'Deze uploadsessie is zijn plek kwijt. Herlaad de pagina en kies de bestanden opnieuw.',
+        'bad-request': 'Deze is niet doorgekomen.',
+      },
+    },
+    s3: {
+      prefillNote: 'Ingevuld vanuit je account ({email}) — pas aan wat niet meer klopt.',
+    },
+    gate: { windowSub: 'Beschikbaar venster' },
+    submit: {
+      sending: 'Versturen…',
+      email: 'Dat e-mailadres kwam er niet doorheen. Controleer het en verstuur opnieuw.',
+      network: 'Het verzoek is niet afgerond en we kunnen niet zien of het is aangekomen. Verstuur het niet twee keer maar mail hello@visuails.com, dan bevestigen wij wat er binnen is.',
+      generic: 'Er ging iets mis aan onze kant. Er is niets in rekening gebracht. Probeer het opnieuw, of mail hello@visuails.com.',
+    },
+  },
+};
+
+// ── The background picker's live half ──────────────────────────────────────
+// One note per swatch, and only ever the selected one is on screen — which is
+// how four paragraphs of rationale became a single line that changes as you
+// click. Every word comes from src/data/backgrounds.js. Added to the blob only
+// for the services that HAVE a background: a lifestyle order downloading four
+// notes about grounds it will never show is copy nobody can ever read.
+if (bgApplies) {
+  for (const l of ['en', 'nl'] as const) {
+    (PIPE[l] as Record<string, unknown>).bg = {
+      warn: bgCopy(l).warn,
+      note: Object.fromEntries([
+        ...BACKGROUNDS.map((b) => [b.id, b.note[l]]),
+        [CUSTOM_ID, bgCopy(l).customHint],
+      ]),
+    };
+  }
+}
+
+// ── The contract, enforced at build time ───────────────────────────────────
+// Every dotted path src/scripts/pipeline.js passes to c(), in both languages.
+// A key that is missing or empty fails the build here rather than reaching a
+// visitor as an empty string. Adding a c() call to pipeline.js means adding
+// its path to this list; that is the point.
+//
+// bg.* is on this list only when the flow has a background — the note keys are
+// generated from the data rather than typed, so adding a recommended value to
+// backgrounds.js adds its own build-time check instead of shipping a swatch
+// with no line under it.
+const REQUIRED_COPY = [
+  'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.outfit',
+  'rung.one', 'rung.many',
+  'level.attended', 'level.unattended',
+  'kind.complete', 'kind.catalog', 'kind.lifestyle',
+  'err.generic',
+  'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.outfit', 'sum.outfitN',
+  // sum.net and NOTHING ELSE about money — VAT is charged at the rate of the
+  // customer's own country, so a gross figure here would be a Dutch rate shown
+  // to whoever reads. vatNote() says once how VAT is handled.
+  'sum.net',
+  'sum.files', 'sum.noFiles', 'sum.window', 'sum.windowLater', 'sum.queue', 'sum.email',
+  'upload.sending', 'upload.done', 'upload.retry', 'upload.remove', 'upload.count',
+  'upload.err.too-large', 'upload.err.batch-full', 'upload.err.rate',
+  'upload.err.unavailable', 'upload.err.network', 'upload.err.generic',
+  'upload.err.bad-type', 'upload.err.empty', 'upload.err.no-file',
+  'upload.err.bad-batch', 'upload.err.bad-request',
+  's3.prefillNote',
+  'gate.windowSub',
+  'submit.sending', 'submit.email', 'submit.network', 'submit.generic',
+  ...(bgApplies
+    ? ['bg.warn', `bg.note.${CUSTOM_ID}`, ...BACKGROUNDS.map((b) => `bg.note.${b.id}`)]
+    : []),
+];
+
+for (const l of ['en', 'nl'] as const) {
+  for (const path of REQUIRED_COPY) {
+    let node: unknown = PIPE[l];
+    for (const key of path.split('.')) {
+      node = node && typeof node === 'object' ? (node as Record<string, unknown>)[key] : undefined;
+    }
+    if (typeof node !== 'string' || !node.trim()) {
+      throw new Error(
+        `OrderFlow.astro: PIPE.${l}.${path} is missing or empty, and src/scripts/pipeline.js reads it.`
+      );
+    }
+  }
+}
+
+// ── The form's own copy ────────────────────────────────────────────────────
+// Markup labels, kept apart from PIPE so the config blob the browser downloads
+// carries only what the script reads.
+//
+// CUT HARD, AUGUST 2026. Step 1 was 605 words, and 120 of them were a
+// queue-versus-window table copied verbatim from /pricing. Lucas: "soms wordt
+// het te veel." What had to survive survives behind a <details> — a real
+// disclosure control that works with JavaScript off and is reachable from the
+// keyboard — and what was a second copy of another page is a link to it.
+const FORM = {
+  en: {
+    railLabel: 'Order steps',
+    rail: ['Order', 'Material', 'Brief', 'Timing', 'Confirm'],
+    next: 'Continue',
+    back: 'Back',
+    optional: 'optional',
+    s1: {
+      h: 'How many, and what for?',
+      countLabel: 'How many products?',
+      countPick: 'Choose a number',
+      countHint: `Above ${ATTENDED_PER_WINDOW} we plan it with you — take the last option.`,
+      countErr: 'Choose how many products before you continue.',
+      more: `More than ${ATTENDED_PER_WINDOW}`,
+      totalLabel: 'Running total',
+      netLabel: `Order value (${vatLabel('excl', 'en')})`,
+      vatNote: vatNote('en'),
+      firstOrder: `First order for a brand: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% off, applied on the invoice.`,
+      displayNote: 'A preview, worked out in your browser. The invoice is calculated again on our side, from the same ladder.',
+      outfitLabel: 'Any of these a full outfit?',
+      outfitHint: `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS}.`,
+      outfitWhy: 'Why a full outfit costs more',
+      outfitWhyBody: OUTFIT_COPY.en,
+      outfitNone: 'None — single product',
+      outfitCount: (n: number) => `${n} full outfit${n === 1 ? '' : 's'}`,
+      levelsH: 'Queue and reserved window, side by side',
+      levelAttended: ['Reserved window', `From ${WINDOW_THRESHOLD} products`],
+      levelUnattended: ['Standard queue', `Up to ${WINDOW_THRESHOLD - 1} products`],
+      ladderLink: 'The whole ladder',
+    },
+    s2: {
+      h: 'Send the product photos',
+      lead: 'Whatever you already have. Phone photos on a table are enough.',
+      dropzone: 'Choose files, or drag them here',
+      dropzoneHint: `JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF · up to ${Math.round(MAX_FILE_BYTES / (1024 * 1024))} MB each · ${MAX_BATCH_FILES} files per order`,
+      off: 'Files cannot be taken at the moment. Carry on — we will ask for them by email, and nothing about your order depends on this step.',
+      skip: 'You can skip this and email the material afterwards.',
+    },
+    s3: {
+      h: 'Who is this for?',
+      lead: 'Enough to invoice it and come back to you.',
+      savedH: 'Using your saved details',
+      savedEdit: 'Change for this order',
+      savedHint: 'This order only. To change them for good, edit them in your account.',
+      name: 'Your name',
+      nameErr: 'Tell us who to address this to.',
+      brand: 'Brand or shop name',
+      brandErr: 'A brand or shop name goes on the invoice.',
+      email: 'Email',
+      emailHint: 'Where the confirmation and the files go.',
+      emailErr: 'We need an email address to send the confirmation to.',
+      phone: 'Phone or WhatsApp',
+      website: 'Website or shop link',
+      vat: 'VAT number',
+      vatHint: 'For a business invoice within the EU.',
+      message: 'Anything we should know',
+      messageHint: 'The look you are after, a deadline behind the deadline, a reference you like.',
+    },
+    s4: {
+      h: 'Timing',
+      lead: 'Checked against the real calendar rather than promised.',
+      checking: 'Checking the calendar…',
+      queueH: 'This order does not need a reserved window',
+      queueBody: 'Orders under the threshold are produced in the order they arrive.',
+      okH: 'These windows can be held for you',
+      okBody: 'Pick one. Nothing is reserved by looking at it — the window is held when this order arrives, and confirmed before anything is invoiced.',
+      okMax: 'One window covers up to',
+      okMaxTail: 'products.',
+      fullH: 'Nothing free inside the planning horizon',
+      fullBody: 'Send the order anyway and you get the first window that opens, in writing, before anything is invoiced.',
+      tooLargeH: 'Larger than one window holds',
+      tooLargeBody: 'A single window covers up to',
+      tooLargeTail: 'products. More than that is two windows and a conversation. Send this and we will plan it with you.',
+      invalidH: 'Choose how many products first',
+      invalidBody: 'Go back a step and pick a count — the calendar cannot be asked a question without one.',
+      unavailableH: 'The calendar did not answer',
+      unavailableBody: 'That is our problem, not yours. Try again, or send the order and we will confirm a window by email.',
+      retry: 'Check again',
+      lostH: 'That window went while you were filling this in',
+      lostBody: 'Nothing was created and nothing was charged. Pick another window below and send again.',
+      nojs: 'Without JavaScript the calendar cannot be checked from this page. Send the form and we will come back with a window in writing — no date is assumed in the meantime.',
+    },
+    s5: {
+      h: 'Check and send',
+      lead: 'Read it back. Nothing has been created yet, and nothing has been charged.',
+      afterH: 'What happens after you press send',
+      after: [
+        'You get a confirmation with a reference, immediately.',
+        'An order with a reserved window is invoiced once that window is confirmed and before production starts. A queue order is invoiced on delivery.',
+        'An order with a reserved window lands in a portal you approve image by image. A queue order arrives as a download link.',
+      ],
+      payNote: 'There is no card form here on purpose. You are confirming an order, not paying for one.',
+      submit: 'Send this order',
+      lostH: 'Your order is in — the window is not',
+      lostBody: 'It arrived a moment after that window filled. Nothing is lost and nothing is invoiced: the order is recorded under its reference, and we come back with the first window that fits, in writing.',
+      lostGo: 'Go to the confirmation',
+      saveLabel: 'Save these details to my account for next time',
+      saveHint: 'Your name, brand and contact details — not this order or its brief.',
+    },
+    noscript: 'JavaScript is off, so this page shows all five steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for the material by email, confirm a window in writing, and invoice the ladder rate for the count you pick.',
+    sharedH: 'What is identical at every count',
+    shared: [
+      ['The pipeline', `The same production run at one product and at ${ATTENDED_PER_WINDOW}.`],
+      ['The review', `${reviewClaim('unattended', 'en')}. At every count.`],
+      ['The files', 'High-resolution and e-commerce-ready, with no per-use licence.'],
+    ],
+    footH: 'Not ready to order?',
+    footBody: `One product, ${sample.price}, ${sample.unit}. Same pipeline as a paid order.`,
+    footCta: `Try a test sample · ${sample.price}`,
+    footWa: 'Ask on WhatsApp',
+  },
+  nl: {
+    railLabel: 'Stappen',
+    rail: ['Bestelling', 'Materiaal', 'Briefing', 'Timing', 'Bevestigen'],
+    next: 'Verder',
+    back: 'Terug',
+    optional: 'optioneel',
+    s1: {
+      h: 'Hoeveel, en waarvoor?',
+      countLabel: 'Hoeveel producten?',
+      countPick: 'Kies een aantal',
+      countHint: `Boven ${ATTENDED_PER_WINDOW} plannen we het samen — kies de laatste optie.`,
+      countErr: 'Kies eerst hoeveel producten.',
+      more: `Meer dan ${ATTENDED_PER_WINDOW}`,
+      totalLabel: 'Lopend totaal',
+      netLabel: `Orderbedrag (${vatLabel('excl', 'nl')})`,
+      vatNote: vatNote('nl'),
+      firstOrder: `Eerste bestelling van een merk: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% korting, verrekend op de factuur.`,
+      displayNote: 'Een voorbeeld, in je browser uitgerekend. De factuur wordt aan onze kant opnieuw berekend, uit dezelfde staffel.',
+      outfitLabel: 'Zitten hier full outfits bij?',
+      outfitHint: `${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}.`,
+      outfitWhy: 'Waarom een full outfit meer kost',
+      outfitWhyBody: OUTFIT_COPY.nl,
+      outfitNone: 'Geen — los product',
+      outfitCount: (n: number) => `${n} full outfit${n === 1 ? '' : 's'}`,
+      levelsH: 'Wachtrij en gereserveerd venster, naast elkaar',
+      levelAttended: ['Gereserveerd venster', `Vanaf ${WINDOW_THRESHOLD} producten`],
+      levelUnattended: ['Standaard wachtrij', `Tot en met ${WINDOW_THRESHOLD - 1} producten`],
+      ladderLink: 'De hele staffel',
+    },
+    s2: {
+      h: 'Stuur de productfoto’s',
+      lead: 'Wat je al hebt. Telefoonfoto’s op tafel zijn genoeg.',
+      dropzone: 'Kies bestanden, of sleep ze hierheen',
+      dropzoneHint: `JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF · max ${Math.round(MAX_FILE_BYTES / (1024 * 1024))} MB per stuk · ${MAX_BATCH_FILES} bestanden per bestelling`,
+      off: 'Bestanden kunnen op dit moment niet worden aangenomen. Ga gerust verder — we vragen ze per e-mail op, en je bestelling hangt niet van deze stap af.',
+      skip: 'Je kunt deze stap overslaan en het materiaal later mailen.',
+    },
+    s3: {
+      h: 'Voor wie is dit?',
+      lead: 'Genoeg om te factureren en bij je terug te komen.',
+      savedH: 'Je opgeslagen gegevens',
+      savedEdit: 'Aanpassen voor deze bestelling',
+      savedHint: 'Alleen voor deze bestelling. Wil je ze definitief wijzigen, pas ze dan aan in je account.',
+      name: 'Je naam',
+      nameErr: 'Vertel ons aan wie we dit richten.',
+      brand: 'Merk- of shopnaam',
+      brandErr: 'Een merk- of shopnaam komt op de factuur.',
+      email: 'E-mail',
+      emailHint: 'Hier komen de bevestiging en de bestanden binnen.',
+      emailErr: 'We hebben een e-mailadres nodig om de bevestiging naartoe te sturen.',
+      phone: 'Telefoon of WhatsApp',
+      website: 'Website of shoplink',
+      vat: 'Btw-nummer',
+      vatHint: 'Voor een zakelijke factuur binnen de EU.',
+      message: 'Wat we moeten weten',
+      messageHint: 'De look die je zoekt, een deadline achter de deadline, een referentie die je mooi vindt.',
+    },
+    s4: {
+      h: 'Timing',
+      lead: 'Tegen de echte agenda gecheckt in plaats van beloofd.',
+      checking: 'Agenda checken…',
+      queueH: 'Deze bestelling heeft geen gereserveerd venster nodig',
+      queueBody: 'Bestellingen onder de grens worden gemaakt in de volgorde waarin ze binnenkomen.',
+      okH: 'Deze vensters kunnen voor je worden vastgehouden',
+      okBody: 'Kies er één. Er wordt niets gereserveerd door ernaar te kijken — het venster wordt vastgehouden zodra deze bestelling binnenkomt, en bevestigd voordat er iets gefactureerd wordt.',
+      okMax: 'Eén venster telt maximaal',
+      okMaxTail: 'producten.',
+      fullH: 'Niets vrij binnen de planningshorizon',
+      fullBody: 'Stuur de bestelling toch: je krijgt het eerste venster dat vrijkomt, op schrift, voordat er iets gefactureerd wordt.',
+      tooLargeH: 'Groter dan één venster aankan',
+      tooLargeBody: 'Eén venster telt maximaal',
+      tooLargeTail: 'producten. Meer dan dat zijn twee vensters en een gesprek. Stuur dit en we plannen het samen.',
+      invalidH: 'Kies eerst hoeveel producten',
+      invalidBody: 'Ga een stap terug en kies een aantal — zonder aantal valt de agenda niets te vragen.',
+      unavailableH: 'De agenda gaf geen antwoord',
+      unavailableBody: 'Dat is ons probleem, niet dat van jou. Probeer opnieuw, of stuur de bestelling en we bevestigen een venster per e-mail.',
+      retry: 'Opnieuw checken',
+      lostH: 'Dat venster is weg terwijl je dit invulde',
+      lostBody: 'Er is niets aangemaakt en niets in rekening gebracht. Kies hieronder een ander venster en verstuur opnieuw.',
+      nojs: 'Zonder JavaScript kan de agenda niet vanaf deze pagina worden gecheckt. Verstuur het formulier, dan komen we op schrift met een venster terug — tot die tijd wordt er geen datum aangenomen.',
+    },
+    s5: {
+      h: 'Controleer en verstuur',
+      lead: 'Lees het terug. Er is nog niets aangemaakt en er is nog niets in rekening gebracht.',
+      afterH: 'Wat er gebeurt nadat je op versturen drukt',
+      after: [
+        'Je krijgt direct een bevestiging met een referentie.',
+        'Een bestelling met een gereserveerd venster wordt gefactureerd zodra dat venster bevestigd is en voordat de productie start. Een wachtrijbestelling wordt bij levering gefactureerd.',
+        'Een bestelling met een gereserveerd venster komt in een portaal waar je beeld voor beeld goedkeurt. Een wachtrijbestelling komt als downloadlink.',
+      ],
+      payNote: 'Hier staat met opzet geen betaalformulier. Je bevestigt een bestelling, je betaalt er nog niet voor.',
+      submit: 'Verstuur deze bestelling',
+      lostH: 'Je bestelling staat er — het venster niet',
+      lostBody: 'Hij kwam net binnen nadat dat venster volliep. Er gaat niets verloren en er wordt niets gefactureerd: de bestelling staat onder haar referentie geregistreerd en we komen op schrift terug met het eerste venster dat past.',
+      lostGo: 'Naar de bevestiging',
+      saveLabel: 'Bewaar deze gegevens in mijn account voor de volgende keer',
+      saveHint: 'Je naam, merk en contactgegevens — niet deze bestelling of de briefing.',
+    },
+    noscript: 'JavaScript staat uit, dus deze pagina toont alle vijf stappen tegelijk. Drie dingen kunnen zo niet: je bestanden aannemen, de agenda checken en het totaal meerekenen. Verstuur het formulier, dan vragen we het materiaal per e-mail op, bevestigen we een venster op schrift en factureren we het staffeltarief bij het aantal dat je kiest.',
+    sharedH: 'Wat bij elk aantal hetzelfde is',
+    shared: [
+      ['De pipeline', `Dezelfde productie bij één product en bij ${ATTENDED_PER_WINDOW}.`],
+      ['De controle', `${reviewClaim('unattended', 'nl')}. Bij elk aantal.`],
+      ['De bestanden', 'Hoge resolutie en e-commerce-klaar, zonder licentie per gebruik.'],
+    ],
+    footH: 'Nog niet klaar om te bestellen?',
+    footBody: `Eén product, ${sample.price}, ${sample.unit}. Dezelfde pipeline als een betaalde bestelling.`,
+    footCta: `Probeer een proefvisual · ${sample.price}`,
+    footWa: 'Vraag het via WhatsApp',
+  },
+};
+
+const f = FORM[lang];
+
+const countLabel = (n: number) => `${n} ${n === 1 ? 'product' : lang === 'nl' ? 'producten' : 'products'}`;
+
+const rowLabels = tierRowLabels(lang);
+const levels = [
+  {
+    tier: 'unattended',
+    heading: f.s1.levelUnattended[0],
+    band: f.s1.levelUnattended[1],
+    values: TIER_ROWS.map((r) => tierRow('unattended', r.key, lang)),
+  },
+  {
+    tier: 'attended',
+    heading: f.s1.levelAttended[0],
+    band: f.s1.levelAttended[1],
+    values: TIER_ROWS.map((r) => tierRow('attended', r.key, lang)),
+  },
+];
+
+// ── The config blob ────────────────────────────────────────────────────────
+// Every number the script needs, from the module that owns it. Nothing here is
+// authoritative: the server re-derives every price and every limit.
+//
+// `service` is the one addition. pipeline.js used to read the ladder kind off
+// whichever radio was checked; there is no radio any more, so the page tells
+// the script what it is. The URL is never parsed — a route rename would
+// otherwise silently reprice every order placed through it.
+const config = {
+  lang,
+  service,
+  ladder: LADDER,
+  windowThreshold: WINDOW_THRESHOLD,
+  maxProducts: ATTENDED_PER_WINDOW,
+  maxFileBytes: MAX_FILE_BYTES,
+  maxBatchFiles: MAX_BATCH_FILES,
+  uploadExt: Object.keys(UPLOAD_TYPES),
+  outfitSurcharge: OUTFIT_SURCHARGE,
+  maxOutfit: MAX_OUTFIT_PRODUCTS,
+  bg: { customId: CUSTOM_ID, lightThreshold: LIGHT_THRESHOLD },
+  copy: PIPE[lang],
+};
+
+// JSON inside a <script> ends at the first literal "</script>", and a stray "<"
+// is the only character that can start one. Escaping it is what makes this blob
+// safe to write with set:html.
+const configJson = JSON.stringify(config).replace(/</g, '\\u003c');
+
+const counts = Array.from({ length: ATTENDED_PER_WINDOW }, (_, i) => i + 1);
+const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i);
+---
+
+<!-- HERO -->
+<section class="page-hero"><div class="container">
+  <span class="eyebrow-page">{lang === 'nl' ? 'Bestellen' : 'Order'}</span>
+  <h1 class="display">{svc.title}</h1>
+  <p class="lead" style="margin-top:1.2rem">{svc.gets}. {svc.lead}</p>
+</div></section>
+
+<!-- THE PIPELINE -->
+<section class="section-tight"><div class="container">
+  <form
+    id="pl-form"
+    class="pl-form"
+    data-pipeline
+    method="post"
+    action="/api/order"
+    enctype="multipart/form-data"
+  >
+    <script type="application/json" data-pipeline-config is:inline set:html={configJson}></script>
+
+    {/* `service` is a hidden input again — but for the opposite reason it used
+        to be one. It was hidden because the form did not ask; it is hidden now
+        because the URL already asked, and the answer is the route. Its value is
+        still the wire name /api/order accepts, so a no-JS post carries the real
+        answer either way.
+
+        `tier` stays hidden and stays written by the script, because it is
+        derived (tierFor(count)) rather than answered. Its default is the tier
+        that reserves nothing: a no-JS order arrives in the queue and the window
+        is agreed by email, which is what the <noscript> promises. */}
+    <input type="hidden" name="service" value={wire} />
+    <input type="hidden" name="tier" value="unattended" />
+    <input type="hidden" name="redirect" value={lp('/thank-you')} />
+    <input type="hidden" name="lang" value={lang} />
+    <input type="hidden" name="window_start" value="" />
+    <input type="hidden" name="window_end" value="" />
+    <input type="hidden" name="upload_batch" value="" />
+    <input type="hidden" name="source" value={`start-${service}`} />
+    <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
+
+    <ol class="pl-rail" aria-label={f.railLabel}>
+      {f.rail.map((t, i) => (
+        <li>
+          <button type="button" class="pl-rail-item" data-pl-rail-item={String(i + 1)}>
+            <span class="pl-rail-n">{String(i + 1).padStart(2, '0')}</span>
+            <span class="pl-rail-t">{t}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+
+    <noscript><p class="pl-noscript">{f.noscript}</p></noscript>
+
+    <!-- STEP 1 · THE ORDER -->
+    <section class="pl-step" data-pl-step="1">
+      <h2 class="pl-h" data-pl-head>{f.s1.h}</h2>
+
+      {/* What was picked, and a way back. Seven photographs and three
+          paragraphs of comparison used to live here; the chooser at /start is
+          where that comparison belongs, and repeating it asks a visitor to
+          re-decide something they decided one click ago. */}
+      <p class="pl-svc">
+        <span class="pl-svc-name">{svc.title}</span>
+        <span class="pl-svc-gets">{svc.gets}</span>
+        <a class="pl-svc-change" href={lp('/start')}>{SERVICE[lang].change}</a>
+      </p>
+
+      {/* One select, one name. Every option is a real count and the last one
+          deliberately is not — countOf() in /api/order would read "30+" as
+          thirty and record a number nobody chose.
+
+          NOTHING IS PRESELECTED. It used to open on "1 product", which meant
+          the line that says "choose how many and the total appears here" was
+          never on screen, and an inattentive visitor could order one product by
+          not answering. */}
+      <div class="field">
+        <label for="pl-products">{f.s1.countLabel} <span class="req">*</span></label>
+        <select id="pl-products" class="select" name="products" required data-pl-req="1" data-pl-err-msg={f.s1.countErr}>
+          <option value="" disabled selected>{f.s1.countPick}</option>
+          {counts.map((n) => <option value={String(n)}>{countLabel(n)}</option>)}
+          <option value={f.s1.more}>{f.s1.more}</option>
+        </select>
+        <span class="hint">{f.s1.countHint}</span>
+      </div>
+
+      {/* Task #271f — Single Product/Full outfit. Not [data-pl-req]: 0 is
+          always a valid answer, so this field is never required. */}
+      <div class="field" data-pl-outfit>
+        <label for="pl-outfit">{f.s1.outfitLabel}</label>
+        <select id="pl-outfit" class="select" name="outfit_count">
+          <option value="0">{f.s1.outfitNone}</option>
+          {outfitCounts.slice(1).map((n) => <option value={String(n)}>{f.s1.outfitCount(n)}</option>)}
+        </select>
+        <span class="hint">{f.s1.outfitHint}</span>
+        {/* OUTFIT_COPY, verbatim — pricing.js requires it wherever the outfit
+            choice is offered. Folded rather than dropped. */}
+        <details class="pl-why">
+          <summary>{f.s1.outfitWhy}</summary>
+          <p>{f.s1.outfitWhyBody}</p>
+        </details>
+      </div>
+
+      {/* THE RUNNING TOTAL.
+          Three things about this block are answers to an accessibility audit
+          rather than to a design brief.
+
+          IT IS A LIVE REGION. The figure changed when the count changed and a
+          screen reader said nothing at all, because nothing here was announced.
+          [aria-live=polite] on the label-plus-figure-plus-rate-line, atomic so
+          the three are read as one sentence rather than as a bare number.
+
+          IT IS NEAR THE TOP. It sat 2,042px down on desktop and 2,683px on
+          mobile — below a photograph grid, a background picker and a
+          two-column table — so the number the whole proposition rests on was
+          off-screen at the moment it changed. It now follows the two fields
+          that decide it.
+
+          IT STICKS ON MOBILE. Below 780px .pl-total-bar is fixed to the bottom
+          of the viewport for as long as step 1 is the step on screen. The
+          explanatory lines stay in the flow where they were.
+
+          None of it is authoritative: a preview computed in the browser from
+          the ladder in the config blob, and no amount is ever posted. */}
+      <div class="pl-total">
+        <div class="pl-total-live" aria-live="polite" aria-atomic="true">
+          <div class="pl-total-bar">
+            <span class="pl-total-label">{f.s1.totalLabel}</span>
+            <span class="pl-total-figure">
+              <span class="pl-total-net" data-pl-total></span>
+              <span class="pl-total-excl">{f.s1.netLabel}</span>
+            </span>
+          </div>
+          <p class="pl-total-note" data-pl-total-note></p>
+        </div>
+        <p class="pl-total-rung" data-pl-rung hidden></p>
+        <p class="pl-total-vatnote">{f.s1.vatNote}</p>
+        <p class="pl-total-first">{f.s1.firstOrder}</p>
+        <p class="pl-total-display">{f.s1.displayNote}</p>
+      </div>
+
+      {/* THE ONE BLOCK THAT DIFFERS PER SERVICE. Catalog and complete slot in
+          the background picker; lifestyle slots in the style picker, because a
+          styled scene has no flat ground to choose. Nothing else on this page
+          knows which one it got. */}
+      <slot />
+
+      {/* What the count earns. Not a control: the level FOLLOWS the count
+          (tierFor(), WINDOW_THRESHOLD), so this is a statement, and the
+          statement is one line that pipeline.js keeps current.
+
+          The two-column table under it was 120 words copied verbatim from
+          /pricing and it was in front of every visitor. It is the same table,
+          behind a disclosure, with a link to the page that owns it. Section 13
+          forbids styling Tier 0 as the lesser option, and equal columns still
+          hold that up wherever the reader chooses to open it. */}
+      <div class="pl-levels">
+        <p class="pl-level-note" data-pl-level-note></p>
+        <details class="pl-why pl-levels-why">
+          <summary>{f.s1.levelsH}</summary>
+          <div class="levels">
+            {levels.map((d) => (
+              <div class="level" data-pl-level={d.tier}>
+                <h4 class="level-h">{d.heading}</h4>
+                <p class="level-band">{d.band}</p>
+                <dl class="level-facts">
+                  {rowLabels.map((k, j) => (
+                    <div class="level-row">
+                      <dt>{k}</dt>
+                      <dd>{d.values[j]}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ))}
+          </div>
+          <p class="pl-panel-note"><a href={lp('/pricing')}>{f.s1.ladderLink}</a></p>
+        </details>
+      </div>
+
+      {/* THE ERROR STATE, which did not exist. Pressing Continue with nothing
+          chosen left the step visually unchanged: no [aria-invalid] anywhere on
+          the page, no [aria-describedby], and reportValidity()'s own bubble is
+          gone in a blink and unreadable to a screen reader that has moved on.
+          One box per step, filled by pipeline.js with the offending field's own
+          message, and tied to that field by aria-describedby. */}
+      <p class="pl-step-err" id="pl-err-1" data-pl-step-error hidden></p>
+
+      <div class="pl-nav">
+        <span></span>
+        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+      </div>
+    </section>
+
+    <!-- STEP 2 · MATERIAL -->
+    <section class="pl-step" data-pl-step="2">
+      <h2 class="pl-h" data-pl-head>{f.s2.h}</h2>
+      <p class="pl-lead">{f.s2.lead}</p>
+
+      {/* Live-only: the input carries no name attribute, so without JS it would
+          be a control that silently sends nothing. */}
+      <div class="pl-upload">
+        <label class="dropzone">
+          <input type="file" data-pl-file multiple accept="image/*" class="pl-file-input" />
+          <span class="dz-main">{f.s2.dropzone}</span>
+          <span class="dz-hint">{f.s2.dropzoneHint}</span>
+        </label>
+        <ul class="pl-droplist" data-pl-droplist></ul>
+        <p class="pl-filecount" data-pl-filecount aria-live="polite"></p>
+        <p class="pl-note" data-pl-upload-note="off" hidden>{f.s2.off}</p>
+      </div>
+
+      <p class="hint pl-skip">{f.s2.skip}</p>
+
+      <p class="pl-step-err" id="pl-err-2" data-pl-step-error hidden></p>
+
+      <div class="pl-nav">
+        <button type="button" class="btn btn-ghost" data-pl-back>{f.back}</button>
+        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 · BRIEF -->
+    <section class="pl-step" data-pl-step="3">
+      <h2 class="pl-h" data-pl-head>{f.s3.h}</h2>
+      <p class="pl-lead">{f.s3.lead}</p>
+      <p class="pl-lead pl-prefill-note" data-pl-prefill-note hidden></p>
+
+      <div class="pl-saved" data-pl-saved hidden>
+        <p class="pl-saved-h">{f.s3.savedH}</p>
+        <ul class="pl-saved-list" data-pl-saved-list></ul>
+        <button type="button" class="btn btn-ghost pl-saved-edit" data-pl-saved-edit>{f.s3.savedEdit}</button>
+        <p class="hint pl-saved-hint">{f.s3.savedHint}</p>
+      </div>
+
+      {/* One wrapper around the six fields so the collapse has a single thing
+          to hide. Hidden, never disabled — a hidden input still posts. */}
+      <div data-pl-s3-fields>
+      <div class="row-2">
+        <div class="field">
+          <label for="pl-name">{f.s3.name} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-name" name="name" autocomplete="name" required data-pl-req="1" data-pl-err-msg={f.s3.nameErr} />
+        </div>
+        <div class="field">
+          <label for="pl-brand">{f.s3.brand} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-brand" name="brand" autocomplete="organization" required data-pl-req="1" data-pl-err-msg={f.s3.brandErr} />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="pl-email">{f.s3.email} <span class="req">*</span></label>
+          <input class="input" type="email" id="pl-email" name="email" autocomplete="email" required data-pl-req="1" data-pl-err-msg={f.s3.emailErr} />
+          <span class="hint">{f.s3.emailHint}</span>
+        </div>
+        <div class="field">
+          <label for="pl-phone">{f.s3.phone} <span class="pl-opt">{f.optional}</span></label>
+          <input class="input" type="tel" id="pl-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="pl-web">{f.s3.website} <span class="pl-opt">{f.optional}</span></label>
+          <input class="input" type="url" id="pl-web" name="website" placeholder="https://" autocomplete="url" />
+        </div>
+        <div class="field">
+          <label for="pl-vat">{f.s3.vat} <span class="pl-opt">{f.optional}</span></label>
+          <input class="input" type="text" id="pl-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" />
+          <span class="hint">{f.s3.vatHint}</span>
+        </div>
+      </div>
+      </div>{/* /[data-pl-s3-fields] */}
+
+      {/* OUTSIDE the collapsible block, deliberately: the message is the one
+          thing on this step that is about THIS order rather than about the
+          customer, so a saved record cannot answer it. */}
+      <div class="field">
+        <label for="pl-msg">{f.s3.message} <span class="pl-opt">{f.optional}</span></label>
+        <textarea class="textarea" id="pl-msg" name="message"></textarea>
+        <span class="hint">{f.s3.messageHint}</span>
+      </div>
+
+      <p class="pl-step-err" id="pl-err-3" data-pl-step-error hidden></p>
+
+      <div class="pl-nav">
+        <button type="button" class="btn btn-ghost" data-pl-back>{f.back}</button>
+        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+      </div>
+    </section>
+
+    <!-- STEP 4 · TIMING -->
+    <section class="pl-step" data-pl-step="4">
+      <h2 class="pl-h" data-pl-head>{f.s4.h}</h2>
+      <p class="pl-lead">{f.s4.lead}</p>
+
+      {/* Every panel ships hidden and gateShow() reveals exactly one. The six
+          answers /api/capacity can give are six different sentences here, on
+          purpose — three of them are empty results meaning different things. */}
+      <div class="pl-gate">
+        <div class="pl-gate-lost" data-pl-gate-lost hidden role="alert">
+          <h3 class="pl-gate-h">{f.s4.lostH}</h3>
+          <p class="pl-gate-body">{f.s4.lostBody}</p>
+        </div>
+
+        <p class="pl-gate-checking" data-pl-gate="checking" hidden aria-live="polite">{f.s4.checking}</p>
+
+        <div class="pl-gate-panel is-queue" data-pl-gate="queue" hidden>
+          <h3 class="pl-gate-h">{f.s4.queueH}</h3>
+          <p class="pl-gate-claim">{unattended.queue[lang]}</p>
+          <p class="pl-gate-body">{f.s4.queueBody}</p>
+        </div>
+
+        <div class="pl-gate-panel" data-pl-gate="ok" hidden>
+          <h3 class="pl-gate-h">{f.s4.okH}</h3>
+          <p class="pl-gate-body">{f.s4.okBody}</p>
+          <div class="pl-windows" data-pl-windows></div>
+          <p class="pl-gate-foot">{f.s4.okMax} <span data-max>{ATTENDED_PER_WINDOW}</span> {f.s4.okMaxTail}</p>
+        </div>
+
+        <div class="pl-gate-panel" data-pl-gate="full" hidden>
+          <h3 class="pl-gate-h">{f.s4.fullH}</h3>
+          <p class="pl-gate-body">{f.s4.fullBody}</p>
+        </div>
+
+        <div class="pl-gate-panel" data-pl-gate="too-large" hidden>
+          <h3 class="pl-gate-h">{f.s4.tooLargeH}</h3>
+          <p class="pl-gate-body">{f.s4.tooLargeBody} <span data-max>{ATTENDED_PER_WINDOW}</span> {f.s4.tooLargeTail}</p>
+        </div>
+
+        <div class="pl-gate-panel" data-pl-gate="invalid" hidden>
+          <h3 class="pl-gate-h">{f.s4.invalidH}</h3>
+          <p class="pl-gate-body">{f.s4.invalidBody}</p>
+        </div>
+
+        <div class="pl-gate-panel" data-pl-gate="unavailable" hidden>
+          <h3 class="pl-gate-h">{f.s4.unavailableH}</h3>
+          <p class="pl-gate-body">{f.s4.unavailableBody}</p>
+          <button type="button" class="btn btn-ghost" data-pl-gate-retry>{f.s4.retry}</button>
+        </div>
+      </div>
+
+      <noscript><p class="pl-noscript">{f.s4.nojs}</p></noscript>
+
+      <p class="pl-step-err" id="pl-err-4" data-pl-step-error hidden></p>
+
+      <div class="pl-nav">
+        <button type="button" class="btn btn-ghost" data-pl-back>{f.back}</button>
+        <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
+      </div>
+    </section>
+
+    <!-- STEP 5 · CONFIRM -->
+    <section class="pl-step" data-pl-step="5">
+      <h2 class="pl-h" data-pl-head>{f.s5.h}</h2>
+      <p class="pl-lead">{f.s5.lead}</p>
+
+      <dl class="pl-summary" data-pl-summary></dl>
+
+      <p class="pl-error" data-pl-error hidden role="alert"></p>
+      <p class="pl-step-err" id="pl-err-5" data-pl-step-error hidden></p>
+
+      <div class="pl-lost" data-pl-lost hidden role="alert">
+        <h3 class="pl-lost-h">{f.s5.lostH}</h3>
+        <p class="pl-lost-body">{f.s5.lostBody}</p>
+        <button type="button" class="btn btn-primary" data-pl-lost-go>{f.s5.lostGo}</button>
+      </div>
+
+      <div class="pl-after">
+        <h3 class="pl-sub-h">{f.s5.afterH}</h3>
+        <ul class="pl-after-list">
+          {f.s5.after.map((t) => <li>{t}</li>)}
+        </ul>
+        <p class="pl-pay-note">{f.s5.payNote}</p>
+      </div>
+
+      {/* Shown by pipeline.js to a signed-in customer who has NOT saved before,
+          and to nobody else. UNCHECKED IN THE MARKUP AND NEVER TICKED BY CODE.
+          No name attribute — it is read by JS and posted to /account/details
+          afterwards, and a name would file a UI preference in the order. */}
+      <div class="pl-save-offer" data-pl-save-offer hidden>
+        <label class="pl-save-row">
+          <input type="checkbox" data-pl-save-check />
+          <span class="pl-save-label">{f.s5.saveLabel}</span>
+        </label>
+        <p class="hint pl-save-hint">{f.s5.saveHint}</p>
+      </div>
+
+      <div class="pl-submit-row">
+        <button type="button" class="btn btn-ghost pl-back-inline" data-pl-back>{f.back}</button>
+        <button type="submit" class="btn btn-primary btn-lg" data-pl-submit>{f.s5.submit}</button>
+      </div>
+    </section>
+  </form>
+</div></section>
+
+<!-- WHAT IS THE SAME IN BOTH -->
+<section class="section-tight on-ink"><div class="container">
+  <h2>{f.sharedH}</h2>
+  <div class="shared-grid reveal-group">
+    {f.shared.map(([k, v]) => (
+      <div class="shared-item reveal pending">
+        <h3>{k}</h3>
+        <p>{v}</p>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+<!-- NOT SURE YET -->
+<section class="section-tight"><div class="container">
+  <div class="start-foot">
+    <div>
+      <h2>{f.footH}</h2>
+      <p class="start-foot-body">{f.footBody}</p>
+    </div>
+    <div class="start-foot-cta">
+      <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{f.footCta}</a>
+      <a href="https://wa.me/31625436130" target="_blank" rel="noopener" class="btn btn-ghost btn-lg">{f.footWa}</a>
+    </div>
+  </div>
+</div></section>
+
+<script>
+  // Page-local, deliberately. pipeline.js is 30 kB of order-form machinery and
+  // Layout.astro must not carry it to every page on the site to serve one.
+  import '../../scripts/pipeline.js';
+</script>
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     /start — the order pipeline.
+
+     Two things about this sheet are not obvious and are load-bearing.
+
+     FIRST: Astro scopes every selector here to this component by rewriting it to
+     :where(.astro-HASH). Elements pipeline.js builds with document.createElement
+     never receive that attribute, so a bare `.pl-file` rule would match nothing
+     at all. Every rule for a generated element is therefore written as a scoped
+     ancestor with a :global() descendant — `.pl-droplist :global(.pl-file)`. The
+     generated elements are the upload rows (.pl-file and its four children plus
+     the appended .pl-file-act buttons), the window buttons (.pl-window and its
+     two spans), and the summary's own dt/dd pairs. Nothing else.
+
+     SECOND: this form works with JavaScript switched off, and almost every
+     display rule below exists to make that true. Without JS all five steps are
+     the page, stacked and separated by a rule, and the browser's own validation
+     posts them in one go. pipeline.js adds .is-live to the form as its first
+     act, and .is-live is what turns the stack into a wizard. Anything that only
+     works live — the rail, the step navigation, the uploader, the running total
+     — is hidden until that class lands, because a control that silently does
+     nothing is worse than a control that is not there.
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* pipeline.js hides things by setting el.hidden, and the UA's own
+     `[hidden] { display: none }` sits in the user-agent origin, where it loses
+     to ANY author rule. .btn is display:inline-flex and .field is display:flex,
+     so without this the hidden gate panels, the closed sub-panel and the two
+     count presentations would all render at once. global.css has no [hidden]
+     rule to inherit. The :global() twin covers generated elements. */
+  [hidden] { display: none !important; }
+  .pl-form :global([hidden]) { display: none !important; }
+
+  /* No .sr-only or .visually-hidden exists sitewide; the fieldset legend needs
+     one. Clipped rather than display:none, so it stays in the a11y tree. */
+  .pl-sr {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ── Form primitives ──────────────────────────────────────────────────────
+     .field / .req / .hint / .input / .textarea / .select / .row-2 / .opt* /
+     .dropzone now live in global.css, under "form primitives". The block that
+     used to sit here said they would move "when those pages retire in the
+     redirect pass"; they have.
+
+     The three kind options are a plain .opt-stack now, which is the global
+     rule and needs nothing here. The override that used to live at this spot
+     (.pl-panel > .opt) belonged to the sub-panels the scope door opened, and
+     went with them. */
+
+  /* ── Step frame ───────────────────────────────────────────────────────────
+     global.css puts clamp(4.5rem, 9vw, 9rem) of padding on every <section>,
+     including these five nested ones. Left alone that is nine rems of nothing
+     between a heading and its own fields. */
+  .pl-step { padding-block: 0; }
+
+  /* No-JS reading order: five stacked steps with a rule between them, so the
+     page reads as one long form rather than five headings running together.
+     Cancelled the moment the wizard takes over, where only one is ever shown
+     and a top border would be a line under nothing. */
+  .pl-step + .pl-step {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    padding-top: clamp(2.5rem, 5vw, 4rem);
+    border-top: 1px solid var(--line);
+  }
+  .pl-form.is-live .pl-step + .pl-step { margin-top: 0; padding-top: 0; border-top: 0; }
+
+  .pl-form.is-live .pl-step { display: none; }
+  .pl-form.is-live .pl-step.is-current { display: block; }
+
+  /* Measure. One number for the whole form, declared once, so the heading, the
+     fields, the summary rules and the submit button all stop at the same x.
+     That is what makes five steps read as one object instead of five pages that
+     happen to follow each other. Step 4 is wider because it is a two-up upload
+     grid rather than prose.
+
+     Step 1 is the exception, and it is an exception about the doors ONLY: the
+     two service models are compared side by side, and squeezing that comparison
+     is the one thing section 13 forbids. So the step uncaps and every child
+     except the doors' fieldset takes the measure back. Capping the step and
+     letting .pl-fieldset break out would say the same thing, but only through
+     negative margins keyed to the container's own padding — a number that would
+     then have to track clamp(1.2rem, 4vw, 2.6rem) by hand, in two places,
+     forever. Done this way the measure is the default and full-bleed is the
+     opt-out, so a child added to step 1 later inherits the safe behaviour
+     rather than the escape hatch.
+
+     Specificity is (0,3,0) — :not() contributes its argument's weight — against
+     Astro's zero-weight :where(.astro-HASH). Nothing in this block competes. */
+  .pl-form { --pl-measure: 880px; }
+  .pl-step { max-width: var(--pl-measure); }
+  .pl-step[data-pl-step="4"] { max-width: 980px; }
+  .pl-step[data-pl-step="1"] { max-width: none; }
+  .pl-step[data-pl-step="1"] > :not(.pl-fieldset) { max-width: var(--pl-measure); }
+
+  .pl-h { font-size: var(--t-h3); line-height: 1.2; text-wrap: balance; }
+  /* show() calls .focus() on the heading so the step change is announced. A
+     programmatic focus on tabindex="-1" does not satisfy :focus-visible, so the
+     ring appears for keyboard users and never as a stray outline after a click. */
+  .pl-h:focus { outline: none; }
+  .pl-h:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
+  .pl-lead { margin-top: .7rem; color: var(--ink-3); max-width: 62ch; }
+  /* Task #271e, 2026-07-29: distinct from .pl-lead only in weight and size —
+     smaller and italic, the way a caption reads next to a heading, not a
+     second sentence of the same lead. It says what pipeline.js's
+     bindPrefill() did (see that file), not a claim from the design system's
+     Verify/Flag pair (DESIGN.md's dated addendum, task #271c): "your details
+     were filled in" is neither a review claim nor a delivery window, so it
+     gets no rule/colour from that system — reaching for it here would be the
+     decorative use colorize.md explicitly bans. */
+  .pl-prefill-note { font-size: .82rem; font-style: italic; margin-top: .35rem; }
+
+  /* ---- the collapsed brief step (August 2026) ------------------------------
+     A returning customer who saved their details gets this instead of six
+     filled boxes. It is a PANEL and not a card: --r-lg, a hairline, the lift
+     ground — the same vocabulary .pl-gate-panel uses two hundred lines down for
+     the other place this form answers a question on the visitor's behalf.
+
+     The values are set in a monospace-ish tabular rhythm rather than as prose,
+     because they are being READ BACK for checking, not read. Nothing here is
+     an input: the real fields are still in the DOM, still posting, just
+     hidden — see collapseBrief() in pipeline.js. */
+  .pl-saved {
+    margin: 1.2rem 0 1.8rem; padding: clamp(1rem, 2.5vw, 1.4rem);
+    border: 1px solid var(--line); background: var(--surface-2, var(--surface));
+    border-radius: var(--r-lg); max-width: 62ch;
+  }
+  .pl-saved-h { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); }
+  .pl-saved-list { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .2rem; }
+  .pl-saved-list li { font-size: .96rem; color: var(--ink); overflow-wrap: anywhere; }
+  .pl-saved-edit { margin-top: .9rem; }
+  .pl-saved-hint { margin-top: .6rem; }
+
+  /* ---- the offer to save, on the confirm step -----------------------------
+     Quiet on purpose. It sits a paragraph above the send button and it is not
+     the decision being made on this screen — an opt-in that competes with the
+     submit is an opt-in people tick to get past it. --r-md, one step down from
+     the panel above, because it is a control and not a surface. */
+  .pl-save-offer {
+    margin: 1.4rem 0 0; padding: .9rem 1rem;
+    border: 1px solid var(--line); border-radius: var(--r-md);
+    max-width: 62ch;
+  }
+  .pl-save-row { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; }
+  /* Same 22px as .cc-check in CookieConsent.astro, the only other checkbox on
+     the site, and for the same reason it is 22px there rather than the 18px
+     global.css draws: every input on this site takes --r-md (8px) and 8px on
+     an 18px box is a circle, i.e. a checkbox that reads as a radio button.
+     The box grows so the token still reads as a rounded square. The radius
+     itself is not touched here — it comes off the scale, as everything does. */
+  .pl-save-row input { flex: 0 0 auto; width: 22px; height: 22px; margin-top: .05rem; accent-color: var(--accent); }
+  .pl-save-label { font-size: .94rem; color: var(--ink); }
+  .pl-save-hint { margin-top: .5rem; }
+
+  .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
+  .pl-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
+
+  .pl-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+
+  .pl-noscript,
+  .pl-note {
+    margin: 0 0 clamp(1.6rem, 3vw, 2.2rem);
+    padding: 1.05rem 1.25rem;
+    font-size: .95rem;
+    line-height: 1.55;
+    max-width: 78ch;
+  }
+  .pl-noscript { border: 1px solid var(--signal); background: var(--paper-2); color: var(--signal-ink); }
+  .pl-note { margin: .9rem 0 0; border: 1px solid var(--warn); background: var(--paper-2); color: var(--warn-ink); }
+
+  /* ── The rail ─────────────────────────────────────────────────────────────
+     Backwards only. A step you have not reached is not a link, and styling it
+     as one invites a click that bindNav() then refuses. */
+  .pl-rail {
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    list-style: none;
+    margin: 0 0 clamp(2rem, 4vw, 3rem);
+    padding: 0;
+    border: 1px solid var(--line-strong);
+  }
+  .pl-form.is-live .pl-rail { display: grid; }
+  .pl-rail > li { display: flex; }
+  .pl-rail > li + li { border-left: 1px solid var(--line-strong); }
+  .pl-rail-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    align-items: flex-start;
+    padding: .85rem 1rem;
+    background: none;
+    border: 0;
+    cursor: default;
+    font: inherit;
+    text-align: left;
+    color: var(--ink-3);
+    transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .pl-rail-item.is-done { cursor: pointer; color: var(--ink-2); }
+  .pl-rail-item.is-current { background: var(--accent-soft); color: var(--ink); }
+  .pl-rail-n { font-family: var(--font-display); font-weight: 800; font-size: .8rem; }
+  .pl-rail-t { font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+
+  /* Prose under a control: an aside for someone still deciding, not another
+     thing to answer. Some of it arrives through set:html and so carries no
+     scope attribute — :global() on the descendant is what reaches the anchors. */
+  .pl-panel-note { margin-top: .55rem; font-size: .86rem; color: var(--ink-3); line-height: 1.55; }
+  .pl-panel-note :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+  .pl-fieldset .pl-sub-h { margin-bottom: .9rem; }
+
+
+  /* Folded rationale. OUTFIT_COPY has to be on this page (pricing.js says so);
+     it does not have to be in front of the ninety per cent who are ordering
+     single products. */
+  .pl-why { margin-top: .2rem; }
+  .pl-why > summary {
+    width: max-content;
+    cursor: pointer;
+    font-size: .8rem;
+    color: var(--accent-bright);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    border-radius: var(--r-sm);
+  }
+  .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+  .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+
+  /* Every block in step 1 moves in one interval, so the count field, the
+     outfit field, the total and the levels table read as one column of
+     answers rather than four things that happen to follow each other. */
+  .pl-step[data-pl-step="1"] > .field,
+  .pl-levels { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
+
+  /* Live-only: nothing fills it without JS, and a box labelled "running total"
+     showing nothing is worse than no box. */
+  .pl-total {
+    display: none;
+    margin-top: clamp(1.6rem, 3vw, 2.2rem);
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line-strong);
+  }
+  .pl-form.is-live .pl-total { display: block; }
+  .pl-total-label { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* Three rows, and the third is the one a client reads as the total — so it
+     is the one that gets the display face. The first two are the same size as
+     each other on purpose: net and VAT are two halves of one statement, and
+     setting the net figure large would be the "big number, asterisk, plus VAT
+     in small type" trick with better typography. */
+  .pl-total-lines { margin: .8rem 0 0; }
+  .pl-total-vatnote { margin: .8rem 0 0; font-size: .78rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
+  .pl-total-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: baseline;
+    padding: .45rem 0;
+  }
+  .pl-total-row dt { font-size: .9rem; color: var(--ink-3); }
+  .pl-total-row dd { margin: 0; font-size: .95rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .pl-total-row.is-gross { border-top: 1px solid var(--line); padding-top: .8rem; margin-top: .3rem; }
+  .pl-total-row.is-gross dt { color: var(--ink); font-weight: 500; }
+  .pl-total-row.is-gross dd {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(1.5rem, 2.6vw, 2rem); line-height: 1; letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+
+  .pl-total-note { margin-top: .8rem; font-size: .85rem; color: var(--ink-3); line-height: 1.5; }
+  /* The one line on this step that is an offer rather than a fact, so it is
+     the one line that carries the system colour — the same treatment the gate
+     note gets, for the same reason: it is a statement of how the ladder works,
+     not a scarcity badge. */
+  .pl-total-rung {
+    margin-top: .8rem;
+    padding: .75rem .95rem;
+    border: 1px solid var(--signal);
+    background: var(--paper-2);
+    color: var(--signal-ink);
+    font-size: .9rem;
+    line-height: 1.5;
+  }
+  .pl-total-first,
+  .pl-total-display { margin-top: .6rem; font-size: .82rem; color: var(--ink-3); line-height: 1.5; max-width: 62ch; }
+  .pl-total-display { font-style: italic; }
+
+  /* The two service levels. One rule between them: no floating cards, no
+     shadow, no elevation difference. Equal column widths are load-bearing.
+     Section 13 forbids styling Tier 0 as the lesser option, and a narrower,
+     lighter or shorter column would say exactly that without using any of the
+     words it bans — which matters more now that the reader is not choosing
+     between them but being told which one their count landed on. */
+  .levels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line-strong);
+    margin-top: .9rem;
+  }
+  .level {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.2rem, 2.4vw, 2rem);
+    transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+  }
+  .level + .level { border-left: 1px solid var(--line-strong); }
+  /* Written by pipeline.js from the count. Identical treatment on either
+     column — which one is marked is the only difference the two are allowed
+     to have. */
+  .level.is-current { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+
+  .level-h { font-size: 1.15rem; line-height: 1.25; text-wrap: balance; }
+  .level-band { margin-top: .3rem; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .level-facts { margin-top: 1.2rem; border-top: 1px solid var(--line); }
+  /* min-height is the same class of problem it solved on the doors this block
+     replaced: the two fact lists sit either side of a vertical rule and the
+     reader compares them ROW BY ROW — turnaround against turnaround, queue
+     against queue. One value wrapping to two lines while its opposite number
+     fits on one pushes every row below it out of step.
+
+     Two lines is the ceiling, measured rather than assumed: the longest value
+     in either language is 72 characters (NL queue) and dd fits ~44 characters
+     per line at the narrowest two-up width. The arithmetic, term by term, from
+     declarations in this rule and the dd rule below: 2 lines × line-height 1.5
+     × font-size .9rem, + .75rem padding top and bottom, + the 1px bottom rule.
+     box-sizing is border-box sitewide (global.css:247), so min-height has to
+     carry the last two. */
+  .level-row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: .9rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--line);
+    min-height: calc(2 * 1.5 * .9rem + 1.5rem + 1px);
+  }
+  .level-row dt {
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3); padding-top: .18rem;
+  }
+  .level-row dd { margin: 0; font-size: .9rem; color: var(--ink-2); line-height: 1.5; }
+
+  /* Written by pipeline.js, so it is empty without JS — where both columns
+     already say everything and a sentence naming one of them would be a claim
+     about a count nothing has read. */
+  .pl-level-note { margin-top: .9rem; font-size: .9rem; color: var(--ink-2); line-height: 1.6; max-width: 70ch; }
+  .pl-level-note:empty { display: none; }
+
+  /* ── Step 2 · material ────────────────────────────────────────────────────
+     The file input carries no name attribute, so without JS this whole block
+     is a control that would silently send nothing. */
+  .pl-upload { display: none; }
+  .pl-form.is-live .pl-upload { display: block; }
+
+  /* .dropzone and .dropzone:hover are in global.css. */
+  .dz-main { display: block; color: var(--ink); font-weight: 500; }
+  .dz-hint { display: block; margin-top: .35rem; font-size: .85rem; color: var(--ink-3); }
+  .pl-file-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+  /* .is-dragging lands on the whole step, not the zone — a dragenter over the
+     list or the hint still has to read as "let go here". */
+  .pl-step.is-dragging .dropzone { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+
+  .pl-droplist { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: .5rem; }
+  .pl-filecount { margin-top: .8rem; font-size: .85rem; color: var(--ink-3); }
+  .pl-filecount:empty { display: none; }
+  .pl-skip { margin-top: 1rem; }
+
+  /* Generated by addRow(). DOM order is name, size, bar, msg — the action
+     button is appended last, so it is placed explicitly rather than left to
+     auto-placement, which would drop it onto a fourth row of its own. */
+  .pl-droplist :global(.pl-file) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: .35rem .9rem;
+    padding: .75rem 1rem .85rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .pl-droplist :global(.pl-file-name) {
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: .92rem; color: var(--ink);
+  }
+  .pl-droplist :global(.pl-file-size) { font-size: .8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .pl-droplist :global(.pl-file-act) {
+    grid-column: 3; grid-row: 1; justify-self: end;
+    background: none; border: 0; padding: 0;
+    font: inherit; font-size: .8rem;
+    color: var(--accent-bright);
+    text-decoration: underline; text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .pl-droplist :global(.pl-file-act:disabled) { color: var(--ink-3); cursor: default; text-decoration: none; }
+  .pl-droplist :global(.pl-file-bar) { grid-column: 1 / -1; display: block; height: 2px; background: var(--line); }
+  .pl-droplist :global(.pl-file-bar > i) { display: block; height: 100%; width: 100%; transform: scaleX(0); transform-origin: left; background: var(--accent); transition: transform var(--dur-1) var(--ease); }
+  .pl-droplist :global(.pl-file-msg) { grid-column: 1 / -1; font-size: .8rem; color: var(--ink-3); }
+  .pl-droplist :global(.pl-file.is-done .pl-file-bar > i) { background: var(--signal); }
+  .pl-droplist :global(.pl-file.is-done .pl-file-msg) { color: var(--signal-ink); }
+  .pl-droplist :global(.pl-file.is-failed) { border-color: var(--warn); }
+  .pl-droplist :global(.pl-file.is-failed .pl-file-msg) { color: var(--warn-ink); }
+
+  /* ── Step 4 · the capacity gate ───────────────────────────────────────────
+     Six panels, one shown. They are deliberately the same object at the same
+     weight: the answer "we have a window" and the answer "we do not" are both
+     the studio telling the truth about its own calendar, and dressing one as
+     good news and the other as an apology would make the gate a sales device. */
+  .pl-gate { margin-top: clamp(1.4rem, 3vw, 2rem); }
+  .pl-gate-panel {
+    border: 1px solid var(--line-strong);
+    padding: clamp(1.2rem, 2.6vw, 1.8rem);
+    background: var(--surface);
+  }
+  /* The one exception, and it is not emphasis: the queue panel is the tier that
+     names no date, so it carries the system colour the rest of the site uses
+     for statements of process. */
+  .pl-gate-panel.is-queue { border-color: var(--signal); background: var(--paper-2); }
+  .pl-gate-h { font-size: 1.15rem; line-height: 1.3; text-wrap: balance; }
+  .pl-gate-claim { margin-top: .6rem; font-weight: 700; color: var(--signal-ink); font-size: .95rem; }
+  .pl-gate-body { margin-top: .7rem; color: var(--ink-3); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
+  .pl-gate-foot { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
+  .pl-gate-panel .btn { margin-top: 1.2rem; }
+  .pl-gate-checking {
+    margin: 0;
+    padding: 1.1rem 1.25rem;
+    border: 1px dashed var(--line-strong);
+    color: var(--ink-3);
+  }
+  .pl-gate-lost {
+    border: 1px solid var(--warn);
+    background: var(--paper-2);
+    padding: clamp(1.2rem, 2.6vw, 1.8rem);
+    margin-bottom: 1rem;
+  }
+  .pl-gate-lost .pl-gate-h { color: var(--warn-ink); }
+
+  .pl-windows {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: .8rem;
+    margin-top: 1.2rem;
+  }
+  .pl-windows :global(.pl-window) {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    align-items: flex-start;
+    padding: .95rem 1.1rem;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .pl-windows :global(.pl-window:hover) { border-color: var(--accent-line); }
+  .pl-windows :global(.pl-window.is-picked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .pl-windows :global(.pl-window-days) { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+  .pl-windows :global(.pl-window-sub) { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* ── Step 5 · confirm ─────────────────────────────────────────────────────
+     :empty is not defensive tidying. renderSummary() fills this on arrival; on
+     the no-JS path it is never filled, and an empty <dl> would still draw its
+     top rule under a heading with nothing beneath it. */
+  /* minmax rather than a flat 9.5rem: the label track was sized on the English
+     words and Dutch does not fit them. REFERENTIEMATERIAAL is 18 characters at
+     .72rem/700 with .08em tracking and overruns the fixed track, so the label
+     collided with its own value. max-content lets the track ask the longest
+     label in whatever language is rendering, and the 9.5rem floor keeps
+     English exactly where it is today rather than letting short labels pull the
+     values leftward. dt's padding-right is the gutter and is inside
+     max-content, so the two never touch. */
+  .pl-summary {
+    display: grid;
+    grid-template-columns: minmax(9.5rem, max-content) 1fr;
+    margin: clamp(1.4rem, 3vw, 2rem) 0 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  .pl-summary:empty { display: none; }
+  .pl-summary :global(dt) {
+    padding: .8rem 1rem .8rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .pl-summary :global(dd) {
+    margin: 0;
+    padding: .8rem 0;
+    border-bottom: 1px solid var(--line);
+    font-size: .95rem; color: var(--ink); line-height: 1.5;
+  }
+
+  .pl-error {
+    margin-top: 1.2rem;
+    padding: .95rem 1.15rem;
+    border: 1px solid var(--warn);
+    background: var(--paper-2);
+    color: var(--warn-ink);
+    font-size: .95rem;
+    line-height: 1.55;
+  }
+
+  .pl-lost {
+    margin-top: 1.2rem;
+    padding: clamp(1.2rem, 2.6vw, 1.8rem);
+    border: 1px solid var(--signal);
+    background: var(--paper-2);
+  }
+  .pl-lost-h { font-size: 1.1rem; line-height: 1.3; color: var(--signal-ink); }
+  .pl-lost-body { margin-top: .7rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
+  .pl-lost .btn { margin-top: 1.2rem; }
+
+  .pl-after { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); }
+  /* Rules, not numerals. What happens after an order is a list of facts, and
+     numbering them would imply the client has four things left to do. */
+  .pl-after-list { list-style: none; margin: .9rem 0 0; padding: 0; border-top: 1px solid var(--line); }
+  .pl-after-list li { padding: .85rem 0; border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
+  .pl-pay-note { margin-top: 1.1rem; font-size: .9rem; color: var(--ink-3); max-width: 64ch; line-height: 1.6; }
+
+  /* ── Navigation ───────────────────────────────────────────────────────────
+     .pl-nav is the wizard's own control strip and does not exist without JS.
+     The submit row is the opposite: it is the control that posts the form on
+     every path through this page, so it is never hidden and never lives inside
+     .pl-nav. Only the back button beside it is live-only. */
+  .pl-nav {
+    display: none;
+    gap: .9rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: clamp(1.8rem, 3.5vw, 2.6rem);
+    padding-top: clamp(1.4rem, 2.5vw, 2rem);
+    border-top: 1px solid var(--line-strong);
+  }
+  .pl-form.is-live .pl-nav { display: flex; }
+
+  .pl-submit-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .9rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: clamp(1.8rem, 3.5vw, 2.6rem);
+    padding-top: clamp(1.4rem, 2.5vw, 2rem);
+    border-top: 1px solid var(--line-strong);
+  }
+  /* Routed through .pl-form so it outranks .btn's own display:inline-flex,
+     which sits at the same specificity and would otherwise win on order. */
+  .pl-form .pl-submit-row .pl-back-inline { display: none; }
+  .pl-form.is-live .pl-submit-row .pl-back-inline { display: inline-flex; }
+  /* Dim the row, not the form. pointer-events:none on the whole form would stop
+     the client selecting the error text they are about to send us. */
+  .pl-form.is-sending .pl-submit-row { opacity: .6; }
+
+  /* ── Below the form ───────────────────────────────────────────────────────
+     The capacity gate, stated before anyone commits. */
+  .gate-note {
+    margin-top: 1.6rem;
+    padding: 1.05rem 1.25rem;
+    border: 1px solid var(--signal);
+    background: var(--paper-2);
+    color: var(--signal-ink);
+    font-size: .95rem;
+    line-height: 1.55;
+    max-width: 78ch;
+  }
+  .gate-note strong { color: var(--signal-ink); font-weight: 700; }
+
+  .shared-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: clamp(1.5rem, 3vw, 3rem);
+    margin-top: clamp(1.8rem, 3vw, 2.6rem);
+  }
+  .shared-item { border-top: 1px solid var(--line-strong); padding-top: 1.2rem; }
+  .shared-item h3 { font-size: 1.1rem; }
+  .shared-item p { margin-top: .55rem; font-size: .95rem; color: var(--ink-3); line-height: 1.6; }
+
+  .start-foot {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: clamp(1.6rem, 4vw, 3.5rem);
+    align-items: center;
+    border-top: 1px solid var(--line-strong);
+    padding-top: clamp(2rem, 4vw, 3rem);
+  }
+  .start-foot-body { margin-top: .9rem; color: var(--ink-3); max-width: 52ch; }
+  .start-foot-cta { display: flex; flex-wrap: wrap; gap: .8rem; }
+  /* The Dutch labels are longer than the English ones and wrap this row onto two
+     lines, where two differently-sized pills stack into a ragged left-aligned
+     column. Grow, never shrink — .btn is white-space: nowrap, so allowing shrink
+     would push the label out of the button rather than wrap it. One row and both
+     buttons grow to share it; two rows and each fills its own. Either way the
+     edges line up. Same principle global.css:386–391 applies sitewide at ≤560px,
+     applied here at the width where this particular row actually breaks. */
+  .start-foot-cta > .btn { flex: 1 0 auto; }
+
+  /* ── Breakpoints ─────────────────────────────────────────────────────────*/
+  @media (max-width: 900px) {
+    .levels { grid-template-columns: 1fr; }
+    .level + .level { border-left: 0; border-top: 1px solid var(--line-strong); }
+    /* One column, so there is no second fact list beside this one. Stacked,
+       the rows are read in sequence rather than compared across a rule, so
+       holding them to a two-line height would be pure whitespace with nothing
+       to line up against. */
+    .level-row { min-height: 0; }
+    .start-foot { grid-template-columns: 1fr; }
+  }
+
+  /* The rail keeps all five numerals at every width — dropping steps would hide
+     how long the form is, which is the one thing it exists to say. The labels
+     go instead, and the current step keeps its own. */
+  @media (max-width: 680px) {
+    .pl-form.is-live .pl-rail { grid-template-columns: repeat(5, auto); }
+    .pl-rail-item { padding: .7rem .8rem; }
+    .pl-rail-item .pl-rail-t { display: none; }
+    .pl-rail-item.is-current .pl-rail-t { display: block; }
+  }
+
+  /* .row-2's 620px collapse is in global.css with the rule it collapses. */
+
+  @media (max-width: 560px) {
+    .level-row { grid-template-columns: 1fr; gap: .25rem; }
+    .pl-summary { grid-template-columns: 1fr; }
+    .pl-summary :global(dt) { border-bottom: 0; padding: .8rem 0 0; }
+    .pl-summary :global(dd) { padding-top: .25rem; }
+  }
+
+  /* ── Reduced motion ──────────────────────────────────────────────────────
+     Everything here is decorative except one: the upload progress bar's width
+     transition is the only signal a client has that a 20 MB photograph is
+     moving, and removing it would leave a static bar and a silent wait. It is
+     informational, not vestibular, so it stays. */
+  @media (prefers-reduced-motion: reduce) {
+    .level,
+    .pl-rail-item { transition: none; }
+    .pl-windows :global(.pl-window) { transition: none; }
+    /* .input, .textarea, .select, .opt and .dropzone are opted out in
+       global.css now, alongside the transitions they cancel — which is also
+       how test-sample and contact stopped animating through the setting. */
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     AUGUST 2026 — what the split and the audit added.
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* ── The service line ─────────────────────────────────────────────────────
+     What was picked and a way back out of it. It replaces a three-column grid
+     of seven photographs: the chooser at /start is where that comparison
+     belongs, and a flow that reopens it is a flow that does not trust the click
+     that got you here. */
+  .pl-svc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .3rem .9rem;
+    margin-top: .9rem;
+    padding: .75rem 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+  .pl-svc-name { font-weight: 600; color: var(--ink); }
+  .pl-svc-gets { font-size: .86rem; color: var(--ink-3); }
+  .pl-svc-change {
+    margin-left: auto;
+    font-size: .82rem;
+    color: var(--accent-bright);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* ── The error state ──────────────────────────────────────────────────────
+     There was none. Pressing Continue with nothing chosen left the step
+     visually identical — no [aria-invalid] on the page, no [aria-describedby],
+     and reportValidity()'s native bubble gone in a blink and unavailable to a
+     screen reader that has moved on. pipeline.js fills one of these per step
+     with the offending field's own message and points the field's
+     aria-describedby at it. */
+  .pl-step-err {
+    margin-top: 1.2rem;
+    padding: .85rem 1.05rem;
+    border: 1px solid var(--warn);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    color: var(--warn-ink);
+    font-size: .92rem;
+    line-height: 1.55;
+  }
+  /* The field itself, so the message and the control agree about which one is
+     wrong. Colour is never the only signal — the message names the field. */
+  .pl-form [aria-invalid='true'] { border-color: var(--warn); }
+
+  /* ── The running total ────────────────────────────────────────────────────
+     A LIVE REGION, which it was not. The figure moved when the count moved and
+     nothing announced it, so a screen-reader user had no way to hear the number
+     the whole proposition rests on. aria-live/aria-atomic sit on the wrapper so
+     the label, the figure and the rate line are read as one sentence.
+
+     STICKY ON MOBILE, below. The audit measured it 2,683px down a phone
+     screen — past the fold by a factor of four at the moment it changes. */
+  .pl-total-live { display: block; }
+  .pl-total-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .4rem 1rem;
+  }
+  .pl-total-label {
+    display: block;
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .pl-total-figure { display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap; }
+  .pl-total-net {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.5rem, 3vw, 1.9rem);
+    line-height: 1.1;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  /* BRIEF-14: no price is printed without saying which side of VAT it is on.
+     Small, but never absent, and never further away than this. */
+  .pl-total-excl { font-size: .76rem; color: var(--ink-3); }
+
+  /* ── The levels table, folded ─────────────────────────────────────────────
+     120 words copied verbatim from /pricing, in front of every visitor. The
+     line that pipeline.js writes says which level THIS count earns, which is
+     the only part that is about the order in hand; the table stays for whoever
+     wants it, and /pricing is linked because it owns it. */
+  .pl-levels-why > .levels { margin-top: 1rem; }
+  .pl-levels-why > .pl-panel-note { margin-top: .8rem; }
+
+  /* ── Mobile: the total follows you ────────────────────────────────────────
+     Fixed rather than sticky, because the step it belongs to is taller than the
+     scroll container it sits in and a sticky bottom edge would let it leave the
+     screen halfway down. It exists only while step 1 is the step on screen —
+     step 2 hides its own subtree, and no other step has a total. */
+  @media (max-width: 780px) {
+    .pl-form.is-live .pl-step.is-current .pl-total-bar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 40;
+      align-items: center;
+      padding: .7rem clamp(1rem, 4vw, 1.4rem) calc(.7rem + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--line-strong);
+      border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
+      background: var(--surface);
+      box-shadow: 0 -6px 24px rgb(0 0 0 / .12);
+    }
+    .pl-form.is-live .pl-step.is-current .pl-total-bar .pl-total-net { font-size: 1.35rem; }
+    /* Room for the bar, so it never covers the Continue button it sits above. */
+    .pl-form.is-live .pl-step[data-pl-step='1'].is-current { padding-bottom: 5.5rem; }
+  }
+</style>

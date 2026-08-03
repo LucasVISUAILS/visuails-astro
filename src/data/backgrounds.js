@@ -10,7 +10,7 @@
 // "before us" and "after us" on their own product grid.
 //
 // So the choice is theirs, the recommendation is ours, and the recommendation
-// is four light values rather than a free-for-all:
+// is three light values rather than a free-for-all:
 //
 //   · Marketplaces are the hard constraint. Amazon requires pure white
 //     (#FFFFFF) on the main image; Zalando and bol want white or near-white.
@@ -32,7 +32,13 @@
 // that shows #F7F5F1 while production runs #F5F5F5 is a delivery a client can
 // measure and reject.
 
-/** The four we put forward, lightest-neutral first. */
+/** The three we put forward, lightest-neutral first.
+    WAS FOUR. Light grey (#EDEDED) came out at Lucas's direction, August 2026:
+    with the custom swatch beside them the row read as five decisions, and grey
+    was the one carrying its weight least — it sits between off-white and beige
+    without being either, and a brand that wants a neutral grey ground can set
+    it exactly on the custom swatch. Three recommendations plus "your own" is
+    four things to look at, which is a row a visitor takes in at a glance. */
 export const RECOMMENDED = [
   {
     id: 'white',
@@ -50,15 +56,6 @@ export const RECOMMENDED = [
     note: {
       en: 'A hair warmer than white. Stops a white garment disappearing into its own background.',
       nl: 'Een tikje warmer dan wit. Voorkomt dat een wit kledingstuk in zijn eigen achtergrond verdwijnt.',
-    },
-  },
-  {
-    id: 'light-grey',
-    hex: '#EDEDED',
-    name: { en: 'Light grey', nl: 'Lichtgrijs' },
-    note: {
-      en: 'Neutral and quiet. The most forgiving ground for pale product and for white stitching.',
-      nl: 'Neutraal en rustig. De meest vergevende ondergrond voor licht product en voor wit stikwerk.',
     },
   },
   {

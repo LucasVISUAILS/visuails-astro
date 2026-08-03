@@ -71,7 +71,7 @@
 
 import { hasAdminSession } from '../../src/lib/admin.js';
 import { mollieKey, mollieKeyProblems, describeHeaders } from '../../src/lib/mollie.js';
-import { AMOUNT } from '../../src/data/pricing.js';
+import { AMOUNT, ladderTotal } from '../../src/data/pricing.js';
 
 const MOLLIE_API = 'https://api.mollie.com/v2';
 
@@ -171,7 +171,10 @@ export async function onRequestGet(context) {
   out.methods = {
     note: 'Mollie filters methods by amount. The test sample is the smallest payment the site makes, so this is the shortest the list ever gets.',
     at_0_99: await methodList(key, AMOUNT.testSample.toFixed(2)),
-    at_full_drop: await methodList(key, AMOUNT.fullDrop.toFixed(2)),
+    // WAS AMOUNT.fullDrop, the €1,950 package price. That constant is gone with
+    // the package model; what this probe needs is simply a large amount, so it
+    // asks the ladder for a full season instead of a retired package.
+    at_large_order: await methodList(key, ladderTotal('complete', 30).toFixed(2)),
   };
 
   out.reading = read(out);

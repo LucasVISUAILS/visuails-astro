@@ -1,0 +1,403 @@
+---
+// VISUAILS — the three services you cannot check out of yet.
+//
+// WHY THESE PAGES EXIST INSTEAD OF NOT EXISTING
+// The chooser at /start lists six things the studio sells. Three of them have a
+// real flow. The other three do not, and the previous answer was to leave them
+// off the form entirely — which is exactly what Lucas noticed about video: it
+// is on /video, it is on /pricing, it is in the ladder, and the one page whose
+// job is to take an order pretended it was not there. A gap a visitor can see
+// is worse than an unfinished page that says what it is.
+//
+// So: one page each, one shared treatment, and the treatment is honest rather
+// than apologetic. The three read as the same KIND of page on purpose — same
+// status strip, same three facts, same short request form — because that is
+// what they are: work the studio does, that a form cannot yet price on its own.
+// A solo studio saying "this exists, here is where it is going, here is how to
+// get in the queue" is a different thing from a broken button.
+//
+// WHAT THEY POST. Nothing new. `service` is one of ORDER_SERVICES in
+// functions/api/order.js — `video` for clips, `custom` for the Brand Model and
+// the plans — and everything that distinguishes them (`request`, `plan`) is an
+// ordinary field that lands in details_json, because it is not in TOP_FIELDS.
+// No server change, no migration, and an order record that still reads.
+//
+// NO CHECKOUT, DELIBERATELY. The Brand Model is a one-time setup that changes
+// every order after it, and the plans are a minimum-term commitment. Both are
+// conversations. A card form here would be the studio pretending a decision has
+// been made that has not.
+import { AMOUNT, euro, vatLabel, vatNote, plans, PLAN_MIN_MONTHS, turnaround } from '../../data/pricing.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  kind: 'video' | 'brand-model' | 'plan';
+}
+const { lang, kind } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+const nl = lang === 'nl';
+
+const planList = plans(lang);
+
+// Common chrome. The status word is the only thing that changes size on the
+// page, and it is the one thing a visitor needs before anything else.
+const UI = {
+  en: {
+    eyebrow: 'Start',
+    statusLabel: 'Where this stands',
+    factsH: 'What it is',
+    formH: 'Get in the queue',
+    formLead: 'No payment, no commitment. It reaches the studio inbox and gets a written answer.',
+    name: 'Your name',
+    brand: 'Brand or shop name',
+    email: 'Email',
+    phone: 'Phone or WhatsApp',
+    website: 'Website or shop link',
+    optional: 'optional',
+    message: 'What do you have in mind?',
+    submit: 'Send this request',
+    nextH: 'What happens next',
+    next: [
+      'A written answer from Lucas, not an automated one.',
+      'A quote against the same figures on this page, or a conversation if the work needs one.',
+      'Nothing is charged, and nothing is reserved, until you say yes in writing.',
+    ],
+    back: 'Back to the chooser',
+    readMore: 'Read the whole story',
+  },
+  nl: {
+    eyebrow: 'Start',
+    statusLabel: 'Hoe het ervoor staat',
+    factsH: 'Wat het is',
+    formH: 'Kom in de wachtrij',
+    formLead: 'Geen betaling, geen verplichting. Het komt in de studio-inbox en krijgt een schriftelijk antwoord.',
+    name: 'Je naam',
+    brand: 'Merk- of shopnaam',
+    email: 'E-mail',
+    phone: 'Telefoon of WhatsApp',
+    website: 'Website of shoplink',
+    optional: 'optioneel',
+    message: 'Wat heb je in gedachten?',
+    submit: 'Verstuur dit verzoek',
+    nextH: 'Wat er daarna gebeurt',
+    next: [
+      'Een schriftelijk antwoord van Lucas, geen automatisch bericht.',
+      'Een offerte op basis van dezelfde bedragen als op deze pagina, of een gesprek als het werk daarom vraagt.',
+      'Er wordt niets in rekening gebracht en niets gereserveerd tot je schriftelijk ja zegt.',
+    ],
+    back: 'Terug naar de keuze',
+    readMore: 'Lees het hele verhaal',
+  },
+};
+const ui = UI[lang];
+
+// ── Per service ────────────────────────────────────────────────────────────
+// `status` is the sentence that has to be true. It is written plainly and it
+// is not hedged: "still being built" means still being built.
+const KIND = {
+  en: {
+    video: {
+      h1: 'Video clips',
+      lead: 'Product clips for feed, story and paid social.',
+      status: 'In build',
+      statusBody: 'The video order flow is not finished. Clips are being produced today — they are ordered by hand, through this form or on an existing order, and the studio confirms scope and timing in writing before anything runs.',
+      facts: [
+        ['Price', `${euro(AMOUNT.video, 'en')} a clip, ${vatLabel('excl', 'en')}. The same figure inside a larger order or on its own.`],
+        ['What you get', 'One product, one look, one clip cut for vertical. Styles are the same four the lifestyle work runs on.'],
+        ['Timing', `${turnaround('unattended', 'en')} once the brief is agreed. No date is named before the calendar clears it.`],
+      ],
+      askLabel: 'How many clips?',
+      askHint: 'A rough number is fine — it is a request, not an order.',
+      more: '/video',
+      moreLabel: 'See the video work',
+    },
+    'brand-model': {
+      h1: 'A Brand Model',
+      lead: 'One face, made only for you, that every order after it can run on.',
+      status: 'By conversation',
+      statusBody: 'There is no checkout for this and there is not going to be one soon. A Brand Model is built once, from a brief about who your customer is — the useful version of that starts with a conversation, not a form field.',
+      facts: [
+        ['Price', `${euro(AMOUNT.brandModel, 'en')} one-time, ${vatLabel('excl', 'en')}. Credited back against your first orders.`],
+        ['What you get', 'A model that exists nowhere else, consistent across every set you order afterwards, with the rights to use it.'],
+        ['Before you commit', 'You see test frames of the face before anything is invoiced. If it is not right, it is not built.'],
+      ],
+      askLabel: null,
+      askHint: null,
+      more: '/custom-models',
+      moreLabel: 'How a Brand Model is built',
+    },
+    plan: {
+      h1: 'A monthly plan',
+      lead: 'A set number of products every month, at a rate below the ladder.',
+      status: 'By intake',
+      statusBody: 'Subscriptions are not self-serve yet. A plan is a minimum-term commitment against reserved studio capacity, so it is agreed in writing first — this form is that intake, and the first month is invoiced only once both sides have signed off.',
+      facts: [
+        ['The plans', planList.map((p) => `${p.name} · ${p.price} ${p.unit}`).join(' · ') + `, ${vatLabel('excl', 'en')}`],
+        ['What you get', `${planList[0].products}, ${planList[1].products} or ${planList[2].products} products a month, produced on reserved capacity rather than in the queue.`],
+        ['The commitment', `${PLAN_MIN_MONTHS} months minimum. Unused products roll over one month.`],
+      ],
+      askLabel: 'Which plan are you looking at?',
+      askHint: 'You can change your mind — this is the start of a conversation.',
+      more: '/pricing',
+      moreLabel: 'The plans on /pricing',
+    },
+  },
+  nl: {
+    video: {
+      h1: 'Videoclips',
+      lead: 'Productclips voor feed, story en paid social.',
+      status: 'In aanbouw',
+      statusBody: 'De bestelflow voor video is niet af. Clips worden wél gemaakt — ze worden met de hand ingepland, via dit formulier of op een bestaande bestelling, en de studio bevestigt omvang en timing schriftelijk voordat er iets draait.',
+      facts: [
+        ['Prijs', `${euro(AMOUNT.video, 'nl')} per clip, ${vatLabel('excl', 'nl')}. Hetzelfde bedrag binnen een grotere bestelling of los.`],
+        ['Wat je krijgt', 'Eén product, één look, één clip gemonteerd voor verticaal. Dezelfde vier stijlen als het lifestyle-werk.'],
+        ['Timing', `${turnaround('unattended', 'nl')} zodra de briefing rond is. Er wordt geen datum genoemd voordat de agenda die vrijgeeft.`],
+      ],
+      askLabel: 'Hoeveel clips?',
+      askHint: 'Een ruwe schatting is prima — het is een verzoek, geen bestelling.',
+      more: '/video',
+      moreLabel: 'Bekijk het videowerk',
+    },
+    'brand-model': {
+      h1: 'Een merkmodel',
+      lead: 'Eén gezicht, alleen voor jou gemaakt, waar elke bestelling daarna op kan draaien.',
+      status: 'In gesprek',
+      statusBody: 'Hier zit geen afrekenknop op, en die komt voorlopig ook niet. Een merkmodel wordt één keer gebouwd, vanuit een briefing over wie je klant is — de bruikbare versie daarvan begint met een gesprek, niet met een formulierveld.',
+      facts: [
+        ['Prijs', `${euro(AMOUNT.brandModel, 'nl')} eenmalig, ${vatLabel('excl', 'nl')}. Wordt verrekend met je eerste bestellingen.`],
+        ['Wat je krijgt', 'Een model dat nergens anders bestaat, consistent over elke set die je daarna bestelt, met de rechten om het te gebruiken.'],
+        ['Voordat je vastzit', 'Je ziet testbeelden van het gezicht voordat er iets gefactureerd wordt. Klopt het niet, dan wordt het niet gebouwd.'],
+      ],
+      askLabel: null,
+      askHint: null,
+      more: '/custom-models',
+      moreLabel: 'Hoe een merkmodel gebouwd wordt',
+    },
+    plan: {
+      h1: 'Een maandplan',
+      lead: 'Een vast aantal producten per maand, tegen een tarief onder de staffel.',
+      status: 'Via intake',
+      statusBody: 'Abonnementen kun je nog niet zelf afsluiten. Een plan is een verplichting voor een minimumtermijn tegen gereserveerde studiocapaciteit, dus het wordt eerst schriftelijk afgesproken — dit formulier is die intake, en de eerste maand wordt pas gefactureerd als beide kanten akkoord zijn.',
+      facts: [
+        ['De plannen', planList.map((p) => `${p.name} · ${p.price} ${p.unit}`).join(' · ') + `, ${vatLabel('excl', 'nl')}`],
+        ['Wat je krijgt', `${planList[0].products}, ${planList[1].products} of ${planList[2].products} producten per maand, gemaakt op gereserveerde capaciteit in plaats van in de wachtrij.`],
+        ['De verplichting', `Minimaal ${PLAN_MIN_MONTHS} maanden. Ongebruikte producten schuiven één maand door.`],
+      ],
+      askLabel: 'Naar welk plan kijk je?',
+      askHint: 'Je mag je nog bedenken — dit is het begin van een gesprek.',
+      more: '/pricing',
+      moreLabel: 'De plannen op /pricing',
+    },
+  },
+};
+const k = KIND[lang][kind];
+
+// The wire name. `video` and `custom` are both in ORDER_SERVICES already; the
+// two that share `custom` are told apart by `request`, which lands in
+// details_json because it is not in TOP_FIELDS.
+const wire = kind === 'video' ? 'video' : 'custom';
+
+const clipCounts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
+---
+
+<section class="page-hero"><div class="container">
+  <span class="eyebrow-page">{ui.eyebrow}</span>
+  <h1 class="display">{k.h1}</h1>
+  <p class="lead" style="margin-top:1.2rem">{k.lead}</p>
+</div></section>
+
+<section class="section-tight"><div class="container">
+  <div class="hold">
+    <!-- THE STATUS. The same object on all three pages, so a visitor who has
+         seen one of them knows what kind of page this is on sight. -->
+    <div class="hold-status">
+      <p class="hold-status-label">{ui.statusLabel}</p>
+      <p class="hold-status-word">{k.status}</p>
+      <p class="hold-status-body">{k.statusBody}</p>
+    </div>
+
+    <div class="hold-facts">
+      <h2 class="hold-h">{ui.factsH}</h2>
+      <dl class="hold-fact-list">
+        {k.facts.map(([label, body]) => (
+          <div class="hold-fact">
+            <dt>{label}</dt>
+            <dd>{body}</dd>
+          </div>
+        ))}
+      </dl>
+      {/* BRIEF-14: every figure above is net, and this is the one line that
+          says once how VAT is handled. */}
+      <p class="hold-vat">{vatNote(lang)}</p>
+      <p class="hold-more"><a href={lp(k.more)}>{k.moreLabel}</a></p>
+    </div>
+
+    <!-- THE REQUEST. A plain form, posting the way every non-pipeline form on
+         this site posts: no JavaScript is involved at any point, so there is no
+         degraded path to describe. -->
+    <div class="hold-form">
+      <h2 class="hold-h">{ui.formH}</h2>
+      <p class="hold-lead">{ui.formLead}</p>
+
+      <form method="post" action="/api/order" class="hold-fields">
+        <input type="hidden" name="service" value={wire} />
+        <input type="hidden" name="request" value={kind} />
+        <input type="hidden" name="lang" value={lang} />
+        <input type="hidden" name="redirect" value={lp('/thank-you')} />
+        <input type="hidden" name="source" value={`start-${kind}`} />
+        <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
+
+        <div class="row-2">
+          <div class="field">
+            <label for="h-name">{ui.name} <span class="req">*</span></label>
+            <input class="input" type="text" id="h-name" name="name" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="h-brand">{ui.brand} <span class="req">*</span></label>
+            <input class="input" type="text" id="h-brand" name="brand" autocomplete="organization" required />
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label for="h-email">{ui.email} <span class="req">*</span></label>
+            <input class="input" type="email" id="h-email" name="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="h-phone">{ui.phone} <span class="hold-opt">{ui.optional}</span></label>
+            <input class="input" type="tel" id="h-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="h-web">{ui.website} <span class="hold-opt">{ui.optional}</span></label>
+          <input class="input" type="url" id="h-web" name="website" placeholder="https://" autocomplete="url" />
+        </div>
+
+        {kind === 'video' && (
+          <div class="field">
+            <label for="h-clips">{k.askLabel}</label>
+            {/* name="products" so the count lands in the orders table's own
+                column rather than in details_json. The last option is
+                deliberately not parseable as an integer — countOf() in
+                /api/order stores null rather than a number nobody chose. */}
+            <select class="select" id="h-clips" name="products">
+              {clipCounts.map((n) => <option value={String(n)}>{n}</option>)}
+              <option value={notSure} selected>{notSure}</option>
+            </select>
+            <span class="hint">{k.askHint}</span>
+          </div>
+        )}
+
+        {kind === 'plan' && (
+          <div class="field">
+            <label for="h-plan">{k.askLabel}</label>
+            <select class="select" id="h-plan" name="plan">
+              <option value="">{notSure}</option>
+              {planList.map((p) => <option value={p.id}>{`${p.name} — ${p.price} ${p.unit}`}</option>)}
+            </select>
+            <span class="hint">{k.askHint}</span>
+          </div>
+        )}
+
+        <div class="field">
+          <label for="h-msg">{ui.message} <span class="hold-opt">{ui.optional}</span></label>
+          <textarea class="textarea" id="h-msg" name="message"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg hold-submit">{ui.submit}</button>
+      </form>
+    </div>
+
+    <div class="hold-next">
+      <h2 class="hold-h">{ui.nextH}</h2>
+      <ul class="hold-next-list">
+        {ui.next.map((t) => <li>{t}</li>)}
+      </ul>
+      <p class="hold-more"><a href={lp('/start')}>{ui.back}</a></p>
+    </div>
+  </div>
+</div></section>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     The shared treatment. All three pages are this sheet, and that is the
+     point: "unfinished" has to look like a deliberate category, not like three
+     separate accidents. Nothing here is styled as an apology — the status strip
+     uses the system colour the rest of the site uses for statements of process,
+     the same one /start's capacity note carries.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .hold { display: grid; gap: clamp(2rem, 4vw, 3rem); max-width: 880px; }
+
+  .hold-status {
+    padding: clamp(1.2rem, 2.6vw, 1.8rem);
+    border: 1px solid var(--signal);
+    border-radius: var(--r-lg);
+    background: var(--paper-2);
+  }
+  .hold-status-label {
+    margin: 0;
+    font-size: .72rem; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .hold-status-word {
+    margin: .35rem 0 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.5rem, 3.4vw, 2rem);
+    line-height: 1.1;
+    color: var(--signal-ink);
+  }
+  .hold-status-body {
+    margin: .8rem 0 0;
+    color: var(--ink-2);
+    font-size: .98rem;
+    line-height: 1.65;
+    max-width: 66ch;
+  }
+
+  .hold-h { font-size: var(--t-h4, 1.3rem); line-height: 1.25; }
+  .hold-lead { margin-top: .6rem; color: var(--ink-3); max-width: 62ch; }
+
+  .hold-fact-list { margin: 1.1rem 0 0; border-top: 1px solid var(--line-strong); }
+  .hold-fact {
+    display: grid;
+    grid-template-columns: minmax(9rem, max-content) 1fr;
+    gap: 1rem;
+    padding: .9rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .hold-fact dt {
+    font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .hold-fact dd { margin: 0; color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
+
+  .hold-vat { margin-top: .9rem; font-size: .78rem; color: var(--ink-3); line-height: 1.55; max-width: 62ch; }
+  .hold-more { margin-top: .9rem; font-size: .9rem; }
+  .hold-more a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  .hold-form {
+    padding: clamp(1.3rem, 3vw, 2rem);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+  }
+  .hold-fields { margin-top: 1.4rem; }
+  .hold-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
+  .hold-submit { margin-top: .6rem; }
+
+  .hold-next-list { list-style: none; margin: 1.1rem 0 0; padding: 0; border-top: 1px solid var(--line); }
+  .hold-next-list li {
+    padding: .85rem 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
+    font-size: .95rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 560px) {
+    .hold-fact { grid-template-columns: 1fr; gap: .25rem; }
+  }
+</style>

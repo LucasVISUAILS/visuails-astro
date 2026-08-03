@@ -38,7 +38,7 @@
 -- The background this brand orders against, so /start does not ask a returning
 -- customer the one question their own product grid already answered. Holds a
 -- RECOMMENDED id from src/data/backgrounds.js ('white' | 'off-white' |
--- 'light-grey' | 'beige') or CUSTOM_ID ('custom'); NULL means no default and
+-- 'beige') or CUSTOM_ID ('custom'); NULL means no default and
 -- /start asks as usual.
 ALTER TABLE customers ADD COLUMN default_background TEXT;
 

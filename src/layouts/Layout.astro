@@ -293,6 +293,14 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   <ClientRouter />
 </head>
 <body class={ground === "espresso" ? "ground-espresso" : undefined}>
+{/* THE FIRST TAB STOP. It has to be the first child of <body>, not merely
+    before <main>: placed after the header it is the twelfth stop, which is
+    eleven stops too late to be a skip link. Even with the drawer inert, the header is a handful of
+      controls in front of every page's content, and a keyboard or screen-reader
+      user had no way past them — the site had no in-page anchor at all. Visually
+      hidden until focused, which is the only state it needs to exist in. */}
+<a class="skip-link" href="#main">{t('nav_skip')}</a>
+
   <!-- SVG sprite — product-scene placeholder symbols, the chrome gradients and
        the outlined logotype. The six greys below (three gObj stops, two gGlass
        stops, one flat #B9B7B4 used for caps and soles) are cut from the SAME
@@ -543,7 +551,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     </div>
   </header>
 
-  <div class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav" id="mobile-nav" inert aria-hidden="true">
     <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
     <svg class="brand-mark mobile-mark" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
     {drops.map((s) => (
@@ -712,7 +720,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     })();
   </script>
 
-  <main>
+  <main id="main" tabindex="-1">
     <slot />
   </main>
 
@@ -745,6 +753,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             {drops.map((s) => <li><a href={lp(s.href)}>{s.title}</a></li>)}
             <li><a href={lp(brandModelHref)}>{t('foot_brandmodel')}</a></li>
             <li><a href={lp('/gallery')}>{t('foot_gallery')}</a></li>
+            {/* The €0.99 sample was in neither the header nor the footer — its
+                only way in was an inline CTA on whichever page you happened to
+                be reading. With no reviews and no client logos it is the
+                studio's single strongest risk-reversal, so leaving it
+                unreachable from the chrome cost more than a footer row. */}
+            <li><a href={lp('/test-sample')}>{t('foot_sample')}</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -819,11 +833,19 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   <script>
     // Importing runs init() once immediately and registers the
     // astro:page-load listener for every ClientRouter navigation after —
-    // see src/scripts/interactions.js. The motion layer (GSAP scroll
-    // choreography) and the hero shader are separate modules with their own
-    // ClientRouter lifecycles; both no-op on pages without their hooks.
+    // see src/scripts/interactions.js. The hero shader is a separate module
+    // with its own ClientRouter lifecycle; it no-ops on pages without its hook.
+    //
+    // ../scripts/motion.js (the GSAP scroll choreography) was imported here and
+    // is gone. It was not partly dead — EVERY hook it queried (.hero-cover,
+    // .ch-head, [data-spread], [data-zoom], [data-stagger], #develop, .vm-row,
+    // .visual-marquee, .comet) appears on zero of the 84 built pages, so all
+    // eight of its effects were no-oping while still pulling gsap +
+    // ScrollTrigger (~70 KB) into every page. Deleted rather than lazy-loaded:
+    // there is no live hook left to lazy-load it FOR. If that markup ever comes
+    // back, the choreography has to come back with it — do not re-add this
+    // import on its own, it will cost 70 KB and animate nothing.
     import '../scripts/interactions.js';
-    import '../scripts/motion.js';
     import '../scripts/shader-hero.js';
   </script>
   {/* THE BEACON IS NOT RENDERED HERE ANY MORE, and that is the whole point of

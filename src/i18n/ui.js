@@ -18,7 +18,11 @@ import { TEST_SAMPLE } from '../data/pricing.js';
 export const languages = { en: 'English', nl: 'Nederlands' };
 export const localeNames = { en: 'EN', nl: 'NL' };
 export const ogLocale = { en: 'en_US', nl: 'nl_NL' };
-export const defaultLang = 'en';
+// `export const defaultLang = 'en'` was here and had no consumer — no module
+// imported it and nothing in this file read it. The fallback it looked like it
+// controlled is actually getLangFromPath()'s own 'en' return, further down;
+// re-adding this constant without wiring that function to it would give the
+// codebase two defaults that can disagree.
 
 // The Drops menu — href is a language-neutral base path (the Layout localizes
 // it with localizedPath); [title, desc] are translated per language below.
@@ -83,6 +87,7 @@ export const ui = {
     // the search intent is not lost — but the footer label names the primary
     // comparison, which is the one a brand is actually weighing.
     foot_compare: 'Shoot day vs VISUAILS',
+    foot_sample: 'Test sample · €0.99',
     foot_gallery: 'Gallery',
     foot_pricing: 'Pricing',
     foot_faq: 'FAQ',
@@ -98,6 +103,7 @@ export const ui = {
     // Layout.astro and so shipped as English on all 36 NL pages — the only
     // untranslated string left in the tree.
     nav_close: 'Close menu',
+    nav_skip: 'Skip to content',
     cc_title: 'Cookies on this site',
     cc_body: 'We use only what the site needs to work. Nothing that measures you is switched on unless you say so.',
     cc_accept: 'Accept analytics',
@@ -114,7 +120,9 @@ export const ui = {
     cc_save: 'Save my choice',
     cc_cancel: 'Back',
     cc_reopen: 'Cookie preferences',
-    cc_changed: 'Saved.',
+    /* cc_changed ('Saved.' / 'Opgeslagen.') was here in both locales. The
+       consent banner never rendered it — nothing called t('cc_changed') in
+       any component, script or page. */
     foot_location: 'Enschede, Netherlands',
     cb_text: 'See it on your own product first.',
     cb_cta: `Test sample · ${TEST_SAMPLE.en.price}`,
@@ -151,6 +159,7 @@ export const ui = {
     foot_studio: 'Hoe een bestelling draait',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
+    foot_sample: 'Proefvisual · €0,99',
     foot_gallery: 'Galerij',
     foot_pricing: 'Prijzen',
     foot_faq: 'FAQ',
@@ -159,6 +168,7 @@ export const ui = {
     foot_terms: 'Algemene voorwaarden',
     foot_cookies: 'Cookies',
     nav_close: 'Menu sluiten',
+    nav_skip: 'Naar de inhoud',
     cc_title: 'Cookies op deze site',
     cc_body: 'We gebruiken alleen wat de site nodig heeft om te werken. Niets dat jou meet staat aan, tenzij je dat zelf zegt.',
     cc_accept: 'Analytics accepteren',
@@ -175,7 +185,6 @@ export const ui = {
     cc_save: 'Keuze opslaan',
     cc_cancel: 'Terug',
     cc_reopen: 'Cookievoorkeuren',
-    cc_changed: 'Opgeslagen.',
     foot_location: 'Enschede, Nederland',
     cb_text: 'Zie het eerst op je eigen product.',
     cb_cta: `Proefvisual · ${TEST_SAMPLE.nl.price}`,

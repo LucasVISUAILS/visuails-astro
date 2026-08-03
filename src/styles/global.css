@@ -135,7 +135,7 @@
      of stylesheet. */
   --bg:          var(--bg-0);
   --bg-deep:     #000000;
-  --surface-3:   var(--surface-2);
+  /* --surface-3 (an alias of --surface-2) was here — nothing var()'d it. */
 
   --ink:         var(--ink-1);
   /* --ink-900 is the one legacy name that is NOT an ink. In harbor it was the
@@ -173,17 +173,19 @@
 
   /* The harbor names still resolve, because portal.css, account.css,
      admin.css and a dozen components read them. They now point at the new
-     system instead of carrying the old values. */
+     system instead of carrying the old values.
+     Four of them were not read by anything and have been removed:
+     --teal-grad, --teal-deep, --mist-teal and --mist-slate. The three
+     standalone sheets declare their own copies of those names, so nothing
+     here was feeding them. The names left below are each read by at least one
+     component or sheet — checked with a var() search across src, public,
+     functions and dist, not assumed from this comment. */
   --teal:        var(--accent);
-  --teal-grad:   var(--accent-dim);
   --teal-hover:  var(--accent-dim);
   --teal-text:   var(--accent);
-  --teal-deep:   var(--accent);
   --clay:        #E86BB0;
   --clay-text:   #E86BB0;
-  --mist-teal:   var(--bg-raise);
   --mist-clay:   var(--bg-raise);
-  --mist-slate:  var(--bg-raise);
   --mist-stone:  var(--bg-raise);
 
   --signal:      var(--accent);
@@ -197,7 +199,9 @@
 
   --brand:       var(--ink-1);
   --accent-on:   var(--accent-ink);
-  --accent-2:    var(--accent);
+  /* --accent-2 was declared here and in the two scopes that restate this
+     block (the dark ground, and the accent-on-light scope). No rule anywhere
+     var()'d it, in any of the three, so all three declarations are gone. */
   --accent-word: var(--accent);
   --accent-bright: var(--accent-dim);
   --accent-soft: rgb(144 190 255 / 0.14);
@@ -328,7 +332,9 @@
      it — four hover states at 450ms on a pass whose whole purpose was to
      put hover states at 120ms. check_motion check 9 now refuses any --dur
      token outside --dur-1..4 so it cannot come back. */
-  --ease-out-quart: cubic-bezier(0.25, 1, 0.50, 1);
+  /* --ease-out-quart: cubic-bezier(0.25, 1, 0.50, 1) was declared here and
+     never var()'d. It existed as the CSS half of a pair with motion.js's
+     EASE.quart (power3.out); motion.js is gone, and no rule referenced it. */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out-expo:  cubic-bezier(0.16, 1, 0.30, 1);
 
@@ -346,16 +352,15 @@
      "sliding in from off-stage" tell the ease-out rule exists to kill. */
   --ease-in-out: cubic-bezier(0.7, 0, 0.2, 1);
 
-  /* ---- z-index: semantic scale, never arbitrary 999/9999 ---- */
-  --z-base:         1;
-  --z-dropdown:   150;
+  /* ---- z-index: semantic scale, never arbitrary 999/9999 ----
+     Kept as a SCALE, so the gaps are meaningful: --z-base (1), --z-dropdown
+     (150), --z-modal-back (390) and --z-tooltip (600) were declared and never
+     var()'d by any rule, and are gone. The steps below are each used. */
   --z-sticky:     200;
   --z-bar:        250;
   --z-grain:      300;   /* above the sticky bar, below any modal — deliberate */
-  --z-modal-back: 390;
   --z-modal:      400;
-  --z-toast:      500;
-  --z-tooltip:    600;
+  --z-toast:      500;   /* the skip link */
 }
 
 /* ---- dark ground scope ---------------------------------------------------
@@ -383,7 +388,7 @@
 .cta-band,
 .photo-band,
 .cmp,
-.make-tile,
+/* .make-tile was listed here; its rules and its markup are both gone. */
 .hero-cover,
 .hero-editorial,
 .ch-promise,
@@ -434,7 +439,6 @@
      now the same value everywhere and this block no longer overrides them. */
   --accent:        var(--teal);
   --accent-on:     var(--accent-ink);
-  --accent-2:      var(--accent);
   --accent-word:   var(--accent);
   --accent-bright: var(--accent);
   --accent-soft:   rgb(255 255 255 / 0.10);
@@ -500,7 +504,7 @@
 
 /* media */
 .photo-band, .photo-split-media, .vis, .cmp, .tile-media, .hv-svc-media,
-.card > img, .card-media, figure.bm-model, .bm-model {
+.card > img, figure.bm-model, .bm-model {
   border-radius: var(--r-lg);
   overflow: hidden;
 }
@@ -519,7 +523,7 @@
 
 /* hairline grids — radius plus clipping, per the note above */
 .hv-pipe, .hv-week, .hv-ch, .hv-vs, .hv-dash, .hv-ob, .hv-faq, .tierc-grid,
-.compare-grid, .lad-table-wrap {
+.compare-grid, .ladder-wrap {
   border-radius: var(--r-md);
   overflow: hidden;
 }
@@ -531,9 +535,9 @@
    they came back square because they carry a background for a highlight, and a
    rounded run of inline text reads as a bug. */
 .pack, .packs, .standing, .standing-inc, .pb-plate, .pb-bar, .svc-row,
-.gate-note, .incl, .hv-stat-card, .lad-table, .tile-media-fill,
+.gate-note, .incl, .tile-media-fill, .ladder,
 .hv-ba-media, .hv-dream-inner .btn, .ts-file, .dropzone, .opt, .door,
-.choice, .pl-panel, .pl-swatch, .summary-row {
+.choice, .pl-panel, .bg-swatch {
   border-radius: var(--r-md);
 }
 /* Photographs that sit on their own rather than inside a plate. Scoped to
@@ -548,6 +552,18 @@ figure > img, .card img, .grid img, .reveal > img, img.wide {
 .ls, .cb-cta, .wa-launcher-label, .hv-pl-dot {
   border-radius: var(--r-sm);
 }
+
+/* The skip link. Off-screen rather than display:none — a hidden element is not
+   focusable, and a link nobody can focus is not a skip link. */
+.skip-link {
+  position: absolute; left: 1rem; top: -4rem; z-index: var(--z-toast);
+  padding: .7rem 1.1rem; border-radius: var(--r-md);
+  background: var(--accent); color: var(--accent-ink);
+  font-size: .9rem; font-weight: 700; text-decoration: none;
+  transition: top var(--dur-1) var(--ease);
+}
+.skip-link:focus { top: 1rem; }
+main:focus { outline: none; }
 
 /* ---- base ---- */
 * { box-sizing: border-box; }
@@ -611,11 +627,15 @@ a { color: inherit; text-decoration: none; }
    scrim, marquee row and pseudo-element on the site, including the ones whose
    whole job is to be a straight line.
 
-   So radius is applied where it means something and nowhere else. Three
-   values, and a component picks one:
-     --r-lg 16px  tiles, panels, media, placeholders, the nav, the conv bar
-     --r-md  8px  buttons, inputs, selects, chips, small controls
-     --r-sm  4px  marks and micro-elements
+   So radius is applied where it means something and nowhere else. WHERE that
+   is, is stated once — in the CORNERS block near the top of this file, not
+   here. A legend used to sit at this spot too, and the two disagreed: this one
+   put panels on --r-lg and chips on --r-md, the CORNERS block puts surfaces on
+   --r-md and marks on --r-sm. Whichever a future editor read first became the
+   rule they followed, which is how a system ends up with two of everything.
+   The three values themselves:
+     --r-lg 16px   --r-md 8px   --r-sm 4px
+   Native controls (buttons, inputs, selects) take --r-md below.
    The native-control rules below still exist for the original reason: iOS
    Safari re-rounds each control type independently, so `appearance: none` has
    to be written per element rather than once.
@@ -824,7 +844,6 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --accent-ink:  #FFFFFF;
   --accent-on:   #FFFFFF;
   --accent-dim:  rgb(8 9 11 / 0.84);
-  --accent-2:    var(--grad-ink);
   --accent-word: var(--grad-ink);
   --accent-bright: var(--grad-ink);
   --accent-soft: rgb(8 9 11 / 0.10);
@@ -1602,9 +1621,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 /* Hero editorial extras */
 .hero-editorial-content .lead-ital { font-style: italic; color: var(--ink-2); max-width: 42ch; margin-top: 1.2rem; font-size: var(--t-lg); line-height: 1.5; }
-.hero-benefits { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 1.6rem 0 0; padding: 0; }
-.hero-benefits li { list-style: none; display: flex; align-items: center; gap: .5rem; color: var(--ink-2); font-size: .84rem; }
-.hero-benefits li::before { content: ""; width: 5px; height: 5px; background: var(--accent); flex: 0 0 auto; }
+/* `.hero-benefits` (the square-bulleted inline list under the hero lead) was
+   here and is gone — the class is on zero built pages. `.lead-ital` above it
+   is still emitted and stays. */
 h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 
 /* Editorial statement + mini benefits */
@@ -1612,25 +1631,17 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 @media (max-width: 860px) { .intro-split { grid-template-columns: 1fr; } }
 .editorial-statement { font-family: var(--font-display); font-weight: 700; font-style: italic; font-size: clamp(1.7rem,3.4vw,2.75rem); line-height: 1.22; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
 .editorial-statement em { font-style: italic; color: var(--accent-word); }
-.mini-benefits { display: grid; gap: 1.1rem; }
-.mini-benefit { display: flex; gap: .75rem; align-items: flex-start; }
-.mini-benefit svg { flex: 0 0 auto; width: 20px; height: 20px; color: var(--accent-bright); margin-top: 2px; }
-.mini-benefit strong { color: var(--ink); font-weight: 600; display: block; font-size: .98rem; }
-.mini-benefit span { color: var(--ink-3); font-size: .88rem; line-height: 1.5; }
+/* `.mini-benefits` / `.mini-benefit` (the icon + strong + span list that sat
+   beside the editorial statement) were here and are gone — neither class is on
+   any built page. `.intro-split` and `.editorial-statement` above are still
+   live and keep their rules. */
 
-/* "From your photo, we make" tiles */
-.make-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(.7rem,1.4vw,1.1rem); }
-@media (max-width: 900px) { .make-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .make-grid { grid-template-columns: 1fr; } }
-.make-tile { position: relative; display: block; overflow: hidden; aspect-ratio: 3/4; background: var(--bg-deep); }
-.make-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-4) var(--ease); }
-.make-tile:hover img { transform: scale(1.05); }
-.make-tile .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 34%, rgb(var(--scrim) / 0.86) 100%); }
-.make-tile .mt-body { position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(1rem,2vw,1.4rem); z-index: 2; }
-.make-tile .mt-name { color: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 1.12rem; display: flex; align-items: center; gap: .4rem; }
-.make-tile .mt-desc { color: var(--ink-2); font-size: .8rem; margin-top: .25rem; line-height: 1.4; }
-.make-tile .mt-play { position: absolute; top: 1rem; right: 1rem; width: 46px; height: 46px; background: var(--accent); display: grid; place-items: center; z-index: 2; }
-.make-tile .mt-play svg { width: 18px; height: 18px; fill: var(--accent-on); margin-left: 2px; }
+/* The "From your photo, we make" tiles stood here — `.make-grid` with its two
+   breakpoints, `.make-tile` and the .mt-body/-name/-desc/-play caption set.
+   The whole family is gone; not one of these classes is on any built page.
+   `.make-tile` was also listed in the dark-ground scope near the top of this
+   file and has been removed from that selector list too, so nothing is left
+   pointing at it. */
 
 /* Multi-photo quality grid */
 .req-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(.8rem,1.6vw,1.2rem); }
@@ -1643,18 +1654,13 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .req-note { margin-top: 1.6rem; color: var(--ink-3); font-size: .92rem; max-width: 62ch; }
 .req-note strong { color: var(--ink); font-weight: 600; }
 
-/* Founder's promise + trust bar — honest substitute for reviews while the
-   studio is new (risk reversal instead of borrowed credibility). The bare
-   `.promise` grid that used to wrap these is gone; the chapter now uses
-   `.promise-split` further down. */
-.promise-eyebrow { display: inline-block; font-size: .8rem; font-weight: 600; letter-spacing: .03em; color: var(--accent-bright); margin-bottom: 1rem; }
-.promise-quote { font-family: var(--font-display); font-style: italic; font-size: clamp(1.2rem,1.9vw,1.5rem); line-height: 1.45; color: var(--ink); margin: 1.4rem 0 0; }
-.promise-sign { display: flex; align-items: center; gap: .6rem; margin-top: 1.4rem; color: var(--ink-3); font-size: .92rem; }
-.promise-sign .promise-mark { height: 24px; flex: 0 0 auto; }
-.promise-sign strong { color: var(--ink); font-weight: 600; }
-.trust-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem 2rem; list-style: none; margin: clamp(2.5rem,5vw,4rem) 0 0; padding: 1.5rem 0 0; box-shadow: inset 0 1px 0 var(--line); }
-.trust-bar li { display: flex; align-items: center; gap: .5rem; color: var(--ink-2); font-size: .86rem; font-weight: 500; }
-.trust-bar li::before { content: ""; width: 6px; height: 6px; background: var(--ink); flex: 0 0 auto; }
+/* Founder's promise + trust bar — the honest substitute for reviews while the
+   studio was new (risk reversal instead of borrowed credibility). The last
+   sweep noted that the `.promise` grid wrapping these had gone; the leaves
+   went with the markup and had simply been missed. So .promise-eyebrow,
+   .promise-quote, .promise-sign and .promise-mark are gone, and so is the
+   whole `.trust-bar` list with them — none of the five is on any built page.
+   The live chapter uses `.promise-split`, further down, which stays. */
 
 /* ============================================================
    THE STUDIO ISSUE — homepage editorial system. One voice: Archivo 900.
@@ -1696,18 +1702,14 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    worth polishing twice. */
 .hero-cover .hc2-bg { position: absolute; inset: 0; z-index: -2; }
 .hero-cover .hc2-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
-/* The scrim is what makes the copy legible, so its stops are not taste. Only
-   the hue moved to harbor ink; the geometry was measured against this
-   photograph and this headline, and neither changed. The top band carries the
-   sticky nav, which is live text over a photograph whose exposure the studio
-   does not control — this frame puts a bright sky exactly where the link
-   cluster sits, so 0.74 down to 26% is measured against the lightest pixel in
-   that band rather than chosen by eye. */
-.hero-cover .hc2-scrim { position: absolute; inset: 0; z-index: -1; background:
-  radial-gradient(90% 80% at 18% 88%, rgb(var(--scrim) / 0.86) 0%, rgb(var(--scrim) / 0.38) 55%, transparent 78%),
-  linear-gradient(180deg, rgb(var(--scrim) / 0.74) 0%, rgb(var(--scrim) / 0.52) 12%, rgb(var(--scrim) / 0.16) 26%, transparent 50%, rgb(var(--scrim) / 0.42) 82%, rgb(var(--scrim) / 0.60) 100%); }
-.cover-inner { flex: 1; display: flex; flex-direction: column; width: 100%; }
-.cover-copy { margin-top: auto; padding-block: 2rem clamp(2.8rem, 6vh, 4.2rem); max-width: 64rem; }
+/* `.hero-cover .hc2-scrim` was here — the two-gradient legibility scrim over
+   the hero photograph, whose stops were measured against this frame rather
+   than chosen by eye — together with `.cover-inner` and `.cover-copy`, the
+   flex column that anchored the headline to the bottom edge. All three are
+   gone: no built page emits any of them. NOTE for whoever restores the cover
+   markup — the scrim is not decoration, it is what put the nav and the
+   headline over 4.5:1 on a photograph the studio does not control, so it has
+   to be rebuilt with the markup and re-measured, not skipped. */
 .cover-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.028em; line-height: .96;
   font-size: clamp(2.4rem, 10.5vw, 6rem); color: var(--ink); max-width: 16ch; }
 .cover-title em { font-style: italic; color: var(--accent-word); }
@@ -1716,21 +1718,12 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 @media (max-width: 560px) { .cover-cta > .btn { width: 100%; } }
 
 
-/* Brand anatomy — the ledger cut the other way: by channel instead of by
-   service, so visitors see which visual lives where (shop / feed / ads /
-   everywhere) and how they add up to a brand. */
-.anatomy { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1rem, 2vw, 1.5rem); margin-top: clamp(2rem, 4vw, 3rem); }
-@media (max-width: 900px) { .anatomy { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .anatomy { grid-template-columns: 1fr; } }
-.anat-card { display: flex; flex-direction: column; border: 1px solid var(--line); overflow: hidden; background: var(--surface); transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease); }
-.anat-card:hover { border-color: var(--accent-line); transform: translateY(-3px); }
-.anat-media { aspect-ratio: 4/5; overflow: hidden; }
-.anat-media img { width: 100%; height: 100%; object-fit: cover; }
-.anat-body { padding: 1rem 1.1rem 1.3rem; }
-.anat-where { display: inline-flex; align-items: center; gap: .4rem; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-bright); }
-.anat-body h3 { font-family: var(--font-display); font-weight: 900; font-size: 1.4rem; letter-spacing: -0.02em; color: var(--ink); margin: .35rem 0 .5rem; }
-.anat-body p { font-size: .88rem; color: var(--ink-3); line-height: 1.5; }
-.anat-note { margin-top: clamp(1.4rem, 2.6vw, 2rem); max-width: 62ch; font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
+/* The brand-anatomy grid stood here — `.anatomy` with its two breakpoints and
+   .anat-card/-media/-body/-where/-note: the ledger cut by channel (shop / feed
+   / ads / everywhere) instead of by service. The whole family is gone. None of
+   its eight classes appears on any of the 84 built pages or in any component;
+   the FigAnatomy figure that survives draws its own scoped markup and shares
+   nothing with these names. */
 
 /* Service-page explainer — the SEO "where it fits" block: prose on the left,
    a "where it lives" channel list on the right. Shared by every service hub. */
@@ -1751,9 +1744,11 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .svc-body h3 { margin-bottom: .1rem; }
 .svc-price { display: block; font-family: var(--font-display); font-weight: 900; font-size: 1.05rem; color: var(--accent-bright); margin: .1rem 0 .5rem; letter-spacing: -0.01em; }
 
-/* Contact-sheet spread — asymmetric magazine grid with ruled captions. */
+/* Contact-sheet spread — asymmetric magazine grid with ruled captions.
+   `.sp-item` (the tile anchor), its two hover rules and `.sp-play` (the 58px
+   video badge) were part of this grid and are gone — neither class is on any
+   built page. */
 .spread { display: grid; grid-template-columns: repeat(12, 1fr); gap: clamp(1rem, 2vw, 1.5rem); margin-top: clamp(2rem, 4vw, 3rem); }
-.sp-item { display: block; }
 .sp-a { grid-column: 1 / 8; grid-row: span 2; }
 .sp-b, .sp-c { grid-column: 8 / 13; }
 .sp-d { grid-column: 1 / 13; }
@@ -1762,34 +1757,17 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .sp-b .sp-media, .sp-c .sp-media { aspect-ratio: 4/3; }
 .sp-d .sp-media { aspect-ratio: 21/9; }
 .sp-media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur-4) var(--ease); }
-.sp-item:hover .sp-media img { transform: scale(1.04); }
-.sp-play { position: absolute; inset: 0; margin: auto; width: 58px; height: 58px; display: grid; place-items: center;
-  background: rgb(var(--scrim) / 0.78); border: 1px solid rgb(255 255 255 / 0.45); }
-.sp-play svg { width: 20px; height: 20px; fill: var(--paper-on-dark); margin-left: 3px; }
 .sp-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
   margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--line-strong); }
 .sp-cap b { font-family: var(--font-display); font-weight: 900; font-size: .9rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink); }
 .sp-cap span { font-size: .8rem; color: var(--ink-3); white-space: nowrap; }
 @media (max-width: 900px) { .sp-a, .sp-b, .sp-c, .sp-d { grid-column: 1 / 13; grid-row: auto; } .sp-a .sp-media { aspect-ratio: 4/3; } }
 
-/* Task #268 — one line of "why this exists" under each spread tile, shown on
-   hover or keyboard focus. A dark scrim from the bottom edge only, not a
-   full-tile overlay, so the image stays the point and the copy reads as a
-   caption rather than a takeover. */
-.sp-reveal { position: absolute; inset: auto 0 0 0; padding: 1.1rem clamp(.9rem, 2vw, 1.3rem) .9rem;
-  background: linear-gradient(180deg, transparent, rgb(var(--scrim) / 0.82) 55%);
-  color: var(--paper-on-dark); font-size: .84rem; line-height: 1.45;
-  transform: translateY(100%); opacity: 0;
-  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease); }
-.sp-item:hover .sp-reveal, .sp-item:focus-visible .sp-reveal { transform: translateY(0); opacity: 1; }
+/* The task #268 hover caption (`.sp-reveal`, a bottom-edge scrim carrying one
+   line of "why this exists") was here and is gone with `.sp-item` above: no
+   built page emits either class. */
 @media (prefers-reduced-motion: reduce) {
   .sp-media img { transition: none; }
-  .sp-item:hover .sp-media img { transform: none; }
-  /* No bespoke transition here: the site-wide reduced-motion rule above
-     already clamps every transition-duration to .001ms. Only the starting
-     position needs to change, so the reveal fades in near-instantly on its
-     own token-based transition instead of sliding. */
-  .sp-reveal { transform: translateY(0); }
 }
 
 
@@ -1797,9 +1775,9 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .process { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1.6rem, 3vw, 2.6rem); margin-top: clamp(2rem, 4vw, 3rem); }
 @media (max-width: 900px) { .process { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 540px) { .process { grid-template-columns: 1fr; } }
-.pr-step { border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
-.pr-num { font-family: var(--font-display); font-weight: 900; font-size: clamp(2.6rem, 4.5vw, 3.6rem); line-height: 1;
-  color: transparent; -webkit-text-stroke: 1.5px var(--accent); }
+/* `.pr-step` (the ruled column) and `.pr-num` (the outline numeral) were here
+   and are gone — neither appears on any built page; only the title/body pair
+   below is still emitted. */
 .pr-t { font-family: var(--font-display); font-weight: 900; font-size: 1.02rem; letter-spacing: .05em; text-transform: uppercase; color: var(--ink); margin: .7rem 0 .35rem; }
 .pr-b { font-size: .92rem; color: var(--ink-3); line-height: 1.55; }
 
@@ -1818,12 +1796,13 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .ch-sub { margin: 1.1rem auto 0; max-width: 52ch; color: var(--ink-2); font-size: var(--t-lg); line-height: 1.6; }
 .ch-cta { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.9rem; }
 .ch-kicker { font-size: .76rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: 1rem; }
-/* .btn-glow kept as a hook so existing markup doesn't break, but the glow is
-   gone — a soft coloured halo is the SaaS signal this brand is escaping. */
-.btn-glow:hover { filter: brightness(1.05); }
+/* `.btn-glow:hover` was kept here "as a hook so existing markup doesn't break".
+   There is no such markup: the class is on zero of the 84 built pages and in no
+   component. A compatibility shim for a caller that does not exist is just a
+   rule, so it went. */
 
-/* Develop scene captions + desktop composition for the pinned scrub. */
-.dev-steps { display: grid; gap: .65rem; margin-top: 1.7rem; max-width: 40ch; }
+/* Develop scene captions + desktop composition for the pinned scrub.
+   `.dev-steps` (the grid wrapping these) is gone — no built page emits it. */
 .dev-step { display: flex; gap: .8rem; align-items: baseline; font-size: .92rem; color: var(--ink-2); }
 .dev-step .dn { font-family: var(--font-display); font-weight: 900; font-size: .78rem; color: var(--accent-bright); flex: 0 0 auto; letter-spacing: .04em; }
 @media (min-width: 900px) {
@@ -1837,24 +1816,14 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .vm-row { display: flex; gap: clamp(.8rem, 1.6vw, 1.2rem); width: max-content; will-change: transform; }
 .vm-row img { height: clamp(180px, 26vh, 300px); width: auto; border: 1px solid var(--line); display: block; }
 
-/* Lead magnet — the free briefing-photo checklist. Two-column band: pitch on
-   the left, a single-field email capture on the right. */
-.lead-magnet { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(1.8rem, 4vw, 3.5rem); align-items: center;
-  padding: clamp(1.8rem, 4vw, 3rem); border: 1px solid var(--accent-line);
-  background: var(--accent-soft); }
-.lm-kicker { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: .8rem; }
-.lm-copy h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); max-width: 18ch; }
-.lm-list { list-style: none; margin: 1.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-.lm-list li { position: relative; padding-left: 1.5rem; font-size: .95rem; color: var(--ink-2); }
-.lm-list li::before { content: ""; position: absolute; left: 0; top: .45em; width: 8px; height: 8px; background: var(--accent); }
-.lm-form { display: flex; flex-direction: column; }
-.lm-label { font-size: .9rem; font-weight: 600; color: var(--ink); margin-bottom: .6rem; }
-.lm-row { display: flex; gap: .6rem; flex-wrap: wrap; }
-.lm-row input { flex: 1 1 200px; padding: .8rem 1rem; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 1rem; }
-.lm-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.lm-row .btn { flex: 0 0 auto; }
-.lm-fine { margin-top: .8rem; font-size: .8rem; color: var(--ink-3); }
-@media (max-width: 760px) { .lead-magnet { grid-template-columns: 1fr; } .lm-row .btn { width: 100%; } }
+/* Lead magnet — the free briefing-photo checklist. The whole band is gone from
+   here: `.lead-magnet` plus .lm-kicker/-copy/-list/-form/-label/-row/-fine and
+   their 760px collapse. The markup was removed from the site and none of these
+   classes appears on any of the 84 built pages.
+   THE SERVER SIDE IS DEPLOYED AND UNTOUCHED: functions/api/order.js still
+   handles the `subscribe` action that this form posted to, and still writes to
+   the subscribers table. Only the CSS went — so if the form is restored, its
+   endpoint is already live and only this styling has to come back with it. */
 
 /* Order-form help line — a quiet "stuck? we'll help" reassurance that turns
    the WhatsApp line into a conversion safety net inside every order wizard. */
@@ -1929,8 +1898,9 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
     linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%); }
 }
 
-/* Glow title + comet (test-sample moment). */
-.glow-title { text-shadow: none; }
+/* Comet (test-sample moment). `.glow-title { text-shadow: none }` sat here and
+   is gone: it cancelled a glow that no longer exists anywhere in the system,
+   on a class no built page has carried since the drop rewrite. */
 .comet { width: min(340px, 60vw); margin: 0 auto .4rem; display: block; overflow: visible; }
 .comet path { fill: none; stroke: var(--line-strong); stroke-width: 2; stroke-linecap: butt; }
 .comet circle { fill: var(--ink); }

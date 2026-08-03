@@ -1,0 +1,198 @@
+---
+// VISUAILS — the look picker, step 1 of the lifestyle flow.
+//
+// WHY THIS EXISTS AT ALL
+// The catalog flow asks which ground the product sits on. A lifestyle carousel
+// has no ground: it is a styled scene, and the equivalent question — the one
+// the studio actually needs answered before it can start — is which world the
+// product goes into. That question was never asked. The single order form hid
+// the background picker for a lifestyle order and put nothing in its place, so
+// the look was something a client had to think to write in the free-text brief
+// or discover by email afterwards.
+//
+// The answers are src/data/styles.js, which is the same data /lifestyle and
+// /lifestyle/<slug> are built from. Four named house styles, plus the one the
+// data itself calls Custom — a world built around the product. Nothing about a
+// style is written here: the name, the line under it and the photograph all
+// come from the module, so a style renamed there is renamed on this form.
+//
+// WHAT THIS POSTS. `style` — the slug, which is also the URL of the page that
+// explains it. It is not in TOP_FIELDS, so it lands in details_json
+// (functions/api/order.js) beside the rest of the brief. No server change.
+import { styles as stylesEn } from '../../data/styles.js';
+import { styles as stylesNl } from '../../data/styles.nl.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+
+const data = lang === 'nl' ? stylesNl : stylesEn;
+
+const COPY = {
+  en: {
+    label: 'Which look?',
+    hint: 'Four house styles, or a world built for you. Nothing is locked in.',
+    see: 'See the whole style',
+    err: 'Pick a look before you continue.',
+  },
+  nl: {
+    label: 'Welke look?',
+    hint: 'Vier huisstijlen, of een wereld die we voor je bouwen. Niets ligt vast.',
+    see: 'Bekijk de hele stijl',
+    err: 'Kies eerst een look.',
+  },
+};
+const c = COPY[lang];
+
+// Rendered at roughly 400 CSS px on a desktop and full-column on a phone,
+// which is deliberate. The old step 1 drew 2,400px files into 84px boxes — a
+// 14× oversample, ~4 MB of photographs downloaded to be thrown away. The fix
+// then was the other half of the ratio: fewer, larger tiles, which took the
+// worst case to ~6× at 1× DPR. The rest of it is here now — the derivatives
+// that did not exist then do, and this step ships 960px files instead of
+// 2,400px ones.
+//
+// CARDS: the intrinsic size of the file this tile actually loads. Every entry
+// is a real `identify` reading, and it is the file's own size rather than the
+// tile's: the markup below used to declare 1200x900 for all five, which is
+// true of none of them (the sources run 928x1152 to 2400x1792). Nothing looked
+// wrong, because .look-shot pins `aspect-ratio: 4/3` in CSS and the CSS wins —
+// but that is the shape of the layout-shift bug this repo has already fixed
+// once, and it is not worth leaving armed.
+//
+// WHY THE MAP LIVES HERE AND NOT IN src/data/styles.js. That module is the
+// source for /lifestyle and /lifestyle/<slug>, which draw these same
+// photographs full-bleed and must keep loading the originals. A `cardPhoto`
+// swapped for a 960px file there would quietly downgrade both of those pages.
+// The derivative belongs to this 400px tile, so it is declared beside it.
+// 960px is 2× the widest box the tile is ever drawn in (567.6 CSS px, at the
+// last viewport width before the grid goes one-up) — see scripts/make-thumbs.mjs,
+// which generates these and argues the number.
+//
+// dunes-01 is on its original on purpose: at 928px it is already under the
+// 960px target, so a derivative would be a same-size re-encode of a q92 file.
+const CARDS = {
+  '/img/lifestyle-dunes-01.webp': { src: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
+  '/img/lifestyle-flash-02.webp': { src: '/img/lifestyle-flash-02-w960.webp', w: 960, h: 1719 },
+  '/img/lifestyle-glow-01.webp': { src: '/img/lifestyle-glow-01-w960.webp', w: 960, h: 1719 },
+  '/img/lifestyle-phone-made-11.webp': { src: '/img/lifestyle-phone-made-11-w960.webp', w: 960, h: 717 },
+  '/img/banners-13.webp': { src: '/img/banners-13-w960.webp', w: 960, h: 717 },
+};
+
+const looks = data.map((s) => {
+  const photo = s.cardPhoto || s.heroPhoto;
+  // Deliberately loud. A style whose card photo changes in styles.js and not
+  // here would otherwise render at a size taken from thin air, which is
+  // exactly the failure the table exists to prevent — the same reason
+  // Compare.astro throws on an unknown path rather than guessing one.
+  const card = CARDS[photo];
+  if (!card) throw new Error(`StylePicker: no card derivative on record for ${photo}. Add it to CARDS (and to scripts/make-thumbs.mjs if it needs generating).`);
+  return { slug: s.slug, name: s.name, tagline: s.tagline, card };
+});
+---
+
+<fieldset class="pl-fieldset pl-look">
+  <legend class="pl-sr">{c.label}</legend>
+  <h3 class="pl-sub-h" id="pl-look-h">{c.label}</h3>
+  <p class="hint pl-look-hint">{c.hint}</p>
+
+  <div class="look-grid" role="radiogroup" aria-labelledby="pl-look-h">
+    {looks.map((s, i) => (
+      <label class="look">
+        <img
+          class="look-shot"
+          src={s.card.src}
+          alt=""
+          width={s.card.w}
+          height={s.card.h}
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="look-row">
+          {/* data-pl-req is not decoration: syncRequired() in pipeline.js
+              rewrites .required from this attribute alone. One radio marked
+              required makes the whole native group required, which is why only
+              the first carries it — and nothing is preselected, because a look
+              chosen by default is a look nobody chose. */}
+          <input
+            type="radio"
+            name="style"
+            value={s.slug}
+            data-pl-style-name={s.name}
+            required={i === 0}
+            data-pl-req={i === 0 ? '1' : undefined}
+            data-pl-err-msg={i === 0 ? c.err : undefined}
+          />
+          <span class="look-name">{s.name}</span>
+        </span>
+        <span class="look-line">{s.tagline}</span>
+      </label>
+    ))}
+  </div>
+
+  <p class="pl-panel-note"><a href={lp('/lifestyle')}>{c.see}</a></p>
+</fieldset>
+
+<style>
+  [hidden] { display: none !important; }
+
+  .pl-sr {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .pl-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .pl-look { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
+  .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
+  .pl-look-hint { display: block; max-width: 66ch; margin-top: .35rem; }
+
+  /* Two up, so the photograph is big enough to be the answer. Four across at
+     this measure would be 200px each and we would be back to describing the
+     look in words beside a thumbnail of it. */
+  .look-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(.7rem, 1.4vw, 1rem);
+    margin-top: .9rem;
+  }
+  .look {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    padding: .6rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .look:hover { border-color: var(--accent-line); }
+  .look:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .look:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .look-shot {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+  }
+  .look-row { display: flex; align-items: center; gap: .5rem; }
+  .look-row input { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+  .look-name { font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
+  .look-line { font-size: .82rem; color: var(--ink-3); line-height: 1.45; }
+
+  .pl-panel-note { margin-top: .8rem; font-size: .86rem; color: var(--ink-3); }
+  .pl-panel-note :global(a),
+  .pl-panel-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* The radio pipeline.js marks when the step is submitted unanswered.
+     Scoped to this component, so the selector cannot reach for .pl-form —
+     Astro would append this component's hash to that too, and the form does
+     not carry it. */
+  .look:has([aria-invalid='true']) { border-color: var(--warn); }
+
+  @media (max-width: 640px) { .look-grid { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .look { transition: none; } }
+</style>
