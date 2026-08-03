@@ -36,7 +36,7 @@
 import {
   AMOUNT, euro, TEST_SAMPLE,
   BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim,
-  LADDER, ladderRate, quote, vatLabel, vatNote,
+  LADDER, ladderRate, ladderFloor, quote, vatLabel, vatNote,
   WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT, PLAN_PRODUCTS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -112,6 +112,9 @@ const EX_SMALL = 14;
 const EX_FULL = 30;
 const WORKED = [EX_ENTRY, EX_SMALL, EX_FULL];
 const Q_SMALL = quote('complete', EX_SMALL);
+// The bottom rung, for the hero anchor. Named rather than inlined because both
+// language tables read it, and a figure typed twice is a figure that drifts.
+const FLOOR_RATE_EN = ladderFloor('complete');
 const Q_SMALL_FIRST = quote('complete', EX_SMALL, { firstOrder: true });
 // ENTRY_RATE (ladderRate('complete', 1)) and FLOOR_RATE (ladderFloor('complete'))
 // were here and are gone with the prose they fed: "from €149 per product, down
@@ -165,7 +168,13 @@ const COPY = {
   en: {
     heroAlt: 'A VISUAILS campaign visual — a model in the dunes at dusk',
     h1: ['The brand', 'you envisioned,', 'visualized.'],
-    heroLede: 'One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style, priced per product, and the rate falls the more you run.',
+    // THE ANCHOR CARRIES A NUMBER NOW. It used to say "priced per product, and
+    // the rate falls" — true, and unfalsifiable, which is the shape of a claim
+    // rather than a price. With the table moved to section 5 this line is the
+    // only figure above the fold, and a visitor who came to find out what it
+    // costs should not have to scroll five bands to learn the studio is not an
+    // agency that quotes on request.
+    heroLede: `One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style. Priced per product, from ${euro(ladderRate('complete', 1), 'en')} down to ${euro(FLOOR_RATE_EN, 'en')} as the count rises.`,
     ctaStart: 'Start an order',
     ctaSample: `See it first — ${sample.price}`,
     facts: [
@@ -213,6 +222,17 @@ const COPY = {
     vatSummary: 'How VAT is handled',
     priceCta: 'Start an order',
     priceCta2: 'The full price list',
+
+    tsKicker: 'Before you commit to any of that',
+    tsH: ['See it on your own product', `for ${sample.price}.`],
+    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. Send one product photo and one comes back, run through the same pipeline as a paid order and checked by the same person.`,
+    tsPoints: [
+      ['One per business', 'Not a trial with a card on file. One sample, once, no account, nothing to cancel.'],
+      ['The real pipeline', 'Same production, same house style, same human check. What comes back is what you would get.'],
+      ['No obligation after', 'If it is not right, that is the end of it. We would rather you found out now than after an order.'],
+    ],
+    tsCta: 'Get your test sample',
+    tsAlt: 'Or start an order',
 
     // The rail's two arrow labels survive its deletion: the Brand Model band
     // further down renders the same .rail-nav buttons and reads these keys.
@@ -418,7 +438,7 @@ const COPY = {
   nl: {
     heroAlt: 'Een VISUAILS campagnebeeld — een model in de duinen bij schemering',
     h1: ['Het merk', 'dat je voor je zag,', 'in beeld.'],
-    heroLede: 'Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl, geprijsd per product, en het tarief zakt naarmate je er meer doet.',
+    heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Per product geprijsd, van ${euro(ladderRate('complete', 1), 'nl')} tot ${euro(FLOOR_RATE_EN, 'nl')} naarmate het aantal stijgt.`,
     ctaStart: 'Start een bestelling',
     ctaSample: `Zie het eerst — ${sample.price}`,
     facts: [
@@ -450,6 +470,17 @@ const COPY = {
     vatSummary: 'Hoe de btw werkt',
     priceCta: 'Start een bestelling',
     priceCta2: 'De volledige prijslijst',
+
+    tsKicker: 'Voordat je je aan iets vastlegt',
+    tsH: ['Zie het op je eigen product', `voor ${sample.price}.`],
+    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, op dat van jou. Stuur één productfoto en er komt er één terug, door dezelfde pipeline als een betaalde bestelling en door dezelfde persoon nagekeken.`,
+    tsPoints: [
+      ['Eén per bedrijf', 'Geen proefperiode met je pas op de plank. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
+      ['De echte pipeline', 'Zelfde productie, zelfde huisstijl, zelfde menselijke controle. Wat terugkomt is wat je zou krijgen.'],
+      ['Daarna geen verplichting', 'Klopt het niet, dan houdt het op. Wij ontdekken dat liever nu dan na een bestelling.'],
+    ],
+    tsCta: 'Vraag je proefvisual aan',
+    tsAlt: 'Of start een bestelling',
 
     // Zie de EN-tabel: deze twee blijven staan voor de merkmodel-rail verderop.
     railPrev: 'Vorige',
@@ -654,7 +685,42 @@ const FAQ_PICK = [
 ].filter(Boolean);
 ---
 
-{/* ── 1 · HERO ───────────────────────────────────────────────────────────────
+{/* ═══ SECTION ORDER — CHANGED 2 AUG 2026, AND HERE IS THE ARGUMENT ═══════════
+    The price table used to be section 2, directly under the hero. It is now 5,
+    and the before/after — which was 6 — is now 2. Lucas asked whether price
+    first was wise; it was not, for one reason specific to this page and two
+    general ones.
+
+    THE SPECIFIC ONE. The ladder prices a COMPLETE PRODUCT: four catalog images
+    plus three lifestyle. That unit is defined in the services band. A reader
+    who met the table first had no denominator, so €149 read as the price of one
+    photograph — the most expensive possible misreading, and entirely
+    self-inflicted. Services now comes first and the table is legible when it
+    arrives.
+
+    THE GENERAL ONES. Ten comparable studios and tools were read for their
+    section order (soona, Superside, Design Pickle, Photoroom, Botika, Pebblely,
+    Flair, ManyPixels, Picjam, DesignJoy). NOT ONE puts price at position 2 —
+    the most price-forward of them, DesignJoy, puts it at 10 of 14. And in eight
+    of the ten, position 3 is the proof slot: logos, cases, reviews. This studio
+    has none of those, so the before/after — a real client's phone photo beside
+    what was delivered — takes that slot. It is also what DESIGN.md's first
+    principle has always demanded: show the work before the claim.
+
+    WHAT WAS NOT DONE, deliberately. Price is not buried. NN/g's B2B research
+    finds price is business buyers' top information need and that its absence
+    sends them to competitors; HockeyStack measured across 31M visits that
+    transparent pricing halves form fills but nearly doubles the share that
+    become real pipeline. With this studio's traffic that trade is worth making.
+    So the hero carries a one-line anchor with a real figure, and the table
+    follows once the unit means something.
+
+    WHAT WOULD REVERSE THIS: evidence that most visitors are returning
+    comparison-shoppers who came to check price. Analytics on direct entries to
+    /pricing is where that would show.
+    ═══════════════════════════════════════════════════════════════════════════ */}
+
+{/* ── 1 · HERO ──────────────────────────────────────────────────────────
     Full-bleed, and the photograph is the only lit thing in the frame. On the
     espresso ground that is not a metaphor: everything above and below it is
     near-black, so the garment is the first colour a visitor sees. */}
@@ -686,7 +752,154 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 2 · THE PRICE, ONCE ────────────────────────────────────────────────────
+{/* ── 2 · BEFORE / AFTER — THE PROOF SLOT ───────────────────────────────
+    The single most persuasive asset the studio owns and it was sitting unused:
+    catalog-before.webp is a real client phone photo, catalog-after.webp is
+    what was delivered from it. Everything else on this page is output; this is
+    the only place a visitor sees the INPUT, which is the thing they are
+    actually being asked to believe ("a phone photo is enough").
+
+    Deliberately placed four bands below the drop tiles that also show
+    catalog-after — close enough to be the same story, far enough that the
+    photograph does not read as repeated.
+
+    Compare.astro rather than a hand-rolled slider: it is already on /catalog
+    and /gallery, it drifts on its own so the comparison is legible without
+    interaction, and it throws at build time on an image with no intrinsic
+    size on record. */}
+<section class="band well-deep">
+  <div class="container">
+    <div class="statement statement-left hv-ba-head">
+      <h2>{c.baH[0]} <em class="hv-accent">{c.baH[1]}</em></h2>
+      <p class="lede">{c.baLede}</p>
+    </div>
+    <div class="hv-ba">
+      <div class="hv-ba-media">
+        <Compare
+          before="/img/catalog-before.webp"
+          after="/img/catalog-after.webp"
+          beforeAlt={c.baBeforeAlt}
+          afterAlt={c.baAfterAlt}
+          beforeLabel={c.baBefore}
+          afterLabel={c.baAfter}
+          ratio="4/5"
+        />
+      </div>
+      <div class="hv-ba-copy">
+        <ol class="hv-ba-points">
+          {c.baPoints.map(([t, b]) => (
+            <li>
+              <h3>{t}</h3>
+              <p>{b}</p>
+            </li>
+          ))}
+        </ol>
+        <p class="hv-ba-note">
+          {c.baNote} <a href={lp('/upload-guidelines')}>{c.baNoteLink}</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ── 3 · THE SERVICES ──────────────────────────────────────────────────
+    WHAT WAS HERE BEFORE THIS BAND. A horizontal rail of six photographs headed
+    "Real output. Zero photoshoots." It showed the work, which is this brand's
+    first principle, but it was proof stacked on proof — and the one thing a
+    visitor could not find above the fold was the actual offer.
+
+    WHAT THIS BAND IS NOW. It was "Everything the studio makes, and what it
+    costs", and the second half of that promise has moved one band up. Every
+    price, every "from", every terms line and the plans tile are gone; the band
+    above prices all four services in one table, and a fifth tile selling a
+    PAYMENT SHAPE next to four tiles selling WORK was a category error anyway.
+
+    THE SERVICE CONTENT STAYS RATHER THAN FOLDING INTO THE PRICE BAND, and the
+    call is deliberate: what a catalog set, a lifestyle carousel, a clip and a
+    Brand Model actually are is the one thing on this subject a reader cannot
+    get from the table — a table can say €85 and cannot say "four images:
+    front, back, a fabric close-up and one worn on a model". Folding it in
+    would have rebuilt the 360-word band inside the price band under a new
+    name. Prices are a rate card and belong in a table; deliverables are a
+    photograph and a sentence and belong beside the photograph.
+
+    FOUR TILES, ONE WEIGHT. It was five at two weights, which said catalog and
+    lifestyle mattered more than a clip. They do, and the band above says so by
+    pricing them per product — this one is a shelf, and a shelf is even. */}
+<section class="band hv-svc-band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.svcH[0]} <em class="hv-accent">{c.svcH[1]}</em></h2>
+      <p class="lede">{c.svcLede}</p>
+    </div>
+    <div class="tiles hv-svc-tiles">
+      {c.svc.map(([name, line, get, href], i) => (
+        <a class="tile s-6 hv-svc-tile" href={lp(href)}>
+          <span class="tile-media hv-svc-media">
+            <img src={SERVICE_IMG[i].src} alt={`${name} — ${line}`} width={SERVICE_IMG[i].w} height={SERVICE_IMG[i].h} loading="lazy" decoding="async" />
+          </span>
+          <span class="tile-body hv-svc-body">
+            <span class="tile-h">{name}</span>
+            <span class="hv-svc-line">{line}</span>
+            {/* The inset plate is what you RECEIVE, kept visually separate from
+                what the service is — a reader comparing four services compares
+                this line and nothing else, so it may not read as more prose. */}
+            <span class="hv-svc-get">{get}</span>
+          </span>
+        </a>
+      ))}
+    </div>
+    <div class="hv-svc-foot">
+      <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
+    </div>
+  </div>
+</section>
+
+{/* ── 4 · WHO IT IS FOR ─────────────────────────────────────────────────
+    Placed directly after the proof rail, which is the first point on the page
+    where a visitor has seen enough to ask "but is this for me". Four
+    situations rather than four personas: a persona ("ambitious founder") is a
+    flattering description a reader agrees with and takes nothing from, a
+    situation is something they either recognise or do not.
+
+    The disqualification list under it is the part that does the work. It is
+    standard on strong productized-service pages and it is the cheapest
+    credibility a vendor with no testimonials can buy: naming who should not
+    buy is a claim only someone confident of the rest can afford to make. */}
+<section class="band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.whoH}</h2>
+      <p class="lede">{c.whoLede}</p>
+    </div>
+    <div class="tiles hv-who-tiles">
+      {c.who.map(([t, b], i) => (
+        <div class="tile s-3">
+          <div class="tile-body">
+            <span class={`hv-who-i ${['w-blue', 'w-violet', 'w-pink', 'w-coral'][i] || ''}`}>{String(i + 1).padStart(2, '0')}</span>
+            <p class="tile-h">{t}</p>
+            <p class="tile-n">{b}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+    {/* THE DISQUALIFICATION LIST IS A DISCLOSURE NOW, not a deletion. Naming
+        who should not buy is the cheapest credibility a vendor with no
+        testimonials can buy, and that claim is made by the SUMMARY — it is in
+        plain sight, under four tiles saying who this is for, and a reader who
+        suspects they are the exception opens it. The four cases underneath are
+        four negative sentences that only one reader in several needs, which is
+        what <details> is for and what /faq and /start already use it for.
+        Keep the summary visible if this is ever rebuilt: the admission is the
+        argument, the four cases are only the evidence for it. */}
+    <details class="hv-notfor">
+      <summary class="hv-notfor-h">{c.notForH}</summary>
+      <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
+    </details>
+  </div>
+</section>
+
+{/* ── 5 · THE PRICE, ONCE ───────────────────────────────────────────────
     FOUR BANDS WENT INTO THIS ONE. The page explained what it costs in four
     places that were not next to each other, and a reader who wanted the number
     had to assemble it from all four:
@@ -800,104 +1013,42 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 3 · THE SERVICES ───────────────────────────────────────────────────────
-    WHAT WAS HERE BEFORE THIS BAND. A horizontal rail of six photographs headed
-    "Real output. Zero photoshoots." It showed the work, which is this brand's
-    first principle, but it was proof stacked on proof — and the one thing a
-    visitor could not find above the fold was the actual offer.
+{/* ── 6 · THE TEST SAMPLE ─────────────────────────────────────────────────
+    NEW, and it belongs exactly here. The €0.99 sample existed only as a button
+    hung off other sections' CTAs — it had no section of its own on the page,
+    which for a studio with no reviews and no client logos was the wrong thing
+    to leave implicit: it is the one offer that lets a buyer produce their OWN
+    proof, and their own is worth more than anybody else's.
 
-    WHAT THIS BAND IS NOW. It was "Everything the studio makes, and what it
-    costs", and the second half of that promise has moved one band up. Every
-    price, every "from", every terms line and the plans tile are gone; the band
-    above prices all four services in one table, and a fifth tile selling a
-    PAYMENT SHAPE next to four tiles selling WORK was a category error anyway.
-
-    THE SERVICE CONTENT STAYS RATHER THAN FOLDING INTO THE PRICE BAND, and the
-    call is deliberate: what a catalog set, a lifestyle carousel, a clip and a
-    Brand Model actually are is the one thing on this subject a reader cannot
-    get from the table — a table can say €85 and cannot say "four images:
-    front, back, a fabric close-up and one worn on a model". Folding it in
-    would have rebuilt the 360-word band inside the price band under a new
-    name. Prices are a rate card and belong in a table; deliverables are a
-    photograph and a sentence and belong beside the photograph.
-
-    FOUR TILES, ONE WEIGHT. It was five at two weights, which said catalog and
-    lifestyle mattered more than a clip. They do, and the band above says so by
-    pricing them per product — this one is a shelf, and a shelf is even. */}
-<section class="band hv-svc-band">
+    Directly after the price table on purpose. The moment a reader has just
+    absorbed a figure is the moment "see it on your own product first" is worth
+    most — it answers the question the number just raised instead of arguing
+    with it. */}
+<section class="band-tight hv-ts-band">
   <div class="container">
-    <div class="statement">
-      <h2>{c.svcH[0]} <em class="hv-accent">{c.svcH[1]}</em></h2>
-      <p class="lede">{c.svcLede}</p>
-    </div>
-    <div class="tiles hv-svc-tiles">
-      {c.svc.map(([name, line, get, href], i) => (
-        <a class="tile s-6 hv-svc-tile" href={lp(href)}>
-          <span class="tile-media hv-svc-media">
-            <img src={SERVICE_IMG[i].src} alt={`${name} — ${line}`} width={SERVICE_IMG[i].w} height={SERVICE_IMG[i].h} loading="lazy" decoding="async" />
-          </span>
-          <span class="tile-body hv-svc-body">
-            <span class="tile-h">{name}</span>
-            <span class="hv-svc-line">{line}</span>
-            {/* The inset plate is what you RECEIVE, kept visually separate from
-                what the service is — a reader comparing four services compares
-                this line and nothing else, so it may not read as more prose. */}
-            <span class="hv-svc-get">{get}</span>
-          </span>
-        </a>
-      ))}
-    </div>
-    <div class="hv-svc-foot">
-      <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
-    </div>
-  </div>
-</section>
-
-{/* ── 3b · WHO IT IS FOR ─────────────────────────────────────────────────────
-    Placed directly after the proof rail, which is the first point on the page
-    where a visitor has seen enough to ask "but is this for me". Four
-    situations rather than four personas: a persona ("ambitious founder") is a
-    flattering description a reader agrees with and takes nothing from, a
-    situation is something they either recognise or do not.
-
-    The disqualification list under it is the part that does the work. It is
-    standard on strong productized-service pages and it is the cheapest
-    credibility a vendor with no testimonials can buy: naming who should not
-    buy is a claim only someone confident of the rest can afford to make. */}
-<section class="band">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.whoH}</h2>
-      <p class="lede">{c.whoLede}</p>
-    </div>
-    <div class="tiles hv-who-tiles">
-      {c.who.map(([t, b], i) => (
-        <div class="tile s-3">
-          <div class="tile-body">
-            <span class={`hv-who-i ${['w-blue', 'w-violet', 'w-pink', 'w-coral'][i] || ''}`}>{String(i + 1).padStart(2, '0')}</span>
-            <p class="tile-h">{t}</p>
-            <p class="tile-n">{b}</p>
-          </div>
+    <div class="hv-ts">
+      <div class="hv-ts-copy">
+        <p class="hv-kicker">{c.tsKicker}</p>
+        <h2 class="hv-ts-h">{c.tsH[0]} <em class="hv-accent">{c.tsH[1]}</em></h2>
+        <p class="lede">{c.tsLede}</p>
+        <div class="hv-cta hv-ts-cta">
+          <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.tsCta}</a>
+          <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.tsAlt}</a>
         </div>
-      ))}
+      </div>
+      <dl class="hv-ts-points">
+        {c.tsPoints.map(([t, b]) => (
+          <div>
+            <dt>{t}</dt>
+            <dd>{b}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
-    {/* THE DISQUALIFICATION LIST IS A DISCLOSURE NOW, not a deletion. Naming
-        who should not buy is the cheapest credibility a vendor with no
-        testimonials can buy, and that claim is made by the SUMMARY — it is in
-        plain sight, under four tiles saying who this is for, and a reader who
-        suspects they are the exception opens it. The four cases underneath are
-        four negative sentences that only one reader in several needs, which is
-        what <details> is for and what /faq and /start already use it for.
-        Keep the summary visible if this is ever rebuilt: the admission is the
-        argument, the four cases are only the evidence for it. */}
-    <details class="hv-notfor">
-      <summary class="hv-notfor-h">{c.notForH}</summary>
-      <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
-    </details>
   </div>
 </section>
 
-{/* ── 4 · THE PIPELINE ───────────────────────────────────────────────────────
+{/* ── 6 · THE PIPELINE ──────────────────────────────────────────────────
     A real ordered sequence, so it is the one place on the page numbers are
     allowed — see DESIGN.md on why 01/02/03 above every section is scaffolding
     and above an actual sequence is not. */}
@@ -919,57 +1070,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 4b · BEFORE / AFTER ────────────────────────────────────────────────────
-    The single most persuasive asset the studio owns and it was sitting unused:
-    catalog-before.webp is a real client phone photo, catalog-after.webp is
-    what was delivered from it. Everything else on this page is output; this is
-    the only place a visitor sees the INPUT, which is the thing they are
-    actually being asked to believe ("a phone photo is enough").
-
-    Deliberately placed four bands below the drop tiles that also show
-    catalog-after — close enough to be the same story, far enough that the
-    photograph does not read as repeated.
-
-    Compare.astro rather than a hand-rolled slider: it is already on /catalog
-    and /gallery, it drifts on its own so the comparison is legible without
-    interaction, and it throws at build time on an image with no intrinsic
-    size on record. */}
-<section class="band well-deep">
-  <div class="container">
-    <div class="statement statement-left hv-ba-head">
-      <h2>{c.baH[0]} <em class="hv-accent">{c.baH[1]}</em></h2>
-      <p class="lede">{c.baLede}</p>
-    </div>
-    <div class="hv-ba">
-      <div class="hv-ba-media">
-        <Compare
-          before="/img/catalog-before.webp"
-          after="/img/catalog-after.webp"
-          beforeAlt={c.baBeforeAlt}
-          afterAlt={c.baAfterAlt}
-          beforeLabel={c.baBefore}
-          afterLabel={c.baAfter}
-          ratio="4/5"
-        />
-      </div>
-      <div class="hv-ba-copy">
-        <ol class="hv-ba-points">
-          {c.baPoints.map(([t, b]) => (
-            <li>
-              <h3>{t}</h3>
-              <p>{b}</p>
-            </li>
-          ))}
-        </ol>
-        <p class="hv-ba-note">
-          {c.baNote} <a href={lp('/upload-guidelines')}>{c.baNoteLink}</a>
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
-
-{/* ── 4c · THE DREAM ─────────────────────────────────────────────────────────
+{/* ── 7 · THE DREAM ─────────────────────────────────────────────────────
     Lucas asked for this one by name: the page explains the mechanism well and
     never once says what the mechanism is FOR. Full-bleed photograph, one
     sentence, no tiles and no figures — the only band on the page with nothing
@@ -990,7 +1091,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 4d · THE WEEK YOU GET BACK ─────────────────────────────────────────────
+{/* ── 8 · THE WEEK YOU GET BACK ─────────────────────────────────────────
     The second thing Lucas asked for: time, expressed as time rather than as
     money. It used to be the first half of a pair — the band under it argued the
     same case in euros, because a shoot costs a day AND a fee and only one of
@@ -1030,7 +1131,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 5 · WHAT AN ORDER REPLACES — DELETED, and this note is what it left ────
+{/* ── 9 · WHAT AN ORDER REPLACES — DELETED, and this note is what it left ───
     The band was a shoot day's cost (SHOOT_DAY, itemised) beside a 30-product
     order's total, with a link to /compare underneath. 121 words, and every one
     of them is on a page that argues it better: /compare is the whole
@@ -1049,7 +1150,7 @@ const FAQ_PICK = [
     visual went with it. If a band ever needs distinguishing again, that note
     says the answer is a tile, a rule or space, not a second ground. */}
 
-{/* ── 6 · WHERE THE VISUALS LAND ─────────────────────────────────────────────
+{/* ── 10 · WHERE THE VISUALS LAND ───────────────────────────────────────
     This used to sit directly under a "four deliverables" band, which named the
     same four services the services band at section 3 now names. That band is
     gone — see the note at section 3 for why one of the two had to be — and
@@ -1085,7 +1186,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 6c · THE ROSTER AND YOUR BRAND MODEL ───────────────────────────────────
+{/* ── 11 · THE ROSTER AND YOUR BRAND MODEL ──────────────────────────────
     Your Brand Model is the most expensive single line the studio sells and,
     until this band, the homepage sold it with a price in the corner of a tile.
     Faces are the one thing that cannot be argued in prose, so the rail is the
@@ -1125,7 +1226,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 7 · THE DASHBOARD ──────────────────────────────────────────────────────
+{/* ── 12 · THE DASHBOARD ────────────────────────────────────────────────
     New, and the reason this band exists at all: a drop is bought partly on the
     strength of what happens after it is ordered, and nothing on the site said
     what that was. Two screens, one of them the client's.
@@ -1179,7 +1280,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 7b · "OR PUT IT ON A MONTHLY PLAN" — DELETED ───────────────────────────
+{/* ── 13 · "OR PUT IT ON A MONTHLY PLAN" — DELETED ──────────────────────
     A full plan grid read from plans(): three tiles, each with a price, a unit,
     a VAT label, a line of copy, five or six inclusions and a saving sentence.
     278 words and three of the page's fourteen VAT labels, eleven bands away
@@ -1196,7 +1297,7 @@ const FAQ_PICK = [
     The plans() import went with it. If a plan grid is ever wanted back here,
     import plans() again — do NOT type the figures. */}
 
-{/* ── 7c · PLANNING BACKWARDS ────────────────────────────────────────────────
+{/* ── 14 · PLANNING BACKWARDS ───────────────────────────────────────────
     The urgency band, and the only honest version of one available here: the
     scarcity is real (one person, a capacity gate that already refuses weeks)
     and it is stated as capacity rather than as a countdown. No "3 spots left"
@@ -1228,7 +1329,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 8 · "WHAT THE NUMBERS ACTUALLY ARE" — DELETED ──────────────────────────
+{/* ── 15 · "WHAT THE NUMBERS ACTUALLY ARE" — DELETED ────────────────────
     Four coloured figures, and three of them were already on the page:
 
       · the floor rate — now the bottom row of the ladder table at section 2,
@@ -1247,7 +1348,7 @@ const FAQ_PICK = [
     not a recap. Nothing here was lost; do not restore it as a fifth pricing
     surface. */}
 
-{/* ── 8b · THE OBJECTIONS ────────────────────────────────────────────────────
+{/* ── 16 · THE OBJECTIONS ───────────────────────────────────────────────
     Four risk questions, answered where the risk is felt rather than two clicks
     away on /faq. The wording is lifted from the answers already in
     src/data/faq.js rather than rewritten, so the homepage cannot end up
@@ -1274,7 +1375,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 8c · FAQ ───────────────────────────────────────────────────────────────
+{/* ── 17 · FAQ ──────────────────────────────────────────────────────────
     Native <details>/<summary>, so it opens with JavaScript off and is
     keyboard-operable without a line of script. Five questions read from
     faq.js — the same objects /faq renders and src/data/schema.js turns into
@@ -1306,7 +1407,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 9 · THE PROMISE ────────────────────────────────────────────────────────
+{/* ── 18 · THE PROMISE ──────────────────────────────────────────────────
     Lit by the WebGL chrome field. .hero-fallback carries the same scene when
     the shader never initialises, which is what makes the material removable
     rather than load-bearing. */}
@@ -1333,7 +1434,7 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 10 · CLOSING ─────────────────────────────────────────────────────────── */}
+{/* ── 19 · CLOSING ─────────────────────── */}
 <section class="band-tall hv-close panel-grad">
   <div class="container closing">
     <div>
@@ -1725,6 +1826,17 @@ const FAQ_PICK = [
   @media (prefers-reduced-motion: reduce) {
     .hv-faq-item summary svg { transition: none; }
   }
+
+  /* ── the test sample ───────────────────────────────────────────────────── */
+  .hv-ts { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(1.8rem, 4vw, 3.6rem); align-items: center; }
+  .hv-ts-h { margin: .9rem 0 0; font-size: var(--t-h2); line-height: 1.04; letter-spacing: -0.035em; color: var(--ink); text-wrap: balance; }
+  .hv-ts-copy .lede { margin-top: clamp(1rem, 2vw, 1.5rem); max-width: 52ch; }
+  .hv-ts-cta { margin-top: clamp(1.4rem, 2.6vw, 2rem); }
+  .hv-ts-points { margin: 0; display: grid; gap: 0; background: var(--line); border-radius: var(--r-md); overflow: hidden; }
+  .hv-ts-points > div { background: var(--surface); padding: clamp(1rem, 2vw, 1.4rem); }
+  .hv-ts-points dt { margin: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
+  .hv-ts-points dd { margin: .35rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
+  @media (max-width: 900px) { .hv-ts { grid-template-columns: 1fr; } }
 
   /* ── closing ───────────────────────────────────────────────────────────── */
   /* The closing panel is the page's one gradient ground — see .panel-grad in
