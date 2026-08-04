@@ -407,11 +407,26 @@ const COPY = {
     promiseSign: 'founder, VISUAILS',
     // The test sample was the first check as well as the last line of the
     // quote directly above it — the same offer twice inside one panel. The
-    // three checks are three different promises now.
+    // checks are different promises now.
+    //
+    // TWO, not three. "The first three brands, free — a first order of up to 14
+    // products at no charge" came out in August 2026 at Lucas's direction, and
+    // it had to go for a reason worth recording: THE PAGE CONTRADICTED ITSELF.
+    // Two bands above, firstBody offers the real thing — 20% off a first order,
+    // read from FIRST_ORDER_DISCOUNT — and /pricing, /faq and the order form all
+    // say the same. The free-order claim appeared nowhere else on the site and
+    // was the only surface making it. Two customers reading the same page could
+    // each have arrived expecting a different deal, and only one of them could
+    // have been right.
+    //
+    // Deliberately NOT replaced with a third promise. The obvious candidate is
+    // the 20% discount, and putting it here would repeat what firstBody already
+    // says — which is exactly the "same offer twice inside one panel" mistake
+    // the note above this one exists to prevent. Two true promises beat three
+    // where one is an echo.
     promiseChecks: [
       ['We ask before we call it done', 'every order ends with the same question: are these right? If not, we go through it with you.'],
       ['You own what you get', 'commercial use across your shop, marketplaces, ads and feeds. No licence per use.'],
-      ['The first three brands, free', `a first order of up to ${EX_SMALL} products at no charge, in exchange for a published case study.`],
     ],
     trust: ['Made in Enschede, NL', 'KVK-registered business', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
 
@@ -643,7 +658,6 @@ const COPY = {
     promiseChecks: [
       ['We vragen het voordat we het af noemen', 'elke bestelling eindigt met dezelfde vraag: kloppen ze? Zo niet, dan gaan we het samen na.'],
       ['De beelden zijn van jou', 'commercieel te gebruiken in je shop, op marktplaatsen, in advertenties en feeds. Geen licentie per gebruik.'],
-      ['De eerste drie merken, gratis', `een eerste bestelling van maximaal ${EX_SMALL} producten kosteloos, in ruil voor een gepubliceerde case.`],
     ],
     trust: ['Gemaakt in Enschede, NL', 'KVK-geregistreerd bedrijf', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
 

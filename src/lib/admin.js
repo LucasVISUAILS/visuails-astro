@@ -95,12 +95,26 @@ export async function adminGet(context) {
   const fileMatch = path.match(/^\/admin\/files\/(\d+)$/);
   if (fileMatch) return serveAdminFile(context, Number(fileMatch[1]));
 
+  const modelImgMatch = path.match(/^\/admin\/models\/(\d+)\/image$/);
+  if (modelImgMatch) return serveModelPreview(context, Number(modelImgMatch[1]));
+
   if (path === '/admin') {
-    const [revisions, orders, counts] = await Promise.all([
-      loadRevisionInbox(env), loadOrders(env), loadTodayCounts(env),
+    // ?status= narrows the order list — Lucas, August 2026: "als je op received
+    // bijvoorbeeld klikt je alle orders ziet staan gesorteerd op received."
+    // Checked against STATUSES rather than passed through: an unknown value
+    // becomes no filter, because a dashboard showing nothing is the one failure
+    // mode that reads as "there is no work" when there is.
+    const wanted = url.searchParams.get('status') || '';
+    const statusFilter = STATUSES.includes(wanted) ? wanted : '';
+
+    const [revisions, orders, counts, statusCounts] = await Promise.all([
+      loadRevisionInbox(env), loadOrders(env, statusFilter), loadTodayCounts(env), loadStatusCounts(env),
     ]);
     const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
-    return html(page({ title: 'Dashboard', body: dashboardBody(revisions, orders, modelsByCustomer, counts) }));
+    return html(page({
+      title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter),
+    }));
   }
 
   return html(page({ title: 'Not found', body: errorBody('Not found.') }), 404);
@@ -277,7 +291,13 @@ async function handleStatusUpdate(context, orderId) {
     });
   }
 
-  return seeOther('/admin');
+  // Back to the list this update was made from, filter and all. `back` came off
+  // the form, so it is re-checked against STATUSES here rather than pasted into
+  // a Location header — the same rule the filter itself follows on the way in.
+  // Anything else redirects to the plain dashboard, which is where a form with
+  // no `back` was always going.
+  const back = String(form?.get('back') || '');
+  return seeOther(STATUSES.includes(back) ? `/admin?status=${encodeURIComponent(back)}` : '/admin');
 }
 
 
@@ -478,9 +498,47 @@ async function sendDeliveryMail(context, orderId) {
     try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; }
   })();
 
+  // ── REVOKE, THEN MINT. THIS ORDER CAN ONLY HAVE ONE LIVE TOKEN ─────────────
+  //
+  // This used to be a bare INSERT, and it meant the delivery mail NEVER WENT
+  // OUT — not once, for any order. schema.sql:275 declares
+  //
+  //   CREATE UNIQUE INDEX idx_order_tokens_live
+  //     ON order_tokens(order_id) WHERE revoked_at IS NULL
+  //
+  // and functions/api/order.js:379 already inserted a live token for this order
+  // the moment it was placed. So the second insert hit "UNIQUE constraint
+  // failed: order_tokens.order_id" and threw. handleStatusUpdate calls this
+  // inside .catch(console.error) — deliberately, so a mail failure cannot turn
+  // a successful status change into an error page — which meant the throw was
+  // swallowed, delivered_at was already written, the dashboard showed success,
+  // and the customer was simply never told their images were ready. Reproduced
+  // against SQLite before this was changed.
+  //
+  // The fix is the one the schema was clearly built for: `revoked_at` exists,
+  // portal.js:306 already renders a "this link has been replaced" page for a
+  // token that has it, and nothing in the codebase had ever written it — a
+  // column and a page waiting for the call that is now here.
+  //
+  // ONE batch, so the revoke and the insert cannot land apart. If they did, the
+  // order would be left with either two live tokens (impossible — the index
+  // refuses it) or none at all, and none means the customer's confirmation link
+  // dies without a replacement being mailed.
+  //
+  // WHAT THE CUSTOMER SEES. The link in their confirmation email stops working
+  // and the new one, in the mail below, takes over. That is a real cost — the
+  // confirmation mail invites them to forward it to a colleague — and it is the
+  // trade the one-live-token rule already chose. The replacement page names the
+  // situation rather than 404ing, and the delivery mail goes to the same address
+  // moments later.
   const token = mintToken();
-  await env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
-    .bind(orderId, await hashToken(token)).run();
+  await env.DB.batch([
+    env.DB.prepare(
+      "UPDATE order_tokens SET revoked_at = datetime('now') WHERE order_id = ?1 AND revoked_at IS NULL"
+    ).bind(orderId),
+    env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
+      .bind(orderId, await hashToken(token)),
+  ]);
   const link = portalUrl(token, origin);
 
   const nl = order.lang === 'nl';
@@ -580,6 +638,13 @@ async function loadCustomers(env) {
     `SELECT c.id, c.email, c.brand, c.name, c.created_at,
             (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS orders,
             (SELECT COALESCE(SUM(o.total_cents),0) FROM orders o
+              -- orders.total_cents holds the NET figure (functions/api/order.js
+              -- binds quote.netCents), while Mollie collects the gross. The
+              -- column header says "excl. VAT" for that reason: a column headed
+              -- "Paid" showing a number 21% below what actually arrived in the
+              -- account is a revenue figure that quietly disagrees with the
+              -- bank. Summing net and labelling it net is the honest pair —
+              -- deriving a gross here would hardcode a rate that quote.js owns.
               WHERE o.customer_id = c.id AND o.payment_status = 'paid') AS paid_cents,
             (SELECT MAX(o.created_at) FROM orders o WHERE o.customer_id = c.id) AS last_order
        FROM customers c
@@ -597,7 +662,7 @@ async function renderCustomers(context) {
   <h1>Customers</h1>
   <p class="lede">${rows.length} brand${rows.length === 1 ? '' : 's'}</p>
   ${rows.length ? `<table class="files">
-    <thead><tr><th>Brand</th><th>Email</th><th class="num">Orders</th><th class="num">Paid</th><th>Last order</th></tr></thead>
+    <thead><tr><th>Brand</th><th>Email</th><th class="num">Orders</th><th class="num">Paid excl. VAT</th><th>Last order</th></tr></thead>
     <tbody>${rows.map((r) => `<tr>
       <td><a href="/admin/customers/${r.id}">${esc(r.brand || r.name || '—')}</a></td>
       <td>${esc(r.email)}</td>
@@ -660,13 +725,39 @@ async function renderCustomer(context, customerId) {
         : m.status === 'in_design'
           ? 'Still in design — the customer cannot pick it.'
           : 'Live: the customer sees this as a tile when they order.';
-      return `<div class="card">
+      return `<div class="card modelcard">
         <div class="row-head"><span class="ref">${esc(m.label)}</span><span class="pill${live ? ' is-delivered' : ''}">${esc(m.status)}</span></div>
-        <p class="meta">${esc(missing)}</p>
-        <form class="controls" method="post" action="/admin/models/${m.id}/preview" enctype="multipart/form-data">
-          <input type="file" name="preview" accept="image/*" required />
-          <button class="btn btn-ghost" type="submit">${m.preview_key ? 'Replace picture' : 'Add picture'}</button>
-        </form>
+        <div class="modelcard-body">
+          <!-- THE PICTURE ITSELF, not just the fact that a key exists. Before
+               this the studio uploaded a file and got back a sentence saying a
+               file was there — no way to see WHICH file, whether it was the
+               right crop, or whether it was the right person. The customer saw
+               the face and the studio did not. /admin/models/:id/image is that
+               view, admin-authenticated, reading the key off the row exactly
+               like every other file route here. -->
+          ${m.preview_key
+            ? `<img class="modelcard-img" src="/admin/models/${m.id}/image" alt="${esc(m.label)}" width="300" height="400" loading="lazy" decoding="async">`
+            : '<span class="modelcard-img is-blank">no picture</span>'}
+          <div class="modelcard-side">
+            <p class="meta">${esc(missing)}</p>
+            <form class="stack" method="post" action="/admin/models/${m.id}/preview" enctype="multipart/form-data">
+              <input type="file" name="preview" accept="image/*" required />
+              <!-- ONE ACTION, NOT TWO. Uploading the picture and making the
+                   model orderable used to be separate forms with an undeclared
+                   dependency between them: a face could sit in the customer's
+                   account invisible for days because the status was still
+                   'in_design' and nothing said so at the moment of upload. It
+                   ships checked because uploading the photograph IS the moment
+                   the model becomes real; unticking it is how you stage one
+                   that is not ready to be seen. -->
+              <label class="checkline">
+                <input type="checkbox" name="publish" value="1" checked>
+                <span>Show it in the customer's account straight away${m.status === 'in_design' ? '' : ' (already visible)'}</span>
+              </label>
+              <button class="btn btn-ghost" type="submit">${m.preview_key ? 'Replace picture' : 'Add picture'}</button>
+            </form>
+          </div>
+        </div>
         <form class="controls" method="post" action="/admin/models/${m.id}/status">
           <select name="status">${MODEL_STATUSES.map((st) =>
             `<option value="${st}"${st === m.status ? ' selected' : ''}>${st}</option>`).join('')}</select>
@@ -800,12 +891,16 @@ async function handleModelStatus({ request, env }, modelId) {
   return seeOther(`/admin/customers/${model.customer_id}`);
 }
 
+/** Images only, and a ceiling. See handleModelPreview() for why both. */
+const PREVIEW_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+const PREVIEW_MAX_BYTES = 12 * 1024 * 1024;
+
 async function handleModelPreview({ request, env }, modelId) {
   if (!Number.isInteger(modelId)) {
     return html(page({ title: 'Admin', body: errorBody('Bad model id.') }), 400);
   }
   const model = await env.DB.prepare(
-    'SELECT id, customer_id FROM custom_models WHERE id = ?1'
+    'SELECT id, customer_id, status FROM custom_models WHERE id = ?1'
   ).bind(modelId).first();
   if (!model) return html(page({ title: 'Admin', body: errorBody('No such model.') }), 404);
   if (!env.UPLOADS) return html(page({ title: 'Admin', body: errorBody('No R2 binding.') }), 503);
@@ -816,15 +911,101 @@ async function handleModelPreview({ request, env }, modelId) {
     return seeOther(`/admin/customers/${model.customer_id}`);
   }
 
+  // ── WHAT IS ALLOWED THROUGH, AND WHY IT IS CHECKED HERE ────────────────────
+  //
+  // `accept="image/*"` on the input is a file-picker filter and nothing more —
+  // it is trivially bypassed and it is not a check. This IS the check, and it
+  // matters more than usual because of where the bytes end up: on a tile in a
+  // paying customer's own account. A PDF stored here renders as a broken image
+  // in the brand kit, and addBrandModels() in pipeline.js REMOVES a tile whose
+  // picture fails to load — so a bad upload becomes a face that silently is not
+  // offered, which is precisely the class of bug this whole page exists to make
+  // visible. An explicit list rather than a `startsWith('image/')`: image/svg+xml
+  // is an image by that test and a script container in practice.
+  const type = String(file.type || '').toLowerCase();
+  if (!PREVIEW_TYPES.includes(type)) {
+    return html(page({
+      title: 'Admin',
+      body: errorBody(
+        `"${esc(String(file.name || 'that file'))}" is ${esc(type || 'of an unknown type')}. `
+        + 'A brand model preview has to be a JPEG, PNG, WebP or AVIF — it is shown to the customer as a photograph.'
+      ),
+    }), 415);
+  }
+  if (file.size > PREVIEW_MAX_BYTES) {
+    return html(page({
+      title: 'Admin',
+      body: errorBody(
+        `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The preview is drawn at about 400px wide in `
+        + 'the customer\'s brand kit, so anything over 12 MB is bytes they wait for and never see.'
+      ),
+    }), 413);
+  }
+
   const clean = String(file.name || 'preview').split(/[\\/]/).pop().slice(0, 100) || 'preview';
   const key = `models/${model.customer_id}/${modelId}-${clean}`;
   await env.UPLOADS.put(key, file.stream(), {
-    httpMetadata: { contentType: file.type || 'application/octet-stream' },
+    httpMetadata: { contentType: type },
   });
-  await env.DB.prepare('UPDATE custom_models SET preview_key = ?1 WHERE id = ?2')
-    .bind(key, modelId).run();
+
+  // ── THE PICTURE AND THE PERMISSION, IN ONE WRITE ───────────────────────────
+  //
+  // A model is offered to the customer only when it has a preview AND its status
+  // is past 'in_design' — /account/me applies both, and so does the brand kit's
+  // own picker. Those were two forms on this page with an undeclared dependency
+  // between them, which is a face uploaded on Monday and invisible until someone
+  // remembers the dropdown on Thursday. The checkbox ships checked, so the
+  // ordinary path is one action; unticking it stages a picture that is not ready
+  // to be seen.
+  //
+  // Only ever 'in_design' -> 'approved'. A model already at 'locked' is left
+  // where it is: locked is further along, and quietly walking it backwards
+  // because someone replaced a photograph would be this handler deciding
+  // something it was not asked to decide.
+  const publish = form.get('publish') === '1';
+  if (publish && model.status === 'in_design') {
+    await env.DB.batch([
+      env.DB.prepare('UPDATE custom_models SET preview_key = ?1, status = ?2 WHERE id = ?3')
+        .bind(key, 'approved', modelId),
+    ]);
+  } else {
+    await env.DB.prepare('UPDATE custom_models SET preview_key = ?1 WHERE id = ?2')
+      .bind(key, modelId).run();
+  }
 
   return seeOther(`/admin/customers/${model.customer_id}`);
+}
+
+/**
+ * The brand model preview, served back to the studio.
+ *
+ * The customer has had this route since August 2026 (account.js's
+ * handleModelPreviewImage) and the studio did not, which is backwards: the
+ * people uploading the file could not see what they had uploaded. Same two
+ * rules that route follows — the R2 key comes off the row and never from the
+ * URL, and a miss is a 404 rather than a placeholder, so a broken preview looks
+ * broken here rather than looking like a design decision.
+ */
+async function serveModelPreview({ env }, modelId) {
+  if (!Number.isInteger(modelId)) return new Response('Bad id', { status: 400 });
+  const row = await env.DB.prepare(
+    'SELECT preview_key FROM custom_models WHERE id = ?1'
+  ).bind(modelId).first();
+  if (!row?.preview_key) return new Response('Not found', { status: 404 });
+  if (!env.UPLOADS) return new Response('No bucket binding', { status: 503 });
+
+  const obj = await env.UPLOADS.get(row.preview_key);
+  if (!obj) return new Response('The object is not in the bucket', { status: 404 });
+
+  return new Response(obj.body, {
+    headers: {
+      'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
+      // Same as every other admin file route: never cached, never indexed.
+      'cache-control': 'private, no-store',
+      'x-robots-tag': 'noindex, nofollow',
+      'x-content-type-options': 'nosniff',
+    },
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -953,25 +1134,68 @@ async function loadRevisionInbox(env) {
   return res.results || [];
 }
 
-/** Recent orders, active ones first — "duidelijk overzicht van wat er gedaan moet worden." */
-async function loadOrders(env) {
-  const res = await env.DB.prepare(
+/**
+ * Recent orders, active ones first — "duidelijk overzicht van wat er gedaan
+ * moet worden."
+ *
+ * FILTERED IN SQL, NOT IN JS, and the difference matters here in a way it does
+ * not in account.js. That page filters a customer's own orders in memory
+ * because it already holds all of them. This query is capped at 200 rows across
+ * every brand on the site, so filtering after the fact would mean "the received
+ * orders among the 200 most recent" — which silently stops being "the received
+ * orders" the moment the studio is busy. The cap has to apply to the filtered
+ * set, so the WHERE has to be in the statement.
+ *
+ * `status` is validated by the caller against STATUSES before it arrives; this
+ * function still treats anything falsy as "no filter" rather than binding it,
+ * so a bug upstream shows up as an unfiltered list and never as a query with an
+ * empty string in it.
+ */
+async function loadOrders(env, status = '') {
+  const where = status ? 'WHERE status = ?1' : '';
+  const stmt = env.DB.prepare(
     // file_count added August 2026 so the Files link on each card can say how
     // many there are without a second query per order. A correlated subquery
     // rather than a join, because a join would multiply the order rows and
     // every column above would then need a GROUP BY it does not otherwise want.
+    // delivered_at / delivery_mailed_at are read so the card can say whether
+    // the customer was actually TOLD. They are two different facts and the
+    // difference is not academic: the delivery mail is sent on a best-effort
+    // path (see handleStatusUpdate's .catch), so "delivered" and "delivered and
+    // announced" can and do come apart.
     `SELECT id, customer_id, ref, service, status, tier, brand, email, product_count,
             window_start, window_end, payment_status, created_at,
+            delivered_at, delivery_mailed_at,
             (SELECT COUNT(*) FROM files f WHERE f.order_id = orders.id) AS file_count
        FROM orders
+      ${where}
       ORDER BY
         CASE status WHEN 'received' THEN 0 WHEN 'in_production' THEN 1
                     WHEN 'human_check' THEN 2 WHEN 'delivered' THEN 3
                     ELSE 4 END,
         id DESC
       LIMIT 200`
-  ).all();
+  );
+  const res = await (status ? stmt.bind(status) : stmt).all();
   return res.results || [];
+}
+
+/**
+ * How many orders sit at each status, all of them, ignoring the 200-row cap
+ * above — because the filter row has to be able to say "delivered 412" while
+ * the list below it shows the newest 200. One grouped query rather than five
+ * counts, and it returns a plain object so the renderer can read a status that
+ * has no rows as 0 without testing for undefined.
+ */
+async function loadStatusCounts(env) {
+  const counts = Object.fromEntries(STATUSES.map((s) => [s, 0]));
+  const res = await env.DB.prepare(
+    'SELECT status, COUNT(*) AS n FROM orders GROUP BY status'
+  ).all();
+  for (const row of res.results || []) {
+    if (Object.prototype.hasOwnProperty.call(counts, row.status)) counts[row.status] = row.n;
+  }
+  return counts;
 }
 
 /**
@@ -1121,7 +1345,7 @@ function loginBody(error = null) {
 </form>`;
 }
 
-function dashboardBody(revisions, orders, modelsByCustomer, counts) {
+function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '') {
   return `
 <div class="bar">
   <a class="mark" href="/">VISUAILS</a>
@@ -1137,8 +1361,43 @@ ${counts ? todayStrip(counts) : ''}
 <h2>Revision requests</h2>
 ${revisions.length ? revisions.map(revisionCard).join('') : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
 
-<h2>Orders</h2>
-${orders.length ? orders.map((o) => orderCard(o, modelsByCustomer.get(o.customer_id) || [])).join('') : '<p class="empty">No orders yet.</p>'}`;
+<h2>Orders${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}</h2>
+${statusFilterRow(statusCounts, statusFilter)}
+${orders.length
+  ? orders.map((o) => orderCard(o, modelsByCustomer.get(o.customer_id) || [], statusFilter)).join('')
+  : statusFilter
+    ? `<p class="empty">Nothing at "${esc(STATUS_LABEL[statusFilter] || statusFilter)}" right now. <a href="/admin">All orders</a></p>`
+    : '<p class="empty">No orders yet.</p>'}`;
+}
+
+/**
+ * The status filter — a row of links, one per status, each carrying its count.
+ *
+ * EVERY STATUS IS SHOWN HERE, including the ones with no orders, which is the
+ * opposite of what account.js does with the same control and the difference is
+ * deliberate. A customer's chip row is about their own history, so an empty
+ * status is noise. This row is a tool Lucas uses all day, and a "cancelled"
+ * link that appears and disappears depending on the week is a control whose
+ * position he cannot learn. A 0 here is information: it says nothing is stuck.
+ *
+ * The active one is a <span> rather than a link to the page you are already on.
+ */
+function statusFilterRow(statusCounts, statusFilter) {
+  if (!statusCounts) return '';
+  const total = STATUSES.reduce((n, s) => n + (statusCounts[s] || 0), 0);
+  const chip = (href, label, n, active) => active
+    ? `<span class="fl-chip is-active" aria-current="true">${esc(label)} <span class="fl-n">${n}</span></span>`
+    : `<a class="fl-chip" href="${esc(href)}">${esc(label)} <span class="fl-n">${n}</span></a>`;
+
+  return `<nav class="fl" aria-label="Filter orders by status">
+    ${chip('/admin', 'All', total, !statusFilter)}
+    ${STATUSES.map((s) => chip(
+      `/admin?status=${encodeURIComponent(s)}`,
+      STATUS_LABEL[s] || s,
+      statusCounts[s] || 0,
+      statusFilter === s,
+    )).join('')}
+  </nav>`;
 }
 
 function revisionCard(r) {
@@ -1152,7 +1411,7 @@ function revisionCard(r) {
 </div>`;
 }
 
-function orderCard(o, models) {
+function orderCard(o, models, statusFilter = '') {
   const options = STATUSES.map(
     (s) => `<option value="${s}"${s === o.status ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
   ).join('');
@@ -1162,6 +1421,18 @@ function orderCard(o, models) {
   // name by accident — see loadCustomModelsByCustomer()'s header.
   const modelList = models.length
     ? `<p class="meta">Custom models: ${models.map((m) => `${esc(m.label)} (${esc(m.status)})`).join(', ')}</p>`
+    : '';
+
+  // DELIVERED, BUT WAS THEY TOLD? The mail is deliberately not awaited into the
+  // response and its failure is deliberately swallowed — a mail that fails must
+  // not turn a successful status change into an error page. The cost of that
+  // choice is silence, and this line is what pays it back: the one place the
+  // studio can see that an order is marked delivered and the customer still
+  // does not know. Pressing Update on 'delivered' again retries the send —
+  // sendDeliveryMail is guarded on delivery_mailed_at, which is exactly the
+  // column that is still empty here, so a retry is safe and cannot double-send.
+  const unannounced = o.status === 'delivered' && !o.delivery_mailed_at
+    ? '<p class="warnline">Delivered, but the customer has not been emailed. Set the status to <strong>delivered</strong> again to retry the mail.</p>'
     : '';
   return `
 <div class="card">
@@ -1177,10 +1448,17 @@ function orderCard(o, models) {
      ${o.product_count ? `${esc(o.product_count)} products · ` : ''}window ${window} ·
      payment ${esc(o.payment_status)} · ${esc(when(o.created_at))}</p>
   <form class="controls" method="post" action="/admin/orders/${o.id}/status">
+    <!-- Where to go back to. Without this, moving one order out of a filtered
+         list drops Lucas back on the unfiltered dashboard and he has to re-pick
+         the filter after every single update — which is the whole working
+         session, not an edge case. handleStatusUpdate re-validates it against
+         STATUSES rather than trusting the round trip. -->
+    ${statusFilter ? `<input type="hidden" name="back" value="${esc(statusFilter)}">` : ''}
     <select name="status">${options}</select>
     <input type="text" name="note" placeholder="Note (optional, goes on the client's timeline too)" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);">
     <button class="btn btn-primary" type="submit">Update</button>
   </form>
+  ${unannounced}
   ${modelList}
   <form class="controls" method="post" action="/admin/orders/${o.id}/models">
     <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);" required>

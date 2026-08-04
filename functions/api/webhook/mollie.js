@@ -241,10 +241,26 @@ async function recordPaid(env, payment, mode) {
   // reservation nobody paid for, and this order has now been paid for. Clearing
   // it in the same statement means there is no window in which a sweep could
   // see a paid order still counting down.
+  // `NOT IN ('paid','refunded')`, not `<> 'paid'`. The refund block above can
+  // have just written 'refunded' on this very request, and 'refunded' <> 'paid'
+  // is true — so the narrow guard let this statement overwrite a refund back to
+  // paid, in the same execution that recorded it.
+  //
+  // The path is narrow and it is real: it needs a payment whose ORIGINAL
+  // notification never made it into the payments table, so that the idempotency
+  // INSERT above succeeds instead of returning. A payment created by hand in
+  // Mollie's dashboard does exactly that (recordPaid's own metadata comment
+  // names it as a supported case), as does any first delivery lost to an outage
+  // and retried after the money went back. The result would be an order marked
+  // paid, with refunded_cents equal to the full amount, and no trace of the
+  // contradiction outside the events log.
+  //
+  // Both terminal states are now excluded, which also makes the belt-and-braces
+  // return above genuinely redundant rather than load-bearing.
   await env.DB.prepare(
     `UPDATE orders SET payment_status = 'paid', payment_provider = 'mollie', payment_ref = ?1, paid_at = datetime('now'),
                        window_expires_at = NULL
-     WHERE id = ?2 AND payment_status <> 'paid'`
+     WHERE id = ?2 AND payment_status NOT IN ('paid', 'refunded')`
   )
     .bind(payment.id, order.id)
     .run();

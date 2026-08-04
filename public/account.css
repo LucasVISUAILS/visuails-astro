@@ -183,9 +183,14 @@
      used to sit under this block is gone with it: a reset that paints every
      element is how a radius ends up on a table cell and a horizontal rule.
      Radius is applied per primitive, below. */
-  --r-lg: 16px;   /* cards, panels, tiles */
-  --r-md: 8px;    /* buttons, fields, pills */
-  --r-sm: 4px;    /* the small stuff inside them */
+  /* 24 / 14 / 8 since August 2026 — raised from 16 / 8 / 4 with the site.
+     Hand-copied from global.css's scale, like every other token in this block,
+     and the three values have to move in step with it: this stylesheet is
+     served to a page that links back into the same site, and a dashboard with
+     tighter corners than the page it came from reads as a different product. */
+  --r-lg: 24px;   /* cards, panels, tiles */
+  --r-md: 14px;   /* buttons, fields, pills */
+  --r-sm: 8px;    /* the small stuff inside them */
   --radius: var(--r-md);
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -474,37 +479,245 @@ select {
 select option { background: var(--surface); color: var(--ink); }
 input, textarea, button, select { font: inherit; -webkit-appearance: none; appearance: none; }
 
-/* ---- brand lock: one panel, one row per style ------------------------------
-   Was three separate .card+.controls forms stacked with their own margins —
-   three visually distinct boxes for what is conceptually one settings list.
-   A single bordered panel with a hairline between rows reads as ONE control,
-   the same shape .files already uses for "several records, one list". */
-/* THE BRAND KIT — three cards, one per service (August 2026).
-   This was one bordered list of rows with a dropdown each. It holds two
-   controls per service now, and Lucas asked for a save button per service, so
-   a row that had to fit a name, two selects and a button on one line became a
-   card that stacks them. Three across on a desktop, one column on a phone. */
-.lockpanel {
+/* ============================================================
+   THE BRAND KIT — August 2026, rebuilt as something you can look at.
+
+   WHAT THIS REPLACED. Three small cards, each holding two <select> elements:
+   one listing ten first names, one listing four colour names with their hex.
+   Lucas: "ik wil dat de brand kit veel mooier worden om in te stellen, dus
+   echt foto's toevoegen bij modellen, het voelt allemaal zo zielloos nu." The
+   defect underneath the word "zielloos" is that both controls asked a visual
+   question in text. You cannot pick a face from a name.
+
+   SO THE CONTROLS ARE THE THING THEY CHOOSE: portraits for faces, the colour
+   itself for grounds. Underneath they are still plain radio inputs in a plain
+   <form> — no script on this page, which is what keeps the CSP at
+   default-src 'none' (see account.js's html()).
+
+   HOW A CHOSEN TILE IS DRAWN, and why it is drawn twice. `:has(:checked)` sets
+   the frame AND reveals a tick mark. Two signals for one state on purpose: a
+   coloured border alone reads as a hover when it sits on a grid of
+   photographs, and this file's own token notes rule out colour as the sole
+   carrier of any state.
+
+   THE HEX ARRIVES AS --sw, set by a style ATTRIBUTE in account.js. A style
+   attribute setting a custom property is admitted by style-src 'self' where an
+   inline <style> block is not, so the swatch colour can be per-brand data
+   while every RULE stays in this file. ------------------------------------- */
+
+.bk-h2 { margin-top: clamp(2.4rem, 5vw, 3.2rem); }
+.bk-own { margin: 0 0 clamp(2rem, 4vw, 2.8rem); }
+.bk-own .lede, .bk-cards + .lede { font-size: 1rem; }
+
+/* ---- the brand's own faces ---- */
+.bk-models {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: .8rem;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: .9rem;
+  margin-top: 1.3rem;
 }
-.lockcard {
-  display: flex;
-  flex-direction: column;
-  gap: .7rem;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--line);
+.bk-model { margin: 0; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--paper-lift); }
+/* `height: auto` is load-bearing, not tidying. Both of these <img> elements
+   carry width/height ATTRIBUTES — deliberately, so the browser reserves the
+   right box before the bytes land and the grid does not jump. But an attribute
+   height maps to a real `height` declaration, and an element with both a width
+   and a height specified ignores `aspect-ratio` entirely: the tiles rendered
+   118x535 instead of 118x157, measured in Chromium. Overriding the height back
+   to auto is what hands control to aspect-ratio while keeping the attributes
+   doing their pre-load job. */
+.bk-model-img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; object-position: center top; background: var(--paper-2); }
+/* A model the studio has not photographed yet. Shown, never offered — see
+   ownModelsSection() in account.js. */
+.bk-model-img.is-blank { display: grid; place-items: center; color: var(--ink-300); }
+.bk-model-img.is-blank .i { width: 34px; height: 34px; }
+.bk-model figcaption { display: grid; gap: .15rem; padding: .6rem .7rem .7rem; }
+.bk-model-name { font-size: .88rem; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.bk-model-state { font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.bk-model.is-ready .bk-model-state { color: var(--teal-text); }
+
+/* ---- the empty state: an invitation, not a shrug ---- */
+.bk-empty {
+  display: flex; gap: clamp(1rem, 3vw, 1.6rem); align-items: flex-start;
+  padding: clamp(1.3rem, 3vw, 1.8rem);
+  border: 1px solid var(--line); border-radius: var(--r-lg);
   background: var(--paper-lift);
-  border-radius: var(--r-md, 6px);
 }
-.lockcard-h { margin: 0; font-size: .98rem; font-weight: 700; color: var(--ink); }
-.lockfield { display: flex; flex-direction: column; gap: .3rem; }
-.lockfield > span { font-size: .78rem; font-weight: 600; color: var(--ink-2); }
-.lockfield select { width: 100%; }
-/* The button goes last and full width: on a card the submit is the end of a
-   sequence rather than one more control in a row. */
-.lockcard > .btn { align-self: stretch; text-align: center; }
+.bk-empty-fig {
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 1px dashed var(--line-strong); color: var(--ink-300);
+}
+.bk-empty-fig .i { width: 30px; height: 30px; }
+.bk-empty-text { min-width: 0; }
+.bk-empty-text h2 { margin: 0 0 .4rem; padding: 0; box-shadow: none; font-size: 1.1rem; }
+.bk-empty-text p { margin: 0 0 1rem; color: var(--ink-2); font-size: .95rem; text-wrap: pretty; }
+
+/* ---- one card per service, folded ------------------------------------------
+   An exclusive accordion (name="bk" on the <details>), so opening lifestyle
+   closes catalog. That is the difference between one grid of faces on screen
+   and thirty. The first card ships open: a page whose subject is photographs
+   must not open on three closed rows. */
+.bk-cards { display: grid; gap: .8rem; }
+.bk-card {
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--paper-lift); overflow: hidden;
+}
+.bk-card[open] { border-color: var(--line-strong); }
+
+.bk-sum {
+  display: flex; align-items: center; gap: clamp(.7rem, 2vw, 1rem);
+  padding: .8rem 1rem; cursor: pointer; list-style: none;
+}
+.bk-sum::-webkit-details-marker { display: none; }
+.bk-sum::marker { content: ''; }
+.bk-sum:hover { background: var(--ghost); }
+.bk-card[open] .bk-sum { box-shadow: inset 0 -1px 0 var(--line); }
+.bk-sum:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+/* The two current answers, side by side: the face as a thumbnail, the ground as
+   a chip of that colour. A service with neither says so in words instead. */
+.bk-sum-figs { display: flex; align-items: center; gap: .5rem; flex: 0 0 auto; }
+.bk-sum-face {
+  width: 42px; height: 56px; object-fit: cover; object-position: center top;
+  border-radius: var(--r-sm); background: var(--paper-2); display: block;
+}
+.bk-sum-face.is-blank { display: grid; place-items: center; color: var(--ink-300); border: 1px dashed var(--line-strong); }
+.bk-sum-face.is-blank .i { width: 20px; height: 20px; }
+.bk-sum-bg {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--sw, transparent); border: 1px solid var(--line-strong);
+}
+.bk-sum-bg.is-blank { background: var(--paper-2); border-style: dashed; }
+
+.bk-sum-text { display: grid; gap: .15rem; min-width: 0; flex: 1 1 auto; }
+.bk-sum-h { font-size: 1rem; font-weight: 700; color: var(--ink); }
+.bk-sum-now { font-size: .84rem; color: var(--ink-3); overflow-wrap: anywhere; }
+.bk-sum-dot { color: var(--ink-300); }
+.bk-sum-cta {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .8rem; letter-spacing: .05em; text-transform: uppercase;
+  font-weight: 600; color: var(--ink-2);
+}
+/* A chevron that turns, so open/closed is legible without the label changing
+   language — the summary text is the same in both states by design. */
+.bk-sum-cta::after {
+  content: ''; width: 7px; height: 7px;
+  border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor;
+  transform: rotate(45deg) translateY(-1px); transition: transform .15s ease;
+}
+.bk-card[open] .bk-sum-cta::after { transform: rotate(225deg) translateY(-1px); }
+
+/* ---- the picker itself ---- */
+.bk-form { display: grid; gap: clamp(1.2rem, 3vw, 1.8rem); padding: clamp(1rem, 3vw, 1.4rem); }
+.bk-group { border: 0; margin: 0; padding: 0; min-width: 0; }
+.bk-group legend {
+  padding: 0 0 .7rem; font-size: .78rem; letter-spacing: .07em;
+  text-transform: uppercase; font-weight: 600; color: var(--ink-3);
+}
+
+.bk-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: .6rem; }
+.bk-tile {
+  position: relative; display: block; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--paper-2); overflow: hidden;
+  transition: border-color .12s ease;
+}
+/* Hidden, not removed: the radio still has to be reachable by keyboard and has
+   to post its value. 1px rather than display:none for exactly that reason. */
+.bk-tile input, .bk-sw input {
+  position: absolute; width: 1px; height: 1px; margin: 0;
+  opacity: 0; pointer-events: none;
+}
+.bk-tile:hover { border-color: var(--line-strong); }
+.bk-tile:has(input:focus-visible), .bk-sw:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}
+.bk-tile:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
+.bk-tile-img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; object-position: center top; }
+.bk-tile-img.is-blank { display: grid; place-items: center; color: var(--ink-300); background: var(--paper-2); }
+.bk-tile-img.is-blank .i { width: 26px; height: 26px; }
+.bk-tile-meta { display: grid; gap: .1rem; padding: .45rem .55rem .55rem; }
+.bk-tile-name { font-size: .82rem; font-weight: 600; color: var(--ink); }
+/* One line. A three-trait model and a one-trait model must not give the grid
+   two different row heights. */
+.bk-tile-sub {
+  font-size: .72rem; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bk-tile.is-own .bk-tile-sub { color: var(--teal-text); }
+
+.bk-tick {
+  position: absolute; top: .4rem; right: .4rem;
+  display: grid; place-items: center; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--teal); color: var(--paper);
+  opacity: 0; transform: scale(.8); transition: opacity .12s ease, transform .12s ease;
+}
+.bk-tick .i { width: 14px; height: 14px; stroke-width: 2.6; }
+.bk-tile:has(input:checked) .bk-tick { opacity: 1; transform: scale(1); }
+
+/* ---- the grounds ---- */
+.bk-sws { display: flex; flex-wrap: wrap; gap: .6rem; }
+.bk-sw {
+  position: relative; display: grid; gap: .3rem; cursor: pointer;
+  width: 96px; padding: .5rem .5rem .6rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--paper-2); text-align: center;
+  transition: border-color .12s ease;
+}
+.bk-sw:hover { border-color: var(--line-strong); }
+.bk-sw:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
+.bk-sw-chip {
+  height: 40px; border-radius: var(--r-sm);
+  background: var(--sw, transparent); border: 1px solid var(--line-strong);
+}
+/* "No preference" is a real answer and needs to look like one rather than like
+   a colour that failed to load. */
+.bk-sw-chip.is-blank {
+  background: repeating-linear-gradient(45deg, var(--paper-2) 0 5px, var(--paper-lift) 5px 10px);
+  border-style: dashed;
+}
+.bk-sw-name { font-size: .78rem; font-weight: 600; color: var(--ink); }
+.bk-sw-hex { font-size: .68rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+.bk-actions { display: flex; }
+.bk-actions .btn { flex: 0 0 auto; }
+
+@media (max-width: 520px) {
+  /* Three across rather than two. Thirteen faces in two columns is seven rows
+     of scrolling on a phone; at 92px the same set is five, and a 92px tile is
+     still a face you can recognise — measured at 390px, the narrowest viewport
+     this dashboard is checked at. */
+  .bk-tiles { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+  .bk-tile-meta { padding: .35rem .4rem .45rem; }
+  .bk-tile-name { font-size: .76rem; }
+  .bk-tile-sub { font-size: .68rem; }
+  .bk-sum { flex-wrap: wrap; }
+  .bk-sum-cta { width: 100%; justify-content: flex-end; }
+  .bk-empty { flex-direction: column; }
+}
+
+/* ---- status filter: a row of links, one per status --------------------------
+   Lucas, August 2026: "als je op received bijvoorbeeld klikt je alle orders
+   ziet staan gesorteerd op received." The active one is a <span> and not a link
+   to the page you are already on, which is why the rules below have to style
+   both element types identically — everything that differs is in .is-active. */
+.fl { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 1.4rem; }
+.fl-chip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .38rem .7rem; border: 1px solid var(--line-strong);
+  border-radius: var(--r-md); background: transparent;
+  font-size: .84rem; color: var(--ink-2); text-decoration: none;
+  white-space: nowrap;
+}
+a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: var(--ghost); }
+.fl-chip.is-active { border-color: var(--teal); color: var(--teal-text); background: var(--ghost); font-weight: 600; }
+.fl-n { font-size: .78rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.fl-chip.is-active .fl-n { color: var(--teal-text); }
+
+/* A count you can act on. The tiles with a 0 stay <div>s — see overviewBody. */
+a.stat.is-link { text-decoration: none; }
+a.stat.is-link:hover { background: var(--ink-800); }
+a.stat.is-link:hover .stat-label { color: var(--ink-2); }
 
 /* ---- login / check-email / bad-link: one framed card, not a bare form ----- */
 .authcard {
@@ -604,3 +817,46 @@ form.login input[type="email"] {
 .card, .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg); }
 .btn, input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md); }
 .btn-quiet { border-radius: 0; }
+
+/* ============================================================
+   "YOUR DETAILS" — the saved-order-details form.
+
+   THESE RULES USED TO LIVE IN src/lib/account.js as an inline <style> admitted
+   by a per-response CSP nonce, because the task that wrote them did not own
+   this file. Its own comment asked whoever was free to touch account.css to
+   move them here verbatim and delete the nonce plumbing with it. August 2026
+   did both — page() has no <style> element now and style-src is plain 'self'.
+
+   The form also moved: it was a panel on the Brand kit page and is now its own
+   section at /account/details. The two background fields it used to carry are
+   gone at Lucas's direction — the brand kit answers that per service, which is
+   the more specific answer to the same question.
+
+   CORNERS. --r-lg on the panel, --r-md on the fields, --r-sm on nothing
+   smaller — the three tokens :root defines and this file applies per
+   primitive. Nothing here is square. */
+.detpanel { margin: 0 0 clamp(2.4rem,5vw,3.4rem); padding: clamp(1.3rem,3vw,1.8rem); border: 1px solid var(--line); background: var(--paper-lift); border-radius: var(--r-lg); }
+.detpanel .lede { font-size: 1rem; }
+.det-h2 { margin-top: 0; }
+.detform { display: grid; gap: 1.1rem; margin-top: 0; }
+.det-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+/* A row with one field left in it — the VAT number, since the background pair
+   came out — must not stretch that field the full width of the main column. An
+   input two thirds of a metre wide for eleven characters reads as a mistake.
+   Capped in ch rather than px so it tracks the field's own font. */
+.det-grid:has(> .det-field:only-child) > .det-field { max-width: 32ch; }
+.det-field { display: grid; gap: .35rem; min-width: 0; }
+.det-field label, .det-label { font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; font-weight: 600; color: var(--ink-3); }
+.det-field input {
+  width: 100%; padding: .7rem .8rem; font-size: .96rem;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface); color: var(--ink);
+}
+.det-opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); }
+.det-hint { font-size: .84rem; color: var(--ink-3); text-wrap: pretty; }
+/* The account email, shown and not editable — see handleDetails(). It is
+   deliberately not a disabled <input>: a greyed-out field reads as one that
+   could be switched on, and this one never can. */
+.det-fixed { margin: 0; padding: .7rem .8rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); background: var(--paper-2); color: var(--ink); font-size: .96rem; overflow-wrap: anywhere; }
+.det-ok { margin: 0 0 1.2rem; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-2); color: var(--signal-ink); font-size: .92rem; }
+.detform .btn { justify-self: start; }

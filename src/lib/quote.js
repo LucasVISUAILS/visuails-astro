@@ -51,6 +51,33 @@ export const VAT_RATE = 0.21;
 /** Services that can be priced from the ladder. Anything else is not payable. */
 export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle', 'complete']);
 
+/**
+ * THE WIRE VALUE IS NOT THE LADDER KEY, AND THAT COST REAL MONEY.
+ *
+ * /start/complete — "Both together", the most expensive door on the site — posts
+ * `service=drop`. It has done since long before this file existed: OrderFlow's
+ * `WIRE` map converts the page's own name into the value orders.service has
+ * always stored, ORDER_SERVICES accepts it, and portal.js and account.js both
+ * carry a label for it. Meanwhile src/data/pricing.js calls that same ladder
+ * `complete`. Two vocabularies for one product, and nothing translated between
+ * them.
+ *
+ * What that produced: quoteOrder({service:'drop'}) fell straight through the
+ * PAYABLE_SERVICES test and returned null. Null is the "do not create a
+ * payment" answer — the correct, safe answer for a Brand Model enquiry, and
+ * catastrophically wrong here. A thirty-product Both-together order (€2,359.50
+ * gross) was written with total_cents NULL, no payment link in the confirmation
+ * email, no window expiry, and no appearance in the admin's unpaid count, which
+ * filters on total_cents > 0. It went out free and nothing anywhere said so.
+ *
+ * Fixed by translating rather than renaming. Renaming the wire value would
+ * orphan every 'drop' row already in D1 and both label maps; this maps the one
+ * value at the one place a price is decided. Anything not in here passes
+ * through unchanged, so a service that IS its own ladder key keeps working with
+ * no entry.
+ */
+const LADDER_KEY = { drop: 'complete' };
+
 /** Round to whole cents the way money has to be rounded: half away from zero. */
 function cents(euros) {
   return Math.round(euros * 100);
@@ -81,7 +108,10 @@ function clamp(n, lo, hi) {
  * safe direction to fail in.
  */
 export function quoteOrder({ service, products, outfits = 0, extras = 0 }) {
-  if (!PAYABLE_SERVICES.has(service)) return null;
+  // Translate first, then decide. Both the payable test and the ladder lookup
+  // below have to see the same name, or this is the same bug in a new place.
+  const kind = LADDER_KEY[service] || service;
+  if (!PAYABLE_SERVICES.has(kind)) return null;
 
   const n = clamp(products, 1, 500);
   // An outfit surcharge is per PRODUCT styled that way, so it can never exceed
@@ -91,7 +121,10 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0 }) {
   // the product count times that cap.
   const x = clamp(extras, 0, n * MAX_EXTRA_PER_PRODUCT);
 
-  const rate = ladderRate(service, n);
+  // `kind`, not `service` — ladderRate() THROWS on an unknown key rather than
+  // defaulting, which is the right behaviour and also the reason this line has
+  // to use the translated name.
+  const rate = ladderRate(kind, n);
   const extraRate = extraPhotoRate(n);
 
   const net = n * rate + o * OUTFIT_SURCHARGE + x * extraRate;
@@ -189,6 +222,31 @@ export function paymentDescription(quote, lang = 'en') {
           );
         }
       }
+    }
+  }
+
+  // AND THAT EVERY WIRE VALUE STILL REACHES A PRICE.
+  //
+  // This half is the guard the original check was missing, and its absence is
+  // exactly why 'drop' went unpriced for as long as it did: the loop above
+  // iterates PAYABLE_SERVICES, so it could only ever test names that were
+  // already known to work. It could not see the name the order form actually
+  // posts. This asserts the translation instead — every wire value must price,
+  // and must price identically to the ladder key it maps to.
+  for (const [wire, key] of Object.entries(LADDER_KEY)) {
+    const viaWire = quoteOrder({ service: wire, products: 30 });
+    const viaKey = quoteOrder({ service: key, products: 30 });
+    if (!viaWire) {
+      throw new Error(
+        `quote.js: the order form posts service="${wire}" and it does not price. `
+        + 'A service that does not price is a service that goes out free — see LADDER_KEY.'
+      );
+    }
+    if (viaWire.netCents !== viaKey.netCents) {
+      throw new Error(
+        `quote.js: "${wire}" priced at ${viaWire.netCents} cents but "${key}" at `
+        + `${viaKey.netCents}. The alias points at the wrong ladder.`
+      );
     }
   }
 })();

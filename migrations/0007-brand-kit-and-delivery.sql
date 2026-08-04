@@ -1,3 +1,29 @@
+-- ╔════════════════════════════════════════════════════════════════════════╗
+-- ║  RUN THIS ONCE. RUNNING IT A SECOND TIME USED TO ERASE EVERY BRAND KIT. ║
+-- ╚════════════════════════════════════════════════════════════════════════╝
+--
+-- Found in the August 2026 audit, after this migration had already been applied
+-- by hand. The table swap below copies FOUR columns out of the old table
+-- (customer_id, style, custom_model_id, updated_at) because those are the four
+-- the old table had. On a second run the "old" table is the NEW one — it now
+-- also holds roster_model and background_hex — and the copy simply does not
+-- mention them. Every standing face and background every customer had set would
+-- be dropped with the table, silently, and the migration would report success.
+--
+-- The `DROP TABLE` that made that irreversible is now a rename. A mistaken
+-- re-run leaves the previous table intact as customer_style_locks_pre0007
+-- instead of destroying it, so the data can be copied back by hand. Once you
+-- have confirmed the live table looks right, that leftover is yours to drop:
+--
+--   SELECT COUNT(*) FROM customer_style_locks_pre0007;   -- expect the old count
+--   DROP TABLE customer_style_locks_pre0007;
+--
+-- The durable fix is a migration RUNNER, so a file that has run cannot run
+-- again: set `migrations_dir = "migrations"` in wrangler.toml and apply with
+-- `wrangler d1 migrations apply visuails --remote`. D1 then records every applied
+-- file in a d1_migrations table and skips it forever after. Seed that table with
+-- 0001-0008 first, or the runner will try to replay all of them.
+--
 -- VISUAILS — migration 0007, August 2026.
 --
 -- Two things Lucas asked for on the same day, and they turn out to be one
@@ -53,7 +79,10 @@ CREATE TABLE customer_style_locks_new (
 INSERT INTO customer_style_locks_new (customer_id, style, custom_model_id, updated_at)
   SELECT customer_id, style, custom_model_id, updated_at FROM customer_style_locks;
 
-DROP TABLE customer_style_locks;
+-- Kept, not dropped — see the banner at the top of this file. On a first run
+-- this leaves one small leftover table; on a mistaken second run it is the
+-- difference between "recoverable" and "gone".
+ALTER TABLE customer_style_locks RENAME TO customer_style_locks_pre0007;
 ALTER TABLE customer_style_locks_new RENAME TO customer_style_locks;
 
 PRAGMA foreign_keys = ON;

@@ -173,9 +173,14 @@
      used to sit under this block is gone with it: a reset that paints every
      element is how a radius ends up on a table cell and a horizontal rule.
      Radius is applied per primitive, below. */
-  --r-lg: 16px;   /* cards, panels, tiles */
-  --r-md: 8px;    /* buttons, fields, pills */
-  --r-sm: 4px;    /* the small stuff inside them */
+  /* 24 / 14 / 8 since August 2026 — raised from 16 / 8 / 4 with the site.
+     Hand-copied from global.css's scale, like every other token in this block,
+     and the three values have to move in step with it: this stylesheet is
+     served to a page that links back into the same site, and a dashboard with
+     tighter corners than the page it came from reads as a different product. */
+  --r-lg: 24px;   /* cards, panels, tiles */
+  --r-md: 14px;   /* buttons, fields, pills */
+  --r-sm: 8px;    /* the small stuff inside them */
   --radius: var(--r-md);
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -382,3 +387,56 @@ table.files th { font-size: .74rem; text-transform: uppercase; letter-spacing: .
 table.files td.num, table.files th.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.files a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
 table.files tr:last-child td { border-bottom: 0; }
+
+/* The status filter, August 2026 — Lucas: "een optie die alle statussen van een
+   order kan sorteren. Dus als je op received bijvoorbeeld klikt je alle orders
+   ziet staan gesorteerd op received."
+
+   EVERY STATUS IS DRAWN HERE, zeros included, which is the opposite of the same
+   control on the customer's own order list. That row is about one brand's
+   history, so an empty status there is noise. This row is a tool used all day,
+   and a "cancelled" link that appears and disappears by the week is a control
+   whose position cannot be learned. A 0 here says nothing is stuck.
+
+   The active chip is a <span>, not a link to the page you are on, so the shared
+   rules have to hold for both element types — everything that differs sits in
+   .is-active. */
+.fl { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0 1.2rem; }
+.fl-chip {
+  display: inline-flex; align-items: center; gap: .38rem;
+  padding: .32rem .6rem; border: 1px solid var(--line-strong);
+  font-size: .82rem; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+}
+a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: var(--ghost); }
+.fl-chip.is-active { border-color: var(--teal); color: var(--teal-text); background: var(--ghost); font-weight: 700; }
+.fl-n { font-size: .76rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.fl-chip.is-active .fl-n { color: var(--teal-text); }
+
+/* An order marked delivered whose customer was never emailed. Amber, like the
+   two counts in the strip that mean "somebody is waiting on you" — it is the
+   same kind of fact, and the only visible trace of a mail that failed on a
+   best-effort path. */
+.warnline {
+  margin: .6rem 0 0; padding: .5rem .7rem; font-size: .84rem;
+  border: 1px solid var(--warn, #b8860b); color: var(--warn-ink, #e0a92b);
+}
+
+/* A brand model on the customer page: the photograph beside its controls.
+   Before August 2026 this card showed a filename's worth of nothing — the
+   studio uploaded a face and had no way to see which face it had uploaded. */
+.modelcard-body { display: flex; gap: 1rem; align-items: flex-start; margin-top: .6rem; }
+.modelcard-img {
+  flex: 0 0 auto; width: 120px; aspect-ratio: 3 / 4; height: auto;
+  object-fit: cover; object-position: center top;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-2);
+}
+.modelcard-img.is-blank {
+  display: grid; place-items: center; width: 120px; aspect-ratio: 3 / 4;
+  border-style: dashed; color: var(--ink-3); font-size: .74rem; letter-spacing: .04em;
+}
+.modelcard-side { flex: 1 1 auto; min-width: 0; }
+.stack { display: grid; gap: .55rem; justify-items: start; margin: .5rem 0 0; }
+.stack input[type="file"] { max-width: 100%; }
+.checkline { display: flex; align-items: flex-start; gap: .45rem; font-size: .84rem; color: var(--ink-2); }
+.checkline input { margin: .15rem 0 0; -webkit-appearance: checkbox; appearance: checkbox; }
+@media (max-width: 560px) { .modelcard-body { flex-direction: column; } }

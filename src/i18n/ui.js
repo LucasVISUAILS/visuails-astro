@@ -87,7 +87,7 @@ export const ui = {
     // the search intent is not lost — but the footer label names the primary
     // comparison, which is the one a brand is actually weighing.
     foot_compare: 'Shoot day vs VISUAILS',
-    foot_sample: 'Test sample · €0.99',
+    foot_sample: `Test sample · ${TEST_SAMPLE.en.price}`,
     foot_gallery: 'Gallery',
     foot_pricing: 'Pricing',
     foot_faq: 'FAQ',
@@ -102,6 +102,11 @@ export const ui = {
     // The mobile drawer's close button. It was an inline aria-label in
     // Layout.astro and so shipped as English on all 36 NL pages — the only
     // untranslated string left in the tree.
+    nav_primary: 'Primary',
+    nav_open: 'Open menu',
+    cb_region: 'Quick start',
+    cb_dismiss: 'Dismiss',
+    cmp_drag: 'Drag to compare before and after',
     nav_close: 'Close menu',
     nav_skip: 'Skip to content',
     cc_title: 'Cookies on this site',
@@ -159,7 +164,7 @@ export const ui = {
     foot_studio: 'Hoe een bestelling draait',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
-    foot_sample: 'Proefvisual · €0,99',
+    foot_sample: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
     foot_gallery: 'Galerij',
     foot_pricing: 'Prijzen',
     foot_faq: 'FAQ',
@@ -167,6 +172,11 @@ export const ui = {
     foot_privacy: 'Privacy',
     foot_terms: 'Algemene voorwaarden',
     foot_cookies: 'Cookies',
+    nav_primary: 'Hoofdnavigatie',
+    nav_open: 'Menu openen',
+    cb_region: 'Snel starten',
+    cb_dismiss: 'Sluiten',
+    cmp_drag: 'Sleep om voor en na te vergelijken',
     nav_close: 'Menu sluiten',
     nav_skip: 'Naar de inhoud',
     cc_title: 'Cookies op deze site',

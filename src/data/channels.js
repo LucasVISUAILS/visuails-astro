@@ -123,8 +123,8 @@ export const CHANNELS = [
     modelShotRisk: false,
     formats: ['jpg', 'png', 'webp'],
     note: {
-      en: 'No background rule, but the AI disclosure has to be in the file: Google requires the IPTC DigitalSourceType property and says not to strip it. Every file we deliver carries it.',
-      nl: 'Geen achtergrondregel, maar de AI-vermelding moet ín het bestand zitten: Google vereist de IPTC-eigenschap DigitalSourceType en zegt die niet te verwijderen. Elk bestand dat wij leveren draagt hem.',
+      en: 'No background rule, but the AI disclosure has to be in the file: Google requires the IPTC DigitalSourceType property and says not to strip it. Our jpg and png deliveries carry it; a webp does not, because the conversion drops it — so take the jpg for this channel.',
+      nl: 'Geen achtergrondregel, maar de AI-vermelding moet ín het bestand zitten: Google vereist de IPTC-eigenschap DigitalSourceType en zegt die niet te verwijderen. Onze jpg- en png-bestanden dragen hem; een webp niet, omdat de conversie hem weggooit — neem voor dit kanaal dus de jpg.',
     },
   },
 ];

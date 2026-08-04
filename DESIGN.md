@@ -879,9 +879,60 @@ argument for the aesthetic, which is the one trade this site cannot make.
 **Never** fold a price, a delivery promise, or a constraint that changes what
 somebody would order. A number nobody sees is a number nobody was told.
 
+## A control shows what it chooses
+
+*(Added August 2026. Lucas, on the customer dashboard's brand kit: "ik wil dat de
+brand kit veel mooier wordt om in te stellen, dus echt foto's toevoegen bij
+modellen, het voelt allemaal zo zielloos nu.")*
+
+The word was "zielloos", but the defect under it is not decoration. That page
+asked a brand to choose the face of their product line from a `<select>` holding
+ten first names, and the ground their product sits on from four colour names
+with their hex codes. Nobody can pick a model from a name — what is being decided
+*is* what someone looks like. A dropdown reading `Off-white · #F7F5F1` is a
+colour the reader has to imagine, on a site whose entire promise is not having to
+imagine.
+
+So: **when a choice is visual, the control is the thing it chooses.** A face is a
+portrait. A colour is that colour. A format is its own proportion. The name goes
+underneath as the label, not in place of the thing.
+
+What that costs, and how it is paid:
+
+- **Weight.** Thirteen portraits per service, three services, is thirty-nine
+  images on one page. The exclusive accordion (`name` on `<details>`) means one
+  service's grid is on screen at a time, `loading="lazy"` keeps the rest off the
+  wire, and the roster grid reads its 800px derivatives, never the 1195px
+  originals — see `src/data/models.js` on why both sizes exist.
+- **Layout stability.** Every tile carries `width`/`height` attributes so the box
+  is reserved before the bytes land. That means the CSS must also say
+  `height: auto`, because an element with both a width and a height specified
+  ignores `aspect-ratio` outright — measured in Chromium, the tiles rendered
+  118×535 instead of 118×157 until it was added.
+- **State that is not only colour.** A checked tile gets a frame *and* a tick.
+  On a grid of photographs a coloured border alone reads as a hover, and colour
+  as the sole carrier of state is out under the token rules regardless.
+- **A real "no preference".** Not an absent tile — a tile, drawn as a dashed
+  frame or a hatched swatch, saying so in words. "Ask me per order" is an
+  answer, and an answer needs somewhere to be clicked.
+
+The picker still posts plain radio inputs in a plain `<form>`: no script anywhere
+on the dashboard, which is what keeps its CSP at `default-src 'none'`. Making a
+control look like its own subject is a rendering decision, not a reason to reach
+for JavaScript.
+
 ## What this system rejects
 
-- **Rounded corners.** Any radius above 0, anywhere.
+- ~~**Rounded corners.** Any radius above 0, anywhere.~~ **Retired.** This was the
+  first system's rule and it has been false in the code since the three-step scale
+  landed; leaving it here as a live prohibition meant the document forbade what
+  every stylesheet already did. The scale is **24 / 14 / 8** (`--r-lg` / `--r-md` /
+  `--r-sm`), raised from 16 / 8 / 4 in August 2026 at Lucas's direction after
+  seeing four options rendered side by side. What survives of the original rule is
+  the part that was always the real point: **no pill**, and **one scale**. A fully
+  round control beside a 14px input is the undecided look, and a hardcoded px
+  radius anywhere is a fourth step nobody decided on — every corner on this site
+  reads a token, verified by grep.
 - **Shadow as depth.** Blur and spread are removed; level 4 offset-only is the exception.
 - **Gradients on UI.** Buttons, cards, grounds, bars. The chrome field only.
 - **Gradient text.** `background-clip: text` on any copy. Emphasis is weight and size.

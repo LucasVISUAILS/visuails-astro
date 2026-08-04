@@ -131,7 +131,28 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // Honeypot: a hidden field real users never see. Bots fill it. Pretend success.
   if (get('company_hp')) return wantsJson ? json({ ok: true, redirect: back }) : redirect(back);
 
-  const email = get('email');
+  // ── LOWERCASED, BECAUSE THIS ADDRESS IS AN IDENTITY AND NOT JUST A FIELD ───
+  //
+  // customers.email is UNIQUE and it is the ONLY credential /account
+  // authenticates against — src/lib/account.js looks a customer up by it and
+  // mails them a link. That lookup lowercases what the visitor typed into the
+  // sign-in box; this did not, so the address went into the database exactly as
+  // typed. SQLite compares TEXT byte for byte and the column has no NOCASE
+  // collation, so a brand that ordered as `Ana@Shop.com` could never sign in:
+  // the lookup missed, sendLoginLink returned early, and the page still said
+  // "check your email" — by design, to stop the form being used to test which
+  // addresses have accounts. No mail, no error, nothing to diagnose.
+  //
+  // The same mismatch also split one brand across two rows: order once with a
+  // capital and once without and UNIQUE(email) sees two different customers,
+  // so half the order history disappears from the account.
+  //
+  // Lowercasing HERE rather than only at the lookup is what makes it one fact
+  // instead of two conventions that have to agree forever. Addresses are
+  // case-insensitive in every mail system anyone actually uses; the local part
+  // is formally allowed to be case-sensitive, and no provider on earth treats
+  // it that way. migrations/0008 normalises the rows written before today.
+  const email = get('email').toLowerCase();
   if (!isEmail(email)) {
     if (wantsJson) return json({ ok: false, error: 'email' }, 400);
     // JS validation normally blocks this; for JS-off users, bounce back to the

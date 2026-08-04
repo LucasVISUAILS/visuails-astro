@@ -475,7 +475,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
         <svg class="brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
       </a>
-      <nav aria-label="Primary" class="primary-nav">
+      <nav aria-label={t('nav_primary')} class="primary-nav">
         <ul class="nav-links">
           <li class="has-menu">
             <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_drops')}
@@ -555,7 +555,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             into an order from the chrome — in both languages, since nav_start
             is deliberately "Start" in EN and NL alike. */}
         <a href={lp('/start')} class="btn btn-primary">{t('nav_start')}</a>
-        <button class="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav"><span></span></button>
+        <button class="menu-toggle" aria-label={t('nav_open')} aria-expanded="false" aria-controls="mobile-nav"><span></span></button>
       </div>
     </div>
   </header>
@@ -815,11 +815,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
 
-  <div class="convbar" role="complementary" aria-label="Quick start">
+  <div class="convbar" role="complementary" aria-label={t('cb_region')}>
     <svg class="brand-mark cb-logo" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
     <em>{t('cb_text')}</em>
     <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
-    <button class="cb-close" type="button" aria-label="Dismiss">&times;</button>
+    <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
   </div>
 
   {/* Our own WhatsApp launcher — a square block, not a third-party circular

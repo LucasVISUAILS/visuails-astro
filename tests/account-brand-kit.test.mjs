@@ -1,0 +1,330 @@
+// VISUAILS — the customer dashboard's brand kit, its details form, and the
+// status filter. August 2026.
+//
+// WHY THIS FILE EXISTS
+// The brand kit stopped being two <select> elements and became a grid of
+// portraits and colour swatches. Every radio it renders has to be a value
+// handleLockUpdate() will actually store, and that is a CONTRACT BETWEEN TWO
+// FUNCTIONS THAT NEVER CALL EACH OTHER — one renders markup, the other reads a
+// POST body, and nothing in the language connects them. A renderer that emits
+// `roster:ava` while the handler expects `rava` produces no error anywhere: the
+// customer picks a face, presses save, and the page comes back with nothing
+// selected. That silence is what this file is for. §2 posts every single value
+// the picker draws and insists each one lands in the database.
+//
+// §1 covers the other silent failure introduced the same day. /account/details
+// has two callers that disagree about backgrounds — the page's own form, which
+// no longer asks, and /start's "save my details", which does. An unconditional
+// UPDATE breaks exactly one of them depending on which way it is written, and
+// breaks it quietly in both directions. See handleDetails()' own comment.
+//
+// HOW IT RUNS. Plain `node`, no wrangler and no miniflare, against a hand-built
+// D1 stub — the same reason src/lib/account.js exists outside functions/ at all
+// (see its header). The stub answers by matching SQL text, records every write,
+// and is deliberately dumb: a test that reimplements SQLite proves nothing about
+// the statements this code sends.
+import { accountGet, accountPost } from '../src/lib/account.js';
+import { mintToken } from '../src/lib/token.js';
+
+const CUSTOMER = { customer_id: 7, email: 'studio@voltbrand.nl', brand: 'VOLT', name: 'Mara' };
+
+const ORDERS = [
+  { id: 91, ref: 'VIS-8K2-QQ1', service: 'catalog', status: 'in_production', tier: 'attended', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', lang: 'en', created_at: '2026-08-01', closed_at: null },
+  { id: 90, ref: 'VIS-7F4-M3A', service: 'lifestyle', status: 'delivered', tier: 'attended', product_count: 12, window_start: null, window_end: null, lang: 'en', created_at: '2026-07-28', closed_at: null },
+  { id: 88, ref: 'VIS-5D1-XX8', service: 'catalog', status: 'delivered', tier: 'unattended', product_count: 4, window_start: null, window_end: null, lang: 'en', created_at: '2026-07-19', closed_at: null },
+];
+
+// Two of this brand's own faces are usable and one is still being made. The
+// third one matters: it must appear on the page and must NOT be offered as a
+// choice, which is the rule ownModelsSection() and lockSection() split on.
+const MODELS = [
+  { id: 31, label: 'Nadia', status: 'approved', has_preview: 1 },
+  { id: 32, label: 'Tomas', status: 'locked', has_preview: 1 },
+  { id: 33, label: 'Autumn face', status: 'in_design', has_preview: 0 },
+];
+
+const DETAILS = {
+  name: 'Mara', brand: 'VOLT', email: CUSTOMER.email, phone: '+31 6 1234 5678',
+  website: 'https://voltbrand.nl', vat_number: 'NL001234567B01',
+  default_background: 'white', default_background_hex: null, details_saved_at: '2026-07-20',
+};
+
+function makeDb({ locks = [], models = MODELS } = {}) {
+  const writes = [];
+  const pick = (sql, binds) => {
+    const s = sql.replace(/\s+/g, ' ');
+    if (s.includes('FROM account_sessions')) return { ...CUSTOMER, expires_at: '2099-01-01' };
+    if (s.includes('FROM rate_limits')) return null;
+    if (s.includes('FROM files f JOIN orders')) return [];
+    if (s.includes('FROM custom_models WHERE id')) {
+      // The ownership check in handleLockUpdate. Only ids this customer owns.
+      const id = binds[0];
+      return models.some((m) => m.id === id) ? { id } : null;
+    }
+    if (s.includes('FROM custom_models')) return models;
+    if (s.includes('FROM customer_style_locks')) return locks;
+    if (s.includes('FROM customers WHERE id')) return DETAILS;
+    if (s.includes('FROM orders')) return ORDERS;
+    return null;
+  };
+  const db = {
+    writes,
+    prepare(sql) {
+      const st = {
+        _b: [],
+        bind(...a) { st._b = a; return st; },
+        async first() { const r = pick(sql, st._b); return Array.isArray(r) ? r[0] : r; },
+        async all() { const r = pick(sql, st._b); return { results: Array.isArray(r) ? r : (r ? [r] : []) }; },
+        async run() {
+          if (/^\s*(UPDATE|INSERT|DELETE)/i.test(sql)) writes.push({ sql: sql.replace(/\s+/g, ' '), binds: st._b });
+          return { success: true };
+        },
+      };
+      return st;
+    },
+    async batch() { return []; },
+  };
+  return db;
+}
+
+async function get(path, opts = {}) {
+  const token = await mintToken();
+  const db = makeDb(opts);
+  const request = new Request(`https://visuails.com${path}`, {
+    headers: { cookie: `vis_account=${token}`, 'accept-language': 'en-GB,en;q=0.9' },
+  });
+  const res = await accountGet({ request, env: { DB: db }, waitUntil() {} });
+  return { status: res.status, html: await res.text(), db };
+}
+
+async function post(path, fields, opts = {}) {
+  const token = await mintToken();
+  const db = makeDb(opts);
+  const request = new Request(`https://visuails.com${path}`, {
+    method: 'POST',
+    body: new URLSearchParams(fields),
+    headers: {
+      cookie: `vis_account=${token}`,
+      origin: 'https://visuails.com',
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+  });
+  const res = await accountPost({ request, env: { DB: db }, waitUntil() {} });
+  return { status: res.status, location: res.headers.get('location'), writes: db.writes };
+}
+
+// currentCustomer() refreshes account_sessions on every authenticated request,
+// so the write log always opens with an UPDATE nobody here is asking about.
+// Every assertion below names the table it means.
+const writeTo = (writes, re) => writes.find((w) => re.test(w.sql)) || { sql: '', binds: [] };
+const CUSTOMERS = /UPDATE customers/;
+const LOCK_INSERT = /INSERT INTO customer_style_locks/;
+const LOCK_DELETE = /DELETE FROM customer_style_locks/;
+
+let fails = 0;
+const check = (name, cond, got = '') => {
+  console.log(`${cond ? ' ok  ' : 'FAIL '} ${String(name).padEnd(60)} ${got}`);
+  if (!cond) fails++;
+};
+const section = (n) => console.log(`\n${n}`);
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§1 · /account/details — two callers, one endpoint');
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The page's own form. It has no background control at all since August 2026,
+// so the request carries no such field and the columns must be left untouched.
+{
+  const r = await post('/account/details', { name: 'Mara', brand: 'VOLT', phone: '+31 6 1', vat: 'NL001234567B01' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('a form with no background leaves the columns alone', !/default_background/.test(w.sql));
+  check('and binds six values rather than eight', w.binds.length === 6, w.binds.length);
+  check('and returns to its own page, not the brand kit', r.location === '/account/details?saved=1#details', r.location);
+}
+
+// /start's save-my-details, which does carry the background just chosen.
+{
+  const r = await post('/account/details', { name: 'Mara', background: 'beige' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('a request carrying a background writes it', /default_background = \?7/.test(w.sql));
+  check('and stores the id it was handed', w.binds[6] === 'beige', JSON.stringify(w.binds[6]));
+  check('with no second hex beside a recommended id', w.binds[7] === null, JSON.stringify(w.binds[7]));
+}
+
+// The custom swatch is the one option whose answer lives in the hex.
+{
+  const r = await post('/account/details', { name: 'Mara', background: 'custom', background_custom: '#eee' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('a custom colour keeps its expanded hex', w.binds[7] === '#EEEEEE', w.binds[7]);
+}
+
+// A colour this site does not offer is "ask me per order" — not a 400.
+{
+  const r = await post('/account/details', { name: 'Mara', background: 'chartreuse' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('an unknown background stores as no preference', w.binds[6] === null, JSON.stringify(w.binds[6]));
+}
+
+// Present-but-empty is an answer ("clear it"), which is why presence and not
+// emptiness is what handleDetails tests.
+{
+  const r = await post('/account/details', { name: 'Mara', background: '' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('an empty background field still counts as an answer',
+    /default_background/.test(w.sql) && w.binds[6] === null);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§2 · the brand kit renders only values the lock handler accepts');
+// ─────────────────────────────────────────────────────────────────────────────
+
+const kit = await get('/account/brand-kit');
+check('the brand kit renders', kit.status === 200, kit.status);
+
+// Pull the picker apart the way a browser would: every radio value, per group.
+const values = (name) => [...kit.html.matchAll(new RegExp(`name="${name}" value="([^"]*)"`, 'g'))].map((m) => m[1]);
+const faces = [...new Set(values('face'))];
+const grounds = [...new Set(values('background_hex'))];
+
+check('it offers faces at all', faces.length > 5, `${faces.length} distinct`);
+check('it offers grounds at all', grounds.length > 1, `${grounds.length} distinct`);
+check('the brand\'s two usable faces are offered', faces.includes('c31') && faces.includes('c32'));
+// The one still being made: shown as a card, never as a choice.
+check('a model still in the making is NOT offered', !faces.includes('c33'));
+check('but it IS on the page', kit.html.includes('Autumn face'));
+check('the standard roster is offered', faces.includes('rava') && faces.includes('rseme'));
+check('"no preference" is a real option', faces.includes('') && grounds.includes(''));
+
+// THE CONTRACT. Every one of those values, posted for every service, has to end
+// in a write. An unrecognised face or ground is dropped silently by design — so
+// a value the renderer invents shows up here as a missing write, not an error.
+{
+  let stored = 0;
+  let dropped = [];
+  for (const style of ['catalog', 'lifestyle', 'video']) {
+    for (const face of faces) {
+      const r = await post('/account/lock', { style, face, background_hex: '#FFFFFF' });
+      // A face of '' with a background still stores a row (the background is
+      // the answer); what must never happen is no write at all.
+      if (LOCK_INSERT.test(writeTo(r.writes, LOCK_INSERT).sql)) stored++;
+      else dropped.push(`${style}/${face || '(none)'}`);
+    }
+  }
+  check('every face the picker draws is stored, for every service',
+    dropped.length === 0, dropped.length ? dropped.join(', ') : `${stored} combinations`);
+}
+
+{
+  let dropped = [];
+  for (const hex of grounds.filter(Boolean)) {
+    const r = await post('/account/lock', { style: 'catalog', face: 'rava', background_hex: hex });
+    const w = writeTo(r.writes, LOCK_INSERT);
+    if (w.binds[4] !== hex.toUpperCase()) dropped.push(hex);
+  }
+  check('every ground the picker draws is stored as its own hex',
+    dropped.length === 0, dropped.length ? dropped.join(', ') : `${grounds.length - 1} colours`);
+}
+
+// Clearing everything deletes the row rather than storing three nulls — "no
+// row" has to stay the single meaning of "no preference".
+{
+  const r = await post('/account/lock', { style: 'catalog', face: '', background_hex: '' });
+  check('clearing both answers deletes the row', LOCK_DELETE.test(writeTo(r.writes, LOCK_DELETE).sql));
+}
+
+// A face belonging to somebody else must not be storable, whatever the form says.
+{
+  const r = await post('/account/lock', { style: 'catalog', face: 'c9999', background_hex: '' });
+  check('a custom model this brand does not own is refused',
+    LOCK_DELETE.test(writeTo(r.writes, LOCK_DELETE).sql) && !LOCK_INSERT.test(writeTo(r.writes, LOCK_INSERT).sql),
+    'treated as no preference');
+}
+
+// A roster id that is not in ROSTER is a hand-built post, not a picker click.
+{
+  const r = await post('/account/lock', { style: 'catalog', face: 'rnobody', background_hex: '' });
+  check('a roster id we do not have is refused',
+    LOCK_DELETE.test(writeTo(r.writes, LOCK_DELETE).sql) && !LOCK_INSERT.test(writeTo(r.writes, LOCK_INSERT).sql),
+    'treated as no preference');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§3 · a saved lock comes back selected, and reads back in the summary');
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+  const saved = await get('/account/brand-kit', {
+    locks: [
+      { style: 'catalog', custom_model_id: 31, roster_model: null, background_hex: '#FFFFFF' },
+      { style: 'lifestyle', custom_model_id: null, roster_model: 'ava', background_hex: '#F7F5F1' },
+    ],
+  });
+  check('the brand\'s own face is the checked one', saved.html.includes('value="c31" checked'));
+  check('a roster face is the checked one for the other service', saved.html.includes('value="rava" checked'));
+  check('both grounds come back checked',
+    saved.html.includes('value="#FFFFFF" checked') && saved.html.includes('value="#F7F5F1" checked'));
+  // The folded card has to say what it holds, or the accordion has hidden the
+  // only thing the page is for.
+  check('the folded summary names the chosen face', /bk-sum-now">Nadia/.test(saved.html));
+  check('and the chosen ground, by name', /bk-sum-now">Ava <span class="bk-sum-dot">·<\/span> Off-white/.test(saved.html));
+  check('an unset service says so once, not twice',
+    (saved.html.match(/Asked per order <span class="bk-sum-dot">/g) || []).length === 0);
+  check('and says it as a whole answer', /bk-sum-now">Asked per order</.test(saved.html));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§4 · the status filter on the order list');
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+  const all = await get('/account/orders');
+  check('unfiltered, every order is listed',
+    ['VIS-8K2-QQ1', 'VIS-7F4-M3A', 'VIS-5D1-XX8'].every((r) => all.html.includes(r)));
+  check('a chip is offered per status this customer actually has',
+    all.html.includes('status=in_production') && all.html.includes('status=delivered'));
+  // No chip for a status with no orders — a filter that resolves to nothing
+  // looks like a feature and is a dead end.
+  check('no chip for a status this customer has never had', !all.html.includes('status=cancelled'));
+  check('"all" is the active chip', /fl-chip is-active" aria-current="true">All/.test(all.html));
+
+  const one = await get('/account/orders?status=delivered');
+  check('filtered, the two delivered orders are listed',
+    one.html.includes('VIS-7F4-M3A') && one.html.includes('VIS-5D1-XX8'));
+  check('and the in-production one is not', !one.html.includes('VIS-8K2-QQ1'));
+  check('the heading counts the filtered set', /Orders <span class="h2-count">\(2\)/.test(one.html));
+  check('the active chip is the one asked for', /fl-chip is-active" aria-current="true">Delivered/.test(one.html));
+
+  // A status nobody can see the name of must not look like an empty account.
+  const bogus = await get('/account/orders?status=not_a_status');
+  check('an unknown status falls back to no filter', bogus.html.includes('VIS-8K2-QQ1'));
+
+  const empty = await get('/account/orders?status=cancelled');
+  check('a real but empty status explains itself and offers a way back',
+    empty.html.includes('No orders with this status.') && empty.html.includes('Show all orders'));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§5 · the page keeps its promises about itself');
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+  const kit2 = await get('/account/brand-kit');
+  // The CSP in html() says default-src 'none' and style-src 'self'. Both are
+  // facts only while this page ships no <script> and no inline <style> — the
+  // nonce that used to admit one is gone (its rules moved to account.css).
+  check('no script anywhere on the dashboard', !/<script/i.test(kit2.html));
+  check('no inline <style> either', !/<style/i.test(kit2.html));
+  check('and no leftover nonce attribute', !/nonce=/i.test(kit2.html));
+  // The details form left this page. Its nav item is what replaced it.
+  check('the brand kit no longer carries the details form', !kit2.html.includes('action="/account/details"'));
+  check('and the sidebar has a way to reach it', kit2.html.includes('href="/account/details"'));
+
+  const det = await get('/account/details');
+  check('the details page renders the form', det.html.includes('action="/account/details"'), det.status);
+  check('with no background control on it',
+    !det.html.includes('name="background"') && !det.html.includes('name="background_custom"'));
+  check('the email is text, not an editable field', det.html.includes('det-fixed') && !det.html.includes('name="email"'));
+}
+
+console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);
+process.exit(fails ? 1 : 0);

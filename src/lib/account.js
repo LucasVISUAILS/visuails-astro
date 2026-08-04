@@ -79,7 +79,7 @@ import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.j
 import { sendMail } from './mail.js';
 import { PER_PRODUCT } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
-import { ROSTER, modelId } from '../data/models.js';
+import { ROSTER, modelId, TRAITS } from '../data/models.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
 const LOGIN_TOKEN_TTL_MINUTES = 30;
@@ -115,10 +115,22 @@ const STYLES = PER_PRODUCT.en.map((p) => p.id);
  * Every value customers.default_background may hold, read off backgrounds.js
  * for the same reason STYLES is read off pricing.js: a second list typed here
  * is a second thing to keep in step. The empty string is the fifth answer and
- * the default one — "no standing preference, ask me per order" — which is why
- * saveDetails() treats anything not in here as that rather than as an error.
+ * the default one — "no standing preference, ask me per order".
+ *
+ * Still here although the details FORM no longer offers a background: /start
+ * posts one to the same endpoint when a customer saves their details mid-order.
+ * See handleDetails() for why presence, not emptiness, decides whether the
+ * column is written.
  */
 const BG_IDS = [...BACKGROUNDS.map((b) => b.id), BG_CUSTOM];
+
+/**
+ * The value on the "no preference" face tile. A named constant because it is
+ * compared against in three places in one function — the checked test, the
+ * summary's "is anything set" test, and the tile's own value — and an empty
+ * string typed three times is an empty string one of them can get wrong.
+ */
+const FACE_NONE = '';
 
 /**
  * Longest saved detail this file will store. Generous for a VAT number and a
@@ -184,18 +196,42 @@ const COPY = {
     // does.
     lockH: 'Defaults per service',
     lockLede: 'What each service starts with — a face and a background. These are defaults, not rules: every order still lets you change them, so you can run your own model on one order and a standard one on the next. Leave a service unset and we ask from scratch, as usual.',
-    lockNoModels: 'No models of your own yet. The standard roster is below and is included in every order.',
-    lockUnset: '— no preference —',
-    lockFace: 'Who wears it',
-    lockBg: 'Background',
-    lockOwn: 'Your own models',
-    lockRoster: 'Standard roster',
+    // lockNoModels / lockUnset / lockFace / lockBg / lockOwn / lockRoster came
+    // out with the dropdowns they labelled (August 2026). Every one of them was
+    // a <select>'s own furniture — a placeholder option, two field labels, two
+    // <optgroup> headings — and the picker that replaced them says the same
+    // things with a photograph, a tick and a per-tile tag. Their bk* successors
+    // are grouped further down. lockH, lockLede and lockSave survive because the
+    // section still has a heading, a lede and a save button.
     lockSave: 'Save',
 
-    // Saved order details, August 2026. Lives on Brand kit rather than on its
-    // own nav item: these ARE the brand's standing answers, next to the
-    // standing model choice, and a sixth sidebar entry for six text fields
-    // would be a section a customer visits once.
+    // The brand kit as a picture rather than as two dropdowns, August 2026.
+    // Lucas: "ik wil dat de brand kit veel mooier wordt om in te stellen, dus
+    // echt foto's toevoegen bij modellen, het voelt allemaal zo zielloos nu."
+    bkLede: 'The look your orders start from — who wears your product, and what it sits on.',
+    bkOwnH: 'Your own models',
+    bkOwnLede: 'Faces made for your brand, and nobody else’s. Pick one below as the default for a service, or choose per order.',
+    bkOwnEmptyH: 'No faces of your own yet',
+    bkOwnEmptyBody: 'A brand model is one face, made for you, that comes back on every order — the same person wearing your range season after season, without a shoot. Until then the standard roster below is included in everything you order.',
+    bkOwnEmptyCta: 'See what it takes',
+    bkOwnPending: 'In the making',
+    bkOwnReady: 'Ready to use',
+    bkOwnTag: 'Yours only',
+    // On a folded service card: what this service currently starts from.
+    bkAsk: 'Asked per order',
+    bkChange: 'Change',
+    bkFaceLede: 'Who wears it',
+    bkBgLede: 'What it sits on',
+    bkNoPref: 'No preference',
+    bkNoPrefFace: 'Ask me per order',
+    bkOwnFig: 'Your model',
+
+    // Saved order details, August 2026 — and its own nav item since Lucas's
+    // "maak er echt een dashboard van met logische indeling". It shared the
+    // Brand kit page for exactly as long as the brand kit was two dropdowns:
+    // once that page became a picture of the brand's faces and grounds, a
+    // phone number and a VAT line sitting under it were a second, unrelated
+    // settings screen wearing the first one's heading. Two concerns, two pages.
     detH: 'Your details',
     detLede: 'Saved once, filled in on every order. Change anything here and the next order picks it up.',
     detName: 'Your name',
@@ -207,17 +243,29 @@ const COPY = {
     detPhone: 'Phone or WhatsApp',
     detWebsite: 'Website or shop link',
     detVat: 'VAT number',
-    detBg: 'Default background',
-    detBgUnset: '— ask me per order —',
-    detBgHex: 'Your own colour (hex)',
-    detBgHexHint: 'Only used when “Your own colour” is picked above.',
+    // detBg / detBgUnset / detBgHex / detBgHexHint are gone, August 2026, at
+    // Lucas's direction: "Default background en Your own colour (hex) kan weg
+    // omdat deze bedoeld zijn voor catalog brand kit." They asked the same
+    // question the brand kit now answers per service, and per service is the
+    // more specific answer — applyBrandKit() in pipeline.js already lets it
+    // win. Two controls for one question is how a customer sets a background
+    // here and sees a different one there. The COLUMNS stay (see
+    // handleDetails) so a value set before today keeps working as a fallback.
     detSave: 'Save details',
     detSaved: 'Saved. Your next order starts filled in.',
     detOptional: 'optional',
 
+    // Filtering the order list by status, August 2026. Lucas: "een optie die
+    // alle statussen van een order kan sorteren. Dus als je op received
+    // bijvoorbeeld klikt je alle orders ziet staan gesorteerd op received."
+    flAll: 'All',
+    flEmpty: 'No orders with this status.',
+    flClear: 'Show all orders',
+
     navOverview: 'Overview',
     navNewRequest: 'New request',
     navBrandKit: 'Brand kit',
+    navDetails: 'Your details',
     navPlan: 'Plan & billing',
 
     // Overview — the landing section. Counts are real, all-time totals, not
@@ -294,16 +342,27 @@ const COPY = {
 
     lockH: 'Standaard per dienst',
     lockLede: 'Waar elke dienst mee begint — een gezicht en een achtergrond. Dit zijn standaardinstellingen en geen regels: bij elke bestelling kun je ze nog wijzigen, dus je kunt de ene bestelling met je eigen model draaien en de volgende met een standaardmodel. Laat een dienst leeg en we vragen het gewoon per bestelling.',
-    lockNoModels: 'Nog geen eigen modellen. Het standaardroster staat hieronder en zit bij elke bestelling inbegrepen.',
-    lockUnset: '— geen voorkeur —',
-    lockFace: 'Wie het draagt',
-    lockBg: 'Achtergrond',
-    lockOwn: 'Je eigen modellen',
-    lockRoster: 'Standaardroster',
+    // Zie de Engelse tak: de zes labels van de oude dropdowns zijn eruit.
     lockSave: 'Opslaan',
 
-    // Zie de Engelse tak voor waarom dit op Brand kit staat en niet in een
-    // eigen menu-item.
+    bkLede: 'De look waar je bestellingen mee beginnen — wie je product draagt, en waar het op staat.',
+    bkOwnH: 'Je eigen modellen',
+    bkOwnLede: 'Gezichten die voor jouw merk zijn gemaakt en voor niemand anders. Kies er hieronder één als standaard voor een dienst, of kies per bestelling.',
+    bkOwnEmptyH: 'Nog geen eigen gezichten',
+    bkOwnEmptyBody: 'Een merkmodel is één gezicht, voor jou gemaakt, dat bij elke bestelling terugkomt — dezelfde persoon in jouw collectie, seizoen na seizoen, zonder shoot. Tot die tijd zit het standaardroster hieronder bij alles wat je bestelt.',
+    bkOwnEmptyCta: 'Bekijk wat daarvoor nodig is',
+    bkOwnPending: 'In de maak',
+    bkOwnReady: 'Klaar voor gebruik',
+    bkOwnTag: 'Alleen van jou',
+    bkAsk: 'Wordt per bestelling gevraagd',
+    bkChange: 'Wijzigen',
+    bkFaceLede: 'Wie het draagt',
+    bkBgLede: 'Waar het op staat',
+    bkNoPref: 'Geen voorkeur',
+    bkNoPrefFace: 'Vraag het per bestelling',
+    bkOwnFig: 'Jouw model',
+
+    // Zie de Engelse tak voor waarom dit een eigen menu-item heeft gekregen.
     detH: 'Je gegevens',
     detLede: 'Eén keer opslaan, daarna bij elke bestelling ingevuld. Pas hier iets aan en de volgende bestelling neemt het over.',
     detName: 'Je naam',
@@ -313,17 +372,19 @@ const COPY = {
     detPhone: 'Telefoon of WhatsApp',
     detWebsite: 'Website of winkellink',
     detVat: 'Btw-nummer',
-    detBg: 'Standaardachtergrond',
-    detBgUnset: '— vraag het per bestelling —',
-    detBgHex: 'Je eigen kleur (hex)',
-    detBgHexHint: 'Wordt alleen gebruikt als hierboven “Je eigen kleur” is gekozen.',
+    // detBg en de hex zijn eruit — zie de Engelse tak voor de reden.
     detSave: 'Gegevens opslaan',
     detSaved: 'Opgeslagen. Je volgende bestelling begint ingevuld.',
     detOptional: 'optioneel',
 
+    flAll: 'Alle',
+    flEmpty: 'Geen bestellingen met deze status.',
+    flClear: 'Alle bestellingen tonen',
+
     navOverview: 'Overzicht',
     navNewRequest: 'Nieuwe aanvraag',
     navBrandKit: 'Brand kit',
+    navDetails: 'Je gegevens',
     navPlan: 'Abonnement & facturering',
 
     ovWelcome: 'Welkom terug',
@@ -455,6 +516,11 @@ export async function accountGet(context) {
   if (path === '/account') return sectionGet(context, customer, 'overview');
   if (path === '/account/orders') return sectionGet(context, customer, 'orders');
   if (path === '/account/brand-kit') return sectionGet(context, customer, 'brand');
+  // GET renders the form, POST (in accountPost) saves it — one path for one
+  // resource, rather than a page at one URL posting to another. It is the same
+  // URL handleDetails already redirected to, which is why the redirect target
+  // stopped being a fragment on the brand kit and started being a page.
+  if (path === '/account/details') return sectionGet(context, customer, 'details');
   if (path === '/account/plan') return sectionGet(context, customer, 'plan');
 
   const lang = negotiate(request);
@@ -571,7 +637,20 @@ async function handleLoginPost({ request, env }) {
 }
 
 async function sendLoginLink(env, request, email, lang) {
-  const customer = await env.DB.prepare('SELECT id FROM customers WHERE email = ?1').bind(email).first();
+  // lower(email), not email. `email` is already lowercased by the caller, and
+  // every row written since August 2026 is lowercase too (functions/api/order.js
+  // normalises on the way in) — but rows written BEFORE that are stored exactly
+  // as the customer typed them, and one capital letter made this lookup miss
+  // silently. The customer saw "check your email" and no email ever came.
+  //
+  // This costs the index on customers.email: lower(email) cannot use it, so the
+  // lookup is a scan. Deliberate, and cheap at this table's size — a few hundred
+  // brands — and the alternative is telling a paying customer their account does
+  // not exist. migrations/0008 normalises the historical rows; this line is what
+  // makes a database that has not run it yet still let people in.
+  const customer = await env.DB.prepare(
+    'SELECT id FROM customers WHERE lower(email) = ?1'
+  ).bind(email).first();
   if (!customer) return;
 
   const { token, tokenHash } = await mintCredential();
@@ -698,18 +777,31 @@ async function sectionGet(context, customer, section) {
   // what would make the background invisible to the renderer.
   const lockByStyle = Object.fromEntries(locks.map((l) => [l.style, l]));
 
+  // Two query strings, read once, in one place. Both are anyone's to type, so
+  // neither is trusted with more than it can carry: `saved` decides one
+  // sentence of confirmation, and `status` is checked against STATUS's own keys
+  // before it reaches a query — an unknown value falls back to "no filter"
+  // rather than to an empty list, because a filter nobody can see the name of
+  // looks exactly like a customer with no orders.
+  let justSaved = false;
+  let statusFilter = '';
+  try {
+    const params = new URL(request.url).searchParams;
+    justSaved = params.get('saved') === '1';
+    const wanted = String(params.get('status') || '');
+    if (Object.prototype.hasOwnProperty.call(STATUS, wanted)) statusFilter = wanted;
+  } catch { /* keep the defaults */ }
+
   let inner, title;
   if (section === 'orders') {
-    inner = ordersBody(t, lang, orders, filesByOrder);
+    inner = ordersBody(t, lang, orders, filesByOrder, statusFilter);
     title = t.ordersHeading;
   } else if (section === 'brand') {
-    // ?saved=1 is set by handleDetails' own redirect and by nothing else. It
-    // decides one sentence of confirmation and can decide nothing else — it is
-    // a query string, i.e. anyone's to type.
-    let justSaved = false;
-    try { justSaved = new URL(request.url).searchParams.get('saved') === '1'; } catch { /* keep false */ }
-    inner = brandKitBody(t, lang, models, lockByStyle, details, justSaved);
+    inner = brandKitBody(t, lang, models, lockByStyle);
     title = t.navBrandKit;
+  } else if (section === 'details') {
+    inner = detailsBody(t, lang, details, justSaved);
+    title = t.detH;
   } else if (section === 'plan') {
     inner = planBody(t, customer);
     title = t.planHeading;
@@ -718,14 +810,13 @@ async function sectionGet(context, customer, section) {
     title = t.navOverview;
   }
 
-  // Every section gets the nonce and the style block, not just Brand kit: the
-  // CSP header and the <style> it admits are set in two different functions,
-  // and a per-section conditional is the shape where the two drift and the
-  // panel silently loses its rules. One extra empty-ish <style> on three pages
-  // is cheaper than that class of bug.
-  const nonce = makeNonce();
+  // The per-response style nonce is gone, August 2026, and its absence is the
+  // point: the rules it admitted now live in public/account.css, where the
+  // stylesheet's own header always said they belonged. style-src is plain 'self'
+  // again — one fewer moving part, and no inline <style> to keep in step with a
+  // CSP set in a different function.
   const body = shellBody(t, lang, customer, section, inner);
-  return html(page({ lang, title, body, full: true, nonce }), 200, [], nonce);
+  return html(page({ lang, title, body, full: true }), 200);
 }
 
 async function currentCustomer(env, request) {
@@ -978,7 +1069,7 @@ function detailsRow(env, customerId) {
  */
 async function handleDetails({ request, env }, customer, asJson) {
   const form = await request.formData().catch(() => null);
-  const home = '/account/brand-kit';
+  const home = '/account/details';
 
   if (!form) return asJson ? json({ error: 'bad-request' }, 400) : seeOther(home);
 
@@ -987,12 +1078,30 @@ async function handleDetails({ request, env }, customer, asJson) {
     return v || null;
   };
 
+  // ── THE BACKGROUND COLUMNS ARE WRITTEN ONLY BY A CALLER THAT SENT ONE ─────
+  //
+  // This endpoint has two callers and, since August 2026, they disagree about
+  // whether backgrounds are any of their business. The details FORM no longer
+  // asks — Lucas took the field off it because the brand kit answers the same
+  // question per service, which is the more specific answer. But /start still
+  // posts here when a customer ticks "save my details" at the end of an order
+  // (bindSaveOffer in pipeline.js), and that request DOES carry the background
+  // they just picked. Saving it is a real feature: it is what makes the next
+  // order start on the same ground.
+  //
+  // An unconditional UPDATE would break one of those two. Keep the columns in
+  // it and saving a phone number on this page silently clears a background set
+  // during an order. Drop them and the order form's save quietly stops working.
+  // So presence decides: a caller that sent a `background` field gets it
+  // written, a caller that did not gets the column left exactly as it was.
+  // Absent is not the same answer as empty, and this is the one place that
+  // distinction is load-bearing.
+  const hasBg = form.has('background');
+  const rawBg = String(form.get('background') || '');
   // Anything not on the list is the empty answer — "ask me per order" — rather
   // than a 400. BG_IDS comes from backgrounds.js, so a fifth recommended colour
   // becomes storable by adding it there and nowhere else.
-  const rawBg = String(form.get('background') || '');
   const background = BG_IDS.includes(rawBg) ? rawBg : null;
-
   // The hex is kept only for the option that has no id to resolve from. A
   // recommended id already carries its own contract value in backgrounds.js;
   // storing a second, client-supplied hex beside it would be a way for the two
@@ -1003,33 +1112,39 @@ async function handleDetails({ request, env }, customer, asJson) {
     await env.DB.prepare(
       `UPDATE customers SET
          name = ?2, brand = ?3, phone = ?4, website = ?5, vat_number = ?6,
-         default_background = ?7, default_background_hex = ?8,
+         ${hasBg ? 'default_background = ?7, default_background_hex = ?8,' : ''}
          details_saved_at = datetime('now'),
          updated_at = datetime('now')
        WHERE id = ?1`
     ).bind(
       customer.customer_id,
       one('name'), one('brand'), one('phone'), one('website'), one('vat'),
-      background, hex
+      ...(hasBg ? [background, hex] : [])
     ).run();
   } catch {
     return asJson ? json({ error: 'unavailable' }, 503) : seeOther(home);
   }
 
   // 303 back to the section the form lives on, same rule handleLockUpdate and
-  // handleFileReview follow. ?saved=1 is what draws the confirmation line —
-  // a settings form that redirects to a page identical to the one it left is
-  // a form the customer presses twice.
+  // handleFileReview follow — which since August 2026 is this form's own page
+  // rather than the brand kit it used to share. ?saved=1 is what draws the
+  // confirmation line: a settings form that redirects to a page identical to
+  // the one it left is a form the customer presses twice.
   return asJson ? json({ ok: true }) : seeOther(`${home}?saved=1#details`);
 }
 
 /**
  * A six-digit uppercase hex, or null. Mirrors normalizeHex() in
- * src/scripts/pipeline.js — including expanding #EEE, which a brand's own
- * style guide is perfectly likely to be written in — because the value this
- * stores and the value that form resolves have to be the same string. Anything
- * else (a colour name, half a paste, an empty box) is not an answer yet and is
- * stored as none rather than as itself.
+ * src/scripts/pipeline.js — including expanding #EEE, which a brand's own style
+ * guide is perfectly likely to be written in — because the value this stores and
+ * the value that form resolves have to be the same string. Anything else (a
+ * colour name, half a paste, an empty box) is not an answer yet and is stored as
+ * none rather than as itself.
+ *
+ * Reached only by the order form's save now: this page's own details form has no
+ * hex field since August 2026, and a STANDING per-service preference is
+ * restricted to a colour we offer rather than one a customer types — see
+ * handleLockUpdate for why.
  */
 function normalizeHex(v) {
   const s = String(v || '').trim().replace(/^#/, '');
@@ -1092,9 +1207,23 @@ function groupFilesByOrder(files) {
   return map;
 }
 
+/**
+ * The brand's own faces.
+ *
+ * preview_key joined the SELECT in August 2026 for one reason: the brand kit
+ * now shows these as photographs rather than as names in a dropdown, and
+ * whether a row HAS a picture decides two different things on that page — a
+ * model with no preview yet is shown as a card that says the studio is still
+ * building it, and it is not offered as a face to lock a service to. The key
+ * itself never reaches the customer; only its presence does, as `has_preview`.
+ * The bytes come from /account/models/:id/preview, which re-reads the row and
+ * checks ownership — see handleModelPreviewImage().
+ */
 async function loadCustomModels(env, customerId) {
   const res = await env.DB.prepare(
-    'SELECT id, label, status FROM custom_models WHERE customer_id = ?1 ORDER BY created_at DESC'
+    `SELECT id, label, status,
+            (preview_key IS NOT NULL AND preview_key <> '') AS has_preview
+       FROM custom_models WHERE customer_id = ?1 ORDER BY created_at DESC`
   ).bind(customerId).all();
   return res.results || [];
 }
@@ -1491,11 +1620,30 @@ function badLinkBody(t) {
 // gives for every token it duplicates). Five, one per nav item, kept as
 // constants rather than a lookup built at render time — there are exactly
 // five and that will not change without a design decision, not a data one.
+// (Six since August 2026 — see the note on the details item in shellBody.)
 const ICON_OVERVIEW = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
 const ICON_NEW = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 const ICON_ORDERS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
 const ICON_BRAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="12"/><rect x="8" y="8" width="12" height="12"/></svg>';
 const ICON_PLAN = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="13"/><path d="M2 11h20"/></svg>';
+const ICON_DETAILS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>';
+
+/**
+ * Two icons that are NOT nav items and so are not in the five above.
+ *
+ * ICON_FACE stands in wherever a portrait is missing: the "no preference" tile,
+ * a brand model the studio has not photographed yet, and the folded summary of
+ * a service with no face set. One glyph for all three on purpose — they are the
+ * same fact ("there is no picture here") and drawing them differently would
+ * imply three different states.
+ *
+ * ICON_TICK is the chosen-tile mark. A checked radio needs something a person
+ * can see on a photograph: a border alone reads as a hover on a grid of faces,
+ * and colour alone would be the sole carrier of state, which account.css's own
+ * token notes rule out.
+ */
+const ICON_FACE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4.2"/><path d="M4.5 20.5c0-4 3.4-7.2 7.5-7.2s7.5 3.2 7.5 7.2"/></svg>';
+const ICON_TICK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>';
 
 /**
  * The sidebar app shell — task #259's second follow-up. Wraps whichever
@@ -1517,6 +1665,10 @@ function shellBody(t, lang, customer, active, inner) {
     { key: 'new', href: '/start', label: t.navNewRequest, icon: ICON_NEW },
     { key: 'orders', href: '/account/orders', label: t.ordersHeading, icon: ICON_ORDERS },
     { key: 'brand', href: '/account/brand-kit', label: t.navBrandKit, icon: ICON_BRAND },
+    // Six now, not five. "Your details" left the brand kit page in August 2026
+    // and a section with its own page needs its own way in — see detH's copy
+    // note for why the two were split.
+    { key: 'details', href: '/account/details', label: t.navDetails, icon: ICON_DETAILS },
     { key: 'plan', href: '/account/plan', label: t.navPlan, icon: ICON_PLAN },
   ];
   const nav = items.map((n) => {
@@ -1551,11 +1703,16 @@ function shellBody(t, lang, customer, active, inner) {
  */
 function overviewBody(t, lang, customer, orders, filesByOrder) {
   const name = customer.brand || customer.name || customer.email;
+  // Each tile now goes somewhere — the same status filter the Orders page
+  // gained in August 2026. A count a customer can see and not act on is a
+  // number they have to go and re-find by hand; "3 in production" and "show me
+  // those 3" are the same intention one click apart. The total goes to the
+  // unfiltered list, which is what "all orders" means.
   const stats = [
-    [t.ovInProduction, orders.filter((o) => o.status === 'in_production').length],
-    [t.ovHumanCheck, orders.filter((o) => o.status === 'human_check').length],
-    [t.ovDelivered, orders.filter((o) => o.status === 'delivered').length],
-    [t.ovTotal, orders.length],
+    [t.ovInProduction, orders.filter((o) => o.status === 'in_production').length, 'in_production'],
+    [t.ovHumanCheck, orders.filter((o) => o.status === 'human_check').length, 'human_check'],
+    [t.ovDelivered, orders.filter((o) => o.status === 'delivered').length, 'delivered'],
+    [t.ovTotal, orders.length, ''],
   ];
   const recent = orders.slice(0, 5);
 
@@ -1569,7 +1726,15 @@ function overviewBody(t, lang, customer, orders, filesByOrder) {
 </div>
 
 <div class="statrow">
-  ${stats.map(([label, n]) => `<div class="stat"><span class="stat-n">${n}</span><span class="stat-label">${esc(label)}</span></div>`).join('')}
+  ${stats.map(([label, n, status]) => {
+    const inner = `<span class="stat-n">${n}</span><span class="stat-label">${esc(label)}</span>`;
+    // A tile with nothing behind it stays a tile. Linking "0 delivered" to a
+    // list that says "no orders with this status" is a click that costs the
+    // customer a page load to be told what the 0 already said.
+    return n
+      ? `<a class="stat is-link" href="/account/orders${status ? `?status=${encodeURIComponent(status)}` : ''}">${inner}</a>`
+      : `<div class="stat">${inner}</div>`;
+  }).join('')}
 </div>
 
 <div class="section-head">
@@ -1591,32 +1756,174 @@ function activityRow(t, lang, o) {
 </li>`;
 }
 
-function ordersBody(t, lang, orders, filesByOrder) {
+/**
+ * Orders, optionally narrowed to one status — August 2026.
+ *
+ * Lucas: "een optie die alle statussen van een order kan sorteren. Dus als je
+ * op received bijvoorbeeld klikt je alle orders ziet staan gesorteerd op
+ * received." So the statuses became a row of links, and the filtering happens
+ * HERE rather than in SQL: loadOrders already fetched every order this customer
+ * has (the same rows Overview counts and this page lists), so a second,
+ * narrower query would be a second round trip to answer a question the data in
+ * hand already answers. Admin's list is the opposite case — 200-row cap, every
+ * brand — and filters in the query for exactly that reason.
+ *
+ * EVERY STATUS THIS CUSTOMER HAS, AND NO OTHERS. A chip for a status with zero
+ * orders is a dead end that looks like a feature; a customer who has never had
+ * anything cancelled should not be invited to view their cancelled orders. The
+ * counts are on the chips because a filter you can count before clicking is a
+ * filter you can decide against clicking.
+ *
+ * The active chip is a <span>, not a link to the page you are on, and carries
+ * aria-current. "All" is always first and is the way back.
+ */
+function ordersBody(t, lang, orders, filesByOrder, statusFilter = '') {
+  const shown = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
+
+  // Insertion order follows STATUS, which is the order the studio moves through
+  // them, not the order this customer's rows happen to arrive in.
+  const counts = new Map();
+  for (const key of Object.keys(STATUS)) {
+    const n = orders.filter((o) => o.status === key).length;
+    if (n) counts.set(key, n);
+  }
+
+  const chip = (href, label, n, active) => active
+    ? `<span class="fl-chip is-active" aria-current="true">${esc(label)}${n === null ? '' : ` <span class="fl-n">${n}</span>`}</span>`
+    : `<a class="fl-chip" href="${esc(href)}">${esc(label)}${n === null ? '' : ` <span class="fl-n">${n}</span>`}</a>`;
+
+  const filters = counts.size > 1 ? `
+<nav class="fl" aria-label="${esc(t.ordersHeading)}">
+  ${chip('/account/orders', t.flAll, orders.length, !statusFilter)}
+  ${[...counts].map(([key, n]) => chip(
+    `/account/orders?status=${encodeURIComponent(key)}`,
+    statusLabel(key, lang) || key,
+    n,
+    statusFilter === key,
+  )).join('')}
+</nav>` : '';
+
+  const empty = statusFilter
+    ? `<p class="empty">${esc(t.flEmpty)} <a href="/account/orders">${esc(t.flClear)}</a></p>`
+    : `<p class="empty">${esc(t.emptyOrders)}</p>`;
+
   return `
-<h1>${esc(t.ordersHeading)}${orders.length ? ` <span class="h2-count">(${orders.length})</span>` : ''}</h1>
+<h1>${esc(t.ordersHeading)}${shown.length ? ` <span class="h2-count">(${shown.length})</span>` : ''}</h1>
 <p class="lede">${esc(t.ordersLede)}</p>
-${orders.length ? orders.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [])).join('') : `<p class="empty">${esc(t.emptyOrders)}</p>`}`;
+${filters}
+${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [])).join('') : empty}`;
 }
 
 /**
- * Brand kit — the standing answers. Two panels, in the order a customer meets
- * them: the details every order asks for (August 2026), then the per-style
- * model lock (task #257). Details come FIRST because they are the ones every
- * customer has, whereas the lock panel is empty for a brand with no custom
- * models — leading a page with an empty state is how a section reads as
- * unfinished.
+ * Brand kit — August 2026, rebuilt as something a brand can look at.
  *
- * Lucas's ask was that details be editable here and not only mid-order: a
- * customer whose VAT number changed should not have to start an order they do
- * not want in order to correct it.
+ * WHAT WAS WRONG WITH IT. Lucas, verbatim: "ik wil dat de brand kit veel
+ * mooier wordt om in te stellen, dus echt foto's toevoegen bij modellen, het
+ * voelt allemaal zo zielloos nu." He is describing a real defect, not a taste.
+ * The page asked a brand to choose the face of their product line from a
+ * <select> holding ten first names. Nobody can choose a model from a name —
+ * the whole thing being decided is what someone looks like. Same for the
+ * background: a dropdown reading "Off-white · #F7F5F1" is a colour you have to
+ * imagine, on a page whose entire subject is not having to imagine.
+ *
+ * SO BOTH CONTROLS BECAME THE THING THEY CHOOSE. Faces are portraits, grounds
+ * are the colour itself. The radio inputs underneath are unchanged, which is
+ * why this is a re-render and not a migration: handleLockUpdate still receives
+ * `face` as 'c<id>' | 'r<id>' | '' and `background_hex` as a hex, so the wire
+ * format, the validation and the stored row are all exactly as they were.
+ *
+ * TWO SECTIONS, IN THIS ORDER. The brand's OWN faces first — they are what
+ * makes this page theirs rather than ours, and a brand that has commissioned
+ * one should see it before it sees our roster. Then the per-service defaults,
+ * which is where a face (theirs or ours) and a ground get attached to catalog,
+ * lifestyle and video.
+ *
+ * "YOUR DETAILS" IS NO LONGER HERE. It moved to its own nav item and its own
+ * page — see the copy note on detH. A phone number and a VAT line under a
+ * gallery of faces were two settings screens sharing one heading.
  */
-function brandKitBody(t, lang, models, lockByStyle, details, justSaved) {
+function brandKitBody(t, lang, models, lockByStyle) {
   return `
 <h1>${esc(t.navBrandKit)}</h1>
-${detailsSection(t, lang, details, justSaved)}
-<h2 class="det-h2">${esc(t.lockH)}</h2>
+<p class="lede">${esc(t.bkLede)}</p>
+${ownModelsSection(t, lang, models)}
+<h2 class="bk-h2">${esc(t.lockH)}</h2>
 <p class="lede">${esc(t.lockLede)}</p>
-${lockSection(t, models, lockByStyle)}`;
+${lockSection(t, lang, models, lockByStyle)}`;
+}
+
+/**
+ * The brand's own faces, as photographs.
+ *
+ * WHY A MODEL WITH NO PICTURE IS STILL SHOWN. It is shown, and it is not
+ * offered. The studio adds a brand model as a label first and the face arrives
+ * later (admin.js's handleAddCustomModel writes status 'in_design' with no
+ * preview_key), so "we are building this" is a normal state of some length —
+ * days, not seconds. Hiding the row would make a customer who was told their
+ * model was underway open this page and see nothing at all. Showing it as a
+ * card that says so answers the question the customer actually has. What it
+ * must NOT do is appear in the picker below, because a face you cannot see is
+ * not a face you can choose — handleMe() draws the same line for the order
+ * form, and loadCustomModels' `has_preview` is what both read.
+ *
+ * THE EMPTY STATE SELLS, at Lucas's direction when asked what it should do for
+ * a brand with none: an invitation with a route to the briefing, not a line of
+ * regret. It is the only place in the customer dashboard that offers something
+ * — which is why it stays one short paragraph and one link, and why the
+ * paragraph says what a brand model IS rather than what it costs. The price
+ * question belongs on the page the link goes to, where the answer is complete.
+ */
+function ownModelsSection(t, lang, models) {
+  if (!models.length) {
+    return `
+<section class="bk-own is-empty">
+  <div class="bk-empty">
+    <span class="bk-empty-fig" aria-hidden="true">${ICON_FACE}</span>
+    <div class="bk-empty-text">
+      <h2>${esc(t.bkOwnEmptyH)}</h2>
+      <p>${esc(t.bkOwnEmptyBody)}</p>
+      <a class="btn btn-2nd" href="/${lang === 'nl' ? 'nl/' : ''}start/brand-model">${esc(t.bkOwnEmptyCta)}</a>
+    </div>
+  </div>
+</section>`;
+  }
+
+  const cards = models.map((m) => {
+    const ready = !!m.has_preview && m.status !== 'in_design';
+    return `
+<figure class="bk-model${ready ? ' is-ready' : ' is-pending'}">
+  ${m.has_preview
+    ? `<img class="bk-model-img" src="/account/models/${m.id}/preview" alt="${esc(m.label || '')}" loading="lazy" decoding="async" width="400" height="535">`
+    : `<span class="bk-model-img is-blank" aria-hidden="true">${ICON_FACE}</span>`}
+  <figcaption>
+    <span class="bk-model-name">${esc(m.label || '')}</span>
+    <span class="bk-model-state">${esc(ready ? t.bkOwnReady : t.bkOwnPending)}</span>
+  </figcaption>
+</figure>`;
+  }).join('');
+
+  return `
+<section class="bk-own">
+  <h2 class="bk-h2">${esc(t.bkOwnH)}</h2>
+  <p class="lede">${esc(t.bkOwnLede)}</p>
+  <div class="bk-models">${cards}</div>
+</section>`;
+}
+
+/**
+ * "Your details" as its own page — August 2026, Lucas's "maak er echt een
+ * dashboard van met logische indeling".
+ *
+ * It is the same form it was inside the brand kit, moved rather than rewritten,
+ * minus the two background fields. The #details id stays on the section because
+ * handleDetails' redirect targets it and a fragment that resolves to nothing is
+ * a scroll position silently lost.
+ */
+function detailsBody(t, lang, details, justSaved) {
+  return `
+<h1>${esc(t.detH)}</h1>
+<p class="lede">${esc(t.detLede)}</p>
+${detailsSection(t, lang, details, justSaved)}`;
 }
 
 /**
@@ -1635,14 +1942,6 @@ ${lockSection(t, models, lockByStyle)}`;
  */
 function detailsSection(t, lang, details, justSaved) {
   const d = details || {};
-  const bg = d.default_background || '';
-  const options = [`<option value=""${bg === '' ? ' selected' : ''}>${esc(t.detBgUnset)}</option>`]
-    // Names come from backgrounds.js in the customer's own language — the same
-    // words /start's swatches use, so the default set here and the option seen
-    // there are recognisably the same choice.
-    .concat(BACKGROUNDS.map((b) => `<option value="${esc(b.id)}"${bg === b.id ? ' selected' : ''}>${esc(b.name[lang] || b.name.en)} · ${esc(b.hex)}</option>`))
-    .concat([`<option value="${esc(BG_CUSTOM)}"${bg === BG_CUSTOM ? ' selected' : ''}>${esc(t.detBgHex)}</option>`])
-    .join('');
 
   const field = (name, label, value, opts = {}) => `
     <div class="det-field">
@@ -1653,8 +1952,6 @@ function detailsSection(t, lang, details, justSaved) {
 
   return `
 <section class="detpanel" id="details">
-  <h2 class="det-h2">${esc(t.detH)}</h2>
-  <p class="lede">${esc(t.detLede)}</p>
   ${justSaved ? `<p class="det-ok" role="status">${esc(t.detSaved)}</p>` : ''}
   <form class="detform" method="post" action="/account/details">
     <div class="det-grid">
@@ -1672,15 +1969,6 @@ function detailsSection(t, lang, details, justSaved) {
     </div>
     <div class="det-grid">
       ${field('vat', t.detVat, d.vat_number, { placeholder: 'NL000000000B00', optional: true })}
-      <div class="det-field">
-        <label for="det-bg">${esc(t.detBg)}</label>
-        <select id="det-bg" name="background">${options}</select>
-      </div>
-    </div>
-    <div class="det-field">
-      <label for="det-bghex">${esc(t.detBgHex)} <span class="det-opt">${esc(t.detOptional)}</span></label>
-      <input id="det-bghex" name="background_custom" type="text" value="${esc(d.default_background_hex || '')}" placeholder="#RRGGBB" maxlength="7" pattern="#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" autocomplete="off" spellcheck="false">
-      <span class="det-hint">${esc(t.detBgHexHint)}</span>
     </div>
     <button class="btn btn-primary" type="submit">${esc(t.detSave)}</button>
   </form>
@@ -1742,48 +2030,140 @@ function planBody(t, customer) {
  * gone — a brand with no custom models still has a roster and a background to
  * set, which is the whole point.
  */
-function lockSection(t, models, lockByStyle) {
-  const rows = STYLES.map((style) => {
+function lockSection(t, lang, models, lockByStyle) {
+  // Only faces a customer can actually see. See ownModelsSection's header: a
+  // model still in the making is shown up there and withheld from here.
+  const pickable = models.filter((m) => m.has_preview && m.status !== 'in_design');
+
+  const rows = STYLES.map((style, i) => {
     const lock = lockByStyle[style] || {};
     const face = lock.custom_model_id ? `c${lock.custom_model_id}`
-      : lock.roster_model ? `r${lock.roster_model}` : '';
-    const bg = lock.background_hex || '';
+      : lock.roster_model ? `r${lock.roster_model}` : FACE_NONE;
+    const bg = (lock.background_hex || '').toUpperCase();
 
-    const custom = models.length
-      ? `<optgroup label="${esc(t.lockOwn)}">${models.map((m) =>
-          `<option value="c${m.id}"${face === `c${m.id}` ? ' selected' : ''}>${esc(m.label)}</option>`).join('')}</optgroup>`
+    // ── WHAT THE FOLDED CARD SAYS ──────────────────────────────────────────
+    // The summary has to answer "what does this service start from" without
+    // being opened, or the accordion has hidden the only thing the page is for.
+    // So it carries the same two answers the body sets, drawn the same way:
+    // the chosen portrait as a thumbnail and the chosen ground as a chip of
+    // that colour. An unset service says so in words rather than showing an
+    // empty frame — "asked per order" is a real answer, not a missing one.
+    const chosenOwn = face.startsWith('c') ? pickable.find((m) => `c${m.id}` === face) : null;
+    const chosenRoster = face.startsWith('r') ? ROSTER.find((m) => `r${modelId(m.name)}` === face) : null;
+    const faceThumb = chosenOwn
+      ? `<img class="bk-sum-face" src="/account/models/${chosenOwn.id}/preview" alt="" loading="lazy" decoding="async" width="96" height="128">`
+      : chosenRoster
+        ? `<img class="bk-sum-face" src="${esc(chosenRoster.thumb)}" alt="" loading="lazy" decoding="async" width="96" height="128">`
+        : '';
+    const faceName = chosenOwn ? chosenOwn.label : chosenRoster ? chosenRoster.name : t.bkAsk;
+    const bgChip = bg
+      ? `<span class="bk-sum-bg" style="--sw:${esc(bg)}" aria-hidden="true"></span>`
       : '';
-    const roster = `<optgroup label="${esc(t.lockRoster)}">${ROSTER.map((m) => {
-      const id = modelId(m.name);
-      return `<option value="r${id}"${face === `r${id}` ? ' selected' : ''}>${esc(m.name)}</option>`;
-    }).join('')}</optgroup>`;
+    const bgMatch = bg ? BACKGROUNDS.find((b) => b.hex.toUpperCase() === bg) : null;
+    const bgName = bg ? (bgMatch?.name[lang] || bgMatch?.name.en || bg) : t.bkAsk;
 
-    const bgOptions =
-      `<option value=""${bg === '' ? ' selected' : ''}>${esc(t.lockUnset)}</option>` +
-      BACKGROUNDS.map((b) =>
-        `<option value="${esc(b.hex)}"${bg.toUpperCase() === b.hex.toUpperCase() ? ' selected' : ''}>${esc(b.name.en)} · ${esc(b.hex)}</option>`
-      ).join('');
+    // A service with NEITHER answer set said "asked per order · asked per
+    // order" — the same sentence twice, which reads as a rendering bug rather
+    // than as an unset service. One phrase covers both when both are unset.
+    const summaryNow = (!face && !bg) ? esc(t.bkAsk)
+      : `${esc(faceName)} <span class="bk-sum-dot">·</span> ${esc(bgName)}`;
 
+    // A radio tile. The <input> is first and visually hidden — the label is the
+    // control, so the whole portrait is the hit area, and :checked styles the
+    // frame around it. Not a <button>: a form with three services, two groups
+    // and one submit is exactly what a radio group is, and building it out of
+    // buttons would need script this page does not have.
+    const faceTile = (value, imgHtml, name, sub, extraClass = '') => `
+      <label class="bk-tile${extraClass}">
+        <input type="radio" name="face" value="${esc(value)}"${face === value ? ' checked' : ''}>
+        ${imgHtml}
+        <span class="bk-tile-meta">
+          <span class="bk-tile-name">${esc(name)}</span>
+          ${sub ? `<span class="bk-tile-sub">${esc(sub)}</span>` : ''}
+        </span>
+        <span class="bk-tick" aria-hidden="true">${ICON_TICK}</span>
+      </label>`;
+
+    const noFaceTile = faceTile(
+      FACE_NONE,
+      `<span class="bk-tile-img is-blank" aria-hidden="true">${ICON_FACE}</span>`,
+      t.bkNoPref,
+      t.bkNoPrefFace,
+      ' is-none'
+    );
+
+    const ownTiles = pickable.map((m) => faceTile(
+      `c${m.id}`,
+      `<img class="bk-tile-img" src="/account/models/${m.id}/preview" alt="" loading="lazy" decoding="async" width="400" height="535">`,
+      m.label || t.bkOwnFig,
+      t.bkOwnTag,
+      ' is-own'
+    )).join('');
+
+    const rosterTiles = ROSTER.map((m) => faceTile(
+      `r${modelId(m.name)}`,
+      `<img class="bk-tile-img" src="${esc(m.thumb)}" alt="" loading="lazy" decoding="async" width="${m.tw}" height="${m.th}">`,
+      m.name,
+      (m.traits || []).map((k) => (TRAITS[lang] || TRAITS.en)[k] || k).join(' · ')
+    )).join('');
+
+    // The grounds. `--sw` carries the hex to CSS as a custom property rather
+    // than as a background declaration, which is what keeps this inside the
+    // style-src 'self' CSP: a `style` ATTRIBUTE setting a variable is allowed
+    // where an inline <style> block is not, and the rule that consumes it lives
+    // in account.css. The hex is also printed as text under the swatch — the
+    // colour is the answer, but the value is the contract (see backgrounds.js).
+    const bgTiles = [
+      `<label class="bk-sw is-none">
+         <input type="radio" name="background_hex" value=""${bg === '' ? ' checked' : ''}>
+         <span class="bk-sw-chip is-blank" aria-hidden="true"></span>
+         <span class="bk-sw-name">${esc(t.bkNoPref)}</span>
+       </label>`,
+    ].concat(BACKGROUNDS.map((b) => `
+      <label class="bk-sw">
+        <input type="radio" name="background_hex" value="${esc(b.hex)}"${bg === b.hex.toUpperCase() ? ' checked' : ''}>
+        <span class="bk-sw-chip" style="--sw:${esc(b.hex)}" aria-hidden="true"></span>
+        <span class="bk-sw-name">${esc(b.name[lang] || b.name.en)}</span>
+        <span class="bk-sw-hex">${esc(b.hex)}</span>
+      </label>`)).join('');
+
+    // `name="bk"` makes the three cards an exclusive accordion: opening
+    // lifestyle closes catalog. That is the difference between a page with one
+    // grid of faces on it and a page with thirty-odd. The first card ships
+    // open so the page opens ON the photographs rather than on three closed
+    // rows — DESIGN.md's disclosure rule allows folding what only some readers
+    // ask for, and it also says a page must not fold the thing it is for.
     return `
-<form class="lockcard" method="post" action="/account/lock">
-  <input type="hidden" name="style" value="${esc(style)}">
-  <h3 class="lockcard-h">${esc(styleLabel(style))}</h3>
-  <label class="lockfield">
-    <span>${esc(t.lockFace)}</span>
-    <select name="face">
-      <option value=""${face === '' ? ' selected' : ''}>${esc(t.lockUnset)}</option>
-      ${custom}${roster}
-    </select>
-  </label>
-  <label class="lockfield">
-    <span>${esc(t.lockBg)}</span>
-    <select name="background_hex">${bgOptions}</select>
-  </label>
-  <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
-</form>`;
+<details class="bk-card" name="bk"${i === 0 ? ' open' : ''}>
+  <summary class="bk-sum">
+    <span class="bk-sum-figs">
+      ${faceThumb || `<span class="bk-sum-face is-blank" aria-hidden="true">${ICON_FACE}</span>`}
+      ${bgChip || `<span class="bk-sum-bg is-blank" aria-hidden="true"></span>`}
+    </span>
+    <span class="bk-sum-text">
+      <span class="bk-sum-h">${esc(styleLabel(style))}</span>
+      <span class="bk-sum-now">${summaryNow}</span>
+    </span>
+    <span class="bk-sum-cta">${esc(t.bkChange)}</span>
+  </summary>
+  <form class="bk-form" method="post" action="/account/lock">
+    <input type="hidden" name="style" value="${esc(style)}">
+    <fieldset class="bk-group">
+      <legend>${esc(t.bkFaceLede)}</legend>
+      <div class="bk-tiles">${noFaceTile}${ownTiles}${rosterTiles}</div>
+    </fieldset>
+    <fieldset class="bk-group">
+      <legend>${esc(t.bkBgLede)}</legend>
+      <div class="bk-sws">${bgTiles}</div>
+    </fieldset>
+    <div class="bk-actions">
+      <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
+    </div>
+  </form>
+</details>`;
   }).join('');
 
-  return `<div class="lockpanel">${rows}</div>`;
+  return `<div class="bk-cards">${rows}</div>`;
 }
 
 function styleLabel(style) {
@@ -1902,7 +2282,7 @@ function errorBody(t, message = null) {
 // check-email and the bad-link page keep `.wrap`: they are single centered
 // cards, not the app shell, same distinction account.css's own header draws
 // between .authcard and everything sectionGet renders.
-function page({ lang, title, body, full = false, nonce = '' }) {
+function page({ lang, title, body, full = false }) {
   return `<!doctype html>
 <html lang="${lang}">
 <head>
@@ -1913,7 +2293,6 @@ function page({ lang, title, body, full = false, nonce = '' }) {
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/account.css">
-${nonce ? `<style nonce="${esc(nonce)}">${DETAILS_CSS}</style>` : ''}
 </head>
 <body${full ? ' class="has-shell"' : ''}>
 ${full ? body : `<div class="wrap">\n${body}\n</div>`}
@@ -1921,51 +2300,16 @@ ${full ? body : `<div class="wrap">\n${body}\n</div>`}
 </html>`;
 }
 
-/**
- * The saved-details panel's own rules, and WHY they are here rather than in
- * public/account.css where every other rule on this page lives.
- *
- * They are in this file because this file is the only one this task owns; the
- * stylesheet is not ours to edit. That is a constraint, not a design, and the
- * next person free to touch account.css should move this block there verbatim
- * and delete the nonce plumbing with it.
- *
- * WHAT THE NONCE IS FOR. style-src is 'self' — an inline <style> is refused,
- * silently, and the panel would render as unstyled boxes with no error anyone
- * would see. The fix is a per-response nonce, NOT 'unsafe-inline': a nonce
- * admits exactly this one block and still refuses every injected style
- * attribute, which is the property 'self' was there for in the first place.
- *
- * CORNERS. --r-lg on the panel, --r-md on the fields, --r-sm on nothing
- * smaller — the three tokens account.css defines at :root and applies per
- * primitive further down. Nothing here is square.
- */
-const DETAILS_CSS = `
-.detpanel { margin: 0 0 clamp(2.4rem,5vw,3.4rem); padding: clamp(1.3rem,3vw,1.8rem); border: 1px solid var(--line); background: var(--paper-lift); border-radius: var(--r-lg); }
-.detpanel .lede { font-size: 1rem; }
-.det-h2 { margin-top: 0; }
-.detform { display: grid; gap: 1.1rem; margin-top: 1.4rem; }
-.det-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.det-field { display: grid; gap: .35rem; min-width: 0; }
-.det-field label, .det-label { font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; font-weight: 600; color: var(--ink-3); }
-.det-field input {
-  width: 100%; padding: .7rem .8rem; font-size: .96rem;
-  border: 1px solid var(--line-strong); border-radius: var(--r-md);
-  background: var(--surface); color: var(--ink);
-}
-.det-field select { width: 100%; padding: .7rem 2.2rem .7rem .8rem; border-radius: var(--r-md); }
-.det-opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); }
-.det-hint { font-size: .84rem; color: var(--ink-3); text-wrap: pretty; }
-/* The account email, shown and not editable — see handleDetails(). It is
-   deliberately not a disabled <input>: a greyed-out field reads as one that
-   could be switched on, and this one never can. */
-.det-fixed { margin: 0; padding: .7rem .8rem; border: 1px dashed var(--line-strong); border-radius: var(--r-md); background: var(--paper-2); color: var(--ink); font-size: .96rem; overflow-wrap: anywhere; }
-.det-ok { margin: .9rem 0 0; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-2); color: var(--signal-ink); font-size: .92rem; }
-.detform .btn { justify-self: start; }
-`;
+// The saved-details panel's rules used to live here as an inline <style>,
+// admitted by a per-response CSP nonce, because the task that wrote them did
+// not own public/account.css. That block's own comment asked whoever was free
+// to touch the stylesheet to move it there verbatim and delete the nonce
+// plumbing with it. August 2026 did both: the rules are in account.css beside
+// every other rule this page uses, page() has no <style>, and style-src is
+// plain 'self'.
 
 /** Same header set and reasoning as portal.js's html() — no script on this page, so default-src 'none' is a fact, not an aspiration. */
-function html(body, status = 200, extraSetCookies = [], nonce = '') {
+function html(body, status = 200, extraSetCookies = []) {
   const headers = new Headers({
     'content-type': 'text/html; charset=utf-8',
     'cache-control': 'no-store',
@@ -1973,22 +2317,10 @@ function html(body, status = 200, extraSetCookies = [], nonce = '') {
     'x-robots-tag': 'noindex, nofollow',
     'x-content-type-options': 'nosniff',
     'content-security-policy':
-      `default-src 'none'; img-src 'self'; style-src 'self'${nonce ? ` 'nonce-${nonce}'` : ''}; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
+      `default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
   });
   for (const c of extraSetCookies) headers.append('Set-Cookie', c);
   return new Response(body, { status, headers });
-}
-
-/**
- * A fresh nonce per response. Must be unpredictable and must never be reused
- * across responses — a nonce that repeats is 'unsafe-inline' with extra steps.
- * crypto.getRandomValues is the same source mintToken() draws on (token.js).
- */
-function makeNonce() {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  let s = '';
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s).replace(/=+$/, '');
 }
 
 function seeOther(location, setCookies = []) {
