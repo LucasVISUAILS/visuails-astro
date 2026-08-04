@@ -46,6 +46,7 @@ import {
   WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, reviewClaim, turnaround,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
+import Disclose from './Disclose.astro';
 import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
 import TierCompare from './TierCompare.astro';
@@ -114,7 +115,7 @@ const COPY = {
     // closing-word-emphasis convention already used on the other hero H1s
     // (homepage's "visualized.", custom-models' "Only yours.").
     h1: 'Clean, consistent product visuals — <em>built to scale.</em>',
-    lead: `A full 4-photo set per product — front, back, detail and one on-model shot. <strong>${euro(entry, 'en')} per product</strong> ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
+    lead: `A full set per product, from 4 photos — front, back, a fabric or logo close-up and one on-model shot, with more available per product. <strong>${euro(entry, 'en')} per product</strong> ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
     // read the tier label verbatim ("Order individual products"), which put the
     // Tier 0 offer in the hero of all three service pages. It was also slightly
@@ -139,7 +140,7 @@ const COPY = {
     // — so this line names the count as well as the promise. A visitor should
     // not be able to leave this page believing a date was promised.
     queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, the order goes into the capacity calendar and gets the reserved window.`,
-    packH: 'One product. Four photos. The rate falls as the count rises.',
+    packH: 'One product. Four photos, or more. The rate falls as the count rises.',
     ladderH: 'What a catalog set costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
@@ -209,6 +210,10 @@ const COPY = {
         a: 'Yes — one on-model photo is part of every product set, at no extra cost. Pick a model when you order, or let us choose one that fits your brand.',
       },
       {
+        q: 'Do I have to use all four?',
+        a: 'No. The set is what you get; what you publish from it is your call. Use two now and keep the others for a seasonal campaign, a new marketplace or a different banner size — there is no time limit and nothing extra to pay for putting one to work later.',
+      },
+      {
         q: 'How long does it take?',
         // Both halves of the timing promise, in the order a buyer needs them:
         // the typical span first, then the fact that it is not a date.
@@ -216,11 +221,11 @@ const COPY = {
       },
       {
         q: 'Can I choose the background colour?',
-        a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send.',
+        a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send. If you pick Amazon, bol or Zalando in the order, the background locks to white because those platforms require it; if you want your own colour as well, order the product twice and it is simply charged at the ladder rate.',
       },
       {
-        q: 'Are the visuals marketplace-compliant?',
-        a: "Yes — framed and exported for common marketplace requirements. Tell us your platform and we'll match its specs.",
+        q: 'Can I use these on Amazon, bol and Zalando?',
+        a: 'You tell us where the product will be sold as part of the order, and we deliver to that spec. All three require a pure white main image, so picking one locks the background to #FFFFFF and the set comes as jpg rather than webp. Two rules stay theirs and are worth knowing: bol allows no model on the main image, and Zalando asks for model views photographed with a real person — so use our on-model shot there as an additional image. We match the specifications; the platform still decides on the listing.',
       },
       {
         q: 'What if I need changes?',
@@ -237,17 +242,17 @@ const COPY = {
   nl: {
     eyebrow: 'Catalog',
     h1: 'Strakke, consistente productvisuals — <em>gebouwd om te schalen.</em>',
-    lead: `Een complete set van 4 foto’s per product — voorkant, achterkant, detail en één on-model shot. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
+    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een stof- of logo-close-up en één on-model shot, en per product bij te bestellen. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
     ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk de prijsstaffel',
     wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Catalog-visuals%20bestellen%20voor%20mijn%20producten.',
     waLabel: 'WhatsApp',
     trust: [
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
-      ['4 foto’s', 'per product'],
+      ['Vanaf 4 foto’s', 'per product'],
     ],
     queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster.`,
-    packH: 'Eén product. Vier foto’s. Het tarief daalt naarmate het aantal stijgt.',
+    packH: 'Eén product. Vier foto’s of meer. Het tarief daalt naarmate het aantal stijgt.',
     ladderH: 'Wat een catalogset kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
@@ -306,16 +311,20 @@ const COPY = {
         a: 'Ja — één on-model foto hoort bij elke productset, zonder extra kosten. Kies een model bij je bestelling, of laat ons er een kiezen die bij je merk past.',
       },
       {
+        q: 'Moet ik alle vier gebruiken?',
+        a: 'Nee. De set is wat je krijgt; wat je ervan publiceert bepaal jij. Gebruik er nu twee en houd de rest voor een seizoenscampagne, een nieuwe marktplaats of een ander bannerformaat — er zit geen termijn op en het kost niets extra om er later alsnog een in te zetten.',
+      },
+      {
         q: 'Hoe lang duurt het?',
         a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn venster vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met het venster: ${turnaround('attended', 'nl').toLowerCase()}.`,
       },
       {
         q: 'Kan ik de achtergrondkleur kiezen?',
-        a: 'Standaard is puur wit (#FFFFFF). Je kunt ook elke hexcode invoeren — een lichte, neutrale kleur werkt het best — toegepast achter elk product dat je opstuurt.',
+        a: 'Standaard is puur wit (#FFFFFF). Je kunt ook elke hexcode invoeren — een lichte, neutrale kleur werkt het best — toegepast achter elk product dat je opstuurt. Kies je bij je bestelling Amazon, bol of Zalando, dan staat de achtergrond vast op wit omdat die platforms dat eisen; wil je daarnaast je eigen kleur, bestel het product dan twee keer en je betaalt gewoon het staffeltarief.',
       },
       {
-        q: 'Voldoen de visuals aan de eisen van marktplaatsen?',
-        a: 'Ja — uitgesneden en geëxporteerd volgens de gangbare eisen van marktplaatsen. Vertel ons je platform en we passen de specificaties daarop aan.',
+        q: 'Kan ik deze op Amazon, bol en Zalando gebruiken?',
+        a: 'Je geeft bij je bestelling aan waar het product verkocht wordt, en we leveren op die specificatie. Alle drie eisen ze een zuiver witte hoofdafbeelding, dus die keuze zet de achtergrond vast op #FFFFFF en je krijgt de set als jpg in plaats van webp. Twee regels blijven van het platform en zijn het weten waard: bol staat geen model op de hoofdafbeelding toe, en Zalando vraagt modelbeelden die met een echte persoon zijn gefotografeerd — gebruik onze on-model shot daar dus als extra afbeelding. Wij matchen de specificaties; het platform beslist over de listing.',
       },
       {
         q: 'Wat als ik wijzigingen nodig heb?',
@@ -544,10 +553,9 @@ const shots = SHOTS[lang];
     <h2 style="margin-bottom:1.8rem">{c.faqH}</h2>
     <div class="faq-stack">
       {c.faqs.map((f) => (
-        <details class="faq-item">
-          <summary>{f.q}</summary>
+        <Disclose summary={f.q} tone="panel">
           <p>{f.a}</p>
-        </details>
+        </Disclose>
       ))}
     </div>
   </div>

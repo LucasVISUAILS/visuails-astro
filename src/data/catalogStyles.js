@@ -81,7 +81,7 @@ export const catalogStyles = [
       'Restocks — new products matching old sets, perfectly',
     ],
     whatYouGet: [
-      'Four photos per product: front, back, detail & on-model',
+      'From four photos per product: front, back, detail & on-model',
       'Consistent lighting, angle and background',
       'High-resolution, marketplace-ready files',
       TIMING,

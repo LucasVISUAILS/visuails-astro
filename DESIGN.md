@@ -835,6 +835,50 @@ WCAG 2.2 AA, enforced by the contrast table above rather than by intention.
 
 ---
 
+## Disclosure — when a block folds
+
+*(Added August 2026. Lucas: "het wordt namelijk best druk om naar te kijken …
+bedenk manieren om dit tegen te gaan maar alsnog dezelfde info en stappen
+behouden." Measured before deciding anything: the homepage carried 2,435 words
+across 24 sections, step 1 of the order flow 1,212, `/ai-act` 1,567 with nothing
+folded — against a median of 346 words across 41 pages. Three places, not a
+sitewide disease, and the fix is disclosure rather than deletion.)*
+
+`src/components/Disclose.astro` is the only disclosure on this site. It replaced
+five near-identical ones — `.faq-item` on /catalog, `.acc-item` on /faq,
+`.hv-notfor` / `.hv-vat` / `.hv-faq-item` on the homepage, `.pl-why` in the
+order form — which between them were five places to fix one focus ring.
+
+**The rule.** Fold a block when it answers a question only SOME readers have.
+Keep it open when every reader needs it to decide.
+
+**The hard line under it.** Nothing on the belief ladder ever folds. PRODUCT.md
+names four rungs — it is not an AI toy, it holds up across a collection, it
+costs less and lands sooner, finding out costs €0.99 — and those are exactly
+what a sceptical visitor arrived to test. Folding one to win quiet trades the
+argument for the aesthetic, which is the one trade this site cannot make.
+
+**Consequences of that rule, applied:**
+
+- Reference and legal prose folds. `/ai-act` keeps its message open (what the
+  rules are aimed at, what you get, why the image has to be right) and folds
+  what is looked up rather than read: what to do when publishing, what we do not
+  claim, who is responsible, where we are.
+- Optional form answers fold, and fold to their own ANSWER rather than to a
+  label. Step 1's channel, background and model pickers each collapse to one
+  line stating what is currently selected, so nothing is hidden — only the
+  controls are. `Disclose`'s `liveAttr` prop renders that line; pipeline.js
+  writes it.
+- One open at a time uses the native exclusive accordion (`name` on `<details>`),
+  not script. Browsers without it open independently, which is the old behaviour.
+- Secondary detail INSIDE a section folds; a section that is its own argument
+  does not. On the homepage that means the price ladder's rung table, the
+  portal's three-way explainer and the launch-date arithmetic fold, while the
+  sections making the case stay open.
+
+**Never** fold a price, a delivery promise, or a constraint that changes what
+somebody would order. A number nobody sees is a number nobody was told.
+
 ## What this system rejects
 
 - **Rounded corners.** Any radius above 0, anywhere.

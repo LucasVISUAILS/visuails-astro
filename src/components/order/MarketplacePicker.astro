@@ -1,0 +1,226 @@
+---
+// VISUAILS — where the product will be sold, step 1 of the catalog and complete
+// flows. Renders ABOVE BackgroundPicker, because it constrains it.
+//
+// WHY IT EXISTS, AND WHY IT SITS FIRST
+// Lucas asked for it and gave the mechanism with the request: pick Amazon and
+// only #FFFFFF stays available. That ordering is the whole design. A customer
+// who chooses a beige ground and then discovers on the next screen that their
+// marketplace forbids it has been made to undo a decision; a customer who names
+// the channel first is simply told what the channel allows. So this fieldset is
+// slotted in before the background one, and the lock runs in that direction
+// only — channels constrain the background, never the other way round.
+//
+// The rules behind `requiresWhite` are in src/data/channels.js, read off each
+// platform's own partner documentation. Read that file for what is verified and
+// for the one platform we deliberately do NOT promise (Zalando's model views).
+//
+// MULTI-SELECT, NOT A DROPDOWN. Lucas: "ook een optie 'meerdere' of het
+// klikbaar maken dat de klant meerdere marktplaatsen kan kiezen". Checkboxes
+// rather than a select-with-an-"other" — a brand sells on its own shop AND on
+// bol AND on Instagram, and that is the normal case rather than the exception.
+// It also makes the conflict legible: the moment a white-required channel is
+// ticked alongside "our own webshop", the split-order note appears, which is
+// the answer to a customer who wants both a compliant listing and their own
+// colour.
+//
+// WITHOUT JAVASCRIPT. The checkboxes post. The white lock does not run, so the
+// background stays freely choosable — and the warning below is in the markup
+// unconditionally-visible-when-relevant only under JS, so the static note in
+// the disclosure carries the rule in words instead. A no-JS order that arrives
+// with Amazon ticked and beige chosen is not a broken order: it is an order the
+// studio corrects on white and mentions, which is what happened before this
+// control existed at all.
+//
+// WHAT THIS POSTS. `channels` — zero or more ids from channels.js. Not in
+// TOP_FIELDS (functions/api/order.js), so the list lands in details_json.
+// Nothing here is required: a customer who does not know yet is a customer we
+// deliver pure white to, which channels.js's `hint` says out loud.
+import {
+  CHANNELS, WHITE_CHANNELS, RISK_CHANNELS, channelName, copy as chCopy,
+} from '../../data/channels.js';
+
+import Disclose from '../Disclose.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const c = chCopy(lang);
+
+// The lock is only honest if something can be locked TO. A channels.js edit
+// that renamed the white swatch would otherwise ship a picker that disables
+// three radios and selects nothing, which is a form with no answer.
+import { background, DEFAULT_ID } from '../../data/backgrounds.js';
+if (!background(DEFAULT_ID) || background(DEFAULT_ID).hex.toUpperCase() !== '#FFFFFF') {
+  throw new Error(
+    'MarketplacePicker.astro: the white-lock target background(DEFAULT_ID) is not #FFFFFF. '
+    + 'Amazon, bol and Zalando require pure white — see src/data/channels.js.'
+  );
+}
+---
+
+<fieldset class="pl-fieldset pl-ch" data-pl-ch>
+  <legend class="pl-sr">{c.label}</legend>
+  <h3 class="pl-sub-h" id="pl-ch-h">{c.label}</h3>
+  <p class="pl-ch-lead">{c.lead}</p>
+
+  <div class="ch-grid" role="group" aria-labelledby="pl-ch-h">
+    {CHANNELS.map((ch) => (
+      <label class="ch-opt">
+        <span class="ch-row">
+          <input
+            type="checkbox"
+            name="channels"
+            value={ch.id}
+            data-pl-ch-box
+            data-pl-ch-white={ch.requiresWhite ? '1' : undefined}
+            data-pl-ch-risk={ch.modelShotRisk ? '1' : undefined}
+            data-pl-ch-mainmodel={ch.modelsOnMain === true ? undefined : '1'}
+          />
+          <span class="ch-name">{channelName(ch, lang)}</span>
+        </span>
+        {ch.requiresWhite && <span class="ch-flag">#FFFFFF</span>}
+        <span class="ch-note">{ch.note[lang]}</span>
+      </label>
+    ))}
+  </div>
+
+  <p class="pl-ch-hint">{c.hint}</p>
+
+  {/* Revealed by pipeline.js when a white-required channel is ticked. Hidden
+      rather than absent so the copy is in the page for a screen reader that
+      reaches it after the change, and so there is one element to toggle rather
+      than a string to build. */}
+  <div class="ch-lock" data-pl-ch-lock hidden>
+    <p class="ch-lock-h">{c.whiteWarnH}</p>
+    <p>{c.whiteWarn}</p>
+  </div>
+
+  {/* The two-order answer, shown alongside the lock. This is the commercially
+      important half of the whole control: the customer is not being told they
+      cannot have their colour, they are being told what it costs to have both.
+      "Charged at the rate your total lands on" is not a discount claim — the
+      ladder in pricing.js is per product, so a second version genuinely is just
+      another product on it. */}
+  <div class="ch-split" data-pl-ch-split hidden>
+    <p class="ch-split-h">{c.splitH}</p>
+    <p>{c.split}</p>
+  </div>
+
+  {/* Shown for a channel that restricts who may appear on the MAIN image.
+      Deliberately not a change to the set: bol and Amazon restrict which image
+      leads, they do not forbid the on-model frame from the listing, so dropping
+      it would take away a photograph the customer paid for and solve nothing.
+      A placement instruction is the whole fix. */}
+  <div class="ch-order" data-pl-ch-order hidden>
+    <p class="ch-order-h">{c.orderH}</p>
+    <p>{c.order}</p>
+  </div>
+
+  {/* Zalando only. A warning and never a block — see channels.js. */}
+  <div class="ch-risk" data-pl-ch-risk hidden>
+    <p class="ch-risk-h">{c.riskH}</p>
+    <p>{c.risk}</p>
+  </div>
+
+  <div data-pl-ch-why hidden>
+    <Disclose summary={c.formatH} tone="plain">
+      <p>{c.format}</p>
+    </Disclose>
+  </div>
+
+  {/* Read by pipeline.js only. Keeps the id list out of the script, so a
+      channel added to channels.js needs no second edit. */}
+  <span
+    hidden
+    data-pl-ch-white-ids={WHITE_CHANNELS.join(',')}
+    data-pl-ch-risk-ids={RISK_CHANNELS.join(',')}
+    data-pl-ch-lock-to={DEFAULT_ID}
+  ></span>
+</fieldset>
+
+<style>
+  [hidden] { display: none !important; }
+
+  .pl-ch { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
+  .pl-ch .pl-sub-h { margin-bottom: .35rem; }
+  .pl-ch-lead { font-size: .88rem; color: var(--ink-2); line-height: 1.6; max-width: 66ch; }
+
+  /* Two columns, not the background picker's four: every tile here carries a
+     sentence of platform rules, and four of those side by side is a wall. */
+  .ch-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; margin-top: .8rem; }
+  .ch-opt {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    padding: .75rem .85rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .ch-opt:hover { border-color: var(--accent-line); }
+  .ch-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .ch-opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .ch-row { display: flex; align-items: center; gap: .5rem; }
+  .ch-row input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+  .ch-name { font-size: .92rem; font-weight: 600; color: var(--ink); line-height: 1.25; }
+  /* The constraint, stated on the tile before it is chosen rather than only in
+     the warning after. A customer scanning the six should be able to see which
+     three take the colour choice away. */
+  .ch-flag {
+    align-self: flex-start;
+    font-size: .66rem; font-weight: 700; letter-spacing: .06em;
+    padding: .12rem .4rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .ch-note { font-size: .76rem; color: var(--ink-3); line-height: 1.5; }
+
+  .pl-ch-hint { margin-top: .7rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+
+  /* The three panels share one shape and differ only in border colour, because
+     they are three registers of the same voice: a rule, an option, a caution.
+     All hairline — a >1px coloured side border is banned in the design system
+     and the legal pages were corrected for exactly this. */
+  .ch-lock, .ch-split, .ch-risk, .ch-order {
+    margin-top: .9rem;
+    padding: .85rem 1.05rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    font-size: .84rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+    max-width: 70ch;
+  }
+  .ch-risk { border-color: var(--warn); color: var(--warn-ink); }
+  .ch-lock-h, .ch-split-h, .ch-risk-h, .ch-order-h { font-weight: 700; color: var(--ink); }
+  .ch-risk-h { color: var(--warn-ink); }
+  .ch-lock p + p, .ch-split p + p, .ch-risk p + p, .ch-order p + p { margin-top: .35rem; }
+
+  .pl-sr {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
+  .pl-fieldset { border: 0; padding: 0; margin-bottom: 0; min-width: 0; }
+  .pl-why { margin-top: 1rem; }
+  .pl-why > summary {
+    width: max-content;
+    cursor: pointer;
+    font-size: .8rem;
+    color: var(--accent-bright);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    border-radius: var(--r-sm);
+  }
+  .pl-why > summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+  .pl-why > p { margin-top: .5rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+
+  @media (max-width: 700px) { .ch-grid { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .ch-opt { transition: none; } }
+</style>

@@ -40,6 +40,7 @@ import {
   ladderRate, ladderFloor, LADDER, vatLabel, vatNote,
   WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
+  EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
 } from '../../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
@@ -52,6 +53,8 @@ import { localizedPath } from '../../i18n/ui.js';
 import {
   RECOMMENDED as BACKGROUNDS, CUSTOM_ID, LIGHT_THRESHOLD, copy as bgCopy,
 } from '../../data/backgrounds.js';
+
+import Disclose from '../Disclose.astro';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -95,7 +98,7 @@ const SERVICE = {
     },
     catalog: {
       title: 'Catalog sets',
-      gets: '4 images per product — front, back, detail, on model',
+      gets: 'From 4 images per product — front, back, detail, on model',
       lead: `The rate falls as the count rises, from ${euro(ladderRate('catalog', 1), 'en')} to ${euro(ladderFloor('catalog'), 'en')} a product.`,
     },
     lifestyle: {
@@ -113,7 +116,7 @@ const SERVICE = {
     },
     catalog: {
       title: 'Catalogsets',
-      gets: '4 beelden per product — voor, achter, detail, op model',
+      gets: 'Vanaf 4 beelden per product — voor, achter, detail, op model',
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('catalog', 1), 'nl')} naar ${euro(ladderFloor('catalog'), 'nl')} per product.`,
     },
     lifestyle: {
@@ -139,6 +142,7 @@ const PIPE = {
       quote: 'Choose how many products and the total appears here.',
       onRequest: '—',
       outfit: ' Plus {price} × {n} for full outfit.',
+      extra: ' Plus {price} × {n} for extra photos.',
     },
     // NOT "{then} instead of {now}" — see the note this line kept in the old
     // file: what falls is the per-product rate, so that is what is compared.
@@ -217,6 +221,7 @@ const PIPE = {
       quote: 'Kies hoeveel producten en het totaal verschijnt hier.',
       onRequest: '—',
       outfit: ' Plus {price} × {n} voor full outfit.',
+      extra: ' Plus {price} × {n} voor extra foto’s.',
     },
     rung: {
       one: `Nog één product en elk product zakt van {now} naar {rate} — {count} voor {then}, ${vatLabel('excl', 'nl')}.`,
@@ -322,7 +327,13 @@ for (const l of ['en', 'nl'] as const) {
     remove: s.remove,
     productName: s.productName,
     ready: s.ready,
-    needsFront: s.needsFront,
+    needsShots: s.needsShots,
+    listAnd: s.listAnd,
+    extraH: s.extraH,
+    extraCount: s.extraCount,
+    extraNote: s.extraNote,
+    extraPlaceholder: s.extraPlaceholder,
+    extraRate: s.extraRate,
     trayAssign: s.trayAssign,
     progress: s.progress,
     progressOne: s.progressOne,
@@ -385,7 +396,7 @@ for (const l of ['en', 'nl'] as const) {
 // backgrounds.js adds its own build-time check instead of shipping a swatch
 // with no line under it.
 const REQUIRED_COPY = [
-  'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.outfit',
+  'total.each', 'total.more', 'total.quote', 'total.onRequest', 'total.outfit', 'total.extra',
   'rung.one', 'rung.many',
   'level.attended', 'level.unattended',
   'kind.complete', 'kind.catalog', 'kind.lifestyle',
@@ -405,7 +416,8 @@ const REQUIRED_COPY = [
   // typed, so a fifth angle added to shots.js brings its own build-time check
   // instead of shipping a slot with no word under the drawing.
   'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
-  'pu.productName', 'pu.ready', 'pu.needsFront', 'pu.trayAssign',
+  'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.listAnd', 'pu.trayAssign',
+  'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate',
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
   'pu.allDone', 'pu.allDoneOne',
   'pu.product', 'pu.add', 'pu.toggle', 'pu.placeIn',
@@ -717,6 +729,11 @@ const config = {
   maxBatchFiles: MAX_BATCH_FILES,
   uploadExt: Object.keys(UPLOAD_TYPES),
   outfitSurcharge: OUTFIT_SURCHARGE,
+  // The extra-photo ladder travels whole rather than as one rate: the rate
+  // depends on the product count, which changes in the browser, so resolving
+  // it here would freeze the wrong rung into the page.
+  extraPhotoLadder: EXTRA_PHOTO_LADDER,
+  maxExtraPerProduct: MAX_EXTRA_PER_PRODUCT,
   maxOutfit: MAX_OUTFIT_PRODUCTS,
   bg: { customId: CUSTOM_ID, lightThreshold: LIGHT_THRESHOLD },
   copy: PIPE[lang],
@@ -826,10 +843,9 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <span class="hint">{f.s1.outfitHint}</span>
         {/* OUTFIT_COPY, verbatim — pricing.js requires it wherever the outfit
             choice is offered. Folded rather than dropped. */}
-        <details class="pl-why">
-          <summary>{f.s1.outfitWhy}</summary>
+        <Disclose summary={f.s1.outfitWhy} tone="plain">
           <p>{f.s1.outfitWhyBody}</p>
-        </details>
+        </Disclose>
       </div>
 
       {/* THE RUNNING TOTAL.
@@ -887,8 +903,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           hold that up wherever the reader chooses to open it. */}
       <div class="pl-levels">
         <p class="pl-level-note" data-pl-level-note></p>
-        <details class="pl-why pl-levels-why">
-          <summary>{f.s1.levelsH}</summary>
+        <Disclose summary={f.s1.levelsH} tone="plain" class="pl-levels-why">
           <div class="levels">
             {levels.map((d) => (
               <div class="level" data-pl-level={d.tier}>
@@ -906,7 +921,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             ))}
           </div>
           <p class="pl-panel-note"><a href={lp('/pricing')}>{f.s1.ladderLink}</a></p>
-        </details>
+        </Disclose>
       </div>
 
       {/* THE ERROR STATE, which did not exist. Pressing Continue with nothing
@@ -1886,8 +1901,11 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      line that pipeline.js writes says which level THIS count earns, which is
      the only part that is about the order in hand; the table stays for whoever
      wants it, and /pricing is linked because it owns it. */
-  .pl-levels-why > .levels { margin-top: 1rem; }
-  .pl-levels-why > .pl-panel-note { margin-top: .8rem; }
+  /* The child combinator moved a level down when this became a Disclose:
+     the component wraps its slot in .dc-body, so `> .levels` no longer
+     matched and the table lost its spacing entirely. */
+  .pl-levels-why :global(.levels) { margin-top: 1rem; }
+  .pl-levels-why :global(.pl-panel-note) { margin-top: .8rem; }
 
   /* ── Mobile: the total follows you ────────────────────────────────────────
      Fixed rather than sticky, because the step it belongs to is taller than the

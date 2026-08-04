@@ -83,6 +83,7 @@
 // use, and naming an instrument a reader cannot act on is noise on a trust page.
 import { localizedPath } from '../i18n/ui.js';
 import FigAnatomy from './FigAnatomy.astro';
+import Disclose from './Disclose.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -128,9 +129,9 @@ const COPY = {
       'Which is why we work the way we do:',
     ],
     s4Items: [
-      ['A real front-facing photograph of the product is required.', 'We do not invent your product. We re-photograph it.'],
+      ['Real photographs of the front and the back are both required.', 'We do not invent your product, we re-photograph it — and a catalog set delivers a back image, so we ask for the back rather than guess at a print or a seam you cannot see from the front.'],
       ['We ask about the material.', '100% cotton falls differently from polyester, and leather catches light differently. That has to be visible.'],
-      ['Optional back, detail and worn shots', 'make the fit more accurate.'],
+      ['A close-up and a worn shot are optional.', 'Each makes one specific thing more accurate. If the product has no logo or hardware to close in on, the close-up you get back is a fabric shot instead.'],
       ['You approve every image', 'before it leaves your order.'],
     ],
 
@@ -215,9 +216,9 @@ const COPY = {
       'Daarom werken we zoals we werken:',
     ],
     s4Items: [
-      ['Een echte frontfoto van het product is verplicht.', 'We verzinnen je product niet, we fotograferen het opnieuw.'],
+      ['Echte foto’s van de voorkant én de achterkant zijn verplicht.', 'We verzinnen je product niet, we fotograferen het opnieuw — en een catalogset levert een achterkantbeeld, dus vragen we de achterkant in plaats van te gokken naar een print of een naad die je van voren niet ziet.'],
       ['We vragen naar het materiaal.', '100% katoen valt anders dan polyester, en leer vangt anders licht. Dat moet je zien.'],
-      ['Optionele achterkant-, detail- en draagfoto’s', 'maken de pasvorm nauwkeuriger.'],
+      ['Een close-up en een draagfoto zijn optioneel.', 'Elk maakt één ding nauwkeuriger. Heeft het product geen logo of fournituren om op in te zoomen, dan wordt de close-up die je terugkrijgt een stoffoto.'],
       ['Jij keurt elk beeld goed', 'voordat het je bestelling verlaat.'],
     ],
 
@@ -348,28 +349,46 @@ const waHref = `https://wa.me/31625436130?text=${encodeURIComponent(c.waText)}`;
       {c.s4Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
     </ul>
 
-    <h2>{c.s5H}</h2>
-    <ol class="legal-ol">
-      {c.s5Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
-    </ol>
-    <p>{c.s5Tail}</p>
+    {/* FROM HERE DOWN THE PAGE FOLDS. §1–§4 are the message — what the rules
+        are aimed at, what you get, and why the image has to match the product —
+        and every reader needs those to decide anything. §5–§8 are looked up
+        rather than read: what to do at publication, what we refuse to claim,
+        who carries what, and where we sit. DESIGN.md's disclosure rule is
+        exactly this split, and the page went from 1,567 words in one column to
+        four lines plus the argument.
 
-    <h2>{c.s6H}</h2>
-    <p>{c.s6P}</p>
-    <dl class="legal-dl">
-      {c.s6Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
-    </dl>
+        Not one shared `name`: these four are reference, and somebody checking
+        their responsibilities against what we do not claim wants both open at
+        once. The exclusive accordion is for step 1, where the whole point is
+        one control at a time. */}
+    <div class="legal-folds">
+      <Disclose summary={c.s5H} tone="plain">
+        <ol class="legal-ol">
+          {c.s5Items.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+        </ol>
+        <p>{c.s5Tail}</p>
+      </Disclose>
 
-    <h2>{c.s7H}</h2>
-    <p>{c.s7P}</p>
-    <p>{c.s7Lead}</p>
-    <ul>
-      {c.s7Items.map((i) => (<li>{i}</li>))}
-    </ul>
-    {c.s7Tail.map((p) => (<p>{p}</p>))}
+      <Disclose summary={c.s6H} tone="plain">
+        <p>{c.s6P}</p>
+        <dl class="legal-dl">
+          {c.s6Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
+        </dl>
+      </Disclose>
 
-    <h2>{c.s8H}</h2>
-    <p>{c.s8P}</p>
+      <Disclose summary={c.s7H} tone="plain">
+        <p>{c.s7P}</p>
+        <p>{c.s7Lead}</p>
+        <ul>
+          {c.s7Items.map((i) => (<li>{i}</li>))}
+        </ul>
+        {c.s7Tail.map((p) => (<p>{p}</p>))}
+      </Disclose>
+
+      <Disclose summary={c.s8H} tone="plain">
+        <p>{c.s8P}</p>
+      </Disclose>
+    </div>
 
   </div>
 </section>
@@ -426,4 +445,9 @@ const waHref = `https://wa.me/31625436130?text=${encodeURIComponent(c.waText)}`;
   .legal-dl { margin-top: 1.4rem; border-top: 1px solid var(--line); }
   .legal-dl dt { padding-top: 1rem; font-weight: 700; color: var(--ink); font-size: 0.95rem; }
   .legal-dl dd { margin: 0.4rem 0 0; padding-bottom: 1rem; border-bottom: 1px solid var(--line); color: var(--ink-2); line-height: 1.7; }
+
+  /* The folded half. Its own top margin so the four rules do not run straight
+     on from §4's bullet list — the fold has to read as a change of register,
+     from the argument to the reference. */
+  .legal-folds { margin-top: 2.6rem; }
 </style>

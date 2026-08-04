@@ -14,18 +14,37 @@
 // a coincidence to hide — it is the clearest possible instruction, because the
 // customer can see what each photo is FOR.
 //
-// ONLY THE FRONT IS REQUIRED, and that is a real rule, not a soft one.
-// Everything is generated from the front shot; the other three each make one
-// specific thing more accurate, and a customer who has only a front shot must
-// still be able to order. What each optional shot buys is written into `buys`
-// below, because "recommended" with no reason attached is just nagging — a
-// customer who knows what skipping costs can make the trade themselves.
+// FRONT AND BACK ARE BOTH REQUIRED, and that is a real rule, not a soft one.
+// Lucas, August 2026: "voor catalog is voorkant en achterkant verplicht omdat
+// deze beide worden geleverd anders is het gokken."
+//
+// The reasoning is the symmetry above, read the other way round. A catalog set
+// SHIPS a back image. Producing one from a front photograph is not inference,
+// it is invention — a print, a yoke seam or a logo that exists only on the back
+// cannot be read off the front, so what the customer receives is a picture of a
+// garment they do not sell. The two shots that come back as literal deliverables
+// are therefore the two we will not proceed without. This file used to require
+// the front alone and describe the back as merely making things "more accurate",
+// which under-sold a shot the studio cannot honestly fake.
+//
+// THE OTHER TWO STAY OPTIONAL, for two different reasons, and the difference is
+// worth keeping straight:
+//   detail — the product may simply not have one. Lucas: "bijvoorbeeld als deze
+//     er niet op staat." Where there is no logo, print or hardware to close in
+//     on, the delivered close-up becomes a fabric shot instead, so the set is
+//     still four images either way. Sending your own only makes that one truer.
+//   worn — it is about fit, and fit can be READ from a flat photo. A worse
+//     reading than a real one, but a reading rather than a fabrication.
+// What each optional shot buys is written into `buys` below, because
+// "recommended" with no reason attached is just nagging — a customer who knows
+// what skipping costs can make the trade themselves.
 //
 // WHAT WE DO NOT DO: refuse an order, block a step, or mark a product invalid
-// for a missing optional shot. The only hard gate is a front shot per product,
-// and even that only applies once a customer has started uploading at all —
-// uploads are optional on every path through /start, and a client who would
-// rather send files over WhatsApp afterwards is a client, not an error state.
+// for a missing optional shot. The only hard gate is a front and a back per
+// product, and even that only applies once a customer has started uploading at
+// all — uploads are optional on every path through /start, and a client who
+// would rather send files over WhatsApp afterwards is a client, not an error
+// state.
 
 /**
  * The four, in the order they are asked for. `id` is what travels in the R2
@@ -48,15 +67,15 @@ export const SHOTS = [
   },
   {
     id: 'back',
-    required: false,
+    required: true,
     name: { en: 'Back', nl: 'Achterkant' },
     how: {
       en: 'Same distance and angle as the front, turned over.',
       nl: 'Zelfde afstand en hoek als de voorkant, omgedraaid.',
     },
     buys: {
-      en: 'Without it we infer the back from the front, and anything only on the back — a print, a yoke seam, a logo — is a guess.',
-      nl: 'Zonder deze leiden we de achterkant af uit de voorkant, en alles wat alléén achterop zit — een print, een pasnaad, een logo — is gokwerk.',
+      en: 'A back image is one of the four you get, so this is the one we cannot invent. Anything that exists only on the back — a print, a yoke seam, a logo — would otherwise be a guess we shipped to you.',
+      nl: 'Een achterkantbeeld is één van de vier die je krijgt, dus dit is de foto die we niet kunnen verzinnen. Alles wat alléén achterop zit — een print, een pasnaad, een logo — zou anders gokwerk zijn dat we je toesturen.',
     },
   },
   {
@@ -68,8 +87,8 @@ export const SHOTS = [
       nl: 'Ga dichtbij op de stof, een naad, het label of de fournituren. Eén is genoeg.',
     },
     buys: {
-      en: 'This is what keeps the material honest — the weave, the wash, the sheen. It is the difference between your garment and a garment.',
-      nl: 'Dit houdt het materiaal eerlijk — de weving, de wassing, de glans. Het verschil tussen jouw kledingstuk en een kledingstuk.',
+      en: 'This is what keeps the material honest — the weave, the wash, the sheen. It is the difference between your garment and a garment. If the product has no logo or hardware to close in on, the close-up you get back is a fabric shot instead, and this is the photo it is read from.',
+      nl: 'Dit houdt het materiaal eerlijk — de weving, de wassing, de glans. Het verschil tussen jouw kledingstuk en een kledingstuk. Heeft het product geen logo of fournituren om op in te zoomen, dan wordt de close-up die je terugkrijgt een stoffoto, en dit is de foto waar die van gelezen wordt.',
     },
   },
   {
@@ -88,8 +107,24 @@ export const SHOTS = [
 ];
 
 export const SHOT_IDS = SHOTS.map((s) => s.id);
-export const REQUIRED_SHOT = SHOTS.find((s) => s.required).id;
 export const SHOTS_PER_PRODUCT = SHOTS.length;
+
+/**
+ * The shots a product cannot be counted as ready without, in asking order.
+ *
+ * Plural since August 2026. This used to be `REQUIRED_SHOT`, a single id found
+ * with `SHOTS.find(s => s.required).id`, and every caller compared against it
+ * with `===`. That singular is deliberately GONE rather than kept pointing at
+ * the front: a stale export that still answers to its old name is how a second
+ * required shot gets silently ignored at one of the five call sites that used
+ * it. Anything that needs the test now has to ask isRequiredShot().
+ */
+export const REQUIRED_SHOT_IDS = SHOTS.filter((s) => s.required).map((s) => s.id);
+
+/** Is this one of the shots we will not proceed without? */
+export function isRequiredShot(id) {
+  return REQUIRED_SHOT_IDS.includes(id);
+}
 
 /** Is this a shot id we are willing to store? Anything else is refused. */
 export function isShotId(id) {
@@ -151,7 +186,7 @@ export function productKeyFromPath(relativePath) {
 export const COPY = {
   en: {
     h: 'Your product photos',
-    lead: 'One product at a time. Only the front is required — the other three each make one specific thing more accurate, and you can skip any of them.',
+    lead: 'One product at a time. The front and the back are both required — both come back to you as delivered images, so neither is ours to guess. The other two are optional and each makes one specific thing more accurate.',
     bulkH: 'Have them all ready?',
     bulkLead: 'Drop the whole lot in and we will sort them. A folder per product works best — we read the folder name as the product.',
     bulkCta: 'Drop files or folders',
@@ -165,7 +200,20 @@ export const COPY = {
     productName: 'Product name or SKU',
     productNameHint: 'Whatever you call it in your own shop. It comes back on the files with the same name.',
     ready: 'Ready',
-    needsFront: 'Needs a front photo',
+    // Names what is missing rather than restating the rule. A card that says
+    // "needs a front photo" to a customer who sent one and skipped the back is
+    // telling them to look in the wrong place.
+    needsShots: 'Needs {list}',
+    listAnd: 'and',
+    // Extra photos — priced in pricing.js (EXTRA_PHOTO_LADDER). The counter is
+    // on every card because the choice is per product; the description field
+    // only appears once the counter is above zero, so a 25-product order with
+    // no extras shows 25 steppers and not one empty textarea.
+    extraH: 'Extra photos',
+    extraCount: 'How many?',
+    extraNote: 'What should they be?',
+    extraPlaceholder: 'e.g. close-up of the model cropped at the neck',
+    extraRate: '{rate} each at this order size, up to {max} per product.',
     trayH: 'Not placed yet',
     trayLead: 'We could not tell which product these belong to. Drag one onto a slot, or use the menu on it.',
     trayAssign: 'Place this',
@@ -181,7 +229,7 @@ export const COPY = {
   },
   nl: {
     h: 'Je productfoto’s',
-    lead: 'Eén product tegelijk. Alleen de voorkant is verplicht — de andere drie maken elk één ding nauwkeuriger, en je mag ze overslaan.',
+    lead: 'Eén product tegelijk. De voorkant en de achterkant zijn allebei verplicht — je krijgt ze allebei terug als geleverd beeld, dus geen van beide is aan ons om te raden. De andere twee zijn optioneel en maken elk één ding nauwkeuriger.',
     bulkH: 'Heb je ze allemaal klaar?',
     bulkLead: 'Sleep de hele hoop erin, dan sorteren wij. Een map per product werkt het best — we lezen de mapnaam als het product.',
     bulkCta: 'Sleep bestanden of mappen',
@@ -195,7 +243,13 @@ export const COPY = {
     productName: 'Productnaam of SKU',
     productNameHint: 'Hoe je het zelf in je shop noemt. Het komt met dezelfde naam terug op de bestanden.',
     ready: 'Klaar',
-    needsFront: 'Mist een voorkantfoto',
+    needsShots: 'Mist {list}',
+    listAnd: 'en',
+    extraH: 'Extra foto’s',
+    extraCount: 'Hoeveel?',
+    extraNote: 'Wat moeten het worden?',
+    extraPlaceholder: 'bijv. close-up van het model bijgesneden bij de hals',
+    extraRate: '{rate} per stuk bij deze bestelgrootte, tot {max} per product.',
     trayH: 'Nog niet geplaatst',
     trayLead: 'We konden niet zien bij welk product deze horen. Sleep er een op een vakje, of gebruik het menu erop.',
     trayAssign: 'Plaats deze',

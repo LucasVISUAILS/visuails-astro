@@ -57,6 +57,21 @@ export const ROSTER = [
   { name: 'Seme',   photo: '/img/model-seme.webp',   thumb: '/img/model-seme-w800.webp',   traits: ['sharp', 'editorial'], w: 1195, h: 1600, tw: 800, th: 1071 },
 ];
 
+/**
+ * The value a roster entry travels as — in the order form, in details_json,
+ * and in whatever the studio reads off it.
+ *
+ * Derived rather than typed as an eleventh column, because a second field
+ * holding the same fact is a second field that can disagree with the first.
+ * Every name in ROSTER is ASCII and single-word, so lowercasing is total and
+ * reversible; if a name ever arrives with a space or an accent, this is the
+ * one place that has to learn about it.
+ */
+export const modelId = (name) => String(name).toLowerCase();
+
+/** The value meaning "no preference" — a real answer, not an empty field. */
+export const MODEL_ANY = 'any';
+
 // Trait keys -> label, per language. Kept here rather than duplicated in
 // every page's own COPY object for the same reason ROSTER is centralized:
 // two pages now render every trait key in ROSTER above, and a trait added to

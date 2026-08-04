@@ -11,7 +11,8 @@
     "favicons": "node scripts/make-favicons.mjs",
     "test:mollie": "node tests/mollie-webhook.test.mjs && node tests/debug-mollie-reading.test.mjs",
     "audit:nav": "node pixnav.mjs",
-    "test:consent": "node tests/cookie-consent.test.mjs"
+    "test:consent": "node tests/cookie-consent.test.mjs",
+    "tag:delivery": "node scripts/tag-delivery.mjs"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
@@ -21,6 +22,7 @@
     "gsap": "^3.13.0"
   },
   "devDependencies": {
+    "exiftool-vendored": "^37.1.0",
     "parse5": "^7.0.0",
     "playwright": "^1.56.0",
     "pngjs": "^7.0.0"

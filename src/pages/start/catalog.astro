@@ -6,11 +6,11 @@
 // near-identical files. The ONE block that differs is passed in as the slot.
 import Layout from '../../layouts/Layout.astro';
 import OrderFlow from '../../components/order/OrderFlow.astro';
-import BackgroundPicker from '../../components/order/BackgroundPicker.astro';
+import Step1Options from '../../components/order/Step1Options.astro';
 ---
 
 <Layout title="Order catalog sets — VISUAILS" description="Product-page images, four per product. Pick the count and the background; the rate falls as the count rises.">
   <OrderFlow lang="en" service="catalog">
-    <BackgroundPicker lang="en" />
+    <Step1Options lang="en" />
   </OrderFlow>
 </Layout>

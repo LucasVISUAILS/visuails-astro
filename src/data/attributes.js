@@ -28,11 +28,26 @@
 //     step 3 rather than as a field on all thirty cards.
 //
 // WHAT THE RESEARCH SAID TO LEAVE OUT REGARDLESS:
-//   · A HEX CODE for the garment colour. A controlled test measured ΔE 11.25
-//     when the target colour arrived as a hex in text against ΔE 0.90 when it
-//     arrived as a reference image — twelve times worse. The photograph the
-//     customer already uploaded IS the swatch. A hex field would cost them
-//     time AND make the output worse, which is a rare combination.
+//   · A HEX CODE for the garment colour, AS THE THING THE COLOUR IS GENERATED
+//     FROM. A controlled test measured ΔE 11.25 when the target colour arrived
+//     as a hex in text against ΔE 0.90 when it arrived as a reference image —
+//     twelve times worse. The photograph the customer already uploaded IS the
+//     swatch, and a hex asked for that job would cost them time AND make the
+//     output worse.
+//
+//     THIS REJECTION STILL STANDS, AND THE `colour` FIELD BELOW DOES NOT
+//     REVERSE IT — it asks the same question for a different job, which is why
+//     it can be added without the argument above being wrong.
+//     Lucas, August 2026: "door licht van de telefoon en de omgeving de kleur
+//     soms kan veranderen." The finding is about generating FROM a hex. The
+//     field below is a CORRECTION TARGET: the render is still built from the
+//     photograph, and the hex is what the finished frame is checked against
+//     when the phone's white balance has pulled the garment warm or cold. One
+//     is an input the renderer reads, the other is a reference a person
+//     compares to — and a photograph shot under a kitchen bulb is exactly the
+//     case where the image is the less trustworthy of the two.
+//     So: never feed this to the generator in place of the photo. Use it at
+//     the review pass, which is the step /ai-act already promises happens.
 //   · GARMENT CATEGORY. Try-on pipelines detect tops/bottoms/one-pieces
 //     themselves.
 //   · GSM, WEIGHT, STRETCH, THICKNESS. The same fabric study found sheen did
@@ -76,6 +91,24 @@ export const PRODUCT_QUESTIONS = [
            'cow leather, matte', 'satin polyester, glossy', 'ribbed knit', 'linen'],
       nl: ['katoenen jersey', 'gewassen katoenen twill, mat', 'zware fleece', 'denim, stug',
            'runderleer, mat', 'satijn polyester, glanzend', 'geribde tricot', 'linnen'],
+    },
+  },
+  {
+    // See the long note at the top of this file for why a hex is asked for here
+    // after being argued against there. Short version: it is the colour we CHECK
+    // against, not the colour we build from.
+    id: 'colour',
+    type: 'text',
+    maxLength: 40,
+    // Renders a live swatch beside the field when the value parses as a hex.
+    // Confirmation, not validation: it tells the customer we read what they
+    // typed, and it never refuses a word.
+    swatch: true,
+    name: { en: 'Its exact colour, if you know it', nl: 'De exacte kleur, als je die weet' },
+    placeholder: { en: '#1B3A2F, or "forest green"', nl: '#1B3A2F, of "bosgroen"' },
+    buys: {
+      en: 'A phone photograph carries the room with it — a warm bulb or a cold window pulls the whole garment off. If you give us the colour code from your own spec, the finished frame is checked against that rather than against whatever the light did. A colour name in words helps too; a code is better, because a name is a range.',
+      nl: 'Een telefoonfoto neemt de kamer mee — een warme lamp of een koud raam trekt het hele kledingstuk scheef. Geef je de kleurcode uit je eigen specificatie, dan leggen we het afgewerkte beeld daarnaast in plaats van naast wat het licht ervan maakte. Een kleur in woorden helpt ook; een code is beter, want een naam is een marge.',
     },
   },
 ];

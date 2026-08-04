@@ -40,6 +40,7 @@ import {
   WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT, PLAN_PRODUCTS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
+import Disclose from './Disclose.astro';
 import Compare from './Compare.astro';
 import { ROSTER } from '../data/models.js';
 import { faqPageGroups } from '../data/faq.js';
@@ -892,10 +893,14 @@ const FAQ_PICK = [
         what <details> is for and what /faq and /start already use it for.
         Keep the summary visible if this is ever rebuilt: the admission is the
         argument, the four cases are only the evidence for it. */}
-    <details class="hv-notfor">
-      <summary class="hv-notfor-h">{c.notForH}</summary>
-      <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
-    </details>
+    {/* Migrated to the shared Disclose (August 2026). The reasoning above still
+        governs: the SUMMARY carries the admission and stays in plain sight;
+        only the four cases fold. */}
+    <div class="hv-notfor">
+      <Disclose summary={c.notForH} tone="plain">
+        <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
+      </Disclose>
+    </div>
   </div>
 </section>
 
@@ -1000,10 +1005,9 @@ const FAQ_PICK = [
       <div class="hv-price-notes">
         <p>{c.addOnNote}</p>
         <p>{c.planNote}</p>
-        <details class="hv-vat">
-          <summary>{c.vatSummary}</summary>
+        <Disclose summary={c.vatSummary} tone="plain" class="hv-vat">
           <p>{vatNote(lang)}</p>
-        </details>
+        </Disclose>
       </div>
       <div class="hv-price-cta">
         <a class="btn btn-primary" href={lp('/start')}>{c.priceCta}</a>
@@ -1390,15 +1394,11 @@ const FAQ_PICK = [
     </div>
     <div class="hv-faq">
       {FAQ_PICK.map((item) => (
-        <details class="hv-faq-item">
-          <summary>
-            <span>{item.q}</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-          </summary>
+        <Disclose summary={item.q} tone="panel">
           {item.html
             ? (<div class="hv-faq-a" set:html={item.html} />)
             : (<div class="hv-faq-a"><p>{item.a}</p></div>)}
-        </details>
+        </Disclose>
       ))}
     </div>
     <div class="hv-faq-foot">

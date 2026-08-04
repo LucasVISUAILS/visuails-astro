@@ -25,6 +25,8 @@ import {
   isLight, LIGHT_THRESHOLD, copy as bgCopy,
 } from '../../data/backgrounds.js';
 
+import Disclose from '../Disclose.astro';
+
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 
@@ -126,11 +128,10 @@ const fl = FIELD[lang];
     <p class="pl-note bg-warn" data-pl-bg-warn hidden>{bgc.warn}</p>
   </div>
 
-  <details class="pl-why">
-    <summary>{WHY[lang]}</summary>
+  <Disclose summary={WHY[lang]} tone="plain">
     <p>{bgc.hint}</p>
     <p>{bgc.matchNote}</p>
-  </details>
+  </Disclose>
 
   {/* Written by pipeline.js. Empty without JS, where `background` and
       `background_custom` already carry the answer. */}

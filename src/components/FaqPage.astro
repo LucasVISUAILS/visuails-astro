@@ -39,6 +39,7 @@
 // will eventually disagree. This component still owns everything around them
 // — the hero, the index band, the accordion markup, the CTA.
 import { faqPageGroups } from '../data/faq.js';
+import Disclose from './Disclose.astro';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -169,14 +170,15 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
       <div class="faq-group" id={GROUP_ANCHORS[gi]}>
         <h2>{g.title}</h2>
         <div class="acc">
+          {/* Migrated to the shared Disclose, August 2026. The body is untouched
+              — this page's answers carry photo figures and set:html, which the
+              component passes straight through. `reveal pending` stays on the
+              wrapper: /faq animates its list and Disclose has no opinion about
+              that. The comment sits OUTSIDE the map on purpose: a JSX comment as
+              the first child of an arrow body is a second expression, which is
+              what "Expected ) but found $$render" was complaining about. */}
           {g.items.map((item) => (
-            <details class="acc-item reveal pending">
-              <summary class="acc-q">
-                <span>{item.q}</span>
-                <span class="acc-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" class="i" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
-                </span>
-              </summary>
+            <Disclose summary={item.q} tone="panel" class="reveal pending">
               <div class="acc-body-inner">
                 {item.html ? <p set:html={item.html} /> : <p>{item.a}</p>}
                 {item.photos ? (
@@ -191,7 +193,7 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
                 ) : null}
                 {item.linkText ? <p class="acc-more"><a href={lp(item.linkHref)} class="link-arrow">{item.linkText} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p> : null}
               </div>
-            </details>
+            </Disclose>
           ))}
         </div>
       </div>

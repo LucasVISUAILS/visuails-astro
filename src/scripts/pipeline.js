@@ -189,7 +189,7 @@
 // arrive in the config blob like every other string on this page — shots.js's
 // own COPY table is never read from here, and importing it would put half the
 // Dutch for one step in a file no translator opens.
-import { SHOT_IDS, REQUIRED_SHOT, guessShot, productKeyFromPath } from '../data/shots.js';
+import { SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromPath } from '../data/shots.js';
 // Same rule, one line down. PRODUCT_QUESTIONS is read here for its IDS, its
 // types, its maxLength and its option ids — the wire values, which have to be
 // the same ones /api/order validates against, and which would rot the first
@@ -580,6 +580,11 @@ function bindOrder() {
   const outfit = q('select[name="outfit_count"]');
   if (outfit) outfit.addEventListener('change', syncTotal);
   bindBackground();
+  // AFTER bindBackground, and the order matters: bindChannels() ends by running
+  // the lock, which reaches into the background radios that bindBackground has
+  // just finished binding. Bound first, constrained second.
+  bindChannels();
+  bindModel();
 }
 
 /**
@@ -656,6 +661,184 @@ function syncOrder() {
 // a hidden field still submits — a lifestyle order would otherwise arrive
 // carrying a background nobody chose.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHERE THE PRODUCT IS SOLD, AND WHAT THAT TAKES AWAY
+//
+// MarketplacePicker.astro asks which channels the images are going to. Three of
+// them — Amazon, bol, Zalando — require a pure white main image, and Amazon
+// enforces it algorithmically at upload. So the moment one of those is ticked,
+// the background stops being a choice: white is selected, the other swatches
+// and the custom colour are DISABLED as well as deselected, and the customer is
+// told why in the same breath rather than discovering it at the marketplace.
+//
+// Disabled, not hidden. A disabled radio is visibly there and visibly
+// unavailable, which is the honest picture — the colours still exist, this
+// order just cannot use them. Hiding them would imply we never offered any.
+//
+// The lock runs one way only. Choosing a background never unticks a channel:
+// the channel is a fact about the customer's business and the colour is a
+// preference, and a form that overrode the fact to protect the preference would
+// have its priorities backwards.
+//
+// The ids come off data attributes written by the component from channels.js,
+// so adding a fourth white-required marketplace is one edit in that file and
+// none here.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE THREE FOLDED ANSWERS IN STEP 1 (Step1Options.astro).
+//
+// Each summary states what is currently chosen, so folding the picker hides the
+// CONTROLS and never the ANSWER. That distinction is the whole reason these are
+// disclosures with a live line rather than dropdowns.
+//
+// EVERY VALUE IS READ BACK OUT OF THE DOM, and that is deliberate rather than
+// lazy: the words for a channel, a swatch and a model already exist in the
+// markup the pickers rendered from channels.js, backgrounds.js and models.js.
+// Passing them through the config blob as well would be a second copy of three
+// vocabularies that could then disagree with the labels the customer is looking
+// at — which on a summary claiming to state the current answer is the one bug
+// that would be invisible in review and obvious to a client.
+//
+// The DEFAULT text is captured from the element on first run, so the "nothing
+// chosen yet" wording lives in Step1Options.astro next to the markup it
+// describes and is never typed here. That also makes it correct with no JS: the
+// server rendered the same string.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Write one summary, falling back to the wording the server rendered.
+ *
+ * THE DEFAULT IS STORED ON THE ELEMENT, not in a module-level Map, and that is
+ * a bug fix rather than a style choice. The Map version was declared roughly
+ * two thirds of the way down this file, and bootstrap runs from nearer the top:
+ * the first syncSummaries() of the page therefore hit `Cannot access
+ * 'summaryDefaults' before initialization`, a temporal-dead-zone error thrown
+ * inside bindChannels() — which had already attached its own listeners, so the
+ * marketplace lock kept working perfectly while bindModel(), the next line in
+ * init, never ran at all. A half-initialised form that looks entirely healthy
+ * is the expensive kind of failure, and a dataset key cannot reproduce it
+ * because there is no binding to be too early for.
+ */
+function setSummary(attr, text) {
+  const el = q(`[${attr}]`);
+  if (!el) return;
+  if (el.dataset.dcDefault === undefined) el.dataset.dcDefault = el.textContent.trim();
+  el.textContent = text || el.dataset.dcDefault;
+}
+
+function syncSummaries() {
+  // Channels — the names of what is ticked, in the order they are shown.
+  const picked = qa('[data-pl-ch-box]')
+    .filter((b) => b.checked)
+    .map((b) => {
+      const name = b.closest('.ch-opt')?.querySelector('.ch-name');
+      return name ? name.textContent.trim() : b.value;
+    });
+  setSummary('data-pl-sum-channels', picked.join(', '));
+
+  // Background — the swatch's own name and hex, or the typed custom colour.
+  // Falls back to the default line when a custom option is selected with
+  // nothing typed in it yet: "Custom · " with an empty hex would read as a
+  // colour that had been chosen, and none has.
+  const bgChecked = q('input[name="background"]:checked');
+  let bgText = '';
+  if (bgChecked) {
+    const isCustom = bgChecked.dataset.plBgCustom !== undefined;
+    const typed = normalizeHex(q('[data-pl-bg-text]') ? q('[data-pl-bg-text]').value : '');
+    const name = bgChecked.dataset.plBgName || '';
+    const hex = isCustom ? typed : (bgChecked.dataset.plBgHex || '');
+    if (!isCustom || typed) bgText = hex ? `${name} · ${hex}` : name;
+  }
+  setSummary('data-pl-sum-bg', bgText);
+
+  // Model — the chosen face, or nothing, which restores "we choose one".
+  const mp = q('input[name="model"]:checked');
+  let modelText = '';
+  if (mp && mp.value !== 'any') {
+    const name = mp.closest('.mp-opt')?.querySelector('.mp-name');
+    modelText = name ? name.textContent.trim() : mp.value;
+  }
+  setSummary('data-pl-sum-model', modelText);
+}
+
+/**
+ * The model radios have no behaviour beyond keeping their summary honest.
+ *
+ * DELEGATED ON THE FORM rather than bound to each radio. Binding eleven
+ * listeners directly worked for the channel checkboxes and silently did not for
+ * these — the summary stayed on its default through a real click while every
+ * other path into syncSummaries() updated it correctly, which is the signature
+ * of a bind that ran against an empty list. Rather than chase the ordering, the
+ * listener sits on the form and asks the event what it came from: it cannot be
+ * bound too early, it survives markup being re-rendered underneath it, and it
+ * is one listener instead of eleven.
+ */
+function bindModel() {
+  if (!form) return;
+  form.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t && t.name === 'model') syncSummaries();
+  });
+}
+
+function bindChannels() {
+  const field = q('[data-pl-ch]');
+  if (!field) return;
+  qa('[data-pl-ch-box]').forEach((box) => {
+    box.addEventListener('change', syncChannels);
+  });
+  syncChannels();
+}
+
+function syncChannels() {
+  const field = q('[data-pl-ch]');
+  if (!field) return;
+
+  const picked = qa('[data-pl-ch-box]').filter((b) => b.checked).map((b) => b.value);
+  const white = qa('[data-pl-ch-box]').some((b) => b.checked && b.dataset.plChWhite === '1');
+  const risk = qa('[data-pl-ch-box]').some((b) => b.checked && b.dataset.plChRisk === '1');
+  // A channel that restricts who may appear on the MAIN image. This never
+  // removes the on-model frame from the set — bol and Amazon govern which
+  // image leads, not which images may exist — so it drives an instruction and
+  // nothing else. Dropping the shot would take away a photograph the customer
+  // has paid for and would not make a single listing more acceptable.
+  const mainModel = qa('[data-pl-ch-box]').some((b) => b.checked && b.dataset.plChMainmodel === '1');
+  // The split-order offer is for the customer who wants BOTH — a locked channel
+  // and a channel where their own colour is allowed. Showing it to somebody who
+  // only ticked Amazon would be selling a second order to someone who has no
+  // use for one.
+  const wantsOwn = qa('[data-pl-ch-box]').some((b) => b.checked && b.dataset.plChWhite !== '1');
+
+  const lockTo = (q('[data-pl-ch-lock-to]') || {}).dataset?.plChLockTo || 'white';
+
+  qa('input[name="background"]').forEach((r) => {
+    const isTarget = r.value === lockTo;
+    r.disabled = white && !isTarget;
+    if (white && isTarget) r.checked = true;
+  });
+
+  // The custom hex field sits outside the radio group and would otherwise stay
+  // typed-in and postable behind a disabled radio. syncBackground() hides the
+  // panel for a non-custom selection, but the value has to stop travelling too.
+  const text = q('[data-pl-bg-text]');
+  if (text && white) text.value = '';
+
+  const show = (sel, on) => { const el = q(sel); if (el) el.hidden = !on; };
+  show('[data-pl-ch-lock]', white);
+  show('[data-pl-ch-split]', white && wantsOwn);
+  show('[data-pl-ch-order]', mainModel);
+  show('[data-pl-ch-risk]', risk);
+  show('[data-pl-ch-why]', white);
+
+  // Re-render the background from whatever the lock just did to it.
+  syncBackground(kindOf());
+  // …and directly as well: on a flow with no background field syncBackground()
+  // returns early, and the channel summary still has to move.
+  syncSummaries();
+  return picked;
+}
 
 function bindBackground() {
   qa('input[name="background"]').forEach((r) => {
@@ -787,6 +970,12 @@ function syncBackground(kind) {
   // `custom`, which is true, and the hex follows when there is one.
   const hex = custom ? typed : (checked && checked.dataset.plBgHex) || '';
   setHidden('background_hex', hex);
+
+  // The folded summary states this same answer. Written here rather than from
+  // the change listener so that every path that can alter the background — a
+  // radio, a typed hex, the marketplace lock — updates the line, instead of the
+  // three that happen to be wired today.
+  syncSummaries();
 }
 
 /**
@@ -884,10 +1073,19 @@ function nextRung(kind, n) {
  * would be wrong for whichever way it guessed. The page says in words that it
  * is applied on the invoice.
  */
-function quoteFor(kind, n, outfits) {
+function quoteFor(kind, n, outfits, extras = 0) {
   const rate = rateFor(kind, n);
   if (rate === null) return null;
-  return { rate, net: round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0)) };
+  // Extra photos follow the ladder (pricing.js EXTRA_PHOTO_LADDER), so their
+  // rate is read at the SAME product count as the products themselves — one
+  // rung for the whole order, which is the consistency that choice was made
+  // for. The outfit surcharge is flat and does not move with n.
+  const extraRate = extraRateNow();
+  return {
+    rate,
+    extraRate,
+    net: round2(n * rate + outfits * Number(cfg.outfitSurcharge || 0) + extras * extraRate),
+  };
 }
 
 /**
@@ -905,7 +1103,13 @@ function syncTotal() {
   const kind = kindOf();
   const n = productCount();
   const outfits = outfitCount();
-  const quote = kind ? quoteFor(kind, n, outfits) : null;
+  const extras = extrasCount();
+  const quote = kind ? quoteFor(kind, n, outfits, extras) : null;
+  // The per-card rate line moves with the PRODUCT count, not with the extras,
+  // so changing the product select has to repaint every card or the cards keep
+  // quoting the rung the order has just left. paint() never calls back into
+  // this function, so there is no loop to guard against.
+  cards.forEach((k) => { if (k.paintExtra) k.paintExtra(); });
 
   const dash = c('total.onRequest');
   // NET, not gross. The gross figure would be the Dutch 21% shown to a buyer
@@ -918,6 +1122,7 @@ function syncTotal() {
     // Task #271f — additive, on top of the rate line. Never on its own: a
     // surcharge with no base price to attach to is meaningless.
     if (outfits > 0) noteText += c('total.outfit', { price: euro(cfg.outfitSurcharge), n: outfits });
+    if (extras > 0) noteText += c('total.extra', { price: euro(quote.extraRate), n: extras });
   } else if (kind && !Number.isInteger(n) && q('select[name="products"]')?.value) {
     // The escape hatch. Not a failure to price — a count this form is not
     // willing to guess at, which the gate has its own panel for.
@@ -936,7 +1141,7 @@ function syncTotal() {
   if (rung) {
     const next = kind && quote ? nextRung(kind, n) : null;
     if (next && next.addProducts > 0) {
-      const then = quoteFor(kind, next.at, Math.min(outfits, next.at));
+      const then = quoteFor(kind, next.at, Math.min(outfits, next.at), extras);
       // `now` is the CURRENT RATE, not the current total. The sentence used to
       // read "{then} instead of {now}" with two totals in it, which put the
       // larger number on the "instead of" side — more products for more money,
@@ -1034,6 +1239,22 @@ function shotLabel(id) {
 }
 
 /**
+ * "front and back", "voorkant en achterkant" — shot names as a readable list.
+ *
+ * Lowercased because the names are title-case as slot labels and this drops
+ * them mid-sentence, where "Needs Front and Back" reads like a product name.
+ * The joiner comes from the copy table (`and` / `en`) rather than being spelled
+ * here, for the same reason nothing else on this page is spelled here. Two is
+ * the realistic ceiling, but the comma branch is written anyway so that adding a
+ * third required shot is a change to shots.js and to nothing else.
+ */
+function shotListText(ids) {
+  const names = ids.map((id) => shotLabel(id).toLocaleLowerCase());
+  if (names.length <= 1) return names[0] || '';
+  return `${names.slice(0, -1).join(', ')} ${c('pu.listAnd')} ${names[names.length - 1]}`;
+}
+
+/**
  * The ceiling on cards, derived rather than picked: four shots per product
  * against the batch ceiling is the number of products that could ever be
  * uploaded for in one order. Beyond it the cards would be real and the uploads
@@ -1065,7 +1286,19 @@ function slotFilled(card, id) {
 }
 
 function cardReady(card) {
-  return slotFilled(card, REQUIRED_SHOT);
+  return REQUIRED_SHOT_IDS.every((id) => slotFilled(card, id));
+}
+
+/**
+ * The required shots this product is still short of, in asking order.
+ *
+ * Drives the card's state line. Returning the ids rather than a boolean is the
+ * whole point: "needs a front photo" shown to somebody who sent a front and
+ * skipped the back sends them to the wrong slot, and they will not find the
+ * problem there because there is no problem there.
+ */
+function missingRequired(card) {
+  return REQUIRED_SHOT_IDS.filter((id) => !slotFilled(card, id));
 }
 
 function pendingCount() {
@@ -1517,9 +1750,32 @@ function buildAbout(card) {
     }
 
     field.append(label, ctrl);
+
+    // A live swatch for a question that carries a colour (attributes.js sets
+    // `swatch`). It appears only once the value parses as a hex and vanishes
+    // again for a word — so it confirms "we read a colour" without ever
+    // implying that a name is the wrong answer. normalizeHex() is the same
+    // parser the background picker uses, which is why #EEE works here too.
+    if (qn.swatch) {
+      const dot = document.createElement('span');
+      dot.className = 'pu-q-swatch';
+      dot.setAttribute('aria-hidden', 'true');
+      const paintDot = () => {
+        const hex = normalizeHex(ctrl.value);
+        dot.style.setProperty('--swatch', hex || 'transparent');
+        dot.hidden = !hex;
+      };
+      ctrl.addEventListener('input', paintDot);
+      paintDot();
+      field.appendChild(dot);
+      field.classList.add('pu-q-has-swatch');
+    }
+
     wrap.appendChild(field);
     card.answers[qn.id] = ctrl;
   });
+
+  wrap.appendChild(buildExtras(card));
 
   // THE FIRST CARD CARRIES THE COPY-DOWN, and only the first. A button on
   // every card is 25 buttons doing 25 slightly different things; one, at the
@@ -1530,6 +1786,113 @@ function buildAbout(card) {
   ['input', 'change'].forEach((ev) => wrap.addEventListener(ev, () => syncCopyDown(cards[0])));
 
   return wrap;
+}
+
+/**
+ * Extra photos on one product — a counter, and a description that only exists
+ * once the counter is above zero.
+ *
+ * WHY THE DESCRIPTION IS CONDITIONAL. attributes.js's own header states the
+ * rule this has to live with: "A field per product times thirty products is
+ * thirty units of friction, so anything that can be asked once per ORDER is
+ * asked once per order." A free-text box on all thirty cards is exactly what
+ * that paragraph refuses. The reconciliation is that the COUNTER is cheap —
+ * one small select sitting at 0 costs a glance — and the box it reveals is
+ * only ever seen by somebody who has already said they want one. A 25-product
+ * order with no extras shows 25 zeros and not a single textarea.
+ *
+ * WHY IT IS NOT IN attributes.js. That file is product FACTS, the things that
+ * change what the renderer does with a garment. How many extra frames somebody
+ * is buying is a commercial choice about the order, so it is built here and
+ * priced from pricing.js. Keeping it out of PRODUCT_QUESTIONS also keeps that
+ * array's "a second question is a data edit" property true.
+ *
+ * A <select> rather than <input type=number>, matching outfit_count: it is a
+ * short closed range, and a number spinner invites a typed 40 that the form
+ * then has to argue with.
+ */
+function buildExtras(card) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-extra';
+
+  const max = Math.max(0, Math.floor(Number(cfg.maxExtraPerProduct) || 0));
+
+  const head = document.createElement('span');
+  head.className = 'pu-extra-h';
+  head.textContent = c('pu.extraH');
+
+  const countField = document.createElement('div');
+  countField.className = 'pu-q pu-extra-count';
+  const countId = `pu-extra-${card.key}`;
+  const countLabel = document.createElement('label');
+  countLabel.className = 'pu-q-label';
+  countLabel.htmlFor = countId;
+  countLabel.textContent = c('pu.extraCount');
+  const select = document.createElement('select');
+  select.className = 'select pu-q-field';
+  select.id = countId;
+  select.name = `extra_${card.key}`;
+  for (let i = 0; i <= max; i++) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = String(i);
+    select.appendChild(opt);
+  }
+  countField.append(countLabel, select);
+
+  const noteField = document.createElement('div');
+  noteField.className = 'pu-q pu-extra-note';
+  const noteId = `pu-extra-note-${card.key}`;
+  const noteLabel = document.createElement('label');
+  noteLabel.className = 'pu-q-label';
+  noteLabel.htmlFor = noteId;
+  noteLabel.textContent = c('pu.extraNote');
+  const note = document.createElement('input');
+  note.className = 'input pu-q-field';
+  note.type = 'text';
+  note.id = noteId;
+  note.name = `extra_note_${card.key}`;
+  note.autocomplete = 'off';
+  note.maxLength = 200;
+  const ph = c('pu.extraPlaceholder');
+  if (ph) note.placeholder = ph;
+  noteField.append(noteLabel, note);
+
+  const rate = document.createElement('span');
+  rate.className = 'pu-extra-rate';
+
+  // Hidden AND disabled when the count is zero — the same pairing the
+  // background panel uses, and for the same reason: a description typed before
+  // the customer changed their mind back to zero must not travel with the
+  // order and be produced.
+  const paint = () => {
+    const n = Number(select.value) || 0;
+    noteField.hidden = n === 0;
+    note.disabled = n === 0;
+    if (n === 0) note.value = '';
+    rate.textContent = c('pu.extraRate', { rate: euro(extraRateNow()), max });
+  };
+  select.addEventListener('change', () => { paint(); syncTotal(); });
+  card.extra = select;
+  card.extraNote = note;
+  card.paintExtra = paint;
+  paint();
+
+  wrap.append(head, countField, noteField, rate);
+  return wrap;
+}
+
+/** The extra-photo rate at the order's CURRENT product count. */
+function extraRateNow() {
+  const rungs = cfg.extraPhotoLadder || [];
+  const n = Math.max(1, Math.floor(productCount()) || 1);
+  const rung = rungs.find(([lo, hi]) => n >= lo && (hi === null || n <= hi));
+  return rung ? rung[2] : 0;
+}
+
+/** Every extra photo asked for across every card. */
+function extrasCount() {
+  return cards.reduce((n, card) => n + (Number(card.extra && card.extra.value) || 0), 0);
 }
 
 /**
@@ -1648,7 +2011,7 @@ function buildSlot(card, id) {
 
   btn.append(dia, img, nameEl);
 
-  if (id === REQUIRED_SHOT) {
+  if (isRequiredShot(id)) {
     const req = document.createElement('span');
     req.className = 'pu-slot-req';
     req.textContent = c('pu.required');
@@ -1687,11 +2050,13 @@ function buildSlot(card, id) {
   };
   const replaceBtn = act(c('pu.replace'), () => file.click());
   const removeBtn = act(c('pu.remove'), () => { clearSlot(card, id); refreshUploader(); });
-  // THE SKIP IS A CONTROL, NOT AN ABSENCE. Three of the four shots are optional
-  // and a customer who has decided not to send one wants to say so — an empty
-  // slot cannot tell "not yet" from "not at all", and the card's own state line
-  // would keep asking. Every skip is undoable in one click, in place.
-  const skipBtn = id === REQUIRED_SHOT ? null : act(c('pu.skipShot'), () => {
+  // THE SKIP IS A CONTROL, NOT AN ABSENCE. The optional shots — detail and worn
+  // since the back became required — belong to a customer who has decided not to
+  // send one and wants to say so: an empty slot cannot tell "not yet" from "not
+  // at all", and the card's own state line would keep asking. Every skip is
+  // undoable in one click, in place. Required slots get no skip button at all,
+  // which is the only place the rule is enforced in the UI rather than argued.
+  const skipBtn = isRequiredShot(id) ? null : act(c('pu.skipShot'), () => {
     clearSlot(card, id);
     card.slots[id].status = 'skipped';
     paintSlot(card, id);
@@ -1701,7 +2066,7 @@ function buildSlot(card, id) {
   // to its own elements, and replacing it wholesale left a slot that could
   // never be painted again — visibly stuck on "skipped" with every control on
   // it dead. An undo that cannot be undone is worse than no undo.
-  const undoBtn = id === REQUIRED_SHOT ? null : act(c('pu.undoSkip'), () => {
+  const undoBtn = isRequiredShot(id) ? null : act(c('pu.undoSkip'), () => {
     clearSlot(card, id);
     refreshUploader();
   });
@@ -1796,7 +2161,7 @@ function paintCard(card) {
   card.el.classList.toggle('is-ready', ready);
   card.el.classList.toggle('is-collapsed', card.collapsed);
   if (card.toggleEl) card.toggleEl.setAttribute('aria-expanded', card.collapsed ? 'false' : 'true');
-  if (card.stateEl) card.stateEl.textContent = ready ? c('pu.ready') : c('pu.needsFront');
+  if (card.stateEl) card.stateEl.textContent = ready ? c('pu.ready') : c('pu.needsShots', { list: shotListText(missingRequired(card)) });
   SHOT_IDS.forEach((id) => paintSlot(card, id));
 }
 
@@ -1804,16 +2169,16 @@ function paintCard(card) {
  * "8 of 25 products ready", never "31 files uploaded".
  *
  * A file count is a receipt for work the customer cannot check. What they can
- * act on is which products are short of the one photograph we cannot work
- * without — so that is the sentence, and the optional photos are counted after
- * it as an addition rather than as a second obligation.
+ * act on is which products are short of a photograph we cannot work without —
+ * the front or the back — so that is the sentence, and the optional photos are
+ * counted after it as an addition rather than as a second obligation.
  */
 function progressText() {
   const total = cards.length;
   if (!total) return '';
   const done = cards.filter(cardReady).length;
   const extra = cards.reduce(
-    (n, card) => n + SHOT_IDS.filter((id) => id !== REQUIRED_SHOT && slotFilled(card, id)).length,
+    (n, card) => n + SHOT_IDS.filter((id) => !isRequiredShot(id) && slotFilled(card, id)).length,
     0
   );
   // Singular branches for the one-product order, which is the entry point of

@@ -66,6 +66,7 @@ import {
 // eventually be updated once. `faqH` — the heading above them — stays here: it
 // is page furniture, not a question.
 import { pricingFaqs } from '../data/faq.js';
+import Disclose from './Disclose.astro';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
 import FigPayback from './FigPayback.astro';
@@ -260,7 +261,7 @@ const COPY = {
     ladderProductsCol: 'Producten',
     kinds: {
       complete: { name: 'Compleet', sub: 'Catalogset en lifestyle-carousel — zeven beelden per product' },
-      catalog: { name: 'Catalogset', sub: 'Vier beelden per product' },
+      catalog: { name: 'Catalogset', sub: 'Vanaf vier beelden per product' },
       lifestyle: { name: 'Lifestyle-carousel', sub: 'Drie beelden per product' },
     },
 
@@ -692,15 +693,9 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
   <div class="section-head"><h2>{c.faqH}</h2></div>
   <div class="acc reveal pending">
     {c.faqs.map((f) => (
-      <details class="acc-item">
-        <summary class="acc-q">
-          <span>{f.q}</span>
-          <span class="acc-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" class="i" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
-          </span>
-        </summary>
-        <div class="acc-body-inner"><p>{f.a}</p></div>
-      </details>
+      <Disclose summary={f.q} tone="panel">
+        <p>{f.a}</p>
+      </Disclose>
     ))}
   </div>
 </div></section>

@@ -234,7 +234,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Wat moet ik opsturen?',
-            a: 'Eén duidelijke foto per product en een korte notitie over de look die je wilt. Meer niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de bestelling.',
+            a: 'Per product een duidelijke foto van de voorkant en één van de achterkant, plus een korte notitie over de look die je wilt. Allebei die kanten krijg je terug als geleverd beeld, dus vragen we ze allebei in plaats van te gokken naar wat er achterop zit. Een close-up en een draagfoto mogen erbij en maken het nauwkeuriger, maar hoeven niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de bestelling.',
           },
           {
             q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
@@ -341,6 +341,10 @@ export function faqPageGroups(lang = 'en') {
             a: 'Nee. De foto’s die je stuurt worden alleen gebruikt om jouw bestelling te produceren, en verder niets.',
           },
           {
+            q: 'Moet ik alle geleverde beelden gebruiken?',
+            a: 'Nee. Je krijgt de complete set per product, en wat je ervan publiceert bepaal jij. Gebruik je vandaag alleen de voorkant en de on-model shot, dan blijven de andere gewoon staan voor wanneer je ze nodig hebt — een seizoenscampagne, een nieuwe marktplaats, een andere bannermaat. Er zit geen gebruikstermijn op en het kost niets extra om er later alsnog een in te zetten.',
+          },
+          {
             q: 'Zijn de visuals AI-gegenereerd?',
             a: 'Ja, en dat zeggen we gewoon. Elke visual wordt gegenereerd uit foto’s van jouw echte product en met de hand afgewerkt voordat die wordt geleverd — een gemaakt beeld, geen foto van een shoot die heeft plaatsgevonden. We beschrijven precies hoe die van jou gemaakt zijn. We vertellen je niet wat dat voor jouw bedrijf betekent.',
             linkText: 'Lees onze AI Act-pagina',
@@ -369,7 +373,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'What do I need to send you?',
-          a: 'One clear photo per product and a short note on the look you want. That is it. Five minutes, whether it is one product or thirty — the effort does not scale with the size of the order.',
+          a: 'Per product, a clear photo of the front and one of the back, plus a short note on the look you want. Both of those sides come back to you as delivered images, so we ask for both rather than guess at whatever is on the back. A close-up and a worn shot are welcome and make it more accurate, but they are not required. Five minutes, whether it is one product or thirty — the effort does not scale with the size of the order.',
         },
         {
           q: 'Can I try it before ordering a whole collection?',
@@ -520,6 +524,10 @@ export function faqPageGroups(lang = 'en') {
         {
           q: 'Do you use my product photos for anything else?',
           a: 'No. The photos you send are used to produce your order and nothing else.',
+        },
+        {
+          q: 'Do I have to use every image you deliver?',
+          a: 'No. You get the complete set per product, and what you publish from it is your call. If today you only use the front and the on-model shot, the rest simply stay there for when you need them — a seasonal campaign, a new marketplace, a different banner size. There is no time limit on using them and nothing extra to pay for putting one to work later.',
         },
         {
           q: 'Are the visuals AI-generated?',

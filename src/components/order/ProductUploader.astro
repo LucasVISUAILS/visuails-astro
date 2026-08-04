@@ -7,8 +7,8 @@
 // which product, or which of the four angles. The studio sorted it afterwards
 // by hand, and the customer never learned whether what they sent was enough.
 // The reasoning for the four shots, and every word describing them, is
-// src/data/shots.js — read that file, not this one, for WHY only the front is
-// required.
+// src/data/shots.js — read that file, not this one, for WHY the front and the
+// back are required and the other two are not.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // THE ONE THING TO GET RIGHT: WHERE THE EXPLANATION LIVES
@@ -54,7 +54,10 @@
 // The material field's suggestions are a shared <datalist> per question
 // (`pu-dl-<id>`), rendered once here rather than per card — a datalist is
 // referenced by id and twenty-five inputs may all name the same one.
-import { SHOTS, REQUIRED_SHOT, copy as shotCopy } from '../../data/shots.js';
+// REQUIRED_SHOT was imported here and never used; it is gone from shots.js now
+// (the rule is two shots, not one), so the dead name goes with it rather than
+// sitting here as an import of an export that no longer exists.
+import { SHOTS, copy as shotCopy } from '../../data/shots.js';
 import { PRODUCT_QUESTIONS, copy as attrCopy } from '../../data/attributes.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES } from '../../lib/uploads.js';
 import ShotDiagram from './ShotDiagram.astro';
@@ -634,6 +637,73 @@ const hint = lang === 'nl'
   /* The gap global.css leaves for the caret. The shorthand above would drop it,
      which is the same trap .select itself has to re-state its way out of. */
   .pu-cards :global(select.pu-q-field) { padding-right: 2.4rem; }
+
+  /* The colour swatch, for the question that carries one. Positioned rather
+     than added to the flex column: the field is label-over-control, and a third
+     child would push the swatch onto its own line under the input. Sitting it
+     inside the control's right edge keeps the row one line tall and reads as
+     part of the field rather than as a fourth thing. */
+  .pu-cards :global(.pu-q-has-swatch) { position: relative; }
+  .pu-cards :global(.pu-q-swatch) {
+    position: absolute;
+    right: .55rem;
+    bottom: 10px;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--r-sm);
+    background: var(--swatch, transparent);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    pointer-events: none;
+  }
+  /* The input has to give the swatch its room, or a long hex sits under it. */
+  .pu-cards :global(.pu-q-has-swatch .pu-q-field) { padding-right: 2.2rem; }
+  .pu-cards :global(.pu-q-swatch[hidden]) { display: none !important; }
+
+  /* ── Extra photos ─────────────────────────────────────────────────────────
+     Its own hairline row under the questions, because it is a different KIND
+     of answer: material describes the product, this buys something. Grouping
+     it with the questions would read as a fifth thing we need to know rather
+     than as a thing the customer is choosing to add.
+
+     The counter is narrow and the description takes the rest of the row, so a
+     card with no extras is a label and a "0" — the smallest shape this control
+     can have while still being visible on every product, which is what asking
+     per product requires. Built by pipeline.js, so every selector here is
+     :global(); the wrapper is the one element this sheet can reach directly. */
+  .pu-cards :global(.pu-extra) {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr);
+    gap: .3rem .7rem;
+    align-items: start;
+    margin-top: .85rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+  }
+  .pu-cards :global(.pu-extra-h) {
+    grid-column: 1 / -1;
+    font-size: .74rem; font-weight: 700; line-height: 1.3;
+    color: var(--ink);
+  }
+  .pu-cards :global(.pu-extra-count) { grid-column: 1; }
+  .pu-cards :global(.pu-extra-note) { grid-column: 2; }
+  /* The rate sits under both columns rather than beside the counter: it is a
+     sentence about the order, not a caption on the select, and at 25 cards a
+     per-control caption is 25 repetitions of the same line at reading weight. */
+  .pu-cards :global(.pu-extra-rate) {
+    grid-column: 1 / -1;
+    font-size: .7rem; line-height: 1.45;
+    color: var(--ink-3);
+  }
+  /* pipeline.js hides the description with el.hidden, and the UA rule for
+     [hidden] loses to .pu-q's display:flex. Same guard the form's own sheet
+     keeps for the background panel. */
+  .pu-cards :global(.pu-extra [hidden]) { display: none !important; }
+
+  @media (max-width: 520px) {
+    .pu-cards :global(.pu-extra) { grid-template-columns: 1fr; }
+    .pu-cards :global(.pu-extra-count),
+    .pu-cards :global(.pu-extra-note) { grid-column: 1; }
+  }
 
   /* ── GENERATED: copy down ─────────────────────────────────────────────────
      ON THE FIRST CARD ONLY, and hidden while it is the only card. A brand

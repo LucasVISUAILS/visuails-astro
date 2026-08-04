@@ -1,0 +1,118 @@
+---
+// VISUAILS — the three optional answers in step 1, folded.
+//
+// WHY THIS FILE EXISTS
+// Step 1 used to hold one question: how many products, and are any of them a
+// full outfit. In August 2026 three more blocks were added on top of it — the
+// marketplace picker, the background picker and the model picker — and step 1
+// went to 1,212 words, half the entire order flow, in one screen. Lucas, the
+// same week: "het wordt namelijk best druk om naar te kijken."
+//
+// The measurement said what to do. Of the four blocks, exactly one has to be
+// answered: the count. The other three all have a safe default already selected
+// — pure white, "choose one that fits our brand", and no channel at all — so
+// they are not questions the customer must work through, they are answers they
+// may want to change.
+//
+// SO THEY FOLD TO THEIR OWN ANSWER, NOT TO A LABEL. This is the whole design
+// and it is why a plain dropdown would have been the wrong instrument: a closed
+// dropdown hides what is selected, and this has to keep showing it. Closed, the
+// three read
+//
+//     Where will you sell these?            not chosen yet
+//     Background                            Pure white
+//     The on-model shot                     We choose one
+//
+// Nothing is hidden except the controls. Every step survives, every answer stays
+// on screen, and step 1 goes from ~1,212 visible words to roughly 250.
+//
+// ONE OPEN AT A TIME, WITH NO SCRIPT. The three share a `name`, which is the
+// native exclusive accordion — the browser closes the others. A browser without
+// it opens them independently, which is exactly today's behaviour and not a
+// regression. DESIGN.md's disclosure section records this as the one place the
+// exclusive variant is used, because here the point IS one control at a time.
+//
+// THE ORDER IS DELIBERATE. Channels first, because channels CONSTRAIN the
+// background (pick Amazon and it locks to #FFFFFF — see MarketplacePicker), so
+// answering them second would mean answering the background twice. Model last,
+// because it is the only one of the three that changes nothing else.
+//
+// The live answer text is written by pipeline.js into the [data-pl-sum-*]
+// spans. With JavaScript off they carry the defaults typed below, which are
+// true on load — a no-JS customer reads three correct summaries and can open
+// any of them, and the form still posts every field.
+import Disclose from '../Disclose.astro';
+import MarketplacePicker from './MarketplacePicker.astro';
+import BackgroundPicker from './BackgroundPicker.astro';
+import ModelPicker from './ModelPicker.astro';
+import { copy as chCopy } from '../../data/channels.js';
+import { background, DEFAULT_ID, copy as bgCopy } from '../../data/backgrounds.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+
+const ch = chCopy(lang);
+const bg = bgCopy(lang);
+
+// The summaries' starting text. Read from the same modules the pickers read, so
+// a renamed swatch or a reworded label cannot leave a stale answer on a summary
+// that claims to state the current one.
+const START = {
+  en: {
+    channels: 'not chosen yet',
+    background: `${background(DEFAULT_ID).name.en} · ${background(DEFAULT_ID).hex}`,
+    model: 'we choose one',
+    modelLabel: 'The on-model shot',
+  },
+  nl: {
+    channels: 'nog niet gekozen',
+    background: `${background(DEFAULT_ID).name.nl} · ${background(DEFAULT_ID).hex}`,
+    model: 'wij kiezen er een',
+    modelLabel: 'De on-model shot',
+  },
+};
+const s = START[lang];
+---
+
+<div class="s1-folds">
+  <Disclose
+    summary={ch.label}
+    name="s1"
+    liveAttr="data-pl-sum-channels"
+    liveText={s.channels}
+  >
+    <MarketplacePicker lang={lang} />
+  </Disclose>
+
+  <Disclose
+    summary={bg.label}
+    name="s1"
+    liveAttr="data-pl-sum-bg"
+    liveText={s.background}
+  >
+    <BackgroundPicker lang={lang} />
+  </Disclose>
+
+  <Disclose
+    summary={s.modelLabel}
+    name="s1"
+    liveAttr="data-pl-sum-model"
+    liveText={s.model}
+  >
+    <ModelPicker lang={lang} />
+  </Disclose>
+</div>
+
+<style>
+  /* Capped at the same measure the pickers were, so folding them changes what
+     is visible and not where the column sits. */
+  .s1-folds { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
+
+  /* The pickers each carry their own top margin for when they stood alone in
+     the step. Inside a fold that margin pushes the controls away from the
+     summary that opened them, so it is removed here — the one place that knows
+     they are no longer top-level blocks. */
+  .s1-folds :global(.pl-ch),
+  .s1-folds :global(.pl-bg),
+  .s1-folds :global(.pl-model) { margin-top: 0; }
+</style>

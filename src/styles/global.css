@@ -1370,11 +1370,39 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 /* Film grain. Plain alpha compositing — no mix-blend-mode: a full-viewport
    blend layer forces the compositor to re-blend the whole page every scrolled
-   frame (a major jank source on Windows); a translucent tile is nearly free. */
+   frame (a major jank source on Windows); a translucent tile is nearly free.
+
+   TURNED DOWN, August 2026. Lucas: "minder film grain op achtergrond, houd het
+   minimaal maar wel licht zichtbaar."
+
+   Measured rather than eyeballed, on a flat #090909 patch with the layer
+   toggled off and on, comparing the mean lift and the standard deviation:
+
+     opacity .07 · baseFrequency 0.9 · numOctaves 2   lift 6.21   amplitude 1.60   (was)
+     opacity .04 · baseFrequency 1.1 · numOctaves 1   lift 3.56   amplitude 0.88   (is)
+
+   So roughly 45% less of both, which is a visible reduction that still leaves
+   texture on a large dark field rather than switching it off.
+
+   THE LIFT MATTERED MORE THAN THE SPECKLE, and it is the half nobody looks at.
+   The turbulence rect is a bright field, so at .07 it was raising black from 9
+   to 15 — a 61% wash on the darkest surface on the site. This layer sits at
+   z-index 300, above everything but a modal, which means it was also sitting on
+   top of the product photography. On a site whose whole argument is that the
+   colour is right, a permanent overlay that lightens every black in every
+   delivered image is arguing the other way.
+
+   numOctaves 1, NOT 2. The second octave is what made it read as blotchy
+   rather than as grain: it adds a low-frequency layer that clumps into cloudy
+   patches at this tile size. One octave plus the finer 1.1 frequency gives
+   smaller, evener particles — the character improves as the quantity drops.
+
+   To take it further down, opacity .03 measures lift 2.67 / amplitude 0.69 and
+   is the next honest step; below that it stops being visible at all. */
 .grain {
   position: fixed; inset: 0; z-index: var(--z-grain); pointer-events: none;
-  opacity: .07;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: .04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 170px;
 }
 

@@ -32,7 +32,7 @@ export const catalogStyles = [
     tagline: 'Strak. Consistent. Zonder concessies.',
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
-    metaPrice: `${CAT_FROM} / product — 4 foto’s`,
+    metaPrice: `${CAT_FROM} / product — vanaf 4 foto’s`,
     orderHref: '/nl/start',
     heroIcon: 'bottle',
     heroWidth: '26%',
@@ -71,7 +71,7 @@ export const catalogStyles = [
       'Bijbestellingen — nieuwe producten die perfect bij oude sets passen',
     ],
     whatYouGet: [
-      'Vier foto\'s per product: voorkant, achterkant, detail & on-model',
+      'Vanaf vier foto\'s per product: voorkant, achterkant, detail & on-model',
       'Consistente belichting, hoek en achtergrond',
       'Hoge-resolutie, marktplaats-klare bestanden',
       TIMING,

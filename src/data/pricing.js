@@ -286,6 +286,103 @@ export const AMOUNT = {
 export const OUTFIT_SURCHARGE = 50;
 export const MAX_OUTFIT_PRODUCTS = 3;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 1c · EXTRA PHOTOS PER PRODUCT — August 2026.
+//
+// Lucas: "de mogelijkheid tot extra fotos voor hetzelfde product. Klanten
+// dienen zelf aan te geven wat voor beeld het moet worden e.g. close up foto
+// van model zonder gezicht."
+//
+// So this is not a fifth angle on the standard list — it is a described,
+// one-off frame the customer asks for in their own words. That difference is
+// the whole pricing argument, and it cuts both ways:
+//   · It costs MORE attention per image than a set photo, which is templated.
+//     Somebody has to read the sentence, decide what it means, and quite often
+//     go a round on it. €35 at the entry rung against the set's implied
+//     €22.25 (€89 for four) is that gap, stated.
+//   · It costs LESS than a full outfit shot at €50, which carries a fit check
+//     ACROSS several garments. One extra angle of one product does not.
+//
+// IT FOLLOWS THE LADDER — LUCAS'S CALL, AGAINST MY RECOMMENDATION, AND THE
+// CONSEQUENCE IS RECORDED HERE RATHER THAN ARGUED AGAIN. I proposed a flat
+// rate on the OUTFIT_SURCHARGE model, because the reason the ladder falls is
+// that templated work amortises over a run and a per-image description does
+// not: at the bottom rung an extra photo earns €13 while costing more studio
+// time than a €8.25 set image. Lucas chose the ladder anyway, for consistency
+// with what the customer already sees. That is a legitimate trade — one price
+// story instead of three — and this comment exists so the margin shape is
+// visible if it ever needs revisiting, not to relitigate it.
+//
+// THE RUNGS ARE DERIVED, NOT INVENTED. Each is LADDER.catalog's rung as a
+// fraction of its own entry rate, applied to €35 and rounded to whole euros:
+//   89→1.000×35 = 35 · 65→0.730×35 = 25.6 → 26 · 51→0.573×35 = 20.1 → 20
+//   39→0.438×35 = 15.3 → 15 · 33→0.371×35 = 13.0 → 13
+// Written out rather than computed at runtime so the numbers on the page are
+// the numbers in this file, and asserted below so a rounding change cannot
+// quietly break the fall.
+export const EXTRA_PHOTO_LADDER = [[1, 4, 35], [5, 9, 26], [10, 19, 20], [20, 34, 15], [35, null, 13]];
+
+// Past four extra frames on one product it is no longer "one more angle", it
+// is a second brief — the same reasoning MAX_OUTFIT_PRODUCTS applies to "more
+// than a form can hold".
+export const MAX_EXTRA_PER_PRODUCT = 4;
+
+/**
+ * The rate for one extra photo, at the order's product count.
+ *
+ * Keyed on PRODUCTS, not on how many extras were ordered: "follows the ladder"
+ * means the customer sees one rung for the whole order, which is the
+ * consistency the choice was made for. Pricing extras on their own count would
+ * be a second ladder to explain and would reward a customer for piling extras
+ * onto one product.
+ */
+export function extraPhotoRate(products = 1) {
+  const n = Math.max(1, Math.floor(Number(products) || 1));
+  const rung = EXTRA_PHOTO_LADDER.find(([lo, hi]) => n >= lo && (hi === null || n <= hi));
+  if (!rung) throw new Error(`pricing.js: no extra-photo rung covers ${n} products`);
+  return rung[2];
+}
+
+// The ladder has to FALL and has to line up with the product ladder it was
+// derived from, or the page prints two price stories that contradict each
+// other. Checked at module load, beside assertLadder()'s own reasoning.
+(function assertExtraLadder() {
+  const rates = EXTRA_PHOTO_LADDER.map((r) => r[2]);
+  for (let i = 1; i < rates.length; i++) {
+    if (rates[i] >= rates[i - 1]) {
+      throw new Error(`pricing.js: EXTRA_PHOTO_LADDER is not strictly falling at rung ${i} (${rates.join(', ')}).`);
+    }
+  }
+  if (EXTRA_PHOTO_LADDER.length !== LADDER.catalog.length) {
+    throw new Error('pricing.js: EXTRA_PHOTO_LADDER must have the same rungs as LADDER.catalog — it is derived from it.');
+  }
+  EXTRA_PHOTO_LADDER.forEach((r, i) => {
+    const [lo, hi] = LADDER.catalog[i];
+    if (r[0] !== lo || r[1] !== hi) {
+      throw new Error(`pricing.js: EXTRA_PHOTO_LADDER rung ${i} does not span the same products as LADDER.catalog.`);
+    }
+  });
+  // An extra photo must never be cheaper than a set image at the same rung —
+  // that is the whole argument for its existence, and an edit to either ladder
+  // that inverted it would be selling bespoke work at templated prices.
+  EXTRA_PHOTO_LADDER.forEach((r, i) => {
+    const perSetImage = LADDER.catalog[i][2] / 4;
+    if (r[2] <= perSetImage) {
+      throw new Error(
+        `pricing.js: an extra photo at €${r[2]} is not dearer than a set image at €${perSetImage.toFixed(2)} `
+        + `on rung ${i}. A described one-off costs more attention than a templated angle — see the comment above.`
+      );
+    }
+  });
+})();
+
+// Why it costs what it costs, written the way OUTFIT_COPY is: a statement of
+// the extra work, not a defence of the price.
+export const EXTRA_PHOTO_COPY = {
+  en: 'An extra photo is one you describe — a detail from another angle, the product on a model cropped at the neck, a flat-lay for a banner. Because it is written rather than picked from a list, someone reads it, decides what it means and checks the result against what you asked for. That reading is the extra work behind the rate.',
+  nl: 'Een extra foto is er een die jij beschrijft — een detail vanuit een andere hoek, het product op een model bijgesneden bij de hals, een flat-lay voor een banner. Omdat het geschreven is in plaats van gekozen uit een lijst, leest iemand het, bepaalt wat het betekent en legt het resultaat naast wat je vroeg. Dat lezen is het extra werk achter het tarief.',
+};
+
 // The one thing NOT delegated to me: why it costs more. Lucas was explicit
 // that this has to be explained, and explained factually rather than
 // defensively ("Leg dit uit maar niet verdedigend") — so this is a statement
@@ -895,12 +992,12 @@ assertLadder();
 
 export const PER_PRODUCT = {
   en: [
-    { id: 'catalog', tier: 'unattended', name: 'Catalog set', price: euro(AMOUNT.catalog, 'en'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Four photos: front, back, a fabric or logo close-up, and one on-model shot.' },
+    { id: 'catalog', tier: 'unattended', name: 'Catalog set', price: euro(AMOUNT.catalog, 'en'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'From four photos: front, back, a fabric or logo close-up, and one on-model shot. Add more per product.' },
     { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle carousel', price: euro(AMOUNT.lifestyle, 'en'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Three photos of one product in one styled look — a carousel ready to post.' },
     { id: 'video', tier: 'unattended', name: 'Video clip', price: euro(AMOUNT.video, 'en'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'en'), unit: 'per clip', line: 'One short clip. The same rate on its own or added to a drop.' },
   ],
   nl: [
-    { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot.' },
+    { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vanaf vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot. Per product bij te bestellen.' },
     { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle-carousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carousel klaar om te posten.' },
     { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een drop.' },
   ],

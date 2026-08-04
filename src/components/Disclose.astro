@@ -1,0 +1,159 @@
+---
+// VISUAILS — one disclosure, used everywhere.
+//
+// WHY IT EXISTS
+// Lucas, August 2026: "het wordt namelijk best druk om naar te kijken … bedenk
+// manieren om dit tegen te gaan maar alsnog dezelfde info en stappen behouden."
+//
+// The site measured 2,435 words on the homepage across 24 sections, 1,212 in
+// step 1 of the order flow, 1,567 on /ai-act with nothing collapsed at all —
+// against a median of 346 across 41 pages. It is three places, not the site.
+//
+// Before this file there were FIVE different disclosures: .faq-item on
+// /catalog, .acc-item on /faq, .hv-notfor, .hv-vat and .hv-faq-item on the
+// homepage, and .pl-why in the order form. Every one is a native
+// <details>/<summary> with the same plus-to-minus affordance and slightly
+// different padding, which is five places to fix a focus ring and five chances
+// for the sixth one to be invented. This is that component, once.
+//
+// THE RULE FOR WHEN A BLOCK EARNS ONE — written down in DESIGN.md too, because
+// a component with no rule attached becomes a component used everywhere:
+//
+//   Collapse a block when it answers a question only SOME of your readers have.
+//   Keep it open when every reader needs it to decide.
+//
+// And one hard line under that: NOTHING ON THE BELIEF LADDER IS EVER
+// COLLAPSED. PRODUCT.md lists four rungs — it is not an AI toy, it holds up
+// across a collection, it costs less and lands sooner, finding out costs €0.99
+// — and those are what a sceptical visitor came to test. Hiding a rung behind a
+// summary to win quiet is trading the argument for the aesthetic.
+//
+// NATIVE <details>, DELIBERATELY. It opens with JavaScript off, it is in the
+// accessibility tree for free, ctrl+F in Chrome opens it to find a match, and
+// it needs no state of ours. Everything below is presentation.
+//
+// `name` GIVES AN EXCLUSIVE ACCORDION WITH NO SCRIPT AT ALL. Two disclosures
+// sharing a name close each other, in the browser, natively. That is what the
+// order form's step 1 uses to show one picker at a time — see OrderFlow.astro.
+// In a browser that does not support it they simply all open independently,
+// which is the old behaviour and not a broken one.
+//
+// `summaryLive` is for the case step 1 needs: a summary that states the CURRENT
+// ANSWER rather than a fixed label, written by pipeline.js. It renders a span
+// with the given data attribute, so this component still holds no logic.
+interface Props {
+  /** The always-visible line. */
+  summary: string;
+  /** Open on load. For the one disclosure on a page that is the exception. */
+  open?: boolean;
+  /** Shared name → native exclusive accordion. */
+  name?: string;
+  /** data-attribute on a trailing span in the summary, for live answer text. */
+  liveAttr?: string;
+  /** Its starting text, so the summary reads correctly with no JS. */
+  liveText?: string;
+  /** 'panel' (bordered, for lists) | 'plain' (rule-only, for prose sections). */
+  tone?: 'panel' | 'plain';
+  class?: string;
+}
+const {
+  summary, open = false, name, liveAttr, liveText = '', tone = 'panel', class: extra = '',
+} = Astro.props;
+---
+
+<details
+  class:list={['dc', `dc-${tone}`, extra]}
+  open={open}
+  name={name}
+>
+  <summary class="dc-sum">
+    <span class="dc-label">{summary}</span>
+    {liveAttr && <span class="dc-live" {...{ [liveAttr]: '' }}>{liveText}</span>}
+  </summary>
+  <div class="dc-body">
+    <slot />
+  </div>
+</details>
+
+<style>
+  /* The marker is removed in three ways because the three engines disagree:
+     list-style for Firefox, ::marker for the spec, ::-webkit-details-marker for
+     older WebKit. Missing any one of them ships a stray triangle beside the
+     glyph below. */
+  .dc > .dc-sum { list-style: none; cursor: pointer; }
+  .dc > .dc-sum::marker { content: ''; }
+  .dc > .dc-sum::-webkit-details-marker { display: none; }
+
+  .dc-sum {
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+    /* The glyph is a grid column rather than a float: a floated ::after drops
+       out of flow, so a two-line summary wraps UNDER it and the plus ends up
+       beside the first line with the second line running past it. */
+    padding-right: 1.6rem;
+    position: relative;
+  }
+  .dc-label { font-weight: 600; color: var(--ink); font-size: .98rem; line-height: 1.4; }
+  /* The current answer, when there is one. Lighter than the label because it is
+     the value and not the question, and it must never out-weigh the thing it
+     answers to. */
+  .dc-live { margin-left: auto; font-size: .86rem; color: var(--ink-3); text-align: right; }
+  .dc-live:empty { display: none; }
+
+  /* Plus to minus. A rotating chevron would be the reflex; the arithmetic
+     glyphs are what every other disclosure on this site already used, so this
+     preserves the existing vocabulary rather than introducing a sixth one. */
+  .dc-sum::after {
+    content: '+';
+    position: absolute;
+    right: 0;
+    top: -0.1em;
+    color: var(--ink-3);
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: color var(--dur-1) var(--ease);
+  }
+  .dc[open] > .dc-sum::after { content: '\2212'; }
+  .dc-sum:hover::after { color: var(--accent-bright); }
+
+  .dc-sum:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: var(--r-sm); }
+
+  .dc-body { margin-top: .85rem; }
+  /* Set on the body rather than on the component, so a caller can put anything
+     inside — a list, a figure, a fieldset — without inheriting prose rules it
+     did not ask for. */
+  .dc-body :global(p) { color: var(--ink-2); font-size: .92rem; line-height: 1.65; }
+  .dc-body :global(p + p) { margin-top: .7rem; }
+
+  /* PANEL — bordered, for a stack of short answers. What /faq and the
+     homepage's FAQ block already looked like. */
+  .dc-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 1.1rem 1.3rem;
+  }
+  /* Stacked panels share their border rather than doubling it. */
+  .dc-panel + .dc-panel { border-top: 0; }
+
+  /* PLAIN — a hairline rule and nothing else, for collapsing whole prose
+     sections on a document page. A bordered box around four paragraphs of
+     legal text would be a card, and cards are the lazy answer; the rule keeps
+     the page reading as a document that happens to fold. */
+  .dc-plain {
+    border-top: 1px solid var(--line);
+    padding: 1.1rem 0;
+  }
+  .dc-plain + .dc-plain { border-top: 1px solid var(--line); }
+  .dc-plain:last-of-type { border-bottom: 1px solid var(--line); }
+  .dc-plain .dc-label { font-size: 1.05rem; }
+
+  /* No height animation. A <details> cannot transition its own open state
+     without scripting it, and the half-measures (animating the body's opacity
+     after the fact) produce a flash on a slow paint. Instant is honest and is
+     what every native accordion does. */
+  @media (prefers-reduced-motion: reduce) {
+    .dc-sum::after { transition: none; }
+  }
+</style>
