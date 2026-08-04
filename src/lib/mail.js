@@ -25,10 +25,33 @@
  * uploads, and an empty array is a new key on every message that doesn't
  * carry one — a wire-format difference that buys nothing.
  */
-export async function sendMail(env, { to, subject, html, attachments }) {
+export async function sendMail(env, { to, subject, html, text, attachments }) {
   if (!env.RESEND_API_KEY) return;                 // not configured yet → skip quietly
   const from = env.FROM_EMAIL || 'VISUAILS <orders@visuails.com>';
-  const payload = { from, to, subject, html, reply_to: 'hello@visuails.com' };
+  // EVERY MESSAGE GOES OUT AS BOTH PARTS, August 2026 — a customer's sign-in
+  // link landed in spam and this was one of the reasons.
+  //
+  // An HTML-only message is a multipart/alternative with one half missing, and
+  // filters weight that heavily: legitimate bulk senders produce both parts
+  // because their tooling does, while the things people report as spam very
+  // often ship HTML alone. Combined with the shape of this particular mail —
+  // short, one prominent link, a button — HTML-only is close to a template for
+  // what a filter is trained to catch.
+  //
+  // Derived from the HTML when a caller does not supply its own, rather than
+  // being made a required argument. A required argument is a thing five call
+  // sites can forget, and a wrong plain-text part is worse than a derived one:
+  // the two halves are supposed to say the same thing, and only one of them
+  // gets read when they disagree. Callers who care — the sign-in link — pass a
+  // hand-written `text` and get exactly that.
+  const payload = {
+    from,
+    to,
+    subject,
+    html,
+    text: text || htmlToText(html),
+    reply_to: 'hello@visuails.com',
+  };
   if (attachments && attachments.length) payload.attachments = attachments;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -36,4 +59,62 @@ export async function sendMail(env, { to, subject, html, attachments }) {
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}
+
+/**
+ * A readable plain-text version of an HTML email.
+ *
+ * NOT a general HTML-to-text converter, and it should not grow into one. It
+ * handles the shapes this project's own emails are built from — paragraphs,
+ * line breaks, table rows, links, bold — because those are the only inputs it
+ * will ever see, and a converter that tries to be complete is one that fails
+ * quietly on the case nobody tested.
+ *
+ * THE LINKS ARE THE POINT. A plain-text part that says "Sign in" where the HTML
+ * had a button is a dead end for anyone reading in text mode — including the
+ * spam filters that compare the two halves. So an anchor becomes `label (url)`,
+ * and an anchor whose label already IS its url stays as just the url rather
+ * than being printed twice.
+ */
+export function htmlToText(html) {
+  if (!html) return '';
+  let s = String(html);
+
+  // Block boundaries first, while the tags are still there to find.
+  s = s
+    .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+    .replace(/<\s*\/\s*(p|div|h[1-6]|tr|li)\s*>/gi, '\n')
+    .replace(/<\s*(hr)\s*\/?\s*>/gi, '\n---\n')
+    .replace(/<\s*\/\s*(td|th)\s*>/gi, '  ');
+
+  // Anchors: keep the destination, and do not print it twice when the label is
+  // already the url (which is how several of these emails render a link).
+  s = s.replace(/<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) => {
+    const clean = label.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!clean) return href;
+    if (clean === href || clean.replace(/\/$/, '') === href.replace(/\/$/, '')) return href;
+    return `${clean} (${href})`;
+  });
+
+  s = s.replace(/<[^>]+>/g, '');
+
+  // Entities this project actually emits, via esc() and by hand.
+  s = s
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;|&apos;/gi, "'")
+    .replace(/&euro;/gi, '€')
+    .replace(/&middot;/gi, '·')
+    .replace(/&rsquo;/gi, '’')
+    .replace(/&mdash;/gi, '—')
+    .replace(/&ndash;/gi, '–');
+
+  return s
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }

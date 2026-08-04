@@ -2798,40 +2798,77 @@ function addBrandModels(me) {
   const models = Array.isArray(me && me.models) ? me.models : [];
   if (!models.length) return;
 
-  const first = grid.firstElementChild;
+  // CLONED FROM THE COMPONENT'S OWN TEMPLATE, NOT BUILT HERE. August 2026, and
+  // it is a fix rather than a tidy-up.
+  //
+  // This function used to assemble the tile with document.createElement, and
+  // every one it made came out unstyled. Astro scopes a component's CSS by
+  // stamping each element in its markup with a data-astro-cid attribute and
+  // compiling the selectors to match it — `.mp-opt[data-astro-cid-q2kvomsp]`.
+  // An element created at runtime has no such attribute, so not one rule on the
+  // page applied: no frame, no padding, no radius, a full-bleed portrait, and
+  // the model's name running into the tag beside it. Beside ten tidy roster
+  // cards, which is how it was spotted.
+  //
+  // The template lives in ModelPicker.astro, so its contents are compiled like
+  // any other markup there and a clone of it IS a roster tile — attribute,
+  // classes, structure and all. It also puts the tile's shape back where it
+  // belongs: change the card in the component and these follow, instead of two
+  // definitions drifting until somebody photographs the difference.
+  const tpl = q('[data-pl-own-tile]');
+  if (!tpl || !tpl.content) {
+    // Loud rather than silent. A missing template means a brand's own faces
+    // simply do not appear on the form, which looks exactly like a brand that
+    // has none — the failure mode this whole function was rewritten to end.
+    console.warn('[pipeline] ModelPicker has no [data-pl-own-tile] template — brand models not shown.');
+    return;
+  }
+
+  // WHERE THEY GO, AND WHY IT MOVED. Lucas, August 2026: "ik wil het kies voor
+  // mij optie helemaal links houden."
+  //
+  // These tiles used to be inserted at the very front, ahead of "choose one
+  // that fits our brand". The reasoning was that a brand which commissioned a
+  // face has already answered this question — true, and it cost something worth
+  // more: that first tile is the RECOMMENDED default, it ships checked, and its
+  // position is how a returning customer finds it without reading. Moving it
+  // around based on whether an account happens to have brand models means the
+  // control sits in a different place for the same person on different days.
+  //
+  // So the anchor is the tile AFTER "choose for us", not the first child. Own
+  // faces still come before the ten strangers, which was the part that mattered
+  // — a brand should not scroll past the roster to reach its own — while the
+  // default keeps the one position it has always had.
+  const anyTile = grid.querySelector('.mp-opt-any');
+  const anchor = anyTile ? anyTile.nextElementSibling : grid.firstElementChild;
+
   for (const m of models) {
     if (!m || !m.id) continue;
-    const label = document.createElement('label');
-    label.className = 'mp-opt is-own';
 
-    const img = document.createElement('img');
-    img.className = 'mp-thumb';
+    const tile = tpl.content.firstElementChild.cloneNode(true);
+    const img = tile.querySelector('.mp-thumb');
+    const input = tile.querySelector('input[name="model"]');
+    const name = tile.querySelector('.mp-name');
+    if (!img || !input || !name) continue;
+
     img.src = m.preview;
-    img.alt = m.label || '';
-    img.loading = 'lazy';
-    img.decoding = 'async';
+    // The alt stays empty on purpose: the name is right beneath it in the same
+    // control, and a screen reader announcing "Nadia, Nadia" is the label read
+    // twice rather than described.
+    img.alt = '';
     // A picture that will not load must not leave a tile the customer can pick
-    // without seeing what they are picking. Removing it is better than a broken
-    // image icon standing in for a face.
-    img.addEventListener('error', () => label.remove());
+    // without seeing what they are picking. Removing it beats a broken-image
+    // icon standing in for a face.
+    img.addEventListener('error', () => tile.remove());
 
-    const row = document.createElement('span');
-    row.className = 'mp-row';
-    const input = document.createElement('input');
-    input.type = 'radio';
-    input.name = 'model';
+    // `c<id>` so the studio can tell a commissioned face from a roster one
+    // without a lookup — the same encoding the brand kit stores in account.js.
     input.value = `c${m.id}`;
-    const name = document.createElement('span');
-    name.className = 'mp-name';
-    name.textContent = m.label || 'Brand model';
-    row.append(input, name);
+    name.textContent = m.label || c('pu.ownModel') || 'Brand model';
 
-    const tag = document.createElement('span');
-    tag.className = 'mp-traits';
-    tag.textContent = c('pu.ownModel') || 'Yours only';
-
-    label.append(img, row, tag);
-    grid.insertBefore(label, first);
+    // Each one before the same anchor, which keeps them in the order /account/me
+    // returned them rather than reversing the list.
+    grid.insertBefore(tile, anchor);
   }
 
   // The summary line has to know about them too, or a customer who picks their

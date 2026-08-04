@@ -82,7 +82,38 @@ import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/back
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
-const LOGIN_TOKEN_TTL_MINUTES = 30;
+const LOGIN_TOKEN_TTL_MINUTES = 60;
+
+/**
+ * How long a sign-in link keeps working AFTER it has first been redeemed.
+ *
+ * WHY A LINK THAT IS SUPPOSED TO BE SINGLE-USE IS REDEEMABLE TWICE.
+ *
+ * The link was consumed by the first GET that touched it, and the first GET is
+ * very often not the customer. Corporate mail security — Microsoft Defender
+ * Safe Links, Proofpoint, Mimecast, Barracuda — fetches every URL in an inbound
+ * message to see where it goes. Those products are exactly what a Dutch shop on
+ * Microsoft 365 has switched on by default. The scanner's fetch burned the
+ * token, and the customer, clicking it for the first time seconds later, was
+ * shown "This link does not work. It may have expired, already been used…" —
+ * a sentence that is true and reads as a lie, on the first click, with no way
+ * forward except asking for another link that the scanner would also burn.
+ *
+ * A confirmation page with a button is the usual answer (a prefetcher will not
+ * POST) and it was rejected here: it puts a click in front of every customer to
+ * defend against a machine, which is the opposite of what was asked for.
+ *
+ * SO THE WINDOW IS THE ANSWER, AND ITS COST IS SMALL. What single-use buys is
+ * that a link found later in an inbox is dead. Fifteen minutes after the first
+ * redemption it still is. What it cannot buy — and never could — is safety from
+ * whoever reads the mailbox, because the address IS the credential this file
+ * authenticates against, and the first redemption already handed over a session.
+ *
+ * Measured from the FIRST use and never extended: used_at is written once and
+ * later redemptions leave it alone, so a link fetched in a loop cannot roll its
+ * own window forward.
+ */
+const LOGIN_TOKEN_GRACE_MINUTES = 15;
 
 /** account_sessions.expires_at — refreshed on every authenticated request; see the header. */
 const ACCOUNT_SESSION_TTL_DAYS = 30;
@@ -659,10 +690,12 @@ async function sendLoginLink(env, request, email, lang) {
   ).bind(customer.id, tokenHash, loginTokenExpiry()).run();
 
   const link = `${requestOrigin(request)}/account/verify/${token}`;
+  const { html, text } = magicLinkEmail(lang, link);
   await sendMail(env, {
     to: email,
     subject: lang === 'nl' ? 'Je inloglink voor VISUAILS' : 'Your VISUAILS sign-in link',
-    html: magicLinkEmail(lang, link),
+    html,
+    text,
   });
 }
 
@@ -688,13 +721,23 @@ async function handleVerify(context, token) {
     return html(page({ lang, title: 'VISUAILS', body: errorBody(t) }), 503);
   }
 
-  if (!row || row.used_at || isExpired(row.expires_at, null)) {
+  // Expiry is absolute and comes first: a link past its hour is dead however it
+  // got here. Only the already-used case gets a window — see
+  // LOGIN_TOKEN_GRACE_MINUTES for why, and why fifteen minutes gives up almost
+  // nothing.
+  if (!row || isExpired(row.expires_at, null)) {
+    return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t) }), 410);
+  }
+  if (row.used_at && !withinGrace(row.used_at)) {
     return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t) }), 410);
   }
 
   const { token: sessionToken, tokenHash: sessionHash } = await mintCredential();
   await env.DB.batch([
-    env.DB.prepare("UPDATE account_tokens SET used_at = datetime('now') WHERE id = ?1").bind(row.id),
+    // `WHERE used_at IS NULL` is what keeps the window anchored to the FIRST
+    // redemption. Without it every re-fetch would restamp used_at and a link
+    // being polled by anything would stay alive indefinitely.
+    env.DB.prepare("UPDATE account_tokens SET used_at = datetime('now') WHERE id = ?1 AND used_at IS NULL").bind(row.id),
     env.DB.prepare(
       'INSERT INTO account_sessions (customer_id, token_hash, expires_at) VALUES (?1, ?2, ?3)'
     ).bind(row.customer_id, sessionHash, accountSessionExpiry()),
@@ -720,6 +763,28 @@ async function mintCredential() {
 
 function loginTokenExpiry(fromDate = new Date()) {
   return new Date(fromDate.getTime() + LOGIN_TOKEN_TTL_MINUTES * 60000).toISOString();
+}
+
+/**
+ * Is this first-use timestamp recent enough that the link may be redeemed again?
+ *
+ * account_tokens.used_at is written by D1 as `datetime('now')`, which is
+ * "YYYY-MM-DD HH:MM:SS" in UTC with no zone marker — Date.parse() reads that as
+ * LOCAL time in most runtimes, which on a Worker is UTC and on a developer's
+ * laptop is not. The 'Z' is appended rather than assumed, so this answers the
+ * same question in both places instead of quietly granting or refusing an extra
+ * hour depending on where it runs.
+ *
+ * An unreadable stamp returns false — the closed door, same rule isExpired()
+ * keeps for an unreadable clock.
+ */
+function withinGrace(usedAt, now = Date.now()) {
+  const raw = String(usedAt || '').trim();
+  if (!raw) return false;
+  const iso = /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw) ? raw : `${raw.replace(' ', 'T')}Z`;
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return false;
+  return now - then <= LOGIN_TOKEN_GRACE_MINUTES * 60000;
 }
 
 function accountSessionExpiry(fromDate = new Date()) {
@@ -2405,24 +2470,60 @@ function esc(s) {
  * distrusts most. No logo image, no styled button: one link, one sentence of
  * context, the studio's own signature.
  */
+/**
+ * The sign-in link, as both halves of the message.
+ *
+ * RETURNS { html, text } RATHER THAN A STRING, since August 2026, after a
+ * customer's link went to spam. sendMail() will derive a text part from HTML
+ * when it has to, and for this one message it should not have to: this is the
+ * mail whose whole content is one link, which is the exact shape a filter is
+ * most suspicious of, and a hand-written text half that reads like a person
+ * wrote it does more here than a derived one. It also prints the URL in full,
+ * so a customer whose client strips the button still has something to copy.
+ *
+ * THE DURATION IS READ, NOT TYPED. This copy said "works once and expires in 30
+ * minutes" while the token had already moved to an hour with a fifteen-minute
+ * reuse window — so the mail was telling customers something the code no longer
+ * did, on the one screen where being wrong costs a sign-in. "Once" is gone too:
+ * it stopped being true when the grace window landed, and the honest line is
+ * the one that names the hour.
+ */
 function magicLinkEmail(lang, link) {
+  const mins = LOGIN_TOKEN_TTL_MINUTES;
+  const hours = mins % 60 === 0 ? mins / 60 : null;
   const copy = lang === 'nl'
     ? {
         h: 'Je inloglink',
-        p: 'Klik op de link hieronder om in te loggen bij je VISUAILS-account. Deze link werkt één keer en verloopt over 30 minuten.',
+        p: `Klik op de link hieronder om in te loggen bij je VISUAILS-account. De link blijft ${hours === 1 ? 'een uur' : `${mins} minuten`} geldig.`,
         b: 'Inloggen',
         f: 'Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren — er verandert niets aan je account.',
+        alt: 'Werkt de knop niet? Kopieer deze link in je browser:',
       }
     : {
         h: 'Your sign-in link',
-        p: 'Click the link below to sign in to your VISUAILS account. It works once and expires in 30 minutes.',
+        p: `Click the link below to sign in to your VISUAILS account. The link stays valid for ${hours === 1 ? 'an hour' : `${mins} minutes`}.`,
         b: 'Sign in',
         f: 'Did not request this? You can ignore this email — nothing about your account changes.',
+        alt: 'Button not working? Copy this link into your browser:',
       };
-  return `<div style="font-family:Arial,sans-serif;color:#222;max-width:480px;margin:0 auto">
+
+  const html = `<div style="font-family:Arial,sans-serif;color:#222;max-width:480px;margin:0 auto">
 <h2 style="margin:0 0 12px">${copy.h}</h2>
 <p style="margin:0 0 20px">${copy.p}</p>
 <p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;padding:10px 18px;background:#111;color:#fff;text-decoration:none">${copy.b}</a></p>
+<p style="margin:0 0 20px;color:#666;font-size:13px">${copy.alt}<br><a href="${link}" style="color:#666">${link}</a></p>
 <p style="margin:0;color:#666;font-size:13px">${copy.f}</p>
 </div>`;
+
+  const text = `${copy.h}
+
+${copy.p}
+
+${link}
+
+${copy.f}
+
+VISUAILS · Enschede, NL · hello@visuails.com`;
+
+  return { html, text };
 }

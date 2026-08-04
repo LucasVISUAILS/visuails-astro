@@ -76,6 +76,7 @@ const COPY = {
       'If you would rather the face were yours alone, a Brand Model is designed once, for you, and is used nowhere else. That is a separate product with its own price, and you do not have to decide it now: a standard face today does not stop you moving to your own later.',
     ],
     brandCta: 'What a Brand Model is',
+    ownBadge: 'Yours',
   },
   nl: {
     label: 'De on-model shot',
@@ -88,6 +89,7 @@ const COPY = {
       'Wil je het gezicht liever exclusief, dan wordt een merkmodel één keer ontworpen, voor jou, en nergens anders gebruikt. Dat is een apart product met een eigen prijs, en je hoeft dat nu niet te beslissen: een standaardgezicht vandaag houdt je niet tegen om later naar een eigen model te gaan.',
     ],
     brandCta: 'Wat een merkmodel is',
+    ownBadge: 'Van jou',
   },
 };
 const c = COPY[lang];
@@ -131,6 +133,37 @@ const c = COPY[lang];
         <span class="mp-traits">{m.traits.map((k) => t[k]).join(' · ')}</span>
       </label>
     ))}
+
+    {/* A BRAND'S OWN FACE, AS REAL MARKUP RATHER THAN AS A STRING IN A SCRIPT.
+        August 2026, and this is a bug fix with a design in it.
+
+        pipeline.js used to BUILD this tile with document.createElement, and the
+        result was unstyled: Astro scopes a component's CSS by stamping every
+        element in its markup with a data-astro-cid attribute and compiling the
+        selectors to match it (`.mp-opt[data-astro-cid-q2kvomsp]`). An element
+        made at runtime carries no such attribute, so not one of the rules on
+        this page reached it. The customer saw a full-bleed portrait with no
+        frame, no padding and the name running into the tag beside it, sitting
+        in a grid of tidy cards.
+
+        A <template> fixes it at the root rather than by leaking the styles to
+        :global: the markup inside it is compiled by Astro exactly like the
+        roster tiles above, attribute and all, so a clone of it IS one of those
+        tiles. It also means this component keeps owning the shape — change a
+        tile here and the injected ones follow, instead of drifting until
+        somebody photographs the difference. */}
+    <template data-pl-own-tile>
+      <label class="mp-opt is-own">
+        <span class="mp-figure">
+          <img class="mp-thumb" alt="" loading="lazy" decoding="async" width="400" height="535" />
+          <span class="mp-badge">{c.ownBadge}</span>
+        </span>
+        <span class="mp-row">
+          <input type="radio" name="model" value="" />
+          <span class="mp-name"></span>
+        </span>
+      </label>
+    </template>
   </div>
 
   <p class="pl-model-note">{c.anyNote}</p>
@@ -207,6 +240,38 @@ const c = COPY[lang];
      alone: the accent hairline is the same one a checked tile gets, at rest. */
   .mp-opt.is-own { border-color: var(--accent-line); }
   .mp-opt.is-own .mp-traits { color: var(--accent-bright); font-weight: 600; }
+
+  /* The photo needs a positioned parent for the badge to sit in. Only the own
+     tiles have one — a roster portrait is still a bare <img>, because giving
+     ten tiles a wrapper they do not use would be ten wrappers to keep in step
+     with this one. `display: block` so the span does not add a text baseline
+     under the picture. */
+  .mp-figure { position: relative; display: block; }
+
+  /* THE LABEL, TOP LEFT IN THE PHOTO. Lucas asked for it there rather than
+     under the name, and it belongs there: this tile's whole distinction is the
+     face, so the mark that says "this one is yours" should be ON the face and
+     not in a caption competing with the model's name.
+
+     It reads on ANY portrait — light background, dark hair, blown-out studio
+     white — because it carries its own dark ground rather than relying on the
+     photograph underneath. The accent stays for the text, so it belongs to the
+     same family as the checked state without being mistaken for it. */
+  .mp-badge {
+    position: absolute;
+    top: .3rem;
+    left: .3rem;
+    padding: .12rem .38rem;
+    border-radius: var(--r-sm);
+    background: rgb(8 9 11 / .78);
+    color: var(--accent-bright);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    line-height: 1.5;
+    pointer-events: none;
+  }
 
   .pl-model-note { margin-top: .7rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
 
