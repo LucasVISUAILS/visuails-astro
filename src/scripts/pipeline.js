@@ -2666,6 +2666,9 @@ function applyAccount(me) {
   }).filter(Boolean);
 
   applySavedBackground(me);
+  // Tiles first: applyBrandKit() may want to preselect one of them.
+  addBrandModels(me);
+  applyBrandKit(me);
 
   // The collapse needs the fields it hides to actually be filled. A saved
   // record missing a name is a saved record that cannot answer step 3, and
@@ -2742,6 +2745,131 @@ function applySavedBackground(me) {
   }
 
   syncBackground(kindOf());
+}
+
+/**
+ * The brand kit, applied to step 1 — August 2026.
+ *
+ * Lucas: standing preferences should be "bij een nieuwe bestelling automatisch
+ * aangevinkt/ingevuld". /account/me now answers a `locks` object keyed by
+ * service, and this is where it lands.
+ *
+ * SAME RULE AS EVERY OTHER PREFILL IN THIS FILE, and it is the rule that makes
+ * prefilling safe: a stored preference only ever overrides the value the PAGE
+ * shipped, never a value a person or the back button chose. defaultChecked is
+ * how a radio group expresses that, and for the model group it is the "we
+ * choose one" option that ships checked.
+ *
+ * IT RUNS AFTER applySavedBackground() and can overwrite it. That ordering is
+ * deliberate: the account-wide default background is a fallback for a brand
+ * that has not thought about it per service, and a per-service lock is the
+ * later, more specific answer to the same question.
+ *
+ * A lock naming a face this order cannot offer is ignored rather than forced —
+ * a lifestyle order has no model picker at all, and a custom model has no radio
+ * in a roster of ten. Silence is the right failure: the studio still reads the
+ * lock off the customer's account, so nothing is lost by the form not showing
+ * it.
+ */
+/**
+ * The brand's own faces, added to the model picker as real tiles.
+ *
+ * Lucas: a brand model added in the admin "zou automatisch een knop moeten
+ * worden om te selecteren bij een nieuwe order". This is that button.
+ *
+ * WHY IT IS BUILT HERE AND NOT IN ModelPicker.astro. That component is static:
+ * it is rendered once at build time from the ten-face roster in models.js,
+ * which is the same for everybody. A brand's own models are per-customer
+ * runtime data that only exists after a session resolves, so the tiles have to
+ * be made here, from /account/me, or not at all.
+ *
+ * THEY GO FIRST, before "choose one that fits our brand" and before the ten.
+ * A brand that has commissioned a face has already answered this question, and
+ * making them scroll past ten strangers to reach their own is the wrong order
+ * on a form that is trying to be short.
+ *
+ * The value is `c<id>` so the studio can tell a commissioned face from a roster
+ * one without a lookup — the same encoding the brand kit uses in account.js,
+ * on purpose: one wire format for one concept.
+ */
+function addBrandModels(me) {
+  const grid = q('.mp-grid');
+  if (!grid) return;
+  const models = Array.isArray(me && me.models) ? me.models : [];
+  if (!models.length) return;
+
+  const first = grid.firstElementChild;
+  for (const m of models) {
+    if (!m || !m.id) continue;
+    const label = document.createElement('label');
+    label.className = 'mp-opt is-own';
+
+    const img = document.createElement('img');
+    img.className = 'mp-thumb';
+    img.src = m.preview;
+    img.alt = m.label || '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    // A picture that will not load must not leave a tile the customer can pick
+    // without seeing what they are picking. Removing it is better than a broken
+    // image icon standing in for a face.
+    img.addEventListener('error', () => label.remove());
+
+    const row = document.createElement('span');
+    row.className = 'mp-row';
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'model';
+    input.value = `c${m.id}`;
+    const name = document.createElement('span');
+    name.className = 'mp-name';
+    name.textContent = m.label || 'Brand model';
+    row.append(input, name);
+
+    const tag = document.createElement('span');
+    tag.className = 'mp-traits';
+    tag.textContent = c('pu.ownModel') || 'Yours only';
+
+    label.append(img, row, tag);
+    grid.insertBefore(label, first);
+  }
+
+  // The summary line has to know about them too, or a customer who picks their
+  // own face sees the fold still saying "we choose one".
+  bindModel();
+  syncSummaries();
+}
+
+function applyBrandKit(me) {
+  const locks = me && typeof me.locks === 'object' && me.locks ? me.locks : null;
+  if (!locks) return;
+  const lock = locks[kindOf()] || null;
+  if (!lock) return;
+
+  // Background. Matched on the RESOLVED hex rather than on an id, because that
+  // is what the brand kit stores — see account.js's handleLockUpdate for why a
+  // standing preference is restricted to a colour we actually offer.
+  const wantHex = normalizeHex(lock.background);
+  if (wantHex) {
+    const checked = q('input[name="background"]:checked');
+    if (!checked || checked.defaultChecked) {
+      const target = qa('input[name="background"]')
+        .find((r) => (r.dataset.plBgHex || '').toUpperCase() === wantHex.toUpperCase());
+      if (target) { target.checked = true; syncBackground(kindOf()); }
+    }
+  }
+
+  // The face — either one of the ten, or one of this brand's own, which
+  // addBrandModels() has just put on the page. Both are radios in the same
+  // group by the time this runs, so one lookup covers both.
+  const wantFace = lock.customModel ? `c${lock.customModel}` : (lock.model || '');
+  if (wantFace) {
+    const current = q('input[name="model"]:checked');
+    if (!current || current.defaultChecked) {
+      const target = qa('input[name="model"]').find((r) => r.value === wantFace);
+      if (target) { target.checked = true; syncSummaries(); }
+    }
+  }
 }
 
 /**

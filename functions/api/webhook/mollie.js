@@ -110,7 +110,13 @@ export async function onRequestPost({ request, env }) {
   // treating it as paid is how a Klarna order ships before it settles. Nothing
   // on the site offers those methods today for a €0.99 payment, which is
   // exactly why this is written down rather than left to be discovered.
-  if (payment.status !== 'paid') {
+  // 'refunded' joins 'paid' here as of August 2026. Mollie fires this same
+  // webhook when money goes back, and depending on whether the refund is
+  // partial or full the payment arrives either still `paid` with a non-zero
+  // amountRefunded, or flipped to `refunded` outright. Both have to reach the
+  // reconciliation below; dropping the second at this gate is half of why a
+  // refund used to disappear without trace.
+  if (payment.status !== 'paid' && payment.status !== 'refunded') {
     console.log(`[mollie-webhook] ${id} is "${payment.status}" (${mode}) — acknowledged, order unchanged`);
     return new Response('ok', { status: 200 });
   }
@@ -150,7 +156,7 @@ async function recordPaid(env, payment, mode) {
     return;
   }
 
-  const order = await env.DB.prepare('SELECT id, status, payment_status FROM orders WHERE ref = ?1').bind(ref).first();
+  const order = await env.DB.prepare('SELECT id, status, payment_status, total_cents, refunded_cents FROM orders WHERE ref = ?1').bind(ref).first();
   if (!order) {
     // The order row is written before the payment is ever created, so this is
     // not a race — it means the ref does not exist here. The usual cause is a
@@ -165,6 +171,47 @@ async function recordPaid(env, payment, mode) {
   const cents = mollieAmountToCents(payment.amount);
   if (cents === null) {
     console.warn('[mollie-webhook] unreadable amount on', payment.id, '—', JSON.stringify(payment.amount));
+  }
+
+  // ── REFUNDS, AND WHY THIS SITS ABOVE THE IDEMPOTENCY GATE ──────────────────
+  //
+  // This is a real gap being closed, not a feature. Mollie fires THIS SAME
+  // webhook, with THIS SAME payment id, when money goes back. The INSERT below
+  // is guarded by UNIQUE(provider, external_id) so that a retried delivery
+  // cannot be counted twice — which is correct, and which meant every refund
+  // notification was caught by that guard, logged as a duplicate, and dropped.
+  // The order stayed `paid` forever. At €0.99 nobody noticed; at €1,101.10 the
+  // books would not balance.
+  //
+  // So the refund is reconciled FIRST, from the payment's own amountRefunded,
+  // and the gate below keeps protecting what it was written to protect: the
+  // one-row-per-attempt payments log.
+  //
+  // It compares against what we already recorded rather than adding, because
+  // amountRefunded is a RUNNING TOTAL on Mollie's side. Adding it on every
+  // delivery would double-count a retried webhook — the exact bug this whole
+  // section exists to fix, reintroduced one line lower down.
+  const refunded = mollieAmountToCents(payment.amountRefunded) ?? 0;
+  const known = Math.max(0, Math.floor(Number(order.refunded_cents) || 0));
+  if (refunded > known) {
+    // Fully refunded when it covers everything that was charged. `paid` with a
+    // partial refund recorded is deliberately NOT downgraded: the work was
+    // bought and part of it was given back, and calling that 'refunded' would
+    // tell the studio to stop on an order that is still running.
+    const full = cents !== null && refunded >= cents;
+    await env.DB.prepare(
+      `UPDATE orders SET refunded_cents = ?1, payment_status = ?2 WHERE id = ?3`
+    ).bind(refunded, full ? 'refunded' : order.payment_status || 'paid', order.id).run();
+
+    await env.DB.prepare(
+      `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'system')`
+    ).bind(
+      order.id,
+      order.status,
+      `Refund recorded: ${(refunded / 100).toFixed(2)} EUR of ${cents === null ? '?' : (cents / 100).toFixed(2)} (Mollie ${payment.id})`
+    ).run().catch(() => {});
+
+    console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): ${known} -> ${refunded} cents, ${full ? 'full' : 'partial'}`);
   }
 
   // The idempotency gate — see the file header. A UNIQUE violation here means
@@ -190,8 +237,13 @@ async function recordPaid(env, payment, mode) {
 
   if (order.payment_status === 'paid') return; // belt and braces alongside the INSERT guard
 
+  // window_expires_at goes to NULL here: the countdown exists only to release a
+  // reservation nobody paid for, and this order has now been paid for. Clearing
+  // it in the same statement means there is no window in which a sweep could
+  // see a paid order still counting down.
   await env.DB.prepare(
-    `UPDATE orders SET payment_status = 'paid', payment_provider = 'mollie', payment_ref = ?1, paid_at = datetime('now')
+    `UPDATE orders SET payment_status = 'paid', payment_provider = 'mollie', payment_ref = ?1, paid_at = datetime('now'),
+                       window_expires_at = NULL
      WHERE id = ?2 AND payment_status <> 'paid'`
   )
     .bind(payment.id, order.id)

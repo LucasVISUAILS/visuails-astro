@@ -56,6 +56,8 @@ import {
 
 import Disclose from '../Disclose.astro';
 
+import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
+
 interface Props {
   lang: 'en' | 'nl';
   /** The ladder kind. Also what the config blob calls the service. */
@@ -334,6 +336,7 @@ for (const l of ['en', 'nl'] as const) {
     extraNote: s.extraNote,
     extraPlaceholder: s.extraPlaceholder,
     extraRate: s.extraRate,
+    ownModel: s.ownModel,
     trayAssign: s.trayAssign,
     progress: s.progress,
     progressOne: s.progressOne,
@@ -417,7 +420,7 @@ const REQUIRED_COPY = [
   // instead of shipping a slot with no word under the drawing.
   'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
   'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.listAnd', 'pu.trayAssign',
-  'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate',
+  'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate', 'pu.ownModel',
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
   'pu.allDone', 'pu.allDoneOne',
   'pu.product', 'pu.add', 'pu.toggle', 'pu.placeIn',
@@ -562,8 +565,11 @@ const FORM = {
         'An order with a reserved window is invoiced once that window is confirmed and before production starts. A queue order is invoiced on delivery.',
         'An order with a reserved window lands in a portal you approve image by image. A queue order arrives as a download link.',
       ],
-      payNote: 'There is no card form here on purpose. You are confirming an order, not paying for one.',
+      payNote: 'There is no card form here on purpose. You are confirming an order — the payment link arrives by email the moment it is in, and your reserved window is held for seven days while you pay.',
       submit: 'Send this order',
+      legal: ['By sending this order you agree to our ', ' and ', '.'],
+      legalTerms: 'terms',
+      legalPrivacy: 'privacy policy',
       lostH: 'Your order is in — the window is not',
       lostBody: 'It arrived a moment after that window filled. Nothing is lost and nothing is invoiced: the order is recorded under its reference, and we come back with the first window that fits, in writing.',
       lostGo: 'Go to the confirmation',
@@ -669,8 +675,11 @@ const FORM = {
         'Een bestelling met een gereserveerd venster wordt gefactureerd zodra dat venster bevestigd is en voordat de productie start. Een wachtrijbestelling wordt bij levering gefactureerd.',
         'Een bestelling met een gereserveerd venster komt in een portaal waar je beeld voor beeld goedkeurt. Een wachtrijbestelling komt als downloadlink.',
       ],
-      payNote: 'Hier staat met opzet geen betaalformulier. Je bevestigt een bestelling, je betaalt er nog niet voor.',
+      payNote: 'Hier staat met opzet geen betaalformulier. Je bevestigt een bestelling — de betaallink komt per mail zodra hij binnen is, en je gereserveerde venster blijft zeven dagen staan terwijl je betaalt.',
       submit: 'Verstuur deze bestelling',
+      legal: ['Door deze bestelling te versturen ga je akkoord met onze ', ' en ', '.'],
+      legalTerms: 'algemene voorwaarden',
+      legalPrivacy: 'privacyverklaring',
       lostH: 'Je bestelling staat er — het venster niet',
       lostBody: 'Hij kwam net binnen nadat dat venster volliep. Er gaat niets verloren en er wordt niets gefactureerd: de bestelling staat onder haar referentie geregistreerd en we komen op schrift terug met het eerste venster dat past.',
       lostGo: 'Naar de bevestiging',
@@ -1147,6 +1156,28 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           {f.s5.after.map((t) => <li>{t}</li>)}
         </ul>
         <p class="pl-pay-note">{f.s5.payNote}</p>
+
+        {/* THE WITHDRAWAL WAIVER. See src/data/consent.js for the two statutory
+            conditions it satisfies and why the VERSION rather than a boolean is
+            what gets stored.
+
+            `required`, and placed immediately above the submit rather than in a
+            block of small print further up: a consent nobody read is a consent
+            nobody gave, and the last thing before the button is the one thing
+            everybody looks at.
+
+            The version rides in a hidden field beside it. If the box is somehow
+            absent — scripts off does not affect it, but a hand-built POST would
+            — /api/order records that fact rather than refusing the order, which
+            is this file's standing rule: never lose an order to protect a
+            secondary step. What it must never do is record consent that was not
+            given, which is why the hidden field carries only the version and the
+            checkbox carries the agreement. */}
+        <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
+        <label class="pl-consent">
+          <input type="checkbox" name="withdrawal_consent" value="yes" required />
+          <span>{currentConsent(lang)}</span>
+        </label>
       </div>
 
       {/* Shown by pipeline.js to a signed-in customer who has NOT saved before,
@@ -1165,6 +1196,29 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <button type="button" class="btn btn-ghost pl-back-inline" data-pl-back>{f.back}</button>
         <button type="submit" class="btn btn-primary btn-lg" data-pl-submit>{f.s5.submit}</button>
       </div>
+
+      {/* THE TERMS, AT THE MOMENT THE CONTRACT IS FORMED.
+          Until August 2026 no form on this site linked to the terms or the
+          privacy policy at all — not this one, not the contact form, not the
+          Brand Model brief. The footer carried them, which is not the same
+          thing: for general terms to bind, the other party has to be given a
+          reasonable opportunity to read them BEFORE or AT the moment of
+          agreeing, and a link in the footer of a different page is not that
+          moment. This is that moment.
+
+          A LINE, NOT A SECOND CHECKBOX, and that is deliberate. The waiver
+          above has to be an explicit act because the statute requires an
+          express declaration; accepting terms does not, as long as they are
+          presented where the agreement happens. Stacking two mandatory ticks
+          would add friction to protect something that a link already protects,
+          and a form that asks twice gets read half as carefully.
+
+          The confirmation email carries the same two links, because that is the
+          durable copy the customer keeps. */}
+      <p class="pl-legal">
+        {f.s5.legal[0]}<a href={lp('/terms')}>{f.s5.legalTerms}</a>{f.s5.legal[1]}
+        <a href={lp('/privacy')}>{f.s5.legalPrivacy}</a>{f.s5.legal[2]}
+      </p>
     </section>
   </form>
 </div></section>
@@ -1686,7 +1740,32 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      numbering them would imply the client has four things left to do. */
   .pl-after-list { list-style: none; margin: .9rem 0 0; padding: 0; border-top: 1px solid var(--line); }
   .pl-after-list li { padding: .85rem 0; border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
+  /* Under the button, at the size a legal line is read rather than skimmed:
+     small, but not the 11px grey that says "we would rather you did not". */
+  .pl-legal { margin-top: .9rem; font-size: .8rem; color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
+  .pl-legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+
   .pl-pay-note { margin-top: 1.1rem; font-size: .9rem; color: var(--ink-3); max-width: 64ch; line-height: 1.6; }
+
+  /* The waiver. Bordered, because it is the one thing on this step that is a
+     declaration rather than a description, and it has to be findable again in a
+     screenshot. Not a warning colour: it is a normal part of ordering, and
+     dressing it as an alert would make a routine sentence look like a catch. */
+  .pl-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    margin-top: 1.2rem;
+    padding: .9rem 1.05rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    max-width: 64ch;
+    cursor: pointer;
+  }
+  .pl-consent input { accent-color: var(--accent); width: 17px; height: 17px; flex: none; margin-top: .15rem; }
+  .pl-consent span { font-size: .86rem; line-height: 1.6; color: var(--ink-2); }
+  .pl-consent:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
   /* ── Navigation ───────────────────────────────────────────────────────────
      .pl-nav is the wizard's own control strip and does not exist without JS.

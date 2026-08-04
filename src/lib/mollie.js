@@ -119,14 +119,62 @@ export function mollieKeyProblems(env) {
  * the order, this function does not swallow it.
  */
 export async function createTestSampleMolliePayment(env, { ref, lang, successUrl, webhookUrl }) {
+  return createMolliePayment(env, {
+    ref,
+    lang,
+    successUrl,
+    webhookUrl,
+    valueEuros: AMOUNT.testSample.toFixed(2),
+    description: lang === 'nl' ? 'VISUAILS proefvisual' : 'VISUAILS test sample',
+  });
+}
+
+/**
+ * A Payment for a real order, at an amount THIS SERVER worked out.
+ *
+ * Added August 2026, when catalog and lifestyle became payable. Everything
+ * about the request is identical to the test sample's — same endpoint, same
+ * metadata, same webhook, same error reporting — so the two share one
+ * implementation below rather than being two copies that drift.
+ *
+ * THE AMOUNT COMES FROM src/lib/quote.js AND NOWHERE ELSE. This function takes
+ * a value in euros as a string because Mollie's API wants one, but the caller
+ * must produce it with centsToMollieValue() from a quoteOrder() result. There
+ * is deliberately no path here that accepts a figure the browser posted: an
+ * amount a customer can influence is an amount a customer can choose.
+ *
+ * `grossCents` is passed separately purely so this function can refuse a
+ * mismatch — a formatting slip between the cents we recorded and the string we
+ * send is the kind of bug that charges the wrong amount silently and is only
+ * found in a bank reconciliation weeks later.
+ */
+export async function createOrderMolliePayment(env, {
+  ref, lang, successUrl, webhookUrl, valueEuros, grossCents, description,
+}) {
+  const asCents = Math.round(Number(valueEuros) * 100);
+  if (!Number.isFinite(asCents) || asCents !== Math.round(Number(grossCents))) {
+    throw new Error(
+      `mollie: refusing to charge ${valueEuros} against a quote of ${grossCents} cents — `
+      + 'the formatted value and the computed total disagree (src/lib/quote.js).'
+    );
+  }
+  // Mollie's own floor. Below it the API refuses the request anyway; catching
+  // it here gives a message that names the order instead of a raw 422.
+  if (asCents < 1) throw new Error(`mollie: refusing to create a payment of ${valueEuros} for ${ref}`);
+
+  return createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description });
+}
+
+/** The one request both creators make. */
+async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description }) {
   const key = mollieKey(env);
 
   const body = {
     amount: {
       currency: 'EUR',
-      value: AMOUNT.testSample.toFixed(2),
+      value: valueEuros,
     },
-    description: lang === 'nl' ? 'VISUAILS proefvisual' : 'VISUAILS test sample',
+    description,
     redirectUrl: successUrl,
     webhookUrl,
     // locale steers which language Mollie's own checkout page renders in —

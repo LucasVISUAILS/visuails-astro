@@ -1,0 +1,224 @@
+---
+// VISUAILS — /start/brand-model. The Brand Model briefing, both locales.
+//
+// This replaces a HoldingPage that said "not built yet". Lucas asked for the
+// Brand Model to become its own order: a short brief, then a conversation about
+// which face fits the brand, rather than a €1,250 button.
+//
+// WHY IT IS ONE SCREEN AND NOT A FIVE-STEP FLOW. /start's flow exists because a
+// catalog order has a count, a capacity window, an upload and a price, and each
+// of those gates the next. A Brand Model has none of them: there is nothing to
+// count, no window to reserve, nothing to upload, and the price is settled in
+// the conversation this form starts. Reusing the stepper here would be five
+// screens of ceremony around eight questions.
+//
+// NO PRICE ON THIS PAGE, DELIBERATELY. The setup fee is quoted on
+// /custom-models, which is the page a buyer reads before they get here. Putting
+// it on the brief would turn a conversation-starter into a checkout, which is
+// the thing Lucas was moving away from. FLAGGED: he asked why a customer would
+// pay off €1,250 and the honest answer is that under the current construction
+// they do not — they pre-pay and earn it back over five orders, and lose the
+// remainder if they stop at three. That structural question is still open; this
+// page is written so that whatever it becomes, nothing here has to change.
+//
+// IT POSTS TO /api/order WITH service=custom. That service id already existed
+// in ORDER_SERVICES. None of these fields are in TOP_FIELDS, so the whole brief
+// lands in details_json and arrives in the studio notification email — no
+// endpoint change was needed, which is why there is none.
+import {
+  PRESENTATION, AGE_BANDS, BUILDS, USAGE, REGISTER, copy as briefCopy, label,
+} from '../data/brandModelBrief.js';
+import { TRAITS } from '../data/models.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+const c = briefCopy(lang);
+const t = TRAITS[lang];
+
+// Every register word has to exist in the roster's own trait labels, or this
+// form would offer a vocabulary the ten standard faces are not described in —
+// and a brand that ticked it would mean something we have no word for.
+for (const k of REGISTER) {
+  if (!t[k]) {
+    throw new Error(
+      `BrandModelBrief.astro: register word "${k}" has no label in TRAITS.${lang} `
+      + '— see src/data/models.js.'
+    );
+  }
+}
+
+const rows = [
+  { name: 'bm_presentation', legend: c.presentation, options: PRESENTATION },
+  { name: 'bm_age', legend: c.age, options: AGE_BANDS },
+  { name: 'bm_build', legend: c.build, options: BUILDS },
+];
+---
+
+<section class="page-hero">
+  <div class="container narrow">
+    <span class="eyebrow-page">{c.eyebrow}</span>
+    <h1 class="display">{c.h1}</h1>
+    <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container narrow">
+    <h2 class="bm-h">{c.formH}</h2>
+    <p class="bm-lead">{c.formLead}</p>
+
+    <form action="/api/order" method="post" class="bm-form">
+      <input type="hidden" name="service" value="custom" />
+      <input type="hidden" name="redirect" value={lp('/thank-you')} />
+      <input type="hidden" name="lang" value={lang} />
+      {/* Same honeypot every other form on this site carries. Off-screen rather
+          than display:none, because a bot that reads computed styles skips the
+          second and fills the first. */}
+      <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px" />
+
+      {rows.map((row) => (
+        <fieldset class="bm-set">
+          <legend class="bm-legend">{row.legend}</legend>
+          <div class="bm-chips">
+            {row.options.map((o, i) => (
+              <label class="bm-chip">
+                <input type="radio" name={row.name} value={o.id} checked={i === row.options.length - 1} />
+                <span>{label(o, lang)}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+
+      {/* Checkboxes, capped at two by the note rather than by script: a form
+          that silently refuses a third tick is a form arguing with somebody who
+          is trying to tell us something. Three answers is information, not an
+          error. */}
+      <fieldset class="bm-set">
+        <legend class="bm-legend">{c.register}</legend>
+        <div class="bm-chips">
+          {REGISTER.map((k) => (
+            <label class="bm-chip">
+              <input type="checkbox" name="bm_register" value={k} />
+              <span>{t[k]}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label for="bm-features">{c.features}</label>
+        <p class="bm-hint">{c.featuresHint}</p>
+        <input class="input" type="text" id="bm-features" name="bm_features" maxlength="200" placeholder={c.featuresPh} autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="bm-avoid">{c.avoid}</label>
+        <p class="bm-hint">{c.avoidHint}</p>
+        <input class="input" type="text" id="bm-avoid" name="bm_avoid" maxlength="200" placeholder={c.avoidPh} autocomplete="off" />
+      </div>
+
+      <fieldset class="bm-set">
+        <legend class="bm-legend">{c.usage}</legend>
+        <div class="bm-chips">
+          {USAGE.map((o, i) => (
+            <label class="bm-chip">
+              <input type="radio" name="bm_usage" value={o.id} checked={i === USAGE.length - 1} />
+              <span>{label(o, lang)}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label for="bm-ref">{c.reference}</label>
+        <input class="input" type="text" id="bm-ref" name="bm_reference" maxlength="200" placeholder={c.referencePh} autocomplete="off" />
+      </div>
+
+      <h3 class="bm-h3">{c.you}</h3>
+      <div class="bm-two">
+        <div class="field">
+          <label for="bm-name">{c.name} <span class="req">*</span></label>
+          <input class="input" type="text" id="bm-name" name="name" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="bm-brand">{c.brand} <span class="req">*</span></label>
+          <input class="input" type="text" id="bm-brand" name="brand" autocomplete="organization" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="bm-email">{c.email} <span class="req">*</span></label>
+        <input class="input" type="email" id="bm-email" name="email" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="bm-notes">{c.notes}</label>
+        <textarea class="textarea" id="bm-notes" name="message" maxlength="1000"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg">{c.submit}</button>
+      {/* Same line, same reasoning, as the order form's — see OrderFlow.astro.
+          No withdrawal waiver here on purpose: this form buys nothing and
+          starts nothing, it opens a conversation, so there is no performance to
+          consent to yet. That consent belongs on whatever order follows. */}
+      <p class="bm-legal">
+        {c.legal[0]}<a href={lp('/terms')}>{c.legalTerms}</a>{c.legal[1]}
+        <a href={lp('/privacy')}>{c.legalPrivacy}</a>{c.legal[2]}
+      </p>
+      <p class="bm-price">{c.priceNote}</p>
+    </form>
+
+    <div class="bm-after">
+      <h2 class="bm-h">{c.afterH}</h2>
+      <ol class="bm-steps">
+        {c.after.map((p) => (<li>{p}</li>))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bm-h { font-size: 1.5rem; margin-top: 0; }
+  .bm-h3 { font-size: 1.05rem; margin-top: 2rem; }
+  .bm-lead { color: var(--ink-2); line-height: 1.7; max-width: 66ch; margin-top: .6rem; }
+  .bm-form { margin-top: 2rem; max-width: 44rem; }
+
+  .bm-set { border: 0; padding: 0; margin: 0 0 1.6rem; min-width: 0; }
+  .bm-legend { font-size: .92rem; font-weight: 700; color: var(--ink); padding: 0; margin-bottom: .6rem; }
+
+  /* Chips rather than a <select>: every option here is one or two words, and a
+     row of them is readable in a glance where a dropdown hides nine of the ten.
+     Same checked treatment as the pickers in the order form, so the two read as
+     one system. */
+  .bm-chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .bm-chip {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .5rem .8rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    font-size: .88rem; color: var(--ink);
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .bm-chip:hover { border-color: var(--accent-line); }
+  .bm-chip:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .bm-chip:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .bm-chip input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
+
+  .bm-hint { font-size: .8rem; color: var(--ink-3); line-height: 1.55; max-width: 62ch; margin: .15rem 0 .45rem; }
+  .bm-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 1rem; }
+  .req { color: var(--accent-bright); }
+
+  .bm-legal { margin-top: .9rem; font-size: .8rem; color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
+  .bm-legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+
+  .bm-price { margin-top: 1rem; font-size: .82rem; color: var(--ink-3); line-height: 1.6; max-width: 66ch; }
+
+  .bm-after { margin-top: clamp(3rem, 6vw, 4.5rem); padding-top: clamp(1.6rem, 3vw, 2.2rem); border-top: 1px solid var(--line); }
+  .bm-steps { margin-top: 1rem; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .7rem; max-width: 68ch; }
+  .bm-steps li { list-style: decimal; color: var(--ink-2); line-height: 1.7; }
+
+  @media (prefers-reduced-motion: reduce) { .bm-chip { transition: none; } }
+</style>

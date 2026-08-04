@@ -160,11 +160,27 @@ export const withVat = (net) => Math.round(net * (1 + VAT_RATE) * 100) / 100;
 // amount, and that computation is server-side where the country is known — but
 // nothing rendered to a visitor may use them. Every price carries
 // vatLabel('excl') and the page states vatNote() once.
-/** One sentence on how VAT is handled, said once per page rather than per price. */
+/**
+ * One sentence on how VAT is handled, said once per page rather than per price.
+ *
+ * CORRECTED AUGUST 2026, when catalog and lifestyle became payable. This used
+ * to promise the rate "of your own country", which describes the model
+ * BRIEF-14-VAT-BTW.md specifies and which needs a per-country table plus live
+ * VIES validation before a reverse charge may be applied. Neither exists. What
+ * the checkout actually does — Lucas's own interim model, confirmed again when
+ * payments were switched on — is charge 21% to everybody and settle the reverse
+ * charge afterwards on the invoice.
+ *
+ * A sentence promising a local rate above a checkout that charges 21% is a
+ * discrepancy the customer finds at the worst possible moment, so the sentence
+ * moved to match the behaviour rather than the other way round. When the
+ * per-country model is built, this is the line that changes back — and
+ * src/lib/quote.js's VAT_RATE is the other half.
+ */
 export function vatNote(lang = 'en') {
   return lang === 'nl'
-    ? 'Alle bedragen zijn excl. btw. De btw wordt bij het afrekenen toegevoegd tegen het tarief van jouw land. Ben je een EU-bedrijf met een geldig btw-nummer, geef het door en de verlegging wordt op de factuur rechtgezet.'
-    : 'All figures are excl. VAT. VAT is added at checkout at the rate of your own country. If you are an EU business with a valid VAT number, give it to us and the reverse charge is settled on your invoice.';
+    ? 'Alle bedragen zijn excl. btw. Bij het afrekenen wordt 21% btw toegevoegd. Ben je een EU-bedrijf buiten Nederland met een geldig btw-nummer, geef het door — dan wordt de verlegging op je factuur rechtgezet.'
+    : 'All figures are excl. VAT. 21% VAT is added at checkout. If you are an EU business outside the Netherlands with a valid VAT number, give it to us and the reverse charge is settled on your invoice.';
 }
 
 /** "excl. VAT" / "incl. VAT", in the reader's language. Never typed on a page. */

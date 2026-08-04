@@ -66,7 +66,8 @@ import {
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail } from '../../src/lib/mail.js';
-import { createTestSampleMolliePayment } from '../../src/lib/mollie.js';
+import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
+import { quoteOrder, centsToMollieValue, paymentDescription, PAYABLE_SERVICES } from '../../src/lib/quote.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
 
@@ -264,13 +265,55 @@ export async function onRequestPost({ request, env, waitUntil }) {
   //
   // window_start being non-null IS the reservation, and gate.window is the only
   // value that ever reaches it. Nothing else in this function may assign it.
+  // ── THE PRICE, WORKED OUT HERE AND NOWHERE ELSE ────────────────────────────
+  // August 2026: catalog and lifestyle became payable, and `orders.total_cents`
+  // finally has a writer. Everything about the amount is recomputed from the
+  // ladder against the order's own fields — the service, the product count, and
+  // the two paid add-ons counted out of the posted form. NOTHING here reads an
+  // amount the browser sent, because pipeline.js's running total is a preview
+  // and a preview a customer can edit is not a price. See src/lib/quote.js.
+  //
+  // The add-on counts are read off the SAME fields the uploader posts, so a
+  // customer who asked for two extra photos on product 3 is charged for two
+  // extra photos. Counting them here rather than trusting a summary field means
+  // there is no total to tamper with, only per-product answers to add up.
+  const outfitCount = countOf(get('outfit_count'));
+  let extraCount = 0;
+  for (const [k, v] of form.entries()) {
+    if (typeof k === 'string' && k.startsWith('extra_') && !k.startsWith('extra_note_')) {
+      extraCount += Math.max(0, Math.floor(Number(v) || 0));
+    }
+  }
+  const quote = quoteOrder({ service: svc, products, outfits: outfitCount, extras: extraCount });
+
+  // ── THE WITHDRAWAL WAIVER, RECORDED ────────────────────────────────────────
+  // A customer with no VAT number is a consumer, and a consumer buying at a
+  // distance has fourteen days to withdraw while this studio delivers in
+  // forty-eight hours. Step 5 asks for the two statements the exception needs
+  // (see src/data/consent.js); this is where the answer is written down.
+  //
+  // Stored as the VERSION ID, not as a boolean: the evidence is not that a box
+  // was ticked, it is which sentence was above it. consent.js maps the id back
+  // to the wording, and old ids are never edited.
+  //
+  // A missing tick is RECORDED, not rejected. The checkbox is `required`, so
+  // this only happens on a hand-built POST — and refusing the order there would
+  // break this file's standing rule about never losing an order to protect a
+  // secondary step. Writing 'MISSING' puts it in front of the studio in the
+  // notification email instead, which is the outcome that can actually be acted
+  // on. It is never written as consent.
+  details.withdrawal_consent = get('withdrawal_consent') === 'yes'
+    ? (get('consent_version') || 'unversioned')
+    : 'MISSING';
+
   await safe(() => env.DB && env.DB
     .prepare(`INSERT INTO orders (ref, customer_id, service, name, brand, email, phone, vat_number, details_json, source, lang,
-                                  tier, product_count, window_start, window_end)
-              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)`)
+                                  tier, product_count, window_start, window_end, total_cents)
+              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)`)
     .bind(ref, customerId, svc, name || null, brand || null, email, phone || null, vat || null,
           JSON.stringify(details), get('source') || null, lang,
-          tier, products, gate.window?.start || null, gate.window?.end || null).run());
+          tier, products, gate.window?.start || null, gate.window?.end || null,
+          quote ? quote.netCents : null).run());
 
   let orderId = null;
   await safe(async () => {
@@ -374,11 +417,57 @@ export async function onRequestPost({ request, env, waitUntil }) {
       await sendMail(env, { to, subject, html: body([]) });
     }
   });
+  // ── THE PAYMENT LINK ───────────────────────────────────────────────────────
+  // Lucas's choice, August 2026: "betaallink na bevestiging". The order is
+  // confirmed exactly as it was before — step 5 still says you are confirming
+  // rather than paying, and that sentence stays true — and the link to pay
+  // arrives in this same confirmation email.
+  //
+  // WHY NOT A REDIRECT TO CHECKOUT. That is what the test sample does, and it
+  // suits a €0.99 impulse. A catalog order is €89 to several thousand, and
+  // sending somebody who has just filled in five steps straight into a payment
+  // wall is where they close the tab. It also keeps the capacity gate's promise
+  // intact: the window is confirmed before you pay, which is what TIERS has
+  // said all along.
+  //
+  // FAILING OPEN, like everything else in this file. If Mollie is unreachable
+  // or the key is missing, the order still exists and the client still gets
+  // their confirmation — without a link this once. Losing an order to protect a
+  // checkout step is the mistake this file refuses to make everywhere else.
+  // ── THE RESERVATION COUNTDOWN ──────────────────────────────────────────────
+  // Lucas's choice: hold the window, but let it expire if nobody pays. Written
+  // only when there is BOTH a window to lose and something to pay — an
+  // unattended order has no reservation to release, and an order with no quote
+  // has nothing to wait for. The webhook clears this the moment payment lands.
+  //
+  // Seven days, and the number lives here rather than in a sweep query for the
+  // reason migration 0006 gives: a policy recomputed at read time is a policy
+  // that lives in whichever query ran last.
+  if (finalWindow && quote) {
+    await safe(() => env.DB && env.DB
+      .prepare(`UPDATE orders SET window_expires_at = datetime('now', '+7 days') WHERE ref = ?1`)
+      .bind(ref).run());
+  }
+
+  let payUrl = null;
+  if (quote && PAYABLE_SERVICES.has(svc) && env.MOLLIE_API_KEY) {
+    const payment = await safe(() => createOrderMolliePayment(env, {
+      ref,
+      lang,
+      valueEuros: centsToMollieValue(quote.grossCents),
+      grossCents: quote.grossCents,
+      description: paymentDescription(quote, lang),
+      successUrl: requestOrigin(request) + back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref),
+      webhookUrl: requestOrigin(request) + '/api/webhook/mollie',
+    }));
+    payUrl = payment?._links?.checkout?.href || null;
+  }
+
   await safe(() => sendMail(env, {
     to: email,
     subject: lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`,
     html: customerEmail(lang, ref, svc, name,
-      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink }),
+      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink, pay: payUrl, quote }),
   }));
 
   const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
@@ -1188,7 +1277,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  * is placement, which is the one thing the copy cannot carry itself.
  */
 function customerEmail(lang, ref, service, name,
-  { tier = 'unattended', window = null, upgrade = null, portal = null } = {}) {
+  { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null } = {}) {
   const nl = lang === 'nl';
   const hi = name ? `Hi ${esc(name)},` : 'Hi,';
   const attended = tier === 'attended';
@@ -1261,13 +1350,45 @@ function customerEmail(lang, ref, service, name,
          <span style="color:#666;font-size:13px">This link is the key to your order — anyone who has it can see it. Keep it inside your team.</span></p>`)
     : '';
 
+  // THE AMOUNT AND THE LINK, in that order and never one without the other. A
+  // "pay now" button with no figure beside it asks somebody to click through to
+  // find out what they owe, and the figure has to name which side of VAT it is
+  // on — BRIEF-14's hardest rule, and an email is the one surface a copy sweep
+  // scoped to src/ never reaches.
+  //
+  // 21% is stated as a line rather than folded silently into the total, because
+  // that is what is actually charged to everyone right now: a valid EU business
+  // number is settled as a reverse charge afterwards on the invoice, and a
+  // customer who expected that needs to see it was not applied here.
+  const payBlock = (pay && quote)
+    ? (nl
+      ? `<p style="margin:18px 0 0;padding-top:16px;border-top:1px solid #e6e6ee">
+           <strong>Te betalen: &euro;${(quote.grossCents / 100).toFixed(2).replace('.', ',')}</strong>
+           <span style="color:#555"> (&euro;${(quote.netCents / 100).toFixed(2).replace('.', ',')} excl. btw + 21% btw)</span><br>
+           <a href="${esc(pay)}">Betaal je bestelling</a><br>
+           <span style="color:#666;font-size:13px">Heb je een geldig EU-btw-nummer buiten Nederland? Dan wordt de verlegging op je factuur rechtgezet.</span>
+         </p>`
+      : `<p style="margin:18px 0 0;padding-top:16px;border-top:1px solid #e6e6ee">
+           <strong>To pay: &euro;${(quote.grossCents / 100).toFixed(2)}</strong>
+           <span style="color:#555"> (&euro;${(quote.netCents / 100).toFixed(2)} excl. VAT + 21% VAT)</span><br>
+           <a href="${esc(pay)}">Pay for your order</a><br>
+           <span style="color:#666;font-size:13px">Have a valid EU VAT number outside the Netherlands? The reverse charge is settled on your invoice.</span>
+         </p>`)
+    : '';
+
   return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
     <p>${hi}</p>
     <p>${received}</p>
     <p>${timing}</p>
+    ${payBlock}
     ${portalNote}
     <p>${care}</p>
     ${upgradeNote}
+        <p style="color:#666;font-size:13px">
+      ${nl
+        ? `Onze <a href="https://visuails.com${nl ? '/nl' : ''}/terms">algemene voorwaarden</a> en <a href="https://visuails.com${nl ? '/nl' : ''}/privacy">privacyverklaring</a>.`
+        : `Our <a href="https://visuails.com/terms">terms</a> and <a href="https://visuails.com/privacy">privacy policy</a>.`}
+    </p>
     <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL · hello@visuails.com</p>
   </div>`;
 }

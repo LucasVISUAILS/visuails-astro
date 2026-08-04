@@ -12,7 +12,8 @@
     "test:mollie": "node tests/mollie-webhook.test.mjs && node tests/debug-mollie-reading.test.mjs",
     "audit:nav": "node pixnav.mjs",
     "test:consent": "node tests/cookie-consent.test.mjs",
-    "tag:delivery": "node scripts/tag-delivery.mjs"
+    "tag:delivery": "node scripts/tag-delivery.mjs",
+    "fetch:order": "node scripts/fetch-order.mjs"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

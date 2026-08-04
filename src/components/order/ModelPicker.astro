@@ -200,6 +200,14 @@ const c = COPY[lang];
   .mp-name { font-size: .8rem; color: var(--ink); line-height: 1.25; }
   .mp-traits { font-size: .68rem; color: var(--ink-3); line-height: 1.3; }
 
+  /* A brand's OWN face, injected by pipeline.js from /account/me — these tiles
+     do not exist in this component's markup and cannot, because the roster is
+     the same for everybody and a commissioned model is not. Marked so the
+     customer can see at a glance which of the faces on this page are theirs
+     alone: the accent hairline is the same one a checked tile gets, at rest. */
+  .mp-opt.is-own { border-color: var(--accent-line); }
+  .mp-opt.is-own .mp-traits { color: var(--accent-bright); font-weight: 600; }
+
   .pl-model-note { margin-top: .7rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
 
   /* Restated rather than inherited: Astro scopes a component's styles to that

@@ -376,10 +376,15 @@ CREATE INDEX IF NOT EXISTS idx_account_sessions_customer ON account_sessions(cus
 -- form agree on what a "style" is without a translation layer between them.
 -- One lock per (customer, style): setting a new one for a style replaces the
 -- old row rather than accumulating a history nobody asked for.
+-- The brand kit: what this customer always wants, per style. Grew past "one
+-- custom model" in August 2026 (migration 0007) — see that file for why every
+-- column is nullable and why a roster id sits beside a custom model id.
 CREATE TABLE IF NOT EXISTS customer_style_locks (
   customer_id     INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   style           TEXT NOT NULL,     -- 'catalog' | 'lifestyle' | 'video'
-  custom_model_id INTEGER NOT NULL REFERENCES custom_models(id) ON DELETE CASCADE,
+  custom_model_id INTEGER REFERENCES custom_models(id) ON DELETE SET NULL,
+  roster_model    TEXT,              -- a standard-roster id from src/data/models.js
+  background_hex  TEXT,              -- resolved hex, or NULL for "ask per order"
   updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (customer_id, style)
 );
@@ -392,6 +397,27 @@ ALTER TABLE orders ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'unpaid';
   -- unpaid | pending | paid | failed | refunded
 ALTER TABLE orders ADD COLUMN payment_ref TEXT;                -- provider's payment/session id
 ALTER TABLE orders ADD COLUMN paid_at TEXT;
+
+-- ── August 2026 · payable orders (migration 0006) ────────────────────────────
+-- window_expires_at: when an UNPAID reservation is released again. Written only
+-- for an order that both reserved a window and has something to pay; cleared by
+-- the webhook on payment. NULL means nothing is counting down, which is correct
+-- for every unattended order and every settled one.
+ALTER TABLE orders ADD COLUMN window_expires_at TEXT;
+-- refunded_cents: how much came back. On the ORDER, not as a second payments
+-- row, so UNIQUE(provider, external_id) keeps doing its job — that constraint
+-- is what made refunds vanish silently before this existed.
+ALTER TABLE orders ADD COLUMN refunded_cents INTEGER NOT NULL DEFAULT 0;
+
+-- ── August 2026 · delivery (migration 0007) ──────────────────────────────────
+-- delivered_at is when the studio moved it to delivered; delivery_mailed_at is
+-- whether the customer was told. Two columns because setting a status twice is
+-- a thing that happens, and the second one is what stops a second email.
+ALTER TABLE orders ADD COLUMN delivered_at TEXT;
+ALTER TABLE orders ADD COLUMN delivery_mailed_at TEXT;
+CREATE INDEX IF NOT EXISTS idx_orders_window_expiry
+  ON orders(window_expires_at) WHERE window_expires_at IS NOT NULL;
+
 
 -- One row per payment EVENT, not per order — a webhook can fire more than
 -- once for the same attempt (retries) and a client can retry a failed

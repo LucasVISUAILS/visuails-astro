@@ -359,3 +359,26 @@ form.login input[type="email"], form.login input[type="password"] {
 .card, .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg); }
 .btn, input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md); }
 .btn-quiet { border-radius: 0; }
+
+
+/* ── The today strip and the tables (August 2026) ──────────────────────────
+   Six counts across the top of the dashboard. Each one is a thing that can be
+   acted on rather than a metric to feel something about — see the header of
+   loadTodayCounts() in src/lib/admin.js for what was deliberately left out.
+   The two that mean "somebody is waiting on you" go amber when non-zero and
+   are plain when they are zero, so an empty queue looks calm rather than
+   green-badged. */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: .6rem; margin: 1.2rem 0 1.6rem; }
+.stat { display: flex; flex-direction: column; gap: .15rem; padding: .8rem .9rem; border: 1px solid var(--line); background: var(--paper-lift); }
+.stat.is-warn { border-color: var(--warn, #b8860b); }
+.stat-n { font-size: 1.5rem; font-weight: 700; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.stat-l { font-size: .74rem; color: var(--ink-3); }
+
+/* One table style for every list the admin grew: order files, customers, a
+   customer's orders. Dense on purpose — this is a working view, not a page. */
+table.files { width: 100%; border-collapse: collapse; margin: .8rem 0 1.4rem; font-size: .88rem; }
+table.files th, table.files td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line); }
+table.files th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 700; }
+table.files td.num, table.files th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.files a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+table.files tr:last-child td { border-bottom: 0; }

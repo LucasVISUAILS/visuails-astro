@@ -1,11 +1,15 @@
 ---
-// VISUAILS — /nl/start/brand-model. A placeholder that says so.
-// The page body is HoldingPage.astro, shared with the other two services that
-// have no checkout yet, so the three read as one deliberate category.
+// VISUAILS — /nl/start/brand-model.astro. The Brand Model brief.
+//
+// This was a HoldingPage saying "no checkout yet". It is a real order now, and
+// the reason it is a BRIEF rather than a checkout is Lucas's own: a Brand Model
+// is commissioned, not configured, so the first step is eight questions and the
+// second is a conversation. The body lives in BrandModelBrief.astro so the two
+// locales cannot drift; only the meta differs here.
 import Layout from '../../../layouts/Layout.astro';
-import HoldingPage from '../../../components/order/HoldingPage.astro';
+import BrandModelBrief from '../../../components/BrandModelBrief.astro';
 ---
 
-<Layout title="Een merkmodel aanvragen — VISUAILS" description="Eén gezicht, alleen voor jou, eenmalig. Er zit geen afrekenknop op: het wordt gebouwd vanuit een briefing, dus het begint met een gesprek.">
-  <HoldingPage lang="nl" kind="brand-model" />
+<Layout title="Een merkmodel aanvragen — VISUAILS" description="Eén gezicht, alleen voor jou. Het begint met een korte briefing en een gesprek over wie het moet dragen — niet met een afrekenknop.">
+  <BrandModelBrief lang="nl" />
 </Layout>

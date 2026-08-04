@@ -79,6 +79,7 @@ import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.j
 import { sendMail } from './mail.js';
 import { PER_PRODUCT } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
+import { ROSTER, modelId } from '../data/models.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
 const LOGIN_TOKEN_TTL_MINUTES = 30;
@@ -181,10 +182,14 @@ const COPY = {
     // h1 and its nav label) and deliberately not the old "Brand lock" either,
     // for the reason the note below still gives. It names what the panel
     // does.
-    lockH: 'Model per style',
-    lockLede: 'Pick the custom model each style should always use. Leave a style unset and we ask per order, as usual.',
-    lockNoModels: 'No custom models on your account yet — nothing to lock to. Ask us to set one up.',
-    lockUnset: '— not locked —',
+    lockH: 'Defaults per service',
+    lockLede: 'What each service starts with — a face and a background. These are defaults, not rules: every order still lets you change them, so you can run your own model on one order and a standard one on the next. Leave a service unset and we ask from scratch, as usual.',
+    lockNoModels: 'No models of your own yet. The standard roster is below and is included in every order.',
+    lockUnset: '— no preference —',
+    lockFace: 'Who wears it',
+    lockBg: 'Background',
+    lockOwn: 'Your own models',
+    lockRoster: 'Standard roster',
     lockSave: 'Save',
 
     // Saved order details, August 2026. Lives on Brand kit rather than on its
@@ -287,10 +292,14 @@ const COPY = {
     bView: 'Bekijken',
     bDownload: 'Downloaden',
 
-    lockH: 'Model per style',
-    lockLede: 'Kies het merkmodel dat elke style altijd moet gebruiken. Laat een style leeg en we vragen het per bestelling, zoals gebruikelijk.',
-    lockNoModels: 'Nog geen merkmodellen op je account — niets om aan vast te zetten. Vraag ons er een in te stellen.',
-    lockUnset: '— niet vastgezet —',
+    lockH: 'Standaard per dienst',
+    lockLede: 'Waar elke dienst mee begint — een gezicht en een achtergrond. Dit zijn standaardinstellingen en geen regels: bij elke bestelling kun je ze nog wijzigen, dus je kunt de ene bestelling met je eigen model draaien en de volgende met een standaardmodel. Laat een dienst leeg en we vragen het gewoon per bestelling.',
+    lockNoModels: 'Nog geen eigen modellen. Het standaardroster staat hieronder en zit bij elke bestelling inbegrepen.',
+    lockUnset: '— geen voorkeur —',
+    lockFace: 'Wie het draagt',
+    lockBg: 'Achtergrond',
+    lockOwn: 'Je eigen modellen',
+    lockRoster: 'Standaardroster',
     lockSave: 'Opslaan',
 
     // Zie de Engelse tak voor waarom dit op Brand kit staat en niet in een
@@ -393,6 +402,12 @@ export async function accountGet(context) {
   // expecting JSON (see handleMe()) — handing it an HTML body either way
   // would be a caller-visible content-type lie, not a graceful degradation.
   if (path === '/account/me') return handleMe(context);
+
+  // A brand model's picture, for the brand that owns it. Ownership is checked
+  // against the session's customer id and the r2_key is read from the row —
+  // never from the URL, which carries only a numeric id.
+  const previewMatch = path.match(/^\/account\/models\/(\d+)\/preview$/);
+  if (previewMatch) return handleModelPreviewImage(context, Number(previewMatch[1]));
 
   if (!env?.DB) {
     const lang = negotiate(request);
@@ -678,7 +693,10 @@ async function sectionGet(context, customer, section) {
   const t = COPY[lang];
 
   const filesByOrder = groupFilesByOrder(files);
-  const lockByStyle = Object.fromEntries(locks.map((l) => [l.style, l.custom_model_id]));
+  // The whole row now, not just the model id: a lock carries a face AND a
+  // background since August 2026, and mapping it down to one column here is
+  // what would make the background invisible to the renderer.
+  const lockByStyle = Object.fromEntries(locks.map((l) => [l.style, l]));
 
   let inner, title;
   if (section === 'orders') {
@@ -813,6 +831,64 @@ async function handleMe({ request, env }) {
   }
   if (!row) return json({}, 401); // the session outlived its own customer row — treat it as signed out, not a 500
 
+  // THE BRAND KIT RIDES ALONG, August 2026. Lucas: the standing preferences
+  // should "bij een nieuwe bestelling automatisch aangevinkt/ingevuld" staan.
+  // /account/me is already fetched by every /start page load, so the locks
+  // travel on a request that is happening anyway rather than costing a second
+  // round trip — and pipeline.js can fill the pickers from it before the
+  // customer has touched anything.
+  //
+  // Keyed by style, because the order form knows which service it is and would
+  // otherwise have to search a list. A failed read is not a failed page: locks
+  // default to an empty object, and an order form with no preselection is the
+  // behaviour everyone had last week.
+  let brandModels = [];
+  try {
+    const { results } = await env.DB.prepare(
+      // MULTIPLE MODELS, and status matters. A brand can have a whole cast —
+      // Lucas, August 2026: "klanten kunnen meerdere modellen krijgen" — so
+      // this is a list rather than a lookup, ordered oldest first because the
+      // face a brand has had longest is the one they think of first.
+      //
+      // 'in_design' is excluded on purpose. That status means the studio has
+      // started a model and it is not finished; offering it as a tile would let
+      // a customer order against a face that does not exist yet. A picture is
+      // required for the same reason a step further on — a tile with no image
+      // is a choice nobody can judge.
+      `SELECT id, label FROM custom_models
+        WHERE customer_id = ?1
+          AND status <> 'in_design'
+          AND preview_key IS NOT NULL AND preview_key <> ''
+        ORDER BY id ASC LIMIT 24`
+    ).bind(customer.customer_id).all();
+    brandModels = (results || []).map((m) => ({
+      id: m.id,
+      label: m.label,
+      // A URL rather than a key. The key is an R2 path and never leaves the
+      // server — the customer gets a route that checks ownership, the same rule
+      // portal.js keeps for a delivered file.
+      preview: `/account/models/${m.id}/preview`,
+    }));
+  } catch { brandModels = []; }
+
+  let locks = {};
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT l.style, l.roster_model, l.background_hex, l.custom_model_id, m.label AS custom_label
+         FROM customer_style_locks l
+         LEFT JOIN custom_models m ON m.id = l.custom_model_id
+        WHERE l.customer_id = ?1`
+    ).bind(customer.customer_id).all();
+    for (const l of results || []) {
+      locks[l.style] = {
+        background: l.background_hex || '',
+        model: l.roster_model || '',
+        customModel: l.custom_model_id || null,
+        customLabel: l.custom_label || '',
+      };
+    }
+  } catch { locks = {}; }
+
   return json({
     email: row.email || '',
     name: row.name || '',
@@ -822,9 +898,46 @@ async function handleMe({ request, env }) {
     vat: row.vat_number || '',
     background: row.default_background || '',
     backgroundHex: row.default_background_hex || '',
+    locks,
+    // The brand's own faces, so the order form can offer them beside the ten
+    // standard ones. Only models that HAVE a picture: a tile with no image is
+    // a grey box a customer has no way to judge, and the studio adding a label
+    // before the face exists is a normal intermediate state rather than
+    // something the customer should be asked to choose from.
+    models: brandModels,
     saved: !!row.details_saved_at,
     label: row.brand || row.name || row.email || '',
   });
+}
+
+/**
+ * Serve one brand model's preview image to the customer who owns it.
+ *
+ * Two things this deliberately does NOT do. It does not take an r2_key from
+ * the URL — a numeric id is looked up and the key comes off the row, which is
+ * the rule portal.js follows for delivered files and admin.js follows for
+ * order files. And it does not fall back to a placeholder on a miss: a 404
+ * makes a broken tile obvious in the studio's own testing, where a grey square
+ * would look like a design decision.
+ */
+async function handleModelPreviewImage({ request, env }, modelId) {
+  if (!env?.DB || !Number.isInteger(modelId)) return new Response('Not found', { status: 404 });
+  const customer = await currentCustomer(env, request);
+  if (!customer) return new Response('Not found', { status: 404 });
+
+  const row = await env.DB.prepare(
+    'SELECT preview_key FROM custom_models WHERE id = ?1 AND customer_id = ?2'
+  ).bind(modelId, customer.customer_id).first();
+  if (!row?.preview_key || !env.UPLOADS) return new Response('Not found', { status: 404 });
+
+  const obj = await env.UPLOADS.get(row.preview_key);
+  if (!obj) return new Response('Not found', { status: 404 });
+
+  const headers = new Headers();
+  if (typeof obj.writeHttpMetadata === 'function') obj.writeHttpMetadata(headers);
+  // private: this is one brand's face and must never sit in a shared cache.
+  headers.set('Cache-Control', 'private, max-age=300');
+  return new Response(obj.body, { headers });
 }
 
 /** The saved-details row, one query, used by /account/me and by Brand kit. */
@@ -988,7 +1101,7 @@ async function loadCustomModels(env, customerId) {
 
 async function loadStyleLocks(env, customerId) {
   const res = await env.DB.prepare(
-    'SELECT style, custom_model_id FROM customer_style_locks WHERE customer_id = ?1'
+    'SELECT style, custom_model_id, roster_model, background_hex FROM customer_style_locks WHERE customer_id = ?1'
   ).bind(customerId).all();
   return res.results || [];
 }
@@ -1005,37 +1118,67 @@ async function loadStyleLocks(env, customerId) {
 async function handleLockUpdate({ request, env }, customer) {
   const form = await request.formData().catch(() => null);
   const style = String(form?.get('style') || '');
-  const raw = String(form?.get('custom_model_id') || '');
   const home = '/account/brand-kit';
 
   if (!STYLES.includes(style)) return seeOther(home);
 
-  if (raw === '') {
-    // Explicitly clearing the lock — back to "ask per order, as usual."
+  // AUGUST 2026 — a lock now carries a face and a background, and the face may
+  // come from either of two places. The single `face` control encodes which:
+  // 'c<id>' is one of this customer's own custom models, 'r<id>' is one of the
+  // ten from the shared roster, '' is no preference. One control because from
+  // the customer's side it is one question; the prefix is what keeps the two
+  // sources apart on the way in.
+  const face = String(form?.get('face') || '');
+  const bgRaw = String(form?.get('background_hex') || '').trim().toUpperCase();
+
+  let customModelId = null;
+  let rosterModel = null;
+
+  if (face.startsWith('c')) {
+    const id = Number.parseInt(face.slice(1), 10);
+    if (Number.isInteger(id)) {
+      // The model must belong to THIS customer. Without this check a forged
+      // post could lock a style to another brand's custom_models row — the
+      // same "owned?" test portal.js runs before it will touch a file.
+      const owned = await env.DB.prepare(
+        'SELECT id FROM custom_models WHERE id = ?1 AND customer_id = ?2'
+      ).bind(id, customer.customer_id).first();
+      if (owned) customModelId = id;
+    }
+  } else if (face.startsWith('r')) {
+    // The roster is a fixed list in our own code, so this is a membership test
+    // rather than an ownership one: anything not in ROSTER is discarded rather
+    // than stored, so a hand-built post cannot put an arbitrary string where
+    // the studio expects a model name.
+    const wanted = face.slice(1);
+    if (ROSTER.some((m) => modelId(m.name) === wanted)) rosterModel = wanted;
+  }
+
+  // Only a background we actually offer. A free hex would be defensible on the
+  // order form — the picker there allows one — but a standing preference is
+  // read by a human weeks later, and a stored value nobody chose from a list is
+  // a value nobody can check.
+  const background = BACKGROUNDS.some((b) => b.hex.toUpperCase() === bgRaw) ? bgRaw : null;
+
+  if (!customModelId && !rosterModel && !background) {
+    // Everything cleared — back to "ask per order, as usual." Deleting rather
+    // than storing three nulls keeps "no row" as the single meaning of "no
+    // preference", so nothing downstream has to test for both.
     await env.DB.prepare(
       'DELETE FROM customer_style_locks WHERE customer_id = ?1 AND style = ?2'
     ).bind(customer.customer_id, style).run();
     return seeOther(home);
   }
 
-  const modelId = Number.parseInt(raw, 10);
-  if (!Number.isInteger(modelId)) return seeOther(home);
-
-  // The model must belong to THIS customer — without this, a forged form post
-  // could lock a style to another brand's custom_models row. Same "owned?"
-  // check portal.js runs before touching a file (files WHERE id AND order_id).
-  const owned = await env.DB.prepare(
-    'SELECT id FROM custom_models WHERE id = ?1 AND customer_id = ?2'
-  ).bind(modelId, customer.customer_id).first();
-  if (!owned) return seeOther(home);
-
   await env.DB.prepare(
-    `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, updated_at)
-     VALUES (?1, ?2, ?3, datetime('now'))
+    `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, updated_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))
      ON CONFLICT(customer_id, style) DO UPDATE SET
        custom_model_id = excluded.custom_model_id,
-       updated_at = datetime('now')`
-  ).bind(customer.customer_id, style, modelId).run();
+       roster_model    = excluded.roster_model,
+       background_hex  = excluded.background_hex,
+       updated_at      = datetime('now')`
+  ).bind(customer.customer_id, style, customModelId, rosterModel, background).run();
 
   return seeOther(home);
 }
@@ -1570,22 +1713,73 @@ function planBody(t, customer) {
 // One panel, one row per style — was three separate .card+.controls forms
 // stacked with their own margins, three visually distinct boxes for what is
 // conceptually one settings list (see account.css's .lockpanel comment).
+/**
+ * The brand kit — one card per service, August 2026.
+ *
+ * WHAT CHANGED AND WHY. This was a single dropdown per style holding one of the
+ * customer's own custom_models rows, and it had a fatal practical problem: a
+ * brand that has not commissioned a Brand Model has nothing to put in it, so
+ * for almost every customer the whole panel rendered as "no custom models yet"
+ * and did nothing at all.
+ *
+ * Lucas: "klant kan hier bijvoorbeeld achtergrond kleur, vaste/favoriete
+ * modellen kiezen. Deze staan dan bij een nieuwe bestelling automatisch
+ * aangevinkt/ingevuld." So it now holds three things per service and two of
+ * them are available to everybody:
+ *
+ *   · a face — either one of this brand's own custom models, or one of the ten
+ *     from the shared standard roster. One control, both sources, because from
+ *     the customer's side it is one question ("who wears our clothes") and
+ *     splitting it into two dropdowns would make them choose a category first.
+ *   · a background — the ground this brand always uses.
+ *
+ * THREE SEPARATE FORMS, NOT ONE. Lucas asked for a button per service and this
+ * is why that is right rather than merely requested: saving catalog must not
+ * quietly rewrite lifestyle. One form per service means one submit changes one
+ * row, and a half-filled card cannot overwrite a finished one.
+ *
+ * IT RENDERS FOR EVERYBODY NOW. The old early return on an empty model list is
+ * gone — a brand with no custom models still has a roster and a background to
+ * set, which is the whole point.
+ */
 function lockSection(t, models, lockByStyle) {
-  if (!models.length) return `<p class="empty">${esc(t.lockNoModels)}</p>`;
-
   const rows = STYLES.map((style) => {
-    const current = lockByStyle[style] ?? '';
-    const options =
-      `<option value=""${current === '' ? ' selected' : ''}>${esc(t.lockUnset)}</option>` +
-      models.map((m) => `<option value="${m.id}"${String(m.id) === String(current) ? ' selected' : ''}>${esc(m.label)}</option>`).join('');
+    const lock = lockByStyle[style] || {};
+    const face = lock.custom_model_id ? `c${lock.custom_model_id}`
+      : lock.roster_model ? `r${lock.roster_model}` : '';
+    const bg = lock.background_hex || '';
+
+    const custom = models.length
+      ? `<optgroup label="${esc(t.lockOwn)}">${models.map((m) =>
+          `<option value="c${m.id}"${face === `c${m.id}` ? ' selected' : ''}>${esc(m.label)}</option>`).join('')}</optgroup>`
+      : '';
+    const roster = `<optgroup label="${esc(t.lockRoster)}">${ROSTER.map((m) => {
+      const id = modelId(m.name);
+      return `<option value="r${id}"${face === `r${id}` ? ' selected' : ''}>${esc(m.name)}</option>`;
+    }).join('')}</optgroup>`;
+
+    const bgOptions =
+      `<option value=""${bg === '' ? ' selected' : ''}>${esc(t.lockUnset)}</option>` +
+      BACKGROUNDS.map((b) =>
+        `<option value="${esc(b.hex)}"${bg.toUpperCase() === b.hex.toUpperCase() ? ' selected' : ''}>${esc(b.name.en)} · ${esc(b.hex)}</option>`
+      ).join('');
+
     return `
-<form class="lockrow" method="post" action="/account/lock">
+<form class="lockcard" method="post" action="/account/lock">
   <input type="hidden" name="style" value="${esc(style)}">
-  <span class="lockrow-name">${esc(styleLabel(style))}</span>
-  <span class="lockrow-controls">
-    <select name="custom_model_id">${options}</select>
-    <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
-  </span>
+  <h3 class="lockcard-h">${esc(styleLabel(style))}</h3>
+  <label class="lockfield">
+    <span>${esc(t.lockFace)}</span>
+    <select name="face">
+      <option value=""${face === '' ? ' selected' : ''}>${esc(t.lockUnset)}</option>
+      ${custom}${roster}
+    </select>
+  </label>
+  <label class="lockfield">
+    <span>${esc(t.lockBg)}</span>
+    <select name="background_hex">${bgOptions}</select>
+  </label>
+  <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
 </form>`;
   }).join('');
 

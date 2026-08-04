@@ -95,14 +95,14 @@ const brandModel = {
   unit: lang === 'nl' ? 'eenmalige setup' : 'one-time setup',
   includes: lang === 'nl'
     ? [
-        'Een model gebouwd voor jouw merk, door niemand anders gebruikt',
-        'Consistent op elk product en in elke bestelling',
+        'Eén of meer modellen gebouwd voor jouw merk, door niemand anders gebruikt',
+        'Hetzelfde gezicht door een hele bestelling heen — en jij kiest per bestelling welk gezicht er loopt',
         `${euro(AMOUNT.brandModelCredit, 'nl')} terug op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
         'Bijgehouden terwijl je lijn verandert',
       ]
     : [
-        'A model built for your brand, used by no one else',
-        'Consistent across every product and every order',
+        'One or more models built for your brand, used by no one else',
+        'The same face across a whole order — and you pick per order which face runs',
         `${euro(AMOUNT.brandModelCredit, 'en')} back on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders`,
         'Kept current as your line changes',
       ],
@@ -145,9 +145,9 @@ const EXAMPLES = [
 const COPY = {
   en: {
     eyebrow: 'Your Brand Model',
-    h1a: 'One face. Every order.',
+    h1a: 'Faces of your own.',
     h1b: 'Only yours.',
-    lead: 'A model designed once for your brand and booked by nobody else, ever. It carries every product, every order, this season and next — so your range reads as one line instead of a folder of separate shoots.',
+    lead: 'A model designed once for your brand and booked by nobody else, ever. Have one, or build a small cast — and choose per order which of them runs, yours or one of the ten standard faces. What stays constant is that a face carries a whole order, so your range reads as one line instead of a folder of separate shoots.',
     ctaPrimary: 'Start an order',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hi%20VISUAILS%2C%20I%27d%20like%20to%20discuss%20a%20brand%20model.',
@@ -229,7 +229,7 @@ const COPY = {
     getH: 'What you get back',
     get: [
       ['locked', 'A <strong>locked model</strong>, exclusive to you, reused at no extra cost.'],
-      ['every', 'The same face in <strong>every visual of every order</strong>.'],
+      ['every', 'The same face across <strong>a whole order</strong> &mdash; and you choose per order which face runs, one of yours or one of the ten.'],
       ['current', '<strong>Kept current</strong> as your line and your styling change.'],
       ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'en')} back</strong> ${vatLabel('excl', 'en')} on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`],
     ],
@@ -272,9 +272,9 @@ const COPY = {
     // the NL pricing package all already call it that. A Dutch visitor who
     // clicks "Jouw merkmodel" should not land on a page that renames it.
     eyebrow: 'Jouw merkmodel',
-    h1a: 'Eén gezicht. Elke bestelling.',
+    h1a: 'Eigen gezichten.',
     h1b: 'Alleen van jou.',
-    lead: 'Een model dat één keer voor jouw merk ontworpen wordt en door niemand anders geboekt kan worden. Het draagt elk product, elke bestelling, dit seizoen en het volgende — zodat je assortiment als één lijn leest in plaats van als een map losse shoots.',
+    lead: 'Een model dat één keer voor jouw merk ontworpen wordt en door niemand anders geboekt kan worden. Neem er één, of bouw een kleine cast — en kies per bestelling wie er loopt: een eigen gezicht of een van de tien standaardmodellen. Wat vaststaat is dat één gezicht een hele bestelling draagt, zodat je assortiment als één lijn leest in plaats van als een map losse shoots.',
     ctaPrimary: 'Start een bestelling',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20merkmodel%20bespreken.',
@@ -345,7 +345,7 @@ const COPY = {
     getH: 'Wat je terugkrijgt',
     get: [
       ['locked', 'Een <strong>vastgezet model</strong>, exclusief van jou, hergebruikt zonder extra kosten.'],
-      ['every', 'Hetzelfde gezicht in <strong>elke visual van elke bestelling</strong>.'],
+      ['every', 'Hetzelfde gezicht door een hele bestelling heen &mdash; en <strong>jij kiest per bestelling</strong> welk gezicht er loopt, dat van jou of een van de tien.'],
       ['current', '<strong>Bijgehouden</strong> terwijl je lijn en je styling veranderen.'],
       ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'nl')} terug</strong> ${vatLabel('excl', 'nl')} op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`],
     ],
