@@ -43,6 +43,11 @@ import {
 } from '../../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
+import { SHOTS, SHOT_IDS, copy as shotCopy } from '../../data/shots.js';
+import {
+  PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
+} from '../../data/attributes.js';
+import ProductUploader from './ProductUploader.astro';
 import { localizedPath } from '../../i18n/ui.js';
 import {
   RECOMMENDED as BACKGROUNDS, CUSTOM_ID, LIGHT_THRESHOLD, copy as bgCopy,
@@ -187,6 +192,11 @@ const PIPE = {
         'no-file': 'Nothing arrived with that one.',
         'bad-batch': 'This upload session lost its place. Reload the page and pick the files again.',
         'bad-request': 'This one did not go through.',
+        // The client only ever sends one of the four ids in shots.js, so this
+        // is a bug in the page rather than something a customer did. It still
+        // gets a sentence: a slot that fails silently is a photograph the
+        // studio never receives and nobody ever missed.
+        'bad-shot': 'We could not tell which photo this was meant to be. Try that slot again.',
       },
     },
     s3: {
@@ -255,6 +265,7 @@ const PIPE = {
         'no-file': 'Er kwam niets mee.',
         'bad-batch': 'Deze uploadsessie is zijn plek kwijt. Herlaad de pagina en kies de bestanden opnieuw.',
         'bad-request': 'Deze is niet doorgekomen.',
+        'bad-shot': 'We konden niet zien welke foto dit moest zijn. Probeer dat vakje opnieuw.',
       },
     },
     s3: {
@@ -288,6 +299,81 @@ if (bgApplies) {
   }
 }
 
+// ── Step 2's live half ─────────────────────────────────────────────────────
+// The per-product uploader builds up to thirty cards × four slots in the
+// browser, so every label in them has to travel in the config blob. All but
+// four come STRAIGHT OUT of src/data/shots.js and are not retyped here — that
+// module owns the words for the four shots the same way backgrounds.js owns the
+// words for the four grounds, and a second copy of "Skip this one" in this file
+// is a second copy a translator will not find.
+//
+// The four that are written here are about the CONTROL rather than about the
+// photographs: what a card is called before it is named, how to add one, what
+// the disclosure does, and what the tray's menu is for. shots.js has no opinion
+// on any of that and should not be given one.
+for (const l of ['en', 'nl'] as const) {
+  const s = shotCopy(l);
+  (PIPE[l] as Record<string, unknown>).pu = {
+    required: s.required,
+    optional: s.optional,
+    skipShot: s.skipShot,
+    undoSkip: s.undoSkip,
+    replace: s.replace,
+    remove: s.remove,
+    productName: s.productName,
+    ready: s.ready,
+    needsFront: s.needsFront,
+    trayAssign: s.trayAssign,
+    progress: s.progress,
+    progressOne: s.progressOne,
+    allDoneOne: s.allDoneOne,
+    progressExtra: s.progressExtra,
+    progressExtraOne: s.progressExtraOne,
+    allDone: s.allDone,
+    product: l === 'nl' ? 'Product {n}' : 'Product {n}',
+    add: l === 'nl' ? 'Nog een product toevoegen' : 'Add another product',
+    // The disclosure opens the photos AND the question, so it says so. A
+    // control whose label names half of what it does is a control a customer
+    // learns to distrust.
+    toggle: l === 'nl' ? 'Toon de foto’s en de vraag' : 'Show the photos and the question',
+    placeIn: l === 'nl' ? 'Plaats bij' : 'Place in',
+    shot: Object.fromEntries(SHOTS.map((x) => [x.id, x.name[l]])),
+
+    // ── The per-product questions ────────────────────────────────────────
+    // Words only. src/data/attributes.js owns them the way shots.js owns the
+    // four angles, and none of them is retyped here. pipeline.js imports the
+    // same module for the IDS, the types and the option ids — behaviour — and
+    // reads every string it paints out of this blob, which is the split the
+    // script's own header sets out.
+    //
+    // The `buys` lines are in the blob because a card repeats them in `title`
+    // for a pointer; they are PRINTED once, by ProductUploader.astro, in the
+    // guide the cards point at with aria-describedby.
+    about: attrCopy(l).aboutH,
+    sameForAll: attrCopy(l).sameForAll,
+    sameForAllHint: attrCopy(l).sameForAllHint,
+    copyDown: attrCopy(l).copyDown,
+    copied: attrCopy(l).copied,
+    copiedOne: attrCopy(l).copiedOne,
+    q: Object.fromEntries(PRODUCT_QUESTIONS.map((x) => [x.id, {
+      name: x.name[l],
+      buys: x.buys[l],
+      ...(x.placeholder ? { placeholder: x.placeholder[l] } : {}),
+    }])),
+    // Keyed by option id, with a blank first option under '_' — a dotted copy
+    // path cannot address an empty key, and inventing a wire value for it
+    // would put a value in the database that attributes.js does not have.
+    // Empty today: no question declares options. It stays because the day one
+    // does, this is what stops its labels being typed a second time.
+    qopt: Object.fromEntries(
+      PRODUCT_QUESTIONS.filter((x) => x.options).map((x) => [
+        x.id,
+        Object.fromEntries(x.options.map((o) => [o.id || '_', o.name[l]])),
+      ])
+    ),
+  };
+}
+
 // ── The contract, enforced at build time ───────────────────────────────────
 // Every dotted path src/scripts/pipeline.js passes to c(), in both languages.
 // A key that is missing or empty fails the build here rather than reaching a
@@ -314,7 +400,27 @@ const REQUIRED_COPY = [
   'upload.err.too-large', 'upload.err.batch-full', 'upload.err.rate',
   'upload.err.unavailable', 'upload.err.network', 'upload.err.generic',
   'upload.err.bad-type', 'upload.err.empty', 'upload.err.no-file',
-  'upload.err.bad-batch', 'upload.err.bad-request',
+  'upload.err.bad-batch', 'upload.err.bad-request', 'upload.err.bad-shot',
+  // Step 2's uploader. The shot names are generated from SHOTS rather than
+  // typed, so a fifth angle added to shots.js brings its own build-time check
+  // instead of shipping a slot with no word under the drawing.
+  'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
+  'pu.productName', 'pu.ready', 'pu.needsFront', 'pu.trayAssign',
+  'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
+  'pu.allDone', 'pu.allDoneOne',
+  'pu.product', 'pu.add', 'pu.toggle', 'pu.placeIn',
+  ...SHOT_IDS.map((id) => `pu.shot.${id}`),
+  // The product questions, generated from src/data/attributes.js rather than
+  // typed, for the reason the shot names are: a second question added there
+  // brings its own build-time check instead of shipping a card with a blank
+  // label. Every option of every select is checked the same way.
+  'pu.about', 'pu.sameForAll', 'pu.sameForAllHint', 'pu.copyDown', 'pu.copied', 'pu.copiedOne',
+  ...PRODUCT_QUESTIONS.flatMap((x) => [
+    `pu.q.${x.id}.name`,
+    `pu.q.${x.id}.buys`,
+    ...(x.placeholder ? [`pu.q.${x.id}.placeholder`] : []),
+    ...(x.options ? x.options.map((o) => `pu.qopt.${x.id}.${o.id || '_'}`) : []),
+  ]),
   's3.prefillNote',
   'gate.windowSub',
   'submit.sending', 'submit.email', 'submit.network', 'submit.generic',
@@ -376,12 +482,13 @@ const FORM = {
       levelUnattended: ['Standard queue', `Up to ${WINDOW_THRESHOLD - 1} products`],
       ladderLink: 'The whole ladder',
     },
+    // Two lines, because the step's own words moved to ProductUploader.astro
+    // with the control they describe — the lead, the dropzone labels, the
+    // file-type hint and the uploads-are-down note are all about a thing this
+    // file no longer renders. What is left is the wizard's heading and the one
+    // promise that has to hold whatever the uploader is doing.
     s2: {
       h: 'Send the product photos',
-      lead: 'Whatever you already have. Phone photos on a table are enough.',
-      dropzone: 'Choose files, or drag them here',
-      dropzoneHint: `JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF · up to ${Math.round(MAX_FILE_BYTES / (1024 * 1024))} MB each · ${MAX_BATCH_FILES} files per order`,
-      off: 'Files cannot be taken at the moment. Carry on — we will ask for them by email, and nothing about your order depends on this step.',
       skip: 'You can skip this and email the material afterwards.',
     },
     s3: {
@@ -402,7 +509,13 @@ const FORM = {
       vat: 'VAT number',
       vatHint: 'For a business invoice within the EU.',
       message: 'Anything we should know',
-      messageHint: 'The look you are after, a deadline behind the deadline, a reference you like.',
+      // SHARPENED, AND THE SHARPENING IS THE POINT. attributes.js's
+      // ORDER_QUESTIONS comment argues there is ONE new order-level field and
+      // not four, because this textarea already covers references and the
+      // things a brand never does — it just was not asking for them by name.
+      // Now it is. Adding labelled boxes for either of them would be the bloat
+      // that comment exists to refuse.
+      messageHint: 'The look you are after, a deadline behind the deadline, a reference you like, anything your brand never does.',
     },
     s4: {
       h: 'Timing',
@@ -488,10 +601,6 @@ const FORM = {
     },
     s2: {
       h: 'Stuur de productfoto’s',
-      lead: 'Wat je al hebt. Telefoonfoto’s op tafel zijn genoeg.',
-      dropzone: 'Kies bestanden, of sleep ze hierheen',
-      dropzoneHint: `JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF · max ${Math.round(MAX_FILE_BYTES / (1024 * 1024))} MB per stuk · ${MAX_BATCH_FILES} bestanden per bestelling`,
-      off: 'Bestanden kunnen op dit moment niet worden aangenomen. Ga gerust verder — we vragen ze per e-mail op, en je bestelling hangt niet van deze stap af.',
       skip: 'Je kunt deze stap overslaan en het materiaal later mailen.',
     },
     s3: {
@@ -512,7 +621,8 @@ const FORM = {
       vat: 'Btw-nummer',
       vatHint: 'Voor een zakelijke factuur binnen de EU.',
       message: 'Wat we moeten weten',
-      messageHint: 'De look die je zoekt, een deadline achter de deadline, een referentie die je mooi vindt.',
+      // Zie de Engelse noot hierboven.
+      messageHint: 'De look die je zoekt, een deadline achter de deadline, een referentie die je mooi vindt, wat je merk juist nooit doet.',
     },
     s4: {
       h: 'Timing',
@@ -814,22 +924,22 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     </section>
 
     <!-- STEP 2 · MATERIAL -->
+    {/* ONE DROPZONE BECAME A CARD PER PRODUCT. The whole of it — the guide, the
+        two ways in, the cards, the tray — is ProductUploader.astro; this step
+        keeps only its heading, its error slot and its navigation, because those
+        are the wizard's furniture and belong to the wizard.
+
+        THE STEP IS STILL NEVER A GATE. Nothing on it is [data-pl-req], nothing
+        validates, and Continue does not so much as look at what was uploaded. A
+        missing front photo is told, not enforced: the progress line says how
+        many products are ready and each card says which one is not, and then
+        the customer goes on. A client who would rather send files afterwards is
+        a client, not an error state — shots.js's header says so and this is the
+        code that has to mean it. */}
     <section class="pl-step" data-pl-step="2">
       <h2 class="pl-h" data-pl-head>{f.s2.h}</h2>
-      <p class="pl-lead">{f.s2.lead}</p>
 
-      {/* Live-only: the input carries no name attribute, so without JS it would
-          be a control that silently sends nothing. */}
-      <div class="pl-upload">
-        <label class="dropzone">
-          <input type="file" data-pl-file multiple accept="image/*" class="pl-file-input" />
-          <span class="dz-main">{f.s2.dropzone}</span>
-          <span class="dz-hint">{f.s2.dropzoneHint}</span>
-        </label>
-        <ul class="pl-droplist" data-pl-droplist></ul>
-        <p class="pl-filecount" data-pl-filecount aria-live="polite"></p>
-        <p class="pl-note" data-pl-upload-note="off" hidden>{f.s2.off}</p>
-      </div>
+      <ProductUploader lang={lang} />
 
       <p class="hint pl-skip">{f.s2.skip}</p>
 
@@ -893,9 +1003,38 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </div>
       </div>{/* /[data-pl-s3-fields] */}
 
-      {/* OUTSIDE the collapsible block, deliberately: the message is the one
-          thing on this step that is about THIS order rather than about the
-          customer, so a saved record cannot answer it. */}
+      {/* OUTSIDE the collapsible block, deliberately: these two are the things
+          on this step that are about THIS order rather than about the
+          customer, so a saved record cannot answer either of them.
+
+          ONE NEW FIELD, NOT FOUR. src/data/attributes.js's ORDER_QUESTIONS
+          comment is the argument and it has to survive: the research put three
+          things at order level — who it is for, references, and what the brand
+          never does — and the textarea below already takes two of them, now by
+          name in its hint. So only the one it genuinely cannot prompt gets a
+          box of its own. Do not add fields for the other two.
+
+          Optional like everything attributes.js asks: no `required`, no
+          data-pl-req, nothing that stops Continue. Its `buys` line is the hint,
+          which costs one line ONCE for the whole order — the reason the
+          per-product question cannot do the same thing and points at a guide
+          instead. */}
+      {ORDER_QUESTIONS.map((qn) => (
+        <div class="field">
+          <label for={`pl-${qn.id}`}>{qn.name[lang]} <span class="pl-opt">{f.optional}</span></label>
+          <input
+            class="input"
+            type="text"
+            id={`pl-${qn.id}`}
+            name={qn.id}
+            maxlength={qn.maxLength}
+            autocomplete="off"
+            placeholder={qn.placeholder ? qn.placeholder[lang] : undefined}
+          />
+          <span class="hint">{qn.buys[lang]}</span>
+        </div>
+      ))}
+
       <div class="field">
         <label for="pl-msg">{f.s3.message} <span class="pl-opt">{f.optional}</span></label>
         <textarea class="textarea" id="pl-msg" name="message"></textarea>
@@ -1055,12 +1194,15 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
      FIRST: Astro scopes every selector here to this component by rewriting it to
      :where(.astro-HASH). Elements pipeline.js builds with document.createElement
-     never receive that attribute, so a bare `.pl-file` rule would match nothing
-     at all. Every rule for a generated element is therefore written as a scoped
-     ancestor with a :global() descendant — `.pl-droplist :global(.pl-file)`. The
-     generated elements are the upload rows (.pl-file and its four children plus
-     the appended .pl-file-act buttons), the window buttons (.pl-window and its
-     two spans), and the summary's own dt/dd pairs. Nothing else.
+     never receive that attribute, so a bare `.pl-window` rule would match
+     nothing at all. Every rule for a generated element is therefore written as a
+     scoped ancestor with a :global() descendant — `.pl-windows :global(.pl-window)`.
+     The generated elements this sheet still owns are the window buttons
+     (.pl-window and its two spans) and the summary's own dt/dd pairs. Nothing
+     else: step 2's generated cards, slots and tray rows moved to
+     ProductUploader.astro along with the markup around them, and a rule for
+     them here would be unreachable in both directions — wrong hash on the
+     ancestor, no hash at all on the child.
 
      SECOND: this form works with JavaScript switched off, and almost every
      display rule below exists to make that true. Without JS all five steps are
@@ -1403,57 +1545,15 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .pl-level-note:empty { display: none; }
 
   /* ── Step 2 · material ────────────────────────────────────────────────────
-     The file input carries no name attribute, so without JS this whole block
-     is a control that would silently send nothing. */
-  .pl-upload { display: none; }
-  .pl-form.is-live .pl-upload { display: block; }
+     Everything that was here is in ProductUploader.astro now, with the markup
+     it paints — the dropzone, the file rows, the drag state and the count line
+     all belonged to a control this file no longer renders, and a scoped rule
+     here could not reach that component's elements anyway (Astro scopes to the
+     component, and ProductUploader's nodes carry ITS hash, not this one's).
 
-  /* .dropzone and .dropzone:hover are in global.css. */
-  .dz-main { display: block; color: var(--ink); font-weight: 500; }
-  .dz-hint { display: block; margin-top: .35rem; font-size: .85rem; color: var(--ink-3); }
-  .pl-file-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
-  /* .is-dragging lands on the whole step, not the zone — a dragenter over the
-     list or the hint still has to read as "let go here". */
-  .pl-step.is-dragging .dropzone { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
-
-  .pl-droplist { list-style: none; margin: .9rem 0 0; padding: 0; display: grid; gap: .5rem; }
-  .pl-filecount { margin-top: .8rem; font-size: .85rem; color: var(--ink-3); }
-  .pl-filecount:empty { display: none; }
+     What stays is the one line that is about the step rather than the
+     uploader: the promise underneath it that this can be skipped. */
   .pl-skip { margin-top: 1rem; }
-
-  /* Generated by addRow(). DOM order is name, size, bar, msg — the action
-     button is appended last, so it is placed explicitly rather than left to
-     auto-placement, which would drop it onto a fourth row of its own. */
-  .pl-droplist :global(.pl-file) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: .35rem .9rem;
-    padding: .75rem 1rem .85rem;
-    border: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .pl-droplist :global(.pl-file-name) {
-    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    font-size: .92rem; color: var(--ink);
-  }
-  .pl-droplist :global(.pl-file-size) { font-size: .8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-  .pl-droplist :global(.pl-file-act) {
-    grid-column: 3; grid-row: 1; justify-self: end;
-    background: none; border: 0; padding: 0;
-    font: inherit; font-size: .8rem;
-    color: var(--accent-bright);
-    text-decoration: underline; text-underline-offset: 3px;
-    cursor: pointer;
-  }
-  .pl-droplist :global(.pl-file-act:disabled) { color: var(--ink-3); cursor: default; text-decoration: none; }
-  .pl-droplist :global(.pl-file-bar) { grid-column: 1 / -1; display: block; height: 2px; background: var(--line); }
-  .pl-droplist :global(.pl-file-bar > i) { display: block; height: 100%; width: 100%; transform: scaleX(0); transform-origin: left; background: var(--accent); transition: transform var(--dur-1) var(--ease); }
-  .pl-droplist :global(.pl-file-msg) { grid-column: 1 / -1; font-size: .8rem; color: var(--ink-3); }
-  .pl-droplist :global(.pl-file.is-done .pl-file-bar > i) { background: var(--signal); }
-  .pl-droplist :global(.pl-file.is-done .pl-file-msg) { color: var(--signal-ink); }
-  .pl-droplist :global(.pl-file.is-failed) { border-color: var(--warn); }
-  .pl-droplist :global(.pl-file.is-failed .pl-file-msg) { color: var(--warn-ink); }
 
   /* ── Step 4 · the capacity gate ───────────────────────────────────────────
      Six panels, one shown. They are deliberately the same object at the same
@@ -1798,7 +1898,17 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     .pl-form.is-live .pl-step.is-current .pl-total-bar {
       position: fixed;
       left: 0; right: 0; bottom: 0;
-      z-index: 40;
+      /* ABOVE THE COOKIE BAR, and this is not a preference. At 390px the
+         consent bar is 218px tall and sits at y=626; the total bar was at
+         y=796 with z-index 40 against the consent bar's --z-bar (250), so
+         elementFromPoint over the whole width of the total returned the
+         cookie bar's buttons. A first-time visitor picking 12 products never
+         saw the €612 and could not tap it — the one number this flow exists
+         to surface, hidden behind the one banner every first-time visitor
+         has open. Sitting above it is right rather than offsetting by
+         --cc-h: the total is the page's own state, the banner is a passing
+         interruption, and stacking them would push the total off screen. */
+      z-index: calc(var(--z-bar) + 1);
       align-items: center;
       padding: .7rem clamp(1rem, 4vw, 1.4rem) calc(.7rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--line-strong);

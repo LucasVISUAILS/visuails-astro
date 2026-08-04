@@ -128,8 +128,12 @@ const EXAMPLES = [
   { src: '/img/custom-models-02.webp', w: 800, h: 1071 },
   { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
   { src: '/img/custom-models-05.webp', w: 1200, h: 1200 },
-  '/img/model-raw-01.webp',
-  '/img/model-raw-02.webp',
+  // These two were bare strings in a list of {src,w,h} objects, so the markup's
+  // `photo.src` read undefined and both shipped as <img> with no src, no width
+  // and no height — a third of the evidence grid blank, on the one page whose
+  // whole argument is finished work.
+  { src: '/img/model-raw-01.webp', w: 1344, h: 1800 },
+  { src: '/img/model-raw-02.webp', w: 1344, h: 1800 },
 ];
 
 // ── Copy ───────────────────────────────────────────────────────────────────
@@ -183,7 +187,7 @@ const COPY = {
     // prose rather than as a figure.
     costMath: `${euro(AMOUNT.brandModelCredit, 'en')} ${vatLabel('excl', 'en')} comes off each of your first ${BRAND_MODEL_CREDIT_DROPS} orders, so once you have run ${BRAND_MODEL_CREDIT_DROPS} orders the setup has returned in full and the face is still yours. Before that point you are paying for exclusivity, which is the honest way to describe it.`,
     costFree: `You do not need a Brand Model to place an order. Every order already includes a model from the standard library at no extra cost — this is a decision about owning a face, not about getting one.`,
-    costCta: 'See the full price ladder',
+    costCta: 'See the price ladder',
     costSequence: `The model is designed and locked before your first order is scheduled, so setup never eats into the reserved window an order of ${WINDOW_THRESHOLD} products or more is given.`,
 
     // WHERE IT FITS
@@ -259,7 +263,7 @@ const COPY = {
     ctaH1: 'Design the face of',
     ctaEm: 'your brand.',
     ctaStart: 'Start an order',
-    ctaPricing: 'See pricing',
+    ctaPricing: 'See the price ladder',
     ctaWaShort: 'WhatsApp',
   },
 
@@ -372,7 +376,7 @@ const COPY = {
     ctaH1: 'Ontwerp het gezicht van',
     ctaEm: 'jouw merk.',
     ctaStart: 'Start een bestelling',
-    ctaPricing: 'Bekijk prijzen',
+    ctaPricing: 'Bekijk de prijsstaffel',
     ctaWaShort: 'WhatsApp',
   },
 };

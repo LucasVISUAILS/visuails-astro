@@ -114,9 +114,53 @@
 //                                                picker; read back on step 5
 //                                                and posted into details_json
 //
-//   step 2  input[type=file][data-pl-file]       NO name attribute, deliberately
-//           [data-pl-droplist]                   the file rows land here
+//   step 2  ProductUploader.astro supplies all of these. NONE of them carries a
+//           `name` attribute except the product-name inputs this file BUILDS
+//           (`product_p1`…), which is deliberate on both counts: a file input
+//           with a name would post bytes /api/order throws away, and the names
+//           must post, because they are the customer's own answer.
+//           input[type=file][data-pl-file]       the bulk picker, multiple
+//           [data-pl-folder-input]               the webkitdirectory twin
+//           [data-pl-folder] [data-pl-folder-row]  its button; the row is
+//                                                revealed only where the
+//                                                property exists
+//           [data-pl-cards]                      the empty <ol>; cards are built
+//                                                here from the count on step 1
+//           [data-pl-add]                        add a product beyond the count
+//           [data-pl-progress]                   "8 of 25 products ready",
+//                                                aria-live, never a file count
+//           [data-pl-tray] [data-pl-tray-list]   files with no product
+//           template[data-pl-dia="<shot>"]       one per id in shots.js; cloned
+//                                                into every generated slot
 //           [data-pl-upload-note="off"]          shown when uploads are down
+//
+//           The classes this file writes are a contract with that component's
+//           scoped sheet, which reaches them through :global(): .pu-card,
+//           .pu-head/.pu-n/.pu-name/.pu-toggle/.pu-state, .pu-slots and
+//           .pu-slot[data-state=empty|skipped|sending|filled|failed] with
+//           .is-thumb, .pu-slot-btn/-dia/-img/-name/-req/-bar/-msg/-input,
+//           .pu-acts/.pu-act, .pu-about/.pu-q/.pu-q-label/.pu-q-field,
+//           .pu-copy/-label/-btn/-hint/-said, and
+//           .pu-tray-item/-thumb/-name/-row/-pick/-go.
+//
+//           TWO SERVER-RENDERED IDS ARE ALSO PART OF THAT CONTRACT, and both
+//           exist so a card can point at something instead of repeating it:
+//           #pu-q-<question>-buys   the one paragraph explaining what that
+//                                   question buys, in the guide at the top of
+//                                   the step. Every card's control names it in
+//                                   aria-describedby, so the explanation is
+//                                   written once and referenced 25 times.
+//           #pu-dl-<question>       the shared <datalist> of examples. One per
+//                                   question, named by every card's input.
+//           A missing one degrades that one affordance and nothing else — the
+//           `list` and `aria-describedby` are only set when the target is
+//           actually in the document.
+//
+//           The per-product answers POST, under `<question>_<key>` — today
+//           `material_p3` — the same shape as the product name (`product_p3`)
+//           and for the same reason: they are the customer's own answers about
+//           product p3, they land in details_json, and /api/order needs no new
+//           column for any of them.
 //
 //   step 3  input[name=name|brand|email|phone|website|vat]
 //           [data-pl-prefill-note]               task #271e — see bindPrefill()
@@ -139,6 +183,21 @@
 // feature; it never throws and never blocks the order.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// BEHAVIOUR, NOT WORDS. Everything imported here is a function or a list of
+// ids: which angle a filename is naming, which folder is the product, which
+// four slots exist and which one is required. The LABELS for all of it still
+// arrive in the config blob like every other string on this page — shots.js's
+// own COPY table is never read from here, and importing it would put half the
+// Dutch for one step in a file no translator opens.
+import { SHOT_IDS, REQUIRED_SHOT, guessShot, productKeyFromPath } from '../data/shots.js';
+// Same rule, one line down. PRODUCT_QUESTIONS is read here for its IDS, its
+// types, its maxLength and its option ids — the wire values, which have to be
+// the same ones /api/order validates against, and which would rot the first
+// time somebody added a fit if they were retyped in the page. Not one string
+// off this import reaches the screen: every label, placeholder and option name
+// is read out of the config blob like everything else on this page.
+import { PRODUCT_QUESTIONS } from '../data/attributes.js';
+
 const STEPS = 5;
 
 /** Per-page state. Reset on every init, because ClientRouter reuses the module. */
@@ -146,10 +205,28 @@ let form = null;
 let cfg = null;
 let current = 1;
 let batch = '';
-let staged = []; // [{ key, name, bytes, row }]
+let staged = []; // [{ key, name, bytes, product, shot }]
 let uploadsOff = false;
 let busy = false;
 let gateReq = 0; // request generation, so a slow answer cannot overwrite a fast one
+
+// Step 2. `cards` is the product list — one per product on the order, each with
+// four slots — and `tray` is what arrived without a product we could name.
+let cards = [];
+let tray = [];
+let trayN = 0;
+let traySig = ''; // what the tray last rendered, so it is not rebuilt per file
+let dragging = ''; // the tray id currently under the cursor, for browsers whose
+                   // dataTransfer is unreadable during dragover
+
+// UPLOADS RUN ONE AT A TIME, and this is the tail of that queue. Declared HERE,
+// with the rest of the state, and not beside the sender that uses it: `let` is
+// hoisted into a temporal dead zone, boot() runs at the bottom of this module
+// but init() assigns this on its first line, and a declaration further down the
+// file therefore threw ReferenceError on the very first boot — swallowed by
+// boot()'s catch, which stripped .is-live and left a stacked form behind until
+// a second page-load event happened to re-run init after evaluation finished.
+let chain = Promise.resolve();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
@@ -190,6 +267,14 @@ function init(el) {
   uploadsOff = false;
   busy = false;
   gateReq = 0;
+  // Object URLs from the previous page are already dead with their documents;
+  // what matters is that the arrays do not outlive the DOM they point at.
+  cards = [];
+  tray = [];
+  trayN = 0;
+  traySig = '';
+  dragging = '';
+  chain = Promise.resolve();
 
   form.dataset.plBound = '1';
   // Belt and braces against a double submit landing two orders: the browser's
@@ -543,6 +628,10 @@ function syncOrder() {
   syncBackground(kind);
   syncTotal();
   syncLevel(attended, chosen);
+  // Step 2's card list is a function of this count, so it is rebuilt from the
+  // same place every other consequence of the count is. Changing 3 to 25 on
+  // step 1 and walking forward has to find 25 cards, not 3.
+  syncCards();
   syncRequired();
 }
 
@@ -885,50 +974,1174 @@ function syncLevel(attended, chosen) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STEP 2 · UPLOAD
+// STEP 2 · THE PRODUCT PHOTOS, ONE PRODUCT AT A TIME
 //
-// One file per request, over XMLHttpRequest rather than fetch, for the reason
-// /api/upload's own header gives: the case that matters is a phone on 4G with
-// twelve product photographs, and fetch has no upload-progress event. A bar
-// that does not move is indistinguishable from a request that has died.
+// This step used to be one <input multiple> and a flat list. A customer
+// ordering 25 products dropped 100 files into it and nothing recorded which
+// file was which product, or which of the four angles — so the studio sorted it
+// by hand afterwards, and the customer never learned whether what they sent was
+// enough. src/data/shots.js is the contract this section implements and the
+// place the reasoning lives; ProductUploader.astro is the markup and the guide.
+//
+// ONE FILE PER REQUEST SURVIVES, unchanged, for the reason /api/upload's own
+// header gives: the case that matters is a phone on 4G with twelve product
+// photographs, and one 200 MB request that dies at 95% takes the whole order
+// with it. Twelve small requests lose one photo, and the client can see which.
+// XMLHttpRequest rather than fetch for the other half of that: fetch has no
+// upload-progress event, and a bar that does not move is indistinguishable from
+// a request that has died. What is new is that each request now says WHERE the
+// photograph goes — `product` and `shot` — and the server stores both.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// TWO WAYS IN, AND NEITHER IS THE FALLBACK FOR THE OTHER
+//   · BULK. Drop everything, folders included. A folder per product is read as
+//     the product (productKeyFromPath); inside a product the filename is read
+//     for the angle (guessShot). A loose file whose NAME says the angle is
+//     grouped with its siblings by what is left of the name once the angle word
+//     is taken out — TSHIRT-01-front.jpg and TSHIRT-01-back.jpg are one product
+//     without any folder at all. A file that says neither goes to the tray,
+//     because IMG_0234.jpg is not evidence of anything and guessing at it would
+//     put a detail shot in a front slot with total confidence.
+//   · ONE BY ONE. A card per product, four slots each, tap a slot and pick.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTHING HERE BLOCKS ANYTHING, EVER
+// There is no validation on this step and there must not be. A missing front
+// photo is SAID — in the progress line, on the card, at the confirm screen —
+// and then the customer continues. shots.js's header states the rule; this is
+// the code that has to mean it, and the test is that removing every file from
+// this step changes nothing about whether Continue works.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Slot state machine: empty → sending → done, plus skipped and failed.
+ *
+ * A FUNCTION DECLARATION, not a const arrow, and that is not a style choice.
+ * boot() is called from the middle of this module (line ~224), so everything it
+ * reaches has to exist before the rest of the file has been evaluated — which
+ * is true of a hoisted function declaration and false of every const and let
+ * below that point. A const here threw "Cannot access before initialization"
+ * inside the very first syncCards(), boot()'s catch swallowed it, and the form
+ * silently fell back to the stacked no-JS layout. Anything new added below this
+ * line and used during init has to follow the same rule.
+ */
+function EMPTY_SLOT() {
+  return { status: 'empty', file: null, key: '', url: '', msg: '', pct: 0, thumb: false };
+}
+
+function shotLabel(id) {
+  return c(`pu.shot.${id}`) || id;
+}
+
+/**
+ * The ceiling on cards, derived rather than picked: four shots per product
+ * against the batch ceiling is the number of products that could ever be
+ * uploaded for in one order. Beyond it the cards would be real and the uploads
+ * would not.
+ */
+function maxCards() {
+  const cap = Math.floor(Number(cfg && cfg.maxBatchFiles) / SHOT_IDS.length);
+  return cap > 0 ? cap : 30;
+}
+
+function cardLabel(card) {
+  const typed = card.input ? card.input.value.trim() : '';
+  return typed || c('pu.product', { n: card.n });
+}
+
+function slotOpen(card, id) {
+  const s = card.slots[id];
+  return !s.file || s.status === 'failed';
+}
+
+function firstOpenSlot(card) {
+  return SHOT_IDS.find((id) => slotOpen(card, id)) || null;
+}
+
+/** Filled means "the customer has given us this one", not "R2 confirmed it". */
+function slotFilled(card, id) {
+  const s = card.slots[id];
+  return !!s.file && s.status !== 'failed';
+}
+
+function cardReady(card) {
+  return slotFilled(card, REQUIRED_SHOT);
+}
+
+function pendingCount() {
+  return cards.reduce(
+    (n, card) => n + SHOT_IDS.filter((id) => card.slots[id].status === 'sending').length,
+    0
+  );
+}
+
+// ── BINDING ──────────────────────────────────────────────────────────────────
+
 function bindUploads() {
-  const input = q('[data-pl-file]');
-  const list = q('[data-pl-droplist]');
-  if (!input || !list) return;
+  const host = q('[data-pl-cards]');
+  if (!host) return;
+  host.textContent = '';
 
-  input.addEventListener('change', () => {
-    const files = [...(input.files || [])];
-    input.value = ''; // so re-picking the same file fires change again
-    queue(files);
-  });
+  const bulk = q('[data-pl-file]');
+  if (bulk) {
+    bulk.addEventListener('change', () => {
+      const picked = [...(bulk.files || [])];
+      bulk.value = ''; // so re-picking the same file fires change again
+      intake(picked.map((file) => ({ file, path: file.webkitRelativePath || file.name })));
+    });
+  }
 
-  // Drag and drop onto the whole step, not just the dashed box — the box is
-  // where people aim, the step is where they let go.
-  const zone = q('[data-pl-step="2"]');
+  // THE FOLDER PICKER IS A SECOND INPUT, and it is feature-detected rather than
+  // rendered blind: webkitdirectory and multiple open different dialogs, no
+  // attribute offers both, and a browser without directory upload would get a
+  // button that opens a file chooser labelled "choose a folder". Dropping a
+  // folder needs none of this — that is webkitGetAsEntry, below.
+  const dirInput = q('[data-pl-folder-input]');
+  const dirBtn = q('[data-pl-folder]');
+  const dirRow = q('[data-pl-folder-row]');
+  if (dirInput && dirBtn && 'webkitdirectory' in dirInput) {
+    dirInput.webkitdirectory = true;
+    if (dirRow) dirRow.hidden = false;
+    dirBtn.addEventListener('click', () => dirInput.click());
+    dirInput.addEventListener('change', () => {
+      const picked = [...(dirInput.files || [])];
+      dirInput.value = '';
+      intake(picked.map((file) => ({ file, path: file.webkitRelativePath || file.name })));
+    });
+  }
+
+  const add = q('[data-pl-add]');
+  if (add) {
+    add.textContent = c('pu.add');
+    // ONLY WHEN THE COUNT IS UNKNOWN. This button exists for the "More than 30"
+    // option, where productCount() is NaN and the card list has no number to
+    // follow. It was rendered at every count, and pressing it added a card
+    // WITHOUT touching select[name="products"] — so a customer who ordered
+    // three products and pressed it twice uploaded photos for five and was
+    // quoted for three, with the two screens contradicting each other and
+    // neither flagging it. A card list that can disagree with the price is
+    // worse than a card list that cannot grow.
+    const syncAdd = () => { add.hidden = !Number.isNaN(productCount()); };
+    syncAdd();
+    document.addEventListener('change', (e) => {
+      if (e.target && e.target.name === 'products') syncAdd();
+    });
+    add.addEventListener('click', () => {
+      if (cards.length >= maxCards()) return;
+      addCard();
+      refreshUploader();
+      const last = cards[cards.length - 1];
+      if (last && last.input) last.input.focus();
+    });
+  }
+
+  bindBulkDrag();
+  syncCards();
+}
+
+/**
+ * Drag onto the step, not onto the dashed box — the box is where people aim,
+ * the step is where they let go. A slot's own drop handler stops propagation,
+ * so a photograph dropped on a slot is not also swept into the bulk sorter.
+ */
+function bindBulkDrag() {
+  const zone = stepNode(2);
+  const drop = q('.pu-drop');
   if (!zone) return;
+  const paint = (on) => { if (drop) drop.classList.toggle('is-dragover', on); };
+
   ['dragenter', 'dragover'].forEach((ev) =>
     zone.addEventListener(ev, (e) => {
       if (!e.dataTransfer) return;
       e.preventDefault();
-      zone.classList.add('is-dragging');
+      paint(true);
     })
   );
   ['dragleave', 'drop'].forEach((ev) =>
     zone.addEventListener(ev, (e) => {
-      if (ev === 'drop') e.preventDefault();
       if (ev === 'dragleave' && zone.contains(e.relatedTarget)) return;
-      zone.classList.remove('is-dragging');
+      paint(false);
     })
   );
   zone.addEventListener('drop', (e) => {
-    const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
-    if (files.length) queue(files);
+    if (!e.dataTransfer) return;
+    e.preventDefault();
+    readDrop(e.dataTransfer).then(intake);
   });
 }
 
-let chain = Promise.resolve();
+// ── READING A DROP ───────────────────────────────────────────────────────────
+
+/**
+ * Everything in a drop, as { file, path } pairs, folders walked.
+ *
+ * DataTransfer.files flattens a folder drag to nothing at all — the directory
+ * simply is not in the list — so a customer who drags the folder their export
+ * wrote gets silence. webkitGetAsEntry is the only way to see it, and it has to
+ * be called synchronously while the drop event is still on the stack, which is
+ * why the entries are collected before the first await.
+ *
+ * Non-standard and unprefixed nowhere, so the plain files list is the fallback
+ * and stays the whole answer on a browser without it.
+ */
+function readDrop(dt) {
+  const flat = () => [...(dt.files || [])].map((file) => ({ file, path: file.name }));
+  let entries = [];
+  try {
+    entries = [...(dt.items || [])]
+      .map((it) => (typeof it.webkitGetAsEntry === 'function' ? it.webkitGetAsEntry() : null))
+      .filter(Boolean);
+  } catch {
+    entries = [];
+  }
+  if (!entries.length) return Promise.resolve(flat());
+
+  const out = [];
+  return Promise.all(entries.map((en) => walkEntry(en, '', out, 0)))
+    .then(() => (out.length ? out : flat()))
+    .catch(() => flat());
+}
+
+/**
+ * One entry, recursively. Never rejects: a directory the browser refuses to
+ * read costs us that directory, not the drop.
+ *
+ * The depth cap is not paranoia about the filesystem — readEntries hands back
+ * at most 100 entries per call and has to be pumped until it returns none, and
+ * a symlink loop presented through this API would pump forever.
+ */
+function walkEntry(entry, prefix, out, depth) {
+  return new Promise((resolve) => {
+    if (!entry || depth > 8 || out.length > Number(cfg.maxBatchFiles) * 2) return resolve();
+    if (entry.isFile) {
+      entry.file(
+        (file) => { out.push({ file, path: prefix + file.name }); resolve(); },
+        () => resolve()
+      );
+      return;
+    }
+    if (!entry.isDirectory) return resolve();
+    const reader = entry.createReader();
+    const pump = () => {
+      reader.readEntries((batchEntries) => {
+        if (!batchEntries.length) return resolve();
+        Promise.all(batchEntries.map((en) => walkEntry(en, `${prefix + entry.name}/`, out, depth + 1)))
+          .then(pump, resolve);
+      }, () => resolve());
+    };
+    pump();
+  });
+}
+
+// ── SORTING A DROP INTO PRODUCTS ─────────────────────────────────────────────
+
+/**
+ * What is left of a filename once the word naming the angle is taken out.
+ *
+ * TSHIRT-01-front.jpg → TSHIRT-01, and so does TSHIRT-01-back.jpg, which is how
+ * two loose files with no folder between them end up on the same card. A token
+ * is dropped when guessShot() recognises it ON ITS OWN, so the test here and
+ * the test that picks the slot are the same test — one table, in shots.js.
+ */
+function stemOf(name) {
+  const base = String(name || '').replace(/\.[A-Za-z0-9]+$/, '');
+  return base
+    .split(/[^A-Za-z0-9]+/)
+    .filter((part) => part && !guessShot(part))
+    .join('-');
+}
+
+/**
+ * A drop, distributed. Folders first, then loose files that name their angle,
+ * then the tray for everything that said nothing.
+ */
+function intake(entries) {
+  if (!entries || !entries.length) return;
+  const groups = new Map();
+  const loose = [];
+
+  entries.forEach((en) => {
+    if (!en || !en.file) return;
+    const folder = productKeyFromPath(en.path);
+    if (folder) {
+      if (!groups.has(folder)) groups.set(folder, []);
+      groups.get(folder).push(en);
+      return;
+    }
+    // No folder. The filename gets one chance to say what it is; a name that
+    // says nothing is not evidence and is not guessed at.
+    const stem = guessShot(en.file.name) ? stemOf(en.file.name) : '';
+    if (stem) {
+      if (!groups.has(stem)) groups.set(stem, []);
+      groups.get(stem).push(en);
+      return;
+    }
+    loose.push(en);
+  });
+
+  groups.forEach((items, label) => placeGroup(label, items));
+  loose.forEach((en) => trayAdd(en.file));
+  refreshUploader();
+}
+
+/**
+ * The card a group of files belongs on: the one already called that, else the
+ * first that is empty and unnamed, else a new one. Never displaces a card the
+ * customer has already filled in — a second drop must not overwrite the first.
+ */
+function cardForGroup(label) {
+  const wanted = String(label || '').trim().toLowerCase();
+  const named = cards.find((card) => card.input && card.input.value.trim().toLowerCase() === wanted);
+  if (named) return named;
+  const blank = cards.find((card) => (!card.input || !card.input.value.trim()) && !SHOT_IDS.some((id) => card.slots[id].file));
+  if (blank) return blank;
+  if (cards.length < maxCards()) return addCard();
+  return null;
+}
+
+function placeGroup(label, items) {
+  const card = cardForGroup(label);
+  if (!card) {
+    // More products in the drop than this order can hold. Nothing is thrown
+    // away; it lands in the tray with a menu on it.
+    items.forEach((en) => trayAdd(en.file));
+    return;
+  }
+  if (card.input && !card.input.value.trim()) card.input.value = label;
+
+  items.forEach((en) => {
+    const guess = guessShot(en.file.name);
+    const id = guess && slotOpen(card, guess) ? guess : firstOpenSlot(card);
+    if (!id) { trayAdd(en.file); return; }
+    placeFile(card, id, en.file);
+  });
+}
+
+// ── THE CARDS ────────────────────────────────────────────────────────────────
+
+/**
+ * The card list follows the count on step 1, and follows it BOTH WAYS.
+ *
+ * The count is the answer to "how many products", so it is the answer to "how
+ * many cards". Shrinking it does not throw photographs away: whatever was on a
+ * card that no longer exists goes to the tray, where it can be placed again or
+ * removed on purpose. The "more than one window holds" option is not a number
+ * (productCount() returns NaN for it by design), so it leaves the list alone
+ * and the customer adds cards themselves.
+ */
+function syncCards() {
+  const host = q('[data-pl-cards]');
+  if (!host) return;
+  const n = productCount();
+  const want = Number.isInteger(n) && n > 0 ? Math.min(n, maxCards()) : Math.max(cards.length, 1);
+
+  while (cards.length > want) dropCard(cards[cards.length - 1]);
+  while (cards.length < want) addCard();
+  refreshUploader();
+}
+
+function addCard() {
+  const host = q('[data-pl-cards]');
+  if (!host) return null;
+  const n = cards.length + 1;
+  // COLLAPSED ON ARRIVAL, except the first. Twenty-five empty cards all open is
+  // 12,265px of step on a 390px phone — fourteen and a half screens to answer
+  // one question. The customer works down the list one product at a time, so
+  // that is the shape the list takes: the first card is open, the rest are one
+  // tap away, and the bulk drop fills them all without any of this mattering.
+  const card = { n, key: `p${n}`, slots: {}, el: null, input: null, collapsed: n > 1, wasReady: false };
+  SHOT_IDS.forEach((id) => { card.slots[id] = EMPTY_SLOT(); });
+  buildCard(card);
+  cards.push(card);
+  host.appendChild(card.el);
+  return card;
+}
+
+function dropCard(card) {
+  SHOT_IDS.forEach((id) => {
+    const s = card.slots[id];
+    // Back to the tray rather than to the bin. The customer answered a question
+    // about the order, not a question about this photograph.
+    if (s.file && s.status !== 'failed') trayAdd(s.file);
+    clearSlot(card, id);
+  });
+  if (card.el) card.el.remove();
+  cards = cards.filter((x) => x !== card);
+}
+
+function buildCard(card) {
+  const li = document.createElement('li');
+  li.className = 'pu-card';
+
+  const head = document.createElement('div');
+  head.className = 'pu-head';
+
+  const num = document.createElement('span');
+  num.className = 'pu-n';
+  num.textContent = String(card.n).padStart(2, '0');
+
+  // NAMED, AND THE NAME POSTS. `product_p3` is not in /api/order's TOP_FIELDS,
+  // so it lands in details_json with the rest of the brief and needs no server
+  // change at all — while the per-file mapping travels separately in R2's
+  // customMetadata and becomes a files row. One fact, one home, joined on `p3`.
+  const input = document.createElement('input');
+  input.className = 'input pu-name';
+  input.type = 'text';
+  input.name = `product_${card.key}`;
+  input.placeholder = c('pu.productName');
+  input.setAttribute('aria-label', `${c('pu.productName')} — ${c('pu.product', { n: card.n })}`);
+  input.autocomplete = 'off';
+  input.addEventListener('change', () => { renderTray(); paintCard(card); });
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'pu-toggle';
+  toggle.setAttribute('aria-expanded', 'true');
+  toggle.setAttribute('aria-label', c('pu.toggle'));
+  toggle.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6 L8 11 L13 6"/></svg>';
+  toggle.addEventListener('click', () => {
+    card.collapsed = !card.collapsed;
+    paintCard(card);
+  });
+
+  const state = document.createElement('span');
+  state.className = 'pu-state';
+
+  head.append(num, input, toggle, state);
+
+  const slots = document.createElement('div');
+  slots.className = 'pu-slots';
+  slots.id = `pu-slots-${card.key}`;
+  SHOT_IDS.forEach((id) => slots.appendChild(buildSlot(card, id)));
+
+  // The three optional questions, folded into the SAME disclosure as the four
+  // slots — aria-controls takes a list, so one toggle honestly names both.
+  const about = buildAbout(card);
+  toggle.setAttribute('aria-controls', `${slots.id} ${about.id}`);
+
+  li.append(head, slots, about);
+  card.el = li;
+  card.input = input;
+  card.stateEl = state;
+  card.toggleEl = toggle;
+  paintCard(card);
+}
+
+/**
+ * The questions from src/data/attributes.js, on one card. Today that is one:
+ * what the product is made of.
+ *
+ * LABEL AND CONTROL, AND NOTHING ELSE ON THE CARD. The question carries a
+ * `buys` sentence saying what answering is worth, and it is genuinely worth
+ * reading — which is exactly why it is not printed here. One sentence × 25
+ * cards is 25 paragraphs of the same sentence, and that multiplication is the
+ * standing complaint this whole step was rebuilt to answer. So
+ * ProductUploader.astro prints it ONCE, in the guide at the top, in a
+ * paragraph with the id #pu-q-<question>-buys, and every control on every card
+ * reaches that paragraph two ways: aria-describedby for assistive technology
+ * and the keyboard, `title` for a pointer.
+ *
+ * IT IS OPTIONAL, on Lucas's explicit direction. No `required`, no
+ * data-pl-req, nothing anywhere in this function that can stop Continue —
+ * removing every answer from every card must change nothing about whether the
+ * order goes through, exactly as it is for the photographs.
+ *
+ * NAMED, AND THE NAME POSTS: `material_p3`, alongside the `product_p3` above.
+ * It is an answer about product p3 and it lands in details_json with it; the
+ * key `p3` is what joins them to the file rows.
+ *
+ * The select branch below is kept although no question is a select today —
+ * attributes.js is the place that decides, and a data file that can only
+ * express text inputs is a data file that will be edited in two places.
+ *
+ * A function declaration for the reason EMPTY_SLOT() gives above: this is
+ * reached from init() before the rest of the module has finished evaluating.
+ */
+function buildAbout(card) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-about';
+  wrap.id = `pu-about-${card.key}`;
+  // A group rather than a fieldset: a <legend> would print "About the product"
+  // on every card, which is the text wall again, one heading at a time.
+  wrap.setAttribute('role', 'group');
+  wrap.setAttribute('aria-label', `${c('pu.about')} — ${c('pu.product', { n: card.n })}`);
+
+  card.answers = {};
+
+  PRODUCT_QUESTIONS.forEach((qn) => {
+    const field = document.createElement('div');
+    field.className = 'pu-q';
+    const id = `pu-q-${qn.id}-${card.key}`;
+
+    const label = document.createElement('label');
+    label.className = 'pu-q-label';
+    label.htmlFor = id;
+    label.textContent = c(`pu.q.${qn.id}.name`);
+
+    let ctrl;
+    if (qn.type === 'select') {
+      ctrl = document.createElement('select');
+      ctrl.className = 'select pu-q-field';
+      qn.options.forEach((o) => {
+        const opt = document.createElement('option');
+        // The wire value, straight off attributes.js — the list /api/order
+        // checks against. The blank "not sure" stays blank, so an unanswered
+        // fit posts nothing rather than posting a fifth fit that does not exist.
+        opt.value = o.id;
+        opt.textContent = c(`pu.qopt.${qn.id}.${o.id || '_'}`);
+        ctrl.appendChild(opt);
+      });
+    } else {
+      ctrl = document.createElement('input');
+      ctrl.className = 'input pu-q-field';
+      ctrl.type = 'text';
+      ctrl.autocomplete = 'off';
+      const ph = c(`pu.q.${qn.id}.placeholder`);
+      if (ph) ctrl.placeholder = ph;
+      // The same ceiling the server enforces. Belt and braces, not a gate:
+      // maxlength stops typing past it, it never refuses a submit.
+      if (qn.maxLength) ctrl.maxLength = qn.maxLength;
+      // Suggestions, not a closed list — and only when the <datalist> is
+      // actually on the page, so a missing one costs the suggestions and
+      // nothing else.
+      if (document.getElementById(`pu-dl-${qn.id}`)) ctrl.setAttribute('list', `pu-dl-${qn.id}`);
+    }
+
+    ctrl.id = id;
+    ctrl.name = `${qn.id}_${card.key}`;
+
+    const buys = c(`pu.q.${qn.id}.buys`);
+    if (buys) ctrl.title = buys;
+    if (document.getElementById(`pu-q-${qn.id}-buys`)) {
+      ctrl.setAttribute('aria-describedby', `pu-q-${qn.id}-buys`);
+    }
+
+    field.append(label, ctrl);
+    wrap.appendChild(field);
+    card.answers[qn.id] = ctrl;
+  });
+
+  // THE FIRST CARD CARRIES THE COPY-DOWN, and only the first. A button on
+  // every card is 25 buttons doing 25 slightly different things; one, at the
+  // top of the list, is the affordance attributes.js asks for.
+  if (card.n === 1) wrap.appendChild(buildCopyDown(card));
+  // Both events, because a <select> fires change and an <input> fires input,
+  // and the copy-down has to know the moment there is something to copy.
+  ['input', 'change'].forEach((ev) => wrap.addEventListener(ev, () => syncCopyDown(cards[0])));
+
+  return wrap;
+}
+
+/**
+ * "Same for every product?" — the answer a brand ordering 25 t-shirts in one
+ * fabric should only have to give once.
+ *
+ * IT FILLS EMPTIES AND NEVER OVERWRITES. Someone who has already typed
+ * "cow leather, matte" on product 9 has said something more specific than this
+ * button can, and a copy-down that flattened it would be a destructive action
+ * on a form with no undo. So the rule is one line long and it is the whole
+ * design: an answer that is already there wins.
+ *
+ * It says what it did, out loud, in a live region. A button that silently
+ * changes eleven fields further down a list the customer cannot see is
+ * indistinguishable from a button that is broken.
+ */
+function buildCopyDown(card) {
+  const row = document.createElement('div');
+  row.className = 'pu-copy';
+
+  const label = document.createElement('span');
+  label.className = 'pu-copy-label';
+  label.textContent = c('pu.sameForAll');
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pu-copy-btn';
+  btn.textContent = c('pu.copyDown');
+  // Nothing to copy yet. Disabled rather than hidden: a control that appears
+  // as you type is a control nobody finds, and pressing it with three empty
+  // fields could only ever announce "copied to 0 products".
+  btn.disabled = true;
+
+  const hint = document.createElement('span');
+  hint.className = 'pu-copy-hint';
+  hint.textContent = c('pu.sameForAllHint');
+
+  const said = document.createElement('span');
+  said.className = 'pu-copy-said';
+  said.setAttribute('aria-live', 'polite');
+
+  btn.addEventListener('click', () => {
+    const n = copyAnswersDown(card);
+    // Singular has its own string: Dutch needs 'product' against
+    // 'producten', which no suffix hack spells for both languages.
+    said.textContent = n === 1 ? c('pu.copiedOne') : c('pu.copied', { n });
+  });
+
+  row.append(label, btn, hint, said);
+  card.copyRow = row;
+  card.copyBtn = btn;
+  return row;
+}
+
+/** Fill every other card's empty answers from this one. Returns how many cards changed. */
+function copyAnswersDown(from) {
+  if (!from || !from.answers) return 0;
+  let n = 0;
+  cards.forEach((card) => {
+    if (card === from || !card.answers) return;
+    let touched = false;
+    PRODUCT_QUESTIONS.forEach((qn) => {
+      const src = from.answers[qn.id];
+      const dst = card.answers[qn.id];
+      if (!src || !dst) return;
+      const value = String(src.value || '').trim();
+      if (!value) return;                              // nothing to give
+      if (String(dst.value || '').trim()) return;      // already answered — leave it
+      dst.value = value;
+      touched = true;
+    });
+    if (touched) n += 1;
+  });
+  return n;
+}
+
+/** The copy-down only makes sense with an answer to copy and a card to copy to. */
+function syncCopyDown(card) {
+  if (!card || !card.copyRow) return;
+  card.copyRow.hidden = cards.length < 2;
+  if (!card.copyBtn) return;
+  card.copyBtn.disabled = !PRODUCT_QUESTIONS.some((qn) => {
+    const el = card.answers && card.answers[qn.id];
+    return el && String(el.value || '').trim();
+  });
+}
+
+function buildSlot(card, id) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-slot';
+  wrap.dataset.puSlot = id;
+  wrap.dataset.state = 'empty';
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pu-slot-btn';
+
+  const dia = document.createElement('span');
+  dia.className = 'pu-slot-dia';
+  const tpl = q(`[data-pl-dia="${id}"]`);
+  if (tpl && tpl.content) dia.appendChild(tpl.content.cloneNode(true));
+
+  const img = document.createElement('img');
+  img.className = 'pu-slot-img';
+  img.alt = '';
+  img.hidden = true;
+  // A HEIC off an iPhone is a file this browser cannot decode. The upload is
+  // fine and the slot is filled; there is simply no picture, so the drawing
+  // stays rather than leaving an empty grey box.
+  img.addEventListener('load', () => { card.slots[id].thumb = true; paintSlot(card, id); });
+  img.addEventListener('error', () => { card.slots[id].thumb = false; paintSlot(card, id); });
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'pu-slot-name';
+  nameEl.textContent = shotLabel(id);
+
+  btn.append(dia, img, nameEl);
+
+  if (id === REQUIRED_SHOT) {
+    const req = document.createElement('span');
+    req.className = 'pu-slot-req';
+    req.textContent = c('pu.required');
+    btn.appendChild(req);
+  }
+
+  const file = document.createElement('input');
+  file.type = 'file';
+  file.className = 'pu-slot-input';
+  file.accept = 'image/*';
+  file.tabIndex = -1;
+  file.setAttribute('aria-hidden', 'true');
+  file.addEventListener('change', () => {
+    const picked = file.files && file.files[0];
+    file.value = '';
+    if (picked) { placeFile(card, id, picked); refreshUploader(); }
+  });
+
+  btn.addEventListener('click', () => file.click());
+
+  const bar = document.createElement('span');
+  bar.className = 'pu-slot-bar';
+  bar.innerHTML = '<i></i>';
+
+  const msg = document.createElement('span');
+  msg.className = 'pu-slot-msg';
+  msg.setAttribute('aria-live', 'polite');
+
+  const acts = document.createElement('span');
+  acts.className = 'pu-acts';
+  const act = (label, fn) => {
+    const b = button(label, 'pu-act');
+    b.addEventListener('click', fn);
+    acts.appendChild(b);
+    return b;
+  };
+  const replaceBtn = act(c('pu.replace'), () => file.click());
+  const removeBtn = act(c('pu.remove'), () => { clearSlot(card, id); refreshUploader(); });
+  // THE SKIP IS A CONTROL, NOT AN ABSENCE. Three of the four shots are optional
+  // and a customer who has decided not to send one wants to say so — an empty
+  // slot cannot tell "not yet" from "not at all", and the card's own state line
+  // would keep asking. Every skip is undoable in one click, in place.
+  const skipBtn = id === REQUIRED_SHOT ? null : act(c('pu.skipShot'), () => {
+    clearSlot(card, id);
+    card.slots[id].status = 'skipped';
+    paintSlot(card, id);
+    refreshUploader();
+  });
+  // clearSlot(), NOT a fresh EMPTY_SLOT(): the slot record carries the handles
+  // to its own elements, and replacing it wholesale left a slot that could
+  // never be painted again — visibly stuck on "skipped" with every control on
+  // it dead. An undo that cannot be undone is worse than no undo.
+  const undoBtn = id === REQUIRED_SHOT ? null : act(c('pu.undoSkip'), () => {
+    clearSlot(card, id);
+    refreshUploader();
+  });
+
+  wrap.append(btn, bar, msg, acts, file);
+
+  // Drop a tray item — or a file straight off the desktop — onto this slot.
+  // stopPropagation so the step's bulk sorter does not also take it.
+  ['dragenter', 'dragover'].forEach((ev) =>
+    wrap.addEventListener(ev, (e) => {
+      if (!e.dataTransfer) return;
+      e.preventDefault();
+      e.stopPropagation();
+      wrap.classList.add('is-over');
+    })
+  );
+  wrap.addEventListener('dragleave', (e) => {
+    if (wrap.contains(e.relatedTarget)) return;
+    wrap.classList.remove('is-over');
+  });
+  wrap.addEventListener('drop', (e) => {
+    if (!e.dataTransfer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    wrap.classList.remove('is-over');
+    const dropped = [...(e.dataTransfer.files || [])];
+    if (dropped.length) { placeFile(card, id, dropped[0]); refreshUploader(); return; }
+    const trayKey = e.dataTransfer.getData('text/plain') || dragging;
+    placeFromTray(trayKey, card.key, id);
+  });
+
+  card.slots[id].el = { wrap, btn, dia, img, nameEl, bar, msg, replaceBtn, removeBtn, skipBtn, undoBtn };
+  return wrap;
+}
+
+// ── PAINT ────────────────────────────────────────────────────────────────────
+
+function paintSlot(card, id) {
+  const s = card.slots[id];
+  const el = s.el;
+  if (!el) return;
+
+  el.wrap.dataset.state = s.status === 'done' ? 'filled' : s.status;
+  el.wrap.classList.toggle('is-thumb', !!s.url && s.thumb);
+
+  if (s.url && el.img.getAttribute('src') !== s.url) el.img.src = s.url;
+  if (!s.url) { el.img.removeAttribute('src'); s.thumb = false; }
+  el.img.hidden = !(s.url && s.thumb);
+  el.dia.hidden = !!(s.url && s.thumb);
+
+  // The track only exists while there is something to track. An empty slot
+  // showing a 0% bar draws a rule under every slot in the card, which reads as
+  // a divider rather than as progress.
+  const fill = el.bar.querySelector('i');
+  if (fill) fill.style.transform = `scaleX(${Math.max(0, Math.min(100, s.pct)) / 100})`;
+  el.bar.hidden = !s.file;
+  el.msg.textContent = s.msg || '';
+
+  const filled = !!s.file;
+  el.replaceBtn.hidden = !filled;
+  el.removeBtn.hidden = !filled;
+  if (el.skipBtn) el.skipBtn.hidden = filled || s.status === 'skipped';
+  if (el.undoBtn) el.undoBtn.hidden = s.status !== 'skipped';
+
+  const what = filled ? `${shotLabel(id)} — ${s.file.name}` : shotLabel(id);
+  el.btn.setAttribute('aria-label', `${what} · ${cardLabel(card)}`);
+}
+
+function paintCard(card) {
+  if (!card.el) return;
+  const ready = cardReady(card);
+
+  // The collapse follows readiness, and only on the CHANGE — otherwise a card
+  // the customer deliberately opened to add a detail shot would slam shut on
+  // the next repaint.
+  if (ready !== card.wasReady) {
+    card.collapsed = ready;
+    card.wasReady = ready;
+    // Hand the list on. A card that just became ready closes, so the next one
+    // that still needs a front shot opens — otherwise finishing a card leaves
+    // the customer looking at nothing and hunting for the next tap.
+    if (ready) {
+      const next = cards.find((k) => k !== card && !cardReady(k));
+      if (next && next.collapsed) {
+        next.collapsed = false;
+        if (next.el) next.el.classList.remove('is-collapsed');
+        if (next.toggleEl) next.toggleEl.setAttribute('aria-expanded', 'true');
+      }
+    }
+  }
+
+  card.el.classList.toggle('is-ready', ready);
+  card.el.classList.toggle('is-collapsed', card.collapsed);
+  if (card.toggleEl) card.toggleEl.setAttribute('aria-expanded', card.collapsed ? 'false' : 'true');
+  if (card.stateEl) card.stateEl.textContent = ready ? c('pu.ready') : c('pu.needsFront');
+  SHOT_IDS.forEach((id) => paintSlot(card, id));
+}
+
+/**
+ * "8 of 25 products ready", never "31 files uploaded".
+ *
+ * A file count is a receipt for work the customer cannot check. What they can
+ * act on is which products are short of the one photograph we cannot work
+ * without — so that is the sentence, and the optional photos are counted after
+ * it as an addition rather than as a second obligation.
+ */
+function progressText() {
+  const total = cards.length;
+  if (!total) return '';
+  const done = cards.filter(cardReady).length;
+  const extra = cards.reduce(
+    (n, card) => n + SHOT_IDS.filter((id) => id !== REQUIRED_SHOT && slotFilled(card, id)).length,
+    0
+  );
+  // Singular branches for the one-product order, which is the entry point of
+  // the whole ladder — the flow was telling that customer "0 of 1 products
+  // ready" while step 5 of the same flow said "1 product".
+  const head = done === total
+    ? (total === 1 ? c('pu.allDoneOne') : c('pu.allDone', { total }))
+    : (total === 1 ? c('pu.progressOne', { done }) : c('pu.progress', { done, total }));
+  // Singular has its own string rather than an "(s)": Dutch pluralises the
+  // noun AND takes an apostrophe (foto → foto’s), so a suffix hack cannot
+  // spell both languages correctly.
+  if (!extra) return head;
+  const tail = extra === 1 ? c('pu.progressExtraOne') : c('pu.progressExtra', { n: extra });
+  return `${head} · ${tail}`;
+}
+
+function refreshUploader() {
+  cards.forEach(paintCard);
+  // The card count moves with the count on step 1, and the copy-down has
+  // nothing to say while there is one card.
+  syncCopyDown(cards[0]);
+  const out = q('[data-pl-progress]');
+  if (out) out.textContent = progressText();
+  const add = q('[data-pl-add]');
+  if (add) add.hidden = cards.length >= maxCards();
+  renderTray();
+}
+
+// ── THE TRAY ─────────────────────────────────────────────────────────────────
+
+/**
+ * Files we could not attribute to a product.
+ *
+ * DRAG IS NOT THE ONLY WAY IN, and that is not a nicety: this step gets used on
+ * a phone by someone photographing garments, and a touch screen has no drag
+ * onto a target the size of a slot. Every item therefore carries a menu of
+ * every product against every shot, worked by tap, by click and by keyboard,
+ * and the drag is the shortcut for whoever has a mouse.
+ *
+ * Tray files are NOT uploaded. A file with no product and no angle is exactly
+ * the batch this whole change exists to stop, so it waits until it is placed —
+ * which also means a tray item costs nothing if the customer removes it.
+ */
+function trayAdd(file) {
+  trayN += 1;
+  tray.push({ id: `t${trayN}`, file, url: objectUrl(file) });
+}
+
+function trayDrop(item) {
+  if (item.url) URL.revokeObjectURL(item.url);
+  tray = tray.filter((x) => x !== item);
+}
+
+function placeFromTray(trayKey, cardKey, shotId) {
+  const item = tray.find((x) => x.id === trayKey);
+  const card = cards.find((x) => x.key === cardKey);
+  if (!item || !card || !isShot(shotId)) return;
+  placeFile(card, shotId, item.file);
+  trayDrop(item);
+  refreshUploader();
+}
+
+function isShot(id) {
+  return SHOT_IDS.indexOf(id) !== -1;
+}
+
+/**
+ * Rebuilt only when it would look different.
+ *
+ * Every option in every tray item's menu is a product against a shot, so at
+ * twenty-five products one item is a hundred <option> elements — and this is
+ * called from refreshUploader(), which runs once per file as a batch of a
+ * hundred photographs lands. Without the signature that is ten thousand
+ * elements built and thrown away per drop, on a phone.
+ */
+function renderTray() {
+  const host = q('[data-pl-tray]');
+  const list = q('[data-pl-tray-list]');
+  if (!host || !list) return;
+
+  const sig = JSON.stringify([tray.map((x) => x.id), cards.map(cardLabel)]);
+  if (sig === traySig) return;
+  traySig = sig;
+
+  host.hidden = !tray.length;
+  list.textContent = '';
+
+  tray.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'pu-tray-item';
+    li.draggable = true;
+    li.dataset.puTray = item.id;
+    li.addEventListener('dragstart', (e) => {
+      dragging = item.id;
+      li.classList.add('is-dragging');
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.id);
+      }
+    });
+    li.addEventListener('dragend', () => { dragging = ''; li.classList.remove('is-dragging'); });
+
+    const thumb = document.createElement('img');
+    thumb.className = 'pu-tray-thumb';
+    thumb.alt = '';
+    if (item.url) thumb.src = item.url;
+
+    const body = document.createElement('div');
+    const nameEl = document.createElement('span');
+    nameEl.className = 'pu-tray-name';
+    // textContent, never innerHTML — the filename is client-supplied and this
+    // is the one place it reaches the DOM before the server has flattened it.
+    nameEl.textContent = item.file.name;
+
+    const row = document.createElement('div');
+    row.className = 'pu-tray-row';
+
+    const pick = document.createElement('select');
+    pick.className = 'select pu-tray-pick';
+    pick.setAttribute('aria-label', c('pu.placeIn'));
+    cards.forEach((card) => {
+      const group = document.createElement('optgroup');
+      group.label = cardLabel(card);
+      SHOT_IDS.forEach((id) => {
+        const opt = document.createElement('option');
+        opt.value = `${card.key}|${id}`;
+        // The product is in the option TEXT as well as in the optgroup label,
+        // because a closed <select> shows only the option — and "Front" on its
+        // own, after choosing, does not say which of twenty-five products it
+        // was. The group is what makes the open list scannable; the text is
+        // what makes the closed one true.
+        opt.textContent = `${cardLabel(card)} · ${shotLabel(id)}`;
+        group.appendChild(opt);
+      });
+      pick.appendChild(group);
+    });
+
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'pu-tray-go';
+    go.textContent = c('pu.trayAssign');
+    go.addEventListener('click', () => {
+      const [cardKey, shotId] = String(pick.value || '').split('|');
+      placeFromTray(item.id, cardKey, shotId);
+    });
+
+    const del = button(c('pu.remove'), 'pu-act');
+    del.addEventListener('click', () => { trayDrop(item); refreshUploader(); });
+
+    row.append(pick, go, del);
+    body.append(nameEl, row);
+    li.append(thumb, body);
+    list.appendChild(li);
+  });
+}
+
+// ── PLACING AND SENDING ──────────────────────────────────────────────────────
+
+function objectUrl(file) {
+  try {
+    return URL.createObjectURL(file);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Put a file in a slot and start sending it.
+ *
+ * Replacing is remove-then-add, including the DELETE of whatever was there: the
+ * placement is recorded in the R2 object's own metadata, so a slot holding two
+ * objects would be two answers to one question with no way to tell which the
+ * customer meant.
+ */
+function placeFile(card, id, file) {
+  clearSlot(card, id);
+  const s = card.slots[id];
+  s.file = file;
+  s.url = objectUrl(file);
+  s.pct = 0;
+  s.thumb = false;
+
+  const bad = preflight(file, pendingCount());
+  if (bad) {
+    s.status = 'failed';
+    s.msg = uploadError(bad.code, bad);
+    paintSlot(card, id);
+    return;
+  }
+
+  s.status = 'sending';
+  s.msg = c('upload.sending');
+  paintSlot(card, id);
+  chain = chain.then(() => sendSlot(card, id)).catch(() => {});
+}
+
+function clearSlot(card, id) {
+  const s = card.slots[id];
+  if (s.url) URL.revokeObjectURL(s.url);
+  if (s.key) removeStaged(s.key);
+  const el = s.el;
+  card.slots[id] = EMPTY_SLOT();
+  card.slots[id].el = el;
+  paintSlot(card, id);
+}
+
+/**
+ * Drop a staged object, server and client.
+ *
+ * The row goes whatever the server said. If the DELETE fails the object is
+ * orphaned in the staging prefix and the lifecycle rule collects it; what must
+ * not happen is a file the client removed still arriving with their order, and
+ * that is decided by `staged`, not by R2.
+ */
+function removeStaged(key) {
+  staged = staged.filter((x) => x.key !== key);
+  if (!batch) return;
+  const url = `/api/upload?batch=${encodeURIComponent(batch)}&key=${encodeURIComponent(key)}`;
+  fetch(url, { method: 'DELETE' }).catch(() => null);
+}
+
+function sendSlot(card, id) {
+  return new Promise((resolve) => {
+    const s = card.slots[id];
+    if (!s.file || s.status !== 'sending') return resolve();
+
+    // IS THIS SLOT STILL THE SLOT IT WAS. A request takes seconds and the
+    // customer can spend them changing the count on step 1, which drops cards,
+    // or replacing this very photograph. Either way the answer this upload is
+    // recording has been superseded — and an object that lands afterwards would
+    // reach the order carrying a product key for a card that no longer exists.
+    // So the response is checked against the state, not assumed onto it.
+    const live = () => cards.indexOf(card) !== -1 && card.slots[id] === s;
+
+    if (uploadsOff) {
+      s.status = 'failed';
+      s.msg = c('upload.err.unavailable');
+      paintSlot(card, id);
+      refreshUploader();
+      return resolve();
+    }
+
+    const fd = new FormData();
+    fd.append('file', s.file);
+    if (batch) fd.append('batch', batch);
+    // THE TWO FIELDS THIS WHOLE STEP EXISTS FOR. The key, not the customer's
+    // name for the product: a name can be retyped after the photograph is in
+    // R2, and a key that changes under an object's metadata is a mapping that
+    // rots. The name posts separately with the order.
+    fd.append('product', card.key);
+    fd.append('shot', id);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload', true);
+    xhr.responseType = 'text';
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (!e.lengthComputable) return;
+      s.pct = (e.loaded / e.total) * 100;
+      paintSlot(card, id);
+    });
+
+    xhr.addEventListener('error', () => {
+      if (!live()) return resolve();
+      s.status = 'failed';
+      s.pct = 0;
+      s.msg = c('upload.err.network');
+      paintSlot(card, id);
+      refreshUploader();
+      resolve();
+    });
+    xhr.addEventListener('abort', () => resolve());
+
+    xhr.addEventListener('load', () => {
+      let body = null;
+      try {
+        body = JSON.parse(xhr.responseText || '{}');
+      } catch {
+        body = null;
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300 && body && body.ok) {
+        batch = body.batch || batch;
+        setHidden('upload_batch', batch);
+        if (!live()) {
+          // Uploaded into a slot that is gone. Take it straight back out —
+          // `staged` is what decides the order's files, and this never joins it.
+          removeStaged(body.file.key);
+          return resolve();
+        }
+        s.status = 'done';
+        s.pct = 100;
+        s.msg = c('upload.done');
+        s.key = body.file.key;
+        staged.push({
+          key: body.file.key,
+          name: body.file.name,
+          bytes: body.file.bytes,
+          product: body.file.product || card.key,
+          shot: body.file.shot || id,
+        });
+        paintSlot(card, id);
+        refreshUploader();
+        return resolve();
+      }
+
+      const code = (body && body.error) || 'generic';
+      if (live()) {
+        s.status = 'failed';
+        s.pct = 0;
+        s.msg = uploadError(code, body);
+      }
+
+      // A dead bucket is not this file's problem, it is every file's problem.
+      // Say so once, stop the queue, and let the order carry on without photos.
+      if (code === 'unavailable') {
+        uploadsOff = true;
+        const off = q('[data-pl-upload-note="off"]');
+        if (off) off.hidden = false;
+      }
+      paintSlot(card, id);
+      refreshUploader();
+      resolve();
+    });
+
+    xhr.send(fd);
+  });
+}
 
 // ── PRE-FLIGHT ───────────────────────────────────────────────────────────────
 // The caps were in the config blob from the day it was written and nothing read
@@ -954,9 +2167,9 @@ function extOf(name) {
 /**
  * Why this file cannot be sent, or null.
  *
- * `queued` is how many files this same drop has already accepted, so a drop of
- * 200 files refuses the 81st onwards rather than sending all of them and
- * letting the server decide one by one.
+ * `queued` is how many files are already in flight, so a drop of 200 files
+ * refuses the ones past the ceiling rather than sending all of them and letting
+ * the server answer 400 two hundred times.
  */
 function preflight(file, queued) {
   const exts = Array.isArray(cfg.uploadExt) ? cfg.uploadExt : [];
@@ -971,123 +2184,6 @@ function preflight(file, queued) {
   return null;
 }
 
-function queue(files) {
-  if (!files.length || uploadsOff) return;
-  let queued = 0;
-  files.forEach((file) => {
-    const row = addRow(file);
-    // The row is added either way. A file that disappears without a word is
-    // worse than one that visibly failed, and this is the only place the reason
-    // can be said.
-    const bad = preflight(file, queued);
-    if (bad) {
-      setBar(row, 0);
-      setMsg(row, uploadError(bad.code, bad), 'is-failed');
-      return;
-    }
-    queued += 1;
-    chain = chain.then(() => sendOne(file, row)).catch(() => {});
-  });
-}
-
-function addRow(file) {
-  const list = q('[data-pl-droplist]');
-  const row = document.createElement('li');
-  row.className = 'pl-file';
-  row.innerHTML =
-    '<span class="pl-file-name"></span>' +
-    '<span class="pl-file-size"></span>' +
-    '<span class="pl-file-bar"><i></i></span>' +
-    '<span class="pl-file-msg" aria-live="polite"></span>';
-  // textContent, never innerHTML — the filename is client-supplied and this row
-  // is the one place it reaches the DOM before the server has flattened it.
-  row.querySelector('.pl-file-name').textContent = file.name;
-  row.querySelector('.pl-file-size').textContent = bytes(file.size);
-  list.appendChild(row);
-  return row;
-}
-
-// scaleX rather than width. Width relayouts the whole row on every progress
-// event — and there is one per chunk, per file, in parallel — where a transform
-// is composited. The bar is an empty <i> with a background, so the two are
-// pixel-identical. DESIGN.md bans animating layout properties; this was one.
-function setBar(row, pct) {
-  const bar = row.querySelector('.pl-file-bar > i');
-  if (bar) bar.style.transform = `scaleX(${Math.max(0, Math.min(100, pct)) / 100})`;
-}
-
-function setMsg(row, text, state) {
-  const msg = row.querySelector('.pl-file-msg');
-  if (msg) msg.textContent = text || '';
-  row.classList.remove('is-done', 'is-failed');
-  if (state) row.classList.add(state);
-}
-
-function sendOne(file, row) {
-  return new Promise((resolve) => {
-    if (uploadsOff) {
-      setMsg(row, c('upload.err.unavailable'), 'is-failed');
-      return resolve();
-    }
-    const fd = new FormData();
-    fd.append('file', file);
-    if (batch) fd.append('batch', batch);
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/upload', true);
-    xhr.responseType = 'text';
-
-    xhr.upload.addEventListener('progress', (e) => {
-      if (e.lengthComputable) setBar(row, (e.loaded / e.total) * 100);
-    });
-
-    xhr.addEventListener('error', () => {
-      setBar(row, 0);
-      setMsg(row, c('upload.err.network'), 'is-failed');
-      addRetry(row, file);
-      resolve();
-    });
-    xhr.addEventListener('abort', () => resolve());
-
-    xhr.addEventListener('load', () => {
-      let body = null;
-      try {
-        body = JSON.parse(xhr.responseText || '{}');
-      } catch {
-        body = null;
-      }
-      if (xhr.status >= 200 && xhr.status < 300 && body && body.ok) {
-        batch = body.batch || batch;
-        setHidden('upload_batch', batch);
-        setBar(row, 100);
-        setMsg(row, c('upload.done'), 'is-done');
-        staged.push({ key: body.file.key, name: body.file.name, bytes: body.file.bytes, row });
-        addRemove(row, body.file.key);
-        renderCount();
-        return resolve();
-      }
-
-      const code = (body && body.error) || 'generic';
-      setBar(row, 0);
-      setMsg(row, uploadError(code, body), 'is-failed');
-
-      // A dead bucket is not this file's problem, it is every file's problem.
-      // Say so once, stop the queue, and let the order carry on without photos.
-      if (code === 'unavailable') {
-        uploadsOff = true;
-        const off = q('[data-pl-upload-note="off"]');
-        if (off) off.hidden = false;
-      } else if (code !== 'bad-type' && code !== 'too-large' && code !== 'empty' && code !== 'batch-full') {
-        addRetry(row, file);
-      }
-      resolve();
-    });
-
-    setMsg(row, c('upload.sending'), null);
-    xhr.send(fd);
-  });
-}
-
 function uploadError(code, body) {
   if (code === 'too-large') return c('upload.err.too-large', { max: bytes(Number((body && body.max) || cfg.maxFileBytes)) });
   if (code === 'batch-full') return c('upload.err.batch-full', { max: Number((body && body.max) || cfg.maxBatchFiles) });
@@ -1096,43 +2192,6 @@ function uploadError(code, body) {
   // tomorrow is an expected miss here, not a broken copy table, and it must not
   // spend a console warning to fall back to the sentence that already covers it.
   return hasCopy(`upload.err.${code}`) ? c(`upload.err.${code}`) : c('upload.err.generic');
-}
-
-function addRetry(row, file) {
-  if (row.querySelector('[data-pl-retry]')) return;
-  const b = button(c('upload.retry'), 'pl-file-act');
-  b.dataset.plRetry = '1';
-  b.addEventListener('click', () => {
-    b.remove();
-    setMsg(row, '', null);
-    chain = chain.then(() => sendOne(file, row)).catch(() => {});
-  });
-  row.appendChild(b);
-}
-
-function addRemove(row, key) {
-  const b = button(c('upload.remove'), 'pl-file-act');
-  b.addEventListener('click', () => {
-    b.disabled = true;
-    const url = `/api/upload?batch=${encodeURIComponent(batch)}&key=${encodeURIComponent(key)}`;
-    fetch(url, { method: 'DELETE' })
-      .catch(() => null)
-      .then(() => {
-        // The row goes whatever the server said. If the DELETE failed the object
-        // is orphaned in the staging prefix and the lifecycle rule collects it;
-        // what must not happen is a file the client removed still arriving with
-        // their order, and that is decided by `staged`, not by R2.
-        staged = staged.filter((s) => s.key !== key);
-        row.remove();
-        renderCount();
-      });
-  });
-  row.appendChild(b);
-}
-
-function renderCount() {
-  const out = q('[data-pl-filecount]');
-  if (out) out.textContent = staged.length ? c('upload.count', { n: staged.length, max: cfg.maxBatchFiles }) : '';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1632,7 +2691,14 @@ function renderSummary() {
   const quote = kind ? quoteFor(kind, n, outfitN) : null;
   if (quote) rows.push([c('sum.net'), euro(quote.net)]);
 
-  rows.push([c('sum.files'), staged.length ? c('upload.count', { n: staged.length, max: cfg.maxBatchFiles }) : c('sum.noFiles')]);
+  // WHAT WAS SENT, IN THE UNIT THE CUSTOMER CARES ABOUT. This row used to read
+  // "12 of 140 uploaded", which is a fact about our storage rather than about
+  // their order — and on the one screen where a missing front photo is still
+  // fixable, "8 of 25 products ready" is the sentence that lets them fix it.
+  // It is an advisory here as everywhere else: it says what is short and then
+  // the send button works anyway.
+  const sent = progressText() || c('upload.count', { n: staged.length, max: cfg.maxBatchFiles });
+  rows.push([c('sum.files'), staged.length ? sent : c('sum.noFiles')]);
 
   // The one row that is allowed to contain a date, and only when the gate put
   // it there. Everything else says what actually happens next instead.

@@ -60,6 +60,9 @@ import {
   bookedFromRows,
   clearedWindows,
 } from '../../src/data/capacity.js';
+import {
+  ORDER_QUESTIONS, isProductQuestionId, productQuestion,
+} from '../../src/data/attributes.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail } from '../../src/lib/mail.js';
@@ -160,7 +163,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
     // notification email. Files are handled by /api/upload and land in the files
     // table further down; they have no business in this record at all.
     if (typeof v !== 'string') continue;
-    if (v) details[k] = v;
+    const cleaned = vetAnswer(k, v);
+    if (cleaned) details[k] = cleaned;
   }
 
   // ---- subscribe (lead magnet) --------------------------------------------
@@ -702,6 +706,63 @@ function countOf(raw) {
   return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
 }
 
+// ---------- the questions in src/data/attributes.js --------------------------
+
+/**
+ * The per-product questions post as `<question>_<product key>` — today that is
+ * `material_p3` — beside the product name the uploader already posts as
+ * `product_p3`. NO SCHEMA CHANGE IS NEEDED and none was made:
+ * they are answers about the order, so they land in details_json with
+ * everything else the customer typed, and `p3` is the key that joins them to
+ * the files rows attachUploads() writes. The studio's email prints
+ * details_json verbatim, so each answer arrives under its own product's key
+ * with no code in the mail path at all. The single order-level question
+ * (`audience`) is an ordinary field and needs nothing beyond the cap below.
+ *
+ * WHAT IS CHECKED, AND WHY ONLY THIS MUCH. details_json is a record of what a
+ * customer told us, not an input to anything that executes, so the job here is
+ * to stop it becoming a place to store arbitrary volume or an invented
+ * vocabulary — not to argue with prose:
+ *
+ *   · LENGTH. Every text question declares a maxLength and the browser applies
+ *     it; a posted field is not a browser, so it is applied again here. Cut
+ *     rather than rejected: an over-long answer is a client with a long
+ *     sentence, not an attack, and dropping their material entirely to punish
+ *     the twenty-first word would be the wrong trade.
+ *   · A CLOSED LIST STAYS CLOSED. No question is a <select> today, but the
+ *     branch stays: attributes.js may declare one, and its ids would be read
+ *     by the studio as an instruction, so anything outside its own option list
+ *     is dropped rather than truncated. Half of a closed-list word is worse
+ *     than none of it.
+ *   · `material` is open text on purpose. attributes.js's `examples` are a
+ *     datalist — suggestions, never a closed list — so a fabric nobody thought
+ *     of has to survive this function.
+ *
+ * Anything that is not one of these keys is returned untouched, so every other
+ * field on every other form behaves exactly as it did.
+ */
+const PRODUCT_ANSWER_KEY = /^([a-z]+)_(p[0-9]{1,3})$/;
+
+function vetAnswer(key, value) {
+  const orderQ = ORDER_QUESTIONS.find((x) => x.id === key);
+  if (orderQ) return capAnswer(value, orderQ.maxLength);
+
+  const m = PRODUCT_ANSWER_KEY.exec(key);
+  if (!m || !isProductQuestionId(m[1])) return value;
+
+  const q = productQuestion(m[1]);
+  const v = String(value).trim();
+  if (q.type === 'select') {
+    return q.options.some((o) => o.id && o.id === v) ? v : '';
+  }
+  return capAnswer(v, q.maxLength);
+}
+
+function capAnswer(value, max) {
+  const v = String(value).trim();
+  return Number.isInteger(max) && max > 0 ? v.slice(0, max) : v;
+}
+
 // ---------- uploads ----------------------------------------------------------
 
 /**
@@ -710,11 +771,25 @@ function countOf(raw) {
  * kind='upload' matters: the portal's serveFile filters on kind='delivery', so
  * a client's own reference photographs are recorded against the order and are
  * not re-served from it. They are input, not output.
+ *
+ * WHERE THE PER-PRODUCT MAPPING LANDS, AUGUST 2026. product_key and shot come
+ * off the R2 object's customMetadata by way of listBatch(), and this insert is
+ * the only place they are written. They are deliberately NOT also folded into
+ * details_json: the mapping is a fact about one file and this is the row that
+ * already names that file, whereas details_json holds the ORDER's answers —
+ * including 'product_p1', the name the customer typed for that card, which
+ * arrives as an ordinary form field and needs no code here at all. One fact,
+ * one home; the key 'p1' is what joins them.
+ *
+ * `|| null` rather than `|| ''` on both: listBatch returns '' for an object
+ * nobody placed, and a column full of empty strings is a column that has to be
+ * checked two ways forever.
  */
 async function attachUploads(env, orderId, staged) {
   if (!env?.DB || !staged.length) return;
-  const sql = `INSERT INTO files (order_id, kind, r2_key, filename, bytes) VALUES (?1, 'upload', ?2, ?3, ?4)`;
-  const rows = staged.map((f) => [orderId, f.key, f.name || null, f.bytes || null]);
+  const sql = `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot)
+               VALUES (?1, 'upload', ?2, ?3, ?4, ?5, ?6)`;
+  const rows = staged.map((f) => [orderId, f.key, f.name || null, f.bytes || null, f.product || null, f.shot || null]);
 
   if (typeof env.DB.batch === 'function') {
     const stmt = env.DB.prepare(sql);
@@ -944,6 +1019,24 @@ function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, (c) => ({ 
 // which is now the one wrong temperature on the page. It was retinted to the
 // warm ink hue at the same luminance (Y 0.261 -> 0.264), so nothing about its
 // legibility changed — only which family it belongs to.
+/**
+ * What to call a product in the studio's email.
+ *
+ * The two halves of the mapping meet here and nowhere else: the file row knows
+ * its product KEY ('p3', off customMetadata) and details_json knows what the
+ * customer typed for that card ('product_p3'). Neither stores the other, so
+ * this is a join, not a lookup of a duplicated value.
+ *
+ * Falls back to the bare key, then to an em dash. A photograph nobody placed is
+ * a photograph nobody placed — it is listed, unlabelled, with everything else,
+ * because it is still in the batch and still the client's material.
+ */
+function productLabel(key, details) {
+  if (!key) return '—';
+  const typed = details && typeof details[`product_${key}`] === 'string' ? details[`product_${key}`].trim() : '';
+  return typed ? `${typed} (${key})` : key;
+}
+
 function detailRows(obj) {
   return Object.entries(obj).map(([k, v]) =>
     `<tr><td style="padding:4px 12px 4px 0;color:#8F8C87">${esc(k)}</td><td style="padding:4px 0"><strong>${esc(v)}</strong></td></tr>`
@@ -1044,6 +1137,8 @@ function notifyEmail(ref, service, top, details, gate = {}) {
            <td style="padding:3px 12px 3px 0;color:${attached.includes(f.key) ? '#0F5F6F' : '#8F8C87'}">${
              attached.includes(f.key) ? 'attached' : 'R2 only'
            }</td>
+           <td style="padding:3px 12px 3px 0;white-space:nowrap">${esc(productLabel(f.product, details))}</td>
+           <td style="padding:3px 12px 3px 0;color:#666;white-space:nowrap">${esc(f.shot || '—')}</td>
            <td style="padding:3px 12px 3px 0"><strong>${esc(f.name || '—')}</strong></td>
            <td style="padding:3px 12px 3px 0;color:#666;white-space:nowrap">${esc(fileSize(f.bytes))}</td>
            <td style="padding:3px 0;color:#8F8C87;font-family:ui-monospace,Menlo,monospace;font-size:11px">${esc(f.key || '')}</td>

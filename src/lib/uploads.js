@@ -39,6 +39,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { isWellFormedToken, mintToken } from './token.js';
+import { SHOTS_PER_PRODUCT, isShotId } from '../data/shots.js';
+import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
 
 /** Everything staged lives under here. Nothing else may. */
 export const UPLOAD_PREFIX = 'intake';
@@ -47,10 +49,22 @@ export const UPLOAD_PREFIX = 'intake';
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 /**
- * Per batch. A full drop is 25–30 products and a client may send two references
- * each, so this has to clear that with room, and still stop a script.
+ * Per batch, and DERIVED rather than picked, because the number it has to clear
+ * changed underneath it. The old value of 80 assumed "25–30 products, maybe two
+ * references each". The order form now asks for FOUR shots per product — front,
+ * back, detail, worn — so a full order at the largest size one reserved window
+ * holds is 30 × 4 = 120 files, and a customer following the instructions to the
+ * letter would have hit the ceiling forty files early.
+ *
+ * The multiplier is the real one from src/data/shots.js and the product cap is
+ * the real one from src/data/capacity.js, so the ceiling moves on its own if
+ * either does. The +20 is slack for the odd extra reference — a sizing chart, a
+ * mood image, a second detail — not a second full set.
+ *
+ * It is still a script stop: 140 files at 25 MB each is a lot of patience for
+ * an attacker who gets rate-limited at 40 uploads a minute anyway.
  */
-export const MAX_BATCH_FILES = 80;
+export const MAX_BATCH_FILES = ATTENDED_PER_WINDOW * SHOTS_PER_PRODUCT + 20;
 
 /**
  * Extension → the content type we store.
@@ -99,7 +113,57 @@ export function keyBelongsTo(key, batch) {
 }
 
 /**
+ * How long a product key may be.
+ *
+ * The key is a label, not an identifier the studio types: the /start uploader
+ * mints `p1`…`p30` and the customer's own name for the product travels
+ * separately as an ordinary form field. 48 is therefore enormous, and it is
+ * enormous on purpose — a cap that has to be raised is a cap that gets removed.
+ */
+export const MAX_PRODUCT_KEY = 48;
+
+/**
+ * A product key we are willing to store in customMetadata.
+ *
+ * WHY THIS IS NOT safeName(). safeName() flattens a FILENAME, and it keeps `.`
+ * because an extension is the part typeFor() reads. A product key has no
+ * extension, is never a path segment, and a leading dot in it means nothing —
+ * so the two want different alphabets, and one function serving both would be a
+ * function whose rules nobody can state. They are also enforced at different
+ * points: safeName()'s output is interpolated into an R2 key, and this one's
+ * output is NOT — see the note in /api/upload. Nothing here may ever be
+ * concatenated into a key without re-reading that note.
+ *
+ * Everything outside [A-Za-z0-9._-] becomes a hyphen, so no separator, no null
+ * byte and no non-ASCII survives — R2 puts customMetadata on the wire as HTTP
+ * header values, where a raw newline is a header injection and a raw é is a
+ * 400 from the API. Returns '' for anything that flattens to nothing, and ''
+ * means "no product", not "a product called nothing".
+ */
+export function safeProduct(raw) {
+  return (raw || '')
+    .toString()
+    .normalize('NFKD')
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/^[-.]+|[-.]+$/g, '')
+    .replace(/-{2,}/g, '-')
+    .slice(0, MAX_PRODUCT_KEY)
+    .replace(/[-.]+$/, '');
+}
+
+/**
  * Everything staged under a batch, oldest first.
+ *
+ * `product` and `shot` are the placement /api/upload recorded — which product
+ * the customer put this photograph against and which of the four angles it is.
+ * Both come back '' when the object predates the per-product uploader or when
+ * the file was sent by something that did not say, and every consumer treats ''
+ * as "unplaced" rather than as an error: a batch of loose files is still a
+ * perfectly good batch, it is just one the studio sorts by hand.
+ *
+ * `shot` is re-validated on the way out even though it was validated on the way
+ * in. The write and the read are years apart in the life of an object and only
+ * one of them is in this deploy.
  *
  * Returns [] for a missing binding, a malformed id or an R2 failure — never
  * throws. /api/order calls this while creating an order, and an unreachable
@@ -113,6 +177,8 @@ export async function listBatch(env, batch, limit = MAX_BATCH_FILES + 1) {
       key: o.key,
       bytes: Number(o.size) || 0,
       name: o.customMetadata?.original || o.key.split('/').pop(),
+      product: safeProduct(o.customMetadata?.product),
+      shot: isShotId(o.customMetadata?.shot) ? o.customMetadata.shot : '',
     }));
   } catch {
     return [];

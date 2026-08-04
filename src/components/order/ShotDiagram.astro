@@ -1,0 +1,76 @@
+---
+// VISUAILS — the four shot diagrams.
+//
+// DRAWINGS, NOT PHOTOGRAPHS, and the distinction is the whole point. Every
+// other image on this site is output: here is what the studio makes. These are
+// instructions: here is what YOU should send. A photograph in an instruction
+// slot gets read as an example of quality — "mine will never look like that" —
+// which is the opposite of what this step needs to say, since the honest
+// message is that a phone photo on a table is enough.
+//
+// Line art also survives what a photograph would not: it reads at 40px in a
+// slot and at 200px in the guide, it inherits the ink colour so it works on
+// every ground the site has, it costs no bytes, and it needs no art direction
+// when a fifth shot type is added.
+//
+// The shapes are deliberately a t-shirt. Not because the studio only shoots
+// t-shirts, but because a garment silhouette everyone recognises instantly is
+// worth more here than a generic box — the customer has to grasp "front" and
+// "back" in the half second before they look away.
+interface Props { shot: string; class?: string; }
+const { shot, class: cls } = Astro.props;
+---
+
+{shot === 'front' && (
+  <svg class:list={['shot-dia', cls]} viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M22 13 L11 19 L8 30 L15 33 L17 28 L17 54 L47 54 L47 28 L49 33 L56 30 L53 19 L42 13 Z" />
+    <path d="M22 13 Q32 21 42 13" />
+  </svg>
+)}
+
+{shot === 'back' && (
+  <svg class:list={['shot-dia', cls]} viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M22 13 L11 19 L8 30 L15 33 L17 28 L17 54 L47 54 L47 28 L49 33 L56 30 L53 19 L42 13 Z" />
+    {/* A shallow yoke instead of the front's scoop, plus the neck label — the
+        two cues that tell you at a glance which way round the garment is. */}
+    <path d="M22 13 Q32 16.5 42 13" />
+    <rect x="29.5" y="15" width="5" height="3.5" rx="1" />
+    {/* Dashed, because it stands for "whatever is printed back here", not for
+        a print we are claiming to see. */}
+    <rect x="24" y="27" width="16" height="14" rx="1.5" stroke-dasharray="3 3" />
+  </svg>
+)}
+
+{shot === 'detail' && (
+  <svg class:list={['shot-dia', cls]} viewBox="0 0 64 64" aria-hidden="true">
+    {/* The weave, then the lens over it. Reading order matters: the texture is
+        the subject and the magnifier is the verb. */}
+    <path d="M12 40 L24 28 M18 46 L34 30 M28 48 L44 32 M38 50 L50 38" opacity="0.55" />
+    <circle cx="30" cy="28" r="13" />
+    <path d="M39.5 37.5 L50 48" stroke-linecap="round" stroke-width="2.4" />
+  </svg>
+)}
+
+{shot === 'worn' && (
+  <svg class:list={['shot-dia', cls]} viewBox="0 0 64 64" aria-hidden="true">
+    <circle cx="32" cy="12" r="6" />
+    <path d="M22 22 L16 26 L14 34 L19 36 L20 31 L20 45 L44 45 L44 31 L45 36 L50 34 L48 26 L42 22 Z" />
+    <path d="M22 22 Q32 27 42 22" />
+    {/* The legs are what make it read as a body rather than a garment on a
+        hanger — which is the only thing this shot is being asked to prove. */}
+    <path d="M25 45 L24 58 M39 45 L40 58" stroke-linecap="round" />
+  </svg>
+)}
+
+<style>
+  .shot-dia {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+</style>

@@ -186,9 +186,29 @@ CREATE TABLE IF NOT EXISTS files (
   -- nobody has looked at yet is not an approved image.
   review_state TEXT NOT NULL DEFAULT 'pending',   -- pending | approved | revision_requested
   review_note  TEXT,                              -- what the client asked for, in their words
-  reviewed_at  TEXT
+  reviewed_at  TEXT,
+
+  -- ── August 2026 · which product, which angle (migration 0005) ──────────────
+  -- Only ever meaningful on kind='upload'. /start step 2 asks for four
+  -- photographs PER PRODUCT (src/data/shots.js) instead of one heap per order,
+  -- /api/upload stores the answer in the R2 object's customMetadata, and
+  -- /api/order copies it here when the staged batch becomes rows.
+  --
+  -- product_key is the uploader's own stable key for one product card — 'p1'…
+  -- 'p30' — and NOT what the customer calls the product. That name is a fact
+  -- about the ORDER, not about this file, so it stays in orders.details_json
+  -- where the rest of the form's answers are, as 'product_p1'. The two join on
+  -- the key and neither duplicates the other.
+  --
+  -- NULL on every delivery row and on every upload that predates the change,
+  -- and no reader may default a NULL to the front shot: "nobody said" is not
+  -- the same answer as "this is the front", and the second one is a wrong
+  -- photograph on a product page.
+  product_key TEXT,                               -- 'p1'…, safeProduct()-flattened
+  shot        TEXT                                -- front | back | detail | worn
 );
 CREATE INDEX IF NOT EXISTS idx_files_order ON files(order_id);
+CREATE INDEX IF NOT EXISTS idx_files_product ON files(order_id, product_key);
 
 -- Newsletter / lead-magnet signups (the briefing-photo checklist).
 CREATE TABLE IF NOT EXISTS subscribers (

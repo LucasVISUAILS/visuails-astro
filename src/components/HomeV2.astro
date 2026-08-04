@@ -359,7 +359,7 @@ const COPY = {
       ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
       ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
     ],
-    chNote: 'Downloads arrive sized per channel in the portal, with a provenance manifest beside them.',
+    chNote: 'Downloads arrive sized per channel in the portal.',
 
     // NO FIGURES IN THIS BAND ANY MORE. The setup price and the credit are in
     // the price band, said once; repeating them here was the fourth and fifth
@@ -398,7 +398,7 @@ const COPY = {
     dashStudioSpec: 'Screenshot to place · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'The order table with the week that is full marked as full.',
     dashLogK: 'The log is the paperwork',
-    dashLogN: 'Every approval and revision is stamped with a time, and the log exports as a PDF. It is the human-review record the EU AI Act asks for: what keeps you in control keeps the file compliant.',
+    dashLogN: 'Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later. Ask and we write it out for you.',
     dashLogCta: 'Read the AI Act page',
 
     promiseH: ['No wall of reviews yet.', 'So we earn it the honest way.'],
@@ -421,7 +421,7 @@ const COPY = {
     // to rather than as a risk to be talked down. It is not said twice.
     ob: [
       ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve or request a revision image by image.', 'See the client portal', '/portal'],
-      ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is made from photographs of your real product and finished by hand, and the files come with a provenance manifest.', 'Read the AI Act page', '/ai-act'],
+      ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is made from photographs of your real product and finished by hand, and you get the line of text to publish them with.', 'Read the AI Act page', '/ai-act'],
       ['My own photos are bad.', 'A phone photo in daylight on a plain surface is enough to start. The guidelines run to two pages and are mostly about light.', 'What makes a usable photo', '/upload-guidelines'],
     ],
 
@@ -597,7 +597,7 @@ const COPY = {
       ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
       ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
     ],
-    chNote: 'De downloads staan per kanaal op maat klaar in het portaal, met een herkomstmanifest ernaast.',
+    chNote: 'De downloads staan per kanaal op maat klaar in het portaal.',
 
     // Geen bedragen meer in deze band — die staan één keer in de prijsband.
     bmH: ['Eén gezicht,', 'en het is alleen van jou.'],
@@ -631,7 +631,7 @@ const COPY = {
     dashStudioSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'De ordertabel, met de volle week als vol gemarkeerd.',
     dashLogK: 'Het logboek is de papierwinkel',
-    dashLogN: 'Elke goedkeuring en revisie krijgt een tijdstempel, en het logboek exporteert als pdf. Het is precies de menselijke controle die de EU AI Act vraagt: wat jou de controle geeft, houdt het dossier op orde.',
+    dashLogN: 'Elke goedkeuring en revisie krijgt een tijdstempel en wordt bewaard bij het beeld waar hij bij hoort, zodat de reeks later terug te lezen is. Vraag ernaar en we schrijven het voor je uit.',
     dashLogCta: 'Lees de AI Act-pagina',
 
     promiseH: ['Nog geen muur vol reviews.', 'Dus verdienen we het eerlijk.'],
@@ -652,7 +652,7 @@ const COPY = {
     // hierboven, en dus niet twee keer op één pagina.
     ob: [
       ['En als ze niet goed zijn?', 'Er wordt niets automatisch geleverd. Een mens bekijkt elk beeld eerst, en in het portaal keur je per beeld goed of vraag je een revisie aan.', 'Bekijk het klantportaal', '/portal'],
-      ['Ziet een klant dat het AI is?', 'Ze zijn AI-gegenereerd en dat zeggen we gewoon. Elk beeld wordt gemaakt uit foto’s van jouw echte product en met de hand afgewerkt, en bij de bestanden zit een herkomstmanifest.', 'Lees de AI Act-pagina', '/ai-act'],
+      ['Ziet een klant dat het AI is?', 'Ze zijn AI-gegenereerd en dat zeggen we gewoon. Elk beeld wordt gemaakt uit foto’s van jouw echte product en met de hand afgewerkt, en je krijgt de regel tekst om ze mee te publiceren.', 'Lees de AI Act-pagina', '/ai-act'],
       ['Mijn eigen foto’s zijn slecht.', 'Een telefoonfoto bij daglicht op een egale ondergrond is genoeg om te beginnen. De richtlijnen zijn twee pagina’s en gaan vooral over licht.', 'Wat een bruikbare foto is', '/upload-guidelines'],
     ],
 
@@ -1569,7 +1569,11 @@ const FAQ_PICK = [
   .hv-price-foot { margin-top: clamp(1.4rem, 2.6vw, 2rem); display: flex; align-items: flex-start; justify-content: space-between; gap: clamp(1.2rem, 3vw, 2.5rem); flex-wrap: wrap; }
   .hv-price-notes { flex: 1 1 28rem; display: grid; gap: .7rem; }
   .hv-price-notes p { margin: 0; max-width: 62ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
-  .hv-price-cta { flex: 0 0 auto; display: flex; gap: .75rem; flex-wrap: wrap; }
+    /* `flex: 0 0 auto` refused to shrink, so at 360px the Dutch ghost button
+     ("De volledige prijslijst", 174px against the English 138px) pushed the row
+     to 370.8px and the whole page scrolled sideways. It may shrink now; the
+     buttons wrap instead. */
+  .hv-price-cta { flex: 1 1 auto; min-width: 0; display: flex; gap: .75rem; flex-wrap: wrap; }
   /* vatNote() as a disclosure rather than as small print. It is forty words
      that matter enormously to the one reader in ten who is about to check
      whether reverse charge applies, and are noise to the other nine — which is

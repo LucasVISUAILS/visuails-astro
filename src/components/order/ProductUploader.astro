@@ -1,0 +1,754 @@
+---
+// VISUAILS — step 2 of /start: the product photos, one product at a time.
+//
+// WHAT THIS REPLACED
+// One <input type="file" multiple> and a flat list of rows. A customer ordering
+// 25 products dropped 100 files into it and nothing recorded which file was
+// which product, or which of the four angles. The studio sorted it afterwards
+// by hand, and the customer never learned whether what they sent was enough.
+// The reasoning for the four shots, and every word describing them, is
+// src/data/shots.js — read that file, not this one, for WHY only the front is
+// required.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// THE ONE THING TO GET RIGHT: WHERE THE EXPLANATION LIVES
+// Four shots × 25 products is a hundred slots, and a slot that explains itself
+// is four explanations printed a hundred times. That is Lucas's standing
+// complaint about this site — "soms wordt het te veel" — arriving as a
+// hundredfold. So the four drawings, the `how` and the `buys` are printed ONCE,
+// at the top, where a customer reads them before they start; inside a card a
+// slot is a drawing and a word, and the drawing is the same drawing they just
+// read about. That is the whole information design of this step: the diagram is
+// the index into an explanation given once.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT IS SERVER-RENDERED HERE AND WHAT IS NOT
+// Everything a customer reads before they touch anything: the guide, the two
+// ways in, the tray's heading, the no-JS ending. The cards themselves are not —
+// there are between one and thirty of them and the number comes from a <select>
+// on step 1, so src/scripts/pipeline.js builds them and this file supplies the
+// empty <ol> plus the four <template> diagrams the script clones into slots.
+//
+// NO-JS ENDS HONESTLY. The uploader needs XMLHttpRequest — it always has, and
+// the old input carried no `name` attribute so that a JS-off browser would post
+// nothing rather than post a file /api/order would throw away. That is still
+// true, and instead of a dead control this now says what actually happens:
+// order first, send the photos afterwards, in the copy shots.js keeps for it
+// (`laterH` / `laterLead`). .pl-form.is-live is what swaps the two.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// THE QUESTION, AND WHY IT DOES NOT COST TWENTY-FIVE PARAGRAPHS
+// src/data/attributes.js adds one optional question per product: what the
+// product is made of. It carries a `buys` line explaining what answering is
+// worth, and printing that on twenty-five cards is twenty-five copies of one
+// explanation, which is the exact failure the paragraph above describes. So it
+// follows the same rule as the shots: the `buys` line is printed ONCE, in a
+// second guide block at the top of this step, in a paragraph with a stable id
+// (`pu-q-<id>-buys`). A card carries a label, a control, and an
+// aria-describedby pointing back at that one paragraph.
+//
+// Everything here iterates PRODUCT_QUESTIONS rather than naming `material`, so
+// the block still holds if Lucas ever adds a second question — that decision
+// lives in the data file, not in this markup.
+//
+// The material field's suggestions are a shared <datalist> per question
+// (`pu-dl-<id>`), rendered once here rather than per card — a datalist is
+// referenced by id and twenty-five inputs may all name the same one.
+import { SHOTS, REQUIRED_SHOT, copy as shotCopy } from '../../data/shots.js';
+import { PRODUCT_QUESTIONS, copy as attrCopy } from '../../data/attributes.js';
+import { MAX_BATCH_FILES, MAX_FILE_BYTES } from '../../lib/uploads.js';
+import ShotDiagram from './ShotDiagram.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const k = shotCopy(lang);
+const a = attrCopy(lang);
+
+// The handful of labels shots.js does not own, because they are about THIS
+// control rather than about the photographs. Same arrangement as
+// StylePicker.astro: a component's own markup strings live with the markup.
+const COPY = {
+  en: {
+    folder: 'Choose a folder instead',
+    folderHint: 'One folder per product. We read the folder name as the product.',
+    off: 'Files cannot be taken at the moment. Carry on — we will ask for them by email, and nothing about your order depends on this step.',
+    guideH: 'What we ask for, and what each one is for',
+  },
+  nl: {
+    folder: 'Of kies een map',
+    folderHint: 'Eén map per product. We lezen de mapnaam als het product.',
+    off: 'Bestanden kunnen op dit moment niet worden aangenomen. Ga gerust verder — we vragen ze per e-mail op, en je bestelling hangt niet van deze stap af.',
+    guideH: 'Wat we vragen, en waar elke foto voor is',
+  },
+};
+const t = COPY[lang];
+
+const mb = Math.round(MAX_FILE_BYTES / (1024 * 1024));
+const hint = lang === 'nl'
+  ? `JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF · max ${mb} MB per stuk · ${MAX_BATCH_FILES} bestanden per bestelling`
+  : `JPG, PNG, WebP, AVIF, HEIC, GIF or TIFF · up to ${mb} MB each · ${MAX_BATCH_FILES} files per order`;
+---
+
+<div class="pu">
+  {/* ── THE GUIDE, ONCE ────────────────────────────────────────────────────
+      Printed here and nowhere else. See the header: a slot inside a card is a
+      drawing and a word, and this is the page that gives the drawing meaning. */}
+  <section class="pu-guide" aria-labelledby="pu-guide-h">
+    <h3 class="pu-guide-h" id="pu-guide-h">{t.guideH}</h3>
+    <p class="pu-lead">{k.lead}</p>
+    <ul class="pu-guide-list">
+      {SHOTS.map((s) => (
+        <li class="pu-guide-item">
+          <span class="pu-guide-dia"><ShotDiagram shot={s.id} /></span>
+          <div class="pu-guide-body">
+            <h4 class="pu-guide-name">
+              {s.name[lang]}
+              <span class:list={['pu-tag', s.required && 'is-req']}>{s.required ? k.required : k.optional}</span>
+            </h4>
+            <p class="pu-guide-how">{s.how[lang]}</p>
+            <p class="pu-guide-buys">{s.buys[lang]}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+    <p class="pu-quality">{k.quality}</p>
+  </section>
+
+  {/* ── THE SECOND HALF OF THE GUIDE, ALSO ONCE ─────────────────────────────
+      The same shape as the block above and for the same reason: a name, an
+      optional mark, and the one sentence that says what answering buys. Every
+      card's control points here with aria-describedby, so the explanation is
+      read once and referenced twenty-five times instead of printed
+      twenty-five times.
+
+      Inside .pu-live because the question lives on generated cards: with
+      JavaScript off there are no cards, and a guide to a field that is not on
+      the page is the worst kind of text wall — one that cannot even be acted
+      on. */}
+  <section class="pu-guide pu-about-guide" aria-labelledby="pu-about-h">
+    <h3 class="pu-guide-h" id="pu-about-h">{a.aboutH}</h3>
+    <p class="pu-lead">{a.aboutLead}</p>
+    <ul class="pu-about-list">
+      {PRODUCT_QUESTIONS.map((qn) => (
+        <li class="pu-about-item">
+          <div class="pu-guide-body">
+            <h4 class="pu-guide-name">
+              {qn.name[lang]}
+              <span class="pu-tag">{a.optional}</span>
+            </h4>
+            <p class="pu-guide-buys" id={`pu-q-${qn.id}-buys`}>
+              <span class="pu-buys-lede">{a.whatItBuys}</span>{qn.buys[lang]}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── THE LIVE UPLOADER ──────────────────────────────────────────────────
+      Two ways in and both first-class: drop the lot, or fill them in one at a
+      time. Neither is the fallback for the other — a customer with an export
+      folder and a customer photographing on a phone are the same customer on
+      two different days. */}
+  <div class="pu-live">
+    <section class="pu-bulk" aria-labelledby="pu-bulk-h">
+      <h3 class="pu-sub-h" id="pu-bulk-h">{k.bulkH}</h3>
+      <p class="pu-sub-lead">{k.bulkLead}</p>
+      <label class="dropzone pu-drop">
+        <input type="file" data-pl-file multiple accept="image/*" class="pu-file-input" />
+        <span class="dz-main">{k.bulkCta}</span>
+        <span class="dz-hint">{hint}</span>
+      </label>
+      {/* A SECOND input, because webkitdirectory and multiple-files are not the
+          same picker: a browser that has directory upload opens a folder
+          chooser for one and a file chooser for the other, and there is no
+          attribute that offers both in one dialog. The button is hidden by
+          pipeline.js on a browser without the property rather than rendered
+          dead. Dropping a folder needs neither — that is webkitGetAsEntry. */}
+      <p class="pu-folder-row" data-pl-folder-row hidden>
+        <button type="button" class="pu-link" data-pl-folder>{t.folder}</button>
+        <span class="hint pu-folder-hint">{t.folderHint}</span>
+      </p>
+      <input type="file" data-pl-folder-input multiple accept="image/*" class="pu-file-input" tabindex="-1" aria-hidden="true" />
+    </section>
+
+    {/* Progress that is about products, never about files. "8 of 25 products
+        ready" is a sentence a customer can act on; "31 files uploaded" is a
+        receipt for work they cannot check. */}
+    <p class="pu-progress" data-pl-progress aria-live="polite"></p>
+
+    {/* ── THE TRAY ─────────────────────────────────────────────────────────
+        Files we could not attribute. It is hidden until there is one, because
+        an empty box labelled "not placed yet" is an accusation.
+
+        Drag onto a slot works, and it is NOT the only way: the menu on each
+        item lists every product against every shot, so this is reachable by
+        click, by keyboard and by a thumb on a phone — none of which can drag. */}
+    <section class="pu-tray" data-pl-tray hidden aria-labelledby="pu-tray-h">
+      <h3 class="pu-sub-h" id="pu-tray-h">{k.trayH}</h3>
+      <p class="pu-sub-lead">{k.trayLead}</p>
+      <ul class="pu-tray-list" data-pl-tray-list></ul>
+    </section>
+
+    <section class="pu-manual" aria-labelledby="pu-manual-h">
+      <h3 class="pu-sub-h" id="pu-manual-h">{k.manualH}</h3>
+      {/* ONCE, over the whole list — the same rule the guide follows. Twenty-five
+          cards each carrying a sentence about what to type in their name field
+          is twenty-five copies of one instruction. */}
+      <p class="pu-sub-lead">{k.productNameHint}</p>
+      {/* Built by pipeline.js from the count on step 1, and rebuilt when that
+          count changes. Empty in the markup on purpose: a card list rendered
+          here would be a guess at a number the visitor has already answered. */}
+      <ol class="pu-cards" data-pl-cards></ol>
+      <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-pl-add></button></p>
+    </section>
+
+    <p class="pl-note pu-off" data-pl-upload-note="off" hidden>{t.off}</p>
+  </div>
+
+  {/* ── WITHOUT JAVASCRIPT ─────────────────────────────────────────────────
+      The end of the honest path. No dead control, no input that posts nothing:
+      the order goes through and the photographs follow, which is what happens
+      anyway for every client who would rather send them later. */}
+  <div class="pu-later">
+    <h3 class="pu-sub-h">{k.laterH}</h3>
+    <p class="pu-sub-lead">{k.laterLead}</p>
+  </div>
+
+  {/* The four drawings, once each, for pipeline.js to clone into generated
+      slots. A <template> is inert — nothing here paints, nothing is announced,
+      and the SVG keeps ShotDiagram.astro's own scoped styling because the
+      scope is an attribute on the element and cloneNode copies attributes. */}
+  {SHOTS.map((s) => <template data-pl-dia={s.id}><ShotDiagram shot={s.id} /></template>)}
+
+  {/* One <datalist> per question that has examples, shared by every card's
+      input through `list="pu-dl-<id>"`. Suggestions, never a closed list —
+      attributes.js says so on the `examples` key and a datalist is the only
+      native control that suggests without refusing. */}
+  {PRODUCT_QUESTIONS.filter((qn) => qn.examples).map((qn) => (
+    <datalist id={`pu-dl-${qn.id}`}>
+      {qn.examples[lang].map((x) => <option value={x}></option>)}
+    </datalist>
+  ))}
+</div>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Step 2 — the per-product uploader.
+
+     SAME TWO RULES AS OrderFlow.astro'S SHEET, for the same reasons, and this
+     block is unreadable without them:
+
+     · Astro scopes every selector here to this component. The cards, the slots
+       and the tray rows are built by pipeline.js with createElement and never
+       receive the scope attribute, so every rule for a generated element is a
+       scoped ancestor with a :global() descendant — `.pu-cards :global(.pu-card)`.
+     · .pl-form.is-live is the live/no-JS switch. Without it the uploader is not
+       shown at all and .pu-later is; with it, the opposite. A control that
+       silently does nothing is worse than a control that is not there.
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* The UA's own `[hidden] { display: none }` sits in the user-agent origin,
+     where it loses to ANY author rule — and several rules below set display on
+     an element pipeline.js hides. OrderFlow.astro declares the same pair for
+     the same reason; it cannot cover this component, because its copy is scoped
+     to ITS hash and these elements carry this one's. */
+  [hidden] { display: none !important; }
+  .pu :global([hidden]) { display: none !important; }
+
+  /* global.css puts clamp(4.5rem, 9vw, 9rem) of padding on every <section>,
+     which at 1440px is 130px above AND below each of the four in here — half a
+     screen of nothing between the guide and the dropzone. These are sections
+     because they are sections (each has its own heading and is labelled by it),
+     not because they are page bands. OrderFlow.astro does the same thing to
+     .pl-step one line into its own sheet, for the same reason.
+
+     First, so the two that declare a padding of their own still win. */
+  .pu-guide, .pu-bulk, .pu-tray, .pu-manual { padding-block: 0; }
+
+  .pu-live { display: none; }
+  :global(.pl-form.is-live) .pu-live { display: block; }
+  :global(.pl-form.is-live) .pu-later { display: none; }
+
+  /* .dropzone, .dropzone:hover, .dropzone:focus-within and .dropzone.is-dragover
+     are all in global.css — including the drag state, which is why nothing here
+     invents one. These two are the labels inside it, and they are declared here
+     rather than inherited from OrderFlow.astro's sheet for the scoping reason
+     above. */
+  .dz-main { display: block; color: var(--ink); font-weight: 500; }
+  .dz-hint { display: block; margin-top: .35rem; font-size: .85rem; color: var(--ink-3); }
+
+  /* ── The guide ────────────────────────────────────────────────────────────
+     Four items, each a drawing and two sentences: what to photograph, and what
+     skipping it costs. The second sentence is the one that earns its place —
+     "recommended" with no reason attached is nagging, and a customer who knows
+     what a missing back shot costs can make that trade themselves. */
+  .pu-guide {
+    margin-top: 1.2rem;
+    padding: clamp(1rem, 2.6vw, 1.6rem);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+  }
+  .pu-guide-h {
+    font-size: .72rem; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .pu-lead { margin-top: .5rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; max-width: 64ch; }
+
+  .pu-guide-list {
+    list-style: none;
+    margin: 1.2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem 1.6rem;
+    /* Two by two at the form's 880px measure, one column on a phone. Four
+       across fits arithmetically and reads badly: `buys` is a sentence, and a
+       sentence in a 200px column is eight lines of two words. */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+  .pu-guide-item {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: .8rem;
+    padding-top: .9rem;
+    border-top: 1px solid var(--line);
+  }
+  .pu-guide-dia { display: block; width: 46px; height: 46px; color: var(--ink-2); }
+  .pu-guide-name {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
+    font-size: 1rem; line-height: 1.2;
+  }
+  .pu-guide-how { margin-top: .35rem; font-size: .86rem; color: var(--ink-2); line-height: 1.5; }
+  .pu-guide-buys { margin-top: .35rem; font-size: .8rem; color: var(--ink-3); line-height: 1.5; }
+
+  /* A mark, so --r-sm. The required one is the only thing in the guide that is
+     a rule rather than a recommendation, and it is the only thing coloured. */
+  .pu-tag {
+    padding: .12rem .4rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    font-size: .64rem; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .pu-tag.is-req { border-color: var(--signal); color: var(--signal-ink); background: var(--paper-2); }
+
+  .pu-quality { margin-top: 1.1rem; font-size: .82rem; color: var(--ink-3); line-height: 1.55; max-width: 70ch; }
+
+  /* ── The second guide: what the product is made of ────────────────────────
+     Only shown on the live form. See the note in the markup: without JS there
+     are no cards, so there is no field for this to explain. */
+  .pu-about-guide { display: none; }
+  :global(.pl-form.is-live) .pu-about-guide { display: block; }
+  /* ITS OWN LIST, NOT .pu-guide-list, and that is a scar. These items have no
+     drawing to sit beside, so they were given .pu-guide-item with the gutter
+     column overridden — and the ≤560px media query further down redeclares
+     that gutter at equal specificity and later in the sheet, so on a phone
+     every paragraph was placed back into a 38px column and wrapped one word
+     per line. The block was 2,365px tall. A shared class that has to be
+     un-declared in two places is not a shared class. */
+  .pu-about-list {
+    list-style: none;
+    margin: 1.1rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: .85rem 1.6rem;
+    /* auto-fit at 250px, which today means one full-width item because there
+       is one question. The track sizing is kept measured rather than replaced
+       with a single column: the form's 880px measure minus this block's own
+       padding leaves 830px, so three tracks plus two 1.6rem gaps need
+       3×250 + 51 = 801 and still fit if a second or third question is ever
+       added back in attributes.js. At 260 the third track missed by half a
+       pixel, which is why it is not 260. */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+  .pu-about-item {
+    min-width: 0;
+    /* The measure guard for the one-question case: a single auto-fit track is
+       830px wide, and a 130-character line is not a line anyone reads. With
+       two or three items the track is already under this, so it does nothing
+       there. */
+    max-width: 70ch;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+  }
+  /* The label attributes.js writes for the `buys` sentence, inline so it costs
+     a phrase rather than a line. The dash is punctuation, not words — it is in
+     CSS because it is the same mark in both languages. */
+  .pu-buys-lede { font-weight: 700; color: var(--ink-2); }
+  .pu-buys-lede::after { content: ' — '; font-weight: 400; }
+
+  /* ── The two ways in ──────────────────────────────────────────────────────*/
+  .pu-bulk, .pu-manual, .pu-tray { margin-top: clamp(1.6rem, 3.4vw, 2.4rem); }
+  .pu-sub-h { font-size: 1.05rem; line-height: 1.3; }
+  .pu-sub-lead { margin-top: .45rem; font-size: .9rem; color: var(--ink-3); line-height: 1.6; max-width: 66ch; }
+  .pu-drop { margin-top: .9rem; border-radius: var(--r-md); }
+  .pu-file-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+  .pu-folder-row { margin-top: .7rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .7rem; }
+  .pu-folder-hint { margin: 0; }
+  .pu-link {
+    background: none; border: 0; padding: 0;
+    font: inherit; font-size: .86rem;
+    color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px;
+    cursor: pointer; border-radius: var(--r-sm);
+  }
+  .pu-link:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+
+  /* ── Progress ─────────────────────────────────────────────────────────────
+     One line, always about products. It is a live region, so it is deliberately
+     short: a screen reader re-reads the whole thing on every change. */
+  .pu-progress {
+    margin-top: clamp(1.4rem, 3vw, 2rem);
+    padding: .7rem .95rem;
+    border: 1px solid var(--signal);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    color: var(--signal-ink);
+    font-size: .9rem;
+    line-height: 1.5;
+  }
+  .pu-progress:empty { display: none; }
+
+  .pu-add-row { margin-top: 1rem; }
+
+  /* Shown once, when the bucket refuses everything. Same object as
+     OrderFlow.astro's .pl-note — declared here because that one is scoped to
+     that component and this element is not in it. */
+  .pu-off {
+    margin: 1.2rem 0 0;
+    padding: 1.05rem 1.25rem;
+    border: 1px solid var(--warn);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    color: var(--warn-ink);
+    font-size: .95rem;
+    line-height: 1.55;
+    max-width: 78ch;
+  }
+
+  /* ── The no-JS ending ─────────────────────────────────────────────────────*/
+  .pu-later {
+    margin-top: clamp(1.6rem, 3.4vw, 2.4rem);
+    padding: clamp(1rem, 2.6vw, 1.5rem);
+    border: 1px solid var(--signal);
+    border-radius: var(--r-lg);
+    background: var(--paper-2);
+  }
+  .pu-later .pu-sub-h { color: var(--signal-ink); }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     GENERATED: the cards. Everything below is :global() under a scoped
+     ancestor. See the note at the top of this sheet.
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  .pu-cards { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .7rem; }
+
+  .pu-cards :global(.pu-card) {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    padding: .8rem clamp(.8rem, 2vw, 1.1rem) 1rem;
+  }
+  /* THE COLLAPSE. A card whose front photo is in has nothing left that needs
+     asking, so it folds to one row — which is what makes a 25-product list
+     scannable rather than a mile of identical boxes. It is not locked: the
+     head is a disclosure, and the three optional shots are one tap away for as
+     long as the customer wants them. */
+  .pu-cards :global(.pu-card.is-collapsed) { padding-bottom: .8rem; }
+  .pu-cards :global(.pu-card.is-collapsed .pu-slots) { display: none; }
+  /* The question folds with the four slots, because they are the same
+     disclosure: a collapsed card is one row, open or nothing. Twenty-five
+     cards each showing a text field is the same mile of boxes the collapse
+     exists to prevent. */
+  .pu-cards :global(.pu-card.is-collapsed .pu-about) { display: none; }
+  .pu-cards :global(.pu-card.is-ready) { border-color: var(--signal); }
+
+  .pu-cards :global(.pu-head) {
+    display: grid;
+    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .5rem .7rem;
+  }
+  .pu-cards :global(.pu-n) {
+    font-family: var(--font-display); font-weight: 800; font-size: .82rem;
+    color: var(--ink-3); font-variant-numeric: tabular-nums;
+  }
+  /* .input is a global primitive; this only trims it to a head-row height so
+     the row reads as one object rather than a box with a number beside it. */
+  .pu-cards :global(.pu-name) { padding: .5rem .7rem; font-size: .92rem; border-radius: var(--r-md); }
+
+  .pu-cards :global(.pu-state) {
+    grid-column: 2 / -1;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+    font-size: .76rem; color: var(--ink-3);
+  }
+  .pu-cards :global(.pu-card.is-ready .pu-state) { color: var(--signal-ink); }
+
+  /* The disclosure. A real button with aria-expanded, and a tap target that
+     clears 44px on a phone without drawing a second box around itself. */
+  .pu-cards :global(.pu-toggle) {
+    grid-row: 1; grid-column: 3;
+    min-width: 44px; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    color: var(--ink-2); cursor: pointer;
+    font: inherit; font-size: .8rem;
+    transition: border-color var(--dur-1) var(--ease);
+  }
+  .pu-cards :global(.pu-toggle:hover) { border-color: var(--accent-line); }
+  .pu-cards :global(.pu-toggle:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pu-cards :global(.pu-toggle > svg) { width: 14px; height: 14px; transition: transform var(--dur-1) var(--ease); }
+  .pu-cards :global(.pu-card:not(.is-collapsed) .pu-toggle > svg) { transform: rotate(180deg); }
+
+  /* ── The four slots ───────────────────────────────────────────────────────
+     Four across on a desktop, two across on a phone. Two rather than four is
+     the whole mobile decision: at 390px four columns is a 72px square, which
+     clears the 44px tap minimum and then has nowhere to put a word. */
+  .pu-cards :global(.pu-slots) {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .5rem;
+    margin-top: .8rem;
+  }
+  .pu-cards :global(.pu-slot) {
+    display: flex; flex-direction: column; gap: .3rem;
+    min-width: 0;
+  }
+  .pu-cards :global(.pu-slot-btn) {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .3rem;
+    width: 100%; min-height: 96px;
+    padding: .6rem .4rem;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--paper-2);
+    color: var(--ink-3);
+    font: inherit;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .pu-cards :global(.pu-slot-btn:hover) { border-color: var(--accent-line); background: var(--accent-soft); color: var(--ink-2); }
+  .pu-cards :global(.pu-slot-btn:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pu-cards :global(.pu-slot.is-over .pu-slot-btn) { border-color: var(--accent); background: var(--accent-soft); }
+  .pu-cards :global(.pu-slot-dia) { display: block; width: 34px; height: 34px; }
+  .pu-cards :global(.pu-slot-name) { font-size: .74rem; font-weight: 600; color: var(--ink-2); text-align: center; }
+  .pu-cards :global(.pu-slot-req) {
+    position: absolute; top: 4px; right: 5px;
+    font-size: .58rem; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--signal-ink);
+  }
+
+  /* FILLED. The photograph fills the box and the drawing goes — the drawing was
+     the instruction and the instruction has been followed.
+
+     .is-thumb, NOT the state, is what swaps them, and the difference matters on
+     a phone: a HEIC straight off an iPhone is a file this browser cannot decode,
+     so the <img> never paints. The slot is still filled, still uploading and
+     still correct — it just has no picture to show, and in that case the drawing
+     has to stay. pipeline.js sets the class from the image's own load/error, so
+     what is on screen is what the browser actually managed to render. */
+  .pu-cards :global(.pu-slot-img) {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: calc(var(--r-md) - 1px);
+  }
+  .pu-cards :global(.pu-slot[data-state="filled"] .pu-slot-btn),
+  .pu-cards :global(.pu-slot[data-state="sending"] .pu-slot-btn) { border-style: solid; border-color: var(--line-strong); }
+  .pu-cards :global(.pu-slot.is-thumb .pu-slot-name) {
+    position: relative; z-index: 1;
+    align-self: stretch; margin-top: auto;
+    padding: .12rem .3rem;
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .pu-cards :global(.pu-slot.is-thumb .pu-slot-req) { display: none; }
+  /* Offscreen rather than display:none: one per slot, and a hidden input is
+     what the slot button, the Replace action and the tray's menu all end up
+     clicking. */
+  .pu-cards :global(.pu-slot-input) {
+    position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px;
+  }
+  .pu-cards :global(.pu-slot[data-state="skipped"] .pu-slot-btn) { opacity: .5; border-style: dotted; }
+  .pu-cards :global(.pu-slot[data-state="failed"] .pu-slot-btn) { border-color: var(--warn); border-style: solid; }
+
+  .pu-cards :global(.pu-slot-bar) { display: block; height: 2px; background: var(--line); border-radius: var(--r-sm); overflow: hidden; }
+  .pu-cards :global(.pu-slot-bar > i) {
+    display: block; height: 100%; width: 100%;
+    transform: scaleX(0); transform-origin: left;
+    background: var(--accent);
+    transition: transform var(--dur-1) var(--ease);
+  }
+  .pu-cards :global(.pu-slot[data-state="filled"] .pu-slot-bar > i) { background: var(--signal); }
+  .pu-cards :global(.pu-slot-msg) { font-size: .7rem; color: var(--ink-3); line-height: 1.35; overflow-wrap: anywhere; }
+  .pu-cards :global(.pu-slot[data-state="failed"] .pu-slot-msg) { color: var(--warn-ink); }
+
+  .pu-cards :global(.pu-acts) { display: flex; flex-wrap: wrap; gap: .1rem .6rem; }
+  .pu-cards :global(.pu-act) {
+    background: none; border: 0; padding: .2rem 0;
+    font: inherit; font-size: .72rem;
+    color: var(--accent-bright);
+    text-decoration: underline; text-underline-offset: 3px;
+    cursor: pointer; border-radius: var(--r-sm);
+  }
+  .pu-cards :global(.pu-act:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+  /* ── GENERATED: the product question ──────────────────────────────────────
+     LABEL AND CONTROL, AND NOTHING ELSE. The `buys` sentence is in
+     .pu-about-guide at the top of the step, once, and every control on every
+     card reaches it with aria-describedby (and repeats it in `title` for a
+     pointer). One explanation printed on twenty-five cards is twenty-five
+     paragraphs; one id referenced from twenty-five cards is one.
+
+     Still a grid rather than a block: auto-fit gives the single field the full
+     card width today and lays a second one beside it without a rewrite. 190px
+     is where the material placeholder stops wrapping mid-word. */
+  .pu-cards :global(.pu-about) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: .55rem .7rem;
+    margin-top: .85rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--line);
+  }
+  .pu-cards :global(.pu-q) { display: flex; flex-direction: column; gap: .28rem; min-width: 0; }
+  .pu-cards :global(.pu-q-label) {
+    font-size: .74rem; font-weight: 600; line-height: 1.3;
+    color: var(--ink-2);
+  }
+  /* .input and .select are global primitives and both already clear 40px; this
+     only trims them to the card's scale, the way .pu-name trims .input. The
+     min-height is restated so a future padding edit cannot quietly drop a
+     control under the tap minimum. */
+  .pu-cards :global(.pu-q-field) {
+    padding: .5rem .7rem;
+    font-size: .88rem;
+    min-height: 40px;
+    border-radius: var(--r-md);
+  }
+  /* The gap global.css leaves for the caret. The shorthand above would drop it,
+     which is the same trap .select itself has to re-state its way out of. */
+  .pu-cards :global(select.pu-q-field) { padding-right: 2.4rem; }
+
+  /* ── GENERATED: copy down ─────────────────────────────────────────────────
+     ON THE FIRST CARD ONLY, and hidden while it is the only card. A brand
+     ordering twenty-five t-shirts in one fabric names that fabric once, not
+     twenty-five times — that is the whole reason attributes.js carries
+     `sameForAll`. It fills empties and never overwrites: a customer who has
+     already typed something into product 9 has said something more specific
+     than this button can, and losing that would be worse than not offering it. */
+  .pu-cards :global(.pu-copy) {
+    grid-column: 1 / -1;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .7rem;
+    margin-top: .15rem;
+  }
+  .pu-cards :global(.pu-copy-label) { font-size: .78rem; font-weight: 600; color: var(--ink-2); }
+  .pu-cards :global(.pu-copy-btn) {
+    min-height: 40px;
+    padding: .45rem .85rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit; font-size: .82rem;
+    cursor: pointer;
+  }
+  .pu-cards :global(.pu-copy-btn:hover:not([disabled])) { border-color: var(--accent-line); background: var(--accent-soft); }
+  /* Nothing to copy yet. Visible and explained by the hint beside it rather
+     than hidden — a control that appears as you type is a control nobody
+     learns is there. */
+  .pu-cards :global(.pu-copy-btn[disabled]) { opacity: .5; cursor: default; }
+  .pu-cards :global(.pu-copy-btn:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pu-cards :global(.pu-copy-hint) { flex: 1 1 14rem; font-size: .74rem; color: var(--ink-3); line-height: 1.45; }
+  /* The live region. Empty until the button is pressed, and it takes no room
+     while it is empty — an announcement slot reserving a line is a line of
+     nothing on every card list that never uses it. */
+  .pu-cards :global(.pu-copy-said) { flex: 1 1 100%; font-size: .76rem; color: var(--signal-ink); line-height: 1.45; }
+  .pu-cards :global(.pu-copy-said:empty) { display: none; }
+
+  /* ── GENERATED: the tray ──────────────────────────────────────────────────*/
+  .pu-tray {
+    padding: clamp(.9rem, 2.4vw, 1.3rem);
+    border: 1px solid var(--warn);
+    border-radius: var(--r-lg);
+    background: var(--paper-2);
+  }
+  .pu-tray .pu-sub-h { color: var(--warn-ink); }
+  .pu-tray-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .6rem; }
+
+  .pu-tray-list :global(.pu-tray-item) {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: .7rem;
+    align-items: center;
+    padding: .6rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+  .pu-tray-list :global(.pu-tray-item.is-dragging) { opacity: .5; }
+  .pu-tray-list :global(.pu-tray-thumb) {
+    width: 56px; height: 56px;
+    object-fit: cover;
+    border-radius: var(--r-sm);
+    background: var(--paper-2);
+  }
+  .pu-tray-list :global(.pu-tray-name) {
+    display: block;
+    font-size: .84rem; color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pu-tray-list :global(.pu-tray-row) { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .4rem; }
+  /* .select is a global primitive; trimmed the same way .pu-name trims .input,
+     and allowed to shrink because 25 products × 4 shots is a long option list
+     in a narrow row. */
+  .pu-tray-list :global(.pu-tray-pick) {
+    flex: 1 1 11rem; min-width: 0;
+    padding: .45rem .6rem; font-size: .82rem;
+    border-radius: var(--r-md);
+  }
+  .pu-tray-list :global(.pu-tray-go) {
+    flex: 0 0 auto;
+    padding: .45rem .8rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit; font-size: .82rem;
+    cursor: pointer;
+    min-height: 38px;
+  }
+  .pu-tray-list :global(.pu-tray-go:hover) { border-color: var(--accent-line); background: var(--accent-soft); }
+  .pu-tray-list :global(.pu-tray-go:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pu-tray-list :global(.pu-act) {
+    background: none; border: 0; padding: .2rem 0;
+    font: inherit; font-size: .74rem;
+    color: var(--accent-bright);
+    text-decoration: underline; text-underline-offset: 3px;
+    cursor: pointer; border-radius: var(--r-sm);
+  }
+
+  /* ── Breakpoints ──────────────────────────────────────────────────────────*/
+  @media (max-width: 560px) {
+    .pu-guide-item { grid-template-columns: 38px 1fr; gap: .7rem; }
+    .pu-guide-dia { width: 38px; height: 38px; }
+    /* Two across, not four. See the note on .pu-slots. */
+    .pu-cards :global(.pu-slots) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pu-cards :global(.pu-slot-btn) { min-height: 108px; }
+    .pu-cards :global(.pu-head) { grid-template-columns: 1.7rem minmax(0, 1fr) auto; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pu-cards :global(.pu-toggle),
+    .pu-cards :global(.pu-toggle > svg),
+    .pu-cards :global(.pu-slot-btn) { transition: none; }
+    /* The slot's progress bar keeps its transition for the reason
+       OrderFlow.astro's sheet gives: it is the only signal that a 20 MB
+       photograph is moving, so it is informational rather than decorative. */
+  }
+</style>

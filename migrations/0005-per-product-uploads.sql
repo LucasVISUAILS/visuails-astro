@@ -1,0 +1,71 @@
+-- VISUAILS — migration 0005. Per-product reference photos on /start step 2.
+--
+-- Lucas, August 2026, verbatim: "Ik wil het per product uploaden mogelijk maken
+-- met een soort visuele handleiding erbij… Alleen voorkant is sowieso
+-- verplicht, de andere kan de klant opzich skippen." Step 2 was one dropzone
+-- with `multiple`: a customer ordering 25 products dropped 100 files into it and
+-- nothing recorded which file was which product, or which of the four angles.
+-- The studio sorted it out afterwards by hand.
+--
+-- The uploader now asks per product and per shot, /api/upload stores both in the
+-- R2 object's customMetadata, and /api/order copies them onto the files row it
+-- already writes for every staged object. These are the two columns that row
+-- did not have.
+--
+-- Brings an EXISTING database up to the shape schema.sql now describes. A fresh
+-- database does not need this file — load schema.sql instead. See 0001 for why
+-- the two cannot be the same statements.
+--
+-- Run it with:
+--   wrangler d1 execute visuails --local  --file=./migrations/0005-per-product-uploads.sql
+--   wrangler d1 execute visuails --remote --file=./migrations/0005-per-product-uploads.sql
+--
+-- RUNNING IT TWICE IS SAFE, AND IT WILL LOOK LIKE A FAILURE — same as 0001
+-- through 0004. SQLite has no ADD COLUMN IF NOT EXISTS, so a second run stops at
+-- the first ALTER TABLE and reports
+--
+--   duplicate column name: product_key
+--
+-- which is the migration telling you it has already been applied.
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- TWO COLUMNS ON files, AND NOT A ROW IN details_json.
+--
+-- "Which product is this photograph of" is a fact about ONE FILE. details_json
+-- already carries the order's own answers — the count, the message, the batch
+-- id, and now the customer's name for each product (`product_p1`, `product_p2`,
+-- …, posted as ordinary form fields by the uploader's own name inputs). Putting
+-- a per-file mapping in there as well would mean the studio has two places to
+-- look and a chance for them to disagree, which is the exact failure this whole
+-- change exists to end.
+--
+-- So the mapping lives here, once, on the row that already names the file. The
+-- LABEL lives in details_json, once, on the record that already holds what the
+-- customer typed. Joining them is `product_key` — 'p3' on four files rows,
+-- 'product_p3' in details_json — and neither is a copy of the other.
+--
+-- Both columns are NULLABLE and both stay NULL on a delivery row. Every file
+-- row written before today has no placement and never will: the photographs are
+-- real, the sorting was done by a person, and a backfill would be inventing it.
+-- NULL is the honest value for "nobody said", and every reader treats it that
+-- way rather than defaulting to the front shot.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- The stable key the uploader minted for one product card — 'p1'…'p30'. NOT the
+-- customer's name for the product: a name can be retyped after the photographs
+-- are already in R2, and a key that changes under an object's customMetadata is
+-- a mapping that quietly rots. src/lib/uploads.js's safeProduct() is what
+-- flattens whatever arrives; the cap is MAX_PRODUCT_KEY (48).
+ALTER TABLE files ADD COLUMN product_key TEXT;
+
+-- One of the four ids in src/data/shots.js — 'front' | 'back' | 'detail' |
+-- 'worn' — and nothing else: isShotId() refuses the request at /api/upload and
+-- listBatch() re-checks on the way back out. That module's header says renaming
+-- one of these is a migration rather than a copy edit, and this column is why.
+ALTER TABLE files ADD COLUMN shot TEXT;
+
+-- The studio's question is "show me everything for this order, grouped by
+-- product", which is idx_files_order plus a sort. The one query this index
+-- earns is the other direction — every photograph of one product across an
+-- order — and it is cheap because it hangs off the existing order_id index.
+CREATE INDEX IF NOT EXISTS idx_files_product ON files(order_id, product_key);

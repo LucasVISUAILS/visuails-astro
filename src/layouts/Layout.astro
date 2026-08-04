@@ -104,6 +104,15 @@ const CF_ANALYTICS_TOKEN = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN ?? '';
 const path = Astro.url.pathname;
 const lang = getLangFromPath(path);
 const t = useTranslations(lang);
+// The two WhatsApp prefills in this file were hardcoded English on all 84 pages
+// — so a Dutch visitor's chat opened in a language they had not chosen — and
+// the launcher's one still said "a drop", the word the pricing rewrite retired.
+// Every other WhatsApp link on the site is already per-locale; these two were
+// simply missed. Interpolated rather than routed through ui.js because the
+// string is a URL parameter, not chrome copy.
+const waText = lang === 'nl'
+  ? 'Hoi VISUAILS, ik wil graag beelden laten maken.'
+  : "Hi VISUAILS, I'd like to talk about some visuals.";
 const lp = (p: string) => localizedPath(lang, p);   // localize a base path for this language
 const base = stripLang(path);                        // language-neutral path (for switcher + hreflang)
 
@@ -748,7 +757,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <p>{t('foot_tagline')}</p>
         </div>
         <div class="footer-col">
-          <h5>{t('foot_drops')}</h5>
+          <h2 class="footer-h">{t('foot_drops')}</h2>
           <ul>
             {drops.map((s) => <li><a href={lp(s.href)}>{s.title}</a></li>)}
             <li><a href={lp(brandModelHref)}>{t('foot_brandmodel')}</a></li>
@@ -762,7 +771,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           </ul>
         </div>
         <div class="footer-col">
-          <h5>{t('foot_company')}</h5>
+          <h2 class="footer-h">{t('foot_company')}</h2>
           <ul>
             <li><a href={lp('/about')}>{t('foot_about')}</a></li>
             <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
@@ -780,7 +789,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           </ul>
         </div>
         <div class="footer-col">
-          <h5>{t('foot_touch')}</h5>
+          <h2 class="footer-h">{t('foot_touch')}</h2>
           <ul>
             <li><a href="mailto:hello@visuails.com">hello@visuails.com</a></li>
             <li><a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a></li>
@@ -1076,7 +1085,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Language switcher (EN · NL · DE). Desktop version lives in .nav-actions;
      a second copy sits inside the mobile drawer (.mobile-lang). */
   .lang-switch { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); padding: 3px; border-radius: var(--r-md); }
-  .lang-switch .ls { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
+  /* 36x27 measured on all 84 pages — under the 40px minimum in both axes, on
+     a control people hit while holding a phone. The visible chip keeps its
+     size; the hit area grows into the padding, which is what min-height and
+     the vertical padding do here. */
+  .lang-switch .ls { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 40px; min-height: 40px; font-size: .74rem; font-weight: 700; letter-spacing: .03em; color: var(--ink-3); padding: 4px 9px; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .lang-switch .ls:hover { color: var(--ink); }
   /* The active chip reads --accent-soft, which is a MIST TINT on the paper
      side. Inside the dark-hero header scope --ink flips to paper-on-dark and
@@ -1118,7 +1131,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-cta .btn { font-size: 1.05rem; }
   .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
   .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
-  .mobile-account-link { display: block; margin-top: .9rem; text-align: center; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
+  .mobile-account-link { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: .9rem; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
   .mobile-close { position: fixed; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
   /* The signed-in pair goes with the link it replaces — the drawer carries its
      own copy (.mobile-account-in). :not([hidden]) is repeated here for the same
@@ -1163,7 +1176,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   @media (max-width: 860px) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; } }
   @media (max-width: 520px) { .footer-grid { grid-template-columns: 1fr; } }
   .footer-brand p { color: var(--ink-3); font-size: .9rem; margin-top: .8rem; max-width: 34ch; }
-  .footer-col h5 { font-family: var(--font-body); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 1rem; font-weight: 600; }
+  /* WAS h5, on every page, which made all 84 skip h2→h5 (and /404 skip h1→h5).
+     The styling never depended on the level — it is applied by class now, so
+     the heading level tells the truth and nothing moves a pixel. */
+  .footer-col .footer-h { font-family: var(--font-body); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 1rem; font-weight: 600; }
   .footer-col ul { display: flex; flex-direction: column; gap: .6rem; list-style: none; margin: 0; padding: 0; }
   .footer-col a { color: var(--ink-2); font-size: .92rem; }
   .footer-col a:hover { color: var(--ink); }

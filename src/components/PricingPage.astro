@@ -238,7 +238,7 @@ const COPY = {
 
     sampleH: 'Before any of it',
     sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${sample.unit}. It runs through the same pipeline as a paid order, so what comes back is what you would get.`,
-    sampleCta: `Request a test sample · ${sample.price} ${vatLabel('excl', 'en')}`,
+    sampleCta: `Request a test sample · ${sample.price}`,
 
     faqH: 'Pricing questions',
 
@@ -319,7 +319,13 @@ const COPY = {
 
     sampleH: 'Voordat je iets vastlegt',
     sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
-    sampleCta: `Vraag een proefvisual aan · ${sample.price} ${vatLabel('excl', 'nl')}`,
+    // NO VAT LABEL ON A BUTTON. A CTA is a label, not a price quotation, and
+    // the site's rule — every printed PRICE carries excl. VAT — is about the
+    // figures a customer compares, not about the word on a button. It also
+    // overflowed: the Dutch string ran to 363.6px in a 360px viewport. The
+    // €0,99 keeps its label in sampleBody just above, where it sits among
+    // other figures and the label means something.
+    sampleCta: `Vraag een proefvisual aan · ${sample.price}`,
 
     faqH: 'Vragen over prijzen',
 

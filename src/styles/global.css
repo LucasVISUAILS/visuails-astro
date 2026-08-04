@@ -1201,7 +1201,11 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   font-family: var(--font-body); font-weight: 700; font-size: .875rem;
-  min-height: 38px; padding: 0 1.15rem;
+  /* 40, not 38. Every .btn on the site measured 38px tall — two pixels under
+     the minimum touch target, everywhere, which an audit picks up on every
+     page and a thumb picks up on none of them individually. Two pixels is
+     free; being under the line on 84 pages is not. */
+  min-height: 40px; padding: 0 1.15rem;
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
   background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--r-md);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
@@ -1978,9 +1982,18 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
-/* Restores what `select { padding-right: 2.4rem }` above declares and the
-   shorthand two rules up silently reset — that is the gap the caret sits in. */
-.select { padding-right: 2.4rem; }
+/* Restores what the `select` rule further up declares and the `background:`
+   shorthand two rules up silently resets. The padding was already restored
+   here; the CARET WAS NOT, so every .select on the site rendered with a bare
+   2.4rem gap on the right and no arrow in it — the gap looked deliberate,
+   which is why it survived. `background` is a shorthand: setting it to a
+   colour clears background-image, and the arrow is a background-image. */
+.select {
+  padding-right: 2.4rem;
+  background-image: var(--select-caret);
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+}
 .select option { background: var(--surface); color: var(--ink); }
 .textarea { min-height: 120px; resize: vertical; }
 
