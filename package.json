@@ -18,7 +18,9 @@
     "test:admin": "node tests/admin.test.mjs",
     "test": "npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie",
     "test:signin": "node tests/account-signin.test.mjs",
-    "logo:pack": "node scripts/make-logo-pack.mjs"
+    "logo:pack": "node scripts/make-logo-pack.mjs",
+    "mail:assets": "node scripts/make-mail-assets.mjs",
+    "mail:render": "node scripts/mail-render.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

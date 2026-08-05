@@ -66,6 +66,8 @@ import {
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail } from '../../src/lib/mail.js';
+import { serviceLabel } from '../../src/data/services.js';
+import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
 import { quoteOrder, centsToMollieValue, paymentDescription, PAYABLE_SERVICES } from '../../src/lib/quote.js';
 
@@ -1297,16 +1299,25 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  * claimUpgradePrompt() owns whether the quarter was free. All that happens here
  * is placement, which is the one thing the copy cannot carry itself.
  */
-function customerEmail(lang, ref, service, name,
+export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null } = {}) {
   const nl = lang === 'nl';
   const hi = name ? `Hi ${esc(name)},` : 'Hi,';
   const attended = tier === 'attended';
   const dated = attended && window && window.start && window.end;
 
+  // THE REFERENCE IS NOT REPEATED HERE. It used to close this sentence, back
+  // when the mail opened straight into body copy and this was the first place it
+  // could appear. The letterhead template prints it under the headline now, two
+  // lines above — and a reference stated twice in three lines reads like a
+  // template that lost track of itself rather than like emphasis.
+  // serviceLabel(), not the raw column. This sentence used to print the slug —
+  // "we hebben je catalog-aanvraag ontvangen" — in the first message a paying
+  // customer gets. src/data/services.js has the words.
+  const svcName = serviceLabel(service, lang) || service;
   const received = nl
-    ? `Bedankt — we hebben je ${esc(service)}-aanvraag ontvangen. Je referentie is <strong>${esc(ref)}</strong>.`
-    : `Thanks — we've received your ${esc(service)} request. Your reference is <strong>${esc(ref)}</strong>.`;
+    ? `Bedankt — we hebben je aanvraag voor ${esc(svcName)} ontvangen.`
+    : `Thanks — we've received your ${esc(svcName)} request.`;
 
   let timing;
   if (dated) {
@@ -1347,7 +1358,9 @@ function customerEmail(lang, ref, service, name,
   // person checks the work; a price comparison must not be allowed to take that
   // position.
   const upgradeNote = upgrade
-    ? `<p style="margin:16px 0 0;padding-top:14px;border-top:1px solid #e6e6ee;color:#555;font-size:13px">${esc(upgrade)}</p>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0"><tr>
+         <td style="padding-top:14px;border-top:1px solid #E6E7EB;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#6B7078">${esc(upgrade)}</td>
+       </tr></table>`
     : '';
 
   // THE PORTAL LINK. After the timing and before the aftercare line, because it
@@ -1364,11 +1377,10 @@ function customerEmail(lang, ref, service, name,
   // The URL is printed as well as linked. Mail clients that strip anchors, and
   // people who read on a phone and continue on a desktop, both need the text.
   const portalNote = portal
-    ? (nl
-      ? `<p>Je order staat hier: <a href="${esc(portal)}">${esc(portal)}</a><br>
-         <span style="color:#666;font-size:13px">Deze link is de sleutel tot je order — iedereen die hem heeft, kan meekijken. Houd hem binnen je team.</span></p>`
-      : `<p>Your order lives here: <a href="${esc(portal)}">${esc(portal)}</a><br>
-         <span style="color:#666;font-size:13px">This link is the key to your order — anyone who has it can see it. Keep it inside your team.</span></p>`)
+    ? linkLine(portal, nl ? 'Volg je bestelling in je portaal' : 'Follow your order in your portal')
+      + note(nl
+        ? `Deze link is de sleutel tot je order — iedereen die hem heeft, kan meekijken. Houd hem binnen je team.<br><span style="color:#8A8F98">${esc(portal)}</span>`
+        : `This link is the key to your order — anyone who has it can see it. Keep it inside your team.<br><span style="color:#8A8F98">${esc(portal)}</span>`)
     : '';
 
   // THE AMOUNT AND THE LINK, in that order and never one without the other. A
@@ -1381,37 +1393,71 @@ function customerEmail(lang, ref, service, name,
   // that is what is actually charged to everyone right now: a valid EU business
   // number is settled as a reverse charge afterwards on the invoice, and a
   // customer who expected that needs to see it was not applied here.
+  // The figure keeps its own currency formatting per language — a Dutch reader
+  // gets 1.234,00 and an English one 1234.00 — because the two halves of the
+  // sentence ("€ x incl." / "€ y excl.") have to agree with each other, and the
+  // easiest way to get that wrong is to format them in two places.
+  // Intl, not toFixed().replace('.', ','). The old line produced "1234,20" for
+  // a four-figure order — the decimal comma was right and the thousands
+  // separator was simply absent, which in Dutch reads as a typo in the one
+  // number the customer is being asked to pay. formatDay() in this same file
+  // already reaches for Intl for exactly this reason.
+  const money = cents => `€ ${new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100)}`;
+
   const payBlock = (pay && quote)
-    ? (nl
-      ? `<p style="margin:18px 0 0;padding-top:16px;border-top:1px solid #e6e6ee">
-           <strong>Te betalen: &euro;${(quote.grossCents / 100).toFixed(2).replace('.', ',')}</strong>
-           <span style="color:#555"> (&euro;${(quote.netCents / 100).toFixed(2).replace('.', ',')} excl. btw + 21% btw)</span><br>
-           <a href="${esc(pay)}">Betaal je bestelling</a><br>
-           <span style="color:#666;font-size:13px">Heb je een geldig EU-btw-nummer buiten Nederland? Dan wordt de verlegging op je factuur rechtgezet.</span>
-         </p>`
-      : `<p style="margin:18px 0 0;padding-top:16px;border-top:1px solid #e6e6ee">
-           <strong>To pay: &euro;${(quote.grossCents / 100).toFixed(2)}</strong>
-           <span style="color:#555"> (&euro;${(quote.netCents / 100).toFixed(2)} excl. VAT + 21% VAT)</span><br>
-           <a href="${esc(pay)}">Pay for your order</a><br>
-           <span style="color:#666;font-size:13px">Have a valid EU VAT number outside the Netherlands? The reverse charge is settled on your invoice.</span>
-         </p>`)
+    ? payPanel({
+      label: nl ? 'Te betalen' : 'To pay',
+      amount: money(quote.grossCents),
+      sub: nl
+        ? `${money(quote.netCents)} excl. btw &middot; incl. 21% btw<br>Heb je een geldig EU-btw-nummer buiten Nederland? Dan wordt de verlegging op je factuur rechtgezet.`
+        : `${money(quote.netCents)} excl. VAT &middot; incl. 21% VAT<br>Have a valid EU VAT number outside the Netherlands? The reverse charge is settled on your invoice.`,
+      href: pay,
+      cta: nl ? 'Betaal je bestelling' : 'Pay for your order',
+    })
     : '';
 
-  return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
-    <p>${hi}</p>
-    <p>${received}</p>
-    <p>${timing}</p>
-    ${payBlock}
-    ${portalNote}
-    <p>${care}</p>
-    ${upgradeNote}
-        <p style="color:#666;font-size:13px">
-      ${nl
-        ? `Onze <a href="https://visuails.com${nl ? '/nl' : ''}/terms">algemene voorwaarden</a> en <a href="https://visuails.com${nl ? '/nl' : ''}/privacy">privacyverklaring</a>.`
-        : `Our <a href="https://visuails.com/terms">terms</a> and <a href="https://visuails.com/privacy">privacy policy</a>.`}
-    </p>
-    <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL · hello@visuails.com</p>
-  </div>`;
+  // THE SUMMARY TABLE carries only what the prose does not already say. The
+  // reserved window in particular stays out of it: `timing` names those dates in
+  // a sentence, under the date rule documented above, and a table row repeating
+  // them is a second place for a promise to be made — which is exactly the shape
+  // of mistake that rule exists to prevent.
+  // Only facts this function is already certain of. Nothing is invented for the
+  // sake of a fuller table: a tier is not given a display name here, because
+  // pricing.js does not have one — TIERS[].label is a scope ("Under 30
+  // products"), not a name, and printing it against a row headed "Tier" would
+  // read as a promise about size that nobody made.
+  const summary = rows([
+    [nl ? 'Dienst' : 'Service', esc(svcName)],
+    quote ? [nl ? 'Producten' : 'Products', String(quote.products)] : null,
+  ].filter(Boolean));
+
+  return shell({
+    lang,
+    // The inbox preview line. It names the reference rather than repeating the
+    // subject, because the two are printed next to each other and saying the
+    // same thing twice wastes the only two lines a closed message gets.
+    preheader: nl
+      ? `Referentie ${ref} — we hebben je aanvraag en houden je op de hoogte.`
+      : `Reference ${ref} — we have your request and will keep you posted.`,
+    body: [
+      h1(nl ? 'Je bestelling staat genoteerd' : 'Your order is in',
+        nl ? `Referentie ${esc(ref)}` : `Reference ${esc(ref)}`),
+      p(hi),
+      p(received),
+      summary,
+      p(timing, { top: summary ? 8 : 0 }),
+      payBlock,
+      payBlock ? '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>' : '',
+      portalNote,
+      p(care, { top: 20 }),
+      upgradeNote,
+      `<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>`,
+      spamNote(lang),
+    ].filter(Boolean).join(''),
+  });
 }
 
 /** A reserved date, written the way a person reads one. UTC, to match the gate. */
@@ -1428,20 +1474,22 @@ function formatDay(iso, lang) {
   }
 }
 
-function subscriberEmail(lang) {
+export function subscriberEmail(lang) {
   const url = 'https://visuails.com' + (lang === 'nl' ? '/nl/upload-guidelines' : '/upload-guidelines');
-  if (lang === 'nl') {
-    return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
-      <p>Hi,</p>
-      <p>Hier is de briefing-foto checklist — de vier hoeken, het licht en de achtergrond die een telefoonfoto tot een campagne maken:</p>
-      <p><a href="${url}">Bekijk de checklist →</a></p>
-      <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL</p>
-    </div>`;
-  }
-  return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
-    <p>Hi,</p>
-    <p>Here's the briefing-photo checklist — the four angles, lighting and background that turn a phone photo into a campaign:</p>
-    <p><a href="${url}">Read the checklist →</a></p>
-    <p style="color:#666;font-size:13px">VISUAILS · Enschede, NL</p>
-  </div>`;
+  const nl = lang === 'nl';
+  return shell({
+    lang,
+    preheader: nl
+      ? 'De vier hoeken, het licht en de achtergrond — in één pagina.'
+      : 'The four angles, the light and the background — on one page.',
+    body: [
+      h1(nl ? 'Je briefing-foto checklist' : 'Your briefing-photo checklist'),
+      p('Hi,'),
+      p(nl
+        ? 'Hier is de briefing-foto checklist — de vier hoeken, het licht en de achtergrond die een telefoonfoto tot een campagne maken.'
+        : "Here's the briefing-photo checklist — the four angles, lighting and background that turn a phone photo into a campaign."),
+      linkLine(url, nl ? 'Bekijk de checklist' : 'Read the checklist'),
+      spamNote(lang),
+    ].join(''),
+  });
 }

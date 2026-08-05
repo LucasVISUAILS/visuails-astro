@@ -51,6 +51,16 @@ const SESSION_COOKIE = 'vis_admin';
 
 /** orders.status, in the order the studio actually moves through them. */
 import { sendMail } from './mail.js';
+// Aliased for the same reason as in account.js: this module has its own `esc`
+// and page-level helpers, and the mail template exports overlapping names.
+import {
+  shell as mailShell,
+  h1 as mailH1,
+  p as mailP,
+  button as mailButton,
+  note as mailNote,
+  spamNote as mailSpamNote,
+} from './mailTemplate.js';
 
 const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'cancelled'];
 const STATUS_LABEL = {
@@ -542,24 +552,7 @@ async function sendDeliveryMail(context, orderId) {
   const link = portalUrl(token, origin);
 
   const nl = order.lang === 'nl';
-  const hi = order.name ? `Hi ${esc(order.name)},` : 'Hi,';
-  const body = nl
-    ? `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
-        <p>${hi}</p>
-        <p>Je bestelling <strong>${esc(order.ref)}</strong> is klaar${n ? ` — ${n} ${n === 1 ? 'beeld' : 'beelden'}` : ''}.</p>
-        <p>In je portaal kun je alles bekijken, downloaden, en per beeld goedkeuren of een revisie aanvragen:<br>
-           <a href="${esc(link)}">${esc(link)}</a></p>
-        <p>Deze link is de sleutel tot je bestelling — stuur hem gerust door aan een collega die mee moet kijken.</p>
-        <p style="color:#666;font-size:13px">VISUAILS &middot; Enschede, NL &middot; hello@visuails.com</p>
-      </div>`
-    : `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
-        <p>${hi}</p>
-        <p>Your order <strong>${esc(order.ref)}</strong> is ready${n ? ` — ${n} ${n === 1 ? 'image' : 'images'}` : ''}.</p>
-        <p>Your portal has everything: view it, download it, and approve or ask for a revision image by image:<br>
-           <a href="${esc(link)}">${esc(link)}</a></p>
-        <p>That link is the key to the order — pass it on to a colleague who needs to look.</p>
-        <p style="color:#666;font-size:13px">VISUAILS &middot; Enschede, NL &middot; hello@visuails.com</p>
-      </div>`;
+  const body = deliveryEmail({ order, link, n });
 
   await sendMail(env, {
     to: order.email,
@@ -570,6 +563,45 @@ async function sendDeliveryMail(context, orderId) {
   await env.DB.prepare(
     "UPDATE orders SET delivery_mailed_at = datetime('now') WHERE id = ?1"
   ).bind(orderId).run();
+}
+
+/**
+ * The "your order is ready" mail.
+ *
+ * EXPORTED so scripts/mail-render.mjs can draw the real thing. The alternative
+ * — a preview script that rebuilds the same blocks itself — is a second copy of
+ * the design, and the whole point of src/lib/mailTemplate.js is that there is
+ * only ever one. A preview that can drift from the mail is worse than no
+ * preview, because it is trusted.
+ */
+export function deliveryEmail({ order, link, n }) {
+  const nl = order.lang === 'nl';
+  const hi = order.name ? `Hi ${esc(order.name)},` : 'Hi,';
+  return mailShell({
+    lang: nl ? 'nl' : 'en',
+    preheader: nl
+      ? `${order.ref} staat klaar in je portaal${n ? ` — ${n} ${n === 1 ? 'beeld' : 'beelden'}` : ''}.`
+      : `${order.ref} is waiting in your portal${n ? ` — ${n} ${n === 1 ? 'image' : 'images'}` : ''}.`,
+    body: [
+      mailH1(
+        nl ? 'Je bestelling staat klaar' : 'Your order is ready',
+        nl ? `Referentie ${esc(order.ref)}` : `Reference ${esc(order.ref)}`,
+      ),
+      mailP(hi),
+      mailP(nl
+        ? `Je bestelling is klaar${n ? ` — ${n} ${n === 1 ? 'beeld' : 'beelden'}` : ''}. In je portaal kun je alles bekijken, downloaden, en per beeld goedkeuren of een revisie aanvragen.`
+        : `Your order is ready${n ? ` — ${n} ${n === 1 ? 'image' : 'images'}` : ''}. Your portal has everything: view it, download it, and approve or ask for a revision image by image.`),
+      mailButton(link, nl ? 'Open je portaal' : 'Open your portal'),
+      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      // The URL in full under the button, for the same reason the sign-in mail
+      // prints it: a client that strips anchors, or a phone-to-desktop hop.
+      mailNote(nl
+        ? `Deze link is de sleutel tot je bestelling — stuur hem gerust door aan een collega die mee moet kijken.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
+        : `That link is the key to the order — pass it on to a colleague who needs to look.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
+      mailSpamNote(nl ? 'nl' : 'en'),
+    ].join(''),
+  });
 }
 
 

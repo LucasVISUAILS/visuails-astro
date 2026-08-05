@@ -48,6 +48,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { TEST_SAMPLE, TIERS, aftercare, turnaround } from '../data/pricing.js';
+import { serviceLabel } from '../data/services.js';
 import { PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken } from './token.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { mailNote } from '../data/mailNote.js';
@@ -230,24 +231,6 @@ const COPY = {
  * because ui.js is the site's whole nav dictionary and this needs three words;
  * if a second non-Astro surface ever needs them, they move to their own module.
  */
-const SERVICE = {
-  catalog: { en: 'Catalog', nl: 'Catalog' },
-  lifestyle: { en: 'Lifestyle', nl: 'Lifestyle' },
-  video: { en: 'Video', nl: 'Video' },
-  custom: { en: 'Your Brand Model', nl: 'Jouw merkmodel' },
-  'test-sample': { en: TEST_SAMPLE.en.name, nl: TEST_SAMPLE.nl.name },
-  // Found missing in the 2026-07-28 site audit (task #263): functions/api/
-  // order.js's ORDER_SERVICES has always included 'drop' — the value
-  // StartPage.astro's attended-tier door posts (see its `value: 'drop'`) —
-  // but this map never named it, so serviceLabel() fell through to its own
-  // documented "the real fix is to add it to the map" case and every Full
-  // Drop / Drop Pilot order showed no Order type at all on the portal. One
-  // label for both: 'drop' covers the fixed 8-product Drop Pilot package and
-  // a larger custom drop alike, which pricing.js's own AMOUNT.dropPilot
-  // constant already treats as the same tier, not two different services.
-  drop: { en: 'Full Drop', nl: 'Volledige drop' },
-};
-
 /** orders.status, in words. The column's own comment lists the values. */
 const STATUS = {
   received: { en: 'Received', nl: 'Ontvangen' },
@@ -1022,11 +1005,6 @@ function seeOther(location) {
  * The real fix for a missing key is to add it to the map above. This is what
  * happens until someone does.
  */
-function serviceLabel(service, lang) {
-  const s = SERVICE[service];
-  return s ? s[lang] || s.en : null;
-}
-
 function statusLabel(status, lang) {
   const s = STATUS[status];
   return s ? s[lang] || s.en : null;

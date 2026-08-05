@@ -81,6 +81,19 @@ import { PER_PRODUCT } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 import { mailNote } from '../data/mailNote.js';
+import { serviceLabel } from '../data/services.js';
+// Aliased on import: this file already has `esc`, `note` and a `p` of its own
+// for the account SCREENS, and the mail template exports the same three names
+// for the mail. Two `p`s in one module is a bug waiting for whichever one gets
+// edited without looking up.
+import {
+  shell as mailShell,
+  h1 as mailH1,
+  p as mailP,
+  button as mailButton,
+  note as mailNote2,
+  spamNote as mailSpamNote,
+} from './mailTemplate.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
 const LOGIN_TOKEN_TTL_MINUTES = 60;
@@ -462,21 +475,6 @@ const COPY = {
     dbDown: 'We kunnen je account nu niet bereiken. Dit ligt aan ons, niet aan jou — probeer het over een paar minuten opnieuw.',
     notFound: 'Niet gevonden.',
   },
-};
-
-/** Display names for orders.service — mirrors portal.js's SERVICE, duplicated for the same reason: this needs four words, not ui.js's whole dictionary. */
-const SERVICE = {
-  catalog: { en: 'Catalog', nl: 'Catalog' },
-  lifestyle: { en: 'Lifestyle', nl: 'Lifestyle' },
-  video: { en: 'Video', nl: 'Video' },
-  custom: { en: 'Your Brand Model', nl: 'Jouw merkmodel' },
-  'test-sample': { en: 'Test sample', nl: 'Proefvisual' },
-  // Same gap portal.js's own SERVICE map had — found and fixed there in the
-  // same audit pass. This copy had it too: 'drop' (StartPage.astro's
-  // attended-tier door, ORDER_SERVICES in order.js) was never named, so
-  // every Full Drop / Drop Pilot order showed no service label in the
-  // dashboard's order list either.
-  drop: { en: 'Full Drop', nl: 'Volledige drop' },
 };
 
 /** orders.status, in words. Mirrors portal.js's/admin.js's own copies. */
@@ -2246,10 +2244,12 @@ function lockSection(t, lang, models, lockByStyle) {
 }
 
 function styleLabel(style) {
-  // A one-word label per style id, the same three ids SERVICE already names —
-  // reused rather than re-typed for the two ('catalog','lifestyle') that
-  // overlap with a service name; 'video' does too.
-  return SERVICE[style]?.en || style;
+  // A one-word label per style id. Three of the ids ('catalog', 'lifestyle',
+  // 'video') are also service names, so the shared map in src/data/services.js
+  // answers for them rather than the words being typed a second time; anything
+  // else falls through to the id, which is what this did before that map moved
+  // out of this file.
+  return serviceLabel(style, 'en') || style;
 }
 
 function orderCard(t, lang, o, files) {
@@ -2426,11 +2426,6 @@ function json(body, status = 200) {
 // SMALL THINGS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function serviceLabel(service, lang) {
-  const s = SERVICE[service];
-  return s ? s[lang] || s.en : null;
-}
-
 function statusLabel(status, lang) {
   const s = STATUS[status];
   return s ? s[lang] || s.en : null;
@@ -2502,7 +2497,7 @@ function esc(s) {
  * it stopped being true when the grace window landed, and the honest line is
  * the one that names the hour.
  */
-function magicLinkEmail(lang, link) {
+export function magicLinkEmail(lang, link) {
   const mins = LOGIN_TOKEN_TTL_MINUTES;
   const hours = mins % 60 === 0 ? mins / 60 : null;
   const copy = lang === 'nl'
@@ -2521,13 +2516,27 @@ function magicLinkEmail(lang, link) {
         alt: 'Button not working? Copy this link into your browser:',
       };
 
-  const html = `<div style="font-family:Arial,sans-serif;color:#222;max-width:480px;margin:0 auto">
-<h2 style="margin:0 0 12px">${copy.h}</h2>
-<p style="margin:0 0 20px">${copy.p}</p>
-<p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;padding:10px 18px;background:#111;color:#fff;text-decoration:none">${copy.b}</a></p>
-<p style="margin:0 0 20px;color:#666;font-size:13px">${copy.alt}<br><a href="${link}" style="color:#666">${link}</a></p>
-<p style="margin:0;color:#666;font-size:13px">${copy.f}</p>
-</div>`;
+  // THE URL APPEARS TWICE ON PURPOSE — once behind the button, once as copyable
+  // text — and tests/account-signin.test.mjs asserts exactly that. A client that
+  // strips the button, or a reader moving from phone to desktop, needs the
+  // second one.
+  const html = mailShell({
+    lang,
+    // Not the subject line again: the inbox prints the two next to each other.
+    preheader: lang === 'nl'
+      ? 'Eén klik en je bent binnen — de link verloopt vanzelf.'
+      : 'One click and you are in — the link expires on its own.',
+    body: [
+      mailH1(copy.h),
+      mailP(copy.p),
+      mailButton(link, copy.b),
+      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      mailP(`${copy.alt}<br><a href="${link}" style="color:#6B7078;word-break:break-all">${link}</a>`, { muted: true }),
+      mailNote2(copy.f),
+      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
+      mailSpamNote(lang),
+    ].join(''),
+  });
 
   const text = `${copy.h}
 
