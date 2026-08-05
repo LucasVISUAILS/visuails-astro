@@ -59,18 +59,32 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Rungs are [minProducts, maxProducts | null, ratePerProduct]. `null` is the
-// open top rung. Three kinds, and the ratio between them is deliberate and
-// constant: catalog-only is 60% of a complete product and lifestyle-only is
-// 75%, so buying both separately costs 135% of the bundle. That 26% bundle
-// saving is the same at every rung, which is what makes it explainable in one
-// sentence instead of a table of exceptions.
+// open top rung. Three kinds, and the ratio between them is deliberate: catalog
+// -only is 60% of a complete product and lifestyle-only is 75%, so buying both
+// separately costs about 135% of the bundle. That bundle saving is roughly the
+// same at every rung, which is what makes it explainable in one sentence
+// instead of a table of exceptions.
+//
+// "ROUGHLY", AND THE ONE PLACE IT IS DELIBERATELY OFF. Lucas, August 2026: "ik
+// vind de 112 euro voor lifestyle een rare prijs, maak dit 109." He is right
+// about what it was: 149 x 0.75 = 111.75, rounded to 112 — a number that is
+// visibly the OUTPUT of a formula rather than a price somebody chose, on the
+// entry rung, which is the one a first-time buyer reads. 109 is 73.2% of the
+// complete rate rather than 75%, so the entry rung's bundle saving is 33% where
+// the others are 35%. That difference is not published anywhere and costs the
+// customer nothing — it makes the first rung slightly cheaper, never dearer.
+//
+// The ratio still generates the other rungs; it is a tool for deriving prices,
+// not a law the prices must obey. Where a derived figure looks like arithmetic
+// showing through, the chosen number wins. Every rung remains strictly falling,
+// which is the property assertLadder() actually enforces.
 export const LADDER = {
   // Catalog set AND lifestyle carousel — seven finished images per product.
   complete: [[1, 4, 149], [5, 9, 109], [10, 19, 85], [20, 34, 65], [35, null, 55]],
   // Catalog set only — four images.
   catalog: [[1, 4, 89], [5, 9, 65], [10, 19, 51], [20, 34, 39], [35, null, 33]],
   // Lifestyle carousel only — three images.
-  lifestyle: [[1, 4, 112], [5, 9, 82], [10, 19, 64], [20, 34, 49], [35, null, 41]],
+  lifestyle: [[1, 4, 109], [5, 9, 82], [10, 19, 64], [20, 34, 49], [35, null, 41]],
 };
 
 /** The per-product rate for a kind at a given product count. */
@@ -217,7 +231,7 @@ export const AMOUNT = {
   // — ladderRate() / ladderTotal() / ladderFloor() are for exactly that — and
   // any page still printing a single figure should say "from".
   catalog: LADDER.catalog[0][2],       // €89 at 1–4 products, €33 at 35+
-  lifestyle: LADDER.lifestyle[0][2],   // €112 at 1–4 products, €41 at 35+
+  lifestyle: LADDER.lifestyle[0][2],   // €109 at 1–4 products, €41 at 35+
   complete: LADDER.complete[0][2],     // €149 at 1–4 products, €55 at 35+
   // RAISED, TASK #271f, 2026-07-30. Was €49, "left alone" by the comment
   // above — that held until Lucas asked for the opposite: video must rise

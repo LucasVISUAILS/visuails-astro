@@ -71,22 +71,47 @@
   --line-strong: rgb(255 255 255 / 0.22);
   --line-ui:     rgb(255 255 255 / 0.42);
 
-  /* ---- the accent — OPP's own #90BEFF ----------------------------------
-     10.43:1 on the page ground, and 10.43:1 the other way round as a fill
-     carrying near-black text. It is the rare accent that works as text, as a
-     rule and as a button fill without a second variant. White on it is 1.91:1
-     and is never correct. */
-  --accent:      #90BEFF;
+  /* ---- the accent — #86C232 -------------------------------------------
+     Was #90BEFF, a light blue, until August 2026. Lucas: "ik wil denk ik af
+     van de pastelkleuren die nu veel gebruikt worden en een wat serieuzere
+     kleurenschema kiezen", with a near-black-and-green reference attached.
+     He is describing the same defect PRODUCT.md's first anti-reference names:
+     "an AI SaaS product page. Gradient hero..." A pastel-blue accent over a
+     blue-violet-pink gradient is that page.
+
+     MEASURED, NOT CHOSEN BY EYE. 9.27:1 on the page ground and 9.27:1 the
+     other way round as a fill carrying near-black text — the same rare
+     property the blue had, which is what lets one value serve as text, as a
+     rule and as a button fill with no second variant. White on it is 2.26:1
+     and is never correct; --accent-ink stays near-black. The moss green from
+     the same reference (#61892F) measured 4.86:1, which clears AA and leaves
+     nothing in hand, so the brighter one won on evidence rather than taste.
+
+     WHY GREEN SURVIVES NEXT TO THE PHOTOGRAPHY, which is the real risk with a
+     saturated accent on this site: it is never a ground. It is a button, a
+     rule, one word in a heading. The photograph stays the most saturated
+     object on the screen, which is the principle in PRODUCT.md this palette
+     had stopped obeying. */
+  --accent:      #86C232;
   --accent-ink:  #08090B;   /* what sits ON an accent fill                  */
-  --accent-dim:  #6E9BE0;   /* hover / pressed, one step down               */
+  --accent-dim:  #6FA828;   /* hover / pressed, one step down               */
 
   /* ---- decorative gradients ---------------------------------------------
      Panels and one or two tiles. NEVER under body copy: measured, every stop
      carries near-black better than white (5.41–8.75 against 2.28–3.68), so
      anything set on one of these takes --grad-ink, not white. That is the
      opposite of the instinct, which is why it is written down. */
-  --grad-1: linear-gradient(135deg, #5B7CFA 0%, #9A6BF5 52%, #E86BB0 100%);
-  --grad-2: linear-gradient(135deg, #9A6BF5 0%, #E86BB0 55%, #F2955C 100%);
+  /* --grad-1 and --grad-2 are gone, August 2026. They held the blue → violet →
+     pink and violet → pink → coral ramps, and after .panel-grad became
+     .panel-tonal nothing rendered either of them: the classes that read them
+     (.panel-grad-2, .tile-c-grad, .tile-c-grad-2) appear on zero built pages,
+     checked before deleting. Leaving them would have left the exact palette
+     this rebuild removed sitting in the stylesheet, ready to be reached for.
+
+     --grad-ink stays. Its name is now wrong — there is no gradient — but it is
+     the near-black that .on-bright writes over an inverted ramp, it has eleven
+     readers, and renaming it is churn. Read it as "the ink a bright surface
+     uses". */
   --grad-ink: #08090B;
 
   /* ---- the bright tile fills --------------------------------------------
@@ -115,10 +140,22 @@
      SPARINGLY. At most two coloured tiles in one grid — see the fence on
      .tile-c* below. Four vivid tiles in a row is a colour swatch, not a page,
      and this brand's whole argument is control. */
-  --fill-blue:   #7CA2FF;
-  --fill-violet: #BC8FFF;
-  --fill-pink:   #F678BD;
-  --fill-coral:  #E98D54;
+  /* THESE WERE FOUR PASTEL HUES AND ARE NOW ONE SEQUENCE. August 2026, same
+     note as the accent above: four unrelated pastels — blue, violet, pink,
+     coral — WERE the "pastelkleuren die nu veel gebruikt worden". They dressed
+     four numbers in a pipeline diagram, a kicker, an accent word and a list
+     dash, and nothing about the product they describe is four things.
+
+     The names survive because a dozen call sites read them and renaming across
+     a component is churn with no gain; what they resolve to is now a
+     progression in the palette the site actually has — accent, accent one step
+     down, then two ink steps. Applied to the pipeline's 01-04 that reads as a
+     sequence advancing, which is what the diagram is about; applied to a
+     kicker or a link it is simply the accent. */
+  --fill-blue:   var(--accent);
+  --fill-violet: var(--accent-dim);
+  --fill-pink:   rgb(255 255 255 / 0.66);
+  --fill-coral:  rgb(255 255 255 / 0.40);
 
   /* ---- radius: three steps, and only three ------------------------------
      24 / 14 / 8, raised from 16 / 8 / 4 in August 2026 at Lucas's direction
@@ -140,6 +177,22 @@
   --r-lg: 24px;
   --r-md: 14px;
   --r-sm: 8px;
+
+  /* --r-pill is not a fourth step on the scale, it is the absence of one: a
+     radius large enough that the shape is decided by the element's height. It
+     applies to BUTTONS ONLY. Lucas, August 2026, after seeing the four options
+     side by side and picking 24/14/8: "ik wil dat de knoppen op de pagina
+     pilvorm krijgen."
+
+     Buttons only, and the line is worth stating. A pill reads as "press me" —
+     it is the one control on the page whose whole job is to be pressed, and the
+     shape is doing work there. An input is a place to put something, a card is
+     a surface to read; rounding those to 999px turns a page into a bag of
+     lozenges and loses the distinction the shape just bought. So the fields
+     stay at --r-md and the cards at --r-lg, and the button is the only thing on
+     the page that is fully round. That contrast IS the decision, not a
+     leftover. */
+  --r-pill: 999px;
   --radius: var(--r-md);   /* legacy alias — components still read this */
 
   /* ---- role aliases -----------------------------------------------------
@@ -196,15 +249,31 @@
   --teal:        var(--accent);
   --teal-hover:  var(--accent-dim);
   --teal-text:   var(--accent);
-  --clay:        #E86BB0;
-  --clay-text:   #E86BB0;
+  /* ONE ATTENTION COLOUR, August 2026, and it used to be two.
+     
+     --clay was #E86BB0, a pink, described as "the pink end of the panel
+     gradients". Those gradients are gone, so the only job it had left was
+     state: it drives --flag here and --warn in all three dashboard
+     stylesheets. Meanwhile --warn below was #F2955C, a coral. So the same
+     product said "pay attention" in pink on one surface and coral on another,
+     and neither was chosen for the job — they were leftovers from a decorative
+     palette doing functional work.
+
+     #E9963B is chosen for it. Amber is what a warning is in every control
+     room, and the hue matters against this particular accent: the green is
+     yellow-green, so an attention colour anywhere near it would read as a
+     variant of "go" rather than as its opposite. This one sits clearly in
+     orange. 8.43:1 on the page ground and 7.44:1 on the raised surface, the
+     worst ground it lands on, so it is safe as text and not only as a border. */
+  --clay:        #E9963B;
+  --clay-text:   #E9963B;
   --mist-clay:   var(--bg-raise);
   --mist-stone:  var(--bg-raise);
 
   --signal:      var(--accent);
   --signal-ink:  var(--accent);
-  --warn:        #F2955C;
-  --warn-ink:    #F2955C;
+  --warn:        var(--clay);
+  --warn-ink:    var(--clay);
   --verify:      var(--accent);
   --verify-ink:  var(--accent);
   --flag:        var(--clay);
@@ -217,7 +286,7 @@
      var()'d it, in any of the three, so all three declarations are gone. */
   --accent-word: var(--accent);
   --accent-bright: var(--accent-dim);
-  --accent-soft: rgb(144 190 255 / 0.14);
+  --accent-soft: rgb(134 194 50 / 0.14);
   --accent-line: var(--line-strong);
   --focus-ring:  var(--accent);
 
@@ -232,13 +301,36 @@
 
   --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
+  /* THREE ROLES, THREE FACES — August 2026. One family used to do all of it
+     and that is what "ik mis hier wat aesthetic" was describing: a page where
+     the heading and the paragraph speak in the same voice has no hierarchy of
+     TONE, only of size.
+
+     --font-heading  the big type, h1/h2 and the display classes. Big Shoulders
+                     Display: condensed industrial signage, tall and narrow.
+                     Deliberately NOT used below h2 — a condensed face at 14px
+                     is a legibility cost with no expressive gain, which is why
+                     --font-display below stays a normal-width grotesque.
+     --font-display  bold sans for the small mechanical bits: figures, step
+                     numbers, prices, uppercase labels. Still Archivo, still the
+                     right tool, and the name is kept because forty rules read
+                     it.
+     --font-body     reading text. Archivo, unchanged and not up for debate —
+                     it does that job well and body copy is where legibility is
+                     won or lost. */
+  --font-heading: "Big Shoulders Display Variable", "Big Shoulders Display", "Archivo Variable", Impact, sans-serif;
   --font-display: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   /* The editorial accent (task #271b) — high-contrast serif italic, used
      nowhere near body text. Georgia/Times New Roman are the fallback stack
      so a slow font load still reads as "a serif", not as Archivo pretending
      to be italic. */
-  --font-editorial: "Bodoni Moda", Georgia, "Times New Roman", serif;
+  /* Was Bodoni Moda italic — a swash didone, i.e. the fashion-magazine reflex.
+     Anybody is a technical grotesque with a true italic, so the accent word now
+     reads as emphasis in an industrial voice instead of as a quotation from
+     another magazine. Same few places, same restraint: a heading's one word, a
+     pull quote, the editorial statement. Never a paragraph. */
+  --font-editorial: "Anybody Variable", "Anybody", "Archivo Variable", sans-serif;
 
   --t-hero:  clamp(3.2rem, 7.4vw, 6rem);
   --t-h1:    clamp(2.5rem, 5.2vw, 4.2rem);
@@ -549,7 +641,12 @@
    rounded run of inline text reads as a bug. */
 .pack, .packs, .standing, .standing-inc, .pb-plate, .pb-bar, .svc-row,
 .gate-note, .incl, .tile-media-fill, .ladder,
-.hv-ba-media, .hv-dream-inner .btn, .ts-file, .dropzone, .opt, .door,
+.hv-ba-media, .ts-file, .dropzone, .opt, .door,
+/* `.hv-dream-inner .btn` was in this list and came out when buttons went to
+   --r-pill (August 2026). A descendant selector beats the bare `.btn`, so it
+   quietly held that one call-to-action at 14px while every other button on the
+   site went round — found by walking the cascade in a browser, not by reading.
+   Any per-surface button radius belongs nowhere: .btn owns its own shape. */
 .choice, .pl-panel, .bg-swatch {
   border-radius: var(--r-md);
 }
@@ -560,10 +657,24 @@ figure > img, .card img, .grid img, .reveal > img, img.wide {
   border-radius: var(--r-lg);
 }
 
-/* marks */
-.chip, .vis-badge, .cmp-tag, .cmp-knob, .acc-icon, .tile-cap, .plate-cap,
-.ls, .cb-cta, .wa-launcher-label, .hv-pl-dot {
-  border-radius: var(--r-sm);
+/* marks — small standalone labels. Pill, not --r-sm, since August 2026.
+   Lucas: "er zijn nog wel knoppen die wat blokkerig zijn."
+
+   A chip at 8px on a page whose buttons are fully round is the shape reading as
+   an oversight, and these are the same OBJECT as a button label: a short word in
+   a small container. Nothing here is a surface to read or a field to fill, which
+   is where the pill rule stops. .cb-cta is a real button and was already caught
+   by .btn; it stays in the list because it is a mark first. */
+.chip, .vis-badge, .cmp-tag, .tile-cap, .plate-cap,
+.ls, .cb-cta, .wa-launcher-label {
+  border-radius: var(--r-pill);
+}
+
+/* Round objects, not pills. A control that is as tall as it is wide has no long
+   axis for a pill to express — 999px on a square is a circle, which is what
+   these already are in spirit: the compare knob, the accordion glyph, the dot. */
+.cmp-knob, .acc-icon, .hv-pl-dot {
+  border-radius: 50%;
 }
 
 /* The skip link. Off-screen rather than display:none — a hidden element is not
@@ -594,7 +705,8 @@ main:focus { outline: none; }
    programmatic jumps into animations the pin then has to chase, which is the
    documented cause of erratic pinning. A property that changed no behaviour we
    want and destabilised the one pinned section on the site is not a trade. */
-html { -webkit-text-size-adjust: 100%; }
+html {
+  overflow-x: hidden; -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   /* iteration-count matters as much as duration. A .001ms animation that is
@@ -619,7 +731,21 @@ body {
      field behind the whole site competes with the photography for the one job
      colour has here, and it was the loudest remaining AI-SaaS signal. */
   background-color: var(--bg);
-  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  /* overflow-x: hidden MOVED TO html, August 2026, and the move is the whole
+     reason the scroll reveal works.
+
+     On body it made BODY the scroll container. `animation-timeline: view()`
+     resolves against the element's nearest scrollport, so every frame on the
+     site got a ViewTimeline whose scroller was not the thing being scrolled:
+     Chromium reported the animation attached, play state "finished", progress
+     pinned at 1.00 at every scroll position. It looked wired up and did
+     nothing. Measured before this line changed and after.
+
+     On html the document stays the scroller, view() resolves to it, and the
+     guarantee this rule exists for is unchanged: a long Dutch compound still
+     cannot push the page wider than the viewport. Re-checked across six pages
+     at 1280px and 390px after the move — no page scrolls sideways. */
 }
 img, svg, video { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-decoration: none; }
@@ -741,7 +867,7 @@ h1, h2, h3, h4, h5, .display, .cover-title, .ch-title {
   hyphens: auto;
 }
 
-h1, h2, .display { font-family: var(--font-display); color: var(--ink); font-weight: 900; line-height: 1.0; letter-spacing: -0.025em; text-wrap: balance; margin: 0; }
+h1, h2, .display { font-family: var(--font-heading); color: var(--ink); font-weight: 800; line-height: 1.0; letter-spacing: -0.012em; text-wrap: balance; margin: 0; }
 h1 { font-size: var(--t-h1); }
 h2 { font-size: var(--t-h2); }
 .display { font-size: var(--t-hero); line-height: 0.96; }
@@ -831,8 +957,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    Read it as: "the ground under me is BRIGHT; recompute everything that
    assumed near-black". It sets no background of its own — what colour the
    bright thing is, is the caller's business. */
-.on-bright,
-.panel-grad {
+.on-bright {
   color: rgb(8 9 11 / 0.82);
 
   --bg:          transparent;
@@ -871,8 +996,26 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --btn-2nd-border:        rgb(8 9 11 / 0.42);
   --btn-2nd-border-hover:  rgb(8 9 11 / 0.70);
 }
-.panel-grad   { background: var(--grad-1); }
-.panel-grad-2 { background: var(--grad-2); }
+
+/* ---- .panel-tonal — the closing plate, August 2026 --------------------------
+   Replaces .panel-grad, which put --grad-1 (blue → violet → pink) under the
+   homepage's closing band. That band was the only gradient ground on the site
+   and it was the first thing PRODUCT.md's anti-reference list names.
+
+   What it is now: one ground, lit from the top left, the way a studio backdrop
+   is lit by one lamp. It is a gradient in the CSS sense and not in the design
+   sense — a single hue falling off, no colour journey — so it reads as light
+   rather than as decoration, and the green button is the only saturated object
+   in the frame.
+
+   IT NO LONGER WEARS .on-bright, and that is the substantive half of the
+   change: a bright plate had to invert the entire ink ramp, flip the accent to
+   near-black and restate all six button tokens. A near-black plate inherits the
+   page's own ramp, so all of that goes away — which is why the primary button
+   is the accent again instead of a dark object on a light ground. */
+.panel-tonal {
+  background: radial-gradient(120% 140% at 12% 0%, #23262E 0%, #14161A 44%, #0B0C0F 100%);
+}
 
 /* ---- the coloured tiles ----------------------------------------------------
    A tile with a heading and a paragraph, on one of the four bright fills. It
@@ -899,8 +1042,6 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .tile.tile-c-violet { background: var(--fill-violet); }
 .tile.tile-c-pink   { background: var(--fill-pink); }
 .tile.tile-c-coral  { background: var(--fill-coral); }
-.tile.tile-c-grad   { background: var(--grad-1); }
-.tile.tile-c-grad-2 { background: var(--grad-2); }
 
 /* A bright tile's own caption rule. --line inside .on-bright is already an ink
    alpha, so this needs no override — it is here to say that out loud, because
@@ -1133,8 +1274,11 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    one: a rail whose scrollbar is hidden is a rail nobody knows is a rail. */
 .rail-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; margin-bottom: clamp(1.4rem, 2.5vw, 2rem); }
 .rail-nav { display: flex; gap: .4rem; flex: 0 0 auto; }
+/* Round, not a pill: 44x44 has no long axis for a pill to express, so 999px
+   and 50% draw the same circle — and a circle is what an icon-only control
+   should be next to a row of pill buttons. */
 .rail-nav button {
-  width: 44px; height: 44px; border-radius: var(--r-md); display: grid; place-items: center;
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
   background: var(--ghost); color: var(--ink); border: 0; cursor: pointer;
   transition: background var(--dur-1) var(--ease);
 }
@@ -1213,14 +1357,32 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    goes darker instead, which is the same argument made with value. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  font-family: var(--font-body); font-weight: 700; font-size: .875rem;
+  /* THE BUTTON IS A SWITCH, NOT A SENTENCE — August 2026. Lucas: "is het
+     mogelijk om de knoppen ook edgyer en intenser te maken om het echt
+     bijpassend te maken."
+     
+     The heading face in caps is what does it. Condensed industrial lettering
+     set as a short tracked label reads as something you throw rather than
+     something you read, which is the "instrument" the brand personality asks
+     for — and it rhymes with the headings without imitating them, because
+     nothing else on the site is uppercase.
+
+     CAPS ARE ALLOWED HERE AND ALMOST NOWHERE ELSE. The rule is short labels
+     and headings only; a button label is the canonical short label. Body copy
+     in caps stays banned. The size goes UP as the case changes: capitals have
+     no descenders and read smaller than their point size suggests, so .875rem
+     lowercase and 1rem uppercase are the same apparent weight. The tracking is
+     what stops caps from setting solid, and the extra horizontal padding is
+     what stops a tracked label from touching the pill's curve. */
+  font-family: var(--font-heading); font-weight: 800; font-size: 1rem;
+  text-transform: uppercase; letter-spacing: .06em;
   /* 40, not 38. Every .btn on the site measured 38px tall — two pixels under
      the minimum touch target, everywhere, which an audit picks up on every
      page and a thumb picks up on none of them individually. Two pixels is
      free; being under the line on 84 pages is not. */
-  min-height: 40px; padding: 0 1.15rem;
+  min-height: 40px; padding: 0 1.35rem;
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
-  background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--r-md);
+  background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--r-pill);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
               border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
 }
@@ -1755,7 +1917,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    markup — the scrim is not decoration, it is what put the nav and the
    headline over 4.5:1 on a photograph the studio does not control, so it has
    to be rebuilt with the markup and re-measured, not skipped. */
-.cover-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.028em; line-height: .96;
+.cover-title { font-family: var(--font-heading); font-weight: 800; letter-spacing: -0.012em; line-height: .96;
   font-size: clamp(2.4rem, 10.5vw, 6rem); color: var(--ink); max-width: 16ch; }
 .cover-title em { font-style: italic; color: var(--accent-word); }
 .cover-sub { margin-top: 1.5rem; max-width: 46ch; color: var(--ink-2); font-size: var(--t-lg); line-height: 1.62; }
@@ -1833,7 +1995,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    violet/cyan halo is the SaaS-hero signal this brand is escaping, and on
    paper it would read as a printing fault rather than as light. The markup
    span is removed too; motion.js already guards on its absence. */
-.ch-title { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.025em; line-height: 1.0;
+.ch-title { font-family: var(--font-heading); font-weight: 800; letter-spacing: -0.012em; line-height: 1.0;
   font-size: clamp(2.4rem, 5.2vw, 4.2rem); color: var(--ink); text-wrap: balance; margin: 0; }
 .ch-l { display: block; }
 .ch-l.dim { color: var(--ink-3); }
@@ -2166,3 +2328,97 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .bm-choose-inner h3 { font-size: 1rem; margin: 0; }
 .bm-choose-inner p { font-size: .85rem; color: var(--ink-3); margin: 0; }
 .bm-lib-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; }
+
+/* ============================================================
+   SCROLL REVEAL — the photograph develops, August 2026.
+
+   Lucas asked for motion that leaves an impression. This is the version that
+   costs nothing: no library, no JavaScript, no bytes. `animation-timeline:
+   view()` hands the progress of the animation to the browser's own compositor,
+   driven by where the element sits in the viewport, and it runs off the main
+   thread.
+
+   WHY A WIPE AND NOT A FADE. A fade is what every AI-generated page does to
+   every section, and it says nothing. This is a vertical wipe with a hair of
+   scale — the image resolves upward out of its own frame, the way a print comes
+   up in the developer. On a site that sells photography the motion should
+   belong to photography.
+
+   THREE THINGS KEEP IT HONEST.
+
+   1 · IT ONLY EVER RUNS AS AN ENHANCEMENT. The rule lives inside @supports, so
+       a browser without scroll-driven animation is handed a fully visible
+       photograph and nothing else. Nothing here gates visibility on a class a
+       script has to add — that is the failure where a reveal never fires on a
+       hidden tab or in a headless render and the section ships blank.
+
+   2 · animation-range IS `entry`, not the default. With the default range an
+       element sitting in the middle of the viewport at page load would be
+       halfway through its own animation — half-wiped, on first paint. Ending at
+       `entry 100%` means anything already on screen is finished before it is
+       ever seen, and only elements arriving from below actually animate.
+
+   3 · THE HERO IS EXCLUDED, deliberately and by name. It is the LCP element on
+       every page it appears on, and animating the largest paint is how a fast
+       site starts measuring slow.
+
+   Reduced motion gets the end state immediately — not a shorter animation, no
+   animation. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* THE FRAME ANIMATES, NOT THE <img> INSIDE IT — and this is the whole
+       trick, found by measuring rather than by reading. `view()` resolves
+       against the element's nearest SCROLLPORT ancestor, and every one of
+       these frames carries overflow:hidden to clip its photograph. Put the
+       animation on the inner image and its timeline is its own frame, inside
+       which it never moves: Chromium reported a ViewTimeline attached, play
+       state "finished", progress pinned at 1, at every scroll position. It
+       looked wired up and did nothing. On the frame, the nearest scrollport is
+       the document, which is the thing actually being scrolled. */
+    /* A NAMED TIMELINE, declared on the OUTER element and read by the frame
+       inside it. `animation-timeline: view()` was tried first and could not
+       work here: it resolves against the element's nearest scrollport, and
+       these frames sit inside cards that carry overflow:hidden of their own.
+       Chromium attached a ViewTimeline and pinned its progress at 1.00 at every
+       scroll position — measured, twice, before this was rewritten.
+
+       view-timeline-name puts the SUBJECT on the card, whose own nearest
+       scrollport is the document, and any descendant may then read that name.
+       Which is also the right subject: the reveal should be timed by where the
+       card is on the page, not by where the photograph sits inside it. */
+    .tile,
+    .hv-face,
+    .photo-band,
+    .photo-split-media,
+    .photo-grid img {
+      view-timeline-name: --rv;
+      view-timeline-axis: block;
+    }
+
+    .tile-media,
+    .plate,
+    .photo-band,
+    .photo-split-media,
+    .photo-grid img {
+      animation: rvDevelop linear both;
+      animation-timeline: --rv;
+      animation-range: entry 8% entry 92%;
+      will-change: clip-path;
+    }
+
+    /* Never the hero: see (3) above. */
+    .hv-hero-bg,
+    .hv-hero-bg img,
+    .hero-editorial .bg,
+    .hero-editorial img,
+    [fetchpriority="high"] {
+      animation: none;
+      will-change: auto;
+    }
+  }
+}
+
+@keyframes rvDevelop {
+  from { clip-path: inset(88% 0 0 0); transform: scale(1.035); }
+  to   { clip-path: inset(0 0 0 0);   transform: scale(1); }
+}

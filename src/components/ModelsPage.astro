@@ -35,7 +35,7 @@
 // per-product tier pricing off pages that are not /pricing, /catalog,
 // /lifestyle or /video, and this is not one of those four.
 import { localizedPath } from '../i18n/ui.js';
-import { ROSTER, TRAITS } from '../data/models.js';
+import { ROSTER, TRAITS, modelId } from '../data/models.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -162,7 +162,7 @@ const wa = `https://wa.me/31625436130?text=${c.waText}`;
             files of pixels the browser downloaded to discard. The pair travels
             together from src/data/models.js so the declared size can never
             describe the other file. */}
-        <img src={m.thumb} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.tw} height={m.th} />
+        <img src={m.thumb} alt={`${m.name} — ${c.modelAlt}`} loading="lazy" decoding="async" width={m.tw} height={m.th} transition:name={`face-${modelId(m.name)}`} />
         <figcaption>
           <span class="bm-model-name">{m.name}</span>
           <span class="bm-model-traits">{m.traits.map((t) => traits[t]).join(' · ')}</span>

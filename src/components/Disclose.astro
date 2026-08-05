@@ -85,6 +85,11 @@ const {
   .dc > .dc-sum::-webkit-details-marker { display: none; }
 
   .dc-sum {
+    /* Was 0px — the last survivor of the hard-edge era, and the only control on
+       the site with no corner at all. Not a pill: this is a full-width row, and
+       999px on something 700px wide draws two semicircles, not a button. It
+       takes the field step, which is what a wide pressable row gets. */
+    border-radius: var(--r-md);
     display: flex;
     align-items: baseline;
     gap: .75rem;

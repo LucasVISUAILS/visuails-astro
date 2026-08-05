@@ -140,7 +140,10 @@ const t = useTranslations(lang);
     background: var(--btn-ghost-fill);
     color: var(--ink);
     border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
+    /* A button, so it takes the button shape — see --r-pill in global.css. This
+       component styles its own controls rather than reusing .btn's rules, so it
+       has to say so itself. */
+    border-radius: var(--r-pill);
     cursor: pointer;
     white-space: nowrap;
   }

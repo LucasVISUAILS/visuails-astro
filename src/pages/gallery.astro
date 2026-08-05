@@ -227,7 +227,8 @@ const filters = [
   /* Gallery-page-only patterns: filter pills. The tile grid itself is the
      shared .photo-grid pattern from global.css. */
   .filter-bar { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1.8rem; }
-  .filter-bar button { font: inherit; cursor: pointer; color: var(--ink-2); background: transparent; border: 1px solid var(--line); padding: .5rem 1.1rem; font-size: .9rem; font-weight: 500; transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
+  /* Filter chips are pressed, so they take the button shape. */
+  .filter-bar button { border-radius: var(--r-pill); font: inherit; cursor: pointer; color: var(--ink-2); background: transparent; border: 1px solid var(--line); padding: .5rem 1.1rem; font-size: .9rem; font-weight: 500; transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .filter-bar button:hover { color: var(--ink); border-color: var(--accent-line); }
   .filter-bar button[aria-pressed="true"] { color: var(--accent-on); background: var(--accent); border-color: transparent; }
 </style>

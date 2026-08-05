@@ -41,7 +41,7 @@
        --ink-700  white 80%                  10.94:1
        --ink-500  white 66%                   7.53:1
        --ink-300  white 22%   RULE ONLY — never text
-     and the accent, #90BEFF, at 10.43:1 on the page ground both as text and
+     and the accent, #86C232, at 9.27:1 on the page ground both as text and
      as a fill carrying near-black text. */
 
   /* ---- grounds ----
@@ -87,20 +87,31 @@
   --mist-stone: #101216;
 
   /* ---- accent ----
-     One light blue. Under harbor these five names were five DARKENING steps
-     of a teal that had to survive on paper; on a dark ground the direction
-     reverses and the text-safe cut is the accent itself. --teal-grad and
-     --teal-hover are the one step DOWN a hover is allowed to take. */
-  --teal:       #90BEFF;
-  --teal-grad:  #6E9BE0;
-  --teal-hover: #6E9BE0;
-  --teal-text:  #90BEFF;
-  --teal-deep:  #90BEFF;
+     #86C232 since August 2026, moved with the site — see the accent note in
+     src/styles/global.css for the contrast measurements and the reasoning.
+     Hand-copied like every other token in this block; a dashboard that links
+     back into the site cannot be the one surface still wearing the old blue.
 
-  /* Second accent — the pink end of the panel gradients, used for state, not
-     for surface. 6.36:1 on the page ground. */
-  --clay:       #E86BB0;
-  --clay-text:  #E86BB0;
+     The names still say "teal" and the value has now been three different
+     colours. They are kept because forty rules in this file read them and a
+     rename is churn with no gain — but read them as "the accent", not as a
+     hue. --teal-grad and --teal-hover are the one step DOWN a hover may take;
+     on a dark ground the text-safe cut is the accent itself, which is why
+     they are not five darkening steps the way they were on paper. */
+  --teal:       #86C232;
+  --teal-grad:  #6FA828;
+  --teal-hover: #6FA828;
+  --teal-text:  #86C232;
+  --teal-deep:  #86C232;
+
+  /* THE ATTENTION COLOUR. Was a pink left over from the decorative palette;
+     #E9963B since August 2026 — see the --clay note in src/styles/global.css
+     for why amber, and why it must not sit near the green. 8.43:1 on the page
+     ground, 7.44:1 on the raised surface, so it is safe as text. --warn and
+     --flag below both read it, which is what makes "pay attention" one colour
+     on this site instead of three. */
+  --clay:       #E9963B;
+  --clay-text:  #E9963B;
 
   /* Ghost fill for secondary and small buttons — a paper alpha now, not an
      ink alpha. An ink alpha on a near-black ground is invisible. */
@@ -164,7 +175,7 @@
   --accent-2:      var(--teal-text);
   --accent-word:   var(--teal-text);
   --accent-bright: var(--teal-hover);
-  --accent-soft:   rgb(144 190 255 / 0.14);
+  --accent-soft:   rgb(134 194 50 / 0.14);
   --accent-line:   var(--ink-300);
 
   --focus-ring:    var(--teal);
@@ -191,6 +202,7 @@
   --r-lg: 24px;   /* cards, panels, tiles */
   --r-md: 14px;   /* buttons, fields, pills */
   --r-sm: 8px;    /* the small stuff inside them */
+  --r-pill: 999px; /* buttons only — see global.css */
   --radius: var(--r-md);
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -517,5 +529,30 @@ details.ask > summary:hover { color: var(--ink-700); }
    for, and nothing else takes a corner: not a table cell, not a rule, not a
    bare <img> that is already clipped by its frame. */
 .card, .facts, .note, .panel, .sheet, .shot img, .thumb img, .box, .revision-note { border-radius: var(--r-lg); }
-.btn, input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md); }
+input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r-md); }
+/* Buttons are fully round since August 2026, at Lucas's direction — see the
+   --r-pill note in src/styles/global.css for why buttons and nothing else.
+   Hand-copied with the rest of the scale so the dashboard keeps matching the
+   site it links back into. */
+.btn { border-radius: var(--r-pill); }
 .btn-quiet { border-radius: 0; }
+.btn-quiet { border-radius: 0; }
+
+/* Buttons are tracked capitals since August 2026 — see the .btn note in
+   src/styles/global.css for why caps are allowed here and nowhere else, and why
+   the size goes up as the case changes.
+
+   NOT in the heading face, and that is deliberate rather than an omission.
+   These pages link this one stylesheet and load no webfont at all; naming
+   Big Shoulders here would fall through to Impact on most machines, which is
+   worse than the honest answer. Caps and tracking carry the character; the
+   letterform stays the one the page actually has. */
+.btn {
+  font-family: var(--font);
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding-left: 1.35rem;
+  padding-right: 1.35rem;
+}
