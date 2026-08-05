@@ -41,7 +41,7 @@
        --ink-700  white 80%                  10.94:1
        --ink-500  white 66%                   7.53:1
        --ink-300  white 22%   RULE ONLY — never text
-     and the accent, #86C232, at 9.27:1 on the page ground both as text and
+     and the accent, #C6F100, at 15.16:1 on the page ground both as text and
      as a fill carrying near-black text. */
 
   /* ---- grounds ----
@@ -87,7 +87,7 @@
   --mist-stone: #101216;
 
   /* ---- accent ----
-     #86C232 since August 2026, moved with the site — see the accent note in
+     #C6F100 since August 2026, moved with the site — see the accent note in
      src/styles/global.css for the contrast measurements and the reasoning.
      Hand-copied like every other token in this block; a dashboard that links
      back into the site cannot be the one surface still wearing the old blue.
@@ -98,11 +98,11 @@
      hue. --teal-grad and --teal-hover are the one step DOWN a hover may take;
      on a dark ground the text-safe cut is the accent itself, which is why
      they are not five darkening steps the way they were on paper. */
-  --teal:       #86C232;
-  --teal-grad:  #6FA828;
-  --teal-hover: #6FA828;
-  --teal-text:  #86C232;
-  --teal-deep:  #86C232;
+  --teal:       #C6F100;
+  --teal-grad:  #ABD200;
+  --teal-hover: #ABD200;
+  --teal-text:  #C6F100;
+  --teal-deep:  #C6F100;
 
   /* THE ATTENTION COLOUR. Was a pink left over from the decorative palette;
      #E9963B since August 2026 — see the --clay note in src/styles/global.css
@@ -175,7 +175,7 @@
   --accent-2:      var(--teal-text);
   --accent-word:   var(--teal-text);
   --accent-bright: var(--teal-hover);
-  --accent-soft:   rgb(134 194 50 / 0.14);
+  --accent-soft:   rgb(198 241 0 / 0.14);
   --accent-line:   var(--ink-300);
 
   --focus-ring:    var(--teal);

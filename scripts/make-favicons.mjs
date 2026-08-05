@@ -13,7 +13,7 @@
  * ────────────────────────────────────────────────────────────────────────────
  * SIX COLOURWAYS, ONE OF THEM LIVE. August 2026.
  *
- * The palette moved to the green (--accent #86C232) and the mark had to follow.
+ * The palette moved to the green (--accent #C6F100) and the mark had to follow.
  * Rather than settling that in a conversation and baking the winner in, all six
  * candidates are cut every run: the live one into public/, the rest into
  * brand/logo/<id>/, which is NOT inside public/ and therefore never deployed —
@@ -23,11 +23,33 @@
  *
  * The contrast figure printed per variant is the glyph against its own tile,
  * and it is the number that decides whether an icon survives being 16px in a
- * tab strip. Two of these are around 2.1:1 — that is not a mistake, it is what
- * white and this green measure against each other, and it is exactly why the
- * alternates exist. WCAG does not govern a logo (1.4.11 exempts them), so a low
- * number here is a legibility judgement rather than a compliance failure. It
- * is printed so the judgement is made with the number in view.
+ * tab strip. WCAG does not govern a logo (1.4.11 exempts them), so a low number
+ * here is a legibility judgement rather than a compliance failure — but it is
+ * printed so the judgement is made with the number in view, and printing it is
+ * what caught the following.
+ *
+ * ACTIVE IS b — WHITE ON GREEN — AND IT IS THE WEAKEST NUMBER ON THE SHEET.
+ * That is a decision, not an oversight, and it is Lucas's, made twice: once
+ * when he picked the colourway, and again after the three combinations were
+ * rendered side by side at 180 / 48 / 32px with their contrast printed under
+ * them and the 32px white-on-toxic tile visibly fading. He chose it with the
+ * number and the picture in front of him. The note is here so nobody quietly
+ * "fixes" it.
+ *
+ * The history, because the number moved twice. He picked white-on-green when
+ * the accent was #86C232, where it measured 2.15:1 — already the weakest option
+ * and chosen with that figure in view. The accent then went to #C6F100 on his
+ * instruction ("meer toxic"), and white on THAT is 1.31:1. Both values are
+ * light, so there is very little between them; near-black on the same green is
+ * 15.16:1, which is why b2 exists and why it was briefly live.
+ *
+ * IF THE TILE EVER NEEDS TO LOOK LIKE THE 2.15:1 VERSION AGAIN, the lever is
+ * the GROUND, not the ink: white needs a green around L 0.44 to reach 2.15:1,
+ * which is the old #86C232 exactly. A tile-only ground is a normal thing for a
+ * brand to have — the site can stay toxic while the icon sits on a deeper green
+ * — and it costs one entry in VARIANTS below. It is not done here because
+ * nobody has asked for it; this paragraph exists so that the option is on the
+ * record rather than rediscovered.
  *
  * WHITE ON TRANSPARENT IS NEVER AN OPTION, whichever variant is live
  * A transparent white mark disappears on Chrome's and Safari's light tab strip,
@@ -43,20 +65,21 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
+import { readGlyph, opticalOffset, BLEND } from './lib/glyph.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
 const DRAWER = path.join(ROOT, 'brand', 'logo');
 
-const GREEN = '#86C232';   // --accent
-const GREEN_DIM = '#6FA828';   // --accent-dim
+const GREEN = '#C6F100';   // --accent
+const GREEN_DIM = '#ABD200';   // --accent-dim
 const DARK = '#08090B';   // --bg-0
 const WHITE = '#FFFFFF';   // --ink-1
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {
-  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — LIVE' },
-  b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen' },
+  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — LIVE, op Lucas zijn keuze' },
+  b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen — 15.16:1' },
   a:  { ground: WHITE,     ink: GREEN,     note: 'gifgroen op wit' },
   a2: { ground: WHITE,     ink: GREEN_DIM, note: 'dieper groen op wit' },
   c:  { ground: DARK,      ink: GREEN,     note: 'gifgroen op bijna-zwart' },
@@ -77,13 +100,12 @@ const contrast = (a, b) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
-/* Pull the glyph out of the layout rather than keeping a second copy of it. */
-const layout = fs.readFileSync(path.join(ROOT, 'src/layouts/Layout.astro'), 'utf8');
-const m = layout.match(/<symbol id="markglyph" viewBox="([^"]+)">([\s\S]*?)<\/symbol>/);
-if (!m) throw new Error('make-favicons: no <symbol id="markglyph"> in Layout.astro');
-const viewBox = m[1];
-const inner = m[2].trim();
-const [, , VW, VH] = viewBox.split(/\s+/).map(Number);
+/* Pull the glyph out of the layout rather than keeping a second copy of it.
+ * Reading it, and knowing where its optical centre is, both live in
+ * scripts/lib/glyph.mjs — shared with make-logo-pack.mjs so the two cannot
+ * disagree about what the mark is or where it sits. */
+const glyph = readGlyph();
+const { viewBox, inner, VW, VH } = glyph;
 
 /**
  * @param {{ground: string, ink: string}} v
@@ -94,10 +116,16 @@ const [, , VW, VH] = viewBox.split(/\s+/).map(Number);
 function svg(v, size, radius, inset) {
   const gh = size * inset;
   const gw = gh * (VW / VH);              // keep the traced aspect exactly
-  const x = (size - gw) / 2;
-  // Geometric centre is also the optical one here: the viewBox is cropped to
-  // the ink, so there is no invisible padding pulling the mark off-centre.
-  const y = (size - gh) / 2;
+  // OPTICALLY CENTRED, NOT GEOMETRICALLY. This used to read "geometric centre
+  // is also the optical one here", which was true of the old near-square V and
+  // stopped being true the day the mark grew a spike: the bounding box now
+  // reaches toward a sliver of ink carrying almost none of the weight, so
+  // centring it drops the letter low and left. `nudge` is measured off the
+  // rendered glyph on every run — see scripts/lib/glyph.mjs for the argument
+  // and for why it is measured rather than stored as a constant.
+  const s = gh / VH;
+  const x = (size - gw) / 2 + nudge.dx * s;
+  const y = (size - gh) / 2 + nudge.dy * s;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect width="${size}" height="${size}" rx="${radius}" ry="${radius}" fill="${v.ground}"/>
   <svg x="${x}" y="${y}" width="${gw}" height="${gh}" viewBox="${viewBox}" fill="${v.ink}">${inner}</svg>
@@ -134,6 +162,7 @@ function icoFromPngs(files) {
  * and no headless shell. Unset on a normal machine, where Playwright finds its
  * own browser and this resolves to undefined (which launch() ignores). */
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+const nudge = await opticalOffset(browser, glyph);
 
 async function shoot(v, out, file, size, radius, inset) {
   const p = await browser.newPage({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
@@ -171,7 +200,7 @@ async function buildSet(v, out) {
   fs.writeFileSync(path.join(out, 'favicon.svg'), svg(v, 64, 12, 0.60) + '\n');
 }
 
-console.log('favicons:');
+console.log(`favicons:  optical nudge ${nudge.dx.toFixed(2)}, ${nudge.dy.toFixed(2)} of ${VW.toFixed(0)}x${VH.toFixed(0)} (blend ${BLEND})`);
 for (const [id, v] of Object.entries(VARIANTS)) {
   const live = id === ACTIVE;
   const out = live ? PUBLIC : path.join(DRAWER, id);

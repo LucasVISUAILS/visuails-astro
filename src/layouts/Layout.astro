@@ -417,10 +417,68 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
          reports, because a checker looks at text and this is an image), and a
          raster cannot take a gradient or a scope-inherited fill at all.
          So each PNG was thresholded, cropped to its ink bounding box, and
-         traced to a single path. The V glyph's ink occupied 308,280→945,933 of
-         its source, hence the 642×658 viewBox; the logotype's 114,270→1759,543,
-         hence 1650×278. Cropping to the ink is what makes `height:` alone a
-         reliable sizing lever — there is no invisible padding baked in.
+         traced to a single path. The logotype's ink occupied 114,270→1759,543
+         of its source, hence the 1650×278 viewBox. Cropping to the ink is what
+         makes `height:` alone a reliable sizing lever — there is no invisible
+         padding baked in.
+
+         THE V GLYPH WAS REDRAWN IN AUGUST 2026 and is on its second trace. The
+         old one was a V with a small leaf to its upper right, 642×658. Lucas
+         supplied a new drawing — the same V with a sharp spike where the leaf
+         was — and it is better in the one place a mark does most of its work:
+         at 16px the leaf collapsed into a blob of pixels and the spike stays a
+         spike. (A first attempt at the same idea was rejected on the same
+         test; rendered at 16 and 24px it read as a W, not a V. The lesson is
+         that a mark is judged at the tab strip, not on the artboard.)
+
+         It is on its THIRD drawing and its second rebuild. Lucas supplied a
+         final, higher-resolution version once the shape was settled; its ink
+         occupies 264,201→965,1014 of a 1254px source, so 702×813 after
+         cropping — TALLER than wide, where the original mark was square. That
+         difference is why the two <use> sites below carry the viewBox too;
+         they hardcode it, and left on a stale one the glyph renders cropped
+         and off-centre with nothing failing.
+
+         IT IS NOT A TRACE. This path was rebuilt as geometry, and the reason is
+         that a trace of this drawing is visibly wrong when you look closely:
+         potrace follows the anti-aliased edge of a 647px raster, so every one
+         of these dead-straight edges came out as a chain of ~1400 coordinates
+         with a fine ripple along it, plus a two-pixel facet at each sharp point
+         where the raster had rounded the tip. Lucas photographed it: *"er zitten
+         allemaal kleine ribbels op het logo."*
+
+         What is here instead: the source upsampled 8x, contoured, reduced with
+         Douglas-Peucker to the 15 + 7 vertices the shape actually has, facets
+         under 3.5 source px merged away (they are rasterisation, not drawing),
+         and the one genuine curve — the shoulder — fitted as a circle and
+         emitted as a single A command. 239 bytes, and every straight edge is a
+         straight line rather than an approximation of one. Verified by
+         rasterising both at source resolution and counting disagreeing pixels:
+         0.48% of the ink, spread over 757 blobs of at most 5px — which is the
+         anti-aliased edge and nothing else.
+
+         TWO THINGS THAT BIT DURING THAT REBUILD, both caught by diffing the
+         render against the source rather than by reading the path. First, a run
+         of shallow turns is not necessarily an arc: it is also what a long,
+         very slightly bent straight edge looks like, and fitting a circle to
+         one produced a 543-unit radius that ballooned the whole inner edge of
+         the V into a crescent. Second, the fix for that is not a tighter angle
+         threshold but an EDGE-LENGTH rule — a vertex may only join a curve if
+         both edges meeting there are short relative to the mark. A shallow turn
+         at the end of a 500-unit straight edge is a kink in a straight edge.
+
+         The method is worth repeating for any future mark: upsample, contour,
+         Douglas-Peucker, merge sub-pixel facets, fit arcs only where the
+         residual proves an arc, and diff the result against the source before
+         believing it. A logo made of straight lines should be drawn with
+         straight lines.
+
+         THE DRAWING ARRIVED IN TWO TONES and ships in one. A second tone would
+         need a second path and a second token in every scope this mark lands
+         in, and it buys nothing where it counts: rendered at 16 and 24px the
+         lighter blade disappears entirely. The spike reads from the NOTCH, not
+         from the tone, so one flat fill loses none of it and keeps the single
+         inherited --brand that lets one symbol serve every ground.
 
          Neither path carries a fill attribute, on purpose. `fill` is an
          inherited SVG property, so every <use> site sets it from a token
@@ -475,26 +533,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 1 -268 -1 -272 -5z"/>
       </g>
     </symbol>
-    <symbol id="markglyph" viewBox="0 0 642 658">
-      <g transform="translate(0.000000,658.000000) scale(0.100000,-0.100000)"
- stroke="none">
-<path d="M6045 6553 c-449 -37 -816 -157 -1077 -353 -283 -212 -452 -484 -515
--825 -24 -134 -25 -507 0 -671 25 -170 64 -345 108 -484 75 -237 123 -350 149
--350 9 0 57 18 106 39 712 309 1083 733 1313 1501 67 226 202 792 266 1118 l7
-32 -159 -2 c-87 -1 -176 -3 -198 -5z M47 6543 c-22 -3 -28 -9 -24 -22 2 -10
-111 -206 242 -437 132 -230 323 -567 425 -749 103 -181 224 -395 270 -475 83
--144 110 -192 207 -365 50 -89 206 -364 403 -710 56 -99 139 -245 184 -325 46
--80 141 -248 213 -375 72 -126 214 -376 315 -555 102 -179 205 -361 230 -405
-86 -148 1121 -1959 1162 -2032 23 -40 44 -73 48 -73 3 0 34 66 68 148 34 81
-97 230 140 332 113 268 437 1047 515 1240 37 91 77 190 90 220 13 30 68 161
-121 290 86 209 331 797 481 1155 30 72 82 195 114 275 33 80 63 151 66 158 13
-29 -16 6 -69 -56 -53 -63 -275 -354 -344 -453 -17 -24 -62 -87 -100 -139 -144
--198 -425 -591 -539 -755 -65 -93 -119 -171 -120 -172 -1 -3 -120 196 -269
-452 -49 83 -110 186 -136 230 -26 44 -87 148 -135 230 -48 83 -118 202 -156
-265 -81 138 -360 616 -437 750 -30 52 -138 239 -240 415 -102 176 -266 460
--365 630 -376 648 -406 694 -541 828 -268 265 -617 420 -1062 472 -121 14
--677 20 -757 8z"/>
-      </g>
+    <symbol id="markglyph" viewBox="0 0 702.00 813.25">
+      <path d="M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z" />
+      <path d="M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z" />
     </symbol>
   </svg>
 
@@ -502,8 +543,23 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <header class="site-header">
     <div class="container nav">
+      {/* THE GLYPH, NOT THE LOGOTYPE, since August 2026 — Lucas: *"ik wil links
+          in de top bar dit logo hebben in plaats van de tekst logo."*
+
+          The two marks are alternative signatures and never a lockup (see the
+          note by the symbols above, and scripts/brand-lockup-guard.mjs, which
+          fails the build if they ever share an ancestor below <body>). Putting
+          the glyph here and leaving the logotype in the footer is exactly the
+          intended use of that pair: the mark signs the chrome, the word signs
+          the page. Their nearest common ancestor is <body>, so the guard is
+          satisfied by construction rather than by having been remembered.
+
+          aria-label stays on the <a> AND on the <svg>: the link needs an
+          accessible name for a screen reader arriving at the nav, and the
+          graphic needs one for anyone who lands on it directly. Neither is
+          redundant with the other, and neither can be inferred from a path. */}
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
-        <svg class="brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
+        <svg class="brand-mark brand-glyph" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
       </a>
       <nav aria-label={t('nav_primary')} class="primary-nav">
         <ul class="nav-links">
@@ -592,7 +648,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <div class="mobile-nav" id="mobile-nav" inert aria-hidden="true">
     <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
-    <svg class="brand-mark mobile-mark" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
+    <svg class="brand-mark mobile-mark" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
     {drops.map((s) => (
       <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
     ))}
@@ -602,8 +658,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <a href={lp('/contact')}>{t('nav_contact')}</a>
     <div class="mobile-cta">
       <a href={lp('/start')} class="btn btn-primary btn-block btn-lg">{t('nav_start')}</a>
-      <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20some%20visuals." class="btn btn-wa btn-block" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{t('mob_chat')}
+      <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20some%20visuals." class="btn btn-wa btn-block" target="_blank" rel="noopener">{t('mob_chat')}
       </a>
       <span class="mobile-cta-hint">{t('mob_notsure')} <a href={lp('/test-sample')}>{t('mob_try')}</a></span>
       {/* Literal "/account", not lp('/account') — see the desktop nav link's
@@ -862,7 +917,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
 
   <div class="convbar" role="complementary" aria-label={t('cb_region')}>
-    <svg class="brand-mark cb-logo" viewBox="0 0 642 658" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
+    <svg class="brand-mark cb-logo" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
     <em>{t('cb_text')}</em>
     <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
     <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
@@ -1033,8 +1088,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     --line-strong: rgb(255 255 255 / 0.30);
     --line-ui:     var(--paper-muted-on-dark);
     /* THE LOGOTYPE FLATTENS TO PAPER HERE TOO, and this is the one scope where
-       it does not follow the accent. :root moved --brand to #86C232 in August
-       2026 — green reads at 9.27:1 on the page ground and the mark is green
+       it does not follow the accent. :root moved --brand to #C6F100 in August
+       2026 — green reads at 15.16:1 on the page ground and the mark is green
        everywhere else, including the footer and the scrolled bar.
 
        Over a hero photograph it is not. Measured exactly the way the ink tiers
@@ -1105,6 +1160,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      ground on this site, .on-ink's whole point, shares that one background)
      instead of being assumed safe the way --ink's flip guarantees. */
   .brand-mark { width: auto; display: block; fill: var(--brand); }
+  /* 30px in a 76px bar. Sized against the CAP HEIGHT of the nav links beside
+     it rather than against the bar: a mark set to the bar's own proportions
+     towers over 15px type. 30px puts the glyph's optical weight level with the
+     link row, which is what makes a chrome row read as one line rather than as
+     a logo with some text next to it. Drops with the bar on a phone. */
+  .brand-glyph { height: 30px; }
+  @media (max-width: 700px) { .brand-glyph { height: 26px; } }
   /* SVG fill is not force-adjusted by the browser the way `color` is, so
      forced-colours still has to be told the ink by name or the mark keeps a
      colour the user asked to be rid of — CanvasText, not CanvasText via
@@ -1282,7 +1344,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        Also quieter: 0.30 → 0.20. A bloom in the accent hue is a much stronger
        signal than one in a colour that appears nowhere else, so the same alpha
        reads as roughly twice the light. */
-    background: radial-gradient(ellipse at 50% 100%, rgb(134 194 50 / 0.20) 0%, rgb(134 194 50 / 0.09) 38%, rgb(134 194 50 / 0) 70%);
+    background: radial-gradient(ellipse at 50% 100%, rgb(198 241 0 / 0.20) 0%, rgb(198 241 0 / 0.09) 38%, rgb(198 241 0 / 0) 70%);
   }
   @media (max-width: 700px) {
     .foot-watermark { width: 190%; bottom: -4%; opacity: .045; }

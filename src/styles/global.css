@@ -71,7 +71,7 @@
   --line-strong: rgb(255 255 255 / 0.22);
   --line-ui:     rgb(255 255 255 / 0.42);
 
-  /* ---- the accent — #86C232 -------------------------------------------
+  /* ---- the accent — #C6F100 -------------------------------------------
      Was #90BEFF, a light blue, until August 2026. Lucas: "ik wil denk ik af
      van de pastelkleuren die nu veel gebruikt worden en een wat serieuzere
      kleurenschema kiezen", with a near-black-and-green reference attached.
@@ -79,22 +79,39 @@
      "an AI SaaS product page. Gradient hero..." A pastel-blue accent over a
      blue-violet-pink gradient is that page.
 
-     MEASURED, NOT CHOSEN BY EYE. 9.27:1 on the page ground and 9.27:1 the
+     MEASURED, NOT CHOSEN BY EYE. 15.16:1 on the page ground and 15.16:1 the
      other way round as a fill carrying near-black text — the same rare
      property the blue had, which is what lets one value serve as text, as a
-     rule and as a button fill with no second variant. White on it is 2.26:1
-     and is never correct; --accent-ink stays near-black. The moss green from
-     the same reference (#61892F) measured 4.86:1, which clears AA and leaves
-     nothing in hand, so the brighter one won on evidence rather than taste.
+     rule and as a button fill with no second variant. White on it is 1.31:1
+     and is never correct; --accent-ink stays near-black.
+
+     IT GOT LOUDER ON PURPOSE, a second time. The first green here was #86C232
+     — a leaf green, 9.27:1. Lucas: *"ik wil het groen wat meer toxic groen
+     maken, nu is het te groen."* Read that literally and it is exact: #86C232
+     sits at OKLCH hue 130 with chroma 0.18, which is the hue and the intensity
+     of a plant. Toxic is the same family pushed until it stops looking grown:
+     hue down to 122 (toward yellow), chroma up to 0.217, and lightness from
+     0.75 to 0.90. That is #C6F100, and the reason it is not #CCFF00 — which is
+     the canonical hazard colour and was rendered beside it — is that at L 0.93
+     the thing stops reading as a green at all and starts reading as a yellow.
+     One notch back keeps it a green that looks wrong, which is what toxic is.
+
+     THE BRIGHTNESS HAS A COST AND IT LANDS ON THE LOGO, not on the type.
+     Everything set IN the accent got better (9.27 → 15.16 on the ground) and
+     everything set ON it got better too. But white on this green is 1.31:1,
+     where on the old one it was 2.15:1 — so the favicon colourway had to flip
+     from white-on-green to near-black-on-green. See ACTIVE in
+     scripts/make-favicons.mjs. A colourway a palette can carry is a property
+     of the palette, not a preference that survives it.
 
      WHY GREEN SURVIVES NEXT TO THE PHOTOGRAPHY, which is the real risk with a
      saturated accent on this site: it is never a ground. It is a button, a
      rule, one word in a heading. The photograph stays the most saturated
      object on the screen, which is the principle in PRODUCT.md this palette
      had stopped obeying. */
-  --accent:      #86C232;
+  --accent:      #C6F100;
   --accent-ink:  #08090B;   /* what sits ON an accent fill                  */
-  --accent-dim:  #6FA828;   /* hover / pressed, one step down               */
+  --accent-dim:  #ABD200;   /* hover / pressed, one step down               */
 
   /* ---- decorative gradients ---------------------------------------------
      Panels and one or two tiles. NEVER under body copy: measured, every stop
@@ -282,14 +299,14 @@
   /* THE LOGOTYPE IS THE ACCENT NOW, August 2026. It was --ink-1 (flat white)
      for as long as the mark has been an SVG, which was the right value while
      the accent was a harbor teal doing button duty and nothing else. The green
-     is the identity, so the logo wears it: VISUAILS in #86C232 measures 9.27:1
-     on the near-black ground and 8.61:1 on --bg-raise, the worst solid surface
+     is the identity, so the logo wears it: VISUAILS in #C6F100 measures 15.16:1
+     on the near-black ground and 14.27:1 on --bg-raise, the worst solid surface
      it lands on, which is comfortably above the 4.5:1 a checker would want if
      this were text (it is an <svg>, so nothing checks it — see the note by
      --brand in .convbar for what that has already cost once).
 
      Read the next three declarations as one rule: --brand tracks the ACCENT on
-     a dark ground and the INK on a bright one. Green on white is 2.15:1, so a
+     a dark ground and the INK on a bright one. Green on white is 1.31:1, so a
      bright ground cannot take the accent version of the logotype, and .on-bright
      restates --brand for exactly that reason — do not delete it on the grounds
      that it "looks like it does nothing", which is true only because :root got
@@ -301,7 +318,7 @@
      var()'d it, in any of the three, so all three declarations are gone. */
   --accent-word: var(--accent);
   --accent-bright: var(--accent-dim);
-  --accent-soft: rgb(134 194 50 / 0.14);
+  --accent-soft: rgb(198 241 0 / 0.14);
   --accent-line: var(--line-strong);
   --focus-ring:  var(--accent);
 
@@ -1005,7 +1022,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --paper-soft-on-dark:  rgb(8 9 11 / 0.82);
   --paper-muted-on-dark: rgb(8 9 11 / 0.68);
   /* The logotype does NOT follow the accent here. :root moved --brand to
-     #86C232, which is 9.27:1 on the near-black ground and 2.15:1 on a bright
+     #C6F100, which is 15.16:1 on the near-black ground and 1.31:1 on a bright
      one — the green and white are within a hair of the same luminance. This
      scope exists for bright grounds, so the mark reverts to ink, which is what
      --brand resolved to sitewide before the accent took it over. Looks
@@ -2662,7 +2679,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    shadow layer. Only on hover — a green edge at rest would make every card
    look selected. */
 @media (hover: hover) {
-  a.lift:hover, .tile a:hover ~ .tile-media { box-shadow: inset 0 1px 0 rgb(134 194 50 / 0.5); }
+  a.lift:hover, .tile a:hover ~ .tile-media { box-shadow: inset 0 1px 0 rgb(198 241 0 / 0.5); }
 }
 
 /* ============================================================
@@ -2824,7 +2841,7 @@ body::before {
     /* 1 · material — ground only, never over an image */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.075'/%3E%3C/svg%3E") 0 0 / 170px repeat,
     /* 2 · the lamp — accent-tinted, top left, very wide, very weak */
-    radial-gradient(120% 90% at 15% -10%, rgb(134 194 50 / 0.05) 0%, rgb(134 194 50 / 0.014) 34%, transparent 62%),
+    radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%),
     /* 3 · the falloff — the far corners sit back */
     radial-gradient(150% 110% at 50% 50%, transparent 38%, rgb(0 0 0 / 0.45) 100%);
 }
