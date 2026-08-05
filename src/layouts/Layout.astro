@@ -63,6 +63,23 @@ import archivoRoman from '@fontsource-variable/archivo/files/archivo-latin-wght-
 // "./*.css", so "/wght.css" resolves to "wght.css.css" and the build fails.
 // Anybody ships an extra "./*.css" entry, which is why the line below keeps it.
 import '@fontsource-variable/big-shoulders-display/wght';
+// ONE AXIS IS ENOUGH — and the two-axis file was tried and handed back.
+// August 2026. Lucas: *"ik zou graag de titelteksten dezelfde grootte willen
+// hebben."*
+//
+// They already were. Measured at the same font-size, Big Shoulders and Anybody
+// have the same x-height to within 1% and the same ascender to within 3%. What
+// made the accent line read as larger was never size: Anybody's stems are 2.8x
+// thicker and the line is 21% wider. Reducing font-size would have made the
+// word genuinely smaller while it still looked heavier — the wrong knob.
+//
+// The knob that IS right is weight, and the weight axis is in this file. The
+// width axis is not; it lives in `/standard-italic.css`, which costs 36 KB more
+// on the latin subset (26 -> 62 KB). That version was built and rendered, and
+// the extra 19px of narrowing it bought did not justify the file. Weight alone
+// takes the line from 299px to 255px, which is most of the distance for none of
+// the bytes. If the width axis is ever wanted for something else, that is the
+// import to switch to — and it is a real cost, not a free upgrade.
 import '@fontsource-variable/anybody/wght-italic.css';
 import bigShoulders from '@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2?url';
 import { ui, dropHrefs, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
@@ -1387,9 +1404,15 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      footer under the reader's thumb. Space costs nothing here; a jump does. */
   @media (max-width: 1100px) { .footer-bottom { padding-bottom: 84px; } }
 
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 20px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
-  .convbar .cb-logo { height: 22px; flex: 0 0 auto; }
+  /* 24px, and 20px of padding to its left rather than 14. The bar's corner is
+     --r-lg (24px), so at 14px the mark sat INSIDE the curve's sweep: nothing
+     was actually clipped — measured 19x22 with the full viewBox visible — but
+     it reads as clipped, which is the same problem from the reader's side.
+     Lucas: *"het logo naast de test sample pop-up is niet juist en afgeknipt
+     lijkt het wel."* A mark needs to clear the radius that frames it. */
+  .convbar .cb-logo { height: 24px; flex: 0 0 auto; }
   .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
   .convbar .cb-cta { background: var(--accent); color: var(--accent-on); padding: 10px 18px; font-size: .9rem; font-weight: 600; white-space: nowrap; }
   .convbar .cb-close { border-radius: 50%; width: 40px; height: 40px; color: var(--ink-3); font-size: 1.1rem; background: none; border: none; cursor: pointer; }

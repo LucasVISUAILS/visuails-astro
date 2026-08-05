@@ -1519,7 +1519,22 @@ const FAQ_PICK = [
     linear-gradient(180deg, rgb(var(--scrim) / 0.76) 0%, rgb(var(--scrim) / 0.50) 13%, rgb(var(--scrim) / 0.14) 27%, transparent 52%, rgb(var(--scrim) / 0.46) 84%, rgb(var(--scrim) / 0.66) 100%); }
   .hv-hero-inner { flex: 1; display: flex; align-items: flex-end; width: 100%; }
   .hv-hero-copy { max-width: 40rem; padding-block: 3rem clamp(2.5rem, 6vh, 4rem); }
-  .hv-h1 { font-family: var(--font-heading); font-weight: 800; font-size: var(--t-hero); line-height: 0.98; letter-spacing: -0.012em; margin: 0; color: var(--paper-on-dark); }
+  /* 900, NOT 800 — Lucas: *"misschien kan je de witte tekst dikgedrukt maken."*
+     The complaint underneath it was that "visualized." looks bigger than the
+     two lines above. It is not: all three run at the same font-size and their
+     x-heights are within 1% of each other. What differs is WEIGHT — the italic
+     line's stems are 73px against the white lines' 26px at a 200px test size,
+     2.8 times thicker — and mass reads as size.
+
+     Big Shoulders at its maximum only closes part of that: 900 takes the stem
+     from 26px to 30px, so the italic is still 2.4x thicker. That is the price
+     of a condensed display face, whose stems stay narrow at every weight by
+     construction. It is worth doing anyway — the perceived gap narrows much
+     more than the stem ratio suggests, because at display size the counters
+     close up too — but the two faces will never weigh the same, and chasing
+     that with font-size would make the line genuinely smaller while still
+     looking heavier. */
+  .hv-h1 { font-family: var(--font-heading); font-weight: 900; font-size: var(--t-hero); line-height: 0.98; letter-spacing: -0.012em; margin: 0; color: var(--paper-on-dark); }
   .hv-line { display: block; }
   .hv-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 900; letter-spacing: -0.03em; }
   .hv-lede { margin: clamp(1.2rem, 2.4vw, 1.9rem) 0 0; max-width: 46ch; font-size: var(--t-lg); line-height: 1.55; color: var(--paper-soft-on-dark); }
