@@ -939,7 +939,24 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .well-deep,
 .well-raise,
 .mist-teal, .mist-clay, .mist-slate, .mist-stone {
-  background: var(--bg-0);
+  /* TRANSPARENT, NOT var(--bg-0) — and the two are not the same thing any more.
+     August 2026, when the page-level lighting layer arrived (see .lit below).
+
+     These declarations existed to NEUTRALISE: each class used to paint its own
+     slightly-different dark, and pointing them all at --bg-0 collapsed five
+     grounds into one. That worked, and for as long as the page ground was a
+     flat colour, painting --bg-0 over --bg-0 was a no-op that cost nothing.
+
+     It stopped being a no-op the moment the ground gained a lamp and a vignette
+     drawn on a fixed layer underneath the content. An opaque --bg-0 on a
+     section is a lid over that layer: three of the homepage's bands wear
+     .well-deep, and they were the three that stayed flat while everything
+     around them was lit — which reads as a rendering fault, not as a decision.
+
+     `transparent` gets the same result the neutralisation was after (nobody
+     paints their own ground) without also blocking the one that is allowed to.
+     body carries --bg-0, so the colour underneath is unchanged to the pixel. */
+  background: transparent;
   --bg: var(--bg-0);
   box-shadow: none;
 }
@@ -1099,6 +1116,65 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .ground-blend.blend-top-only::after {
   background: linear-gradient(to bottom, var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam, clamp(3.5rem, 8vw, 8rem)));
 }
+
+/* ---- the heroes, bottom edge only -----------------------------------------
+   Lucas: *"ook het vervagen toevoegen op hero image."*
+
+   BOTTOM ONLY, and the top is not an oversight. Every hero on this site slides
+   under the sticky header (`margin-top: -76px`), so its top edge is not a seam
+   at all — there is nothing above it to join to. What IS up there is the
+   scrim's own 0.76 darkening, which exists so the nav clears contrast over an
+   uncontrolled photograph. Laying an opaque --bg-0 fade on top of that would
+   take the sky out of every hero to solve a problem that does not exist there.
+
+   The bottom edge is the seam: 100svh of photograph meeting --bg-0 on one row
+   of pixels, straight across the viewport. It is the most visible line on the
+   page and it is the first one anyone scrolls past.
+
+   A DEEPER FADE THAN A BAND GETS. The default seam is sized for a section a
+   few hundred pixels tall; a hero is the whole viewport, and the same 8rem on
+   it reads as a stripe rather than as a dissolve. 14vh is proportional to the
+   thing it is fading, which is the only measure that holds from a phone to an
+   ultrawide.
+
+   NOT the LCP image's problem: this paints a gradient over the photograph, it
+   does not touch the <img>, so nothing here changes what the browser measures
+   as the largest paint or when it decodes it. */
+.hv-hero,
+.hero-cover,
+.hero-editorial {
+  position: relative;
+  isolation: isolate;
+  --seam: clamp(5rem, 14vh, 11rem);
+}
+.hv-hero::after,
+.hero-cover::after,
+.hero-editorial::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam));
+}
+
+/* THE TWO HEROES STACK DIFFERENTLY AND THE FADE HAS TO SIT IN A DIFFERENT
+   LAYER IN EACH. One z-index for both looked right and was invisible on one of
+   them — caught by sampling a pixel column across each hero's bottom edge, not
+   by looking, because a fade that never paints looks exactly like a hero that
+   has none.
+
+   .hv-hero stacks NEGATIVELY: its photograph is at -2 and its scrim at -1, and
+   its copy is in normal flow. -1 puts the fade above the scrim (later in the
+   DOM at equal z-index) and below the copy, which is what a negatively-stacked
+   positioned element does by definition.
+
+   .hero-editorial does not: .bg and .fade are positioned with z-index auto,
+   which is 0, and .hero-editorial-content and -cue are at 2. A fade at -1 goes
+   underneath the photograph and does nothing at all. 1 is the only free layer
+   between them. */
+.hv-hero::after,
+.hero-cover::after { z-index: -1; }
+.hero-editorial::after { z-index: 1; }
 /* The closing plate blends at BOTH edges, and both of them fade to --bg-0.
    That is worth one sentence because the obvious guess is wrong: the footer's
    background is declared `var(--bg-deep)`, which is #000 at :root — but
@@ -2687,4 +2763,68 @@ a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
   font-size: .88rem;
   line-height: 1.55;
   color: var(--ink-2);
+}
+
+/* ============================================================
+   .lit — the page is lit, not painted. August 2026.
+
+   Lucas: *"wat kan ik doen om de achtergrond wat meer gevoel te geven?
+   Bijvoorbeeld vormen toevoegen op elke bovenkant en onderkant van secties."*
+
+   WHY THIS IS NOT SHAPES, and the argument is his own brief rather than taste.
+   A shape on a section boundary — a wave, a slant, a curve — only becomes
+   visible by introducing a SECOND GROUND for it to be cut out of. This site has
+   one ground on purpose (see ONE GROUND above, which ends with "if a section
+   needs distinguishing, the answer is a tile, a panel, a rule, or more space —
+   not a second ground"), and PRODUCT.md names the two things a divider shape
+   signals as anti-references by name: the dropshipping site and the AI SaaS
+   product page. Both were built and photographed before this was written; the
+   wave in particular took one look.
+
+   What a near-black page is actually missing is not shape. It is the two things
+   that make any dark surface read as a surface rather than as a value: LIGHT
+   and MATERIAL. This layer supplies both, in that order.
+
+   THE STUDIO SWEEP. A cyclorama has no corner where the wall meets the floor —
+   it curves, so a subject sits in one continuous field with no seam anywhere.
+   That is the answer to "how do sections flow into each other" in the
+   vocabulary of the object this studio uses every day, and it is a lamp rather
+   than a divider: one wide, weak fall of accent-tinted light from the top left,
+   plus an edge falloff that drops the far corners about 4%. The reading column
+   comes forward without a single new line being drawn.
+
+   THE GRAIN HERE IS THE SECOND PASS, NOT THE FIRST. .grain already exists —
+   a fixed overlay at z-index 300, opacity .04, tuned down from .07 precisely
+   because at .07 it was lifting black from 9 to 15 and washing every delivered
+   photograph. That layer stays exactly as it is. This one is different in the
+   one way that matters: it sits at z-index -1, UNDER the content, so it can
+   never touch a product image, a tile or a line of type — it only ever falls on
+   empty ground, which is the surface Lucas is describing as flat. That is why
+   it can be stronger than the overlay without re-opening the argument the
+   overlay's comment settled.
+
+   ONE ELEMENT, THREE BACKGROUND LAYERS, NO JAVASCRIPT AND NO REQUEST. The
+   grain is an inline SVG data URI with its alpha baked into the rect, because a
+   background layer cannot carry its own opacity. Nothing here animates, so
+   there is no prefers-reduced-motion branch to write — a fixed layer under a
+   scrolling page is parallax you cannot feel, not motion.
+
+   IT IS ON body, NOT html. html has no background of its own, so body's
+   --bg-0 is propagated to the canvas and body is then treated as having none —
+   which is exactly what makes a z-index:-1 pseudo-element here paint ON the
+   page colour and UNDER everything else. On html the same rule would fight the
+   propagation and land under the colour, invisible. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    /* 1 · material — ground only, never over an image */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.075'/%3E%3C/svg%3E") 0 0 / 170px repeat,
+    /* 2 · the lamp — accent-tinted, top left, very wide, very weak */
+    radial-gradient(120% 90% at 15% -10%, rgb(134 194 50 / 0.05) 0%, rgb(134 194 50 / 0.014) 34%, transparent 62%),
+    /* 3 · the falloff — the far corners sit back */
+    radial-gradient(150% 110% at 50% 50%, transparent 38%, rgb(0 0 0 / 0.45) 100%);
 }
