@@ -178,16 +178,31 @@ const COPY = {
     heroLede: `One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style. Priced per product, from ${euro(ladderRate('complete', 1), 'en')} down to ${euro(FLOOR_RATE_EN, 'en')} as the count rises.`,
     ctaStart: 'Start an order',
     ctaSample: `See it first — ${sample.price}`,
-    facts: [
-      // NOT typed. pricing.js's own header says "pages use this, never a
-      // literal" and this file broke that rule in four places — which is
-      // exactly how the NL copy below ended up saying "bevestigd voor je
-      // betaalt" while the other six NL pages said "voordat je betaalt", and
-      // "door mensen nagekeken" against the roster's "met de hand
-      // gecontroleerd". Two promises, two wordings, one studio.
-      ['Window', turnaround('attended', 'en')],
-      ['Review', reviewClaim('attended', 'en')],
-      ['Studio', 'Enschede, NL'],
+    // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
+    // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
+    // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
+    // liever op de hero zelf zulke info tonen zonder balk erachter."*
+    //
+    // What was here: a 0.86-alpha bar across the foot of the hero holding
+    // WINDOW / REVIEW / STUDIO as a definition list. Three labels and three
+    // values, which is a SPEC SHEET — the format a datasheet uses, and the
+    // reason it read as furniture. "STUDIO — Enschede, NL" in particular
+    // answers a question nobody has above the fold.
+    //
+    // Three lines now, each one an objection rather than an attribute: when do
+    // I get it, is it actually any good, and can I use what I get. The third
+    // is new; the first two are the same two typed helpers as before.
+    //
+    // STILL NOT TYPED BY HAND. pricing.js's header says "pages use this, never
+    // a literal" and this file broke that rule in four places — which is
+    // exactly how the NL copy ended up saying "bevestigd voor je betaalt"
+    // while six other NL pages said "voordat je betaalt". Two promises, two
+    // wordings, one studio. The licence line is the one string here that has
+    // no helper, and it is quoted from the promise band verbatim.
+    proof: [
+      turnaround('attended', 'en'),
+      reviewClaim('attended', 'en'),
+      'Yours to use — shop, marketplaces, ads and feeds',
     ],
 
     // ── THE PRICE BAND ────────────────────────────────────────────────────
@@ -457,10 +472,11 @@ const COPY = {
     heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Per product geprijsd, van ${euro(ladderRate('complete', 1), 'nl')} tot ${euro(FLOOR_RATE_EN, 'nl')} naarmate het aantal stijgt.`,
     ctaStart: 'Start een bestelling',
     ctaSample: `Zie het eerst — ${sample.price}`,
-    facts: [
-      ['Venster', turnaround('attended', 'nl')],
-      ['Controle', reviewClaim('attended', 'nl')],
-      ['Studio', 'Enschede, NL'],
+    // Zie de EN-tabel voor waarom dit geen plint meer is.
+    proof: [
+      turnaround('attended', 'nl'),
+      reviewClaim('attended', 'nl'),
+      'Van jou om te gebruiken — webshop, marktplaatsen, ads en feeds',
     ],
 
     // Zie de EN-tabel voor waarom deze band er is: vier prijsbanden zijn er één
@@ -754,16 +770,19 @@ const FAQ_PICK = [
         <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
         <a href={lp('/test-sample')} class="btn btn-ghost btn-lg">{c.ctaSample}</a>
       </div>
+      {/* The proof line sits INSIDE the hero copy, under the buttons, on the
+          photograph — no bar behind it. It is the last thing read before the
+          click and it is placed where the eye already is, rather than in a
+          rail at the foot of the fold that has to be found. */}
+      <ul class="hv-proof">
+        {c.proof.map((p) => (
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5" /></svg>
+            <span>{p}</span>
+          </li>
+        ))}
+      </ul>
     </div>
-  </div>
-  <div class="hv-plinth">
-    <dl class="container hv-plinth-row">
-      {c.facts.map(([k, v], i) => (
-        <div class={`hv-fact${i === 0 ? ' is-flag' : i === 1 ? ' is-verify' : ''}`}>
-          <dt>{k}</dt><dd>{v}</dd>
-        </div>
-      ))}
-    </dl>
   </div>
 </section>
 
@@ -1098,7 +1117,10 @@ const FAQ_PICK = [
     The claim is deliberately about perception rather than results ("looks like
     a brand that has its act together", not "sells more"), because a conversion
     claim here would be a number this studio cannot yet evidence. */}
-<section class="hv-dream">
+{/* .ground-blend sits at z-index -1, which is the same layer as .hv-dream-scrim
+    and later in the DOM, so it paints over the scrim and under the copy. The
+    photograph is at -2 and stays below both. */}
+<section class="hv-dream ground-blend">
   <img class="hv-dream-bg" src="/img/lifestyle-glow-06.webp" alt={c.dreamAlt} width="2400" height="1792" loading="lazy" decoding="async" />
   <div class="hv-dream-scrim" aria-hidden="true"></div>
   <div class="container hv-dream-inner">
@@ -1435,7 +1457,12 @@ const FAQ_PICK = [
     Lit by the WebGL chrome field. .hero-fallback carries the same scene when
     the shader never initialises, which is what makes the material removable
     rather than load-bearing. */}
-<section class="ch ch-promise band">
+{/* .ground-blend: the chrome field is a <canvas> filling the section edge to
+    edge, so without it the marbled material starts and stops on two hard
+    horizontal lines. See the primitive in global.css — it lays --bg-0 back
+    over both edges and fades out, and it works on a canvas because it never
+    touches the canvas. */}
+<section class="ch ch-promise band ground-blend">
   <div class="hero-fallback" aria-hidden="true"></div>
   <canvas id="hero-shader" aria-hidden="true"></canvas>
   <div class="container">
@@ -1496,29 +1523,43 @@ const FAQ_PICK = [
   .hv-line { display: block; }
   .hv-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 900; letter-spacing: -0.03em; }
   .hv-lede { margin: clamp(1.2rem, 2.4vw, 1.9rem) 0 0; max-width: 46ch; font-size: var(--t-lg); line-height: 1.55; color: var(--paper-soft-on-dark); }
-  .hv-cta { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: clamp(1.6rem, 3vw, 2.2rem); }
+  .hv-cta { display: flex; gap: var(--gap-actions); flex-wrap: wrap; margin-top: clamp(1.6rem, 3vw, 2.2rem); }
   @media (max-width: 560px) { .hv-cta > .btn { width: 100%; } }
 
-  /* The plinth: three facts that are true before anyone talks to us. Ink at
-     0.86 rather than a lower alpha because it sits on a photograph whose
-     brightest pixel is not ours to choose. */
-  .hv-plinth { position: relative; background: rgb(var(--scrim) / 0.86); box-shadow: inset 0 1px 0 var(--line-strong); }
-  .hv-plinth-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1rem, 3vw, 3rem); margin: 0; padding-block: 1.15rem 1.35rem; }
-  .hv-fact dt { font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--paper-muted-on-dark); margin: 0; }
-  .hv-fact dd { margin: .35rem 0 0; font-size: .86rem; line-height: 1.4; color: var(--paper-on-dark); }
-  /* Colour as a rule under one fact the copy already states, never as a fill —
-     a delivery window is Flag, a review claim is Verify. */
-  .hv-fact.is-flag dd, .hv-fact.is-verify dd { display: inline-block; border-bottom: 3px solid; padding-bottom: .18rem; }
-  .hv-fact.is-flag dd { border-color: var(--clay); }
-  .hv-fact.is-verify dd { border-color: var(--teal); }
+  /* The proof line. No ground of its own — it sits on the photograph, lit by
+     the hero scrim that was already there for the headline.
+
+     The two coloured underscores went with the bar. They were doing a job the
+     bar created: three columns of identical grey needed something to say which
+     fact mattered, so a delivery window got an amber rule and a review claim a
+     green one. A checked list needs neither — the tick IS the emphasis, and
+     three of them in the accent is one signal repeated rather than two signals
+     competing. Colour spent on a decoration is colour not available for the
+     button six pixels above it.
+
+     align-items: flex-start on the row, not center: the third line wraps to
+     two on a laptop and a centred tick would then float beside the gap between
+     them instead of marking the first word. */
+  /* STACKED, not a wrapping row, at every width. Laid out as a row it fell
+     2 + 1 on a 1440px screen — the copy column is capped at 40rem and the
+     three lines total wider than that — and a list that wraps unevenly reads
+     as an accident rather than as a list. Three ticks down the left margin is
+     also the shape a reader already knows: it is a checklist, which is exactly
+     the claim being made. */
+  .hv-proof { list-style: none; margin: clamp(1.3rem, 2.6vw, 1.9rem) 0 0; padding: 0;
+    display: flex; flex-direction: column; gap: .5rem; }
+  .hv-proof li { display: flex; align-items: flex-start; gap: .5rem;
+    font-size: .9rem; line-height: 1.4; color: var(--paper-soft-on-dark); }
+  .hv-proof svg { flex: 0 0 auto; width: 1.05em; height: 1.05em; margin-top: .16em;
+    fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
   @media (max-width: 760px) {
-    .hv-plinth-row { grid-template-columns: 1fr; gap: .9rem; }
-    /* The WhatsApp launcher is position: fixed at bottom-left, and the plinth
-       is the bottom of a 100svh hero — so on a phone they occupy the same
-       pixels on first paint and the launcher sat on top of the third fact.
-       48px launcher + its 12px inset + a little air. Measured, not padded by
-       feel. */
-    .hv-plinth-row { padding-bottom: 5.25rem; }
+    /* The WhatsApp launcher is position: fixed at bottom-left and the hero is
+       100svh, so on a phone the launcher and the foot of the hero occupy the
+       same pixels on first paint — it used to sit on top of the third fact in
+       the plinth and it would sit on the third proof line now. 48px launcher +
+       its 12px inset + air. Measured, not padded by feel. */
+    .hv-hero-copy { padding-bottom: 5.25rem; }
   }
 
   /* ── the one accent word ────────────────────────────────────────────────
@@ -1871,7 +1912,11 @@ const FAQ_PICK = [
      global.css for what that scope restates and why it has to. The only thing
      added here is the radius: the panel is full-bleed, so it takes corners on
      its top edge alone, where it meets the dark page above it. */
-  .hv-close { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  /* No top radius any more. .panel-tonal fades its own top edge back into the
+     page ground now (.ground-blend in global.css), and a rounded corner under
+     a 100px fade is a corner nobody can see — it only showed as two slivers of
+     --bg-0 beside a plate that was already dissolving. */
+  .hv-close { overflow: hidden; }
 </style>
 
 <script>

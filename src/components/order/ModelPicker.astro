@@ -77,6 +77,12 @@ const COPY = {
     ],
     brandCta: 'What a Brand Model is',
     ownBadge: 'Yours',
+    // Shown only to a signed-OUT visitor — see the markup for how. A brand that
+    // has commissioned its own face and then does not see it here has no way of
+    // knowing why: the tiles are injected from /account/me, so signed out looks
+    // exactly like "you don't have one".
+    ownSignedOut: 'Have your own Brand Model? Sign in and it appears here, ready to pick — along with the details you ordered under last time.',
+    ownSignIn: 'Sign in',
   },
   nl: {
     label: 'De on-model shot',
@@ -90,6 +96,8 @@ const COPY = {
     ],
     brandCta: 'Wat een merkmodel is',
     ownBadge: 'Van jou',
+    ownSignedOut: 'Heb je een eigen merkmodel? Log in, dan staat hij hier klaar om te kiezen — samen met de gegevens waarmee je de vorige keer besteld hebt.',
+    ownSignIn: 'Inloggen',
   },
 };
 const c = COPY[lang];
@@ -166,6 +174,28 @@ const c = COPY[lang];
     </template>
   </div>
 
+  {/* WHY A SIGNED-OUT BRAND NEEDS TELLING, August 2026. Lucas: *"ik mis nog
+      een tekst bij het selecteren van modellen dat aangeeft dat als je custom
+      modellen hebt je moet inloggen om deze te kunnen zien en gebruiken."*
+
+      The own-face tiles above are injected by pipeline.js from /account/me. A
+      customer who paid for a Brand Model and arrives here without a session
+      sees the ten roster faces and nothing else — which is indistinguishable
+      from not owning one. There is no error, because nothing failed.
+
+      data-acct="out" rather than a check of our own: Layout.astro already runs
+      one memoised /account/me per page load and toggles every [data-acct] node
+      in a single pass, painting from a sessionStorage snapshot so the state is
+      usually correct on first paint. A second mechanism here would be a second
+      answer to the same question, and the two would disagree the first time one
+      of them was changed. What ships in the static HTML is the signed-out
+      state, which is both the honest default and the correct one for almost
+      everyone reaching this form. */}
+  <p class="mp-signin" data-acct="out">
+    <span>{c.ownSignedOut}</span>
+    <a href={lp('/account')} class="btn btn-ghost mp-signin-btn">{c.ownSignIn}</a>
+  </p>
+
   <p class="pl-model-note">{c.anyNote}</p>
 
   <Disclose summary={c.why} tone="plain">
@@ -238,6 +268,22 @@ const c = COPY[lang];
      the same for everybody and a commissioned model is not. Marked so the
      customer can see at a glance which of the faces on this page are theirs
      alone: the accent hairline is the same one a checked tile gets, at rest. */
+  /* The signed-out prompt. Same shape as .mail-note elsewhere on the site — a
+     surface with an accent rule down its left edge — because it does the same
+     job: a quiet aside that has to be findable by the one person scanning for
+     it. It sits BELOW the grid rather than above it, so it never pushes the
+     tiles down for the majority who do not need it. */
+  .mp-signin {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin: 1.1rem 0 0; padding: .8rem 1rem;
+    border-radius: var(--r-md);
+    background: var(--surface);
+    box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
+    font-size: .9rem; line-height: 1.5; color: var(--ink-2);
+  }
+  .mp-signin > span { flex: 1 1 20rem; }
+  .mp-signin-btn { flex: 0 0 auto; }
+
   .mp-opt.is-own { border-color: var(--accent-line); }
   .mp-opt.is-own .mp-traits { color: var(--accent-bright); font-weight: 600; }
 

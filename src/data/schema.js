@@ -154,7 +154,13 @@ function organizationNode() {
     name: 'VISUAILS',
     description: ORG_DESCRIPTION,
     url: SITE,
-    logo: `${SITE}/img/logo-mark.webp`,
+    // The favicon set, not img/logo-mark.webp. That raster is the cyan-to-
+    // periwinkle mark from the retired palette — the one thing on the site
+    // still wearing it, and the one image Google would have shown next to the
+    // brand in a knowledge panel. favicon-512.png is cut from the same traced
+    // glyph as everything else by scripts/make-favicons.mjs, so it follows the
+    // palette automatically instead of needing a hand export.
+    logo: `${SITE}/favicon-512.png`,
     image: `${SITE}/img/banners-09.webp`,
     email: 'hello@visuails.com',
     telephone: '+31625436130',
@@ -164,7 +170,16 @@ function organizationNode() {
       addressCountry: 'NL',
     },
     areaServed: 'Worldwide',
-    sameAs: ['https://wa.me/31625436130'],
+    // Every profile the studio actually controls. sameAs is how a search
+    // engine knows these accounts and this domain are one publisher rather
+    // than three unrelated things with the same name — it is the entity-
+    // resolution field, not a link list, so an account that is not ours does
+    // not belong here even if we post to it.
+    sameAs: [
+      'https://wa.me/31625436130',
+      'https://www.instagram.com/visuails_com/',
+      'https://www.facebook.com/profile.php?id=61590208333392',
+    ],
   };
 }
 

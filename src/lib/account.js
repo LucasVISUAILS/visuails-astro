@@ -80,6 +80,7 @@ import { sendMail } from './mail.js';
 import { PER_PRODUCT } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
+import { mailNote } from '../data/mailNote.js';
 
 /** account_tokens.expires_at — long enough to find the email on a phone, short enough that a stale inbox hit is dead. */
 const LOGIN_TOKEN_TTL_MINUTES = 60;
@@ -188,7 +189,14 @@ const COPY = {
     loginTooMany: 'Too many attempts. Wait a minute and try again.',
 
     checkTitle: 'Check your email',
-    checkBody: 'If that address has ordered with us before, a sign-in link is on its way. It works once, and for 30 minutes.',
+    // THE LIFETIME IN THIS SENTENCE WAS A LIE FOR ONE BUILD. It said "works
+    // once, and for 30 minutes" while the token had already moved to an hour
+    // with a fifteen-minute reuse window — the change that stopped corporate
+    // mail scanners burning links before the customer clicked them. The mail
+    // itself was updated and reads its wording from LOGIN_TOKEN_TTL_MINUTES;
+    // this screen, which the customer is looking at while they wait, was not.
+    // It is built from the constant now, so the two cannot disagree again.
+    checkBody: `If that address has ordered with us before, a sign-in link is on its way. It stays valid for ${LOGIN_TOKEN_TTL_MINUTES % 60 === 0 ? (LOGIN_TOKEN_TTL_MINUTES / 60 === 1 ? 'an hour' : `${LOGIN_TOKEN_TTL_MINUTES / 60} hours`) : `${LOGIN_TOKEN_TTL_MINUTES} minutes`}.`,
 
     badLinkTitle: 'This link does not work',
     badLinkBody: 'It may have expired, already been used, or been mistyped. Request a new one below.',
@@ -350,7 +358,9 @@ const COPY = {
     loginTooMany: 'Te veel pogingen. Even wachten en opnieuw proberen.',
 
     checkTitle: 'Check je e-mail',
-    checkBody: 'Als dat adres al eerder bij ons besteld heeft, is er een inloglink onderweg. Hij werkt één keer, en 30 minuten lang.',
+    // Zie de EN-regel: de duur komt uit LOGIN_TOKEN_TTL_MINUTES, niet uit een
+    // getal dat iemand hier ooit heeft ingetypt.
+    checkBody: `Als dat adres al eerder bij ons besteld heeft, is er een inloglink onderweg. Hij blijft ${LOGIN_TOKEN_TTL_MINUTES % 60 === 0 ? (LOGIN_TOKEN_TTL_MINUTES / 60 === 1 ? 'een uur' : `${LOGIN_TOKEN_TTL_MINUTES / 60} uur`) : `${LOGIN_TOKEN_TTL_MINUTES} minuten`} geldig.`,
 
     badLinkTitle: 'Deze link werkt niet',
     badLinkBody: 'Mogelijk is hij verlopen, al gebruikt, of verkeerd overgetypt. Vraag hieronder een nieuwe aan.',
@@ -664,7 +674,7 @@ async function handleLoginPost({ request, env }) {
     await sendLoginLink(env, request, email, lang).catch(() => {});
   }
 
-  return html(page({ lang, title: t.checkTitle, body: checkEmailBody(t) }));
+  return html(page({ lang, title: t.checkTitle, body: checkEmailBody(t, lang) }));
 }
 
 async function sendLoginLink(env, request, email, lang) {
@@ -1660,12 +1670,16 @@ function loginBody(t, lang, error = null) {
 </div>`;
 }
 
-function checkEmailBody(t) {
+function checkEmailBody(t, lang) {
+  // The spam line comes from src/data/mailNote.js — the same sentence the
+  // thank-you page and the portal's no-link screen print. See that file for why
+  // it is shared rather than written three times.
   return `
 <div class="bar"><a class="mark" href="/">VISUAILS</a></div>
 <div class="authcard">
   <h1>${esc(t.checkTitle)}</h1>
   <p class="lede">${esc(t.checkBody)}</p>
+  <p class="mailnote">${esc(mailNote(lang))}</p>
 </div>`;
 }
 

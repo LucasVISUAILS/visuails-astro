@@ -260,8 +260,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
     <div class="flex" style="margin-top:1.8rem">
       <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
       <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
-      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
       </a>
     </div>
     <div class="trust-row" style="margin-top:2.4rem">
@@ -443,8 +442,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
       <div class="flex" style="justify-content:center;margin-top:2rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
         <a href={`${lp('/custom-models')}#standard`} class="btn btn-ghost btn-lg">{c.modelCta}</a>
-        <a href={c.waTalk} class="btn btn-wa" target="_blank" rel="noopener">
-          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+        <a href={c.waTalk} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
         </a>
       </div>
     </div>

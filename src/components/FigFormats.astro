@@ -82,7 +82,13 @@ const RATIOS = [
 
   .fmt-frame {
     height: clamp(122px, 17vw, 208px);
-    border: 1px solid var(--ink);
+    /* A 1px --ink border is a WHITE outline, which on a near-black page is the
+       hardest edge the palette can draw — it read as a wireframe, not as a
+       frame. An inset ring at --line-strong is the same shape at a fifth of
+       the contrast, and the radius matches every other framed object. */
+    border: 0;
+    border-radius: var(--r-md);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
     background: var(--surface);
     overflow: hidden;
   }

@@ -144,7 +144,9 @@ const { photo, photoAlt, made, madeAlt, inLabel, outLabel, slots, note } = Astro
   .fan-cell {
     position: relative;
     aspect-ratio: 1 / 1;
-    border: 1px solid var(--line-strong);
+    border: 0;
+    border-radius: var(--r-md);
+    box-shadow: inset 0 0 0 1px var(--line);
     background: var(--surface);
     overflow: hidden;
   }

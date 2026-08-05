@@ -226,8 +226,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
     <div class="flex" style="margin-top:1.8rem">
       <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
       </a>
     </div>
     <div class="trust-row" style="margin-top:2.2rem">
@@ -312,8 +311,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
             products" — which was a door the buyer picked between. Size picks
             the service level now, so the button is a verb. */}
         <a href={lp('/start')} class="btn btn-primary">{c.buyCta}</a>
-        <a href={c.waQuote} class="btn btn-wa" target="_blank" rel="noopener">
-          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waQuoteLabel}
+        <a href={c.waQuote} class="btn btn-wa" target="_blank" rel="noopener">{c.waQuoteLabel}
         </a>
       </div>
     </div>
@@ -352,8 +350,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       <div class="flex" style="justify-content:center;margin-top:2rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
         <a href={lp('/contact')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
-        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">
-          <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.waLabel}
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
         </a>
       </div>
     </div>

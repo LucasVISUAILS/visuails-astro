@@ -66,9 +66,17 @@ const guides = [
 
 <style>
   .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
-  .guide-card { display: flex; flex-direction: column; padding: clamp(1.4rem, 2.6vw, 2rem); border: 1px solid var(--line); background: var(--surface); transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
-  .guide-card:hover { border-color: var(--accent-line); transform: translateY(-3px); background: var(--surface-2); }
-  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border: 1px solid var(--accent-line); margin-bottom: 1rem; }
+    /* A card, so it takes the card treatment: the site radius and .lift from
+     global.css (a lit top edge, a contact shadow, a 1.2% rise on hover)
+     instead of a 1px grey rectangle. The local transition is gone with it —
+     .lift declares its own, and two rules animating `transform` from two
+     places is how a hover ends up with two different durations. */
+.guide-card { display: flex; flex-direction: column; padding: clamp(1.5rem, 2.8vw, 2.1rem); border: 0; border-radius: var(--r-lg); background: var(--surface); }
+    /* Only the ground changes here. The rise and the shadow come from .lift in
+     global.css; repeating translateY locally would win on specificity and
+     silently drop the 1.2% scale that makes the two consistent. */
+  .guide-card:hover { background: var(--surface-2); }
+  .guide-tag { align-self: flex-start; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-bright); padding: .3rem .7rem; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--accent-line); margin-bottom: 1rem; }
   .guide-title { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.12; color: var(--ink); letter-spacing: -0.02em; }
   .guide-desc { margin-top: .7rem; font-size: .95rem; color: var(--ink-3); line-height: 1.55; }
   .guide-more { margin-top: 1.4rem; display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; font-weight: 600; color: var(--ink); }

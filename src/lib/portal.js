@@ -50,6 +50,7 @@
 import { TEST_SAMPLE, TIERS, aftercare, turnaround } from '../data/pricing.js';
 import { PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken } from './token.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
+import { mailNote } from '../data/mailNote.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
 
@@ -914,6 +915,13 @@ function plainPage(env, request, kind, status, lang = null) {
 <main class="plain">
   <h1>${esc(title)}</h1>
   <p class="lede">${esc(lede)}</p>
+  ${/* Only `none`. That is the screen that says "open the link from the email
+        we sent you", so it is the only one of the six where a reader's next
+        move is to go and look in their inbox. On `expired` or `replaced` the
+        mail exists and is not the problem, and telling someone to check their
+        spam folder for a message they already read is the kind of help that
+        makes a page feel automated. */ ''}
+  ${kind === 'none' ? `<p class="mailnote">${esc(mailNote(l))}</p>` : ''}
   <p class="note">${esc(ask)} <a href="mailto:${STUDIO_EMAIL}">${STUDIO_EMAIL}</a></p>
 </main>`;
 

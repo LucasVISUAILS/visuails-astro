@@ -826,6 +826,22 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             <li style="color:var(--ink-3)">{t('foot_location')}</li>
             {t('support_note') && <li style="color:var(--ink-3);font-size:.82rem;margin-top:.2rem">{t('support_note')}</li>}
           </ul>
+          {/* The social row. Icons only, no labels — three brand marks are
+              read faster than three words, and these are the three marks
+              everyone already knows. The mark itself comes from the
+              [href*="…"] rules in global.css, which is why there is no <svg>
+              here: one path per network, in one file, used by every link to
+              that network anywhere on the site.
+
+              aria-label carries the destination, because a link whose entire
+              content is a CSS ::before is a link with no accessible name.
+              rel="me" is the one piece of markup that tells an aggregator
+              these profiles and this domain are the same publisher. */}
+          <ul class="foot-social">
+            <li><a href="https://wa.me/31625436130" target="_blank" rel="noopener me" aria-label="WhatsApp"></a></li>
+            <li><a href="https://www.instagram.com/visuails_com/" target="_blank" rel="noopener me" aria-label="Instagram"></a></li>
+            <li><a href="https://www.facebook.com/profile.php?id=61590208333392" target="_blank" rel="noopener me" aria-label="Facebook"></a></li>
+          </ul>
         </div>
       </div>
       <div class="footer-bottom">
@@ -863,8 +879,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     rel="noopener"
     aria-label={t('wa_launcher_aria')}
   >
+    {/* THE ACTUAL WHATSAPP MARK, not a speech bubble. What was here was a
+        generic outlined chat bubble — the shape of "message us", which is not
+        the shape anyone recognises. The point of putting a network's own glyph
+        on a button is that it is identified before it is read, and a bubble
+        that is nearly-but-not-quite WhatsApp gets neither the recognition nor
+        the neutrality. Same path as public/img/i-whatsapp.svg, inline here
+        because this one is drawn at 24px and wants no extra request on first
+        paint; fill, not stroke, so it matches the marks in the footer. */}
     <svg class="wa-launcher-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" />
+      <path fill="currentColor" stroke="none" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
     </svg>
     <span class="wa-launcher-label">{t('wa_launcher_label')}</span>
   </a>
@@ -886,6 +910,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     // import on its own, it will cost 70 KB and animate nothing.
     import '../scripts/interactions.js';
     import '../scripts/shader-hero.js';
+    // Inertial scrolling. ~3 kB, off entirely under prefers-reduced-motion and
+    // on touch; it drives the document's real scrollTop, so the sticky header
+    // above and the view()-timeline reveals in global.css are unaffected. The
+    // long argument for why a library and not `scroll-behavior: smooth` is at
+    // the top of the module.
+    import '../scripts/smooth-scroll.js';
   </script>
   {/* THE BEACON IS NOT RENDERED HERE ANY MORE, and that is the whole point of
       the consent banner. A <script> in the HTML fires before any script can
@@ -1002,6 +1032,29 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     --line:        rgb(255 255 255 / 0.16);
     --line-strong: rgb(255 255 255 / 0.30);
     --line-ui:     var(--paper-muted-on-dark);
+    /* THE LOGOTYPE FLATTENS TO PAPER HERE TOO, and this is the one scope where
+       it does not follow the accent. :root moved --brand to #86C232 in August
+       2026 — green reads at 9.27:1 on the page ground and the mark is green
+       everywhere else, including the footer and the scrolled bar.
+
+       Over a hero photograph it is not. Measured exactly the way the ink tiers
+       above were (wordmark hidden, the box it occupies screenshotted, the
+       BRIGHTEST pixel taken as the ground):
+
+         /                5.55:1   ✓
+         /how-it-works    3.70:1   ✗
+         /video           3.19:1   ✗
+         /about           2.94:1   ✗
+
+       Three of the four fail, and they fail because the green is a mid-tone:
+       it has the room white has against a dark photograph and none of white's
+       room against a bright one. So the bar over a hero keeps the paper mark
+       and swaps to green at the same moment the bar itself goes solid — one
+       transition, not two, which is the only reason a logotype changing colour
+       is acceptable rather than a bug.
+
+       Re-take these numbers when a hero photograph is replaced. Nothing will
+       report it: a contrast checker reads text and this is an <svg>. */
     --brand:       var(--paper-on-dark);
     --focus-ring:  var(--paper-on-dark);
     --ghost:       rgb(255 255 255 / 0.12);
@@ -1165,7 +1218,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      children so it never hijacks the CTA buttons (which live in .mobile-cta)
      — that override was flattening "Order now" to a left-aligned block. */
   .mobile-nav > a { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
-  .mobile-cta { display: flex; flex-direction: column; gap: .7rem; margin-top: 1.8rem; }
+  .mobile-cta { display: flex; flex-direction: column; gap: var(--gap-actions); margin-top: 1.8rem; }
   .mobile-cta .btn { font-size: 1.05rem; }
   .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
   .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
@@ -1180,11 +1233,27 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   /* The gap above the footer is breathing room after a dark section that ended
-     on its own terms. After a gradient panel it is not breathing room, it is a
-     strip of leftover page between two finished blocks — the panel's bottom
-     edge and the footer's top edge with nothing in between doing any work. So
-     when the panel is the last thing on the page, the footer meets it. */
-  main:has(> .panel-grad:last-child) + .site-footer { margin-top: 0; }
+     on its own terms. After a panel it is not breathing room, it is a strip of
+     leftover page between two finished blocks — the panel's bottom edge and
+     the footer's top edge with nothing in between doing any work. So when the
+     panel is the last thing on the page, the footer meets it.
+
+     THIS RULE HAS NEVER ONCE MATCHED, for two independent reasons, which is
+     why the 130px of empty ground and the hairline above the footer are in
+     every screenshot Lucas has ever sent of the bottom of the page.
+
+     One: it said .panel-grad, and that class was renamed to .panel-tonal with
+     the palette. Two, and this one predates the rename: `:last-child` on the
+     panel is false. Astro appends its hoisted <script> inside <main>, so the
+     last child of main is a SCRIPT and the last SECTION is second-to-last. A
+     structural pseudo-class over markup a framework appends to is a bet on
+     that framework's output, so the test is simply "does main contain a panel
+     as a direct child" — which is only ever true for the closing plate.
+
+     The hairline goes with the gap. An inset rule is how a footer separates
+     itself from a section that ended on its own terms; these two do not end,
+     the plate runs into it. */
+  main:has(> .panel-tonal) + .site-footer { margin-top: 0; box-shadow: none; }
   .site-footer > .container { position: relative; z-index: 1; }
 
   /* The finale sits behind the columns and is clipped by the footer, so the
@@ -1198,11 +1267,22 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .foot-glow {
     position: absolute; left: 50%; bottom: -34%;
     width: min(120%, 1500px); aspect-ratio: 2 / 1; transform: translateX(-50%);
-    /* Was harbor teal, hand-written as rgb() because a gradient stop cannot
-       take a token with a separate alpha. It still cannot — so this is the
-       accent's channels, quoted once, with a comment saying where they come
-       from. If --accent moves, these three stops move with it by hand. */
-    background: radial-gradient(ellipse at 50% 100%, rgb(91 124 250 / 0.30) 0%, rgb(154 107 245 / 0.14) 38%, rgb(154 107 245 / 0) 70%);
+    /* Hand-written as rgb() because a gradient stop cannot take a token with a
+       separate alpha. It still cannot — so this is the accent's channels,
+       quoted once, with a comment saying where they come from.
+
+       THE COMMENT SAID "if --accent moves, these three stops move with it by
+       hand" AND THEN THEY DID NOT. The accent went from harbor blue to the
+       green and this rule kept 91 124 250 and 154 107 245 — a blue-to-violet
+       bloom under the footer, which is the pink glow Lucas is looking at in
+       every screenshot of the bottom of the page. An instruction to a future
+       reader is not a mechanism; this is the second thing in this palette
+       change to be found by looking rather than by anything failing.
+
+       Also quieter: 0.30 → 0.20. A bloom in the accent hue is a much stronger
+       signal than one in a colour that appears nowhere else, so the same alpha
+       reads as roughly twice the light. */
+    background: radial-gradient(ellipse at 50% 100%, rgb(134 194 50 / 0.20) 0%, rgb(134 194 50 / 0.09) 38%, rgb(134 194 50 / 0) 70%);
   }
   @media (max-width: 700px) {
     .foot-watermark { width: 190%; bottom: -4%; opacity: .045; }
@@ -1219,6 +1299,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      the heading level tells the truth and nothing moves a pixel. */
   .footer-col .footer-h { font-family: var(--font-body); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 1rem; font-weight: 600; }
   .footer-col ul { display: flex; flex-direction: column; gap: .6rem; list-style: none; margin: 0; padding: 0; }
+  /* The social row is the one <ul> in a footer column that runs across. It has
+     to be overridden HERE rather than in global.css: the rule above is scoped
+     by Astro to `.footer-col[data-astro-cid-…] ul[data-astro-cid-…]`, and no
+     bare class in a global stylesheet can outrank two classes plus two
+     attributes. Everything else about .foot-social — the 44px targets, the
+     ring, the hover — is in global.css beside the icon masks it depends on. */
+  .footer-col ul.foot-social { flex-direction: row; gap: .5rem; }
   .footer-col a { color: var(--ink-2); font-size: .92rem; }
   .footer-col a:hover { color: var(--ink); }
   /* Matches the anchors beside it exactly — a withdrawal route that looks
@@ -1257,7 +1344,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     font-size: .88rem; font-weight: 600; line-height: 1; white-space: nowrap;
     transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); border-radius: var(--r-md); }
   .wa-launcher:hover { border-color: var(--ink-3); background: var(--surface-2); }
-  .wa-launcher-i { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; }
+  /* fill, no stroke — the mark is a solid glyph now, not an outlined bubble.
+     A stroke-width on a filled path thickens every counter until the phone
+     inside the bubble closes up at 20px. */
+  .wa-launcher-i { width: 20px; height: 20px; flex: 0 0 auto; fill: currentColor; stroke: none; }
   /* Clipped, not squeezed. The old rule transitioned max-width and margin-left,
      which is layout animation — banned outright by DESIGN.md — and it moved the
      mark out from under the pointer as the label arrived. The label is now a

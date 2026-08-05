@@ -14,6 +14,7 @@
 // #ty-summary. Nothing here needs Astro.url.searchParams.
 import Layout from '../layouts/Layout.astro';
 import { TIERS, turnaround } from '../data/pricing.js';
+import { mailNote } from '../data/mailNote.js';
 
 // Every form on the site lands here and all of them place per-product orders,
 // so the timing this page states is Tier 0's. It claimed "around 24 hours" in
@@ -38,6 +39,12 @@ const description =
     <span class="eyebrow-page">Request received</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Thanks — we've got your request.</h1>
     <p class="lead" style="margin:1.2rem auto 0">We'll confirm the details by email — usually faster on WhatsApp.</p>
+    {/* The spam line. One sentence, from src/data/mailNote.js, printed on every
+        screen that tells a customer to expect an email — this page, the
+        "check your email" screen after requesting a sign-in link, and the
+        portal's no-link screen. Placed directly under the sentence that makes
+        the promise, because that is where the doubt starts. */}
+    <p class="mail-note">{mailNote('en')}</p>
     <!-- Filled client-side with the order reference /api/order redirected here
          with (initThankYou in interactions.js). Ships hidden and stays hidden
          unless there is a valid reference to show — a visitor who reaches this
@@ -56,7 +63,6 @@ const description =
       <a href="/upload-guidelines" class="btn btn-primary btn-lg">Read upload guidelines</a>
       <a href="/" class="btn btn-ghost btn-lg">Back to home</a>
       <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20just%20sent%20a%20request%20through%20the%20site." class="btn btn-wa" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
         Message us on WhatsApp
       </a>
     </div>
@@ -74,7 +80,6 @@ const description =
         <p style="margin-top:.4rem;font-size:.95rem;color:var(--ink-3)">The more angles we have, the more we can guarantee fit, colour and detail come out right the first time. Send a detail close-up, the fabric and an on-body shot — it's free to add and it lifts the whole result.</p>
       </div>
       <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20send%20extra%20photos%20for%20my%20order." class="btn btn-wa" target="_blank" rel="noopener" data-track="ty-extra-photos">
-        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z" /></svg>
         Send extra photos
       </a>
     </div>

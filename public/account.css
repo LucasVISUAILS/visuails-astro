@@ -897,3 +897,26 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   padding-left: 1.35rem;
   padding-right: 1.35rem;
 }
+
+/* ---- .mailnote — "check your spam", August 2026 ----------------------------
+   Printed under every screen on this worker that tells someone an email is on
+   its way: the "check your email" screen after a sign-in link is requested,
+   and the portal's no-link screen.
+
+   The sentence lives in src/data/mailNote.js and is shared with the Astro side
+   of the site. These rules are NOT shared and cannot be: this page runs under
+   `default-src 'none'; style-src 'self'`, so it gets this file and nothing
+   else — no global.css, no inline style attribute. If .mail-note in
+   global.css changes shape, change it here too; there is no mechanism that
+   will tell you, which is why this paragraph exists. */
+.mailnote {
+  margin: 1rem 0 0;
+  max-width: 52ch;
+  padding: .7rem .9rem .7rem 1rem;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 3px 0 0 var(--accent);
+  font-size: .9rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}

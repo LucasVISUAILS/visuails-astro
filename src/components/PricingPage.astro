@@ -707,8 +707,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     <div class="flex" style="justify-content:center;margin-top:2rem">
       <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.ctaSample}</a>
       <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.ctaStart}</a>
-      <a href={`https://wa.me/31625436130?text=${c.waText}`} class="btn btn-wa" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 20l1.5-4.5A8.38 8.38 0 0 1 3.5 11 8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 8.5 8.5z"/></svg>{c.ctaWa}
+      <a href={`https://wa.me/31625436130?text=${c.waText}`} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWa}
       </a>
     </div>
   </div>

@@ -279,7 +279,22 @@
   --flag:        var(--clay);
   --flag-ink:    var(--clay);
 
-  --brand:       var(--ink-1);
+  /* THE LOGOTYPE IS THE ACCENT NOW, August 2026. It was --ink-1 (flat white)
+     for as long as the mark has been an SVG, which was the right value while
+     the accent was a harbor teal doing button duty and nothing else. The green
+     is the identity, so the logo wears it: VISUAILS in #86C232 measures 9.27:1
+     on the near-black ground and 8.61:1 on --bg-raise, the worst solid surface
+     it lands on, which is comfortably above the 4.5:1 a checker would want if
+     this were text (it is an <svg>, so nothing checks it — see the note by
+     --brand in .convbar for what that has already cost once).
+
+     Read the next three declarations as one rule: --brand tracks the ACCENT on
+     a dark ground and the INK on a bright one. Green on white is 2.15:1, so a
+     bright ground cannot take the accent version of the logotype, and .on-bright
+     restates --brand for exactly that reason — do not delete it on the grounds
+     that it "looks like it does nothing", which is true only because :root got
+     there first. */
+  --brand:       var(--accent);
   --accent-on:   var(--accent-ink);
   /* --accent-2 was declared here and in the two scopes that restate this
      block (the dark ground, and the accent-on-light scope). No rule anywhere
@@ -551,12 +566,14 @@
 
   --focus-ring:    var(--paper-on-dark);
 
-  /* The logotype is one flat value that has to be legible on BOTH grounds, so
-     it flips with the ramp exactly like --ink does. It resolved to --ink-900
-     sitewide for one build and the footer wordmark went ink-on-ink: invisible,
-     and invisible in a way no contrast checker reports, because a checker
-     looks at text and this is an <svg>. */
-  --brand:         var(--paper-on-dark);
+  /* The logotype has to be legible on BOTH grounds, so it flips with the ramp
+     exactly like --ink does. It resolved to --ink-900 sitewide for one build
+     and the footer wordmark went ink-on-ink: invisible, and invisible in a way
+     no contrast checker reports, because a checker looks at text and this is
+     an <svg>. The conversion bar's ground is dark, so it takes the accent —
+     the same value :root now carries, restated here because this scope
+     restates the whole ramp and a gap would inherit the wrong half of it. */
+  --brand:         var(--accent);
 
   /* Secondary on a dark ground is an outline, not a paper block: a paper fill
      over a photograph is a second primary button competing with the teal one.
@@ -970,6 +987,15 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --paper-on-dark:       var(--grad-ink);
   --paper-soft-on-dark:  rgb(8 9 11 / 0.82);
   --paper-muted-on-dark: rgb(8 9 11 / 0.68);
+  /* The logotype does NOT follow the accent here. :root moved --brand to
+     #86C232, which is 9.27:1 on the near-black ground and 2.15:1 on a bright
+     one — the green and white are within a hair of the same luminance. This
+     scope exists for bright grounds, so the mark reverts to ink, which is what
+     --brand resolved to sitewide before the accent took it over. Looks
+     redundant, is not: without it a wordmark dropped into an .on-bright
+     section would go green-on-white and nothing would report it, because a
+     contrast checker reads text and this is an <svg>. */
+  --brand:       var(--grad-ink);
 
   --line:        rgb(8 9 11 / 0.16);
   --line-strong: rgb(8 9 11 / 0.30);
@@ -1013,9 +1039,83 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    near-black and restate all six button tokens. A near-black plate inherits the
    page's own ramp, so all of that goes away — which is why the primary button
    is the accent again instead of a dark object on a light ground. */
+/* The light source moved from `at 12% 0%` to `at 16% 26%`. It was on the top
+   edge, which is exactly where .ground-blend below now lays the page ground
+   back over the plate — so the brightest part of the lamp was being covered by
+   the fade and the plate read as the same near-black as everything around it.
+   A lamp that is entirely inside the seam is not a lamp. Dropping it a quarter
+   of the way down puts the highlight where the heading is, which is where a
+   studio would have aimed it anyway. */
 .panel-tonal {
-  background: radial-gradient(120% 140% at 12% 0%, #23262E 0%, #14161A 44%, #0B0C0F 100%);
+  background: radial-gradient(115% 130% at 16% 26%, #262A33 0%, #15171C 46%, #0A0B0E 100%);
 }
+
+/* ---- .ground-blend — how a section with its own ground joins the page ------
+   Lucas: *"alle secties die veranderen van achtergrond wat meer op elkaar
+   aansluiten met een subtiele fade"*.
+
+   Almost every full-width ground on this site is --bg-0 (see ONE GROUND
+   above). Three sections are deliberately not: the closing plate's tonal
+   gradient, the dream band's photograph, and the promise band's chrome field.
+   Each of those met the page at a hard horizontal line — one row of pixels
+   where #08090B becomes something else — and a straight seam across a 1440px
+   viewport is the most visible edge a layout can have. It is why a photograph
+   two folds down reads as a banner pasted onto the page rather than as part
+   of it.
+
+   ONE PSEUDO-ELEMENT, TWO GRADIENTS, and it works the same whether the ground
+   underneath is a CSS gradient, an <img> or a <canvas>: it does not touch the
+   ground at all. It lays the PAGE's colour back over the section's own top and
+   bottom edge and fades it out, so the section emerges from the page instead
+   of starting on it. A mask would have been the other approach and is worse
+   here — masking the section masks its text with it, and masking a <canvas>
+   costs a compositor layer on the one section that already has a WebGL context.
+
+   z-index: -1 is the whole trick. A negatively-stacked positioned child paints
+   ABOVE its parent's own background and BELOW the parent's in-flow content, so
+   the fade covers the ground and never dims a heading. `isolation: isolate`
+   keeps it from escaping to an ancestor stacking context, and it is why every
+   section wearing this class must not rely on its own children being below -1
+   — .hv-dream's photo sits at -2 for exactly that reason.
+
+   The height is a proportion of the viewport, not a fixed value: a 60px fade
+   under a 900px band is a gradient, the same 60px under a 200px band is most
+   of the section. */
+.ground-blend, .panel-tonal { position: relative; isolation: isolate; }
+.ground-blend::after, .panel-tonal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam,        clamp(3.5rem, 8vw, 8rem))),
+    linear-gradient(to top,    var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam-bottom, var(--seam, clamp(3.5rem, 8vw, 8rem))));
+}
+/* The two edges are separately adjustable because they meet different things.
+   A section that runs into the footer wants a shorter bottom fade than one
+   that runs into 9rem of empty page. --seam sets both; --seam-bottom overrides
+   the lower one. */
+.ground-blend.blend-top-only::after {
+  background: linear-gradient(to bottom, var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam, clamp(3.5rem, 8vw, 8rem)));
+}
+/* The closing plate blends at BOTH edges, and both of them fade to --bg-0.
+   That is worth one sentence because the obvious guess is wrong: the footer's
+   background is declared `var(--bg-deep)`, which is #000 at :root — but
+   .site-footer is in the .on-ink list above and that scope re-points --bg-deep
+   to --ink-900. Its rendered ground is #08090B, the same value as the page.
+   Fading the plate's bottom edge to literal black would have put a band of
+   #000 between two #08090B surfaces: a new seam, in the place we were removing
+   one. Sampled the column at x=1200 to confirm rather than trusting the token
+   name. */
+.panel-tonal { --seam-bottom: clamp(3rem, 6vw, 5rem); }
+
+/* The closing plate wears it by default; it is the one section whose ground is
+   pure CSS, so there is no markup to change. Top seam only, because it sits
+   directly on the footer. The rounded top corners came off with it (see
+   .hv-close in HomeV2.astro): a 24px radius and a 100px fade are two different
+   answers to the same question, and the fade is the one Lucas asked for. */
+.panel-tonal { --seam: clamp(4rem, 9vw, 9rem); }
 
 /* ---- the coloured tiles ----------------------------------------------------
    A tile with a heading and a paragraph, on one of the four bright fills. It
@@ -1109,11 +1209,20 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .band       { padding-block: clamp(4.5rem, 9vw, 9rem); }
 .band-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
 .band-tall  { padding-block: clamp(6.5rem, 13vw, 13rem); }
-/* Emptiness costs nothing on the dark ground — it reads as air. On a gradient
-   plate it is 400px of saturated colour with nothing in it, which reads as a
-   mistake. A panel keeps the tall band's intent and half its measure. */
-.panel-grad.band-tall { padding-block: clamp(4rem, 7vw, 6.5rem); }
-.panel-grad .closing { min-height: 0; }
+/* Emptiness costs nothing on the dark ground — it reads as air. On a plate it
+   is 400px of a DIFFERENT ground with nothing in it, which reads as a mistake.
+   A panel keeps the tall band's intent and half its measure.
+
+   THESE TWO SELECTORS SAID .panel-grad UNTIL AUGUST 2026 and had been dead
+   since the class was renamed to .panel-tonal with the palette. Nothing broke
+   loudly — the rules simply stopped matching, so the homepage's closing plate
+   silently went back to the full band-tall padding (13rem) on top of .closing's
+   own min-height of 78svh. That is most of two viewports holding one heading
+   and two buttons, which is precisely what Lucas described: *"het voelt nogal
+   als een random knop"*. A renamed class is a rename of every selector that
+   names it; grep for the old name before deleting it. */
+.panel-tonal.band-tall { padding-block: clamp(4rem, 7vw, 6.5rem); }
+.panel-tonal .closing { min-height: min(46svh, 26rem); }
 .band + .band, .band-tight + .band-tight { box-shadow: inset 0 1px 0 var(--line); }
 
 /* 2 · STATEMENT — centred headline, one accent word, one line of lede. OPP's
@@ -1129,7 +1238,33 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   margin: clamp(1.1rem, 2vw, 1.6rem) auto 0; max-width: 54ch;
   font-size: var(--t-lg); line-height: 1.55; color: var(--ink-2); text-wrap: pretty;
 }
-.statement .actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+/* THE ROW ITSELF, not a descendant of .statement, and that distinction cost
+   three closing sections their button spacing.
+
+   The homepage, /studio and /portal all close with `class="statement actions"`
+   — both names on ONE element. `.statement .actions` is a descendant selector,
+   so it matched none of them: the buttons fell back to being inline-blocks
+   separated by the single space between the two <a> tags, about 8px, which is
+   what Lucas saw. Declaring the row on its own means both spellings work —
+   `.statement.actions` on one element and `.actions` nested inside one — and
+   the next person who writes either does not have to know which.
+
+   1.1rem, not .75rem. These are pill buttons on the largest size with a filled
+   primary next to an outlined ghost; at 12px the two shapes read as one
+   two-tone object. The gap has to be visibly larger than the pills' own end
+   caps or the eye groups them. */
+/* ONE GAP FOR EVERY ROW OF BUTTONS, and it is a token because it had drifted
+   into five values: .actions was 12px (and not applying at all — see above),
+   .hv-cta 12px, .ch-cta 16px, the cookie bar 9.6px, the mobile drawer 11.2px.
+   Nothing chose any of them; they were each typed once and never compared,
+   which is how a site ends up with two primary buttons 10px apart on one page
+   and 16px apart on the next.
+
+   The value is set by the shape: these are pill buttons, and two pills closer
+   together than their own end caps read as one two-tone object. */
+:root { --gap-actions: clamp(.9rem, 1.6vw, 1.25rem); }
+.actions { display: flex; gap: var(--gap-actions); flex-wrap: wrap; margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+.statement .actions, .statement.actions { justify-content: center; }
 .statement-left { text-align: left; margin-inline: 0; }
 .statement-left h2, .statement-left h1, .statement-left .lede { margin-inline: 0; }
 .statement-left .actions { justify-content: flex-start; }
@@ -1526,7 +1661,8 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    simply stops, which is what a film strip actually does. */
 .marquee { overflow: hidden; padding-block: clamp(1rem, 2vw, 1.6rem); }
 .marquee-track { display: flex; gap: clamp(.9rem,1.4vw,1.3rem); width: max-content; }
-.marquee-item { width: clamp(280px, 26vw, 380px); aspect-ratio: 4/5; overflow: hidden; flex: 0 0 auto; border: 1px solid var(--line); }
+.marquee-item { width: clamp(280px, 26vw, 380px); aspect-ratio: 4/5; overflow: hidden; flex: 0 0 auto;
+  border-radius: var(--r-lg); box-shadow: inset 0 0 0 1px var(--line); }
 
 /* Product visual scenes ("vis") — placeholder for the rare spot with no
    real "clean product on white" photography (see IMAGES.md). */
@@ -2001,7 +2137,7 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .ch-l.dim { color: var(--ink-3); }
 .ch-title em { font-style: normal; color: var(--accent-word); }
 .ch-sub { margin: 1.1rem auto 0; max-width: 52ch; color: var(--ink-2); font-size: var(--t-lg); line-height: 1.6; }
-.ch-cta { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.9rem; }
+.ch-cta { display: flex; justify-content: center; gap: var(--gap-actions); flex-wrap: wrap; margin-top: 1.9rem; }
 .ch-kicker { font-size: .76rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-bright); margin-bottom: 1rem; }
 /* `.btn-glow:hover` was kept here "as a hook so existing markup doesn't break".
    There is no such markup: the class is on zero of the 84 built pages and in no
@@ -2330,95 +2466,225 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .bm-lib-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; }
 
 /* ============================================================
-   SCROLL REVEAL — the photograph develops, August 2026.
+   THE SCROLL-DRIVEN PHOTO REVEAL IS GONE — August 2026.
 
-   Lucas asked for motion that leaves an impression. This is the version that
-   costs nothing: no library, no JavaScript, no bytes. `animation-timeline:
-   view()` hands the progress of the animation to the browser's own compositor,
-   driven by where the element sits in the viewport, and it runs off the main
-   thread.
+   What was here: `animation-timeline: view()` on every .tile-media, .plate,
+   .photo-band, .photo-split-media and .photo-grid img, wiping a clip-path from
+   inset(88%) to 0 across the element's entry into the viewport. It worked, it
+   cost no JavaScript and no bytes, and it took three rounds of scrollport
+   debugging to make work at all.
 
-   WHY A WIPE AND NOT A FADE. A fade is what every AI-generated page does to
-   every section, and it says nothing. This is a vertical wipe with a hair of
-   scale — the image resolves upward out of its own frame, the way a print comes
-   up in the developer. On a site that sells photography the motion should
-   belong to photography.
+   Lucas: *"ik vind het scrolleffect op foto's niet mooi, houd deze subtiel en
+   zonder scroll of verwijder dit effect."*
 
-   THREE THINGS KEEP IT HONEST.
+   It is deleted rather than shortened, and the reason is worth writing down so
+   it is not reinvented: the objection is not to the AMOUNT of movement, it is
+   to movement that is tied to the scrollbar at all. A scroll-linked animation
+   makes the page feel like it is being operated rather than read — every
+   photograph is mid-transition for as long as you are moving, and there is no
+   duration you can pick that fixes that, because the duration is the user's
+   scroll speed. Halving the range would have produced a smaller version of the
+   thing he does not like.
 
-   1 · IT ONLY EVER RUNS AS AN ENHANCEMENT. The rule lives inside @supports, so
-       a browser without scroll-driven animation is handed a fully visible
-       photograph and nothing else. Nothing here gates visibility on a class a
-       script has to add — that is the failure where a reveal never fires on a
-       hidden tab or in a headless render and the section ships blank.
+   What carries the page instead is .lift below: motion that answers a
+   deliberate act (a pointer arriving) rather than an incidental one (the page
+   moving). Do not re-add a scroll-driven reveal on top of it — the two are
+   answers to the same question and the page only gets one.
 
-   2 · animation-range IS `entry`, not the default. With the default range an
-       element sitting in the middle of the viewport at page load would be
-       halfway through its own animation — half-wiped, on first paint. Ending at
-       `entry 100%` means anything already on screen is finished before it is
-       ever seen, and only elements arriving from below actually animate.
+   The @keyframes went with it; nothing else referenced rvDevelop.
+   ============================================================ */
 
-   3 · THE HERO IS EXCLUDED, deliberately and by name. It is the LCP element on
-       every page it appears on, and animating the largest paint is how a fast
-       site starts measuring slow.
+/* ============================================================
+   .lift — the blocks come off the page, August 2026.
 
-   Reduced motion gets the end state immediately — not a shorter animation, no
-   animation. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    /* THE FRAME ANIMATES, NOT THE <img> INSIDE IT — and this is the whole
-       trick, found by measuring rather than by reading. `view()` resolves
-       against the element's nearest SCROLLPORT ancestor, and every one of
-       these frames carries overflow:hidden to clip its photograph. Put the
-       animation on the inner image and its timeline is its own frame, inside
-       which it never moves: Chromium reported a ViewTimeline attached, play
-       state "finished", progress pinned at 1, at every scroll position. It
-       looked wired up and did nothing. On the frame, the nearest scrollport is
-       the document, which is the thing actually being scrolled. */
-    /* A NAMED TIMELINE, declared on the OUTER element and read by the frame
-       inside it. `animation-timeline: view()` was tried first and could not
-       work here: it resolves against the element's nearest scrollport, and
-       these frames sit inside cards that carry overflow:hidden of their own.
-       Chromium attached a ViewTimeline and pinned its progress at 1.00 at every
-       scroll position — measured, twice, before this was rewritten.
+   Lucas: *"van sommige elementen en blokken op de pagina wil ik een 3d effect
+   alsof ze uit de website poppen, en dat ze heel licht inzoomen wanneer je er
+   met je muis overheen gaat — echt heel subtiel, niet overdreven. Niet op
+   alles toepassen maar houd het wel consistent."*
 
-       view-timeline-name puts the SUBJECT on the card, whose own nearest
-       scrollport is the document, and any descendant may then read that name.
-       Which is also the right subject: the reveal should be timed by where the
-       card is on the page, not by where the photograph sits inside it. */
-    .tile,
-    .hv-face,
-    .photo-band,
-    .photo-split-media,
-    .photo-grid img {
-      view-timeline-name: --rv;
-      view-timeline-axis: block;
-    }
+   THE HARD PART IS THAT THE GROUND IS NEAR-BLACK. A drop shadow works by
+   darkening what is behind the object, and there is nothing left to darken at
+   #08090B — the conventional card shadow is literally invisible here. Every
+   dark UI that looks flat is flat for this reason.
 
-    .tile-media,
-    .plate,
-    .photo-band,
-    .photo-split-media,
-    .photo-grid img {
-      animation: rvDevelop linear both;
-      animation-timeline: --rv;
-      animation-range: entry 8% entry 92%;
-      will-change: clip-path;
-    }
+   So depth is built the way it is built in a photograph of a physical object,
+   from three separate cues, and all three are needed:
 
-    /* Never the hero: see (3) above. */
-    .hv-hero-bg,
-    .hv-hero-bg img,
-    .hero-editorial .bg,
-    .hero-editorial img,
-    [fetchpriority="high"] {
-      animation: none;
-      will-change: auto;
-    }
+     1 · A LIT TOP EDGE. `inset 0 1px 0` in a paper alpha is the highlight on
+         the object's own upper bevel — the single strongest "this is above the
+         surface" signal available on a dark ground, because it is the one that
+         does not depend on the background at all.
+     2 · A CONTACT SHADOW. Tight, dark, barely offset. This is what says the
+         object is RESTING on something rather than painted onto it.
+     3 · A CAST SHADOW. Wide, soft, offset downward, and pure black rather than
+         a tinted grey — on this ground a tinted shadow reads as a smudge.
+
+   THE HOVER IS 1.2%, AND THAT IS NOT A TYPO. `scale(1.012)` plus 3px of rise.
+   On a 400px card that is under 5px of growth: you register it as the card
+   coming toward you and you cannot name what changed, which is the difference
+   between subtle and cheap. The temptation is 1.03 — at that size a grid of
+   cards visibly reflows under the pointer and the whole page feels loose.
+
+   WHERE IT IS APPLIED, and this list IS the consistency Lucas asked for.
+   Four selectors: .tile (the site's card primitive, which is most of the cards
+   on most of the pages), .tierc-col (the two service-level cards),
+   .guide-card, and .lift itself for anything that has to opt in by hand.
+
+   A block qualifies if it is a self-contained RECTANGLE — two dimensions,
+   readable as one object, plausibly clickable. It does NOT go on bands,
+   section grounds, anything full-bleed, or text. Two rejections worth naming,
+   because both looked like obvious candidates:
+
+     · Accordion rows (.dc-panel). A 1.2% scale on a 740px row is 9px of
+       growth; with eight stacked, a pointer walking the list makes the whole
+       column breathe. Lift is for objects, not lines. They got a surface
+       change on hover instead — see Disclose.astro.
+     · Diagram tiles (.fmt-frame, .fan-cell, .apv-tile). They already carry an
+       inset ring from their own component, and a component's scoped selector
+       outranks a bare class here, so the lift shadow would have been
+       overwritten and silently done nothing. Two rules writing the same
+       property from two files is a bug waiting for the next reader; they keep
+       the ring and stay flat, which is right for a diagram anyway.
+
+   Adding a selector to this list is the cheap way to break the rule. The test
+   is "is this an object", not "would it look nice".
+
+   transform on hover only, and only where a pointer exists. A touch device has
+   no hover state; :hover on touch fires on tap and sticks until you tap
+   elsewhere, which is a card that stays 1.2% larger for no reason. */
+.lift,
+.tile,
+.tierc-col,
+.guide-card {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.055),
+    0 1px 2px rgb(0 0 0 / 0.55),
+    0 14px 30px -18px rgb(0 0 0 / 0.9);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .lift,
+  .tile,
+  .tierc-col,
+  .guide-card {
+    transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  }
+  .lift:hover,
+  .tile:hover,
+  .tierc-col:hover,
+  .guide-card:hover {
+    transform: translateY(-3px) scale(1.012);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.09),
+      0 2px 4px rgb(0 0 0 / 0.6),
+      0 26px 48px -20px rgb(0 0 0 / 0.95);
   }
 }
 
-@keyframes rvDevelop {
-  from { clip-path: inset(88% 0 0 0); transform: scale(1.035); }
-  to   { clip-path: inset(0 0 0 0);   transform: scale(1); }
+/* A lifted card that is ALSO a link gets the accent on its lit edge. The
+   highlight is already there; tinting it is a free affordance and costs no new
+   shadow layer. Only on hover — a green edge at rest would make every card
+   look selected. */
+@media (hover: hover) {
+  a.lift:hover, .tile a:hover ~ .tile-media { box-shadow: inset 0 1px 0 rgb(134 194 50 / 0.5); }
+}
+
+/* ============================================================
+   SOCIAL ICONS — one mechanism, three marks.
+
+   Lucas: *"alle whatsapp knoppen moeten het whatsapp icoon bevatten, dit wil
+   ik voortaan bij alle sociale media."*
+
+   The marks are single-colour masks, not <img>. An <img> of a brand glyph is
+   a fixed colour, which means one file per ground and a silent failure the day
+   a button's ink changes; a mask paints `currentColor` through the shape, so
+   the icon is whatever the label beside it is, always, including in
+   forced-colours mode. The paths live in public/img/i-*.svg — one copy each,
+   read by both the CSS below and any markup that wants a bigger one.
+
+   THE WHATSAPP ICON IS ATTACHED BY HREF, not by class, and that is deliberate.
+   There are seventeen WhatsApp links across eleven components and they wear
+   .btn-wa, .btn-ghost, .btn-primary, .link-arrow and no class at all. Adding a
+   class to each is seventeen edits that must be repeated for the eighteenth
+   link somebody adds next month. `[href*="wa.me"]` cannot be forgotten.
+
+   Two exclusions: the fixed launcher, which draws its own mark at a larger
+   size, and anything already carrying an <svg> child. */
+:where(a[href*="wa.me"], a[href*="instagram.com"], a[href*="facebook.com"])::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 1.05em;
+  height: 1.05em;
+  background: currentColor;
+  -webkit-mask: var(--soc) center / contain no-repeat;
+  mask: var(--soc) center / contain no-repeat;
+}
+a[href*="wa.me"]      { --soc: url('/img/i-whatsapp.svg'); }
+a[href*="instagram.com"] { --soc: url('/img/i-instagram.svg'); }
+a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
+
+/* Links that are not flex containers still need the mark to sit on the text
+   baseline rather than on the line box's top. */
+:where(a[href*="wa.me"], a[href*="instagram.com"], a[href*="facebook.com"]):not(.btn)::before {
+  display: inline-block;
+  vertical-align: -0.16em;
+  margin-right: .45em;
+}
+/* The launcher has its own, larger mark. */
+.wa-launcher::before { content: none; }
+
+/* The footer's social row: three marks, no labels, sized as touch targets.
+   44px is the smallest square a finger reliably hits, and it is the reason
+   these are not simply three inline icons in the contact list.
+
+   THE ROW DIRECTION IS NOT SET HERE, and the reason is worth one line so it is
+   not "fixed" back. Layout.astro carries `.footer-col ul { flex-direction:
+   column }` for the link lists, and Astro scopes that to
+   `.footer-col[data-astro-cid-…] ul[data-astro-cid-…]` — two classes plus two
+   attributes. Nothing written in this file can outrank that without an
+   !important or a triple-class hack, so the override lives beside the rule it
+   overrides, in Layout.astro. */
+.foot-social { display: flex; gap: .5rem; margin-top: .9rem; list-style: none; padding: 0; }
+.foot-social a {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 50%;
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.foot-social a::before { width: 1.15rem; height: 1.15rem; margin: 0; }
+.foot-social a:hover, .foot-social a:focus-visible {
+  color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+/* ---- .mail-note — "check your spam", everywhere it belongs ------------------
+   Lucas, August 2026, after a customer's sign-in link went to junk: this line
+   should appear every time a screen tells someone an email is coming.
+
+   The sentence itself is in src/data/mailNote.js because three different
+   renderers print it (Astro pages, the account worker, the order portal). This
+   is only how it looks, and the account/portal workers carry their own copy of
+   these rules in public/account.css and public/portal.css — their pages run
+   under `style-src 'self'` with no access to this file.
+
+   QUIETER THAN THE PROMISE ABOVE IT, LOUDER THAN A FOOTNOTE. It is read by two
+   people: the one whose mail arrived, who should be able to skip it, and the
+   one whose did not, who is scanning the page for exactly this. So it gets a
+   surface and an accent rule — enough to find without looking, not enough to
+   compete with the sentence that says the email is on its way. Left-aligned
+   even inside the centred thank-you column: it is an instruction, and an
+   instruction that wraps to two centred ragged lines is harder to follow. */
+.mail-note {
+  margin: 1.1rem auto 0;
+  max-width: 46ch;
+  text-align: left;
+  padding: .7rem .9rem .7rem 1rem;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
+  font-size: .88rem;
+  line-height: 1.55;
+  color: var(--ink-2);
 }

@@ -129,7 +129,7 @@ const t = useTranslations(lang);
   .cc-copy b { display: block; color: var(--ink); font-size: .95rem; margin-bottom: .15rem; }
   .cc-copy a { color: var(--fill-blue); text-decoration: underline; text-underline-offset: 2px; }
 
-  .cc-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .cc-actions { display: flex; align-items: center; gap: var(--gap-actions); flex-wrap: wrap; }
   /* ONE class for both answers. Equal prominence is not a thing to remember,
      it is a thing to make structurally impossible to get wrong. */
   .cc-btn {
@@ -210,7 +210,7 @@ const t = useTranslations(lang);
     flex: 0 0 auto; width: 22px; height: 22px; margin-top: .1rem;
     accent-color: var(--accent); cursor: pointer;
   }
-  .cc-prefs-actions { display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap; margin-top: .4rem; }
+  .cc-prefs-actions { display: flex; gap: var(--gap-actions); justify-content: flex-end; flex-wrap: wrap; margin-top: .4rem; }
 
   /* The conversion bar and this cannot occupy the same 20px. While the consent
      bar is up, the conversion bar sits above it.

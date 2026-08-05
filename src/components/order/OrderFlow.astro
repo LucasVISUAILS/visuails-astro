@@ -587,6 +587,11 @@ const FORM = {
     footBody: `One product, ${sample.price}, ${sample.unit}. Same pipeline as a paid order.`,
     footCta: `Try a test sample · ${sample.price}`,
     footWa: 'Ask on WhatsApp',
+    // The signed-out sign-in prompt at the head of the form. See the markup by
+    // .pl-signin for why it exists and why it is [data-acct="out"].
+    signInH: 'Ordered with us before?',
+    signInBody: 'Sign in and your name, brand, contact details, saved background and your own Brand Models are already filled in — including on every order after this one.',
+    signInCta: 'Sign in',
   },
   nl: {
     railLabel: 'Stappen',
@@ -697,6 +702,9 @@ const FORM = {
     footBody: `Eén product, ${sample.price}, ${sample.unit}. Dezelfde pipeline als een betaalde bestelling.`,
     footCta: `Probeer een proefvisual · ${sample.price}`,
     footWa: 'Vraag het via WhatsApp',
+    signInH: 'Al eerder bij ons besteld?',
+    signInBody: 'Log in en je naam, merk, contactgegevens, opgeslagen achtergrond en je eigen merkmodellen staan er al in — ook bij elke bestelling hierna.',
+    signInCta: 'Inloggen',
   },
 };
 
@@ -795,6 +803,40 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     <input type="hidden" name="upload_batch" value="" />
     <input type="hidden" name="source" value={`start-${service}`} />
     <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
+
+    {/* SIGN IN FIRST, IF THERE IS ANYTHING TO SIGN IN TO. August 2026. Lucas:
+        *"misschien ook bovenaan het begin van een order een knop inloggen laten
+        verschijnen voor als iemand nog niet heeft ingelogd — op deze manier
+        wordt het bestellen sneller en krijg je persoonlijke voorkeuren gelijk
+        automatisch ingevuld. Wanneer een klant al is ingelogd dit niet laten
+        zien."*
+
+        The machinery to prefill has existed for a while: bindPrefill() in
+        pipeline.js asks /account/me, fills six fields, restores the saved
+        background, injects the customer's own Brand Models and collapses the
+        briefing step when it has everything. All of it is silent, and all of it
+        does nothing for a returning customer who simply did not think to sign
+        in — which is most of them, because nothing on this page mentioned it.
+
+        WHY IT IS AT THE TOP AND NOT BESIDE THE EMAIL FIELD. The saving is only
+        real if it happens before the work does. Offered at step 3, next to the
+        name and email it would have filled, it arrives after the customer has
+        already typed them — at which point it is not a shortcut, it is a note
+        saying they wasted a minute.
+
+        data-acct="out" is the site's existing mechanism (Layout.astro): one
+        memoised /account/me per page load, every [data-acct] node toggled in a
+        single pass, painted from a sessionStorage snapshot so a signed-in
+        customer usually never sees this at all rather than watching it vanish.
+        The static HTML ships the signed-out state, which is correct for a
+        crawler, for a browser with no JavaScript, and for most visitors. */}
+    <aside class="pl-signin" data-acct="out">
+      <div>
+        <p class="pl-signin-h">{f.signInH}</p>
+        <p class="pl-signin-body">{f.signInBody}</p>
+      </div>
+      <a href={lp('/account')} class="btn btn-primary pl-signin-cta">{f.signInCta}</a>
+    </aside>
 
     <ol class="pl-rail" aria-label={f.railLabel}>
       {f.rail.map((t, i) => (
@@ -1291,6 +1333,25 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      rule to inherit. The :global() twin covers generated elements. */
   [hidden] { display: none !important; }
   .pl-form :global([hidden]) { display: none !important; }
+
+  /* The signed-out sign-in prompt. Deliberately not a .mail-note clone: this
+     one is asking for an action rather than offering reassurance, so it gets a
+     real primary button and a heading, and it sits on the raised surface with
+     an accent edge so it reads as an offer at the top of the form rather than
+     as a warning about it. */
+  .pl-signin {
+    display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem); flex-wrap: wrap;
+    margin: 0 0 clamp(1.4rem, 3vw, 2rem);
+    padding: clamp(1rem, 2vw, 1.3rem) clamp(1.1rem, 2.2vw, 1.5rem);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+  .pl-signin > div { flex: 1 1 22rem; }
+  .pl-signin-h { margin: 0; font-weight: 700; color: var(--ink); font-size: .98rem; }
+  .pl-signin-body { margin: .3rem 0 0; font-size: .88rem; line-height: 1.55; color: var(--ink-3); }
+  .pl-signin-cta { flex: 0 0 auto; }
+  @media (max-width: 560px) { .pl-signin-cta { width: 100%; } }
 
   /* No .sr-only or .visually-hidden exists sitewide; the fieldset legend needs
      one. Clipped rather than display:none, so it stays in the a11y tree. */

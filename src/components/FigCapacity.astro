@@ -107,7 +107,9 @@ const segments = (hasSlot: boolean) => {
       transparent 0 5px,
       var(--line-strong) 5px 6px
     );
-    border: 1px solid var(--line);
+    border: 0;
+    border-radius: var(--r-sm);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .cap-open {

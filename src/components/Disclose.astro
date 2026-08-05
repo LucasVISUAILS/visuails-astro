@@ -134,13 +134,37 @@ const {
 
   /* PANEL — bordered, for a stack of short answers. What /faq and the
      homepage's FAQ block already looked like. */
+  /* PANEL — a stack of separate rows, not one bordered table. August 2026.
+     Lucas: *"bij sommige elementen zit een soort grijze rand eromheen, maak
+     dit mooier"*, with the FAQ stack as the example.
+
+     What it was: `border: 1px solid var(--line)` with square corners, and
+     `border-top: 0` on every panel after the first so eight questions read as
+     one outlined box divided into eight cells. Two problems, and the second is
+     the one that matters. The outline is dated — a grey rectangle on a
+     near-black page is a 2009 table. But the SHARED border also said these
+     eight things are one thing, when they are eight independent questions a
+     visitor opens one at a time.
+
+     So: real rows, with real space between them, each on the raised surface
+     with its own radius and a lit top edge. The gap is small (6px) because
+     they are still a list and not a grid of cards.
+
+     NO .lift HERE, and that is deliberate against the global rule. A 1.2%
+     scale on a 740px-wide row is nine pixels of growth, and with eight rows
+     stacked the pointer walking down the list makes the whole column breathe.
+     Lift is for objects with two dimensions; this is a line. It gets a surface
+     change on hover instead, which is what a list row has always got. */
   .dc-panel {
     background: var(--surface);
-    border: 1px solid var(--line);
+    border: 0;
+    border-radius: var(--r-md);
     padding: 1.1rem 1.3rem;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+    transition: background var(--dur-1) var(--ease);
   }
-  /* Stacked panels share their border rather than doubling it. */
-  .dc-panel + .dc-panel { border-top: 0; }
+  .dc-panel + .dc-panel { margin-top: 6px; }
+  .dc-panel:hover, .dc-panel[open] { background: var(--surface-2); }
 
   /* PLAIN — a hairline rule and nothing else, for collapsing whole prose
      sections on a document page. A bordered box around four paragraphs of
