@@ -28,28 +28,31 @@
  * printed so the judgement is made with the number in view, and printing it is
  * what caught the following.
  *
- * ACTIVE IS b — WHITE ON GREEN — AND IT IS THE WEAKEST NUMBER ON THE SHEET.
- * That is a decision, not an oversight, and it is Lucas's, made twice: once
- * when he picked the colourway, and again after the three combinations were
- * rendered side by side at 180 / 48 / 32px with their contrast printed under
- * them and the 32px white-on-toxic tile visibly fading. He chose it with the
- * number and the picture in front of him. The note is here so nobody quietly
- * "fixes" it.
+ * ACTIVE IS c — THE GREEN MARK ON A NEAR-BLACK TILE. Lucas: *"ik wil eigenlijk
+ * het toxic groene logo met transparante achtergrond."* This is that request
+ * with the one part changed that could not survive: the mark IS the green now
+ * rather than white, and it keeps a ground.
  *
- * The history, because the number moved twice. He picked white-on-green when
- * the accent was #86C232, where it measured 2.15:1 — already the weakest option
- * and chosen with that figure in view. The accent then went to #C6F100 on his
- * instruction ("meer toxic"), and white on THAT is 1.31:1. Both values are
- * light, so there is very little between them; near-black on the same green is
- * 15.16:1, which is why b2 exists and why it was briefly live.
+ * WHY NOT ACTUALLY TRANSPARENT, which is what was asked. A favicon lands on
+ * three surfaces and two of them are light. Measured against the real values:
  *
- * IF THE TILE EVER NEEDS TO LOOK LIKE THE 2.15:1 VERSION AGAIN, the lever is
- * the GROUND, not the ink: white needs a green around L 0.44 to reach 2.15:1,
- * which is the old #86C232 exactly. A tile-only ground is a normal thing for a
- * brand to have — the site can stay toxic while the icon sits on a deeper green
- * — and it costs one entry in VARIANTS below. It is not done here because
- * nobody has asked for it; this paragraph exists so that the option is on the
- * record rather than rediscovered.
+ *              transparent green   green on this tile
+ *   light tab        1.18:1              15.16:1
+ *   Google result    1.31:1              15.16:1
+ *   dark tab        10.92:1              15.16:1
+ *
+ * A transparent green mark is beautiful on a dark tab strip and a pale ghost
+ * everywhere else — including Google's results page, which is white, and which
+ * is the exact surface Lucas was trying to clean up when he asked why the old
+ * Wix icon was still showing there. Mocked up as three browser rows and looked
+ * at before this was decided; the ghost is visible in the picture, not just in
+ * the arithmetic.
+ *
+ * A theme-aware SVG (green under prefers-color-scheme: dark, near-black under
+ * light) solves the tab strip properly and was the runner-up. It loses on the
+ * fallbacks: the .ico and the PNGs cannot switch, so Android, bookmarks and
+ * Google all get the near-black version, and the icon is then only green on
+ * roughly half the surfaces it appears on. One colour everywhere won.
  *
  * WHITE ON TRANSPARENT IS NEVER AN OPTION, whichever variant is live
  * A transparent white mark disappears on Chrome's and Safari's light tab strip,
@@ -78,14 +81,14 @@ const WHITE = '#FFFFFF';   // --ink-1
 
 /** id → { ground, ink, note }. `ACTIVE` picks the one that ships. */
 const VARIANTS = {
-  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — LIVE, op Lucas zijn keuze' },
+  c:  { ground: DARK,      ink: GREEN,     note: 'gifgroen op bijna-zwart — LIVE' },
+  b:  { ground: GREEN,     ink: WHITE,     note: 'wit op gifgroen — 1.31:1' },
   b2: { ground: GREEN,     ink: DARK,      note: 'bijna-zwart op gifgroen — 15.16:1' },
   a:  { ground: WHITE,     ink: GREEN,     note: 'gifgroen op wit' },
   a2: { ground: WHITE,     ink: GREEN_DIM, note: 'dieper groen op wit' },
-  c:  { ground: DARK,      ink: GREEN,     note: 'gifgroen op bijna-zwart' },
   mono: { ground: DARK,    ink: WHITE,     note: 'wit op bijna-zwart — het vorige stel' },
 };
-const ACTIVE = 'b';
+const ACTIVE = 'c';
 
 /* Relative luminance and contrast, WCAG 2.x. Twenty lines rather than a
  * dependency, and the same maths the palette in global.css was solved with. */
