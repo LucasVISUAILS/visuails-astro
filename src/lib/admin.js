@@ -156,6 +156,12 @@ export async function adminPost(context) {
 
   if (path === '/admin/logout') return handleLogout(context, admin);
 
+  const resolveMatch = path.match(/^\/admin\/revisions\/(\d+)\/resolve$/);
+  if (resolveMatch) return handleRevisionResolve(context, Number(resolveMatch[1]));
+
+  const revokeMatch = path.match(/^\/admin\/customers\/(\d+)\/revisions$/);
+  if (revokeMatch) return handleRevisionRights(context, Number(revokeMatch[1]));
+
   const statusMatch = path.match(/^\/admin\/orders\/(\d+)\/status$/);
   if (statusMatch) return handleStatusUpdate(context, Number(statusMatch[1]));
 
@@ -253,6 +259,74 @@ async function dummyHash() {
 // ─────────────────────────────────────────────────────────────────────────────
 // STATUS UPDATE
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Een revisie afhandelen: het beeld gaat terug naar de klant ter beoordeling.
+ *
+ * review_state gaat naar 'pending' en niet naar 'approved'. Dat verschil is het
+ * hele punt: wij hebben iets gedaan, de klant beslist of het klopt. Het op
+ * 'approved' zetten zou namens de klant een oordeel vellen over werk dat zij
+ * nog niet gezien hebben, en dat is precies het soort stille aanname waar een
+ * discussie over "ik heb dit nooit goedgekeurd" uit ontstaat.
+ *
+ * De notitie wordt gewist omdat hij bij die vorige ronde hoorde. Hij is niet
+ * weg: revision_requests bewaart hem met datum, en dat is waar de geschiedenis
+ * hoort te staan in plaats van in een veld dat de volgende aanvraag overschrijft.
+ */
+async function handleRevisionResolve({ env }, fileId) {
+  const row = await env.DB.prepare(
+    "SELECT id, order_id FROM files WHERE id = ?1 AND review_state = 'revision_requested'"
+  ).bind(fileId).first().catch(() => null);
+  if (!row) return seeOther('/admin');
+
+  await env.DB.batch([
+    env.DB.prepare(
+      "UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1"
+    ).bind(fileId),
+    // Alleen de nog openstaande regels, zodat een tweede ronde later niet de
+    // afhandeldatum van de eerste overschrijft.
+    env.DB.prepare(
+      "UPDATE revision_requests SET resolved_at = datetime('now') WHERE file_id = ?1 AND resolved_at IS NULL"
+    ).bind(fileId),
+  ]).catch(() => {});
+
+  return seeOther('/admin');
+}
+
+/**
+ * Revisierechten intrekken of teruggeven.
+ *
+ * Lucas: *"wanneer hier misbruik van wordt gemaakt kan de klant zijn
+ * revisierechten verliezen."* Een handeling van een mens dus, en omkeerbaar —
+ * want de volgende stap na intrekken is meestal een gesprek, en dat gesprek
+ * loopt vaak goed af.
+ *
+ * De reden is verplicht bij intrekken en dat is geen formaliteit: over drie
+ * maanden belt dit merk, en dan is "waarom staat dit uit" de eerste vraag. Bij
+ * teruggeven wordt beide velden geleegd, zodat er geen reden blijft hangen bij
+ * een account waar niets meer aan de hand is.
+ */
+async function handleRevisionRights({ request, env }, customerId) {
+  const form = await request.formData().catch(() => null);
+  const action = String(form?.get('action') || '');
+  const back = `/admin/customers/${customerId}`;
+
+  if (action === 'restore') {
+    await env.DB.prepare(
+      'UPDATE customers SET revisions_revoked_at = NULL, revisions_revoked_note = NULL WHERE id = ?1'
+    ).bind(customerId).run().catch(() => {});
+    return seeOther(back);
+  }
+
+  if (action !== 'revoke') return seeOther(back);
+  const note = String(form?.get('note') || '').trim().slice(0, 500);
+  if (!note) return seeOther(back);
+
+  await env.DB.prepare(
+    "UPDATE customers SET revisions_revoked_at = datetime('now'), revisions_revoked_note = ?2 WHERE id = ?1"
+  ).bind(customerId, note).run().catch(() => {});
+  return seeOther(back);
+}
 
 async function handleStatusUpdate(context, orderId) {
   const { request, env } = context;
@@ -712,7 +786,11 @@ async function renderCustomer(context, customerId) {
     return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
   }
   const customer = await env.DB.prepare(
-    'SELECT id, email, brand, name, phone, website, vat_number, created_at FROM customers WHERE id = ?1'
+    `SELECT id, email, brand, name, phone, website, vat_number, created_at,
+            revisions_revoked_at, revisions_revoked_note,
+            (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id) AS revisions_asked,
+            (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id AND rr.resolved_at IS NULL) AS revisions_open
+       FROM customers WHERE id = ?1`
   ).bind(customerId).first();
   if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
 
@@ -811,10 +889,46 @@ async function renderCustomer(context, customerId) {
        </tr>`).join('')}</tbody></table>`
     : '<p class="empty">No orders yet.</p>';
 
+  /*
+   * REVISIERECHTEN — het enige knopje op deze pagina dat iets van de klant
+   * afneemt, dus het staat er met zijn cijfers naast in plaats van kaal.
+   *
+   * Twee getallen: hoe vaak dit merk ooit een revisie vroeg, en hoeveel er nu
+   * openstaan. Zonder die twee is intrekken een oordeel op gevoel, en dit is
+   * precies het besluit waarvan je over drie maanden wilt kunnen uitleggen
+   * waarom je het nam.
+   *
+   * De reden is verplicht bij intrekken; teruggeven kan met één klik, omdat de
+   * stap na intrekken meestal een gesprek is en dat gesprek vaak goed afloopt.
+   */
+  const revoked = Boolean(customer.revisions_revoked_at);
+  const revisionsPanel = `
+  <div class="card${revoked ? ' is-attention' : ''}">
+    <div class="row-head">
+      <span class="ref">Revisies</span>
+      <span class="meta">${customer.revisions_asked}× aangevraagd${customer.revisions_open ? ` · ${customer.revisions_open} open` : ''}</span>
+    </div>
+    ${revoked
+      ? `<p class="meta">Ingetrokken op ${esc(when(customer.revisions_revoked_at))}.</p>
+         ${customer.revisions_revoked_note ? `<div class="note">${esc(customer.revisions_revoked_note)}</div>` : ''}
+         <form method="post" action="/admin/customers/${customer.id}/revisions">
+           <button class="btn btn-primary" type="submit" name="action" value="restore">Rechten teruggeven</button>
+         </form>`
+      : `<p class="meta">Deze klant kan revisies aanvragen. Duidelijke fouten van ons lossen we altijd op — intrekken is voor misbruik.</p>
+         <form method="post" action="/admin/customers/${customer.id}/revisions" class="revoke-form">
+           <label class="sr-only" for="revoke-note">Reden</label>
+           <input id="revoke-note" name="note" type="text" maxlength="500" placeholder="Reden — komt hier te staan, niet bij de klant" required>
+           <button class="btn btn-ghost" type="submit" name="action" value="revoke">Rechten intrekken</button>
+         </form>`}
+  </div>`;
+
   const body = `
   <p><a href="/admin/customers">&larr; Customers</a></p>
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
   <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · VAT ${esc(customer.vat_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}</p>
+
+  <h2>Revisies</h2>
+  ${revisionsPanel}
 
   <h2>Brand kit</h2>
   <p class="meta">Set by the customer in their own portal. Read-only here, deliberately.</p>
@@ -1154,11 +1268,32 @@ function later(waitUntil, promise) {
  * Lucas asked for explicitly: "revisies binnen krijg wanneer klanten het in
  * hun portaal met een notitie aanvragen."
  */
+/*
+ * DE INBOX BLIJFT OP files.review_state STAAN, niet op revision_requests.
+ *
+ * Die laatste tabel (migrations/0010) is de geschiedenis en begint op de dag
+ * dat hij is aangemaakt; review_state is de HUIDIGE toestand en geldt ook voor
+ * elke aanvraag van daarvóór. Zou deze query op de log draaien, dan zou elke
+ * openstaande revisie van vóór de migratie stilzwijgend uit het overzicht
+ * verdwijnen — werk dat er is en dat niemand meer ziet. De log wordt er dus bij
+ * gejoind in plaats van eroverheen gelegd.
+ *
+ * WAT DE LOG WÉL TOEVOEGT, en dat is het punt van Lucas' vraag: `asked` is hoe
+ * vaak dit merk ooit een revisie heeft aangevraagd. Eén regel op een kaart, en
+ * het verschil tussen "normale klant met een terecht punt" en "deze belt elke
+ * levering" is af te lezen zonder ergens anders te gaan kijken.
+ */
 async function loadRevisionInbox(env) {
   const res = await env.DB.prepare(
-    `SELECT f.id AS file_id, f.filename, f.review_note, f.reviewed_at,
-            o.id AS order_id, o.ref, o.brand, o.email, o.lang
-       FROM files f JOIN orders o ON o.id = f.order_id
+    `SELECT f.id AS file_id, f.filename, f.review_note, f.reviewed_at, f.preview_key,
+            o.id AS order_id, o.ref, o.brand, o.email, o.lang,
+            o.customer_id,
+            c.revisions_revoked_at,
+            (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = o.customer_id) AS asked,
+            (SELECT COUNT(*) FROM revision_requests rr WHERE rr.file_id = f.id) AS asked_here
+       FROM files f
+       JOIN orders o ON o.id = f.order_id
+       LEFT JOIN customers c ON c.id = o.customer_id
       WHERE f.review_state = 'revision_requested'
       ORDER BY f.reviewed_at DESC
       LIMIT 100`
@@ -1432,14 +1567,42 @@ function statusFilterRow(statusCounts, statusFilter) {
   </nav>`;
 }
 
+/*
+ * WAAROM ER EEN THUMBNAIL OP MOET. Lucas: *"in /admin willen zien bij elke order
+ * en foto waar een revisie voor is aangevraagd."* Een bestandsnaam plus een
+ * notitie dwingt je om in een ander scherm te gaan zoeken welk beeld het is,
+ * en dat is de stap waar dit overzicht juist vanaf moet. /admin/files/<id>
+ * bestond al voor precies deze rij, dus het kost één <img>.
+ *
+ * `asked` staat er alleen bij als er meer dan één is. Bij een eerste aanvraag
+ * is "1×" ruis; bij de zevende is het het enige wat je wilt weten.
+ */
 function revisionCard(r) {
+  const repeat = r.asked_here > 1
+    ? `<span class="pill is-attention">${r.asked_here}× dit beeld</span>` : '';
+  const often = r.asked > 1 ? `<span class="meta">${r.asked}× door dit merk</span>` : '';
+  const revoked = r.revisions_revoked_at
+    ? `<span class="pill">revisierechten ingetrokken</span>` : '';
+
   return `
-<div class="card is-attention">
+<div class="card is-attention" id="rev-${r.file_id}">
   <div class="row-head">
-    <span class="ref">${esc(r.ref)}</span>
-    <span class="meta">${esc(r.brand || r.email)} · ${esc(r.filename || 'file #' + r.file_id)} · ${esc(when(r.reviewed_at))}</span>
+    <span class="ref"><a href="/admin/orders/${r.order_id}/files">${esc(r.ref)}</a></span>
+    <span class="meta">${esc(r.brand || r.email)} · ${esc(when(r.reviewed_at))}</span>
   </div>
-  ${r.review_note ? `<div class="note">${esc(r.review_note)}</div>` : '<p class="meta">No note left.</p>'}
+  <div class="rev-body">
+    <a class="rev-shot" href="/admin/files/${r.file_id}" target="_blank" rel="noopener">
+      <img src="/admin/files/${r.file_id}" alt="${esc(r.filename || 'beeld ' + r.file_id)}" loading="lazy" decoding="async">
+    </a>
+    <div class="rev-text">
+      <p class="meta">${esc(r.filename || 'file #' + r.file_id)} ${repeat} ${often} ${revoked}</p>
+      ${r.review_note ? `<div class="note">${esc(r.review_note)}</div>` : '<p class="meta">Geen notitie achtergelaten.</p>'}
+      <form method="post" action="/admin/revisions/${r.file_id}/resolve" class="rev-actions">
+        <button class="btn btn-primary" type="submit">Opgelost — terug naar de klant</button>
+      </form>
+      <p class="meta"><a href="/admin/customers/${r.customer_id}">Klant bekijken</a></p>
+    </div>
+  </div>
 </div>`;
 }
 

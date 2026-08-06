@@ -114,8 +114,19 @@ const c = COPY[lang];
         an opinion on their own product — and putting it last would have made
         the recommended answer the one you reach after ten portraits. */}
     <label class="mp-opt mp-opt-any">
+      {/* HET MERKTEKEN IN PLAATS VAN EEN PLUS. Lucas: *"ik wil dat de 'choose
+          one that fits our brand'-optie een VISUAILS-logo krijgt zodat de klant
+          kan zien dat wij deze dan voor hem kiezen."* Een plusje betekent
+          "voeg iets toe", en dat is precies niet wat deze tegel doet — hij
+          betekent "wij kiezen". Tussen tien portretten is het merkteken het
+          enige beeld dat zegt wie er dan kiest.
+
+          Hetzelfde <symbol id="markglyph"> als de topbar en de favicon, via
+          <use>, dus deze tegel verandert mee als de vorm ooit weer verandert.
+          Layout.astro's brand-lockup-guard bewaakt dat wordmark en glyph geen
+          gedeelde voorouder krijgen; dit is een losse glyph en valt daarbuiten. */}
       <span class="mp-thumb mp-thumb-any" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18" /></svg>
+        <svg class="mp-mark" viewBox="0 0 702.00 813.25"><use href="#markglyph" /></svg>
       </span>
       <span class="mp-row">
         <input type="radio" name="model" value={MODEL_ANY} checked />
@@ -283,6 +294,16 @@ const c = COPY[lang];
   }
   .mp-signin > span { flex: 1 1 20rem; }
   .mp-signin-btn { flex: 0 0 auto; }
+
+  /* De merktegel. Het glyph vult de tegel niet zoals een portret dat doet —
+     een logo op ware grootte tussen tien gezichten leest als een fout — dus
+     het staat gecentreerd op ongeveer een derde van de hoogte, in het accent.
+     `fill: currentColor` zodat de kleur uit één plek komt. */
+  .mp-thumb-any .mp-mark {
+    width: 34%; height: 34%; display: block;
+    fill: var(--accent); color: var(--accent);
+  }
+  .mp-thumb-any { display: grid; place-items: center; }
 
   .mp-opt.is-own { border-color: var(--accent-line); }
   .mp-opt.is-own .mp-traits { color: var(--accent-bright); font-weight: 600; }

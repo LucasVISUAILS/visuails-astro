@@ -45,6 +45,7 @@
  */
 
 import { mailNote } from '../data/mailNote.js';
+import { tagline } from '../data/brand.js';
 
 const SITE = 'https://visuails.com';
 
@@ -172,7 +173,16 @@ const footer = lang => {
       <a href="${base}/terms" style="color:${C.faint}">${terms}</a> &middot;
       <a href="${base}/privacy" style="color:${C.faint}">${privacy}</a>
     </p>
-    <p style="margin:0;font-size:12px;color:${C.faint}">VISUAILS &middot; Enschede, NL &middot; hello@visuails.com</p>
+    <p style="margin:0 0 4px;font-size:12px;color:${C.faint}">VISUAILS &middot; Enschede, NL &middot; hello@visuails.com</p>
+    <!-- DE BELOFTE STAAT IN DE VOET, NIET IN DE ONDERWERPREGEL. Een onderwerp
+         moet zeggen wat er in de mail staat — "Je bestelling staat genoteerd —
+         VIS-2608-4471" is scanbaar in een volle inbox en een slogan ervoor
+         maakt hem langer en vager. Erger: een transactionele mail met een
+         reclamezin in het onderwerp leest voor een filter als marketing, en
+         daar is deze mail juist van weggehouden (zie src/lib/mail.js over
+         waarom alles als twee delen verstuurd wordt). De voet is waar een
+         merkzin hoort: gelezen door wie doorleest, genegeerd door wie scant. -->
+    <p style="margin:0;font-size:12px;color:${C.faint}">${esc(tagline(lang).plain)}</p>
   </td></tr>
 </table>`;
 };

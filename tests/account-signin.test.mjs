@@ -208,6 +208,41 @@ const anHourAgo = new Date(Date.now() - 60 * 60000).toISOString();
   globalThis.fetch = realFetch;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THE COOKIE ATTRIBUTES, and why they get their own block.
+//
+// August 2026: sign-in was an endless loop. The token was found, the session row
+// was written, the 303 went out with a correct Set-Cookie — and /account still
+// showed the email form, so the customer asked for another link and went round
+// again. Nothing in the database was wrong. The cookie said SameSite=Strict, and
+// a magic link is clicked from a mail client, which makes the whole navigation
+// cross-site — so the browser set the cookie and then refused to send it on the
+// redirect that immediately followed.
+//
+// A Node test cannot reproduce a browser's SameSite behaviour. It CAN pin the
+// attribute, which is the part that was wrong and the part somebody will
+// "correct" later: admin.js sets an almost identical cookie with Strict, and
+// there it is right, because a password form is same-site by nature. Two lines
+// that look alike and must differ is exactly the shape this repo keeps getting
+// bitten by, so the difference is asserted rather than commented.
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+  const r = await visit({ ...base, expires_at: inAnHour, used_at: null }, token);
+  const c = r.cookie;
+
+  check('the session cookie is SameSite=Lax, not Strict',
+    /SameSite=Lax/i.test(c) && !/SameSite=Strict/i.test(c), c.split(';').pop().trim());
+  check('a magic link cannot use Strict — a mail click is always cross-site',
+    !/SameSite=Strict/i.test(c));
+  check('it stays HttpOnly', /HttpOnly/i.test(c));
+  check('and Secure', /Secure/i.test(c));
+  check('scoped to /account and nothing wider', /Path=\/account(;|$)/.test(c),
+    (c.match(/Path=[^;]*/) || [''])[0]);
+  check('and it carries a lifetime rather than dying with the tab', /Max-Age=\d+/.test(c),
+    (c.match(/Max-Age=\d+/) || [''])[0]);
+}
+
 
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);
 process.exit(fails ? 1 : 0);

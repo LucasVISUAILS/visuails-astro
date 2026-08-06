@@ -40,6 +40,7 @@ import {
   WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT, PLAN_PRODUCTS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
+import { TAGLINE } from '../data/brand.js';
 import Disclose from './Disclose.astro';
 import Compare from './Compare.astro';
 import { ROSTER, modelId } from '../data/models.js';
@@ -180,7 +181,7 @@ const COPY = {
     // ours — and "campaign" is the word an established brand already uses for
     // what it runs. Nothing here says they are not a brand yet; that was the
     // objection to the previous draft.
-    h1: ['You upload.', 'We deliver the <em>campaign</em>.'],
+    h1: TAGLINE.en.lines,
     // THE ANCHOR CARRIES A NUMBER NOW. It used to say "priced per product, and
     // the rate falls" — true, and unfalsifiable, which is the shape of a claim
     // rather than a price. With the table moved to section 5 this line is the
@@ -480,7 +481,7 @@ const COPY = {
 
   nl: {
     heroAlt: 'Een VISUAILS campagnebeeld — een model in de duinen bij schemering',
-    h1: ['Jij uploadt.', 'Wij leveren de <em>campagne</em>.'],
+    h1: TAGLINE.nl.lines,
     heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Per product geprijsd, van ${euro(ladderRate('complete', 1), 'nl')} tot ${euro(FLOOR_RATE_EN, 'nl')} naarmate het aantal stijgt.`,
     ctaStart: 'Start een bestelling',
     ctaSample: `Zie het eerst — ${sample.price}`,

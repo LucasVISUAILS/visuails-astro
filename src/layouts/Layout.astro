@@ -63,23 +63,6 @@ import archivoRoman from '@fontsource-variable/archivo/files/archivo-latin-wght-
 // "./*.css", so "/wght.css" resolves to "wght.css.css" and the build fails.
 // Anybody ships an extra "./*.css" entry, which is why the line below keeps it.
 import '@fontsource-variable/big-shoulders-display/wght';
-// ONE AXIS IS ENOUGH — and the two-axis file was tried and handed back.
-// August 2026. Lucas: *"ik zou graag de titelteksten dezelfde grootte willen
-// hebben."*
-//
-// They already were. Measured at the same font-size, Big Shoulders and Anybody
-// have the same x-height to within 1% and the same ascender to within 3%. What
-// made the accent line read as larger was never size: Anybody's stems are 2.8x
-// thicker and the line is 21% wider. Reducing font-size would have made the
-// word genuinely smaller while it still looked heavier — the wrong knob.
-//
-// The knob that IS right is weight, and the weight axis is in this file. The
-// width axis is not; it lives in `/standard-italic.css`, which costs 36 KB more
-// on the latin subset (26 -> 62 KB). That version was built and rendered, and
-// the extra 19px of narrowing it bought did not justify the file. Weight alone
-// takes the line from 299px to 255px, which is most of the distance for none of
-// the bytes. If the width axis is ever wanted for something else, that is the
-// import to switch to — and it is a real cost, not a free upgrade.
 import '@fontsource-variable/anybody/wght-italic.css';
 import bigShoulders from '@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2?url';
 import { ui, dropHrefs, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
@@ -632,7 +615,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             script for a reason that is easy to trip over: Astro scopes the
             styles below to the elements it sees at BUILD time, so a node
             created in JS carries no scope attribute and gets none of them. */}
-        <a href="/account" class="nav-account-link" data-acct="out" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
+        <a href={`/account?lang=${lang}`} class="nav-account-link" data-acct="out" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
         <span class="nav-account-in" data-acct="in" hidden>
           <a href="/account" class="nav-account-link nav-account-name" data-acct-label aria-label={acct.aria} aria-current={isActive('/account') ? 'page' : undefined}></a>
           {/* A form, not a link: signing out is a state change and it has to be
@@ -682,7 +665,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           comment above for why: /account has no /nl/ counterpart to localize
           to, and lp() sending Dutch visitors to a 404 was live from task
           #259 until this fix. */}
-      <a href="/account" class="mobile-account-link" data-acct="out">{t('nav_account')}</a>
+      <a href={`/account?lang=${lang}`} class="mobile-account-link" data-acct="out">{t('nav_account')}</a>
       {/* The drawer's own copy of the signed-in state. Not a second mechanism:
           the script at the foot of this file fills every [data-acct-label] and
           toggles every [data-acct] on the page in one pass, so the drawer and

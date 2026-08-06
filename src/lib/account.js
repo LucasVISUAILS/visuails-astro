@@ -31,7 +31,8 @@
 // portal.js has no cookie and, correctly, no CSRF token — the URL token IS the
 // credential there. This file DOES set a cookie once a magic link is redeemed,
 // which is an AMBIENT credential exactly like admin.js's session cookie, so
-// the same defence applies: SameSite=Strict plus an Origin check on every
+// the same defence applies: SameSite (Lax here — see setSessionCookie for why a
+// magic link cannot use Strict) plus an Origin check on every
 // state-changing POST once a session exists. /account/login itself is exempt
 // from the Origin check — it requires no session to call, so there is no
 // ambient credential for a forged request to ride on; the worst a forged POST
@@ -82,6 +83,7 @@ import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/back
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 import { mailNote } from '../data/mailNote.js';
 import { serviceLabel } from '../data/services.js';
+import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
 // for the mail. Two `p`s in one module is a bug waiting for whichever one gets
@@ -141,6 +143,7 @@ const VERIFY_LIMIT = 20;
 /** The dashboard itself. */
 const PAGE_LIMIT = 60;
 /** File reads get their own, larger budget — one dashboard view can trigger several. */
+const ZIP_LIMIT = 12;
 const FILE_LIMIT = 300;
 /** Logout, the lock form, and per-file review actions. */
 const POST_LIMIT = 20;
@@ -233,6 +236,12 @@ const COPY = {
 
     filesHeading: 'Files',
     emptyFiles: 'Not delivered yet.',
+    sideDelivered: 'What we delivered',
+    sideUploaded: 'What you uploaded',
+    emptyUploads: 'No photos on file for this order.',
+    bDownloadAll: 'Download all',
+    revokedNote: 'Revision requests are paused on this account. Message us and we will sort it out.',
+    shotNames: { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On a model' },
     bView: 'View',
     bDownload: 'Download',
 
@@ -348,6 +357,11 @@ const COPY = {
     askLabel: 'What should change?',
     askHint: 'In your own words. The more specific, the faster we get it right.',
     stApproved: 'Approved',
+    stExpired: 'No longer available',
+    detPhoneHint: 'Add a WhatsApp number and we can reach you there about an order — a question about a photo answered in a minute instead of a mail thread.',
+    waNudgeTitle: 'Get updates on WhatsApp',
+    waNudgeBody: 'Add your number and we can send order updates and quick questions straight to WhatsApp. Nothing changes if you leave it empty — email keeps working.',
+    waNudgeCta: 'Add your number',
     stRevision: 'Revision requested',
 
     planHeading: 'Plan & billing',
@@ -391,6 +405,12 @@ const COPY = {
 
     filesHeading: 'Bestanden',
     emptyFiles: 'Nog niet geleverd.',
+    sideDelivered: 'Wat wij leverden',
+    sideUploaded: 'Wat jij uploadde',
+    emptyUploads: 'Geen foto’s bij deze bestelling.',
+    bDownloadAll: 'Alles downloaden',
+    revokedNote: 'Revisieaanvragen staan op dit account uit. Stuur ons een bericht, dan lossen we het samen op.',
+    shotNames: { front: 'Voorkant', back: 'Achterkant', detail: 'Detail', worn: 'Op een model' },
     bView: 'Bekijken',
     bDownload: 'Downloaden',
 
@@ -461,6 +481,11 @@ const COPY = {
     askLabel: 'Wat moet er anders?',
     askHint: 'In je eigen woorden. Hoe specifieker, hoe sneller het klopt.',
     stApproved: 'Goedgekeurd',
+    stExpired: 'Niet meer beschikbaar',
+    detPhoneHint: 'Zet er een WhatsApp-nummer neer, dan kunnen we je daar bereiken over een bestelling — een vraag over een foto is dan in een minuut geregeld in plaats van in een mailwisseling.',
+    waNudgeTitle: 'Updates via WhatsApp',
+    waNudgeBody: 'Voeg je nummer toe, dan sturen we updates over je bestelling en korte vragen rechtstreeks via WhatsApp. Laat je het leeg, dan verandert er niets — mail blijft gewoon werken.',
+    waNudgeCta: 'Nummer toevoegen',
     stRevision: 'Revisie aangevraagd',
 
     planHeading: 'Abonnement & facturering',
@@ -523,6 +548,15 @@ export async function accountGet(context) {
       token = verifyMatch[1];
     }
     return handleVerify(context, token);
+  }
+
+  const zipMatch = path.match(/^\/account\/orders\/(\d+)\/zip$/);
+  if (zipMatch) {
+    const gate = await checkRate(env, { ip: clientIp(request), action: 'account-zip', limit: ZIP_LIMIT });
+    if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
+    const customer = await currentCustomer(env, request);
+    if (!customer) return seeOther('/account/login');
+    return serveOrderZip(context, customer, Number(zipMatch[1]));
   }
 
   const fileMatch = path.match(/^\/account\/files\/(\d+)\/(f|d)$/);
@@ -724,7 +758,7 @@ async function handleVerify(context, token) {
   const lang = negotiate(request);
   const t = COPY[lang];
 
-  if (!isWellFormedToken(token)) return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t) }), 404);
+  if (!isWellFormedToken(token)) return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 404);
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-verify', limit: VERIFY_LIMIT });
   if (!gate.allowed) return new Response(null, { status: 429, headers: { 'retry-after': String(Math.max(1, gate.retryAfter || 60)), 'content-type': 'text/plain' } });
@@ -744,10 +778,10 @@ async function handleVerify(context, token) {
   // LOGIN_TOKEN_GRACE_MINUTES for why, and why fifteen minutes gives up almost
   // nothing.
   if (!row || isExpired(row.expires_at, null)) {
-    return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t) }), 410);
+    return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 410);
   }
   if (row.used_at && !withinGrace(row.used_at)) {
-    return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t) }), 410);
+    return html(page({ lang, title: t.badLinkTitle, body: badLinkBody(t, lang) }), 410);
   }
 
   const { token: sessionToken, tokenHash: sessionHash } = await mintCredential();
@@ -1239,7 +1273,13 @@ function normalizeHex(v) {
 /** All orders this customer has placed, most recent first. */
 async function loadOrders(env, customerId) {
   const res = await env.DB.prepare(
-    `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at
+    // revisions_revoked_at hangt aan de KLANT, niet aan de bestelling, maar
+    // reviewControls() beslist per bestelling of de knoppen er staan — dus
+    // reist het mee in dezelfde rij in plaats van als tweede query. Eén
+    // subselect op een tabel met één rij is goedkoper dan een extra round trip
+    // en het houdt de aanroep verderop op één ding: `o`.
+    `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at,
+            (SELECT revisions_revoked_at FROM customers c WHERE c.id = ?1) AS revisions_revoked_at
        FROM orders
       WHERE customer_id = ?1
       ORDER BY created_at DESC, id DESC
@@ -1272,11 +1312,21 @@ function canSeeReviewHistory(o) {
  * exactly the rows this single join already returns.
  */
 async function loadCustomerFiles(env, customerId) {
+  // BEIDE KANTEN, sinds augustus 2026. Deze query las alleen kind='delivery',
+  // dus het dashboard kon een klant wél laten zien wat hij terugkreeg en niet
+  // wat hij had aangeleverd. Lucas: *"ze zien dan 2 kanten: de foto's die ze
+  // hebben geüpload en foto's die ze hebben ontvangen."* Dat is niet alleen
+  // symmetrie — het is hoe iemand controleert of zijn upload goed is
+  // aangekomen, en waar hij naar wijst als hij een revisie aanvraagt.
+  //
+  // product_key en shot komen mee omdat een upload zonder die twee een
+  // bestandsnaam is en met die twee "product 3 · achterkant".
   const res = await env.DB.prepare(
-    `SELECT f.id, f.order_id, f.filename, f.bytes, f.expires_at, f.review_state, f.review_note, f.reviewed_at
+    `SELECT f.id, f.order_id, f.kind, f.filename, f.bytes, f.expires_at,
+            f.review_state, f.review_note, f.reviewed_at, f.product_key, f.shot
        FROM files f JOIN orders o ON o.id = f.order_id
-      WHERE o.customer_id = ?1 AND f.kind = 'delivery'
-      ORDER BY f.order_id, f.id`
+      WHERE o.customer_id = ?1 AND f.kind IN ('upload', 'delivery')
+      ORDER BY f.order_id, f.kind DESC, f.id`
   ).bind(customerId).all();
   return res.results || [];
 }
@@ -1424,7 +1474,14 @@ async function handleFileReview({ request, env }, customer) {
   let owned;
   try {
     owned = await env.DB.prepare(
-      `SELECT f.id FROM files f JOIN orders o ON o.id = f.order_id
+      // order_id komt mee omdat revision_requests hem genormaliseerd opslaat,
+      // en revisions_revoked_at omdat een ingetrokken recht ook moet gelden
+      // voor een POST die het formulier omzeilt — de knoppen weghalen in de UI
+      // is een presentatie, niet een regel.
+      `SELECT f.id, f.order_id, c.revisions_revoked_at
+         FROM files f
+         JOIN orders o ON o.id = f.order_id
+         JOIN customers c ON c.id = o.customer_id
         WHERE f.id = ?1 AND o.customer_id = ?2 AND f.kind = 'delivery'
           AND o.tier = 'attended' AND o.closed_at IS NULL`
     ).bind(fileId, customer.customer_id).first();
@@ -1447,11 +1504,29 @@ async function handleFileReview({ request, env }, customer) {
         `UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1`
       ).bind(fileId).run();
     } else {
+      // INGETROKKEN RECHTEN WORDEN HIER GEHANDHAAFD, niet in de UI. Goedkeuren
+      // en terugdraaien blijven wél kunnen: die kosten ons niets en een klant
+      // die zijn revisierechten kwijt is, moet nog steeds kunnen zeggen dat
+      // iets goed is.
+      if (owned.revisions_revoked_at) return seeOther(anchor);
+
       const note = String(form.get('note') || '').trim().slice(0, NOTE_MAX);
-      if (!note) return seeOther(anchor); // nothing said, nothing changed
-      await env.DB.prepare(
-        `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
-      ).bind(fileId, note).run();
+      if (!note) return seeOther(anchor);
+
+      // TWEE SCHRIJFACTIES IN ÉÉN BATCH. files.review_state is de huidige
+      // toestand van dit beeld; revision_requests is de geschiedenis waar admin
+      // op stuurt en waaruit de telling komt. Zouden ze los gaan, dan bestaat er
+      // een toestand waarin een beeld op 'revision_requested' staat zonder dat
+      // iemand weet wanneer of waarom het gevraagd is — precies de situatie die
+      // migration 0010 beschrijft.
+      await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
+        ).bind(fileId, note),
+        env.DB.prepare(
+          `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
+        ).bind(fileId, owned.order_id, customer.customer_id, note),
+      ]);
     }
   } catch {
     return seeOther(home);
@@ -1479,6 +1554,69 @@ async function handleFileReview({ request, env }, customer) {
  * ui.js: three small pure helpers are cheaper to keep in step by eye than to
  * add a third caller-agnostic module for.
  */
+/**
+ * De hele levering van één bestelling als één bestand.
+ *
+ * Lucas koos "per foto én alles in één zip". Bij twintig producten is los
+ * downloaden tachtig keer klikken, en dat is precies het moment waarop iemand
+ * jou mailt met de vraag of het ook anders kan.
+ *
+ * ALLEEN LEVERINGEN. Uploads zitten er niet in, om dezelfde reden dat ze geen
+ * downloadknop hebben: het zijn de foto's van de klant.
+ *
+ * DE VERLOPEN RIJEN VALLEN ERBUITEN in de query, niet in de lus. Een bestand
+ * waarvan het downloadvenster dicht is, hoort niet in een archief te zitten dat
+ * langs die grens heen gebouwd wordt.
+ */
+async function serveOrderZip(context, customer, orderId) {
+  const { env } = context;
+  if (!env.UPLOADS) return new Response(null, { status: 503, headers: fileHeaders() });
+
+  let order;
+  let rows;
+  try {
+    order = await env.DB.prepare(
+      'SELECT id, ref FROM orders WHERE id = ?1 AND customer_id = ?2'
+    ).bind(orderId, customer.customer_id).first();
+    if (!order) return new Response(null, { status: 404, headers: fileHeaders() });
+
+    rows = (await env.DB.prepare(
+      `SELECT id, r2_key, filename, bytes
+         FROM files
+        WHERE order_id = ?1 AND kind = 'delivery'
+          AND (expires_at IS NULL OR expires_at > datetime('now'))
+        ORDER BY id`
+    ).bind(orderId).all()).results || [];
+  } catch {
+    return new Response(null, { status: 503, headers: fileHeaders() });
+  }
+
+  if (!rows.length) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  // De grens van zip.js, hier gehandhaafd omdat hier de maten bekend zijn. Een
+  // 413 met een lege body is eerlijker dan een archief dat pas bij de klant
+  // blijkt niet te openen.
+  const total = rows.reduce((n, r) => n + (r.bytes || 0), 0);
+  if (rows.length > ZIP_MAX_FILES || total > ZIP_MAX_BYTES) {
+    return new Response(null, { status: 413, headers: fileHeaders() });
+  }
+
+  const stream = zipStream(rows.map((r) => ({
+    name: r.filename || `${r.id}.jpg`,
+    get: async () => {
+      const obj = await env.UPLOADS.get(r.r2_key);
+      return obj ? obj.arrayBuffer() : null;
+    },
+  })));
+
+  const headers = new Headers(fileHeaders());
+  headers.set('content-type', 'application/zip');
+  headers.set('content-disposition', zipDisposition(`VISUAILS-${order.ref}.zip`));
+  // Geen content-length: de lengte is pas bekend als het laatste bestand
+  // geschreven is, en een geraden lengte is een afgekapte download.
+  return new Response(stream, { status: 200, headers });
+}
+
 async function serveAccountFile(context, customer, fileId, mode) {
   const { request, env } = context;
 
@@ -1487,15 +1625,25 @@ async function serveAccountFile(context, customer, fileId, mode) {
   let file;
   try {
     file = await env.DB.prepare(
-      `SELECT f.id, f.r2_key, f.preview_key, f.filename, f.expires_at
+      `SELECT f.id, f.kind, f.r2_key, f.preview_key, f.filename, f.expires_at
          FROM files f JOIN orders o ON o.id = f.order_id
-        WHERE f.id = ?1 AND o.customer_id = ?2 AND f.kind = 'delivery'`
+        WHERE f.id = ?1 AND o.customer_id = ?2 AND f.kind IN ('upload', 'delivery')`
     ).bind(fileId, customer.customer_id).first();
   } catch {
     return new Response(null, { status: 503, headers: fileHeaders() });
   }
   if (!file) return new Response(null, { status: 404, headers: fileHeaders() });
   if (file.expires_at && isExpired(file.expires_at, null)) return new Response(null, { status: 410, headers: fileHeaders() });
+
+  // EEN UPLOAD IS TE BEKIJKEN EN NIET TE DOWNLOADEN. Bekijken is wat het
+  // dashboard nodig heeft — controleren dat het goed is aangekomen, en ernaar
+  // wijzen bij een revisie. Downloaden voegt niets toe: het zijn de foto's van
+  // de klant, die heeft hij zelf al. 404 en niet 403, omdat er voor deze
+  // combinatie van id en modus simpelweg niets te leveren valt en een 403 zou
+  // suggereren dat er iets is dat met andere rechten wél kon.
+  if (file.kind === 'upload' && mode === 'd') {
+    return new Response(null, { status: 404, headers: fileHeaders() });
+  }
 
   const key = mode === 'f' ? file.preview_key || file.r2_key : file.r2_key;
 
@@ -1586,13 +1734,51 @@ function readSessionCookie(request) {
   return null;
 }
 
+/*
+ * SameSite=Lax, NOT Strict — and this is the whole sign-in bug, August 2026.
+ *
+ * Lucas: *"als ik op die link klik dan moet ik nog een keer mijn email invullen
+ * en dan krijg ik nog een mail met inloglink en dan geeft weer aan dat ik mijn
+ * mail in moet voeren."* An endless loop, and nothing in the database was wrong:
+ * the token was found, the session row was written, email_verified was set, and
+ * the 303 to /account went out with a correct Set-Cookie. The browser then threw
+ * the cookie away on the very next request.
+ *
+ * WHY. A magic link is clicked from a mail client, so the request to
+ * /account/verify/… is a CROSS-SITE navigation. A SameSite=Strict cookie is set
+ * fine by that response, but it is not SENT on the redirected request that
+ * follows, because the browser still counts the whole navigation chain as
+ * cross-site-initiated. So /account received no cookie, decided nobody was
+ * signed in, and rendered the email form again. Ask for a new link and the same
+ * thing happens forever. The one credential this site gives to customers was
+ * unusable in every browser that implements SameSite correctly.
+ *
+ * WHAT Lax GIVES UP, precisely: nothing that matters here. Lax withholds the
+ * cookie on cross-site POSTs and on cross-site subresource requests — which is
+ * the entire CSRF surface — and sends it only on top-level cross-site GET
+ * navigations, which is exactly the magic-link case and which changes no state
+ * in this file. The Origin check on every state-changing POST that the header of
+ * this file describes stays in place and is untouched.
+ *
+ * ADMIN KEEPS Strict, and the two files must not be made to match. admin.js
+ * authenticates a PASSWORD typed into a form on this origin: its login is
+ * same-site by nature, so Strict costs it nothing and buys the stronger
+ * guarantee. The credential decides the attribute, not consistency between two
+ * lines that happen to look alike.
+ *
+ * Path=/account stays. Everything that reads this session lives under /account,
+ * including the /account/me probe the layout paints the header from, and a
+ * narrower path is a smaller surface.
+ */
+const COOKIE_FLAGS = `Path=/account; HttpOnly; Secure; SameSite=Lax`;
+
 function setSessionCookie(token) {
   const maxAge = ACCOUNT_SESSION_TTL_DAYS * 86400;
-  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/account; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Max-Age=${maxAge}; ${COOKIE_FLAGS}`;
 }
 
 function clearSessionCookie() {
-  return `${SESSION_COOKIE}=; Path=/account; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
+  return `${SESSION_COOKIE}=; Max-Age=0; ${COOKIE_FLAGS}`;
 }
 
 /**
@@ -1691,13 +1877,31 @@ function checkEmailBody(t, lang) {
 </div>`;
 }
 
-function badLinkBody(t) {
+/*
+ * A DEAD LINK IS THE ONE PAGE THAT MUST NOT BE A DEAD END.
+ *
+ * This page told the truth and then failed to act on it: the copy said "Vraag
+ * hieronder een nieuwe aan" / "Request a new one below", and below it was a
+ * small `.note` link to another page. Nothing to fill in, and the way forward
+ * was the quietest thing on the screen — on the one screen a customer reaches
+ * only when they are already stuck, and only after their link has expired.
+ *
+ * The form is rendered here now, so "below" is literally true and the fix is one
+ * action instead of a page hop. It is the SAME form as /account/login, from the
+ * same function, because two email fields that must agree about their name,
+ * their autocomplete hint and their action is two things to get wrong.
+ */
+function badLinkBody(t, lang) {
   return `
 <div class="bar"><a class="mark" href="/">VISUAILS</a></div>
 <div class="authcard">
   <h1>${esc(t.badLinkTitle)}</h1>
   <p class="lede">${esc(t.badLinkBody)}</p>
-  <p class="note"><a href="/account/login">${esc(t.loginSubmit)}</a></p>
+  <form class="login" method="post" action="/account/login">
+    <input type="hidden" name="lang" value="${esc(lang)}">
+    <input type="email" name="email" placeholder="${esc(t.loginEmailLabel)}" autocomplete="email" required>
+    <button class="btn btn-primary" type="submit">${esc(t.loginSubmit)}</button>
+  </form>
 </div>`;
 }
 
@@ -2040,6 +2244,23 @@ function detailsSection(t, lang, details, justSaved) {
   return `
 <section class="detpanel" id="details">
   ${justSaved ? `<p class="det-ok" role="status">${esc(t.detSaved)}</p>` : ''}
+  ${/*
+     DE AANSPORING STAAT ER ALLEEN ALS ER NOG GEEN NUMMER IS. Lucas: *"wij raden
+     aan telefoonnummer voor whatsapp toe te voegen om sneller updates te
+     krijgen."* Een aanbeveling die blijft staan nadat je hem hebt opgevolgd, is
+     geen aanbeveling meer maar ruis — en het is precies de reden dat mensen dit
+     soort blokken wegleren te kijken. Zodra het veld gevuld is, verdwijnt hij.
+
+     Hij belooft ook niets wat we niet doen: er staat dat we je dáár kunnen
+     bereiken, niet dat er automatisch iets verstuurd wordt. Zolang er geen
+     WhatsApp-verzending bestaat, zou dat laatste een toezegging zijn die
+     niemand nakomt.
+  */ ''}
+  ${d.phone ? '' : `<div class="wa-nudge">
+    <h3>${esc(t.waNudgeTitle)}</h3>
+    <p>${esc(t.waNudgeBody)}</p>
+    <p><a class="btn btn-quiet btn-sm" href="#det-phone">${esc(t.waNudgeCta)}</a></p>
+  </div>`}
   <form class="detform" method="post" action="/account/details">
     <div class="det-grid">
       ${field('name', t.detName, d.name, { auto: 'name' })}
@@ -2051,7 +2272,7 @@ function detailsSection(t, lang, details, justSaved) {
       <span class="det-hint">${esc(t.detEmailNote)}</span>
     </div>
     <div class="det-grid">
-      ${field('phone', t.detPhone, d.phone, { type: 'tel', auto: 'tel', optional: true })}
+      ${field('phone', t.detPhone, d.phone, { type: 'tel', auto: 'tel', optional: true, hint: t.detPhoneHint })}
       ${field('website', t.detWebsite, d.website, { type: 'url', placeholder: 'https://', auto: 'url', optional: true })}
     </div>
     <div class="det-grid">
@@ -2275,9 +2496,31 @@ function orderCard(t, lang, o, files) {
     o.created_at ? [t.fPlaced, String(o.created_at).slice(0, 10)] : null,
   ].filter(Boolean);
 
-  const fileList = files.length
-    ? `<ul class="files">${files.map((f) => fileRow(t, f, o)).join('')}</ul>`
-    : `<p class="meta">${esc(t.emptyFiles)}</p>`;
+  // TWEE KANTEN. `files` komt gesorteerd binnen op kind DESC, dus upload vóór
+  // delivery; hier wordt het gesplitst omdat de twee stapels niet hetzelfde
+  // zijn en niet hetzelfde mogen kunnen. Een levering is te downloaden en te
+  // beoordelen; een upload is er om te bekijken.
+  const delivered = files.filter((f) => f.kind !== 'upload');
+  const uploaded = files.filter((f) => f.kind === 'upload');
+
+  const side = (heading, list, empty, extra = '') => `
+  <section class="side">
+    <div class="side-head"><h3>${esc(heading)}</h3>${extra}</div>
+    ${list.length
+      ? `<ul class="shots">${list.join('')}</ul>`
+      : `<p class="meta">${esc(empty)}</p>`}
+  </section>`;
+
+  // De zip staat alleen bij de levering, en alleen als er iets in zit.
+  const zip = delivered.length
+    ? `<a class="btn btn-ghost btn-sm" href="/account/orders/${o.id}/zip">${esc(t.bDownloadAll)}</a>`
+    : '';
+
+  const fileList = `
+  <div class="sides">
+    ${side(t.sideDelivered, delivered.map((f) => shotTile(t, f, o)), t.emptyFiles, zip)}
+    ${side(t.sideUploaded, uploaded.map((f) => shotTile(t, f, o)), t.emptyUploads)}
+  </div>`;
 
   return `
 <div class="card" id="order-${o.id}">
@@ -2287,7 +2530,6 @@ function orderCard(t, lang, o, files) {
   </div>
   <dl class="facts">${facts.map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
   <p class="meta">${esc(t.fWindow)}: ${o.window_start ? window : esc(window)}</p>
-  <h3>${esc(t.filesHeading)}</h3>
   ${fileList}
 </div>`;
 }
@@ -2305,22 +2547,46 @@ function orderCard(t, lang, o, files) {
  * to them — two forms of control, not one form with mixed intents, same
  * "one form, two submits" shape portal.js's shot() uses for approve/revise.
  */
-function fileRow(t, f, o) {
+/**
+ * Eén foto als foto, met zijn knoppen eronder.
+ *
+ * DIT WAS EEN REGEL TEKST. `fileRow()` zette een bestandsnaam, een grootte en
+ * twee knoppen op een <li> — correct, en onbruikbaar voor waar het scherm voor
+ * is. Lucas: *"ik zou willen dat klanten foto's letterlijk qua beeld kunnen
+ * zien."* Een klant die twintig producten heeft besteld en wil weten of shot
+ * drie klopt, kan dat niet aflezen aan `IMG_4471.jpg`.
+ *
+ * DE PREVIEW IS EEN AANVRAAG AAN DEZELFDE ROUTE die de knop "Bekijken" al
+ * gebruikte: /account/files/<id>/f levert preview_key || r2_key, achter de
+ * sessie. Er komt dus geen publieke URL bij en er wordt niets nieuws
+ * blootgesteld — het beeld dat er altijd al doorheen kon, wordt nu ook echt
+ * getoond. loading="lazy" omdat een bestelling van dertig producten anders
+ * honderdtwintig gelijktijdige verzoeken opent.
+ *
+ * GEEN width/height. Bij de rest van de site staan die er wel, omdat de
+ * intrinsieke maat daar bekend is; hier is het een klantfoto van onbekende
+ * verhouding. De tegel is een vaste 4/5-box met object-fit: cover, dus de
+ * layout ligt vast zonder dat er een maat geraden hoeft te worden.
+ */
+function shotTile(t, f, o) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
-  const size = f.bytes ? formatBytes(f.bytes) : '';
-  const info = `<span class="file-info"><span class="name">${esc(f.filename || `#${f.id}`)}</span>${size ? `<span class="meta">${esc(size)}</span>` : ''}</span>`;
+  const isUpload = f.kind === 'upload';
 
-  if (gone) {
-    return `<li id="f${f.id}">${info}</li>`;
-  }
+  // "Product 3 · Achterkant" leest beter dan een bestandsnaam, maar alleen als
+  // beide bekend zijn — en shot mag NOOIT geraden worden (zie de kolomnotitie
+  // in schema.sql: "nobody said" is niet hetzelfde antwoord als "front").
+  const shotName = f.shot && t.shotNames[f.shot] ? t.shotNames[f.shot] : null;
+  const product = f.product_key ? f.product_key.replace(/^p/, '#') : null;
+  const caption = [product, shotName].filter(Boolean).join(' · ') || f.filename || `#${f.id}`;
 
-  const actions = `<span class="file-actions">
-    <a class="btn btn-ghost" href="/account/files/${f.id}/f">${esc(t.bView)}</a>
-    <a class="btn btn-ghost" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>
-  </span>`;
+  const media = gone
+    ? `<div class="shot-media is-gone"><span>${esc(t.stExpired)}</span></div>`
+    : `<a class="shot-media" href="/account/files/${f.id}/f" target="_blank" rel="noopener">
+         <img src="/account/files/${f.id}/f" alt="${esc(caption)}" loading="lazy" decoding="async">
+       </a>`;
 
   let state = '';
-  if (canSeeReviewHistory(o)) {
+  if (!isUpload && canSeeReviewHistory(o)) {
     if (f.review_state === 'approved') {
       state = `<span class="state approved">${esc(t.stApproved)}</span>`;
     } else if (f.review_state === 'revision_requested') {
@@ -2328,36 +2594,67 @@ function fileRow(t, f, o) {
     }
   }
 
-  let review = '';
-  if (canReview(o)) {
-    if (f.review_state === 'approved' || f.review_state === 'revision_requested') {
-      const label = f.review_state === 'approved' ? t.bUndo : t.bCancel;
-      review = `<form class="review-form" method="post" action="/account/review">
+  // Uploads krijgen geen downloadknop en geen beoordeelknoppen: de route
+  // weigert een download van een upload sowieso (zie serveAccountFile), en een
+  // knop die 404 oplevert is een belofte die je niet nakomt.
+  const actions = (gone || isUpload)
+    ? ''
+    : `<a class="btn btn-quiet btn-sm" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>`;
+
+  return `<li class="shot" id="f${f.id}">
+  ${media}
+  <div class="shot-body">
+    <span class="shot-cap">${esc(caption)}</span>
+    ${state}
+    <div class="shot-actions">${actions}${isUpload || gone ? '' : reviewControls(t, f, o)}</div>
+  </div>
+</li>`;
+}
+
+/**
+ * De beoordeelknoppen, losgetrokken uit het oude fileRow().
+ *
+ * Zelfde formulier, zelfde acties, zelfde verplichte notitie — alleen niet
+ * langer verweven met het tonen van een bestandsnaam. Dat scheelt niet vier
+ * regels maar een tweede plek waar de regels over wie mag beoordelen zouden
+ * kunnen gaan afwijken van deze.
+ *
+ * DE NOTITIE IS VERPLICHT en dat is geen formaliteit: zonder wat er mis is, is
+ * een revisie een opdracht om te raden. `required` houdt het tegen in de
+ * browser, accountPost() controleert het op de server, en migrations/0010 zet
+ * er een CHECK op de kolom omheen — drie lagen, omdat alleen de derde nog staat
+ * als iemand het formulier omzeilt.
+ *
+ * INGETROKKEN RECHTEN. Lucas: *"wanneer hier misbruik van wordt gemaakt kan de
+ * klant zijn revisierechten verliezen."* Dan verdwijnen de knoppen en komt er
+ * een zin voor in de plaats die zegt wat er aan de hand is en hoe je het
+ * oplost. Niet zwijgend weglaten: een knop die er zonder uitleg niet meer is,
+ * is een bug voor degene die hem zoekt.
+ */
+function reviewControls(t, f, o) {
+  if (!canReview(o)) return '';
+  if (o.revisions_revoked_at) return `<p class="meta revoked">${esc(t.revokedNote)}</p>`;
+
+  if (f.review_state === 'approved' || f.review_state === 'revision_requested') {
+    const label = f.review_state === 'approved' ? t.bUndo : t.bCancel;
+    return `<form class="review-form" method="post" action="/account/review">
     <input type="hidden" name="file" value="${f.id}">
-    <button class="btn btn-quiet" type="submit" name="action" value="undo">${esc(label)}</button>
+    <button class="btn btn-quiet btn-sm" type="submit" name="action" value="undo">${esc(label)}</button>
   </form>`;
-    } else {
-      // formnovalidate on Approve so the required note in the <details> below
-      // cannot block it — the two submits are alternatives, not steps.
-      review = `<form class="review-form" method="post" action="/account/review">
+  }
+
+  // formnovalidate op Goedkeuren, zodat de verplichte notitie in de <details>
+  // hem niet blokkeert — de twee knoppen zijn alternatieven, geen stappen.
+  return `<form class="review-form" method="post" action="/account/review">
     <input type="hidden" name="file" value="${f.id}">
-    <button class="btn btn-primary" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
     <details class="ask">
       <summary>${esc(t.askSummary)}</summary>
       <label class="sr-only" for="n${f.id}">${esc(t.askLabel)}</label>
       <textarea id="n${f.id}" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.askHint)}" required></textarea>
-      <button class="btn btn-ghost" type="submit" name="action" value="revise">${esc(t.bSend)}</button>
+      <button class="btn btn-ghost btn-sm" type="submit" name="action" value="revise">${esc(t.bSend)}</button>
     </details>
   </form>`;
-    }
-  }
-
-  return `<li id="f${f.id}">
-  ${info}
-  ${state}
-  ${actions}
-  ${review}
-</li>`;
 }
 
 function errorBody(t, message = null) {
@@ -2455,7 +2752,46 @@ function requestOrigin(request) {
 }
 
 /** Language for the pages reached before any order is known — same as portal.js's negotiate(). */
+/*
+ * DE TAAL VAN DIT SCHERM, augustus 2026 — en accept-language is het LAATSTE
+ * waar naar gekeken wordt, niet het eerste.
+ *
+ * Lucas: *"het inlogscherm is standaard Nederlands."* Klopte, en niet alleen
+ * voor hem: deze functie las alleen de browserkop, dus iedereen met een
+ * Nederlandse browser kreeg Nederlands — ook wie net op de Engelse site zat en
+ * daar op "Log in" klikte. De site heeft twee taalversies waar de bezoeker zelf
+ * tussen kiest, en die keuze werd hier weggegooid ten gunste van een instelling
+ * die diezelfde bezoeker misschien jaren geleden op zijn laptop heeft gezet.
+ *
+ * De volgorde is nu van "wat heeft deze persoon zojuist gedaan" naar "wat staat
+ * er in zijn systeem":
+ *
+ *   1 · ?lang= in de URL — de nav-link draagt hem mee, dus dit is letterlijk de
+ *       taal van de pagina waar vandaan geklikt is. Alleen 'nl' of 'en' wordt
+ *       geaccepteerd; iets anders is geen taal maar invoer.
+ *   2 · de Referer — kwam je van een /nl/-pagina, dan las je Nederlands. Werkt
+ *       ook als de link geen parameter draagt, en kost niets als hij er niet is.
+ *   3 · accept-language — de oude regel, nu als terugval voor wie hier
+ *       rechtstreeks binnenkomt via een bookmark of de mail.
+ */
 function negotiate(request) {
+  const known = (v) => (v === 'nl' || v === 'en' ? v : null);
+
+  try {
+    const fromQuery = known(new URL(request.url).searchParams.get('lang'));
+    if (fromQuery) return fromQuery;
+  } catch { /* geen bruikbare URL — door naar de volgende bron */ }
+
+  try {
+    const ref = request?.headers?.get?.('referer');
+    if (ref) {
+      const p = new URL(ref).pathname;
+      // /nl of /nl/... — maar niet /nlsomething.
+      if (/^\/nl(\/|$)/.test(p)) return 'nl';
+      if (p.startsWith('/')) return 'en';
+    }
+  } catch { /* rommelige referer is geen fout, alleen geen signaal */ }
+
   const header = request?.headers?.get?.('accept-language') || '';
   return /(^|[,\s])nl\b/i.test(header) ? 'nl' : 'en';
 }

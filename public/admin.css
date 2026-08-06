@@ -477,3 +477,28 @@ a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: v
   padding-left: 1.35rem;
   padding-right: 1.35rem;
 }
+
+
+/* ---- revisie-inbox met beeld (augustus 2026) --------------------------------
+   Lucas: "in /admin willen zien bij elke order en foto waar een revisie voor is
+   aangevraagd." Een bestandsnaam plus notitie dwong je om in een ander scherm
+   op te zoeken welk beeld het was; de thumbnail haalt die stap weg. Vaste
+   breedte en aspect-ratio, zodat een rij kaarten niet gaat schuiven naarmate de
+   foto's binnenkomen. */
+.rev-body { display: flex; gap: .9rem; align-items: flex-start; margin-top: .6rem; }
+.rev-shot {
+  flex: 0 0 92px; display: block; width: 92px; aspect-ratio: 4 / 5; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--paper-lift);
+}
+.rev-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rev-text { min-width: 0; flex: 1; }
+.rev-actions { margin-top: .6rem; }
+@media (max-width: 560px) { .rev-body { flex-direction: column; } .rev-shot { flex-basis: auto; } }
+
+/* Intrekken vraagt een reden, dus het veld en de knop staan op één rij en het
+   veld krijgt de ruimte — een reden van drie woorden is geen reden. */
+.revoke-form { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .6rem; }
+.revoke-form input {
+  flex: 1; min-width: 14rem; padding: .5rem .6rem;
+  border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
+}
