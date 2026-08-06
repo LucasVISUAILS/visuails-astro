@@ -198,6 +198,10 @@ const COPY = {
     reviewH: "Fast means nothing if it isn't right.",
     reviewP: 'Every visual is generated, then reviewed by a person before it reaches you — colour and detail held true, not left to chance.',
     reviewChips: ['Consistent lighting & framing', 'Marketplace-ready', reviewClaim('unattended', 'en')],
+    // The trust row carried the turnaround flag but not the review claim, while
+    // /lifestyle and /video carried both. Three service pages making two
+    // different promises above the fold is the inconsistency, not the wording.
+    reviewNote: reviewClaim('unattended', 'en'),
     reviewAlt: 'A clean, marketplace-ready catalog visual by VISUAILS',
     faqH: 'Catalog questions, answered',
     faqs: [
@@ -299,6 +303,7 @@ const COPY = {
     reviewH: 'Snel betekent niets als het niet klopt.',
     reviewP: 'Elke visual wordt gegenereerd en daarna door een mens gecontroleerd voordat je hem krijgt — kleur en detail blijven kloppen, niets aan het toeval overgelaten.',
     reviewChips: ['Consistente belichting & uitsnede', 'Klaar voor marktplaatsen', reviewClaim('unattended', 'nl')],
+    reviewNote: reviewClaim('unattended', 'nl'),
     reviewAlt: 'Een strakke, voor marktplaatsen klare Catalog-visual van VISUAILS',
     faqH: 'Catalog-vragen, beantwoord',
     faqs: [
@@ -341,9 +346,16 @@ const shots = SHOTS[lang];
 ---
 
 <section class="page-hero">
-  <div class="container two-col" style="align-items:center">
+  <div class="container two-col hero-split">
     <div class="reveal pending">
-      <h1 class="display cat-h1" style="font-size:clamp(2.4rem,5vw,4rem)" set:html={c.h1} />
+      <!-- `.eyebrow-page` is the site's standing convention — /pricing,
+           /compare, /models, /custom-models, /start, /ai-act and /lifestyle all
+           open with it. This page and /video were the two that did not, so a
+           visitor moving between the three service pages lost the label exactly
+           where the pages are meant to feel like siblings. The ProductScene
+           badge beside it names the IMAGE; this names the page. -->
+      <span class="eyebrow-page">{c.eyebrow}</span>
+      <h1 class="display cat-h1" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem" set:html={c.h1} />
       <p class="lead" style="margin-top:1.2rem" set:html={c.lead} />
       <div class="flex" style="margin-top:1.8rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -356,6 +368,7 @@ const shots = SHOTS[lang];
           <span class="trust-item"><strong>{strong}</strong> {rest}</span>
         ))}
         <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
+        <span class="trust-item tf-verify"><strong>{c.reviewNote}</strong></span>
       </div>
       <p class="queue-note">{c.queueNote}</p>
     </div>
@@ -467,7 +480,7 @@ const shots = SHOTS[lang];
       <div class="photo-split-media"><ProductScene icon="jar" width="40%" badge={c.baH} /></div>
       <div>
         <h2>{c.stepsH}</h2>
-        <div class="steps" style="grid-template-columns:1fr;margin-top:1.6rem;gap:1.1rem">
+        <div class="steps steps-stacked" style="margin-top:1.6rem">
           {c.steps.map(([h, p], i) => (
             <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
           ))}
@@ -632,10 +645,9 @@ const shots = SHOTS[lang];
   .faq-item[open] summary::after { content: '\2212'; }
   .faq-item p { margin-top: .8rem; color: var(--ink-3); font-size: .92rem; line-height: 1.6; }
 
-  .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.1rem; }
-  .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--ink-3); }
-  .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
-  .step p { font-size: .9rem; color: var(--ink-3); }
+  /* The scoped `.step` override that used to sit here is `.steps-stacked` in
+     global.css now — /lifestyle and /video use the same stacked row, and three
+     copies of five declarations is how the last four duplications started. */
 
   /* The Brand Model link inside packP. It arrives through set:html, so it
      carries no scope attribute and a plain `.pack-p a` rule would not reach

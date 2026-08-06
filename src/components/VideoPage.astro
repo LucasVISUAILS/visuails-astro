@@ -37,6 +37,7 @@ import {
   reviewClaim, turnaround,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
+import Disclose from './Disclose.astro';
 import TierCompare from './TierCompare.astro';
 import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
@@ -86,6 +87,7 @@ const strip = [
 // readonly tuples and .map() on that union is a TS error.
 const COPY = {
   en: {
+    eyebrow: 'Video',
     h1: 'Short product videos<br />that <em>move</em>.',
     lead: `8 seconds, subtle motion. ${clip} per clip, ${vatLabel('excl', 'en')} — the same rate whether it is one clip or twenty.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
@@ -96,6 +98,13 @@ const COPY = {
     waQuote: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20a%20quote%20for%20a%20campaign%20video.',
     waLabel: 'WhatsApp',
     waQuoteLabel: 'Quote a campaign',
+    // The third hero button. /catalog and /lifestyle both offer it and this
+    // page did not, so the one service page whose price is a single flat
+    // figure was also the one that gave a visitor no way to see the figure in
+    // context. It says "pricing" rather than "the price ladder": a clip is not
+    // on the ladder, and sending someone to look for a falling rate that does
+    // not exist for this service is the confusion buyFlat exists to prevent.
+    ctaPrices: 'See pricing',
     trust: [
       ['8s', 'clean product videos'],
       [clip, `per clip · ${vatLabel('excl', 'en')}`],
@@ -129,6 +138,13 @@ const COPY = {
       ['Product pages', 'an autoplay clip beside the stills.'],
       ['Email & landing pages', 'a moment of life above the fold.'],
     ],
+    stepsH: 'Three steps to a moving product.',
+    steps: [
+      ['Send a product photo', 'One clean still is enough to start.'],
+      ['We add the motion', 'A slow turn, a drape, a catch of light — held subtle.'],
+      [turnaround('unattended', 'en'), 'Sized for pages, social and ads.'],
+    ],
+    stepsAlt: 'A product video still from a VISUAILS Motion clip',
     cleanH: 'Clean motion, ready to publish.',
     clean: [
       '8-second video with subtle motion',
@@ -151,11 +167,39 @@ const COPY = {
       phone: 'Phone-made-style lifestyle visual',
       dunes: 'Dunes-style lifestyle visual',
     },
+    faqH: 'Video questions, answered',
+    faqs: [
+      {
+        q: 'What does a clip cost?',
+        a: `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
+      },
+      {
+        q: 'Why does the clip rate not fall with volume?',
+        a: 'Catalog and lifestyle photos are priced per product, and that rate falls a rung at a time as the count rises. A clip is not on that ladder — the work per clip is the same whether it arrives alone or with fifty products, so the rate stays put. It is the same figure on its own as it is inside a larger order.',
+      },
+      {
+        q: 'How long is a clip, and what do I get?',
+        a: 'Eight seconds of subtle motion, exported at sizes that fit a product page, a feed and an ad — the same style held across your whole range, so clips ordered months apart still look like they belong together.',
+      },
+      {
+        q: 'How long does it take?',
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more is already booked into the calendar and holds its window, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one holding a window: ${turnaround('attended', 'en').toLowerCase()}.`,
+      },
+      {
+        q: 'Can a model appear in the clip?',
+        a: 'Yes. Where a person appears, that person can come from the standard roster or be a Brand Model made only for you — the same face your catalog and lifestyle sets already run on, so a shopper sees one person across stills and motion alike.',
+      },
+      {
+        q: 'What if I need changes?',
+        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+      },
+    ],
     ctaH: 'Give your product<br>a little movement.',
     ctaP: `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()} under ${WINDOW_THRESHOLD} products.`,
     ctaSecondary: 'Contact us',
   },
   nl: {
+    eyebrow: 'Video',
     h1: 'Korte productvideo’s<br />die <em>bewegen</em>.',
     lead: `8 seconden, subtiele beweging. ${clip} per clip, ${vatLabel('excl', 'nl')} — hetzelfde tarief of het er nu één is of twintig.`,
     ctaPrimary: 'Start een bestelling',
@@ -163,6 +207,7 @@ const COPY = {
     waQuote: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20offerte%20voor%20een%20campagnevideo.',
     waLabel: 'WhatsApp',
     waQuoteLabel: 'Offerte voor een campagne',
+    ctaPrices: 'Bekijk de prijzen',
     trust: [
       ['8s', 'strakke productvideo’s'],
       [clip, `per clip · ${vatLabel('excl', 'nl')}`],
@@ -190,6 +235,13 @@ const COPY = {
       ['Productpagina’s', 'een autoplay-clip naast de stills.'],
       ['E-mail & landingspagina’s', 'een moment van leven boven de vouw.'],
     ],
+    stepsH: 'Drie stappen naar een bewegend product.',
+    steps: [
+      ['Stuur een productfoto', 'Eén strakke still is genoeg om te beginnen.'],
+      ['Wij brengen het in beweging', 'Een langzame draai, een val van stof, een lichtvonk — subtiel gehouden.'],
+      [turnaround('unattended', 'nl'), 'Op maat voor pagina’s, social en advertenties.'],
+    ],
+    stepsAlt: 'Een still uit een VISUAILS Motion-clip',
     cleanH: 'Strakke beweging, klaar om te publiceren.',
     clean: [
       'Video van 8 seconden met subtiele beweging',
@@ -208,6 +260,33 @@ const COPY = {
       phone: 'Lifestyle-visual in Phone-made-stijl',
       dunes: 'Lifestyle-visual in Dunes-stijl',
     },
+    faqH: 'Video-vragen, beantwoord',
+    faqs: [
+      {
+        q: 'Wat kost een clip?',
+        a: `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
+      },
+      {
+        q: 'Waarom daalt het cliptarief niet bij grotere aantallen?',
+        a: 'Catalog- en lifestylefoto’s zijn geprijsd per product, en dat tarief zakt trede voor trede naarmate het aantal stijgt. Een clip staat niet op die staffel — het werk per clip is hetzelfde of hij nu alleen komt of met vijftig producten, dus het tarief blijft staan. Los is het hetzelfde bedrag als binnen een grotere bestelling.',
+      },
+      {
+        q: 'Hoe lang is een clip, en wat krijg ik?',
+        a: 'Acht seconden subtiele beweging, geëxporteerd op maten die passen op een productpagina, een feed en een advertentie — met dezelfde stijl door je hele assortiment, zodat clips die maanden uit elkaar besteld zijn nog steeds bij elkaar horen.',
+      },
+      {
+        q: 'Hoe lang duurt het?',
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn venster vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met het venster: ${turnaround('attended', 'nl').toLowerCase()}.`,
+      },
+      {
+        q: 'Kan er een model in de clip?',
+        a: 'Ja. Waar een persoon in beeld komt, kan die uit de standaardroster komen of een merkmodel zijn dat alleen voor jou gemaakt is — hetzelfde gezicht waar je catalog- en lifestylesets al op draaien, zodat een klant één persoon ziet in stills én in beweging.',
+      },
+      {
+        q: 'Wat als ik wijzigingen nodig heb?',
+        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+      },
+    ],
     ctaH: 'Geef je product<br>een beetje beweging.',
     ctaP: `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()} onder ${WINDOW_THRESHOLD} producten.`,
     ctaSecondary: 'Neem contact op',
@@ -222,10 +301,15 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
   <div class="fade"></div>
   <div class="hero-editorial-content container">
-    <h1 class="display vid-h1" style="font-size:clamp(2.8rem,6.5vw,5.4rem)" set:html={c.h1} />
+    <!-- The page label every other page component already prints. See
+         CatalogPage.astro's own note: this and /catalog were the two service
+         pages missing it. -->
+    <span class="eyebrow-page">{c.eyebrow}</span>
+    <h1 class="display vid-h1" style="font-size:clamp(2.8rem,6.5vw,5.4rem);margin-top:1rem" set:html={c.h1} />
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
     <div class="flex" style="margin-top:1.8rem">
       <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPrices}</a>
       <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
       </a>
     </div>
@@ -287,6 +371,28 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   </div>
 </section>
 
+<!-- HOW IT WORKS, in the same place and the same shape as /catalog's. The
+     three service pages tell the story in the same order now: what it is,
+     where it lives, the kinds, the three steps, the checklist, the price
+     block, the tier line, the questions. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="photo-split reveal pending">
+      <div class="photo-split-media">
+        <img src="/img/banners-04.webp" alt={c.stepsAlt} loading="lazy" decoding="async" width="928" height="1152" />
+      </div>
+      <div>
+        <h2>{c.stepsH}</h2>
+        <div class="steps steps-stacked" style="margin-top:1.6rem">
+          {c.steps.map(([h, p], i) => (
+            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="section-tight">
   <div class="container two-col">
     <div class="reveal pending">
@@ -342,6 +448,19 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   </div>
 </section>
 
+<section>
+  <div class="container" style="max-width:760px">
+    <h2 style="margin-bottom:1.8rem">{c.faqH}</h2>
+    <div class="faq-stack">
+      {c.faqs.map((f) => (
+        <Disclose summary={f.q} tone="panel">
+          <p>{f.a}</p>
+        </Disclose>
+      ))}
+    </div>
+  </div>
+</section>
+
 <section class="section-tight">
   <div class="container">
     <div class="cta-band reveal pending">
@@ -391,6 +510,10 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
     color: var(--ink-3);
   }
   .buy-note .buy-flat strong { color: var(--ink); font-weight: 700; }
+
+  /* The question list. `Disclose` styles the panels; this only sets the gap
+     between them, exactly as on /catalog and /lifestyle. */
+  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
 
   /* `.drop-note` lived here, and identically in CatalogPage.astro and
      LifestylePage.astro. Three copies of one block is what TierCompare.astro

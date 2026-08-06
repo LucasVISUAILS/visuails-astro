@@ -1658,6 +1658,17 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem,5vw,4.5rem); align-items: center; }
 @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
+/* THE SERVICE HERO, which is a .two-col that leans toward its text.
+   An even split gives the copy column about 560px at 1280, and the three hero
+   buttons — order, prices, WhatsApp — need about 580px to sit on one line. So
+   /catalog broke 2 + 1 while /lifestyle and /video, whose heroes span the full
+   width, kept all three together: the same row, laid out three different ways,
+   on three pages a visitor moves between. Tilting the split gives the copy
+   column the ~650px the row needs and costs the image almost nothing, because
+   the panel beside it is already a fixed-ratio box rather than a photo that
+   wants every pixel. Collapses to one column with .two-col at 900px. */
+.two-col.hero-split { grid-template-columns: 1.15fr .85fr; }
+
 .kicker { display: inline-flex; align-items: center; gap: .5rem; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .kicker::before { content: ""; width: 5px; height: 5px; background: var(--accent); }
 .eyebrow-page { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-3); font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1.2rem; }
@@ -1728,6 +1739,23 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .step .step-n { font-family: var(--font-display); font-weight: 900; font-size: 1.1rem; color: var(--accent-bright); }
 .step h3 { font-size: 1.2rem; margin: .6rem 0 .45rem; }
 .step p { font-size: .95rem; color: var(--ink-3); }
+
+/* STACKED STEPS — the one-column variant the service pages use inside a
+   .photo-split, where the row sits beside an image instead of spanning the
+   page. Smaller than the three-across default, and the numeral is muted rather
+   than accent: at this width an accent 1.1rem numeral competes with the
+   heading it is meant to introduce, and there are three of them down the
+   column.
+   THIS LIVED IN CatalogPage.astro AS A SCOPED OVERRIDE. It moved here the
+   moment /lifestyle and /video grew the same block, because the alternative
+   was a third scoped copy of five declarations — the exact shape this codebase
+   keeps having to undo (.drop-note in three page components, the SERVICE map
+   in two libs, the mail header in four call sites). */
+.steps-stacked { grid-template-columns: 1fr; gap: 1.1rem; }
+.steps-stacked .step { padding-top: 1.1rem; }
+.steps-stacked .step .step-n { font-size: 1rem; color: var(--ink-3); }
+.steps-stacked .step h3 { font-size: 1.05rem; margin: .5rem 0 .3rem; }
+.steps-stacked .step p { font-size: .9rem; }
 
 .arrow-rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem, 3vw, 3rem); }
 @media (max-width: 860px) { .arrow-rows { grid-template-columns: 1fr; } }

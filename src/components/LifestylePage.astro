@@ -38,6 +38,7 @@ import {
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
+import Disclose from './Disclose.astro';
 import TierCompare from './TierCompare.astro';
 import { styles as stylesEn } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
@@ -147,6 +148,27 @@ const COPY = {
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
     ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them. Your first order with us is ${firstPct} off on top of it.`,
+    // The button under the rung table. /catalog has had one since the ladder
+    // landed and this page did not, so the one page that shows a full rate card
+    // was also the one that made you scroll past it to act on it.
+    ladderCta: 'Start an order',
+    stepsH: 'Three steps to a carousel.',
+    steps: [
+      ['Upload a photo', 'One product photo is enough to start.'],
+      ['Pick a mood', 'Dunes, Flash, Glow, Phone-made — or your own.'],
+      [turnaround('unattended', 'en'), 'Three matched shots, ready to post.'],
+    ],
+    stepsAlt: 'A styled lifestyle scene made by VISUAILS',
+    heroAlt: 'A product styled in a Dunes lifestyle scene by VISUAILS',
+    checkH: 'Everything a feed post needs.',
+    check: [
+      'Three photos, one styled look',
+      'The same colour grade across the set',
+      'An on-model shot in every carousel',
+      'Sized for feed, carousel and ads',
+      reviewClaim('unattended', 'en'),
+    ],
+    checkAlt: 'A VISUAILS lifestyle carousel shot, styled and graded',
     moodsH: 'Four moods — or <em>your own.</em>',
     onRequest: 'On request',
     // The mood cards are small, so they carry the two ends of the ladder and
@@ -180,6 +202,37 @@ const COPY = {
     rangeCta: 'See the full gallery',
     exampleAlt: (n: string) => `${n} lifestyle example`,
     reviewNote: reviewClaim('unattended', 'en'),
+    faqH: 'Lifestyle questions, answered',
+    faqs: [
+      {
+        q: 'What does a lifestyle carousel cost?',
+        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a rung at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a carousel is three photos of one product in one styled look.`,
+      },
+      {
+        q: 'What are the three photos?',
+        a: 'A scene shot — your product styled in a real-world setting. An on-model shot, so people can picture it in their own life. And a tight detail close-up that proves the quality. All three carry the same colour grade, which is what makes them read as one post rather than three photos.',
+      },
+      {
+        q: 'Can I have more than one look per product?',
+        a: 'One styled look per order. A second scene for the same product is simply a second order at the ladder rate — which also means the two sets stay distinct rather than being blended into a mood that is neither.',
+      },
+      {
+        q: 'Can I get a mood that is not one of the four?',
+        a: 'Yes. The four signature looks are what most brands pick because they are already tuned; anything beyond them is scoped and quoted, so tell us what you have in mind and we come back with a price rather than guessing at one.',
+      },
+      {
+        q: 'Can the same model appear across my whole collection?',
+        a: 'Yes. Pick a face from the standard roster and reuse it, or have a Brand Model made only for you — the same person then carries your catalog sets, your carousels and your clips, which is what makes a range look like one brand rather than a series of shoots.',
+      },
+      {
+        q: 'How long does it take?',
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more is already booked into the calendar and holds its window, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one holding a window: ${turnaround('attended', 'en').toLowerCase()}.`,
+      },
+      {
+        q: 'What if I need changes?',
+        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+      },
+    ],
     ctaH: 'Put your product<br>in a scene that sells.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
   },
@@ -209,6 +262,24 @@ const COPY = {
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
     ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Je eerste bestelling is daar nog eens ${firstPct} goedkoper op.`,
+    ladderCta: 'Start een bestelling',
+    stepsH: 'Drie stappen naar een carousel.',
+    steps: [
+      ['Upload een foto', 'Eén productfoto is genoeg om te beginnen.'],
+      ['Kies een sfeer', 'Dunes, Flash, Glow, Phone-made — of je eigen.'],
+      [turnaround('unattended', 'nl'), 'Drie shots die matchen, klaar om te posten.'],
+    ],
+    stepsAlt: 'Een gestylede lifestyle-scène gemaakt door VISUAILS',
+    heroAlt: 'Een product gestyled in een Dunes-lifestylescène van VISUAILS',
+    checkH: 'Alles wat een feedpost nodig heeft.',
+    check: [
+      'Drie foto’s, één gestylede look',
+      'Dezelfde colour grade door de hele set',
+      'Een on-model shot in elke carousel',
+      'Op maat voor feed, carousel en advertenties',
+      reviewClaim('unattended', 'nl'),
+    ],
+    checkAlt: 'Een VISUAILS lifestyle-carouselshot, gestyled en gegradeerd',
     moodsH: 'Vier sferen — of <em>je eigen.</em>',
     onRequest: 'Op aanvraag',
     unitLabel: `${euro(entry, 'nl')} – ${euro(floor, 'nl')} / product · ${vatLabel('excl', 'nl')}`,
@@ -240,6 +311,37 @@ const COPY = {
     rangeCta: 'Bekijk de volledige galerij',
     exampleAlt: (n: string) => `${n} lifestyle-voorbeeld`,
     reviewNote: reviewClaim('unattended', 'nl'),
+    faqH: 'Lifestyle-vragen, beantwoord',
+    faqs: [
+      {
+        q: 'Wat kost een lifestyle-carousel?',
+        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en het tarief zakt trede voor trede naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een carousel drie foto’s van één product in één gestylede look.`,
+      },
+      {
+        q: 'Welke drie foto’s zijn het?',
+        a: 'Een sfeershot — je product gestyled in een realistische setting. Een on-model shot, zodat mensen het in hun eigen leven zien. En een strakke detail-close-up die de kwaliteit bewijst. Alle drie dragen dezelfde colour grade, en dat is wat ze als één post laat lezen in plaats van als drie losse foto’s.',
+      },
+      {
+        q: 'Kan ik meer dan één look per product?',
+        a: 'Eén gestylede look per bestelling. Een tweede scène voor hetzelfde product is gewoon een tweede bestelling tegen het staffeltarief — en zo blijven de twee sets ook echt van elkaar te onderscheiden in plaats van te vervagen tot een sfeer die geen van beide is.',
+      },
+      {
+        q: 'Kan ik een sfeer krijgen die niet bij de vier hoort?',
+        a: 'Ja. De vier signatuurlooks zijn wat de meeste merken kiezen omdat ze al afgesteld zijn; alles daarbuiten wordt gescoped en op offerte gezet, dus laat weten wat je in gedachten hebt en we komen met een prijs terug in plaats van er een te gokken.',
+      },
+      {
+        q: 'Kan hetzelfde model door mijn hele collectie?',
+        a: 'Ja. Kies een gezicht uit de standaardroster en gebruik dat steeds opnieuw, of laat een merkmodel maken dat alleen van jou is — dezelfde persoon draagt dan je catalogsets, je carousels en je clips, en dat is wat een assortiment op één merk laat lijken in plaats van op een reeks losse shoots.',
+      },
+      {
+        q: 'Hoe lang duurt het?',
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn venster vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met het venster: ${turnaround('attended', 'nl').toLowerCase()}.`,
+      },
+      {
+        q: 'Wat als ik wijzigingen nodig heb?',
+        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+      },
+    ],
     ctaH: 'Zet je product<br>in een scène die verkoopt.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
   },
@@ -252,25 +354,43 @@ const c = COPY[lang];
 const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLabel);
 ---
 
+<!-- THE HERO, in /catalog's shape. This page opened on a full-width column of
+     text with no image at all — on a site that sells photography, and beside
+     two sibling pages that both lead with a picture. It is a .two-col
+     .hero-split now, same as /catalog, with a real mood photo where /catalog
+     puts its ProductScene: this page's product IS the photograph, so a rendered
+     scene would be the weaker choice here even though it is the consistent one.
+     /video keeps its full-bleed .hero-editorial — that is the same idea (lead
+     with the picture) executed for a page whose subject is motion, not a
+     fourth arrangement. -->
 <section class="page-hero">
-  <div class="container">
-    <span class="eyebrow-page">{c.eyebrow}</span>
-    <h1 class="display ls-h1" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem" set:html={c.h1} />
-    <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
-    <div class="flex" style="margin-top:1.8rem">
-      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
-      <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
-      <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
-      </a>
+  <div class="container two-col hero-split">
+    <div class="reveal pending">
+      <span class="eyebrow-page">{c.eyebrow}</span>
+      <h1 class="display ls-h1" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem" set:html={c.h1} />
+      <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+      <div class="flex" style="margin-top:1.8rem">
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
+        <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
+        </a>
+      </div>
+      <div class="trust-row" style="margin-top:2.4rem">
+        {c.trust.map(([strong, rest]) => (
+          <span class="trust-item"><strong>{strong}</strong> {rest}</span>
+        ))}
+        <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
+        <span class="trust-item tf-verify"><strong>{c.reviewNote}</strong></span>
+      </div>
+      <p class="queue-note">{c.queueNote}</p>
     </div>
-    <div class="trust-row" style="margin-top:2.4rem">
-      {c.trust.map(([strong, rest]) => (
-        <span class="trust-item"><strong>{strong}</strong> {rest}</span>
-      ))}
-      <span class="trust-item tf-flag"><strong>{turnaround('unattended', lang)}</strong></span>
-      <span class="trust-item tf-verify"><strong>{c.reviewNote}</strong></span>
+    <div class="reveal pending">
+      <div class="photo-band tall">
+        <img src="/img/lifestyle-dunes-01.webp" alt={c.heroAlt} loading="eager" fetchpriority="high" decoding="async" width="928" height="1152" />
+        <div class="scrim"></div>
+        <div class="caption"><p style="font-size:.9rem">{c.eyebrow} &middot; Dunes</p></div>
+      </div>
     </div>
-    <p class="queue-note">{c.queueNote}</p>
   </div>
 </section>
 
@@ -310,6 +430,10 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
         </tbody>
       </table>
       <p class="rungs-note">{c.ladderNote}</p>
+    </div>
+
+    <div class="flex" style="justify-content:center;margin-top:1.8rem">
+      <a href={lp('/start')} class="btn btn-primary">{c.ladderCta}</a>
     </div>
   </div>
 </section>
@@ -356,6 +480,46 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
           ))}
         </ul>
       </aside>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS, then WHAT YOU GET — the two beats /catalog and /video both
+     carry and this page did not. With these in place the three service pages
+     run the same order: what it is, where it lives, the styles, the three
+     steps, the checklist, the proof, the tier line, the questions. -->
+<section class="section-tight">
+  <div class="container">
+    <div class="photo-split reveal pending">
+      <div class="photo-split-media">
+        <img src="/img/lifestyle-glow-01.webp" alt={c.stepsAlt} loading="lazy" decoding="async" width="1340" height="2400" />
+      </div>
+      <div>
+        <h2>{c.stepsH}</h2>
+        <div class="steps steps-stacked" style="margin-top:1.6rem">
+          {c.steps.map(([h, p], i) => (
+            <div class="step"><span class="step-n">{String(i + 1).padStart(2, '0')}</span><h3>{h}</h3><p>{p}</p></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container two-col">
+    <div class="reveal pending">
+      <h2>{c.checkH}</h2>
+      <ul class="checklist" style="margin-top:1.4rem">
+        {c.check.map((li) => (
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
+        ))}
+      </ul>
+    </div>
+    <div class="reveal pending">
+      <div class="photo-split-media">
+        <img src="/img/lifestyle-flash-02.webp" alt={c.checkAlt} loading="lazy" decoding="async" width="1340" height="2400" />
+      </div>
     </div>
   </div>
 </section>
@@ -434,6 +598,19 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
   </div>
 </section>
 
+<section>
+  <div class="container" style="max-width:760px">
+    <h2 style="margin-bottom:1.8rem">{c.faqH}</h2>
+    <div class="faq-stack">
+      {c.faqs.map((f) => (
+        <Disclose summary={f.q} tone="panel">
+          <p>{f.a}</p>
+        </Disclose>
+      ))}
+    </div>
+  </div>
+</section>
+
 <section class="section-tight">
   <div class="container">
     <div class="cta-band reveal pending">
@@ -494,6 +671,10 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
      styled under `.req-card` in global.css — so on this page the numerals
      rendered as unstyled body text. Same treatment as `.step-n` elsewhere. */
   .shot-n { font-family: var(--font-display); font-weight: 900; font-size: 1rem; color: var(--ink-3); display: block; margin-bottom: .5rem; }
+
+  /* The question list. `Disclose` styles the panels; this only sets the gap
+     between them, exactly as on /catalog and /video. */
+  .faq-stack { display: flex; flex-direction: column; gap: .7rem; }
 
   /* `.drop-note` lived here, and identically in CatalogPage.astro and
      VideoPage.astro. Three copies of one block is what TierCompare.astro
