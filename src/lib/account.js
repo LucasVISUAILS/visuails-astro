@@ -682,11 +682,21 @@ async function sendLoginLink(env, request, email, lang) {
   // as the customer typed them, and one capital letter made this lookup miss
   // silently. The customer saw "check your email" and no email ever came.
   //
-  // This costs the index on customers.email: lower(email) cannot use it, so the
-  // lookup is a scan. Deliberate, and cheap at this table's size — a few hundred
-  // brands — and the alternative is telling a paying customer their account does
-  // not exist. migrations/0008 normalises the historical rows; this line is what
-  // makes a database that has not run it yet still let people in.
+  // This used to cost the index on customers.email — lower(email) cannot use a
+  // plain column index, so the lookup was a scan. Deliberate at the time, and
+  // cheap at this table's size, because the alternative was telling a paying
+  // customer their account does not exist.
+  //
+  // migrations/0009 adds a UNIQUE INDEX on lower(email), and SQLite uses an
+  // expression index when the indexed expression matches the WHERE clause
+  // verbatim — which it does here, same function, same column. Verified against
+  // SQLite: the plan reads `SEARCH customers USING INDEX idx_customers_email_lower`.
+  // So this is an index read again, AND two spellings of one address can no
+  // longer both exist. Keep the expression exactly as written: wrap it in a
+  // TRIM() and the planner silently falls back to the scan.
+  //
+  // migrations/0008 normalises the historical rows; this line is what makes a
+  // database that has run neither still let people in.
   const customer = await env.DB.prepare(
     'SELECT id FROM customers WHERE lower(email) = ?1'
   ).bind(email).first();

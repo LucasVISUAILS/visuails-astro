@@ -1,0 +1,58 @@
+-- VISUAILS — migration 0009, August 2026.
+--
+-- THE FIX 0008 DELIBERATELY LEFT FOR LATER.
+--
+-- migrations/0008 normalises historical addresses to lowercase and ends with an
+-- instruction rather than a statement:
+--
+--     A UNIQUE INDEX ON lower(email) IS NOT CREATED, on purpose. It would be
+--     the durable fix, and it would also fail outright on a database that still
+--     has such a pair — turning a migration that CAN always run into one that
+--     sometimes cannot. […] add the index in a later migration once the query
+--     above comes back empty.
+--
+-- Run against production on 6 August 2026: 0008 executed three statements,
+-- wrote zero rows — every address was already lowercase — and the duplicate
+-- check it prescribes,
+--
+--     SELECT lower(email) AS addr, COUNT(*) AS rows, GROUP_CONCAT(id) AS ids
+--       FROM customers GROUP BY addr HAVING rows > 1;
+--
+-- returned nothing. The precondition is met, so this is that later migration.
+--
+-- WHAT IT BUYS, and it is two different things at once.
+--
+-- 1 · IT MAKES THE BUG UNREPEATABLE. customers.email already carries UNIQUE, but
+--     SQLite compares TEXT byte for byte, so `Ana@Shop.com` and `ana@shop.com`
+--     satisfy that constraint as two different customers — which is exactly how
+--     one brand ended up able to split across two accounts. The write path is
+--     normalised in code now, and code is a promise; this is a guarantee. Any
+--     future path that forgets to lowercase gets a constraint violation instead
+--     of a second silent account.
+--
+-- 2 · IT TURNS THE SIGN-IN LOOKUP BACK INTO AN INDEX READ. src/lib/account.js's
+--     sendLoginLink() queries `WHERE lower(email) = ?1`, and its own comment
+--     records the cost: "lower(email) cannot use it, so the lookup is a scan.
+--     Deliberate, and cheap at this table's size." SQLite can use an expression
+--     index when the indexed expression matches the one in the WHERE clause
+--     verbatim, and it does here — same function, same column. The scan was the
+--     right trade while the alternative was locking people out; it stops being a
+--     trade at all now.
+--
+-- IF THIS FAILS, IT IS NOT A MYSTERY. The only way `CREATE UNIQUE INDEX` can be
+-- refused is a pair of rows that collide under lower(). That means a duplicate
+-- appeared between the check above and this run. Run the check again, merge the
+-- pair by hand — decide which id keeps the history, repoint orders.customer_id,
+-- custom_models.customer_id and customer_style_locks.customer_id at it, delete
+-- the loser — and re-run this file. IF NOT EXISTS makes re-running safe.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_email_lower
+    ON customers (lower(email));
+
+-- AFTER RUNNING THIS, confirm the planner actually picked it up:
+--
+--   EXPLAIN QUERY PLAN SELECT id FROM customers WHERE lower(email) = 'x@y.com';
+--
+-- The detail column should name idx_customers_email_lower. If it still says
+-- "SCAN customers", the expression in the query and the expression in the index
+-- have drifted apart — most likely because one of them gained a TRIM() or a
+-- different case function — and the index is dead weight until they match again.

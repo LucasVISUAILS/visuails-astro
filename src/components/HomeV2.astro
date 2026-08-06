@@ -168,7 +168,19 @@ const PLAN_HIGH = Math.max(...Object.values(PLAN_PRODUCTS));
 const COPY = {
   en: {
     heroAlt: 'A VISUAILS campaign visual — a model in the dunes at dusk',
-    h1: ['The brand', 'you envisioned,', 'visualized.'],
+    // THE HEADLINE CARRIES ITS OWN EMPHASIS as of 6 August 2026 — the <em> is in
+    // the copy instead of being applied to whatever line happens to be last.
+    // Lucas, looking at the old behaviour: *"de hele zin toxic groen maken vind
+    // ik wat minder"*, and the line before it broke with "Wij" alone. Both came
+    // from the same place: the component decided the accent and nobody decided
+    // the line breaks. Now the sentence says both.
+    //
+    // Written as English, not translated from the Dutch. "You upload. We deliver
+    // the campaign." is the same two beats — the customer's one action, then
+    // ours — and "campaign" is the word an established brand already uses for
+    // what it runs. Nothing here says they are not a brand yet; that was the
+    // objection to the previous draft.
+    h1: ['You upload.', 'We deliver the <em>campaign</em>.'],
     // THE ANCHOR CARRIES A NUMBER NOW. It used to say "priced per product, and
     // the rate falls" — true, and unfalsifiable, which is the shape of a claim
     // rather than a price. With the table moved to section 5 this line is the
@@ -468,7 +480,7 @@ const COPY = {
 
   nl: {
     heroAlt: 'Een VISUAILS campagnebeeld — een model in de duinen bij schemering',
-    h1: ['Het merk', 'dat je voor je zag,', 'in beeld.'],
+    h1: ['Jij uploadt.', 'Wij leveren de <em>campagne</em>.'],
     heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Per product geprijsd, van ${euro(ladderRate('complete', 1), 'nl')} tot ${euro(FLOOR_RATE_EN, 'nl')} naarmate het aantal stijgt.`,
     ctaStart: 'Start een bestelling',
     ctaSample: `Zie het eerst — ${sample.price}`,
@@ -762,8 +774,9 @@ const FAQ_PICK = [
   <div class="hv-hero-scrim" aria-hidden="true"></div>
   <div class="container hv-hero-inner">
     <div class="hv-hero-copy">
-      <h1 class="hv-h1">{c.h1.map((line, i) => (
-        <span class="hv-line">{i === c.h1.length - 1 ? <em>{line}</em> : line}</span>
+      {/* set:html, want de <em> zit in de copy. Zie de noot bij COPY.en.h1. */}
+      <h1 class="hv-h1">{c.h1.map((line) => (
+        <span class="hv-line" set:html={line} />
       ))}</h1>
       <p class="hv-lede">{c.heroLede}</p>
       <div class="hv-cta">
@@ -1536,7 +1549,10 @@ const FAQ_PICK = [
      looking heavier. */
   .hv-h1 { font-family: var(--font-heading); font-weight: 900; font-size: var(--t-hero); line-height: 0.98; letter-spacing: -0.012em; margin: 0; color: var(--paper-on-dark); }
   .hv-line { display: block; }
-  .hv-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 900; letter-spacing: -0.03em; }
+  /* :global(), omdat deze <em> via set:html binnenkomt en dus geen
+     data-astro-cid-attribuut draagt — precies dezelfde reden als bij
+     `.pack-p :global(a)` in CatalogPage.astro. Zonder dit blijft het accent wit. */
+  .hv-h1 :global(em) { font-family: var(--font-editorial); font-style: italic; font-weight: 900; letter-spacing: -0.03em; }
   .hv-lede { margin: clamp(1.2rem, 2.4vw, 1.9rem) 0 0; max-width: 46ch; font-size: var(--t-lg); line-height: 1.55; color: var(--paper-soft-on-dark); }
   .hv-cta { display: flex; gap: var(--gap-actions); flex-wrap: wrap; margin-top: clamp(1.6rem, 3vw, 2.2rem); }
   @media (max-width: 560px) { .hv-cta > .btn { width: 100%; } }

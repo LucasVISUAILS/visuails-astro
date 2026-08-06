@@ -20,7 +20,8 @@
     "test:signin": "node tests/account-signin.test.mjs",
     "logo:pack": "node scripts/make-logo-pack.mjs",
     "mail:assets": "node scripts/make-mail-assets.mjs",
-    "mail:render": "node scripts/mail-render.mjs"
+    "mail:render": "node scripts/mail-render.mjs",
+    "check:wrangler": "node scripts/check-wrangler.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

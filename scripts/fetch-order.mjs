@@ -35,12 +35,9 @@
  * alternative is an S3 client and a credentials file, which is a bigger surface
  * than the problem deserves.
  */
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
-
-const run = promisify(execFile);
+import { wranglerOrThrow, assertSafeArg } from './lib/wrangler.mjs';
 
 const args = process.argv.slice(2);
 const ref = args.find((a) => !a.startsWith('--'));
@@ -55,17 +52,30 @@ if (!ref) {
   process.exit(2);
 }
 
+// THE REF IS CHECKED BEFORE IT IS USED, for two reasons that arrived together.
+// It is interpolated into a SQL string below, and on Windows the whole command
+// now passes through a shell (see scripts/lib/wrangler.mjs). Either one on its
+// own would be worth a guard; both at once, on a value typed at a prompt, make
+// it not optional. A real ref is letters, digits and hyphens — makeRef() in
+// functions/api/order.js emits nothing else.
+if (!/^[A-Za-z0-9-]{3,40}$/.test(ref)) {
+  console.error(`"${ref}" ziet er niet uit als een order-referentie (letters, cijfers en streepjes).`);
+  process.exit(2);
+}
+assertSafeArg(ref, 'order-referentie');
+
 const DB = 'visuails';
 const BUCKET = 'visuails-uploads';
 
-/** wrangler, with its output captured rather than inherited. */
-async function wrangler(argv) {
-  const { stdout } = await run('npx', ['wrangler', ...argv], {
-    maxBuffer: 64 * 1024 * 1024,
-    env: process.env,
-  });
-  return stdout;
-}
+/* wrangler moved to scripts/lib/wrangler.mjs on 2026-08-06.
+ *
+ * The call here was `execFile('npx', ...)`, which on Windows cannot start
+ * anything: `npx` exists there only as `npx.cmd`, and Node has refused to spawn
+ * a `.cmd` without `shell: true` since the CVE-2024-27980 patch. So this script
+ * failed with a bare `spawn npx ENOENT` on the only machine that runs it —
+ * before it ever reached Cloudflare, which means the 7403 that was blamed for
+ * it was never what stopped this command. See that module's header. */
+const wrangler = (argv) => wranglerOrThrow(argv);
 
 /**
  * The order's uploads, straight from D1.
