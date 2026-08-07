@@ -30,7 +30,7 @@ export const styles = [
     moodTitle: 'Hoe Dunes voelt.',
     moodParagraphs: [
       'Zonovergoten minimalisme, aardse tonen, lange zachte schaduwen. De look van ingetogen luxe.',
-      'Het geeft producten de ruimte om vanzelfsprekend te voelen. Woestijnlicht, linnentexturen, negatieve ruimte die het woord doet.',
+      'Producten krijgen hier de ruimte. Woestijnlicht, linnen, en veel leegte eromheen die het werk doet.',
     ],
     steps: [
       { title: 'Vind de horizon', body: 'Brede, rustige composities met ademruimte rond het product.' },
@@ -79,9 +79,9 @@ export const styles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Hard licht, hard geplaatst', body: 'De afval van de flits wordt gecontroleerd zodat het product scherp blijft terwijl de wereld erachter wegvalt.' },
+      { title: 'Hard licht, strak geplaatst', body: 'De flits valt precies af waar hij moet: het product blijft scherp en de achtergrond zakt weg.' },
       { title: 'Schaduw als compositie', body: 'Het zwart achter het onderwerp is niet leeg — het is getekend en bepaalt waar het oog landt.' },
-      { title: 'Contrast zonder slachtoffers', body: 'We voeren de kracht op terwijl we productkleur en textuur beschermen tegen overbelichting.' },
+      { title: 'Hard, maar niets brandt uit', body: 'We zetten het contrast hoog en houden tegelijk de kleur en de structuur van je product heel.' },
       { title: 'Energie die zich herhaalt', body: 'De chaos is gesystematiseerd: je tiende Flash-visual raakt net zo hard als je eerste, en matcht hem.' },
     ],
     why: [
@@ -132,7 +132,7 @@ export const styles = [
   {
     slug: 'phone-made',
     name: 'Phone-made',
-    tagline: 'Ziet er moeiteloos uit. Is het niet.',
+    tagline: 'Ziet eruit alsof het zo gemaakt is. Dat is het niet.',
     heroPhoto: '/img/lifestyle-phone-made-01.webp',
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
     beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
@@ -145,7 +145,7 @@ export const styles = [
     ],
     steps: [
       { title: 'Zet het licht', body: 'Eén raam of lamp, niets geënsceneerd — licht zoals het thuis echt valt.' },
-      { title: 'Houd het uit de hand', body: 'Natuurlijke hoeken en een vleugje imperfectie, zonder statiefstijfheid.' },
+      { title: 'Alsof het uit de hand geschoten is', body: 'Natuurlijke hoeken en een beetje scheef, zonder dat het er stijf van een statief uitziet.' },
       { title: 'Snijd uit voor de feed', body: 'Gekaderd voor het platform waar het landt, vanaf de allereerste versie.' },
     ],
     grid: grid(
@@ -161,7 +161,7 @@ export const styles = [
     why: [
       { title: 'Leest als echt', body: 'Geen studioverklikker — gemaakt om naast UGC te staan zonder ooit op te vallen.' },
       { title: 'Vertrouwen vóór glans', body: 'De look die presteert wanneer een publiek wantrouwig is tegenover alles wat te gestyled is.' },
-      { title: 'Feed-native vanaf het eerste kader', body: 'Geen aparte uitsneed-ronde nodig — het is klaar zoals geleverd.' },
+      { title: 'Meteen goed voor je feed', body: 'Je hoeft er niets meer uit te snijden — de verhouding klopt al zoals je hem krijgt.' },
     ],
     bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die vertrouwen bouwen vóór glans', 'Organische content die er niet als advertentie uit mag zien'],
     whatYouGet: ['Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', TIMING, REVIEW],

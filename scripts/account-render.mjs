@@ -40,11 +40,19 @@ const WIDTHS = [[1280, 'breed'], [420, 'telefoon']];
  * de rijen komt uit de echte queries in account.js. */
 const CUSTOMER = { customer_id: 7, email: 'studio@voltbrand.nl', brand: 'VOLT', name: 'Mara' };
 
+/* De betaalkolommen staan er sinds 7 augustus 2026 bij, want anders rendert
+ * paymentBlock() niets en is precies het blok dat toen is toegevoegd het enige
+ * dat je op deze plaatjes niet ziet. Vier bestellingen, vier toestanden:
+ * onbetaald met een aflopend venster, betaald, betaald, en een proefvisual. */
 const ORDERS = [
-  { id: 91, ref: 'VIS-2608-4471', service: 'catalog', status: 'in_production', tier: 'attended', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', lang: 'nl', created_at: '2026-08-01', closed_at: null, revisions_revoked_at: null },
-  { id: 90, ref: 'VIS-2607-9920', service: 'lifestyle', status: 'delivered', tier: 'attended', product_count: 12, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-28', closed_at: null, revisions_revoked_at: null },
-  { id: 89, ref: 'VIS-2607-3312', service: 'catalog', status: 'human_check', tier: 'attended', product_count: 8, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-24', closed_at: null, revisions_revoked_at: null },
-  { id: 88, ref: 'VIS-2607-1180', service: 'catalog', status: 'delivered', tier: 'unattended', product_count: 4, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-19', closed_at: null, revisions_revoked_at: null },
+  { id: 91, ref: 'VIS-2608-4471', service: 'catalog', status: 'in_production', tier: 'attended', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', lang: 'nl', created_at: '2026-08-01', closed_at: null, revisions_revoked_at: null,
+    payment_status: 'unpaid', payment_provider: null, paid_at: null, total_cents: 63000, vat_cents: 13230, vat_rate: 0.21, vat_treatment: 'nl_standard', currency: 'EUR', refunded_cents: 0, window_expires_at: '2026-08-08 12:00' },
+  { id: 90, ref: 'VIS-2607-9920', service: 'lifestyle', status: 'delivered', tier: 'attended', product_count: 12, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-28', closed_at: null, revisions_revoked_at: null,
+    payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-28', total_cents: 32400, vat_cents: 6804, vat_rate: 0.21, vat_treatment: 'nl_standard', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
+  { id: 89, ref: 'VIS-2607-3312', service: 'catalog', status: 'human_check', tier: 'attended', product_count: 8, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-24', closed_at: null, revisions_revoked_at: null,
+    payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-24', total_cents: 20800, vat_cents: 0, vat_rate: 0, vat_treatment: 'eu_reverse_charge', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
+  { id: 88, ref: 'VIS-2607-1180', service: 'test-sample', status: 'delivered', tier: 'unattended', product_count: 1, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-19', closed_at: null, revisions_revoked_at: null,
+    payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-19', total_cents: 99, vat_cents: 21, vat_rate: 0.21, vat_treatment: 'nl_standard', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
 ];
 
 const SHOTS = ['front', 'back', 'detail', 'worn'];
@@ -159,7 +167,7 @@ const PHOTOS = fs.readdirSync(path.join(ROOT, 'public/img'))
   .map((f) => path.join(ROOT, 'public/img', f));
 if (!PHOTOS.length) throw new Error('account-render: geen voorbeeldfotos in public/img');
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium' });
 const context = await browser.newContext();
 
 await context.route('**/*', async (route) => {

@@ -70,6 +70,9 @@ import { serviceLabel } from '../../src/data/services.js';
 import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
 import { quoteOrder, centsToMollieValue, paymentDescription, PAYABLE_SERVICES } from '../../src/lib/quote.js';
+import { vatDecision, VAT_TREATMENT, normaliseVat, viesCode, vatShort, HOME_COUNTRY } from '../../src/data/vat.js';
+import { checkVat, viesEvidence } from '../../src/lib/vies.js';
+import { composeName, composeAddress } from '../../src/data/address.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
 
@@ -102,6 +105,21 @@ const MAIL_ATTACH_MAX_FILES = 10;
 const TOP_FIELDS = [
   'service', 'redirect', 'lang', 'name', 'brand', 'company', 'email', 'phone', 'vat', 'website',
   'company_hp', 'source',
+  // ── section 15 · who the customer is, for VAT ──
+  // `country` decides the VAT treatment and `address` is a formal invoice
+  // requirement; both belong in their own column rather than buried in
+  // details_json, where nothing could query them.
+  'country', 'address',
+  // Sinds migratie 0016 losse velden — zie src/data/address.js voor waarom
+  // `name` en `billing_address` daarnaast blijven bestaan als samengestelde
+  // weergave. 'address' staat hierboven nog in de lijst zodat een oud
+  // formulier in een tab die al openstond niet ineens zijn adres in
+  // details_json ziet belanden.
+  'first_name', 'last_name', 'no_vat',
+  'address_line1', 'address_line2', 'postal_code', 'city', 'region',
+  // Het vinkje "bewaar deze gegevens" van een bezoeker die niet is ingelogd.
+  // Een kolom en niet details_json, want er wordt op gestuurd bij het inloggen.
+  'save_details',
   // ── section 10 · the pipeline's own fields ──
   'tier', 'products', 'window_start', 'window_end', 'upload_batch', 'mode',
 ];
@@ -169,11 +187,63 @@ export async function onRequestPost({ request, env, waitUntil }) {
     } catch {}
     return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=email');
   }
-  const name = get('name');
+  // `name` is de samengestelde weergave: uit de twee losse velden als het
+  // formulier ze stuurt, en anders het oude enkele veld. Zie de noot bij
+  // composeAddress hieronder.
+  const name = composeName(get('first_name'), get('last_name')) || get('name');
   const brand = get('brand') || get('company');
   const phone = get('phone');
   const vat = get('vat');
   const website = get('website');
+  // Uppercased and length-capped rather than trusted: this string picks the VAT
+  // rate, so a value the form did not offer must not silently become a country.
+  // vatDecision() treats anything it does not recognise as outside the EU, and
+  // an empty string as domestic — both fail towards charging, not towards zero.
+  const country = get('country').toUpperCase().slice(0, 2);
+
+  /*
+   * ── DE NAAM EN HET ADRES, UIT LOSSE VELDEN ─────────────────────────────────
+   *
+   * Sinds migratie 0016 vraagt het formulier apart naar voornaam, achternaam en
+   * de vier adresregels. `name` en `billing_address` blijven bestaan en blijven
+   * gevuld worden — als de SAMENGESTELDE weergave, die de bevestigingsmail en
+   * het adminscherm als één blok lezen. Het samenstellen gebeurt op één plek,
+   * in src/data/address.js, zodat "postcode vóór plaats" niet in drie bestanden
+   * apart bedacht wordt.
+   *
+   * EEN OUD FORMULIER BLIJFT WERKEN. Een tab die vóór vandaag geopend is post
+   * nog `name` en `address` als één veld; die vallen hieronder terug in de
+   * samengestelde kolommen, met de losse velden leeg. Beter een bestelling met
+   * een adres op één regel dan een bestelling die weigert.
+   */
+  const firstName = get('first_name');
+  const lastName = get('last_name');
+  const addressParts = {
+    line1: get('address_line1'),
+    line2: get('address_line2'),
+    postal: get('postal_code'),
+    city: get('city'),
+    region: get('region'),
+  };
+  const address = (composeAddress(addressParts) || get('address')).slice(0, 500);
+
+  // Het vinkje "ik heb geen btw-nummer". Het zegt alleen iets over het
+  // formulier: vatDecision() kijkt naar het land en naar een bij VIES BEVESTIGD
+  // nummer, en een vinkje kan daar geen 0% kopen.
+  const noVat = !vat && ['1', 'on', 'true', 'yes'].includes(get('no_vat').toLowerCase());
+
+  /*
+   * "BEWAAR DEZE GEGEVENS" VAN IEMAND ZONDER SESSIE.
+   *
+   * Een ingelogde klant loopt langs /account/details (zie saveDetailsIfAsked in
+   * pipeline.js) en is daarmee klaar. Wie niet is ingelogd kan dat niet, dus
+   * reist zijn keuze mee met de bestelling — en wordt hier alleen VASTGELEGD,
+   * niet uitgevoerd. Het effect valt bij de eerste keer inloggen, want dit
+   * eindpunt is niet geauthenticeerd en het adres in het formulier is niet
+   * bewezen van hem. Zie migrations/0017 en promoteSaveRequest() in
+   * src/lib/account.js.
+   */
+  const saveRequested = ['1', 'on', 'true', 'yes'].includes(get('save_details').toLowerCase());
 
   // Everything not lifted to a column becomes the order detail record.
   const details = {};
@@ -214,7 +284,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (service === 'contact') {
     const body = details.message || details.notes || '';
     let customerId = null;
-    await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat }); });
+    await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, ...addressParts }); });
     await safe(() => env.DB && env.DB
       .prepare('INSERT INTO messages (customer_id, email, name, subject, body) VALUES (?1,?2,?3,?4,?5)')
       .bind(customerId, email, name || null, get('subject') || 'Contact form', body || null).run());
@@ -279,7 +349,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
 
   let customerId = null;
-  await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat }); });
+  await safe(async () => { customerId = await upsertCustomer(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, ...addressParts }); });
 
   // `lang` is stored, not just used. This request is the last moment the client's
   // language is known for free — every later message (the portal, the delivery
@@ -307,7 +377,82 @@ export async function onRequestPost({ request, env, waitUntil }) {
       extraCount += Math.max(0, Math.floor(Number(v) || 0));
     }
   }
-  const quote = quoteOrder({ service: svc, products, outfits: outfitCount, extras: extraCount });
+
+  // ── WHICH VAT, AND THE PROOF THAT IT IS THE RIGHT ONE ──────────────────────
+  // Three outcomes and one rule: nothing goes to 0% without evidence. The whole
+  // decision lives in vatDecision() (src/data/vat.js) so the checkout, the
+  // invoice and the tests cannot each have their own version of it.
+  //
+  //   Dutch customer      → 21%, no VIES call at all. The domestic reverse
+  //                         charge is a closed list and this trade is not on
+  //                         it, so a Dutch VAT number changes nothing. This is
+  //                         the branch that would quietly cost 21% of every
+  //                         domestic B2B order if it were written the obvious
+  //                         way.
+  //   EU, number given    → ask VIES. Valid means 0% and "btw verlegd"; invalid
+  //                         means 21%; UNREACHABLE ALSO MEANS 21%. Romania was
+  //                         down the morning this was written, and treating an
+  //                         outage as a pass is the single most expensive bug
+  //                         available here.
+  //   Outside the EU      → 0%, but not reverse charge — the supply is simply
+  //                         not taxable in the Netherlands, which is a
+  //                         different sentence on the invoice and no ICP line.
+  //
+  // The check runs INLINE and not in waitUntil, because its answer changes the
+  // amount Mollie is asked for. Four seconds is the ceiling (see vies.js); past
+  // that the order is priced at 21% rather than left hanging.
+  // FALL BACK TO THE SAVED CUSTOMER RECORD when the form posted no country.
+  // Two ways that happens and both are real: a hand-built POST, and the saved-
+  // details collapse on /start, which hides step 3 for a returning customer —
+  // a hidden <select> posts an empty string. pipeline.js prefills it now so it
+  // should not be empty, but "should not" is not a guarantee, and the cost of
+  // getting this wrong is charging a German business 21% it does not owe.
+  //
+  // Only ever fills a blank. A country the customer chose on this order always
+  // wins over the one on file, because a brand that moved should not be priced
+  // from last year's address.
+  let effCountry = country;
+  let effAddress = address;
+  if ((!effCountry || !effAddress) && customerId) {
+    await safe(async () => {
+      // De losse velden komen mee sinds migratie 0016. Zonder dat zou een
+      // bestelling die op het opgeslagen adres terugvalt wél billing_address
+      // krijgen en de losse kolommen leeg laten — een factuur die de regels dan
+      // niet onder elkaar kan zetten, precies waar 0016 voor is.
+      const saved = await env.DB?.prepare(
+        `SELECT country, billing_address, address_line1, address_line2, postal_code, city, region
+           FROM customers WHERE id = ?1`
+      ).bind(customerId).first();
+      if (saved) {
+        if (!effCountry && saved.country) effCountry = String(saved.country).toUpperCase().slice(0, 2);
+        if (!effAddress && saved.billing_address) effAddress = String(saved.billing_address).slice(0, 500);
+        if (!addressParts.line1) {
+          addressParts.line1 = saved.address_line1 || '';
+          addressParts.line2 = saved.address_line2 || '';
+          addressParts.postal = saved.postal_code || '';
+          addressParts.city = saved.city || '';
+          addressParts.region = saved.region || '';
+        }
+      }
+    });
+  }
+
+  const vatParts = normaliseVat(vat);
+  const vatCc = viesCode(effCountry);
+  let vies = null;
+  if (vatCc && effCountry !== HOME_COUNTRY && vatParts.number) {
+    // The requester pair is what earns the consultation number — the only thing
+    // that later proves the check happened. Without it the reply's identifier
+    // field comes back empty.
+    const own = normaliseVat(env.VISUAILS_VAT || 'NL005407575B96');
+    vies = await checkVat(vatCc, vatParts.number, { country: own.country || 'NL', number: own.number });
+  }
+  const vatCall = vatDecision({ country: effCountry, vatValid: !!(vies && vies.valid) });
+
+  const quote = quoteOrder({
+    service: svc, products, outfits: outfitCount, extras: extraCount,
+    vatRate: vatCall.rate,
+  });
 
   // ── THE WITHDRAWAL WAIVER, RECORDED ────────────────────────────────────────
   // A customer with no VAT number is a consumer, and a consumer buying at a
@@ -329,14 +474,78 @@ export async function onRequestPost({ request, env, waitUntil }) {
     ? (get('consent_version') || 'unversioned')
     : 'MISSING';
 
-  await safe(() => env.DB && env.DB
-    .prepare(`INSERT INTO orders (ref, customer_id, service, name, brand, email, phone, vat_number, details_json, source, lang,
-                                  tier, product_count, window_start, window_end, total_cents)
-              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)`)
-    .bind(ref, customerId, svc, name || null, brand || null, email, phone || null, vat || null,
+  /*
+   * ── DE BESTELLING WEGSCHRIJVEN, EN WAAROM DIT TWEE KOLOMMENSETS KENT ───────
+   *
+   * De losse naam- en adresvelden staan NAAST `name` en `billing_address`, niet
+   * in plaats van. De losse zijn wat een factuur regel voor regel nodig heeft;
+   * de samengestelde zijn wat elke bestaande lezer al gebruikt — de
+   * bevestigingsmail, het adminscherm, het archief van de bewaarplicht — en die
+   * hoeven daar niet allemaal voor herschreven te worden. Zie migrations/0016
+   * en src/data/address.js.
+   *
+   * EN ER IS EEN TERUGVAL, want dit is de duurste regel in dit bestand.
+   *
+   * Een deploy komt in de praktijk soms eerder dan een migratie. Stond hier
+   * alleen de brede INSERT, dan gooit D1 "no such column: first_name", vangt
+   * safe() dat op, en gaat de rest van deze functie vrolijk verder: geen
+   * orders-rij, geen order_events, geen portaaltoken — maar wél een
+   * bevestigingsmail, wél een betaallink, en wél `ok: true` naar de klant. Een
+   * bestelling die is betaald en niet bestaat, zonder één foutmelding
+   * onderweg. Dat mag niet van één migratie afhangen.
+   *
+   * Dus: de brede INSERT, en bij een ontbrekende kolom nog één keer met de set
+   * van vóór 0016. Dan mist de bestelling zijn losse adresregels — hersteld
+   * zodra de migratie draait, want billing_address en name zijn wél geschreven
+   * — en dat is oneindig veel beter dan geen bestelling.
+   */
+  const ORDER_COLS_BASE = `ref, customer_id, service, name, brand, email, phone, vat_number, details_json, source, lang,
+                           tier, product_count, window_start, window_end, total_cents,
+                           country, billing_address, vat_treatment, vat_rate, vat_cents,
+                           vat_valid, vat_checked_at, vat_consultation, vat_check_name, vat_check_json`;
+  const ORDER_COLS_0016 = `first_name, last_name, no_vat_number,
+                           address_line1, address_line2, postal_code, city, region`;
+  const placeholders = (n) => Array.from({ length: n }, (_, i) => `?${i + 1}`).join(',');
+
+  const orderBinds = [
+          ref, customerId, svc, name || null, brand || null, email, phone || null, vat || null,
           JSON.stringify(details), get('source') || null, lang,
           tier, products, gate.window?.start || null, gate.window?.end || null,
-          quote ? quote.netCents : null).run());
+          // total_cents stays NET, as it always has — admin.js's column header
+          // says "excl. VAT" and its comment explains why. What changes is that
+          // the VAT beside it is no longer unrecorded: vat_cents plus
+          // total_cents is now exactly what Mollie was asked for.
+          quote ? quote.netCents : null,
+          effCountry || null, effAddress || null,
+          vatCall.treatment, vatCall.rate, quote ? quote.vatCents : 0,
+          vies && vies.valid ? 1 : 0,
+          vies ? vies.checkedAt : null,
+          vies ? vies.consultation : null,
+          vies ? vies.name : null,
+          viesEvidence(vies),
+  ];
+  const orderBinds0016 = [
+    firstName || null, lastName || null, noVat ? 1 : 0,
+    addressParts.line1 || null, addressParts.line2 || null,
+    addressParts.postal || null, addressParts.city || null, addressParts.region || null,
+  ];
+
+  await safe(async () => {
+    if (!env.DB) return;
+    const wide = [...orderBinds, ...orderBinds0016];
+    try {
+      await env.DB.prepare(
+        `INSERT INTO orders (${ORDER_COLS_BASE}, ${ORDER_COLS_0016}) VALUES (${placeholders(wide.length)})`
+      ).bind(...wide).run();
+      return;
+    } catch (err) {
+      if (!/no such column/i.test(String(err?.message || err))) throw err;
+      console.error('[order] migratie 0016 ontbreekt — bestelling zonder losse adresvelden weggeschreven:', ref);
+    }
+    await env.DB.prepare(
+      `INSERT INTO orders (${ORDER_COLS_BASE}) VALUES (${placeholders(orderBinds.length)})`
+    ).bind(...orderBinds).run();
+  });
 
   let orderId = null;
   await safe(async () => {
@@ -415,9 +624,14 @@ export async function onRequestPost({ request, env, waitUntil }) {
   await safe(async () => {
     const to = env.NOTIFY_EMAIL || 'hello@visuails.com';
     const subject = `${raced ? '[WINDOW LOST] ' : ''}New ${svc} order — ${ref}`;
-    const body = (attached) => notifyEmail(ref, svc, { name, brand, email, phone, vat, website }, details, {
+    // The studio's copy gets the VAT verdict too. It is the only place a human
+    // sees the order before the money moves, and "0% charged, VIES said yes,
+    // here is the consultation number" is exactly the line an accountant asks
+    // about three months later.
+    const body = (attached) => notifyEmail(ref, svc, { name, brand, email, phone, vat, website, country: effCountry, address: effAddress }, details, {
       tier, products, window: finalWindow, raced, asked, uploads: staged.length,
       upgrade: upgradeCount, files: staged, attached, portal: portalLink,
+      vat: vatCall, vies, quote,
     });
     try {
       await sendMail(env, { to, subject, html: body(packed.keys), attachments: packed.attachments });
@@ -490,7 +704,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     to: email,
     subject: lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`,
     html: customerEmail(lang, ref, svc, name,
-      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink, pay: payUrl, quote }),
+      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink, pay: payUrl, quote, vat: vatCall }),
   }));
 
   /*
@@ -1066,9 +1280,71 @@ function fileSize(bytes) {
  */
 async function upsertCustomer(env, c) {
   if (!env.DB) return null;
+  /*
+   * TWEE POGINGEN, OM DEZELFDE REDEN ALS DE INSERT INTO orders HIERBOVEN. Deze
+   * aanroep bepaalt `customerId`, en die hangt aan de bestelling, aan het
+   * portaal en aan het dashboard. Mislukt hij op een kolom die migratie 0016
+   * nog moet aanmaken, dan is de bestelling van niemand — en safe() eromheen
+   * zou dat inslikken. Dus bij "no such column" nog één keer zonder de nieuwe
+   * kolommen; de klant bestaat dan wel, met alleen de samengestelde naam en
+   * het samengestelde adres.
+   */
+  try {
+    await upsertWide(env, c);
+  } catch (err) {
+    if (!/no such column/i.test(String(err?.message || err))) throw err;
+    console.error('[order] migratie 0016 ontbreekt — klant zonder losse adresvelden bijgewerkt:', c.email);
+    await env.DB.prepare(
+      `INSERT INTO customers (email, name, brand, phone, website, vat_number, country, billing_address)
+       VALUES (?1,?2,?3,?4,?5,?6,?7,?8)
+       ON CONFLICT(email) DO UPDATE SET
+         name=CASE WHEN customers.details_saved_at IS NULL
+                   THEN COALESCE(excluded.name, customers.name)
+                   ELSE COALESCE(customers.name, excluded.name) END,
+         brand=CASE WHEN customers.details_saved_at IS NULL
+                   THEN COALESCE(excluded.brand, customers.brand)
+                   ELSE COALESCE(customers.brand, excluded.brand) END,
+         phone=CASE WHEN customers.details_saved_at IS NULL
+                   THEN COALESCE(excluded.phone, customers.phone)
+                   ELSE COALESCE(customers.phone, excluded.phone) END,
+         website=CASE WHEN customers.details_saved_at IS NULL
+                   THEN COALESCE(excluded.website, customers.website)
+                   ELSE COALESCE(customers.website, excluded.website) END,
+         vat_number=CASE WHEN customers.details_saved_at IS NULL
+                   THEN COALESCE(excluded.vat_number, customers.vat_number)
+                   ELSE COALESCE(customers.vat_number, excluded.vat_number) END,
+         country=CASE WHEN customers.details_saved_at IS NULL
+                   THEN COALESCE(excluded.country, customers.country)
+                   ELSE COALESCE(customers.country, excluded.country) END,
+         billing_address=CASE WHEN customers.details_saved_at IS NULL
+                   THEN COALESCE(excluded.billing_address, customers.billing_address)
+                   ELSE COALESCE(customers.billing_address, excluded.billing_address) END,
+         updated_at=datetime('now')`
+    ).bind(c.email, c.name || null, c.brand || null, c.phone || null, c.website || null, c.vat || null,
+           c.country || null, c.address || null).run();
+  }
+  const row = await env.DB.prepare('SELECT id FROM customers WHERE email = ?1').bind(c.email).first();
+  return row?.id ?? null;
+}
+
+/** De brede variant, met de kolommen uit migratie 0016. Zie upsertCustomer(). */
+async function upsertWide(env, c) {
   await env.DB.prepare(
-    `INSERT INTO customers (email, name, brand, phone, website, vat_number)
-     VALUES (?1,?2,?3,?4,?5,?6)
+    // country and billing_address have existed on this table since the first
+    // schema and had never been written by anything — no INSERT or UPDATE in
+    // src/ or functions/ touched either, because no form asked for them. They
+    // are written now, under exactly the same details_saved_at rule as every
+    // other field: a customer who has saved their details keeps them, and an
+    // order can only fill a blank.
+    // De losse naam- en adresvelden uit migratie 0016 gaan mee onder exact
+    // dezelfde details_saved_at-regel als de rest: heeft de klant zijn gegevens
+    // opgeslagen, dan wint wat er staat en kan een bestelling alleen een leeg
+    // veld vullen. no_vat_number valt daarbuiten en heeft zijn eigen regel —
+    // zie hieronder.
+    `INSERT INTO customers (email, name, brand, phone, website, vat_number, country, billing_address,
+                            first_name, last_name, address_line1, address_line2, postal_code, city, region,
+                            no_vat_number, save_requested_at)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)
      ON CONFLICT(email) DO UPDATE SET
        name=CASE WHEN customers.details_saved_at IS NULL
                  THEN COALESCE(excluded.name, customers.name)
@@ -1085,10 +1361,85 @@ async function upsertCustomer(env, c) {
        vat_number=CASE WHEN customers.details_saved_at IS NULL
                  THEN COALESCE(excluded.vat_number, customers.vat_number)
                  ELSE COALESCE(customers.vat_number, excluded.vat_number) END,
+       country=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.country, customers.country)
+                 ELSE COALESCE(customers.country, excluded.country) END,
+       billing_address=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.billing_address, customers.billing_address)
+                 ELSE COALESCE(customers.billing_address, excluded.billing_address) END,
+       -- ── DE LOSSE VELDEN VOLGEN DE SAMENGESTELDE, NIET ANDERSOM ──────────
+       --
+       -- Naïef zou hier hetzelfde CASE staan als hierboven, en dat is precies
+       -- fout voor een klant die zijn gegevens vóór migratie 0016 heeft
+       -- opgeslagen. Die heeft name en billing_address gevuld en de losse
+       -- kolommen leeg. Een gewone COALESCE ziet die leegte als "nog niets" en
+       -- vult hem met het adres van DEZE bestelling — terwijl name en
+       -- billing_address beschermd blijven en het OUDE adres houden. Uitkomst:
+       -- de factuurkolommen wijzen naar Enschede en de samengestelde regel die
+       -- elke mail leest naar Amsterdam. Twee waarheden over één klant.
+       --
+       -- Dus is de vraag niet "is dit veld leeg" maar "weten we deze naam / dit
+       -- adres al ergens". Zo lang de samengestelde kolom gevuld is, blijft de
+       -- hele set staan zoals hij staat, en verandert hij alleen via
+       -- /account/details — waar naam, losse velden en samenstelling in één
+       -- keer worden geschreven.
+       first_name=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.first_name, customers.first_name)
+                 WHEN customers.name IS NULL AND customers.first_name IS NULL
+                 THEN excluded.first_name
+                 ELSE customers.first_name END,
+       last_name=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.last_name, customers.last_name)
+                 WHEN customers.name IS NULL AND customers.last_name IS NULL
+                 THEN excluded.last_name
+                 ELSE customers.last_name END,
+       address_line1=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.address_line1, customers.address_line1)
+                 WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
+                 THEN excluded.address_line1
+                 ELSE customers.address_line1 END,
+       address_line2=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.address_line2, customers.address_line2)
+                 WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
+                 THEN excluded.address_line2
+                 ELSE customers.address_line2 END,
+       postal_code=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.postal_code, customers.postal_code)
+                 WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
+                 THEN excluded.postal_code
+                 ELSE customers.postal_code END,
+       city=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.city, customers.city)
+                 WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
+                 THEN excluded.city
+                 ELSE customers.city END,
+       region=CASE WHEN customers.details_saved_at IS NULL
+                 THEN COALESCE(excluded.region, customers.region)
+                 WHEN customers.billing_address IS NULL AND customers.address_line1 IS NULL
+                 THEN excluded.region
+                 ELSE customers.region END,
+       -- "Ik heb geen btw-nummer" wordt alleen AANgezet, nooit uit. Een klant
+       -- die vandaag zegt dat hij er geen heeft, zegt dat over zichzelf; een
+       -- bestelling waarbij hij het vinkje gewoon niet aanraakte zegt niets, en
+       -- dat mag een eerder antwoord niet wissen. Uitzetten gebeurt op één
+       -- plek: het invullen van een echt nummer, in handleDetails().
+       no_vat_number=CASE WHEN excluded.no_vat_number = 1 THEN 1
+                 WHEN excluded.vat_number IS NOT NULL THEN 0
+                 ELSE customers.no_vat_number END,
+       -- Alleen zetten, nooit wissen, en nooit als er al opgeslagen is. Een
+       -- volgende bestelling zonder vinkje betekent niet "haal weg" — het
+       -- betekent dat er niets gevraagd is.
+       save_requested_at=CASE
+                 WHEN customers.details_saved_at IS NOT NULL THEN NULL
+                 WHEN excluded.save_requested_at IS NOT NULL THEN COALESCE(customers.save_requested_at, excluded.save_requested_at)
+                 ELSE customers.save_requested_at END,
        updated_at=datetime('now')`
-  ).bind(c.email, c.name || null, c.brand || null, c.phone || null, c.website || null, c.vat || null).run();
-  const row = await env.DB.prepare('SELECT id FROM customers WHERE email = ?1').bind(c.email).first();
-  return row?.id ?? null;
+  ).bind(c.email, c.name || null, c.brand || null, c.phone || null, c.website || null, c.vat || null,
+         c.country || null, c.address || null,
+         c.firstName || null, c.lastName || null,
+         c.line1 || null, c.line2 || null, c.postal || null, c.city || null, c.region || null,
+         c.noVat ? 1 : 0,
+         c.saveRequested ? new Date().toISOString() : null).run();
 }
 
 // sendMail() moved to src/lib/mail.js on 2026-07-27 — see that file's header
@@ -1207,6 +1558,21 @@ function notifyEmail(ref, service, top, details, gate = {}) {
   const files = gate.files || [];
   const attached = gate.attached || [];
 
+  // ── THE VAT VERDICT, IN FRONT OF A HUMAN ───────────────────────────────────
+  // Amber rather than red for the unconfirmed case: it is not an error, it is
+  // an order that was charged 21% where the customer may have expected 0%, and
+  // the studio is the only party who can put that right before the invoice.
+  const v = gate.vat;
+  const vies = gate.vies;
+  const vatBlock = v
+    ? `<p style="margin:0 0 16px;padding:12px;background:${v.treatment === 'nl_standard' ? '#1F2229' : '#23301C'};color:#fff;font-size:13px;line-height:1.6">
+         <strong>VAT: ${esc(v.treatment)}</strong> at ${Math.round(v.rate * 100)}%${gate.quote ? ` — net ${(gate.quote.netCents / 100).toFixed(2)}, VAT ${(gate.quote.vatCents / 100).toFixed(2)}, charged ${(gate.quote.grossCents / 100).toFixed(2)}` : ''}<br>
+         Reason: ${esc(v.reason)}${top.country ? ` · country ${esc(top.country)}` : ''}
+         ${vies ? `<br>VIES: ${vies.ok ? (vies.valid ? 'valid' : 'INVALID') : `unreachable (${esc(vies.error || '?')})`}${vies.consultation ? ` · consultation ${esc(vies.consultation)}` : ''}${vies.name ? ` · ${esc(vies.name)}` : ''}` : ''}
+         ${v.reason === 'eu-unconfirmed' ? '<br><strong>Charged 21% to an EU customer who gave a number we could not confirm. Worth a look before the invoice.</strong>' : ''}
+       </p>`
+    : '';
+
   const banner = raced
     ? `<p style="margin:0 0 16px;padding:12px;background:#8F4023;color:#fff;font-size:14px">
          <strong>Window lost.</strong> This order asked for
@@ -1290,6 +1656,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
 
   return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
     ${banner}
+    ${vatBlock}
     <h2 style="margin:0 0 8px">New ${esc(service)} order</h2>
     <p style="margin:0 0 4px">Reference <strong>${esc(ref)}</strong></p>
     ${meta ? `<p style="margin:0 0 12px;color:#666;font-size:13px">${meta}</p>` : ''}
@@ -1324,7 +1691,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  * is placement, which is the one thing the copy cannot carry itself.
  */
 export function customerEmail(lang, ref, service, name,
-  { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null } = {}) {
+  { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null } = {}) {
   const nl = lang === 'nl';
   const hi = name ? `Hi ${esc(name)},` : 'Hi,';
   const attended = tier === 'attended';

@@ -1,24 +1,46 @@
-// VISUAILS — FigWalk's behaviour. Three small jobs and nothing else.
+// VISUAILS — FigWalk's behaviour. Four small jobs and nothing else.
 //
 //   1 · SWITCH SERVICE. Show one of the three bodies, hide the other two.
-//   2 · SWITCH LOOK. Within the visible body, show the layers for the chosen
-//       background or style.
-//   3 · TRACK SCROLL. Mark the step crossing the middle of the viewport as
-//       active, and show the stage layer that belongs to it.
+//   2 · SWITCH LOOK. Within the visible body, show the layers belonging to the
+//       chosen background or style.
+//   3 · TRACK SCROLL. Decide which step the reader is on, and show the stage
+//       layer that belongs to it.
+//   4 · SLIDE. Move each step sideways in proportion to how far it is from the
+//       reading line — in from the left, out to the right.
+//
+// WHY THE SLIDE IS SCROLL-LINKED AND NOT AN ANIMATION. Lucas: *"dat de tekst en
+// de stylen van links naar rechts gaan net als lenis tijdens het scrollen."* A
+// keyframe animation has its own clock and would run at its own speed no matter
+// how fast you scrolled; this reads the scroll position and derives a position
+// from it, so the text moves exactly as fast as the reader does. The site
+// already runs Lenis (src/scripts/smooth-scroll.js), which lerps the scroll
+// itself, and everything downstream of that inherits the easing for free. That
+// is the whole of "net als lenis" — there is nothing to ease here, because the
+// thing being followed is already eased.
 //
 // IT CREATES NOTHING. Every layer, every look, every result grid is already in
-// the page — see FigWalk.astro's header for the two reasons, of which the
-// sharper one is that Astro's scoped CSS hangs off `data-astro-cid-*` and a
-// node built here would carry none of it. This file only ever sets `hidden`,
-// toggles a class, and copies an `src` between two elements that both already
-// exist. If you reach for createElement, put the element in the .astro file
-// with `hidden` instead.
+// the page. This file sets `hidden`, toggles one class, and writes two custom
+// properties. The reason is the trap this project has hit three times: Astro's
+// scoped CSS hangs off `data-astro-cid-*`, which only template elements carry,
+// so a node built here would match no rule in FigWalk.astro. If you reach for
+// createElement, put the element in the .astro file with `hidden` instead.
 //
-// IT IS OPTIONAL. With this file absent the component is a long static column:
+// IT IS OPTIONAL. Without this file the component is a long static column:
 // every layer visible under its steps, every radio still clickable, nothing
-// misleading. The sticky positioning and the layer hiding both live behind
-// `.js` in the CSS, so they only exist once the page has decided scripting is
-// on. That is the same contract as global.css's `.reveal.pending`.
+// misleading. The sticky positioning, the layer hiding and the slide all live
+// behind `.js` in the CSS, so they only exist once the page has decided
+// scripting is on — the same contract as `.reveal.pending` in global.css.
+
+// The travel DISTANCE is not here — it is `--wk-shift` in FigWalk.astro, and
+// this file only writes the unitless -1…1 position. The first version wrote
+// pixels, which meant one number for every screen width: 72px is right beside a
+// 34rem column and wrong on a 390px phone, where it pushed the whole paragraph
+// off the right edge. A media query can answer that; a constant cannot.
+
+/** How faint a step gets at the edge of its band. Never zero: a step that
+ *  vanishes entirely reads as content that failed to load, and someone
+ *  skim-scrolling should still see that there is more below. */
+const MIN_OPACITY = 0.22;
 
 function initWalk() {
   const root = document.querySelector('[data-walk]');
@@ -29,25 +51,24 @@ function initWalk() {
   const serviceInputs = Array.prototype.slice.call(root.querySelectorAll('[data-walk-service]'));
   if (!bodies.length) return;
 
-  // Per-body state. Kept on the element rather than in a closure variable so
-  // that switching service and coming back does not reset the look the reader
-  // had chosen — losing someone's choice because they glanced at another tab is
-  // the kind of small rudeness that makes an interactive figure feel cheap.
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  // Read from the DOM rather than held in a variable, so switching service and
+  // coming back does not reset the look the reader had chosen.
   function currentLook(body) {
     const on = body.querySelector('[data-walk-look-input]:checked');
     return on ? on.value : null;
   }
 
-  /** Show exactly the layers that belong to (step, look). */
+  /** Show exactly the layers belonging to (step, look). */
   function paint(body, stepId, look) {
-    // Which layer a step wants. `source` and `make` have one each; the look
-    // step and the result step have one per look; `model` has one that borrows
-    // the look's image.
-    let want = 'source';
-    if (stepId === 'model') want = 'model';
-    else if (stepId === 'make') want = 'make';
-    else if (stepId === 'result') want = 'result';
-    else if (stepId !== 'source') want = 'look';
+    // The look step's id is the service's own — 'background', 'style' or
+    // 'videoStyle' — so anything that is not one of the five fixed names is
+    // the look step.
+    let want = stepId;
+    if (stepId !== 'order' && stepId !== 'upload' && stepId !== 'window'
+      && stepId !== 'pay' && stepId !== 'model' && stepId !== 'make'
+      && stepId !== 'portal' && stepId !== 'result') want = 'look';
 
     const layers = body.querySelectorAll('[data-walk-layer]');
     for (let i = 0; i < layers.length; i++) {
@@ -58,11 +79,11 @@ function initWalk() {
       el.hidden = !(isKind && (!elLook || elLook === look));
     }
 
-    // The model layer shows the look beside the face, so it needs the chosen
-    // look's image. Copying the src between two existing <img>s rather than
-    // rendering four model layers: the face never changes, only what it stands
-    // next to, and four near-identical layers would be four more images to
-    // download for one that is ever seen.
+    // The model layer stands the chosen look next to the face, so it borrows
+    // that look's image. Copying an src between two existing <img>s rather than
+    // rendering one model layer per look: the face never changes, and four
+    // near-identical layers would be four more images downloaded for one that
+    // is ever seen.
     const pair = body.querySelector('[data-walk-model-look]');
     if (pair && look) {
       const src = body.querySelector('[data-walk-layer="look"][data-walk-look="' + look + '"] img');
@@ -73,46 +94,72 @@ function initWalk() {
   }
 
   /**
-   * Where on the screen the reader is looking.
+   * THE READING LINE — where on the screen the reader's attention is.
    *
-   * On the two-column layout that is simply the middle: the stage is BESIDE the
-   * text, so the whole viewport height is reading space.
+   * Not the middle of the viewport, because the stage is stuck to the top and
+   * covers a good part of it. Measured against the middle, the "active" step
+   * would be one whose heading is behind the picture. The line is therefore the
+   * middle of whatever is left underneath the stage.
    *
-   * On a phone the stage is stuck to the TOP and covers roughly the upper half,
-   * so the middle of the viewport is behind it. Measured against the mid-point
-   * there, the step that counts as active is one the reader cannot see the
-   * heading of — which is exactly what the first phone build did. Below 860px
-   * the focus point is therefore the middle of what is left under the stage.
+   * Falls back to the viewport middle if the stage is not there or has scrolled
+   * past, which is the correct answer in both of those cases.
    */
-  function focalPoint(body) {
-    if (!window.matchMedia('(max-width: 860px)').matches) return window.innerHeight / 2;
+  function readingLine(body) {
     const stage = body.querySelector('.wk-stage');
     if (!stage) return window.innerHeight / 2;
-    const bottom = Math.max(0, stage.getBoundingClientRect().bottom);
+    const bottom = stage.getBoundingClientRect().bottom;
+    if (bottom <= 0 || bottom >= window.innerHeight) return window.innerHeight / 2;
     return bottom + (window.innerHeight - bottom) / 2;
   }
 
-  /** The step currently nearest the reader's focus point, in one body. */
-  function activeStep(body) {
-    const steps = body.querySelectorAll('[data-walk-step]');
-    const mid = focalPoint(body);
-    let best = null;
-    let bestDist = Infinity;
-    for (let i = 0; i < steps.length; i++) {
-      const r = steps[i].getBoundingClientRect();
-      const d = Math.abs(r.top + r.height / 2 - mid);
-      if (d < bestDist) { bestDist = d; best = steps[i]; }
-    }
-    return best;
-  }
-
+  /**
+   * One pass over the visible body: place every step, and light the one at the
+   * reading line.
+   *
+   * Reads all the rectangles first and writes afterwards. Interleaving the two
+   * would make every write invalidate the next read — the classic layout
+   * thrash, and with nine steps it is nine forced reflows a frame.
+   */
   function sync(body) {
     if (!body || body.hidden) return;
-    const step = activeStep(body);
-    if (!step) return;
     const steps = body.querySelectorAll('[data-walk-step]');
-    for (let i = 0; i < steps.length; i++) steps[i].classList.toggle('is-on', steps[i] === step);
-    paint(body, step.getAttribute('data-walk-step'), currentLook(body));
+    if (!steps.length) return;
+
+    const line = readingLine(body);
+    // The band over which a step travels its full distance. Two thirds of the
+    // viewport: shorter and the movement is abrupt, longer and neighbouring
+    // steps are all mid-slide at once, which reads as drift rather than pacing.
+    const band = window.innerHeight * 0.66;
+
+    const dist = [];
+    let best = 0;
+    let bestAbs = Infinity;
+    for (let i = 0; i < steps.length; i++) {
+      const r = steps[i].getBoundingClientRect();
+      // Signed distance from the reading line to the step's centre, normalised
+      // and clamped. POSITIVE means the step is still below the line — not yet
+      // read — and it belongs to the LEFT. Negative means it is above, already
+      // read, and it belongs to the right.
+      let d = (r.top + r.height / 2 - line) / band;
+      if (d > 1) d = 1;
+      if (d < -1) d = -1;
+      dist.push(d);
+      const abs = d < 0 ? -d : d;
+      if (abs < bestAbs) { bestAbs = abs; best = i; }
+    }
+
+    for (let i = 0; i < steps.length; i++) {
+      steps[i].classList.toggle('is-on', i === best);
+      const inner = steps[i].firstElementChild;
+      if (!inner || reduced.matches) continue;
+      const d = dist[i];
+      const abs = d < 0 ? -d : d;
+      // -d, so a step below the line (d > 0) sits to the left.
+      inner.style.setProperty('--wk-t', (-d).toFixed(3));
+      inner.style.setProperty('--wk-o', (1 - abs * (1 - MIN_OPACITY)).toFixed(3));
+    }
+
+    paint(body, steps[best].getAttribute('data-walk-step'), currentLook(body));
   }
 
   function visibleBody() {
@@ -127,20 +174,16 @@ function initWalk() {
     for (let i = 0; i < bodies.length; i++) {
       bodies[i].hidden = bodies[i].getAttribute('data-walk-body') !== id;
     }
-    const body = visibleBody();
-    sync(body);
-    // Bring the reader back to the top of the walkthrough. Switching service
-    // three steps down otherwise leaves them mid-way through a path they have
-    // not started, looking at a stage that jumped. `block: 'start'` on the
-    // picker rather than on the body, so the choice they just made stays in
-    // view and the change is legible as a consequence of it.
+    sync(visibleBody());
+    // Take the reader back to the top of the walkthrough. Switching service
+    // four steps down otherwise leaves them halfway through a path they have
+    // not started. Scrolls to the PICKER rather than the body, so the choice
+    // they just made stays on screen and the change reads as a consequence of
+    // it — and only when the picker has already left the top, because yanking
+    // the page for someone looking straight at it is worse than not scrolling.
     const pick = root.querySelector('.wk-pick');
-    if (pick) {
-      const top = pick.getBoundingClientRect().top;
-      // Only scroll if the picker has already left the top of the screen —
-      // yanking the page for someone who is looking straight at it is worse
-      // than not scrolling at all.
-      if (top < 0) pick.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (pick && pick.getBoundingClientRect().top < 0) {
+      pick.scrollIntoView({ block: 'start', behavior: reduced.matches ? 'auto' : 'smooth' });
     }
   }
   for (let i = 0; i < serviceInputs.length; i++) serviceInputs[i].addEventListener('change', onService);
@@ -148,17 +191,14 @@ function initWalk() {
   // ── look switching ───────────────────────────────────────────────────────
   const lookInputs = Array.prototype.slice.call(root.querySelectorAll('[data-walk-look-input]'));
   for (let i = 0; i < lookInputs.length; i++) {
-    lookInputs[i].addEventListener('change', function onLook() {
-      sync(visibleBody());
-    });
+    lookInputs[i].addEventListener('change', function onLook() { sync(visibleBody()); });
   }
 
   // ── scroll tracking ──────────────────────────────────────────────────────
-  // rAF-throttled, passive, and reading layout once per frame at most. The
-  // alternative — an IntersectionObserver per step — needs a rootMargin band
-  // tuned to the step height, and these steps are `62svh` tall, which is close
-  // enough to the band that steps at the top and bottom of the list never fire.
-  // A distance-to-centre comparison has no such edge case.
+  // rAF-throttled and passive. An IntersectionObserver would do the lighting
+  // but not the slide: the slide needs a continuous position, not a threshold
+  // crossing, and an observer that fired often enough to drive it would be a
+  // scroll handler with extra steps.
   let queued = false;
   function onScroll() {
     if (queued) return;
@@ -170,6 +210,19 @@ function initWalk() {
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
+
+  // If the reader turns reduced motion on mid-visit, drop the offsets rather
+  // than leaving nine steps frozen wherever they happened to be.
+  if (reduced.addEventListener) {
+    reduced.addEventListener('change', function onPref() {
+      if (!reduced.matches) return;
+      const inners = root.querySelectorAll('.wk-step-in');
+      for (let i = 0; i < inners.length; i++) {
+        inners[i].style.removeProperty('--wk-t');
+        inners[i].style.removeProperty('--wk-o');
+      }
+    });
+  }
 
   sync(visibleBody());
 }

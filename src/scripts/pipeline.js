@@ -433,8 +433,31 @@ function reduced() {
  */
 function syncRequired() {
   fields().forEach((f) => {
-    f.required = f.dataset.plReq === '1' && isShown(f);
+    f.required = f.dataset.plReq === '1' && isShown(f) && !waived(f);
   });
+}
+
+/*
+ * ── EEN VELD DAT VERPLICHT IS TENZIJ ─────────────────────────────────────────
+ *
+ * Lucas, 7 augustus 2026: *"inclusief btw-nummer met een checkbox bij
+ * btw-nummer toch te skippen als de klant geen btw-nummer heeft of buiten de eu
+ * komt."*
+ *
+ * `data-pl-req-unless="no_vat"` op het veld wijst naar het vinkje dat de eis
+ * opheft. Eén bron: het `required`-attribuut wordt door syncRequired() gezet en
+ * niet met de hand aan- en uitgezet, dus er is geen tweede plek waar dezelfde
+ * regel kan gaan afwijken — precies de reden dat data-pl-req überhaupt bestaat
+ * (zie bindForm hierboven, waar het attribuut van elk veld wordt afgehaald).
+ *
+ * Onbekende naam → niets opgeheven. Een verwijzing naar een vinkje dat niet
+ * bestaat mag een verplicht veld niet stilletjes optioneel maken.
+ */
+function waived(f) {
+  const name = f.dataset && f.dataset.plReqUnless;
+  if (!name) return false;
+  const box = q(`input[type="checkbox"][name="${name}"]`);
+  return !!(box && box.checked);
 }
 
 function isShown(el) {
@@ -455,6 +478,16 @@ function bindErrors() {
   };
   form.addEventListener('input', clear);
   form.addEventListener('change', clear);
+
+  // Een vinkje dat een eis opheft, moet die eis meteen opheffen — anders zet je
+  // het aan en houdt de browser je nog steeds tegen op het veld erboven. Één
+  // luisteraar op het formulier in plaats van één per vinkje; zie waived().
+  form.addEventListener('change', (e) => {
+    const el = e.target;
+    if (el && el.type === 'checkbox' && qa('[data-pl-req-unless]').some((f) => f.dataset.plReqUnless === el.name)) {
+      syncRequired();
+    }
+  });
 }
 
 function bindNav() {
@@ -2624,18 +2657,50 @@ function uploadError(code, body) {
  * white swatch into a button that posts the customer's saved id. A whitelist
  * cannot do that, whatever the endpoint grows next.
  */
-const PREFILL_FIELDS = ['name', 'brand', 'email', 'phone', 'website', 'vat'];
+// `country` and `address` joined in August 2026 with the VAT work, and they are
+// the two that MUST be here rather than nice to have. The collapse below hides
+// step 3 for a returning customer, and a hidden <select> posts an empty string
+// — which the server reads as "no country", which prices at 21%. A German
+// customer with a valid VAT number would have been charged Dutch VAT because
+// their own saved details were not handed back to them.
+// De losse naam- en adresvelden sinds migratie 0016 — zie src/data/address.js
+// voor waarom `name` en `billing_address` daarnaast blijven bestaan.
+const PREFILL_FIELDS = [
+  'first_name', 'last_name', 'brand', 'email', 'phone', 'website', 'vat',
+  'country', 'address_line1', 'address_line2', 'postal_code', 'city', 'region',
+];
 
 /** The three the form cannot go without — nothing collapses unless all three are filled. */
-const REQUIRED_DETAILS = ['name', 'brand', 'email'];
+// What step 3 cannot be collapsed without. `country` and `address` are on this
+// list for the same reason they are on PREFILL_FIELDS: collapsing a step whose
+// hidden required fields are empty is how a form gets stuck on a validation
+// error pointing at a control nobody can see — and for country it is worse than
+// stuck, because an empty country silently prices the order at 21%.
+const REQUIRED_DETAILS = [
+  'first_name', 'last_name', 'brand', 'email', 'country', 'address_line1', 'postal_code', 'city',
+];
 
 function bindPrefill() {
   accountMe()
     .then((me) => {
-      if (!me || !form) return;
-      applyAccount(me);
+      if (!form) return;
+      if (me) { applyAccount(me); return; }
+      /*
+       * ── OOK VOOR WIE NIET IS INGELOGD — 7 augustus 2026 ───────────────────
+       *
+       * Lucas: *"ook na het bestellen — bewaar dit zodat je het niet opnieuw
+       * hoeft in te vullen."* Het aanbod stond alleen in de tak hierboven, dus
+       * uitgerekend degene die alles met de hand heeft ingetypt kreeg het niet
+       * te zien. Dat is de klant met de meeste reden om ja te zeggen.
+       *
+       * De weg is een andere: een uitgelogde bezoeker kan niet naar
+       * /account/details posten, want daar hoort een sessie bij. Zijn vinkje
+       * reist mee met de bestelling en wordt ingelost bij zijn eerste keer
+       * inloggen — zie migrations/0017.
+       */
+      bindSaveOffer({ signedIn: false });
     })
-    .catch(() => {}); // no account, offline, or /account/me unreachable — the form is already fine empty
+    .catch(() => {}); // offline of /account/me onbereikbaar — het formulier werkt leeg ook
 }
 
 /**
@@ -2659,11 +2724,34 @@ function applyAccount(me) {
   const filled = PREFILL_FIELDS.map((key) => {
     const value = me[key];
     if (typeof value !== 'string' || !value) return null;
-    const input = q(`input[name="${key}"]`);
+    // `select` as well as `input` — country is a <select>, and the old selector
+    // silently skipped it, which is the same empty-country bug from the other
+    // side. `[name=]` on either tag, and the "never overwrite" rule still holds
+    // because a select with no chosen option has value ''.
+    const input = q(`input[name="${key}"], select[name="${key}"]`);
     if (!input || input.value) return null; // never overwrite
     input.value = value;
+    // A programmatic value change fires nothing, and the select's own styling
+    // and the error-clearing listener both key off `change`.
+    if (input.tagName === 'SELECT') input.dispatchEvent(new Event('change', { bubbles: true }));
     return key;
   }).filter(Boolean);
+
+  /*
+   * "IK HEB GEEN BTW-NUMMER" IS OOK EEN OPGESLAGEN ANTWOORD.
+   *
+   * Zonder deze twee regels ziet een particulier of een Amerikaans bedrijf bij
+   * elke bestelling opnieuw een verplicht btw-veld dat hij nooit kan invullen —
+   * terwijl hij die vraag één keer beantwoord heeft. Het vinkje wordt alleen
+   * AANgezet, nooit uit: een klant die vandaag wél een nummer intikt, heeft er
+   * kennelijk een gekregen, en zijn invoer hoort niet door een oud antwoord
+   * overschreven te worden.
+   */
+  const noVat = q('input[type="checkbox"][name="no_vat"]');
+  if (noVat && me.noVat && !q('input[name="vat"]')?.value) {
+    noVat.checked = true;
+    noVat.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 
   applySavedBackground(me);
   // Tiles first: applyBrandKit() may want to preselect one of them.
@@ -2675,9 +2763,21 @@ function applyAccount(me) {
   // hiding an empty required field behind a summary is how a form gets stuck
   // on a validation error pointing at a control nobody can see.
   const complete = REQUIRED_DETAILS.every((k) => {
-    const input = q(`input[name="${k}"]`);
+    const input = q(`input[name="${k}"], select[name="${k}"]`);
     return input && input.value.trim();
-  });
+  })
+    // HET BTW-VELD HOORT HIER OOK BIJ, en het staat niet in REQUIRED_DETAILS
+    // omdat het als enige verplicht-tenzij is. Zonder deze regel klapt stap 3
+    // dicht over een leeg btw-veld zonder vinkje: syncRequired() slaat een
+    // verborgen veld over (isShown()), dus er komt geen waarschuwing, en de
+    // bestelling gaat de deur uit zonder nummer én zonder het antwoord "die heb
+    // ik niet". Precies het onderscheid waar no_vat_number voor bestaat.
+    && (() => {
+      const vat = q('input[name="vat"]');
+      const box = q('input[type="checkbox"][name="no_vat"]');
+      if (!vat) return true;
+      return !!(vat.value.trim() || (box && box.checked));
+    })();
 
   // The summary already says which details are being used, so the note that
   // says the same thing in a sentence would be saying it twice. It is the
@@ -2708,7 +2808,7 @@ function applyAccount(me) {
   // someone who already saved has nothing to opt into, and someone signed out
   // has no account to save to. It ships hidden and unchecked and is never
   // pre-ticked — see bindSaveOffer().
-  if (!me.saved) bindSaveOffer();
+  if (!me.saved) bindSaveOffer({ signedIn: true });
 }
 
 /**
@@ -2929,7 +3029,9 @@ function collapseBrief(me) {
 
   list.textContent = '';
   PREFILL_FIELDS.forEach((key) => {
-    const input = q(`input[name="${key}"]`);
+    // `select` erbij: country is een keuzelijst, en zonder dit stond het land
+    // niet in het lijstje "je opgeslagen gegevens" terwijl het er wel is.
+    const input = q(`input[name="${key}"], select[name="${key}"]`);
     const val = input && input.value.trim();
     if (!val) return;
     const li = document.createElement('li');
@@ -2950,7 +3052,7 @@ function collapseBrief(me) {
       fields.hidden = false;
       panel.hidden = true;
       syncRequired();
-      const first = q('input[name="name"]');
+      const first = q('input[name="first_name"]');
       if (first) first.focus();
     }, { once: true });
   }
@@ -2970,11 +3072,34 @@ function collapseBrief(me) {
 // travel with the order to /api/order and be mistaken for an answer to it.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function bindSaveOffer() {
+function bindSaveOffer({ signedIn }) {
   const offer = q('[data-pl-save-offer]');
   const box = q('[data-pl-save-check]');
   if (!offer || !box) return;
   box.checked = false; // a bfcache restore can bring a tick back with it
+
+  // Eén van de twee hints. De uitkomst verschilt écht — meteen opgeslagen tegen
+  // opgeslagen bij de eerste keer inloggen — en dat hoort te lezen te zijn
+  // vóórdat iemand het vinkje zet, niet erna.
+  const hintIn = q('[data-pl-save-hint="in"]');
+  const hintOut = q('[data-pl-save-hint="out"]');
+  if (hintIn) hintIn.hidden = !signedIn;
+  if (hintOut) hintOut.hidden = !!signedIn;
+
+  /*
+   * HET VERBORGEN VELD DRAAGT DE UITKOMST, EN ALLEEN VOOR EEN UITGELOGDE
+   * BEZOEKER. Een ingelogde klant wordt afgehandeld door saveDetailsIfAsked(),
+   * die na de bestelling naar /account/details post — geauthenticeerd, en dus
+   * meteen effectief. Zou het veld voor hem ook meegaan, dan zou dezelfde wens
+   * langs twee wegen binnenkomen en zou de trage weg de snelle kunnen
+   * overschrijven.
+   */
+  const flag = q('[data-pl-save-flag]');
+  if (flag) {
+    flag.value = '';
+    if (!signedIn) box.addEventListener('change', () => { flag.value = box.checked ? '1' : ''; });
+  }
+
   offer.hidden = false;
 }
 
@@ -3003,9 +3128,23 @@ function saveDetailsIfAsked() {
   const fd = new FormData();
   PREFILL_FIELDS.forEach((key) => {
     if (key === 'email') return; // the account email is not editable — see account.js
-    const input = q(`input[name="${key}"]`);
+    // `select` staat er sinds 7 augustus 2026 bij. `country` zit in
+    // PREFILL_FIELDS maar is een <select>, dus deze regel vond hem niet en het
+    // land ging nooit mee naar /account/details — terwijl juist dat veld
+    // bepaalt of er 21% of "btw verlegd" op de volgende factuur staat.
+    // applyAccount() hierboven was hier al voor gerepareerd, deze kant niet.
+    const input = q(`input[name="${key}"], select[name="${key}"]`);
     if (input) fd.set(key, input.value.trim());
   });
+  // HET VINKJE MOET MEE, anders faalt de opslag stil voor precies de mensen
+  // voor wie het bedoeld is. handleDetails() ziet dan een leeg `vat` zonder
+  // `no_vat` ernaast, leest dat als "niet ingevuld", en weigert het hele
+  // verzoek — en deze fetch is keepalive met een lege catch, dus er is geen
+  // scherm en geen melding. Elke particulier en elk niet-EU-bedrijf zou zijn
+  // gegevens nooit opgeslagen zien worden.
+  const noVatBox = q('input[type="checkbox"][name="no_vat"]');
+  if (noVatBox && noVatBox.checked) fd.set('no_vat', '1');
+
   const bg = q('input[name="background"]:checked');
   const bgField = q('[data-pl-bg]');
   // A lifestyle-only order has no background — the fieldset is disabled and

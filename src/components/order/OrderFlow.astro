@@ -35,11 +35,12 @@ import { waHref } from '../../data/whatsapp.js';
 //     never once on screen, and a distracted visitor could order one product by
 //     not answering. It is now an explicit choice, and it is the first thing
 //     the new error state has to say something about.
+import { countryOptions } from '../../data/vat.js';
 import {
   TIERS, reviewClaim, euro, TEST_SAMPLE,
   TIER_ROWS, tierRow, tierRowLabels, turnaround,
   ladderRate, ladderFloor, LADDER, vatLabel, vatNote,
-  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT,
+  WINDOW_THRESHOLD,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
 } from '../../data/pricing.js';
@@ -97,6 +98,11 @@ if (!LADDER[service]) {
 // /api/order's ORDER_SERVICES and the D1 `service` column call a catalog set
 // plus a lifestyle carousel; renaming it is a migration, not a form change.
 const WIRE = { complete: 'drop', catalog: 'catalog', lifestyle: 'lifestyle' } as const;
+
+// The country select's options, grouped, built once. In frontmatter rather than
+// inline for this file's standing reason: an arrow function in a JSX attribute
+// puts a `>` inside the opening tag and the tag scanners close the element on it.
+const COUNTRIES = countryOptions(lang);
 const wire = WIRE[service];
 
 // A lifestyle carousel is a styled scene, not a product on a ground, so it has
@@ -507,9 +513,8 @@ const FORM = {
       totalLabel: 'Running total',
       netLabel: `Order value (${vatLabel('excl', 'en')})`,
       vatNote: vatNote('en'),
-      firstOrder: `First order for a brand: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% off, applied on the invoice.`,
       displayNote: 'A preview, worked out in your browser. The invoice is calculated again on our side, from the same ladder.',
-      outfitLabel: 'Any of these a full outfit?',
+      outfitLabel: 'Any complete outfits in here? (trousers, top and shoes together)',
       outfitCatalogNote: 'A catalog set is priced and shot per product, so full outfits are not part of this order. Need one because it matters to the brand? Ask us and we will look at it with you.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS}.`,
       outfitWhy: 'Why a full outfit costs more',
@@ -536,8 +541,11 @@ const FORM = {
       savedH: 'Using your saved details',
       savedEdit: 'Change for this order',
       savedHint: 'This order only. To change them for good, edit them in your account.',
-      name: 'Your name',
-      nameErr: 'Tell us who to address this to.',
+      // `name` is één veld geweest tot 7 augustus 2026 — zie migrations/0016.
+      firstName: 'First name',
+      firstErr: 'Fill in your first name — it goes on the invoice.',
+      lastName: 'Last name',
+      lastErr: 'The invoice needs a surname on it.',
       brand: 'Brand or shop name',
       brandErr: 'A brand or shop name goes on the invoice.',
       email: 'Email',
@@ -545,8 +553,27 @@ const FORM = {
       emailErr: 'We need an email address to send the confirmation to.',
       phone: 'Phone or WhatsApp',
       website: 'Website or shop link',
+      country: 'Country',
+      countryPick: 'Choose a country',
+      countryEu: 'European Union',
+      countryOther: 'Elsewhere',
+      countryErr: 'We need the country for the invoice and the VAT.',
+      street: 'Street and number',
+      streetPh: 'Vaarwerkhorst 17',
+      streetErr: 'An invoice needs an address on it.',
+      street2: 'Addition',
+      street2Ph: 'Unit, floor, c/o',
+      postal: 'Postcode',
+      postalPh: '7531 HK',
+      postalErr: 'The postcode is missing.',
+      city: 'City',
+      cityErr: 'The town or city is missing.',
+      region: 'State or province',
+      regionHint: 'Only where an address needs one — most of Europe does not.',
       vat: 'VAT number',
-      vatHint: 'For a business invoice within the EU.',
+      vatErr: 'Fill in your VAT number, or tick the box below if you do not have one.',
+      noVat: 'I do not have a VAT number',
+      vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
       message: 'Anything we should know',
       // SHARPENED, AND THE SHARPENING IS THE POINT. attributes.js's
       // ORDER_QUESTIONS comment argues there is ONE new order-level field and
@@ -566,7 +593,7 @@ const FORM = {
       okBody: 'Pick one. Nothing is reserved by looking at it — the window is held when this order arrives, and confirmed before anything is invoiced.',
       okMax: 'One window covers up to',
       okMaxTail: 'products.',
-      fullH: 'Nothing free inside the planning horizon',
+      fullH: 'The next few weeks are full',
       fullBody: 'Send the order anyway and you get the first window that opens, in writing, before anything is invoiced.',
       tooLargeH: 'Larger than one window holds',
       tooLargeBody: 'A single window covers up to',
@@ -599,6 +626,7 @@ const FORM = {
       lostGo: 'Go to the confirmation',
       saveLabel: 'Save these details to my account for next time',
       saveHint: 'Your name, brand and contact details — not this order or its brief.',
+      saveHintOut: 'Your name, brand and contact details — not this order or its brief. They are kept the moment you first sign in; the link is in your confirmation email.',
     },
     noscript: 'JavaScript is off, so this page shows all five steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for the material by email, confirm a window in writing, and invoice the ladder rate for the count you pick.',
     sharedH: 'What is identical at every count',
@@ -635,12 +663,11 @@ const FORM = {
       countHint: `Boven ${ATTENDED_PER_WINDOW} plannen we het samen — kies de laatste optie.`,
       countErr: 'Kies eerst hoeveel producten.',
       more: `Meer dan ${ATTENDED_PER_WINDOW}`,
-      totalLabel: 'Lopend totaal',
+      totalLabel: 'Totaal tot nu toe',
       netLabel: `Orderbedrag (${vatLabel('excl', 'nl')})`,
       vatNote: vatNote('nl'),
-      firstOrder: `Eerste bestelling van een merk: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% korting, verrekend op de factuur.`,
       displayNote: 'Een voorbeeld, in je browser uitgerekend. De factuur wordt aan onze kant opnieuw berekend, uit dezelfde staffel.',
-      outfitLabel: 'Zitten hier full outfits bij?',
+      outfitLabel: 'Zitten er complete setjes bij? (broek, top en schoenen samen)',
       outfitCatalogNote: 'Een catalogset is per product geprijsd en per product geschoten, dus full outfits horen niet bij deze bestelling. Toch nodig omdat het belangrijk is voor je merk? Vraag het ons, dan kijken we er samen naar.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}.`,
       outfitWhy: 'Waarom een full outfit meer kost',
@@ -662,8 +689,10 @@ const FORM = {
       savedH: 'Je opgeslagen gegevens',
       savedEdit: 'Aanpassen voor deze bestelling',
       savedHint: 'Alleen voor deze bestelling. Wil je ze definitief wijzigen, pas ze dan aan in je account.',
-      name: 'Je naam',
-      nameErr: 'Vertel ons aan wie we dit richten.',
+      firstName: 'Voornaam',
+      firstErr: 'Vul je voornaam in — die komt op de factuur.',
+      lastName: 'Achternaam',
+      lastErr: 'Op de factuur hoort een achternaam.',
       brand: 'Merk- of shopnaam',
       brandErr: 'Een merk- of shopnaam komt op de factuur.',
       email: 'E-mail',
@@ -671,15 +700,34 @@ const FORM = {
       emailErr: 'We hebben een e-mailadres nodig om de bevestiging naartoe te sturen.',
       phone: 'Telefoon of WhatsApp',
       website: 'Website of shoplink',
+      country: 'Land',
+      countryPick: 'Kies een land',
+      countryEu: 'Europese Unie',
+      countryOther: 'Elders',
+      countryErr: 'We hebben het land nodig voor de factuur en de btw.',
+      street: 'Straat en huisnummer',
+      streetPh: 'Vaarwerkhorst 17',
+      streetErr: 'Op een factuur hoort een adres.',
+      street2: 'Toevoeging',
+      street2Ph: 'Unit, verdieping, t.a.v.',
+      postal: 'Postcode',
+      postalPh: '7531 HK',
+      postalErr: 'De postcode ontbreekt nog.',
+      city: 'Plaats',
+      cityErr: 'De plaats ontbreekt nog.',
+      region: 'Provincie of staat',
+      regionHint: 'Alleen waar een adres er een heeft — in het grootste deel van Europa niet.',
       vat: 'Btw-nummer',
-      vatHint: 'Voor een zakelijke factuur binnen de EU.',
+      vatErr: 'Vul je btw-nummer in, of zet het vinkje hieronder aan als je er geen hebt.',
+      noVat: 'Ik heb geen btw-nummer',
+      vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij dan rekenen we geen Nederlandse btw.',
       message: 'Wat we moeten weten',
       // Zie de Engelse noot hierboven.
       messageHint: 'De look die je zoekt, een deadline achter de deadline, een referentie die je mooi vindt, wat je merk juist nooit doet.',
     },
     s4: {
       h: 'Timing',
-      lead: 'Tegen de echte agenda gecheckt in plaats van beloofd.',
+      lead: 'We kijken in de echte agenda. Wat je hier ziet, houden we ook vrij.',
       checking: 'Agenda checken…',
       queueH: 'Deze bestelling heeft geen gereserveerd venster nodig',
       queueBody: 'Bestellingen onder de grens worden gemaakt in de volgorde waarin ze binnenkomen.',
@@ -687,7 +735,7 @@ const FORM = {
       okBody: 'Kies er één. Er wordt niets gereserveerd door ernaar te kijken — het venster wordt vastgehouden zodra deze bestelling binnenkomt, en bevestigd voordat er iets gefactureerd wordt.',
       okMax: 'Eén venster telt maximaal',
       okMaxTail: 'producten.',
-      fullH: 'Niets vrij binnen de planningshorizon',
+      fullH: 'De komende weken zitten vol',
       fullBody: 'Stuur de bestelling toch: je krijgt het eerste venster dat vrijkomt, op schrift, voordat er iets gefactureerd wordt.',
       tooLargeH: 'Groter dan één venster aankan',
       tooLargeBody: 'Eén venster telt maximaal',
@@ -720,6 +768,7 @@ const FORM = {
       lostGo: 'Naar de bevestiging',
       saveLabel: 'Bewaar deze gegevens in mijn account voor de volgende keer',
       saveHint: 'Je naam, merk en contactgegevens — niet deze bestelling of de briefing.',
+      saveHintOut: 'Je naam, merk en contactgegevens — niet deze bestelling of de briefing. Ze worden bewaard zodra je voor het eerst inlogt; de link staat in je bevestigingsmail.',
     },
     noscript: 'JavaScript staat uit, dus deze pagina toont alle vijf stappen tegelijk. Drie dingen kunnen zo niet: je bestanden aannemen, de agenda checken en het totaal meerekenen. Verstuur het formulier, dan vragen we het materiaal per e-mail op, bevestigen we een venster op schrift en factureren we het staffeltarief bij het aantal dat je kiest.',
     sharedH: 'Wat bij elk aantal hetzelfde is',
@@ -970,7 +1019,6 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         </div>
         <p class="pl-total-rung" data-pl-rung hidden></p>
         <p class="pl-total-vatnote">{f.s1.vatNote}</p>
-        <p class="pl-total-first">{f.s1.firstOrder}</p>
         <p class="pl-total-display">{f.s1.displayNote}</p>
       </div>
 
@@ -1070,14 +1118,39 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       {/* One wrapper around the six fields so the collapse has a single thing
           to hide. Hidden, never disabled — a hidden input still posts. */}
       <div data-pl-s3-fields>
+      {/* ── VOORNAAM EN ACHTERNAAM ────────────────────────────────────────
+          Lucas, 7 augustus 2026: *"Aanpassen naar naam en achternaam."* Eén
+          veld met "Je naam" erboven levert "Mara" op — genoeg voor een aanhef
+          in een mail, te weinig voor de tenaamstelling op een factuur.
+
+          `name` bestaat nog steeds in de database en wordt nog steeds gevuld,
+          maar als de SAMENGESTELDE weergave; het samenvoegen gebeurt op de
+          server, in src/data/address.js. Zie migrations/0016. */}
       <div class="row-2">
         <div class="field">
-          <label for="pl-name">{f.s3.name} <span class="req">*</span></label>
-          <input class="input" type="text" id="pl-name" name="name" autocomplete="name" required data-pl-req="1" data-pl-err-msg={f.s3.nameErr} />
+          <label for="pl-first">{f.s3.firstName} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-first" name="first_name" autocomplete="given-name" required data-pl-req="1" data-pl-err-msg={f.s3.firstErr} />
         </div>
+        <div class="field">
+          <label for="pl-last">{f.s3.lastName} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-last" name="last_name" autocomplete="family-name" required data-pl-req="1" data-pl-err-msg={f.s3.lastErr} />
+        </div>
+      </div>
+
+      {/* ELKE RIJ TWEE VELDEN. Lucas: *"sommige invul velden staan heel random
+          geplaatst en niet op een rij."* Het merkveld stond alleen met een lege
+          rechterhelft ernaast, en de website hing helemaal onderaan bij het
+          btw-nummer. Nu staat wat bij elkaar hoort naast elkaar — wie je bent,
+          hoe we je bereiken, waar je zit — en blijft er precies één rij met een
+          enkel veld over, de laatste. */}
+      <div class="row-2">
         <div class="field">
           <label for="pl-brand">{f.s3.brand} <span class="req">*</span></label>
           <input class="input" type="text" id="pl-brand" name="brand" autocomplete="organization" required data-pl-req="1" data-pl-err-msg={f.s3.brandErr} />
+        </div>
+        <div class="field">
+          <label for="pl-web">{f.s3.website} <span class="pl-opt">{f.optional}</span></label>
+          <input class="input" type="url" id="pl-web" name="website" placeholder="https://" autocomplete="url" />
         </div>
       </div>
 
@@ -1093,14 +1166,106 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         </div>
       </div>
 
+      {/* ── WAAR DE KLANT ZIT, EN HET FACTUURADRES ────────────────────────
+          Allebei VERPLICHT, en allebei nieuw in augustus 2026.
+
+          Het adres was er simpelweg niet, terwijl het een formele factuureis
+          is — elke factuur die dit studio ooit heeft gestuurd miste hem.
+
+          Het LAND is het veld dat de btw bepaalt. Niet de taal, niet het
+          IP-adres, en niet de twee letters die iemand voor zijn btw-nummer
+          typt: een <select> met waarden die wij bepalen, omdat dit ene veld
+          het verschil is tussen 21% rekenen en niets rekenen. Een vrij
+          tekstveld daar is een vrij tekstveld dat belasting beslist.
+
+          Nederland staat los bovenaan omdat het de meeste bestellingen zijn en
+          omdat het het enige antwoord is dat zich anders gedraagt dan alle
+          andere — zie vatDecision() in src/data/vat.js. */}
       <div class="row-2">
         <div class="field">
-          <label for="pl-web">{f.s3.website} <span class="pl-opt">{f.optional}</span></label>
-          <input class="input" type="url" id="pl-web" name="website" placeholder="https://" autocomplete="url" />
+          <label for="pl-street">{f.s3.street} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-street" name="address_line1" autocomplete="address-line1" required data-pl-req="1" data-pl-err-msg={f.s3.streetErr} placeholder={f.s3.streetPh} />
         </div>
         <div class="field">
-          <label for="pl-vat">{f.s3.vat} <span class="pl-opt">{f.optional}</span></label>
-          <input class="input" type="text" id="pl-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" />
+          <label for="pl-street2">{f.s3.street2} <span class="pl-opt">{f.optional}</span></label>
+          <input class="input" type="text" id="pl-street2" name="address_line2" autocomplete="address-line2" placeholder={f.s3.street2Ph} />
+        </div>
+      </div>
+
+      {/* ── VIER VELDEN IN PLAATS VAN ÉÉN ─────────────────────────────────
+          Lucas: *"Is factuuradres in 1 regel wel handig, dit doen ze toch vaak
+          apart."* Drie redenen, in migrations/0016 uitgeschreven; de zwaarste
+          is dat een factuur de regels onder elkaar moet zetten en dat uit één
+          vrij ingetypt veld niet te halen is.
+
+          De tweede is hier zichtbaar aan de autocomplete-waarden:
+          address-line1, postal-code en address-level2 worden door browsers
+          herkend en ingevuld. `street-address` op één input is de slechtst
+          ondersteunde van het stel, en dit is een formulier dat iemand bij elke
+          bestelling opnieuw invult.
+
+          Toevoeging en provincie blijven optioneel: die ontbreken op een echt
+          adres ook echt, en in het grootste deel van Europa staat er geen
+          provincie op. */}
+      <div class="row-2">
+        <div class="field">
+          <label for="pl-postal">{f.s3.postal} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-postal" name="postal_code" autocomplete="postal-code" required data-pl-req="1" data-pl-err-msg={f.s3.postalErr} placeholder={f.s3.postalPh} />
+        </div>
+        <div class="field">
+          <label for="pl-city">{f.s3.city} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-city" name="city" autocomplete="address-level2" required data-pl-req="1" data-pl-err-msg={f.s3.cityErr} />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="pl-country">{f.s3.country} <span class="req">*</span></label>
+          <select class="input" id="pl-country" name="country" autocomplete="country" required data-pl-req="1" data-pl-err-msg={f.s3.countryErr}>
+            <option value="">{f.s3.countryPick}</option>
+            {COUNTRIES.home.map((ct) => (<option value={ct.id}>{ct.name}</option>))}
+            <optgroup label={f.s3.countryEu}>
+              {COUNTRIES.eu.map((ct) => (<option value={ct.id}>{ct.name}</option>))}
+            </optgroup>
+            <optgroup label={f.s3.countryOther}>
+              {COUNTRIES.other.map((ct) => (<option value={ct.id}>{ct.name}</option>))}
+            </optgroup>
+          </select>
+        </div>
+        <div class="field">
+          <label for="pl-region">{f.s3.region} <span class="pl-opt">{f.optional}</span></label>
+          <input class="input" type="text" id="pl-region" name="region" autocomplete="address-level1" />
+          <span class="hint">{f.s3.regionHint}</span>
+        </div>
+      </div>
+
+      <div class="row-2">
+        {/* ── HET BTW-NUMMER IS VERPLICHT, TENZIJ JE ZEGT DAT JE ER GEEN HEBT
+            Lucas: *"inclusief btw-nummer met een checkbox bij btw-nummer toch
+            te skippen als de klant geen btw-nummer heeft of buiten de eu
+            komt."*
+
+            Een leeg veld is dubbelzinnig — "nog niet ingevuld" of "die heb ik
+            niet" — en dat verschil is precies wat je wilt weten. Een
+            particulier en een Amerikaans bedrijf hebben er geen. Een Duits
+            bedrijf dat het vergeet hoort het wél te merken: zonder nummer
+            betaalt het 21% dat het had kunnen laten verleggen.
+
+            HET VINKJE KOOPT GEEN 0%. vatDecision() in src/data/vat.js kijkt
+            naar het land en naar een bij VIES BEVESTIGD nummer, en verder naar
+            niets. Dit gaat alleen over of het veld ingevuld moet zijn.
+
+            `required` staat er NIET op: dit formulier heeft wel script, maar
+            een required-attribuut dat door een vinkje aan en uit gaat is een
+            tweede plek waar de regel staat. data-pl-req-unless wijst naar het
+            vinkje, en validate() in pipeline.js leest die ene bron. */}
+        <div class="field">
+          <label for="pl-vat">{f.s3.vat} <span class="req">*</span></label>
+          <input class="input" type="text" id="pl-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" data-pl-req="1" data-pl-req-unless="no_vat" data-pl-err-msg={f.s3.vatErr} />
+          <label class="pl-check" for="pl-no-vat">
+            <input type="checkbox" id="pl-no-vat" name="no_vat" value="1" />
+            <span>{f.s3.noVat}</span>
+          </label>
           <span class="hint">{f.s3.vatHint}</span>
         </div>
       </div>
@@ -1270,7 +1435,17 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <input type="checkbox" data-pl-save-check />
           <span class="pl-save-label">{f.s5.saveLabel}</span>
         </label>
-        <p class="hint pl-save-hint">{f.s5.saveHint}</p>
+        {/* Twee hints, waarvan er altijd precies één zichtbaar is. Wie is
+            ingelogd krijgt het opgeslagen zodra de bestelling doorkomt; wie niet
+            is ingelogd krijgt het opgeslagen zodra hij voor het eerst inlogt, en
+            dat verschil hoort hij te lezen voordat hij het vinkje zet. */}
+        <p class="hint pl-save-hint" data-pl-save-hint="in">{f.s5.saveHint}</p>
+        <p class="hint pl-save-hint" data-pl-save-hint="out" hidden>{f.s5.saveHintOut}</p>
+        {/* Zonder naam kan het vinkje zelf niets in de bestelling filen — zie
+            hierboven. Dit veld draagt alleen de UITKOMST, en alleen voor een
+            bezoeker die niet is ingelogd: die kan zijn gegevens niet via
+            /account/details opslaan, want daar is een sessie voor nodig. */}
+        <input type="hidden" name="save_details" value="" data-pl-save-flag />
       </div>
 
       <div class="pl-submit-row">
@@ -1522,6 +1697,30 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
   .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
   .pl-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
+
+  /* Het vinkje onder het btw-veld. ONDER en niet ernaast: het is geen tweede
+     vraag maar het antwoord "niet van toepassing" op de vraag erboven, en
+     ernaast zou het op een telefoon een kolom worden die nergens past. */
+  .pl-check {
+    display: flex; align-items: center; gap: .5rem;
+    margin-top: .45rem; font-size: .86rem; font-weight: 400; color: var(--ink-2);
+    text-transform: none; letter-spacing: 0; cursor: pointer;
+  }
+  /* Geen eigen maat: global.css tekent het vakje al (18px, vierkant, met een
+     vinkje in de accentkleur). Een tweede maat hier zou het uit de pas laten
+     lopen met elke andere checkbox op de site. */
+  .pl-check input { flex: 0 0 auto; }
+  @media (pointer: coarse) { .pl-check { min-height: 44px; } }
+
+  /* Aangevinkt: het veld erboven is niet meer aan de beurt. Gedempt, niet
+     uitgeschakeld — een uitgeschakeld veld post niets, en wie zich bedenkt en
+     tóch een nummer intikt hoort dat gewoon te kunnen. syncRequired() haalt de
+     eis eraf; zie waived() in pipeline.js. */
+  .field:has(.pl-check input:checked) input[name="vat"] { opacity: .45; }
+  /* Alléén het veldlabel, niet het label van het vinkje zelf — `> label` raakte
+     ook `<label class="pl-check">`, zodat het vinkje dat je net aanzette
+     zichzelf dimde. */
+  .field:has(.pl-check input:checked) > label[for="pl-vat"] { opacity: .6; }
 
   .pl-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 

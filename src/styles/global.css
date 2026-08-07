@@ -844,7 +844,18 @@ select {
   padding-right: 2.4rem;
 }
 
-/* Checkbox — square box, hard-cornered check. */
+/* Checkbox — square box, hard-cornered check.
+ *
+ * DE RADIUS MOEST ER EXPLICIET BIJ — 7 augustus 2026. De regel hierboven zet
+ * `border-radius: var(--r-md)` op élke <input>, en --r-md is 14px. Op een vakje
+ * van 18px is dat een cirkel. Dit blok zei "square box" en tekende al die tijd
+ * een rondje, wat een checkbox eruit laat zien als een keuzerondje — precies het
+ * verschil dat een vinkje moet uitdrukken. Vier pixels: geen scherpe hoek die
+ * uit de rest van het scherm springt, wel onmiskenbaar een vakje.
+ *
+ * Alleen de checkbox. Het keuzerondje blijft rond, want zo staat het overal op
+ * de site en zo lezen mensen het ook. */
+input[type="checkbox"] { border-radius: 4px; }
 input[type="checkbox"], input[type="radio"] {
   -webkit-appearance: none; appearance: none;
   width: 18px; height: 18px; flex: 0 0 auto; margin: 0;

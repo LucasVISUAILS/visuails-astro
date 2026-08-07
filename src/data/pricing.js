@@ -112,12 +112,25 @@ export function ladderFloor(kind) {
   return rungs[rungs.length - 1][2];
 }
 
-// FIRST ORDER, once per brand. This replaces the Drop Pilot rather than
-// sitting beside it: the Pilot was a loss-leader wearing a package's clothes,
-// with a size (exactly 8) and a rule ("once per brand") that both had to be
-// explained. A plain percentage off a first order is the same incentive with
-// nothing to explain, and it works at every order size instead of one.
-export const FIRST_ORDER_DISCOUNT = 0.20;
+// FIRST_ORDER_DISCOUNT WAS HERE — 20% off a first order, once per brand, and it
+// is gone. Lucas: *"Verwijder hierna ook de 20% korting omdat we zelfverzekerd
+// willen zijn over de prijzen die we hanteren, een sample van 0,99 cent is al
+// redelijk genoeg denk ik."*
+//
+// That is a pricing argument, not a copy tidy-up, and it is the right one. The
+// discount was the third thing the ladder had already replaced: the Drop Pilot
+// was a loss-leader wearing a package's clothes, the discount was the same
+// loss-leader as a percentage, and the ladder itself is the volume answer.
+// Quoting a rate and then knocking a fifth off it says the rate was never the
+// price — which is exactly the doubt a studio selling on consistency cannot
+// afford to plant.
+//
+// The €0.99 test sample stays and now carries the whole of the "try before you
+// commit" job on its own. AMOUNT.testSample.
+//
+// Deleted rather than set to zero. A constant of 0 leaves every sentence about
+// it standing, and the next reader has to work out whether the feature is off
+// or broken.
 
 /** The monthly plans — the back door. Products per month, and what is included. */
 export const PLAN_AMOUNT = { starter: 390, studio: 790, brand: 1690 };
@@ -146,6 +159,63 @@ const WINDOW_THRESHOLD_LABEL = 10;
 /** 'attended' | 'unattended' — which tier's promises an order of this size gets. */
 export function tierFor(products) {
   return (Math.floor(Number(products) || 0) >= WINDOW_THRESHOLD) ? 'attended' : 'unattended';
+}
+
+// ── WIE MAG BEOORDELEN ───────────────────────────────────────────────────────
+//
+// WAT HIER OP 7 AUGUSTUS 2026 IS VERANDERD, EN WAAROM HET HIER STAAT.
+//
+// Goedkeuren en "er klopt iets niet" zaten achter tier 1. Lucas bestelde één
+// product om het scherm te bekijken, kreeg alleen een downloadknop te zien, en
+// meldde het als kapotte knoppen. Dat was het niet — het was de regel, en dat
+// is erger: een regel die je alleen kunt ontdekken door hem te missen.
+//
+// Lucas: *"voor iedere bestelling behalve 0,99 cent sample."* Dus:
+//
+//   elke betaalde bestelling  → per beeld goedkeuren of aanmerken
+//   de proefvisual van € 0,99 → niet
+//
+// WAAROM DE PROEFVISUAL DE UITZONDERING IS, en waarom dat geen zuinigheid is.
+// Dat ding is één beeld voor negenennegentig cent, bedoeld om te laten zien wat
+// we maken. Er is geen productie omheen die bijgestuurd kan worden en geen
+// tweede ronde die ergens uit betaald wordt. Een revisieknop eronder zou een
+// belofte doen die niet waar te maken is op dat bedrag — en dat is precies de
+// soort belofte die je later moet terugnemen.
+//
+// DIT STAAT IN pricing.js EN NIET TWEE KEER IN src/lib/. Het stónd twee keer:
+// account.js en portal.js hadden allebei hun eigen canReview(), met een
+// commentaar erbij dat de duplicatie verdedigde ("not enough shared logic to
+// justify a cross-file dependency"). Dat argument klopte tot het moment dat de
+// regel veranderde — toen waren het twee plekken die uit elkaar konden lopen,
+// en één ervan zou het geworden zijn. Het is één product-regel; hij hoort bij
+// de rest van het productmodel.
+export const SAMPLE_SERVICE = 'test-sample';
+
+/**
+ * Mag er op de beelden van deze bestelling nog een besluit genomen worden?
+ *
+ * @param {{service?: string, closed_at?: string|null}} order  Een orderrij, of
+ *   genoeg ervan. Beide velden mogen ontbreken; dan is het antwoord ja, want
+ *   een onbekende dienst is geen proefvisual.
+ */
+export function canReviewOrder(order) {
+  if (!order) return false;
+  if (order.service === SAMPLE_SERVICE) return false;
+  return !order.closed_at;
+}
+
+/**
+ * Mag getóónd worden wat er eerder besloten is — "goedgekeurd op 12 juli", de
+ * notitie onder een aangemerkt beeld?
+ *
+ * Twee functies en niet één, omdat een afgesloten bestelling de eerste uitzet
+ * en de tweede aan laat: de klant is klaar met beslissen, maar wat hij besloot
+ * ís het verslag van de opdracht. Alleen de proefvisual zet allebei uit — daar
+ * kán niets besloten zijn, dus "goedgekeurd" zou een besluit beschrijven dat
+ * nooit gevraagd is.
+ */
+export function canSeeReviewHistory(order) {
+  return !!order && order.service !== SAMPLE_SERVICE;
 }
 
 // ── VAT ──────────────────────────────────────────────────────────────────────
@@ -510,12 +580,22 @@ export function euroRange(low, high, lang = 'en') {
 //       as "we put it right". FLAGGED to the client as a pricing change rather
 //       than made silently: it removes a (never-priced) revenue line.
 //
-// The tiers still differ, and now they differ on something real. Attended gets
-// a committed window, priority in the queue, and a portal where every image is
-// approved or flagged individually. Unattended gets the standard queue and a
-// message. Section 13 frames the split as "order individual products" against
-// "run a whole drop" — revisions were never the actual difference, they were
-// just the difference that was easiest to put a number on.
+// The tiers still differ, and now they differ on something real: attended gets
+// a committed 48-hour window and priority in the queue, unattended gets the
+// standard queue. Section 13 frames the split as "order individual products"
+// against "run a whole drop" — revisions were never the actual difference, they
+// were just the difference that was easiest to put a number on.
+//
+// ── EN PER-BEELD BEOORDELEN IS SINDS 7 AUGUSTUS OOK GEEN VERSCHIL MEER ───────
+//
+// Dit blok zei tot vandaag dat attended "a portal where every image is approved
+// or flagged individually" kreeg, en de `delivery`-regels hieronder zeiden het
+// in beide kolommen na. Dat is niet meer waar en het was ook niet houdbaar: het
+// zette de enige plek waar een klant kan zéggen dat er iets mis is achter een
+// bestelgrootte, terwijl "we vragen of je tevreden bent en zetten recht wat dat
+// niet is" hierboven voor beide treden staat. Een belofte zonder knop is geen
+// belofte. Zie canReviewOrder() bovenaan dit bestand voor de regel zoals hij nu
+// is, en voor de ene uitzondering.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const REVIEW_CLAIM = {
@@ -574,13 +654,14 @@ export const TIERS = {
     // dus minder dan het product doet, en dat is de vervelendste soort fout:
     // hij kost je verkopen zonder dat iemand klaagt.
     //
-    // Het verschil tussen de treden zit niet meer in het dashboard maar in wat
-    // je er kunt: hieronder kijken en downloaden, hierboven daarnaast per beeld
-    // goedkeuren of een revisie vragen. Dat verschil staat nu in beide kolommen
-    // met zoveel woorden.
+    // EN SINDS 7 AUGUSTUS OOK BEOORDELEN. Deze regel zei "bekijken en
+    // downloaden" en zette het goedkeuren daarmee een trede hoger; die grens is
+    // weg (zie canReviewOrder). Wat er in deze kolom overblijft is precies wat
+    // er ook echt gebeurt, en het verschil met de trede hiernaast staat in de
+    // regels erboven — het venster en de voorrang — waar het thuishoort.
     delivery: {
-      en: 'In your dashboard to view and download, plus a link by email or WhatsApp',
-      nl: 'In je dashboard om te bekijken en downloaden, plus een link via e-mail of WhatsApp',
+      en: 'In your dashboard to view, download and approve, plus a link by email or WhatsApp',
+      nl: 'In je dashboard om te bekijken, downloaden en goed te keuren, plus een link via e-mail of WhatsApp',
     },
     // The promise is identical to attended's — see the block comment above for
     // why it is a standard rather than a counted entitlement.
@@ -613,9 +694,15 @@ export const TIERS = {
       en: 'Priority in the queue — a booked window is never given up for a later, smaller order',
       nl: 'Voorrang in de wachtrij — een geboekt venster wijkt nooit voor een latere, kleinere bestelling',
     },
+    // NIET MEER "plus per-image approve or request-revision" — dat kan de trede
+    // hieronder sinds 7 augustus ook. Wat hier wél overblijft en nergens anders
+    // staat: de bestelpagina uit de mail toont bij een gereserveerd venster elke
+    // statuswijziging met een datum erbij (zie attendedBody in src/lib/portal.js;
+    // unattendedBody rendert geen tijdlijn). Dat is een echt verschil, geen
+    // herschreven versie van hetzelfde.
     delivery: {
-      en: 'Same dashboard, plus per-image approve or request-revision',
-      nl: 'Zelfde dashboard, plus per beeld goedkeuren of een revisie vragen',
+      en: 'Same dashboard, plus an order page showing every step with its date',
+      nl: 'Zelfde dashboard, plus een bestelpagina met elke stap en zijn datum',
     },
     // Same promise as unattended, different instrument: `delivery` above says
     // where flagging happens, this says what flagging gets you. The two rows
@@ -811,15 +898,16 @@ export function upgradePrompt(products, lang = 'en') {
  * saying whether VAT is in it. A page that computes its own total will
  * eventually print one without the label.
  *
- * `firstOrder` applies FIRST_ORDER_DISCOUNT, which is the whole of what used to
- * be the Drop Pilot.
+ * THE `firstOrder` OPTION AND THE `discount` FIELD ARE GONE with the 20% off —
+ * see the note where FIRST_ORDER_DISCOUNT used to be. `listTotal` and `net` are
+ * now always the same number and both are kept, because callers use both names
+ * and one of them meaning something different from the other was the only
+ * reason there were two.
  */
-export function quote(kind, products, { firstOrder = false } = {}) {
+export function quote(kind, products) {
   const n = Math.max(0, Math.floor(Number(products) || 0));
   const rate = n === 0 ? ladderRate(kind, 1) : ladderRate(kind, n);
-  const gross0 = ladderTotal(kind, n);
-  const discount = firstOrder ? Math.round(gross0 * FIRST_ORDER_DISCOUNT * 100) / 100 : 0;
-  const net = Math.round((gross0 - discount) * 100) / 100;
+  const net = ladderTotal(kind, n);
   // The next rung, so a page can say "two more and every product drops to €65".
   const rungs = LADDER[kind];
   const idx = rungs.findIndex(([lo, hi]) => n >= lo && (hi === null || n <= hi));
@@ -827,8 +915,7 @@ export function quote(kind, products, { firstOrder = false } = {}) {
   return {
     products: n,
     rate,
-    listTotal: gross0,
-    discount,
+    listTotal: net,
     net,
     vat: vatOf(net),
     gross: withVat(net),
@@ -1067,8 +1154,8 @@ export function perProduct(id, lang = 'en') {
 }
 
 export const TEST_SAMPLE = {
-  en: { name: 'Test sample', price: euro(AMOUNT.testSample, 'en'), unit: 'one per business', line: 'See it on your own product first.' },
-  nl: { name: 'Proefvisual', price: euro(AMOUNT.testSample, 'nl'), unit: 'één per bedrijf', line: 'Zie het eerst op je eigen product.' },
+  en: { name: 'Test sample', price: euro(AMOUNT.testSample, 'en'), unit: 'one per business', line: 'One image of one of your products, before you order anything.' },
+  nl: { name: 'Proefvisual', price: euro(AMOUNT.testSample, 'nl'), unit: 'één per bedrijf', line: 'Eén beeld van één van je producten, voordat je iets bestelt.' },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

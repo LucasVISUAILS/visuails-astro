@@ -78,12 +78,21 @@
 import { hashToken, isWellFormedToken, mintToken, isExpired } from './token.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { sendMail } from './mail.js';
-import { PER_PRODUCT } from '../data/pricing.js';
+import {
+  PER_PRODUCT,
+  canReviewOrder,
+  canSeeReviewHistory as historyAllowed,
+  SAMPLE_SERVICE,
+} from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 import { mailNote } from '../data/mailNote.js';
 import { serviceLabel } from '../data/services.js';
 import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
+import { countryOptions, vatShort, VAT_TREATMENT } from '../data/vat.js';
+import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '../data/address.js';
+import { createOrderMolliePayment } from './mollie.js';
+import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
@@ -131,6 +140,39 @@ const LOGIN_TOKEN_TTL_MINUTES = 60;
  * own window forward.
  */
 const LOGIN_TOKEN_GRACE_MINUTES = 15;
+
+/*
+ * ── DE ZESCIJFERIGE CODE NAAST DE LINK — 7 augustus 2026 ────────────────────
+ *
+ * Lucas: *"Dan hoeft niemand van mailapp naar browser te springen, wat op
+ * mobiel precies de plek is waar mensen afhaken."* Diezelfde mail draagt nu
+ * bovenaan zes cijfers; de wachtpagina heeft een invoerveld, dus de klant blijft
+ * staan waar hij al stond.
+ *
+ * DRIE GETALLEN, EN ZE DRAGEN SAMEN DE VEILIGHEID. Zes cijfers zijn maar twintig
+ * bits — dat is op zichzelf niets. Wat het houdbaar maakt:
+ *
+ *   TIEN MINUTEN, korter dan het uur van de link. Die link moet een mailscanner
+ *   en een omweg over de desktop overleven; de code wordt overgetypt terwijl je
+ *   ernaar kijkt.
+ *
+ *   VIJF POGINGEN, en dan is de code dood. Niet het account, en niet de link in
+ *   dezelfde mail — die is 128 bits en valt niet te raden, dus die laten
+ *   sterven zou alleen de klant treffen. Vijf kansen op een miljoen binnen tien
+ *   minuten is geen aanvalspad.
+ *
+ *   EN ELKE NIEUWE POGING KOST EEN MAIL in het postvak van het slachtoffer,
+ *   bovenop de bestaande LOGIN_LIMIT per IP. Volhouden is luidruchtig.
+ *
+ * WAT DIT NADRUKKELIJK NIET IS: een pincode die de klant zelf kiest. Dat was
+ * het eerste voorstel en het is een wachtwoord van zes cijfers — mensen kiezen
+ * niet uit een miljoen maar uit een handvol, dus een aanvaller hoeft er een paar
+ * honderd te proberen. Zie migrations/0017 voor het volledige argument.
+ */
+const LOGIN_CODE_TTL_MINUTES = 10;
+const LOGIN_CODE_MAX_ATTEMPTS = 5;
+/** Losser dan LOGIN_LIMIT: een verkeerd overgetypte code is normaal, een mail versturen niet. */
+const CODE_LIMIT = 30;
 
 /** account_sessions.expires_at — refreshed on every authenticated request; see the header. */
 const ACCOUNT_SESSION_TTL_DAYS = 30;
@@ -223,7 +265,10 @@ const COPY = {
     // spreekt, en de tweede helft was drie losse mededelingen achter elkaar. De
     // zin heeft maar twee dingen te doen: zeggen WELK adres, en wegnemen dat je
     // een wachtwoord staat te zoeken dat je nooit hebt gehad.
-    loginLede: 'Use the email address you ordered with and we\u2019ll send you a link to sign in. There is no password.',
+    // Noemt allebei sinds 7 augustus 2026, want de mail draagt allebei. Een
+    // scherm dat een link belooft en een codeveld toont, is hetzelfde
+    // verschil dat de mail zelf ook had.
+    loginLede: 'Use the email address you ordered with and we\u2019ll send you a code and a link to sign in. There is no password.',
     // WIE HIER KAN INLOGGEN, EN WAAROM DAT ER STAAT. Er is geen aanmeldknop:
     // een account ontstaat bij een bestelling, en verder nergens. Wie dat niet
     // weet, vult zijn adres in, krijgt "check je e-mail", en wacht op een mail
@@ -237,7 +282,7 @@ const COPY = {
     // kunnen — daar staat zijn betaallink.
     loginWho: 'Your account is made when you place an order. There is no separate sign-up, so this only works with an address that has ordered with us.',
     loginEmailLabel: 'Email',
-    loginSubmit: 'Send my link',
+    loginSubmit: 'Send my code',
     loginTooMany: 'Too many attempts. Wait a minute and try again.',
 
     checkTitle: 'Check your email',
@@ -248,8 +293,31 @@ const COPY = {
     // itself was updated and reads its wording from LOGIN_TOKEN_TTL_MINUTES;
     // this screen, which the customer is looking at while they wait, was not.
     // It is built from the constant now, so the two cannot disagree again.
-    checkBody: `If that address has ordered with us before, a sign-in link is on its way. It stays valid for ${LOGIN_TOKEN_TTL_MINUTES % 60 === 0 ? (LOGIN_TOKEN_TTL_MINUTES / 60 === 1 ? 'an hour' : `${LOGIN_TOKEN_TTL_MINUTES / 60} hours`) : `${LOGIN_TOKEN_TTL_MINUTES} minutes`}.`,
+    // Noemt allebei, want er staat allebei in de mail en het veld eronder vraagt
+    // om de code. Hoe lang ze leven staat in de hint onder het veld, waar het
+    // hoort bij de handeling in plaats van bij de mededeling.
+    checkBody: 'If that address has ordered with us before, an email with a six-digit code and a sign-in link is on its way.',
 
+    // ── DE ZESCIJFERIGE CODE ──────────────────────────────────────────────────
+    // Elke zin hier moet hetzelfde zeggen tegen iemand die zich vertypte en
+    // tegen iemand die aan het raden is: nergens staat of het adres bestaat.
+    codeLabel: 'Type the code from that email',
+    codeSubmit: 'Sign in',
+    codeHint: (mins) => `The code is valid for ${mins} minutes. The link in the same email keeps working for an hour.`,
+    codeShape: 'A code is six digits.',
+    // ÉÉN ZIN VOOR ELKE MISSER, en dat is een besluit dat een test heeft
+    // afgedwongen. Er stond eerst hoeveel pogingen er nog over waren, wat
+    // vriendelijker leest — maar die teller verschijnt alleen bij een adres dat
+    // BESTAAT. Typ een willekeurig adres met een willekeurige code, kijk of er
+    // een teller komt, en je weet wie hier klant is. Dat is precies de
+    // account-opsomming die de rest van dit bestand overal vermijdt. Nu zegt
+    // deze zin hetzelfde tegen iedereen: onbekend adres, verkeerde code,
+    // verlopen code, opgebruikte code.
+    codeWrong: 'That code does not work. Use the link in the same email, or ask for a new one below.',
+    codeAgain: 'Send a new email',
+    codeAgainCta: 'Send it again',
+    codeTooMany: 'Too many attempts from here. Wait a minute, or use the link in the email.',
+    codeUnavailable: 'Codes are not switched on yet — use the link in the email.',
     badLinkTitle: 'This link does not work',
     badLinkBody: 'It may have expired, already been used, or been mistyped. Request a new one below.',
 
@@ -267,6 +335,10 @@ const COPY = {
     fService: 'Service',
     fPlaced: 'Placed',
     fWindow: 'Window',
+    // Voor een bestelling onder de drempel: geen datum, want die bestaat niet
+    // voor deze trede. Dezelfde belofte als TIERS.unattended.turnaround in
+    // pricing.js, in één regel op de kaart.
+    fQueue: 'Standard queue — typically 2–4 working days.',
     fProducts: 'Products',
     windowPending: 'Being scheduled',
 
@@ -277,6 +349,29 @@ const COPY = {
     emptyUploads: 'No photos on file for this order.',
     bDownloadAll: 'Download all',
     revokedNote: 'Revision requests are paused on this account. Message us and we will sort it out.',
+    // Waarom er onder een proefvisual geen knoppen staan. Zie canReviewOrder()
+    // in pricing.js: dit is de enige bestelling zonder, en dan hoort er een zin
+    // te staan in plaats van een gat.
+    sampleNote: 'This is the €0.99 test sample, so there is nothing to approve — but tell us what you think and we will answer.',
+    closedNote: 'You approved everything in this order. Changed your mind? Undo it below.',
+    // Anders dan closedNote: die nodigt uit om iets terug te draaien. Deze zegt
+    // dat dat niet meer aan de orde is — geen besluit op dit beeld, of de
+    // bewaartermijn van de bestelling is voorbij. Zie reopenable().
+    settledNote: 'This order is finished. Everything here stays downloadable — message us if something is still not right.',
+
+    // Geld. Netto en btw apart, want dat is wat er op de factuur staat en het is
+    // het enige wat een boekhouder zoekt.
+    payNet: 'Excl. VAT',
+    payVat: 'VAT',
+    payTotal: 'Total',
+    payRefunded: 'Refunded',
+    payRefundedNote: 'This order was refunded.',
+    payPaid: 'Paid.',
+    payPaidOn: (day) => `Paid on ${day}.`,
+    payDue: 'Not paid yet.',
+    payDueBy: (day) => `Not paid yet — your slot is held until ${day}.`,
+    payNow: 'Pay now',
+    payFailed: 'We could not open the payment screen. Try again in a minute, or message us.',
     shotNames: { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On a model' },
     bView: 'View',
     bDownload: 'Download',
@@ -331,7 +426,8 @@ const COPY = {
     // settings screen wearing the first one's heading. Two concerns, two pages.
     detH: 'Your details',
     detLede: 'Saved once, filled in on every order. Change anything here and the next order picks it up.',
-    detName: 'Your name',
+    detFirst: 'First name',
+    detLast: 'Last name',
     detBrand: 'Brand or shop name',
     detEmail: 'Email',
     // Says WHY the field above it is not editable, in the customer's terms.
@@ -340,6 +436,29 @@ const COPY = {
     detPhone: 'Phone or WhatsApp',
     detWebsite: 'Website or shop link',
     detVat: 'VAT number',
+    detVatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
+    detNoVat: 'I do not have a VAT number',
+    detMissing: 'Something is still missing. Every field except the ones marked optional has to be filled in — they end up on your invoice.',
+    detFailed: 'We could not save that just now. Try again in a moment — nothing was changed.',
+    // Zelfde woorden als op het bestelformulier (OrderFlow.astro) — twee
+    // schermen die naar hetzelfde vragen, vragen het hetzelfde.
+    detCountry: 'Country',
+    detCountryPick: 'Choose a country',
+    detCountryEu: 'European Union',
+    detCountryOther: 'Elsewhere',
+    detCountryHint: 'This decides the VAT on your invoice, so it is worth getting right.',
+    // Vier velden sinds 7 augustus 2026 — zie migrations/0016. Dezelfde woorden
+    // als op het bestelformulier, want twee schermen die naar hetzelfde vragen
+    // horen het op dezelfde manier te vragen.
+    detStreet: 'Street and number',
+    detStreetPh: 'Vaarwerkhorst 17',
+    detStreet2: 'Addition',
+    detStreet2Ph: 'Unit, floor, c/o',
+    detPostal: 'Postcode',
+    detPostalPh: '7531 HK',
+    detCity: 'City',
+    detRegion: 'State or province',
+    detRegionHint: 'Only where an address needs one — most of Europe does not.',
     // detBg / detBgUnset / detBgHex / detBgHexHint are gone, August 2026, at
     // Lucas's direction: "Default background en Your own colour (hex) kan weg
     // omdat deze bedoeld zijn voor catalog brand kit." They asked the same
@@ -372,7 +491,7 @@ const COPY = {
     ovWelcome: 'Welcome back',
     ovLede: 'A quick look at your orders and files.',
     ovInProduction: 'In production',
-    ovHumanCheck: 'In human check',
+    ovHumanCheck: 'Being checked',
     ovDelivered: 'Delivered',
     ovTotal: 'Orders total',
     ovRecent: 'Recent activity',
@@ -450,22 +569,32 @@ const COPY = {
     signOut: 'Sign out',
     footAsk: 'Anything else,',
     dbDown: 'We cannot reach your account right now. This is our end, not yours — try again in a few minutes.',
-    notFound: 'Not found.',
+    notFound: 'This page does not exist. Go back to your overview.',
   },
 
   nl: {
     loginTitle: 'Inloggen',
-    loginLede: 'Vul het e-mailadres in waarmee je hebt besteld, dan sturen we je een inloglink. Een wachtwoord heb je niet nodig.',
+    loginLede: 'Vul het e-mailadres in waarmee je hebt besteld, dan sturen we je een code en een inloglink. Een wachtwoord heb je niet nodig.',
     loginWho: 'Je account ontstaat zodra je een bestelling plaatst. Aanmelden kan niet apart, dus dit werkt alleen met een adres waarmee al besteld is.',
     loginEmailLabel: 'E-mail',
-    loginSubmit: 'Stuur mijn link',
-    loginTooMany: 'Te veel pogingen. Even wachten en opnieuw proberen.',
+    loginSubmit: 'Stuur mijn code',
+    loginTooMany: 'Te veel pogingen achter elkaar. Wacht een minuut en probeer het dan opnieuw.',
 
     checkTitle: 'Check je e-mail',
-    // Zie de EN-regel: de duur komt uit LOGIN_TOKEN_TTL_MINUTES, niet uit een
-    // getal dat iemand hier ooit heeft ingetypt.
-    checkBody: `Als dat adres al eerder bij ons besteld heeft, is er een inloglink onderweg. Hij blijft ${LOGIN_TOKEN_TTL_MINUTES % 60 === 0 ? (LOGIN_TOKEN_TTL_MINUTES / 60 === 1 ? 'een uur' : `${LOGIN_TOKEN_TTL_MINUTES / 60} uur`) : `${LOGIN_TOKEN_TTL_MINUTES} minuten`} geldig.`,
+    // Zie de EN-regel: allebei genoemd, en de duur staat bij de handeling.
+    checkBody: 'Als dat adres al eerder bij ons besteld heeft, is er een mail onderweg met een code van zes cijfers en een inloglink.',
 
+    codeLabel: 'Vul de code uit die mail in',
+    codeSubmit: 'Inloggen',
+    codeHint: (mins) => `De code is ${mins} minuten geldig. De link in dezelfde mail blijft een uur werken.`,
+    codeShape: 'Een code bestaat uit zes cijfers.',
+    // Zie de Engelse tak: één zin voor elke misser, zodat er niets te lezen
+    // valt over of het adres bestaat.
+    codeWrong: 'Die code werkt niet. Gebruik de link in dezelfde mail, of vraag hieronder een nieuwe aan.',
+    codeAgain: 'Nieuwe mail sturen',
+    codeAgainCta: 'Opnieuw versturen',
+    codeTooMany: 'Te veel pogingen vanaf hier. Wacht even, of gebruik de link in de mail.',
+    codeUnavailable: 'Codes staan nog niet aan — gebruik de link in de mail.',
     badLinkTitle: 'Deze link werkt niet',
     badLinkBody: 'Mogelijk is hij verlopen, al gebruikt, of verkeerd overgetypt. Vraag hieronder een nieuwe aan.',
 
@@ -477,6 +606,7 @@ const COPY = {
     fService: 'Dienst',
     fPlaced: 'Geplaatst',
     fWindow: 'Venster',
+    fQueue: 'Standaard wachtrij — meestal 2–4 werkdagen.',
     fProducts: 'Producten',
     windowPending: 'Wordt ingepland',
 
@@ -487,6 +617,21 @@ const COPY = {
     emptyUploads: 'Geen foto’s bij deze bestelling.',
     bDownloadAll: 'Alles downloaden',
     revokedNote: 'Revisieaanvragen staan op dit account uit. Stuur ons een bericht, dan lossen we het samen op.',
+    sampleNote: 'Dit is de proefvisual van € 0,99, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.',
+    closedNote: 'Je hebt alles in deze bestelling goedgekeurd. Toch nog iets? Maak het hieronder ongedaan.',
+    settledNote: 'Deze bestelling is afgerond. Alles blijft hier te downloaden — is er toch nog iets, stuur ons dan een bericht.',
+
+    payNet: 'Excl. btw',
+    payVat: 'Btw',
+    payTotal: 'Totaal',
+    payRefunded: 'Terugbetaald',
+    payRefundedNote: 'Deze bestelling is terugbetaald.',
+    payPaid: 'Betaald.',
+    payPaidOn: (day) => `Betaald op ${day}.`,
+    payDue: 'Nog niet betaald.',
+    payDueBy: (day) => `Nog niet betaald — je plek staat vast tot ${day}.`,
+    payNow: 'Nu betalen',
+    payFailed: 'We konden het betaalscherm niet openen. Probeer het zo nog eens, of stuur ons een bericht.',
     shotNames: { front: 'Voorkant', back: 'Achterkant', detail: 'Detail', worn: 'Op een model' },
     bView: 'Bekijken',
     bDownload: 'Downloaden',
@@ -516,13 +661,32 @@ const COPY = {
     // Zie de Engelse tak voor waarom dit een eigen menu-item heeft gekregen.
     detH: 'Je gegevens',
     detLede: 'Eén keer opslaan, daarna bij elke bestelling ingevuld. Pas hier iets aan en de volgende bestelling neemt het over.',
-    detName: 'Je naam',
+    detFirst: 'Voornaam',
+    detLast: 'Achternaam',
     detBrand: 'Merk- of winkelnaam',
     detEmail: 'E-mail',
     detEmailNote: 'Hiermee log je in, dus dit verandert alleen door onder een nieuw adres te bestellen. Mail ons en we zetten het om.',
     detPhone: 'Telefoon of WhatsApp',
     detWebsite: 'Website of winkellink',
     detVat: 'Btw-nummer',
+    detVatHint: 'Een bedrijf in een ander EU-land: we controleren het bij VIES, en als het klopt rekenen we geen Nederlandse btw.',
+    detNoVat: 'Ik heb geen btw-nummer',
+    detMissing: 'Er ontbreekt nog iets. Alles behalve de velden met "optioneel" moet ingevuld zijn — het komt op je factuur te staan.',
+    detFailed: 'Opslaan lukte even niet. Probeer het zo nog eens — er is niets gewijzigd.',
+    detCountry: 'Land',
+    detCountryPick: 'Kies een land',
+    detCountryEu: 'Europese Unie',
+    detCountryOther: 'Elders',
+    detCountryHint: 'Hiermee staat de btw op je factuur vast, dus het loont om dit te laten kloppen.',
+    detStreet: 'Straat en huisnummer',
+    detStreetPh: 'Vaarwerkhorst 17',
+    detStreet2: 'Toevoeging',
+    detStreet2Ph: 'Unit, verdieping, t.a.v.',
+    detPostal: 'Postcode',
+    detPostalPh: '7531 HK',
+    detCity: 'Plaats',
+    detRegion: 'Provincie of staat',
+    detRegionHint: 'Alleen waar een adres er een heeft — in het grootste deel van Europa niet.',
     // detBg en de hex zijn eruit — zie de Engelse tak voor de reden.
     detSave: 'Gegevens opslaan',
     detSaved: 'Opgeslagen. Je volgende bestelling begint ingevuld.',
@@ -541,7 +705,7 @@ const COPY = {
     ovWelcome: 'Welkom terug',
     ovLede: 'Een snel overzicht van je bestellingen en bestanden.',
     ovInProduction: 'In productie',
-    ovHumanCheck: 'In menselijke controle',
+    ovHumanCheck: 'Wordt nagekeken',
     ovDelivered: 'Geleverd',
     ovTotal: 'Bestellingen totaal',
     ovRecent: 'Recente activiteit',
@@ -605,7 +769,7 @@ const COPY = {
     signOut: 'Uitloggen',
     footAsk: 'Verder iets,',
     dbDown: 'We kunnen je account nu niet bereiken. Dit ligt aan ons, niet aan jou — probeer het over een paar minuten opnieuw.',
-    notFound: 'Niet gevonden.',
+    notFound: 'Deze pagina bestaat niet. Ga terug naar je overzicht.',
   },
 };
 
@@ -613,7 +777,7 @@ const COPY = {
 const STATUS = {
   received: { en: 'Received', nl: 'Ontvangen' },
   in_production: { en: 'In production', nl: 'In productie' },
-  human_check: { en: 'In human check', nl: 'In menselijke controle' },
+  human_check: { en: 'Being checked', nl: 'Wordt nagekeken' },
   delivered: { en: 'Delivered', nl: 'Geleverd' },
   cancelled: { en: 'Cancelled', nl: 'Geannuleerd' },
 };
@@ -733,6 +897,11 @@ export async function accountPost(context) {
   // no ambient credential, so there is nothing for a forged cross-site POST to
   // ride on.
   if (path === '/account/login') return handleLoginPost(context);
+  // Ook vóór de Origin-controle en vóór currentCustomer(), om dezelfde reden als
+  // de regel hierboven: hier is nog geen sessie om op mee te liften, dus er is
+  // niets wat een vervalste cross-site POST zou kunnen misbruiken. Wat er wél
+  // is, is een rate limit en een pogingenteller — zie handleCodePost.
+  if (path === '/account/code') return handleCodePost(context);
 
   const customer = await currentCustomer(env, request);
   // 401, not a redirect, for the fetch caller — for the same reason handleMe()
@@ -766,6 +935,9 @@ export async function accountPost(context) {
   if (path === '/account/lock') return handleLockUpdate(context, customer);
   if (path === '/account/review') return handleFileReview(context, customer);
   if (path === '/account/details') return handleDetails(context, customer, asJson);
+
+  const pay = /^\/account\/orders\/(\d+)\/pay$/.exec(path);
+  if (pay) return handleOrderPay(context, customer, Number(pay[1]));
 
   const lang = negotiate(request);
   if (asJson) return json({ error: 'not-found' }, 404);
@@ -813,7 +985,92 @@ async function handleLoginPost({ request, env }) {
     await sendLoginLink(env, request, email, lang).catch(() => {});
   }
 
-  return html(page({ lang, title: t.checkTitle, body: checkEmailBody(t, lang) }));
+  return html(page({ lang, title: t.checkTitle, body: checkEmailBody(t, lang, isEmail(email) ? email : '') }));
+}
+
+/**
+ * Zes cijfers, uniform getrokken, met de nul voorop intact.
+ *
+ * `crypto.getRandomValues` en niet Math.random(): dit is een inloggeheim, en de
+ * generator die een animatie mag aansturen is niet de generator die dat mag
+ * doen. Rejection sampling in plaats van een modulo — 2^32 is niet deelbaar
+ * door een miljoen, dus `% 1000000` zou de laagste 967.296 uitkomsten iets
+ * waarschijnlijker maken dan de rest. Dat is een klein scheefje en het is
+ * gratis om niet te hebben.
+ *
+ * padStart houdt "004821" zes tekens lang. Een code die soms vijf cijfers is,
+ * is een code waarvan het invoerveld niet kan zeggen hoe lang hij hoort te zijn.
+ */
+function mintLoginCode() {
+  const buf = new Uint32Array(1);
+  const limit = Math.floor(0x100000000 / 1000000) * 1000000;
+  let n;
+  do {
+    crypto.getRandomValues(buf);
+    n = buf[0];
+  } while (n >= limit);
+  return String(n % 1000000).padStart(6, '0');
+}
+
+/**
+ * Wat er in account_tokens.code_hash komt te staan.
+ *
+ * Het klant-id gaat mee de hash in zodat één tabel met een miljoen voorberekende
+ * waarden niet alle rijen tegelijk opent. Zie migrations/0017 over wat dit wél
+ * en niet oplost: tegen iemand die de database in handen heeft is het geen
+ * bescherming — zes cijfers zijn zo teruggerekend — maar het houdt leesbare
+ * inlogcodes uit een log, een backup of een half uitgevoerde query.
+ */
+function hashLoginCode(customerId, code) {
+  return hashToken(`${customerId}:${String(code).trim()}`);
+}
+
+/** Alleen zes cijfers. Spaties en streepjes eruit, want mensen typen "048 210". */
+function normaliseCode(raw) {
+  const digits = String(raw || '').replace(/\D/g, '');
+  return /^\d{6}$/.test(digits) ? digits : null;
+}
+
+function loginCodeExpiry(fromDate = new Date()) {
+  return new Date(fromDate.getTime() + LOGIN_CODE_TTL_MINUTES * 60000).toISOString();
+}
+
+/**
+ * "Bewaar mijn gegevens", gevraagd bij een bestelling, ingelost bij het inloggen.
+ *
+ * ── WAAROM DIT TWEE MOMENTEN ZIJN ───────────────────────────────────────────
+ *
+ * Lucas: *"ook na het bestellen — bewaar dit zodat je het niet opnieuw hoeft in
+ * te vullen."* Een ingelogde klant regelt dat via /account/details, achter zijn
+ * sessie. Wie niet is ingelogd kan dat niet, dus reist zijn vinkje mee met de
+ * bestelling — en /api/order is niet geauthenticeerd. Het adres in dat formulier
+ * is niet bewezen van hem.
+ *
+ * Zou de bestelling `details_saved_at` direct zetten, dan kan iemand met een
+ * bestelling op jouw adres jouw opgeslagen gegevens bevriezen: vanaf dat moment
+ * wint de opgeslagen waarde in upsertCustomer() en kan geen enkele bestelling er
+ * nog iets aan veranderen. Klein, maar het is een vreemde die aan jouw record
+ * zit.
+ *
+ * Inloggen — via de link of via de code — bewijst wél dat het postvak van hem
+ * is. Dat is exact hetzelfde bewijs waarop `email_verified` op 1 gaat, en dus
+ * het moment waarop de wens mag gelden.
+ *
+ * ALLEEN ALS ER NOG NIETS OPGESLAGEN IS. `details_saved_at IS NULL` staat in de
+ * WHERE en niet in een if hier: een klant die zijn gegevens al een keer heeft
+ * opgeslagen, heeft die keuze zelf gemaakt en een oud vinkje van een bestelling
+ * hoort daar niet overheen te lopen.
+ *
+ * Best effort. Mislukt dit, dan is het gevolg dat de klant het vakje op
+ * /account/details nog een keer moet aanzetten — geen reden om een inlog te
+ * laten stranden.
+ */
+function promoteSaveRequest(env, customerId) {
+  return env.DB.prepare(
+    `UPDATE customers
+        SET details_saved_at = datetime('now'), save_requested_at = NULL, updated_at = datetime('now')
+      WHERE id = ?1 AND save_requested_at IS NOT NULL AND details_saved_at IS NULL`
+  ).bind(customerId).run().catch(() => {});
 }
 
 async function sendLoginLink(env, request, email, lang) {
@@ -844,18 +1101,182 @@ async function sendLoginLink(env, request, email, lang) {
   if (!customer) return;
 
   const { token, tokenHash } = await mintCredential();
-  await env.DB.prepare(
-    'INSERT INTO account_tokens (customer_id, token_hash, expires_at) VALUES (?1, ?2, ?3)'
-  ).bind(customer.id, tokenHash, loginTokenExpiry()).run();
+  const code = mintLoginCode();
+
+  /*
+   * EEN NIEUWE CODE DOODT DE VORIGE, en dat is geen opruiming maar de regel die
+   * de vijf-pogingengrens betekenis geeft. Zou een oude code blijven leven, dan
+   * koopt elke nieuwe aanvraag er vijf pogingen bij op een code die nog geldig
+   * is — tien aanvragen zijn dan vijftig gokken tegelijk. Nu geldt er altijd
+   * precies één code per klant, met precies vijf kansen.
+   *
+   * Alleen de CODE gaat dood, niet de link. Iemand die twee keer op "stuur een
+   * link" drukt en dan de eerste mail opent, hoort gewoon binnen te komen.
+   */
+  /*
+   * EN ALS MIGRATIE 0017 NOG NIET GEDRAAID HEEFT, GAAT DE MAIL TOCH UIT.
+   *
+   * Deze functie wordt aangeroepen met een .catch(() => {}) eromheen, omdat
+   * niets in het antwoord mag verraden of het adres bestaat. Dat betekent ook
+   * dat een fout hier volstrekt onzichtbaar is: één onbekende kolom en er komt
+   * nooit meer een inlogmail aan, op elk account, zonder één foutmelding. Dat
+   * is inloggen kapot, en dan is het slechtste antwoord "wacht op de migratie".
+   *
+   * Dus bij een ontbrekende kolom: dezelfde link, zonder de code. Precies wat
+   * het gisteren was.
+   */
+  let withCode = true;
+  try {
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE account_tokens SET code_hash = NULL
+          WHERE customer_id = ?1 AND code_hash IS NOT NULL`
+      ).bind(customer.id),
+      env.DB.prepare(
+        `INSERT INTO account_tokens (customer_id, token_hash, expires_at, code_hash, code_expires_at)
+         VALUES (?1, ?2, ?3, ?4, ?5)`
+      ).bind(customer.id, tokenHash, loginTokenExpiry(), await hashLoginCode(customer.id, code), loginCodeExpiry()),
+    ]);
+  } catch (err) {
+    if (!/no such column/i.test(String(err?.message || err))) throw err;
+    console.error('[account] migratie 0017 ontbreekt — inlogmail zonder code verstuurd');
+    withCode = false;
+    await env.DB.prepare(
+      'INSERT INTO account_tokens (customer_id, token_hash, expires_at) VALUES (?1, ?2, ?3)'
+    ).bind(customer.id, tokenHash, loginTokenExpiry()).run();
+  }
 
   const link = `${requestOrigin(request)}/account/verify/${token}`;
-  const { html, text } = magicLinkEmail(lang, link);
+  const { html, text } = magicLinkEmail(lang, link, withCode ? code : null);
   await sendMail(env, {
     to: email,
-    subject: lang === 'nl' ? 'Je inloglink voor VISUAILS' : 'Your VISUAILS sign-in link',
+    // De onderwerpregel volgt de inhoud, net als de kop in de mail zelf: staat
+    // er een code in, dan is dat het eerste wat iemand op zijn vergrendelscherm
+    // ziet en hoort het onderwerp daar niet iets anders te beloven.
+    subject: withCode
+      ? (lang === 'nl' ? 'Je inlogcode voor VISUAILS' : 'Your VISUAILS sign-in code')
+      : (lang === 'nl' ? 'Je inloglink voor VISUAILS' : 'Your VISUAILS sign-in link'),
     html,
     text,
   });
+}
+
+/**
+ * POST /account/code — inloggen met de zes cijfers uit de mail.
+ *
+ * DEZELFDE UITKOMST ALS DE LINK, LANGS EEN ANDERE DEUR. Slaagt hij, dan gebeurt
+ * exact wat handleVerify() doet: een sessie, de cookie, en email_verified op 1
+ * — want een code uit een mail overtypen bewijst hetzelfde als een link uit die
+ * mail openen, namelijk dat je bij dat postvak kunt.
+ *
+ * ── WAT ER NIET UIT MAG LEKKEN ──────────────────────────────────────────────
+ *
+ * Of het adres bestaat. Een onbekend adres heeft geen rij en dus geen code, en
+ * dat moet er precies zo uitzien als een verkeerd overgetypte code: dezelfde
+ * zin, dezelfde statuscode, geen verschil in wat er op het scherm komt. Vandaar
+ * dat elk pad hieronder op hetzelfde antwoord uitkomt en er nergens "dit adres
+ * kennen we niet" staat.
+ *
+ * Het aantal resterende pogingen wordt WEL getoond. Dat verraadt niets — wie de
+ * code aan het raden is weet zelf hoe vaak hij gegokt heeft — en het is het
+ * verschil tussen een formulier dat je nog een keer probeert en een formulier
+ * dat ineens niets meer doet.
+ */
+async function handleCodePost({ request, env }) {
+  /*
+   * DE ORIGIN-CONTROLE STAAT HIER EN NIET IN accountPost, EN DAT IS GEEN
+   * SLORDIGHEID. Deze route wordt afgehandeld vóór currentCustomer(), samen met
+   * /account/login, omdat er nog geen sessie is om op te leunen — de gedeelde
+   * controle verderop komt na een `if (!customer) return seeOther(login)` en
+   * zou dit dus nooit bereiken.
+   *
+   * Maar hij is hier wél nodig, en op één punt méér dan bij /account/login.
+   * Die route verstuurt alleen een mail; het ergste wat een vervalste POST daar
+   * doet is iemand een mail bezorgen. Deze route MAAKT EEN SESSIE. Zonder deze
+   * regel kan een andere site het formulier van buitenaf indienen met een code
+   * die de aanvaller zelf heeft aangevraagd, en dan zit het slachtoffer in de
+   * browser van zijn eigen computer ingelogd op het account van de aanvaller —
+   * en uploadt hij zijn foto's daarin. Login-CSRF, en het is stil.
+   */
+  if (!originIsSelf(request, env)) {
+    const lang = negotiate(request);
+    return html(page({ lang, title: COPY[lang].loginTitle, body: loginBody(COPY[lang], lang, originMismatchDetail(request)) }), 403);
+  }
+
+  const gate = await checkRate(env, { ip: clientIp(request), action: 'account-code', limit: CODE_LIMIT });
+  const form = await request.formData().catch(() => null);
+  const lang = form && String(form.get('lang') || '') === 'nl' ? 'nl' : negotiate(request);
+  const t = COPY[lang];
+
+  const email = String(form?.get('email') || '').trim().toLowerCase();
+  const code = normaliseCode(form?.get('code'));
+
+  // Eén pagina voor elke afloop behalve de goede, met één zin die verschilt.
+  const again = (message, status = 400) =>
+    html(page({ lang, title: t.checkTitle, body: checkEmailBody(t, lang, email, message) }), status);
+
+  if (!gate.allowed) return again(t.codeTooMany, 429);
+  if (!isEmail(email)) return again(t.codeWrong);
+  if (!code) return again(t.codeShape);
+
+  let row;
+  try {
+    // De nieuwste levende code van deze klant. ORDER BY id DESC omdat een
+    // tweede aanvraag de eerste doodt (zie sendLoginLink) maar de rij laat
+    // staan — de link erin moet blijven werken.
+    row = await env.DB.prepare(
+      `SELECT at.id, at.customer_id, at.code_hash, at.code_expires_at, at.code_attempts, at.expires_at, at.used_at
+         FROM account_tokens at
+         JOIN customers c ON c.id = at.customer_id
+        WHERE lower(c.email) = ?1 AND at.code_hash IS NOT NULL
+        ORDER BY at.id DESC LIMIT 1`
+    ).bind(email).first();
+  } catch (err) {
+    // Zonder migratie 0017 bestaat code_hash niet. Dan is er geen code om in te
+    // vullen, en zegt het scherm dat — met de link ernaast die het wél doet.
+    if (/no such column/i.test(String(err?.message || err))) return again(t.codeUnavailable);
+    return html(page({ lang, title: 'VISUAILS', body: errorBody(t) }), 503);
+  }
+
+  if (!row || isExpired(row.code_expires_at, null)) return again(t.codeWrong);
+  if (Number(row.code_attempts) >= LOGIN_CODE_MAX_ATTEMPTS) return again(t.codeWrong);
+
+  const guess = await hashLoginCode(row.customer_id, code);
+  if (guess !== row.code_hash) {
+    // BIJ DE LAATSTE MISSER GAAT DE CODE DOOD, NIET HET ACCOUNT EN NIET DE LINK.
+    // De link in dezelfde mail is 128 bits en valt niet te raden; die laten
+    // sterven zou alleen de klant treffen die zich vertypt heeft. Daarom wijst
+    // het antwoord hieronder terug naar diezelfde mail in plaats van dood te
+    // lopen, en staat het formulier voor een nieuwe eronder.
+    await env.DB.prepare(
+      `UPDATE account_tokens
+          SET code_attempts = code_attempts + 1,
+              code_hash = CASE WHEN code_attempts + 1 >= ?2 THEN NULL ELSE code_hash END
+        WHERE id = ?1`
+    ).bind(row.id, LOGIN_CODE_MAX_ATTEMPTS).run().catch(() => {});
+    return again(t.codeWrong);
+  }
+
+  // De code is goed. Hij mag nu niet nog eens: eenmalig is eenmalig, en de
+  // volgende bezoeker van deze pagina — of dat nu dezelfde persoon is of
+  // iemand die over zijn schouder meekeek — begint weer bij nul.
+  const { token: sessionToken, tokenHash: sessionHash } = await mintCredential();
+  try {
+    await env.DB.batch([
+      env.DB.prepare("UPDATE account_tokens SET code_hash = NULL, used_at = COALESCE(used_at, datetime('now')) WHERE id = ?1").bind(row.id),
+      env.DB.prepare(
+        'INSERT INTO account_sessions (customer_id, token_hash, expires_at) VALUES (?1, ?2, ?3)'
+      ).bind(row.customer_id, sessionHash, accountSessionExpiry()),
+      env.DB.prepare('UPDATE customers SET email_verified = 1 WHERE id = ?1').bind(row.customer_id),
+    ]);
+  } catch {
+    return html(page({ lang, title: 'VISUAILS', body: errorBody(t) }), 503);
+  }
+
+  // Het vinkje van bij de bestelling, nu het bewezen is. Zie promoteSaveRequest.
+  await promoteSaveRequest(env, row.customer_id);
+
+  return seeOther('/account', [setSessionCookie(sessionToken)]);
 }
 
 // env.DB is guaranteed here — accountGet checks it before this is ever reached,
@@ -905,6 +1326,10 @@ async function handleVerify(context, token) {
     // rather than sending a second message nobody asked for.
     env.DB.prepare("UPDATE customers SET email_verified = 1 WHERE id = ?1").bind(row.customer_id),
   ]);
+
+  // Dezelfde stap als in handleCodePost: dit is het moment waarop bewezen is
+  // dat het postvak van hem is, en dus waarop "bewaar mijn gegevens" mag gelden.
+  await promoteSaveRequest(env, row.customer_id);
 
   return seeOther('/account', [setSessionCookie(sessionToken)]);
 }
@@ -1055,22 +1480,33 @@ async function sectionGet(context, customer, section) {
   // looks exactly like a customer with no orders.
   let justSaved = false;
   let statusFilter = '';
+  // `pay=failed` zet handleOrderPay() als het betaalscherm niet openging. Zonder
+  // deze regel zou de klant op precies dezelfde pagina terugkomen met precies
+  // dezelfde knop — niet te onderscheiden van "er gebeurde niets toen ik klikte".
+  let payFailed = false;
+  // `missing=1` zet handleDetails() als er een verplicht veld leeg is
+  // teruggekomen. Zonder deze regel keert de klant terug op een pagina die er
+  // precies hetzelfde uitziet als voor het opslaan, zonder dat er iets bewaard
+  // is — de stilste manier om iemand zijn gegevens te laten kwijtraken.
+  let detailsMissing = false;
   try {
     const params = new URL(request.url).searchParams;
     justSaved = params.get('saved') === '1';
+    payFailed = params.get('pay') === 'failed';
+    detailsMissing = params.get('missing') === '1' ? 'missing' : (params.get('failed') === '1' ? 'failed' : false);
     const wanted = String(params.get('status') || '');
     if (Object.prototype.hasOwnProperty.call(STATUS, wanted)) statusFilter = wanted;
   } catch { /* keep the defaults */ }
 
   let inner, title;
   if (section === 'orders') {
-    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter);
+    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed);
     title = t.ordersHeading;
   } else if (section === 'brand') {
     inner = brandKitBody(t, lang, models, lockByStyle);
     title = t.navBrandKit;
   } else if (section === 'details') {
-    inner = detailsBody(t, lang, details, justSaved);
+    inner = detailsBody(t, lang, details, justSaved, detailsMissing);
     title = t.detH;
   } else if (section === 'plan') {
     inner = planBody(t, customer);
@@ -1257,6 +1693,21 @@ async function handleMe({ request, env }) {
     phone: row.phone || '',
     website: row.website || '',
     vat: row.vat_number || '',
+    noVat: !!row.no_vat_number,
+    country: row.country || '',
+    // De losse velden, want dat zijn de velden die het bestelformulier sinds
+    // 7 augustus 2026 heeft. `address` blijft als samengesteld blok voor wie
+    // het als één ding wil tonen; `first_name` valt terug op de oude `name`,
+    // net als in detailsSection() en om dezelfde reden — bij "Van der Meer"
+    // is niet te raden waar de voornaam ophoudt.
+    first_name: row.first_name || (row.last_name ? '' : (row.name || '')),
+    last_name: row.last_name || '',
+    address_line1: row.address_line1 || '',
+    address_line2: row.address_line2 || '',
+    postal_code: row.postal_code || '',
+    city: row.city || '',
+    region: row.region || '',
+    address: row.billing_address || '',
     background: row.default_background || '',
     backgroundHex: row.default_background_hex || '',
     locks,
@@ -1301,10 +1752,56 @@ async function handleModelPreviewImage({ request, env }, modelId) {
   return new Response(obj.body, { headers });
 }
 
-/** The saved-details row, one query, used by /account/me and by Brand kit. */
-function detailsRow(env, customerId) {
+/**
+ * The saved-details row, one query, used by /account/me and by Brand kit.
+ *
+ * ── EN MET EEN TERUGVAL, OM EEN HELE GOEDE REDEN ───────────────────────────
+ *
+ * Deze query hangt in de Promise.all van sectionGet(), en die heeft één catch
+ * om alle zes de queries heen die een 503 teruggeeft. Eén onbekende kolom hier
+ * is dus niet "de gegevenspagina mist een veld" maar "het hele dashboard is
+ * onbereikbaar" — op elke sectie, ook Bestellingen en Brand kit.
+ *
+ * De kolommen uit migratie 0016 bestaan pas nadat die migratie gedraaid is, en
+ * een deploy komt in de praktijk soms eerder dan een migratie. Zonder deze
+ * terugval is dat gat een dashboard dat plat ligt tot iemand het doorheeft.
+ * Zelfde afspraak als loadOrders() hierboven.
+ */
+async function detailsRow(env, customerId) {
+  try {
+    return await detailsRowFull(env, customerId);
+  } catch (err) {
+    if (!/no such column/i.test(String(err?.message || err))) throw err;
+    // Zonder 0016: alleen de samengestelde naam en het samengestelde adres.
+    // detailsSection() zet de oude naam dan in het voornaamveld en de losse
+    // adresvelden blijven leeg — de klant vult ze aan, en dat is precies wat er
+    // ná de migratie ook zou gebeuren.
+    return env.DB.prepare(
+      `SELECT email, name, brand, phone, website, vat_number, country, billing_address,
+              default_background, default_background_hex, details_saved_at
+         FROM customers WHERE id = ?1`
+    ).bind(customerId).first();
+  }
+}
+
+function detailsRowFull(env, customerId) {
   return env.DB.prepare(
-    `SELECT email, name, brand, phone, website, vat_number,
+    // country and billing_address joined the set in August 2026, when the order
+    // form started asking for them. They matter more than the others here: the
+    // saved-details collapse HIDES step 3 for a returning customer, and a
+    // hidden country field posts empty — which vatDecision() reads as domestic
+    // and prices at 21%. A German customer with a valid VAT number would have
+    // been charged Dutch VAT because their own saved details were not sent
+    // back to them. (functions/api/order.js also falls back to the customer row
+    // server-side, so the two failures would have to happen together.)
+    // De losse naam- en adresvelden komen uit migratie 0016; `name` en
+    // `billing_address` blijven ernaast staan als de samengestelde weergave.
+    // Beide worden gelezen: het formulier vult de losse velden, en een rij van
+    // vóór 0016 heeft alleen de samengestelde — zie detailsSection(), dat de
+    // oude naam in het voornaamveld zet zodat er niets zoekraakt.
+    `SELECT email, name, first_name, last_name, brand, phone, website,
+            vat_number, no_vat_number, country, billing_address,
+            address_line1, address_line2, postal_code, city, region,
             default_background, default_background_hex, details_saved_at
        FROM customers WHERE id = ?1`
   ).bind(customerId).first();
@@ -1332,10 +1829,11 @@ function detailsRow(env, customerId) {
  * credential, it is UNIQUE, and a session that could rewrite it is a session
  * that could point itself at another brand's inbox.
  *
- * EVERY FIELD IS OPTIONAL AND AN EMPTY ONE CLEARS. A customer removing their
- * phone number from the form means they want it gone, not that the field was
- * skipped — this is a settings screen, not the order form, and there is exactly
- * one way to read a blank box on a settings screen.
+ * EEN LEEG VAKJE WIST — MAAR NIET MEER OVERAL. Dat was de regel: dit is een
+ * instellingenscherm, geen bestelformulier, dus een leeggemaakt telefoonveld
+ * betekent "haal weg". Voor telefoon, website en de toevoeging op het adres
+ * geldt dat nog steeds. Voor de velden die op een factuur belanden niet meer,
+ * sinds 7 augustus 2026 — zie REQUIRED hieronder.
  */
 async function handleDetails({ request, env }, customer, asJson) {
   const form = await request.formData().catch(() => null);
@@ -1378,21 +1876,135 @@ async function handleDetails({ request, env }, customer, asJson) {
   // to disagree about what 'beige' means.
   const hex = background === BG_CUSTOM ? normalizeHex(form.get('background_custom') || form.get('background_hex')) : null;
 
+  /*
+   * LAND EN ADRES — dezelfde presentie-regel als de achtergrond hierboven.
+   *
+   * Twee aanroepers, en ze sturen niet hetzelfde. Het formulier op
+   * /account/details vraagt sinds 7 augustus 2026 naar allebei, dus daar
+   * betekent een leeg vakje "weghalen". /start's opslag-vinkje (bindSaveOffer in
+   * pipeline.js) stuurt ze niet altijd mee, en een onvoorwaardelijke UPDATE zou
+   * dan het land wissen dat de klant net bij zijn bestelling heeft opgegeven —
+   * precies het veld waar de btw-beslissing op draait. Afwezig is een ander
+   * antwoord dan leeg, en dat verschil is hier duur.
+   *
+   * Het land wordt teruggebracht tot twee hoofdletters. De database moet één
+   * vocabulaire spreken (ISO 3166, zie migratie 0015); alles wat daar niet op
+   * lijkt wordt null in plaats van opgeslagen zoals het binnenkwam.
+   */
+  const hasCountry = form.has('country');
+  const rawCountry = String(form.get('country') || '').trim().toUpperCase();
+  const country = /^[A-Z]{2}$/.test(rawCountry) ? rawCountry : null;
+  /*
+   * ── WAT ER INGEVULD MOET ZIJN, EN WAT "MOET" HIER BETEKENT ─────────────────
+   *
+   * Lucas: *"Deze gegevens zijn ook verplicht inclusief btw-nummer met een
+   * checkbox bij btw-nummer toch te skippen."* Dit scherm hield tot vandaag de
+   * regel "elk veld optioneel, leeg wist" aan, en dat was juist zolang het een
+   * geheugensteuntje was. Er komt nu een factuur uit, en daar hoort een
+   * tenaamstelling en een adres op.
+   *
+   * DE CONTROLE KIJKT ALLEEN NAAR WAT ER GESTUURD IS. `form.has()` beslist,
+   * precies zoals bij de achtergrond hierboven: een aanroeper die een veld niet
+   * meestuurt, laat het met rust en wordt er niet op afgerekend. Een aanroeper
+   * die het wél stuurt maar leeg, zegt "haal weg" — en dat mag bij een
+   * verplicht veld niet, want dan staat er straks een factuur zonder adres.
+   *
+   * Zo blijft /start's opslag-vinkje werken (dat stuurt de velden die de klant
+   * net heeft ingevuld) zonder dat dit scherm zijn eigen eisen laat vallen.
+   */
+  const REQUIRED = ['first_name', 'last_name', 'brand', 'country', 'address_line1', 'postal_code', 'city'];
+  const emptyRequired = REQUIRED.some((k) => form.has(k) && !one(k));
+
+  /*
+   * HET BTW-NUMMER, EN HET VINKJE ERNAAST.
+   *
+   * Drie toestanden en ze zijn niet inwisselbaar:
+   *
+   *   nummer ingevuld          → bewaren, vinkje uit
+   *   vinkje aan               → geen nummer, en dat is een ANTWOORD
+   *   allebei leeg, wel gestuurd → niet ingevuld, dus geweigerd
+   *
+   * De middelste is waarom no_vat_number een kolom is en niet af te leiden uit
+   * een leeg veld: zonder dat onderscheid zou een particulier bij elke
+   * bestelling opnieuw langs een veld moeten dat hij nooit kan invullen.
+   *
+   * Een ingevuld nummer wint van het vinkje. Wie allebei doet, heeft er een —
+   * en het formulier hoort niet te gokken welke van de twee hij meende.
+   */
+  const hasVat = form.has('vat');
+  const vatNumber = one('vat');
+  const noVat = !vatNumber && ['1', 'on', 'true', 'yes'].includes(String(form.get('no_vat') || '').toLowerCase());
+  const vatMissing = hasVat && !vatNumber && !noVat;
+
+  if (emptyRequired || vatMissing) {
+    // Niets schrijven. Half opslaan zou de helft van een factuuradres
+    // achterlaten en dat is erger dan niet opslaan, want het ziet eruit alsof
+    // het gelukt is.
+    return asJson
+      ? json({ error: 'incomplete' }, 400)
+      : seeOther(`${home}?missing=1#details`);
+  }
+
+  const hasAddress = ADDRESS_FIELDS.some((k) => form.has(k));
+  const hasName = form.has('first_name') || form.has('last_name');
+
+  /*
+   * ELK VELD IS PRESENTIE-GESTUURD, ZONDER UITZONDERING.
+   *
+   * `brand`, `phone`, `website` en `vat_number` stonden hier onvoorwaardelijk
+   * in de UPDATE, uit de tijd dat dit formulier de enige aanroeper was. Sinds
+   * /start's opslag-vinkje meedoet is dat een gat: een POST met alleen
+   * `{ phone: … }` schreef `brand = NULL` mee — en `brand` staat sinds vandaag
+   * in de REQUIRED-set hierboven. Een deelaanroeper kon dus een verplicht veld
+   * leegmaken zonder er ooit naar gevraagd te hebben, en de controle erboven
+   * ziet dat niet, want die kijkt juist alleen naar wat er GESTUURD is.
+   *
+   * Nu bepaalt form.has() alles, en is er precies één regel: afwezig laat met
+   * rust, aanwezig schrijft — leeg of niet.
+   */
+  const sets = [];
+  const binds = [];
+  const add = (sql, value) => { binds.push(value); sets.push(`${sql} = ?${binds.length + 1}`); };
+  if (form.has('brand')) add('brand', one('brand'));
+  if (form.has('phone')) add('phone', one('phone'));
+  if (form.has('website')) add('website', one('website'));
+  if (hasVat) { add('vat_number', vatNumber); add('no_vat_number', noVat ? 1 : 0); }
+  if (hasBg) { add('default_background', background); add('default_background_hex', hex); }
+  if (hasCountry) add('country', country);
+
+  // `name` en `billing_address` blijven bestaan als de SAMENGESTELDE weergave —
+  // zie migrations/0016 en src/data/address.js. Ze worden hier geschreven en
+  // nergens anders afgeleid, zodat een mail of een adminscherm het adres als
+  // één blok kan lezen zonder de regels zelf in de goede volgorde te zetten.
+  if (hasName) {
+    add('first_name', one('first_name'));
+    add('last_name', one('last_name'));
+    add('name', composeName(one('first_name'), one('last_name')));
+  }
+  if (hasAddress) {
+    for (const k of ADDRESS_FIELDS) add(k, one(k));
+    add('billing_address', composeAddress(addressFromFields(one)));
+  }
+
   try {
+    // Een POST zonder één bekend veld erin schrijft geen kolommen, maar zet nog
+    // wel details_saved_at — dat is wat /start's vinkje bedoelt als de klant
+    // niets heeft ingevuld: "onthou mij". Zonder deze tak zou `sets` leeg zijn
+    // en de SET met een komma beginnen.
     await env.DB.prepare(
       `UPDATE customers SET
-         name = ?2, brand = ?3, phone = ?4, website = ?5, vat_number = ?6,
-         ${hasBg ? 'default_background = ?7, default_background_hex = ?8,' : ''}
+         ${sets.length ? `${sets.join(', ')},` : ''}
          details_saved_at = datetime('now'),
          updated_at = datetime('now')
        WHERE id = ?1`
-    ).bind(
-      customer.customer_id,
-      one('name'), one('brand'), one('phone'), one('website'), one('vat'),
-      ...(hasBg ? [background, hex] : [])
-    ).run();
-  } catch {
-    return asJson ? json({ error: 'unavailable' }, 503) : seeOther(home);
+    ).bind(customer.customer_id, ...binds).run();
+  } catch (err) {
+    // NIET STIL TERUG NAAR DEZELFDE PAGINA. Dat deed dit: de klant kreeg een
+    // scherm dat er identiek uitzag, zonder dat er iets bewaard was — en de
+    // meest waarschijnlijke oorzaak is een kolom uit migratie 0016 die er nog
+    // niet is, dus precies het soort fout dat je wilt zien.
+    console.error('[account] gegevens opslaan mislukt —', err?.message || err);
+    return asJson ? json({ error: 'unavailable' }, 503) : seeOther(`${home}?failed=1#details`);
   }
 
   // 303 back to the section the form lives on, same rule handleLockUpdate and
@@ -1423,6 +2035,49 @@ function normalizeHex(v) {
   return null;
 }
 
+/**
+ * Een vlakje in één kleur, zonder één regel inline CSS.
+ *
+ * ── DE BUG DIE DIT BESTAND OP 7 AUGUSTUS 2026 OPLEVERDE ─────────────────────
+ *
+ * De stalen in de brand kit werden getekend met `style="--sw:#C6F100"`, met een
+ * commentaar erbij dat uitlegde waarom dat mocht: *"a `style` ATTRIBUTE setting
+ * a variable is allowed where an inline <style> block is not."* Dat is niet
+ * waar. De CSP van deze pagina zegt `style-src 'self'`, en `style-src-attr`
+ * valt in CSP3 terug op `style-src` — dus het attribuut wordt óók geweigerd.
+ * Gemeten in Chromium: `getPropertyValue('--sw')` komt leeg terug en de console
+ * zegt *"Refused to apply inline style"*. Elk vakje in de brand kit stond dus
+ * doorzichtig, op /account én in het adminscherm, en niemand kon zien welke
+ * achtergrondkleur er nou eigenlijk vastlag.
+ *
+ * ── WAAROM SVG EN NIET 'unsafe-inline' ──────────────────────────────────────
+ *
+ * De makkelijke uitweg is `style-src 'self' 'unsafe-inline'`. Dat is één woord
+ * en het werkt, en het is de verkeerde ruil: deze pagina's draaien op
+ * `default-src 'none'` zonder één script, en dat is precies de reden dat een
+ * ingeslopen stukje HTML hier nu niets kan. Dat opgeven voor een gekleurd
+ * vierkantje is een slechte koers.
+ *
+ * `fill` op een <rect> is een PRESENTATIE-ATTRIBUUT uit SVG, geen CSS. Het gaat
+ * niet door style-src, het werkt in elke browser die SVG kent, en het vraagt
+ * geen enkele versoepeling. De SVG rekt zich met viewBox="0 0 1 1" en
+ * preserveAspectRatio="none" naar elke maat die de CSS eromheen geeft, dus de
+ * afmetingen blijven waar ze horen: in account.css.
+ *
+ * DE KLEUR WORDT HIER NOG EEN KEER GECONTROLEERD. normalizeHex() bewaakt de
+ * ingang al, maar dit is de uitgang, en een `fill` die uit de database komt
+ * hoort niet op vertrouwen te leunen. Alles wat geen #RRGGBB is, wordt een leeg
+ * vakje in plaats van een attribuut met onbekende inhoud.
+ *
+ * @param {string} hex  '#RRGGBB'.
+ * @param {string} cls  De klasse die de maat en de vorm bepaalt.
+ */
+function swatch(hex, cls) {
+  const safe = /^#[0-9A-Fa-f]{6}$/.test(String(hex || '')) ? String(hex).toUpperCase() : null;
+  if (!safe) return `<span class="${cls} is-blank" aria-hidden="true"></span>`;
+  return `<span class="${cls}" aria-hidden="true"><svg viewBox="0 0 1 1" preserveAspectRatio="none" focusable="false"><rect width="1" height="1" fill="${safe}"/></svg></span>`;
+}
+
 /** All orders this customer has placed, most recent first. */
 async function loadOrders(env, customerId) {
   // customer_note komt uit migratie 0013 en wordt in een try/catch gelezen: de
@@ -1431,8 +2086,20 @@ async function loadOrders(env, customerId) {
   // uitkomst klopt in beide gevallen.
   try {
     const res = await env.DB.prepare(
+      // DE BETAALKOLOMMEN ZIJN HIER OP 7 AUGUSTUS 2026 BIJ GEKOMEN. Dit scherm
+      // wist niets van geld: payment_status, total_cents en window_expires_at
+      // kwamen in het hele bestand niet voor. Een klant die de betaling afbrak
+      // zag "Ontvangen" zonder bedrag en zonder knop, terwijl zijn reservering
+      // afliep — en de enige betaallink zat in een mail die hij misschien niet
+      // meer had. Zie paymentBlock() en handleOrderPay().
+      //
+      // vat_cents en vat_rate komen uit migratie 0015. Draait die nog niet, dan
+      // gooit deze query "no such column" en vangt de catch hieronder hem op —
+      // dezelfde afspraak als customer_note uit 0013.
       `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at,
               customer_note, customer_note_at,
+              payment_status, payment_provider, paid_at, total_cents, currency, refunded_cents,
+              window_expires_at, vat_cents, vat_rate, vat_treatment,
               (SELECT revisions_revoked_at FROM customers c WHERE c.id = ?1) AS revisions_revoked_at
          FROM orders
         WHERE customer_id = ?1
@@ -1453,7 +2120,11 @@ async function loadOrders(env, customerId) {
     // reist het mee in dezelfde rij in plaats van als tweede query. Eén
     // subselect op een tabel met één rij is goedkoper dan een extra round trip
     // en het houdt de aanroep verderop op één ding: `o`.
+    // De terugval kent alleen kolommen uit schema.sql en migratie 0003/0006 —
+    // alles wat 0013 en 0015 toevoegen valt hier weg. paymentBlock() leest
+    // vat_cents dan als undefined en rekent met het standaardtarief; zie daar.
     `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at,
+            payment_status, payment_provider, paid_at, total_cents, currency, refunded_cents, window_expires_at,
             (SELECT revisions_revoked_at FROM customers c WHERE c.id = ?1) AS revisions_revoked_at
        FROM orders
       WHERE customer_id = ?1
@@ -1464,20 +2135,41 @@ async function loadOrders(env, customerId) {
 }
 
 /**
- * Can this order's files be approved / flagged for revision from here?
- * Mirrors portal.js's own `review`/`history` split on the same two columns —
- * see shot()'s header there for the full reasoning. Tier 0 ('unattended')
- * never had a review step to begin with; a closed order still SHOWS what was
- * decided (history) but no longer accepts new decisions (review). Duplicated
- * rather than imported: this is two booleans over fields both files already
- * read, not enough shared logic to justify a cross-file dependency between
- * the token-authenticated portal and the cookie-authenticated dashboard.
+ * Mag er op de beelden van deze bestelling nog een besluit genomen worden?
+ *
+ * DE REGEL ZELF STAAT NIET MEER HIER. Hij stond hier én in portal.js, met een
+ * commentaar dat de duplicatie verdedigde — en toen hij op 7 augustus 2026
+ * veranderde ("voor iedere bestelling behalve 0,99 cent sample") waren het twee
+ * plekken die uit elkaar konden lopen. Zie canReviewOrder() in
+ * src/data/pricing.js voor de regel en voor waarom de proefvisual de
+ * uitzondering is. De twee aliassen blijven staan omdat `canReview(o)` op de
+ * plek waar hij gelezen wordt beter uitlegt wat de vraag is dan de importnaam.
  */
-function canReview(o) {
-  return o.tier === 'attended' && !o.closed_at;
-}
-function canSeeReviewHistory(o) {
-  return o.tier === 'attended';
+const canReview = canReviewOrder;
+const canSeeReviewHistory = historyAllowed;
+
+/** Een proefvisual van € 0,99 — de enige bestelling zonder beoordeelknoppen. */
+const isSample = (o) => o && o.service === SAMPLE_SERVICE;
+
+/**
+ * Mag een afgeronde bestelling nog heropend worden door een goedkeuring terug
+ * te draaien?
+ *
+ * DE BEWAARTERMIJN HANGT AAN closed_at, en dat is precies waarom hier een grens
+ * moet staan. order_tokens.expires_at wordt door geen enkele INSERT geschreven
+ * (kijk maar: functions/api/order.js en src/lib/admin.js zetten alleen order_id
+ * en token_hash), dus isExpired() in token.js leidt de negentig dagen volledig
+ * af uit closed_at. Wist je dat veld, dan leeft de gemailde portaallink weer —
+ * ook een die al lang dood hoorde te zijn, en zo vaak als iemand op de knop
+ * drukt.
+ *
+ * Binnen het venster is heropenen wat de klant bedoelt: hij zit nog in de
+ * nasleep van de opdracht. Daarbuiten is de opdracht klaar, en klaar is een
+ * toestand die niet met één klik terug hoort te draaien.
+ */
+function reopenable(o) {
+  if (!o || !o.closed_at) return true;
+  return !isExpired(null, o.closed_at);
 }
 
 /**
@@ -1776,11 +2468,13 @@ async function handleFileReview({ request, env }, customer) {
   const action = String(form?.get('action') || '');
   if (!Number.isInteger(fileId) || !['approve', 'revise', 'undo'].includes(action)) return seeOther(home);
 
-  // The file must belong to an order THIS customer owns, that order must
-  // still be under review (tier 'attended', not yet closed) — mirrors
-  // canReview() above and portal.js's own ownership + tier + closed_at gate,
-  // so a forged post cannot review another brand's files, and a stale form
-  // left open in a tab cannot revive a decision on a job that already closed.
+  // Het bestand moet horen bij een bestelling van DEZE klant, en die bestelling
+  // mag geen proefvisual zijn. De tier-eis is er op 7 augustus 2026 uit (zie
+  // canReviewOrder in pricing.js), en closed_at is verhuisd van deze WHERE naar
+  // de afhandeling per actie: een afgeronde bestelling weigert een nieuw besluit
+  // maar laat het terugdraaien van het oude toe. Stond het hier, dan zou de
+  // "Ongedaan maken"-knop die het scherm toont stil niets doen — een knop die
+  // een 303 teruggeeft en verder niets is erger dan geen knop.
   let owned;
   try {
     owned = await env.DB.prepare(
@@ -1788,19 +2482,35 @@ async function handleFileReview({ request, env }, customer) {
       // en revisions_revoked_at omdat een ingetrokken recht ook moet gelden
       // voor een POST die het formulier omzeilt — de knoppen weghalen in de UI
       // is een presentatie, niet een regel.
-      `SELECT f.id, f.order_id, c.revisions_revoked_at
+      // ALLEEN EEN LEVEND BEELD. superseded_at en expires_at stonden hier niet
+      // in, en dat is precies het gat waarlangs een afgeronde bestelling voor
+      // altijd open te zetten was: maybeClose() telt alleen levende beelden, dus
+      // een 'undo' op een vervangen of verlopen beeld wiste closed_at zonder dat
+      // er ooit nog iets was dat de bestelling opnieuw kon afronden. Het scherm
+      // toont die beelden trouwens ook niet — dit is de regel eronder.
+      `SELECT f.id, f.order_id, o.closed_at, c.revisions_revoked_at
          FROM files f
          JOIN orders o ON o.id = f.order_id
          JOIN customers c ON c.id = o.customer_id
         WHERE f.id = ?1 AND o.customer_id = ?2 AND f.kind = 'delivery'
-          AND o.tier = 'attended' AND o.closed_at IS NULL`
-    ).bind(fileId, customer.customer_id).first();
+          AND o.service <> ?3
+          AND f.superseded_at IS NULL
+          AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))`
+    ).bind(fileId, customer.customer_id, SAMPLE_SERVICE).first();
   } catch {
     return seeOther(home);
   }
   if (!owned) return seeOther(home);
 
   const anchor = `${home}#f${fileId}`;
+
+  // Nieuwe besluiten op een afgeronde bestelling: stil terug. Het scherm biedt
+  // ze niet aan, dus dit is een formulier uit een tab die al open stond.
+  if (owned.closed_at && action !== 'undo') return seeOther(anchor);
+  // En terugdraaien alleen zolang de bestelling nog te heropenen is — zie
+  // reopenable(): buiten dat venster zou het wissen van closed_at een
+  // portaallink wekken die al verlopen hoorde te zijn.
+  if (owned.closed_at && !reopenable(owned)) return seeOther(anchor);
 
   try {
     if (action === 'approve') {
@@ -1812,9 +2522,29 @@ async function handleFileReview({ request, env }, customer) {
     } else if (action === 'undo') {
       // Reversible on purpose — same reasoning as portal.js: a mis-tapped
       // Approve must not strand a client with a decision they cannot take back.
-      await env.DB.prepare(
-        `UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1`
-      ).bind(fileId).run();
+      //
+      // EN HET OPENT DE BESTELLING WEER. Was dit het beeld waarmee maybeClose()
+      // hem afrondde, dan zou het terugdraaien anders een bestelling achterlaten
+      // die "afgerond" heet met een beeld erin waar niemand meer iets over kan
+      // zeggen: goedkeuren is dan geblokkeerd door closed_at, en er is geen weg
+      // terug. Afronden is een gevolg van het laatste besluit, dus het volgt dat
+      // besluit ook als het wordt teruggenomen. Eén batch, want een bestelling
+      // die half heropend is bestaat niet.
+      const undo = [
+        env.DB.prepare(
+          `UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1`
+        ).bind(fileId),
+      ];
+      if (owned.closed_at) {
+        undo.push(
+          env.DB.prepare('UPDATE orders SET closed_at = NULL WHERE id = ?1').bind(owned.order_id),
+          env.DB.prepare(
+            `INSERT INTO order_events (order_id, status, note, actor)
+             VALUES (?1, 'delivered', ?2, 'system')`
+          ).bind(owned.order_id, 'Een goedkeuring is teruggedraaid — bestelling weer open.')
+        );
+      }
+      await env.DB.batch(undo);
     } else {
       // INGETROKKEN RECHTEN WORDEN HIER GEHANDHAAFD, niet in de UI. Goedkeuren
       // en terugdraaien blijven wél kunnen: die kosten ons niets en een klant
@@ -1845,6 +2575,113 @@ async function handleFileReview({ request, env }, customer) {
   }
 
   return seeOther(anchor);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ALSNOG BETALEN — POST /account/orders/<id>/pay
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Een nieuwe betaallink voor een bestelling die nooit betaald is.
+ *
+ * WAAROM DIT ER NIET WAS, EN WAAROM DAT EEN GAT WAS. De betaling werd één keer
+ * aangemaakt, tijdens het bestellen, in functions/api/order.js. Die link ging
+ * de bevestigingsmail in en stond op /thank-you, en verder nergens. Wie de tab
+ * sloot voordat hij betaalde, of de mail niet terugvond, had geen enkele manier
+ * meer om het af te maken — behalve appen. Ondertussen loopt window_expires_at
+ * door en geeft de reservering zijn plek terug.
+ *
+ * WAT ER GECONTROLEERD WORDT, IN DEZE VOLGORDE:
+ *
+ *   1 · Is dit een bestelling van DEZE klant. De sessie zegt wie hij is; het
+ *       nummer in de URL zegt niets. De WHERE bindt allebei.
+ *   2 · Staat hij op 'unpaid'. Alleen de webhook zet 'paid', dus dat is de
+ *       enige bron die telt — niet dat er ooit een link is aangemaakt.
+ *   3 · Is er een bedrag. Een bestelling zonder prijs (video, custom: die gaan
+ *       via een gesprek) heeft hier niets te zoeken.
+ *
+ * HET BEDRAG KOMT UIT DE RIJ, niet uit een nieuwe offerte — zie orderMoney().
+ * Wat er destijds is afgesproken is wat er betaald wordt, ook als de prijslijst
+ * intussen veranderd is.
+ *
+ * TWEE KEER KLIKKEN GEEFT TWEE BETALINGEN BIJ MOLLIE. Dat is bewust niet
+ * dichtgetimmerd: de webhook boekt de eerste die binnenkomt als betaald, de
+ * tweede blijft open staan en vervalt vanzelf, en zou iemand ze allebei
+ * afronden dan staat het verschil in het adminscherm met een terugbetaalknop
+ * ernaast. Een lock hierop zou een klant die op een trage verbinding twee keer
+ * drukt buitensluiten van betalen, en dat is de duurdere fout.
+ */
+async function handleOrderPay({ request, env }, customer, orderId) {
+  const home = '/account/orders';
+  const anchor = `${home}#order-${orderId}`;
+  if (!Number.isInteger(orderId) || orderId <= 0) return seeOther(home);
+
+  /*
+   * TWEE QUERIES, OM DEZELFDE REDEN ALS loadOrders() HIERBOVEN. vat_cents komt
+   * uit migratie 0015. Draait die nog niet, dan gooit de eerste "no such
+   * column" — en de kaart die de knop toont valt dan óók terug op de smalle
+   * kolommenset, dus hier stilletjes opgeven zou een knop opleveren die zichtbaar
+   * niets doet. Dat is de vervelendste soort kapot: geen fout, geen melding,
+   * geen betaling. De terugval rekent met het standaardtarief, precies zoals
+   * orderMoney() en om dezelfde reden.
+   */
+  const COLS = 'id, ref, service, lang, product_count, total_cents, payment_status';
+  const byId = (cols) => env.DB.prepare(
+    `SELECT ${cols} FROM orders WHERE id = ?1 AND customer_id = ?2`
+  ).bind(orderId, customer.customer_id).first();
+
+  let order;
+  try {
+    order = await byId(`${COLS}, vat_cents`);
+  } catch (err) {
+    if (!/no such column/i.test(String(err?.message || err))) return seeOther(anchor);
+    try {
+      order = await byId(COLS);
+    } catch {
+      return seeOther(anchor);
+    }
+  }
+
+  if (!order || String(order.payment_status || 'unpaid') !== 'unpaid') return seeOther(anchor);
+  if (!(isPayableService(order.service) || order.service === SAMPLE_SERVICE)) return seeOther(anchor);
+
+  const m = orderMoney(order);
+  if (!m || m.gross < 1) return seeOther(anchor);
+
+  const lang = order.lang === 'nl' ? 'nl' : 'en';
+  const origin = (() => { try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; } })();
+
+  let checkout = null;
+  try {
+    const payment = await createOrderMolliePayment(env, {
+      ref: order.ref,
+      lang,
+      valueEuros: centsToMollieValue(m.gross),
+      grossCents: m.gross,
+      // ladderKey(), want paymentDescription() kent alleen de laddernamen —
+      // 'drop' zou daar "VISUAILS — 30 producten, undefined" van maken, en dat
+      // is de omschrijving die de klant op zijn bankafschrift terugziet.
+      description: paymentDescription({ service: ladderKey(order.service), products: order.product_count || 1 }, lang),
+      // Terug naar de bestelling zelf en niet naar /thank-you: hij komt hier
+      // vandaan, en de kaart waar hij op stond is precies waar hij wil zien dat
+      // het gelukt is.
+      successUrl: `${origin}${anchor}`,
+      webhookUrl: `${origin}/api/webhook/mollie`,
+    });
+    checkout = payment?._links?.checkout?.href || null;
+  } catch (err) {
+    // Mollie eruit, sleutel weg, bedrag geweigerd — allemaal hetzelfde voor de
+    // klant, en allemaal het opschrijven waard voor ons. De klant hoort niet
+    // wát er mis was; hij hoort dat het niet aan hem lag.
+    console.error('[account] betaallink mislukt voor', order.ref, '—', err?.message || err);
+  }
+
+  // De query komt vóór het anker — andersom leest de browser 'pay=failed' als
+  // deel van de fragmentnaam en komt hij nergens aan.
+  if (!checkout || !/^https:\/\/[^/]*mollie\.com\//.test(checkout)) {
+    return seeOther(`${home}?pay=failed#order-${orderId}`);
+  }
+  return seeOther(checkout);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2189,7 +3026,28 @@ function loginBody(t, lang, error = null) {
 </div>`;
 }
 
-function checkEmailBody(t, lang) {
+/**
+ * "Kijk in je mail" — en sinds 7 augustus 2026 hoeft dat niet meer weg te leiden.
+ *
+ * WAT HIER VERANDERDE. Deze pagina was een doodlopende mededeling: lees dit,
+ * ga weg, kom terug via je mailapp. Op een telefoon is dat de sprong waar
+ * mensen afhaken — de mailapp opent zijn eigen browser, soms zonder de cookie
+ * die hier gezet moet worden. Nu staat het invoerveld voor de zes cijfers uit
+ * diezelfde mail er meteen onder: switchen naar je mail, zes cijfers lezen,
+ * terugswitchen, klaar. Geen nieuw tabblad, geen tweede pagina.
+ *
+ * HET E-MAILADRES REIST MEE ALS HIDDEN FIELD. Het moet, want de code alleen
+ * wijst geen klant aan — en het is het adres dat de bezoeker zojuist zelf heeft
+ * ingetypt, dus er komt niets in beeld wat hij niet al wist. Bij een fout
+ * antwoord wordt hij teruggezet, zodat niemand hem hoeft over te typen om nog
+ * één poging te doen.
+ *
+ * `inputmode="numeric"` en `autocomplete="one-time-code"`: dat eerste geeft een
+ * cijfertoetsenbord, het tweede laat iOS en Android de code uit de binnenkomende
+ * mail als suggestie boven het toetsenbord zetten. Dan is de sprong helemaal
+ * weg.
+ */
+function checkEmailBody(t, lang, email = '', message = null) {
   // The spam line comes from src/data/mailNote.js — the same sentence the
   // thank-you page and the portal's no-link screen print. See that file for why
   // it is shared rather than written three times.
@@ -2198,7 +3056,37 @@ function checkEmailBody(t, lang) {
 <div class="authcard">
   <h1>${esc(t.checkTitle)}</h1>
   <p class="lede">${esc(t.checkBody)}</p>
+  ${message ? `<p class="error" role="alert">${esc(message)}</p>` : ''}
+  <form class="login codeform" method="post" action="/account/code">
+    <input type="hidden" name="lang" value="${esc(lang)}">
+    <input type="hidden" name="email" value="${esc(email)}">
+    <label for="login-code">${esc(t.codeLabel)}</label>
+    <input id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+           pattern="[0-9 ]{6,9}" maxlength="9" required autofocus
+           placeholder="000000" aria-describedby="login-code-hint">
+    <button class="btn btn-primary" type="submit">${esc(t.codeSubmit)}</button>
+  </form>
+  <p class="det-hint" id="login-code-hint">${esc(t.codeHint(LOGIN_CODE_TTL_MINUTES))}</p>
   <p class="mailnote">${esc(mailNote(lang))}</p>
+  ${/*
+     EN EEN WEG VOORUIT ALS DE CODE OP IS. Dezelfde les als op de
+     dode-link-pagina hieronder: het scherm dat iemand alleen bereikt als hij
+     vastzit, mag geen doodlopende weg zijn. De zin bij een mislukte poging
+     verwijst naar "hieronder", en dan moet daar ook echt iets staan — hetzelfde
+     formulier als /account/login, uit dezelfde functie, want twee e-mailvelden
+     die het eens moeten zijn over hun naam en hun actie zijn twee dingen om
+     verkeerd te doen.
+  */ ''}
+  <details class="codeagain"${message ? ' open' : ''}>
+    <summary>${esc(t.codeAgain)}</summary>
+    <form class="login" method="post" action="/account/login">
+      <input type="hidden" name="lang" value="${esc(lang)}">
+      <label class="sr-only" for="again-email">${esc(t.loginEmailLabel)}</label>
+      <input id="again-email" name="email" type="email" autocomplete="email" required
+             value="${esc(email)}" placeholder="${esc(t.loginEmailLabel)}">
+      <button class="btn btn-ghost" type="submit">${esc(t.codeAgainCta)}</button>
+    </form>
+  </details>
   <!-- Hier valt de stilte als het adres niet bestaat: geen mail, geen uitleg.
        Dezelfde zin als op het inlogscherm, want dit is de plek waar iemand hem
        nodig heeft in plaats van waar hij hem las. -->
@@ -2532,7 +3420,7 @@ function activityRow(t, lang, o) {
  * The active chip is a <span>, not a link to the page you are on, and carries
  * aria-current. "All" is always first and is the way back.
  */
-function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '') {
+function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '', payFailed = false) {
   const shown = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
 
   // Insertion order follows STATUS, which is the order the studio moves through
@@ -2565,6 +3453,7 @@ function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), st
   return `
 <h1>${esc(t.ordersHeading)}${shown.length ? ` <span class="h2-count">(${shown.length})</span>` : ''}</h1>
 <p class="lede">${esc(t.ordersLede)}</p>
+${payFailed ? `<p class="det-ok is-warn" role="status">${esc(t.payFailed)}</p>` : ''}
 ${filters}
 ${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [])).join('') : empty}`;
 }
@@ -2674,11 +3563,11 @@ function ownModelsSection(t, lang, models) {
  * handleDetails' redirect targets it and a fragment that resolves to nothing is
  * a scroll position silently lost.
  */
-function detailsBody(t, lang, details, justSaved) {
+function detailsBody(t, lang, details, justSaved, missing = false) {
   return `
 <h1>${esc(t.detH)}</h1>
 <p class="lede">${esc(t.detLede)}</p>
-${detailsSection(t, lang, details, justSaved)}`;
+${detailsSection(t, lang, details, justSaved, missing)}`;
 }
 
 /**
@@ -2695,19 +3584,42 @@ ${detailsSection(t, lang, details, justSaved)}`;
  * query, which is a signed-out state one request late rather than a crash —
  * every value below is read off `d` with a fallback for exactly that reason.
  */
-function detailsSection(t, lang, details, justSaved) {
+function detailsSection(t, lang, details, justSaved, missing = false) {
   const d = details || {};
+  const COUNTRIES = countryOptions(lang);
 
+  /*
+   * WAT VERPLICHT IS, EN WAAROM DAT HIER OMDRAAIT — 7 augustus 2026.
+   *
+   * Dit scherm had één regel: elk veld optioneel, en een leeg vakje betekent
+   * "haal weg". Dat was juist zolang het een geheugensteuntje was. Nu er een
+   * factuur uit komt is het dat niet meer: een factuur zonder tenaamstelling,
+   * zonder adres of zonder land is geen factuur, en het land bepaalt bovendien
+   * of er 21% of "btw verlegd" op staat.
+   *
+   * Lucas: *"Deze gegevens zijn ook verplicht inclusief btw-nummer met een
+   * checkbox bij btw-nummer toch te skippen als de klant geen btw-nummer heeft
+   * of buiten de eu komt."*
+   *
+   * Optioneel blijven alleen de twee die op een echt adres ook echt kunnen
+   * ontbreken: de toevoeging, en de provincie — die staat in het grootste deel
+   * van Europa niet op een adres. Telefoon en website blijven optioneel omdat
+   * ze niet op de factuur horen.
+   *
+   * `required` in de markup is de eerste laag; handleDetails() controleert het
+   * daarna nog eens, want een formulier is een verzoek en geen belofte.
+   */
   const field = (name, label, value, opts = {}) => `
     <div class="det-field">
       <label for="det-${esc(name)}">${esc(label)}${opts.optional ? ` <span class="det-opt">${esc(t.detOptional)}</span>` : ''}</label>
-      <input id="det-${esc(name)}" name="${esc(name)}" type="${esc(opts.type || 'text')}" value="${esc(value || '')}" maxlength="${DETAIL_MAX}"${opts.placeholder ? ` placeholder="${esc(opts.placeholder)}"` : ''} autocomplete="${esc(opts.auto || 'off')}">
+      <input id="det-${esc(name)}" name="${esc(name)}" type="${esc(opts.type || 'text')}" value="${esc(value || '')}" maxlength="${DETAIL_MAX}"${opts.placeholder ? ` placeholder="${esc(opts.placeholder)}"` : ''} autocomplete="${esc(opts.auto || 'off')}"${opts.optional ? '' : ' required'}>
       ${opts.hint ? `<span class="det-hint">${esc(opts.hint)}</span>` : ''}
     </div>`;
 
   return `
 <section class="detpanel" id="details">
   ${justSaved ? `<p class="det-ok" role="status">${esc(t.detSaved)}</p>` : ''}
+  ${missing ? `<p class="det-ok is-warn" role="alert">${esc(missing === 'failed' ? t.detFailed : t.detMissing)}</p>` : ''}
   ${/*
      DE AANSPORING STAAT ER ALLEEN ALS ER NOG GEEN NUMMER IS. Lucas: *"wij raden
      aan telefoonnummer voor whatsapp toe te voegen om sneller updates te
@@ -2726,21 +3638,145 @@ function detailsSection(t, lang, details, justSaved) {
     <p><a class="btn btn-quiet btn-sm" href="#det-phone">${esc(t.waNudgeCta)}</a></p>
   </div>`}
   <form class="detform" method="post" action="/account/details">
+    ${/*
+       VOORNAAM EN ACHTERNAAM. Lucas, 7 augustus 2026: *"Aanpassen naar naam en
+       achternaam."* Er stond één veld met "Je naam" erboven, en dat levert
+       "Mara" op — genoeg voor een aanhef in een mail, te weinig voor de
+       tenaamstelling op een factuur.
+
+       EEN LEGE ACHTERNAAM VALT TERUG OP DE OUDE WAARDE. Wie zijn gegevens vóór
+       vandaag heeft opgeslagen, heeft alleen `name`; splitsen bij de spatie
+       zou bij "Van der Meer" of "de Jong" het verkeerde antwoord geven, en een
+       gok die één op de tien namen verminkt is erger dan een veld dat de klant
+       zelf even rechtzet. Dus komt de bestaande naam in het voornaamveld te
+       staan en vult hij de achternaam zelf aan.
+    */ ''}
     <div class="det-grid">
-      ${field('name', t.detName, d.name, { auto: 'name' })}
+      ${field('first_name', t.detFirst, d.first_name || (d.last_name ? '' : d.name), { auto: 'given-name' })}
+      ${field('last_name', t.detLast, d.last_name, { auto: 'family-name' })}
+    </div>
+    ${/*
+       ELKE RIJ IS TWEE VELDEN OF ÉÉN OVER DE VOLLE BREEDTE — 7 augustus 2026.
+
+       Lucas: *"sommige invul velden staan heel random geplaatst."* Dat kwam
+       niet alleen uit de CSS: het merkveld stond alleen op een rij, e-mail stond
+       los buiten het raster, en het btw-veld stond weer alleen. Drie
+       verschillende breedtes op één formulier, in een volgorde die er geen
+       reden voor gaf.
+
+       Nu is het gegroepeerd naar wat het is — wie je bent, hoe we je bereiken,
+       waar je zit, en de fiscale gegevens — en heeft elk veld een van twee
+       breedtes. `is-wide` is een besluit dat in de markup staat, niet iets wat
+       een rij overkomt omdat er toevallig één veld in zit.
+    */ ''}
+    <div class="det-grid">
       ${field('brand', t.detBrand, d.brand, { auto: 'organization' })}
-    </div>
-    <div class="det-field">
-      <span class="det-label">${esc(t.detEmail)}</span>
-      <p class="det-fixed">${esc(d.email || '')}</p>
-      <span class="det-hint">${esc(t.detEmailNote)}</span>
-    </div>
-    <div class="det-grid">
-      ${field('phone', t.detPhone, d.phone, { type: 'tel', auto: 'tel', optional: true, hint: t.detPhoneHint })}
       ${field('website', t.detWebsite, d.website, { type: 'url', placeholder: 'https://', auto: 'url', optional: true })}
     </div>
     <div class="det-grid">
-      ${field('vat', t.detVat, d.vat_number, { placeholder: 'NL000000000B00', optional: true })}
+      <div class="det-field is-wide">
+        <span class="det-label">${esc(t.detEmail)}</span>
+        <p class="det-fixed">${esc(d.email || '')}</p>
+        <span class="det-hint">${esc(t.detEmailNote)}</span>
+      </div>
+    </div>
+    <div class="det-grid">
+      ${field('phone', t.detPhone, d.phone, { type: 'tel', auto: 'tel', optional: true, hint: t.detPhoneHint })}
+    </div>
+    ${/*
+       LAND EN FACTUURADRES, sinds 7 augustus 2026.
+
+       Ze werden hier al GELEZEN — detailsRow() haalt ze op, /account/me geeft ze
+       terug, en /start vult er stap 3 mee voor — maar ze stonden niet in dit
+       formulier. Een merk dat verhuist of dat bij de eerste bestelling het
+       verkeerde land koos, kon dat dus nergens meer rechtzetten:
+       upsertCustomer() in functions/api/order.js overschrijft een land dat er al
+       staat met opzet niet, en dit scherm bood het niet aan. De lede erboven
+       zegt intussen "pas hier iets aan en de volgende bestelling neemt het
+       over".
+
+       En het is niet cosmetisch. Sinds de btw-beslissing (src/data/vat.js)
+       bepaalt dit ene veld of er 21% bij komt of dat er verlegd wordt. Een land
+       dat niet klopt is een factuur die niet klopt.
+
+       DEZELFDE WOORDEN ALS OP HET BESTELFORMULIER. De labels, de groepen en de
+       plaatsaanduiding komen letterlijk overeen met OrderFlow.astro, en de
+       landenlijst komt uit dezelfde countryOptions() — twee schermen die naar
+       hetzelfde vragen horen het op dezelfde manier te vragen.
+    */ ''}
+    <div class="det-grid">
+      ${field('address_line1', t.detStreet, d.address_line1, { placeholder: t.detStreetPh, auto: 'address-line1' })}
+      ${field('address_line2', t.detStreet2, d.address_line2, { placeholder: t.detStreet2Ph, optional: true, auto: 'address-line2' })}
+    </div>
+    ${/*
+       VIER VELDEN IN PLAATS VAN ÉÉN, sinds 7 augustus 2026. Lucas: *"Is
+       factuuradres in 1 regel wel handig, dit doen ze toch vaak apart."* Zie
+       migrations/0016 voor de drie redenen; de belangrijkste is dat een factuur
+       de regels onder elkaar moet kunnen zetten en dat uit één vrij ingetypt
+       veld niet te halen is.
+
+       autocomplete per veld is de tweede reden en hij is hier zichtbaar:
+       address-line1, postal-code en address-level2 worden door browsers
+       herkend en ingevuld, `street-address` op één input is de slechtst
+       ondersteunde van het stel.
+    */ ''}
+    <div class="det-grid">
+      ${field('postal_code', t.detPostal, d.postal_code, { placeholder: t.detPostalPh, auto: 'postal-code' })}
+      ${field('city', t.detCity, d.city, { auto: 'address-level2' })}
+    </div>
+    <div class="det-grid">
+      <div class="det-field">
+        <label for="det-country">${esc(t.detCountry)}</label>
+        <select id="det-country" name="country" autocomplete="country">
+          <option value="">${esc(t.detCountryPick)}</option>
+          ${COUNTRIES.home.map((c) => `<option value="${esc(c.id)}"${d.country === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}
+          <optgroup label="${esc(t.detCountryEu)}">
+            ${COUNTRIES.eu.map((c) => `<option value="${esc(c.id)}"${d.country === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}
+          </optgroup>
+          <optgroup label="${esc(t.detCountryOther)}">
+            ${COUNTRIES.other.map((c) => `<option value="${esc(c.id)}"${d.country === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}
+          </optgroup>
+        </select>
+        <span class="det-hint">${esc(t.detCountryHint)}</span>
+      </div>
+      ${field('region', t.detRegion, d.region, { optional: true, hint: t.detRegionHint, auto: 'address-level1' })}
+    </div>
+    ${/*
+       HET BTW-NUMMER IS VERPLICHT, TENZIJ JE ZEGT DAT JE ER GEEN HEBT.
+
+       Lucas: *"inclusief btw-nummer met een checkbox bij btw-nummer toch te
+       skippen als de klant geen btw-nummer heeft of buiten de eu komt."*
+
+       WAAROM EEN VINKJE EN NIET GEWOON "OPTIONEEL". Een leeg veld is
+       dubbelzinnig: het betekent óf "nog niet ingevuld" óf "die heb ik niet",
+       en dat verschil is precies wat je wilt weten. Een particulier en een
+       Amerikaans bedrijf hebben er geen — en horen niet elke keer opnieuw langs
+       een veld te moeten dat rood kleurt. Een Duits bedrijf dat het vergeet
+       hoort dat wél te merken, want zonder nummer betaalt het 21% dat het had
+       kunnen laten verleggen.
+
+       HET VINKJE KOOPT GEEN 0%. Het zegt alleen iets over dit formulier.
+       vatDecision() in src/data/vat.js kijkt naar het land en naar een bij VIES
+       bevestigd nummer, en verder naar niets.
+
+       GEEN `required` OP DIT ENE VELD, EN DAT IS EEN BESLUIT. Deze pagina heeft
+       geen script — default-src 'none', zie html() — dus een vinkje kan het
+       attribuut niet weghalen. Stond het er wel, dan kon iemand die het vinkje
+       aanzet zijn formulier niet meer versturen: de browser weigert, wijst naar
+       een leeg veld, en er is niets dat dat kan opheffen. De eis staat dus op de
+       server, in handleDetails(), waar hij het vinkje kan meewegen. Het
+       uitgrijzen is puur `.det-vat:has(input:checked)` in account.css.
+    */ ''}
+    <div class="det-grid det-vat">
+      <div class="det-field">
+        <label for="det-vat">${esc(t.detVat)}${d.no_vat_number ? ` <span class="det-opt">${esc(t.detOptional)}</span>` : ''}</label>
+        <input id="det-vat" name="vat" type="text" value="${esc(d.vat_number || '')}" maxlength="${DETAIL_MAX}" placeholder="NL000000000B00" autocomplete="off">
+        <label class="det-check">
+          <input type="checkbox" name="no_vat" value="1"${d.no_vat_number ? ' checked' : ''}>
+          <span>${esc(t.detNoVat)}</span>
+        </label>
+        <span class="det-hint">${esc(t.detVatHint)}</span>
+      </div>
     </div>
     <button class="btn btn-primary" type="submit">${esc(t.detSave)}</button>
   </form>
@@ -2828,9 +3864,7 @@ function lockSection(t, lang, models, lockByStyle) {
         ? `<img class="bk-sum-face" src="${esc(chosenRoster.thumb)}" alt="" loading="lazy" decoding="async" width="96" height="128">`
         : '';
     const faceName = chosenOwn ? chosenOwn.label : chosenRoster ? chosenRoster.name : t.bkAsk;
-    const bgChip = bg
-      ? `<span class="bk-sum-bg" style="--sw:${esc(bg)}" aria-hidden="true"></span>`
-      : '';
+    const bgChip = bg ? swatch(bg, 'bk-sum-bg') : '';
     const bgMatch = bg ? BACKGROUNDS.find((b) => b.hex.toUpperCase() === bg) : null;
     const bgName = bg ? (bgMatch?.name[lang] || bgMatch?.name.en || bg) : t.bkAsk;
 
@@ -2879,12 +3913,9 @@ function lockSection(t, lang, models, lockByStyle) {
       (m.traits || []).map((k) => (TRAITS[lang] || TRAITS.en)[k] || k).join(' · ')
     )).join('');
 
-    // The grounds. `--sw` carries the hex to CSS as a custom property rather
-    // than as a background declaration, which is what keeps this inside the
-    // style-src 'self' CSP: a `style` ATTRIBUTE setting a variable is allowed
-    // where an inline <style> block is not, and the rule that consumes it lives
-    // in account.css. The hex is also printed as text under the swatch — the
-    // colour is the answer, but the value is the contract (see backgrounds.js).
+    // The grounds. De kleur komt uit swatch() hierboven — zie daar waarom het
+    // geen `style`-attribuut meer is. De hex staat er als tekst ónder: de kleur
+    // is het antwoord, maar de waarde is het contract (zie backgrounds.js).
     const bgTiles = [
       `<label class="bk-sw is-none">
          <input type="radio" name="background_hex" value=""${bg === '' ? ' checked' : ''}>
@@ -2894,7 +3925,7 @@ function lockSection(t, lang, models, lockByStyle) {
     ].concat(BACKGROUNDS.map((b) => `
       <label class="bk-sw">
         <input type="radio" name="background_hex" value="${esc(b.hex)}"${bg === b.hex.toUpperCase() ? ' checked' : ''}>
-        <span class="bk-sw-chip" style="--sw:${esc(b.hex)}" aria-hidden="true"></span>
+        ${swatch(b.hex, 'bk-sw-chip')}
         <span class="bk-sw-name">${esc(b.name[lang] || b.name.en)}</span>
         <span class="bk-sw-hex">${esc(b.hex)}</span>
       </label>`)).join('');
@@ -2945,6 +3976,111 @@ function styleLabel(style) {
   // else falls through to the id, which is what this did before that map moved
   // out of this file.
   return serviceLabel(style, 'en') || style;
+}
+
+/*
+ * ── WAT EEN BESTELLING KOST, EN OF HET BETAALD IS — 7 augustus 2026 ─────────
+ *
+ * Dit scherm zei er niets over. Niet "onbetaald", niet het bedrag, niet dat de
+ * reservering afloopt, en geen knop om het alsnog te doen. De enige betaallink
+ * werd één keer aangemaakt bij het bestellen en reisde mee in de bevestigingsmail
+ * en op /thank-you; wie de tab sloot of de mail kwijtraakte, kon nergens meer
+ * betalen — terwijl `window_expires_at` gewoon doorliep.
+ *
+ * ── HET BEDRAG WORDT NIET OPNIEUW BEREKEND ──────────────────────────────────
+ *
+ * orders.total_cents is NETTO en is wat er destijds is geoffreerd. Opnieuw door
+ * quoteOrder() halen zou betekenen dat een prijswijziging met terugwerkende
+ * kracht op een bestaande bestelling landt, en dat is precies de fout die je
+ * niet wilt maken op een scherm met een betaalknop eronder. De btw komt uit
+ * vat_cents (migratie 0015).
+ *
+ * DRAAIT 0015 NOG NIET, dan bestaat vat_cents niet en valt dit terug op het
+ * standaardtarief. Dat is geen gok: elke rij van vóór die migratie is een
+ * Nederlandse bestelling met 21% erover — dat is letterlijk wat er tot dan toe
+ * gebeurde, en het is dezelfde aanname die 0015 zelf als DEFAULT vastlegt. Naar
+ * BENEDEN afronden zou hier gratis btw weggeven.
+ */
+function orderMoney(o) {
+  const net = Number(o.total_cents);
+  if (!Number.isFinite(net) || net <= 0) return null;
+  const vat = Number.isFinite(Number(o.vat_cents)) && o.vat_cents !== null
+    ? Number(o.vat_cents)
+    : Math.round(net * VAT_RATE);
+  const refunded = Number(o.refunded_cents) || 0;
+  return { net, vat, gross: net + vat, refunded, known: o.vat_cents !== null && o.vat_cents !== undefined };
+}
+
+/** Centen als '€ 1.234,56' / '€1,234.56' — dezelfde vorm als euro() in pricing.js. */
+function money(cents, lang) {
+  const v = (Number(cents) || 0) / 100;
+  return lang === 'nl'
+    ? `€ ${v.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `€${v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * Het geldblok op de bestelkaart.
+ *
+ * DE KNOP STAAT ER ALLEEN ALS ER ÉCHT NOG IETS TE BETALEN IS: een bedrag boven
+ * nul, payment_status 'unpaid', en een dienst waarvoor er überhaupt een prijs
+ * bestaat. Een "Nu betalen" onder een bestelling die al betaald is, is de ergste
+ * knop die dit scherm kan hebben.
+ */
+function paymentBlock(t, lang, o) {
+  const m = orderMoney(o);
+  if (!m) return '';
+
+  const state = String(o.payment_status || 'unpaid');
+  // "€ 0,00" onder Btw is een correct bedrag en een nietszeggend antwoord. Bij
+  // een verlegde of buiten-scope bestelling staat er wát er op de factuur staat
+  // — "Btw verlegd" — want dat is de reden dat er nul staat, en die reden is
+  // precies wat een boekhouder hier zoekt. vatShort() is dezelfde bron die de
+  // factuur en het adminscherm gebruiken.
+  const zeroWhy = o.vat_treatment && o.vat_treatment !== VAT_TREATMENT.standard
+    ? vatShort(o.vat_treatment, lang)
+    : null;
+  const rows = [
+    [t.payNet, money(m.net, lang)],
+    [t.payVat, m.vat === 0 && zeroWhy ? zeroWhy : money(m.vat, lang)],
+    [t.payTotal, money(m.gross, lang)],
+  ];
+  if (m.refunded > 0) rows.push([t.payRefunded, money(m.refunded, lang)]);
+
+  let line;
+  let cls;
+  if (state === 'paid') {
+    cls = 'is-paid';
+    line = o.paid_at ? t.payPaidOn(shortDate(o.paid_at, lang)) : t.payPaid;
+  } else if (state === 'refunded') {
+    cls = 'is-refunded';
+    line = t.payRefundedNote;
+  } else {
+    cls = 'is-unpaid';
+    // Het venster verloopt, en dat is de reden dat dit dringend is. Alleen
+    // zeggen als er ook echt een datum staat — een dreiging zonder datum is
+    // alleen maar onrust.
+    line = o.window_expires_at
+      ? t.payDueBy(shortDate(o.window_expires_at, lang))
+      : t.payDue;
+  }
+
+  // isPayableService() en niet PAYABLE_SERVICES: orders.service bewaart 'drop'
+  // waar de ladder 'complete' heet, en dat rechtstreeks toetsen laat de duurste
+  // bestelling op de site zonder betaalknop staan. Zie LADDER_KEY in quote.js.
+  const payable = isPayableService(o.service) || o.service === SAMPLE_SERVICE;
+  const button = state === 'unpaid' && payable
+    ? `<form class="pay-form" method="post" action="/account/orders/${o.id}/pay">
+         <button class="btn btn-primary btn-sm" type="submit">${esc(t.payNow)}</button>
+       </form>`
+    : '';
+
+  return `
+<div class="paybox ${cls}">
+  <dl class="pay-rows">${rows.map(([k, v]) => `<div class="pay-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+  <p class="pay-state">${esc(line)}</p>
+  ${button}
+</div>`;
 }
 
 function orderCard(t, lang, o, files, events = []) {
@@ -3016,9 +4152,26 @@ function orderCard(t, lang, o, files, events = []) {
     <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
   </div>
   <dl class="facts">${facts.map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
-  <p class="meta">${esc(t.fWindow)}: ${o.window_start ? window : esc(window)}</p>
+  ${
+    /* "Venster: Wordt ingepland" stond hier altijd, en bij een bestelling onder
+       de drempel is dat een belofte die nooit ingelost wordt: schema.sql zegt
+       met zoveel woorden dat een unattended bestelling window_start voorgoed
+       leeg laat — die heeft een wachtrij, geen datum. De regel hoort er dus
+       alleen te staan als er een venster ís, of als er een op komt. */
+    o.window_start || o.tier === 'attended'
+      ? `<p class="meta">${esc(t.fWindow)}: ${o.window_start ? window : esc(window)}</p>`
+      : `<p class="meta">${esc(t.fQueue)}</p>`
+  }
+  ${paymentBlock(t, lang, o)}
   ${progressBlock(t, lang, o, events)}
   ${studioNote(t, o)}
+  ${
+    /* Afgerond, en dat hoort ergens te staan. maybeClose() zet closed_at zodra
+       het laatste beeld is goedgekeurd; tot vandaag was het enige zichtbare
+       gevolg dat de knoppen verdwenen. Eén zin op de kaart in plaats van onder
+       elke foto: het is een feit over de bestelling, niet over een beeld. */
+    o.closed_at && !isSample(o) ? `<p class="meta closed">${esc(t.closedNote)}</p>` : ''
+  }
   ${fileList}
 </div>`;
 }
@@ -3371,10 +4524,39 @@ function shotTile(t, f, o, inProduct = false) {
  * is een bug voor degene die hem zoekt.
  */
 function reviewControls(t, f, o) {
-  if (!canReview(o)) return '';
-  if (o.revisions_revoked_at) return `<p class="meta revoked">${esc(t.revokedNote)}</p>`;
+  // DE PROEFVISUAL, EN WAAROM HIER EEN ZIN STAAT IN PLAATS VAN NIETS. Dit is de
+  // enige bestelling zonder beoordeelknoppen (zie canReviewOrder in pricing.js).
+  // Precies die stilte was de melding van 7 augustus: Lucas bestelde één product,
+  // zag alleen "Downloaden", en las het als kapotte knoppen. Een lege plek waar
+  // een knop hoort is niet neutraal — hij ziet eruit als een fout.
+  if (isSample(o)) return `<p class="meta revoked">${esc(t.sampleNote)}</p>`;
 
+  /*
+   * TERUGDRAAIEN BLIJFT ALTIJD KUNNEN — 7 augustus 2026.
+   *
+   * Dit stond boven de regel hieronder: `if (!canReview(o)) return ''`, en
+   * canReview() is onwaar zodra closed_at staat. maybeClose() zet closed_at op
+   * het moment dat de klant zijn LAATSTE beeld goedkeurt. Eén klik haalde dus in
+   * één keer alle knoppen van de hele bestelling weg — ook de "Ongedaan
+   * maken"-knop van precies die klik. Wie zich verklikt op de laatste foto zat
+   * vast, zonder melding, met een scherm dat er hetzelfde uitzag als een
+   * bestelling waar nooit iets mee gebeurd was.
+   *
+   * Een besluit dat je niet kunt terugnemen leert mensen niets meer aan te
+   * raken. Dus: een afgeronde bestelling accepteert geen NIEUWE besluiten meer,
+   * maar het besluit dat hem afrondde blijft omkeerbaar — en dat terugdraaien
+   * opent de bestelling weer (zie handleFileReview).
+   *
+   * NIET VOOR ALTIJD, en dat is geen zuinigheid. order_tokens.expires_at wordt
+   * nergens geschreven, dus isExpired() in token.js leidt de bewaartermijn van
+   * de portaallink volledig af uit closed_at. Zou terugdraaien dat veld op
+   * eender welk moment mogen wissen, dan wekt een klik op deze knop een
+   * gemailde link die negentig dagen geleden had moeten sterven — en herhaalbaar
+   * ook. Binnen het venster is heropenen wat de klant bedoelt; daarbuiten staat
+   * het besluit, en zegt de zin eronder dat.
+   */
   if (f.review_state === 'approved' || f.review_state === 'revision_requested') {
+    if (o.closed_at && !reopenable(o)) return `<p class="meta revoked">${esc(t.settledNote)}</p>`;
     const label = f.review_state === 'approved' ? t.bUndo : t.bCancelShort;
     return `<form class="review-form" method="post" action="/account/review">
     <input type="hidden" name="file" value="${f.id}">
@@ -3382,12 +4564,24 @@ function reviewControls(t, f, o) {
   </form>`;
   }
 
+  // Geen besluit op dit beeld en de bestelling is afgerond. Dat kan bij een beeld
+  // dat ná het afronden geleverd is; dan hoort er te staan waarom er niets te
+  // kiezen valt in plaats van een lege plek. Andere zin dan closedNote op de
+  // kaart: die nodigt uit om iets ongedaan te maken, en hier is er niets.
+  if (!canReview(o)) return `<p class="meta revoked">${esc(t.settledNote)}</p>`;
+
   // formnovalidate op Goedkeuren, zodat de verplichte notitie in de <details>
   // hem niet blokkeert — de twee knoppen zijn alternatieven, geen stappen.
-  return `<form class="review-form" method="post" action="/account/review">
-    <input type="hidden" name="file" value="${f.id}">
-    <button class="btn btn-primary btn-sm" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
-    <details class="ask">
+  //
+  // INGETROKKEN RECHTEN HALEN ALLEEN DE REVISIEHELFT WEG. Deze controle stond
+  // bovenaan de functie en verving daarmee álle knoppen — óók goedkeuren, en
+  // óók ongedaan maken. handleFileReview() staat die twee juist wél toe (zie
+  // daar: "een klant die zijn revisierechten kwijt is, moet nog steeds kunnen
+  // zeggen dat iets goed is"), dus het scherm was strenger dan de regel. Erger:
+  // zonder goedkeurknop kan zo'n bestelling nooit meer afgerond raken.
+  const ask = o.revisions_revoked_at
+    ? `<p class="meta revoked">${esc(t.revokedNote)}</p>`
+    : `<details class="ask">
       <!-- De samenvatting is de tweede knop, en ziet er ook zo uit. Als
            onderstreepte tekstregel onder een gevulde knop leek dit een voetnoot
            in plaats van het alternatief dat het is: goedkeuren of aanmerken
@@ -3396,12 +4590,17 @@ function reviewControls(t, f, o) {
       <label class="sr-only" for="n${f.id}">${esc(t.askLabel)}</label>
       <textarea id="n${f.id}" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.askHint)}" required></textarea>
       <button class="btn btn-ghost btn-sm" type="submit" name="action" value="revise">${esc(t.bSend)}</button>
-    </details>
+    </details>`;
+
+  return `<form class="review-form" method="post" action="/account/review">
+    <input type="hidden" name="file" value="${f.id}">
+    <button class="btn btn-primary btn-sm" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
+    ${ask}
   </form>`;
 }
 
 function errorBody(t, message = null) {
-  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error" style="margin-top:2rem">${esc(message || (t && t.dbDown) || 'Something went wrong.')}</p>`;
+  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error is-page">${esc(message || (t && t.dbDown) || 'Something went wrong.')}</p>`;
 }
 
 // `full` swaps the centered 940px `.wrap` column for the edge-to-edge shell
@@ -3586,24 +4785,75 @@ function esc(s) {
  * it stopped being true when the grace window landed, and the honest line is
  * the one that names the hour.
  */
-export function magicLinkEmail(lang, link) {
+export function magicLinkEmail(lang, link, code = null) {
   const mins = LOGIN_TOKEN_TTL_MINUTES;
   const hours = mins % 60 === 0 ? mins / 60 : null;
+  /*
+   * ── DE KOP VOLGT WAT ER ONDER STAAT — 7 augustus 2026 ──────────────────────
+   *
+   * Lucas, bij het zien van de eerste versie: *"zou de link niet boven de code
+   * moeten staan omdat de tekst dit op die manier laat zien."* Hij heeft
+   * gelijk over de tegenstrijdigheid en niet over de oplossing: de kop zei "Je
+   * inloglink" en er kwam een code, dus de tekst en de volgorde spraken elkaar
+   * tegen. Maar de code hoort bovenaan te blijven — dat is de hele reden dat
+   * hij bestaat (zie hieronder), en hem onder de knop zetten is hem verstoppen
+   * achter precies de sprong die hij moest wegnemen.
+   *
+   * Dus de TEKST is omgedraaid in plaats van de volgorde. De kop noemt nu geen
+   * van beide, de code komt eerst met zijn eigen zin, en de link volgt als het
+   * alternatief dat hij is. Zodra er geen code is — migratie 0017 nog niet
+   * gedraaid — valt alles terug op de oude woorden, want dan klopt "Je
+   * inloglink" weer precies.
+   */
   const copy = lang === 'nl'
     ? {
-        h: 'Je inloglink',
-        p: `Klik op de link hieronder om in te loggen bij je VISUAILS-account. De link blijft ${hours === 1 ? 'een uur' : `${mins} minuten`} geldig.`,
+        h: code ? 'Inloggen bij VISUAILS' : 'Je inloglink',
+        p: code
+          ? `Liever klikken? Deze link doet hetzelfde en blijft ${hours === 1 ? 'een uur' : `${mins} minuten`} geldig.`
+          : `Klik op de link hieronder om in te loggen bij je VISUAILS-account. De link blijft ${hours === 1 ? 'een uur' : `${mins} minuten`} geldig.`,
         b: 'Inloggen',
         f: 'Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren — er verandert niets aan je account.',
         alt: 'Werkt de knop niet? Kopieer deze link in je browser:',
+        codeH: 'Vul deze code in op het scherm waar je vandaan komt:',
+        codeF: `${LOGIN_CODE_TTL_MINUTES} minuten geldig, één keer te gebruiken.`,
       }
     : {
-        h: 'Your sign-in link',
-        p: `Click the link below to sign in to your VISUAILS account. The link stays valid for ${hours === 1 ? 'an hour' : `${mins} minutes`}.`,
+        h: code ? 'Sign in to VISUAILS' : 'Your sign-in link',
+        p: code
+          ? `Rather click? This link does the same and stays valid for ${hours === 1 ? 'an hour' : `${mins} minutes`}.`
+          : `Click the link below to sign in to your VISUAILS account. The link stays valid for ${hours === 1 ? 'an hour' : `${mins} minutes`}.`,
         b: 'Sign in',
         f: 'Did not request this? You can ignore this email — nothing about your account changes.',
         alt: 'Button not working? Copy this link into your browser:',
+        codeH: 'Type this code on the screen you came from:',
+        codeF: `Valid for ${LOGIN_CODE_TTL_MINUTES} minutes, single use.`,
       };
+
+  /*
+   * ── DE CODE STAAT BOVENAAN, VÓÓR DE KNOP ───────────────────────────────────
+   *
+   * Niet uit netheid maar omdat dit de reden is dat hij bestaat: wie op zijn
+   * telefoon zit, wil de zes cijfers zien zonder te scrollen en zonder de mail
+   * open te klappen. Een voorbeeldweergave in een inbox toont de eerste regels,
+   * en dat zijn nu precies de cijfers.
+   *
+   * Met spatie ertussen — "048 210" — omdat zes losse cijfers in één blok
+   * verkeerd overgetypt worden. normaliseCode() haalt de spatie er aan de
+   * andere kant weer uit, dus plakken werkt ook.
+   *
+   * Geen <table> of custom HTML: mailTemplate.js's shell bepaalt hoe deze mails
+   * eruitzien, en een tweede opmaaktaal in één mail is hoe de ene helft er in
+   * Outlook anders uit gaat zien dan de andere.
+   */
+  const spaced = code ? `${code.slice(0, 3)} ${code.slice(3)}` : null;
+  const codeBlock = code
+    ? [
+        mailP(copy.codeH),
+        mailP(`<span style="font-size:30px;line-height:1.2;letter-spacing:.16em;font-weight:700;color:#0B0C0E">${spaced}</span>`),
+        mailP(copy.codeF, { muted: true }),
+        '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      ].join('')
+    : '';
 
   // THE URL APPEARS TWICE ON PURPOSE — once behind the button, once as copyable
   // text — and tests/account-signin.test.mjs asserts exactly that. A client that
@@ -3613,10 +4863,11 @@ export function magicLinkEmail(lang, link) {
     lang,
     // Not the subject line again: the inbox prints the two next to each other.
     preheader: lang === 'nl'
-      ? 'Eén klik en je bent binnen — de link verloopt vanzelf.'
-      : 'One click and you are in — the link expires on its own.',
+      ? (code ? `Je code is ${spaced} — of gebruik de link.` : 'Eén klik en je bent binnen — de link verloopt vanzelf.')
+      : (code ? `Your code is ${spaced} — or use the link.` : 'One click and you are in — the link expires on its own.'),
     body: [
       mailH1(copy.h),
+      codeBlock,
       mailP(copy.p),
       mailButton(link, copy.b),
       '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
@@ -3628,7 +4879,13 @@ export function magicLinkEmail(lang, link) {
   });
 
   const text = `${copy.h}
+${code ? `
+${copy.codeH}
 
+  ${spaced}
+
+${copy.codeF}
+` : ''}
 ${copy.p}
 
 ${link}

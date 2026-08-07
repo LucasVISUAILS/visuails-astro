@@ -26,10 +26,10 @@ const lp = (p: string) => localizedPath(lang, p);
 
 const COPY = {
   en: {
-    h1: ['One link.', 'Your whole drop.'],
+    h1: ['One link.', 'Your whole order.'],
     lede: `From ${WINDOW_THRESHOLD} products up, an order comes with a private link. No account to make, no password to lose. Everything about that order lives behind it, from the day it is booked to the day you sign it off. A smaller order arrives as a download link by email instead — same files, same rights, without the review screen.`,
     ctaStart: 'Start an order',
-    ctaHow: 'How a drop is run',
+    ctaHow: 'How an order is run',
 
     stateH: 'Where it is, without asking.',
     stateLede: 'The portal opens on the state of your order. A drop moves through six of them, and the one it is in is the first thing on the page.',
@@ -51,7 +51,6 @@ const COPY = {
     ],
     galleryPh: 'Client portal · delivery gallery',
     galleryNote: 'The approve / request-revision screen, one image selected, the revision note open.',
-    gallerySpec: 'Screenshot to place · 16:10 · /img/portal-gallery.webp',
 
     dlH: 'Sized for where it is going.',
     dlLede: 'A catalog image and a story frame are not the same file. The downloads are cut per channel so nothing has to be resized after it reaches you.',
@@ -83,10 +82,10 @@ const COPY = {
   },
 
   nl: {
-    h1: ['Eén link.', 'Je hele drop.'],
+    h1: ['Eén link.', 'Je hele bestelling.'],
     lede: `Vanaf ${WINDOW_THRESHOLD} producten krijg je bij een bestelling een privélink. Geen account om aan te maken, geen wachtwoord om kwijt te raken. Alles over die bestelling zit erachter, van de dag dat hij geboekt wordt tot de dag dat jij hem aftekent. Een kleinere bestelling komt in plaats daarvan als downloadlink per mail — dezelfde bestanden, dezelfde rechten, zonder het beoordelingsscherm.`,
     ctaStart: 'Start een bestelling',
-    ctaHow: 'Hoe een drop draait',
+    ctaHow: 'Hoe een bestelling loopt',
 
     stateH: 'Waar hij staat, zonder te vragen.',
     stateLede: 'Het portaal opent op de status van je order. Een drop doorloopt er zes, en waar hij nu staat is het eerste op de pagina.',
@@ -108,7 +107,6 @@ const COPY = {
     ],
     galleryPh: 'Klantportaal · leveringsgalerij',
     galleryNote: 'Het scherm voor goedkeuren en revisie aanvragen, één beeld geselecteerd, het revisieveld open.',
-    gallerySpec: 'Screenshot te plaatsen · 16:10 · /img/portal-gallery.webp',
 
     dlH: 'Op maat voor waar het heen gaat.',
     dlLede: 'Een catalogbeeld en een storyframe zijn niet hetzelfde bestand. De downloads zijn per kanaal gesneden, zodat er na levering niets meer bijgeschaald hoeft te worden.',
@@ -191,7 +189,6 @@ const c = COPY[lang];
         <div>
           <p class="ph-label">{c.galleryPh}</p>
           <p class="ph-note">{c.galleryNote}</p>
-          <p class="ph-spec">{c.gallerySpec}</p>
         </div>
       </div>
     </div>

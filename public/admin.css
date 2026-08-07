@@ -642,3 +642,34 @@ a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: v
    hetzelfde als niets rood maken. */
 .danger-block.is-worst { border-color: #a33; }
 .danger-block.is-worst h4 { color: #e06a6a; }
+
+/* ── WAT HIER OP 7 AUGUSTUS 2026 UIT DE MARKUP IS GEHAALD ────────────────────
+ *
+ * Acht plekken in admin.js droegen hun opmaak in een `style`-attribuut:
+ * `style="flex:1; min-width:12rem; …"` op de tekstvelden, `style="margin-top:
+ * .5rem"` op de knoppenrijen. Die kwamen nooit aan. De CSP van dit scherm zegt
+ * `style-src 'self'`, en `style-src-attr` valt in CSP3 terug op `style-src` —
+ * dus het attribuut wordt geweigerd, met "Refused to apply inline style" in de
+ * console en verder geen enkel teken. Gemeten in Chromium, niet aangenomen.
+ *
+ * Zichtbaar gevolg: elk van die invoervelden stond op zijn natuurlijke breedte
+ * in plaats van de rij te vullen, zonder rand en op de verkeerde achtergrond,
+ * en de knoppenrijen plakten aan het veld erboven. Zie swatch() in
+ * src/lib/account.js voor dezelfde fout aan de klantkant, en voor waarom
+ * 'unsafe-inline' niet het antwoord is. */
+
+/* Een tekstveld dat de rij vult. Eén klasse in plaats van drie bijna gelijke
+   attributen — het verschil tussen min-width 12rem en 14rem was geen besluit. */
+.in-grow {
+  flex: 1; min-width: 12rem; padding: .5rem .6rem; font: inherit;
+  border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
+}
+
+/* De knoppenrij ónder een veld, in plaats van ernaast. `.controls` heeft zijn
+   eigen margin-top; deze staat er om te zeggen dat hij bij het veld hoort dat
+   erboven staat en niet bij het blok ervoor. */
+.controls.is-under { margin-top: .6rem; }
+
+/* De foutpagina heeft geen kaart om zich heen, dus zijn enige ademruimte komt
+   van hier. */
+.error.is-page { margin-top: 2rem; }

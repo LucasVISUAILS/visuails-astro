@@ -9,16 +9,15 @@ import PricingPage from '../../components/PricingPage.astro';
 // staffel: het instaptarief, de bodem, en dat het tarief daalt. De korting op
 // de eerste bestelling staat achteraan, want dat is de zin die een snippet
 // zich kan veroorloven kwijt te raken.
-import { euro, ladderRate, ladderFloor, LADDER, vatLabel, FIRST_ORDER_DISCOUNT } from '../../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../../data/pricing.js';
 
 const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
-const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 const description =
   `Geprijsd per product, en het tarief daalt naarmate het aantal stijgt: ` +
   `${euro(ladderRate('complete', 1), 'nl')} tot ` +
   `${euro(ladderFloor('complete'), 'nl')} vanaf ${FLOOR_FROM} producten, ` +
-  `${vatLabel('excl', 'nl')}. Eerste bestelling ${firstPct} korting.`;
+  `${vatLabel('excl', 'nl')}.`;
 ---
 
 <Layout title="Prijzen — VISUAILS" description={description}>

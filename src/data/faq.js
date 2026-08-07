@@ -67,7 +67,7 @@
 
 import {
   AMOUNT, TIERS, TEST_SAMPLE, euro, reviewClaim, turnaround, aftercare, perProduct,
-  LADDER, ladderRate, ladderFloor, quote, FIRST_ORDER_DISCOUNT,
+  LADDER, ladderRate, ladderFloor, ladderTotal,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
   PLAN_MIN_MONTHS, PLAN_ROLLOVER_MONTHS,
   WINDOW_THRESHOLD, vatLabel, vatNote,
@@ -88,10 +88,6 @@ const TOP_RUNG_AT = COMPLETE_RUNGS[COMPLETE_RUNGS.length - 1][0];
 const ENTRY_RUNG_LAST = COMPLETE_RUNGS[0][1];
 const SECOND_RUNG_AT = COMPLETE_RUNGS[1][0];
 
-// The discount as a percentage, computed rather than typed. A written "20%"
-// beside a constant of 0.20 is two sources of truth for one number, and the
-// written one is the one that gets missed.
-const FIRST_PCT = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 // The worked example under the first-order discount. The SAME count
 // PricingPage.astro uses for its own worked example, deliberately: this answer
@@ -123,7 +119,6 @@ export function pricingFaqs(lang = 'en') {
   const planList = plans(l);
   const planName = Object.fromEntries(planList.map((p) => [p.id, p.name]));
   const studioSaving = planSaving('studio');
-  const firstEg = quote('complete', FIRST_EG_PRODUCTS, { firstOrder: true });
 
   if (l === 'nl') {
     return [
@@ -133,7 +128,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Is mijn eerste bestelling goedkoper?',
-        a: `Ja — ${FIRST_PCT} eraf, eenmalig per merk, bij elke omvang. Het is wat het pilotpakket was, zonder het vaste aantal: ${FIRST_EG_PRODUCTS} complete producten is ${ex(firstEg.listTotal, 'nl')}, en bij een eerste bestelling is dat ${exIncl(firstEg.net, 'nl')}.`,
+        a: `Nee, en dat is met opzet. Er was een kennismakingskorting van 20% en die is eraf gehaald: een tarief noemen en er dan een vijfde vanaf halen zegt dat het tarief nooit de prijs was. De staffel ís de korting — het tarief per product daalt naarmate je er meer bestelt, en het geldt voor elk product in de bestelling. ${FIRST_EG_PRODUCTS} complete producten is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'nl')}, voor iedereen, altijd. Wil je het werk eerst zien, dan is daar de proefvisual voor.`,
       },
       {
         q: 'Hoe daalt het tarief?',
@@ -169,7 +164,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Is my first order cheaper?',
-      a: `Yes — ${FIRST_PCT} off, once per brand, at any size. It is what the pilot package used to be, without the fixed count: ${FIRST_EG_PRODUCTS} complete products is ${ex(firstEg.listTotal, 'en')}, and on a first order that is ${exIncl(firstEg.net, 'en')}.`,
+      a: `No, and that is deliberate. There was a 20% first-order discount and it has been removed: quoting a rate and then taking a fifth off it says the rate was never the price. The ladder is the discount — the rate per product falls as the count rises, and it applies to every product in the order. ${FIRST_EG_PRODUCTS} complete products is ${ex(ladderTotal('complete', FIRST_EG_PRODUCTS), 'en')}, for everyone, always. If you want to see the work first, that is what the test sample is for.`,
     },
     {
       q: 'How does the rate fall?',
@@ -238,7 +233,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
-            a: `Op twee manieren. Een proefvisual van ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit} — die loopt door dezelfde pipeline als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn — en een eerste bestelling is ${FIRST_PCT} goedkoper, hoe groot of klein die ook is, eenmalig per merk.`,
+            a: `Op twee manieren. Een proefvisual van ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit} — die loopt door dezelfde pipeline als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn.`,
           },
         ],
       },
@@ -311,7 +306,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Zijn er volumekortingen?',
-            a: `De staffel ís het antwoord op volume — er komt niets bovenop en er valt niets te onderhandelen. Het tarief geldt voor elk product in de bestelling, dus een trede omlaag verlaagt de prijs van allemaal: bij ${ENTRY_RUNG_LAST} producten is dat ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}. Daarbovenop is je eerste bestelling ${FIRST_PCT} goedkoper, eenmalig per merk.`,
+            a: `De staffel ís het antwoord op volume — er komt niets bovenop en er valt niets te onderhandelen. Het tarief geldt voor elk product in de bestelling, dus een trede omlaag verlaagt de prijs van allemaal: bij ${ENTRY_RUNG_LAST} producten is dat ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'nl')} per product, bij ${SECOND_RUNG_AT} nog ${ex(ladderRate('complete', SECOND_RUNG_AT), 'nl')}.`,
           },
           {
             q: 'Is er een abonnement?',
@@ -377,7 +372,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Can I try it before ordering a whole collection?',
-          a: `Two ways. A ${sample.price} ${vatLabel('excl', 'en')} test sample on one of your own products, ${sample.unit} — it runs through the same pipeline as a paid order, so what you see is what you would get. Or simply start small: the rate is per product, so a first order can be a handful of pieces — and a first order is ${FIRST_PCT} off whatever its size, once per brand.`,
+          a: `Two ways. A ${sample.price} ${vatLabel('excl', 'en')} test sample on one of your own products, ${sample.unit} — it runs through the same pipeline as a paid order, so what you see is what you would get. Or simply start small: the rate is per product, so a first order can be a handful of pieces.`,
         },
       ],
     },
@@ -496,7 +491,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Are there volume discounts?',
-          a: `The ladder is the volume answer — nothing is stacked on top of it and there is nothing to negotiate. The rate applies to every product in the order, so crossing onto the next rung lowers the price of all of them: at ${ENTRY_RUNG_LAST} products it is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, at ${SECOND_RUNG_AT} it is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each. On top of that, a first order is ${FIRST_PCT} off, once per brand.`,
+          a: `The ladder is the volume answer — nothing is stacked on top of it and there is nothing to negotiate. The rate applies to every product in the order, so crossing onto the next rung lowers the price of all of them: at ${ENTRY_RUNG_LAST} products it is ${ex(ladderRate('complete', ENTRY_RUNG_LAST), 'en')} each, at ${SECOND_RUNG_AT} it is ${ex(ladderRate('complete', SECOND_RUNG_AT), 'en')} each.`,
         },
         {
           q: 'Is there a subscription?',

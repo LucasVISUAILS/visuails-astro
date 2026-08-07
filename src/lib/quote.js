@@ -45,7 +45,20 @@ import {
   MAX_OUTFIT_PRODUCTS, AMOUNT,
 } from '../data/pricing.js';
 
-/** The rate Mollie collects from everyone, pending the per-country model. */
+/**
+ * The DUTCH rate. Not "the rate everyone pays" any more.
+ *
+ * This constant used to be commented "the rate Mollie collects from everyone,
+ * pending the per-country model", and BRIEF-14 described that model as future
+ * work. It is not future work now: quoteOrder() takes a rate, src/data/vat.js
+ * decides which one, and this is only the default — the answer for a Dutch
+ * customer, and for every case where we could not prove otherwise.
+ *
+ * It stays a duplicate of pricing.js's VAT_RATE rather than an import, for the
+ * reason pricing.js:192 gives: this module is loaded by a Cloudflare Worker and
+ * the two halves are checked against each other at build time by
+ * assertQuoteMatches() instead.
+ */
 export const VAT_RATE = 0.21;
 
 /** Services that can be priced from the ladder. Anything else is not payable. */
@@ -78,6 +91,31 @@ export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle', 'complete']);
  */
 const LADDER_KEY = { drop: 'complete' };
 
+/**
+ * De wire-waarde naar de laddernaam, voor iedereen buiten dit bestand.
+ *
+ * TOEGEVOEGD OMDAT DEZELFDE VAL OP 7 AUGUSTUS 2026 EEN TWEEDE KEER DICHTKLAPTE.
+ * Het geldblok op het klantdashboard en de knop "Nu betalen" toetsten
+ * `PAYABLE_SERVICES.has(order.service)` rechtstreeks op de rij uit de database.
+ * Daar staat 'drop', en PAYABLE_SERVICES kent alleen 'complete' — dus een
+ * bestelling van "Allebei" (de duurste deur op de site, dertig producten is
+ * € 2.359,50) kreeg geen betaalknop, en de POST erachter weigerde stil. Precies
+ * het scenario dat hierboven in vijfentwintig regels beschreven staat, in nieuwe
+ * code herhaald.
+ *
+ * Vandaar dat de vertaling nu geëxporteerd wordt in plaats van dat elke
+ * aanroeper hem opnieuw moet kennen. Wie een dienst uit orders.service in handen
+ * heeft, gebruikt isPayableService() en niet de verzameling.
+ */
+export function ladderKey(service) {
+  return LADDER_KEY[service] || service;
+}
+
+/** Is deze dienst uit orders.service te prijzen — en dus te betalen? */
+export function isPayableService(service) {
+  return PAYABLE_SERVICES.has(ladderKey(service));
+}
+
 /** Round to whole cents the way money has to be rounded: half away from zero. */
 function cents(euros) {
   return Math.round(euros * 100);
@@ -107,7 +145,7 @@ function clamp(n, lo, hi) {
  * a computed price. A null here means "do not create a payment", which is the
  * safe direction to fail in.
  */
-export function quoteOrder({ service, products, outfits = 0, extras = 0 }) {
+export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate = VAT_RATE }) {
   // Translate first, then decide. Both the payable test and the ladder lookup
   // below have to see the same name, or this is the same bug in a new place.
   const kind = LADDER_KEY[service] || service;
@@ -129,11 +167,26 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0 }) {
 
   const net = n * rate + o * OUTFIT_SURCHARGE + x * extraRate;
   const netCents = cents(net);
+
+  // THE RATE IS AN ARGUMENT NOW, and the caller is the only one who can know
+  // it: it depends on the customer's country and on whether VIES confirmed
+  // their VAT number, neither of which this module has any business fetching.
+  // See vatDecision() in src/data/vat.js — one place, and every surface asks it.
+  //
+  // Clamped and sanity-checked rather than trusted. A NaN arriving here would
+  // make vatCents NaN, grossCents NaN, and centsToMollieValue() would throw
+  // somewhere much less obvious; a negative rate would make a refund out of a
+  // sale. Anything that is not a sensible fraction falls back to the Dutch
+  // rate, which is the same fail-closed direction as everything else in this
+  // path.
+  const rateOk = typeof vatRate === 'number' && isFinite(vatRate) && vatRate >= 0 && vatRate <= 1;
+  const effectiveRate = rateOk ? vatRate : VAT_RATE;
+
   // VAT on the NET TOTAL, not summed per line: rounding each line separately
   // and adding them up drifts from the figure on the invoice by a cent or two
   // on a large order, and a payment that disagrees with its own invoice by a
   // cent is a reconciliation job every single time.
-  const vatCents = Math.round(netCents * VAT_RATE);
+  const vatCents = Math.round(netCents * effectiveRate);
 
   return {
     service,
@@ -145,7 +198,7 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0 }) {
     netCents,
     vatCents,
     grossCents: netCents + vatCents,
-    vatRate: VAT_RATE,
+    vatRate: effectiveRate,
   };
 }
 

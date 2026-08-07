@@ -46,7 +46,7 @@ const MAILS = [
   },
   {
     label: 'Inloglink',
-    html: magicLinkEmail('nl', 'https://visuails.com/account/verify/7Kd2p9QbXm4Rt6Zv').html,
+    html: magicLinkEmail('nl', 'https://visuails.com/account/verify/7Kd2p9QbXm4Rt6Zv', '048210').html,
   },
   {
     label: 'Bestelling staat klaar',

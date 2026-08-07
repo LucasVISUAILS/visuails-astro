@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="nl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VISUAILS — styleguide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Big+Shoulders+Display:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg-0:#08090B;--bg-raise:#101216;--surface:#17191E;--surface-2:#1F2229;--ink-1:#FFFFFF;--ink-2:rgb(255 255 255 / 0.80);--ink-3:rgb(255 255 255 / 0.66);--ink-4:rgb(255 255 255 / 0.52);--line:rgb(255 255 255 / 0.12);--line-strong:rgb(255 255 255 / 0.22);--line-ui:rgb(255 255 255 / 0.42);--accent:#C6F100;--accent-ink:#08090B;--accent-dim:#ABD200;--grad-ink:#08090B;--fill-blue:var(--accent);--fill-violet:var(--accent-dim);--fill-pink:rgb(255 255 255 / 0.66);--fill-coral:rgb(255 255 255 / 0.40);--r-lg:24px;--r-md:14px;--r-sm:8px;--r-pill:999px;--radius:var(--r-md);--bg:var(--bg-0);--bg-deep:#000000;--ink:var(--ink-1);--ink-900:var(--bg-0);--ink-700:var(--ink-2);--ink-500:var(--ink-3);--ink-300:var(--ink-4);--ink-200:var(--line);--ink-100:var(--ink-1);--ink-850:var(--surface);--ink-800:var(--surface-2);--ink-faint:var(--ink-4);--scrim:8 9 11;--paper:var(--bg-0);--paper-2:var(--bg-raise);--paper-lift:var(--surface);--paper-on-dark:var(--ink-1);--paper-soft-on-dark:var(--ink-2);--paper-muted-on-dark:var(--ink-3);--teal:var(--accent);--teal-hover:var(--accent-dim);--teal-text:var(--accent);--clay:#E9963B;--clay-text:#E9963B;--mist-clay:var(--bg-raise);--mist-stone:var(--bg-raise);--signal:var(--accent);--signal-ink:var(--accent);--warn:var(--clay);--warn-ink:var(--clay);--verify:var(--accent);--verify-ink:var(--accent);--flag:var(--clay);--flag-ink:var(--clay);--brand:var(--accent);--accent-on:var(--accent-ink);--accent-word:var(--accent);--accent-bright:var(--accent-dim);--accent-soft:rgb(198 241 0 / 0.14);--accent-line:var(--line-strong);--focus-ring:var(--accent);--ghost:rgb(255 255 255 / 0.08);--btn-ghost-fill:rgb(255 255 255 / 0.08);--btn-ghost-fill-hover:rgb(255 255 255 / 0.16);--btn-2nd-fill:transparent;--btn-2nd-fill-hover:rgb(255 255 255 / 0.08);--btn-2nd-ink:var(--ink-1);--btn-2nd-border:rgb(255 255 255 / 0.28);--btn-2nd-border-hover:rgb(255 255 255 / 0.55);--select-caret:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");--font-heading:"Big Shoulders Display Variable", "Big Shoulders Display", "Archivo Variable", Impact, sans-serif;--font-display:"Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--font-body:"Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--font-editorial:"Anybody Variable", "Anybody", "Archivo Variable", sans-serif;--t-hero:clamp(3.2rem, 7.4vw, 6rem);--t-h1:clamp(2.5rem, 5.2vw, 4.2rem);--t-h2:clamp(2.1rem, 4vw, 3.3rem);--t-h3:clamp(1.2rem, 1.7vw, 1.45rem);--t-lg:clamp(1.05rem, 1.35vw, 1.18rem);--t-body:1.0625rem;--container:1240px;--chrome:linear-gradient( 105deg, oklch(0.720 0.004 255) 0%, oklch(0.880 0.006 255) 9%, oklch(0.580 0.008 255) 17%, oklch(0.940 0.003 265) 26%, oklch(0.660 0.010 255) 35%, oklch(0.410 0.006 255) 44%, oklch(0.830 0.005 265) 53%, oklch(0.970 0.002 60) 62%, oklch(0.520 0.009 255) 71%, oklch(0.760 0.004 255) 80%, oklch(0.350 0.007 255) 89%, oklch(0.610 0.012 255) 100% );--chrome-filter:contrast(1.18) saturate(0.75);--ease-out-quint:cubic-bezier(0.22, 1, 0.36, 1);--ease-out-expo:cubic-bezier(0.16, 1, 0.30, 1);--dur-1:120ms;--dur-2:240ms;--dur-3:450ms;--dur-4:900ms;--ease:var(--ease-out-quint);--ease-in-out:cubic-bezier(0.7, 0, 0.2, 1);--z-sticky:200;--z-bar:250;--z-grain:300;--z-modal:400;--z-toast:500}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg-0);color:var(--ink-1);font-family:var(--font-body);
+     font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:clamp(2.5rem,6vw,5rem) clamp(1.2rem,4vw,2.5rem) 8rem}
+h1{font-family:var(--font-heading);font-size:clamp(3rem,8vw,6rem);line-height:.92;margin:0 0 1rem;letter-spacing:-.01em;text-transform:uppercase}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{color:var(--ink-3);max-width:60ch;margin:0 0 1rem;font-size:1.05rem}
+.meta{color:var(--ink-4);font-size:.82rem;margin:0}
+h2{font-family:var(--font-heading);font-size:clamp(1.7rem,3.4vw,2.6rem);margin:0 0 .4rem;text-transform:uppercase;letter-spacing:.01em}
+section{margin-top:clamp(3rem,7vw,5.5rem);border-top:1px solid var(--line);padding-top:clamp(1.6rem,3vw,2.4rem)}
+.why{color:var(--ink-3);max-width:66ch;margin:0 0 1.8rem;font-size:.94rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem}
+.sw{display:flex;flex-direction:column;gap:.45rem}
+.chip{height:92px;border-radius:var(--r-md);border:1px solid var(--line);display:grid;place-items:center;font-size:.7rem;padding:.4rem;text-align:center}
+.nonc{opacity:.8;word-break:break-all}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem;color:var(--ink-2)}
+.v{font-size:.72rem;color:var(--ink-4);word-break:break-all}
+.type-row{border-bottom:1px solid var(--line);padding:1.3rem 0}
+.type-row:last-child{border-bottom:0}
+.type-row .name{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin-bottom:.5rem}
+.type-row .why{margin:.4rem 0 0;font-size:.85rem}
+.btns{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center}
+.b{border:0;cursor:pointer;font-family:var(--font-display);font-weight:700;letter-spacing:.02em;text-transform:uppercase;
+   padding:.85rem 1.5rem;border-radius:var(--r-pill);font-size:.85rem}
+.b-p{background:var(--accent);color:var(--accent-ink)}
+.b-g{background:var(--btn-ghost-fill);color:var(--ink-1)}
+.b-2{background:transparent;color:var(--ink-1);border:1px solid var(--btn-2nd-border)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:1.3rem}
+.card h3{margin:0 0 .4rem;font-size:1rem}
+.card p{margin:0;color:var(--ink-3);font-size:.88rem}
+.pill{display:inline-flex;align-items:center;gap:.45rem;border:1px solid var(--line);border-radius:var(--r-pill);padding:.35rem .85rem;font-size:.8rem;color:var(--ink-2)}
+.pill i{width:6px;height:6px;border-radius:50%;background:var(--accent);display:block}
+.scale li{list-style:none;margin:0 0 .8rem;display:flex;gap:1rem;align-items:baseline;border-bottom:1px dashed var(--line);padding-bottom:.8rem}
+.scale{padding:0;margin:0}
+.scale code{flex:0 0 7rem}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+td,th{text-align:left;padding:.55rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--ink-4);font-weight:500;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase}
+.foot{margin-top:5rem;color:var(--ink-4);font-size:.78rem;border-top:1px solid var(--line);padding-top:1.4rem}
+</style></head><body><div class="wrap">
+
+<h1>VISUAILS<br><em>styleguide</em></h1>
+<p class="lede">Elke waarde hieronder is uitgelezen uit <code>src/styles/global.css</code> op het moment dat dit bestand werd gegenereerd. Er staat niets in dat met de hand is overgetypt, dus hij kan niet uit de pas lopen met de site.</p>
+<p class="meta">Gegenereerd door <code>scripts/make-styleguide.mjs</code> · 100 tokens · palet: toxic green <code>#C6F100</code></p>
+
+<section>
+  <h2>Ground</h2>
+  <p class="why">Vier lagen, van de paginabodem tot een tegel op een tegel. Alles daarboven is ink of line.</p>
+  <div class="grid"><div class="sw">
+    <div class="chip" style="background:#08090B;color:#FFFFFF">
+      
+    </div>
+    <code>--bg-0</code>
+    <span class="v">#08090B</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#101216;color:#FFFFFF">
+      
+    </div>
+    <code>--bg-raise</code>
+    <span class="v">#101216</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#17191E;color:#FFFFFF">
+      
+    </div>
+    <code>--surface</code>
+    <span class="v">#17191E</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#1F2229;color:#FFFFFF">
+      
+    </div>
+    <code>--surface-2</code>
+    <span class="v">#1F2229</span>
+  </div></div>
+</section><section>
+  <h2>Ink</h2>
+  <p class="why">Vier stappen wit, en niet meer. Alle vier halen 4,5:1 op de donkerste ondergrond — dat is precies waarom er bij vier wordt gestopt.</p>
+  <div class="grid"><div class="sw">
+    <div class="chip" style="background:#FFFFFF;color:#08090B">
+      
+    </div>
+    <code>--ink-1</code>
+    <span class="v">#FFFFFF</span>
+  </div><div class="sw">
+    <div class="chip" style="background:rgb(255 255 255 / 0.80);color:#fff">
+      
+    </div>
+    <code>--ink-2</code>
+    <span class="v">rgb(255 255 255 / 0.80)</span>
+  </div><div class="sw">
+    <div class="chip" style="background:rgb(255 255 255 / 0.66);color:#fff">
+      
+    </div>
+    <code>--ink-3</code>
+    <span class="v">rgb(255 255 255 / 0.66)</span>
+  </div><div class="sw">
+    <div class="chip" style="background:rgb(255 255 255 / 0.52);color:#fff">
+      
+    </div>
+    <code>--ink-4</code>
+    <span class="v">rgb(255 255 255 / 0.52)</span>
+  </div></div>
+</section><section>
+  <h2>Lines</h2>
+  <p class="why">Drie gewichten: een scheiding, een rand die je moet zien, en de omtrek van een bedienbaar ding.</p>
+  <div class="grid"><div class="sw">
+    <div class="chip" style="background:rgb(255 255 255 / 0.12);color:#fff">
+      
+    </div>
+    <code>--line</code>
+    <span class="v">rgb(255 255 255 / 0.12)</span>
+  </div><div class="sw">
+    <div class="chip" style="background:rgb(255 255 255 / 0.22);color:#fff">
+      
+    </div>
+    <code>--line-strong</code>
+    <span class="v">rgb(255 255 255 / 0.22)</span>
+  </div><div class="sw">
+    <div class="chip" style="background:rgb(255 255 255 / 0.42);color:#fff">
+      
+    </div>
+    <code>--line-ui</code>
+    <span class="v">rgb(255 255 255 / 0.42)</span>
+  </div></div>
+</section><section>
+  <h2>Accent</h2>
+  <p class="why">Toxic green. 15,16:1 op de grond én andersom als vulling met bijna-zwarte tekst — die zeldzame eigenschap is wat één waarde laat werken als tekst, als lijn én als knopvulling. Wit erop is 1,31:1 en dus nooit goed.</p>
+  <div class="grid"><div class="sw">
+    <div class="chip" style="background:#C6F100;color:#08090B">
+      
+    </div>
+    <code>--accent</code>
+    <span class="v">#C6F100</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#ABD200;color:#08090B">
+      
+    </div>
+    <code>--accent-dim</code>
+    <span class="v">#ABD200</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#08090B;color:#FFFFFF">
+      
+    </div>
+    <code>--accent-ink</code>
+    <span class="v">#08090B</span>
+  </div><div class="sw">
+    <div class="chip" style="background:rgb(198 241 0 / 0.14);color:#fff">
+      
+    </div>
+    <code>--accent-soft</code>
+    <span class="v">rgb(198 241 0 / 0.14)</span>
+  </div></div>
+</section><section>
+  <h2>Signal</h2>
+  <p class="why">Eén waarschuwingskleur naast het groen. Klei, niet rood: rood naast dit groen is kerst.</p>
+  <div class="grid"><div class="sw">
+    <div class="chip" style="background:#E9963B;color:#FFFFFF">
+      
+    </div>
+    <code>--clay</code>
+    <span class="v">#E9963B</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#E9963B;color:#FFFFFF">
+      
+    </div>
+    <code>--warn</code>
+    <span class="v">var(--clay) → #E9963B</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#C6F100;color:#08090B">
+      
+    </div>
+    <code>--verify</code>
+    <span class="v">var(--accent) → #C6F100</span>
+  </div><div class="sw">
+    <div class="chip" style="background:#C6F100;color:#08090B">
+      
+    </div>
+    <code>--focus-ring</code>
+    <span class="v">var(--accent) → #C6F100</span>
+  </div></div>
+</section><section>
+  <h2>Radius</h2>
+  
+  <div class="grid"><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">8px</span>
+    </div>
+    <code>--r-sm</code>
+    <span class="v">8px</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">14px</span>
+    </div>
+    <code>--r-md</code>
+    <span class="v">14px</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">24px</span>
+    </div>
+    <code>--r-lg</code>
+    <span class="v">24px</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">999px</span>
+    </div>
+    <code>--r-pill</code>
+    <span class="v">999px</span>
+  </div></div>
+</section><section>
+  <h2>Motion</h2>
+  <p class="why">Vier duren en twee curves. State, element, sectie, en het lange geval.</p>
+  <div class="grid"><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">120ms</span>
+    </div>
+    <code>--dur-1</code>
+    <span class="v">120ms</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">240ms</span>
+    </div>
+    <code>--dur-2</code>
+    <span class="v">240ms</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">450ms</span>
+    </div>
+    <code>--dur-3</code>
+    <span class="v">450ms</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">900ms</span>
+    </div>
+    <code>--dur-4</code>
+    <span class="v">900ms</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">cubic-bezier(0.22, 1, 0.36, 1)</span>
+    </div>
+    <code>--ease-out-quint</code>
+    <span class="v">cubic-bezier(0.22, 1, 0.36, 1)</span>
+  </div><div class="sw">
+    <div class="chip" style="background:var(--surface-2);color:#fff">
+      <span class="nonc">cubic-bezier(0.16, 1, 0.30, 1)</span>
+    </div>
+    <code>--ease-out-expo</code>
+    <span class="v">cubic-bezier(0.16, 1, 0.30, 1)</span>
+  </div></div>
+</section>
+
+<section>
+  <h2>Type</h2>
+  <p class="why">Vier families, en ze doen alle vier iets anders. De koppen zijn smal en de leestekst niet — dat contrast is het hele typografische idee.</p>
+  <div class="type-row">
+    <div class="name">--font-heading — Big Shoulders Display</div>
+    <div style="font-family:"Big Shoulders Display Variable", "Big Shoulders Display", "Archivo Variable", Impact, sans-serif;font-size:2.1rem;line-height:1.1">Jij uploadt. Wij leveren de campagne.</div>
+    <p class="why">De grote koppen. Smal, hoog, hard — het gezicht van de site.</p>
+  </div><div class="type-row">
+    <div class="name">--font-display — Archivo</div>
+    <div style="font-family:"Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;font-size:2.1rem;line-height:1.1">Jij uploadt. Wij leveren de campagne.</div>
+    <p class="why">De kleine mechanische dingen: cijfers, stapnummers, labels.</p>
+  </div><div class="type-row">
+    <div class="name">--font-body — Archivo</div>
+    <div style="font-family:"Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;font-size:2.1rem;line-height:1.1">Jij uploadt. Wij leveren de campagne.</div>
+    <p class="why">Leestekst. Niet ter discussie.</p>
+  </div><div class="type-row">
+    <div class="name">--font-editorial — Anybody</div>
+    <div style="font-family:"Anybody Variable", "Anybody", "Archivo Variable", sans-serif;font-size:2.1rem;line-height:1.1">Jij uploadt. Wij leveren de campagne.</div>
+    <p class="why">De redactionele uitschieters.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Scale</h2>
+  <p class="why">Zes stappen, allemaal <code>clamp()</code>, dus er is geen breakpoint waarop de typografie springt.</p>
+  <ul class="scale"><li><code>--t-hero</code><span style="font-family:var(--font-heading);font-size:clamp(3.2rem, 7.4vw, 6rem);line-height:1">Aa</span><span class="v">clamp(3.2rem, 7.4vw, 6rem)</span></li><li><code>--t-h1</code><span style="font-family:var(--font-heading);font-size:clamp(2.5rem, 5.2vw, 4.2rem);line-height:1">Aa</span><span class="v">clamp(2.5rem, 5.2vw, 4.2rem)</span></li><li><code>--t-h2</code><span style="font-family:var(--font-heading);font-size:clamp(2.1rem, 4vw, 3.3rem);line-height:1">Aa</span><span class="v">clamp(2.1rem, 4vw, 3.3rem)</span></li><li><code>--t-h3</code><span style="font-family:var(--font-heading);font-size:clamp(1.2rem, 1.7vw, 1.45rem);line-height:1">Aa</span><span class="v">clamp(1.2rem, 1.7vw, 1.45rem)</span></li><li><code>--t-lg</code><span style="font-family:var(--font-heading);font-size:clamp(1.05rem, 1.35vw, 1.18rem);line-height:1">Aa</span><span class="v">clamp(1.05rem, 1.35vw, 1.18rem)</span></li><li><code>--t-body</code><span style="font-family:var(--font-heading);font-size:1.0625rem;line-height:1">Aa</span><span class="v">1.0625rem</span></li></ul>
+</section>
+
+<section>
+  <h2>Buttons</h2>
+  <p class="why">Drie, en niet meer. Bijna-zwart op groen voor de primaire — wit op dit groen haalt 1,31:1 en is dus nooit correct.</p>
+  <div class="btns">
+    <button class="b b-p">Start een bestelling</button>
+    <button class="b b-g">Proefvisual</button>
+    <button class="b b-2">Bekijk de prijzen</button>
+    <span class="pill"><i></i>Chip</span>
+  </div>
+</section>
+
+<section>
+  <h2>Surfaces</h2>
+  <p class="why">Eén kaartvorm. De rand doet het werk, niet een schaduw.</p>
+  <div class="cards">
+    <div class="card"><h3>Catalog</h3><p>Vier beelden per product — voor, achter, detail, op model.</p></div>
+    <div class="card"><h3>Lifestyle</h3><p>Drie beelden, één gestylede look, klaar om te posten.</p></div>
+    <div class="card"><h3>Video</h3><p>Eén clip die doorloopt.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Alle tokens</h2>
+  <p class="why">De volledige <code>:root</code>, in de volgorde waarin global.css hem definieert. De aliassen staan erbij: veel namen uit het harbor-palet resolven nog, omdat portal.css, account.css en admin.css ze nog gebruiken.</p>
+  <table><thead><tr><th>Token</th><th>Waarde</th><th>Resolved</th></tr></thead><tbody>
+  <tr><td><code>--bg-0</code></td><td class="v">#08090B</td><td class="v"></td></tr><tr><td><code>--bg-raise</code></td><td class="v">#101216</td><td class="v"></td></tr><tr><td><code>--surface</code></td><td class="v">#17191E</td><td class="v"></td></tr><tr><td><code>--surface-2</code></td><td class="v">#1F2229</td><td class="v"></td></tr><tr><td><code>--ink-1</code></td><td class="v">#FFFFFF</td><td class="v"></td></tr><tr><td><code>--ink-2</code></td><td class="v">rgb(255 255 255 / 0.80)</td><td class="v"></td></tr><tr><td><code>--ink-3</code></td><td class="v">rgb(255 255 255 / 0.66)</td><td class="v"></td></tr><tr><td><code>--ink-4</code></td><td class="v">rgb(255 255 255 / 0.52)</td><td class="v"></td></tr><tr><td><code>--line</code></td><td class="v">rgb(255 255 255 / 0.12)</td><td class="v"></td></tr><tr><td><code>--line-strong</code></td><td class="v">rgb(255 255 255 / 0.22)</td><td class="v"></td></tr><tr><td><code>--line-ui</code></td><td class="v">rgb(255 255 255 / 0.42)</td><td class="v"></td></tr><tr><td><code>--accent</code></td><td class="v">#C6F100</td><td class="v"></td></tr><tr><td><code>--accent-ink</code></td><td class="v">#08090B</td><td class="v"></td></tr><tr><td><code>--accent-dim</code></td><td class="v">#ABD200</td><td class="v"></td></tr><tr><td><code>--grad-ink</code></td><td class="v">#08090B</td><td class="v"></td></tr><tr><td><code>--fill-blue</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--fill-violet</code></td><td class="v">var(--accent-dim)</td><td class="v">#ABD200</td></tr><tr><td><code>--fill-pink</code></td><td class="v">rgb(255 255 255 / 0.66)</td><td class="v"></td></tr><tr><td><code>--fill-coral</code></td><td class="v">rgb(255 255 255 / 0.40)</td><td class="v"></td></tr><tr><td><code>--r-lg</code></td><td class="v">24px</td><td class="v"></td></tr><tr><td><code>--r-md</code></td><td class="v">14px</td><td class="v"></td></tr><tr><td><code>--r-sm</code></td><td class="v">8px</td><td class="v"></td></tr><tr><td><code>--r-pill</code></td><td class="v">999px</td><td class="v"></td></tr><tr><td><code>--radius</code></td><td class="v">var(--r-md)</td><td class="v">14px</td></tr><tr><td><code>--bg</code></td><td class="v">var(--bg-0)</td><td class="v">#08090B</td></tr><tr><td><code>--bg-deep</code></td><td class="v">#000000</td><td class="v"></td></tr><tr><td><code>--ink</code></td><td class="v">var(--ink-1)</td><td class="v">#FFFFFF</td></tr><tr><td><code>--ink-900</code></td><td class="v">var(--bg-0)</td><td class="v">#08090B</td></tr><tr><td><code>--ink-700</code></td><td class="v">var(--ink-2)</td><td class="v">rgb(255 255 255 / 0.80)</td></tr><tr><td><code>--ink-500</code></td><td class="v">var(--ink-3)</td><td class="v">rgb(255 255 255 / 0.66)</td></tr><tr><td><code>--ink-300</code></td><td class="v">var(--ink-4)</td><td class="v">rgb(255 255 255 / 0.52)</td></tr><tr><td><code>--ink-200</code></td><td class="v">var(--line)</td><td class="v">rgb(255 255 255 / 0.12)</td></tr><tr><td><code>--ink-100</code></td><td class="v">var(--ink-1)</td><td class="v">#FFFFFF</td></tr><tr><td><code>--ink-850</code></td><td class="v">var(--surface)</td><td class="v">#17191E</td></tr><tr><td><code>--ink-800</code></td><td class="v">var(--surface-2)</td><td class="v">#1F2229</td></tr><tr><td><code>--ink-faint</code></td><td class="v">var(--ink-4)</td><td class="v">rgb(255 255 255 / 0.52)</td></tr><tr><td><code>--scrim</code></td><td class="v">8 9 11</td><td class="v"></td></tr><tr><td><code>--paper</code></td><td class="v">var(--bg-0)</td><td class="v">#08090B</td></tr><tr><td><code>--paper-2</code></td><td class="v">var(--bg-raise)</td><td class="v">#101216</td></tr><tr><td><code>--paper-lift</code></td><td class="v">var(--surface)</td><td class="v">#17191E</td></tr><tr><td><code>--paper-on-dark</code></td><td class="v">var(--ink-1)</td><td class="v">#FFFFFF</td></tr><tr><td><code>--paper-soft-on-dark</code></td><td class="v">var(--ink-2)</td><td class="v">rgb(255 255 255 / 0.80)</td></tr><tr><td><code>--paper-muted-on-dark</code></td><td class="v">var(--ink-3)</td><td class="v">rgb(255 255 255 / 0.66)</td></tr><tr><td><code>--teal</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--teal-hover</code></td><td class="v">var(--accent-dim)</td><td class="v">#ABD200</td></tr><tr><td><code>--teal-text</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--clay</code></td><td class="v">#E9963B</td><td class="v"></td></tr><tr><td><code>--clay-text</code></td><td class="v">#E9963B</td><td class="v"></td></tr><tr><td><code>--mist-clay</code></td><td class="v">var(--bg-raise)</td><td class="v">#101216</td></tr><tr><td><code>--mist-stone</code></td><td class="v">var(--bg-raise)</td><td class="v">#101216</td></tr><tr><td><code>--signal</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--signal-ink</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--warn</code></td><td class="v">var(--clay)</td><td class="v">#E9963B</td></tr><tr><td><code>--warn-ink</code></td><td class="v">var(--clay)</td><td class="v">#E9963B</td></tr><tr><td><code>--verify</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--verify-ink</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--flag</code></td><td class="v">var(--clay)</td><td class="v">#E9963B</td></tr><tr><td><code>--flag-ink</code></td><td class="v">var(--clay)</td><td class="v">#E9963B</td></tr><tr><td><code>--brand</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--accent-on</code></td><td class="v">var(--accent-ink)</td><td class="v">#08090B</td></tr><tr><td><code>--accent-word</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--accent-bright</code></td><td class="v">var(--accent-dim)</td><td class="v">#ABD200</td></tr><tr><td><code>--accent-soft</code></td><td class="v">rgb(198 241 0 / 0.14)</td><td class="v"></td></tr><tr><td><code>--accent-line</code></td><td class="v">var(--line-strong)</td><td class="v">rgb(255 255 255 / 0.22)</td></tr><tr><td><code>--focus-ring</code></td><td class="v">var(--accent)</td><td class="v">#C6F100</td></tr><tr><td><code>--ghost</code></td><td class="v">rgb(255 255 255 / 0.08)</td><td class="v"></td></tr><tr><td><code>--btn-ghost-fill</code></td><td class="v">rgb(255 255 255 / 0.08)</td><td class="v"></td></tr><tr><td><code>--btn-ghost-fill-hover</code></td><td class="v">rgb(255 255 255 / 0.16)</td><td class="v"></td></tr><tr><td><code>--btn-2nd-fill</code></td><td class="v">transparent</td><td class="v"></td></tr><tr><td><code>--btn-2nd-fill-hover</code></td><td class="v">rgb(255 255 255 / 0.08)</td><td class="v"></td></tr><tr><td><code>--btn-2nd-ink</code></td><td class="v">var(--ink-1)</td><td class="v">#FFFFFF</td></tr><tr><td><code>--btn-2nd-border</code></td><td class="v">rgb(255 255 255 / 0.28)</td><td class="v"></td></tr><tr><td><code>--btn-2nd-border-hover</code></td><td class="v">rgb(255 255 255 / 0.55)</td><td class="v"></td></tr><tr><td><code>--select-caret</code></td><td class="v">url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' vi…</td><td class="v"></td></tr><tr><td><code>--font-heading</code></td><td class="v">"Big Shoulders Display Variable", "Big Shoulders Display", "Archivo Variable", Impact, san…</td><td class="v"></td></tr><tr><td><code>--font-display</code></td><td class="v">"Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans…</td><td class="v"></td></tr><tr><td><code>--font-body</code></td><td class="v">"Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans…</td><td class="v"></td></tr><tr><td><code>--font-editorial</code></td><td class="v">"Anybody Variable", "Anybody", "Archivo Variable", sans-serif</td><td class="v"></td></tr><tr><td><code>--t-hero</code></td><td class="v">clamp(3.2rem, 7.4vw, 6rem)</td><td class="v"></td></tr><tr><td><code>--t-h1</code></td><td class="v">clamp(2.5rem, 5.2vw, 4.2rem)</td><td class="v"></td></tr><tr><td><code>--t-h2</code></td><td class="v">clamp(2.1rem, 4vw, 3.3rem)</td><td class="v"></td></tr><tr><td><code>--t-h3</code></td><td class="v">clamp(1.2rem, 1.7vw, 1.45rem)</td><td class="v"></td></tr><tr><td><code>--t-lg</code></td><td class="v">clamp(1.05rem, 1.35vw, 1.18rem)</td><td class="v"></td></tr><tr><td><code>--t-body</code></td><td class="v">1.0625rem</td><td class="v"></td></tr><tr><td><code>--container</code></td><td class="v">1240px</td><td class="v"></td></tr><tr><td><code>--chrome</code></td><td class="v">linear-gradient( 105deg, oklch(0.720 0.004 255) 0%, oklch(0.880 0.006 255) 9%, oklch(0.580…</td><td class="v"></td></tr><tr><td><code>--chrome-filter</code></td><td class="v">contrast(1.18) saturate(0.75)</td><td class="v"></td></tr><tr><td><code>--ease-out-quint</code></td><td class="v">cubic-bezier(0.22, 1, 0.36, 1)</td><td class="v"></td></tr><tr><td><code>--ease-out-expo</code></td><td class="v">cubic-bezier(0.16, 1, 0.30, 1)</td><td class="v"></td></tr><tr><td><code>--dur-1</code></td><td class="v">120ms</td><td class="v"></td></tr><tr><td><code>--dur-2</code></td><td class="v">240ms</td><td class="v"></td></tr><tr><td><code>--dur-3</code></td><td class="v">450ms</td><td class="v"></td></tr><tr><td><code>--dur-4</code></td><td class="v">900ms</td><td class="v"></td></tr><tr><td><code>--ease</code></td><td class="v">var(--ease-out-quint)</td><td class="v">cubic-bezier(0.22, 1, 0.36, 1)</td></tr><tr><td><code>--ease-in-out</code></td><td class="v">cubic-bezier(0.7, 0, 0.2, 1)</td><td class="v"></td></tr><tr><td><code>--z-sticky</code></td><td class="v">200</td><td class="v"></td></tr><tr><td><code>--z-bar</code></td><td class="v">250</td><td class="v"></td></tr><tr><td><code>--z-grain</code></td><td class="v">300</td><td class="v"></td></tr><tr><td><code>--z-modal</code></td><td class="v">400</td><td class="v"></td></tr><tr><td><code>--z-toast</code></td><td class="v">500</td><td class="v"></td></tr>
+  </tbody></table>
+</section>
+
+<p class="foot">VISUAILS · KVK 99742993 · Deze pagina is gegenereerd, niet geschreven. Wijzig een kleur in <code>src/styles/global.css</code> en draai <code>npm run styleguide</code> opnieuw.</p>
+</div></body></html>

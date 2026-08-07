@@ -464,6 +464,17 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .btn-sm { padding: .3rem .6rem; font-size: .76rem; }
 .revoked { font-size: .76rem; line-height: 1.45; }
 
+/* "Je hebt alles goedgekeurd." Eén regel op de bestelkaart, met een streepje
+   ervoor zodat hij niet als nog een feit tussen de facts leest maar als de
+   stand van zaken. Zie de noot bij closedNote in account.js: dit stond er tot 7
+   augustus 2026 helemaal niet — het afronden was alleen te merken doordat er
+   knoppen verdwenen. */
+.meta.closed {
+  margin-top: .9rem; padding-left: .7rem;
+  border-left: 2px solid var(--accent);
+  color: var(--ink-2);
+}
+
 /* ---- per-file review (task #259, second follow-up) --------------------------
    Approve / request-a-revision / Undo — the cookie-authenticated twin of
    portal.js's shot(). Same class names as portal.css on purpose: .state,
@@ -542,10 +553,12 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
    photographs, and this file's own token notes rule out colour as the sole
    carrier of any state.
 
-   THE HEX ARRIVES AS --sw, set by a style ATTRIBUTE in account.js. A style
-   attribute setting a custom property is admitted by style-src 'self' where an
-   inline <style> block is not, so the swatch colour can be per-brand data
-   while every RULE stays in this file. ------------------------------------- */
+   DE HEX KOMT ALS <svg><rect fill>, niet als custom property. Dit stuk zei tot
+   7 augustus 2026 dat een style-ATTRIBUUT met een custom property door
+   style-src 'self' werd toegelaten. Dat klopte niet — style-src-attr valt terug
+   op style-src, dus het attribuut werd geweigerd en elk vakje bleef leeg. `fill`
+   is een SVG-presentatieattribuut en geen CSS, dus het raakt de CSP niet. Zie
+   swatch() in account.js. Elke MAAT en elke VORM staat nog steeds hier. ---- */
 
 .bk-h2 { margin-top: clamp(2.4rem, 5vw, 3.2rem); }
 .bk-own { margin: 0 0 clamp(2rem, 4vw, 2.8rem); }
@@ -625,10 +638,16 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
 }
 .bk-sum-face.is-blank { display: grid; place-items: center; color: var(--ink-300); border: 1px dashed var(--line-strong); }
 .bk-sum-face.is-blank .i { width: 20px; height: 20px; }
+/* De kleur komt uit een <svg><rect fill> binnenin, niet uit een
+   background-declaratie met een custom property erin. Zie swatch() in
+   account.js: het `style`-attribuut dat die property zette werd door
+   style-src 'self' geweigerd, dus stond elk vakje hier doorzichtig. overflow
+   knipt de rechthoek in de ronde vorm. */
 .bk-sum-bg {
   width: 26px; height: 26px; border-radius: 50%;
-  background: var(--sw, transparent); border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-strong); overflow: hidden;
 }
+.bk-sum-bg > svg, .bk-sw-chip > svg { display: block; width: 100%; height: 100%; }
 .bk-sum-bg.is-blank { background: var(--paper-2); border-style: dashed; }
 
 .bk-sum-text { display: grid; gap: .15rem; min-width: 0; flex: 1 1 auto; }
@@ -709,8 +728,8 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
 .bk-sw:hover { border-color: var(--line-strong); }
 .bk-sw:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
 .bk-sw-chip {
-  height: 40px; border-radius: var(--r-sm);
-  background: var(--sw, transparent); border: 1px solid var(--line-strong);
+  height: 40px; border-radius: var(--r-sm); overflow: hidden;
+  border: 1px solid var(--line-strong);
 }
 /* "No preference" is a real answer and needs to look like one rather than like
    a colour that failed to load. */
@@ -769,12 +788,20 @@ a.stat.is-link:hover .stat-label { color: var(--ink-2); }
 }
 .authcard h1 { margin-top: 0; font-size: clamp(1.6rem, 3.4vw, 2.1rem); }
 .authcard .lede { font-size: 1rem; }
-form.login { max-width: none; margin: 1.6rem 0 0; display: grid; gap: .9rem; }
+/* minmax(0,1fr) om dezelfde reden als bij form.codeform verderop: een auto-kolom
+   groeit mee met de max-content van een <input> zonder `size`, en dat is breder
+   dan de kaart. Op het inlogscherm zelf viel dat niet op omdat er geen max-width
+   op stond; zodra die er is, wel. */
+form.login { max-width: none; margin: 1.6rem 0 0; display: grid; gap: .9rem; grid-template-columns: minmax(0, 1fr); }
 form.login input[type="email"] {
   padding: .8rem .9rem; border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
   font-size: 1rem;
 }
 .error { color: var(--warn-ink); font-size: .92rem; margin: 0 0 .6rem; }
+/* De foutpagina staat los, zonder kaart eromheen. Deze regel stond tot 7
+   augustus 2026 als style="margin-top:2rem" in errorBody() — en werd door
+   style-src 'self' geweigerd, dus de melding plakte tegen de balk aan. */
+.error.is-page { margin-top: 2rem; }
 .note { margin: .8rem 0 0; padding: .9rem 1rem; max-width: 68ch; background: var(--paper-2); border: 1px solid var(--line); font-size: .96rem; color: var(--signal-ink); }
 .empty { padding: 1.4rem 0; color: var(--ink-3); font-size: .96rem; }
 
@@ -887,18 +914,56 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 .detpanel .lede { font-size: 1rem; }
 .det-h2 { margin-top: 0; }
 .detform { display: grid; gap: 1.1rem; margin-top: 0; }
-.det-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-/* A row with one field left in it — the VAT number, since the background pair
-   came out — must not stretch that field the full width of the main column. An
-   input two thirds of a metre wide for eleven characters reads as a mistake.
-   Capped in ch rather than px so it tracks the field's own font. */
-.det-grid:has(> .det-field:only-child) > .det-field { max-width: 32ch; }
-.det-field { display: grid; gap: .35rem; min-width: 0; }
+/* ── TWEE KOLOMMEN, EN MAAR TWEE BREEDTES — 7 augustus 2026 ──────────────────
+ *
+ * Lucas: *"sommige invul velden staan heel random geplaatst en niet op een rij
+ * zoals website of winkellink."* Twee dingen door elkaar, allebei zichtbaar in
+ * dat ene scherm.
+ *
+ * EEN: `repeat(auto-fit, minmax(220px, 1fr))` met daarbovenop een cap van 32ch
+ * voor een rij met één veld erin. Dat gaf drie verschillende breedtes onder
+ * elkaar — halve kolom, 32ch, volle breedte — en het oog leest dat als
+ * willekeur, niet als hiërarchie. Nu zijn er precies twee: een halve kolom en
+ * de volle breedte. Een rij met één veld laat de rechterhelft gewoon leeg, dus
+ * de linkerrand én de rechterrand lopen door over alle rijen heen.
+ *
+ * TWEE: zie .det-field hieronder. */
+.det-grid { display: grid; gap: 1.1rem; }
+@media (min-width: 780px) {
+  .det-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* De volle breedte is een keuze en geen bijwerking: een veld dat over allebei
+     de kolommen loopt, draagt die klasse zelf. */
+  .det-grid > .det-field.is-wide { grid-column: 1 / -1; }
+}
+
+/* ── EN WAAROM DE VELDEN NIET OP ÉÉN LIJN STONDEN ────────────────────────────
+ *
+ * `.det-field` is een grid, en een grid dat door zijn ouder wordt uitgerekt
+ * verdeelt die extra hoogte over zijn auto-rijen (align-content: normal gedraagt
+ * zich als stretch). Twee velden naast elkaar zijn even hoog, dus zodra er onder
+ * de één een hint staat en onder de ander niet, zakt de INVOER van die ander
+ * naar beneden om het verschil op te vangen. Vandaar dat "Website of
+ * winkellink" een halve regel lager begon dan "Telefoon of WhatsApp" ernaast.
+ *
+ * align-content: start laat de rijen op hun eigen hoogte staan en de extra
+ * ruimte onderaan vallen — waar hij niets scheeftrekt. */
+.det-field { display: grid; gap: .35rem; min-width: 0; align-content: start; }
 .det-field label, .det-label { font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; font-weight: 600; color: var(--ink-3); }
-.det-field input {
-  width: 100%; padding: .7rem .8rem; font-size: .96rem;
+/* Het land is een <select> en verder precies hetzelfde veld als de rest. Eén
+   regel voor allebei, zodat een keuzelijst tussen twee tekstvelden niet
+   opvalt als iets anders — hij vraagt hetzelfde soort ding. */
+.det-field input, .det-field select {
+  width: 100%; padding: .7rem .8rem; font-size: .96rem; font-family: inherit;
   border: 1px solid var(--line-strong); border-radius: var(--r-md);
   background: var(--surface); color: var(--ink);
+}
+/* De inklapper tekent zichzelf; zonder deze regel zet de browser er zijn eigen
+   knopje naast op een lichte ondergrond die hier nergens op slaat. */
+.det-field select { appearance: none; padding-right: 2.2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+                    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position: calc(100% - 1.15rem) 55%, calc(100% - .85rem) 55%;
+  background-size: 6px 6px, 6px 6px; background-repeat: no-repeat;
 }
 .det-opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); }
 .det-hint { font-size: .84rem; color: var(--ink-3); text-wrap: pretty; }
@@ -1400,3 +1465,184 @@ details.ask { margin-top: 0; }
 .loginwho {
   margin: 1rem 0 0; font-size: .8rem; line-height: 1.55; color: var(--ink-3);
 }
+
+/* ── HET GELDBLOK OP DE BESTELKAART — 7 augustus 2026 ────────────────────────
+ *
+ * Wat een bestelling kost en of het betaald is, stond nergens op dit scherm.
+ * Zie paymentBlock() in account.js. Vorm: dezelfde hairline-kaart als .flowbox
+ * eronder, want het zijn twee blokken van hetzelfde soort — feiten over de
+ * bestelling, niet over een beeld — en twee vormtalen naast elkaar zou de kaart
+ * in stukken hakken. */
+.paybox {
+  margin-top: 1.3rem; padding: 1rem 1.1rem;
+  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
+  background: var(--surface-2);
+  display: grid; gap: .6rem;
+}
+/* Onbetaald krijgt de accentrand. Niet rood: er is niets misgegaan, er moet
+   alleen nog iets gebeuren — en rood is hier gereserveerd voor een terugbetaling
+   en voor het onomkeerbare vak in admin. */
+.paybox.is-unpaid { border-left: 2px solid var(--accent); }
+.paybox.is-refunded { border-left: 2px solid var(--warn, #b8860b); }
+
+/* Bedragen rechts uitgelijnd op cijfers die even breed zijn, zodat netto, btw
+   en totaal onder elkaar te lezen zijn als een kolom en niet als drie zinnen. */
+.pay-rows { margin: 0; display: grid; gap: .28rem; }
+.pay-row { display: flex; justify-content: space-between; gap: 1rem; font-size: .88rem; }
+.pay-row dt { color: var(--ink-3); }
+.pay-row dd { margin: 0; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+/* De laatste regel is het bedrag dat je overmaakt; die mag zwaarder wegen. */
+.pay-row:nth-child(3) dt, .pay-row:nth-child(3) dd { color: var(--ink); font-weight: 700; }
+
+.pay-state { margin: 0; font-size: .86rem; color: var(--ink-2); }
+.paybox.is-paid .pay-state { color: var(--ink-3); }
+.pay-form { margin: 0; }
+.pay-form .btn { width: max-content; }
+
+/* De melding als het betaalscherm niet openging. Dezelfde kaart als de
+   opgeslagen-bevestiging, met een amberrand ervoor omdat dit geen bevestiging
+   is maar een tegenvaller. */
+.det-ok.is-warn { border-color: var(--warn, #b8860b); color: var(--ink); }
+
+/* ── HET VINKJE NAAST HET BTW-NUMMER — 7 augustus 2026 ───────────────────────
+ *
+ * Lucas: *"inclusief btw-nummer met een checkbox bij btw-nummer toch te skippen
+ * als de klant geen btw-nummer heeft of buiten de eu komt."*
+ *
+ * Het staat ONDER het veld en niet ernaast: het is geen tweede vraag maar het
+ * antwoord "niet van toepassing" op de vraag erboven, en naast het veld zou het
+ * op een telefoon een derde kolom worden die nergens past. */
+/* `.det-field label` hierboven is hoofdletters en gesperd — dat is het label van
+   een veld. Dit is een zin naast een vinkje en moet dus alles daarvan
+   terugdraaien, met een selector die zwaar genoeg weegt om te winnen. */
+.det-field .det-check {
+  display: flex; align-items: center; gap: .5rem;
+  margin-top: .1rem; font-size: .86rem; color: var(--ink-2);
+  text-transform: none; letter-spacing: 0; font-weight: 400; cursor: pointer;
+}
+/* En het vakje moet geen tekstveld worden: `.det-field input` geeft elk veld
+   hier volle breedte, padding en een ronde rand. Voor een checkbox is dat een
+   grote lege pil in plaats van een vinkje. */
+/* account.css is een kopie van de tokens uit global.css maar niet van de
+   native-control-regels; dit vakje moet er dus zelf staan. Dezelfde maat en
+   dezelfde vorm als op de rest van de site: 18px, vierkant met vier pixels
+   rondom, en een vinkje in de accentkleur. */
+.det-field .det-check input {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; flex: 0 0 auto; margin: 0; padding: 0;
+  display: inline-grid; place-content: center;
+  border: 1px solid var(--line-strong); border-radius: 4px;
+  background: var(--surface); cursor: pointer;
+}
+.det-field .det-check input:hover { border-color: var(--ink-3); }
+.det-field .det-check input:checked { background: var(--accent); border-color: var(--accent-on, #08090B); }
+.det-field .det-check input:checked::after {
+  content: ''; width: 5px; height: 10px;
+  border: solid var(--paper); border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+@media (pointer: coarse) {
+  /* Een raakvlak van zestien pixels is te klein voor een duim; het label is de
+     hit area, dus die krijgt de hoogte in plaats van het vakje. */
+  .det-field .det-check { min-height: 44px; }
+}
+
+/* Aangevinkt: het veld erboven is niet meer aan de beurt. Gedempt en niet
+   verborgen — een veld dat wegspringt terwijl je ernaar kijkt is verwarrender
+   dan een veld dat zichtbaar uitgaat, en wie zich bedenkt vindt het terug waar
+   het stond. Geen JavaScript: :has() doet dit, en deze pagina draait op
+   default-src 'none'.
+
+   WEL GEDEMPT, NIET UITGESCHAKELD, en dat is geen halfslachtigheid. Zonder
+   script kan een vinkje het `required`-attribuut op het veld erboven niet
+   weghalen; zou dat attribuut er staan en zette deze regel er pointer-events:
+   none overheen, dan weigert de browser het formulier te versturen én kan hij
+   het veld niet aanwijzen om te zeggen waarom. Een formulier dat op niets
+   reageert. Vandaar: geen `required` op dit ene veld, de eis staat op de server
+   (zie handleDetails), en het veld blijft typbaar — wie zich bedenkt en tóch
+   een nummer intikt, wint van zijn eigen vinkje. */
+.det-vat:has(.det-check input:checked) input[name="vat"] { opacity: .45; }
+.det-vat:has(.det-check input:checked) label[for="det-vat"] { opacity: .6; }
+
+/* ── HET VELD VOOR DE ZESCIJFERIGE CODE — 7 augustus 2026 ────────────────────
+ *
+ * Staat op de "kijk in je mail"-pagina, direct onder de mededeling, zodat de
+ * sprong naar een mailapp niet ook nog een sprong terug naar een ander scherm
+ * wordt. Zie checkEmailBody() in account.js.
+ *
+ * GROOT, GESPERD EN GECENTREERD. Zes cijfers overtypen van een telefoonscherm
+ * is de handeling waar dit veld voor bestaat; op de standaardmaat van een
+ * tekstveld leest 048210 als één getal in plaats van als zes tekens die je één
+ * voor één controleert. Tabular-nums zodat een 1 net zoveel ruimte krijgt als
+ * een 8 en de code niet lijkt te verspringen tijdens het typen. */
+/* ── DE VERHOUDINGEN OP DIT KAARTJE — 7 augustus 2026 ────────────────────────
+ *
+ * Lucas, bij de eerste versie: *"Lijkt niet helemaal in verhouding."* Klopt, en
+ * de oorzaak was niet één maat maar een stapel: een invoerveld over de volle
+ * breedte met tekst van 1,6rem erin, daaronder een knop van 58 pixels, ook over
+ * de volle breedte, en daaronder nog eens een veld met een knop voor het
+ * opnieuw versturen. Vier even brede blokken onder elkaar, waarvan de twee
+ * zwaarste niets met elkaar te maken lijken te hebben omdat ze even breed zijn
+ * als alles eromheen.
+ *
+ * WAT HET OPLOST: het veld en zijn knop krijgen samen één breedte die smaller
+ * is dan de kaart. Daarmee worden ze één ding — de handeling — in plaats van
+ * twee losse balken, en de tekst eromheen krijgt zijn eigen maat terug. Zes
+ * cijfers hebben geen 300 pixels nodig; ze hebben precies genoeg nodig om als
+ * zes tekens te lezen.
+ *
+ * En de tweede weg (opnieuw versturen) is gedempt: dezelfde vorm als de eerste
+ * maakt van een uitweg een even luide oproep als de hoofdhandeling. */
+/* `grid-template-columns: minmax(0, 1fr)` is hier load-bearing en niet netjes.
+   Zonder die regel maakt de grid één auto-kolom die zo breed wordt als de
+   max-content van zijn breedste kind — en dat is een <input> zonder `size`,
+   die op 1,4rem met letterafstand ruim driehonderd pixels claimt. De max-width
+   van het formulier klemt dat niet af, want een grid-item mag standaard niet
+   onder zijn min-content krimpen. Resultaat: een veld dat een kwart breder was
+   dan het formulier eromheen. Precies het soort scheefte dat je ziet zonder te
+   kunnen aanwijzen. */
+form.codeform {
+  margin-top: 1.3rem; max-width: 15rem; gap: .5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+form.codeform label {
+  font-size: .78rem; letter-spacing: .06em; text-transform: uppercase;
+  font-weight: 600; color: var(--ink-3);
+}
+form.codeform input[name="code"] {
+  padding: .6rem .5rem; border: 1px solid var(--line-strong);
+  background: var(--paper-lift); color: var(--ink);
+  font-size: 1.4rem; font-weight: 700; letter-spacing: .22em; text-align: center;
+  font-variant-numeric: tabular-nums;
+  /* De letterafstand zit ook áchter het laatste teken; zonder deze correctie
+     staat de code een paar pixels links van het midden. */
+  text-indent: .22em;
+}
+/* De plaatsaanduiding is zes nullen; op volle sterkte leest dat als een
+   ingevulde code. */
+form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
+
+/* De hint hoort bij de knop erboven, niet bij het blok eronder — dus dicht
+   erop, en daarna pas lucht. */
+.authcard .det-hint { margin: .1rem 0 0; max-width: 34ch; }
+.authcard .mailnote { margin-top: 1.6rem; }
+
+/* ── DE TWEEDE WEG, GEDEMPT ─────────────────────────────────────────────────
+   "Nieuwe mail sturen" is het antwoord op een probleem, niet de handeling waar
+   dit scherm voor bestaat. Dichtgeklapt tenzij er iets misging (de <details>
+   krijgt dan `open` mee vanuit account.js), en daarbinnen alles een maat
+   kleiner dan hierboven. */
+.codeagain { margin-top: 1.2rem; }
+.codeagain > summary {
+  cursor: pointer; list-style: none; width: max-content;
+  font-size: .84rem; color: var(--ink-3);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.codeagain > summary::-webkit-details-marker { display: none; }
+.codeagain > summary::marker { content: ''; }
+.codeagain > summary:hover { color: var(--ink); }
+/* Zelfde breedte als de code-groep hierboven, zodat de twee handelingen op één
+   kolomrand staan in plaats van elk hun eigen maat te kiezen. */
+.codeagain form.login { margin-top: .7rem; max-width: 15rem; gap: .5rem; grid-template-columns: minmax(0, 1fr); }
+.codeagain form.login input[type="email"] { padding: .55rem .7rem; font-size: .92rem; }
+.codeagain .btn { min-height: 34px; font-size: .78rem; width: max-content; }

@@ -195,7 +195,28 @@ const anHourAgo = new Date(Date.now() - 60 * 60000).toISOString();
   // token had already moved to an hour with a reuse window. On the one screen
   // where being wrong costs a sign-in, the duration is read from the constant.
   check('the mail states the real lifetime', /een uur/.test(nl.text), 'NL: een uur');
-  check('and no longer claims it works only once', !/één keer|works once/i.test(nl.text));
+
+  /*
+   * ── TWEE GELDIGHEDEN IN ÉÉN MAIL, EN ZE MOGEN NIET VERWISSELEN ────────────
+   *
+   * Sinds 7 augustus 2026 draagt deze mail allebei: zes cijfers die tien
+   * minuten leven en één keer werken, en een link die een uur leeft en een
+   * herkansing van een kwartier heeft (zie LOGIN_TOKEN_GRACE_MINUTES). Deze
+   * test stond er omdat de oude copy "werkt één keer" over de LINK zei terwijl
+   * dat niet meer waar was. Die belofte is nu waar — maar over de code.
+   *
+   * Dus wordt er per zin gekeken in plaats van per mail: de regel die de link
+   * beschrijft mag niet zeggen dat hij eenmalig is, en de regel bij de code
+   * moet dat juist wél zeggen. Een test die de hele tekst afzoekt zou de twee
+   * weer op één hoop gooien, en dat is precies de fout die hij moest vangen.
+   */
+  const linkLines = nl.text.split('\n').filter((l) => /link/i.test(l)).join(' ');
+  check('no sentence about the LINK claims single use',
+    !!linkLines && !/één keer|works once/i.test(linkLines), linkLines.trim().slice(0, 64));
+  const codeLines = nl.text.split('\n').filter((l) => /minuten geldig/.test(l)).join(' ');
+  check('the sentence about the CODE does claim it', /één keer/.test(codeLines), codeLines.trim());
+  check('and the code itself is in the mail', /\b\d{3} \d{3}\b/.test(nl.text));
+  check('the code is in the HTML half too', /\d{3} \d{3}/.test(nl.html));
 
   const en = await login('studio@voltbrand.nl', 'en');
   check('the English mail says the same thing', /an hour/.test(en.text), 'EN: an hour');

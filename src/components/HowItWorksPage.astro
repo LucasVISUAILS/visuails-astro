@@ -182,7 +182,7 @@ import Compare from './Compare.astro';
 import FigWalk from './FigWalk.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
-  WINDOW_THRESHOLD, vatLabel, vatNote,
+  WINDOW_THRESHOLD, vatLabel, vatNote, TEST_SAMPLE,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -247,7 +247,7 @@ const COPY = {
 
     ctaH: 'See it on your own product.',
     ctaBody: `One test sample per business — ${sample}, no commitment. It runs through the same pipeline as a paid order.`,
-    ctaSampleBtn: 'Test sample',
+    ctaSampleBtn: `One image · ${TEST_SAMPLE.en.price}`,
     ctaStartBtn: 'Start an order',
     wa: waHref("Hi VISUAILS, I have a question about how an order works."),
   },
@@ -290,7 +290,7 @@ const COPY = {
 
     ctaH: 'Zie het op je eigen product.',
     ctaBody: `Eén proefvisual per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde pipeline als een betaalde bestelling.`,
-    ctaSampleBtn: 'Proefvisual',
+    ctaSampleBtn: `Eén beeld · ${TEST_SAMPLE.nl.price}`,
     ctaStartBtn: 'Start een bestelling',
     wa: waHref("Hoi VISUAILS, ik heb een vraag over hoe een bestelling werkt."),
   },

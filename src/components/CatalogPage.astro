@@ -44,7 +44,7 @@ import { waHref } from '../data/whatsapp.js';
 // nest a second <html> inside the first.
 import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
-  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, reviewClaim, turnaround,
+  WINDOW_THRESHOLD, reviewClaim, turnaround,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
@@ -79,10 +79,6 @@ const rungRows = rungs.map(([lo, hi, rate]) => ({
 const t0 = TIERS.unattended;
 
 // The first-order discount as a percentage, computed rather than written. A
-// typed "20%" beside a constant of 0.20 is two sources of truth for one
-// number, and the typed one is the one that gets missed. Same derivation as
-// /pricing, which is where the discount is explained at length.
-const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 // The four photos, named. This used to be prose in three different places
 // with three slightly different orderings; it is one list now.
@@ -145,7 +141,7 @@ const COPY = {
     ladderH: 'What a catalog set costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
-    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them. Your first order with us is ${firstPct} off on top of it.`,
+    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them.`,
     // The on-model shot is the one line on this page where the Brand Model is
     // the obvious next question, so the upsell is woven into the sentence that
     // already raises it rather than parked in a block of its own. §1 of the
@@ -247,7 +243,7 @@ const COPY = {
   nl: {
     eyebrow: 'Catalog',
     h1: 'Strakke, consistente productvisuals — <em>gebouwd om te schalen.</em>',
-    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een stof- of logo-close-up en één on-model shot, en per product bij te bestellen. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
+    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer beelden per product kan altijd. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
     ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk de prijsstaffel',
     wa: waHref("Hoi VISUAILS, ik wil graag Catalog-visuals bestellen voor mijn producten."),
@@ -261,16 +257,16 @@ const COPY = {
     ladderH: 'Wat een catalogset kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
-    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Je eerste bestelling is daar nog eens ${firstPct} goedkoper op.`,
+    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
     packP: `Elk product komt terug als een complete set — inclusief een echte on-model shot, niet alleen flat-lays. Die shot kan een gezicht uit de standaardroster gebruiken, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
     packCta: 'Start een bestelling',
     edMeta: '( Waar het past )',
-    edH: 'Catalogfotografie: helderheid die de verkoop sluit.',
+    edH: 'Catalogfotografie: zo duidelijk dat er niets meer te twijfelen valt.',
     edSub: 'De strakke productpagina’s waar je shop en marktplaatsen op draaien.',
     whatH: 'Wat het is',
     whatP: [
       'Catalogfotografie is het rechte, strakke productbeeld waar een klant het product op beoordeelt — voorkant, achterkant, een detail-close-up en één on-model shot, allemaal op een consistente achtergrond. Het is er niet om sfeer te maken; het laat precies zien wat iemand koopt, zonder dat er iets geraden wordt.',
-      'Het is ook waar een klein merk stilletjes gevestigd begint te ogen. Als elk product in je assortiment op dezelfde manier is geschoten — zelfde kader, zelfde licht, zelfde kleur — leest de collectie als één doordachte lijn in plaats van een mix van telefoonfoto’s. Die consistentie bouwt vertrouwen, en vertrouwen verhoogt de conversie.',
+      'Het is ook wat een klein merk groter laat lijken dan het is. Staat elk product op dezelfde manier op de foto — zelfde kader, zelfde licht, zelfde kleur — dan ziet je collectie eruit als één doordachte lijn en niet als een verzameling telefoonfoto’s. Dat wekt vertrouwen, en vertrouwen verkoopt.',
     ],
     whereH: 'Waar het leeft',
     where: [

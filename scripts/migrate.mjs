@@ -144,23 +144,112 @@ async function query(sql, attempt = 1) {
 }
 
 /**
- * Eén opdracht uitvoeren, via een tijdelijk .sql-bestand.
+ * Eén opdracht op één regel zetten — maar niet binnen een string.
  *
- * NIET via --command, en dat is de les van vanavond. Een CREATE TABLE loopt over
- * meerdere regels, en een argument met regeleindes erin overleeft de weg door
- * cmd.exe niet — ook niet met aanhalingstekens eromheen. Een bestand heeft dat
- * probleem niet: er gaat één pad over de commandoregel en de SQL raakt de shell
- * nooit aan.
+ * WAAROM DIT ER IS. Zie execute() hieronder: --command wil één argument zonder
+ * regeleindes. De SQL in migrations/ staat over meerdere regels omdat dat
+ * leesbaar is, niet omdat het moet — een CREATE INDEX met zijn WHERE eronder is
+ * exact dezelfde opdracht als diezelfde tekst achter elkaar.
  *
- * Het bestand komt in de tijdelijke map van het systeem en niet naast de
- * migraties: dit is werkgeheugen, geen bron, en het hoort niet in een map te
- * verschijnen waar `npm run migrate` de volgende keer opnieuw doorheen loopt.
+ * WAT HIER NIET MAG GEBEUREN: witruimte weghalen die BINNEN een tekstwaarde
+ * staat. `DEFAULT 'nl_standard'` overleeft dat prima, maar de dag dat er een
+ * DEFAULT met twee spaties of een regeleinde in komt, zou dit stilletjes een
+ * andere waarde de database in schrijven. Daarom telt dit aanhalingstekens mee,
+ * net als stripComments() hierboven, en geeft het `null` terug zodra het niet
+ * zeker weet wat het aan het inkorten is. `null` betekent: doe het via een
+ * bestand.
+ */
+function oneLine(stmt) {
+  let out = '';
+  let inString = false;
+  let space = false;
+  for (let i = 0; i < stmt.length; i++) {
+    const ch = stmt[i];
+    if (inString) {
+      // Een regeleinde binnen een tekstwaarde is deel van die waarde. Dat is
+      // niet in te korten, dus dan valt de hele opdracht terug op een bestand.
+      if (ch === '\n' || ch === '\r') return null;
+      out += ch;
+      if (ch === "'") {
+        if (stmt[i + 1] === "'") { out += "'"; i++; } else { inString = false; }
+      }
+      continue;
+    }
+    if (ch === "'") {
+      if (space) { out += ' '; space = false; }
+      inString = true;
+      out += ch;
+      continue;
+    }
+    if (/\s/.test(ch)) { if (out) space = true; continue; }
+    if (space) { out += ' '; space = false; }
+    out += ch;
+  }
+  // Een aanhalingsteken dat nooit dichtgaat betekent dat dit iets anders is dan
+  // wat ik denk dat het is. Niet inkorten.
+  return inString ? null : out;
+}
+
+/**
+ * Wanneer --command niet meer kan.
+ *
+ * cmd.exe knipt een commandoregel af rond 8191 tekens, en dan krijg je geen
+ * foutmelding maar een half statement. De langste opdracht in migrations/ is 445
+ * tekens, dus 6000 is ruim — en als er ooit een backfill komt die er overheen
+ * gaat, gaat die via een bestand in plaats van kapot.
+ *
+ * Een " in de SQL gaat ook naar het bestand. quoteForCmd() verdubbelt hem, en
+ * hoe cmd.exe een verdubbelde " binnen een geciteerd argument leest hangt af van
+ * waar hij staat. Geen enkele migratie gebruikt ze (SQLite accepteert " voor
+ * kolomnamen, maar hier staat overal gewone tekst), dus dit kost niets.
+ */
+const CMD_MAX = 6000;
+
+/**
+ * Eén opdracht uitvoeren.
+ *
+ * ── WAAROM DIT OP 7 AUGUSTUS 2026 IS OMGEDRAAID ─────────────────────────────
+ *
+ * Dit ging via een tijdelijk .sql-bestand, om precies de reden die hieronder in
+ * oneLine() staat: meerdere regels overleven cmd.exe niet. Toen Lucas migratie
+ * 0015 wilde draaien kwam er twee keer:
+ *
+ *   A request to the Cloudflare API (/accounts/…/d1/database/…/import) failed.
+ *   Authentication error [code: 10000]
+ *
+ * Let op het endpoint: /import. `wrangler d1 execute --file` upload het bestand
+ * via de D1 IMPORT-API, en die weigert het OAuth-token dat `wrangler login`
+ * achterlaat — de scopelijst van dat token (offline_access, account:read,
+ * d1:write) dekt de gewone query-API wél en import niet. Vandaar dat de
+ * kolomcontrole ervóór, die --command gebruikt, gewoon antwoord gaf en de eerste
+ * ALTER meteen omviel. Het token was dus niet stuk; het ging om welk endpoint
+ * wrangler koos, en dat koos dít script voor hem.
+ *
+ * DUS: --command waar het kan, en dat is overal in migrations/ — elke opdracht
+ * hier is één statement dat prima op één regel past zodra je de witruimte die er
+ * voor de leesbaarheid in staat weghaalt. Het bestand blijft bestaan als
+ * terugval voor wat écht niet over een commandoregel kan (een tekstwaarde met
+ * een regeleinde, of iets van duizenden tekens). Loopt die terugval op dezelfde
+ * 10000 stuk, dan zegt de foutmelding hieronder wat eraan te doen is in plaats
+ * van "authentication error" en verder niks.
  */
 async function execute(stmt) {
+  const line = oneLine(stmt);
+  if (line && line.length <= CMD_MAX && !line.includes('"')) {
+    return wrangler(['d1', 'execute', DB, scope, '--yes', '--command', line]);
+  }
+
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'visuails-migrate-')), 'stmt.sql');
   fs.writeFileSync(file, `${stmt};\n`);
   try {
-    return await wrangler(['d1', 'execute', DB, scope, '--yes', '--file', file]);
+    const r = await wrangler(['d1', 'execute', DB, scope, '--yes', '--file', file]);
+    if (!r.ok && /\/import[\s\S]*?\b10000\b|Authentication error \[code: 10000\]/.test(r.out)) {
+      r.out += '\n\nDeze opdracht moest via de import-API omdat hij niet op één regel past,'
+        + '\nen die weigert het token van `wrangler login`. Maak een API-token aan met'
+        + '\nD1:Edit op https://dash.cloudflare.com/profile/api-tokens en draai opnieuw met'
+        + '\nCLOUDFLARE_API_TOKEN erin gezet.';
+    }
+    return r;
   } finally {
     try { fs.rmSync(path.dirname(file), { recursive: true, force: true }); } catch { /* niet belangrijk */ }
   }

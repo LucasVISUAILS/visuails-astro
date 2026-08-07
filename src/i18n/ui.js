@@ -52,7 +52,7 @@ export const ui = {
     nav_pricing: 'Pricing',
     nav_gallery: 'Gallery',
     nav_contact: 'Contact',
-    nav_start: 'Start',
+    nav_start: 'Order',
     // Customer accounts (task #257) had no entry point anywhere in the
     // chrome — the dashboard, magic-link login and downloads all existed at
     // /account, reachable only if you already knew the URL. One small text
@@ -129,8 +129,8 @@ export const ui = {
        consent banner never rendered it — nothing called t('cc_changed') in
        any component, script or page. */
     foot_location: 'Enschede, Netherlands',
-    cb_text: 'See it on your own product first.',
-    cb_cta: `Test sample · ${TEST_SAMPLE.en.price}`,
+    cb_text: 'Send us one product and see what comes back, before you order anything.',
+    cb_cta: `One image · ${TEST_SAMPLE.en.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Message VISUAILS on WhatsApp — opens in a new tab',
     lang_label: 'Language',
@@ -142,7 +142,7 @@ export const ui = {
     nav_pricing: 'Prijzen',
     nav_gallery: 'Galerij',
     nav_contact: 'Contact',
-    nav_start: 'Start',
+    nav_start: 'Bestellen',
     nav_account: 'Inloggen',
     drops: [
       ['Catalog', 'Voorkant, achterkant, detail en on-model, voor elk product'],
@@ -196,8 +196,8 @@ export const ui = {
     cc_cancel: 'Terug',
     cc_reopen: 'Cookievoorkeuren',
     foot_location: 'Enschede, Nederland',
-    cb_text: 'Zie het eerst op je eigen product.',
-    cb_cta: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
+    cb_text: 'Stuur ons één product en zie wat eruit komt, voordat je iets bestelt.',
+    cb_cta: `Eén beeld · ${TEST_SAMPLE.nl.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Stuur VISUAILS een bericht via WhatsApp — opent in een nieuw tabblad',
     lang_label: 'Taal',

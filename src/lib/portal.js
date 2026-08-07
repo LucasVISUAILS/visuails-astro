@@ -47,7 +47,10 @@
 // header block above seeOther() and admin.js's originIsSelf().
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { TEST_SAMPLE, TIERS, aftercare, turnaround } from '../data/pricing.js';
+import {
+  TEST_SAMPLE, TIERS, aftercare, turnaround,
+  canReviewOrder, canSeeReviewHistory, SAMPLE_SERVICE,
+} from '../data/pricing.js';
 import { serviceLabel } from '../data/services.js';
 import { PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken } from './token.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
@@ -93,7 +96,11 @@ const COPY = {
     orderTitle: 'Your order',
     orderLede: 'Everything we have finished so far. Approve what works, and flag anything that does not.',
     filesTitle: 'Your files',
-    filesLede: 'Everything from this order, ready to download.',
+    // "ready to download" was the whole of it until 7 August 2026, when
+    // approving stopped being a Tier 1 feature. The line has to say the second
+    // thing too, or the buttons below it arrive unannounced.
+    filesLede: 'Everything from this order. Download what you need, approve what works, and flag anything that does not.',
+    sampleLede: 'Your test sample. Download it, and tell us what you think — we answer every one.',
 
     fRef: 'Reference',
     fOrder: 'Order',
@@ -152,7 +159,7 @@ const COPY = {
     replacedBody: 'A newer link was issued for this order. Check the most recent email from us — that one works.',
 
     busyTitle: 'Too many requests',
-    busyBody: 'Give it a moment and reload the page.',
+    busyBody: 'Wait a minute and reload the page.',
 
     downTitle: 'We cannot reach your order right now',
     downBody: 'This is our end, not yours, and it is being looked at. Try again in a few minutes.',
@@ -162,7 +169,8 @@ const COPY = {
     orderTitle: 'Je bestelling',
     orderLede: 'Alles wat we tot nu toe af hebben. Keur goed wat klopt, en markeer wat niet klopt.',
     filesTitle: 'Je bestanden',
-    filesLede: 'Alles uit deze bestelling, klaar om te downloaden.',
+    filesLede: 'Alles uit deze bestelling. Download wat je nodig hebt, keur goed wat klopt, en markeer wat niet klopt.',
+    sampleLede: 'Je proefvisual. Download hem, en laat weten wat je ervan vindt — we reageren op elke reactie.',
 
     fRef: 'Referentie',
     fOrder: 'Bestelling',
@@ -216,7 +224,7 @@ const COPY = {
     replacedBody: 'Voor deze bestelling is een nieuwere link uitgegeven. Kijk in de meest recente mail van ons — die werkt.',
 
     busyTitle: 'Te veel verzoeken',
-    busyBody: 'Even wachten en de pagina opnieuw laden.',
+    busyBody: 'Wacht een minuut en laad de pagina opnieuw.',
 
     downTitle: 'We kunnen je bestelling nu niet bereiken',
     downBody: 'Dit ligt aan ons, niet aan jou, en er wordt naar gekeken. Probeer het over een paar minuten opnieuw.',
@@ -235,7 +243,7 @@ const COPY = {
 const STATUS = {
   received: { en: 'Received', nl: 'Ontvangen' },
   in_production: { en: 'In production', nl: 'In productie' },
-  human_check: { en: 'In human check', nl: 'In menselijke controle' },
+  human_check: { en: 'Being checked', nl: 'Wordt nagekeken' },
   delivered: { en: 'Delivered', nl: 'Geleverd' },
   cancelled: { en: 'Cancelled', nl: 'Geannuleerd' },
 };
@@ -329,10 +337,13 @@ export async function portalPost(context) {
 
   const home = `/o/${route.token}`;
 
-  // Tier 0 has no review controls to post to, and a closed order has none left.
-  // Both are silent no-ops rather than errors: nothing on the page they were
-  // looking at offered this, so there is nothing to explain — just show it again.
-  if (order.tier !== 'attended' || order.closed_at) return seeOther(home);
+  // Een proefvisual heeft geen knoppen om op te posten: stil terug naar dezelfde
+  // pagina in plaats van een fout, want er stond niets op het scherm dat dit
+  // aanbood. De regel zelf staat in pricing.js — dit bestand en account.js
+  // hadden hem allebei apart, en dat is precies hoe ze uit elkaar konden gaan
+  // lopen toen hij veranderde. De closed_at-helft van die regel staat verderop,
+  // bij de actie: afgerond weigert een nieuw besluit maar laat terugdraaien toe.
+  if (!canSeeReviewHistory(order)) return seeOther(home);
 
   let form;
   try {
@@ -344,6 +355,11 @@ export async function portalPost(context) {
   const action = String(form.get('action') || '');
   const fileId = Number.parseInt(String(form.get('file') || ''), 10);
   if (!Number.isInteger(fileId) || !['approve', 'revise', 'undo'].includes(action)) return seeOther(home);
+
+  // Afgerond: geen nieuwe besluiten, terugdraaien wél. Zelfde regel als in
+  // account.js's handleFileReview, en om dezelfde reden — de knop die dan nog op
+  // het scherm staat moet ook echt iets doen.
+  if (order.closed_at && action !== 'undo') return seeOther(home);
 
   // The file must belong to THIS order. Without this, a valid token for order A
   // could review order B's images by editing one number in a form.
@@ -372,19 +388,58 @@ export async function portalPost(context) {
       // Reversible on purpose. A mis-tapped Approve on a phone must not strand a
       // client with an image they never meant to sign off, and an approval that
       // cannot be taken back quietly teaches people not to press anything.
-      await env.DB.prepare(
-        `UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1`
-      )
-        .bind(fileId)
-        .run();
+      //
+      // Heropent de bestelling als hij hierdoor was afgerond — zie de langere
+      // uitleg bij dezelfde stap in account.js's handleFileReview. Twee regels
+      // SQL die in beide bestanden staan; dat is goedkoper dan dat dit bestand
+      // de dashboardmodule gaat importeren voor een UPDATE.
+      const undo = [
+        env.DB.prepare(
+          `UPDATE files SET review_state = 'pending', review_note = NULL, reviewed_at = NULL WHERE id = ?1`
+        ).bind(fileId),
+      ];
+      if (order.closed_at) {
+        undo.push(
+          env.DB.prepare('UPDATE orders SET closed_at = NULL WHERE id = ?1').bind(order.order_id),
+          env.DB.prepare(
+            `INSERT INTO order_events (order_id, status, note, actor)
+             VALUES (?1, 'delivered', ?2, 'system')`
+          ).bind(order.order_id, 'Een goedkeuring is teruggedraaid — bestelling weer open.')
+        );
+      }
+      await env.DB.batch(undo);
     } else {
+      // Ingetrokken rechten worden op de server gehandhaafd en niet in de
+      // opmaak — een POST die het formulier omzeilt hoort dezelfde muur te
+      // vinden. Goedkeuren en terugdraaien blijven wél kunnen; zie dezelfde
+      // afweging in account.js's handleFileReview.
+      if (order.revisions_revoked_at) return seeOther(anchor);
+
       const note = String(form.get('note') || '').trim().slice(0, NOTE_MAX);
       if (!note) return seeOther(anchor); // nothing said, nothing changed
-      await env.DB.prepare(
-        `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
-      )
-        .bind(fileId, note)
-        .run();
+
+      /*
+       * TWEE SCHRIJFACTIES, NIET ÉÉN — 7 augustus 2026.
+       *
+       * Dit schreef alleen `files.review_state`. account.js's kant van dezelfde
+       * handeling schrijft daarnaast een rij in `revision_requests`, en dat is
+       * niet dubbelop: files houdt de HUIDIGE toestand van één beeld bij, en
+       * revision_requests is de geschiedenis waar het adminscherm op stuurt —
+       * de openstaande-revisieteller, de lijst en het afhandelen komen daar
+       * allemaal uit. Een revisie die via de gemailde link binnenkwam, kwam
+       * daardoor in die lijst nooit voor.
+       *
+       * Zolang alleen tier 1 hier knoppen had was dat een klein gat. Sinds
+       * elke bestelling ze heeft, is het de helft van de verzoeken.
+       */
+      await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
+        ).bind(fileId, note),
+        env.DB.prepare(
+          `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
+        ).bind(fileId, order.order_id, order.customer_id, note),
+      ]);
     }
   } catch {
     return plainPage(env, request, 'down', 503);
@@ -439,7 +494,14 @@ async function loadOrder(env, token) {
             t.revoked_at   AS revoked_at,
             o.id           AS order_id,
             o.ref, o.service, o.status, o.tier, o.lang,
-            o.product_count, o.window_start, o.window_end, o.closed_at
+            o.product_count, o.window_start, o.window_end, o.closed_at,
+            o.customer_id,
+            -- Ingetrokken revisierechten hangen aan de KLANT en werden hier niet
+            -- gelezen. Zolang dit scherm alleen tier 1 knoppen gaf viel dat niet
+            -- op naast account.js, dat er wél op controleert; sinds 7 augustus
+            -- 2026 heeft elke bestelling ze en zou een klant met ingetrokken
+            -- rechten ze via de gemailde link gewoon blijven indienen.
+            (SELECT c.revisions_revoked_at FROM customers c WHERE c.id = o.customer_id) AS revisions_revoked_at
        FROM order_tokens t
        JOIN orders o ON o.id = t.order_id
       WHERE t.token_hash = ?1`
@@ -683,7 +745,10 @@ function attendedBody(t, lang, order, token, files, events) {
     : '';
 
   const work = files.length
-    ? `<ul class="shots">${files.map((f) => shot(t, lang, f, token, { review: !readOnly, history: true })).join('')}</ul>`
+    ? `<ul class="shots">${files.map((f) => shot(t, lang, f, token, {
+        review: canReviewOrder(order),
+        history: canSeeReviewHistory(order),
+      })).join('')}</ul>`
     : `<p class="note">${esc(t.emptyAttended)}</p>`;
 
   return `<main>
@@ -731,16 +796,28 @@ function unattendedBody(t, lang, order, token, files) {
 
   const timing = `${turnaround('unattended', lang)} — ${lower(TIERS.unattended.queue[lang])}`;
 
+  // BEOORDELEN HOORT OOK HIER, sinds 7 augustus 2026. Deze pagina zette
+  // `review: false, history: false` hard, uit de tijd dat per-beeld goedkeuren
+  // bij de hogere trede hoorde. Nu beslist canReviewOrder() het, net als op het
+  // dashboard, zodat dezelfde bestelling niet twee antwoorden geeft afhankelijk
+  // van of de klant via de mail of via /account binnenkwam.
   const work = files.length
     ? `<ul class="shots">${files
-        .map((f) => shot(t, lang, f, token, { review: false, history: false }))
+        .map((f) => shot(t, lang, f, token, {
+          review: canReviewOrder(order),
+          history: canSeeReviewHistory(order),
+        }))
         .join('')}</ul>`
     : `<p class="note">${esc(t.emptyUnattended(timing))}</p>`;
 
+  // De proefvisual heeft geen beoordeelknoppen (zie canReviewOrder), dus hij
+  // hoort ook niet aangekondigd te worden met een zin die zegt dat je kunt
+  // goedkeuren. Eén lede per soort bestelling, in plaats van één zin die voor
+  // de helft van de gevallen niet klopt.
   return `<main>
 <div class="head">
   <h1>${esc(t.filesTitle)}</h1>
-  <p class="lede">${esc(t.filesLede)}</p>
+  <p class="lede">${esc(order.service === SAMPLE_SERVICE ? t.sampleLede : t.filesLede)}</p>
 </div>
 ${factList(facts)}
 <p class="note">${esc(t.howUnattended(aftercare('unattended', lang)))}</p>
@@ -766,15 +843,17 @@ function factList(pairs) {
  * `history` decides whether the review STATE renders — the "approved on 12 July"
  * line and the note under a flagged image.
  *
- * They are two flags and not one because a closed Tier 1 order turns the first
- * off and leaves the second on: the client is done deciding, but what they
- * decided is the record of the job and deleting it on close would be a lie by
- * omission. Tier 0 turns both off, and that is the real reason this pair exists.
- * Tier 0 has no review step, so a Tier 0 client cannot have approved anything —
- * rendering "APPROVED ON 12 JULY" to them describes a decision they were never
- * asked to make, and "REVISION REQUESTED" describes one they cannot cancel,
- * since the controls are not there. Nothing writes those values on a Tier 0 row
- * today; this makes it impossible for anything to start.
+ * They are two flags and not one because a closed order turns the first off and
+ * leaves the second on: the client is done deciding, but what they decided is
+ * the record of the job and deleting it on close would be a lie by omission.
+ * Alleen de proefvisual zet allebei uit — daar is nooit iets te beslissen
+ * geweest, dus "GOEDGEKEURD OP 12 JULI" zou een besluit beschrijven dat niemand
+ * gevraagd heeft.
+ *
+ * BEIDE KOMEN UIT pricing.js. Ze stonden hier als `order.tier === 'attended'`,
+ * en op 7 augustus 2026 verviel die grens; de aanroepers hierboven vragen het nu
+ * aan canReviewOrder() / canSeeReviewHistory(), zodat het dashboard en deze
+ * pagina niet twee antwoorden kunnen geven over dezelfde bestelling.
  *
  * Everything else about the two tiers' file lists is identical — same grid, same
  * type, same spacing — which is section 13's point: a different service model,
@@ -808,8 +887,15 @@ function shot(t, lang, f, token, { review, history }) {
 
   let controls = `<div class="acts">${download}</div>`;
 
-  if (review && !gone) {
-    if (f.review_state === 'approved' || f.review_state === 'revision_requested') {
+  // `review` is "mag er een NIEUW besluit vallen". Een besluit dat er al ligt
+  // blijft terug te draaien zolang de bestelling überhaupt beoordeeld mag worden
+  // (`history`) — anders haalt de laatste goedkeuring, die de bestelling
+  // afrondt, ook zijn eigen ongedaan-knop weg. Zie handleFileReview in
+  // account.js voor de volledige uitleg; de serverkant weigert hier hetzelfde.
+  const decided = f.review_state === 'approved' || f.review_state === 'revision_requested';
+
+  if ((review || (history && decided)) && !gone) {
+    if (decided) {
       const label = f.review_state === 'approved' ? t.bUndo : t.bCancel;
       controls = `<form method="post" action="">
   <input type="hidden" name="file" value="${f.id}">

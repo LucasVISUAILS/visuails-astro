@@ -557,3 +557,79 @@ CREATE TABLE IF NOT EXISTS invoice_archive (
   archived_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_invoice_archive_ref ON invoice_archive(ref);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 0015 · WAAR DE KLANT ZIT, EN WELKE BTW DAARBIJ HOORT
+-- Zie migrations/0015-vat-country.sql voor het volledige verhaal. Kort: de btw
+-- wordt vanaf nu bij de checkout bepaald in plaats van achteraf op de factuur
+-- rechtgezet, en dat kan alleen met het land en het VIES-bewijs erbij. Dit
+-- repareert ook orders.vat_cents, een kolom die src/lib/admin.js al SELECT'te
+-- en die niet bestond — waardoor het bewaarplicht-archief stilzwijgend leeg
+-- bleef bij elke klantverwijdering.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE orders ADD COLUMN country TEXT;
+ALTER TABLE orders ADD COLUMN billing_address TEXT;
+ALTER TABLE orders ADD COLUMN vat_treatment TEXT NOT NULL DEFAULT 'nl_standard';
+ALTER TABLE orders ADD COLUMN vat_rate REAL NOT NULL DEFAULT 0.21;
+ALTER TABLE orders ADD COLUMN vat_cents INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN vat_valid INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN vat_checked_at TEXT;
+ALTER TABLE orders ADD COLUMN vat_consultation TEXT;
+ALTER TABLE orders ADD COLUMN vat_check_name TEXT;
+ALTER TABLE orders ADD COLUMN vat_check_json TEXT;
+ALTER TABLE orders ADD COLUMN icp_reported_at TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_orders_icp_due
+  ON orders (paid_at)
+  WHERE vat_treatment = 'eu_reverse_charge' AND icp_reported_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_vat_treatment ON orders (vat_treatment);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 0016 · DE NAAM EN HET ADRES, UIT ELKAAR
+-- Zie migrations/0016-address-lines.sql voor het volledige verhaal. Kort: een
+-- factuur zet een adres op drie regels en dat is uit één vrij ingetypt veld niet
+-- te halen; browsers vullen address-line1/postal-code/address-level2 wél
+-- betrouwbaar in en `street-address` op één input niet. `name` en
+-- `billing_address` blijven bestaan als de SAMENGESTELDE weergave — zie
+-- src/data/address.js, dat op één plek bepaalt hoe die eruitzien.
+--
+-- no_vat_number is het verschil tussen "nog niet ingevuld" en "die heb ik niet".
+-- Het zegt alleen iets over het formulier; vatDecision() in src/data/vat.js
+-- kijkt naar het land en naar een bij VIES bevestigd nummer, en een vinkje kan
+-- daar geen 0% kopen.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE customers ADD COLUMN first_name    TEXT;
+ALTER TABLE customers ADD COLUMN last_name     TEXT;
+ALTER TABLE customers ADD COLUMN no_vat_number INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE customers ADD COLUMN address_line1 TEXT;
+ALTER TABLE customers ADD COLUMN address_line2 TEXT;
+ALTER TABLE customers ADD COLUMN postal_code   TEXT;
+ALTER TABLE customers ADD COLUMN city          TEXT;
+ALTER TABLE customers ADD COLUMN region        TEXT;
+
+ALTER TABLE orders ADD COLUMN first_name    TEXT;
+ALTER TABLE orders ADD COLUMN last_name     TEXT;
+ALTER TABLE orders ADD COLUMN no_vat_number INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN address_line1 TEXT;
+ALTER TABLE orders ADD COLUMN address_line2 TEXT;
+ALTER TABLE orders ADD COLUMN postal_code   TEXT;
+ALTER TABLE orders ADD COLUMN city          TEXT;
+ALTER TABLE orders ADD COLUMN region        TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 0017 · ZES CIJFERS NAAST DE INLOGLINK
+-- Zie migrations/0017-login-code.sql. Kort: dezelfde mail draagt een eenmalige
+-- code, zodat niemand van zijn mailapp naar een browser hoeft te springen — op
+-- mobiel de plek waar mensen afhaken. Tien minuten, vijf pogingen, daarna is de
+-- code dood en werkt alleen de link nog. Geen door de klant gekozen pincode:
+-- dat zou een wachtwoord van zes cijfers zijn.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE account_tokens ADD COLUMN code_hash       TEXT;
+ALTER TABLE account_tokens ADD COLUMN code_expires_at TEXT;
+ALTER TABLE account_tokens ADD COLUMN code_attempts   INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_account_tokens_code
+  ON account_tokens (customer_id, code_expires_at)
+  WHERE code_hash IS NOT NULL;
+-- Gevraagd bij de bestelling, ingelost bij de eerste keer inloggen — zie de
+-- migratie voor waarom dat twee momenten zijn en geen één.
+ALTER TABLE customers ADD COLUMN save_requested_at TEXT;

@@ -92,7 +92,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   SHOOT_DAY, euro, quote, ladderFloor, tierFor,
   reviewClaim, turnaround, aftercare,
-  FIRST_ORDER_DISCOUNT, vatLabel,
+  vatLabel,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigConverge from './FigConverge.astro';
@@ -128,7 +128,6 @@ const orderNet = `${euro(q.net, lang)} ${vatLabel('excl', lang)}`;
 const orderRate = euro(q.rate, lang);
 const shootNet = `${shoot.range} ${vatLabel('excl', lang)}`;
 const floorRate = euro(ladderFloor('complete'), lang);
-const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 // No `as const`: COPY[lang] would otherwise widen to a union of readonly tuple
 // types and .map() below would stop type-checking (project convention, see
@@ -162,7 +161,7 @@ const COPY = {
         // one row where an unlabelled figure would make the whole page a
         // comparison of two things that were never the same kind of number.
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product, falling to ${floorRate} at the top of the ladder. A first order is ${firstPct} off.`,
+        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product, falling to ${floorRate} at the top of the ladder.`,
       },
       {
         label: 'When it lands',
@@ -290,7 +289,7 @@ const COPY = {
       {
         label: 'Wat het kost',
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product, aflopend tot ${floorRate} boven aan de staffel. Een eerste bestelling krijgt ${firstPct} korting.`,
+        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product, aflopend tot ${floorRate} boven aan de staffel.`,
       },
       {
         label: 'Wanneer het er is',

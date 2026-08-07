@@ -53,7 +53,7 @@ import { waHref } from '../data/whatsapp.js';
 // it still carries the retired 24-hour claim (task #190) and /compare is the
 // page that argument belongs on. The shoot-day anchor does that job here.
 import {
-  LADDER, ladderRate, quote, FIRST_ORDER_DISCOUNT,
+  LADDER, ladderRate, quote,
   plans, PLAN_AMOUNT, PLAN_CLIPS,
   SHOOT_DAY, TEST_SAMPLE,
   reviewClaim, aftercare, euro, AMOUNT,
@@ -143,13 +143,9 @@ const WORKED = [5, 14, 30];
 const ANCHOR_PRODUCTS = WORKED[WORKED.length - 1];
 
 // The first-order discount as a percentage, computed rather than written. A
-// typed "20%" beside a constant of 0.20 is two sources of truth for one
-// number, and the typed one is the one that gets missed.
-const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 // The worked example under the discount — the same middle count as the tiles,
-// list price and first-order price, both from quote() so the subtraction is
+// The worked examples, from quote() so the arithmetic is in one place —
 // the module's and not this page's.
-const firstEg = quote('complete', WORKED[1], { firstOrder: true });
 
 // The plans, and the one card that needs to be named in another section's copy.
 const planList = plans(lang);
@@ -179,8 +175,13 @@ const COPY = {
     workedUnit: 'products',
     perProduct: 'per product',
 
-    firstLead: `Your first order is ${firstPct} off.`,
-    firstBody: `Once per brand, at any size. It is what the pilot package used to be, without the fixed count: ${WORKED[1]} complete products is ${euro(firstEg.listTotal, 'en')} ${vatLabel('excl', 'en')}, and on a first order that is ${euro(firstEg.net, 'en')} ${vatLabel('excl', 'en')}.`,
+    // The 20% first-order discount stood here. It is gone — see the note where
+    // FIRST_ORDER_DISCOUNT used to be in pricing.js. What replaces it is not a
+    // smaller discount but the reason there is none: the ladder is the volume
+    // answer, and the way to find out whether the work is any good is the test
+    // sample, not a fifth off the first invoice.
+    firstLead: 'The rate on this page is the rate.',
+    firstBody: `No first-order discount, no volume negotiation, no package you have to fit your line into. The ladder above is the whole of it, and it applies to every product in the order. If you want to see the work before you commit, that is what the ${TEST_SAMPLE.en.price} test sample is for.`,
     ladderCta: 'Start an order',
 
     anchorH: 'What this replaces',
@@ -271,8 +272,8 @@ const COPY = {
     workedUnit: 'producten',
     perProduct: 'per product',
 
-    firstLead: `Je eerste bestelling is ${firstPct} goedkoper.`,
-    firstBody: `Eenmalig per merk, bij elke omvang. Het is wat het pilotpakket was, zonder het vaste aantal: ${WORKED[1]} complete producten is ${euro(firstEg.listTotal, 'nl')} ${vatLabel('excl', 'nl')}, en bij een eerste bestelling is dat ${euro(firstEg.net, 'nl')} ${vatLabel('excl', 'nl')}.`,
+    firstLead: 'Het tarief op deze pagina is het tarief.',
+    firstBody: `Geen kennismakingskorting, geen onderhandeling over volume, geen pakket waar je lijn in moet passen. De staffel hierboven is het hele verhaal, en hij geldt voor elk product in de bestelling. Wil je het werk zien voordat je iets vastlegt, dan is de proefvisual van ${TEST_SAMPLE.nl.price} daarvoor.`,
     ladderCta: 'Start een bestelling',
 
     anchorH: 'Wat dit vervangt',

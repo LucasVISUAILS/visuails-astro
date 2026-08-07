@@ -40,6 +40,9 @@ import { waHref } from '../data/whatsapp.js';
 // will eventually disagree. This component still owns everything around them
 // — the hero, the index band, the accordion markup, the CTA.
 import { faqPageGroups } from '../data/faq.js';
+// De prijs van de proefvisual komt uit pricing.js en niet uit een getal dat
+// hier ooit is ingetypt — zie de knop hieronder.
+import { TEST_SAMPLE } from '../data/pricing.js';
 import Disclose from './Disclose.astro';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -83,7 +86,7 @@ const COPY = {
     ctaEm: 'question',
     ctaH2: '?',
     ctaBody: 'Message us on WhatsApp — usually a reply within an hour on weekdays.',
-    ctaSample: 'Test sample',
+    ctaSample: `One image · ${TEST_SAMPLE.en.price}`,
     ctaContact: 'Get in touch',
     wa: waHref("Hi VISUAILS, I have a question about your service."),
   },
@@ -101,7 +104,7 @@ const COPY = {
     ctaEm: 'vraag',
     ctaH2: '?',
     ctaBody: 'Stuur ons een bericht op WhatsApp — meestal binnen een uur antwoord op werkdagen.',
-    ctaSample: 'Proefvisual',
+    ctaSample: `Eén beeld · ${TEST_SAMPLE.nl.price}`,
     ctaContact: 'Neem contact op',
     wa: waHref("Hoi VISUAILS, ik heb een vraag over jullie dienst."),
   },

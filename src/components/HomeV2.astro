@@ -37,7 +37,7 @@ import {
   AMOUNT, euro, TEST_SAMPLE,
   BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim,
   LADDER, ladderRate, ladderFloor, quote, vatLabel, vatNote,
-  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, PLAN_AMOUNT, PLAN_PRODUCTS,
+  WINDOW_THRESHOLD, PLAN_AMOUNT, PLAN_PRODUCTS,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import { TAGLINE } from '../data/brand.js';
@@ -117,14 +117,12 @@ const Q_SMALL = quote('complete', EX_SMALL);
 // The bottom rung, for the hero anchor. Named rather than inlined because both
 // language tables read it, and a figure typed twice is a figure that drifts.
 const FLOOR_RATE_EN = ladderFloor('complete');
-const Q_SMALL_FIRST = quote('complete', EX_SMALL, { firstOrder: true });
 // ENTRY_RATE (ladderRate('complete', 1)) and FLOOR_RATE (ladderFloor('complete'))
 // were here and are gone with the prose they fed: "from €149 per product, down
 // to €55" was the entry rung and the floor rung SAID, and the merged band shows
 // both as the top and bottom rows of the table instead. Do not reintroduce them
 // to write that sentence again — the table already is the sentence. ladderFloor
 // left the import with them; ladderRate stays, because the table calls it.
-const FIRST_ORDER_PCT = Math.round(FIRST_ORDER_DISCOUNT * 100);
 const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 
 // ── THE LADDER, AS A TABLE ─────────────────────────────────────────────────
@@ -190,7 +188,7 @@ const COPY = {
     // agency that quotes on request.
     heroLede: `One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style. Priced per product, from ${euro(ladderRate('complete', 1), 'en')} down to ${euro(FLOOR_RATE_EN, 'en')} as the count rises.`,
     ctaStart: 'Start an order',
-    ctaSample: `See it first — ${sample.price}`,
+    ctaSample: `One image of your product — ${sample.price}`,
     // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
     // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
     // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
@@ -244,8 +242,10 @@ const COPY = {
     workedH: 'What that comes to',
     workedUnit: 'products',
     workedEach: 'each',
-    firstLead: `First order: ${FIRST_ORDER_PCT}% off.`,
-    firstBody: `Once per brand, at any size — ${EX_SMALL} complete products is ${euro(Q_SMALL.net, 'en')}, and ${euro(Q_SMALL_FIRST.net, 'en')} the first time.`,
+    // Was "First order: 20% off." The discount is gone; this says why, which
+    // is a stronger line than the discount was. See pricing.js.
+    firstLead: 'The rate is the rate.',
+    firstBody: `No first-order discount and nothing to negotiate — ${EX_SMALL} complete products is ${euro(Q_SMALL.net, 'en')}, whoever you are and whenever you ask.`,
     addOnNote: `A video clip is ${euro(AMOUNT.video, 'en')}, the same rate inside an order or on its own. Your Brand Model is ${euro(AMOUNT.brandModel, 'en')} once, credited back over your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
     planNote: `Ordering every month rather than every season? Three monthly plans, from ${euro(PLAN_FROM, 'en')} for ${PLAN_LOW}–${PLAN_HIGH} products a month, each priced below the ladder for the same output.`,
     vatSummary: 'How VAT is handled',
@@ -274,7 +274,7 @@ const COPY = {
     // prices all four in one table. What is left is the half a reader cannot
     // get anywhere else on this page — what each service IS and what lands in
     // the folder — next to a photograph of it.
-    svcH: ['Four things the studio makes,', 'and what you get back.'],
+    svcH: ['Four kinds of visual we make,', 'and what lands in your folder.'],
     svcLede: 'Catalog and lifestyle are what a product gets. A video clip and your Brand Model ride on top of an order, or stand on their own.',
     // [name, what it is, what you receive, href]
     svc: [
@@ -418,13 +418,11 @@ const COPY = {
     dashPortalN: 'A private link, no password. Status and the delivery date with a countdown, then the full gallery: approve or request a revision image by image, and download sized per channel.',
     dashPortalCta: 'See the client portal',
     dashPortalPh: 'Client portal · delivery gallery',
-    dashPortalSpec: 'Screenshot to place · 16:10 · /img/portal-gallery.webp',
     dashPortalNote: 'The approve / request-revision screen, with one image selected.',
     dashStudioK: 'The studio side',
     dashStudioN: 'Every order and the capacity calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
     dashStudioCta: 'See how an order is run',
     dashStudioPh: 'Studio dashboard · capacity calendar',
-    dashStudioSpec: 'Screenshot to place · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'The order table with the week that is full marked as full.',
     dashLogK: 'The log is the paperwork',
     dashLogN: 'Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later. Ask and we write it out for you.',
@@ -440,15 +438,15 @@ const COPY = {
     // TWO, not three. "The first three brands, free — a first order of up to 14
     // products at no charge" came out in August 2026 at Lucas's direction, and
     // it had to go for a reason worth recording: THE PAGE CONTRADICTED ITSELF.
-    // Two bands above, firstBody offers the real thing — 20% off a first order,
-    // read from FIRST_ORDER_DISCOUNT — and /pricing, /faq and the order form all
+    // Two bands above, firstBody used to offer 20% off a first order. That
+    // discount is retired; the line now says the rate is the rate. /pricing, /faq and the order form all
     // say the same. The free-order claim appeared nowhere else on the site and
     // was the only surface making it. Two customers reading the same page could
     // each have arrived expecting a different deal, and only one of them could
     // have been right.
     //
     // Deliberately NOT replaced with a third promise. The obvious candidate is
-    // the 20% discount, and putting it here would repeat what firstBody already
+    // the discount that used to be, and putting it here would repeat what firstBody already
     // says — which is exactly the "same offer twice inside one panel" mistake
     // the note above this one exists to prevent. Two true promises beat three
     // where one is an echo.
@@ -482,9 +480,9 @@ const COPY = {
   nl: {
     heroAlt: 'Een VISUAILS campagnebeeld — een model in de duinen bij schemering',
     h1: TAGLINE.nl.lines,
-    heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Per product geprijsd, van ${euro(ladderRate('complete', 1), 'nl')} tot ${euro(FLOOR_RATE_EN, 'nl')} naarmate het aantal stijgt.`,
+    heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Je betaalt per product: van ${euro(ladderRate('complete', 1), 'nl')} omlaag naar ${euro(FLOOR_RATE_EN, 'nl')} naarmate je er meer bestelt.`,
     ctaStart: 'Start een bestelling',
-    ctaSample: `Zie het eerst — ${sample.price}`,
+    ctaSample: `Eén beeld van jouw product — ${sample.price}`,
     // Zie de EN-tabel voor waarom dit geen plint meer is.
     proof: [
       turnaround('attended', 'nl'),
@@ -508,8 +506,8 @@ const COPY = {
     workedH: 'Wat dat wordt',
     workedUnit: 'producten',
     workedEach: 'per stuk',
-    firstLead: `Eerste bestelling: ${FIRST_ORDER_PCT}% korting.`,
-    firstBody: `Eén keer per merk, bij elk aantal — ${EX_SMALL} complete producten is ${euro(Q_SMALL.net, 'nl')}, en ${euro(Q_SMALL_FIRST.net, 'nl')} de eerste keer.`,
+    firstLead: 'Het tarief is het tarief.',
+    firstBody: `Geen kennismakingskorting en niets om over te onderhandelen — ${EX_SMALL} complete producten is ${euro(Q_SMALL.net, 'nl')}, wie je ook bent en wanneer je ook vraagt.`,
     addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')}, verrekend over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
     planNote: `Bestel je elke maand in plaats van elk seizoen? Drie maandplannen, vanaf ${euro(PLAN_FROM, 'nl')} voor ${PLAN_LOW}–${PLAN_HIGH} producten per maand, en elk goedkoper dan de staffel voor dezelfde output.`,
     vatSummary: 'Hoe de btw werkt',
@@ -520,7 +518,7 @@ const COPY = {
     tsH: ['Zie het op je eigen product', `voor ${sample.price}.`],
     tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, op dat van jou. Stuur één productfoto en er komt er één terug, door dezelfde pipeline als een betaalde bestelling en door dezelfde persoon nagekeken.`,
     tsPoints: [
-      ['Eén per bedrijf', 'Geen proefperiode met je pas op de plank. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
+      ['Eén per bedrijf', 'Geen proefperiode, en we bewaren je pasgegevens niet. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
       ['De echte pipeline', 'Zelfde productie, zelfde huisstijl, zelfde menselijke controle. Wat terugkomt is wat je zou krijgen.'],
       ['Daarna geen verplichting', 'Klopt het niet, dan houdt het op. Wij ontdekken dat liever nu dan na een bestelling.'],
     ],
@@ -533,8 +531,8 @@ const COPY = {
 
     // De prijzen zijn uit deze band gehaald — die staan één keer in de band
     // hierboven. Wat blijft is wat een dienst IS en wat je terugkrijgt.
-    svcH: ['Vier dingen die de studio maakt,', 'en wat je terugkrijgt.'],
-    svcLede: 'Catalog en lifestyle zijn wat een product krijgt. Een videoclip en je merkmodel komen daarbovenop, of staan op zichzelf.',
+    svcH: ['Vier soorten beeld die we maken,', 'en wat er in je map belandt.'],
+    svcLede: 'Catalog en lifestyle zijn wat een product krijgt. Een videoclip en je eigen merkmodel kun je erbij nemen, of los bestellen.',
     svc: [
       [
         'Catalogset',
@@ -544,7 +542,7 @@ const COPY = {
       ],
       [
         'Lifestyle-carousel',
-        'Gestileerde scènes in context die de scroll stoppen en het gevoel verkopen.',
+        'Je product in een gestylede scène waar mensen op blijven hangen.',
         `${LIFESTYLE_IMAGES} beelden per product: één gestylede look, uitgesneden voor een carousel en klaar om te posten.`,
         '/lifestyle',
       ],
@@ -575,7 +573,7 @@ const COPY = {
     ],
 
     whoH: 'Voor merken met meer producten dan shootdagen.',
-    whoLede: 'Vier situaties waar deze studio op geprijsd is. Zit die van jou ertussen, dan klopt de rekensom.',
+    whoLede: 'Vier situaties waar deze prijzen voor gemaakt zijn. Zit die van jou ertussen, dan klopt de rekensom.',
     who: [
       ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De lijn moet eruitzien alsof hij thuishoort naast labels die tien jaar ouder zijn.'],
       ['Elk seizoen een lancering', 'Vier tot zes per jaar, en elke keer begint het met een fotograaf, een model en een dag waarop iedereen kan.'],
@@ -667,13 +665,11 @@ const COPY = {
     dashPortalN: 'Een privélink, zonder wachtwoord. Status en de leverdatum met een aftelling, daarna de volledige galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
     dashPortalCta: 'Bekijk het klantportaal',
     dashPortalPh: 'Klantportaal · leveringsgalerij',
-    dashPortalSpec: 'Screenshot te plaatsen · 16:10 · /img/portal-gallery.webp',
     dashPortalNote: 'Het scherm voor goedkeuren en revisie aanvragen, met één beeld geselecteerd.',
     dashStudioK: 'De studiokant',
     dashStudioN: 'Elke bestelling en de capaciteitskalender waar de datumkiezer uit leest. Een statuswijziging schrijft in dezelfde beweging de tijdlijn die jij ziet, dus het portaal loopt nooit achter op de studio.',
     dashStudioCta: 'Zie hoe een bestelling draait',
     dashStudioPh: 'Studiodashboard · capaciteitskalender',
-    dashStudioSpec: 'Screenshot te plaatsen · 16:10 · /img/admin-capacity.webp',
     dashStudioNote: 'De ordertabel, met de volle week als vol gemarkeerd.',
     dashLogK: 'Het logboek is de papierwinkel',
     dashLogN: 'Elke goedkeuring en revisie krijgt een tijdstempel en wordt bewaard bij het beeld waar hij bij hoort, zodat de reeks later terug te lezen is. Vraag ernaar en we schrijven het voor je uit.',
@@ -1315,7 +1311,6 @@ const FAQ_PICK = [
           <div>
             <p class="ph-label">{c.dashPortalPh}</p>
             <p class="ph-note">{c.dashPortalNote}</p>
-            <p class="ph-spec">{c.dashPortalSpec}</p>
           </div>
         </div>
       </div>
@@ -1330,7 +1325,6 @@ const FAQ_PICK = [
           <div>
             <p class="ph-label">{c.dashStudioPh}</p>
             <p class="ph-note">{c.dashStudioNote}</p>
-            <p class="ph-spec">{c.dashStudioSpec}</p>
           </div>
         </div>
       </div>

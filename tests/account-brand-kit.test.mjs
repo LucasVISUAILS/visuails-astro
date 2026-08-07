@@ -124,6 +124,26 @@ async function post(path, fields, opts = {}) {
 // so the write log always opens with an UPDATE nobody here is asking about.
 // Every assertion below names the table it means.
 const writeTo = (writes, re) => writes.find((w) => re.test(w.sql)) || { sql: '', binds: [] };
+
+/*
+ * WAT ER IN KOLOM X BELANDT, ZONDER DE PLAATS TE TELLEN.
+ *
+ * Deze assertions lazen `w.binds[6]` en `/default_background = \?7/`. Dat werkte
+ * zolang de UPDATE een vaste kop had, en brak op 7 augustus 2026 toen `name`
+ * uit de vaste set verdween ten gunste van first_name/last_name — alles schoof
+ * één op, en vier tests werden rood terwijl er inhoudelijk niets mis was.
+ *
+ * Een test die op een positie leunt, test de volgorde van de SQL en niet wat er
+ * wordt opgeslagen. Deze zoekt het nummer op bij de kolomnaam, dus hij blijft
+ * kloppen als er een veld tussen komt en wordt rood als de kolom de verkeerde
+ * waarde krijgt — wat het punt was.
+ */
+function valueFor(w, column) {
+  const m = new RegExp(`\\b${column} = \\?(\\d+)`).exec(w.sql || '');
+  if (!m) return undefined;              // de kolom staat niet in deze UPDATE
+  return w.binds[Number(m[1]) - 1];      // binds[0] is ?1 (het klant-id), dus ?n is binds[n-1]
+}
+const writes = (w, column) => new RegExp(`\\b${column} = \\?\\d+`).test(w.sql || '');
 const CUSTOMERS = /UPDATE customers/;
 const LOCK_INSERT = /INSERT INTO customer_style_locks/;
 const LOCK_DELETE = /DELETE FROM customer_style_locks/;
@@ -145,7 +165,7 @@ section('§1 · /account/details — two callers, one endpoint');
   const r = await post('/account/details', { name: 'Mara', brand: 'VOLT', phone: '+31 6 1', vat: 'NL001234567B01' });
   const w = writeTo(r.writes, CUSTOMERS);
   check('a form with no background leaves the columns alone', !/default_background/.test(w.sql));
-  check('and binds six values rather than eight', w.binds.length === 6, w.binds.length);
+  check('and writes only the fields it was sent', !writes(w, 'country') && !writes(w, 'city'));
   check('and returns to its own page, not the brand kit', r.location === '/account/details?saved=1#details', r.location);
 }
 
@@ -153,23 +173,23 @@ section('§1 · /account/details — two callers, one endpoint');
 {
   const r = await post('/account/details', { name: 'Mara', background: 'beige' });
   const w = writeTo(r.writes, CUSTOMERS);
-  check('a request carrying a background writes it', /default_background = \?7/.test(w.sql));
-  check('and stores the id it was handed', w.binds[6] === 'beige', JSON.stringify(w.binds[6]));
-  check('with no second hex beside a recommended id', w.binds[7] === null, JSON.stringify(w.binds[7]));
+  check('a request carrying a background writes it', writes(w, 'default_background'));
+  check('and stores the id it was handed', valueFor(w, 'default_background') === 'beige', JSON.stringify(valueFor(w, 'default_background')));
+  check('with no second hex beside a recommended id', valueFor(w, 'default_background_hex') === null, JSON.stringify(valueFor(w, 'default_background_hex')));
 }
 
 // The custom swatch is the one option whose answer lives in the hex.
 {
   const r = await post('/account/details', { name: 'Mara', background: 'custom', background_custom: '#eee' });
   const w = writeTo(r.writes, CUSTOMERS);
-  check('a custom colour keeps its expanded hex', w.binds[7] === '#EEEEEE', w.binds[7]);
+  check('a custom colour keeps its expanded hex', valueFor(w, 'default_background_hex') === '#EEEEEE', valueFor(w, 'default_background_hex'));
 }
 
 // A colour this site does not offer is "ask me per order" — not a 400.
 {
   const r = await post('/account/details', { name: 'Mara', background: 'chartreuse' });
   const w = writeTo(r.writes, CUSTOMERS);
-  check('an unknown background stores as no preference', w.binds[6] === null, JSON.stringify(w.binds[6]));
+  check('an unknown background stores as no preference', valueFor(w, 'default_background') === null, JSON.stringify(valueFor(w, 'default_background')));
 }
 
 // Present-but-empty is an answer ("clear it"), which is why presence and not
@@ -178,7 +198,121 @@ section('§1 · /account/details — two callers, one endpoint');
   const r = await post('/account/details', { name: 'Mara', background: '' });
   const w = writeTo(r.writes, CUSTOMERS);
   check('an empty background field still counts as an answer',
-    /default_background/.test(w.sql) && w.binds[6] === null);
+    writes(w, 'default_background') && valueFor(w, 'default_background') === null);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§1b · wat er verplicht is, en hoe het wordt samengesteld');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// 7 augustus 2026. Lucas: *"Is factuuradres in 1 regel wel handig, dit doen ze
+// toch vaak apart"*, *"Aanpassen naar naam en achternaam"* en *"Deze gegevens
+// zijn ook verplicht inclusief btw-nummer met een checkbox bij btw-nummer toch
+// te skippen als de klant geen btw-nummer heeft of buiten de eu komt."*
+//
+// Drie dingen die alle drie fout kunnen zonder dat iemand het merkt: een half
+// opgeslagen adres, een samengestelde weergave die niet klopt met de losse
+// velden, en een verplichting die je met een leeg vakje omzeilt.
+
+const FULL = {
+  first_name: 'Mara', last_name: 'de Groot', brand: 'VOLT',
+  country: 'NL', address_line1: 'Vaarwerkhorst 17', address_line2: '',
+  postal_code: '7531 HK', city: 'Enschede', region: '',
+  vat: 'NL001234567B01', phone: '', website: '',
+};
+
+{
+  const r = await post('/account/details', FULL);
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('a complete form saves', r.location === '/account/details?saved=1#details', r.location);
+  check('the two name fields are stored apart',
+    valueFor(w, 'first_name') === 'Mara' && valueFor(w, 'last_name') === 'de Groot');
+  // "de Groot" is precies waarom `name` niet achteraf gesplitst wordt maar
+  // vooraf samengesteld — zie migrations/0016.
+  check('and `name` is the two of them joined', valueFor(w, 'name') === 'Mara de Groot', valueFor(w, 'name'));
+  check('every address line lands in its own column',
+    valueFor(w, 'address_line1') === 'Vaarwerkhorst 17'
+    && valueFor(w, 'postal_code') === '7531 HK'
+    && valueFor(w, 'city') === 'Enschede');
+  check('an empty optional line is stored as nothing, not as ""',
+    valueFor(w, 'address_line2') === null && valueFor(w, 'region') === null);
+  // Postcode en plaats op één regel, straat erboven — de vorm die een envelop
+  // aanhoudt. Het land staat er met opzet NIET bij; zie composeAddress().
+  check('and the composed block reads like an address',
+    valueFor(w, 'billing_address') === 'Vaarwerkhorst 17\n7531 HK Enschede',
+    JSON.stringify(valueFor(w, 'billing_address')));
+}
+
+{
+  const r = await post('/account/details', { ...FULL, city: '' });
+  check('a required field sent empty saves NOTHING',
+    !writeTo(r.writes, CUSTOMERS).sql, writeTo(r.writes, CUSTOMERS).sql.slice(0, 40));
+  check('and says so instead of pretending it worked',
+    r.location === '/account/details?missing=1#details', r.location);
+}
+
+{
+  const r = await post('/account/details', { ...FULL, last_name: '' });
+  check('a missing surname is refused too', r.location === '/account/details?missing=1#details', r.location);
+}
+
+// Het vinkje. Drie toestanden, en ze zijn niet inwisselbaar.
+{
+  const r = await post('/account/details', { ...FULL, vat: '', no_vat: '1' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('"I have no VAT number" is an answer, and saves', !!w.sql);
+  check('it stores no number', valueFor(w, 'vat_number') === null);
+  check('and records that the answer was given', valueFor(w, 'no_vat_number') === 1, valueFor(w, 'no_vat_number'));
+}
+
+{
+  const r = await post('/account/details', { ...FULL, vat: '' });
+  check('an empty VAT number with no tick is refused',
+    r.location === '/account/details?missing=1#details', r.location);
+}
+
+{
+  // Wie allebei doet, heeft er een. Het formulier hoort niet te gokken welke
+  // van de twee hij meende.
+  const r = await post('/account/details', { ...FULL, no_vat: '1' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('a filled number beats its own checkbox', valueFor(w, 'vat_number') === 'NL001234567B01');
+  check('and clears the "no number" flag', valueFor(w, 'no_vat_number') === 0, valueFor(w, 'no_vat_number'));
+}
+
+{
+  // /start's opslag-vinkje stuurt niet noodzakelijk alles. Een veld dat niet
+  // meekomt, is niet leeg — het is niet ter sprake, en mag niet gewist worden
+  // en ook niet als ontbrekend gelden.
+  const r = await post('/account/details', { phone: '+31 6 25436130' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('a partial caller is not held to the required set', !!w.sql && r.location.includes('saved=1'));
+  check('and leaves the fields it did not send alone',
+    !writes(w, 'city') && !writes(w, 'first_name') && !writes(w, 'country'));
+}
+
+{
+  // DE DUURSTE VAN DE DRIE. `brand` stond onvoorwaardelijk in de UPDATE, dus
+  // een POST met alleen een telefoonnummer schreef `brand = NULL` mee — en
+  // `brand` is verplicht. Een deelaanroeper kon zo een verplicht veld
+  // leegmaken zonder er ooit naar gevraagd te hebben, en de controle erboven
+  // ziet dat niet omdat die juist alleen naar het GESTUURDE kijkt.
+  const r = await post('/account/details', { phone: '+31 6 25436130' });
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('a partial caller cannot null a field it never sent',
+    !writes(w, 'brand') && !writes(w, 'website') && !writes(w, 'vat_number'),
+    w.sql.replace(/\s+/g, ' ').slice(0, 90));
+  check('and the one field it did send is written', valueFor(w, 'phone') === '+31 6 25436130');
+}
+
+{
+  // Niets bekends erin: geen kolommen, wel details_saved_at. Zonder de
+  // lege-sets-tak zou de SET met een komma beginnen en de query stuklopen.
+  const r = await post('/account/details', {});
+  const w = writeTo(r.writes, CUSTOMERS);
+  check('an empty post still marks the record as saved',
+    /details_saved_at = datetime/.test(w.sql) && !/SET\s*,/.test(w.sql),
+    w.sql.replace(/\s+/g, ' ').slice(0, 70));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

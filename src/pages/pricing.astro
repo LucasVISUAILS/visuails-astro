@@ -13,16 +13,15 @@ import PricingPage from '../components/PricingPage.astro';
 // and the fact that the fall is what the page is about. The first-order
 // discount is the last clause because it is the one a snippet can afford to
 // lose — the two rates cannot be.
-import { euro, ladderRate, ladderFloor, LADDER, vatLabel, FIRST_ORDER_DISCOUNT } from '../data/pricing.js';
+import { euro, ladderRate, ladderFloor, LADDER, vatLabel } from '../data/pricing.js';
 
 const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
-const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 const description =
   `Priced per product, and the rate falls as the count rises: ` +
   `${euro(ladderRate('complete', 1), 'en')} down to ` +
   `${euro(ladderFloor('complete'), 'en')} from ${FLOOR_FROM} products, ` +
-  `${vatLabel('excl', 'en')}. First order ${firstPct} off.`;
+  `${vatLabel('excl', 'en')}.`;
 ---
 
 <Layout title="Pricing — VISUAILS" description={description}>

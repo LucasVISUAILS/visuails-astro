@@ -35,7 +35,7 @@ import { waHref } from '../data/whatsapp.js';
 // from turnaround(); what changed is that this page names the count.
 import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
-  WINDOW_THRESHOLD, FIRST_ORDER_DISCOUNT, reviewClaim, turnaround,
+  WINDOW_THRESHOLD, reviewClaim, turnaround,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
@@ -65,9 +65,6 @@ const rungRows = rungs.map(([lo, hi, rate]) => ({
 }));
 const t0 = TIERS.unattended;
 
-// Computed, never typed — a "20%" written beside a constant of 0.20 is two
-// sources of truth for one number, and the typed one is the one that rots.
-const firstPct = `${Math.round(FIRST_ORDER_DISCOUNT * 100)}%`;
 
 // The before/after row. Photo paths only — the labels come out of `moods` so
 // a renamed style can never drift between the grid and the comparison row.
@@ -148,7 +145,7 @@ const COPY = {
     ladderH: 'What a carousel costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
-    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them. Your first order with us is ${firstPct} off on top of it.`,
+    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them.`,
     // The button under the rung table. /catalog has had one since the ladder
     // landed and this page did not, so the one page that shows a full rate card
     // was also the one that made you scroll past it to act on it.
@@ -254,7 +251,7 @@ const COPY = {
     setH: 'Eén product. Drie foto’s. <em>Een carousel.</em>',
     setP: 'Elke lifestyle-bestelling is je product in één gestylede look, geleverd als drie shots die bij elkaar horen — klaar om te posten als carousel op Instagram, je shop en ads.',
     set: [
-      ['De sfeer', 'Je product gestyled in een realistische setting — het sfeerbeeld dat de scroll stopt.'],
+      ['De sfeer', 'Je product gestyled in een realistische setting — het sfeerbeeld waar iemand op blijft hangen.'],
       ['On-model', 'Hetzelfde product gedragen of vastgehouden, zodat mensen het in hun eigen leven zien.'],
       ['Logo-close-up', 'Een strakke detailshot — zelfde vibe, zelfde colour grade — die de kwaliteit bewijst.'],
     ],
@@ -262,7 +259,7 @@ const COPY = {
     ladderH: 'Wat een carousel kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
-    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}. Je eerste bestelling is daar nog eens ${firstPct} goedkoper op.`,
+    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
     ladderCta: 'Start een bestelling',
     stepsH: 'Drie stappen naar een carousel.',
     steps: [
@@ -285,12 +282,12 @@ const COPY = {
     onRequest: 'Op aanvraag',
     unitLabel: `${euro(entry, 'nl')} – ${euro(floor, 'nl')} / product · ${vatLabel('excl', 'nl')}`,
     edMeta: '( Waar het past )',
-    edH: 'Lifestylefotografie: verlangen, in context.',
-    edSub: 'De scènes die verlangen wekken, niet alleen helderheid.',
+    edH: 'Lifestylefotografie: je product in een scène waar iemand zichzelf in ziet.',
+    edSub: 'Beelden die iets losmaken, niet alleen laten zien wat het is.',
     whatH: 'Wat het is',
     whatP: [
       'Waar catalog het product helder toont, zet lifestylefotografie het in een wereld — gestyled, belicht en geschoten als een scène waar iemand in wil stappen. Een VISUAILS lifestyle-bestelling is drie foto’s van één product in één look: een sfeershot, een on-model shot en een detail-close-up, met dezelfde grade, zodat ze als één verhaal lezen en direct als carousel op een feed te posten zijn.',
-      'Dit is het beeld dat het emotionele werk doet. Het zegt niet alleen wat het product is; het laat mensen zien wie ze ermee zouden zijn. Daarom hoort het waar mensen scrollen voor inspiratie in plaats van specificaties — en daarom is het vaak het verschil tussen een listing die bekeken wordt en een merk dat gevolgd wordt.',
+      'Dit is het beeld dat het emotionele werk doet. Het zegt niet alleen wat het product is; het laat iemand zien hoe hij eruitziet met jouw product aan. Daarom hoort het waar mensen scrollen voor inspiratie in plaats van specificaties — en daarom is het vaak het verschil tussen een listing die bekeken wordt en een merk dat gevolgd wordt.',
     ],
     whereH: 'Waar het leeft',
     where: [

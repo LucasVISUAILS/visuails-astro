@@ -67,7 +67,7 @@ const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'canc
 const STATUS_LABEL = {
   received: 'Received',
   in_production: 'In production',
-  human_check: 'In human check',
+  human_check: 'Being checked',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
 };
@@ -662,9 +662,23 @@ async function handleCustomerWipe(context, customerId) {
     ) }), 400);
   }
 
+  // DEZE QUERY SELECTEERDE EEN KOLOM DIE NIET BESTOND, en de vangnet-catch
+  // eronder zorgde ervoor dat niemand het merkte. `orders.vat_cents` stond in
+  // geen enkele migratie — alleen op invoice_archive — dus D1 gooide "no such
+  // column", `.catch()` slikte het in, `rows` werd leeg, de INSERT hieronder
+  // werd overgeslagen, en handleCustomerWipe() verwijderde vervolgens gewoon
+  // de bestanden, de bestellingen en de klant. Het bewaarplicht-archief legde
+  // stilzwijgend nul regels vast, zeven jaar bewaarplicht en al. De test zag
+  // het niet omdat de fixture `vat_cents` netjes meegaf. migrations/0015 maakt
+  // de kolom echt.
+  //
+  // De catch blijft, maar mag geen fout meer verbergen die het archief
+  // leegmaakt: faalt deze query, dan faalt de wipe en is er niets verwijderd.
   const orders = await env.DB.prepare(
     'SELECT id, ref, service, total_cents, vat_cents, paid_at, created_at, payment_status FROM orders WHERE customer_id = ?1'
-  ).bind(customerId).all().catch(() => ({ results: [] }));
+  ).bind(customerId).all().catch((err) => {
+    throw new Error(`kon de bestellingen niet lezen, dus er is niets verwijderd: ${err?.message || err}`);
+  });
   const rows = orders.results || [];
 
   // 1 · Bewaren wat bewaard moet blijven.
@@ -819,9 +833,16 @@ async function handleStatusUpdate(context, orderId) {
  * zijn.
  */
 async function loadOrderFiles(env, orderId) {
+  // De btw-kolommen komen uit migratie 0015 en horen bij de brede query, niet
+  // bij de smalle: valt de brede om omdat 0015 nog niet gedraaid is, dan is de
+  // narrow-variant precies wat je wilt — de pagina laadt zonder btw-blok in
+  // plaats van helemaal niet te laden. Zelfde patroon als 0011 hierboven.
   const wide = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
                        delivery_mailed_at, redelivery_mailed_at, redelivery_count,
-                       customer_note, customer_note_at
+                       customer_note, customer_note_at,
+                       country, vat_number, vat_treatment, vat_rate, vat_cents, total_cents,
+                       vat_valid, vat_checked_at, vat_consultation, vat_check_name,
+                       icp_reported_at
                   FROM orders WHERE id = ?1`;
   const narrow = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
                          delivery_mailed_at
@@ -900,6 +921,42 @@ async function renderFiles(context, orderId) {
 
   const showAnnounced = migrated && delivery.length > 0;
   const pending = migrated ? delivery.filter((f) => !f.announced_at) : [];
+
+  /* ── DE BTW-BESLISSING, MET HET BEWIJS ERBIJ ────────────────────────────────
+   *
+   * Dit is geen sierstuk. Als de Belastingdienst over drie jaar vraagt waarom
+   * bestelling VIS-XXXX-YYY op 0% stond, is dit het scherm waar het antwoord
+   * staat: welk land, welk nummer, wat VIES zei, en het raadpleegnummer dat
+   * bewijst dát er is gecontroleerd. Zonder dat laatste is een bevestiging
+   * niet meer dan een bewering.
+   *
+   * De ICP-regel staat erbij omdat elke verlegde EU-dienst op de kwartaalopgaaf
+   * moet en een bedrag in rubriek 3b zonder ICP-regel een staande rode vlag is.
+   */
+  const vatRow = migrated && order.vat_treatment ? (() => {
+    const t = order.vat_treatment;
+    const money = (c) => `€${((Number(c) || 0) / 100).toFixed(2)}`;
+    const label = t === 'eu_reverse_charge' ? 'Btw verlegd (art. 196)'
+      : t === 'outside_scope' ? 'Niet belastbaar in NL'
+      : `Nederlandse btw ${Math.round((Number(order.vat_rate) || 0) * 100)}%`;
+    const proof = order.vat_number
+      ? (order.vat_valid
+        ? `VIES: geldig${order.vat_checked_at ? ` op ${esc(when(order.vat_checked_at))}` : ''}${order.vat_consultation ? ` · raadpleegnummer ${esc(order.vat_consultation)}` : ' · <strong>geen raadpleegnummer opgeslagen</strong>'}${order.vat_check_name ? ` · ${esc(order.vat_check_name)}` : ''}`
+        : `VIES: <strong>niet bevestigd</strong> — er is Nederlandse btw gerekend`)
+      : 'Geen btw-nummer opgegeven';
+    const icp = t === 'eu_reverse_charge'
+      ? (order.icp_reported_at
+        ? `<span class="muted">ICP opgegeven ${esc(when(order.icp_reported_at))}</span>`
+        : '<strong>Nog niet op de opgaaf ICP</strong>')
+      : '';
+    return `<section class="card">
+      <h2>Btw</h2>
+      <p><strong>${esc(label)}</strong>${order.country ? ` · ${esc(order.country)}` : ''}${order.vat_number ? ` · ${esc(order.vat_number)}` : ''}</p>
+      <p class="muted">Netto ${money(order.total_cents)} · btw ${money(order.vat_cents)} · in rekening gebracht ${money((Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0))}</p>
+      <p class="muted">${proof}</p>
+      ${icp ? `<p>${icp}</p>` : ''}
+    </section>`;
+  })() : '';
 
   /* ── DE INDELING — augustus 2026 ────────────────────────────────────────────
    *
@@ -1055,7 +1112,7 @@ async function renderFiles(context, orderId) {
     ? `<form method="post" action="/admin/orders/${order.id}/map">
       <table class="files"><thead><tr><th></th><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th>${showAnnounced ? '<th>Announced</th>' : ''}</tr></thead>
       <tbody>${delivery.map(mapRow).join('')}</tbody></table>
-      <div class="controls" style="margin-top:.7rem">
+      <div class="controls is-under">
         <button class="btn btn-primary" type="submit">Save mapping</button>
         <span class="muted">Guessed from the filenames — correct what is wrong, then save. Two files on the same product and shot: the newest one wins and the older is marked replaced.</span>
       </div>
@@ -1101,7 +1158,7 @@ async function renderFiles(context, orderId) {
   </p>
   ${pending.length
     ? `<form class="controls" method="post" action="/admin/orders/${order.id}/announce">
-         <input type="text" name="note" maxlength="${ANNOUNCE_NOTE_MAX}" placeholder="Optional: what changed (goes in the mail and on their timeline)" style="flex:1; min-width:14rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);">
+         <input type="text" name="note" maxlength="${ANNOUNCE_NOTE_MAX}" placeholder="Optional: what changed (goes in the mail and on their timeline)" class="in-grow">
          <button class="btn btn-primary" type="submit">Announce ${pending.length} new ${pending.length === 1 ? 'image' : 'images'}</button>
        </form>
        <p class="muted">One mail for everything that is still unannounced — upload all of it first, then press once.</p>`
@@ -1128,7 +1185,7 @@ async function renderFiles(context, orderId) {
       order.customer_note_at ? ` Last changed ${esc(when(order.customer_note_at))}.` : ''}</p>
     <form method="post" action="/admin/orders/${order.id}/note">
       <textarea name="note" rows="3" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="e.g. The fabric on product 4 came out darker than your photo, so we lifted the exposure a touch.">${esc(order.customer_note || '')}</textarea>
-      <div class="controls" style="margin-top:.5rem">
+      <div class="controls is-under">
         <button class="btn btn-primary btn-sm" type="submit">Save${order.customer_note ? ' / clear' : ''}</button>
         <span class="muted">Empty saves as no message.</span>
       </div>
@@ -1139,7 +1196,7 @@ async function renderFiles(context, orderId) {
     <h3>Only you see this</h3>
     <form method="post" action="/admin/orders/${order.id}/internal">
       <textarea name="body" rows="2" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="Why this order took an extra round, what to watch for next time, what you agreed on the phone." required></textarea>
-      <div class="controls" style="margin-top:.5rem">
+      <div class="controls is-under">
         <button class="btn btn-ghost btn-sm" type="submit">Add note</button>
       </div>
     </form>
@@ -1177,6 +1234,8 @@ async function renderFiles(context, orderId) {
   ${announce}
 
   ${noteBlocks}
+
+  ${vatRow}
   `;
   return html(page({ title: order.ref, body }));
 }
@@ -2297,7 +2356,7 @@ async function renderCustomer(context, customerId) {
        action here. The photo is optional so a model can still be created before
        there is anything to show, but the common path is both at once. -->
   <form class="controls" method="post" action="/admin/customers/${customer.id}/models" enctype="multipart/form-data">
-    <input type="text" name="label" placeholder="New brand model name (e.g. 'Nora')" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);" required>
+    <input type="text" name="label" placeholder="New brand model name (e.g. 'Nora')" class="in-grow" required>
     <input type="file" name="preview" accept="image/*">
     <button class="btn btn-primary" type="submit">Add brand model</button>
   </form>
@@ -3168,7 +3227,7 @@ function revisionCard(r) {
       <form method="post" action="/admin/revisions/${r.file_id}/resolve" class="rev-actions">
         <input type="text" name="fixed" maxlength="${ANNOUNCE_NOTE_MAX}" required
                placeholder="Wat heb je aangepast? Deze regel gaat naar de klant."
-               style="flex:1; min-width:14rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);">
+               class="in-grow">
         <button class="btn btn-primary" type="submit">Opgelost — terug naar de klant</button>
       </form>
       <p class="meta"><a href="/admin/customers/${r.customer_id}">Klant bekijken</a></p>
@@ -3232,7 +3291,7 @@ function orderCard(o, models, statusFilter = '') {
          STATUSES rather than trusting the round trip. -->
     ${statusFilter ? `<input type="hidden" name="back" value="${esc(statusFilter)}">` : ''}
     <select name="status">${options}</select>
-    <input type="text" name="note" placeholder="Note (optional, goes on the client's timeline too)" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);">
+    <input type="text" name="note" placeholder="Note (optional, goes on the client's timeline too)" class="in-grow">
     <button class="btn btn-primary" type="submit">Update</button>
   </form>
   ${unannounced}
@@ -3242,7 +3301,7 @@ function orderCard(o, models, statusFilter = '') {
   ${modelList}
   ${orderDanger(o)}
   <form class="controls" method="post" action="/admin/orders/${o.id}/models">
-    <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);" required>
+    <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" class="in-grow" required>
     <button class="btn btn-ghost" type="submit">Add custom model</button>
   </form>
 </div>`;
@@ -3319,7 +3378,7 @@ function orderDanger(o) {
  * is nagelopen), dus de opmaak mag hier door.
  */
 function errorBody(message) {
-  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error" style="margin-top:2rem">${message}</p>`;
+  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error is-page">${message}</p>`;
 }
 
 function page({ title, body }) {

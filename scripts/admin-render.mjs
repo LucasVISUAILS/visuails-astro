@@ -84,7 +84,7 @@ const request = new Request(`https://visuails.com${SECTION}`, { headers: { cooki
 const res = await adminGet({ request, env: makeEnv(), waitUntil() {} });
 const body = await res.text();
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const browser = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium' });
 const context = await browser.newContext();
 await context.route('**/*', async (route) => {
   const u = new URL(route.request().url());
