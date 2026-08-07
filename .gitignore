@@ -8,3 +8,7 @@ dist/
 # stripe-local-test.js). Het script leest de sleutel nu uit een env var, maar
 # dit bestand blijft sowieso genegeerd als extra vangnet.
 stripe-local-test.js
+
+# Voorbeeldopnames van het dashboard (scripts/account-render.mjs) — gereedschap,
+# geen bron. Ze horen bij een moment, niet bij de code.
+.render/

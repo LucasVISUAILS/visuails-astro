@@ -564,13 +564,26 @@ export const TIERS = {
       en: 'Standard queue, no fixed delivery date',
       nl: 'Standaard wachtrij, geen vaste leverdatum',
     },
+    // ELKE BESTELLING GEEFT TOEGANG TOT HET DASHBOARD, sinds augustus 2026.
+    //
+    // Lucas: *"klant krijgt na elke bestelling (ook test sample van 0,99 cent)
+    // toegang tot het klantendashboard."* Deze regel zei nog "download link by
+    // email or WhatsApp" en zette daarmee het dashboard neer als iets van de
+    // hogere trede — terwijl /account elke bestelling van een klant toont,
+    // ongeacht tier, en sinds vandaag met de foto's erbij. De tabel beloofde
+    // dus minder dan het product doet, en dat is de vervelendste soort fout:
+    // hij kost je verkopen zonder dat iemand klaagt.
+    //
+    // Het verschil tussen de treden zit niet meer in het dashboard maar in wat
+    // je er kunt: hieronder kijken en downloaden, hierboven daarnaast per beeld
+    // goedkeuren of een revisie vragen. Dat verschil staat nu in beide kolommen
+    // met zoveel woorden.
     delivery: {
-      en: 'Delivered as a download link by email or WhatsApp',
-      nl: 'Geleverd als downloadlink via e-mail of WhatsApp',
+      en: 'In your dashboard to view and download, plus a link by email or WhatsApp',
+      nl: 'In je dashboard om te bekijken en downloaden, plus een link via e-mail of WhatsApp',
     },
-    // The instrument here is a message, because there is no portal on this
-    // tier. The promise is identical to attended's — see the block comment
-    // above for why it is a standard rather than a counted entitlement.
+    // The promise is identical to attended's — see the block comment above for
+    // why it is a standard rather than a counted entitlement.
     aftercare: {
       en: 'We ask if you are happy with them, and put right anything that is not',
       nl: 'We vragen of je tevreden bent, en zetten recht wat dat niet is',
@@ -601,8 +614,8 @@ export const TIERS = {
       nl: 'Voorrang in de wachtrij — een geboekt venster wijkt nooit voor een latere, kleinere bestelling',
     },
     delivery: {
-      en: 'Client portal with per-image approve or request-revision',
-      nl: 'Klantportaal met per beeld goedkeuren of revisie aanvragen',
+      en: 'Same dashboard, plus per-image approve or request-revision',
+      nl: 'Zelfde dashboard, plus per beeld goedkeuren of een revisie vragen',
     },
     // Same promise as unattended, different instrument: `delivery` above says
     // where flagging happens, this says what flagging gets you. The two rows

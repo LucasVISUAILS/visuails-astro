@@ -152,6 +152,22 @@ const POST_LIMIT = 20;
 const NOTE_MAX = 2000;
 
 /**
+ * Het nummer waar een klant ons echt kan bereiken, zonder de +.
+ *
+ * Lucas: *"misschien ook link naar whatsapp voor persoonlijke support wanneer
+ * nodig."* Dat hoort bij de revisie: een formulier is goed voor "de achtergrond
+ * moet wit" en hopeloos voor "ik weet niet goed hoe ik het moet zeggen, kijk
+ * even mee". Het staat daarom in de uitgeklapte productkaart en niet in de kop
+ * van het dashboard — bij de foto waar het over gaat, niet als algemene
+ * uitnodiging om te bellen.
+ *
+ * Hetzelfde nummer als in src/data/schema.js en de videopagina's. Op termijn is
+ * één bron beter; die staat in een datamap die deze Worker niet importeert, en
+ * een import daarvoor optuigen is voor één string te veel machinerie.
+ */
+const WHATSAPP = '31625436130';
+
+/**
  * Which styles a brand can lock a custom model to. Read off PER_PRODUCT rather
  * than typed again — those ids ('catalog' | 'lifestyle' | 'video') are exactly
  * what customer_style_locks.style is documented to hold (migrations/0003).
@@ -358,11 +374,51 @@ const COPY = {
     askHint: 'In your own words. The more specific, the faster we get it right.',
     stApproved: 'Approved',
     stExpired: 'No longer available',
+    // Per product, sinds augustus 2026. prodLabel krijgt het nummer als string
+    // binnen omdat product_key 'p3' is en niet 3 — het omzetten hoort bij de
+    // sleutel, niet bij de zin.
+    prodLabel: (n) => `Product ${n}`,
+    prodOther: 'Other images',
+    prodDelivered: (n) => (n === 1 ? '1 image delivered' : `${n} images delivered`),
+    prodApproved: (n) => `${n} approved`,
+    prodNothingYet: 'Nothing delivered for this one yet.',
+    prodWeMade: 'What we delivered',
+    prodYouSent: 'What you sent',
+    prodOpen: 'See the photos',
+    prodClose: 'Close',
+    // De tijdlijn. Deze zinnen zijn wat de klant leest in plaats van de
+    // kolomwaarde: 'human_check' is een woord uit onze werkverdeling.
+    flowNowLabel: 'Right now:',
+    flowNow: {
+      received: 'We have your order and your files. We are scheduling it in.',
+      in_production: 'Our studio is making your images.',
+      human_check: 'Someone is going through every image before it reaches you.',
+      delivered: 'Your images are ready. Look them over and tell us if anything is off.',
+      cancelled: 'This order was cancelled. Nothing is being made for it.',
+    },
+    flowStep: { received: 'Received', in_production: 'In production', human_check: 'Checked by a person', delivered: 'Delivered' },
+    flowWindow: (from, to) => (from === to ? `Planned for ${from}.` : `Planned for ${from} – ${to}.`),
+    flowHistory: 'Everything that happened',
+    noteFrom: 'From the studio',
+    ovNowTitle: 'Your latest order',
+    ovOthers: (n) => (n === 1 ? '1 more order in progress' : `${n} more orders in progress`),
+    ovOpenOrder: 'Open this order',
+    prodHelp: 'Hard to put in writing? Show us instead —',
+    prodHelpCta: 'message us on WhatsApp',
+    ovLatest: 'Latest visuals',
+    // Geen eigen "bekijk alles" naast ovViewAll: twee links naar dezelfde
+    // pagina met verschillende bewoording leest als twee bestemmingen.
+    ovLatestEmpty: 'Your delivered visuals will appear here.',
     detPhoneHint: 'Add a WhatsApp number and we can reach you there about an order — a question about a photo answered in a minute instead of a mail thread.',
     waNudgeTitle: 'Get updates on WhatsApp',
     waNudgeBody: 'Add your number and we can send order updates and quick questions straight to WhatsApp. Nothing changes if you leave it empty — email keeps working.',
     waNudgeCta: 'Add your number',
     stRevision: 'Revision requested',
+    // Kort, want deze twee staan als vlaggetje ÓP de foto en als knop ONDER
+    // een tegel van 132 pixels. De lange vorm blijft in de kop van het
+    // product staan, waar de ruimte er wel is.
+    stRevisionShort: 'Revision',
+    bCancelShort: 'Cancel',
 
     planHeading: 'Plan & billing',
     planLede: 'You are billed per order — there is no subscription to manage yet.',
@@ -468,7 +524,7 @@ const COPY = {
     ovDelivered: 'Geleverd',
     ovTotal: 'Bestellingen totaal',
     ovRecent: 'Recente activiteit',
-    ovViewAll: 'Alle bestellingen bekijken',
+    ovViewAll: 'Bekijk alle bestellingen',
     ovNewCta: 'Nieuwe aanvraag',
 
     ordersLede: 'Elke bestelling, van start tot levering.',
@@ -482,11 +538,41 @@ const COPY = {
     askHint: 'In je eigen woorden. Hoe specifieker, hoe sneller het klopt.',
     stApproved: 'Goedgekeurd',
     stExpired: 'Niet meer beschikbaar',
+    prodLabel: (n) => `Product ${n}`,
+    prodOther: 'Overige beelden',
+    prodDelivered: (n) => (n === 1 ? '1 beeld geleverd' : `${n} beelden geleverd`),
+    prodApproved: (n) => `${n} goedgekeurd`,
+    prodNothingYet: 'Hier is nog niets voor geleverd.',
+    prodWeMade: 'Wat wij leverden',
+    prodYouSent: 'Wat jij stuurde',
+    prodOpen: 'Bekijk de foto\u2019s',
+    prodClose: 'Sluiten',
+    flowNowLabel: 'Nu:',
+    flowNow: {
+      received: 'We hebben je bestelling en je bestanden binnen. We plannen hem in.',
+      in_production: 'Onze studio maakt je beelden.',
+      human_check: 'Een mens loopt elk beeld na voordat het naar je toe gaat.',
+      delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
+      cancelled: 'Deze bestelling is geannuleerd. Er wordt niets voor gemaakt.',
+    },
+    flowStep: { received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door een mens', delivered: 'Geleverd' },
+    flowWindow: (from, to) => (from === to ? `Ingepland op ${from}.` : `Ingepland van ${from} tot ${to}.`),
+    flowHistory: 'Alles wat er gebeurd is',
+    noteFrom: 'Van de studio',
+    ovNowTitle: 'Je laatste bestelling',
+    ovOthers: (n) => (n === 1 ? 'nog 1 lopende bestelling' : `nog ${n} lopende bestellingen`),
+    ovOpenOrder: 'Open deze bestelling',
+    prodHelp: 'Lastig op te schrijven? Laat het ons zien \u2014',
+    prodHelpCta: 'app ons op WhatsApp',
+    ovLatest: 'Laatst geleverd',
+    ovLatestEmpty: 'Hier verschijnen je geleverde visuals zodra ze klaar zijn.',
     detPhoneHint: 'Zet er een WhatsApp-nummer neer, dan kunnen we je daar bereiken over een bestelling — een vraag over een foto is dan in een minuut geregeld in plaats van in een mailwisseling.',
     waNudgeTitle: 'Updates via WhatsApp',
     waNudgeBody: 'Voeg je nummer toe, dan sturen we updates over je bestelling en korte vragen rechtstreeks via WhatsApp. Laat je het leeg, dan verandert er niets — mail blijft gewoon werken.',
     waNudgeCta: 'Nummer toevoegen',
     stRevision: 'Revisie aangevraagd',
+    stRevisionShort: 'Revisie',
+    bCancelShort: 'Intrekken',
 
     planHeading: 'Abonnement & facturering',
     planLede: 'Je betaalt per bestelling — er is nog geen abonnement om te beheren.',
@@ -861,18 +947,19 @@ function accountSessionExpiry(fromDate = new Date()) {
  */
 async function sectionGet(context, customer, section) {
   const { env, request } = context;
-  let orders, files, models, locks, details;
+  let orders, files, models, locks, details, events;
   try {
     // `details` joins the same Promise.all rather than being fetched inside
     // brandKitBody(): one round of queries, four possible pages, is what this
     // function has always been — and a query issued from a render function is
     // one a future section reordering can accidentally run twice.
-    [orders, files, models, locks, details] = await Promise.all([
+    [orders, files, models, locks, details, events] = await Promise.all([
       loadOrders(env, customer.customer_id),
       loadCustomerFiles(env, customer.customer_id),
       loadCustomModels(env, customer.customer_id),
       loadStyleLocks(env, customer.customer_id),
       detailsRow(env, customer.customer_id),
+      loadOrderEvents(env, customer.customer_id),
     ]);
   } catch {
     const lang = negotiate(request);
@@ -889,6 +976,7 @@ async function sectionGet(context, customer, section) {
   const t = COPY[lang];
 
   const filesByOrder = groupFilesByOrder(files);
+  const eventsByOrder = groupEventsByOrder(events);
   // The whole row now, not just the model id: a lock carries a face AND a
   // background since August 2026, and mapping it down to one column here is
   // what would make the background invisible to the renderer.
@@ -911,7 +999,7 @@ async function sectionGet(context, customer, section) {
 
   let inner, title;
   if (section === 'orders') {
-    inner = ordersBody(t, lang, orders, filesByOrder, statusFilter);
+    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter);
     title = t.ordersHeading;
   } else if (section === 'brand') {
     inner = brandKitBody(t, lang, models, lockByStyle);
@@ -923,7 +1011,7 @@ async function sectionGet(context, customer, section) {
     inner = planBody(t, customer);
     title = t.planHeading;
   } else {
-    inner = overviewBody(t, lang, customer, orders, filesByOrder);
+    inner = overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder);
     title = t.navOverview;
   }
 
@@ -1272,6 +1360,23 @@ function normalizeHex(v) {
 
 /** All orders this customer has placed, most recent first. */
 async function loadOrders(env, customerId) {
+  // customer_note komt uit migratie 0013 en wordt in een try/catch gelezen: de
+  // bestellingenlijst is het dashboard, en dat mag niet omvallen op een kolom
+  // die nog niet bestaat. Zonder kolom is er ook geen mededeling, dus de
+  // uitkomst klopt in beide gevallen.
+  try {
+    const res = await env.DB.prepare(
+      `SELECT id, ref, service, status, tier, product_count, window_start, window_end, lang, created_at, closed_at,
+              customer_note, customer_note_at,
+              (SELECT revisions_revoked_at FROM customers c WHERE c.id = ?1) AS revisions_revoked_at
+         FROM orders
+        WHERE customer_id = ?1
+        ORDER BY created_at DESC, id DESC
+        LIMIT 200`
+    ).bind(customerId).all();
+    return res.results || [];
+  } catch { /* valt terug op de query zonder die kolommen */ }
+
   const res = await env.DB.prepare(
     // revisions_revoked_at hangt aan de KLANT, niet aan de bestelling, maar
     // reviewControls() beslist per bestelling of de knoppen er staan — dus
@@ -1321,14 +1426,87 @@ async function loadCustomerFiles(env, customerId) {
   //
   // product_key en shot komen mee omdat een upload zonder die twee een
   // bestandsnaam is en met die twee "product 3 · achterkant".
-  const res = await env.DB.prepare(
-    `SELECT f.id, f.order_id, f.kind, f.filename, f.bytes, f.expires_at,
-            f.review_state, f.review_note, f.reviewed_at, f.product_key, f.shot
-       FROM files f JOIN orders o ON o.id = f.order_id
-      WHERE o.customer_id = ?1 AND f.kind IN ('upload', 'delivery')
-      ORDER BY f.order_id, f.kind DESC, f.id`
-  ).bind(customerId).all();
-  return res.results || [];
+  // VERVANGEN BEELDEN BLIJVEN HIER BUITEN, sinds migratie 0012. Levert de
+  // studio na een revisie een nieuwe versie van "product 3 · achterkant", dan
+  // krijgt de vorige een superseded_at en hoort hij niet meer op dit scherm:
+  // de klant kan met de foto waar hij een revisie op vroeg niets meer, en hem
+  // laten staan naast zijn opvolger maakt van elke revisieronde een extra
+  // beeld dat genegeerd moet worden.
+  //
+  // De ORDER BY sorteert nu ook op product en shot, zodat de groepering in
+  // orderCard() de volgorde van de database kan volgen in plaats van hem zelf
+  // te bedenken. NULLS gaan achteraan — niet-ingedeelde beelden horen onder de
+  // producten, niet ertussen.
+  const cols = `f.id, f.order_id, f.kind, f.filename, f.bytes, f.expires_at,
+                f.review_state, f.review_note, f.reviewed_at, f.product_key, f.shot`;
+  const order = `ORDER BY f.order_id,
+                          f.product_key IS NULL, f.product_key,
+                          f.kind DESC, f.shot IS NULL, f.shot, f.id`;
+  try {
+    const res = await env.DB.prepare(
+      `SELECT ${cols}
+         FROM files f JOIN orders o ON o.id = f.order_id
+        WHERE o.customer_id = ?1 AND f.kind IN ('upload', 'delivery')
+          AND f.superseded_at IS NULL
+        ${order}`
+    ).bind(customerId).all();
+    return res.results || [];
+  } catch {
+    // Code vóór migratie: dan bestaat superseded_at niet, en is er ook nog
+    // niets vervangen — dus is de oude vraag nog het goede antwoord.
+    const res = await env.DB.prepare(
+      `SELECT ${cols}
+         FROM files f JOIN orders o ON o.id = f.order_id
+        WHERE o.customer_id = ?1 AND f.kind IN ('upload', 'delivery')
+        ${order}`
+    ).bind(customerId).all();
+    return res.results || [];
+  }
+}
+
+/**
+ * De tijdlijn van elke bestelling van deze klant, in één query.
+ *
+ * WAAROM DIT ER NIET WAS. `order_events` wordt gevuld bij elke statuswijziging
+ * (zie admin.js: twee schrijfacties, nooit één) en werd tot nu toe alleen
+ * gelezen door portal.js — en dáár ook nog eens alleen voor `attended`
+ * bestellingen. Dat betekende dat een klant MET een account minder zag over
+ * zijn eigen bestelling dan iemand met een doorgestuurd linkje, en dat een
+ * klant op de goedkoopste trede helemaal niets zag. Precies verkeerd om: het
+ * account is de plek waar je thuishoort, en de tijdlijn is het enige wat
+ * antwoord geeft op de vraag waarmee iemand inlogt — waar is mijn bestelling.
+ *
+ * ÉÉN QUERY VOOR ALLE BESTELLINGEN, met een plafond. Per bestelling een query
+ * is bij tien bestellingen tien rondes op een pagina die er al vijf doet. Het
+ * plafond staat ruim boven wat een bestelling ooit aan gebeurtenissen krijgt
+ * (vijf statussen plus wat handmatige notities) en beschermt tegen het geval
+ * dat iemand een bestelling honderd keer heen en weer zet.
+ */
+async function loadOrderEvents(env, customerId) {
+  try {
+    const res = await env.DB.prepare(
+      `SELECT e.order_id, e.status, e.note, e.created_at
+         FROM order_events e JOIN orders o ON o.id = e.order_id
+        WHERE o.customer_id = ?1
+        ORDER BY e.order_id, e.id
+        LIMIT 400`
+    ).bind(customerId).all();
+    return res.results || [];
+  } catch {
+    // Een tijdlijn is context, geen dashboard. Valt deze query om, dan hoort de
+    // rest van de pagina gewoon te laden — zonder tijdlijn, met alles erop wat
+    // er wél is.
+    return [];
+  }
+}
+
+function groupEventsByOrder(events) {
+  const map = new Map();
+  for (const e of events || []) {
+    if (!map.has(e.order_id)) map.set(e.order_id, []);
+    map.get(e.order_id).push(e);
+  }
+  return map;
 }
 
 function groupFilesByOrder(files) {
@@ -1992,7 +2170,7 @@ function shellBody(t, lang, customer, active, inner) {
  * "this month" to. Recent activity is the five newest orders, each linking
  * to its full card on the Orders page rather than repeating that card here.
  */
-function overviewBody(t, lang, customer, orders, filesByOrder) {
+function overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder = new Map()) {
   const name = customer.brand || customer.name || customer.email;
   // Each tile now goes somewhere — the same status filter the Orders page
   // gained in August 2026. A count a customer can see and not act on is a
@@ -2006,6 +2184,90 @@ function overviewBody(t, lang, customer, orders, filesByOrder) {
     [t.ovTotal, orders.length, ''],
   ];
   const recent = orders.slice(0, 5);
+
+  /*
+   * DE STROOK MET LAATST GELEVERDE BEELDEN.
+   *
+   * Lucas: *"op het klantenportaal begin dashboard alle recent geleverde
+   * visuals tonen (alleen visueel niet downloadbaar) met een link erbij."*
+   *
+   * WAAROM ALLEEN KIJKEN HIER. Downloaden hoort bij de bestelling, want daar
+   * staat de context: welk product, welke shot, goedgekeurd of niet. Een
+   * losse strook met downloadknoppen zou dat allemaal weglaten en tóch de
+   * eindhandeling aanbieden — dan download je iets zonder te weten waarvan.
+   * Deze strook heeft één taak: laten zien dat er iets moois klaarstaat, en de
+   * weg wijzen. Elke tegel linkt daarom naar zijn eigen bestelling.
+   *
+   * TWAALF, EN NIET ALLES. Dit is een overzicht, geen galerij. Twaalf vult twee
+   * rijen op een breed scherm en blijft op een telefoon binnen één veegbeweging;
+   * wie meer wil, klikt door — en dat is precies de link die hij vroeg.
+   */
+  const latest = [];
+  for (const o of orders) {
+    for (const f of (filesByOrder.get(o.id) || [])) {
+      if (f.kind === 'upload') continue;
+      if (f.expires_at && isExpired(f.expires_at, null)) continue;
+      latest.push({ f, o });
+      if (latest.length >= 12) break;
+    }
+    if (latest.length >= 12) break;
+  }
+
+  const latestBlock = `
+<div class="section-head">
+  <h2>${esc(t.ovLatest)}</h2>
+  ${orders.length ? `<a class="viewall" href="/account/orders">${esc(t.ovViewAll)}</a>` : ''}
+</div>
+${latest.length
+  ? `<ul class="latest">${latest.map(({ f, o }) => `
+      <li class="latest-item">
+        <a href="/account/orders#order-${o.id}" title="${esc(o.ref)}">
+          <img src="/account/files/${f.id}/f" alt="${esc(o.ref)}" loading="lazy" decoding="async">
+        </a>
+      </li>`).join('')}</ul>`
+  : `<p class="empty">${esc(t.ovLatestEmpty)}</p>`}`;
+
+  /*
+   * ÉÉN BESTELLING BOVENAAN, DE REST ACHTER EEN KLAPJE — augustus 2026.
+   *
+   * Lucas: *"ik zou graag de oudste of nieuwste bestelling getoond willen
+   * hebben op het dashboard, en wanneer de klant meerdere bestellingen heeft
+   * geplaatst deze met een dropdown laten openen. Bedenk wat het beste is."*
+   *
+   * DE NIEUWSTE LOPENDE, en dat is de afweging. Nieuwste is voorspelbaar en
+   * bijna altijd waar de aandacht zit; oudste is alleen beter als je "wat duurt
+   * het langst" wilt beantwoorden, en dat is een vraag van een studio, niet van
+   * een klant. Maar nieuwste-zonder-meer zou een net geleverde bestelling boven
+   * een bestelling zetten die nog in productie is, en dan staat er "klaar"
+   * bovenaan terwijl er nog iets loopt. Dus: de nieuwste LOPENDE bestelling, en
+   * pas als er niets meer loopt de nieuwste van allemaal.
+   *
+   * De rest zit in een <details> die zegt hoeveel het er zijn. Geen echte
+   * dropdown met een keuzelijst: dat vraagt om script en om een keuze die
+   * niemand wil maken. Uitklappen laat ze alle drie zien, met hun eigen tijdlijn.
+   */
+  const active = orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled');
+  const featured = active[0] || orders[0] || null;
+  // Alleen de andere LOPENDE bestellingen in het klapje. Geleverde bestellingen
+  // horen hier niet: die staan al in de strook eronder en in de activiteitlijst,
+  // en een klapje dat "nog 1 lopende bestelling" zegt en er vervolgens drie
+  // toont waarvan twee klaar zijn, telt iets anders dan het belooft.
+  const rest = active.filter((o) => o !== featured);
+
+  const orderBlock = featured
+    ? `
+<div class="section-head"><h2>${esc(t.ovNowTitle)}</h2></div>
+${featuredOrder(t, lang, featured, eventsByOrder.get(featured.id) || [])}
+${rest.length
+  ? `<details class="more-orders">
+       <summary>${esc(t.ovOthers(rest.length))}</summary>
+       <div class="more-orders-list">
+         ${rest.slice(0, 6).map((o) => featuredOrder(t, lang, o, eventsByOrder.get(o.id) || [])).join('')}
+       </div>
+       ${rest.length > 6 ? `<p class="meta"><a class="viewall" href="/account/orders">${esc(t.ovViewAll)}</a></p>` : ''}
+     </details>`
+  : ''}`
+    : '';
 
   return `
 <div class="ovhead">
@@ -2028,6 +2290,10 @@ function overviewBody(t, lang, customer, orders, filesByOrder) {
   }).join('')}
 </div>
 
+${orderBlock}
+
+${latestBlock}
+
 <div class="section-head">
   <h2>${esc(t.ovRecent)}</h2>
   ${orders.length ? `<a class="viewall" href="/account/orders">${esc(t.ovViewAll)}</a>` : ''}
@@ -2035,6 +2301,46 @@ function overviewBody(t, lang, customer, orders, filesByOrder) {
 ${recent.length
   ? `<ul class="activity">${recent.map((o) => activityRow(t, lang, o)).join('')}</ul>`
   : `<p class="empty">${esc(t.emptyOrders)}</p>`}`;
+}
+
+/**
+ * Eén bestelling op het overzicht: de kop, de tijdlijn, en de weg erheen.
+ *
+ * BEWUST NIET DE HELE ORDERKAART. Die bevat de productkaarten met knoppen om
+ * goed te keuren, en dat hoort op de bestellingenpagina — een overzicht dat
+ * alles herhaalt is geen overzicht meer. Hier staat wat je wilt weten zonder
+ * te klikken (waar is het, wanneer) plus één link naar de plek waar je iets
+ * kunt dóén.
+ */
+function featuredOrder(t, lang, o, events) {
+  return `
+<div class="ovorder">
+  <div class="ovorder-head">
+    <span class="ref">${esc(o.ref)}</span>
+    <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
+    <span class="meta">${esc(serviceLabel(o.service, lang) || o.service)}${o.product_count ? ` · ${esc(String(o.product_count))} ${esc(t.fProducts.toLowerCase())}` : ''}</span>
+    <a class="viewall" href="/account/orders#order-${o.id}">${esc(t.ovOpenOrder)}</a>
+  </div>
+  ${progressBlock(t, lang, o, events)}
+  ${studioNote(t, o)}
+</div>`;
+}
+
+/**
+ * De mededeling van de studio bij deze bestelling.
+ *
+ * Lucas: *"één notitieveld per bestelling in admin dat de klant óók ziet."*
+ * Hier is dat veld, aan de kant waar het gelezen wordt. Eén staand bericht,
+ * geen gesprek — wat er nu geldt over deze bestelling. Er staat bij van wie het
+ * komt, want een zin zonder afzender op een dashboard leest als systeemtekst,
+ * en dit is juist het tegenovergestelde: iemand die iets tegen je zegt.
+ */
+function studioNote(t, o) {
+  if (!o.customer_note) return '';
+  return `<div class="studionote">
+  <span class="studionote-who">${esc(t.noteFrom)}</span>
+  <p>${esc(o.customer_note)}</p>
+</div>`;
 }
 
 function activityRow(t, lang, o) {
@@ -2068,7 +2374,7 @@ function activityRow(t, lang, o) {
  * The active chip is a <span>, not a link to the page you are on, and carries
  * aria-current. "All" is always first and is the way back.
  */
-function ordersBody(t, lang, orders, filesByOrder, statusFilter = '') {
+function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '') {
   const shown = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
 
   // Insertion order follows STATUS, which is the order the studio moves through
@@ -2102,7 +2408,7 @@ function ordersBody(t, lang, orders, filesByOrder, statusFilter = '') {
 <h1>${esc(t.ordersHeading)}${shown.length ? ` <span class="h2-count">(${shown.length})</span>` : ''}</h1>
 <p class="lede">${esc(t.ordersLede)}</p>
 ${filters}
-${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [])).join('') : empty}`;
+${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [])).join('') : empty}`;
 }
 
 /**
@@ -2483,7 +2789,7 @@ function styleLabel(style) {
   return serviceLabel(style, 'en') || style;
 }
 
-function orderCard(t, lang, o, files) {
+function orderCard(t, lang, o, files, events = []) {
   const window = o.window_start ? `${esc(o.window_start)} → ${esc(o.window_end || '—')}` : t.windowPending;
   // Status is not repeated here — it already has the pill in row-head, and a
   // second plain-text copy of the same word two lines down read as clutter
@@ -2516,7 +2822,30 @@ function orderCard(t, lang, o, files) {
     ? `<a class="btn btn-ghost btn-sm" href="/account/orders/${o.id}/zip">${esc(t.bDownloadAll)}</a>`
     : '';
 
-  const fileList = `
+  /*
+   * PER PRODUCT, NIET PER STAPEL — augustus 2026.
+   *
+   * Lucas: *"op het dashboard staan de twee kanten naast elkaar zonder dat
+   * iemand kan zien welk beeld bij welk product hoort. Bij één product valt dat
+   * niet op. Bij dertig is het onbruikbaar, en het is precies de bestelling
+   * waar het uitmaakt."*
+   *
+   * Dus: één kaart per product, met wat de klant stuurde en wat wij leverden
+   * bij elkaar. Uitklappen laat de losse foto's zien, en pas dáár staan de
+   * beoordeelknoppen — een revisie vraag je op een foto, niet op een stapel.
+   *
+   * WAAROM DE OUDE TWEE KOLOMMEN BLIJVEN BESTAAN. Draagt geen enkel bestand een
+   * product (elke bestelling van vóór deze week, en elke levering die nog
+   * ingedeeld moet worden), dan is groeperen een kaart met de naam "overige"
+   * eromheen — pure omhaal. In dat geval doet dit scherm wat het deed. De
+   * groepering verschijnt zodra er iets te groeperen valt.
+   */
+  const grouped = groupByProduct(delivered, uploaded);
+  const fileList = grouped
+    ? `
+  <div class="prod-tools">${zip}</div>
+  <div class="prods">${grouped.map((g) => productCard(t, lang, o, g)).join('')}</div>`
+    : `
   <div class="sides">
     ${side(t.sideDelivered, delivered.map((f) => shotTile(t, f, o)), t.emptyFiles, zip)}
     ${side(t.sideUploaded, uploaded.map((f) => shotTile(t, f, o)), t.emptyUploads)}
@@ -2530,6 +2859,8 @@ function orderCard(t, lang, o, files) {
   </div>
   <dl class="facts">${facts.map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
   <p class="meta">${esc(t.fWindow)}: ${o.window_start ? window : esc(window)}</p>
+  ${progressBlock(t, lang, o, events)}
+  ${studioNote(t, o)}
   ${fileList}
 </div>`;
 }
@@ -2547,6 +2878,209 @@ function orderCard(t, lang, o, files) {
  * to them — two forms of control, not one form with mixed intents, same
  * "one form, two submits" shape portal.js's shot() uses for approve/revise.
  */
+/* ── DE TIJDLIJN — augustus 2026 ──────────────────────────────────────────────
+ *
+ * Lucas: *"tijdlijn naar het dashboard, voor elke trede. Klantvriendelijke
+ * tekst per status, niet de databasewaarde. 'Wat gebeurt er nu' bovenaan, in
+ * plaats van een lijst die je zelf moet interpreteren."*
+ *
+ * DRIE DINGEN IN ÉÉN BLOK, IN DEZE VOLGORDE.
+ *
+ *   1 · Eén zin over wat er nú gebeurt. Dat is het antwoord op de vraag
+ *       waarmee iemand inlogt. Een lijst gebeurtenissen is een antwoord op
+ *       "wat is er gebeurd", en dat is een andere vraag — interessant nadat
+ *       de eerste beantwoord is, nooit ervoor.
+ *   2 · Vier stappen als spoor. Waar zit ik, hoeveel komt er nog. Zonder
+ *       percentages: een balk die 62% zegt over werk dat in dagen loopt, is
+ *       een precisie die niet bestaat.
+ *   3 · De gebeurtenissen zelf, dichtgeklapt. Wie de datums wil, klapt uit;
+ *       wie ze niet wil, ziet ze niet — en dat is de meerderheid.
+ *
+ * STATUSTEKST IS COPY, GEEN KOLOMWAARDE. "human_check" is een woord uit onze
+ * werkverdeling; "een mens loopt elk beeld na" is wat het voor de klant
+ * betekent. STATUS[].nl geeft nog steeds het korte label voor de pil bovenaan
+ * de kaart — dit zijn de zinnen eronder.
+ */
+const FLOW = ['received', 'in_production', 'human_check', 'delivered'];
+
+/**
+ * "2026-08-10" → "10 aug" / "10 Aug".
+ *
+ * NIET Intl.DateTimeFormat. Die vraagt om een Date, en een Date maken van een
+ * kale datum zonder tijdzone is de klassieke manier om er een dag naast te
+ * zitten: '2026-08-10' wordt als UTC-middernacht gelezen en in een westelijke
+ * tijdzone is dat 9 augustus. Hier wordt niets gerekend — de drie stukken
+ * worden uit de string geknipt, want dat is precies wat er getoond moet worden.
+ * Onbekende vorm gaat ongewijzigd terug: liever een ruwe datum dan een verkeerde.
+ */
+const MONTHS = {
+  nl: ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+};
+function shortDate(value, lang) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
+  if (!m) return String(value || '');
+  const months = MONTHS[lang] || MONTHS.en;
+  return `${Number(m[3])} ${months[Number(m[2]) - 1] || m[2]}`;
+}
+
+function progressBlock(t, lang, o, events = []) {
+  const status = o.status || 'received';
+  const cancelled = status === 'cancelled';
+  const idx = FLOW.indexOf(status);
+
+  // Wat er nu gebeurt, plus het venster als dat bekend is — een belofte met een
+  // datum eraan is een ander bericht dan dezelfde belofte zonder.
+  const now = t.flowNow[status] || t.flowNow.received;
+  const when = !cancelled && status !== 'delivered' && o.window_start
+    ? ` ${t.flowWindow(shortDate(o.window_start, lang), shortDate(o.window_end || o.window_start, lang))}`
+    : '';
+
+  const steps = cancelled
+    ? ''
+    : `<ol class="flow">${FLOW.map((key, i) => {
+        const state = i < idx ? 'is-done' : i === idx ? 'is-now' : 'is-todo';
+        return `<li class="flow-step ${state}"><span class="flow-dot"></span><span class="flow-label">${esc(t.flowStep[key])}</span></li>`;
+      }).join('')}</ol>`;
+
+  /* De gebeurtenissen. Alleen de statuswijzigingen die iets betekenen, en de
+   * notities die er met de hand bij getypt zijn — want dat is het enige wat
+   * niet uit de status af te leiden is. Nieuwste bovenaan: de laatste
+   * gebeurtenis is de enige die iemand echt zoekt. */
+  const rows = [...events].reverse().map((e) => `<li>
+    <span class="tl-when">${esc(String(e.created_at || '').slice(0, 10))}</span>
+    <span class="tl-what">${esc(statusLabel(e.status, lang) || e.status)}${e.note ? `<span class="tl-note">${esc(e.note)}</span>` : ''}</span>
+  </li>`).join('');
+
+  return `
+<div class="flowbox${cancelled ? ' is-cancelled' : ''}">
+  <p class="flow-now"><strong>${esc(t.flowNowLabel)}</strong> ${esc(now)}${esc(when)}</p>
+  ${steps}
+  ${rows
+    ? `<details class="tl">
+         <summary>${esc(t.flowHistory)}</summary>
+         <ul class="tl-list">${rows}</ul>
+       </details>`
+    : ''}
+</div>`;
+}
+
+/**
+ * De bestanden van één bestelling gegroepeerd per product.
+ *
+ * Geeft `null` terug als er niets te groeperen valt — geen enkel bestand draagt
+ * een product_key — zodat de aanroeper terug kan vallen op de twee kolommen.
+ * Dat is geen randgeval maar de normale toestand van elke bestelling van vóór
+ * augustus 2026, en van elke levering die nog ingedeeld moet worden.
+ *
+ * NIET-INGEDEELDE BESTANDEN VERDWIJNEN NIET. Ze krijgen een eigen groep,
+ * onderaan, zonder productnummer. Een bestand weglaten omdat het geen etiket
+ * draagt is de ergste van de mogelijke keuzes: dan is er een foto waarvoor
+ * betaald is die nergens meer te zien is.
+ */
+function groupByProduct(delivered, uploaded) {
+  const all = [...delivered, ...uploaded];
+  if (!all.some((f) => f.product_key)) return null;
+
+  const map = new Map();
+  const take = (f, kind) => {
+    const key = f.product_key || '';
+    if (!map.has(key)) map.set(key, { key, delivered: [], uploaded: [] });
+    map.get(key)[kind].push(f);
+  };
+  for (const f of delivered) take(f, 'delivered');
+  for (const f of uploaded) take(f, 'uploaded');
+
+  return [...map.values()].sort((a, b) => {
+    if (!a.key) return 1;           // "overig" onderaan
+    if (!b.key) return -1;
+    return (Number(a.key.slice(1)) || 0) - (Number(b.key.slice(1)) || 0);
+  });
+}
+
+/**
+ * Eén product: wat je stuurde, wat wij leverden, en de knoppen per foto.
+ *
+ * DICHT, TENZIJ ER IETS AAN DE HAND IS. Dertig producten opengeklapt is een
+ * scherm van tien meter; dertig dichte kaarten met een voorbeeldje erop is een
+ * overzicht. Eén uitzondering: een product waarop een revisie loopt staat open,
+ * want dat is het product waar de klant naartoe kwam.
+ *
+ * GEEN JAVASCRIPT, EN DAT IS GEEN CONCESSIE. Dit dashboard draait onder
+ * `default-src 'none'` — er is geen script en er kan er geen komen zonder die
+ * regel te verzwakken. <details>/<summary> doet het uitklappen zelf, en de
+ * animatie zit in account.css (::details-content waar de browser het kent, een
+ * keyframe waar niet). Werkt dus ook op een oude telefoon, zonder laadtijd, en
+ * blijft werken als er iets misgaat met het netwerk.
+ *
+ * DE AMBERKLEURIGE RAND. Lucas: *"als een revisie is aangevraagd een amber rand
+ * om het product heen."* Hij hangt aan een levend beeld met
+ * review_state='revision_requested'. Levert de studio een vervanging voor
+ * dezelfde product+shot, dan wordt het oude beeld vervangen (superseded_at) en
+ * valt het uit deze lijst — dus de rand verdwijnt doordat het werk gedaan is.
+ */
+function productCard(t, lang, o, g) {
+  const label = g.key ? t.prodLabel(g.key.replace(/^p/, '')) : t.prodOther;
+  const live = g.delivered.filter((f) => !(f.expires_at && isExpired(f.expires_at, null)));
+  const revising = g.delivered.some((f) => f.review_state === 'revision_requested');
+  const approved = g.delivered.filter((f) => f.review_state === 'approved').length;
+
+  // De omslag is het eerste geleverde beeld, en anders wat de klant zelf
+  // stuurde. Een lege tegel zou zeggen "er is niets", terwijl er wél iets is:
+  // zijn eigen foto, in afwachting.
+  const cover = live[0] || g.delivered[0] || g.uploaded[0] || null;
+  const coverImg = cover
+    ? `<img src="/account/files/${cover.id}/f" alt="" loading="lazy" decoding="async">`
+    : '';
+
+  const facts = [
+    g.delivered.length ? t.prodDelivered(g.delivered.length) : t.prodNothingYet,
+    g.delivered.length && approved ? t.prodApproved(approved) : null,
+  ].filter(Boolean).join(' · ');
+
+  const waText = encodeURIComponent(
+    lang === 'nl'
+      ? `Hoi VISUAILS, over bestelling ${o.ref} (${label}):`
+      : `Hi VISUAILS, about order ${o.ref} (${label}):`
+  );
+
+  return `
+<details class="prod${revising ? ' is-revising' : ''}"${revising ? ' open' : ''}>
+  <summary class="prod-head">
+    <span class="prod-cover">${coverImg}</span>
+    <span class="prod-text">
+      <span class="prod-title">${esc(label)}</span>
+      <span class="prod-facts">${esc(facts)}</span>
+      ${revising ? `<span class="prod-flag">${esc(t.stRevision)}</span>` : ''}
+    </span>
+    <!-- Twee etiketten, waarvan er altijd één verborgen is. Zonder script kan
+         de tekst van een <summary> niet veranderen bij het openklappen, en
+         "Bekijk de foto's" laten staan terwijl ze al openstaan is een knop die
+         iets anders belooft dan hij doet. -->
+    <span class="prod-cta"><span class="on-closed">${esc(t.prodOpen)}</span><span class="on-open">${esc(t.prodClose)}</span></span>
+  </summary>
+  <div class="prod-panel">
+    <div class="prod-inner">
+      <div class="prod-col">
+        <h4>${esc(t.prodWeMade)}</h4>
+        ${g.delivered.length
+          ? `<ul class="shots">${g.delivered.map((f) => shotTile(t, f, o, true)).join('')}</ul>`
+          : `<p class="meta">${esc(t.prodNothingYet)}</p>`}
+      </div>
+      ${g.uploaded.length
+        ? `<div class="prod-col is-ref">
+             <h4>${esc(t.prodYouSent)}</h4>
+             <ul class="shots is-ref">${g.uploaded.map((f) => shotTile(t, f, o)).join('')}</ul>
+           </div>`
+        : ''}
+    </div>
+    <p class="prod-help">${esc(t.prodHelp)}
+      <a href="https://wa.me/${WHATSAPP}?text=${waText}" target="_blank" rel="noopener">${esc(t.prodHelpCta)}</a>
+    </p>
+  </div>
+</details>`;
+}
+
 /**
  * Eén foto als foto, met zijn knoppen eronder.
  *
@@ -2568,7 +3102,7 @@ function orderCard(t, lang, o, files) {
  * verhouding. De tegel is een vaste 4/5-box met object-fit: cover, dus de
  * layout ligt vast zonder dat er een maat geraden hoeft te worden.
  */
-function shotTile(t, f, o) {
+function shotTile(t, f, o, inProduct = false) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
   const isUpload = f.kind === 'upload';
 
@@ -2576,37 +3110,63 @@ function shotTile(t, f, o) {
   // beide bekend zijn — en shot mag NOOIT geraden worden (zie de kolomnotitie
   // in schema.sql: "nobody said" is niet hetzelfde antwoord als "front").
   const shotName = f.shot && t.shotNames[f.shot] ? t.shotNames[f.shot] : null;
-  const product = f.product_key ? f.product_key.replace(/^p/, '#') : null;
+  // Binnen een productkaart staat het productnummer al in de kop. Het per foto
+  // herhalen maakt van vier bijschriften vier keer hetzelfde woord met één
+  // verschil erachter, en dat verschil is juist wat je moet kunnen scannen.
+  const product = (!inProduct && f.product_key) ? f.product_key.replace(/^p/, '#') : null;
   const caption = [product, shotName].filter(Boolean).join(' · ') || f.filename || `#${f.id}`;
+
+  /*
+   * DE TOESTAND STAAT OP DE FOTO, NIET IN DE RIJ KNOPPEN — augustus 2026.
+   *
+   * Lucas, bij het zien van de eerste versie: *"de knoppen zijn soms wat uit
+   * balans."* Dat kwam hier vandaan. "Goedgekeurd" en "Revisie aangevraagd"
+   * stonden als tekstregel tussen het bijschrift en de knoppen, dus een tegel
+   * mét toestand duwde zijn knoppen een regel lager dan de tegel ernaast. Vier
+   * foto's naast elkaar en de knoppen stonden op drie verschillende hoogtes —
+   * en juist bij vier gelijke dingen ziet een oog elke afwijking meteen.
+   *
+   * Als vlaggetje op het beeld kost het geen hoogte in de kolom, staat het
+   * dichter bij waar het over gaat, en beginnen alle knoppenrijen op dezelfde
+   * lijn. De notitie blijft eronder staan, ná de knoppen, waar extra hoogte
+   * niemand meer scheeftrekt.
+   */
+  let badge = '';
+  let said = '';
+  if (!isUpload && canSeeReviewHistory(o)) {
+    if (f.review_state === 'approved') {
+      badge = `<span class="shot-badge is-approved">${esc(t.stApproved)}</span>`;
+    } else if (f.review_state === 'revision_requested') {
+      badge = `<span class="shot-badge is-revision">${esc(t.stRevisionShort)}</span>`;
+      if (f.review_note) said = `<p class="said">${esc(f.review_note)}</p>`;
+    }
+  }
 
   const media = gone
     ? `<div class="shot-media is-gone"><span>${esc(t.stExpired)}</span></div>`
     : `<a class="shot-media" href="/account/files/${f.id}/f" target="_blank" rel="noopener">
          <img src="/account/files/${f.id}/f" alt="${esc(caption)}" loading="lazy" decoding="async">
+         ${badge}
        </a>`;
-
-  let state = '';
-  if (!isUpload && canSeeReviewHistory(o)) {
-    if (f.review_state === 'approved') {
-      state = `<span class="state approved">${esc(t.stApproved)}</span>`;
-    } else if (f.review_state === 'revision_requested') {
-      state = `<span class="state revision">${esc(t.stRevision)}</span>${f.review_note ? `<p class="said">${esc(f.review_note)}</p>` : ''}`;
-    }
-  }
 
   // Uploads krijgen geen downloadknop en geen beoordeelknoppen: de route
   // weigert een download van een upload sowieso (zie serveAccountFile), en een
   // knop die 404 oplevert is een belofte die je niet nakomt.
-  const actions = (gone || isUpload)
+  //
+  // De volgorde is besluit-dan-bewaren: goedkeuren of aanmerken staat boven,
+  // downloaden eronder. Downloaden stond eerst bovenaan uit de tijd dat dit een
+  // regel was met een knop erachter; in een tegel is de bovenste knop de
+  // voorgestelde handeling, en dat is niet "bewaar dit op je bureaublad".
+  const download = (gone || isUpload)
     ? ''
-    : `<a class="btn btn-quiet btn-sm" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>`;
+    : `<a class="btn btn-file btn-sm" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>`;
 
   return `<li class="shot" id="f${f.id}">
   ${media}
   <div class="shot-body">
     <span class="shot-cap">${esc(caption)}</span>
-    ${state}
-    <div class="shot-actions">${actions}${isUpload || gone ? '' : reviewControls(t, f, o)}</div>
+    <div class="shot-actions">${isUpload || gone ? '' : reviewControls(t, f, o)}${download}</div>
+    ${said}
   </div>
 </li>`;
 }
@@ -2636,10 +3196,10 @@ function reviewControls(t, f, o) {
   if (o.revisions_revoked_at) return `<p class="meta revoked">${esc(t.revokedNote)}</p>`;
 
   if (f.review_state === 'approved' || f.review_state === 'revision_requested') {
-    const label = f.review_state === 'approved' ? t.bUndo : t.bCancel;
+    const label = f.review_state === 'approved' ? t.bUndo : t.bCancelShort;
     return `<form class="review-form" method="post" action="/account/review">
     <input type="hidden" name="file" value="${f.id}">
-    <button class="btn btn-quiet btn-sm" type="submit" name="action" value="undo">${esc(label)}</button>
+    <button class="btn btn-line btn-sm" type="submit" name="action" value="undo">${esc(label)}</button>
   </form>`;
   }
 
@@ -2649,7 +3209,11 @@ function reviewControls(t, f, o) {
     <input type="hidden" name="file" value="${f.id}">
     <button class="btn btn-primary btn-sm" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
     <details class="ask">
-      <summary>${esc(t.askSummary)}</summary>
+      <!-- De samenvatting is de tweede knop, en ziet er ook zo uit. Als
+           onderstreepte tekstregel onder een gevulde knop leek dit een voetnoot
+           in plaats van het alternatief dat het is: goedkeuren of aanmerken
+           zijn twee even geldige antwoorden op dezelfde foto. -->
+      <summary class="btn btn-line btn-sm">${esc(t.askSummary)}</summary>
       <label class="sr-only" for="n${f.id}">${esc(t.askLabel)}</label>
       <textarea id="n${f.id}" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.askHint)}" required></textarea>
       <button class="btn btn-ghost btn-sm" type="submit" name="action" value="revise">${esc(t.bSend)}</button>

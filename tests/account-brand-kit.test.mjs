@@ -49,13 +49,14 @@ const DETAILS = {
   default_background: 'white', default_background_hex: null, details_saved_at: '2026-07-20',
 };
 
-function makeDb({ locks = [], models = MODELS } = {}) {
+function makeDb({ locks = [], models = MODELS, files = [], events = [] } = {}) {
   const writes = [];
   const pick = (sql, binds) => {
     const s = sql.replace(/\s+/g, ' ');
     if (s.includes('FROM account_sessions')) return { ...CUSTOMER, expires_at: '2099-01-01' };
     if (s.includes('FROM rate_limits')) return null;
-    if (s.includes('FROM files f JOIN orders')) return [];
+    if (s.includes('FROM order_events')) return events;
+    if (s.includes('FROM files f JOIN orders')) return files;
     if (s.includes('FROM custom_models WHERE id')) {
       // The ownership check in handleLockUpdate. Only ids this customer owns.
       const id = binds[0];
@@ -324,6 +325,127 @@ section('§5 · the page keeps its promises about itself');
   check('with no background control on it',
     !det.html.includes('name="background"') && !det.html.includes('name="background_custom"'));
   check('the email is text, not an editable field', det.html.includes('det-fixed') && !det.html.includes('name="email"'));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§6 · het dashboard groepeert per product');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Uploads droegen product_key en shot, leveringen niet, dus stonden er twee
+// stapels beelden naast elkaar zonder verband. Nu leveringen wél ingedeeld
+// worden, hoort het dashboard ze per product te tonen — en hoort de kaart van
+// een product waarop een revisie loopt open te staan en op te lichten, want dat
+// is het product waar de klant voor terugkwam.
+
+const FILE = (id, kind, product, shot, extra = {}) => ({
+  id, order_id: 91, kind, filename: `f${id}.webp`, bytes: 1000,
+  expires_at: null, review_state: 'pending', review_note: null, reviewed_at: null,
+  product_key: product, shot, ...extra,
+});
+
+{
+  const r = await get('/account/orders', {
+    files: [
+      FILE(1, 'upload', 'p1', null),
+      FILE(2, 'delivery', 'p1', 'front', { review_state: 'approved' }),
+      FILE(3, 'delivery', 'p1', 'back'),
+      FILE(4, 'upload', 'p2', null),
+      FILE(5, 'delivery', 'p2', 'front', { review_state: 'revision_requested', review_note: 'Achtergrond trekt naar grijs.' }),
+    ],
+  });
+  const cards = (r.html.match(/class="prod[ "]/g) || []).length;
+  check('one card per product, not one pile per direction', cards === 2, `${cards} card(s)`);
+  check('the product with an open revision is marked', r.html.includes('prod is-revising'));
+  check('and it is open, because that is what they came back for',
+    /<details class="prod is-revising" open>/.test(r.html));
+  check('both directions live inside the card', r.html.includes('What we delivered') && r.html.includes('What you sent'));
+  check('the note the customer left is shown back to them', r.html.includes('Achtergrond trekt naar grijs.'));
+  check('and there is a way to reach a human about it', r.html.includes('wa.me/31625436130'));
+  // Het productnummer staat in de kop; het per foto herhalen maakt vier
+  // bijschriften die alleen achteraan verschillen.
+  check('the tile captions do not repeat the product number', !r.html.includes('#1 · Front'));
+}
+
+// Niets ingedeeld: dan is groeperen een kaart met "overige" eromheen, en doet
+// het scherm wat het altijd deed.
+{
+  const r = await get('/account/orders', {
+    files: [FILE(6, 'upload', null, null), FILE(7, 'delivery', null, null)],
+  });
+  check('with nothing mapped it falls back to the two columns',
+    !r.html.includes('class="prods"') && r.html.includes('class="sides"'));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§7 · de tijdlijn staat op het dashboard, voor elke trede');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// order_events werd alleen gelezen door portal.js, en dáár alleen voor
+// `attended`. Een klant met een account zag dus MINDER over zijn eigen
+// bestelling dan iemand met een doorgestuurd linkje, en op de goedkoopste trede
+// zag hij niets. Deze sectie legt de drie dingen vast die dat omkeren: de
+// tijdlijn staat er, hij staat er ongeacht de trede, en er staat een zin over
+// wat er nu gebeurt in plaats van de kolomwaarde.
+
+const EVENTS = [
+  { order_id: 88, status: 'received', note: null, created_at: '2026-07-19 09:00' },
+  { order_id: 88, status: 'delivered', note: 'Alles in één keer geleverd.', created_at: '2026-07-21 14:00' },
+  { order_id: 91, status: 'received', note: null, created_at: '2026-08-01 09:00' },
+];
+
+{
+  const r = await get('/account', { events: EVENTS });
+  check('the overview leads with one order and its timeline', r.html.includes('class="ovorder"') && r.html.includes('flowbox'));
+  check('with a sentence about what happens now, not a column value',
+    r.html.includes('Our studio is making your images') && !r.html.includes('>in_production<'));
+  check('and the four steps, with the current one marked',
+    r.html.includes('flow-step is-now') && r.html.includes('flow-step is-todo'));
+  check('the history is there but folded away', r.html.includes('class="tl"') && r.html.includes('Everything that happened'));
+  // Met één lopende bestelling hoort er geen klapje te staan: een knop die
+  // "nog 0 bestellingen" opent is erger dan geen knop.
+  check('with only one order in progress there is nothing to unfold',
+    !r.html.includes('class="more-orders"'));
+}
+
+{
+  // Twee lopende bestellingen: dan pas verschijnt het klapje, en het telt
+  // alleen wat er nog loopt — geleverde bestellingen staan al in de strook
+  // eronder.
+  const delivered = ORDERS.find((o) => o.id === 90);
+  const prev = delivered.status;
+  delivered.status = 'in_production';
+  const r = await get('/account', { events: EVENTS });
+  check('two in progress: one control, counting only those',
+    r.html.includes('class="more-orders"') && r.html.includes('1 more order in progress'));
+  delivered.status = prev;
+}
+
+{
+  // Order 88 is the unattended one in this fixture. The portal would show it no
+  // timeline at all; the dashboard must not care about the tier.
+  const r = await get('/account/orders', { events: EVENTS });
+  const boxes = (r.html.match(/class="flowbox/g) || []).length;
+  check('every order card carries a timeline, unattended included',
+    boxes === ORDERS.length, `${boxes} of ${ORDERS.length}`);
+  check('the delivered one says the images are ready',
+    r.html.includes('Your images are ready'));
+  check('and a note typed by hand travels to the customer',
+    r.html.includes('Alles in één keer geleverd.'));
+}
+
+// De mededeling die admin schrijft, aan de kant waar hij gelezen wordt.
+{
+  const o = ORDERS.find((x) => x.id === 91);
+  o.customer_note = 'De stof op product 4 kwam donkerder uit dan op je foto, dus we hebben de belichting opgetrokken.';
+  const r = await get('/account/orders', { events: EVENTS });
+  check('the studio note reaches the customer', r.html.includes('belichting opgetrokken'));
+  check('with a sender above it, not as system text', r.html.includes('studionote-who'));
+  // De garantie uit migratie 0013: interne aantekeningen staan in een tabel die
+  // deze kant niet kent. Een dashboard dat order_notes zou lezen, zou hier te
+  // vinden zijn.
+  check('and nothing on this page reads the internal log',
+    !r.html.includes('order_notes'));
+  delete o.customer_note;
 }
 
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);

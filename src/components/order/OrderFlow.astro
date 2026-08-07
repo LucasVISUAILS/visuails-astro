@@ -66,6 +66,28 @@ interface Props {
 const { lang, service } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
+/*
+ * WAT CATALOG NIET VRAAGT, augustus 2026.
+ *
+ * Lucas: *"deze vragen mogen weg en full outfit is niet mogelijk bij catalog,
+ * omdat dit per product gaat."* Drie velden vervallen op deze ene dienst, elk
+ * om zijn eigen reden:
+ *
+ *  · Full outfit — een catalogset is per product geprijsd en per product
+ *    geleverd. De vraag stelt een keuze voor die niet bestaat, en een keuze die
+ *    niet bestaat kost een klant nog steeds een moment nadenken. Wie het toch
+ *    wil, kan het apart aanvragen; dat staat er nu in plaats van het veld.
+ *  · "Wie draagt dit?" — het model kies je op deze dienst al in de modelkiezer
+ *    hierboven. Twee keer dezelfde vraag in één formulier leest als een fout.
+ *  · "Nog iets wat we moeten weten" — op catalog staan de per-productvelden er
+ *    al; een open vak eronder is de plek waar niemand iets invult en waar jij
+ *    toch elke keer even moet kijken.
+ *
+ * Lifestyle en video houden alle drie: daar bepaalt "wie draagt dit?" hoe de
+ * scène gestyled wordt, en dáár kán een look wél een volledige outfit zijn.
+ */
+const isCatalog = service === 'catalog';
+
 if (!LADDER[service]) {
   throw new Error(`OrderFlow.astro: "${service}" is not a kind on the ladder in src/data/pricing.js.`);
 }
@@ -487,6 +509,7 @@ const FORM = {
       firstOrder: `First order for a brand: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% off, applied on the invoice.`,
       displayNote: 'A preview, worked out in your browser. The invoice is calculated again on our side, from the same ladder.',
       outfitLabel: 'Any of these a full outfit?',
+      outfitCatalogNote: 'A catalog set is priced and shot per product, so full outfits are not part of this order. Need one because it matters to the brand? Ask us and we will look at it with you.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'en')} per product styled that way, up to ${MAX_OUTFIT_PRODUCTS}.`,
       outfitWhy: 'Why a full outfit costs more',
       outfitWhyBody: OUTFIT_COPY.en,
@@ -612,6 +635,7 @@ const FORM = {
       firstOrder: `Eerste bestelling van een merk: ${Math.round(FIRST_ORDER_DISCOUNT * 100)}% korting, verrekend op de factuur.`,
       displayNote: 'Een voorbeeld, in je browser uitgerekend. De factuur wordt aan onze kant opnieuw berekend, uit dezelfde staffel.',
       outfitLabel: 'Zitten hier full outfits bij?',
+      outfitCatalogNote: 'Een catalogset is per product geprijsd en per product geschoten, dus full outfits horen niet bij deze bestelling. Toch nodig omdat het belangrijk is voor je merk? Vraag het ons, dan kijken we er samen naar.',
       outfitHint: `${euro(OUTFIT_SURCHARGE, 'nl')} extra per product dat zo wordt gestyled, tot maximaal ${MAX_OUTFIT_PRODUCTS}.`,
       outfitWhy: 'Waarom een full outfit meer kost',
       outfitWhyBody: OUTFIT_COPY.nl,
@@ -885,6 +909,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
       {/* Task #271f — Single Product/Full outfit. Not [data-pl-req]: 0 is
           always a valid answer, so this field is never required. */}
+      {!isCatalog && (
       <div class="field" data-pl-outfit>
         <label for="pl-outfit">{f.s1.outfitLabel}</label>
         <select id="pl-outfit" class="select" name="outfit_count">
@@ -898,6 +923,11 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <p>{f.s1.outfitWhyBody}</p>
         </Disclose>
       </div>
+      )}
+
+      {isCatalog && (
+        <p class="hint pl-outfit-note">{f.s1.outfitCatalogNote}</p>
+      )}
 
       {/* THE RUNNING TOTAL.
           Three things about this block are answers to an accessibility audit
@@ -1085,7 +1115,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           which costs one line ONCE for the whole order — the reason the
           per-product question cannot do the same thing and points at a guide
           instead. */}
-      {ORDER_QUESTIONS.map((qn) => (
+      {(isCatalog ? [] : ORDER_QUESTIONS).map((qn) => (
         <div class="field">
           <label for={`pl-${qn.id}`}>{qn.name[lang]} <span class="pl-opt">{f.optional}</span></label>
           <input
@@ -1101,11 +1131,13 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         </div>
       ))}
 
+      {!isCatalog && (
       <div class="field">
         <label for="pl-msg">{f.s3.message} <span class="pl-opt">{f.optional}</span></label>
         <textarea class="textarea" id="pl-msg" name="message"></textarea>
         <span class="hint">{f.s3.messageHint}</span>
       </div>
+      )}
 
       <p class="pl-step-err" id="pl-err-3" data-pl-step-error hidden></p>
 

@@ -1,0 +1,43 @@
+# VISUAILS — cache-headers. Cloudflare Pages leest dit bestand.
+#
+# WAAROM DIT ER KOMT — 7 augustus 2026, 00:11.
+#
+# Lucas deployde de nieuwe fotogalerij in het klantdashboard en kreeg één foto
+# op volle breedte in plaats van een raster tegels. De CSS klopte, de HTML
+# klopte, de opmaakregels stonden in het bestand. Zijn browser had gewoon nog
+# de vorige /account.css.
+#
+# Dat is geen toeval maar een eigenschap van deze drie bestanden. Alles wat
+# Astro bouwt krijgt een hash in de bestandsnaam — /_astro/index.CJk3d9.css —
+# dus een nieuwe versie is een nieuwe URL en cache is dan gratis en veilig.
+# Deze drie niet: /account.css, /admin.css en /portal.css worden met een vaste
+# naam uitgeserveerd door de Workers in src/lib/, want die zijn geen onderdeel
+# van de Astro-build. Vaste naam plus lange cache betekent: na een deploy zien
+# klanten dagenlang de oude opmaak, en jij ziet het niet omdat jij toevallig
+# net hard ververst hebt.
+#
+# no-cache IS NIET no-store. De browser mag het bestand bewaren; hij moet alleen
+# even navragen of het nog klopt. Is het onveranderd, dan komt er een 304 terug
+# van een paar honderd bytes en wordt de lokale kopie gebruikt. De kosten zijn
+# één verzoek per paginabezoek; de opbrengst is dat een deploy altijd meteen
+# zichtbaar is. Voor drie stylesheets op een dashboard dat een handjevol mensen
+# per dag opent, is dat de goede kant van de ruil.
+#
+# De rest van de site staat hier niet in en houdt de standaard van Cloudflare
+# Pages: gehashte bestandsnamen mogen en moeten juist lang gecachet worden.
+
+/account.css
+  Cache-Control: no-cache
+
+/admin.css
+  Cache-Control: no-cache
+
+/portal.css
+  Cache-Control: no-cache
+
+# Het merkteken in de mail. Wél lang cachen — de naam is vast, maar de inhoud
+# verandert alleen als het logo verandert, en dan is een dag vertraging in een
+# mailclient onschadelijk. Zonder deze regel haalt Gmail's beeldproxy hem bij
+# elke geopende mail opnieuw op.
+/img/mail/*
+  Cache-Control: public, max-age=86400

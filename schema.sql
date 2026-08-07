@@ -447,3 +447,77 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_external ON payments(provider, ex
 -- order-creation insert in functions/api/order.js is the only writer today.
 ALTER TABLE order_events ADD COLUMN actor TEXT NOT NULL DEFAULT 'system';
   -- 'system' | 'admin'
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- August 2026 · revisies en herleveringen (migraties 0009, 0010, 0011)
+--
+-- WAAROM DIT BLOK BESTAAT. schema.sql was drie migraties achterop geraakt, en
+-- dat is niet cosmetisch: dit bestand is wat een LEGE database maakt. Zonder
+-- revision_requests hieronder zou een verse D1 — een tweede omgeving, een
+-- herstel na verlies — de revisieknop wél tonen en bij de eerste aanvraag
+-- omvallen op "no such table". Wie een migratie toevoegt, voegt hem hier ook
+-- toe; migrations/ is de weg van oud naar nieuw, dit is de bestemming.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 0009 — één account per e-mailadres, ongeacht hoofdletters. Op de EXPRESSIE
+-- lower(email), niet op de kolom: de planner gebruikt hem alleen als de WHERE
+-- letterlijk dezelfde expressie bevat, en dat is precies hoe account.js zoekt.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_email_lower ON customers (lower(email));
+
+-- 0010 — revisies worden geteld, niet begrensd. Zie migrations/0010 voor het
+-- volledige waarom; kort: één regel per aanvraag bewaart de geschiedenis die
+-- files.review_note zou overschrijven, en intrekken is een handeling van een
+-- mens en geen limiet in code.
+CREATE TABLE IF NOT EXISTS revision_requests (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_id     INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  order_id    INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+  note        TEXT NOT NULL CHECK (length(trim(note)) > 0),
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  resolved_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_revision_requests_order ON revision_requests(order_id);
+CREATE INDEX IF NOT EXISTS idx_revision_requests_customer ON revision_requests(customer_id);
+CREATE INDEX IF NOT EXISTS idx_revision_requests_open ON revision_requests(created_at) WHERE resolved_at IS NULL;
+ALTER TABLE customers ADD COLUMN revisions_revoked_at TEXT;
+ALTER TABLE customers ADD COLUMN revisions_revoked_note TEXT;
+
+-- 0011 — een herlevering is ook nieuws. delivery_mailed_at blijft de EERSTE
+-- aankondiging bewaken; wat daarna geleverd wordt heeft zijn eigen stempel per
+-- bestand (announced_at) en zijn eigen teller op de bestelling. De knop in
+-- admin verstuurt één bericht voor alles wat nog niet aangekondigd is, zodat
+-- drie beelden achter elkaar niet drie mails zijn.
+ALTER TABLE orders ADD COLUMN redelivery_mailed_at TEXT;
+ALTER TABLE orders ADD COLUMN redelivery_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE files ADD COLUMN announced_at TEXT;
+CREATE INDEX IF NOT EXISTS idx_files_unannounced
+  ON files (order_id) WHERE kind = 'delivery' AND announced_at IS NULL;
+
+-- 0012 — een beeld hoort bij een product. product_key/shot bestonden al voor
+-- élke rij; wat ontbrak was het besef dat een tweede levering voor dezelfde
+-- product+shot een VERVANGING is en geen extra beeld. Zonder dat groeit een
+-- product na drie revisieronden naar zeven beelden waarvan de klant er vier
+-- moet negeren. De klant ziet alleen de levende beelden, admin de hele stapel.
+ALTER TABLE files ADD COLUMN superseded_at TEXT;
+CREATE INDEX IF NOT EXISTS idx_files_live_delivery
+  ON files (order_id, product_key, shot)
+  WHERE kind = 'delivery' AND superseded_at IS NULL;
+
+-- 0013 — het gesprek hoort bij de bestelling. orders.customer_note is één
+-- staande mededeling die de klant meeleest; order_notes is het interne logboek
+-- dat door GEEN ENKELE klantquery wordt aangeraakt (dat is de garantie, niet
+-- een visibility-kolom die je moet onthouden te filteren); resolution_note is
+-- de regel terug bij een afgehandelde revisie.
+ALTER TABLE orders ADD COLUMN customer_note TEXT;
+ALTER TABLE orders ADD COLUMN customer_note_at TEXT;
+CREATE TABLE IF NOT EXISTS order_notes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id   INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  body       TEXT NOT NULL CHECK (length(trim(body)) > 0),
+  author     TEXT NOT NULL DEFAULT 'admin',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_order_notes_order ON order_notes(order_id, id);
+ALTER TABLE revision_requests ADD COLUMN resolution_note TEXT;

@@ -22,7 +22,7 @@ import sharp from 'sharp';
 
 import { customerEmail, subscriberEmail } from '../functions/api/order.js';
 import { magicLinkEmail } from '../src/lib/account.js';
-import { deliveryEmail } from '../src/lib/admin.js';
+import { deliveryEmail, redeliveryEmail } from '../src/lib/admin.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA_MARK = 'data:image/png;base64,' +
@@ -54,6 +54,20 @@ const MAILS = [
       order: { ref: 'VIS-2608-4471', name: 'Sanne', email: 'sanne@voltbrand.nl', lang: 'nl' },
       link: PORTAL,
       n: 24,
+    }),
+  },
+  {
+    // De tweede mailsoort, augustus 2026. Staat hier naast de eerste omdat dat
+    // de enige manier is om te zien of ze naast elkaar te onderscheiden zijn —
+    // twee mails die op elkaar lijken in dezelfde inbox lezen als één mail die
+    // per ongeluk twee keer verstuurd is.
+    label: 'Revisie staat klaar',
+    html: redeliveryEmail({
+      order: { ref: 'VIS-2608-4471', name: 'Sanne', email: 'sanne@voltbrand.nl', lang: 'nl' },
+      link: PORTAL,
+      n: 3,
+      revisions: 2,
+      note: 'De achtergrond op beeld 4 en 7 is nu egaal wit, en de mouw op beeld 11 is rechtgetrokken.',
     }),
   },
   {

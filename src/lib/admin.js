@@ -59,6 +59,7 @@ import {
   p as mailP,
   button as mailButton,
   note as mailNote,
+  quote as mailQuote,
   spamNote as mailSpamNote,
 } from './mailTemplate.js';
 
@@ -172,6 +173,25 @@ export async function adminPost(context) {
   const uploadMatch = path.match(/^\/admin\/orders\/(\d+)\/deliver$/);
   if (uploadMatch) return handleDeliveryUpload(context, Number(uploadMatch[1]));
 
+  // Herlevering melden. Los van /deliver, want uploaden en aankondigen zijn
+  // twee beslissingen — zie het blok boven handleAnnounceRedelivery().
+  const announceMatch = path.match(/^\/admin\/orders\/(\d+)\/announce$/);
+  if (announceMatch) return handleAnnounceRedelivery(context, Number(announceMatch[1]));
+
+  // Welk beeld hoort bij welk product — de indeling die het klantdashboard in
+  // groepen verdeelt in plaats van in twee losse stapels.
+  const mapMatch = path.match(/^\/admin\/orders\/(\d+)\/map$/);
+  if (mapMatch) return handleFileMapping(context, Number(mapMatch[1]));
+
+  // Twee notitieroutes, en het verschil zit in de route zoals het in de tabel
+  // zit: /note schrijft naar de bestelling en wordt door de klant gelezen,
+  // /internal schrijft naar order_notes en wordt door niemand anders gelezen.
+  const noteMatch = path.match(/^\/admin\/orders\/(\d+)\/note$/);
+  if (noteMatch) return handleCustomerNote(context, Number(noteMatch[1]));
+
+  const internalMatch = path.match(/^\/admin\/orders\/(\d+)\/internal$/);
+  if (internalMatch) return handleInternalNote(context, Number(internalMatch[1]));
+
   const previewMatch = path.match(/^\/admin\/models\/(\d+)\/preview$/);
   if (previewMatch) return handleModelPreview(context, Number(previewMatch[1]));
 
@@ -273,11 +293,37 @@ async function dummyHash() {
  * weg: revision_requests bewaart hem met datum, en dat is waar de geschiedenis
  * hoort te staan in plaats van in een veld dat de volgende aanvraag overschrijft.
  */
-async function handleRevisionResolve({ env }, fileId) {
+async function handleRevisionResolve({ request, env }, fileId) {
   const row = await env.DB.prepare(
     "SELECT id, order_id FROM files WHERE id = ?1 AND review_state = 'revision_requested'"
   ).bind(fileId).first().catch(() => null);
   if (!row) return seeOther('/admin');
+
+  /*
+   * ÉÉN REGEL TERUG — augustus 2026.
+   *
+   * Lucas: *"bij een afgehandelde revisie: één regel terug naar de klant over
+   * wat er is aangepast."*
+   *
+   * VERPLICHT, om dezelfde reden als de notitie van de klant verplicht is. Hij
+   * schreef op wat er mis was; "opgelost" zonder tekst is daar geen antwoord
+   * op, het is een vinkje. En over drie maanden is dat vinkje precies het gat
+   * waar niemand meer weet waarom er een extra ronde was.
+   *
+   * De regel gaat naar order_events, want dat is de tijdlijn die de klant
+   * sinds deze week op zijn dashboard ziet — en hij blijft op de aanvraag zelf
+   * staan als bewijs bij de vraag waar hij bij hoort.
+   */
+  const form = await request.formData().catch(() => null);
+  const fixed = String(form?.get('fixed') || '').trim().slice(0, ANNOUNCE_NOTE_MAX);
+  if (!fixed) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'Say in one line what you changed. The customer wrote down what was wrong; "resolved" on its own is not an answer to that, and in three months it is the gap where nobody remembers why there was an extra round.'
+    ) }), 400);
+  }
+
+  const status = await env.DB.prepare('SELECT status FROM orders WHERE id = ?1')
+    .bind(row.order_id).first().catch(() => null);
 
   await env.DB.batch([
     env.DB.prepare(
@@ -286,8 +332,11 @@ async function handleRevisionResolve({ env }, fileId) {
     // Alleen de nog openstaande regels, zodat een tweede ronde later niet de
     // afhandeldatum van de eerste overschrijft.
     env.DB.prepare(
-      "UPDATE revision_requests SET resolved_at = datetime('now') WHERE file_id = ?1 AND resolved_at IS NULL"
-    ).bind(fileId),
+      "UPDATE revision_requests SET resolved_at = datetime('now'), resolution_note = ?2 WHERE file_id = ?1 AND resolved_at IS NULL"
+    ).bind(fileId, fixed),
+    env.DB.prepare(
+      "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
+    ).bind(row.order_id, status?.status || 'delivered', fixed),
   ]).catch(() => {});
 
   return seeOther('/admin');
@@ -409,53 +458,360 @@ async function handleStatusUpdate(context, orderId) {
 // delivered against it".
 // ─────────────────────────────────────────────────────────────────────────────
 
+/*
+ * TWEE QUERIES DIE ALLEBEI EEN OUDERE DATABASE OVERLEVEN.
+ *
+ * De kolommen van migratie 0011 (files.announced_at, orders.redelivery_*)
+ * worden hier gelezen, en code komt bijna altijd eerder op productie dan een
+ * migratie: een deploy is een druk op de knop, een migratie is een terminal.
+ * Zou deze pagina daarop stukgaan, dan is de eerste ervaring met de nieuwe
+ * functie een foutpagina op de plek waar de bestanden staan — de pagina die
+ * juist niets met melden te maken heeft. Dus: probeer het ruime SELECT, val
+ * terug op het krappe, en laat het herleverblok weg zolang de kolommen er niet
+ * zijn.
+ */
 async function loadOrderFiles(env, orderId) {
-  const order = await env.DB.prepare(
-    `SELECT id, ref, service, status, brand, name, email, lang, product_count
-     FROM orders WHERE id = ?1`
-  ).bind(orderId).first();
+  const wide = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
+                       delivery_mailed_at, redelivery_mailed_at, redelivery_count,
+                       customer_note, customer_note_at
+                  FROM orders WHERE id = ?1`;
+  const narrow = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
+                         delivery_mailed_at
+                    FROM orders WHERE id = ?1`;
+  let order = null;
+  let migrated = true;
+  try {
+    order = await env.DB.prepare(wide).bind(orderId).first();
+  } catch {
+    migrated = false;
+    order = await env.DB.prepare(narrow).bind(orderId).first();
+  }
   if (!order) return null;
-  const { results } = await env.DB.prepare(
-    `SELECT id, kind, filename, bytes, product_key, shot, created_at
-     FROM files WHERE order_id = ?1 ORDER BY kind, id`
-  ).bind(orderId).all();
-  return { order, files: results || [] };
+
+  const fileCols = migrated
+    ? 'id, kind, filename, bytes, product_key, shot, created_at, review_state, announced_at, superseded_at'
+    : 'id, kind, filename, bytes, product_key, shot, created_at, review_state';
+  let results = [];
+  try {
+    ({ results } = await env.DB.prepare(
+      `SELECT ${fileCols} FROM files WHERE order_id = ?1 ORDER BY kind, id`
+    ).bind(orderId).all());
+  } catch {
+    migrated = false;
+    ({ results } = await env.DB.prepare(
+      `SELECT id, kind, filename, bytes, product_key, shot, created_at
+       FROM files WHERE order_id = ?1 ORDER BY kind, id`
+    ).bind(orderId).all());
+  }
+  /* De interne aantekeningen. Eigen query, eigen try/catch: dit is de tabel die
+   * de klantkant NIET kent, en als hij er nog niet is hoort de werkpagina
+   * gewoon te laden. */
+  let notes = [];
+  try {
+    const r = await env.DB.prepare(
+      'SELECT id, body, author, created_at FROM order_notes WHERE order_id = ?1 ORDER BY id DESC LIMIT 50'
+    ).bind(orderId).all();
+    notes = r.results || [];
+  } catch { notes = []; }
+
+  return { order, files: results || [], migrated, notes };
 }
 
 async function renderFiles(context, orderId) {
-  const { env } = context;
+  const { env, request } = context;
   if (!Number.isInteger(orderId)) {
     return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
   }
   const data = await loadOrderFiles(env, orderId);
   if (!data) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
 
-  const { order, files } = data;
+  const { order, files, migrated, notes } = data;
   const intake = files.filter((f) => f.kind === 'upload');
   const delivery = files.filter((f) => f.kind === 'delivery');
 
-  const row = (f) => `<tr>
+  // Per bestand zichtbaar of het al gemeld is. Dit is de kolom die de vraag
+  // "wat weet de klant?" beantwoordt zonder dat je je mailbox erbij hoeft te
+  // pakken — en het is ook de controle op de knop hieronder: wat je meldt,
+  // staat hier daarna als gemeld.
+  const row = (f, showAnnounced) => `<tr>
     <td>${esc(f.product_key || '')}</td>
     <td>${esc(f.shot || '')}</td>
     <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a></td>
     <td class="num">${f.bytes ? Math.round(f.bytes / 1024) + ' kB' : ''}</td>
+    ${showAnnounced
+      ? `<td>${f.announced_at
+          ? `<span class="muted">${esc(when(f.announced_at))}</span>`
+          : '<strong>not announced</strong>'}</td>`
+      : ''}
   </tr>`;
 
-  const table = (rows, empty) => rows.length
-    ? `<table class="files"><thead><tr><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th></tr></thead>
-       <tbody>${rows.map(row).join('')}</tbody></table>`
+  const table = (rows, empty, showAnnounced = false) => rows.length
+    ? `<table class="files"><thead><tr><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th>${showAnnounced ? '<th>Announced</th>' : ''}</tr></thead>
+       <tbody>${rows.map((f) => row(f, showAnnounced)).join('')}</tbody></table>`
     : `<p class="muted">${empty}</p>`;
+
+  const showAnnounced = migrated && delivery.length > 0;
+  const pending = migrated ? delivery.filter((f) => !f.announced_at) : [];
+
+  /* ── DE INDELING — augustus 2026 ────────────────────────────────────────────
+   *
+   * Eén tabel met per levering twee keuzelijstjes, allebei al op de gok uit de
+   * bestandsnaam (zie guessProductShot). Bevestigen is één knop voor de hele
+   * bestelling.
+   *
+   * WAAROM DIT DE BELANGRIJKSTE TABEL VAN DEZE PAGINA IS. Zolang een levering
+   * geen product draagt, staan op het klantdashboard twee stapels beelden naast
+   * elkaar zonder verband: dit stuurde je, dit kreeg je terug, zoek zelf maar
+   * uit welke bij welke hoort. Bij dertig producten is dat geen ongemak maar
+   * een onbruikbaar scherm — en het is precies de bestelling waar het geld in
+   * zit. Wat hier wordt ingevuld, is wat daar de groepen maakt.
+   *
+   * DE AMBERKLEURIGE RIJ. Een beeld waar de klant een revisie op vroeg. Hij
+   * blijft amber tot er een nieuw beeld voor dezelfde product+shot binnenkomt —
+   * dan wordt deze vervangen (superseded_at) en verdwijnt hij uit het
+   * klantdashboard én uit deze markering. Dat is de terugkoppeling die Lucas
+   * vroeg: de gloed gaat weg omdat het werk gedaan is, niet omdat iemand een
+   * vinkje heeft gezet.
+   */
+  const SHOT_KEYS = ['front', 'back', 'detail', 'worn'];
+  const productOptions = (() => {
+    const keys = new Set();
+    for (const f of files) if (f.product_key) keys.add(f.product_key);
+    const n = Number(order.product_count) || 0;
+    for (let i = 1; i <= Math.min(n, 60); i++) keys.add(`p${i}`);
+    return [...keys].sort((a, b) => (Number(a.slice(1)) || 0) - (Number(b.slice(1)) || 0));
+  })();
+
+  const select = (name, value, options, blank) =>
+    `<select name="${name}">
+       <option value=""${value ? '' : ' selected'}>${blank}</option>
+       ${options.map(([v, label]) =>
+         `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(label)}</option>`).join('')}
+     </select>`;
+
+  const mapRow = (f) => {
+    const revising = f.review_state === 'revision_requested';
+    const dead = !!f.superseded_at;
+    const cls = [revising ? 'is-revising' : '', dead ? 'is-superseded' : ''].filter(Boolean).join(' ');
+    return `<tr class="${cls}">
+      <td class="thumbcell"><a href="/admin/files/${f.id}"><img class="thumb" src="/admin/files/${f.id}" alt=""></a></td>
+      <td>${select(`p${f.id}`, f.product_key || '', productOptions.map((k) => [k, `Product ${k.slice(1)}`]), '— not set —')}</td>
+      <td>${select(`s${f.id}`, f.shot || '', SHOT_KEYS.map((k) => [k, k]), '— not set —')}</td>
+      <td><a href="/admin/files/${f.id}">${esc(f.filename || `file-${f.id}`)}</a>
+        ${dead ? '<br><span class="muted">replaced</span>' : ''}
+        ${revising ? '<br><strong>revision asked</strong>' : ''}</td>
+      <td class="num">${f.bytes ? Math.round(f.bytes / 1024) + ' kB' : ''}</td>
+      ${showAnnounced
+        ? `<td>${f.announced_at ? `<span class="muted">${esc(when(f.announced_at))}</span>` : '<strong>not announced</strong>'}</td>`
+        : ''}
+    </tr>`;
+  };
+
+  /* ── HET WERKBORD — augustus 2026 ───────────────────────────────────────────
+   *
+   * Lucas: *"ik wil de order eerst visueel invullen op het admin account en dan
+   * samen pushen naar de klant in 1 keer per product of order. Dus ik wil de
+   * foto's op kunnen slaan zodat ik er meerdere dagen over kan doen en dan
+   * gelijk zie welke nog missen."*
+   *
+   * Een rooster van producten × shots. Elk vakje is óf een beeld óf een gat met
+   * een uploadveld erin. Dat is de hele functie: er is geen aparte
+   * "concept"-toestand nodig, want een geleverd bestand is al opgeslagen en de
+   * klant hoort er pas van als er GEMELD wordt. Het scheiden van uploaden en
+   * melden — dat bestond al voor de eerste levering en is met de meldknop
+   * doorgetrokken naar herleveringen — is precies wat dit bord mogelijk maakt.
+   *
+   * WAAROM VIER VASTE SHOTS. Een catalogusset LEVERT er vier: voorkant,
+   * achterkant, detail, op model (src/data/shots.js legt uit dat dat dezelfde
+   * vier zijn die we van de klant vragen, en waarom). Een rooster met vaste
+   * kolommen laat een gat een gat zijn; een lijst met wat er toevallig al is,
+   * kan dat per definitie niet. Voor andere diensten dan catalog is het rooster
+   * een hulpmiddel en geen norm — vandaar dat er onderaan altijd een vrij
+   * uploadveld blijft en losse bestanden gewoon in de indeeltabel komen.
+   */
+  const SHOT_LABEL = { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On model' };
+  const liveByKey = new Map();
+  for (const f of delivery) {
+    if (f.superseded_at || !f.product_key || !f.shot) continue;
+    liveByKey.set(`${f.product_key}|${f.shot}`, f);
+  }
+
+  const boardProducts = productOptions.length ? productOptions : [];
+  const totalSlots = boardProducts.length * SHOT_KEYS.length;
+  const filledSlots = boardProducts.reduce((n, key) =>
+    n + SHOT_KEYS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length, 0);
+
+  const slot = (productKey, shotKey) => {
+    const f = liveByKey.get(`${productKey}|${shotKey}`);
+    if (!f) {
+      return `<div class="slot is-empty">
+        <span class="slot-label">${esc(SHOT_LABEL[shotKey] || shotKey)}</span>
+        <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
+          <input type="hidden" name="product" value="${esc(productKey)}">
+          <input type="hidden" name="shot" value="${esc(shotKey)}">
+          <input type="file" name="files" required>
+          <button class="btn btn-ghost btn-sm" type="submit">Upload</button>
+        </form>
+      </div>`;
+    }
+    const revising = f.review_state === 'revision_requested';
+    const fresh = migrated && !f.announced_at;
+    return `<div class="slot${revising ? ' is-revising' : ''}${fresh ? ' is-fresh' : ''}">
+      <span class="slot-label">${esc(SHOT_LABEL[shotKey] || shotKey)}</span>
+      <a href="/admin/files/${f.id}" target="_blank" rel="noopener"><img class="slot-img" src="/admin/files/${f.id}" alt="" loading="lazy"></a>
+      <span class="slot-state">${revising ? 'revision asked' : fresh ? 'not announced' : 'announced'}</span>
+      <!-- Vervangen gaat via hetzelfde vakje: een nieuw bestand op dezelfde
+           product+shot maakt het vorige automatisch vervangen (resupersede),
+           dus "opnieuw" is hier één handeling en geen opruimklus. -->
+      <form method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
+        <input type="hidden" name="product" value="${esc(productKey)}">
+        <input type="hidden" name="shot" value="${esc(shotKey)}">
+        <input type="file" name="files" required>
+        <button class="btn btn-quiet btn-sm" type="submit">Replace</button>
+      </form>
+    </div>`;
+  };
+
+  const productRow = (key) => {
+    const done = SHOT_KEYS.filter((sh) => liveByKey.has(`${key}|${sh}`)).length;
+    const fresh = SHOT_KEYS.filter((sh) => {
+      const f = liveByKey.get(`${key}|${sh}`);
+      return f && migrated && !f.announced_at;
+    }).length;
+    // Per product melden mag alleen als de bestelling al één keer aangekondigd
+    // is — de eerste keer gaat via de status, met de mail die zegt dat de
+    // bestelling klaar is. Zie handleAnnounceRedelivery.
+    const push = fresh && order.delivery_mailed_at
+      ? `<form method="post" action="/admin/orders/${order.id}/announce" class="board-push">
+           <input type="hidden" name="product" value="${esc(key)}">
+           <button class="btn btn-primary btn-sm" type="submit">Push ${fresh} to the customer</button>
+         </form>`
+      : '';
+    return `<section class="board-row" id="${esc(key)}">
+      <div class="board-head">
+        <h3>Product ${esc(key.slice(1))}</h3>
+        <span class="board-count${done === SHOT_KEYS.length ? ' is-full' : ''}">${done}/${SHOT_KEYS.length}</span>
+        ${push}
+      </div>
+      <div class="slots">${SHOT_KEYS.map((sh) => slot(key, sh)).join('')}</div>
+    </section>`;
+  };
+
+  const board = boardProducts.length
+    ? `<p class="muted">${filledSlots} of ${totalSlots} slots filled. Files are saved as you go — the customer sees nothing until you press push.</p>
+       ${boardProducts.map(productRow).join('')}`
+    : '<p class="muted">This order has no product count on it, so there is no grid to fill. Upload below and map the files by hand.</p>';
+
+  const unmapped = delivery.filter((f) => !f.superseded_at && (!f.product_key || !f.shot)).length;
+  const mapForm = delivery.length
+    ? `<form method="post" action="/admin/orders/${order.id}/map">
+      <table class="files"><thead><tr><th></th><th>Product</th><th>Shot</th><th>File</th><th class="num">Size</th>${showAnnounced ? '<th>Announced</th>' : ''}</tr></thead>
+      <tbody>${delivery.map(mapRow).join('')}</tbody></table>
+      <div class="controls" style="margin-top:.7rem">
+        <button class="btn btn-primary" type="submit">Save mapping</button>
+        <span class="muted">Guessed from the filenames — correct what is wrong, then save. Two files on the same product and shot: the newest one wins and the older is marked replaced.</span>
+      </div>
+    </form>
+    ${unmapped
+      ? `<p class="warnline">${unmapped} delivered ${unmapped === 1 ? 'file has' : 'files have'} no product or shot yet. Until they do, the customer sees them in a loose pile instead of beside the product they belong to.</p>`
+      : ''}`
+    : '<p class="muted">Nothing delivered yet.</p>';
+
+  // ?announced= komt van de eigen redirect na het indrukken van de knop. Een
+  // vlag in de URL en geen sessiebericht: deze pagina heeft geen state en dit
+  // is één regel bevestiging, geen boodschap die een tweede opslagplaats waard
+  // is. De waarde wordt als getal gelezen en nooit teruggeschreven.
+  const flag = (() => {
+    try { return new URL(request.url).searchParams.get('announced'); } catch { return null; }
+  })();
+  const mappedFlag = (() => {
+    try { return Number(new URL(request.url).searchParams.get('mapped')) || 0; } catch { return 0; }
+  })();
+  const flash = flag === 'none'
+    ? '<p class="muted">Nothing new to announce — every delivered file on this order has already been mailed.</p>'
+    : Number(flag) > 0
+      ? `<p class="okline">Mailed. ${Number(flag)} ${Number(flag) === 1 ? 'image' : 'images'} announced to ${esc(order.email || 'the customer')}.</p>`
+      : mappedFlag
+        ? `<p class="okline">Mapping saved for ${mappedFlag} ${mappedFlag === 1 ? 'file' : 'files'}. The customer&rsquo;s dashboard now groups them per product.</p>`
+        : '';
+
+  const announce = !migrated
+    ? ''
+    : !order.delivery_mailed_at
+      ? `<p class="muted">This order has never been announced. Set its status to <strong>delivered</strong> on the dashboard — that sends the &ldquo;your order is ready&rdquo; mail.</p>`
+      : `
+  <p class="muted">
+    First announced ${esc(when(order.delivery_mailed_at))}${
+      order.redelivery_count
+        ? ` &middot; ${order.redelivery_count} re-${order.redelivery_count === 1 ? 'delivery' : 'deliveries'} announced, last ${esc(when(order.redelivery_mailed_at))}`
+        : ''}.
+  </p>
+  ${pending.length
+    ? `<form class="controls" method="post" action="/admin/orders/${order.id}/announce">
+         <input type="text" name="note" maxlength="${ANNOUNCE_NOTE_MAX}" placeholder="Optional: what changed (goes in the mail and on their timeline)" style="flex:1; min-width:14rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);">
+         <button class="btn btn-primary" type="submit">Announce ${pending.length} new ${pending.length === 1 ? 'image' : 'images'}</button>
+       </form>
+       <p class="muted">One mail for everything that is still unannounced — upload all of it first, then press once.</p>`
+    : '<p class="muted">Everything delivered here has been announced.</p>'}`;
+
+  /* ── TWEE SOORTEN NOTITIES, ZICHTBAAR VERSCHILLEND ──────────────────────────
+   *
+   * Lucas: *"één notitieveld per bestelling in admin dat de klant óók ziet.
+   * Interne notities apart, die de klant nooit ziet — het verschil moet in de
+   * kolom zitten, niet in jouw hoofd."*
+   *
+   * De kolom doet het werk (orders.customer_note tegenover de tabel
+   * order_notes, die door geen enkele klantquery wordt aangeraakt), maar het
+   * scherm moet dat verschil ook laten zien. Vandaar: het klantveld heeft een
+   * groene rand en zegt letterlijk dat de klant meeleest; het interne blok is
+   * grijs en zegt letterlijk dat hij dat niet doet. Twee identieke tekstvakken
+   * onder elkaar zijn één verkeerde klik van iets wat niet gelezen had mogen
+   * worden. */
+  const noteBlocks = `
+  <h2>Notes</h2>
+  <div class="notepanel is-shared">
+    <h3>The customer reads this</h3>
+    <p class="muted">One standing message on their order page. Not a chat — what is true now, not what was true last week.${
+      order.customer_note_at ? ` Last changed ${esc(when(order.customer_note_at))}.` : ''}</p>
+    <form method="post" action="/admin/orders/${order.id}/note">
+      <textarea name="note" rows="3" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="e.g. The fabric on product 4 came out darker than your photo, so we lifted the exposure a touch.">${esc(order.customer_note || '')}</textarea>
+      <div class="controls" style="margin-top:.5rem">
+        <button class="btn btn-primary btn-sm" type="submit">Save${order.customer_note ? ' / clear' : ''}</button>
+        <span class="muted">Empty saves as no message.</span>
+      </div>
+    </form>
+  </div>
+
+  <div class="notepanel is-internal">
+    <h3>Only you see this</h3>
+    <form method="post" action="/admin/orders/${order.id}/internal">
+      <textarea name="body" rows="2" maxlength="${CUSTOMER_NOTE_MAX}" placeholder="Why this order took an extra round, what to watch for next time, what you agreed on the phone." required></textarea>
+      <div class="controls" style="margin-top:.5rem">
+        <button class="btn btn-ghost btn-sm" type="submit">Add note</button>
+      </div>
+    </form>
+    ${notes.length
+      ? `<ul class="notelog">${notes.map((n) => `<li>
+           <span class="notelog-when">${esc(when(n.created_at))}</span>
+           <span class="notelog-body">${esc(n.body)}</span>
+         </li>`).join('')}</ul>`
+      : '<p class="muted">Nothing noted yet.</p>'}
+  </div>`;
 
   const body = `
   <p><a href="/admin">&larr; Dashboard</a></p>
   <h1>${esc(order.ref)}</h1>
   <p class="muted">${esc(order.brand || order.name || '')} &middot; ${esc(order.service)} &middot; ${esc(order.status)}${order.product_count ? ` &middot; ${order.product_count} products` : ''}</p>
+  ${flash}
 
   <h2>Client uploads (${intake.length})</h2>
   ${table(intake, 'Nothing was uploaded with this order.')}
 
-  <h2>Delivered (${delivery.length})</h2>
-  ${table(delivery, 'Nothing delivered yet.')}
+  <h2>The board</h2>
+  ${migrated ? board : '<p class="muted">Run migration 0012 to get the per-product board.</p>'}
+
+  <h2>Every delivered file (${delivery.length})</h2>
+  ${migrated ? mapForm : table(delivery, 'Nothing delivered yet.', showAnnounced)}
 
   <h2>Upload the finished work</h2>
   <p class="muted">Files land against this order and appear in the client&rsquo;s portal. Setting the status to <strong>delivered</strong> on the dashboard is what emails them the link &mdash; uploading alone does not.</p>
@@ -463,8 +819,163 @@ async function renderFiles(context, orderId) {
     <input type="file" name="files" multiple required />
     <button type="submit">Upload</button>
   </form>
+
+  <h2>Tell the customer</h2>
+  ${announce}
+
+  ${noteBlocks}
   `;
   return html(page({ title: order.ref, body }));
+}
+
+/** Langste notitie, aan beide kanten. Een alinea, geen dossier. */
+const CUSTOMER_NOTE_MAX = 1200;
+
+/**
+ * De mededeling die de klant meeleest.
+ *
+ * LEEG OPSLAAN MAG, en dat is bewust: een mededeling die niet meer klopt moet
+ * weg kunnen zonder omweg. Daarom is dit een UPDATE naar NULL en geen aparte
+ * verwijderknop — de knop die hem plaatste is ook de knop die hem weghaalt.
+ *
+ * GEEN MAIL. Dit is een prikbord bij de bestelling, geen bericht. Wie wil dat
+ * de klant het nú leest, gebruikt de meldknop hierboven of pakt de telefoon;
+ * een mail per notitiewijziging maakt van elke tikfout een bericht.
+ */
+async function handleCustomerNote({ request, env }, orderId) {
+  if (!Number.isInteger(orderId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+  }
+  const form = await request.formData().catch(() => null);
+  const note = String(form?.get('note') || '').trim().slice(0, CUSTOMER_NOTE_MAX);
+  try {
+    await env.DB.prepare(
+      `UPDATE orders SET customer_note = ?2,
+                         customer_note_at = CASE WHEN ?2 IS NULL THEN NULL ELSE datetime('now') END
+        WHERE id = ?1`
+    ).bind(orderId, note || null).run();
+  } catch (err) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `Could not save the note: ${esc(err?.message || String(err))}. Migration 0013 may not have run yet.`
+    ) }), 500);
+  }
+  return seeOther(`/admin/orders/${orderId}/files?noted=1`);
+}
+
+/**
+ * Een interne aantekening.
+ *
+ * Alleen toevoegen, niet bewerken en niet verwijderen. Een logboek waarin je
+ * kunt terugschrijven is geen logboek meer, en het enige doel van dit ding is
+ * dat over drie maanden nog te lezen is waarom die extra ronde er was.
+ */
+async function handleInternalNote({ request, env }, orderId) {
+  if (!Number.isInteger(orderId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+  }
+  const form = await request.formData().catch(() => null);
+  const body = String(form?.get('body') || '').trim().slice(0, CUSTOMER_NOTE_MAX);
+  if (!body) return seeOther(`/admin/orders/${orderId}/files`);
+  try {
+    await env.DB.prepare(
+      'INSERT INTO order_notes (order_id, body) VALUES (?1, ?2)'
+    ).bind(orderId, body).run();
+  } catch (err) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `Could not save the note: ${esc(err?.message || String(err))}. Migration 0013 may not have run yet.`
+    ) }), 500);
+  }
+  return seeOther(`/admin/orders/${orderId}/files?noted=1`);
+}
+
+/**
+ * De indeling opslaan: welk beeld hoort bij welk product en welke shot.
+ *
+ * ÉÉN FORMULIER VOOR DE HELE BESTELLING, want dat is hoe het werk gaat: dertig
+ * bestanden komen in één keer binnen en worden in één keer nagelopen. Dertig
+ * losse opslaanknoppen zijn dertig kansen om er één te vergeten.
+ *
+ * ALLES WORDT GECONTROLEERD, OOK AL KOMT HET UIT ONZE EIGEN KEUZELIJST. Een
+ * product moet `p<getal>` zijn en een shot moet in SHOTS staan; wat daar niet
+ * aan voldoet wordt leeg, niet overgeslagen. Een formulier is een verzoek en
+ * geen bewijs, ook als het van deze pagina komt.
+ */
+const SHOTS = ['front', 'back', 'detail', 'worn'];
+
+async function handleFileMapping({ request, env }, orderId) {
+  if (!Number.isInteger(orderId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+  }
+  const form = await request.formData().catch(() => null);
+  if (!form) return seeOther(`/admin/orders/${orderId}/files`);
+
+  const { results } = await env.DB.prepare(
+    "SELECT id FROM files WHERE order_id = ?1 AND kind = 'delivery'"
+  ).bind(orderId).all();
+  const mine = new Set((results || []).map((r) => r.id));
+
+  const updates = [];
+  for (const [name, raw] of form.entries()) {
+    const m = /^([ps])(\d+)$/.exec(name);
+    if (!m) continue;
+    const fileId = Number(m[2]);
+    // Alleen bestanden van DEZE bestelling. Het id komt uit een formulier, dus
+    // het is een wens; de set hierboven is het feit.
+    if (!mine.has(fileId)) continue;
+    if (m[1] === 's') continue;   // shots worden bij het product opgehaald, hieronder
+
+    const product = /^p\d{1,3}$/.test(String(raw)) ? String(raw) : null;
+    const shotRaw = String(form.get(`s${fileId}`) || '');
+    const shot = SHOTS.includes(shotRaw) ? shotRaw : null;
+    updates.push(
+      env.DB.prepare('UPDATE files SET product_key = ?2, shot = ?3 WHERE id = ?1 AND order_id = ?4')
+        .bind(fileId, product, shot, orderId)
+    );
+  }
+  if (updates.length) await env.DB.batch(updates);
+
+  await resupersede(env, orderId);
+  return seeOther(`/admin/orders/${orderId}/files?mapped=${updates.length}`);
+}
+
+/**
+ * Bepaal opnieuw welke leveringen vervangen zijn.
+ *
+ * DE REGEL: binnen één bestelling is per product+shot het HOOGSTE id het
+ * levende beeld en is al het oudere vervangen. Dat is precies wat er na een
+ * revisie gebeurt — je uploadt de nieuwe versie van "product 3, achterkant" en
+ * de vorige hoort uit het dashboard van de klant te verdwijnen, want daar kan
+ * hij niets meer mee.
+ *
+ * EERST ALLES VRIJGEVEN, DAN OPNIEUW BEPALEN. Zonder die eerste stap is een
+ * correctie in de indeling niet terug te draaien: verzet je een bestand per
+ * ongeluk naar product 3 en daarna terug naar product 4, dan zou het "vervangen"
+ * blijven omdat het stempel al stond. Nu is de uitkomst altijd een functie van
+ * wat er nú in de kolommen staat, en niet van de volgorde waarin je het hebt
+ * ingevuld.
+ *
+ * Zacht falen: draait migratie 0012 nog niet, dan bestaat superseded_at niet en
+ * blijft alles zoals het was — één beeld meer in beeld is geen ramp, een
+ * foutpagina midden in het indelen wel.
+ */
+async function resupersede(env, orderId) {
+  try {
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE files SET superseded_at = NULL WHERE order_id = ?1 AND kind = 'delivery'"
+      ).bind(orderId),
+      env.DB.prepare(
+        `UPDATE files SET superseded_at = datetime('now')
+          WHERE order_id = ?1 AND kind = 'delivery'
+            AND product_key IS NOT NULL AND shot IS NOT NULL
+            AND id < (SELECT MAX(f2.id) FROM files f2
+                       WHERE f2.order_id = files.order_id AND f2.kind = 'delivery'
+                         AND f2.product_key = files.product_key AND f2.shot = files.shot)`
+      ).bind(orderId),
+    ]);
+  } catch (err) {
+    console.error('[admin] supersede pass skipped for order', orderId, '—', err?.message || err);
+  }
 }
 
 /**
@@ -503,6 +1014,61 @@ async function serveAdminFile(context, fileId) {
  * to 'pending' in the schema, which is the honest starting point: an image
  * nobody has looked at yet is not an approved image.
  */
+/* ── WELK PRODUCT, WELKE SHOT — augustus 2026 ─────────────────────────────────
+ *
+ * Lucas: *"bij het uploaden van een levering per bestand het product kiezen (of
+ * afleiden uit de bestandsnaam met bevestiging)."*
+ *
+ * HET WERD AFLEIDEN MÉT BEVESTIGING, EN DAT IS EEN BEWUSTE KEUZE. Per bestand
+ * kiezen vóór het uploaden vraagt om een formulier dat meegroeit met de
+ * bestandskiezer, en dat kan niet zonder JavaScript — terwijl /admin net als het
+ * klantportaal onder `default-src 'none'` draait en geen script laadt. Dat is
+ * geen beperking om omheen te werken maar een eigenschap die deze pagina's
+ * veilig en snel houdt.
+ *
+ * Dus: bij het uploaden wordt er geraden uit de bestandsnaam, en op de
+ * bestandenpagina staat daarna één tabel waarin elke rij een keuzelijstje heeft
+ * dat al op de gok staat. Klopt de gok — en met een fatsoenlijke exportnaam
+ * klopt hij — dan is bevestigen één klik voor de hele bestelling. Klopt hij
+ * niet, dan verzet je een lijstje. Dat is sneller dan dertig keer kiezen, en de
+ * gok is nooit het laatste woord.
+ *
+ * WAT HET HERKENT. p3 / product3 / prod-3 / -03- ergens in de naam, en de
+ * shotwoorden in beide talen. Er wordt NIETS geraden als er niets staat: leeg
+ * blijft leeg, want "niemand heeft het gezegd" is een ander antwoord dan
+ * "voorkant" — dezelfde regel die schema.sql bij deze kolom noteert.
+ */
+const SHOT_WORDS = [
+  ['front', /\b(front|voor|voorkant|vk)\b/i],
+  ['back', /\b(back|achter|achterkant|ak)\b/i],
+  ['detail', /\b(detail|close|closeup|dtl)\b/i],
+  ['worn', /\b(worn|model|onmodel|op-?model|lifestyle)\b/i],
+];
+
+export function guessProductShot(filename) {
+  const base = String(filename || '').replace(/\.[a-z0-9]+$/i, '');
+  // Scheidingstekens naar spaties, zodat \b in de shotwoorden werkt op
+  // "VOLT_03-achterkant" net zo goed als op "volt 03 achterkant".
+  const words = base.replace(/[_\-.]+/g, ' ');
+
+  let product = null;
+  const explicit = words.match(/\b(?:p|prod|product)\s*0*(\d{1,3})\b/i);
+  if (explicit) product = `p${Number(explicit[1])}`;
+  if (!product) {
+    // Een los getal telt alleen als het niet het enige in de naam is dat een
+    // volgnummer kan zijn. "01" in "VOLT 01 front" is het product; "4471" in
+    // een referentie niet — vandaar de bovengrens van drie cijfers.
+    const loose = words.match(/\b(\d{1,3})\b/);
+    if (loose) product = `p${Number(loose[1])}`;
+  }
+
+  let shot = null;
+  for (const [key, re] of SHOT_WORDS) {
+    if (re.test(words)) { shot = key; break; }
+  }
+  return { product, shot };
+}
+
 async function handleDeliveryUpload({ request, env }, orderId) {
   if (!Number.isInteger(orderId)) {
     return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
@@ -514,6 +1080,22 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   const form = await request.formData().catch(() => null);
   const incoming = form ? form.getAll('files').filter((f) => f && typeof f === 'object' && f.size >= 0) : [];
   if (!incoming.length) return seeOther(`/admin/orders/${orderId}/files`);
+
+  /*
+   * IN EEN VAKJE UPLOADEN — augustus 2026.
+   *
+   * Lucas: *"ik wil de order eerst visueel invullen op het admin account (...)
+   * zodat ik er meerdere dagen over kan doen en dan gelijk zie welke nog missen
+   * en gedaan moeten worden, met voorkant, achterkant etc. labels erbij."*
+   *
+   * Komt de upload uit een vakje van het werkbord, dan staan het product en de
+   * shot in het formulier en hoeft er niets geraden te worden — dat is per
+   * definitie beter dan de beste gok uit een bestandsnaam. Komt hij uit het
+   * losse veld onderaan (een stapel in één keer), dan blijft de gok staan en
+   * corrigeer je hem in de indeeltabel.
+   */
+  const slotProduct = /^p\d{1,3}$/.test(String(form.get('product') || '')) ? String(form.get('product')) : null;
+  const slotShot = SHOTS.includes(String(form.get('shot') || '')) ? String(form.get('shot')) : null;
 
   let stored = 0;
   const failed = [];
@@ -527,10 +1109,16 @@ async function handleDeliveryUpload({ request, env }, orderId) {
       await env.UPLOADS.put(key, file.stream(), {
         httpMetadata: { contentType: file.type || 'application/octet-stream' },
       });
+      // De gok gaat meteen mee de rij in. Hij staat daarna als voorselectie in
+      // het indeelformulier, dus hij is een voorstel en geen bewering — maar
+      // hem hier al opslaan scheelt dertig keuzelijstjes op leeg zetten.
+      const guessed = guessProductShot(clean);
+      const product = slotProduct || guessed.product;
+      const shot = slotShot || guessed.shot;
       await env.DB.prepare(
-        `INSERT INTO files (order_id, kind, r2_key, filename, bytes)
-         VALUES (?1, 'delivery', ?2, ?3, ?4)`
-      ).bind(orderId, key, clean, file.size ?? null).run();
+        `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot)
+         VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6)`
+      ).bind(orderId, key, clean, file.size ?? null, product, shot).run();
       stored++;
     } catch (err) {
       failed.push(`${clean}: ${err && err.message ? err.message : 'failed'}`);
@@ -543,7 +1131,11 @@ async function handleDeliveryUpload({ request, env }, orderId) {
       body: errorBody(`${stored} stored, ${failed.length} failed:<br>${failed.map(esc).join('<br>')}`),
     }), 500);
   }
-  return seeOther(`/admin/orders/${orderId}/files`);
+  // Een upload in een gevuld vakje is een vervanging, en dat moet meteen
+  // kloppen — anders staan er tot de volgende keer opslaan twee beelden voor
+  // dezelfde plek in het dashboard van de klant.
+  if (slotProduct && slotShot) await resupersede(env, orderId);
+  return seeOther(`/admin/orders/${orderId}/files${slotProduct ? `#${slotProduct}` : ''}`);
 }
 
 /**
@@ -615,15 +1207,7 @@ async function sendDeliveryMail(context, orderId) {
   // trade the one-live-token rule already chose. The replacement page names the
   // situation rather than 404ing, and the delivery mail goes to the same address
   // moments later.
-  const token = mintToken();
-  await env.DB.batch([
-    env.DB.prepare(
-      "UPDATE order_tokens SET revoked_at = datetime('now') WHERE order_id = ?1 AND revoked_at IS NULL"
-    ).bind(orderId),
-    env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
-      .bind(orderId, await hashToken(token)),
-  ]);
-  const link = portalUrl(token, origin);
+  const link = await freshPortalLink(env, orderId, origin);
 
   const nl = order.lang === 'nl';
   const body = deliveryEmail({ order, link, n });
@@ -637,6 +1221,116 @@ async function sendDeliveryMail(context, orderId) {
   await env.DB.prepare(
     "UPDATE orders SET delivery_mailed_at = datetime('now') WHERE id = ?1"
   ).bind(orderId).run();
+  // Elk beeld dat in deze mail zit, is vanaf nu aangekondigd. Dit is wat de
+  // herleverknop later leeg of vol maakt — zie markAnnounced()'s noot.
+  await markAnnounced(env, orderId);
+}
+
+/**
+ * Eén levend token per bestelling: het oude intrekken en meteen een nieuw
+ * uitgeven, in één batch.
+ *
+ * Stond eerst als losse regels in sendDeliveryMail(). Nu de herleveringsmail
+ * dezelfde link nodig heeft, moest dit één functie worden — want de valkuil
+ * hierboven (een tweede INSERT die op de unieke index stukloopt en de mail in
+ * stilte laat verdampen) is precies het soort ding dat je bij het overtypen
+ * half meeneemt.
+ */
+async function freshPortalLink(env, orderId, origin) {
+  const token = mintToken();
+  await env.DB.batch([
+    env.DB.prepare(
+      "UPDATE order_tokens SET revoked_at = datetime('now') WHERE order_id = ?1 AND revoked_at IS NULL"
+    ).bind(orderId),
+    env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)')
+      .bind(orderId, await hashToken(token)),
+  ]);
+  return portalUrl(token, origin);
+}
+
+/**
+ * Stempel elk nog niet aangekondigd geleverd bestand van deze bestelling.
+ *
+ * WAAROM EEN STEMPEL PER BESTAND EN NIET EEN DATUM OP DE BESTELLING. De vraag
+ * die de knop stelt is "wat heeft deze klant nog nooit aangekondigd gezien", en
+ * dat is een eigenschap van een bestand. Met alleen datums op de bestelling
+ * moet je created_at tegen mailed_at afzetten, en die vergelijking gaat mis op
+ * het enige moment dat telt: een upload in dezelfde seconde als de mail.
+ *
+ * ZACHT FALEN, EXPRES. Draait de code al en migratie 0011 nog niet, dan bestaat
+ * files.announced_at niet en gooit dit. Dat mag de mail die net verstuurd is
+ * niet ongedaan maken — die is de deur al uit. Dus wordt het gelogd en gaat het
+ * verder; het gevolg is hooguit dat de knop nog een keer werk aanbiedt dat al
+ * gemeld is, en dat is te overzien tegenover een 500 na een geslaagde mail.
+ */
+async function markAnnounced(env, orderId, product = null) {
+  try {
+    await env.DB.prepare(
+      `UPDATE files SET announced_at = datetime('now')
+        WHERE order_id = ?1 AND kind = 'delivery' AND announced_at IS NULL
+          AND (?2 IS NULL OR product_key = ?2)`
+    ).bind(orderId, product).run();
+  } catch (err) {
+    console.error('[admin] announced_at not stamped for order', orderId, '—', err?.message || err);
+  }
+}
+
+/**
+ * Sluit de revisieaanvragen waarvan het beeld inmiddels vervangen is.
+ *
+ * ALLEEN DIE. Een aanvraag afvinken omdat er íets nieuws de deur uit gaat, zou
+ * de aanvraag sluiten waar nog niets mee gedaan is — en dat is precies de
+ * stilte die we vandaag aan het repareren zijn, alleen dan met een vinkje
+ * eroverheen. `superseded_at IS NOT NULL` is het bewijs dat er een nieuw beeld
+ * voor dezelfde product+shot ligt; zonder dat bewijs blijft de aanvraag open en
+ * blijft de amberkleurige markering staan.
+ */
+async function closeReplacedRevisions(env, orderId) {
+  try {
+    await env.DB.prepare(
+      `UPDATE revision_requests SET resolved_at = datetime('now')
+        WHERE order_id = ?1 AND resolved_at IS NULL
+          AND file_id IN (SELECT id FROM files
+                           WHERE order_id = ?1 AND kind = 'delivery' AND superseded_at IS NOT NULL)`
+    ).bind(orderId).run();
+  } catch (err) {
+    console.error('[admin] revision close skipped for order', orderId, '—', err?.message || err);
+  }
+}
+
+/**
+ * Hoeveel geleverde beelden van deze bestelling zijn nog nooit gemeld, en
+ * hoeveel openstaande revisieaanvragen zouden ermee beantwoord worden.
+ *
+ * Beide in try/catch: draait de code vóór migratie 0011, dan bestaan
+ * announced_at en revision_requests misschien nog niet, en dan hoort de
+ * bestellingspagina gewoon te laden zonder herleverblok in plaats van te
+ * breken. Nul is hier "niets te melden", wat het veilige antwoord is.
+ */
+async function unannouncedTally(env, orderId, product = null) {
+  const one = async (sql) => {
+    try {
+      const row = await env.DB.prepare(sql).bind(orderId, product).first();
+      return Number(row?.n || 0);
+    } catch { return 0; }
+  };
+  const [files, revisions] = await Promise.all([
+    one(`SELECT COUNT(*) AS n FROM files
+          WHERE order_id = ?1 AND kind = 'delivery' AND announced_at IS NULL
+            AND (?2 IS NULL OR product_key = ?2)`),
+    // Openstaand, of net opgelost maar nog niet gemeld — allebei zijn ze wat
+    // deze mail beantwoordt. Alleen op resolved_at IS NULL filteren zou de
+    // revisies missen die met de knop "Opgelost" al zijn afgevinkt, en dat is
+    // de normale volgorde van werken.
+    one(`SELECT COUNT(*) AS n FROM revision_requests r
+           JOIN orders o ON o.id = r.order_id
+           JOIN files f ON f.id = r.file_id
+          WHERE r.order_id = ?1
+            AND (?2 IS NULL OR f.product_key = ?2)
+            AND (r.resolved_at IS NULL
+                 OR r.resolved_at > COALESCE(o.redelivery_mailed_at, o.delivery_mailed_at, '0000'))`),
+  ]);
+  return { files, revisions };
 }
 
 /**
@@ -680,6 +1374,206 @@ export function deliveryEmail({ order, link, n }) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DE HERLEVERING — augustus 2026.
+//
+// Lucas: *"een tweede mailsoort: 'je revisie staat klaar', los van de eerste
+// levering. Niet automatisch bij elke upload versturen maar met een knop, zodat
+// drie beelden achter elkaar één bericht zijn."*
+//
+// WAAROM DIT DE EERSTE REPARATIE WAS. De revisieknop die we vandaag bouwden
+// eindigde in stilte: de klant vraagt een revisie, de studio lost hem op, en
+// `orders.delivery_mailed_at` — dat er precies voor is om "je bestelling staat
+// klaar" niet twee keer te versturen — zorgde ervoor dat er daarna nooit meer
+// iets gemaild werd. Een functie waarvan de uitkomst niet aankomt, is geen
+// halve functie maar een belofte die je niet nakomt.
+//
+// WAAROM EEN KNOP EN GEEN AUTOMATISME. Bij de eerste levering hangt de mail aan
+// de STATUSWIJZIGING en niet aan de upload, met precies deze redenering in de
+// commentaar hierboven: uploaden en aankondigen zijn verschillende beslissingen,
+// en de studio zet routineus bestanden klaar voordat ze klaar zijn om het te
+// zeggen. Bij een herlevering is er geen statuswijziging om aan te hangen — de
+// bestelling stond al op geleverd — dus moet er iets anders zijn dat het moment
+// markeert. Dat is deze knop. Drie beelden achter elkaar uploaden en dan één
+// keer melden is niet een gemak, het is de bedoeling: drie mails over dezelfde
+// revisie leest als een studio die niet weet wat hij aan het doen is.
+//
+// WAT DE KNOP NIET DOET. Hij raakt delivery_mailed_at niet aan. Die kolom blijft
+// bewaken wat hij bewaakt — de eerste aankondiging — en herleveringen tellen in
+// hun eigen kolommen. Zo blijft "is deze klant ooit verteld dat zijn bestelling
+// klaar was" een vraag met één antwoord, ook na vier herleveringen.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Langste toelichting die meegaat in de herleveringsmail. Een alinea, geen brief. */
+const ANNOUNCE_NOTE_MAX = 400;
+
+async function handleAnnounceRedelivery(context, orderId) {
+  const { request, env } = context;
+  if (!Number.isInteger(orderId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+  }
+  const order = await env.DB.prepare(
+    `SELECT id, ref, email, name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1`
+  ).bind(orderId).first();
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+  if (!order.email) return html(page({ title: 'Admin', body: errorBody('This order has no email address on it.') }), 400);
+
+  // DE EERSTE AANKONDIGING IS NIET DEZE KNOP. Is er nooit een leveringsmail
+  // geweest, dan hoort die eerst — met de tekst "je bestelling staat klaar", en
+  // via de statuswijziging, zodat delivered_at en het tijdlijnbericht kloppen.
+  // "Je revisie staat klaar" als allereerste bericht over een bestelling is een
+  // mail die naar iets verwijst wat de klant nog nooit gezien heeft.
+  if (!order.delivery_mailed_at) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This order has never been announced. Set its status to <strong>delivered</strong> first — that sends the "your order is ready" mail. This button is for what comes after.'
+    ) }), 400);
+  }
+
+  const form = await request.formData().catch(() => null);
+  const note = String(form?.get('note') || '').trim().slice(0, ANNOUNCE_NOTE_MAX);
+  // PER PRODUCT OF PER BESTELLING. Lucas wilde allebei kunnen: een product dat
+  // af is meteen de deur uit, of aan het eind alles in één bericht. Zonder
+  // `product` gaat het over de hele bestelling — dat is de knop onderaan.
+  const product = /^p\d{1,3}$/.test(String(form?.get('product') || '')) ? String(form.get('product')) : null;
+
+  const tally = await unannouncedTally(env, orderId, product);
+  // NIETS NIEUWS IS GEEN MAIL. Een knop die altijd verstuurt, verstuurt ook de
+  // dubbelklik en de "ik wist even niet of ik hem al had ingedrukt" — en dat is
+  // aan de kant van de klant niet te onderscheiden van een studio die twee keer
+  // hetzelfde zegt. Er is geen foutmelding nodig: terug naar de pagina, waar
+  // het blok dan zelf laat zien dat er niets klaarstaat.
+  if (!tally.files) return seeOther(`/admin/orders/${orderId}/files?announced=none`);
+
+  const origin = (() => {
+    try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; }
+  })();
+  const link = await freshPortalLink(env, orderId, origin);
+
+  const nl = order.lang === 'nl';
+  const isRevision = tally.revisions > 0;
+  const subject = isRevision
+    ? (nl ? `Je revisie staat klaar — ${order.ref}` : `Your revision is ready — ${order.ref}`)
+    : (nl ? `Nieuwe beelden voor je bestelling — ${order.ref}` : `New images for your order — ${order.ref}`);
+
+  // HIER WORDT WÉL GEWACHT, EN WÉL GETOOND. Bij de statuswijziging is de mail
+  // bewust niet awaited: die knop verandert iets in de database en de mail is
+  // een gevolg, dus een mailstoring mag geen mislukte statuswijziging worden.
+  // Deze knop doet niets ánders dan mailen. Faalt de mail, dan is er niets
+  // gebeurd, en dat moet op het scherm staan in plaats van in de console.
+  try {
+    await sendMail(env, {
+      to: order.email,
+      subject,
+      html: redeliveryEmail({ order, link, n: tally.files, revisions: tally.revisions, note, product }),
+    });
+  } catch (err) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `The mail did not go out: ${esc(err?.message || String(err))}. Nothing was marked as announced, so you can press the button again.`
+    ) }), 502);
+  }
+
+  // Pas ná een geslaagde verzending. Andersom zou één mislukte mail de beelden
+  // voorgoed als "gemeld" wegzetten en de klant met niets achterlaten.
+  await markAnnounced(env, orderId, product);
+  await closeReplacedRevisions(env, orderId);
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE orders SET redelivery_mailed_at = datetime('now'),
+                         redelivery_count = COALESCE(redelivery_count, 0) + 1
+        WHERE id = ?1`
+    ).bind(orderId),
+    // Ook op de tijdlijn van de klant, om dezelfde reden als bij een
+    // statuswijziging: het portaal leest order_events, en een gebeurtenis die
+    // alleen in een mailbox bestaat, bestaat niet meer zodra die mail
+    // weggegooid is. De status blijft wat hij is — dit is geen nieuwe fase.
+    env.DB.prepare(
+      `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')`
+    ).bind(
+      orderId,
+      order.status || 'delivered',
+      note || (isRevision
+        ? `${tally.files} ${tally.files === 1 ? 'nieuw beeld' : 'nieuwe beelden'} geleverd na revisie`
+        : `${tally.files} ${tally.files === 1 ? 'nieuw beeld' : 'nieuwe beelden'} geleverd`),
+    ),
+  ]);
+
+  return seeOther(`/admin/orders/${orderId}/files?announced=${tally.files}`);
+}
+
+/**
+ * De "je revisie staat klaar"-mail.
+ *
+ * WAAROM EEN EIGEN MAIL EN NIET DEZELFDE MET EEN ANDER ONDERWERP. "Je
+ * bestelling staat klaar" voor de tweede keer is feitelijk onjuist — de
+ * bestelling stond al klaar, dit is wat eraan veranderd is. En het is de mail
+ * die na een klacht binnenkomt: hij moet als eerste zeggen dat er iets mee
+ * gedaan is, niet opnieuw beginnen met "je bestelling is klaar".
+ *
+ * TWEE BEWOORDINGEN, ÉÉN SJABLOON. Stonden er revisieaanvragen open, dan gaat
+ * dit over die revisie; is er zonder aanvraag iets bijgeleverd, dan zijn het
+ * gewoon nieuwe beelden. Hetzelfde bericht met twee eerlijke openingen is beter
+ * dan één zin die in het ene geval te veel belooft en in het andere te weinig.
+ *
+ * EXPORTED, om dezelfde reden als deliveryEmail: scripts/mail-render.mjs tekent
+ * het echte ding, niet een tweede kopie van het ontwerp.
+ */
+export function redeliveryEmail({ order, link, n, revisions = 0, note = '', product = null }) {
+  const nl = order.lang === 'nl';
+  const hi = order.name ? `Hi ${esc(order.name)},` : 'Hi,';
+  const isRevision = revisions > 0;
+  // Gaat het over één product, dan staat dat in de zin. "3 nieuwe beelden" bij
+  // een bestelling van dertig producten is waar en nutteloos; "3 nieuwe beelden
+  // voor product 7" is waar en bruikbaar.
+  const forProduct = product
+    ? (nl ? ` voor product ${esc(product.replace(/^p/, ''))}` : ` for product ${esc(product.replace(/^p/, ''))}`)
+    : '';
+  const images = (nl
+    ? `${n} ${n === 1 ? 'nieuw beeld' : 'nieuwe beelden'}`
+    : `${n} new ${n === 1 ? 'image' : 'images'}`) + forProduct;
+
+  return mailShell({
+    lang: nl ? 'nl' : 'en',
+    preheader: nl
+      ? `${images} voor ${order.ref} staan klaar in je portaal.`
+      : `${images} for ${order.ref} are waiting in your portal.`,
+    body: [
+      mailH1(
+        isRevision
+          ? (nl ? 'Je revisie staat klaar' : 'Your revision is ready')
+          : (nl ? 'Er staan nieuwe beelden klaar' : 'New images are ready'),
+        nl ? `Referentie ${esc(order.ref)}` : `Reference ${esc(order.ref)}`,
+      ),
+      mailP(hi),
+      mailP(isRevision
+        ? (nl
+          ? `We hebben ${revisions === 1 ? 'je revisie' : `je ${revisions} revisies`} opgepakt en ${images} voor je klaargezet. Je kunt ze bekijken, downloaden en opnieuw goedkeuren of nog een keer laten aanpassen.`
+          : `We picked up ${revisions === 1 ? 'your revision' : `your ${revisions} revisions`} and put ${images} up for you. View them, download them, and approve or ask again.`)
+        : (nl
+          ? `Er staan ${images} bij je bestelling. Je kunt ze bekijken, downloaden en per beeld goedkeuren of een revisie aanvragen.`
+          : `There are ${images} with your order. View them, download them, and approve or request a revision image by image.`)),
+      // De toelichting van de studio, als die er is. Tussen de begroeting en de
+      // knop, want dit is waarom de mail er is — niet een voetnoot eronder.
+      note
+        ? mailQuote(esc(note).replace(/\n+/g, '<br>'))
+        : '',
+      note ? '<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>' : '',
+      mailButton(link, nl ? 'Bekijk de nieuwe beelden' : 'See the new images'),
+      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      // DEZE LINK VERVANGT DE VORIGE, en dat staat er ook. Eén levend token per
+      // bestelling is de regel van het schema (zie freshPortalLink); wie de
+      // oude link nog geopend had, krijgt daar de "vervangen"-pagina. Dat
+      // stilzwijgend laten gebeuren is hoe je iemand laat denken dat er iets
+      // stuk is.
+      mailNote(nl
+        ? `Deze link vervangt de vorige — gebruik vanaf nu deze.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
+        : `This link replaces the previous one — use this from now on.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
+      mailSpamNote(nl ? 'nl' : 'en'),
+    ].join(''),
+  });
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // THE NUMBERS, AND THE CUSTOMER VIEW — August 2026.
 //
 // Lucas: "zorg dat admin meer kan doen want het voelt nu best leeg terwijl
@@ -711,7 +1605,7 @@ async function loadTodayCounts(env) {
       return Number(row?.n || 0);
     } catch { return 0; }
   };
-  const [newToday, inProduction, checking, undelivered, unpaid, revisions] = await Promise.all([
+  const [newToday, inProduction, checking, undelivered, unpaid, revisions, toAnnounce] = await Promise.all([
     one("SELECT COUNT(*) AS n FROM orders WHERE date(created_at) = date('now')"),
     one("SELECT COUNT(*) AS n FROM orders WHERE status = 'in_production'"),
     one("SELECT COUNT(*) AS n FROM orders WHERE status = 'human_check'"),
@@ -722,8 +1616,20 @@ async function loadTodayCounts(env) {
     // priced against it are not debts, they are rows.
     one("SELECT COUNT(*) AS n FROM orders WHERE payment_status = 'unpaid' AND total_cents > 0"),
     one("SELECT COUNT(*) AS n FROM files WHERE review_state = 'revision_requested'"),
+    // PER BESTELLING, NIET PER BESTAND. Dit telt werk, en het werk is "een
+    // klant bellen dat er iets klaarstaat" — dat is één handeling, ook als er
+    // zes beelden onder hangen. Zes tellen zou de strook laten schreeuwen over
+    // één druk op de knop. Faalt de query omdat migratie 0011 nog niet is
+    // gedraaid, dan geeft one() 0 terug en verdwijnt de cel vanzelf.
+    // ALLEEN BESTELLINGEN DIE AL EEN KEER AANGEKONDIGD ZIJN. Een bestelling
+    // die nog in productie is heeft vaak al bestanden staan — de studio zet
+    // routineus werk klaar voordat het klaar is — en die meetellen zou de
+    // strook laten waarschuwen voor werk dat nog niet af is. Wat hier hoort te
+    // staan is de bestelling waarvan de klant denkt dat hij alles heeft.
+    one(`SELECT COUNT(DISTINCT f.order_id) AS n FROM files f JOIN orders o ON o.id = f.order_id
+          WHERE f.kind = 'delivery' AND f.announced_at IS NULL AND o.delivery_mailed_at IS NOT NULL`),
   ]);
-  return { newToday, inProduction, checking, undelivered, unpaid, revisions };
+  return { newToday, inProduction, checking, undelivered, unpaid, revisions, toAnnounce };
 }
 
 function todayStrip(c) {
@@ -736,6 +1642,7 @@ function todayStrip(c) {
     ${cell(c.undelivered, 'open')}
     ${cell(c.unpaid, 'unpaid', true)}
     ${cell(c.revisions, 'revisions', true)}
+    ${cell(c.toAnnounce, 'to announce', true)}
   </div>`;
 }
 
@@ -1285,7 +2192,12 @@ function later(waitUntil, promise) {
  */
 async function loadRevisionInbox(env) {
   const res = await env.DB.prepare(
+    // product_key en shot komen sinds augustus 2026 mee: een revisie op
+    // "IMG_8841.webp" is een zoekopdracht, een revisie op "product 3 ·
+    // achterkant" is een opdracht. Dat is precies wat Lucas vroeg — meteen
+    // weten welk bestand vervangen moet worden.
     `SELECT f.id AS file_id, f.filename, f.review_note, f.reviewed_at, f.preview_key,
+            f.product_key, f.shot,
             o.id AS order_id, o.ref, o.brand, o.email, o.lang,
             o.customer_id,
             c.revisions_revoked_at,
@@ -1344,7 +2256,40 @@ async function loadOrders(env, status = '') {
       LIMIT 200`
   );
   const res = await (status ? stmt.bind(status) : stmt).all();
-  return res.results || [];
+  const orders = res.results || [];
+
+  /*
+   * WAT IS ER GELEVERD MAAR NIET GEZEGD — als losse query, expres.
+   *
+   * Dit had een vijfde subquery in het SELECT hierboven kunnen zijn, en dan zou
+   * de hele bestellingenlijst omvallen op een database waar migratie 0011 nog
+   * niet gedraaid is: de lijst is het admin-dashboard, en dat mag niet stuk van
+   * een kolom die er nog niet is. Nu is het één extra ronde die faalt in zijn
+   * eentje, en dan is het gevolg precies wat het vóór vandaag was — geen regel
+   * op de kaart.
+   *
+   * Eén query voor alle bestellingen samen, geen query per kaart: de lijst
+   * toont er tot 200.
+   */
+  if (orders.length) {
+    try {
+      const { results } = await env.DB.prepare(
+        // Zelfde afbakening als in de strook: alleen bestellingen waar de klant
+        // al een keer "het staat klaar" over gehoord heeft. Bij de rest is een
+        // geleverd bestand nog geen nieuws maar werk in uitvoering.
+        `SELECT f.order_id AS order_id, COUNT(*) AS n
+           FROM files f JOIN orders o ON o.id = f.order_id
+          WHERE f.kind = 'delivery' AND f.announced_at IS NULL
+            AND o.delivery_mailed_at IS NOT NULL
+          GROUP BY f.order_id`
+      ).all();
+      const byOrder = new Map((results || []).map((r) => [r.order_id, Number(r.n) || 0]));
+      for (const o of orders) o.unannounced = byOrder.get(o.id) || 0;
+    } catch {
+      for (const o of orders) o.unannounced = 0;
+    }
+  }
+  return orders;
 }
 
 /**
@@ -1595,9 +2540,21 @@ function revisionCard(r) {
       <img src="/admin/files/${r.file_id}" alt="${esc(r.filename || 'beeld ' + r.file_id)}" loading="lazy" decoding="async">
     </a>
     <div class="rev-text">
+      <!-- WAT MOET ER VERVANGEN WORDEN. Het product en de shot staan vóór de
+           bestandsnaam, want dat is waar je op zoekt in je eigen map — en het
+           is het antwoord op "welke moet ik opnieuw maken". Staat er nog geen
+           indeling op dit beeld, dan zegt de regel dat ook: dan is het de
+           bestandsnaam of niets, en dat is precies het gat dat de indeeltabel
+           op de bestandenpagina dicht. -->
+      <p class="rev-what">${r.product_key
+        ? `<strong>Product ${esc(r.product_key.replace(/^p/, ''))}${r.shot ? ` &middot; ${esc(r.shot)}` : ''}</strong>`
+        : '<strong class="muted">not mapped to a product</strong>'}</p>
       <p class="meta">${esc(r.filename || 'file #' + r.file_id)} ${repeat} ${often} ${revoked}</p>
       ${r.review_note ? `<div class="note">${esc(r.review_note)}</div>` : '<p class="meta">Geen notitie achtergelaten.</p>'}
       <form method="post" action="/admin/revisions/${r.file_id}/resolve" class="rev-actions">
+        <input type="text" name="fixed" maxlength="${ANNOUNCE_NOTE_MAX}" required
+               placeholder="Wat heb je aangepast? Deze regel gaat naar de klant."
+               style="flex:1; min-width:14rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);">
         <button class="btn btn-primary" type="submit">Opgelost — terug naar de klant</button>
       </form>
       <p class="meta"><a href="/admin/customers/${r.customer_id}">Klant bekijken</a></p>
@@ -1629,6 +2586,17 @@ function orderCard(o, models, statusFilter = '') {
   const unannounced = o.status === 'delivered' && !o.delivery_mailed_at
     ? '<p class="warnline">Delivered, but the customer has not been emailed. Set the status to <strong>delivered</strong> again to retry the mail.</p>'
     : '';
+
+  // EN DE TWEEDE STILTE, sinds augustus 2026. Bovenstaande regel vangt de
+  // bestelling die nooit is aangekondigd. Deze vangt de bestelling die wél is
+  // aangekondigd en daarna nieuwe beelden kreeg — de revisie die is opgelost en
+  // waar niemand iets over gezegd heeft. Zonder deze regel is dat alleen te
+  // zien door elke geleverde bestelling één voor één open te klikken, en dus in
+  // de praktijk niet.
+  const pendingAnnounce = o.delivery_mailed_at && o.unannounced
+    ? `<p class="warnline">${o.unannounced} delivered ${o.unannounced === 1 ? 'file has' : 'files have'} not been announced.
+        <a href="/admin/orders/${o.id}/files">Tell the customer &rarr;</a></p>`
+    : '';
   return `
 <div class="card">
   <div class="row-head">
@@ -1654,6 +2622,7 @@ function orderCard(o, models, statusFilter = '') {
     <button class="btn btn-primary" type="submit">Update</button>
   </form>
   ${unannounced}
+  ${pendingAnnounce}
   ${modelList}
   <form class="controls" method="post" action="/admin/orders/${o.id}/models">
     <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);" required>

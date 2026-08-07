@@ -1,0 +1,191 @@
+/* Het klantdashboard als plaatje. `npm run account:render`
+ *
+ * WAAROM DIT BESTAAT. Het dashboard is de enige plek in dit project waar de
+ * opmaak niet te zien is zonder een echte sessie, een echte database en een
+ * deploy. Dat is precies de reden dat de fotogalerij in augustus 2026 op volle
+ * breedte live ging: de HTML klopte, de CSS klopte, en niemand had het gezien.
+ * Een pagina die je pas na een deploy kunt beoordelen, beoordeel je niet.
+ *
+ * WAT HET DOET. Het roept accountGet() aan met dezelfde domme D1-stub als
+ * tests/account-brand-kit.test.mjs — geen wrangler, geen miniflare — vangt de
+ * HTML op, en zet die in Chromium neer met public/account.css ervoor en echte
+ * foto's op de plek van /account/files/<id>/f. Uit komt een PNG per taal en per
+ * breedte, in .render/ (niet in public/, dit is gereedschap en geen bestand dat
+ * de site uitserveert).
+ *
+ * WAT HET NIET IS. Geen test. Er wordt niets beweerd en niets afgekeurd; het
+ * enige wat dit script levert is een beeld waar een mens naar kan kijken. De
+ * beweringen staan in tests/.
+ *
+ *   node scripts/account-render.mjs                 → /account, nl + en, 1280 en 420
+ *   node scripts/account-render.mjs /account/orders → een andere sectie
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { accountGet } from '../src/lib/account.js';
+import { mintToken } from '../src/lib/token.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const OUT = path.join(ROOT, '.render');
+fs.mkdirSync(OUT, { recursive: true });
+
+const SECTION = process.argv[2] || '/account';
+const WIDTHS = [[1280, 'breed'], [420, 'telefoon']];
+
+/* ── de nepdatabase ──────────────────────────────────────────────────────────
+ * Genoeg orders om de vier tellers te vullen en genoeg geleverde bestanden om
+ * de strook twee rijen te laten halen. De cijfers zijn verzonnen; de vorm van
+ * de rijen komt uit de echte queries in account.js. */
+const CUSTOMER = { customer_id: 7, email: 'studio@voltbrand.nl', brand: 'VOLT', name: 'Mara' };
+
+const ORDERS = [
+  { id: 91, ref: 'VIS-2608-4471', service: 'catalog', status: 'in_production', tier: 'attended', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', lang: 'nl', created_at: '2026-08-01', closed_at: null, revisions_revoked_at: null },
+  { id: 90, ref: 'VIS-2607-9920', service: 'lifestyle', status: 'delivered', tier: 'attended', product_count: 12, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-28', closed_at: null, revisions_revoked_at: null },
+  { id: 89, ref: 'VIS-2607-3312', service: 'catalog', status: 'human_check', tier: 'attended', product_count: 8, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-24', closed_at: null, revisions_revoked_at: null },
+  { id: 88, ref: 'VIS-2607-1180', service: 'catalog', status: 'delivered', tier: 'unattended', product_count: 4, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-19', closed_at: null, revisions_revoked_at: null },
+];
+
+const SHOTS = ['front', 'back', 'detail', 'worn'];
+const FILES = [];
+let fid = 400;
+/* Drie producten per bestelling, elk vier shots — de vorm die de
+ * productkaarten op het dashboard moeten laten zien. Eén beeld staat op
+ * 'revision_requested', want de amberkleurige rand is een van de dingen die
+ * alleen op een plaatje te beoordelen zijn. */
+for (const o of ORDERS) {
+  const products = o.status === 'delivered' ? 3 : o.status === 'human_check' ? 2 : 0;
+  for (let p = 1; p <= Math.max(products, 2); p++) {
+    FILES.push({ id: fid++, order_id: o.id, kind: 'upload', filename: `IMG_${1000 + p}.jpg`, bytes: 2_400_000, expires_at: null, review_state: null, review_note: null, reviewed_at: null, product_key: `p${p}`, shot: null });
+  }
+  for (let p = 1; p <= products; p++) {
+    for (const shot of SHOTS) {
+      const revising = o.id === 90 && p === 2 && shot === 'back';
+      FILES.push({
+        id: fid++, order_id: o.id, kind: 'delivery',
+        filename: `VOLT-p${p}-${shot}.webp`, bytes: 1_800_000, expires_at: '2026-12-31',
+        review_state: revising ? 'revision_requested' : (p === 1 ? 'approved' : 'pending'),
+        review_note: revising ? 'De achtergrond trekt naar grijs, en de mouw hangt scheef.' : null,
+        reviewed_at: revising ? '2026-08-05' : null,
+        product_key: `p${p}`, shot,
+      });
+    }
+  }
+}
+
+const DETAILS = {
+  name: 'Mara', brand: 'VOLT', email: CUSTOMER.email, phone: '',
+  website: 'https://voltbrand.nl', vat_number: 'NL001234567B01',
+  default_background: 'white', default_background_hex: null, details_saved_at: '2026-07-20',
+};
+
+const MODELS = [
+  { id: 31, label: 'Nadia', status: 'approved', has_preview: 1 },
+  { id: 32, label: 'Tomas', status: 'locked', has_preview: 1 },
+];
+
+/* Gebeurtenissen voor de tijdlijn — de rijen die admin bij elke
+ * statuswijziging wegschrijft, inclusief een handmatige notitie. */
+const EVENTS = [
+  { order_id: 91, status: 'received', note: null, created_at: '2026-08-01 09:12' },
+  { order_id: 91, status: 'in_production', note: 'Ingepland voor donderdag.', created_at: '2026-08-03 10:40' },
+  { order_id: 90, status: 'received', note: null, created_at: '2026-07-28 08:03' },
+  { order_id: 90, status: 'in_production', note: null, created_at: '2026-07-29 11:20' },
+  { order_id: 90, status: 'human_check', note: null, created_at: '2026-08-01 16:05' },
+  { order_id: 90, status: 'delivered', note: '12 beelden geleverd.', created_at: '2026-08-02 09:30' },
+  { order_id: 89, status: 'received', note: null, created_at: '2026-07-24 12:00' },
+  { order_id: 89, status: 'human_check', note: null, created_at: '2026-07-30 15:41' },
+  { order_id: 88, status: 'delivered', note: null, created_at: '2026-07-20 10:00' },
+];
+
+function makeDb() {
+  const pick = (sql) => {
+    const s = sql.replace(/\s+/g, ' ');
+    if (s.includes('FROM account_sessions')) return { ...CUSTOMER, expires_at: '2099-01-01' };
+    if (s.includes('FROM rate_limits')) return null;
+    if (s.includes('FROM order_events')) return EVENTS;
+    if (s.includes('FROM files f JOIN orders')) return FILES;
+    if (s.includes('FROM custom_models')) return MODELS;
+    if (s.includes('FROM customer_style_locks')) return [];
+    if (s.includes('FROM customers WHERE id')) return DETAILS;
+    if (s.includes('FROM orders')) return ORDERS;
+    return null;
+  };
+  return {
+    prepare(sql) {
+      const st = {
+        bind() { return st; },
+        async first() { const r = pick(sql); return Array.isArray(r) ? r[0] : r; },
+        async all() { const r = pick(sql); return { results: Array.isArray(r) ? r : (r ? [r] : []) }; },
+        async run() { return { success: true }; },
+      };
+      return st;
+    },
+    async batch() { return []; },
+  };
+}
+
+async function render(section, lang) {
+  const token = await mintToken();
+  const url = new URL(`https://visuails.com${section}`);
+  if (lang === 'en') url.searchParams.set('lang', 'en');
+  const request = new Request(url, {
+    headers: { cookie: `vis_account=${token}`, 'accept-language': lang === 'nl' ? 'nl-NL,nl;q=0.9' : 'en-GB,en;q=0.9' },
+  });
+  const res = await accountGet({ request, env: { DB: makeDb() }, waitUntil() {} });
+  return res.text();
+}
+
+/* De foto's. /account/files/<id>/f haalt normaal uit R2; hier draaien we door
+ * een handjevol echte beelden heen zodat de tegels de verhouding en de
+ * uitsnede krijgen die ze in het echt ook krijgen. Een grijs vlak zou elke
+ * fout in object-fit verbergen. */
+const PHOTOS = fs.readdirSync(path.join(ROOT, 'public/img'))
+  .filter((f) => /^(banners|lifestyle|custom-models|catalog)/.test(f) && /\.webp$/.test(f))
+  .sort()
+  .map((f) => path.join(ROOT, 'public/img', f));
+if (!PHOTOS.length) throw new Error('account-render: geen voorbeeldfotos in public/img');
+
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const context = await browser.newContext();
+
+await context.route('**/*', async (route) => {
+  const u = new URL(route.request().url());
+  if (u.pathname === '/account.css' || u.pathname.endsWith('.css')) {
+    const file = path.join(ROOT, 'public', u.pathname.replace(/^\//, ''));
+    if (fs.existsSync(file)) return route.fulfill({ contentType: 'text/css', body: fs.readFileSync(file) });
+  }
+  if (/^\/account\/files\/(\d+)\//.test(u.pathname)) {
+    const n = Number(u.pathname.match(/^\/account\/files\/(\d+)\//)[1]);
+    return route.fulfill({ contentType: 'image/webp', body: fs.readFileSync(PHOTOS[n % PHOTOS.length]) });
+  }
+  if (u.pathname === '/__page') return route.fulfill({ contentType: 'text/html', body: globalThis.__html });
+  return route.fulfill({ status: 204, body: '' });
+});
+
+for (const lang of ['nl', 'en']) {
+  globalThis.__html = await render(SECTION, lang);
+  for (const [w, name] of WIDTHS) {
+    const page = await context.newPage();
+    /* EEN HOOG VENSTER, EXPRES. De tegels staan op loading="lazy", en een
+     * fullPage-opname rekt het beeld op zonder alsnog te laden wat buiten het
+     * oorspronkelijke venster viel — dan komen de onderste tegels als zwarte
+     * vlakken op de foto en lijkt de opmaak stuk. Met een venster van 2000px
+     * valt alles binnen bereik en wacht networkidle ze netjes af. */
+    await page.setViewportSize({ width: w, height: 2000 });
+    await page.goto('https://visuails.com/__page', { waitUntil: 'networkidle' });
+
+    /* Terug naar een normale hoogte voordat de opname wordt gemaakt, anders
+     * krijgt de PNG onderaan honderden pixels leegte van het hoge venster. */
+    await page.setViewportSize({ width: w, height: 900 });
+    const slug = SECTION.replace(/\W+/g, '-').replace(/^-|-$/g, '') || 'account';
+    const file = path.join(OUT, `${slug}-${lang}-${name}.png`);
+    await page.screenshot({ path: file, fullPage: true });
+    await page.close();
+    console.log(`  .render/${path.basename(file)}  ${(fs.statSync(file).size / 1024).toFixed(0)} kB`);
+  }
+}
+
+await browser.close();
+console.log('\n▶ nepdata, echte CSS — dit is om naar te kijken, niet om iets mee te bewijzen');

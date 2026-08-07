@@ -27,7 +27,7 @@
 //
 // Runs under plain `node` against hand-built D1 and R2 stubs — see
 // tests/account-brand-kit.test.mjs's header for why that is the right shape.
-import { adminGet, adminPost } from '../src/lib/admin.js';
+import { adminGet, adminPost, guessProductShot } from '../src/lib/admin.js';
 import { mintToken } from '../src/lib/token.js';
 
 const ORDERS = [
@@ -40,7 +40,7 @@ const MODELS = {
   32: { id: 32, customer_id: 7, label: 'Tomas', status: 'locked', preview_key: 'models/7/32-tomas.jpg' },
 };
 
-function makeEnv() {
+function makeEnv(opts = {}) {
   const writes = [];
   const prepared = [];
   const mails = [];
@@ -58,7 +58,24 @@ function makeEnv() {
     if (s.includes('SELECT status, COUNT(*)')) {
       return [{ status: 'received', n: 2 }, { status: 'delivered', n: 41 }];
     }
+    // De twee tellingen van de herleveringsknop, vóór de algemene
+    // bestandstelling — anders vangt die regel ze allebei op en telt elke
+    // bestelling zes onaangekondigde beelden.
+    // TELLINGEN EERST, DAN DE LIJST. `SELECT COUNT(*) ... FROM files WHERE
+    // order_id = ?1` bevat óók "FROM files WHERE order_id", dus de lijstregel
+    // hieronder vangt hem af als hij eerder staat — en dan telt de
+    // leveringsmail nul beelden zonder dat er iets omvalt.
+    if (s.includes('announced_at IS NULL')) return { n: opts.unannounced ?? 0 };
+    if (s.includes('FROM revision_requests')) return { n: opts.openRevisions ?? 0 };
     if (s.includes('COUNT(*) AS n FROM files')) return { n: 6 };
+    // De bestandenlijst van één bestelling — de pagina waar de meldknop op staat.
+    if (s.includes("SELECT id FROM files WHERE order_id")) return (opts.deliveryIds || []).map((id) => ({ id }));
+    if (s.includes('FROM files WHERE order_id')) return opts.files || [];
+    if (s.includes('FROM order_notes')) return opts.notes || [];
+    // De opzoekactie van handleRevisionResolve. Moet vóór de generieke
+    // revision_requested-regel staan, anders krijgt hij een lege lijst terug en
+    // stopt de handler stil.
+    if (s.includes('SELECT id, order_id FROM files WHERE id')) return { id: binds[0], order_id: 90 };
     if (s.includes('COUNT(*) AS n')) return { n: 1 };
     if (s.includes("review_state = 'revision_requested'")) return [];
     if (s.includes('FROM orders WHERE id')) return ORDERS.find((o) => o.id === binds[0]) || null;
@@ -350,6 +367,339 @@ section('§3 · the status filter on the dashboard');
   });
   check('a hand-built "back" cannot redirect anywhere else',
     bogus.headers.get('location') === '/admin', bogus.headers.get('location'));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§4 · de herlevering — "je revisie staat klaar", los van de eerste mail');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// WAAROM DIT GETEST WORDT. De revisieknop in het klantportaal eindigde in
+// stilte: orders.delivery_mailed_at zorgt ervoor dat "je bestelling staat
+// klaar" één keer verstuurd wordt, en dus werd er na een opgeloste revisie
+// nooit meer iets gemaild. De reparatie is een tweede mailsoort met een eigen
+// teller, en de hele waarde ervan zit in vier dingen die geen van alle luid
+// falen: hij verstuurt niet als er niets nieuws is, hij stempelt pas ná een
+// geslaagde verzending, hij laat delivery_mailed_at met rust, en hij mag niet
+// de eerste aankondiging zijn.
+
+// Het normale geval: drie nieuwe beelden, twee openstaande revisies.
+{
+  sentMail = [];
+  const env = makeEnv({ unannounced: 3, openRevisions: 2 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+
+  const res = await adminReq('POST', '/admin/orders/90/announce', {
+    env, body: new URLSearchParams({ note: 'Achtergrond op beeld 4 rechtgetrokken.' }),
+  });
+
+  check('the announce redirects back to the files page with a count',
+    res.headers.get('location') === '/admin/orders/90/files?announced=3', res.headers.get('location'));
+  check('exactly one mail goes out', sentMail.length === 1, `${sentMail.length} mail(s)`);
+  check('it is the REVISION mail, not the delivery mail',
+    /revision is ready/i.test(sentMail[0]?.subject || ''), sentMail[0]?.subject);
+  check('the studio note travels with it',
+    /beeld 4 rechtgetrokken/.test(sentMail[0]?.html || ''));
+  check('the files are stamped as announced',
+    has(env.DB.writes, /UPDATE files SET announced_at/));
+  check('the re-delivery counter goes up',
+    has(env.DB.writes, /UPDATE orders SET redelivery_mailed_at[\s\S]*redelivery_count/));
+  // DE KERN VAN LUCAS' EIS. De eerste aankondiging houdt zijn eigen bewaker.
+  check('delivery_mailed_at is NOT touched',
+    !has(env.DB.writes, /UPDATE orders SET delivery_mailed_at/));
+  check('the customer gets a working link (old token revoked, new one minted)',
+    has(env.DB.writes, /UPDATE order_tokens SET revoked_at/) && has(env.DB.writes, /INSERT INTO order_tokens/));
+  check('and it lands on their timeline too',
+    has(env.DB.writes, /INSERT INTO order_events/));
+
+  order.delivery_mailed_at = prev;
+}
+
+// Niets nieuws: de knop mag dan niets doen. Dit is de dubbelklik, en aan de
+// kant van de klant is een tweede identieke mail niet te onderscheiden van een
+// studio die zichzelf herhaalt.
+{
+  sentMail = [];
+  const env = makeEnv({ unannounced: 0, openRevisions: 1 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+
+  const res = await adminReq('POST', '/admin/orders/90/announce', { env, body: new URLSearchParams() });
+
+  check('nothing unannounced means no mail', sentMail.length === 0, `${sentMail.length} mail(s)`);
+  check('and no token is burned for a mail that was not sent',
+    !has(env.DB.writes, /INSERT INTO order_tokens/));
+  check('the page says so rather than erroring',
+    res.headers.get('location') === '/admin/orders/90/files?announced=none', res.headers.get('location'));
+
+  order.delivery_mailed_at = prev;
+}
+
+// Een bestelling die nog nooit is aangekondigd. "Je revisie staat klaar" als
+// allereerste bericht verwijst naar iets wat de klant nog nooit gezien heeft.
+{
+  sentMail = [];
+  const env = makeEnv({ unannounced: 4, openRevisions: 0 });   // order 91: delivery_mailed_at is null
+  const res = await adminReq('POST', '/admin/orders/91/announce', { env, body: new URLSearchParams() });
+
+  check('a never-announced order is refused', res.status === 400, res.status);
+  check('and nothing is mailed', sentMail.length === 0, `${sentMail.length} mail(s)`);
+  check('and nothing is stamped', !has(env.DB.writes, /UPDATE files SET announced_at/));
+}
+
+// Bijgeleverd zonder dat er om gevraagd is: dan is het geen revisie, en dat
+// hoort de mail ook niet te beweren.
+{
+  sentMail = [];
+  const env = makeEnv({ unannounced: 2, openRevisions: 0 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+
+  await adminReq('POST', '/admin/orders/90/announce', { env, body: new URLSearchParams() });
+
+  check('with no revisions open it announces new images, not a revision',
+    /new images/i.test(sentMail[0]?.subject || '') && !/revision/i.test(sentMail[0]?.subject || ''),
+    sentMail[0]?.subject);
+
+  order.delivery_mailed_at = prev;
+}
+
+// De pagina zelf: de knop moet er staan met het juiste aantal erop, en bij een
+// bestelling die nog nooit is aangekondigd moet hij er juist NIET staan.
+{
+  const env = makeEnv({
+    unannounced: 2,
+    files: [
+      { id: 10, kind: 'delivery', filename: 'volt-01.webp', bytes: 900000, product_key: 'p1', shot: 'front', created_at: '2026-08-02 09:00', announced_at: '2026-08-02 10:00' },
+      { id: 11, kind: 'delivery', filename: 'volt-02.webp', bytes: 910000, product_key: 'p1', shot: 'back', created_at: '2026-08-05 12:00', announced_at: null },
+      { id: 12, kind: 'delivery', filename: 'volt-03.webp', bytes: 880000, product_key: 'p2', shot: 'front', created_at: '2026-08-05 12:01', announced_at: null },
+    ],
+  });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+
+  const res = await adminReq('GET', '/admin/orders/90/files', { env });
+  const body = await res.text();
+  check('the files page offers the button, counted from the files themselves',
+    /Announce 2 new images/.test(body));
+  check('it posts to the announce route',
+    /action="\/admin\/orders\/90\/announce"/.test(body));
+  check('and each delivered file says whether the customer knows about it',
+    /not announced/.test(body));
+
+  order.delivery_mailed_at = prev;
+}
+
+{
+  const env = makeEnv({
+    unannounced: 1,
+    files: [{ id: 13, kind: 'delivery', filename: 'x.webp', bytes: 1, product_key: '', shot: '', created_at: '2026-08-06', announced_at: null }],
+  });
+  const res = await adminReq('GET', '/admin/orders/91/files', { env });   // nooit aangekondigd
+  const body = await res.text();
+  check('an order that was never announced gets no announce button',
+    !/Announce 1 new image/.test(body));
+  check('it is pointed at the delivered status instead',
+    /never been announced/.test(body));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§5 · welk beeld hoort bij welk product');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Uploads dragen product_key en shot sinds migratie 0005; leveringen droegen
+// niets, omdat de uploadroute van admin de kolommen niet vulde. Gevolg op het
+// klantdashboard: twee stapels beelden naast elkaar zonder verband. Bij dertig
+// producten onbruikbaar — en dat is de bestelling waar het geld in zit.
+//
+// De gok uit de bestandsnaam is het halve werk, dus hij wordt hier vastgelegd:
+// wat hij herkent, en vooral wat hij NIET raadt.
+
+{
+  const g = (n) => guessProductShot(n);
+  check('p3 in de naam is product 3', g('VOLT-p3-back.webp').product === 'p3', g('VOLT-p3-back.webp').product);
+  check('en het shotwoord komt mee', g('VOLT-p3-back.webp').shot === 'back');
+  check('nederlandse shotwoorden tellen ook', g('volt 07 achterkant.jpg').shot === 'back');
+  check('een los volgnummer telt als product', g('volt 07 achterkant.jpg').product === 'p7', g('volt 07 achterkant.jpg').product);
+  check('nullen ervoor verdwijnen', g('VOLT_03_front.webp').product === 'p3', g('VOLT_03_front.webp').product);
+  // DE BELANGRIJKSTE: niet raden als er niets staat. "niemand heeft het
+  // gezegd" is een ander antwoord dan "voorkant", en een verkeerde gok die als
+  // waarheid wordt opgeslagen is erger dan een leeg veld dat om aandacht vraagt.
+  check('een naam zonder aanwijzing levert niets op',
+    g('final render.png').product === null && g('final render.png').shot === null);
+  check('een lang referentienummer is geen product', g('IMG_4471.jpg').product === null, String(g('IMG_4471.jpg').product));
+}
+
+// De upload zelf schrijft de gok mee de rij in.
+{
+  const env = makeEnv();
+  const fd = new FormData();
+  fd.append('files', new File([new Uint8Array(2048)], 'VOLT-p4-detail.webp', { type: 'image/webp' }));
+  await adminReq('POST', '/admin/orders/90/deliver', { env, body: fd });
+  const w = env.DB.writes.find((x) => /INSERT INTO files/.test(x.sql));
+  check('een geüploade levering krijgt product en shot mee',
+    /product_key, shot/.test(w?.sql || '') && w?.binds?.includes('p4') && w?.binds?.includes('detail'),
+    JSON.stringify(w?.binds || []));
+}
+
+// Het indeelformulier: bevestigen of corrigeren, in één keer voor de hele
+// bestelling.
+{
+  const env = makeEnv({ deliveryIds: [201, 202] });
+  const body = new URLSearchParams({ p201: 'p1', s201: 'front', p202: 'p1', s202: 'front' });
+  const res = await adminReq('POST', '/admin/orders/90/map', { env, body });
+
+  check('de indeling wordt opgeslagen', has(env.DB.writes, /UPDATE files SET product_key = \?2, shot = \?3/));
+  check('en de pagina bevestigt hoeveel', /mapped=2$/.test(res.headers.get('location') || ''), res.headers.get('location'));
+  // De vervangregel: twee beelden op dezelfde product+shot betekent dat het
+  // oudste vervangen is. Eerst alles vrijgeven, dan opnieuw bepalen — anders is
+  // een correctie in de indeling niet terug te draaien.
+  const clearAt = indexOfWrite(env.DB.writes, /UPDATE files SET superseded_at = NULL/);
+  const setAt = indexOfWrite(env.DB.writes, /UPDATE files SET superseded_at = datetime/);
+  check('vervangen wordt opnieuw bepaald, niet opgestapeld',
+    clearAt >= 0 && setAt > clearAt, `clear@${clearAt} set@${setAt}`);
+}
+
+{
+  const env = makeEnv({ deliveryIds: [201] });
+  // Een id dat niet bij deze bestelling hoort, en een verzonnen shot.
+  const body = new URLSearchParams({ p999: 'p1', s999: 'front', p201: 'p2', s201: 'vanaf-de-maan' });
+  await adminReq('POST', '/admin/orders/90/map', { env, body });
+  const writes = env.DB.writes.filter((w) => /UPDATE files SET product_key/.test(w.sql));
+  check('een bestand van een andere bestelling wordt genegeerd', writes.length === 1, `${writes.length} write(s)`);
+  check('en een onbekende shot wordt leeg, niet doorgelaten',
+    writes[0]?.binds[2] === null, String(writes[0]?.binds[2]));
+}
+
+// Melden sluit alleen de revisies waarvan het beeld echt vervangen is.
+{
+  sentMail = [];
+  const env = makeEnv({ unannounced: 2, openRevisions: 1 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+
+  await adminReq('POST', '/admin/orders/90/announce', { env, body: new URLSearchParams() });
+  const w = env.DB.writes.find((x) => /UPDATE revision_requests SET resolved_at/.test(x.sql));
+  check('melden sluit openstaande revisies', !!w);
+  check('maar alleen die waarvan het beeld vervangen is',
+    /superseded_at IS NOT NULL/.test(w?.sql || ''));
+
+  order.delivery_mailed_at = prev;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§6 · het werkbord: eerst invullen, dan pushen');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Lucas: *"ik wil de order eerst visueel invullen en dan samen pushen naar de
+// klant in 1 keer per product of order, zodat ik er meerdere dagen over kan
+// doen en gelijk zie welke nog missen."* Het bord kan dat alleen als een gat
+// eruitziet als een gat, als een upload precies in zijn vakje landt, en als
+// pushen te beperken is tot één product.
+
+{
+  const env = makeEnv({
+    files: [
+      { id: 501, kind: 'delivery', filename: 'a.webp', bytes: 1, product_key: 'p1', shot: 'front', created_at: '2026-08-01', review_state: 'pending', announced_at: null, superseded_at: null },
+    ],
+  });
+  const res = await adminReq('GET', '/admin/orders/90/files', { env });
+  const body = await res.text();
+  check('the board draws a slot per shot, labelled',
+    /FRONT|Front/.test(body) && body.includes('On model') && body.includes('Detail'));
+  check('an empty slot carries the product and shot it stands for',
+    /name="product" value="p1"[\s\S]{0,200}name="shot" value="back"/.test(body));
+  check('and it counts what is filled', /1\/4/.test(body));
+}
+
+// De upload uit een vakje raadt niets: het vakje weet het al.
+{
+  const env = makeEnv();
+  const fd = new FormData();
+  fd.set('product', 'p2');
+  fd.set('shot', 'worn');
+  fd.append('files', new File([new Uint8Array(1024)], 'export-final-v3.webp', { type: 'image/webp' }));
+  await adminReq('POST', '/admin/orders/90/deliver', { env, body: fd });
+  const w = env.DB.writes.find((x) => /INSERT INTO files/.test(x.sql));
+  check('a slot upload lands on that exact product and shot',
+    w?.binds?.includes('p2') && w?.binds?.includes('worn'), JSON.stringify(w?.binds || []));
+  // Een upload in een gevuld vakje is een vervanging, dus de vervangregel moet
+  // meteen draaien — anders staan er twee beelden voor dezelfde plek.
+  check('and the replace rule runs straight away',
+    has(env.DB.writes, /UPDATE files SET superseded_at = datetime/));
+}
+
+// Pushen per product raakt alleen dat product.
+{
+  sentMail = [];
+  const env = makeEnv({ unannounced: 2, openRevisions: 0 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+
+  await adminReq('POST', '/admin/orders/90/announce', { env, body: new URLSearchParams({ product: 'p7' }) });
+  const stamp = env.DB.writes.find((x) => /UPDATE files SET announced_at/.test(x.sql));
+  check('pushing one product stamps only that product', stamp?.binds?.includes('p7'), JSON.stringify(stamp?.binds || []));
+  check('and the mail says which product it is about',
+    /product 7/i.test(sentMail[0]?.html || ''));
+
+  order.delivery_mailed_at = prev;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§7 · notities: wat de klant leest, en wat alleen jij leest');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Lucas: *"een klant vraagt een revisie met een notitie, jij lost hem op, en
+// daarna is er geen kanaal meer. Over drie maanden weet niemand meer waarom die
+// extra ronde er was."* Het verschil tussen de twee soorten notities moet in de
+// KOLOM zitten en niet in het hoofd van degene die tikt — dus deze sectie
+// bewijst dat ze naar twee verschillende plekken gaan.
+
+{
+  const env = makeEnv();
+  await adminReq('POST', '/admin/orders/90/note', { env, body: new URLSearchParams({ note: 'Stof kwam donkerder uit, belichting opgetrokken.' }) });
+  const w = env.DB.writes.find((x) => /UPDATE orders SET customer_note/.test(x.sql));
+  check('the shared note lands on the order', !!w && w.binds.includes('Stof kwam donkerder uit, belichting opgetrokken.'));
+  check('and it stamps when it changed', /customer_note_at/.test(w?.sql || ''));
+}
+
+{
+  const env = makeEnv();
+  await adminReq('POST', '/admin/orders/90/note', { env, body: new URLSearchParams({ note: '   ' }) });
+  const w = env.DB.writes.find((x) => /UPDATE orders SET customer_note/.test(x.sql));
+  check('an empty note clears the message rather than storing blanks', w?.binds[1] === null, String(w?.binds[1]));
+}
+
+{
+  const env = makeEnv();
+  await adminReq('POST', '/admin/orders/90/internal', { env, body: new URLSearchParams({ body: 'Derde ronde omdat de eerste upload een prototype was.' }) });
+  check('an internal note goes to its own table', has(env.DB.writes, /INSERT INTO order_notes/));
+  // DE GARANTIE. Niet een kolom die gefilterd moet worden, maar een tabel die
+  // de klantkant niet kent.
+  check('and never touches the order the customer reads',
+    !has(env.DB.writes, /UPDATE orders SET customer_note/));
+}
+
+{
+  const env = makeEnv();
+  const res = await adminReq('POST', '/admin/revisions/501/resolve', { env, body: new URLSearchParams({ fixed: '' }) });
+  check('resolving without saying what changed is refused', res.status === 400, res.status);
+  check('and nothing is written', !has(env.DB.writes, /UPDATE revision_requests/));
+}
+
+{
+  const env = makeEnv();
+  await adminReq('POST', '/admin/revisions/501/resolve', { env, body: new URLSearchParams({ fixed: 'Achtergrond egaal wit gemaakt.' }) });
+  check('with a line, the request is closed and the line is kept',
+    has(env.DB.writes, /UPDATE revision_requests SET resolved_at = datetime\('now'\), resolution_note/));
+  check('and the customer sees it on their own timeline',
+    has(env.DB.writes, /INSERT INTO order_events/));
 }
 
 globalThis.fetch = realFetch;

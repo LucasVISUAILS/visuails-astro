@@ -136,6 +136,23 @@ export const note = html =>
     </td>
   </tr></table>`;
 
+/**
+ * What the studio typed, set apart from what the template says.
+ *
+ * August 2026, with the re-delivery mail. `note()` above is for boilerplate —
+ * the spam line, the link repeated in full — and in a mail whose whole point is
+ * "here is what we changed", the changed-bit must not look like the footnotes.
+ * Green edge and a tinted ground, same pair as payPanel, so the eye lands on it
+ * before the button rather than after.
+ */
+export const quote = html =>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 0"><tr>
+    <td width="4" bgcolor="${C.green}" style="width:4px;background:${C.green};font-size:0;line-height:0">&nbsp;</td>
+    <td style="padding:14px 18px">
+      <p style="margin:0;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.text}">${html}</p>
+    </td>
+  </tr></table>`;
+
 /** The "check your spam" line, from the one place that sentence is written. */
 export const spamNote = lang => note(esc(mailNote(lang)));
 

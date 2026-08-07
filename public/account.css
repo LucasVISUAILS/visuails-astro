@@ -964,3 +964,417 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 }
 .wa-nudge h3 { margin: 0; font-size: .92rem; font-weight: 700; color: var(--ink); }
 .wa-nudge p { margin: .35rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
+
+
+/* ---- laatst geleverd, op het overzicht (augustus 2026) -----------------------
+   Alleen kijken. Downloaden hoort bij de bestelling, waar de context staat —
+   welk product, welke shot, goedgekeurd of niet. Deze strook heeft één taak:
+   laten zien dat er iets klaarstaat en de weg wijzen.
+
+   VASTE KOLOMMEN, GEEN auto-fill. Dat stond hier eerst en gaf een rafelige
+   laatste rij: negen tegels naast elkaar en dan drie eronder, wat er uitziet
+   als een raster dat halverwege ophoudt. Twaalf is deelbaar door zes, vier en
+   drie, dus bij elk van deze drie breekpunten staan er volle rijen. Dat is de
+   hele reden dat het er twaalf zijn.
+
+   4/5 en niet vierkant. Dit zijn modefoto's; een vierkante uitsnede hakt bij
+   een staand beeld hoofd of schoenen eraf, en juist die twee vertellen of de
+   foto goed is. */
+.latest { list-style: none; margin: .8rem 0 2rem; padding: 0; display: grid; gap: .55rem;
+  grid-template-columns: repeat(6, 1fr); }
+.latest-item a {
+  display: block; aspect-ratio: 4 / 5; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--r-sm, 6px); background: var(--surface-2);
+}
+.latest-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .latest-item img { transition: transform .2s ease, opacity .2s ease; }
+  .latest-item a:hover img { transform: scale(1.04); opacity: .92; }
+}
+@media (max-width: 900px) { .latest { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 560px) {
+  .latest { grid-template-columns: repeat(3, 1fr); }
+  /* Twaalf staande tegels op drie kolommen is vier rijen, en dan staat de
+     recente activiteit een halve veeg te ver weg. Negen: drie volle rijen,
+     dezelfde strook, één scherm. De rest staat op de bestellingen zelf. */
+  .latest-item:nth-child(n+10) { display: none; }
+}
+
+/* ---- het dashboard strakker ---------------------------------------------
+   Drie dingen die het rommelig lieten ogen, geen van drieën een grote ingreep.
+
+   1 · De koppen boven de blokken hadden dezelfde grootte als de koppen ín de
+       blokken, dus alles schreeuwde even hard. Ze zijn nu een label: klein,
+       gespatieerd, gedempt — het oog vindt de structuur zonder te lezen.
+   2 · De tellerkaarten en de kaarten eronder hadden verschillende randen en
+       hoeken, wat op één scherm leest als twee ontwerpen. Nu dezelfde.
+   3 · Verticale ruimte was overal gelijk, waardoor niets bij elkaar hoorde.
+       Meer lucht tússen secties, minder binnen een sectie. */
+.section-head { display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; margin: 2.4rem 0 .2rem; }
+.section-head:first-child { margin-top: 0; }
+.section-head h2 { font-size: .78rem; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 700; margin: 0; }
+.viewall { font-size: .82rem; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+.viewall:hover { color: var(--ink); }
+
+.statrow { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin: 1.4rem 0 0; }
+.stat, .stat.is-link {
+  border: 1px solid var(--line); border-radius: var(--r-sm, 6px);
+  background: var(--surface-2); padding: .9rem 1rem; display: block;
+}
+.stat-n { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.7rem;
+  line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.stat-label { display: block; margin-top: .3rem; font-size: .78rem; color: var(--ink-3); }
+@media (hover: hover) {
+  .stat.is-link:hover { border-color: var(--line-strong); background: var(--surface); }
+}
+
+.ovhead { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1.2rem; flex-wrap: wrap; margin-bottom: .4rem; }
+.ovhead h1 { margin: 0; }
+.ovhead .lede { margin: .35rem 0 0; }
+
+/* ---- per product: één kaart, uitklapbaar (augustus 2026) --------------------
+
+   Lucas: *"klant klikt op product resultaat waarna hij een soortvan uitklapt in
+   de 4 foto's en per foto voor een revisie kan kiezen. Ik zou het mooi vinden
+   als uitklappen van foto's met subtiele soepele animaties gaat."*
+
+   GEEN JAVASCRIPT. Dit dashboard draait onder `default-src 'none'`; er is geen
+   script en er komt er geen bij voor een uitklapper. <details> doet het werk,
+   en de animatie zit hier — in twee lagen:
+
+     1 · ::details-content, waar de browser het kent (Chrome 131+, en het komt
+         overal aan). Samen met `interpolate-size: allow-keywords` kan block-size
+         van 0 naar auto lopen, dus OPENEN ÉN SLUITEN gaan vloeiend.
+     2 · een keyframe op de inhoud, voor de rest. Openen is dan een zachte
+         inschuif; sluiten klapt dicht. Dat is de eerlijke degradatie: liever
+         driekwart van de animatie overal dan alles op één browser.
+
+   Bij `prefers-reduced-motion` valt alles weg. Een uitklapper is functioneel;
+   de beweging is versiering en versiering is optioneel. */
+.prods { display: grid; gap: .7rem; margin: 1.1rem 0 0; interpolate-size: allow-keywords; }
+.prod-tools { display: flex; justify-content: flex-end; margin: 1.1rem 0 -.4rem; }
+
+.prod {
+  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
+  background: var(--surface-2); overflow: hidden;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.prod[open] { border-color: var(--line-strong); }
+
+/* De kop is de knop. list-style weg in beide dialecten, want Safari gebruikt
+   nog ::-webkit-details-marker en de rest ::marker — mist er één, dan staat er
+   een driehoekje naast een zorgvuldig uitgelijnde rij. */
+.prod-head {
+  display: flex; align-items: center; gap: .8rem; padding: .6rem .8rem;
+  cursor: pointer; list-style: none; user-select: none;
+}
+.prod-head::-webkit-details-marker { display: none; }
+.prod-head::marker { content: ''; }
+.prod-head:hover { background: var(--surface); }
+.prod-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.prod-cover {
+  flex: 0 0 auto; width: 52px; aspect-ratio: 4 / 5; overflow: hidden;
+  border-radius: var(--r-sm, 6px); background: var(--surface); display: block;
+}
+.prod-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.prod-text { display: flex; flex-direction: column; gap: .15rem; min-width: 0; flex: 1 1 auto; }
+.prod-title { font-weight: 700; font-size: .95rem; color: var(--ink); }
+.prod-facts { font-size: .8rem; color: var(--ink-3); }
+.prod-cta { font-size: .8rem; color: var(--ink-2); white-space: nowrap; }
+.prod[open] .prod-cta { color: var(--ink-3); }
+
+/* Amber: er loopt een revisie op dit product. Verdwijnt vanzelf zodra de studio
+   een vervangend beeld levert — dan valt het oude beeld uit de lijst (zie
+   loadCustomerFiles over superseded_at) en is er niets meer om te markeren. */
+.prod.is-revising {
+  border-color: var(--warn, #b8860b);
+  box-shadow: 0 0 0 1px var(--warn, #b8860b), 0 0 22px -8px var(--warn, #b8860b);
+}
+.prod-flag {
+  align-self: flex-start; margin-top: .15rem;
+  font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 700;
+  color: var(--warn-ink, #e0a92b);
+}
+
+.prod-inner { display: grid; gap: 1.1rem; padding: .2rem .8rem .9rem; }
+@media (min-width: 780px) {
+  /* Wat wij leverden krijgt de ruimte; wat jij stuurde staat ernaast als
+     referentie. Niet fifty-fifty: de klant komt voor het resultaat en kijkt
+     naar zijn eigen foto om te vergelijken. */
+  .prod-inner { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); }
+}
+.prod-inner h4 {
+  margin: 0 0 .5rem; font-size: .72rem; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 700;
+}
+.shots.is-ref { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.shots.is-ref .shot-body { display: none; }
+
+.prod-help { margin: 0; padding: .55rem .8rem .8rem; font-size: .82rem; color: var(--ink-3); }
+.prod-help a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Laag 1 — de echte animatie, waar de browser ::details-content kent. */
+@supports selector(::details-content) {
+  .prod::details-content {
+    block-size: 0; overflow: hidden;
+    transition: block-size .32s cubic-bezier(.2, .7, .3, 1), content-visibility .32s allow-discrete;
+  }
+  .prod[open]::details-content { block-size: auto; }
+}
+/* Laag 2 — overal elders: openen schuift zacht in. */
+@supports not selector(::details-content) {
+  .prod[open] .prod-panel { animation: prod-open .28s cubic-bezier(.2, .7, .3, 1) both; }
+}
+@keyframes prod-open {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prods { interpolate-size: numeric-only; }
+  .prod, .prod::details-content { transition: none; }
+  .prod[open] .prod-panel { animation: none; }
+}
+
+/* ---- de knoppen onder een foto, verticaal (augustus 2026) -------------------
+   Ze stonden naast elkaar met flex-wrap, uit de tijd dat een bestand een REGEL
+   was en de breedte van de kaart. In een tegelraster is een tegel 110 tot 160
+   pixels breed en past "Goedkeuren" naast "Downloaden" niet — dan wikkelt het
+   half, valt "Er klopt iets niet" op een derde regel, en lopen twee tegels in
+   elkaar over. Onder elkaar en over de volle breedte is bij deze maat de enige
+   vorm die klopt, en hij leest ook beter: de foto, wat ermee is, wat je ermee
+   kunt. */
+.shot-actions { flex-direction: column; align-items: stretch; gap: .3rem; }
+.shot-actions .btn { width: 100%; text-align: center; }
+.review-form { flex-direction: column; align-items: stretch; gap: .3rem; margin-top: .1rem; }
+details.ask { margin-top: 0; }
+
+/* Binnen een productkaart mogen de tegels groter: er staan er vier, niet
+   dertig, en op deze foto's wordt een besluit genomen. */
+/* Vier op een rij bij een catalogusproduct: 132px is de maat waarbij vier
+   tegels plus hun tussenruimte binnen de linkerkolom vallen. Passen ze niet,
+   dan wikkelt de vierde naar een tweede rij en staat er een gat waar een oog
+   naar blijft zoeken. */
+.prod .shots { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+.prod .shots.is-ref { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.prod .said { font-size: .8rem; }
+
+/* Het etiket op de kop wisselt mee met de stand van de <details>. */
+.prod .on-open { display: none; }
+.prod[open] .on-closed { display: none; }
+.prod[open] .on-open { display: inline; }
+
+/* Een knoptekst die niet past, hoort te wikkelen en niet uit de kaart te
+   steken. "Aanvraag intrekken" is op een telefoon breder dan een tegel; met
+   nowrap liep hij tot buiten de rand van de bestelling. */
+.shot-actions .btn, .review-form .btn { white-space: normal; line-height: 1.25; }
+
+/* ---- de knoppen onder een foto, in balans (augustus 2026) -------------------
+
+   Lucas: *"ik zou de knoppen wel wat strakker willen hebben, het is soms wat
+   uit balans."*
+
+   WAT ER UIT BALANS WAS. Drie handelingen in drie verschillende gedaanten:
+   een gevulde groene pil (Goedkeuren), een onderstreepte tekstregel
+   (Downloaden) en nog een onderstreepte tekstregel (Er klopt iets niet). Bij
+   elkaar leest dat als één knop met twee voetnoten, terwijl goedkeuren en
+   aanmerken juist even geldige antwoorden zijn. Nu: drie blokken van dezelfde
+   hoogte en breedte, met verschil in KLEUR en niet in vorm — gevuld voor de
+   voorgestelde handeling, omlijnd voor het alternatief, gedempt voor bewaren.
+
+   RECHTE HOEKEN, GEEN PILLEN. Een pil op volle breedte onder een rechthoekige
+   foto van dezelfde breedte zet twee vormtalen onder elkaar. Dezelfde radius
+   als de tegel eronder houdt de kolom één ding. */
+.shot-actions { gap: .25rem; }
+.shot-actions .btn,
+.shot-actions .review-form .btn,
+.shot-actions details.ask > summary.btn {
+  width: 100%; min-height: 32px; padding: .32rem .5rem;
+  font-size: .72rem; letter-spacing: .04em; border-radius: var(--r-sm, 6px);
+  text-decoration: none; white-space: normal; line-height: 1.2;
+}
+@media (pointer: coarse) {
+  .shot-actions .btn, .shot-actions details.ask > summary.btn { min-height: 38px; }
+}
+
+/* Het alternatief: omlijnd, dezelfde maat als de gevulde knop ernaast. */
+.btn-line {
+  background: none; color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.btn-line:hover, .btn-line:focus-visible { background: var(--surface); color: var(--ink); }
+
+/* Bewaren: het stilste blok van de drie, maar wél een blok. */
+.btn-file { background: none; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line); }
+.btn-file:hover, .btn-file:focus-visible { color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+/* De <summary> is een knop, dus hij mag geen driehoekje meer hebben en moet
+   met de toetsenbordfocus omgaan als een knop. */
+.shot-actions details.ask > summary.btn { display: flex; cursor: pointer; list-style: none; }
+.shot-actions details.ask > summary.btn::-webkit-details-marker { display: none; }
+.shot-actions details.ask > summary.btn::marker { content: ''; }
+.shot-actions details.ask[open] > summary.btn { background: var(--surface); color: var(--ink); }
+.shot-actions details.ask { width: 100%; }
+.shot-actions details.ask textarea { margin-top: .3rem; }
+
+/* Het vlaggetje op de foto zelf. Klein, met een donkere ondergrond zodat het
+   op elke foto leesbaar blijft — een gekleurde letter zonder ondergrond
+   verdwijnt in een lichte achtergrond, en dit is precies het label dat je niet
+   mag missen. */
+.shot-badge {
+  position: absolute; left: .4rem; top: .4rem; z-index: 1;
+  padding: .18rem .42rem; border-radius: var(--r-sm, 5px);
+  font-size: .62rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
+  background: rgb(8 9 11 / .78); backdrop-filter: blur(3px);
+}
+.shot-badge.is-approved { color: var(--accent); }
+.shot-badge.is-revision { color: var(--warn-ink, #e0a92b); box-shadow: inset 0 0 0 1px var(--warn, #b8860b); }
+
+/* De notitie staat onder de knoppen: extra hoogte trekt daar niets meer
+   scheef, en hij hoort bij het vlaggetje op de foto, niet tussen de knoppen. */
+.shot-body .said { margin: .4rem 0 0; font-size: .78rem; }
+
+/* Alle tegels beginnen bovenaan hun rij, ook als de buurman een notitie heeft. */
+.shots { align-items: start; }
+
+/* ---- de tijdlijn (augustus 2026) -------------------------------------------
+
+   Drie lagen informatie, aflopend in nadruk: één zin over nu, vier stappen als
+   spoor, en de datums dichtgeklapt. Wie inlogt wil de eerste regel; de rest is
+   er voor wie doorvraagt. */
+.flowbox {
+  margin: 1rem 0 0; padding: .85rem 1rem;
+  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
+  background: var(--surface-2);
+}
+.flowbox.is-cancelled { opacity: .7; }
+.flow-now { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--ink-2); }
+.flow-now strong { color: var(--ink); margin-right: .25rem; }
+
+/* Het spoor. Vier bolletjes met een lijn ertussen; de lijn zit op het bolletje
+   zelf (::before) zodat er geen apart element per verbinding nodig is en de
+   laatste stap er vanzelf geen krijgt. */
+.flow { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  gap: 0; margin: .9rem 0 .2rem; padding: 0; }
+.flow-step { position: relative; display: flex; flex-direction: column; gap: .4rem; align-items: flex-start;
+  padding-right: .5rem; }
+.flow-dot { position: relative; z-index: 1; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--surface); box-shadow: inset 0 0 0 2px var(--line-strong); }
+.flow-step::before {
+  content: ''; position: absolute; left: 5px; right: -5px; top: 5px; height: 1px;
+  background: var(--line-strong);
+}
+.flow-step:last-child::before { display: none; }
+.flow-label { font-size: .72rem; line-height: 1.25; color: var(--ink-3); }
+
+.flow-step.is-done .flow-dot { background: var(--ink-2); box-shadow: inset 0 0 0 2px var(--ink-2); }
+.flow-step.is-done .flow-label { color: var(--ink-2); }
+.flow-step.is-now .flow-dot {
+  background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.flow-step.is-now .flow-label { color: var(--ink); font-weight: 700; }
+.flow-step.is-todo .flow-dot { background: var(--surface); }
+
+/* De datums. Dicht, want de meerderheid wil ze niet — en wie ze wil, wil ze
+   allemaal tegelijk. */
+.tl { margin-top: .7rem; }
+.tl > summary {
+  cursor: pointer; list-style: none; font-size: .78rem; color: var(--ink-3);
+  text-decoration: underline; text-underline-offset: 3px; width: max-content;
+}
+.tl > summary::-webkit-details-marker { display: none; }
+.tl > summary::marker { content: ''; }
+.tl > summary:hover { color: var(--ink); }
+.tl-list { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .45rem; }
+.tl-list li { display: grid; grid-template-columns: 5.5rem 1fr; gap: .6rem; font-size: .82rem; }
+.tl-when { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tl-what { color: var(--ink-2); }
+.tl-note { display: block; color: var(--ink-3); font-style: italic; margin-top: .1rem; }
+
+/* ---- de uitgelichte bestelling op het overzicht ---------------------------- */
+.ovorder {
+  border: 1px solid var(--line); border-radius: var(--r-md, 10px);
+  background: var(--surface-2); padding: .9rem 1rem 1rem; margin-top: .6rem;
+}
+.ovorder-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.ovorder-head .ref { font-weight: 700; letter-spacing: .04em; }
+.ovorder-head .meta { font-size: .82rem; color: var(--ink-3); }
+.ovorder-head .viewall { margin-left: auto; }
+.ovorder .flowbox { border: 0; background: none; padding: .6rem 0 0; margin-top: .2rem; }
+
+.more-orders { margin-top: .7rem; }
+.more-orders > summary {
+  cursor: pointer; list-style: none; width: max-content;
+  padding: .45rem .8rem; border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
+  font-size: .82rem; color: var(--ink-2);
+}
+.more-orders > summary::-webkit-details-marker { display: none; }
+.more-orders > summary::marker { content: ''; }
+.more-orders > summary::after { content: ' ↓'; color: var(--ink-3); }
+.more-orders[open] > summary::after { content: ' ↑'; }
+.more-orders > summary:hover { border-color: var(--line-strong); color: var(--ink); }
+.more-orders-list { display: grid; gap: .6rem; margin-top: .6rem; }
+
+@media (max-width: 560px) {
+  .flow { grid-auto-flow: row; grid-auto-columns: auto; gap: .55rem; }
+  .flow-step { flex-direction: row; align-items: center; gap: .55rem; padding: 0; }
+  /* Verticaal spoor op een telefoon: de lijn loopt van bolletje naar bolletje
+     omlaag in plaats van opzij. Vier labels naast elkaar op 360 pixels wordt
+     vier keer twee woorden onder elkaar, en dat leest niet als een spoor. */
+  .flow-step::before { left: 5px; right: auto; top: 11px; bottom: -.55rem; width: 1px; height: auto; }
+}
+
+/* ---- lucht (augustus 2026) --------------------------------------------------
+   Lucas: *"zorg ook in het dashboard voor genoeg whitespace tussen secties en
+   subtiele ruimte tussen knoppen — goedkeuren, er klopt iets niet en
+   downloaden zitten wel redelijk dicht op elkaar."*
+
+   Twee soorten ruimte, en ze horen niet gelijk te zijn. TUSSEN secties mag het
+   royaal: dat is waar het oog een nieuw onderwerp moet herkennen zonder een kop
+   te lezen. BINNEN een groepje knoppen is een paar pixels genoeg — ze horen bij
+   elkaar en te veel lucht maakt van drie knoppen drie losse dingen. Wat er mis
+   was: die twee stonden op bijna dezelfde waarde, dus de knoppen plakten en de
+   secties dreven niet uit elkaar. */
+.shot-actions { gap: .4rem; }
+.shot-body { gap: .5rem; margin-top: .6rem; }
+.shot-body .said { margin-top: .55rem; }
+
+/* Tussen de knoppen van dezelfde soort iets minder dan tussen twee soorten:
+   goedkeuren en aanmerken zijn één keuze, downloaden is een andere handeling. */
+.shot-actions .review-form { gap: .28rem; }
+.shot-actions .btn-file { margin-top: .12rem; }
+
+.prods { gap: 1rem; margin-top: 1.5rem; }
+.prod-inner { gap: 1.4rem; padding: .5rem 1rem 1.1rem; }
+.prod-head { padding: .75rem .9rem; gap: .9rem; }
+.prod-help { padding: .2rem .9rem 1rem; }
+.prod-tools { margin: 1.4rem 0 -.2rem; }
+
+.section-head { margin: 3rem 0 .3rem; }
+.section-head:first-child { margin-top: 0; }
+.statrow { margin-top: 1.8rem; }
+.flowbox { margin-top: 1.3rem; padding: 1rem 1.1rem; }
+.ovorder { padding: 1.05rem 1.15rem 1.15rem; margin-top: .9rem; }
+.more-orders { margin-top: 1.1rem; }
+.latest { margin: 1rem 0 .5rem; }
+.card + .card { margin-top: 1.4rem; }
+
+/* ---- de mededeling van de studio (augustus 2026) ---------------------------
+   Eén staand bericht bij de bestelling, geschreven door een mens. Groene rand
+   links en een afzender erboven: zonder die twee leest een losse zin op een
+   dashboard als systeemtekst, en dit is juist het enige op dit scherm dat
+   iemand persoonlijk tegen je zegt. */
+.studionote {
+  margin: 1.1rem 0 0; padding: .8rem 1rem;
+  background: var(--surface-2); border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-sm, 6px) var(--r-sm, 6px) 0;
+}
+.studionote-who {
+  display: block; font-size: .68rem; letter-spacing: .09em; text-transform: uppercase;
+  font-weight: 700; color: var(--ink-3);
+}
+.studionote p { margin: .3rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-2); }

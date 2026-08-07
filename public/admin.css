@@ -502,3 +502,102 @@ a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: v
   flex: 1; min-width: 14rem; padding: .5rem .6rem;
   border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
 }
+
+/* De bevestiging na het melden van een herlevering. Groen en niet amber: dit
+   is het enige bericht in dit dashboard dat zegt dat er iets goed is gegaan, en
+   het staat er kort — één regel boven de tabel waarin je het resultaat meteen
+   terugziet in de kolom "Announced". */
+.okline {
+  margin: .6rem 0 0; padding: .5rem .7rem; font-size: .84rem;
+  border: 1px solid var(--accent, #C6F100); color: var(--ink);
+  background: color-mix(in srgb, var(--accent, #C6F100) 10%, transparent);
+}
+
+/* ---- de indeeltabel: welk beeld hoort bij welk product (augustus 2026) ------
+   Een miniatuur in de eerste kolom, omdat de hele handeling is: kijken naar
+   een foto en zeggen welk product het is. Een tabel met alleen bestandsnamen
+   dwingt je die vraag in een ander tabblad te beantwoorden. */
+.files .thumbcell { width: 56px; padding-right: .4rem; }
+.files .thumb {
+  display: block; width: 48px; aspect-ratio: 4 / 5; object-fit: cover;
+  border: 1px solid var(--line); border-radius: var(--r-sm, 4px); background: var(--paper-2);
+}
+.files select {
+  padding: .35rem .4rem; border: 1px solid var(--line-strong);
+  background: var(--paper-lift); color: var(--ink); font: inherit; font-size: .85rem;
+}
+
+/* Een beeld waar de klant een revisie op vroeg: amber, dezelfde kleur als elke
+   andere "iemand wacht op jou" in dit dashboard. De markering verdwijnt vanzelf
+   zodra er een nieuw beeld voor dezelfde product+shot ligt — dan is deze rij
+   vervangen en zakt hij weg in grijs. */
+.files tr.is-revising > td { background: color-mix(in srgb, var(--warn, #b8860b) 14%, transparent); }
+.files tr.is-revising strong { color: var(--warn-ink, #e0a92b); }
+.files tr.is-superseded > td { opacity: .45; }
+.files tr.is-superseded .thumb { filter: grayscale(1); }
+
+/* Wat er vervangen moet worden, boven de bestandsnaam in de revisiekaart. */
+.rev-what { margin: 0 0 .25rem; font-size: .95rem; color: var(--ink); }
+
+/* ---- het werkbord: producten × shots (augustus 2026) ------------------------
+   Een gat moet eruitzien als een gat. Daarom vaste kolommen per shot en een
+   gestippeld vak met het uploadveld erin, in plaats van een lijst met wat er
+   toevallig al is — die kan per definitie niet laten zien wat ontbreekt. */
+.board-row { margin: 1.1rem 0 0; }
+.board-head { display: flex; align-items: center; gap: .7rem; margin: 0 0 .5rem; }
+.board-head h3 { margin: 0; font-size: .95rem; }
+.board-count {
+  font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--ink-3);
+  border: 1px solid var(--line); border-radius: 999px; padding: .05rem .5rem;
+}
+.board-count.is-full { color: var(--ink); border-color: var(--accent); }
+.board-push { margin-left: auto; }
+
+.slots { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.slot {
+  display: flex; flex-direction: column; gap: .35rem; padding: .5rem;
+  border: 1px solid var(--line); border-radius: var(--r-md, 8px); background: var(--paper-lift);
+}
+.slot.is-empty { border-style: dashed; background: none; }
+.slot-label { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.slot-img {
+  width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block;
+  border-radius: var(--r-sm, 5px); background: var(--paper-2);
+}
+.slot-state { font-size: .7rem; color: var(--ink-3); }
+.slot input[type=file] { font-size: .7rem; width: 100%; }
+.slot .btn { width: 100%; }
+
+/* Nog niet gemeld: groen randje, want dit is werk dat af is en wacht op één
+   druk op de knop. Revisie: amber, dezelfde taal als overal in dit dashboard. */
+.slot.is-fresh { border-color: var(--accent); }
+.slot.is-fresh .slot-state { color: var(--ink); }
+.slot.is-revising { border-color: var(--warn, #b8860b); }
+.slot.is-revising .slot-state { color: var(--warn-ink, #e0a92b); font-weight: 700; }
+
+/* De vervangknop is een noodgeval, geen hoofdhandeling: bij een compleet
+   product staan er vier naast elkaar en dan schreeuwen vier gevulde knoppen
+   harder dan de foto's erboven. */
+.slot .btn { min-height: 28px; font-size: .7rem; padding: .2rem .45rem; }
+.slot .btn-quiet { background: none; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); }
+.slot .btn-quiet:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+/* ---- notities: gedeeld en intern (augustus 2026) ---------------------------
+   Het verschil zit in de kolom (orders.customer_note tegenover de tabel
+   order_notes), maar het scherm moet het ook laten zien — twee identieke
+   tekstvakken onder elkaar zijn één verkeerde klik van iets wat de klant nooit
+   had mogen lezen. Groen: hij leest mee. Grijs met een streepjesrand: hij niet. */
+.notepanel { margin: 1rem 0 0; padding: .9rem 1rem; border-radius: var(--r-md, 8px); }
+.notepanel h3 { margin: 0 0 .3rem; font-size: .9rem; }
+.notepanel textarea {
+  width: 100%; padding: .6rem .7rem; font: inherit; font-size: .88rem;
+  border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
+  border-radius: var(--r-sm, 5px); resize: vertical;
+}
+.notepanel.is-shared { border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.notepanel.is-internal { border: 1px dashed var(--line-strong); }
+
+.notelog { list-style: none; margin: .8rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.notelog li { display: grid; grid-template-columns: 8rem 1fr; gap: .6rem; font-size: .85rem; }
+.notelog-when { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.notelog-body { color: var(--ink-2); white-space: pre-wrap; }

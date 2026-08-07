@@ -93,12 +93,38 @@ export function assertSafeArg(value, what = 'argument') {
  * @param {number}  [opts.maxBuffer]
  * @returns {Promise<{ok: boolean, out: string, stdout: string}>}
  */
+/**
+ * Een argument zó opschrijven dat cmd.exe het als ÉÉN argument teruggeeft.
+ *
+ * WAAROM DIT ERBIJ MOEST — 7 augustus 2026. Het scriptje dat migraties draait
+ * gaf `--command SELECT name FROM pragma_table_info('files')` mee, en wrangler
+ * antwoordde met "Unknown arguments: name, FROM, pragma_table_info('files')".
+ * Dat is de valkuil die bovenaan dit bestand al beschreven staat, van de andere
+ * kant: met `shell: true` plakt Windows de argumentenlijst tot één regel tekst
+ * die cmd.exe daarna zelf opnieuw uit elkaar haalt — en dan is elke spatie in
+ * een argument een nieuwe scheiding. De waarschuwing stond er dus wel, maar de
+ * bescherming niet.
+ *
+ * Alleen aanhalingstekens eromheen is genoeg voor wat hier langskomt (SQL,
+ * paden, databasenamen); een ingesloten " wordt verdubbeld, wat cmd.exe als een
+ * letterlijke " leest. Percenttekens blijven ongemoeid — die worden alleen
+ * uitgebreid in een .bat-bestand, niet op deze aanroeplaag.
+ */
+function quoteForCmd(value) {
+  const v = String(value);
+  return /[\s"&|<>^()]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
 export async function wrangler(argv, { env = process.env, maxBuffer = 64 * 1024 * 1024 } = {}) {
   // Lokaal geïnstalleerd: rechtstreeks via node, zonder shell (zie localWrangler).
-  // Anders via npx, met de shell alleen op Windows omdat het daar niet anders kan.
+  // Anders via npx, met de shell alleen op Windows omdat het daar niet anders kan
+  // — en dan met aanhalingstekens, want de shell hakt anders elk argument met
+  // een spatie erin in stukken.
   const [cmd, args, opts] = LOCAL
     ? [process.execPath, [LOCAL, ...argv], {}]
-    : [NPX, ['wrangler', ...argv], { shell: isWindows }];
+    : isWindows
+      ? [NPX, ['wrangler', ...argv].map(quoteForCmd), { shell: true }]
+      : [NPX, ['wrangler', ...argv], {}];
   try {
     const { stdout, stderr } = await run(cmd, args, {
       env,
