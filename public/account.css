@@ -1378,3 +1378,10 @@ details.ask { margin-top: 0; }
   font-weight: 700; color: var(--ink-3);
 }
 .studionote p { margin: .3rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-2); }
+
+/* Een levering die geen beeld is — een video, een zip. Geen gebroken plaatje
+   maar een tegel die zegt wat het is en waar je hem opent. */
+.shot-media.is-file { display: grid; place-items: center; background: var(--surface); }
+.shot-filetype {
+  font-size: .8rem; font-weight: 800; letter-spacing: .1em; color: var(--ink-3);
+}

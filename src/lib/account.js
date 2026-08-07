@@ -1375,7 +1375,12 @@ async function loadOrders(env, customerId) {
         LIMIT 200`
     ).bind(customerId).all();
     return res.results || [];
-  } catch { /* valt terug op de query zonder die kolommen */ }
+  } catch (err) {
+    // Zelfde regel als hierboven: alleen wijken voor een kolom die er nog niet
+    // is. Anders zou een hapering de mededeling van de studio stilzwijgend van
+    // het scherm halen.
+    if (!/no such column|customer_note/i.test(String(err?.message || err))) throw err;
+  }
 
   const res = await env.DB.prepare(
     // revisions_revoked_at hangt aan de KLANT, niet aan de bestelling, maar
@@ -1451,7 +1456,12 @@ async function loadCustomerFiles(env, customerId) {
         ${order}`
     ).bind(customerId).all();
     return res.results || [];
-  } catch {
+  } catch (err) {
+    // ALLEEN op een ontbrekende kolom terugvallen. Een blinde catch zou bij een
+    // hapering van D1 de tweede query draaien en dan vrolijk de vervangen
+    // beelden terugzetten in het dashboard van de klant — een fout die eruitziet
+    // als een geslaagde pagina.
+    if (!/no such column|superseded_at/i.test(String(err?.message || err))) throw err;
     // Code vóór migratie: dan bestaat superseded_at niet, en is er ook nog
     // niets vervangen — dus is de oude vraag nog het goede antwoord.
     const res = await env.DB.prepare(
@@ -1488,7 +1498,7 @@ async function loadOrderEvents(env, customerId) {
       `SELECT e.order_id, e.status, e.note, e.created_at
          FROM order_events e JOIN orders o ON o.id = e.order_id
         WHERE o.customer_id = ?1
-        ORDER BY e.order_id, e.id
+        ORDER BY e.order_id DESC, e.id
         LIMIT 400`
     ).bind(customerId).all();
     return res.results || [];
@@ -1758,13 +1768,25 @@ async function serveOrderZip(context, customer, orderId) {
     ).bind(orderId, customer.customer_id).first();
     if (!order) return new Response(null, { status: 404, headers: fileHeaders() });
 
-    rows = (await env.DB.prepare(
-      `SELECT id, r2_key, filename, bytes
+    // VERVANGEN BEELDEN HOREN ER NIET IN — 7 augustus 2026. Het scherm liet na
+    // een revisieronde alleen de nieuwe versie zien (loadCustomerFiles filtert
+    // op superseded_at), maar het zip-bestand bevatte allebei. Dan download je
+    // "alles" en zit je alsnog te vergelijken welke van de twee de goede is —
+    // precies het extra beeld dat migratie 0012 uit beeld wilde halen.
+    //
+    // Met een terugval voor het geval die migratie nog niet gedraaid is: dan
+    // bestaat de kolom niet en is er ook nog niets vervangen.
+    const zipCols = `SELECT id, r2_key, filename, bytes
          FROM files
         WHERE order_id = ?1 AND kind = 'delivery'
-          AND (expires_at IS NULL OR expires_at > datetime('now'))
-        ORDER BY id`
-    ).bind(orderId).all()).results || [];
+          AND (expires_at IS NULL OR expires_at > datetime('now'))`;
+    try {
+      rows = (await env.DB.prepare(`${zipCols} AND superseded_at IS NULL ORDER BY id`)
+        .bind(orderId).all()).results || [];
+    } catch (err) {
+      if (!/no such column|superseded_at/i.test(String(err?.message || err))) throw err;
+      rows = (await env.DB.prepare(`${zipCols} ORDER BY id`).bind(orderId).all()).results || [];
+    }
   } catch {
     return new Response(null, { status: 503, headers: fileHeaders() });
   }
@@ -2207,6 +2229,9 @@ function overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder = n
     for (const f of (filesByOrder.get(o.id) || [])) {
       if (f.kind === 'upload') continue;
       if (f.expires_at && isExpired(f.expires_at, null)) continue;
+      // Een strook met een gebroken plaatje erin leest als een kapot dashboard.
+      // Een videobestand hoort bij zijn bestelling, niet in een beeldenstrook.
+      if (!isViewable(f)) continue;
       latest.push({ f, o });
       if (latest.length >= 12) break;
     }
@@ -3022,20 +3047,26 @@ function groupByProduct(delivered, uploaded) {
 function productCard(t, lang, o, g) {
   const label = g.key ? t.prodLabel(g.key.replace(/^p/, '')) : t.prodOther;
   const live = g.delivered.filter((f) => !(f.expires_at && isExpired(f.expires_at, null)));
-  const revising = g.delivered.some((f) => f.review_state === 'revision_requested');
-  const approved = g.delivered.filter((f) => f.review_state === 'approved').length;
+  // Op de LEVENDE beelden, niet op alles. Een verlopen beeld met een openstaande
+  // revisie zou de kaart anders amber kleuren én opengeklapt tonen, met als
+  // enige inhoud "niet meer beschikbaar" — een rand om een leegte.
+  const revising = live.some((f) => f.review_state === 'revision_requested');
+  const approved = live.filter((f) => f.review_state === 'approved').length;
 
   // De omslag is het eerste geleverde beeld, en anders wat de klant zelf
   // stuurde. Een lege tegel zou zeggen "er is niets", terwijl er wél iets is:
   // zijn eigen foto, in afwachting.
-  const cover = live[0] || g.delivered[0] || g.uploaded[0] || null;
+  // Een verlopen levering is geen omslag: /account/files/<id>/f geeft daar 410
+  // terug, dus die tegel zou als gebroken beeld renderen. Liever de eigen upload
+  // van de klant — die bestaat nog en zegt ook iets.
+  const cover = live.find(isViewable) || g.uploaded.find(isViewable) || null;
   const coverImg = cover
     ? `<img src="/account/files/${cover.id}/f" alt="" loading="lazy" decoding="async">`
     : '';
 
   const facts = [
-    g.delivered.length ? t.prodDelivered(g.delivered.length) : t.prodNothingYet,
-    g.delivered.length && approved ? t.prodApproved(approved) : null,
+    live.length ? t.prodDelivered(live.length) : t.prodNothingYet,
+    live.length && approved ? t.prodApproved(approved) : null,
   ].filter(Boolean).join(' · ');
 
   const waText = encodeURIComponent(
@@ -3102,6 +3133,19 @@ function productCard(t, lang, o, g) {
  * verhouding. De tegel is een vaste 4/5-box met object-fit: cover, dus de
  * layout ligt vast zonder dat er een maat geraden hoeft te worden.
  */
+/**
+ * Is dit bestand als beeld te tonen?
+ *
+ * WAAROM DIT NODIG IS — 7 augustus 2026. Elke levering werd als `<img>`
+ * neergezet, en de videodienst levert mp4's. Die renderden als een gebroken
+ * plaatje, op de bestellingenpagina én in de strook op het overzicht — voor de
+ * klant niet te onderscheiden van "er is iets stuk". Onbekende extensie telt
+ * als beeld: dat is wat het bijna altijd is, en een tegel die het probeert en
+ * faalt is beter dan een tegel die het niet probeert.
+ */
+const NOT_IMAGE = /\.(mp4|webm|mov|m4v|avi|mkv|zip|pdf|psd|ai|tiff?)$/i;
+const isViewable = (f) => !NOT_IMAGE.test(String(f?.filename || ''));
+
 function shotTile(t, f, o, inProduct = false) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
   const isUpload = f.kind === 'upload';
@@ -3144,8 +3188,10 @@ function shotTile(t, f, o, inProduct = false) {
 
   const media = gone
     ? `<div class="shot-media is-gone"><span>${esc(t.stExpired)}</span></div>`
-    : `<a class="shot-media" href="/account/files/${f.id}/f" target="_blank" rel="noopener">
-         <img src="/account/files/${f.id}/f" alt="${esc(caption)}" loading="lazy" decoding="async">
+    : `<a class="shot-media${isViewable(f) ? '' : ' is-file'}" href="/account/files/${f.id}/f" target="_blank" rel="noopener">
+         ${isViewable(f)
+           ? `<img src="/account/files/${f.id}/f" alt="${esc(caption)}" loading="lazy" decoding="async">`
+           : `<span class="shot-filetype">${esc((String(f.filename || '').split('.').pop() || 'file').toUpperCase())}</span>`}
          ${badge}
        </a>`;
 

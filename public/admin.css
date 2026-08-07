@@ -601,3 +601,44 @@ a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: v
 .notelog li { display: grid; grid-template-columns: 8rem 1fr; gap: .6rem; font-size: .85rem; }
 .notelog-when { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .notelog-body { color: var(--ink-2); white-space: pre-wrap; }
+
+/* ---- zoeken en vaste filters (augustus 2026) -------------------------------- */
+.searchrow { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin: .8rem 0 .6rem; }
+.searchrow input[type=search] {
+  flex: 1 1 18rem; min-width: 12rem; padding: .5rem .7rem; font: inherit; font-size: .9rem;
+  border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
+  border-radius: var(--r-sm, 5px);
+}
+.fl-row { display: flex; gap: .4rem; flex-wrap: wrap; margin: 0 0 1rem; }
+
+/* ---- annuleren, verbergen, verwijderen --------------------------------------
+   Dichtgeklapt, want dit zijn de knoppen die je een paar keer per maand nodig
+   hebt en nooit per ongeluk. Open staan de drie naast elkaar mét hun verschil
+   uitgeschreven, zodat de keuze valt op wat er gebeurt en niet op welke knop
+   het dichtst bij de muis staat. */
+.danger { margin: .7rem 0 0; }
+.danger > summary {
+  cursor: pointer; list-style: none; width: max-content;
+  font-size: .82rem; color: var(--ink-3);
+  border: 1px dashed var(--line-strong); border-radius: var(--r-sm, 5px); padding: .3rem .6rem;
+}
+.danger > summary::-webkit-details-marker { display: none; }
+.danger > summary::marker { content: ''; }
+.danger > summary:hover { color: var(--ink); }
+.danger-body { display: grid; gap: .8rem; margin-top: .7rem; }
+@media (min-width: 900px) { .danger-body { grid-template-columns: repeat(3, 1fr); } }
+.danger-block {
+  display: flex; flex-direction: column; gap: .4rem; padding: .8rem;
+  border: 1px solid var(--line); border-radius: var(--r-sm, 6px); background: var(--paper-lift);
+}
+.danger-block h4 { margin: 0; font-size: .88rem; }
+.danger-block input[type=text], .danger-block select {
+  padding: .45rem .55rem; font: inherit; font-size: .85rem;
+  border: 1px solid var(--line-strong); background: var(--paper-2); color: var(--ink);
+  border-radius: var(--r-sm, 4px);
+}
+.danger-money { display: flex; flex-direction: column; gap: .25rem; font-size: .8rem; color: var(--ink-3); }
+/* Het onomkeerbare vak is het enige met een rode rand. Alles rood maken is
+   hetzelfde als niets rood maken. */
+.danger-block.is-worst { border-color: #a33; }
+.danger-block.is-worst h4 { color: #e06a6a; }

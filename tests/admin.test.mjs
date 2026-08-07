@@ -31,8 +31,8 @@ import { adminGet, adminPost, guessProductShot } from '../src/lib/admin.js';
 import { mintToken } from '../src/lib/token.js';
 
 const ORDERS = [
-  { id: 91, customer_id: 7, ref: 'VIS-8K2-QQ1', service: 'catalog', status: 'received', tier: 'attended', brand: 'VOLT', email: 'studio@voltbrand.nl', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', payment_status: 'paid', created_at: '2026-08-01', delivered_at: null, delivery_mailed_at: null, file_count: 0, lang: 'nl', name: 'Mara' },
-  { id: 90, customer_id: 8, ref: 'VIS-7F4-M3A', service: 'lifestyle', status: 'delivered', tier: 'attended', brand: 'Kade', email: 'hi@kade.nl', product_count: 12, window_start: null, window_end: null, payment_status: 'paid', created_at: '2026-07-31', delivered_at: '2026-08-02', delivery_mailed_at: null, file_count: 6, lang: 'en', name: 'Ilse' },
+  { id: 91, customer_id: 7, ref: 'VIS-8K2-QQ1', service: 'catalog', status: 'received', tier: 'attended', brand: 'VOLT', email: 'studio@voltbrand.nl', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', payment_status: 'paid', total_cents: 102000, vat_cents: 21420, paid_at: '2026-08-01', created_at: '2026-08-01', delivered_at: null, delivery_mailed_at: null, file_count: 0, lang: 'nl', name: 'Mara' },
+  { id: 90, customer_id: 8, ref: 'VIS-7F4-M3A', service: 'lifestyle', status: 'delivered', tier: 'attended', brand: 'Kade', email: 'hi@kade.nl', product_count: 12, window_start: null, window_end: null, payment_status: 'paid', total_cents: 48000, vat_cents: 10080, paid_at: '2026-07-31', created_at: '2026-07-31', delivered_at: '2026-08-02', delivery_mailed_at: null, file_count: 6, lang: 'en', name: 'Ilse' },
 ];
 
 const MODELS = {
@@ -70,14 +70,22 @@ function makeEnv(opts = {}) {
     if (s.includes('COUNT(*) AS n FROM files')) return { n: 6 };
     // De bestandenlijst van één bestelling — de pagina waar de meldknop op staat.
     if (s.includes("SELECT id FROM files WHERE order_id")) return (opts.deliveryIds || []).map((id) => ({ id }));
+    // Vóór de algemene bestandenregel: deze twee queries vragen iets anders van
+    // dezelfde tabel, en wie eerst staat wint.
+    if (s.includes('r2_key, preview_key FROM files')) return opts.keys || [];
+    if (s.includes('FROM files f JOIN orders o ON o.id = f.order_id')) return opts.keys || [];
     if (s.includes('FROM files WHERE order_id')) return opts.files || [];
     if (s.includes('FROM order_notes')) return opts.notes || [];
+    if (s.includes('FROM admin_log')) return [];
+    if (s.includes('r2_key, preview_key FROM files')) return opts.keys || [];
+    if (s.includes('FROM customers WHERE id')) return opts.customer || { id: 7, email: 'studio@voltbrand.nl', brand: 'VOLT', name: 'Mara' };
     // De opzoekactie van handleRevisionResolve. Moet vóór de generieke
     // revision_requested-regel staan, anders krijgt hij een lege lijst terug en
     // stopt de handler stil.
     if (s.includes('SELECT id, order_id FROM files WHERE id')) return { id: binds[0], order_id: 90 };
     if (s.includes('COUNT(*) AS n')) return { n: 1 };
     if (s.includes("review_state = 'revision_requested'")) return [];
+    if (s.includes('FROM orders WHERE customer_id')) return ORDERS;
     if (s.includes('FROM orders WHERE id')) return ORDERS.find((o) => o.id === binds[0]) || null;
     if (s.includes('FROM orders')) return binds.length ? ORDERS.filter((o) => o.status === binds[0]) : ORDERS;
     if (s.includes('FROM customers WHERE id')) return { id: 7, email: 'studio@voltbrand.nl', brand: 'VOLT' };
@@ -121,7 +129,9 @@ function makeEnv(opts = {}) {
     async batch(list) { for (const st of list) record(st); return list.map(() => ({ success: true })); },
   };
 
+  const deletes = [];
   const UPLOADS = {
+    async delete(key) { deletes.push(key); },
     async put(key, body, opts) { puts.push({ key, type: opts?.httpMetadata?.contentType }); return { key }; },
     async get(key) {
       if (!key.startsWith('models/')) return null;
@@ -129,7 +139,7 @@ function makeEnv(opts = {}) {
     },
   };
 
-  return { DB, UPLOADS, mails, puts, models, RESEND_API_KEY: 'test-key' };
+  return { DB, UPLOADS, mails, puts, deletes, models, RESEND_API_KEY: 'test-key' };
 }
 
 async function adminReq(method, path, { env, body, headers = {} } = {}) {
@@ -700,6 +710,203 @@ section('§7 · notities: wat de klant leest, en wat alleen jij leest');
     has(env.DB.writes, /UPDATE revision_requests SET resolved_at = datetime\('now'\), resolution_note/));
   check('and the customer sees it on their own timeline',
     has(env.DB.writes, /INSERT INTO order_events/));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§8 · annuleren, verbergen, verwijderen — drie dingen, geen knop');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Lucas: *"'orders verwijderen' klinkt als één knop, maar er zitten drie
+// verschillende situaties onder. Ze op één hoop gooien is hoe je per ongeluk een
+// betaalde bestelling weggooit die je zeven jaar moet bewaren."* De regel is
+// daarom in de CODE gezet en niet in het hoofd van degene die klikt: het
+// verschil zit in payment_status, en de knop kijkt zelf.
+
+{
+  const env = makeEnv();
+  const res = await adminReq('POST', '/admin/orders/90/cancel', { env, body: new URLSearchParams({ reason: '' }) });
+  check('cancelling without a reason is refused', res.status === 400, res.status);
+  check('and nothing changes', !has(env.DB.writes, /status = 'cancelled'/));
+}
+
+{
+  // Order 90 is paid in the fixture. Dan moet er iets over het geld gezegd zijn.
+  const env = makeEnv();
+  const res = await adminReq('POST', '/admin/orders/90/cancel', { env, body: new URLSearchParams({ reason: 'Merk stopt met de lijn.' }) });
+  check('a paid order cannot be cancelled without deciding about the money', res.status === 400, res.status);
+}
+
+{
+  const env = makeEnv();
+  await adminReq('POST', '/admin/orders/90/cancel', {
+    env, body: new URLSearchParams({ reason: 'Merk stopt met de lijn.', payment: 'refund' }),
+  });
+  check('with a reason and a decision it cancels', has(env.DB.writes, /status = 'cancelled'/));
+  const ev = env.DB.writes.find((w) => /INSERT INTO order_events/.test(w.sql));
+  check('the customer sees the reason and what happens with the money',
+    /Merk stopt/.test(ev?.binds?.[1] || '') && /Refund/.test(ev?.binds?.[1] || ''), ev?.binds?.[1]);
+  check('and it lands in the admin log', has(env.DB.writes, /INSERT INTO admin_log/));
+}
+
+{
+  const env = makeEnv();
+  await adminReq('POST', '/admin/orders/90/hide', { env, body: new URLSearchParams({ action: 'hide' }) });
+  check('hiding stamps hidden_at', has(env.DB.writes, /SET hidden_at = datetime/));
+  check('and does not touch the status', !has(env.DB.writes, /SET status/));
+}
+
+{
+  // DE BELANGRIJKSTE REGEL VAN DEZE SECTIE.
+  const env = makeEnv();
+  const res = await adminReq('POST', '/admin/orders/90/delete', { env, body: new URLSearchParams({ confirm: 'VIS-7F4-M3A' }) });
+  check('a PAID order cannot be deleted, even with the right confirmation', res.status === 400, res.status);
+  check('and not a single row is dropped', !has(env.DB.writes, /DELETE FROM orders/));
+}
+
+{
+  // Order 91 staat op 'paid' in de fixture; even op onbetaald zetten.
+  const o = ORDERS.find((x) => x.id === 91);
+  const prev = o.payment_status;
+  o.payment_status = 'unpaid';
+
+  const wrong = makeEnv();
+  const r1 = await adminReq('POST', '/admin/orders/91/delete', { env: wrong, body: new URLSearchParams({ confirm: 'weet ik veel' }) });
+  check('the reference has to be typed exactly', r1.status === 400, r1.status);
+  check('nothing deleted on a wrong confirmation', !has(wrong.DB.writes, /DELETE FROM orders/));
+
+  const env = makeEnv({ keys: [{ r2_key: 'intake/VIS-8K2-QQ1/001-a.jpg', preview_key: null }] });
+  await adminReq('POST', '/admin/orders/91/delete', { env, body: new URLSearchParams({ confirm: 'VIS-8K2-QQ1' }) });
+  check('an unpaid order with the right reference is deleted', has(env.DB.writes, /DELETE FROM orders WHERE id/));
+  check('its files leave R2 too', env.deletes.includes('intake/VIS-8K2-QQ1/001-a.jpg'), env.deletes.join(','));
+  check('and the children go first, so nothing is orphaned',
+    indexOfWrite(env.DB.writes, /DELETE FROM files/) < indexOfWrite(env.DB.writes, /DELETE FROM orders WHERE id/));
+
+  o.payment_status = prev;
+}
+
+// Het AVG-verzoek: alles van één merk weg, behalve wat de boekhouding nodig heeft.
+{
+  const env = makeEnv();
+  const r = await adminReq('POST', '/admin/customers/7/wipe', { env, body: new URLSearchParams({ confirm: 'iets anders' }) });
+  check('erasing a customer needs their brand name typed exactly', r.status === 400, r.status);
+  check('and erases nothing until it is', !has(env.DB.writes, /DELETE FROM customers/));
+}
+
+{
+  const env = makeEnv();
+  await adminReq('POST', '/admin/customers/7/wipe', { env, body: new URLSearchParams({ confirm: 'VOLT' }) });
+  const archive = indexOfWrite(env.DB.writes, /INSERT INTO invoice_archive/);
+  const wipe = indexOfWrite(env.DB.writes, /DELETE FROM customers/);
+  // DE VOLGORDE IS HET HELE PUNT. Andersom levert een fout halverwege een klant
+  // zonder bestellingen én zonder boekhouding op, en dat is de enige uitkomst
+  // hier die je niet meer kunt repareren.
+  check('the invoice lines are archived BEFORE anything is deleted',
+    archive >= 0 && wipe > archive, `archief@${archive} wissen@${wipe}`);
+  check('the archive carries no name, only money and dates',
+    !/brand|email|name/i.test(env.DB.writes.find((w) => /INSERT INTO invoice_archive/.test(w.sql))?.sql || ''));
+  check('sessions and tokens go too, so nobody stays logged in',
+    has(env.DB.writes, /DELETE FROM account_sessions/) && has(env.DB.writes, /DELETE FROM account_tokens/));
+  check('and the whole thing is logged', has(env.DB.writes, /INSERT INTO admin_log/));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§9 · zoeken, filteren en een spoor');
+// ─────────────────────────────────────────────────────────────────────────────
+
+{
+  const env = makeEnv();
+  await adminReq('GET', '/admin?q=VOLT', { env });
+  const listQuery = env.DB.prepared.find((sql) => /FROM orders/.test(sql) && /LIMIT 200/.test(sql));
+  check('searching happens in the query that carries the LIMIT',
+    /ref LIKE/.test(listQuery || '') && /brand LIKE/.test(listQuery || ''), 'LIKE ... LIMIT 200');
+  check('and hidden orders stay out by default', /hidden_at IS NULL/.test(listQuery || ''));
+}
+
+{
+  const env = makeEnv();
+  await adminReq('GET', '/admin?hidden=1', { env });
+  const listQuery = env.DB.prepared.find((sql) => /FROM orders/.test(sql) && /LIMIT 200/.test(sql));
+  check('asking for hidden orders drops that condition', !/hidden_at IS NULL/.test(listQuery || ''));
+}
+
+{
+  for (const [f, needle] of [['revisions', /revision_requested/], ['unpaid', /payment_status = 'unpaid'/], ['unannounced', /announced_at IS NULL/]]) {
+    const env = makeEnv();
+    await adminReq('GET', `/admin?f=${f}`, { env });
+    const listQuery = env.DB.prepared.find((sql) => /FROM orders/.test(sql) && /LIMIT 200/.test(sql));
+    check(`the "${f}" filter is a real condition, not a client-side sieve`, needle.test(listQuery || ''));
+  }
+}
+
+{
+  const env = makeEnv();
+  const res = await adminReq('GET', '/admin?f=verzonnen', { env });
+  check('an invented filter falls back to everything rather than to nothing', res.status === 200, res.status);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§10 · de fouten van de nachtelijke controle, vastgezet');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Vier dingen die geen van alle luid faalden en die een tweede paar ogen eruit
+// haalde. Ze staan hier zodat ze niet terugkomen.
+
+{
+  // 1 · De R2-sleutel liep bij elke aanvraag opnieuw vanaf 001, dus twee keer
+  // hetzelfde bestand in hetzelfde vakje overschreef het eerste beeld — de
+  // vervangwerkwijze van het bord, dus geen randgeval.
+  const env = makeEnv();
+  const one = new FormData();
+  one.set('product', 'p1'); one.set('shot', 'front');
+  one.append('files', new File([new Uint8Array(64)], 'front.jpg', { type: 'image/jpeg' }));
+  await adminReq('POST', '/admin/orders/90/deliver', { env, body: one });
+
+  const two = new FormData();
+  two.set('product', 'p1'); two.set('shot', 'front');
+  two.append('files', new File([new Uint8Array(64)], 'front.jpg', { type: 'image/jpeg' }));
+  await adminReq('POST', '/admin/orders/90/deliver', { env, body: two });
+
+  check('replacing a slot with the same filename does not overwrite the old object',
+    env.puts.length === 2 && env.puts[0].key !== env.puts[1].key, env.puts.map((p) => p.key).join(' | '));
+  check('and the key still says where the image belongs', /p1-front/.test(env.puts[1].key), env.puts[1].key);
+}
+
+{
+  // 2 · Een beeld dat vervangen is voordat het gemeld werd, is geen nieuws.
+  // De knop telde het niet, de mail wel — "push 1" en dan "2 new images".
+  const env = makeEnv({ unannounced: 1, openRevisions: 0 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+  await adminReq('POST', '/admin/orders/90/announce', { env, body: new URLSearchParams() });
+  const tally = env.DB.prepared.find((q) => /COUNT\(\*\) AS n FROM files/.test(q) && /announced_at IS NULL/.test(q));
+  check('the announce tally ignores superseded files', /superseded_at IS NULL/.test(tally || ''));
+  order.delivery_mailed_at = prev;
+}
+
+{
+  // 3 · Melden sloot de regel in revision_requests maar liet files.review_state
+  // op 'revision_requested' staan — en dát is wat de inbox en de teller lezen.
+  // Twee schermen die iets anders beweren over hetzelfde werk.
+  const env = makeEnv({ unannounced: 2, openRevisions: 1 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const prev = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-08-02 10:00';
+  await adminReq('POST', '/admin/orders/90/announce', { env, body: new URLSearchParams() });
+  check('closing a revision also clears the state the inbox reads',
+    has(env.DB.writes, /UPDATE files SET review_state = 'pending'[\s\S]*superseded_at IS NOT NULL/));
+  order.delivery_mailed_at = prev;
+}
+
+{
+  // 4 · Een verborgen testbestelling telde nog wel mee in de strook en in de
+  // chips — dan liegt het cijfer boven de lijst die eronder staat.
+  const env = makeEnv();
+  await adminReq('GET', '/admin', { env });
+  const revisionCount = env.DB.prepared.find((q) => /review_state = 'revision_requested'/.test(q) && /COUNT/.test(q));
+  const chips = env.DB.prepared.find((q) => /GROUP BY status/.test(q));
+  check('the revision counter skips hidden orders', /hidden_at IS NULL/.test(revisionCount || ''));
+  check('and so do the status chips', /hidden_at IS NULL/.test(chips || ''));
 }
 
 globalThis.fetch = realFetch;

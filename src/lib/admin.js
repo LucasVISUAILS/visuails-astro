@@ -109,6 +109,8 @@ export async function adminGet(context) {
   const modelImgMatch = path.match(/^\/admin\/models\/(\d+)\/image$/);
   if (modelImgMatch) return serveModelPreview(context, Number(modelImgMatch[1]));
 
+  if (path === '/admin/log') return renderLog(context);
+
   if (path === '/admin') {
     // ?status= narrows the order list — Lucas, August 2026: "als je op received
     // bijvoorbeeld klikt je alle orders ziet staan gesorteerd op received."
@@ -117,14 +119,24 @@ export async function adminGet(context) {
     // mode that reads as "there is no work" when there is.
     const wanted = url.searchParams.get('status') || '';
     const statusFilter = STATUSES.includes(wanted) ? wanted : '';
+    // Zoekterm en vaste filters, allebei uit de URL zodat een gefilterde lijst
+    // een link is die je kunt bewaren — en allebei gekortwiekt en gecontroleerd
+    // voordat ze een query in gaan.
+    const q = String(url.searchParams.get('q') || '').trim().slice(0, 80);
+    const wantedFilter = String(url.searchParams.get('f') || '');
+    const filter = ['revisions', 'unpaid', 'unannounced'].includes(wantedFilter) ? wantedFilter : '';
+    const hidden = url.searchParams.get('hidden') === '1';
 
     const [revisions, orders, counts, statusCounts] = await Promise.all([
-      loadRevisionInbox(env), loadOrders(env, statusFilter), loadTodayCounts(env), loadStatusCounts(env),
+      loadRevisionInbox(env),
+      loadOrders(env, statusFilter, { q, filter, hidden }),
+      loadTodayCounts(env),
+      loadStatusCounts(env),
     ]);
     const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
-      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter),
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }),
     }));
   }
 
@@ -191,6 +203,20 @@ export async function adminPost(context) {
 
   const internalMatch = path.match(/^\/admin\/orders\/(\d+)\/internal$/);
   if (internalMatch) return handleInternalNote(context, Number(internalMatch[1]));
+
+  // Drie soorten "weg", drie routes — zie het blok boven handleOrderCancel over
+  // waarom dit geen één knop met een keuzelijstje is.
+  const cancelMatch = path.match(/^\/admin\/orders\/(\d+)\/cancel$/);
+  if (cancelMatch) return handleOrderCancel(context, Number(cancelMatch[1]));
+
+  const hideMatch = path.match(/^\/admin\/orders\/(\d+)\/hide$/);
+  if (hideMatch) return handleOrderHide(context, Number(hideMatch[1]));
+
+  const deleteMatch = path.match(/^\/admin\/orders\/(\d+)\/delete$/);
+  if (deleteMatch) return handleOrderDelete(context, Number(deleteMatch[1]));
+
+  const wipeMatch = path.match(/^\/admin\/customers\/(\d+)\/wipe$/);
+  if (wipeMatch) return handleCustomerWipe(context, Number(wipeMatch[1]));
 
   const previewMatch = path.match(/^\/admin\/models\/(\d+)\/preview$/);
   if (previewMatch) return handleModelPreview(context, Number(previewMatch[1]));
@@ -339,6 +365,9 @@ async function handleRevisionResolve({ request, env }, fileId) {
     ).bind(row.order_id, status?.status || 'delivered', fixed),
   ]).catch(() => {});
 
+  await logAdmin(env, await currentAdmin({ request, env }), 'revision.resolve', {
+    orderId: row.order_id, detail: `bestand #${fileId}: ${fixed}`,
+  });
   return seeOther('/admin');
 }
 
@@ -355,7 +384,9 @@ async function handleRevisionResolve({ request, env }, fileId) {
  * teruggeven wordt beide velden geleegd, zodat er geen reden blijft hangen bij
  * een account waar niets meer aan de hand is.
  */
-async function handleRevisionRights({ request, env }, customerId) {
+async function handleRevisionRights(context, customerId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
   const form = await request.formData().catch(() => null);
   const action = String(form?.get('action') || '');
   const back = `/admin/customers/${customerId}`;
@@ -364,6 +395,7 @@ async function handleRevisionRights({ request, env }, customerId) {
     await env.DB.prepare(
       'UPDATE customers SET revisions_revoked_at = NULL, revisions_revoked_note = NULL WHERE id = ?1'
     ).bind(customerId).run().catch(() => {});
+    await logAdmin(env, admin, 'revisions.restore', { customerId });
     return seeOther(back);
   }
 
@@ -374,7 +406,318 @@ async function handleRevisionRights({ request, env }, customerId) {
   await env.DB.prepare(
     "UPDATE customers SET revisions_revoked_at = datetime('now'), revisions_revoked_note = ?2 WHERE id = ?1"
   ).bind(customerId, note).run().catch(() => {});
+  // Dit is de handeling waar het logboek voor bedoeld is: hij neemt iets van
+  // een klant af, hij is met één klik terug te draaien, en over drie maanden is
+  // "wanneer en waarom is dit gebeurd" de eerste vraag.
+  await logAdmin(env, admin, 'revisions.revoke', { customerId, detail: note });
   return seeOther(back);
+}
+
+/* ── HET SPOOR — augustus 2026 ─────────────────────────────────────────────────
+ *
+ * Lucas: *"er wordt nergens vastgelegd wie in admin wat heeft gedaan.
+ * order_events.actor bestaat, maar alleen statuswijzigingen schrijven erin. Het
+ * intrekken van revisierechten, een verwijdering, een prijscorrectie: allemaal
+ * spoorloos."*
+ *
+ * WAAROM NIET ALLES IN order_events. Die tabel wordt door de klant gelezen —
+ * portal.js, en sinds deze week ook zijn dashboard. Er hoort dus niets in te
+ * staan wat hij niet mag zien, en "revisierechten ingetrokken wegens misbruik"
+ * is precies zoiets. Dus: order_events blijft de tijdlijn die je deelt,
+ * admin_log is het logboek dat je bijhoudt. Handelingen die de klant ook aangaan
+ * (annuleren) schrijven in allebei — dezelfde gebeurtenis, twee publieken, twee
+ * bewoordingen.
+ *
+ * NOOIT LOAD-BEARING. Een mislukte logregel mag geen mislukte handeling worden:
+ * dan zou een kapotte tabel het hele dashboard onbruikbaar maken. Vandaar de
+ * catch — het spoor is belangrijk, maar minder belangrijk dan het werk.
+ */
+async function logAdmin(env, admin, action, { orderId = null, customerId = null, detail = '' } = {}) {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+    ).bind(admin?.admin_id ?? admin?.id ?? null, admin?.email || null, action, orderId, customerId, detail || null).run();
+  } catch (err) {
+    console.error('[admin] log niet weggeschreven:', action, err?.message || err);
+  }
+}
+
+/* ── ANNULEREN, VERBERGEN, VERWIJDEREN — drie dingen, geen knop ───────────────
+ *
+ * Lucas: *"'orders verwijderen' klinkt als één knop, maar er zitten drie
+ * verschillende situaties onder. Ze op één hoop gooien is hoe je per ongeluk
+ * een betaalde bestelling weggooit die je zeven jaar moet bewaren."*
+ *
+ * ANNULEREN is het gewone geval: de bestelling gaat niet door. De rij blijft,
+ * de reden is verplicht, de klant ziet het in zijn tijdlijn. En er moet gekozen
+ * worden wat er met het geld gebeurt — terugbetalen, tegoed, of niets. Niet
+ * omdat de software dat kan uitvoeren (terugbetalen gebeurt bij Mollie), maar
+ * omdat het besluit vastgelegd hoort te zijn op het moment dat je het neemt.
+ *
+ * VERBERGEN is voor je eigen testbestellingen en dubbelingen: weg uit de
+ * lijsten en de cijfers, niet weg uit de database.
+ *
+ * VERWIJDEREN mag alleen als er niet betaald is. Dat is geen beleefdheidsregel
+ * maar een bewaarplicht, en de knop controleert het zelf in plaats van erop te
+ * vertrouwen dat jij het om middernacht onthoudt.
+ */
+const CANCEL_PAYMENT = ['refund', 'credit', 'none'];
+
+async function handleOrderCancel(context, orderId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  const order = await env.DB.prepare(
+    'SELECT id, ref, status, payment_status, total_cents FROM orders WHERE id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+
+  const form = await request.formData().catch(() => null);
+  const reason = String(form?.get('reason') || '').trim().slice(0, 500);
+  const payment = CANCEL_PAYMENT.includes(String(form?.get('payment') || '')) ? String(form.get('payment')) : '';
+
+  if (!reason) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'A cancellation needs a reason. It goes on the customer&rsquo;s timeline and it is the first thing anyone asks in three months.'
+    ) }), 400);
+  }
+  // Betaald? Dan moet er iets over het geld gezegd zijn. Onbetaald? Dan is er
+  // niets te kiezen en zou een keuze doen alsof er iets besloten is.
+  const paid = order.payment_status === 'paid' && Number(order.total_cents || 0) > 0;
+  if (paid && !payment) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This order is paid, so say what happens with the money: refund, credit, or nothing. Leaving it implicit is how a refund gets forgotten.'
+    ) }), 400);
+  }
+
+  const moneyLine = paid
+    ? { refund: 'Refund to be issued', credit: 'Credit for a future order', none: 'No refund' }[payment]
+    : 'Nothing was paid';
+
+  /*
+   * GEEN STILLE MISLUKKING — 7 augustus 2026. Hier stond `.catch(() => {})`,
+   * en daaronder werd onvoorwaardelijk "geannuleerd" gelogd en teruggeleid naar
+   * het dashboard. Eén hapering van D1, of een database waar migratie 0014 nog
+   * niet op gedraaid is, en de bestelling stond gewoon nog open terwijl alles
+   * eromheen zei van niet. Een mislukte mail mag zwijgen; een mislukte
+   * statuswijziging niet, want die is de handeling zelf.
+   */
+  try {
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE orders SET status = 'cancelled', cancelled_at = datetime('now'),
+                         cancel_reason = ?2, cancel_payment = ?3
+        WHERE id = ?1`
+    ).bind(orderId, reason, paid ? payment : null),
+    // De klant leest dit. Daarom de reden zoals je hem zou uitspreken, plus wat
+    // er met zijn geld gebeurt — dat is zijn eerste vraag.
+    env.DB.prepare(
+      "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'admin')"
+    ).bind(orderId, `${reason} — ${moneyLine}`),
+  ]);
+  } catch (err) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `The cancellation did not go through: ${esc(err?.message || String(err))}. Nothing was changed.`
+    ) }), 500);
+  }
+
+  await logAdmin(env, admin, 'order.cancel', {
+    orderId, detail: `${order.ref}: ${reason} (${moneyLine})`,
+  });
+  return seeOther('/admin');
+}
+
+async function handleOrderHide(context, orderId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  const form = await request.formData().catch(() => null);
+  const show = String(form?.get('action') || '') === 'show';
+
+  const order = await env.DB.prepare('SELECT id, ref FROM orders WHERE id = ?1').bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+
+  await env.DB.prepare(
+    `UPDATE orders SET hidden_at = ${show ? 'NULL' : "datetime('now')"} WHERE id = ?1`
+  ).bind(orderId).run().catch(() => {});
+  await logAdmin(env, admin, show ? 'order.unhide' : 'order.hide', { orderId, detail: order.ref });
+  return seeOther(show ? '/admin?hidden=1' : '/admin');
+}
+
+/**
+ * Eén bestelling echt weg, en alleen als er niet betaald is.
+ *
+ * DE BEVESTIGING IS DE REFERENTIE OVERTYPEN. Een "weet je het zeker?" wordt
+ * weggeklikt; een referentie overtypen kan niet per ongeluk. Het is dezelfde
+ * maatregel die de klantwissing hieronder gebruikt, en om dezelfde reden.
+ *
+ * WAT ER MEEGAAT: de bestanden in R2 én hun rijen. Een verweesde R2-sleutel is
+ * opslag waar je voor betaalt en die niemand ooit nog terugvindt. Faalt R2, dan
+ * gaat de rest wél door — een bestand dat blijft hangen is beter dan een halve
+ * verwijdering waarvan niemand weet hoe ver hij kwam; het staat in het logboek.
+ */
+async function handleOrderDelete(context, orderId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  const order = await env.DB.prepare(
+    'SELECT id, ref, payment_status, total_cents FROM orders WHERE id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+
+  if (order.payment_status === 'paid' && Number(order.total_cents || 0) > 0) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This order was paid, so it is not deletable — a paid order has to stay on file. Cancel it (with a reason) or hide it from your lists instead.'
+    ) }), 400);
+  }
+
+  const form = await request.formData().catch(() => null);
+  if (String(form?.get('confirm') || '').trim() !== order.ref) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `To delete this order, type its reference exactly: <strong>${esc(order.ref)}</strong>.`
+    ) }), 400);
+  }
+
+  const keys = await env.DB.prepare('SELECT r2_key, preview_key FROM files WHERE order_id = ?1')
+    .bind(orderId).all().catch(() => ({ results: [] }));
+
+  /*
+   * EERST DE RIJEN, DAN DE BESTANDEN — 7 augustus 2026.
+   *
+   * Andersom stond hier, met een `.catch(() => {})` op de batch eronder: de
+   * objecten waren dan al uit R2 weg terwijl de rijen bleven staan als een
+   * hapering de batch trof, en het logboek meldde intussen een geslaagde
+   * verwijdering. Rijen eerst betekent dat de enige uitkomst bij een fout een
+   * bestelling is die er nog gewoon is — en die kun je nog een keer proberen.
+   *
+   * order_events, files, revision_requests en order_notes hangen met ON DELETE
+   * CASCADE aan orders (zie schema.sql), maar D1 heeft foreign keys niet altijd
+   * aan staan. Expliciet opruimen scheelt het soort weesrijen dat je pas een
+   * jaar later vindt.
+   */
+  try {
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM revision_requests WHERE order_id = ?1').bind(orderId),
+      env.DB.prepare('DELETE FROM order_notes WHERE order_id = ?1').bind(orderId),
+      env.DB.prepare('DELETE FROM order_events WHERE order_id = ?1').bind(orderId),
+      env.DB.prepare('DELETE FROM order_tokens WHERE order_id = ?1').bind(orderId),
+      env.DB.prepare('DELETE FROM files WHERE order_id = ?1').bind(orderId),
+      env.DB.prepare('DELETE FROM orders WHERE id = ?1').bind(orderId),
+    ]);
+  } catch (err) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `Nothing was deleted: ${esc(err?.message || String(err))}. The order and its files are untouched.`
+    ) }), 500);
+  }
+
+  // Pas nu de objecten. Blijft er één hangen, dan is dat opslag die je betaalt
+  // en geen gat in je administratie — het staat in het logboek.
+  let removed = 0;
+  for (const row of keys.results || []) {
+    for (const key of [row.r2_key, row.preview_key].filter(Boolean)) {
+      try { await env.UPLOADS?.delete(key); removed++; } catch { /* zie hierboven */ }
+    }
+  }
+
+  await logAdmin(env, admin, 'order.delete', {
+    orderId: null, detail: `${order.ref} verwijderd (onbetaald), ${removed} bestand(en) uit R2`,
+  });
+  return seeOther('/admin');
+}
+
+/**
+ * Alles van één merk weg, op AVG-verzoek.
+ *
+ * Lucas: *"echt verwijderen — alleen voor een AVG-verzoek, en dan hoort het bij
+ * de klant en niet bij de bestelling: alles van dat merk weg, inclusief de
+ * bestanden in R2. Bewaart wat de belastingdienst wil zien: een geanonimiseerde
+ * factuurregel met bedrag en datum."*
+ *
+ * DE VOLGORDE IS NIET WILLEKEURIG. Eerst de factuurregels wegschrijven, dan pas
+ * verwijderen. Andersom zou een fout halverwege een klant zonder bestellingen
+ * én zonder boekhouding opleveren, en dat is de enige uitkomst hier die je niet
+ * meer kunt repareren.
+ *
+ * WAT ER IN HET ARCHIEF KOMT: referentie, dienst, bedrag, btw, datum. Geen
+ * naam, geen e-mail, geen merk. Precies genoeg om een aangifte te
+ * onderbouwen en te weinig om iemand te herkennen — dat is wat de bewaarplicht
+ * vraagt en waar het recht op vergetelheid ruimte voor laat.
+ *
+ * BEVESTIGEN DOOR DE MERKNAAM OVER TE TYPEN. Er is geen ongedaan maken na deze
+ * knop; dan hoort er ook geen enkele manier te zijn om hem per ongeluk in te
+ * drukken.
+ */
+async function handleCustomerWipe(context, customerId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  const customer = await env.DB.prepare(
+    'SELECT id, email, brand, name FROM customers WHERE id = ?1'
+  ).bind(customerId).first().catch(() => null);
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('That customer does not exist.') }), 404);
+
+  const expected = (customer.brand || customer.name || customer.email || '').trim();
+  const form = await request.formData().catch(() => null);
+  if (String(form?.get('confirm') || '').trim() !== expected) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `To erase everything for this customer, type <strong>${esc(expected)}</strong> exactly. There is no undo, so there is no easy button either.`
+    ) }), 400);
+  }
+
+  const orders = await env.DB.prepare(
+    'SELECT id, ref, service, total_cents, vat_cents, paid_at, created_at, payment_status FROM orders WHERE customer_id = ?1'
+  ).bind(customerId).all().catch(() => ({ results: [] }));
+  const rows = orders.results || [];
+
+  // 1 · Bewaren wat bewaard moet blijven.
+  const paid = rows.filter((o) => o.payment_status === 'paid' && Number(o.total_cents || 0) > 0);
+  if (paid.length) {
+    await env.DB.batch(paid.map((o) => env.DB.prepare(
+      `INSERT INTO invoice_archive (ref, service, total_cents, vat_cents, paid_at, created_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+    ).bind(o.ref, o.service || null, Number(o.total_cents || 0), Number(o.vat_cents || 0), o.paid_at || null, o.created_at || null)))
+      .catch((err) => { throw new Error(`archief niet weggeschreven: ${err?.message || err}`); });
+  }
+
+  // 2 · De bestanden uit R2. Zowel wat de klant stuurde als wat wij leverden,
+  //     plus de portretten van zijn eigen modellen — die staan onder models/.
+  const fileKeys = await env.DB.prepare(
+    'SELECT f.r2_key, f.preview_key FROM files f JOIN orders o ON o.id = f.order_id WHERE o.customer_id = ?1'
+  ).bind(customerId).all().catch(() => ({ results: [] }));
+  const modelKeys = await env.DB.prepare(
+    'SELECT preview_key FROM custom_models WHERE customer_id = ?1 AND preview_key IS NOT NULL'
+  ).bind(customerId).all().catch(() => ({ results: [] }));
+
+  let removed = 0;
+  let failed = 0;
+  for (const row of [...(fileKeys.results || []), ...(modelKeys.results || [])]) {
+    for (const key of [row.r2_key, row.preview_key].filter(Boolean)) {
+      try { await env.UPLOADS?.delete(key); removed++; } catch { failed++; }
+    }
+  }
+
+  // 3 · De rijen, van blad naar wortel zodat er nooit een rij naar een
+  //     verdwenen ouder wijst — ook niet als foreign keys uit staan.
+  const ids = rows.map((o) => o.id);
+  const perOrder = (table) => ids.map((id) =>
+    env.DB.prepare(`DELETE FROM ${table} WHERE order_id = ?1`).bind(id));
+  await env.DB.batch([
+    ...perOrder('revision_requests'),
+    ...perOrder('order_notes'),
+    ...perOrder('order_events'),
+    ...perOrder('order_tokens'),
+    ...perOrder('files'),
+    env.DB.prepare('DELETE FROM customer_style_locks WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM custom_models WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM account_sessions WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM orders WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM customers WHERE id = ?1').bind(customerId),
+  ]).catch((err) => { throw new Error(`wissen mislukt: ${err?.message || err}`); });
+
+  await logAdmin(env, admin, 'customer.wipe', {
+    customerId: null,
+    detail: `${expected}: ${rows.length} bestelling(en) gewist, ${paid.length} factuurregel(s) bewaard, ${removed} bestand(en) uit R2${failed ? `, ${failed} mislukt` : ''}`,
+  });
+
+  return seeOther('/admin/customers?wiped=1');
 }
 
 async function handleStatusUpdate(context, orderId) {
@@ -390,7 +733,7 @@ async function handleStatusUpdate(context, orderId) {
     return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
   }
 
-  const exists = await env.DB.prepare('SELECT id FROM orders WHERE id = ?1').bind(orderId).first();
+  const exists = await env.DB.prepare('SELECT id, ref FROM orders WHERE id = ?1').bind(orderId).first();
   if (!exists) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
 
   // Two writes, not one — orders.status is what every other query in the
@@ -429,6 +772,10 @@ async function handleStatusUpdate(context, orderId) {
   // a Location header — the same rule the filter itself follows on the way in.
   // Anything else redirects to the plain dashboard, which is where a form with
   // no `back` was always going.
+  await logAdmin(env, await currentAdmin(context), 'order.status', {
+    orderId, detail: `${exists.ref || `#${orderId}`} → ${status}${note ? ` (${note})` : ''}`,
+  });
+
   const back = String(form?.get('back') || '');
   return seeOther(STATUSES.includes(back) ? `/admin?status=${encodeURIComponent(back)}` : '/admin');
 }
@@ -724,6 +1071,9 @@ async function renderFiles(context, orderId) {
   const flag = (() => {
     try { return new URL(request.url).searchParams.get('announced'); } catch { return null; }
   })();
+  const notedFlag = (() => {
+    try { return new URL(request.url).searchParams.get('noted') === '1'; } catch { return false; }
+  })();
   const mappedFlag = (() => {
     try { return Number(new URL(request.url).searchParams.get('mapped')) || 0; } catch { return 0; }
   })();
@@ -733,7 +1083,9 @@ async function renderFiles(context, orderId) {
       ? `<p class="okline">Mailed. ${Number(flag)} ${Number(flag) === 1 ? 'image' : 'images'} announced to ${esc(order.email || 'the customer')}.</p>`
       : mappedFlag
         ? `<p class="okline">Mapping saved for ${mappedFlag} ${mappedFlag === 1 ? 'file' : 'files'}. The customer&rsquo;s dashboard now groups them per product.</p>`
-        : '';
+        : notedFlag
+          ? '<p class="okline">Note saved.</p>'
+          : '';
 
   const announce = !migrated
     ? ''
@@ -859,6 +1211,9 @@ async function handleCustomerNote({ request, env }, orderId) {
       `Could not save the note: ${esc(err?.message || String(err))}. Migration 0013 may not have run yet.`
     ) }), 500);
   }
+  await logAdmin(env, await currentAdmin({ request, env }), 'order.note', {
+    orderId, detail: note ? 'mededeling aan de klant bijgewerkt' : 'mededeling aan de klant gewist',
+  });
   return seeOther(`/admin/orders/${orderId}/files?noted=1`);
 }
 
@@ -935,6 +1290,9 @@ async function handleFileMapping({ request, env }, orderId) {
   if (updates.length) await env.DB.batch(updates);
 
   await resupersede(env, orderId);
+  await logAdmin(env, await currentAdmin({ request, env }), 'order.map', {
+    orderId, detail: `${updates.length} bestand(en) ingedeeld`,
+  });
   return seeOther(`/admin/orders/${orderId}/files?mapped=${updates.length}`);
 }
 
@@ -1101,20 +1459,39 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   const failed = [];
   for (const file of incoming) {
     const clean = String(file.name || 'file').split(/[\\/]/).pop().slice(0, 120) || 'file';
+    // De gok gaat meteen mee de rij in. Hij staat daarna als voorselectie in
+    // het indeelformulier, dus hij is een voorstel en geen bewering — maar hem
+    // hier al opslaan scheelt dertig keuzelijstjes op leeg zetten. Komt de
+    // upload uit een vakje van het bord, dan is er niets te raden.
+    const guessed = guessProductShot(clean);
+    const product = slotProduct || guessed.product;
+    const shot = slotShot || guessed.shot;
     // Under delivery/<ref>/ rather than intake/: the two directions are never
     // mixed in the bucket, so a lifecycle rule or a manual clean-up can tell
     // what a customer sent from what we made.
-    const key = `delivery/${order.ref}/${String(stored + 1).padStart(3, '0')}-${clean}`;
+    /*
+     * DE SLEUTEL MOET UNIEK ZIJN, EN DAT WAS HIJ NIET — 7 augustus 2026.
+     *
+     * Hij was `delivery/<ref>/<volgnummer>-<bestandsnaam>`, en dat volgnummer
+     * begint bij elke aanvraag opnieuw bij 1. Twee keer "front.jpg" in het vakje
+     * van product 1 laten vallen — precies de vervangwerkwijze van het bord —
+     * schreef dus twee keer naar `.../001-front.jpg`. Het oude beeld was weg, en
+     * de vervangen rij wees vanaf dat moment naar de bytes van zijn eigen
+     * opvolger. Twee rijen, één object, en het "ervoor" onherstelbaar.
+     *
+     * Nu draagt de sleutel waar het beeld hoort (product en shot) plus een
+     * willekeurig stukje, zodat een tweede upload naar hetzelfde vakje ernaast
+     * komt te staan in plaats van eroverheen. De rij wijst naar zijn eigen
+     * object; superseded_at bepaalt wat er getoond wordt, niet de bucket.
+     */
+    const slotName = [product || null, shot || null].filter(Boolean).join('-');
+    const unique = crypto.randomUUID().slice(0, 8);
+    const key = `delivery/${order.ref}/${slotName ? `${slotName}-` : ''}${unique}-${clean}`;
     try {
       await env.UPLOADS.put(key, file.stream(), {
         httpMetadata: { contentType: file.type || 'application/octet-stream' },
       });
-      // De gok gaat meteen mee de rij in. Hij staat daarna als voorselectie in
-      // het indeelformulier, dus hij is een voorstel en geen bewering — maar
-      // hem hier al opslaan scheelt dertig keuzelijstjes op leeg zetten.
-      const guessed = guessProductShot(clean);
-      const product = slotProduct || guessed.product;
-      const shot = slotShot || guessed.shot;
+
       await env.DB.prepare(
         `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot)
          VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6)`
@@ -1268,6 +1645,7 @@ async function markAnnounced(env, orderId, product = null) {
     await env.DB.prepare(
       `UPDATE files SET announced_at = datetime('now')
         WHERE order_id = ?1 AND kind = 'delivery' AND announced_at IS NULL
+          AND superseded_at IS NULL
           AND (?2 IS NULL OR product_key = ?2)`
     ).bind(orderId, product).run();
   } catch (err) {
@@ -1285,14 +1663,35 @@ async function markAnnounced(env, orderId, product = null) {
  * voor dezelfde product+shot ligt; zonder dat bewijs blijft de aanvraag open en
  * blijft de amberkleurige markering staan.
  */
-async function closeReplacedRevisions(env, orderId) {
+async function closeReplacedRevisions(env, orderId, product = null) {
   try {
-    await env.DB.prepare(
-      `UPDATE revision_requests SET resolved_at = datetime('now')
-        WHERE order_id = ?1 AND resolved_at IS NULL
-          AND file_id IN (SELECT id FROM files
-                           WHERE order_id = ?1 AND kind = 'delivery' AND superseded_at IS NOT NULL)`
-    ).bind(orderId).run();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE revision_requests SET resolved_at = datetime('now')
+          WHERE order_id = ?1 AND resolved_at IS NULL
+            AND file_id IN (SELECT id FROM files
+                             WHERE order_id = ?1 AND kind = 'delivery' AND superseded_at IS NOT NULL
+                               AND (?2 IS NULL OR product_key = ?2))`
+      ).bind(orderId, product),
+      /*
+       * ÉN DE TOESTAND OP HET BESTAND ZELF — 7 augustus 2026.
+       *
+       * Dit sloot alleen de regel in revision_requests. files.review_state bleef
+       * op 'revision_requested' staan, en dát is wat de revisie-inbox leest, wat
+       * de teller in de bovenste strook telt en wat de rij amber kleurt. Gevolg:
+       * de klantpagina zei "0 open" en het dashboard bleef de kaart tonen —
+       * twee schermen die permanent iets anders beweren over hetzelfde werk.
+       *
+       * Alleen op beelden die daadwerkelijk vervangen zijn. Een revisie waar nog
+       * niets mee is gedaan, hoort te blijven staan.
+       */
+      env.DB.prepare(
+        `UPDATE files SET review_state = 'pending'
+          WHERE order_id = ?1 AND kind = 'delivery' AND superseded_at IS NOT NULL
+            AND review_state = 'revision_requested'
+            AND (?2 IS NULL OR product_key = ?2)`
+      ).bind(orderId, product),
+    ]);
   } catch (err) {
     console.error('[admin] revision close skipped for order', orderId, '—', err?.message || err);
   }
@@ -1315,8 +1714,11 @@ async function unannouncedTally(env, orderId, product = null) {
     } catch { return 0; }
   };
   const [files, revisions] = await Promise.all([
+    // superseded_at erbij: een beeld dat vervangen is voordat het gemeld werd,
+    // is geen nieuws meer. Zonder deze regel zei de knop "1" en de mail "2".
     one(`SELECT COUNT(*) AS n FROM files
           WHERE order_id = ?1 AND kind = 'delivery' AND announced_at IS NULL
+            AND superseded_at IS NULL
             AND (?2 IS NULL OR product_key = ?2)`),
     // Openstaand, of net opgelost maar nog niet gemeld — allebei zijn ze wat
     // deze mail beantwoordt. Alleen op resolved_at IS NULL filteren zou de
@@ -1474,7 +1876,7 @@ async function handleAnnounceRedelivery(context, orderId) {
   // Pas ná een geslaagde verzending. Andersom zou één mislukte mail de beelden
   // voorgoed als "gemeld" wegzetten en de klant met niets achterlaten.
   await markAnnounced(env, orderId, product);
-  await closeReplacedRevisions(env, orderId);
+  await closeReplacedRevisions(env, orderId, product);
   await env.DB.batch([
     env.DB.prepare(
       `UPDATE orders SET redelivery_mailed_at = datetime('now'),
@@ -1496,6 +1898,9 @@ async function handleAnnounceRedelivery(context, orderId) {
     ),
   ]);
 
+  await logAdmin(env, await currentAdmin(context), 'order.announce', {
+    orderId, detail: `${order.ref}: ${tally.files} beeld(en)${product ? ` van product ${product.replace(/^p/, '')}` : ''} gemeld`,
+  });
   return seeOther(`/admin/orders/${orderId}/files?announced=${tally.files}`);
 }
 
@@ -1606,16 +2011,23 @@ async function loadTodayCounts(env) {
     } catch { return 0; }
   };
   const [newToday, inProduction, checking, undelivered, unpaid, revisions, toAnnounce] = await Promise.all([
-    one("SELECT COUNT(*) AS n FROM orders WHERE date(created_at) = date('now')"),
-    one("SELECT COUNT(*) AS n FROM orders WHERE status = 'in_production'"),
-    one("SELECT COUNT(*) AS n FROM orders WHERE status = 'human_check'"),
+    // VERBORGEN TELT NERGENS MEE. Een testbestelling van jezelf hoort niet in
+    // "vandaag binnengekomen" en niet in "onbetaald" — anders is verbergen een
+    // halve maatregel die de cijfers laat liegen. one() vangt de fout af als
+    // migratie 0014 nog niet gedraaid is, en dan telt hij 0 in plaats van te
+    // breken.
+    one("SELECT COUNT(*) AS n FROM orders WHERE date(created_at) = date('now') AND hidden_at IS NULL"),
+    one("SELECT COUNT(*) AS n FROM orders WHERE status = 'in_production' AND hidden_at IS NULL"),
+    one("SELECT COUNT(*) AS n FROM orders WHERE status = 'human_check' AND hidden_at IS NULL"),
     // Not "not delivered" — an order that is cancelled is not waiting on
     // anybody, and counting it as work is how a dashboard starts lying.
-    one("SELECT COUNT(*) AS n FROM orders WHERE status IN ('received','in_production','human_check')"),
+    one("SELECT COUNT(*) AS n FROM orders WHERE status IN ('received','in_production','human_check') AND hidden_at IS NULL"),
     // Only what is actually owed: the test sample and anything with no total
     // priced against it are not debts, they are rows.
-    one("SELECT COUNT(*) AS n FROM orders WHERE payment_status = 'unpaid' AND total_cents > 0"),
-    one("SELECT COUNT(*) AS n FROM files WHERE review_state = 'revision_requested'"),
+    one("SELECT COUNT(*) AS n FROM orders WHERE payment_status = 'unpaid' AND total_cents > 0 AND hidden_at IS NULL"),
+    // Via orders, want een revisie op een verborgen testbestelling is geen werk.
+    one(`SELECT COUNT(*) AS n FROM files f JOIN orders o ON o.id = f.order_id
+          WHERE f.review_state = 'revision_requested' AND o.hidden_at IS NULL`),
     // PER BESTELLING, NIET PER BESTAND. Dit telt werk, en het werk is "een
     // klant bellen dat er iets klaarstaat" — dat is één handeling, ook als er
     // zes beelden onder hangen. Zes tellen zou de strook laten schreeuwen over
@@ -1627,7 +2039,8 @@ async function loadTodayCounts(env) {
     // strook laten waarschuwen voor werk dat nog niet af is. Wat hier hoort te
     // staan is de bestelling waarvan de klant denkt dat hij alles heeft.
     one(`SELECT COUNT(DISTINCT f.order_id) AS n FROM files f JOIN orders o ON o.id = f.order_id
-          WHERE f.kind = 'delivery' AND f.announced_at IS NULL AND o.delivery_mailed_at IS NOT NULL`),
+          WHERE f.kind = 'delivery' AND f.announced_at IS NULL AND f.superseded_at IS NULL
+            AND o.delivery_mailed_at IS NOT NULL AND o.hidden_at IS NULL`),
   ]);
   return { newToday, inProduction, checking, undelivered, unpaid, revisions, toAnnounce };
 }
@@ -1829,6 +2242,39 @@ async function renderCustomer(context, customerId) {
          </form>`}
   </div>`;
 
+  /*
+   * HET AVG-VERZOEK. Lucas: *"eén knop op de klantpagina, met bevestiging
+   * waarin je de merknaam moet overtypen."*
+   *
+   * Hij staat onderaan, dichtgeklapt, met uitgeschreven wat er weggaat en wat
+   * er blijft — want dat laatste is waar de vraag over gaat als de klant later
+   * belt. Betaalde bestellingen laten een geanonimiseerde factuurregel achter:
+   * bedrag, btw, datum, referentie. Geen naam.
+   */
+  const paidCount = orders.filter((o) => o.payment_status === 'paid' && Number(o.total_cents || 0) > 0).length;
+  const wipeName = (customer.brand || customer.name || customer.email || '').trim();
+  const wipePanel = `
+<details class="danger">
+  <summary>Erase this customer (GDPR request)</summary>
+  <div class="danger-body">
+    <div class="danger-block is-worst">
+      <h4>Everything of this brand, gone</h4>
+      <p class="meta">
+        Removes ${orders.length} order${orders.length === 1 ? '' : 's'}, every uploaded and delivered file in R2,
+        their brand models and their pictures, their standing preferences, and every sign-in session and token.
+        ${paidCount
+          ? `Keeps ${paidCount} anonymised invoice line${paidCount === 1 ? '' : 's'} — reference, amount, VAT and date, no name — because a paid order has to stay accountable for seven years.`
+          : 'Nothing was ever paid, so there is nothing to keep for the bookkeeping.'}
+        There is no undo.
+      </p>
+      <form method="post" action="/admin/customers/${customer.id}/wipe">
+        <input type="text" name="confirm" required autocomplete="off" placeholder="Type ${esc(wipeName)} to confirm">
+        <button class="btn btn-ghost btn-sm" type="submit">Erase everything</button>
+      </form>
+    </div>
+  </div>
+</details>`;
+
   const body = `
   <p><a href="/admin/customers">&larr; Customers</a></p>
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
@@ -1856,6 +2302,9 @@ async function renderCustomer(context, customerId) {
 
   <h2>Orders</h2>
   ${orderRows}
+  
+  <h2>Danger zone</h2>
+  ${wipePanel}
   `;
   return html(page({ title: customer.brand || customer.email, body }));
 }
@@ -2207,6 +2656,7 @@ async function loadRevisionInbox(env) {
        JOIN orders o ON o.id = f.order_id
        LEFT JOIN customers c ON c.id = o.customer_id
       WHERE f.review_state = 'revision_requested'
+        AND o.hidden_at IS NULL AND f.superseded_at IS NULL
       ORDER BY f.reviewed_at DESC
       LIMIT 100`
   ).all();
@@ -2230,8 +2680,47 @@ async function loadRevisionInbox(env) {
  * so a bug upstream shows up as an unfiltered list and never as a query with an
  * empty string in it.
  */
-async function loadOrders(env, status = '') {
-  const where = status ? 'WHERE status = ?1' : '';
+/**
+ * De bestellingenlijst, met alles wat je erop kunt zoeken en filteren.
+ *
+ * Lucas: *"admin heeft geen zoekfunctie. Bij twintig bestellingen scroll je. Bij
+ * tweehonderd niet."* En: *"vaste filters: openstaande revisies, onbetaald,
+ * geleverd maar niet aangekondigd."*
+ *
+ * ALLES IN DE QUERY DIE OOK DE LIMIT DRAAGT. Dat was al de regel voor het
+ * statusfilter en hij geldt hier net zo hard: na de LIMIT filteren betekent
+ * "de onbetaalde bestellingen ónder de tweehonderd nieuwste", en dat houdt op
+ * hetzelfde te zijn als "de onbetaalde bestellingen" op precies het moment dat
+ * het druk is.
+ *
+ * VERBORGEN VALT WEG, TENZIJ JE ERNAAR VRAAGT. Een testbestelling van jezelf
+ * hoort niet in de lijst en niet in de tellingen; hij hoort wél terug te vinden
+ * te zijn, anders is verbergen hetzelfde als verwijderen met een omweg.
+ */
+async function loadOrders(env, status = '', { q = '', filter = '', hidden = false } = {}) {
+  const clauses = [];
+  const binds = [];
+  if (status) { binds.push(status); clauses.push(`status = ?${binds.length}`); }
+  if (!hidden) clauses.push('hidden_at IS NULL');
+
+  // Zoeken op wat je in je hand hebt als je zoekt: een referentie uit een mail,
+  // een merknaam uit een gesprek, of het e-mailadres waarmee iemand belt.
+  if (q) {
+    binds.push(`%${q}%`);
+    const n = binds.length;
+    clauses.push(`(ref LIKE ?${n} OR brand LIKE ?${n} OR email LIKE ?${n} OR name LIKE ?${n})`);
+  }
+
+  if (filter === 'revisions') {
+    clauses.push("EXISTS (SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.review_state = 'revision_requested')");
+  } else if (filter === 'unpaid') {
+    clauses.push("payment_status = 'unpaid' AND total_cents > 0");
+  } else if (filter === 'unannounced') {
+    clauses.push(`delivery_mailed_at IS NOT NULL AND EXISTS (
+      SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.kind = 'delivery' AND f.announced_at IS NULL)`);
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const stmt = env.DB.prepare(
     // file_count added August 2026 so the Files link on each card can say how
     // many there are without a second query per order. A correlated subquery
@@ -2243,8 +2732,8 @@ async function loadOrders(env, status = '') {
     // path (see handleStatusUpdate's .catch), so "delivered" and "delivered and
     // announced" can and do come apart.
     `SELECT id, customer_id, ref, service, status, tier, brand, email, product_count,
-            window_start, window_end, payment_status, created_at,
-            delivered_at, delivery_mailed_at,
+            window_start, window_end, payment_status, total_cents, created_at,
+            delivered_at, delivery_mailed_at, hidden_at, cancel_reason, cancel_payment,
             (SELECT COUNT(*) FROM files f WHERE f.order_id = orders.id) AS file_count
        FROM orders
       ${where}
@@ -2255,7 +2744,15 @@ async function loadOrders(env, status = '') {
         id DESC
       LIMIT 200`
   );
-  const res = await (status ? stmt.bind(status) : stmt).all();
+  let res;
+  try {
+    res = await (binds.length ? stmt.bind(...binds) : stmt).all();
+  } catch (err) {
+    // hidden_at komt uit migratie 0014. Draait die nog niet, dan hoort de lijst
+    // te laden zonder dat filter in plaats van helemaal niet te laden.
+    if (!/hidden_at/.test(String(err?.message || err))) throw err;
+    return loadOrdersLegacy(env, status, q);
+  }
   const orders = res.results || [];
 
   /*
@@ -2292,6 +2789,32 @@ async function loadOrders(env, status = '') {
   return orders;
 }
 
+/** De lijst zoals hij was vóór migratie 0014 — alleen als die nog niet gedraaid is. */
+async function loadOrdersLegacy(env, status = '', q = '') {
+  const clauses = [];
+  const binds = [];
+  if (status) { binds.push(status); clauses.push(`status = ?${binds.length}`); }
+  // Zoeken werkt ook zonder 0014 — de kolommen waarop gezocht wordt bestaan al
+  // sinds het begin. Hem hier weglaten zou een zoekopdracht stilzwijgend
+  // beantwoorden met "de tweehonderd nieuwste", en dat is een verkeerd antwoord
+  // dat er goed uitziet.
+  if (q) { binds.push(`%${q}%`); const n = binds.length;
+    clauses.push(`(ref LIKE ?${n} OR brand LIKE ?${n} OR email LIKE ?${n} OR name LIKE ?${n})`); }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  const stmt = env.DB.prepare(
+    // total_cents hoort erbij, ook hier: orderDanger() beslist er de knop
+    // "verwijderen" op, en zonder de kolom leest elke bestelling als onbetaald.
+    `SELECT id, customer_id, ref, service, status, tier, brand, email, product_count,
+            window_start, window_end, payment_status, total_cents, created_at,
+            delivered_at, delivery_mailed_at,
+            (SELECT COUNT(*) FROM files f WHERE f.order_id = orders.id) AS file_count
+       FROM orders ${where}
+      ORDER BY id DESC LIMIT 200`
+  );
+  const res = await (binds.length ? stmt.bind(...binds) : stmt).all();
+  return res.results || [];
+}
+
 /**
  * How many orders sit at each status, all of them, ignoring the 200-row cap
  * above — because the filter row has to be able to say "delivered 412" while
@@ -2301,9 +2824,11 @@ async function loadOrders(env, status = '') {
  */
 async function loadStatusCounts(env) {
   const counts = Object.fromEntries(STATUSES.map((s) => [s, 0]));
+  // Verborgen bestellingen tellen hier ook niet mee — anders leest de chip
+  // "Received 5" boven een lijst van vier, en dan vertrouw je geen van beide.
   const res = await env.DB.prepare(
-    'SELECT status, COUNT(*) AS n FROM orders GROUP BY status'
-  ).all();
+    'SELECT status, COUNT(*) AS n FROM orders WHERE hidden_at IS NULL GROUP BY status'
+  ).all().catch(() => env.DB.prepare('SELECT status, COUNT(*) AS n FROM orders GROUP BY status').all());
   for (const row of res.results || []) {
     if (Object.prototype.hasOwnProperty.call(counts, row.status)) counts[row.status] = row.n;
   }
@@ -2457,7 +2982,80 @@ function loginBody(error = null) {
 </form>`;
 }
 
-function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '') {
+/**
+ * Het logboek: wie deed wat, wanneer.
+ *
+ * ÉÉN PAGINA, GEEN FILTERS. Dit is geen werkscherm maar een geheugen — je komt
+ * hier als je je afvraagt waarom iets is zoals het is, en dan wil je scrollen
+ * en lezen, niet zoeken op iets waarvan je de naam niet meer weet. Tweehonderd
+ * regels is ruim een maand werk.
+ */
+async function renderLog({ env }) {
+  let rows = [];
+  let missing = false;
+  try {
+    const res = await env.DB.prepare(
+      `SELECT id, admin_email, action, order_id, customer_id, detail, created_at
+         FROM admin_log ORDER BY id DESC LIMIT 200`
+    ).all();
+    rows = res.results || [];
+  } catch { missing = true; }
+
+  const body = `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Activity log</h1>
+<p class="lede">Every change made from this dashboard. The customer never sees this — their own timeline lives on the order.</p>
+${missing
+  ? '<p class="warnline">The log table is not there yet. Run migration 0014.</p>'
+  : rows.length
+    ? `<table class="files"><thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead><tbody>
+        ${rows.map((r) => `<tr>
+          <td class="muted">${esc(when(r.created_at))}</td>
+          <td class="muted">${esc(r.admin_email || '—')}</td>
+          <td><code>${esc(r.action)}</code></td>
+          <td>${esc(r.detail || '')}${r.order_id ? ` <a href="/admin/orders/${r.order_id}/files">order &rarr;</a>` : ''}${r.customer_id ? ` <a href="/admin/customers/${r.customer_id}">customer &rarr;</a>` : ''}</td>
+        </tr>`).join('')}
+      </tbody></table>`
+    : '<p class="empty">Nothing logged yet.</p>'}`;
+  return html(page({ title: 'Activity log', body }));
+}
+
+function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}) {
+  const { q = '', filter = '', hidden = false } = view;
+
+  /* Zoeken en filteren, in één rij boven de lijst.
+   *
+   * EEN GET-FORMULIER, geen POST: dan is het resultaat een URL die je kunt
+   * bewaren, doorsturen en verversen. Dat is precies wat je wilt van "alle
+   * onbetaalde bestellingen" — dat is geen handeling maar een plek. */
+  const chip = (key, label) => {
+    const on = filter === key;
+    const url = new URLSearchParams();
+    if (statusFilter) url.set('status', statusFilter);
+    if (q) url.set('q', q);
+    if (!on) url.set('f', key);
+    if (hidden) url.set('hidden', '1');
+    const qs = url.toString();
+    return `<a class="fl-chip${on ? ' is-active' : ''}" href="/admin${qs ? `?${qs}` : ''}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
+  };
+
+  const searchRow = `
+<form class="searchrow" method="get" action="/admin">
+  ${statusFilter ? `<input type="hidden" name="status" value="${esc(statusFilter)}">` : ''}
+  ${filter ? `<input type="hidden" name="f" value="${esc(filter)}">` : ''}
+  ${hidden ? '<input type="hidden" name="hidden" value="1">' : ''}
+  <input type="search" name="q" value="${esc(q)}" placeholder="Reference, brand, email or name" aria-label="Search orders">
+  <button class="btn btn-ghost btn-sm" type="submit">Search</button>
+  ${q ? `<a class="fl-chip" href="/admin">Clear</a>` : ''}
+</form>
+<div class="fl-row">
+  ${chip('revisions', 'Revisions open')}
+  ${chip('unpaid', 'Unpaid')}
+  ${chip('unannounced', 'Delivered, not announced')}
+  <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Hiding hidden again' : 'Include hidden'}</a>
+  <a class="fl-chip" href="/admin/log">Activity log &rarr;</a>
+</div>`;
+
   return `
 <div class="bar">
   <a class="mark" href="/">VISUAILS</a>
@@ -2473,7 +3071,8 @@ ${counts ? todayStrip(counts) : ''}
 <h2>Revision requests</h2>
 ${revisions.length ? revisions.map(revisionCard).join('') : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
 
-<h2>Orders${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}</h2>
+<h2>Orders${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
+${searchRow}
 ${statusFilterRow(statusCounts, statusFilter)}
 ${orders.length
   ? orders.map((o) => orderCard(o, modelsByCustomer.get(o.customer_id) || [], statusFilter)).join('')
@@ -2623,7 +3222,10 @@ function orderCard(o, models, statusFilter = '') {
   </form>
   ${unannounced}
   ${pendingAnnounce}
+  ${o.hidden_at ? `<p class="meta">Hidden since ${esc(when(o.hidden_at))} — it stays out of the lists and the counts.</p>` : ''}
+  ${o.cancel_reason ? `<p class="warnline">Cancelled: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc({ refund: 'refund to be issued', credit: 'credit given', none: 'no refund' }[o.cancel_payment] || o.cancel_payment)}` : ''}</p>` : ''}
   ${modelList}
+  ${orderDanger(o)}
   <form class="controls" method="post" action="/admin/orders/${o.id}/models">
     <input type="text" name="label" placeholder="New custom model label (e.g. 'Studio Look A')" style="flex:1; min-width:12rem; padding:.5rem .6rem; border:1px solid var(--line-strong); background:var(--paper-lift); color:var(--ink);" required>
     <button class="btn btn-ghost" type="submit">Add custom model</button>
@@ -2631,8 +3233,78 @@ function orderCard(o, models, statusFilter = '') {
 </div>`;
 }
 
+/**
+ * De drie manieren om een bestelling weg te krijgen, achter één klapje.
+ *
+ * DICHTGEKLAPT, want dit zijn de knoppen die je een paar keer per maand nodig
+ * hebt en nooit per ongeluk. Open staan ze naast elkaar mét hun verschil
+ * uitgeschreven, zodat de keuze gemaakt wordt op wat er gebeurt en niet op
+ * welke knop het dichtst bij de muis staat.
+ *
+ * VERWIJDEREN VERDWIJNT BIJ EEN BETAALDE BESTELLING. Niet grijs, niet met een
+ * foutmelding achteraf: hij staat er niet. Een knop die je niet mag indrukken
+ * is een knop die je op een dag toch indrukt.
+ */
+function orderDanger(o) {
+  const paid = o.payment_status === 'paid' && Number(o.total_cents || 0) > 0;
+  const cancelled = o.status === 'cancelled';
+  return `
+<details class="danger">
+  <summary>Cancel, hide or delete</summary>
+  <div class="danger-body">
+    ${cancelled
+      ? '<p class="meta">Already cancelled.</p>'
+      : `<form method="post" action="/admin/orders/${o.id}/cancel" class="danger-block">
+           <h4>Cancel</h4>
+           <p class="meta">The order stays on file, the customer sees &ldquo;cancelled&rdquo; and your reason on their timeline.</p>
+           <input type="text" name="reason" required maxlength="500" placeholder="Why is this not going ahead? The customer reads this.">
+           ${paid
+             ? `<label class="danger-money">What happens with the money?
+                  <select name="payment" required>
+                    <option value="">— choose —</option>
+                    <option value="refund">Refund it</option>
+                    <option value="credit">Credit for a future order</option>
+                    <option value="none">Nothing, keep it</option>
+                  </select>
+                </label>
+                <p class="meta">This records the decision; the refund itself still happens in Mollie.</p>`
+             : '<p class="meta">Nothing was paid, so there is nothing to decide about money.</p>'}
+           <button class="btn btn-ghost btn-sm" type="submit">Cancel this order</button>
+         </form>`}
+
+    <form method="post" action="/admin/orders/${o.id}/hide" class="danger-block">
+      <h4>${o.hidden_at ? 'Unhide' : 'Hide'}</h4>
+      <p class="meta">${o.hidden_at
+        ? 'Put it back in the lists and the counts.'
+        : 'Your own test orders and accidental doubles. Out of the lists and the counts, still in the database.'}</p>
+      <input type="hidden" name="action" value="${o.hidden_at ? 'show' : 'hide'}">
+      <button class="btn btn-ghost btn-sm" type="submit">${o.hidden_at ? 'Show again' : 'Hide from my lists'}</button>
+    </form>
+
+    ${paid
+      ? '<div class="danger-block"><h4>Delete</h4><p class="meta">Not available: this order was paid, and a paid order has to stay on file. Cancel or hide it instead.</p></div>'
+      : `<form method="post" action="/admin/orders/${o.id}/delete" class="danger-block is-worst">
+           <h4>Delete for good</h4>
+           <p class="meta">Unpaid only. The row and its files in R2 go, and nothing brings them back. Type <strong>${esc(o.ref)}</strong> to confirm.</p>
+           <input type="text" name="confirm" required placeholder="${esc(o.ref)}" autocomplete="off">
+           <button class="btn btn-ghost btn-sm" type="submit">Delete this order</button>
+         </form>`}
+  </div>
+</details>`;
+}
+
+/**
+ * De foutpagina. `message` is HTML, en dat is een bewuste keuze.
+ *
+ * Hij escapete zijn argument, terwijl elke aanroeper hier opmaak doorgeeft —
+ * `<strong>${esc(order.ref)}</strong>`, regeleindes tussen mislukte bestanden,
+ * een `&rsquo;`. Het resultaat was een foutpagina die je letterlijk
+ * `&lt;strong&gt;VIS-2608-4471&lt;/strong&gt;` liet lezen op het moment dat je al
+ * iets verkeerd had gedaan. Elke aanroeper escapet zijn eigen variabelen (dat
+ * is nagelopen), dus de opmaak mag hier door.
+ */
 function errorBody(message) {
-  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error" style="margin-top:2rem">${esc(message)}</p>`;
+  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error" style="margin-top:2rem">${message}</p>`;
 }
 
 function page({ title, body }) {

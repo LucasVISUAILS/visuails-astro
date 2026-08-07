@@ -521,3 +521,39 @@ CREATE TABLE IF NOT EXISTS order_notes (
 );
 CREATE INDEX IF NOT EXISTS idx_order_notes_order ON order_notes(order_id, id);
 ALTER TABLE revision_requests ADD COLUMN resolution_note TEXT;
+
+-- 0014 — terugdraaien, wegstoppen, en een spoor. Annuleren (met reden en een
+-- expliciete keuze over het geld), verbergen (uit de lijsten, niet uit de
+-- database), en admin_log: een tabel die de klant NIET leest, zodat er ook
+-- dingen in kunnen die hij niet hoort te zien. invoice_archive is wat er van
+-- een bestelling overblijft nadat de klant op AVG-verzoek gewist is.
+ALTER TABLE orders ADD COLUMN hidden_at TEXT;
+ALTER TABLE orders ADD COLUMN cancel_reason TEXT;
+ALTER TABLE orders ADD COLUMN cancel_payment TEXT;
+ALTER TABLE orders ADD COLUMN cancelled_at TEXT;
+CREATE INDEX IF NOT EXISTS idx_orders_visible
+  ON orders (status, id) WHERE hidden_at IS NULL;
+CREATE TABLE IF NOT EXISTS admin_log (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_id    INTEGER,
+  admin_email TEXT,
+  action      TEXT NOT NULL,
+  order_id    INTEGER,
+  customer_id INTEGER,
+  detail      TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_admin_log_time ON admin_log(id DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_log_order ON admin_log(order_id);
+CREATE INDEX IF NOT EXISTS idx_admin_log_customer ON admin_log(customer_id);
+CREATE TABLE IF NOT EXISTS invoice_archive (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  ref          TEXT NOT NULL,
+  service      TEXT,
+  total_cents  INTEGER NOT NULL DEFAULT 0,
+  vat_cents    INTEGER NOT NULL DEFAULT 0,
+  paid_at      TEXT,
+  created_at   TEXT,
+  archived_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_invoice_archive_ref ON invoice_archive(ref);
