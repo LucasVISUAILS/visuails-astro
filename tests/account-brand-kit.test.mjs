@@ -49,11 +49,14 @@ const DETAILS = {
   default_background: 'white', default_background_hex: null, details_saved_at: '2026-07-20',
 };
 
-function makeDb({ locks = [], models = MODELS, files = [], events = [] } = {}) {
+function makeDb({ locks = [], models = MODELS, files = [], events = [], finish = null } = {}) {
   const writes = [];
   const pick = (sql, binds) => {
     const s = sql.replace(/\s+/g, ' ');
     if (s.includes('FROM account_sessions')) return { ...CUSTOMER, expires_at: '2099-01-01' };
+    // De telling van maybeClose(): hoeveel levende beelden zijn er, en hoeveel
+    // daarvan zijn goedgekeurd.
+    if (s.includes('AS live') && s.includes('AS approved')) return finish;
     if (s.includes('FROM rate_limits')) return null;
     if (s.includes('FROM order_events')) return events;
     if (s.includes('FROM files f JOIN orders')) return files;
@@ -83,7 +86,10 @@ function makeDb({ locks = [], models = MODELS, files = [], events = [] } = {}) {
       };
       return st;
     },
-    async batch() { return []; },
+    // Een batch schrijft net zo goed als een losse run — hij werd hier alleen
+    // niet opgeschreven, waardoor alles wat via batch() gaat (de revisie, het
+    // afronden) onzichtbaar was voor elke test die naar writes kijkt.
+    async batch(list) { for (const st of list) await st.run(); return list.map(() => ({ success: true })); },
   };
   return db;
 }
@@ -446,6 +452,52 @@ const EVENTS = [
   check('and nothing on this page reads the internal log',
     !r.html.includes('order_notes'));
   delete o.customer_note;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§8 · stap 6: afgerond zodra het laatste beeld is goedgekeurd');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// closed_at bestond en werd nergens gezet, dus een bestelling bleef eeuwig open
+// staan met revisieknoppen erop. Nu sluit hij zichzelf op het enige moment dat
+// het waar kan zijn: de klant keurt zijn laatste beeld goed. Drie dingen die
+// mis kunnen gaan liggen hier vast — te vroeg sluiten, een lege bestelling voor
+// "alles goedgekeurd" aanzien, en een al gesloten bestelling opnieuw sluiten.
+
+{
+  const r = await post('/account/review', { file: '2', action: 'approve' },
+    { files: [{ id: 2, order_id: 91, revisions_revoked_at: null }],
+      finish: { live: 4, approved: 4, status: 'delivered', closed_at: null } });
+  const closing = r.writes.find((w) => /UPDATE orders SET closed_at/.test(w.sql));
+  check('the last approval closes the order', !!closing);
+  check('and only if it was still open', /closed_at IS NULL/.test(closing?.sql || ''));
+  check('the customer sees it on their timeline',
+    r.writes.some((w) => /INSERT INTO order_events/.test(w.sql) && /afgerond/.test(String(w.binds?.[1] || ''))));
+}
+
+{
+  const r = await post('/account/review', { file: '2', action: 'approve' },
+    { files: [{ id: 2, order_id: 91, revisions_revoked_at: null }],
+      finish: { live: 4, approved: 3, status: 'delivered', closed_at: null } });
+  check('three out of four approved does NOT close it',
+    !r.writes.some((w) => /UPDATE orders SET closed_at/.test(w.sql)));
+}
+
+{
+  // Nul beelden is geen afgeronde bestelling maar een lege.
+  const r = await post('/account/review', { file: '2', action: 'approve' },
+    { files: [{ id: 2, order_id: 91, revisions_revoked_at: null }],
+      finish: { live: 0, approved: 0, status: 'delivered', closed_at: null } });
+  check('an order with nothing delivered is not "all approved"',
+    !r.writes.some((w) => /UPDATE orders SET closed_at/.test(w.sql)));
+}
+
+{
+  const r = await post('/account/review', { file: '2', action: 'approve' },
+    { files: [{ id: 2, order_id: 91, revisions_revoked_at: null }],
+      finish: { live: 2, approved: 2, status: 'delivered', closed_at: '2026-08-01' } });
+  check('an order that already closed is left alone',
+    !r.writes.some((w) => /UPDATE orders SET closed_at/.test(w.sql)));
 }
 
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);

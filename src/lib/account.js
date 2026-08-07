@@ -1647,6 +1647,63 @@ async function handleLockUpdate({ request, env }, customer) {
  * by the time any POST reaches this far (see accountPost's shared Origin
  * check above every route past /account/login).
  */
+/**
+ * Stap 6: afgerond.
+ *
+ * Lucas: *"alles goedgekeurd of het venster verlopen. closed_at gaat om,
+ * revisieknoppen verdwijnen, de download blijft. closed_at bestaat maar wordt
+ * nergens gezet."* Dus wordt hij hier gezet, op het enige moment waarop het
+ * waar kan worden: de klant keurt zijn laatste beeld goed.
+ *
+ * WAAROM NIET OOK OP EEN TERMIJN. Dat vraagt om iets wat periodiek draait, en
+ * dat is een cron met een eigen storingsmodus voor een gebeurtenis die zich in
+ * de praktijk zelf aandient. Een afronding op tijd hoort bovendien vooraf
+ * aangekondigd te worden ("we sluiten deze bestelling over een week") en dat is
+ * een tweede mail; die staat op de lijst, deze niet.
+ *
+ * ALLEEN ALS ER ÉCHT NIETS MEER OPENSTAAT. Nul beelden telt niet als "alles
+ * goedgekeurd" — dat is een lege bestelling, geen afgeronde. En verlopen of
+ * vervangen beelden tellen niet mee, want daar kan de klant niets meer over
+ * zeggen; ze zouden een bestelling voorgoed openhouden.
+ *
+ * WAT ER NIET GEBEURT: geen mail. Dit is een gevolg van een handeling die de
+ * klant zojuist zélf deed, en "je hebt zojuist op goedkeuren geklikt" is geen
+ * bericht. De gebeurtenis komt op zijn tijdlijn, waar hij hem terugvindt.
+ */
+async function maybeClose(env, orderId) {
+  try {
+    const row = await env.DB.prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM files f
+           WHERE f.order_id = o.id AND f.kind = 'delivery'
+             AND f.superseded_at IS NULL
+             AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))) AS live,
+         (SELECT COUNT(*) FROM files f
+           WHERE f.order_id = o.id AND f.kind = 'delivery'
+             AND f.superseded_at IS NULL
+             AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
+             AND f.review_state = 'approved') AS approved,
+         o.status, o.closed_at
+       FROM orders o WHERE o.id = ?1`
+    ).bind(orderId).first();
+    if (!row || row.closed_at || row.status !== 'delivered') return;
+    if (!row.live || row.approved !== row.live) return;
+
+    await env.DB.batch([
+      env.DB.prepare("UPDATE orders SET closed_at = datetime('now') WHERE id = ?1 AND closed_at IS NULL").bind(orderId),
+      env.DB.prepare(
+        `INSERT INTO order_events (order_id, status, note, actor)
+         VALUES (?1, 'delivered', ?2, 'system')`
+      ).bind(orderId, 'Alle beelden goedgekeurd — bestelling afgerond. Downloaden blijft mogelijk.'),
+    ]);
+  } catch (err) {
+    // Afronden is een afronding, geen handeling. Mislukt het, dan is het
+    // gevolg dat de bestelling nog een dag openstaat — geen reden om de
+    // goedkeuring die de klant net gaf te laten mislukken.
+    console.error('[account] afronden overgeslagen voor bestelling', orderId, '—', err?.message || err);
+  }
+}
+
 async function handleFileReview({ request, env }, customer) {
   const home = '/account/orders';
   const form = await request.formData().catch(() => null);
@@ -1685,6 +1742,8 @@ async function handleFileReview({ request, env }, customer) {
       await env.DB.prepare(
         `UPDATE files SET review_state = 'approved', review_note = NULL, reviewed_at = datetime('now') WHERE id = ?1`
       ).bind(fileId).run();
+      // Was dit de laatste? Dan is de bestelling af — zie maybeClose().
+      await maybeClose(env, owned.order_id);
     } else if (action === 'undo') {
       // Reversible on purpose — same reasoning as portal.js: a mis-tapped
       // Approve must not strand a client with a decision they cannot take back.

@@ -124,7 +124,8 @@ export async function adminGet(context) {
     // voordat ze een query in gaan.
     const q = String(url.searchParams.get('q') || '').trim().slice(0, 80);
     const wantedFilter = String(url.searchParams.get('f') || '');
-    const filter = ['revisions', 'unpaid', 'unannounced'].includes(wantedFilter) ? wantedFilter : '';
+    const filter = ['revisions', 'unpaid', 'unannounced', 'paid_undelivered', 'delivered_unpaid'].includes(wantedFilter)
+      ? wantedFilter : '';
     const hidden = url.searchParams.get('hidden') === '1';
 
     const [revisions, orders, counts, statusCounts] = await Promise.all([
@@ -2010,7 +2011,7 @@ async function loadTodayCounts(env) {
       return Number(row?.n || 0);
     } catch { return 0; }
   };
-  const [newToday, inProduction, checking, undelivered, unpaid, revisions, toAnnounce] = await Promise.all([
+  const [newToday, inProduction, checking, undelivered, unpaid, revisions, owed, toAnnounce] = await Promise.all([
     // VERBORGEN TELT NERGENS MEE. Een testbestelling van jezelf hoort niet in
     // "vandaag binnengekomen" en niet in "onbetaald" — anders is verbergen een
     // halve maatregel die de cijfers laat liegen. one() vangt de fout af als
@@ -2038,11 +2039,12 @@ async function loadTodayCounts(env) {
     // routineus werk klaar voordat het klaar is — en die meetellen zou de
     // strook laten waarschuwen voor werk dat nog niet af is. Wat hier hoort te
     // staan is de bestelling waarvan de klant denkt dat hij alles heeft.
+    one("SELECT COUNT(*) AS n FROM orders WHERE status = 'delivered' AND payment_status != 'paid' AND total_cents > 0 AND hidden_at IS NULL"),
     one(`SELECT COUNT(DISTINCT f.order_id) AS n FROM files f JOIN orders o ON o.id = f.order_id
           WHERE f.kind = 'delivery' AND f.announced_at IS NULL AND f.superseded_at IS NULL
             AND o.delivery_mailed_at IS NOT NULL AND o.hidden_at IS NULL`),
   ]);
-  return { newToday, inProduction, checking, undelivered, unpaid, revisions, toAnnounce };
+  return { newToday, inProduction, checking, undelivered, unpaid, revisions, owed, toAnnounce };
 }
 
 function todayStrip(c) {
@@ -2056,6 +2058,7 @@ function todayStrip(c) {
     ${cell(c.unpaid, 'unpaid', true)}
     ${cell(c.revisions, 'revisions', true)}
     ${cell(c.toAnnounce, 'to announce', true)}
+    ${cell(c.owed, 'delivered, not paid', true)}
   </div>`;
 }
 
@@ -2715,6 +2718,16 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
     clauses.push("EXISTS (SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.review_state = 'revision_requested')");
   } else if (filter === 'unpaid') {
     clauses.push("payment_status = 'unpaid' AND total_cents > 0");
+  } else if (filter === 'paid_undelivered') {
+    // WAAR GELD DOORHEEN LOOPT, deel één: betaald en nog niet geleverd. Dat is
+    // een belofte die openstaat, en de enige reden dat die lijst niet bestond
+    // is dat je hem uit twee kolommen moet samenstellen die nooit naast elkaar
+    // stonden.
+    clauses.push("payment_status = 'paid' AND status IN ('received','in_production','human_check')");
+  } else if (filter === 'delivered_unpaid') {
+    // Deel twee, en de duurste: geleverd en nooit betaald. Dit is het enige
+    // filter in dit dashboard dat over verlies gaat in plaats van over werk.
+    clauses.push("status = 'delivered' AND payment_status != 'paid' AND total_cents > 0");
   } else if (filter === 'unannounced') {
     clauses.push(`delivery_mailed_at IS NOT NULL AND EXISTS (
       SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.kind = 'delivery' AND f.announced_at IS NULL)`);
@@ -3052,6 +3065,8 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
   ${chip('revisions', 'Revisions open')}
   ${chip('unpaid', 'Unpaid')}
   ${chip('unannounced', 'Delivered, not announced')}
+  ${chip('paid_undelivered', 'Paid, not delivered')}
+  ${chip('delivered_unpaid', 'Delivered, not paid')}
   <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Hiding hidden again' : 'Include hidden'}</a>
   <a class="fl-chip" href="/admin/log">Activity log &rarr;</a>
 </div>`;

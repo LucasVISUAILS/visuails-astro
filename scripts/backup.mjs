@@ -1,0 +1,183 @@
+/* Een kopie van alles wat je kwijt kunt raken. `npm run backup`
+ *
+ *   npm run backup              → database + een inventaris van R2
+ *   npm run backup -- --files   → ook de bestanden zelf ophalen (traag)
+ *   npm run backup -- --keep 10 → oudere back-ups opruimen, tien bewaren
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * WAAROM DIT HET BELANGRIJKSTE SCRIPT IN DEZE MAP IS.
+ *
+ * Er is geen back-up. Niet van D1, niet van R2. Alles wat deze week gebouwd is
+ * — de bestellingen, de revisiegeschiedenis, de indeling per product, de
+ * notities — staat op één plek, en één verkeerd `DELETE` of één account dat op
+ * slot gaat is genoeg. Cloudflare doet aan point-in-time recovery voor D1
+ * (dertig dagen op het betaalde plan), maar dat is hún kopie op hún account:
+ * precies het ding dat je niet meer kunt gebruiken op de dag dat je het account
+ * kwijt bent. Een bestand op je eigen schijf is dat wel.
+ *
+ * WAT ER IN DE KOPIE ZIT.
+ *
+ *   <datum>-d1.sql        de hele database als SQL, teruglaadbaar met
+ *                         `wrangler d1 execute --file` op een lege database
+ *   <datum>-r2.json       elke R2-sleutel die de database noemt, met bestandsnaam,
+ *                         grootte en waar hij bij hoort
+ *   <datum>-objects/      de bestanden zelf — alleen met --files
+ *
+ * WAAROM DE INVENTARIS APART, EN STANDAARD ZONDER DE BESTANDEN. De database is
+ * een paar honderd kilobyte en in seconden binnen; de bucket is gigabytes en
+ * duurt uren. Een dagelijkse kopie van het eerste is een gewoonte die je
+ * volhoudt, een dagelijkse kopie van het tweede niet. De inventaris is het
+ * verschil tussen "alles weg" en "ik weet precies welke 340 bestanden weg zijn
+ * en bij welke klant ze hoorden" — en dat laatste is een gesprek dat je kunt
+ * voeren.
+ *
+ * WAT DIT NIET IS: een herstelknop. Terugzetten is met opzet handwerk, want de
+ * dag dat je het nodig hebt wil je kijken naar wat je terugzet voordat je het
+ * over de echte database heen giet. Onderaan staat hoe.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { wrangler } from './lib/wrangler.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const OUT = path.join(ROOT, 'backups');
+
+const argv = process.argv.slice(2);
+const hash = argv.findIndex((a) => a.startsWith('#'));
+const args = hash === -1 ? argv : argv.slice(0, hash);
+const WITH_FILES = args.includes('--files');
+const KEEP = (() => {
+  const i = args.indexOf('--keep');
+  const n = i === -1 ? NaN : Number(args[i + 1]);
+  return Number.isInteger(n) && n > 0 ? n : 0;
+})();
+
+const DB = (() => {
+  const toml = fs.readFileSync(path.join(ROOT, 'wrangler.toml'), 'utf8');
+  const m = /database_name\s*=\s*"([^"]+)"/.exec(toml);
+  if (!m) throw new Error('backup: geen database_name in wrangler.toml');
+  return m[1];
+})();
+
+const BUCKET = (() => {
+  const toml = fs.readFileSync(path.join(ROOT, 'wrangler.toml'), 'utf8');
+  const m = /bucket_name\s*=\s*"([^"]+)"/.exec(toml);
+  return m ? m[1] : null;
+})();
+
+/* De datum in de bestandsnaam is lokale tijd en niet UTC, omdat je hem leest en
+ * niet sorteert op een server: "de kopie van gisteravond" moet gisteravond
+ * heten. Sorteren blijft werken, want het formaat is jaar-maand-dag. */
+const stamp = (() => {
+  const d = new Date();
+  const p2 = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}`;
+})();
+
+fs.mkdirSync(OUT, { recursive: true });
+
+console.log(`VISUAILS · back-up ${stamp}\n`);
+
+// ── 1 · de database ───────────────────────────────────────────────────────────
+const sqlFile = path.join(OUT, `${stamp}-d1.sql`);
+process.stdout.write('  database exporteren… ');
+/* `-y` beantwoordt de waarschuwing die wrangler geeft voordat hij de database
+ * even op slot zet. Oudere versies kennen die vlag niet en weigeren hem, dus
+ * bij "unknown argument" gaat hij er zonder — liever een script dat op twee
+ * versies werkt dan een vlag die je moet onthouden. */
+let dump = await wrangler(['d1', 'export', DB, '--remote', '-y', '--output', sqlFile]);
+if (!dump.ok && /unknown argument|unrecognized/i.test(dump.out)) {
+  dump = await wrangler(['d1', 'export', DB, '--remote', '--output', sqlFile]);
+}
+if (!dump.ok || !fs.existsSync(sqlFile)) {
+  console.log('mislukt');
+  console.error(dump.out.trim().slice(0, 1200));
+  process.exit(1);
+}
+const sqlKb = (fs.statSync(sqlFile).size / 1024).toFixed(0);
+console.log(`${path.basename(sqlFile)}  ${sqlKb} kB`);
+
+/* EEN EXPORT DIE GEEN TABELLEN BEVAT IS GEEN EXPORT. Dat klinkt onmogelijk,
+ * maar een geslaagde aanroep met een leeg of half bestand is precies het soort
+ * back-up dat je pas ontdekt op de dag dat je hem nodig hebt. Twee goedkope
+ * controles: staat er een CREATE TABLE in, en staan de tabellen erin die er
+ * horen te zijn. */
+const sql = fs.readFileSync(sqlFile, 'utf8');
+const tables = [...sql.matchAll(/CREATE TABLE (?:IF NOT EXISTS )?["'`]?(\w+)/gi)].map((m) => m[1]);
+const MUST_HAVE = ['orders', 'customers', 'files'];
+const missing = MUST_HAVE.filter((t) => !tables.includes(t));
+if (missing.length) {
+  console.error(`\n  ✖ de export mist ${missing.join(', ')} — dit is geen bruikbare kopie.`);
+  console.error('    Het bestand blijft staan zodat je kunt kijken wat er wél in zit.');
+  process.exit(1);
+}
+console.log(`     ${tables.length} tabellen, waaronder ${MUST_HAVE.join(', ')}`);
+
+// ── 2 · de inventaris van R2 ─────────────────────────────────────────────────
+process.stdout.write('  inventaris van de bestanden… ');
+const inv = await wrangler([
+  'd1', 'execute', DB, '--remote', '--json', '--command',
+  `SELECT f.id, f.order_id, o.ref, f.kind, f.filename, f.bytes, f.r2_key, f.preview_key
+     FROM files f LEFT JOIN orders o ON o.id = f.order_id ORDER BY f.id`,
+]);
+let files = [];
+if (inv.ok) {
+  try { files = JSON.parse(inv.stdout.slice(inv.stdout.indexOf('[')))?.[0]?.results || []; } catch { /* hieronder */ }
+}
+if (!files.length) {
+  console.log('leeg of mislukt');
+  console.error('    De database-export is er wel. Zonder inventaris weet je bij verlies niet');
+  console.error('    welke bestanden het waren — draai dit deel later nog eens.');
+} else {
+  const manifest = path.join(OUT, `${stamp}-r2.json`);
+  const total = files.reduce((n, f) => n + (Number(f.bytes) || 0), 0);
+  fs.writeFileSync(manifest, JSON.stringify({
+    taken_at: stamp, database: DB, bucket: BUCKET,
+    count: files.length, bytes: total, files,
+  }, null, 2));
+  console.log(`${files.length} bestanden, ${(total / 1024 / 1024).toFixed(0)} MB`);
+}
+
+// ── 3 · de bestanden zelf, alleen als erom gevraagd is ───────────────────────
+if (WITH_FILES && files.length) {
+  if (!BUCKET) {
+    console.error('  ✖ geen bucket_name in wrangler.toml — kan de bestanden niet ophalen.');
+  } else {
+    const dir = path.join(OUT, `${stamp}-objects`);
+    fs.mkdirSync(dir, { recursive: true });
+    const keys = files.flatMap((f) => [f.r2_key, f.preview_key].filter(Boolean));
+    console.log(`  ${keys.length} objecten ophalen uit ${BUCKET} — dit duurt even.`);
+    let done = 0;
+    let failed = 0;
+    for (const key of keys) {
+      // Het pad uit de sleutel nabouwen, zodat de map er straks uitziet zoals de
+      // bucket: delivery/<ref>/… en intake/<ref>/…
+      const dest = path.join(dir, key.replace(/[^\w./-]/g, '_'));
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      const r = await wrangler(['r2', 'object', 'get', `${BUCKET}/${key}`, '--remote', '--file', dest]);
+      if (r.ok) { done++; } else { failed++; }
+      if ((done + failed) % 25 === 0) process.stdout.write(`\r     ${done + failed}/${keys.length}`);
+    }
+    console.log(`\r     ${done} opgehaald${failed ? `, ${failed} mislukt` : ''}          `);
+  }
+} else if (files.length) {
+  console.log('  (de bestanden zelf niet meegenomen — gebruik --files als je die ook wilt)');
+}
+
+// ── 4 · opruimen ─────────────────────────────────────────────────────────────
+if (KEEP) {
+  const sets = [...new Set(fs.readdirSync(OUT).map((f) => f.slice(0, 16)))].sort();
+  const drop = sets.slice(0, Math.max(0, sets.length - KEEP));
+  for (const old of drop) {
+    for (const f of fs.readdirSync(OUT).filter((f) => f.startsWith(old))) {
+      fs.rmSync(path.join(OUT, f), { recursive: true, force: true });
+    }
+  }
+  if (drop.length) console.log(`  ${drop.length} oudere back-up(s) opgeruimd, ${KEEP} bewaard`);
+}
+
+console.log(`\n▶ ${path.relative(ROOT, OUT)}/${stamp}-*`);
+console.log('\nTerugzetten is met opzet handwerk. Op een LEGE database:');
+console.log(`  npx wrangler d1 execute ${DB} --remote --file backups/${stamp}-d1.sql`);
+console.log('Kijk eerst in het bestand. Over een database die nog data heeft, giet je dit niet.');
