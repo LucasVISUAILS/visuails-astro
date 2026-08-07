@@ -1385,3 +1385,11 @@ details.ask { margin-top: 0; }
 .shot-filetype {
   font-size: .8rem; font-weight: 800; letter-spacing: .1em; color: var(--ink-3);
 }
+
+/* De taalkeuze, onderin de zijbalk bij de naam van het merk — waar je hem zoekt
+   als je hem zoekt, en waar hij niet in de weg staat als je hem niet zoekt. */
+.sidelang {
+  display: inline-block; margin: .1rem 0 .6rem; font-size: .78rem;
+  color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px;
+}
+.sidelang:hover { color: var(--ink); }

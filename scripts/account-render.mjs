@@ -129,12 +129,24 @@ function makeDb() {
 async function render(section, lang) {
   const token = await mintToken();
   const url = new URL(`https://visuails.com${section}`);
-  if (lang === 'en') url.searchParams.set('lang', 'en');
+  /* DE TAAL KOMT UIT DE COOKIE, niet uit ?lang= — sinds 7 augustus 2026 zet die
+   * parameter de keuze vast en stuurt hij door naar dezelfde pagina zónder hem.
+   * Dit script kreeg daardoor een 303 met een lege body terug en maakte een
+   * schermafdruk van niets: een witte PNG die er precies zo uitziet als een
+   * stuk dashboard. Precies de reden dat dit script bestaat, en precies de
+   * manier waarop het zelf kon liegen. */
   const request = new Request(url, {
-    headers: { cookie: `vis_account=${token}`, 'accept-language': lang === 'nl' ? 'nl-NL,nl;q=0.9' : 'en-GB,en;q=0.9' },
+    headers: {
+      cookie: `vis_account=${token}; vis_lang=${lang}`,
+      'accept-language': lang === 'nl' ? 'nl-NL,nl;q=0.9' : 'en-GB,en;q=0.9',
+    },
   });
   const res = await accountGet({ request, env: { DB: makeDb() }, waitUntil() {} });
-  return res.text();
+  const body = await res.text();
+  if (res.status !== 200 || body.length < 500) {
+    throw new Error(`account-render: ${section} (${lang}) gaf ${res.status} met ${body.length} tekens — dat is geen pagina.`);
+  }
+  return body;
 }
 
 /* De foto's. /account/files/<id>/f haalt normaal uit R2; hier draaien we door

@@ -215,7 +215,12 @@ const DETAIL_MAX = 200;
 const COPY = {
   en: {
     loginTitle: 'Sign in',
-    loginLede: 'Enter the email you order under. We send a link — no password to remember.',
+    // "Enter the email you order under" — Lucas, 7 augustus: *"is die zin niet
+    // heel raar onder sign in."* Ja. "Order under" is geen Engels dat iemand
+    // spreekt, en de tweede helft was drie losse mededelingen achter elkaar. De
+    // zin heeft maar twee dingen te doen: zeggen WELK adres, en wegnemen dat je
+    // een wachtwoord staat te zoeken dat je nooit hebt gehad.
+    loginLede: 'Use the email address you ordered with and we\u2019ll send you a link to sign in. There is no password.',
     loginEmailLabel: 'Email',
     loginSubmit: 'Send my link',
     loginTooMany: 'Too many attempts. Wait a minute and try again.',
@@ -435,7 +440,7 @@ const COPY = {
 
   nl: {
     loginTitle: 'Inloggen',
-    loginLede: 'Vul het e-mailadres in waaronder je bestelt. We sturen een link — geen wachtwoord nodig.',
+    loginLede: 'Vul het e-mailadres in waarmee je hebt besteld, dan sturen we je een inloglink. Een wachtwoord heb je niet nodig.',
     loginEmailLabel: 'E-mail',
     loginSubmit: 'Stuur mijn link',
     loginTooMany: 'Te veel pogingen. Even wachten en opnieuw proberen.',
@@ -945,8 +950,37 @@ function accountSessionExpiry(fromDate = new Date()) {
  * shape, not the plan" when asked, so Plan & billing renders real account
  * facts and a per-order-billing note, never a fabricated quota.
  */
+/**
+ * De taalkeuze uit de cookie, of null.
+ *
+ * Eén cookie voor het hele accountgedeelte, met dezelfde vlaggen als de sessie
+ * (zie COOKIE_FLAGS en de noot daar over SameSite=Lax en de inloglink). Geen
+ * kolom op de klant: dit is een voorkeur van het APPARAAT waarop iemand kijkt,
+ * niet van het merk. De inkoper en de eigenaar delen één account en hoeven niet
+ * dezelfde taal te delen.
+ */
+function langCookie(request) {
+  const raw = request.headers.get('cookie') || '';
+  const m = /(?:^|;\s*)vis_lang=(nl|en)(?:;|$)/.exec(raw);
+  return m ? m[1] : null;
+}
+
 async function sectionGet(context, customer, section) {
   const { env, request } = context;
+
+  /* ?lang=nl of ?lang=en legt de keuze vast en stuurt je terug naar dezelfde
+   * pagina zonder de parameter. Zonder die omleiding blijft hij in de URL
+   * hangen en deelt iemand straks een link die de taal van de ontvanger
+   * overschrijft. */
+  try {
+    const url = new URL(request.url);
+    const wanted = url.searchParams.get('lang');
+    if (wanted === 'nl' || wanted === 'en') {
+      url.searchParams.delete('lang');
+      const back = `${url.pathname}${url.search}${url.hash}`;
+      return seeOther(back, [`vis_lang=${wanted}; Max-Age=${365 * 86400}; ${COOKIE_FLAGS}`]);
+    }
+  } catch { /* geen geldige URL: dan is er ook niets te kiezen */ }
   let orders, files, models, locks, details, events;
   try {
     // `details` joins the same Promise.all rather than being fetched inside
@@ -972,7 +1006,22 @@ async function sectionGet(context, customer, section) {
   // system with zero orders yet (should not happen — accounts are never
   // created except by ordering — but nothing here assumes it) falls back to
   // Accept-Language, same as the pre-login pages.
-  const lang = orders[0]?.lang === 'nl' ? 'nl' : orders[0]?.lang === 'en' ? 'en' : negotiate(request);
+  /*
+   * DE TAAL VAN HET DASHBOARD — en wie hem kiest. 7 augustus 2026.
+   *
+   * Hij kwam uit de laatste bestelling en verder nergens uit. Dat is een goede
+   * gok en een slecht slot: een merk dat één keer in het Nederlands bestelde,
+   * kon daarna nooit meer een Engels scherm krijgen — ook niet als degene die
+   * inlogt de inkoper uit Berlijn is. Beide talen bestonden volledig; er was
+   * alleen geen deur.
+   *
+   * De volgorde is nu: wat de klant zelf koos (cookie), anders zijn laatste
+   * bestelling, anders zijn browser. Een keuze wint van een gok, en een gok
+   * wint van niets — dezelfde volgorde als negotiate() zelf aanhoudt.
+   */
+  const chosen = langCookie(request);
+  const lang = chosen
+    || (orders[0]?.lang === 'nl' ? 'nl' : orders[0]?.lang === 'en' ? 'en' : negotiate(request));
   const t = COPY[lang];
 
   const filesByOrder = groupFilesByOrder(files);
@@ -2237,6 +2286,10 @@ function shellBody(t, lang, customer, active, inner) {
     <div class="sideuser">
       <span class="sideuser-name">${esc(customer.brand || customer.name || customer.email)}</span>
       <span class="sideuser-email">${esc(customer.email)}</span>
+      <!-- De taalknop. Eén link naar de andere taal en niet twee links waarvan
+           er één de huidige is: "Nederlands · English" met de actieve grijs is
+           twee dingen om te lezen voor een keuze met twee uitkomsten. -->
+      <a class="sidelang" href="?lang=${lang === 'nl' ? 'en' : 'nl'}">${lang === 'nl' ? 'English' : 'Nederlands'}</a>
       <form method="post" action="/account/logout"><button class="btn btn-ghost btn-block" type="submit">${esc(t.signOut)}</button></form>
     </div>
   </aside>

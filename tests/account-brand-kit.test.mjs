@@ -500,5 +500,40 @@ section('§8 · stap 6: afgerond zodra het laatste beeld is goedgekeurd');
     !r.writes.some((w) => /UPDATE orders SET closed_at/.test(w.sql)));
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+section('§9 · het dashboard is tweetalig, en de klant mag kiezen');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Beide talen bestonden volledig, maar de taal kwam uit de laatste BESTELLING
+// en verder nergens uit. Een merk dat één keer in het Nederlands bestelde kon
+// daarna nooit meer een Engels scherm krijgen — ook niet als degene die inlogt
+// de inkoper uit Berlijn is. Er waren twee talen en één deur.
+
+{
+  const token = await mintToken();
+  const db = makeDb();
+  const req = new Request('https://visuails.com/account?lang=nl', {
+    headers: { cookie: `vis_account=${token}`, 'accept-language': 'en-GB,en;q=0.9' },
+  });
+  const res = await accountGet({ request: req, env: { DB: db }, waitUntil() {} });
+  check('choosing a language redirects and remembers it', res.status === 303, res.status);
+  check('the parameter is dropped so a shared link cannot force it',
+    res.headers.get('location') === '/account', res.headers.get('location'));
+  check('and the cookie is scoped to the dashboard, not the whole site',
+    /vis_lang=nl/.test(res.headers.get('set-cookie') || '') && /Path=\/account/.test(res.headers.get('set-cookie') || ''));
+}
+
+{
+  const token = await mintToken();
+  const db = makeDb();
+  // De bestellingen in deze fixture staan op 'en'; de cookie moet daaroverheen.
+  const req = new Request('https://visuails.com/account', {
+    headers: { cookie: `vis_account=${token}; vis_lang=nl`, 'accept-language': 'en-GB,en;q=0.9' },
+  });
+  const html = await (await accountGet({ request: req, env: { DB: db }, waitUntil() {} })).text();
+  check('the choice beats the language of the last order', html.includes('Welkom terug'));
+  check('and the toggle then offers the way back', /href="\?lang=en"/.test(html));
+}
+
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);
 process.exit(fails ? 1 : 0);
