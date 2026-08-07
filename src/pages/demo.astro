@@ -1,17 +1,36 @@
 ---
-// VISUAILS — /demo (Engels). De pagina zelf staat in DemoGame.astro zodat
-// /demo en /nl/demo niet uit elkaar kunnen lopen; hier staat alleen de meta.
+// VISUAILS — /demo (Engels). De walkthrough zelf staat in FigWalk.astro zodat
+// /demo, /nl/demo en /how-it-works niet uit elkaar kunnen lopen; hier staat
+// alleen de meta en de kop.
+//
+// WAT HIER STOND: DemoGame — het sleepspel. Zie de kop van src/data/demo.js
+// voor waarom dat is opgegaan in de walkthrough in plaats van ernaast te
+// blijven staan.
 //
 // noindex staat er NIET op, en dat is een keuze: dit is precies het soort
 // pagina waar iemand op zoekt die "AI productfoto's proberen" intikt, en het is
-// een eerlijke landing — je kunt hem spelen zonder account, zonder betaling en
-// zonder je eigen foto's af te staan.
+// een eerlijke landing — je kunt hem doorlopen zonder account, zonder betaling
+// en zonder je eigen foto's af te staan.
 import Layout from '../layouts/Layout.astro';
-import DemoGame from '../components/DemoGame.astro';
+import FigWalk from '../components/FigWalk.astro';
+import { WALK_COPY } from '../data/demo.js';
+const c = WALK_COPY.en;
 ---
 <Layout
-  title="Try it — VISUAILS"
-  description="Drag a photo in, make two choices, and see the set that comes back. A real order, played on a product that is not yours."
+  title="See how an order works — VISUAILS"
+  description="Pick a service and scroll. One order, from the phone photo you send to the files that come back — catalog, lifestyle or video, each on its own."
 >
-  <DemoGame lang="en" />
+  <section class="section-tight"><div class="container">
+    <div class="walk-head">
+      <h1 class="display">{c.title}</h1>
+      <p class="lead">{c.lede}</p>
+    </div>
+    <FigWalk lang="en" />
+  </div></section>
 </Layout>
+
+<style>
+  .walk-head { max-width: 52rem; margin: 0 auto clamp(2.4rem, 5vw, 4rem); text-align: center; }
+  .walk-head .display { font-size: clamp(2rem, 5vw, 3.4rem); }
+  .walk-head .lead { margin: 1.2rem auto 0; max-width: 60ch; }
+</style>
