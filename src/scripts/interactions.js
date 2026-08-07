@@ -45,6 +45,8 @@ const I18N = {
   en: {
     sourceThanks: 'Thanks — that helps us a lot.',
     tyRefTitle: 'Your reference', tyRefNote: 'Keep this handy — quote it if you message us about this order.',
+    tyPayNote: 'This order is not paid yet. Production starts once the payment comes through.',
+    tyPayCta: 'Complete the payment',
     tsSending: 'Uploading…',
     tsDone: 'Uploaded',
     tsRemove: 'Remove',
@@ -78,6 +80,8 @@ const I18N = {
   nl: {
     sourceThanks: 'Bedankt — daar hebben we veel aan.',
     tyRefTitle: 'Je referentie', tyRefNote: 'Bewaar deze — vermeld hem als je ons over deze bestelling appt of mailt.',
+    tyPayNote: 'Deze bestelling is nog niet betaald. Zodra de betaling binnen is, gaan we aan de slag.',
+    tyPayCta: 'Rond de betaling af',
     tsSending: 'Uploaden…',
     tsDone: 'Geüpload',
     tsRemove: 'Verwijderen',
@@ -807,15 +811,43 @@ function initWizards() {
 // terms: a query string is read by the referrer header, browser history, and
 // anything that logs URLs. A reference is the right thing to show, and the only
 // thing worth putting there.
+/**
+ * Is dit een betaallink van Mollie, en niets anders?
+ *
+ * WAAROM DIT ERBIJ HOORT. `pay` komt uit de adresbalk, en alles uit de adresbalk
+ * is van de bezoeker — of van wie hem een link stuurde. Zonder controle is dit
+ * een open doorverwijzing: iemand mailt een klant
+ * /thank-you?pay=https://niet-mollie.example en de knop op ONZE bedanktpagina,
+ * in onze groene kleur, stuurt hem naar een nepbetaalpagina. Vandaar: https, en
+ * het domein moet mollie.com zijn of eronder hangen.
+ */
+function molliePayUrl(raw) {
+  if (!raw) return null;
+  let u;
+  try { u = new URL(raw); } catch { return null; }
+  if (u.protocol !== 'https:') return null;
+  if (u.hostname !== 'mollie.com' && !u.hostname.endsWith('.mollie.com')) return null;
+  return u.href;
+}
+
 function initThankYou() {
   const box = document.querySelector('#ty-summary');
   if (!box) return;
-  const ref = (new URLSearchParams(location.search).get('ref') || '').trim();
+  const params = new URLSearchParams(location.search);
+  const ref = (params.get('ref') || '').trim();
   if (!/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) return;
   const d = t18();
+  const pay = molliePayUrl(params.get('pay'));
   box.innerHTML = `<h4 style="margin-bottom:.4rem">${d.tyRefTitle}</h4>`
     + `<p style="margin:0;font-size:1.15rem;letter-spacing:.02em"><strong>${ref.toUpperCase()}</strong></p>`
-    + `<p style="margin:.55rem 0 0;color:var(--ink-3);font-size:.9rem">${d.tyRefNote}</p>`;
+    + `<p style="margin:.55rem 0 0;color:var(--ink-3);font-size:.9rem">${d.tyRefNote}</p>`
+    // De betaalknop staat ÍN het referentievak en niet ergens los: dit is het
+    // enige blok op de pagina dat over deze ene bestelling gaat, en de
+    // handeling hoort bij het nummer waar hij bij hoort.
+    + (pay
+      ? `<p style="margin:1rem 0 .5rem;font-size:.92rem;color:var(--ink-2)">${d.tyPayNote}</p>`
+        + `<a class="btn btn-primary" href="${pay}" rel="noopener">${d.tyPayCta}</a>`
+      : '');
   box.style.display = 'block';
 }
 

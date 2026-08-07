@@ -221,6 +221,18 @@ const COPY = {
     // zin heeft maar twee dingen te doen: zeggen WELK adres, en wegnemen dat je
     // een wachtwoord staat te zoeken dat je nooit hebt gehad.
     loginLede: 'Use the email address you ordered with and we\u2019ll send you a link to sign in. There is no password.',
+    // WIE HIER KAN INLOGGEN, EN WAAROM DAT ER STAAT. Er is geen aanmeldknop:
+    // een account ontstaat bij een bestelling, en verder nergens. Wie dat niet
+    // weet, vult zijn adres in, krijgt "check je e-mail", en wacht op een mail
+    // die nooit komt — want het antwoord is met opzet hetzelfde of het adres nu
+    // bestaat of niet (zie handleLoginPost over accountopsomming). Deze zin is
+    // wat die stilte verklaarbaar maakt vóórdat hij valt.
+    //
+    // "Geplaatst", niet "betaald": de klantrij wordt aangemaakt op het moment
+    // dat de bestelling binnenkomt (functions/api/order.js, upsertCustomer),
+    // dus iemand met een openstaande betaling kán inloggen en hoort dat ook te
+    // kunnen — daar staat zijn betaallink.
+    loginWho: 'Your account is made when you place an order. There is no separate sign-up, so this only works with an address that has ordered with us.',
     loginEmailLabel: 'Email',
     loginSubmit: 'Send my link',
     loginTooMany: 'Too many attempts. Wait a minute and try again.',
@@ -441,6 +453,7 @@ const COPY = {
   nl: {
     loginTitle: 'Inloggen',
     loginLede: 'Vul het e-mailadres in waarmee je hebt besteld, dan sturen we je een inloglink. Een wachtwoord heb je niet nodig.',
+    loginWho: 'Je account ontstaat zodra je een bestelling plaatst. Aanmelden kan niet apart, dus dit werkt alleen met een adres waarmee al besteld is.',
     loginEmailLabel: 'E-mail',
     loginSubmit: 'Stuur mijn link',
     loginTooMany: 'Te veel pogingen. Even wachten en opnieuw proberen.',
@@ -2169,6 +2182,7 @@ function loginBody(t, lang, error = null) {
     <input type="email" name="email" placeholder="${esc(t.loginEmailLabel)}" autocomplete="email" required>
     <button class="btn btn-primary" type="submit">${esc(t.loginSubmit)}</button>
   </form>
+  <p class="loginwho">${esc(t.loginWho)}</p>
 </div>`;
 }
 
@@ -2182,6 +2196,10 @@ function checkEmailBody(t, lang) {
   <h1>${esc(t.checkTitle)}</h1>
   <p class="lede">${esc(t.checkBody)}</p>
   <p class="mailnote">${esc(mailNote(lang))}</p>
+  <!-- Hier valt de stilte als het adres niet bestaat: geen mail, geen uitleg.
+       Dezelfde zin als op het inlogscherm, want dit is de plek waar iemand hem
+       nodig heeft in plaats van waar hij hem las. -->
+  <p class="loginwho">${esc(t.loginWho)}</p>
 </div>`;
 }
 

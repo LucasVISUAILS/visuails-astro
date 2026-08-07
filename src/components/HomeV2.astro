@@ -1482,7 +1482,14 @@ const FAQ_PICK = [
   <div class="container">
     <div class="hv-promise">
       <div>
-        <h2 class="hv-promise-h"><span>{c.promiseH[0]}</span><span class="dim">{c.promiseH[1]}</span></h2>
+        {/* WAAROM DEZE KOP VERANDERT — 7 augustus 2026. Lucas: *"deze secties
+            voelen niet alsof ze bij de homepage horen en erin zijn geplakt."*
+            Hij had gelijk, en het zat niet in de woorden maar in de vorm: dit
+            was de enige kop op de hele pagina met een eigen tweekleurentruc,
+            wit boven grijs. Elke andere sectie zet zijn nadruk op één manier —
+            een <em class="hv-accent"> op het deel dat het punt draagt. Twee
+            manieren om hetzelfde te doen leest als twee ontwerpers. */}
+        <h2 class="hv-promise-h"><span>{c.promiseH[0]}</span><span><em class="hv-accent">{c.promiseH[1]}</em></span></h2>
         <p class="hv-quote">{c.promiseQuote}</p>
         <p class="hv-sign"><strong>Lucas</strong> · {c.promiseSign}</p>
       </div>
@@ -1506,8 +1513,8 @@ const FAQ_PICK = [
       <h2>{c.closeH}</h2>
       <p class="lede">{c.closeLede}</p>
       <div class="statement actions">
-        <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.closeCta}</a>
-        <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.closeAlt}</a>
+        <a href={lp('/test-sample')} class="btn btn-primary">{c.closeCta}</a>
+        <a href={lp('/start')} class="btn btn-ghost">{c.closeAlt}</a>
       </div>
     </div>
   </div>
@@ -1772,8 +1779,12 @@ const FAQ_PICK = [
   .hv-promise { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: clamp(2rem, 5vw, 4rem); align-items: start; }
   .hv-promise-h { font-size: var(--t-h2); line-height: 1.05; letter-spacing: -0.035em; margin: 0; }
   .hv-promise-h span { display: block; }
-  .hv-promise-h .dim { color: var(--ink-3); }
-  .hv-quote { font-family: var(--font-editorial); font-style: italic; font-weight: 500; font-size: clamp(1.15rem, 1.9vw, 1.45rem); line-height: 1.45; color: var(--ink); margin: 1.4rem 0 0; max-width: 40ch; }
+  /* .dim is weg: die grijze tweede regel was de eigen truc van deze sectie. */
+  /* Een maat kleiner dan het stond. Op een telefoon liep het citaat over zes
+     regels op bijna kophoogte, en dan concurreren de kop en het citaat om
+     dezelfde rol — je leest twee koppen achter elkaar in plaats van een kop met
+     een onderbouwing. */
+  .hv-quote { font-family: var(--font-editorial); font-style: italic; font-weight: 500; font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.5; color: var(--ink-2); margin: 1.3rem 0 0; max-width: 42ch; }
   .hv-sign { margin: 1rem 0 0; font-size: .875rem; color: var(--ink-3); }
   .hv-sign strong { color: var(--ink-2); }
   .hv-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
@@ -1948,7 +1959,22 @@ const FAQ_PICK = [
      page ground now (.ground-blend in global.css), and a rounded corner under
      a 100px fade is a corner nobody can see — it only showed as two slivers of
      --bg-0 beside a plate that was already dissolving. */
+  /* ── de afsluiter is geen tweede hero ──────────────────────────────────
+     Lucas over deze sectie: *"voelt niet alsof hij bij de homepage hoort."*
+     Dat kwam van de maat. `.closing h2` in global.css staat op --t-hero, en
+     dat is exact dezelfde grootte als de kop bovenaan de pagina: je scrolt
+     tweeduizend pixels door een pagina van koppen op --t-h2 en dan begint er
+     ineens weer iets op heroformaat, gecentreerd, met twee grote knoppen. Het
+     leest als het begin van een andere pagina.
+
+     Hier dus op de maat van de pagina zelf. GESCOPET op .hv-close en niet
+     globaal aangepast: /portal, /studio en /compare gebruiken dezelfde
+     .closing en zijn kortere pagina's waar een grote laatste kop wél de
+     verhouding houdt. Dat is een oordeel per pagina, geen regel. */
   .hv-close { overflow: hidden; }
+  .hv-close .closing { min-height: min(34svh, 20rem); }
+  .hv-close .closing h2 { font-size: var(--t-h2); line-height: 1.05; letter-spacing: -0.03em; max-width: 18ch; }
+  .hv-close .closing .lede { font-size: var(--t-md, 1.05rem); max-width: 44ch; }
 </style>
 
 <script>

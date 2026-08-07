@@ -39,6 +39,12 @@ const description =
     <span class="eyebrow-page">Request received</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Thanks — we've got your request.</h1>
     <p class="lead" style="margin:1.2rem auto 0">We'll confirm the details by email — usually faster on WhatsApp.</p>
+    {/* See the Dutch page for the full note: this page said "request received"
+        and the card below promised we were preparing the visuals, while on a
+        paid order nothing starts until the payment lands. Worded
+        conditionally because the contact form, the checklist and the video
+        request land here too and have no payment link. */}
+    <p class="ty-pay"><strong>Is there a payment link in your confirmation email?</strong> Complete that payment — your order is noted, but production only starts once the payment has come through.</p>
     {/* The spam line. One sentence, from src/data/mailNote.js, printed on every
         screen that tells a customer to expect an email — this page, the
         "check your email" screen after requesting a sign-in link, and the
@@ -59,18 +65,28 @@ const description =
         <button type="button" class="source-btn" data-source="Other">Somewhere else</button>
       </div>
     </div>
+    {/* THE WAY IN, on the page where they are. Lucas: *"misschien bij thank you
+        page ook een link om in te loggen zetten zodat klanten gelijk hun
+        bestelling kunnen bekijken."* It is now the first button: an order was
+        just placed, and the question that follows an order is "where is it",
+        not "what should I have uploaded". The guidelines move to second.
+
+        The line under the row is not decoration. Nobody is signed in at this
+        moment — signing in means asking for a link by email — and a button
+        that quietly needs a second step is a button that reads as broken. */}
     <div class="flex" style="justify-content:center;margin-top:2rem">
-      <a href="/upload-guidelines" class="btn btn-primary btn-lg">Read upload guidelines</a>
-      <a href="/" class="btn btn-ghost btn-lg">Back to home</a>
+      <a href="/account" class="btn btn-primary btn-lg">See your order</a>
+      <a href="/upload-guidelines" class="btn btn-ghost btn-lg">Read upload guidelines</a>
       <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20just%20sent%20a%20request%20through%20the%20site." class="btn btn-wa" target="_blank" rel="noopener">
         Message us on WhatsApp
       </a>
     </div>
+    <p class="ty-signin">Sign in with the email address on this order and we&rsquo;ll send you a link — there is no password.</p>
   </div></section>
 
   <section class="section-tight"><div class="container">
     <div class="grid grid-3 reveal-group">
-      <div class="card reveal pending"><h4>What happens next</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">We review your brief, prepare your visuals, and a person quality-checks every result before it reaches you.</p></div>
+      <div class="card reveal pending"><h4>What happens next</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Once the payment has come through we review your brief, prepare your visuals, and a person quality-checks every result before it reaches you.</p></div>
       <div class="card reveal pending"><h4>Typical timing</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} from a complete brief to your download link. {T0.queue.en}; a brand-new custom style can take a little longer.</p></div>
       <div class="card reveal pending"><h4>Need to add something?</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reply to our message on WhatsApp or email <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> with any extra details or references.</p></div>
     </div>
@@ -87,6 +103,21 @@ const description =
 </Layout>
 
 <style>
+  /* The payment line. Left-aligned inside an otherwise centred hero, with a
+     green edge: centred text reads as atmosphere, and this is the only
+     sentence on the page that asks the reader to do something. */
+  .ty-pay {
+    max-width: 520px; margin: 1.4rem auto 0; padding: .85rem 1rem;
+    text-align: left; font-size: .95rem; line-height: 1.6; color: var(--ink-2);
+    background: var(--paper-lift, rgb(255 255 255 / .03));
+    border-left: 3px solid var(--accent);
+  }
+  .ty-pay strong { color: var(--ink); }
+  .ty-signin { margin: .9rem auto 0; max-width: 520px; font-size: .85rem; color: var(--ink-3); }
+  /* The spam note sits directly under the payment line; two stacked asides of
+     different widths read as two unrelated boxes. One column for both. */
+  .mail-note { max-width: 520px; margin-inline: auto; }
+
   .ty-summary h4 { font-size: 1rem; color: var(--ink); }
   /* .ty-dl / .ty-row / .ty-swatch / .ty-hex were removed in section 10. They
      styled a definition list of the submitted answers that initThankYou() built

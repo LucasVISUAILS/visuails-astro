@@ -1115,6 +1115,34 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    The height is a proportion of the viewport, not a fixed value: a 60px fade
    under a 900px band is a gradient, the same 60px under a 200px band is most
    of the section. */
+/* ---- --bg-seam — de kleur waar een naad naartoe hoort te vervagen ----------
+   Lucas, 7 augustus 2026, met twee schermafdrukken: *"het gaat voornamelijk om
+   de rand, dat niet mooi overloopt naar deze sectie"* en *"zelfde met homepage
+   overloop"*.
+
+   HET WAS ÉÉN FOUT OP VIER PLEKKEN, en de fade was niet stuk — hij vervaagde
+   naar de verkeerde kleur. Elke naad hier eindigt in `--bg-0` (#08090B), en dat
+   IS de paginakleur… tot augustus 2026, toen `body::before` erbij kwam: een
+   vaste laag met korrel, een lamp linksboven en een vignet (zie .lit onderaan
+   dit bestand). Die laag tilt de zichtbare grond naar ongeveer #0F1011.
+
+   De secties die hun eigen grond hebben — de hero's, de droomband, het
+   chroomveld, de afsluitplaat — maken allemaal een eigen stapelcontext
+   (`isolation: isolate`), dus die verlichting valt eronder en niet erin. Hun
+   fade eindigt daardoor op vlak #08090B terwijl de pagina eronder #0F1011 is:
+   een sprong van zeven waarden, op één rij pixels, dwars over het scherm. Dat
+   is precies wat er op beide schermafdrukken te zien is.
+
+   Gemeten en niet geraden: een pixelkolom over elke naad gaf 8,9,11 boven de
+   lijn en 15,16,17 eronder, op vier naden hetzelfde.
+
+   WAAROM ÉÉN GETAL EN GEEN BEREKENING. De lamp staat op het VENSTER en niet op
+   de pagina, dus de lift verschilt een paar waarden met waar een naad toevallig
+   op het scherm staat. Exact matchen kan dus niet en hoeft niet: het verschil
+   gaat van zeven waarden naar hooguit twee, en twee waarden onder een
+   korrellaag van ±3 ziet niemand. */
+:root { --bg-seam: #0F1011; }
+
 .ground-blend, .panel-tonal { position: relative; isolation: isolate; }
 .ground-blend::after, .panel-tonal::after {
   content: '';
@@ -1123,16 +1151,23 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   z-index: -1;
   pointer-events: none;
   background:
-    linear-gradient(to bottom, var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam,        clamp(3.5rem, 8vw, 8rem))),
-    linear-gradient(to top,    var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam-bottom, var(--seam, clamp(3.5rem, 8vw, 8rem))));
+    linear-gradient(to bottom, var(--seam-color, var(--bg-seam)) 0, rgb(8 9 11 / 0) var(--seam,        clamp(3.5rem, 8vw, 8rem))),
+    linear-gradient(to top,    var(--seam-color-bottom, var(--seam-color, var(--bg-seam))) 0, rgb(8 9 11 / 0) var(--seam-bottom, var(--seam, clamp(3.5rem, 8vw, 8rem))));
 }
 /* The two edges are separately adjustable because they meet different things.
    A section that runs into the footer wants a shorter bottom fade than one
    that runs into 9rem of empty page. --seam sets both; --seam-bottom overrides
    the lower one. */
 .ground-blend.blend-top-only::after {
-  background: linear-gradient(to bottom, var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam, clamp(3.5rem, 8vw, 8rem)));
+  background: linear-gradient(to bottom, var(--seam-color, var(--bg-seam)) 0, rgb(8 9 11 / 0) var(--seam, clamp(3.5rem, 8vw, 8rem)));
 }
+
+/* DE ONDERSTE NAAD VAN DE AFSLUITPLAAT IS DE UITZONDERING, en het is de enige.
+   Daaronder ligt de voet, en die schildert zijn eigen ondergrond — vlak
+   #08090B, zonder de verlichting erdoorheen (gemeten: 8,9,11, kaarsrecht). Naar
+   #0F1011 vervagen zou daar een lichte band tussen twee donkere vlakken zetten:
+   een nieuwe naad op de plek waar we er net een weghaalden. */
+main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 
 /* ---- the heroes, bottom edge only -----------------------------------------
    Lucas: *"ook het vervagen toevoegen op hero image."*
@@ -1171,7 +1206,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(to top, var(--bg-0) 0, rgb(8 9 11 / 0) var(--seam));
+  background: linear-gradient(to top, var(--seam-color, var(--bg-seam)) 0, rgb(8 9 11 / 0) var(--seam));
 }
 
 /* THE TWO HEROES STACK DIFFERENTLY AND THE FADE HAS TO SIT IN A DIFFERENT

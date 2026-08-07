@@ -1393,3 +1393,10 @@ details.ask { margin-top: 0; }
   color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px;
 }
 .sidelang:hover { color: var(--ink); }
+
+/* De regel die uitlegt hoe je aan een account komt. Onder het formulier en
+   gedempt: het is geen instructie maar een antwoord op de vraag die pas komt
+   als de mail uitblijft. */
+.loginwho {
+  margin: 1rem 0 0; font-size: .8rem; line-height: 1.55; color: var(--ink-3);
+}

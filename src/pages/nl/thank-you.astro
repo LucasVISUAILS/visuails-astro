@@ -39,6 +39,21 @@ const description =
     <span class="eyebrow-page">Aanvraag ontvangen</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Bedankt — we hebben je aanvraag ontvangen.</h1>
     <p class="lead" style="margin:1.2rem auto 0">We bevestigen de details per e-mail — meestal sneller via WhatsApp.</p>
+    {/* DE BETALING, EN WAAROM DIE HIER STAAT — 7 augustus 2026.
+        Lucas: *"in de thank you page staat nergens dat je de betaling dient te
+        voltooien in de bevestigingsmail. Daarna kan het orderproces pas gestart
+        worden."* Klopte: deze pagina zei "aanvraag ontvangen" en de kaart
+        eronder beloofde dat we je visuals gingen klaarmaken — terwijl er bij
+        een betaalde bestelling nog niets begint.
+
+        VOORWAARDELIJK GEFORMULEERD, want op deze pagina komt ook de
+        contactvraag, de gratis checklist en de video-aanvraag uit, en die
+        hebben geen betaallink. De zin is daarom waar in alle gevallen: staat er
+        een link in je mail, dan is dát de volgende stap; staat hij er niet, dan
+        lees je hem als niet van toepassing. Dit is een statische pagina zonder
+        toegang tot de bestelling, dus dit is de eerlijkste vorm die geen
+        JavaScript nodig heeft om te kloppen. */}
+    <p class="ty-pay"><strong>Staat er een betaallink in je bevestigingsmail?</strong> Rond die betaling af — je bestelling is genoteerd, maar we beginnen pas met produceren zodra de betaling binnen is.</p>
     {/* Zie de EN-pagina: één zin, uit src/data/mailNote.js. */}
     <p class="mail-note">{mailNote('nl')}</p>
     <!-- Filled client-side with the order reference /api/order redirected here
@@ -55,18 +70,25 @@ const description =
         <button type="button" class="source-btn" data-source="Other">Ergens anders</button>
       </div>
     </div>
+    {/* De weg naar binnen, op de pagina waar ze toch al zijn — zie de EN-pagina
+        voor de volledige noot. Kort: na een bestelling is de eerstvolgende
+        vraag "waar is hij", niet "wat had ik moeten uploaden", dus dit is nu de
+        eerste knop. De regel eronder staat er omdat niemand op dit moment is
+        ingelogd, en een knop die stilzwijgend een tweede stap nodig heeft leest
+        als een kapotte knop. */}
     <div class="flex" style="justify-content:center;margin-top:2rem">
-      <a href="/nl/upload-guidelines" class="btn btn-primary btn-lg">Lees de uploadrichtlijnen</a>
-      <a href="/nl" class="btn btn-ghost btn-lg">Terug naar home</a>
+      <a href="/account" class="btn btn-primary btn-lg">Bekijk je bestelling</a>
+      <a href="/nl/upload-guidelines" class="btn btn-ghost btn-lg">Lees de uploadrichtlijnen</a>
       <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20zojuist%20een%20aanvraag%20via%20de%20site%20verstuurd." class="btn btn-wa" target="_blank" rel="noopener">
         Stuur ons een bericht op WhatsApp
       </a>
     </div>
+    <p class="ty-signin">Je logt in met het e-mailadres van deze bestelling — we sturen je een link, een wachtwoord heb je niet nodig.</p>
   </div></section>
 
   <section class="section-tight"><div class="container">
     <div class="grid grid-3 reveal-group">
-      <div class="card reveal pending"><h4>Wat er nu gebeurt</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">We bekijken je briefing, maken je visuals klaar, en een persoon controleert elk resultaat met de hand voordat het je bereikt.</p></div>
+      <div class="card reveal pending"><h4>Wat er nu gebeurt</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Zodra de betaling binnen is, bekijken we je briefing, maken we je visuals klaar, en controleert een persoon elk resultaat met de hand voordat het je bereikt.</p></div>
       <div class="card reveal pending"><h4>Gebruikelijke doorlooptijd</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} van een complete briefing tot je downloadlink. {T0.queue.nl}; een gloednieuwe custom stijl kan iets langer duren.</p></div>
       <div class="card reveal pending"><h4>Wil je nog iets toevoegen?</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reageer op ons bericht op WhatsApp of mail <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> met eventuele extra details of referenties.</p></div>
     </div>
@@ -83,6 +105,21 @@ const description =
 </Layout>
 
 <style>
+  /* De betaalregel. Groene rand links en linksuitgelijnd binnen een verder
+     gecentreerde kop: gecentreerde tekst leest als sfeer, en dit is de enige
+     zin op deze pagina waar iets van de lezer gevraagd wordt. */
+  .ty-pay {
+    max-width: 520px; margin: 1.4rem auto 0; padding: .85rem 1rem;
+    text-align: left; font-size: .95rem; line-height: 1.6; color: var(--ink-2);
+    background: var(--paper-lift, rgb(255 255 255 / .03));
+    border-left: 3px solid var(--accent);
+  }
+  .ty-pay strong { color: var(--ink); }
+  .ty-signin { margin: .9rem auto 0; max-width: 520px; font-size: .85rem; color: var(--ink-3); }
+  /* De spamregel staat direct onder de betaalregel; twee blokken onder elkaar
+     met verschillende breedtes lezen als twee losse dingen. Eén kolom. */
+  .mail-note { max-width: 520px; margin-inline: auto; }
+
   .ty-summary h4 { font-size: 1rem; color: var(--ink); }
   /* .ty-dl / .ty-row / .ty-swatch / .ty-hex were removed in section 10. They
      styled a definition list of the submitted answers that initThankYou() built

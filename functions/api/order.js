@@ -493,7 +493,31 @@ export async function onRequestPost({ request, env, waitUntil }) {
       { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink, pay: payUrl, quote }),
   }));
 
-  const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref);
+  /*
+   * DE BETAALLINK REIST MEE NAAR DE BEDANKTPAGINA — 7 augustus 2026.
+   *
+   * Lucas: *"misschien ook handig om de betalingslink hier neer te zetten mocht
+   * de betaling nog niet voldaan zijn."*
+   *
+   * Tot nu ging die link uitsluitend de mail in, en werd de browser naar
+   * /thank-you gestuurd. De klant zat dus op een pagina die zei dat alles goed
+   * was gegaan, met de enige handeling die nog van hem gevraagd werd in een
+   * mail die nog moest aankomen — en met een spamfilter ertussen. Nu staat de
+   * knop ook op het scherm waar hij toch al is.
+   *
+   * ALLEEN OP DEZE ENE OVERGANG. Mollie stuurt na het betalen terug naar
+   * successUrl, en die draagt `pay` niet — dus wie betaald heeft, komt terug op
+   * dezelfde pagina zónder betaalknop. Dat is precies het gedrag dat je wilt en
+   * het kost geen enkele controle: de knop verschijnt als er nog iets te betalen
+   * is en verdwijnt zodra dat niet meer zo is.
+   *
+   * De URL zelf is geen geheim — het is dezelfde link die in de mail staat, hij
+   * is eenmalig en hij verloopt. Wel wordt hij hieronder gecontroleerd voordat
+   * de pagina er een knop van maakt (zie initThankYou in interactions.js): een
+   * `pay=` die niet naar Mollie wijst, wordt genegeerd.
+   */
+  const done = back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref)
+    + (payUrl ? `&pay=${encodeURIComponent(payUrl)}` : '');
 
   // ───────────────────────────────────────────────────────────────────────────
   // MOLLIE — TEST SAMPLE ONLY (see BACKEND-SETUP.md §9). The order row above
