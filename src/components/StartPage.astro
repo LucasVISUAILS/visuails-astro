@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /start, the chooser.
 //
 // WHAT THIS PAGE USED TO BE
@@ -125,6 +126,10 @@ const COPY = {
     footBody: `One product, ${sample.price}, ${sample.unit}. It runs through the same pipeline as a paid order, so what you see is what you would get.`,
     footCta: `Try a test sample · ${sample.price}`,
     footWa: 'Ask on WhatsApp',
+    // Zie de noot bij OrderFlow.astro's footWaText: deze knop opende WhatsApp
+    // met een leeg bericht. Hier staat de bezoeker nog vóór het formulier, dus
+    // de zin is een vraag en geen vastgelopen bestelling.
+    footWaText: "Hi VISUAILS, I'm not sure which service fits my products.",
     ladder: 'The whole ladder, and what each rung buys',
   },
   nl: {
@@ -194,6 +199,7 @@ const COPY = {
     footBody: `Eén product, ${sample.price}, ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat je ziet is wat je zou krijgen.`,
     footCta: `Probeer een proefvisual · ${sample.price}`,
     footWa: 'Vraag het via WhatsApp',
+    footWaText: 'Hoi VISUAILS, ik weet niet zeker welke dienst bij mijn producten past.',
     ladder: 'De hele staffel, en wat elke trede oplevert',
   },
 };
@@ -280,7 +286,7 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
     </div>
     <div class="start-foot-cta">
       <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.footCta}</a>
-      <a href="https://wa.me/31625436130" target="_blank" rel="noopener" class="btn btn-ghost btn-lg">{c.footWa}</a>
+      <a href={waHref(c.footWaText)} target="_blank" rel="noopener" class="btn btn-ghost btn-lg">{c.footWa}</a>
     </div>
   </div>
 </div></section>

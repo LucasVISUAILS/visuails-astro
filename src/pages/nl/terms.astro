@@ -1,4 +1,5 @@
 ---
+import { WHATSAPP_DISPLAY, waHref } from '../../data/whatsapp.js';
 // VISUAILS — Algemene voorwaarden (Nederlands). Vertaling van src/pages/terms.astro.
 // De redenering achter §2 ("gereserveerde bestelling"), het nieuwe §7, de
 // 50/50-alinea in §9 en de herschreven §4, §6 en §10 staat in dat bestand. Kort samengevat: §6 beloofde
@@ -124,7 +125,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>Op deze voorwaarden is Nederlands recht van toepassing. Eventuele geschillen worden voorgelegd aan de bevoegde Nederlandse rechter, tenzij dwingend recht anders bepaalt.</p>
 
       <h2>13. Contact</h2>
-      <p>Vragen over deze voorwaarden? Mail <a href="mailto:hello@visuails.com">hello@visuails.com</a> of stuur ons een bericht op WhatsApp via <a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a>.</p>
+      <p>Vragen over deze voorwaarden? Mail <a href="mailto:hello@visuails.com">hello@visuails.com</a> of stuur ons een bericht op WhatsApp via <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>.</p>
 
     </div>
   </section>
@@ -137,7 +138,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <a href="/nl/test-sample" class="btn btn-primary btn-lg">Proefvisual</a>
           <a href="/nl/start" class="btn btn-ghost btn-lg">Start een bestelling</a>
-          <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20jullie%20voorwaarden." class="btn btn-wa" target="_blank" rel="noopener">
+          <a href={waHref("Hoi VISUAILS, ik heb een vraag over jullie voorwaarden.")} class="btn btn-wa" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>

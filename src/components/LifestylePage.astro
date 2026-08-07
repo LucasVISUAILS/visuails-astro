@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /lifestyle and /nl/lifestyle share this body.
 //
 // Same reasoning as CatalogPage.astro: the two locales were separate 181-line
@@ -121,8 +122,8 @@ const COPY = {
     // on a link that lands on /start's two-way fork.
     ctaPrimary: 'Start an order',
     ctaSecondary: 'See the price ladder',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20order%20lifestyle%20visuals%20for%20my%20products.',
-    waTalk: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20lifestyle%20visuals%20for%20my%20brand.',
+    wa: waHref("Hi VISUAILS, I'd like to order lifestyle visuals for my products."),
+    waTalk: waHref("Hi VISUAILS, I'd like to talk about lifestyle visuals for my brand."),
     waLabel: 'WhatsApp',
     // Two figures, not one. A single rate here is the exact claim the ladder
     // retired — see the note at the top of this file.
@@ -242,8 +243,8 @@ const COPY = {
     lead: `Vier signatuurlooks. Een carousel van 3 foto’s per product — ${euro(entry, 'nl')} ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
     ctaPrimary: 'Start een bestelling',
     ctaSecondary: 'Bekijk de prijsstaffel',
-    wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20Lifestyle-visuals%20bestellen%20voor%20mijn%20producten.',
-    waTalk: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20Lifestyle-visuals%20voor%20mijn%20merk.',
+    wa: waHref("Hoi VISUAILS, ik wil graag Lifestyle-visuals bestellen voor mijn producten."),
+    waTalk: waHref("Hoi VISUAILS, ik wil graag praten over Lifestyle-visuals voor mijn merk."),
     waLabel: 'WhatsApp',
     trust: [
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],

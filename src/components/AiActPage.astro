@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /ai-act. Rewritten 3 August 2026 from copy supplied by Lucas,
 // which replaces the July 2026 version wholesale. The old page argued about
 // whether the disclosure rule reached ordinary product imagery; that argument
@@ -303,7 +304,7 @@ const FIG = {
 
 const c = COPY[lang];
 const f = FIG[lang];
-const waHref = `https://wa.me/31625436130?text=${encodeURIComponent(c.waText)}`;
+const waLink = waHref(c.waText);
 ---
 
 <section class="page-hero">
@@ -400,7 +401,7 @@ const waHref = `https://wa.me/31625436130?text=${encodeURIComponent(c.waText)}`;
       <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
       <div class="flex" style="justify-content:center;margin-top:2rem">
         <a href={lp('/contact')} class="btn btn-primary btn-lg">{c.ctaBtn}</a>
-        <a href={waHref} class="btn btn-wa" target="_blank" rel="noopener">
+        <a href={waLink} class="btn btn-wa" target="_blank" rel="noopener">
           {c.wa}
         </a>
       </div>

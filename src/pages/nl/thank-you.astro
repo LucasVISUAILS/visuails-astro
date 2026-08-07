@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../../data/whatsapp.js';
 // VISUAILS — thank-you / confirmation page. Ported from the SvelteKit
 // thank-you page (itself ported from static /thank-you.html).
 //
@@ -79,7 +80,7 @@ const description =
     <div class="flex" style="justify-content:center;margin-top:2rem">
       <a href="/account" class="btn btn-primary btn-lg">Bekijk je bestelling</a>
       <a href="/nl/upload-guidelines" class="btn btn-ghost btn-lg">Lees de uploadrichtlijnen</a>
-      <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20zojuist%20een%20aanvraag%20via%20de%20site%20verstuurd." class="btn btn-wa" target="_blank" rel="noopener">
+      <a href={waHref("Hoi VISUAILS, ik heb zojuist een aanvraag via de site verstuurd.")} class="btn btn-wa" target="_blank" rel="noopener">
         Stuur ons een bericht op WhatsApp
       </a>
     </div>
@@ -97,7 +98,7 @@ const description =
         <h4>Wil je de details garanderen?</h4>
         <p style="margin-top:.4rem;font-size:.95rem;color:var(--ink-3)">Hoe meer hoeken we hebben, hoe meer we garanderen dat pasvorm, kleur en detail meteen goed uitkomen. Stuur een detail-close-up, de stof en een on-body shot — gratis toe te voegen en het tilt het hele resultaat op.</p>
       </div>
-      <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20wil%20graag%20extra%20foto%27s%20voor%20mijn%20bestelling%20sturen." class="btn btn-wa" target="_blank" rel="noopener" data-track="ty-extra-photos">
+      <a href={waHref("Hoi VISUAILS, ik wil graag extra foto's voor mijn bestelling sturen.")} class="btn btn-wa" target="_blank" rel="noopener" data-track="ty-extra-photos">
         Stuur extra foto’s
       </a>
     </div>

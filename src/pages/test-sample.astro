@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — test sample. Ported from
 // /tmp/visuails-rebuild/src/routes/test-sample/+page.svelte: a 2-step
 // request wizard (style/model/product -> contact) inside one <form>.
@@ -294,7 +295,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
               <button type="submit" class="btn btn-primary">Request sample</button>
             </div>
           </div>
-                  <p class="form-help">Stuck on a step, or unsure about something? <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27m%20filling%20in%20an%20order%20and%20have%20a%20question." target="_blank" rel="noopener">Message us on WhatsApp</a> — we usually reply within an hour on weekdays and can place the order with you.</p>
+                  <p class="form-help">Stuck on a step, or unsure about something? <a href={waHref("Hi VISUAILS, I'm filling in an order and have a question.")} target="_blank" rel="noopener">Message us on WhatsApp</a> — we usually reply within an hour on weekdays and can place the order with you.</p>
         </form>
       </div>
       <p class="hint" style="text-align:center;margin-top:1rem">One sample per business &middot; a small {SAMPLE.price} verification to prevent abuse &middot; that's all you pay for the sample.</p>
@@ -309,7 +310,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
         <p class="lead" style="margin:1.2rem auto 0;text-align:center">Send us your product on WhatsApp and we'll help you pick a style.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <a href="/start" class="btn btn-ghost btn-lg">Place a full order</a>
-          <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20try%20a%20test%20sample." class="btn btn-wa btn-lg" target="_blank" rel="noopener">
+          <a href={waHref("Hi VISUAILS, I'd like to try a test sample.")} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>

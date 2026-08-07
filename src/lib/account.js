@@ -83,6 +83,7 @@ import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/back
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 import { mailNote } from '../data/mailNote.js';
 import { serviceLabel } from '../data/services.js';
+import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
@@ -161,11 +162,13 @@ const NOTE_MAX = 2000;
  * van het dashboard — bij de foto waar het over gaat, niet als algemene
  * uitnodiging om te bellen.
  *
- * Hetzelfde nummer als in src/data/schema.js en de videopagina's. Op termijn is
- * één bron beter; die staat in een datamap die deze Worker niet importeert, en
- * een import daarvoor optuigen is voor één string te veel machinerie.
+ * Het nummer stond hier los, met de noot "op termijn is één bron beter; die
+ * staat in een datamap die deze Worker niet importeert". Dat argument was al
+ * niet meer waar toen het werd opgeschreven — deze Worker importeert
+ * ../data/pricing.js, ../data/models.js en ../data/services.js — en het is nu
+ * helemaal weg: src/data/whatsapp.js is een kale ESM-module zonder afhankelijk-
+ * heden, dus hij draait net zo goed in de Worker als in de build.
  */
-const WHATSAPP = '31625436130';
 
 /**
  * Which styles a brand can lock a custom model to. Read off PER_PRODUCT rather
@@ -3236,7 +3239,7 @@ function productCard(t, lang, o, g) {
         : ''}
     </div>
     <p class="prod-help">${esc(t.prodHelp)}
-      <a href="https://wa.me/${WHATSAPP}?text=${waText}" target="_blank" rel="noopener">${esc(t.prodHelpCta)}</a>
+      <a href="https://wa.me/${WHATSAPP_NUMBER}?text=${waText}" target="_blank" rel="noopener">${esc(t.prodHelpCta)}</a>
     </p>
   </div>
 </details>`;

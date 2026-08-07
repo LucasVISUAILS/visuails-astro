@@ -1,3 +1,4 @@
+import { waHref } from './whatsapp.js';
 // VISUAILS — video style data, ported verbatim from the SvelteKit rebuild
 // ($lib/data/videoStyles.js). Drives both the /video hub cards and the
 // /video/[slug] template (src/pages/video/[slug].astro), same data-driven
@@ -143,7 +144,7 @@ export const videoStyles = [
     priceTrust: 'Quoted per project',
     priceUnit: '',
     ctaLabel: 'Get a campaign quote',
-    ctaHref: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20a%20quote%20for%20a%20campaign%20video.',
+    ctaHref: waHref("Hi VISUAILS, I'd like a quote for a campaign video."),
     ctaExternal: true,
     heroIcon: 'sneaker',
     heroWidth: '26%',
@@ -195,7 +196,7 @@ export const videoStyles = [
     priceTrust: 'Quoted per project',
     priceUnit: '',
     ctaLabel: 'Discuss a custom video',
-    ctaHref: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20discuss%20a%20custom%20video.',
+    ctaHref: waHref("Hi VISUAILS, I'd like to discuss a custom video."),
     ctaExternal: true,
     heroIcon: 'jar',
     heroWidth: '26%',

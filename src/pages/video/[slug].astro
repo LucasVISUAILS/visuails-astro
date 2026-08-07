@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../../data/whatsapp.js';
 // VISUAILS — shared template for the video style detail pages (Motion /
 // Lifestyle Video / Campaign). Ported from the SvelteKit rebuild's
 // VideoStylePage.svelte, driven by `style` entries from
@@ -16,7 +17,6 @@ export function getStaticPaths() {
 }
 
 const { style } = Astro.props;
-const waName = style.name.replaceAll(' ', '%20');
 const metaPrice = `${style.priceTrust}${style.priceUnit}`;
 
 // Timing, review level and queue behaviour are tier facts, not per-style
@@ -104,7 +104,7 @@ const m = media[style.slug] ?? media.motion;
               )}
             </span>
           </span>
-          <a href={`https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%27d%20like%20to%20talk%20about%20the%20${waName}%20style.`} class="btn btn-wa" target="_blank" rel="noopener">
+          <a href={waHref(`Hi VISUAILS, I'd like to talk about the ${style.name} style.`)} class="btn btn-wa" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>

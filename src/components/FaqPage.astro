@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /faq, rewritten. AUDIT-TASK-0.md §F: "REWRITE selectively.
 // Contains 'about €10 a photo' and 24h claims."
 //
@@ -66,7 +67,11 @@ const COPY = {
     h1a: 'Questions, ',
     h1em: 'answered',
     h1b: '.',
-    lead: 'How a drop works, what it costs, when it lands, and what happens if the week you need cannot be held. Still unsure? Message us on WhatsApp.',
+    // "How a drop works" — the word the pricing rewrite retired everywhere
+    // else, still standing on the page whose whole job is to explain the
+    // service in the customer's own words. A drop is a collection going live,
+    // which is what the CLIENT does; what we sell is an order of products.
+    lead: 'How an order works, what it costs, when it lands, and what happens if the week you need cannot be held. Still unsure? Message us on WhatsApp.',
     heroAlt: 'A VISUAILS lifestyle visual',
 
     // The <nav> around the group index needs a name, and it is the only string
@@ -80,14 +85,14 @@ const COPY = {
     ctaBody: 'Message us on WhatsApp — usually a reply within an hour on weekdays.',
     ctaSample: 'Test sample',
     ctaContact: 'Get in touch',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20your%20service.',
+    wa: waHref("Hi VISUAILS, I have a question about your service."),
   },
 
   nl: {
     h1a: 'Vragen, ',
     h1em: 'beantwoord',
     h1b: '.',
-    lead: 'Hoe een drop werkt, wat het kost, wanneer het er is, en wat er gebeurt als de week die je nodig hebt niet kan. Nog steeds onzeker? Stuur ons een bericht op WhatsApp.',
+    lead: 'Hoe een bestelling werkt, wat het kost, wanneer het er is, en wat er gebeurt als de week die je nodig hebt niet kan. Nog steeds onzeker? Stuur ons een bericht op WhatsApp.',
     heroAlt: 'Een VISUAILS-lifestylevisual',
 
     indexLabel: 'Ga naar een onderdeel',
@@ -98,7 +103,7 @@ const COPY = {
     ctaBody: 'Stuur ons een bericht op WhatsApp — meestal binnen een uur antwoord op werkdagen.',
     ctaSample: 'Proefvisual',
     ctaContact: 'Neem contact op',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20jullie%20dienst.',
+    wa: waHref("Hoi VISUAILS, ik heb een vraag over jullie dienst."),
   },
 };
 

@@ -35,10 +35,18 @@ export const SERVICE = {
   custom: { en: 'Your Brand Model', nl: 'Jouw merkmodel' },
   'test-sample': { en: TEST_SAMPLE.en.name, nl: TEST_SAMPLE.nl.name },
   // ORDER_SERVICES in functions/api/order.js has always included 'drop' — the
-  // value StartPage.astro's attended-tier door posts. One label covers both the
-  // fixed 8-product Drop Pilot and a larger custom drop, which pricing.js
-  // already treats as one tier rather than two services.
-  drop: { en: 'Full Drop', nl: 'Volledige drop' },
+  // value StartPage.astro's attended-tier door posts. THE KEY STAYS 'drop'
+  // because it is a wire value: it sits in orders.service on every row already
+  // written, and renaming it would need a migration to buy nothing.
+  //
+  // THE LABEL DOES NOT STAY. It read 'Full Drop' / 'Volledige drop' — the name
+  // of a package that pricing.js retired, printed on the confirmation mail and
+  // the dashboard of every order placed through the complete-tier door. So the
+  // customer paid for a ladder and was sent the name of a price list that no
+  // longer exists. OrderFlow.astro's WIRE map is where the two meet
+  // (`complete → drop`), and what that door actually sells is both scopes at
+  // once, which is what the label now says.
+  drop: { en: 'Catalog + Lifestyle', nl: 'Catalog + Lifestyle' },
 };
 
 /** @param {string} service @param {'en'|'nl'} lang @returns {string|null} */

@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../../data/whatsapp.js';
 // VISUAILS — About. Editorial page: who we are, what we hold to, a fast
 // strip of real photography, closing CTA. Ported from the SvelteKit about
 // page — see IMAGES.md for the photo strip and hero.
@@ -45,7 +46,7 @@ const strip = [
       <p class="lead" style="margin-top:1.2rem">Productvisuals van studiokwaliteit — moderne snelheid, gecontroleerd door echte mensen.</p>
       <div class="flex" style="margin-top:1.8rem">
         <a href="/nl/test-sample" class="btn btn-primary btn-lg">Proefvisual</a>
-        <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20meer%20over%20jullie%20weten." class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
+        <a href={waHref("Hoi VISUAILS, ik wil graag meer over jullie weten.")} class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     </div>
   </section>
@@ -90,7 +91,7 @@ const strip = [
       <p class="lead" style="margin:1.2rem auto 0;text-align:center">Proefvisual, of stuur ons een bericht op WhatsApp.</p>
       <div class="flex" style="justify-content:center;margin-top:2rem">
         <a href="/nl/test-sample" class="btn btn-primary btn-lg">Proefvisual</a>
-        <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20visuals%20voor%20mijn%20merk." class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
+        <a href={waHref("Hoi VISUAILS, ik wil graag praten over visuals voor mijn merk.")} class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     </div>
   </div></section>

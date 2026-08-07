@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /models, "The standard library".
 //
 // One component for both languages, same reason as every other paired page:
@@ -49,12 +50,15 @@ const COPY = {
     lead: 'Shared across every brand we work with, and included in every order at no extra cost. Pick one yourself, or tell us the product and the customer and we match one for you.',
     ctaPrimary: 'Start an order',
     ctaWa: 'Discuss it on WhatsApp',
-    waText: 'Hi%20VISUAILS%2C%20I%27d%20like%20to%20ask%20about%20the%20standard%20models.',
+    waText: 'Hi VISUAILS, I\'d like to ask about the standard models.',
     heroAlt: 'A VISUAILS standard model',
     trust: [
       ['No fee', 'per model, ever'],
       ['Ten faces', 'shared across brands'],
-      ['Swap freely', 'drop to drop'],
+      // Was 'drop to drop'. See PricingPage.astro's header: a drop is a
+      // collection going live, which is the CLIENT's word for their own
+      // launch, not the name of anything we sell.
+      ['Swap freely', 'order to order'],
     ],
 
     rosterMeta: '( All ten )',
@@ -66,7 +70,7 @@ const COPY = {
 
     incMeta: '( What it costs )',
     incH: 'Included, not upsold.',
-    incBody: 'Every drop already includes a model from this roster. There is no per-model fee and no upgrade to unlock one — the price on /pricing is the whole price.',
+    incBody: 'Every order already includes a model from this roster. There is no per-model fee and no upgrade to unlock one — the price on /pricing is the whole price.',
     incCta: 'See the price ladder',
 
     doorH: 'Want a face that’s only yours?',
@@ -86,12 +90,12 @@ const COPY = {
     lead: 'Gedeeld over elk merk waarmee we werken, en inbegrepen in elke bestelling zonder extra kosten. Kies er zelf een, of vertel ons het product en de klant en wij matchen er een voor je.',
     ctaPrimary: 'Start een bestelling',
     ctaWa: 'Bespreek het op WhatsApp',
-    waText: 'Hoi%20VISUAILS%2C%20ik%20wil%20graag%20iets%20vragen%20over%20de%20standaardmodellen.',
+    waText: 'Hoi VISUAILS, ik wil graag iets vragen over de standaardmodellen.',
     heroAlt: 'Een VISUAILS-standaardmodel',
     trust: [
       ['Geen kosten', 'per model, nooit'],
       ['Tien gezichten', 'gedeeld over merken'],
-      ['Vrij wisselen', 'van drop tot drop'],
+      ['Vrij wisselen', 'van bestelling tot bestelling'],
     ],
 
     rosterMeta: '( Alle tien )',
@@ -99,11 +103,11 @@ const COPY = {
     rosterSub: 'Op een formaat waarop je een gezicht echt kunt beoordelen — vierkante platen, geen thumbnails van zestig pixels.',
     modelAlt: 'een VISUAILS-standaardmodel',
     chooseH: 'Laat ons matchen',
-    chooseBody: 'Vertel ons het product en de klant wanneer je een drop start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
+    chooseBody: 'Vertel ons het product en de klant wanneer je een bestelling start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
 
     incMeta: '( Wat het kost )',
     incH: 'Inbegrepen, niet aangeboden als upsell.',
-    incBody: 'Elke drop bevat al een model uit deze bibliotheek. Er is geen kost per model en geen upgrade om er een vrij te spelen — de prijs op /nl/pricing is de hele prijs.',
+    incBody: 'Elke bestelling bevat al een model uit deze bibliotheek. Er is geen kost per model en geen upgrade om er een vrij te spelen — de prijs op /nl/pricing is de hele prijs.',
     incCta: 'Bekijk de volledige prijsladder',
 
     doorH: 'Wil je een gezicht dat alleen van jou is?',
@@ -120,7 +124,7 @@ const COPY = {
 
 const c = COPY[lang];
 const traits = TRAITS[lang];
-const wa = `https://wa.me/31625436130?text=${c.waText}`;
+const wa = waHref(c.waText);
 ---
 
 <!-- HERO -->

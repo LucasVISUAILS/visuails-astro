@@ -1,0 +1,889 @@
+---
+// VISUAILS — FigFlow: the whole production pipeline as one continuous rail,
+// with controls the reader can actually turn. Augustus 2026.
+//
+// WAAROM DIT BESTAAT. Lucas stuurde vijf schermafbeeldingen van een
+// betaalproduct — een verticale rail waarlangs geld naar beneden loopt, met
+// onderweg een kaart vol schakelaars, een slot, en onderaan een splitsing naar
+// drie valuta's en drie merchants — en schreef: *"Ik zou iets als dit willen
+// maar dan meer interactief maar 1 opzicht de gehele production pipeline, wel
+// creatief aanpassen naar hoe dit verwerkt kan worden met het visuails
+// systeem, dit is namelijk een betalingssysteem."*
+//
+// Twee opdrachten in één zin. "Eén opzicht" is een structuurprobleem: /how-it-
+// works vertelde het verhaal in VIJF losse figuren met tekst ertussen, en wie
+// het geheel wilde zien moest het zelf in zijn hoofd aan elkaar plakken.
+// "Meer interactief" is het verschil met de referentie: dáár schuiven de
+// schakelaars vanzelf om terwijl je scrollt — het is een film van een product.
+// Hier zijn het echte schakelaars.
+//
+// WAT DE VIJF FIGUREN BEWEERDEN, EN WAAR DAT NU ZIT. Dit is geen samenvatting
+// maar een verhuizing: elke claim die een van de vijf maakte en die de tekst
+// eromheen niet ook maakte, moest mee. Ze stonden er niet voor niets.
+//
+//   FigFanOut  — "één foto erin, een reeks eruit", plus de bekentenis dat drie
+//                van de vier uitvoerframes GETEKEND zijn en niet gefotografeerd.
+//                → stage 1 en de fan-out onderaan; de bekentenis staat in de
+//                  figcaption die de pagina meegeeft (`note`).
+//   FigPipeline — dat stap 2 geen stap is maar een POORT: een ding met twee
+//                kanten dat werk kan weigeren. Een genummerd kaartje gaf de
+//                weigering evenveel gewicht als "je stuurt ons foto's".
+//                → de gate-node, getekend als een deuropening, met de
+//                  weigerkant zichtbaar ernaast.
+//   FigCapacity — allebei de uitkomsten tegelijk, inclusief de verliezende. En
+//                de harde regel uit die figuur: er mag NIETS te tellen zijn.
+//                Een schaal op de banden is een leveringsbelofte die niemand
+//                heeft gedaan. → de twee sporen bij de gate hebben geen maat.
+//   FigApproval — PARALLELLISME: goedgekeurd, in revisie en nog onderweg naast
+//                elkaar, want een opsomming is een plaatje van het tegendeel.
+//                Plus: dit is een tekening, geen schermafbeelding.
+//                → de portal-node met drie tegels in drie toestanden.
+//   FigFormats  — dat één beeld vijf kanaalvormen overleeft, en dat elk frame
+//                de verhouding IS waar het label onder staat (echte
+//                `aspect-ratio`, geen met de hand gekozen breedte).
+//                → de fan-out onderaan, met dezelfde vijf ratio's in dezelfde
+//                  volgorde.
+//
+// DE CREATIEVE VERTALING. In de referentie loopt er geld door de rail en
+// bepalen de schakelaars wat er met dat geld gebeurt. Hier loopt er WERK door
+// de rail. De schakelaars bepalen de scope, en de schuif bepaalt het aantal
+// producten — en dat laatste is de vondst. De prijsladder van VISUAILS is het
+// moeilijkst uit te leggen deel van het aanbod ("het tarief daalt naarmate het
+// aantal stijgt") en een tabel laat dat zien als vijf regels waar je zelf je
+// eigen geval in moet opzoeken. Een schuif die je van 1 naar 40 sleept terwijl
+// het bedrag onder je duim van €149 naar €55 loopt, is diezelfde ladder als
+// beweging. En hij doet nog iets: bij tien producten springt de poort eronder
+// om van wachtrij naar gereserveerd venster, want dat IS wat er bij tien
+// gebeurt. Eén bedieningselement laat de prijs, de doorlooptijd, de
+// leveringsvorm en de poort tegelijk kantelen, omdat die vier in het echte
+// systeem ook aan dezelfde knop hangen.
+//
+// GEEN TAAL IN DIT BESTAND. Alle copy komt als prop uit de tweetalige COPY-
+// tabel van de aanroepende pagina — dezelfde regel als bij de vijf figuren die
+// dit vervangt, zodat EN/NL-pariteit op één plek te controleren blijft. De
+// enige tekens die hier hardgecodeerd staan zijn cijfers en ratio-labels
+// ("1:1"), en die zijn in beide talen gelijk.
+//
+// GEEN ARROW FUNCTIONS IN JSX-ATTRIBUTEN, GEEN GEÏNTERPOLEERDE CLASSNAMEN.
+// Zie de kop van FigPipeline: de `>` in `=>` breekt tag-scanners, en een
+// classnaam die als `` `is-${x}` `` wordt gebouwd staat noch in de markup noch
+// in de CSS waar een checker hem kan vinden. Alles wat afgeleid is, wordt
+// hierboven in de frontmatter uitgerekend.
+//
+// ZONDER JAVASCRIPT MOET DIT KLOPPEN. DESIGN.md's regel is dat animatie een
+// al-zichtbare toestand versiert. Daarom rendert de server de figuur in een
+// echte, complete begintoestand — catalog en lifestyle aan, video uit, twaalf
+// producten — en zijn de bedieningselementen gewone `<input>`s. Zonder script
+// kun je ze omzetten en gebeurt er niets; wat je ziet blijft een waar plaatje
+// van een bestelling van twaalf producten. Met script rekent alles mee.
+//
+// DE PRIJZEN KOMEN NIET UIT DIT BESTAND EN OOK NIET UIT DE CLIENT-CODE. De
+// ladder staat in src/data/pricing.js en mag daar staan. De pagina rekent één
+// keer per taal ELKE mogelijke uitkomst uit — zeven schakelaarstanden × 40
+// aantallen — en zet die als JSON in de pagina. Het script zoekt op, het rekent
+// niet. Dat is bewust: een tweede implementatie van de ladder in browser-JS is
+// precies hoe twee prijzen ontstaan die vandaag toevallig gelijk zijn.
+//
+// En de sleutel is de STAND VAN DE SCHAKELAARS, niet de naam van een ladder.
+// De eerste versie sleutelde op laddernaam en liet de browser zelf uitrekenen
+// dat catalog + lifestyle de `complete`-trede is — waarmee die regel op twee
+// plekken stond, en ze waren het meteen oneens: lifestyle uitzetten wisselde
+// het tarief naar catalog maar liet de regel "en elk product zakt naar €109"
+// van de vorige stand eronder staan. Elke stand heeft nu een eigen rij, dus er
+// is geen regel om te verdubbelen en geen toestand die kan verschalen.
+
+interface Channel {
+  /** The channel this crop is for — "Shop listing", "Reel or story".
+   *  No `alt` field: FigFormats needed one because its frames were crops of a
+   *  real photograph and each was separate evidence. These are drawn boxes
+   *  whose whole content is the ratio label inside them, which is text. */
+  t: string;
+}
+interface Source {
+  /** Shot name — "Front", "Back". */
+  t: string;
+  /** A real photograph, when one exists for this slot. Drawn otherwise. */
+  src?: string;
+  alt?: string;
+}
+interface Scope {
+  /** 'catalog' | 'lifestyle' | 'video' — the toggle's identity. */
+  id: string;
+  /** "Catalog set" */
+  t: string;
+  /** "4 images per product" */
+  b: string;
+  /** Whether it starts switched on. */
+  on?: boolean;
+}
+interface Props {
+  /** Stage headings, in order, from the page's COPY table. */
+  stages: { send: string; scope: string; gate: string; make: string; deliver: string };
+  /** The four shots the customer sends. */
+  sources: Source[];
+  /** The three scope toggles. */
+  scopes: Scope[];
+  /** Label + unit for the product count control. */
+  countLabel: string;
+  countUnit: string;
+  /** Gate copy for both sides of the doorway. */
+  gatePass: string;
+  gateRefuse: string;
+  gateNote: string;
+  /** The two production nodes. */
+  makeSteps: { t: string; b: string }[];
+  /** Portal tile states — approved, in revision, still coming. */
+  portalStates: { ok: string; rev: string; wait: string };
+  /** What the delivery is called at each tier. */
+  deliverPortal: string;
+  deliverLink: string;
+  /** The five channel crops. */
+  channels: Channel[];
+  /** Per-count strings the script swaps in. Built by the page from pricing.js. */
+  rates: Record<string, { rate: string; total: string; per: string; next: string | null }>;
+  /** Timing strings per tier, from turnaround() — never a literal. */
+  timing: { attended: string; unattended: string };
+  /** The count at which the tier flips. */
+  threshold: number;
+  /** Highest count the slider reaches. */
+  maxCount: number;
+  /** Where the slider starts, and what the server renders. */
+  startCount: number;
+  /** "excl. VAT" — from vatLabel(), never typed here. */
+  vat: string;
+  /** Small print under the whole figure. Carries the drawn-not-photographed
+   *  disclosure and the not-a-screenshot one. */
+  note: string;
+  /** Accessible name for the figure as a whole. */
+  label: string;
+  /** "Two more products and every product drops to …" — shown when a next
+   *  rung exists. The page supplies the template already filled per count in
+   *  `rates`, so this is only the fallback label for the region. */
+  nextLabel: string;
+  /** What stands where the price was when every switch is off. */
+  emptyLabel: string;
+  /** "{n} images leave the studio" — one string with a {n} hole in it, so the
+   *  number can sit anywhere in the sentence the language wants. */
+  imagesLabel: string;
+}
+
+const {
+  stages, sources, scopes, countLabel, countUnit,
+  gatePass, gateRefuse, gateNote, makeSteps, portalStates,
+  deliverPortal, deliverLink, channels, rates, timing,
+  threshold, maxCount, startCount, vat, note, label, nextLabel, emptyLabel,
+  imagesLabel,
+} = Astro.props;
+
+// Split on the {n} hole. A page that forgets the hole gets its sentence with
+// the number appended rather than a crash — the sentence is still true, it is
+// just badly worded, and that is the right failure for a caption.
+const imagesParts = String(imagesLabel).split('{n}');
+const imagesBefore = imagesParts[0];
+const imagesAfter = imagesParts.length > 1 ? imagesParts[1] : '';
+
+// The five ratios, in the order FigFormats published them. Coupled to
+// `channels` by index exactly as FigFormats coupled RATIOS to `frames`: the
+// caption promises each frame IS its ratio, so the pair must not drift. Kept
+// as a literal here rather than imported because FigFormats is being retired
+// and a constant whose only remaining reader is this file belongs in this file.
+const RATIOS = [
+  { r: '1 / 1', label: '1:1' },
+  { r: '4 / 5', label: '4:5' },
+  { r: '9 / 16', label: '9:16' },
+  { r: '16 / 9', label: '16:9' },
+  { r: '3 / 4', label: '3:4' },
+];
+
+// The scope toggles' initial state, and the image count that follows from it.
+// IMAGES_PER is the same arithmetic pricing.js documents beside the ladder —
+// a catalog set is four, a lifestyle carousel is three, a clip is one — and it
+// is repeated here rather than imported because it is not a price and pricing.js
+// does not export it as a number. If those set sizes ever change, this is the
+// second place to look; the first is PER_PRODUCT's `line` copy.
+const IMAGES_PER = { catalog: 4, lifestyle: 3, video: 1 };
+const startOn = scopes.filter(function isOn(s) { return s.on !== false; }).map(function id(s) { return s.id; });
+const startImages = startOn.reduce(function add(n, id) { return n + (IMAGES_PER[id] || 0); }, 0);
+
+// The rate table is keyed by the literal switch state — "110:12" is catalog on,
+// lifestyle on, video off, twelve products — so the server builds its key the
+// same way the browser will. No ladder rule lives on either side; see the note
+// above flowRates in HowItWorksPage.astro for why that mattered.
+function bit(id) { return startOn.indexOf(id) > -1 ? '1' : '0'; }
+const START_KEY = bit('catalog') + bit('lifestyle') + bit('video') + ':' + startCount;
+
+// The server-rendered state. Everything below reads from these, so the no-JS
+// page is internally consistent rather than a set of defaults that happen to
+// sit near each other. The fallback is not defensive padding: `scopes` with
+// everything switched off is a state the reader can reach in one click, and it
+// has nothing to quote.
+const BLANK = { rate: '', per: '', total: '', next: null };
+const start = rates[START_KEY] || BLANK;
+const startPriced = !!rates[START_KEY];
+const startAttended = startCount >= threshold;
+const startTiming = startAttended ? timing.attended : timing.unattended;
+const startDelivery = startAttended ? deliverPortal : deliverLink;
+
+// The config the client script reads. Prices are pre-formatted strings, one per
+// possible count — see the header note on why no ladder arithmetic ships to the
+// browser. `imagesPer` is here too so the script does not re-declare it.
+const config = {
+  threshold, maxCount, startCount,
+  imagesPer: IMAGES_PER,
+  rates,
+  timing,
+  delivery: { attended: deliverPortal, unattended: deliverLink },
+};
+---
+
+<figure class="fl" aria-label={label} data-flow>
+  <script type="application/json" data-flow-config set:html={JSON.stringify(config)} />
+
+  <div class="fl-rail">
+
+    {/* ── 1 · WHAT YOU SEND ─────────────────────────────────────────────
+        The four shots, converging. In the reference this row is three buyer
+        avatars; here it is the folder the customer drops, which is the actual
+        input and the thing the H1 above promises. */}
+    <section class="fl-stage" data-flow-stage="send">
+      <h3 class="fl-h">{stages.send}</h3>
+      <ul class="fl-sources">
+        {sources.map((s) => (
+          <li class="fl-src">
+            {s.src
+              ? <img src={s.src} alt={s.alt} width="480" height="480" loading="lazy" decoding="async" />
+              : <span class="fl-src-drawn" aria-hidden="true"></span>}
+            <span class="fl-src-t">{s.t}</span>
+          </li>
+        ))}
+      </ul>
+      {/* Four lines meeting one. This was a single rounded rectangle in the
+          first pass, which drew a box under the tiles rather than a junction —
+          it did not touch the tiles above it or the rail below it, so it read
+          as a stray frame. Mirrored deliberately against the split at the foot
+          of the figure: the same drawing, run the other way, is what makes
+          "four things in, one order" and "one order, five shapes" read as two
+          halves of one movement rather than two unrelated diagrams. */}
+      <span class="fl-converge" aria-hidden="true">
+        <svg viewBox="0 0 500 80" preserveAspectRatio="none" focusable="false">
+          <path d="M62 0 V16 Q62 40 110 40 H226 Q250 40 250 64 V80" />
+          <path d="M187 0 V16 Q187 40 211 40 H238 Q250 40 250 64 V80" />
+          <path d="M312 0 V16 Q312 40 288 40 H262 Q250 40 250 64 V80" />
+          <path d="M437 0 V16 Q437 40 389 40 H274 Q250 40 250 64 V80" />
+        </svg>
+      </span>
+    </section>
+
+    {/* The travelling token. The reference runs a € down a dotted line; the
+        thing travelling here is the order itself, so the token is a frame. */}
+    <span class="fl-flow" aria-hidden="true"><span class="fl-token"></span></span>
+
+    {/* ── 2 · SCOPE — THE ONE INTERACTIVE CARD ──────────────────────────
+        Real inputs, not painted ones. The reference's toggles flip themselves
+        as you scroll, which looks alive and answers nothing; these answer
+        "what would mine cost", which is the question the page exists for. */}
+    <section class="fl-stage" data-flow-stage="scope">
+      <h3 class="fl-h">{stages.scope}</h3>
+      {/* THE CONTROLS SHIP DISABLED AND flow.js ENABLES THEM. Without that, a
+          reader with JavaScript off could flip a switch and drag the slider —
+          both are native controls and both move on their own — while none of
+          the numbers underneath them changed. The card would then be showing
+          "catalog off, forty products" above "€85 a product, 12 products, 84
+          files", which is not a stale picture but a false one. Disabled, the
+          card is what the header promises: a true, fixed picture of one real
+          order. See enable() in src/scripts/flow.js. */}
+      <div class="fl-card">
+        <ul class="fl-scopes">
+          {scopes.map((s) => (
+            <li class="fl-scope">
+              <label class="fl-toggle">
+                <input type="checkbox" data-flow-scope={s.id} checked={s.on !== false} disabled />
+                <span class="fl-switch" aria-hidden="true"></span>
+                <span class="fl-scope-text">
+                  <span class="fl-scope-t">{s.t}</span>
+                  <span class="fl-scope-b">{s.b}</span>
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+
+        <div class="fl-count">
+          <label class="fl-count-label" for="fl-count">{countLabel}</label>
+          <output class="fl-count-out" for="fl-count" data-flow-count>{startCount}</output>
+          <input
+            class="fl-range"
+            id="fl-count"
+            type="range"
+            min="1"
+            max={maxCount}
+            step="1"
+            value={startCount}
+            data-flow-range
+            disabled
+          />
+          <span class="fl-count-unit">{countUnit}</span>
+        </div>
+
+        {/* The running total. aria-live so a screen-reader user dragging the
+            slider hears the number change; polite, because it changes on every
+            step and assertive would interrupt continuously.
+
+            It HIDES rather than blanks when every switch is off. A price line
+            standing empty reads as a number that failed to load; an absent one
+            reads as nothing to price, which is what it is. */}
+        <p class="fl-price" aria-live="polite" data-flow-price hidden={!startPriced}>
+          <span class="fl-price-rate" data-flow-rate>{start.rate}</span>
+          <span class="fl-price-per" data-flow-per>{start.per}</span>
+          <span class="fl-price-total" data-flow-total>{start.total}</span>
+          <span class="fl-price-vat">{vat}</span>
+        </p>
+        <p class="fl-empty" data-flow-empty hidden={startPriced}>{emptyLabel}</p>
+        {/* The label is a visually-hidden span, not an aria-label on the <p>.
+            `role=paragraph` is in ARIA's name-prohibited set, so the attribute
+            was either dropped — leaving flowNextLabel as dead copy in both
+            languages — or, where a browser did honour it, it REPLACED the
+            sentence carrying the actual number. A span is read in sequence
+            with it instead of instead of it. */}
+        <p class="fl-next" data-flow-next hidden={!start.next}>
+          <span class="fl-sr">{nextLabel}: </span><span data-flow-next-text>{start.next}</span>
+        </p>
+      </div>
+      {/* The count of what leaves the studio. It rendered as a bare "84" with
+          no word beside it in the first pass — a number floating under a card,
+          which is the kind of thing that reads as a bug rather than a fact.
+          The page supplies the sentence with a {n} hole in it so the word order
+          can differ per language; splitting on the hole keeps the number in its
+          own element for the script to write to. */}
+      <p class="fl-images">
+        {imagesBefore}<strong data-flow-images>{startImages * startCount}</strong>{imagesAfter}
+      </p>
+    </section>
+
+    <span class="fl-flow" aria-hidden="true"><span class="fl-token"></span></span>
+
+    {/* ── 3 · THE GATE ──────────────────────────────────────────────────
+        Two uprights with the rail between them, and the refusing side drawn
+        beside the passing one. FigCapacity's rule holds: the two tracks carry
+        no scale, no ticks and no bands to count. The claim is "this can say
+        no", not "here is how full next week is". */}
+    <section class="fl-stage" data-flow-stage="gate">
+      <h3 class="fl-h">{stages.gate}</h3>
+      <div class="fl-gate">
+        <span class="fl-post" aria-hidden="true"></span>
+        <div class="fl-gate-body">
+          <p class="fl-gate-pass"><span class="fl-tick" aria-hidden="true"></span>{gatePass}</p>
+          <p class="fl-gate-timing" data-flow-timing>{startTiming}</p>
+          <p class="fl-gate-refuse"><span class="fl-cross" aria-hidden="true"></span>{gateRefuse}</p>
+        </div>
+        <span class="fl-post" aria-hidden="true"></span>
+      </div>
+      <p class="fl-sub">{gateNote}</p>
+    </section>
+
+    <span class="fl-flow" aria-hidden="true"><span class="fl-token"></span></span>
+
+    {/* ── 4 · PRODUCTION AND THE HUMAN CHECK ────────────────────────────
+        Two nodes, not one. The second is the whole difference between this and
+        a prompt box, and folding it into "we produce" is how it disappears. */}
+    <section class="fl-stage" data-flow-stage="make">
+      <h3 class="fl-h">{stages.make}</h3>
+      <ol class="fl-make">
+        {makeSteps.map((m) => (
+          <li class="fl-make-step">
+            <span class="fl-dot" aria-hidden="true"></span>
+            <span class="fl-make-t">{m.t}</span>
+            <span class="fl-make-b">{m.b}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <span class="fl-flow" aria-hidden="true"><span class="fl-token"></span></span>
+
+    {/* ── 5 · DELIVERY ──────────────────────────────────────────────────
+        FigApproval's parallelism, kept: three tiles in three states at once.
+        The tiles are aria-hidden and the legend carries the meaning in text,
+        exactly as FigApproval did — a decorative grid that a screen reader
+        walks through tile by tile is noise, and the states are the content. */}
+    <section class="fl-stage" data-flow-stage="deliver">
+      <h3 class="fl-h">{stages.deliver}</h3>
+      <p class="fl-delivery" data-flow-delivery>{startDelivery}</p>
+      <div class="fl-portal" data-flow-portal hidden={!startAttended}>
+        <ul class="fl-tiles" aria-hidden="true">
+          <li class="fl-tile is-ok"></li>
+          <li class="fl-tile is-rev"></li>
+          <li class="fl-tile is-wait"></li>
+          <li class="fl-tile is-ok"></li>
+          <li class="fl-tile is-wait"></li>
+          <li class="fl-tile is-ok"></li>
+        </ul>
+        <ul class="fl-legend">
+          <li><span class="fl-key is-ok" aria-hidden="true"></span>{portalStates.ok}</li>
+          <li><span class="fl-key is-rev" aria-hidden="true"></span>{portalStates.rev}</li>
+          <li><span class="fl-key is-wait" aria-hidden="true"></span>{portalStates.wait}</li>
+        </ul>
+      </div>
+    </section>
+
+    {/* ── 6 · THE FAN-OUT ───────────────────────────────────────────────
+        The reference splits one € into three currencies curving down to three
+        merchants. This splits one visual into the five shapes the channels
+        ask for. Real `aspect-ratio` on every frame, because the caption
+        promises each frame IS the ratio under it. */}
+    <span class="fl-split" aria-hidden="true">
+      {/* Five columns, so the endpoints are the five column CENTRES: at
+          `repeat(5, 1fr)` those fall at 10 / 30 / 50 / 70 / 90 percent, which
+          in this 500-unit box is 50 / 150 / 250 / 350 / 450. The first pass
+          used 22 / 108 / 250 / 392 / 478 in a box narrower than the grid, so
+          every line landed somewhere between two frames. The wrapper is now
+          the same width as the grid it feeds, which is the only way these two
+          stay aligned when the container resizes. */}
+      <svg viewBox="0 0 500 90" preserveAspectRatio="none" focusable="false">
+        <path d="M250 0 V24 Q250 50 202 50 H98 Q50 50 50 76 V90" />
+        <path d="M250 0 V24 Q250 50 226 50 H174 Q150 50 150 76 V90" />
+        <path d="M250 0 V90" />
+        <path d="M250 0 V24 Q250 50 274 50 H326 Q350 50 350 76 V90" />
+        <path d="M250 0 V24 Q250 50 298 50 H402 Q450 50 450 76 V90" />
+      </svg>
+    </span>
+
+    <ul class="fl-out">
+      {channels.map((ch, i) => (
+        <li class="fl-out-frame">
+          <span class="fl-crop" style={`aspect-ratio:${RATIOS[i % RATIOS.length].r}`}>
+            <span class="fl-crop-drawn" aria-hidden="true"></span>
+            <span class="fl-crop-ratio">{RATIOS[i % RATIOS.length].label}</span>
+          </span>
+          <span class="fl-out-t">{ch.t}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <figcaption class="fl-note">{note}</figcaption>
+</figure>
+
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════
+     FigFlow
+
+     TWO THINGS THIS FILE HAS TO GET RIGHT AND THE FIVE FIGURES DID NOT HAVE TO.
+
+     1 · IT IS TALL. Five figures each got their own section with the page's
+         rhythm around them. One rail is a single element roughly five screens
+         high, so the vertical rhythm has to live INSIDE it — hence the stage
+         padding rather than section margins.
+
+     2 · IT MOVES. Every animated property here is transform or opacity, both
+         compositor-only, and the script never writes a style — it adds one
+         class. Nothing here can force layout while the page scrolls.
+
+     THE DEFAULT IS LIT. `.fl-stage` is fully visible with no classes on it. The
+     script ADDS `.is-lit` as each stage arrives; the dimming only exists once
+     `.js` is on <html> and motion is allowed. Same contract as `.reveal
+     pending` — see global.css 1992. Get this backwards and the figure is blank
+     for anyone whose JS fails.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  .fl { margin: 0; }
+
+  .fl-rail {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 46rem;
+    margin: 0 auto;
+  }
+
+  /* Measured, then cut. The first pass used clamp(1.6rem, 3vw, 2.6rem) top and
+     bottom on every stage PLUS a 5rem connector between them, which put about
+     nine rem of nothing between two things the reader is meant to see as one
+     movement. The connector is the spacing; the stage only needs enough to stop
+     its heading touching it. */
+  .fl-stage {
+    width: 100%;
+    text-align: center;
+    padding: clamp(.6rem, 1.4vw, 1rem) 0;
+  }
+
+  .fl-h {
+    font-size: .78rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 1.1rem;
+    font-weight: 500;
+  }
+
+  /* ── 1 · sources ──────────────────────────────────────────────────────── */
+  .fl-sources {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: clamp(.5rem, 2vw, 1rem);
+    flex-wrap: wrap;
+  }
+  .fl-src { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+  .fl-src img,
+  .fl-src-drawn {
+    display: block;
+    width: clamp(3.4rem, 11vw, 5.2rem);
+    aspect-ratio: 1;
+    border-radius: var(--r-md);
+    object-fit: cover;
+  }
+  /* A drawn slot, and it must never be mistaken for a photograph — the caption
+     says three of these are drawings and the drawing has to look like one.
+     Hatching, not a grey box: a grey box reads as an image that failed to load. */
+  .fl-src-drawn {
+    border: 1px solid var(--line);
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0 5px,
+      var(--line-strong) 5px 6px
+    );
+  }
+  .fl-src-t { font-size: .78rem; color: var(--ink-3); }
+
+  /* The converge and the split are the same drawing at two scales, so they
+     share everything but their width. Both are `preserveAspectRatio="none"`
+     with `vector-effect: non-scaling-stroke`, which is what lets the box
+     stretch to the grid above it while the hairline stays a hairline. */
+  .fl-converge,
+  .fl-split { display: block; }
+  .fl-converge svg,
+  .fl-split svg { width: 100%; height: 100%; overflow: visible; }
+  .fl-converge path,
+  .fl-split path { fill: none; stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+  /* Width-matched to the row it collects from, so the four lines start under
+     the four tiles rather than near them. */
+  .fl-converge { width: min(100%, 24rem); height: clamp(1.6rem, 3.4vw, 2.4rem); margin: .9rem auto 0; }
+
+  /* ── the flowing rail between stages ──────────────────────────────────── */
+  .fl-flow {
+    position: relative;
+    display: block;
+    width: 1px;
+    height: clamp(2.6rem, 5vw, 3.6rem);
+    background-image: linear-gradient(var(--line) 50%, transparent 0);
+    background-size: 1px 8px;
+    background-repeat: repeat-y;
+  }
+  /* The travelling token. Parked at the top and invisible until the script
+     lights this segment — a dot sliding down a line with no scroll behind it is
+     decoration, and decoration that runs on a loop is a distraction. */
+  .fl-token {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 9px;
+    height: 9px;
+    margin-left: -4px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+  }
+  .fl-flow.is-lit { background-image: linear-gradient(color-mix(in srgb, var(--accent) 55%, transparent) 50%, transparent 0); }
+  .fl-flow.is-lit .fl-token {
+    opacity: 1;
+    animation: fl-travel 1.1s var(--ease-out-quint) forwards;
+  }
+  @keyframes fl-travel {
+    from { transform: translateY(0); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    to   { transform: translateY(calc(clamp(2.6rem, 5vw, 3.6rem) - 9px)); opacity: 0; }
+  }
+
+  /* ── 2 · the scope card ───────────────────────────────────────────────── */
+  .fl-card {
+    text-align: left;
+    max-width: 26rem;
+    margin: 0 auto;
+    padding: clamp(1rem, 2.4vw, 1.4rem);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+  }
+
+  .fl-scopes { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; }
+
+  .fl-toggle {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .55rem .2rem;
+    cursor: pointer;
+  }
+  /* The real checkbox, kept in the layout and kept focusable. Not
+     `display:none` — that removes it from the tab order and from the
+     accessibility tree, which is the usual way a "custom toggle" stops being a
+     toggle. Clipped instead, and the visible switch is the focus ring's host. */
+  .fl-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .fl-switch {
+    flex: 0 0 auto;
+    position: relative;
+    width: 2.4rem;
+    height: 1.35rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--ink-3) 28%, transparent);
+    transition: background var(--dur-2) var(--ease-out-quint);
+  }
+  .fl-switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(1.35rem - 6px);
+    height: calc(1.35rem - 6px);
+    border-radius: 50%;
+    background: #fff;
+    transition: transform var(--dur-2) var(--ease-out-quint);
+  }
+  .fl-toggle input:checked + .fl-switch { background: var(--accent); }
+  .fl-toggle input:checked + .fl-switch::after { transform: translateX(calc(2.4rem - 1.35rem)); }
+  .fl-toggle input:focus-visible + .fl-switch {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .fl-scope-text { display: flex; flex-direction: column; gap: .1rem; }
+  .fl-scope-t { font-size: .95rem; }
+  .fl-scope-b { font-size: .8rem; color: var(--ink-3); }
+
+  .fl-count {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: .3rem .8rem;
+    margin-top: 1.1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  .fl-count-label { font-size: .8rem; color: var(--ink-3); }
+  .fl-count-out { font-size: 1.1rem; font-variant-numeric: tabular-nums; text-align: right; }
+  .fl-range { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin-top: .3rem; }
+  .fl-count-unit { grid-column: 1 / -1; font-size: .78rem; color: var(--ink-3); }
+
+  .fl-price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .1rem .5rem;
+    margin: 1rem 0 0;
+  }
+  .fl-price-rate { font-size: clamp(1.6rem, 4vw, 2.1rem); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .fl-price-per,
+  .fl-price-vat { font-size: .8rem; color: var(--ink-3); }
+  .fl-price-total { font-size: .9rem; color: var(--ink-2); width: 100%; font-variant-numeric: tabular-nums; }
+  /* Clipped, not hidden: it has to stay in the accessibility tree. */
+  .fl-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The disabled state the server ships (see the note by .fl-card). It should
+     read as "not yet", not as "refused", so the switch keeps its colour and
+     only the cursor changes — for the fraction of a second before flow.js
+     enables it, and permanently for a reader with no JavaScript, for whom the
+     card is a static illustration and a grabbable slider would be a lie. */
+  .fl-toggle input:disabled + .fl-switch { cursor: default; }
+  .fl-toggle:has(input:disabled) { cursor: default; }
+  .fl-range:disabled { cursor: default; }
+
+  .fl-next { margin: .5rem 0 0; font-size: .82rem; color: var(--accent); }
+  .fl-next[hidden] { display: none; }
+  .fl-price[hidden] { display: none; }
+  .fl-empty { margin: 1rem 0 0; font-size: .88rem; color: var(--ink-3); }
+  .fl-empty[hidden] { display: none; }
+
+  .fl-images { margin: 1rem 0 0; font-size: .85rem; color: var(--ink-3); }
+  .fl-images strong { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+
+  /* ── 3 · the gate ─────────────────────────────────────────────────────── */
+  .fl-gate {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: stretch;
+    gap: clamp(1rem, 3vw, 2rem);
+    max-width: 30rem;
+    margin: 0 auto;
+  }
+  /* The uprights. Heavier than every other line in the figure on purpose: this
+     is the one node you should read as a thing with two sides before you read
+     its label. */
+  .fl-post { width: 3px; background: var(--ink-2); border-radius: 2px; }
+  .fl-gate-body { padding: .4rem 0; }
+  .fl-gate-pass,
+  .fl-gate-refuse {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    margin: 0;
+    text-align: left;
+    font-size: .92rem;
+  }
+  .fl-gate-refuse { margin-top: .8rem; color: var(--ink-3); }
+  .fl-gate-timing { margin: .35rem 0 0 1.4rem; text-align: left; font-size: .82rem; color: var(--ink-3); }
+  .fl-tick,
+  .fl-cross {
+    flex: 0 0 auto;
+    width: .9rem;
+    height: .9rem;
+    margin-top: .18rem;
+    border-radius: 50%;
+  }
+  .fl-tick { background: var(--accent); }
+  .fl-cross { border: 1px solid var(--line-strong); }
+  .fl-sub { margin: 1rem auto 0; max-width: 34rem; font-size: .82rem; color: var(--ink-3); }
+
+  /* ── 4 · production ───────────────────────────────────────────────────── */
+  .fl-make { list-style: none; margin: 0 auto; padding: 0; max-width: 30rem; display: grid; gap: 1rem; }
+  .fl-make-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .2rem .8rem;
+    text-align: left;
+  }
+  .fl-dot { grid-row: span 2; width: .55rem; height: .55rem; margin-top: .42rem; border-radius: 50%; background: var(--ink-2); }
+  .fl-make-t { font-size: .95rem; }
+  .fl-make-b { font-size: .84rem; color: var(--ink-3); }
+
+  /* ── 5 · delivery ─────────────────────────────────────────────────────── */
+  .fl-delivery { margin: 0 auto; max-width: 34rem; font-size: .95rem; }
+  .fl-portal { margin-top: 1.2rem; }
+  .fl-portal[hidden] { display: none; }
+  .fl-tiles {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .5rem;
+    max-width: 20rem;
+  }
+  .fl-tile { aspect-ratio: 4 / 5; border-radius: var(--r-sm); border: 1px solid var(--line); }
+  .fl-tile.is-ok { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .fl-tile.is-rev { border-color: #E0A33A; background: color-mix(in srgb, #E0A33A 14%, transparent); }
+  .fl-tile.is-wait {
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0 5px,
+      var(--line) 5px 6px
+    );
+  }
+  .fl-legend {
+    list-style: none;
+    margin: .9rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .4rem 1.1rem;
+    font-size: .8rem;
+    color: var(--ink-3);
+  }
+  .fl-legend li { display: flex; align-items: center; gap: .4rem; }
+  .fl-key { width: .7rem; height: .7rem; border-radius: 3px; border: 1px solid var(--line); }
+  .fl-key.is-ok { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 30%, transparent); }
+  .fl-key.is-rev { border-color: #E0A33A; background: color-mix(in srgb, #E0A33A 30%, transparent); }
+
+  /* ── 6 · the fan-out ──────────────────────────────────────────────────── */
+  /* Full width, matching .fl-out — see the note on the paths. */
+  .fl-split { width: 100%; height: clamp(2.6rem, 6vw, 4rem); margin-top: .6rem; }
+
+  .fl-out {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: end;
+    gap: clamp(.4rem, 1.6vw, .9rem);
+  }
+  .fl-out-frame { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+  /* THE FRAME IS THE RATIO. `aspect-ratio` is set inline from RATIOS, so the
+     shape cannot drift from the label the way a hand-picked height would. */
+  .fl-crop {
+    position: relative;
+    display: block;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+  }
+  .fl-crop-drawn {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0 5px,
+      var(--line) 5px 6px
+    );
+  }
+  .fl-crop-ratio {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: .7rem;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .fl-out-t { font-size: .72rem; color: var(--ink-3); text-align: center; line-height: 1.25; }
+
+  .fl-note {
+    margin: clamp(1.6rem, 3vw, 2.4rem) auto 0;
+    max-width: 46rem;
+    font-size: .82rem;
+    color: var(--ink-3);
+  }
+
+  /* ── the scroll choreography ──────────────────────────────────────────── */
+  /* Only under .js, only when motion is welcome, and only ever as a dim-then-
+     lift of something already laid out. No height, no margin, no display. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .fl-stage,
+    :global(.js) .fl-out,
+    :global(.js) .fl-split {
+      opacity: .28;
+      transition: opacity var(--dur-3) var(--ease-out-quint), transform var(--dur-3) var(--ease-out-quint);
+    }
+    :global(.js) .fl-stage { transform: translateY(10px); }
+    :global(.js) .fl-stage.is-lit,
+    :global(.js) .fl-out.is-lit,
+    :global(.js) .fl-split.is-lit { opacity: 1; transform: none; }
+  }
+
+  /* ── narrow ───────────────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    /* Five frames across a phone gives each one about 55px, which is narrower
+       than the ratio label inside it. Two rows of the same five, in the same
+       order, keeps the sequence readable — the order carries meaning here the
+       way it does in FigFormats. */
+    .fl-out { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+    /* Three columns down here, so a five-armed split points at gaps. The
+       converge stays: four sources are still four sources at this width. */
+    .fl-split { display: none; }
+    .fl-gate { grid-template-columns: auto 1fr auto; gap: .8rem; }
+    .fl-tiles { max-width: 100%; }
+  }
+</style>

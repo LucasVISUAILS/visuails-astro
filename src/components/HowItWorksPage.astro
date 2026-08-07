@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — /how-it-works, rewritten. AUDIT-TASK-0.md §F: "REWRITE. 'One
 // photo in. A campaign out.' → drop-shaped. All ~24h claims corrected."
 //
@@ -166,14 +167,15 @@
 // Drawing constants — ratios, block widths, tile patterns, glyph paths — live
 // inside the figure components, because they are the same in every language.
 import Compare from './Compare.astro';
-import FigFanOut from './FigFanOut.astro';
-import FigPipeline from './FigPipeline.astro';
-import FigCapacity from './FigCapacity.astro';
-import FigApproval from './FigApproval.astro';
-import FigFormats from './FigFormats.astro';
+// FigFanOut, FigPipeline, FigCapacity, FigApproval and FigFormats used to be
+// imported here. They are one component now — see FigFlow.astro's header for
+// what each of them claimed and where that claim went. The five files still
+// exist and are still imported by nothing; deleting them is a separate,
+// reversible decision and this page is not the place to make it.
+import FigFlow from './FigFlow.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
-  WINDOW_THRESHOLD, vatLabel, vatNote,
+  WINDOW_THRESHOLD, vatLabel, vatNote, quote,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -188,6 +190,12 @@ const lp = (p: string) => localizedPath(lang, p);
 // table so neither branch can print one without the other.
 const sample = `${euro(AMOUNT.testSample, lang)} ${vatLabel('excl', lang)}`;
 
+// The clip price the flow's video toggle quotes. Same construction as `sample`
+// and the same reason: BRIEF-14 forbids a bare figure, and building it here
+// means neither language branch can print the number without the label.
+const clip = `${euro(AMOUNT.video, 'en')} ${vatLabel('excl', 'en')}`;
+const clipNl = `${euro(AMOUNT.video, 'nl')} ${vatLabel('excl', 'nl')}`;
+
 // No `as const` — see PricingPage.astro for why (union-of-tuples breaks .map).
 const COPY = {
   en: {
@@ -199,83 +207,86 @@ const COPY = {
     ctaStart: 'Start an order',
     ctaSample: 'Try a test sample',
 
-    // FigFanOut, straight after the hero: the H1 drawn. "One folder in, a whole
-    // batch out" is a shape, and a shape is the one thing a sentence cannot show.
-    fanIn: 'What you send',
-    fanOut: 'What comes back, per product',
-    fanPhotoAlt: 'A washed T-shirt photographed flat on an office table in window light',
-    fanMadeAlt: 'The same T-shirt, cut out and lit on a plain white ground',
-    fanSlots: [
-      { t: 'On a model' },
-      { t: 'In a scene' },
-      { t: 'Sized for ads' },
-    ],
-    // Every figcaption on this page was written twice: once at the length the
-    // argument wanted, and once at the length a caption is allowed to be. The
-    // first drafts came to 188 words across five figures — a picture, then a
-    // paragraph explaining the picture, which is the reflex that produced the
-    // complaint this whole task exists to answer. What survives is only what the
-    // drawing genuinely cannot say: here, that three of the four output frames
-    // are DRAWN and not photographed. That is a disclosure, not commentary; drop
-    // it and the figure quietly claims four real results where it has one.
-    fanNote: 'One product, photographed once. The white-ground pair is real — the other three frames are drawn, because they are slots in the delivery, not results this shirt has produced.',
+    // ── FIGFLOW ──────────────────────────────────────────────────────────
+    // This block replaces the copy that fed five separate figures. The keys it
+    // retires and where each claim went are listed in FigFlow.astro's header;
+    // read that before deleting anything here, because several of these strings
+    // are the ONLY place a claim is made.
+    flowH: 'Your order, end to end.',
+    flowLede: 'One rail, from the folder you send to the crops that go out. The switches are real — turn them and the count, the price, the queue and the delivery all move with them, because in the actual system they hang off the same two numbers.',
+    flowLabel: 'The VISUAILS production pipeline, with controls for scope and product count',
 
-    // `n` is gone and is not coming back: FigPipeline's rail IS the ordering, so
-    // printing 01/02/03/04 beside it would be the scaffolding reflex DESIGN.md
-    // rejects, wearing the numbers twice. `gate` is what step 02 needs instead —
-    // it draws a doorway rather than a dot, so the refusal is visible before the
-    // label is read.
-    steps: [
-      {
-        h: 'You send the products',
-        b: 'Photos and a short note on the look. Five minutes, however many products you have — the effort does not scale with the size of the order.',
-        linkText: 'See the upload guidelines',
-        linkHref: '/upload-guidelines',
-      },
-      {
-        h: 'We check capacity',
-        b: `Before anything is charged. From ${WINDOW_THRESHOLD} products an order is only given a window the calendar can actually hold — and if it cannot be held, you are told that instead of a date.`,
-        gate: true,
-      },
-      {
-        h: 'We produce and check',
-        b: 'Generated in the pipeline, finished by hand in professional editing tools, colour-graded to your brand, and looked at by a person before it leaves.',
-      },
-      {
-        h: 'You get the files',
-        // One product, one line, stated as the threshold rather than as two
-        // things to choose between — see the header note.
-        b: `From ${WINDOW_THRESHOLD} products an order lands in a portal you approve image by image. Below that it arrives as a download link.`,
-      },
+    flowStages: {
+      send: 'What you send',
+      scope: 'What you order',
+      gate: 'The capacity gate',
+      make: 'What we do',
+      deliver: 'What you get',
+    },
+
+    // The four shots from src/data/shots.js, in asking order. The first is a
+    // real client photograph; the other three are drawn, and the caption says
+    // so — see FigFanOut's old fanNote, which this replaces.
+    flowSources: [
+      { t: 'Front', src: '/img/catalog-before.webp', alt: 'A washed T-shirt photographed flat on an office table in window light' },
+      { t: 'Back' },
+      { t: 'Detail' },
+      { t: 'Worn' },
     ],
-    pipeNote: 'Four stops, and the second one can say no. That is the only reason the other three are worth anything.',
+
+    // `id` is the ladder key, not a label — see FigFlow's ladderKey(). Catalog
+    // and lifestyle together are the `complete` rung, which is why both start
+    // on: it is the order most brands actually place, and it is the one state
+    // that shows the whole figure at once.
+    flowScopes: [
+      { id: 'catalog', t: 'Catalog set', b: '4 images per product — front, back, detail, on model', on: true },
+      { id: 'lifestyle', t: 'Lifestyle carousel', b: '3 images per product — one styled look, ready to post', on: true },
+      { id: 'video', t: 'Video clip', b: `1 clip per product — ${clip}`, on: false },
+    ],
+    flowCountLabel: 'Products in the order',
+    flowCountUnit: `Drag it. The rate per product falls as the count rises, and at ${WINDOW_THRESHOLD} the order changes queue.`,
+    flowNextLabel: 'The next rung on the price ladder',
+    flowEmpty: 'Switch something on and the price appears here.',
+    // {n} is the hole the number goes in — see FigFlow's imagesParts.
+    flowImages: '{n} files leave the studio for this order.',
+
+    // The gate. Both sides, and the refusing side is not smaller — that was
+    // FigCapacity's whole argument and the reason it was a figure at all.
+    flowGatePass: 'The calendar can hold it',
+    flowGateRefuse: 'It cannot — and then you are told that, with the next window that can, instead of a date invented to keep the order',
+    flowGateNote: 'Checked before anything is charged. It is the one promise on this site we would rather lose an order over than break.',
+
+    flowMake: [
+      { t: 'Produced', b: 'Every product in the order runs together, which is what makes the lighting, the angle and the grade match across all of them.' },
+      { t: 'Finished and checked by a person', b: 'Hand-finished in professional editing tools, colour-graded to your brand, and looked at by a human before it leaves.' },
+    ],
+
+    flowPortal: {
+      ok: 'Approved by you',
+      rev: 'Revision requested — this image only',
+      wait: 'Still coming',
+    },
+    flowDeliverPortal: `From ${WINDOW_THRESHOLD} products it lands in a portal you approve image by image — approved, in revision and still coming, all at once, none of them waiting on the others.`,
+    flowDeliverLink: 'Below that it arrives as a download link, with the same production and the same check behind it.',
+
+    flowChannels: [
+      { t: 'Shop listing' },
+      { t: 'Feed post' },
+      { t: 'Reel or story' },
+      { t: 'Banner' },
+      { t: 'Marketplace' },
+    ],
+
+    // FIVE DISCLOSURES IN ONE CAPTION, because this figure replaced five. Every
+    // sentence here was load-bearing somewhere else: drawn-not-photographed
+    // (FigFanOut), not-a-screenshot (FigApproval), each frame IS its ratio and
+    // the high-resolution claim that used to be a card of its own (FigFormats).
+    // The prices sentence is new and is the price of making the figure quote
+    // real numbers at all.
+    flowNote: `A diagram, not a screenshot. The front photo is a real client file; the other frames are drawn, because they are slots in the delivery and not results this shirt has produced. Each crop is genuinely the ratio it is labelled with. Delivered files are high-resolution and e-commerce-ready. Prices come from the published ladder, ${vatLabel('excl', 'en')}.`,
 
     gateLead: 'No date is printed until the calendar clears it.',
     gateBody: 'A reserved window is confirmed before you pay, never after. If the week you need cannot be held, you hear that — not an optimistic guess. It is the one promise on this site we would rather lose an order over than break.',
-    // FigCapacity draws both answers. The paragraph above can only assert the
-    // refusal happens; two tracks side by side show it, and showing the losing
-    // case is the whole reason this claim is not boilerplate.
-    capCases: [
-      {
-        label: 'The week you need can be held',
-        slot: 'Your order',
-        verdict: 'The window is reserved, and confirmed in writing before anything is charged.',
-      },
-      {
-        label: 'It cannot',
-        verdict: 'You are told so, and offered the first window that can hold it. No date is invented to keep the order.',
-      },
-    ],
-    // The cut clause read "no figure on this site prints a duration, and the two
-    // sanctioned ones are further down this page". True, binding, and none of a
-    // reader's business — it is a rule this repo keeps, so it belongs here in a
-    // comment where it still binds whoever edits FigCapacity next, rather than on
-    // the page where it spent 22 words telling a customer about our own policy.
-    // The rule, stated once: the bands are unlabelled and uncountable on purpose,
-    // and any edit that gives them a scale is reintroducing the delivery-time
-    // claim that tasks #190 and #198 spent two rounds removing.
-    capNote: 'The bands are work already committed. They are deliberately uneven — there is nothing here to count.',
-
     craftH: 'More than AI. Finished by hand.',
     craftBody: "The pipeline does the heavy lifting, but it is only the start. Every visual is finished in professional editing tools and colour-graded to your brand, and a person checks accuracy, consistency and framing before anything ships — the difference between a raw generator and something you would publish.",
     chips: ['Professional editing & retouch', 'Colour grading to your brand', reviewClaim('attended', 'en')],
@@ -284,19 +295,6 @@ const COPY = {
 
     portalH: 'You approve it, image by image.',
     portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}`,
-    // These four strings replace the four-item checklist that used to sit here.
-    // The claim the list was making — "a revision on that image alone, the rest
-    // of the order keeps moving" — is about PARALLELISM, and a column of
-    // bullets is a picture of the opposite. Three states at once is the claim.
-    apvHead: 'Your order, in the portal',
-    apvOk: 'Approved by you',
-    apvRev: 'Revision requested — this image only',
-    apvWait: 'Still coming',
-    // "Every image appears the moment it is ready" went: the drawing shows three
-    // states side by side, which IS that sentence. The disclosure stays for the
-    // same reason as fanNote's — a diagram that lets itself be read as a
-    // screenshot is inventing proof.
-    apvNote: 'A drawing of the portal, not a screenshot. Nothing is final until you approve it, and the approved set downloads at full resolution.',
     portalNote: `Smaller orders work differently and more simply. ${TIERS.unattended.delivery.en}.`,
 
     detailsH: 'The details that matter',
@@ -309,29 +307,6 @@ const COPY = {
       { t: 'Two ways in', b: 'On-site, or WhatsApp — whichever suits you. The same pipeline either way.' },
       { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
     ],
-    // The sixth card used to read: "Files — high-resolution, e-commerce-ready
-    // files, sized for shop listings, marketplaces and ads." A true sentence
-    // that shows a reader nothing, in a six-up grid of identical cards, which
-    // is the other device DESIGN.md rejects. FigFormats makes the same claim by
-    // being the shapes, and the grid is five cards now instead of six.
-    formatsH: 'One visual, every shape a channel asks for',
-    fmtAlt: 'One product visual cropped to five different aspect ratios',
-    // Frame 0 takes fmtAlt; 1..4 carry their own, because each crop is
-    // different evidence, not a decorative repeat. Order is coupled to
-    // FigFormats' RATIOS (1:1, 4:5, 9:16, 16:9, 3:4) like the labels are.
-    fmtFrames: [
-      { t: 'Shop listing' },
-      { t: 'Feed post', alt: 'The same catalog visual cropped to a tall 4:5 feed post' },
-      { t: 'Reel or story', alt: 'The same catalog visual cropped to a full-height 9:16 reel or story' },
-      { t: 'Banner', alt: 'The same catalog visual cropped to a wide 16:9 banner' },
-      { t: 'Marketplace', alt: 'The same catalog visual cropped to a 3:4 marketplace listing' },
-    ],
-    // First sentence is load-bearing — it is the whole of the deleted "Files"
-    // card, and removing a card while dropping its claim would be losing content,
-    // not compressing it. The rest said "the drawing is the claim" in words,
-    // which is a figure arguing for itself instead of doing its job.
-    fmtNote: 'High-resolution, e-commerce-ready files. Each frame is the ratio it is labelled with.',
-
     faqH: 'Still have a question?',
     // The second inbound link to /guides (brief §1 — it had none in any page
     // body). It sits under the FAQ heading because that is where someone with
@@ -343,7 +318,7 @@ const COPY = {
     ctaBody: `One test sample per business — ${sample}, no commitment. It runs through the same pipeline as a paid order.`,
     ctaSampleBtn: 'Test sample',
     ctaStartBtn: 'Start an order',
-    wa: 'https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20how%20an%20order%20works.',
+    wa: waHref("Hi VISUAILS, I have a question about how an order works."),
   },
 
   nl: {
@@ -355,56 +330,65 @@ const COPY = {
     ctaStart: 'Start een bestelling',
     ctaSample: 'Probeer een proefvisual',
 
-    fanIn: 'Wat jij stuurt',
-    fanOut: 'Wat je terugkrijgt, per product',
-    fanPhotoAlt: 'Een gewassen T-shirt, plat gefotografeerd op een kantoortafel bij daglicht',
-    fanMadeAlt: 'Hetzelfde T-shirt, uitgesneden en belicht op een egale witte ondergrond',
-    fanSlots: [
-      { t: 'Op een model' },
-      { t: 'In een scène' },
-      { t: 'Op advertentieformaat' },
-    ],
-    fanNote: 'Eén product, één keer gefotografeerd. Het kader op wit is een echt paar — de andere drie zijn getekend, want het zijn plekken in de levering, geen resultaten die dit shirt heeft opgeleverd.',
+    flowH: 'Je bestelling, van begin tot eind.',
+    flowLede: 'Eén rail, van de map die je stuurt tot de uitsnedes die eruit gaan. De schakelaars zijn echt — zet ze om en het aantal, de prijs, de wachtrij en de levering bewegen mee, want in het echte systeem hangen die aan dezelfde twee getallen.',
+    flowLabel: 'De productiepipeline van VISUAILS, met knoppen voor scope en aantal producten',
 
-    steps: [
-      {
-        h: 'Jij stuurt de producten',
-        b: 'Foto’s en een korte notitie over de look. Vijf minuten, hoeveel producten het ook zijn — de moeite groeit niet mee met de omvang van de bestelling.',
-        linkText: 'Bekijk de uploadrichtlijnen',
-        linkHref: '/upload-guidelines',
-      },
-      {
-        h: 'Wij checken de capaciteit',
-        b: `Voordat er iets betaald wordt. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling alleen een venster dat de agenda ook echt kan vasthouden — en kan die week niet, dan hoor je dat in plaats van een datum.`,
-        gate: true,
-      },
-      {
-        h: 'Wij produceren en controleren',
-        b: 'Gegenereerd in de pipeline, met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en door een mens bekeken voordat het weggaat.',
-      },
-      {
-        h: 'Jij krijgt de bestanden',
-        // Zie de EN-tak: één grens, geen twee producten om uit te kiezen.
-        b: `Vanaf ${WINDOW_THRESHOLD} producten komt een bestelling in een portaal waar je beeld voor beeld goedkeurt. Daaronder komt hij als downloadlink.`,
-      },
+    flowStages: {
+      send: 'Wat jij stuurt',
+      scope: 'Wat je bestelt',
+      gate: 'De capaciteitspoort',
+      make: 'Wat wij doen',
+      deliver: 'Wat je krijgt',
+    },
+
+    flowSources: [
+      { t: 'Voorkant', src: '/img/catalog-before.webp', alt: 'Een gewassen T-shirt, plat gefotografeerd op een kantoortafel bij daglicht' },
+      { t: 'Achterkant' },
+      { t: 'Detail' },
+      { t: 'Gedragen' },
     ],
-    pipeNote: 'Vier haltes, en de tweede kan nee zeggen. Dat is de enige reden dat de andere drie iets waard zijn.',
+
+    flowScopes: [
+      { id: 'catalog', t: 'Catalogset', b: '4 beelden per product — voor, achter, detail, op model', on: true },
+      { id: 'lifestyle', t: 'Lifestyle-carousel', b: '3 beelden per product — één gestylede look, klaar om te posten', on: true },
+      { id: 'video', t: 'Videoclip', b: `1 clip per product — ${clipNl}`, on: false },
+    ],
+    flowCountLabel: 'Producten in de bestelling',
+    flowCountUnit: `Sleep hem. Het tarief per product daalt naarmate het aantal stijgt, en bij ${WINDOW_THRESHOLD} verandert de bestelling van wachtrij.`,
+    flowNextLabel: 'De volgende trede op de prijsladder',
+    flowEmpty: 'Zet iets aan en de prijs verschijnt hier.',
+    flowImages: 'Er gaan {n} bestanden de deur uit voor deze bestelling.',
+
+    flowGatePass: 'De agenda kan het vasthouden',
+    flowGateRefuse: 'Of niet — en dan hoor je dat, met het eerstvolgende venster dat het wél kan, in plaats van een datum die is verzonnen om de bestelling binnen te houden',
+    flowGateNote: 'Gecontroleerd voordat er iets in rekening wordt gebracht. Het is de ene belofte op deze site waarvoor we liever een bestelling verliezen dan haar te breken.',
+
+    flowMake: [
+      { t: 'Geproduceerd', b: 'Elk product in de bestelling gaat samen door de pipeline, en juist dat maakt dat de belichting, de hoek en de grade over alle producten kloppen.' },
+      { t: 'Afgewerkt en door een mens gecontroleerd', b: 'Met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en door een mens bekeken voordat het weggaat.' },
+    ],
+
+    flowPortal: {
+      ok: 'Door jou goedgekeurd',
+      rev: 'Revisie aangevraagd — alleen dit beeld',
+      wait: 'Nog onderweg',
+    },
+    flowDeliverPortal: `Vanaf ${WINDOW_THRESHOLD} producten komt hij in een portaal waar je beeld voor beeld goedkeurt — goedgekeurd, in revisie en nog onderweg tegelijk, en geen van drieën wacht op de andere.`,
+    flowDeliverLink: 'Daaronder komt hij als downloadlink, met dezelfde productie en dezelfde controle erachter.',
+
+    flowChannels: [
+      { t: 'Shoplisting' },
+      { t: 'Feedpost' },
+      { t: 'Reel of story' },
+      { t: 'Banner' },
+      { t: 'Marktplaats' },
+    ],
+
+    flowNote: `Een tekening, geen schermafbeelding. De voorkantfoto is een echt klantbestand; de andere kaders zijn getekend, want het zijn plekken in de levering en geen resultaten die dit shirt heeft opgeleverd. Elke uitsnede ís echt de verhouding waar het label bij staat. Geleverde bestanden zijn hoge resolutie en klaar voor e-commerce. Prijzen komen uit de gepubliceerde ladder, ${vatLabel('excl', 'nl')}.`,
 
     gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
     gateBody: 'Een gereserveerd venster wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — geen optimistische gok. Het is de ene belofte op deze site waarvoor we liever een bestelling verliezen dan haar te breken.',
-    capCases: [
-      {
-        label: 'De week die je nodig hebt kan worden vastgehouden',
-        slot: 'Jouw bestelling',
-        verdict: 'Het venster wordt gereserveerd en schriftelijk bevestigd voordat er iets in rekening wordt gebracht.',
-      },
-      {
-        label: 'Die week kan niet',
-        verdict: 'Dan hoor je dat, met het eerstvolgende venster dat het wél kan vasthouden. Er wordt geen datum verzonnen om de bestelling binnen te houden.',
-      },
-    ],
-    capNote: 'De banden zijn werk dat al vastligt. Ze zijn met opzet ongelijk — er valt hier niets te tellen.',
-
     craftH: 'Meer dan AI. Met de hand afgewerkt.',
     craftBody: 'De pipeline doet het zware werk, maar dat is pas het begin. Elke visual wordt afgewerkt in professionele editingtools en kleurgecorrigeerd naar je merk, en een mens controleert nauwkeurigheid, consistentie en kadrering voordat er iets weggaat — het verschil tussen een kale generator en iets dat je zou publiceren.',
     chips: ['Professionele editing & retouche', 'Kleurcorrectie naar je merk', reviewClaim('attended', 'nl')],
@@ -413,11 +397,6 @@ const COPY = {
 
     portalH: 'Jij keurt goed, beeld voor beeld.',
     portalBody: `Een bestelling van ${WINDOW_THRESHOLD} producten of meer komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}`,
-    apvHead: 'Jouw bestelling, in het portaal',
-    apvOk: 'Door jou goedgekeurd',
-    apvRev: 'Revisie aangevraagd — alleen dit beeld',
-    apvWait: 'Nog onderweg',
-    apvNote: 'Een tekening van het portaal, geen schermafbeelding. Niets is definitief tot jij het goedkeurt, en de goedgekeurde set download je in volledige resolutie.',
     portalNote: `Kleinere bestellingen werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
 
     detailsH: 'De details die ertoe doen',
@@ -429,17 +408,6 @@ const COPY = {
       { t: 'Twee ingangen', b: 'Via de site of via WhatsApp — wat jou uitkomt. Dezelfde pipeline in beide gevallen.' },
       { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
     ],
-    formatsH: 'Eén visual, elke vorm die een kanaal vraagt',
-    fmtAlt: 'Eén productvisual bijgesneden naar vijf verschillende beeldverhoudingen',
-    fmtFrames: [
-      { t: 'Shoplisting' },
-      { t: 'Feedpost', alt: 'Dezelfde catalogvisual bijgesneden naar een staande 4:5-feedpost' },
-      { t: 'Reel of story', alt: 'Dezelfde catalogvisual bijgesneden naar een schermvullende 9:16-reel of -story' },
-      { t: 'Banner', alt: 'Dezelfde catalogvisual bijgesneden naar een brede 16:9-banner' },
-      { t: 'Marktplaats', alt: 'Dezelfde catalogvisual bijgesneden naar een 3:4-vermelding op een marktplaats' },
-    ],
-    fmtNote: 'Hoge-resolutiebestanden, klaar voor e-commerce. Elk kader ís de verhouding waar het label bij staat.',
-
     faqH: 'Nog een vraag?',
     faqGuides: `De FAQ beantwoordt de praktische vragen; de langere stukken — hoe je de foto maakt die je ons stuurt, wat een shootdag echt kost — staan bij de <a href="${lp('/guides')}">gidsen</a>.`,
     faqCta: 'Lees de FAQ',
@@ -448,31 +416,111 @@ const COPY = {
     ctaBody: `Eén proefvisual per bedrijf — ${sample}, zonder verplichting. Hij loopt door dezelfde pipeline als een betaalde bestelling.`,
     ctaSampleBtn: 'Proefvisual',
     ctaStartBtn: 'Start een bestelling',
-    wa: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20hoe%20een%20bestelling%20werkt.',
+    wa: waHref("Hoi VISUAILS, ik heb een vraag over hoe een bestelling werkt."),
   },
 };
 
 const c = COPY[lang];
 
-// Built here rather than inline in the <FigPipeline> attribute, and the reason
-// is not taste. An arrow function inside a JSX attribute puts a `>` (the one in
-// `=>`) inside the opening tag, and check_tags — which scans for tag
-// boundaries, not JS — closed <FigPipeline> on it and then reported the next
-// </div> as a mismatch against an unclosed `figpipeline`. The report was
-// correct about what it could see. Same principle as FigCapacity's segments()
-// helper: static analysis is the entire safety net in this repo (npm is
-// blocked, nothing can be built or screenshotted), so markup that the checkers
-// cannot parse is markup with no checker on it.
+// ── THE RATE TABLE THE FIGURE SHIPS TO THE BROWSER ───────────────────────────
+// Every price FigFlow can show, precomputed here: one entry per (scope
+// combination × product count). Seven priced combinations × FLOW_MAX counts is
+// a few hundred short strings — well under 40 kB of JSON, a fraction of that
+// gzipped — and it buys the thing that matters. The ladder is implemented ONCE,
+// in src/data/pricing.js, and the browser only ever looks a key up.
 //
-// The href is localised here too. FigPipeline has no `lang` prop and must not
-// grow one — see its header comment.
-const pipeStops = c.steps.map((s) => ({
-  t: s.h,
-  b: s.b,
-  gate: s.gate,
-  linkText: s.linkText,
-  linkHref: s.linkHref ? lp(s.linkHref) : undefined,
-}));
+// KEYED BY THE SWITCHES, NOT BY THE LADDER. The first draft keyed on the ladder
+// name and left the browser to work out that catalog + lifestyle means the
+// `complete` rung — which put that rule in two places, and the two promptly
+// disagreed: switching lifestyle off left the previous rung's "and every
+// product drops to €109" standing under a catalog price. The key is now the
+// literal state of the three switches, so there is no rule to duplicate and no
+// state that can go stale, because every state has its own row.
+//
+// FLOW_MAX is 40 rather than the ladder's open top rung because a slider needs
+// an end and 40 is a season. The last rung (35+) is reached and visible, which
+// is the part that has to be true; anything beyond it prices identically.
+const FLOW_MAX = 40;
+const FLOW_START = 12;   // above WINDOW_THRESHOLD on purpose — the server-rendered
+                         // state should be the one that shows the portal, since
+                         // that is the half of the figure a no-JS reader would
+                         // otherwise never see.
+
+// No arrow functions in JSX attributes is the rule for MARKUP; this is
+// frontmatter, where they are fine. Named anyway, because a stack trace that
+// says `rateRow` beats one that says `<anonymous>`.
+function ladderFor(cat, life) {
+  if (cat && life) return 'complete';
+  if (cat) return 'catalog';
+  if (life) return 'lifestyle';
+  return null;
+}
+
+function rateRow(cat, life, vid, n) {
+  const kind = ladderFor(cat, life);
+  if (!kind && !vid) return null;   // nothing switched on — nothing to quote
+
+  const q = kind ? quote(kind, n) : null;
+  // The headline is what ONE product costs at the scope on screen. A clip is
+  // priced per product like everything else, so it belongs in that figure
+  // rather than in a footnote the reader has to add up themselves.
+  const perProduct = (q ? q.rate : 0) + (vid ? AMOUNT.video : 0);
+  const total = (q ? q.listTotal : 0) + (vid ? AMOUNT.video * n : 0);
+
+  let next = null;
+  if (q && q.nextRung) {
+    const add = q.nextRung.addProducts;
+    // The next rung's PER-PRODUCT figure, on the same basis as the headline —
+    // clip included when the clip is switched on. Quoting the bare photo rung
+    // next to a headline that includes the clip is two numbers that look like
+    // they should match and do not.
+    const to = euro(q.nextRung.rate + (vid ? AMOUNT.video : 0), lang);
+    // WITH THE VAT LABEL. This sentence prints a price, and BRIEF-14's rule is
+    // every number, not every block — the `excl. VAT` span belongs to the price
+    // paragraph above and never reaches this one. It was unlabelled until a
+    // review caught it.
+    const vl = vatLabel('excl', lang);
+    if (lang === 'nl') {
+      next = add === 1
+        ? `Nog één product en elk product zakt naar ${to} ${vl}.`
+        : `Nog ${add} producten en elk product zakt naar ${to} ${vl}.`;
+    } else {
+      next = add === 1
+        ? `One more product and every product drops to ${to} ${vl}.`
+        : `${add} more products and every product drops to ${to} ${vl}.`;
+    }
+  }
+
+  const unit = lang === 'nl' ? 'per product' : 'a product';
+  const totalLine = lang === 'nl'
+    ? `${n} ${n === 1 ? 'product' : 'producten'} · ${euro(total, lang)} totaal`
+    : `${n} ${n === 1 ? 'product' : 'products'} · ${euro(total, lang)} total`;
+
+  return { rate: euro(perProduct, lang), per: unit, total: totalLine, next };
+}
+
+// The key is the switch state, digit by digit, then the count: "110:12" is
+// catalog on, lifestyle on, video off, twelve products. Built the same way on
+// both sides — see flowKey() in src/scripts/flow.js.
+const flowRates = {};
+for (const cat of [0, 1]) {
+  for (const life of [0, 1]) {
+    for (const vid of [0, 1]) {
+      for (let n = 1; n <= FLOW_MAX; n++) {
+        const row = rateRow(!!cat, !!life, !!vid, n);
+        if (row) flowRates[`${cat}${life}${vid}:${n}`] = row;
+      }
+    }
+  }
+}
+
+// The timing strings. turnaround() and nothing else — pricing.js's header calls
+// this the only sanctioned source, and a figure that flips between two tiers is
+// exactly the surface tempted to type "2–4 days" by hand.
+const flowTiming = {
+  attended: turnaround('attended', lang),
+  unattended: turnaround('unattended', lang),
+};
 ---
 
 <!-- HERO -->
@@ -489,48 +537,60 @@ const pipeStops = c.steps.map((s) => ({
   </div>
 </section>
 
-<!-- ONE FOLDER IN, A BATCH OUT — the H1, drawn. It sits directly under the hero
-     because it is the same sentence: the hero says it, this shows it, and a
-     reader who scrolls past the words still gets the account. -->
-<section class="section-tight"><div class="container">
-  <div class="reveal pending">
-    <FigFanOut
-      photo="/img/catalog-before.webp"
-      photoAlt={c.fanPhotoAlt}
-      made="/img/catalog-after.webp"
-      madeAlt={c.fanMadeAlt}
-      inLabel={c.fanIn}
-      outLabel={c.fanOut}
-      slots={c.fanSlots}
-      note={c.fanNote}
-    />
-  </div>
-</div></section>
+<!-- THE WHOLE PIPELINE, AS ONE RAIL YOU CAN TURN KNOBS ON.
+     This one section is what five were: FigFanOut (one folder in, a batch out),
+     FigPipeline (the four stops and the gate), FigCapacity (both answers),
+     FigApproval (three states at once) and FigFormats (five channel shapes).
+     Lucas: "1 opzicht de gehele production pipeline" — and, separately, "meer
+     interactief", which is why the scope switches and the count slider are real
+     inputs rather than the reference's self-flipping decorations.
 
-<!-- THE FOUR STEPS, as a rail rather than four cards. Four, not three: the
-     capacity check is a step, not a disclaimer, and hiding it inside "we
-     produce" is how a studio ends up promising a week it cannot hold. The
-     gate stop is drawn as a doorway, which is the one thing the old numbered
-     grid could not say — it gave the refusal the same weight as "you send us
-     photos". The hrefs are localised HERE, not inside the figure. -->
+     The gate promise is stated in prose FIRST and drawn SECOND, the same order
+     /start uses. A reader who stops at the paragraph has the whole promise; the
+     figure is what makes the refusing half impossible to skim past. -->
 <section class="section-tight"><div class="container">
-  <div class="reveal pending">
-    <FigPipeline stops={pipeStops} note={c.pipeNote} />
-  </div>
-</div></section>
-
-<!-- THE CAPACITY GATE. Same promise as /start, stated once more where the
-     process is being explained rather than chosen — and then drawn, because
-     the half of this promise that matters is the half where the answer is no,
-     and prose can only tell you that happens. -->
-<section class="section-tight"><div class="container narrow">
+  <div class="section-head"><h2>{c.flowH}</h2></div>
+  <p class="flow-lede reveal pending">{c.flowLede}</p>
   <div class="gate reveal pending">
     <p class="editorial-statement">{c.gateLead}</p>
     <p class="gate-body">{c.gateBody}</p>
   </div>
-  <div class="gate-fig reveal pending">
-    <FigCapacity cases={c.capCases} note={c.capNote} />
+  <div class="reveal pending">
+    <FigFlow
+      label={c.flowLabel}
+      stages={c.flowStages}
+      sources={c.flowSources}
+      scopes={c.flowScopes}
+      countLabel={c.flowCountLabel}
+      countUnit={c.flowCountUnit}
+      nextLabel={c.flowNextLabel}
+      emptyLabel={c.flowEmpty}
+      imagesLabel={c.flowImages}
+      gatePass={c.flowGatePass}
+      gateRefuse={c.flowGateRefuse}
+      gateNote={c.flowGateNote}
+      makeSteps={c.flowMake}
+      portalStates={c.flowPortal}
+      deliverPortal={c.flowDeliverPortal}
+      deliverLink={c.flowDeliverLink}
+      channels={c.flowChannels}
+      rates={flowRates}
+      timing={flowTiming}
+      threshold={WINDOW_THRESHOLD}
+      maxCount={FLOW_MAX}
+      startCount={FLOW_START}
+      vat={vatLabel('excl', lang)}
+      note={c.flowNote}
+    />
   </div>
+  {/* vatNote() ONCE PER PAGE, and this page had never said it. Every number in
+      the figure carries `excl. VAT` — that is BRIEF-14's per-number rule — but
+      the second half of the rule is one line per page saying how VAT is
+      actually handled, and the page went from printing one price (the test
+      sample) to printing a live calculator without ever adding it. Plain
+      paragraph rather than /pricing's <Disclose>: this is the foot of a figure,
+      not a price table, and a thing you have to open to read is not "stated". */}
+  <p class="flow-vat">{vatNote(lang)}</p>
 </div></section>
 
 <!-- FINISHED BY HAND -->
@@ -555,39 +615,23 @@ const pipeStops = c.steps.map((s) => ({
   </div>
 </div></section>
 
-<!-- THE PORTAL -->
-<section class="section-tight"><div class="container two-col">
+<!-- THE PORTAL, IN WORDS. The drawing of it — three states at once — is now
+     the delivery stage of the rail above, so what is left here is the claim
+     itself. One column, not two: a two-column block with nothing in the right
+     half is a layout waiting for an image that is not coming. -->
+<section class="section-tight"><div class="container narrow">
   <div class="reveal pending">
     <h2>{c.portalH}</h2>
     <p class="lead" style="margin-top:1.1rem">{c.portalBody}</p>
     <p class="portal-note">{c.portalNote}</p>
   </div>
-  <div class="reveal pending">
-    <FigApproval
-      head={c.apvHead}
-      okLabel={c.apvOk}
-      revLabel={c.apvRev}
-      waitLabel={c.apvWait}
-      note={c.apvNote}
-    />
-  </div>
 </div></section>
 
-<!-- THE DETAILS. The figure opens the section and the cards follow, so the
-     band is not another uninterrupted run of identical boxes — and the "Files"
-     claim that used to be the sixth box is now the thing you can see. -->
+<!-- THE DETAILS. FigFormats and its heading used to open this section; the five
+     channel crops are the fan-out at the foot of the rail now, and the
+     high-resolution claim that was once a sixth card travelled with them into
+     the rail's caption. What is left is the card grid it always ended with. -->
 <section><div class="container">
-  <div class="section-head"><h2>{c.formatsH}</h2></div>
-  <div class="reveal pending" style="margin-bottom:clamp(3rem,6vw,4.5rem)">
-    <FigFormats
-      photo="/img/catalog-after.webp"
-      alt={c.fmtAlt}
-      width={1800}
-      height={1800}
-      frames={c.fmtFrames}
-      note={c.fmtNote}
-    />
-  </div>
   <div class="section-head"><h2>{c.detailsH}</h2></div>
   <div class="grid grid-auto reveal-group">
     {c.details.map((d) => (
@@ -633,10 +677,17 @@ const pipeStops = c.steps.map((s) => ({
      sentence is the design. */
   .gate { border-top: 2px solid var(--ink); padding-top: clamp(1.4rem, 3vw, 2.2rem); }
   .gate-body { margin-top: 1.1rem; color: var(--ink-2); max-width: 66ch; }
-  /* The figure is part of the gate block, not a new thought, so it sits inside
-     the same narrow container under one rule rather than starting its own
-     section with its own heading. */
-  .gate-fig { margin-top: clamp(2rem, 4.5vw, 3.2rem); }
+  /* `.gate-fig` used to be here and is gone with FigCapacity — see the note at
+     the top of this block about not leaving a rule that selects nothing.
+     The gate block now introduces the rail rather than a figure of its own, so
+     what it needs is room underneath it, not around a drawing. */
+  .gate { margin-bottom: clamp(2.4rem, 5vw, 3.6rem); }
+
+  /* The lede above the gate promise. Wider than the prose max, because it is
+     describing a thing the reader can see the whole of. */
+  .flow-lede { max-width: 68ch; margin: 0 0 clamp(1.8rem, 4vw, 2.8rem); color: var(--ink-2); font-size: 1.02rem; line-height: 1.65; }
+
+  .flow-vat { margin: clamp(1rem, 2vw, 1.4rem) auto 0; max-width: 46rem; font-size: .78rem; color: var(--ink-4); line-height: 1.6; }
 
   .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
   .chip { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1px solid var(--line); font-size: .8rem; color: var(--ink-2); }
@@ -653,3 +704,12 @@ const pipeStops = c.steps.map((s) => ({
   .faq-guides { margin-top: .9rem; font-size: .92rem; color: var(--ink-3); line-height: 1.6; }
   .faq-guides :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
 </style>
+
+<script>
+  // Page-local, like /start's pipeline.js and /demo's demo-game.js: this is one
+  // figure's behaviour and Layout.astro must not ship it to 86 pages to serve
+  // one. Importing runs it immediately and registers the astro:page-load
+  // listener for every ClientRouter navigation after — see src/scripts/flow.js,
+  // which also explains why no price arithmetic lives in it.
+  import '../scripts/flow.js';
+</script>

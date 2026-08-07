@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../../data/whatsapp.js';
 // VISUAILS — the order pipeline, shared by every service that has a real flow.
 //
 // WHY THIS IS A COMPONENT AND NOT A PAGE
@@ -610,6 +611,11 @@ const FORM = {
     footBody: `One product, ${sample.price}, ${sample.unit}. Same pipeline as a paid order.`,
     footCta: `Try a test sample · ${sample.price}`,
     footWa: 'Ask on WhatsApp',
+    // De knop stond op een kale wa.me-link: WhatsApp opende met een leeg
+    // invoerveld, zodat wie hier klikt zelf moet bedenken wat hij schrijft —
+    // op precies het punt waar hij vastliep in het bestelformulier. Elke
+    // andere WhatsApp-knop op de site opent met een zin; deze twee niet.
+    footWaText: "Hi VISUAILS, I'm filling in an order and got stuck.",
     // The signed-out sign-in prompt at the head of the form. See the markup by
     // .pl-signin for why it exists and why it is [data-acct="out"].
     signInH: 'Ordered with us before?',
@@ -726,6 +732,7 @@ const FORM = {
     footBody: `Eén product, ${sample.price}, ${sample.unit}. Dezelfde pipeline als een betaalde bestelling.`,
     footCta: `Probeer een proefvisual · ${sample.price}`,
     footWa: 'Vraag het via WhatsApp',
+    footWaText: 'Hoi VISUAILS, ik ben een bestelling aan het invullen en kom er niet uit.',
     signInH: 'Al eerder bij ons besteld?',
     signInBody: 'Log in en je naam, merk, contactgegevens, opgeslagen achtergrond en je eigen merkmodellen staan er al in — ook bij elke bestelling hierna.',
     signInCta: 'Inloggen',
@@ -1319,7 +1326,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     </div>
     <div class="start-foot-cta">
       <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{f.footCta}</a>
-      <a href="https://wa.me/31625436130" target="_blank" rel="noopener" class="btn btn-ghost btn-lg">{f.footWa}</a>
+      <a href={waHref(f.footWaText)} target="_blank" rel="noopener" class="btn btn-ghost btn-lg">{f.footWa}</a>
     </div>
   </div>
 </div></section>

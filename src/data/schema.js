@@ -77,6 +77,7 @@ import {
   BRAND_MODEL_CREDIT_DROPS, euro,
 } from './pricing.js';
 import { pricingFaqs, faqPageItems } from './faq.js';
+import { WHATSAPP_NUMBER, waHref } from './whatsapp.js';
 
 export const SITE = 'https://visuails.com';
 
@@ -163,7 +164,7 @@ function organizationNode() {
     logo: `${SITE}/favicon-512.png`,
     image: `${SITE}/img/banners-09.webp`,
     email: 'hello@visuails.com',
-    telephone: '+31625436130',
+    telephone: `+${WHATSAPP_NUMBER}`,
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Enschede',
@@ -176,7 +177,7 @@ function organizationNode() {
     // resolution field, not a link list, so an account that is not ours does
     // not belong here even if we post to it.
     sameAs: [
-      'https://wa.me/31625436130',
+      waHref(),
       'https://www.instagram.com/visuails_com/',
       'https://www.facebook.com/profile.php?id=61590208333392',
     ],

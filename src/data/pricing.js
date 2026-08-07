@@ -1037,12 +1037,12 @@ export const PER_PRODUCT = {
   en: [
     { id: 'catalog', tier: 'unattended', name: 'Catalog set', price: euro(AMOUNT.catalog, 'en'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'From four photos: front, back, a fabric or logo close-up, and one on-model shot. Add more per product.' },
     { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle carousel', price: euro(AMOUNT.lifestyle, 'en'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'en'), unit: 'per product', line: 'Three photos of one product in one styled look — a carousel ready to post.' },
-    { id: 'video', tier: 'unattended', name: 'Video clip', price: euro(AMOUNT.video, 'en'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'en'), unit: 'per clip', line: 'One short clip. The same rate on its own or added to a drop.' },
+    { id: 'video', tier: 'unattended', name: 'Video clip', price: euro(AMOUNT.video, 'en'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'en'), unit: 'per clip', line: 'One short clip. The same rate on its own or added to a larger order.' },
   ],
   nl: [
     { id: 'catalog', tier: 'unattended', name: 'Catalogset', price: euro(AMOUNT.catalog, 'nl'), outfitPrice: euro(AMOUNT.catalog + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Vanaf vier foto’s: voorkant, achterkant, een stof- of logodetail, en één on-model shot. Per product bij te bestellen.' },
     { id: 'lifestyle', tier: 'unattended', name: 'Lifestyle-carousel', price: euro(AMOUNT.lifestyle, 'nl'), outfitPrice: euro(AMOUNT.lifestyle + OUTFIT_SURCHARGE, 'nl'), unit: 'per product', line: 'Drie foto’s van één product in één gestylede look — een carousel klaar om te posten.' },
-    { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een drop.' },
+    { id: 'video', tier: 'unattended', name: 'Videoclip', price: euro(AMOUNT.video, 'nl'), outfitPrice: euro(AMOUNT.video + OUTFIT_SURCHARGE, 'nl'), unit: 'per clip', line: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan een grotere bestelling.' },
   ],
 };
 

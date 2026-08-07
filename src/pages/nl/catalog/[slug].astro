@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../../../data/whatsapp.js';
 // VISUAILS — shared template for the catalog style detail pages (Dutch / NL).
 // Localized copy of src/pages/catalog/[slug].astro — imports the NL data file
 // and prefixes every internal link with /nl.
@@ -14,7 +15,6 @@ export function getStaticPaths() {
 }
 
 const { style } = Astro.props;
-const waName = style.name.replaceAll(' ', '%20');
 
 // Timing, review level and queue behaviour are tier facts, not per-style
 // copy. They come from pricing.js so a capacity change cannot leave a
@@ -46,7 +46,7 @@ const QUEUE = TIERS.unattended.queue.nl;
         <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
         <div class="flex" style="margin-top:1.8rem">
           <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">Bestel {style.name}</a></span></span>
-          <a href={`https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20de%20${waName}-stijl.`} class="btn btn-wa" target="_blank" rel="noopener">
+          <a href={waHref(`Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`)} class="btn btn-wa" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>

@@ -1,3 +1,4 @@
+import { waHref } from './whatsapp.js';
 // VISUAILS — video style data (Dutch / NL). Localized copy of
 // src/data/videoStyles.js — same shape and exports, only the human-readable
 // strings are translated. Internal CTA paths are prefixed with /nl; external
@@ -138,7 +139,7 @@ export const videoStyles = [
     priceTrust: 'Offerte per project',
     priceUnit: '',
     ctaLabel: 'Vraag een campagne-offerte aan',
-    ctaHref: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20offerte%20voor%20een%20campagnevideo.',
+    ctaHref: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
     ctaExternal: true,
     heroIcon: 'sneaker',
     heroWidth: '26%',
@@ -190,7 +191,7 @@ export const videoStyles = [
     priceTrust: 'Offerte per project',
     priceUnit: '',
     ctaLabel: 'Bespreek een video op maat',
-    ctaHref: 'https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20een%20video%20op%20maat%20bespreken.',
+    ctaHref: waHref("Hoi VISUAILS, ik wil graag een video op maat bespreken."),
     ctaExternal: true,
     heroIcon: 'jar',
     heroWidth: '26%',

@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../data/whatsapp.js';
 // VISUAILS — the site's 404. Added 2026-07-28 (task #263 audit, live-site
 // spot-check, finding 7 — the most severe of the lot).
 //
@@ -47,7 +48,7 @@ const description =
     <div class="flex" style="justify-content:center;margin-top:2rem">
       <a href="/" class="btn btn-primary btn-lg">Back to home</a>
       <a href="/start" class="btn btn-ghost btn-lg">Start a request</a>
-      <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20followed%20a%20link%20that%20didn%27t%20work." class="btn btn-wa" target="_blank" rel="noopener">
+      <a href={waHref("Hi VISUAILS, I followed a link that didn't work.")} class="btn btn-wa" target="_blank" rel="noopener">
         Tell us what's broken
       </a>
     </div>

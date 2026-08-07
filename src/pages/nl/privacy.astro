@@ -1,4 +1,5 @@
 ---
+import { WHATSAPP_DISPLAY, waHref } from '../../data/whatsapp.js';
 // VISUAILS — Privacybeleid (Nederlands). Vertaling van src/pages/privacy.astro.
 // De redenering achter §6 (bronmateriaal 90 dagen, geleverde visuals 12
 // maanden, portaallink 90 dagen) en achter §9's portaalclausule staat in dat
@@ -32,7 +33,7 @@ import Layout from '../../layouts/Layout.astro';
         <li>Kamer van Koophandel (KVK): 99742993</li>
         <li>Btw-nummer: NL005407575B96</li>
         <li>E-mail: <a href="mailto:hello@visuails.com">hello@visuails.com</a></li>
-        <li>WhatsApp: <a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a></li>
+        <li>WhatsApp: <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a></li>
       </ul>
 
       <h2>2. Welke gegevens we verzamelen</h2>
@@ -109,7 +110,7 @@ import Layout from '../../layouts/Layout.astro';
       </ul>
 
       <h2>10. Hoe je contact met ons opneemt</h2>
-      <p>Als je vragen hebt over dit beleid of over hoe wij met je gegevens omgaan, neem dan contact met ons op via <a href="mailto:hello@visuails.com">hello@visuails.com</a> of via WhatsApp op <a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a>. We streven ernaar snel te reageren.</p>
+      <p>Als je vragen hebt over dit beleid of over hoe wij met je gegevens omgaan, neem dan contact met ons op via <a href="mailto:hello@visuails.com">hello@visuails.com</a> of via WhatsApp op <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>. We streven ernaar snel te reageren.</p>
 
     </div>
   </section>
@@ -121,7 +122,7 @@ import Layout from '../../layouts/Layout.astro';
         <p class="lead" style="margin:1.2rem auto 0;text-align:center">We leggen graag alles in dit beleid uit. Neem contact op en we komen bij je terug.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <a href="/nl/contact" class="btn btn-primary btn-lg">Neem contact op</a>
-          <a href="https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20heb%20een%20vraag%20over%20privacy." class="btn btn-wa" target="_blank" rel="noopener">
+          <a href={waHref("Hoi VISUAILS, ik heb een vraag over privacy.")} class="btn btn-wa" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>

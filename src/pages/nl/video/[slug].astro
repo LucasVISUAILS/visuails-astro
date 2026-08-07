@@ -1,4 +1,5 @@
 ---
+import { waHref } from '../../../data/whatsapp.js';
 // VISUAILS — shared template for the video style detail pages (Dutch / NL).
 // Localized copy of src/pages/video/[slug].astro — imports the NL data file
 // and prefixes every internal link with /nl.
@@ -12,7 +13,6 @@ export function getStaticPaths() {
 }
 
 const { style } = Astro.props;
-const waName = style.name.replaceAll(' ', '%20');
 const metaPrice = `${style.priceTrust}${style.priceUnit}`;
 
 // Timing, review level and queue behaviour are tier facts, not per-style
@@ -100,7 +100,7 @@ const m = media[style.slug] ?? media.motion;
               )}
             </span>
           </span>
-          <a href={`https://wa.me/31625436130?text=Hoi%20VISUAILS%2C%20ik%20wil%20graag%20praten%20over%20de%20${waName}-stijl.`} class="btn btn-wa" target="_blank" rel="noopener">
+          <a href={waHref(`Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`)} class="btn btn-wa" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>

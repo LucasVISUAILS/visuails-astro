@@ -1,4 +1,5 @@
 ---
+import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
 // VISUAILS — Terms of Service. Ported from the SvelteKit terms page (itself
 // ported from static /terms.html). Legal pages are deliberately
 // plain/scannable, not "designed" — no reveal animations or kickers, per the
@@ -192,7 +193,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>These terms are governed by the laws of the Netherlands. Any disputes will be subject to the jurisdiction of the competent Dutch courts, unless mandatory law provides otherwise.</p>
 
       <h2>13. Contact</h2>
-      <p>Questions about these terms? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a> or message us on WhatsApp at <a href="https://wa.me/31625436130" target="_blank" rel="noopener">+31 6 25436130</a>.</p>
+      <p>Questions about these terms? Email <a href="mailto:hello@visuails.com">hello@visuails.com</a> or message us on WhatsApp at <a href={waHref()} target="_blank" rel="noopener">{WHATSAPP_DISPLAY}</a>.</p>
 
     </div>
   </section>
@@ -205,7 +206,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <a href="/test-sample" class="btn btn-primary btn-lg">Test sample</a>
           <a href="/start" class="btn btn-ghost btn-lg">Start an order</a>
-          <a href="https://wa.me/31625436130?text=Hi%20VISUAILS%2C%20I%20have%20a%20question%20about%20your%20terms." class="btn btn-wa" target="_blank" rel="noopener">
+          <a href={waHref("Hi VISUAILS, I have a question about your terms.")} class="btn btn-wa" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>
