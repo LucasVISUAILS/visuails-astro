@@ -964,7 +964,14 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     // back, the choreography has to come back with it — do not re-add this
     // import on its own, it will cost 70 KB and animate nothing.
     import '../scripts/interactions.js';
-    import '../scripts/shader-hero.js';
+    /* shader-hero.js is hier weg — 7 augustus 2026. Het chroomveld dat het
+     * tekende stond op één sectie van de homepage, en die sectie is herbouwd
+     * zonder canvas (zie sectie 18 in HomeV2.astro: het was een tweede
+     * ondergrond op een pagina die er één heeft). Het script zocht
+     * #hero-shader, vond niets, en stopte netjes — maar het werd wel op alle
+     * 84 pagina's opgehaald en uitgevoerd om dat vast te stellen. Zelfde
+     * redenering als bij de choreografie hierboven: geen haak meer, dus geen
+     * import. Komt het canvas ooit terug, dan komt deze regel ermee terug. */
     // Inertial scrolling. ~3 kB, off entirely under prefers-reduced-motion and
     // on touch; it drives the document's real scrollTop, so the sticky header
     // above and the view()-timeline reveals in global.css are unaffected. The

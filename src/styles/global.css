@@ -528,7 +528,8 @@
 /* .make-tile was listed here; its rules and its markup are both gone. */
 .hero-cover,
 .hero-editorial,
-.ch-promise,
+/* .ch-promise stond hier; die sectie is 7 augustus 2026 herbouwd zonder eigen
+   ondergrond en staat nu gewoon op de paginagrond, die al donker is. */
 .convbar {
   --bg:         var(--ink-900);
   --bg-deep:    var(--ink-900);
@@ -2330,72 +2331,31 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .form-help a { color: var(--accent-bright); font-weight: 600; }
 .form-help a:hover { text-decoration: underline; }
 
-/* Promise chapter — split scene lit by the WebGL light field. */
-.ch-promise { position: relative; overflow: hidden; isolation: isolate; }
-/* Chrome surface #1. The plane is a real reflection — a fresnel term over a
-   domain-warped normal, sampling the chrome ramp. The rectangle is
-   hard-bounded (overflow: hidden on .ch-promise, no feathered edge, no
-   vignette bleeding into the page) because a chrome plane with soft edges is a
-   glow, and a glow is the thing this system left behind. */
-.ch-promise #hero-shader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; opacity: .55; }
-/* Fallback for the WebGL light field: what the section looks like when the
-   shader never initialises. Same scene, same lighting, no canvas. */
-.ch-promise .hero-fallback { position: absolute; inset: 0; z-index: -3; filter: var(--chrome-filter); background: var(--chrome); }
+/* HET CHROOMVELD IS WEG — 7 augustus 2026.
+   Lucas, met de hele onderkant van de pagina in beeld: *"die 2 secties passen
+   echt niet bij de website, maak deze even opnieuw en laat ze erbij passen,
+   die animatie kan ook weg."*
 
-/* THE SCRIM IS ITS OWN LAYER, and that is a fix, not a refactor.
-   It used to be the first background layer of .hero-fallback — i.e. UNDER the
-   canvas, at z-index -2 against the canvas's -1. So it only ever darkened the
-   fallback. Every visitor whose browser actually ran the shader got the
-   headline, the founder quote and the byline sitting directly on raw metal
-   with no scrim at all, and the three careful media queries below were tuning
-   a plate almost nobody was looking at. The section read as an oily smear
-   because that is what unscrimmed chrome under text looks like.
+   Hier stond het complete apparaat eromheen: .ch-promise als eigen
+   stapelcontext, het canvas van de WebGL-reflectie, de statische
+   chroomgradiënt als terugval, een richtingsgevoelige scrim eroverheen en drie
+   mediaquery's die de stops van die scrim per breedte bijstelden voor
+   contrast. Zorgvuldig werk, en allemaal in dienst van een tweede ondergrond op
+   een pagina die er volgens haar eigen regel maar één heeft (zie ONE GROUND
+   hierboven: heeft een sectie onderscheid nodig, dan is het een tegel, een
+   paneel, een lijn of meer ruimte).
 
-   Now: canvas at -2, fallback at -3, scrim at -1 — above whichever of the two
-   is painting, below the copy. One declaration governs both paths, so the
-   measured stops mean what they say in both.
+   Op een breed scherm was het resultaat een glanzende zilveren balk dwars door
+   een bijna zwarte pagina. De sectie is herbouwd als gewone band met het citaat
+   in een paneel — zie sectie 18 in HomeV2.astro.
 
-   The stops themselves are unchanged and the reasoning stands: the copy sits
-   on the left, so the left stays near-opaque and the metal is only let through
-   on the right where there is nothing to read. Without it the 62% glint
-   (L 0.97) lands under paper-coloured text at 1.09:1. The opaque stop runs to
-   18% and the 0.90 stop to 44% because the copy column is 1.05fr of a 2fr
-   split plus the container gutter — at the earlier 6%/34% the byline came in
-   at 4.64:1 against a 4.5 floor, which is not margin, it is luck. */
-.ch-promise::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    linear-gradient(100deg, var(--ink-900) 18%, rgb(var(--scrim) / 0.90) 44%, rgb(var(--scrim) / 0.62) 68%, rgb(var(--scrim) / 0.46) 100%),
-    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%);
-}
-.promise-split { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(2.4rem, 5vw, 4.5rem); align-items: center; }
-@media (max-width: 900px) {
-  .promise-split { grid-template-columns: 1fr; }
-  /* One column: the copy is now the full width, so the strip the metal was
-     living in does not exist any more. A directional scrim that assumes a
-     right-hand column is worse than useless here — it puts the brightest part
-     of the plate directly under the paragraph. Measured at 390px it took the
-     dim title line to 2.42:1 and the byline to 2.77:1.
-     So below the split the metal recedes to a sheen: a near-flat veil, and the
-     plane's own opacity comes down with it. This is the removability test
-     answering itself — where the chrome has no room to be a composition, it
-     stops being one rather than being one on top of the words. */
-  .ch-promise::before { background:
-    linear-gradient(100deg, var(--ink-900) 22%, rgb(var(--scrim) / 0.95) 55%, rgb(var(--scrim) / 0.92) 100%),
-    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%); }
-  .ch-promise #hero-shader { opacity: .30; }
-}
-/* The band just above the split is the tightest case in the whole section: the
-   container has stopped growing but the viewport has not, so the copy column
-   is at its widest as a FRACTION of the plate — which is the only fraction a
-   percentage-stop gradient can see. Measured at 901px the byline sat at
-   4.71:1 against a 4.5 floor; the stops move right to buy real margin, and the
-   68%/100% end stays put so the metal keeps its side. */
-@media (min-width: 901px) and (max-width: 1200px) {
-  .ch-promise::before { background:
-    linear-gradient(100deg, var(--ink-900) 28%, rgb(var(--scrim) / 0.90) 54%, rgb(var(--scrim) / 0.62) 74%, rgb(var(--scrim) / 0.46) 100%),
-    linear-gradient(180deg, transparent 55%, var(--bg-deep) 100%); }
-}
+   MEE WEGGEHAALD: de import van scripts/shader-hero.js in Layout.astro. Het
+   script zelf staat er nog; komt het canvas ooit terug, dan komt de import
+   ermee terug. De tokens --chrome en --chrome-filter blijven ook staan: ze
+   beschrijven een oppervlak uit het ontwerpsysteem, niet deze ene sectie.
+
+   .promise-split ging hier ook weg — die stond alleen in dit blok en op geen
+   enkele gebouwde pagina. */
 
 /* Comet (test-sample moment). `.glow-title { text-shadow: none }` sat here and
    is gone: it cancelled a glow that no longer exists anywhere in the system,

@@ -1467,32 +1467,46 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 18 · THE PROMISE ──────────────────────────────────────────────────
-    Lit by the WebGL chrome field. .hero-fallback carries the same scene when
-    the shader never initialises, which is what makes the material removable
-    rather than load-bearing. */}
-{/* .ground-blend: the chrome field is a <canvas> filling the section edge to
-    edge, so without it the marbled material starts and stops on two hard
-    horizontal lines. See the primitive in global.css — it lays --bg-0 back
-    over both edges and fades out, and it works on a canvas because it never
-    touches the canvas. */}
-<section class="ch ch-promise band ground-blend">
-  <div class="hero-fallback" aria-hidden="true"></div>
-  <canvas id="hero-shader" aria-hidden="true"></canvas>
+{/* ── 18 · DE BELOFTE ──────────────────────────────────────────────────
+    HERBOUWD OP 7 AUGUSTUS 2026. Lucas, met een schermafdruk van de hele
+    onderkant van de pagina: *"die 2 secties passen echt niet bij de website,
+    maak deze even opnieuw en laat ze erbij passen, die animatie kan ook weg."*
+
+    WAT ER WEG IS EN WAAROM. Deze sectie had een WebGL-chroomveld: een canvas
+    van rand tot rand met een bewegend metaaloppervlak, plus een
+    gradiëntversie voor browsers waar de shader niet start. Op een breed scherm
+    was het effect een glanzende zilveren balk dwars door een verder bijna
+    zwarte pagina — geen accent maar een tweede pagina.
+
+    En het ging in tegen de regel die dit stylesheet zelf oplegt (zie ONE GROUND
+    in global.css): één ondergrond, en heeft een sectie onderscheid nodig, dan
+    is het antwoord een tegel, een paneel, een lijn of meer ruimte — geen tweede
+    ondergrond. Deze sectie was de uitzondering op de eigen huisregel, en dat is
+    precies wat je ziet als je hem naast de rest zet.
+
+    Wat ervoor terugkomt is de vorm die de andere zeventien secties gebruiken:
+    een band op de paginagrond, een statement-kop, en het citaat in een paneel —
+    een tegel dus, precies wat de regel voorschrijft. Het citaat verliest er
+    niets bij: een lichte rand en een groene streep links trekken op een zwarte
+    pagina meer aandacht dan een oppervlak dat overal glimt.
+
+    OOK WEG: de laadregel voor de shader in Layout.astro en het script zelf. Een
+    canvas dat nergens meer staat, kost anders nog steeds een verzoek en een
+    WebGL-context op elke pagina. */}
+<section class="band">
   <div class="container">
+    <div class="statement">
+      {/* Elke zin op zijn eigen regel. Laat je dit doorlopen, dan breekt hij
+          op de breedte van de kolom en valt de knip midden in een zin — "No
+          wall of reviews / yet. So we earn it" leest als twee halve gedachten.
+          Twee zinnen, twee regels: de knip staat waar de punt staat. */}
+      <h2 class="hv-promise-h"><span>{c.promiseH[0]}</span><em class="hv-accent">{c.promiseH[1]}</em></h2>
+    </div>
     <div class="hv-promise">
-      <div>
-        {/* WAAROM DEZE KOP VERANDERT — 7 augustus 2026. Lucas: *"deze secties
-            voelen niet alsof ze bij de homepage horen en erin zijn geplakt."*
-            Hij had gelijk, en het zat niet in de woorden maar in de vorm: dit
-            was de enige kop op de hele pagina met een eigen tweekleurentruc,
-            wit boven grijs. Elke andere sectie zet zijn nadruk op één manier —
-            een <em class="hv-accent"> op het deel dat het punt draagt. Twee
-            manieren om hetzelfde te doen leest als twee ontwerpers. */}
-        <h2 class="hv-promise-h"><span>{c.promiseH[0]}</span><span><em class="hv-accent">{c.promiseH[1]}</em></span></h2>
-        <p class="hv-quote">{c.promiseQuote}</p>
-        <p class="hv-sign"><strong>Lucas</strong> · {c.promiseSign}</p>
-      </div>
+      <figure class="hv-quotecard">
+        <blockquote>{c.promiseQuote}</blockquote>
+        <figcaption><strong>Lucas</strong> · {c.promiseSign}</figcaption>
+      </figure>
       <ul class="hv-checks">
         {c.promiseChecks.map(([t, b]) => (
           <li>
@@ -1506,13 +1520,20 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 19 · CLOSING ─────────────────────── */}
-<section class="band-tall hv-close panel-tonal">
-  <div class="container closing">
-    <div>
+{/* ── 19 · AFSLUITING ───────────────────────────────────────────────────
+    Ook herbouwd. Deze plaat had .panel-tonal: een eigen radiale gradiënt als
+    ondergrond, die op een breed scherm leest als een lichte gloed onderaan de
+    pagina — dezelfde tweede-ondergrond-fout als hierboven, alleen zachter.
+
+    Nu een gewone band op de paginagrond. Wat de afsluiting onderscheidt, is
+    niet een andere kleur maar wat er staat: één kop, één zin, twee knoppen, en
+    verder niets. Dat is genoeg om te weten dat de pagina hier ophoudt. */}
+<section class="band hv-close">
+  <div class="container">
+    <div class="statement">
       <h2>{c.closeH}</h2>
       <p class="lede">{c.closeLede}</p>
-      <div class="statement actions">
+      <div class="actions">
         <a href={lp('/test-sample')} class="btn btn-primary">{c.closeCta}</a>
         <a href={lp('/start')} class="btn btn-ghost">{c.closeAlt}</a>
       </div>
@@ -1776,17 +1797,27 @@ const FAQ_PICK = [
      see the note where that band used to be, above section 8b. */
 
   /* ── the promise ───────────────────────────────────────────────────────── */
-  .hv-promise { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: clamp(2rem, 5vw, 4rem); align-items: start; }
-  .hv-promise-h { font-size: var(--t-h2); line-height: 1.05; letter-spacing: -0.035em; margin: 0; }
-  .hv-promise-h span { display: block; }
-  /* .dim is weg: die grijze tweede regel was de eigen truc van deze sectie. */
-  /* Een maat kleiner dan het stond. Op een telefoon liep het citaat over zes
-     regels op bijna kophoogte, en dan concurreren de kop en het citaat om
-     dezelfde rol — je leest twee koppen achter elkaar in plaats van een kop met
-     een onderbouwing. */
-  .hv-quote { font-family: var(--font-editorial); font-style: italic; font-weight: 500; font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.5; color: var(--ink-2); margin: 1.3rem 0 0; max-width: 42ch; }
-  .hv-sign { margin: 1rem 0 0; font-size: .875rem; color: var(--ink-3); }
-  .hv-sign strong { color: var(--ink-2); }
+  .hv-promise-h span, .hv-promise-h em { display: block; }
+
+  /* Twee kolommen op breed, onder elkaar op smal — dezelfde verdeling als de
+     andere tweekoloms secties op deze pagina. */
+  .hv-promise { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: clamp(1.6rem, 3.5vw, 2.6rem); align-items: start; margin-top: clamp(2.2rem, 4.5vw, 3.4rem); }
+
+  /* HET CITAAT IS EEN TEGEL, en dat is precies wat de huisregel voorschrijft
+     voor een stuk dat eruit moet springen: een paneel, geen tweede ondergrond.
+     Een groene streep links en de rand van .hv-ob-item eromheen — dezelfde
+     twee middelen die de rest van de pagina ook gebruikt. */
+  .hv-quotecard {
+    margin: 0; padding: clamp(1.3rem, 2.4vw, 1.9rem);
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+  }
+  .hv-quotecard blockquote {
+    margin: 0; font-family: var(--font-editorial); font-style: italic; font-weight: 500;
+    font-size: clamp(1.05rem, 1.5vw, 1.25rem); line-height: 1.5; color: var(--ink);
+  }
+  .hv-quotecard figcaption { margin-top: 1rem; font-size: .85rem; color: var(--ink-3); }
+  .hv-quotecard figcaption strong { color: var(--ink-2); }
   .hv-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.1rem; }
   .hv-checks li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
   .hv-checks strong { color: var(--ink); }
@@ -1950,31 +1981,13 @@ const FAQ_PICK = [
   .hv-ts-points dd { margin: .35rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
   @media (max-width: 900px) { .hv-ts { grid-template-columns: 1fr; } }
 
-  /* ── closing ───────────────────────────────────────────────────────────── */
-  /* The closing panel — see .panel-tonal in
-     global.css for what that scope restates and why it has to. The only thing
-     added here is the radius: the panel is full-bleed, so it takes corners on
-     its top edge alone, where it meets the dark page above it. */
-  /* No top radius any more. .panel-tonal fades its own top edge back into the
-     page ground now (.ground-blend in global.css), and a rounded corner under
-     a 100px fade is a corner nobody can see — it only showed as two slivers of
-     --bg-0 beside a plate that was already dissolving. */
-  /* ── de afsluiter is geen tweede hero ──────────────────────────────────
-     Lucas over deze sectie: *"voelt niet alsof hij bij de homepage hoort."*
-     Dat kwam van de maat. `.closing h2` in global.css staat op --t-hero, en
-     dat is exact dezelfde grootte als de kop bovenaan de pagina: je scrolt
-     tweeduizend pixels door een pagina van koppen op --t-h2 en dan begint er
-     ineens weer iets op heroformaat, gecentreerd, met twee grote knoppen. Het
-     leest als het begin van een andere pagina.
-
-     Hier dus op de maat van de pagina zelf. GESCOPET op .hv-close en niet
-     globaal aangepast: /portal, /studio en /compare gebruiken dezelfde
-     .closing en zijn kortere pagina's waar een grote laatste kop wél de
-     verhouding houdt. Dat is een oordeel per pagina, geen regel. */
-  .hv-close { overflow: hidden; }
-  .hv-close .closing { min-height: min(34svh, 20rem); }
-  .hv-close .closing h2 { font-size: var(--t-h2); line-height: 1.05; letter-spacing: -0.03em; max-width: 18ch; }
-  .hv-close .closing .lede { font-size: var(--t-md, 1.05rem); max-width: 44ch; }
+  /* ── afsluiting ─────────────────────────────────────────────────────────
+     Wat hier stond ging over een plaat met een eigen gradiënt, een eigen
+     hoogte en een kop op heroformaat. Die plaat is er niet meer (zie de noot
+     bij sectie 19): het is nu een gewone band met een statement erin, en een
+     statement heeft al een maat, een breedte en een uitlijning. Wat overblijft
+     is één regel lucht boven de knoppen. */
+  .hv-close .actions { margin-top: clamp(1.4rem, 2.6vw, 2rem); display: flex; gap: .7rem; flex-wrap: wrap; justify-content: center; }
 </style>
 
 <script>

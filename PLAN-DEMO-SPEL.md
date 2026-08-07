@@ -95,6 +95,11 @@ groen. Dit is het moment waarop iemand "ja, dit ken ik" denkt.
 dezelfde vragen zijn die het echte formulier stelt — anders leer je iemand een
 flow die niet bestaat. Per dienst verschillen ze (zie hieronder).
 
+**3b · Wie draagt hem.** Alleen bij catalog en lifestyle. Eén gezicht is actief,
+de rest is zichtbaar en vergrendeld — zie de aanvulling onderaan dit bestand
+over waarom dat geen nepkeuze is maar de goedkoopste manier om te laten zien dat
+er tien gezichten zijn en dat een eigen merkmodel bestaat.
+
 **4 · De controle.** Geen laadbalk. Drie regels die één voor één afvinken:
 *pasvorm gecontroleerd · kleur vergeleken met je foto · achtergrond schoon.* Dat
 is letterlijk wat er in de menselijke controle gebeurt, dus het is waar, en het
@@ -128,7 +133,10 @@ veroorzaakt.
 ### Lifestyle — de jas
 Vraag 1: **kies een stijl.** De vier huisstijlen die echt bestaan: Glow, Dunes,
 Flash, Phone-made. Als swatchkaarten met een klein bewegend voorbeeld erin.
-Vraag 2: **binnen of buiten.**
+Vraag 2: **welk formaat** — 9:16, 4:5 of 16:9. Bewust dít en niet "binnen of
+buiten": een tweede omgeving verdubbelt de fotoproductie, een uitsnede kost
+niets en leert bovendien iets waars, namelijk dat je meerdere kaders
+terugkrijgt van hetzelfde beeld.
 
 Bij elke stijl die je aanklikt wisselt de rechterhelft van de vergelijker
 onmiddellijk. Dat is het speelmoment: dezelfde jas, vier werelden, één schuif
@@ -219,3 +227,146 @@ bestemming.
 6. Pas daarna: de verkeerde foto, en het onthouden van de laatste uitkomst.
 
 Stap 1 tot en met 3 is het spel. De rest is wat het beter maakt.
+
+---
+
+# Aanvulling: het model, en de precieze productielijst
+
+*7 augustus 2026, na Lucas' twee vragen: de modelkeuze moet erin, en met één
+model per dienst omdat tien modellen tien keer zoveel foto's betekent.*
+
+## Het model: één gezicht, drie diensten
+
+Die rem is de juiste, en er zit een gratis winst in die je op het eerste gezicht
+niet ziet: **neem niet één model per dienst, maar één model voor alle drie.**
+
+Dan is de demo geen verzameling losse voorbeelden meer maar één campagne — een
+merk, een gezicht, drie diensten. Dat is precies wat een klant koopt, en het is
+ook wat je in de galerij nog eens kunt gebruiken. Drie modellen zouden hier drie
+keer "kijk wat we kunnen" zeggen; één model zegt "dit is hoe het eruitziet als
+wij je merk doen".
+
+### Hoe de stap dan toch een keuze is
+
+Een keuzescherm met één optie is geen keuze. De stap wordt daarom:
+
+Vier tegels naast elkaar. **Eén is actief** — het gezicht dat in de demo staat.
+**Twee zijn zichtbaar maar vergrendeld**, met echte portretten uit de bestaande
+roster (`/img/model-*.webp`, die staan er al, dus dit kost geen enkele nieuwe
+foto). **De vierde is de merkmodel-kaart**, ook vergrendeld, met de zin dat je
+bij een echte bestelling uit tien gezichten kiest of je eigen model laat maken.
+
+Bij het aantikken van een vergrendelde tegel gebeurt er iets kleins in plaats
+van niets: de tegel schudt niet en er verschijnt geen foutmelding, er schuift
+één regel open — *"In de demo staat Lisa. Bij een echte bestelling kies je uit
+tien gezichten, of we maken er één die alleen van jou is."* Met een link naar
+`/models` en `/custom-models`.
+
+Dat is de hele truc van dit spel in het klein: een uitgeschakelde optie die
+uitlegt waarom hij uit staat, verkoopt beter dan een optie die doet alsof. Je
+gebruikt dezelfde vorm al bij de custom stijl.
+
+**Welk gezicht.** Uit de bestaande roster, en consistentie telt zwaarder dan de
+keuze zelf. Lisa (*natural, approachable*) of Fabi (*clean, contemporary*) —
+allebei breed leesbaar en geen van beide zo uitgesproken dat het de kleding
+overstemt. Kies er één en gebruik hem overal in de demo.
+
+**Waar de stap staat.** Alleen bij catalog en lifestyle vóór de controle-stap.
+Bij video hoort hij bij de stijl (Motion heeft geen model) — daar is het geen
+aparte stap maar een regel onder het resultaat.
+
+---
+
+## Wat je moet maken
+
+Uitgangspunt: drie producten, één model, en de stijlen die er al zijn —
+`src/data/styles.js` (Dunes, Flash, Glow, Phone-made, en Custom als
+vergrendelde kaart), `src/data/videoStyles.js` (Motion, Lifestyle Video,
+Campaign, en Custom) en `src/data/backgrounds.js` (wit #FFFFFF, gebroken wit
+#F7F5F1, beige #EDE4D8).
+
+### De bronfoto's — het belangrijkste van de hele lijst
+
+Vier stuks, en ze moeten er **slecht** uitzien. Niet onbruikbaar, maar gewoon:
+met een telefoon, in een kamer, tegen een muur die niet helemaal wit is, licht
+van één raam, een beetje scheef. Dat is de "voor" in elke vergelijking, en als
+die eruitziet als een studiofoto valt het hele spel plat — dan lijkt het alsof
+we van een goede foto een goede foto maken.
+
+| bestand | wat | verhouding |
+|---|---|---|
+| `demo/src-catalog-front.webp` | hoodie of T-shirt, plat of hangend, recht van voren | 4:5 |
+| `demo/src-catalog-back.webp` | zelfde stuk, omgedraaid | 4:5 |
+| `demo/src-lifestyle.webp` | jas of jurk, hangend aan een deurpost | 4:5 |
+| `demo/src-video.webp` | sneaker, op tafel | 4:5 |
+
+### Catalog — het T-shirt
+
+Achtergrondkeuze geldt voor de drie packshots; het on-model beeld heeft zijn
+eigen studiolook en verandert niet mee. Dat is geen bezuiniging maar hoe het in
+het echt ook is.
+
+| bestand | shot | achtergrond |
+|---|---|---|
+| `demo/cat-front-white.webp` | voorkant | wit |
+| `demo/cat-front-offwhite.webp` | voorkant | gebroken wit |
+| `demo/cat-front-beige.webp` | voorkant | beige |
+| `demo/cat-back-white.webp` | achterkant | wit |
+| `demo/cat-back-offwhite.webp` | achterkant | gebroken wit |
+| `demo/cat-back-beige.webp` | achterkant | beige |
+| `demo/cat-detail-white.webp` | detail (stof, naad of label) | wit |
+| `demo/cat-detail-offwhite.webp` | detail | gebroken wit |
+| `demo/cat-detail-beige.webp` | detail | beige |
+| `demo/cat-worn.webp` | op model — het gekozen gezicht | studio |
+
+Tien beelden, alle vier de shots op 4:5, 1600px op de lange zijde.
+
+### Lifestyle — de jas
+
+Vier stijlen, per stijl twee beelden: één wijde scène en één dichterbij. De
+tweede is wat de klant later gebruikt voor een vierkante post, en het laat zien
+dat je meer terugkrijgt dan één plaatje.
+
+| bestand | stijl | kader |
+|---|---|---|
+| `demo/lif-dunes-wide.webp` / `-close.webp` | Dunes — *sun, sand and quiet luxury* | wijd / dichtbij |
+| `demo/lif-flash-wide.webp` / `-close.webp` | Flash — *direct flash, no apologies* | wijd / dichtbij |
+| `demo/lif-glow-wide.webp` / `-close.webp` | Glow — *golden hour, on demand* | wijd / dichtbij |
+| `demo/lif-phone-wide.webp` / `-close.webp` | Phone-made — *looks effortless, isn't* | wijd / dichtbij |
+
+Acht beelden. Zelfde jas, zelfde model, vier werelden — dat is precies waarom
+de vergelijker hier zo goed werkt: je klikt en alleen de wereld verandert.
+
+Maak de wijde beelden op 3:2 en snijd de close op 4:5 uit dezelfde render als
+dat kan. De formaatkeuze in het spel (9:16 · 4:5 · 16:9) is een uitsnede van
+hetzelfde beeld en kost dus geen extra werk — en het leert dat je meerdere
+uitsnedes krijgt.
+
+### Video — de sneaker
+
+Drie clips, want Custom is een vergrendelde kaart en geen clip.
+
+| bestand | stijl | lengte |
+|---|---|---|
+| `demo/vid-motion.mp4` + `.webp` (posterframe) | Motion — één stille camera, subtiele beweging, naadloze loop | 6–8 s |
+| `demo/vid-lifestyle.mp4` + `.webp` | Lifestyle Video — de scène in beweging, met model | 6–8 s |
+| `demo/vid-campaign.mp4` + `.webp` | Campaign — meerdere shots, het grote moment | 8–10 s |
+
+Film of render in 9:16 en houd het midden veilig, dan is de 16:9-keuze in het
+spel een uitsnede in plaats van een tweede clip. Per clip hooguit 1,5 MB
+(H.264, geen audio) en een posterframe als `.webp`, zodat er iets staat voordat
+de video geladen is.
+
+### Bij elkaar
+
+Vier bronfoto's, achttien eindbeelden, drie clips met drie posterframes. Achtentwintig
+bestanden, één model, één productiedag als je het achter elkaar doet. De
+modelkeuze zelf kost nul nieuwe foto's, want de vergrendelde tegels gebruiken de
+portretten die al in `/img/model-*.webp` staan.
+
+### Waar ze komen te staan
+
+Alles onder `public/img/demo/`. Eén map, één naamgeving (`dienst-onderwerp-variant`),
+zodat de code de bestandsnaam kan samenstellen uit de keuzes van de speler in
+plaats van een tabel met paden bij te houden — en zodat een ontbrekend beeld
+meteen te zien is aan de naam die niet bestaat.
