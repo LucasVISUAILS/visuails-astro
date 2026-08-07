@@ -1,0 +1,381 @@
+---
+// VISUAILS — het demospel. Augustus 2026. Het denkwerk staat in
+// PLAN-DEMO-SPEL.md; de tabel met beelden en teksten in src/data/demo.js.
+//
+// ── WAT DIT IS ───────────────────────────────────────────────────────────────
+// Een bestelling die je kunt spelen. Je kiest een voorbeeldproduct, sleept het
+// in het uploadvak, maakt de twee keuzes die het echte formulier ook stelt,
+// kiest wie het draagt, en krijgt de set terug in een vergelijker met je eigen
+// "foto" ernaast.
+//
+// ── DE REGEL DIE ALLES STUURT ────────────────────────────────────────────────
+// Er wordt niets gegenereerd. Elke uitkomst is een beeld dat wij eerder echt
+// gemaakt hebben, en dat staat ook op het scherm. Dat is geen bekentenis maar
+// de claim: "dit is echt werk van ons" is sterker dan een laadbalk die doet
+// alsof er gerekend wordt. Het spel simuleert de HANDELING, niet de techniek.
+//
+// ── ALLES STAAT IN DE HTML, HET SCRIPT SCHAKELT ALLEEN ───────────────────────
+// Elke stap wordt door Astro gerenderd en met [hidden] verborgen. Het script
+// zet er één zichtbaar. Dat kost een paar kilobyte extra HTML en levert drie
+// dingen op: de pagina is te lezen zonder JavaScript (je ziet dan de eerste
+// stap en de knoppen naar /start), elke stap is te inspecteren zonder hem te
+// spelen, en er is geen sjabloon dat in twee talen uit elkaar kan lopen.
+//
+// ── WAAROM GEEN Compare.astro ────────────────────────────────────────────────
+// Die component is een vaste voor/na met een driftende scheiding, en precies
+// dat vaste is hier het probleem: het beeld rechts wisselt bij elke klik. Een
+// schuif die de speler zelf vasthoudt hoort bovendien bij een spel — de drift
+// is voor een pagina waar je naar kijkt, deze is er een om vast te pakken.
+import {
+  DEMO_PRODUCTS, DEMO_BACKGROUNDS, DEMO_SHOTS, DEMO_COPY,
+  DEMO_MODEL, DEMO_LOCKED_MODELS,
+  catalogImage, lifestyleImage, videoClip,
+} from '../data/demo.js';
+import { styles as STYLES } from '../data/styles.js';
+import { videoStyles as VIDEO_STYLES } from '../data/videoStyles.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl' }
+const { lang } = Astro.props;
+const c = DEMO_COPY[lang] || DEMO_COPY.en;
+const lp = (p: string) => localizedPath(lang, p);
+
+// De vier huisstijlen, zonder 'custom' — die wordt de vergrendelde kaart.
+const houseStyles = STYLES.filter((s) => s.slug !== 'custom');
+const videoStyles = VIDEO_STYLES.filter((s) => s.slug !== 'custom');
+
+// Alles wat het script nodig heeft om een beeld te kiezen, in één blok JSON.
+// Niet als losse data-attributen over vijftig elementen verspreid: dan is de
+// vraag "welk beeld hoort hierbij" beantwoord op vijftig plekken.
+const board = {
+  products: DEMO_PRODUCTS.map((p) => ({ id: p.id, steps: p.steps, source: p.source.src })),
+  catalog: Object.fromEntries(
+    DEMO_BACKGROUNDS.map((bg) => [bg.id, Object.fromEntries(
+      DEMO_SHOTS.map((shot) => [shot, catalogImage(shot, bg.id).src]),
+    )]),
+  ),
+  lifestyle: Object.fromEntries(
+    houseStyles.map((s) => [s.slug, { wide: lifestyleImage(s.slug, 'wide').src, close: lifestyleImage(s.slug, 'close').src }]),
+  ),
+  video: Object.fromEntries(videoStyles.map((s) => [s.slug, videoClip(s.slug)])),
+  copy: {
+    resultLede: { one: c.resultLede(1), many: c.resultLede(4) },
+    checks: c.checks,
+    shotNames: c.shotNames,
+    missingBack: c.missingBack,
+    counter: c.counter(3, 38),
+  },
+};
+---
+
+<section class="band demo" data-demo>
+  <div class="container">
+    <div class="statement">
+      <h1>{c.title}</h1>
+      <p class="lede">{c.lede}</p>
+    </div>
+
+    <p class="demo-honest">{c.honest}</p>
+
+    {/* ── 1 · kies een product ─────────────────────────────────────────── */}
+    <div class="demo-step" data-step="product">
+      <h2 class="demo-h">{c.pickProduct}</h2>
+      <div class="demo-pick">
+        {DEMO_PRODUCTS.map((p) => (
+          <button type="button" class="demo-card" data-product={p.id}>
+            <img src={p.source.src} alt="" loading="lazy" decoding="async" />
+            <span class="demo-card-name">{p[lang].name}</span>
+            <span class="demo-card-line">{p[lang].line}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* ── 2 · sleep hem erin ───────────────────────────────────────────── */}
+    <div class="demo-step" data-step="drop" hidden>
+      <h2 class="demo-h">{c.drop}</h2>
+      <div class="demo-dropwrap">
+        <img class="demo-drag" data-drag src="" alt="" draggable="true" />
+        <div class="demo-drop" data-drop tabindex="0" role="button" aria-label={c.drop}>
+          <span data-drop-label>{c.drop}</span>
+        </div>
+      </div>
+      <p class="demo-hint">{c.dropHint}</p>
+    </div>
+
+    {/* ── 3 · de vragen ────────────────────────────────────────────────── */}
+    <div class="demo-step" data-step="background" hidden>
+      <h2 class="demo-h">{c.background}</h2>
+      <div class="demo-swatches">
+        {DEMO_BACKGROUNDS.map((bg, i) => (
+          <button type="button" class="demo-swatch" data-choice="background" data-value={bg.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+            <span class="demo-swatch-chip" style={`background:${bg.hex}`}></span>
+            <span>{c.backgroundNames[bg.id]}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div class="demo-step" data-step="shots" hidden>
+      <h2 class="demo-h">{c.shots}</h2>
+      <div class="demo-tiles">
+        {DEMO_SHOTS.map((shot) => (
+          <button type="button" class="demo-tile" data-toggle="shot" data-value={shot}
+                  aria-pressed={shot === 'back' ? 'false' : 'true'}>
+            {c.shotNames[shot]}
+          </button>
+        ))}
+      </div>
+      {/* DE ACHTERKANT STAAT STANDAARD UIT, en dat is de sterkste vondst van het
+          hele spel. Laat de speler hem uit staan, dan komt er in het resultaat
+          een vraagteken op die plek met de reden erbij — zie src/data/shots.js:
+          een achterkant verzinnen is geen afleiding maar uitvinding. Uitleg die
+          je zelf hebt veroorzaakt, vergeet je niet. */}
+      <p class="demo-hint">{c.shotsHint}</p>
+      {/* EEN STAP DIE NIET VANZELF DOORGAAT, HEEFT EEN KNOP NODIG. De andere
+          stappen zijn keuzes met één uitkomst en schuiven zelf door; deze is
+          een rijtje schakelaars, dus wie niets aanraakt zou hier blijven staan.
+          Een spel waarin je vast kunt lopen omdat je tevreden was met de
+          standaardinstelling, is een spel met een dood punt. */}
+      <div class="demo-next"><button type="button" class="btn btn-primary" data-next>{c.nextStep}</button></div>
+    </div>
+
+    <div class="demo-step" data-step="style" hidden>
+      <h2 class="demo-h">{c.style}</h2>
+      <div class="demo-styles">
+        {houseStyles.map((s, i) => (
+          <button type="button" class="demo-style" data-choice="style" data-value={s.slug} aria-pressed={i === 0 ? 'true' : 'false'}>
+            <img src={s.cardPhoto} alt="" loading="lazy" decoding="async" />
+            <span class="demo-style-name">{s.name}</span>
+            <span class="demo-style-line">{s.tagline}</span>
+          </button>
+        ))}
+        <div class="demo-style is-locked">
+          <span class="demo-style-name">{c.customCard}</span>
+          <span class="demo-style-line">{c.customBody}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-step" data-step="crop" hidden>
+      <h2 class="demo-h">{c.crop}</h2>
+      <div class="demo-tiles">
+        {[['9:16', 'ratio-916'], ['4:5', 'ratio-45'], ['16:9', 'ratio-169']].map(([label, id], i) => (
+          <button type="button" class="demo-tile" data-choice="crop" data-value={id} aria-pressed={i === 1 ? 'true' : 'false'}>{label}</button>
+        ))}
+      </div>
+    </div>
+
+    <div class="demo-step" data-step="videoStyle" hidden>
+      <h2 class="demo-h">{c.videoStyle}</h2>
+      <div class="demo-styles">
+        {videoStyles.map((s, i) => (
+          <button type="button" class="demo-style" data-choice="videoStyle" data-value={s.slug} aria-pressed={i === 0 ? 'true' : 'false'}>
+            <span class="demo-style-name">{s.name}</span>
+            <span class="demo-style-line">{s.tagline}</span>
+          </button>
+        ))}
+        <div class="demo-style is-locked">
+          <span class="demo-style-name">{c.customCard}</span>
+          <span class="demo-style-line">{c.customBody}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-step" data-step="ratio" hidden>
+      <h2 class="demo-h">{c.ratio}</h2>
+      <div class="demo-tiles">
+        {[['9:16', 'v-916'], ['16:9', 'v-169']].map(([label, id], i) => (
+          <button type="button" class="demo-tile" data-choice="ratio" data-value={id} aria-pressed={i === 0 ? 'true' : 'false'}>{label}</button>
+        ))}
+      </div>
+    </div>
+
+    {/* ── 4 · wie draagt hem ───────────────────────────────────────────── */}
+    <div class="demo-step" data-step="model" hidden>
+      <h2 class="demo-h">{c.model}</h2>
+      <div class="demo-models">
+        <button type="button" class="demo-model is-on" data-choice="model" data-value={DEMO_MODEL.id} aria-pressed="true">
+          <img src={DEMO_MODEL.photo} alt="" loading="lazy" decoding="async" />
+          <span>{DEMO_MODEL.name}</span>
+        </button>
+        {DEMO_LOCKED_MODELS.map((m) => (
+          <button type="button" class="demo-model is-locked" data-locked>
+            <img src={m.photo} alt="" loading="lazy" decoding="async" />
+            <span>{m.name}</span>
+          </button>
+        ))}
+        <button type="button" class="demo-model is-locked is-own" data-locked>
+          <span class="demo-model-own">{c.modelOwn}</span>
+        </button>
+      </div>
+      {/* Een vergrendelde tegel die uitlegt waaróm hij vergrendeld is, verkoopt
+          de echte optie beter dan een tegel die doet alsof je hem kunt kiezen.
+          Zelfde vorm als de custom-stijlkaart hierboven. */}
+      <p class="demo-hint" data-locked-note hidden>
+        {c.modelLocked} <a href={lp('/models')}>{c.modelRoster}</a>
+      </p>
+      <div class="demo-next"><button type="button" class="btn btn-primary" data-next>{c.nextStep}</button></div>
+    </div>
+
+    {/* ── 5 · de controle ──────────────────────────────────────────────── */}
+    <div class="demo-step demo-check" data-step="check" hidden>
+      <h2 class="demo-h">{c.checking}</h2>
+      <ul class="demo-checks" data-checks>
+        {c.checks.map((line) => (<li>{line}</li>))}
+      </ul>
+    </div>
+
+    {/* ── 6 · het resultaat ────────────────────────────────────────────── */}
+    <div class="demo-step" data-step="result" hidden>
+      <h2 class="demo-h">{c.resultH}</h2>
+      <p class="demo-hint" data-result-lede></p>
+
+      <div class="demo-compare" data-compare>
+        {/* TWEE BEELDEN VAN DEZELFDE MAAT, en het bovenste wordt weggeknipt.
+            Eerst zat het "na"-beeld in een wrapper die smaller werd — maar dan
+            schaalt het beeld erbinnen mee en staan de twee helften niet meer
+            op dezelfde plek: je vergelijkt twee uitsnedes in plaats van één
+            foto met zijn resultaat. Met clip-path blijven beide beelden exact
+            even groot en beweegt alleen de knip. */}
+        <div class="demo-compare-media" data-media>
+          <img class="demo-before" data-before src="" alt={c.before} />
+          <img class="demo-after" data-after src="" alt={c.after} />
+          <span class="demo-tag is-before">{c.before}</span>
+          <span class="demo-tag is-after">{c.after}</span>
+        </div>
+        {/* Een <input type=range> en geen sleeplogica: die is met een toetsenbord
+            te bedienen, kent aanraking al, en heeft geen enkele regel script
+            nodig om te weten wat "half" betekent. */}
+        <input class="demo-slider" data-slider type="range" min="0" max="100" value="55" aria-label={c.after} />
+      </div>
+
+      <ul class="demo-set" data-set></ul>
+
+      <p class="demo-counter" data-counter></p>
+      <div class="demo-actions">
+        <a class="btn btn-primary" data-cta href={lp('/test-sample')}>{c.ctaPrimary}</a>
+        <a class="btn btn-ghost" data-cta-start href={lp('/start')}>{c.ctaGhost}</a>
+        <button type="button" class="btn btn-quiet" data-restart>{c.restart}</button>
+      </div>
+    </div>
+
+    <p class="demo-placeholder">{c.placeholderNote}</p>
+  </div>
+
+  <script type="application/json" data-demo-board set:html={JSON.stringify(board)}></script>
+</section>
+
+<script>
+  import '../scripts/demo-game.js';
+</script>
+
+<style>
+  .demo-honest { margin: clamp(1.2rem, 2.4vw, 1.8rem) auto 0; max-width: 54ch; text-align: center; font-size: .82rem; color: var(--ink-3); }
+  .demo-placeholder { margin: clamp(2rem, 4vw, 3rem) 0 0; font-size: .75rem; color: var(--ink-3); text-align: center; opacity: .7; }
+
+  .demo-step { margin-top: clamp(2.4rem, 5vw, 3.6rem); }
+  .demo-h { font-size: clamp(1.15rem, 2vw, 1.5rem); margin: 0 0 clamp(1rem, 2vw, 1.4rem); text-align: center; }
+  .demo-hint { margin: 1rem auto 0; max-width: 52ch; text-align: center; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
+  .demo-hint a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── kiezen ───────────────────────────────────────────────────────────── */
+  .demo-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1px; background: var(--line); }
+  .demo-card { display: flex; flex-direction: column; gap: .3rem; padding: 0 0 1.1rem; background: var(--surface); border: 0; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+  .demo-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; margin-bottom: 1rem; }
+  .demo-card-name { padding: 0 1.1rem; font-weight: 700; color: var(--ink); }
+  .demo-card-line { padding: 0 1.1rem; font-size: .84rem; color: var(--ink-3); }
+  .demo-card:hover, .demo-card:focus-visible { background: var(--surface-2); outline: none; }
+  .demo-card:hover img, .demo-card:focus-visible img { opacity: .9; }
+
+  /* ── het uploadvak ────────────────────────────────────────────────────── */
+  .demo-dropwrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: clamp(1.4rem, 3vw, 2.6rem); align-items: center; max-width: 46rem; margin-inline: auto; }
+  .demo-drag { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--line); cursor: grab; display: block; }
+  .demo-drag:active { cursor: grabbing; }
+  .demo-drop {
+    aspect-ratio: 4 / 5; display: grid; place-items: center; padding: 1rem; text-align: center;
+    border: 2px dashed var(--line-strong); border-radius: var(--r-md); color: var(--ink-3);
+    font-size: .9rem; cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease;
+  }
+  .demo-drop.is-over, .demo-drop:focus-visible { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); color: var(--ink); outline: none; }
+  .demo-drop.is-full { border-style: solid; border-color: var(--accent); padding: 0; }
+  /* Ook door het script gezet — zie de :global-noot bij .demo-set. */
+  .demo-drop.is-full :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .demo-drag.is-gone { visibility: hidden; }
+
+  /* ── keuzes ───────────────────────────────────────────────────────────── */
+  .demo-swatches, .demo-tiles { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+  .demo-swatch, .demo-tile {
+    display: inline-flex; align-items: center; gap: .55rem; padding: .6rem 1rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-pill, 999px);
+    background: none; color: var(--ink-2); font: inherit; font-size: .88rem; cursor: pointer;
+  }
+  .demo-swatch-chip { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .25); }
+  .demo-swatch[aria-pressed='true'], .demo-tile[aria-pressed='true'] { border-color: var(--accent); color: var(--ink); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .demo-tile[aria-pressed='false'] { opacity: .55; }
+
+  .demo-styles { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1px; background: var(--line); }
+  .demo-style { display: flex; flex-direction: column; gap: .25rem; padding: 0 0 1rem; background: var(--surface); border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+  .demo-style img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; margin-bottom: .8rem; }
+  .demo-style-name { padding: .9rem 1rem 0; font-weight: 700; color: var(--ink); }
+  .demo-style img + .demo-style-name { padding-top: 0; }
+  .demo-style-line { padding: 0 1rem; font-size: .82rem; line-height: 1.5; color: var(--ink-3); }
+  .demo-style[aria-pressed='true'] { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+  .demo-style.is-locked { border: 1px dashed var(--line-strong); background: none; cursor: default; padding-top: 0; }
+
+  /* ── modellen ─────────────────────────────────────────────────────────── */
+  .demo-models { display: flex; flex-wrap: wrap; gap: .8rem; justify-content: center; }
+  .demo-model { width: 8.5rem; padding: 0 0 .6rem; background: var(--surface); border: 1px solid var(--line); font: inherit; color: var(--ink-2); cursor: pointer; }
+  .demo-model img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; object-position: center top; display: block; margin-bottom: .5rem; }
+  .demo-model span { font-size: .85rem; }
+  .demo-model.is-on { border-color: var(--accent); color: var(--ink); }
+  .demo-model.is-locked { opacity: .45; }
+  .demo-model.is-locked:hover { opacity: .7; }
+  .demo-model.is-own { display: grid; place-items: center; aspect-ratio: 3 / 4.4; border-style: dashed; }
+  .demo-model-own { padding: 0 .7rem; text-align: center; line-height: 1.4; }
+
+  /* ── de controle ──────────────────────────────────────────────────────── */
+  .demo-next { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); display: flex; justify-content: center; }
+
+  .demo-checks { list-style: none; margin: 0 auto; padding: 0; max-width: 22rem; display: grid; gap: .6rem; }
+  .demo-checks li { display: flex; align-items: center; gap: .6rem; font-size: .92rem; color: var(--ink-3); opacity: .25; transition: opacity .25s ease, color .25s ease; }
+  .demo-checks li::before { content: '✓'; color: var(--accent); font-weight: 700; }
+  .demo-checks li.is-done { opacity: 1; color: var(--ink-2); }
+
+  /* ── de vergelijker ───────────────────────────────────────────────────── */
+  /* Een staand beeld op 44rem breed is 55rem hoog — dat is anderhalf scherm
+     voor één foto. De hoogte is daarom de grens en de breedte volgt. */
+  .demo-compare { max-width: min(28rem, 100%); margin: 0 auto; }
+  .demo-compare-media { position: relative; aspect-ratio: 4 / 5; max-height: 62svh; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+  .demo-compare-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .demo-after { clip-path: inset(0 calc(100% - var(--pos, 55%)) 0 0); }
+  .demo-tag { position: absolute; bottom: .6rem; padding: .2rem .5rem; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; background: rgb(8 9 11 / .72); color: var(--ink-2); }
+  .demo-tag.is-before { right: .6rem; }
+  .demo-tag.is-after { left: .6rem; color: var(--accent); }
+  .demo-slider { width: 100%; margin-top: .7rem; accent-color: var(--accent); }
+
+  /* :global OP ALLES WAT HET SCRIPT MAAKT — en dit is precies de val waar dit
+     project al eens in liep (zie de noot bij de kop op de homepage). Astro
+     scopet een stijl door elk element in het SJABLOON een data-astro-cid mee te
+     geven; een <li> die door JavaScript wordt aangemaakt heeft dat attribuut
+     niet en valt dus buiten elke regel hier. Het gevolg is niet een foutmelding
+     maar iets veel vervelenders: tegels zonder verhouding en bijschriften als
+     losse lopende tekst — precies zoals het er stond. */
+  .demo-set { list-style: none; margin: clamp(1.4rem, 2.6vw, 2rem) auto 0; padding: 0; max-width: 40rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; }
+  .demo-set :global(li) { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+  .demo-set :global(img), .demo-set :global(video) { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; border: 1px solid var(--line); background: var(--surface); }
+  .demo-set :global(.demo-set-cap) { font-size: .72rem; color: var(--ink-3); }
+  .demo-set :global(.is-missing) {
+    display: grid; place-items: center; aspect-ratio: 4 / 5; padding: .5rem; text-align: center;
+    border: 1px dashed var(--warn, #b8860b); color: var(--warn-ink, #e0a92b);
+    font-size: .74rem; line-height: 1.35;
+  }
+  @media (max-width: 560px) { .demo-set { grid-template-columns: repeat(2, 1fr); } }
+
+  .demo-counter { margin: clamp(1.4rem, 2.6vw, 2rem) auto 0; max-width: 46ch; text-align: center; font-size: .9rem; color: var(--ink-2); }
+  .demo-actions { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); display: flex; flex-wrap: wrap; gap: .7rem; justify-content: center; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .demo-checks li, .demo-drop { transition: none; }
+  }
+</style>

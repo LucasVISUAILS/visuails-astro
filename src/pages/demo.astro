@@ -1,0 +1,17 @@
+---
+// VISUAILS — /demo (Engels). De pagina zelf staat in DemoGame.astro zodat
+// /demo en /nl/demo niet uit elkaar kunnen lopen; hier staat alleen de meta.
+//
+// noindex staat er NIET op, en dat is een keuze: dit is precies het soort
+// pagina waar iemand op zoekt die "AI productfoto's proberen" intikt, en het is
+// een eerlijke landing — je kunt hem spelen zonder account, zonder betaling en
+// zonder je eigen foto's af te staan.
+import Layout from '../layouts/Layout.astro';
+import DemoGame from '../components/DemoGame.astro';
+---
+<Layout
+  title="Try it — VISUAILS"
+  description="Drag a photo in, make two choices, and see the set that comes back. A real order, played on a product that is not yours."
+>
+  <DemoGame lang="en" />
+</Layout>
