@@ -211,12 +211,12 @@ const COMPLETE_NAME = { en: 'Complete', nl: 'Compleet' };
 
 const COMPLETE_LEAD = {
   en: 'A catalog set and a lifestyle carousel for every product in the order.',
-  nl: 'Voor elk product in de bestelling een catalogset en een lifestyle-carousel.',
+  nl: 'Elk product in de bestelling krijgt een catalogset en een lifestyle-carousel.',
 };
 
 const VIDEO_LINE = {
   en: 'One short clip. The same rate on its own or added to any order.',
-  nl: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
+  nl: 'Eén korte clip. De prijs is hetzelfde, los of toegevoegd aan een bestelling.',
 };
 
 const BRAND_MODEL_NAME = { en: 'Your Brand Model', nl: 'Jouw merkmodel' };

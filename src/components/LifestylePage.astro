@@ -118,7 +118,7 @@ const COPY = {
     // the full note — this button carried the tier label verbatim, in the hero,
     // on a link that lands on /start's two-way fork.
     ctaPrimary: 'Start an order',
-    ctaSecondary: 'See the price ladder',
+    ctaSecondary: 'See the price per product',
     wa: waHref("Hi VISUAILS, I'd like to order lifestyle visuals for my products."),
     waTalk: waHref("Hi VISUAILS, I'd like to talk about lifestyle visuals for my brand."),
     waLabel: 'WhatsApp',
@@ -131,7 +131,7 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, the order goes into the capacity calendar and gets the reserved window.`,
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
     setH: 'One product. Three photos. <em>A carousel.</em>',
     setP: 'Every lifestyle order is your product in one styled look, delivered as three shots that belong together — ready to post as a carousel on Instagram, your shop and ads.',
     // Numbered because a carousel genuinely is an ordered sequence: this is
@@ -145,7 +145,7 @@ const COPY = {
     ladderH: 'What a carousel costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
-    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them.`,
+    ladderNote: `The rate applies to every product in the order, not only the ones above that count — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them.`,
     // The button under the rung table. /catalog has had one since the ladder
     // landed and this page did not, so the one page that shows a full rate card
     // was also the one that made you scroll past it to act on it.
@@ -204,7 +204,7 @@ const COPY = {
     faqs: [
       {
         q: 'What does a lifestyle carousel cost?',
-        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a rung at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a carousel is three photos of one product in one styled look.`,
+        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a step at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a carousel is three photos of one product in one styled look.`,
       },
       {
         q: 'What are the three photos?',
@@ -212,7 +212,7 @@ const COPY = {
       },
       {
         q: 'Can I have more than one look per product?',
-        a: 'One styled look per order. A second scene for the same product is simply a second order at the ladder rate — which also means the two sets stay distinct rather than being blended into a mood that is neither.',
+        a: 'One styled look per order. A second scene for the same product is simply a second order at the per-product rate — which also means the two sets stay distinct rather than being blended into a mood that is neither.',
       },
       {
         q: 'Can I get a mood that is not one of the four?',
@@ -224,7 +224,7 @@ const COPY = {
       },
       {
         q: 'How long does it take?',
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more is already booked into the calendar and holds its window, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one holding a window: ${turnaround('attended', 'en').toLowerCase()}.`,
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
       },
       {
         q: 'What if I need changes?',
@@ -239,7 +239,7 @@ const COPY = {
     h1: 'Jouw product, in scènes <em>die verkopen.</em>',
     lead: `Vier signatuurlooks. Een carousel van 3 foto’s per product — ${euro(entry, 'nl')} ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
     ctaPrimary: 'Start een bestelling',
-    ctaSecondary: 'Bekijk de prijsstaffel',
+    ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag Lifestyle-visuals bestellen voor mijn producten."),
     waTalk: waHref("Hoi VISUAILS, ik wil graag praten over Lifestyle-visuals voor mijn merk."),
     waLabel: 'WhatsApp',
@@ -247,19 +247,19 @@ const COPY = {
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['3 foto’s', 'per product'],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de agenda en krijgt hij de vastgezette leverdatum.`,
     setH: 'Eén product. Drie foto’s. <em>Een carousel.</em>',
-    setP: 'Elke lifestyle-bestelling is je product in één gestylede look, geleverd als drie shots die bij elkaar horen — klaar om te posten als carousel op Instagram, je shop en ads.',
+    setP: 'Elke lifestyle-bestelling is je product in één gestylde look, geleverd als drie shots die bij elkaar horen — klaar om te posten als carousel op Instagram, je shop en ads.',
     set: [
       ['De sfeer', 'Je product gestyled in een realistische setting — het sfeerbeeld waar iemand op blijft hangen.'],
       ['On-model', 'Hetzelfde product gedragen of vastgehouden, zodat mensen het in hun eigen leven zien.'],
       ['Logo-close-up', 'Een strakke detailshot — zelfde vibe, zelfde colour grade — die de kwaliteit bewijst.'],
     ],
-    setNote: 'Eén gestylede look per bestelling · zelfde colour grading · een andere scène is een aparte bestelling.',
+    setNote: 'Eén gestylde look per bestelling · zelfde colour grading · een andere scène is een aparte bestelling.',
     ladderH: 'Wat een carousel kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
-    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
+    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
     ladderCta: 'Start een bestelling',
     stepsH: 'Drie stappen naar een carousel.',
     steps: [
@@ -267,7 +267,7 @@ const COPY = {
       ['Kies een sfeer', 'Dunes, Flash, Glow, Phone-made — of je eigen.'],
       [turnaround('unattended', 'nl'), 'Drie shots die matchen, klaar om te posten.'],
     ],
-    stepsAlt: 'Een gestylede lifestyle-scène gemaakt door VISUAILS',
+    stepsAlt: 'Een gestylde lifestyle-scène gemaakt door VISUAILS',
     heroAlt: 'Een product gestyled in een Dunes-lifestylescène van VISUAILS',
     checkH: 'Alles wat een feedpost nodig heeft.',
     check: [
@@ -313,7 +313,7 @@ const COPY = {
     faqs: [
       {
         q: 'Wat kost een lifestyle-carousel?',
-        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en het tarief zakt trede voor trede naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een carousel drie foto’s van één product in één gestylede look.`,
+        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een carousel drie foto’s van één product in één gestylde look.`,
       },
       {
         q: 'Welke drie foto’s zijn het?',
@@ -321,11 +321,11 @@ const COPY = {
       },
       {
         q: 'Kan ik meer dan één look per product?',
-        a: 'Eén gestylede look per bestelling. Een tweede scène voor hetzelfde product is gewoon een tweede bestelling tegen het staffeltarief — en zo blijven de twee sets ook echt van elkaar te onderscheiden in plaats van te vervagen tot een sfeer die geen van beide is.',
+        a: 'Eén gestylede look per bestelling. Een tweede scène voor hetzelfde product is gewoon een tweede bestelling tegen het tarief per product — en zo blijven de twee sets ook echt van elkaar te onderscheiden in plaats van te vervagen tot een sfeer die geen van beide is.',
       },
       {
         q: 'Kan ik een sfeer krijgen die niet bij de vier hoort?',
-        a: 'Ja. De vier signatuurlooks zijn wat de meeste merken kiezen omdat ze al afgesteld zijn; alles daarbuiten wordt gescoped en op offerte gezet, dus laat weten wat je in gedachten hebt en we komen met een prijs terug in plaats van er een te gokken.',
+        a: 'Ja. De vier signatuurlooks zijn wat de meeste merken kiezen omdat ze al afgesteld zijn; alles daarbuiten spreken we eerst met je af en zetten we op een offerte, dus laat weten wat je in gedachten hebt en we komen met een prijs terug in plaats van er een te gokken.',
       },
       {
         q: 'Kan hetzelfde model door mijn hele collectie?',
@@ -333,7 +333,7 @@ const COPY = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn venster vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met het venster: ${turnaround('attended', 'nl').toLowerCase()}.`,
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn leverdatum vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met de leverdatum: ${turnaround('attended', 'nl').toLowerCase()}.`,
       },
       {
         q: 'Wat als ik wijzigingen nodig heb?',

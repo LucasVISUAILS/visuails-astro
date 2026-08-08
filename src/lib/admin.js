@@ -2345,8 +2345,8 @@ async function renderCustomer(context, customerId) {
   <h2>Revisies</h2>
   ${revisionsPanel}
 
-  <h2>Brand kit</h2>
-  <p class="meta">Set by the customer in their own portal. Read-only here, deliberately.</p>
+  <h2>Vaste look</h2>
+  <p class="meta">Set by the customer in their own portal — the section they see as "Je vaste look". Read-only here, deliberately.</p>
   ${lockRows}
 
   <h2>Custom models</h2>

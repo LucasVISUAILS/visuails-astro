@@ -95,15 +95,15 @@ const label = lang === 'nl'
 const t = lang === 'nl'
   ? {
       h: `Wat er verandert bij ${WINDOW_THRESHOLD} producten`,
-      p: `Je kiest geen serviceniveau — de omvang van je bestelling bepaalt het. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster; daaronder loopt hij in de standaard wachtrij. Dat is ook precies het aantal waarbij het tarief per product een trede zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
+      p: `Je kiest geen serviceniveau — de omvang van je bestelling bepaalt het. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij de vastgezette leverdatum; daaronder loopt hij in de normale doorlooptijd. Dat is ook precies het aantal waarbij het tarief per product een stap zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
       cta0: 'Start een bestelling',
-      cta1: 'Bekijk de staffel',
+      cta1: 'Bekijk de prijs per product',
     }
   : {
       h: `What changes at ${WINDOW_THRESHOLD} products`,
-      p: `You do not pick a service level — the size of your order sets it. From ${WINDOW_THRESHOLD} products an order goes into the capacity calendar and gets the reserved window; below that it runs in the standard queue. That is also the count at which the rate per product drops a rung, so there is one line to cross rather than two. Both run through the same production and the same check.`,
+      p: `You do not pick a service level — the size of your order sets it. From ${WINDOW_THRESHOLD} products we hold a delivery date for the order and confirm it in writing; below that count the normal turnaround applies. That is also the count at which the rate per product drops a step, so there is one line to cross rather than two. Both run through the same production and the same check.`,
       cta0: 'Start an order',
-      cta1: 'See the price ladder',
+      cta1: 'See the price per product',
     };
 
 // The row labels are NOT typed in `t` above with the rest of the copy. They

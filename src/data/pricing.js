@@ -490,8 +490,8 @@ export const EXTRA_PHOTO_COPY = {
 // price was questioned. Read wherever the outfit choice is offered (the /start
 // step 1 field today; a service page is a reasonable next place to reuse it).
 export const OUTFIT_COPY = {
-  en: 'A full outfit means every product in the shot is checked for fit against the others and matched to how it would really look worn together — not composited separately and placed side by side. That check is the extra work behind the price.',
-  nl: 'Een full outfit betekent dat elk product in het shot wordt gecontroleerd op pasvorm ten opzichte van de andere producten, en zo precies mogelijk wordt nagebootst zoals het er in het echt uit zou zien als je het samen draagt — niet los samengesteld en naast elkaar gezet. Die controle is het extra werk achter de prijs.',
+  en: 'A complete look means every product in the shot is checked for fit against the others and matched to how it would really look worn together — not composited separately and placed side by side. That check is the extra work behind the price.',
+  nl: 'Een compleet setje betekent dat elk product in het shot wordt gecontroleerd op pasvorm ten opzichte van de andere producten, en zo precies mogelijk wordt nagebootst zoals het er in het echt uit zou zien als je het samen draagt — niet los samengesteld en naast elkaar gezet. Die controle is het extra werk achter de prijs.',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -642,7 +642,7 @@ export const TIERS = {
     // a downgrade in disguise."
     queue: {
       en: 'Standard queue, no fixed delivery date',
-      nl: 'Standaard wachtrij, geen vaste leverdatum',
+      nl: 'Normale doorlooptijd, geen vaste leverdatum',
     },
     // ELKE BESTELLING GEEFT TOEGANG TOT HET DASHBOARD, sinds augustus 2026.
     //
@@ -684,15 +684,15 @@ export const TIERS = {
     // The site must never print a date the gate has not cleared.
     turnaround: {
       en: 'A reserved 48-hour window, confirmed before you pay',
-      nl: 'Een gereserveerd venster van 48 uur, bevestigd voordat je betaalt',
+      nl: 'Een leverdatum met 48 uur werk erin, vastgezet voordat je betaalt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
       // about a product the buyer picked: an order past WINDOW_THRESHOLD holds
       // its slot against anything smaller arriving after it. Same guarantee,
       // stated in the terms the ladder actually uses.
-      en: 'Priority in the queue — a booked window is never given up for a later, smaller order',
-      nl: 'Voorrang in de wachtrij — een geboekt venster wijkt nooit voor een latere, kleinere bestelling',
+      en: 'Priority over other orders — a booked delivery date is never given up for a later, smaller order',
+      nl: 'Voorrang boven andere bestellingen — een geboekte leverdatum wijkt nooit voor een latere, kleinere bestelling',
     },
     // NIET MEER "plus per-image approve or request-revision" — dat kan de trede
     // hieronder sinds 7 augustus ook. Wat hier wél overblijft en nergens anders
@@ -983,8 +983,8 @@ export function plans(lang = 'en') {
       ],
       saving: saving
         ? (nlx
-            ? `Op de staffel zou dit ${euro(saving.onLadder, l)} kosten — ${euro(saving.saving, l)} per maand verschil.`
-            : `The same output on the ladder is ${euro(saving.onLadder, l)} — ${euro(saving.saving, l)} a month more.`)
+            ? `Op de prijs per product zou dit ${euro(saving.onLadder, l)} kosten — ${euro(saving.saving, l)} per maand verschil.`
+            : `The same output on the price per product is ${euro(saving.onLadder, l)} — ${euro(saving.saving, l)} a month more.`)
         : null,
     };
   });
@@ -1153,9 +1153,64 @@ export function perProduct(id, lang = 'en') {
   return item;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HOEVEEL BEELDEN ÉÉN PRODUCT OPLEVERT
+//
+// Deze twee getallen stonden als "vier" en "drie" uitgeschreven op zeventien
+// plekken, en op de proefvisual stond ondertussen "één beeld". Lucas, 8 augustus
+// 2026: *"test sample is niet 1 beeld maar 1 product volledig geleverd, dus bij
+// keuze catalog 4 beelden en lifestyle 3 beelden. Dit is belangrijk om aan te
+// passen want dit laat de waarde zien van de test sample en wat je nou krijgt."*
+//
+// Dus staan ze hier één keer, en leest de tekst ze op. De opmerkingen bij LADDER
+// hierboven noemen dezelfde aantallen ("four images", "three images", "seven
+// finished images"); assertShotCounts() hieronder houdt die drie bij elkaar,
+// zodat een wijziging aan één kant niet stil de andere kant laat liegen.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Een catalogset: voorkant, achterkant, een detail, en één op een model. */
+export const CATALOG_IMAGES = 4;
+/** Een lifestyle-carousel: een scène, een op een model, een detailclose-up. */
+export const LIFESTYLE_IMAGES = 3;
+/** Een compleet product is beide samen. */
+export const COMPLETE_IMAGES = CATALOG_IMAGES + LIFESTYLE_IMAGES;
+
+/*
+ * De catalogset levert net zoveel beelden als de klant er uploadt — vier — maar
+ * dat is geen wet, het is vandaag zo. SHOTS in shots.js gaat over wat er IN
+ * gaat, CATALOG_IMAGES over wat eruit komt. Ze mogen uit elkaar lopen; als dat
+ * gebeurt, moet iemand de tekst nalezen in plaats van het te ontdekken via een
+ * klant die vier beelden verwachtte. Vandaar deze controle bij de bouw.
+ */
+function assertShotCounts() {
+  if (COMPLETE_IMAGES !== 7) {
+    throw new Error(
+      `pricing.js: een compleet product is ${COMPLETE_IMAGES} beelden, maar de opmerking bij LADDER.complete zegt zeven. Werk beide bij.`,
+    );
+  }
+}
+assertShotCounts();
+
 export const TEST_SAMPLE = {
-  en: { name: 'Test sample', price: euro(AMOUNT.testSample, 'en'), unit: 'one per business', line: 'One image of one of your products, before you order anything.' },
-  nl: { name: 'Proefvisual', price: euro(AMOUNT.testSample, 'nl'), unit: 'één per bedrijf', line: 'Eén beeld van één van je producten, voordat je iets bestelt.' },
+  en: {
+    name: 'Test sample',
+    price: euro(AMOUNT.testSample, 'en'),
+    unit: 'one per business',
+    // Niet "one image". Eén product, volledig geleverd — precies wat een betaalde
+    // bestelling per product oplevert, en dat is de hele reden dat de proef iets
+    // bewijst.
+    line: `One product, finished the way a paid order is: ${CATALOG_IMAGES} catalog images or a ${LIFESTYLE_IMAGES}-photo lifestyle carousel, your choice.`,
+    catalogLine: `${CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.`,
+    lifestyleLine: `${LIFESTYLE_IMAGES} photos in one styled look — a scene, one on a model, and a detail close-up.`,
+  },
+  nl: {
+    name: 'Proefvisual',
+    price: euro(AMOUNT.testSample, 'nl'),
+    unit: 'één per bedrijf',
+    line: `Eén product, afgewerkt zoals bij een betaalde bestelling: ${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest.`,
+    catalogLine: `${CATALOG_IMAGES} beelden — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
+    lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylde look — een scène, één op een model, en een detailclose-up.`,
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

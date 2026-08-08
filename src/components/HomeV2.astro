@@ -38,11 +38,15 @@ import {
   BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim,
   LADDER, ladderRate, ladderFloor, quote, vatLabel, vatNote,
   WINDOW_THRESHOLD, PLAN_AMOUNT, PLAN_PRODUCTS,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import { TAGLINE } from '../data/brand.js';
 import Disclose from './Disclose.astro';
 import Compare from './Compare.astro';
+// De doorlooptour van het klantdashboard. Zie FigDash.astro: hij verving een
+// grijs vlak met een productienotitie erin.
+import FigDash from './FigDash.astro';
 import { ROSTER, modelId } from '../data/models.js';
 import { faqPageGroups } from '../data/faq.js';
 
@@ -188,7 +192,7 @@ const COPY = {
     // agency that quotes on request.
     heroLede: `One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style. Priced per product, from ${euro(ladderRate('complete', 1), 'en')} down to ${euro(FLOOR_RATE_EN, 'en')} as the count rises.`,
     ctaStart: 'Start an order',
-    ctaSample: `One image of your product — ${sample.price}`,
+    ctaSample: `Send one product photo, get one product back in full — ${sample.price}`,
     // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
     // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
     // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
@@ -247,17 +251,17 @@ const COPY = {
     firstLead: 'The rate is the rate.',
     firstBody: `No first-order discount and nothing to negotiate — ${EX_SMALL} complete products is ${euro(Q_SMALL.net, 'en')}, whoever you are and whenever you ask.`,
     addOnNote: `A video clip is ${euro(AMOUNT.video, 'en')}, the same rate inside an order or on its own. Your Brand Model is ${euro(AMOUNT.brandModel, 'en')} once, credited back over your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
-    planNote: `Ordering every month rather than every season? Three monthly plans, from ${euro(PLAN_FROM, 'en')} for ${PLAN_LOW}–${PLAN_HIGH} products a month, each priced below the ladder for the same output.`,
+    planNote: `Ordering every month rather than every season? Three monthly plans, from ${euro(PLAN_FROM, 'en')} for ${PLAN_LOW}–${PLAN_HIGH} products a month, each priced below the price per product for the same output.`,
     vatSummary: 'How VAT is handled',
     priceCta: 'Start an order',
     priceCta2: 'The full price list',
 
-    tsKicker: 'Before you commit to any of that',
-    tsH: ['See it on your own product', `for ${sample.price}.`],
-    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. Send one product photo and one comes back, run through the same pipeline as a paid order and checked by the same person.`,
+    tsKicker: 'Before you place an order',
+    tsH: ['One of your own products, delivered in full', `for ${sample.price}.`],
+    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. Send one product photo and that product comes back in full: ${CATALOG_IMAGES} catalog images, or a ${LIFESTYLE_IMAGES}-photo lifestyle carousel. Same production as a paid order, checked by the same person.`,
     tsPoints: [
       ['One per business', 'Not a trial with a card on file. One sample, once, no account, nothing to cancel.'],
-      ['The real pipeline', 'Same production, same house style, same human check. What comes back is what you would get.'],
+      ['No shortcuts for a sample', 'Same production, same house style, same human check. What comes back is what you would get.'],
       ['No obligation after', 'If it is not right, that is the end of it. We would rather you found out now than after an order.'],
     ],
     tsCta: 'Get your test sample',
@@ -365,7 +369,7 @@ const COPY = {
       ['No casting, no booking', 'No model, no photographer, no studio, no shared free day.'],
       ['Nothing leaves your stockroom', 'Nothing is shipped and nothing comes back creased.'],
       ['No day off the business', 'A shoot day is a day you sell nothing.'],
-      ['No cull, no retouch queue', 'Finished visuals, not four hundred frames to sort on a Sunday.'],
+      ['No cull, no waiting for retouch', 'Finished visuals, not four hundred frames to sort on a Sunday.'],
     ],
     // The one sentence left over from the deleted "What an order replaces"
     // band: the euros against a shoot day are /compare's and /pricing's
@@ -400,13 +404,13 @@ const COPY = {
     bmCta: 'How Your Brand Model works',
 
     plH: 'Work back from your launch date.',
-    plLede: 'The window is reserved capacity, not a place in a queue. That is why it can be promised at all — and why it runs out.',
+    plLede: 'The delivery date is reserved capacity, not a place in a line. That is why it can be promised at all — and why it runs out.',
     pl: [
       ['Your launch date', 'The day the collection has to be live. Everything else is counted backwards from here.'],
       // WINDOW_THRESHOLD moved here from the deleted price tile in the old drop
       // band. It is the condition on the window, and this is the band about the
       // window — it had no business being stated beside a per-product rate.
-      ['Minus 48 hours', `The reserved window, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it; below that count an order runs in the standard queue.`],
+      ['48 hours from your date', `The reserved delivery date, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it; below that count an order runs in the normal turnaround.`],
       ['Minus one folder', 'The day you send the photos. That is your part finished, and the date is already locked.'],
     ],
     plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait.',
@@ -420,15 +424,15 @@ const COPY = {
     dashPortalPh: 'Client portal · delivery gallery',
     dashPortalNote: 'The approve / request-revision screen, with one image selected.',
     dashStudioK: 'The studio side',
-    dashStudioN: 'Every order and the capacity calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
+    dashStudioN: 'Every order and the calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
     dashStudioCta: 'See how an order is run',
-    dashStudioPh: 'Studio dashboard · capacity calendar',
+    dashStudioPh: 'Studio dashboard · delivery calendar',
     dashStudioNote: 'The order table with the week that is full marked as full.',
     dashLogK: 'The log is the paperwork',
     dashLogN: 'Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later. Ask and we write it out for you.',
     dashLogCta: 'Read the AI Act page',
 
-    promiseH: ['No wall of reviews yet.', 'So we earn it the honest way.'],
+    promiseH: ['No wall of reviews yet.', 'So we earn your trust the honest way.'],
     promiseQuote: `"I check every visual myself before it reaches you, and I would rather redo one than ship it. Not sure yet? See it on your own product for ${sample.price} first."`,
     promiseSign: 'founder, VISUAILS',
     // The test sample was the first check as well as the last line of the
@@ -471,8 +475,8 @@ const COPY = {
     faqLede: 'The five that get asked most, and the rest on their own page.',
     faqCta: 'Every question, answered',
 
-    closeH: 'See it on your own product first.',
-    closeLede: `One visual, made from your photo, human-checked — for a ${sample.price} verification. One per business.`,
+    closeH: 'One of your own products, delivered in full, first.',
+    closeLede: `${CATALOG_IMAGES} catalog images or a carousel of ${LIFESTYLE_IMAGES}, made from your photo, human-checked — for a ${sample.price} verification. One per business.`,
     closeCta: 'Get your test sample',
     closeAlt: 'Start an order instead',
   },
@@ -482,7 +486,7 @@ const COPY = {
     h1: TAGLINE.nl.lines,
     heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Je betaalt per product: van ${euro(ladderRate('complete', 1), 'nl')} omlaag naar ${euro(FLOOR_RATE_EN, 'nl')} naarmate je er meer bestelt.`,
     ctaStart: 'Start een bestelling',
-    ctaSample: `Eén beeld van jouw product — ${sample.price}`,
+    ctaSample: `Stuur één productfoto, krijg één product volledig terug — ${sample.price}`,
     // Zie de EN-tabel voor waarom dit geen plint meer is.
     proof: [
       turnaround('attended', 'nl'),
@@ -509,17 +513,17 @@ const COPY = {
     firstLead: 'Het tarief is het tarief.',
     firstBody: `Geen kennismakingskorting en niets om over te onderhandelen — ${EX_SMALL} complete producten is ${euro(Q_SMALL.net, 'nl')}, wie je ook bent en wanneer je ook vraagt.`,
     addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')}, verrekend over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
-    planNote: `Bestel je elke maand in plaats van elk seizoen? Drie maandplannen, vanaf ${euro(PLAN_FROM, 'nl')} voor ${PLAN_LOW}–${PLAN_HIGH} producten per maand, en elk goedkoper dan de staffel voor dezelfde output.`,
+    planNote: `Bestel je elke maand in plaats van elk seizoen? Drie maandplannen, vanaf ${euro(PLAN_FROM, 'nl')} voor ${PLAN_LOW}–${PLAN_HIGH} producten per maand, en elk goedkoper dan de prijs per product voor dezelfde output.`,
     vatSummary: 'Hoe de btw werkt',
     priceCta: 'Start een bestelling',
     priceCta2: 'De volledige prijslijst',
 
-    tsKicker: 'Voordat je je aan iets vastlegt',
-    tsH: ['Zie het op je eigen product', `voor ${sample.price}.`],
-    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, op dat van jou. Stuur één productfoto en er komt er één terug, door dezelfde pipeline als een betaalde bestelling en door dezelfde persoon nagekeken.`,
+    tsKicker: 'Voordat je een bestelling plaatst',
+    tsH: ['Eén product van jezelf, volledig geleverd', `voor ${sample.price}.`],
+    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, op dat van jou. Stuur één productfoto en je krijgt dat product volledig terug: ${CATALOG_IMAGES} catalogbeelden, of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto's. Zelfde productie als een betaalde bestelling, door dezelfde persoon nagekeken.`,
     tsPoints: [
       ['Eén per bedrijf', 'Geen proefperiode, en we bewaren je pasgegevens niet. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
-      ['De echte pipeline', 'Zelfde productie, zelfde huisstijl, zelfde menselijke controle. Wat terugkomt is wat je zou krijgen.'],
+      ['Geen kortere weg voor een proef', 'Zelfde productie, zelfde huisstijl, zelfde menselijke controle. Wat terugkomt is wat je zou krijgen.'],
       ['Daarna geen verplichting', 'Klopt het niet, dan houdt het op. Wij ontdekken dat liever nu dan na een bestelling.'],
     ],
     tsCta: 'Vraag je proefvisual aan',
@@ -649,11 +653,11 @@ const COPY = {
     bmCta: 'Zo werkt je merkmodel',
 
     plH: 'Reken terug vanaf je livegangdatum.',
-    plLede: 'Het venster is gereserveerde capaciteit, geen plek in een wachtrij. Daarom kan het überhaupt beloofd worden — en daarom raakt het op.',
+    plLede: 'De leverdatum is gereserveerde capaciteit, geen langere doorlooptijd. Daarom kan het überhaupt beloofd worden — en daarom raakt het op.',
     pl: [
       ['Je livegangdatum', 'De dag waarop de collectie live moet staan. Al het andere wordt hiervandaan teruggeteld.'],
       // WINDOW_THRESHOLD staat nu hier, niet meer naast een tarief per product.
-      ['Min 48 uur', `Het gereserveerde venster, bij bestellingen van ${WINDOW_THRESHOLD} producten of meer. Zodra de planning het heeft vrijgegeven, mag niets anders in de studio eroverheen; daaronder loopt een bestelling in de gewone wachtrij.`],
+      ['48 uur vanaf je leverdatum', `De vastgezette leverdatum, bij bestellingen van ${WINDOW_THRESHOLD} producten of meer. Zodra de planning het heeft vrijgegeven, mag niets anders in de studio eroverheen; daaronder loopt een bestelling in de normale doorlooptijd.`],
       ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar, en de datum staat al vast.'],
     ],
     plNote: 'Weken worden één voor één geboekt, en een volle week wordt als vol aangeboden in plaats van als langere wachttijd.',
@@ -700,8 +704,8 @@ const COPY = {
     faqLede: 'De vijf die het vaakst gesteld worden, en de rest op een eigen pagina.',
     faqCta: 'Alle vragen, beantwoord',
 
-    closeH: 'Zie het eerst op je eigen product.',
-    closeLede: `Eén beeld, gemaakt van jouw foto, door een mens nagekeken — voor een verificatie van ${sample.price}. Eén per bedrijf.`,
+    closeH: 'Eerst één product van jezelf, volledig geleverd.',
+    closeLede: `${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}, gemaakt van jouw foto, door een mens nagekeken — voor een verificatie van ${sample.price}. Eén per bedrijf.`,
     closeCta: 'Vraag je proefvisual aan',
     closeAlt: 'Of start meteen een bestelling',
   },
@@ -1301,18 +1305,20 @@ const FAQ_PICK = [
     </div>
 
     <div class="hv-dash">
-      <div class="hv-dash-row">
+      {/* ── DE TOUR STAAT OVER DE VOLLE BREEDTE, NIET IN EEN HALVE KOLOM ──
+          Lucas: *"een usable voorbeeld van het dashboard met voorbeelden van
+          wat mogelijk is en wat je allemaal kan inzien."* Dat past niet naast
+          een tekstkolom: er staan vier panelen in, en het smalste ervan heeft
+          vier fotokolommen. Dus staat de tekst erboven en de figuur eronder.
+          De rij hieronder (de studiokant) houdt zijn twee kolommen, want daar
+          zit nog een placeholder. */}
+      <div class="hv-dash-row is-stack">
         <div class="hv-dash-copy">
           <h3>{c.dashPortalK}</h3>
           <p>{c.dashPortalN}</p>
           <a class="btn btn-ghost" href={lp('/portal')}>{c.dashPortalCta}</a>
         </div>
-        <div class="ph" style="--ph-ratio: 16 / 10">
-          <div>
-            <p class="ph-label">{c.dashPortalPh}</p>
-            <p class="ph-note">{c.dashPortalNote}</p>
-          </div>
-        </div>
+        <FigDash lang={lang} />
       </div>
 
       <div class="hv-dash-row is-flip">
@@ -1777,6 +1783,12 @@ const FAQ_PICK = [
   .hv-dash { margin-top: clamp(2.6rem, 5vw, 4rem); display: grid; gap: 1px; background: var(--line); }
   .hv-dash-row { background: var(--bg); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.5rem, 3vw, 3rem); align-items: center; padding: clamp(1.5rem, 3vw, 2.6rem); }
   .hv-dash-row.is-flip .hv-dash-copy { order: 2; }
+  /* De tour is te breed voor een halve kolom: vier fotokolommen naast een
+     zijbalk van vijftien rem redt het niet onder de negenhonderd pixels. Dus
+     één kolom, tekst boven, figuur onder — en de tekst houdt zijn eigen
+     regellengte in plaats van de volle breedte te pakken. */
+  .hv-dash-row.is-stack { grid-template-columns: 1fr; align-items: start; }
+  .hv-dash-row.is-stack .hv-dash-copy { max-width: 62ch; }
   .hv-dash-copy h3 { margin: 0 0 .7rem; font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
   .hv-dash-copy p { margin: 0 0 1.3rem; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 46ch; }
   .hv-dash-log { background: var(--bg); padding: clamp(1.5rem, 3vw, 2.6rem); }

@@ -252,12 +252,12 @@ export const WALK_COPY = {
       order: {
         n: 'You, on the site',
         h: 'You fill in the order form',
-        b: `Five screens: what you want made, your photos, a short note on the look, when you need it, and a confirmation. The scope you choose applies to every product in the order, so you set it once rather than product by product. Nothing is charged at this point and nothing is booked — you are describing the job, not buying it.`,
+        b: `Five screens: what you want made, your photos, a short note on the look, when you need it, and a confirmation. What you choose applies to every product in the order, so you set it once rather than product by product. Nothing is charged at this point and nothing is booked — you are describing the job, not buying it.`,
       },
       upload: {
         n: 'You, on the site',
         h: 'You upload the photos',
-        b: `Drop a folder and we read the folder name as the product; drop loose files and we sort them by filename. Two shots per product are required — the front and the back — and a detail and a worn shot are welcome if you have them. Phone photos on a table in window light are exactly right. Five minutes, however many products you have; the effort does not grow with the size of the order.`,
+        b: `Order a folder and we read the folder name as the product; order loose files and we sort them by filename. Two shots per product are required — the front and the back — and a detail and a worn shot are welcome if you have them. Phone photos on a table in delivery date light are exactly right. Five minutes, however many products you have; the effort does not grow with the size of the order.`,
       },
       look: {
         n: 'You, on the site',
@@ -266,8 +266,8 @@ export const WALK_COPY = {
       },
       window: {
         n: 'Us, before you pay',
-        h: 'We check the calendar and confirm a window',
-        b: `From ${WINDOW_THRESHOLD_} products the order goes into the capacity calendar and gets ${TURN_ATT_.toLowerCase()} — in writing, and before anything is charged. If the week you need cannot be held, you are told that, with the next window that can. No date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no window to reserve: the order runs in the standard queue at ${TURN_UNATT_.toLowerCase()}.`,
+        h: 'We check the calendar and confirm a delivery date',
+        b: `From ${WINDOW_THRESHOLD_} products the order goes into the calendar and gets ${TURN_ATT_.toLowerCase()} — in writing, and before anything is charged. If the week you need cannot be held, you are told that, with the next delivery date that can. No date is invented to keep an order. Below ${WINDOW_THRESHOLD_} products there is no delivery date to reserve: the order runs in the normal turnaround at ${TURN_UNATT_.toLowerCase()}.`,
       },
       pay: {
         n: 'You, by email',
@@ -298,7 +298,7 @@ export const WALK_COPY = {
 
     lookCustom: 'Something else in mind? A style of your own goes in a note with your order and we look at it together.',
     modelLocked: 'Locked in this walkthrough',
-    modelRoster: 'See the ten',
+    modelRoster: 'See the ten models',
     checks: ['Fit checked against your photo', 'Colour compared', 'Background clean'],
     outCount: function outCount(n) { return n === 1 ? 'One clip, from that one photo.' : `${n} images, from that one photo.`; },
     shotNames: { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On a model' },
@@ -308,16 +308,16 @@ export const WALK_COPY = {
     // step beside it is.
     capOrder: 'The order form',
     capUpload: 'What you send',
-    capWindow: 'The capacity gate',
+    capWindow: 'The calendar check',
     capPay: 'Paid — production starts',
     capPortal: 'Your order, in the portal',
     windowPass: 'The calendar can hold it — reserved and confirmed before you pay',
-    windowRefuse: 'Or it cannot, and you are told that with the next window that can',
+    windowRefuse: 'Or it cannot, and you are told that with the next delivery date that can',
     payLine: 'Nothing is produced before this is completed.',
-    orderLines: ['Scope', 'Material', 'Brief', 'Timing', 'Confirm'],
+    orderLines: ['What', 'Material', 'Notes', 'Timing', 'Confirm'],
     portalStates: { ok: 'Approved by you', rev: 'Revision requested — this image only', wait: 'Still coming' },
 
-    ctaPrimary: 'Do this with your own product',
+    ctaPrimary: 'Start an order with your own products',
     ctaGhost: 'Start an order',
     placeholderNote: 'Stand-in images — the walkthrough set is still being shot. Every frame here was made earlier for a real order; nothing is generated while you look at it.',
     noClip: 'The clip for this style has not been shot yet — this is the still it will be cut from.',
@@ -339,7 +339,7 @@ export const WALK_COPY = {
       order: {
         n: 'Jij, op de site',
         h: 'Je vult het bestelformulier in',
-        b: 'Vijf schermen: wat je wilt laten maken, je foto\u2019s, een korte notitie over de look, wanneer je het nodig hebt, en een bevestiging. De scope die je kiest geldt voor elk product in de bestelling, dus je stelt hem één keer in en niet per product. Er wordt op dit moment niets in rekening gebracht en niets vastgelegd — je beschrijft de opdracht, je koopt hem nog niet.',
+        b: 'Vijf schermen: wat je wilt laten maken, je foto\u2019s, een korte notitie over de look, wanneer je het nodig hebt, en een bevestiging. Wat je kiest geldt voor elk product in de bestelling, dus je kiest één keer en niet per product. Er wordt op dit moment niets in rekening gebracht en niets vastgelegd — je beschrijft de opdracht, je koopt hem nog niet.',
       },
       upload: {
         n: 'Jij, op de site',
@@ -353,8 +353,8 @@ export const WALK_COPY = {
       },
       window: {
         n: 'Wij, voordat je betaalt',
-        h: 'Wij checken de agenda en bevestigen een venster',
-        b: `Vanaf ${WINDOW_THRESHOLD_} producten gaat de bestelling de capaciteitsagenda in en krijgt hij ${TURN_ATT_NL_.toLowerCase()} — schriftelijk, en voordat er iets in rekening wordt gebracht. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat, met het eerstvolgende venster dat het wél kan. Er wordt geen datum verzonnen om een bestelling binnen te houden. Onder ${WINDOW_THRESHOLD_} producten valt er geen venster te reserveren: die bestelling loopt in de standaardwachtrij, ${TURN_UNATT_NL_.toLowerCase()}.`,
+        h: 'Wij checken de agenda en bevestigen een leverdatum',
+        b: `Vanaf ${WINDOW_THRESHOLD_} producten gaat de bestelling de agenda in en krijgt hij ${TURN_ATT_NL_.toLowerCase()} — schriftelijk, en voordat er iets in rekening wordt gebracht. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat, met de eerstvolgende leverdatum die het wél kan. Er wordt geen datum verzonnen om een bestelling binnen te houden. Onder ${WINDOW_THRESHOLD_} producten valt er geen leverdatum te reserveren: die bestelling loopt in de normale doorlooptijd, ${TURN_UNATT_NL_.toLowerCase()}.`,
       },
       pay: {
         n: 'Jij, per mail',
@@ -369,7 +369,7 @@ export const WALK_COPY = {
       make: {
         n: 'Wij, in productie',
         h: 'Samen geproduceerd, daarna met de hand afgewerkt',
-        b: 'Elk product in de bestelling gaat als één batch door de pipeline, en dat is wat de belichting, de hoek en de grade over alle producten laat kloppen — los gedraaid zou dat niet zo zijn. Daarna wordt het met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en controleert een mens de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
+        b: 'Elk product in de bestelling gaat als één batch door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar. Los gedraaid lukt dat niet. Daarna wordt het met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en controleert een mens de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
       },
       portal: {
         n: 'Jij, in je account',
@@ -379,13 +379,13 @@ export const WALK_COPY = {
       result: {
         n: 'Jij, aan het eind',
         h: 'Je downloadt de set',
-        b: 'Hoge-resolutiebestanden, klaar voor e-commerce, op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten op alles wat we leveren. Download ze los, of neem de hele goedgekeurde set als zip.',
+        b: 'Hogeresolutiebestanden, klaar voor e-commerce, op maat voor shoplistings, marktplaatsen en advertenties, met volledige commerciële gebruiksrechten op alles wat we leveren. Download ze los, of neem de hele goedgekeurde set als zip.',
       },
     },
 
     lookCustom: 'Iets anders voor ogen? Een eigen stijl gaat in een notitie bij je bestelling, en dan kijken we er samen naar.',
     modelLocked: 'Vast in deze doorloop',
-    modelRoster: 'Bekijk de tien',
+    modelRoster: 'Bekijk de tien modellen',
     checks: ['Pasvorm vergeleken met je foto', 'Kleur gecontroleerd', 'Achtergrond schoon'],
     outCount: function outCount(n) { return n === 1 ? 'Eén clip, uit die ene foto.' : `${n} beelden, uit die ene foto.`; },
     shotNames: { front: 'Voorkant', back: 'Achterkant', detail: 'Detail', worn: 'Op een model' },
@@ -393,16 +393,16 @@ export const WALK_COPY = {
 
     capOrder: 'Het bestelformulier',
     capUpload: 'Wat jij stuurt',
-    capWindow: 'De capaciteitspoort',
+    capWindow: 'De agendacheck',
     capPay: 'Betaald — de productie start',
     capPortal: 'Jouw bestelling, in het portaal',
     windowPass: 'De agenda kan het vasthouden — gereserveerd en bevestigd voordat je betaalt',
-    windowRefuse: 'Of niet, en dan hoor je dat met het eerstvolgende venster dat het wél kan',
+    windowRefuse: 'Of niet, en dan hoor je dat met de eerstvolgende leverdatum die het wél kan',
     payLine: 'Er wordt niets geproduceerd voordat dit is voltooid.',
-    orderLines: ['Scope', 'Materiaal', 'Briefing', 'Timing', 'Bevestigen'],
+    orderLines: ['Wat', 'Materiaal', 'Notitie', 'Timing', 'Bevestigen'],
     portalStates: { ok: 'Door jou goedgekeurd', rev: 'Revisie aangevraagd — alleen dit beeld', wait: 'Nog onderweg' },
 
-    ctaPrimary: 'Doe dit met je eigen product',
+    ctaPrimary: 'Start een bestelling met je eigen producten',
     ctaGhost: 'Start een bestelling',
     placeholderNote: 'Voorlopige beelden — de serie voor deze doorloop moet nog geschoten worden. Elk kader hier is eerder gemaakt voor een echte bestelling; er wordt niets gegenereerd terwijl je kijkt.',
     noClip: 'De clip voor deze stijl is nog niet geschoten — dit is het stilstaande beeld waar hij uit gesneden wordt.',

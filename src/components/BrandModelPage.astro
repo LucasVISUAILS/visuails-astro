@@ -156,7 +156,7 @@ const COPY = {
     trust: [
       ['One-time', 'setup, then it is yours'],
       ['Exclusive', 'to your brand, permanently'],
-      ['Credited back', 'across your first orders'],
+      ['Credited back', `across your first ${BRAND_MODEL_CREDIT_DROPS} orders`],
     ],
 
     // NOT A MODEL
@@ -164,10 +164,10 @@ const COPY = {
     notALead: 'The standard library is shared: a face you like is a face another brand can pick tomorrow. A Brand Model is designed for you alone and never appears anywhere else.',
     notAAlt: 'A VISUAILS model portrait',
     props: [
-      ['Built from your brief', 'Age, styling, mood, the things you never want to see.'],
+      ['Built from what you tell us', 'Age, styling, mood, and what you never want to see.'],
       ['Exclusive by construction', 'No other brand can order this face. Not a promise — a property of how it is made.'],
       ['Identical, order after order', 'The same person in the same skin, whether it is product four or product two hundred.'],
-      ['Yours to keep', 'Set up once. Every order after runs at the normal ladder rate for its size.'],
+      ['Yours to keep', 'Set up once. Every order after runs at the normal per-product rate for its size.'],
     ],
 
     // COST
@@ -188,8 +188,8 @@ const COPY = {
     // prose rather than as a figure.
     costMath: `${euro(AMOUNT.brandModelCredit, 'en')} ${vatLabel('excl', 'en')} comes off each of your first ${BRAND_MODEL_CREDIT_DROPS} orders, so once you have run ${BRAND_MODEL_CREDIT_DROPS} orders the setup has returned in full and the face is still yours. Before that point you are paying for exclusivity, which is the honest way to describe it.`,
     costFree: `You do not need a Brand Model to place an order. Every order already includes a model from the standard library at no extra cost — this is a decision about owning a face, not about getting one.`,
-    costCta: 'See the price ladder',
-    costSequence: `The model is designed and locked before your first order is scheduled, so setup never eats into the reserved window an order of ${WINDOW_THRESHOLD} products or more is given.`,
+    costCta: 'See the price per product',
+    costSequence: `The model is designed and locked before your first order is scheduled, so setup never eats into the reserved delivery date an order of ${WINDOW_THRESHOLD} products or more is given.`,
 
     // WHERE IT FITS
     fitMeta: '( Where it fits )',
@@ -264,7 +264,7 @@ const COPY = {
     ctaH1: 'Design the face of',
     ctaEm: 'your brand.',
     ctaStart: 'Start an order',
-    ctaPricing: 'See the price ladder',
+    ctaPricing: 'See the price per product',
     ctaWaShort: 'WhatsApp',
   },
 
@@ -283,14 +283,14 @@ const COPY = {
     trust: [
       ['Eenmalige', 'setup, daarna is het van jou'],
       ['Exclusief', 'voor jouw merk, permanent'],
-      ['Terugverdiend', 'over je eerste bestellingen'],
+      ['Terugverdiend', `over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`],
     ],
 
     notAH: 'Jouw model, niet <em>een</em> model.',
     notALead: 'De standaardbibliotheek is gedeeld: een gezicht dat jij mooi vindt, kan een ander merk morgen kiezen. Een merkmodel wordt alleen voor jou ontworpen en verschijnt nergens anders.',
     notAAlt: 'Een VISUAILS-modelportret',
     props: [
-      ['Gebouwd op jouw briefing', 'Leeftijd, styling, sfeer, en de dingen die je nooit wil zien.'],
+      ['Gebouwd op wat jij ons vertelt', 'Leeftijd, styling, sfeer, en wat je nooit wil zien.'],
       ['Exclusief, en niet op ons woord', 'Geen ander merk kan dit gezicht bestellen. Dat is geen belofte maar een gevolg van hoe het gemaakt is.'],
       ['Identiek, bestelling na bestelling', 'Dezelfde persoon in dezelfde huid, of het nu product vier is of product tweehonderd.'],
       ['Van jou, en het blijft van jou', 'Je zet het één keer op. Elke bestelling daarna betaal je gewoon de prijs per product die bij die omvang hoort.'],
@@ -309,16 +309,16 @@ const COPY = {
     // krediet verandert.
     costMath: `${euro(AMOUNT.brandModelCredit, 'nl')} ${vatLabel('excl', 'nl')} gaat er af bij elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen, dus na ${BRAND_MODEL_CREDIT_DROPS} bestellingen is de setup volledig terugverdiend en is het gezicht nog steeds van jou. Tot dat punt betaal je voor exclusiviteit, en dat is de eerlijke omschrijving.`,
     costFree: `Je hebt geen merkmodel nodig om te bestellen. Elke bestelling bevat al een model uit de standaardbibliotheek, zonder extra kosten — dit is een keuze over het bezitten van een gezicht, niet over het krijgen van een gezicht.`,
-    costCta: 'Bekijk de volledige prijsladder',
-    costSequence: `Het model wordt ontworpen en vastgezet vóórdat je eerste bestelling ingepland wordt, zodat de setup nooit ten koste gaat van het gereserveerde venster dat een bestelling vanaf ${WINDOW_THRESHOLD} producten krijgt.`,
+    costCta: 'Bekijk alle prijzen per aantal',
+    costSequence: `Het model wordt ontworpen en vastgezet vóórdat je eerste bestelling ingepland wordt, zodat de setup nooit ten koste gaat van de vastgezette leverdatum die een bestelling vanaf ${WINDOW_THRESHOLD} producten krijgt.`,
 
     fitMeta: '( Waar het past )',
     fitH: 'Eén look, door alles wat je verkoopt.',
     fitSub: 'De rode draad die van een assortiment een merk maakt.',
     fitWhatH: 'Wat het is',
     fitWhat: [
-      'Een merkmodel is een signatuur die één keer ontworpen wordt, exclusief voor jou — een gezicht, een houding, een manier van staan die geen ander merk deelt. Eenmaal vastgezet wordt elke visual in elke bestelling ermee gemaakt, zodat je catalog en je feed samenhangen in plaats van uit losse sessies samengesteld te lijken.',
-      'Dit is waar visuals ophouden foto’s te zijn en merkwaarde worden. Een consistent gezicht verandert een scroll-voorbij in herkenning: mensen kennen je beelden voordat ze je naam lezen. Het werkt overal waar je merk verschijnt, want overal én consistent zijn is het hele punt.',
+      'Een merkmodel is een signatuur die één keer ontworpen wordt, exclusief voor jou — een gezicht, een houding, een manier van staan die geen ander merk deelt. Eenmaal vastgezet wordt elke visual in elke bestelling ermee gemaakt, zodat je catalogus en je feed samenhangen in plaats van over te komen als losse sessies.',
+      'Hier stoppen beelden foto’s te zijn: ze worden merkwaarde. Eén vast gezicht maakt van voorbijscrollen herkenning — mensen kennen je beelden voordat ze je naam lezen. Het werkt overal waar je merk verschijnt, want overal én consistent zijn is het hele punt.',
     ],
     fitWhereH: 'Waar het leeft',
     fitWhere: [
@@ -370,14 +370,14 @@ const COPY = {
     genH: 'Waarom niet gewoon een generator prompten?',
     genBody: [
       'Dat kan, en voor één beeld kun je dat waarschijnlijk beter doen. Wat een prompt je niet geeft, is twee keer dezelfde persoon. Vraag een algemene generator om hetzelfde gezicht over dertig producten en je krijgt dertig familieleden — bijna-treffers die een klant als slordigheid leest, lang voordat hij kan zeggen waarom.',
-      'Wat wij verkopen is niet de generatie. Het is de vergrendeling: een identiteit die één keer wordt vastgezet, gestuurd door je eigen productfoto’s, en bekeken door een mens voordat er iets naar je toe gaat. Dat is het deel dat een catalog overleeft.',
+      'Wat wij verkopen is niet de generatie. Het is de vergrendeling: een identiteit die één keer wordt vastgezet, gestuurd door je eigen productfoto’s, en bekeken door een mens voordat er iets naar je toe gaat. Dat is het deel dat een hele catalogus overleeft.',
     ],
     genCta: 'De langere vergelijking, tools inbegrepen',
 
     ctaH1: 'Ontwerp het gezicht van',
     ctaEm: 'jouw merk.',
     ctaStart: 'Start een bestelling',
-    ctaPricing: 'Bekijk de prijsstaffel',
+    ctaPricing: 'Bekijk de prijs per product',
     ctaWaShort: 'WhatsApp',
   },
 };
@@ -415,14 +415,14 @@ const DIRECTIONS = {
 // artefact.
 const STEPS = {
   en: [
-    ['Intake', 'You send references and a brief on the look you want.'],
+    ['You send', 'You send references and tell us the look you want.'],
     ['Directions', 'We design two or three directions for you to react to.'],
     ['You choose', 'Pick the face that fits, with one round of refinement.'],
     ['Locked', 'The model is fixed so it cannot drift between orders.'],
     ['In every order', 'From then on your model carries every visual we make.'],
   ],
   nl: [
-    ['Intake', 'Je stuurt referenties en een briefing over de look die je wilt.'],
+    ['Jij stuurt', 'Je stuurt referenties en vertelt welke look je wilt.'],
     ['Richtingen', 'We ontwerpen twee of drie richtingen waarop je kunt reageren.'],
     ['Jij kiest', 'Kies het gezicht dat past, met één ronde verfijning.'],
     ['Vastgezet', 'Het model wordt vastgelegd zodat het niet tussen bestellingen kan afdrijven.'],

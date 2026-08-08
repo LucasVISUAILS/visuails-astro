@@ -113,7 +113,7 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, the order goes into the capacity calendar and gets the reserved window.`,
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
     reviewNote: reviewClaim('unattended', 'en'),
     kindsH: 'Ways to add motion.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
@@ -160,7 +160,7 @@ const COPY = {
     // the difference this block now has to state out loud rather than imply.
     buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}, on its own or added to any order.`,
     buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
-    buyFlat: `Catalog and lifestyle photos are priced per product and the rate falls as the count rises. A clip does not sit on that ladder: it is one rate, whatever else is in the order. ${studioPlan ? `${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
+    buyFlat: `Catalog and lifestyle photos are priced per product and the rate falls as the count rises. A clip does not work that way: it is one rate, whatever else is in the order. ${studioPlan ? `${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
     buyCta: 'Start an order',
     stripAlt: {
       campaign: 'Campaign photography',
@@ -176,7 +176,7 @@ const COPY = {
       },
       {
         q: 'Why does the clip rate not fall with volume?',
-        a: 'Catalog and lifestyle photos are priced per product, and that rate falls a rung at a time as the count rises. A clip is not on that ladder — the work per clip is the same whether it arrives alone or with fifty products, so the rate stays put. It is the same figure on its own as it is inside a larger order.',
+        a: 'Catalog and lifestyle photos are priced per product, and that rate falls a step at a time as the count rises. A clip is not part of that price per product — the work per clip is the same whether it arrives alone or with fifty products, so the rate stays put. It is the same figure on its own as it is inside a larger order.',
       },
       {
         q: 'How long is a clip, and what do I get?',
@@ -184,7 +184,7 @@ const COPY = {
       },
       {
         q: 'How long does it take?',
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more is already booked into the calendar and holds its window, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one holding a window: ${turnaround('attended', 'en').toLowerCase()}.`,
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
       },
       {
         q: 'Can a model appear in the clip?',
@@ -213,7 +213,7 @@ const COPY = {
       ['8s', 'strakke productvideo’s'],
       [clip, `per clip · ${vatLabel('excl', 'nl')}`],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de agenda en krijgt hij de vastgezette leverdatum.`,
     reviewNote: reviewClaim('unattended', 'nl'),
     kindsH: 'Manieren om beweging toe te voegen.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
@@ -253,7 +253,7 @@ const COPY = {
     buyH: 'Twee manieren om video te kopen',
     buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}, los of toegevoegd aan elke bestelling.`,
     buyQuote: '<strong>Campaign</strong> — groter, meerdere shots, offerte per project.',
-    buyFlat: `Catalog- en lifestylefoto’s zijn geprijsd per product en dat tarief daalt naarmate het aantal stijgt. Een clip staat niet op die staffel: het is één tarief, wat er verder ook in de bestelling zit. ${studioPlan ? `${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
+    buyFlat: `Catalog- en lifestylefoto’s zijn geprijsd per product en dat tarief daalt naarmate het aantal stijgt. Bij een clip werkt dat niet zo: het is één tarief, wat er verder ook in de bestelling zit. ${studioPlan ? `${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
     buyCta: 'Start een bestelling',
     stripAlt: {
       campaign: 'Campagnefotografie',
@@ -269,7 +269,7 @@ const COPY = {
       },
       {
         q: 'Waarom daalt het cliptarief niet bij grotere aantallen?',
-        a: 'Catalog- en lifestylefoto’s zijn geprijsd per product, en dat tarief zakt trede voor trede naarmate het aantal stijgt. Een clip staat niet op die staffel — het werk per clip is hetzelfde of hij nu alleen komt of met vijftig producten, dus het tarief blijft staan. Los is het hetzelfde bedrag als binnen een grotere bestelling.',
+        a: 'Catalog- en lifestylefoto’s zijn geprijsd per product, en dat tarief zakt stap voor stap naarmate het aantal stijgt. Bij een clip werkt dat niet zo — het werk per clip is hetzelfde of hij nu alleen komt of met vijftig producten, dus het tarief blijft staan. Los is het hetzelfde bedrag als binnen een grotere bestelling.',
       },
       {
         q: 'Hoe lang is een clip, en wat krijg ik?',
@@ -277,7 +277,7 @@ const COPY = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn venster vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met het venster: ${turnaround('attended', 'nl').toLowerCase()}.`,
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn leverdatum vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met de leverdatum: ${turnaround('attended', 'nl').toLowerCase()}.`,
       },
       {
         q: 'Kan er een model in de clip?',

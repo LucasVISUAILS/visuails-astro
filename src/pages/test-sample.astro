@@ -10,7 +10,7 @@ import { waHref } from '../data/whatsapp.js';
 // reimplemented as vanilla JS below, keeping the exact same markup/fields
 // and the same "both steps stay in the DOM" behavior.
 import Layout from '../layouts/Layout.astro';
-import { TEST_SAMPLE, turnaround } from '../data/pricing.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
 
 // The verification fee was typed in four separate places and the delivery step
 // promised "~24 hours" — a figure the capacity gate has never cleared. Both are
@@ -52,15 +52,15 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
 
 <Layout
   title="Test VISUAILS with 1 product — test sample"
-  description="Upload one product photo and see it become a publish-ready e-commerce visual. One sample per business, checked by a person before it reaches you."
+  description="Upload one product photo and get that product back in full: four catalog images or a three-photo lifestyle carousel. One sample per business, checked by a person before it reaches you."
 >
   <!-- HERO -->
   <section class="page-hero"><div class="container">
     <span class="eyebrow-page">Test sample</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Test VISUAILS with <span class="accent-word">1 product</span></h1>
-    <p class="lead" style="margin-top:1.2rem">Upload one product photo and see it become a publish-ready visual — before you order.</p>
+    <p class="lead" style="margin-top:1.2rem">Upload one product photo and get that product back in full: {CATALOG_IMAGES} catalog images, or a {LIFESTYLE_IMAGES}-photo lifestyle carousel. Exactly what a paid order gets you per product.</p>
     <div class="chip-row" style="margin-top:1.8rem">
-      <span class="chip"><span class="dot"></span>1 sample per business</span>
+      <span class="chip"><span class="dot"></span>One complete product</span>
       <span class="chip"><span class="dot"></span>Just {SAMPLE.price} verification</span>
       <span class="chip"><span class="dot"></span>Human quality-checked</span>
     </div>
@@ -70,10 +70,12 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   <section class="section-tight">
     <div class="container two-col">
       <div class="reveal pending">
-        <h2>One product, turned into a publish-ready visual.</h2>
-        <p style="margin-top:1.1rem;color:var(--ink-3);max-width:52ch">The same pipeline and human review used on every paid order — the honest way to judge quality before you commit.</p>
+        <h2>One product, delivered in full.</h2>
+        <p style="margin-top:1.1rem;color:var(--ink-3);max-width:52ch">The same production and human review used on every paid order — the honest way to judge quality before you commit.</p>
         <ul class="checklist" style="margin-top:1.4rem">
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>One high-resolution visual, delivered by email download link.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Pick catalog: {CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Pick lifestyle: {LIFESTYLE_IMAGES} photos in one styled look — a scene, one on a model, and a detail close-up.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>High resolution, delivered as an email download link.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>A real look at our lighting, framing and finish.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Reviewed by a person before it reaches you.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>A one-off {SAMPLE.price} verification, one sample per business.</span></li>
@@ -94,7 +96,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
     <div class="container">
       <div class="section-head">
         <h2>How the sample works</h2>
-        <p>Four short steps from your photo to a finished visual in your inbox.</p>
+        <p>Four short steps from your photo to a finished set in your inbox.</p>
       </div>
       <div class="steps">
         <div class="step reveal pending"><div class="step-n">01</div><h3>Upload product photo</h3><p>Share one clear photo of the product you'd like us to work with.</p></div>
@@ -109,7 +111,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   <section class="section-tight">
     <div class="container">
       <div class="section-head">
-        <h2>Give us a good photo, get a great result</h2>
+        <h2>Sharp photo in, publish-ready visual out</h2>
         <p>The clearer your input, the better the visual we can build from it.</p>
       </div>
       <div class="grid grid-2">

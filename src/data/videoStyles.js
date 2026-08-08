@@ -151,13 +151,13 @@ export const videoStyles = [
     cardIcon: 'sneaker',
     cardWidth: '56%',
     cardPrice: 'Custom quote',
-    cardDesc: 'Multi-shot campaign pieces, built around your brief. Priced per project.',
+    cardDesc: 'Multi-shot campaign films, built around the story you want to tell. Priced per project.',
     moodTitle: 'What Campaign feels like.',
     moodParagraphs: [
       'The full production: multiple shots, a narrative arc, edits cut to land a launch.',
     ],
     steps: [
-      { title: 'Scope the campaign', body: 'Shots and deliverables agreed on WhatsApp.' },
+      { title: 'Agree what the campaign covers', body: 'Shots and files agreed on WhatsApp.' },
       { title: 'Shoot the sequence', body: 'A multi-shot film, graded as one story.' },
       { title: 'Deliver every cut', body: "Every channel's format, from one campaign." },
     ],
@@ -166,13 +166,13 @@ export const videoStyles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'A brief, taken seriously', body: 'Shot list and story built to your launch, not a template.' },
+      { title: 'Your idea, taken seriously', body: 'Shot list and story built to your launch, not a template.' },
       { title: 'Multi-shot construction', body: 'Openers, details, hero moments, end cards — sequenced.' },
       { title: 'Edit, grade, deliver', body: 'Cuts for feed, stories and site, one shared grade.' },
-      { title: 'A fixed price, up front', body: 'Scoped on WhatsApp. You approve before we start.' },
+      { title: 'A fixed price, up front', body: 'Agreed on WhatsApp. You approve before we start.' },
     ],
     why: [
-      { title: 'One partner for the whole campaign', body: 'Stills, motion and every cut, one brief.' },
+      { title: 'One partner for the whole campaign', body: 'Stills, motion and every cut, from one conversation.' },
       { title: 'One grade, every channel', body: 'Consistent colour and mood across every format.' },
       { title: 'Priced before you commit', body: 'A clear quote, agreed before any work starts.' },
     ],
@@ -203,19 +203,19 @@ export const videoStyles = [
     cardIcon: 'jar',
     cardWidth: '46%',
     cardPrice: 'Custom quote',
-    cardDesc: 'Your own concept, pace and look — a video scoped entirely to your brief.',
+    cardDesc: 'Your own concept, pace and look — a video built entirely around what you tell us.',
     moodTitle: 'What Custom feels like.',
     moodParagraphs: [
-      'Beyond the three formats — a video concept scoped to your brief: your story, your pace, your look.',
+      'Beyond the three formats — a video concept built around your story, your pace, your look.',
     ],
     steps: [
-      { title: 'Brief', body: 'Tell us the idea and where it needs to run.' },
-      { title: 'Concept', body: 'We design a custom motion concept and scope it with you.' },
+      { title: 'You tell us', body: 'Tell us the idea and where it needs to run.' },
+      { title: 'Concept', body: 'We design a custom motion concept and agree it with you.' },
       { title: 'Deliver', body: 'Every cut you need, graded as one.' },
     ],
     craft: [
-      { title: 'Built from your idea', body: 'No template — the concept starts from your brief and references.' },
-      { title: 'Scoped before we start', body: 'Shots, length and deliverables agreed up front, priced clearly.' },
+      { title: 'Built from your idea', body: 'No template — the concept starts from what you tell us and the references you send.' },
+      { title: 'Agreed before we start', body: 'Shots, length and files agreed up front, priced clearly.' },
       { title: 'Any format, one grade', body: 'Feed, stories and site cuts, all sharing one look.' },
       { title: 'Consistent with your stills', body: 'Colour and mood matched to your catalog and lifestyle set.' },
     ],
@@ -228,7 +228,7 @@ export const videoStyles = [
       'Ideas the three formats don\'t cover',
       'Launches with a specific story to tell',
       'Brands that want a signature motion style',
-      'Anything scoped and quoted per project',
+      'Anything agreed and quoted per project',
     ],
     whatYouGet: [
       'A bespoke video concept, designed with you',

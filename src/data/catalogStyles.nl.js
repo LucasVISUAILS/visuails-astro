@@ -55,13 +55,13 @@ export const catalogStyles = [
     ),
     craft: [
       { title: 'Een vastgezet lichtrecept', body: 'Eén softbox-opstelling, vastgelegd — geen keuze die per shot opnieuw wordt gemaakt.' },
-      { title: 'Een hoeksysteem, geen losse hoek', body: 'Vaste camerageometrie, zodat nieuwe producten naadloos naast oude passen.' },
+      { title: 'Een hoeksysteem, geen losse hoek', body: 'Vaste camerageometrie, zodat een nieuw product precies naast een oud past.' },
       { title: 'Kleur trouw aan het product', body: 'Wit blijft wit, je merkkleur blijft kloppen.' },
       { title: 'Uitsnedes voor elk kanaal', body: 'Eén set uitsnedes werkt voor je shop, Amazon, Bol en advertenties.' },
     ],
     why: [
       { title: 'Marktplaats-proof', body: 'Voldoet aan de strikte beeldregels van Amazon, Bol, Zalando en meer.' },
-      { title: 'Klaar voor bijbestellen', body: 'Nieuwe producten passen naadloos in de set, zonder zichtbare naad.' },
+      { title: 'Klaar voor bijbestellen', body: 'Een nieuw product schuift zo in de bestaande set, zonder zichtbare naad.' },
       { title: 'Geen art direction nodig', body: 'Stuur een foto, ontvang hetzelfde doordachte kader terug.' },
     ],
     bestFor: [
@@ -73,7 +73,7 @@ export const catalogStyles = [
     whatYouGet: [
       'Vanaf vier foto\'s per product: voorkant, achterkant, detail & on-model',
       'Consistente belichting, hoek en achtergrond',
-      'Hoge-resolutie, marktplaats-klare bestanden',
+      'Hogeresolutiebestanden, klaar voor de marktplaatsen',
       TIMING,
       REVIEW,
     ],

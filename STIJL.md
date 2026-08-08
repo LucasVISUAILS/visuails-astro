@@ -69,10 +69,21 @@ er gebeurt als je erop drukt?
 
 | Fout | Goed |
 | --- | --- |
-| Zie het eerst — € 0,99 | Eén beeld van jouw product — € 0,99 |
+| Zie het eerst — € 0,99 | Stuur één productfoto, krijg één afgewerkt beeld — € 0,99 |
+| Eén beeld van jouw product — € 0,99 | Eén afgewerkt beeld van jouw product — € 0,99 |
 | Bekijk alle tien | Bekijk alle tien modellen |
 | Zie wat je krijgt | Bekijk een geleverde bestelling |
 | Vier dingen die de studio maakt | Vier soorten beeld die de studio maakt |
+
+De tweede regel is er op 8 augustus 2026 bij gekomen, en hij is de strengste van
+de vier. `Eén beeld van jouw product` haalt de eerste toets: er staat een
+zelfstandig naamwoord in, en er staat bij van wie het product is. En hij is nóg
+niet goed. Lucas: *"1 foto van je product zegt helemaal niets van wat je krijgt
+en te zien krijgt in het volgende scherm, te vaag weer."*
+
+Dus komt er een tweede toets bij, en die is zwaarder: **zegt de knop ook wat er
+op het volgende scherm gebeurt?** Een knop die klopt maar de bezoeker verrast, is
+een knop die niet klopt.
 
 Hetzelfde geldt voor een getal: **een getal draagt zijn eenheid mee.** "€ 0,99"
 is geen prijs zolang er niet bij staat waarvoor. "48 uur" is geen belofte zolang
@@ -86,19 +97,46 @@ klantzijde beland. Een bezoeker heeft deze woorden nog nooit gezien:
 | Nooit op de klantzijde | Wel |
 | --- | --- |
 | drop | bestelling · een hele collectie |
-| venster / window | je leverdatum · de dagen die we voor je vrijhouden |
+| venster / window | de leverdatum · de dagen die we voor je vrijhouden |
+| gereserveerd venster | een vastgezette leverdatum |
 | wachtrij / queue | de normale doorlooptijd |
-| staffel / ladder / trede / rung | de prijs per product · hoe meer producten, hoe lager |
+| staffel / ladder / prijsladder | de prijs per product · alle prijzen per aantal |
+| trede / rung | een stap in het aantal · één product erbij |
 | scope | wat je bestelt |
-| brief | wat je ons meegeeft |
-| capaciteitspoort / capacity gate | of er nog plek is |
-| brand kit | jouw vaste instellingen |
+| brief / briefing | wat je ons vertelt · je notitie |
+| capaciteitspoort / capacity gate | de agendacheck · of er nog plek is |
+| capaciteitsagenda / capacity calendar | de agenda |
+| pipeline | de productie · onze werkwijze |
+| brand kit | je vaste look · your look |
 | full outfit | een compleet setje: broek, top en schoenen samen |
 | attended / unattended · tier 0/1 | (nooit noemen; beschrijf het verschil) |
-| intake | een kort gesprek vooraf |
+| intake | een gesprek vooraf |
 
 De regel erachter is algemener dan de tabel: **als een woord alleen klopt omdat
 je weet hoe het hier achter de schermen werkt, is het het verkeerde woord.**
+
+**Twee uitzonderingen, en alleen deze twee.** `drop` blijft staan waar het de
+collectielancering van de klant is — "voor drops met lawaai" is gewone modetaal
+en niet ons woord. `window` blijft staan waar het een echt raam of een lichtbron
+is ("daylight through a window").
+
+`brand kit` stond er eerst bij als derde uitzondering, omdat Lucas die naam zelf
+gebruikt. Dat was de verkeerde afweging, en hij zei het meteen: *"brand kit ook
+aanpassen naar iets logisch."* Dat een woord van ons komt maakt het geen
+klantwoord. Het was bovendien het enige Engelse label in een Nederlandse
+navigatie naast Overzicht, Bestellingen en Je gegevens. Het heet nu **Je vaste
+look** / **Your look** — de woorden die de lede van de pagina al gebruikte.
+
+Het pad `/account/brand-kit` blijft wél zoals het was: dat staat in inloglinks
+in mails die al verstuurd zijn. Een naam die verandert is geen reden om een link
+te laten breken.
+
+De ronde van 8 augustus 2026 haalde deze woorden van ruim vierhonderd plekken
+weg; `TEKST-RONDE.md` heeft de before en after van elke regel. Wat daarbij bleek:
+één woord vervangen verandert soms het geslacht ("het venster" wordt "de
+leverdatum"), en dan moeten het lidwoord en het verwijswoord mee. Een vervanging
+zonder de zin daarna hardop te lezen levert "het leverdatum" op, en dat is een
+nieuwe fout in plaats van een opgeloste.
 
 ### 4 · Kort, en één gedachte per zin
 

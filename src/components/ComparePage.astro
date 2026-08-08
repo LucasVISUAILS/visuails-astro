@@ -140,7 +140,7 @@ const COPY = {
     h1c: '.',
     lead: 'Both get a season of product images made. They cost different money, different hours, and they fail in different ways. Here is the comparison with nothing hidden on either side.',
     ctaPrimary: 'Start an order',
-    ctaGhost: 'See the price ladder',
+    ctaGhost: 'See the price per product',
 
     matrixLabel: 'A production day compared with a VISUAILS order',
     colLabel: 'What',
@@ -161,7 +161,7 @@ const COPY = {
         // one row where an unlabelled figure would make the whole page a
         // comparison of two things that were never the same kind of number.
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product, falling to ${floorRate} at the top of the ladder.`,
+        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product, falling to ${floorRate} at the highest product count.`,
       },
       {
         label: 'When it lands',
@@ -172,7 +172,7 @@ const COPY = {
         // the exact reflex #246 is about. What stays is the part a picture
         // cannot say: how long, and that the retouching is after.
         a: 'Weeks. A date has to be agreed before anyone shoots, and the retouching starts after the day ends.',
-        b: `${turnaround(tier, 'en')}. The window is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
+        b: `${turnaround(tier, 'en')}. The delivery date is cleared against the calendar before it is offered — if the week you need cannot be held, you are told that instead of given a date.`,
       },
       {
         label: 'Who checks it',
@@ -269,9 +269,9 @@ const COPY = {
     h1a: 'Een shootdag, of ',
     h1b: 'een bestelling',
     h1c: '.',
-    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Ze kosten ander geld, andere uren, en ze gaan op andere manieren mis. Dit is de vergelijking met aan geen van beide kanten iets verstopt.',
+    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Ze kosten ander geld, andere uren, en ze gaan op andere manieren mis. Hier staan ze naast elkaar, en aan geen van beide kanten is iets weggelaten.',
     ctaPrimary: 'Start een bestelling',
-    ctaGhost: 'Bekijk de prijsstaffel',
+    ctaGhost: 'Bekijk de prijs per product',
 
     matrixLabel: 'Een productiedag vergeleken met een VISUAILS-bestelling',
     colLabel: 'Wat',
@@ -289,12 +289,12 @@ const COPY = {
       {
         label: 'Wat het kost',
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product, aflopend tot ${floorRate} boven aan de staffel.`,
+        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product, aflopend tot ${floorRate} bij het hoogste aantal producten.`,
       },
       {
         label: 'Wanneer het er is',
         a: 'Weken. Er moet eerst een datum vastliggen voordat er iemand fotografeert, en de retouche begint pas als de dag voorbij is.',
-        b: `${turnaround(tier, 'nl')}. Het venster wordt eerst tegen de agenda gehouden — kan de week die je nodig hebt niet, dan hoor je dat, in plaats van een datum.`,
+        b: `${turnaround(tier, 'nl')}. De leverdatum wordt eerst tegen de agenda gehouden — kan de week die je nodig hebt niet, dan hoor je dat, in plaats van een datum.`,
       },
       {
         label: 'Wie het controleert',

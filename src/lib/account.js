@@ -315,7 +315,7 @@ const COPY = {
     // verlopen code, opgebruikte code.
     codeWrong: 'That code does not work. Use the link in the same email, or ask for a new one below.',
     codeAgain: 'Send a new email',
-    codeAgainCta: 'Send it again',
+    codeAgainCta: 'Send a new code',
     codeTooMany: 'Too many attempts from here. Wait a minute, or use the link in the email.',
     codeUnavailable: 'Codes are not switched on yet — use the link in the email.',
     badLinkTitle: 'This link does not work',
@@ -334,11 +334,11 @@ const COPY = {
     fRef: 'Reference',
     fService: 'Service',
     fPlaced: 'Placed',
-    fWindow: 'Window',
+    fWindow: 'Delivery',
     // Voor een bestelling onder de drempel: geen datum, want die bestaat niet
     // voor deze trede. Dezelfde belofte als TIERS.unattended.turnaround in
     // pricing.js, in één regel op de kaart.
-    fQueue: 'Standard queue — typically 2–4 working days.',
+    fQueue: 'Standard turnaround — usually 2–4 working days.',
     fProducts: 'Products',
     windowPending: 'Being scheduled',
 
@@ -377,15 +377,25 @@ const COPY = {
     bDownload: 'Download',
 
     // lockHeading ('Brand lock') from task #257 is gone — navBrandKit below
-    // is now both the nav label AND the Brand kit page's <h1>. Lucas's own
-    // brief for this rebuild named the section "Brand kit"; keeping a second,
-    // older heading that said "Brand lock" one line down would have the page
-    // disagree with its own nav item about what it is called.
-    // Brand kit now has two panels — details, then this — so the lock half
-    // needs a heading of its own. NOT "Brand kit" again (that is the page's
-    // h1 and its nav label) and deliberately not the old "Brand lock" either,
-    // for the reason the note below still gives. It names what the panel
-    // does.
+    // is now both the nav label AND the section page's <h1>.
+    //
+    // 2026-08-08: die sectie heette tot vandaag "Brand kit". Lucas: *"brand kit
+    // ook aanpassen naar iets logisch"*. Twee dingen waren mis. Het was het
+    // enige Engelse label in een Nederlandse navigatie naast Overzicht,
+    // Bestellingen en Je gegevens. En het zei niet wat erachter zat — een
+    // bezoeker moest de pagina openen om te weten dat het over het gezicht en
+    // de achtergrond van zijn beelden gaat. De lede eronder zei het al goed
+    // ("de look waar je bestellingen mee beginnen"), dus die woorden zijn nu de
+    // naam: "Je vaste look" / "Your look".
+    //
+    // Het pad blijft /account/brand-kit. Dat staat in inloglinks in mails die
+    // al verstuurd zijn, en een naam die verandert is geen reden om een link te
+    // laten breken.
+    //
+    // De sectie heeft twee panelen — details, dan dit — dus de lock-helft heeft
+    // een eigen kop nodig. NOT de naam van de pagina zelf (dat is de h1 en het
+    // navlabel) en deliberately niet het oude "Brand lock" either, for the
+    // reason the note below still gives. It names what the panel does.
     lockH: 'Defaults per service',
     lockLede: 'What each service starts with — a face and a background. These are defaults, not rules: every order still lets you change them, so you can run your own model on one order and a standard one on the next. Leave a service unset and we ask from scratch, as usual.',
     // lockNoModels / lockUnset / lockFace / lockBg / lockOwn / lockRoster came
@@ -405,7 +415,7 @@ const COPY = {
     bkOwnLede: 'Faces made for your brand, and nobody else’s. Pick one below as the default for a service, or choose per order.',
     bkOwnEmptyH: 'No faces of your own yet',
     bkOwnEmptyBody: 'A brand model is one face, made for you, that comes back on every order — the same person wearing your range season after season, without a shoot. Until then the standard roster below is included in everything you order.',
-    bkOwnEmptyCta: 'See what it takes',
+    bkOwnEmptyCta: 'See what a brand model needs',
     bkOwnPending: 'In the making',
     bkOwnReady: 'Ready to use',
     bkOwnTag: 'Yours only',
@@ -420,7 +430,7 @@ const COPY = {
 
     // Saved order details, August 2026 — and its own nav item since Lucas's
     // "maak er echt een dashboard van met logische indeling". It shared the
-    // Brand kit page for exactly as long as the brand kit was two dropdowns:
+    // vaste-look-pagina for exactly as long as that section was two dropdowns:
     // once that page became a picture of the brand's faces and grounds, a
     // phone number and a VAT line sitting under it were a second, unrelated
     // settings screen wearing the first one's heading. Two concerns, two pages.
@@ -438,7 +448,7 @@ const COPY = {
     detVat: 'VAT number',
     detVatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
     detNoVat: 'I do not have a VAT number',
-    detMissing: 'Something is still missing. Every field except the ones marked optional has to be filled in — they end up on your invoice.',
+    detMissing: 'One of the fields above is still empty. Everything except the ones marked optional has to be filled in — it all ends up on your invoice.',
     detFailed: 'We could not save that just now. Try again in a moment — nothing was changed.',
     // Zelfde woorden als op het bestelformulier (OrderFlow.astro) — twee
     // schermen die naar hetzelfde vragen, vragen het hetzelfde.
@@ -480,7 +490,7 @@ const COPY = {
 
     navOverview: 'Overview',
     navNewRequest: 'New request',
-    navBrandKit: 'Brand kit',
+    navBrandKit: 'Your look',
     navDetails: 'Your details',
     navPlan: 'Plan & billing',
 
@@ -507,12 +517,12 @@ const COPY = {
     bApprove: 'Approve',
     bUndo: 'Undo',
     bCancel: 'Cancel this request',
-    bSend: 'Send this',
+    bSend: 'Send this note',
     askSummary: 'Something is not right',
     askLabel: 'What should change?',
     askHint: 'In your own words. The more specific, the faster we get it right.',
     stApproved: 'Approved',
-    stExpired: 'No longer available',
+    stExpired: 'Removed after the storage period — ask us if you still need it',
     // Per product, sinds augustus 2026. prodLabel krijgt het nummer als string
     // binnen omdat product_key 'p3' is en niet 3 — het omzetten hoort bij de
     // sleutel, niet bij de zin.
@@ -592,7 +602,7 @@ const COPY = {
     // valt over of het adres bestaat.
     codeWrong: 'Die code werkt niet. Gebruik de link in dezelfde mail, of vraag hieronder een nieuwe aan.',
     codeAgain: 'Nieuwe mail sturen',
-    codeAgainCta: 'Opnieuw versturen',
+    codeAgainCta: 'Stuur een nieuwe code',
     codeTooMany: 'Te veel pogingen vanaf hier. Wacht even, of gebruik de link in de mail.',
     codeUnavailable: 'Codes staan nog niet aan — gebruik de link in de mail.',
     badLinkTitle: 'Deze link werkt niet',
@@ -605,8 +615,8 @@ const COPY = {
     fRef: 'Referentie',
     fService: 'Dienst',
     fPlaced: 'Geplaatst',
-    fWindow: 'Venster',
-    fQueue: 'Standaard wachtrij — meestal 2–4 werkdagen.',
+    fWindow: 'Levering',
+    fQueue: 'Normale doorlooptijd — meestal 2–4 werkdagen.',
     fProducts: 'Producten',
     windowPending: 'Wordt ingepland',
 
@@ -646,7 +656,7 @@ const COPY = {
     bkOwnLede: 'Gezichten die voor jouw merk zijn gemaakt en voor niemand anders. Kies er hieronder één als standaard voor een dienst, of kies per bestelling.',
     bkOwnEmptyH: 'Nog geen eigen gezichten',
     bkOwnEmptyBody: 'Een merkmodel is één gezicht, voor jou gemaakt, dat bij elke bestelling terugkomt — dezelfde persoon in jouw collectie, seizoen na seizoen, zonder shoot. Tot die tijd zit het standaardroster hieronder bij alles wat je bestelt.',
-    bkOwnEmptyCta: 'Bekijk wat daarvoor nodig is',
+    bkOwnEmptyCta: 'Bekijk wat een merkmodel nodig heeft',
     bkOwnPending: 'In de maak',
     bkOwnReady: 'Klaar voor gebruik',
     bkOwnTag: 'Alleen van jou',
@@ -671,7 +681,7 @@ const COPY = {
     detVat: 'Btw-nummer',
     detVatHint: 'Een bedrijf in een ander EU-land: we controleren het bij VIES, en als het klopt rekenen we geen Nederlandse btw.',
     detNoVat: 'Ik heb geen btw-nummer',
-    detMissing: 'Er ontbreekt nog iets. Alles behalve de velden met "optioneel" moet ingevuld zijn — het komt op je factuur te staan.',
+    detMissing: 'Een van de velden hierboven is nog leeg. Alles behalve de velden met "optioneel" moet ingevuld zijn — het komt allemaal op je factuur.',
     detFailed: 'Opslaan lukte even niet. Probeer het zo nog eens — er is niets gewijzigd.',
     detCountry: 'Land',
     detCountryPick: 'Kies een land',
@@ -698,7 +708,7 @@ const COPY = {
 
     navOverview: 'Overzicht',
     navNewRequest: 'Nieuwe aanvraag',
-    navBrandKit: 'Brand kit',
+    navBrandKit: 'Je vaste look',
     navDetails: 'Je gegevens',
     navPlan: 'Abonnement & facturering',
 
@@ -722,7 +732,7 @@ const COPY = {
     askLabel: 'Wat moet er anders?',
     askHint: 'In je eigen woorden. Hoe specifieker, hoe sneller het klopt.',
     stApproved: 'Goedgekeurd',
-    stExpired: 'Niet meer beschikbaar',
+    stExpired: 'Verwijderd na de bewaartermijn — vraag ons als je hem nog nodig hebt',
     prodLabel: (n) => `Product ${n}`,
     prodOther: 'Overige beelden',
     prodDelivered: (n) => (n === 1 ? '1 beeld geleverd' : `${n} beelden geleverd`),
@@ -919,10 +929,16 @@ export async function accountPost(context) {
     // itself — so showing them here is what makes a real mismatch (as
     // opposed to a forged request, which this check still blocks) fixable by
     // whoever hits it instead of a dead end.
+    //
+    // 2026-08-08, tekstronde: die twee waarden bleven staan, maar de zin
+    // ervoor niet. "Request origin did not match" is de naam van onze eigen
+    // controle, geen melding — en de detailregel stond er los achter, zonder
+    // te zeggen wat de lezer ermee moest. Nu staat er eerst wat er is en wat
+    // hij kan doen, en dan de twee waarden mét de reden dat ze er staan.
     const detail = originMismatchDetail(request);
     return html(page({ lang, title: 'VISUAILS', body: errorBody(COPY[lang], (lang === 'nl'
-      ? 'De herkomst van dit verzoek klopte niet. Probeer het opnieuw vanaf je accountpagina.'
-      : 'Request origin did not match. Try again from your account page.') + ' ' + detail) }), 403);
+      ? 'Deze pagina is vanaf een andere site geopend, dus we hebben hem voor de zekerheid niet uitgevoerd. Ga terug naar je accountpagina en probeer het daar opnieuw. Blijft het gebeuren, stuur ons dan deze regel mee: '
+      : 'This page was opened from another site, so we did not run it. Go back to your account page and try again there. If it keeps happening, send us this line: ') + detail) }), 403);
   }
 
   const gate = await checkRate(env, { ip: clientIp(request), action: 'account-post', limit: POST_LIMIT });
@@ -1383,7 +1399,7 @@ function accountSessionExpiry(fromDate = new Date()) {
  * One data load, four possible pages — task #259's second follow-up: Lucas
  * asked for the single-scroll dashboard to become a real sidebar app (a
  * "Studio Dashboard" shape, his own reference) with Overview / Orders /
- * Brand kit / Plan & billing as their own sections. All four need overlapping
+ * Je vaste look / Plan & billing as their own sections. All four need overlapping
  * slices of the same four queries (orders feed both Overview's counts and the
  * Orders list; files feed both), so this stays ONE Promise.all — same
  * reasoning dashboardGet always had — and only the render step branches on
@@ -1753,14 +1769,14 @@ async function handleModelPreviewImage({ request, env }, modelId) {
 }
 
 /**
- * The saved-details row, one query, used by /account/me and by Brand kit.
+ * The saved-details row, one query, used by /account/me and by Je vaste look.
  *
  * ── EN MET EEN TERUGVAL, OM EEN HELE GOEDE REDEN ───────────────────────────
  *
  * Deze query hangt in de Promise.all van sectionGet(), en die heeft één catch
  * om alle zes de queries heen die een 503 teruggeeft. Eén onbekende kolom hier
  * is dus niet "de gegevenspagina mist een veld" maar "het hele dashboard is
- * onbereikbaar" — op elke sectie, ook Bestellingen en Brand kit.
+ * onbereikbaar" — op elke sectie, ook Bestellingen en Je vaste look.
  *
  * De kolommen uit migratie 0016 bestaan pas nadat die migratie gedraaid is, en
  * een deploy komt in de praktijk soms eerder dan een migratie. Zonder deze
@@ -1813,7 +1829,7 @@ function detailsRowFull(env, customerId) {
 
 /**
  * Save the answers that do not change between orders. Two callers, one
- * handler: the Brand kit form (browser POST, 303 back to the section) and
+ * handler: the vaste-look form (browser POST, 303 back to the section) and
  * /start's end-of-order opt-in (fetch, JSON). See wantsJson() for why the two
  * are told apart by Accept rather than by a field in the body.
  *
@@ -3459,7 +3475,8 @@ ${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) |
 }
 
 /**
- * Brand kit — August 2026, rebuilt as something a brand can look at.
+ * Je vaste look (tot 8 augustus 2026: "Brand kit") — rebuilt as something a
+ * brand can look at.
  *
  * WHAT WAS WRONG WITH IT. Lucas, verbatim: "ik wil dat de brand kit veel
  * mooier wordt om in te stellen, dus echt foto's toevoegen bij modellen, het
@@ -4600,7 +4617,7 @@ function reviewControls(t, f, o) {
 }
 
 function errorBody(t, message = null) {
-  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error is-page">${esc(message || (t && t.dbDown) || 'Something went wrong.')}</p>`;
+  return `<div class="bar"><a class="mark" href="/">VISUAILS</a></div><p class="error is-page">${esc(message || (t && t.dbDown) || 'We cannot show this page right now. Go back to your account and try again in a few minutes — nothing has changed in the meantime.')}</p>`;
 }
 
 // `full` swaps the centered 940px `.wrap` column for the edge-to-edge shell

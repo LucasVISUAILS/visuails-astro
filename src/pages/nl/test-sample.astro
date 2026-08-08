@@ -10,7 +10,7 @@ import { waHref } from '../../data/whatsapp.js';
 // reimplemented as vanilla JS below, keeping the exact same markup/fields
 // and the same "both steps stay in the DOM" behavior.
 import Layout from '../../layouts/Layout.astro';
-import { TEST_SAMPLE, turnaround } from '../../data/pricing.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../../data/pricing.js';
 
 // De verificatiekosten stonden op vier plekken ingetypt en de leverstap beloofde
 // "~24 uur" — een cijfer dat de capaciteitspoort nooit heeft goedgekeurd. Het
@@ -51,15 +51,15 @@ const sampleTypes = [
 
 <Layout
   title="Test VISUAILS met 1 product — proefvisual"
-  description="Upload één productfoto en zie er een publicatieklare e-commerce visual van worden. Eén proef per bedrijf, door een persoon gecontroleerd."
+  description="Upload één productfoto en krijg dat product volledig terug: vier catalogbeelden of een lifestyle-carousel van drie foto’s. Eén proef per bedrijf, door een persoon gecontroleerd."
 >
   <!-- HERO -->
   <section class="page-hero"><div class="container">
     <span class="eyebrow-page">Proefvisual</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Test VISUAILS met <span class="accent-word">1 product</span></h1>
-    <p class="lead" style="margin-top:1.2rem">Upload één productfoto en zie hoe die een publicatieklare visual wordt — voordat je bestelt.</p>
+    <p class="lead" style="margin-top:1.2rem">Upload één productfoto en krijg dat product volledig terug: {CATALOG_IMAGES} catalogbeelden, of een lifestyle-carousel van {LIFESTYLE_IMAGES} foto’s. Precies wat je bij een betaalde bestelling per product krijgt.</p>
     <div class="chip-row" style="margin-top:1.8rem">
-      <span class="chip"><span class="dot"></span>1 proef per bedrijf</span>
+      <span class="chip"><span class="dot"></span>Eén volledig product</span>
       <span class="chip"><span class="dot"></span>Slechts {SAMPLE.price} verificatie</span>
       <span class="chip"><span class="dot"></span>Met de hand gecontroleerd</span>
     </div>
@@ -69,10 +69,12 @@ const sampleTypes = [
   <section class="section-tight">
     <div class="container two-col">
       <div class="reveal pending">
-        <h2>Eén product, omgezet in een publicatieklare visual.</h2>
-        <p style="margin-top:1.1rem;color:var(--ink-3);max-width:52ch">Dezelfde pipeline en menselijke controle die we bij elke betaalde bestelling gebruiken — de eerlijke manier om de kwaliteit te beoordelen voordat je je vastlegt.</p>
+        <h2>Eén product, volledig geleverd.</h2>
+        <p style="margin-top:1.1rem;color:var(--ink-3);max-width:52ch">Dezelfde productie en menselijke controle die we bij elke betaalde bestelling gebruiken — de eerlijke manier om de kwaliteit te beoordelen voordat je je vastlegt.</p>
         <ul class="checklist" style="margin-top:1.4rem">
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Eén visual in hoge resolutie, geleverd via een downloadlink per e-mail.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Kies je catalog: {CATALOG_IMAGES} beelden — voorkant, achterkant, een stof- of logodetail, en één op een model.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Kies je lifestyle: {LIFESTYLE_IMAGES} foto’s in één gestylde look — een scène, één op een model, en een detailclose-up.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>In hoge resolutie, als downloadlink per e-mail.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Een echte blik op onze belichting, kadrering en afwerking.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Door een persoon gecontroleerd voordat het je bereikt.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Een eenmalige verificatie van {SAMPLE.price}, één proef per bedrijf.</span></li>
@@ -93,7 +95,7 @@ const sampleTypes = [
     <div class="container">
       <div class="section-head">
         <h2>Hoe de proef werkt</h2>
-        <p>Vier korte stappen van jouw foto tot een afgewerkte visual in je inbox.</p>
+        <p>Vier korte stappen van jouw foto tot een afgewerkte set in je inbox.</p>
       </div>
       <div class="steps">
         <div class="step reveal pending"><div class="step-n">01</div><h3>Upload productfoto</h3><p>Deel één duidelijke foto van het product waarmee je ons wilt laten werken.</p></div>
@@ -108,14 +110,14 @@ const sampleTypes = [
   <section class="section-tight">
     <div class="container">
       <div class="section-head">
-        <h2>Geef ons een goede foto, krijg een geweldig resultaat</h2>
+        <h2>Scherpe foto erin, publicatieklaar beeld eruit</h2>
         <p>Hoe duidelijker je input, hoe beter de visual die we ervan kunnen bouwen.</p>
       </div>
       <div class="grid grid-2">
         <div class="card reveal pending">
           <h3 style="color:var(--ink)">Doen</h3>
           <ul class="checklist" style="margin-top:1rem">
-            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Helder, scherp en in focus</span></li>
+            <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Helder en haarscherp</span></li>
             <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Neutrale, rustige achtergrond</span></li>
             <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Goede, gelijkmatige belichting</span></li>
             <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Het hele product in beeld</span></li>
@@ -124,7 +126,7 @@ const sampleTypes = [
         <div class="card reveal pending">
           <h3 style="color:var(--ink-3)">Niet doen</h3>
           <ul class="checklist" style="margin-top:1rem">
-            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--ink-3)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Wazige of laag-resolutie foto’s</span></li>
+            <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--ink-3)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Wazige foto’s of foto’s met een lage resolutie</span></li>
             <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--ink-3)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Donkere of sterk beschaduwde foto’s</span></li>
             <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--ink-3)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Drukke of afleidende achtergronden</span></li>
             <li><svg viewBox="0 0 24 24" class="i" style="stroke:var(--ink-3)"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Zware filters of watermerken</span></li>
@@ -267,7 +269,7 @@ const sampleTypes = [
               </div>
             </div>
 
-            <p class="hint" style="margin:.4rem 0 1.4rem">Je proef wordt geleverd via een downloadlink naar je e-mail. Indien nodig nemen we contact op via WhatsApp of e-mail.</p>
+            <p class="hint" style="margin:.4rem 0 1.4rem">Je proef wordt geleverd via een downloadlink naar je e-mail. Als we iets moeten navragen, doen we dat via WhatsApp of e-mail.</p>
 
             <div class="flex" style="justify-content:space-between;margin-top:.4rem">
               <button type="button" class="btn btn-ghost" data-wizard-back>

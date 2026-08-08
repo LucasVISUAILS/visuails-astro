@@ -28,7 +28,7 @@ const TIMING = turnaround('unattended', 'nl');
 
 const description =
   `Je aanvraag is ontvangen. We bevestigen per e-mail of WhatsApp, en je ` +
-  `visuals volgen uit de standaard wachtrij — ${TIMING.toLowerCase()}.`;
+  `visuals volgen uit de normale doorlooptijd — ${TIMING.toLowerCase()}.`;
 ---
 
 <Layout
@@ -89,14 +89,14 @@ const description =
 
   <section class="section-tight"><div class="container">
     <div class="grid grid-3 reveal-group">
-      <div class="card reveal pending"><h4>Wat er nu gebeurt</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Zodra de betaling binnen is, bekijken we je briefing, maken we je visuals klaar, en controleert een persoon elk resultaat met de hand voordat het je bereikt.</p></div>
-      <div class="card reveal pending"><h4>Gebruikelijke doorlooptijd</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} van een complete briefing tot je downloadlink. {T0.queue.nl}; een gloednieuwe custom stijl kan iets langer duren.</p></div>
+      <div class="card reveal pending"><h4>Wat er nu gebeurt</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Zodra de betaling binnen is, lezen we wat je hebt gestuurd, maken we je beelden klaar, en controleert een persoon elk resultaat met de hand voordat het bij jou aankomt.</p></div>
+      <div class="card reveal pending"><h4>Gebruikelijke doorlooptijd</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} vanaf het moment dat we je foto’s en je notitie hebben tot je downloadlink. {T0.queue.nl}; een gloednieuwe custom stijl kan iets langer duren.</p></div>
       <div class="card reveal pending"><h4>Wil je nog iets toevoegen?</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reageer op ons bericht op WhatsApp of mail <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> met eventuele extra details of referenties.</p></div>
     </div>
     <div class="card reveal pending ty-upsell">
       <div>
         <h4>Wil je de details garanderen?</h4>
-        <p style="margin-top:.4rem;font-size:.95rem;color:var(--ink-3)">Hoe meer hoeken we hebben, hoe meer we garanderen dat pasvorm, kleur en detail meteen goed uitkomen. Stuur een detail-close-up, de stof en een on-body shot — gratis toe te voegen en het tilt het hele resultaat op.</p>
+        <p style="margin-top:.4rem;font-size:.95rem;color:var(--ink-3)">Hoe meer hoeken we hebben, hoe meer we garanderen dat pasvorm, kleur en detail meteen goed uitkomen. Stuur een close-up van een detail, een foto van de stof en een foto op het lichaam. Toevoegen kost niets en het hele resultaat wordt er beter van.</p>
       </div>
       <a href={waHref("Hoi VISUAILS, ik wil graag extra foto's voor mijn bestelling sturen.")} class="btn btn-wa" target="_blank" rel="noopener" data-track="ty-extra-photos">
         Stuur extra foto’s

@@ -127,7 +127,7 @@ export const styles = [
     ],
     why: [
       { title: 'Sells a feeling, not just a product', body: 'The atmosphere that beauty and fashion buyers actually respond to.' },
-      { title: 'Campaign-grade, every order', body: "No separate 'hero shot' tier — this finishing is the standard." },
+      { title: 'Campaign-grade, every order', body: "There is no upgrade to buy for a hero shot — this finishing is the standard." },
       { title: 'One consistent glow', body: 'The same warmth across your whole feed, launch after launch.' },
     ],
     bestFor: ['Beauty, skincare and fragrance', 'Fashion that sells a feeling', 'Campaigns and launches that need atmosphere', 'Brands building an aspirational feed'],
@@ -141,7 +141,7 @@ export const styles = [
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
     beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
     cardIcon: 'bottle',
-    cardDesc: 'Minimal visuals that resemble authentic real-life photography — natural, effortless, like casual smartphone photography.',
+    cardDesc: 'Minimal visuals that look like an everyday photo — natural and unpolished, like something someone just took.',
     moodTitle: 'What Phone-made feels like.',
     moodParagraphs: [
       'Daylight through a window, a product on a kitchen counter, a slightly imperfect frame. It reads as real.',

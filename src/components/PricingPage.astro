@@ -159,10 +159,10 @@ const COPY = {
   en: {
     eyebrow: 'Pricing',
     h1: 'Priced per product. The rate falls as the count rises.',
-    lead: `One unit: a product. One rate, and it only ever moves down a rung. Every count has a price, so no order costs more per product than a smaller one — and there is no package to squeeze your line into.`,
+    lead: `One unit: a product. One rate, and it only ever moves down a step. Every count has a price, so no order costs more per product than a smaller one — and there is no package to squeeze your line into.`,
 
-    ladderH: 'The ladder',
-    ladderSub: 'Pick the scope, count your products, read the rate. The rate applies to every product in the order, not only the ones past the rung.',
+    ladderH: 'The price per product',
+    ladderSub: 'Pick the scope, count your products, read the rate. The rate applies to every product in the order, not only the ones above that count.',
     ladderProductsCol: 'Products',
     kinds: {
       complete: { name: 'Complete', sub: 'Catalog set and lifestyle carousel — seven images per product' },
@@ -181,13 +181,13 @@ const COPY = {
     // answer, and the way to find out whether the work is any good is the test
     // sample, not a fifth off the first invoice.
     firstLead: 'The rate on this page is the rate.',
-    firstBody: `No first-order discount, no volume negotiation, no package you have to fit your line into. The ladder above is the whole of it, and it applies to every product in the order. If you want to see the work before you commit, that is what the ${TEST_SAMPLE.en.price} test sample is for.`,
+    firstBody: `No first-order discount, no volume negotiation, no package you have to fit your line into. The price per product above is the whole of it, and it applies to every product in the order. If you want to see the work before you commit, that is what the ${TEST_SAMPLE.en.price} test sample is for.`,
     ladderCta: 'Start an order',
 
     anchorH: 'What this replaces',
     anchorWasTag: 'A production day',
     anchorNowTag: `${ANCHOR_PRODUCTS} products here`,
-    anchorNowMeta: 'Catalog set and lifestyle carousel for each, one briefing, one invoice',
+    anchorNowMeta: 'Catalog set and lifestyle carousel for each, one order, one invoice',
     anchorPerProduct: `${euro(ladderRate('complete', ANCHOR_PRODUCTS), 'en')} per product at that count · ${vatLabel('excl', 'en')}`,
     anchorNowList: [
       'Nothing to ship, nowhere to travel, no day off the business',
@@ -229,24 +229,24 @@ const COPY = {
 
     inclH: 'In every order',
     svcLead: 'Service level follows size.',
-    svcBody: `From ${WINDOW_THRESHOLD} products an order goes into the capacity calendar and gets the reserved window. Below that it runs in the standard queue. One line to cross, rather than a second question to answer.`,
+    svcBody: `From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets the reserved delivery date. Below that it runs in the normal turnaround. One line to cross, rather than a second question to answer.`,
     svcFromTag: `From ${WINDOW_THRESHOLD} products`,
     svcUnderTag: `Under ${WINDOW_THRESHOLD} products`,
     gateLead: 'No date is printed until the calendar clears it.',
-    gateBody: 'A reserved window is confirmed before you pay, never after. If the week you need cannot be held, you are told that instead of being given an optimistic guess.',
+    gateBody: 'A reserved delivery date is confirmed before you pay, never after. If the week you need cannot be held, you are told that instead of being given an optimistic guess.',
 
     plansH: 'The plans',
-    plansSub: 'If the same output comes round every month, buying it by the month costs less than buying it order by order. That is all a plan is — not a bigger package, the same products at a lower price for committing to the month. Each card shows the difference against the ladder above.',
+    plansSub: 'If the same output comes round every month, buying it by the month costs less than buying it order by order. That is all a plan is — not a bigger package, the same products at a lower price for committing to the month. Each card shows the difference against the price per product above.',
     plansCta: 'Set up a plan',
 
-    sampleH: 'Before any of it',
-    sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${sample.unit}. It runs through the same pipeline as a paid order, so what comes back is what you would get.`,
+    sampleH: 'Before you place an order',
+    sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${sample.unit}. It runs through the same production as a paid order, so what comes back is what you would get.`,
     sampleCta: `Request a test sample · ${sample.price}`,
 
     faqH: 'Pricing questions',
 
-    ctaH1: 'See it on your',
-    ctaEm: 'own product.',
+    ctaH1: 'One of your own products,',
+    ctaEm: 'delivered in full.',
     ctaSample: `Test sample · ${sample.price} ${vatLabel('excl', 'en')}`,
     ctaStart: 'Start an order',
     ctaWa: 'WhatsApp',
@@ -256,10 +256,10 @@ const COPY = {
   nl: {
     eyebrow: 'Prijzen',
     h1: 'Geprijsd per product. Het tarief daalt naarmate het aantal stijgt.',
-    lead: `Eén eenheid: een product. Eén tarief, en dat gaat alleen maar een trede omlaag. Elk aantal heeft een prijs, dus geen bestelling kost per product meer dan een kleinere — en er is geen pakket waar je lijn in moet passen.`,
+    lead: `Eén eenheid: een product. Eén tarief, en dat zakt alleen maar één product per keer. Elk aantal heeft een prijs, dus geen bestelling kost per product meer dan een kleinere — en er is geen pakket waar je lijn in moet passen.`,
 
-    ladderH: 'De staffel',
-    ladderSub: 'Kies de scope, tel je producten, lees het tarief. Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede.',
+    ladderH: 'De prijs per product',
+    ladderSub: 'Kies de scope, tel je producten, lees het tarief. Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens.',
     ladderProductsCol: 'Producten',
     kinds: {
       complete: { name: 'Compleet', sub: 'Catalogset en lifestyle-carousel — zeven beelden per product' },
@@ -273,13 +273,13 @@ const COPY = {
     perProduct: 'per product',
 
     firstLead: 'Het tarief op deze pagina is het tarief.',
-    firstBody: `Geen kennismakingskorting, geen onderhandeling over volume, geen pakket waar je lijn in moet passen. De staffel hierboven is het hele verhaal, en hij geldt voor elk product in de bestelling. Wil je het werk zien voordat je iets vastlegt, dan is de proefvisual van ${TEST_SAMPLE.nl.price} daarvoor.`,
+    firstBody: `Geen kennismakingskorting, geen onderhandeling over volume, geen pakket waar je lijn in moet passen. De prijs per product hierboven is het hele verhaal, en hij geldt voor elk product in de bestelling. Wil je het werk zien voordat je iets vastlegt, dan is de proefvisual van ${TEST_SAMPLE.nl.price} daarvoor.`,
     ladderCta: 'Start een bestelling',
 
     anchorH: 'Wat dit vervangt',
     anchorWasTag: 'Een productiedag',
     anchorNowTag: `${ANCHOR_PRODUCTS} producten hier`,
-    anchorNowMeta: 'Catalogset en lifestyle-carousel per stuk, één briefing, één factuur',
+    anchorNowMeta: 'Catalogset en lifestyle-carousel per stuk, één bestelling, één factuur',
     anchorPerProduct: `${euro(ladderRate('complete', ANCHOR_PRODUCTS), 'nl')} per product bij dat aantal · ${vatLabel('excl', 'nl')}`,
     anchorNowList: [
       'Niets opsturen, nergens naartoe, geen dag uit de zaak',
@@ -310,18 +310,18 @@ const COPY = {
 
     inclH: 'In elke bestelling',
     svcLead: 'Het serviceniveau volgt de omvang.',
-    svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster. Daaronder loopt hij in de standaard wachtrij. Eén grens om over te gaan, in plaats van een tweede vraag om te beantwoorden.`,
+    svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij de vastgezette leverdatum. Daaronder loopt hij in de normale doorlooptijd. Eén grens om over te gaan, in plaats van een tweede vraag om te beantwoorden.`,
     svcFromTag: `Vanaf ${WINDOW_THRESHOLD} producten`,
     svcUnderTag: `Onder ${WINDOW_THRESHOLD} producten`,
     gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
-    gateBody: 'Een gereserveerd venster wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — in plaats van een optimistische gok.',
+    gateBody: 'Een vastgezette leverdatum wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — in plaats van een optimistische gok.',
 
     plansH: 'De plannen',
-    plansSub: 'Komt dezelfde output elke maand terug, dan is per maand kopen goedkoper dan bestelling voor bestelling. Meer is een plan niet — geen groter pakket, dezelfde producten voor een lagere prijs omdat je je aan de maand verbindt. Elke kaart laat het verschil met de staffel hierboven zien.',
+    plansSub: 'Komt dezelfde output elke maand terug, dan is per maand kopen goedkoper dan bestelling voor bestelling. Meer is een plan niet — geen groter pakket, dezelfde producten voor een lagere prijs omdat je je aan de maand verbindt. Elke kaart laat het verschil met de prijs per product hierboven zien.',
     plansCta: 'Een plan opzetten',
 
-    sampleH: 'Voordat je iets vastlegt',
-    sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${sample.unit}. Het loopt door dezelfde pipeline als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
+    sampleH: 'Voordat je een bestelling plaatst',
+    sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${sample.unit}. Het loopt door dezelfde productie als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
     // NO VAT LABEL ON A BUTTON. A CTA is a label, not a price quotation, and
     // the site's rule — every printed PRICE carries excl. VAT — is about the
     // figures a customer compares, not about the word on a button. It also
@@ -332,8 +332,8 @@ const COPY = {
 
     faqH: 'Vragen over prijzen',
 
-    ctaH1: 'Zie het op je',
-    ctaEm: 'eigen product.',
+    ctaH1: 'Eén volledig geleverd product,',
+    ctaEm: 'van jezelf.',
     ctaSample: `Proefvisual · ${sample.price} ${vatLabel('excl', 'nl')}`,
     ctaStart: 'Start een bestelling',
     ctaWa: 'WhatsApp',
@@ -361,8 +361,8 @@ const included = [
     ? 'Hoge resolutie en e-commerce-klaar, zonder licentie per gebruik'
     : 'High-resolution and e-commerce-ready, with no per-use licence',
   lang === 'nl'
-    ? 'Eén briefing, één factuur, ongeacht het aantal'
-    : 'One briefing, one invoice, whatever the count',
+    ? 'Eén bestelling, één factuur, ongeacht het aantal'
+    : 'One order, one invoice, whatever the count',
   lang === 'nl'
     ? 'Hetzelfde tarief op elk product in de bestelling'
     : 'The same rate on every product in the order',

@@ -48,7 +48,7 @@ export const videoStyles = [
     steps: [
       { title: 'Zet het kader vast', body: 'Eén strakke compositie, camera volkomen stil.' },
       { title: 'Voeg subtiele beweging toe', body: 'Lichte drift, zachte rotatie of onthulling.' },
-      { title: 'Loop het naadloos', body: 'Het laatste kader sluit aan op het eerste.' },
+      { title: 'De loop sluit rond', body: 'Het laatste kader sluit aan op het eerste.' },
     ],
     grid: grid(
       [],
@@ -56,9 +56,9 @@ export const videoStyles = [
     ),
     craft: [
       { title: 'Eén beweging per film', body: 'Eén doelbewuste camera- of lichtbeweging. Ingehoudenheid is de stijl.' },
-      { title: 'Loop-schone eindes', body: 'Begin- en eindkaders op elkaar afgestemd zodat het naadloos loopt.' },
+      { title: 'Loop-schone eindes', body: 'Begin- en eindkader op elkaar afgestemd, zodat de loop niet hapert.' },
       { title: 'Materiaalbewuste beweging', body: 'Snelheid en licht afgestemd op waar het product van gemaakt is.' },
-      { title: 'Grading afgestemd op stills', body: 'Deelt een grade met je catalogusset.' },
+      { title: 'Grading afgestemd op stills', body: 'Krijgt dezelfde kleurbewerking als je catalogset.' },
     ],
     why: [
       { title: 'Leven zonder ruis', body: 'Maakt af wat een statische foto niet helemaal kan zeggen.' },
@@ -161,13 +161,13 @@ export const videoStyles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Een brief, serieus genomen', body: 'Shotlijst en verhaal gebouwd op jouw launch, geen template.' },
+      { title: 'Jouw idee, serieus genomen', body: 'Shotlijst en verhaal gebouwd op jouw launch, geen template.' },
       { title: 'Opbouw met meerdere shots', body: 'Openers, details, heromomenten, eindkaarten — in volgorde gezet.' },
       { title: 'Monteren, graden, leveren', body: 'Versies voor feed, stories en site, één gedeelde grade.' },
-      { title: 'Een vaste prijs, vooraf', body: 'Scope bepaald via WhatsApp. Jij keurt goed voordat we beginnen.' },
+      { title: 'Een vaste prijs, vooraf', body: 'Afgesproken via WhatsApp. Jij keurt goed voordat we beginnen.' },
     ],
     why: [
-      { title: 'Eén partner voor de hele campagne', body: 'Stills, beweging en elke versie, één brief.' },
+      { title: 'Eén partner voor de hele campagne', body: 'Stills, beweging en elke versie, uit één gesprek.' },
       { title: 'Eén grade, elk kanaal', body: 'Consistente kleur en sfeer over elk formaat.' },
       { title: 'Geprijsd voordat je je vastlegt', body: 'Een heldere offerte, afgesproken voordat er werk begint.' },
     ],
@@ -178,7 +178,7 @@ export const videoStyles = [
       'Teams die één partner voor alles nodig hebben',
     ],
     whatYouGet: [
-      'Een afgekaderde campagnefilm met meerdere shots',
+      'Een campagnefilm met meerdere shots, van tevoren helemaal afgesproken',
       'Versies voor elk kanaal waarop je zit',
       'Eén grade over je hele campagne',
       'Een heldere, afgesproken prijs voordat het werk begint',
@@ -198,18 +198,18 @@ export const videoStyles = [
     cardIcon: 'jar',
     cardWidth: '46%',
     cardPrice: 'Offerte op maat',
-    cardDesc: 'Je eigen concept, tempo en look — een video volledig afgekaderd op jouw brief.',
+    cardDesc: 'Je eigen concept, tempo en look — een video die helemaal is gebouwd op wat jij ons vertelt.',
     moodTitle: 'Hoe Custom voelt.',
     moodParagraphs: [
-      'Voorbij de drie formaten — een videoconcept afgekaderd op jouw brief: jouw verhaal, jouw tempo, jouw look.',
+      'Voorbij de drie formaten — een videoconcept gebouwd op jouw verhaal, jouw tempo, jouw look.',
     ],
     steps: [
-      { title: 'Brief', body: 'Vertel ons het idee en waar het moet draaien.' },
+      { title: 'Jij vertelt', body: 'Vertel ons het idee en waar het moet draaien.' },
       { title: 'Concept', body: 'We ontwerpen een motion-concept op maat en kaderen het samen met jou af.' },
       { title: 'Lever', body: 'Elke versie die je nodig hebt, gegraded als één.' },
     ],
     craft: [
-      { title: 'Gebouwd vanuit jouw idee', body: 'Geen template — het concept begint bij jouw brief en referenties.' },
+      { title: 'Gebouwd op jouw idee', body: 'Geen template — het concept begint bij wat jij vertelt en de referenties die je stuurt.' },
       { title: 'Afgekaderd voordat we beginnen', body: 'Shots, lengte en deliverables vooraf afgesproken, helder geprijsd.' },
       { title: 'Elk formaat, één grade', body: 'Versies voor feed, stories en site, allemaal met één look.' },
       { title: 'Consistent met je stills', body: 'Kleur en sfeer afgestemd op je catalogus- en lifestyle-set.' },
@@ -223,7 +223,7 @@ export const videoStyles = [
       'Ideeën die de drie formaten niet dekken',
       'Launches met een specifiek verhaal te vertellen',
       'Merken die een kenmerkende motion-stijl willen',
-      'Alles wat per project wordt afgekaderd en geoffreerd',
+      'Alles wat we per project afspreken en op een offerte zetten',
     ],
     whatYouGet: [
       'Een videoconcept op maat, samen met jou ontworpen',

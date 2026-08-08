@@ -13,7 +13,7 @@
 
 // The €0.99 test-sample figure is read from the price ladder, never typed here.
 // src/data/pricing.js is the single source of truth for every euro on the site.
-import { TEST_SAMPLE } from '../data/pricing.js';
+import { TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
 
 export const languages = { en: 'English', nl: 'Nederlands' };
 export const localeNames = { en: 'EN', nl: 'NL' };
@@ -129,8 +129,8 @@ export const ui = {
        consent banner never rendered it — nothing called t('cc_changed') in
        any component, script or page. */
     foot_location: 'Enschede, Netherlands',
-    cb_text: 'Send us one product and see what comes back, before you order anything.',
-    cb_cta: `One image · ${TEST_SAMPLE.en.price}`,
+    cb_text: `Send us one product photo and get that product back in full — ${CATALOG_IMAGES} catalog images or a carousel of ${LIFESTYLE_IMAGES}, before you order anything.`,
+    cb_cta: `One product in full · ${TEST_SAMPLE.en.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Message VISUAILS on WhatsApp — opens in a new tab',
     lang_label: 'Language',
@@ -196,8 +196,8 @@ export const ui = {
     cc_cancel: 'Terug',
     cc_reopen: 'Cookievoorkeuren',
     foot_location: 'Enschede, Nederland',
-    cb_text: 'Stuur ons één product en zie wat eruit komt, voordat je iets bestelt.',
-    cb_cta: `Eén beeld · ${TEST_SAMPLE.nl.price}`,
+    cb_text: `Stuur ons één productfoto en krijg dat product volledig terug — ${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}, voordat je iets bestelt.`,
+    cb_cta: `Eén product volledig · ${TEST_SAMPLE.nl.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Stuur VISUAILS een bericht via WhatsApp — opent in een nieuw tabblad',
     lang_label: 'Taal',

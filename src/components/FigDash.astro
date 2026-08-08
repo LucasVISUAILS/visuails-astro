@@ -1,0 +1,506 @@
+---
+/*
+ * FigDash — het klantdashboard als doorlooptour, op de marketingsite.
+ *
+ * ── WAAROM DIT BESTAAT ──────────────────────────────────────────────────────
+ *
+ * Lucas, 7 augustus 2026: *"Ik wil op de homepage bij client portal een usable
+ * voorbeeld laten zien van het dashboard met voorbeelden van wat mogelijk is en
+ * wat je allemaal kan inzien, het is een volledige mock up en kan niks
+ * aanpassen, alleen een walkthrough."*
+ *
+ * Wat er stond was een grijs vlak met een bijschrift erin, en tot vandaag ook
+ * nog de regel "Screenshot to place · 16:10 · /img/portal-gallery.webp" — een
+ * productienotitie die een bezoeker las op precies de plek waar hij het
+ * portaal moest beoordelen. Een screenshot zou dat oplossen en twee nieuwe
+ * problemen maken: hij veroudert stil zodra het echte scherm verandert, en hij
+ * laat één toestand zien terwijl de vraag "wat kan ik er allemaal in zien" over
+ * vier gaat.
+ *
+ * ── HET IS EEN MOCK-UP, EN DAT MOET ZICHTBAAR ZIJN ──────────────────────────
+ *
+ * Er zit geen enkele echte handeling in. Geen formulier, geen link naar
+ * /account, geen knop die iets doet. De vier panelen zijn opmaak met verzonnen
+ * gegevens erin, en er staat met zoveel woorden bij dat het een voorbeeld is.
+ * Een demo die eruitziet alsof je erin kunt werken en dat dan niet kan, is
+ * erger dan geen demo.
+ *
+ * ── GEEN JAVASCRIPT ─────────────────────────────────────────────────────────
+ *
+ * Het wisselen tussen de vier panelen gebeurt met radio-inputs en `:has()`.
+ * Niet uit zuinigheid: deze figuur staat op de homepage, en de homepage is de
+ * pagina die het vaakst op een trage telefoon wordt geopend. Een tour die pas
+ * werkt nadat er een bundel is binnengekomen, werkt niet op het moment dat het
+ * uitmaakt. Kent een browser `:has()` niet, dan staat het eerste paneel open en
+ * blijft de rest bereikbaar via de labels eronder — degraderen zonder te breken.
+ *
+ * De verzonnen gegevens zijn met opzet herkenbaar als voorbeeld: merk VOLT,
+ * referentie VIS-2608-4471. Dezelfde die in scripts/account-render.mjs staan,
+ * zodat de mock en de renders van het échte dashboard over hetzelfde merk gaan.
+ */
+import { euro } from '../data/pricing.js';
+
+interface Props { lang?: 'en' | 'nl' }
+const { lang = 'en' } = Astro.props;
+const nl = lang === 'nl';
+
+/* Eén id-voorvoegsel per instantie, zodat twee FigDash'en op één pagina niet
+   dezelfde radiogroep delen. */
+const uid = `fd${Math.random().toString(36).slice(2, 8)}`;
+
+const C = nl
+  ? {
+      note: 'Voorbeeld met verzonnen gegevens — hier valt niets in te vullen.',
+      tabs: [
+        ['Overzicht', 'Waar je bestellingen staan'],
+        ['Bestellingen', 'Elk beeld, met je eigen upload ernaast'],
+        ['Je vaste look', 'Wie je product draagt, en waar het op staat'],
+        ['Je gegevens', 'Eén keer invullen, daarna voorgevuld'],
+      ],
+      ovH: 'Wat er nu loopt',
+      ovTiles: [['1', 'in productie'], ['1', 'wordt nagekeken'], ['2', 'geleverd'], ['1', 'onbetaald']],
+      ovOrder: 'VIS-2608-4471 · Catalog · 30 producten',
+      ovNow: 'Onze studio maakt je beelden.',
+      ovWindow: 'Leverdatum 10 – 14 aug',
+      flow: ['Ontvangen', 'In productie', 'Wordt nagekeken', 'Geleverd'],
+      ovRecent: 'Laatst geleverd',
+      payNet: 'Excl. btw', payVat: 'Btw', payTotal: 'Totaal',
+      payState: 'Nog niet betaald — je plek staat vast tot 8 aug.',
+      payBtn: 'Nu betalen',
+      ordH: 'Product 1',
+      ordFacts: '4 beelden geleverd · 4 goedgekeurd',
+      ordMade: 'Wat wij leverden', ordSent: 'Wat jij stuurde',
+      shots: ['Voorkant', 'Achterkant', 'Detail', 'Op een model'],
+      bApprove: 'Goedkeuren', bAsk: 'Er klopt iets niet', bDown: 'Downloaden',
+      ordNote: 'Per beeld, niet per stapel. Een revisie vraag je op de foto waar het over gaat.',
+      bkH: 'Standaard per dienst',
+      bkFace: 'Wie het draagt', bkBg: 'Waar het op staat',
+      bkModels: ['Nadia', 'Tomas', 'Aaron'],
+      bkColours: [['#FFFFFF', 'Wit'], ['#F7F5F1', 'Gebroken wit'], ['#EDE4D8', 'Beige']],
+      bkNote: 'Wat hier staat, staat bij je volgende bestelling al ingevuld.',
+      detH: 'Je gegevens',
+      detFields: [['Voornaam', 'Mara'], ['Achternaam', 'de Groot'], ['Merk', 'VOLT'], ['Land', 'Nederland'], ['Straat en huisnummer', 'Vaarwerkhorst 17'], ['Postcode', '7531 HK'], ['Plaats', 'Enschede'], ['Btw-nummer', 'NL001234567B01']],
+      detNote: 'Deze gegevens komen op je factuur. Het land bepaalt of er btw bij komt.',
+    }
+  : {
+      note: 'Example with made-up data — nothing here can be filled in.',
+      tabs: [
+        ['Overview', 'Where your orders stand'],
+        ['Orders', 'Every image, next to the photo you sent'],
+        ['Your look', 'Who wears your product, and what it sits on'],
+        ['Your details', 'Fill in once, then prefilled'],
+      ],
+      ovH: 'What is running now',
+      ovTiles: [['1', 'in production'], ['1', 'being checked'], ['2', 'delivered'], ['1', 'unpaid']],
+      ovOrder: 'VIS-2608-4471 · Catalog · 30 products',
+      ovNow: 'Our studio is making your visuals.',
+      ovWindow: 'Delivery 10 – 14 Aug',
+      flow: ['Received', 'In production', 'Being checked', 'Delivered'],
+      ovRecent: 'Delivered most recently',
+      payNet: 'Excl. VAT', payVat: 'VAT', payTotal: 'Total',
+      payState: 'Not paid yet — your slot is held until 8 Aug.',
+      payBtn: 'Pay now',
+      ordH: 'Product 1',
+      ordFacts: '4 images delivered · 4 approved',
+      ordMade: 'What we delivered', ordSent: 'What you sent',
+      shots: ['Front', 'Back', 'Detail', 'On a model'],
+      bApprove: 'Approve', bAsk: 'Something is not right', bDown: 'Download',
+      ordNote: 'Image by image, not by the pile. You ask for a revision on the photo it is about.',
+      bkH: 'Default per service',
+      bkFace: 'Who wears it', bkBg: 'What it stands on',
+      bkModels: ['Nadia', 'Tomas', 'Aaron'],
+      bkColours: [['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white'], ['#EDE4D8', 'Beige']],
+      bkNote: 'Whatever is set here arrives prefilled on your next order.',
+      detH: 'Your details',
+      detFields: [['First name', 'Mara'], ['Last name', 'de Groot'], ['Brand', 'VOLT'], ['Country', 'Netherlands'], ['Street and number', 'Vaarwerkhorst 17'], ['Postcode', '7531 HK'], ['City', 'Enschede'], ['VAT number', 'NL001234567B01']],
+      detNote: 'These go on your invoice. The country decides whether VAT is added.',
+    };
+
+/* Bedragen uit euro() in pricing.js, niet met de hand ingetypt — dan staat er
+   in het voorbeeld hetzelfde soort bedrag als op de prijspagina. */
+const money = { net: euro(630, lang), vat: euro(132.3, lang), total: euro(762.3, lang) };
+
+const PHOTOS = [
+  '/img/lifestyle-flash-01.webp',
+  '/img/lifestyle-flash-03.webp',
+  '/img/lifestyle-flash-05.webp',
+  '/img/lifestyle-flash-07.webp',
+];
+const UPLOAD = '/img/catalog-before.webp';
+---
+
+<figure class="fd" aria-label={C.tabs.map((t) => t[0]).join(', ')}>
+  {/* De radiogroep. Verborgen voor het oog, niet voor het toetsenbord of een
+      schermlezer: ze zijn met de labels eronder verbonden en blijven bereikbaar
+      met tab en de pijltjestoetsen, precies zoals een echte tabrij. */}
+  {C.tabs.map(([name], i) => (
+    <input
+      class="fd-radio"
+      type="radio"
+      name={`${uid}-tab`}
+      id={`${uid}-${i}`}
+      checked={i === 0}
+    />
+  ))}
+
+  <div class="fd-frame">
+    <div class="fd-bar">
+      <span class="fd-mark">VISUAILS</span>
+      <span class="fd-badge">{C.note}</span>
+    </div>
+
+    <div class="fd-body">
+      <nav class="fd-nav">
+        {C.tabs.map(([name, sub], i) => (
+          <label class="fd-tab" for={`${uid}-${i}`}>
+            <span class="fd-tab-n">{name}</span>
+            <span class="fd-tab-s">{sub}</span>
+          </label>
+        ))}
+      </nav>
+
+      <div class="fd-panes">
+        {/* 1 · OVERZICHT */}
+        <div class="fd-pane" data-pane="0">
+          <div class="fd-tiles">
+            {C.ovTiles.map(([n, label]) => (
+              <div class="fd-tile"><b>{n}</b><span>{label}</span></div>
+            ))}
+          </div>
+
+          <div class="fd-card">
+            <p class="fd-ref">{C.ovOrder}</p>
+            <div class="fd-pay">
+              <div class="fd-payrow"><span>{C.payNet}</span><span>{money.net}</span></div>
+              <div class="fd-payrow"><span>{C.payVat}</span><span>{money.vat}</span></div>
+              <div class="fd-payrow is-total"><span>{C.payTotal}</span><span>{money.total}</span></div>
+              <p class="fd-paystate">{C.payState}</p>
+              <span class="fd-fakebtn">{C.payBtn}</span>
+            </div>
+
+            <p class="fd-now"><b>{nl ? 'Nu:' : 'Now:'}</b> {C.ovNow} <span class="fd-win">{C.ovWindow}</span></p>
+            <ol class="fd-flow">
+              {C.flow.map((step, i) => (
+                <li class={`fd-step ${i < 1 ? 'is-done' : i === 1 ? 'is-now' : ''}`}>
+                  <span class="fd-dot"></span><span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <p class="fd-h4">{C.ovRecent}</p>
+          <div class="fd-strip">
+            {PHOTOS.map((src) => (
+              <img src={src} alt="" loading="lazy" decoding="async" width="200" height="250" />
+            ))}
+          </div>
+        </div>
+
+        {/* 2 · BESTELLINGEN */}
+        <div class="fd-pane" data-pane="1">
+          <div class="fd-card">
+            <div class="fd-prodhead">
+              <img class="fd-cover" src={PHOTOS[0]} alt="" loading="lazy" decoding="async" width="80" height="100" />
+              <span>
+                <b>{C.ordH}</b>
+                <span class="fd-sub">{C.ordFacts}</span>
+              </span>
+            </div>
+
+            <div class="fd-cols">
+              <div>
+                <p class="fd-h4">{C.ordMade}</p>
+                <div class="fd-shots">
+                  {C.shots.map((cap, i) => (
+                    <div class="fd-shot">
+                      <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
+                      <span class="fd-cap">{cap}</span>
+                      <span class="fd-fakebtn is-sm">{C.bApprove}</span>
+                      <span class="fd-fakebtn is-sm is-line">{C.bAsk}</span>
+                      <span class="fd-fakebtn is-sm is-quiet">{C.bDown}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div class="fd-ref-col">
+                <p class="fd-h4">{C.ordSent}</p>
+                <img class="fd-upload" src={UPLOAD} alt="" loading="lazy" decoding="async" width="160" height="200" />
+              </div>
+            </div>
+          </div>
+          <p class="fd-note">{C.ordNote}</p>
+        </div>
+
+        {/* 3 · BRAND KIT */}
+        <div class="fd-pane" data-pane="2">
+          <div class="fd-card">
+            <p class="fd-ref">{C.bkH} — Catalog</p>
+            <p class="fd-h4">{C.bkFace}</p>
+            <div class="fd-faces">
+              {C.bkModels.map((name, i) => (
+                <div class={`fd-face ${i === 0 ? 'is-on' : ''}`}>
+                  <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="120" height="160" />
+                  <span>{name}</span>
+                </div>
+              ))}
+            </div>
+            <p class="fd-h4">{C.bkBg}</p>
+            <div class="fd-sws">
+              {C.bkColours.map(([hex, name], i) => (
+                <div class={`fd-sw ${i === 0 ? 'is-on' : ''}`}>
+                  {/* fill als SVG-presentatieattribuut, niet als inline style —
+                      zie swatch() in src/lib/account.js voor waarom. */}
+                  <svg viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"><rect width="1" height="1" fill={hex} /></svg>
+                  <span>{name}</span>
+                  <span class="fd-hex">{hex}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p class="fd-note">{C.bkNote}</p>
+        </div>
+
+        {/* 4 · JE GEGEVENS */}
+        <div class="fd-pane" data-pane="3">
+          <div class="fd-card">
+            <p class="fd-ref">{C.detH}</p>
+            <div class="fd-fields">
+              {C.detFields.map(([label, value]) => (
+                <div class="fd-field">
+                  <span class="fd-flabel">{label}</span>
+                  <span class="fd-fvalue">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p class="fd-note">{C.detNote}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<style>
+  /* Het frame. Eén hairline en één donkerder vlak: het moet lezen als een
+     ander oppervlak dan de pagina eromheen, zonder een tweede vormtaal te
+     introduceren. */
+  .fd {
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--paper-2);
+    overflow: hidden;
+  }
+
+  .fd-radio { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+
+  .fd-bar {
+    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    padding: .7rem 1rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .fd-mark { font-weight: 800; letter-spacing: .1em; font-size: .78rem; }
+  /* De mock-upmelding staat in de balk en niet onder de figuur: wie de tour
+     begint hoort te weten dat het een voorbeeld is voordat hij iets aanwijst. */
+  .fd-badge {
+    margin-left: auto; font-size: .7rem; line-height: 1.3; color: var(--ink-3);
+    padding: .2rem .5rem; border: 1px solid var(--line); border-radius: var(--r-pill);
+  }
+
+  .fd-body { display: grid; }
+  @media (min-width: 860px) { .fd-body { grid-template-columns: 15rem 1fr; } }
+
+  .fd-nav {
+    display: grid; gap: .2rem; padding: .7rem;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (min-width: 860px) {
+    .fd-nav { border-bottom: 0; border-right: 1px solid var(--line); align-content: start; }
+  }
+  .fd-tab {
+    display: grid; gap: .1rem; cursor: pointer;
+    padding: .55rem .7rem; border-radius: var(--r-md);
+    border: 1px solid transparent;
+  }
+  .fd-tab-n { font-size: .88rem; font-weight: 700; color: var(--ink-2); }
+  .fd-tab-s { font-size: .74rem; line-height: 1.35; color: var(--ink-3); }
+  .fd-tab:hover { background: var(--ghost); }
+
+  /* De aangewezen tab, en het bijbehorende paneel. `:has()` leest de stand van
+     de radio's die bovenaan de figuur staan. Zonder `:has()` valt alles terug
+     op het blok onderaan dit bestand. */
+  .fd:has(.fd-radio:nth-of-type(1):checked) .fd-tab:nth-of-type(1),
+  .fd:has(.fd-radio:nth-of-type(2):checked) .fd-tab:nth-of-type(2),
+  .fd:has(.fd-radio:nth-of-type(3):checked) .fd-tab:nth-of-type(3),
+  .fd:has(.fd-radio:nth-of-type(4):checked) .fd-tab:nth-of-type(4) {
+    background: var(--surface); border-color: var(--line-strong);
+  }
+  .fd:has(.fd-radio:nth-of-type(1):checked) .fd-tab:nth-of-type(1) .fd-tab-n,
+  .fd:has(.fd-radio:nth-of-type(2):checked) .fd-tab:nth-of-type(2) .fd-tab-n,
+  .fd:has(.fd-radio:nth-of-type(3):checked) .fd-tab:nth-of-type(3) .fd-tab-n,
+  .fd:has(.fd-radio:nth-of-type(4):checked) .fd-tab:nth-of-type(4) .fd-tab-n {
+    color: var(--accent);
+  }
+  /* Het toetsenbord moet zien waar het is; de radio zelf is onzichtbaar, dus de
+     focusring hoort op het label te landen. */
+  .fd-radio:focus-visible + .fd-radio ~ .fd-body .fd-tab,
+  .fd-radio:focus-visible ~ .fd-body .fd-tab { outline: none; }
+  .fd:has(.fd-radio:nth-of-type(1):focus-visible) .fd-tab:nth-of-type(1),
+  .fd:has(.fd-radio:nth-of-type(2):focus-visible) .fd-tab:nth-of-type(2),
+  .fd:has(.fd-radio:nth-of-type(3):focus-visible) .fd-tab:nth-of-type(3),
+  .fd:has(.fd-radio:nth-of-type(4):focus-visible) .fd-tab:nth-of-type(4) {
+    outline: 2px solid var(--focus-ring); outline-offset: 2px;
+  }
+
+  .fd-panes { padding: clamp(.8rem, 2vw, 1.2rem); min-width: 0; }
+  /* Vier panelen van vier hoogtes laten de pagina onder de figuur verspringen
+     zodra iemand een tab aanwijst. Vanaf de brede opmaak staat de hoogte vast op
+     die van het langste paneel; smaller mag het meebewegen, want daar scrolt de
+     bezoeker toch. */
+  @media (min-width: 860px) { .fd-panes { min-height: 35.75rem; } }
+  .fd-pane { display: none; }
+  .fd:has(.fd-radio:nth-of-type(1):checked) .fd-pane[data-pane='0'],
+  .fd:has(.fd-radio:nth-of-type(2):checked) .fd-pane[data-pane='1'],
+  .fd:has(.fd-radio:nth-of-type(3):checked) .fd-pane[data-pane='2'],
+  .fd:has(.fd-radio:nth-of-type(4):checked) .fd-pane[data-pane='3'] { display: block; }
+
+  /* ---- de onderdelen binnen een paneel ---- */
+  .fd-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  @media (min-width: 620px) { .fd-tiles { grid-template-columns: repeat(4, 1fr); } }
+  .fd-tile {
+    display: grid; gap: .1rem; padding: .6rem .7rem;
+    border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface);
+  }
+  .fd-tile b { font-size: 1.3rem; line-height: 1; }
+  .fd-tile span { font-size: .72rem; color: var(--ink-3); }
+
+  .fd-card {
+    margin-top: .8rem; padding: .85rem;
+    border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface);
+  }
+  .fd-ref { margin: 0 0 .6rem; font-size: .78rem; letter-spacing: .06em; color: var(--ink-3); }
+
+  .fd-pay {
+    display: grid; gap: .25rem; padding: .7rem;
+    border-left: 2px solid var(--accent); border-radius: var(--r-sm);
+    background: var(--paper-2);
+  }
+  .fd-payrow { display: flex; justify-content: space-between; gap: 1rem; font-size: .8rem; color: var(--ink-3); }
+  .fd-payrow span:last-child { font-variant-numeric: tabular-nums; }
+  .fd-payrow.is-total { color: var(--ink); font-weight: 700; }
+  .fd-paystate { margin: .35rem 0 .1rem; font-size: .76rem; color: var(--ink-2); }
+
+  /* Een knop die geen knop is. <span> en niet <button>, zodat er niets te
+     klikken valt en een schermlezer hem niet als handeling aankondigt — het is
+     opmaak die laat zien dat er in het echte scherm een knop staat. */
+  .fd-fakebtn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: max-content; padding: .35rem .8rem; border-radius: var(--r-pill);
+    background: var(--accent); color: var(--accent-on);
+    font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .fd-fakebtn.is-sm { width: 100%; padding: .28rem .4rem; font-size: .62rem; border-radius: var(--r-sm); }
+  .fd-fakebtn.is-line { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .fd-fakebtn.is-quiet { background: none; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line); }
+
+  .fd-now { margin: .8rem 0 0; font-size: .82rem; color: var(--ink-2); }
+  .fd-win { color: var(--ink-3); }
+  .fd-flow { list-style: none; display: grid; grid-auto-flow: column; gap: 0; margin: .7rem 0 0; padding: 0; }
+  .fd-step { position: relative; display: grid; gap: .35rem; font-size: .68rem; color: var(--ink-3); }
+  .fd-dot {
+    width: 9px; height: 9px; border-radius: 50%; position: relative; z-index: 1;
+    background: var(--surface); box-shadow: inset 0 0 0 2px var(--line-strong);
+  }
+  .fd-step::before {
+    content: ''; position: absolute; left: 4px; right: -4px; top: 4px; height: 1px; background: var(--line-strong);
+  }
+  .fd-step:last-child::before { display: none; }
+  .fd-step.is-done .fd-dot { background: var(--ink-2); box-shadow: inset 0 0 0 2px var(--ink-2); }
+  .fd-step.is-now .fd-dot { background: var(--accent); box-shadow: 0 0 0 3px rgb(198 241 0 / .22); }
+  .fd-step.is-now { color: var(--ink); font-weight: 700; }
+  /* Vier namen naast elkaar vullen op een telefoon de regel exact: "Ontvangen In
+     productie Wordt nagekeken Geleverd" liep aan elkaar vast zonder één pixel
+     ertussen. Smal draait de tijdlijn een kwartslag — stippen links, namen
+     erachter, lijn verticaal. Naast elkaar krijgen de namen bovendien lucht,
+     zodat ze ook net boven het omslagpunt niet tegen elkaar staan. */
+  .fd-step > span + span { padding-right: .5rem; }
+  @media (max-width: 559px) {
+    .fd-flow { grid-auto-flow: row; gap: .55rem; }
+    .fd-step { grid-template-columns: 9px 1fr; align-items: start; gap: .55rem; line-height: 1.35; }
+    .fd-step .fd-dot { margin-top: 3px; }
+    .fd-step > span + span { padding-right: 0; }
+    .fd-step::before {
+      left: 4px; right: auto; top: 7px; bottom: calc(-.55rem - 6px);
+      width: 1px; height: auto;
+    }
+  }
+
+  .fd-h4 { margin: 1rem 0 .4rem; font-size: .7rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+  /* Vier duimnagels, geen vier foto's: op volle breedte werden ze 195px breed en
+     dan 244px hoog, waardoor dit paneel 200px langer werd dan de andere drie. */
+  .fd-strip {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem;
+    max-width: 26rem;
+  }
+  .fd-strip img, .fd-shot img, .fd-cover, .fd-upload, .fd-face img {
+    width: 100%; height: auto; display: block; border-radius: var(--r-sm); object-fit: cover;
+  }
+  .fd-strip img { aspect-ratio: 4 / 5; }
+
+  .fd-prodhead { display: flex; align-items: center; gap: .7rem; }
+  .fd-prodhead > span { display: grid; gap: .1rem; font-size: .86rem; }
+  .fd-cover { width: 46px; aspect-ratio: 4 / 5; flex: 0 0 auto; }
+  .fd-sub { font-size: .72rem; color: var(--ink-3); }
+
+  .fd-cols { display: grid; gap: 1rem; margin-top: .6rem; }
+  @media (min-width: 700px) { .fd-cols { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); } }
+  .fd-shots { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  @media (min-width: 560px) { .fd-shots { grid-template-columns: repeat(4, 1fr); } }
+  .fd-shot { display: grid; gap: .25rem; align-content: start; }
+  .fd-shot img { aspect-ratio: 4 / 5; }
+  .fd-cap { font-size: .68rem; color: var(--ink-2); }
+  .fd-upload { aspect-ratio: 4 / 5; }
+
+  .fd-faces { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; max-width: 22rem; }
+  .fd-face { display: grid; gap: .25rem; padding: .3rem; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: .7rem; color: var(--ink-3); }
+  .fd-face.is-on { border-color: var(--accent); color: var(--ink); }
+  .fd-face img { aspect-ratio: 3 / 4; }
+
+  .fd-sws { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .fd-sw {
+    display: grid; gap: .2rem; width: 5.5rem; padding: .35rem;
+    border: 1px solid var(--line); border-radius: var(--r-sm);
+    font-size: .7rem; color: var(--ink-2); text-align: center;
+  }
+  .fd-sw.is-on { border-color: var(--accent); }
+  .fd-sw svg { display: block; width: 100%; height: 28px; border-radius: 3px; }
+  .fd-hex { font-size: .62rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  .fd-fields { display: grid; gap: .5rem; }
+  @media (min-width: 620px) { .fd-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .fd-field { display: grid; gap: .2rem; }
+  .fd-flabel { font-size: .66rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .fd-fvalue {
+    padding: .45rem .6rem; font-size: .82rem; color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--paper-2);
+  }
+
+  .fd-note { margin: .8rem 0 0; font-size: .78rem; line-height: 1.5; color: var(--ink-3); max-width: 60ch; }
+
+  /* ---- geen :has(), en dan? ------------------------------------------------
+     Alle vier de panelen onder elkaar, met hun tabnaam als kopje. Niet mooi,
+     wel volledig: de vraag "wat kan ik er allemaal in zien" wordt dan nog
+     steeds beantwoord. Dit raakt geen enkele moderne browser — Safari, Chrome
+     en Firefox kennen :has() allemaal — maar een figuur die op de homepage
+     staat, hoort niet leeg te kunnen zijn. */
+  @supports not selector(:has(*)) {
+    .fd-pane { display: block; border-top: 1px solid var(--line); padding-top: .8rem; margin-top: .8rem; }
+    .fd-pane:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+    .fd-nav { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fd-tab, .fd-fakebtn { transition: none; }
+  }
+</style>

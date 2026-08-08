@@ -26,7 +26,7 @@ export const styles = [
     cardPhoto: '/img/lifestyle-dunes-01.webp',
     beforeAfter: { before: '/img/lifestyle-dunes-02.webp', after: '/img/lifestyle-dunes-01.webp' },
     cardIcon: 'bag',
-    cardDesc: 'Warme, zonovergoten editorial-scènes met zacht natuurlijk licht en aardse, zandkleurige omgevingen — een verheven, aspirationele sfeer die premium producten flatteert.',
+    cardDesc: 'Warme, zonovergoten editorial-scènes met zacht natuurlijk licht en aardse, zandkleurige omgevingen — een sfeer waar je in wilt stappen, en die premium producten flatteert.',
     moodTitle: 'Hoe Dunes voelt.',
     moodParagraphs: [
       'Zonovergoten minimalisme, aardse tonen, lange zachte schaduwen. De look van ingetogen luxe.',
@@ -67,7 +67,7 @@ export const styles = [
     moodTitle: 'Hoe Flash voelt.',
     moodParagraphs: [
       'Hard on-camera licht, diepe schaduwen, kleur die knalt. De nightlife-look, confronterend van opzet.',
-      'Verkeerd gedaan is het gewoon hard. Goed gedaan is het elektrisch. Wij hebben er een discipline van gemaakt.',
+      'Verkeerd toegepast is dit licht gewoon hard. Goed toegepast is het elektrisch. Wij hebben er een discipline van gemaakt.',
     ],
     steps: [
       { title: 'Plaats hard licht', body: 'De flits zo geplaatst dat het product strak uit het donker wordt gesneden.' },
@@ -126,7 +126,7 @@ export const styles = [
       { title: 'Campagnekwaliteit, elke bestelling', body: 'Geen aparte \'hero shot\'-laag — deze afwerking is de standaard.' },
       { title: 'Eén consistente gloed', body: 'Dezelfde warmte over je hele feed, launch na launch.' },
     ],
-    bestFor: ['Beauty, skincare en parfum', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een aspirationele feed bouwen'],
+    bestFor: ['Beauty, skincare en parfum', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een feed bouwen waar mensen bij willen horen'],
     whatYouGet: ['Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elk beeld', TIMING, REVIEW],
   },
   {
@@ -137,11 +137,11 @@ export const styles = [
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
     beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
     cardIcon: 'bottle',
-    cardDesc: 'Minimalistische visuals die lijken op authentieke, alledaagse fotografie — natuurlijk, moeiteloos, als spontane smartphonefotografie.',
+    cardDesc: 'Minimalistische visuals die lijken op authentieke, alledaagse fotografie — natuurlijk en ongepolijst, als een foto die iemand net even maakte.',
     moodTitle: 'Hoe Phone-made voelt.',
     moodParagraphs: [
       'Daglicht door een raam, een product op een aanrecht, een licht imperfect kader. Het leest als echt.',
-      'Het is de stijl die feeds je laat vertrouwen. Geen studioglans, geen harde verkoop. Gewoon je product dat een geloofwaardig leven leidt.',
+      'Deze stijl laat een feed je vertrouwen. Geen studioglans, geen harde verkoop. Gewoon je product in een geloofwaardig leven.',
     ],
     steps: [
       { title: 'Zet het licht', body: 'Eén raam of lamp, niets geënsceneerd — licht zoals het thuis echt valt.' },
@@ -154,7 +154,7 @@ export const styles = [
     ),
     craft: [
       { title: 'Geëngineerde imperfectie', body: 'Lichte kanteling, natuurlijke lichtafval, eerlijke schaduwen — elk \'ongelukje\' is bewust geplaatst, zodat het gevonden aanvoelt in plaats van geënsceneerd.' },
-      { title: 'Daglichtlogica', body: 'Elke scène gehoorzaamt aan één lichtbron en één tijdstip van de dag. Dat is wat geloofwaardig van griezelig scheidt.' },
+      { title: 'Daglichtlogica', body: 'Elke scène houdt zich aan één lichtbron en één tijdstip van de dag. Dat scheidt geloofwaardig van griezelig.' },
       { title: 'Aankleding die fluistert', body: 'Props zijn zo gekozen dat ze niets dateren en van niets afleiden. Het product blijft het luidste in beeld.' },
       { title: 'Feed-first kadering', body: 'Vooraf gecomponeerd voor 4:5 en 9:16, zodat niets belangrijks sneuvelt in de uitsnede.' },
     ],
@@ -175,11 +175,11 @@ export const styles = [
     heroPhoto: '/img/banners-13.webp',
     cardPhoto: '/img/banners-13.webp',
     cardIcon: 'bag',
-    cardDesc: 'Niet een van onze vier sferen — een lifestyle-scène op maat, ontworpen vanuit jouw referenties.',
+    cardDesc: 'Geen van onze vier vaste sferen — een lifestyle-scène op maat, ontworpen vanuit jouw referenties.',
     orderHref: '/nl/start',
     orderLabel: 'Start een scène op maat',
     moodParagraphs: [
-      'Niet een van onze vier sferen — een scène ontworpen vanuit jouw referenties: de setting, styling en het licht die alleen jouw merk zou gebruiken.',
+      'Geen van onze vier vaste sferen — een scène ontworpen vanuit jouw referenties. De setting, de styling en het licht die alleen bij jouw merk passen.',
       'We bouwen de wereld één keer, samen met jou, en houden daarna elke toekomstige visual daaraan trouw.',
     ],
     steps: [

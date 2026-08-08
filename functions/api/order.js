@@ -268,7 +268,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
       .bind(email, get('subscribe') || 'lead-magnet').run());
     await safe(() => sendMail(env, {
       to: email,
-      subject: lang === 'nl' ? 'Je briefing-foto checklist' : 'Your briefing-photo checklist',
+      subject: lang === 'nl' ? 'Zo maak je de productfoto’s die wij nodig hebben' : 'How to shoot the product photos we need',
       html: subscriberEmail(lang),
     }));
     await safe(() => sendMail(env, {
@@ -1715,8 +1715,8 @@ export function customerEmail(lang, ref, service, name,
     const from = formatDay(window.start, lang);
     const to = formatDay(window.end, lang);
     timing = nl
-      ? `Je venster staat gereserveerd: ${esc(from)} tot en met ${esc(to)}.`
-      : `Your window is reserved: ${esc(from)} to ${esc(to)}.`;
+      ? `Je leverdatum staat gereserveerd: ${esc(from)} tot en met ${esc(to)}.`
+      : `Your delivery date is reserved: ${esc(from)} to ${esc(to)}.`;
   } else if (attended) {
     timing = nl
       ? `${turnaround('attended', 'nl')}. We komen bij je terug met de exacte data — zolang die niet bevestigd zijn, noemen we er geen.`
@@ -1874,11 +1874,11 @@ export function subscriberEmail(lang) {
       ? 'De vier hoeken, het licht en de achtergrond — in één pagina.'
       : 'The four angles, the light and the background — on one page.',
     body: [
-      h1(nl ? 'Je briefing-foto checklist' : 'Your briefing-photo checklist'),
+      h1(nl ? 'Zo maak je de productfoto’s die wij nodig hebben' : 'How to shoot the product photos we need'),
       p('Hi,'),
       p(nl
-        ? 'Hier is de briefing-foto checklist — de vier hoeken, het licht en de achtergrond die een telefoonfoto tot een campagne maken.'
-        : "Here's the briefing-photo checklist — the four angles, lighting and background that turn a phone photo into a campaign."),
+        ? 'Hier staat het in vier punten — de hoeken, het licht en de achtergrond die van een telefoonfoto een campagnebeeld maken.'
+        : "Here it is in four points — the angles, lighting and background that turn a phone photo into a campaign image."),
       linkLine(url, nl ? 'Bekijk de checklist' : 'Read the checklist'),
       spamNote(lang),
     ].join(''),

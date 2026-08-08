@@ -122,7 +122,7 @@ const COPY = {
     // is simply correct rather than diplomatic, and where the line falls is
     // stated further down, on the queue note and in the TierCompare block.
     ctaPrimary: 'Start an order',
-    ctaSecondary: 'See the price ladder',
+    ctaSecondary: 'See the price per product',
     wa: waHref("Hi VISUAILS, I'd like to order catalog visuals for my products."),
     waLabel: 'WhatsApp',
     // Two figures, not one. A single rate in a trust row is the exact claim
@@ -136,12 +136,12 @@ const COPY = {
     // must be VISIBLE, and it is a bigger difference now that size decides it
     // — so this line names the count as well as the promise. A visitor should
     // not be able to leave this page believing a date was promised.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, the order goes into the capacity calendar and gets the reserved window.`,
+    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
     packH: 'One product. Four photos, or more. The rate falls as the count rises.',
     ladderH: 'What a catalog set costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
-    ladderNote: `The rate applies to every product in the order, not only the ones past the rung — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them.`,
+    ladderNote: `The rate applies to every product in the order, not only the ones above that count — so ${floorFrom} products are ${euro(floor, 'en')} each, all of them.`,
     // The on-model shot is the one line on this page where the Brand Model is
     // the obvious next question, so the upsell is woven into the sentence that
     // already raises it rather than parked in a block of its own. §1 of the
@@ -204,7 +204,7 @@ const COPY = {
     faqs: [
       {
         q: 'What does a catalog set cost?',
-        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a rung at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a set is four photos — front, back, a close-up of the logo or fabric, and one on-model shot.`,
+        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a step at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a set is four photos — front, back, a close-up of the logo or fabric, and one on-model shot.`,
       },
       {
         q: 'Is the on-model shot really included?',
@@ -218,11 +218,11 @@ const COPY = {
         q: 'How long does it take?',
         // Both halves of the timing promise, in the order a buyer needs them:
         // the typical span first, then the fact that it is not a date.
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more is already booked into the calendar and holds its window, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one holding a window: ${turnaround('attended', 'en').toLowerCase()}.`,
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
       },
       {
         q: 'Can I choose the background colour?',
-        a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send. If you pick Amazon, bol or Zalando in the order, the background locks to white because those platforms require it; if you want your own colour as well, order the product twice and it is simply charged at the ladder rate.',
+        a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send. If you pick Amazon, bol or Zalando in the order, the background locks to white because those platforms require it; if you want your own colour as well, order the product twice and it is simply charged at the per-product rate.',
       },
       {
         q: 'Can I use these on Amazon, bol and Zalando?',
@@ -245,19 +245,19 @@ const COPY = {
     h1: 'Strakke, consistente productvisuals — <em>gebouwd om te schalen.</em>',
     lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer beelden per product kan altijd. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
     ctaPrimary: 'Start een bestelling',
-    ctaSecondary: 'Bekijk de prijsstaffel',
+    ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag Catalog-visuals bestellen voor mijn producten."),
     waLabel: 'WhatsApp',
     trust: [
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
       ['Vanaf 4 foto’s', 'per product'],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de capaciteitsagenda en krijgt hij het gereserveerde venster.`,
+    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} gaat de bestelling in de agenda en krijgt hij de vastgezette leverdatum.`,
     packH: 'Eén product. Vier foto’s of meer. Het tarief daalt naarmate het aantal stijgt.',
     ladderH: 'Wat een catalogset kost',
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
-    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten voorbij de trede — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
+    ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
     packP: `Elk product komt terug als een complete set — inclusief een echte on-model shot, niet alleen flat-lays. Die shot kan een gezicht uit de standaardroster gebruiken, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
     packCta: 'Start een bestelling',
     edMeta: '( Waar het past )',
@@ -306,7 +306,7 @@ const COPY = {
     faqs: [
       {
         q: 'Wat kost een catalogset?',
-        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en het tarief zakt trede voor trede naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een set vier foto’s — voorkant, achterkant, een close-up van het logo of de stof, en één on-model shot.`,
+        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een set vier foto’s — voorkant, achterkant, een close-up van het logo of de stof, en één foto op een model.`,
       },
       {
         q: 'Zit de on-model shot echt inbegrepen?',
@@ -318,11 +318,11 @@ const COPY = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn venster vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met het venster: ${turnaround('attended', 'nl').toLowerCase()}.`,
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een bestelling van ${WINDOW_THRESHOLD} producten of meer staat al in de agenda en houdt zijn leverdatum vast, dus een drukke week kan een kleinere bestelling verschuiven. Vanaf ${WINDOW_THRESHOLD} producten is jouw bestelling degene met de leverdatum: ${turnaround('attended', 'nl').toLowerCase()}.`,
       },
       {
         q: 'Kan ik de achtergrondkleur kiezen?',
-        a: 'Standaard is puur wit (#FFFFFF). Je kunt ook elke hexcode invoeren — een lichte, neutrale kleur werkt het best — toegepast achter elk product dat je opstuurt. Kies je bij je bestelling Amazon, bol of Zalando, dan staat de achtergrond vast op wit omdat die platforms dat eisen; wil je daarnaast je eigen kleur, bestel het product dan twee keer en je betaalt gewoon het staffeltarief.',
+        a: 'Standaard is puur wit (#FFFFFF). Je kunt ook elke hexcode invoeren — een lichte, neutrale kleur werkt het best — toegepast achter elk product dat je opstuurt. Kies je bij je bestelling Amazon, bol of Zalando, dan staat de achtergrond vast op wit omdat die platforms dat eisen; wil je daarnaast je eigen kleur, bestel het product dan twee keer en je betaalt gewoon het tarief per product.',
       },
       {
         q: 'Kan ik deze op Amazon, bol en Zalando gebruiken?',
