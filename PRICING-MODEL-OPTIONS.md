@@ -125,7 +125,7 @@ schalen dan de agenda van één oprichter.
 
 **Waar het je pijn doet.** Een maandelijkse verplichting is een zwaardere eerste
 ja dan een eenmalige opdracht, en jij vraagt die ja van koude prospects zonder
-social proof. Dit model heeft de proefvisual van €0,99 harder nodig dan de
+social proof. Dit model heeft de proefvisual van €1 harder nodig dan de
 andere drie — die is dan niet meer een leuk extraatje maar de enige brug naar
 binnen.
 

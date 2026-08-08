@@ -192,7 +192,7 @@ const lp = (p: string) => localizedPath(lang, p);
 
 // The test sample is the only price this page prints, and it now prints with a
 // VAT label attached — BRIEF-14's rule, and it was being broken here quietly:
-// a bare €0.99 next to "no commitment" reads as the whole of what leaves the
+// a bare €1 next to "no commitment" reads as the whole of what leaves the
 // account, and it is not. Both figures are built here rather than in the copy
 // table so neither branch can print one without the other.
 const sample = `${euro(AMOUNT.testSample, lang)} ${vatLabel('excl', lang)}`;

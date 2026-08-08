@@ -23,6 +23,11 @@ const PAID = (over = {}) => ({
   id: 'tr_5B8cwPMGnU6qLbRvo7qEZo',
   mode: 'test',
   createdAt: '2026-08-02T10:00:00+00:00',
+  // BEWUST 0.99 EN NIET 1.00, en het is geen prijs. Dit toetst dat een
+  // decimal-string van Mollie in hele centen terechtkomt, en 0.99 → 99 loopt
+  // door beide decimalen; 1.00 → 100 zou een afrondfout in de centen niet
+  // aantonen. De proefvisual kost sinds 8 augustus 2026 € 1 (AMOUNT.testSample);
+  // deze fixture volgt die prijs met opzet niet.
   amount: { value: '0.99', currency: 'EUR' },
   description: 'VISUAILS test sample',
   method: 'ideal',

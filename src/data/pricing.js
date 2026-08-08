@@ -117,6 +117,14 @@ export function ladderFloor(kind) {
 // willen zijn over de prijzen die we hanteren, een sample van 0,99 cent is al
 // redelijk genoeg denk ik."*
 //
+// TWEE DINGEN OVER DAT CITAAT, want het staat er letterlijk en dat blijft zo.
+// "0,99 cent" betekent taalkundig minder dan één cent; bedoeld is € 0,99. Die
+// verspreking staat in meerdere citaten in dit bestand en in account.js, en is
+// daar bewust niet weggepoetst — citaten zijn de notulen van deze beslissingen.
+// SCHRIJF HET NOOIT ZO IN KLANTTEKST: een studio die op consistentie verkoopt,
+// kan geen prijs printen die zijn eigen eenheid tegenspreekt.
+// En het bedrag zelf is inmiddels € 1 — zie AMOUNT.testSample hieronder.
+//
 // That is a pricing argument, not a copy tidy-up, and it is the right one. The
 // discount was the third thing the ladder had already replaced: the Drop Pilot
 // was a loss-leader wearing a package's clothes, the discount was the same
@@ -125,7 +133,7 @@ export function ladderFloor(kind) {
 // price — which is exactly the doubt a studio selling on consistency cannot
 // afford to plant.
 //
-// The €0.99 test sample stays and now carries the whole of the "try before you
+// The test sample stays and now carries the whole of the "try before you
 // commit" job on its own. AMOUNT.testSample.
 //
 // Deleted rather than set to zero. A constant of 0 leaves every sentence about
@@ -173,7 +181,7 @@ export function tierFor(products) {
 // Lucas: *"voor iedere bestelling behalve 0,99 cent sample."* Dus:
 //
 //   elke betaalde bestelling  → per beeld goedkeuren of aanmerken
-//   de proefvisual van € 0,99 → niet
+//   de proefvisual van € 1 → niet
 //
 // WAAROM DE PROEFVISUAL DE UITZONDERING IS, en waarom dat geen zuinigheid is.
 // Dat ding is één beeld voor negenennegentig cent, bedoeld om te laten zien wat
@@ -294,7 +302,47 @@ export const AMOUNT = {
   // make the drop look any more attractive relative to buying à la carte, it
   // would just cost every client more everywhere. If that should change too,
   // it is a separate decision — say so and it moves on its own line.
-  testSample: 0.99,
+  // ── WAAROM € 1 EN NIET € 0,99 ───────────────────────────────────────────────
+  //
+  // Lucas, 8 augustus 2026, na de vraag of 0,99 psychologisch beter zat.
+  //
+  // 1. HET 9-EINDE DOET HIER WÉL IETS, EN DAT IS NIET GENOEG. Eerlijk over de
+  //    mechanica: quoteTestSample() in src/lib/quote.js rekent dit bedrag plat
+  //    af (vatCents: 0), dus de klant betaalt vandaag exact € 0,99 of exact
+  //    € 1,00. Het linkercijfer verschilt dan in zijn sterkste vorm — "centen"
+  //    tegenover "een euro" — dus het charme-effect is hier echt aanwezig. Het
+  //    weegt alleen niet op tegen (2) en (3). En het is niet houdbaar: zodra de
+  //    btw-vraag op WERKLIJST.md wordt beslecht en er 21% op komt, wordt € 0,99
+  //    → € 1,20 en € 1 → € 1,21, en is het effect alsnog weg. € 1 is de keuze
+  //    die die correctie overleeft; € 0,99 is de keuze die erdoor ongedaan wordt.
+  //
+  // 2. HET BOTST MET DE REDEN DAT FIRST_ORDER_DISCOUNT WEG IS. Zie het blok
+  //    daarover hierboven: een tarief noemen en er dan een vijfde af halen zegt
+  //    dat het tarief nooit de prijs was. Een 9-einde is diezelfde onzekerheid
+  //    in een ander font — een getal gekozen om kleiner te lijken. Een rond
+  //    getal leest als gekozen. Dit is het eerste bedrag dat een prospect ziet.
+  //
+  // 3. DE DREMPEL IS NIET HET GELD, EN DAT MAAKT (1) KLEIN. Wie een proefvisual
+  //    aanvraagt moet een productfoto uploaden, kiezen wat hij wil en zijn
+  //    gegevens geven. Dáár haakt iemand af, niet op een cent. Niemand ziet af
+  //    van € 1 die bij € 0,99 wel had besteld. Er gaat bovendien een volledig
+  //    product door dezelfde productie en Mollie houdt ~€ 0,29 per transactie
+  //    in: dit is geen omzet maar een poort. € 1 zegt "symbolisch", € 0,99 zegt
+  //    "hierover is gerekend" — en dat is bij dit bedrag niet geloofwaardig.
+  //
+  // ⚠ OPEN PUNT DAT HIERONDER LANGSKOMT. De site labelt dit bedrag "excl. btw"
+  // (PricingPage.astro, faq.js), maar quoteTestSample() rekent het plat af met
+  // vatCents: 0 en noemt het in zijn eigen comment btw-INCLUSIEF. Die twee
+  // kunnen niet samen waar zijn, en WERKLIJST.md heeft de vraag al open staan:
+  // een echte visual die de klant krijgt is een levering tegen vergoeding, dus
+  // hoort er btw op. Ook BRIEF-14 vraagt Tier 0 juist INCLUSIEF te tonen, want
+  // consumenten kunnen hier bij. Dat is een fiscale beslissing, geen opruimklus
+  // — niet stilletjes één kant op fixen.
+  //
+  // NIET AANPASSEN NAAR EEN 9-EINDE zonder die punten te weerleggen. En let
+  // op euro(): een heel bedrag print zonder decimalen, dus dit wordt "€ 1" en
+  // niet "€ 1,00" — bedoeld, zie de functie.
+  testSample: 1,
   // THE ENTRY RUNG, not a flat rate any more. A page that prints one number for
   // "a catalog set" is now printing what ONE costs; the rate falls from here as
   // the count rises (LADDER above). Pages that can show the whole ladder should

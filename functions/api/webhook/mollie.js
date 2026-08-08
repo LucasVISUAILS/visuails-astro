@@ -2,7 +2,7 @@
 //
 // POST /api/webhook/mollie
 //
-// The other half of the €0.99 test sample. functions/api/order.js creates the
+// The other half of the €1 test sample. functions/api/order.js creates the
 // payment and sends the customer to Mollie; this is what runs when Mollie
 // comes back to say what happened. Until this file existed, that URL 404'd and
 // nothing on the site ever moved an order to `paid` — an order could reach
@@ -109,7 +109,7 @@ export async function onRequestPost({ request, env }) {
   // acknowledged and dropped. `open`, `pending` and `authorized` are not final
   // at all; `authorized` in particular means a hold, not a payment, and
   // treating it as paid is how a Klarna order ships before it settles. Nothing
-  // on the site offers those methods today for a €0.99 payment, which is
+  // on the site offers those methods today for a €1 payment, which is
   // exactly why this is written down rather than left to be discovered.
   // 'refunded' joins 'paid' here as of August 2026. Mollie fires this same
   // webhook when money goes back, and depending on whether the refund is
@@ -200,7 +200,7 @@ async function recordPaid(env, payment, mode) {
   // is guarded by UNIQUE(provider, external_id) so that a retried delivery
   // cannot be counted twice — which is correct, and which meant every refund
   // notification was caught by that guard, logged as a duplicate, and dropped.
-  // The order stayed `paid` forever. At €0.99 nobody noticed; at €1,101.10 the
+  // The order stayed `paid` forever. At €1 nobody noticed; at €1,101.10 the
   // books would not balance.
   //
   // So the refund is reconciled FIRST, from the payment's own amountRefunded,
@@ -291,7 +291,7 @@ async function recordPaid(env, payment, mode) {
   //
   // The mode is in the note ON PURPOSE and in capitals. A test payment writes
   // a real `paid` into whichever database the deployment is pointed at, and
-  // six weeks from now the only thing distinguishing it from a real €0.99 in
+  // six weeks from now the only thing distinguishing it from a real €1 in
   // the admin timeline is this word.
   await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
     .bind(

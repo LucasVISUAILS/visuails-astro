@@ -24,14 +24,14 @@ The drop is the unit of sale: one collection, one deadline, one invoice — pric
 
 ## Conversion & proof
 
-- Primary CTA: the €0.99 test sample — one product, turned into a publish-ready visual, sitewide.
+- Primary CTA: the €1 test sample — one product, turned into a publish-ready visual, sitewide.
 - Secondary CTA: `/start` — begin a drop, capacity-gated, no obligation until the deposit.
 - The line a visitor remembers after 10 seconds: **One drop. One deadline. One invoice.**
 - Belief ladder, in order:
   1. This is not an AI toy — the output is real, finished and human-reviewed.
   2. It holds up across a whole collection, not just one lucky frame.
   3. It costs less and lands sooner than the shoot day it replaces.
-  4. Finding out costs €0.99.
+  4. Finding out costs €1.
 - Proof on hand: finished work only, with no client named. Real output can be shown as imagery; no testimonials, no logos, no client names, no performance figures are available to publish. The "No wall of reviews yet" section carries this honestly, industry figures are labelled as industry figures, and the three case-study slots stay empty until there is something true to put in them.
 
 ## Brand Personality

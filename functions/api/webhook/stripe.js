@@ -2,7 +2,7 @@
 //
 // POST /api/webhook/stripe
 //
-// The only thing on the site that reaches here today is the €0.99 test
+// The only thing on the site that reaches here today is the €1 test
 // sample (functions/api/order.js creates the Checkout Session via
 // src/lib/stripe.js only when svc === 'test-sample'). The handler itself
 // doesn't assume that scope, though: it reads whatever order the session's

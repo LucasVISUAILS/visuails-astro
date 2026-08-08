@@ -74,7 +74,7 @@ into every pillar.
 ├── /upload-guidelines               supporting                       [index]
 ├── /ai-act                          supporting · trust, footer-only  [index]
 ├── /start                           flow · the 5-step pipeline       [index]
-├── /test-sample                     flow · €0.99 trial · Product     [index]
+├── /test-sample                     flow · €1 trial · Product     [index]
 ├── /thank-you                       flow · post-conversion        [NOINDEX]
 ├── /privacy                         legal                            [index]
 ├── /terms                           legal                            [index]
@@ -159,7 +159,7 @@ to 153 EN and 155 NL.
 
 | URL | Title | Len | Meta description | Len | H1 | Primary intent / keyword | Links out (body) | Links in (body) |
 |---|---|---|---|---|---|---|---|---|
-| `/` | Product visuals for clothing brands, no shoot \| VISUAILS | 56 | Catalog and lifestyle visuals for clothing brands, from your own product photos. No shoot. 25–30 products for €1,850. See it on yours for €0.99. | 144 | The brand you envisioned, visualized. | “product visuals for clothing brands” — category entry, commercial | **10** — `/ai-act`, `/catalog`, `/contact`, `/custom-models`, `/lifestyle`, `/models`, `/pricing`, `/start`, `/test-sample`, `/video` | **2** — `/404`, `/thank-you` |
+| `/` | Product visuals for clothing brands, no shoot \| VISUAILS | 56 | Catalog and lifestyle visuals for clothing brands, from your own product photos. No shoot. 25–30 products for €1,850. See it on yours for €1. | 144 | The brand you envisioned, visualized. | “product visuals for clothing brands” — category entry, commercial | **10** — `/ai-act`, `/catalog`, `/contact`, `/custom-models`, `/lifestyle`, `/models`, `/pricing`, `/start`, `/test-sample`, `/video` | **2** — `/404`, `/thank-you` |
 | `/about` | VISUAILS — About us | 19 | VISUAILS is a product-visual studio in Enschede, Netherlands — modern production speed with human judgement on every visual we deliver. | 135 | Great visuals, without the studio. | brand/company lookup — navigational | **1** — `/test-sample` | **0** — none |
 | `/ai-act` | AI Act transparency — VISUAILS | 30 | How VISUAILS visuals are made, what we can put in writing about an order, and what we will not claim on your behalf under the EU AI Act. | 136 | AI Act | “AI Act transparency” — trust, informational | **1** — `/contact` | **2** — `/`, `/faq` |
 | `/catalog` | Catalog photos for clothing brands, no shoot \| VISUAILS | 55 | €89.99 per product: four photos — front, back, a fabric or logo close-up, and one on-model shot. Typically 2–4 working days. | 124 | Clean, consistent product visuals — built to scale. | “catalog photos for clothing brands” — commercial | **4** — `/catalog/classic`, `/catalog/custom`, `/pricing`, `/start` | **5** — `/`, `/catalog/classic`, `/catalog/custom`, `/pricing`, `/start` |

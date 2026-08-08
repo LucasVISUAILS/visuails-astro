@@ -737,7 +737,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // arrives in this same confirmation email.
   //
   // WHY NOT A REDIRECT TO CHECKOUT. That is what the test sample does, and it
-  // suits a €0.99 impulse. A catalog order is €89 to several thousand, and
+  // suits a €1 impulse. A catalog order is €89 to several thousand, and
   // sending somebody who has just filled in five steps straight into a payment
   // wall is where they close the tab. It also keeps the capacity gate's promise
   // intact: the window is confirmed before you pay, which is what TIERS has

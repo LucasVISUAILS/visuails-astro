@@ -1,5 +1,11 @@
 # Tekstronde — elke zin die is veranderd
 
+> **Let op — prijs verouderd.** De bedragen in dit document zijn van de
+> tekstronde zelf. De proefvisual kost sinds 8 augustus 2026 **€ 1**, niet
+> € 0,99. Dit verslag is met opzet niet herschreven: het legt vast wat er op
+> dat moment stond en waarom het veranderde. Neem hier dus geen prijs uit
+> over — die staat in `src/data/pricing.js` (`AMOUNT.testSample`).
+
 8 augustus 2026.
 
 484 teksten aangepast, verspreid over 57 bestanden. Per wijziging staat

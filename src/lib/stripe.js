@@ -13,7 +13,7 @@
 // env.STRIPE_WEBHOOK_SECRET (secret, verification only). See BACKEND-SETUP.md
 // §9 for where these come from and how they're handed over.
 //
-// SCOPE, TODAY: the €0.99 test sample only. The full order pricing model
+// SCOPE, TODAY: the €1 test sample only. The full order pricing model
 // (tiers, packages, per-product, VAT) has no server-side price computation
 // yet — see the note in functions/api/order.js above the call site — so
 // nothing here builds a Checkout Session for anything else. Extending this

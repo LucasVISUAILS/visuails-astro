@@ -13,7 +13,7 @@
 // the webhook landed, to READ one back. See MOLLIE.md for where the key comes
 // from and how to set it.
 //
-// SCOPE, TODAY: the €0.99 test sample only, same as the Stripe version it
+// SCOPE, TODAY: the €1 test sample only, same as the Stripe version it
 // replaces — see the note in functions/api/order.js above the call site.
 // Extending this to real orders still needs server-side price computation
 // first, for the same reason stripe.js's header gave: a payment is never

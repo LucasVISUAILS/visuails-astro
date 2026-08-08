@@ -14,7 +14,7 @@ Een spel lost dat niet op met een betere uitleg maar met een handeling. Wie een
 foto in een vak sleept, twee keuzes maakt en een set terugkrijgt, heeft de
 bestelling al gedaan — alleen zonder eigen product en zonder te betalen. Wat je
 daarna nog moet overtuigen is klein: dat het met hún kleding net zo gaat. Daar
-is de testsample van €0,99 voor, en dát is waar dit spel op uitkomt.
+is de testsample van €1 voor, en dát is waar dit spel op uitkomt.
 
 **Eén regel die alles stuurt: er wordt niets gegenereerd.** Elke uitkomst is een
 beeld dat wij eerder echt gemaakt hebben. Dat is geen valsspelen zolang je het

@@ -20,7 +20,7 @@ import { euro, AMOUNT, ladderRate, ladderFloor, LADDER, vatLabel } from '../../d
 const FLOOR_FROM = LADDER.complete[LADDER.complete.length - 1][0];
 
 // Onder de 152 tekens (META_LIMIT), zodat Google hem heel toont: dit is de
-// description die niet afgekapt mag worden, en de €0,99-haak staat achteraan.
+// description die niet afgekapt mag worden, en de €1-haak staat achteraan.
 const description =
   `Catalogbeelden en lifestyle voor kledingmerken, van je eigen productfoto’s. ` +
   `${euro(ladderRate('complete', 1), 'nl')} per product, ` +

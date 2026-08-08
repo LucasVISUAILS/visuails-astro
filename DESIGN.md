@@ -854,7 +854,7 @@ Keep it open when every reader needs it to decide.
 
 **The hard line under it.** Nothing on the belief ladder ever folds. PRODUCT.md
 names four rungs — it is not an AI toy, it holds up across a collection, it
-costs less and lands sooner, finding out costs €0.99 — and those are exactly
+costs less and lands sooner, finding out costs €1 — and those are exactly
 what a sceptical visitor arrived to test. Folding one to win quiet trades the
 argument for the aesthetic, which is the one trade this site cannot make.
 

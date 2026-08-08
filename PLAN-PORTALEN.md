@@ -276,7 +276,7 @@ blijft het snelle kanaal, en de belangrijke dingen worden naar de draad gekopiee
 
 ## 10. Facturen en betalen
 
-Nu wordt er alleen voor het testmonster van €0,99 afgerekend; elke echte bestelling gaat
+Nu wordt er alleen voor het testmonster van €1 afgerekend; elke echte bestelling gaat
 zonder betaalstap naar de bedankpagina, en de klant ziet nergens zijn betaalstatus. De
 kolommen bestaan wel (`payment_status`, `paid_at`, `payments`-tabel) maar zijn voor de klant
 onzichtbaar.
@@ -649,12 +649,12 @@ vandaag bestaat die berekening alleen bij het bouwen van de site en in de browse
 **Fase 2 — de betaalmodule.** Nu je voor Mollie op echte bestellingen hebt gekozen, is dit de
 tweede fase in plaats van de laatste, omdat administratie je andere grote tijdvreter is:
 
-1. **Betaallink per bestelling** en de bestaande webhook verbreed van €0,99 naar elk bedrag.
+1. **Betaallink per bestelling** en de bestaande webhook verbreed van €1 naar elk bedrag.
    Die webhook is idempotent en heeft bewezen gewerkt, dus dit is het makkelijke deel.
 2. **Terugbetalingen**, en dit is nu een echt gat dat met betalen meekomt: een refund stuurt
    dezelfde webhook opnieuw, botst op de uniciteitsregel `UNIQUE(provider, external_id)`, wordt
    als dubbele melding weggegooid, en de bestelling blijft voor altijd op `paid` staan. Met
-   testbedragen van €0,99 viel dat niet op; met echte bedragen wel.
+   testbedragen van €1 viel dat niet op; met echte bedragen wel.
 3. **Factuur als pdf** met het juiste btw-regime erop — 21% of verlegd bij een geldig
    EU-btw-nummer buiten Nederland — plus de correctielijst in admin die hoort bij jouw
    tussenoplossing (iedereen 21%, achteraf corrigeren).
@@ -763,7 +763,7 @@ Daarom staat "de prijs naar de server" in elke optie hieronder die verder gaat d
 
 **Wat het is.** Je factureert zoals nu, met de hand of via je boekhoudpakket. Het portaal zegt
 niets over geld, of hooguit "betaald: ja/nee" dat jij zelf in admin omzet. Mollie blijft alleen
-voor het testmonster van €0,99.
+voor het testmonster van €1.
 
 **Bouwlast.** Nul.
 
@@ -778,7 +778,7 @@ bedrag zou willen tonen — portaal, klantdossier, cijfers — kan dat niet.
 **Wat het is.** De prijs wordt bij het plaatsen op de server berekend en vastgezet op de order.
 Het btw-regime wordt bepaald en opgeslagen (21%, of verlegd bij een geldig EU-btw-nummer buiten
 Nederland). De klant krijgt een betaallink. De bestaande Mollie-webhook wordt verbreed van
-€0,99 naar elk bedrag. Er komt een factuur-pdf, en de betaalstatus wordt zichtbaar in het
+€1 naar elk bedrag. Er komt een factuur-pdf, en de betaalstatus wordt zichtbaar in het
 portaal.
 
 **Bouwlast.** De grootste module in het plan. De webhook is het makkelijke deel — die bestaat,

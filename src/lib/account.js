@@ -83,6 +83,7 @@ import {
   canReviewOrder,
   canSeeReviewHistory as historyAllowed,
   SAMPLE_SERVICE,
+  TEST_SAMPLE,
 } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
@@ -352,7 +353,13 @@ const COPY = {
     // Waarom er onder een proefvisual geen knoppen staan. Zie canReviewOrder()
     // in pricing.js: dit is de enige bestelling zonder, en dan hoort er een zin
     // te staan in plaats van een gat.
-    sampleNote: 'This is the €0.99 test sample, so there is nothing to approve — but tell us what you think and we will answer.',
+    //
+    // Het bedrag komt uit TEST_SAMPLE en wordt hier niet getypt. Het stond hier
+    // wél met de hand, en toen de prijs 8 augustus 2026 van € 0,99 naar € 1 ging
+    // waren dit de twee plekken op de hele site die het mis hadden — precies het
+    // soort fout dat geen build tegenhoudt, want een verkeerd bedrag is nog altijd
+    // een geldige string.
+    sampleNote: `This is the ${TEST_SAMPLE.en.price} test sample, so there is nothing to approve — but tell us what you think and we will answer.`,
     closedNote: 'You approved everything in this order. Changed your mind? Undo it below.',
     // Anders dan closedNote: die nodigt uit om iets terug te draaien. Deze zegt
     // dat dat niet meer aan de orde is — geen besluit op dit beeld, of de
@@ -627,7 +634,7 @@ const COPY = {
     emptyUploads: 'Geen foto’s bij deze bestelling.',
     bDownloadAll: 'Alles downloaden',
     revokedNote: 'Revisieaanvragen staan op dit account uit. Stuur ons een bericht, dan lossen we het samen op.',
-    sampleNote: 'Dit is de proefvisual van € 0,99, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.',
+    sampleNote: `Dit is de proefvisual van ${TEST_SAMPLE.nl.price}, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.`,
     closedNote: 'Je hebt alles in deze bestelling goedgekeurd. Toch nog iets? Maak het hieronder ongedaan.',
     settledNote: 'Deze bestelling is afgerond. Alles blijft hier te downloaden — is er toch nog iets, stuur ons dan een bericht.',
 
@@ -2164,7 +2171,7 @@ async function loadOrders(env, customerId) {
 const canReview = canReviewOrder;
 const canSeeReviewHistory = historyAllowed;
 
-/** Een proefvisual van € 0,99 — de enige bestelling zonder beoordeelknoppen. */
+/** Een proefvisual — de enige bestelling zonder beoordeelknoppen. Prijs: TEST_SAMPLE. */
 const isSample = (o) => o && o.service === SAMPLE_SERVICE;
 
 /**

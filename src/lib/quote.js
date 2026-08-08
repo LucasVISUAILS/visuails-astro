@@ -7,7 +7,7 @@
 // pipeline.js's quoteFor(), and its own comment says out loud that it is "a
 // preview, the invoice is derived server-side" — except there was no
 // server-side derivation to point at. The only Mollie payment that existed was
-// the €0.99 test sample, at a constant, so the gap never showed.
+// the €1 test sample, at a constant, so the gap never showed.
 //
 // The moment a catalog order can be paid, that gap becomes the whole problem.
 // An amount that only the browser knows is an amount the customer can change,
@@ -205,7 +205,7 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
 /** The test sample, priced from its own constant so it can share the plumbing. */
 export function quoteTestSample() {
   const netCents = cents(AMOUNT.testSample);
-  // The €0.99 sample has always been charged as a flat amount, and it stays
+  // The €1 sample has always been charged as a flat amount, and it stays
   // flat: adding 21% to it would make it €1.20, which is not the number on
   // every page of the site. It is treated as VAT-inclusive.
   return {

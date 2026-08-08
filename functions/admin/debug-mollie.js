@@ -64,7 +64,7 @@
 // C and D create real payments. With a `test_` key those are free, fake, and
 // expire on their own; they are described as "DIAGNOSTIC" so they are obvious
 // in the Mollie dashboard. With a `live_` key they are real but unpaid
-// payments for €0.99, which nobody will ever complete.
+// payments for €1, which nobody will ever complete.
 //
 // It reveals no secret: the key's length, its five-character prefix and a list
 // of any invisible characters in it, never the key.
@@ -162,7 +162,7 @@ export async function onRequestGet(context) {
   // ── WHICH METHODS, AND AT WHICH AMOUNT ────────────────────────────────────
   // Added because the checkout showed two rows and that looked thin. It is a
   // fair worry and the answer is not a guess, it is a query: Mollie filters the
-  // method list BY AMOUNT, because most methods have a minimum. €0.99 is the
+  // method list BY AMOUNT, because most methods have a minimum. €1 is the
   // smallest payment the site ever makes, so the test sample is the worst case
   // the list will ever look — a €1,850 drop is a different question entirely.
   //

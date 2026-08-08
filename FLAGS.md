@@ -85,7 +85,7 @@ rejected at the HTTP layer, which is exactly a 400 with an empty body.
 `STRIPE_SECRET_KEY` was almost certainly set the same way in the same sitting.
 **Nothing was ever wrong with either provider, or with Cloudflare.** If Stripe
 is ever revisited, check the secret's shape first. See `MOLLIE.md`.
-Mollie is wired in both directions, but only for the €0.99 test sample —
+Mollie is wired in both directions, but only for the €1 test sample —
 section 14 and everything else that takes money are still blocked, on something
 more specific than "which processor": see **cxl** below. `src/lib/stripe.js`
 and its webhook are still in the tree, called by nothing.
@@ -95,7 +95,7 @@ generated once and reused for the life of the order (what is built), or it is
 consumed by first use (what the phrase can also mean). If you meant the second,
 the portal is wrong.
 
-**cxl · Nothing but the €0.99 sample can be charged for, and the two things
+**cxl · Nothing but the €1 sample can be charged for, and the two things
 blocking that are yours.** The webhook loop works end to end now, so the
 mechanism is not the problem. What is missing before a drop can be paid for:
 **server-side price computation** (a payment must never be created from an

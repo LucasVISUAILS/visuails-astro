@@ -1,6 +1,6 @@
-# Mollie — how it is wired, and how to test the €0.99 sample
+# Mollie — how it is wired, and how to test the €1 sample
 
-Mollie is connected for exactly one thing: the **€0.99 test sample**. Every
+Mollie is connected for exactly one thing: the **€1 test sample**. Every
 other service on the site still goes straight to the thank-you page with no
 payment step, on purpose — see "What is deliberately not wired" at the bottom.
 
@@ -75,7 +75,7 @@ the payment, which matters in step 2 of the walkthrough.
 
 ---
 
-## Testing the €0.99 sample, end to end
+## Testing the €1 sample, end to end
 
 ### It has to be the deployed site, not localhost
 
@@ -103,7 +103,7 @@ for — but for this loop the deployed preview is simpler and closer to real.
 
    That suffix is deliberate. A test payment writes a real `paid` into the real
    database, and six weeks from now that label is the only thing telling it
-   apart from a genuine €0.99.
+   apart from a genuine €1.
 
 5. **Then do it again and pick `failed` or `expired`.** The order must stay
    unpaid and nothing must appear in its timeline. A payment integration that
@@ -229,7 +229,7 @@ where Ctrl+V is a real paste.
 
 ### When to delete the diagnostic
 
-`functions/admin/debug-mollie.js` has done its job once the €0.99 walkthrough
+`functions/admin/debug-mollie.js` has done its job once the €1 walkthrough
 above passes **and** you have read `methods.at_full_drop` once. It is admin-gated and leaks nothing, so there is no urgency — but
 a debug endpoint that outlives its question is one nobody remembers the purpose
 of. Delete it, and `functions/api/debug-egress-ip.js` with it: that one was
@@ -337,7 +337,7 @@ list of any invisible characters in it, never the key itself. It is behind the
 top of the file, the same way `debug-egress-ip.js` was.
 
 Probes C and D create real payments. On a `test_` key those are free and fake;
-on a `live_` key they are genuine but unpaid €0.99 payments nobody will
+on a `live_` key they are genuine but unpaid €1 payments nobody will
 complete. Both are described as `VISUAILS DIAGNOSTIC — ignore` so they are
 obvious in the dashboard.
 
@@ -383,14 +383,14 @@ If the checkout ever needs to happen on `visuails.com` itself rather than on
 Mollie's domain, that is **Mollie Components** — card fields embedded in our own
 page. It is a real option and a real amount of work, and it moves this site into
 PCI scope in a way the hosted page deliberately avoids. Not now, and not for a
-€0.99 sample.
+€1 sample.
 
 ### "There are only two payment methods"
 
 Partly the amount, partly the account.
 
 **Mollie filters the method list by amount**, because most methods have a
-minimum. €0.99 is the smallest payment this site ever makes, so the test sample
+minimum. €1 is the smallest payment this site ever makes, so the test sample
 is the *shortest that list will ever be*. A €1,850 full drop is a different
 question, and `/admin/debug-mollie` now answers it by asking Mollie both ways —
 `methods.at_0_99` against `methods.at_full_drop`, straight from the account, no
@@ -482,7 +482,7 @@ Run it after touching either file. It needs no network and no credentials.
 3. Set the profile's checkout branding — logo, button colour, legal links —
    and correct the merchant name from "Visuails" to VISUAILS. See "The checkout
    page" above.
-4. Do one real €0.99 payment against your own card or iDEAL and confirm the
+4. Do one real €1 payment against your own card or iDEAL and confirm the
    timeline event has **no** `TEST MODE` suffix. That absence is the check.
 5. Existing test rows in D1 stay `paid` and stay labelled. Clear them out if a
    clean payment history matters to you.

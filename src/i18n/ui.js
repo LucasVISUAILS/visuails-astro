@@ -11,7 +11,7 @@
 // both locales because the Layout renders it conditionally and a per-locale
 // notice slot is worth keeping.
 
-// The €0.99 test-sample figure is read from the price ladder, never typed here.
+// The €1 test-sample figure is read from the price ladder, never typed here.
 // src/data/pricing.js is the single source of truth for every euro on the site.
 import { TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
 
