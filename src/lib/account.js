@@ -87,6 +87,10 @@ import {
 } from '../data/pricing.js';
 import { RECOMMENDED as BACKGROUNDS, CUSTOM_ID as BG_CUSTOM } from '../data/backgrounds.js';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
+// De kanaallijst staat op één plek. Hier alleen de ids om tegen te valideren
+// en de namen om te tonen — welke kanalen wit eisen is de zaak van
+// syncChannels() in pipeline.js, niet van dit bestand.
+import { CHANNELS, CHANNEL_IDS, channelName } from '../data/channels.js';
 import { mailNote } from '../data/mailNote.js';
 import { serviceLabel } from '../data/services.js';
 import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
@@ -431,6 +435,9 @@ const COPY = {
     bkChange: 'Change',
     bkFaceLede: 'Who wears it',
     bkBgLede: 'What it sits on',
+    bkChLede: 'Where you sell it',
+    bkChHint: 'Only on catalog for now. Pick a marketplace that requires a pure white main image and every order starts on white — Amazon and bol check that automatically on their side.',
+    bkChNone: 'Asked per order',
     bkNoPref: 'No preference',
     bkNoPrefFace: 'Ask me per order',
     bkOwnFig: 'Your model',
@@ -671,6 +678,9 @@ const COPY = {
     bkChange: 'Wijzigen',
     bkFaceLede: 'Wie het draagt',
     bkBgLede: 'Waar het op staat',
+    bkChLede: 'Waar je het verkoopt',
+    bkChHint: 'Voorlopig alleen bij catalog. Kies je een marktplaats die een zuiver wit hoofdbeeld eist, dan begint elke bestelling op wit — Amazon en bol controleren dat aan hun kant automatisch.',
+    bkChNone: 'Wordt per bestelling gevraagd',
     bkNoPref: 'Geen voorkeur',
     bkNoPrefFace: 'Vraag het per bestelling',
     bkOwnFig: 'Jouw model',
@@ -1693,8 +1703,13 @@ async function handleMe({ request, env }) {
 
   let locks = {};
   try {
+    // SELECT l.* in plaats van een kolomlijst: dan werkt deze query ook op een
+    // database waar 0019 nog niet gedraaid heeft, en is `l.channels` daar simpel
+    // undefined in plaats van een SQL-fout die alle locks laat vervallen. De
+    // catch hieronder zou dat opvangen door ALLE voorkeuren weg te gooien, en
+    // dat is een veel duurdere terugval dan één ontbrekend veld.
     const { results } = await env.DB.prepare(
-      `SELECT l.style, l.roster_model, l.background_hex, l.custom_model_id, m.label AS custom_label
+      `SELECT l.*, m.label AS custom_label
          FROM customer_style_locks l
          LEFT JOIN custom_models m ON m.id = l.custom_model_id
         WHERE l.customer_id = ?1`
@@ -1705,6 +1720,10 @@ async function handleMe({ request, env }) {
         model: l.roster_model || '',
         customModel: l.custom_model_id || null,
         customLabel: l.custom_label || '',
+        // Gesplitst én opnieuw gefilterd tegen de lijst in onze eigen code: een
+        // id dat sinds het opslaan uit channels.js is verdwenen mag geen vinkje
+        // worden dat nergens meer bij hoort.
+        channels: String(l.channels || '').split(',').map((v) => v.trim()).filter((v) => CHANNEL_IDS.includes(v)),
       };
     }
   } catch { locks = {}; }
@@ -2390,9 +2409,29 @@ async function handleLockUpdate({ request, env }, customer) {
   // a value nobody can check.
   const background = BACKGROUNDS.some((b) => b.hex.toUpperCase() === bgRaw) ? bgRaw : null;
 
-  if (!customModelId && !rosterModel && !background) {
+  // ── WAAR DIT MERK VERKOOPT (migratie 0019) ─────────────────────────────────
+  //
+  // Meerdere vinkjes, dus getAll() en niet get(). Elke waarde wordt tegen
+  // CHANNEL_IDS gehouden — dezelfde soort lidmaatschapstoets als bij de roster
+  // hierboven, en om dezelfde reden: een zelfgebouwde post mag geen eigen string
+  // zetten waar de studio een kanaal verwacht. Dubbelen eruit met een Set en de
+  // volgorde van channels.js aanhouden, zodat de opgeslagen waarde niet afhangt
+  // van de volgorde waarin de browser de velden meestuurt.
+  //
+  // WAT HIER NIET STAAT: de witregel. Amazon zet de achtergrond vast op wit,
+  // maar dat gebeurt in syncChannels() in pipeline.js, waar het al gebeurde voor
+  // een losse bestelling. Hier wit forceren zou betekenen dat twee plekken het
+  // eens moeten blijven over welke kanalen wit eisen.
+  const wanted = new Set(
+    (typeof form?.getAll === 'function' ? form.getAll('channels') : [])
+      .map((v) => String(v || '').trim().toLowerCase())
+      .filter((v) => CHANNEL_IDS.includes(v))
+  );
+  const channels = CHANNEL_IDS.filter((id) => wanted.has(id)).join(',') || null;
+
+  if (!customModelId && !rosterModel && !background && !channels) {
     // Everything cleared — back to "ask per order, as usual." Deleting rather
-    // than storing three nulls keeps "no row" as the single meaning of "no
+    // than storing nulls keeps "no row" as the single meaning of "no
     // preference", so nothing downstream has to test for both.
     await env.DB.prepare(
       'DELETE FROM customer_style_locks WHERE customer_id = ?1 AND style = ?2'
@@ -2400,15 +2439,33 @@ async function handleLockUpdate({ request, env }, customer) {
     return seeOther(home);
   }
 
-  await env.DB.prepare(
-    `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, updated_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))
-     ON CONFLICT(customer_id, style) DO UPDATE SET
-       custom_model_id = excluded.custom_model_id,
-       roster_model    = excluded.roster_model,
-       background_hex  = excluded.background_hex,
-       updated_at      = datetime('now')`
-  ).bind(customer.customer_id, style, customModelId, rosterModel, background).run();
+  try {
+    await env.DB.prepare(
+      `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, channels, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'))
+       ON CONFLICT(customer_id, style) DO UPDATE SET
+         custom_model_id = excluded.custom_model_id,
+         roster_model    = excluded.roster_model,
+         background_hex  = excluded.background_hex,
+         channels        = excluded.channels,
+         updated_at      = datetime('now')`
+    ).bind(customer.customer_id, style, customModelId, rosterModel, background, channels).run();
+  } catch (err) {
+    // Terugval voor een database waar 0019 nog niet gedraaid heeft. Zelfde
+    // patroon als de btw-INSERT in functions/api/order.js: een deploy die vóór
+    // zijn migratie landt mag een voorkeur niet weggooien, hij mag alleen dat
+    // ene nieuwe veld nog niet kunnen bewaren.
+    if (!/channels/i.test(String(err && err.message))) throw err;
+    await env.DB.prepare(
+      `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))
+       ON CONFLICT(customer_id, style) DO UPDATE SET
+         custom_model_id = excluded.custom_model_id,
+         roster_model    = excluded.roster_model,
+         background_hex  = excluded.background_hex,
+         updated_at      = datetime('now')`
+    ).bind(customer.customer_id, style, customModelId, rosterModel, background).run();
+  }
 
   return seeOther(home);
 }
@@ -3873,6 +3930,33 @@ function lockSection(t, lang, models, lockByStyle) {
       : lock.roster_model ? `r${lock.roster_model}` : FACE_NONE;
     const bg = (lock.background_hex || '').toUpperCase();
 
+    // ── DE KANALEN, ALLEEN BIJ CATALOG ─────────────────────────────────────────
+    //
+    // Lucas, 8 augustus 2026: *"Doe het voor nu alleen bij catalog want
+    // lifestyle, complete en video klopt ook nog niet."*
+    //
+    // Dus niet: de kolom per dienst begrenzen (zie migratie 0019 — dat zou een
+    // tweede waarheid zijn zodra de andere stromen wél kloppen). Wel: dit blok
+    // hier alleen tekenen, en applyBrandKit() in pipeline.js alleen op catalog
+    // laten toepassen. Twee plekken, en ze noemen elkaar, zodat het opheffen van
+    // deze beperking één zoekopdracht is en geen archeologie.
+    const chOn = String(lock.channels || '').split(',')
+      .map((v) => v.trim())
+      .filter((v) => CHANNEL_IDS.includes(v));
+    const chApplies = style === 'catalog';
+    const chBoxes = !chApplies ? '' : CHANNELS.map((ch) => `
+      <label class="bk-ch">
+        <input type="checkbox" name="channels" value="${esc(ch.id)}"${chOn.includes(ch.id) ? ' checked' : ''}>
+        <span class="bk-ch-name">${esc(channelName(ch, lang))}</span>
+        ${ch.requiresWhite ? '<span class="bk-ch-flag">#FFFFFF</span>' : ''}
+      </label>`).join('');
+    const chGroup = !chApplies ? '' : `
+    <fieldset class="bk-group">
+      <legend>${esc(t.bkChLede)}</legend>
+      <div class="bk-chs">${chBoxes}</div>
+      <p class="bk-hint">${esc(t.bkChHint)}</p>
+    </fieldset>`;
+
     // ── WHAT THE FOLDED CARD SAYS ──────────────────────────────────────────
     // The summary has to answer "what does this service start from" without
     // being opened, or the accordion has hidden the only thing the page is for.
@@ -3895,8 +3979,12 @@ function lockSection(t, lang, models, lockByStyle) {
     // A service with NEITHER answer set said "asked per order · asked per
     // order" — the same sentence twice, which reads as a rendering bug rather
     // than as an unset service. One phrase covers both when both are unset.
-    const summaryNow = (!face && !bg) ? esc(t.bkAsk)
-      : `${esc(faceName)} <span class="bk-sum-dot">·</span> ${esc(bgName)}`;
+    const chNames = chApplies && chOn.length
+      ? CHANNELS.filter((c) => chOn.includes(c.id)).map((c) => channelName(c, lang)).join(', ')
+      : '';
+    const summaryNow = (!face && !bg && !chNames) ? esc(t.bkAsk)
+      : [esc(faceName), esc(bgName)].concat(chNames ? [esc(chNames)] : [])
+          .join(' <span class="bk-sum-dot">·</span> ');
 
     // A radio tile. The <input> is first and visually hidden — the label is the
     // control, so the whole portrait is the hit area, and :checked styles the
@@ -3982,7 +4070,7 @@ function lockSection(t, lang, models, lockByStyle) {
     <fieldset class="bk-group">
       <legend>${esc(t.bkBgLede)}</legend>
       <div class="bk-sws">${bgTiles}</div>
-    </fieldset>
+    </fieldset>${chGroup}
     <div class="bk-actions">
       <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
     </div>

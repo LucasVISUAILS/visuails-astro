@@ -51,6 +51,11 @@
  * object's customMetadata, so it is a stable key: renaming one is a migration,
  * not a copy edit.
  */
+// De bovengrens van het aantal extra foto's staat in pricing.js, samen met wat
+// ze kosten. Zie isExtraShotId() onderaan voor waarom hij hier nodig is.
+// pricing.js importeert niets uit dit bestand, dus dit maakt geen cyclus.
+import { MAX_EXTRA_PER_PRODUCT as MAX_EXTRA } from './pricing.js';
+
 export const SHOTS = [
   {
     id: 'front',
@@ -127,8 +132,49 @@ export function isRequiredShot(id) {
 }
 
 /** Is this a shot id we are willing to store? Anything else is refused. */
+/*
+ * ── DE EXTRA FOTO'S HEBBEN OOK EEN SLOT NODIG ────────────────────────────────
+ *
+ * Lucas, 8 augustus 2026: *"een extra foto toevoegen zou een extra upload vak
+ * moeten openen maar opent nu een tekstblok. Wanneer je 1 extra foto kiest krijg
+ * je 1 upload mogelijkheid erbij met daaronder een verplichte notitie van wat de
+ * klant wilt, foto is niet verplicht notitie wel."*
+ *
+ * Een bijbestelde foto is een BESCHRIJVING, niet een hoek. De klant zegt wat het
+ * moet worden en mag er een voorbeeld bij leggen — daarom is de notitie verplicht
+ * en de foto niet. Dat is de omgekeerde verhouding van de vier vaste sloten
+ * hierboven, en precies daarom horen ze niet in SHOTS: die lijst drijft de vaste
+ * hoeken, hun tekeningen, hun labels en hun verplichting.
+ *
+ * WAAROM ZE TOCH DOOR isShotId() MOETEN. /api/upload weigert elke `shot` die
+ * deze functie niet kent — een gesloten verzameling, en dat hoort zo. Zonder deze
+ * uitbreiding zou elke extra foto met 400 bad-shot terugkomen. De id draagt zijn
+ * nummer ('extra2'), zodat de studio in R2 leest waar het beeld bij hoort zonder
+ * een tabel nodig te hebben.
+ *
+ * De bovengrens komt uit pricing.js — MAX_EXTRA_PER_PRODUCT is ook wat de teller
+ * in het formulier begrenst en wat er geprijsd wordt. Hem hier overtypen zou
+ * betekenen dat de server een vijfde foto aanneemt die niemand kan bestellen.
+ */
+export const EXTRA_SHOT_PREFIX = 'extra';
+
+/** 'extra1', 'extra2', … — het nummer zoals de klant het ziet, dus vanaf 1. */
+export function extraShotId(n) {
+  return `${EXTRA_SHOT_PREFIX}${n}`;
+}
+
+export function isExtraShotId(id, max) {
+  if (typeof id !== 'string') return false;
+  const m = new RegExp(`^${EXTRA_SHOT_PREFIX}([1-9][0-9]?)$`).exec(id);
+  if (!m) return false;
+  const n = Number.parseInt(m[1], 10);
+  const cap = Number.isFinite(max) && max > 0 ? max : MAX_EXTRA;
+  return n >= 1 && n <= cap;
+}
+
 export function isShotId(id) {
-  return typeof id === 'string' && SHOT_IDS.includes(id);
+  if (typeof id !== 'string') return false;
+  return SHOT_IDS.includes(id) || isExtraShotId(id);
 }
 
 /** One shot by id, or undefined. */
@@ -213,6 +259,15 @@ export const COPY = {
     extraCount: 'How many?',
     extraNote: 'What should they be?',
     extraPlaceholder: 'e.g. close-up of the model cropped at the neck',
+    // Eén rij per bijbestelde foto. Het nummer staat erin omdat de klant met
+    // meerdere rijen tegelijk werkt en anders drie identieke labels ziet.
+    extraSlot: 'Extra {n}',
+    extraNoteLabel: 'What should Extra {n} be?',
+    // De notitie is verplicht en de foto niet — zie de noot bij isExtraShotId().
+    // Deze zin wordt de melding in het foutvak ÉN in de bubbel van de browser,
+    // dus hij moet zeggen welk veld het is en niet "vul dit in".
+    extraNoteErr: 'Describe what Extra {n} should be before you continue.',
+    extraShotHint: 'A reference is optional — describe it and we will make it.',
     extraRate: '{rate} each at this order size, up to {max} per product.',
     ownModel: 'Yours only',
     trayH: 'Not placed yet',
@@ -250,6 +305,10 @@ export const COPY = {
     extraCount: 'Hoeveel?',
     extraNote: 'Wat moeten het worden?',
     extraPlaceholder: 'bijv. close-up van het model bijgesneden bij de hals',
+    extraSlot: 'Extra {n}',
+    extraNoteLabel: 'Wat moet Extra {n} worden?',
+    extraNoteErr: 'Beschrijf wat Extra {n} moet worden voordat je verdergaat.',
+    extraShotHint: 'Een voorbeeldfoto mag, hoeft niet — beschrijf het en wij maken het.',
     extraRate: '{rate} per stuk bij deze bestelgrootte, tot {max} per product.',
     ownModel: 'Alleen van jou',
     trayH: 'Nog niet geplaatst',

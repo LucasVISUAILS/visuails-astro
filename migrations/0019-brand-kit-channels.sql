@@ -1,0 +1,43 @@
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 0019 · HET VERKOOPKANAAL IN DE BRAND KIT
+--
+-- Lucas, 8 augustus 2026: *"Verwerk het verkoopkanaal (channels) in de brandkit
+-- kiest iemand Amazon, dan gaat de achtergrond op wit vast."*
+--
+-- Waar een merk verkoopt verandert vrijwel nooit, terwijl de bestelstroom het
+-- elke keer opnieuw vraagt. Het is dus precies wat een staande voorkeur hoort te
+-- zijn — en het is het enige veld in deze kit met een HARDE gevolgtrekking:
+-- Amazon, bol en Zalando eisen #FFFFFF op het hoofdbeeld, en dat wordt aan hun
+-- kant machinaal gecontroleerd.
+--
+-- ── WAAROM HIER GEEN TWEEDE WITREGEL STAAT ───────────────────────────────────
+-- Die regel bestaat al, één keer, in syncChannels() in src/scripts/pipeline.js:
+-- staat er een kanaal aan met requiresWhite, dan gaan alle andere achtergronden
+-- op disabled en wordt wit aangevinkt. De brand kit vult straks alleen de
+-- vinkjes in en laat die functie zijn werk doen. Zou deze migratie of de
+-- toepaskant zelf ook wit forceren, dan stonden er twee plekken die het eens
+-- moeten blijven over welke kanalen wit eisen — en dat blijven ze niet.
+--
+-- ── ALLEEN CATALOG, VOOR NU ──────────────────────────────────────────────────
+-- Lucas, zelfde dag: *"Doe het voor nu alleen bij catalog want lifestyle,
+-- complete en video klopt ook nog niet."* De KOLOM is niet aan een dienst
+-- gebonden — dat zou een tweede waarheid zijn zodra de andere stromen wel
+-- kloppen — maar de invulkant en de toepaskant staan bewust alleen op catalog.
+-- Zie lockSection() en applyBrandKit(); beide noemen deze regel.
+--
+-- ── VORM VAN DE WAARDE ───────────────────────────────────────────────────────
+-- Een komma-lijst van kanaal-ids ('amazon,own'), niet JSON. De ids zijn korte
+-- woorden uit een vaste lijst in onze eigen code (CHANNEL_IDS in
+-- src/data/channels.js) en worden bij het lezen gesplitst en opnieuw tegen die
+-- lijst gehouden, dus JSON zou hier alleen een parser toevoegen die kan falen.
+-- NULL betekent hetzelfde als in de rest van deze tabel: geen voorkeur, vraag
+-- het per bestelling.
+--
+-- Idempotent gehouden zonder ALTER ... IF NOT EXISTS (bestaat niet in SQLite):
+-- dit bestand mag precies één keer draaien. De runner ontbreekt nog — zie de
+-- kop van 0007 — dus als je twijfelt of hij al gedraaid heeft, controleer eerst:
+--   PRAGMA table_info(customer_style_locks);
+-- en zoek naar een kolom 'channels'. Staat hij er, dan is 0019 al gedraaid.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+ALTER TABLE customer_style_locks ADD COLUMN channels TEXT;

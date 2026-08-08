@@ -194,15 +194,42 @@ export async function listBatch(env, batch, limit = MAX_BATCH_FILES + 1) {
  * the random tail is what makes it unique — so flattening it costs nothing.
  */
 export function safeName(raw) {
-  const base = (raw || 'file')
+  const flat = (raw || 'file')
     .toString()
     .split(/[\\/]/)
     .pop()
     .normalize('NFKD')
     .replace(/[^A-Za-z0-9._-]+/g, '-')
     .replace(/^[.\-]+/, '')
-    .replace(/-{2,}/g, '-')
-    .slice(0, 60);
+    .replace(/-{2,}/g, '-');
+
+  // ── DE STAART AFKNIPPEN, NOOIT DE EXTENSIE ─────────────────────────────────
+  //
+  // 8 augustus 2026. Dit was een echte bug en hij zag eruit als een
+  // formaatprobleem: "een .jpeg kan wel, een .png niet". Dat was toeval. Een
+  // .slice(0, 60) op de héle naam knipte bij een lange naam de extensie eraf
+  // ("...aa.png" werd "...aa.pn"), typeFor() gaf dan null en /api/upload
+  // antwoordde 400 bad-type. Een cameranaam als IMG_4821.jpeg is dertien tekens
+  // en overleeft dat; een export uit een ontwerpprogramma met een beschrijvende
+  // naam niet. Vandaar de indruk dat het aan PNG lag.
+  //
+  // NFKD maakt het erger, want normaliseren LAAT DE NAAM GROEIEN: elke letter
+  // met een accent wordt letter + los teken en dat losse teken wordt een
+  // hyphen. Een naam van 59 tekens kan zo over de 60 komen en zijn extensie
+  // alsnog verliezen.
+  //
+  // Dus knippen we de stam en plakken we de extensie terug. De extensie bepaalt
+  // het contentType in R2, dus een sleutel die op .pn eindigt terwijl er
+  // image/png in staat is precies de tegenstrijdigheid die je later niet meer
+  // kunt uitleggen.
+  const i = flat.lastIndexOf('.');
+  const hasExt = i > 0 && i < flat.length - 1;
+  const stem = hasExt ? flat.slice(0, i) : flat;
+  const ext = hasExt ? flat.slice(i) : '';
+  // De extensie zelf ook begrenzen: ".dit-is-geen-extensie" is geen extensie, en
+  // een naam die volledig uit punten bestaat mag geen lange staart opleveren.
+  const tail = ext.length <= 6 ? ext : '';
+  const base = (stem.slice(0, Math.max(1, 60 - tail.length)) + tail).replace(/^[.\-]+/, '');
   return base || 'file';
 }
 

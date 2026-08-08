@@ -203,7 +203,7 @@ const PIPE = {
       outfitN: '{price} extra × {n}',
       net: `Order value (${vatLabel('excl', 'en')})`,
       files: 'Reference material',
-      noFiles: 'Nothing sent yet — you can email it afterwards',
+      noFiles: 'Nothing sent yet — we will come to you',
       window: 'Delivery',
       windowLater: 'Delivery date still to be reserved',
       queue: TIERS.unattended.queue.en,
@@ -277,7 +277,7 @@ const PIPE = {
       outfitN: '{price} extra × {n}',
       net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
       files: 'Referentiemateriaal',
-      noFiles: 'Nog niets gestuurd — je kunt het later mailen',
+      noFiles: 'Nog niets gestuurd — we nemen contact met je op',
       window: 'Levering',
       windowLater: 'Leverdatum wordt nog vastgezet',
       queue: TIERS.unattended.queue.nl,
@@ -365,6 +365,10 @@ for (const l of ['en', 'nl'] as const) {
     extraNote: s.extraNote,
     extraPlaceholder: s.extraPlaceholder,
     extraRate: s.extraRate,
+    extraSlot: s.extraSlot,
+    extraNoteLabel: s.extraNoteLabel,
+    extraNoteErr: s.extraNoteErr,
+    extraShotHint: s.extraShotHint,
     ownModel: s.ownModel,
     trayAssign: s.trayAssign,
     progress: s.progress,
@@ -450,6 +454,7 @@ const REQUIRED_COPY = [
   'pu.required', 'pu.optional', 'pu.skipShot', 'pu.undoSkip', 'pu.replace', 'pu.remove',
   'pu.productName', 'pu.ready', 'pu.needsShots', 'pu.listAnd', 'pu.trayAssign',
   'pu.extraH', 'pu.extraCount', 'pu.extraNote', 'pu.extraPlaceholder', 'pu.extraRate', 'pu.ownModel',
+  'pu.extraSlot', 'pu.extraNoteLabel', 'pu.extraNoteErr', 'pu.extraShotHint',
   'pu.progress', 'pu.progressOne', 'pu.progressExtra', 'pu.progressExtraOne',
   'pu.allDone', 'pu.allDoneOne',
   'pu.product', 'pu.add', 'pu.toggle', 'pu.placeIn',
@@ -533,7 +538,8 @@ const FORM = {
     // promise that has to hold whatever the uploader is doing.
     s2: {
       h: 'Send the product photos',
-      skip: 'You can skip this and email the material afterwards.',
+      // Zie de NL-tabel voor waarom deze regel niet meer uitnodigt tot achteraf mailen.
+      skip: 'Sending everything now means we can start straight away. If we need more for the quality, we will come to you.',
     },
     s3: {
       h: 'Who is this for?',
@@ -683,7 +689,23 @@ const FORM = {
     },
     s2: {
       h: 'Stuur de productfoto’s',
-      skip: 'Je kunt deze stap overslaan en het materiaal later mailen.',
+      // Hier stond: "Je kunt deze stap overslaan en het materiaal later mailen."
+      // Weg op 8 augustus 2026. Lucas: *"Materiaal liever niet achteraf opsturen
+      // zodat we zo snel mogelijk met de order aan de slag kunnen, wanneer wij
+      // denken dat we nog extra foto's van het product nodig hebben om kwaliteit
+      // te waarborgen nemen wij contact op met de klant."*
+      //
+      // Een bestelling zonder foto's is een bestelling die stilstaat tot er een
+      // mail komt, en die mail komt bij de studio terecht als werk dat niemand
+      // heeft ingepland. De regel gaf toestemming voor precies dat. Wat er in de
+      // plaats komt is geen dwang maar een belofte de andere kant op: wij nemen
+      // contact op als we meer nodig hebben.
+      //
+      // Stap 2 blijft technisch géén poort (zie de noot bij de stapknoppen): wie
+      // doorklikt zonder foto's wordt niet tegengehouden. Dat is bewust — een
+      // upload die mislukt mag geen bestelling blokkeren. Maar de tekst nodigt
+      // er niet meer toe uit.
+      skip: 'Compleet aangeleverd betekent dat we meteen kunnen beginnen. Missen we iets voor de kwaliteit, dan nemen we zelf contact met je op.',
     },
     s3: {
       h: 'Voor wie is dit?',
@@ -1453,7 +1475,8 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             checkbox carries the agreement. */}
         <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
         <label class="pl-consent">
-          <input type="checkbox" name="withdrawal_consent" value="yes" required />
+          <input type="checkbox" name="withdrawal_consent" value="yes" required
+                 data-pl-err-msg={lang === 'nl' ? "Vink dit aan om te bevestigen dat we mogen beginnen voordat je bedenktijd voorbij is." : "Please tick this to confirm you agree production may start before the withdrawal period ends."} />
           <span>{currentConsent(lang)}</span>
         </label>
       </div>

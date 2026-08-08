@@ -140,22 +140,30 @@ export function productQuestion(id) {
  * wears this, which drives model casting and styling across every product in
  * the order — and the textarea's own hint does the rest.
  */
-export const ORDER_QUESTIONS = [
-  {
-    id: 'audience',
-    type: 'text',
-    maxLength: 120,
-    name: { en: 'Who wears this?', nl: 'Wie draagt dit?' },
-    placeholder: {
-      en: 'men, 20–30, skate and streetwear',
-      nl: 'mannen, 20–30, skate en streetwear',
-    },
-    buys: {
-      en: 'Which model we cast and how the scenes are styled — one answer that steers every product in the order.',
-      nl: 'Welk model we kiezen en hoe de scènes gestyled worden — één antwoord dat elk product in de bestelling stuurt.',
-    },
-  },
-];
+// ── DE AUDIENCE-VRAAG IS WEG, EN DAAROM IS DEZE LIJST LEEG ───────────────────
+//
+// Lucas, 8 augustus 2026: *"'voor wie is dit?' is niet meer relevant, dit is
+// iets voor custom stylen wanneer het bedrijf een specifieke doelgroep heeft,
+// wij focussen voornamelijk op jonge merken voor een jong publiek vandaar de
+// jong uitziende modellen."*
+//
+// Dat is geen bezuiniging op het formulier maar een positioneringsargument, en
+// het klopt: de roster in src/data/models.js IS het antwoord op deze vraag. Een
+// merk vragen wie zijn publiek is en vervolgens uit tien jonge gezichten kiezen,
+// is vragen naar iets waar het aanbod al over beslist heeft. En een vraag
+// stellen waarvan het antwoord niets verandert, is de duurste soort veld: de
+// klant denkt na, wij lezen het, en er gebeurt niets mee.
+//
+// Wél relevant zodra er custom styling of een merkmodel in het spel is — dáár
+// is de doelgroep een echte parameter. Dat is een aparte stroom (het
+// briefingformulier bij het merkmodel), niet een gewone bestelling.
+//
+// DE LIJST BLIJFT BESTAAN, LEEG. Niet verwijderen: ORDER_QUESTION_IDS,
+// functions/api/order.js en OrderFlow.astro lezen hem, en een lege lijst laat
+// die machinerie intact voor de volgende vraag die wél iets verandert. Een
+// weggehaalde export is een build-fout op vier plekken; een lege array is nul
+// velden en nul verrassingen.
+export const ORDER_QUESTIONS = [];
 
 export const ORDER_QUESTION_IDS = ORDER_QUESTIONS.map((q) => q.id);
 

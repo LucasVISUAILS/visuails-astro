@@ -189,7 +189,7 @@
 // arrive in the config blob like every other string on this page — shots.js's
 // own COPY table is never read from here, and importing it would put half the
 // Dutch for one step in a file no translator opens.
-import { SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromPath } from '../data/shots.js';
+import { SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromPath, extraShotId } from '../data/shots.js';
 // Same rule, one line down. PRODUCT_QUESTIONS is read here for its IDS, its
 // types, its maxLength and its option ids — the wire values, which have to be
 // the same ones /api/order validates against, and which would rot the first
@@ -589,6 +589,24 @@ function bindNav() {
  * missing rather than saying "check the form" — and the field points at the box
  * with aria-describedby. The native bubble is still called for, because it is
  * the fastest signal for a mouse user and costs nothing.
+ *
+ * ── EN DIE BUBBEL SPREEKT ONZE TAAL, NIET DIE VAN DE BROWSER ────────────────
+ *
+ * 8 augustus 2026, gemeld op de Engelse bestelpagina: "Vink dit selectievakje
+ * aan als je wilt doorgaan." Dat is geen tekst van deze site — het is de eigen
+ * melding van Chrome, en reportValidity() rendert die in de taal van de
+ * BROWSER. Wie een Nederlandse Chrome heeft, krijgt Nederlandse bubbels op een
+ * Engelse pagina, en daar is geen `lang` op het document tegen opgewassen.
+ *
+ * De enige manier om die tekst te bepalen is setCustomValidity(), en dat werd
+ * nergens in dit project aangeroepen. Dus staat er nu de sentence die al naast
+ * het veld stond: één bron voor de bubbel en voor het foutvak eronder.
+ *
+ * Waarom niet meteen weer leegmaken: een custom-validity blijft gelden tot je
+ * hem opheft, en zolang hij geldt is het veld ongeldig — ook nadat de klant het
+ * heeft ingevuld. clearStepError() haalt hem eraf, en die loopt bij elke edit
+ * en voor elke nieuwe ronde. Vergeet dat en de klant zit vast op een ingevuld
+ * formulier, wat erger is dan een bubbel in de verkeerde taal.
  */
 function validateStep(n) {
   const node = stepNode(n);
@@ -598,6 +616,9 @@ function validateStep(n) {
   const bad = qa('input, select, textarea', node).find((f) => isShown(f) && !f.checkValidity());
   if (!bad) return true;
   showStepError(node, bad);
+  if (typeof bad.setCustomValidity === 'function') {
+    bad.setCustomValidity(bad.dataset.plErrMsg || c('err.generic'));
+  }
   bad.reportValidity();
   return false;
 }
@@ -636,6 +657,15 @@ function clearStepError(node) {
   if (box && box.id) {
     qa(`[aria-describedby="${box.id}"]`, node).forEach((el) => el.removeAttribute('aria-describedby'));
   }
+  // De custom-validity eraf, en dit is het belangrijkste deel van deze functie.
+  // validateStep() zet onze eigen sentence in de native bubbel; blijft die
+  // staan, dan is het veld ongeldig ook nádat de klant het heeft ingevuld en
+  // komt hij niet verder. Over de hele stap, niet alleen over het veld dat het
+  // laatst fout was — een eerdere ronde kan er een op een ander veld hebben
+  // achtergelaten.
+  qa('input, select, textarea', node).forEach((el) => {
+    if (typeof el.setCustomValidity === 'function' && el.validationMessage) el.setCustomValidity('');
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1323,7 +1353,18 @@ function EMPTY_SLOT() {
 }
 
 function shotLabel(id) {
+  // Een extra slot heeft geen vaste naam in shots.js — het is er één van maximaal
+  // vier en draagt zijn nummer. Hier en niet in buildSlot(), zodat er één plek is
+  // waar een slot zijn woord vandaan haalt.
+  const n = extraSlotNumber(id);
+  if (n) return c('pu.extraSlot', { n });
   return c(`pu.shot.${id}`) || id;
+}
+
+/** Het nummer uit 'extra2', of 0 als dit geen extra slot is. */
+function extraSlotNumber(id) {
+  const m = /^extra([1-9][0-9]?)$/.exec(String(id || ''));
+  return m ? Number.parseInt(m[1], 10) : 0;
 }
 
 /**
@@ -1899,6 +1940,37 @@ function buildAbout(card) {
  * short closed range, and a number spinner invites a typed 40 that the form
  * then has to argue with.
  */
+/*
+ * ── EXTRA FOTO'S: N GEKOZEN IS N UPLOADVAKKEN ────────────────────────────────
+ *
+ * Lucas, 8 augustus 2026: *"een extra foto toevoegen zou een extra upload vak
+ * moeten openen maar opent nu een tekstblok. Wanneer je 1 extra foto kiest krijg
+ * je 1 upload mogelijkheid erbij met daaronder een verplichte notitie van wat de
+ * klant wilt, foto is niet verplicht notitie wel, en 3 extra foto's dus 3 upload
+ * mogelijkheden erbij."*
+ *
+ * Wat er stond was één tekstveld voor alle bijbestelde foto's samen. Bij drie
+ * extra's moest de klant dus drie wensen in één regel proppen, en er was geen
+ * plek voor het voorbeeld dat de wens uitlegt.
+ *
+ * DE OMGEKEERDE VERPLICHTING. Bij de vier vaste hoeken is de FOTO het antwoord.
+ * Hier is de BESCHRIJVING het antwoord en is de foto een hulpmiddel: wij maken
+ * het beeld, de klant zegt wat het moet worden. Dus notitie verplicht, foto niet.
+ *
+ * HOE DE VERPLICHTING WORDT AFGEDWONGEN. Via dataset.plReq, dezelfde ene bron die
+ * syncRequired() leest — niet via een `required`-attribuut, want de sweep in
+ * bindForm() die attributen omzet is al gedraaid als deze kaarten gebouwd worden.
+ * syncRequired() kijkt bovendien of het veld ZICHTBAAR is, dus een rij die weer
+ * dichtgaat houdt niemand tegen. Stap 2 had tot vandaag niets met plReq erop en
+ * was daarmee feitelijk geen poort; dit is het eerste veld dat er wel een van
+ * maakt, en alleen voor wie extra's bijbestelt.
+ *
+ * ROWS WORDEN ÉÉN KEER GEBOUWD EN DAARNA BEWAARD. Niet opnieuw opgebouwd bij elke
+ * wijziging van de teller: wie van 3 naar 1 en terug naar 3 gaat, zou anders twee
+ * al geüploade voorbeelden kwijt zijn. Ze worden ook pas gebouwd als iemand ze
+ * nodig heeft — bij dertig producten zou vier sloten per kaart vooruitbouwen
+ * honderdtwintig widgets in de pagina zetten die niemand heeft gevraagd.
+ */
 function buildExtras(card) {
   const wrap = document.createElement('div');
   wrap.className = 'pu-extra';
@@ -1928,45 +2000,93 @@ function buildExtras(card) {
   }
   countField.append(countLabel, select);
 
-  const noteField = document.createElement('div');
-  noteField.className = 'pu-q pu-extra-note';
-  const noteId = `pu-extra-note-${card.key}`;
-  const noteLabel = document.createElement('label');
-  noteLabel.className = 'pu-q-label';
-  noteLabel.htmlFor = noteId;
-  noteLabel.textContent = c('pu.extraNote');
-  const note = document.createElement('input');
-  note.className = 'input pu-q-field';
-  note.type = 'text';
-  note.id = noteId;
-  note.name = `extra_note_${card.key}`;
-  note.autocomplete = 'off';
-  note.maxLength = 200;
-  const ph = c('pu.extraPlaceholder');
-  if (ph) note.placeholder = ph;
-  noteField.append(noteLabel, note);
+  const rows = document.createElement('div');
+  rows.className = 'pu-extra-rows';
 
   const rate = document.createElement('span');
   rate.className = 'pu-extra-rate';
 
-  // Hidden AND disabled when the count is zero — the same pairing the
-  // background panel uses, and for the same reason: a description typed before
-  // the customer changed their mind back to zero must not travel with the
-  // order and be produced.
-  const paint = () => {
-    const n = Number(select.value) || 0;
-    noteField.hidden = n === 0;
-    note.disabled = n === 0;
-    if (n === 0) note.value = '';
-    rate.textContent = c('pu.extraRate', { rate: euro(extraRateNow()), max });
+  const built = new Map();
+
+  const ensure = (i) => {
+    if (built.has(i)) return built.get(i);
+    const id = extraShotId(i);
+    // Het slot leeft in card.slots, naast de vaste hoeken. Alles wat readiness,
+    // voortgang en de "lege kaart"-toets berekent, loopt over SHOT_IDS en niet
+    // over card.slots — dus een extra slot telt daar niet mee, en dat is precies
+    // goed: een bijbestelde foto is geen ontbrekende hoek.
+    if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
+
+    const row = document.createElement('div');
+    row.className = 'pu-extra-row';
+    row.dataset.puExtraRow = String(i);
+
+    row.appendChild(buildSlot(card, id));
+    // buildSlot() bouwt alleen; paintSlot() bepaalt wat je ziet. Voor de vaste
+    // hoeken doet buildCard() dat in zijn eigen lus — sla je het hier over, dan
+    // staan Vervangen, Verwijderen en Overslaan onder een leeg vak, want die
+    // elementen beginnen zichtbaar en worden pas door paintSlot() weggezet.
+    paintSlot(card, id);
+
+    const noteField = document.createElement('div');
+    noteField.className = 'pu-q pu-extra-note';
+    const noteId = `pu-extra-note-${card.key}-${i}`;
+    const noteLabel = document.createElement('label');
+    noteLabel.className = 'pu-q-label';
+    noteLabel.htmlFor = noteId;
+    noteLabel.textContent = c('pu.extraNoteLabel', { n: i });
+    const note = document.createElement('input');
+    note.className = 'input pu-q-field';
+    note.type = 'text';
+    note.id = noteId;
+    note.name = `extra_note_${card.key}_${i}`;
+    note.autocomplete = 'off';
+    note.maxLength = 200;
+    const ph = c('pu.extraPlaceholder');
+    if (ph) note.placeholder = ph;
+    note.dataset.plReq = '1';
+    note.dataset.plErrMsg = c('pu.extraNoteErr', { n: i });
+    const hint = document.createElement('span');
+    hint.className = 'pu-q-hint';
+    hint.textContent = c('pu.extraShotHint');
+    noteField.append(noteLabel, note, hint);
+    row.appendChild(noteField);
+
+    rows.appendChild(row);
+    const entry = { i, id, row, note };
+    built.set(i, entry);
+    return entry;
   };
-  select.addEventListener('change', () => { paint(); syncTotal(); });
+
+  const paint = () => {
+    const n = Math.min(max, Number(select.value) || 0);
+    for (let i = 1; i <= n; i++) {
+      const r = ensure(i);
+      r.row.hidden = false;
+      r.note.disabled = false;
+    }
+    built.forEach((r, i) => {
+      if (i <= n) return;
+      r.row.hidden = true;
+      r.note.disabled = true;
+      r.note.value = '';
+      // Ook het beeld weg. Zelfde reden als bij de oude notitie: een voorbeeld
+      // dat is geüpload en daarna weggeklikt mag niet meereizen en geproduceerd
+      // worden. clearSlot() haalt hem ook uit de staging-lijst.
+      if (card.slots[r.id] && (card.slots[r.id].file || card.slots[r.id].key)) clearSlot(card, r.id);
+    });
+    rate.textContent = c('pu.extraRate', { rate: euro(extraRateNow()), max });
+    // De verplichting van de notities hangt aan zichtbaarheid, dus na elke
+    // wijziging opnieuw laten bepalen.
+    syncRequired();
+  };
+
+  select.addEventListener('change', () => { paint(); syncTotal(); refreshUploader(); });
   card.extra = select;
-  card.extraNote = note;
   card.paintExtra = paint;
   paint();
 
-  wrap.append(head, countField, noteField, rate);
+  wrap.append(head, countField, rows, rate);
   return wrap;
 }
 
@@ -2144,7 +2264,14 @@ function buildSlot(card, id) {
   // at all", and the card's own state line would keep asking. Every skip is
   // undoable in one click, in place. Required slots get no skip button at all,
   // which is the only place the rule is enforced in the UI rather than argued.
-  const skipBtn = isRequiredShot(id) ? null : act(c('pu.skipShot'), () => {
+  // ── GEEN OVERSLAAN-KNOP OP EEN EXTRA FOTO ───────────────────────────────────
+  // Bij een vaste hoek die niet verplicht is (detail, draagfoto) betekent
+  // "overslaan" iets echts: de klant zegt dat hij hem niet stuurt en de kaart
+  // stopt erom te vragen. Bij een bijbestelde foto is er niets om over te slaan
+  // — het beeld is een voorbeeld dat mag ontbreken, en wat er wél moet staan is
+  // de beschrijving in het veld ernaast. Een overslaan-knop zou suggereren dat
+  // je een extra die je hebt besteld kunt laten vallen; dat doe je met de teller.
+  const skipBtn = (isRequiredShot(id) || extraSlotNumber(id)) ? null : act(c('pu.skipShot'), () => {
     clearSlot(card, id);
     card.slots[id].status = 'skipped';
     paintSlot(card, id);
@@ -3060,6 +3187,38 @@ function applyBrandKit(me) {
     if (!current || current.defaultChecked) {
       const target = qa('input[name="model"]').find((r) => r.value === wantFace);
       if (target) { target.checked = true; syncSummaries(); }
+    }
+  }
+
+  // ── DE VERKOOPKANALEN, ALLEEN BIJ CATALOG ───────────────────────────────────
+  //
+  // Lucas, 8 augustus 2026: *"Doe het voor nu alleen bij catalog want lifestyle,
+  // complete en video klopt ook nog niet."* De tegenhanger van deze regel staat
+  // in lockSection() in account.js, waar de vinkjes alleen bij catalog getekend
+  // worden. Twee plekken, en ze noemen elkaar.
+  //
+  // DIT STAAT BEWUST ALS LAATSTE IN DEZE FUNCTIE. De witvergrendeling van een
+  // marktplaats moet het laatste woord hebben over de achtergrond hierboven:
+  // een opgeslagen beige is een voorkeur, #FFFFFF op Amazon is een eis, en een
+  // eis die vóór een voorkeur loopt levert een radio op die aangevinkt én
+  // disabled is — dan post er geen achtergrond en krijgt de studio niets.
+  //
+  // DIT ZET ZELF GEEN ACHTERGROND VAST. Het vinkt alleen kanalen aan en laat
+  // syncChannels() daarna zijn eigen werk doen: die zet elke achtergrond behalve
+  // wit op disabled zodra er een kanaal met requiresWhite aanstaat, en dat deed
+  // hij al voor een losse bestelling. Hier ook wit forceren zou betekenen dat
+  // twee plekken het eens moeten blijven over welke kanalen wit eisen — en de
+  // lijst staat in channels.js, niet hier.
+  //
+  // Zelfde overschrijfregel als hierboven: alleen een vinkje dat de pagina zelf
+  // heeft meegegeven wordt aangeraakt. Heeft de klant in deze sessie al iets
+  // aangevinkt of uitgevinkt, dan is dat het antwoord.
+  if (kindOf() === 'catalog' && Array.isArray(lock.channels) && lock.channels.length) {
+    const boxes = qa('[data-pl-ch-box]');
+    const touched = boxes.some((b) => b.checked !== b.defaultChecked);
+    if (boxes.length && !touched) {
+      boxes.forEach((b) => { b.checked = lock.channels.indexOf(b.value) !== -1; });
+      syncChannels();
     }
   }
 }

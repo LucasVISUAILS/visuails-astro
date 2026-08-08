@@ -685,7 +685,35 @@ const hint = lang === 'nl'
     color: var(--ink);
   }
   .pu-cards :global(.pu-extra-count) { grid-column: 1; }
-  .pu-cards :global(.pu-extra-note) { grid-column: 2; }
+
+  /* ── EEN RIJ PER BIJBESTELDE FOTO (augustus 2026) ─────────────────────────
+     Hier stond één beschrijvingsveld naast de teller. Sinds er per extra foto
+     een uploadvak én een eigen notitie is, is dat een lijst geworden en niet
+     langer een tweede kolom — dus de rijen lopen over de volle breedte en het
+     uploadvak staat links van zijn eigen notitie.
+
+     Waarom het slot een vaste breedte krijgt en de notitie de rest: het slot is
+     een miniatuur met een vaste verhouding (zie .pu-slot), de notitie is
+     leestekst. Ze omgekeerd laten rekken zou een klein plaatje uitrekken en een
+     zin in een kolom van vijf woorden persen. */
+  .pu-cards :global(.pu-extra-rows) {
+    grid-column: 1 / -1;
+    display: flex; flex-direction: column; gap: .55rem;
+    margin-top: .15rem;
+  }
+  .pu-cards :global(.pu-extra-row) {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, 5.5rem) minmax(0, 1fr);
+    gap: .55rem;
+    align-items: start;
+  }
+  .pu-cards :global(.pu-extra-note) { min-width: 0; }
+  /* De hint onder de notitie zegt dat de foto mag en niet moet. Klein, want de
+     verplichting zit in het label en niet hier. */
+  .pu-cards :global(.pu-extra-note .pu-q-hint) {
+    display: block; margin-top: .2rem;
+    font-size: .68rem; line-height: 1.4; color: var(--ink-3);
+  }
   /* The rate sits under both columns rather than beside the counter: it is a
      sentence about the order, not a caption on the select, and at 25 cards a
      per-control caption is 25 repetitions of the same line at reading weight. */
@@ -703,6 +731,9 @@ const hint = lang === 'nl'
     .pu-cards :global(.pu-extra) { grid-template-columns: 1fr; }
     .pu-cards :global(.pu-extra-count),
     .pu-cards :global(.pu-extra-note) { grid-column: 1; }
+    /* Op een telefoon staat het uploadvak boven zijn notitie in plaats van
+       ernaast: twee kolommen van elk nog geen tien tekens is geen lay-out. */
+    .pu-cards :global(.pu-extra-row) { grid-template-columns: 1fr; }
   }
 
   /* ── GENERATED: copy down ─────────────────────────────────────────────────

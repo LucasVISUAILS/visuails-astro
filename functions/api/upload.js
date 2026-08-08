@@ -91,8 +91,15 @@ export async function onRequestPost(context) {
   if (presented && !isWellFormedBatch(presented)) return json({ ok: false, error: 'bad-batch' }, 400);
   const batch = presented || mintBatch();
 
+  // Het TYPE wordt op de ORIGINELE naam bepaald, de SLEUTEL op de veilige naam.
+  // Andersom was de bug van 8 augustus 2026: de server keurde een naam af die de
+  // client al had goedgekeurd, omdat alleen de server naar een afgeknipte versie
+  // keek. De client (pipeline.js preflight) leest file.name, dus dat is de bron
+  // waarover ze het eens moeten zijn. safeName() houdt de extensie nu heel, dus
+  // beide zouden hetzelfde antwoord geven — maar dan nog is één bron beter dan
+  // twee die toevallig gelijk lopen.
   const name = safeName(file.name);
-  const type = typeFor(name);
+  const type = typeFor(file.name);
   if (!type) return json({ ok: false, error: 'bad-type', accepted: Object.keys(UPLOAD_TYPES) }, 400);
 
   // WHERE THIS PHOTOGRAPH GOES, IF THE CLIENT SAID.
