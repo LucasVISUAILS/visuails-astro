@@ -93,13 +93,13 @@ const lp = (p: string) => localizedPath(lang, p);
 // than an empty price band on a page whose whole job is a number.
 const brandModel = {
   price: euro(AMOUNT.brandModel, lang),
-  unit: lang === 'nl' ? 'eenmalige setup' : 'one-time setup',
+  unit: lang === 'nl' ? 'eenmalig ontwerp' : 'one-time setup',
   includes: lang === 'nl'
     ? [
         'Eén of meer modellen gebouwd voor jouw merk, door niemand anders gebruikt',
-        'Hetzelfde gezicht door een hele bestelling heen — en jij kiest per bestelling welk gezicht er loopt',
+        'Hetzelfde gezicht door een hele bestelling heen — en jij kiest per bestelling welk gezicht erop staat',
         `${euro(AMOUNT.brandModelCredit, 'nl')} terug op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
-        'Bijgehouden terwijl je lijn verandert',
+        'Blijft meegaan als je collectie verandert',
       ]
     : [
         'One or more models built for your brand, used by no one else',
@@ -275,13 +275,13 @@ const COPY = {
     eyebrow: 'Jouw merkmodel',
     h1a: 'Eigen gezichten.',
     h1b: 'Alleen van jou.',
-    lead: 'Een model dat we één keer voor jouw merk ontwerpen, en dat geen ander merk kan boeken. Neem er één of bouw een kleine cast. Per bestelling kies je wie er op staat: je eigen gezicht, of een van de tien standaardmodellen. Eén gezicht draagt de hele bestelling, dus je assortiment leest als één lijn in plaats van als een map losse shoots.',
+    lead: 'Een model dat we één keer voor jouw merk ontwerpen, en dat geen ander merk kan boeken. Neem er één, of laat een klein groepje maken. Per bestelling kies je wie erop staat: je eigen gezicht, of een van de tien standaardmodellen. Eén gezicht draagt de hele bestelling, dus je collectie ziet eruit als één geheel in plaats van als een map met losse fotoshoots.',
     ctaPrimary: 'Start een bestelling',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi VISUAILS, ik wil graag een merkmodel bespreken.',
     heroAlt: 'Een portret van een VISUAILS merkmodel',
     trust: [
-      ['Eenmalige', 'setup, daarna is het van jou'],
+      ['Eén keer betalen', 'daarna is het gezicht van jou'],
       ['Exclusief', 'voor jouw merk, permanent'],
       ['Terugverdiend', `over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`],
     ],
@@ -291,47 +291,47 @@ const COPY = {
     notAAlt: 'Een VISUAILS-modelportret',
     props: [
       ['Gebouwd op wat jij ons vertelt', 'Leeftijd, styling, sfeer, en wat je nooit wil zien.'],
-      ['Exclusief, en niet op ons woord', 'Geen ander merk kan dit gezicht bestellen. Dat is geen belofte maar een gevolg van hoe het gemaakt is.'],
-      ['Identiek, bestelling na bestelling', 'Dezelfde persoon in dezelfde huid, of het nu product vier is of product tweehonderd.'],
-      ['Van jou, en het blijft van jou', 'Je zet het één keer op. Elke bestelling daarna betaal je gewoon de prijs per product die bij die omvang hoort.'],
+      ['Exclusief, en dat hoef je niet op ons woord te geloven', 'Geen ander merk kan dit gezicht bestellen. Dat is geen belofte, maar een gevolg van hoe het gemaakt is.'],
+      ['Identiek, bestelling na bestelling', 'Dezelfde persoon, met hetzelfde gezicht en dezelfde huidtint, of het nu product vier is of product tweehonderd.'],
+      ['Van jou, en het blijft van jou', 'Je betaalt één keer voor het ontwerp. Elke bestelling daarna kost gewoon de prijs per product die bij dat aantal hoort.'],
     ],
 
     costH: 'Wat het kost, en wat er terugkomt',
-    costSetupLabel: 'Eenmalige setup',
+    costSetupLabel: 'Eenmalig ontwerp',
     costCreditLabel: 'Terug naar jou',
     costCreditUnit: `op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
     costSetupVat: vatLabel('excl', 'nl'),
     costCreditVat: vatLabel('excl', 'nl'),
-    costIncludes: 'Wat de setup dekt',
+    costIncludes: 'Wat het ontwerp dekt',
     costMathH: 'De rekensom, gewoon uitgeschreven',
     // Geen rangtelwoord ("bij de vijfde bestelling"): het aantal komt uit pricing.js,
     // dus een uitgeschreven rangtelwoord veroudert stil zodra de setup of het
     // krediet verandert.
-    costMath: `${euro(AMOUNT.brandModelCredit, 'nl')} ${vatLabel('excl', 'nl')} gaat er af bij elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen, dus na ${BRAND_MODEL_CREDIT_DROPS} bestellingen is de setup volledig terugverdiend en is het gezicht nog steeds van jou. Tot dat punt betaal je voor exclusiviteit, en dat is de eerlijke omschrijving.`,
-    costFree: `Je hebt geen merkmodel nodig om te bestellen. Elke bestelling bevat al een model uit de standaardbibliotheek, zonder extra kosten — dit is een keuze over het bezitten van een gezicht, niet over het krijgen van een gezicht.`,
+    costMath: `${euro(AMOUNT.brandModelCredit, 'nl')} ${vatLabel('excl', 'nl')} gaat er af bij elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen, dus na ${BRAND_MODEL_CREDIT_DROPS} bestellingen is het ontwerp volledig terugverdiend en is het gezicht nog steeds van jou. Tot dat punt betaal je voor exclusiviteit, en dat is de eerlijke omschrijving.`,
+    costFree: `Je hebt geen merkmodel nodig om te bestellen. Elke bestelling bevat al een model uit de standaardbibliotheek, zonder extra kosten — je kiest hier of een gezicht alleen van jou is, niet of je er een krijgt.`,
     costCta: 'Bekijk alle prijzen per aantal',
-    costSequence: `Het model wordt ontworpen en vastgezet vóórdat je eerste bestelling ingepland wordt, zodat de setup nooit ten koste gaat van de vastgezette leverdatum die een bestelling vanaf ${WINDOW_THRESHOLD} producten krijgt.`,
+    costSequence: `We ontwerpen het model en zetten het vast voordat we je eerste bestelling inplannen. Zo gaat het ontwerp nooit ten koste van de leverdatum die we vrijhouden voor een bestelling vanaf ${WINDOW_THRESHOLD} producten.`,
 
     fitMeta: '( Waar het past )',
     fitH: 'Eén look, door alles wat je verkoopt.',
     fitSub: 'De rode draad die van een assortiment een merk maakt.',
     fitWhatH: 'Wat het is',
     fitWhat: [
-      'Een merkmodel is een signatuur die één keer ontworpen wordt, exclusief voor jou — een gezicht, een houding, een manier van staan die geen ander merk deelt. Eenmaal vastgezet wordt elke visual in elke bestelling ermee gemaakt, zodat je catalogus en je feed samenhangen in plaats van over te komen als losse sessies.',
-      'Hier stoppen beelden foto’s te zijn: ze worden merkwaarde. Eén vast gezicht maakt van voorbijscrollen herkenning — mensen kennen je beelden voordat ze je naam lezen. Het werkt overal waar je merk verschijnt, want overal én consistent zijn is het hele punt.',
+      'Een merkmodel is één gezicht dat we één keer voor jou ontwerpen — met een eigen houding en een eigen manier van staan, die geen ander merk deelt. Zodra het vastligt, maken we elke visual in elke bestelling met dat gezicht. Zo horen je catalogus en je feed bij elkaar in plaats van dat het losse shoots blijven.',
+      'Met één vast gezicht herkennen mensen je beelden nog voordat ze je naam lezen. Dat werkt alleen als dat gezicht overal hetzelfde is: op je webshop, in je advertenties en op je socials. Dat is wat een eigen model je geeft.',
     ],
-    fitWhereH: 'Waar het leeft',
+    fitWhereH: 'Waar je het gebruikt',
     fitWhere: [
       ['Elk kanaal', 'shop, feed, ads en e-mail, in één look.'],
-      ['Campagnes', 'seizoensverhalen met een gezicht dat men al kent.'],
-      ['Hele collecties', `${WINDOW_THRESHOLD} producten of tweehonderd, in één bestelling die als één lijn moet lezen.`],
+      ['Campagnes', 'seizoenscampagnes met een gezicht dat je klanten al kennen.'],
+      ['Hele collecties', `${WINDOW_THRESHOLD} producten of tweehonderd, in één bestelling die als één geheel moet overkomen.`],
       ['Je identiteit', 'de visuele signatuur waaraan mensen je herkennen.'],
     ],
 
     dirH: 'Negen richtingen om op te reageren.',
-    dirLead: 'Illustratieve startpunten, geen menu. Stuur ons je referenties en we ontwerpen twee of drie echte richtingen tegen jouw lijn aan.',
+    dirLead: 'Dit zijn voorbeelden om op te reageren, geen menu om uit te kiezen. Stuur ons je referenties, dan ontwerpen we twee of drie echte richtingen voor jouw collectie.',
 
-    outH: 'Echte output, geen mockup.',
+    outH: 'Echt geleverd werk, geen voorbeeld.',
     outAlt: 'Een voorbeeld van een VISUAILS merkmodel',
 
     procH: 'Hoe een merkmodel tot stand komt',
@@ -341,20 +341,20 @@ const COPY = {
       ['references', 'Een paar <strong>referenties</strong> voor de look die je zoekt.'],
       ['spec', 'De <strong>leeftijd, houding en styling</strong> die je wilt.'],
       ['range', 'Een idee van <strong>het assortiment</strong> dat het model moet dragen.'],
-      ['nevers', 'Jouw <strong>do’s en don’ts</strong> — vooral de don’ts.'],
+      ['nevers', 'Wat je <strong>wel en zeker niet</strong> wil zien — vooral dat laatste.'],
     ],
     getH: 'Wat je terugkrijgt',
     get: [
       ['locked', 'Een <strong>vastgezet model</strong>, exclusief van jou, hergebruikt zonder extra kosten.'],
-      ['every', 'Hetzelfde gezicht door een hele bestelling heen &mdash; en <strong>jij kiest per bestelling</strong> welk gezicht er loopt, dat van jou of een van de tien.'],
-      ['current', '<strong>Bijgehouden</strong> terwijl je lijn en je styling veranderen.'],
+      ['every', 'Hetzelfde gezicht door een hele bestelling heen &mdash; en <strong>jij kiest per bestelling</strong> welk gezicht erop staat, dat van jou of een van de tien.'],
+      ['current', '<strong>Blijft meegaan</strong> als je collectie en je styling veranderen.'],
       ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'nl')} terug</strong> ${vatLabel('excl', 'nl')} op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`],
     ],
 
     libMeta: '( Of begin hier )',
     libH: 'De standaardbibliotheek',
     libAlt: 'een VISUAILS-standaardmodel',
-    libLead: 'Tien modellen, gedeeld over merken, inbegrepen in elke bestelling zonder extra kosten. Kies er een, of laat ons er een matchen op jouw product en jouw klant. Je kunt later alsnog overstappen op een eigen merkmodel, zonder iets over te doen.',
+    libLead: 'Tien modellen die we voor alle merken gebruiken, inbegrepen in elke bestelling zonder extra kosten. Kies er een, of vertel ons wat je verkoopt en wie je klant is, dan kiezen wij er een dat past. Je kunt later alsnog overstappen op een eigen merkmodel, zonder iets over te doen.',
     libChooseH: 'Laat ons matchen',
     libChooseBody: 'Vertel ons het product en de klant wanneer je een bestelling start, dan kiezen wij het model dat past — en blijven we dat gebruiken.',
     libNote: 'Standaardmodellen zitten in de prijs per product die je toch al betaalt. Je betaalt niets extra per model en er is geen upgrade voor nodig.',
@@ -367,12 +367,12 @@ const COPY = {
       contemporary: 'Eigentijds', sharp: 'Scherp',
     },
 
-    genH: 'Waarom niet gewoon een generator prompten?',
+    genH: 'Waarom niet gewoon zelf iets met een AI-generator maken?',
     genBody: [
-      'Dat kan, en voor één beeld kun je dat waarschijnlijk beter doen. Wat een prompt je niet geeft, is twee keer dezelfde persoon. Vraag een algemene generator om hetzelfde gezicht over dertig producten en je krijgt dertig familieleden — bijna-treffers die een klant als slordigheid leest, lang voordat hij kan zeggen waarom.',
-      'Wat wij verkopen is niet de generatie. Het is de vergrendeling: een identiteit die één keer wordt vastgezet, gestuurd door je eigen productfoto’s, en bekeken door een mens voordat er iets naar je toe gaat. Dat is het deel dat een hele catalogus overleeft.',
+      'Dat kan, en voor één beeld kun je dat waarschijnlijk beter doen. Wat een prompt je niet geeft, is twee keer dezelfde persoon. Vraag een algemene generator om hetzelfde gezicht voor dertig producten en je krijgt dertig familieleden — steeds net iemand anders, en dat ziet een klant als slordigheid, lang voordat hij kan zeggen waarom.',
+      'Wij verkopen niet het maken van een beeld. Wij verkopen dat het vastligt: één identiteit die één keer wordt vastgezet, gestuurd door je eigen productfoto’s, en door een specialist bekeken voordat er iets naar je toe gaat. Dat is het deel dat een hele collectie meegaat.',
     ],
-    genCta: 'De langere vergelijking, tools inbegrepen',
+    genCta: 'De hele vergelijking, ook met AI-tools',
 
     ctaH1: 'Ontwerp het gezicht van',
     ctaEm: 'jouw merk.',
@@ -404,9 +404,9 @@ const DIRECTIONS = {
     ['W', 'Warm en toegankelijk', 'Open uitdrukking, natuurlijk licht, alledaags gemak.'],
     ['H', 'High-fashion editorial', 'Sculpturale pose, harde schaduw, magazine-intensiteit.'],
     ['R', 'Retro Americana', 'Warme filmtinten, nostalgische styling.'],
-    ['C', 'Coastal en sun-worn', 'Zonverbleekte warmte, gouden-uurgemak.'],
+    ['C', 'Coastal en sun-worn', 'Zonverbleekte warmte, het licht van het gouden uur.'],
     ['M', 'Monochrome studio', 'Garderobe in één tint, grafische schaduw.'],
-    ['B', 'Bold colour-block', 'Verzadigde garderobe, onmiskenbaar op thumbnailformaat.'],
+    ['B', 'Bold colour-block', 'Verzadigde garderobe, ook klein in een feed nog onmiskenbaar.'],
   ],
 };
 
@@ -425,7 +425,7 @@ const STEPS = {
     ['Jij stuurt', 'Je stuurt referenties en vertelt welke look je wilt.'],
     ['Richtingen', 'We ontwerpen twee of drie richtingen waarop je kunt reageren.'],
     ['Jij kiest', 'Kies het gezicht dat past, met één ronde verfijning.'],
-    ['Vastgezet', 'Het model wordt vastgelegd zodat het niet tussen bestellingen kan afdrijven.'],
+    ['Vastgezet', 'We leggen het model vast, zodat het niet per bestelling gaat verschuiven.'],
     ['In elke bestelling', 'Vanaf dan draagt jouw model elke visual die we maken.'],
   ],
 };

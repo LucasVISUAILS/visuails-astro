@@ -102,7 +102,7 @@ export const SHOTS = [
     name: { en: 'Worn', nl: 'Gedragen' },
     how: {
       en: 'Anyone wearing it, any phone, any room. It is for the fit, not for the picture.',
-      nl: 'Wie dan ook die het draagt, elke telefoon, elke kamer. Het gaat om de pasvorm, niet om de foto.',
+      nl: 'Wie het ook draagt, elke telefoon, elke kamer. Het gaat om de pasvorm, niet om de foto.',
     },
     buys: {
       en: 'How it actually hangs on a body — the drop of the shoulder, where the hem lands, how oversized oversized really is. Without it the on-model shot is our best reading of a flat photo.',

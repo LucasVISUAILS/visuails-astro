@@ -334,7 +334,19 @@ const COPY = {
     // from the single-page dashboard are gone; Overview has its own welcome
     // copy now (ovWelcome/ovLede below) that says more than a static subtitle
     // could.
-    dashSub: 'Studio Dashboard',
+    // ── DE NAAM VAN DIT SCHERM (8 augustus 2026) ──────────────────────────
+    // Lucas: *"Ik wil dat het dashboard de naam VISUAILS Studio krijgt."* Dit is
+    // wat er onder het woordmerk in de zijbalk staat, dus dit IS de naam.
+    //
+    // Eén naam, niet drie. Hier stond 'Studio Dashboard', de homepage noemde het
+    // 'Jouw portaal', de voettekst 'Het klantportaal' en de cookietekst 'het
+    // klantenportaal' — vier namen voor één scherm.
+    //
+    // EN JOUW EIGEN KANT IS DAAROM OMGEDOOPT. 'Studiodashboard' was tot vandaag de
+    // naam van het ADMINportaal, op vier plekken. Twee schermen met het woord
+    // studio in hun naam is precies de verwarring die dit moest oplossen; die
+    // heten nu Adminportaal. Zie StudioPage.astro en HomeV2.astro.
+    dashSub: 'VISUAILS Studio',
 
     // Doubles as the Orders sidebar nav label — see shellBody — so there is
     // one word for "Orders" in this file, not two that could drift apart.
@@ -628,7 +640,7 @@ const COPY = {
     badLinkTitle: 'Deze link werkt niet',
     badLinkBody: 'Mogelijk is hij verlopen, al gebruikt, of verkeerd overgetypt. Vraag hieronder een nieuwe aan.',
 
-    dashSub: 'Studio-dashboard',
+    dashSub: 'VISUAILS Studio',
 
     ordersHeading: 'Bestellingen',
     emptyOrders: 'Hier staat nog niets — je eerste bestelling verschijnt zodra hij binnenkomt.',
@@ -675,7 +687,7 @@ const COPY = {
     bkOwnH: 'Je eigen modellen',
     bkOwnLede: 'Gezichten die voor jouw merk zijn gemaakt en voor niemand anders. Kies er hieronder één als standaard voor een dienst, of kies per bestelling.',
     bkOwnEmptyH: 'Nog geen eigen gezichten',
-    bkOwnEmptyBody: 'Een merkmodel is één gezicht, voor jou gemaakt, dat bij elke bestelling terugkomt — dezelfde persoon in jouw collectie, seizoen na seizoen, zonder shoot. Tot die tijd zit het standaardroster hieronder bij alles wat je bestelt.',
+    bkOwnEmptyBody: 'Een merkmodel is één gezicht, voor jou gemaakt, dat bij elke bestelling terugkomt — dezelfde persoon in jouw collectie, seizoen na seizoen, zonder shoot. Tot die tijd zit het standaardbibliotheek hieronder bij alles wat je bestelt.',
     bkOwnEmptyCta: 'Bekijk wat een merkmodel nodig heeft',
     bkOwnPending: 'In de maak',
     bkOwnReady: 'Klaar voor gebruik',
@@ -769,11 +781,11 @@ const COPY = {
     flowNow: {
       received: 'We hebben je bestelling en je bestanden binnen. We plannen hem in.',
       in_production: 'Onze studio maakt je beelden.',
-      human_check: 'Een mens loopt elk beeld na voordat het naar je toe gaat.',
+      human_check: 'Een specialist loopt elk beeld na voordat het naar je toe gaat.',
       delivered: 'Je beelden staan klaar. Bekijk ze en laat het weten als er iets niet klopt.',
       cancelled: 'Deze bestelling is geannuleerd. Er wordt niets voor gemaakt.',
     },
-    flowStep: { received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door een mens', delivered: 'Geleverd' },
+    flowStep: { received: 'Ontvangen', in_production: 'In productie', human_check: 'Nagekeken door een specialist', delivered: 'Geleverd' },
     flowWindow: (from, to) => (from === to ? `Ingepland op ${from}.` : `Ingepland van ${from} tot ${to}.`),
     flowHistory: 'Alles wat er gebeurd is',
     noteFrom: 'Van de studio',

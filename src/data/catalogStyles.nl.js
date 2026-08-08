@@ -40,7 +40,7 @@ export const catalogStyles = [
     cardWidth: '42%',
     cardPrice: `${CAT_FROM} / product ${CAT_VAT}`,
     cardDesc: 'Een complete set per product — voorkant, achterkant, detail en één on-model shot.',
-    moodTitle: 'Hoe Classic voelt.',
+    moodTitle: 'Hoe Classic eruitziet.',
     moodParagraphs: [
       'Puur, gelijkmatig licht en een kader dat nooit verschuift — elk product gefotografeerd alsof het in dezelfde studio was, op dezelfde ochtend.',
     ],
@@ -92,7 +92,7 @@ export const catalogStyles = [
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
     cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product voor ${CAT_FROM} per set van vier foto’s.`,
-    moodTitle: 'Hoe Eigen merk voelt.',
+    moodTitle: 'Hoe Eigen merk eruitziet.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',
     ],

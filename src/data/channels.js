@@ -167,7 +167,7 @@ export const COPY = {
     splitH: 'Wil je ook je eigen achtergrond?',
     split: 'Bestel hetzelfde product twee keer: één marktplaatsversie op wit, en één voor je eigen shop en socials in de kleur die je wilt. Die tweede telt gewoon als een extra product, dus je betaalt het tarief waar je totaal op uitkomt — geen toeslag.',
     riskH: 'Over Zalando en de on-model shot',
-    risk: 'Zalando vraagt om modelbeelden die met een echte persoon zijn gefotografeerd. Onze on-model shot is gegenereerd, dus we kunnen niet beloven dat die als geldig modelbeeld wordt geaccepteerd — de packshots zijn een ander verhaal en voldoen wél aan hun eisen. Zit je lijn op Zalando, gebruik onze beelden dan voor de packviews en overleg met ons voordat je op de modelfoto rekent.',
+    risk: 'Zalando vraagt om modelbeelden die met een echte persoon zijn gefotografeerd. Onze on-model shot is gegenereerd, dus we kunnen niet beloven dat die als geldig modelbeeld wordt geaccepteerd — de packshots zijn een ander verhaal en voldoen wél aan hun eisen. Verkoop je op Zalando, gebruik onze beelden dan voor de packviews en overleg met ons voordat je op de modelfoto rekent.',
     formatH: 'Je krijgt jpg',
     format: 'Zalando accepteert alleen JPG en Amazon neemt geen webp, dus een marktplaatsbestelling wordt als jpg geleverd in plaats van webp. Daarmee blijft de AI-vermelding ook in het bestand zitten, die webp-omzetting eruit haalt.',
     orderH: 'Welk beeld vooraan hoort',

@@ -41,7 +41,7 @@ export const videoStyles = [
     cardWidth: '42%',
     cardPrice: `${VID.price} / clip`,
     cardDesc: 'Een clip van 8 seconden, subtiele beweging, strakke presentatie. Vaste prijs.',
-    moodTitle: 'Hoe Motion voelt.',
+    moodTitle: 'Hoe Motion eruitziet.',
     moodParagraphs: [
       'Acht seconden, één product, één strakke beweging — genoeg om het oog vast te houden, nooit genoeg om af te leiden.',
     ],
@@ -56,7 +56,7 @@ export const videoStyles = [
     ),
     craft: [
       { title: 'Eén beweging per film', body: 'Eén doelbewuste camera- of lichtbeweging. Ingehoudenheid is de stijl.' },
-      { title: 'Loop-schone eindes', body: 'Begin- en eindkader op elkaar afgestemd, zodat de loop niet hapert.' },
+      { title: 'Een einde dat op het begin past', body: 'Begin- en eindbeeld op elkaar afgestemd, zodat de loop niet hapert.' },
       { title: 'Materiaalbewuste beweging', body: 'Snelheid en licht afgestemd op waar het product van gemaakt is.' },
       { title: 'Grading afgestemd op stills', body: 'Krijgt dezelfde kleurbewerking als je catalogset.' },
     ],
@@ -94,13 +94,13 @@ export const videoStyles = [
     cardWidth: '46%',
     cardPrice: `${VID.price} / clip`,
     cardDesc: 'Een gestylede scène, in beweging — voor social en advertenties. Vaste prijs.',
-    moodTitle: 'Hoe Lifestyle Video voelt.',
+    moodTitle: 'Hoe Lifestyle Video eruitziet.',
     moodParagraphs: [
       'Een gestylede scène, losgelaten: opstijgende stoom, verschuivend licht, een model dat zich naar de lens draait.',
     ],
     steps: [
       { title: 'Bouw de scène', body: 'Je wereld van lifestyle-stills, in beweging gebracht.' },
-      { title: 'Regisseer lichtbeweging', body: 'Natuurlijk gebaar en licht dat geobserveerd aanvoelt.' },
+      { title: 'Beweging en licht geregisseerd', body: 'Een natuurlijk gebaar, en licht dat niet gezet lijkt.' },
       { title: 'Monteer voor het kanaal', body: 'Opgemaakt voor waar het ook draait.' },
     ],
     grid: grid(
@@ -147,13 +147,13 @@ export const videoStyles = [
     cardWidth: '56%',
     cardPrice: 'Offerte op maat',
     cardDesc: 'Campagnestukken met meerdere shots, gebouwd rond jouw brief. Prijs per project.',
-    moodTitle: 'Hoe Campaign voelt.',
+    moodTitle: 'Hoe Campaign eruitziet.',
     moodParagraphs: [
       'De volledige productie: meerdere shots, een verhaallijn, montages gesneden om een launch te laten landen.',
     ],
     steps: [
       { title: 'Bepaal de scope van de campagne', body: 'Shots en deliverables afgesproken via WhatsApp.' },
-      { title: 'Schiet de reeks', body: 'Een film met meerdere shots, gegraded als één verhaal.' },
+      { title: 'Film de hele reeks', body: 'Meerdere shots in één film, met dezelfde kleurzetting, zodat het één verhaal is.' },
       { title: 'Lever elke versie', body: 'Het formaat van elk kanaal, uit één campagne.' },
     ],
     grid: grid(
@@ -199,7 +199,7 @@ export const videoStyles = [
     cardWidth: '46%',
     cardPrice: 'Offerte op maat',
     cardDesc: 'Je eigen concept, tempo en look — een video die helemaal is gebouwd op wat jij ons vertelt.',
-    moodTitle: 'Hoe Custom voelt.',
+    moodTitle: 'Hoe Custom eruitziet.',
     moodParagraphs: [
       'Voorbij de drie formaten — een videoconcept gebouwd op jouw verhaal, jouw tempo, jouw look.',
     ],

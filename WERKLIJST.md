@@ -10,6 +10,9 @@ Opgesteld 6 augustus 2026. Dit is een werkbestand, geen rapport: streep door wat
 
 ## 0 · Eerst, want de rest wacht erop
 
+- [ ] 🔴 **Juridische pagina's laten nakijken.** Op /terms, /privacy en /cookie-policy stonden tot 8 augustus 2026 noten aan de klant dat het "een algemene template" is en "door een jurist nagekeken moet worden". Die zijn van de klantpagina's gehaald — ze hoorden daar niet, want ze vertelden iedere klant dat het contract dat hij aanging niet was nagekeken. **Het onderliggende punt staat nog: de teksten zijn niet door een jurist gezien.** Neem dit mee in dezelfde ronde als de btw-verlegging.
+- [ ] 🔴 **/terms §9 spreekt zichzelf en de site tegen over betalen.** De voorwaarden zeggen "kleine bestellingen en proefvisuals worden bij het afrekenen volledig betaald" en "een gereserveerde bestelling in twee delen: 50% bij bevestiging, 50% voor oplevering". De bestelstroom, /pricing, /faq en /how-it-works zeggen alle vier iets anders: kleine bestellingen op levering, gereserveerde bestellingen ineens vóór productie, met zeven dagen betaaltermijn. Er bestaat nergens een 50/50-splitsing. Welke kant waar is, is een bedrijfsbeslissing — niet iets om in stilte gelijk te trekken.
+- [ ] 🟡 **/terms §4 noemt video, maandplannen en merkmodel "op aanvraag geprijsd"** terwijl /pricing, /video, /custom-models en de JSON-LD €69 per clip, €390/€790/€1.690 per maand en €1.250 setup als vaste prijzen publiceren.
 - [ ] 🔴 `npm run build` draaien en deployen. Alles van vandaag staat nog alleen op je schijf: het nieuwe logo in de topbar, de favicon, het mail-briefhoofd, en de drie servicepagina's
 - [ ] 🔴 Na de deploy: `https://visuails.com/favicon.ico` en `/img/mail/mark-groen.png` openen in je browser om te zien dat ze laden
 - [ ] 🔴 Search Console → URL-inspectie op `https://visuails.com/` → Indexering aanvragen. Daarna hetzelfde voor `https://www.visuails.com/`, zodat Google de 301 tegenkomt

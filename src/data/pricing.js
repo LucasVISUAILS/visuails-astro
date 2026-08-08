@@ -732,7 +732,15 @@ export const TIERS = {
     // The site must never print a date the gate has not cleared.
     turnaround: {
       en: 'A reserved 48-hour window, confirmed before you pay',
-      nl: 'Een leverdatum met 48 uur werk erin, vastgezet voordat je betaalt',
+      // 8 augustus 2026 — DIT ZEI IETS ANDERS DAN DE ENGELSE REGEL, op zo'n
+      // vijftien plekken. Er stond "een leverdatum met 48 uur werk erin": dat
+      // gaat over hoeveel uur wij eraan werken en zegt niets over snelheid,
+      // terwijl de Engelse regel een levering binnen 48 uur belooft. capacity.js
+      // is expliciet dat 48 uur twee werkdagen betekent, en HomeV2 zei elders al
+      // "48 uur vanaf je leverdatum" — de Nederlandse tekst was dus ook met
+      // zichzelf in tegenspraak. Vermoedelijk bijschade van het opruimen van het
+      // woord "venster".
+      nl: 'Levering binnen 48 uur vanaf je leverdatum, vastgezet voordat je betaalt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
@@ -1257,7 +1265,7 @@ export const TEST_SAMPLE = {
     unit: 'één per bedrijf',
     line: `Eén product, afgewerkt zoals bij een betaalde bestelling: ${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest.`,
     catalogLine: `${CATALOG_IMAGES} beelden — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
-    lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylde look — een scène, één op een model, en een detailclose-up.`,
+    lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
   },
 };
 

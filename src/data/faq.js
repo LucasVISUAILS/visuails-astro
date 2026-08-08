@@ -219,7 +219,7 @@ export function faqPageGroups(lang = 'en') {
         items: [
           {
             q: 'Wat is VISUAILS?',
-            a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestyle-carousels en video voor een hele productlijn. Onze productie doet dat op schaal; een mens controleert elke visual voordat die bij jou aankomt.',
+            a: 'VISUAILS maakt van een map met productfoto’s catalogsets, lifestyle-carousels en video voor een hele productlijn. Onze productie doet dat op schaal; een specialist controleert elke visual voordat die bij jou aankomt.',
           },
           {
             // DE ENIGE PLEK waar het woord "drop" nog staat, en het gaat daar
@@ -262,7 +262,7 @@ export function faqPageGroups(lang = 'en') {
             a: 'Ja, en dat is grotendeels het punt. Dezelfde belichting, hoek, grade en hetzelfde model kunnen over een hele bestelling worden vastgehouden, en over de bestellingen daarna, zodat een catalogus samenhangend blijft terwijl de lijn groeit.',
           },
           {
-            q: 'Kan ik een model dat alleen van mij is?',
+            q: 'Kan ik een model dat alleen van mij is krijgen?',
             a: `Ja. Jouw merkmodel is een gezicht dat voor jouw merk is gebouwd en door niemand anders wordt gebruikt, consistent over elk product en elke bestelling. Elke bestelling bevat al een model uit de standaardbibliotheek, dus dit is een upgrade en geen vereiste — en in het ${planName.brand}-plan zit het inbegrepen.`,
             linkText: 'Bekijk Jouw merkmodel',
             linkHref: '/custom-models',
@@ -282,11 +282,11 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Wat als de week die ik nodig heb niet kan?',
-            a: 'Dan zeggen we dat, voordat je betaalt, in plaats van je een datum te geven en te hopen. Een vastgezette leverdatum wordt tegen de agenda gehouden voordat het wordt aangeboden — nooit erna. Een bestelling die al in de agenda staat, wijkt nooit voor een latere.',
+            a: 'Dan zeggen we dat, voordat je betaalt, in plaats van je een datum te geven en te hopen. Een vastgezette leverdatum wordt eerst tegen de agenda gehouden en pas daarna aangeboden — nooit andersom. Een bestelling die al in de agenda staat, wijkt nooit voor een latere.',
           },
           {
-            q: 'Wordt elk beeld echt door een mens gecontroleerd?',
-            a: `${reviewClaim('attended', 'nl')} — een mens selecteert en inspecteert elk beeld op nauwkeurigheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
+            q: 'Wordt elk beeld echt door een specialist gecontroleerd?',
+            a: `${reviewClaim('attended', 'nl')} — een specialist bekijkt elk beeld en controleert of het klopt, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
           },
           {
             q: 'Wat als de visuals niet kloppen?',
@@ -315,7 +315,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
-            a: `Ja, en dat is de moeite waard. ${vatLabel('rate', 'nl')} wordt bij het afrekenen aan iedereen berekend — de prijzen op de site zijn netto, gemarkeerd met ${vatLabel('excl', 'nl')} — en voor een EU-bedrijf met een geldig btw-nummer wordt de verlegging achteraf op de factuur rechtgezet. We zijn gevestigd in Nederland (btw NL005407575B96).`,
+            a: `Ja, en dat is de moeite waard. ${vatLabel('rate', 'nl')} wordt bij het afrekenen aan iedereen berekend — de prijzen op de site zijn netto, gemarkeerd met ${vatLabel('excl', 'nl')} — en voor een EU-bedrijf BUITEN Nederland met een geldig btw-nummer wordt de verlegging achteraf op de factuur rechtgezet. Een Nederlands bedrijf betaalt altijd 21%, ook met een geldig btw-nummer, en buiten de EU valt de levering buiten de Europese btw. We zijn gevestigd in Nederland (btw NL005407575B96).`,
           },
         ],
       },
@@ -500,7 +500,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Can I add my VAT number?',
-          a: `Yes, and it is worth doing. ${vatLabel('rate', 'en')} is charged at checkout to everyone — the prices on the site are net, marked ${vatLabel('excl', 'en')} — and for an EU business with a valid VAT number the reverse charge is corrected afterwards on the invoice. We are based in the Netherlands (VAT NL005407575B96).`,
+          a: `Yes, and it is worth doing. ${vatLabel('rate', 'en')} is charged at checkout to everyone — the prices on the site are net, marked ${vatLabel('excl', 'en')} — and for an EU business OUTSIDE the Netherlands with a valid VAT number the reverse charge is corrected afterwards on the invoice. A Dutch business always pays 21%, even with a valid VAT number, and outside the EU the supply falls outside EU VAT altogether. We are based in the Netherlands (VAT NL005407575B96).`,
         },
       ],
     },

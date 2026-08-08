@@ -17,6 +17,11 @@ import {
 const CAT_ENTRY = euro(ladderRate('catalog', 1), 'nl');
 const CAT_FLOOR = euro(ladderFloor('catalog'), 'nl');
 const LIFE_ENTRY = euro(ladderRate('lifestyle', 1), 'nl');
+// De vloer van lifestyle is NIET dezelfde als die van catalog. Hier stond
+// CAT_FLOOR voor beide, met "en lager" erachter — dus las de pagina dat
+// lifestyle tot €33 zou dalen terwijl hij op €41 eindigt, en dat er nog iets
+// onder zat. Twee onwaarheden in één zin over prijzen. 8 augustus 2026.
+const LIFE_FLOOR = euro(ladderFloor('lifestyle'), 'nl');
 const VID = euro(AMOUNT.video, 'nl');
 const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 const SAMPLE = TEST_SAMPLE.nl;
@@ -25,7 +30,7 @@ const guides = [
   { title: 'Zo fotografeer je je product met je telefoon', desc: 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', href: '/nl/upload-guidelines', tag: 'Checklist' },
   { title: 'Van foto naar publicatie — hoe het werkt', desc: 'Wat er precies gebeurt tussen het sturen van één foto en het terugkrijgen van een afgewerkte, met de hand gecontroleerde visual.', href: '/nl/how-it-works', tag: 'Proces' },
   { title: 'AI-tools vs een done-for-you studio', desc: 'Wanneer een AI-tool die je zelf bedient echt genoeg is — en waar hij je stilletjes uren kost aan overdoen en kleur die niet bij je merk past.', href: '/nl/compare', tag: 'Vergelijk' },
-  { title: 'Wat productvisuals echt kosten', desc: `Catalog vanaf ${CAT_ENTRY} per set van vier foto’s en lifestyle vanaf ${LIFE_ENTRY}, allebei dalend tot ${CAT_FLOOR} en lager vanaf ${FLOOR_FROM} producten; video een vaste ${VID} per clip. Alles ${vatLabel('excl', 'nl')}.`, href: '/nl/pricing', tag: 'Prijzen' },
+  { title: 'Wat productvisuals echt kosten', desc: `Catalog vanaf ${CAT_ENTRY} per set van vier foto’s en lifestyle vanaf ${LIFE_ENTRY}, dalend tot ${CAT_FLOOR} en ${LIFE_FLOOR} vanaf ${FLOOR_FROM} producten; video een vaste ${VID} per clip. Alles ${vatLabel('excl', 'nl')}.`, href: '/nl/pricing', tag: 'Prijzen' },
   { title: 'Vragen, beantwoord', desc: 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', href: '/nl/faq', tag: 'FAQ' },
 ];
 ---

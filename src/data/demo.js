@@ -257,7 +257,7 @@ export const WALK_COPY = {
       upload: {
         n: 'You, on the site',
         h: 'You upload the photos',
-        b: `Order a folder and we read the folder name as the product; order loose files and we sort them by filename. Two shots per product are required — the front and the back — and a detail and a worn shot are welcome if you have them. Phone photos on a table in delivery date light are exactly right. Five minutes, however many products you have; the effort does not grow with the size of the order.`,
+        b: `Drag a folder in and we read the folder name as the product; send loose files and we sort them by filename. Two shots per product are required — the front and the back — and a detail and a worn shot are welcome if you have them. Phone photos on a table in daylight are exactly right. Five minutes, however many products you have; the effort does not grow with the size of the order.`,
       },
       look: {
         n: 'You, on the site',
@@ -369,7 +369,7 @@ export const WALK_COPY = {
       make: {
         n: 'Wij, in productie',
         h: 'Samen geproduceerd, daarna met de hand afgewerkt',
-        b: 'Elk product in de bestelling gaat als één batch door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar. Los gedraaid lukt dat niet. Daarna wordt het met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en controleert een mens de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
+        b: 'Elk product in de bestelling gaat als één batch door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar. Los gedraaid lukt dat niet. Daarna wordt het met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en controleert een specialist de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
       },
       portal: {
         n: 'Jij, in je account',

@@ -165,9 +165,12 @@ const COPY = {
     ladderSub: 'Pick the scope, count your products, read the rate. The rate applies to every product in the order, not only the ones above that count.',
     ladderProductsCol: 'Products',
     kinds: {
-      complete: { name: 'Complete', sub: 'Catalog set and lifestyle carousel — seven images per product' },
-      catalog: { name: 'Catalog set', sub: 'From four images per product' },
-      lifestyle: { name: 'Lifestyle carousel', sub: 'Three images per product' },
+      // 'per product' stond hier ÉN werd door de rendering nog een keer
+      // aangeplakt, dus de kolomkoppen lazen "…per product / per product · excl.
+      // VAT". Hier eruit; de regel eronder plakt hem al. 8 augustus 2026.
+      complete: { name: 'Complete', sub: 'Catalog set and lifestyle carousel — seven images' },
+      catalog: { name: 'Catalog set', sub: 'From four images' },
+      lifestyle: { name: 'Lifestyle carousel', sub: 'Three images' },
     },
 
     workedH: 'What that comes to',
@@ -255,25 +258,26 @@ const COPY = {
 
   nl: {
     eyebrow: 'Prijzen',
-    h1: 'Geprijsd per product. Het tarief daalt naarmate het aantal stijgt.',
-    lead: `Eén eenheid: een product. Eén tarief, en dat zakt alleen maar één product per keer. Elk aantal heeft een prijs, dus geen bestelling kost per product meer dan een kleinere — en er is geen pakket waar je lijn in moet passen.`,
+    h1: 'Je betaalt per product. Hoe meer producten, hoe lager het tarief.',
+    lead: `Je rekent per product af, niet per beeld en niet per pakket. Eén tarief per product, en dat tarief kan alleen omlaag — bij elk product dat je erbij doet. Elk aantal heeft zijn eigen prijs, dus je betaalt per product nooit meer dan iemand met een kleinere bestelling, en er is geen pakket waar je collectie in moet passen.`,
 
     ladderH: 'De prijs per product',
-    ladderSub: 'Kies de scope, tel je producten, lees het tarief. Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens.',
+    ladderSub: 'Kies wat je wilt laten maken, tel je producten, lees het tarief. Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens.',
     ladderProductsCol: 'Producten',
     kinds: {
-      complete: { name: 'Compleet', sub: 'Catalogset en lifestyle-carousel — zeven beelden per product' },
-      catalog: { name: 'Catalogset', sub: 'Vanaf vier beelden per product' },
-      lifestyle: { name: 'Lifestyle-carousel', sub: 'Drie beelden per product' },
+      // Zie de EN-tabel: 'per product' werd twee keer geprint.
+      complete: { name: 'Compleet', sub: 'Catalogset en lifestyle-carousel — zeven beelden' },
+      catalog: { name: 'Catalogset', sub: 'Vanaf vier beelden' },
+      lifestyle: { name: 'Lifestyle-carousel', sub: 'Drie beelden' },
     },
 
     workedH: 'Wat dat wordt',
-    workedSub: 'Drie aantallen op de complete scope, uitgerekend, zodat de tabel geen huiswerk is.',
+    workedSub: 'Drie aantallen compleet uitgerekend, zodat je niet zelf hoeft te rekenen.',
     workedUnit: 'producten',
     perProduct: 'per product',
 
     firstLead: 'Het tarief op deze pagina is het tarief.',
-    firstBody: `Geen kennismakingskorting, geen onderhandeling over volume, geen pakket waar je lijn in moet passen. De prijs per product hierboven is het hele verhaal, en hij geldt voor elk product in de bestelling. Wil je het werk zien voordat je iets vastlegt, dan is de proefvisual van ${TEST_SAMPLE.nl.price} daarvoor.`,
+    firstBody: `Geen kennismakingskorting, geen onderhandeling over volume, geen pakket waar je collectie in moet passen. De prijs per product hierboven is het hele verhaal, en hij geldt voor elk product in de bestelling. Wil je het werk eerst zien, bestel dan de proefvisual van ${TEST_SAMPLE.nl.price}.`,
     ladderCta: 'Start een bestelling',
 
     anchorH: 'Wat dit vervangt',
@@ -289,7 +293,7 @@ const COPY = {
     anchorNote: `Geen van beide bedragen zegt iets over wat er uit een shootdag komt — dat hangt van de dag af. ${shoot.caveat} Wat een bestelling hier vastlegt, is dat de uitkomst vaststaat voordat je betaalt. De rest van die vergelijking — de uren, het risico, wat je aan elk van beide overhoudt — staat <a href="${lp('/compare')}">naast elkaar uitgeschreven</a>.`,
 
     addOnH: 'Toe te voegen aan een bestelling',
-    addOnSub: 'Geen van beide is op zichzelf een manier om visuals te kopen. Ze komen bovenop een bestelling die je al draait.',
+    addOnSub: 'Deze twee zijn geen bestelling op zichzelf. Ze komen bovenop een bestelling die je al doet.',
     brandModelName: 'Jouw merkmodel',
     brandModelLine: 'Eén gezicht. Elke bestelling. Alleen van jou.',
     brandModelUnit: 'eenmalige setup',
@@ -300,7 +304,7 @@ const COPY = {
     videoName: 'Videoclip',
     videoLine: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
     videoUnit: 'per clip',
-    videoIncH: 'Hoe het geprijsd is:',
+    videoIncH: 'Hoe de prijs werkt:',
     videoList: [
       'Binnen een bestelling hetzelfde tarief als los — het is hetzelfde werk',
       `${PLAN_CLIPS.studio} clips per maand zitten in het ${planById.studio.name}-plan`,
@@ -309,15 +313,15 @@ const COPY = {
     videoCta: 'Bekijk wat een clip is',
 
     inclH: 'In elke bestelling',
-    svcLead: 'Het serviceniveau volgt de omvang.',
-    svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij de vastgezette leverdatum. Daaronder loopt hij in de normale doorlooptijd. Eén grens om over te gaan, in plaats van een tweede vraag om te beantwoorden.`,
+    svcLead: 'Hoe groot je bestelling is, bepaalt hoe we hem inplannen.',
+    svcBody: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij een vastgezette leverdatum. Daaronder loopt hij in de normale doorlooptijd. Eén grens, en verder niets wat je hoeft te kiezen.`,
     svcFromTag: `Vanaf ${WINDOW_THRESHOLD} producten`,
     svcUnderTag: `Onder ${WINDOW_THRESHOLD} producten`,
-    gateLead: 'Er wordt geen datum genoemd voordat de agenda die heeft vrijgegeven.',
-    gateBody: 'Een vastgezette leverdatum wordt bevestigd voordat je betaalt, nooit erna. Kan de week die je nodig hebt niet worden vastgehouden, dan hoor je dat — in plaats van een optimistische gok.',
+    gateLead: 'We noemen geen datum voordat we in de agenda hebben gekeken.',
+    gateBody: 'Je vastgezette leverdatum staat vast voordat je betaalt, nooit erna. Kunnen we de week die je nodig hebt niet vrijhouden, dan zeggen we dat meteen. Je krijgt geen optimistische gok.',
 
     plansH: 'De plannen',
-    plansSub: 'Komt dezelfde output elke maand terug, dan is per maand kopen goedkoper dan bestelling voor bestelling. Meer is een plan niet — geen groter pakket, dezelfde producten voor een lagere prijs omdat je je aan de maand verbindt. Elke kaart laat het verschil met de prijs per product hierboven zien.',
+    plansSub: 'Heb je elke maand hetzelfde nodig, dan is per maand kopen goedkoper dan bestelling voor bestelling. Meer is een plan niet: geen groter pakket, maar dezelfde producten voor een lagere prijs omdat je je per maand vastlegt. Elke kaart laat het verschil met de prijs per product hierboven zien.',
     plansCta: 'Een plan opzetten',
 
     sampleH: 'Voordat je een bestelling plaatst',
@@ -358,7 +362,7 @@ const included = [
   reviewClaim('unattended', lang),
   aftercare('unattended', lang),
   lang === 'nl'
-    ? 'Hoge resolutie en e-commerce-klaar, zonder licentie per gebruik'
+    ? 'Hoge resolutie en klaar voor je webshop, zonder licentie per gebruik'
     : 'High-resolution and e-commerce-ready, with no per-use licence',
   lang === 'nl'
     ? 'Eén bestelling, één factuur, ongeacht het aantal'

@@ -47,7 +47,7 @@ import Compare from './Compare.astro';
 // De doorlooptour van het klantdashboard. Zie FigDash.astro: hij verving een
 // grijs vlak met een productienotitie erin.
 import FigDash from './FigDash.astro';
-import { ROSTER, modelId } from '../data/models.js';
+import { ROSTER, modelId, TRAITS } from '../data/models.js';
 import { faqPageGroups } from '../data/faq.js';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -86,6 +86,15 @@ const SERVICE_IMG = [
 // The roster rail in the Brand Model band. Every face here is a real entry in
 // src/data/models.js, which is the same list /models and /custom-models read —
 // so the homepage cannot end up advertising a face the roster no longer has.
+/*
+ * De eigenschappen van een model zijn SLEUTELS ('warm', 'approachable'), geen
+ * woorden. TRAITS[lang] maakt er woorden van. Dit stond hier niet en het gevolg
+ * was Engelse sleutels op de Nederlandse homepage — zie de noot bij de rij zelf.
+ * Onbekende sleutel: de sleutel zelf, zodat een nieuwe eigenschap zichtbaar
+ * ontbreekt in plaats van stil te verdwijnen.
+ */
+const traitWords = (m) => (m.traits || []).map((k) => (TRAITS[lang] || TRAITS.en)[k] || k);
+
 const FACES = ROSTER;
 
 // VISUALS PER PRODUCT, derived rather than typed. A catalog set is four photos
@@ -201,7 +210,7 @@ const COPY = {
     // Begint met het woord "Test sample", niet met "One product photo": deze
     // regel staat onder BEIDE knoppen en moet zonder twijfel bij de tweede
     // horen. Zonder dat woord lijkt het of een bestelling ook € 1 kost.
-    ctaSampleNote: `Test sample: one product photo, one product back in full — ${CATALOG_IMAGES}\u00A0catalog images or ${LIFESTYLE_IMAGES}\u00A0lifestyle photos. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    ctaSampleNote: `Test sample: send the same photos as a normal order — front and back at least — and get one product back in full: ${CATALOG_IMAGES}\u00A0catalog images or ${LIFESTYLE_IMAGES}\u00A0lifestyle photos. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
     // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
     // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
     // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
@@ -266,8 +275,8 @@ const COPY = {
     priceCta2: 'The full price list',
 
     tsKicker: 'Before you place an order',
-    tsH: ['One of your own products, delivered in full', `for ${sample.price}.`],
-    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. Send one product photo and that product comes back in full: ${CATALOG_IMAGES} catalog images, or a ${LIFESTYLE_IMAGES}-photo lifestyle carousel. Same production as a paid order, checked by the same person.`,
+    tsH: ['Your own product, fully pictured', `for ${sample.price}.`],
+    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. You send the same photos a normal order needs: front and back at least, and a detail or worn shot if you have them. Back comes one product in full: ${CATALOG_IMAGES} catalog images, or a ${LIFESTYLE_IMAGES}-photo lifestyle carousel. Same production as a paid order, checked by the same specialist.`,
     tsPoints: [
       ['One per business', 'Not a trial with a card on file. One sample, once, no account, nothing to cancel.'],
       ['No shortcuts for a sample', 'Same production, same house style, same human check. What comes back is what you would get.'],
@@ -427,15 +436,15 @@ const COPY = {
 
     dashH: ['What happens', 'after you order.'],
     dashLede: 'Two screens — one you get, one we work in — and both are the reason a date can be promised at all.',
-    dashPortalK: 'Your portal',
+    dashPortalK: 'VISUAILS Studio',
     dashPortalN: 'A private link, no password. Status and the delivery date with a countdown, then the full gallery: approve or request a revision image by image, and download sized per channel.',
-    dashPortalCta: 'See the client portal',
+    dashPortalCta: 'See VISUAILS Studio',
     dashPortalPh: 'Client portal · delivery gallery',
     dashPortalNote: 'The approve / request-revision screen, with one image selected.',
-    dashStudioK: 'The studio side',
+    dashStudioK: 'Our side of it',
     dashStudioN: 'Every order and the calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
     dashStudioCta: 'See how an order is run',
-    dashStudioPh: 'Studio dashboard · delivery calendar',
+    dashStudioPh: 'Admin side · delivery calendar',
     dashStudioNote: 'The order table with the week that is full marked as full.',
     dashLogK: 'The log is the paperwork',
     dashLogN: 'Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later. Ask and we write it out for you.',
@@ -475,7 +484,7 @@ const COPY = {
     // checks below, where it sits beside the other things the studio commits
     // to rather than as a risk to be talked down. It is not said twice.
     ob: [
-      ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve or request a revision image by image.', 'See the client portal', '/portal'],
+      ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve or request a revision image by image.', 'See VISUAILS Studio', '/portal'],
       ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is made from photographs of your real product and finished by hand, and you get the line of text to publish them with.', 'Read the AI Act page', '/ai-act'],
       ['My own photos are bad.', 'A phone photo in daylight on a plain surface is enough to start. The guidelines run to two pages and are mostly about light.', 'What makes a usable photo', '/upload-guidelines'],
     ],
@@ -496,18 +505,18 @@ const COPY = {
     heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Je betaalt per product: van ${euro(ladderRate('complete', 1), 'nl')} omlaag naar ${euro(FLOOR_RATE_EN, 'nl')} naarmate je er meer bestelt.`,
     ctaStart: 'Start een bestelling',
     ctaSample: `Proefvisual aanvragen · ${sample.price}`,
-    ctaSampleNote: `Proefvisual: één productfoto, één product volledig terug — ${CATALOG_IMAGES}\u00A0catalogbeelden of ${LIFESTYLE_IMAGES}\u00A0lifestyle-foto’s. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    ctaSampleNote: `Proefvisual: stuur dezelfde foto’s als bij een gewone bestelling — voorkant en achterkant in elk geval — en je krijgt één product volledig terug: ${CATALOG_IMAGES}\u00A0catalogbeelden of ${LIFESTYLE_IMAGES}\u00A0lifestyle-foto’s. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
     // Zie de EN-tabel voor waarom dit geen plint meer is.
     proof: [
       turnaround('attended', 'nl'),
       reviewClaim('attended', 'nl'),
-      'Van jou om te gebruiken — webshop, marktplaatsen, ads en feeds',
+      'De beelden zijn van jou — webshop, marktplaatsen, ads en feeds',
     ],
 
     // Zie de EN-tabel voor waarom deze band er is: vier prijsbanden zijn er één
     // geworden en alles wat deze pagina over geld zegt, staat in deze keys.
     priceH: ['Eén prijs per product.', 'Die zakt als je er meer doet.'],
-    priceLede: `Een product is de eenheid — een catalogset en een lifestyle-carousel, ${PER_PRODUCT_VISUALS} afgewerkte beelden. Neem het paar of één van de twee helften, en het tarief zakt naarmate het aantal stijgt.`,
+    priceLede: `Je betaalt per product. Bij een compleet product horen een catalogset en een lifestyle-carousel: ${PER_PRODUCT_VISUALS} afgewerkte beelden. Je kunt ook alleen catalog of alleen lifestyle nemen, en hoe meer producten je bestelt, hoe lager het tarief.`,
     priceVat: `Alle bedragen in dit blok zijn ${vatLabel('excl', 'nl')}.`,
     ladCountCol: 'Producten',
     ladKinds: [
@@ -516,12 +525,12 @@ const COPY = {
       ['Lifestyle', `${LIFESTYLE_IMAGES} beelden`],
     ],
     ladPer: 'per product',
-    ladNote: 'Allebei op hetzelfde product is één tarief, niet de twee bij elkaar opgeteld.',
+    ladNote: 'Neem je allebei op hetzelfde product, dan betaal je het complete tarief en niet de twee tarieven bij elkaar.',
     workedH: 'Wat dat wordt',
     workedUnit: 'producten',
     workedEach: 'per stuk',
     firstLead: 'Het tarief is het tarief.',
-    firstBody: `Geen kennismakingskorting en niets om over te onderhandelen — ${EX_SMALL} complete producten is ${euro(Q_SMALL.net, 'nl')}, wie je ook bent en wanneer je ook vraagt.`,
+    firstBody: `Geen kennismakingskorting en niets om over te onderhandelen — ${EX_SMALL} complete producten kosten ${euro(Q_SMALL.net, 'nl')}, wie je ook bent en wanneer je het ook vraagt.`,
     addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')}, verrekend over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
     planNote: `Bestel je elke maand in plaats van elk seizoen? Drie maandplannen, vanaf ${euro(PLAN_FROM, 'nl')} voor ${PLAN_LOW}–${PLAN_HIGH} producten per maand, en elk goedkoper dan de prijs per product voor dezelfde output.`,
     vatSummary: 'Hoe de btw werkt',
@@ -529,11 +538,11 @@ const COPY = {
     priceCta2: 'De volledige prijslijst',
 
     tsKicker: 'Voordat je een bestelling plaatst',
-    tsH: ['Eén product van jezelf, volledig geleverd', `voor ${sample.price}.`],
-    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, op dat van jou. Stuur één productfoto en je krijgt dat product volledig terug: ${CATALOG_IMAGES} catalogbeelden, of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto's. Zelfde productie als een betaalde bestelling, door dezelfde persoon nagekeken.`,
+    tsH: ['Jouw eigen product volledig in beeld', `voor ${sample.price}.`],
+    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, maar op dat van jou. Je stuurt dezelfde foto’s als bij een gewone bestelling: voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt. Je krijgt één product volledig terug: ${CATALOG_IMAGES} catalogbeelden, of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s. Zelfde productie als een betaalde bestelling, door dezelfde specialist nagekeken.`,
     tsPoints: [
-      ['Eén per bedrijf', 'Geen proefperiode, en we bewaren je pasgegevens niet. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
-      ['Geen kortere weg voor een proef', 'Zelfde productie, zelfde huisstijl, zelfde menselijke controle. Wat terugkomt is wat je zou krijgen.'],
+      ['Eén per bedrijf', 'Geen proefperiode, en we bewaren je betaalgegevens niet. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
+      ['Geen kortere weg voor een proef', 'Zelfde productie, zelfde stijl, en dezelfde specialist die het nakijkt. Wat terugkomt is wat je zou krijgen.'],
       ['Daarna geen verplichting', 'Klopt het niet, dan houdt het op. Wij ontdekken dat liever nu dan na een bestelling.'],
     ],
     tsCta: 'Vraag je proefvisual aan',
@@ -546,23 +555,23 @@ const COPY = {
     // De prijzen zijn uit deze band gehaald — die staan één keer in de band
     // hierboven. Wat blijft is wat een dienst IS en wat je terugkrijgt.
     svcH: ['Vier soorten beeld die we maken,', 'en wat er in je map belandt.'],
-    svcLede: 'Catalog en lifestyle zijn wat een product krijgt. Een videoclip en je eigen merkmodel kun je erbij nemen, of los bestellen.',
+    svcLede: 'Elk product krijgt catalog- en lifestyle-beelden. Een videoclip en je eigen merkmodel kun je erbij nemen, of los bestellen.',
     svc: [
       [
         'Catalogset',
-        'Strakke, consistente productpagina’s die een jonge lijn gevestigd laten lijken.',
+        'Strakke productpagina’s waar elk product er hetzelfde uitziet, van het eerste tot het laatste.',
         `${CATALOG_IMAGES} beelden per product: voorkant, achterkant, een close-up van de stof of het logo, en één gedragen op een model.`,
         '/catalog',
       ],
       [
         'Lifestyle-carousel',
-        'Je product in een gestylede scène waar mensen op blijven hangen.',
+        'Je product in een gestylede scène, niet op een witte achtergrond.',
         `${LIFESTYLE_IMAGES} beelden per product: één gestylede look, uitgesneden voor een carousel en klaar om te posten.`,
         '/lifestyle',
       ],
       [
         'Videoclip',
-        'Subtiele beweging die doorklik oplevert waar een stilstaand beeld blijft steken.',
+        'Hetzelfde product in beweging, in plaats van op een stilstaand beeld.',
         'Eén korte verticale clip, gesneden voor Reels, TikTok en paid.',
         '/video',
       ],
@@ -576,63 +585,63 @@ const COPY = {
     svcCta: 'Start een bestelling',
 
     pipeH: 'Van map tot lancering.',
-    pipeLede: 'Vier stappen, en in twee ervan zit jij.',
+    pipeLede: 'Vier stappen, en bij twee daarvan doe jij iets.',
     pipe: [
       ['Jij stuurt een map', 'Eén map per product, de mapnaam is de SKU. Een telefoonfoto is genoeg om te beginnen.'],
-      ['De datum wordt vrijgegeven', 'De planning wordt tegen de echte capaciteit gelegd. Zit de week vol, dan krijg je de eerstvolgende die dat niet is.'],
+      ['Je leverdatum komt vast te staan', 'Wij kijken of die week nog plek heeft. Zit hij vol, dan krijg je de eerste week die nog ruimte heeft.'],
       // De vier huisstijlen staan nu hier — ze waren een cijfer in de band
       // "Wat de getallen werkelijk zijn", die met de prijsfusie is vervallen.
       ['De studio draait', 'Catalog, lifestyle en video in één huisstijl — Glow, Dunes, Flash of Phone-made — bewerking en kleurcorrectie afgewerkt.'],
-      ['Een mens kijkt ernaar', 'Elk beeld wordt bekeken voordat het weggaat. Er wordt niets automatisch geleverd.'],
+      ['Een specialist kijkt ernaar', 'Een specialist bekijkt elk beeld voordat het naar je toe gaat. We leveren niets automatisch.'],
     ],
 
     whoH: 'Voor merken met meer producten dan shootdagen.',
     whoLede: 'Vier situaties waar deze prijzen voor gemaakt zijn. Zit die van jou ertussen, dan klopt de rekensom.',
     who: [
-      ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De lijn moet eruitzien alsof hij thuishoort naast labels die tien jaar ouder zijn.'],
+      ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De beelden moeten wel net zo goed zijn als die van merken die tien jaar ouder zijn.'],
       ['Elk seizoen een lancering', 'Vier tot zes per jaar, en elke keer begint het met een fotograaf, een model en een dag waarop iedereen kan.'],
-      ['Marktplaatsen voeden', 'Zalando, Amazon en bol willen schone beelden volgens een vaste spec, en dat goed krijgen is niemands favoriete middag.'],
+      ['Marktplaatsen bijhouden', 'Zalando, Amazon en bol willen strakke beelden volgens een vaste specificatie, en dat goed krijgen is niemands favoriete middag.'],
       ['Meer SKU’s dan uren', 'De collectie groeide harder dan de productie eromheen, en de fotografie blijft doorschuiven.'],
     ],
     notForH: 'Waarschijnlijk niets voor je als',
     notFor: [
-      'je één campagnebeeld wilt met vastgelegde modellen, en niet een hele lijn',
-      'de merkrichting nog om de paar weken verschuift — een huisstijl moet ergens consistent mee kunnen zijn',
-      'je één product verkoopt, waardoor een huisstijl nergens consistent over kan zijn',
+      'je één campagnebeeld wilt met een model dat je zelf contracteert, en niet een hele collectie',
+      'de stijl van je merk nog elke paar weken verandert — dan is er nog niets om consistent in te blijven',
+      'je één product verkoopt — dan valt er tussen producten niets consistent te houden',
       'je een getekende release nodig hebt voor een gezicht waar je al mee werkt',
     ],
 
     baH: ['Dit kwam binnen.', 'Dit ging eruit.'],
-    baLede: 'Eén foto, met een telefoon gemaakt, op een tafel. Er is niets opnieuw gefotografeerd, opnieuw gestyled of ergens heen gestuurd.',
+    baLede: 'Links een foto met een telefoon, op een tafel. Rechts wat wij ervan maakten. Er is niets opnieuw gefotografeerd, opnieuw gestyled of ergens heen gestuurd.',
     baBefore: 'Ingestuurd',
     baAfter: 'Geleverd',
     baBeforeAlt: 'De ruwe telefoonfoto die een klant instuurde',
     baAfterAlt: 'Het afgewerkte VISUAILS-catalogbeeld dat daaruit is gemaakt',
     baPoints: [
-      ['Het kledingstuk blijft zoals het is', 'Snit, kleur, print en fournituren blijven precies zoals ze op het sample zitten — het enige deel van het beeld waar niet over te onderhandelen valt.'],
-      ['De rest wordt eromheen gebouwd', 'Licht, achtergrond, model en uitsnede worden eromheen gemaakt, in de huisstijl waarin de bestelling draait.'],
-      ['Een mens tekent het af', 'Het eindbeeld wordt naast jouw originele foto gelegd en ertegen gecontroleerd voordat het weggaat.'],
+      ['Het kledingstuk blijft zoals het is', 'Snit, kleur, print en fournituren blijven precies zoals ze op het sample zitten. Daar wijken we nooit van af.'],
+      ['De rest maken wij eromheen', 'Licht, achtergrond, model en uitsnede maken wij eromheen, in de stijl die je voor de bestelling hebt gekozen.'],
+      ['Een specialist keurt het goed', 'We leggen het eindbeeld naast je eigen foto. Pas als het klopt, gaat het naar je toe.'],
     ],
-    baNote: 'Een telefoonfoto bij daglicht is genoeg om te beginnen. Zijn die van jou slechter dan deze, stuur er dan toch één voor een eerlijk antwoord.',
+    baNote: 'Een telefoonfoto bij daglicht is genoeg om te beginnen. Twijfel je of jouw foto goed genoeg is? Stuur er één, dan zeggen we eerlijk wat we ervan kunnen maken.',
     baNoteLink: 'Wat een bruikbare foto is',
 
-    dreamKicker: 'Waar het uiteindelijk allemaal om gaat',
-    dreamH: 'Een klein label dat er nooit klein uitzag.',
-    dreamLede: 'Niemand die je pagina scrolt weet hoeveel mensen hier werken. Ze zien alleen of de beelden van een merk zijn dat het voor elkaar heeft, en dat oordeel valt in twee seconden. Het is het enige deel van gevestigd overkomen dat een jong label gewoon kan kopen.',
+    dreamKicker: 'Waarom de beelden zo zwaar wegen',
+    dreamH: 'Je merk wordt op je beelden beoordeeld.',
+    dreamLede: 'Niemand die je pagina bekijkt weet hoeveel mensen er bij je werken. Ze zien de beelden, en binnen twee seconden hebben ze een oordeel. Dat is precies het stuk dat je zelf in de hand hebt.',
     dreamCta: 'Bekijk een hele bestelling',
     dreamAlt: 'Een VISUAILS lifestyle-beeld — een gestylede campagnescène',
 
     weekH: 'De week die je terugkrijgt.',
     weekLede: 'Een shoot is niet één dag. Het is de week eromheen: de casting, de boeking, het opsturen, het verzetten als het regent, de twee avonden foto’s uitzoeken. Zo ziet die week er nu uit.',
     week: [
-      ['Maandag', 'Je zet een map met productfoto’s in het portaal. Twintig minuten, grotendeels mappen hernoemen naar je SKU’s.'],
-      ['Woensdag', 'De bestelling landt. In het portaal keur je goed wat klopt en markeer je wat niet klopt.'],
+      ['Maandag', 'Je zet een map met productfoto’s in VISUAILS Studio. Twintig minuten werk, en dat is vooral mappen hernoemen naar je SKU’s.'],
+      ['Woensdag', 'De bestelling is klaar. In VISUAILS Studio keur je goed wat klopt en geef je aan wat niet klopt.'],
       ['Vrijdag', 'De productpagina’s staan live, de carousels ingepland. Je bent geen moment in een studio geweest.'],
     ],
     backH: 'Wat dat vrijmaakt',
     back: [
       ['Geen casting, geen boeking', 'Geen model, geen fotograaf, geen studio, geen gedeelde vrije dag.'],
-      ['Er gaat niets de voorraad uit', 'Er wordt niets opgestuurd en er komt niets gekreukt terug.'],
+      ['Er gaat niets de voorraad uit', 'Je stuurt niets op, en er komt niets gekreukt terug.'],
       ['Geen dag uit de zaak', 'Een shootdag is een dag waarop je niets verkoopt.'],
       ['Geen selectie, geen retoucheerlijst', 'Afgewerkte beelden, geen vierhonderd frames voor op zondag.'],
     ],
@@ -647,66 +656,66 @@ const COPY = {
     ch: [
       ['Hero op de productpagina', 'Op wit of in scène'],
       ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail'],
-      ['On-model beeld', 'In elke catalogset'],
+      ['Beeld op een model', 'In elke catalogset'],
       ['Instagram-carousel', 'Drie gestylede beelden per product'],
       ['Reels en TikTok', 'Verticale clips, bij elke bestelling'],
       ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes'],
       ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
       ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
     ],
-    chNote: 'De downloads staan per kanaal op maat klaar in het portaal.',
+    chNote: 'In VISUAILS Studio staan de downloads per kanaal op maat klaar.',
 
     // Geen bedragen meer in deze band — die staan één keer in de prijsband.
     bmH: ['Eén gezicht,', 'en het is alleen van jou.'],
-    bmLede: 'De rij hieronder is waar je vandaag uit kunt kiezen, en elk van hen kan in jouw bestelling verschijnen. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is en door niemand anders gebruikt wordt.',
-    bmNote: 'Een terugkerend gezicht is de goedkoopste continuïteit die een merk kan kopen — daarom gebruiken catalogi al jaren hetzelfde model.',
+    bmLede: 'Uit deze gezichten kun je vandaag kiezen, en ze kunnen allemaal in jouw bestelling staan. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is en dat wij bij niemand anders gebruiken.',
+    bmNote: 'Hetzelfde gezicht in elke bestelling maakt je beelden herkenbaar — daarom gebruiken catalogi al jaren hetzelfde model.',
     bmCta: 'Zo werkt je merkmodel',
 
-    plH: 'Reken terug vanaf je livegangdatum.',
-    plLede: 'De leverdatum is gereserveerde capaciteit, geen langere doorlooptijd. Daarom kan het überhaupt beloofd worden — en daarom raakt het op.',
+    plH: 'Reken terug vanaf de dag dat je live gaat.',
+    plLede: 'Bij een vastgezette leverdatum houden we die dagen in de studio voor je vrij. Daarom kunnen we hem beloven — en daarom is hij niet altijd meer vrij.',
     pl: [
-      ['Je livegangdatum', 'De dag waarop de collectie live moet staan. Al het andere wordt hiervandaan teruggeteld.'],
+      ['De dag dat je live gaat', 'De dag waarop de collectie online moet staan. Vanaf daar rekenen we terug.'],
       // WINDOW_THRESHOLD staat nu hier, niet meer naast een tarief per product.
-      ['48 uur vanaf je leverdatum', `De vastgezette leverdatum, bij bestellingen van ${WINDOW_THRESHOLD} producten of meer. Zodra de planning het heeft vrijgegeven, mag niets anders in de studio eroverheen; daaronder loopt een bestelling in de normale doorlooptijd.`],
+      ['48 uur vanaf je leverdatum', `De vastgezette leverdatum, vanaf ${WINDOW_THRESHOLD} producten. Zodra die datum vaststaat, gaat geen ander werk in de studio er nog voor. Bestel je minder producten, dan geldt de normale doorlooptijd.`],
       ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar, en de datum staat al vast.'],
     ],
-    plNote: 'Weken worden één voor één geboekt, en een volle week wordt als vol aangeboden in plaats van als langere wachttijd.',
-    plCta: 'Kijk welke weken open staan',
+    plNote: 'We boeken de weken één voor één vol. Zit een week vol, dan zeggen we dat gewoon, in plaats van je een langere wachttijd te geven.',
+    plCta: 'Kijk welke weken nog vrij zijn',
 
     dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
-    dashLede: 'Twee schermen — één dat jij krijgt, één waarin wij werken — en samen zijn ze de reden dat er überhaupt een datum beloofd kan worden.',
-    dashPortalK: 'Jouw portaal',
-    dashPortalN: 'Een privélink, zonder wachtwoord. Status en de leverdatum met een aftelling, daarna de volledige galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
-    dashPortalCta: 'Bekijk het klantportaal',
-    dashPortalPh: 'Klantportaal · leveringsgalerij',
+    dashLede: 'Twee schermen: één voor jou, één waarin wij werken. Samen zijn ze de reden dat we je een datum kunnen geven.',
+    dashPortalK: 'VISUAILS Studio',
+    dashPortalN: 'Je komt binnen via een privélink, zonder wachtwoord. Je ziet de status en de leverdatum met een aftelling, en daarna de hele galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
+    dashPortalCta: 'Bekijk VISUAILS Studio',
+    dashPortalPh: 'VISUAILS Studio · leveringsgalerij',
     dashPortalNote: 'Het scherm voor goedkeuren en revisie aanvragen, met één beeld geselecteerd.',
-    dashStudioK: 'De studiokant',
-    dashStudioN: 'Elke bestelling en de capaciteitskalender waar de datumkiezer uit leest. Een statuswijziging schrijft in dezelfde beweging de tijdlijn die jij ziet, dus het portaal loopt nooit achter op de studio.',
+    dashStudioK: 'Onze kant',
+    dashStudioN: 'Hier staat elke bestelling, naast de agenda waaruit de datumkiezer leest. Zetten wij een bestelling op een andere status, dan verandert de tijdlijn die jij ziet meteen mee. Wat in VISUAILS Studio staat, is dus nooit ouder dan wat wij zien.',
     dashStudioCta: 'Zie hoe een bestelling draait',
-    dashStudioPh: 'Studiodashboard · capaciteitskalender',
+    dashStudioPh: 'Ons eigen scherm · de agenda',
     dashStudioNote: 'De ordertabel, met de volle week als vol gemarkeerd.',
-    dashLogK: 'Het logboek is de papierwinkel',
-    dashLogN: 'Elke goedkeuring en revisie krijgt een tijdstempel en wordt bewaard bij het beeld waar hij bij hoort, zodat de reeks later terug te lezen is. Vraag ernaar en we schrijven het voor je uit.',
+    dashLogK: 'Het logboek legt alles vast',
+    dashLogN: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en blijft bij het beeld staan waar hij bij hoort. Zo kun je later teruglezen wat er wanneer gebeurde. Vraag ernaar en we schrijven het voor je uit.',
     dashLogCta: 'Lees de AI Act-pagina',
 
     promiseH: ['Nog geen muur vol reviews.', 'Dus verdienen we het eerlijk.'],
-    promiseQuote: `"Ik bekijk elk beeld zelf voordat het naar je toe gaat, en ik doe er liever één over dan dat ik hem verstuur. Nog niet zeker? Zie het eerst op je eigen product voor ${sample.price}."`,
+    promiseQuote: `"Ik bekijk elk beeld zelf voordat het naar je toe gaat, en ik doe er liever één over dan dat ik hem verstuur. Nog niet zeker? Bekijk het eerst op je eigen product voor ${sample.price}."`,
     promiseSign: 'oprichter, VISUAILS',
     // De proefvisual stond hier én in het citaat erboven — hetzelfde aanbod
     // twee keer in één paneel. Drie beloftes, drie verschillende dingen.
     promiseChecks: [
-      ['We vragen het voordat we het af noemen', 'elke bestelling eindigt met dezelfde vraag: kloppen ze? Zo niet, dan gaan we het samen na.'],
+      ['We vragen het voordat we klaar zeggen', 'Elke bestelling eindigt met dezelfde vraag: kloppen de beelden? Zo niet, dan kijken we er samen naar.'],
       ['De beelden zijn van jou', 'commercieel te gebruiken in je shop, op marktplaatsen, in advertenties en feeds. Geen licentie per gebruik.'],
     ],
-    trust: ['Gemaakt in Enschede, NL', 'KVK-geregistreerd bedrijf', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
+    trust: ['Gemaakt in Enschede, NL', 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
 
     obH: 'De dingen die je aan de telefoon zou vragen.',
     obLede: 'Drie antwoorden waar je bij een leverancier meestal een belletje voor nodig hebt.',
     // DRIE, niet vier: "Van wie zijn de beelden?" staat nu bij de beloftes
     // hierboven, en dus niet twee keer op één pagina.
     ob: [
-      ['En als ze niet goed zijn?', 'Er wordt niets automatisch geleverd. Een mens bekijkt elk beeld eerst, en in het portaal keur je per beeld goed of vraag je een revisie aan.', 'Bekijk het klantportaal', '/portal'],
-      ['Ziet een klant dat het AI is?', 'Ze zijn AI-gegenereerd en dat zeggen we gewoon. Elk beeld wordt gemaakt uit foto’s van jouw echte product en met de hand afgewerkt, en je krijgt de regel tekst om ze mee te publiceren.', 'Lees de AI Act-pagina', '/ai-act'],
+      ['En als ze niet goed zijn?', 'We leveren niets automatisch. Een specialist bekijkt eerst elk beeld, en in VISUAILS Studio keur je ze per stuk goed of vraag je een revisie aan.', 'Bekijk VISUAILS Studio', '/portal'],
+      ['Ziet een klant dat het AI is?', 'Ze zijn met AI gemaakt en dat zeggen we gewoon. We maken elk beeld uit foto’s van jouw echte product en werken het met de hand af. Je krijgt van ons het regeltje tekst dat je erbij zet als je ze publiceert.', 'Lees de AI Act-pagina', '/ai-act'],
       ['Mijn eigen foto’s zijn slecht.', 'Een telefoonfoto bij daglicht op een egale ondergrond is genoeg om te beginnen. De richtlijnen zijn twee pagina’s en gaan vooral over licht.', 'Wat een bruikbare foto is', '/upload-guidelines'],
     ],
 
@@ -715,7 +724,7 @@ const COPY = {
     faqCta: 'Alle vragen, beantwoord',
 
     closeH: 'Eerst één product van jezelf, volledig geleverd.',
-    closeLede: `${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}, gemaakt van jouw foto, door een mens nagekeken — voor een verificatie van ${sample.price}. Eén per bedrijf.`,
+    closeLede: `${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}, gemaakt van jouw eigen foto’s en door een specialist nagekeken — voor ${sample.price}. Eén per bedrijf.`,
     closeCta: 'Vraag je proefvisual aan',
     closeAlt: 'Of start meteen een bestelling',
   },
@@ -1285,14 +1294,26 @@ const FAQ_PICK = [
         grid draws `thumb` (800px): different files, one photograph, which is
         exactly what a view transition is for.
 
-        The comment sits HERE and not inside the map on purpose: a {/* */} as
-        the first child of an arrow body gives the expression two roots, and
-        Astro fails the build with "Expected ) but found $$render". */}
+        WAARSCHUWING — DIT COMMENTAAR LEKTE. Hier stond de tekens van een JSX-
+        commentaar letterlijk uitgeschreven, midden in dit commentaar. Het
+        afsluitende teken sloot dit blok toen te vroeg, en de rest van de zin
+        stond als gewone leestekst op de homepage — in beide talen, direct boven
+        de gezichtenrij, en zo ook live. Gevonden 8 augustus 2026.
+
+        Schrijf de tekens dus nooit uit binnen een commentaar. Wat de noot moest
+        zeggen: dit commentaar staat hier en niet binnen de map, omdat een
+        JSX-commentaar als eerste kind van een arrow-body de expressie twee
+        wortels geeft en Astro dan afbreekt op een parse-fout. */}
     <div class="rail hv-faces" data-rail>
       {FACES.map((m) => (
         <a class="hv-face" href={lp('/models')}>
-          <span class="plate"><img src={m.photo} alt={`${m.name} — ${m.traits.join(', ')}`} width={m.w} height={m.h} loading="lazy" decoding="async" transition:name={`face-${modelId(m.name)}`} /></span>
-          <span class="plate-cap"><b>{m.name}</b><span>{m.traits.join(' · ')}</span></span>
+          {/* traitWords() en niet m.traits: die array bevat SLEUTELS, geen woorden.
+              Rechtstreeks joinen zette hier "warm · approachable" op de
+              Nederlandse pagina — ruwe Engelse sleutels, ook in de alt-tekst,
+              terwijl /nl/models netjes "Warm · Toegankelijk" toont. Gevonden 8
+              augustus 2026; ModelsPage.astro deed het al goed. */}
+          <span class="plate"><img src={m.photo} alt={`${m.name} — ${traitWords(m).join(', ')}`} width={m.w} height={m.h} loading="lazy" decoding="async" transition:name={`face-${modelId(m.name)}`} /></span>
+          <span class="plate-cap"><b>{m.name}</b><span>{traitWords(m).join(' · ')}</span></span>
         </a>
       ))}
     </div>

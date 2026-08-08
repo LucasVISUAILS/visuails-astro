@@ -269,7 +269,7 @@ const COPY = {
     h1a: 'Een shootdag, of ',
     h1b: 'een bestelling',
     h1c: '.',
-    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Ze kosten ander geld, andere uren, en ze gaan op andere manieren mis. Hier staan ze naast elkaar, en aan geen van beide kanten is iets weggelaten.',
+    lead: 'Allebei leveren ze een seizoen aan productbeelden op. Ze kosten niet hetzelfde, ze vragen niet dezelfde uren, en ze gaan op andere manieren mis. Hier staan ze naast elkaar, en aan geen van beide kanten is iets weggelaten.',
     ctaPrimary: 'Start een bestelling',
     ctaGhost: 'Bekijk de prijs per product',
 
@@ -284,7 +284,7 @@ const COPY = {
         a: 'Eén dag van ieders tijd, en wat daar precies in past.',
         // Zie de EN-tak: het aantal staat erbij omdat het tarief met de omvang
         // meezakt, dus dit is één uitgewerkt voorbeeld en geen pakketprijs.
-        b: `${ANCHOR_PRODUCTS} producten — een catalogset en een lifestyle-carousel voor elk. Elk aantal kan; dit is de omvang waarmee de dag hiernaast wordt vergeleken.`,
+        b: `${ANCHOR_PRODUCTS} producten — een catalogset en een lifestyle-carousel voor elk. Elk aantal kan; dit is het aantal waarmee we de dag hiernaast vergelijken.`,
       },
       {
         label: 'Wat het kost',
@@ -294,16 +294,16 @@ const COPY = {
       {
         label: 'Wanneer het er is',
         a: 'Weken. Er moet eerst een datum vastliggen voordat er iemand fotografeert, en de retouche begint pas als de dag voorbij is.',
-        b: `${turnaround(tier, 'nl')}. De leverdatum wordt eerst tegen de agenda gehouden — kan de week die je nodig hebt niet, dan hoor je dat, in plaats van een datum.`,
+        b: `${turnaround(tier, 'nl')}. We kijken eerst in de agenda of de week die je nodig hebt nog kan. Kan die niet, dan hoor je dat meteen, in plaats van dat je een datum krijgt.`,
       },
       {
         label: 'Wie het controleert',
-        a: 'Jij, op de dag zelf. Daarna degene die retoucheert, op zijn eigen tempo.',
+        a: 'Jij, op de dag zelf. Daarna degene die retoucheert, in zijn eigen tempo.',
         b: `${reviewClaim(tier, 'nl')} — en daarna jij, beeld voor beeld, in het portaal.`,
       },
       {
         label: 'Als er iets mis is',
-        a: 'Opnieuw schieten is opnieuw een dag, vanaf nul geboekt.',
+        a: 'Opnieuw fotograferen is opnieuw een dag, en die boek je vanaf nul.',
         b: `${aftercare(tier, 'nl')} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
       },
       {
@@ -313,7 +313,7 @@ const COPY = {
       },
     ],
     caveat: shoot.caveat,
-    caveatNote: 'Dat is een echt bereik voor een echte dag, geen stroman: het is wat de hele dag kost zodra elke regel hierboven is meegeteld, en de onderkant is een bescheiden stadsstudio waar je veel zelf doet. Beide bedragen in die regel zijn netto, dus het zijn dezelfde soort getallen.',
+    caveatNote: 'Dat is een echte bandbreedte voor een echte dag, niet het duurste geval om ons eigen bedrag mooier te laten lijken. Het is wat de hele dag kost zodra je elke regel hierboven meetelt. De onderkant is een bescheiden stadsstudio waar je veel zelf doet. Beide bedragen zijn netto, dus het zijn dezelfde soort getallen.',
 
     // FigConverge (taak #246) — zie de EN-tak hierboven voor waarom de labels
     // naamwoordgroepen zijn en geen stellingen. convTitle en seqTitle zijn
@@ -321,7 +321,7 @@ const COPY = {
     // hetzelfde noemen; wijkt er één af, dan leest de figuur als een derde
     // partij in plaats van als dezelfde twee kolommen, getekend.
     convergeH: 'Wat op één lijn moet komen',
-    convergeSub: 'Geen kosten en geen planning — alleen wat het met wat eens moet worden voordat er een beeld bestaat.',
+    convergeSub: 'Even los van geld en planning: dit is wat er allemaal op één lijn moet komen voordat er één beeld bestaat.',
     convTitle: 'Een productiedag',
     convLanes: [
       { label: 'Een studio, op een datum' },
@@ -330,11 +330,11 @@ const COPY = {
       { label: 'Het product, in de ruimte, tegen die tijd' },
     ],
     convMeet: 'Eén datum',
-    convOut: 'Alles wordt op die dag gemaakt. Opnieuw schieten is dezelfde vier dingen, opnieuw op één lijn.',
+    convOut: 'Alles wordt op die dag gemaakt. Wil je het opnieuw, dan moeten diezelfde vier dingen weer allemaal kloppen.',
     seqTitle: 'Een VISUAILS-bestelling',
     seqSteps: [
       'Je stuurt een map met productfoto’s.',
-      'De week wordt tegen de agenda gehouden, en vastgezet of geweigerd.',
+      'We kijken of die week nog kan, en zetten hem vast of zeggen nee.',
       'Beelden worden gemaakt, en komen binnen zodra elk beeld klaar is.',
     ],
     seqOut: 'Niets hoeft op één plek op één moment te zijn. Een revisie is één beeld, niet opnieuw die hele afstemming.',
@@ -343,10 +343,10 @@ const COPY = {
     winsHead: 'Waar een shootdag nog steeds wint',
     winsSub: 'We vertellen het je liever eerlijk. Is dit de opdracht? Boek dan de dag — een bestelling bij ons is er het verkeerde gereedschap voor.',
     wins: [
-      { t: 'Een materiaal dat in de ruimte moet liggen', b: 'Sommige afwerkingen kloppen alleen als iemand ze met het oog uitlicht — een weefsel dat meebeweegt, een coating die maar op één hoek vangt. Draait de hele verkoop om het gevoel, zet er dan een camera op.' },
-      { t: 'Een campagne rond één echt persoon', b: 'Een oprichter, een sporter, een gezicht dat je publiek al bij naam volgt. Dat is een mens, geen model. Fotografeer die.' },
+      { t: 'Een materiaal dat in de ruimte moet liggen', b: 'Sommige afwerkingen kloppen alleen als iemand ze met het oog uitlicht — een weefsel dat meebeweegt, een coating die alleen onder één hoek oplicht. Draait de hele verkoop om het gevoel, zet er dan een camera op.' },
+      { t: 'Een campagne rond één echt persoon', b: 'Een oprichter, een sporter, een gezicht dat je publiek al bij naam volgt. Dat is een echt persoon, geen model. Die moet je fotograferen.' },
       { t: 'Documentatie, geen verbeelding', b: 'Persbeelden, herkomstfoto’s, alles waarbij het punt is dat er echt een camera bij was en iemand daarnaar gaat vragen.' },
-      { t: 'Je wilt de dag zelf', b: 'Een shoot is ook een teamdag, een behind-the-scenes reel, een lanceringsmoment. Is dat het budget op zichzelf waard, dan is het het budget waard.' },
+      { t: 'Je wilt de dag zelf', b: 'Een shoot is ook een teamdag, materiaal voor achter de schermen, een lanceringsmoment. Is dat op zichzelf het budget waard, boek de dag dan.' },
     ],
 
     toolHead: 'En als je een self-serve tool overweegt',
@@ -354,13 +354,13 @@ const COPY = {
     enoughHead: 'Een tool is echt genoeg als',
     enough: [
       'Je een snelle mock wilt om een idee te testen of een layout te schetsen.',
-      'Het niet voor klanten komt, dus off-brand is prima.',
+      'Niemand buiten je bedrijf het ziet, dus het hoeft niet bij je merk te passen.',
       'Je het prompten leuk vindt, en de middag hebt.',
     ],
     costsHead: 'Hij kost je stilletjes geld als',
     costs: [
-      'Er tien generaties nodig zijn voor één bruikbare. Goedkoop per poging, duur per bruikbaar beeld.',
-      'Je merkkleur bij elke run een beetje verschuift. Over een hele catalogus is dat precies wat een shop amateuristisch laat ogen.',
+      'Je tien pogingen nodig hebt voor één bruikbaar beeld. Goedkoop per poging, duur per bruikbaar beeld.',
+      'Je merkkleur bij elke poging een beetje verschuift. Over een hele catalogus is dat precies wat een shop amateuristisch maakt.',
       'Er niets gecontroleerd wordt. Een tool levert vervormde handen en verzonnen tekst rechtstreeks aan je shop.',
       'Prompten, opnieuw proberen, upscalen, croppen en exporteren nog steeds jouw middag is.',
     ],
@@ -369,7 +369,7 @@ const COPY = {
 
     ctaHead: 'Geloof ons niet — ',
     ctaHeadEm: 'test het',
-    ctaBody: 'Zie VISUAILS eerst op je eigen product, en leg het daarna naast wat je verder overwoog.',
+    ctaBody: 'Laat ons het eerst op je eigen product zien, en leg dat daarna naast wat je verder overweegt.',
     ctaSample: 'Proefvisual',
     ctaStart: 'Start een bestelling',
     ctaWa: 'Vraag ons alles',

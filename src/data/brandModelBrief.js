@@ -126,7 +126,7 @@ export const COPY = {
   nl: {
     eyebrow: 'Merkmodel',
     h1: 'Vertel ons wie het moet dragen.',
-    lead: 'Een merkmodel wordt één keer ontworpen, voor jou, en nergens anders gebruikt. Het is niets wat je uit een lijst kiest — dus dit zijn een paar korte vragen, en daarna kijken we er samen naar en komen we met richtingen terug voordat er iets gebouwd wordt.',
+    lead: 'Een merkmodel wordt één keer ontworpen, voor jou, en nergens anders gebruikt. Het is niet iets wat je uit een lijst kiest — dus dit zijn een paar korte vragen, en daarna kijken we er samen naar en komen we met richtingen terug voordat er iets gebouwd wordt.',
     formH: 'Wat we van je nodig hebben',
     formLead: 'Acht antwoorden, de meeste met één tik. Alles hier is een startpunt en geen specificatie — in het gesprek wordt het beslist.',
     presentation: 'Hoe moet het model overkomen?',
@@ -155,7 +155,7 @@ export const COPY = {
     after: [
       'We lezen wat je invulde en komen binnen twee werkdagen terug met richtingen — niet één gezicht maar een paar, zodat je iets hebt om op te reageren.',
       'Jij zegt wat in de buurt komt en wat niet klopt. Die ronde is precies waarom we het zo doen; een gezicht waar niemand over gediscussieerd heeft, is een gezicht dat niemand gekozen heeft.',
-      'Zodra het vaststaat is het model van jou en wordt het bij geen enkel ander merk gebruikt. Het wordt bijgehouden terwijl je lijn verandert.',
+      'Zodra het vaststaat is het model van jou en wordt het bij geen enkel ander merk gebruikt. Het blijft meegaan als je collectie verandert.',
     ],
     priceNote: 'Voor dit formulier en het gesprek erna betaal je niets. Het setupbedrag en hoe je dat betaalt, spreken we af voordat er iets gebouwd wordt — nooit achteraf.',
   },

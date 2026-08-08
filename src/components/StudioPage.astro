@@ -54,17 +54,17 @@ const COPY = {
       [`Size decides, at ${WINDOW_THRESHOLD} products`, `From ${WINDOW_THRESHOLD} products an order goes into the calendar and holds a committed date. Smaller orders run in a normal turnaround and yield to it, which is what makes the committed date committed.`],
       ['Nothing is promised twice', 'A week that has been offered and taken is gone from the picker before the next person sees it.'],
     ],
-    gatePh: 'Studio dashboard · delivery calendar',
+    gatePh: 'Admin side · delivery calendar',
     gateNote: 'The week view with load per week, and a full week marked as unavailable.',
 
     boardH: 'One table, every order.',
-    boardLede: 'The studio side is deliberately boring: a list of orders, the state each one is in, and the calendar the picker reads from. There is no dashboard of graphs, because a graph has never told anyone which order is late.',
+    boardLede: 'Our side of it is deliberately boring: a list of orders, the state each one is in, and the calendar the picker reads from. There is no dashboard of graphs, because a graph has never told anyone which order is late.',
     board: [
       ['Every order, one row', 'Reference, brand, product count, the committed date and the state it is in.'],
       ['Revisions come to the top', 'A revision request from a client portal lands in its own list, with the note the client wrote, in their words.'],
       ['A state change writes both sides', 'Moving an order writes the studio record and the client-visible timeline in the same move — which is why the portal is never out of date with the studio.'],
     ],
-    boardPh: 'Studio dashboard · order table',
+    boardPh: 'Admin side · order table',
     boardNote: 'The order list with one revision request open.',
 
     humanH: 'The last step is a person.',
@@ -95,26 +95,26 @@ const COPY = {
     gateH: 'De planning weigert voordat de tekst belooft.',
     gateLede: 'De datumkiezer in het bestelformulier toont geen lijstje datums. Hij vraagt de planning waar de studio zich die week werkelijk aan verbonden heeft, haalt weg wat de studio niet kan vasthouden, en biedt de eerste week aan die dat wel kan.',
     gate: [
-      ['Belasting, geen beschikbaarheid', 'Capaciteit wordt in producten geteld, niet in orders. Dertig producten in één bestelling wegen dertig, want dat is wat ze kosten om te maken.'],
+      ['Werkdruk, geen beschikbaarheid', 'Capaciteit wordt in producten geteld, niet in orders. Dertig producten in één bestelling wegen dertig, want dat is wat ze kosten om te maken.'],
       ['Eén plafond, één plek', 'De limiet is één instelbaar getal. Er is nergens een tweede regel die er stilletjes van kan afwijken.'],
       // Zie de EN-tak: omvang beslist, niet het soort bestelling.
       [`Omvang beslist, bij ${WINDOW_THRESHOLD} producten`, `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling de agenda in en houdt hij een vastgelegde datum. Kleinere bestellingen draaien in een normale doorlooptijd en wijken ervoor — precies dat maakt de vastgelegde datum vastgelegd.`],
       ['Niets wordt twee keer beloofd', 'Een week die is aangeboden en gepakt, is uit de kiezer verdwenen voordat de volgende hem ziet.'],
     ],
-    gatePh: 'Studiodashboard · capaciteitskalender',
+    gatePh: 'Adminportaal · de agenda',
     gateNote: 'Het weekoverzicht met de belasting per week, en een volle week als niet-beschikbaar gemarkeerd.',
 
     boardH: 'Eén tabel, elke order.',
-    boardLede: 'De studiokant is met opzet saai: een lijst orders, de staat waarin elke order zit, en de kalender waar de kiezer uit leest. Geen dashboard vol grafieken, want een grafiek heeft nog nooit iemand verteld welke bestelling te laat is.',
+    boardLede: 'Onze kant is met opzet saai: een lijst orders, de staat waarin elke order zit, en de kalender waar de kiezer uit leest. Geen dashboard vol grafieken, want een grafiek heeft nog nooit iemand verteld welke bestelling te laat is.',
     board: [
       ['Elke order, één regel', 'Kenmerk, merk, aantal producten, de vastgelegde datum en de staat waarin hij zit.'],
-      ['Revisies komen bovenaan', 'Een revisieverzoek uit een klantportaal komt in een eigen lijst binnen, met de notitie die de klant schreef, in diens eigen woorden.'],
+      ['Revisies komen bovenaan', 'Een revisieverzoek uit VISUAILS Studio komt in een eigen lijst binnen, met de notitie die de klant schreef, in diens eigen woorden.'],
       ['Een statuswissel schrijft beide kanten', 'Een order verplaatsen schrijft het studiodossier en de tijdlijn die de klant ziet in dezelfde beweging — daarom loopt het portaal nooit achter op de studio.'],
     ],
-    boardPh: 'Studiodashboard · ordertabel',
+    boardPh: 'Adminportaal · bestellingentabel',
     boardNote: 'De orderlijst met één revisieverzoek open.',
 
-    humanH: 'De laatste stap is een mens.',
+    humanH: 'De laatste stap is een specialist.',
     humanLede: 'Er wordt niets automatisch geleverd. Elk beeld in elke bestelling wordt bekeken voordat het weggaat, en dat kijken is een staat waar de order doorheen moet — geen bewering op een pagina.',
     humanNote: 'Die controle is ook wat het logboek vastlegt. Elke goedkeuring en revisie krijgt een tijdstempel en wordt bewaard bij het beeld waar hij bij hoort, dus wat jou de regie geeft over de bestelling is hetzelfde wat de reeks later terug te lezen maakt.',
     humanCta: 'Lees de AI Act-pagina',
@@ -124,7 +124,7 @@ const COPY = {
     honest: [
       ['Het garandeert geen week die niet is vrijgegeven', 'Zit de planning vol, dan krijg je de eerstvolgende week die dat niet is. Je krijgt geen ja om daarna verzet te worden.'],
       ['Het jaagt een bestelling niet langs de controle', 'De vastgezette leverdatum is de leverdatum waarin het werk past, geen doel waar de studio naartoe sprint. Een bestelling die niet klopt gaat niet op tijd weg; die gaat goed weg.'],
-      ['Het schaalt niet door aan te nemen', 'Het plafond is een echt getal en blijft een echt getal. Als de studio vol zit, zegt hij dat — de enige versie hiervan die iets waard is.'],
+      ['We rekenen niet op ruimte die er nog niet is', 'Het plafond is een echt getal en blijft een echt getal. Zit de studio vol, dan zeggen we dat gewoon — anders is die datum niets waard.'],
     ],
 
     closeH: 'Boek een week die de planning heeft vrijgegeven.',

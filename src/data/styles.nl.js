@@ -27,7 +27,7 @@ export const styles = [
     beforeAfter: { before: '/img/lifestyle-dunes-02.webp', after: '/img/lifestyle-dunes-01.webp' },
     cardIcon: 'bag',
     cardDesc: 'Warme, zonovergoten editorial-scènes met zacht natuurlijk licht en aardse, zandkleurige omgevingen — een sfeer waar je in wilt stappen, en die premium producten flatteert.',
-    moodTitle: 'Hoe Dunes voelt.',
+    moodTitle: 'Hoe Dunes eruitziet.',
     moodParagraphs: [
       'Zonovergoten minimalisme, aardse tonen, lange zachte schaduwen. De look van ingetogen luxe.',
       'Producten krijgen hier de ruimte. Woestijnlicht, linnen, en veel leegte eromheen die het werk doet.',
@@ -64,7 +64,7 @@ export const styles = [
     beforeAfter: { before: '/img/lifestyle-flash-07.webp', after: '/img/lifestyle-flash-01.webp' },
     cardIcon: 'sneaker',
     cardDesc: 'Energieke flitsvisuals met een nightlife-/editorial-gevoel — pittig, contrastrijk, trendgedreven.',
-    moodTitle: 'Hoe Flash voelt.',
+    moodTitle: 'Hoe Flash eruitziet.',
     moodParagraphs: [
       'Hard on-camera licht, diepe schaduwen, kleur die knalt. De nightlife-look, confronterend van opzet.',
       'Verkeerd toegepast is dit licht gewoon hard. Goed toegepast is het elektrisch. Wij hebben er een discipline van gemaakt.',
@@ -101,7 +101,7 @@ export const styles = [
     beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
     cardIcon: 'jar',
     cardDesc: 'Gedurfde visuals geïnspireerd op fashion-editorial — directe on-camera flits, scherp contrast, sterke schaduwen, moderne campagne-esthetiek.',
-    moodTitle: 'Hoe Glow voelt.',
+    moodTitle: 'Hoe Glow eruitziet.',
     moodParagraphs: [
       'Laagstaande zon, zachte gloed, huid en product gehuld in hetzelfde amberkleurige licht. De look van een avond die goed verliep.',
       'Editorial-merken gebruiken dit licht omdat het alles flatteert wat het raakt. Nu is het een instelling, geen locatieshoot van twee weken.',
@@ -138,14 +138,14 @@ export const styles = [
     beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
     cardIcon: 'bottle',
     cardDesc: 'Minimalistische visuals die lijken op authentieke, alledaagse fotografie — natuurlijk en ongepolijst, als een foto die iemand net even maakte.',
-    moodTitle: 'Hoe Phone-made voelt.',
+    moodTitle: 'Hoe Phone-made eruitziet.',
     moodParagraphs: [
       'Daglicht door een raam, een product op een aanrecht, een licht imperfect kader. Het leest als echt.',
       'Deze stijl laat een feed je vertrouwen. Geen studioglans, geen harde verkoop. Gewoon je product in een geloofwaardig leven.',
     ],
     steps: [
       { title: 'Zet het licht', body: 'Eén raam of lamp, niets geënsceneerd — licht zoals het thuis echt valt.' },
-      { title: 'Alsof het uit de hand geschoten is', body: 'Natuurlijke hoeken en een beetje scheef, zonder dat het er stijf van een statief uitziet.' },
+      { title: 'Alsof je het zelf even hebt gemaakt', body: 'Natuurlijke hoeken en een beetje scheef, zonder dat het er stijf van een statief uitziet.' },
       { title: 'Snijd uit voor de feed', body: 'Gekaderd voor het platform waar het landt, vanaf de allereerste versie.' },
     ],
     grid: grid(
@@ -163,7 +163,7 @@ export const styles = [
       { title: 'Vertrouwen vóór glans', body: 'De look die presteert wanneer een publiek wantrouwig is tegenover alles wat te gestyled is.' },
       { title: 'Meteen goed voor je feed', body: 'Je hoeft er niets meer uit te snijden — de verhouding klopt al zoals je hem krijgt.' },
     ],
-    bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die vertrouwen bouwen vóór glans', 'Organische content die er niet als advertentie uit mag zien'],
+    bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die eerst vertrouwen opbouwen en dan glans', 'Organische content die er niet als advertentie uit mag zien'],
     whatYouGet: ['Authentieke, telefoon-echte lifestyle-scènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één', TIMING, REVIEW],
   },
   {
