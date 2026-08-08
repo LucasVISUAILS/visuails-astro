@@ -192,7 +192,16 @@ const COPY = {
     // agency that quotes on request.
     heroLede: `One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style. Priced per product, from ${euro(ladderRate('complete', 1), 'en')} down to ${euro(FLOOR_RATE_EN, 'en')} as the count rises.`,
     ctaStart: 'Start an order',
-    ctaSample: `Send one product photo, get one product back in full — ${sample.price}`,
+    // KORT, want dit is een knop en geen zin. De hele belofte stond hier in het
+    // label en dat maakte de pil breder dan de primaire knop ernaast — een
+    // secundaire actie die meer ruimte inneemt dan de primaire leest als de
+    // hoofdactie. Wat je krijgt staat nu in ctaSampleNote eronder, waar het
+    // gelezen mag worden in plaats van gescand.
+    ctaSample: `Request a test sample · ${sample.price}`,
+    // Begint met het woord "Test sample", niet met "One product photo": deze
+    // regel staat onder BEIDE knoppen en moet zonder twijfel bij de tweede
+    // horen. Zonder dat woord lijkt het of een bestelling ook € 1 kost.
+    ctaSampleNote: `Test sample: one product photo, one product back in full — ${CATALOG_IMAGES}\u00A0catalog images or ${LIFESTYLE_IMAGES}\u00A0lifestyle photos. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
     // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
     // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
     // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
@@ -486,7 +495,8 @@ const COPY = {
     h1: TAGLINE.nl.lines,
     heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Je betaalt per product: van ${euro(ladderRate('complete', 1), 'nl')} omlaag naar ${euro(FLOOR_RATE_EN, 'nl')} naarmate je er meer bestelt.`,
     ctaStart: 'Start een bestelling',
-    ctaSample: `Stuur één productfoto, krijg één product volledig terug — ${sample.price}`,
+    ctaSample: `Proefvisual aanvragen · ${sample.price}`,
+    ctaSampleNote: `Proefvisual: één productfoto, één product volledig terug — ${CATALOG_IMAGES}\u00A0catalogbeelden of ${LIFESTYLE_IMAGES}\u00A0lifestyle-foto’s. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
     // Zie de EN-tabel voor waarom dit geen plint meer is.
     proof: [
       turnaround('attended', 'nl'),
@@ -782,8 +792,13 @@ const FAQ_PICK = [
       <p class="hv-lede">{c.heroLede}</p>
       <div class="hv-cta">
         <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
-        <a href={lp('/test-sample')} class="btn btn-ghost btn-lg">{c.ctaSample}</a>
+        <a href={lp('/test-sample')} class="btn btn-ghost btn-lg" aria-describedby="hv-cta-note">{c.ctaSample}</a>
       </div>
+      {/* aria-describedby en niet in het label: een schermlezer krijgt "Proefvisual
+          aanvragen · € 1" als naam — kort en bruikbaar in een linklijst — en de
+          voorwaarden erachteraan als beschrijving. Alles in het label proppen
+          maakt de naam onbruikbaar; het weglaten maakt de voorwaarden onhoorbaar. */}
+      <p class="hv-cta-note" id="hv-cta-note">{c.ctaSampleNote}</p>
       {/* The proof line sits INSIDE the hero copy, under the buttons, on the
           photograph — no bar behind it. It is the last thing read before the
           click and it is placed where the eye already is, rather than in a
@@ -1606,7 +1621,20 @@ const FAQ_PICK = [
      as an accident rather than as a list. Three ticks down the left margin is
      also the shape a reader already knows: it is a checklist, which is exactly
      the claim being made. */
-  .hv-proof { list-style: none; margin: clamp(1.3rem, 2.6vw, 1.9rem) 0 0; padding: 0;
+  /* De notitie onder de knoppen. Kleiner dan de prooflijst, maar in DEZELFDE
+     kleur — --paper-soft-on-dark is de tint die op deze foto met het bestaande
+     scrim gemeten door de contrasteis komt. Een tint dimmer "omdat het een
+     voetnoot is" zakt daar onmiddellijk door, en kleine tekst op een foto is
+     precies waar dat niet mag.
+
+     De marge is klein aan de bovenkant en ruim aan de onderkant: dat is wat de
+     regel aan de knoppen vastplakt en van de prooflijst losmaakt. Nabijheid doet
+     hier het groeperingswerk, geen lijn en geen kader. */
+  .hv-cta-note { margin: .8rem 0 0; max-width: 52ch;
+    font-size: .8125rem; line-height: 1.5; text-wrap: pretty;
+    color: var(--paper-soft-on-dark); }
+
+  .hv-proof { list-style: none; margin: clamp(1.05rem, 2.2vw, 1.5rem) 0 0; padding: 0;
     display: flex; flex-direction: column; gap: .5rem; }
   .hv-proof li { display: flex; align-items: flex-start; gap: .5rem;
     font-size: .9rem; line-height: 1.4; color: var(--paper-soft-on-dark); }
