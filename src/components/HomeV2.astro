@@ -1327,25 +1327,51 @@ const FAQ_PICK = [
           vier fotokolommen. Dus staat de tekst erboven en de figuur eronder.
           De rij hieronder (de studiokant) houdt zijn twee kolommen, want daar
           zit nog een placeholder. */}
-      <div class="hv-dash-row is-stack">
+      {/* ── DE TWEE SCHERMEN ZWEVEN NAAST HUN TEKST ────────────────────────
+          Lucas, 8 augustus 2026: *"Ik zou het mooi vinden als de dashboard
+          mockup naast de tekst staat en een soort floating effect krijgt en een
+          beetje een kant op buigt als of het 3d is. Zelfde geld voor The studio
+          side."*
+
+          Dit verving de stapeling die hier stond. Die was er om een echte reden
+          — de tour paste niet in een halve kolom omdat zijn zijbalk op
+          vensterbreedte aansprong — en die reden is weggenomen in plaats van
+          genegeerd: FigDash meet sinds vandaag zijn eigen breedte met een
+          container query, dus in een smalle kolom stapelt de zijbalk gewoon.
+          Zonder die wijziging zou dit een afgekapte figuur zijn.
+
+          De twee rijen kantelen NAAR ELKAAR TOE: de eerste staat rechts en
+          draait naar links, de tweede staat links en draait naar rechts. Dat is
+          wat de zigzag maakt die `is-flip` altijd beloofde en nooit waarmaakte —
+          en het richt beide schermen naar de tekst die erover gaat, in plaats
+          van twee keer dezelfde kant op. */}
+      <div class="hv-dash-row is-showcase">
         <div class="hv-dash-copy">
           <h3>{c.dashPortalK}</h3>
           <p>{c.dashPortalN}</p>
           <a class="btn btn-ghost" href={lp('/portal')}>{c.dashPortalCta}</a>
         </div>
-        <FigDash lang={lang} />
+        <div class="hv-stage">
+          <div class="hv-float">
+            <FigDash lang={lang} />
+          </div>
+        </div>
       </div>
 
-      <div class="hv-dash-row is-flip">
+      <div class="hv-dash-row is-showcase is-flip">
         <div class="hv-dash-copy">
           <h3>{c.dashStudioK}</h3>
           <p>{c.dashStudioN}</p>
           <a class="btn btn-ghost" href={lp('/studio')}>{c.dashStudioCta}</a>
         </div>
-        <div class="ph" style="--ph-ratio: 16 / 10">
-          <div>
-            <p class="ph-label">{c.dashStudioPh}</p>
-            <p class="ph-note">{c.dashStudioNote}</p>
+        <div class="hv-stage">
+          <div class="hv-float">
+            <div class="ph" style="--ph-ratio: 16 / 10">
+              <div>
+                <p class="ph-label">{c.dashStudioPh}</p>
+                <p class="ph-note">{c.dashStudioNote}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1810,13 +1836,145 @@ const FAQ_PICK = [
   /* ── the dashboard band ────────────────────────────────────────────────── */
   .hv-dash { margin-top: clamp(2.6rem, 5vw, 4rem); display: grid; gap: 1px; background: var(--line); }
   .hv-dash-row { background: var(--bg); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.5rem, 3vw, 3rem); align-items: center; padding: clamp(1.5rem, 3vw, 2.6rem); }
-  .hv-dash-row.is-flip .hv-dash-copy { order: 2; }
-  /* De tour is te breed voor een halve kolom: vier fotokolommen naast een
-     zijbalk van vijftien rem redt het niet onder de negenhonderd pixels. Dus
-     één kolom, tekst boven, figuur onder — en de tekst houdt zijn eigen
-     regellengte in plaats van de volle breedte te pakken. */
-  .hv-dash-row.is-stack { grid-template-columns: 1fr; align-items: start; }
-  .hv-dash-row.is-stack .hv-dash-copy { max-width: 62ch; }
+  /* ── DE ZWEVENDE SCHERMEN ──────────────────────────────────────────────────
+     De kolommen worden EXPLICIET geplaatst, niet met `order` en niet met
+     `direction`. Beide zijn hier geprobeerd en beide hebben een stille bijwerking:
+
+     · `order` wisselt wel de leesvolgorde maar niet de tracks, dus de FIGUUR
+       kreeg de smalle 5fr en de TEKST de brede 7fr. Op 1240px stond het scherm in
+       432px terwijl de tekst 605px had waarvan 220px leeg bleef.
+     · `direction: rtl` wisselt de tracks wél, maar keert ook de kant op waar een
+       te breed kind overloopt — en dit kind is met opzet 139% breed (zie --k
+       hieronder). De figuur liep daardoor over de tekst.
+
+     grid-column zegt gewoon welke kolom wat krijgt. De 7fr gaat altijd naar het
+     scherm, aan welke kant het ook staat, en overloop blijft één richting op
+     zodat transform-origin voor beide rijen hetzelfde kan zijn. */
+  .hv-dash-row.is-showcase { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; }
+  .hv-dash-row.is-showcase > .hv-dash-copy { grid-column: 1; }
+  .hv-dash-row.is-showcase > .hv-stage { grid-column: 2; }
+  .hv-dash-row.is-showcase.is-flip { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .hv-dash-row.is-showcase.is-flip > .hv-dash-copy { grid-column: 2; }
+  .hv-dash-row.is-showcase.is-flip > .hv-stage { grid-column: 1; }
+
+  /* ── WAAROM --lift GEREGISTREERD IS ────────────────────────────────────────
+     Een custom property die niet is aangemeld, heeft geen type. De browser kan
+     dan niet tussen twee waarden rekenen en zet hem halverwege in één keer om:
+     de figuur zou schokken in plaats van zweven. @property geeft hem een type en
+     daarmee interpolatie.
+
+     En waarom de animatie alleen --lift beweegt en niet de hele transform: een
+     animatie wint in de cascade van een gewone declaratie. Zou hij `transform`
+     zetten, dan zou de hover-transform hieronder nooit aankomen — ook niet met
+     animation-play-state: paused, want een gepauzeerde animatie blijft zijn
+     waarde opleggen. Door alleen de variabele te bewegen houdt de declaratie de
+     regie en kunnen zweven en hover naast elkaar bestaan. */
+  @property --lift {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  /* Het podium geeft de perspectiefdiepte. Die hoort op de OUDER en niet op het
+     element zelf: perspective op het element zelf laat elk kind zijn eigen
+     verdwijnpunt krijgen, en dan kantelt de figuur niet als één plaat maar als
+     een stapel losse kaarten. 1800px is ver genoeg dat de vervorming leest als
+     een scherm dat een beetje wegdraait en niet als een fisheye. */
+  .hv-stage { perspective: 1800px; perspective-origin: 50% 40%; }
+
+  /* De kanteling en de zweving zijn twee TRANSFORMS OP ÉÉN ELEMENT, via een
+     variabele: transform is één eigenschap, dus twee regels die hem beide zetten
+     overschrijven elkaar. --lift wordt door de animatie bewogen, de rest staat
+     vast. */
+  /* ── OP WARE GROOTTE TEKENEN, DAARNA VERKLEINEN ──────────────────────────
+     Eerste poging was: de figuur laten meekrimpen met de kolom. Dat paste, maar
+     onder de 720px stapelt hij zijn zijbalk en dan las hij als een telefoon in
+     plaats van als een dashboard — precies het beeld dat deze sectie niet wil
+     verkopen.
+
+     Dus krijgt hij een lay-outbreedte van 100%/--k (bij --k .72 is dat 139% van
+     de kolom) en wordt hij met scale(--k) teruggebracht tot exact de kolom. De
+     rekensom is bij elke vensterbreedte consistent, dus dit heeft geen
+     breekpunten en geen JavaScript nodig: de figuur denkt altijd dat hij ~840px
+     breed is, blijft dus zijn zijbalk tonen, en wat je ziet is een desktop-
+     dashboard op schaal. De 7fr-track is minmax(0, 7fr), dus die 139% blaast de
+     grid niet op — hij loopt over en de schaal haalt hem terug.
+
+     transform-origin blijft voor BEIDE rijen links: de 39% overloop gaat altijd
+     naar rechts (het document is links-naar-rechts), dus links ankeren laat de
+     verkleinde figuur exact op de kolombreedte uitkomen — geen overloop, geen
+     gat. Rechts ankeren zou hem de andere kant op duwen. */
+  .hv-float {
+    --k: .72;
+    --lift: 0px;
+    width: calc(100% / var(--k));
+    transform-origin: left center;
+    transform: scale(var(--k)) translate3d(0, var(--lift), 0) rotateY(-9deg) rotateX(3.5deg) rotateZ(-.6deg);
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform .5s cubic-bezier(.16, 1, .3, 1);
+    animation: hv-drift 7s cubic-bezier(.37, 0, .63, 1) infinite alternate;
+  }
+  /* De tweede rij staat aan de andere kant, dus draait hij de andere kant op —
+     beide schermen kijken naar de tekst die erover gaat. */
+  .is-flip .hv-float {
+    transform: scale(var(--k)) translate3d(0, var(--lift), 0) rotateY(9deg) rotateX(3.5deg) rotateZ(.6deg);
+    animation-delay: -3.5s;
+  }
+  /* Naar je toe komen als je erbij komt. Niet helemaal plat: dan springt de
+     hoogte van de figuur en verschuift de rij eronder. */
+  .hv-dash-row.is-showcase:hover .hv-float,
+  .hv-dash-row.is-showcase:focus-within .hv-float {
+    transform: scale(var(--k)) translate3d(0, calc(var(--lift) - 6px), 0) rotateY(-3deg) rotateX(1deg) rotateZ(-.2deg);
+    animation-play-state: paused;
+  }
+  .is-flip:hover .hv-float,
+  .is-flip:focus-within .hv-float {
+    transform: scale(var(--k)) translate3d(0, calc(var(--lift) - 6px), 0) rotateY(3deg) rotateX(1deg) rotateZ(.2deg);
+  }
+
+  @keyframes hv-drift {
+    from { --lift: 6px; }
+    to   { --lift: -6px; }
+  }
+
+  /* DESIGN.md haalt box-shadow als dieptesignaal weg — hairlines en papierwaarde
+     doen dat werk. Een gekanteld scherm is de uitzondering waar die regel voor
+     bedoeld is: zonder iets onder zich zweeft het niet, het staat schuin. Dus
+     geen zachte wolk maar een gerichte schaduw die zegt waar de vloer is, in
+     zwart en niet in een tint, zodat hij op elke ondergrond hetzelfde doet. */
+  .hv-float > :global(*) { box-shadow: -18px 26px 48px -20px rgb(0 0 0 / .75); }
+  .is-flip .hv-float > :global(*) { box-shadow: 18px 26px 48px -20px rgb(0 0 0 / .75); }
+
+  /* Onder de 980px stapelt de rij en gaat de kanteling eraf: een scherm van
+     driehonderd pixels breed dat ook nog wegdraait, is een scherm dat je niet
+     meer kunt lezen. Zelfde grens als waar de rij zijn tweede kolom verliest. */
+  @media (max-width: 980px) {
+    .hv-dash-row.is-showcase { grid-template-columns: 1fr; align-items: start; }
+    /* Gestapeld staat de tekst boven het scherm, ook in de omgekeerde rij. */
+    .hv-dash-row.is-showcase.is-flip { grid-template-columns: 1fr; }
+    .hv-dash-row.is-showcase > .hv-dash-copy,
+    .hv-dash-row.is-showcase.is-flip > .hv-dash-copy { grid-column: 1; grid-row: 1; }
+    .hv-dash-row.is-showcase > .hv-stage,
+    .hv-dash-row.is-showcase.is-flip > .hv-stage { grid-column: 1; grid-row: 2; }
+    .hv-stage { perspective: none; }
+    /* Gestapeld: geen schaal, geen kanteling, gewoon de figuur op zijn eigen
+       breedte — dan mag hij zijn zijbalk stapelen, want daar is hij dan ook echt
+       smal genoeg voor. */
+    .hv-float, .is-flip .hv-float {
+      --k: 1; width: 100%; transform: none; animation: none; will-change: auto;
+    }
+    .hv-float > :global(*), .is-flip .hv-float > :global(*) {
+      box-shadow: 0 18px 36px -22px rgb(0 0 0 / .7);
+    }
+  }
+
+  /* Beweging is hier versiering, dus hij gaat er als eerste af. De KANTELING
+     blijft: een statische transform is geen beweging, en het is de vorm die
+     Lucas vroeg. Alleen het zweven en de overgang verdwijnen. */
+  @media (prefers-reduced-motion: reduce) {
+    .hv-float, .is-flip .hv-float { animation: none; transition: none; --lift: 0px; }
+  }
   .hv-dash-copy h3 { margin: 0 0 .7rem; font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
   .hv-dash-copy p { margin: 0 0 1.3rem; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 46ch; }
   .hv-dash-log { background: var(--bg); padding: clamp(1.5rem, 3vw, 2.6rem); }
@@ -1824,7 +1982,6 @@ const FAQ_PICK = [
   .hv-dash-log p { margin: 0 0 1.3rem; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 68ch; }
   @media (max-width: 820px) {
     .hv-dash-row { grid-template-columns: 1fr; }
-    .hv-dash-row.is-flip .hv-dash-copy { order: 0; }
   }
 
   /* The .hv-stat* rules went with the "What the numbers actually are" band —

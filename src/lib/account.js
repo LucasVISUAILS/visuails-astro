@@ -92,6 +92,10 @@ import { ROSTER, modelId, TRAITS } from '../data/models.js';
 // syncChannels() in pipeline.js, niet van dit bestand.
 import { CHANNELS, CHANNEL_IDS, channelName } from '../data/channels.js';
 import { mailNote } from '../data/mailNote.js';
+// Afronden staat sinds 8 augustus 2026 in zijn eigen bestand omdat portal.js
+// hem óók nodig heeft — zie de kop van close.js. Hier stond dezelfde functie
+// als `maybeClose`; alleen dit bestand riep hem aan en dat was de bug.
+import { maybeCloseOrder } from './close.js';
 import { serviceLabel } from '../data/services.js';
 import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT } from '../data/vat.js';
@@ -475,11 +479,13 @@ const COPY = {
     // als op het bestelformulier, want twee schermen die naar hetzelfde vragen
     // horen het op dezelfde manier te vragen.
     detStreet: 'Street and number',
-    detStreetPh: 'Vaarwerkhorst 17',
+    // Voorbeeldtekst, geen bestaand adres. Hier stond het huisadres van de
+    // eigenaar; zie de noot in FigDash.astro van 8 augustus 2026.
+    detStreetPh: 'Voorbeeldstraat 12',
     detStreet2: 'Addition',
     detStreet2Ph: 'Unit, floor, c/o',
     detPostal: 'Postcode',
-    detPostalPh: '7531 HK',
+    detPostalPh: '1234 AB',
     detCity: 'City',
     detRegion: 'State or province',
     detRegionHint: 'Only where an address needs one — most of Europe does not.',
@@ -706,11 +712,11 @@ const COPY = {
     detCountryOther: 'Elders',
     detCountryHint: 'Hiermee staat de btw op je factuur vast, dus het loont om dit te laten kloppen.',
     detStreet: 'Straat en huisnummer',
-    detStreetPh: 'Vaarwerkhorst 17',
+    detStreetPh: 'Voorbeeldstraat 12',
     detStreet2: 'Toevoeging',
     detStreet2Ph: 'Unit, verdieping, t.a.v.',
     detPostal: 'Postcode',
-    detPostalPh: '7531 HK',
+    detPostalPh: '1234 AB',
     detCity: 'Plaats',
     detRegion: 'Provincie of staat',
     detRegionHint: 'Alleen waar een adres er een heeft — in het grootste deel van Europa niet.',
@@ -2507,39 +2513,6 @@ async function handleLockUpdate({ request, env }, customer) {
  * klant zojuist zélf deed, en "je hebt zojuist op goedkeuren geklikt" is geen
  * bericht. De gebeurtenis komt op zijn tijdlijn, waar hij hem terugvindt.
  */
-async function maybeClose(env, orderId) {
-  try {
-    const row = await env.DB.prepare(
-      `SELECT
-         (SELECT COUNT(*) FROM files f
-           WHERE f.order_id = o.id AND f.kind = 'delivery'
-             AND f.superseded_at IS NULL
-             AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))) AS live,
-         (SELECT COUNT(*) FROM files f
-           WHERE f.order_id = o.id AND f.kind = 'delivery'
-             AND f.superseded_at IS NULL
-             AND (f.expires_at IS NULL OR f.expires_at > datetime('now'))
-             AND f.review_state = 'approved') AS approved,
-         o.status, o.closed_at
-       FROM orders o WHERE o.id = ?1`
-    ).bind(orderId).first();
-    if (!row || row.closed_at || row.status !== 'delivered') return;
-    if (!row.live || row.approved !== row.live) return;
-
-    await env.DB.batch([
-      env.DB.prepare("UPDATE orders SET closed_at = datetime('now') WHERE id = ?1 AND closed_at IS NULL").bind(orderId),
-      env.DB.prepare(
-        `INSERT INTO order_events (order_id, status, note, actor)
-         VALUES (?1, 'delivered', ?2, 'system')`
-      ).bind(orderId, 'Alle beelden goedgekeurd — bestelling afgerond. Downloaden blijft mogelijk.'),
-    ]);
-  } catch (err) {
-    // Afronden is een afronding, geen handeling. Mislukt het, dan is het
-    // gevolg dat de bestelling nog een dag openstaat — geen reden om de
-    // goedkeuring die de klant net gaf te laten mislukken.
-    console.error('[account] afronden overgeslagen voor bestelling', orderId, '—', err?.message || err);
-  }
-}
 
 async function handleFileReview({ request, env }, customer) {
   const home = '/account/orders';
@@ -2598,7 +2571,7 @@ async function handleFileReview({ request, env }, customer) {
         `UPDATE files SET review_state = 'approved', review_note = NULL, reviewed_at = datetime('now') WHERE id = ?1`
       ).bind(fileId).run();
       // Was dit de laatste? Dan is de bestelling af — zie maybeClose().
-      await maybeClose(env, owned.order_id);
+      await maybeCloseOrder(env, owned.order_id);
     } else if (action === 'undo') {
       // Reversible on purpose — same reasoning as portal.js: a mis-tapped
       // Approve must not strand a client with a decision they cannot take back.

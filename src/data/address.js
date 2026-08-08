@@ -38,9 +38,9 @@ export function composeName(first, last) {
  *
  * DRIE REGELS, IN DE VOLGORDE DIE EEN ENVELOP AANHOUDT:
  *
- *   Vaarwerkhorst 17
+ *   Voorbeeldstraat 12
  *   Unit B
- *   7531 HK Enschede
+ *   1234 AB Rotterdam
  *
  * Postcode en plaats staan op één regel omdat ze bij elkaar horen — dat is hoe
  * ze in heel Europa geschreven worden, en het is wat een klant terugleest als

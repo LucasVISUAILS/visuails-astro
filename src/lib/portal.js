@@ -55,6 +55,9 @@ import { serviceLabel } from '../data/services.js';
 import { PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken } from './token.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { mailNote } from '../data/mailNote.js';
+// Niet uit account.js: zie de kop van close.js voor waarom afronden een eigen
+// bestand kreeg in plaats van dat dit bestand de dashboardmodule importeert.
+import { maybeCloseOrder } from './close.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
 
@@ -384,6 +387,19 @@ export async function portalPost(context) {
       )
         .bind(fileId)
         .run();
+      // ── WAS DIT DE LAATSTE? DAN IS DE BESTELLING AF ────────────────────────
+      //
+      // Dit ontbrak, en het was een echte bug: /account/review deed dit wel en
+      // dit pad niet. Terwijl DIT het pad is dat de klant krijgt toegestuurd —
+      // de /o/<token>-link uit de levermail. Wie hier zijn laatste beeld
+      // goedkeurde, liet `closed_at` leeg en zijn bestelling gold verder als nog
+      // open: geen afrondgebeurtenis op de tijdlijn, en de tevredenheidsvraag
+      // uit reviewverzamelingspecificatie.md zou hier nooit afgaan.
+      //
+      // Gevonden op 8 augustus 2026 bij het uitwerken van die specificatie. Zie
+      // close.js voor waarom dit een eigen bestand is en niet een import uit
+      // account.js.
+      await maybeCloseOrder(env, order.order_id);
     } else if (action === 'undo') {
       // Reversible on purpose. A mis-tapped Approve on a phone must not strand a
       // client with an image they never meant to sign off, and an approval that

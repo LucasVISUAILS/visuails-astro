@@ -565,12 +565,16 @@ const FORM = {
       countryOther: 'Elsewhere',
       countryErr: 'We need the country for the invoice and the VAT.',
       street: 'Street and number',
-      streetPh: 'Vaarwerkhorst 17',
+      // Hier stond een BESTAAND adres als voorbeeldtekst — dat van de eigenaar —
+      // en het stond in het grijs onder elk bestelformulier dat iemand opende.
+      // Een placeholder hoort de VORM te laten zien, niet een plek. Zie ook de
+      // noot in FigDash.astro, waar hetzelfde adres in de mockup stond.
+      streetPh: 'Voorbeeldstraat 12',
       streetErr: 'An invoice needs an address on it.',
       street2: 'Addition',
       street2Ph: 'Unit, floor, c/o',
       postal: 'Postcode',
-      postalPh: '7531 HK',
+      postalPh: '1234 AB',
       postalErr: 'The postcode is missing.',
       city: 'City',
       cityErr: 'The town or city is missing.',
@@ -730,12 +734,12 @@ const FORM = {
       countryOther: 'Elders',
       countryErr: 'We hebben het land nodig voor de factuur en de btw.',
       street: 'Straat en huisnummer',
-      streetPh: 'Vaarwerkhorst 17',
+      streetPh: 'Voorbeeldstraat 12',
       streetErr: 'Op een factuur hoort een adres.',
       street2: 'Toevoeging',
       street2Ph: 'Unit, verdieping, t.a.v.',
       postal: 'Postcode',
-      postalPh: '7531 HK',
+      postalPh: '1234 AB',
       postalErr: 'De postcode ontbreekt nog.',
       city: 'Plaats',
       cityErr: 'De plaats ontbreekt nog.',

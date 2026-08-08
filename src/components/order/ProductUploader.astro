@@ -149,12 +149,49 @@ const hint = lang === 'nl'
   </section>
 
   {/* ── THE LIVE UPLOADER ──────────────────────────────────────────────────
-      Two ways in and both first-class: drop the lot, or fill them in one at a
-      time. Neither is the fallback for the other — a customer with an export
-      folder and a customer photographing on a phone are the same customer on
-      two different days. */}
-  <div class="pu-live">
-    <section class="pu-bulk" aria-labelledby="pu-bulk-h">
+      ÉÉN WEG TEGELIJK, EN PER PRODUCT IS DE VOORKEUR — 8 augustus 2026.
+
+      Hier stonden beide manieren onder elkaar op één scherm: eerst de sleepbak
+      voor de hele hoop, daarna de kaarten per product. Lucas: *"Ook het slepen
+      van bestanden of mappen werkt niet zo fijn. (…) niet beide opties tonen,
+      laat eerst invulscherm zien en maak een knop om over te schakelen naar map
+      uploaden en dan verdwijnt het andere scherm."*
+
+      Twee dingen veranderden daarmee. De ORDE: de kaarten staan nu eerst en de
+      sleepbak erachter, want per product ingevuld is de weg die geen navraag
+      kost. En de EXCLUSIVITEIT: er is er altijd precies één zichtbaar. Twee
+      manieren naast elkaar is geen keuze aanbieden maar de keuze doorschuiven —
+      de klant moet dan zelf uitzoeken welke van de twee voor hem bedoeld is, en
+      dat is precies het moment waarop iemand de verkeerde pakt.
+
+      De maproute is NIET weggestopt. Hij is sneller en voor een merk met een
+      exportmap de enige redelijke weg. Hij kost alleen een gesprek achteraf, en
+      dat staat er nu bij vóórdat je hem kiest.
+
+      DE BAK BLIJFT VOOR BEIDE WERKEN. pipeline.js hangt zijn sleep-luisteraars
+      aan het formulier en niet aan dit paneel, dus een map op de kaarten slepen
+      werkt nog steeds — verbergen is geen uitschakelen. Dat is bewust: iemand die
+      per product invult en tóch een map naar binnen sleept, bedoelde dat. */}
+  <div class="pu-live" data-pu-modes>
+    <section class="pu-manual" data-pu-panel="cards" aria-labelledby="pu-manual-h">
+      <h3 class="pu-sub-h" id="pu-manual-h">{k.manualH}</h3>
+      {/* ONCE, over the whole list — the same rule the guide follows. Twenty-five
+          cards each carrying a sentence about what to type in their name field
+          is twenty-five copies of one instruction. */}
+      <p class="pu-sub-lead">{k.productNameHint}</p>
+      {/* Built by pipeline.js from the count on step 1, and rebuilt when that
+          count changes. Empty in the markup on purpose: a card list rendered
+          here would be a guess at a number the visitor has already answered. */}
+      <ol class="pu-cards" data-pl-cards></ol>
+      <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-pl-add></button></p>
+
+      <p class="pu-swap">
+        <button type="button" class="pu-link" data-pu-switch="folder">{k.toFolder}</button>
+        <span class="hint">{k.toFolderWhy}</span>
+      </p>
+    </section>
+
+    <section class="pu-bulk" data-pu-panel="folder" hidden aria-labelledby="pu-bulk-h">
       <h3 class="pu-sub-h" id="pu-bulk-h">{k.bulkH}</h3>
       <p class="pu-sub-lead">{k.bulkLead}</p>
       <label class="dropzone pu-drop">
@@ -173,11 +210,20 @@ const hint = lang === 'nl'
         <span class="hint pu-folder-hint">{t.folderHint}</span>
       </p>
       <input type="file" data-pl-folder-input multiple accept="image/*" class="pu-file-input" tabindex="-1" aria-hidden="true" />
+
+      <p class="pu-swap">
+        <button type="button" class="pu-link" data-pu-switch="cards">{k.toCards}</button>
+        <span class="hint">{k.toCardsWhy}</span>
+      </p>
     </section>
 
     {/* Progress that is about products, never about files. "8 of 25 products
         ready" is a sentence a customer can act on; "31 files uploaded" is a
-        receipt for work they cannot check. */}
+        receipt for work they cannot check.
+
+        BUITEN DE PANELEN, want hij gaat over de bestelling en niet over de weg
+        die je koos: wie een map stuurt wil net zo goed weten hoeveel producten
+        er klaar zijn. */}
     <p class="pu-progress" data-pl-progress aria-live="polite"></p>
 
     {/* ── THE TRAY ─────────────────────────────────────────────────────────
@@ -191,19 +237,6 @@ const hint = lang === 'nl'
       <h3 class="pu-sub-h" id="pu-tray-h">{k.trayH}</h3>
       <p class="pu-sub-lead">{k.trayLead}</p>
       <ul class="pu-tray-list" data-pl-tray-list></ul>
-    </section>
-
-    <section class="pu-manual" aria-labelledby="pu-manual-h">
-      <h3 class="pu-sub-h" id="pu-manual-h">{k.manualH}</h3>
-      {/* ONCE, over the whole list — the same rule the guide follows. Twenty-five
-          cards each carrying a sentence about what to type in their name field
-          is twenty-five copies of one instruction. */}
-      <p class="pu-sub-lead">{k.productNameHint}</p>
-      {/* Built by pipeline.js from the count on step 1, and rebuilt when that
-          count changes. Empty in the markup on purpose: a card list rendered
-          here would be a guess at a number the visitor has already answered. */}
-      <ol class="pu-cards" data-pl-cards></ol>
-      <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-pl-add></button></p>
     </section>
 
     <p class="pl-note pu-off" data-pl-upload-note="off" hidden>{t.off}</p>
@@ -384,6 +417,22 @@ const hint = lang === 'nl'
 
   /* ── The two ways in ──────────────────────────────────────────────────────*/
   .pu-bulk, .pu-manual, .pu-tray { margin-top: clamp(1.6rem, 3.4vw, 2.4rem); }
+
+  /* ── DE OMSCHAKELREGEL ────────────────────────────────────────────────────
+     Onderaan het paneel en niet bovenaan: de keuze om van weg te wisselen komt
+     nadat je hebt gezien wat de huidige weg van je vraagt, niet ervoor. Een
+     tekstknop en geen tweede knop met vulling — er staat al een primaire actie
+     op deze stap, en een tweede gevulde knop ernaast maakt twee hoofdacties.
+
+     De reden staat ernaast en niet in een tooltip: dit is de plek waar iemand
+     een keuze maakt die hem later een telefoontje kost. */
+  .pu-swap {
+    margin: clamp(1.4rem, 3vw, 2.1rem) 0 0;
+    padding-top: clamp(1rem, 2vw, 1.4rem);
+    border-top: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .7rem;
+  }
+  .pu-swap .hint { flex: 1 1 26ch; max-width: 62ch; margin: 0; }
   .pu-sub-h { font-size: 1.05rem; line-height: 1.3; }
   .pu-sub-lead { margin-top: .45rem; font-size: .9rem; color: var(--ink-3); line-height: 1.6; max-width: 66ch; }
   .pu-drop { margin-top: .9rem; border-radius: var(--r-md); }

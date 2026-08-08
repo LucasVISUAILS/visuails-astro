@@ -703,6 +703,10 @@ function bindOrder() {
   // just finished binding. Bound first, constrained second.
   bindChannels();
   bindModel();
+  // De omschakeling tussen per-product en map. Na de rest, want show() roept
+  // syncRequired() en refreshUploader() aan en die willen dat de kaarten en de
+  // achtergrond al gebonden zijn.
+  bindUploadMode();
 }
 
 /**
@@ -908,6 +912,62 @@ function bindChannels() {
     box.addEventListener('change', syncChannels);
   });
   syncChannels();
+}
+
+/*
+ * ── ÉÉN AANLEVERWEG TEGELIJK ─────────────────────────────────────────────────
+ *
+ * Lucas, 8 augustus 2026: *"niet beide opties tonen, laat eerst invulscherm zien
+ * en maak een knop om over te schakelen naar map uploaden en dan verdwijnt het
+ * andere scherm."* De markup staat in ProductUploader.astro; hier staat alleen
+ * de omschakeling.
+ *
+ * WAT ER NIET GEBEURT BIJ OMSCHAKELEN: niets weggooien. Een foto die al naar R2
+ * is gegaan blijft staan, een ingevulde productnaam blijft staan, en het bakje
+ * met niet-geplaatste bestanden blijft bestaan. Verbergen is geen wissen — wie
+ * halverwege van gedachten verandert en terugschakelt, moet zijn werk terugzien
+ * en niet opnieuw beginnen. Dat is ook waarom dit `hidden` gebruikt en geen
+ * `display:none` in een klasse: één mechanisme, en syncRequired() leest het al.
+ *
+ * EN DE VERPLICHTING SCHUIFT MEE. De notities bij de extra foto's staan op de
+ * kaarten en zijn verplicht (zie buildExtras). Staat de maproute open, dan zijn
+ * die kaarten onzichtbaar en dus niet verplicht — syncRequired() kijkt naar
+ * zichtbaarheid, dus dat volgt zonder een tweede regel. Schakelt hij terug, dan
+ * gelden ze weer.
+ */
+function bindUploadMode() {
+  const wrap = q('[data-pu-modes]');
+  if (!wrap) return;
+  const panels = qa('[data-pu-panel]', wrap);
+  if (!panels.length) return;
+
+  const show = (mode, moveFocus) => {
+    panels.forEach((p) => { p.hidden = p.dataset.puPanel !== mode; });
+    // De verplichte velden hangen aan zichtbaarheid, dus opnieuw laten bepalen.
+    syncRequired();
+    // En de uploader zijn eigen staat laten hertekenen: de voortgangsregel en het
+    // bakje staan buiten de panelen en gaan over de bestelling, niet over de weg.
+    refreshUploader();
+    if (!moveFocus) return;
+    // De focus naar de kop van het nieuwe paneel. Zonder dit staat de focus op een
+    // knop die net verdwenen is, en dan valt hij terug naar het begin van het
+    // document — een schermlezer verliest dan zijn plek en een toetsenbordgebruiker
+    // moet de hele stap opnieuw doorlopen.
+    const live = panels.find((p) => !p.hidden);
+    const h = live && q('.pu-sub-h', live);
+    if (h) {
+      if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1');
+      h.focus({ preventScroll: false });
+    }
+  };
+
+  qa('[data-pu-switch]', wrap).forEach((btn) => {
+    btn.addEventListener('click', () => show(btn.dataset.puSwitch, true));
+  });
+
+  // Beginstand uit de markup: de kaarten staan open, de map is `hidden`. Hier niet
+  // opnieuw zetten — dan zou de beginstand op twee plekken staan en ooit uiteen
+  // gaan lopen. Dit is alleen de omschakeling.
 }
 
 function syncChannels() {

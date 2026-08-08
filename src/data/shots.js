@@ -236,7 +236,21 @@ export const COPY = {
     bulkH: 'Have them all ready?',
     bulkLead: 'Drop the whole lot in and we will sort them. A folder per product works best — we read the folder name as the product.',
     bulkCta: 'Drop files or folders',
-    manualH: 'Or fill them in one by one',
+    manualH: 'Fill them in per product',
+    // ── DE TWEE MANIEREN ZIJN NIET GELIJKWAARDIG MEER ────────────────────────
+    // Lucas, 8 augustus 2026: *"Laat de klant kiezen om een hele map op te sturen
+    // of via het invoerscherm in te vullen met invulscherm als voorkeur omdat map
+    // onoverzichtelijk is en ik waarschijnlijk contact op moet gaan nemen met de
+    // klant over wat hij precies wilt."*
+    //
+    // Dus zegt de tekst dat ook. De maproute is niet verboden en niet weggestopt
+    // — hij is sneller en voor een klant met een exportmap de enige redelijke weg
+    // — maar hij kost een gesprek achteraf, en dat hoort iemand te weten vóórdat
+    // hij hem kiest en niet erna.
+    toFolder: 'Rather send one whole folder?',
+    toFolderWhy: 'Faster, less precise: we read the folder name as the product, and we usually have to come back to you to ask what is what.',
+    toCards: 'Fill them in per product instead',
+    toCardsWhy: 'Takes longer and needs nothing from us afterwards — every photo is already against the right product and the right angle.',
     required: 'Required',
     optional: 'Optional',
     skipShot: 'Skip this one',
@@ -289,7 +303,12 @@ export const COPY = {
     bulkH: 'Heb je ze allemaal klaar?',
     bulkLead: 'Sleep de hele hoop erin, dan sorteren wij. Een map per product werkt het best — we lezen de mapnaam als het product.',
     bulkCta: 'Sleep bestanden of mappen',
-    manualH: 'Of vul ze één voor één in',
+    manualH: 'Vul ze per product in',
+    // Zie de EN-tabel voor waarom deze twee wegen niet meer gelijkwaardig zijn.
+    toFolder: 'Liever één hele map sturen?',
+    toFolderWhy: 'Sneller, minder precies: we lezen de mapnaam als het product, en meestal moeten we daarna bij je terugkomen om te vragen wat wat is.',
+    toCards: 'Toch per product invullen',
+    toCardsWhy: 'Kost meer tijd en daarna niets meer van ons — elke foto staat dan al bij het juiste product en de juiste hoek.',
     required: 'Verplicht',
     optional: 'Optioneel',
     skipShot: 'Sla deze over',

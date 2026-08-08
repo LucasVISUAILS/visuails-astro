@@ -34,6 +34,18 @@
  * uitmaakt. Kent een browser `:has()` niet, dan staat het eerste paneel open en
  * blijft de rest bereikbaar via de labels eronder — degraderen zonder te breken.
  *
+ * ── GEEN ECHTE ADRESSEN IN DEZE FIGUUR ───────────────────────────────────────
+ * 8 augustus 2026: hier stond het huisadres van de eigenaar, op de homepage, in
+ * beide talen. Het was als voorbeeldgegeven bedoeld en het las ook zo — en dat
+ * is precies waarom het niemand opviel. Wat er nu staat is onmiskenbaar
+ * verzonnen: Voorbeeldstraat 12, 1234 AB Rotterdam, in dezelfde vorm als het
+ * btw-nummer NL001234567B01 dat er al stond.
+ *
+ * NOOIT EEN BESTAAND ADRES IN EEN MOCKUP, ook niet dat van jezelf, ook niet als
+ * het "maar een voorbeeld" is. Een adres dat echt kan zijn, wordt gelezen als
+ * echt. Als je hier ooit iets levensechter wil, verzin dan een straat die niet
+ * bestaat — niet een die wel bestaat maar niet de jouwe is.
+ *
  * De verzonnen gegevens zijn met opzet herkenbaar als voorbeeld: merk VOLT,
  * referentie VIS-2608-4471. Dezelfde die in scripts/account-render.mjs staan,
  * zodat de mock en de renders van het échte dashboard over hetzelfde merk gaan.
@@ -79,7 +91,7 @@ const C = nl
       bkColours: [['#FFFFFF', 'Wit'], ['#F7F5F1', 'Gebroken wit'], ['#EDE4D8', 'Beige']],
       bkNote: 'Wat hier staat, staat bij je volgende bestelling al ingevuld.',
       detH: 'Je gegevens',
-      detFields: [['Voornaam', 'Mara'], ['Achternaam', 'de Groot'], ['Merk', 'VOLT'], ['Land', 'Nederland'], ['Straat en huisnummer', 'Vaarwerkhorst 17'], ['Postcode', '7531 HK'], ['Plaats', 'Enschede'], ['Btw-nummer', 'NL001234567B01']],
+      detFields: [['Voornaam', 'Mara'], ['Achternaam', 'de Groot'], ['Merk', 'VOLT'], ['Land', 'Nederland'], ['Straat en huisnummer', 'Voorbeeldstraat 12'], ['Postcode', '1234 AB'], ['Plaats', 'Rotterdam'], ['Btw-nummer', 'NL001234567B01']],
       detNote: 'Deze gegevens komen op je factuur. Het land bepaalt of er btw bij komt.',
     }
   : {
@@ -112,7 +124,7 @@ const C = nl
       bkColours: [['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white'], ['#EDE4D8', 'Beige']],
       bkNote: 'Whatever is set here arrives prefilled on your next order.',
       detH: 'Your details',
-      detFields: [['First name', 'Mara'], ['Last name', 'de Groot'], ['Brand', 'VOLT'], ['Country', 'Netherlands'], ['Street and number', 'Vaarwerkhorst 17'], ['Postcode', '7531 HK'], ['City', 'Enschede'], ['VAT number', 'NL001234567B01']],
+      detFields: [['First name', 'Mara'], ['Last name', 'de Groot'], ['Brand', 'VOLT'], ['Country', 'Netherlands'], ['Street and number', 'Voorbeeldstraat 12'], ['Postcode', '1234 AB'], ['City', 'Rotterdam'], ['VAT number', 'NL001234567B01']],
       detNote: 'These go on your invoice. The country decides whether VAT is added.',
     };
 
@@ -284,7 +296,41 @@ const UPLOAD = '/img/catalog-before.webp';
   /* Het frame. Eén hairline en één donkerder vlak: het moet lezen als een
      ander oppervlak dan de pagina eromheen, zonder een tweede vormtaal te
      introduceren. */
+  /* ── @container EN NIET @media (8 augustus 2026) ──────────────────────────
+     Deze figuur stond over de volle breedte, dus viewport-breakpoints kwamen
+     ongeveer overeen met zijn eigen breedte. Nu hij naast een tekstkolom staat,
+     is dat verband weg: op een venster van 1240px is deze figuur ~600px breed,
+     terwijl `@media (min-width: 860px)` een zijbalk van 15rem aanzette die daar
+     niet meer past. Dat is precies de reden dat de tour eerder onder de tekst
+     werd gezet in plaats van ernaast.
+
+     Een component hoort zich naar zijn eigen ruimte te gedragen, niet naar het
+     venster. container-type: inline-size maakt .fd de meetlat en dan gelden de
+     regels hieronder op de breedte van de FIGUUR. Daarmee is de vloer weg die
+     de tweekolomsopstelling in de weg stond: wordt de kolom smal, dan stapelt
+     de zijbalk gewoon.
+
+     LET OP bij verplaatsen: staat .fd ooit weer over de volle breedte, dan
+     werken deze regels nog steeds — een container query is niet afhankelijk van
+     waar hij staat. Dat is het punt.
+
+     DE GRENS STAAT OP 600px EN NIET OP 860px. Op de homepage staat deze figuur in
+     een kolom en wordt hij als geheel verkleind (zie .hv-float in HomeV2.astro):
+     zijn LAY-OUTbreedte is daar ruim, zijn ZICHTBARE breedte klein. 600px is de
+     breedte waarop de zijbalk van 15rem plus een paneel nog leest als een
+     dashboard in plaats van als een telefoon — en dat laatste is wat er gebeurde
+     toen hij op 860 bleef staan. Waarom precies 660: bij een venster van 981px — net
+     boven de grens waar de rij stapelt — is de lay-outbreedte van deze figuur
+     precies 660px, en met afronding valt hij dan net verkeerd om. Elke hogere grens
+     laat een venster over waarin de rij al twee kolommen heeft maar de figuur nog
+     stapelt, en dat is precies één beeld dat niemand ooit test. 600 geeft marge.
+
+     Meet dit niet met getBoundingClientRect op de gekantelde figuur: die geeft de
+     omhullende doos van de gedraaide vorm terug en die is breder dan het element.
+     Deel de breedte van .hv-stage door --k. */
   .fd {
+    container-type: inline-size;
+    container-name: fd;
     margin: 0;
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
@@ -309,13 +355,13 @@ const UPLOAD = '/img/catalog-before.webp';
   }
 
   .fd-body { display: grid; }
-  @media (min-width: 860px) { .fd-body { grid-template-columns: 15rem 1fr; } }
+  @container fd (min-width: 600px) { .fd-body { grid-template-columns: 15rem 1fr; } }
 
   .fd-nav {
     display: grid; gap: .2rem; padding: .7rem;
     border-bottom: 1px solid var(--line);
   }
-  @media (min-width: 860px) {
+  @container fd (min-width: 600px) {
     .fd-nav { border-bottom: 0; border-right: 1px solid var(--line); align-content: start; }
   }
   .fd-tab {
@@ -358,7 +404,7 @@ const UPLOAD = '/img/catalog-before.webp';
      zodra iemand een tab aanwijst. Vanaf de brede opmaak staat de hoogte vast op
      die van het langste paneel; smaller mag het meebewegen, want daar scrolt de
      bezoeker toch. */
-  @media (min-width: 860px) { .fd-panes { min-height: 35.75rem; } }
+  @container fd (min-width: 600px) { .fd-panes { min-height: 35.75rem; } }
   .fd-pane { display: none; }
   .fd:has(.fd-radio:nth-of-type(1):checked) .fd-pane[data-pane='0'],
   .fd:has(.fd-radio:nth-of-type(2):checked) .fd-pane[data-pane='1'],
@@ -454,9 +500,13 @@ const UPLOAD = '/img/catalog-before.webp';
   .fd-sub { font-size: .72rem; color: var(--ink-3); }
 
   .fd-cols { display: grid; gap: 1rem; margin-top: .6rem; }
-  @media (min-width: 700px) { .fd-cols { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); } }
+  @container fd (min-width: 700px) { .fd-cols { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); } }
   .fd-shots { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
-  @media (min-width: 560px) { .fd-shots { grid-template-columns: repeat(4, 1fr); } }
+  /* minmax(0, 1fr) en niet 1fr: de vloer van een track met 1fr is de min-content
+   van wat erin staat, en dat is hier het langste ononderbroken woord in een
+   vette hoofdletterpil ('GOEDKEUREN'). Dat liet de cel overlopen zodra de
+   figuur smal werd — zichtbaar als een afgekapte pil, want .fd klipt. */
+  @container fd (min-width: 560px) { .fd-shots { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .fd-shot { display: grid; gap: .25rem; align-content: start; }
   .fd-shot img { aspect-ratio: 4 / 5; }
   .fd-cap { font-size: .68rem; color: var(--ink-2); }
