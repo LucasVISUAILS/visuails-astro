@@ -70,7 +70,10 @@ import { serviceLabel } from '../../src/data/services.js';
 import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
 import { quoteOrder, centsToMollieValue, paymentDescription, PAYABLE_SERVICES } from '../../src/lib/quote.js';
-import { vatDecision, VAT_TREATMENT, normaliseVat, viesCode, vatShort, HOME_COUNTRY } from '../../src/data/vat.js';
+import {
+  vatDecision, VAT_TREATMENT, normaliseVat, viesCode, vatShort, HOME_COUNTRY,
+  vatGate, REVIEW, REVIEW_HOURS,
+} from '../../src/data/vat.js';
 import { checkVat, viesEvidence } from '../../src/lib/vies.js';
 import { composeName, composeAddress } from '../../src/data/address.js';
 
@@ -437,6 +440,17 @@ export async function onRequestPost({ request, env, waitUntil }) {
     });
   }
 
+  // Het vinkje uit §4 van de specificatie: de klant verklaart dat het nummer van
+  // zijn bedrijf is en dat het bedrijf buiten Nederland zit. Geen formaliteit —
+  // bij een foutieve verlegging ligt de aansprakelijkheid bij de leverancier, en
+  // dit is het enige bewijs dat de claim van de klant komt en niet van ons.
+  //
+  // Het formulier biedt 0% pas aan nádat dit is aangevinkt, dus in de praktijk
+  // staat het er altijd als er 0% uit komt. Staat het er niet en komt er toch 0%
+  // uit, dan is er langs het formulier heen gepost, en dat is precies wat de
+  // poort hieronder tegenhoudt.
+  const vatConfirmed = get('vat_confirmed') === 'yes';
+
   const vatParts = normaliseVat(vat);
   const vatCc = viesCode(effCountry);
   let vies = null;
@@ -448,6 +462,27 @@ export async function onRequestPost({ request, env, waitUntil }) {
     vies = await checkVat(vatCc, vatParts.number, { country: own.country || 'NL', number: own.number });
   }
   const vatCall = vatDecision({ country: effCountry, vatValid: !!(vies && vies.valid) });
+
+  // ── DE POORT ───────────────────────────────────────────────────────────────
+  //
+  // Uit `btwverleggingspecificatie.md`, augustus 2026. Het tarief hierboven is
+  // belastingrecht en staat vast. Dit is iets anders: is deze claim geloofwaardig
+  // genoeg om er meteen geld op te laten volgen?
+  //
+  // Let op de drie toestanden van `viesState`. `vies` is null als er niets te
+  // controleren was (geen nummer, of een land buiten de EU), `vies.ok` is false
+  // als de controle niet lúkte, en pas daarna zegt `vies.valid` iets. Migratie
+  // 0015 gooide die drie op één INTEGER NOT NULL DEFAULT 0, waardoor "afgekeurd"
+  // en "niet kunnen controleren" hetzelfde getal werden. Ze zijn hier weer los.
+  const viesState = !vies ? null : (vies.ok ? vies.valid === true : null);
+  const vatReview = vatGate({
+    country: effCountry,
+    treatment: vatCall.treatment,
+    vatValid: viesState,
+    vatError: vies && !vies.ok ? (vies.error || 'onbekend') : '',
+    confirmed: vatConfirmed,
+    hadNumber: !!vatParts.number,
+  });
 
   const quote = quoteOrder({
     service: svc, products, outfits: outfitCount, extras: extraCount,
@@ -505,6 +540,19 @@ export async function onRequestPost({ request, env, waitUntil }) {
                            vat_valid, vat_checked_at, vat_consultation, vat_check_name, vat_check_json`;
   const ORDER_COLS_0016 = `first_name, last_name, no_vat_number,
                            address_line1, address_line2, postal_code, city, region`;
+  /*
+   * Migratie 0018 — de beoordeling. Zelfde trap als 0016 hierboven: een deploy
+   * die vóór de migratie live gaat, mag geen bestelling verliezen. Vandaar drie
+   * niveaus in plaats van twee, van breed naar smal, en pas de smalste is de
+   * bodem die er altijd is.
+   *
+   * `vat_valid_state` staat hier en `vat_valid` in de basis. Dat is geen
+   * duplicaat: de eerste kan null zijn en betekent "niet kunnen controleren", de
+   * tweede is de oude NOT NULL-kolom waar bestaande queries op lezen. Beide
+   * worden geschreven zolang de tweede bestaat.
+   */
+  const ORDER_COLS_0018 = `review_state, review_reason, review_requested_at, review_deadline,
+                           vat_confirmed, vat_confirmed_at, vat_valid_state, vat_check_error`;
   const placeholders = (n) => Array.from({ length: n }, (_, i) => `?${i + 1}`).join(',');
 
   const orderBinds = [
@@ -530,8 +578,36 @@ export async function onRequestPost({ request, env, waitUntil }) {
     addressParts.postal || null, addressParts.city || null, addressParts.region || null,
   ];
 
+  const nowIso = new Date().toISOString();
+  // De deadline is een belofte aan de klant ("binnen 24 uur"), dus wordt hij
+  // uitgerekend en opgeslagen, niet elke keer opnieuw op een pagina berekend.
+  const reviewDeadline = vatReview.needsReview
+    ? new Date(Date.now() + REVIEW_HOURS * 3600 * 1000).toISOString()
+    : null;
+  const orderBinds0018 = [
+    vatReview.needsReview ? REVIEW.pending : null,
+    vatReview.reasons.length ? vatReview.reasons.join('; ') : null,
+    vatReview.needsReview ? nowIso : null,
+    reviewDeadline,
+    vatConfirmed ? 1 : 0,
+    vatConfirmed ? nowIso : null,
+    viesState === null ? null : (viesState ? 1 : 0),
+    vies && !vies.ok ? (vies.error || 'onbekend') : null,
+  ];
+
   await safe(async () => {
     if (!env.DB) return;
+    const widest = [...orderBinds, ...orderBinds0016, ...orderBinds0018];
+    try {
+      await env.DB.prepare(
+        `INSERT INTO orders (${ORDER_COLS_BASE}, ${ORDER_COLS_0016}, ${ORDER_COLS_0018})`
+        + ` VALUES (${placeholders(widest.length)})`
+      ).bind(...widest).run();
+      return;
+    } catch (err) {
+      if (!/no such column/i.test(String(err?.message || err))) throw err;
+      console.error('[order] migratie 0018 ontbreekt — bestelling zonder beoordelingsvelden weggeschreven:', ref);
+    }
     const wide = [...orderBinds, ...orderBinds0016];
     try {
       await env.DB.prepare(
@@ -686,8 +762,11 @@ export async function onRequestPost({ request, env, waitUntil }) {
       .bind(ref).run());
   }
 
+  // Geen betaallink als de poort dichtstaat. Dit is het enige punt in de flow
+  // waar dat kan: zodra er een link bestaat, kan iemand hem gebruiken, en dan is
+  // het geld binnen op een claim die nog niemand heeft nagekeken.
   let payUrl = null;
-  if (quote && PAYABLE_SERVICES.has(svc) && env.MOLLIE_API_KEY) {
+  if (quote && PAYABLE_SERVICES.has(svc) && env.MOLLIE_API_KEY && vatReview.payableNow) {
     const payment = await safe(() => createOrderMolliePayment(env, {
       ref,
       lang,
@@ -696,6 +775,10 @@ export async function onRequestPost({ request, env, waitUntil }) {
       description: paymentDescription(quote, lang),
       successUrl: requestOrigin(request) + back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref),
       webhookUrl: requestOrigin(request) + '/api/webhook/mollie',
+      // Bij 0% wordt iDEAL niet aangeboden — zie de toelichting in
+      // src/lib/mollie.js. Voorkomen dat een Nederlandse bankrekening onder een
+      // buitenlandse claim verschijnt, in plaats van het achteraf uitzoeken.
+      excludeIdeal: vatCall.rate === 0,
     }));
     payUrl = payment?._links?.checkout?.href || null;
   }

@@ -258,3 +258,124 @@ export function vatShort(treatment, lang) {
 export function needsIcp(treatment) {
   return treatment === VAT_TREATMENT.reverseCharge;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DE POORT — mag deze bestelling betaald worden, en moet er iemand naar kijken?
+//
+// Augustus 2026, uit `btwverleggingspecificatie.md`. Dit is met opzet een TWEEDE
+// functie naast vatDecision(), want ze beantwoorden verschillende vragen:
+//
+//   vatDecision()  — welk tarief geldt hier? Dat is belastingrecht. Het antwoord
+//                    volgt uit het land en uit VIES, en is niet onderhandelbaar.
+//   vatGate()      — is deze claim geloofwaardig? Dat is fraudebeheersing. Het
+//                    antwoord hangt af van wat we kunnen verifiëren, en van wat
+//                    de klant zelf heeft verklaard.
+//
+// Ze door elkaar halen is hoe je een tarief krijgt dat van een vinkje afhangt.
+// Het tarief hangt nooit van een vinkje af. Wat van het vinkje afhangt is of we
+// de bestelling meteen laten betalen of eerst zelf bekijken.
+//
+// ── WAAROM DE SPECIFICATIE HIER ÉÉN STAP TE VER GAAT ────────────────────────
+//
+// §3 zegt voor een niet-EU-land: `return GEEN_BTW_BEREKENING_NU`. Dat is niet
+// nodig en niet wenselijk. Het tarief buiten de EU is 0% op grond van artikel 44
+// — plaats van dienst is het land van de afnemer — en dat staat vast zodra het
+// land bekend is. Er is niets te berekenen ná de beoordeling wat er nu niet al
+// uit komt. Wat de beoordeling werkelijk tegenhoudt is iets anders: een
+// Nederlandse klant die "Verenigde Staten" aanwijst om 21% te ontlopen. Daar
+// bestaat geen API voor, dus daar kijkt een mens naar.
+//
+// Dus: het tarief wordt gewoon berekend en opgeslagen, de factuur kan meteen
+// kloppen, en wat wacht is de betaling. Dat is één ding minder dat later nog
+// moet gebeuren, en de order is compleet als hij wordt goedgekeurd.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** De toestanden van `orders.review_state`. Zie migratie 0018. */
+export const REVIEW = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  expired: 'expired',
+};
+
+/** Hoelang de klant op een antwoord hoeft te wachten, en hoelang hij daarna
+ *  heeft om te betalen. Uit §7 van de specificatie. */
+export const REVIEW_HOURS = 24;
+export const PAYMENT_DAYS = 7;
+
+/**
+ * @param {object} o
+ * @param {string}  o.country     ISO-code uit het formulier.
+ * @param {string}  o.treatment   De uitkomst van vatDecision().
+ * @param {boolean|null} o.vatValid  true/false van VIES, of null als de controle
+ *   niet is gelukt. Let op het verschil: false is "VIES zei nee", null is "we
+ *   weten het niet". Voor het tarief maakt dat niets uit, voor de vlag alles.
+ * @param {string=} o.vatError    'timeout' | 'network' | 'unavailable' | ''
+ * @param {boolean=} o.confirmed  Heeft de klant het vinkje aangezet?
+ * @param {boolean=} o.hadNumber  Heeft de klant een btw-nummer ingevuld?
+ * @returns {{ needsReview: boolean, payableNow: boolean, reasons: string[] }}
+ *
+ * `reasons` is voor een mens, niet voor code. Er wordt nooit op gematcht.
+ */
+export function vatGate({ country, treatment, vatValid, vatError, confirmed, hadNumber }) {
+  const up = String(country || '').trim().toUpperCase();
+  const reasons = [];
+  let payableNow = true;
+
+  // 1 · Buiten de EU. Er is geen register waarin we dit kunnen nakijken — VIES
+  //     dekt alleen lidstaten — dus is dit de enige claim op de site die
+  //     helemaal op het woord van de klant rust. En hij is 21% waard.
+  if (up && up !== HOME_COUNTRY && !isEu(up)) {
+    reasons.push('niet-EU: 0% rust alleen op wat de klant zelf opgeeft');
+    payableNow = false;
+  }
+
+  // 2 · Een EU-nummer dat we niet hebben kúnnen controleren. Het tarief is al
+  //     21% (fail-closed), dus hier gaat geen geld verloren — maar de klant
+  //     krijgt een rekening met btw die hij misschien niet verwachtte, en dat
+  //     wil je weten voordat hij mailt.
+  if (vatValid === null && hadNumber && up && up !== HOME_COUNTRY && isEu(up)) {
+    reasons.push(`VIES gaf geen antwoord (${vatError || 'onbekend'}) — 21% gerekend op een nummer dat misschien klopt`);
+  }
+
+  // 3 · Een EU-nummer dat VIES afkeurde. Zelfde bedrag, andere oorzaak: hier
+  //     heeft de klant iets verkeerd ingevuld, en één mailtje lost het op.
+  if (vatValid === false && hadNumber) {
+    reasons.push('VIES keurde het btw-nummer af — 21% gerekend');
+  }
+
+  // 4 · Verlegging zonder verklaring van de klant. Dit hoort niet te kunnen: het
+  //     formulier eist het vinkje voordat het 0% aanbiedt. Komt het toch voor,
+  //     dan is er langs het formulier heen gepost, en dan is 0% niet te
+  //     verdedigen tegenover de Belastingdienst.
+  if (treatment === VAT_TREATMENT.reverseCharge && confirmed !== true) {
+    reasons.push('0% verlegd zonder de bevestiging van de klant — niet via het formulier ingediend');
+    payableNow = false;
+  }
+
+  return { needsReview: reasons.length > 0, payableNow, reasons };
+}
+
+/**
+ * Klopt het betaalmiddel met de claim?
+ *
+ * iDEAL is een Nederlands systeem: je hebt er een rekening bij een Nederlandse
+ * bank voor nodig. Betaalt iemand met iDEAL terwijl hij zegt een Duits bedrijf
+ * te zijn, dan is dat geen bewijs van fraude — een Nederlander kan de directeur
+ * van een Duitse GmbH zijn — maar het is wel het soort samenloop dat je één keer
+ * zelf wil zien.
+ *
+ * DIT KAN ALLEEN ACHTERAF. Het betaalmiddel wordt gekozen op de betaalpagina van
+ * Mollie, ná het aanmaken van de betaling, dus ná het vaststellen van het
+ * tarief. De specificatie plaatst deze controle vóór het tarief; dat moment
+ * bestaat niet. Zie ook src/lib/mollie.js, waar iDEAL niet wordt aangeboden bij
+ * een order die op verlegging staat — voorkomen is beter dan achteraf zien.
+ */
+export function paymentMismatch({ method, country, treatment }) {
+  const m = String(method || '').toLowerCase();
+  const up = String(country || '').trim().toUpperCase();
+  if (m !== 'ideal') return null;
+  if (!up || up === HOME_COUNTRY) return null;
+  if (treatment === VAT_TREATMENT.standard) return null;
+  return `betaald met iDEAL terwijl het land ${up} is en er 0% is gerekend`;
+}

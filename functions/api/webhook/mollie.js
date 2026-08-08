@@ -57,6 +57,7 @@
 // normal path, not an edge case.
 
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents } from '../../../src/lib/mollie.js';
+import { paymentMismatch } from '../../../src/data/vat.js';
 
 export async function onRequestPost({ request, env }) {
   if (!env.MOLLIE_API_KEY) {
@@ -172,6 +173,25 @@ async function recordPaid(env, payment, mode) {
   if (cents === null) {
     console.warn('[mollie-webhook] unreadable amount on', payment.id, '—', JSON.stringify(payment.amount));
   }
+
+  // ── HET BETAALMIDDEL, EN WAAROM HET HIER PAS BEKEND IS ─────────────────────
+  //
+  // `btwverleggingspecificatie.md` §3 zet de iDEAL-kruiscontrole midden in de
+  // btw-beslissing bij checkout. Daar kan hij niet staan: op dat moment is er
+  // nog geen betaling en dus geen middel. Dit is het eerste punt in de hele
+  // keten waar `payment.method` bestaat.
+  //
+  // Vandaar deze twee stappen, en de volgorde is niet vrij:
+  //   1 · Het middel vastleggen. Ook als er niets aan de hand is, want een lege
+  //       kolom is geen bewijs dat er met een kaart is betaald.
+  //   2 · Alleen als het niet klopt met de claim: de order markeren. Niet
+  //       tegenhouden — het geld is binnen en de dienst is verkocht. Wat hier
+  //       gebeurt is dat het in het overzicht komt te staan.
+  //
+  // De echte voorkoming zit een stap eerder, in src/lib/mollie.js: bij een order
+  // op 0% wordt iDEAL niet aangeboden. Dit is het net voor wat daar doorheen valt
+  // — een oudere betaallink, of een order die met de hand is aangemaakt.
+  await recordPaymentMethod(env, order.id, payment, ref, mode);
 
   // ── REFUNDS, AND WHY THIS SITS ABOVE THE IDEMPOTENCY GATE ──────────────────
   //
@@ -295,4 +315,64 @@ export function onRequestGet() {
     status: 200,
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
+}
+
+/**
+ * Het betaalmiddel opslaan, en markeren als het niet bij de btw-claim past.
+ *
+ * Elke stap hier is best-effort en vangt zijn eigen fout op. Dit is een webhook:
+ * gooit hij, dan levert Mollie opnieuw af, en dan wordt de betaling twee keer
+ * verwerkt of de order helemaal niet bijgewerkt. Een ontbrekend betaalmiddel is
+ * een gat in het spoor; een omgevallen webhook is een gat in de boekhouding.
+ *
+ * De kolommen komen uit migratie 0018. Bestaan ze nog niet — deploy vóór
+ * migratie, wat in de praktijk voorkomt — dan slaat dit stil over in plaats van
+ * de betaling mee te sleuren.
+ */
+async function recordPaymentMethod(env, orderId, payment, ref, mode) {
+  const method = typeof payment.method === 'string' ? payment.method : null;
+  if (!method) return;
+
+  let row = null;
+  try {
+    row = await env.DB.prepare(
+      'SELECT country, vat_treatment, review_state, review_reason FROM orders WHERE id = ?1'
+    ).bind(orderId).first();
+  } catch (err) {
+    // `review_state` bestaat pas na 0018. Zonder die kolom kunnen we niet
+    // markeren, maar het middel opslaan kan wel — dus vallen we terug.
+    console.warn('[mollie-webhook] kan de btw-velden van', ref, 'niet lezen —', err && err.message);
+  }
+
+  try {
+    await env.DB.prepare('UPDATE orders SET payment_method = ?1 WHERE id = ?2').bind(method, orderId).run();
+  } catch (err) {
+    console.warn('[mollie-webhook] payment_method niet opgeslagen voor', ref,
+      '— migratie 0018 gedraaid? —', err && err.message);
+    return;
+  }
+
+  if (!row) return;
+
+  const mismatch = paymentMismatch({
+    method,
+    country: row.country,
+    treatment: row.vat_treatment,
+  });
+  if (!mismatch) return;
+
+  // ── WAAROM DIT LOGT EN NIET MARKEERT ───────────────────────────────────────
+  //
+  // Lucas koos 8 augustus 2026 voor voorkómen in plaats van achteraf nakijken:
+  // bij een order op 0% wordt iDEAL niet aangeboden (src/lib/mollie.js), dus de
+  // samenloop hoort niet te kunnen ontstaan. Kwam hij er tóch, dan is de order op
+  // dat moment al betaald en al gestart — hem dan op een beoordelingslijst zetten
+  // levert werk op zonder dat er nog iets te beslissen valt.
+  //
+  // Dus geen vlag, maar ook niet weggooien: dit is het enige teken dat de
+  // uitsluiting is omzeild, of dat er met de hand een betaallink is gemaakt. Het
+  // betaalmiddel staat hierboven al in de kolom; deze regel maakt zichtbaar
+  // waarom je ernaar zou kijken.
+  console.warn('[mollie-webhook]', ref, `betaalmiddel past niet bij de btw-claim (${mode}):`, mismatch,
+    '— iDEAL hoort bij 0% niet aangeboden te worden; check src/lib/mollie.js en of deze link met de hand is gemaakt.');
 }

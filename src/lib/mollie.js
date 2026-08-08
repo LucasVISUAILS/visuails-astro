@@ -149,7 +149,7 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
  * found in a bank reconciliation weeks later.
  */
 export async function createOrderMolliePayment(env, {
-  ref, lang, successUrl, webhookUrl, valueEuros, grossCents, description,
+  ref, lang, successUrl, webhookUrl, valueEuros, grossCents, description, excludeIdeal,
 }) {
   const asCents = Math.round(Number(valueEuros) * 100);
   if (!Number.isFinite(asCents) || asCents !== Math.round(Number(grossCents))) {
@@ -162,11 +162,38 @@ export async function createOrderMolliePayment(env, {
   // it here gives a message that names the order instead of a raw 422.
   if (asCents < 1) throw new Error(`mollie: refusing to create a payment of ${valueEuros} for ${ref}`);
 
-  return createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description });
+  return createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal });
 }
 
+/*
+ * WAAROM iDEAL SOMS NIET WORDT AANGEBODEN — augustus 2026.
+ *
+ * `btwverleggingspecificatie.md` §3 wil iDEAL gebruiken als kruiscontrole op een
+ * niet-Nederlandse btw-claim: betaalt iemand met iDEAL terwijl hij zegt een Duits
+ * bedrijf te zijn, markeer de order dan. Dat is een goed signaal, maar het komt
+ * te laat om er iets aan te doen — het middel wordt gekozen op de betaalpagina
+ * van Mollie, ná het vaststellen van het tarief, dus je ziet het pas als de 0%
+ * al op de factuur staat.
+ *
+ * Dus doen we het andersom. Staat een order op 0% omdat de klant zegt buiten
+ * Nederland te zitten, dan bieden we iDEAL niet aan. Een Nederlandse
+ * bankrekening is dan geen bewijs meer dat achteraf moet worden uitgezocht: de
+ * samenloop kan simpelweg niet ontstaan. Wie werkelijk een Duitse GmbH is,
+ * betaalt met een kaart of een SEPA-overboeking en merkt er niets van.
+ *
+ * `paymentMismatch()` in src/data/vat.js blijft bestaan als tweede net, voor de
+ * gevallen waar deze uitsluiting niet greep — een oudere betaallink, of een
+ * order die met de hand is aangemaakt.
+ *
+ * WERKING BIJ MOLLIE. Er is geen "exclude"-parameter. `method` op een array zet
+ * juist een witte lijst: alleen die middelen worden aangeboden. Dus noemen we de
+ * middelen die wél mogen. Staat er in dit account iets niet aan, dan negeert
+ * Mollie dat middel gewoon; wat overblijft is wat er is.
+ */
+const NON_NL_METHODS = ['creditcard', 'bancontact', 'banktransfer', 'paypal', 'eps', 'giropay', 'sofort'];
+
 /** The one request both creators make. */
-async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description }) {
+async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal }) {
   const key = mollieKey(env);
 
   const body = {
@@ -185,6 +212,11 @@ async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, val
     // the Stripe side.
     metadata: { order_ref: ref },
   };
+
+  // Alleen zetten als het nodig is: een lege of onnodige witte lijst zou
+  // middelen wegnemen bij gewone Nederlandse bestellingen, en dat is precies het
+  // soort stille verslechtering waar niemand een melding van krijgt.
+  if (excludeIdeal) body.method = NON_NL_METHODS;
 
   const res = await fetch(`${MOLLIE_API}/payments`, {
     method: 'POST',

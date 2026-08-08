@@ -197,6 +197,10 @@ import { SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromP
 // off this import reaches the screen: every label, placeholder and option name
 // is read out of the config blob like everything else on this page.
 import { PRODUCT_QUESTIONS } from '../data/attributes.js';
+// De EU-lijst staat op één plek. Hem hier overtypen zou betekenen dat het
+// formulier en de server het ooit oneens worden over of een land in de EU zit,
+// en dan biedt het formulier 0% aan waar de server 21% rekent.
+import { isEu, HOME_COUNTRY } from '../data/vat.js';
 
 const STEPS = 5;
 
@@ -404,7 +408,7 @@ function show(n, opts) {
     }
   }
 
-  syncRequired();
+  syncVatConfirm();
   if (to === 5) renderSummary();
 
   const node = stepNode(to);
@@ -435,6 +439,47 @@ function syncRequired() {
   fields().forEach((f) => {
     f.required = f.dataset.plReq === '1' && isShown(f) && !waived(f);
   });
+}
+
+/*
+ * ── DE VERKLARING BIJ 0%, EN WANNEER HIJ VERSCHIJNT ──────────────────────────
+ *
+ * Uit btwverleggingspecificatie.md §4: bij een geslaagde verlegging een
+ * verplicht vinkje waarin de klant verklaart dat het bedrijf buiten Nederland
+ * zit en dat het nummer daarbij hoort.
+ *
+ * De voorwaarde is precies die van artikel 196: een ander EU-land dan Nederland,
+ * en een btw-nummer ingevuld. Buiten de EU is er geen verlegging — dat is
+ * "niet belastbaar in Nederland", een andere regel met een andere factuurtekst
+ * (zie src/data/vat.js) — dus hoort dit vinkje daar niet, en zou het er zetten
+ * suggereren dat het één ding is.
+ *
+ * DIT BELOOFT NIETS. Het vinkje verschijnt zodra 0% MOGELIJK is, niet zodra het
+ * zeker is: of het nummer klopt weten we pas als VIES antwoordt, en dat gebeurt
+ * op de server bij verzenden. Klopt het niet, dan is het tarief 21% en is het
+ * vinkje betekenisloos in plaats van onwaar. De andere volgorde — pas vragen ná
+ * VIES — zou betekenen dat de klant een vinkje krijgt op het moment dat hij op
+ * verzenden heeft gedrukt, en dat is de slechtste plek voor een verplicht veld.
+ */
+function syncVatConfirm() {
+  const block = q('[data-pl-vatconfirm]');
+  if (!block) return;
+  const country = (q('select[name=country]') || {}).value || '';
+  const vat = ((q('input[name=vat]') || {}).value || '').trim();
+  const noVat = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
+
+  const up = country.trim().toUpperCase();
+  const applies = !!up && up !== HOME_COUNTRY && isEu(up) && !!vat && !noVat;
+
+  block.hidden = !applies;
+  // Verdwijnt het blok, dan verdwijnt ook het antwoord. Een aangevinkte
+  // verklaring die de klant niet meer kan zien, is geen verklaring — en hij zou
+  // meeliften naar de server bij een land waar hij niet over gaat.
+  if (!applies) {
+    const box = q('input[name=vat_confirmed]');
+    if (box) box.checked = false;
+  }
+  syncRequired();
 }
 
 /*
@@ -488,6 +533,16 @@ function bindErrors() {
       syncRequired();
     }
   });
+
+  // Land, btw-nummer en "ik heb geen btw-nummer" bepalen samen of de verklaring
+  // van toepassing is. Eén luisteraar voor alle drie, op `input` én `change`,
+  // want een land is een select en een nummer wordt getypt.
+  const watch = (e) => {
+    const n = e.target && e.target.name;
+    if (n === 'country' || n === 'vat' || n === 'no_vat') syncVatConfirm();
+  };
+  form.addEventListener('input', watch);
+  form.addEventListener('change', watch);
 }
 
 function bindNav() {

@@ -54,6 +54,14 @@ function db({ order = { id: 7, status: 'received', payment_status: 'pending' }, 
           if (sql.includes('INSERT INTO payments')) {
             if (dupe) throw new Error('UNIQUE constraint failed: payments.provider, payments.external_id');
             writes.push(['payments', st._args]);
+          } else if (sql.includes('SET payment_method')) {
+            // Augustus 2026: de webhook legt nu ook het betaalmiddel vast, zodat
+            // de iDEAL-kruiscontrole uit btwverleggingspecificatie.md §3 een
+            // spoor heeft. Dat is een aparte UPDATE en hij hoort niet mee te
+            // tellen in de verwachtingen hieronder, die over de BETALING gaan.
+            writes.push(['method', st._args]);
+          } else if (sql.includes('SET review_state')) {
+            writes.push(['flag', st._args]);
           } else if (sql.includes('UPDATE orders')) {
             if (throwOnUpdate) throw new Error('D1_ERROR: database is locked');
             writes.push(['orders', st._args]);
@@ -89,8 +97,21 @@ async function check(name, fn, expect) {
   let got;
   try { got = await fn(); } catch (e) { unmute(); got = { status: 'THREW: ' + e.message }; }
   unmute();
-  const pass = got.status === expect.status && (!expect.writes || JSON.stringify(got.writes) === JSON.stringify(expect.writes));
-  results.push({ name, expected: expect.status, got: got.status, writes: got.writes, pass });
+  // 'method' en 'flag' zijn het btw-spoor, geen betaalboeking. Een toets die ze
+  // niet noemt, gaat over de betaling en hoort er niet op te vallen.
+  // Niet elke toets geeft `writes` terug — sommige kijken alleen naar de status.
+  const seen = Array.isArray(got.writes) ? got.writes : null;
+  const relevant = !seen ? null
+    : (expect.writes && (expect.writes.includes('method') || expect.writes.includes('flag'))
+      ? seen
+      : seen.filter((w) => w !== 'method' && w !== 'flag'));
+  // Toetsen die iets anders dan `writes` teruggeven (het middel, de vlag) worden
+  // veld voor veld vergeleken; alles wat de verwachting noemt, moet kloppen.
+  const extra = Object.keys(expect).filter((k) => k !== 'status' && k !== 'writes');
+  const extraOk = extra.every((k) => JSON.stringify(got[k]) === JSON.stringify(expect[k]));
+  const pass = got.status === expect.status && extraOk
+    && (!expect.writes || JSON.stringify(relevant) === JSON.stringify(expect.writes));
+  results.push({ name, expected: expect.status, got: got.status, writes: relevant, pass });
 }
 
 const ENV = { MOLLIE_API_KEY: 'test_dHar4XY7LxsDOtmnkVtjNVWXLSlXsM', DB: null };
@@ -102,6 +123,44 @@ await check('paid, test mode → 200 + three writes', async () => {
   const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
   return { status: r.status, writes: d.writes.map((w) => w[0]) };
 }, { status: 200, writes: ['payments', 'orders', 'event'] });
+
+// 1b · HET BETAALMIDDEL, EN DE KRUISCONTROLE — augustus 2026.
+//
+// Uit btwverleggingspecificatie.md §3. De specificatie zet deze controle midden
+// in de btw-beslissing bij checkout; daar bestaat het betaalmiddel nog niet. Dit
+// is het eerste punt in de keten waar het wél bestaat, en dus de plek waar het
+// wordt vastgelegd.
+//
+// Twee dingen worden hier bewezen. Dat het middel altijd wordt opgeslagen — een
+// lege kolom is geen bewijs dat er met een kaart is betaald. En dat een order
+// alleen wordt gemarkeerd als het middel niet bij de claim past.
+await check('het betaalmiddel wordt vastgelegd', async () => {
+  stubFetch({ body: PAID({ method: 'creditcard' }) });
+  const d = db({ order: { id: 7, status: 'received', payment_status: 'pending', country: 'DE', vat_treatment: 'eu_reverse_charge' } });
+  const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
+  const m = d.writes.find((w) => w[0] === 'method');
+  return { status: r.status, method: m ? m[1][0] : null, flagged: d.writes.some((w) => w[0] === 'flag') };
+}, { status: 200, method: 'creditcard', flagged: false });
+
+// Lucas koos voor voorkomen in plaats van achteraf nakijken, dus wordt hier NIET
+// gemarkeerd: de order is dan al betaald en gestart, en een beoordeling zonder
+// besluit is werk zonder uitkomst. Wat er wél gebeurt is loggen, en het
+// betaalmiddel staat in de kolom. Deze toets zet die keuze vast — wie hier ooit
+// een vlag terugzet, moet dat expres doen.
+await check('iDEAL op een Duitse verlegging wordt NIET gemarkeerd, alleen gelogd', async () => {
+  stubFetch({ body: PAID({ method: 'ideal' }) });
+  const d = db({ order: { id: 7, status: 'received', payment_status: 'pending', country: 'DE', vat_treatment: 'eu_reverse_charge' } });
+  const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
+  const m = d.writes.find((w) => w[0] === 'method');
+  return { status: r.status, flagged: d.writes.some((w) => w[0] === 'flag'), method: m ? m[1][0] : null };
+}, { status: 200, flagged: false, method: 'ideal' });
+
+await check('iDEAL op een Nederlandse order wordt niet gemarkeerd', async () => {
+  stubFetch({ body: PAID({ method: 'ideal' }) });
+  const d = db({ order: { id: 7, status: 'received', payment_status: 'pending', country: 'NL', vat_treatment: 'nl_standard' } });
+  const r = await onRequestPost({ request: form('tr_5B8cwPMGnU6qLbRvo7qEZo'), env: { ...ENV, DB: d } });
+  return { status: r.status, flagged: d.writes.some((w) => w[0] === 'flag') };
+}, { status: 200, flagged: false });
 
 // 2 · every non-paid status is acknowledged and changes nothing
 for (const st of ['open', 'pending', 'authorized', 'canceled', 'expired', 'failed']) {

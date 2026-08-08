@@ -573,6 +573,8 @@ const FORM = {
       vat: 'VAT number',
       vatErr: 'Fill in your VAT number, or tick the box below if you do not have one.',
       noVat: 'I do not have a VAT number',
+      vatConfirm: 'I confirm that my company is established outside the Netherlands and that this VAT number belongs to it.',
+      vatConfirmHint: 'Required before we can invoice at 0%. The tax authority holds us liable for a reverse charge that turns out to be wrong, so this is the one thing we cannot decide for you.',
       vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
       message: 'Anything we should know',
       // SHARPENED, AND THE SHARPENING IS THE POINT. attributes.js's
@@ -720,6 +722,8 @@ const FORM = {
       vat: 'Btw-nummer',
       vatErr: 'Vul je btw-nummer in, of zet het vinkje hieronder aan als je er geen hebt.',
       noVat: 'Ik heb geen btw-nummer',
+      vatConfirm: 'Ik verklaar dat mijn bedrijf buiten Nederland is gevestigd en dat dit btw-nummer van dat bedrijf is.',
+      vatConfirmHint: 'Nodig voordat we 0% op je factuur kunnen zetten. Bij een verlegging die onjuist blijkt, ligt de aanslag bij ons — dit is het enige dat wij niet voor je kunnen invullen.',
       vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij dan rekenen we geen Nederlandse btw.',
       message: 'Wat we moeten weten',
       // Zie de Engelse noot hierboven.
@@ -1267,6 +1271,34 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             <span>{f.s3.noVat}</span>
           </label>
           <span class="hint">{f.s3.vatHint}</span>
+
+          {/* ── DE VERKLARING BIJ 0% ────────────────────────────────────────
+              Uit btwverleggingspecificatie.md §4. Verborgen tot er werkelijk 0%
+              uit de beslissing komt, en dan verplicht.
+
+              WAAROM HIJ ER STAAT. Bij een verlegging schuift de btw-plicht naar
+              de afnemer, en bij een verlegging die onjuist blijkt komt de
+              naheffing bij de leverancier — bij VISUAILS. Dit vinkje is het
+              enige bewijs dat de claim van de klant komt en niet van ons.
+
+              WAAROM ER GEEN NIEUWE REGEL VOOR NODIG WAS. syncRequired() in
+              pipeline.js zet `required` al op elk veld met `data-pl-req="1"`
+              dat ZICHTBAAR is. Dit blok is `hidden` tot 0% van toepassing is,
+              dus is het vinkje dan niet zichtbaar en niet verplicht, en zodra
+              het verschijnt is het dat wel. Eén bron, geen tweede attribuut.
+
+              Zonder JavaScript blijft het blok verborgen en blokkeert het niets.
+              Dan is er ook geen 0% zonder verklaring: de poort in
+              functions/api/order.js houdt de betaling tegen en de order komt op
+              de beoordelingslijst. Degraderen naar veilig, niet naar gratis. */}
+          <div class="field pl-vatconfirm" data-pl-vatconfirm hidden>
+            <label class="pl-check" for="pl-vat-confirmed">
+              <input type="checkbox" id="pl-vat-confirmed" name="vat_confirmed" value="yes"
+                     data-pl-req="1" data-pl-err-msg={f.s3.vatConfirm} />
+              <span>{f.s3.vatConfirm}</span>
+            </label>
+            <span class="hint">{f.s3.vatConfirmHint}</span>
+          </div>
         </div>
       </div>
       </div>{/* /[data-pl-s3-fields] */}
