@@ -1156,7 +1156,37 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
    Bij `prefers-reduced-motion` valt alles weg. Een uitklapper is functioneel;
    de beweging is versiering en versiering is optioneel. */
 .prods { display: grid; gap: .7rem; margin: 1.1rem 0 0; interpolate-size: allow-keywords; }
-.prod-tools { display: flex; justify-content: flex-end; margin: 1.1rem 0 -.4rem; }
+/* ── DE MAP ────────────────────────────────────────────────────────────────
+   Hier stond `.prod-tools`: een rij die één ghost-knopje ("Alles downloaden")
+   rechts uitlijnde boven het fotorooster. Die knop is op 9 augustus 2026 het
+   enige geworden dat de klant echt meeneemt — de foto's erboven zijn sindsdien
+   beoordeelbeelden zonder downloadknop — en dan is rechtsboven in de hoek de
+   verkeerde plek en de verkeerde maat.
+
+   Het staat onder de producten en niet erboven, want dat is de leesorde van de
+   handeling: eerst kijken en goedkeuren, dan meenemen. Een primaire knop, want
+   het is de enige echte handeling op dit blok.
+
+   Twee kolommen die op smal één worden. `align-items: center` en niet `start`:
+   de knop hoort naast de uitleg te staan en niet naast de eerste regel ervan. */
+.folder {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem 1.4rem;
+  align-items: center;
+  margin: 1.2rem 0 0; padding: 1.05rem 1.15rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md, 10px);
+}
+.folder h3 { margin: 0 0 .3rem; font-size: .98rem; font-weight: 700; color: var(--ink); }
+.folder-n { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+/* De uitleg waarom de foto's erboven geen knop meer hebben. Kleiner en grijzer:
+   het is de zin die je leest als je hem mist, niet de zin die je eerst leest. */
+.folder-note { margin: .5rem 0 0; max-width: 62ch; }
+.folder-btn { white-space: nowrap; }
+@media (max-width: 560px) {
+  .folder { grid-template-columns: 1fr; }
+  .folder-btn { width: 100%; text-align: center; }
+}
 
 .prod {
   border: 1px solid var(--line); border-radius: var(--r-md, 10px);
@@ -1310,8 +1340,10 @@ details.ask { margin-top: 0; }
 .btn-line:hover, .btn-line:focus-visible { background: var(--surface); color: var(--ink); }
 
 /* Bewaren: het stilste blok van de drie, maar wél een blok. */
-.btn-file { background: none; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line); }
-.btn-file:hover, .btn-file:focus-visible { color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+/* .btn-file is op 9 augustus 2026 verwijderd samen met de downloadknop per beeld
+   (zie de noot in shotTile in src/lib/account.js). Er is geen enkele plek meer die
+   die klasse tekent, dus zou de regel dode CSS zijn — en dode CSS is de reden dat
+   de volgende die hier komt denkt dat er nog een variant bestaat. */
 
 /* De <summary> is een knop, dus hij mag geen driehoekje meer hebben en moet
    met de toetsenbordfocus omgaan als een knop. */
@@ -1447,13 +1479,13 @@ details.ask { margin-top: 0; }
 /* Tussen de knoppen van dezelfde soort iets minder dan tussen twee soorten:
    goedkeuren en aanmerken zijn één keuze, downloaden is een andere handeling. */
 .shot-actions .review-form { gap: .28rem; }
-.shot-actions .btn-file { margin-top: .12rem; }
+
 
 .prods { gap: 1rem; margin-top: 1.5rem; }
 .prod-inner { gap: 1.4rem; padding: .5rem 1rem 1.1rem; }
 .prod-head { padding: .75rem .9rem; gap: .9rem; }
 .prod-help { padding: .2rem .9rem 1rem; }
-.prod-tools { margin: 1.4rem 0 -.2rem; }
+.folder { margin-top: 1.6rem; padding: 1.2rem 1.3rem; }
 
 .section-head { margin: 3rem 0 .3rem; }
 .section-head:first-child { margin-top: 0; }

@@ -58,9 +58,24 @@ import { waHref } from '../data/whatsapp.js';
 //     a single 'VP8 ' chunk — no EXIF, no XMP, no C2PA. The site's own imagery
 //     demonstrates the finding.
 //
+// EN DIT IS OP 9 AUGUSTUS 2026 VERANDERD, dus de tekst van §6 hieronder ook.
+//
+// De meting hierboven blijft kloppen: sharp gooit een C2PA-manifest weg bij de
+// omzetting naar webp. Wat veranderd is, is wat wij daarna doen. scripts/deliver.mjs
+// schrijft nu in elk geleverd bestand een IPTC DigitalSourceType-tag — ná de
+// omzetting, ook in de webp, waar dus een vermelding terugkomt die de omzetting had
+// weggegooid. Zie scripts/lib/aitag.mjs voor de waarde en scripts/tag-delivery.mjs
+// voor waarom webp met opzet meedoet.
+//
+// Daarmee werd "wij voegen niets toe" onwaar, en dat is precies de soort zin die op
+// een pagina over de AI Act niet mag blijven staan omdat hij ooit klopte. De tekst
+// zegt nu wat we schrijven, dat het geen garantie is (elk programma dat opnieuw
+// opslaat kan het weghalen), en nog steeds dat de zichtbare vermelding de enige is
+// die telt.
+//
 // webp is not the problem — the C2PA spec supports it, in a 'C2PA' RIFF chunk.
 // Generic converters are the problem: preserving a manifest across a re-encode
-// takes a C2PA-aware tool, and neither sharp nor Pillow is one. So §6 says which
+// takes a C2PA-aware tool, and neither sharp nor Pillow is one. So §6 said which
 // formats carry it and which do not, and tells the reader not to rely on the
 // file to identify itself. That sentence is worth more to a brand than the
 // blanket reassurance it replaces, and unlike the blanket version it is true.
@@ -237,7 +252,7 @@ const COPY = {
       ['Wij zijn geen juristen.', 'Deze pagina is informatie, geen juridisch advies.'],
       ['Onze menselijke controle stelt je beelden niet vrij van de vermeldingsplicht.', 'Die uitzondering in de wet geldt voor tekst over zaken van algemeen belang, niet voor beeld. Wie anders beweert, heeft de tekst niet gelezen.'],
       ['Het EU-icoon gebruiken maakt je niet automatisch compliant.', 'Het is een hulpmiddel, geen keurmerk. Wij leveren het omdat het herkenbaar is, niet omdat het iets afdekt.'],
-      ['De machine-leesbare markering in het bestand komt van de modelaanbieders, niet van ons.', 'Wij voegen niets toe en halen niets bewust weg. In de praktijk: de jpg- en png-bestanden die je van ons krijgt dragen die markering; webp niet, omdat de omzetting naar webp haar weggooit — dat is een eigenschap van beeldconverters, niet van webp. Bovendien hebben aanbieders van systemen die al op de markt waren tot 2 december 2026 om te markeren, dus nog niet elk model markeert. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare, die jij plaatst.'],
+      ['Elk bestand dat wij leveren draagt een machine-leesbare herkomsttag, en één regel daarvan is van ons.', 'Wij schrijven in elk geleverd bestand een IPTC DigitalSourceType-tag — de waarde die "deels door een model gemaakt" betekent — ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Wat de aanbieder zelf markeerde laten we staan; wij halen niets weg. Het is geen garantie: elk programma dat een beeld opnieuw opslaat kan de tag verwijderen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare, die jij plaatst.'],
       ['Marktplaatsen hebben eigen beeldregels.', 'Zalando, Amazon, bol en About You stellen soms strengere eisen dan de wet, met name aan de hoofdafbeelding. Die controleer je zelf voor je eigen kanalen — we denken graag mee.'],
     ],
 

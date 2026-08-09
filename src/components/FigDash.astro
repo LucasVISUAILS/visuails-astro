@@ -86,9 +86,19 @@ const C = nl
       bApprove: 'Goedkeuren', bAsk: 'Er klopt iets niet', bDown: 'Downloaden',
       ordNote: 'Per beeld, niet per stapel. Een revisie vraag je op de foto waar het over gaat.',
       bkH: 'Standaard per dienst',
-      bkFace: 'Wie het draagt', bkBg: 'Waar het op staat',
-      bkModels: ['Nadia', 'Tomas', 'Aaron'],
+      bkFace: 'Wie het draagt', bkBg: 'Waar het op staat', bkCh: 'Waar je het verkoopt',
+      bkAsk: 'Geen voorkeur', bkAskSub: 'Vraag het per bestelling',
+      bkOwn: 'Alleen van jou',
+      /* Het eerste gezicht is een EIGEN merkmodel, met het label dat het echte
+         scherm eraan hangt. Zie de noot bij bkFaces in de layout hieronder. */
+      bkFaces: [
+        { name: 'Nadia', own: true },
+        { name: 'Tomas', sub: 'Warm · Toegankelijk' },
+        { name: 'Aaron', sub: 'Editorial · Elegant' },
+      ],
       bkColours: [['#FFFFFF', 'Wit'], ['#F7F5F1', 'Gebroken wit'], ['#EDE4D8', 'Beige']],
+      bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Onze eigen webshop', null], ['Social en advertenties', null]],
+      bkChNote: 'Kies je een marktplaats die een zuiver wit hoofdbeeld eist, dan begint elke bestelling op wit.',
       bkNote: 'Wat hier staat, staat bij je volgende bestelling al ingevuld.',
       detH: 'Je gegevens',
       detFields: [['Voornaam', 'Mara'], ['Achternaam', 'de Groot'], ['Merk', 'VOLT'], ['Land', 'Nederland'], ['Straat en huisnummer', 'Voorbeeldstraat 12'], ['Postcode', '1234 AB'], ['Plaats', 'Rotterdam'], ['Btw-nummer', 'NL001234567B01']],
@@ -119,9 +129,17 @@ const C = nl
       bApprove: 'Approve', bAsk: 'Something is not right', bDown: 'Download',
       ordNote: 'Image by image, not by the pile. You ask for a revision on the photo it is about.',
       bkH: 'Default per service',
-      bkFace: 'Who wears it', bkBg: 'What it stands on',
-      bkModels: ['Nadia', 'Tomas', 'Aaron'],
+      bkFace: 'Who wears it', bkBg: 'What it stands on', bkCh: 'Where you sell it',
+      bkAsk: 'No preference', bkAskSub: 'Ask me per order',
+      bkOwn: 'Yours only',
+      bkFaces: [
+        { name: 'Nadia', own: true },
+        { name: 'Tomas', sub: 'Warm · Approachable' },
+        { name: 'Aaron', sub: 'Editorial · Elegant' },
+      ],
       bkColours: [['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white'], ['#EDE4D8', 'Beige']],
+      bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Our own webshop', null], ['Social and ads', null]],
+      bkChNote: 'Pick a marketplace that requires a pure white main image and every order starts on white.',
       bkNote: 'Whatever is set here arrives prefilled on your next order.',
       detH: 'Your details',
       detFields: [['First name', 'Mara'], ['Last name', 'de Groot'], ['Brand', 'VOLT'], ['Country', 'Netherlands'], ['Street and number', 'Voorbeeldstraat 12'], ['Postcode', '1234 AB'], ['City', 'Rotterdam'], ['VAT number', 'NL001234567B01']],
@@ -248,11 +266,36 @@ const UPLOAD = '/img/catalog-before.webp';
           <div class="fd-card">
             <p class="fd-ref">{C.bkH} — Catalog</p>
             <p class="fd-h4">{C.bkFace}</p>
+            {/* ── GELIJKGETROKKEN MET HET ECHTE SCHERM — 9 augustus 2026 ──────
+                Lucas: *"het recht te trekken met de huidige look van VISUAILS
+                Studio die nu een beetje aangepast is en bijvoorbeeld een custom
+                model toe te voegen bij modelkeuze."*
+
+                Drie dingen die er in het echte dashboard staan en hier niet:
+
+                · "Geen voorkeur" als EERSTE tegel, en aangevinkt. Dat is de
+                  standaard van een nieuwe klant, en het is de tegel die vertelt
+                  dat je niets hoeft te kiezen — precies het tegengif tegen de
+                  indruk dat je hier een formulier moet invullen voordat je kunt
+                  bestellen.
+                · een EIGEN merkmodel, met het label "Alleen van jou" in de
+                  accentkleur. Zonder dat leest deze rij als een keuze uit onze
+                  bibliotheek, en is het duurste ding dat we verkopen onzichtbaar
+                  op de plek waar het hoort te staan.
+                · de kanalen eronder, sinds migratie 0019 in de brand kit. */}
             <div class="fd-faces">
-              {C.bkModels.map((name, i) => (
-                <div class={`fd-face ${i === 0 ? 'is-on' : ''}`}>
+              <div class="fd-face is-ask is-on">
+                <span class="fd-face-ph" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4.2" /><path d="M4.5 20.5c0-4 3.4-7.2 7.5-7.2s7.5 3.2 7.5 7.2" /></svg>
+                </span>
+                <span>{C.bkAsk}</span>
+                <span class="fd-face-sub">{C.bkAskSub}</span>
+              </div>
+              {C.bkFaces.map((m, i) => (
+                <div class={`fd-face ${m.own ? 'is-own' : ''}`}>
                   <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="120" height="160" />
-                  <span>{name}</span>
+                  <span>{m.name}</span>
+                  <span class={`fd-face-sub ${m.own ? 'is-own' : ''}`}>{m.own ? C.bkOwn : m.sub}</span>
                 </div>
               ))}
             </div>
@@ -268,6 +311,15 @@ const UPLOAD = '/img/catalog-before.webp';
                 </div>
               ))}
             </div>
+            <p class="fd-h4">{C.bkCh}</p>
+            <div class="fd-chs">
+              {C.bkChannels.map(([name, hex], i) => (
+                <span class={`fd-ch ${i < 2 ? 'is-on' : ''}`}>
+                  {name}{hex ? <b class="fd-ch-hex">{hex}</b> : null}
+                </span>
+              ))}
+            </div>
+            <p class="fd-fine">{C.bkChNote}</p>
           </div>
           <p class="fd-note">{C.bkNote}</p>
         </div>
@@ -512,10 +564,33 @@ const UPLOAD = '/img/catalog-before.webp';
   .fd-cap { font-size: .68rem; color: var(--ink-2); }
   .fd-upload { aspect-ratio: 4 / 5; }
 
-  .fd-faces { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; max-width: 22rem; }
-  .fd-face { display: grid; gap: .25rem; padding: .3rem; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: .7rem; color: var(--ink-3); }
+  /* Vier tegels nu: "geen voorkeur" plus drie gezichten. Zelfde volgorde en
+     zelfde labels als het echte scherm — zie de noot in de layout. */
+  .fd-faces { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; max-width: 28rem; }
+  .fd-face { display: grid; gap: .18rem; padding: .3rem; border: 1px solid var(--line); border-radius: var(--r-sm); font-size: .7rem; color: var(--ink-3); align-content: start; }
   .fd-face.is-on { border-color: var(--accent); color: var(--ink); }
   .fd-face img { aspect-ratio: 3 / 4; }
+  .fd-face > span:first-of-type { font-weight: 600; color: var(--ink-2); }
+  .fd-face.is-on > span:first-of-type { color: var(--ink); }
+  .fd-face-sub { font-size: .62rem; line-height: 1.3; color: var(--ink-3); }
+  /* "Alleen van jou" in de accentkleur, net als in het dashboard: dat label is
+     het verschil tussen een gezicht uit onze bibliotheek en een gezicht dat
+     niemand anders gebruikt. */
+  .fd-face-sub.is-own { color: var(--accent); font-weight: 600; }
+  .fd-face.is-own { border-color: var(--line-strong); }
+  /* De lege tegel krijgt hetzelfde silhouet als ICON_FACE in account.js — één
+     glyph voor "hier staat geen foto", op alle plekken dezelfde. */
+  .fd-face-ph { display: grid; place-items: center; aspect-ratio: 3 / 4; background: var(--surface-2); border-radius: 3px; }
+  .fd-face-ph svg { width: 26px; height: 26px; fill: none; stroke: var(--ink-3); stroke-width: 1.4; }
+
+  /* De kanalen, sinds migratie 0019 in de brand kit. Chips en geen vinkjes: dat
+     is hoe het echte scherm ze tekent, en een aangevinkt kanaal draagt zijn
+     verplichte achtergrondkleur mee. */
+  .fd-chs { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .fd-ch { display: inline-flex; align-items: center; gap: .35rem; padding: .28rem .55rem; border: 1px solid var(--line); border-radius: var(--r-pill); font-size: .68rem; color: var(--ink-3); }
+  .fd-ch.is-on { border-color: var(--accent); color: var(--ink); }
+  .fd-ch-hex { font-size: .6rem; font-weight: 600; padding: .1rem .3rem; border-radius: 3px; background: var(--surface-2); color: var(--ink-2); }
+  .fd-fine { margin: .5rem 0 0; font-size: .64rem; line-height: 1.45; color: var(--ink-3); max-width: 44ch; }
 
   .fd-sws { display: flex; flex-wrap: wrap; gap: .5rem; }
   .fd-sw {

@@ -31,7 +31,25 @@ export const ogLocale = { en: 'en_US', nl: 'nl_NL' };
 // /custom-models. Those two merge into one page under the new positioning
 // (see AUDIT-TASK-0.md §D), and Your Brand Model is important enough to sit at
 // the top level of the nav rather than inside a dropdown.
-export const dropHrefs = ['/catalog', '/lifestyle', '/video'];
+//
+// ── dropHrefs IS WEG, EN DAT HEEFT EEN REDEN — 9 augustus 2026 ──────────────
+//
+// Hier stond `export const dropHrefs = ['/catalog', '/lifestyle', '/video']`, en
+// Layout.astro reeg die aan de titels vast OP INDEX:
+//
+//   ui[lang].drops.map((s, i) => ({ href: dropHrefs[i], title: s[0], desc: s[1] }))
+//
+// Drie parallelle lijsten — één met paden, één met Engelse teksten, één met
+// Nederlandse — die alleen goed blijven zolang alle drie in dezelfde volgorde
+// staan. Er is geen sleutel die een verschuiving opmerkt: wie een item in het
+// midden toevoegt en één van de drie vergeet, krijgt Lifestyle met de url van
+// Video en een build die vrolijk doorloopt.
+//
+// Bij het toevoegen van het vierde item (Hooks) is dat omgezet naar objecten die
+// hun eigen `href` dragen. Nu is de volgorde per taal vrij, kan een verschuiving
+// niet meer bestaan, en is er ruimte voor `soon` — het label voor een dienst die
+// er wel is maar nog niet te bestellen valt.
+export const NAV_SOON = 'soon';
 
 // Your Brand Model's live URL. /models used to 301 here (AUDIT-TASK-0.md
 // §H·8); as of task #270 it's a real page of its own again (§H·8's own
@@ -64,10 +82,29 @@ export const ui = {
     // /pricing, /catalog, /lifestyle and /video only — never in the nav — so
     // these descriptions say what the work is, not what one product costs.
     drops: [
-      ['Catalog', 'Front, back, detail and on-model, for every product'],
-      ['Lifestyle', 'Your product in a styled scene, ready to post'],
-      ['Video', 'Short clips that move, on any product in the order'],
+      { href: '/catalog', title: 'Catalog', desc: 'Front, back, detail and on-model, for every product' },
+      { href: '/lifestyle', title: 'Lifestyle', desc: 'Your product in a styled scene, ready to post' },
+      { href: '/video', title: 'Video', desc: 'Short clips that move, on any product in the order' },
+      /*
+       * HOOKS HEEFT GEEN href, EN DAT IS HET HELE PUNT — 9 augustus 2026.
+       *
+       * Lucas: *"Verberg de pagina voor nu (…) maar post hem voor nu wel alvast
+       * tussen de services als knop die niet werkt met een label erbij dat deze
+       * nog niet klaar is."*
+       *
+       * Er was een /hooks-pagina en die is weg. Dit item blijft staan, want een
+       * dienst die je aankondigt hoort in het menu waar je diensten staan — maar
+       * zonder href, en Layout.astro tekent hem daarom als een uitgeschakeld
+       * menu-item in plaats van als een link.
+       *
+       * WAAROM NIET GEWOON WEGLATEN TOT DE PAGINA ER IS. Omdat dat de vraag
+       * "wat maken jullie" met een half antwoord laat staan. Zie de kop van
+       * HoldingPage.astro: een gat dat een bezoeker kan zien, is erger dan een
+       * onafgemaakt ding dat zegt wat het is.
+       */
+      { title: 'Hooks', desc: 'Not ready yet — a short video on a proven format, soon', soon: true },
     ],
+    nav_soon: 'Soon',
     mob_chat: 'Chat on WhatsApp',
     mob_notsure: 'Not sure yet?',
     mob_try: `Try a test sample · ${TEST_SAMPLE.en.price}`,
@@ -149,12 +186,21 @@ export const ui = {
      * opsturen: vier beelden of een carousel van drie. Dat is het concrete ding —
      * "één product volledig" is een omschrijving van diezelfde beelden waar je
      * niets aan hebt tot je weet hoeveel het er zijn.
+     *
+     * ── ÉÉN ZIN, OP ÉÉN REGEL (9 augustus 2026, tweede ronde) ────────────────
+     *
+     * Lucas: *"maak de note 1 zin. De pop up mag wel iets langer zijn maar niet te
+     * lang."* De balk staat nu op één rij — teken, zin, knop, kruisje — zoals een
+     * promobalk hoort te staan, en dan mag de zin niet afbreken. Vandaar dat het
+     * product vooropstaat en de opsomming erachter: "Je eigen product als …" is
+     * één mededeling, terwijl "… , van je eigen product" een bijstelling was die
+     * op een tweede regel belandde.
      */
     // \u00A0 tussen "of" en het getal: text-wrap:balance brak de regel precies
     // daar af, en "a carousel of" met de 3 op de volgende regel leest als een
     // onafgemaakte zin. Een harde spatie houdt ze bij elkaar zonder de balans
     // uit te zetten.
-    cb_note: `${TEST_SAMPLE.en.deliverable}, from your own product.`,
+    cb_note: `Your own product as ${TEST_SAMPLE.en.deliverable}.`,
     cb_cta: `Request a test sample · ${TEST_SAMPLE.en.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Message VISUAILS on WhatsApp — opens in a new tab',
@@ -170,10 +216,12 @@ export const ui = {
     nav_start: 'Bestellen',
     nav_account: 'Inloggen',
     drops: [
-      ['Catalog', 'Voorkant, achterkant, detail en on-model, voor elk product'],
-      ['Lifestyle', 'Je product in een gestylede scène, klaar om te posten'],
-      ['Video', 'Korte clips met beweging, op elk product in de bestelling'],
+      { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en on-model, voor elk product' },
+      { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten' },
+      { href: '/video', title: 'Video', desc: 'Korte clips met beweging, op elk product in de bestelling' },
+      { title: 'Hooks', desc: 'Nog niet klaar — een korte video op een bewezen format, binnenkort', soon: true },
     ],
+    nav_soon: 'Binnenkort',
     mob_chat: 'Chat via WhatsApp',
     mob_notsure: 'Nog niet zeker?',
     mob_try: `Probeer een proefvisual · ${TEST_SAMPLE.nl.price}`,
@@ -221,7 +269,7 @@ export const ui = {
     cc_cancel: 'Terug',
     cc_reopen: 'Cookievoorkeuren',
     foot_location: 'Enschede, Nederland',
-    cb_note: `${TEST_SAMPLE.nl.deliverable}, van je eigen product.`,
+    cb_note: `Je eigen product als ${TEST_SAMPLE.nl.deliverable}.`,
     cb_cta: `Vraag een proefvisual aan · ${TEST_SAMPLE.nl.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Stuur VISUAILS een bericht via WhatsApp — opent in een nieuw tabblad',

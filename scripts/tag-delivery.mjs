@@ -71,10 +71,15 @@
 import { exiftool } from 'exiftool-vendored';
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-
-const BASE = 'http://cv.iptc.org/newscodes/digitalsourcetype';
-const COMPOSITE = `${BASE}/compositeWithTrainedAlgorithmicMedia`;
-const FULLY = `${BASE}/trainedAlgorithmicMedia`;
+/*
+ * De twee waarden en de schrijffunctie staan sinds 9 augustus 2026 in
+ * scripts/lib/aitag.mjs, omdat scripts/deliver.mjs ze ook nodig heeft. Twee
+ * scripts met elk hun eigen kopie van deze url is de dag waarop het ene een
+ * andere claim in een bestand zet dan het andere — en niemand leest een tag na.
+ * De uitleg over het gereedschap en het moment blijft hierboven staan: die gaat
+ * over dit script en niet over de waarde.
+ */
+import { COMPOSITE, FULLY, writeSourceType } from './lib/aitag.mjs';
 
 /**
  * Extra IPTC keywords to write alongside the source type.
@@ -173,27 +178,12 @@ for (const file of files) {
 
     if (before === value) { already++; continue; }
 
-    await exiftool.write(
-      file,
-      {
-        // -XMP-iptcExt:DigitalSourceType. The Iptc4xmpExt namespace is where
-        // Google looks and where the IPTC vocabulary lives.
-        'XMP-iptcExt:DigitalSourceType': value,
-        ...(KEYWORDS.length ? { 'XMP-dc:Subject': KEYWORDS } : {}),
-      },
-      // exiftool's default is to leave a _original copy beside every file. For
-      // a 25-image drop that doubles the folder the customer is about to be
-      // sent, so the copy is refused and the write is verified below instead.
-      { writeArgs: ['-overwrite_original'] }
-    );
-
-    // VERIFY EVERY WRITE, don't trust the exit code. The whole point of this
-    // script is that a file can answer for itself; a run that reported success
-    // while writing nothing would be worse than no run at all, because nobody
-    // would look again.
-    const after = await readTag(file);
-    if (after === value) tagged++;
-    else failed.push([rel, `wrote but read back ${after || 'nothing'}`]);
+    // Schrijven én nakijken zit nu in writeSourceType() — zie de noot daar over
+    // waarom het terugleesje niet overdreven is. De KEYWORDS-lijst is hier leeg
+    // gebleven en wordt daarom niet meer meegestuurd; stond er ooit iets in, dan
+    // hoort dat in aitag.mjs bij de tag zelf.
+    await writeSourceType(file, value);
+    tagged++;
   } catch (err) {
     failed.push([rel, err.message.split('\n')[0]]);
   }

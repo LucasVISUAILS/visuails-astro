@@ -98,6 +98,12 @@ import { mailNote } from '../data/mailNote.js';
 import { maybeCloseOrder } from './close.js';
 import { issueInvoice } from './invoice.js';
 import { feedbackBlock, loadFeedback, handleFeedbackPost } from './feedback.js';
+// Waarom een 303 naar buiten hier niet werkt en een tussenpagina wel: zie de kop
+// van offsite.js. Kort: form-action 'self' in de CSP van deze pagina geldt óók
+// voor de redirect ná de post, dus een 303 naar Mollie of Google wordt door de
+// browser geblokkeerd — stil, met een lege pagina, en met een foutmelding die
+// onze eigen url noemt.
+import { offsitePage } from './offsite.js';
 import { serviceLabel } from '../data/services.js';
 import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT } from '../data/vat.js';
@@ -105,6 +111,10 @@ import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '
 import { createOrderMolliePayment } from './mollie.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
+// Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
+// deze twee schermen hadden elk hun eigen query over dezelfde levering en die
+// waren al uit elkaar gelopen.
+import { loadDeliveryFiles, deliveryEntries, deliverySummary, humanBytes } from './delivery.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
 // for the mail. Two `p`s in one module is a bug waiting for whichever one gets
@@ -370,7 +380,13 @@ const COPY = {
     sideDelivered: 'What we delivered',
     sideUploaded: 'What you uploaded',
     emptyUploads: 'No photos on file for this order.',
-    bDownloadAll: 'Download all',
+    bDownloadAll: 'Download the folder',
+    // De kaart die de losse downloadknoppen vervangt. Wat erin zit staat erbij,
+    // want een knop met "download" erop en niets eromheen laat de klant gokken of
+    // hij het goede formaat krijgt.
+    folderH: 'Your files',
+    folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP — so a print shop, a shop page and a feed each get the file they want without anyone resizing anything.',
+    folderReview: 'The photos above are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
     revokedNote: 'Revision requests are paused on this account. Message us and we will sort it out.',
     // Waarom er onder een proefvisual geen knoppen staan. Zie canReviewOrder()
     // in pricing.js: dit is de enige bestelling zonder, en dan hoort er een zin
@@ -676,7 +692,10 @@ const COPY = {
     sideDelivered: 'Wat wij leverden',
     sideUploaded: 'Wat jij uploadde',
     emptyUploads: 'Geen foto’s bij deze bestelling.',
-    bDownloadAll: 'Alles downloaden',
+    bDownloadAll: 'Download de map',
+    folderH: 'Jouw bestanden',
+    folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgt een drukker, een productpagina en een feed elk het bestand dat hij wil, zonder dat iemand nog iets bijschaalt.',
+    folderReview: 'De foto\'s hierboven zijn beoordeelbeelden op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
     revokedNote: 'Revisieaanvragen staan op dit account uit. Stuur ons een bericht, dan lossen we het samen op.',
     sampleNote: `Dit is de proefvisual van ${TEST_SAMPLE.nl.price}, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.`,
     closedNote: 'Je hebt alles in deze bestelling goedgekeurd. Toch nog iets? Maak het hieronder ongedaan.',
@@ -911,13 +930,24 @@ export async function accountGet(context) {
     return serveOrderZip(context, customer, Number(zipMatch[1]));
   }
 
-  const fileMatch = path.match(/^\/account\/files\/(\d+)\/(f|d)$/);
+  /*
+   * ALLEEN NOG /f — 9 augustus 2026. De /d-variant (dezelfde bytes, maar met
+   * content-disposition: attachment) is vervallen samen met de downloadknop per
+   * beeld. Een route die blijft bestaan nadat de knop eruit is, is geen
+   * opruiming maar een niet-gedocumenteerde achterdeur: wie de url één keer
+   * gezien heeft, downloadt gewoon door.
+   *
+   * Een oude bladwijzer op /d krijgt hierdoor de 404 die onderaan deze functie
+   * staat. Dat is de juiste uitkomst en niet een regressie: er is geen enkele
+   * plek meer die zo'n link tekent.
+   */
+  const fileMatch = path.match(/^\/account\/files\/(\d+)\/f$/);
   if (fileMatch) {
     const gate = await checkRate(env, { ip: clientIp(request), action: 'account-file', limit: FILE_LIMIT });
     if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
     const customer = await currentCustomer(env, request);
     if (!customer) return seeOther('/account/login');
-    return serveAccountFile(context, customer, Number(fileMatch[1]), fileMatch[2]);
+    return serveAccountFile(context, customer, Number(fileMatch[1]));
   }
 
   // Een factuur als pdf. Onder dezelfde limiet als de andere bestandsroutes en
@@ -2521,7 +2551,29 @@ async function handleFeedback({ request, env }, customer) {
     customerId: customer.customer_id,
     form,
   });
-  return seeOther(res.redirect || `${home}#order-${orderId}`);
+
+  /*
+   * NIET seeOther(res.redirect). Dat stond hier, en dat is de bug die Lucas op
+   * 9 augustus 2026 rapporteerde als *"deze knoppen verwijzen nergens naartoe"*:
+   * de post kwam aan, de klik werd opgeslagen, en daarna blokkeerde Chrome de
+   * 303 naar Google omdat form-action 'self' ook over redirects gaat. Zie de kop
+   * van offsite.js, en csp-probe.mjs voor de meting.
+   *
+   * Komt de url niet door de https-toets van offsitePage(), dan gaat de klant
+   * terug naar zijn bestelling in plaats van naar een url die wij niet kunnen
+   * plaatsen.
+   */
+  if (res.redirect) {
+    const lang = negotiate(request);
+    const page = offsitePage({
+      url: res.redirect,
+      name: res.redirectName,
+      lang,
+      css: '/account.css',
+    });
+    if (page) return html(page);
+  }
+  return seeOther(`${home}#order-${orderId}`);
 }
 
 async function loadFeedbackFor(env, orderIds) {
@@ -2918,7 +2970,28 @@ async function handleOrderPay({ request, env }, customer, orderId) {
   if (!checkout || !/^https:\/\/[^/]*mollie\.com\//.test(checkout)) {
     return seeOther(`${home}?pay=failed#order-${orderId}`);
   }
-  return seeOther(checkout);
+  /*
+   * ── DEZE KNOP WAS STIL STUK, EN DAT IS ERGER DAN DE REVIEWKNOP ────────────
+   *
+   * Hier stond `return seeOther(checkout)`. Dezelfde fout als bij de
+   * reviewknoppen, gevonden bij het uitzoeken daarvan: de CSP van deze pagina
+   * zegt form-action 'self', en die geldt ook voor de redirect ná de post. Dus
+   * werd de betaling bij Mollie WEL aangemaakt en gebeurde er daarna zichtbaar
+   * niets — de kaart bleef staan, zonder melding, met een aangemaakte betaling
+   * die niemand ooit afrekende. Zie de kop van offsite.js voor de meting.
+   *
+   * De tussenpagina is hier bovendien beter dan de 303 die het had moeten zijn:
+   * als Mollie traag is, leest de klant "we sturen je door naar Mollie" in
+   * plaats van naar een pagina te kijken die niets doet.
+   *
+   * checkout is hierboven al tegen mollie.com getoetst; offsitePage() eist
+   * daarnaast https en een absolute url. Faalt die toets alsnog, dan is dit
+   * hetzelfde geval als een mislukte betaallink en gaat de klant naar ?pay=failed
+   * in plaats van naar een url die twee controles niet haalde.
+   */
+  const away = offsitePage({ url: checkout, name: 'Mollie', lang, css: '/account.css' });
+  if (!away) return seeOther(`${home}?pay=failed#order-${orderId}`);
+  return html(away);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2959,50 +3032,50 @@ async function serveOrderZip(context, customer, orderId) {
   if (!env.UPLOADS) return new Response(null, { status: 503, headers: fileHeaders() });
 
   let order;
-  let rows;
+  let files;
   try {
     order = await env.DB.prepare(
-      'SELECT id, ref FROM orders WHERE id = ?1 AND customer_id = ?2'
+      'SELECT id, ref, lang FROM orders WHERE id = ?1 AND customer_id = ?2'
     ).bind(orderId, customer.customer_id).first();
     if (!order) return new Response(null, { status: 404, headers: fileHeaders() });
 
-    // VERVANGEN BEELDEN HOREN ER NIET IN — 7 augustus 2026. Het scherm liet na
-    // een revisieronde alleen de nieuwe versie zien (loadCustomerFiles filtert
-    // op superseded_at), maar het zip-bestand bevatte allebei. Dan download je
-    // "alles" en zit je alsnog te vergelijken welke van de twee de goede is —
-    // precies het extra beeld dat migratie 0012 uit beeld wilde halen.
-    //
-    // Met een terugval voor het geval die migratie nog niet gedraaid is: dan
-    // bestaat de kolom niet en is er ook nog niets vervangen.
-    const zipCols = `SELECT id, r2_key, filename, bytes
-         FROM files
-        WHERE order_id = ?1 AND kind = 'delivery'
-          AND (expires_at IS NULL OR expires_at > datetime('now'))`;
-    try {
-      rows = (await env.DB.prepare(`${zipCols} AND superseded_at IS NULL ORDER BY id`)
-        .bind(orderId).all()).results || [];
-    } catch (err) {
-      if (!/no such column|superseded_at/i.test(String(err?.message || err))) throw err;
-      rows = (await env.DB.prepare(`${zipCols} ORDER BY id`).bind(orderId).all()).results || [];
-    }
+    /*
+     * ── DE QUERY STOND HIER EN STAAT NU IN src/lib/delivery.js ───────────────
+     *
+     * Hier stond een eigen SELECT met de `superseded_at`-filter erin (7 augustus:
+     * het archief bevatte na een revisieronde nog de oude versie, terwijl het
+     * scherm alleen de nieuwe liet zien). Portal.js had zijn eigen versie van
+     * dezelfde query, ZONDER die filter — dus liep dezelfde bug daar nog. Twee
+     * query's over hetzelfde begrip lopen uit elkaar, en dat is hier precies wat
+     * er gebeurd was.
+     *
+     * Nu is er één loadDeliveryFiles(), die ook de assets uit file_assets
+     * meeneemt, en één deliveryEntries() die de mappenstructuur bepaalt. Wat de
+     * klant hier downloadt en wat hij via zijn portaallink downloadt, is
+     * daarmee per constructie hetzelfde archief.
+     */
+    files = await loadDeliveryFiles(env, orderId);
   } catch {
     return new Response(null, { status: 503, headers: fileHeaders() });
   }
 
-  if (!rows.length) return new Response(null, { status: 404, headers: fileHeaders() });
+  if (!files.length) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  const entries = deliveryEntries(files, order.lang === 'en' ? 'en' : 'nl');
+  if (!entries.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
   // De grens van zip.js, hier gehandhaafd omdat hier de maten bekend zijn. Een
   // 413 met een lege body is eerlijker dan een archief dat pas bij de klant
   // blijkt niet te openen.
-  const total = rows.reduce((n, r) => n + (r.bytes || 0), 0);
-  if (rows.length > ZIP_MAX_FILES || total > ZIP_MAX_BYTES) {
+  const total = entries.reduce((n, e) => n + (e.bytes || 0), 0);
+  if (entries.length > ZIP_MAX_FILES || total > ZIP_MAX_BYTES) {
     return new Response(null, { status: 413, headers: fileHeaders() });
   }
 
-  const stream = zipStream(rows.map((r) => ({
-    name: r.filename || `${r.id}.jpg`,
+  const stream = zipStream(entries.map((e) => ({
+    name: e.name,
     get: async () => {
-      const obj = await env.UPLOADS.get(r.r2_key);
+      const obj = await env.UPLOADS.get(e.key);
       return obj ? obj.arrayBuffer() : null;
     },
   })));
@@ -3015,7 +3088,7 @@ async function serveOrderZip(context, customer, orderId) {
   return new Response(stream, { status: 200, headers });
 }
 
-async function serveAccountFile(context, customer, fileId, mode) {
+async function serveAccountFile(context, customer, fileId) {
   const { request, env } = context;
 
   if (!env.UPLOADS) return new Response(null, { status: 503, headers: fileHeaders() });
@@ -3033,17 +3106,23 @@ async function serveAccountFile(context, customer, fileId, mode) {
   if (!file) return new Response(null, { status: 404, headers: fileHeaders() });
   if (file.expires_at && isExpired(file.expires_at, null)) return new Response(null, { status: 410, headers: fileHeaders() });
 
-  // EEN UPLOAD IS TE BEKIJKEN EN NIET TE DOWNLOADEN. Bekijken is wat het
-  // dashboard nodig heeft — controleren dat het goed is aangekomen, en ernaar
-  // wijzen bij een revisie. Downloaden voegt niets toe: het zijn de foto's van
-  // de klant, die heeft hij zelf al. 404 en niet 403, omdat er voor deze
-  // combinatie van id en modus simpelweg niets te leveren valt en een 403 zou
-  // suggereren dat er iets is dat met andere rechten wél kon.
-  if (file.kind === 'upload' && mode === 'd') {
-    return new Response(null, { status: 404, headers: fileHeaders() });
-  }
-
-  const key = mode === 'f' ? file.preview_key || file.r2_key : file.r2_key;
+  /*
+   * ── NIETS IS HIER MEER TE DOWNLOADEN, OOK GEEN LEVERING ───────────────────
+   *
+   * Hier stond een uitzondering voor uploads (die mochten al niet gedownload
+   * worden) en daaronder koos `mode` tussen het beoordeelbeeld en het volledige
+   * bestand. Sinds 9 augustus 2026 is er maar één modus: bekijken. De route
+   * accepteert /d niet meer, dus is `mode` altijd 'f' — dit is de plek die dat
+   * hardmaakt in plaats van erop te vertrouwen.
+   *
+   * `preview_key || r2_key` blijft staan en die terugval is nu wél echt een
+   * terugval: scripts/deliver.mjs vult preview_key met een verkleind beeld van
+   * 1400px. Tot vandaag vulde niets die kolom en serveerde dit pad dus altijd
+   * het volledige leveringsbestand — het scherm dat "alleen om te beoordelen"
+   * heet, gaf de levering weg. Een oude levering zonder beoordeelbeeld doet dat
+   * nog steeds; dat is bekend en het is de reden dat het script bestaat.
+   */
+  const key = file.preview_key || file.r2_key;
 
   let object;
   try {
@@ -3060,10 +3139,9 @@ async function serveAccountFile(context, customer, fileId, mode) {
 
   const type = mimeFor(file.filename || key, headers.get('content-type'));
   headers.set('content-type', type);
-  headers.set(
-    'content-disposition',
-    mode === 'd' ? `attachment; ${dispositionFilename(file.filename || 'file')}` : 'inline'
-  );
+  // Altijd inline. Er is geen attachment-variant meer; de enige download op dit
+  // scherm is het archief van de hele bestelling (serveOrderZip).
+  headers.set('content-disposition', 'inline');
 
   if (!object.body) {
     return new Response(null, { status: request.headers.get('if-none-match') ? 304 : 412, headers });
@@ -4631,9 +4709,32 @@ function orderCard(t, lang, o, files, events = [], fb = null) {
       : `<p class="meta">${esc(empty)}</p>`}
   </section>`;
 
-  // De zip staat alleen bij de levering, en alleen als er iets in zit.
-  const zip = delivered.length
-    ? `<a class="btn btn-ghost btn-sm" href="/account/orders/${o.id}/zip">${esc(t.bDownloadAll)}</a>`
+  /*
+   * ── DE MAP IS EEN KAART GEWORDEN, GEEN KNOP IN EEN HOEK ───────────────────
+   *
+   * Hier stond één ghost-knopje "Alles downloaden" boven het fotorooster. Dat
+   * paste toen elke foto zijn eigen downloadknop had: de zip was toen een
+   * gemak, geen levering.
+   *
+   * Sinds 9 augustus 2026 is dit archief het ENIGE dat de klant meeneemt, en dan
+   * is een klein knopje ernaast de verkeerde maat voor het belangrijkste ding op
+   * het scherm. Het staat nu in een eigen kaart, met erin wat hij krijgt (per
+   * product, drie formaten) en de zin die uitlegt waarom de foto's erboven geen
+   * downloadknop meer hebben.
+   *
+   * Die tweede zin is niet opsmuk. Zonder uitleg is een galerij zonder
+   * downloadknoppen een scherm dat stuk lijkt, en dan mailt iemand ons met de
+   * vraag waar zijn foto's zijn — precies de mail die deze regel voorkomt.
+   */
+  const folder = delivered.length
+    ? `<section class="folder">
+    <div class="folder-body">
+      <h3>${esc(t.folderH)}</h3>
+      <p class="folder-n">${esc(t.folderBody)}</p>
+      <p class="meta folder-note">${esc(t.folderReview)}</p>
+    </div>
+    <a class="btn btn-primary btn-sm folder-btn" href="/account/orders/${o.id}/zip">${esc(t.bDownloadAll)}</a>
+  </section>`
     : '';
 
   /*
@@ -4657,11 +4758,12 @@ function orderCard(t, lang, o, files, events = [], fb = null) {
   const grouped = groupByProduct(delivered, uploaded);
   const fileList = grouped
     ? `
-  <div class="prod-tools">${zip}</div>
-  <div class="prods">${grouped.map((g) => productCard(t, lang, o, g)).join('')}</div>`
+  <div class="prods">${grouped.map((g) => productCard(t, lang, o, g)).join('')}</div>
+  ${folder}`
     : `
+  ${folder}
   <div class="sides">
-    ${side(t.sideDelivered, delivered.map((f) => shotTile(t, f, o)), t.emptyFiles, zip)}
+    ${side(t.sideDelivered, delivered.map((f) => shotTile(t, f, o)), t.emptyFiles)}
     ${side(t.sideUploaded, uploaded.map((f) => shotTile(t, f, o)), t.emptyUploads)}
   </div>`;
 
@@ -5027,23 +5129,29 @@ function shotTile(t, f, o, inProduct = false) {
          ${badge}
        </a>`;
 
-  // Uploads krijgen geen downloadknop en geen beoordeelknoppen: de route
-  // weigert een download van een upload sowieso (zie serveAccountFile), en een
-  // knop die 404 oplevert is een belofte die je niet nakomt.
-  //
-  // De volgorde is besluit-dan-bewaren: goedkeuren of aanmerken staat boven,
-  // downloaden eronder. Downloaden stond eerst bovenaan uit de tijd dat dit een
-  // regel was met een knop erachter; in een tegel is de bovenste knop de
-  // voorgestelde handeling, en dat is niet "bewaar dit op je bureaublad".
-  const download = (gone || isUpload)
-    ? ''
-    : `<a class="btn btn-file btn-sm" href="/account/files/${f.id}/d">${esc(t.bDownload)}</a>`;
+  /*
+   * ── HIER STOND EEN DOWNLOADKNOP PER BEELD, EN DIE IS WEG ──────────────────
+   *
+   * Lucas, 9 augustus 2026: *"de zichtbare foto's zijn dus niet downloadbaar in
+   * het portaal en puur voor revisies aanvragen. Alleen de map (het
+   * eindresultaat) kan gedownload worden."*
+   *
+   * Dat is geen beperking maar een opruiming. Wat hier per beeld te downloaden
+   * was, is één van de drie formaten van één foto, met de naam die hij bij ons
+   * toevallig had. Wat de klant nodig heeft is een png voor de drukker en een
+   * webp voor de webshop, in een map die zegt bij welk product ze horen. Twaalf
+   * losse knoppen die elk het verkeerde bestand geven, zijn geen twaalf keuzes.
+   *
+   * De tegel houdt precies één taak over: beoordelen. Zie ook serveAccountFile,
+   * waar de /d-route om dezelfde reden is vervallen — een knop weghalen terwijl
+   * de route blijft, is de knop verstoppen.
+   */
 
   return `<li class="shot" id="f${f.id}">
   ${media}
   <div class="shot-body">
     <span class="shot-cap">${esc(caption)}</span>
-    <div class="shot-actions">${isUpload || gone ? '' : reviewControls(t, f, o)}${download}</div>
+    <div class="shot-actions">${isUpload || gone ? '' : reviewControls(t, f, o)}</div>
     ${said}
   </div>
 </li>`;

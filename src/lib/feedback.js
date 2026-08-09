@@ -526,9 +526,10 @@ async function notifyStudio(env, { orderId, kind, score, note }) {
  * keer. De aanroeper doet zijn eigen autorisatie — is dit jouw bestelling — en
  * geeft daarna alleen door wat er is ingevuld.
  *
- * @returns {Promise<{ok: boolean, redirect: string|null}>} `redirect` is de url
- *   waar een platformknop naartoe moet; bij de andere acties null, want die
- *   blijven op de pagina.
+ * @returns {Promise<{ok: boolean, redirect: string|null, redirectName?: string|null}>}
+ *   `redirect` is de url waar een platformknop naartoe moet, met `redirectName`
+ *   als de naam die de tussenpagina noemt; bij de andere acties is `redirect`
+ *   null, want die blijven op de pagina.
  */
 export async function handleFeedbackPost(env, { orderId, customerId, form }) {
   const kind = String(form.get('fb') || '');
@@ -568,7 +569,15 @@ export async function handleFeedbackPost(env, { orderId, customerId, form }) {
     if (!id) return { ok: false, redirect: null };
     await savePlatformClick(env, orderId, id);
     const p = REVIEW_PLATFORMS.find((x) => x.id === id);
-    return { ok: true, redirect: p ? p.url : null };
+    /*
+     * `redirectName` gaat mee omdat de aanroeper geen tussenpagina kan schrijven
+     * die "Doorsturen naar Google" zegt zonder te weten dat dit Google is — en de
+     * enige andere manier om dat te weten is de url terugzoeken in
+     * REVIEW_PLATFORMS, wat een tweede plek is waar dezelfde lijst gelezen wordt.
+     * Waarom die tussenpagina er is en waarom een 303 hier niet kan: zie de kop
+     * van offsite.js.
+     */
+    return { ok: true, redirect: p ? p.url : null, redirectName: p ? p.name : null };
   }
 
   if (kind === 'reset') {

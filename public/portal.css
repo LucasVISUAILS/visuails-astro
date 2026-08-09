@@ -362,13 +362,42 @@ h1 {
 .state.revision::before { content: "\2014\00a0"; }
 .said { margin: .5rem 0 0; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .9rem; color: var(--ink-2); font-style: italic; }
 
+/* ---- de map --------------------------------------------------------------
+   Nieuw op 9 augustus 2026, en het belangrijkste blok op deze pagina: het is het
+   enige dat de klant meeneemt. Tot vandaag had dit portaal geen enkele knop voor
+   het geheel — wie via de gemailde link kwam, haalde zijn levering foto voor foto
+   op, en dat is precies de handeling die er niet meer is.
+
+   Onder de beelden en niet erboven, want dat is de orde van de handeling: eerst
+   kijken en goedkeuren, dan meenemen. Dezelfde vorm en dezelfde klassenamen als
+   in account.css, zodat de twee schermen ook op het oog één levering zijn. */
+.folder {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem 1.6rem;
+  align-items: center;
+  margin: 1.6rem 0 0; padding: 1.2rem 1.3rem;
+  background: var(--surface-2, var(--surface));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md, 10px);
+}
+.folder h2 { margin: 0 0 .35rem; font-size: 1.05rem; }
+.folder-n { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+.folder-meta { margin: .45rem 0 0; font-size: .8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+/* De zin die uitlegt waarom de foto's erboven geen knop meer hebben. Kleiner en
+   grijzer: het is de zin die je leest als je hem mist, niet de eerste die je leest. */
+.folder-note { margin: .55rem 0 0; max-width: 62ch; }
+@media (max-width: 560px) {
+  .folder { grid-template-columns: 1fr; }
+  .folder .btn { width: 100%; text-align: center; }
+}
+
 /* ---- controls ------------------------------------------------------------ */
 .acts { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
-/* text-decoration is reset here rather than left to the anchor rule above,
-   because Download is an <a> and Approve is a <button> and they sit side by side
-   in the same .acts row. One of them arriving underlined would make two controls
-   that do the same kind of thing look like two different kinds of thing.
-   .btn-quiet puts the underline back for itself, further down.
+/* text-decoration wordt hier gereset en niet overgelaten aan de ankerregel
+   hierboven. De aanleiding was Download naast Goedkeuren — een <a> naast een
+   <button> in dezelfde rij, waarvan er één onderstreept aankwam. Die
+   downloadknop is er niet meer, maar de reset blijft: .btn-primary in het
+   mapblok hieronder is óók een <a>, en de volgende knop die hier komt zal het
+   ook zijn.
 
    ---- the button system, hand-copied from global.css ------------------------
    Two sizes and three fills, so a control measures and reads the same here as

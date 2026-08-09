@@ -1,0 +1,333 @@
+---
+/*
+ * FigGallery — beoordelen, en waarom de map het eindresultaat is.
+ *
+ * ── WAAROM DIT BESTAAT ──────────────────────────────────────────────────────
+ *
+ * Lucas, 9 augustus 2026, over /portal: *"deze is nu nog wat saai en inconsistent
+ * met de rest van de website. Op de eerste sectie gelijk weer een grote dashboard
+ * mock-up laten zien die ook op de homepage staat en bij de image by image sectie
+ * ook een eigen unieke mock-up maken voor het specifieke idee."*
+ *
+ * Wat er stond was een grijs vlak met "CLIENT PORTAL · DELIVERY GALLERY" erin,
+ * naast de tekst die uitlegt dat je beeld voor beeld goedkeurt. Een placeholder op
+ * de plek van het bewijs.
+ *
+ * ── WAT DEZE FIGUUR MOET UITLEGGEN, EN DAT IS SINDS VANDAAG MEER ────────────
+ *
+ * Deze band ging over goedkeuren. Diezelfde dag veranderde het portaal zelf:
+ *
+ *   *"Ik wil dat klanten de foto's apart kunnen zien en een revisie per foto
+ *   kunnen aanvragen maar het echte wat ze krijgen is een map met alle bestanden
+ *   erin, de zichtbare foto's zijn dus niet downloadbaar in het portaal."*
+ *
+ * Dat is een onderscheid dat een bezoeker niet zelf verzint, en het is precies het
+ * soort ding dat als een BEPERKING leest als je het in een zin uitlegt en als een
+ * OPRUIMING als je het laat zien. Vandaar de vorm van deze figuur: links de tegels
+ * met twee knoppen en geen downloadknop, rechtsonder de map met wat erin zit. Het
+ * scherm zegt zelf waarom die twee dingen niet hetzelfde zijn.
+ *
+ * ── DE STATEN ZIJN DE HELE COMPOSITIE ──────────────────────────────────────
+ *
+ * Vier tegels: één goedgekeurd, één met een revisie erop (met de notitie van de
+ * klant eronder, in zijn eigen woorden), één open met het notitieveld erin, en één
+ * die nog niets is. Dat is geen willekeurige greep — het is de bewering van deze
+ * band in beeld: de rest van de bestelling loopt door terwijl er één terug is. Een
+ * lijstje met vier keer "wacht op je" zou het omgekeerde tekenen.
+ *
+ * De teller bovenaan (2 van 4 goedgekeurd · 1 terug) is het enige stukje UI dat
+ * bewijst dat die staten iets DOEN.
+ *
+ * ── HET IS EEN MOCK-UP EN DAT MOET ERBIJ STAAN ─────────────────────────────
+ *
+ * Zelfde afspraak als FigDash en FigStudio: verzonnen gegevens, geen echte
+ * handeling, geen link naar een portaal, en het woord "voorbeeld" in beeld. Merk
+ * VOLT en referentie VIS-2608-4471, dezelfde als in de andere twee figuren, zodat
+ * de drie over dezelfde bestelling gaan.
+ *
+ * NOOIT EEN ECHT ADRES OF EEN ECHTE NAAM. Zie de langere noot in FigDash.astro.
+ *
+ * ── GEEN JAVASCRIPT ────────────────────────────────────────────────────────
+ *
+ * Er is niets interactief nodig: dit is één toestand van één scherm. Het
+ * notitieveld is een <textarea readonly> met tekst erin en geen formulier — een
+ * formulier op een marketingpagina dat nergens naartoe post, is een knop die
+ * niets doet.
+ */
+interface Props { lang?: 'en' | 'nl' }
+const { lang = 'en' } = Astro.props;
+const nl = lang === 'nl';
+
+const PHOTOS = [
+  '/img/lifestyle-flash-01.webp',
+  '/img/lifestyle-flash-03.webp',
+  '/img/lifestyle-flash-05.webp',
+  '/img/lifestyle-flash-07.webp',
+];
+
+const C = nl
+  ? {
+      badge: 'Voorbeeld met verzonnen gegevens',
+      ref: 'VIS-2608-4471 · VOLT',
+      h: 'Wat wij leverden',
+      tally: '2 van 4 goedgekeurd · 1 terug',
+      tiles: [
+        { cap: 'Product 1 · voorkant', state: 'ok', label: 'Goedgekeurd op 8 aug' },
+        { cap: 'Product 1 · achterkant', state: 'rev', label: 'Revisie gevraagd op 8 aug', said: 'De mouw valt links anders dan rechts.' },
+        { cap: 'Product 2 · voorkant', state: 'open' },
+        { cap: 'Product 2 · achterkant', state: 'ok', label: 'Goedgekeurd op 8 aug' },
+      ],
+      bApprove: 'Goedkeuren',
+      bAsk: 'Er klopt iets niet',
+      noteLabel: 'Zeg in je eigen woorden wat er niet klopt',
+      notePlaceholder: 'De kleur van het label is te warm — hij moet koeler, zoals op de foto die ik stuurde.',
+      bSend: 'Versturen',
+      reviewNote: 'Deze beelden zijn op schermformaat. Ze staan er om te beoordelen.',
+      folderH: 'Jouw bestanden',
+      folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP.',
+      folderMeta: '24 bestanden · 186,4 MB',
+      bFolder: 'Download de map',
+      tree: [
+        ['product-1/', 'dir'],
+        ['PNG/voorkant.png', 'png'],
+        ['JPG/voorkant.jpg', 'jpg'],
+        ['WEBP/voorkant.webp', 'webp'],
+        ['product-2/', 'dir'],
+      ],
+    }
+  : {
+      badge: 'Example with made-up data',
+      ref: 'VIS-2608-4471 · VOLT',
+      h: 'What we delivered',
+      tally: '2 of 4 approved · 1 back',
+      tiles: [
+        { cap: 'Product 1 · front', state: 'ok', label: 'Approved 8 Aug' },
+        { cap: 'Product 1 · back', state: 'rev', label: 'Revision asked 8 Aug', said: 'The sleeve sits differently on the left than on the right.' },
+        { cap: 'Product 2 · front', state: 'open' },
+        { cap: 'Product 2 · back', state: 'ok', label: 'Approved 8 Aug' },
+      ],
+      bApprove: 'Approve',
+      bAsk: 'Something is off',
+      noteLabel: 'Say what is wrong in your own words',
+      notePlaceholder: 'The label colour is too warm — it should be cooler, like the photo I sent.',
+      bSend: 'Send',
+      reviewNote: 'These are at screen size. They are here to be judged.',
+      folderH: 'Your files',
+      folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP.',
+      folderMeta: '24 files · 186.4 MB',
+      bFolder: 'Download the folder',
+      tree: [
+        ['product-1/', 'dir'],
+        ['PNG/front.png', 'png'],
+        ['JPG/front.jpg', 'jpg'],
+        ['WEBP/front.webp', 'webp'],
+        ['product-2/', 'dir'],
+      ],
+    };
+---
+
+<figure class="fg">
+  <div class="fg-frame">
+    <div class="fg-bar">
+      <span class="fg-mark">VISUAILS</span>
+      <span class="fg-ref">{C.ref}</span>
+      <span class="fg-badge">{C.badge}</span>
+    </div>
+
+    <div class="fg-body">
+      <div class="fg-head">
+        <p class="fg-h">{C.h}</p>
+        <p class="fg-tally">{C.tally}</p>
+      </div>
+
+      <ul class="fg-tiles">
+        {C.tiles.map((tile, i) => (
+          <li class={`fg-tile is-${tile.state}`}>
+            <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
+            <div class="fg-tile-body">
+              <span class="fg-cap">{tile.cap}</span>
+              {tile.state === 'ok' ? <span class="fg-state is-ok">{tile.label}</span> : null}
+              {tile.state === 'rev' ? (
+                <>
+                  <span class="fg-state is-rev">{tile.label}</span>
+                  <p class="fg-said">{tile.said}</p>
+                </>
+              ) : null}
+              {tile.state === 'open' ? (
+                <div class="fg-acts">
+                  <span class="fg-btn is-primary">{C.bApprove}</span>
+                  <span class="fg-btn">{C.bAsk}</span>
+                </div>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* Het geopende notitieveld. Eén keer, onder het rooster, want in een tegel
+          van tweehonderd pixels breed is een tekstvak van drie regels niet te
+          lezen — en het is juist de zin van de klant die deze band verkoopt. */}
+      <div class="fg-ask">
+        <p class="fg-ask-l">{C.noteLabel}</p>
+        <p class="fg-ask-field">{C.notePlaceholder}</p>
+        <span class="fg-btn">{C.bSend}</span>
+      </div>
+
+      <p class="fg-fine">{C.reviewNote}</p>
+
+      {/* ── DE MAP, EN DAAROM STAAT HIJ IN DEZE FIGUUR ──────────────────────
+          Dit hoort niet bij "beeld voor beeld goedkeuren" en het staat er toch,
+          omdat het de vraag beantwoordt die de tegels hierboven oproepen: als er
+          bij geen enkele foto een downloadknop staat, waar krijg ik mijn
+          bestanden dan? Het boompje ernaast zegt wat erin zit — drie formaten per
+          product — en dat is sneller gelezen dan de zin die het uitlegt. */}
+      <section class="fg-folder">
+        <div>
+          <p class="fg-folder-h">{C.folderH}</p>
+          <p class="fg-folder-n">{C.folderBody}</p>
+          <p class="fg-folder-m">{C.folderMeta}</p>
+        </div>
+        {/* ── HET BOOMPJE, ZONDER LABELS ERNAAST ─────────────────────────────
+            Hier stonden gekleurde PNG/JPG/WEBP-chips vóór elk pad, en dat las
+            dubbel: "PNG · PNG/voorkant.png". Het pad zegt het formaat al twee
+            keer (de map en de extensie). Wat overblijft is de vorm zelf, en die
+            is het enige dat deze figuur hier moet bewijzen. */}
+        <ul class="fg-tree">
+          {C.tree.map(([name, kind]) => (
+            <li class={`fg-tree-${kind === 'dir' ? 'dir' : 'file'}`}>{name}</li>
+          ))}
+        </ul>
+        <span class="fg-btn is-primary fg-folder-btn">{C.bFolder}</span>
+      </section>
+    </div>
+  </div>
+</figure>
+
+<style>
+  /* De maat wordt met een container query gemeten en niet met het venster: deze
+     figuur staat in een halve kolom, dus wat hij moet weten is hoe breed die kolom
+     is. Zelfde reden als in FigDash — zie de langere noot daar. */
+  .fg { container-type: inline-size; margin: 0; }
+
+  .fg-frame {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .fg-bar {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+    padding: .7rem .9rem;
+    background: var(--surface-2);
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .fg-mark { font-family: var(--font-display); font-weight: 900; font-size: .78rem; letter-spacing: .16em; color: var(--ink); }
+  .fg-ref { font-size: .7rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  /* Het woord "voorbeeld" hoort in beeld te staan en niet alleen in de tekst
+     ernaast: een schermafdruk wordt gedeeld zonder zijn pagina. */
+  .fg-badge {
+    margin-left: auto;
+    font-size: .62rem; letter-spacing: .04em;
+    color: var(--ink-3);
+    padding: .18rem .5rem;
+    border: 1px solid var(--line); border-radius: var(--r-pill);
+  }
+
+  .fg-body { padding: .9rem; display: grid; gap: .8rem; }
+  .fg-head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .fg-h { margin: 0; font-size: .9rem; font-weight: 700; color: var(--ink); }
+  .fg-tally { margin: 0; font-size: .7rem; color: var(--ink-3); }
+
+  /* Vier tegels op één rij zodra het past, en anders twee. Onder de 22rem één,
+     want een foto van tachtig pixels breed bewijst niets. */
+  .fg-tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .55rem; }
+  @container (max-width: 34rem) { .fg-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container (max-width: 20rem) { .fg-tiles { grid-template-columns: 1fr; } }
+
+  .fg-tile { display: grid; gap: .3rem; align-content: start; }
+  .fg-tile img {
+    width: 100%; aspect-ratio: 4 / 5; object-fit: cover;
+    border-radius: var(--r-sm, 6px);
+    /* De rand zegt de staat mee. Niet ALLEEN de rand: de woorden eronder doen het
+       werk, want een staat die alleen een kleur is, is voor niemand te lezen die
+       de twee tinten niet kan scheiden — en dit is de staat die beslist of een
+       foto weggaat. */
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .fg-tile.is-ok img { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .fg-tile.is-rev img { box-shadow: inset 0 0 0 2px var(--warn-ink, #C9A227); }
+  .fg-tile.is-open img { box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .fg-tile-body { display: grid; gap: .18rem; }
+  .fg-cap { font-size: .66rem; color: var(--ink-2); }
+  .fg-state { font-size: .6rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .fg-state.is-ok { color: var(--accent); }
+  .fg-state.is-rev { color: var(--warn-ink, #C9A227); }
+  .fg-said {
+    margin: .15rem 0 0; padding-left: .45rem;
+    box-shadow: inset 2px 0 0 var(--line-strong);
+    font-size: .62rem; line-height: 1.45; font-style: italic; color: var(--ink-3);
+  }
+
+  .fg-acts { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .15rem; }
+  /* Geen echte knoppen — zie de kop. Een <span> die eruitziet als een knop is hier
+     het eerlijke element: er is niets om aan te klikken. */
+  .fg-btn {
+    display: inline-block;
+    font-size: .6rem; font-weight: 600; letter-spacing: .02em;
+    padding: .26rem .5rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    color: var(--ink-2); white-space: nowrap;
+  }
+  .fg-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+
+  .fg-ask {
+    display: grid; gap: .35rem; justify-items: start;
+    padding: .65rem .7rem;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+  }
+  .fg-ask-l { margin: 0; font-size: .64rem; color: var(--ink-3); }
+  .fg-ask-field {
+    margin: 0; width: 100%;
+    padding: .45rem .55rem;
+    font-size: .66rem; line-height: 1.5; color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--line-strong); border-radius: var(--r-sm, 6px);
+  }
+
+  .fg-fine { margin: 0; font-size: .62rem; line-height: 1.5; color: var(--ink-3); }
+
+  /* ── DE MAP ──────────────────────────────────────────────────────────────
+     Drie kolommen: waarom, wat erin zit, en de knop. Onder de 30rem worden het er
+     één, met de knop over de volle breedte — dan leest het als het echte scherm op
+     een telefoon. */
+  .fg-folder {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: .8rem 1rem; align-items: center;
+    padding: .8rem .85rem;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+  }
+  @container (max-width: 30rem) {
+    .fg-folder { grid-template-columns: 1fr; }
+    .fg-folder-btn { text-align: center; }
+  }
+  .fg-folder-h { margin: 0 0 .15rem; font-size: .78rem; font-weight: 700; color: var(--ink); }
+  .fg-folder-n { margin: 0; font-size: .66rem; line-height: 1.5; color: var(--ink-2); }
+  .fg-folder-m { margin: .25rem 0 0; font-size: .62rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  /* Monospace, want dit zijn paden en geen woorden — dan is uitlijning informatie
+     en niet toeval. */
+  .fg-tree {
+    list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .6rem; line-height: 1.4; color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .fg-tree-dir { color: var(--ink-2); font-weight: 600; }
+  /* De bestanden springen in onder hun map, want dat is wat een map is. */
+  .fg-tree-file { padding-left: .8rem; }
+</style>

@@ -105,7 +105,28 @@ async function pay(order, { handler } = {}) {
     env: { DB: makeDb(order), MOLLIE_API_KEY: 'test_dHar4XY7LxsDOtmnkVtjNVWXLSlXsM' },
     waitUntil() {},
   });
-  return { status: res.status, to: res.headers.get('location') || '', calls };
+  /*
+   * `body` komt mee sinds 9 augustus 2026. Tot die dag las deze helper alleen de
+   * Location-header, en dat is precies waarom hij een kapotte betaalknop groen
+   * kon houden: /account/orders/<id>/pay antwoordde met een 303 naar Mollie, deze
+   * test vond die url in de header, en de browser blokkeerde de omleiding omdat
+   * form-action 'self' ook over redirects gaat. Zie de kop van src/lib/offsite.js.
+   *
+   * Het antwoord is nu een tussenpagina, dus moet de test in de PAGINA kunnen
+   * kijken. Een 303 blijft bestaan voor alles wat op onze eigen site landt — de
+   * mislukte gevallen hieronder — en dan is `body` leeg.
+   */
+  const body = res.status === 200 ? await res.text() : '';
+  return { status: res.status, to: res.headers.get('location') || '', body, calls };
+}
+
+/* Waar de tussenpagina iemand naartoe stuurt. Twee plekken in één pagina, en ze
+   moeten hetzelfde doel noemen: de meta refresh doet het werk, de knop is er voor
+   het geval die geblokkeerd is. Eén van de twee is niet genoeg. */
+function bestemming(body) {
+  const meta = /<meta http-equiv="refresh" content="0; url=([^"]+)">/.exec(body)?.[1] || '';
+  const link = /<a class="btn btn-primary" href="([^"]+)"/.exec(body)?.[1] || '';
+  return meta && meta === link ? meta : `meta=${meta} link=${link}`;
 }
 
 const base = {
@@ -117,7 +138,14 @@ const base = {
 console.log('\n── de betaling ──');
 {
   const r = await pay(base);
-  check('an unpaid order goes to Mollie', r.status === 303 && /mollie\.com\/checkout/.test(r.to), r.to);
+  /*
+   * GEEN 303 MEER. Hier stond `r.status === 303 && /mollie\.com/.test(r.to)`, en
+   * die regel was de hele tijd waar terwijl de knop niets deed — zie de noot bij
+   * pay() hierboven. Wat nu getoetst wordt is wat de klant echt krijgt: een
+   * pagina van ons die hem naar Mollie stuurt, met het doel twee keer erin.
+   */
+  check('an unpaid order is sent on to Mollie', r.status === 200 && /^https:\/\/[^/]*mollie\.com\/checkout/.test(bestemming(r.body)), bestemming(r.body));
+  check('  and not with a redirect the browser refuses', r.status, 200);
   check('exactly one payment is created', r.calls.length === 1, r.calls.length);
   // 630,00 netto + 132,30 btw = 762,30. Alleen het netto bedrag sturen zou 21%
   // per bestelling weglekken, en niemand zou het merken tot de aangifte.

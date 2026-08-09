@@ -1,0 +1,501 @@
+---
+/*
+ * VISUAILS — /hooks, de vierde categorie. 9 augustus 2026.
+ *
+ * ── WAAROM DEZE PAGINA ER STAAT VOORDAT DE DIENST BESTAAT ───────────────────
+ *
+ * Lucas: *"Ik wil de categorie op de website plaatsen maar misschien met een
+ * label coming soon met een notify me knop misschien. Bedenk wat handig is."*
+ *
+ * Het antwoord op "is dat handig" staat al in dit project, in de kop van
+ * src/components/order/HoldingPage.astro: *"A gap a visitor can see is worse than
+ * an unfinished page that says what it is."* Die pagina's bestaan omdat /video op
+ * de site stond, in de prijslijst stond, en het bestelformulier deed alsof het er
+ * niet was. Deze pagina is dezelfde afspraak, één stap eerder: de dienst bestaat
+ * nog niet, dus zegt de pagina dat, en biedt hij het enige aan wat vandaag echt
+ * kan — een gesprek.
+ *
+ * ── WAAROM "HOOKS" EN NIET "VIRAL" ────────────────────────────────────────
+ *
+ * Lucas, op de vraag naar de naam: *"Viral is misschien misleidend omdat we
+ * klanten niet een viral post kunnen beloven."* Dat is precies het argument, en
+ * het is dezelfde regel die de rest van de site draagt.
+ *
+ * De andere categorieën heten naar wat je krijgt of naar het mechanisme, nooit
+ * naar de uitkomst: Catalog, Lifestyle, Video, Brand Model. "Viral" zou de enige
+ * zijn die een resultaat in zijn naam belooft — en dan spreekt de naam de sectie
+ * "wat wij niet beloven" op deze eigen pagina tegen. "Hooks" noemt het mechanisme,
+ * is één woord, werkt in beide talen zonder vertaling (net als Catalog en
+ * Lifestyle), en is precies waar deze dienst uit bestaat: een bibliotheek van
+ * vormen die het al gedaan hebben.
+ *
+ * Het zwakke punt van de naam, eerlijk benoemd: "hook" is vakjargon. Dat wordt
+ * opgevangen door de plek waar de naam staat — het menu-item heeft een
+ * beschrijvingsregel eronder (zie ui.en.drops), dus jargon en uitleg komen in
+ * dezelfde oogopslag.
+ *
+ * ── GEEN PRIJZEN, EN DAT IS EEN BESLUIT ────────────────────────────────────
+ *
+ * Het voorbeeldbestand had een prijssectie met nullen erin. Die gaat er hier UIT
+ * en niet als plaatshouder mee: de pagina wordt geïndexeerd (Lucas' keuze), en een
+ * tabel met "€ 000" die Google oppikt is erger dan geen tabel. Wat er staat is wat
+ * waar is: de prijs is er nog niet, en het eerste gesprek gaat erover.
+ *
+ * ── WAT HET FORMULIER DOET, EN WAAROM GEEN MAILINGLIJST ────────────────────
+ *
+ * Lucas koos "aanvraag met een vinkje voor mail" boven een kale notify-lijst.
+ *
+ * Het formulier post naar /api/order met `service=video` en `request=hooks`,
+ * exact zoals HoldingPage het doet (zie de noot daar over ORDER_SERVICES). Dat is
+ * geen truc: dit IS videowerk, `video` staat niet in PAYABLE_SERVICES dus er kan
+ * niets afgerekend of gefactureerd worden, en `request` landt in details_json omdat
+ * het niet in TOP_FIELDS staat. Geen migratie, geen nieuwe route, en een rij die
+ * in het adminportaal gewoon leesbaar is.
+ *
+ * Het vinkje `notify` landt in dezelfde details_json. GEEN tweede tabel en geen
+ * rij in `subscribers`: één aanvraag met een vlag erop is één ding om te
+ * beantwoorden, en bij de lancering zijn dat de rijen die je opzoekt. Twee
+ * mechanismen voor dezelfde bezoeker zijn twee lijsten die uit elkaar gaan lopen.
+ *
+ * Het vinkje is NIET verplicht en staat los van het versturen — dat is wat het
+ * toestemming maakt in plaats van een voorwaarde. /privacy §2 en §3 zijn met één
+ * regel uitgebreid zodat die toestemming ook ergens staat; zonder dat is een
+ * vinkje dat om mail vraagt een belofte zonder grondslag.
+ */
+import { localizedPath } from '../i18n/ui.js';
+import { turnaround } from '../data/pricing.js';
+import FigHook from './FigHook.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const lp = (p: string) => localizedPath(lang, p);
+const nl = lang === 'nl';
+
+const C = nl
+  ? {
+      eyebrow: 'Hooks · in ontwikkeling',
+      h1: ['Je product in de ', 'eerste seconde', '.'],
+      lead: 'Een post die niemand stopt, wordt niet gezien. Of iemand stopt, wordt niet beslist door je product maar door de vorm eromheen — en die vorm is te kiezen. Wij zetten jouw product in een vorm die al bewezen heeft dat hij een duim tegenhoudt, en leveren hem als video, klaar om te plaatsen.',
+      ctaForm: 'Vertel wat je zou willen maken',
+      ctaHooks: 'Bekijk de vormen',
+
+      statusLabel: 'Status',
+      statusWord: 'In ontwikkeling',
+      statusBody: 'De vormen staan, de eerste opdrachten lopen. Wat er nog niet is, is een prijs die een formulier zelf kan uitrekenen — dus gaat het eerste gesprek daarover en niet over een afrekenscherm.',
+
+      whatH: 'Wat het is',
+      whatSub: 'Een vorm die stopt, met jouw product erin.',
+      whatBody: 'We nemen één product van je en zetten het in een postvorm die we kiezen uit een bibliotheek van vormen die eerder gedraaid hebben. Je krijgt de video — verticaal, met en zonder geluid leesbaar — plus de losse beelden eruit, in de formaten die je feed en je advertentiemanager willen.',
+      whatFig: 'Het voorbeeld hiernaast is één vorm: de post breekt zijn eigen kader. De interface hoort de bovenste laag te zijn, en dat is hij niet. Dat is een halve seconde twijfel, en een halve seconde is het hele verschil tussen doorscrollen en kijken.',
+
+      stepsH: 'Waarom het werkt',
+      steps: [
+        ['De vorm wordt gekozen, niet verzonnen', 'We beginnen bij een vorm die het al gedaan heeft en niet bij een leeg blad. Wat we aanpassen is wat er in de vorm zit: jouw product, jouw kleur, jouw toon.'],
+        ['De eerste seconde is de hele opdracht', 'Er gebeurt iets in beeld dat niet hoort te kunnen. Geen tekstballon met "wacht tot het einde" — dat is een belofte, en een belofte kost al de seconde die je wilde winnen.'],
+        ['En dan is het nog steeds jouw product', 'De truc mag het product niet opeten. Wie de post navertelt, moet jouw artikel navertellen — anders heb je een grappige video gekocht in plaats van een verkoop.'],
+      ],
+
+      hooksH: 'De bibliotheek',
+      hooksSub: 'Vier vormen om mee te beginnen.',
+      hooksLead: 'Elke vorm hieronder is een patroon dat we uit posts hebben gehaald die het gedaan hebben — in jouw categorie waar dat kan, en anders in een categorie waar hetzelfde soort duim scrolt. De bibliotheek groeit; wat niet meer werkt, gaat eruit.',
+      hooks: [
+        ['break', 'Kaderbreuk', 'Iets loopt door de interface', 'Een veter, een druppel, een mouw die over de balk valt en eronder verder gaat. De laag die altijd bovenop hoort te liggen, ligt eronder — en dat klopt niet op een manier waar je naar moet kijken.'],
+        ['loop', 'Naadloze lus', 'Het einde is het begin', 'De laatste frame is de eerste. Je kijkt hem twee keer voordat je merkt dat hij opnieuw begon, en de tweede keer zie je het product pas echt.'],
+        ['pov', 'Eerste persoon', 'Alsof je het zelf vasthoudt', 'Camera op ooghoogte, handen in beeld, geen studio. De vorm van een video die iemand zelf maakte, met de kwaliteit van iets dat wél gemaakt is.'],
+        ['swap', 'Omslag', 'Ervoor en erna, in één beweging', 'Niet twee foto’s naast elkaar, maar één beweging waarin het omslaat. Het werkt omdat het oog de overgang wil zien en niet het resultaat.'],
+      ],
+      hooksFine: 'Een bewezen vorm is geen bewezen uitkomst. Dat een vorm ergens anders veel bekeken is, zegt dat de vorm werkt in die context — niet dat jouw post dat aantal haalt. Wat het wél doet: je begint niet bij nul, en de eerste seconde is niet meer de gok.',
+
+      getH: 'Wat je krijgt',
+      get: [
+        ['De video', '9:16, en 4:5 en 1:1 uit dezelfde montage. Leesbaar zonder geluid, want de meeste mensen kijken zo. Met geluid erbij als je het gebruikt.'],
+        ['De losse beelden', 'De frames waar het gebeurt, als stilstaand beeld — voor een advertentie, een productpagina of een verhaal. In dezelfde map en dezelfde formaten als een gewone bestelling.'],
+        ['De caption en de eerste reactie', 'De tekst eronder hoort bij de vorm en wordt niet los verzonnen. Inclusief de eerste reactie die je zelf plaatst — dat is de plek waar de link hoort en niet in de video.'],
+        ['Beeld voor beeld goedkeuren', 'Hetzelfde portaal als bij een gewone bestelling: je ziet de montage, keurt hem goed of zegt in je eigen woorden wat er niet klopt, en de map komt pas los als je tevreden bent.'],
+      ],
+
+      honestH: 'Wat wij niet beloven',
+      honestSub: 'Geen views, geen algoritme, geen garantie.',
+      honestLead: 'Dit is de sectie die de meeste bureaus weglaten, en de reden dat wij hem erin zetten: als wij views zouden beloven, zou je ons daarop moeten vertrouwen — en dat kan niemand, want niemand bezit de feed.',
+      honest: [
+        ['Geen aantal.', 'We noemen geen views, geen likes en geen volgersgroei. Wat een post doet, hangt af van je publiek, je timing en een systeem dat niemand van buiten kan lezen.'],
+        ['Geen andermans cijfer als ons cijfer.', 'Er staat op deze pagina geen "tot zoveel miljoen views". Dat cijfer is van de post waar de vorm uit komt, en die was van iemand anders.'],
+        ['Geen advertentiebeheer.', 'Wij maken het materiaal. Plaatsen, targeten en budget bijstellen doe jij of je bureau — en dat is beter, want daar zit je publiek en niet bij ons.'],
+        ['Geen imitatie van een merk.', 'We bouwen geen post na van een ander merk en gebruiken geen logo’s of muziek waar je geen recht op hebt. Een vorm is vrij; een uitvoering is dat niet.'],
+        ['En het staat erbij dat het gemaakt is.', 'Elk bestand draagt onze machine-leesbare herkomsttag, en de zichtbare vermelding op je post plaats je zelf.'],
+      ],
+      honestCta: 'Lees de AI Act-pagina',
+
+      priceH: 'Wat het kost',
+      priceBody: 'Nog niets, want er staat nog geen prijs. Zodra hij er is, staat hij hier en op de prijspagina — niet in een gesprek waarin het bedrag van de klant afhangt. Tot die tijd: vertel wat je zou willen maken, dan zeggen we wat het bij jou zou zijn.',
+
+      formH: 'In de rij',
+      formLead: 'Eén product en één idee is genoeg. Je krijgt een echt antwoord van een mens, geen automatische mail met een brochure.',
+      fName: 'Naam',
+      fBrand: 'Merk',
+      fEmail: 'E-mail',
+      fWebsite: 'Website of Instagram',
+      fIdea: 'Welk product zou je hiermee willen doen, en wat zou er moeten gebeuren?',
+      fIdeaHint: 'Twee regels is genoeg. "Onze witte sneaker, veters die over de balk hangen" zegt al meer dan een briefing.',
+      optional: 'optioneel',
+      notify: 'Mail me als Hooks te bestellen is.',
+      notifyNote: 'Eén mail, op het moment dat het er is. Daarna doen we er niets meer met je adres, en je hoeft dit vinkje niet aan te zetten om een antwoord te krijgen.',
+      submit: 'Verstuur',
+      formFine: 'Wat je hier invult komt bij ons terecht en nergens anders.',
+      privacy: 'Zo gaan we met je gegevens om',
+
+      turnH: 'En als het er is',
+      turn: (t: string) => `Doorlooptijd van een gewone bestelling: ${t}. Hooks zal daar niet ver van liggen, maar zolang de eerste opdrachten lopen, zeggen we er geen getal over.`,
+    }
+  : {
+      eyebrow: 'Hooks · in build',
+      h1: ['Your product in the ', 'first second', '.'],
+      lead: 'A post nobody stops for is a post nobody sees. Whether someone stops is not decided by your product but by the shape around it — and that shape can be chosen. We put your product in a shape that has already held a thumb, and deliver it as video, ready to post.',
+      ctaForm: 'Tell us what you would make',
+      ctaHooks: 'See the shapes',
+
+      statusLabel: 'Status',
+      statusWord: 'In build',
+      statusBody: 'The shapes exist and the first jobs are running. What does not exist yet is a price a form can work out on its own — so the first conversation is about that, not a checkout screen.',
+
+      whatH: 'What it is',
+      whatSub: 'A shape that stops, with your product in it.',
+      whatBody: 'We take one product of yours and put it in a post shape chosen from a library of shapes that have run before. You get the video — vertical, readable with and without sound — plus the stills out of it, in the formats your feed and your ad manager want.',
+      whatFig: 'The example beside this is one shape: the post breaks its own frame. The interface is supposed to be the top layer, and it is not. That is half a second of doubt, and half a second is the whole difference between scrolling past and looking.',
+
+      stepsH: 'Why it works',
+      steps: [
+        ['The shape is chosen, not invented', 'We start from a shape that has already done it, not from a blank page. What we change is what sits inside the shape: your product, your colour, your tone.'],
+        ['The first second is the whole job', 'Something happens on screen that should not be possible. No caption saying "wait for the end" — that is a promise, and a promise already costs the second you were trying to win.'],
+        ['And it is still your product', 'The trick must not eat the product. Whoever retells the post has to retell your article — otherwise you bought a funny video instead of a sale.'],
+      ],
+
+      hooksH: 'The library',
+      hooksSub: 'Four shapes to start with.',
+      hooksLead: 'Every shape below is a pattern we took from posts that did it — in your category where we can, and otherwise in a category where the same kind of thumb is scrolling. The library grows; what stops working comes out.',
+      hooks: [
+        ['break', 'Frame break', 'Something runs through the interface', 'A lace, a drip, a sleeve that falls over the bar and continues below it. The layer that always sits on top is underneath — and that is wrong in a way you have to look at.'],
+        ['loop', 'Seamless loop', 'The end is the beginning', 'The last frame is the first. You watch it twice before you notice it started again, and the second time is when you actually see the product.'],
+        ['pov', 'First person', 'As if you were holding it', 'Camera at eye height, hands in frame, no studio. The shape of a video somebody made themselves, with the quality of something that was actually made.'],
+        ['swap', 'The turn', 'Before and after, in one move', 'Not two photos side by side, but one movement in which it turns over. It works because the eye wants to see the transition, not the result.'],
+      ],
+      hooksFine: 'A proven shape is not a proven outcome. That a shape was watched a lot somewhere else says the shape works in that context — not that your post reaches that number. What it does do: you do not start from zero, and the first second stops being the gamble.',
+
+      getH: 'What you get',
+      get: [
+        ['The video', '9:16, plus 4:5 and 1:1 out of the same edit. Readable without sound, because that is how most people watch. With sound if you use it.'],
+        ['The stills', 'The frames where it happens, as stills — for an ad, a product page or a story. In the same folder and the same formats as any other order.'],
+        ['The caption and the first comment', 'The text underneath belongs to the shape and is not invented separately. Including the first comment you post yourself — that is where the link belongs, not in the video.'],
+        ['Approve it image by image', 'The same portal as any order: you see the edit, approve it or say in your own words what is wrong, and the folder only comes loose once you are happy.'],
+      ],
+
+      honestH: 'What we do not promise',
+      honestSub: 'No views, no algorithm, no guarantee.',
+      honestLead: 'This is the section most agencies leave out, and the reason we put it in: if we promised views, you would have to trust us on it — and nobody can be trusted on that, because nobody owns the feed.',
+      honest: [
+        ['No number.', 'We name no views, no likes and no follower growth. What a post does depends on your audience, your timing and a system nobody outside it can read.'],
+        ['No borrowed number.', 'There is no "up to so many million views" on this page. That number belongs to the post the shape came from, and that post was somebody else’s.'],
+        ['No ad management.', 'We make the material. Posting, targeting and moving budget is you or your agency — and that is better, because your audience is there and not here.'],
+        ['No imitating a brand.', 'We do not rebuild another brand’s post and we do not use logos or music you have no right to. A shape is free; an execution is not.'],
+        ['And it says it was made.', 'Every file carries our machine-readable provenance tag, and the visible disclosure on your post is yours to place.'],
+      ],
+      honestCta: 'Read the AI Act page',
+
+      priceH: 'What it costs',
+      priceBody: 'Nothing yet, because there is no price yet. The moment there is, it goes here and on the pricing page — not into a conversation where the number depends on the customer. Until then: tell us what you would make and we will tell you what it would be for you.',
+
+      formH: 'Get in the queue',
+      formLead: 'One product and one idea is enough. You get a real answer from a person, not an automated mail with a brochure.',
+      fName: 'Name',
+      fBrand: 'Brand',
+      fEmail: 'Email',
+      fWebsite: 'Website or Instagram',
+      fIdea: 'Which product would you use this for, and what should happen?',
+      fIdeaHint: 'Two lines is enough. "Our white sneaker, laces hanging over the bar" already says more than a brief.',
+      optional: 'optional',
+      notify: 'Email me when Hooks can be ordered.',
+      notifyNote: 'One email, at the moment it exists. After that we do nothing else with your address, and you do not have to tick this to get an answer.',
+      submit: 'Send',
+      formFine: 'What you fill in here reaches us and nobody else.',
+      privacy: 'How we handle your data',
+
+      turnH: 'And when it is here',
+      turn: (t: string) => `Turnaround on a normal order: ${t}. Hooks will not be far off that, but while the first jobs are running we are not putting a number on it.`,
+    };
+---
+
+{/* ── DE HELD: DE FIGUUR NAAST DE BELOFTE ────────────────────────────────────
+    De figuur staat naast de kop en niet eronder, om dezelfde reden als op
+    /portal: dit is een pagina over een VORM, en een pagina over een vorm die
+    boven de vouw geen vorm laat zien, verkoopt niets. */}
+<section class="page-hero"><div class="container">
+  <div class="hk-hero">
+    <div>
+      <span class="eyebrow-page">{C.eyebrow}</span>
+      <h1 class="display">{C.h1[0]}<em class="hk-accent">{C.h1[1]}</em>{C.h1[2]}</h1>
+      <p class="lead" style="margin-top:1.2rem">{C.lead}</p>
+      <div class="hk-actions">
+        <a class="btn btn-primary btn-lg" href="#queue">{C.ctaForm}</a>
+        <a class="btn btn-ghost btn-lg" href="#shapes">{C.ctaHooks}</a>
+      </div>
+    </div>
+    <div class="hk-stage"><FigHook lang={lang} /></div>
+  </div>
+</div></section>
+
+{/* ── DE STATUS ─────────────────────────────────────────────────────────────
+    Hetzelfde soort object als op /start/video, zodat een bezoeker die daar al
+    geweest is dit soort pagina op zicht herkent. Bovenaan en niet onderaan: het
+    is het eerste dat iemand moet weten voordat hij verder leest. */}
+<section class="section-tight"><div class="container">
+  <div class="hk-status">
+    <p class="hk-status-label">{C.statusLabel}</p>
+    <p class="hk-status-word">{C.statusWord}</p>
+    <p class="hk-status-body">{C.statusBody}</p>
+  </div>
+</div></section>
+
+{/* ── WAT HET IS ─────────────────────────────────────────────────────────── */}
+<section class="section-tight"><div class="container">
+  <span class="eyebrow-page">{C.whatH}</span>
+  <h2>{C.whatSub}</h2>
+  <p class="lead" style="margin-top:1rem">{C.whatBody}</p>
+  <p class="hk-fine">{C.whatFig}</p>
+
+  <div class="hk-steps">
+    {C.steps.map(([h, body], i) => (
+      <div class="hk-step">
+        <span class="hk-step-n">{String(i + 1).padStart(2, '0')}</span>
+        <h3>{h}</h3>
+        <p>{body}</p>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+{/* ── DE BIBLIOTHEEK ─────────────────────────────────────────────────────── */}
+<section class="section-tight" id="shapes"><div class="container">
+  <span class="eyebrow-page">{C.hooksH}</span>
+  <h2>{C.hooksSub}</h2>
+  <p class="lead" style="margin-top:1rem">{C.hooksLead}</p>
+
+  <div class="hk-hooks">
+    {C.hooks.map(([key, tag, h, body]) => (
+      <article class="hk-hook">
+        {/* De vorm getekend en niet alleen benoemd: "kaderbreuk" is jargon, een
+            tekening is dat niet. Vier vlakjes CSS, geen plaatjes om te laden. */}
+        <div class={`hk-fig f-${key}`}>{key === 'swap' ? <><span></span><span></span></> : null}</div>
+        <span class="hk-tag">{tag}</span>
+        <h3>{h}</h3>
+        <p>{body}</p>
+      </article>
+    ))}
+  </div>
+  <p class="hk-fine">{C.hooksFine}</p>
+</div></section>
+
+{/* ── WAT JE KRIJGT ──────────────────────────────────────────────────────── */}
+<section class="section-tight on-ink"><div class="container">
+  <span class="eyebrow-page">{C.getH}</span>
+  <h2>{nl ? 'Eén map, en er zit alles in.' : 'One folder, and everything is in it.'}</h2>
+  <dl class="hk-list">
+    {C.get.map(([k, v]) => (
+      <div class="hk-row"><dt>{k}</dt><dd>{v}</dd></div>
+    ))}
+  </dl>
+  <p class="hk-fine">{C.turn(turnaround('attended', lang))}</p>
+</div></section>
+
+{/* ── WAT WIJ NIET BELOVEN ───────────────────────────────────────────────────
+    Een eigen sectie en geen kleine lettertjes. De hele reden dat dit werkt, is
+    dat het niet weggemoffeld is: een leverancier die vertelt wat hij niet kan, is
+    de enige die je kunt geloven over wat hij wél kan. */}
+<section class="section-tight"><div class="container">
+  <div class="hk-honest">
+    <span class="eyebrow-page">{C.honestH}</span>
+    <h2>{C.honestSub}</h2>
+    <p class="lead" style="margin-top:1rem">{C.honestLead}</p>
+    <ul class="hk-honest-list">
+      {C.honest.map(([b, body]) => (
+        <li><span><b>{b}</b> {body}</span></li>
+      ))}
+    </ul>
+    <p class="hk-more"><a href={lp('/ai-act')}>{C.honestCta}</a></p>
+  </div>
+</div></section>
+
+{/* ── DE PRIJS DIE ER NOG NIET IS ────────────────────────────────────────── */}
+<section class="section-tight"><div class="container">
+  <div class="hk-price">
+    <h2>{C.priceH}</h2>
+    <p class="lead" style="margin-top:.8rem">{C.priceBody}</p>
+  </div>
+</div></section>
+
+{/* ── HET FORMULIER ─────────────────────────────────────────────────────────
+    Geen JavaScript, net als elk ander formulier op deze site dat niet in de
+    bestelstroom zit. Zie de kop van dit bestand voor wat het post en waarom. */}
+<section class="section-tight" id="queue"><div class="container">
+  <div class="hk-form">
+    <h2>{C.formH}</h2>
+    <p class="lead" style="margin-top:.8rem">{C.formLead}</p>
+
+    <form method="post" action="/api/order" class="hk-fields">
+      <input type="hidden" name="service" value="video" />
+      <input type="hidden" name="request" value="hooks" />
+      <input type="hidden" name="lang" value={lang} />
+      <input type="hidden" name="redirect" value={lp('/thank-you')} />
+      <input type="hidden" name="source" value="hooks-page" />
+      {/* De honeypot van de bestelstroom, letterlijk overgenomen: /api/order
+          leest `company_hp` en gooit de post weg als er iets in staat. */}
+      <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
+
+      <div class="row-2">
+        <div class="field">
+          <label for="hk-name">{C.fName} <span class="req">*</span></label>
+          <input class="input" type="text" id="hk-name" name="name" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="hk-brand">{C.fBrand} <span class="req">*</span></label>
+          <input class="input" type="text" id="hk-brand" name="brand" autocomplete="organization" required />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="hk-email">{C.fEmail} <span class="req">*</span></label>
+          <input class="input" type="email" id="hk-email" name="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="hk-web">{C.fWebsite} <span class="hk-opt">{C.optional}</span></label>
+          <input class="input" type="text" id="hk-web" name="website" placeholder="@" autocomplete="url" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="hk-idea">{C.fIdea}</label>
+        <textarea class="textarea" id="hk-idea" name="message" rows="3"></textarea>
+        <span class="hint">{C.fIdeaHint}</span>
+      </div>
+
+      {/* ── HET VINKJE ────────────────────────────────────────────────────────
+          Niet verplicht, en met opzet los van de verstuurknop. Dat is wat het
+          toestemming maakt in plaats van een voorwaarde — zie de noot bij het
+          toestemmingsvinkje in OrderFlow.astro, die dezelfde regel stelt: een
+          toestemming die niemand las, is een toestemming die niemand gaf. */}
+      <label class="hk-check">
+        <input type="checkbox" name="notify" value="yes" />
+        <span>{C.notify}</span>
+      </label>
+      <p class="hint hk-check-note">{C.notifyNote}</p>
+
+      <button type="submit" class="btn btn-primary btn-lg hk-submit">{C.submit}</button>
+      <p class="hk-fine hk-form-fine">{C.formFine} <a href={lp('/privacy')}>{C.privacy}</a></p>
+    </form>
+  </div>
+</div></section>
+
+<style>
+  .hk-hero {
+    display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(2rem, 5vw, 4rem); align-items: center;
+  }
+  @media (max-width: 900px) { .hk-hero { grid-template-columns: 1fr; } }
+  .hk-hero .display { max-width: 18ch; }
+  /* Het accent op één woord in de kop, zoals elke andere pagina het doet: het is
+     nooit een ondergrond, altijd één woord of één rand. */
+  .hk-accent { font-style: normal; color: var(--accent); }
+  .hk-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.8rem; }
+  .hk-stage > :global(*) { box-shadow: 0 22px 46px -24px rgb(0 0 0 / .7); }
+
+  /* De statusstrip. Dezelfde vorm als op /start/video, maar met eigen klassen —
+     die stijlen zijn daar scoped aan die component, dus overnemen betekent hier
+     opnieuw schrijven. Vandaar dezelfde maten en niet dezelfde regels. */
+  .hk-status {
+    display: grid; gap: .3rem;
+    padding: 1.2rem 1.3rem;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--r-md);
+    max-width: 62rem;
+  }
+  .hk-status-label { margin: 0; font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .hk-status-word { margin: 0; font-family: var(--font-display); font-weight: 900; font-size: 1.5rem; line-height: 1.1; color: var(--ink); letter-spacing: -0.02em; }
+  .hk-status-body { margin: .4rem 0 0; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 64ch; }
+
+  .hk-fine { margin: 1.4rem 0 0; font-size: .875rem; line-height: 1.6; color: var(--ink-3); max-width: 66ch; }
+  .hk-more { margin: 1.2rem 0 0; font-size: .9rem; }
+  .hk-more a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  .hk-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); margin-top: clamp(2rem, 4vw, 3rem); }
+  @media (max-width: 780px) { .hk-steps { grid-template-columns: 1fr; } }
+  .hk-step { background: var(--bg); padding: clamp(1.3rem, 2.5vw, 2rem); }
+  .hk-step-n { font-family: var(--font-display); font-weight: 900; font-size: 1.9rem; line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--line-strong); display: block; }
+  .hk-step h3 { margin: .9rem 0 .45rem; font-size: 1.02rem; }
+  .hk-step p { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
+
+  .hk-hooks { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: clamp(2rem, 4vw, 3rem); }
+  .hk-hook { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 1.1rem 1.15rem; display: grid; gap: .55rem; align-content: start; }
+  .hk-hook h3 { font-size: 1rem; }
+  .hk-hook p { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
+  .hk-tag { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+
+  /* De vier tekeningetjes. Elk is een VORM en geen illustratie: genoeg om te
+     zien wat er bedoeld wordt, te weinig om af te leiden. */
+  .hk-fig { height: 74px; border-radius: var(--r-sm, 6px); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); position: relative; overflow: hidden; }
+  .f-break::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 14px; transform: translateY(-50%); background: #0B0C0E; box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line); }
+  .f-break::after { content: ''; position: absolute; left: 42%; top: 12%; bottom: 12%; width: 5px; border-radius: 3px; background: var(--accent); }
+  .f-loop::before { content: ''; position: absolute; inset: 18% 12%; border: 2px dashed var(--line-strong); border-radius: 50%; }
+  .f-loop::after { content: '\21bb'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--accent); font-size: 1.4rem; }
+  .f-pov::before { content: ''; position: absolute; left: 8%; right: 8%; top: 22%; height: 30%; background: var(--line); border-radius: 3px; }
+  .f-pov::after { content: ''; position: absolute; left: 8%; width: 34%; bottom: 20%; height: 22%; background: var(--accent); border-radius: 3px; }
+  .f-swap { display: grid; grid-template-columns: 1fr 1fr; }
+  .f-swap span { display: block; }
+  .f-swap span:first-child { background: var(--line); }
+  .f-swap span:last-child { background: color-mix(in srgb, var(--accent) 70%, transparent); }
+
+  .hk-list { display: grid; gap: 1px; background: var(--line); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  .hk-row { background: var(--bg); display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 1rem 2rem; padding: 1.15rem clamp(0rem, 1vw, 1rem); }
+  @media (max-width: 700px) { .hk-row { grid-template-columns: 1fr; gap: .3rem; } }
+  .hk-row dt { color: var(--ink); font-weight: 700; font-size: .98rem; }
+  .hk-row dd { margin: 0; font-size: .9rem; color: var(--ink-3); line-height: 1.6; }
+
+  .hk-honest { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); padding: clamp(1.5rem, 3vw, 2.4rem); }
+  .hk-honest-list { list-style: none; margin: 1.4rem 0 0; padding: 0; display: grid; gap: .9rem; }
+  .hk-honest-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .7rem; font-size: .95rem; line-height: 1.6; color: var(--ink-2); }
+  /* Een streepje in de waarschuwingskleur en geen vinkje: dit is een lijst van
+     dingen die NIET gebeuren, en een vinkje ervoor zou het omgekeerde zeggen. */
+  .hk-honest-list li::before { content: '\2014'; color: var(--warn-ink); }
+  .hk-honest-list b { color: var(--ink); }
+
+  .hk-price { max-width: 62rem; }
+
+  .hk-form { max-width: 46rem; }
+  .hk-fields { margin-top: 1.6rem; }
+  .hk-opt { font-weight: 500; font-size: .78rem; color: var(--ink-3); text-transform: lowercase; }
+  .hk-submit { margin-top: 1.2rem; }
+  .hk-form-fine { margin-top: 1rem; }
+  .hk-form-fine a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Het vinkje wordt opnieuw getekend, want appearance: none staat op alles in
+     de formulierreset. Zelfde maat en vorm als het toestemmingsvinkje in de
+     bestelstroom, zodat een vinkje op deze site er overal hetzelfde uitziet. */
+  .hk-check { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .6rem; align-items: start; cursor: pointer; margin-top: .4rem; }
+  .hk-check input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    width: 18px; height: 18px; flex: 0 0 auto; margin: .18rem 0 0; padding: 0;
+    display: inline-grid; place-content: center;
+    border: 1px solid var(--line-strong); border-radius: 4px;
+    background: var(--surface-2); cursor: pointer;
+  }
+  .hk-check input[type="checkbox"]:hover { border-color: var(--ink-3); }
+  .hk-check input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  .hk-check input[type="checkbox"]:checked::after {
+    content: ''; width: 5px; height: 10px;
+    border: solid var(--accent-ink, #08090B); border-width: 0 2px 2px 0;
+    transform: translateY(-1px) rotate(45deg);
+  }
+  .hk-check span { font-size: .92rem; line-height: 1.5; color: var(--ink-2); }
+  .hk-check-note { margin-top: .5rem; max-width: 60ch; }
+</style>

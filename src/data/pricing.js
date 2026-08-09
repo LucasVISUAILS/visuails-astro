@@ -574,7 +574,30 @@ export function euro(amount, lang = 'en') {
   return `€${grouped}${cents ? s.decimal + cents : ''}`;
 }
 
-/** A range, e.g. "€2,500–8,000" — the currency symbol is not repeated. */
+/**
+ * A range, e.g. "€2,500–8,000" — the currency symbol is not repeated.
+ *
+ * ── DIT MAG NOOIT EEN PRIJS VAN ONS ZIJN — 9 augustus 2026 ─────────────────
+ *
+ * Lucas: *"Wel zou ik uberhaupt bij alle services 1 prijs willen noemen en niet
+ * een range. Dus liever vanaf €... en niet €39 - €19 of zoiets."*
+ *
+ * Dat is nu de regel, en deze functie heeft daarom precies één toegestane
+ * aanroeper: SHOOT_DAY, verderop in dit bestand. Dat is geen prijs van VISUAILS
+ * maar een schatting van wat een productiedag ELDERS kost — een externe kostenpost
+ * die we als vergelijking noemen, met de spreiding er met opzet in en een caveat
+ * eronder ("loopt sterk uiteen per stad, per studio en per hoeveel je zelf doet").
+ *
+ * Voor onze eigen prijzen is een bereik een slechter antwoord dan een vanaf-prijs,
+ * en niet alleen qua stijl: bij "€119 – €149" leest iedereen €119 en hoort hij
+ * €149 in het gesprek, en dan is de pagina de aanleiding voor het ongemak. Een
+ * vanaf-prijs zegt welke kant het op beweegt en laat de ladder het werk doen —
+ * daar staan alle tarieven exact, per aantal, en dat is wat een klant zelf kan
+ * narekenen.
+ *
+ * tests/nav.test.mjs houdt vast dat er geen tweede aanroeper bijkomt. Wie hier een
+ * dienstprijs door wil halen, komt die test tegen en niet een reviewer.
+ */
 export function euroRange(low, high, lang = 'en') {
   const s = SEP[lang] || SEP.en;
   const fmt = (n) => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, s.thousands);

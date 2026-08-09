@@ -47,6 +47,10 @@ import Compare from './Compare.astro';
 // De doorlooptour van het klantdashboard. Zie FigDash.astro: hij verving een
 // grijs vlak met een productienotitie erin.
 import FigDash from './FigDash.astro';
+// Onze kant van dezelfde bestelling. Zie de kop van FigStudio.astro: hij verving
+// het grijze vlak dat hier stond, op precies de plek waar een bezoeker moet
+// beslissen of hij een datum van ons gelooft.
+import FigStudio from './FigStudio.astro';
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
 import { faqPageGroups } from '../data/faq.js';
 
@@ -296,7 +300,7 @@ const COPY = {
     // prices all four in one table. What is left is the half a reader cannot
     // get anywhere else on this page — what each service IS and what lands in
     // the folder — next to a photograph of it.
-    svcH: ['Four kinds of visual we make,', 'and what lands in your folder.'],
+    svcH: ['What we make,', 'and what lands in your folder.'],
     svcLede: 'Catalog and lifestyle are what a product gets. A video clip and your Brand Model ride on top of an order, or stand on their own.',
     // [name, what it is, what you receive, href]
     svc: [
@@ -441,11 +445,29 @@ const COPY = {
     dashPortalCta: 'See VISUAILS Studio',
     dashPortalPh: 'Client portal · delivery gallery',
     dashPortalNote: 'The approve / request-revision screen, with one image selected.',
+    /* ── HOOKS STAAT OP DE PLANK, NIET IN DE ETALAGE — 9 augustus 2026 ────────
+       Lucas: *"Verberg de pagina voor nu omdat ik alle ideeën hiervoor nog moet
+       bedenken en hoe ik dit ga maken maar post hem voor nu wel alvast tussen de
+       services als knop die niet werkt met een label erbij dat deze nog niet klaar
+       is."*
+
+       Hier stond een volledige band met de kaderbreuk-figuur erin. Die is weg, en
+       de pagina waar hij naartoe wees ook: er is geen /hooks meer. Wat overblijft
+       is één tegel tussen de vier diensten, die niet aan te klikken is en zegt
+       waarom.
+
+       DE KOP TELT NIET MEER. Er stond "Four kinds of visual we make" — een
+       hardgecodeerd getal in twee talen, dat bij elke vijfde dienst opnieuw fout
+       gaat. Een vijfde tegel die niets kost om toe te voegen, hoort niet een
+       tekstwijziging in twee bestanden te vragen. */
+    svcSoon: 'Not ready yet',
+    svcSoonBody: 'We are still working this one out. It will be available soon; until then there is nothing to click.',
+    svcSoonCta: 'See Hooks',
+    svcSoonDesc: 'Your product in a short video, on a format we have built before.',
+
     dashStudioK: 'Our side of it',
     dashStudioN: 'Every order and the calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
     dashStudioCta: 'See how an order is run',
-    dashStudioPh: 'Admin side · delivery calendar',
-    dashStudioNote: 'The order table with the week that is full marked as full.',
     dashLogK: 'The log is the paperwork',
     dashLogN: 'Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later. Ask and we write it out for you.',
     dashLogCta: 'Read the AI Act page',
@@ -554,7 +576,7 @@ const COPY = {
 
     // De prijzen zijn uit deze band gehaald — die staan één keer in de band
     // hierboven. Wat blijft is wat een dienst IS en wat je terugkrijgt.
-    svcH: ['Vier soorten beeld die we maken,', 'en wat er in je map belandt.'],
+    svcH: ['Wat we maken,', 'en wat er in je map belandt.'],
     svcLede: 'Elk product krijgt catalog- en lifestyle-beelden. Een videoclip en je eigen merkmodel kun je erbij nemen, of los bestellen.',
     svc: [
       [
@@ -689,11 +711,14 @@ const COPY = {
     dashPortalCta: 'Bekijk VISUAILS Studio',
     dashPortalPh: 'VISUAILS Studio · leveringsgalerij',
     dashPortalNote: 'Het scherm voor goedkeuren en revisie aanvragen, met één beeld geselecteerd.',
+    svcSoon: 'Nog niet klaar',
+    svcSoonBody: 'Hier zijn we nog mee bezig. Binnenkort is hij beschikbaar; tot die tijd valt er niets aan te klikken.',
+    svcSoonCta: 'Bekijk Hooks',
+    svcSoonDesc: 'Je product in een korte video, op een format dat we eerder hebben gebouwd.',
+
     dashStudioK: 'Onze kant',
     dashStudioN: 'Hier staat elke bestelling, naast de agenda waaruit de datumkiezer leest. Zetten wij een bestelling op een andere status, dan verandert de tijdlijn die jij ziet meteen mee. Wat in VISUAILS Studio staat, is dus nooit ouder dan wat wij zien.',
     dashStudioCta: 'Zie hoe een bestelling draait',
-    dashStudioPh: 'Ons eigen scherm · de agenda',
-    dashStudioNote: 'De ordertabel, met de volle week als vol gemarkeerd.',
     dashLogK: 'Het logboek legt alles vast',
     dashLogN: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en blijft bij het beeld staan waar hij bij hoort. Zo kun je later teruglezen wat er wanneer gebeurde. Vraag ernaar en we schrijven het voor je uit.',
     dashLogCta: 'Lees de AI Act-pagina',
@@ -921,6 +946,30 @@ const FAQ_PICK = [
         </a>
       ))}
     </div>
+    {/* ── DE VIJFDE, DIE NOG NIET KAN ────────────────────────────────────────
+        Lucas: *"post hem voor nu wel alvast tussen de services als knop die niet
+        werkt met een label erbij dat deze nog niet klaar is."*
+
+        EEN STROOK EN GEEN VIJFDE TEGEL. De vier tegels staan in een raster van
+        twee bij twee; een vijfde maakt daar drie rijen van met een gat rechts
+        onderin, en dan leest de nieuwe dienst als een fout in de opmaak in plaats
+        van als een aankondiging. Onder de vier, met een hairline ertussen, is hij
+        er wel bij en verstoort hij de vergelijking van de vier niet.
+
+        EEN ECHTE <button disabled> EN GEEN GRIJZE SPAN. Dat is het verschil tussen
+        een knop die niet werkt en iets dat eruitziet als een knop: `disabled` wordt
+        door elke schermlezer aangekondigd als niet-beschikbaar, is niet met tab te
+        bereiken, en kan niet per ongeluk toch iets doen. Een <span> met een grijze
+        rand zegt tegen niemand iets, behalve tegen wie hem kan zien. */}
+    <div class="hv-soon">
+      <div class="hv-soon-copy">
+        <p class="hv-soon-h">Hooks <em class="hv-soon-tag">{c.svcSoon}</em></p>
+        <p class="hv-soon-desc">{c.svcSoonDesc}</p>
+        <p class="hv-soon-body">{c.svcSoonBody}</p>
+      </div>
+      <button class="btn btn-ghost hv-soon-btn" type="button" disabled>{c.svcSoonCta}</button>
+    </div>
+
     <div class="hv-svc-foot">
       <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
     </div>
@@ -1330,9 +1379,15 @@ const FAQ_PICK = [
     New, and the reason this band exists at all: a drop is bought partly on the
     strength of what happens after it is ordered, and nothing on the site said
     what that was. Two screens, one of them the client's.
-    The two media slots are PLACEHOLDERS, deliberately and visibly — the
-    screenshots do not exist yet and a neutral rectangle pretending otherwise
-    is how a slot stays empty forever. Every other image on this page is real. */}
+
+    Beide slots zijn nu ECHTE figuren: FigDash voor de klantkant, FigStudio voor
+    de onze. Hier stonden grijze placeholders, met de nette redenering erbij dat
+    een neutrale rechthoek eerlijker is dan een nagemaakt scherm. Dat was waar
+    zolang het alternatief een verzonnen screenshot was — maar niet zolang de
+    band iets over PROCES belooft, want een placeholder op de plek van het bewijs
+    laat de belofte onbewezen. Beide figuren zijn getekend uit dezelfde
+    componenten als de echte schermen, met verzonnen gegevens en het woord
+    "voorbeeld" erin. */}
 <section class="band well-deep">
   <div class="container">
     <div class="statement">
@@ -1345,9 +1400,7 @@ const FAQ_PICK = [
           Lucas: *"een usable voorbeeld van het dashboard met voorbeelden van
           wat mogelijk is en wat je allemaal kan inzien."* Dat past niet naast
           een tekstkolom: er staan vier panelen in, en het smalste ervan heeft
-          vier fotokolommen. Dus staat de tekst erboven en de figuur eronder.
-          De rij hieronder (de studiokant) houdt zijn twee kolommen, want daar
-          zit nog een placeholder. */}
+          vier fotokolommen. Dus staat de tekst erboven en de figuur eronder. */}
       {/* ── DE TWEE SCHERMEN ZWEVEN NAAST HUN TEKST ────────────────────────
           Lucas, 8 augustus 2026: *"Ik zou het mooi vinden als de dashboard
           mockup naast de tekst staat en een soort floating effect krijgt en een
@@ -1387,12 +1440,7 @@ const FAQ_PICK = [
         </div>
         <div class="hv-stage">
           <div class="hv-float">
-            <div class="ph" style="--ph-ratio: 16 / 10">
-              <div>
-                <p class="ph-label">{c.dashStudioPh}</p>
-                <p class="ph-note">{c.dashStudioNote}</p>
-              </div>
-            </div>
+            <FigStudio lang={lang} />
           </div>
         </div>
       </div>
@@ -1854,6 +1902,48 @@ const FAQ_PICK = [
   /* The .hv-vs* rules went with the "What an order replaces" band — see the
      note where that band used to be, above section 6. */
 
+  /* ── DE DIENST DIE NOG NIET KAN ────────────────────────────────────────────
+     Onder de vier tegels, met een hairline erboven: het hoort bij de diensten en
+     het is er geen vijfde van. Geen omkadering en geen eigen ondergrond, want dan
+     wordt een aankondiging een aanbod.
+
+     De knop staat er UITGESCHAKELD en niet weggelaten. Weglaten zou de strook een
+     mededeling maken; een knop die er is en niet werkt, zegt precies wat er aan de
+     hand is — er komt hier iets, en vandaag nog niet. */
+  .hv-soon {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem 2rem; align-items: center;
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    padding-top: clamp(1.4rem, 2.5vw, 2rem);
+    box-shadow: inset 0 1px 0 var(--line);
+  }
+  @media (max-width: 640px) {
+    .hv-soon { grid-template-columns: 1fr; }
+    .hv-soon-btn { width: 100%; }
+  }
+  .hv-soon-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
+  /* Hetzelfde rustige label als in het menu (.mi-soon in Layout.astro) en met
+     opzet niet in de accentkleur: het accent is de kleur van een handeling, en dit
+     is de reden om iets NIET te doen. */
+  .hv-soon-tag {
+    display: inline-block; margin-left: .5rem;
+    font-style: normal; font-weight: 600;
+    font-size: .64rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3);
+    padding: .12rem .4rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    vertical-align: middle;
+  }
+  .hv-soon-desc { margin: .45rem 0 0; font-size: .95rem; line-height: 1.55; color: var(--ink-2); max-width: 56ch; }
+  .hv-soon-body { margin: .35rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); max-width: 60ch; }
+  /* Uitgeschakeld hoort uitgeschakeld te ZIEN, en de cursor hoort het te zeggen
+     voordat iemand klikt. `pointer-events` blijft aan: een cursor die niet
+     verandert, is een knop waarvan je pas na de klik weet dat hij dood is. */
+  .hv-soon-btn[disabled] {
+    opacity: .45; cursor: not-allowed;
+    color: var(--ink-3); border-color: var(--line);
+  }
+
   /* ── the dashboard band ────────────────────────────────────────────────── */
   .hv-dash { margin-top: clamp(2.6rem, 5vw, 4rem); display: grid; gap: 1px; background: var(--line); }
   .hv-dash-row { background: var(--bg); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.5rem, 3vw, 3rem); align-items: center; padding: clamp(1.5rem, 3vw, 2.6rem); }
@@ -1871,12 +1961,40 @@ const FAQ_PICK = [
      grid-column zegt gewoon welke kolom wat krijgt. De 7fr gaat altijd naar het
      scherm, aan welke kant het ook staat, en overloop blijft één richting op
      zodat transform-origin voor beide rijen hetzelfde kan zijn. */
-  .hv-dash-row.is-showcase { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; }
-  .hv-dash-row.is-showcase > .hv-dash-copy { grid-column: 1; }
-  .hv-dash-row.is-showcase > .hv-stage { grid-column: 2; }
-  .hv-dash-row.is-showcase.is-flip { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
-  .hv-dash-row.is-showcase.is-flip > .hv-dash-copy { grid-column: 2; }
-  .hv-dash-row.is-showcase.is-flip > .hv-stage { grid-column: 1; }
+  /* ── EN grid-row: 1 ERBIJ, WAT GEEN NETHEID IS MAAR DE BUG ─────────────────
+     Lucas, 9 augustus 2026: *"de Our side mock-up moet gecentreerd worden met de
+     tekst ernaast."* Hij stond niet naast die tekst maar eronder, en de reden is
+     een regel hierboven die er niet staat.
+
+     Alleen grid-column zetten is niet genoeg. Bij de omgekeerde rij krijgt de
+     TEKST kolom 2 en wordt hij als eerste geplaatst; daarna moet de figuur naar
+     kolom 1, en automatische plaatsing gaat nooit terug naar een kolom die al
+     voorbij is. Dus maakte de browser een tweede rij aan. Gemeten in de gebouwde
+     pagina: grid-template-rows stond op `172.766px 430.609px` — twee rijen — en
+     `align-items: center` centreerde daarna netjes binnen elk van die twee. Het
+     zag eruit als een uitlijnprobleem en het was een plaatsingsprobleem.
+
+     Met een expliciete rij is er één rij, staan beide cellen ernaast, en doet
+     align-items: center wat er al die tijd stond. De gestapelde variant onder de
+     980px zet zijn eigen grid-row 1 en 2 — zie daar. */
+  .hv-dash-row.is-showcase { align-items: center; }
+  .hv-dash-row.is-showcase > .hv-dash-copy { grid-column: 1; grid-row: 1; }
+  .hv-dash-row.is-showcase > .hv-stage { grid-column: 2; grid-row: 1; }
+  .hv-dash-row.is-showcase.is-flip > .hv-dash-copy { grid-column: 2; grid-row: 1; }
+  .hv-dash-row.is-showcase.is-flip > .hv-stage { grid-column: 1; grid-row: 1; }
+
+  /* ── DE FIGUURKOLOM IS BREDER DAN DE TEKSTKOLOM, EN NU MEER DAN EERST ──────
+     Lucas: *"beide mock up schermen kunnen wat groter."* Er zijn twee knoppen
+     waarmee dat kan en ze doen niet hetzelfde:
+
+       · deze verhouding — de figuur krijgt meer millimeters
+       · --k hieronder — dezelfde millimeters, maar minder verkleind, dus grotere
+         letters en knoppen in het scherm zelf
+
+     Beide zijn opengedraaid, en de tekstkolom houdt genoeg over: de paragraaf
+     heeft max-width 46ch en die haalt hij op 4.5fr nog. */
+  .hv-dash-row.is-showcase { grid-template-columns: minmax(0, 4.5fr) minmax(0, 7.5fr); }
+  .hv-dash-row.is-showcase.is-flip { grid-template-columns: minmax(0, 7.5fr) minmax(0, 4.5fr); }
 
   /* ── WAAROM --lift GEREGISTREERD IS ────────────────────────────────────────
      Een custom property die niet is aangemeld, heeft geen type. De browser kan
@@ -1925,6 +2043,30 @@ const FAQ_PICK = [
      naar rechts (het document is links-naar-rechts), dus links ankeren laat de
      verkleinde figuur exact op de kolombreedte uitkomen — geen overloop, geen
      gat. Rechts ankeren zou hem de andere kant op duwen. */
+  /* ── WAT --k MAG ZIJN, EN WAAR DIE GRENS VANDAAN KOMT ─────────────────────
+     De figuur wordt op 100%/--k getekend en met scale(--k) teruggebracht, dus
+     --k is letterlijk de zoomfactor van wat je ziet. Groter is beter tot precies
+     één punt: FigDash heeft container queries op 560, 600 en 700px, en onder de
+     700 wordt zijn fotorooster één kolom, onder de 600 gaat zijn zijbalk boven de
+     panelen staan. Dan is het geen dashboard meer maar een telefoon, en dat is
+     het beeld dat deze band niet verkoopt.
+
+     De ondergrens is dus niet esthetisch maar meetbaar: de LAYOUTBREEDTE van de
+     figuur — kolombreedte gedeeld door --k — moet boven de 700px blijven, ook op
+     het smalste venster waar deze rij nog twee kolommen heeft (980px, zie de
+     media query onderaan). Daarom staat --k in banden en niet op één waarde: op
+     980px is er domweg minder te verdelen dan op 1600px.
+
+     Gemeten na deze wijziging, aan het BEGIN van elke band — daar is de kolom het
+     smalst en staat de vloer dus het dichtst bij:
+
+        981px → 707px       1100px → 735px
+       1250px → 796px       1500px → 748px      1920px en breder → 745px
+
+     Elke band begint dus net boven de 700 en loopt daarboven op tot de volgende
+     stap hem terugzet. Wie --k verder wil opendraaien, meet die kolom eerst: zakt
+     hij onder de 700, dan verandert de figuur van VORM en niet van maat, en dat
+     zie je niet als je alleen naar één vensterbreedte kijkt. */
   .hv-float {
     --k: .72;
     --lift: 0px;
@@ -1953,6 +2095,12 @@ const FAQ_PICK = [
   .is-flip:focus-within .hv-float {
     transform: scale(var(--k)) translate3d(0, calc(var(--lift) - 6px), 0) rotateY(3deg) rotateX(1deg) rotateZ(.2deg);
   }
+
+  /* Meer ruimte, dus minder verkleinen. De bovengrens van elke band is gekozen op
+     de 700px-vloer uit de noot bij .hv-float. */
+  @media (min-width: 1100px) { .hv-float { --k: .78; } }
+  @media (min-width: 1250px) { .hv-float { --k: .82; } }
+  @media (min-width: 1500px) { .hv-float { --k: .86; } }
 
   @keyframes hv-drift {
     from { --lift: 6px; }

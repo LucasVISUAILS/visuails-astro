@@ -66,7 +66,7 @@ import archivoRoman from '@fontsource-variable/archivo/files/archivo-latin-wght-
 import '@fontsource-variable/big-shoulders-display/wght';
 import '@fontsource-variable/anybody/wght-italic.css';
 import bigShoulders from '@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2?url';
-import { ui, dropHrefs, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
+import { ui, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 import { graphJson } from '../data/schema.js';
 import CookieConsent from '../components/CookieConsent.astro';
 
@@ -142,7 +142,10 @@ const wa = WA_CHROME[lang] || WA_CHROME.en;
 const lp = (p: string) => localizedPath(lang, p);   // localize a base path for this language
 const base = stripLang(path);                        // language-neutral path (for switcher + hreflang)
 
-const drops = (ui[lang] || ui.en).drops.map((s: string[], i: number) => ({ href: dropHrefs[i], title: s[0], desc: s[1] }));
+/* Elke ingang draagt zijn eigen href sinds 9 augustus 2026 — zie de noot bij
+   NAV_SOON in src/i18n/ui.js. Hier stond een map() die drie parallelle lijsten
+   op index aan elkaar reeg, en die kon stil verschuiven. */
+const drops = (ui[lang] || ui.en).drops;
 
 // ── The signed-in chrome's own copy ─────────────────────────────────────────
 // Everything else in this header comes from t() / src/i18n/ui.js, and these
@@ -570,10 +573,23 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-menu" role="menu">
-              {drops.map((s) => (
-                <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
-                  <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
-                </a>
+              {/* ── EEN ITEM ZONDER href IS GEEN LINK ─────────────────────────────
+                  Een dienst die er nog niet is, heeft geen pagina om naartoe te
+                  gaan. Dan hoort er ook geen <a> te staan: een link die naar
+                  niets wijst, of naar `#`, is een klik die niets doet en waar de
+                  bezoeker zelf moet raden waarom.
+
+                  `role="menuitem"` blijft, want het is nog steeds een item in dit
+                  menu, en `aria-disabled` zegt tegen een schermlezer wat de grijze
+                  tint tegen een oog zegt. `tabindex="-1"` haalt hem uit de
+                  toetsenbordronde: er is niets te activeren. */}
+              {drops.map((s) => (s.href
+                ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                    <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
+                  </a>
+                : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
+                    <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
+                  </span>
               ))}
             </div>
           </li>
@@ -651,8 +667,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   <div class="mobile-nav" id="mobile-nav" inert aria-hidden="true">
     <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
     <svg class="brand-mark mobile-mark" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
-    {drops.map((s) => (
-      <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+    {drops.map((s) => (s.href
+      ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+      : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
     ))}
     <a href={lp(brandModelHref)} aria-current={isActive(brandModelHref) ? 'page' : undefined}>{t('nav_brandmodel')}</a>
     <a href={lp('/gallery')}>{t('nav_gallery')}</a>
@@ -846,7 +863,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         <div class="footer-col">
           <h2 class="footer-h">{t('foot_drops')}</h2>
           <ul>
-            {drops.map((s) => <li><a href={lp(s.href)}>{s.title}</a></li>)}
+            {drops.map((s) => <li>{s.href
+              ? <a href={lp(s.href)}>{s.title}</a>
+              : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>}</li>)}
             <li><a href={lp(brandModelHref)}>{t('foot_brandmodel')}</a></li>
             <li><a href={lp('/gallery')}>{t('foot_gallery')}</a></li>
             {/* The €1 sample was in neither the header nor the footer — its
@@ -918,16 +937,21 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
 
-  {/* DE KNOP BOVEN, DE UITLEG ERONDER — 9 augustus 2026. Dit was één rij met een
-      zin van dertig woorden ertussen; zie de noot bij cb_note in i18n/ui.js.
-      De volgorde in de DOM is nu ook de leesvolgorde: eerst wat je kunt doen,
-      dan waarom. Een schermlezer krijgt daarmee dezelfde volgorde als het oog. */}
+  {/* ÉÉN RIJ: teken, zin, knop, kruisje — 9 augustus 2026.
+
+      Hier stond eerst een zin van dertig woorden op één regel (te breed), daarna
+      de knop met de uitleg eronder (te hoog, en twee regels tekst maakten er een
+      blok van). Dit is de vorm die een promobalk hoort te hebben: één mededeling,
+      één handeling, ernaast.
+
+      De zin staat vóór de knop, in de DOM en op het scherm: eerst waarover het
+      gaat, dan wat je kunt doen. Een schermlezer krijgt daarmee dezelfde volgorde
+      als het oog. Zie de noot bij cb_note in i18n/ui.js over waarom die zin er
+      precies zo staat. */}
   <div class="convbar" role="complementary" aria-label={t('cb_region')}>
     <svg class="brand-mark cb-logo" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
-    <span class="cb-body">
-      <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
-      <em class="cb-note">{t('cb_note')}</em>
-    </span>
+    <em class="cb-note">{t('cb_note')}</em>
+    <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
     <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
   </div>
 
@@ -1245,6 +1269,37 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
   .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: .92rem; }
   .nav-menu .mi-desc { color: var(--ink-3); font-size: .8rem; line-height: 1.4; }
+
+  /* ── HET "BINNENKORT"-LABEL ────────────────────────────────────────────────
+     Eén klasse voor alle drie de plekken waar de menu-items staan (dropdown,
+     mobiele lade, footer), want het is hetzelfde feit over dezelfde dienst en
+     drie varianten zouden gaan afwijken.
+
+     GEEN accentkleur. Het accent is op deze site de kleur van een handeling —
+     een knop, een link die je moet hebben. "Binnenkort" is het omgekeerde: het
+     is de reden om er NIET op te klikken als je vandaag iets wil bestellen. Dus
+     krijgt het de rustigste rand die er is, en trekt het item zelf niet meer
+     aandacht dan de drie diensten die je wél kunt kopen.
+
+     `font-style: normal` omdat het een <em> is: het is semantisch een nadruk op
+     de status, maar cursief naast een vetgedrukte titel leest als een typefout. */
+  /* Een uitgeschakeld menu-item. Grijzer dan een link, geen onderstreping bij
+     hover, en de cursor zegt het voordat iemand klikt. In de dropdown erft het de
+     padding van de <a> ernaast niet automatisch — vandaar dat die hier opnieuw
+     staat, zodat de vier items dezelfde maat houden. */
+  .nav-menu .mi-off { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; color: var(--ink-3); cursor: not-allowed; }
+  .nav-menu .mi-off .mi-title { color: var(--ink-3); }
+  .mobile-nav .mi-off, .footer-col .mi-off { color: var(--ink-3); cursor: not-allowed; }
+
+  .mi-soon {
+    display: inline-block; margin-left: .45rem;
+    font-style: normal; font-weight: 600;
+    font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3);
+    padding: .1rem .35rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    vertical-align: middle;
+  }
   .menu-toggle { display: none; width: 44px; height: 44px; align-items: center; justify-content: center; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
   .menu-toggle span, .menu-toggle span::before, .menu-toggle span::after { content: ''; display: block; width: 18px; height: 2px; background: var(--ink); }
   .menu-toggle span::before { transform: translateY(-6px); } .menu-toggle span::after { transform: translateY(4px); }
@@ -1403,108 +1458,79 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   @media (max-width: 1100px) { .footer-bottom { padding-bottom: 84px; } }
 
   /* ── DE VORM VAN DE BALK ─────────────────────────────────────────────────
-     Concentrische hoeken: buiten --r-lg (24px), binnenrand 10px lucht, dus de
-     knop binnenin krijgt 14px (--r-md). Dat is 24 min 10, en dat is precies wat
-     twee geneste rondingen nodig hebben om evenwijdig te lopen. Met de knop op
-     zijn eigen pilvorm liep de binnenboog een andere kant op dan de buitenboog,
-     en dat is wat de balk rommelig maakte.
+     Één rij, vier cellen: teken, zin, knop, kruisje. `align-items: center` mag
+     nu weer, want er is geen tweede regel meer om bovenaan uit te lijnen — dat
+     haalt tegelijk de drie losse margin-top-correcties weg die daarvoor nodig
+     waren.
 
-     Grid en geen flex: drie kolommen — teken, inhoud, kruisje — met de rijen
-     erin uitgelijnd op de EERSTE rij. Bij flex moest elk kind zijn eigen
-     margin-top krijgen om naast de knop te staan, en dat zijn drie getallen die
-     los van elkaar verkeerd kunnen gaan zodra de knop van hoogte verandert. */
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto; align-items: start; column-gap: 12px; padding: 10px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }
+     De hoek is --r-pill en niet --r-lg. Op een balk van 58px hoog met een pil
+     erin liepen die twee rondingen langs elkaar heen: de buitenboog was vlakker
+     dan de binnenboog en dat is precies wat "niet strak" oplevert. Twee volledig
+     ronde vormen, de een in de ander, lopen per definitie evenwijdig. */
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto auto; align-items: center; column-gap: 14px; padding: 9px 9px 9px 18px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-pill); }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
-  /* 24px, and 20px of padding to its left rather than 14. The bar's corner is
-     --r-lg (24px), so at 14px the mark sat INSIDE the curve's sweep: nothing
-     was actually clipped — measured 19x22 with the full viewBox visible — but
-     it reads as clipped, which is the same problem from the reader's side.
-     Lucas: *"het logo naast de test sample pop-up is niet juist en afgeknipt
-     lijkt het wel."* A mark needs to clear the radius that frames it. */
-  /* ÉÉN MAAT VOOR DE HOOGTE VAN DE EERSTE RIJ. Het teken en het kruisje staan
-     allebei naast de knop en moeten er allebei op gecentreerd staan; met een
-     los getal per element gaat dat mis zodra de knop verandert. Nu leiden ze het
-     af van dezelfde variabele als de knop zelf. */
+
+  /* Eén maat voor de hoogte van de rij: de knop, het kruisje en het teken leiden
+     er alle drie hun eigen maat uit af, zodat er geen los getal is dat achterblijft
+     als de knop verandert. */
   .convbar { --cb-row: 40px; }
-  /* ── DE BREEDTE STAAT ER EXPLICIET, EN DAT MOET ────────────────────────
+
+  /* ── DE BREEDTE VAN HET TEKEN STAAT ER EXPLICIET, EN DAT MOET ────────────
      `.brand-mark` heeft `width: auto` en de svg leidt zijn breedte af uit de
      viewBox. In een flexregel werkt dat; in een grid met `auto`-kolommen droeg
      hij NUL bij aan de intrinsieke breedte — gemeten: kolom 1 werd 0px en het
-     teken verdween van de balk terwijl de hoogte gewoon 22px was. Een vervangen
-     element met alleen een hoogte is precies het geval waarin die berekening
-     wegvalt.
-     Dus: één variabele voor de hoogte en de breedte eruit gerekend met de
-     verhouding uit de viewBox (702 x 813.25). Verandert de tekening van
-     verhouding, dan verandert dit getal mee — daarom staat het er als deling en
-     niet als uitkomst.
+     teken verdween van de balk terwijl de hoogte gewoon 22px was.
 
-     EN `max-width: none`, WAT DE ECHTE OORZAAK WAS. global.css zet
-     `img, svg, video { max-width: 100% }` als reset. Honderd procent van WAT, in
-     een gridkolom die zichzelf op zijn inhoud maat? Dat is een kringetje: de
-     kolom wacht op de svg, de svg wacht op de kolom, en de browser knipt die
-     knoop door op nul. Op een breed scherm viel het niet op omdat de noot de
-     tweede kolom al breed maakte; op een telefoon is de noot verborgen en was het
-     teken wég. Met een expliciete breedte is die bovengrens hier zinloos, dus
-     gaat hij eraf. */
-  .convbar .cb-logo { --cb-mark-h: 22px; height: var(--cb-mark-h); width: calc(var(--cb-mark-h) * 702 / 813.25); max-width: none; align-self: start; margin-top: calc((var(--cb-row) - var(--cb-mark-h)) / 2); }
-  /* De knop en de noot als één kolom. align-items:start, anders rekt de knop mee
-     met de breedte van de noot en wordt een handeling zo breed als zijn uitleg. */
-  /* GEEN min-width: 0 HIER. Dat stond er om lange noten te laten afbreken, en het
-     deed iets veel ergers: het liet deze kolom onder zijn min-content krimpen. Op
-     een telefoon is de noot verborgen, dus was de knop de enige inhoud — en die
-     werd tot 90px samengeperst met "· €1" buiten de balk en het kruisje bovenop
-     de tekst. De noot heeft zijn eigen max-width; die begrenst de kolom al. */
-  .convbar .cb-body { display: grid; justify-items: start; row-gap: 8px; }
-  /* GEEN nowrap MEER OP DE NOOT. Dat was wat de balk zo breed maakte: de zin kon
-     niet afbreken, dus duwde hij de balk tot aan max-width.
-     `text-wrap: balance` verdeelt de twee regels gelijk. Zonder dat viel er één
-     woord alleen op regel twee — "product." onder een volle regel — en een
-     wees is precies het soort detail dat een blok slordig laat lijken zonder dat
-     je meteen ziet waarom. Browsers die het niet kennen, breken zoals voorheen.
+     De echte oorzaak zat een laag hoger: global.css zet
+     `img, svg, video { max-width: 100% }` als reset. Honderd procent van wát, in
+     een kolom die zichzelf op zijn inhoud maat? Dat is een kringetje, en de
+     browser knipt die knoop door op nul. Vandaar `max-width: none` plus een
+     breedte die uit de verhouding van de viewBox (702 x 813.25) volgt — als
+     deling opgeschreven, zodat een andere tekening meerekent. */
+  .convbar .cb-logo { --cb-mark-h: 22px; height: var(--cb-mark-h); width: calc(var(--cb-mark-h) * 702 / 813.25); max-width: none; }
 
-     De maat is 38ch, en dat getal is twee keer gemeten. Op 40ch werd de noot
-     merkbaar breder dan de knop en stond het kruisje tachtig pixels rechts van de
-     knop, waardoor het blok los viel. Op 30ch paste de langere Nederlandse zin
-     ("4 catalogbeelden of een lifestyle-carousel van 3 foto's, van je eigen
-     product") niet meer in twee regels en werd de balk drie regels hoog. 38ch is
-     waar beide talen op twee regels uitkomen die ongeveer zo breed zijn als de
-     knop erboven. Verandert die zin, kijk dan opnieuw. */
-  .convbar .cb-note { font-style: normal; font-size: .8rem; font-weight: 400; line-height: 1.45; color: var(--ink-3); max-width: 38ch; text-wrap: balance; padding-inline: 2px; }
-  /* --r-md binnen --r-lg met 10px padding: concentrisch, zie de noot hierboven. */
-  .convbar .cb-cta { display: inline-flex; align-items: center; min-height: var(--cb-row); padding: 0 20px; background: var(--accent); color: var(--accent-on); font-size: .88rem; font-weight: 600; letter-spacing: .01em; white-space: nowrap; border-radius: var(--r-md); }
-  /* Rond en even hoog als de knop, zodat de eerste rij één lijn heeft in plaats
-     van drie hoogtes. Geen eigen ronding meer die met de knop concurreert. */
-  .convbar .cb-close { border-radius: 50%; width: var(--cb-row); height: var(--cb-row); display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 1.05rem; line-height: 1; background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
+  /* ── DE ZIN ──────────────────────────────────────────────────────────────
+     Eén regel, en dat is nu een eis in plaats van een wens: hij staat naast de
+     knop. `nowrap` maakt dat hard, en de noot in i18n/ui.js houdt de zin kort
+     genoeg om die belofte te kunnen doen — dit is dezelfde `nowrap` die de balk
+     eerder bijna schermbreed maakte, maar toen stond er een zin van dertig
+     woorden in en nu een van tien.
+
+     Onder 900px valt hij weg. Twee redenen: daar zou hij de balk breder maken dan
+     het scherm, en de knop zegt met "test sample · €1" al genoeg om op te kunnen
+     klikken. */
+  .convbar .cb-note { font-style: normal; font-size: .85rem; font-weight: 400; line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
+  @media (max-width: 900px) { .convbar .cb-note { display: none; } }
+
+  /* De knop houdt de pilvorm van elke andere knop op de site. Hij is de reden dat
+     de balk zelf ook een pil is — zie de noot bij .convbar. */
+  .convbar .cb-cta { display: inline-flex; align-items: center; min-height: var(--cb-row); padding: 0 22px; background: var(--accent); color: var(--accent-on); font-size: .88rem; font-weight: 600; letter-spacing: .01em; white-space: nowrap; border-radius: var(--r-pill); }
+
+  /* Rond en even hoog als de knop, zodat de rij één lijn heeft in plaats van drie
+     hoogtes. Iets kleiner dan de knop, want het is de secundaire handeling. */
+  .convbar .cb-close { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 1.05rem; line-height: 1; background: none; border: 0; border-radius: 50%; cursor: pointer; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   .convbar .cb-close:hover { color: var(--ink); background: rgb(255 255 255 / 0.06); }
-  /* ── OP EEN TELEFOON IS DE BALK EEN STROOK, GEEN BLOKJE ──────────────────
+
+  /* ── OP EEN TELEFOON IS DE BALK EEN STROOK ───────────────────────────────
      Op een breed scherm maakt de balk zich zo breed als zijn inhoud en staat hij
      gecentreerd. Op een telefoon werkt dat niet: gemeten op 320px liep de
      Nederlandse knop ("Vraag een proefvisual aan · €1", 237px) samen met teken,
      tussenruimtes en kruisje op 340px uit terwijl er 296px was — en wat er dan
-     buiten valt is het KRUISJE. Een balk die je niet kunt wegklikken is erger
-     dan een balk die te breed is.
-     Dus daaronder: vaste marges links en rechts, de knop rekt mee, en het
-     kruisje staat altijd binnen de rand. De transform verliest zijn
-     translateX omdat de balk niet meer gecentreerd hoeft te worden — met beide
-     erin zou hij op de helft van zijn eigen breedte naar links schuiven.
+     buiten valt is het KRUISJE. Een balk die je niet kunt wegklikken is erger dan
+     een balk die te breed is.
+
+     Dus daaronder: vaste marges links en rechts, de knop rekt mee tot maximaal
+     20rem (verder is het geen knop meer maar een band), en het kruisje staat
+     altijd binnen de rand. De transform verliest zijn translateX omdat de balk
+     niet meer gecentreerd hoeft te worden.
 
      Het teken gaat weg, en dat is de enige manier waarop de knop op 320px nog
      past. Op die maat is het ook het minst nodig: de kleur en de tekst zeggen al
-     van wie de balk is, en het kruisje moet bereikbaar blijven.
-
-     De noot gaat om een andere reden weg: twee regels uitleg naast een knop
-     maken de balk daar hoger dan een duim comfortabel reikt. */
+     van wie de balk is, en het kruisje moet bereikbaar blijven. */
   @media (max-width: 600px) {
-    .convbar { left: 12px; right: 12px; max-width: none; transform: translateY(120%); grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+    .convbar { left: 12px; right: 12px; max-width: none; transform: translateY(120%); grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; padding: 9px; }
     .convbar.show { transform: translateY(0); }
-    .convbar .cb-note,
     .convbar .cb-logo { display: none; }
-    .convbar .cb-body { justify-items: stretch; }
-    /* De knop rekt mee, maar niet onbeperkt. Op 560px was de strook 536 breed en
-       werd de knop een groen vlak van bijna 470px — dat is geen knop meer, dat is
-       een band. 20rem is ongeveer waar een knop ophoudt als knop te lezen; wat
-       overblijft verdeelt margin-inline: auto, zodat hij midden in de strook staat
-       in plaats van tegen de linkerrand. */
     .convbar .cb-cta { justify-content: center; padding: 0 14px; font-size: .85rem; max-width: 20rem; margin-inline: auto; }
   }
 

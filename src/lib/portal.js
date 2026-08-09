@@ -6,8 +6,15 @@
 //   TIER 1 · attended  → "Your order".  The portal proper: the work so far, with
 //                        per-image approve / request-revision, the order's
 //                        timeline, and the reserved window when one exists.
-//   TIER 0 · unattended → "Your files". An authenticated download page. No review
-//                        controls, no timeline, no portal framing, and no date.
+//   TIER 0 · unattended → "Your files". Dezelfde galerij zonder tijdlijn, zonder
+//                        portaalomlijsting en zonder datum.
+//
+// EN SINDS 9 AUGUSTUS 2026 IS ER MAAR ÉÉN DOWNLOAD, in beide gevallen: de map van
+// de hele bestelling. De beelden op het scherm zijn beoordeelbeelden — Lucas:
+// *"de zichtbare foto's zijn dus niet downloadbaar in het portaal en puur voor
+// revisies aanvragen."* Zie de kop van src/lib/delivery.js voor wat daar allemaal
+// bij kwam kijken; de korte versie is dat files.preview_key sinds migratie 0001
+// bestond en door geen enkele regel code ooit was gevuld.
 //
 // THAT SPLIT IS NOT A DOWNGRADE, AND IT IS NOT COSMETIC. src/data/pricing.js says
 // TIERS.unattended.portal === false and TIERS.attended.portal === true, and the
@@ -59,6 +66,15 @@ import { mailNote } from '../data/mailNote.js';
 // bestand kreeg in plaats van dat dit bestand de dashboardmodule importeert.
 import { maybeCloseOrder } from './close.js';
 import { feedbackBlock, loadFeedback, handleFeedbackPost } from './feedback.js';
+// Waarom een platformknop een tussenpagina krijgt en geen 303: zie de kop van
+// offsite.js. form-action 'self' in de CSP hieronder geldt ook voor de redirect
+// na de post, dus een 303 naar Google landt in een leeg tabblad.
+import { offsitePage } from './offsite.js';
+// Dezelfde bouwer als VISUAILS Studio gebruikt. Zie de kop van delivery.js: dit
+// portaal had helemaal geen archief, en de query's van de twee schermen waren al
+// uit elkaar gelopen op superseded_at.
+import { loadDeliveryFiles, deliveryEntries, deliverySummary, humanBytes } from './delivery.js';
+import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
 
@@ -133,7 +149,11 @@ const COPY = {
     on: (day) => `on ${day}`,
 
     bApprove: 'Approve',
-    bDownload: 'Download',
+    bDownload: 'Download the folder',
+    folderH: 'Your files',
+    folderBody: 'One folder per product, and in it the same visual as PNG, JPG and WebP — so a print shop, a shop page and a feed each get the file they want without anyone resizing anything.',
+    folderReview: 'The photos above are review copies, at screen size. They are there to approve or to point at when something is wrong. The folder holds the real files.',
+    folderMeta: (n, size) => `${n} files · ${size}`,
     bUndo: 'Undo',
     bCancel: 'Cancel this request',
     bSend: 'Send this note',
@@ -198,7 +218,11 @@ const COPY = {
     on: (day) => `op ${day}`,
 
     bApprove: 'Goedkeuren',
-    bDownload: 'Downloaden',
+    bDownload: 'Download de map',
+    folderH: 'Jouw bestanden',
+    folderBody: 'Eén map per product, en daarin hetzelfde beeld als PNG, JPG en WebP — zo krijgt een drukker, een productpagina en een feed elk het bestand dat hij wil, zonder dat iemand nog iets bijschaalt.',
+    folderReview: 'De foto\'s hierboven zijn beoordeelbeelden op schermformaat. Ze staan er om goed te keuren of om naar te wijzen als er iets niet klopt. De echte bestanden zitten in de map.',
+    folderMeta: (n, size) => `${n} bestanden · ${size}`,
     bUndo: 'Ongedaan maken',
     bCancel: 'Aanvraag intrekken',
     bSend: 'Verstuur deze notitie',
@@ -257,7 +281,8 @@ const STATUS = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * GET /o, /o/<token>, /o/<token>/f/<id> (inline) and /o/<token>/d/<id> (download).
+ * GET /o, /o/<token>, /o/<token>/f/<id> (het beoordeelbeeld, inline) en
+ * /o/<token>/zip (de map van de hele bestelling).
  *
  * The order of the guards is the design. Shape check first, because it costs one
  * regex and stops /o/wp-admin before it can spend anything. Rate limit second,
@@ -276,7 +301,14 @@ export async function portalGet(context) {
   if (route.kind === 'unknown') return plainPage(env, request, 'unknown', 404);
   if (!isWellFormedToken(route.token)) return plainPage(env, request, 'unknown', 404);
 
-  const isFile = route.kind === 'file' || route.kind === 'download';
+  /*
+   * Het archief valt onder de PAGINA-limiet en niet onder de bestandslimiet. Een
+   * beeld wordt bij elke paginaweergave twaalf keer opgehaald (vandaar FILE_LIMIT
+   * van driehonderd), maar de map haal je één keer per bestelling op. Onder de
+   * ruime limiet zou een script honderden archieven van twee gigabyte kunnen
+   * aanvragen, en dat is precies wat een limiet moet tegenhouden.
+   */
+  const isFile = route.kind === 'file';
   const gate = await checkRate(env, {
     ip: clientIp(request),
     action: isFile ? 'portal-file' : 'portal',
@@ -303,6 +335,7 @@ export async function portalGet(context) {
   if (isExpired(order.expires_at, order.closed_at)) return plainPage(env, request, 'expired', 410, lang);
 
   if (isFile) return serveFile(context, order, route);
+  if (route.kind === 'zip') return serveOrderFolder(context, order, lang);
 
   later(context, bumpUse(env, order.token_id));
   return renderOrder(env, order, route.token, lang);
@@ -368,9 +401,15 @@ export async function portalPost(context) {
    * token voor deze bestelling, en dat is hierboven al vastgesteld — zelfde
    * vertrouwensmodel als de goedkeurknoppen.
    *
-   * Bij een platformknop is het antwoord een 303 naar Google of Trustpilot. Dat
-   * formulier heeft target="_blank", dus die omleiding landt in het nieuwe
-   * tabblad en de bestelpagina blijft staan waar hij stond.
+   * Bij een platformknop is het antwoord een TUSSENPAGINA en geen 303 naar
+   * Google. Dat is geen omslachtigheid: de CSP van deze pagina zegt form-action
+   * 'self', en die richtlijn geldt ook voor de redirect ná de post — een 303 naar
+   * buiten wordt door Chrome geblokkeerd en levert een leeg tabblad op. Zie de
+   * kop van offsite.js, waar de meting staat, en account.js voor dezelfde
+   * wijziging aan dezelfde knoppen in VISUAILS Studio.
+   *
+   * Het formulier heeft target="_blank", dus de tussenpagina en de reis erna
+   * landen in het nieuwe tabblad en de bestelpagina blijft staan waar hij stond.
    */
   if (form.get('fb')) {
     const res = await handleFeedbackPost(env, {
@@ -378,7 +417,16 @@ export async function portalPost(context) {
       customerId: order.customer_id || null,
       form,
     });
-    return seeOther(res.redirect || `${home}#fb-h`);
+    if (res.redirect) {
+      const away = offsitePage({
+        url: res.redirect,
+        name: res.redirectName,
+        lang,
+        css: '/portal.css',
+      });
+      if (away) return html(away);
+    }
+    return seeOther(`${home}#fb-h`);
   }
 
   const action = String(form.get('action') || '');
@@ -515,11 +563,26 @@ function parseRoute(url) {
   }
 
   if (parts.length === 2) return { kind: 'order', token };
-  if (parts.length === 4 && (parts[2] === 'f' || parts[2] === 'd')) {
+  /*
+   * ── /d IS VERVALLEN, /zip IS ERBIJ GEKOMEN — 9 augustus 2026 ──────────────
+   *
+   * Lucas: *"de zichtbare foto's zijn dus niet downloadbaar in het portaal en
+   * puur voor revisies aanvragen. Alleen de map (het eindresultaat) kan
+   * gedownload worden."*
+   *
+   * /o/<token>/d/<id> gaf hetzelfde bestand als /f maar met
+   * content-disposition: attachment. Die route is weg, niet alleen de knop:
+   * een url die blijft werken nadat de knop eruit is, is de knop verstoppen.
+   *
+   * /o/<token>/zip bestond hier nog helemaal niet — het archief zat alleen in
+   * VISUAILS Studio, en dit is het scherm dat een klant zonder account per mail
+   * krijgt. Wie via zijn link kwam, kon zijn levering dus alleen foto voor foto
+   * ophalen. Precies de handeling die vanaf vandaag niet meer bestaat.
+   */
+  if (parts.length === 3 && parts[2] === 'zip') return { kind: 'zip', token };
+  if (parts.length === 4 && parts[2] === 'f') {
     const fileId = Number.parseInt(parts[3], 10);
-    if (Number.isInteger(fileId)) {
-      return { kind: parts[2] === 'f' ? 'file' : 'download', token, fileId };
-    }
+    if (Number.isInteger(fileId)) return { kind: 'file', token, fileId };
   }
   return { kind: 'unknown', token };
 }
@@ -553,18 +616,23 @@ async function loadOrder(env, token) {
   return row || null;
 }
 
-async function loadFiles(env, orderId) {
-  const res = await env.DB.prepare(
-    `SELECT id, r2_key, preview_key, filename, bytes, expires_at,
-            review_state, review_note, reviewed_at
-       FROM files
-      WHERE order_id = ?1 AND kind = 'delivery'
-      ORDER BY id`
-  )
-    .bind(orderId)
-    .all();
-  return res.results || [];
-}
+/*
+ * ── DIT SCHERM LIET VERVANGEN BEELDEN ZIEN, EN DAT WAS DE ERGSTE PLEK ───────
+ *
+ * Hier stond een eigen query, en die miste `superseded_at IS NULL`. account.js
+ * filtert er sinds migratie 0012 op; dit bestand niet, en niemand had de twee ooit
+ * naast elkaar gelegd.
+ *
+ * Gevolg: vroeg een klant een revisie aan, dan leverden wij een nieuw beeld, en
+ * daarna stonden er in zijn portaal TWEE — het afgekeurde en het nieuwe. Op het
+ * scherm waar hij naartoe gaat om te kijken of zijn opmerking iets heeft
+ * opgeleverd. In VISUAILS Studio was dat al goed, dus wie beide schermen naast
+ * elkaar had, zag twee versies van zijn eigen bestelling.
+ *
+ * De query staat nu in delivery.js en wordt door beide schermen gebruikt, zodat
+ * dit niet nog een keer één kant op kan wijzigen. Dat is ook de reden dat deze
+ * functie niet meer bestaat: hij was de tweede waarheid.
+ */
 
 async function loadEvents(env, orderId) {
   const res = await env.DB.prepare(
@@ -625,10 +693,21 @@ async function serveFile(context, order, route) {
     return new Response(null, { status: 410, headers: fileHeaders() });
   }
 
-  // A preview is a smaller rendition of the same photograph, written by the
-  // delivery pipeline. When there is none, the full file stands in — correct,
-  // just heavy. See the note on previewKey() below.
-  const key = route.kind === 'file' ? file.preview_key || file.r2_key : file.r2_key;
+  /*
+   * ── ALTIJD HET BEOORDEELBEELD, EN NOOIT MEER DE LEVERING ──────────────────
+   *
+   * Hier koos `route.kind` tussen het beoordeelbeeld en het volledige bestand.
+   * Er is nu maar één keuze, want /d bestaat niet meer.
+   *
+   * En de terugval `|| file.r2_key` was tot vandaag geen terugval maar de regel:
+   * files.preview_key is sinds migratie 0001 door geen enkele regel code ooit
+   * geschreven. Dit pad serveerde dus altijd het leveringsbestand — op het scherm
+   * dat "alleen om te beoordelen" heet. scripts/deliver.mjs vult die kolom nu met
+   * een verkleind beeld van 1400px. Voor een levering van vóór vandaag staat er
+   * nog steeds het volledige bestand, en dat is de eerlijke stand van zaken: de
+   * knop is weg, het bestand is voor die oude bestellingen niet verkleind.
+   */
+  const key = file.preview_key || file.r2_key;
 
   let object;
   try {
@@ -648,12 +727,8 @@ async function serveFile(context, order, route) {
   const type = mimeFor(file.filename || key, headers.get('content-type'));
   headers.set('content-type', type);
 
-  headers.set(
-    'content-disposition',
-    route.kind === 'download'
-      ? `attachment; ${dispositionFilename(file.filename || 'file')}`
-      : 'inline'
-  );
+  // Altijd inline. De enige download in dit portaal is de map (serveOrderFolder).
+  headers.set('content-disposition', 'inline');
 
   // A conditional request that matched. R2 returns the metadata with no body.
   if (!object.body) {
@@ -730,7 +805,7 @@ async function renderOrder(env, order, token, lang) {
   let files = [];
   let events = [];
   try {
-    files = await loadFiles(env, order.order_id);
+    files = await loadDeliveryFiles(env, order.order_id);
     if (attended) events = await loadEvents(env, order.order_id);
   } catch {
     // The order exists and the client is authenticated; a failed second query is
@@ -745,9 +820,18 @@ async function renderOrder(env, order, token, lang) {
    */
   const fb = attended && order.closed_at ? await loadFeedback(env, order.order_id) : null;
 
+  /*
+   * De map wordt uit dezelfde rijen berekend als de tegels — zie loadDeliveryFiles.
+   * `deliveryEntries` bepaalt de namen (en dus ook of er mappen in zitten) en
+   * `deliverySummary` telt wat er op het scherm naast de knop komt te staan. Beide
+   * zijn zuivere functies over de rijen die er al zijn: geen tweede query, en per
+   * constructie hetzelfde archief als de route straks bouwt.
+   */
+  const folder = folderBlock(t, token, deliverySummary(deliveryEntries(files, lang)));
+
   const body = attended
-    ? attendedBody(t, lang, order, token, files, events, fb)
-    : unattendedBody(t, lang, order, token, files);
+    ? attendedBody(t, lang, order, token, files, events, fb, folder)
+    : unattendedBody(t, lang, order, token, files, folder);
 
   return html(
     page({
@@ -780,7 +864,7 @@ function foot(t) {
  * niet opgehaald, om dezelfde reden als de rest van deze functie: attendedBody()
  * tekent en vraagt niets aan de database.
  */
-function attendedBody(t, lang, order, token, files, events, fb = null) {
+function attendedBody(t, lang, order, token, files, events, fb = null, folder = '') {
   const approved = files.filter((f) => f.review_state === 'approved').length;
   const revisions = files.filter((f) => f.review_state === 'revision_requested').length;
   const readOnly = !!order.closed_at;
@@ -834,6 +918,7 @@ ${factList(facts)}
   <h2>${esc(t.workTitle)}${tally}</h2>
   ${work}
 </section>
+${folder}
 ${feedback}
 ${timeline(t, lang, events)}
 </main>`;
@@ -856,7 +941,7 @@ function windowLine(t, lang, order) {
 
 // ---- Tier 0 · the delivery page ---------------------------------------------
 
-function unattendedBody(t, lang, order, token, files) {
+function unattendedBody(t, lang, order, token, files, folder = '') {
   // No window, no date, no countdown — not because there is no room for one, but
   // because Tier 0 has a queue span rather than a delivery date, and section 13
   // is unambiguous: "NO named delivery date [...] never a date."
@@ -898,7 +983,86 @@ ${factList(facts)}
   <h2>${esc(t.filesHeading)}</h2>
   ${work}
 </section>
+${folder}
 </main>`;
+}
+
+/*
+ * ── DE MAP, OP HET SCHERM ──────────────────────────────────────────────────
+ *
+ * Dit blok is nieuw en het is het belangrijkste op de pagina, want het is het
+ * enige dat de klant meeneemt. Tot vandaag stond er in dit portaal geen enkele
+ * knop voor het geheel: wie via de gemailde link kwam, haalde zijn levering foto
+ * voor foto op — en dat is precies de handeling die er nu niet meer is.
+ *
+ * De tweede alinea legt uit waarom de foto's erboven geen knop meer hebben. Die
+ * zin is niet vriendelijkheid: zonder uitleg lijkt een galerij zonder
+ * downloadknoppen stuk, en dan mailt iemand ons met de vraag waar zijn bestanden
+ * zijn. Dat is de mail die deze regel voorkomt.
+ *
+ * WAAROM ER GEEN AANTAL EN GEEN MAAT BIJ STAAT als er niets te zeggen is: die
+ * twee komen uit de assets in de database, en bij een levering van vóór vandaag
+ * zijn ze er niet. Een maat verzinnen op basis van wat we niet hebben, is de
+ * enige manier om deze knop een leugen te laten worden.
+ */
+function folderBlock(t, token, summary) {
+  if (!summary || !summary.files) return '';
+  const meta = summary.bytes
+    ? `<p class="folder-meta">${esc(t.folderMeta(summary.files, humanBytes(summary.bytes)))}</p>`
+    : '';
+  return `<section class="folder">
+  <div class="folder-body">
+    <h2>${esc(t.folderH)}</h2>
+    <p class="folder-n">${esc(t.folderBody)}</p>
+    ${meta}
+    <p class="note folder-note">${esc(t.folderReview)}</p>
+  </div>
+  <a class="btn btn-primary" href="/o/${esc(token)}/zip">${esc(t.bDownload)}</a>
+</section>`;
+}
+
+/*
+ * GET /o/<token>/zip — het archief.
+ *
+ * Dezelfde functie als serveOrderZip in account.js op één ding na: daar is het
+ * eigendomsbewijs een sessiecookie en hier een token dat portalGet hierboven al
+ * heeft gecontroleerd. De rest — welke bestanden, welke mapnamen, welke grenzen —
+ * komt uit delivery.js en uit zip.js, zodat de klant via zijn link exact hetzelfde
+ * archief krijgt als via zijn account. Dat is geen netheid: het is het verschil
+ * tussen één levering en twee versies van dezelfde levering.
+ */
+async function serveOrderFolder(context, order, lang) {
+  const { env } = context;
+  if (!env.UPLOADS) return new Response(null, { status: 503, headers: fileHeaders() });
+
+  let files;
+  try {
+    files = await loadDeliveryFiles(env, order.order_id);
+  } catch {
+    return new Response(null, { status: 503, headers: fileHeaders() });
+  }
+  if (!files.length) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  const entries = deliveryEntries(files, lang);
+  if (!entries.length) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  const total = entries.reduce((n, e) => n + (e.bytes || 0), 0);
+  if (entries.length > ZIP_MAX_FILES || total > ZIP_MAX_BYTES) {
+    return new Response(null, { status: 413, headers: fileHeaders() });
+  }
+
+  const stream = zipStream(entries.map((e) => ({
+    name: e.name,
+    get: async () => {
+      const obj = await env.UPLOADS.get(e.key);
+      return obj ? obj.arrayBuffer() : null;
+    },
+  })));
+
+  const headers = new Headers(fileHeaders());
+  headers.set('content-type', 'application/zip');
+  headers.set('content-disposition', zipDisposition(`VISUAILS-${order.ref}.zip`));
+  return new Response(stream, { status: 200, headers });
 }
 
 // ---- shared pieces ----------------------------------------------------------
@@ -935,7 +1099,15 @@ function factList(pairs) {
 function shot(t, lang, f, token, { review, history }) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
   const name = f.filename || `#${f.id}`;
-  const meta = [f.bytes ? formatBytes(f.bytes) : null, gone ? t.fileGone : null].filter(Boolean).join(' · ');
+  /*
+   * DE BESTANDSGROOTTE STOND HIER EN IS WEG. Een maat naast een foto is nuttig als
+   * je hem gaat downloaden — "18,4 MB" vertelt je of je dit op 4G moet doen. Nu er
+   * per beeld niets meer te downloaden is, beschrijft die maat een handeling die
+   * niet bestaat, en bovendien de maat van het MASTERBESTAND terwijl je naar een
+   * beoordeelbeeld kijkt. De maat staat nu één keer op de pagina, bij de map, waar
+   * hij over de download gaat die er wél is.
+   */
+  const meta = gone ? t.fileGone : '';   // wordt bij het uitschrijven ontsnapt, zie hieronder
 
   // alt is empty on purpose: the filename below is the only description that
   // exists, it is already on the page as text, and repeating it would make a
@@ -954,11 +1126,20 @@ function shot(t, lang, f, token, { review, history }) {
     if (f.review_note) state += `<p class="said">${esc(f.review_note)}</p>`;
   }
 
-  const download = gone
-    ? ''
-    : `<a class="btn btn-ghost" href="/o/${token}/d/${f.id}">${esc(t.bDownload)}</a>`;
-
-  let controls = `<div class="acts">${download}</div>`;
+  /*
+   * ── DE DOWNLOADKNOP PER BEELD IS WEG ──────────────────────────────────────
+   *
+   * Lucas, 9 augustus 2026: *"de zichtbare foto's zijn dus niet downloadbaar in
+   * het portaal en puur voor revisies aanvragen."* Er stond hier een knop die
+   * één formaat van één beeld gaf, met de naam die het bij ons toevallig had.
+   * Wat de klant nodig heeft staat in de map: per product een png, een jpg en
+   * een webp. Zie folderBlock() verderop.
+   *
+   * `${'$'}{download}` stond op DRIE plekken in deze functie — los, in het
+   * ongedaan-formulier en in het goedkeurformulier. Alle drie zijn ze weg; wat
+   * overblijft is één handeling per tegel, en dat is beoordelen.
+   */
+  let controls = '';
 
   // `review` is "mag er een NIEUW besluit vallen". Een besluit dat er al ligt
   // blijft terug te draaien zolang de bestelling überhaupt beoordeeld mag worden
@@ -972,7 +1153,7 @@ function shot(t, lang, f, token, { review, history }) {
       const label = f.review_state === 'approved' ? t.bUndo : t.bCancel;
       controls = `<form method="post" action="">
   <input type="hidden" name="file" value="${f.id}">
-  <div class="acts">${download}<button class="btn btn-quiet" type="submit" name="action" value="undo">${esc(label)}</button></div>
+  <div class="acts"><button class="btn btn-quiet" type="submit" name="action" value="undo">${esc(label)}</button></div>
 </form>`;
     } else {
       // One form, two submits. formnovalidate on Approve so the required note in
@@ -981,7 +1162,6 @@ function shot(t, lang, f, token, { review, history }) {
   <input type="hidden" name="file" value="${f.id}">
   <div class="acts">
     <button class="btn btn-primary" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
-    ${download}
   </div>
   <details class="ask">
     <summary>${esc(t.askSummary)}</summary>
@@ -1191,13 +1371,11 @@ function formatDay(iso, lang) {
   }
 }
 
-function formatBytes(n) {
-  const b = Number(n);
-  if (!Number.isFinite(b) || b <= 0) return '';
-  if (b < 1024) return `${b} B`;
-  if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`;
-  return `${(b / (1024 * 1024)).toFixed(1)} MB`;
-}
+/* formatBytes() stond hier en had één aanroeper: de maat naast elke foto. Die is
+   op 9 augustus 2026 vervallen (zie de noot in shot()). De maat die er nog is,
+   hoort bij de map en komt uit humanBytes() in delivery.js — één functie voor de
+   ene plek waar nog een bestandsgrootte op het scherm staat. Twee functies die
+   bytes opmaken, is de tweede die ooit anders gaat afronden dan de eerste. */
 
 /**
  * Language for a page with no order behind it. Order pages never call this —

@@ -16,8 +16,10 @@
     "fetch:order": "node scripts/fetch-order.mjs",
     "test:account": "node tests/account-brand-kit.test.mjs",
     "test:admin": "node tests/admin.test.mjs",
-    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:invoices && npm run test:feedback && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie",
+    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie",
     "test:invoice": "node tests/invoice-pdf.test.mjs",
+    "test:offsite": "node tests/offsite.test.mjs",
+    "check:csp": "node scripts/csp-probe.mjs",
     "test:signin": "node tests/account-signin.test.mjs",
     "logo:pack": "node scripts/make-logo-pack.mjs",
     "mail:assets": "node scripts/make-mail-assets.mjs",
@@ -35,7 +37,10 @@
     "styleguide": "node scripts/make-styleguide.mjs",
     "test:invoicing": "node tests/invoice-issue.test.mjs",
     "test:invoices": "node tests/account-invoices.test.mjs",
-    "test:feedback": "node tests/feedback.test.mjs"
+    "test:feedback": "node tests/feedback.test.mjs",
+    "deliver": "node scripts/deliver.mjs",
+    "test:delivery": "node tests/delivery.test.mjs",
+    "test:nav": "node tests/nav.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",
@@ -51,6 +56,7 @@
     "exiftool-vendored": "^37.1.0",
     "parse5": "^7.0.0",
     "playwright": "^1.56.0",
-    "pngjs": "^7.0.0"
+    "pngjs": "^7.0.0",
+    "sharp": "^0.34.5"
   }
 }

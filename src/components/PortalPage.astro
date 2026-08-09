@@ -19,6 +19,23 @@
 // are the honest state of it anyway.
 import { localizedPath } from '../i18n/ui.js';
 import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
+/*
+ * TWEE ECHTE FIGUREN, WAAR TWEE GRIJZE VLAKKEN STONDEN — 9 augustus 2026.
+ *
+ * Lucas: *"deze is nu nog wat saai en inconsistent met de rest van de website. Op
+ * de eerste sectie gelijk weer een grote dashboard mock-up laten zien die ook op
+ * de homepage staat en bij de image by image sectie ook een eigen unieke mock-up
+ * maken voor het specifieke idee."*
+ *
+ * FigDash is letterlijk dezelfde figuur als op de homepage, en dat is het punt:
+ * deze pagina verkoopt hetzelfde scherm, dus hoort er hetzelfde beeld bij. Een
+ * tweede tekening van hetzelfde scherm is een tweede versie die kan gaan afwijken.
+ *
+ * FigGallery is nieuw en staat alleen hier, omdat het over deze ene band gaat:
+ * beoordelen per beeld, en waarom de map het eindresultaat is.
+ */
+import FigDash from './FigDash.astro';
+import FigGallery from './FigGallery.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -44,22 +61,25 @@ const COPY = {
     stateNote: 'Each change is written into a timeline you can read, with the date it happened. Nothing about your order is only in our heads.',
 
     galleryH: 'Approve it image by image.',
-    galleryLede: 'On delivery the whole order opens as a gallery. Every visual has two buttons and there is no accept-all — an order you approved in one click is an order nobody looked at.',
+    galleryLede: 'On delivery the whole order opens as a gallery. Every visual has two buttons and there is no accept-all — an order you approved in one click is an order nobody looked at. Ask for a revision on one image and the rest of the order keeps moving.',
     galleryList: [
       ['Approve', 'Marks that image done. The count at the top moves.'],
       ['Request a revision', 'Opens a note field. Say what is wrong in your own words — it goes straight to the person who made it.'],
+      // Nieuw op 9 augustus 2026, en het hoort hier omdat de figuur ernaast het
+      // laat zien: bij de foto's staat geen downloadknop meer. Dat verzint een
+      // bezoeker niet zelf, en ongezegd leest het als een scherm dat stuk is.
+      ['The images here are review size', 'They exist to be judged, not to be used. What you take away is one folder — the next section is what is in it.'],
     ],
-    galleryPh: 'Client portal · delivery gallery',
-    galleryNote: 'The approve / request-revision screen, one image selected, the revision note open.',
 
-    dlH: 'Sized for where it is going.',
-    dlLede: 'A catalog image and a story frame are not the same file. The downloads are cut per channel so nothing has to be resized after it reaches you.',
+    dlH: 'One folder, and everything is in it.',
+    dlLede: 'When the order is approved you download one folder. Inside it is a folder per product, and in each of those the same visual three times: PNG, JPG and WebP. So a print shop, a product page and a feed each get the file they want, and nobody has to convert anything.',
     dl: [
-      ['Shop', 'Square and 4:5, at the resolution a product page wants.'],
-      ['Social', '4:5 and 9:16, cropped for the feed and the story.'],
-      ['Ads', '16:9 and 1:1, with the safe area kept clear.'],
+      ['PNG', 'Lossless, the biggest file. This is the one for print and for anything that gets edited again.'],
+      ['JPG', 'The format every system accepts. For a product page, a lookbook, an email.'],
+      ['WebP', 'A third of the size at the same quality. For your site, so a page loads fast.'],
     ],
-    dlManifest: 'We add no provenance data of our own to a delivered file. A jpg or png carries whatever marking the model provider put in it; a webp does not, because converting to webp discards it. The disclosure that counts is the visible one you place, and the AI Act page has the line to use.',
+    dlTree: 'product-1/PNG/front.png  ·  product-1/JPG/front.jpg  ·  product-1/WEBP/front.webp',
+    dlManifest: 'Every delivered file carries a machine-readable IPTC provenance tag that we write ourselves — including the WebP, where converting had discarded whatever the model provider had put in. We add that line and we remove nothing. It is not a guarantee: any tool that re-saves an image can strip it, and providers of systems already on the market have until 2 December 2026 to mark at all. So do not rely on a file identifying itself. The disclosure that counts is the visible one you place, and the AI Act page has the line to use.',
 
     logH: 'Every approval and revision stays readable afterwards.',
     logLede: 'Every approval and every revision is stamped with a time and kept against the individual image, and you can read the sequence back at any time from your own link. Ask, and we will write it out for you as a summary. There is no button here that generates a document, and we are not going to imply there is.',
@@ -100,22 +120,22 @@ const COPY = {
     stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je order zit alleen in ons hoofd.',
 
     galleryH: 'Beeld voor beeld goedkeuren.',
-    galleryLede: 'Bij levering opent de hele bestelling als galerij. Elk beeld heeft twee knoppen en er is geen alles-accepteren — een bestelling die je in één klik goedkeurde, is een bestelling waar niemand naar gekeken heeft.',
+    galleryLede: 'Bij levering opent de hele bestelling als galerij. Elk beeld heeft twee knoppen en er is geen alles-accepteren — een bestelling die je in één klik goedkeurde, is een bestelling waar niemand naar gekeken heeft. Vraag je op één beeld een revisie aan, dan loopt de rest van de bestelling gewoon door.',
     galleryList: [
       ['Goedkeuren', 'Daarmee staat dat beeld op afgerond. De teller bovenaan loopt mee.'],
       ['Revisie aanvragen', 'Opent een notitieveld. Zeg in je eigen woorden wat er niet klopt — het gaat rechtstreeks naar degene die het gemaakt heeft.'],
+      ['De beelden hier zijn op schermformaat', 'Ze staan er om te beoordelen, niet om te gebruiken. Wat je meeneemt is één map — de volgende sectie is wat daarin zit.'],
     ],
-    galleryPh: 'Klantportaal · leveringsgalerij',
-    galleryNote: 'Het scherm voor goedkeuren en revisie aanvragen, één beeld geselecteerd, het revisieveld open.',
 
-    dlH: 'Op maat voor waar het heen gaat.',
-    dlLede: 'Een catalogbeeld en een storyframe zijn niet hetzelfde bestand. De downloads zijn per kanaal gesneden, zodat er na levering niets meer bijgeschaald hoeft te worden.',
+    dlH: 'Eén map, en alles zit erin.',
+    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan hetzelfde beeld drie keer: PNG, JPG en WebP. Zo krijgt een drukker, een productpagina en een feed elk het bestand dat hij wil, en hoeft niemand nog iets om te zetten.',
     dl: [
-      ['Shop', 'Vierkant en 4:5, op de resolutie die een productpagina wil.'],
-      ['Social', '4:5 en 9:16, bijgesneden voor de feed en de story.'],
-      ['Ads', '16:9 en 1:1, met het veilige gebied vrijgehouden.'],
+      ['PNG', 'Lossless, het grootste bestand. Dit is degene voor druk en voor alles wat nog bewerkt wordt.'],
+      ['JPG', 'Het formaat dat elk systeem aanneemt. Voor een productpagina, een lookbook, een mail.'],
+      ['WebP', 'Een derde van de grootte bij dezelfde kwaliteit. Voor je eigen site, zodat een pagina snel laadt.'],
     ],
-    dlManifest: 'Wij voegen zelf geen herkomstdata toe aan een geleverd bestand. Een jpg of png draagt de markering die de modelaanbieder erin zette; een webp niet, omdat de omzetting naar webp die weggooit. De vermelding die telt is de zichtbare die jij plaatst, en op de AI Act-pagina staat de regel die je daarvoor gebruikt.',
+    dlTree: 'product-1/PNG/voorkant.png  ·  product-1/JPG/voorkant.jpg  ·  product-1/WEBP/voorkant.webp',
+    dlManifest: 'Elk geleverd bestand draagt een machine-leesbare IPTC-herkomsttag die wij er zelf in zetten — ook de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Die regel voegen we toe en we halen niets weg. Het is geen garantie: elk programma dat een beeld opnieuw opslaat kan hem verwijderen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare die jij plaatst, en op de AI Act-pagina staat de regel die je daarvoor gebruikt.',
 
     logH: 'Elke goedkeuring en revisie blijft terug te lezen.',
     logLede: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en wordt bewaard bij het betreffende beeld, en je kunt de reeks op elk moment teruglezen via je eigen link. Vraag ernaar en we schrijven het voor je uit als overzicht. Er zit hier geen knop die een document genereert, en we doen ook niet alsof.',
@@ -143,13 +163,21 @@ const c = COPY[lang];
 
 <section class="band-tall pp-hero">
   <div class="container">
-    <div class="statement statement-left">
-      <h1>{c.h1[0]} <em class="pp-accent">{c.h1[1]}</em></h1>
-      <p class="lede">{c.lede}</p>
-      <div class="actions">
-        <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
-        <a href={lp('/how-it-works')} class="btn btn-ghost btn-lg">{c.ctaHow}</a>
+    {/* ── DE KOP EN HET SCHERM NAAST ELKAAR ──────────────────────────────────
+        Hier stond alleen tekst, en dan is de eerste schermvulling van een pagina
+        over een SCHERM een pagina zonder scherm. De figuur staat rechts en de
+        tekst links, en op smal stapelt hij eronder — dezelfde ordening als de
+        dashboardband op de homepage, zodat het één site blijft. */}
+    <div class="pp-hero-grid">
+      <div class="statement statement-left">
+        <h1>{c.h1[0]} <em class="pp-accent">{c.h1[1]}</em></h1>
+        <p class="lede">{c.lede}</p>
+        <div class="actions">
+          <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
+          <a href={lp('/how-it-works')} class="btn btn-ghost btn-lg">{c.ctaHow}</a>
+        </div>
       </div>
+      <div class="pp-stage"><FigDash lang={lang} /></div>
     </div>
   </div>
 </section>
@@ -185,12 +213,7 @@ const c = COPY[lang];
           {c.galleryList.map(([k, v]) => (<div><dt>{k}</dt><dd>{v}</dd></div>))}
         </dl>
       </div>
-      <div class="ph" style="--ph-ratio: 16 / 10">
-        <div>
-          <p class="ph-label">{c.galleryPh}</p>
-          <p class="ph-note">{c.galleryNote}</p>
-        </div>
-      </div>
+      <div class="pp-stage"><FigGallery lang={lang} /></div>
     </div>
   </div>
 </section>
@@ -212,6 +235,9 @@ const c = COPY[lang];
         </div>
       ))}
     </div>
+    {/* Het pad zelf erbij. Drie tegels zeggen WELKE formaten er zijn; deze regel
+        zegt hoe het in de map staat, en dat is de vraag die iemand overhoudt. */}
+    <p class="pp-tree">{c.dlTree}</p>
     <p class="pp-manifest">{c.dlManifest}</p>
   </div>
 </section>
@@ -284,8 +310,43 @@ const c = COPY[lang];
   .pp-states p { margin: 0; font-size: .85rem; line-height: 1.5; color: var(--ink-3); }
   .pp-note { margin: 1.6rem 0 0; font-size: .875rem; line-height: 1.6; color: var(--ink-3); max-width: 64ch; }
 
+  /* ── DE HELD MET ZIJN SCHERM ──────────────────────────────────────────────
+     Tekst links, figuur rechts. De figuurkolom is de bredere van de twee, want de
+     figuur is hier het argument en de tekst de aankondiging.
+
+     `align-items: center` en niet `start`: de kop staat halverwege het scherm en
+     niet op de bovenrand ervan — dat las als een tekst die per ongeluk naast een
+     plaatje was gezet. Zelfde keuze als de dashboardband op de homepage, waar dit
+     precies fout ging omdat er geen expliciete grid-row stond. Hier is één rij, dus
+     kan dat niet gebeuren. */
+  .pp-hero-grid {
+    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(1.8rem, 4vw, 3.5rem); align-items: center;
+  }
+  .pp-hero-grid .statement-left { max-width: none; }
+  @media (max-width: 980px) {
+    .pp-hero-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Het podium om een figuur. Geen kanteling en geen zweving zoals op de homepage:
+     daar zijn het twee schermen die elkaar afwisselen en is de beweging het
+     bindmiddel. Hier staat er één per band en zou dezelfde truc twee keer op één
+     pagina onrustig worden. Wat blijft is de gerichte schaduw die zegt waar de vloer
+     is — DESIGN.md haalt schaduw als dieptesignaal weg, en een zwevend scherm is de
+     uitzondering waar die regel voor bedoeld is. */
+  .pp-stage > :global(*) { box-shadow: 0 22px 46px -24px rgb(0 0 0 / .7); }
+
   .pp-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.8rem, 4vw, 3.5rem); align-items: center; }
   @media (max-width: 860px) { .pp-split { grid-template-columns: 1fr; } }
+
+  /* Het pad in de map. Monospace, want het is een pad en geen zin, en dan is
+     uitlijning informatie. */
+  .pp-tree {
+    margin: 1.4rem 0 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .8rem; line-height: 1.7; color: var(--ink-2);
+    overflow-wrap: anywhere;
+  }
 
   .pp-defs { margin: 0; display: grid; gap: 1rem; }
   .pp-defs dt { font-weight: 700; font-size: .95rem; color: var(--ink); }

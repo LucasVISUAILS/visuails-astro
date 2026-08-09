@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voorbeeld — de virale dienst verkopen | VISUAILS</title>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════════
+  VOORBEELD-HTML — HOE IK DEZE DIENST ZOU VERKOPEN
+  ═══════════════════════════════════════════════════════════════════════════════
+
+  Lucas, 9 augustus 2026: *"Ik wil ook binnenkort een nieuwe service gaan lanceren
+  dat producten van merken verwerkt in viral content posts, die slim gebruik maken
+  van hooks en bewezen posts die eerder al veel likes hebben gehad. Maak een
+  voorbeeld html voor me hoe je dit zou verkopen."*
+
+  Plus het idee: *"Een video met een Instagram bar ertussen dat overloopt naar de
+  foto eronder. Valt ontzettend op (Guerilla marketing). Ipv een burger kan ik
+  bijvoorbeeld de schoen van een klant pakken en de veters van de klant zwaaiend
+  laten hangen over de instagram bar."*
+
+  ── DE VERKOOPGEDACHTE, IN ÉÉN ALINEA ────────────────────────────────────────
+
+  De verleiding is om dit te verkopen als "wij maken virale content". Dat is de
+  belofte die elk bureau doet, die niemand kan nakomen, en die bij de eerste post
+  van 800 views een gesprek oplevert dat je niet wil hebben.
+
+  Dus verkoopt deze pagina iets anders, en het is preciezer én sterker: wij
+  verkopen de EERSTE SECONDE. Een post die niemand stopt, wordt niet gezien, en of
+  iemand stopt wordt beslist door de vorm — niet door het product. Wat wij leveren
+  is een vorm die bewezen stopt, met jouw product erin. Wat het platform daarna
+  doet, is niet van ons, en dat staat er met zoveel woorden.
+
+  Dat is dezelfde eerlijkheid die de rest van de site draagt (de agenda die een
+  volle week als vol aanbiedt, "de vermelding die telt is de zichtbare die jij
+  plaatst"), en het is hier niet alleen netjes maar ook het beste argument: een
+  leverancier die vertelt wat hij NIET kan, is de enige die je kunt geloven over
+  wat hij wél kan.
+
+  ── DE STRUCTUUR, EN WAAROM DEZE ORDE ───────────────────────────────────────
+
+   1 · HET IDEE ALS BEELD. Bovenaan geen tekst maar de truc zelf: een nagemaakte
+       Instagram-balk waar een veter over hangt en op de foto eronder valt. Wie dit
+       ziet, snapt de dienst zonder de kop te lezen. Dit is de enige pagina op de
+       site waar de figuur vóór de belofte komt, en dat is met opzet: het product
+       IS een pattern interrupt, dus moet de pagina er zelf een zijn.
+   2 · WAT HET IS, in één alinea, met de eerlijke grens erin.
+   3 · WAAROM HET WERKT — het mechanisme, in drie stappen. Niet "wij zijn
+       creatief" maar wat er in de eerste seconde gebeurt.
+   4 · DE HOOKBIBLIOTHEEK. Dit is het echte verkoopargument en het krijgt de meeste
+       ruimte: we beginnen niet bij nul, we beginnen bij vormen die al gedraaid
+       hebben. Met de eerlijke voetnoot: bewezen vorm is geen bewezen uitkomst.
+   5 · WAT JE KRIJGT. Concreet, in bestanden en in dagen.
+   6 · WAT WIJ NIET BELOVEN. Een eigen sectie, geen kleine lettertjes. Dit is het
+       stuk dat een merk laat besluiten om te bellen.
+   7 · DE PRIJS. Drie vormen. DE BEDRAGEN HIERONDER ZIJN PLAATSHOUDERS — zie de
+       noot bij die sectie.
+
+  ── NIETS EXTERN, NIETS DAT MEET ────────────────────────────────────────────
+
+  Eén bestand, alle css erin, geen script, geen webfont van buiten, geen embed. De
+  site staat op nul externe scripts zodat de cookiebanner en de privacyverklaring
+  niet aangepast hoeven te worden (zie de noot in src/data/reviews.js), en een
+  voorbeeldpagina die dat wel doet, is een voorbeeld dat je niet kunt overnemen.
+
+  Het "Instagram"-blok is met opzet NAGETEKEND en niet ingebed: geen logo, geen
+  merknaam, geen echte post. Een nagebootste balk is een tekening van een idee; een
+  echte embed is het merk van iemand anders op onze verkooppagina.
+
+  ── WAT ER NOG VAN JOU MOET KOMEN ──────────────────────────────────────────
+
+   · De naam van de dienst. Hieronder staat "STOPPERS" als werktitel omdat een
+     pagina zonder naam niet te lezen is, niet omdat het de naam moet zijn.
+   · De bedragen.
+   · Eén echte case. Zolang die er niet is, staat er nergens een getal over een
+     resultaat — ook geen "tot 2 miljoen views", want dat is het resultaat van
+     iemand anders en het leest als het onze.
+-->
+<style>
+  /* ── DE TOKENS VAN DE SITE, LETTERLIJK ──────────────────────────────────────
+     Overgenomen uit src/styles/global.css, zodat dit voorbeeld naast de echte site
+     gelegd kan worden zonder dat kleur of maat afwijkt. In de echte pagina worden
+     ze geërfd; hier staan ze erin omdat dit bestand op zichzelf moet staan. */
+  :root {
+    --bg: #08090B;
+    --bg-raise: #101216;
+    --surface: #17191E;
+    --surface-2: #1F2229;
+    --ink: #FFFFFF;
+    --ink-2: rgb(255 255 255 / 0.80);
+    --ink-3: rgb(255 255 255 / 0.66);
+    --line: rgb(255 255 255 / 0.12);
+    --line-strong: rgb(255 255 255 / 0.22);
+    --accent: #C6F100;
+    --accent-ink: #08090B;
+    --accent-dim: #ABD200;
+    --clay: #E9963B;
+    --font-body: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-heading: "Big Shoulders Display", "Archivo", Impact, sans-serif;
+    --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink-2);
+    font-family: var(--font-body);
+    font-size: 1rem; line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  img, svg { max-width: 100%; }
+  .wrap { max-width: 72rem; margin: 0 auto; padding: 0 clamp(1.2rem, 4vw, 2.5rem); }
+  .band { padding: clamp(3rem, 7vw, 6rem) 0; }
+  .band + .band { box-shadow: inset 0 1px 0 var(--line); }
+  .band-raise { background: var(--bg-raise); }
+
+  h1, h2 {
+    font-family: var(--font-heading);
+    color: var(--ink); font-weight: 800; line-height: 1.0;
+    letter-spacing: -0.02em; margin: 0; text-wrap: balance;
+  }
+  h1 { font-size: clamp(2.6rem, 7vw, 5rem); }
+  h2 { font-size: clamp(1.9rem, 4vw, 3rem); }
+  h3 { font-family: var(--font-body); color: var(--ink); font-weight: 700; font-size: 1.1rem; line-height: 1.25; margin: 0; }
+  p { margin: 0; text-wrap: pretty; }
+  .lede { font-size: clamp(1.02rem, 1.5vw, 1.18rem); line-height: 1.6; color: var(--ink-2); max-width: 58ch; }
+  .fine { font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 66ch; }
+  .accent { color: var(--accent); font-style: normal; }
+  .eyebrow {
+    display: inline-block;
+    font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .stack > * + * { margin-top: 1.1rem; }
+  .stack-lg > * + * { margin-top: 2.2rem; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 40px; padding: 0 1.4rem;
+    font-family: var(--font-heading); font-weight: 800; font-size: 1rem;
+    text-transform: uppercase; letter-spacing: .06em;
+    border-radius: var(--r-pill); border: 1px solid transparent;
+    text-decoration: none; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { background: var(--accent-dim); }
+  .btn-ghost { color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost:hover { border-color: var(--ink-3); }
+  .btn-lg { min-height: 52px; font-size: 1.05rem; padding: 0 1.8rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: .7rem; }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     1 · HET IDEE ALS BEELD
+     ═══════════════════════════════════════════════════════════════════════════
+
+     Dit blok is de dienst. Drie lagen op elkaar:
+
+       · de bovenste helft: het "product" in beeld (hier een blok kleur met een
+         schoen erin getekend, want er staat geen echte klantfoto in een voorbeeld)
+       · de nagemaakte Instagram-balk eroverheen
+       · en de VETER die over die balk hangt en op de onderste helft doorloopt
+
+     De veter is één SVG-pad dat DWARS OVER de balk ligt: de balk staat op
+     z-index 1, de veter op 2. Dat is de hele truc, en het is ook precies wat een
+     scroller een halve seconde laat twijfelen — de UI hoort de bovenste laag te
+     zijn, en hier is hij het niet.
+
+     WAAROM CSS EN SVG EN GEEN AFBEELDING. Een png van dit idee is niet te
+     hergebruiken en niet aan te passen; dit blok wel. Zet er straks een echte
+     productfoto in de plaats van het gekleurde vlak en het staat er.
+
+     GEEN ANIMATIE. Overwogen: de veter laten zwaaien. Dat maakt de figuur mooier
+     en de uitleg zwakker — een bewegend element trekt de aandacht naar de beweging
+     in plaats van naar de doorbroken laag, en dat laatste is wat verkocht wordt.
+     Een echte post is een video; deze pagina is een uitleg. */
+  .demo {
+    position: relative;
+    max-width: 27rem; margin: 0 auto;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: 0 30px 70px -30px rgb(0 0 0 / .9), inset 0 0 0 1px var(--line);
+  }
+  /* Boven: het "product". 4:5, de verhouding van een feedpost. */
+  .demo-top {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background:
+      radial-gradient(120% 90% at 50% 15%, #2A2E37 0%, #14161A 60%, #0C0E11 100%);
+    display: grid; place-items: center;
+  }
+  .demo-shoe { width: 62%; height: auto; }
+  /* De labels staan LINKS en niet gecentreerd. Gecentreerd liepen ze precies onder
+     de veter door en was geen van de twee nog te lezen — het label hoort het beeld
+     te benoemen en niet met de hoofdrol te vechten. */
+  .demo-hint {
+    position: absolute; left: 1rem; bottom: .8rem;
+    font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  }
+
+  /* ── DE NAGEMAAKTE BALK ────────────────────────────────────────────────────
+     Geen logo en geen merknaam. Wat een balk als balk laat lezen zijn de vormen:
+     een rondje, drie iconen links, één rechts, en een regel tekst. Dat is genoeg
+     — en het is een tekening en geen imitatie van iemands merk. */
+  .demo-bar {
+    position: relative; z-index: 1;
+    background: #0B0C0E;
+    box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
+    padding: .7rem .9rem;
+    display: grid; gap: .5rem;
+  }
+  .demo-icons { display: flex; align-items: center; gap: .75rem; }
+  .demo-ic { width: 20px; height: 20px; color: var(--ink); flex: 0 0 auto; }
+  .demo-ic.is-liked { color: #FF3B5C; }
+  .demo-spacer { flex: 1 1 auto; }
+  .demo-caption { font-size: .74rem; line-height: 1.45; color: var(--ink-2); }
+  .demo-caption b { color: var(--ink); font-weight: 700; }
+  .demo-handle { display: flex; align-items: center; gap: .5rem; }
+  .demo-dot { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); flex: 0 0 auto; }
+  .demo-name { font-size: .74rem; font-weight: 700; color: var(--ink); }
+
+  /* Onder: waar de veter op valt. Lager, want dit is de "tweede" post. */
+  .demo-bottom {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: radial-gradient(110% 120% at 50% 0%, #1A1D22 0%, #0C0E11 70%);
+  }
+  .demo-floor {
+    position: absolute; left: 1rem; bottom: .8rem;
+    font-size: .66rem; color: var(--ink-3); letter-spacing: .08em; text-transform: uppercase;
+  }
+
+  /* ── DE VETER ─────────────────────────────────────────────────────────────
+     Absoluut over alle drie de lagen, op z-index 2 zodat hij OVER de balk valt.
+     `pointer-events: none` want het is een tekening en niet een bediening.
+
+     De hoogte is 78% van de figuur en hij begint op 46%: dat is net boven de balk,
+     zodat het oog ziet dat hij van de schoen komt. Zou hij op de balk beginnen,
+     dan is het een streep en geen veter. */
+  /* De veter begint BIJ DE SCHOEN en niet in de lucht. Eerste versie begon op 44%,
+     net boven de balk, en dan is het een streep die uit het niets komt: het oog
+     ziet geen veter maar een lijn die door de interface loopt. Nu start hij op 26%,
+     tussen de vetergaten, en dan is het hetzelfde beeld met een oorzaak erin. */
+  .demo-lace {
+    position: absolute; z-index: 2;
+    left: 0; right: 0; top: 26%; height: 74%;
+    pointer-events: none;
+  }
+  .demo-lace svg { width: 100%; height: 100%; display: block; }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     DE REST VAN DE PAGINA
+     ═══════════════════════════════════════════════════════════════════════════ */
+  .hero { padding-top: clamp(2.4rem, 6vw, 4.5rem); }
+  .hero-grid {
+    display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(2rem, 5vw, 4rem); align-items: center;
+  }
+  @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
+
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); margin-top: clamp(2rem, 4vw, 3rem); }
+  @media (max-width: 780px) { .steps { grid-template-columns: 1fr; } }
+  .step { background: var(--bg); padding: clamp(1.3rem, 2.5vw, 2rem); }
+  .step-n {
+    font-family: var(--font-heading); font-weight: 800; font-size: 2rem; line-height: 1;
+    color: transparent; -webkit-text-stroke: 1.5px var(--line-strong);
+  }
+  .step h3 { margin: .9rem 0 .45rem; }
+  .step p { font-size: .9rem; color: var(--ink-3); }
+
+  /* De hookbibliotheek. Kaarten met de VORM erin getekend en niet alleen benoemd,
+     want "pattern interrupt" is jargon en een tekening is dat niet. */
+  .hooks { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: clamp(2rem, 4vw, 3rem); }
+  .hook {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md);
+    padding: 1.1rem 1.15rem; display: grid; gap: .55rem; align-content: start;
+  }
+  .hook-fig { height: 74px; border-radius: var(--r-sm); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); position: relative; overflow: hidden; }
+  .hook h3 { font-size: 1rem; }
+  .hook p { font-size: .85rem; color: var(--ink-3); }
+  .hook-tag { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+
+  /* De vier tekeningetjes in de kaarten. Elk is een vorm en geen illustratie:
+     genoeg om te zien wat er bedoeld wordt, te weinig om af te leiden. */
+  .f-break::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 14px; transform: translateY(-50%); background: #0B0C0E; box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line); }
+  .f-break::after { content: ''; position: absolute; left: 42%; top: 12%; bottom: 12%; width: 5px; border-radius: 3px; background: var(--accent); }
+  .f-loop::before { content: ''; position: absolute; inset: 18% 12%; border: 2px dashed var(--line-strong); border-radius: 50%; }
+  .f-loop::after { content: '↻'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--accent); font-size: 1.4rem; }
+  .f-pov::before { content: ''; position: absolute; left: 8%; right: 8%; top: 22%; height: 30%; background: var(--line); border-radius: 3px; }
+  .f-pov::after { content: ''; position: absolute; left: 8%; width: 34%; bottom: 20%; height: 22%; background: var(--accent); border-radius: 3px; }
+  .f-swap { display: grid; grid-template-columns: 1fr 1fr; }
+  .f-swap span { display: block; }
+  .f-swap span:first-child { background: var(--line); }
+  .f-swap span:last-child { background: color-mix(in srgb, var(--accent) 70%, transparent); }
+
+  .list { display: grid; gap: 1px; background: var(--line); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  .row { background: var(--bg); display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 1rem 2rem; padding: 1.15rem clamp(0rem, 1vw, 1rem); }
+  @media (max-width: 700px) { .row { grid-template-columns: 1fr; gap: .3rem; } }
+  .row dt { color: var(--ink); font-weight: 700; font-size: .98rem; }
+  .row dd { margin: 0; font-size: .9rem; color: var(--ink-3); line-height: 1.6; }
+
+  /* ── WAT WIJ NIET BELOVEN ─────────────────────────────────────────────────
+     Een eigen band met een eigen kleur, en niet een voetnoot in 11px. De hele
+     reden dat deze sectie werkt, is dat hij niet weggemoffeld is. */
+  .honest { background: var(--surface); border-radius: var(--r-lg); padding: clamp(1.5rem, 3vw, 2.4rem); border: 1px solid var(--line-strong); }
+  .honest ul { list-style: none; margin: 1.2rem 0 0; padding: 0; display: grid; gap: .9rem; }
+  .honest li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .7rem; font-size: .95rem; line-height: 1.6; color: var(--ink-2); }
+  .honest li::before { content: '—'; color: var(--clay); }
+
+  .prices { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: clamp(2rem, 4vw, 3rem); }
+  .price { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 1.3rem; display: grid; gap: .5rem; align-content: start; }
+  .price.is-pick { border-color: var(--accent); }
+  .price-v { font-family: var(--font-heading); font-weight: 800; font-size: 2.2rem; line-height: 1; color: var(--ink); letter-spacing: -0.02em; }
+  .price-v small { font-family: var(--font-body); font-weight: 400; font-size: .8rem; color: var(--ink-3); letter-spacing: 0; }
+  .price p { font-size: .875rem; color: var(--ink-3); }
+  .price-pick { font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+
+  /* De banner die zegt dat dit een voorbeeld is. Bovenaan en niet onderaan: wie
+     deze pagina doorstuurt, moet het bij de eerste blik zien. */
+  .draft {
+    background: var(--clay); color: #08090B;
+    font-size: .82rem; font-weight: 700; line-height: 1.5;
+    padding: .7rem 1rem; text-align: center;
+  }
+  footer { padding: 3rem 0 4rem; color: var(--ink-3); font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<div class="draft">
+  Voorbeeldpagina — de dienstnaam is een werktitel en de bedragen zijn plaatshouders.
+</div>
+
+<!-- ═══ 1 · HET IDEE ALS BEELD, EN DE BELOFTE ERNAAST ═══════════════════════ -->
+<section class="band hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="stack">
+        <span class="eyebrow">Nieuw · werktitel STOPPERS</span>
+        <h1>Je product in de <em class="accent">eerste seconde</em>.</h1>
+        <p class="lede">
+          Een post die niemand stopt, wordt niet gezien. Of iemand stopt, wordt niet
+          beslist door je product maar door de vorm eromheen — en die vorm is te
+          kiezen. Wij zetten jouw product in een vorm die al bewezen heeft dat hij
+          een duim tegenhoudt, en leveren hem als video, klaar om te plaatsen.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary btn-lg" href="#prijs">Wat het kost</a>
+          <a class="btn btn-ghost btn-lg" href="#hooks">Zie de vormen</a>
+        </div>
+        <p class="fine">
+          Eén product, één vorm, drie dagen. Wij beloven de vorm en de uitvoering —
+          niet het aantal views. Waarom we dat laatste niet doen, staat verderop en
+          niet in de kleine lettertjes.
+        </p>
+      </div>
+
+      <!-- De figuur. Zie de langere noot bij .demo in de stijl hierboven. -->
+      <figure class="demo" aria-label="Voorbeeld: een nagemaakte feedbalk waar een veter over hangt en op het beeld eronder doorloopt.">
+        <div class="demo-top">
+          <!-- Een schoen, getekend. Geen klantfoto in een voorbeeldpagina. -->
+          <svg class="demo-shoe" viewBox="0 0 200 120" fill="none" aria-hidden="true">
+            <path d="M18 92c0-10 4-18 12-24l30-22c6-4 12-6 19-6h14c8 0 15 4 19 11l10 17c3 5 8 8 14 9l31 5c8 1 14 8 14 16v6c0 5-4 9-9 9H27c-5 0-9-4-9-9z"
+                  fill="#E8E8E4"/>
+            <path d="M18 92c0-4 1-7 2-10h163c2 3 3 6 3 10v6c0 5-4 9-9 9H27c-5 0-9-4-9-9z" fill="#C9C9C4"/>
+            <path d="M62 46l22 14M74 36l22 14M86 27l22 14" stroke="#9A9A95" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="150" cy="76" r="6" fill="#C6F100"/>
+          </svg>
+          <span class="demo-hint">jouw product</span>
+        </div>
+
+        <!-- De nagemaakte balk. Vormen, geen merk. -->
+        <div class="demo-bar">
+          <div class="demo-icons">
+            <svg class="demo-ic is-liked" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-8.4-5.2-9.7-10.2C1.2 6.9 3.8 4 7.1 4c2 0 3.6 1.1 4.9 2.9C13.3 5.1 14.9 4 16.9 4c3.3 0 5.9 2.9 4.8 6.8C20.4 15.8 12 21 12 21z"/></svg>
+            <svg class="demo-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-12.3 7.6L3 21l1.5-5.4A8.5 8.5 0 1 1 21 12z" stroke-linejoin="round"/></svg>
+            <svg class="demo-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M22 3 11 14M22 3l-7 19-4-8-8-4z" stroke-linejoin="round"/></svg>
+            <span class="demo-spacer"></span>
+            <svg class="demo-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 21l-7-5-7 5V4h14z" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="demo-handle">
+            <span class="demo-dot"></span>
+            <span class="demo-name">jouwmerk</span>
+          </div>
+          <p class="demo-caption"><b>jouwmerk</b> De veters zitten los. Wacht even —</p>
+        </div>
+
+        <div class="demo-bottom">
+          <span class="demo-floor">en hij loopt gewoon door</span>
+        </div>
+
+        <!-- DE VETER. Over alles heen, z-index 2. Dit is de dienst in één pad. -->
+        <div class="demo-lace" aria-hidden="true">
+          <svg viewBox="0 0 400 300" preserveAspectRatio="none" fill="none">
+            <!-- Een schaduw eerst, zodat de veter niet op de balk geplakt lijkt maar
+                 erboven hangt. Zonder dit leest het als een streep. -->
+            <path d="M186 2 C186 46, 150 88, 168 138 C188 194, 258 206, 272 264"
+                  stroke="rgb(0 0 0 / .55)" stroke-width="16" stroke-linecap="round" transform="translate(6 8)"/>
+            <path d="M186 2 C186 46, 150 88, 168 138 C188 194, 258 206, 272 264"
+                  stroke="#E8E8E4" stroke-width="11" stroke-linecap="round"/>
+            <!-- Het metalen uiteinde. Eén detail is genoeg om het een veter te maken. -->
+            <rect x="262" y="254" width="20" height="34" rx="5" fill="#C6F100" transform="rotate(14 272 271)"/>
+          </svg>
+        </div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 2 · WAT HET IS ═════════════════════════════════════════════════════ -->
+<section class="band band-raise">
+  <div class="wrap stack">
+    <span class="eyebrow">Wat het is</span>
+    <h2>Een vorm die stopt, met jouw product erin.</h2>
+    <p class="lede">
+      We nemen één product van je en zetten het in een postvorm die we kiezen uit
+      een bibliotheek van vormen die eerder gedraaid hebben. Je krijgt de video —
+      verticaal, met en zonder geluid leesbaar — plus de losse beelden eruit, in de
+      formaten die je feed en je advertentiemanager willen.
+    </p>
+    <p class="fine">
+      Het voorbeeld hierboven is één vorm: de post breekt zijn eigen kader. De
+      interface hoort de bovenste laag te zijn, en dat is hij niet. Dat is een halve
+      seconde twijfel, en een halve seconde is het hele verschil tussen
+      doorscrollen en kijken.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step-n">01</span>
+        <h3>De vorm wordt gekozen, niet verzonnen</h3>
+        <p>
+          We beginnen bij een vorm die het al gedaan heeft en niet bij een leeg
+          blad. Wat we aanpassen is wat er in de vorm zit: jouw product, jouw kleur,
+          jouw toon.
+        </p>
+      </div>
+      <div class="step">
+        <span class="step-n">02</span>
+        <h3>De eerste seconde is de hele opdracht</h3>
+        <p>
+          Er gebeurt iets in beeld dat niet hoort te kunnen. Geen tekstballon met
+          "wacht tot het einde" — dat is een belofte, en een belofte kost al de
+          seconde die je wilde winnen.
+        </p>
+      </div>
+      <div class="step">
+        <span class="step-n">03</span>
+        <h3>En dan is het nog steeds jouw product</h3>
+        <p>
+          De truc mag het product niet opeten. Wie de post navertelt, moet jouw
+          artikel navertellen — anders heb je een grappige video gekocht in plaats
+          van een verkoop.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 3 · DE HOOKBIBLIOTHEEK ═════════════════════════════════════════════ -->
+<section class="band" id="hooks">
+  <div class="wrap stack">
+    <span class="eyebrow">De bibliotheek</span>
+    <h2>Vier vormen om mee te beginnen.</h2>
+    <p class="lede">
+      Elke vorm hieronder is een patroon dat we uit posts hebben gehaald die het
+      gedaan hebben — in jouw categorie waar dat kan, en anders in een categorie
+      waar hetzelfde soort duim scrolt. De bibliotheek groeit; wat niet meer werkt,
+      gaat eruit.
+    </p>
+
+    <div class="hooks">
+      <article class="hook">
+        <div class="hook-fig f-break"></div>
+        <span class="hook-tag">Kaderbreuk</span>
+        <h3>Iets loopt door de interface</h3>
+        <p>
+          Een veter, een druppel, een mouw die over de balk valt en eronder verder
+          gaat. De laag die altijd bovenop hoort te liggen, ligt eronder — en dat
+          klopt niet op een manier waar je naar moet kijken.
+        </p>
+      </article>
+
+      <article class="hook">
+        <div class="hook-fig f-loop"></div>
+        <span class="hook-tag">Naadloze lus</span>
+        <h3>Het einde is het begin</h3>
+        <p>
+          De laatste frame is de eerste. Je kijkt hem twee keer voordat je merkt dat
+          hij opnieuw begon, en de tweede keer zie je het product pas echt.
+        </p>
+      </article>
+
+      <article class="hook">
+        <div class="hook-fig f-pov"></div>
+        <span class="hook-tag">Eerste persoon</span>
+        <h3>Alsof je het zelf vasthoudt</h3>
+        <p>
+          Camera op ooghoogte, handen in beeld, geen studio. De vorm van een video
+          die iemand zelf maakte, met de kwaliteit van iets dat wél gemaakt is.
+        </p>
+      </article>
+
+      <article class="hook">
+        <div class="hook-fig f-swap"><span></span><span></span></div>
+        <span class="hook-tag">Omslag</span>
+        <h3>Ervoor en erna, in één beweging</h3>
+        <p>
+          Niet twee foto's naast elkaar, maar één beweging waarin het omslaat. Het
+          werkt omdat het oog de overgang wil zien en niet het resultaat.
+        </p>
+      </article>
+    </div>
+
+    <p class="fine">
+      Een bewezen vorm is geen bewezen uitkomst. Dat een vorm ergens anders honderd­duizenden
+      keren is bekeken, zegt dat de vorm werkt in die context — niet dat jouw post dat
+      aantal haalt. Wat het wél doet: je begint niet bij nul, en de eerste seconde is
+      niet meer de gok.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 4 · WAT JE KRIJGT ══════════════════════════════════════════════════ -->
+<section class="band band-raise">
+  <div class="wrap stack">
+    <span class="eyebrow">Wat je krijgt</span>
+    <h2>Eén map, en er zit alles in.</h2>
+    <dl class="list">
+      <div class="row">
+        <dt>De video</dt>
+        <dd>
+          9:16, en 4:5 en 1:1 uit dezelfde montage. Leesbaar zonder geluid, want de
+          meeste mensen kijken zo. Met geluid erbij als je het gebruikt.
+        </dd>
+      </div>
+      <div class="row">
+        <dt>De losse beelden</dt>
+        <dd>
+          De frames waar het gebeurt, als stilstaand beeld — voor een advertentie, een
+          productpagina of een verhaal. PNG, JPG en WebP, in mappen per gebruik.
+        </dd>
+      </div>
+      <div class="row">
+        <dt>De caption en de eerste reactie</dt>
+        <dd>
+          De tekst eronder hoort bij de vorm en wordt niet los verzonnen. Inclusief
+          de eerste reactie die je zelf plaatst — dat is de plek waar de link hoort
+          en niet in de video.
+        </dd>
+      </div>
+      <div class="row">
+        <dt>Beeld voor beeld goedkeuren</dt>
+        <dd>
+          Hetzelfde portaal als bij een gewone bestelling: je ziet de montage, keurt
+          hem goed of zegt in je eigen woorden wat er niet klopt, en de map komt pas
+          los als je tevreden bent.
+        </dd>
+      </div>
+      <div class="row">
+        <dt>Drie werkdagen</dt>
+        <dd>
+          Vanaf het moment dat je product bij ons is en de vorm gekozen is. Eén
+          revisieronde zit erin.
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<!-- ═══ 5 · WAT WIJ NIET BELOVEN ═══════════════════════════════════════════ -->
+<section class="band">
+  <div class="wrap">
+    <div class="honest">
+      <span class="eyebrow">Wat wij niet beloven</span>
+      <h2 style="margin-top:.6rem">Geen views, geen algoritme, geen garantie.</h2>
+      <p class="lede" style="margin-top:1rem">
+        Dit is de sectie die de meeste bureaus weglaten, en de reden dat wij hem
+        erin zetten: als wij views zouden beloven, zou je ons daarop moeten
+        vertrouwen — en dat kan niemand, want niemand bezit de feed.
+      </p>
+      <ul>
+        <li>
+          <span>
+            <b>Geen aantal.</b> We noemen geen views, geen likes en geen
+            volgersgroei. Wat een post doet, hangt af van je publiek, je timing en
+            een systeem dat niemand van buiten kan lezen.
+          </span>
+        </li>
+        <li>
+          <span>
+            <b>Geen andermans cijfer als ons cijfer.</b> Er staat op deze pagina
+            geen "tot 2 miljoen views". Dat cijfer is van de post waar de vorm uit
+            komt, en die was van iemand anders.
+          </span>
+        </li>
+        <li>
+          <span>
+            <b>Geen advertentiebeheer.</b> Wij maken het materiaal. Plaatsen,
+            targeten en budget bijstellen doe jij of je bureau — en dat is beter,
+            want daar zit je publiek en niet bij ons.
+          </span>
+        </li>
+        <li>
+          <span>
+            <b>Geen imitatie van een merk.</b> We bouwen geen post na van een ander
+            merk en gebruiken geen logo's of muziek waar je geen recht op hebt. Een
+            vorm is vrij; een uitvoering is dat niet.
+          </span>
+        </li>
+        <li>
+          <span>
+            <b>En het staat erbij dat het gemaakt is.</b> Elk bestand draagt onze
+            machine-leesbare herkomsttag, en de zichtbare vermelding op je post
+            plaats je zelf — de AI Act-pagina heeft de regel die je daarvoor
+            gebruikt.
+          </span>
+        </li>
+      </ul>
+      <p class="fine" style="margin-top:1.4rem">
+        Wat we wél beloven: de vorm, de uitvoering, de drie dagen en de revisieronde.
+        Werkt de post niet, dan kijken we samen naar de vorm en niet naar jouw feed.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 6 · DE PRIJS ═══════════════════════════════════════════════════════ -->
+<!--
+  DE BEDRAGEN HIERONDER ZIJN PLAATSHOUDERS.
+
+  Ik heb ze erin gezet omdat een prijssectie zonder getal niet te beoordelen is —
+  je kunt aan een lege tabel niet zien of de opzet klopt. De VORM is wel een
+  voorstel dat ik zou verdedigen:
+
+    · per post, om te beginnen zonder gesprek over een abonnement
+    · een set van vier, want één post is geen test; vier vormen naast elkaar
+      vertellen je wélke vorm bij jouw publiek werkt, en dat is het echte
+      product van deze dienst
+    · per maand, voor wie het als kanaal draait
+
+  De middelste is de aanbevolen, en dat is niet een verkooptruc maar wat de dienst
+  waard maakt: vier vormen geven je een antwoord, één post geeft je een uitkomst.
+-->
+<section class="band band-raise" id="prijs">
+  <div class="wrap stack">
+    <span class="eyebrow">Wat het kost</span>
+    <h2>Drie vormen, en de middelste is de nuttigste.</h2>
+    <p class="lede">
+      Eén post vertelt je of hij gewerkt heeft. Vier vertellen je waarom. Dat is het
+      verschil, en het is de reden dat de set de aanbevolen is.
+    </p>
+
+    <div class="prices">
+      <article class="price">
+        <h3>Eén post</h3>
+        <p class="price-v">€ 000 <small>excl. btw</small></p>
+        <p>Eén product, één vorm, één revisieronde. Om te kijken wat het is.</p>
+      </article>
+
+      <article class="price is-pick">
+        <span class="price-pick">Aanbevolen</span>
+        <h3>Een set van vier</h3>
+        <p class="price-v">€ 0.000 <small>excl. btw</small></p>
+        <p>
+          Vier vormen op hetzelfde product, in één levering. Je plaatst ze in vier
+          weken en weet daarna welke vorm bij jouw publiek stopt — dat weet je van
+          één post niet.
+        </p>
+      </article>
+
+      <article class="price">
+        <h3>Per maand</h3>
+        <p class="price-v">€ 0.000 <small>per maand</small></p>
+        <p>
+          Vier posts per maand, wisselende producten, en de vorm die het bij jou
+          doet krijgt voorrang. Maandelijks opzegbaar.
+        </p>
+      </article>
+    </div>
+
+    <div class="actions" style="margin-top:2rem">
+      <a class="btn btn-primary btn-lg" href="#">Stuur één product in</a>
+      <a class="btn btn-ghost btn-lg" href="#">Vraag naar een vorm voor jouw product</a>
+    </div>
+    <p class="fine">
+      Weet je nog niet of het bij je past? Stuur één product en één vorm. Dat is de
+      kleinste stap die een echt antwoord geeft.
+    </p>
+  </div>
+</section>
+
+<footer class="wrap">
+  Voorbeeldpagina, 9 augustus 2026. Geen externe scripts, geen embeds, geen echte
+  posts — de feedbalk in de figuur is nagetekend.
+</footer>
+
+</body>
+</html>
