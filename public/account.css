@@ -1682,3 +1682,59 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .codeagain form.login { margin-top: .7rem; max-width: 15rem; gap: .5rem; grid-template-columns: minmax(0, 1fr); }
 .codeagain form.login input[type="email"] { padding: .55rem .7rem; font-size: .92rem; }
 .codeagain .btn { min-height: 34px; font-size: .78rem; width: max-content; }
+
+/* ── FACTUREN ───────────────────────────────────────────────────────────────
+   Een tabel en geen kaartenlijst. De rest van dit dashboard werkt met kaarten,
+   omdat een bestelling een verloop heeft dat ruimte nodig heeft; een factuur
+   heeft vier feiten en één knop, en vier feiten in een kaart zijn vier regels
+   waar een rij volstaat. Kolommen laten je bovendien vergelijken — bedragen
+   onder elkaar zijn de reden dat een boekhouding tabellen gebruikt.
+
+   GEEN RADIUS OP DE CELLEN. Zie de tokennoot boven --r-md: een tabelcel neemt
+   geen hoek. Alleen de kaart eromheen doet dat. */
+.invtable { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.invtable th {
+  text-align: left; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
+  font-weight: 600; color: var(--ink-3); padding: 0 .8rem .55rem 0;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+.invtable td { padding: .8rem .8rem .8rem 0; box-shadow: inset 0 -1px 0 var(--line); vertical-align: middle; }
+.invtable tr:last-child td { box-shadow: none; }
+.invtable th:last-child, .invtable td:last-child { padding-right: 0; }
+
+/* Bedragen rechts en met vaste cijferbreedte, zodat de komma's op één lijn
+   staan. Zonder tabular-nums schuiven ze per rij op en is de kolom niet meer
+   te scannen — precies wat een bedragkolom moet kunnen. */
+.invtable .invamount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.invtable .invact { text-align: right; white-space: nowrap; }
+.invtable .invact .btn { min-height: 34px; font-size: .78rem; width: max-content; margin-left: auto; }
+
+/* De twee toestanden zonder knop: 'wordt gemaakt' en 'ingetrokken'. Bewust géén
+   .pill — die heeft een rand en een hoek, en in een kolom die verder alleen
+   knoppen bevat leest dat als iets om op te drukken. Zie de noot bij `action` in
+   invoicesBody(). */
+.invstate { font-size: .8rem; color: var(--ink-3); }
+
+/* "Btw verlegd" hoort bij het nummer erboven en niet in een eigen kolom: het
+   geldt voor een kleine minderheid van de facturen, en een kolom die bij de
+   meeste rijen leeg is leest als ontbrekende gegevens. */
+.invflag {
+  display: block; margin-top: .15rem; font-size: .72rem; font-weight: 400;
+  letter-spacing: .02em; color: var(--ink-3);
+}
+
+/* Onder ~40rem is vijf kolommen te veel. De tabel wordt dan een lijst van
+   blokken: het nummer als kop, de rest als label-waardeparen uit de
+   ::before — de koprij verdwijnt, dus het label moet mee naar de cel. */
+@media (max-width: 40rem) {
+  .invtable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .invtable tr { display: block; padding: .9rem 0; box-shadow: inset 0 -1px 0 var(--line); }
+  .invtable tr:last-child { box-shadow: none; }
+  .invtable td { display: flex; gap: .8rem; justify-content: space-between; align-items: baseline;
+                 padding: .18rem 0; box-shadow: none; }
+  .invtable td::before { content: attr(data-label); font-size: .78rem; color: var(--ink-3); }
+  .invtable td:first-child { display: block; margin-bottom: .35rem; }
+  .invtable td:first-child::before { content: none; }
+  .invtable .invact { justify-content: flex-start; margin-top: .5rem; }
+  .invtable .invact .btn { margin-left: 0; }
+}

@@ -38,7 +38,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { wrangler } from './lib/wrangler.mjs';
+import { wrangler, warmLogin } from './lib/wrangler.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'backups');
@@ -78,6 +78,12 @@ const stamp = (() => {
 fs.mkdirSync(OUT, { recursive: true });
 
 console.log(`VISUAILS · back-up ${stamp}\n`);
+
+// Token vernieuwen vóór de eerste aanroep, anders valt een back-up om op een
+// 7403 die geen rechtenprobleem is — zie warmLogin() in lib/wrangler.mjs.
+// Juist hier vervelend: een back-up die niet draait, merk je pas als je hem
+// nodig hebt.
+await warmLogin();
 
 // ── 1 · de database ───────────────────────────────────────────────────────────
 const sqlFile = path.join(OUT, `${stamp}-d1.sql`);

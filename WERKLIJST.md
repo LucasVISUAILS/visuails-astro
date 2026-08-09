@@ -10,14 +10,69 @@ Opgesteld 6 augustus 2026. Dit is een werkbestand, geen rapport: streep door wat
 
 ## 0 · Eerst, want de rest wacht erop
 
+## 0a · Migraties die nog moeten draaien
+
+Ze zitten allemaal in één plakbestand, omdat `npm run migrate` vastloopt op
+Cloudflare-foutcode 7403 (een sleutelprobleem op je eigen machine, niet op de
+database).
+
+- [x] ~~0019 (verkoopkanaal in de brand kit) en 0020 (tevredenheid en reviews)~~ — door Lucas gedraaid.
+- [x] ~~0021 (facturen)~~ — gedraaid 9 augustus 2026 met `npm run migrate`, nadat bleek dat een `npx wrangler whoami` ervoor de 7403 wegneemt. `invoice_series`, `invoices` en de vier indexen staan erin. Het plakken in het D1-console was niet meer nodig; `MIGRATIE-0021-PLAKKEN.sql` blijft staan als terugval.
+- [x] ~~Wrangler-autorisatie: de 7403 verklaard.~~ Het was geen rechtenprobleem maar een verlopen OAuth-toegangstoken. `npm run migrate`, `npm run backup` en `npm run fetch:order` vernieuwen hem nu zelf voordat ze beginnen (`warmLogin()` in scripts/lib/wrangler.mjs), en `npm run check:wrangler` meet deze oorzaak nu als eerste. Roep je wrangler met de hand aan en krijg je 7403: eerst `npx wrangler whoami`.
+- [ ] 🔴 **Deployen, en dan VISUAILS Studio → Facturen openen.** De tabellen staan in de database, de code staat nog alleen op je schijf. Na de deploy haalt die sectie de achterstand van je betaalde testbestellingen zelf in — maximaal vijf per bezoek, met de betaaldatum als factuurdatum. Zie je nummers verschijnen, dan werkt de hele keten.
+- [ ] 🔴 **`SELLER_ADDRESS` als secret in Pages zetten, vóór de eerste echte factuur.** Zonder die variabele valt `sellerOf()` terug op een voorbeeldadres. Je huisadres hoort daar niet in — zet een adres dat je op een factuur wilt zien. `VISUAILS_IBAN` erbij als je het rekeningnummer erop wilt.
+
+---
+
+## Facturen (gebouwd 9 augustus 2026)
+
+Wat er staat: migratie 0021 (`invoice_series` + `invoices`), `src/lib/invoice.js`
+(nummer uitgeven, momentopname, idempotent), `src/lib/invoicePdf.js` (de pdf, met
+alle drie de btw-behandelingen en de wettelijk vereiste teksten),
+`src/lib/invoiceMail.js` (de mail "Betaling ontvangen" met de pdf als bijlage —
+die mail bestond niet, dus iemand betaalde en hoorde daarna niets), de sectie
+**Facturen** in VISUAILS Studio met `/account/invoices/<id>/pdf`, en de aanroep uit
+de Mollie-webhook. Onder test in `tests/invoice-pdf.test.mjs` (141),
+`tests/invoice-issue.test.mjs` (63, tegen een echte SQLite) en
+`tests/account-invoices.test.mjs`.
+
+Wat er nog niet is, en bewust niet:
+
+- [ ] 🟡 **Creditnota's.** Een refund wordt wel geboekt (`refunded_cents`) maar er komt geen document tegenover. Dat is een eigen nummerreeks en een eigen rij die naar de factuur verwijst — geen tweede factuur op dezelfde bestelling, want dat weigert het schema met opzet.
+- [ ] 🟡 **De factuur naar de studio.** Nu gaat hij alleen naar de klant. Voor je eigen administratie is de bron `invoices` + R2, en dat is genoeg zolang je erbij kunt; een maandoverzicht in het adminscherm zou hier de logische volgende stap zijn.
+- [ ] 🟢 **Een herstelroute voor `pending` in het adminscherm.** Blijft een factuur op 'pending' staan, dan repareert het klantbezoek hem al. Er is nog geen knop om dat vanaf jouw kant te forceren; de index `idx_invoices_pending` staat er wel voor klaar.
+- [ ] 🟢 **`SELLER_ADDRESS` als secret zetten.** Zonder die variabele valt `sellerOf()` terug op een voorbeeldadres. Zet hem in de Pages-omgeving vóór de eerste echte factuur, samen met `VISUAILS_IBAN` als je wilt dat het rekeningnummer erop staat.
+
+---
+
+## Wat de site belooft maar niet doet (onderzocht 9 augustus 2026)
+
+Elk punt hieronder is met bestandsverwijzingen bewezen, niet vermoed. Gesorteerd op ernst.
+
+- [ ] 🔴 **De bewaartermijnen worden door niets uitgevoerd.** /terms en /privacy beloven dat aangeleverde foto's 90 dagen na afronding worden verwijderd en visuals 12 maanden bewaard blijven; /portal zegt zelfs dat de bronbestanden "op dezelfde klok" verdwijnen. Er is geen enkele geplande taak (geen `[triggers]` in wrangler.toml, geen `scheduled`-handler), en `files.expires_at` wordt nergens geschreven. De foto's van elke klant staan er na 90 dagen nog. Dit klemt twee kanten op: contractbreuk én een AVG-bewaartermijn die je zelf op twee juridische pagina's hebt vastgelegd. De 90-dagen-*linkexpiry* werkt wél.
+- [ ] 🔴 **"Eén proefvisual per bedrijf" wordt niet gehandhaafd.** `functions/api/order.js` gaat bij `test-sample` rechtstreeks naar de betaling zonder ooit op een eerdere proef te controleren. Eén merk kan zijn hele collectie voor €1 per product laten maken. Het enige punt op deze lijst dat direct geld kost.
+- [ ] 🔴 **De bevestigingsmail zegt "incl. 21% btw" ook bij 0%.** `customerEmail()` krijgt de btw-uitkomst wél mee maar leest die parameter nergens; "21%" staat hard in de regel. Een verleggingsklant krijgt twee keer hetzelfde bedrag te zien met "excl." en "incl. 21%" ernaast — in de enige mail die zijn bestelling bevestigt.
+- [ ] 🔴 **"De verlegging wordt achteraf op je factuur rechtgezet" is sinds migratie 0015 onwaar.** De verlegging wordt bij het afrekenen toegepast. Staat op /pricing, /how-it-works, /start, in de FAQ én in de bevestigingsmail. Een Duitse klant betaalt al 0% maar leest dat hij 21% betaalt en een correctie krijgt die niet komt.
+- [ ] 🔴 **De tevredenheidsvraag wordt nooit gesteld.** "We vragen of je tevreden bent, en zetten recht wat dat niet is" staat op zeven pagina's, in de bevestigingsmail en in /terms §10 — en het is de belofte die de revisierondes heeft vervangen. Tabel `order_feedback` staat in migratie 0020 (nog te draaien, zie boven); nul code raakt hem aan.
+- [ ] 🔴 **Een order die de btw-poort tegenhoudt komt er niet meer uit.** Geen betaallink, en er is geen adminscherm dat de beoordeling afrondt: `orders.review_state` wordt één keer geschreven en nergens gelezen. Een klant buiten de EU krijgt een bevestiging zonder bedrag en zonder betaalknop.
+- [ ] 🟡 **De €250 merkmodel-credit wordt niet verrekend.** Alle treffers zijn presentatie in .astro-bestanden; `quote.js` kent het begrip niet en er is geen kolom om de teller bij te houden. Een geldbelofte met een rekensom die de pagina zelf uitschrijft.
+- [ ] 🟡 **"Downloads per kanaal gesneden" bestaat niet.** Eén rij in `files` is één bestand; `preview_key` is expliciet géén uitsnede. De klant downloadt wat de studio uploadde en schaalt alles zelf bij — precies het werk waarvan /portal zegt dat het niet meer nodig is.
+- [ ] 🟡 **De Engelse /ai-act-lead spreekt §6 van dezelfde pagina tegen.** "We say so on the file" tegenover "We add nothing […] do not rely on a file identifying itself". De Nederlandse lead klopt. Dit is de pagina waarmee je je zorgvuldigheid verkoopt.
+- [ ] 🟡 **Niet-betaalde leverdata worden nooit vrijgegeven.** `window_expires_at` wordt gezet, maar `functions/api/capacity.js` filtert er niet op. Wie niet betaalt houdt zijn week voor altijd bezet, en de volgende klant ziet "vol" voor een vrije week.
+- [ ] 🟡 **"Mail ons en we sturen een nieuwe link" kan niemand uitvoeren.** `freshPortalLink()` bestaat, maar beide aanroepen zitten achter een poort die nieuwe bestanden vereist. Na 90 dagen — precies wanneer de klant volgens de voorwaarden mag mailen — is er geen route.
+- [ ] 🟡 **Geen aftelling bij de leverdatum**, terwijl de homepage die beschrijft. En /portal noemt zes statussen; de code heeft er vijf, waarvan "Revision" en "Closed" niet als status bestaan.
+- [ ] 🟢 **/demo belooft te weinig**: zegt dat per beeld goedkeuren vanaf 10 producten geldt, terwijl elke betaalde bestelling het sinds 7 augustus mag.
+
+Niet vast te stellen uit code, wel na te gaan: de verwerkersovereenkomsten met Resend, Mollie, Cloudflare en de modelaanbieder (/privacy §5 en §8 beloven die), en hoe de ICP-opgaaf feitelijk gedaan wordt — `icp_reported_at` en `needsIcp()` bestaan, maar er wordt nooit naar geschreven.
+
 - [ ] 🔴 **Juridische pagina's laten nakijken.** Op /terms, /privacy en /cookie-policy stonden tot 8 augustus 2026 noten aan de klant dat het "een algemene template" is en "door een jurist nagekeken moet worden". Die zijn van de klantpagina's gehaald — ze hoorden daar niet, want ze vertelden iedere klant dat het contract dat hij aanging niet was nagekeken. **Het onderliggende punt staat nog: de teksten zijn niet door een jurist gezien.** Neem dit mee in dezelfde ronde als de btw-verlegging.
 - [ ] 🔴 **/terms §9 spreekt zichzelf en de site tegen over betalen.** De voorwaarden zeggen "kleine bestellingen en proefvisuals worden bij het afrekenen volledig betaald" en "een gereserveerde bestelling in twee delen: 50% bij bevestiging, 50% voor oplevering". De bestelstroom, /pricing, /faq en /how-it-works zeggen alle vier iets anders: kleine bestellingen op levering, gereserveerde bestellingen ineens vóór productie, met zeven dagen betaaltermijn. Er bestaat nergens een 50/50-splitsing. Welke kant waar is, is een bedrijfsbeslissing — niet iets om in stilte gelijk te trekken.
 - [ ] 🟡 **/terms §4 noemt video, maandplannen en merkmodel "op aanvraag geprijsd"** terwijl /pricing, /video, /custom-models en de JSON-LD €69 per clip, €390/€790/€1.690 per maand en €1.250 setup als vaste prijzen publiceren.
 - [ ] 🔴 `npm run build` draaien en deployen. Alles van vandaag staat nog alleen op je schijf: het nieuwe logo in de topbar, de favicon, het mail-briefhoofd, en de drie servicepagina's
 - [ ] 🔴 Na de deploy: `https://visuails.com/favicon.ico` en `/img/mail/mark-groen.png` openen in je browser om te zien dat ze laden
 - [ ] 🔴 Search Console → URL-inspectie op `https://visuails.com/` → Indexering aanvragen. Daarna hetzelfde voor `https://www.visuails.com/`, zodat Google de 301 tegenkomt
-- [ ] Migratie `0008` draaien tegen remote D1 (idempotent, dus twee keer draaien kan geen kwaad)
-- [ ] Wrangler-autorisatie fixen — de 7403 blokkeert `npm run fetch:order` en het draaien van migraties vanaf de CLI
+- [x] ~~Migratie `0008` draaien tegen remote D1~~ — meegegaan in de run van 9 augustus 2026 (56 opdrachten uitgevoerd, 81 overgeslagen omdat ze er al stonden).
+- [x] ~~Wrangler-autorisatie fixen — de 7403 blokkeert `npm run fetch:order` en het draaien van migraties vanaf de CLI~~ — zie boven: verlopen toegangstoken, wordt nu automatisch vernieuwd.
 - [ ] Rond 11 augustus: DMARC-rapporten bekijken en beslissen of `p=quarantine` aan kan
 
 ---
@@ -67,7 +122,7 @@ Ja. Mollie heeft een Subscriptions API bovenop mandaten: je laat de klant één 
 - [ ] Zolang je bij Mollie blijft: de verlegging-op-de-factuur-route netjes dichttimmeren. Nu betaalt iedereen 21% en wordt een geldig EU-btw-nummer achteraf rechtgezet, wat klopt maar handwerk is
 - [ ] Btw-nummers valideren via VIES bij het bestellen in plaats van achteraf
 - [ ] 🟡 De €1 proefvisual: als het een échte visual is die de klant krijgt, is het een levering tegen vergoeding en hoort er btw op. Wil je puur verifiëren dat een kaart geldig is, dan is een **€0-eerste betaling** de schone route — Mollie staat dat toe voor creditcard en PayPal, en dan is er geen levering en dus geen btw-vraag
-- [ ] Factuurnummering en bewaarplicht regelen (doorlopend genummerd, zeven jaar)
+- [x] ~~Factuurnummering en bewaarplicht regelen (doorlopend genummerd, zeven jaar)~~ — gedaan 9 augustus 2026, zie "Facturen" boven. Reeks per jaar zonder gaten, momentopname per factuur, pdf in R2 en zeven jaar bewaard.
 
 > Ik ben geen belastingadviseur. Bovenstaande is hoe de systemen werken, niet wat jij fiscaal moet doen — laat de btw-behandeling van de proefvisual en de verlegging één keer bevestigen door je boekhouder, dat is een half uur dat je later dubbel terugverdient.
 

@@ -39,7 +39,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { wrangler } from './lib/wrangler.mjs';
+import { wrangler, warmLogin } from './lib/wrangler.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR = path.join(ROOT, 'migrations');
@@ -125,13 +125,28 @@ function statements(sql) {
  */
 async function query(sql, attempt = 1) {
   const r = await wrangler(['d1', 'execute', DB, scope, '--json', '--command', sql]);
-  // 7403 komt en gaat. Eén keer opnieuw proberen na een adempauze scheelt een
-  // afgebroken run die je daarna met de hand moet uitzoeken; blijft hij komen,
-  // dan is het geen hapering maar een autorisatieprobleem en hoort het script
-  // te stoppen in plaats van te blijven kloppen.
+  /*
+   * ── DE RETRY VERNIEUWT NU HET TOKEN IN PLAATS VAN TE WACHTEN ───────────────
+   *
+   * Hier stond "7403 komt en gaat", met drie seconden wachten en dan hetzelfde
+   * nog een keer. Dat hielp zelden, en 9 augustus 2026 werd duidelijk waarom:
+   * 7403 is hier geen hapering bij Cloudflare maar een verlopen
+   * OAuth-toegangstoken (zie warmLogin() in lib/wrangler.mjs). Drie seconden
+   * later is datzelfde token nog even verlopen — de retry probeerde precies wat
+   * al niet werkte.
+   *
+   * Dus nu: eerst vernieuwen, dan opnieuw. Het wachten blijft staan voor de
+   * gevallen die wél een hapering zijn (fetch failed, ECONNRESET, een timeout),
+   * want daar helpt een adempauze en een vers token niet.
+   */
   if (!r.ok && attempt === 1 && /7403|fetch failed|ECONNRESET|timed? ?out/i.test(r.out)) {
-    console.log('  (hapering bij Cloudflare — één keer opnieuw over 3 seconden)');
-    await new Promise((res) => setTimeout(res, 3000));
+    if (/7403/.test(r.out)) {
+      console.log('  (7403 — token vernieuwen en opnieuw)');
+      await warmLogin({ force: true });
+    } else {
+      console.log('  (hapering bij Cloudflare — één keer opnieuw over 3 seconden)');
+      await new Promise((res) => setTimeout(res, 3000));
+    }
     return query(sql, 2);
   }
   if (!r.ok) throw new Error(`kon de database niet lezen:\n${r.out.trim()}`);
@@ -352,6 +367,25 @@ for (const pick of only) {
 }
 
 console.log(`Database ${DB} ${scope}${DRY ? '  (proefdraaien — er wordt niets uitgevoerd)' : ''}\n`);
+
+/*
+ * EERST HET TOKEN VERNIEUWEN, VÓÓR HET EERSTE LEESCOMMANDO.
+ *
+ * Dit is de handeling die Lucas met de hand deed — `npx wrangler whoami`, dan
+ * `npm run migrate` — en die het verschil maakte tussen 7403 op statement één en
+ * een run die helemaal doorloopt. Zie warmLogin() in lib/wrangler.mjs voor wat er
+ * gebeurt en waarom de foutmelding je de verkeerde kant op stuurt.
+ *
+ * Het staat hier en niet in wrangler(): niet elk script wil dit (check-wrangler
+ * meet juist de ruwe toestand), en een leesactie die ongevraagd in de aanroeplaag
+ * zit is er één die je niet meer ziet gebeuren.
+ *
+ * OOK BIJ --dry, en dat is geen slordigheid: een proefrun voert niets uit maar
+ * leest wél de hele plattegrond met pragma_table_info, dus hij heeft precies
+ * hetzelfde token nodig. Een proefrun die op 7403 omvalt is nog verwarrender dan
+ * een echte, want dan lijkt het alsof er niets veiligs te doen valt.
+ */
+await warmLogin();
 
 /*
  * ── EEN TABEL DIE HERBOUWD WORDT, RAAK JE NIET UIT GEWOONTE AAN ─────────────

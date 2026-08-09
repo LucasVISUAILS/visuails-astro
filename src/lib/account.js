@@ -96,6 +96,7 @@ import { mailNote } from '../data/mailNote.js';
 // hem óók nodig heeft — zie de kop van close.js. Hier stond dezelfde functie
 // als `maybeClose`; alleen dit bestand riep hem aan en dat was de bug.
 import { maybeCloseOrder } from './close.js';
+import { issueInvoice } from './invoice.js';
 import { serviceLabel } from '../data/services.js';
 import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT } from '../data/vat.js';
@@ -608,6 +609,23 @@ const COPY = {
     planBrandLabel: 'Brand',
     planNote: 'Questions about pricing or an invoice? Reply to any order email, or reach us at hello@visuails.com.',
 
+    navInvoices: 'Invoices',
+    invHeading: 'Invoices',
+    invLede: 'Every paid order has an invoice here. Download it as a PDF for your own records.',
+    invEmpty: 'There is nothing here yet. An invoice appears as soon as an order is paid.',
+    invEmptyUnpaid: 'No invoices yet. Your order has one as soon as the payment comes through.',
+    invNumber: 'Invoice',
+    invDate: 'Date',
+    invOrder: 'Order',
+    invAmount: 'Amount',
+    invDownload: 'Download PDF',
+    invPending: 'Being prepared',
+    invPendingNote: 'This invoice has its number and the document is still being made. Refresh in a minute; if it stays like this, send us a line.',
+    invVoid: 'Withdrawn',
+    invReverse: 'VAT reverse charged',
+    invOutside: 'Outside European VAT',
+    invKeepNote: 'Invoices stay available here for as long as your account exists. Dutch law requires us to keep them for seven years, so they do not disappear with your files.',
+
     signOut: 'Sign out',
     footAsk: 'Anything else,',
     dbDown: 'We cannot reach your account right now. This is our end, not yours — try again in a few minutes.',
@@ -811,6 +829,23 @@ const COPY = {
     planBrandLabel: 'Merk',
     planNote: 'Vragen over prijzen of een factuur? Reageer op een bestel-e-mail, of mail hello@visuails.com.',
 
+    navInvoices: 'Facturen',
+    invHeading: 'Facturen',
+    invLede: 'Bij elke betaalde bestelling staat hier de factuur. Download hem als pdf voor je eigen administratie.',
+    invEmpty: 'Hier staat nog niets. Zodra een bestelling betaald is, komt de factuur erbij.',
+    invEmptyUnpaid: 'Nog geen facturen. Je bestelling krijgt er een zodra de betaling binnen is.',
+    invNumber: 'Factuur',
+    invDate: 'Datum',
+    invOrder: 'Bestelling',
+    invAmount: 'Bedrag',
+    invDownload: 'Download pdf',
+    invPending: 'Wordt gemaakt',
+    invPendingNote: 'Deze factuur heeft zijn nummer, het document wordt nog gemaakt. Vernieuw de pagina over een minuut; blijft het hierbij, laat het ons dan weten.',
+    invVoid: 'Ingetrokken',
+    invReverse: 'Btw verlegd',
+    invOutside: 'Buiten de Europese btw',
+    invKeepNote: 'Je facturen blijven hier staan zolang je account bestaat. Wij moeten ze zeven jaar bewaren, dus ze verdwijnen niet samen met je bestanden.',
+
     signOut: 'Uitloggen',
     footAsk: 'Verder iets,',
     dbDown: 'We kunnen je account nu niet bereiken. Dit ligt aan ons, niet aan jou — probeer het over een paar minuten opnieuw.',
@@ -884,6 +919,18 @@ export async function accountGet(context) {
     return serveAccountFile(context, customer, Number(fileMatch[1]), fileMatch[2]);
   }
 
+  // Een factuur als pdf. Onder dezelfde limiet als de andere bestandsroutes en
+  // met dezelfde eigendomscontrole: het id in de URL is een getal, en of het van
+  // deze klant is beslist de query, niet de URL.
+  const invMatch = path.match(/^\/account\/invoices\/(\d+)\/pdf$/);
+  if (invMatch) {
+    const gate = await checkRate(env, { ip: clientIp(request), action: 'account-file', limit: FILE_LIMIT });
+    if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
+    const customer = await currentCustomer(env, request);
+    if (!customer) return seeOther('/account/login');
+    return serveInvoicePdf(context, customer, Number(invMatch[1]));
+  }
+
   if (path === '/account/login') {
     const customer = await currentCustomer(env, request);
     if (customer) return seeOther('/account');
@@ -910,6 +957,7 @@ export async function accountGet(context) {
   // URL handleDetails already redirected to, which is why the redirect target
   // stopped being a fragment on the brand kit and started being a page.
   if (path === '/account/details') return sectionGet(context, customer, 'details');
+  if (path === '/account/invoices') return sectionGet(context, customer, 'invoices');
   if (path === '/account/plan') return sectionGet(context, customer, 'plan');
 
   const lang = negotiate(request);
@@ -1559,6 +1607,20 @@ async function sectionGet(context, customer, section) {
   } else if (section === 'details') {
     inner = detailsBody(t, lang, details, justSaved, detailsMissing);
     title = t.detH;
+  } else if (section === 'invoices') {
+    /*
+     * DE ENIGE SECTIE DIE NIET IN DE Promise.all HIERBOVEN ZIT, en dat is met
+     * opzet. Die zes queries draaien voor élke pagina van dit dashboard. Wat
+     * deze sectie doet is duurder: hij haalt niet alleen facturen op, hij MAAKT
+     * ze ook als ze ontbreken — een pdf renderen en in R2 leggen. Dat aan de
+     * gezamenlijke laadstap toevoegen zou betekenen dat het overzicht, de brand
+     * kit en de bestellingenlijst dat werk allemaal meedragen.
+     *
+     * Dus lui, hier, en alleen als iemand naar zijn facturen kijkt.
+     */
+    const list = await invoicesFor(env, customer.customer_id, orders);
+    inner = invoicesBody(t, lang, list, orders);
+    title = t.invHeading;
   } else if (section === 'plan') {
     inner = planBody(t, customer);
     title = t.planHeading;
@@ -2366,9 +2428,30 @@ async function loadCustomModels(env, customerId) {
   return res.results || [];
 }
 
+/*
+ * De vastgezette voorkeuren per dienst.
+ *
+ * ── WAAROM SELECT * EN GEEN KOLOMLIJST (9 augustus 2026) ─────────────────────
+ *
+ * Hier stond `SELECT style, custom_model_id, roster_model, background_hex`, en
+ * migratie 0019 voegde er een vijfde kolom aan toe: `channels`. Die is er nooit
+ * bij gezet. Het gevolg was stiller dan een fout: lockSection() leest
+ * `lock.channels`, kreeg altijd undefined, en tekende de vinkjes dus altijd
+ * leeg. Opslaan werkte wél — de waarde stond in de database en het bestelformulier
+ * vulde hem netjes voor via /account/me, dat zijn eigen query met `l.*` heeft —
+ * dus een klant die Amazon aanvinkte, opsloeg en terugkeerde zag lege vakjes bij
+ * een instelling die gewoon aan stond. Dat is de duurste soort verkeerd beeld:
+ * hij vinkt hem nog eens aan, of hij besluit dat het niet werkt.
+ *
+ * Vandaar `l.*`. Dezelfde afweging als in handleMe(): een sterretje werkt óók op
+ * een database waar de migratie nog niet gedraaid heeft — `channels` is daar
+ * simpelweg undefined in plaats van een SQL-fout — en er is geen zesde kolom
+ * denkbaar die dit scherm wél moet weten en niet mag lezen. Een kolomlijst die
+ * een migratie kan missen is hier duurder dan de paar bytes die hij spaart.
+ */
 async function loadStyleLocks(env, customerId) {
   const res = await env.DB.prepare(
-    'SELECT style, custom_model_id, roster_model, background_hex FROM customer_style_locks WHERE customer_id = ?1'
+    'SELECT l.* FROM customer_style_locks l WHERE l.customer_id = ?1'
   ).bind(customerId).all();
   return res.results || [];
 }
@@ -2910,6 +2993,63 @@ async function serveAccountFile(context, customer, fileId, mode) {
   return new Response(object.body, { status: 200, headers });
 }
 
+/**
+ * Een factuur als pdf, voor de klant van wie hij is.
+ *
+ * ── DRIE DINGEN DIE HIER ANDERS ZIJN DAN BIJ serveAccountFile() ──────────────
+ *
+ * 1 · GEEN RANGE, GEEN onlyIf. Een factuur is een paar kilobyte. Het bereik- en
+ *     conditionele-verzoekapparaat hierboven bestaat voor beelden van tientallen
+ *     megabytes en zou hier alleen extra takken opleveren die niemand raakt.
+ *
+ * 2 · GEEN 410. Beelden verlopen — dat is de afspraak op /terms — maar een
+ *     factuur verloopt niet. Wij moeten hem zeven jaar bewaren en de klant mag
+ *     hem al die tijd ophalen. Er is dus geen `expires_at` om te controleren en
+ *     dat is geen vergeten controle.
+ *
+ * 3 · ALTIJD ALS DOWNLOAD, nooit inline. Dit is een document voor de boekhouding
+ *     en niet iets om even te bekijken; de bestandsnaam is het factuurnummer,
+ *     zodat wat er in de map belandt te herkennen is zonder hem te openen.
+ *
+ * De eigendomscontrole loopt via `orders`, niet via `invoices.customer_id`. Die
+ * kolom is ON DELETE SET NULL — een verwijderd klantaccount laat de factuur staan
+ * met een leeg klantveld, en een controle daarop zou dan van "niet van jou"
+ * ongemerkt naar "van niemand, dus van iedereen" schuiven.
+ */
+async function serveInvoicePdf(context, customer, invoiceId) {
+  const { env } = context;
+  if (!env.UPLOADS) return new Response(null, { status: 503, headers: fileHeaders() });
+
+  let inv;
+  try {
+    inv = await env.DB.prepare(
+      `SELECT i.number, i.status, i.pdf_key
+         FROM invoices i JOIN orders o ON o.id = i.order_id
+        WHERE i.id = ?1 AND o.customer_id = ?2`
+    ).bind(invoiceId, customer.customer_id).first();
+  } catch {
+    return new Response(null, { status: 503, headers: fileHeaders() });
+  }
+  if (!inv) return new Response(null, { status: 404, headers: fileHeaders() });
+  // 'pending' heeft een nummer en nog geen document. 404 en niet 500: er is niets
+  // te leveren, en het overzicht toont voor deze rij ook geen knop.
+  if (inv.status !== 'issued' || !inv.pdf_key) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  let object;
+  try {
+    object = await env.UPLOADS.get(inv.pdf_key);
+  } catch {
+    return new Response(null, { status: 503, headers: fileHeaders() });
+  }
+  if (!object || !object.body) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  const headers = new Headers(fileHeaders());
+  headers.set('content-type', 'application/pdf');
+  headers.set('content-disposition', `attachment; ${dispositionFilename(`${inv.number}.pdf`)}`);
+  if (typeof object.size === 'number') headers.set('content-length', String(object.size));
+  return new Response(object.body, { status: 200, headers });
+}
+
 function fileHeaders() {
   return {
     'cache-control': 'private, max-age=3600',
@@ -3200,6 +3340,10 @@ const ICON_ORDERS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path
 const ICON_BRAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="12"/><rect x="8" y="8" width="12" height="12"/></svg>';
 const ICON_PLAN = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="13"/><path d="M2 11h20"/></svg>';
 const ICON_DETAILS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>';
+// Een blad met regels en een omgeslagen hoek. Bewust géén euroteken: dat staat
+// naast ICON_PLAN ("Abonnement & facturering") en twee geldglyphs onder elkaar
+// zeggen niet welke van de twee de documenten heeft.
+const ICON_INVOICE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h4"/></svg>';
 
 /**
  * Two icons that are NOT nav items and so are not in the five above.
@@ -3242,6 +3386,12 @@ function shellBody(t, lang, customer, active, inner) {
     // and a section with its own page needs its own way in — see detH's copy
     // note for why the two were split.
     { key: 'details', href: '/account/details', label: t.navDetails, icon: ICON_DETAILS },
+    // Facturen staat direct boven "Abonnement & facturering" en niet erin. Die
+    // pagina gaat over wat je betaalt; deze over de documenten die je moet
+    // bewaren. Ze samenvoegen zou de factuur onder een kop zetten waar hij niet
+    // gezocht wordt — en op vijf plekken belooft de site "je factuur", niet "je
+    // factureringsinstellingen".
+    { key: 'invoices', href: '/account/invoices', label: t.navInvoices, icon: ICON_INVOICE },
     { key: 'plan', href: '/account/plan', label: t.navPlan, icon: ICON_PLAN },
   ];
   const nav = items.map((n) => {
@@ -3858,6 +4008,184 @@ function detailsSection(t, lang, details, justSaved, missing = false) {
  * real invoice question. This shows what is real — the account identity —
  * and points anything else at a human, same as portal.js's own foot note does.
  */
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * FACTUREN
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * De site belooft op vijf plekken een factuur — /terms §9, de btw-noot op
+ * /pricing, de FAQ, de bestelbevestiging, en /demo zegt zelfs dat de factuur
+ * automatisch volgt. Tot 9 augustus 2026 werd er geen enkele gemaakt en had de
+ * klant nergens een plek om te kijken. Dit is die plek.
+ */
+
+/**
+ * De facturen van deze klant, en wat er ontbreekt alsnog aanmaken.
+ *
+ * ── WAAROM DIT SCHERM FACTUREN MAG MAKEN ────────────────────────────────────
+ *
+ * De betaalwebhook geeft de factuur normaal uit op het moment van betalen. Dat
+ * is één pad, en het is een pad dat kan mislukken op een manier die niemand
+ * merkt: Mollie krijgt zijn 200, de betaling staat goed, en alleen het document
+ * ontbreekt. Zonder een tweede pad zou dat betekenen dat een klant een factuur
+ * mist en dat wij het pas horen als hij erom vraagt.
+ *
+ * Dus haalt dit scherm de achterstand in. Voor elke betaalde bestelling zonder
+ * factuur wordt issueInvoice() aangeroepen, met de BETAALDATUM als factuurdatum
+ * en niet met vandaag — een factuur die te laat is gemaakt is nog steeds een
+ * factuur van de dag dat er betaald werd.
+ *
+ * Dat is veilig omdat issueInvoice() idempotent is: hij geeft geen tweede nummer
+ * uit voor dezelfde bestelling, en een halve poging (nummer wel, pdf niet) wordt
+ * met hetzelfde nummer afgemaakt. Twee tabbladen tegelijk leveren dus één
+ * factuur op.
+ *
+ * ── BEGRENSD, EN WAAROM ─────────────────────────────────────────────────────
+ *
+ * Maximaal CATCHUP_MAX per paginabezoek. Een klant met vijftig onbefactureerde
+ * bestellingen zou anders vijftig pdf's in één request renderen en de pagina
+ * laten aflopen — en dan krijgt hij er nul. Vijf per keer betekent dat de eerste
+ * vijf er wel staan en de rest bij het volgende bezoek volgt, wat een langzame
+ * inhaalslag is in plaats van een pagina die niet laadt. In de praktijk is de
+ * achterstand nul of één.
+ *
+ * Fouten worden gelogd en genegeerd: het overzicht van de facturen die er WEL
+ * zijn mag niet omvallen op eentje die niet gemaakt kan worden.
+ */
+const CATCHUP_MAX = 5;
+
+async function invoicesFor(env, customerId, orders) {
+  const read = async () => {
+    try {
+      const res = await env.DB.prepare(
+        `SELECT i.id, i.number, i.status, i.pdf_bytes, i.snapshot_json, i.lang, i.issued_at, i.created_at,
+                o.ref, o.service, o.paid_at
+           FROM invoices i JOIN orders o ON o.id = i.order_id
+          WHERE o.customer_id = ?1
+          ORDER BY i.year DESC, i.seq DESC
+          LIMIT 200`
+      ).bind(customerId).all();
+      return res?.results || [];
+    } catch (err) {
+      // Migratie 0021 nog niet gedraaid: "no such table: invoices". Dezelfde
+      // afspraak als loadOrders() met de kolommen uit 0013 en 0015 — geen tabel
+      // betekent geen facturen, niet een kapot dashboard.
+      console.warn('[account] facturen niet te lezen —', err && err.message,
+        '— migratie 0021 gedraaid?');
+      return null;
+    }
+  };
+
+  let list = await read();
+  if (list === null) return [];
+
+  // Wat is betaald en heeft nog geen factuur? Uit de lijst die sectionGet al
+  // heeft geladen, dus zonder extra query.
+  const have = new Set(list.map((r) => r.ref));
+  const behind = orders.filter((o) => o.payment_status === 'paid' && o.paid_at && !have.has(o.ref));
+  if (!behind.length) return list;
+
+  let made = 0;
+  for (const o of behind.slice(0, CATCHUP_MAX)) {
+    try {
+      await issueInvoice(env, o.id, { today: o.paid_at });
+      made++;
+    } catch (err) {
+      console.error('[account] factuur voor', o.ref, 'niet uitgegeven —', err && err.message ? err.message : err);
+    }
+  }
+  if (behind.length > CATCHUP_MAX) {
+    console.log('[account] nog', behind.length - CATCHUP_MAX, 'facturen achterstand voor klant', customerId,
+      '— volgen bij het volgende bezoek');
+  }
+  if (!made) return list;
+
+  const again = await read();
+  return again === null ? list : again;
+}
+
+/** '9 aug 2026' / '9 Aug 2026' — als shortDate(), maar met het jaar erbij, want een factuur zonder jaartal is geen factuur. */
+function invoiceDate(value, lang) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
+  if (!m) return String(value || '');
+  const months = MONTHS[lang] || MONTHS.en;
+  return `${Number(m[3])} ${months[Number(m[2]) - 1] || m[2]} ${m[1]}`;
+}
+
+/**
+ * Het overzicht.
+ *
+ * ÉÉN RIJ PER FACTUUR, MET DE DOWNLOAD ALS ENIGE ACTIE. Geen kaart per factuur
+ * zoals bij een bestelling: een bestelling heeft een verloop en een tijdlijn, een
+ * factuur is één document met vier feiten eraan. Wat iemand hier komt doen is
+ * hem downloaden, en alles wat daar tussen staat is in de weg.
+ *
+ * DE LEGE STAAT ZEGT TWEE VERSCHILLENDE DINGEN. Iemand zonder betaalde
+ * bestellingen hoort te lezen dat het er nog niet is; iemand die net betaald
+ * heeft en wél iets verwacht, hoort te lezen dat het eraan komt. Eén tekst voor
+ * beide zou voor de tweede lezen als "die van jou is er niet".
+ */
+function invoicesBody(t, lang, list, orders) {
+  if (!list.length) {
+    const anyPaid = orders.some((o) => o.payment_status === 'paid');
+    return `
+<h1>${esc(t.invHeading)}</h1>
+<p class="lede">${esc(t.invLede)}</p>
+<div class="card"><p class="meta">${esc(anyPaid ? t.invEmptyUnpaid : t.invEmpty)}</p></div>`;
+  }
+
+  const rows = list.map((inv) => {
+    let snap = {};
+    try { snap = JSON.parse(inv.snapshot_json || '{}'); } catch { /* dan zonder */ }
+    const gross = Number(snap.netCents || 0) + Number(snap.vatCents || 0);
+    const treatment = String(snap.treatment || '');
+    const flag = treatment === VAT_TREATMENT.reverseCharge ? t.invReverse
+      : treatment === VAT_TREATMENT.outsideScope ? t.invOutside
+        : '';
+
+    // 'pending' betekent: het nummer is uitgegeven, de pdf nog niet gemaakt. Dat
+    // hoort niet als downloadknop te verschijnen die 404 geeft — zie migratie
+    // 0021 over waarom het nummer er dan al is.
+    //
+    // GEEN .pill VOOR DE TWEE TOESTANDEN ZONDER KNOP. Een pill heeft in dit
+    // dashboard een rand en een hoek, en in deze kolom staat verder alleen een
+    // knop — dan leest "Wordt gemaakt" als iets waarop je kunt drukken, precies
+    // in het geval dat je niets kunt doen. Vandaar gedempte tekst zonder rand:
+    // een mededeling ziet eruit als een mededeling.
+    const action = inv.status === 'issued'
+      ? `<a class="btn btn-ghost" href="/account/invoices/${inv.id}/pdf">${esc(t.invDownload)}</a>`
+      : `<span class="invstate">${esc(inv.status === 'void' ? t.invVoid : t.invPending)}</span>`;
+
+    // data-label draagt de kolomkop mee naar de cel. Onder 40rem verdwijnt de
+    // koprij en wordt elke rij een blok met label-waardeparen — zie account.css.
+    // Een cel zonder label zou daar een los getal zijn.
+    return `<tr>
+      <td><b>${esc(inv.number)}</b>${flag ? `<span class="invflag">${esc(flag)}</span>` : ''}</td>
+      <td data-label="${esc(t.invDate)}">${esc(invoiceDate(snap.date || inv.created_at, lang))}</td>
+      <td data-label="${esc(t.invOrder)}">${esc(inv.ref || '')}</td>
+      <td class="invamount" data-label="${esc(t.invAmount)}">${esc(money(gross, lang))}</td>
+      <td class="invact">${action}</td>
+    </tr>`;
+  }).join('');
+
+  const anyPending = list.some((inv) => inv.status === 'pending');
+
+  return `
+<h1>${esc(t.invHeading)}</h1>
+<p class="lede">${esc(t.invLede)}</p>
+<div class="card">
+  <table class="invtable">
+    <thead><tr>
+      <th>${esc(t.invNumber)}</th><th>${esc(t.invDate)}</th><th>${esc(t.invOrder)}</th>
+      <th class="invamount">${esc(t.invAmount)}</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  ${anyPending ? `<p class="meta">${esc(t.invPendingNote)}</p>` : ''}
+  <p class="meta">${esc(t.invKeepNote)}</p>
+</div>`;
+}
+
 function planBody(t, customer) {
   return `
 <h1>${esc(t.planHeading)}</h1>

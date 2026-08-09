@@ -52,7 +52,33 @@ const ORDERS = [
   { id: 89, ref: 'VIS-2607-3312', service: 'catalog', status: 'human_check', tier: 'attended', product_count: 8, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-24', closed_at: null, revisions_revoked_at: null,
     payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-24', total_cents: 20800, vat_cents: 0, vat_rate: 0, vat_treatment: 'eu_reverse_charge', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
   { id: 88, ref: 'VIS-2607-1180', service: 'test-sample', status: 'delivered', tier: 'unattended', product_count: 1, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-19', closed_at: null, revisions_revoked_at: null,
-    payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-19', total_cents: 99, vat_cents: 21, vat_rate: 0.21, vat_treatment: 'nl_standard', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
+    /* €1 en geen 0,99, en vat_cents 0: de proefvisual wordt sinds 8 augustus
+     * 2026 als één vast bedrag afgerekend (AMOUNT.testSample), en
+     * quoteTestSample() zet er geen btw bovenop. */
+    payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-19', total_cents: 100, vat_cents: 0, vat_rate: 0, vat_treatment: 'nl_standard', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
+];
+
+/* De facturen bij de drie betaalde bestellingen hierboven. Eén ervan staat op
+ * 'pending' — dat is de toestand waarin het nummer al is uitgegeven en de pdf
+ * nog niet bestaat, en het is de enige rij in dit overzicht die géén knop
+ * krijgt. Zonder hem in de nepdata is dat precies het geval dat je op een
+ * schermafdruk nooit ziet. */
+const snap = (over) => JSON.stringify({
+  number: over.number, date: over.date, lang: 'nl',
+  netCents: over.net, vatCents: over.vat, grossCents: over.net + over.vat,
+  vatRate: over.vat ? 0.21 : 0, treatment: over.treatment || 'nl_standard',
+  customer: { name: 'Mara' }, lines: [],
+});
+const INVOICES = [
+  { id: 31, number: 'VIS-2026-0031', status: 'issued', pdf_key: 'invoices/2026/VIS-2026-0031.pdf', pdf_bytes: 2310,
+    snapshot_json: snap({ number: 'VIS-2026-0031', date: '2026-07-28', net: 32400, vat: 6804 }), lang: 'nl',
+    issued_at: '2026-07-28 09:31', created_at: '2026-07-28 09:31', ref: 'VIS-2607-9920', service: 'lifestyle', paid_at: '2026-07-28' },
+  { id: 30, number: 'VIS-2026-0030', status: 'issued', pdf_key: 'invoices/2026/VIS-2026-0030.pdf', pdf_bytes: 2288,
+    snapshot_json: snap({ number: 'VIS-2026-0030', date: '2026-07-24', net: 20800, vat: 0, treatment: 'eu_reverse_charge' }), lang: 'nl',
+    issued_at: '2026-07-24 12:02', created_at: '2026-07-24 12:02', ref: 'VIS-2607-3312', service: 'catalog', paid_at: '2026-07-24' },
+  { id: 29, number: 'VIS-2026-0029', status: 'pending', pdf_key: null, pdf_bytes: null,
+    snapshot_json: snap({ number: 'VIS-2026-0029', date: '2026-07-19', net: 100, vat: 0 }), lang: 'nl',
+    issued_at: null, created_at: '2026-07-19 15:10', ref: 'VIS-2607-1180', service: 'test-sample', paid_at: '2026-07-19' },
 ];
 
 const SHOTS = ['front', 'back', 'detail', 'worn'];
@@ -116,6 +142,7 @@ function makeDb() {
     if (s.includes('FROM files f JOIN orders')) return FILES;
     if (s.includes('FROM custom_models')) return MODELS;
     if (s.includes('FROM customer_style_locks')) return [];
+    if (s.includes('FROM invoices i')) return INVOICES;
     if (s.includes('FROM customers WHERE id')) return DETAILS;
     if (s.includes('FROM orders')) return ORDERS;
     return null;

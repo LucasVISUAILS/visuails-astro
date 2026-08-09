@@ -23,6 +23,7 @@ import sharp from 'sharp';
 import { customerEmail, subscriberEmail } from '../functions/api/order.js';
 import { magicLinkEmail } from '../src/lib/account.js';
 import { deliveryEmail, redeliveryEmail } from '../src/lib/admin.js';
+import { invoiceEmail } from '../src/lib/invoiceMail.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA_MARK = 'data:image/png;base64,' +
@@ -69,6 +70,22 @@ const MAILS = [
       revisions: 2,
       note: 'De achtergrond op beeld 4 en 7 is nu egaal wit, en de mouw op beeld 11 is rechtgetrokken.',
     }),
+  },
+  {
+    // 9 augustus 2026. Dit is de eerste mail die op het moment van BETALEN uitgaat
+    // — die bestond niet, en dat was het gat waardoor iemand kon betalen en daarna
+    // niets meer hoorde tot het werk klaar was. Hij staat hier naast de
+    // orderbevestiging omdat die twee elkaar het snelst opvolgen in dezelfde
+    // inbox: als ze niet van elkaar te onderscheiden zijn, leest de tweede als
+    // een dubbele.
+    label: 'Betaling ontvangen · met factuur',
+    html: invoiceEmail({
+      lang: 'nl',
+      order: { ref: 'VIS-2608-4471' },
+      invoice: { number: 'VIS-2026-0031' },
+      snap: { date: '2026-08-09', netCents: 102000, vatCents: 21420, treatment: 'nl_standard' },
+      attached: true,
+    }).html,
   },
   {
     label: 'Checklist (lead magnet)',

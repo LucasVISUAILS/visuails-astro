@@ -142,6 +142,62 @@ export async function wrangler(argv, { env = process.env, maxBuffer = 64 * 1024 
   }
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EERST `whoami`, DAN DE REST
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT LUCAS OP 9 AUGUSTUS 2026 OPMERKTE ───────────────────────────────────
+ *
+ * `npm run migrate` viel om met 7403 op het állereerste statement. Draaide hij
+ * eerst `npx wrangler whoami` en daarna hetzelfde commando, dan liep de hele
+ * migratie zonder één fout door — 56 opdrachten uitgevoerd, 81 overgeslagen.
+ *
+ * Dat is betere informatie dan wat er tot vandaag in migrate.mjs stond. Daar
+ * heette het "7403 komt en gaat" en "hoe meer aanroepen je doet hoe groter de
+ * kans dat je erin loopt", met een retry na drie seconden als antwoord. Dat is de
+ * verklaring die je verzint als je alleen ziet dát het soms werkt. Het is niet
+ * willekeurig: één leescommando ervoor maakt het verschil, elke keer.
+ *
+ * ── WAT ER VERMOEDELIJK GEBEURT, EN WAT IK NIET WEET ────────────────────────
+ *
+ * `wrangler login` levert een OAuth-toegangstoken dat kort geldig is en met een
+ * refresh-token vernieuwd moet worden. `whoami` is het commando dat die
+ * vernieuwing doet en het resultaat naar wrangler's configuratie schrijft, zodat
+ * alles daarna een vers token gebruikt.
+ *
+ * Waarom de aanroepen uit dit script dat niet zelf voor elkaar krijgen, weet ik
+ * niet zeker — het zijn kindprocessen zonder terminal, en dat is de meest
+ * waarschijnlijke reden, maar ik heb het niet bewezen. Dat hoeft ook niet: het
+ * middel is één extra leesactie aan het begin, en dat is goedkoop genoeg om niet
+ * eerst het mechanisme te hoeven kennen.
+ *
+ * Wat wél telt is dat 7403 hier NIET betekent wat de foutmelding zegt. "The given
+ * account is not valid or is not authorized to access this service" leest als een
+ * rechtenprobleem, en stuurt je naar API-tokens, accountrollen en permissies —
+ * uren zoeken in de verkeerde hoek. Vandaar dat dit hier staat en niet in een
+ * commentaarregel bij één aanroeper.
+ *
+ * ── MEMOÏSEERD, EN MET force ────────────────────────────────────────────────
+ *
+ * Eén keer per proces, want een tweede keer vernieuwt niets en kost een aanroep.
+ * `force: true` is voor de retry halverwege een lange run: is het token daar
+ * alsnog verlopen, dan is opnieuw vernieuwen precies de reparatie — en dat is wat
+ * de oude retry-na-drie-seconden juist níet deed, die probeerde hetzelfde
+ * verlopen token nog een keer.
+ *
+ * Mislukken is geen fout. Is er helemaal geen login, dan faalt het echte commando
+ * hierna met zijn eigen, duidelijkere melding; hier stoppen zou die melding
+ * vervangen door een minder bruikbare.
+ */
+let warmed = null;
+
+export async function warmLogin({ env = process.env, force = false } = {}) {
+  if (force) warmed = null;
+  if (!warmed) warmed = wrangler(['whoami'], { env });
+  return warmed;
+}
+
 /** Zelfde aanroep, maar gooit bij mislukking — voor scripts die door moeten. */
 export async function wranglerOrThrow(argv, opts) {
   const r = await wrangler(argv, opts);

@@ -62,6 +62,32 @@ export async function sendMail(env, { to, subject, html, text, attachments }) {
 }
 
 /**
+ * Bytes → base64, in chunks. Wat Resend in `attachments[].content` verwacht.
+ *
+ * String.fromCharCode(...bytes) op een foto van 25 MB is geen langzaam pad maar
+ * een stack overflow — de spread wordt één aanroep met 25 miljoen argumenten.
+ * 32 kB per keer zit ruim onder de argumentgrens van elke engine en kost één
+ * concatenatie per blok.
+ *
+ * ── WAAROM DIT HIER STAAT EN NIET IN order.js (9 augustus 2026) ──────────────
+ *
+ * Hij stond daar, als privéfunctie, zolang de bestelnotificatie het enige was
+ * dat ooit iets meestuurde. De factuurmail is de tweede, en een tweede kopie van
+ * precies deze lus is een tweede plek waar iemand ooit `CHUNK` groter zet en de
+ * fout in de andere laat staan. Dit hoort bij versturen, niet bij bestellen —
+ * dus staat het naast sendMail(), waar de aanroepers al kijken.
+ */
+export function toBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  const CHUNK = 0x8000;
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
+}
+
+/**
  * A readable plain-text version of an HTML email.
  *
  * NOT a general HTML-to-text converter, and it should not grow into one. It

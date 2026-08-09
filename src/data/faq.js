@@ -315,7 +315,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
-            a: `Ja, en dat is de moeite waard. ${vatLabel('rate', 'nl')} wordt bij het afrekenen aan iedereen berekend — de prijzen op de site zijn netto, gemarkeerd met ${vatLabel('excl', 'nl')} — en voor een EU-bedrijf BUITEN Nederland met een geldig btw-nummer wordt de verlegging achteraf op de factuur rechtgezet. Een Nederlands bedrijf betaalt altijd 21%, ook met een geldig btw-nummer, en buiten de EU valt de levering buiten de Europese btw. We zijn gevestigd in Nederland (btw NL005407575B96).`,
+            a: `Ja, en dat is de moeite waard. De prijzen op de site zijn netto, gemarkeerd met ${vatLabel('excl', 'nl')}. Vul je btw-nummer in bij het bestellen: we controleren het bij VIES, en klopt het terwijl je in de EU buiten Nederland zit, dan betaal je 0% en is de btw verlegd — je geeft hem zelf aan in je eigen land. Een Nederlands bedrijf betaalt altijd ${vatLabel('rate', 'nl')}, ook met een geldig nummer, en buiten de EU valt de levering buiten de Europese btw. We zijn gevestigd in Nederland (btw NL005407575B96).`,
           },
         ],
       },
@@ -500,7 +500,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Can I add my VAT number?',
-          a: `Yes, and it is worth doing. ${vatLabel('rate', 'en')} is charged at checkout to everyone — the prices on the site are net, marked ${vatLabel('excl', 'en')} — and for an EU business OUTSIDE the Netherlands with a valid VAT number the reverse charge is corrected afterwards on the invoice. A Dutch business always pays 21%, even with a valid VAT number, and outside the EU the supply falls outside EU VAT altogether. We are based in the Netherlands (VAT NL005407575B96).`,
+          a: `Yes, and it is worth doing. The prices on the site are net, marked ${vatLabel('excl', 'en')}. Enter your VAT number when you order: we check it against VIES, and if it is valid while you are in the EU outside the Netherlands, you pay 0% and the VAT is reverse charged — you declare it yourself in your own country. A Dutch business always pays ${vatLabel('rate', 'en')}, even with a valid number, and outside the EU the supply falls outside EU VAT altogether. We are based in the Netherlands (VAT NL005407575B96).`,
         },
       ],
     },

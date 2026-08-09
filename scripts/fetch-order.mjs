@@ -37,7 +37,7 @@
  */
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { wranglerOrThrow, assertSafeArg } from './lib/wrangler.mjs';
+import { wranglerOrThrow, assertSafeArg, warmLogin } from './lib/wrangler.mjs';
 
 const args = process.argv.slice(2);
 const ref = args.find((a) => !a.startsWith('--'));
@@ -109,6 +109,11 @@ function niceName(row, i) {
   if (row.n) return row.n;
   return `${String(i + 1).padStart(3, '0')}${ext}`;
 }
+
+// Token vernieuwen voordat er iets gevraagd wordt: dit script viel eerder om op
+// een 7403 die als een rechtenprobleem leest en er geen is — zie warmLogin() in
+// lib/wrangler.mjs.
+await warmLogin();
 
 const rows = await listUploads();
 if (!rows.length) {

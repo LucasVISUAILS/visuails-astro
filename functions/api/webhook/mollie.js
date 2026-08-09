@@ -58,6 +58,8 @@
 
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents } from '../../../src/lib/mollie.js';
 import { paymentMismatch } from '../../../src/data/vat.js';
+import { issueInvoice } from '../../../src/lib/invoice.js';
+import { mailInvoice } from '../../../src/lib/invoiceMail.js';
 
 export async function onRequestPost({ request, env }) {
   if (!env.MOLLIE_API_KEY) {
@@ -303,6 +305,49 @@ async function recordPaid(env, payment, mode) {
     .run();
 
   console.log(`[mollie-webhook] order ${ref} marked paid from ${payment.id} (${mode})`);
+
+  // ── DE FACTUUR ─────────────────────────────────────────────────────────────
+  //
+  // Dit is het moment waarop een factuur mag bestaan: er is betaald, het bedrag
+  // staat vast en de btw-behandeling is niet meer te veranderen. Eerder zou het
+  // een offerte zijn met het woord factuur erboven.
+  //
+  // ── WAAROM DIT NIET IN DE 500 MAG EINDIGEN ─────────────────────────────────
+  //
+  // De regel bovenaan dit bestand — 500 betekent "lever opnieuw af" — geldt hier
+  // niet meer. Op dit punt is de betaling al geboekt EN heeft de idempotentiegate
+  // hierboven de rij in `payments` geschreven. Een tweede aflevering komt dus niet
+  // eens tot hier; hem uitlokken met een 500 levert alleen een mislukte poging op
+  // die niets herstelt. Vandaar: alles wat hieronder misgaat wordt gelogd en
+  // verder genegeerd.
+  //
+  // ── EN WAAROM DAT GEEN VERLOREN FACTUUR IS ─────────────────────────────────
+  //
+  // De herstelroute zit in VISUAILS Studio: /account/invoices roept issueInvoice()
+  // zelf aan voor elke betaalde bestelling die er nog geen heeft. Deze aanroep is
+  // dus het gemak — de klant hoeft er niet naar te zoeken — en niet de enige weg.
+  // Wat hier faalt, komt bij het eerstvolgende bezoek alsnog goed, met de datum
+  // van de betaling en niet die van het bezoek.
+  //
+  // Mollie hanteert 15 seconden. Een pdf van één pagina met de veertien
+  // standaardfonts is een kwestie van tientallen milliseconden, de put in R2 gaat
+  // over een paar kilobyte en de mail is één fetch. Ruim binnen de tijd, en als
+  // het onverhoopt toch niet lukt, zie de alinea hierboven.
+  try {
+    // Geen `today` mee: issueInvoice() pakt dan `paid_at`, dat de UPDATE hierboven
+    // net heeft gezet. De factuurdatum is de betaaldatum, ook als deze aflevering
+    // van Mollie een dag later komt.
+    const invoice = await issueInvoice(env, order.id);
+    if (invoice) {
+      const full = await env.DB.prepare(
+        'SELECT ref, email, lang FROM orders WHERE id = ?1'
+      ).bind(order.id).first();
+      await mailInvoice(env, { order: full, invoice });
+    }
+  } catch (e) {
+    console.error('[mollie-webhook] factuur voor', ref, 'niet uitgegeven —', e && e.message ? e.message : e,
+      '— wordt hersteld zodra de klant VISUAILS Studio opent (/account/invoices).');
+  }
 }
 
 // A GET here is not part of the protocol — Mollie only ever POSTs. It answers

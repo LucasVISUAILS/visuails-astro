@@ -253,26 +253,33 @@ export const withVat = (net) => Math.round(net * (1 + VAT_RATE) * 100) / 100;
 // nothing rendered to a visitor may use them. Every price carries
 // vatLabel('excl') and the page states vatNote() once.
 /**
- * One sentence on how VAT is handled, said once per page rather than per price.
+ * How VAT is handled, said once per page rather than per price.
  *
- * CORRECTED AUGUST 2026, when catalog and lifestyle became payable. This used
- * to promise the rate "of your own country", which describes the model
- * BRIEF-14-VAT-BTW.md specifies and which needs a per-country table plus live
- * VIES validation before a reverse charge may be applied. Neither exists. What
- * the checkout actually does — Lucas's own interim model, confirmed again when
- * payments were switched on — is charge 21% to everybody and settle the reverse
- * charge afterwards on the invoice.
+ * ── TWEE KEER GECORRIGEERD, EN DE TWEEDE KEER IS DE INTERESSANTE ─────────────
  *
- * A sentence promising a local rate above a checkout that charges 21% is a
- * discrepancy the customer finds at the worst possible moment, so the sentence
- * moved to match the behaviour rather than the other way round. When the
- * per-country model is built, this is the line that changes back — and
- * src/lib/quote.js's VAT_RATE is the other half.
+ * Augustus 2026, toen catalog en lifestyle betaalbaar werden: hier stond dat je
+ * het tarief van je eigen land betaalde. Dat beschreef het model uit
+ * BRIEF-14-VAT-BTW.md, waarvoor een tabel per land én een live VIES-controle
+ * nodig is, en geen van beide bestond. De zin ging toen mee met het gedrag in
+ * plaats van andersom, want een belofte over de prijs die pas bij het afrekenen
+ * blijkt niet te kloppen, is de duurste plek om ontdekt te worden.
+ *
+ * 9 AUGUSTUS 2026 — dezelfde fout, de andere kant op. De zin bleef staan nadat
+ * migratie 0015 er wél een echte verlegging van maakte: sindsdien controleert het
+ * bestelformulier het btw-nummer bij VIES en rekent een bevestigd EU-bedrijf
+ * buiten Nederland 0% AF BIJ HET AFREKENEN. De belofte "dan wordt de verlegging
+ * op je factuur rechtgezet" kondigde dus een correctie aan die al was doorgevoerd
+ * en daarom nooit meer zou komen — en klanten buiten de EU stonden er niet in,
+ * terwijl die 0% betalen op een heel andere grond.
+ *
+ * De zin beschrijft nu de drie uitkomsten die vatDecision() echt kan geven. Bij
+ * een verandering daar verandert deze regel mee; dat is één plek, en dat is de
+ * reden dat deze functie bestaat in plaats van een string per pagina.
  */
 export function vatNote(lang = 'en') {
   return lang === 'nl'
-    ? 'Alle bedragen zijn excl. btw. Bij het afrekenen wordt 21% btw toegevoegd. Ben je een EU-bedrijf buiten Nederland met een geldig btw-nummer, geef het door — dan wordt de verlegging op je factuur rechtgezet.'
-    : 'All figures are excl. VAT. 21% VAT is added at checkout. If you are an EU business outside the Netherlands with a valid VAT number, give it to us and the reverse charge is settled on your invoice.';
+    ? 'Alle bedragen zijn excl. btw. Nederlandse klanten betalen 21% btw bij het afrekenen. Ben je een EU-bedrijf buiten Nederland, vul dan je btw-nummer in: klopt het volgens VIES, dan betaal je 0% en is de btw verlegd. Buiten de EU valt de levering buiten de Europese btw.'
+    : 'All figures are excl. VAT. Dutch customers pay 21% VAT at checkout. If you are an EU business outside the Netherlands, enter your VAT number: if VIES confirms it, you pay 0% and the VAT is reverse charged. Outside the EU the supply falls outside European VAT.';
 }
 
 /** "excl. VAT" / "incl. VAT", in the reader's language. Never typed on a page. */

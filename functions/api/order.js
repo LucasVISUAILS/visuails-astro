@@ -65,7 +65,7 @@ import {
 } from '../../src/data/attributes.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
-import { sendMail } from '../../src/lib/mail.js';
+import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
 import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
@@ -1293,23 +1293,8 @@ function mailFilename(name, index) {
   return cleaned || `upload-${index + 1}`;
 }
 
-/**
- * Bytes → base64, in chunks.
- *
- * String.fromCharCode(...bytes) on a 25 MB photograph is a stack overflow, not a
- * slow path — the spread becomes one call with 25 million arguments. 32 kB at a
- * time is well under every engine's argument limit and costs one concatenation
- * per chunk.
- */
-function toBase64(buf) {
-  const bytes = new Uint8Array(buf);
-  const CHUNK = 0x8000;
-  let bin = '';
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(bin);
-}
+// toBase64() verhuisde 9 augustus 2026 naar src/lib/mail.js, samen met de
+// factuurmail die hem als tweede aanroeper nodig had — zie de noot daar.
 
 // ---------- helpers ----------------------------------------------------------
 
@@ -1863,10 +1848,23 @@ export function customerEmail(lang, ref, service, name,
   // on — BRIEF-14's hardest rule, and an email is the one surface a copy sweep
   // scoped to src/ never reaches.
   //
-  // 21% is stated as a line rather than folded silently into the total, because
-  // that is what is actually charged to everyone right now: a valid EU business
-  // number is settled as a reverse charge afterwards on the invoice, and a
-  // customer who expected that needs to see it was not applied here.
+  // ── DE BTW-REGEL VOLGT DE BESLISSING, NIET DE AANNAME (9 augustus 2026) ────
+  //
+  // Hier stond hard "incl. 21% btw", met eronder de belofte dat een geldig
+  // EU-btw-nummer "achteraf op je factuur wordt rechtgezet". Beide waren onwaar
+  // geworden. Sinds migratie 0015 wordt de verlegging BIJ HET AFREKENEN
+  // toegepast: een Duits bedrijf met een door VIES bevestigd nummer betaalt 0%,
+  // en het bedrag in deze mail is dat 0%-bedrag.
+  //
+  // Wat de klant dus las: hetzelfde getal twee keer, één keer met "excl. btw" en
+  // één keer met "incl. 21% btw" erachter — plus de aankondiging van een
+  // correctie die al was doorgevoerd en dus nooit meer zou komen. In de enige
+  // mail die zijn bestelling bevestigt.
+  //
+  // `vat` (de uitkomst van vatDecision()) werd al aan deze functie meegegeven en
+  // nergens gelezen. Nu bepaalt hij de regel. Drie behandelingen, drie teksten,
+  // en de standaardtekst blijft 21% noemen als losse regel in plaats van hem
+  // stil in het totaal te vouwen — dat is wat er dan ook echt gebeurt.
   // The figure keeps its own currency formatting per language — a Dutch reader
   // gets 1.234,00 and an English one 1234.00 — because the two halves of the
   // sentence ("€ x incl." / "€ y excl.") have to agree with each other, and the
@@ -1881,13 +1879,29 @@ export function customerEmail(lang, ref, service, name,
     maximumFractionDigits: 2,
   }).format(cents / 100)}`;
 
+  const treatment = vat?.treatment || VAT_TREATMENT.standard;
+  const vatSub = () => {
+    const net = money(quote.netCents);
+    if (treatment === VAT_TREATMENT.reverseCharge) {
+      return nl
+        ? `${net} excl. btw &middot; 0% btw, verlegd<br>Je btw-nummer is bevestigd, dus we rekenen geen btw. Je geeft hem zelf aan in je eigen land.`
+        : `${net} excl. VAT &middot; 0% VAT, reverse charged<br>Your VAT number checked out, so we charge no VAT. You declare it yourself in your own country.`;
+    }
+    if (treatment === VAT_TREATMENT.outsideScope) {
+      return nl
+        ? `${net} excl. btw &middot; geen Europese btw<br>Je zit buiten de EU, dus deze levering valt buiten de Europese btw.`
+        : `${net} excl. VAT &middot; no European VAT<br>You are outside the EU, so this supply falls outside European VAT.`;
+    }
+    return nl
+      ? `${net} excl. btw &middot; incl. 21% btw`
+      : `${net} excl. VAT &middot; incl. 21% VAT`;
+  };
+
   const payBlock = (pay && quote)
     ? payPanel({
       label: nl ? 'Te betalen' : 'To pay',
       amount: money(quote.grossCents),
-      sub: nl
-        ? `${money(quote.netCents)} excl. btw &middot; incl. 21% btw<br>Heb je een geldig EU-btw-nummer buiten Nederland? Dan wordt de verlegging op je factuur rechtgezet.`
-        : `${money(quote.netCents)} excl. VAT &middot; incl. 21% VAT<br>Have a valid EU VAT number outside the Netherlands? The reverse charge is settled on your invoice.`,
+      sub: vatSub(),
       href: pay,
       cta: nl ? 'Betaal je bestelling' : 'Pay for your order',
     })
