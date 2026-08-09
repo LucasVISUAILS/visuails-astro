@@ -19,8 +19,36 @@ database).
 - [x] ~~0019 (verkoopkanaal in de brand kit) en 0020 (tevredenheid en reviews)~~ — door Lucas gedraaid.
 - [x] ~~0021 (facturen)~~ — gedraaid 9 augustus 2026 met `npm run migrate`, nadat bleek dat een `npx wrangler whoami` ervoor de 7403 wegneemt. `invoice_series`, `invoices` en de vier indexen staan erin. Het plakken in het D1-console was niet meer nodig; `MIGRATIE-0021-PLAKKEN.sql` blijft staan als terugval.
 - [x] ~~Wrangler-autorisatie: de 7403 verklaard.~~ Het was geen rechtenprobleem maar een verlopen OAuth-toegangstoken. `npm run migrate`, `npm run backup` en `npm run fetch:order` vernieuwen hem nu zelf voordat ze beginnen (`warmLogin()` in scripts/lib/wrangler.mjs), en `npm run check:wrangler` meet deze oorzaak nu als eerste. Roep je wrangler met de hand aan en krijg je 7403: eerst `npx wrangler whoami`.
-- [ ] 🔴 **Deployen, en dan VISUAILS Studio → Facturen openen.** De tabellen staan in de database, de code staat nog alleen op je schijf. Na de deploy haalt die sectie de achterstand van je betaalde testbestellingen zelf in — maximaal vijf per bezoek, met de betaaldatum als factuurdatum. Zie je nummers verschijnen, dan werkt de hele keten.
+- [ ] 🔴 **Deployen, dan `HERSTEL-TESTFACTUREN.sql` draaien, dan VISUAILS Studio → Facturen openen.** In die volgorde. VIS-2026-0001 is uitgegeven met `VAT 0.21%` en het slug "catalog" op papier; dat is 9 augustus gerepareerd, maar de reparatie bereikt een factuur die al `issued` is niet. Zolang het testdata is mag je hem weggooien en de teller op nul zetten — daarna nooit meer, en dan is opnieuw renderen uit `snapshot_json` de weg.
+- [ ] 🟡 **Opnieuw renderen uit de momentopname is nog niet te doen.** Wordt er ná de eerste echte factuur nog iets aan de opmaak gerepareerd, dan is er geen knop om een bestaande factuur opnieuw te laten maken. De momentopname staat er wel en is er precies voor bedoeld; het is een functie van tien regels plus een plek in het adminscherm. Nu niet gebouwd omdat het weggooien van testdata het vandaag oplost en een ongebruikte knop een knop is die niemand test.
+- [ ] 🟢 **De factuur volgt de taal van de bestelling.** Jouw testbestelling stond op `en`, dus je kreeg een Engelse factuur op een Nederlands adres in Enschede. Dat is bedoeld gedrag — de klant krijgt de taal waarin hij besteld heeft — maar het is het soort ding dat je één keer wilt zien voordat het bij een klant gebeurt.
+- [ ] 🟢 **Nederlandse postcodes worden overgenomen zoals ze getypt zijn.** "7531HK" komt zonder spatie op de factuur. Niet fout, wel slordig; één normalisatie bij het opslaan lost het op voor alle adressen tegelijk.
+  Na de deploy en de opruiming haalt de sectie Facturen de achterstand van je betaalde testbestellingen zelf in — maximaal vijf per bezoek, met de betaaldatum als factuurdatum. Zie je nummers verschijnen met `Btw 21%` en een dienstnaam met hoofdletter, dan werkt de hele keten.
 - [ ] 🔴 **`SELLER_ADDRESS` als secret in Pages zetten, vóór de eerste echte factuur.** Zonder die variabele valt `sellerOf()` terug op een voorbeeldadres. Je huisadres hoort daar niet in — zet een adres dat je op een factuur wilt zien. `VISUAILS_IBAN` erbij als je het rekeningnummer erop wilt.
+
+---
+
+## Reviews (fase 1 gebouwd 9 augustus 2026)
+
+Wat er staat: `src/data/reviews.js` (de twee links, één plek), `src/lib/feedback.js`
+(de vraag, de routing en het schrijven — één gedeelde component voor VISUAILS
+Studio én het portaal, zoals §2 vraagt), `public/feedback.css`, en de aanroepen in
+`account.js` en `portal.js`. De trigger is `closed_at`: élk beeld goedgekeurd.
+Onder test in `tests/feedback.test.mjs` (75 assertions, tegen het echte
+migratiebestand).
+
+De regel die niet mag sneuvelen: **bij een lage score blijven de publieke
+reviewknoppen staan.** Kleiner en onder het privéformulier, maar aanwezig. Ze
+weglaten is review gating — bij Google en Trustpilot tegen de richtlijnen en in de
+EU een oneerlijke handelspraktijk. De test controleert ook dat er niets is dat ze
+wegstopt (`hidden`, `display:none`), want met alleen "staat het in de html" bleef
+hij groen toen ik dat probeerde.
+
+Fase 2, nog te bouwen:
+
+- [ ] 🟡 **De eenmalige herinnering na 5-7 dagen** (§2 stap 3). `reminder_sent_at` en de index `idx_feedback_reminder` staan klaar. Blokkeert op hetzelfde als de betaaldeadline: dit project is Cloudflare Pages en heeft geen `scheduled` handler — zie de noot onderaan migratie 0018. Dat is een aparte beslissing (een Worker ernaast, of een cron van buiten).
+- [ ] 🟡 **Het testimonialblok op de homepage** (§2 stap 4). Pas tonen bij minstens één goedgekeurde testimonial; bij nul blijft de eerlijke tekst staan die er nu is. Er is nog geen scherm om `testimonial_approved` op 1 te zetten — dat hoort in het adminportaal.
+- [x] ~~**De privénotitie moet ergens binnenkomen.**~~ — gedaan. Bij een score onder de 4 gaat er een mail naar `NOTIFY_EMAIL`, en nog een zodra de klant erbij schrijft wat er misging. Allebei precies één keer: de score mailt alleen als hij verandert, de notitie alleen als hij nieuw is (de eerste wint). Zonder `RESEND_API_KEY` gaat er niets uit en gaat er niets stuk.
 
 ---
 
@@ -53,7 +81,7 @@ Elk punt hieronder is met bestandsverwijzingen bewezen, niet vermoed. Gesorteerd
 - [ ] 🔴 **"Eén proefvisual per bedrijf" wordt niet gehandhaafd.** `functions/api/order.js` gaat bij `test-sample` rechtstreeks naar de betaling zonder ooit op een eerdere proef te controleren. Eén merk kan zijn hele collectie voor €1 per product laten maken. Het enige punt op deze lijst dat direct geld kost.
 - [ ] 🔴 **De bevestigingsmail zegt "incl. 21% btw" ook bij 0%.** `customerEmail()` krijgt de btw-uitkomst wél mee maar leest die parameter nergens; "21%" staat hard in de regel. Een verleggingsklant krijgt twee keer hetzelfde bedrag te zien met "excl." en "incl. 21%" ernaast — in de enige mail die zijn bestelling bevestigt.
 - [ ] 🔴 **"De verlegging wordt achteraf op je factuur rechtgezet" is sinds migratie 0015 onwaar.** De verlegging wordt bij het afrekenen toegepast. Staat op /pricing, /how-it-works, /start, in de FAQ én in de bevestigingsmail. Een Duitse klant betaalt al 0% maar leest dat hij 21% betaalt en een correctie krijgt die niet komt.
-- [ ] 🔴 **De tevredenheidsvraag wordt nooit gesteld.** "We vragen of je tevreden bent, en zetten recht wat dat niet is" staat op zeven pagina's, in de bevestigingsmail en in /terms §10 — en het is de belofte die de revisierondes heeft vervangen. Tabel `order_feedback` staat in migratie 0020 (nog te draaien, zie boven); nul code raakt hem aan.
+- [x] ~~**De tevredenheidsvraag wordt nooit gesteld.**~~ — gebouwd 9 augustus 2026, fase 1 van de specificatie (§2 stap 1 en 2). Zie "Reviews" hieronder.
 - [ ] 🔴 **Een order die de btw-poort tegenhoudt komt er niet meer uit.** Geen betaallink, en er is geen adminscherm dat de beoordeling afrondt: `orders.review_state` wordt één keer geschreven en nergens gelezen. Een klant buiten de EU krijgt een bevestiging zonder bedrag en zonder betaalknop.
 - [ ] 🟡 **De €250 merkmodel-credit wordt niet verrekend.** Alle treffers zijn presentatie in .astro-bestanden; `quote.js` kent het begrip niet en er is geen kolom om de teller bij te houden. Een geldbelofte met een rekensom die de pagina zelf uitschrijft.
 - [ ] 🟡 **"Downloads per kanaal gesneden" bestaat niet.** Eén rij in `files` is één bestand; `preview_key` is expliciet géén uitsnede. De klant downloadt wat de studio uploadde en schaalt alles zelf bij — precies het werk waarvan /portal zegt dat het niet meer nodig is.

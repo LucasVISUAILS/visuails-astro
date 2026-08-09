@@ -189,7 +189,12 @@ function base(over = {}) {
       { description: 'Extra achtergrond', qty: 1, unitCents: 4500, totalCents: 4500 },
     ],
     netCents: 154500,
-    vatRate: 21,
+    // 0.21 EN NIET 21, want dat is wat orders.vat_rate bevat: vatDecision() geeft
+    // `rate: 0.21`. De fixture stond hier op 21 en dat is precies waarom 147
+    // assertions "VAT 0.21%" op een echte factuur niet hebben gezien — zie de noot
+    // bij vatRate in prepare(). Een fixture die niet lijkt op de echte data toetst
+    // de code tegen een wereld die niet bestaat.
+    vatRate: 0.21,
     vatCents: 32445,
     grossCents: 186945,
     treatment: 'nl_standard',
@@ -405,7 +410,7 @@ const bare = await renderInvoicePdf({
   seller: { name: 'VISUAILS', address: ['Voorbeeldstraat 12'], vat: 'NL005407575B96', kvk: '99742993', email: 'hello@visuails.com', iban: null },
   customer: { name: 'Piet', company: null, address: ['Dorpsstraat 1'], country: 'NL', vat: null },
   lines: [{ description: 'Sample', qty: 1, unitCents: 99, totalCents: 99 }],
-  netCents: 99, vatRate: 21, vatCents: 21, grossCents: 120,
+  netCents: 99, vatRate: 0.21, vatCents: 21, grossCents: 120,
   treatment: 'nl_standard', reference: null, paidAt: null, viesConsultation: null,
 });
 const bareText = textOf(bare);
@@ -519,6 +524,51 @@ const unbreakable = await renderInvoicePdf(base({
 check('an unbreakable string is hard-broken rather than overflowing',
   extractText(unbreakable).filter((r) => r.includes('visuails.com') || r.includes('bestandsnaam')).length >= 2, true);
 check('and it does not run off the sheet either', offPage(unbreakable).map((r) => r.text), []);
+
+// ── 9b · HET BTW-TARIEF, IN BEIDE VORMEN ─────────────────────────────────────
+//
+// De bug die op VIS-2026-0001 stond: `VAT 0.21%`. Deze reeks toetst dat een breuk
+// én een percentage allebei als percentage op papier komen, want beide vormen
+// bestaan nu in het wild — orders.vat_rate bewaart de breuk, en mijn eigen oudere
+// momentopnames bewaren wat de fixtures gaven.
+console.log('\n── het btw-tarief ──');
+
+const rateText = async (rate) => textOf(await renderInvoicePdf(base({
+  vatRate: rate, netCents: 154500, vatCents: 32445, grossCents: 186945,
+})));
+
+check('0.21 wordt 21%', (await rateText(0.21)).includes('Btw 21%'), true);
+check('21 blijft 21%', (await rateText(21)).includes('Btw 21%'), true);
+check('0.09 wordt 9%', (await rateText(0.09)).includes('Btw 9%'), true);
+check('9 blijft 9%', (await rateText(9)).includes('Btw 9%'), true);
+// Geen enkel land heeft een tarief onder de 1%, dus alles tussen 0 en 1 is een
+// breuk. Dat is wat deze omzetting eenduidig maakt en niet een gok.
+check('0.215 wordt 21,5% en verliest geen halve procent',
+  (await rateText(0.215)).includes('Btw 21,5%'), true);
+check('nul blijft nul, in beide vormen', (await rateText(0)).includes('Btw 0%'), true);
+// En het tarief hoort NERGENS als kommagetal met een procentteken te staan.
+check('nooit "0.21%" of "0,21%" op het blad',
+  /0[.,]21\s*%/.test(await rateText(0.21)), false);
+
+// ── 9c · HET MERKTEKEN ───────────────────────────────────────────────────────
+//
+// Vector, niet raster: de paden staan als padnotatie in de contentstroom. Zonder
+// deze controle is "het logo staat erop" iets wat je op een schermafdruk ziet en
+// niet iets wat de suite bewaakt — en dit is precies het soort ding dat verdwijnt
+// bij een herschrijving van de kop.
+console.log('\n── het merkteken ──');
+
+const markPdf = await renderInvoicePdf(base());
+const markStreams = streamsOf(markPdf).join('\n');
+// De vul-operator van PDF. Die staat alleen in de stroom als er een pad is
+// getekend; tekst en lijnen leveren hem niet op (een lijn eindigt op S).
+check('er wordt een gevuld pad getekend', /(^|\s)f\*?(\s|$)/m.test(markStreams), true);
+// Twee subpaden, dus minstens twee keer een 'moveto' in de kop. Het teken bestaat
+// uit de V en de bliksem eromheen; verdwijnt er één, dan is het geen merkteken meer.
+check('twee subpaden, niet één', (markStreams.match(/(^|\s)m(\s|$)/gm) || []).length >= 2, true);
+check('het blijft vector: geen ingesloten afbeelding',
+  Buffer.from(markPdf).toString('latin1').includes('/Image'), false);
+check('en het teken kost bijna niets', markPdf.length < 6000, true);
 
 // ── 10a · EEN FACTUUR DIE NIET OPTELT WORDT NIET GEDRUKT ─────────────────────
 //

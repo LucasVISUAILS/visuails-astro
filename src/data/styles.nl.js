@@ -44,7 +44,7 @@ export const styles = [
     craft: [
       { title: 'Een ingehouden palet, streng bewaakt', body: 'Zand, bot, terracotta en schaduw. Alles wat luider is, wordt verwijderd voordat het in beeld komt.' },
       { title: 'Geometrie van lang licht', body: 'Schaduwen vallen laag en lang, wat vlakke producten dimensie geeft en premium producten gewicht.' },
-      { title: 'Textuur als luxe', body: 'Steen, pleisterwerk en geweven oppervlakken worden weergegeven met de precisie die minimalisme duur laat voelen.' },
+      { title: 'Oppervlakken die je kunt zien', body: 'Steen, pleisterwerk en geweven achtergronden houden hun structuur op volle resolutie, zodat een rustige scène toch iets te bekijken heeft.' },
       { title: 'Ruimte met opzet gelaten', body: 'Composities houden royale negatieve ruimte — klaar voor tekst, of voor stilte.' },
     ],
     why: [
@@ -85,11 +85,11 @@ export const styles = [
       { title: 'Energie die zich herhaalt', body: 'De chaos is gesystematiseerd: je tiende Flash-visual raakt net zo hard als je eerste, en matcht hem.' },
     ],
     why: [
-      { title: 'Stopt het scrollen', body: 'Gebouwd voor feeds waar zacht, gelijkmatig licht meteen voorbij wordt gescrold.' },
+      { title: 'Valt op in een feed', body: 'Hard licht en diepe schaduw zijn ook op thumbnailformaat te zien, waar zacht gelijkmatig licht wegvalt.' },
       { title: 'Een edge die zich herhaalt', body: 'Dezelfde intensiteit op visual één en visual honderd.' },
-      { title: 'Gebouwd voor drops', body: 'Getimede energie voor launches, bijbestellingen en hypemomenten.' },
+      { title: 'Gemaakt voor een lancering', body: 'De look past bij een release, een bijbestelling of een beperkte oplage.' },
     ],
-    bestFor: ['Streetwear, sneakers en accessoires', 'Drops, launches en hypemomenten', 'Merken met een edge om te behouden', 'Social-advertenties die duimen moeten stoppen'],
+    bestFor: ['Streetwear, sneakers en accessoires', 'Lanceringen en beperkte oplages', 'Merken met een harde, herkenbare stijl', 'Social-advertenties die tussen de rest moeten opvallen'],
     whatYouGet: ['Energieke flitsverlichte scènes', 'Diep, doelbewust schaduwwerk', 'Consistente modellen, vastgezet op je merk', TIMING, REVIEW],
   },
   {

@@ -35,7 +35,7 @@ import { waHref } from '../data/whatsapp.js';
 // from turnaround(); what changed is that this page names the count.
 import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
-  WINDOW_THRESHOLD, reviewClaim, turnaround,
+  WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
@@ -173,7 +173,7 @@ const COPY = {
     // nothing else — the full rung list is one section above them.
     unitLabel: `${euro(entry, 'en')} – ${euro(floor, 'en')} / product · ${vatLabel('excl', 'en')}`,
     edMeta: '( Where it fits )',
-    edH: 'Lifestyle photography: desire, in context.',
+    edH: `Lifestyle photography: your product in a styled scene, ${LIFESTYLE_IMAGES} photos per product.`,
     edSub: 'The scenes that create want, not just clarity.',
     whatH: 'What it is',
     whatP: [
@@ -216,7 +216,7 @@ const COPY = {
       },
       {
         q: 'Can I get a mood that is not one of the four?',
-        a: 'Yes. The four signature looks are what most brands pick because they are already tuned; anything beyond them is scoped and quoted, so tell us what you have in mind and we come back with a price rather than guessing at one.',
+        a: 'Yes. Most brands pick one of the four because they are ready to run today. For anything else, tell us what you have in mind and we send you a price before we start.',
       },
       {
         q: 'Can the same model appear across my whole collection?',

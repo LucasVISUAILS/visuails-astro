@@ -61,9 +61,9 @@ export const videoStyles = [
       { title: 'Grading afgestemd op stills', body: 'Krijgt dezelfde kleurbewerking als je catalogset.' },
     ],
     why: [
-      { title: 'Leven zonder ruis', body: 'Maakt af wat een statische foto niet helemaal kan zeggen.' },
+      { title: 'Beweging, en niets meer', body: 'Een langzame pan of een kleine draai. Geen muziek, geen cuts, geen tekst in beeld.' },
       { title: 'Elk formaat, één shoot', body: 'Gemonteerd voor vierkant, portret en breed vanuit één bestand.' },
-      { title: 'Klaar voor de scroll', body: '8 seconden, gebouwd om aandacht vast te houden.' },
+      { title: 'De juiste lengte voor een feed', body: '8 seconden, in de verhouding die Instagram en TikTok gebruiken.' },
     ],
     bestFor: [
       'Productpagina\'s die leven nodig hebben',

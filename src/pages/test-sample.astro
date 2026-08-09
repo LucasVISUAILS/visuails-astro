@@ -12,12 +12,16 @@ import { waHref } from '../data/whatsapp.js';
 import Layout from '../layouts/Layout.astro';
 import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../data/pricing.js';
 
-// The verification fee was typed in four separate places and the delivery step
+// The €1 was typed in four separate places and the delivery step
 // promised "~24 hours" — a figure the capacity gate has never cleared. Both are
 // tier facts, so they come from pricing.js now. "No subscription" went with
 // them: it stopped being true the day the monthly plans shipped, and /faq and
 // /about were already corrected for exactly that reason. The sample runs the
 // per-product lane, so it states that lane's turnaround and nothing faster.
+// Sinds 9 augustus 2026 geldt hetzelfde voor de OMSCHRIJVING van dat bedrag. Het
+// heette "a €1 verification", en dat woord beloofde een controle die er niet is —
+// zie de noot bij TEST_SAMPLE in pricing.js. De zin staat nu als `feeNote` in dat
+// bestand, want hij stond op elf plekken los ingetypt.
 const SAMPLE = TEST_SAMPLE.en;
 const TIMING = turnaround('unattended', 'en');
 
@@ -52,16 +56,16 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
 
 <Layout
   title="Test VISUAILS with 1 product — test sample"
-  description="Send the same photos a normal order needs and get one product back in full: four catalog images or a three-photo lifestyle carousel. One sample per business, checked by a specialist before it reaches you."
+  description="Send the same photos a normal order needs and get back four catalog photos or a three-photo lifestyle carousel. One sample per business, checked by a specialist before it reaches you."
 >
   <!-- HERO -->
   <section class="page-hero"><div class="container">
     <span class="eyebrow-page">Test sample</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Test VISUAILS with <span class="accent-word">1 product</span></h1>
-    <p class="lead" style="margin-top:1.2rem">You send what a normal order needs — front and back at least, plus a detail or worn shot if you have them — and that product comes back in full: {CATALOG_IMAGES} catalog images, or a {LIFESTYLE_IMAGES}-photo lifestyle carousel. Exactly what a paid order gets you per product. The more you send, the better we can make it.</p>
+    <p class="lead" style="margin-top:1.2rem">You send what a normal order needs — front and back at least, plus a detail or worn shot if you have them — and back come {SAMPLE.deliverable}. Exactly what a paid order gets you per product. The more you send, the better we can make it.</p>
     <div class="chip-row" style="margin-top:1.8rem">
-      <span class="chip"><span class="dot"></span>One complete product</span>
-      <span class="chip"><span class="dot"></span>Just {SAMPLE.price} verification</span>
+      <span class="chip"><span class="dot"></span>{CATALOG_IMAGES} photos, or {LIFESTYLE_IMAGES}</span>
+      <span class="chip"><span class="dot"></span>Just {SAMPLE.price}</span>
       <span class="chip"><span class="dot"></span>Human quality-checked</span>
     </div>
   </div></section>
@@ -70,7 +74,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
   <section class="section-tight">
     <div class="container two-col">
       <div class="reveal pending">
-        <h2>One product, delivered in full.</h2>
+        <h2>{SAMPLE.deliverable}, from your own product.</h2>
         <p style="margin-top:1.1rem;color:var(--ink-3);max-width:52ch">The same production and human review used on every paid order — the honest way to judge quality before you commit.</p>
         <ul class="checklist" style="margin-top:1.4rem">
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Pick catalog: {CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.</span></li>
@@ -78,7 +82,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>High resolution, delivered as an email download link.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>A real look at our lighting, framing and finish.</span></li>
           <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Reviewed by a person before it reaches you.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>A one-off {SAMPLE.price} verification, one sample per business.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>A one-off {SAMPLE.feeNote}, one sample per business.</span></li>
         </ul>
       </div>
       <div class="reveal pending">
@@ -300,7 +304,7 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
                   <p class="form-help">Stuck on a step, or unsure about something? <a href={waHref("Hi VISUAILS, I'm filling in an order and have a question.")} target="_blank" rel="noopener">Message us on WhatsApp</a> — we usually reply within an hour on weekdays and can place the order with you.</p>
         </form>
       </div>
-      <p class="hint" style="text-align:center;margin-top:1rem">One sample per business &middot; a small {SAMPLE.price} verification to prevent abuse &middot; that's all you pay for the sample.</p>
+      <p class="hint" style="text-align:center;margin-top:1rem">One sample per business &middot; a {SAMPLE.feeNote} &middot; that's all you pay for the sample.</p>
     </div>
   </section>
 

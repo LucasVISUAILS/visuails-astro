@@ -1254,15 +1254,70 @@ function assertShotCounts() {
 }
 assertShotCounts();
 
+/*
+ * ── WAT DE €1 IS, EN WAAROM DIE ZIN HIER STAAT (9 augustus 2026) ─────────────
+ *
+ * Lucas: *"Ik wil de €1 verification veranderen naar A €1 fee to prevent abuse,
+ * omdat verification niet helemaal eerlijk voelt."*
+ *
+ * Hij heeft gelijk, en het is geen kwestie van toon. "Verification" suggereert
+ * dat we iets controleren en dat het bedrag daarvoor dient — dat we je kaart
+ * verifiëren, of je bedrijf. Dat doen we niet. We houden €1 en dat is het; het
+ * enige wat het tegenhoudt is dat iemand honderd proeven aanvraagt. Een woord dat
+ * een controle belooft die er niet is, is precies het soort belofte dat de rest
+ * van deze site probeert te vermijden.
+ *
+ * ── EN WAAROM HET NU ÉÉN VELD IS ────────────────────────────────────────────
+ *
+ * De zin stond op elf plekken los ingetypt: /test-sample twee keer plus een chip,
+ * /gallery, /upload-guidelines en de homepage, allemaal maal twee talen. De kop
+ * van src/pages/test-sample.astro voert dat argument zelf al — daar staat "the
+ * verification fee was typed in four separate places" als reden dat de PRIJS naar
+ * dit bestand verhuisde. De omschrijving eromheen bleef achter, en dus was deze
+ * ene woordwijziging elf bewerkingen in zes bestanden.
+ *
+ * `feeNote` is de volledige zin voor waar de belofte helemaal wordt uitgeschreven.
+ * Waar alleen het bedrag past — een chip van drie woorden — staat het bedrag en
+ * verder niets: een halve uitleg is slechter dan geen.
+ *
+ * ZONDER LIDWOORD, en dat is niet willekeurig. De eerste versie begon met "a ",
+ * en op /test-sample leverde dat "A one-off a €1 fee to prevent abuse" op. Een
+ * gedeelde zin die zijn eigen lidwoord meebrengt, kan maar in één zinsbouw staan;
+ * "a one-off …", "just …" en "for a …" willen er alle drie iets anders voor. Dus
+ * draagt de aanroeper het lidwoord en deze zin alleen de bewering.
+ */
 export const TEST_SAMPLE = {
   en: {
     name: 'Test sample',
     price: euro(AMOUNT.testSample, 'en'),
     unit: 'one per business',
+    feeNote: `${euro(AMOUNT.testSample, 'en')} fee to prevent abuse`,
+    /*
+     * ── WAT JE KRIJGT, IN ÉÉN ZIN (9 augustus 2026) ──────────────────────────
+     *
+     * Lucas: *"er staat nu 4 catalog set of Carousel, zet er lifestyle Carousel
+     * bij om het duidelijk te maken. Er zijn teveel zinnen gewoon niet duidelijk.
+     * Zeg gewoon wat het is."*
+     *
+     * Dit werd op ACHT verschillende manieren gezegd — "4 catalog images or a
+     * carousel of 3", "one product in full", "a catalog set or a carousel",
+     * "4 catalogbeelden of een carousel van 3" — en de helft daarvan noemde het
+     * woord lifestyle niet. "A carousel of 3" is dan een carousel van drie wát,
+     * en waarvan.
+     *
+     * Beide dingen worden nu bij hun naam genoemd, met hun aantal, en beide keren
+     * met het woord foto's erbij. Dat is de hele regel: geen omschrijving waar een
+     * getal hoort, en geen naam zonder aantal.
+     *
+     * Eén constante en geen zin per pagina, om dezelfde reden als feeNote
+     * hierboven: acht formuleringen zijn acht plekken waar de volgende
+     * verduidelijking weer half blijft steken.
+     */
+    deliverable: `${CATALOG_IMAGES} catalog photos or a lifestyle carousel of ${LIFESTYLE_IMAGES} photos`,
     // Niet "one image". Eén product, volledig geleverd — precies wat een betaalde
     // bestelling per product oplevert, en dat is de hele reden dat de proef iets
     // bewijst.
-    line: `One product, finished the way a paid order is: ${CATALOG_IMAGES} catalog images or a ${LIFESTYLE_IMAGES}-photo lifestyle carousel, your choice.`,
+    line: `${CATALOG_IMAGES} catalog photos or a lifestyle carousel of ${LIFESTYLE_IMAGES} photos, your choice, finished the way a paid order is.`,
     catalogLine: `${CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.`,
     lifestyleLine: `${LIFESTYLE_IMAGES} photos in one styled look — a scene, one on a model, and a detail close-up.`,
   },
@@ -1270,7 +1325,12 @@ export const TEST_SAMPLE = {
     name: 'Proefvisual',
     price: euro(AMOUNT.testSample, 'nl'),
     unit: 'één per bedrijf',
-    line: `Eén product, afgewerkt zoals bij een betaalde bestelling: ${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest.`,
+    // Geen "vergoeding" of "bijdrage" — dat zijn de woorden waarmee je een bedrag
+    // mooier maakt dan het is, en dan ben je terug bij het probleem met
+    // "verificatie". Je betaalt €1, en dat houdt misbruik tegen. Meer is het niet.
+    feeNote: `${euro(AMOUNT.testSample, 'nl')} om misbruik te voorkomen`,
+    deliverable: `${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s`,
+    line: `${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest, afgewerkt zoals bij een betaalde bestelling.`,
     catalogLine: `${CATALOG_IMAGES} beelden — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
     lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
   },

@@ -125,7 +125,7 @@ export function pricingFaqs(lang = 'en') {
     return [
       {
         q: 'Wanneer betaal ik?',
-        a: `Vanaf ${WINDOW_THRESHOLD} producten nadat de capaciteitscheck je leverdatum heeft bevestigd en voordat de productie start — je reserveert die leverdatum, dus daar betaal je voor. Kleinere bestellingen worden bij levering gefactureerd. De proefvisual is het enige dat vooraf betaald wordt, en dat is er één per bedrijf.`,
+        a: `Vanaf ${WINDOW_THRESHOLD} producten betaal je zodra we je leverdatum hebben bevestigd, en voordat we beginnen. Je legt die datum daarmee vast, en dat is waar je voor betaalt. Kleinere bestellingen worden bij levering gefactureerd. De proefvisual is het enige dat vooraf betaald wordt, en dat is er één per bedrijf.`,
       },
       {
         q: 'Is mijn eerste bestelling goedkoper?',
@@ -137,7 +137,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Is een plan goedkoper dan bestellen wanneer ik het nodig heb?',
-        a: `Alleen als dezelfde output elke maand terugkomt. Het ${planName.studio}-plan is ${ex(PLAN_AMOUNT.studio, 'nl')} per maand voor ${PLAN_PRODUCTS.studio} producten en ${PLAN_CLIPS.studio} clips; op de prijs per product kost diezelfde output ${ex(studioSaving.onLadder, 'nl')}. Bestel je seizoensgebonden in plaats van maandelijks, dan is de prijs per product de goedkopere deur — een plan dat je niet volmaakt is geen besparing.`,
+        a: `Alleen als dezelfde output elke maand terugkomt. Het ${planName.studio}-plan is ${ex(PLAN_AMOUNT.studio, 'nl')} per maand voor ${PLAN_PRODUCTS.studio} producten en ${PLAN_CLIPS.studio} clips; op de prijs per product kost diezelfde output ${ex(studioSaving.onLadder, 'nl')}. Bestel je per seizoen in plaats van elke maand, dan ben je goedkoper uit met de prijs per product. Een plan waarvan je de producten niet opmaakt, bespaart je niets.`,
       },
       {
         q: 'Wat gebeurt er met planproducten die ik niet gebruik?',
@@ -226,7 +226,7 @@ export function faqPageGroups(lang = 'en') {
             // over de lancering van de KLANT — precies de botsing die het
             // prijsmodel heeft veranderd. Zie de kop van dit bestand.
             q: 'Wat is een bestelling?',
-            a: `Een bestelling is zoveel producten als je in één keer aanlevert — één keer aanleveren, één tarief, één factuur — met wat je per product kiest: een catalogset, een lifestyle-carousel, of allebei. Er is geen pakket waar je lijn in moet passen en geen minimum; het tarief per product daalt naarmate het aantal stijgt. En over het woord "bestelling": in mode is dat jouw collectie die live gaat. Daarom noemen we onze eigen werkopdracht zo niet meer. De bestelling is van jou. Wat je bij ons koopt is een bestelling.`,
+            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} beelden, een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
           },
           {
             q: 'Wat moet ik opsturen?',
@@ -234,7 +234,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
-            a: `Op twee manieren. Een proefvisual van ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit}: dat product volledig geleverd — ${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES} foto’s. Die loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn.`,
+            a: `Op twee manieren. Een proefvisual van ${sample.price} ${vatLabel('excl', 'nl')} op je eigen product, ${sample.unit}: je krijgt ${sample.deliverable} terug. Die loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen. Of begin gewoon klein: het tarief is per product, dus een eerste bestelling mag een handvol stuks zijn.`,
           },
         ],
       },
@@ -243,7 +243,7 @@ export function faqPageGroups(lang = 'en') {
         items: [
           {
             q: 'Wat is het verschil tussen catalog en lifestyle?',
-            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je allebei, dan heet dat op de prijs per product de complete scope — voor elk product beide.`,
+            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je allebei op hetzelfde product, dan heet dat een compleet product: ${CATALOG_IMAGES + LIFESTYLE_IMAGES} beelden tegen één tarief, voor elk product in de bestelling.`,
             photos: [
               {
                 src: '/img/catalog-after.webp',
@@ -365,7 +365,7 @@ export function faqPageGroups(lang = 'en') {
           // model. See this file's header. Do not reintroduce it as a name for
           // what we sell; that is what "an order" and "a batch" are for.
           q: 'What is an order?',
-          a: `An order is however many products you send in one go — one delivery, one rate, one invoice — with what you choose applied to each: a catalog set, a lifestyle carousel, or both. There is no package to fit your line into and no minimum, and the rate per product falls as the count rises. About the word "order": in fashion it means your collection going live, so we stopped using it for our own work order. The order is yours. What you buy from us is an order.`,
+          a: `An order is everything you send in one go: one upload, one rate, one invoice. Per product you pick a catalog set of ${CATALOG_IMAGES} photos, a lifestyle carousel of ${LIFESTYLE_IMAGES} photos, or both. There is no minimum and no package to fit your line into — the more products, the lower the rate per product.`,
         },
         {
           q: 'What do I need to send you?',
@@ -373,12 +373,12 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Can I try it before ordering a whole collection?',
-          a: `Two ways. A ${sample.price} ${vatLabel('excl', 'en')} test sample on one of your own products, ${sample.unit}: that product delivered in full — ${CATALOG_IMAGES} catalog images or a ${LIFESTYLE_IMAGES}-photo carousel. It runs through the same production as a paid order, so what you see is what you would get. Or simply start small: the rate is per product, so a first order can be a handful of pieces.`,
+          a: `Two ways. A ${sample.price} ${vatLabel('excl', 'en')} test sample on one of your own products, ${sample.unit}: you get back ${sample.deliverable}. It runs through the same production as a paid order, so what you see is what you would get. Or simply start small: the rate is per product, so a first order can be a handful of pieces.`,
         },
       ],
     },
     {
-      title: 'Ordering and scope',
+      title: 'Ordering and what you get',
       items: [
         {
           q: 'What is the difference between catalog and lifestyle?',
@@ -395,7 +395,7 @@ export function faqPageGroups(lang = 'en') {
           // accessor, so they are the same strings /catalog and /lifestyle
           // render. Only the name and the line are read — never the price,
           // which is an entry rung now and belongs on the ladder, not here.
-          a: `${cat.name}. ${cat.line} Clean, consistent, built for shop listings and marketplaces. ${life.name}. ${life.line} A styled scene rather than a product on a background. Take both and the price per product calls that the complete scope — both of them, for every product in the order.`,
+          a: `${cat.name}. ${cat.line} Clean, consistent, built for shop listings and marketplaces. ${life.name}. ${life.line} A styled scene rather than a product on a background. Take both on the same product and that is a complete product: ${CATALOG_IMAGES + LIFESTYLE_IMAGES} photos at one rate, for every product in the order.`,
           // The only answer on this page whose subject is literally "these two
           // things look different", so it is the only one where a pair of
           // photographs does the explaining better than the paragraph above

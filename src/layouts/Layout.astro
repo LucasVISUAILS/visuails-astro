@@ -918,10 +918,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
 
+  {/* DE KNOP BOVEN, DE UITLEG ERONDER — 9 augustus 2026. Dit was één rij met een
+      zin van dertig woorden ertussen; zie de noot bij cb_note in i18n/ui.js.
+      De volgorde in de DOM is nu ook de leesvolgorde: eerst wat je kunt doen,
+      dan waarom. Een schermlezer krijgt daarmee dezelfde volgorde als het oog. */}
   <div class="convbar" role="complementary" aria-label={t('cb_region')}>
     <svg class="brand-mark cb-logo" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
-    <em>{t('cb_text')}</em>
-    <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
+    <span class="cb-body">
+      <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
+      <em class="cb-note">{t('cb_note')}</em>
+    </span>
     <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
   </div>
 
@@ -1396,7 +1402,18 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      footer under the reader's thumb. Space costs nothing here; a jump does. */
   @media (max-width: 1100px) { .footer-bottom { padding-bottom: 84px; } }
 
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-flex; align-items: center; gap: 12px; padding: 8px 8px 8px 20px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }
+  /* ── DE VORM VAN DE BALK ─────────────────────────────────────────────────
+     Concentrische hoeken: buiten --r-lg (24px), binnenrand 10px lucht, dus de
+     knop binnenin krijgt 14px (--r-md). Dat is 24 min 10, en dat is precies wat
+     twee geneste rondingen nodig hebben om evenwijdig te lopen. Met de knop op
+     zijn eigen pilvorm liep de binnenboog een andere kant op dan de buitenboog,
+     en dat is wat de balk rommelig maakte.
+
+     Grid en geen flex: drie kolommen — teken, inhoud, kruisje — met de rijen
+     erin uitgelijnd op de EERSTE rij. Bij flex moest elk kind zijn eigen
+     margin-top krijgen om naast de knop te staan, en dat zijn drie getallen die
+     los van elkaar verkeerd kunnen gaan zodra de knop van hoogte verandert. */
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto; align-items: start; column-gap: 12px; padding: 10px; background: var(--surface-2); border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-lg); }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
   /* 24px, and 20px of padding to its left rather than 14. The bar's corner is
      --r-lg (24px), so at 14px the mark sat INSIDE the curve's sweep: nothing
@@ -1404,11 +1421,92 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      it reads as clipped, which is the same problem from the reader's side.
      Lucas: *"het logo naast de test sample pop-up is niet juist en afgeknipt
      lijkt het wel."* A mark needs to clear the radius that frames it. */
-  .convbar .cb-logo { height: 24px; flex: 0 0 auto; }
-  .convbar em { font-style: normal; font-size: .92rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
-  .convbar .cb-cta { background: var(--accent); color: var(--accent-on); padding: 10px 18px; font-size: .9rem; font-weight: 600; white-space: nowrap; }
-  .convbar .cb-close { border-radius: 50%; width: 40px; height: 40px; color: var(--ink-3); font-size: 1.1rem; background: none; border: none; cursor: pointer; }
-  @media (max-width: 600px) { .convbar em { display: none; } }
+  /* ÉÉN MAAT VOOR DE HOOGTE VAN DE EERSTE RIJ. Het teken en het kruisje staan
+     allebei naast de knop en moeten er allebei op gecentreerd staan; met een
+     los getal per element gaat dat mis zodra de knop verandert. Nu leiden ze het
+     af van dezelfde variabele als de knop zelf. */
+  .convbar { --cb-row: 40px; }
+  /* ── DE BREEDTE STAAT ER EXPLICIET, EN DAT MOET ────────────────────────
+     `.brand-mark` heeft `width: auto` en de svg leidt zijn breedte af uit de
+     viewBox. In een flexregel werkt dat; in een grid met `auto`-kolommen droeg
+     hij NUL bij aan de intrinsieke breedte — gemeten: kolom 1 werd 0px en het
+     teken verdween van de balk terwijl de hoogte gewoon 22px was. Een vervangen
+     element met alleen een hoogte is precies het geval waarin die berekening
+     wegvalt.
+     Dus: één variabele voor de hoogte en de breedte eruit gerekend met de
+     verhouding uit de viewBox (702 x 813.25). Verandert de tekening van
+     verhouding, dan verandert dit getal mee — daarom staat het er als deling en
+     niet als uitkomst.
+
+     EN `max-width: none`, WAT DE ECHTE OORZAAK WAS. global.css zet
+     `img, svg, video { max-width: 100% }` als reset. Honderd procent van WAT, in
+     een gridkolom die zichzelf op zijn inhoud maat? Dat is een kringetje: de
+     kolom wacht op de svg, de svg wacht op de kolom, en de browser knipt die
+     knoop door op nul. Op een breed scherm viel het niet op omdat de noot de
+     tweede kolom al breed maakte; op een telefoon is de noot verborgen en was het
+     teken wég. Met een expliciete breedte is die bovengrens hier zinloos, dus
+     gaat hij eraf. */
+  .convbar .cb-logo { --cb-mark-h: 22px; height: var(--cb-mark-h); width: calc(var(--cb-mark-h) * 702 / 813.25); max-width: none; align-self: start; margin-top: calc((var(--cb-row) - var(--cb-mark-h)) / 2); }
+  /* De knop en de noot als één kolom. align-items:start, anders rekt de knop mee
+     met de breedte van de noot en wordt een handeling zo breed als zijn uitleg. */
+  /* GEEN min-width: 0 HIER. Dat stond er om lange noten te laten afbreken, en het
+     deed iets veel ergers: het liet deze kolom onder zijn min-content krimpen. Op
+     een telefoon is de noot verborgen, dus was de knop de enige inhoud — en die
+     werd tot 90px samengeperst met "· €1" buiten de balk en het kruisje bovenop
+     de tekst. De noot heeft zijn eigen max-width; die begrenst de kolom al. */
+  .convbar .cb-body { display: grid; justify-items: start; row-gap: 8px; }
+  /* GEEN nowrap MEER OP DE NOOT. Dat was wat de balk zo breed maakte: de zin kon
+     niet afbreken, dus duwde hij de balk tot aan max-width.
+     `text-wrap: balance` verdeelt de twee regels gelijk. Zonder dat viel er één
+     woord alleen op regel twee — "product." onder een volle regel — en een
+     wees is precies het soort detail dat een blok slordig laat lijken zonder dat
+     je meteen ziet waarom. Browsers die het niet kennen, breken zoals voorheen.
+
+     De maat is 38ch, en dat getal is twee keer gemeten. Op 40ch werd de noot
+     merkbaar breder dan de knop en stond het kruisje tachtig pixels rechts van de
+     knop, waardoor het blok los viel. Op 30ch paste de langere Nederlandse zin
+     ("4 catalogbeelden of een lifestyle-carousel van 3 foto's, van je eigen
+     product") niet meer in twee regels en werd de balk drie regels hoog. 38ch is
+     waar beide talen op twee regels uitkomen die ongeveer zo breed zijn als de
+     knop erboven. Verandert die zin, kijk dan opnieuw. */
+  .convbar .cb-note { font-style: normal; font-size: .8rem; font-weight: 400; line-height: 1.45; color: var(--ink-3); max-width: 38ch; text-wrap: balance; padding-inline: 2px; }
+  /* --r-md binnen --r-lg met 10px padding: concentrisch, zie de noot hierboven. */
+  .convbar .cb-cta { display: inline-flex; align-items: center; min-height: var(--cb-row); padding: 0 20px; background: var(--accent); color: var(--accent-on); font-size: .88rem; font-weight: 600; letter-spacing: .01em; white-space: nowrap; border-radius: var(--r-md); }
+  /* Rond en even hoog als de knop, zodat de eerste rij één lijn heeft in plaats
+     van drie hoogtes. Geen eigen ronding meer die met de knop concurreert. */
+  .convbar .cb-close { border-radius: 50%; width: var(--cb-row); height: var(--cb-row); display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 1.05rem; line-height: 1; background: none; border: none; cursor: pointer; transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
+  .convbar .cb-close:hover { color: var(--ink); background: rgb(255 255 255 / 0.06); }
+  /* ── OP EEN TELEFOON IS DE BALK EEN STROOK, GEEN BLOKJE ──────────────────
+     Op een breed scherm maakt de balk zich zo breed als zijn inhoud en staat hij
+     gecentreerd. Op een telefoon werkt dat niet: gemeten op 320px liep de
+     Nederlandse knop ("Vraag een proefvisual aan · €1", 237px) samen met teken,
+     tussenruimtes en kruisje op 340px uit terwijl er 296px was — en wat er dan
+     buiten valt is het KRUISJE. Een balk die je niet kunt wegklikken is erger
+     dan een balk die te breed is.
+     Dus daaronder: vaste marges links en rechts, de knop rekt mee, en het
+     kruisje staat altijd binnen de rand. De transform verliest zijn
+     translateX omdat de balk niet meer gecentreerd hoeft te worden — met beide
+     erin zou hij op de helft van zijn eigen breedte naar links schuiven.
+
+     Het teken gaat weg, en dat is de enige manier waarop de knop op 320px nog
+     past. Op die maat is het ook het minst nodig: de kleur en de tekst zeggen al
+     van wie de balk is, en het kruisje moet bereikbaar blijven.
+
+     De noot gaat om een andere reden weg: twee regels uitleg naast een knop
+     maken de balk daar hoger dan een duim comfortabel reikt. */
+  @media (max-width: 600px) {
+    .convbar { left: 12px; right: 12px; max-width: none; transform: translateY(120%); grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+    .convbar.show { transform: translateY(0); }
+    .convbar .cb-note,
+    .convbar .cb-logo { display: none; }
+    .convbar .cb-body { justify-items: stretch; }
+    /* De knop rekt mee, maar niet onbeperkt. Op 560px was de strook 536 breed en
+       werd de knop een groen vlak van bijna 470px — dat is geen knop meer, dat is
+       een band. 20rem is ongeveer waar een knop ophoudt als knop te lezen; wat
+       overblijft verdeelt margin-inline: auto, zodat hij midden in de strook staat
+       in plaats van tegen de linkerrand. */
+    .convbar .cb-cta { justify-content: center; padding: 0 14px; font-size: .85rem; max-width: 20rem; margin-inline: auto; }
+  }
 
   /* WhatsApp launcher — a square block pinned to the left rail, so it never
      collides with the centred .convbar. 48px hit area at minimum; the label

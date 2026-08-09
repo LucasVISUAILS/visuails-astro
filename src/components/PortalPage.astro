@@ -18,7 +18,7 @@
 // ships, nothing here needs rewriting. If it is not, the two placeholder slots
 // are the honest state of it anyway.
 import { localizedPath } from '../i18n/ui.js';
-import { WINDOW_THRESHOLD } from '../data/pricing.js';
+import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -61,7 +61,7 @@ const COPY = {
     ],
     dlManifest: 'We add no provenance data of our own to a delivered file. A jpg or png carries whatever marking the model provider put in it; a webp does not, because converting to webp discards it. The disclosure that counts is the visible one you place, and the AI Act page has the line to use.',
 
-    logH: 'The log is the paperwork.',
+    logH: 'Every approval and revision stays readable afterwards.',
     logLede: 'Every approval and every revision is stamped with a time and kept against the individual image, and you can read the sequence back at any time from your own link. Ask, and we will write it out for you as a summary. There is no button here that generates a document, and we are not going to imply there is.',
     logCta: 'Read the AI Act page',
 
@@ -75,8 +75,8 @@ const COPY = {
     ],
     secNote: 'Treat the link the way you would treat a key: anyone who has it can see the order. Send it on if a colleague needs it, and ask us for a new one if it goes somewhere it should not.',
 
-    closeH: 'One of your own products, delivered in full, first.',
-    closeLede: 'One product in full, made from your photo, human-checked. The portal comes with every paid order.',
+    closeH: 'One of your own products, as a catalog set or a carousel, first.',
+    closeLede: `${TEST_SAMPLE.en.deliverable}, made from your own photo and checked by a specialist. The portal comes with every paid order.`,
     closeCta: 'Get a test sample',
     closeAlt: 'Start an order',
   },
@@ -117,22 +117,22 @@ const COPY = {
     ],
     dlManifest: 'Wij voegen zelf geen herkomstdata toe aan een geleverd bestand. Een jpg of png draagt de markering die de modelaanbieder erin zette; een webp niet, omdat de omzetting naar webp die weggooit. De vermelding die telt is de zichtbare die jij plaatst, en op de AI Act-pagina staat de regel die je daarvoor gebruikt.',
 
-    logH: 'Het logboek is de papierwinkel.',
+    logH: 'Elke goedkeuring en revisie blijft terug te lezen.',
     logLede: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en wordt bewaard bij het betreffende beeld, en je kunt de reeks op elk moment teruglezen via je eigen link. Vraag ernaar en we schrijven het voor je uit als overzicht. Er zit hier geen knop die een document genereert, en we doen ook niet alsof.',
     logCta: 'Lees de AI Act-pagina',
 
     secH: 'Waarom er geen wachtwoord is.',
-    secLede: 'Een wachtwoord is nog iets om kwijt te raken, en voor een link die je drie keer opent levert het niets op. De link ís de sleutel, dus is hij als een sleutel gebouwd.',
+    secLede: 'Een wachtwoord is nog iets om kwijt te raken, en voor een link die je drie keer opent levert het niets op. Daarom hebben we de link zelf zo gemaakt dat niemand hem kan raden.',
     sec: [
-      ['256 bits toeval', 'Gegenereerd door de crypto in de runtime, niet door een teller. Niet te raden en niet af te lopen.'],
+      ['Niet te raden', 'De link bestaat uit 256 willekeurige bits — geen volgnummer dat je kunt ophogen om bij de bestelling van iemand anders te komen.'],
       ['Nooit leesbaar opgeslagen', 'Alleen een hash wordt bewaard, dus de link is niet uit de database terug te lezen.'],
       ['Snelheidsbegrensd', 'Herhaalde pogingen op het endpoint worden geweigerd voordat ze het record bereiken.'],
       ['Hij verloopt', 'Negentig dagen nadat de order sluit werkt de link niet meer, en op dezelfde klok worden de bronbestanden die je stuurde verwijderd.'],
     ],
     secNote: 'Behandel de link zoals je een sleutel behandelt: wie hem heeft, kan de bestelling zien. Stuur hem gerust door als een collega hem nodig heeft, en vraag ons om een nieuwe als hij ergens belandt waar hij niet hoort.',
 
-    closeH: 'Eerst één product van jezelf, volledig geleverd.',
-    closeLede: 'Eén product volledig, gemaakt van jouw foto, door een specialist nagekeken. Het portaal krijg je bij elke betaalde bestelling.',
+    closeH: 'Eerst één product van jezelf, als catalogset of carousel.',
+    closeLede: `${TEST_SAMPLE.nl.deliverable}, gemaakt van je eigen foto en door een specialist nagekeken. Het portaal krijg je bij elke betaalde bestelling.`,
     closeCta: 'Vraag een proefvisual aan',
     closeAlt: 'Start een bestelling',
   },

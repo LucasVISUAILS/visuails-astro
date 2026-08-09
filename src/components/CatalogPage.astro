@@ -44,7 +44,7 @@ import { waHref } from '../data/whatsapp.js';
 // nest a second <html> inside the first.
 import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
-  WINDOW_THRESHOLD, reviewClaim, turnaround,
+  WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
@@ -111,7 +111,7 @@ const COPY = {
     // <em> added task #271b (Lucas's own request, editorial accent) — same
     // closing-word-emphasis convention already used on the other hero H1s
     // (homepage's "visualized.", custom-models' "Only yours.").
-    h1: 'Clean, consistent product visuals — <em>built to scale.</em>',
+    h1: `Product-page photos, ${CATALOG_IMAGES} per product — <em>the same on every product.</em>`,
     lead: `A full set per product, from 4 photos — front, back, a fabric or logo close-up and one on-model shot, with more available per product. <strong>${euro(entry, 'en')} per product</strong> ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
     // read the tier label verbatim ("Order individual products"), which put the

@@ -34,7 +34,7 @@ export const styles = [
     moodTitle: 'What Dunes feels like.',
     moodParagraphs: [
       'Sun-washed minimalism, earthy tones, long soft shadows. The look of quiet luxury.',
-      'It gives products room to feel inevitable. Desert light, linen textures, negative space doing the talking.',
+      'Wide frames, sand and stone surfaces, and long low shadows. Plenty of empty space around the product, and nothing in the scene competing with it.',
     ],
     steps: [
       { title: 'Find the horizon', body: 'Wide, quiet compositions with room to breathe around the product.' },
@@ -48,7 +48,7 @@ export const styles = [
     craft: [
       { title: 'A restrained palette, enforced', body: 'Sand, bone, terracotta and shadow. Anything louder is removed before it reaches the frame.' },
       { title: 'Long-light geometry', body: 'Shadows are cast low and long, giving flat products dimension and premium products gravity.' },
-      { title: 'Texture as luxury', body: 'Stone, plaster and woven surfaces are rendered with the fidelity that makes minimalism feel expensive.' },
+      { title: 'Surfaces you can read', body: 'Stone, plaster and woven backgrounds keep their grain at full resolution, so a plain scene still has something to look at.' },
       { title: 'Space left on purpose', body: 'Compositions hold generous negative space — ready-made for type, or for silence.' },
     ],
     why: [
@@ -85,13 +85,13 @@ export const styles = [
     craft: [
       { title: 'Hard light, placed hard', body: 'Flash falloff is controlled so the product stays crisp while the world drops away behind it.' },
       { title: 'Shadow as composition', body: "The black behind the subject isn't empty — it's drawn, shaping where the eye lands." },
-      { title: 'Contrast without casualty', body: 'We push the punch while protecting product colour and texture from blowing out.' },
+      { title: 'Hard light, no blown-out product', body: 'The scene gets deep shadows and bright highlights, but the product itself keeps its real colour and its fabric detail.' },
       { title: 'Energy that repeats', body: 'The chaos is systematised: your tenth Flash visual hits like your first, and matches it.' },
     ],
     why: [
-      { title: 'Stops the scroll', body: 'Built for feeds where soft, even light gets scrolled straight past.' },
+      { title: 'Stands out in a feed', body: 'Hard light and deep shadow read at thumbnail size, where soft even light goes unnoticed.' },
       { title: 'An edge that repeats', body: 'The same intensity on visual one and visual one hundred.' },
-      { title: 'Built for drops', body: 'Timed energy for launches, restocks and hype moments.' },
+      { title: 'Made for a launch', body: 'The look suits a release, a restock or a limited run.' },
     ],
     bestFor: ['Streetwear, sneakers and accessories', 'Drops, launches and hype moments', 'Brands with an edge to keep', 'Social ads that need to stop thumbs'],
     whatYouGet: ['High-energy flash-lit scenes', 'Deep, deliberate shadow work', 'Consistent models, locked to your brand', TIMING, REVIEW],
@@ -157,15 +157,15 @@ export const styles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Engineered imperfection', body: "Slight tilt, natural falloff, honest shadows — each 'accident' is placed deliberately, so it feels found rather than staged." },
+      { title: 'Looks like a phone shot, on purpose', body: 'A slight tilt, uneven light and a real shadow. Every one of those is placed deliberately, so the photo reads as taken rather than produced.' },
       { title: 'Daylight logic', body: "Every scene obeys one light source and one time of day. That's what separates believable from uncanny." },
-      { title: 'Set dressing that whispers', body: 'Props are chosen to date-stamp nothing and distract from nothing. The product stays the loudest thing in frame.' },
+      { title: 'Props that stay in the background', body: 'Nothing in the scene dates the photo to a season, and nothing pulls your eye off the product.' },
       { title: 'Feed-first framing', body: 'Composed for 4:5 and 9:16 up front, so nothing important dies in the crop.' },
     ],
     why: [
       { title: 'Reads as real', body: 'No studio tell — built to sit next to UGC without ever standing out.' },
       { title: 'Trust before polish', body: 'The look that performs when audiences are wary of anything too styled.' },
-      { title: 'Feed-native from frame one', body: "No separate cropping pass needed — it's ready as delivered." },
+      { title: 'Already the right shape for a feed', body: 'Delivered in the aspect ratio Instagram uses, so you do not have to crop it yourself.' },
     ],
     bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn't look like ads"],
     whatYouGet: ['Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one', TIMING, REVIEW],

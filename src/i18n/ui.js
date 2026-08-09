@@ -129,8 +129,33 @@ export const ui = {
        consent banner never rendered it — nothing called t('cc_changed') in
        any component, script or page. */
     foot_location: 'Enschede, Netherlands',
-    cb_text: `Send us one of your products the way a normal order needs it, and get it back in full — ${CATALOG_IMAGES} catalog images or a carousel of ${LIFESTYLE_IMAGES}, before you order anything.`,
-    cb_cta: `One product in full · ${TEST_SAMPLE.en.price}`,
+    /*
+     * ── DE BALK IS EEN KNOP MET EEN NOOT, GEEN ALINEA (9 augustus 2026) ───────
+     *
+     * Lucas: *"de test sample pop up is veel te lang. Maak het vergelijkbaar met
+     * de Request a test sample knop en een kleine note eronder."*
+     *
+     * Hier stond een zin van dertig woorden op één regel, en `white-space: nowrap`
+     * in de opmaak maakte de balk daarmee bijna zo breed als het scherm. Een
+     * element dat ongevraagd over je pagina schuift, moet in één oogopslag te
+     * lezen zijn en anders weg te klikken; dertig woorden zijn geen oogopslag.
+     *
+     * `cb_cta` heette "One product in full · €1". Dat las als een productnaam en
+     * niet als een handeling, en het is bovendien dezelfde knop die op /pricing en
+     * op de homepage "Request a test sample · €1" heet. Eén handeling hoort overal
+     * hetzelfde te heten, anders lijkt het iets anders.
+     *
+     * De noot noemt nu WAT je krijgt in plaats van te herhalen dat je iets moet
+     * opsturen: vier beelden of een carousel van drie. Dat is het concrete ding —
+     * "één product volledig" is een omschrijving van diezelfde beelden waar je
+     * niets aan hebt tot je weet hoeveel het er zijn.
+     */
+    // \u00A0 tussen "of" en het getal: text-wrap:balance brak de regel precies
+    // daar af, en "a carousel of" met de 3 op de volgende regel leest als een
+    // onafgemaakte zin. Een harde spatie houdt ze bij elkaar zonder de balans
+    // uit te zetten.
+    cb_note: `${TEST_SAMPLE.en.deliverable}, from your own product.`,
+    cb_cta: `Request a test sample · ${TEST_SAMPLE.en.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Message VISUAILS on WhatsApp — opens in a new tab',
     lang_label: 'Language',
@@ -196,8 +221,8 @@ export const ui = {
     cc_cancel: 'Terug',
     cc_reopen: 'Cookievoorkeuren',
     foot_location: 'Enschede, Nederland',
-    cb_text: `Stuur ons één product zoals je dat bij een gewone bestelling zou aanleveren, en krijg het volledig terug — ${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}, voordat je iets bestelt.`,
-    cb_cta: `Eén product volledig · ${TEST_SAMPLE.nl.price}`,
+    cb_note: `${TEST_SAMPLE.nl.deliverable}, van je eigen product.`,
+    cb_cta: `Vraag een proefvisual aan · ${TEST_SAMPLE.nl.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Stuur VISUAILS een bericht via WhatsApp — opent in een nieuw tabblad',
     lang_label: 'Taal',

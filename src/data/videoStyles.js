@@ -66,9 +66,9 @@ export const videoStyles = [
       { title: 'Stills-matched grading', body: 'Shares a grade with your catalog set.' },
     ],
     why: [
-      { title: 'Life without noise', body: "Finishes what a static photo can't quite say." },
+      { title: 'Movement, nothing more', body: 'A slow pan or a small turn. No music, no cuts, no text on screen.' },
       { title: 'Every format, one shoot', body: 'Cut for square, portrait and wide from one file.' },
-      { title: 'Ready for the scroll', body: '8 seconds, built to hold attention.' },
+      { title: 'The right length for a feed', body: '8 seconds, delivered in the aspect ratio Instagram and TikTok use.' },
     ],
     bestFor: [
       'Product pages that need life',

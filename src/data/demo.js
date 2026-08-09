@@ -272,7 +272,7 @@ export const WALK_COPY = {
       pay: {
         n: 'You, by email',
         h: 'You pay, and production starts',
-        b: 'A confirmation email arrives with the payment link. The order does not enter production until that payment is completed — that is the one gate between describing a job and us starting it. The invoice follows automatically, and from that moment the order is visible in your account with its own timeline.',
+        b: 'A confirmation email arrives with the payment link. The order does not enter production until that payment is completed. The invoice follows automatically, and from that moment the order is visible in your account with its own timeline.',
       },
       model: {
         n: 'Us, in production',

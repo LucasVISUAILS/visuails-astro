@@ -210,7 +210,7 @@ const COPY = {
     // Begint met het woord "Test sample", niet met "One product photo": deze
     // regel staat onder BEIDE knoppen en moet zonder twijfel bij de tweede
     // horen. Zonder dat woord lijkt het of een bestelling ook € 1 kost.
-    ctaSampleNote: `Test sample: send the same photos as a normal order — front and back at least — and get one product back in full: ${CATALOG_IMAGES}\u00A0catalog images or ${LIFESTYLE_IMAGES}\u00A0lifestyle photos. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    ctaSampleNote: `Test sample: send the same photos as a normal order — front and back at least — and get back ${sample.deliverable}. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
     // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
     // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
     // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
@@ -276,7 +276,7 @@ const COPY = {
 
     tsKicker: 'Before you place an order',
     tsH: ['Your own product, fully pictured', `for ${sample.price}.`],
-    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. You send the same photos a normal order needs: front and back at least, and a detail or worn shot if you have them. Back comes one product in full: ${CATALOG_IMAGES} catalog images, or a ${LIFESTYLE_IMAGES}-photo lifestyle carousel. Same production as a paid order, checked by the same specialist.`,
+    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. You send the same photos a normal order needs: front and back at least, and a detail or worn shot if you have them. Back come ${sample.deliverable}. Same production as a paid order, checked by the same specialist.`,
     tsPoints: [
       ['One per business', 'Not a trial with a card on file. One sample, once, no account, nothing to cancel.'],
       ['No shortcuts for a sample', 'Same production, same house style, same human check. What comes back is what you would get.'],
@@ -308,7 +308,7 @@ const COPY = {
       ],
       [
         'Lifestyle carousel',
-        'Styled scenes in context that stop the scroll and sell the feeling.',
+        'Your product in a styled scene, made for Instagram and ads rather than a product page.',
         `${LIFESTYLE_IMAGES} images per product: one styled look, cut for a carousel and ready to post.`,
         '/lifestyle',
       ],
@@ -371,7 +371,7 @@ const COPY = {
 
     dreamKicker: 'What it is all actually for',
     dreamH: 'A small label that never looked small.',
-    dreamLede: 'Nobody scrolling your page knows how many people work here. They only see whether the images look like a brand that has its act together, and that judgement takes two seconds. It is the one part of looking established a young label can simply go and buy.',
+    dreamLede: 'A shopper cannot see how big your team is. They see whether every product photo matches the last one. That is what an order gives you across your whole range: the same lighting, the same framing, the same model on every product.',
     dreamCta: 'See an order in full',
     dreamAlt: 'A VISUAILS lifestyle visual — a styled campaign scene',
 
@@ -422,7 +422,7 @@ const COPY = {
     bmCta: 'How Your Brand Model works',
 
     plH: 'Work back from your launch date.',
-    plLede: 'The delivery date is reserved capacity, not a place in a line. That is why it can be promised at all — and why it runs out.',
+    plLede: `From ${WINDOW_THRESHOLD} products we take that week out of the calendar for your order. That is why we can put the date in writing, and why a week that is full is offered as full.`,
     pl: [
       ['Your launch date', 'The day the collection has to be live. Everything else is counted backwards from here.'],
       // WINDOW_THRESHOLD moved here from the deleted price tile in the old drop
@@ -493,8 +493,8 @@ const COPY = {
     faqLede: 'The five that get asked most, and the rest on their own page.',
     faqCta: 'Every question, answered',
 
-    closeH: 'One of your own products, delivered in full, first.',
-    closeLede: `${CATALOG_IMAGES} catalog images or a carousel of ${LIFESTYLE_IMAGES}, made from your photo, human-checked — for a ${sample.price} verification. One per business.`,
+    closeH: 'One of your own products, as a catalog set or a carousel, first.',
+    closeLede: `${sample.deliverable}, made from your own photo and checked by a specialist — for a ${sample.feeNote}. One per business.`,
     closeCta: 'Get your test sample',
     closeAlt: 'Start an order instead',
   },
@@ -505,7 +505,7 @@ const COPY = {
     heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Je betaalt per product: van ${euro(ladderRate('complete', 1), 'nl')} omlaag naar ${euro(FLOOR_RATE_EN, 'nl')} naarmate je er meer bestelt.`,
     ctaStart: 'Start een bestelling',
     ctaSample: `Proefvisual aanvragen · ${sample.price}`,
-    ctaSampleNote: `Proefvisual: stuur dezelfde foto’s als bij een gewone bestelling — voorkant en achterkant in elk geval — en je krijgt één product volledig terug: ${CATALOG_IMAGES}\u00A0catalogbeelden of ${LIFESTYLE_IMAGES}\u00A0lifestyle-foto’s. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    ctaSampleNote: `Proefvisual: stuur dezelfde foto’s als bij een gewone bestelling — voorkant en achterkant in elk geval — en je krijgt ${sample.deliverable} terug. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
     // Zie de EN-tabel voor waarom dit geen plint meer is.
     proof: [
       turnaround('attended', 'nl'),
@@ -539,7 +539,7 @@ const COPY = {
 
     tsKicker: 'Voordat je een bestelling plaatst',
     tsH: ['Jouw eigen product volledig in beeld', `voor ${sample.price}.`],
-    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, maar op dat van jou. Je stuurt dezelfde foto’s als bij een gewone bestelling: voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt. Je krijgt één product volledig terug: ${CATALOG_IMAGES} catalogbeelden, of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s. Zelfde productie als een betaalde bestelling, door dezelfde specialist nagekeken.`,
+    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, maar op dat van jou. Je stuurt dezelfde foto’s als bij een gewone bestelling: voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt. Je krijgt ${sample.deliverable} terug. Zelfde productie als een betaalde bestelling, door dezelfde specialist nagekeken.`,
     tsPoints: [
       ['Eén per bedrijf', 'Geen proefperiode, en we bewaren je betaalgegevens niet. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
       ['Geen kortere weg voor een proef', 'Zelfde productie, zelfde stijl, en dezelfde specialist die het nakijkt. Wat terugkomt is wat je zou krijgen.'],
@@ -672,7 +672,7 @@ const COPY = {
     bmCta: 'Zo werkt je merkmodel',
 
     plH: 'Reken terug vanaf de dag dat je live gaat.',
-    plLede: 'Bij een vastgezette leverdatum houden we die dagen in de studio voor je vrij. Daarom kunnen we hem beloven — en daarom is hij niet altijd meer vrij.',
+    plLede: 'Bij een vastgezette leverdatum houden we die dagen in de studio voor je vrij. Daarom kunnen we die datum op papier zetten — en daarom kan een week ook vol zitten.',
     pl: [
       ['De dag dat je live gaat', 'De dag waarop de collectie online moet staan. Vanaf daar rekenen we terug.'],
       // WINDOW_THRESHOLD staat nu hier, niet meer naast een tarief per product.
@@ -683,7 +683,7 @@ const COPY = {
     plCta: 'Kijk welke weken nog vrij zijn',
 
     dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
-    dashLede: 'Twee schermen: één voor jou, één waarin wij werken. Samen zijn ze de reden dat we je een datum kunnen geven.',
+    dashLede: 'Twee schermen: jij ziet de status van je bestelling, wij zien de agenda van de hele studio. Wat wij aanpassen, staat meteen ook bij jou.',
     dashPortalK: 'VISUAILS Studio',
     dashPortalN: 'Je komt binnen via een privélink, zonder wachtwoord. Je ziet de status en de leverdatum met een aftelling, en daarna de hele galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
     dashPortalCta: 'Bekijk VISUAILS Studio',
@@ -698,7 +698,7 @@ const COPY = {
     dashLogN: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en blijft bij het beeld staan waar hij bij hoort. Zo kun je later teruglezen wat er wanneer gebeurde. Vraag ernaar en we schrijven het voor je uit.',
     dashLogCta: 'Lees de AI Act-pagina',
 
-    promiseH: ['Nog geen muur vol reviews.', 'Dus verdienen we het eerlijk.'],
+    promiseH: ['We hebben nog weinig reviews.', 'Dus laten we het je eerst zien op je eigen product.'],
     promiseQuote: `"Ik bekijk elk beeld zelf voordat het naar je toe gaat, en ik doe er liever één over dan dat ik hem verstuur. Nog niet zeker? Bekijk het eerst op je eigen product voor ${sample.price}."`,
     promiseSign: 'oprichter, VISUAILS',
     // De proefvisual stond hier én in het citaat erboven — hetzelfde aanbod
@@ -723,8 +723,8 @@ const COPY = {
     faqLede: 'De vijf die het vaakst gesteld worden, en de rest op een eigen pagina.',
     faqCta: 'Alle vragen, beantwoord',
 
-    closeH: 'Eerst één product van jezelf, volledig geleverd.',
-    closeLede: `${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}, gemaakt van jouw eigen foto’s en door een specialist nagekeken — voor ${sample.price}. Eén per bedrijf.`,
+    closeH: 'Eerst één product van jezelf, als catalogset of carousel.',
+    closeLede: `${sample.deliverable}, gemaakt van je eigen foto’s en door een specialist nagekeken — voor ${sample.feeNote}. Eén per bedrijf.`,
     closeCta: 'Vraag je proefvisual aan',
     closeAlt: 'Of start meteen een bestelling',
   },

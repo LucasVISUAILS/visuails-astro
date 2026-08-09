@@ -47,7 +47,11 @@ const CUSTOMER = { customer_id: 7, email: 'studio@voltbrand.nl', brand: 'VOLT', 
 const ORDERS = [
   { id: 91, ref: 'VIS-2608-4471', service: 'catalog', status: 'in_production', tier: 'attended', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', lang: 'nl', created_at: '2026-08-01', closed_at: null, revisions_revoked_at: null,
     payment_status: 'unpaid', payment_provider: null, paid_at: null, total_cents: 63000, vat_cents: 13230, vat_rate: 0.21, vat_treatment: 'nl_standard', currency: 'EUR', refunded_cents: 0, window_expires_at: '2026-08-08 12:00' },
-  { id: 90, ref: 'VIS-2607-9920', service: 'lifestyle', status: 'delivered', tier: 'attended', product_count: 12, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-28', closed_at: null, revisions_revoked_at: null,
+  /* AFGEROND, zodat de tevredenheidsvraag op de schermafdruk staat. `closed_at`
+     is de trigger uit reviewverzamelingspecificatie.md §2 stap 1, en een blok dat
+     alleen bij een afgeronde bestelling verschijnt, zie je op nepdata nooit als er
+     geen afgeronde bestelling in zit. */
+  { id: 90, ref: 'VIS-2607-9920', service: 'lifestyle', status: 'delivered', tier: 'attended', product_count: 12, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-28', closed_at: '2026-08-02 09:31', revisions_revoked_at: null,
     payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-28', total_cents: 32400, vat_cents: 6804, vat_rate: 0.21, vat_treatment: 'nl_standard', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
   { id: 89, ref: 'VIS-2607-3312', service: 'catalog', status: 'human_check', tier: 'attended', product_count: 8, window_start: null, window_end: null, lang: 'nl', created_at: '2026-07-24', closed_at: null, revisions_revoked_at: null,
     payment_status: 'paid', payment_provider: 'mollie', paid_at: '2026-07-24', total_cents: 20800, vat_cents: 0, vat_rate: 0, vat_treatment: 'eu_reverse_charge', currency: 'EUR', refunded_cents: 0, window_expires_at: null },
@@ -133,6 +137,11 @@ const EVENTS = [
   { order_id: 88, status: 'delivered', note: null, created_at: '2026-07-20 10:00' },
 ];
 
+/* Het antwoord op de tevredenheidsvraag. Standaard leeg — dan staat de vraag zelf
+   op de plaat, en dat is de toestand die een klant het eerst ziet. Zet er een rij
+   met score 2 of 5 in om de twee vervolgtoestanden te bekijken. */
+const FEEDBACK = [];
+
 function makeDb() {
   const pick = (sql) => {
     const s = sql.replace(/\s+/g, ' ');
@@ -142,6 +151,7 @@ function makeDb() {
     if (s.includes('FROM files f JOIN orders')) return FILES;
     if (s.includes('FROM custom_models')) return MODELS;
     if (s.includes('FROM customer_style_locks')) return [];
+    if (s.includes('FROM order_feedback')) return FEEDBACK;
     if (s.includes('FROM invoices i')) return INVOICES;
     if (s.includes('FROM customers WHERE id')) return DETAILS;
     if (s.includes('FROM orders')) return ORDERS;

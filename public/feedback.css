@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DE TEVREDENHEIDSVRAAG — één stylesheet, twee pagina's
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Ingeladen door VISUAILS Studio (/account) én door het portaal (/o/<token>),
+   omdat het blok in beide staat en reviewverzamelingspecificatie.md §2 om één
+   gedeelde component vraagt.
+
+   WAAROM EEN DERDE BESTAND EN NIET IN account.css EN portal.css. Die twee hebben
+   geen gedeelde componentklassen: portal.css kent `.card` niet en heeft `.meta`
+   alleen binnen `.shot`. Wat ze wél allebei definiëren zijn de tokens — --ink,
+   --line, --accent, --r-lg en de rest. Dus leunt dit bestand ALLEEN op tokens en
+   op `.btn`, dat in beide bestaat, en werkt het daarmee in beide zonder één regel
+   dubbel.
+
+   Verandert een token van naam, dan valt dit blok mee om in plaats van stil af te
+   wijken van de pagina eromheen. Dat is de bedoeling. */
+
+.fb {
+  margin-top: 1.4rem;
+  padding: 1.3rem 1.4rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.fb h3 { margin: 0; font-size: 1.05rem; }
+.fb h4 { margin: 0 0 .3rem; font-size: .95rem; }
+.fb-lede { margin: .35rem 0 0; font-size: .88rem; line-height: 1.5; color: var(--ink-3); max-width: 56ch; }
+
+/* ── DE STERRENRIJ ───────────────────────────────────────────────────────────
+   Knoppen en geen radio's met een aparte verstuurknop: één klik is één antwoord,
+   en dat is wat "eén klik" in de tekst belooft. Elke knop verstuurt zijn eigen
+   waarde, dus er is geen JavaScript nodig en geen tweede handeling. */
+.fb-scores {
+  display: flex; align-items: center; gap: .7rem;
+  margin-top: .9rem; flex-wrap: wrap;
+}
+.fb-stars { display: inline-flex; gap: .35rem; }
+.fb-star {
+  width: 40px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font: inherit; font-size: .95rem; font-weight: 600;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+.fb-star:hover, .fb-star:focus-visible {
+  background: var(--accent); color: var(--accent-on); border-color: var(--accent);
+}
+/* De uiteinden benoemen, want een rij cijfers van 1 tot 5 zegt niet welke kant
+   goed is. Op een smal scherm vallen ze weg: daar staan de cijfers onder de
+   vraag en is de volgorde uit de tekst al duidelijk. */
+.fb-scale { font-size: .78rem; color: var(--ink-3); }
+@media (max-width: 460px) { .fb-scale { display: none; } }
+
+.fb-given {
+  display: inline-block;
+  font-size: .78rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ── DE ACTIES ───────────────────────────────────────────────────────────────
+   Elke knop is zijn eigen formulier, want elke knop post iets anders en opent in
+   een nieuw tabblad. Vandaar de flex-rij eromheen in plaats van een form met drie
+   knoppen erin. */
+.fb-actions { display: flex; align-items: center; gap: .6rem; margin-top: .8rem; flex-wrap: wrap; }
+.fb-actions form { margin: 0; }
+.fb-btn-sm { min-height: 38px; font-size: .84rem; padding: 0 1rem; }
+.fb-hint { font-size: .78rem; line-height: 1.45; color: var(--ink-3); max-width: 52ch; }
+
+.fb-share { margin-top: 1.1rem; }
+
+/* ── DE KLEINE VARIANT BIJ EEN LAGE SCORE ────────────────────────────────────
+   Kleiner en onder het privéformulier, maar aanwezig. Dat is niet cosmetisch: het
+   verschil tussen deze volgorde en het WEGLATEN van dit blok is het verschil
+   tussen een advies en review gating, en dat laatste is bij Google en Trustpilot
+   tegen de richtlijnen en in de EU een oneerlijke handelspraktijk. Zie §2 van de
+   specificatie en de noot bovenaan src/lib/feedback.js.
+
+   Een hairline erboven in plaats van een eigen kader: het hoort bij dit blok en
+   is er geen tweede aanbod naast. */
+.fb-also {
+  margin-top: 1.2rem; padding-top: 1rem;
+  box-shadow: inset 0 1px 0 var(--line);
+}
+.fb-also h4 { font-size: .88rem; color: var(--ink-2); }
+.fb-also .fb-lede { font-size: .82rem; }
+
+/* ── DE FORMULIEREN ──────────────────────────────────────────────────────────*/
+.fb-fix, .fb-quote { margin-top: 1.1rem; display: grid; gap: .6rem; justify-items: start; }
+.fb-fix textarea, .fb-quote textarea, .fb-quote input[type="text"] {
+  width: 100%; max-width: 52ch;
+  padding: .6rem .7rem;
+  font: inherit; font-size: .92rem;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  resize: vertical;
+}
+.fb-fix textarea::placeholder, .fb-quote textarea::placeholder, .fb-quote input::placeholder { color: var(--ink-3); }
+.fb-fix textarea:focus-visible, .fb-quote textarea:focus-visible, .fb-quote input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+.fb-fix .fb-lede, .fb-quote .fb-lede { margin: 0; }
+
+/* Het vinkje voor de testimonial. Een eigen regel en geen kleine tekst achter een
+   hokje: dit is de aparte toestemming die §3 eist, en die hoort te lezen als een
+   zin die je bevestigt. */
+.fb-check { display: grid; grid-template-columns: auto 1fr; gap: .6rem; align-items: start; max-width: 52ch; cursor: pointer; }
+/* ── HET VINKJE MOET TE ZIEN ZIJN, EN DAT KOST MEER DAN JE DENKT ────────────
+   Op de eerste schermafdruk stond de zin er wel en het hokje niet. De oorzaak
+   staat in account.css:
+
+     input, textarea, button, select { appearance: none; }
+
+   Een reset die het native uiterlijk van élke control weghaalt — nuttig voor
+   tekstvelden en knoppen, en fataal voor een checkbox: die heeft geen andere
+   verschijning dan zijn native tekening. Er bleef letterlijk niets over.
+
+   `accent-color` erop zetten helpt dan ook niet; dat kleurt een vinkje dat niet
+   meer bestaat. Dus wordt het vakje hier opnieuw getekend, in dezelfde maat en
+   vorm als `.det-check` elders in het dashboard: 18px, vier pixels ronding, en
+   het vinkje als een gedraaide hoek in de accentkleur.
+
+   Het blijft een echte <input type="checkbox">. Geen span die eruitziet als een
+   hokje — dat is niet met de spatiebalk te bedienen en wordt door geen enkele
+   schermlezer als keuze aangekondigd, en dit is uitgerekend het hokje dat de
+   toestemming uit §3 van de specificatie draagt. */
+.fb-check input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; flex: 0 0 auto; margin: .1rem 0 0; padding: 0;
+  display: inline-grid; place-content: center;
+  border: 1px solid var(--line-strong); border-radius: 4px;
+  background: var(--surface-2); cursor: pointer;
+}
+.fb-check input[type="checkbox"]:hover { border-color: var(--ink-3); }
+.fb-check input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+.fb-check input[type="checkbox"]:checked::after {
+  content: ''; width: 5px; height: 10px;
+  border: solid var(--accent-on); border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+.fb-check span { font-size: .88rem; line-height: 1.5; color: var(--ink-2); }
+
+.fb-thanks { margin: 1rem 0 0; font-size: .9rem; color: var(--ink-2); }
+.fb-again { margin-top: 1.1rem; }
+.fb-again .btn-quiet {
+  font: inherit; font-size: .82rem;
+  color: var(--ink-3);
+  background: none; border: 0; padding: 0;
+  text-decoration: underline; text-underline-offset: 3px;
+  cursor: pointer;
+}
+.fb-again .btn-quiet:hover, .fb-again .btn-quiet:focus-visible { color: var(--ink); }

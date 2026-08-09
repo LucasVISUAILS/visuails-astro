@@ -58,6 +58,7 @@ import { mailNote } from '../data/mailNote.js';
 // Niet uit account.js: zie de kop van close.js voor waarom afronden een eigen
 // bestand kreeg in plaats van dat dit bestand de dashboardmodule importeert.
 import { maybeCloseOrder } from './close.js';
+import { feedbackBlock, loadFeedback, handleFeedbackPost } from './feedback.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
 
@@ -353,6 +354,31 @@ export async function portalPost(context) {
     form = await request.formData();
   } catch {
     return seeOther(home);
+  }
+
+  /*
+   * ── HET TEVREDENHEIDSBLOK, VÓÓR DE BEELDACTIES ────────────────────────────
+   *
+   * Een eigen tak en niet een vijfde `action`, omdat de bestaande controles
+   * hieronder allemaal over een BEELD gaan: ze eisen een file-id en ze weigeren
+   * een besluit op een afgeronde bestelling. Dit blok verschijnt juist alleen
+   * wanneer de bestelling afgerond IS, en heeft geen beeld.
+   *
+   * Er is geen eigen eigendomscontrole nodig: wie hier komt heeft een geldig
+   * token voor deze bestelling, en dat is hierboven al vastgesteld — zelfde
+   * vertrouwensmodel als de goedkeurknoppen.
+   *
+   * Bij een platformknop is het antwoord een 303 naar Google of Trustpilot. Dat
+   * formulier heeft target="_blank", dus die omleiding landt in het nieuwe
+   * tabblad en de bestelpagina blijft staan waar hij stond.
+   */
+  if (form.get('fb')) {
+    const res = await handleFeedbackPost(env, {
+      orderId: order.order_id,
+      customerId: order.customer_id || null,
+      form,
+    });
+    return seeOther(res.redirect || `${home}#fb-h`);
   }
 
   const action = String(form.get('action') || '');
@@ -711,8 +737,16 @@ async function renderOrder(env, order, token, lang) {
     // not a reason to show them a locked door. Render what we have.
   }
 
+  /*
+   * Het antwoord op de tevredenheidsvraag, alleen opgehaald als er iets te vragen
+   * is. Buiten de try hierboven, want loadFeedback() vangt zijn eigen fout al op
+   * en geeft dan null — een ontbrekende tabel (migratie 0020 niet gedraaid) hoort
+   * de beelden op deze pagina niet te kosten.
+   */
+  const fb = attended && order.closed_at ? await loadFeedback(env, order.order_id) : null;
+
   const body = attended
-    ? attendedBody(t, lang, order, token, files, events)
+    ? attendedBody(t, lang, order, token, files, events, fb)
     : unattendedBody(t, lang, order, token, files);
 
   return html(
@@ -741,7 +775,12 @@ function foot(t) {
 
 // ---- Tier 1 · the portal ----------------------------------------------------
 
-function attendedBody(t, lang, order, token, files, events) {
+/*
+ * `fb` is de rij uit order_feedback, of null. Hij komt van buiten en wordt hier
+ * niet opgehaald, om dezelfde reden als de rest van deze functie: attendedBody()
+ * tekent en vraagt niets aan de database.
+ */
+function attendedBody(t, lang, order, token, files, events, fb = null) {
   const approved = files.filter((f) => f.review_state === 'approved').length;
   const revisions = files.filter((f) => f.review_state === 'revision_requested').length;
   const readOnly = !!order.closed_at;
@@ -767,6 +806,23 @@ function attendedBody(t, lang, order, token, files, events) {
       })).join('')}</ul>`
     : `<p class="note">${esc(t.emptyAttended)}</p>`;
 
+  /*
+   * ── DE TEVREDENHEIDSVRAAG, EN WANNEER HIJ VERSCHIJNT ──────────────────────
+   *
+   * Alleen bij een AFGERONDE bestelling. `closed_at` wordt gezet door
+   * maybeCloseOrder() zodra élk levend beeld is goedgekeurd — dat is precies de
+   * trigger uit §2 stap 1 van reviewverzamelingspecificatie.md, en het is de
+   * reden dat close.js bestaat: dit pad riep die afronding niet aan, dus zou de
+   * vraag hier nooit zijn afgegaan.
+   *
+   * Vragen halverwege zou iets anders meten. "Ben je tevreden met wat je hebt
+   * gekregen" bij vier van de twaalf beelden is een vraag over een bestelling die
+   * nog niet klaar is, en het antwoord daarop zegt niets over wat er straks staat.
+   */
+  const feedback = readOnly
+    ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb })
+    : '';
+
   return `<main>
 <div class="head">
   <h1>${esc(t.orderTitle)}</h1>
@@ -778,6 +834,7 @@ ${factList(facts)}
   <h2>${esc(t.workTitle)}${tally}</h2>
   ${work}
 </section>
+${feedback}
 ${timeline(t, lang, events)}
 </main>`;
 }
@@ -1035,6 +1092,10 @@ function page({ lang, title, body }) {
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/portal.css">
+<!-- Het tevredenheidsblok, uit één stylesheet die ook VISUAILS Studio inlaadt.
+     Zie de kop van public/feedback.css over waarom dat een derde bestand is en
+     niet twee keer dezelfde regels. -->
+<link rel="stylesheet" href="/feedback.css">
 </head>
 <body>
 <div class="wrap">

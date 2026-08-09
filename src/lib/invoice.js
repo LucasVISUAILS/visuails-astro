@@ -32,6 +32,7 @@
 import { renderInvoicePdf } from './invoicePdf.js';
 import { composeAddress } from '../data/address.js';
 import { VAT_TREATMENT } from '../data/vat.js';
+import { serviceLabel } from '../data/services.js';
 
 /** Ons eigen adres en onze nummers. Uit env waar dat kan, met een vaste terugval. */
 function sellerOf(env) {
@@ -103,11 +104,29 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
     region: order.region,
   }) || '').split('\n').map((l) => l.trim()).filter(Boolean);
 
-  // Eén regel voor de bestelling. Een uitsplitsing per product zou een tweede
-  // waarheid over de prijs zijn, en die staat al in de bestelling zelf.
+  /*
+   * Eén regel voor de bestelling. Een uitsplitsing per product zou een tweede
+   * waarheid over de prijs zijn, en die staat al in de bestelling zelf.
+   *
+   * ── DE DIENSTNAAM UIT services.js, NIET UIT DE KOLOM (9 augustus 2026) ──────
+   *
+   * Hier stond `${order.service}`, en op VIS-2026-0001 kwam dat eruit als
+   * "catalog — 1 product": het slug uit de database, kleine letter, op een
+   * factuur. Precies de fout die de header van src/data/services.js bij naam
+   * noemt — daar was het "Dienst: catalog" in de bestelbevestiging — met de
+   * conclusie dat een derde eigen kopie van die namen is hoe de tweede ontstond.
+   * Dit was de vierde aanroeper die eromheen ging.
+   *
+   * serviceLabel() geeft null bij een onbekende dienst en dan valt dit terug op de
+   * kolom. Dat is de regel van dat bestand en hij blijft hier gelden: liever het
+   * ruwe slug dan een naam die wij verzinnen, want een blanco of een slug is
+   * zichtbaar mis en een gok niet.
+   */
+  const svc = serviceLabel(order.service, lang) || order.service;
+  const n = order.product_count || 1;
   const label = lang === 'nl'
-    ? `${order.service} — ${order.product_count || 1} product${(order.product_count || 1) === 1 ? '' : 'en'}`
-    : `${order.service} — ${order.product_count || 1} product${(order.product_count || 1) === 1 ? '' : 's'}`;
+    ? `${svc} — ${n} product${n === 1 ? '' : 'en'}`
+    : `${svc} — ${n} product${n === 1 ? '' : 's'}`;
 
   return {
     number,

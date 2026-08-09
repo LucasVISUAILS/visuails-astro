@@ -16,7 +16,7 @@
     "fetch:order": "node scripts/fetch-order.mjs",
     "test:account": "node tests/account-brand-kit.test.mjs",
     "test:admin": "node tests/admin.test.mjs",
-    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:invoices && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie",
+    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:invoices && npm run test:feedback && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie",
     "test:invoice": "node tests/invoice-pdf.test.mjs",
     "test:signin": "node tests/account-signin.test.mjs",
     "logo:pack": "node scripts/make-logo-pack.mjs",
@@ -34,7 +34,8 @@
     "test:code": "node tests/account-code.test.mjs",
     "styleguide": "node scripts/make-styleguide.mjs",
     "test:invoicing": "node tests/invoice-issue.test.mjs",
-    "test:invoices": "node tests/account-invoices.test.mjs"
+    "test:invoices": "node tests/account-invoices.test.mjs",
+    "test:feedback": "node tests/feedback.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

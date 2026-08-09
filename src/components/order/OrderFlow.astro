@@ -248,7 +248,7 @@ const PIPE = {
   nl: {
     total: {
       each: `{rate} per product × {n}, ${vatLabel('excl', 'nl')}.`,
-      more: 'Dat is meer dan we in één vastgezette leverdatum kwijt kunnen, dus dit plannen we samen in plaats van het door een formulier te laten uitrekenen.',
+      more: 'Dat is meer dan er in één week past, dus dit plannen we samen in plaats van het door een formulier te laten uitrekenen.',
       quote: 'Kies hoeveel producten en het totaal verschijnt hier.',
       onRequest: '—',
       outfit: ' Plus {price} × {n} voor een compleet setje — broek, top en schoenen in één foto.',
@@ -648,7 +648,7 @@ const FORM = {
       ['The files', 'High-resolution and e-commerce-ready, with no per-use licence.'],
     ],
     footH: 'Not ready to order?',
-    footBody: `One product in full — ${CATALOG_IMAGES} catalog images or a ${LIFESTYLE_IMAGES}-photo carousel — for ${sample.price}, ${sample.unit}. Made the same way as a paid order.`,
+    footBody: `${sample.deliverable}, made from one of your own products — for ${sample.price}, ${sample.unit}. Made the same way as a paid order.`,
     footCta: `Try a test sample · ${sample.price}`,
     footWa: 'Ask on WhatsApp',
     // De knop stond op een kale wa.me-link: WhatsApp opende met een leeg
@@ -714,7 +714,7 @@ const FORM = {
       skip: 'Stuur je alles mee, dan kunnen we meteen beginnen. Missen we een foto, dan nemen we zelf contact met je op.',
     },
     s3: {
-      h: 'Voor wie is dit?',
+      h: 'Naar wie sturen we de factuur en de beelden?',
       lead: 'Genoeg om een factuur te maken en je te kunnen bereiken.',
       savedH: 'Je opgeslagen gegevens',
       savedEdit: 'Aanpassen voor deze bestelling',
@@ -810,7 +810,7 @@ const FORM = {
       ['De bestanden', 'Hoge resolutie en klaar voor je webshop, zonder licentie per gebruik.'],
     ],
     footH: 'Nog niet klaar om te bestellen?',
-    footBody: `Eén product volledig — ${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES} — voor ${sample.price}, ${sample.unit}. Dezelfde productie als een betaalde bestelling.`,
+    footBody: `${sample.deliverable}, gemaakt van je eigen product — voor ${sample.price}, ${sample.unit}. Dezelfde productie als een betaalde bestelling.`,
     footCta: `Probeer een proefvisual · ${sample.price}`,
     footWa: 'Vraag het via WhatsApp',
     footWaText: 'Hoi VISUAILS, ik ben een bestelling aan het invullen en kom er niet uit.',

@@ -341,6 +341,11 @@ function makeSheet(pdf, fonts) {
     return out.length ? out : [''];
   }
 
+  /** Een SVG-pad op het blad, in de huidige inktkleur. Zie MARK_PATHS. */
+  function svg(path, { x = M.left, y = state.y, scale = 1, color = INK } = {}) {
+    state.page.drawSvgPath(path, { x, y, scale, color });
+  }
+
   function rule(y, color = RULE, thickness = 0.6) {
     state.page.drawLine({
       start: { x: M.left, y },
@@ -354,6 +359,7 @@ function makeSheet(pdf, fonts) {
     state,
     newPage,
     draw,
+    svg,
     wrap,
     width,
     rule,
@@ -377,7 +383,31 @@ function prepare(invoice) {
 
   const netCents = Number.isFinite(Number(inv.netCents)) ? Math.round(Number(inv.netCents)) : 0;
   const vatCents = Number.isFinite(Number(inv.vatCents)) ? Math.round(Number(inv.vatCents)) : 0;
-  const vatRate = Number.isFinite(Number(inv.vatRate)) ? Number(inv.vatRate) : 0;
+  /*
+   * ── "VAT 0.21%" OP EEN ECHTE FACTUUR — 9 augustus 2026 ──────────────────────
+   *
+   * De eerste factuur die dit systeem uitgaf, VIS-2026-0001, zei letterlijk
+   * `VAT 0.21%`. Het tarief werd doorgegeven als breuk en met een %-teken
+   * afgedrukt.
+   *
+   * `orders.vat_rate` is een BREUK, want vatDecision() geeft `rate: 0.21` en dat
+   * is wat quote.js ermee rekent. Een percentage op papier is 21. Die twee vormen
+   * zijn hier vermengd geraakt.
+   *
+   * EN WAAROM 147 ASSERTIONS DAT NIET ZAGEN: mijn eigen fixtures schreven
+   * `vatRate: 21`. De test toetste dus of de code overweg kon met een vorm die de
+   * echte data nooit heeft. Een fixture die niet lijkt op wat er langskomt, is een
+   * test die de fout meeschrijft in plaats van hem te vinden — precies wat er
+   * gebeurde, en de reden dat dit commentaar hier staat en niet in een changelog.
+   *
+   * NU BEIDE VORMEN, en dat is niet slap. Er bestaat geen btw-tarief onder de 1%,
+   * dus een waarde tussen 0 en 1 is per definitie een breuk en een waarde vanaf 1
+   * per definitie een percentage. 0 is in beide vormen 0. Er is dus geen invoer
+   * waarbij dit de verkeerde kant op kan gokken, en oude momentopnames — die de
+   * breuk bewaren — renderen daarmee vanaf nu goed.
+   */
+  const rawRate = Number.isFinite(Number(inv.vatRate)) ? Number(inv.vatRate) : 0;
+  const vatRate = rawRate > 0 && rawRate < 1 ? Math.round(rawRate * 10000) / 100 : rawRate;
   const treatment = inv.treatment === 'eu_reverse_charge' || inv.treatment === 'outside_scope'
     ? inv.treatment
     : 'nl_standard';
@@ -477,13 +507,102 @@ export async function renderInvoicePdf(invoice) {
   return pdf.save({ useObjectStreams: true, addDefaultPage: false });
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * HET MERKTEKEN, ALS VECTOR
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 9 augustus 2026, na de eerste echte factuur: *"Ik zou het VISUAILS logo
+ * ook nog wel mooi vinden om erop te hebben."*
+ *
+ * ── WAAROM PADEN EN GEEN PNG ─────────────────────────────────────────────────
+ *
+ * De mail moet het met een PNG doen omdat e-mail geen SVG kent (zie
+ * scripts/make-mail-assets.mjs). Een pdf heeft die beperking niet: pdf-lib kan
+ * SVG-padnotatie rechtstreeks tekenen, dus het teken blijft vector en is scherp op
+ * papier én bij 800% inzoomen. Een raster zou hier bovendien als base64 in dit
+ * bestand moeten staan — een blok van tienduizenden tekens data in een
+ * bronbestand — of van schijf gelezen moeten worden, en dat laatste mag niet: de
+ * test in tests/invoice-pdf.test.mjs eist dat deze module niets importeert behalve
+ * pdf-lib en het rendert met de Node-globals weggehaald.
+ *
+ * ── WAAR DEZE TWEE PADEN VANDAAN KOMEN ──────────────────────────────────────
+ *
+ * Letterlijk uit brand/visuails-logo/svg/visuails-mark-zwart.svg, dat zelf uit het
+ * <symbol id="markglyph"> in Layout.astro wordt gegenereerd — dezelfde bron als de
+ * favicon en het mailbriefhoofd. Verandert de tekening, dan is DIT de plek die
+ * niet automatisch meegaat, en daarom staat de herkomst hier met zoveel woorden:
+ * kopieer de twee `d`-waarden opnieuw, en laat VIEWBOX_H gelijk aan de hoogte in
+ * de viewBox.
+ *
+ * De pdf-tekst staat op een y-as die omhoog loopt en SVG op een die omlaag loopt;
+ * drawSvgPath() neemt de y als BOVENkant en tekent naar beneden. Vandaar dat het
+ * teken op `top` wordt geplaatst en de tekst ernaast op `top - iets`.
+ */
+const MARK_PATHS = [
+  'M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 '
+  + 'L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z',
+  'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z',
+];
+const VIEWBOX_H = 813.25;
+const VIEWBOX_W = 702;
+
+/*
+ * ── DE MAAT EN DE HOOGTE, UITGEREKEND IN PLAATS VAN GEGOKT ──────────────────
+ *
+ * Eerste poging: 21pt hoog, bovenkant 3pt boven de regel. Op de proef stond het
+ * teken zichtbaar te laag — de punt van de V hing veertien punten onder de
+ * basislijn van VISUAILS — en dat leest als twee dingen die toevallig naast
+ * elkaar staan in plaats van als één merk.
+ *
+ * Een lockup hangt aan de KAPITAALHOOGTE van het woord ernaast, niet aan de
+ * puntgrootte. Helvetica-Bold heeft een kapitaalhoogte van 718/1000 em; dat is een
+ * vaste eigenschap van het standaardlettertype en mag dus als getal opgeschreven
+ * worden. Bij 19pt is dat 13,6pt: de afstand van de basislijn tot de bovenkant van
+ * de V van VISUAILS.
+ *
+ * Het teken krijgt 12% overhoogte, gelijk verdeeld boven en onder die band. Exact
+ * op kapitaalhoogte oogt een spitse vorm te klein naast rechthoekige letters —
+ * dezelfde reden dat een ronde o in elk lettertype iets buiten de regel steekt.
+ */
+const CAP_RATIO = 0.718;
+const MARK_OVERSHOOT = 1.12;
+const CAP_H = CAP_RATIO * SIZE.h1;
+const MARK_H = CAP_H * MARK_OVERSHOOT;
+const MARK_W = (MARK_H / VIEWBOX_H) * VIEWBOX_W;
+/*
+ * Lucht tussen teken en woord: iets minder dan de helft van de breedte van het
+ * teken, dezelfde verhouding als het mailbriefhoofd (28px teken, 12px lucht). Op
+ * 9pt naast een teken van 13pt stond het woord los; op deze maat lezen ze als één
+ * geheel zonder tegen elkaar aan te staan.
+ */
+const MARK_GAP = MARK_W * 0.45;
+
 // ── kop ──────────────────────────────────────────────────────────────────────
 
 function drawHeader(sheet, d, fonts) {
   const { t } = d;
   const top = sheet.y;
 
-  sheet.draw(d.seller.name, { x: M.left, y: top - 4, size: SIZE.h1, font: fonts.bold });
+  /*
+   * HET TEKEN, DAN HET WOORD. Samen het lockup uit het mailbriefhoofd, en om
+   * dezelfde reden in die volgorde: het teken is wat iemand herkent voordat hij
+   * leest.
+   *
+   * Tekst wordt vanaf zijn BASISLIJN getekend en een pad vanaf zijn BOVENKANT.
+   * Die twee nulpunten liggen niet op dezelfde hoogte, dus de bovenkant van het
+   * teken wordt hier uitgerekend vanaf de basislijn van het woord: kapitaalhoogte
+   * erbij, en de helft van de overhoogte er nog eens bovenop zodat wat er onder de
+   * basislijn uitsteekt precies evenveel is als wat er boven de letters uitsteekt.
+   */
+  const baseline = top - 4;
+  const scale = MARK_H / VIEWBOX_H;
+  const markTop = baseline + CAP_H + (MARK_H - CAP_H) / 2;
+  for (const p of MARK_PATHS) {
+    sheet.svg(p, { x: M.left, y: markTop, scale });
+  }
+
+  sheet.draw(d.seller.name, { x: M.left + MARK_W + MARK_GAP, y: baseline, size: SIZE.h1, font: fonts.bold });
   sheet.draw(t.title, { x: CONTENT_RIGHT, y: top - 2, size: SIZE.h2, font: fonts.bold, align: 'right' });
 
   // Seller identity. The VAT number and the KVK number are not decoration here:

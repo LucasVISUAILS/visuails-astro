@@ -97,6 +97,7 @@ import { mailNote } from '../data/mailNote.js';
 // als `maybeClose`; alleen dit bestand riep hem aan en dat was de bug.
 import { maybeCloseOrder } from './close.js';
 import { issueInvoice } from './invoice.js';
+import { feedbackBlock, loadFeedback, handleFeedbackPost } from './feedback.js';
 import { serviceLabel } from '../data/services.js';
 import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT } from '../data/vat.js';
@@ -1035,6 +1036,8 @@ export async function accountPost(context) {
   if (path === '/account/review') return handleFileReview(context, customer);
   if (path === '/account/details') return handleDetails(context, customer, asJson);
 
+  if (path === '/account/feedback') return handleFeedback(context, customer);
+
   const pay = /^\/account\/orders\/(\d+)\/pay$/.exec(path);
   if (pay) return handleOrderPay(context, customer, Number(pay[1]));
 
@@ -1599,7 +1602,23 @@ async function sectionGet(context, customer, section) {
 
   let inner, title;
   if (section === 'orders') {
-    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed);
+    /*
+     * ── DE ANTWOORDEN, IN ÉÉN QUERY VOOR ALLE BESTELLINGEN ──────────────────
+     *
+     * Niet in de Promise.all bovenaan, want die draait voor élke sectie van dit
+     * dashboard en dit is alleen op de bestellingenpagina nodig. En niet per
+     * bestelkaart, want dan is het één query per kaart — bij twintig
+     * bestellingen twintig aanroepen voor een blok dat op de meeste niet eens
+     * verschijnt.
+     *
+     * Eén IN-lijst dus, en alleen over de bestellingen die het blok kunnen
+     * krijgen: afgerond. Zijn dat er nul, dan gaat er niets naar de database.
+     */
+    const closed = orders.filter((o) => o.closed_at).map((o) => o.id);
+    const feedbackByOrder = closed.length
+      ? await loadFeedbackFor(env, closed)
+      : new Map();
+    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed, feedbackByOrder);
     title = t.ordersHeading;
   } else if (section === 'brand') {
     inner = brandKitBody(t, lang, models, lockByStyle);
@@ -2449,6 +2468,76 @@ async function loadCustomModels(env, customerId) {
  * denkbaar die dit scherm wél moet weten en niet mag lezen. Een kolomlijst die
  * een migratie kan missen is hier duurder dan de paar bytes die hij spaart.
  */
+/**
+ * De feedbackrijen van een handvol bestellingen, als Map op order_id.
+ *
+ * De ids komen uit rijen die we net zelf uit `orders` hebben gelezen voor déze
+ * klant, dus ze zijn per constructie van hem — vandaar dat ze rechtstreeks in de
+ * IN mogen. Ze worden alsnog door Number() gehaald: een lijst die uit een query
+ * komt hoort niet als tekst in een volgende query te belanden, ook niet als hij
+ * vandaag alleen getallen bevat.
+ *
+ * Ontbreekt de tabel — migratie 0020 niet gedraaid — dan is de uitkomst een lege
+ * Map en staat er op elke kaart gewoon de vraag. Zelfde afspraak als
+ * loadFeedback() in feedback.js.
+ */
+/**
+ * Het tevredenheidsblok, van deze kant.
+ *
+ * ── WAT HIER GECONTROLEERD WORDT, EN WAAROM PRECIES DIT ─────────────────────
+ *
+ * Eén ding: is deze bestelling van deze klant, en is hij afgerond. Dat tweede is
+ * niet overbodig naast het eerste — het blok verschijnt alleen bij een afgeronde
+ * bestelling, dus een POST voor een bestelling die dat niet is, komt niet van een
+ * scherm dat wij hebben getekend.
+ *
+ * De Origin-controle, de rate limit en de sessie zijn hierboven in accountPost()
+ * al gedaan, voor elke route. Ze hier nog eens doen zou een tweede, iets andere
+ * kopie van diezelfde poort zijn — precies waar de noot bovenaan die functie
+ * tegen waarschuwt.
+ *
+ * Bij een platformknop antwoorden we met een 303 naar Google of Trustpilot. Dat
+ * formulier heeft target="_blank", dus die omleiding landt in het nieuwe tabblad
+ * en het dashboard blijft staan.
+ */
+async function handleFeedback({ request, env }, customer) {
+  const form = await request.formData().catch(() => null);
+  const orderId = Number.parseInt(String(form?.get('order') || ''), 10);
+  const home = '/account/orders';
+  if (!Number.isInteger(orderId)) return seeOther(home);
+
+  let order;
+  try {
+    order = await env.DB.prepare(
+      'SELECT id, closed_at FROM orders WHERE id = ?1 AND customer_id = ?2'
+    ).bind(orderId, customer.customer_id).first();
+  } catch {
+    return seeOther(home);
+  }
+  if (!order || !order.closed_at) return seeOther(home);
+
+  const res = await handleFeedbackPost(env, {
+    orderId,
+    customerId: customer.customer_id,
+    form,
+  });
+  return seeOther(res.redirect || `${home}#order-${orderId}`);
+}
+
+async function loadFeedbackFor(env, orderIds) {
+  const ids = orderIds.map((n) => Number(n)).filter(Number.isInteger);
+  if (!ids.length) return new Map();
+  try {
+    const res = await env.DB.prepare(
+      `SELECT * FROM order_feedback WHERE order_id IN (${ids.map(() => '?').join(',')})`
+    ).bind(...ids).all();
+    return new Map((res?.results || []).map((r) => [r.order_id, r]));
+  } catch (err) {
+    console.warn('[account] feedback niet te lezen —', err && err.message, '— migratie 0020 gedraaid?');
+    return new Map();
+  }
+}
+
 async function loadStyleLocks(env, customerId) {
   const res = await env.DB.prepare(
     'SELECT l.* FROM customer_style_locks l WHERE l.customer_id = ?1'
@@ -3635,7 +3724,7 @@ function activityRow(t, lang, o) {
  * The active chip is a <span>, not a link to the page you are on, and carries
  * aria-current. "All" is always first and is the way back.
  */
-function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '', payFailed = false) {
+function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '', payFailed = false, feedbackByOrder = new Map()) {
   const shown = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
 
   // Insertion order follows STATUS, which is the order the studio moves through
@@ -3670,7 +3759,7 @@ function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), st
 <p class="lede">${esc(t.ordersLede)}</p>
 ${payFailed ? `<p class="det-ok is-warn" role="status">${esc(t.payFailed)}</p>` : ''}
 ${filters}
-${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [])).join('') : empty}`;
+${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null)).join('') : empty}`;
 }
 
 /**
@@ -4508,7 +4597,13 @@ function paymentBlock(t, lang, o) {
 </div>`;
 }
 
-function orderCard(t, lang, o, files, events = []) {
+/*
+ * `fb` is de rij uit order_feedback voor DEZE bestelling, of null. Meegegeven en
+ * niet hier opgehaald: deze functie tekent, en een query in een renderfunctie is
+ * er één die per bestelling opnieuw afgaat.
+ */
+function orderCard(t, lang, o, files, events = [], fb = null) {
+  const feedback = feedbackFor(t, lang, o, fb);
   const window = o.window_start ? `${esc(o.window_start)} → ${esc(o.window_end || '—')}` : t.windowPending;
   // Status is not repeated here — it already has the pill in row-head, and a
   // second plain-text copy of the same word two lines down read as clutter
@@ -4597,8 +4692,34 @@ function orderCard(t, lang, o, files, events = []) {
        elke foto: het is een feit over de bestelling, niet over een beeld. */
     o.closed_at && !isSample(o) ? `<p class="meta closed">${esc(t.closedNote)}</p>` : ''
   }
+  ${feedback}
   ${fileList}
 </div>`;
+}
+
+/*
+ * ── WANNEER DE TEVREDENHEIDSVRAAG OP EEN BESTELKAART STAAT ───────────────────
+ *
+ * Alleen bij een AFGERONDE bestelling die geen proefvisual is.
+ *
+ * `closed_at` is de trigger uit §2 stap 1 van reviewverzamelingspecificatie.md:
+ * élk levend beeld goedgekeurd. Halverwege vragen zou iets anders meten — "ben je
+ * tevreden met wat je hebt gekregen" bij vier van de twaalf beelden gaat over een
+ * bestelling die nog niet klaar is.
+ *
+ * De proefvisual valt erbuiten om dezelfde reden dat hij geen beoordeelknoppen
+ * heeft (zie canReview): het is één product voor €1 om te kijken of het klopt, en
+ * iemand om een openbare review vragen over een proef is vragen naar een oordeel
+ * over iets wat nog geen bestelling was.
+ */
+function feedbackFor(t, lang, o, fb) {
+  if (!o.closed_at || isSample(o)) return '';
+  return feedbackBlock({
+    lang,
+    action: '/account/feedback',
+    hidden: `<input type="hidden" name="order" value="${o.id}">`,
+    feedback: fb,
+  });
 }
 
 /**
@@ -5046,6 +5167,9 @@ function page({ lang, title, body, full = false }) {
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/account.css">
+<!-- Het tevredenheidsblok, uit dezelfde stylesheet die het portaal inlaadt.
+     Zie de kop van public/feedback.css. -->
+<link rel="stylesheet" href="/feedback.css">
 </head>
 <body${full ? ' class="has-shell"' : ''}>
 ${full ? body : `<div class="wrap">\n${body}\n</div>`}
