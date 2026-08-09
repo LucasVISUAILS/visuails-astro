@@ -1265,7 +1265,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .has-menu { position: relative; }
   .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-  .nav-menu a { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
+  .nav-menu a,
+  .nav-menu .mi-off { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
   .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: .92rem; }
   .nav-menu .mi-desc { color: var(--ink-3); font-size: .8rem; line-height: 1.4; }
@@ -1287,9 +1288,6 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      hover, en de cursor zegt het voordat iemand klikt. In de dropdown erft het de
      padding van de <a> ernaast niet automatisch — vandaar dat die hier opnieuw
      staat, zodat de vier items dezelfde maat houden. */
-  .nav-menu .mi-off { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; color: var(--ink-3); cursor: not-allowed; }
-  .nav-menu .mi-off .mi-title { color: var(--ink-3); }
-  .mobile-nav .mi-off, .footer-col .mi-off { color: var(--ink-3); cursor: not-allowed; }
 
   .mi-soon {
     display: inline-block; margin-left: .45rem;
@@ -1337,7 +1335,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       var(--bg); }
   @media (max-height: 820px) {
     .mobile-nav { padding-top: 74px; }
-    .mobile-nav > a { font-size: 1.35rem; padding: .62rem 0; }
+    .mobile-nav > a,
+    .mobile-nav > .mi-off { font-size: 1.35rem; padding: .62rem 0; }
     .mobile-mark { height: 26px; margin-bottom: 1rem; }
     .mobile-cta { margin-top: 1.2rem; }
   }
@@ -1349,7 +1348,20 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* Only the plain nav links get the large display styling. Scoped to direct
      children so it never hijacks the CTA buttons (which live in .mobile-cta)
      — that override was flattening "Order now" to a left-aligned block. */
-  .mobile-nav > a { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
+  /* ── DE UITGESCHAKELDE INGANG KRIJGT DEZELFDE SELECTOR, NIET DEZELFDE WAARDEN ──
+     Lucas op zijn telefoon: *"hooks staat er heel raar in en inconsistent met de
+     andere knoppen."* En dat was het: dit was `.mobile-nav > a`, en Hooks is geen
+     <a> maar een <span> (want er is geen pagina om naartoe te gaan). Dus erfde hij
+     hier niets — geen 1.7rem, geen displayfont, geen hairline eronder — en stond
+     hij op body-formaat tussen zes regels van 27 pixels.
+
+     De reparatie is de SELECTOR en niet een tweede regelset met dezelfde getallen.
+     Zou ik `.mi-off` apart opmaken, dan is dat een tweede plek die bij de volgende
+     wijziging van deze rij achterblijft, en dan staat Hooks er over een maand
+     opnieuw raar in. Nu is er letterlijk één regel die de maat van een ingang in
+     deze lade bepaalt, en of hij aanklikbaar is verandert daar niets aan. */
+  .mobile-nav > a,
+  .mobile-nav > .mi-off { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
   .mobile-cta { display: flex; flex-direction: column; gap: var(--gap-actions); margin-top: 1.8rem; }
   .mobile-cta .btn { font-size: 1.05rem; }
   .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
@@ -1438,7 +1450,25 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      attributes. Everything else about .foot-social — the 44px targets, the
      ring, the hover — is in global.css beside the icon masks it depends on. */
   .footer-col ul.foot-social { flex-direction: row; gap: .5rem; }
-  .footer-col a { color: var(--ink-2); font-size: .92rem; }
+  .footer-col a,
+  .footer-col .mi-off { color: var(--ink-2); font-size: .92rem; }
+
+  /* ── DE TINT KOMT ALS LAATSTE, EN DAT IS GEEN DETAIL ───────────────────────
+     Deze regel stond eerst hoger in het bestand dan de maatregels hierboven. Bij
+     gelijke specificiteit wint de laatste, dus zette de gedeelde regel de kleur
+     daarna weer op --ink en was het item niet grijs maar gewoon wit — een item dat
+     eruitziet als een link en niet werkt.
+
+     Alleen de kleur en de cursor wijken af. Alles wat een ingang zijn maat geeft,
+     komt uit dezelfde regel als de links; zie de noot bij .mobile-nav > a.
+
+     `cursor: default` en niet `not-allowed` in de lade en de footer: not-allowed is
+     de juiste cursor bij een control die je zou kunnen aanwijzen, en op een telefoon
+     is er geen cursor. In het dropdownmenu op een desktop staat hij wél op
+     not-allowed, want daar beweegt een muis over. */
+  .nav-menu .mi-off { color: var(--ink-3); cursor: not-allowed; }
+  .nav-menu .mi-off .mi-title { color: var(--ink-3); }
+  .mobile-nav > .mi-off, .footer-col .mi-off { color: var(--ink-3); cursor: default; }
   .footer-col a:hover { color: var(--ink); }
   /* Matches the anchors beside it exactly — a withdrawal route that looks
      like a button among links reads as an ad, and one that is quieter than the
@@ -1500,7 +1530,27 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      het scherm, en de knop zegt met "test sample · €1" al genoeg om op te kunnen
      klikken. */
   .convbar .cb-note { font-style: normal; font-size: .85rem; font-weight: 400; line-height: 1.4; color: var(--ink-2); white-space: nowrap; }
-  @media (max-width: 900px) { .convbar .cb-note { display: none; } }
+  /* ── DE NOTE BLIJFT STAAN, OOK OP EEN TELEFOON ─────────────────────────────
+     Hier stond `@media (max-width: 900px) { .cb-note { display: none } }`, en
+     samen met het verbergen van het teken onder de 600px was het resultaat wat
+     Lucas op zijn telefoon zag: een kale groene knop met een kruisje, en niets dat
+     zei waarom hij daar stond. *"ook mist hier tekst en logo bij de pop up."*
+
+     Dat was mijn eigen fout uit de ronde waarin de balk korter moest: ik heb hem
+     korter gemaakt door de UITLEG weg te halen, en de uitleg is het enige waardoor
+     de knop iets betekent. "Request a test sample · €1" zonder die regel is een
+     bedrag zonder aanbod.
+
+     Wat er nu gebeurt onder de 700px: de balk wordt twee regels in plaats van één.
+     Teken en tekst boven, knop eronder over de volle breedte. Dat is een paar
+     pixels hoger en het draagt zijn hele boodschap — en op een telefoon is verticale
+     ruimte precies wat je wél hebt.
+
+     `white-space: nowrap` moet er dan af, anders staat de regel op één lijn te
+     duwen tegen een breedte die er niet is. */
+  @media (max-width: 700px) {
+    .convbar .cb-note { white-space: normal; font-size: .8rem; line-height: 1.35; }
+  }
 
   /* De knop houdt de pilvorm van elke andere knop op de site. Hij is de reden dat
      de balk zelf ook een pil is — zie de noot bij .convbar. */
@@ -1527,12 +1577,32 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      Het teken gaat weg, en dat is de enige manier waarop de knop op 320px nog
      past. Op die maat is het ook het minst nodig: de kleur en de tekst zeggen al
      van wie de balk is, en het kruisje moet bereikbaar blijven. */
-  @media (max-width: 600px) {
-    .convbar { left: 12px; right: 12px; max-width: none; transform: translateY(120%); grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; padding: 9px; }
+  /* ── TWEE RIJEN, EN HET TEKEN BLIJFT ──────────────────────────────────────
+     Drie kolommen op de bovenste rij (teken, tekst, kruisje) en de knop over de
+     volle breedte eronder. Het kruisje blijft rechtsboven, want dat is waar je hem
+     zoekt en hij mag nooit onder de knop belanden — dat was de bug van de vorige
+     ronde, waarbij het kruisje op 320px buiten de balk viel.
+
+     Geen pilvorm meer maar een gewone ronding: een pil om een blok van twee regels
+     leest als een fout, en een strook van rand tot rand met 14px ronding is wat
+     elke andere strook op een telefoon doet. */
+  @media (max-width: 700px) {
+    .convbar {
+      left: 12px; right: 12px; max-width: none;
+      transform: translateY(120%);
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      column-gap: 10px; row-gap: 10px;
+      padding: 12px; border-radius: 14px;
+    }
     .convbar.show { transform: translateY(0); }
-    .convbar .cb-logo { display: none; }
-    .convbar .cb-cta { justify-content: center; padding: 0 14px; font-size: .85rem; max-width: 20rem; margin-inline: auto; }
+    /* Het teken en de tekst op de bovenste rij, het kruisje ernaast. */
+    .convbar .cb-logo { grid-column: 1; grid-row: 1; --cb-mark-h: 20px; }
+    .convbar .cb-note { grid-column: 2; grid-row: 1; }
+    .convbar .cb-close { grid-column: 3; grid-row: 1; align-self: start; }
+    /* En de knop over de volle breedte eronder. */
+    .convbar .cb-cta { grid-column: 1 / -1; grid-row: 2; justify-content: center; padding: 0 14px; font-size: .88rem; }
   }
+
 
   /* WhatsApp launcher — a square block pinned to the left rail, so it never
      collides with the centred .convbar. 48px hit area at minimum; the label
@@ -1578,6 +1648,18 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      viewport shrinks, so "beside" is only true down to about 380px. Stacking
      is true at every width. */
   @media (max-width: 600px) { .wa-launcher { left: auto; right: 12px; --wa-bottom: 12px; } }
-  @media (max-width: 620px) { .wa-launcher { --wa-bottom: 96px; } }
+  /* ── DE WHATSAPP-KNOP MOET BOVEN DE CONVBAR UIT ───────────────────────────
+     Dit stond op 96px, gemeten toen de convbar op een telefoon één rij was: 58px
+     hoog plus 20px van de onderkant, dus 96 was ruim.
+
+     Sinds de balk twee rijen heeft (de uitleg is teruggekomen — zie de noot bij
+     .cb-note) is hij 110px hoog. Gemeten op 412px breed lag de WhatsApp-knop
+     daarmee bovenop de bovenste rij van de balk. 20px onderkant + 110px balk +
+     12px lucht = 142.
+
+     Het breekpunt is 700px en niet 620px, zodat het meeschuift met het punt waar de
+     balk van vorm verandert. Twee verschillende grenzen voor hetzelfde feit is hoe
+     dit de vorige keer misging. */
+  @media (max-width: 700px) { .wa-launcher { --wa-bottom: 142px; } }
   @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

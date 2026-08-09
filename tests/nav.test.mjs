@@ -31,6 +31,25 @@ const check = (name, actual, expected) => {
   console.log(`${ok ? ' ok  ' : 'FAIL '} ${String(name).padEnd(58)} ${ok ? '' : `expected ${JSON.stringify(expected)} got ${JSON.stringify(actual)}`}`);
 };
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
+
+/*
+ * Alleen de CODE, zonder commentaar.
+ *
+ * DIT IS DE DERDE KEER DAT IK HIER INTRAP, dus staat hij nu bovenaan in plaats van
+ * per sectie opnieuw. Elke broncontrole die een verwijderde regel opspoort, vindt
+ * óók de noot die uitlegt dat die regel verwijderd is — en straft daarmee het
+ * opschrijven van de reden. Eerst in tests/offsite.test.mjs (`seeOther(checkout)`),
+ * toen bij het prijsbereik (Lucas' citaat "niet €39 - €19"), en nu bij
+ * `.cb-note { display: none }`.
+ *
+ * De regexp voor een regelcommentaar eist een spatie of regelbegin vóór de twee
+ * slashes, zodat `https://…` in een string blijft staan.
+ */
+const codeOnly = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+  .replace(/(^|\s)\/\/.*$/gm, '$1');
+
 const LANGS = ['en', 'nl'];
 
 /* ══ 1 · ELKE INGANG DRAAGT ZIJN EIGEN HREF ══════════════════════════════════
@@ -88,6 +107,65 @@ for (const lang of LANGS) {
   const count = (layout.match(/mi-soon/g) || []).length;
   check('het label staat op drie plekken plus zijn stijl', count >= 4, true);
   check('en dropHrefs is nergens meer', layout.includes('dropHrefs'), false);
+
+  /*
+   * ── EEN UITGESCHAKELDE INGANG MOET DEZELFDE MAAT HEBBEN ALS EEN LINK ──────
+   *
+   * Lucas op zijn telefoon, 9 augustus 2026: *"hooks staat er heel raar in en
+   * inconsistent met de andere knoppen."* De oorzaak: de mobiele lade maakte
+   * `.mobile-nav > a` groot, en Hooks is geen <a> maar een <span> — dus erfde hij
+   * niets en stond hij op body-formaat tussen zes regels van 27 pixels.
+   *
+   * De reparatie was de SELECTOR delen en niet de getallen herhalen.
+   *
+   * ── EN DEZE TEST WAS EERST WAARDELOOS ─────────────────────────────────────
+   *
+   * Eerste versie zocht met een regexp of ergens in het bestand `.mobile-nav > a,`
+   * gevolgd door `.mobile-nav > .mi-off {` stond. Bij de sabotage bleef hij groen:
+   * er zijn TWEE regels die `.mobile-nav > a` opmaken (de gewone en die in de
+   * media query voor smalle schermen), en zolang één van de twee het paar nog had,
+   * vond de regexp een match. Een test die "ergens" zoekt, controleert niets.
+   *
+   * Nu wordt er GETELD: elke plek die de link opmaakt, moet ook .mi-off in dezelfde
+   * selector hebben. Splitst iemand er één, dan lopen de aantallen uiteen.
+   */
+  const css = codeOnly(layout);
+
+  /*
+   * PER REGEL, en niet door te tellen. Tellen was mijn tweede poging en die was ook
+   * fout: `.mobile-nav > .mi-off` komt drie keer voor en `.mobile-nav > a` twee
+   * keer, want de grijstint is met opzet een regel die ALLEEN over .mi-off gaat.
+   * Gelijkheid eisen maakte die tint tot een fout.
+   *
+   * Wat de regel echt is: er mag geen enkele selectorlijst zijn die de LINK opmaakt
+   * zonder .mi-off erin. Een regel die alleen .mi-off opmaakt mag wel — dat is
+   * precies wat een afwijkende kleur is. Dus wordt de css in regels geknipt en wordt
+   * elke selectorlijst afzonderlijk bekeken.
+   */
+  const selectors = [...css.matchAll(/([^{}]+)\{[^{}]*\}/g)].map((m) => m[1].trim());
+  const pairs = [
+    ['de dropdown', '.nav-menu a', '.nav-menu .mi-off'],
+    ['de mobiele lade', '.mobile-nav > a', '.mobile-nav > .mi-off'],
+    ['de footer', '.footer-col a', '.footer-col .mi-off'],
+  ];
+  for (const [naam, link, off] of pairs) {
+    // Selectorlijsten die de link opmaken. `a,` of `a {` — niet `a:hover`, want een
+    // hovertoestand hoort een uitgeschakeld item juist niet te krijgen.
+    const rules = selectors.filter((sel) => new RegExp(`${link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(,|$)`, 'm').test(sel));
+    check(`${naam}: er is een regel die de link opmaakt`, rules.length > 0, true);
+    const missing = rules.filter((sel) => !sel.includes(off));
+    check(`${naam}: elke regel noemt ook .mi-off`, missing, []);
+  }
+
+  /*
+   * En de grijstint moet ná de maat komen. Ook dit was eerst te los: ik zocht met
+   * lastIndexOf op ".mi-off { color: var(--ink-3)" en vond daarmee de regel van de
+   * dropdown, die toevallig wél achteraan stond — dus bleef de test groen terwijl de
+   * tint van de LADE naar voren was gehaald. Nu wordt precies die ene regel gezocht.
+   */
+  const tint = css.lastIndexOf('.mobile-nav > .mi-off, .footer-col .mi-off');
+  const size = css.lastIndexOf('.mobile-nav > .mi-off { display: block');
+  check('de tint van de lade komt ná zijn maat', tint > size && size > -1, true);
 }
 
 /* ══ 4 · (WAS: HOOKS IS HELEMAAL AANGESLOTEN) ═══════════════════════════════
@@ -170,11 +248,33 @@ console.log('\nde privacyverklaring dekt het');
  * waarschijnlijk een dienstprijs als bereik op een pagina, en dan wil ik dat hier
  * horen en niet van een klant.
  */
+/* ══ 6b · DE CONVBAR HOUDT ZIJN UITLEG OP EEN TELEFOON ══════════════════════
+ *
+ * Lucas: *"ook mist hier tekst en logo bij de pop up."* Op zijn telefoon stond er
+ * een kale groene knop met een kruisje: `.cb-note` werd onder de 900px op
+ * display:none gezet en `.cb-logo` onder de 600px, allebei door mij, in de ronde
+ * waarin de balk korter moest. Ik heb hem korter gemaakt door de UITLEG weg te
+ * halen — en dat is het enige waardoor de knop iets betekent.
+ *
+ * Deze test is daarom een verbod en geen bevestiging: nergens mag een media query
+ * die twee elementen nog verbergen.
+ */
+console.log('\nde balk onderaan houdt zijn uitleg');
+{
+  const css = codeOnly(read('src/layouts/Layout.astro'));
+  // Alles wat .cb-note of .cb-logo op display:none zet, in welke query dan ook.
+  const hidesNote = /\.cb-note[^{}]*\{[^}]*display:\s*none/.test(css);
+  const hidesLogo = /\.cb-logo[^{}]*\{[^}]*display:\s*none/.test(css);
+  check('de tekst wordt nergens verborgen', hidesNote, false);
+  check('het teken ook niet', hidesLogo, false);
+  // En de knop van WhatsApp moet boven de balk uit blijven; die staat op één plek.
+  check('de whatsapp-knop wijkt voor de balk', /--wa-bottom: 142px/.test(css), true);
+}
+
 console.log('\nde prijsvorm');
 {
-  const pricing = read('src/data/pricing.js');
   // Alleen de code, want de noot bij de functie noemt de naam ook.
-  const code = pricing.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
+  const code = codeOnly(read('src/data/pricing.js'));
   const calls = [...code.matchAll(/euroRange\(/g)].length;
   // Eén keer de declaratie (`export function euroRange(`), twee keer de aanroep in
   // SHOOT_DAY — één per taal. Meer dan dat is een nieuwe plek met een bereik.
@@ -190,7 +290,7 @@ console.log('\nde prijsvorm');
    * Dezelfde valkuil als in tests/offsite.test.mjs — een broncontrole die proza
    * meeleest, straft het opschrijven van de regel.
    */
-  const stripped = (f) => read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
+  const stripped = (f) => codeOnly(read(f));
   const files = ['src/data/pricing.js', 'src/components/PricingPage.astro', 'src/components/HomeV2.astro'];
   const handwritten = files.filter((f) => /€\s?\d[\d.,]*\s*[–—-]\s*€/.test(stripped(f)));
   check('geen handgeschreven bereik met twee eurotekens', handwritten, []);
