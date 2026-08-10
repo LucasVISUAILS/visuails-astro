@@ -69,7 +69,7 @@ import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
 import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
-import { quoteOrder, centsToMollieValue, paymentDescription, PAYABLE_SERVICES } from '../../src/lib/quote.js';
+import { quoteOrder, centsToMollieValue, paymentDescription, PAYABLE_SERVICES, isPayableService } from '../../src/lib/quote.js';
 import {
   vatDecision, VAT_TREATMENT, normaliseVat, viesCode, vatShort, HOME_COUNTRY,
   vatGate, REVIEW, REVIEW_HOURS,
@@ -803,7 +803,21 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // waar dat kan: zodra er een link bestaat, kan iemand hem gebruiken, en dan is
   // het geld binnen op een claim die nog niemand heeft nagekeken.
   let payUrl = null;
-  if (quote && PAYABLE_SERVICES.has(svc) && env.MOLLIE_API_KEY && vatReview.payableNow) {
+  /*
+   * isPayableService(svc) EN NIET PAYABLE_SERVICES.has(svc) — 10 AUGUSTUS 2026.
+   *
+   * `svc` komt uit ORDER_SERVICES (regel 80) en die bevat 'drop': dat is de wire-waarde
+   * die de attended-deur post, en die staat zo in orders.service. PAYABLE_SERVICES kent
+   * alleen de laddernaam 'complete'. Dus `PAYABLE_SERVICES.has('drop')` was false en de
+   * duurste bestelling op de site kreeg geen betaallink in haar bevestigingsmail.
+   *
+   * Dit is de DERDE keer dat dezelfde val dichtklapt. quote.js:96-108 beschrijft de
+   * tweede (7 augustus, het geldblok en de knop op het klantdashboard) en exporteert
+   * sindsdien isPayableService() met de instructie: wie een dienst uit orders.service in
+   * handen heeft, gebruikt die functie en niet de verzameling. Dit aanroeppunt deelt de
+   * betaallink uit en las nog steeds de verzameling.
+   */
+  if (quote && isPayableService(svc) && env.MOLLIE_API_KEY && vatReview.payableNow) {
     const payment = await safe(() => createOrderMolliePayment(env, {
       ref,
       lang,
@@ -1586,9 +1600,35 @@ function json(body, status = 200) {
 }
 
 // Only allow same-site thank-you targets, and match the language.
-function safeRedirect(raw, lang) {
-  if (raw && raw.startsWith('/') && !raw.startsWith('//') && raw.includes('thank-you')) return raw;
-  return lang === 'nl' ? '/nl/thank-you' : '/thank-you';
+/*
+ * ── EEN BACKSLASH IS GEEN VEILIG BEGIN — 10 AUGUSTUS 2026 ───────────────────
+ *
+ * De test was `startsWith('/') && !startsWith('//')`, en die laat `/\evil.com/thank-you`
+ * door: begint met één schuine streep, niet met twee, en bevat 'thank-you'. Volgens de
+ * WHATWG-URL-regels behandelt een browser bij een https-URL een backslash daar
+ * hetzelfde als een schuine streep, dus lost hij dit op als https://evil.com/thank-you.
+ *
+ * Dat maakte dit een open redirect op visuails.com, en erger: dezelfde waarde wordt
+ * in de successUrl voor Mollie gezet, dus ook de terugkeer ná betaling landde op de
+ * host van een ander — met de ref in de queryreeks.
+ *
+ * De controle is nu niet meer "hoe begint de tekst" maar "waar wijst hij heen": de
+ * waarde wordt opgelost tegen onze eigen oorsprong en moet daar ook uitkomen. Dat is
+ * dezelfde vraag die de browser straks stelt, en dan hoeft dit niet te weten hoeveel
+ * tekens er nog als scheidingsteken meedoen.
+ */
+export function safeRedirect(raw, lang) {
+  const fallback = lang === 'nl' ? '/nl/thank-you' : '/thank-you';
+  if (!raw || typeof raw !== 'string') return fallback;
+  let url;
+  try {
+    url = new URL(raw, 'https://visuails.com');
+  } catch {
+    return fallback;
+  }
+  if (url.origin !== 'https://visuails.com') return fallback;
+  if (!url.pathname.includes('thank-you')) return fallback;
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }

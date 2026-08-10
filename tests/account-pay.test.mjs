@@ -156,8 +156,20 @@ console.log('\n── de betaling ──');
   check('the webhook points at our own handler',
     /^https:\/\/visuails\.com\/api\/webhook\/mollie$/.test(r.calls[0]?.body?.webhookUrl || ''),
     r.calls[0]?.body?.webhookUrl);
+  /*
+   * DE TERUGKEER DRAAGT HET ID TWEE KEER, EN DAT IS OPZET — 10 augustus 2026.
+   *
+   * De bestelkaarten zijn <details> geworden en staan dicht als er niets te doen is.
+   * Een hash bereikt de server nooit, dus zonder `?order=` landt een klant die
+   * terugkomt van Mollie op een dichte kaart. De hash laat de browser springen, de
+   * query vertelt de server welke kaart open moet. Zie de noot bij openOrderId in
+   * src/lib/account.js — daar staat ook waarom CSS dit niet kan oplossen.
+   */
   check('and Mollie sends them back to the order they came from',
-    /\/account\/orders#order-91$/.test(r.calls[0]?.body?.redirectUrl || ''),
+    /\/account\/orders\?order=91#order-91$/.test(r.calls[0]?.body?.redirectUrl || ''),
+    r.calls[0]?.body?.redirectUrl);
+  check('and the card they land on will be open, not collapsed',
+    /[?&]order=91(&|#|$)/.test(r.calls[0]?.body?.redirectUrl || ''),
     r.calls[0]?.body?.redirectUrl);
   check('the checkout language follows the order, not the browser',
     r.calls[0]?.body?.locale === 'nl_NL');
@@ -253,7 +265,10 @@ console.log('\n── als het misgaat ──');
   });
   check('a refusal does not throw', r.status === 303, r.status);
   check('and says so on the page instead of failing silently',
-    /\?pay=failed#order-91$/.test(r.to), r.to);
+    /\?pay=failed&order=91#order-91$/.test(r.to), r.to);
+  /* Zonder dit valt de melding "betalen is mislukt" op een ingeklapte kaart. */
+  check('and opens the card the message is about',
+    /[?&]order=91(&|#|$)/.test(r.to), r.to);
 }
 
 {

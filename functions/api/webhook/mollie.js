@@ -140,7 +140,25 @@ export async function onRequestPost({ request, env }) {
      * Een markering zetten zou een tweede poging in de weg staan.
      */
     if (['failed', 'canceled', 'expired'].includes(payment.status) && env.DB) {
-      const ref = payment?.metadata?.ref || payment?.description || '';
+      /*
+       * `metadata.order_ref`, NIET `metadata.ref` — GECORRIGEERD 10 AUGUSTUS 2026.
+       *
+       * Hier stond `payment?.metadata?.ref`. Die sleutel bestaat niet: src/lib/mollie.js
+       * regel 213 schrijft `metadata: { order_ref: ref }`, en het betaalde pad tien
+       * regels lager in dit bestand leest hem ook zo. De optionele ketting maakte er
+       * `undefined` van, waarna de terugval de betaalomschrijving pakte
+       * ("VISUAILS — 12 producten, catalogsets") en die matcht nooit op orders.ref.
+       *
+       * Netto: de SELECT vond nooit iets en notifyPaymentFailed() is nooit één keer
+       * aangeroepen. De hele melding die hierboven in twintig regels wordt uitgelegd —
+       * "en nu valt het niet meer stil" — stond dood in de code, en dat is precies het
+       * soort fout dat je niet ziet: er komt geen mail, en dat is wat je verwacht als er
+       * niets mis is.
+       *
+       * De terugval op description is weg. Hij kon nooit werken, en een terugval die
+       * nooit werkt maskeert alleen dat de eerste sleutel fout is.
+       */
+      const ref = payment?.metadata?.order_ref || '';
       try {
         const row = ref
           ? await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first()
@@ -188,7 +206,7 @@ async function recordPaid(env, payment, mode) {
     return;
   }
 
-  const order = await env.DB.prepare('SELECT id, status, payment_status, total_cents, refunded_cents FROM orders WHERE ref = ?1').bind(ref).first();
+  const order = await env.DB.prepare('SELECT id, service, status, payment_status, total_cents, refunded_cents FROM orders WHERE ref = ?1').bind(ref).first();
   if (!order) {
     // The order row is written before the payment is ever created, so this is
     // not a race — it means the ref does not exist here. The usual cause is a
@@ -281,7 +299,35 @@ async function recordPaid(env, payment, mode) {
         JSON.stringify(payment)
       )
       .run();
-  } catch {
+  } catch (err) {
+    /*
+     * ── ALLEEN EEN DUBBELE AFLEVERING MAG HIER STIL AFLOPEN — 10 AUGUSTUS 2026 ──
+     *
+     * Hier stond een kale `catch {}` met de mededeling "already processed, skipping".
+     * Het commentaar erboven beweert dat een fout hier een UNIQUE-overtreding betekent,
+     * maar de catch ving ELKE fout op, gaf `return`, en de handler antwoordt daarna met
+     * 200 — waarmee Mollie te horen krijgt dat het gelukt is en niet meer opnieuw komt.
+     *
+     * WAT DAT KOST. Eén hapering van D1 op deze INSERT en de bestelling wordt nooit op
+     * betaald gezet, `window_expires_at` nooit gewist, geen factuur uitgegeven en geen
+     * melding verstuurd — permanent, want het retryvenster van 26 uur is met die 200
+     * afgezegd. De klant heeft betaald en het systeem weet het nooit.
+     *
+     * Nu wordt er gekeken naar WELKE fout het is. Een UNIQUE-overtreding op
+     * (provider, external_id) betekent inderdaad dat een eerdere aflevering dit al deed:
+     * stil aflopen is dan juist. Alles anders gaat omhoog, de handler antwoordt 500, en
+     * Mollie komt terug — precies waar dat retryschema voor is.
+     *
+     * De tekst van D1 bij een schending is "UNIQUE constraint failed: payments…". Er
+     * wordt op beide woorden gematcht en niet op de volledige zin, want die zin is van
+     * Cloudflare en niet van ons.
+     */
+    const text = String(err?.message || err || '');
+    const duplicate = /unique/i.test(text) && /constraint/i.test(text);
+    if (!duplicate) {
+      console.error('[mollie-webhook] betaling', payment.id, 'niet vastgelegd —', text);
+      throw err;
+    }
     console.log('[mollie-webhook] duplicate delivery for', payment.id, '— already processed, skipping');
     return;
   }
@@ -378,6 +424,32 @@ async function recordPaid(env, payment, mode) {
   // standaardfonts is een kwestie van tientallen milliseconden, de put in R2 gaat
   // over een paar kilobyte en de mail is één fetch. Ruim binnen de tijd, en als
   // het onverhoopt toch niet lukt, zie de alinea hierboven.
+  /*
+   * ── GEEN FACTUUR VOOR HET TESTEXEMPLAAR — 10 AUGUSTUS 2026 ─────────────────
+   *
+   * issueInvoice() werd hier onvoorwaardelijk aangeroepen, ook voor een €1-proefbeeld.
+   * En dat leverde een AANTOONBAAR ONJUIST document op: quoteOrder() geeft null voor
+   * 'test-sample' (het staat niet in PAYABLE_SERVICES), dus `orders.total_cents` blijft
+   * NULL en `vat_cents` 0. snapshotFromOrder() leest `Number(order.total_cents) || 0`,
+   * de regelsomcontrole in invoicePdf komt langs met 0 === 0, en de klant krijgt een
+   * genummerde factuur die "Subtotaal € 0,00 · btw € 0,00 · Betaald € 0,00" zegt terwijl
+   * er €1 is afgeschreven. Bovendien verbruikt zo'n factuur een nummer in een reeks die
+   * geen gaten mag hebben.
+   *
+   * WAAROM OVERSLAAN EN NIET REPAREREN. quote.js:206 heeft `quoteTestSample()` staan,
+   * met nul aanroepers in de hele repo, en die zegt: netCents €1, vatCents 0, "treated
+   * as VAT-inclusive". Die keuze — of dat €1 inclusief 21% is of buiten de btw valt —
+   * is een fiscale beslissing en niet iets om hier stilzwijgend in te bakken. Een fout
+   * document niet uitgeven is onomstreden; een tarief verzinnen is dat niet.
+   *
+   * De betaling zelf is niet zoek: hij staat in `payments` en bij Mollie. Wil je hier
+   * wél een factuur, dan is dat één regel zodra de fiscale vraag beantwoord is.
+   */
+  if (order.service === 'test-sample') {
+    console.log('[mollie-webhook] testexemplaar', ref, '— geen factuur, zie de noot hierboven');
+    return;
+  }
+
   try {
     // Geen `today` mee: issueInvoice() pakt dan `paid_at`, dat de UPDATE hierboven
     // net heeft gezet. De factuurdatum is de betaaldatum, ook als deze aflevering

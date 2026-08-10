@@ -1,3 +1,44 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DE TEKSTSCHAAL VAN DIT DASHBOARD — vastgelegd 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * GETELD, NIET GESCHAT. Dit bestand had 25 verschillende vaste tekstgroottes tussen
+ * 0,62 en 1,7 rem. Een deel daarvan lag zo dicht op elkaar dat geen oog het verschil
+ * ziet: .8 naast .8125 naast .82 (12,80 / 13,00 / 13,12 px), .84 naast .85 naast .86,
+ * .875 naast .88, .95 naast .96 naast .98. Dat zijn geen ontwerpstappen maar
+ * afdrijving — drie keer dezelfde bedoeling, drie keer een ander getal, omdat er
+ * telkens één regel bij kwam zonder dat iemand keek wat er al stond.
+ *
+ * Het gevolg is niet dat één plek er fout uitziet. Het gevolg is dat het geheel
+ * onrustig leest zonder dat je kunt aanwijzen waarom, en dat is precies het soort
+ * slordigheid dat een klant voelt en niet benoemt.
+ *
+ * WAT ER GEBEURD IS. 35 declaraties zijn naar de dichtstbijzijnde stap geschoven, met
+ * een harde grens: geen enkele verschuift meer dan 0,32 px bij een basis van 16 px.
+ * Er is dus niets HERONTWORPEN — de schaal is samengetrokken op plekken waar het
+ * verschil onzichtbaar was, en overal waar een stap echt een stap is, is hij gebleven.
+ *
+ * DE SCHAAL. Veertien maten, en een nieuwe regel hoort er één van te kiezen:
+ *
+ *   .62  9,92 px   het kleinste label, spaarzaam
+ *   .68 10,88 px
+ *   .72 11,52 px   meta, tijdstempels
+ *   .78 12,48 px   pillen, samenvattingen, tabelkoppen
+ *   .82 13,12 px   secundaire tekst
+ *   .86 13,76 px
+ *   .92 14,72 px   knoppen en labels
+ *   .96 15,36 px
+ *   1   16,00 px   lopende tekst
+ *   1.0625 17 px   kaartkop — gemeten waarde, zie global.css over .as-card-h
+ *   1.1 17,60 px
+ *   1.15 18,40 px
+ *   1.4 22,40 px
+ *   1.7 27,20 px
+ *
+ * Plus twee clamp()-koppen. admin.css heeft dezelfde behandeling nog nodig (20 maten)
+ * en portal.css ook (15) — dat is meetbaar en nog niet gedaan.
+ */
+
 /* ============================================================
    VISUAILS — /account, the customer dashboard. Task #257, 2026-07-27.
 
@@ -293,8 +334,8 @@ a { color: inherit; }
   box-shadow: inset 0 1px 0 var(--line);
   display: flex; flex-direction: column; gap: .15rem;
 }
-.sideuser-name { font-size: .88rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
-.sideuser-email { font-size: .8rem; color: var(--ink-3); overflow-wrap: anywhere; }
+.sideuser-name { font-size: .86rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.sideuser-email { font-size: .78rem; color: var(--ink-3); overflow-wrap: anywhere; }
 .sideuser form { margin-top: .8rem; }
 .btn-block { display: flex; width: 100%; }
 
@@ -326,7 +367,7 @@ a { color: inherit; }
 }
 .mark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
 .ref { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-.bar-right { display: flex; align-items: center; gap: 1rem; font-size: .9rem; color: var(--ink-3); }
+.bar-right { display: flex; align-items: center; gap: 1rem; font-size: .92rem; color: var(--ink-3); }
 /* Product-name suffix beside the wordmark — "VISUAILS · Studio Dashboard",
    the same shape as any tool naming itself next to its parent brand. Only on
    the dashboard itself (dashboardBody), not on login/check-email/bad-link —
@@ -378,7 +419,7 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .activity-link { display: flex; flex-direction: column; gap: .2rem; text-decoration: none; min-width: 0; }
 .activity-link .ref { text-transform: none; letter-spacing: 0; font-size: .96rem; font-weight: 600; color: var(--ink); }
 .activity-link:hover .ref { text-decoration: underline; text-underline-offset: 2px; }
-.activity-link .meta { font-size: .84rem; }
+.activity-link .meta { font-size: .82rem; }
 
 /* ---- order cards -----------------------------------------------------------
    A card per order, the same "list of records with a status" shape admin.css
@@ -455,14 +496,14 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 }
 .shot-media.is-gone {
   display: grid; place-items: center; text-align: center;
-  font-size: .74rem; line-height: 1.3; color: var(--ink-3); padding: .5rem;
+  font-size: .72rem; line-height: 1.3; color: var(--ink-3); padding: .5rem;
 }
 
 .shot-body { display: flex; flex-direction: column; gap: .35rem; margin-top: .45rem; }
 .shot-cap { font-size: .78rem; color: var(--ink-2); overflow-wrap: anywhere; }
 .shot-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
-.btn-sm { padding: .3rem .6rem; font-size: .76rem; }
-.revoked { font-size: .76rem; line-height: 1.45; }
+.btn-sm { padding: .3rem .6rem; font-size: .78rem; }
+.revoked { font-size: .78rem; line-height: 1.45; }
 
 /* "Je hebt alles goedgekeurd." Eén regel op de bestelkaart, met een streepje
    ervoor zodat hij niet als nog een feit tussen de facts leest maar als de
@@ -489,7 +530,7 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
 .state.approved::before { content: "\2014\00a0"; }
 .state.revision { color: var(--warn-ink); }
 .state.revision::before { content: "\2014\00a0"; }
-.said { margin: .3rem 0 0; width: 100%; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .88rem; color: var(--ink-2); font-style: italic; }
+.said { margin: .3rem 0 0; width: 100%; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .86rem; color: var(--ink-2); font-style: italic; }
 
 .review-form { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; width: 100%; margin-top: .5rem; }
 /* .btn-quiet itself is defined down with the other .btn variants — it only
@@ -586,8 +627,8 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
 .bk-model-img.is-blank { display: grid; place-items: center; color: var(--ink-300); }
 .bk-model-img.is-blank .i { width: 34px; height: 34px; }
 .bk-model figcaption { display: grid; gap: .15rem; padding: .6rem .7rem .7rem; }
-.bk-model-name { font-size: .88rem; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
-.bk-model-state { font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.bk-model-name { font-size: .86rem; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.bk-model-state { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .bk-model.is-ready .bk-model-state { color: var(--teal-text); }
 
 /* ---- the empty state: an invitation, not a shrug ---- */
@@ -605,7 +646,7 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
 .bk-empty-fig .i { width: 30px; height: 30px; }
 .bk-empty-text { min-width: 0; }
 .bk-empty-text h2 { margin: 0 0 .4rem; padding: 0; box-shadow: none; font-size: 1.1rem; }
-.bk-empty-text p { margin: 0 0 1rem; color: var(--ink-2); font-size: .95rem; text-wrap: pretty; }
+.bk-empty-text p { margin: 0 0 1rem; color: var(--ink-2); font-size: .96rem; text-wrap: pretty; }
 
 /* ---- one card per service, folded ------------------------------------------
    An exclusive accordion (name="bk" on the <details>), so opening lifestyle
@@ -652,11 +693,11 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
 
 .bk-sum-text { display: grid; gap: .15rem; min-width: 0; flex: 1 1 auto; }
 .bk-sum-h { font-size: 1rem; font-weight: 700; color: var(--ink); }
-.bk-sum-now { font-size: .84rem; color: var(--ink-3); overflow-wrap: anywhere; }
+.bk-sum-now { font-size: .82rem; color: var(--ink-3); overflow-wrap: anywhere; }
 .bk-sum-dot { color: var(--ink-300); }
 .bk-sum-cta {
   flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35rem;
-  font-size: .8rem; letter-spacing: .05em; text-transform: uppercase;
+  font-size: .78rem; letter-spacing: .05em; text-transform: uppercase;
   font-weight: 600; color: var(--ink-2);
 }
 /* A chevron that turns, so open/closed is legible without the label changing
@@ -743,7 +784,7 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
 /* Het vinkje zelf blijft zichtbaar en bedienbaar — anders is een groep waar
    meerdere antwoorden mogen niet te onderscheiden van een radiogroep. */
 .bk-ch input { accent-color: var(--teal); margin: 0; }
-.bk-ch-name { font-size: .9rem; }
+.bk-ch-name { font-size: .92rem; }
 .bk-ch-flag {
   font-size: .68rem; letter-spacing: .02em; padding: .1rem .3rem;
   border: 1px solid var(--line-strong); border-radius: var(--r-sm);
@@ -751,7 +792,7 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
 }
 .bk-hint {
   margin: .6rem 0 0; max-width: 62ch;
-  font-size: .8125rem; line-height: 1.5; color: var(--ink-2);
+  font-size: .82rem; line-height: 1.5; color: var(--ink-2);
   text-wrap: pretty;
 }
 .bk-sw {
@@ -786,7 +827,7 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
      this dashboard is checked at. */
   .bk-tiles { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
   .bk-tile-meta { padding: .35rem .4rem .45rem; }
-  .bk-tile-name { font-size: .76rem; }
+  .bk-tile-name { font-size: .78rem; }
   .bk-tile-sub { font-size: .68rem; }
   .bk-sum { flex-wrap: wrap; }
   .bk-sum-cta { width: 100%; justify-content: flex-end; }
@@ -803,7 +844,7 @@ input, textarea, button, select { font: inherit; -webkit-appearance: none; appea
   display: inline-flex; align-items: center; gap: .4rem;
   padding: .38rem .7rem; border: 1px solid var(--line-strong);
   border-radius: var(--r-md); background: transparent;
-  font-size: .84rem; color: var(--ink-2); text-decoration: none;
+  font-size: .82rem; color: var(--ink-2); text-decoration: none;
   white-space: nowrap;
 }
 a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: var(--ghost); }
@@ -857,7 +898,7 @@ form.login input[type="email"] {
    depth argument made with value rather than with motion. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  font-family: var(--font); font-weight: 700; font-size: .875rem;
+  font-family: var(--font); font-weight: 700; font-size: .86rem;
   min-height: 38px; padding: 0 1.15rem;
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
   background: var(--ghost); color: var(--ink); border: 0;
@@ -1002,7 +1043,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   background-size: 6px 6px, 6px 6px; background-repeat: no-repeat;
 }
 .det-opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-3); }
-.det-hint { font-size: .84rem; color: var(--ink-3); text-wrap: pretty; }
+.det-hint { font-size: .82rem; color: var(--ink-3); text-wrap: pretty; }
 /* The account email, shown and not editable — see handleDetails(). It is
    deliberately not a disabled <input>: a greyed-out field reads as one that
    could be switched on, and this one never can. */
@@ -1047,7 +1088,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   border-radius: var(--r-md);
   background: var(--surface);
   box-shadow: inset 3px 0 0 var(--accent);
-  font-size: .9rem;
+  font-size: .92rem;
   line-height: 1.55;
   color: var(--ink-2);
 }
@@ -1064,7 +1105,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   border-radius: 0 var(--r-sm, 6px) var(--r-sm, 6px) 0;
 }
 .wa-nudge h3 { margin: 0; font-size: .92rem; font-weight: 700; color: var(--ink); }
-.wa-nudge p { margin: .35rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
+.wa-nudge p { margin: .35rem 0 0; font-size: .86rem; line-height: 1.55; color: var(--ink-3); }
 
 
 /* ---- laatst geleverd, op het overzicht (augustus 2026) -----------------------
@@ -1177,8 +1218,8 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md, 10px);
 }
-.folder h3 { margin: 0 0 .3rem; font-size: .98rem; font-weight: 700; color: var(--ink); }
-.folder-n { margin: 0; font-size: .875rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+.folder h3 { margin: 0 0 .3rem; font-size: .96rem; font-weight: 700; color: var(--ink); }
+.folder-n { margin: 0; font-size: .86rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
 /* De uitleg waarom de foto's erboven geen knop meer hebben. Kleiner en grijzer:
    het is de zin die je leest als je hem mist, niet de zin die je eerst leest. */
 .folder-note { margin: .5rem 0 0; max-width: 62ch; }
@@ -1214,9 +1255,9 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 .prod-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .prod-text { display: flex; flex-direction: column; gap: .15rem; min-width: 0; flex: 1 1 auto; }
-.prod-title { font-weight: 700; font-size: .95rem; color: var(--ink); }
-.prod-facts { font-size: .8rem; color: var(--ink-3); }
-.prod-cta { font-size: .8rem; color: var(--ink-2); white-space: nowrap; }
+.prod-title { font-weight: 700; font-size: .96rem; color: var(--ink); }
+.prod-facts { font-size: .78rem; color: var(--ink-3); }
+.prod-cta { font-size: .78rem; color: var(--ink-2); white-space: nowrap; }
 .prod[open] .prod-cta { color: var(--ink-3); }
 
 /* Amber: er loopt een revisie op dit product. Verdwijnt vanzelf zodra de studio
@@ -1228,7 +1269,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 }
 .prod-flag {
   align-self: flex-start; margin-top: .15rem;
-  font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 700;
+  font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 700;
   color: var(--warn-ink, #e0a92b);
 }
 
@@ -1292,7 +1333,7 @@ details.ask { margin-top: 0; }
    naar blijft zoeken. */
 .prod .shots { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 .prod .shots.is-ref { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
-.prod .said { font-size: .8rem; }
+.prod .said { font-size: .78rem; }
 
 /* Het etiket op de kop wisselt mee met de stand van de <details>. */
 .prod .on-open { display: none; }
@@ -1385,7 +1426,7 @@ details.ask { margin-top: 0; }
   background: var(--surface-2);
 }
 .flowbox.is-cancelled { opacity: .7; }
-.flow-now { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--ink-2); }
+.flow-now { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--ink-2); }
 .flow-now strong { color: var(--ink); margin-right: .25rem; }
 
 /* Het spoor. Vier bolletjes met een lijn ertussen; de lijn zit op het bolletje
@@ -1510,13 +1551,13 @@ details.ask { margin-top: 0; }
   display: block; font-size: .68rem; letter-spacing: .09em; text-transform: uppercase;
   font-weight: 700; color: var(--ink-3);
 }
-.studionote p { margin: .3rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-2); }
+.studionote p { margin: .3rem 0 0; font-size: .92rem; line-height: 1.6; color: var(--ink-2); }
 
 /* Een levering die geen beeld is — een video, een zip. Geen gebroken plaatje
    maar een tegel die zegt wat het is en waar je hem opent. */
 .shot-media.is-file { display: grid; place-items: center; background: var(--surface); }
 .shot-filetype {
-  font-size: .8rem; font-weight: 800; letter-spacing: .1em; color: var(--ink-3);
+  font-size: .78rem; font-weight: 800; letter-spacing: .1em; color: var(--ink-3);
 }
 
 /* De taalkeuze, onderin de zijbalk bij de naam van het merk — waar je hem zoekt
@@ -1531,7 +1572,7 @@ details.ask { margin-top: 0; }
    gedempt: het is geen instructie maar een antwoord op de vraag die pas komt
    als de mail uitblijft. */
 .loginwho {
-  margin: 1rem 0 0; font-size: .8rem; line-height: 1.55; color: var(--ink-3);
+  margin: 1rem 0 0; font-size: .78rem; line-height: 1.55; color: var(--ink-3);
 }
 
 /* ── HET GELDBLOK OP DE BESTELKAART — 7 augustus 2026 ────────────────────────
@@ -1556,7 +1597,7 @@ details.ask { margin-top: 0; }
 /* Bedragen rechts uitgelijnd op cijfers die even breed zijn, zodat netto, btw
    en totaal onder elkaar te lezen zijn als een kolom en niet als drie zinnen. */
 .pay-rows { margin: 0; display: grid; gap: .28rem; }
-.pay-row { display: flex; justify-content: space-between; gap: 1rem; font-size: .88rem; }
+.pay-row { display: flex; justify-content: space-between; gap: 1rem; font-size: .86rem; }
 .pay-row dt { color: var(--ink-3); }
 .pay-row dd { margin: 0; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 /* De laatste regel is het bedrag dat je overmaakt; die mag zwaarder wegen. */
@@ -1703,7 +1744,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .codeagain { margin-top: 1.2rem; }
 .codeagain > summary {
   cursor: pointer; list-style: none; width: max-content;
-  font-size: .84rem; color: var(--ink-3);
+  font-size: .82rem; color: var(--ink-3);
   text-decoration: underline; text-underline-offset: 3px;
 }
 .codeagain > summary::-webkit-details-marker { display: none; }
@@ -1745,7 +1786,7 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
    .pill — die heeft een rand en een hoek, en in een kolom die verder alleen
    knoppen bevat leest dat als iets om op te drukken. Zie de noot bij `action` in
    invoicesBody(). */
-.invstate { font-size: .8rem; color: var(--ink-3); }
+.invstate { font-size: .78rem; color: var(--ink-3); }
 
 /* "Btw verlegd" hoort bij het nummer erboven en niet in een eigen kolom: het
    geldt voor een kleine minderheid van de facturen, en een kolom die bij de
@@ -1770,3 +1811,85 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   .invtable .invact { justify-content: flex-start; margin-top: .5rem; }
   .invtable .invact .btn { margin-left: 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DE BESTELKAART KLAPT IN — 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * De kaart is een <details> geworden (zie orderCard() in src/lib/account.js voor
+ * waarom native en welke kaarten open beginnen). Wat hier nodig is, is drie keer
+ * hetzelfde probleem als bij het vraagteken op de startpagina, plus één dat daar
+ * niet bestond.
+ *
+ * 1 · DRIE REGELS OM DE MARKERING WEG TE HALEN. Blink leest `list-style`, WebKit wil
+ *     `::-webkit-details-marker` en Firefox `::marker`. Twee ervan volstaan niet: dan
+ *     staat er op één van de drie engines een driehoekje naast onze eigen chevron.
+ *
+ * 2 · EEN <summary> IS EEN BLOKELEMENT en vult dus de hele kolom. Dat is hier juist
+ *     goed — de hele balk moet klikbaar zijn — maar hij moet wel een flexrij worden,
+ *     anders staan de referentie, de meta en de pil onder elkaar.
+ *
+ * 3 · DE PIL MAG NIET MEEKLIKKEN als aanwijzer: cursor op de summary, niet op de
+ *     kinderen, zodat het duidelijk is dat de balk het bedieningselement is.
+ *
+ * 4 · EN DIT IS DE NIEUWE: `?pay=held#order-91` en elke link in onze eigen mails
+ *     wijst naar één kaart. `details:target` opent hem, zodat niemand op een dicht
+ *     paneel landt na het klikken op een link die belooft ergens naartoe te gaan.
+ *     `open` als attribuut werkt niet voor dit geval — de browser kent de hash pas
+ *     na het laden, en de server kent hem nooit.
+ */
+.card.ord > summary.ord-sum {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+.card.ord > summary.ord-sum::-webkit-details-marker { display: none; }
+.card.ord > summary.ord-sum::marker { content: ''; }
+
+/* De chevron staat achteraan en draait mee. Een tekstteken en geen svg: hij moet
+   dezelfde kleur en dezelfde optische grootte hebben als de meta ernaast, en dat
+   volgt hier gratis uit currentColor en em. */
+.card.ord > summary.ord-sum::after {
+  content: '';
+  margin-left: auto;
+  width: .5em;
+  height: .5em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-.1em);
+  opacity: .5;
+  transition: transform .18s ease, opacity .18s ease;
+  flex: none;
+}
+.card.ord[open] > summary.ord-sum::after {
+  transform: rotate(-135deg) translateY(-.1em);
+  opacity: .8;
+}
+.card.ord > summary.ord-sum:hover::after { opacity: .9; }
+
+/* De samenvattingsregel. `min-width: 0` zodat een lange dienstnaam afbreekt in
+   plaats van de pil van de rij te duwen. */
+.ord-sum-meta {
+  font-size: .78rem;
+  color: var(--ink-3);
+  min-width: 0;
+}
+
+/* Toetsenbordfocus hoort zichtbaar te zijn op het element dat je bedient, en niet
+   alleen op de tekst erin. */
+.card.ord > summary.ord-sum:focus-visible {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Zie noot 4: het openen van de aangewezen kaart gebeurt aan de serverkant, omdat
+   CSS het niet kan — `open` is een attribuut en geen stijl, en een dichte <details>
+   verbergt zijn inhoud via de slot-machinerie van de browser. Elke link naar één kaart
+   geeft het id daarom óók in de queryreeks mee; zie de noot bij openOrderId in
+   src/lib/account.js. Wat hier blijft, is alleen dat de kaart waar je op landt even
+   opvalt. */
+.card.ord:target { outline: 1px solid color-mix(in srgb, currentColor 22%, transparent); outline-offset: 4px; }

@@ -293,7 +293,31 @@ function makeSheet(pdf, fonts) {
     state.pages.push(page);
     state.page = page;
     state.y = PAGE.h - M.top;
+    /*
+     * HET WATERMERK ALS EERSTE, EN DAAROM HIER. Een pdf kent geen z-index: wat later
+     * getekend wordt, ligt bovenop. Zou dit ergens in de opmaak staan, dan hangt het
+     * van de aanroeporde af of het over de tabel valt, en die orde verandert zodra er
+     * een blok bij komt. Meteen na addPage() kan het niet anders dan onderop liggen.
+     *
+     * Ook op een tweede pagina, want een factuur met twintig regels loopt door en een
+     * merk dat alleen op blad 1 staat leest als een vergeten instelling.
+     */
+    watermark(page);
     return page;
+  }
+
+  /** Het teken, doorzichtig en aangesneden in de linkeronderhoek. Zie WM_H. */
+  function watermark(page) {
+    if (!WM_OPACITY) return;
+    for (const path of MARK_PATHS) {
+      page.drawSvgPath(path, {
+        x: -WM_W * WM_BLEED_X,
+        y: WM_TOP_Y,
+        scale: WM_H / VIEWBOX_H,
+        color: INK,
+        opacity: WM_OPACITY,
+      });
+    }
   }
 
   function width(text, font, size) {
@@ -548,35 +572,64 @@ const VIEWBOX_H = 813.25;
 const VIEWBOX_W = 702;
 
 /*
- * ── DE MAAT EN DE HOOGTE, UITGEREKEND IN PLAATS VAN GEGOKT ──────────────────
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * HET TEKEN ALS WATERMERK, AANGESNEDEN IN DE LINKERHOEK — 10 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
  *
- * Eerste poging: 21pt hoog, bovenkant 3pt boven de regel. Op de proef stond het
- * teken zichtbaar te laag — de punt van de V hing veertien punten onder de
- * basislijn van VISUAILS — en dat leest als twee dingen die toevallig naast
- * elkaar staan in plaats van als één merk.
+ * ── DRIE VORMEN OP ÉÉN DAG, EN WAAROM DEZE HET IS ──────────────────────────
  *
- * Een lockup hangt aan de KAPITAALHOOGTE van het woord ernaast, niet aan de
- * puntgrootte. Helvetica-Bold heeft een kapitaalhoogte van 718/1000 em; dat is een
- * vaste eigenschap van het standaardlettertype en mag dus als getal opgeschreven
- * worden. Bij 19pt is dat 13,6pt: de afstand van de basislijn tot de bovenkant van
- * de V van VISUAILS.
+ * Hier stonden vandaag eerst maten voor een LOCKUP ([V] VISUAILS, zoals het
+ * mailbriefhoofd), daarna voor een HANDMERK (VISUAILS met een kleine V rechtsboven, op
+ * de plek van een ™). Lucas over die tweede: "haal het logo daar weg en plaats hem
+ * misschien als watermerk doorzichtig in de linker hoek wat afgesneden."
  *
- * Het teken krijgt 12% overhoogte, gelijk verdeeld boven en onder die band. Exact
- * op kapitaalhoogte oogt een spitse vorm te klein naast rechthoekige letters —
- * dezelfde reden dat een ronde o in elk lettertype iets buiten de regel steekt.
+ * Dat lost en passant iets op wat bij de eerste twee bleef wringen.
+ * scripts/brand-lockup-guard.mjs laat `astro build` FALEN als het woordmerk en de V op
+ * een pagina in dezelfde container staan, met Lucas' eigen instructie als reden: *"they
+ * are two alternative signatures for the same brand, not a lockup, and a V sitting next
+ * to the word it already spells reads as a duplicated logo."* Een watermerk dat door de
+ * bladrand wordt afgesneden staat niet NÁÁST het woord — het is achtergrond, geen
+ * signatuur. De kop draagt weer alleen het woordmerk, en daarmee houdt de factuur zich
+ * aan de regel die de site afdwingt.
+ *
+ * ── DE MAAT EN DE DEKKING, GEKOZEN OP EEN PROEF ────────────────────────────
+ *
+ * Vier varianten op A4 gezet met nagebootste factuurinhoud eroverheen, om te zien wat er
+ * onder tekst gebeurt en niet alleen wat er mooi uitziet:
+ *
+ *   linksBOVEN, 300 pt, 5%   ligt achter het adresblok. Op een belastingdocument is
+ *                            juist dát de tekst die niets mag verliezen. Afgevallen.
+ *   linksonder, 300 pt, 5%   schoon, maar zo klein dat het eerder een vlek lijkt dan
+ *                            een keuze.
+ *   linksonder, 420 pt, 4%   vult de leegte tussen de tabel en de voet, en achter de
+ *                            8pt-grijze noten is er geen contrastverlies te zien.  ← deze
+ *   linksonder, 420 pt, 8%   duidelijk zichtbaar, en dat is het probleem: 8% grijs
+ *                            achter 8pt grijze tekst gaat kosten zodra iemand dit
+ *                            fotokopieert of doorstuurt naar zijn boekhouder.
+ *
+ * ── WAAROM LINKSONDER EN NIET LINKSBOVEN ───────────────────────────────────
+ *
+ * Boven staat alles wat een factuur een factuur maakt: woordmerk, adres, btw- en
+ * KVK-nummer, factuurnummer. Onder de tabel is de enige plek op dit blad die op een
+ * betaalde factuur van één regel écht leeg is. Een watermerk hoort in leegte te staan,
+ * niet in inhoud.
+ *
+ * ── AANGESNEDEN, DUS OP TWEE RANDEN ────────────────────────────────────────
+ *
+ * 34% van de breedte valt links buiten het blad en de onderkant valt onder de
+ * bladrand weg. Twee randen en niet één, want een vorm die maar aan één kant wordt
+ * afgesneden leest als een fout in de opmaak; aan twee kanten leest hij als een
+ * uitsnede. pdf-lib knipt zelf op de bladmaat af, dus dit hoeft niet gemaskeerd te
+ * worden.
  */
-const CAP_RATIO = 0.718;
-const MARK_OVERSHOOT = 1.12;
-const CAP_H = CAP_RATIO * SIZE.h1;
-const MARK_H = CAP_H * MARK_OVERSHOOT;
-const MARK_W = (MARK_H / VIEWBOX_H) * VIEWBOX_W;
-/*
- * Lucht tussen teken en woord: iets minder dan de helft van de breedte van het
- * teken, dezelfde verhouding als het mailbriefhoofd (28px teken, 12px lucht). Op
- * 9pt naast een teken van 13pt stond het woord los; op deze maat lezen ze als één
- * geheel zonder tegen elkaar aan te staan.
- */
-const MARK_GAP = MARK_W * 0.45;
+const WM_H = 420;
+const WM_W = (WM_H / VIEWBOX_H) * VIEWBOX_W;
+const WM_OPACITY = 0.04;
+/** Hoeveel van de breedte links buiten het blad valt. Zie de noot hierboven. */
+const WM_BLEED_X = 0.34;
+/** De bovenkant van het teken, gemeten van de onderrand. drawSvgPath tekent naar
+ *  beneden, dus hieronder valt de punt van de V buiten het blad. */
+const WM_TOP_Y = WM_H * 0.80;
 
 // ── kop ──────────────────────────────────────────────────────────────────────
 
@@ -596,13 +649,14 @@ function drawHeader(sheet, d, fonts) {
    * basislijn uitsteekt precies evenveel is als wat er boven de letters uitsteekt.
    */
   const baseline = top - 4;
-  const scale = MARK_H / VIEWBOX_H;
-  const markTop = baseline + CAP_H + (MARK_H - CAP_H) / 2;
-  for (const p of MARK_PATHS) {
-    sheet.svg(p, { x: M.left, y: markTop, scale });
-  }
 
-  sheet.draw(d.seller.name, { x: M.left + MARK_W + MARK_GAP, y: baseline, size: SIZE.h1, font: fonts.bold });
+  /*
+   * ALLEEN HET WOORDMERK. Het teken stond hier vandaag twee keer — eerst ervoor als
+   * lockup, daarna erachter als handmerk — en staat nu als watermerk in de linkerhoek;
+   * zie de noot bij WM_H. Deze kop is daarmee terug bij één signatuur, wat ook is wat
+   * scripts/brand-lockup-guard.mjs van elke pagina op de site eist.
+   */
+  sheet.draw(d.seller.name, { x: M.left, y: baseline, size: SIZE.h1, font: fonts.bold });
   sheet.draw(t.title, { x: CONTENT_RIGHT, y: top - 2, size: SIZE.h2, font: fonts.bold, align: 'right' });
 
   // Seller identity. The VAT number and the KVK number are not decoration here:

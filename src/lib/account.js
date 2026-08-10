@@ -1630,8 +1630,29 @@ async function sectionGet(context, customer, section) {
   // precies hetzelfde uitziet als voor het opslaan, zonder dat er iets bewaard
   // is — de stilste manier om iemand zijn gegevens te laten kwijtraken.
   let detailsMissing = false;
+  /*
+   * ── WELKE KAART OPEN MOET, KOMT UIT DE QUERY EN NIET UIT DE HASH ────────────
+   *
+   * De bestelkaarten zijn <details> geworden en staan dicht als er niets te doen is.
+   * Elke link die naar één kaart wijst — de mails, de tegels op het overzicht, de
+   * terugkeer na een mislukte betaling — eindigt op `#order-<id>`, en een hash bereikt
+   * de server nooit. Een klant die op "betalen is mislukt" klikt zou dus op een dichte
+   * kaart landen: precies de dode knop die vandaag op drie andere plekken is opgeruimd,
+   * in een nieuwe vorm.
+   *
+   * CSS kan het niet oplossen. `details:target` bestaat als selector, maar `open` is een
+   * attribuut en geen stijl, en een dichte <details> verbergt zijn inhoud via de
+   * slot-machinerie van de browser en niet via `display`. Dus geen `display: revert`-truc.
+   *
+   * Vandaar dat elk van die links het id nu ÓÓK in de queryreeks meegeeft
+   * (`?order=91#order-91`). De hash laat de browser naar de kaart springen, de query
+   * vertelt de server welke er open moet. Twee keer hetzelfde getal, en dat is de prijs
+   * voor nul javascript.
+   */
+  let openOrderId = 0;
   try {
     const params = new URL(request.url).searchParams;
+    openOrderId = Number(params.get('order')) || 0;
     justSaved = params.get('saved') === '1';
     payFailed = params.get('pay') === 'failed';
     payHeld = params.get('pay') === 'held';
@@ -1658,7 +1679,7 @@ async function sectionGet(context, customer, section) {
     const feedbackByOrder = closed.length
       ? await loadFeedbackFor(env, closed)
       : new Map();
-    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed, feedbackByOrder, payHeld);
+    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed, feedbackByOrder, payHeld, openOrderId);
     title = t.ordersHeading;
   } else if (section === 'brand') {
     inner = brandKitBody(t, lang, models, lockByStyle);
@@ -2583,7 +2604,7 @@ async function handleFeedback({ request, env }, customer) {
     });
     if (page) return html(page);
   }
-  return seeOther(`${home}#order-${orderId}`);
+  return seeOther(`${home}?order=${orderId}#order-${orderId}`);
 }
 
 async function loadFeedbackFor(env, orderIds) {
@@ -2946,7 +2967,7 @@ async function handleFileReview({ request, env }, customer) {
  */
 async function handleOrderPay({ request, env }, customer, orderId) {
   const home = '/account/orders';
-  const anchor = `${home}#order-${orderId}`;
+  const anchor = `${home}?order=${orderId}#order-${orderId}`;
   if (!Number.isInteger(orderId) || orderId <= 0) return seeOther(home);
 
   /*
@@ -3012,12 +3033,29 @@ async function handleOrderPay({ request, env }, customer, orderId) {
    * zeggen precies de dode knop die vandaag op twee andere plekken is opgeruimd.
    * Hij hoort te lezen dat wij ernaar kijken en dat hij bericht krijgt.
    *
-   * ALLEEN 'pending' HOUDT TEGEN. 'approved' mag betalen (dat is waar goedkeuren
-   * voor is), en een leeg veld ook — dat is elke bestelling die de poort nooit
-   * geraakt heeft, en dat is de overgrote meerderheid.
+   * WELKE TOESTANDEN TEGENHOUDEN — GECORRIGEERD 10 AUGUSTUS 2026.
+   *
+   * Hier stond "alleen 'pending' houdt tegen", met als redenering: 'approved' mag
+   * betalen en een leeg veld ook. Die redenering vergat de derde uitkomst. `REVIEW` in
+   * src/data/vat.js kent vier waarden — pending, approved, rejected, expired — en
+   * admin.js:3480 zet er `'rejected'` in als jij op "Afwijzen, ik neem contact op"
+   * drukt. Het commentaar bij die knop belooft met zoveel woorden dat de bestelling
+   * daarna onbetaalbaar blijft.
+   *
+   * Wat er werkelijk gebeurde: een afgewezen bestelling glipte langs deze poort en was
+   * met "Nu betalen" af te rekenen op precies het 0%-tarief dat jij net geweigerd had.
+   * Dan is het geld binnen, de btw niet afgedragen, en de aansprakelijkheid ligt bij
+   * ons — het scenario waarvoor deze hele poort op 9 augustus is gebouwd.
+   *
+   * Daarom staat er nu een LIJST VAN WAT MAG in plaats van een lijst van wat niet mag.
+   * Een vijfde toestand die er ooit bij komt, valt dan stil aan de veilige kant.
+   * 'approved' mag (dat is waar goedkeuren voor is) en leeg mag (dat is elke bestelling
+   * die de poort nooit geraakt heeft, de overgrote meerderheid).
    */
-  if (String(order.review_state || '') === REVIEW.pending) {
-    return seeOther(`${home}?pay=held#order-${orderId}`);
+  const reviewState = String(order.review_state || '');
+  const PAYABLE_REVIEW = new Set(['', REVIEW.approved]);
+  if (!PAYABLE_REVIEW.has(reviewState)) {
+    return seeOther(`${home}?pay=held&order=${orderId}#order-${orderId}`);
   }
 
   const m = orderMoney(order);
@@ -3054,7 +3092,7 @@ async function handleOrderPay({ request, env }, customer, orderId) {
   // De query komt vóór het anker — andersom leest de browser 'pay=failed' als
   // deel van de fragmentnaam en komt hij nergens aan.
   if (!checkout || !/^https:\/\/[^/]*mollie\.com\//.test(checkout)) {
-    return seeOther(`${home}?pay=failed#order-${orderId}`);
+    return seeOther(`${home}?pay=failed&order=${orderId}#order-${orderId}`);
   }
   /*
    * ── DEZE KNOP WAS STIL STUK, EN DAT IS ERGER DAN DE REVIEWKNOP ────────────
@@ -3076,7 +3114,7 @@ async function handleOrderPay({ request, env }, customer, orderId) {
    * in plaats van naar een url die twee controles niet haalde.
    */
   const away = offsitePage({ url: checkout, name: 'Mollie', lang, css: '/account.css' });
-  if (!away) return seeOther(`${home}?pay=failed#order-${orderId}`);
+  if (!away) return seeOther(`${home}?pay=failed&order=${orderId}#order-${orderId}`);
   return html(away);
 }
 
@@ -3735,7 +3773,7 @@ function overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder = n
 ${latest.length
   ? `<ul class="latest">${latest.map(({ f, o }) => `
       <li class="latest-item">
-        <a href="/account/orders#order-${o.id}" title="${esc(o.ref)}">
+        <a href="/account/orders?order=${o.id}#order-${o.id}" title="${esc(o.ref)}">
           <img src="/account/files/${f.id}/f" alt="${esc(o.ref)}" loading="lazy" decoding="async">
         </a>
       </li>`).join('')}</ul>`
@@ -3833,7 +3871,7 @@ function featuredOrder(t, lang, o, events) {
     <span class="ref">${esc(o.ref)}</span>
     <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
     <span class="meta">${esc(serviceLabel(o.service, lang) || o.service)}${o.product_count ? ` · ${esc(String(o.product_count))} ${esc(t.fProducts.toLowerCase())}` : ''}</span>
-    <a class="viewall" href="/account/orders#order-${o.id}">${esc(t.ovOpenOrder)}</a>
+    <a class="viewall" href="/account/orders?order=${o.id}#order-${o.id}">${esc(t.ovOpenOrder)}</a>
   </div>
   ${progressBlock(t, lang, o, events)}
   ${studioNote(t, o)}
@@ -3859,7 +3897,7 @@ function studioNote(t, o) {
 
 function activityRow(t, lang, o) {
   return `<li>
-  <a class="activity-link" href="/account/orders#order-${o.id}">
+  <a class="activity-link" href="/account/orders?order=${o.id}#order-${o.id}">
     <span class="ref">${esc(o.ref)}</span>
     <span class="meta">${esc(serviceLabel(o.service, lang) || o.service)}${o.created_at ? ` · ${esc(String(o.created_at).slice(0, 10))}` : ''}</span>
   </a>
@@ -3888,7 +3926,7 @@ function activityRow(t, lang, o) {
  * The active chip is a <span>, not a link to the page you are on, and carries
  * aria-current. "All" is always first and is the way back.
  */
-function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '', payFailed = false, feedbackByOrder = new Map(), payHeld = false) {
+function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '', payFailed = false, feedbackByOrder = new Map(), payHeld = false, openOrderId = 0) {
   const shown = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
 
   // Insertion order follows STATUS, which is the order the studio moves through
@@ -3924,7 +3962,7 @@ function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), st
 ${payFailed ? `<p class="det-ok is-warn" role="status">${esc(t.payFailed)}</p>` : ''}
 ${payHeld ? `<p class="det-ok is-warn" role="status">${esc(t.payHeld)}</p>` : ''}
 ${filters}
-${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null)).join('') : empty}`;
+${shown.length ? shown.map((o, i) => orderCard(t, lang, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null, i, openOrderId)).join('') : empty}`;
 }
 
 /**
@@ -4800,11 +4838,32 @@ function paymentBlock(t, lang, o) {
   const zeroWhy = o.vat_treatment && o.vat_treatment !== VAT_TREATMENT.standard
     ? vatShort(o.vat_treatment, lang)
     : null;
-  const rows = [
-    [t.payNet, money(m.net, lang)],
-    [t.payVat, m.vat === 0 && zeroWhy ? zeroWhy : money(m.vat, lang)],
-    [t.payTotal, money(m.gross, lang)],
-  ];
+  /*
+   * ── EEN BETAALDE BESTELLING KRIJGT ÉÉN REGEL, GEEN UITSPLITSING ─────────────
+   *
+   * Hier stonden altijd drie regels (excl. btw / btw / totaal) plus soms een vierde
+   * voor terugbetaald, ook op een bestelling die maanden geleden betaald is. Op de
+   * bestellingenpagina van Lucas stond die uitsplitsing tien keer onder elkaar, en
+   * dat is het grootste deel van waarom die pagina onoverzichtelijk las.
+   *
+   * De uitsplitsing hoort ergens: op de FACTUUR. Die is per bestelling met één klik
+   * te downloaden in Studio → Facturen, hij is het document waar een boekhouder naar
+   * kijkt, en hij is bevroren — daar kan het bedrag niet meer bewegen. Een tweede
+   * plek waar hetzelfde staat is geen service maar ruis.
+   *
+   * BIJ EEN ONBETAALDE BESTELLING BLIJFT HIJ WEL STAAN. Daar is de uitsplitsing geen
+   * naslag maar de vraag zelf: dit is wat je gaat betalen, en dan hoort te staan
+   * waaruit dat bedrag bestaat vóórdat iemand op de knop drukt. Een terugbetaling
+   * blijft ook altijd zichtbaar; dat is nieuws en geen naslag.
+   */
+  const settled = state === 'paid' && !(m.refunded > 0);
+  const rows = settled
+    ? [[t.payTotal, money(m.gross, lang)]]
+    : [
+      [t.payNet, money(m.net, lang)],
+      [t.payVat, m.vat === 0 && zeroWhy ? zeroWhy : money(m.vat, lang)],
+      [t.payTotal, money(m.gross, lang)],
+    ];
   if (m.refunded > 0) rows.push([t.payRefunded, money(m.refunded, lang)]);
 
   let line;
@@ -4848,19 +4907,17 @@ function paymentBlock(t, lang, o) {
  * niet hier opgehaald: deze functie tekent, en een query in een renderfunctie is
  * er één die per bestelling opnieuw afgaat.
  */
-function orderCard(t, lang, o, files, events = [], fb = null) {
+function orderCard(t, lang, o, files, events = [], fb = null, index = 0, openOrderId = 0) {
   const feedback = feedbackFor(t, lang, o, fb);
   const window = o.window_start ? `${esc(o.window_start)} → ${esc(o.window_end || '—')}` : t.windowPending;
   // Status is not repeated here — it already has the pill in row-head, and a
   // second plain-text copy of the same word two lines down read as clutter
   // rather than information. Placed (the order date) replaces it: real,
   // useful, and nowhere else on the card.
-  const facts = [
-    [t.fRef, o.ref],
-    [t.fService, serviceLabel(o.service, lang) || o.service],
-    o.product_count ? [t.fProducts, String(o.product_count)] : null,
-    o.created_at ? [t.fPlaced, String(o.created_at).slice(0, 10)] : null,
-  ].filter(Boolean);
+  /* De feitenlijst is op 10 augustus 2026 van de kaart verdwenen omdat de samenvatting
+     van de ingeklapte kaart dezelfde vier waarden draagt; zie de noot verderop. De
+     labels t.fRef/t.fService/t.fProducts/t.fPlaced blijven in de vertalingen staan —
+     admin.js en het overzicht gebruiken ze ook. */
 
   // TWEE KANTEN. `files` komt gesorteerd binnen op kind DESC, dus upload vóór
   // delivery; hier wordt het gesplitst omdat de twee stapels niet hetzelfde
@@ -4935,13 +4992,91 @@ function orderCard(t, lang, o, files, events = [], fb = null) {
     ${side(t.sideUploaded, uploaded.map((f) => shotTile(t, f, o)), t.emptyUploads)}
   </div>`;
 
+  /*
+   * ═══════════════════════════════════════════════════════════════════════════
+   * DE KAART KLAPT IN — 10 AUGUSTUS 2026
+   * ═══════════════════════════════════════════════════════════════════════════
+   *
+   * Lucas: "ik zou willen dat je bestellingen in de studio kan inklappen om het wat
+   * overzichtelijker te maken." Elke kaart draagt de feiten, het geldblok, de
+   * voortgang, de studionoot, de tevredenheidsvraag én alle bestanden per product.
+   * Bij tien bestellingen is dat een pagina waar je in scrolt om te zoeken.
+   *
+   * ── NATIVE <details>, GEEN JAVASCRIPT ──────────────────────────────────────
+   *
+   * Zelfde keuze als bij het vraagteken op de startpagina. Het werkt zonder script,
+   * het is met het toetsenbord te openen, Ctrl+F van de browser vindt tekst in een
+   * dicht paneel (en opent het), en een schermlezer kondigt de toestand aan. Een
+   * eigen knop met aria-expanded is meer code voor minder.
+   *
+   * ── WELKE OPEN STAAN, EN WAAROM NIET "ALLEEN DE NIEUWSTE" ──────────────────
+   *
+   * Dicht betekent: hier hoef je niets. Dus staat een kaart open zodra er wél iets
+   * is — een openstaande betaling, een gevraagde revisie, een afgeronde bestelling
+   * die nog geen beoordeling heeft. Dat is bruikbaarder dan "de bovenste", want de
+   * bovenste is de nieuwste en juist een nieuwe bestelling is vaak degene waar je
+   * even niets mee moet.
+   *
+   * De eerste kaart staat er los van altijd open. Een lijst die volledig dicht
+   * opent leest als een lege pagina, en dan is het eerste wat iemand doet: alles
+   * openklikken om te zien wat er staat.
+   *
+   * ── DE SAMENVATTING MOET IETS ZEGGEN ──────────────────────────────────────
+   *
+   * Een dichte kaart die alleen de referentie toont, dwingt je hem te openen om te
+   * zien of hij je nodig heeft — en dan is inklappen niets waard. Daarom staan de
+   * dienst, het aantal producten en de datum in de samenvatting zelf, naast de
+   * statuspil die er al stond.
+   *
+   * ── EN DE ANKERS BLIJVEN WERKEN ───────────────────────────────────────────
+   *
+   * `?pay=held#order-91` en de links in onze eigen mails wijzen naar één kaart. Het
+   * id staat daarom op het <details>-element zelf, en account.css opent een kaart
+   * die :target is. Zonder die regel zou een klant die op "betalen mislukt" klikt
+   * op een dichte kaart landen — de dode knop van vandaag in een nieuwe vorm.
+   */
+  const needsAttention = Boolean(
+    (String(o.payment_status || 'unpaid') !== 'paid' && orderMoney(o))
+    || files.some((f) => f.review_state === 'revision_requested')
+    || (o.closed_at && !isSample(o) && !fb)
+  );
+  const openNow = index === 0 || needsAttention || Number(openOrderId) === Number(o.id);
+
+  /* De samenvatting: kort genoeg voor één regel op een telefoon, en in dezelfde
+     woorden als de feitenlijst eronder, zodat het openen niets nieuws lijkt. */
+  const summaryBits = [
+    serviceLabel(o.service, lang) || o.service,
+    o.product_count ? `${o.product_count}${lang === 'nl' ? ' prod.' : ' items'}` : null,
+    o.created_at ? String(o.created_at).slice(0, 10) : null,
+  ].filter(Boolean);
+
   return `
-<div class="card" id="order-${o.id}">
-  <div class="row-head">
+<details class="card ord" id="order-${o.id}"${openNow ? ' open' : ''}>
+  <summary class="row-head ord-sum">
     <span class="ref">${esc(o.ref)}</span>
+    <span class="ord-sum-meta">${esc(summaryBits.join(' · '))}</span>
     <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
-  </div>
-  <dl class="facts">${facts.map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+  </summary>
+  ${
+    /*
+     * DE FEITENRIJ IS WEG — 10 AUGUSTUS 2026.
+     *
+     * Lucas: "ik wou dat je alleen de belangrijke info op de order kaart ziet omdat dit
+     * nogal onoverzichtelijk is." Hier stond een <dl class="facts"> met vier cellen:
+     * REFERENTIE, DIENST, PRODUCTEN, GEPLAATST.
+     *
+     * Alle vier staan sinds vandaag ÓÓK in de samenvatting van de ingeklapte kaart — de
+     * referentie zelfs twee keer op één kaart, één keer in de kop en één keer als eerste
+     * cel eronder. Toen de kaart niet inklapte was die rij het enige plekje waar die
+     * feiten stonden; nu is het een tweede kopie die alleen maar tussen jou en de
+     * voortgang in staat.
+     *
+     * Wat er BLIJFT is wat de samenvatting niet kan dragen: het venster of de wachtrij,
+     * het geld, de voortgang, en de bestanden. Dat is per definitie de belangrijke
+     * informatie, want het is de informatie die verandert.
+     */
+    ''
+  }
   ${
     /* "Venster: Wordt ingepland" stond hier altijd, en bij een bestelling onder
        de drempel is dat een belofte die nooit ingelost wordt: schema.sql zegt
@@ -4964,7 +5099,7 @@ function orderCard(t, lang, o, files, events = [], fb = null) {
   }
   ${feedback}
   ${fileList}
-</div>`;
+</details>`;
 }
 
 /*
