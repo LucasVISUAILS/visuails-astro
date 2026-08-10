@@ -191,6 +191,14 @@ async function render(section, lang) {
   if (res.status !== 200 || body.length < 500) {
     throw new Error(`account-render: ${section} (${lang}) gaf ${res.status} met ${body.length} tekens — dat is geen pagina.`);
   }
+  /* Met VISUAILS_DUMP_HTML=<map> wordt de html óók weggeschreven. Alleen voor het
+     doormeten van computed styles: een schermafdruk laat zien dát iets te groot is, de
+     html laat een browser vertellen hoeveel px het is. */
+  if (process.env.VISUAILS_DUMP_HTML) {
+    const out = path.join(process.env.VISUAILS_DUMP_HTML, `${section.replace(/\//g, '_') || 'root'}-${lang}.html`);
+    fs.mkdirSync(process.env.VISUAILS_DUMP_HTML, { recursive: true });
+    fs.writeFileSync(out, body);
+  }
   return body;
 }
 

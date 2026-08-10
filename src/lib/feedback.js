@@ -330,11 +330,38 @@ function scoreRow(t, action, hidden) {
  * waar hij stond. `rel="noopener"` hoort daarbij; zonder dat krijgt het nieuwe
  * tabblad een verwijzing naar dit venster.
  */
-function platformButtons(t, action, hidden, clicked, { small = false } = {}) {
+/*
+ * ── DE VERHOUDING WAS FOUT — 10 AUGUSTUS 2026 ───────────────────────────────
+ *
+ * Lucas op een telefoonschermafdruk: "zorg dat alles een in verhouding is, sommige knoppen
+ * zijn veel te groot bijvoorbeeld." Wat hij zag: twee volle accentgroene knoppen,
+ * "REVIEW ON GOOGLE" en "REVIEW ON TRUSTPILOT", elk bijna de volle schermbreedte, onder
+ * elkaar, in een blok dat er zelf boven zegt *"Everything below is optional."*
+ *
+ * Dat is de hiërarchie precies omgedraaid. De accentvulling is op dit dashboard het teken
+ * van DE handeling die de bestelling verder brengt — "Nu betalen", "Download de map". Twee
+ * optionele verzoeken in datzelfde gewicht schreeuwen harder dan de knop die geld
+ * verplaatst, en dat maakt niet alleen de kaart onrustig maar de betaalknop minder
+ * vindbaar.
+ *
+ * DRIE DINGEN VERANDERD, EN GEEN VIERDE.
+ *
+ * 1 · Ze zijn ghost + klein geworden, altijd. De `small`-optie bestond al en werd op de
+ *     ene plek gebruikt en op de andere niet — dat verschil was geen keuze maar een
+ *     omissie, dus is de optie weg en is er één vorm.
+ * 2 · Het label is alleen nog de platformnaam. "Review op Google" herhaalde de kop die er
+ *     twee regels boven staat ("Wil je dat ergens zeggen?"), en die herhaling was precies
+ *     wat de knop zo breed maakte dat er geen tweede naast paste.
+ * 3 · Ze staan nu naast elkaar in plaats van onder elkaar; zie .fb-actions in account.css.
+ *
+ * WAT NIET IS AANGERAAKT: dat het een POST is, dat hij in een nieuw tabblad opent en dat
+ * de klik geregistreerd wordt. Dat is de werking, en die was niet het probleem.
+ */
+function platformButtons(t, action, hidden, clicked) {
   return REVIEW_PLATFORMS.map((p) => `<form method="post" action="${esc(action)}" target="_blank" rel="noopener">
     ${hidden}<input type="hidden" name="fb" value="click">
     <input type="hidden" name="platform" value="${esc(p.id)}">
-    <button class="btn ${small ? 'btn-ghost fb-btn-sm' : 'btn-primary'}" type="submit">${esc(t.platform(p.name))}</button>
+    <button class="btn btn-ghost btn-sm" type="submit">${esc(p.name)}</button>
   </form>`).join('') + (clicked.length ? '' : `<span class="fb-hint">${esc(t.platformNote)}</span>`);
 }
 
@@ -432,7 +459,7 @@ export function feedbackBlock({ lang = 'nl', action, hidden = '', feedback = nul
     <div class="fb-also">
       <h4>${esc(t.alsoH)}</h4>
       <p class="fb-lede">${esc(t.alsoLede)}</p>
-      <div class="fb-actions">${platformButtons(t, action, hidden, clicked, { small: true })}</div>
+      <div class="fb-actions">${platformButtons(t, action, hidden, clicked)}</div>
     </div>
     ${again}
   </section>`;

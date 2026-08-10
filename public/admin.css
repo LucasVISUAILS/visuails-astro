@@ -14,6 +14,19 @@
    ============================================================ */
 
 :root {
+  /* ── color-scheme HOORDE HIER OOK — 10 augustus 2026 ──────────────────────
+     Stond alleen in src/styles/global.css, en deze drie stylesheets zijn
+     handkopieën van dat :root. Zonder deze regel tekent de browser alles wat hij
+     zelf opmaakt in de LICHTE variant op een donkere pagina: een <input> zonder
+     eigen vulregel wordt een wit vlak, net als een select, een vinkje, de
+     scrollbar en het autofill-geel.
+
+     Gevonden doordat het naamveld in het tevredenheidsblok als witte pil
+     terugkwam in een render. Op een telefoon leidde Chrome het donker af uit iets
+     anders en viel het niet op — precies het soort verschil dat pas opvalt op de
+     browser van een klant. */
+  color-scheme: dark;
+
   /* ---- palette ----------------------------------------------------------
      Hand-copied from src/styles/global.css's :root. This is a duplicate and
      the file header says so; what keeps it honest is that the NAMES here are
@@ -351,7 +364,63 @@ select option { background: var(--surface); color: var(--ink); }
 :where(a, button, input, textarea, select):focus-visible {
   outline: 2px solid var(--focus-ring); outline-offset: 2px;
 }
-input, textarea, button, select { font: inherit; -webkit-appearance: none; appearance: none; }
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * `font: inherit` WISTE ELKE MAAT — GEMETEN 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: "soms zijn placeholder texten ook te groot en niet goed zichtbaar."
+ *
+ * Hier stond `font: inherit` als shorthand, ná de regels die de velden hun eigen maat
+ * geven. Een shorthand zet ELKE eigenschap die hij dekt, dus ook font-size — en die werd
+ * daarmee teruggezet op wat het element erft. Dat is `body { font-size: 1.0625rem }`,
+ * dus 17 px.
+ *
+ * Gemeten op een viewport van 390 px, vóór deze wijziging:
+ *
+ *   p.lede             17,6 px
+ *   input[type=text]     17 px   ← en de rand/vulling van de BROWSER, niet van ons
+ *   input[type=email]    17 px
+ *   textarea             17 px   ← terwijl er twintig regels hoger .92rem staat
+ *   select               17 px, hoogte 47 px
+ *   .btn                 16 px, hoogte 38 px
+ *
+ * Elk veld was dus groter dan de tekst eromheen, en de placeholder is per definitie de
+ * grootte van het veld. Vandaar "te groot". En "niet goed zichtbaar": een kaal
+ * <input type="text"> had in deze stylesheet GEEN enkele regel — geen vulling, geen rand,
+ * geen padding — dus tekende de browser zijn eigen grijze veldje, dat niet dezelfde
+ * vulling of rand heeft als de textarea ernaast.
+ *
+ * WAT HIER NU STAAT. Alleen de familie en het gewicht erven; de maat is een keuze. En één
+ * veldvorm voor alles wat je kunt intypen, met dezelfde hoogte als een .btn (38 px), zodat
+ * een veld en een knop naast elkaar op één lijn liggen in plaats van bijna.
+ */
+input, textarea, button, select {
+  font-family: inherit;
+  font-weight: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
+input[type="search"], input[type="number"], input[type="password"], textarea, select {
+  font-size: .92rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+}
+input[type="text"], input[type="email"], input[type="tel"], input[type="url"],
+input[type="search"], input[type="number"], input[type="password"] {
+  min-height: 38px;
+  padding: 0 .7rem;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--line-ui); outline: none; }
+
+/* DE PLACEHOLDER IS EEN HINT EN GEEN WAARDE. Hij moet leesbaar zijn en tegelijk niet te
+   verwarren met ingevulde tekst — vandaar dezelfde maat als het veld, maar de gedempte
+   inkt. --ink-3 haalt 5,27:1 op --surface, dus ruim boven de grens van 4,5:1; dat is
+   gemeten in de kop van dit bestand en niet hier opnieuw geraden. */
+::placeholder { color: var(--ink-3); opacity: 1; }
 /* The UA default placeholder is #757575, which lands at 4.49:1 on --surface —
    a fail by one hundredth. Named here so it is a token on the ramp instead,
    and --ink-3 (5.27:1 on --surface), never --ink-300. */

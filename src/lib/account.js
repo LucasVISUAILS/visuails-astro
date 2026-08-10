@@ -5071,12 +5071,33 @@ function orderCard(t, lang, o, files, events = [], fb = null, index = 0, openOrd
       ? `${o.product_count} ${Number(o.product_count) === 1 ? 'product' : 'prod.'}`
       : `${o.product_count} ${Number(o.product_count) === 1 ? 'item' : 'items'}`)
     : null;
-  const summaryBits = [
-    serviceLabel(o.service, lang) || o.service,
-    items,
-    o.created_at ? String(o.created_at).slice(0, 10) : null,
-    unpaidMoney && unpaidMoney.gross > 0 ? money(unpaidMoney.gross, lang) : null,
-  ].filter(Boolean);
+  /* De scheidingstekens worden met een VASTE spatie aan het vorige woord geplakt
+     ('woord\u00A0· woord'). Op een telefoon breekt deze regel, en met een gewone spatie
+     ervoor belandde de punt aan het BEGIN van de tweede regel: "Catalog · 30 prod. ·
+     2026-08-01" / "· € 762,30". Nu kan de regel alleen ná de punt breken. */
+  /*
+   * ELK FEIT IN ZIJN EIGEN SPAN, MET EEN KLASSE — 10 augustus 2026.
+   *
+   * Ze stonden als één samengevoegde tekst in de balk, en op 390 px paste die niet: eerst
+   * belandde het scheidingsteken aan het begin van de tweede regel, en na een vaste spatie
+   * brak de regel middenin de datum ("2026-08-" / "01 · € 762,30"). Een vaste spatie lost
+   * op waar hij MAG breken, niet dát hij moet breken.
+   *
+   * Op een telefoon moet er dus een waarde af, en dat kan alleen als elk feit apart te
+   * benoemen is. De datum gaat: die is het minst bruikbare van de vier op een dichte
+   * kaart — hij verandert nooit meer, terwijl het bedrag zegt of je nog iets moet en de
+   * dienst en het aantal zeggen waar het over gaat. Op een breed scherm staat hij er wel.
+   *
+   * Het scheidingsteken zit in het ::before van de span en niet in de tekst, zodat het
+   * verdwijnt met de waarde erbij en er nooit twee punten naast elkaar staan.
+   */
+  const bits = [
+    ['svc', serviceLabel(o.service, lang) || o.service],
+    ['num', items],
+    ['date', o.created_at ? String(o.created_at).slice(0, 10) : null],
+    ['money', unpaidMoney && unpaidMoney.gross > 0 ? money(unpaidMoney.gross, lang) : null],
+  ].filter(([, v]) => v);
+  const summaryBits = bits.map(([k, v]) => `<span class="ord-b ord-b-${k}">${esc(v)}</span>`).join('');
 
   const stepIdx = FLOW.indexOf(o.status || 'received');
   const miniFlow = o.status === 'cancelled'
@@ -5089,7 +5110,7 @@ function orderCard(t, lang, o, files, events = [], fb = null, index = 0, openOrd
 <details class="card ord" id="order-${o.id}"${openNow ? ' open' : ''}>
   <summary class="row-head ord-sum">
     <span class="ref">${esc(o.ref)}</span>
-    <span class="ord-sum-meta">${esc(summaryBits.join(' · '))}</span>
+    <span class="ord-sum-meta">${summaryBits}</span>
     ${miniFlow}
     <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
     <span class="ord-chev" aria-hidden="true"></span>
