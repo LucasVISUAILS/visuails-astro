@@ -216,6 +216,14 @@
   --accent-2:      var(--teal-text);
   --accent-word:   var(--teal-text);
   --accent-bright: var(--teal-hover);
+  /* --accent-dim ONTBRAK, en dat kostte 10 augustus 2026 een render: de gevulde
+     "in productie"-pil las `var(--accent-dim)` — de naam die global.css gebruikt voor
+     één stap terug — en die naam bestond hier niet. Een ongeldige waarde is geen fout
+     maar géén achtergrond, dus de pil kwam doorzichtig terug met alleen de golf erover.
+     Precies waar de kop van dit bestand voor waarschuwt: de namen hier horen dezelfde
+     te zijn als in global.css, anders is drift niet te zien als een waarde maar als een
+     ontbrekend concept. */
+  --accent-dim:    var(--teal-hover);
   --accent-soft:   rgb(198 241 0 / 0.14);
   --accent-line:   var(--ink-300);
 
@@ -1849,33 +1857,73 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .card.ord > summary.ord-sum::-webkit-details-marker { display: none; }
 .card.ord > summary.ord-sum::marker { content: ''; }
 
-/* De chevron staat achteraan en draait mee. Een tekstteken en geen svg: hij moet
-   dezelfde kleur en dezelfde optische grootte hebben als de meta ernaast, en dat
-   volgt hier gratis uit currentColor en em. */
-.card.ord > summary.ord-sum::after {
-  content: '';
-  margin-left: auto;
-  width: .5em;
-  height: .5em;
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DE BALK: PIJL, STIPPEN, EN WAT ER BEWEEGT — 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: "graag iets van een pijltje dat duidelijk maakt dat je de kaart in en uit kan
+ * klappen", "de tijdlijn van waar de order op dat moment is", en "wat subtiele animaties
+ * over het algemeen om alles wat soepeler te maken".
+ *
+ * DE PIJL IS EEN ELEMENT EN GEEN ::after. Hij stond eerst als pseudo-element met
+ * `margin-left:auto`, en dat werkte alleen zolang de balk drie kinderen had. Nu er ook
+ * stippen bij staan is de volgorde een ontwerpkeuze en geen bijproduct van de selector,
+ * dus staat hij als <span class="ord-chev"> in de html. Dan is ook meteen te zien dát
+ * hij er is als je de opmaak leest.
+ *
+ * Hij wordt GROTER EN DONKERDER op hover en focus. Een pijl die altijd even hard staat,
+ * is decoratie; een pijl die reageert, is een bedieningselement — dat verschil is precies
+ * wat iemand vertelt dat de balk klikbaar is.
+ */
+.ord-chev {
+  margin-left: .1rem;
+  width: .46em;
+  height: .46em;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
-  transform: rotate(45deg) translateY(-.1em);
-  opacity: .5;
-  transition: transform .18s ease, opacity .18s ease;
+  transform: rotate(45deg) translateY(-.12em);
+  opacity: .45;
   flex: none;
+  transition: transform .22s cubic-bezier(.22,.61,.36,1), opacity .18s ease;
 }
-.card.ord[open] > summary.ord-sum::after {
-  transform: rotate(-135deg) translateY(-.1em);
-  opacity: .8;
+.card.ord[open] > .ord-sum .ord-chev { transform: rotate(-135deg) translateY(-.12em); opacity: .7; }
+.card.ord > .ord-sum:hover .ord-chev,
+.card.ord > .ord-sum:focus-visible .ord-chev { opacity: .95; }
+
+/* ── DE MINI-TIJDLIJN ───────────────────────────────────────────────────────
+ * Vier stipjes, dezelfde vier stappen als de rail in de open kaart. Gedaan is gevuld
+ * maar gedempt, NU is vol en draagt een ring; wat komt is een holle stip. Zo lees je de
+ * stand zonder een woord te lezen, en de pil ernaast zegt hetzelfde in tekst voor wie
+ * dat wel wil.
+ *
+ * De ring is een box-shadow en geen extra element: een ring die de doos groter maakt zou
+ * de balkhoogte per status laten verspringen, en dan staat een lijst van tien
+ * bestellingen niet meer in lijn. */
+.ord-mini { display: inline-flex; align-items: center; gap: .3rem; flex: none; margin-left: .2rem; }
+.ord-mini-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  transition: background .2s ease, box-shadow .2s ease;
 }
-.card.ord > summary.ord-sum:hover::after { opacity: .9; }
+.ord-mini-dot.is-done { background: var(--ink-3); border-color: transparent; }
+.ord-mini-dot.is-now {
+  background: var(--accent);
+  border-color: transparent;
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 22%, transparent);
+}
 
 /* De samenvattingsregel. `min-width: 0` zodat een lange dienstnaam afbreekt in
    plaats van de pil van de rij te duwen. */
+/* `margin-right: auto` duwt alles NA de meta naar rechts, zodat de balk twee groepen
+   heeft: referentie en feiten links, stand en bediening rechts. Zonder deze regel deelt
+   .row-head's space-between de vijf kinderen gelijk over de breedte en staan de stippen
+   los in het midden — vijf losse dingen in plaats van twee groepen. */
 .ord-sum-meta {
   font-size: .78rem;
   color: var(--ink-3);
   min-width: 0;
+  margin-right: auto;
 }
 
 /* Toetsenbordfocus hoort zichtbaar te zijn op het element dat je bedient, en niet
@@ -1893,3 +1941,127 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
    src/lib/account.js. Wat hier blijft, is alleen dat de kaart waar je op landt even
    opvalt. */
 .card.ord:target { outline: 1px solid color-mix(in srgb, currentColor 22%, transparent); outline-offset: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DE STATUSKLEUREN, EN WAAROM "IN PRODUCTIE" BEWEEGT — 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: "In productie is nu groen maar ik zou delivered liever een groene kleur willen
+ * geven. Kijk of je in productie een andere kleur kan geven volgens het VISUAILS toxic
+ * green color scheme en wijk er niet vanaf bedenk iets creatiefs, wellicht kan een licht
+ * animatie ook goed zijn van een soort golven die over de knop in productie gaan."
+ *
+ * ── WAAROM ER GÉÉN TWEEDE KLEUR BIJ KOMT ───────────────────────────────────
+ *
+ * "Een andere kleur, maar wijk niet af van het schema" zijn twee eisen die elkaar
+ * tegenspreken zodra je een hue erbij verzint. Het schema ís één groen: --accent #C6F100,
+ * OKLCH hue 122, chroma 0.217. Een tweede hue erbij is per definitie afwijken, en global.css
+ * legt in dertig regels uit waarom juist dít groen zo hard bevochten is.
+ *
+ * Dus verschilt het niet in KLEUR maar in TOESTAND, en dat is bovendien wat de twee
+ * statussen ook echt van elkaar scheidt:
+ *
+ *   IN PRODUCTIE   groen als VULLING met bijna-zwarte tekst, en een golf die eroverheen
+ *                  trekt. Vol en bewegend: er wordt nú aan gewerkt.
+ *   GELEVERD       groen als RAND en TEKST, transparant, stil. Klaar en in rust.
+ *
+ * Eén hue, twee behandelingen, en het verschil is op een stilstaande schermafdruk óók
+ * zichtbaar — vulling naast omlijning — dus het hangt niet aan de animatie.
+ *
+ * De vulling is --accent-dim en niet --accent: op een dichte kaart in een lijst van tien
+ * is de volle #C6F100 als vlak het hardste object op het scherm, en global.css zegt met
+ * zoveel woorden dat dit groen "never a ground" is. Eén stap terug houdt dat principe
+ * overeind en houdt bijna-zwart erop ruim boven de contrastgrens.
+ *
+ * ── DE GOLF ────────────────────────────────────────────────────────────────
+ *
+ * Een lichte band die van links naar rechts over de pil schuift, 2,6 s per keer, met een
+ * lange pauze ertussen doordat de band breder dan de pil begint. Niet pulseren en niet
+ * knipperen: dat trekt de aandacht weg van waar iemand naar kijkt. Een golf leest als
+ * "er loopt iets", en dat is precies de boodschap.
+ *
+ * `background-position` en niet een tweede element met transform, want de pil heeft al
+ * een rand en een radius; een schuivend kind zou daar buiten vallen tenzij het geklemd
+ * wordt, en dat is twee eigenschappen extra voor hetzelfde beeld.
+ */
+.pill.is-in_production {
+  border-color: transparent;
+  color: var(--accent-ink);
+  background-color: var(--accent-dim);
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 38%,
+    rgb(255 255 255 / 0.42) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  background-size: 280% 100%;
+  background-repeat: no-repeat;
+  background-position: 140% 0;
+  animation: ord-wave 2.6s cubic-bezier(.45,.05,.55,.95) infinite;
+}
+@keyframes ord-wave {
+  0%   { background-position: 140% 0; }
+  55%  { background-position: -40% 0; }
+  100% { background-position: -40% 0; }
+}
+
+/* GELEVERD KRIJGT HET GROEN. Stond op grijs met een steenkleurige vulling — het zag
+   eruit als "archief" terwijl het de uitkomst is waar de klant voor betaald heeft. */
+.pill.is-delivered {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: transparent;
+  text-decoration: none;
+}
+
+/*
+ * ── EN ALLES STAAT STIL VOOR WIE DAT VRAAGT ────────────────────────────────
+ *
+ * prefers-reduced-motion is geen nette bijzaak: bewegende interfaces geven mensen met
+ * vestibulaire klachten fysieke klachten. De golf is bovendien het soort beweging dat
+ * eindeloos doorloopt, en dat is precies waar die instelling voor bedoeld is. De pil
+ * blijft dan gevuld groen — het onderscheid met geleverd blijft dus staan.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .pill.is-in_production { animation: none; background-image: none; }
+  .ord-chev { transition: none; }
+  .card.ord[open] > *:not(summary) { animation: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * SOEPELER, EN COMPACTER — 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * "Wat subtiele animaties over het algemeen in de gehele VISUAILS Studio", en "kijk of je
+ * het wat compacter kan maken omdat het soms wat veel lijkt terwijl het heel simpel hoort
+ * te zijn."
+ *
+ * DE INHOUD VAN EEN KAART KOMT OP. <details> kan zijn hoogte niet animeren zonder script
+ * — de browser springt van 0 naar auto — maar wat er verschijnt mág wel opkomen. Een
+ * verschuiving van 4 px en 180 ms is genoeg om het als openen te laten lezen in plaats
+ * van als verspringen, en kort genoeg om nooit in de weg te zitten.
+ *
+ * WAT NIET GEANIMEERD WORDT: de hoogte van de lijst, en niets dat tekst verplaatst nadat
+ * iemand al begonnen is te lezen. Beweging hoort te vertellen wat er veranderde, niet om
+ * aandacht te vragen.
+ */
+.card.ord[open] > *:not(summary) { animation: ord-reveal .18s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes ord-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* De balk zelf reageert op aanwijzen — een rij in een lijst die niets doet als je
+   eroverheen gaat, leest als tekst en niet als iets wat je kunt openen. */
+.card.ord > .ord-sum { transition: background-color .16s ease; border-radius: inherit; }
+.card.ord > .ord-sum:hover { background-color: color-mix(in srgb, var(--ink-1, #fff) 4%, transparent); }
+
+/* COMPACTER. Een dichte kaart is één regel informatie in een doos die voor een halve
+   pagina inhoud ontworpen is; die verhouding klopt niet meer. Minder lucht binnen de
+   balk en minder ruimte tussen de kaarten, zodat tien bestellingen op één schermhoogte
+   passen in plaats van op twee. De open kaart houdt zijn eigen ademruimte. */
+.card.ord { margin-bottom: .55rem; }
+.card.ord:not([open]) > .ord-sum { padding-top: .1rem; padding-bottom: .1rem; }
+.card.ord[open] { margin-bottom: 1rem; }

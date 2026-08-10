@@ -5042,20 +5042,57 @@ function orderCard(t, lang, o, files, events = [], fb = null, index = 0, openOrd
   );
   const openNow = index === 0 || needsAttention || Number(openOrderId) === Number(o.id);
 
-  /* De samenvatting: kort genoeg voor één regel op een telefoon, en in dezelfde
-     woorden als de feitenlijst eronder, zodat het openen niets nieuws lijkt. */
+  /*
+   * ── DE SAMENVATTING DRAAGT NU OOK WAAR DE BESTELLING IS ────────────────────
+   *
+   * Lucas: "ik zou wel de tijdlijn van waar de order op dat moment is erop willen en
+   * wellicht nog wat kleine belangrijke details."
+   *
+   * Vier stipjes, dezelfde vier stappen als de rail in de open kaart en uit dezelfde
+   * FLOW-array — niet een tweede lijstje dat kan gaan afwijken. Gevuld tot en met de
+   * huidige stap, de huidige met een ring erom. Bij een geannuleerde bestelling staan
+   * ze er niet: er is geen weg meer om op te zijn.
+   *
+   * `aria-label` geeft de stand in woorden, want vier stipjes zijn voor een schermlezer
+   * niets. Het label komt uit STATUS, dezelfde bron als de pil ernaast.
+   *
+   * ── EN ÉÉN DETAIL, NIET DRIE ──────────────────────────────────────────────
+   *
+   * Het bedrag staat erbij zodra er iets te betalen is, want dat is het enige feit op
+   * een dichte kaart waar iemand naar hándelt. Bij een betaalde bestelling niet: dan is
+   * het naslag, en naslag hoort achter de klik. Zo blijft de balk één regel.
+   *
+   * "1 items" STOND ER, EN DAT WAS FOUT. Het meervoud werd hard aangeplakt, dus een
+   * bestelling van één product las in het Engels als "1 items". Nu enkelvoud bij één.
+   */
+  const unpaidMoney = String(o.payment_status || 'unpaid') !== 'paid' ? orderMoney(o) : null;
+  const items = o.product_count
+    ? (lang === 'nl'
+      ? `${o.product_count} ${Number(o.product_count) === 1 ? 'product' : 'prod.'}`
+      : `${o.product_count} ${Number(o.product_count) === 1 ? 'item' : 'items'}`)
+    : null;
   const summaryBits = [
     serviceLabel(o.service, lang) || o.service,
-    o.product_count ? `${o.product_count}${lang === 'nl' ? ' prod.' : ' items'}` : null,
+    items,
     o.created_at ? String(o.created_at).slice(0, 10) : null,
+    unpaidMoney && unpaidMoney.gross > 0 ? money(unpaidMoney.gross, lang) : null,
   ].filter(Boolean);
+
+  const stepIdx = FLOW.indexOf(o.status || 'received');
+  const miniFlow = o.status === 'cancelled'
+    ? ''
+    : `<span class="ord-mini" role="img" aria-label="${esc(statusLabel(o.status, lang) || o.status)}">${
+      FLOW.map((key, i) => `<i class="ord-mini-dot${i < stepIdx ? ' is-done' : i === stepIdx ? ' is-now' : ''}"></i>`).join('')
+    }</span>`;
 
   return `
 <details class="card ord" id="order-${o.id}"${openNow ? ' open' : ''}>
   <summary class="row-head ord-sum">
     <span class="ref">${esc(o.ref)}</span>
     <span class="ord-sum-meta">${esc(summaryBits.join(' · '))}</span>
+    ${miniFlow}
     <span class="pill is-${esc(o.status)}">${esc(statusLabel(o.status, lang) || o.status)}</span>
+    <span class="ord-chev" aria-hidden="true"></span>
   </summary>
   ${
     /*
