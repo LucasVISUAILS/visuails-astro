@@ -559,7 +559,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           the page. Their nearest common ancestor is <body>, so the guard is
           satisfied by construction rather than by having been remembered.
 
-          aria-label stays on the <a> AND on the <svg>: the link needs an
+          aria-label stays on the <a> AND on the <svg aria-hidden="true">: the link needs an
           accessible name for a screen reader arriving at the nav, and the
           graphic needs one for anyone who lands on it directly. Neither is
           redundant with the other, and neither can be inferred from a path. */}
@@ -570,7 +570,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         <ul class="nav-links">
           <li class="has-menu">
             <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_drops')}
-              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 9l6 6 6-6"/></svg>
+              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-menu" role="menu">
               {/* ── EEN ITEM ZONDER href IS GEEN LINK ─────────────────────────────
@@ -850,7 +850,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         fenced here rather than made available as a utility class. */}
     <div class="foot-finale" aria-hidden="true">
       <span class="foot-glow"></span>
-      <svg class="foot-watermark" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
+      <svg class="foot-watermark" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false" aria-hidden="true"><use href="#wordmark" /></svg>
     </div>
     <div class="container">
       <div class="footer-grid">
@@ -905,7 +905,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           {/* The social row. Icons only, no labels — three brand marks are
               read faster than three words, and these are the three marks
               everyone already knows. The mark itself comes from the
-              [href*="…"] rules in global.css, which is why there is no <svg>
+              [href*="…"] rules in global.css, which is why there is no <svg aria-hidden="true">
               here: one path per network, in one file, used by every link to
               that network anywhere on the site.
 
@@ -1148,7 +1148,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        is acceptable rather than a bug.
 
        Re-take these numbers when a hero photograph is replaced. Nothing will
-       report it: a contrast checker reads text and this is an <svg>. */
+       report it: a contrast checker reads text and this is an <svg aria-hidden="true">. */
     --brand:       var(--paper-on-dark);
     --focus-ring:  var(--paper-on-dark);
     --ghost:       rgb(255 255 255 / 0.12);
@@ -1265,6 +1265,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .has-menu { position: relative; }
   .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  /* ── ESCAPE MOET HET PANEEL OOK ECHT DICHT DOEN ─────────────────────────────
+     9 augustus 2026, gemeten: na Escape stond `aria-expanded` op false en het paneel
+     nog op `opacity: 1`. De regel hierboven houdt het open zolang de focus ergens in
+     `.has-menu` staat — en de knop die je met Escape terugkrijgt, zit daar zelf in.
+     De focus terugzetten kon het dus per definitie niet oplossen.
+
+     Deze regel wint van beide varianten hierboven (twee klassen plus een pseudo,
+     tegen één klasse plus een pseudo) en gaat er weer af zodra de bezoeker iets
+     anders doet dan Escape — zie interactions.js. */
+  .has-menu.esc-closed:focus-within .nav-menu { opacity: 0; visibility: hidden; transform: translateY(-6px); }
   .nav-menu a,
   .nav-menu .mi-off { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
@@ -1613,7 +1623,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     width: 48px; height: 48px; padding: 0;
     background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink);
     font-size: .88rem; font-weight: 600; line-height: 1; white-space: nowrap;
-    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); border-radius: var(--r-md); }
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), bottom var(--dur-3) var(--ease); border-radius: var(--r-md); }
   .wa-launcher:hover { border-color: var(--ink-3); background: var(--surface-2); }
   /* fill, no stroke — the mark is a solid glyph now, not an outlined bubble.
      A stroke-width on a filled path thickens every counter until the phone
@@ -1635,6 +1645,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   }
   @media (prefers-reduced-motion: reduce) {
     .wa-launcher-label { transition: none; }
+    .wa-launcher { transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
   }
   /* Bottom-RIGHT on a phone, not bottom-left. A fixed launcher always covers
      whatever is in its corner, and on the rebuilt homepage that corner is
@@ -1648,7 +1659,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      viewport shrinks, so "beside" is only true down to about 380px. Stacking
      is true at every width. */
   @media (max-width: 600px) { .wa-launcher { left: auto; right: 12px; --wa-bottom: 12px; } }
-  /* ── DE WHATSAPP-KNOP MOET BOVEN DE CONVBAR UIT ───────────────────────────
+  /* ── DE WHATSAPP-KNOP MOET BOVEN DE CONVBAR UIT — MAAR ALLEEN ALS DIE ER IS ──
      Dit stond op 96px, gemeten toen de convbar op een telefoon één rij was: 58px
      hoog plus 20px van de onderkant, dus 96 was ruim.
 
@@ -1659,7 +1670,18 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
      Het breekpunt is 700px en niet 620px, zodat het meeschuift met het punt waar de
      balk van vorm verandert. Twee verschillende grenzen voor hetzelfde feit is hoe
-     dit de vorige keer misging. */
-  @media (max-width: 700px) { .wa-launcher { --wa-bottom: 142px; } }
+     dit de vorige keer misging.
+
+     10 augustus 2026: de 142px stond hier los van of de balk er ook echt was —
+     puur op viewportbreedte. Vóór de scroll-drempel (640px) en na het sluiten via
+     .cb-close (initConvbar in interactions.js zet dan .show weg) bleef de knop
+     dus op die hoogte hangen, zwevend boven niets. `.convbar.show ~ .wa-launcher`
+     bindt de 142px aan de balk zelf: de knop en de balk staan als broers in de
+     DOM en de balk staat er eerst, dus de sibling-selector werkt zonder JS. Zodra
+     .show weggaat — dichtklikken, wegscrollen boven de drempel, of een pagina
+     waar de balk onderdrukt is — zakt de knop terug naar de hoek, en de
+     bottom-transitie hierboven maakt daar een beweging van in plaats van een
+     sprong. */
+  @media (max-width: 700px) { .convbar.show ~ .wa-launcher { --wa-bottom: 142px; } }
   @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

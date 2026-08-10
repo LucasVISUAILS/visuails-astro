@@ -51,6 +51,7 @@
  * zodat de mock en de renders van het échte dashboard over hetzelfde merk gaan.
  */
 import { euro } from '../data/pricing.js';
+import { DEMO_ORDER, demoWindow, windowLabel } from '../data/figdemo.js';
 
 interface Props { lang?: 'en' | 'nl' }
 const { lang = 'en' } = Astro.props;
@@ -59,6 +60,14 @@ const nl = lang === 'nl';
 /* Eén id-voorvoegsel per instantie, zodat twee FigDash'en op één pagina niet
    dezelfde radiogroep delen. */
 const uid = `fd${Math.random().toString(36).slice(2, 8)}`;
+
+/* ── DE LEVERDATUM STOND ALS WEEK IN DEZE FIGUUR ─────────────────────────────
+   Hier stond "Leverdatum 10 – 14 aug", een hele werkweek. Een vastgelegd venster
+   is twee werkdagen (WINDOW_DAYS in src/data/capacity.js), dus dit beloofde de
+   bezoeker iets ruimer dan wat de poort werkelijk vastzet. Het komt nu uit
+   dezelfde fixture als FigStudio, FigGate en FigBoard, zodat de vier figuren niet
+   ieder hun eigen leverdatum dragen. */
+const win = windowLabel(demoWindow(DEMO_ORDER.products), lang);
 
 const C = nl
   ? {
@@ -73,7 +82,7 @@ const C = nl
       ovTiles: [['1', 'in productie'], ['1', 'wordt nagekeken'], ['2', 'geleverd'], ['1', 'onbetaald']],
       ovOrder: 'VIS-2608-4471 · Catalog · 30 producten',
       ovNow: 'Onze studio maakt je beelden.',
-      ovWindow: 'Leverdatum 10 – 14 aug',
+      ovWindow: `Leverdatum ${win}`,
       flow: ['Ontvangen', 'In productie', 'Wordt nagekeken', 'Geleverd'],
       ovRecent: 'Laatst geleverd',
       payNet: 'Excl. btw', payVat: 'Btw', payTotal: 'Totaal',
@@ -116,7 +125,7 @@ const C = nl
       ovTiles: [['1', 'in production'], ['1', 'being checked'], ['2', 'delivered'], ['1', 'unpaid']],
       ovOrder: 'VIS-2608-4471 · Catalog · 30 products',
       ovNow: 'Our studio is making your visuals.',
-      ovWindow: 'Delivery 10 – 14 Aug',
+      ovWindow: `Delivery ${win}`,
       flow: ['Received', 'In production', 'Being checked', 'Delivered'],
       ovRecent: 'Delivered most recently',
       payNet: 'Excl. VAT', payVat: 'VAT', payTotal: 'Total',
@@ -286,7 +295,7 @@ const UPLOAD = '/img/catalog-before.webp';
             <div class="fd-faces">
               <div class="fd-face is-ask is-on">
                 <span class="fd-face-ph" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4.2" /><path d="M4.5 20.5c0-4 3.4-7.2 7.5-7.2s7.5 3.2 7.5 7.2" /></svg>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4.2" /><path d="M4.5 20.5c0-4 3.4-7.2 7.5-7.2s7.5 3.2 7.5 7.2" /></svg>
                 </span>
                 <span>{C.bkAsk}</span>
                 <span class="fd-face-sub">{C.bkAskSub}</span>

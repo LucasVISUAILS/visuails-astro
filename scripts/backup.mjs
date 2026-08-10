@@ -38,7 +38,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { wrangler, warmLogin } from './lib/wrangler.mjs';
+import { wrangler, warmLogin, asCommandArg } from './lib/wrangler.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'backups');
@@ -120,29 +120,94 @@ if (missing.length) {
 }
 console.log(`     ${tables.length} tabellen, waaronder ${MUST_HAVE.join(', ')}`);
 
-// ── 2 · de inventaris van R2 ─────────────────────────────────────────────────
+/* ── 2 · de inventaris van R2 ─────────────────────────────────────────────────
+ *
+ * DE QUERY GAAT DOOR asCommandArg() — 10 augustus 2026.
+ *
+ * Deze SQL stond hier over twee regels, zoals leesbare SQL hoort, en ging zo
+ * rechtstreeks naar `--command`. Op Windows loopt die aanroep via cmd.exe (zie
+ * lib/wrangler.mjs) en daar is een regeleinde geen witruimte maar het einde van het
+ * commando. Uitkomst: `npm run backup -- --files` meldde "leeg of mislukt", schreef
+ * geen inventaris, en sloeg stap 3 volledig over — want die is afhankelijk van deze
+ * lijst. De back-up mét bestanden heeft dus nooit één object opgehaald.
+ *
+ * Het middel stond al in dit project: assertSafeArg() weigert `\n` met zoveel
+ * woorden, en migrate.mjs korrtte zijn SQL al in om precies deze reden. Beide zaten
+ * één bestand verderop en dit aanroeppunt kende ze niet, dus staan ze nu in
+ * lib/wrangler.mjs.
+ */
 process.stdout.write('  inventaris van de bestanden… ');
-const inv = await wrangler([
-  'd1', 'execute', DB, '--remote', '--json', '--command',
+const INVENTORY_SQL = asCommandArg(
   `SELECT f.id, f.order_id, o.ref, f.kind, f.filename, f.bytes, f.r2_key, f.preview_key
-     FROM files f LEFT JOIN orders o ON o.id = f.order_id ORDER BY f.id`,
-]);
+     FROM files f LEFT JOIN orders o ON o.id = f.order_id ORDER BY f.id`
+);
+const inv = INVENTORY_SQL
+  ? await wrangler(['d1', 'execute', DB, '--remote', '--json', '--command', INVENTORY_SQL])
+  : { ok: false, out: 'de inventarisquery past niet op een commandoregel', stdout: '' };
+
+/* DRIE UITKOMSTEN, DRIE BERICHTEN. Hier stond één regel — "leeg of mislukt" — voor
+ * twee dingen die niets met elkaar te maken hebben: een database zonder bestanden
+ * (prima, er is niets te bewaren) en een aanroep die faalde (niet prima, je back-up
+ * is onvolledig en je weet niet waarom). Dat onderscheid is het verschil tussen
+ * doorgaan en uitzoeken, en dat hoort de melding voor je te maken. */
 let files = [];
+let invError = inv.ok ? null : inv.out.trim().split('\n').filter(Boolean).slice(-3).join(' ');
 if (inv.ok) {
-  try { files = JSON.parse(inv.stdout.slice(inv.stdout.indexOf('[')))?.[0]?.results || []; } catch { /* hieronder */ }
+  try {
+    files = JSON.parse(inv.stdout.slice(inv.stdout.indexOf('[')))?.[0]?.results || [];
+  } catch (err) {
+    invError = `het antwoord was geen JSON — ${err.message}`;
+  }
 }
-if (!files.length) {
-  console.log('leeg of mislukt');
-  console.error('    De database-export is er wel. Zonder inventaris weet je bij verlies niet');
-  console.error('    welke bestanden het waren — draai dit deel later nog eens.');
+/* ── DE VARIANTEN UIT MIGRATIE 0022 HOREN ER OOK BIJ ──────────────────────────
+ *
+ * GEMETEN OP 10 AUGUSTUS 2026. De eerste geslaagde back-up mét bestanden haalde 33
+ * objecten op — precies het aantal rijen in `files`. Geen enkele variant, want deze
+ * inventaris keek alleen naar `files`, en `file_assets` (png/jpg/webp per beeld, sinds
+ * 0022) is een aparte tabel met aparte R2-sleutels.
+ *
+ * Vandaag kost dat niets: `file_assets` heeft nul rijen in productie, na te lezen in
+ * de dump ernaast. Maar scripts/deliver.mjs vult die tabel wél, en cron/index.js
+ * verwijdert die sleutels wél — de opruimtaak weet dus van objecten die de back-up
+ * niet kent. Dat is de verkeerde kant om asymmetrisch te zijn, en het is nu goedkoop
+ * recht te zetten in plaats van na de eerste levering via het script.
+ *
+ * Mislukt dit deel, dan is dat GEEN reden om de bestanden niet op te halen: de
+ * hoofdinventaris is er dan wel. Vandaar een eigen melding en geen exitcode.
+ */
+const ASSETS_SQL = asCommandArg(
+  `SELECT a.file_id, a.format, a.r2_key, a.bytes, f.order_id, o.ref
+     FROM file_assets a JOIN files f ON f.id = a.file_id
+     LEFT JOIN orders o ON o.id = f.order_id ORDER BY a.id`
+);
+let assets = [];
+if (!invError && files.length) {
+  const q = await wrangler(['d1', 'execute', DB, '--remote', '--json', '--command', ASSETS_SQL]);
+  if (q.ok) {
+    try { assets = JSON.parse(q.stdout.slice(q.stdout.indexOf('[')))?.[0]?.results || []; } catch { assets = []; }
+  } else if (!/no such table/i.test(q.out)) {
+    console.error('\n    (de varianten uit file_assets konden niet gelezen worden — de rest gaat door)');
+  }
+}
+
+if (invError) {
+  console.log('mislukt');
+  console.error(`    ${invError}`);
+  console.error('    De database-export is er wel, maar de inventaris niet, en de bestanden');
+  console.error('    zijn dus ook niet opgehaald. Dit is geen volledige back-up.');
+  process.exitCode = 1;
+} else if (!files.length) {
+  console.log('geen bestanden in de database');
+  console.error('    Dat is een geldige uitkomst en geen fout: er staat niets in `files`,');
+  console.error('    dus er is ook niets in R2 dat bij een bestelling hoort.');
 } else {
   const manifest = path.join(OUT, `${stamp}-r2.json`);
   const total = files.reduce((n, f) => n + (Number(f.bytes) || 0), 0);
   fs.writeFileSync(manifest, JSON.stringify({
     taken_at: stamp, database: DB, bucket: BUCKET,
-    count: files.length, bytes: total, files,
+    count: files.length, bytes: total, files, assets,
   }, null, 2));
-  console.log(`${files.length} bestanden, ${(total / 1024 / 1024).toFixed(0)} MB`);
+  console.log(`${files.length} bestanden, ${(total / 1024 / 1024).toFixed(0)} MB${assets.length ? `, plus ${assets.length} varianten` : ''}`);
 }
 
 // ── 3 · de bestanden zelf, alleen als erom gevraagd is ───────────────────────
@@ -152,7 +217,13 @@ if (WITH_FILES && files.length) {
   } else {
     const dir = path.join(OUT, `${stamp}-objects`);
     fs.mkdirSync(dir, { recursive: true });
-    const keys = files.flatMap((f) => [f.r2_key, f.preview_key].filter(Boolean));
+    /* Elke sleutel die de database noemt: het beeld, zijn beoordeelbeeld, en de
+     * varianten uit 0022. Set() omdat een preview_key in theorie gelijk kan zijn aan
+     * een r2_key (een levering zonder verkleining), en dan hoeft hij niet twee keer. */
+    const keys = [...new Set([
+      ...files.flatMap((f) => [f.r2_key, f.preview_key]),
+      ...assets.map((a) => a.r2_key),
+    ].filter(Boolean))];
     console.log(`  ${keys.length} objecten ophalen uit ${BUCKET} — dit duurt even.`);
     let done = 0;
     let failed = 0;

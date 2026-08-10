@@ -1,0 +1,366 @@
+---
+/*
+ * FigBoard — de tabel waar wij in werken, met één revisieverzoek open.
+ *
+ * ── WAAROM DIT BESTAAT ──────────────────────────────────────────────────────
+ *
+ * Lucas, 9 augustus 2026: *"maak de mock ups voor deze 'Our side' pagina en houd
+ * het consistent."*
+ *
+ * Wat er stond was een grijs vlak met "ADMINPORTAAL · BESTELLINGENTABEL" erin, en
+ * eronder een noot die precies beschreef wat er te zien had moeten zijn: *"De
+ * orderlijst met één revisieverzoek open."* Die noot is de opdracht van deze
+ * figuur, letterlijk.
+ *
+ * ── WAT HIJ MOET LATEN ZIEN, EN IN WELKE ORDE ──────────────────────────────
+ *
+ * De band ernaast maakt drie beweringen, en deze figuur maakt ze alle drie hard,
+ * in dezelfde volgorde als de tekst:
+ *
+ *   1 · REVISIES KOMEN BOVENAAN. Niet als een badge in een rij, maar als een
+ *       eigen lijst boven de tabel — met de zin van de klant erin, in zijn eigen
+ *       woorden. Dat is het hele verschil tussen een systeem dat een revisie
+ *       registreert en een studio die hem leest.
+ *
+ *   2 · ELKE BESTELLING, ÉÉN REGEL. Vier rijen, met de kolommen die er werkelijk
+ *       zijn. Geen grafieken: de tekst zegt "een grafiek heeft nog nooit iemand
+ *       verteld welke bestelling te laat is", en een figuur die dat zegt en
+ *       vervolgens een cirkeldiagram tekent, is een figuur die zijn eigen pagina
+ *       tegenspreekt.
+ *
+ *   3 · ÉÉN SCHRIJFACTIE, TWEE SCHERMEN. Onderaan, met dezelfde tijdstempel aan
+ *       beide kanten. Niet "wij synchroniseren snel" maar "het is één
+ *       gebeurtenis" — en dat is te zien doordat het tijdstip twee keer in de
+ *       accentkleur staat en identiek is.
+ *
+ * ── WAAROM DE REVISIE OP EEN GELEVERDE BESTELLING STAAT ────────────────────
+ *
+ * Dat is de enige plek waar hij kan staan, en het is ook het interessantste geval:
+ * een bestelling die klaar was, komt terug. Een revisie op een bestelling die nog
+ * in productie is, zou de vraag oproepen waar de klant die foto dan gezien heeft.
+ *
+ * De statuswissel onderaan is daarom óók die revisie en niet een tweede
+ * gebeurtenis: geleverd → revisie, één schrijfactie, beide schermen. FigStudio op
+ * de homepage laat "in productie → wordt nagekeken" zien; twee keer hetzelfde
+ * voorbeeld op twee pagina's zou van een mechanisme een screenshot maken.
+ *
+ * ── HET IS EEN MOCK-UP EN DAT MOET ZICHTBAAR ZIJN ──────────────────────────
+ *
+ * Verzonnen merken, verzonnen referenties, geen enkele handeling, geen link naar
+ * /admin, en het woord "voorbeeld" in beeld. Referentie en merk komen uit
+ * src/data/figdemo.js, zodat deze figuur en de andere vier over dezelfde
+ * bestelling gaan.
+ *
+ * NOOIT EEN ECHT ADRES OF EEN ECHTE NAAM. Zie de langere noot in FigDash.astro.
+ * De namen in de kolom "merk" zijn verzonnen en de zin van de klant is verzonnen;
+ * er staat geen naam van een persoon in, want een revisienotitie met een naam
+ * eronder is een citaat en niet een voorbeeld.
+ *
+ * ── GEEN JAVASCRIPT ────────────────────────────────────────────────────────
+ *
+ * Eén toestand van één scherm. De knoppen zijn <span>'s: er is niets om aan te
+ * klikken, en een echte knop die niets doet is een leugen met een cursor.
+ */
+import { DEMO_ORDER, DEMO_OTHERS, demoWindow, otherWindow, windowLabel } from '../data/figdemo.js';
+
+interface Props { lang?: 'en' | 'nl' }
+const { lang = 'en' } = Astro.props;
+const nl = lang === 'nl';
+
+/* ── GEEN DATUM IN DEZE TABEL IS INGETYPT ───────────────────────────────────
+   Het venster van de demobestelling komt uit de poort; de vensters van de andere
+   drie komen uit src/data/figdemo.js, waar ze de bezetting van de agenda in
+   FigGate veroorzaken. Zo kan deze tabel de figuur ernaast niet tegenspreken.
+
+   Dat het zó moest, bleek uit de test en niet uit nadenken: eerst stond Nord Label
+   hier op het venster dat de poort in FigGate juist als VRIJ aanbood. Zie de noot
+   bij DEMO_OTHERS. */
+const winBig = windowLabel(demoWindow(DEMO_ORDER.products), lang);
+const others = DEMO_OTHERS.map((o) => ({ ...o, win: otherWindow(o, lang) }));
+const [nord, halte, kade] = others;
+
+const C = nl
+  ? {
+      side: 'Studiokant',
+      badge: 'Voorbeeld met verzonnen gegevens',
+
+      revH: 'Revisieverzoeken',
+      revCount: '1 open',
+      revRef: `${halte.ref} · ${halte.brand}`,
+      revWhat: 'Product 3 · achterkant',
+      revWhen: 'binnengekomen vandaag 13:58',
+      revSaid: 'De achterkant staat iets gedraaid, daardoor loopt het logo scheef.',
+      revActs: ['Oppakken', 'Bekijk het beeld'],
+      revNote: 'De notitie staat er zoals de klant hem schreef. Er wordt niets samengevat en niets omgezet in een categorie.',
+
+      tblH: 'Bestellingen',
+      tblCols: ['Referentie', 'Merk', 'Producten', 'Venster', 'Status'],
+      tblRows: [
+        { ...DEMO_ORDER, win: winBig, status: 'In productie', tone: 'run' },
+        { ...nord, status: 'Wordt nagekeken', tone: 'check' },
+        { ...halte, status: 'Revisie', tone: 'rev', flag: true },
+        { ...kade, status: 'Wacht op betaling', tone: 'wait' },
+      ],
+      tblNote: 'Elke bestelling staat op dezelfde lijst, in dezelfde tabel. Er is geen aparte rij voor grote klanten.',
+
+      syncH: 'Eén schrijfactie',
+      syncOurs: 'Wij zetten hem op',
+      syncYours: 'In VISUAILS Studio staat',
+      syncFrom: 'Geleverd',
+      syncTo: 'Revisie',
+      syncStamp: 'vandaag 13:58',
+      syncYoursLine: 'Revisie gevraagd · product 3 · achterkant',
+      syncLine: 'Twee keer hetzelfde tijdstip, want het is niet twee keer opgeschreven. De statuswissel en de tijdlijn die de klant ziet zijn dezelfde schrijfactie — daarom kan het portaal niet achterlopen.',
+    }
+  : {
+      side: 'Studio side',
+      badge: 'Example with made-up data',
+
+      revH: 'Revision requests',
+      revCount: '1 open',
+      revRef: `${halte.ref} · ${halte.brand}`,
+      revWhat: 'Product 3 · back',
+      revWhen: 'came in today 13:58',
+      revSaid: 'The back is turned slightly, which makes the logo sit crooked.',
+      revActs: ['Take it on', 'Open the image'],
+      revNote: 'The note is here as the client wrote it. Nothing is summarised and nothing is turned into a category.',
+
+      tblH: 'Orders',
+      tblCols: ['Reference', 'Brand', 'Products', 'Window', 'Status'],
+      tblRows: [
+        { ...DEMO_ORDER, win: winBig, status: 'In production', tone: 'run' },
+        { ...nord, status: 'Being checked', tone: 'check' },
+        { ...halte, status: 'Revision', tone: 'rev', flag: true },
+        { ...kade, status: 'Awaiting payment', tone: 'wait' },
+      ],
+      tblNote: 'Every order sits on the same list, in the same table. There is no separate row for big accounts.',
+
+      syncH: 'One write',
+      syncOurs: 'We set it',
+      syncYours: 'VISUAILS Studio shows',
+      syncFrom: 'Delivered',
+      syncTo: 'Revision',
+      syncStamp: 'today 13:58',
+      syncYoursLine: 'Revision asked · product 3 · back',
+      syncLine: 'The same time twice, because it was not written twice. The status change and the timeline the client sees are the same write — which is why the portal cannot fall behind.',
+    };
+---
+
+<figure class="fb" aria-label={`${C.revH}, ${C.tblH}, ${C.syncH}`}>
+  <div class="fb-frame">
+    <div class="fb-bar">
+      <span class="fb-mark">VISUAILS</span>
+      <span class="fb-side">{C.side}</span>
+      <span class="fb-badge">{C.badge}</span>
+    </div>
+
+    <div class="fb-body">
+      {/* ── 1 · DE REVISIELIJST, BOVEN DE TABEL ────────────────────────────── */}
+      <section class="fb-card is-rev">
+        <div class="fb-head">
+          <p class="fb-h">{C.revH}</p>
+          <p class="fb-count">{C.revCount}</p>
+        </div>
+        <div class="fb-rev">
+          <p class="fb-rev-top">
+            <b>{C.revRef}</b>
+            <span class="fb-rev-what">{C.revWhat}</span>
+            <span class="fb-rev-when">{C.revWhen}</span>
+          </p>
+          {/* De zin van de klant, met een streep ervoor. Cursief en ingesprongen,
+              want het is een citaat en niet onze tekst — en op deze pagina is dat
+              onderscheid het hele punt. */}
+          <p class="fb-said">{C.revSaid}</p>
+          <div class="fb-acts">
+            {C.revActs.map((a, i) => (
+              <span class:list={['fb-btn', i === 0 && 'is-primary']}>{a}</span>
+            ))}
+          </div>
+        </div>
+        <p class="fb-fine">{C.revNote}</p>
+      </section>
+
+      {/* ── 2 · DE TABEL ──────────────────────────────────────────────────── */}
+      <section class="fb-card">
+        <div class="fb-head"><p class="fb-h">{C.tblH}</p></div>
+        <div class="fb-tblwrap">
+          <table class="fb-tbl">
+            <thead>
+              <tr>{C.tblCols.map((col, i) => <th class={i > 1 ? 'is-num' : ''}>{col}</th>)}</tr>
+            </thead>
+            <tbody>
+              {C.tblRows.map((r) => (
+                <tr class={r.flag ? 'is-flag' : ''}>
+                  <td><b>{r.ref}</b></td>
+                  <td>{r.brand}</td>
+                  <td class="is-num">{r.products}</td>
+                  <td class="is-num">{r.win}</td>
+                  <td class="is-num"><span class={`fb-pill is-${r.tone}`}>{r.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="fb-fine">{C.tblNote}</p>
+      </section>
+
+      {/* ── 3 · ÉÉN SCHRIJFACTIE ──────────────────────────────────────────── */}
+      <section class="fb-card">
+        <div class="fb-head"><p class="fb-h">{C.syncH}</p></div>
+        <div class="fb-sync">
+          <div class="fb-half">
+            <p class="fb-cap">{C.syncOurs}</p>
+            <div class="fb-swap">
+              <span class="fb-pill is-was">{C.syncFrom}</span>
+              <span class="fb-arrow" aria-hidden="true">→</span>
+              <span class="fb-pill is-rev">{C.syncTo}</span>
+            </div>
+            <p class="fb-stamp">{C.syncStamp}</p>
+          </div>
+          <div class="fb-half">
+            <p class="fb-cap">{C.syncYours}</p>
+            <p class="fb-yours">{C.syncYoursLine}</p>
+            <p class="fb-stamp">{C.syncStamp}</p>
+          </div>
+        </div>
+        <p class="fb-fine">{C.syncLine}</p>
+      </section>
+    </div>
+  </div>
+</figure>
+
+<style>
+  /* Container query en geen media query: deze figuur staat in een halve kolom.
+     Zelfde reden als in FigDash — zie de noot daar. */
+  .fb { container-type: inline-size; margin: 0; }
+
+  .fb-frame {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.8);
+  }
+
+  /* Zelfde titelbalk als FigGate en FigStudio. Drie figuren over hetzelfde
+     systeem horen dezelfde rand te hebben. */
+  .fb-bar {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+    padding: .7rem 1rem;
+    background: var(--surface-2);
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .fb-mark { font-size: .72rem; font-weight: 700; letter-spacing: .2em; color: var(--ink); }
+  .fb-side {
+    font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    padding: .18rem .5rem; border-radius: var(--r-pill);
+    background: var(--accent); color: var(--accent-on);
+  }
+  .fb-badge { margin-left: auto; font-size: .62rem; color: var(--ink-3); }
+
+  .fb-body { padding: 1rem; display: grid; gap: .8rem; }
+
+  .fb-card {
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--bg, var(--surface));
+    padding: .8rem;
+    display: grid; gap: .6rem;
+  }
+  /* De revisiekaart is de enige met een gemarkeerde rand, omdat hij het enige is
+     op dit scherm waar iemand iets mee MOET. De rest is een stand van zaken. */
+  .fb-card.is-rev { border-color: var(--warn-ink, #C9A227); }
+
+  .fb-head { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .fb-h { margin: 0; font-size: .8rem; font-weight: 600; color: var(--ink); }
+  .fb-count {
+    margin: 0 0 0 auto;
+    font-size: .58rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--warn-ink, #C9A227);
+  }
+  .fb-cap {
+    margin: 0; font-size: .58rem; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .fb-fine { margin: 0; font-size: .64rem; line-height: 1.55; color: var(--ink-3); }
+
+  /* ── DE REVISIE ───────────────────────────────────────────────────────────*/
+  .fb-rev { display: grid; gap: .35rem; }
+  .fb-rev-top {
+    margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .55rem;
+    font-size: .68rem; color: var(--ink-3);
+  }
+  .fb-rev-top b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .fb-rev-what { color: var(--ink-2); }
+  .fb-rev-when { margin-left: auto; font-size: .62rem; font-variant-numeric: tabular-nums; }
+  .fb-said {
+    margin: 0; padding: .1rem 0 .1rem .55rem;
+    box-shadow: inset 2px 0 0 var(--warn-ink, #C9A227);
+    font-size: .7rem; line-height: 1.5; font-style: italic; color: var(--ink-2);
+  }
+  .fb-acts { display: flex; flex-wrap: wrap; gap: .3rem; }
+  /* Geen echte knoppen — zie de kop. */
+  .fb-btn {
+    display: inline-block;
+    font-size: .6rem; font-weight: 600;
+    padding: .26rem .55rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    color: var(--ink-2); white-space: nowrap;
+  }
+  .fb-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+
+  /* ── DE TABEL ─────────────────────────────────────────────────────────────*/
+  .fb-tblwrap { overflow-x: auto; }
+  .fb-tbl { width: 100%; border-collapse: collapse; font-size: .7rem; }
+  .fb-tbl th {
+    text-align: left; padding: 0 .7rem .45rem 0;
+    font-size: .58rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-3); white-space: nowrap;
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .fb-tbl td { padding: .5rem .7rem .5rem 0; box-shadow: inset 0 -1px 0 var(--line); color: var(--ink-3); vertical-align: middle; }
+  .fb-tbl tr:last-child td { box-shadow: none; }
+  .fb-tbl .is-num { text-align: right; padding-right: 0; white-space: nowrap; }
+  .fb-tbl b { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* De rij waar de revisie bij hoort, met een rand links in dezelfde kleur als de
+     kaart erboven. Dat is de enige verbinding die de bezoeker nodig heeft tussen
+     de lijst en de tabel — een pijl of een lijn zou het scherm namaken in plaats
+     van het uit te leggen. */
+  .fb-tbl tr.is-flag td { background: color-mix(in srgb, var(--warn-ink, #C9A227) 7%, transparent); }
+  .fb-tbl tr.is-flag td:first-child {
+    box-shadow: inset 0 -1px 0 var(--line), inset 2px 0 0 var(--warn-ink, #C9A227);
+    padding-left: .55rem;
+  }
+  .fb-tbl tr.is-flag b { color: var(--ink); }
+
+  .fb-pill {
+    display: inline-block;
+    font-size: .58rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    padding: .18rem .5rem; border-radius: var(--r-pill);
+    border: 1px solid var(--line-strong); color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .fb-pill.is-run { border-color: var(--accent); color: var(--accent); }
+  .fb-pill.is-check { border-color: var(--line-strong); color: var(--ink-2); }
+  .fb-pill.is-rev { border-color: var(--warn-ink, #C9A227); color: var(--warn-ink, #C9A227); }
+  .fb-pill.is-wait { border-color: var(--line); color: var(--ink-3); }
+  .fb-pill.is-was { border-color: var(--line); color: var(--ink-3); text-decoration: line-through; }
+
+  /* ── ÉÉN SCHRIJFACTIE ─────────────────────────────────────────────────────*/
+  .fb-sync { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+  @container (max-width: 30rem) { .fb-sync { grid-template-columns: 1fr; } }
+  .fb-half {
+    display: grid; gap: .4rem; align-content: start;
+    padding: .6rem .65rem;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm, 6px);
+  }
+  .fb-swap { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+  .fb-arrow { color: var(--ink-3); font-size: .78rem; }
+  .fb-yours { margin: 0; font-size: .68rem; line-height: 1.45; color: var(--ink-2); }
+  /* De twee tijdstempels dragen dezelfde kleur, en dat is de bewijsvoering: het
+     oog ziet dat het één gebeurtenis is voordat de zin eronder het uitlegt.
+     Dezelfde keuze, met dezelfde reden, als in FigStudio. */
+  .fb-stamp { margin: 0; font-size: .66rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+</style>

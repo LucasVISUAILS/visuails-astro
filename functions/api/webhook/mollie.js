@@ -60,6 +60,7 @@ import { getMolliePayment, isMolliePaymentId, mollieAmountToCents } from '../../
 import { paymentMismatch } from '../../../src/data/vat.js';
 import { issueInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
+import { notifyPaid, notifyPaymentFailed } from '../../../src/lib/notify.js';
 
 export async function onRequestPost({ request, env }) {
   if (!env.MOLLIE_API_KEY) {
@@ -121,6 +122,34 @@ export async function onRequestPost({ request, env }) {
   // refund used to disappear without trace.
   if (payment.status !== 'paid' && payment.status !== 'refunded') {
     console.log(`[mollie-webhook] ${id} is "${payment.status}" (${mode}) — acknowledged, order unchanged`);
+    /*
+     * ── EN NU VALT HET NIET MEER STIL, 9 AUGUSTUS 2026 ─────────────────────────
+     *
+     * Deze regel logde het en liet het vallen. Een klant die het betaalscherm
+     * sloot of wiens betaling verliep, was daarmee onzichtbaar: geen mail, geen
+     * markering, niets. De enige plek waar het stond was het Cloudflare-log, waar
+     * niemand kijkt.
+     *
+     * ALLEEN DE EINDTOESTANDEN. 'open' en 'pending' zijn normale tussenstappen —
+     * Mollie stuurt die webhook ook als iemand nog aan het betalen is. Een mail bij
+     * elke tussenstap zou dit bericht binnen een week onleesbaar maken en dan mis
+     * je de definitieve.
+     *
+     * De bestelling wordt NIET aangeraakt. Er is niets fout: hij staat nog op
+     * onbetaald en de klant kan het gewoon opnieuw proberen in VISUAILS Studio.
+     * Een markering zetten zou een tweede poging in de weg staan.
+     */
+    if (['failed', 'canceled', 'expired'].includes(payment.status) && env.DB) {
+      const ref = payment?.metadata?.ref || payment?.description || '';
+      try {
+        const row = ref
+          ? await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first()
+          : null;
+        if (row?.id) await notifyPaymentFailed(env, row.id, payment.status);
+      } catch (err) {
+        console.error('[mollie-webhook] kon geen bericht sturen over', payment.status, '—', err?.message || err);
+      }
+    }
     return new Response('ok', { status: 200 });
   }
 
@@ -303,6 +332,22 @@ async function recordPaid(env, payment, mode) {
       'system'
     )
     .run();
+
+  /*
+   * ── EN DE STUDIO HOORT HET OOK, 9 AUGUSTUS 2026 ────────────────────────────
+   *
+   * Tot nu ging er bij een geslaagde betaling alléén een mail naar de klant (de
+   * factuur, src/lib/invoiceMail.js). Lucas hoorde niets, dus de enige manier om te
+   * weten dat er geld binnen was, was zelf het dashboard openen. Dit is het bericht
+   * waar het werk mee mag beginnen.
+   *
+   * NA de order_events-regel en niet ervoor: de administratie is belangrijker dan het
+   * bericht erover, en zou de mail omvallen dan staat de betaling er nog steeds.
+   * notifyPaid() vangt zijn eigen fouten en geeft niets terug, dus dit kan de webhook
+   * niet laten mislukken — en een webhook die 500 teruggeeft, wordt door Mollie 26 uur
+   * lang opnieuw aangeboden.
+   */
+  await notifyPaid(env, order.id);
 
   console.log(`[mollie-webhook] order ${ref} marked paid from ${payment.id} (${mode})`);
 

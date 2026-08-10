@@ -1,0 +1,62 @@
+-- VISUAILS — waar het verzoek vandaan kwam, naast wat de klant zegt.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAAROM DEZE KOLOM ER KOMT
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Lucas, 9 augustus 2026: *"ik was nog benieuwd hoe het nou gaat wanneer iemand in
+-- NL zegt dat hij uit Amerika bestelt om belasting te ontduiken. Hoe check ik dit
+-- nou?"*
+--
+-- Het antwoord was: niet. `vatGate()` houdt zo'n bestelling wel tegen, maar er was
+-- niets naast de claim te leggen. Voor een land buiten de EU bestaat geen register
+-- — VIES dekt alleen lidstaten — dus de opgave "wij zijn Amerikaans" rustte volledig
+-- op het woord van de klant, en die opgave is 21% waard.
+--
+-- Cloudflare geeft op ELK verzoek gratis het land mee dat bij het ip hoort
+-- (`request.cf.country`). Dat werd nergens in dit project gebruikt. Nu wordt het bij
+-- het bestellen vastgelegd, zodat er in het adminportaal twee dingen naast elkaar
+-- staan: wat de klant zegt, en waar het verzoek vandaan kwam.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAT DIT NIET IS
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- GEEN BEWIJS EN GEEN AUTOMATISCHE AFKEURING. Een vpn, een zakenreis, een
+-- Nederlander die directeur is van een Amerikaanse vennootschap: alle drie leveren
+-- een "verschil" op zonder dat er iets mis is. Daarom beslist deze kolom niets — hij
+-- staat in het adminscherm naast de claim, en een mens kijkt ernaar.
+--
+-- Een automatische regel op dit veld zou de eerste eerlijke klant met een vpn
+-- buitensluiten, en dat is de duurdere fout.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAAROM DIT MAG, EN WAT ER OVER MOET IN /privacy
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Het is een landcode van twee letters, geen ip-adres. Het ip zelf wordt met opzet
+-- NIET opgeslagen: voor het doel — een fiscale opgave kunnen onderbouwen — is het
+-- land genoeg, en een ip is een persoonsgegeven met een veel langere staart.
+-- Dataminimalisatie is hier dus niet alleen netjes, het is ook precies genoeg.
+--
+-- /privacy §4 en §6 horen dit te noemen. Zie de noot in functions/api/order.js waar
+-- het wordt weggeschreven.
+
+ALTER TABLE orders ADD COLUMN origin_country TEXT;
+
+-- ── EEN INDEX DIE HIER EERST BIJ STOND, EN DIE ER NIET HOORT ─────────────────
+--
+-- Ik had hier een `idx_orders_review ON orders (review_state, created_at)` gezet, met
+-- de noot dat die index nog niet bestond en dat dát verklaarde waarom `review_state`
+-- nooit een lezer kreeg.
+--
+-- Dat was fout. Migratie 0018 maakt al een index met EXACT DEZELFDE NAAM en een
+-- andere definitie: `ON orders (review_state, review_deadline) WHERE review_state IS
+-- NOT NULL`. Twee migraties die dezelfde indexnaam claimen is een val: op een
+-- bestaande database doet `IF NOT EXISTS` niets en houd je die van 0018, op een verse
+-- database hangt het van de volgorde af — en in beide gevallen krijgt niemand een
+-- melding dat er twee bedoelingen waren.
+--
+-- Die index van 0018 dekt de query van het adminscherm trouwens gewoon:
+-- `WHERE review_state = 'pending'` gebruikt de eerste kolom. Er was dus niets te
+-- verbeteren; er was alleen iets te controleren voordat ik het opschreef.

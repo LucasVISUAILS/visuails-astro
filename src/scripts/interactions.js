@@ -265,6 +265,63 @@ function initMobileNav() {
     nav.setAttribute('aria-hidden', open ? 'false' : 'true');
     const toggle = document.querySelector('.menu-toggle');
     if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+    /*
+     * ── EN DE PAGINA ERONDER GAAT INERT ALS DE LADE OPEN STAAT ────────────────
+     *
+     * 9 augustus 2026, gemeten op 390px. De omgekeerde kant was al goed gebouwd (de
+     * gesloten lade krijgt `inert`, zie de noot hierboven), maar de pagina eronder
+     * niet. Vijftien tabs door de lade en de zestiende zette de focus op de
+     * "Start an order"-knop van de homepage — volledig achter een ondoorzichtige
+     * lade. `elementFromPoint` op de coördinaten van die knop gaf een ander element
+     * terug: de focus stond op iets dat niemand kon zien, terwijl de lade openbleef.
+     *
+     * `inert` op de broers en zussen in plaats van een tab-val met een keydown-
+     * handler. Een val moet zelf bijhouden wat het eerste en laatste focusbare
+     * element is, en dat verschuift zodra er een item bij komt — precies wat er
+     * vandaag met "Hooks" is gebeurd. `inert` laat de browser dat bijhouden, haalt de
+     * achtergrond óók uit de toegankelijkheidsboom, en werkt zonder toetsen te
+     * onderscheppen.
+     *
+     * De lade en de knop die hem opent blijven bereikbaar; al hun broers en zussen
+     * niet. De knop hoort erbij omdat je hem nodig hebt om te sluiten.
+     */
+    const parent = nav.parentElement;
+    if (parent) {
+      for (const sib of parent.children) {
+        if (sib === nav) continue;
+        /*
+         * ── EERST STOND HIER EEN UITZONDERING VOOR DE KNOP, EN DIE LEKTE ───────
+         *
+         * `if (sib.contains(toggle)) continue;` — de header overslaan zodat de knop
+         * bereikbaar bleef om de lade te sluiten. Gemeten resultaat: op tabstop 16
+         * stond de focus op de LOGO-LINK, die in dezelfde header zit en op 390px
+         * volledig achter de lade ligt. Eén overgeslagen voorouder maakt al zijn
+         * kinderen bereikbaar; `inert` is niet per element terug te draaien.
+         *
+         * De uitzondering was ook niet nodig. De lade heeft zijn eigen sluitknop en
+         * die is tabstop 1, en Escape werkt ook. Er is dus geen enkele reden om de
+         * knop die hem opende bereikbaar te houden terwijl hij onzichtbaar is.
+         */
+        if (open) {
+          // Wat al inert WAS, moet dat blijven als de lade sluit. Zonder deze
+          // markering zou sluiten iets openzetten dat om een andere reden dicht stond.
+          if (sib.hasAttribute('inert')) sib.setAttribute('data-was-inert', '');
+          sib.setAttribute('inert', '');
+        } else if (sib.hasAttribute('data-was-inert')) {
+          sib.removeAttribute('data-was-inert');
+        } else {
+          sib.removeAttribute('inert');
+        }
+      }
+    }
+
+    /*
+     * Sluiten brengt de focus terug naar de knop. Zonder dit staat de focus na
+     * Escape op een element in een lade die net inert is geworden, en dan begint de
+     * volgende tab weer bovenaan de pagina — de bezoeker is zijn plek kwijt.
+     */
+    if (!open && toggle && nav.contains(document.activeElement)) toggle.focus();
   };
   document.addEventListener('click', (e) => {
     const t = e.target;
@@ -300,7 +357,64 @@ function initServicesMenu() {
     }
     if (!t.closest('.has-menu')) setOpen(document.querySelector('.has-menu'), false);
   });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(document.querySelector('.has-menu'), false); });
+  /*
+   * ── ESCAPE ZETTE aria-expanded OP false EN LIET HET PANEEL STAAN ────────────
+   *
+   * 9 augustus 2026, gemeten. Tab naar "Wat we maken", Enter, tab naar een item,
+   * Escape: `aria-expanded` ging correct naar "false", maar
+   * `getComputedStyle(.nav-menu)` gaf nog `opacity: 1; visibility: visible`. Escape
+   * ZEI dus dat het menu dicht was terwijl je het nog zag staan.
+   *
+   * De oorzaak zit in de CSS en niet hier: `.has-menu:focus-within .nav-menu` houdt
+   * het paneel getekend zolang de focus ergens in `.has-menu` staat, en deze handler
+   * verplaatste de focus niet. Hij haalde alleen de klasse weg.
+   *
+   * De reparatie hoort dan ook hier en niet in de CSS. `:focus-within` is precies wat
+   * je wil op een desktopmenu — het houdt het open terwijl je er met tab door loopt.
+   * Wat ontbrak is dat Escape de focus TERUGBRENGT naar de knop, en dat is ook wat
+   * een bezoeker verwacht: je bent uit het menu, je staat weer op wat het opende.
+   */
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const li = document.querySelector('.has-menu');
+    if (!li) return;
+    const inside = li.contains(document.activeElement);
+    setOpen(li, false);
+    if (inside) {
+      /*
+       * ── EN DIT WAS MIJN EERSTE FIX, DIE NIET WERKTE ───────────────────────────
+       *
+       * De focus terugzetten op de knop leek de oplossing: `aria-expanded` ging naar
+       * false en de focus stond weer waar de bezoeker hem verwachtte. Gemeten bleef
+       * het paneel toch op `opacity: 1; visibility: visible` staan — want de KNOP zit
+       * zelf in `.has-menu`, dus `:focus-within` was nog steeds waar. Ik had de focus
+       * verplaatst binnen precies het element waarvan ik hem weg moest halen.
+       *
+       * Vandaar deze klasse. Zolang hij erop staat, wint hij van de
+       * `:focus-within`-regel (drie klassen plus een pseudo tegen twee) en is het
+       * paneel dicht terwijl de focus er nog in staat. Hij gaat er weer af zodra de
+       * bezoeker iets anders doet dan Escape — dus tabben, klikken of typen opent het
+       * menu weer op de normale manier. Zonder dat opruimen zou Escape het menu voor
+       * de rest van het bezoek onbruikbaar maken met de muis.
+       */
+      li.classList.add('esc-closed');
+      const trigger = li.querySelector('.nav-trigger');
+      if (trigger) trigger.focus();
+    }
+  });
+
+  /* De klasse van hierboven weer weghalen. Elke andere toets en elke klik betekent
+     dat de bezoeker verder wil; alleen Escape houdt hem dicht. `focusout` hoort erbij
+     voor het geval de focus het menu verlaat zonder toets of klik. */
+  const reopenable = () => {
+    for (const li of document.querySelectorAll('.has-menu.esc-closed')) li.classList.remove('esc-closed');
+  };
+  document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') reopenable(); });
+  document.addEventListener('pointerdown', reopenable);
+  document.addEventListener('focusout', (e) => {
+    const li = e.target instanceof Element ? e.target.closest('.has-menu') : null;
+    if (li) setTimeout(() => { if (!li.contains(document.activeElement)) li.classList.remove('esc-closed'); }, 0);
+  });
 }
 
 let convbarDismissed = false;

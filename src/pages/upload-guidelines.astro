@@ -35,13 +35,13 @@ import ProductScene from '../components/ProductScene.astro';
   <section><div class="container">
     <div class="grid grid-2 reveal-group">
       <div class="card reveal pending">
-        <h3 style="color:var(--ink)">Do</h3>
+        <h2 class="as-h3" style="color:var(--ink)">Do</h3>
         <ul class="checklist" style="margin-top:1rem">
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Keep it clear &amp; sharp — in focus, no motion blur.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Use a neutral, uncluttered background.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Light it well and evenly — daylight works great.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Show the full product, plus a few close-ups of key details.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5" /></svg><span>Send the highest resolution you have.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Keep it clear &amp; sharp — in focus, no motion blur.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Use a neutral, uncluttered background.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Light it well and evenly — daylight works great.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Show the full product, plus a few close-ups of key details.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Send the highest resolution you have.</span></li>
         </ul>
       </div>
       {/* This card used to carry a bespoke red — oklch(0.78 0.15 25) on the
@@ -57,13 +57,13 @@ import ProductScene from '../components/ProductScene.astro';
           ProductScene rather than labelling it red: recess the ground. The ✕
           against the ✓ and the heading carry the meaning; they always did. */}
       <div class="card reveal pending" style="background:var(--surface-2)">
-        <h3 style="color:var(--ink)">Avoid</h3>
+        <h2 class="as-h3" style="color:var(--ink)">Avoid</h3>
         <ul class="checklist" style="margin-top:1rem">
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Blurry, dark or low-light shots.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Busy or distracting backgrounds.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Heavy filters or strong colour casts.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Tiny, low-res screenshots.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Cropping part of the product out of frame.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Blurry, dark or low-light shots.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Busy or distracting backgrounds.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Heavy filters or strong colour casts.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Tiny, low-res screenshots.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg><span>Cropping part of the product out of frame.</span></li>
         </ul>
       </div>
     </div>
@@ -84,10 +84,10 @@ import ProductScene from '../components/ProductScene.astro';
         <p>We almost never hold your product in our hands, so the more angles you send, the more exactly we can rebuild it. That is what makes the difference between matching your product and approximating it.</p>
       </div>
       <div class="req-grid reveal-group">
-        <div class="req-card reveal pending"><span class="rc-num">01</span><h4>Front &amp; back</h4><p>The whole product from both sides, so nothing about its shape is guessed.</p></div>
-        <div class="req-card reveal pending"><span class="rc-num">02</span><h4>A detail close-up</h4><p>Logos, stitching, prints, hardware — the things that have to stay exact.</p></div>
-        <div class="req-card reveal pending"><span class="rc-num">03</span><h4>The fabric</h4><p>A close shot of the material so texture, weave and sheen read true.</p></div>
-        <div class="req-card reveal pending"><span class="rc-num">04</span><h4>Worn for fit</h4><p>Someone actually wearing it, so we can reproduce the real-world fit and drape.</p></div>
+        <div class="req-card reveal pending"><span class="rc-num">01</span><h3>Front &amp; back</h3><p>The whole product from both sides, so nothing about its shape is guessed.</p></div>
+        <div class="req-card reveal pending"><span class="rc-num">02</span><h3>A detail close-up</h3><p>Logos, stitching, prints, hardware — the things that have to stay exact.</p></div>
+        <div class="req-card reveal pending"><span class="rc-num">03</span><h3>The fabric</h3><p>A close shot of the material so texture, weave and sheen read true.</p></div>
+        <div class="req-card reveal pending"><span class="rc-num">04</span><h3>Worn for fit</h3><p>Someone actually wearing it, so we can reproduce the real-world fit and drape.</p></div>
       </div>
       <p class="req-note reveal pending"><strong>The first one is required. The rest are recommended.</strong> Front and back both come back to you as delivered images, so we ask for both rather than invent the side we cannot see. The close-up and the worn shot are optional — each one makes a specific thing more accurate, and if a product has no logo or hardware to close in on, the close-up you get back is a fabric shot instead.</p>
     </div>

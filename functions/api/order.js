@@ -629,6 +629,43 @@ export async function onRequestPost({ request, env, waitUntil }) {
     orderId = row?.id ?? null;
   });
 
+  /*
+   * ── WAAR HET VERZOEK VANDAAN KWAM, 9 AUGUSTUS 2026 ─────────────────────────
+   *
+   * Lucas' vraag: hoe controleer je iemand die in Nederland zit en zegt dat hij uit
+   * Amerika bestelt? Voor een land buiten de EU bestaat geen register — VIES dekt
+   * alleen lidstaten — dus die opgave rustte volledig op zijn woord, en is 21% waard.
+   *
+   * Cloudflare geeft op elk verzoek gratis het land mee dat bij het ip hoort. Dat
+   * werd hier nergens gebruikt. Nu staat het naast de claim in het adminscherm, en
+   * kan een mens er één keer naar kijken.
+   *
+   * ── EEN APARTE UPDATE EN GEEN VIERDE INSERT-VARIANT ────────────────────────
+   *
+   * De INSERT hierboven heeft al drie niveaus (basis, +0016, +0018) om een
+   * niet-gedraaide migratie te overleven. Een vierde toevoegen zou dit veld even
+   * belangrijk maken als het bedrag en het adres, en dat is het niet: het is
+   * aanvullend bewijsmateriaal. Valt deze regel weg omdat 0023 nog niet gedraaid is,
+   * dan is de bestelling nog steeds volledig juist.
+   *
+   * ── ALLEEN DE LANDCODE, NIET HET IP ────────────────────────────────────────
+   *
+   * Twee letters. Het ip zelf wordt met opzet niet opgeslagen: voor het doel — een
+   * fiscale opgave kunnen onderbouwen — is het land genoeg, en een ip is een
+   * persoonsgegeven met een veel langere staart. Dit hoort in /privacy §4 te staan.
+   *
+   * GEEN AUTOMATISCHE AFKEURING. Een vpn, een zakenreis of een Nederlandse directeur
+   * van een Amerikaanse vennootschap leveren allemaal een verschil op zonder dat er
+   * iets mis is. Dit veld beslist dus niets; het staat er alleen naast.
+   */
+  const originCountry = String(request?.cf?.country || '').trim().toUpperCase().slice(0, 2);
+  if (orderId && originCountry) {
+    await safe(async () => {
+      await env.DB.prepare('UPDATE orders SET origin_country = ?2 WHERE id = ?1')
+        .bind(orderId, originCountry).run();
+    });
+  }
+
   // TWO PEOPLE, ONE LAST WINDOW, THE SAME INSTANT. Both passed the gate above,
   // because both read the calendar before either had written to it. Resolving it
   // here — after the write, when the rows exist — is what makes the outcome a

@@ -150,7 +150,10 @@ const START = SERVICES[0].id;
       Radios, not buttons: one of three, mutually exclusive, arrow-key
       navigable for free, and it survives with no script. */}
   <div class="wk-pick">
-    <h3 class="wk-pick-h">{t.pickH}</h3>
+    {/* Een h2 en geen h3: op /demo is de <h1> de paginakop en was dit de eerstvolgende
+        kop, dus sprong het niveau van 1 naar 3. De maat blijft die van .wk-pick-h en
+        verandert dus niet. */}
+    <h2 class="wk-pick-h">{t.pickH}</h2>
     <div class="wk-pick-row" role="radiogroup" aria-label={t.pickH}>
       {SERVICES.map((svc) => (
         <label class="wk-svc">
@@ -298,7 +301,7 @@ const START = SERVICES[0].id;
           <li class="wk-step" data-walk-step={id === 'look' ? svc.look : id}>
             <div class="wk-step-in">
               <p class="wk-step-n">{t.steps[id].n}</p>
-              <h4 class="wk-step-h">{t.steps[id].h}</h4>
+              <h3 class="wk-step-h">{t.steps[id].h}</h3>
               <p class="wk-step-b">{t.steps[id].b}</p>
 
               {id === 'look' ? (

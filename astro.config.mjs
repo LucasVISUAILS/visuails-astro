@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import brandLockupGuard from './scripts/brand-lockup-guard.mjs';
+import sitemapAnd404 from './scripts/sitemap-and-404.mjs';
 
 // VISUAILS — Astro v2 rebuild. Fully static output (Cloudflare Pages serves
 // the build/ output directly, same deploy shape as the previous SvelteKit
@@ -43,5 +44,9 @@ export default defineConfig({
   // wordmark are two alternative signatures, never a lockup. Checked on the
   // built HTML, so it holds for every page and every component that renders
   // one. See scripts/brand-lockup-guard.mjs for the exact formulation.
-  integrations: [brandLockupGuard()],
+  // De sitemap wordt uit de build gelezen in plaats van met de hand bijgehouden, en
+  // de Nederlandse 404 wordt platgezet zodat Cloudflare Pages hem vindt. Zie de kop
+  // van scripts/sitemap-and-404.mjs: het handgeschreven bestand liep veertien
+  // pagina's achter, waaronder /demo, waar niets naartoe linkte.
+  integrations: [brandLockupGuard(), sitemapAnd404()],
 });

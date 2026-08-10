@@ -24,6 +24,11 @@
    see each component's own <style> block for its `em`/quote override. */
 
 :root {
+  /* De site is met opzet alleen donker. Zonder deze regel tekent de browser zijn
+     EIGEN onderdelen licht voor iemand met een lichte systeemvoorkeur: de
+     scrollbalk, de focusring die de browser zelf zet, en elke toekomstige
+     datumkiezer. Eén regel, en het is geen thema maar een mededeling. */
+  color-scheme: dark;
   /* ═══════════════════════════════════════════════════════════════════════
      SECTION 18 — the OPP palette, and the end of the hard-edge rule.
      ═══════════════════════════════════════════════════════════════════════
@@ -918,7 +923,30 @@ h1 { font-size: var(--t-h1); }
 h2 { font-size: var(--t-h2); }
 .display { font-size: var(--t-hero); line-height: 0.96; }
 h1 em, h2 em, .display em { font-style: normal; color: var(--accent-word); }
-h3 { font-family: var(--font-body); color: var(--ink); font-weight: 700; font-size: var(--t-h3); line-height: 1.2; letter-spacing: -0.012em; text-wrap: balance; margin: 0; }
+/* ── EEN KOP DIE HOGER STAAT DAN HIJ ERUITZIET, 9 AUGUSTUS 2026 ─────────────
+   Op vijf sjablonen werd een kopniveau overgeslagen (h1 → h4, of h2 → h4). Dat
+   breekt "spring naar de volgende kop" in een schermlezer, terwijl de tekst zelf
+   gewoon leesbaar blijft — het soort fout die je niet ziet en die iemand anders
+   raakt.
+
+   De reparatie is het NIVEAU verhogen zonder de MAAT te veranderen, want de maat
+   was een ontwerpkeuze en het niveau een vergissing. Vandaar deze twee klassen.
+   `.as-h3` deelt letterlijk de regel van h3 hieronder, zodat er geen tweede
+   definitie van dezelfde maat ontstaat.
+
+   `.card h3` als selector kon NIET: er staan al zestien echte h3's in een .card, en
+   die zouden er dan allemaal in krimpen. Gemeten voordat ik het probeerde. */
+h3, .as-h3 { font-family: var(--font-body); color: var(--ink); font-weight: 700; font-size: var(--t-h3); line-height: 1.2; letter-spacing: -0.012em; text-wrap: balance; margin: 0; }
+
+/* De kaartkop zoals hij was toen hij nog een h4 was. Gemeten in de browser vóór de
+   wijziging: 17px, gewicht 700, regelhoogte 27,54px, marge 22,61px boven en onder —
+   dat laatste is de standaardmarge die de browser aan een h4 geeft en die dus
+   verdween zodra het een h3 werd. */
+.as-card-h {
+  font-family: var(--font-body); color: var(--ink);
+  font-weight: 700; font-size: 1.0625rem; line-height: 1.62;
+  letter-spacing: normal; margin: 1.413rem 0;
+}
 .accent-word { color: var(--accent-word); font-style: normal; }
 p { text-wrap: pretty; margin: 0; }
 .lead { font-size: var(--t-lg); color: var(--ink-2); line-height: 1.6; max-width: 56ch; }
@@ -1422,33 +1450,23 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 }
 .plate-cap b { font-weight: 700; font-size: .9rem; color: var(--ink); }
 
-/* 4 · PLACEHOLDER — for slots where the asset does not exist yet.
-   IT MUST NEVER LOOK FINISHED. That is the whole specification. A neutral
-   rectangle that reads as a design element is worse than an obvious gap,
-   because it stops anyone from filling it. So: a flat well, a hairline, a
-   registration cross in the corner, and a label saying what belongs there and
-   at what ratio.
-   This is NOT the answer for photography — the studio has 73 real product
-   images and the brand's first argument is "show the work before the claim".
-   Placeholders are for the surfaces nothing exists for yet: the portal and
-   admin screens on the product pages. */
-.ph {
-  position: relative; display: grid; place-items: center;
-  aspect-ratio: var(--ph-ratio, 16 / 10);
-  background: var(--surface-2);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
-  border-radius: var(--r-lg);
-  color: var(--ink-3); text-align: center; padding: 1.5rem;
-}
-.ph::before, .ph::after {
-  content: ''; position: absolute; background: var(--line-strong);
-}
-/* A registration cross, top-left. Two hairlines, no glyph, no icon font. */
-.ph::before { left: 12px; top: 12px; width: 14px; height: 1px; }
-.ph::after  { left: 18px; top: 6px;  width: 1px;  height: 13px; }
-.ph-label { font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
-.ph-note  { margin: .4rem 0 0; font-size: .78rem; line-height: 1.45; max-width: 34ch; }
-.ph-spec  { margin: .55rem 0 0; font-size: .72rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+/* 4 · PLACEHOLDER — WEG, 9 AUGUSTUS 2026, EN DAT IS DE BEDOELDE UITKOMST.
+   Hier stond een blok van twintig regels voor grijze vlakken met een label erin:
+   een put, een hairline, een registratiekruis en de tekst "hier hoort een portaal-
+   scherm". De specificatie erbij was expliciet: HET MAG ER NOOIT AF UITZIEN, want
+   een net rechthoekje wordt nooit gevuld.
+
+   Die eis heeft precies gedaan wat hij moest doen. De vlakken bleven lelijk, en
+   daarom zijn ze een voor een vervangen door echte figuren: FigDash op de homepage
+   en in /portal, FigGallery in /portal, en op 9 augustus FigGate en FigBoard op
+   /studio — de laatste twee die er nog stonden.
+
+   Er is nu geen enkele `.ph` meer in de hele repo, dus gaan de regels eruit in
+   plaats van mee te reizen naar elke bezoeker. Komt er ooit weer een leeg vak,
+   dan hoort daar dezelfde eis bij: liever een zichtbaar gat dan een net vlak, en
+   het staat in de git-geschiedenis van dit bestand voor wie het terug wil.
+   Zie ook tests/figures.test.mjs, dat rood wordt als `class="ph"` op /studio
+   terugkomt. */
 
 /* 5 · TILES — discrete objects on the ground, not a divided sheet.
    REBUILT after checking how onlinepaymentplatform.com actually builds theirs,
@@ -2160,7 +2178,10 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 @media (max-width: 460px) { .req-grid { grid-template-columns: 1fr; } }
 .req-card { background: var(--surface); border: 1px solid var(--line); padding: 1.3rem; height: 100%; }
 .req-card .rc-num { font-family: var(--font-display); font-weight: 900; color: var(--accent-bright); font-size: .95rem; }
-.req-card h4 { color: var(--ink); font-size: 1rem; margin: .55rem 0 .35rem; font-family: var(--font-body); font-weight: 700; }
+/* Was `.req-card h4`. Bij het verhogen van het kopniveau kwam de regelhoogte van h3
+   mee (1.2 in plaats van de 1.62 die deze kop van de body erfde): gemeten 19,2px waar
+   het 25,92px was. Vandaar dat die er nu expliciet bij staat. */
+.req-card h3 { color: var(--ink); font-size: 1rem; line-height: 1.62; margin: .55rem 0 .35rem; font-family: var(--font-body); font-weight: 700; }
 .req-card p { color: var(--ink-3); font-size: .86rem; line-height: 1.5; }
 .req-note { margin-top: 1.6rem; color: var(--ink-3); font-size: .92rem; max-width: 62ch; }
 .req-note strong { color: var(--ink); font-weight: 600; }

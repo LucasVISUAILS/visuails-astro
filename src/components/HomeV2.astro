@@ -464,6 +464,32 @@ const COPY = {
     svcSoonBody: 'We are still working this one out. It will be available soon; until then there is nothing to click.',
     svcSoonCta: 'See Hooks',
     svcSoonDesc: 'Your product in a short video, on a format we have built before.',
+    /* ── HET VRAAGTEKEN NAAST HOOKS — 9 augustus 2026 ─────────────────────────
+       Lucas: *"misschien naast hooks een klein vraagteken logo zetten waar
+       mensen op kunnen klikken waarna ze het concept kunnen zien van wat het
+       precies inhoud."*
+
+       De tekst hieronder komt uit HOOKS-COPY-CONCEPT.md en niet uit de oude
+       HooksPage.astro. Die oude tekst overtrad de toonregels op acht punten,
+       waaronder de ene die je expliciet had aangewezen ("één product en één idee
+       is genoeg" — dat suggereert dat één foto genoeg is). Die fout mag niet via
+       een uitklapper terug de site op komen, dus staat hier de gecorrigeerde
+       versie: geen metafoor, geen beloofd bereik, en expliciet dat één foto NIET
+       genoeg is.
+
+       GEEN PRIJS IN DIT PANEEL, en dat is met opzet. De pagina is verborgen
+       omdat de prijs nog niet vastligt (zie noot 4 in HOOKS-COPY-CONCEPT.md:
+       geen maximum aantal varianten, geen doorlooptijd bewezen). "Vanaf €119"
+       op de homepage zetten is een openbaar aanbod op een dienst die nog niet
+       besteld kan worden. Eén regel toevoegen kan later in tien seconden. */
+    svcSoonQ: 'What Hooks is',
+    svcSoonQBody: [
+      ['You send photos', 'The same set as a catalog order: front and back at a minimum, plus a detail shot and a worn shot if you have them. One photo is not enough, because the format moves around the product.'],
+      ['We build the video', 'Short, vertical, on a format we have used before. The video continues into the image below it in the feed, so the two read as one picture.'],
+      ['A specialist checks it', 'Before it is delivered: the product has to stay recognisable and the join has to line up. It is in VISUAILS Studio within 24 to 48 hours, where you approve it or say what is wrong.'],
+      ['What we sell', 'The format and the execution. Not reach — whether a post travels depends on the platform and on timing, and neither of those is ours to promise.'],
+    ],
+    svcSoonQFoot: 'This is the concept as it stands. The price and the ordering are not settled yet, which is why the button does not work.',
 
     dashStudioK: 'Our side of it',
     dashStudioN: 'Every order and the calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
@@ -715,6 +741,16 @@ const COPY = {
     svcSoonBody: 'Hier zijn we nog mee bezig. Binnenkort is hij beschikbaar; tot die tijd valt er niets aan te klikken.',
     svcSoonCta: 'Bekijk Hooks',
     svcSoonDesc: 'Je product in een korte video, op een format dat we eerder hebben gebouwd.',
+    /* Zie de noot bij de Engelse tegenhanger hierboven: waar deze tekst vandaan
+       komt, en waarom er geen prijs in staat. */
+    svcSoonQ: 'Wat Hooks is',
+    svcSoonQBody: [
+      ['Je stuurt foto’s', 'Dezelfde set als bij een catalogbestelling: minimaal voorkant en achterkant, plus een detailfoto en een draagfoto als je die hebt. Eén foto is niet genoeg, want het format beweegt om het product heen.'],
+      ['Wij bouwen de video', 'Kort, verticaal, op een format dat we eerder hebben gebruikt. De video loopt door in het beeld dat eronder in de feed staat, waardoor de twee als één beeld lezen.'],
+      ['Een specialist kijkt hem na', 'Voordat hij geleverd wordt: het product moet herkenbaar blijven en de naad moet kloppen. Binnen 24 tot 48 uur staat hij in VISUAILS Studio, waar je hem goedkeurt of zegt wat er niet klopt.'],
+      ['Wat wij verkopen', 'Het format en de uitvoering. Geen bereik — of een post ergens terechtkomt hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven.'],
+    ],
+    svcSoonQFoot: 'Dit is het concept zoals het er nu staat. De prijs en het bestellen liggen nog niet vast, en daarom werkt de knop niet.',
 
     dashStudioK: 'Onze kant',
     dashStudioN: 'Hier staat elke bestelling, naast de agenda waaruit de datumkiezer leest. Zetten wij een bestelling op een andere status, dan verandert de tijdlijn die jij ziet meteen mee. Wat in VISUAILS Studio staat, is dus nooit ouder dan wat wij zien.',
@@ -961,9 +997,60 @@ const FAQ_PICK = [
         door elke schermlezer aangekondigd als niet-beschikbaar, is niet met tab te
         bereiken, en kan niet per ongeluk toch iets doen. Een <span> met een grijze
         rand zegt tegen niemand iets, behalve tegen wie hem kan zien. */}
-    <div class="hv-soon">
+    {/* ── HET VRAAGTEKEN, EN WAAROM DE HELE REGEL DE KNOP IS ──────────────────
+        Lucas: *"misschien naast hooks een klein vraagteken logo zetten waar
+        mensen op kunnen klikken waarna ze het concept kunnen zien."*
+
+        NATIVE <details>, ZOALS ELKE ANDERE UITKLAPPER OP DEZE SITE. Hij opent
+        zonder JavaScript, staat gratis in de toegankelijkheidsboom, en ctrl+F in
+        Chrome klapt hem open om een woord te vinden dat erin staat. Er zit hier
+        geen enkele regel script aan.
+
+        NIET DE GEDEELDE <Disclose>, EN DAT IS EEN AFWIJKING MET EEN REDEN.
+        Disclose.astro bestaat juist om te voorkomen dat er een zesde uitklapper
+        wordt uitgevonden, dus deze afwijking hoort verantwoord te worden: die
+        component tekent een REGEL OVER DE VOLLE BREEDTE met een plus rechts, en
+        wat hier gevraagd is, is een rondje van twintig pixels dat middenin een
+        tekstregel naast één woord staat. Om Disclose zo te krijgen moet je zijn
+        `padding-right`, zijn flexregel en zijn `::after`-glyph allemaal van
+        buitenaf met `:global()` overschrijven — dan blijft er van "één
+        uitklapper" niets over behalve de naam. De regel in DESIGN.md gaat over
+        de VORM van een uitklapper in een lijst antwoorden; dit is geen lijst.
+
+        DE HELE TITELREGEL IS DE <summary>, NIET ALLEEN HET RONDJE. Een
+        vraagteken van 20px is op een telefoon een doelwit dat je twee keer mist;
+        de regel eromheen is 300px breed. Het rondje blijft de zichtbare
+        aanwijzing dat er iets te openen valt, maar wie op "Hooks" tikt, opent
+        hetzelfde. Dat is dezelfde afspraak als bij elke andere summary op de
+        site: het label is de knop.
+
+        HET PANEEL OPENT BOVEN DE TWEE REGELS TEKST en niet onderaan de strook,
+        omdat een uitklapper direct onder zijn eigen samenvatting hoort te
+        verschijnen. Openen duwt de omschrijving naar beneden — dat is wat een
+        uitklapper doet, en het alternatief (paneel onderaan, ver van het
+        vraagteken) laat de bezoeker zoeken wat er nou veranderde.
+
+        `id="hooks"` staat erop zodat er ergens naartoe te linken valt zodra dat
+        nodig is — het menu-item is nu bewust dood, maar als het ooit een link
+        naar deze strook moet worden, hoeft daar alleen een href bij. */}
+    <div class="hv-soon" id="hooks">
       <div class="hv-soon-copy">
-        <p class="hv-soon-h">Hooks <em class="hv-soon-tag">{c.svcSoon}</em></p>
+        <details class="hv-q">
+          <summary class="hv-soon-h hv-q-sum">
+            <span>Hooks</span>
+            {/* Het rondje is decoratie; de toegankelijke naam van de knop is de
+                regel eromheen, en die moet zeggen wat opengaat en niet "?". */}
+            <span class="hv-q-mark" aria-hidden="true">?</span>
+            <span class="hv-q-say">{c.svcSoonQ}</span>
+            <em class="hv-soon-tag">{c.svcSoon}</em>
+          </summary>
+          <div class="hv-q-panel">
+            {c.svcSoonQBody.map(([k, v]) => (
+              <p class="hv-q-row"><b class="hv-q-k">{k}</b><span class="hv-q-v">{v}</span></p>
+            ))}
+            <p class="hv-q-foot">{c.svcSoonQFoot}</p>
+          </div>
+        </details>
         <p class="hv-soon-desc">{c.svcSoonDesc}</p>
         <p class="hv-soon-body">{c.svcSoonBody}</p>
       </div>
@@ -1330,8 +1417,8 @@ const FAQ_PICK = [
         <p class="lede">{c.bmLede}</p>
       </div>
       <div class="rail-nav">
-        <button type="button" data-rail-prev aria-label={c.railPrev}><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" /></svg></button>
-        <button type="button" data-rail-next aria-label={c.railNext}><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg></button>
+        <button type="button" data-rail-prev aria-label={c.railPrev}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg></button>
+        <button type="button" data-rail-next aria-label={c.railNext}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
       </div>
     </div>
   </div>
@@ -1912,16 +1999,103 @@ const FAQ_PICK = [
      hand is — er komt hier iets, en vandaag nog niet. */
   .hv-soon {
     display: grid; grid-template-columns: minmax(0, 1fr) auto;
-    gap: 1rem 2rem; align-items: center;
+    /* ── START EN NIET CENTER, SINDS DE UITKLAPPER ERIN ZIT ──────────────────
+       Was `center`, en dat klopte zolang de strook een vaste hoogte had. Nu de
+       uitklapper open kan, groeit de linkerkolom van drie regels naar dertien —
+       en dan zweeft de knop op 360px hoogte in een leeg vlak rechts, ver van
+       alles waar hij bij hoort. Gemeten: de knop stond op y=463 bij een paneel
+       van y=434 tot y=798.
+
+       Met `start` staat hij op de titelregel, dicht en open hetzelfde, naast de
+       naam waar hij bij hoort. Dat is ook de plek waar hij het duidelijkst zegt
+       wat hij is: een knop bij Hooks, die niet werkt. */
+    gap: 1rem 2rem; align-items: start;
     margin-top: clamp(1.6rem, 3vw, 2.4rem);
     padding-top: clamp(1.4rem, 2.5vw, 2rem);
     box-shadow: inset 0 1px 0 var(--line);
+    /* De strook heeft een id (#hooks), dus hoort hij niet onder de vaste balk te
+       landen als er ooit naartoe gelinkt wordt. Zelfde waarde als .faq-group. */
+    scroll-margin-top: clamp(5rem, 10vw, 7rem);
   }
   @media (max-width: 640px) {
     .hv-soon { grid-template-columns: 1fr; }
     .hv-soon-btn { width: 100%; }
   }
   .hv-soon-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
+
+  /* ── DE UITKLAPPER MET HET VRAAGTEKEN ─────────────────────────────────────
+     Het driehoekje moet op DRIE manieren weg, want de drie engines zijn het
+     oneens: `list-style` voor Firefox, `::marker` voor de spec, en
+     `::-webkit-details-marker` voor oudere WebKit. Eén ervan overslaan levert
+     een zwerfdriehoekje naast het rondje op. Dezelfde drie regels staan in
+     Disclose.astro, met dezelfde reden. */
+  .hv-q { margin: 0; }
+  .hv-q > .hv-q-sum { list-style: none; cursor: pointer; }
+  .hv-q > .hv-q-sum::marker { content: ''; }
+  .hv-q > .hv-q-sum::-webkit-details-marker { display: none; }
+  /* `fit-content` OMDAT EEN SUMMARY EEN BLOK IS EN DUS DE HELE KOLOM VULT.
+     Gemeten: 992px breed op 1440px, dus een klik op 900px — een halve meter van
+     het vraagteken, in leegte — klapte het paneel open. Een onzichtbaar
+     klikvlak is geen bediening maar een verrassing. Nu is het klikvlak precies
+     de regel die je ziet: naam, rondje, label.
+
+     `flex-wrap` staat aan omdat de titelregel in de smalle kolom van de strook
+     staat en het label erbij hoort te blijven ook als het niet meer past. */
+  .hv-q-sum { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; width: fit-content; max-width: 100%; }
+  .hv-q-sum:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; border-radius: var(--r-sm); }
+
+  /* Het rondje. In `em` en niet in pixels, zodat het meeschaalt met de titel in
+     plaats van er bij een andere lettergrootte naast te gaan hangen. */
+  .hv-q-mark {
+    display: inline-grid; place-items: center;
+    width: 1.35em; height: 1.35em;
+    font-size: .72rem; font-weight: 700; line-height: 1;
+    color: var(--ink-3);
+    border: 1px solid var(--line-strong); border-radius: 50%;
+    transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+  }
+  .hv-q-sum:hover .hv-q-mark,
+  .hv-q[open] .hv-q-mark { color: var(--accent-bright); border-color: var(--accent); }
+
+  /* Wat er opengaat, alleen voor wie het niet kan zien. Het rondje is voor een
+     schermlezer geen aanwijzing maar een vraagteken, dus staat hier de naam van
+     de handeling — en die naam hoort in de summary te staan en niet in een
+     `title`, want een title wordt niet voorgelezen en niet aangeraakt.
+     Er is sitewide geen .sr-only in de Astro-kant (alleen in portal.css en
+     account.css, die hier niet geladen worden), dus staat hij hier lokaal. */
+  .hv-q-say {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0; overflow: hidden;
+    white-space: nowrap; clip-path: inset(50%);
+  }
+
+  /* Het paneel is een oppervlak en geen omkadering: een grijze rand om vier
+     regels tekst is een tabel uit 2009, en de verhoogde ondergrond met een
+     opgelichte bovenrand is wat de rest van de site voor zoiets gebruikt. */
+  .hv-q-panel {
+    margin-top: .85rem;
+    max-width: 64ch;
+    padding: 1rem 1.15rem;
+    background: var(--surface);
+    border-radius: var(--r-md);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+  /* Kop en tekst in ÉÉN alinea, niet in twee elementen boven elkaar: het is één
+     mededeling met een aanhef, en twee blokken maken er een lijst van die met de
+     vier diensttegels hierboven gaat concurreren. */
+  .hv-q-row { margin: 0; font-size: .875rem; line-height: 1.65; }
+  .hv-q-row + .hv-q-row { margin-top: .7rem; }
+  .hv-q-k { color: var(--ink); font-weight: 700; }
+  .hv-q-k::after { content: ' — '; color: var(--ink-3); font-weight: 400; }
+  .hv-q-v { color: var(--ink-2); }
+  .hv-q-foot {
+    margin: .9rem 0 0; padding-top: .75rem;
+    box-shadow: inset 0 1px 0 var(--line);
+    font-size: .8rem; line-height: 1.6; color: var(--ink-3);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hv-q-mark { transition: none; }
+  }
   /* Hetzelfde rustige label als in het menu (.mi-soon in Layout.astro) en met
      opzet niet in de accentkleur: het accent is de kleur van een handeling, en dit
      is de reden om iets NIET te doen. */

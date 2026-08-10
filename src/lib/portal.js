@@ -60,6 +60,8 @@ import {
 } from '../data/pricing.js';
 import { serviceLabel } from '../data/services.js';
 import { PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken } from './token.js';
+import { notifyRevision } from './notify.js';
+import { clearUploadRetention } from './retention.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { mailNote } from '../data/mailNote.js';
 // Niet uit account.js: zie de kop van close.js voor waarom afronden een eigen
@@ -491,6 +493,19 @@ export async function portalPost(context) {
       if (order.closed_at) {
         undo.push(
           env.DB.prepare('UPDATE orders SET closed_at = NULL WHERE id = ?1').bind(order.order_id),
+          /*
+           * ── EN DE BEWAARKLOK VAN HET BRONMATERIAAL TERUG OP NUL ──────────
+           *
+           * 9 augustus 2026. De bestelling gaat weer open, dus de negentig dagen
+           * die bij het afsluiten op het bronmateriaal zijn gestempeld moeten weg.
+           * Zonder deze regel verdwijnen de productfoto's negentig dagen na de
+           * EERSTE afronding — en dat is precies het materiaal dat nodig is om de
+           * revisie te maken waar de bestelling nu voor open staat.
+           *
+           * Mag wél in dezelfde batch als de UPDATE hierboven: deze query leest
+           * `closed_at` niet, hij wist alleen een kolom op files.
+           */
+          clearUploadRetention(env, order.order_id),
           env.DB.prepare(
             `INSERT INTO order_events (order_id, status, note, actor)
              VALUES (?1, 'delivered', ?2, 'system')`
@@ -530,6 +545,32 @@ export async function portalPost(context) {
           `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
         ).bind(fileId, order.order_id, order.customer_id, note),
       ]);
+      /*
+       * ── EN DE STUDIO KRIJGT ER BERICHT VAN, 9 AUGUSTUS 2026 ─────────────────
+       *
+       * Deze route schreef netjes naar de database en zweeg. Een klant die om elf uur
+       * 's avonds een revisie aanvroeg, produceerde geen enkel signaal — je moest het
+       * zelf gaan zoeken in het dashboard.
+       *
+       * De notitie gaat mee IN de mail. /studio belooft dat een revisieverzoek
+       * binnenkomt "met de notitie die de klant schreef, in diens eigen woorden", en
+       * een bericht dat alleen zegt "er is een revisie" dwingt je alsnog het dashboard
+       * te openen om te weten of het dringend is.
+       *
+       * NA de batch, en de fouten blijven binnen notifyRevision(): het verzoek van de
+       * klant mag niet omvallen omdat Resend even niet bereikbaar is.
+       */
+      await notifyRevision(env, {
+        orderId: order.order_id,
+        fileId,
+        note,
+        /* Geen bestandsgegevens meegegeven: notifyRevision() zoekt ze zelf op.
+           Hier stond eerst `f?.filename`, met geen enkele `f` in deze scope — en
+           optional chaining vángt een niet-bestaande variabele niet, die gooit een
+           ReferenceError. Precies de fout die een revisieverzoek van een klant zou
+           laten mislukken op het versturen van een mail erover. */
+      });
+
     }
   } catch {
     return plainPage(env, request, 'down', 503);

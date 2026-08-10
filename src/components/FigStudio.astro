@@ -21,7 +21,7 @@
  *
  * Dus laat deze figuur het mechanisme zien, en niet het resultaat:
  *
- *   1 · DE AGENDA — capaciteit per week, in producten. Er staat een week vol, en
+ *   1 · DE AGENDA — capaciteit per dag, in producten. Er staat een dag vol, en
  *       die wordt als vol aangeboden. Dat is het enige beeld dat "we beloven geen
  *       datum die we niet hebben" waar máákt in plaats van beweert.
  *   2 · DE BESTELLINGEN — de tabel waar we in werken, met de statuskolom. Eén rij
@@ -59,9 +59,42 @@
  * `:has()` niet, dan staat het eerste paneel open en blijven de andere bereikbaar
  * via hun label.
  */
+/*
+ * ── DE AGENDA STOND OP WEKEN VAN HONDERD, EN DIE BESTAAN NIET ───────────────
+ *
+ * 9 augustus 2026, bij het tekenen van FigGate voor /studio. Deze figuur zei
+ * "Capaciteit per week · 96 van 100 producten". src/data/capacity.js telt per DAG:
+ * 18 producten per studiodag, 3 daarvan vrij voor kleine bestellingen, 15 te
+ * verkopen als vastgelegd venster van twee werkdagen. Weken van honderd komen
+ * nergens in dat bestand voor.
+ *
+ * Het waren verzonnen getallen in een mock-up, dus niemand werd erdoor benadeeld —
+ * maar het is wel de figuur die op de homepage de bewering "we beloven geen datum
+ * die we niet hebben" moet WAARMAKEN, en een verzonnen mechanisme maakt een echte
+ * bewering niet waar. En sinds /studio dezelfde agenda uit de echte cijfers tekent,
+ * zouden twee pagina's twee verhalen vertellen over hetzelfde plafond.
+ *
+ * De rijen komen nu uit src/data/figdemo.js, dezelfde fixture die FigGate en
+ * FigBoard gebruiken. Vijf dagen en niet tien: dit is de homepage, waar de figuur
+ * het argument moet SAMENVATTEN. /studio is de plek waar hij het uitlegt.
+ */
+import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capacity.js';
+import { DEMO_ORDER, DEMO_OTHERS, demoRows, demoWindow, otherWindow, windowLabel } from '../data/figdemo.js';
+
 interface Props { lang?: 'en' | 'nl' }
 const { lang = 'en' } = Astro.props;
 const nl = lang === 'nl';
+
+/* Woensdag 5 t/m dinsdag 11 augustus: de volle dag, de twee dagen die niet
+   toereikend zijn, en het venster dat wél wordt aangeboden. Vijf rijen is de
+   kortste reeks waarin het argument nog compleet is. */
+const days = demoRows(DEMO_ORDER.products, lang).slice(2, 7);
+const win = windowLabel(demoWindow(DEMO_ORDER.products), lang);
+
+/* De andere drie bestellingen in de tabel, met hun venster uit dezelfde fixture.
+   Ze stonden hier op "3 – 7 aug" — een hele werkweek voor een bestelling van acht
+   producten. Zie de noot bij DEMO_OTHERS in src/data/figdemo.js. */
+const [nord, halte, kade] = DEMO_OTHERS.map((o) => ({ ...o, win: otherWindow(o, lang) }));
 
 /* Eén id-voorvoegsel per instantie, zodat twee figuren op één pagina niet dezelfde
    radiogroep delen. Zelfde truc als FigDash. */
@@ -71,26 +104,21 @@ const C = nl
   ? {
       note: 'Voorbeeld met verzonnen gegevens — dit is ons scherm, niet het jouwe.',
       tabs: [
-        ['De agenda', 'Wat er per week in past'],
+        ['De agenda', 'Wat er per dag in past'],
         ['De bestellingen', 'Waar alles staat, en van wie'],
         ['Eén schrijfactie', 'Waarom jouw scherm nooit achterloopt'],
       ],
 
       /* 1 · AGENDA */
-      calH: 'Capaciteit per week',
-      calSub: 'Geteld in producten, niet in bestellingen.',
-      calWeeks: [
-        { label: '3 – 7 aug', used: 96, cap: 100, state: 'full' },
-        { label: '10 – 14 aug', used: 30, cap: 100, state: 'mine' },
-        { label: '17 – 21 aug', used: 42, cap: 100, state: 'open' },
-        { label: '24 – 28 aug', used: 8, cap: 100, state: 'open' },
-      ],
+      calH: 'Capaciteit per dag',
+      calSub: `${PRODUCTS_PER_DAY} producten per studiodag, waarvan ${QUEUE_FLOOR_PER_DAY} vrij blijven voor kleine bestellingen. Een venster is ${WINDOW_DAYS} werkdagen.`,
       calFull: 'Vol',
-      calMine: 'Jouw bestelling',
+      calMine: 'Jouw venster',
       calOpen: 'Ruimte',
-      calUnit: (u, c) => `${u} van ${c} producten`,
+      calEarly: 'Te vroeg',
+      calUnit: (u, c) => `${u} / ${c}`,
       calRules: [
-        ['Een volle week wordt als vol aangeboden.', 'Je krijgt geen datum die we niet hebben. Dat is de hele reden dat deze agenda vóór de belofte wordt gelezen en niet erna.'],
+        ['Een volle dag wordt als vol aangeboden.', 'Je krijgt geen datum die we niet hebben. Dat is de hele reden dat deze agenda vóór de belofte wordt gelezen en niet erna.'],
         ['Wat er staat, blijft staan.', 'Een bestelling die al in de agenda staat, schuift nooit op om een latere erin te krijgen.'],
       ],
 
@@ -98,10 +126,10 @@ const C = nl
       tblH: 'Bestellingen',
       tblCols: ['Referentie', 'Merk', 'Producten', 'Leverdatum', 'Status'],
       tblRows: [
-        { ref: 'VIS-2608-4471', brand: 'VOLT', n: '30', win: '10 – 14 aug', status: 'In productie', tone: 'run', mine: true },
-        { ref: 'VIS-2608-4468', brand: 'Nord Label', n: '12', win: '3 – 7 aug', status: 'Wordt nagekeken', tone: 'check' },
-        { ref: 'VIS-2608-4462', brand: 'Studio Halte', n: '8', win: '3 – 7 aug', status: 'Geleverd', tone: 'done' },
-        { ref: 'VIS-2607-9920', brand: 'Kade 4', n: '4', win: '—', status: 'Wacht op betaling', tone: 'wait' },
+        { ...DEMO_ORDER, win, status: 'In productie', tone: 'run', mine: true },
+        { ...nord, status: 'Wordt nagekeken', tone: 'check' },
+        { ...halte, status: 'Geleverd', tone: 'done' },
+        { ...kade, status: 'Wacht op betaling', tone: 'wait' },
       ],
       tblMine: 'Jouw bestelling',
       tblNote: 'Elke bestelling staat op dezelfde lijst, in dezelfde tabel. Er is geen aparte rij voor grote klanten.',
@@ -117,7 +145,7 @@ const C = nl
       syncEvents: [
         ['Ontvangen', '1 aug 09:12'],
         ['Betaling binnen', '1 aug 09:14'],
-        ['Leverdatum vastgezet · 10 – 14 aug', '1 aug 09:14'],
+        [`Leverdatum vastgezet · ${win}`, '1 aug 09:14'],
         ['In productie', '8 aug 08:30'],
         ['Wordt nagekeken', 'vandaag 14:02'],
       ],
@@ -125,35 +153,30 @@ const C = nl
   : {
       note: 'Example with made-up data — this is our screen, not yours.',
       tabs: [
-        ['The calendar', 'What fits in a week'],
+        ['The calendar', 'What fits in a day'],
         ['The orders', 'Where everything stands, and whose it is'],
         ['One write', 'Why your screen is never behind'],
       ],
 
-      calH: 'Capacity per week',
-      calSub: 'Counted in products, not in orders.',
-      calWeeks: [
-        { label: '3 – 7 Aug', used: 96, cap: 100, state: 'full' },
-        { label: '10 – 14 Aug', used: 30, cap: 100, state: 'mine' },
-        { label: '17 – 21 Aug', used: 42, cap: 100, state: 'open' },
-        { label: '24 – 28 Aug', used: 8, cap: 100, state: 'open' },
-      ],
+      calH: 'Capacity per day',
+      calSub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of which stay free for small orders. A window is ${WINDOW_DAYS} working days.`,
       calFull: 'Full',
-      calMine: 'Your order',
+      calMine: 'Your window',
       calOpen: 'Room',
-      calUnit: (u, c) => `${u} of ${c} products`,
+      calEarly: 'Too soon',
+      calUnit: (u, c) => `${u} / ${c}`,
       calRules: [
-        ['A full week is offered as full.', 'You never get a date we do not have. That is the whole reason this calendar is read before the promise instead of after it.'],
+        ['A full day is offered as full.', 'You never get a date we do not have. That is the whole reason this calendar is read before the promise instead of after it.'],
         ['What is booked stays booked.', 'An order already in the calendar is never moved to fit a later one in.'],
       ],
 
       tblH: 'Orders',
       tblCols: ['Reference', 'Brand', 'Products', 'Delivery', 'Status'],
       tblRows: [
-        { ref: 'VIS-2608-4471', brand: 'VOLT', n: '30', win: '10 – 14 Aug', status: 'In production', tone: 'run', mine: true },
-        { ref: 'VIS-2608-4468', brand: 'Nord Label', n: '12', win: '3 – 7 Aug', status: 'Being checked', tone: 'check' },
-        { ref: 'VIS-2608-4462', brand: 'Studio Halte', n: '8', win: '3 – 7 Aug', status: 'Delivered', tone: 'done' },
-        { ref: 'VIS-2607-9920', brand: 'Kade 4', n: '4', win: '—', status: 'Awaiting payment', tone: 'wait' },
+        { ...DEMO_ORDER, win, status: 'In production', tone: 'run', mine: true },
+        { ...nord, status: 'Being checked', tone: 'check' },
+        { ...halte, status: 'Delivered', tone: 'done' },
+        { ...kade, status: 'Awaiting payment', tone: 'wait' },
       ],
       tblMine: 'Your order',
       tblNote: 'Every order sits on the same list, in the same table. There is no separate row for big accounts.',
@@ -168,7 +191,7 @@ const C = nl
       syncEvents: [
         ['Received', '1 Aug 09:12'],
         ['Payment received', '1 Aug 09:14'],
-        ['Delivery date reserved · 10 – 14 Aug', '1 Aug 09:14'],
+        [`Delivery date reserved · ${win}`, '1 Aug 09:14'],
         ['In production', '8 Aug 08:30'],
         ['Being checked', 'today 14:02'],
       ],
@@ -201,7 +224,7 @@ const C = nl
 
       <div class="fs-panes">
         {/* ── 1 · DE AGENDA ─────────────────────────────────────────────────
-            De balk per week is het hele argument. Een percentage zou hetzelfde
+            De balk per dag is het hele argument. Een percentage zou hetzelfde
             zeggen en niets laten zien; een balk die tegen zijn eigen rand aanloopt
             is wat "vol" betekent. */}
         <div class="fs-pane" data-pane="0">
@@ -211,15 +234,17 @@ const C = nl
               <p class="fs-sub">{C.calSub}</p>
             </div>
             <ul class="fs-weeks">
-              {C.calWeeks.map((w) => (
-                <li class={`fs-week is-${w.state}`}>
-                  <span class="fs-week-l">{w.label}</span>
+              {days.map((d) => (
+                <li class={`fs-week is-${d.offered ? 'mine' : d.state}`}>
+                  <span class="fs-week-l"><b>{d.day}</b> {d.label}</span>
                   <span class="fs-bar-track" aria-hidden="true">
-                    <span class="fs-bar-fill" style={`--pct: ${Math.round((w.used / w.cap) * 100)}%`}></span>
+                    <span class="fs-bar-fill" style={`--pct: ${Math.round((d.used / d.cap) * 100)}%`}></span>
                   </span>
-                  <span class="fs-week-n">{C.calUnit(w.used, w.cap)}</span>
+                  <span class="fs-week-n">{C.calUnit(d.used, d.cap)}</span>
+                  {/* Het woord staat er altijd bij: kleur alleen mag geen
+                      informatie dragen, en deze staat beslist over een datum. */}
                   <span class="fs-week-s">
-                    {w.state === 'full' ? C.calFull : w.state === 'mine' ? C.calMine : C.calOpen}
+                    {d.offered ? C.calMine : d.state === 'full' ? C.calFull : d.state === 'early' ? C.calEarly : C.calOpen}
                   </span>
                 </li>
               ))}
@@ -254,7 +279,7 @@ const C = nl
                         {r.mine ? <span class="fs-you">{C.tblMine}</span> : null}
                       </td>
                       <td>{r.brand}</td>
-                      <td class="is-num">{r.n}</td>
+                      <td class="is-num">{r.products}</td>
                       <td class="is-num">{r.win}</td>
                       <td class="is-num"><span class={`fs-pill is-${r.tone}`}>{r.status}</span></td>
                     </tr>
@@ -407,7 +432,7 @@ const C = nl
   .fs-note { margin: 0; font-size: .7rem; line-height: 1.5; color: var(--ink-3); max-width: 62ch; }
 
   /* ── DE AGENDA ────────────────────────────────────────────────────────────
-     Een rij per week: label, balk, aantal, en de toestand als woord. Het woord
+     Een rij per dag: label, balk, aantal, en de toestand als woord. Het woord
      staat erbij omdat kleur alleen geen informatie mag dragen — dezelfde regel
      die account.css aanhoudt voor zijn statuspillen. */
   .fs-weeks { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }

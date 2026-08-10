@@ -427,6 +427,12 @@ table.files tr:last-child td { border-bottom: 0; }
 }
 a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: var(--ghost); }
 .fl-chip.is-active { border-color: var(--teal); color: var(--teal-text); background: var(--ghost); font-weight: 700; }
+/* De btw-controle, als er iets in behandeling is. Amber en niet rood, om dezelfde
+   reden als de twee tellers in de strook: er is niets stuk, er wacht iemand op jou.
+   Rood zou zeggen dat er een fout is, en de meeste bestellingen die hier belanden
+   hebben niets mis — ze komen uit een land waar geen register bestaat. */
+.fl-chip.is-warn { border-color: var(--warn, #b8860b); color: var(--warn, #b8860b); font-weight: 700; }
+a.fl-chip.is-warn:hover { background: var(--ghost); }
 .fl-n { font-size: .76rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .fl-chip.is-active .fl-n { color: var(--teal-text); }
 

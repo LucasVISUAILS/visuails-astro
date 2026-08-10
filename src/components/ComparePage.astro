@@ -460,7 +460,7 @@ const t = COPY[lang];
   <div class="wins reveal-group">
     {t.wins.map((w) => (
       <div class="card reveal pending">
-        <h4>{w.t}</h4>
+        <h3 class="as-card-h">{w.t}</h3>
         <p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{w.b}</p>
       </div>
     ))}
@@ -490,7 +490,7 @@ const t = COPY[lang];
     </div>
   </div>
   <p class="tool-close">{t.toolClose}</p>
-  <a href={lp('/test-sample')} class="link-arrow" data-track="compare-tool-sample">{t.toolCta} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  <a href={lp('/test-sample')} class="link-arrow" data-track="compare-tool-sample">{t.toolCta} <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
 </div></section>
 
 <!-- CTA -->

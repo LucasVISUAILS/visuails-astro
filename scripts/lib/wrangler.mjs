@@ -115,7 +115,133 @@ function quoteForCmd(value) {
   return /[\s"&|<>^()]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
-export async function wrangler(argv, { env = process.env, maxBuffer = 64 * 1024 * 1024 } = {}) {
+/**
+ * Eén SQL-opdracht op één regel zetten — maar niet binnen een string.
+ *
+ * ── WAAROM DIT HIER STAAT EN NIET IN MIGRATE.MJS ────────────────────────────
+ *
+ * Dit stond in scripts/migrate.mjs, want daar werd het op 7 augustus 2026 uit nood
+ * geschreven: `--command` wil één argument zonder regeleindes, en de SQL in
+ * migrations/ staat over meerdere regels omdat dat leesbaar is.
+ *
+ * Op 10 augustus 2026 bleek waarom het daar niet hoort. `npm run backup -- --files`
+ * meldde "inventaris van de bestanden… leeg of mislukt" en haalde geen enkel object
+ * op. De inventarisquery in backup.mjs staat over twee regels, precies zoals de SQL
+ * in migrations/, en die ging rechtstreeks naar `--command`. assertSafeArg() hierboven
+ * — de controle uit dit bestand zelf — weigert `\r` en `\n` met zoveel woorden; dat
+ * aanroepen deed backup.mjs niet. De regel stond dus wél in het project, één bestand
+ * verderop, en het aanroeppunt kende hem niet.
+ *
+ * Elke plek die `--command` gebruikt heeft dit nodig. Dan hoort het bij de laag die
+ * wrangler aanroept, niet bij het script dat er het eerst tegenaan liep.
+ *
+ * ── WAT HIER NIET MAG GEBEUREN ──────────────────────────────────────────────
+ *
+ * Witruimte weghalen die BINNEN een tekstwaarde staat. `DEFAULT 'nl_standard'`
+ * overleeft dat prima, maar de dag dat er een DEFAULT met twee spaties of een
+ * regeleinde in komt, zou dit stilletjes een andere waarde de database in schrijven.
+ * Daarom telt dit aanhalingstekens mee en geeft het `null` terug zodra het niet zeker
+ * weet wat het aan het inkorten is. `null` betekent: doe het via een bestand.
+ */
+export function oneLine(stmt) {
+  let out = '';
+  let inString = false;
+  let space = false;
+  for (let i = 0; i < stmt.length; i++) {
+    const ch = stmt[i];
+    if (inString) {
+      // Een regeleinde binnen een tekstwaarde is deel van die waarde. Dat is
+      // niet in te korten, dus dan valt de hele opdracht terug op een bestand.
+      if (ch === '\n' || ch === '\r') return null;
+      out += ch;
+      if (ch === "'") {
+        if (stmt[i + 1] === "'") { out += "'"; i++; } else { inString = false; }
+      }
+      continue;
+    }
+    if (ch === "'") {
+      if (space) { out += ' '; space = false; }
+      inString = true;
+      out += ch;
+      continue;
+    }
+    if (/\s/.test(ch)) { if (out) space = true; continue; }
+    if (space) { out += ' '; space = false; }
+    out += ch;
+  }
+  // Een aanhalingsteken dat nooit dichtgaat betekent dat dit iets anders is dan
+  // wat ik denk dat het is. Niet inkorten.
+  return inString ? null : out;
+}
+
+/**
+ * Wanneer --command niet meer kan.
+ *
+ * cmd.exe knipt een commandoregel af rond 8191 tekens, en dan krijg je geen
+ * foutmelding maar een half statement. De langste opdracht in migrations/ is 445
+ * tekens, dus 6000 is ruim — en als er ooit een backfill komt die er overheen
+ * gaat, gaat die via een bestand in plaats van kapot.
+ *
+ * Een " in de SQL gaat ook naar het bestand. quoteForCmd() verdubbelt hem, en
+ * hoe cmd.exe een verdubbelde " binnen een geciteerd argument leest hangt af van
+ * waar hij staat. Geen enkele migratie gebruikt ze (SQLite accepteert " voor
+ * kolomnamen, maar hier staat overal gewone tekst), dus dit kost niets.
+ */
+export const CMD_MAX = 6000;
+
+/**
+ * Kan deze SQL als `--command` mee, of moet hij via een bestand?
+ *
+ * Geeft de ingekorte regel terug, of `null`. Eén plek voor de drie voorwaarden, zodat
+ * een nieuw aanroeppunt ze niet opnieuw hoeft te bedenken — en dat is precies wat er
+ * met backup.mjs gebeurde.
+ */
+export function asCommandArg(sql) {
+  const line = oneLine(sql);
+  if (!line || line.length > CMD_MAX || line.includes('"')) return null;
+  return line;
+}
+
+/**
+ * Het argument ná `--command` inkorten, waar de aanroeper dat vergeet.
+ *
+ * ── WAAROM DIT HIER GEBEURT EN NIET BIJ DE AANROEPER — 10 AUGUSTUS 2026 ─────
+ *
+ * Ik repareerde scripts/backup.mjs door de query door asCommandArg() te halen, en keek
+ * daarna naar de andere aanroeppunten. Drie van de vier gaven meerregelige SQL mee:
+ *
+ *   scripts/backup.mjs      de inventaris  — meldde "leeg of mislukt", haalde niets op
+ *   scripts/fetch-order.mjs listUploads()  — een template over vier regels
+ *   scripts/deliver.mjs     query()        — geeft door wat de aanroeper aanlevert
+ *
+ * Alleen migrate.mjs deed het goed, en dat is het bestand waar de regel geschreven is.
+ * Een regel die drie van de vier keer vergeten wordt, is geen regel maar een valkuil.
+ * De vierde keer dat ik in dit project iets tegenkwam dat al opgelost was, is het
+ * moment om te stoppen met het beter opschrijven en het onvergeetbaar te maken.
+ *
+ * ── WAAROM DIT GEEN STILLE HERSCHRIJVING IS ────────────────────────────────
+ *
+ * Er verandert niets aan de betekenis van de SQL: alleen witruimte BUITEN een
+ * tekstwaarde wordt ingekort, en oneLine() geeft `null` — geen wijziging dus — zodra
+ * het niet zeker weet waar het naar kijkt. Wat cmd.exe anders zou zien als het einde
+ * van het commando, ziet SQLite als één spatie.
+ *
+ * Kan het niet veilig ingekort worden, dan gaat het ONGEWIJZIGD door. Dan faalt de
+ * aanroep zoals hij vandaag faalt, en dat is geen achteruitgang — migrate.mjs vraagt
+ * asCommandArg() zelf al vooraf en valt in dat geval terug op een bestand.
+ */
+function flattenCommand(argv) {
+  const i = argv.indexOf('--command');
+  if (i === -1 || i === argv.length - 1) return argv;
+  const line = asCommandArg(argv[i + 1]);
+  if (!line || line === argv[i + 1]) return argv;
+  const copy = argv.slice();
+  copy[i + 1] = line;
+  return copy;
+}
+
+export async function wrangler(rawArgv, { env = process.env, maxBuffer = 64 * 1024 * 1024 } = {}) {
+  const argv = flattenCommand(rawArgv);
   // Lokaal geïnstalleerd: rechtstreeks via node, zonder shell (zie localWrangler).
   // Anders via npx, met de shell alleen op Windows omdat het daar niet anders kan
   // — en dan met aanhalingstekens, want de shell hakt anders elk argument met
@@ -141,6 +267,11 @@ export async function wrangler(argv, { env = process.env, maxBuffer = 64 * 1024 
     };
   }
 }
+
+/* Alleen voor de test. Het net hierboven is niet te zien aan wat wrangler teruggeeft,
+ * en een vangnet waarvan niemand kan nakijken of het er nog hangt, is er over een half
+ * jaar niet meer. Zie tests/wrangler-args.test.mjs. */
+export const __flattenCommand = flattenCommand;
 
 /*
  * ═══════════════════════════════════════════════════════════════════════════════

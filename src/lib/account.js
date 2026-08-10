@@ -76,6 +76,8 @@
 // point; this file is where it turns into code.
 
 import { hashToken, isWellFormedToken, mintToken, isExpired } from './token.js';
+import { notifyRevision } from './notify.js';
+import { clearUploadRetention } from './retention.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.js';
 import { sendMail } from './mail.js';
 import {
@@ -106,7 +108,7 @@ import { feedbackBlock, loadFeedback, handleFeedbackPost } from './feedback.js';
 import { offsitePage } from './offsite.js';
 import { serviceLabel } from '../data/services.js';
 import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
-import { countryOptions, vatShort, VAT_TREATMENT } from '../data/vat.js';
+import { countryOptions, vatShort, VAT_TREATMENT, REVIEW } from '../data/vat.js';
 import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '../data/address.js';
 import { createOrderMolliePayment } from './mollie.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
@@ -417,6 +419,11 @@ const COPY = {
     payDueBy: (day) => `Not paid yet — your slot is held until ${day}.`,
     payNow: 'Pay now',
     payFailed: 'We could not open the payment screen. Try again in a minute, or message us.',
+    /* De melding als de btw-poort de bestelling vasthoudt. Geen woord over fraude
+       of controle: voor de klant is dit een administratieve stap, en de meeste
+       klanten die hier belanden hebben niets verkeerd gedaan — ze zitten alleen
+       buiten de EU, waar geen register bestaat om hun opgave in na te kijken. */
+    payHeld: 'We are checking the VAT details on this order before it can be paid. That is a manual step on orders outside the EU, because there is no register we can look them up in. You will hear from us within one working day.',
     shotNames: { front: 'Front', back: 'Back', detail: 'Detail', worn: 'On a model' },
     bView: 'View',
     bDownload: 'Download',
@@ -712,6 +719,7 @@ const COPY = {
     payDueBy: (day) => `Nog niet betaald — je plek staat vast tot ${day}.`,
     payNow: 'Nu betalen',
     payFailed: 'We konden het betaalscherm niet openen. Probeer het zo nog eens, of stuur ons een bericht.',
+    payHeld: 'We kijken de btw-gegevens van deze bestelling na voordat er betaald kan worden. Dat is bij bestellingen buiten de EU een handmatige stap, omdat er geen register is waarin we ze kunnen nakijken. Je hoort binnen één werkdag van ons.',
     shotNames: { front: 'Voorkant', back: 'Achterkant', detail: 'Detail', worn: 'Op een model' },
     bView: 'Bekijken',
     bDownload: 'Downloaden',
@@ -1616,6 +1624,7 @@ async function sectionGet(context, customer, section) {
   // deze regel zou de klant op precies dezelfde pagina terugkomen met precies
   // dezelfde knop — niet te onderscheiden van "er gebeurde niets toen ik klikte".
   let payFailed = false;
+  let payHeld = false;
   // `missing=1` zet handleDetails() als er een verplicht veld leeg is
   // teruggekomen. Zonder deze regel keert de klant terug op een pagina die er
   // precies hetzelfde uitziet als voor het opslaan, zonder dat er iets bewaard
@@ -1625,6 +1634,7 @@ async function sectionGet(context, customer, section) {
     const params = new URL(request.url).searchParams;
     justSaved = params.get('saved') === '1';
     payFailed = params.get('pay') === 'failed';
+    payHeld = params.get('pay') === 'held';
     detailsMissing = params.get('missing') === '1' ? 'missing' : (params.get('failed') === '1' ? 'failed' : false);
     const wanted = String(params.get('status') || '');
     if (Object.prototype.hasOwnProperty.call(STATUS, wanted)) statusFilter = wanted;
@@ -1648,7 +1658,7 @@ async function sectionGet(context, customer, section) {
     const feedbackByOrder = closed.length
       ? await loadFeedbackFor(env, closed)
       : new Map();
-    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed, feedbackByOrder);
+    inner = ordersBody(t, lang, orders, filesByOrder, eventsByOrder, statusFilter, payFailed, feedbackByOrder, payHeld);
     title = t.ordersHeading;
   } else if (section === 'brand') {
     inner = brandKitBody(t, lang, models, lockByStyle);
@@ -2246,7 +2256,7 @@ function normalizeHex(v) {
 function swatch(hex, cls) {
   const safe = /^#[0-9A-Fa-f]{6}$/.test(String(hex || '')) ? String(hex).toUpperCase() : null;
   if (!safe) return `<span class="${cls} is-blank" aria-hidden="true"></span>`;
-  return `<span class="${cls}" aria-hidden="true"><svg viewBox="0 0 1 1" preserveAspectRatio="none" focusable="false"><rect width="1" height="1" fill="${safe}"/></svg></span>`;
+  return `<span class="${cls}" aria-hidden="true"><svg viewBox="0 0 1 1" preserveAspectRatio="none" focusable="false" aria-hidden="true"><rect width="1" height="1" fill="${safe}"/></svg></span>`;
 }
 
 /** All orders this customer has placed, most recent first. */
@@ -2827,6 +2837,19 @@ async function handleFileReview({ request, env }, customer) {
       if (owned.closed_at) {
         undo.push(
           env.DB.prepare('UPDATE orders SET closed_at = NULL WHERE id = ?1').bind(owned.order_id),
+          /*
+           * ── EN DE BEWAARKLOK VAN HET BRONMATERIAAL TERUG OP NUL ──────────
+           *
+           * 9 augustus 2026. De bestelling gaat weer open, dus de negentig dagen
+           * die bij het afsluiten op het bronmateriaal zijn gestempeld moeten weg.
+           * Zonder deze regel verdwijnen de productfoto's negentig dagen na de
+           * EERSTE afronding — en dat is precies het materiaal dat nodig is om de
+           * revisie te maken waar de bestelling nu voor open staat.
+           *
+           * Mag wél in dezelfde batch als de UPDATE hierboven: deze query leest
+           * `closed_at` niet, hij wist alleen een kolom op files.
+           */
+          clearUploadRetention(env, owned.order_id),
           env.DB.prepare(
             `INSERT INTO order_events (order_id, status, note, actor)
              VALUES (?1, 'delivered', ?2, 'system')`
@@ -2858,6 +2881,27 @@ async function handleFileReview({ request, env }, customer) {
           `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
         ).bind(fileId, owned.order_id, customer.customer_id, note),
       ]);
+      /*
+       * ── EN DE STUDIO KRIJGT ER BERICHT VAN, 9 AUGUSTUS 2026 ─────────────────
+       *
+       * Deze route schreef netjes naar de database en zweeg. Een klant die om elf uur
+       * 's avonds een revisie aanvroeg, produceerde geen enkel signaal — je moest het
+       * zelf gaan zoeken in het dashboard.
+       *
+       * De notitie gaat mee IN de mail. /studio belooft dat een revisieverzoek
+       * binnenkomt "met de notitie die de klant schreef, in diens eigen woorden", en
+       * een bericht dat alleen zegt "er is een revisie" dwingt je alsnog het dashboard
+       * te openen om te weten of het dringend is.
+       *
+       * NA de batch, en de fouten blijven binnen notifyRevision(): het verzoek van de
+       * klant mag niet omvallen omdat Resend even niet bereikbaar is.
+       */
+      await notifyRevision(env, {
+        orderId: owned.order_id,
+        fileId,
+        note,
+      });
+
     }
   } catch {
     return seeOther(home);
@@ -2921,18 +2965,60 @@ async function handleOrderPay({ request, env }, customer, orderId) {
 
   let order;
   try {
-    order = await byId(`${COLS}, vat_cents`);
+    order = await byId(`${COLS}, vat_cents, review_state`);
   } catch (err) {
     if (!/no such column/i.test(String(err?.message || err))) return seeOther(anchor);
+    /*
+     * Twee terugvallen in plaats van één, want er zijn twee migraties in het spel:
+     * `vat_cents` komt uit 0015 en `review_state` uit 0018. Draaien ze beide niet,
+     * dan is er ook geen poort om te respecteren en is de oude kolommenset juist.
+     * Draait alleen 0015 niet, dan moet review_state er nog steeds bij — anders zou
+     * een niet-gedraaide prijsmigratie de fraudecontrole uitzetten, en dat is de
+     * stilste manier waarop dit kan mislukken.
+     */
     try {
-      order = await byId(COLS);
+      order = await byId(`${COLS}, review_state`);
     } catch {
-      return seeOther(anchor);
+      try {
+        order = await byId(COLS);
+      } catch {
+        return seeOther(anchor);
+      }
     }
   }
 
   if (!order || String(order.payment_status || 'unpaid') !== 'unpaid') return seeOther(anchor);
   if (!(isPayableService(order.service) || order.service === SAMPLE_SERVICE)) return seeOther(anchor);
+
+  /*
+   * ── DE BTW-POORT GELDT OOK HIER, 9 AUGUSTUS 2026 ─────────────────────────────
+   *
+   * DIT WAS DE ACHTERDEUR. `vatGate()` in src/data/vat.js zet een bestelling op
+   * `review_state = 'pending'` zodra een klant een land buiten de EU claimt — de
+   * enige claim op de site die volledig op zijn woord rust, en 21% waard. Bij het
+   * bestellen wordt er dan géén betaallink gemaakt (functions/api/order.js:769).
+   *
+   * Deze functie keek daar niet naar. Ze controleerde of er nog niet betaald was en
+   * of er een bedrag stond, en maakte dan een Mollie-link aan. Een klant die de
+   * controle had geraakt, logde dus in op VISUAILS Studio en rekende daar zelf af
+   * tegen het tarief dat zijn onverifieerde claim had opgeleverd. De voordeur op
+   * slot, de achterdeur open, en niets dat het verschil zag.
+   *
+   * ── WAAROM DIT EEN ZICHTBARE MELDING IS EN GEEN STILLE OMLEIDING ────────────
+   *
+   * De regels hierboven leiden stil om, en dat is daar juist: die gevallen kunnen
+   * alleen ontstaan door aan de URL te sleutelen. Dit geval kan een echte klant
+   * overkomen met een echte knop, en dan is een pagina die herlaadt zonder iets te
+   * zeggen precies de dode knop die vandaag op twee andere plekken is opgeruimd.
+   * Hij hoort te lezen dat wij ernaar kijken en dat hij bericht krijgt.
+   *
+   * ALLEEN 'pending' HOUDT TEGEN. 'approved' mag betalen (dat is waar goedkeuren
+   * voor is), en een leeg veld ook — dat is elke bestelling die de poort nooit
+   * geraakt heeft, en dat is de overgrote meerderheid.
+   */
+  if (String(order.review_state || '') === REVIEW.pending) {
+    return seeOther(`${home}?pay=held#order-${orderId}`);
+  }
 
   const m = orderMoney(order);
   if (!m || m.gross < 1) return seeOther(anchor);
@@ -3802,7 +3888,7 @@ function activityRow(t, lang, o) {
  * The active chip is a <span>, not a link to the page you are on, and carries
  * aria-current. "All" is always first and is the way back.
  */
-function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '', payFailed = false, feedbackByOrder = new Map()) {
+function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), statusFilter = '', payFailed = false, feedbackByOrder = new Map(), payHeld = false) {
   const shown = statusFilter ? orders.filter((o) => o.status === statusFilter) : orders;
 
   // Insertion order follows STATUS, which is the order the studio moves through
@@ -3836,6 +3922,7 @@ function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), st
 <h1>${esc(t.ordersHeading)}${shown.length ? ` <span class="h2-count">(${shown.length})</span>` : ''}</h1>
 <p class="lede">${esc(t.ordersLede)}</p>
 ${payFailed ? `<p class="det-ok is-warn" role="status">${esc(t.payFailed)}</p>` : ''}
+${payHeld ? `<p class="det-ok is-warn" role="status">${esc(t.payHeld)}</p>` : ''}
 ${filters}
 ${shown.length ? shown.map((o) => orderCard(t, lang, o, filesByOrder.get(o.id) || [], eventsByOrder.get(o.id) || [], feedbackByOrder.get(o.id) || null)).join('') : empty}`;
 }

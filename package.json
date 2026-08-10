@@ -16,7 +16,7 @@
     "fetch:order": "node scripts/fetch-order.mjs",
     "test:account": "node tests/account-brand-kit.test.mjs",
     "test:admin": "node tests/admin.test.mjs",
-    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie",
+    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schema && npm run test:retention && npm run test:wrangler && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie",
     "test:invoice": "node tests/invoice-pdf.test.mjs",
     "test:offsite": "node tests/offsite.test.mjs",
     "check:csp": "node scripts/csp-probe.mjs",
@@ -40,7 +40,16 @@
     "test:feedback": "node tests/feedback.test.mjs",
     "deliver": "node scripts/deliver.mjs",
     "test:delivery": "node tests/delivery.test.mjs",
-    "test:nav": "node tests/nav.test.mjs"
+    "test:nav": "node tests/nav.test.mjs",
+    "test:figures": "node tests/figures.test.mjs",
+    "test:promises": "node tests/promises.test.mjs",
+    "cron:check": "npx wrangler deploy --dry-run --config cron/wrangler.toml",
+    "cron:deploy": "npx wrangler deploy --config cron/wrangler.toml",
+    "cron:run": "npx wrangler dev --test-scheduled --config cron/wrangler.toml --persist-to .wrangler/state",
+    "test:schema": "node tests/schema.test.mjs",
+    "test:retention": "node tests/retention.test.mjs",
+    "test:a11y": "node tests/a11y.test.mjs",
+    "test:wrangler": "node tests/wrangler-args.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

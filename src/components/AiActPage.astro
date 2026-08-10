@@ -73,6 +73,19 @@ import { waHref } from '../data/whatsapp.js';
 // opslaat kan het weghalen), en nog steeds dat de zichtbare vermelding de enige is
 // die telt.
 //
+// ── EN OP 9 AUGUSTUS, LATER OP DE DAG: DE ENGELSE VERSIE STOND ER NOG ───────
+//
+// Bij het herschrijven hierboven is alleen de Nederlandse tak aangepast. De
+// Engelse zei nog "The machine-readable marking (…) comes from the model
+// providers, not from us. We add nothing" — dus stond er op deze pagina, over
+// dezelfde wettelijke verplichting, in de ene taal het tegendeel van de andere.
+// Een halve dag lang, op de enige pagina waar het juridisch is.
+//
+// Dat is exact het faalpatroon dat WORKING-AGREEMENT.md §3 beschrijft: één taal
+// nakijken is een "false-clean generator". Er is nu een test die de twee talen van
+// §6 tegen elkaar houdt (tests/promises.test.mjs), want dit is niet iets wat je
+// door beter opletten voorkomt — het is iets wat je door meten voorkomt.
+//
 // webp is not the problem — the C2PA spec supports it, in a 'C2PA' RIFF chunk.
 // Generic converters are the problem: preserving a manifest across a re-encode
 // takes a C2PA-aware tool, and neither sharp nor Pillow is one. So §6 said which
@@ -165,7 +178,7 @@ const COPY = {
       ['We are not lawyers.', 'This page is information, not legal advice.'],
       ['Our human check does not exempt your images from the disclosure duty.', 'That exemption in the law is for text on matters of public interest, not for images. Anyone claiming otherwise has not read it.'],
       ['Using the EU icon does not make you compliant.', 'It is an aid, not a certification. We supply it because it is recognisable, not because it covers anything.'],
-      ['The machine-readable marking in the file comes from the model providers, not from us.', 'We add nothing and we deliberately remove nothing. In practice: the jpg and png files you get from us carry that marking; webp does not, because converting to webp discards it — that is a property of image converters, not of webp. Note too that providers of systems already on the market have until 2 December 2026 to mark, so not every model marks yet. So do not rely on a file identifying itself. The disclosure that counts is the visible one, the one you place.'],
+      ['Every file we deliver carries a machine-readable provenance tag, and one line of it is ours.', 'We write an IPTC DigitalSourceType tag into every delivered file — the value that means "partly made by a model" — including the WebP, where the conversion discarded whatever the model provider had put there. What the provider marked itself we leave alone; we remove nothing. It is not a guarantee: any program that re-saves an image can strip the tag, and providers of systems already on the market have until 2 December 2026 to mark at all. So do not rely on a file to identify itself. The disclosure that counts is the visible one, the one you place.'],
       ['Marketplaces have their own image rules.', 'Zalando, Amazon, bol and About You sometimes set stricter requirements than the law does, particularly for the main image. You check those for your own channels — we are glad to think along.'],
     ],
 

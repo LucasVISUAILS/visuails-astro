@@ -153,7 +153,7 @@ const columns = (['unattended', 'attended'] as const).map((id) => ({
         </dl>
         <a href={col.href} class="link-arrow tierc-cta">
           {col.cta}
-          <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
       </div>
     ))}

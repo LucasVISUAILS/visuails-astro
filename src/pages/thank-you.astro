@@ -87,13 +87,13 @@ const description =
 
   <section class="section-tight"><div class="container">
     <div class="grid grid-3 reveal-group">
-      <div class="card reveal pending"><h4>What happens next</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Once the payment has come through we read what you sent, prepare your visuals, and a person checks every result before it reaches you.</p></div>
-      <div class="card reveal pending"><h4>Typical timing</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} from the moment we have your photos and your notes to your download link. {T0.queue.en}; a brand-new custom style can take a little longer.</p></div>
-      <div class="card reveal pending"><h4>Need to add something?</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reply to our message on WhatsApp or email <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> with any extra details or references.</p></div>
+      <div class="card reveal pending"><h2 class="as-card-h">What happens next</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Once the payment has come through we read what you sent, prepare your visuals, and a person checks every result before it reaches you.</p></div>
+      <div class="card reveal pending"><h2 class="as-card-h">Typical timing</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} from the moment we have your photos and your notes to your download link. {T0.queue.en}; a brand-new custom style can take a little longer.</p></div>
+      <div class="card reveal pending"><h2 class="as-card-h">Need to add something?</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reply to our message on WhatsApp or email <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> with any extra details or references.</p></div>
     </div>
     <div class="card reveal pending ty-upsell">
       <div>
-        <h4>Want to guarantee the details?</h4>
+        <h2 class="as-card-h">Want to guarantee the details?</h2>
         <p style="margin-top:.4rem;font-size:.95rem;color:var(--ink-3)">The more angles we have, the more accurately we can match fit, colour and detail first time. Send a detail close-up, the fabric and an on-body shot — it's free to add and it lifts the whole result.</p>
       </div>
       <a href={waHref("Hi VISUAILS, I'd like to send extra photos for my order.")} class="btn btn-wa" target="_blank" rel="noopener" data-track="ty-extra-photos">
@@ -119,7 +119,11 @@ const description =
      different widths read as two unrelated boxes. One column for both. */
   .mail-note { max-width: 520px; margin-inline: auto; }
 
-  .ty-summary h4 { font-size: 1rem; color: var(--ink); }
+  /* Was `.ty-summary h4`. Die kop is een h2 geworden (het kopniveau sprong van h1
+   naar h4); de selector moest mee, anders viel deze verkleining stil weg en werd
+   de kop 17px in plaats van 16px. Eén pixel, en precies het soort restje dat een
+   tagwijziging achterlaat. */
+  .ty-summary .as-card-h { font-size: 1rem; color: var(--ink); }
   /* .ty-dl / .ty-row / .ty-swatch / .ty-hex were removed in section 10. They
      styled a definition list of the submitted answers that initThankYou() built
      by reading the form fields back out of the query string — which only worked

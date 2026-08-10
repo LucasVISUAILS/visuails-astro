@@ -39,7 +39,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { wrangler, warmLogin } from './lib/wrangler.mjs';
+import { wrangler, warmLogin, oneLine, CMD_MAX } from './lib/wrangler.mjs';
+import { statements, stripComments } from './lib/sql.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR = path.join(ROOT, 'migrations');
@@ -73,49 +74,13 @@ const DB = (() => {
 
 const scope = LOCAL ? '--local' : '--remote';
 
-/**
- * Commentaar eruit — óók het commentaar dat áchter een opdracht staat.
- *
- * DE BUG DIE DIT VEROORZAAKTE, 7 augustus 2026. De vorige versie gooide alleen
- * regels weg die MET `--` beginnen. In migrations/0006 staat:
- *
- *   ALTER TABLE orders ADD COLUMN window_expires_at TEXT;   -- ISO datetime, or NULL
- *   ALTER TABLE orders ADD COLUMN refunded_cents INTEGER NOT NULL DEFAULT 0;
- *
- * Dat commentaar staat ná de puntkomma, dus bij het splitsen plakte het aan het
- * BEGIN van de volgende opdracht. Die begon daarmee niet meer met "ALTER", de
- * herkenner zag er geen ADD COLUMN in, en dus draaide hij hem gewoon — met
- * "duplicate column name: refunded_cents" tot gevolg. De controle was er wel,
- * hij keek alleen naar de verkeerde tekst.
- *
- * Aanhalingstekens worden bijgehouden zodat een `--` binnen een string blijft
- * staan. Die komen in deze migraties niet voor, maar de dag dat er één in komt,
- * hoort dit niet stil het halve statement weg te knippen.
+/*
+ * stripComments() en statements() stonden hier en staan sinds 10 augustus 2026 in
+ * lib/sql.mjs, ongewijzigd. Reden: tests/wrangler-args.test.mjs moet de opdrachten
+ * kunnen inlezen zóals dit script ze aan wrangler geeft. Deed de test dat met een
+ * eigen splitsing, dan keurde hij iets anders goed dan wat er draait — en dan viel
+ * hij om op een apostrof in een commentaarregel, wat precies gebeurde.
  */
-function stripComments(sql) {
-  return sql.split('\n').map((line) => {
-    let inString = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === "'") {
-        // '' binnen een string is een ontsnapte apostrof, geen einde.
-        if (inString && line[i + 1] === "'") { i++; continue; }
-        inString = !inString;
-      } else if (!inString && ch === '-' && line[i + 1] === '-') {
-        return line.slice(0, i);
-      }
-    }
-    return line;
-  }).join('\n');
-}
-
-/** SQL in losse opdrachten hakken, zonder commentaar ertussen. */
-function statements(sql) {
-  return stripComments(sql)
-    .split(';')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 /**
  * Eén vraag aan de database, als JSON terug.
@@ -158,67 +123,12 @@ async function query(sql, attempt = 1) {
   }
 }
 
-/**
- * Eén opdracht op één regel zetten — maar niet binnen een string.
- *
- * WAAROM DIT ER IS. Zie execute() hieronder: --command wil één argument zonder
- * regeleindes. De SQL in migrations/ staat over meerdere regels omdat dat
- * leesbaar is, niet omdat het moet — een CREATE INDEX met zijn WHERE eronder is
- * exact dezelfde opdracht als diezelfde tekst achter elkaar.
- *
- * WAT HIER NIET MAG GEBEUREN: witruimte weghalen die BINNEN een tekstwaarde
- * staat. `DEFAULT 'nl_standard'` overleeft dat prima, maar de dag dat er een
- * DEFAULT met twee spaties of een regeleinde in komt, zou dit stilletjes een
- * andere waarde de database in schrijven. Daarom telt dit aanhalingstekens mee,
- * net als stripComments() hierboven, en geeft het `null` terug zodra het niet
- * zeker weet wat het aan het inkorten is. `null` betekent: doe het via een
- * bestand.
+/*
+ * oneLine() en CMD_MAX stonden hier, en staan sinds 10 augustus 2026 in
+ * lib/wrangler.mjs. Ze horen bij de laag die wrangler aanroept en niet bij dit
+ * script: elke plek die --command gebruikt heeft ze nodig, en scripts/backup.mjs
+ * liep er stuk op omdat het ze hier niet kon zien. De reden staat daar uitgebreid.
  */
-function oneLine(stmt) {
-  let out = '';
-  let inString = false;
-  let space = false;
-  for (let i = 0; i < stmt.length; i++) {
-    const ch = stmt[i];
-    if (inString) {
-      // Een regeleinde binnen een tekstwaarde is deel van die waarde. Dat is
-      // niet in te korten, dus dan valt de hele opdracht terug op een bestand.
-      if (ch === '\n' || ch === '\r') return null;
-      out += ch;
-      if (ch === "'") {
-        if (stmt[i + 1] === "'") { out += "'"; i++; } else { inString = false; }
-      }
-      continue;
-    }
-    if (ch === "'") {
-      if (space) { out += ' '; space = false; }
-      inString = true;
-      out += ch;
-      continue;
-    }
-    if (/\s/.test(ch)) { if (out) space = true; continue; }
-    if (space) { out += ' '; space = false; }
-    out += ch;
-  }
-  // Een aanhalingsteken dat nooit dichtgaat betekent dat dit iets anders is dan
-  // wat ik denk dat het is. Niet inkorten.
-  return inString ? null : out;
-}
-
-/**
- * Wanneer --command niet meer kan.
- *
- * cmd.exe knipt een commandoregel af rond 8191 tekens, en dan krijg je geen
- * foutmelding maar een half statement. De langste opdracht in migrations/ is 445
- * tekens, dus 6000 is ruim — en als er ooit een backfill komt die er overheen
- * gaat, gaat die via een bestand in plaats van kapot.
- *
- * Een " in de SQL gaat ook naar het bestand. quoteForCmd() verdubbelt hem, en
- * hoe cmd.exe een verdubbelde " binnen een geciteerd argument leest hangt af van
- * waar hij staat. Geen enkele migratie gebruikt ze (SQLite accepteert " voor
- * kolomnamen, maar hier staat overal gewone tekst), dus dit kost niets.
- */
-const CMD_MAX = 6000;
 
 /**
  * Eén opdracht uitvoeren.

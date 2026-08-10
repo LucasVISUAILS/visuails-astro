@@ -23,16 +23,21 @@
  */
 import { exiftool } from 'exiftool-vendored';
 
-const BASE = 'http://cv.iptc.org/newscodes/digitalsourcetype';
-
-/** Deels door een model gemaakt — de gewone situatie bij ons. */
-export const COMPOSITE = `${BASE}/compositeWithTrainedAlgorithmicMedia`;
-
-/** Volledig door een model gemaakt — alleen als er geen echte foto in zit. */
-export const FULLY = `${BASE}/trainedAlgorithmicMedia`;
-
-/** De formaten waarin we een tag kwijt kunnen. */
-export const TAGGABLE = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+/*
+ * ── DE STRINGS ZIJN OP 9 AUGUSTUS 2026 ÉÉN LAAG NAAR BENEDEN GEGAAN ──────────
+ *
+ * Ze stonden hier. Het argument uit de kop hierboven — twee kopieën is een dag
+ * waarop de ene helft van een levering een andere claim draagt dan de andere —
+ * kreeg een derde plek: het adminportaal moet de tag kunnen NAKIJKEN, en dat
+ * draait in workerd. Een Worker kan dit bestand niet importeren, want
+ * exiftool-vendored is een binair programma.
+ *
+ * Dus: de waardes staan in src/lib/iptc.js, dat nul afhankelijkheden heeft en
+ * daardoor overal heen kan. Dit bestand blijft de SCHRIJVER, en dat is nog steeds
+ * de enige plek waar een tag wordt gezet.
+ */
+export { COMPOSITE, FULLY, TAGGABLE } from '../../src/lib/iptc.js';
+import { COMPOSITE } from '../../src/lib/iptc.js';
 
 /** Wat er nu in staat, of null. */
 export async function readSourceType(file) {

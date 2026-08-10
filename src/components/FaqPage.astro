@@ -199,7 +199,7 @@ if (GROUP_ANCHORS.length !== c.groups.length) {
                     ))}
                   </div>
                 ) : null}
-                {item.linkText ? <p class="acc-more"><a href={lp(item.linkHref)} class="link-arrow">{item.linkText} <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p> : null}
+                {item.linkText ? <p class="acc-more"><a href={lp(item.linkHref)} class="link-arrow">{item.linkText} <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p> : null}
               </div>
             </Disclose>
           ))}

@@ -1,0 +1,392 @@
+---
+/*
+ * FigGate — de capaciteitspoort, getekend met de cijfers waar hij echt op draait.
+ *
+ * ── WAAROM DIT BESTAAT ──────────────────────────────────────────────────────
+ *
+ * Lucas, 9 augustus 2026: *"maak de mock ups voor deze 'Our side' pagina en houd
+ * het consistent."*
+ *
+ * Wat er stond was een grijs vlak met "ADMINPORTAAL · DE AGENDA" erin, op de
+ * pagina die als enige taak heeft te bewijzen dat een leverdatum een mechanisme
+ * heeft. Een placeholder op de plek van het bewijs — dezelfde fout die op de
+ * homepage en op /portal al is opgeruimd.
+ *
+ * ── WAT DEZE FIGUUR MOET BEWIJZEN ──────────────────────────────────────────
+ *
+ * De bewering van deze band is niet "wij hebben een agenda". Het is: de datum die
+ * je krijgt aangeboden, bestond al voordat wij hem noemden. Dat is te bewijzen met
+ * precies één beeld — de agenda die de kiezer leest, met de dag erin die geweigerd
+ * wordt.
+ *
+ * Drie dingen doet hij daarom, en niets anders:
+ *
+ *   1 · DE ECHTE EENHEID. Producten per dag, geen weken. De poort in capacity.js
+ *       telt 18 producten per studiodag, houdt er 3 vrij voor kleine bestellingen,
+ *       en verkoopt de overige 15 per dag als vastgelegd venster van twee
+ *       werkdagen. Die 3 staan in beeld als een apart stuk van de balk, want het
+ *       is het enige deel van dit mechanisme dat de bezoeker beschermt die géén
+ *       grote bestelling plaatst.
+ *
+ *   2 · EEN GEWEIGERDE DAG. Woensdag staat op 15 van 15 en wordt als vol
+ *       aangeboden. De verleiding is een agenda te tekenen waar alles kan; dat is
+ *       de belofte die elke leverancier doet en die niemand meer gelooft. Een
+ *       dichte dag is het bewijs dat de open dagen echt open zijn.
+ *
+ *   3 · TWEE ANTWOORDEN UIT DEZELFDE AGENDA. Dertig producten krijgen 10 – 11
+ *       augustus, twaalf producten krijgen 6 – 7 augustus. Op dezelfde dag, uit
+ *       dezelfde agenda. Dat is wat "geteld in producten, niet in bestellingen"
+ *       betekent, en het is met geen enkele zin zo hard te maken.
+ *
+ * ── DE FIGUUR REKENT, HIJ TEKENT GEEN UITKOMST ─────────────────────────────
+ *
+ * Het venster dat hier "aangeboden" heet, komt uit `offerableWindows()` in
+ * src/data/capacity.js — dezelfde functie die /start gebruikt om een echte klant
+ * een echte datum te geven. Er is hier geen ingetypte datum die met de werkelijk-
+ * heid mee moet veranderen: verander PRODUCTS_PER_DAY en deze figuur verschuift
+ * mee. tests/figures.test.mjs valt om zodra de tekening en de poort iets anders
+ * zeggen.
+ *
+ * ── HET IS EEN MOCK-UP EN DAT MOET ZICHTBAAR ZIJN ──────────────────────────
+ *
+ * Zelfde afspraak als FigDash, FigStudio en FigGallery: verzonnen gegevens, geen
+ * enkele handeling, geen link naar /admin, en het woord "voorbeeld" in beeld.
+ * Merk VOLT en referentie VIS-2608-4471 uit src/data/figdemo.js, zodat alle vijf
+ * de figuren over dezelfde bestelling gaan.
+ *
+ * NOOIT EEN ECHT ADRES OF EEN ECHTE NAAM. Zie de langere noot in FigDash.astro.
+ *
+ * ── GEEN JAVASCRIPT ────────────────────────────────────────────────────────
+ *
+ * Er valt niets te wisselen: dit is één toestand van één agenda op één dag. Alles
+ * wat hier beweegt zou de aandacht wegtrekken van het enige dat gelezen moet
+ * worden, namelijk welke dag geweigerd wordt.
+ */
+import {
+  ATTENDED_PER_DAY,
+  LEAD_DAYS,
+  PRODUCTS_PER_DAY,
+  QUEUE_FLOOR_PER_DAY,
+  WINDOW_DAYS,
+} from '../data/capacity.js';
+import {
+  DEMO_ORDER,
+  DEMO_SMALL_PRODUCTS,
+  demoRows,
+  demoWindow,
+  windowLabel,
+} from '../data/figdemo.js';
+
+interface Props { lang?: 'en' | 'nl' }
+const { lang = 'en' } = Astro.props;
+const nl = lang === 'nl';
+
+const rows = demoRows(DEMO_ORDER.products, lang);
+const win = demoWindow(DEMO_ORDER.products);
+const small = demoWindow(DEMO_SMALL_PRODUCTS);
+
+/* De eerste en de laatste dag van het venster, zodat de accentrand links één
+   doorlopend blok wordt in plaats van twee losse strepen. Berekend en niet
+   ingetypt: bij WINDOW_DAYS = 3 klopt het nog. */
+const offered = rows.filter((r) => r.offered);
+const firstOffered = offered[0]?.iso;
+const lastOffered = offered[offered.length - 1]?.iso;
+
+/* Het aantal per dag dat de poort vraagt voor deze bestelling. Dit is dezelfde
+   deling als in windowFits(): naar boven afgerond, want een half product bestaat
+   niet en een venster dat op een halve past, past niet. */
+const perDay = Math.ceil(DEMO_ORDER.products / WINDOW_DAYS);
+
+const C = nl
+  ? {
+      side: 'Studiokant',
+      badge: 'Voorbeeld met verzonnen gegevens',
+      h: 'Wat de datumkiezer vraagt',
+      sub: `${PRODUCTS_PER_DAY} producten per studiodag, waarvan ${QUEUE_FLOOR_PER_DAY} vrij blijven voor kleine bestellingen. Een venster is ${WINDOW_DAYS} werkdagen.`,
+      askL: 'De aanvraag',
+      askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} producten`,
+      unit: (u, c) => `${u} / ${c}`,
+      sEarly: 'Te vroeg',
+      sFull: 'Vol',
+      sOpen: 'Ruimte',
+      sWin: 'Venster',
+      floorNote: `De laatste ${QUEUE_FLOOR_PER_DAY} van elke dag zijn niet te boeken als venster. Die blijven voor bestellingen die in de normale doorlooptijd draaien.`,
+      leadNote: `De eerste ${LEAD_DAYS} werkdagen zijn geen productietijd: de producten moeten aankomen en bekeken worden voordat een datum iets betekent.`,
+      verdictL: 'Aangeboden',
+      verdictWhy: `${DEMO_ORDER.products} producten vragen ${perDay} op elke dag van het venster, dus twee dagen die helemaal vrij zijn. Donderdag en vrijdag hebben ruimte, maar niet genoeg — en dan wordt dat venster niet aangeboden.`,
+      cmpL: 'Zelfde agenda, kleinere bestelling',
+      cmpV: `${DEMO_SMALL_PRODUCTS} producten · ${windowLabel(small, lang)}`,
+      cmpWhy: 'Daarom wordt er in producten geteld en niet in bestellingen: het antwoord hangt af van wat er gemaakt moet worden, niet van hoeveel regels er in de tabel staan.',
+      noneNote: 'Past er binnen de horizon niets? Dan krijg je geen datum. Er is met opzet geen "dichtst mogelijke" uitkomst, want dat is de datum die later verzet moet worden.',
+    }
+  : {
+      side: 'Studio side',
+      badge: 'Example with made-up data',
+      h: 'What the date picker asks',
+      sub: `${PRODUCTS_PER_DAY} products per studio day, ${QUEUE_FLOOR_PER_DAY} of which stay free for small orders. A window is ${WINDOW_DAYS} working days.`,
+      askL: 'The request',
+      askV: `${DEMO_ORDER.ref} · ${DEMO_ORDER.brand} · ${DEMO_ORDER.products} products`,
+      unit: (u, c) => `${u} / ${c}`,
+      sEarly: 'Too soon',
+      sFull: 'Full',
+      sOpen: 'Room',
+      sWin: 'Window',
+      floorNote: `The last ${QUEUE_FLOOR_PER_DAY} of every day cannot be booked as a window. They stay for orders running in the normal turnaround.`,
+      leadNote: `The first ${LEAD_DAYS} working days are not production time: the products have to arrive and be looked at before a date means anything.`,
+      verdictL: 'Offered',
+      verdictWhy: `${DEMO_ORDER.products} products ask for ${perDay} on each day of the window, so two days that are completely free. Thursday and Friday have room, but not enough — and then that window is not offered.`,
+      cmpL: 'Same calendar, smaller order',
+      cmpV: `${DEMO_SMALL_PRODUCTS} products · ${windowLabel(small, lang)}`,
+      cmpWhy: 'This is why it is counted in products and not in orders: the answer depends on what has to be made, not on how many rows are in the table.',
+      noneNote: 'If nothing fits inside the horizon, you get no date. There is deliberately no "closest we can do", because that is the date that has to be moved later.',
+    };
+
+const stateWord = (r) =>
+  r.offered ? C.sWin : r.state === 'early' ? C.sEarly : r.state === 'full' ? C.sFull : C.sOpen;
+
+/* De balk staat voor de HELE dag (18) en niet voor het verkoopbare deel (15),
+   want anders is de gereserveerde staart niet te tekenen — en juist die staart is
+   het deel dat uitgelegd moet worden. */
+const pct = (n) => `${Math.round((n / PRODUCTS_PER_DAY) * 100)}%`;
+const floorAt = pct(ATTENDED_PER_DAY);
+---
+
+<figure class="fgt" aria-label={C.h}>
+  <div class="fgt-frame">
+    <div class="fgt-bar">
+      <span class="fgt-mark">VISUAILS</span>
+      <span class="fgt-side">{C.side}</span>
+      <span class="fgt-badge">{C.badge}</span>
+    </div>
+
+    <div class="fgt-body">
+      <div class="fgt-head">
+        <p class="fgt-h">{C.h}</p>
+        <p class="fgt-sub">{C.sub}</p>
+      </div>
+
+      {/* De aanvraag staat bovenaan en niet onderaan: de agenda is alleen te
+          lezen als je weet wat eraan gevraagd is. */}
+      <div class="fgt-ask">
+        <span class="fgt-ask-l">{C.askL}</span>
+        <span class="fgt-ask-v">{C.askV}</span>
+      </div>
+
+      <ul class="fgt-list">
+        {rows.map((r) => (
+          <li
+            class:list={[
+              'fgt-row',
+              `is-${r.state}`,
+              r.offered && 'is-win',
+              r.iso === firstOffered && 'is-win-a',
+              r.iso === lastOffered && 'is-win-b',
+            ]}
+          >
+            <span class="fgt-day"><b>{r.day}</b> {r.label}</span>
+            <span class="fgt-track" aria-hidden="true">
+              <span class="fgt-fill" style={`--pct: ${pct(r.used)}`}></span>
+              {/* De gereserveerde staart. Een aparte laag en geen tweede balk:
+                  het is hetzelfde etmaal, alleen een deel dat niet te koop is. */}
+              <span class="fgt-floor" style={`--floor: ${floorAt}`}></span>
+            </span>
+            <span class="fgt-n">{C.unit(r.used, r.cap)}</span>
+            {/* Het woord staat er altijd bij. Kleur alleen mag geen informatie
+                dragen — dezelfde regel die account.css aanhoudt voor zijn
+                statuspillen, en hier beslist die staat over een datum. */}
+            <span class="fgt-s">{stateWord(r)}</span>
+          </li>
+        ))}
+      </ul>
+
+      <p class="fgt-fine">{C.floorNote} {C.leadNote}</p>
+
+      <div class="fgt-verdict">
+        <span class="fgt-v-l">{C.verdictL}</span>
+        <span class="fgt-v-v">{windowLabel(win, lang)}</span>
+      </div>
+      <p class="fgt-fine">{C.verdictWhy}</p>
+
+      {/* ── DE VERGELIJKING ────────────────────────────────────────────────
+          Twee uitkomsten uit dezelfde agenda op dezelfde dag. Dit is het enige
+          deel van de figuur dat niet over deze bestelling gaat, en het staat er
+          omdat het de zin ernaast ("geteld in producten") van een bewering in
+          een aantoonbaar feit verandert. */}
+      <div class="fgt-cmp">
+        <span class="fgt-cmp-l">{C.cmpL}</span>
+        <span class="fgt-cmp-v">{C.cmpV}</span>
+        <p class="fgt-cmp-n">{C.cmpWhy}</p>
+      </div>
+
+      <p class="fgt-fine">{C.noneNote}</p>
+    </div>
+  </div>
+</figure>
+
+<style>
+  /* De maat wordt met een container query gemeten en niet met het venster: deze
+     figuur staat in een halve kolom van een bredere band, dus wat hij moet weten
+     is hoe breed die KOLOM is. Zelfde reden als in FigDash — zie de noot daar. */
+  .fgt { container-type: inline-size; margin: 0; }
+
+  .fgt-frame {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.8);
+  }
+
+  /* Zelfde titelbalk als FigStudio, letter voor letter dezelfde vorm: de twee
+     figuren horen als twee kanten van hetzelfde systeem te lezen en niet als twee
+     producten. */
+  .fgt-bar {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+    padding: .7rem 1rem;
+    background: var(--surface-2);
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .fgt-mark { font-size: .72rem; font-weight: 700; letter-spacing: .2em; color: var(--ink); }
+  .fgt-side {
+    font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    padding: .18rem .5rem; border-radius: var(--r-pill);
+    background: var(--accent); color: var(--accent-on);
+  }
+  .fgt-badge { margin-left: auto; font-size: .62rem; color: var(--ink-3); }
+
+  .fgt-body { padding: 1rem; display: grid; gap: .8rem; }
+  .fgt-head { display: grid; gap: .15rem; }
+  .fgt-h { margin: 0; font-size: .84rem; font-weight: 600; color: var(--ink); }
+  .fgt-sub { margin: 0; font-size: .68rem; line-height: 1.5; color: var(--ink-3); }
+
+  .fgt-ask {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem;
+    padding: .55rem .65rem;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+  }
+  .fgt-ask-l {
+    font-size: .58rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .fgt-ask-v { font-size: .7rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ── DE DAGEN ─────────────────────────────────────────────────────────────
+     Tien rijen, één per werkdag. Rijen en geen kolommen: in een halve kolom is
+     een staafdiagram van tien staven twintig pixels per dag, en dan is het label
+     eronder niet te lezen. Een rij heeft altijd ruimte voor zijn eigen naam.
+
+     `gap: 0` met een scheidingslijn per rij in plaats van losse rijen met lucht
+     ertussen, zodat de accentrand van het venster één doorlopend blok is en niet
+     twee strepen met een gat. */
+  .fgt-list { list-style: none; margin: 0; padding: 0; display: grid; }
+  .fgt-row {
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr) auto 4.2rem;
+    align-items: center; gap: .55rem;
+    padding: .32rem .4rem;
+    font-size: .68rem;
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+  .fgt-row:last-child { box-shadow: none; }
+  @container (max-width: 26rem) {
+    /* ── OP EEN TELEFOON: TWEE REGELS PER DAG, NIET DRIE ────────────────────
+       Eerste versie zette alleen de balk op een eigen regel en het aantal
+       daaronder. Gemeten was dat drie regels per dag, dus dertig regels voor tien
+       dagen — een lijst die op een telefoon anderhalf scherm vult voordat de
+       uitkomst in zicht komt.
+
+       Nu staan dag, aantal en staat samen op de eerste regel en heeft alleen de
+       balk zijn eigen regel. Het aantal hoort ook inhoudelijk naast de dag: het is
+       geen aparte mededeling maar dezelfde. */
+    .fgt-row { grid-template-columns: minmax(0, 1fr) auto auto; row-gap: .1rem; column-gap: .5rem; }
+    .fgt-row .fgt-day { order: 1; }
+    .fgt-row .fgt-n { order: 2; }
+    .fgt-row .fgt-s { order: 3; }
+    .fgt-row .fgt-track { grid-column: 1 / -1; order: 4; }
+  }
+  .fgt-day { color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .fgt-day b { color: var(--ink-2); font-weight: 600; }
+  .fgt-n { font-size: .62rem; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fgt-s {
+    font-size: .56rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--ink-3); text-align: right; white-space: nowrap;
+  }
+
+  .fgt-track {
+    position: relative; display: block;
+    height: 8px; border-radius: var(--r-pill);
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .fgt-fill { display: block; height: 100%; width: var(--pct); background: var(--ink-3); }
+  /* De gereserveerde staart, met een streeppatroon en geen vlakke kleur: een
+     tweede vlakke kleur zou lezen als een tweede soort werk, en dit is geen werk
+     maar ruimte die bewust leeg blijft. */
+  .fgt-floor {
+    position: absolute; top: 0; bottom: 0; left: var(--floor); right: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--line-strong) 0 2px,
+      transparent 2px 5px
+    );
+    box-shadow: inset 1px 0 0 var(--line-strong);
+  }
+
+  /* Te vroeg: de dag heeft werk, maar hij doet niet mee. Gedimd en niet
+     doorgestreept — er is niets fout met die dag, hij is alleen al bezet met de
+     briefing van wat er nu binnenkomt. */
+  .fgt-row.is-early { opacity: .55; }
+
+  /* Vol is de enige toestand met een waarschuwingskleur, en niet rood: er is
+     niets stuk, de dag is bezet. Een rode balk op een verkooppagina leest als
+     een storing. Zelfde keuze en dezelfde kleur als in FigStudio. */
+  .fgt-row.is-full .fgt-fill { background: var(--warn-ink, #C9A227); }
+  .fgt-row.is-full .fgt-s { color: var(--warn-ink, #C9A227); }
+  .fgt-row.is-full .fgt-n { color: var(--warn-ink, #C9A227); }
+
+  /* Het venster. Twee rijen, één blok: de accentrand loopt door en alleen de
+     buitenhoeken zijn rond. */
+  .fgt-row.is-win {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent), inset 0 -1px 0 var(--line);
+  }
+  .fgt-row.is-win .fgt-day b, .fgt-row.is-win .fgt-day { color: var(--ink); }
+  .fgt-row.is-win .fgt-s { color: var(--accent); }
+  .fgt-row.is-win .fgt-fill { background: var(--accent); }
+  .fgt-row.is-win-a { border-radius: var(--r-sm, 6px) var(--r-sm, 6px) 0 0; }
+  .fgt-row.is-win-b {
+    border-radius: 0 0 var(--r-sm, 6px) var(--r-sm, 6px);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .fgt-fine { margin: 0; font-size: .64rem; line-height: 1.55; color: var(--ink-3); }
+
+  .fgt-verdict {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem;
+    padding: .6rem .7rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  .fgt-v-l {
+    font-size: .58rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  .fgt-v-v { font-size: .84rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* De vergelijking staat op de gedempte ondergrond en niet in het accent: het is
+     niet de uitkomst van deze aanvraag, het is de controle erop. */
+  .fgt-cmp {
+    display: grid; gap: .2rem;
+    padding-top: .6rem;
+    box-shadow: inset 0 1px 0 var(--line);
+  }
+  .fgt-cmp-l {
+    font-size: .58rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .fgt-cmp-v { font-size: .74rem; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .fgt-cmp-n { margin: .1rem 0 0; font-size: .64rem; line-height: 1.55; color: var(--ink-3); }
+</style>

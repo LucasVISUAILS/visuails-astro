@@ -129,15 +129,43 @@ async function readCalendar(env, today) {
     env.DB.prepare('SELECT day FROM blackout_days WHERE day >= ?1 AND day <= ?2')
       .bind(today, horizonEnd)
       .all(),
-    // Live attended reservations only. COALESCE covers rows written before
-    // window_end existed; cancelled orders release their days immediately.
+    /*
+     * Live attended reservations only. COALESCE covers rows written before
+     * window_end existed; cancelled orders release their days immediately.
+     *
+     * ── EN EEN VERLOPEN ONBETAALDE RESERVERING TELT NIET MEER MEE ────────────
+     * 9 augustus 2026.
+     *
+     * functions/api/order.js:761 zet bij een gereserveerde bestelling een
+     * `window_expires_at` op zeven dagen — de tijd die de klant krijgt om te
+     * betalen. Deze query las die kolom niet. Wie een week reserveerde en nooit
+     * betaalde, blokkeerde die week dus VOOR ALTIJD voor iedereen daarna: jij zag
+     * in het adminportaal een onbetaalde bestelling staan, de volgende klant zag
+     * "vol" voor een week die leeg was, en herstellen kon alleen met SQL met de
+     * hand.
+     *
+     * De nachtelijke taak (cron/index.js) geeft zulke reserveringen vrij door de
+     * kolommen leeg te maken, maar die draait één keer per etmaal. Deze twee
+     * regels sluiten dat gat: zodra de zeven dagen om zijn, is de week hier al
+     * open, ook als de taak vannacht niet gelopen heeft. De taak ruimt op, deze
+     * query beslist — dat is de goede kant om dit dubbel te doen.
+     *
+     * ALLEEN ALS ER NIET BETAALD IS. Een betaalde bestelling houdt haar week,
+     * ook als `window_expires_at` in het verleden ligt: die datum is een
+     * betaaltermijn en geen einddatum van de reservering.
+     */
     env.DB.prepare(
       `SELECT window_start, window_end, product_count
          FROM orders
         WHERE tier = 'attended'
           AND window_start IS NOT NULL
           AND status <> 'cancelled'
-          AND COALESCE(window_end, window_start) >= ?1`
+          AND COALESCE(window_end, window_start) >= ?1
+          AND NOT (
+                COALESCE(payment_status, 'unpaid') = 'unpaid'
+            AND window_expires_at IS NOT NULL
+            AND window_expires_at <= datetime('now')
+          )`
     )
       .bind(today)
       .all(),

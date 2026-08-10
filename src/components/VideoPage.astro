@@ -400,7 +400,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       <h2>{c.cleanH}</h2>
       <ul class="checklist" style="margin-top:1.4rem">
         {c.clean.map((li) => (
-          <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>{li}</span></li>
         ))}
       </ul>
     </div>

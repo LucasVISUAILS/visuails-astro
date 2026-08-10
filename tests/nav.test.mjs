@@ -311,8 +311,23 @@ console.log('\nverborgen, maar niet onzichtbaar');
   check('er is geen /hooks-pagina', existsSync(new URL('../src/pages/hooks.astro', import.meta.url)), false);
   check('en geen Nederlandse',      existsSync(new URL('../src/pages/nl/hooks.astro', import.meta.url)), false);
 
-  const sitemap = read('public/sitemap.xml').replace(/<!--[\s\S]*?-->/g, '');
-  check('en hij staat niet in de sitemap', /hooks/.test(sitemap), false);
+  /*
+   * De sitemap staat sinds 9 augustus 2026 in dist/ en niet meer in public/: hij wordt
+   * bij elke build uit de build gelezen (scripts/sitemap-and-404.mjs), omdat het
+   * handgeschreven bestand veertien pagina's achterliep. Deze test las het oude pad en
+   * viel daardoor meteen om — precies zoals bedoeld, want een test die stil groen
+   * blijft op een verplaatst bestand is erger dan een test die kapot gaat.
+   *
+   * Bestaat dist/ niet (een schone kloon zonder build), dan wordt deze controle
+   * OVERGESLAGEN in plaats van rood. Hij gaat over de uitvoer van de build; is die er
+   * niet, dan is er niets te controleren en zou rood alleen maar wennen aan rood zijn.
+   */
+  if (existsSync(new URL('../dist/sitemap.xml', import.meta.url))) {
+    const sitemap = read('dist/sitemap.xml').replace(/<!--[\s\S]*?-->/g, '');
+    check('en hij staat niet in de sitemap', /hooks/.test(sitemap), false);
+  } else {
+    console.log(' --   sitemap niet gecontroleerd: er is geen build (npm run build)');
+  }
 
   // Het item staat er nog, zonder href, in beide talen.
   for (const lang of LANGS) {
@@ -327,6 +342,93 @@ console.log('\nverborgen, maar niet onzichtbaar');
   check('een item zonder href wordt geen link', /aria-disabled="true"/.test(layout), true);
   check('en de strook op de homepage heeft een uitgeschakelde knop',
     /<button[^>]*hv-soon-btn[^>]*disabled/.test(read('src/components/HomeV2.astro')), true);
+}
+
+/* ══ 9 · HET VRAAGTEKEN NAAST HOOKS ═════════════════════════════════════════
+ *
+ * Lucas: *"misschien naast hooks een klein vraagteken logo zetten waar mensen op
+ * kunnen klikken waarna ze het concept kunnen zien van wat het precies inhoud."*
+ *
+ * Deze sectie bewaakt drie dingen die alle drie eerder al één keer fout zijn
+ * gegaan, en dat is de reden dat ze hier staan en niet in mijn hoofd:
+ *
+ * 1. DE TOON. De oude HooksPage.astro overtrad de toonregels op acht punten,
+ *    waaronder *"Eén product en één idee is genoeg"* — twee keer. Lucas had daar
+ *    expliciet voor gewaarschuwd: *"dat is eerder op de site fout geweest en
+ *    inmiddels gecorrigeerd, dus deze nieuwe pagina moet het meteen goed doen."*
+ *    Die tekst staat nog steeds als bestand op de schijf. Een uitklapper op de
+ *    homepage is precies de plek waar iemand hem er ooit uit copy-pastet.
+ *
+ * 2. DE PRIJS. De strook staat er juist omdat de dienst nog niet besteld kan
+ *    worden en de prijs nog niet vastligt. Eén "vanaf €119" in dit paneel maakt
+ *    van een aankondiging een openbaar aanbod.
+ *
+ * 3. HET DRIEHOEKJE. Drie engines, drie manieren om de marker te verbergen. Wie
+ *    er één weghaalt bij het opschonen, ziet dat op zijn eigen browser niet.
+ */
+console.log('\nhet vraagteken naast hooks');
+{
+  const home = read('src/components/HomeV2.astro');
+
+  // De uitklapper zelf, en de summary die de hele titelregel is.
+  check('er is een <details> bij Hooks', /<details class="hv-q">/.test(home), true);
+  check('de titelregel is de summary', /<summary class="hv-soon-h hv-q-sum">/.test(home), true);
+  check('het rondje is decoratie', /class="hv-q-mark" aria-hidden="true">\?</.test(home), true);
+  // De toegankelijke naam staat in de summary en niet in een title-attribuut: een
+  // title wordt niet voorgelezen en op een telefoon nooit gezien.
+  check('en er staat een naam voor de handeling in', /class="hv-q-say">\{c\.svcSoonQ\}</.test(home), true);
+
+  // Het driehoekje, op alle drie de manieren. Los geteld, want één ervan
+  // weghalen is de fout die alleen op iemand anders' browser te zien is.
+  const css = home.replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const rule of [
+    '.hv-q > .hv-q-sum { list-style: none',
+    '.hv-q > .hv-q-sum::marker',
+    '.hv-q > .hv-q-sum::-webkit-details-marker',
+  ]) {
+    check(`de marker is weg via ${rule.split('.hv-q-sum').pop() || 'list-style'}`, css.includes(rule), true);
+  }
+  // En de verborgen naam is écht verborgen, niet met display:none (dan valt hij
+  // ook uit de toegankelijkheidsboom en is de knop weer "?").
+  check('de naam is visueel verborgen, niet weggehaald', /\.hv-q-say \{[^}]*clip-path: inset\(50%\)/.test(css), true);
+  check('en niet met display: none', /\.hv-q-say \{[^}]*display: none/.test(css), false);
+
+  /*
+   * DE PANEELTEKST, per taal uit de bron gehaald.
+   *
+   * De copy van de homepage zit in HomeV2.astro zelf en niet in ui.js, dus valt
+   * hij niet te importeren; hij wordt hier uit de brontekst gelezen. Twee blokken
+   * verwacht — Engels en Nederlands — want één taal controleren is een halve
+   * controle, en dat is precies het gat waar bij deze strook eerder al iets in
+   * verdween.
+   */
+  const blocks = [...home.matchAll(/svcSoonQBody: \[([\s\S]*?)\n {4}\],/g)].map((m) => m[1]);
+  check('beide talen hebben een paneeltekst', blocks.length, 2);
+  for (const [i, b] of blocks.entries()) {
+    const lang = i === 0 ? 'en' : 'nl';
+    check(`${lang}: vier regels in het paneel`, [...b.matchAll(/\n\s*\['/g)].length, 4);
+
+    // Wat er MOET staan.
+    check(`${lang}: één foto is niet genoeg`, /(not enough|niet genoeg)/.test(b), true);
+    check(`${lang}: een specialist kijkt hem na`, /specialist/.test(b), true);
+    check(`${lang}: 24 tot 48 uur`, /24 (to|tot) 48/.test(b), true);
+    check(`${lang}: het scherm heet VISUAILS Studio`, /VISUAILS Studio/.test(b), true);
+
+    // Wat er NIET mag staan. "viral" en "scroll" zijn de twee woorden waar Lucas
+    // om vroeg ze weg te laten; het eurotekens-verbod is de prijs die nog niet
+    // vastligt; "genoeg" zonder "niet" ervoor is de fout van de oude pagina.
+    check(`${lang}: geen prijs in het paneel`, /€/.test(b), false);
+    check(`${lang}: het woord viral staat er niet`, /viral/i.test(b), false);
+    check(`${lang}: de scroll wordt niet genoemd`, /scroll/i.test(b), false);
+    check(`${lang}: geen belofte van bereik`,
+      /(guarantee|gegarandeerd|meer volgers|more followers|gaat viraal)/i.test(b), false);
+  }
+
+  // En de voetregel zegt waarom de knop dood is, in beide talen.
+  const feet = [...home.matchAll(/svcSoonQFoot: '([^']*)'/g)].map((m) => m[1]);
+  check('beide talen hebben een voetregel', feet.length, 2);
+  check('en die zegt dat de prijs nog niet vastligt',
+    feet.every((f) => /(not settled|niet vast)/.test(f)), true);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

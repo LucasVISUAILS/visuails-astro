@@ -501,7 +501,7 @@ const wa = waHref(c.waText);
       <span class="bmcost-inc-h">{c.costIncludes}</span>
       <ul class="checklist bmcost-inc">
         {brandModel.includes.map((f) => (
-          <li><svg class="i" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+          <li><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
         ))}
       </ul>
       <p class="bmcost-seq">{c.costSequence}</p>
@@ -516,7 +516,7 @@ const wa = waHref(c.waText);
     <div class="bmcost-note reveal pending">
       <p class="bmcost-free">{c.costFree}</p>
       <a href={lp('/pricing')} class="link-arrow">{c.costCta}
-        <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </a>
     </div>
   </div>
@@ -593,7 +593,7 @@ const wa = waHref(c.waText);
     <h3>{c.giveH}</h3>
     <ul class="checklist bm-exchange-list">
       {c.give.map((g) => (
-        <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
+        <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
       ))}
     </ul>
   </div>
@@ -601,7 +601,7 @@ const wa = waHref(c.waText);
     <h3>{c.getH}</h3>
     <ul class="checklist bm-exchange-list">
       {c.get.map((g) => (
-        <li><svg viewBox="0 0 24 24" class="i"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
+        <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span set:html={g[1]} /></li>
       ))}
     </ul>
   </div>
@@ -639,7 +639,7 @@ const wa = waHref(c.waText);
         <h3>{c.libChooseH}</h3>
         <p>{c.libChooseBody}</p>
         <a href={lp('/start')} class="link-arrow">{c.ctaPrimary}
-          <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
       </div>
     </div>
@@ -659,7 +659,7 @@ const wa = waHref(c.waText);
   <div class="bm-gen reveal pending">
     {c.genBody.map((p) => <p>{p}</p>)}
     <a href={lp('/compare#ai-tools')} class="link-arrow">{c.genCta}
-      <svg viewBox="0 0 24 24" class="i"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </a>
   </div>
 </div></section>

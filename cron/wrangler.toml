@@ -1,0 +1,99 @@
+# VISUAILS — de nachtelijke taken.
+#
+# ══════════════════════════════════════════════════════════════════════════════
+# WAAROM DIT EEN TWEEDE PROJECT IS EN GEEN MAP IN functions/
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Cloudflare Pages Functions hebben geen `scheduled` handler. Dat is geen
+# beperking van Cloudflare maar van Pages specifiek: een Worker heeft die handler
+# wel, een Pages Function nooit. WERKLIJST.md:49 noemde dat al als de reden dat de
+# herinneringsmail voor reviews niet gebouwd kon worden — maar het gevolg was
+# groter dan die ene functie. Er draaide in dit hele project niets periodiek, en
+# vijf dingen wachtten daarop:
+#
+#   · de bewaartermijn uit /privacy §6 kon niets verwijderen;
+#   · een gereserveerde week die nooit betaald werd, kwam nooit vrij;
+#   · een factuur die halverwege bleef steken werd nooit alsnog uitgegeven;
+#   · de review-herinnering na vijf tot zeven dagen kon niet afgaan;
+#   · de back-up liep alleen als Lucas eraan dacht.
+#
+# Deze Worker draait naast de Pages-site, op DEZELFDE D1-database en DEZELFDE
+# R2-bucket. Dat is de hele truc: bindings zijn niet exclusief, twee projecten
+# mogen naar dezelfde database kijken. Er is dus geen api tussen de twee nodig en
+# geen sleutel die ergens moet worden bewaard.
+#
+# ── HET ALTERNATIEF DAT WE NIET NEMEN ────────────────────────────────────────
+#
+# De veelgekozen omweg is een GitHub Action op een schema die een endpoint op de
+# site aanroept. Dan staat er een sleutel in een repository, en hangt het
+# verwijderen van persoonsgegevens af van de beschikbaarheid van GitHub. Voor een
+# taak die bestaat om een privacybelofte na te komen is dat de verkeerde ruil.
+#
+# ── DE TIJD ──────────────────────────────────────────────────────────────────
+#
+# 03:10 UTC, dus 04:10 of 05:10 in Nederland, afhankelijk van de zomertijd. Buiten
+# elk plausibel werkuur, en niet op het hele uur: op :00 draait de halve wereld
+# zijn taken en zijn de gedeelde limieten het krapst.
+#
+# Eén trigger en niet vier. De taken zijn kort en de volgorde is niet willekeurig
+# (zie cron/index.js), dus ze horen in één run.
+
+name = "visuails-cron"
+main = "index.js"
+
+# ── GEEN PUBLIEKE URL, 10 AUGUSTUS 2026 ──────────────────────────────────────
+#
+# De eerste deploy meldde een adres: visuails-cron.<subdomein>.workers.dev. Dat is
+# de standaard van Cloudflare en hier ongewenst.
+#
+# Er zit geen `fetch`-handler in cron/index.js — alleen `scheduled` — dus een
+# verzoek aan dat adres krijgt een foutmelding en er lekt niets. Maar deze Worker
+# heeft wel de D1-database en de R2-bucket aan zich hangen, en een openbaar adres
+# op iets met die twee bindings is een deur die er niet hoeft te zijn. Alles wat
+# hier gebeurt, gebeurt op de klok.
+#
+# Dat de deur nu op slot zit omdat er geen handler achter staat, is geen slot maar
+# een toevalligheid: de dag dat iemand er een `fetch` in zet om "even iets te
+# testen", staat die test op internet. Deze regel maakt dat onmogelijk in plaats
+# van onwaarschijnlijk.
+workers_dev = false
+
+# En expliciet ook geen preview-URL's. Wrangler waarschuwde hierover bij de deploy:
+# omdat `workers_dev` uit staat en `preview_urls` niet genoemd was, zette hij ze
+# "voor deze deployment" uit — een standaard die per versie kan veranderen en die
+# niemand hier heeft gekozen. Nu staat het besluit in het bestand.
+#
+# Wrangler stelt in die waarschuwing voor om `preview_urls = true` te zetten. Dat is
+# hier precies het verkeerde antwoord: het zou de deur die we net dichtdeden weer
+# openzetten, alleen op een ander adres per versie. Een waarschuwing wegnemen door
+# te doen wat hij voorstelt, is niet hetzelfde als hem begrijpen.
+preview_urls = false
+compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["10 3 * * *"]
+
+# --- Bindings: exact dezelfde als in ../wrangler.toml -------------------------
+# De database_id en de bucket_name MOETEN gelijk zijn aan die van de site. Staat
+# hier een andere id, dan draait deze taak vrolijk op een lege database en meldt
+# hij elke nacht dat er niets op te ruimen was.
+[[d1_databases]]
+binding = "DB"
+database_name = "visuails"
+database_id = "941961a0-0180-4c41-9442-09a519584a95"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "visuails-uploads"
+
+[vars]
+NOTIFY_EMAIL = "hello@visuails.com"
+FROM_EMAIL = "VISUAILS <orders@visuails.com>"
+
+# RESEND_API_KEY is een secret en staat hier NIET. Zet hem apart, voor dit project:
+#   npx wrangler secret put RESEND_API_KEY --config cron/wrangler.toml
+#
+# Zonder die sleutel doet de taak nog steeds alles behalve mailen, en zegt hij in
+# zijn verslag dat hij niet kon mailen. Dat is met opzet: opruimen en vrijgeven zijn
+# belangrijker dan het bericht erover.

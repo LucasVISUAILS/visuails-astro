@@ -32,6 +32,8 @@
  * ander.
  */
 
+import { stampUploadRetention } from './retention.js';
+
 /**
  * Rond de bestelling af als élk levend leveringsbeeld is goedgekeurd.
  *
@@ -89,6 +91,30 @@ export async function maybeCloseOrder(env, orderId) {
          VALUES (?1, 'delivered', ?2, 'system')`
       ).bind(orderId, 'Alle beelden goedgekeurd — bestelling afgerond. Downloaden blijft mogelijk.'),
     ]);
+
+    /*
+     * ── HIER BEGINT DE KLOK VAN HET BRONMATERIAAL, 9 AUGUSTUS 2026 ──────────
+     *
+     * /privacy §6 en /terms §7 beloven dat geüploade productfoto's 90 dagen na het
+     * afsluiten van de bestelling worden verwijderd. `files.expires_at` bestond
+     * sinds migratie 0001, mét de opmerking "set when the order closes", en werd
+     * door geen enkele query ooit gevuld. Dit is die query.
+     *
+     * NA de batch en niet erin, want de UPDATE leest `orders.closed_at` — die moet
+     * dus al geschreven zijn. In één batch zou hij de oude waarde (NULL) lezen en
+     * niets stempelen, stil.
+     *
+     * De uitkomst wordt niet gecontroleerd en een fout hier laat het afronden staan:
+     * de opruimtaak leidt de 90 dagen ook zelf af uit closed_at, precies zodat deze
+     * regel geen enkel punt is waar de belofte op kan hangen. Zie de kop van
+     * src/lib/retention.js.
+     */
+    try {
+      await stampUploadRetention(env, orderId).run();
+    } catch (err) {
+      console.error('[close] bewaartermijn niet gestempeld voor bestelling', orderId, '—', err?.message || err);
+    }
+
     return true;
   } catch (err) {
     console.error('[close] afronden overgeslagen voor bestelling', orderId, '—', err?.message || err);

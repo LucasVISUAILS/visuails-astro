@@ -1,4 +1,20 @@
 ---
+// ── DE HARDE LEVERBELOFTE IS HIER WEGGEHAALD, 9 AUGUSTUS 2026 ────────────────
+//
+// Deze pagina beloofde op twee plekken "twee werkdagen": in de hero en in de
+// eerste kaart. De Engelse tegenhanger deed dat op geen van beide plekken — daar
+// stond "modern speed", zonder termijn. De gevoeligste claim van de site was dus
+// niet gelijk in twee talen, en hij stond in de taal die volgens STIJL.md het
+// grootste deel van het publiek leest.
+//
+// Erger dan de scheefheid was dat hij in strijd was met het mechanisme. Volgens
+// src/data/pricing.js krijgt een bestelling onder tien producten "meestal 2-4
+// werkdagen" en uitdrukkelijk GEEN vastgelegde datum, en /studio bestaat als hele
+// pagina om uit te leggen dat er geen datum wordt genoemd voordat de agenda hem
+// heeft vrijgegeven. Een hero die twee werkdagen belooft, spreekt dat allebei tegen.
+//
+// Wat er nu staat noemt geen termijn en verwijst naar de prijspagina, waar de
+// termijn per bestelgrootte uit pricing.js komt en dus niet los kan gaan staan.
 import { waHref } from '../../data/whatsapp.js';
 // VISUAILS — About. Editorial page: who we are, what we hold to, a fast
 // strip of real photography, closing CTA. Ported from the SvelteKit about
@@ -43,7 +59,7 @@ const strip = [
     <div class="fade"></div>
     <div class="hero-editorial-content container">
       <h1 class="display" data-split-lines>Studiobeelden,<br />zonder <em>studio</em>.</h1>
-      <p class="lead" style="margin-top:1.2rem">Productvisuals uit je eigen foto’s, binnen twee werkdagen, en door een specialist nagekeken voordat ze naar je toe gaan.</p>
+      <p class="lead" style="margin-top:1.2rem">Productvisuals uit je eigen foto’s, door een specialist nagekeken voordat ze naar je toe gaan.</p>
       <div class="flex" style="margin-top:1.8rem">
         <a href="/nl/test-sample" class="btn btn-primary btn-lg">Proefvisual</a>
         <a href={waHref("Hoi VISUAILS, ik wil graag meer over jullie weten.")} class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
@@ -69,7 +85,7 @@ const strip = [
   <section class="section-tight"><div class="container">
     <h2 style="margin-bottom:2rem">Drie dingen waar we aan vasthouden.</h2>
     <div class="grid grid-3 reveal-group">
-      <div class="card card-hover reveal pending"><h3>Snel, zonder sluiproute</h3><p style="margin-top:.6rem;color:var(--ink-3)">Twee werkdagen, en nog steeds beelden die je zonder aarzelen publiceert.</p></div>
+      <div class="card card-hover reveal pending"><h3>Snel, zonder sluiproute</h3><p style="margin-top:.6rem;color:var(--ink-3)">Een doorlooptijd die we halen in plaats van een die mooi staat, en nog steeds beelden die je zonder aarzelen publiceert. Welke termijn bij jouw bestelling hoort, staat op de prijspagina.</p></div>
       <div class="card card-hover reveal pending"><h3>Consistent, ook bij dertig producten</h3><p style="margin-top:.6rem;color:var(--ink-3)">Dezelfde kleurzetting en dezelfde kadrering over je hele assortiment, niet per beeld opnieuw bedacht.</p></div>
       <div class="card card-hover reveal pending"><h3>Eén product of een hele collectie</h3><p style="margin-top:.6rem;color:var(--ink-3)">Catalog {CAT_ENTRY} per product, {CAT_FLOOR} vanaf {CAT_FLOOR_FROM} ({vatLabel('excl', 'nl')}). Bestel er één, of een hele collectie.</p></div>
     </div>

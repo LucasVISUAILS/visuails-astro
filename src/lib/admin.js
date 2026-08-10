@@ -38,6 +38,8 @@
 // different relationships to the site, not an inconsistency.
 
 import { hashToken, mintToken, portalUrl } from './token.js';
+import { stampDeliveryRetention } from './retention.js';
+import { hasProvenanceTag, isScannable } from './provenance.js';
 import { checkRate, clientIp } from './ratelimit.js';
 import {
   adminSessionExpiry,
@@ -110,6 +112,7 @@ export async function adminGet(context) {
   if (modelImgMatch) return serveModelPreview(context, Number(modelImgMatch[1]));
 
   if (path === '/admin/log') return renderLog(context);
+  if (path === '/admin/vat') return renderVatReview(context);
 
   if (path === '/admin') {
     // ?status= narrows the order list — Lucas, August 2026: "als je op received
@@ -128,16 +131,17 @@ export async function adminGet(context) {
       ? wantedFilter : '';
     const hidden = url.searchParams.get('hidden') === '1';
 
-    const [revisions, orders, counts, statusCounts] = await Promise.all([
+    const [revisions, orders, counts, statusCounts, vatHeld] = await Promise.all([
       loadRevisionInbox(env),
       loadOrders(env, statusFilter, { q, filter, hidden }),
       loadTodayCounts(env),
       loadStatusCounts(env),
+      loadVatHeld(env),
     ]);
     const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
-      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }),
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld),
     }));
   }
 
@@ -178,6 +182,12 @@ export async function adminPost(context) {
 
   const statusMatch = path.match(/^\/admin\/orders\/(\d+)\/status$/);
   if (statusMatch) return handleStatusUpdate(context, Number(statusMatch[1]));
+
+  // De btw-beslissing. `admin` wordt meegegeven omdat dit de enige handeling in dit
+  // dashboard is waar één klik 21% van een factuur verschuift, en dan hoort in het
+  // logboek te staan wie erop klikte.
+  const vatMatch = path.match(/^\/admin\/orders\/(\d+)\/vat$/);
+  if (vatMatch) return handleVatDecision(context, Number(vatMatch[1]), admin);
 
   const modelMatch = path.match(/^\/admin\/orders\/(\d+)\/models$/);
   if (modelMatch) return handleAddCustomModel(context, Number(modelMatch[1]));
@@ -1517,6 +1527,11 @@ async function handleDeliveryUpload({ request, env }, orderId) {
 
   let stored = 0;
   const failed = [];
+  /* Bestanden die wél gecontroleerd konden worden en geen herkomsttag bleken te
+     dragen. Geen fout — ze zijn opgeslagen — maar wel iets dat je moet weten
+     vóórdat je de levering aankondigt. */
+  const untagged = [];
+
   for (const file of incoming) {
     const clean = String(file.name || 'file').split(/[\\/]/).pop().slice(0, 120) || 'file';
     // De gok gaat meteen mee de rij in. Hij staat daarna als voorselectie in
@@ -1548,7 +1563,32 @@ async function handleDeliveryUpload({ request, env }, orderId) {
     const unique = crypto.randomUUID().slice(0, 8);
     const key = `delivery/${order.ref}/${slotName ? `${slotName}-` : ''}${unique}-${clean}`;
     try {
-      await env.UPLOADS.put(key, file.stream(), {
+      /*
+       * ── DE HERKOMSTTAG NAKIJKEN, 9 AUGUSTUS 2026 ──────────────────────────
+       *
+       * /ai-act §6 belooft dat elk geleverd bestand een machine-leesbare
+       * herkomsttag draagt. scripts/deliver.mjs schrijft die; dit bord is de
+       * tweede weg naar de klant en schreef hem niet. Een Worker kan die tag niet
+       * schrijven (exiftool is een binair programma) — zie de kop van
+       * src/lib/provenance.js voor waarom een eigen writer hier een slecht idee
+       * is. Wat wél kan is kijken, en het zeggen.
+       *
+       * Alleen als het bestand een tag KAN dragen en klein genoeg is om in te
+       * kijken. Voor de rest gebeurt er niets: die worden niet gemeld als
+       * ongetagd, want er is niet gekeken.
+       *
+       * Let op de gevolgen voor het geheugen: zodra we kijken, moeten de bytes
+       * hier staan, dus gaat de buffer naar R2 in plaats van de stream. Dat is de
+       * ruil, en hij is bewust begrensd op MAX_SCAN_BYTES.
+       */
+      let body = file.stream();
+      if (isScannable(clean, file.size)) {
+        const bytes = await file.arrayBuffer();
+        if (!hasProvenanceTag(bytes)) untagged.push(clean);
+        body = bytes;
+      }
+
+      await env.UPLOADS.put(key, body, {
         httpMetadata: { contentType: file.type || 'application/octet-stream' },
       });
 
@@ -1572,7 +1612,122 @@ async function handleDeliveryUpload({ request, env }, orderId) {
   // kloppen — anders staan er tot de volgende keer opslaan twee beelden voor
   // dezelfde plek in het dashboard van de klant.
   if (slotProduct && slotShot) await resupersede(env, orderId);
+
+  /*
+   * ── DE WAARSCHUWING OVER DE HERKOMSTTAG ─────────────────────────────────────
+   *
+   * GEEN FOUT EN GEEN 500. De bestanden staan in R2 en de rijen staan in de
+   * database; de upload is gelukt. Wat er mist is de tag die /ai-act §6 belooft, en
+   * dat is iets om te weten vóórdat je op "aankondigen" drukt — daarna staat het
+   * bestand bij de klant.
+   *
+   * OOK GEEN BLOKKADE. Een Worker kan die tag niet schrijven, dus tegenhouden zou
+   * betekenen dat je een levering niet kunt doen die je wel moet doen. De keuze is
+   * aan jou: taggen via het script, of bewust doorgaan.
+   *
+   * De pagina noemt het commando, want een waarschuwing zonder de volgende stap
+   * erin is een waarschuwing die je de tweede keer wegklikt.
+   */
+  const heavy = await portalWeight(env, orderId);
+
+  if (untagged.length || heavy) {
+    const tagBlock = untagged.length ? `
+        <h2>Geen herkomsttag</h2>
+        <p>Deze bestanden staan klaar, maar er zit geen IPTC <code>DigitalSourceType</code> in:</p>
+        <ul>${untagged.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>
+        <p>/ai-act §6 belooft dat elk geleverd bestand die tag draagt. Dit scherm kan
+        hem niet schrijven — dat doet <code>exiftool</code>, en dat draait niet in een
+        Worker.</p>` : '';
+
+    const weightBlock = heavy ? `
+        <h2>Geen beoordeelbeeld — de portaalpagina weegt ${heavy.mb} MB</h2>
+        <p>${heavy.n} van de ${heavy.total} geleverde beelden hebben geen verkleinde
+        versie, dus het portaal en VISUAILS Studio serveren het volledige bestand.
+        Samen is dat <strong>${heavy.mb} MB op één pagina</strong>. Op een telefoon is
+        dat niet langzaam maar stuk.</p>
+        <p>Dit scherm kan die verkleining niet maken — daar is een beeldbibliotheek voor
+        nodig die niet in een Worker draait. <code>npm run deliver</code> maakt hem wel,
+        en vult <code>preview_key</code>.</p>` : '';
+
+    return html(page({
+      title: untagged.length && heavy ? 'Upload — twee dingen om te weten'
+        : untagged.length ? 'Upload — geen herkomsttag' : 'Upload — geen beoordeelbeeld',
+      body: `<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+        <h1>${stored} bestand${stored === 1 ? '' : 'en'} opgeslagen</h1>
+        ${tagBlock}${weightBlock}
+        <h2>Zo zet je het recht</h2>
+        <p><strong>Lever via het script:</strong> <code>npm run deliver -- ${esc(order.ref)} ./de-map --go</code>
+        — dat maakt png, jpg en webp, maakt het beoordeelbeeld, tagt alles en zet het er
+        in één keer op.${untagged.length ? `<br><strong>Of tag alleen de map en upload opnieuw:</strong> <code>npm run tag:delivery -- ./de-map</code>` : ''}</p>
+        <p>Doorgaan mag: de bestanden staan in R2 en de klant ziet ze. Er is nog geen
+        mail uit — dat gebeurt pas bij aankondigen.</p>
+        <p><a class="btn" href="/admin/orders/${orderId}/files">Verder naar de bestanden</a></p>`,
+    }));
+  }
+
   return seeOther(`/admin/orders/${orderId}/files${slotProduct ? `#${slotProduct}` : ''}`);
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * WEEGT DE PORTAALPAGINA VAN DEZE BESTELLING TE VEEL?
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT DE METING OP 10 AUGUSTUS 2026 LIET ZIEN ─────────────────────────────
+ *
+ * De eerste volledige back-up gaf een inventaris van alle 33 bestanden in productie.
+ * Daarin: `preview_key` is NULL op alle vijftien geleverde beelden, en drie afgeleverde
+ * bestellingen wegen 33,1 / 24,6 / 18,4 MB aan volledige PNG's. Alle drie zijn
+ * testbestellingen op een eigen adres, dus er heeft geen klant onder geleden — maar de
+ * oorzaak is niet oud en niet weg.
+ *
+ * Er zijn TWEE wegen naar de klant. scripts/deliver.mjs maakt varianten én een
+ * beoordeelbeeld en vult `preview_key`. Dit bord — de INSERT een paar honderd regels
+ * hierboven — noemt die kolom niet, dus blijft hij NULL. En portal.js, account.js en
+ * delivery.js lezen alle drie `preview_key || r2_key`: die terugval is precies zoals
+ * bedoeld, maar hij betekent dat een levering via dit scherm het volledige bestand naar
+ * een telefoon stuurt. Het commentaar bij die kolom in schema.sql zegt het zelf:
+ * *"served at delivery resolution that page is hundreds of megabytes, which on a phone
+ * is not slow, it is broken."*
+ *
+ * ── WAAROM EEN GRENS EN GEEN WAARSCHUWING BIJ ELKE UPLOAD ──────────────────
+ *
+ * Elke upload via dit bord levert een NULL op. Zou de melding daarop afgaan, dan komt
+ * hij altijd — en een waarschuwing die altijd komt, is een knop die je wegklikt. Precies
+ * wat er bij de herkomsttag hierboven al over staat.
+ *
+ * Dus meet het gevolg in plaats van de oorzaak: hoeveel weegt de pagina die de klant
+ * opent? Onder de grens is het geen probleem en zwijgt het scherm. Erboven staat er een
+ * getal, en een getal is geen nag.
+ *
+ * ── DE GRENS ────────────────────────────────────────────────────────────────
+ *
+ * 8 MB. Vier beelden van 2 MB haalt een telefoon op 4G binnen een paar seconden; de
+ * 33 MB die hier gemeten is, niet. Het is een grens en geen wet: hij mag verschuiven
+ * zodra er echte cijfers uit het portaal komen. Wat niet mag is hem weghalen, want dan
+ * is het weer onzichtbaar.
+ *
+ * Alleen levende beelden (`superseded_at IS NULL`), want een vervangen beeld wordt niet
+ * getoond en weegt dus niets voor de klant. Faalt de query, dan is er geen melding en
+ * geen fout: het is een controle bovenop een geslaagde upload, geen deel ervan.
+ */
+const PORTAL_WEIGHT_WARN = 8 * 1024 * 1024;
+
+async function portalWeight(env, orderId) {
+  try {
+    const row = await env.DB.prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN preview_key IS NULL THEN 1 ELSE 0 END) AS zonder,
+              SUM(CASE WHEN preview_key IS NULL THEN COALESCE(bytes, 0) ELSE 0 END) AS bytes
+         FROM files
+        WHERE order_id = ?1 AND kind = 'delivery' AND superseded_at IS NULL`
+    ).bind(orderId).first();
+    const bytes = Number(row?.bytes || 0);
+    if (!Number(row?.zonder) || bytes < PORTAL_WEIGHT_WARN) return null;
+    return { n: Number(row.zonder), total: Number(row.total), mb: (bytes / 1024 / 1024).toFixed(1) };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1708,6 +1863,19 @@ async function markAnnounced(env, orderId, product = null) {
           AND superseded_at IS NULL
           AND (?2 IS NULL OR product_key = ?2)`
     ).bind(orderId, product).run();
+    /*
+     * ── EN METEEN DE BEWAARTERMIJN, 9 AUGUSTUS 2026 ────────────────────────
+     *
+     * /privacy §6 belooft dat geleverde visuals 12 maanden na LEVERING bewaard
+     * blijven. Aankondigen is dat moment: hier gaat de mail met de link uit. Niet
+     * bij het afsluiten van de bestelling — daartussen kan een maand
+     * goedkeuringswerk zitten, en dan zou de klant meer krijgen dan de tekst zegt.
+     *
+     * In dezelfde functie en niet in een eigen stap, want de twee horen bij
+     * elkaar: `announced_at` is de datum waar deze termijn vanaf loopt, en twee
+     * losse paden zouden een beeld kunnen aankondigen zonder klok.
+     */
+    await stampDeliveryRetention(env, orderId).run();
   } catch (err) {
     console.error('[admin] announced_at not stamped for order', orderId, '—', err?.message || err);
   }
@@ -2062,6 +2230,25 @@ export function redeliveryEmail({ order, link, n, revisions = 0, note = '', prod
 //     same count, and this dashboard is opened between jobs rather than
 //     studied.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/*
+ * Hoeveel bestellingen op een btw-beslissing wachten.
+ *
+ * Eigen functie en niet in loadTodayCounts(), want die gaat over vandaag en dit is
+ * een stapel die blijft staan tot iemand hem wegwerkt. Faalt de query — 0018 niet
+ * gedraaid — dan is het antwoord nul en verschijnt de chip niet. Dat is juist: zonder
+ * die migratie bestaat de poort niet en is er ook niets vastgehouden.
+ */
+async function loadVatHeld(env) {
+  try {
+    const row = await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM orders WHERE review_state = 'pending'"
+    ).first();
+    return Number(row?.n) || 0;
+  } catch {
+    return 0;
+  }
+}
 
 async function loadTodayCounts(env) {
   const one = async (sql, ...bind) => {
@@ -3092,7 +3279,222 @@ ${missing
   return html(page({ title: 'Activity log', body }));
 }
 
-function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}) {
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE BTW-POORT, MET EEN SCHERM ERACHTER
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAAROM DIT ER OP 9 AUGUSTUS 2026 KOMT ───────────────────────────────────
+ *
+ * Lucas: *"ik was nog benieuwd hoe het nou gaat wanneer iemand in NL zegt dat hij
+ * uit Amerika bestelt om belasting te ontduiken. Hoe check ik dit nou en wat is
+ * hier tegen te doen of hebben we hier al iets voor gemaakt."*
+ *
+ * Er was al veel voor gemaakt, en het hield niets tegen. `vatGate()` in
+ * src/data/vat.js zet zo'n bestelling op `review_state = 'pending'` en er wordt
+ * geen betaallink gemaakt. Maar `orders.review_state` werd door NIETS gelezen —
+ * elke treffer op die naam in dit bestand ging over `files.review_state`, een
+ * andere kolom met dezelfde naam voor het goedkeuren van beelden. Een
+ * vastgehouden bestelling was dus onzichtbaar, en alleen met SQL te vinden.
+ *
+ * ── WAT DIT SCHERM WEL EN NIET IS ───────────────────────────────────────────
+ *
+ * Het is GEEN fraudedetector. Er staat wat de klant opgaf naast waar het verzoek
+ * vandaan kwam (migratie 0023), en dat verschil is geen bewijs: een vpn, een
+ * zakenreis of een Nederlandse directeur van een Amerikaanse vennootschap leveren
+ * alle drie een verschil op zonder dat er iets mis is.
+ *
+ * Wat het is: de plek waar één mens één keer kijkt. Dat is ook wat de zaak
+ * juridisch vraagt — voor een dienst aan een zakelijke klant buiten de EU is 0%
+ * juist, maar de bewijslast dat die klant daar echt gevestigd is ligt bij de
+ * leverancier. Dit scherm is dus niet "wie ligt er", het is "wat heb ik in handen".
+ *
+ * ── DRIE KNOPPEN, EN WAAROM PRECIES DEZE DRIE ───────────────────────────────
+ *
+ * · GOEDKEUREN — de opgave klopt, 0% blijft, de klant kan betalen.
+ * · BTW ALSNOG REKENEN — de opgave houdt geen stand. De NETTOPRIJS BLIJFT
+ *   ONGEWIJZIGD; er komt 21% bovenop. Dat is precies wat er fiscaal gebeurt: je
+ *   verandert niet de prijs, je stelt vast dat Nederlandse btw van toepassing is.
+ * · AFWIJZEN — je wil er eerst over praten. De bestelling blijft onbetaalbaar en
+ *   verdwijnt uit deze lijst, zodat hij je niet elke dag opnieuw aankijkt.
+ *
+ * Er is met opzet GEEN knop die het land wijzigt. Dan zou dit scherm de opgave van
+ * de klant kunnen herschrijven, en dat is precies het soort administratie waarvan je
+ * later niet meer weet wat de klant zelf heeft gezegd.
+ */
+async function renderVatReview({ env }) {
+  let rows = [];
+  let missing = false;
+  try {
+    const res = await env.DB.prepare(
+      `SELECT o.id, o.ref, o.created_at, o.service, o.product_count,
+              o.country, o.origin_country, o.billing_address, o.brand,
+              o.vat_treatment, o.vat_rate, o.vat_cents, o.total_cents,
+              o.vat_valid, o.vat_check_name, o.review_state, o.review_reason,
+              o.review_requested_at, o.payment_status,
+              c.email
+         FROM orders o
+         LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE o.review_state = 'pending'
+        ORDER BY o.id DESC
+        LIMIT 100`
+    ).all();
+    rows = res.results || [];
+  } catch (err) {
+    // origin_country komt uit 0023 en de beoordelingsvelden uit 0018. Zonder die
+    // migraties is er niets te tonen, en dan hoort dit scherm te zeggen wat eraan
+    // scheelt in plaats van leeg te blijven — zelfde terugval als renderLog.
+    missing = String(err?.message || '');
+  }
+
+  const cents = (v) => `€ ${((Number(v) || 0) / 100).toFixed(2).replace('.', ',')}`;
+
+  const body = `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Btw-controle</h1>
+<p class="lede">Bestellingen die op een btw-opgave wachten die wij niet kunnen nakijken.
+Voor landen buiten de EU bestaat geen register — VIES dekt alleen lidstaten — dus rust
+0% daar volledig op wat de klant zelf opgeeft. Zolang een bestelling hier staat, kan
+er niet betaald worden: niet via een link van ons en niet via VISUAILS Studio.</p>
+${missing
+  ? `<p class="warnline">Dit scherm kan de bestellingen niet lezen (${esc(missing)}). Draai migratie 0018 en 0023.</p>`
+  : rows.length
+    ? rows.map((o) => {
+        const claim = String(o.country || '—').toUpperCase();
+        const from = String(o.origin_country || '').toUpperCase();
+        /* Het verschil wordt WEL gemarkeerd en NIET beoordeeld. Een gekleurde
+           regel die zegt "let hier op" is bruikbaar; een regel die zegt "dit is
+           fraude" is een conclusie die dit scherm niet mag trekken. */
+        const mismatch = from && claim !== '—' && from !== claim;
+        const net = Number(o.total_cents) || 0;
+        const withVat = Math.round(net * 0.21);
+        return `
+<div class="card">
+  <div class="row-head">
+    <span class="ref">${esc(o.ref)}</span>
+    <span class="muted">${esc(o.brand || '—')} · ${esc(o.service || '')} · ${esc(String(o.product_count || 0))} producten</span>
+    <span class="muted">${esc(when(o.review_requested_at || o.created_at))}</span>
+  </div>
+  <p class="meta">${esc(o.email || 'geen e-mailadres')}</p>
+
+  <table class="files"><tbody>
+    <tr><th>Klant zegt</th><td><strong>${esc(claim)}</strong>${o.vat_check_name ? ` · ${esc(o.vat_check_name)}` : ''}</td></tr>
+    <tr><th>Verzoek kwam uit</th><td>${from
+      ? `<strong>${esc(from)}</strong>${mismatch ? ' <span class="pill danger">wijkt af</span>' : ' <span class="pill">gelijk</span>'}`
+      : '<span class="muted">niet vastgelegd — bestelling van vóór migratie 0023</span>'}</td></tr>
+    <tr><th>Factuuradres</th><td>${esc(o.billing_address || '—')}</td></tr>
+    <tr><th>Reden dat hij hier staat</th><td>${esc(o.review_reason || 'niet vastgelegd')}</td></tr>
+    <tr><th>Nu gerekend</th><td>${esc(o.vat_treatment || '—')} · btw ${cents(o.vat_cents)} over ${cents(net)}</td></tr>
+  </tbody></table>
+
+  <div class="rev-actions">
+    <form method="post" action="/admin/orders/${o.id}/vat">
+      <input type="hidden" name="action" value="approve">
+      <button class="btn btn-primary" type="submit">Opgave klopt — 0% blijft staan</button>
+    </form>
+    <form method="post" action="/admin/orders/${o.id}/vat">
+      <input type="hidden" name="action" value="charge_vat">
+      <button class="btn" type="submit">Btw alsnog rekenen — ${cents(withVat)} erbij</button>
+    </form>
+    <form method="post" action="/admin/orders/${o.id}/vat">
+      <input type="hidden" name="action" value="reject">
+      <button class="btn btn-ghost" type="submit">Afwijzen, ik neem contact op</button>
+    </form>
+  </div>
+  <p class="meta">De nettoprijs verandert bij geen van de drie. "Btw alsnog rekenen" zet er 21% bovenop en laat ${esc(cents(net))} staan.</p>
+</div>`;
+      }).join('')
+    : '<p class="empty">Niets in behandeling. Elke bestelling met een btw-opgave die we konden nakijken, is gewoon doorgegaan.</p>'}`;
+
+  return html(page({ title: 'Btw-controle', body }));
+}
+
+/*
+ * De beslissing wegschrijven.
+ *
+ * ── ALLE DRIE DE UITKOMSTEN ZIJN TERUG TE LEZEN ────────────────────────────
+ *
+ * Elke handeling schrijft drie dingen: de nieuwe toestand op de bestelling, een
+ * regel op de tijdlijn die de KLANT ziet, en een regel in het adminlogboek met wie
+ * het deed. Dat laatste is niet paranoia: dit is de enige plek in dit dashboard waar
+ * één klik 21% van een factuur verschuift, en dan hoort er te staan wie er op klikte.
+ *
+ * ── DE KLANT ZIET EEN NEUTRALE REGEL ───────────────────────────────────────
+ *
+ * Op zijn tijdlijn staat "btw-gegevens nagekeken" en niet "wij dachten dat je loog".
+ * Het overgrote deel van de mensen dat hier langskomt heeft niets verkeerd gedaan —
+ * ze zitten buiten de EU, waar geen register is. De reden die jij hebt gezien blijft
+ * in `review_reason` staan en gaat niet mee naar de klant.
+ */
+async function handleVatDecision({ request, env }, orderId, admin) {
+  const back = '/admin/vat';
+  const form = await request.formData();
+  const action = String(form.get('action') || '');
+  if (!['approve', 'charge_vat', 'reject'].includes(action)) return seeOther(back);
+
+  const order = await env.DB.prepare(
+    'SELECT id, ref, total_cents, vat_cents, review_state FROM orders WHERE id = ?1'
+  ).bind(orderId).first();
+  if (!order) return seeOther(back);
+  // Alleen wat nog in behandeling is. Twee tabbladen open hebben mag geen tweede
+  // beslissing over dezelfde bestelling opleveren.
+  if (String(order.review_state || '') !== 'pending') return seeOther(back);
+
+  const net = Number(order.total_cents) || 0;
+  const statements = [];
+  let note;
+  let detail;
+
+  if (action === 'approve') {
+    statements.push(env.DB.prepare(
+      `UPDATE orders
+          SET review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?2
+        WHERE id = ?1 AND review_state = 'pending'`
+    ).bind(orderId, admin?.email || 'admin'));
+    note = 'Btw-gegevens nagekeken en in orde. De bestelling kan betaald worden.';
+    detail = `${order.ref}: opgave goedgekeurd, tarief ongewijzigd`;
+  } else if (action === 'charge_vat') {
+    /*
+     * DE NETTOPRIJS BLIJFT STAAN, ER KOMT 21% BOVENOP.
+     *
+     * `total_cents` is het bedrag EXCLUSIEF btw (zie orderMoney() in account.js) en
+     * `vat_cents` is de btw ernaast. Deze handeling raakt dus alleen de tweede.
+     * Dat is precies wat er fiscaal gebeurt: de prijs van het werk verandert niet,
+     * er wordt vastgesteld dat Nederlandse btw van toepassing is.
+     *
+     * Het land dat de klant opgaf blijft staan. Zie de kop hierboven: dit scherm
+     * herschrijft de opgave van de klant niet.
+     */
+    const vat = Math.round(net * 0.21);
+    statements.push(env.DB.prepare(
+      `UPDATE orders
+          SET review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?2,
+              vat_treatment = 'standard', vat_rate = 0.21, vat_cents = ?3
+        WHERE id = ?1 AND review_state = 'pending'`
+    ).bind(orderId, admin?.email || 'admin', vat));
+    note = 'Btw-gegevens nagekeken. Op deze bestelling wordt Nederlandse btw gerekend; het bedrag exclusief btw is niet veranderd.';
+    detail = `${order.ref}: 21% btw alsnog gerekend (${vat} cent over ${net} cent)`;
+  } else {
+    statements.push(env.DB.prepare(
+      `UPDATE orders
+          SET review_state = 'rejected', reviewed_at = datetime('now'), reviewed_by = ?2
+        WHERE id = ?1 AND review_state = 'pending'`
+    ).bind(orderId, admin?.email || 'admin'));
+    note = 'We hebben een vraag over de btw-gegevens van deze bestelling en nemen contact met je op.';
+    detail = `${order.ref}: opgave afgewezen, wacht op contact`;
+  }
+
+  statements.push(env.DB.prepare(
+    `INSERT INTO order_events (order_id, status, note, actor)
+     VALUES (?1, 'pending', ?2, 'studio')`
+  ).bind(orderId, note));
+
+  await env.DB.batch(statements);
+  await logAdmin(env, admin, `vat:${action}`, { orderId, detail });
+  return seeOther(back);
+}
+
+function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0) {
   const { q = '', filter = '', hidden = false } = view;
 
   /* Zoeken en filteren, in één rij boven de lijst.
@@ -3128,6 +3530,19 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
   ${chip('delivered_unpaid', 'Delivered, not paid')}
   <a class="fl-chip${hidden ? ' is-active' : ''}" href="/admin?hidden=${hidden ? '0' : '1'}">${hidden ? 'Hiding hidden again' : 'Include hidden'}</a>
   <a class="fl-chip" href="/admin/log">Activity log &rarr;</a>
+  ${/*
+      DE LINK NAAR DE BTW-CONTROLE, MET HET AANTAL ERIN.
+
+      Een scherm dat niemand kan bereiken is hetzelfde probleem als geen scherm — en
+      dat was precies wat er met `orders.review_state` aan de hand was: de toestand
+      bestond, er was geen weg ernaartoe. Het getal staat erbij omdat een link zonder
+      getal je niet vertelt of je erop moet klikken.
+
+      Staat er niets in behandeling, dan is de chip er ook niet. Een lege lijst is
+      geen werk en hoort niet elke dag om aandacht te vragen.
+   */''}${vatHeld > 0
+    ? `<a class="fl-chip is-warn" href="/admin/vat">Btw-controle &middot; ${vatHeld} &rarr;</a>`
+    : ''}
 </div>`;
 
   return `

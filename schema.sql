@@ -633,3 +633,171 @@ CREATE INDEX IF NOT EXISTS idx_account_tokens_code
 -- Gevraagd bij de bestelling, ingelost bij de eerste keer inloggen — zie de
 -- migratie voor waarom dat twee momenten zijn en geen één.
 ALTER TABLE customers ADD COLUMN save_requested_at TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 0010 · DE DRIE INDEXEN OP revision_requests DIE HIER NOOIT STONDEN
+--
+-- Gevonden op 9 augustus 2026 door tests/schema.test.mjs, die schema.sql op een
+-- verse database draait en daarna elke migratie erover heen haalt om te zien of er
+-- nog iets bijkomt. Er kwam iets bij, en niet uit de zes migraties die ik net had
+-- toegevoegd: deze drie staan sinds migratie 0010 in de migratiereeks en hebben dit
+-- bestand nooit gehaald.
+--
+-- De TABEL stond er wel, de indexen niet. Een verse database zou dus werken en bij
+-- elke revisielijst in het adminportaal een volledige tabelscan doen — het soort
+-- verschil dat pas opvalt als er duizend rijen staan, en dan als "het dashboard is
+-- traag geworden" in plaats van als een ontbrekende index.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_revreq_open  ON revision_requests(resolved_at, created_at);
+CREATE INDEX IF NOT EXISTS idx_revreq_order ON revision_requests(order_id);
+CREATE INDEX IF NOT EXISTS idx_revreq_cust  ON revision_requests(customer_id);
+
+-- ═════════════════════════════════════════════════════════════════════════════
+-- 9 AUGUSTUS 2026 — DIT BESTAND STOPTE BIJ 0017 EN DAT WAS EEN TIJDBOM
+-- ═════════════════════════════════════════════════════════════════════════════
+--
+-- De kop hierboven zegt: "Anything added here must also be added there, or a fresh
+-- install and a live install stop agreeing." Precies dat was gebeurd. Zes migraties
+-- lang — 0018 tot en met 0023 — was dit bestand niet meegegroeid:
+--
+--   · alle twaalf orderkolommen van de btw-poort (0018) ontbraken;
+--   · `channels` op de merkset (0019);
+--   · de tabel `order_feedback` (0020), dus reviews konden niet worden opgeslagen;
+--   · de tabellen `invoice_series` en `invoices` (0021) — en zonder die twee valt
+--     issueInvoice() meteen om, dus MISLUKT DE FACTUURSTAP BIJ ELKE BETALING;
+--   · `file_assets` (0022), dus geen formaatvarianten;
+--   · `origin_country` (0023).
+--
+-- Dat is geen dringend probleem zolang de database bestaat en bijgewerkt is. Het is
+-- een tijdbom die afgaat op de dag dat je hem het hardst nodig hebt: bij herstel na
+-- een storing. En dat viel samen met het tweede gat uit dezelfde audit — er was ook
+-- nog nooit een back-up gemaakt. Geen kopie van de gegevens, en geen betrouwbaar
+-- recept voor de structuur.
+--
+-- De blokken hieronder zijn overgenomen uit de migratiebestanden zelf en niet met de
+-- hand nagetypt, zodat er geen derde versie van dezelfde waarheid ontstaat. Alleen de
+-- CREATE- en ALTER-statements: die migraties bevatten geen backfill, dus er is niets
+-- dat op een verse database iets zou moeten bijwerken.
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0018 · DE BTW-POORT
+-- Zie migrations/0018-vat-review.sql. Kort: een btw-opgave die wij niet kunnen
+-- nakijken — buiten de EU bestaat geen register — houdt de bestelling vast op
+-- `review_state = 'pending'` en er wordt geen betaallink gemaakt. Sinds 9 augustus
+-- 2026 is er ook een scherm dat die stapel leest (/admin/vat) en respecteert de
+-- betaalknop in VISUAILS Studio de poort.
+-- ────────────────────────────────────────────────────────────────────────────
+ALTER TABLE orders ADD COLUMN review_state TEXT;
+ALTER TABLE orders ADD COLUMN review_reason TEXT;
+ALTER TABLE orders ADD COLUMN review_requested_at TEXT;
+ALTER TABLE orders ADD COLUMN review_deadline TEXT;
+ALTER TABLE orders ADD COLUMN reviewed_at TEXT;
+ALTER TABLE orders ADD COLUMN reviewed_by TEXT;
+ALTER TABLE orders ADD COLUMN payment_deadline TEXT;
+ALTER TABLE orders ADD COLUMN vat_confirmed INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN vat_confirmed_at TEXT;
+ALTER TABLE orders ADD COLUMN vat_valid_state INTEGER;
+ALTER TABLE orders ADD COLUMN vat_check_error TEXT;
+ALTER TABLE orders ADD COLUMN payment_method TEXT;
+CREATE INDEX IF NOT EXISTS idx_orders_review
+  ON orders (review_state, review_deadline) WHERE review_state IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_payment_deadline
+  ON orders (payment_deadline) WHERE payment_deadline IS NOT NULL;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0019 · DE KANALEN IN DE MERKSET
+-- Zie migrations/0019-brand-kit-channels.sql.
+-- ────────────────────────────────────────────────────────────────────────────
+ALTER TABLE customer_style_locks ADD COLUMN channels TEXT;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0020 · DE REVIEWVRAAG NA EEN AFGERONDE BESTELLING
+-- Zie migrations/0020-order-feedback.sql. Let op: `testimonial_approved` wordt op
+-- dit moment door niets op 1 gezet — er is nog geen goedkeurscherm en geen blok op
+-- de site dat goedgekeurde reviews toont. Zie AUDIT-9-AUGUSTUS.md §7.
+-- ────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS order_feedback (
+  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id            INTEGER NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
+  customer_id         INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+  score               INTEGER NOT NULL CHECK (score BETWEEN 1 AND 5),
+  private_note        TEXT,
+  platforms_clicked   TEXT,
+  testimonial_text    TEXT,
+  testimonial_name    TEXT,
+  testimonial_consent INTEGER NOT NULL DEFAULT 0,
+  testimonial_approved INTEGER NOT NULL DEFAULT 0,
+  asked_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  reminder_sent_at    TEXT,
+  updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_pending
+  ON order_feedback(testimonial_approved, asked_at)
+  WHERE testimonial_consent = 1;
+CREATE INDEX IF NOT EXISTS idx_feedback_live
+  ON order_feedback(updated_at)
+  WHERE testimonial_approved = 1;
+CREATE INDEX IF NOT EXISTS idx_feedback_reminder
+  ON order_feedback(asked_at)
+  WHERE reminder_sent_at IS NULL AND platforms_clicked IS NULL AND testimonial_text IS NULL;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0021 · FACTUREN MET EEN DOORLOPENDE NUMMERING
+-- Zie migrations/0021-invoices.sql. `invoice_series` houdt per jaar het laatste
+-- nummer bij; `snapshot_json` bevat de volledige invoer van renderInvoicePdf(),
+-- zodat dezelfde factuur byte-identiek opnieuw te maken is. De nachtelijke taak in
+-- cron/index.js gebruikt precies dat om een vastgelopen factuur alsnog uit te geven.
+-- ────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS invoice_series (
+  year        INTEGER PRIMARY KEY,
+  last_number INTEGER NOT NULL DEFAULT 0,
+  updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS invoices (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  number      TEXT    NOT NULL UNIQUE,
+  year        INTEGER NOT NULL,
+  seq         INTEGER NOT NULL,
+  order_id    INTEGER NOT NULL UNIQUE REFERENCES orders(id) ON DELETE RESTRICT,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+  status      TEXT    NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'issued', 'void')),
+  void_reason TEXT,
+  pdf_key     TEXT,
+  pdf_bytes   INTEGER,
+  snapshot_json TEXT NOT NULL,
+  lang        TEXT    NOT NULL DEFAULT 'nl',
+  issued_at   TEXT,
+  created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+  CHECK (status <> 'issued' OR pdf_key IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS idx_invoices_order  ON invoices(order_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_series ON invoices(year, seq);
+CREATE INDEX IF NOT EXISTS idx_invoices_customer ON invoices(customer_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_invoices_pending ON invoices(created_at) WHERE status = 'pending';
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0022 · ÉÉN BEELD, DRIE FORMATEN
+-- Zie migrations/0022-delivery-assets.sql. De klant krijgt een map met png, jpg en
+-- webp; `file_assets` houdt bij welk object in R2 bij welk formaat hoort. De
+-- opruimtaak in cron/index.js moet deze rijen kennen, want ON DELETE CASCADE ruimt
+-- de RIJEN op en niet de objecten in de bucket.
+-- ────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS file_assets (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_id     INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  format      TEXT NOT NULL CHECK (format IN ('png', 'jpg', 'webp')),
+  r2_key      TEXT NOT NULL,
+  bytes       INTEGER,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (file_id, format)
+);
+CREATE INDEX IF NOT EXISTS idx_file_assets_file ON file_assets (file_id);
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0023 · WAAR HET VERZOEK VANDAAN KWAM
+-- Zie migrations/0023-origin-country.sql. Cloudflare geeft op elk verzoek gratis het
+-- land mee; dat staat in het adminscherm naast wat de klant zelf opgaf. Het beslist
+-- niets — een vpn of een zakenreis levert een verschil op zonder dat er iets mis is.
+-- ────────────────────────────────────────────────────────────────────────────
+ALTER TABLE orders ADD COLUMN origin_country TEXT;

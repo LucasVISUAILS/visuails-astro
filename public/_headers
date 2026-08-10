@@ -41,3 +41,57 @@
 # elke geopende mail opnieuw op.
 /img/mail/*
   Cache-Control: public, max-age=86400
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BEVEILIGINGSHEADERS — 9 AUGUSTUS 2026
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Dit bestand bevatte alleen cacheregels. Er IS een Content-Security-Policy op deze
+# site, maar die wordt in src/lib/ gezet en geldt dus alleen voor /o, /account en
+# /admin. De 82 statische pagina's die bezoekers en zoekmachines raken hadden geen
+# enkele beveiligingsheader: geen HSTS, geen X-Content-Type-Options, geen
+# Referrer-Policy, geen Permissions-Policy.
+#
+# ── WAAROM ER GEEN CSP BIJ STAAT, EN DAT IS GEMETEN EN GEEN GEMAKZUCHT ───────
+#
+# Een CSP met `style-src 'self'` blokkeert ook inline style-ATTRIBUTEN, want
+# `style-src-attr` valt daarop terug als hij niet apart genoemd is. Geteld in de
+# build: 1663 inline style-attributen, verspreid over alle 86 pagina's. Een CSP
+# toevoegen zou dus de opmaak van de hele site slopen.
+#
+# De twee uitwegen zijn beide slecht als tussenstap. `'unsafe-inline'` erbij zetten
+# levert een header op die er streng uitziet en het gat openlaat waar hij voor
+# bedoeld is — dat is erger dan geen CSP, want dan denkt iedereen dat het geregeld
+# is. En 1663 attributen omzetten naar klassen is een echte opruiming van een paar
+# uur die je niet halverwege wil hebben staan.
+#
+# Dus: de vier headers die NU al niets breken staan er, en de CSP wacht op die
+# opruiming. Zie AUDIT-9-AUGUSTUS.md §9.
+#
+# ── PER HEADER, KORT ────────────────────────────────────────────────────────
+#
+# · Strict-Transport-Security — een jaar, subdomeinen mee. Cloudflare stuurt al door
+#   naar https; dit zorgt dat de browser het de tweede keer zelf al weet en er dus
+#   geen onbeveiligd verzoek meer overheen gaat. GEEN `preload`: dat is een
+#   eenrichtingsbeslissing die je bij een lijst van Google moet aanmelden en niet
+#   zomaar terugdraait. Wil je dat, dan is dat een aparte, bewuste stap.
+# · X-Content-Type-Options — geen MIME-sniffing. Voorkomt dat een bestand dat als
+#   tekst wordt geserveerd alsnog als script wordt uitgevoerd.
+# · Referrer-Policy — bij het verlaten van de site gaat alleen het domein mee en
+#   niet het pad. Een klant die vanuit /account/orders naar buiten klikt, geeft
+#   daarmee niet prijs waar hij was.
+# · Permissions-Policy — camera, microfoon, locatie en betaal-api's staan uit. Deze
+#   site gebruikt er geen van, en een ingebedde derde partij kan er dan ook niet om
+#   vragen.
+# · X-Frame-Options + frame-ancestors — de site mag niet in een frame van iemand
+#   anders. Beide, want de eerste is de oude en breed ondersteunde vorm en de tweede
+#   de huidige; `frame-ancestors` is bovendien het ENIGE CSP-onderdeel dat hier
+#   veilig kan, omdat het niets met stijl of scripts te maken heeft.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'

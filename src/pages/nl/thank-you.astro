@@ -89,13 +89,13 @@ const description =
 
   <section class="section-tight"><div class="container">
     <div class="grid grid-3 reveal-group">
-      <div class="card reveal pending"><h4>Wat er nu gebeurt</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Zodra de betaling binnen is, lezen we wat je hebt gestuurd, maken we je beelden klaar, en controleert een persoon elk resultaat met de hand voordat het bij jou aankomt.</p></div>
-      <div class="card reveal pending"><h4>Gebruikelijke doorlooptijd</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} vanaf het moment dat we je foto’s en je notitie hebben tot je downloadlink. {T0.queue.nl}; een gloednieuwe custom stijl kan iets langer duren.</p></div>
-      <div class="card reveal pending"><h4>Wil je nog iets toevoegen?</h4><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reageer op ons bericht op WhatsApp of mail <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> met eventuele extra details of referenties.</p></div>
+      <div class="card reveal pending"><h2 class="as-card-h">Wat er nu gebeurt</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Zodra de betaling binnen is, lezen we wat je hebt gestuurd, maken we je beelden klaar, en controleert een persoon elk resultaat met de hand voordat het bij jou aankomt.</p></div>
+      <div class="card reveal pending"><h2 class="as-card-h">Gebruikelijke doorlooptijd</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} vanaf het moment dat we je foto’s en je notitie hebben tot je downloadlink. {T0.queue.nl}; een gloednieuwe custom stijl kan iets langer duren.</p></div>
+      <div class="card reveal pending"><h2 class="as-card-h">Wil je nog iets toevoegen?</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Reageer op ons bericht op WhatsApp of mail <a href="mailto:hello@visuails.com" style="color:var(--accent-bright)">hello@visuails.com</a> met eventuele extra details of referenties.</p></div>
     </div>
     <div class="card reveal pending ty-upsell">
       <div>
-        <h4>Wil je de details garanderen?</h4>
+        <h2 class="as-card-h">Wil je de details garanderen?</h2>
         <p style="margin-top:.4rem;font-size:.95rem;color:var(--ink-3)">Hoe meer hoeken we hebben, hoe nauwkeuriger we pasvorm, kleur en detail meteen goed krijgen. Stuur een close-up van een detail, een foto van de stof en een foto op het lichaam. Toevoegen kost niets en het hele resultaat wordt er beter van.</p>
       </div>
       <a href={waHref("Hoi VISUAILS, ik wil graag extra foto’s voor mijn bestelling sturen.")} class="btn btn-wa" target="_blank" rel="noopener" data-track="ty-extra-photos">
@@ -121,7 +121,11 @@ const description =
      met verschillende breedtes lezen als twee losse dingen. Eén kolom. */
   .mail-note { max-width: 520px; margin-inline: auto; }
 
-  .ty-summary h4 { font-size: 1rem; color: var(--ink); }
+  /* Was `.ty-summary h4`. Die kop is een h2 geworden (het kopniveau sprong van h1
+   naar h4); de selector moest mee, anders viel deze verkleining stil weg en werd
+   de kop 17px in plaats van 16px. Eén pixel, en precies het soort restje dat een
+   tagwijziging achterlaat. */
+  .ty-summary .as-card-h { font-size: 1rem; color: var(--ink); }
   /* .ty-dl / .ty-row / .ty-swatch / .ty-hex were removed in section 10. They
      styled a definition list of the submitted answers that initThankYou() built
      by reading the form fields back out of the query string — which only worked

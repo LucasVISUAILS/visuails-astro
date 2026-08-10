@@ -36,7 +36,32 @@ import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
 //       /privacy; the two documents did not reference each other at all before.
 //
 //   §9  gains the 50/50 deposit paragraph, per AUDIT-TASK-0.md:128. Scoped to
-//       what is invoiced rather than charged at checkout, so a free
+//       what is invoiced rather than charged at checkout, so a free//
+// ── §9 BESCHREEF EEN BETAALREGELING DIE NIET BESTAAT ────────────────────────
+//
+// 9 augustus 2026. Hier stond: "invoiced (…) in two parts: 50% on confirmation
+// (…) and 50% before the finished files are released". Doorzocht op elke vorm van
+// aanbetaling, termijn of helft in functions/api/order.js, src/lib/quote.js,
+// src/data/pricing.js en de Mollie-webhook: nul treffers. Er is geen tweede
+// termijn, er is geen deelfactuur, en er is niets dat een eerste termijn kan
+// registreren.
+//
+// De vorige regel had ÓÓK de eerste helft mis. "Small orders and test samples are
+// paid in full at checkout" — alleen de proefvisual van €1 krijgt bij het bestellen
+// een Mollie-link (functions/api/order.js:855, expliciet `svc === 'test-sample'`).
+// Elke andere bestelling gaat zonder betaling naar de bedankpagina en wordt later
+// via VISUAILS Studio betaald. Een kleine catalogbestelling wordt dus niet bij het
+// afrekenen betaald.
+//
+// Wat er nu staat is wat de code doet. De twee zinnen over het vasthouden van een
+// plek en het vrijgeven van bestanden zijn RECHTEN die hij zich voorbehoudt, geen
+// beweringen over een technische blokkade — dat mag in voorwaarden staan, en het is
+// het enige deel van de oude alinea dat overeind kon blijven.
+//
+// Een aanbetaling in twee termijnen écht bouwen is een aparte opdracht: het vraagt
+// een deelfactuur, een tweede betaallink, een vrijgavepoort op de levering, en het
+// verandert de kasstroom. Zie AUDIT-9-AUGUSTUS.md. Zolang dat niet gebouwd is, mag
+// het hier niet staan.
 //       founding-offer order does not fall into a clause about instalments.
 //
 // §6 AND §10 — the flagged decision, now taken.
@@ -169,7 +194,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>9. Payment &amp; VAT</h2>
       <p>Payment is handled through our payment provider. Invoices are issued for your records. For EU business customers with a valid VAT number, the reverse-charge mechanism may apply where the conditions are met; otherwise Dutch VAT rules apply. You are responsible for providing accurate billing and VAT details.</p>
-      <p>Small orders and test samples are paid in full at checkout. A reserved order or custom work is invoiced rather than charged at checkout, in two parts: 50% on confirmation, which is what reserves your production slot, and 50% before the finished files are released. Work does not start, and no slot is held, until the first instalment is paid.</p>
+      <p>A test sample is charged at checkout, because it is a fixed &euro;1. Every other order is placed first and priced second: you send the brief, we confirm the order and the amount, and you pay that amount in full from one payment link in VISUAILS Studio. There are no instalments. We do not hold a production slot, and we do not release finished files, before that payment has reached us.</p>
 
       <h2>10. Cancellations, refunds and putting it right</h2>
       <p>Because visuals are produced to your specific brief, work that has already started or been delivered generally cannot be cancelled for a refund.</p>
