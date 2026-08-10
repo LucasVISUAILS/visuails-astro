@@ -4319,6 +4319,16 @@ const CATCHUP_MAX = 5;
  * @param {Array<{ref: string, id: number, payment_status: string, paid_at: string}>} orders
  * @param {Set<string>} have  refs die al een factuur hebben
  */
+/**
+ * De refs die een AFGERONDE factuur hebben. Een halve factuur (nummer wel, pdf niet)
+ * hoort er niet in, want die moet opnieuw geprobeerd worden — zie de noot in
+ * invoicesFor(). Apart en geëxporteerd zodat die regel te testen is zonder een
+ * dashboard te renderen.
+ */
+export function issuedRefs(list) {
+  return new Set((list || []).filter((r) => r && r.status === 'issued').map((r) => r.ref));
+}
+
 export function catchupOrder(orders, have) {
   return (orders || [])
     .filter((o) => o.payment_status === 'paid' && o.paid_at && !have.has(o.ref))
@@ -4352,7 +4362,31 @@ async function invoicesFor(env, customerId, orders) {
 
   // Wat is betaald en heeft nog geen factuur? Uit de lijst die sectionGet al
   // heeft geladen, dus zonder extra query.
-  const have = new Set(list.map((r) => r.ref));
+  /*
+   * ── ALLEEN UITGEGEVEN FACTUREN GELDEN ALS "HEEFT ER EEN" — 10 AUGUSTUS 2026 ──
+   *
+   * WAT LUCAS ZAG. Van de vier facturen die de inhaalslag maakte, bleef VIS-2026-0004
+   * op "Wordt gemaakt" staan: nummer wel, pdf niet. En de tekst eronder zei
+   * *"Vernieuw de pagina over een minuut"* — wat niet waar was. Deze verzameling werd
+   * gevuld met ELKE factuur die er stond, ook een halve, dus bij het verversen viel die
+   * bestelling buiten `behind` en werd er niets opnieuw geprobeerd. De pagina beloofde
+   * iets wat de pagina zelf niet deed.
+   *
+   * WAAROM DIT VEILIG IS. issueInvoice() is hier expliciet op gebouwd: bestaat er al een
+   * rij met een nummer maar zonder pdf, dan gebruikt hij DAT nummer opnieuw en rendert
+   * hij uit de bewaarde momentopname. Geen tweede nummer, geen gat in de reeks, en
+   * dezelfde pdf als de eerste poging had opgeleverd. De UPDATE erna staat op
+   * `status = 'pending'`, dus twee gelijktijdige pogingen kunnen elkaar niet overschrijven.
+   *
+   * De nachtelijke cron (issuePendingInvoices) blijft het net eronder: die pakt wat na
+   * een kwartier nog steeds hangt. Wat hier verandert is dat de klant niet tot de
+   * volgende ochtend hoeft te wachten voor iets dat één render kost.
+   *
+   * EN HET IS TEGELIJK DE DIAGNOSE. Blijft een factuur na een keer verversen nóg op
+   * "wordt gemaakt" staan, dan is het geen incident maar een fout die elke keer
+   * terugkomt — en dan zegt dat meer dan een rij die stil blijft liggen.
+   */
+  const have = issuedRefs(list);
   /*
    * ── OP BETAALDATUM, OUDSTE EERST — 10 AUGUSTUS 2026 ───────────────────────
    *

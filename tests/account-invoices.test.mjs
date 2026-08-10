@@ -22,7 +22,7 @@
  */
 
 import { DatabaseSync } from 'node:sqlite';
-import { accountGet, catchupOrder } from '../src/lib/account.js';
+import { accountGet, catchupOrder, issuedRefs } from '../src/lib/account.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
 
 let fails = 0;
@@ -175,6 +175,33 @@ console.log('\nVISUAILS Studio — Facturen\n');
  * maar een reeks waarin 0003 twee dagen vóór 0001 gedateerd is, is het eerste wat een
  * boekhouder eruit haalt.
  */
+/* ── EEN HALVE FACTUUR MOET OPNIEUW GEPROBEERD WORDEN ──────────────────────
+ *
+ * VIS-2026-0004 bleef op 10 augustus 2026 op "Wordt gemaakt" staan: nummer wel, pdf
+ * niet. De pagina zei "Vernieuw de pagina over een minuut", maar de inhaalslag sloeg
+ * die bestelling over omdat er al een factuurRIJ stond. De belofte onder de tabel was
+ * dus niet waar. issueInvoice() hergebruikt bij een tweede poging hetzelfde nummer, dus
+ * opnieuw proberen kost geen gat in de reeks.
+ */
+console.log('\nwelke facturen als "klaar" gelden');
+{
+  const L = (ref, status) => ({ ref, status });
+  const set = issuedRefs([L('A', 'issued'), L('B', 'pending'), L('C', 'issued'), L('D', 'void')]);
+  check('een uitgegeven factuur geldt als klaar', set.has('A'));
+  check('een halve factuur NIET', set.has('B') === false, set.has('B'));
+  check('een vernietigde factuur ook niet', set.has('D') === false, set.has('D'));
+  check('en er blijven er twee over', set.size === 2, set.size);
+  check('een lege lijst valt niet om', issuedRefs(null).size === 0, issuedRefs(null).size);
+
+  // Het gevolg samen met de sortering: de halve wordt opnieuw aangeboden.
+  const orders = [
+    { ref: 'A', id: 1, paid_at: '2026-08-07 08:00:00', payment_status: 'paid' },
+    { ref: 'B', id: 2, paid_at: '2026-08-09 08:00:00', payment_status: 'paid' },
+  ];
+  const again = catchupOrder(orders, set).map((o) => o.ref);
+  check('de bestelling met de halve factuur komt terug', again.join('') === 'B', again.join(''));
+}
+
 console.log('\nde volgorde van de inhaalslag');
 {
   const O = (ref, id, paid_at, payment_status = 'paid') => ({ ref, id, paid_at, payment_status });
