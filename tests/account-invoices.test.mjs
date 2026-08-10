@@ -22,7 +22,7 @@
  */
 
 import { DatabaseSync } from 'node:sqlite';
-import { accountGet } from '../src/lib/account.js';
+import { accountGet, catchupOrder } from '../src/lib/account.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
 
 let fails = 0;
@@ -162,6 +162,55 @@ const get = (path, { db, bucket = makeBucket(), cookie = `vis_account=${token}`,
   });
 
 console.log('\nVISUAILS Studio — Facturen\n');
+/* ── DE VOLGORDE WAARIN DE INHAALSLAG NUMMERS UITDEELT ─────────────────────
+ *
+ * Op 10 augustus 2026 stond in het overzicht van Lucas:
+ *
+ *   VIS-2026-0001   9 aug        VIS-2026-0003   7 aug
+ *   VIS-2026-0002   9 aug        VIS-2026-0004   7 aug
+ *
+ * Het nummer liep tegen de datum in, want de lijst kwam binnen op `created_at DESC`
+ * (goed voor het dashboard van de klant) en die volgorde bepaalde wie het eerste
+ * nummer kreeg. De nummers waren opeenvolgend en zonder gaten, dus formeel in orde —
+ * maar een reeks waarin 0003 twee dagen vóór 0001 gedateerd is, is het eerste wat een
+ * boekhouder eruit haalt.
+ */
+console.log('\nde volgorde van de inhaalslag');
+{
+  const O = (ref, id, paid_at, payment_status = 'paid') => ({ ref, id, paid_at, payment_status });
+
+  // Zoals loadOrders() ze aanlevert: nieuwste eerst.
+  const dashboardOrder = [
+    O('VIS-EN6T-CG1', 4, '2026-08-09 11:00:00'),
+    O('VIS-4MZF-WVP', 3, '2026-08-09 09:30:00'),
+    O('VIS-5ASQ-ZZQ', 2, '2026-08-07 16:00:00'),
+    O('VIS-ME5F-UJW', 1, '2026-08-07 08:15:00'),
+  ];
+  const out = catchupOrder(dashboardOrder, new Set()).map((o) => o.ref);
+  check('de oudste betaling krijgt het eerste nummer', out[0] === 'VIS-ME5F-UJW', out[0]);
+  check('en de nieuwste het laatste', out[3] === 'VIS-EN6T-CG1', out[3]);
+  check('de datums lopen dus mee met de nummers',
+    out.join(',') === 'VIS-ME5F-UJW,VIS-5ASQ-ZZQ,VIS-4MZF-WVP,VIS-EN6T-CG1', out.join(','));
+
+  // Twee betalingen op dezelfde seconde: dan beslist de bestelling die er het eerst
+  // was, en niet wat de database die dag teruggeeft.
+  const tie = catchupOrder([O('B', 9, '2026-08-07 08:15:00'), O('A', 2, '2026-08-07 08:15:00')], new Set());
+  check('gelijke betaaltijd: laagste id eerst', tie.map((o) => o.ref).join('') === 'AB', tie.map((o) => o.ref).join(''));
+
+  // Wat er niet in mag.
+  const mixed = catchupOrder([
+    O('betaald', 1, '2026-08-07 08:00:00'),
+    O('onbetaald', 2, null, 'unpaid'),
+    O('betaald-zonder-datum', 3, null),
+    O('heeft-al-een-factuur', 4, '2026-08-06 08:00:00'),
+  ], new Set(['heeft-al-een-factuur']));
+  check('alleen betaalde bestellingen', mixed.map((o) => o.ref).join(',') === 'betaald', mixed.map((o) => o.ref).join(','));
+  check('een lege lijst valt niet om', catchupOrder(undefined, new Set()).length === 0, catchupOrder(undefined, new Set()).length);
+
+  // En de lijst die binnenkwam blijft zoals hij was — het dashboard erna gebruikt hem.
+  check('de aangeleverde lijst wordt niet omgesorteerd', dashboardOrder[0].ref === 'VIS-EN6T-CG1', dashboardOrder[0].ref);
+}
+
 
 /* ── de pagina ───────────────────────────────────────────────────────────── */
 {

@@ -4308,6 +4308,23 @@ function detailsSection(t, lang, details, justSaved, missing = false) {
  */
 const CATCHUP_MAX = 5;
 
+/**
+ * Welke betaalde bestellingen nog een factuur missen, in de volgorde waarin ze een
+ * nummer horen te krijgen: oudste betaling eerst.
+ *
+ * Geëxporteerd om één reden: dit is te testen zonder een halve database na te bouwen,
+ * en de vorige versie van deze regel is precies het soort fout dat je niet ziet
+ * zolang er één bestelling per keer langskomt.
+ *
+ * @param {Array<{ref: string, id: number, payment_status: string, paid_at: string}>} orders
+ * @param {Set<string>} have  refs die al een factuur hebben
+ */
+export function catchupOrder(orders, have) {
+  return (orders || [])
+    .filter((o) => o.payment_status === 'paid' && o.paid_at && !have.has(o.ref))
+    .sort((a, b) => String(a.paid_at).localeCompare(String(b.paid_at)) || (a.id - b.id));
+}
+
 async function invoicesFor(env, customerId, orders) {
   const read = async () => {
     try {
@@ -4336,7 +4353,37 @@ async function invoicesFor(env, customerId, orders) {
   // Wat is betaald en heeft nog geen factuur? Uit de lijst die sectionGet al
   // heeft geladen, dus zonder extra query.
   const have = new Set(list.map((r) => r.ref));
-  const behind = orders.filter((o) => o.payment_status === 'paid' && o.paid_at && !have.has(o.ref));
+  /*
+   * ── OP BETAALDATUM, OUDSTE EERST — 10 AUGUSTUS 2026 ───────────────────────
+   *
+   * WAT LUCAS ZAG. Na het opruimen van de testfacturen maakte deze inhaalslag er vier
+   * nieuwe, en in het overzicht stond:
+   *
+   *   VIS-2026-0001   9 aug        VIS-2026-0003   7 aug
+   *   VIS-2026-0002   9 aug        VIS-2026-0004   7 aug
+   *
+   * Het nummer loopt dus tegen de datum in. De oorzaak zit niet hier maar in de lijst
+   * die binnenkomt: loadOrders() sorteert `ORDER BY created_at DESC` omdat een klant
+   * zijn nieuwste bestelling bovenaan wil zien. Die volgorde werd hier ongewijzigd
+   * doorgegeven aan issueInvoice(), en dat is de plek die het volgende nummer uitdeelt.
+   * De nieuwste bestelling kreeg dus 0001, en `paid_at` werd de factuurdatum.
+   *
+   * WAAROM DAT NIET MAG BLIJVEN. De nummers zijn wél opeenvolgend en zonder gaten, dus
+   * de eis van de Belastingdienst is niet geschonden. Maar een reeks waarin factuur
+   * 0003 twee dagen vóór 0001 gedateerd is, is het eerste wat een boekhouder eruit
+   * haalt, en bij een kwartaalaangifte moet je gaan uitleggen wat er niet uit te leggen
+   * is. Bovendien gebeurt het opnieuw bij elke inhaalslag van meer dan één bestelling —
+   * dit is geen eenmalige verschuiving maar het gedrag.
+   *
+   * De sortering staat HIER en niet in loadOrders(), want die volgorde is goed voor wat
+   * hij doet: het dashboard van de klant. Twee lezers met twee verschillende eisen aan
+   * dezelfde lijst, en de eis van de factuurreeks is de striktere van de twee.
+   *
+   * `id` als tweede sleutel omdat twee bestellingen op dezelfde seconde betaald kunnen
+   * zijn — dan bepaalt de volgorde van aanmaak wie het lagere nummer krijgt, en niet
+   * hoe de database die dag toevallig teruggeeft.
+   */
+  const behind = catchupOrder(orders, have);
   if (!behind.length) return list;
 
   let made = 0;
