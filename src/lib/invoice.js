@@ -34,12 +34,39 @@ import { composeAddress } from '../data/address.js';
 import { VAT_TREATMENT } from '../data/vat.js';
 import { serviceLabel } from '../data/services.js';
 
+/*
+ * ── HOE SELLER_ADDRESS AANGELEVERD MAG WORDEN — 10 AUGUSTUS 2026 ────────────
+ *
+ * Dit splitste alleen op een echt regeleinde. Dat kán niet: een Pages-secret wordt
+ * ingetypt achter `Enter a secret value: »`, één regel, geen enter — die beëindigt de
+ * invoer. Een adres van vier regels was dus alleen via een omweg in te voeren, en het
+ * gevolg van een mislukte poging is niet zichtbaar: de terugval hieronder springt in
+ * en de factuur draagt een verzonnen adres zonder één foutmelding.
+ *
+ * Daarom worden drie schrijfwijzen geaccepteerd, allemaal met dezelfde uitkomst:
+ *
+ *   een echt regeleinde        (dashboard, textarea, een pipe uit een bestand)
+ *   de twee tekens \n          (wat je intypt als je "nieuwe regel" bedoelt)
+ *   een liggend streepje |     (het makkelijkst op een commandoregel)
+ *
+ * DE TERUGVAL BLIJFT MET OPZET EEN VERZONNEN ADRES. Het echte adres hier neerzetten
+ * zou betekenen dat een ontbrekend secret onopgemerkt goed gaat — en dan merkt niemand
+ * het op de dag dat de terugval iets anders is dan de werkelijkheid. Een factuur met
+ * "Voorbeeldstraat 12" erop valt op; een die per ongeluk klopt, niet.
+ */
+function addressFrom(value) {
+  return String(value)
+    .replace(/\\n/g, '\n')
+    .split(/[\n|]/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
 /** Ons eigen adres en onze nummers. Uit env waar dat kan, met een vaste terugval. */
 function sellerOf(env) {
   return {
     name: 'VISUAILS',
-    address: String(env?.SELLER_ADDRESS || 'Voorbeeldstraat 12\n1234 AB Rotterdam')
-      .split('\n').map((l) => l.trim()).filter(Boolean),
+    address: addressFrom(env?.SELLER_ADDRESS || 'Voorbeeldstraat 12\n1234 AB Rotterdam'),
     vat: env?.VISUAILS_VAT || 'NL005407575B96',
     kvk: env?.VISUAILS_KVK || '99742993',
     email: env?.FROM_EMAIL_ADDRESS || 'hello@visuails.com',

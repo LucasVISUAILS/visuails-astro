@@ -9,11 +9,29 @@
 #
 # The RESEND_API_KEY is a SECRET and is deliberately NOT stored here (it would
 # leak into git). Set it separately with either:
-#   npx wrangler pages secret put RESEND_API_KEY
+#   npx wrangler pages secret put RESEND_API_KEY --project-name visuails-astro
 # or in the dashboard: your Pages project -> Settings -> Variables and Secrets
 # -> add RESEND_API_KEY as an encrypted Secret.
+#
+# ── DE PROJECTNAAM STOND HIER FOUT — 10 AUGUSTUS 2026 ────────────────────────
+#
+# Hier stond `name = "visuails"`. Het Pages-project heet "visuails-astro", en dat
+# verschil bleef achttien dagen onopgemerkt om één reden: de site wordt gebouwd via
+# de GitHub-koppeling, en dan kiest Cloudflare het project niet op basis van dit
+# veld. Elke deploy ging dus goed.
+#
+# Waar het wél op stukloopt is elk `wrangler pages`-commando, want dát leest de naam
+# hier. `npx wrangler pages secret put SELLER_ADDRESS` antwoordde met
+# `Project "visuails" does not exist` — een melding die klinkt als "je project is
+# weg" terwijl het project er prima staat, alleen onder een andere naam. Vandaar dat
+# de regel hierboven de naam nu ook expliciet noemt: het antwoord hoort in het
+# bestand te staan en niet in het geheugen van degene die het een keer heeft
+# uitgezocht.
+#
+# `visuails` is wél de naam van de D1-database (zie database_name onderaan). Die
+# twee namen naast elkaar zijn precies waardoor dit kon ontstaan.
 
-name = "visuails"
+name = "visuails-astro"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-07-01"
 # Confirmed required: removing this broke the build with

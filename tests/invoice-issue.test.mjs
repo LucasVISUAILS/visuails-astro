@@ -119,6 +119,48 @@ function addOrder(db, over = {}) {
 const env = (db, b = bucket()) => ({ DB: d1(db), UPLOADS: b, VISUAILS_IBAN: 'NL00 TEST 0000 0000 00' });
 
 console.log('\nVISUAILS — facturen uitgeven\n');
+/* ── HET VERKOPERSADRES UIT HET SECRET ──────────────────────────────────────
+ *
+ * Een Pages-secret wordt ingetypt achter één prompt, dus een adres van vier regels
+ * moet ook zonder echte regeleindes in te voeren zijn. Ging dat mis, dan viel de
+ * code stil terug op "Voorbeeldstraat 12" en droeg de factuur een verzonnen adres
+ * zónder foutmelding — precies de fout die op 10 augustus 2026 in twee al
+ * uitgegeven facturen bleek te zitten.
+ *
+ * Getest via de echte snapshot van issueInvoice(), niet via de hulpfunctie: wat
+ * telt is wat er in `snapshot_json` belandt, want dat is wat de pdf leest en wat
+ * bevroren blijft.
+ */
+console.log('\nhet adres uit SELLER_ADDRESS');
+{
+  const forms = {
+    'liggende streepjes': 'Lucas Voorbeeld | Teststraat 1 | 1234 AB Teststad | Nederland',
+    'de twee tekens \\n': 'Lucas Voorbeeld\\nTeststraat 1\\n1234 AB Teststad\\nNederland',
+    'echte regeleindes': 'Lucas Voorbeeld\nTeststraat 1\n1234 AB Teststad\nNederland',
+  };
+  for (const [naam, value] of Object.entries(forms)) {
+    const db = fresh();
+    const id = addOrder(db);
+    const e = env(db);
+    e.SELLER_ADDRESS = value;
+    await issueInvoice(e, id, { today: '2026-08-10' });
+    const row = db.prepare('SELECT snapshot_json FROM invoices WHERE order_id = ?').get(id);
+    const seller = JSON.parse(row.snapshot_json).seller;
+    ok(`${naam} geven vier regels`, seller.address.length, 4, seller.address);
+    ok('  en de eerste is de naam', seller.address[0], 'Lucas Voorbeeld');
+    ok('  en er zit geen witruimte aan', seller.address[2], '1234 AB Teststad');
+  }
+
+  /* Zonder secret blijft het een duidelijk verzonnen adres. Dat is het signaal. */
+  const db = fresh();
+  const id = addOrder(db);
+  await issueInvoice(env(db), id, { today: '2026-08-10' });
+  const seller = JSON.parse(db.prepare('SELECT snapshot_json FROM invoices WHERE order_id = ?').get(id).snapshot_json).seller;
+  ok('zonder secret staat er een verzonnen adres', /Voorbeeldstraat/.test(seller.address.join(' ')), true, seller.address);
+  ok('en het KVK-nummer staat er wel', seller.kvk, '99742993');
+  ok('en het btw-nummer ook', seller.vat, 'NL005407575B96');
+}
+
 
 /* ── 1 · de vorm van het nummer ─────────────────────────────────────────── */
 console.log('het nummer');
