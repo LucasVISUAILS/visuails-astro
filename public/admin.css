@@ -1,3 +1,30 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DE TEKSTSCHAAL VAN HET ADMINPORTAAL — vastgelegd 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * GETELD, NIET GESCHAT. Dit bestand had 20 verschillende vaste tekstgroottes. Zeven
+ * daarvan lagen zo dicht op elkaar dat geen oog het verschil ziet: .84 naast .85 naast
+ * .875 naast .88 is 13,44 / 13,60 / 14,00 / 14,08 px — vier getallen voor één bedoeling,
+ * omdat er telkens één regel bij kwam zonder dat iemand keek wat er al stond.
+ *
+ * 30 declaraties zijn naar de dichtstbijzijnde stap geschoven. Op één na verschuift er
+ * niets meer dan 0,32 px bij een basis van 16 px, en die twee uitzonderingen staan hier
+ * omdat een uitzondering die je niet opschrijft geen uitzondering is maar een fout:
+ *
+ *   .75rem → .78rem   0,48 px — .75 ligt exact tussen .72 en .78, dus welke kant je
+ *                     ook kiest kost hetzelfde; omhoog sluit aan bij de meeste buren.
+ *   1.5rem → 1.6rem   1,60 px, en dus zichtbaar. Twee kopmaten die 1,6 px van elkaar
+ *                     liggen zijn geen twee stappen op een schaal maar afdrijving. Dit
+ *                     is de enige verandering in dit bestand die je met het oog ziet;
+ *                     terugdraaien is één getal.
+ *
+ * DE SCHAAL. Elf maten, en een nieuwe regel hoort er één van te kiezen:
+ * .68 · .72 · .78 · .82 · .86 · .92 · .96 · 1 · 1.0625 · 1.1 · 1.6
+ *
+ * Dezelfde stappen als account.css en portal.css, want een medewerker die van het
+ * adminportaal naar VISUAILS Studio kijkt hoort niet twee typografieën te zien.
+ */
+
 /* ============================================================
    VISUAILS — /admin, Lucas's own dashboard. 2026-07-27.
 
@@ -248,7 +275,7 @@ a { color: inherit; }
   box-shadow: inset 0 -1px 0 var(--line);
 }
 .mark { font-weight: 800; letter-spacing: -0.02em; font-size: 1.1rem; color: var(--ink); text-decoration: none; }
-.bar-right { display: flex; align-items: center; gap: 1rem; font-size: .85rem; color: var(--ink-3); }
+.bar-right { display: flex; align-items: center; gap: 1rem; font-size: .86rem; color: var(--ink-3); }
 
 h1 { margin: 1.6rem 0 .3rem; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
 h2 { margin: 2.4rem 0 .8rem; font-size: 1.1rem; font-weight: 700; color: var(--ink); }
@@ -272,7 +299,7 @@ h2 { margin: 2.4rem 0 .8rem; font-size: 1.1rem; font-weight: 700; color: var(--i
   display: flex; align-items: baseline; justify-content: space-between;
   gap: .8rem; flex-wrap: wrap; margin-bottom: .5rem;
 }
-.ref { font-family: ui-monospace, Menlo, monospace; font-size: .85rem; font-weight: 700; color: var(--ink); }
+.ref { font-family: ui-monospace, Menlo, monospace; font-size: .86rem; font-weight: 700; color: var(--ink); }
 .meta { font-size: .82rem; color: var(--ink-3); }
 .pill {
   display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .04em;
@@ -300,7 +327,7 @@ h2 { margin: 2.4rem 0 .8rem; font-size: 1.1rem; font-weight: 700; color: var(--i
    client's side of it. --ink-2 on --mist-clay is 5.27:1. */
 .note {
   margin: .5rem 0 0; padding: .1rem .8rem; background: none;
-  border-left: 2px solid var(--warn-ink); font-size: .9rem; white-space: pre-wrap;
+  border-left: 2px solid var(--warn-ink); font-size: .92rem; white-space: pre-wrap;
 }
 
 .controls { display: flex; align-items: center; gap: .6rem; margin-top: .7rem; flex-wrap: wrap; }
@@ -308,7 +335,7 @@ h2 { margin: 2.4rem 0 .8rem; font-size: 1.1rem; font-weight: 700; color: var(--i
    in from --select-caret — the same chevron, on the same ink, global.css puts
    on every <select> on the site. padding-right is the gap it sits in. */
 select {
-  font: inherit; font-size: .88rem; padding: .5rem 2.1rem .5rem .6rem; border: 1px solid var(--line-strong);
+  font: inherit; font-size: .86rem; padding: .5rem 2.1rem .5rem .6rem; border: 1px solid var(--line-strong);
   background-color: var(--surface); color: var(--ink); -webkit-appearance: none; appearance: none;
   background-image: var(--select-caret); background-repeat: no-repeat; background-position: right .7rem center;
 }
@@ -330,7 +357,7 @@ select option { background: var(--surface); color: var(--ink); }
    No transform on hover — the hover goes darker instead. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  font-family: var(--font); font-weight: 700; font-size: .875rem;
+  font-family: var(--font); font-weight: 700; font-size: .86rem;
   min-height: 38px; padding: 0 1.15rem;
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
   background: var(--ghost); color: var(--ink); border: 0;
@@ -432,10 +459,10 @@ form.login { max-width: 340px; margin: 3rem auto 0; display: grid; gap: .8rem; }
 form.login input[type="email"], form.login input[type="password"] {
   padding: .7rem .8rem; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
 }
-.error { color: var(--warn-ink); font-size: .88rem; margin: 0 0 .4rem; }
+.error { color: var(--warn-ink); font-size: .86rem; margin: 0 0 .4rem; }
 
 .tabs { display: flex; gap: 1.2rem; margin: 1.4rem 0 0; border-bottom: 1px solid var(--line); }
-.tabs a { padding-bottom: .6rem; font-size: .9rem; color: var(--ink-3); text-decoration: none; }
+.tabs a { padding-bottom: .6rem; font-size: .92rem; color: var(--ink-3); text-decoration: none; }
 .tabs a.is-active { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink-900); }
 
 /* ---- radius, applied per primitive -----------------------------------------
@@ -463,14 +490,14 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: .6rem; margin: 1.2rem 0 1.6rem; }
 .stat { display: flex; flex-direction: column; gap: .15rem; padding: .8rem .9rem; border: 1px solid var(--line); background: var(--paper-lift); }
 .stat.is-warn { border-color: var(--warn, #b8860b); }
-.stat-n { font-size: 1.5rem; font-weight: 700; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.stat-l { font-size: .74rem; color: var(--ink-3); }
+.stat-n { font-size: 1.6rem; font-weight: 700; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.stat-l { font-size: .72rem; color: var(--ink-3); }
 
 /* One table style for every list the admin grew: order files, customers, a
    customer's orders. Dense on purpose — this is a working view, not a page. */
-table.files { width: 100%; border-collapse: collapse; margin: .8rem 0 1.4rem; font-size: .88rem; }
+table.files { width: 100%; border-collapse: collapse; margin: .8rem 0 1.4rem; font-size: .86rem; }
 table.files th, table.files td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line); }
-table.files th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 700; }
+table.files th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 700; }
 table.files td.num, table.files th.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.files a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
 table.files tr:last-child td { border-bottom: 0; }
@@ -502,7 +529,7 @@ a.fl-chip:hover { border-color: var(--ink-700); color: var(--ink); background: v
    hebben niets mis — ze komen uit een land waar geen register bestaat. */
 .fl-chip.is-warn { border-color: var(--warn, #b8860b); color: var(--warn, #b8860b); font-weight: 700; }
 a.fl-chip.is-warn:hover { background: var(--ghost); }
-.fl-n { font-size: .76rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.fl-n { font-size: .78rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .fl-chip.is-active .fl-n { color: var(--teal-text); }
 
 /* An order marked delivered whose customer was never emailed. Amber, like the
@@ -510,7 +537,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
    same kind of fact, and the only visible trace of a mail that failed on a
    best-effort path. */
 .warnline {
-  margin: .6rem 0 0; padding: .5rem .7rem; font-size: .84rem;
+  margin: .6rem 0 0; padding: .5rem .7rem; font-size: .82rem;
   border: 1px solid var(--warn, #b8860b); color: var(--warn-ink, #e0a92b);
 }
 
@@ -525,12 +552,12 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 }
 .modelcard-img.is-blank {
   display: grid; place-items: center; width: 120px; aspect-ratio: 3 / 4;
-  border-style: dashed; color: var(--ink-3); font-size: .74rem; letter-spacing: .04em;
+  border-style: dashed; color: var(--ink-3); font-size: .72rem; letter-spacing: .04em;
 }
 .modelcard-side { flex: 1 1 auto; min-width: 0; }
 .stack { display: grid; gap: .55rem; justify-items: start; margin: .5rem 0 0; }
 .stack input[type="file"] { max-width: 100%; }
-.checkline { display: flex; align-items: flex-start; gap: .45rem; font-size: .84rem; color: var(--ink-2); }
+.checkline { display: flex; align-items: flex-start; gap: .45rem; font-size: .82rem; color: var(--ink-2); }
 .checkline input { margin: .15rem 0 0; -webkit-appearance: checkbox; appearance: checkbox; }
 @media (max-width: 560px) { .modelcard-body { flex-direction: column; } }
 
@@ -583,7 +610,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
    het staat er kort — één regel boven de tabel waarin je het resultaat meteen
    terugziet in de kolom "Announced". */
 .okline {
-  margin: .6rem 0 0; padding: .5rem .7rem; font-size: .84rem;
+  margin: .6rem 0 0; padding: .5rem .7rem; font-size: .82rem;
   border: 1px solid var(--accent, #C6F100); color: var(--ink);
   background: color-mix(in srgb, var(--accent, #C6F100) 10%, transparent);
 }
@@ -599,7 +626,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 }
 .files select {
   padding: .35rem .4rem; border: 1px solid var(--line-strong);
-  background: var(--paper-lift); color: var(--ink); font: inherit; font-size: .85rem;
+  background: var(--paper-lift); color: var(--ink); font: inherit; font-size: .86rem;
 }
 
 /* Een beeld waar de klant een revisie op vroeg: amber, dezelfde kleur als elke
@@ -612,7 +639,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .files tr.is-superseded .thumb { filter: grayscale(1); }
 
 /* Wat er vervangen moet worden, boven de bestandsnaam in de revisiekaart. */
-.rev-what { margin: 0 0 .25rem; font-size: .95rem; color: var(--ink); }
+.rev-what { margin: 0 0 .25rem; font-size: .96rem; color: var(--ink); }
 
 /* ---- het werkbord: producten × shots (augustus 2026) ------------------------
    Een gat moet eruitzien als een gat. Daarom vaste kolommen per shot en een
@@ -620,9 +647,9 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
    toevallig al is — die kan per definitie niet laten zien wat ontbreekt. */
 .board-row { margin: 1.1rem 0 0; }
 .board-head { display: flex; align-items: center; gap: .7rem; margin: 0 0 .5rem; }
-.board-head h3 { margin: 0; font-size: .95rem; }
+.board-head h3 { margin: 0; font-size: .96rem; }
 .board-count {
-  font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--ink-3);
+  font-size: .78rem; font-variant-numeric: tabular-nums; color: var(--ink-3);
   border: 1px solid var(--line); border-radius: 999px; padding: .05rem .5rem;
 }
 .board-count.is-full { color: var(--ink); border-color: var(--accent); }
@@ -639,8 +666,8 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block;
   border-radius: var(--r-sm, 5px); background: var(--paper-2);
 }
-.slot-state { font-size: .7rem; color: var(--ink-3); }
-.slot input[type=file] { font-size: .7rem; width: 100%; }
+.slot-state { font-size: .72rem; color: var(--ink-3); }
+.slot input[type=file] { font-size: .72rem; width: 100%; }
 .slot .btn { width: 100%; }
 
 /* Nog niet gemeld: groen randje, want dit is werk dat af is en wacht op één
@@ -653,7 +680,7 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 /* De vervangknop is een noodgeval, geen hoofdhandeling: bij een compleet
    product staan er vier naast elkaar en dan schreeuwen vier gevulde knoppen
    harder dan de foto's erboven. */
-.slot .btn { min-height: 28px; font-size: .7rem; padding: .2rem .45rem; }
+.slot .btn { min-height: 28px; font-size: .72rem; padding: .2rem .45rem; }
 .slot .btn-quiet { background: none; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); }
 .slot .btn-quiet:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
 
@@ -663,9 +690,9 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
    tekstvakken onder elkaar zijn één verkeerde klik van iets wat de klant nooit
    had mogen lezen. Groen: hij leest mee. Grijs met een streepjesrand: hij niet. */
 .notepanel { margin: 1rem 0 0; padding: .9rem 1rem; border-radius: var(--r-md, 8px); }
-.notepanel h3 { margin: 0 0 .3rem; font-size: .9rem; }
+.notepanel h3 { margin: 0 0 .3rem; font-size: .92rem; }
 .notepanel textarea {
-  width: 100%; padding: .6rem .7rem; font: inherit; font-size: .88rem;
+  width: 100%; padding: .6rem .7rem; font: inherit; font-size: .86rem;
   border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
   border-radius: var(--r-sm, 5px); resize: vertical;
 }
@@ -673,14 +700,14 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .notepanel.is-internal { border: 1px dashed var(--line-strong); }
 
 .notelog { list-style: none; margin: .8rem 0 0; padding: 0; display: grid; gap: .5rem; }
-.notelog li { display: grid; grid-template-columns: 8rem 1fr; gap: .6rem; font-size: .85rem; }
+.notelog li { display: grid; grid-template-columns: 8rem 1fr; gap: .6rem; font-size: .86rem; }
 .notelog-when { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .notelog-body { color: var(--ink-2); white-space: pre-wrap; }
 
 /* ---- zoeken en vaste filters (augustus 2026) -------------------------------- */
 .searchrow { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin: .8rem 0 .6rem; }
 .searchrow input[type=search] {
-  flex: 1 1 18rem; min-width: 12rem; padding: .5rem .7rem; font: inherit; font-size: .9rem;
+  flex: 1 1 18rem; min-width: 12rem; padding: .5rem .7rem; font: inherit; font-size: .92rem;
   border: 1px solid var(--line-strong); background: var(--paper-lift); color: var(--ink);
   border-radius: var(--r-sm, 5px);
 }
@@ -706,13 +733,13 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
   display: flex; flex-direction: column; gap: .4rem; padding: .8rem;
   border: 1px solid var(--line); border-radius: var(--r-sm, 6px); background: var(--paper-lift);
 }
-.danger-block h4 { margin: 0; font-size: .88rem; }
+.danger-block h4 { margin: 0; font-size: .86rem; }
 .danger-block input[type=text], .danger-block select {
-  padding: .45rem .55rem; font: inherit; font-size: .85rem;
+  padding: .45rem .55rem; font: inherit; font-size: .86rem;
   border: 1px solid var(--line-strong); background: var(--paper-2); color: var(--ink);
   border-radius: var(--r-sm, 4px);
 }
-.danger-money { display: flex; flex-direction: column; gap: .25rem; font-size: .8rem; color: var(--ink-3); }
+.danger-money { display: flex; flex-direction: column; gap: .25rem; font-size: .78rem; color: var(--ink-3); }
 /* Het onomkeerbare vak is het enige met een rode rand. Alles rood maken is
    hetzelfde als niets rood maken. */
 .danger-block.is-worst { border-color: #a33; }

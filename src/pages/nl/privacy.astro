@@ -18,7 +18,13 @@ import Layout from '../../layouts/Layout.astro';
       <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Privacybeleid</h1>
       <p class="lead" style="margin-top:1.2rem">Hoe wij bij VISUAILS met je persoonsgegevens omgaan — in gewone taal, in lijn met de Algemene Verordening Gegevensbescherming (AVG/GDPR) van de EU.</p>
       <p class="legal-meta">Laatst bijgewerkt: augustus 2026</p>
-      <p class="legal-note">Dit is een algemeen sjabloon — laat het beoordelen door een gekwalificeerde juridische professional voordat je erop vertrouwt.</p>
+      {/* De sjabloonnoot is hier weg op 11 augustus 2026, tegelijk met die op
+          /nl/terms en /nl/cookie-policy. De volledige uitleg staat in
+          src/pages/nl/terms.astro; kort: de Engelse versies waren die zin op
+          8 augustus al kwijt, de Nederlandse niet, en een privacybeleid dat zelf
+          zegt dat het niet is nagekeken is precies het tegenovergestelde van wat
+          een privacybeleid moet doen. De teksten zijn nog steeds niet door een
+          jurist gezien — dat punt staat op de werklijst, niet op deze pagina. */}
     </div>
   </section>
 

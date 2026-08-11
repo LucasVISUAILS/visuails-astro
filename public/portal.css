@@ -1,3 +1,24 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * DE TEKSTSCHAAL VAN HET KLANTPORTAAL — vastgelegd 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * GETELD, NIET GESCHAT. Dit bestand had 15 verschillende vaste tekstgroottes, waarvan een
+ * handvol binnen een halve pixel van elkaar: .875 naast .88 (14,00 / 14,08 px), .95 naast
+ * .96, 1.05 naast 1.0625. Dat zijn geen ontwerpstappen maar drie keer dezelfde bedoeling
+ * met een ander getal.
+ *
+ * 12 declaraties zijn naar de dichtstbijzijnde stap geschoven, en geen enkele verschuift
+ * meer dan 0,32 px bij een basis van 16 px. Er is dus niets herontworpen — de schaal is
+ * samengetrokken waar het verschil onzichtbaar was.
+ *
+ * DE SCHAAL. Tien maten:
+ * .72 · .78 · .82 · .86 · .92 · .96 · 1 · 1.0625 · 1.1 · 1.15
+ *
+ * Dezelfde stappen als account.css en admin.css. Dit portaal is wat een klant ziet als hij
+ * op de link in zijn levermail klikt, dus het hoort dezelfde typografie te dragen als het
+ * dashboard waar hij daarna inlogt.
+ */
+
 /* ============================================================
    VISUAILS — the client portal at /o/<token>. Section 10.
 
@@ -300,7 +321,7 @@ h1 {
   padding-top: 1.6rem; box-shadow: inset 0 1px 0 var(--line);
 }
 .fact { min-width: 0; }
-.fact dt { font-size: .74rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.fact dt { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
 .fact dd { margin: .35rem 0 0; color: var(--ink); font-weight: 500; }
 
 /* ---- system note --------------------------------------------------------
@@ -362,18 +383,18 @@ h1 {
 .tally { font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2rem 1.6rem; list-style: none; margin: 0; padding: 0; }
 .shot img { width: 100%; background: var(--paper-2); }
-.shot .name { display: block; margin: .7rem 0 .1rem; font-size: .9rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.shot .name { display: block; margin: .7rem 0 .1rem; font-size: .92rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
 .shot .meta { font-size: .82rem; color: var(--ink-3); }
 
 /* State reads as a word, never as a colour alone — a colour-only state is
    unreadable to anyone who cannot separate the two hues, and this one decides
    whether a photograph ships. */
-.state { display: inline-block; margin-top: .5rem; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.state { display: inline-block; margin-top: .5rem; font-size: .78rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .state.approved { color: var(--ink); }
 .state.approved::before { content: "\2014\00a0"; }
 .state.revision { color: var(--warn-ink); }
 .state.revision::before { content: "\2014\00a0"; }
-.said { margin: .5rem 0 0; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .9rem; color: var(--ink-2); font-style: italic; }
+.said { margin: .5rem 0 0; padding-left: .9rem; box-shadow: inset 2px 0 0 var(--line-strong); font-size: .92rem; color: var(--ink-2); font-style: italic; }
 
 /* ---- de map --------------------------------------------------------------
    Nieuw op 9 augustus 2026, en het belangrijkste blok op deze pagina: het is het
@@ -392,9 +413,9 @@ h1 {
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md, 10px);
 }
-.folder h2 { margin: 0 0 .35rem; font-size: 1.05rem; }
-.folder-n { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
-.folder-meta { margin: .45rem 0 0; font-size: .8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.folder h2 { margin: 0 0 .35rem; font-size: 1.0625rem; }
+.folder-n { margin: 0; font-size: .92rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+.folder-meta { margin: .45rem 0 0; font-size: .78rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 /* De zin die uitlegt waarom de foto's erboven geen knop meer hebben. Kleiner en
    grijzer: het is de zin die je leest als je hem mist, niet de eerste die je leest. */
 .folder-note { margin: .55rem 0 0; max-width: 62ch; }
@@ -431,7 +452,7 @@ h1 {
    goes darker instead, which is the same argument made with value. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  font-family: var(--font); font-weight: 700; font-size: .875rem;
+  font-family: var(--font); font-weight: 700; font-size: .86rem;
   min-height: 38px; padding: 0 1.15rem;
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
   background: var(--ghost); color: var(--ink); border: 0;
@@ -547,7 +568,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--line-ui); outlin
 textarea {
   display: block; width: 100%; margin-top: .6rem; padding: .7rem .8rem;
   background: var(--surface); color: var(--ink);
-  border: 1px solid var(--line-strong); resize: vertical; min-height: 5.5rem; font-size: .95rem;
+  border: 1px solid var(--line-strong); resize: vertical; min-height: 5.5rem; font-size: .96rem;
 }
 textarea:focus { border-color: var(--line-ui); outline: none; }
 /* The UA default placeholder is #757575, which lands at 4.49:1 on --surface —
@@ -559,7 +580,7 @@ textarea:focus { border-color: var(--line-ui); outline: none; }
    no JavaScript — this page has none, and a client on hotel wifi should not be
    waiting on a script to say what is wrong with a photograph. */
 details.ask { margin-top: .8rem; }
-details.ask > summary { cursor: pointer; font-size: .88rem; font-weight: 600; color: var(--ink); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
+details.ask > summary { cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--ink); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
 details.ask > summary::-webkit-details-marker { display: none; }
 details.ask > summary:hover { color: var(--ink-700); }
 
@@ -595,7 +616,7 @@ details.ask > summary:hover { color: var(--ink-700); }
    setting as a single 125-character line across the full 940px column, which is
    the least readable sentence on the page carrying the most important thing on
    it. Measured like everything else now. */
-.foot { margin: clamp(3rem, 6vw, 4.5rem) 0 0; padding-top: 1.4rem; box-shadow: inset 0 1px 0 var(--line); font-size: .88rem; color: var(--ink-3); }
+.foot { margin: clamp(3rem, 6vw, 4.5rem) 0 0; padding-top: 1.4rem; box-shadow: inset 0 1px 0 var(--line); font-size: .86rem; color: var(--ink-3); }
 .foot p { max-width: 68ch; }
 .foot a { color: var(--ink-700); text-decoration: underline; text-underline-offset: 2px; }
 
@@ -673,7 +694,7 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
   border-radius: var(--r-md);
   background: var(--surface);
   box-shadow: inset 3px 0 0 var(--accent);
-  font-size: .9rem;
+  font-size: .92rem;
   line-height: 1.55;
   color: var(--ink-2);
 }

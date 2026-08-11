@@ -11,7 +11,11 @@ import Layout from '../../layouts/Layout.astro';
     <span class="eyebrow-page">Juridisch</span>
     <h1 class="display" style="font-size:clamp(2.2rem,4.5vw,3.4rem)">Cookiebeleid</h1>
     <p style="margin-top:.8rem;color:var(--ink-3)">Laatst bijgewerkt: augustus 2026</p>
-    <div class="legal-note" style="margin-top:1.4rem">Dit is een algemeen sjabloon — laat het beoordelen door een gekwalificeerde juridische professional voordat je erop vertrouwt.</div>
+    {/* De sjabloonnoot is hier weg op 11 augustus 2026, tegelijk met die op
+        /nl/terms en /nl/privacy. Volledige uitleg in src/pages/nl/terms.astro.
+        Deze stond in een div en niet in een p, en viel daarom buiten de
+        doorzoeking van 8 augustus — dat ene verschil in tag is de hele reden dat
+        hij drie dagen langer bleef staan dan de andere twee. */}
   </div></section>
 
   <section class="section-tight"><div class="container narrow legal stack-lg">

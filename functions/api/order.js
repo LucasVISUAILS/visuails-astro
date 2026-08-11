@@ -630,6 +630,52 @@ export async function onRequestPost({ request, env, waitUntil }) {
   });
 
   /*
+   * ── EEN BESTELLING DIE NIET IS WEGGESCHREVEN MOET IEMAND HOREN — 11 AUG 2026 ─
+   *
+   * Tot vandaag was dit de stilste fout in het hele bestand. De INSERT hierboven
+   * zit in safe(), safe() logt naar de console, en dit project heeft geen
+   * logbewaring: `[observability]` staat in geen van beide wrangler.toml's. Een
+   * mislukte insert was dus letterlijk onwaarneembaar — en de klant kreeg
+   * ondertussen een bevestiging, want de rest van deze functie loopt gewoon door.
+   *
+   * Alles wat de klant net heeft ingevuld staat op dit moment nog in het geheugen
+   * en nergens anders. Dit is het laatste punt waarop het te redden is, dus het
+   * gaat integraal de mail in: met details_json erbij is de bestelling met de hand
+   * na te maken in plaats van bij de klant terug te moeten vragen wat hij wilde.
+   *
+   * `env.DB &&` staat er zodat dit alleen afgaat als er een database is om in te
+   * schrijven. Zonder binding — een lokale run, een test — is een ontbrekende rij
+   * geen storing maar de bedoeling, en een alarm dat in de normale toestand afgaat
+   * is een alarm dat niemand meer leest.
+   *
+   * De mail zelf staat óók in safe(): als Resend plat ligt is dat vervelend, maar
+   * het mag deze functie niet alsnog laten struikelen over de fout die hij aan het
+   * melden is.
+   */
+  const orderRowMissing = Boolean(env.DB) && !orderId;
+  if (orderRowMissing) {
+    console.error('[order] bestelling NIET weggeschreven —', ref, '(betaallink onderdrukt)');
+    await safe(() => sendMail(env, {
+      to: env.NOTIFY_EMAIL || 'hello@visuails.com',
+      subject: `!! Bestelling niet weggeschreven — ${ref}`,
+      html: `<p><strong>De rij in <code>orders</code> ontbreekt na het invoegen.</strong>
+        De klant heeft wél een bevestiging gekregen; er is met opzet GEEN betaallink
+        aangemaakt. Maak deze bestelling met de hand aan of neem contact op.</p>
+        <p>Kenmerk: <strong>${esc(ref)}</strong><br>
+        Dienst: ${esc(svc)}<br>
+        Naam: ${esc(name || '—')}<br>
+        Merk: ${esc(brand || '—')}<br>
+        E-mail: ${esc(email)}<br>
+        Telefoon: ${esc(phone || '—')}<br>
+        Producten: ${esc(String(products ?? '—'))}<br>
+        Land: ${esc(effCountry || country || '—')}<br>
+        Btw-nummer: ${esc(vat || '—')}</p>
+        <p>Volledige inhoud van het formulier:</p>
+        <pre style="white-space:pre-wrap;font:12px/1.5 monospace">${esc(JSON.stringify(details, null, 2))}</pre>`,
+    }));
+  }
+
+  /*
    * ── WAAR HET VERZOEK VANDAAN KWAM, 9 AUGUSTUS 2026 ─────────────────────────
    *
    * Lucas' vraag: hoe controleer je iemand die in Nederland zit en zegt dat hij uit
@@ -817,7 +863,41 @@ export async function onRequestPost({ request, env, waitUntil }) {
    * handen heeft, gebruikt die functie en niet de verzameling. Dit aanroeppunt deelt de
    * betaallink uit en las nog steeds de verzameling.
    */
-  if (quote && isPayableService(svc) && env.MOLLIE_API_KEY && vatReview.payableNow) {
+  /*
+   * ── `orderId &&` STOND HIER NIET — 11 AUGUSTUS 2026 ────────────────────────
+   *
+   * Dit was de duurste regel van de site: er werd een echte Mollie-betaling
+   * aangemaakt zonder te controleren of de bestelling ook daadwerkelijk in de
+   * database staat.
+   *
+   * De INSERT hierboven (regel ~598) zit in `safe()`, en safe() vangt álles af
+   * behalve "no such column" en logt het weg. Een overbelaste D1, een timeout,
+   * een constraint — allemaal stil. `orderId` blijft dan null (regel ~626), en
+   * die poort keek daar niet naar. De klant kreeg dus een geldige betaalknop
+   * voor een `ref` die nergens bestond.
+   *
+   * Wat er daarna gebeurde, maakte het onherstelbaar in plaats van alleen fout.
+   * De webhook zoekt de bestelling op `ref` (functions/api/webhook/mollie.js
+   * ~209), vindt niets, doet `console.error` en `return` — en dat is een 200
+   * naar Mollie, dus Mollie stopt met opnieuw aanbieden. Netto: geld binnen,
+   * geen bestelling, geen factuur, geen mail, en het enige spoor is een
+   * consoleregel in een omgeving zonder logbewaring. De noot bij die plek zegt
+   * "The order row is written before the payment is ever created, so this is
+   * not a race" — dat is precies de aanname die hier niet gold.
+   *
+   * Vandaar de volgorde: éérst of de bestelling bestaat, dan pas of er een
+   * prijs is. Er is geen enkele toestand waarin een betaallink zonder rij in
+   * `orders` de goede uitkomst is — een betaling die nergens naar verwijst is
+   * niet een halve bestelling maar een terugbetaling die nog moet gebeuren.
+   *
+   * De tweede helft van dezelfde reparatie zit in src/lib/quote.js: `quote` was
+   * nooit null bij een onbekend productaantal, want clamp() maakte er één
+   * product van. Zie de noot daar.
+   *
+   * Als `orderId` null is gaat er nu een alarmmail uit (zie hieronder) — zonder
+   * die mail zou deze poort de fout alleen maar stiller maken dan hij al was.
+   */
+  if (orderId && quote && isPayableService(svc) && env.MOLLIE_API_KEY && vatReview.payableNow) {
     const payment = await safe(() => createOrderMolliePayment(env, {
       ref,
       lang,

@@ -91,6 +91,19 @@ export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle', 'complete']);
  */
 const LADDER_KEY = { drop: 'complete' };
 
+/*
+ * Het hoogste productaantal waarvoor deze module een prijs afgeeft. Stond als los
+ * getal 500 in de clamp hieronder; het staat hier bij naam omdat het sinds
+ * 11 augustus 2026 twee dingen doet — het is niet langer alleen een plafond maar
+ * ook een weigergrens (zie de noot in quoteOrder). Eén getal op twee plekken is
+ * hoe die twee betekenissen uit elkaar zouden lopen.
+ *
+ * Ruim boven alles wat het formulier kan posten (ATTENDED_PER_WINDOW is 30) en
+ * ruim onder wat countOf() doorlaat (999), zodat het gat daartussen hier wordt
+ * afgevangen en niet ergens verderop een bedrag wordt.
+ */
+const MAX_LADDER_PRODUCTS = 500;
+
 /**
  * De wire-waarde naar de laddernaam, voor iedereen buiten dit bestand.
  *
@@ -151,7 +164,54 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
   const kind = LADDER_KEY[service] || service;
   if (!PAYABLE_SERVICES.has(kind)) return null;
 
-  const n = clamp(products, 1, 500);
+  /*
+   * ── EEN AANTAL DAT ER NIET IS, IS GEEN AANTAL VAN ÉÉN — 11 AUGUSTUS 2026 ────
+   *
+   * Hieronder stond meteen `clamp(products, 1, 500)`. clamp() maakt van alles wat
+   * geen getal is eerst 0 (`Number(n) || 0`) en tilt dat daarna naar de ondergrens:
+   * 1. Voor `outfits` en `extras` klopt dat — daar IS 0 een geldig antwoord en is de
+   * klem er tegen een gesleuteld formulier. Voor het productaantal klopt het niet,
+   * want daar is "niet ingevuld" iets heel anders dan "nul", en de ondergrens maakt
+   * er stilletjes een bestelling van één product van.
+   *
+   * Dat was niet theoretisch. /start biedt onderaan de keuzelijst de optie "Meer dan
+   * 30 producten" aan — de tekst zelf is de waarde, want er valt geen getal te kiezen
+   * (zie `f.s1.more` in OrderFlow.astro, en counts loopt tot ATTENDED_PER_WINDOW).
+   * countOf() in functions/api/order.js leest die tekst als null, geeft die
+   * ongewijzigd door, en hier rolde er een offerte uit voor één product à € 149. Die
+   * offerte werd een echte Mollie-betaallink in de bevestigingsmail: wie om 35
+   * producten vroeg kreeg een knop om € 180,29 te betalen in plaats van ruim
+   * € 2.000 — en had hij erop gedrukt, dan stond de bestelling betaald geboekt en was
+   * de factuur op dát bedrag uitgegeven.
+   *
+   * Null is hier het goede antwoord, en het bestaat al: de kop van deze functie zegt
+   * dat null "geen betaling aanmaken" betekent en dat dat de veilige kant is om op te
+   * falen. Een aantal dat we niet kennen hoort in dezelfde categorie als een dienst
+   * die niet op de ladder staat — de prijs is dan een gesprek, en dat is precies wat
+   * het formulier op dat punt óók belooft ("dit plannen we samen in plaats van het
+   * door een formulier te laten uitrekenen").
+   *
+   * De BOVENgrens doet mee om dezelfde reden, niet uit netheid. 600 producten
+   * stilzwijgend als 500 afrekenen is dezelfde fout gespiegeld: een bedrag dat niet
+   * hoort bij wat er besteld is, alleen nu in ons voordeel-omgekeerd. countOf() laat
+   * tot 999 door, dus dat gat is bereikbaar zonder het formulier.
+   *
+   * Number() en niet Number.isInteger(): een aanroeper die '12' als tekst doorgeeft
+   * bedoelt twaalf, en die mag niet stilletjes op null vallen. Wat overblijft —
+   * null, '', undefined, NaN, 0, negatief, boven het plafond — is precies de
+   * verzameling waarvoor geen prijs bestaat.
+   */
+  const asked = Math.floor(Number(products));
+  if (!Number.isFinite(asked) || asked < 1 || asked > MAX_LADDER_PRODUCTS) return null;
+
+  // Rechtstreeks, en niet nog een keer door clamp(). Na de regel hierboven IS dit
+  // al een geheel getal binnen [1, MAX_LADDER_PRODUCTS], dus een klem eromheen kan
+  // niets meer doen — en een klem die niets doet leest als een vangnet dat er niet
+  // is. De weigering hierboven is het vangnet; die twee naast elkaar zetten is hoe
+  // iemand later de een versoepelt in de veronderstelling dat de ander hem opvangt.
+  // outfits en extras hieronder houden hun clamp wél: die worden niet geweigerd
+  // maar begrensd, want daar is 0 een geldig antwoord en is de klem de hele regel.
+  const n = asked;
   // An outfit surcharge is per PRODUCT styled that way, so it can never exceed
   // the product count — and pricing.js caps it at three regardless.
   const o = clamp(outfits, 0, Math.min(n, MAX_OUTFIT_PRODUCTS));
