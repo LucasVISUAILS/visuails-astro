@@ -149,6 +149,26 @@ const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae'
         <p>Two quick steps. Tell us the look you want, then where to send it.</p>
       </div>
       <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
+        <!-- Refusals come back from /api/order as a redirect carrying ?error=…,
+             because this form does a plain POST rather than a fetch. These blocks
+             are the landing place for that; initFormRefusal() in interactions.js
+             unhides the one that matches and moves focus to it. Hidden in the
+             markup rather than injected from JS, so the wording is translated
+             with the rest of the page and shows up in a diff.
+
+             role="status" and not role="alert": the visitor has just navigated,
+             so this is the state of the page they arrived at rather than
+             something that interrupted them. -->
+        <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
+          <strong>You've already had your test sample.</strong>
+          It is one per business, so nothing has been ordered and nothing has been charged.
+          Ready for the real thing? A <a href="/start/catalog">catalog set</a> starts at a single
+          product — or <a href="/contact">send us a message</a> if you want a second look at something.
+        </div>
+        <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
+          <strong>That email address didn't go through.</strong>
+          Check it for a typo and send it again — it is the address the finished visual arrives at.
+        </div>
         <!-- data-astro-reload: this is the one form on the site whose POST can
              come back with a redirect to a different origin (Stripe Checkout,
              functions/api/order.js). Layout.astro's <ClientRouter /> intercepts

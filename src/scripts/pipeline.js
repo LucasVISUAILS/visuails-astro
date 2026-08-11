@@ -202,11 +202,41 @@ import { PRODUCT_QUESTIONS } from '../data/attributes.js';
 // en dan biedt het formulier 0% aan waar de server 21% rekent.
 import { isEu, HOME_COUNTRY } from '../data/vat.js';
 
-const STEPS = 5;
+/*
+ * ── HOEVEEL STAPPEN, EN WELKE IS DE POORT — 11 AUGUSTUS 2026 ─────────────────
+ *
+ * Dit was `const STEPS = 5`, en dat klopte zolang elke bestelling door dezelfde
+ * vijf schermen ging. De proefvisual op /test-sample gaat door vier: kiezen,
+ * foto's, gegevens, controleren. De levertijd hoort er niet tussen, want een proef
+ * van één product reserveert geen productieweek — tierForProducts(1) maakt er
+ * sowieso een onbegeleide bestelling van, dus de capaciteitsagenda zou er ook
+ * niets voor vrijgeven.
+ *
+ * Twee waarden in plaats van één constante, en dat is de hele wijziging: "hoeveel
+ * stappen zijn er" en "op welke stap draait de capaciteitspoort" zijn twee losse
+ * feiten die toevallig allebei uit datzelfde getal werden afgeleid. Zolang de
+ * poort altijd stap 4 was en de samenvatting altijd stap 5, viel dat niet op. Bij
+ * vier stappen zonder poort valt het meteen om: de samenvatting is dan stap 4 en
+ * de poort bestaat niet.
+ *
+ * De pagina zegt het, de code raadt het niet. `steps` en `gateStep` komen uit het
+ * configblok dat OrderFlow.astro uitzendt — dezelfde route als `service`, en om de
+ * reden die daar staat. Ze uit de DOM tellen zou ook werken, tot iemand een stap
+ * verbergt in plaats van weglaat; dan verschuift de navigatie zonder dat iemand
+ * die regel heeft geschreven.
+ *
+ * De standaardwaarden zijn de oude. Een pagina die niets meestuurt — en dat zijn
+ * alle drie de bestaande bestelstromen — gedraagt zich dus precies zoals gisteren.
+ */
+const DEFAULT_STEPS = 5;
+const DEFAULT_GATE_STEP = 4;
 
 /** Per-page state. Reset on every init, because ClientRouter reuses the module. */
 let form = null;
 let cfg = null;
+let STEPS = DEFAULT_STEPS;
+/** Null betekent: deze stroom heeft geen capaciteitspoort. */
+let GATE_STEP = DEFAULT_GATE_STEP;
 let current = 1;
 let batch = '';
 let staged = []; // [{ key, name, bytes, product, shot }]
@@ -264,6 +294,13 @@ function init(el) {
   form = el;
   cfg = readConfig(el);
   if (!cfg) return; // no config, no enhancement — the stacked form still works
+
+  /* Gelezen vóór alles wat navigeert. Een pagina die er niets over zegt krijgt de
+     oude vijf stappen met de poort op vier; `gateStep: null` betekent uitdrukkelijk
+     "geen poort" en is dus iets anders dan "niet meegestuurd". */
+  STEPS = Number.isInteger(cfg.steps) && cfg.steps > 0 ? cfg.steps : DEFAULT_STEPS;
+  GATE_STEP = cfg.gateStep === null ? null
+    : (Number.isInteger(cfg.gateStep) ? cfg.gateStep : DEFAULT_GATE_STEP);
 
   current = 1;
   batch = '';
@@ -409,7 +446,8 @@ function show(n, opts) {
   }
 
   syncVatConfirm();
-  if (to === 5) renderSummary();
+  /* De laatste stap, niet stap 5: bij de proefvisual is dat stap 4. */
+  if (to === STEPS) renderSummary();
 
   const node = stepNode(to);
   if (node && (!opts || opts.focus !== false)) {
@@ -552,7 +590,7 @@ function bindNav() {
       if (!validateStep(current)) return;
       const to = current + 1;
       show(to);
-      if (to === 4) runGate();
+      if (GATE_STEP !== null && to === GATE_STEP) runGate();
     });
   });
   qa('[data-pl-back]').forEach((b) => {
@@ -725,7 +763,23 @@ function bindOrder() {
  * order placed through it. The page says what it is.
  */
 function kindOf() {
-  const r = q('input[name="service"]:checked');
+  /*
+   * `[data-pl-kind]:checked` eerst, en pas daarna de oude plek — 11 aug 2026.
+   *
+   * Dit las alleen `input[name="service"]:checked`, uit de tijd dat de
+   * laddersoort met de wire-waarde meeliftte op één radiogroep. Op de
+   * proefvisual lopen die twee uit elkaar: `service` is voor beide keuzes
+   * 'test-sample' — dat is wat /api/order leest, en waar de prijs en de controle
+   * "een proef per bedrijf" aan hangen — terwijl de soort alleen zegt WAT er
+   * gemaakt wordt, een catalogset of een carousel. Die keuze staat daar dus in
+   * een eigen veld, `sample_type`.
+   *
+   * Op het attribuut zoeken in plaats van op de veldnaam maakt dat verschil
+   * onzichtbaar voor de rest van dit bestand: wie de soort draagt, draagt
+   * `data-pl-kind`, en hoe dat veld heet is de zaak van de pagina. De oude regel
+   * blijft als terugval staan, zodat /start onveranderd werkt.
+   */
+  const r = q('[data-pl-kind]:checked') || q('input[name="service"]:checked');
   const kind = (r && r.dataset.plKind) || (cfg && cfg.service) || '';
   return kind && cfg.ladder && cfg.ladder[kind] ? kind : '';
 }
@@ -3677,7 +3731,7 @@ function onSubmit(e) {
     if (!validateStep(current)) return;
     const to = current + 1;
     show(to);
-    if (to === 4) runGate();
+    if (GATE_STEP !== null && to === GATE_STEP) runGate();
     return;
   }
 
@@ -3776,7 +3830,13 @@ function finishSubmit(status, body) {
     if (warn) warn.hidden = !windowWent;
 
     clearWindow();
-    show(4);
+    /* GATE_STEP en niet 4. Een stroom zonder poort kan hier niet komen — de
+       server geeft 'window-gone' alleen bij een begeleide bestelling, en die
+       vraagt om een leverweek — maar `show(4)` zou daar de samenvatting openen
+       en dan de poort eroverheen tekenen. Een onbereikbare tak die bij de eerste
+       de beste wijziging het verkeerde scherm opent, is precies het soort regel
+       dat later voor een raadsel zorgt. */
+    if (GATE_STEP !== null) show(GATE_STEP);
     renderGate({ reason: offered ? 'ok' : body.reason, windows: body.windows || [], max: body.max });
     // renderGate already picks the panel from the reason — 'too-large' and
     // 'invalid' included, each with its own true sentence, one of which quotes

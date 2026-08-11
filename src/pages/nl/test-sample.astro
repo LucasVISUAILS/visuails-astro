@@ -148,6 +148,27 @@ const sampleTypes = [
         <p>Twee snelle stappen. Vertel ons de look die je wilt, daarna waar we die naartoe sturen.</p>
       </div>
       <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
+        <!-- Weigeringen komen van /api/order terug als een redirect met ?error=…,
+             omdat dit formulier een gewone POST doet en geen fetch. Deze blokken
+             zijn waar dat landt; initFormRefusal() in interactions.js haalt het
+             `hidden` van het passende blok en zet de focus erop. In de opmaak en
+             niet vanuit JS, zodat de tekst mee vertaald wordt met de rest van de
+             pagina en in een diff te zien is.
+
+             role="status" en niet role="alert": de bezoeker is zojuist genavigeerd,
+             dus dit is de toestand van de pagina waar hij aankomt — niet iets dat
+             hem onderbrak. -->
+        <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
+          <strong>Je hebt je proefvisual al gehad.</strong>
+          Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven.
+          Klaar voor het echte werk? Een <a href="/nl/start/catalog">catalogset</a> begint bij één
+          product — of <a href="/nl/contact">stuur ons een bericht</a> als je ergens nog naar wilt kijken.
+        </div>
+        <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
+          <strong>Dat e-mailadres kwam er niet doorheen.</strong>
+          Kijk het even na op een typefout en verstuur opnieuw — het is het adres waar de
+          afgewerkte visual naartoe gaat.
+        </div>
         <form action="/api/order" method="post" data-wizard novalidate>
           <input type="hidden" name="service" value="test-sample" />
           <input type="hidden" name="redirect" value="/nl/thank-you" />

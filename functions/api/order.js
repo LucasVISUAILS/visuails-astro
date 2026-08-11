@@ -304,6 +304,90 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const svc = ORDER_SERVICES.has(service) ? service : 'catalog';
   const ref = makeRef();
 
+  /*
+   * ═══════════════════════════════════════════════════════════════════════════
+   * ÉÉN PROEFVISUAL PER BEDRIJF — 11 AUGUSTUS 2026
+   * ═══════════════════════════════════════════════════════════════════════════
+   *
+   * Dit stond als belofte in de algemene voorwaarden (§ "Test sample"), op
+   * /pricing, op de homepage en in TEST_SAMPLE.unit ("one per business"), en werd
+   * door niets afgedwongen. Doorzocht op `sample_used`, `test_sample_at` en elke
+   * telling per klant: nul treffers. Eén merk kon zijn hele collectie voor € 1 per
+   * product laten maken. Het enige punt uit de doorlichting van 10 augustus dat
+   * direct geld kost.
+   *
+   * ── WAAROM E-MAIL, EN NIET IETS BETERS ────────────────────────────────────
+   *
+   * Het proefvisualformulier vraagt om naam, e-mail, telefoon en merknaam. Géén
+   * btw-nummer, géén KVK. Wat overblijft om een "bedrijf" mee te herkennen:
+   *
+   *   e-mail   exact, en al genormaliseerd naar kleine letters (regel 178).
+   *            Eenduidig, en voor de klant te begrijpen als hij geweigerd wordt.
+   *   merknaam vrije tekst. "Merk", "merk b.v." en "MERK BV" zijn drie waarden.
+   *   domein   ONBRUIKBAAR als hard criterium: bij gmail.com of hotmail.com zou
+   *            de eerste aanvrager iedereen daarna buitensluiten. Dat is geen
+   *            randgeval maar de meerderheid van een eerste aanvraag.
+   *
+   * Dus e-mail. Dat houdt niet tegen dat iemand een tweede adres pakt, en dat
+   * hoeft ook niet: de € 1 is er "to prevent abuse", niet als slot. Wat dit wél
+   * tegenhoudt is het geval uit de doorlichting — twintig producten achter elkaar
+   * op één adres — en dat is precies het geval dat geld kost.
+   *
+   * Merknaam is bewust GEEN tweede blokkade. De twee fouten zijn niet gelijk: een
+   * misgelopen proef kost een paar euro studiotijd, een ten onrechte geweigerde
+   * klant kost de klant zelf — en dat op het eerste scherm dat hij ooit ziet, bij
+   * een studio die er nul heeft. Bij twijfel dus doorlaten.
+   *
+   * ── ALLEEN BETAALD TELT ───────────────────────────────────────────────────
+   *
+   * `payment_status = 'paid'`, en niet "er bestaat een rij". Wie het formulier
+   * invult en bij Mollie de tab sluit heeft niets gekregen; die zijn proef
+   * afpakken zou een fout zijn die vaker voorkomt dan het misbruik dat we hier
+   * afvangen. Betaald is ook het moment waarop de belofte is nagekomen: hij heeft
+   * zijn proefvisual gehad.
+   *
+   * ── EN HET FAALT OPEN ─────────────────────────────────────────────────────
+   *
+   * Kan de database niet gelezen worden, dan gaat de bestelling gewoon door. Dat
+   * is dezelfde kant op als de rest van dit bestand ("Failing OPEN, not closed",
+   * de noot bij de Mollie-tak): een klant kwijtraken om een controle te redden is
+   * de fout die dit bestand overal weigert te maken. De prijs van openvallen is
+   * één proefvisual; de prijs van dichtvallen is een klant die op het eerste
+   * scherm een foutmelding krijgt die nergens op slaat.
+   */
+  if (svc === 'test-sample') {
+    let used = 0;
+    let checked = false;
+    await safe(async () => {
+      if (!env.DB) return;
+      const row = await env.DB
+        .prepare(`SELECT COUNT(*) AS n FROM orders
+                   WHERE service = 'test-sample'
+                     AND payment_status = 'paid'
+                     AND lower(email) = ?1`)
+        .bind(email).first();
+      used = Number(row?.n) || 0;
+      checked = true;
+    });
+
+    if (checked && used > 0) {
+      console.log('[order] tweede proefvisual geweigerd voor', email, `(${used} betaald)`);
+      if (wantsJson) return json({ ok: false, error: 'sample-used' }, 409);
+      /* Terug naar het formulier waar hij vandaan kwam, niet naar de
+         bedankpagina — dezelfde Referer-route als de e-mailcontrole hierboven,
+         en om dezelfde reden: `back` wijst naar "gelukt" en dat is dit niet. */
+      let dest = back;
+      try {
+        const from = request.headers.get('Referer');
+        if (from) {
+          const u = new URL(from);
+          if (u.origin === new URL(request.url).origin) dest = u.pathname + u.search;
+        }
+      } catch {}
+      return redirect(dest + (dest.includes('?') ? '&' : '?') + 'error=sample-used');
+    }
+  }
+
   const products = countOf(get('products'));
 
   // DERIVED, NOT POSTED. This used to read `get('tier') === 'attended'`, which

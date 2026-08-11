@@ -50,7 +50,8 @@
     "test:retention": "node tests/retention.test.mjs",
     "test:a11y": "node tests/a11y.test.mjs",
     "test:wrangler": "node tests/wrangler-args.test.mjs",
-    "test:order": "node tests/order-api.test.mjs"
+    "test:order": "node tests/order-api.test.mjs",
+    "test:steps": "node tests/pipeline-steps.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

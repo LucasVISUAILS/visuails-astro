@@ -2562,6 +2562,25 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .ts-msg:empty { display: none; }
 .ts-msg.is-error { color: var(--warn-ink); }
 
+/* De weigering bovenaan het formulier — 11 augustus 2026.
+ *
+ * Voor de bezoeker die terugkomt met ?error=… omdat de server de bestelling niet
+ * heeft aangenomen: een tweede proefvisual op hetzelfde adres, of een e-mailadres
+ * dat niet klopt. initFormRefusal() in interactions.js haalt het `hidden` eraf.
+ *
+ * --warn op de rand en --warn-ink op de kop, niet omgekeerd: --warn is in DESIGN.md
+ * de waarde voor vlakken, randen en grote tekst, --warn-ink die voor tekst. De
+ * lopende tekst blijft --ink-2, want een hele alinea in een waarschuwingskleur
+ * leest als een storing terwijl dit een regel is die gewoon wordt uitgelegd.
+ *
+ * tabindex="-1" staat in de HTML zodat de melding focus kan krijgen; vandaar hier
+ * ook een zichtbare ring, anders springt de pagina ergens heen zonder te tonen
+ * waarheen. */
+.ts-refused { margin-bottom: 1.4rem; padding: 1rem 1.15rem; border: 1px solid var(--warn); background: var(--surface); font-size: .92rem; line-height: 1.55; color: var(--ink-2); }
+.ts-refused strong { display: block; margin-bottom: .3rem; color: var(--warn-ink); }
+.ts-refused a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.ts-refused:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
 /* DOM order out of tsRow() is name, size, msg; the Remove button is appended
    last, so it is placed explicitly — left to auto-placement it would drop onto
    a row of its own below the message. */

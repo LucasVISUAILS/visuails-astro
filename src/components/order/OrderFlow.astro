@@ -64,8 +64,31 @@ interface Props {
   lang: 'en' | 'nl';
   /** The ladder kind. Also what the config blob calls the service. */
   service: 'complete' | 'catalog' | 'lifestyle';
+  /*
+   * ── DE PROEFSTAND — 11 AUGUSTUS 2026 ──────────────────────────────────────
+   *
+   * 'order' is elke betalende bestelling en is wat er stond; 'sample' is de
+   * proefvisual van € 1 op /test-sample. Die had zijn eigen tweestapsformulier
+   * met een eigen uploader en een eigen wizard in interactions.js — twee
+   * bestelformulieren naast elkaar, allebei te onderhouden. Wat op /start al
+   * werkte (uploads per product, stijlkiezer, modelkiezer, de foutafhandeling)
+   * ontbrak op de proef, en dat is nu juist het scherm waar een merk voor het
+   * eerst iets van je koopt.
+   *
+   * Vier verschillen, en niet meer dan vier:
+   *   · de soort — catalogset of lifestyle-carousel — kiest de bezoeker hier,
+   *     in plaats van dat de pagina hem meegeeft;
+   *   · het aantal staat vast op 1 en wordt niet gevraagd;
+   *   · geen levertijdstap, want een proef reserveert geen productieweek;
+   *   · de prijs is vast € 1 en komt niet van de ladder.
+   *
+   * Al het andere is letterlijk dezelfde stroom. Waar hieronder `isSample` staat
+   * is dat dus één van die vier, en nergens anders voor.
+   */
+  mode?: 'order' | 'sample';
 }
-const { lang, service } = Astro.props;
+const { lang, service, mode = 'order' } = Astro.props;
+const isSample = mode === 'sample';
 const lp = (p: string) => localizedPath(lang, p);
 
 /*
@@ -99,17 +122,34 @@ if (!LADDER[service]) {
 // plus a lifestyle carousel; renaming it is a migration, not a form change.
 const WIRE = { complete: 'drop', catalog: 'catalog', lifestyle: 'lifestyle' } as const;
 
+/*
+ * De proef post ALTIJD 'test-sample', ongeacht welke soort de bezoeker kiest.
+ * Dat is de splitsing waar deze stand op draait: `service` op de draad zegt WAT
+ * voor bestelling het is (en daar hangt de prijs, de factuur en de controle
+ * "één per bedrijf" aan), terwijl de laddersoort alleen zegt wat er gemaakt
+ * wordt — vier catalogbeelden of een carousel van drie. Die twee liepen op
+ * /start toevallig gelijk; hier niet, en dus moeten ze uit elkaar.
+ */
+const wireService = isSample ? 'test-sample' : WIRE[service];
+
 // The country select's options, grouped, built once. In frontmatter rather than
 // inline for this file's standing reason: an arrow function in a JSX attribute
 // puts a `>` inside the opening tag and the tag scanners close the element on it.
 const COUNTRIES = countryOptions(lang);
-const wire = WIRE[service];
+const wire = wireService;
 
 // A lifestyle carousel is a styled scene, not a product on a ground, so it has
 // no background to choose. The picker is simply not rendered for it — the old
 // page hid AND disabled the fieldset at runtime, which was the right fix while
 // one page served all three services and is dead weight now that it does not.
-const bgApplies = service !== 'lifestyle';
+//
+// EN DAN DE PROEF, 11 augustus 2026. Daar staat de soort bij het bouwen nog niet
+// vast: de bezoeker kiest hem in stap 1. Dus rendert de kiezer daar altijd, en
+// doet syncBackground(kindOf()) in pipeline.js wat de regel hierboven "dead
+// weight" noemt — verbergen én uitschakelen zodra er lifestyle gekozen wordt.
+// Dat is geen terugval: die functie bestaat daar nog steeds voor. Wat hierboven
+// vervalt is alleen de aanname dat één pagina altijd één dienst bedient.
+const bgApplies = isSample ? true : service !== 'lifestyle';
 
 const unattended = TIERS.unattended;
 const sample = TEST_SAMPLE[lang];
@@ -513,6 +553,18 @@ const FORM = {
       countLabel: 'How many products?',
       countPick: 'Choose a number',
       countHint: `Above ${ATTENDED_PER_WINDOW} we plan it with you — take the last option.`,
+      /* ── De soortkeuze op de proefvisual, 11 augustus 2026 ─────────────────
+         Wat je krijgt staat naast de naam en niet eronder in een hint: het is
+         het verschil waarop je kiest, en dat hoort niet in kleine letters. De
+         aantallen komen niet uit een tekst maar uit dezelfde bron als de rest
+         van de site — vier catalogbeelden, een carousel van drie. */
+      sampleKindLabel: 'What should we make?',
+      sampleKindCatalog: 'Catalog set',
+      sampleKindCatalogGets: 'Four images, product on a clean ground',
+      sampleKindLifestyle: 'Lifestyle carousel',
+      sampleKindLifestyleGets: 'Three images, worn in a styled scene',
+      sampleKindErr: 'Pick one of the two.',
+      sampleFlatNote: 'for one product, one per business. Everything else on this page is the same work a paid order gets.',
       countErr: 'Choose how many products before you continue.',
       more: `More than ${ATTENDED_PER_WINDOW} products`,
       totalLabel: 'Running total',
@@ -675,6 +727,14 @@ const FORM = {
       countLabel: 'Hoeveel producten?',
       countPick: 'Kies een aantal',
       countHint: `Boven ${ATTENDED_PER_WINDOW} plannen we het samen — kies de laatste optie.`,
+      /* Zie de noot bij de Engelse tegenhanger. */
+      sampleKindLabel: 'Wat maken we voor je?',
+      sampleKindCatalog: 'Catalogset',
+      sampleKindCatalogGets: 'Vier beelden, je product op een schone ondergrond',
+      sampleKindLifestyle: 'Lifestyle-carousel',
+      sampleKindLifestyleGets: 'Drie beelden, gedragen in een gestileerde scène',
+      sampleKindErr: 'Kies er één van de twee.',
+      sampleFlatNote: 'voor één product, één per bedrijf. Al het andere op deze pagina is hetzelfde werk als bij een betaalde bestelling.',
       countErr: 'Kies eerst hoeveel producten.',
       more: `Meer dan ${ATTENDED_PER_WINDOW} producten`,
       totalLabel: 'Totaal tot nu toe',
@@ -851,6 +911,20 @@ const levels = [
 const config = {
   lang,
   service,
+  /*
+   * Wat pipeline.js over de vorm van dit formulier moet weten, 11 augustus 2026.
+   *
+   * `steps` en `gateStep` stonden daar tot vandaag als één constante (STEPS = 5),
+   * waaruit twee dingen werden afgeleid: hoeveel stappen er zijn, en op welke de
+   * capaciteitspoort draait. Zolang dat altijd vijf en vier waren viel niet op dat
+   * het twee losse feiten zijn. De proef heeft er vier en geen poort, en dan valt
+   * het meteen om — zie de noot bovenaan pipeline.js.
+   *
+   * `gateStep: null` is uitdrukkelijk "deze stroom heeft geen poort", en dus iets
+   * anders dan niets meesturen: dat laatste betekent "gebruik de oude waarde".
+   */
+  steps: isSample ? 4 : 5,
+  gateStep: isSample ? null : 4,
   ladder: LADDER,
   windowThreshold: WINDOW_THRESHOLD,
   maxProducts: ATTENDED_PER_WINDOW,
@@ -950,8 +1024,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       <a href={lp('/account')} class="btn btn-primary pl-signin-cta">{f.signInCta}</a>
     </aside>
 
+    {/* De vierde rail-ingang is 'Levertijd' / 'Timing', en die stap bestaat niet
+        bij een proefvisual. Er wordt hier gefilterd in plaats van een tweede
+        lijst naast f.rail te zetten: twee lijsten die op één na gelijk zijn,
+        lopen bij de eerste tekstwijziging uit elkaar. De index staat vast aan de
+        volgorde van de stappen zelf, dus als die ooit verandert, verandert deze
+        regel mee — en dat is precies de bedoeling. */}
     <ol class="pl-rail" aria-label={f.railLabel}>
-      {f.rail.map((t, i) => (
+      {(isSample ? f.rail.filter((_, i) => i !== 3) : f.rail).map((t, i) => (
         <li>
           <button type="button" class="pl-rail-item" data-pl-rail-item={String(i + 1)}>
             <span class="pl-rail-n">{String(i + 1).padStart(2, '0')}</span>
@@ -971,11 +1051,49 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           paragraphs of comparison used to live here; the chooser at /start is
           where that comparison belongs, and repeating it asks a visitor to
           re-decide something they decided one click ago. */}
+      {!isSample && (
       <p class="pl-svc">
         <span class="pl-svc-name">{svc.title}</span>
         <span class="pl-svc-gets">{svc.gets}</span>
         <a class="pl-svc-change" href={lp('/start')}>{SERVICE[lang].change}</a>
       </p>
+      )}
+
+      {/* DE SOORTKEUZE, ALLEEN BIJ DE PROEF — 11 augustus 2026.
+          Op /start staat de dienst al vast voordat dit formulier laadt; hier is
+          hij de eerste vraag.
+
+          `name="sample_type"` en niet `name="service"`: service draagt de
+          wire-waarde die /api/order leest, en die is voor allebei 'test-sample'.
+          Wat hier gekozen wordt is de laddersoort — wat er gemaakt wordt.
+          kindOf() in pipeline.js leest `[data-pl-kind]:checked`, en daar hangt
+          meteen de achtergrondkiezer aan: die verdwijnt vanzelf bij lifestyle,
+          want een gestileerde scène heeft geen achtergrond om te kiezen. */}
+      {isSample && (
+      <fieldset class="pl-fieldset pl-kinds">
+        <legend class="pl-sr">{f.s1.sampleKindLabel}</legend>
+        <h3 class="pl-sub-h" id="pl-kind-h">{f.s1.sampleKindLabel}</h3>
+        <div class="pl-kind-row" role="radiogroup" aria-labelledby="pl-kind-h">
+          {[['catalog', f.s1.sampleKindCatalog, f.s1.sampleKindCatalogGets],
+            ['lifestyle', f.s1.sampleKindLifestyle, f.s1.sampleKindLifestyleGets]].map(([k, name, gets], i) => (
+            <label class="pl-kind">
+              <input
+                type="radio"
+                name="sample_type"
+                value={k}
+                data-pl-kind={k}
+                checked={i === 0}
+                required
+                data-pl-req="1"
+                data-pl-err-msg={f.s1.sampleKindErr}
+              />
+              <span class="pl-kind-name">{name}</span>
+              <span class="pl-kind-gets">{gets}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      )}
 
       {/* One select, one name. Every option is a real count and the last one
           deliberately is not — countOf() in /api/order would read "30+" as
@@ -985,6 +1103,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           the line that says "choose how many and the total appears here" was
           never on screen, and an inattentive visitor could order one product by
           not answering. */}
+      {!isSample && (
       <div class="field">
         <label for="pl-products">{f.s1.countLabel} <span class="req">*</span></label>
         <select id="pl-products" class="select" name="products" required data-pl-req="1" data-pl-err-msg={f.s1.countErr}>
@@ -994,6 +1113,20 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         </select>
         <span class="hint">{f.s1.countHint}</span>
       </div>
+      )}
+
+      {/* Een proef is één product. Geen keuzelijst met één optie erin: een vraag
+          met maar één antwoord is geen vraag, en hij zou wel een fout kunnen
+          opleveren als iemand hem leeg laat. Als select en niet als hidden,
+          omdat productCount() in pipeline.js `select[name="products"]` leest —
+          en zonder telling weet de kaartenlijst niet hoeveel producten er zijn.
+          Uit de tabvolgorde en voor schermlezers verborgen, want er valt niets
+          te kiezen. */}
+      {isSample && (
+      <select name="products" hidden aria-hidden="true" tabindex="-1">
+        <option value="1" selected>1</option>
+      </select>
+      )}
 
       {/* Task #271f — Single Product/Full outfit. Not [data-pl-req]: 0 is
           always a valid answer, so this field is never required. */}
@@ -1038,6 +1171,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
           None of it is authoritative: a preview computed in the browser from
           the ladder in the config blob, and no amount is ever posted. */}
+      {!isSample && (
       <div class="pl-total">
         <div class="pl-total-live" aria-live="polite" aria-atomic="true">
           <div class="pl-total-bar">
@@ -1053,6 +1187,24 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <p class="pl-total-vatnote">{f.s1.vatNote}</p>
         <p class="pl-total-display">{f.s1.displayNote}</p>
       </div>
+      )}
+
+      {/* De proef kost één vast bedrag, dus hier staat geen meelopend totaal.
+          Het blok hierboven is er om een bedrag te tonen dat MEEBEWEEGT met de
+          telling en de staffel; als er niets beweegt is een live-regio met een
+          onveranderlijk getal erin alleen maar ruis voor een schermlezer.
+          Vandaar één zin, en geen aria-live.
+
+          syncTotal() in pipeline.js draait hier gewoon en schrijft nergens
+          naartoe: setText() verdraagt een ontbrekend element. Dat is met opzet
+          niet afgevangen met een extra vlag in de config — een tak die niets
+          doet omdat het doel er niet is, is minder om fout te doen dan een tak
+          die overgeslagen wordt omdat een vlag dat zegt. */}
+      {isSample && (
+      <p class="pl-total-flat">
+        <strong>{sample.price}</strong> {f.s1.sampleFlatNote}
+      </p>
+      )}
 
       {/* THE ONE BLOCK THAT DIFFERS PER SERVICE. Catalog and complete slot in
           the background picker; lifestyle slots in the style picker, because a
@@ -1379,8 +1531,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       </div>
     </section>
 
-    <!-- STEP 4 · TIMING -->
-    <section class="pl-step" data-pl-step="4">
+    {/* STAP 4 · LEVERTIJD — bestaat niet bij een proefvisual.
+        Weggelaten en niet verborgen: een verborgen stap zit nog in de DOM, en
+        dan telt de navigatie hem mee terwijl niemand hem ziet. pipeline.js
+        hoort via het configblok dat er vier stappen zijn en geen poort. */}
+    {!isSample && (
+    <section class="pl-step" data-pl-timing data-pl-step="4">
       <h2 class="pl-h" data-pl-head>{f.s4.h}</h2>
       <p class="pl-lead">{f.s4.lead}</p>
 
@@ -1439,9 +1595,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <button type="button" class="btn btn-primary" data-pl-next>{f.next}</button>
       </div>
     </section>
+    )}
 
-    <!-- STEP 5 · CONFIRM -->
-    <section class="pl-step" data-pl-step="5">
+    {/* STAP 5, of 4 als de levertijd hierboven wegviel. Het nummer moet
+        aaneengesloten zijn: pipeline.js loopt van 1 tot STEPS en zou bij een gat
+        op een lege stap uitkomen. */}
+    <section class="pl-step" data-pl-step={isSample ? '4' : '5'}>
       <h2 class="pl-h" data-pl-head>{f.s5.h}</h2>
       <p class="pl-lead">{f.s5.lead}</p>
 
@@ -1693,7 +1852,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      Astro's zero-weight :where(.astro-HASH). Nothing in this block competes. */
   .pl-form { --pl-measure: 880px; }
   .pl-step { max-width: var(--pl-measure); }
-  .pl-step[data-pl-step="4"] { max-width: 980px; }
+  /* Op de levertijdstap staat de agenda met zes weken naast elkaar, en die
+     heeft meer breedte nodig dan de leesmaat. Dat mikte op `data-pl-step="4"`,
+     wat klopte zolang stap vier ALTIJD de levertijd was. Bij een proefvisual is
+     vier het controlescherm, en dat moet gewoon op de leesmaat blijven — vandaar
+     dat de regel nu op de stap zelf mikt en niet op zijn nummer. */
+  .pl-step[data-pl-timing] { max-width: 980px; }
   .pl-step[data-pl-step="1"] { max-width: none; }
   .pl-step[data-pl-step="1"] > :not(.pl-fieldset) { max-width: var(--pl-measure); }
 
@@ -1784,6 +1948,30 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   .field:has(.pl-check input:checked) > label[for="pl-vat"] { opacity: .6; }
 
   .pl-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+
+  /* ── DE SOORTKEUZE OP DE PROEFVISUAL — 11 augustus 2026 ────────────────────
+     Twee kaarten naast elkaar, en onder 34em onder elkaar: bij twee opties is
+     naast elkaar de vergelijking, en dat is precies waar de keuze over gaat.
+     De radio zelf blijft in de tabvolgorde en krijgt gewoon zijn focusring —
+     hem verstoppen achter de kaart is hoe een toetsenbordgebruiker de selectie
+     kwijtraakt. Vandaar :focus-within op de kaart en niet display:none. */
+  .pl-total-flat { margin-top: 1.4rem; padding: .9rem 1.1rem; border: 1px solid var(--line-strong); background: var(--surface); font-size: .95rem; color: var(--ink-2); }
+  .pl-total-flat strong { color: var(--ink); font-size: 1.15rem; }
+
+  .pl-kind-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  @media (max-width: 34em) { .pl-kind-row { grid-template-columns: 1fr; } }
+  .pl-kind {
+    display: grid; gap: .2rem; align-content: start;
+    padding: 1rem 1.1rem; cursor: pointer;
+    border: 1px solid var(--line-strong); background: var(--surface);
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .pl-kind:hover { border-color: var(--ink-3); }
+  .pl-kind:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .pl-kind:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .pl-kind input { margin: 0 0 .35rem; }
+  .pl-kind-name { font-weight: 600; color: var(--ink); }
+  .pl-kind-gets { font-size: .88rem; color: var(--ink-3); }
 
   .pl-noscript,
   .pl-note {

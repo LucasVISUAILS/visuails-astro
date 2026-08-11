@@ -759,6 +759,50 @@ function tsGateMsg() {
   return d.tsNeedFile;
 }
 
+/*
+ * ── DE WEIGERING BIJ EEN TWEEDE PROEFVISUAL ZICHTBAAR MAKEN — 11 AUG 2026 ────
+ *
+ * functions/api/order.js weigert sinds vandaag een tweede BETAALDE proefvisual op
+ * hetzelfde e-mailadres, en stuurt de bezoeker terug naar het formulier met
+ * `?error=sample-used`. Zonder deze functie is dat een doodlopende weg: hij komt
+ * terug op een formulier dat er precies zo uitziet als voor hij op verzenden
+ * drukte, zonder enige aanwijzing waarom er niets is gebeurd — en probeert het
+ * dan opnieuw.
+ *
+ * Het valt op dat `?error=email` daar al sinds de bouw van dit formulier heen
+ * werd geschreven en door NIETS werd gelezen. Die wordt hier meteen meegenomen;
+ * het is dezelfde regel code en dezelfde doodlopende weg.
+ *
+ * De tekst staat in de HTML en niet hier: dit bestand is tweetalig noch de plek
+ * voor klantteksten (zie de woordenlijst bovenaan — die is er voor de
+ * uploadmeldingen, die uit JS moeten komen omdat ze pas tijdens het kiezen van
+ * een bestand ontstaan). Hier is de melding er al; hij is alleen nog verborgen.
+ *
+ * Het adres wordt daarna opgeschoond met replaceState, zodat een verversing of
+ * een gedeelde link niet opnieuw een foutmelding toont voor iets wat de bezoeker
+ * op dat moment niet aan het doen is.
+ */
+function initFormRefusal() {
+  let code = '';
+  try { code = new URL(window.location.href).searchParams.get('error') || ''; } catch { return; }
+  if (!code) return;
+
+  const box = document.querySelector(`[data-form-refusal="${code}"]`);
+  if (!box) return;
+
+  box.hidden = false;
+  /* focus() en niet scrollIntoView(): de melding krijgt tabindex="-1" in de HTML,
+     dus dit brengt hem in beeld én vertelt een schermlezer dat hier iets nieuws
+     staat. Alleen scrollen doet het eerste wel en het tweede niet. */
+  try { box.focus({ preventScroll: false }); } catch { box.scrollIntoView({ block: 'center' }); }
+
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.delete('error');
+    window.history.replaceState({}, '', u.pathname + (u.search || '') + u.hash);
+  } catch {}
+}
+
 let tsInputBound = false;
 function initTestSampleUpload() {
   const input = document.querySelector('#ts-upload');
@@ -1286,6 +1330,7 @@ export function init() {
   initServicesMenu();
   initConvbar();
   initTestSampleUpload();
+  initFormRefusal();
   initWizards();
 }
 
