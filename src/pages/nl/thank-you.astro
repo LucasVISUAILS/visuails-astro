@@ -39,7 +39,7 @@ const description =
   <section class="page-hero"><div class="container" style="max-width:720px;text-align:center;margin-inline:auto">
     <span class="eyebrow-page">Aanvraag ontvangen</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Bedankt — we hebben je aanvraag ontvangen.</h1>
-    <p class="lead" style="margin:1.2rem auto 0">We bevestigen de details per e-mail — meestal sneller via WhatsApp.</p>
+    <p class="lead ty-hide-when-cancelled" style="margin:1.2rem auto 0">We bevestigen de details per e-mail — meestal sneller via WhatsApp.</p>
     {/* DE BETALING, EN WAAROM DIE HIER STAAT — 7 augustus 2026.
         Lucas: *"in de thank you page staat nergens dat je de betaling dient te
         voltooien in de bevestigingsmail. Daarna kan het orderproces pas gestart
@@ -54,15 +54,30 @@ const description =
         lees je hem als niet van toepassing. Dit is een statische pagina zonder
         toegang tot de bestelling, dus dit is de eerlijkste vorm die geen
         JavaScript nodig heeft om te kloppen. */}
-    <p class="ty-pay"><strong>Staat er een betaallink in je bevestigingsmail?</strong> Rond die betaling af — je bestelling is genoteerd, maar we beginnen pas met produceren zodra de betaling binnen is.</p>
+    <p class="ty-pay ty-hide-when-cancelled"><strong>Staat er een betaallink in je bevestigingsmail?</strong> Rond die betaling af — je bestelling is genoteerd, maar we beginnen pas met produceren zodra de betaling binnen is.</p>
     {/* Zie de EN-pagina: één zin, uit src/data/mailNote.js. */}
-    <p class="mail-note">{mailNote('nl')}</p>
+    {/* ── GEANNULEERD: EEN TWEEDE PROEFVISUAL — 11 augustus 2026 ──────────────
+         Zie de Engelse pagina voor waarom dit blok bovenaan staat. */}
+    <div class="ty-cancelled" data-ty-cancelled role="status" tabindex="-1" hidden>
+      <h2 class="ty-cancelled-h">Deze hebben we moeten annuleren</h2>
+      <p>Er is bij ons al een proefvisual voor jouw bedrijf de deur uit gegaan. Het is
+        er &eacute;&eacute;n per bedrijf, dus deze tweede aanvraag is geannuleerd — en de
+        &euro;&nbsp;1 gaat terug naar de rekening waarvan je betaald hebt. Dat duurt
+        meestal een paar werkdagen.</p>
+      <p>Klopt dat niet? Bijvoorbeeld omdat een collega hem zonder overleg heeft besteld,
+        of omdat die eerste proef nooit is aangekomen — beantwoord dan je bevestigingsmail,
+        dan zoeken we het met de hand uit.</p>
+      <p class="ty-cancelled-next">Wil je het echte werk? De gewone diensten beginnen bij
+        de prijs per product, zonder minimumafname.</p>
+      <a class="btn btn-primary" href="/nl/start">Bekijk de diensten</a>
+    </div>
+    <p class="mail-note ty-hide-when-cancelled">{mailNote('nl')}</p>
     <!-- Filled client-side with the order reference /api/order redirected here
          with (initThankYou in interactions.js). Ships hidden and stays hidden
          unless there is a valid reference to show — a visitor who reaches this
          page any other way simply doesn't get a summary box. -->
     <div class="card ty-summary" id="ty-summary" style="display:none;text-align:left;margin:2rem auto 0;max-width:520px"></div>
-    <div class="source-ask" data-source-ask>
+    <div class="source-ask ty-hide-when-cancelled" data-source-ask>
       <span class="source-q">Nog één ding — hoe kwam je bij ons terecht?</span>
       <div class="source-btns">
         <button type="button" class="source-btn" data-source="Instagram">Instagram</button>
@@ -87,7 +102,7 @@ const description =
     <p class="ty-signin">Je logt in met het e-mailadres van deze bestelling — we sturen je een link, een wachtwoord heb je niet nodig.</p>
   </div></section>
 
-  <section class="section-tight"><div class="container">
+  <section class="section-tight ty-hide-when-cancelled"><div class="container">
     <div class="grid grid-3 reveal-group">
       <div class="card reveal pending"><h2 class="as-card-h">Wat er nu gebeurt</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Zodra de betaling binnen is, lezen we wat je hebt gestuurd, maken we je beelden klaar, en controleert een persoon elk resultaat met de hand voordat het bij jou aankomt.</p></div>
       <div class="card reveal pending"><h2 class="as-card-h">Gebruikelijke doorlooptijd</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} vanaf het moment dat we je foto’s en je notitie hebben tot je downloadlink. {T0.queue.nl}; een gloednieuwe custom stijl kan iets langer duren.</p></div>
@@ -145,4 +160,18 @@ const description =
   .ty-upsell { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.2rem; border-color: var(--accent-line); }
   .ty-upsell .btn { flex: 0 0 auto; }
   @media (max-width: 560px) { .ty-upsell .btn { width: 100%; } }
+
+  /* ── HET ANNULERINGSBLOK ──────────────────────────────────────────────────
+     Zwaarder omrand dan een gewone kaart, want dit is het enige op deze pagina
+     dat de bezoeker écht moet lezen. Geen rood: er is niets misgegaan en hij
+     heeft niets fout gedaan — er is een regel toegepast, en zijn geld komt terug.
+     Rood zou zeggen "fout", en dat leest als "jij deed iets fout". */
+  .ty-cancelled {
+    max-width: 560px; margin: 0 auto 2.5rem; padding: 1.6rem 1.7rem;
+    border: 2px solid var(--ink); background: var(--surface); text-align: left;
+  }
+  .ty-cancelled:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .ty-cancelled-h { font-size: var(--t-h4, 1.25rem); margin: 0 0 .7rem; }
+  .ty-cancelled p { margin: 0 0 .8rem; color: var(--ink-2); }
+  .ty-cancelled-next { color: var(--ink) !important; font-weight: 600; }
 </style>

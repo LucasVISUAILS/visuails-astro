@@ -141,7 +141,7 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
    * in het echt opvangt: een INSERT die faalt om een reden die niets met een
    * ontbrekende kolom te maken heeft. De SELECT erna geeft dan geen rij, precies
    * zoals in productie. */
-  const db = ({ insertThrows = false, samplesPaid = 0, samplesUnpaid = 0, readThrows = false } = {}) => {
+  const db = ({ insertThrows = false, samplesPaid = 0, samplesUnpaid = 0, readThrows = false, samplePeople = [], posterEmail = '', posterPhone = null } = {}) => {
     let stored = false;
     const inserted = [];
     return {
@@ -151,20 +151,6 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
           _a: [],
           bind(...a) { st._a = a; return st; },
           async first() {
-            /* De telling voor "één proefvisual per bedrijf".
-             *
-             * Deze nep-database LEEST de query in plaats van hem te negeren, en dat
-             * is met opzet: zou hij altijd hetzelfde getal teruggeven, dan zou het
-             * weghalen van `payment_status = 'paid'` uit de echte query geen enkele
-             * test rood maken. Nu telt een onbetaalde proef alleen mee als dat
-             * filter ontbreekt — precies de mutatie die we willen zien.
-             *
-             * `readThrows` bootst een onleesbare D1 na: die moet OPEN vallen. */
-            if (sql.includes("service = 'test-sample'") && sql.includes('COUNT(*)')) {
-              if (readThrows) throw new Error('D1_ERROR: no such table');
-              const onlyPaid = sql.includes("payment_status = 'paid'");
-              return { n: onlyPaid ? samplesPaid : samplesPaid + samplesUnpaid };
-            }
             return sql.includes('SELECT id FROM orders WHERE ref') && stored ? { id: 42 } : null;
           },
           async run() {
@@ -175,7 +161,38 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
             }
             return { success: true };
           },
-          async all() { return { results: [] }; },
+          /* De rijen voor "één proefvisual per bedrijf".
+           *
+           * Deze nep-database LEEST de query in plaats van hem te negeren, en dat is
+           * met opzet: zou hij altijd dezelfde rijen teruggeven, dan zou het weghalen
+           * van `payment_status = 'paid'` uit de echte query geen enkele test rood
+           * maken. Nu komt een onbetaalde proef alleen terug als dat filter ontbreekt
+           * — precies de mutatie die we willen zien.
+           *
+           * Sinds 11 augustus 2026 komen er ADRESSEN en NUMMERS terug in plaats van
+           * een telling: de controle normaliseert nu zelf en vergelijkt in JS, dus
+           * een stub die alleen een getal teruggeeft zou de hele normalisatie
+           * ongetest laten. `samplePeople` zet wie er al een proef gehad heeft.
+           *
+           * `readThrows` bootst een onleesbare D1 na: die moet OPEN vallen. */
+          async all() {
+            if (sql.includes("service = 'test-sample'")) {
+              if (readThrows) throw new Error('D1_ERROR: no such table');
+              const onlyPaid = sql.includes("payment_status = 'paid'");
+              const rows = [];
+              const fill = (n, who) => { for (let i = 0; i < n; i++) rows.push(who(i)); };
+              if (samplePeople.length) rows.push(...samplePeople);
+              else {
+                fill(samplesPaid, () => ({ email: posterEmail, phone: posterPhone || null }));
+                if (!onlyPaid) fill(samplesUnpaid, () => ({ email: posterEmail, phone: posterPhone || null }));
+              }
+              /* Een onbetaalde proef mag alleen meetellen als het filter weg is; met
+                 samplePeople staat de betaalstatus in de rij zelf. */
+              const keep = onlyPaid ? rows.filter((r) => r.paid !== false) : rows;
+              return { results: keep };
+            }
+            return { results: [] };
+          },
         };
         return st;
       },
@@ -187,7 +204,11 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
     const fd = new FormData();
     for (const [k, v] of Object.entries(fields)) fd.append(k, v);
     seen = [];
-    lastDb = db(opts);
+    /* Het geposte adres gaat mee naar de nep-database: `samplesPaid: 1` betekent
+       "deze persoon heeft er al een gehad", en dat kan de stub alleen weten als
+       hij weet wie er post. Vóór 11 aug 2026 gaf hij een telling terug en deed de
+       identiteit er niet toe; nu vergelijkt de controle echte adressen. */
+    lastDb = db({ ...(opts || {}), posterEmail: fields.email, posterPhone: fields.phone });
     const res = await onRequestPost({
       request: new Request('https://visuails.com/api/order', { method: 'POST', body: fd }),
       env: {
@@ -266,6 +287,64 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
 
   const unreadable = await post(sample, { readThrows: true });
   ok('een onleesbare database weigert niemand', unreadable.payments, 1);
+
+  /*
+   * ── HET GAT VAN VIJF SECONDEN ──────────────────────────────────────────────
+   *
+   * `lower(email)` was de hele controle, en `lucas+2@merk.nl` komt aan in dezelfde
+   * inbox als `lucas@merk.nl`. Dat is geen fraudetruc maar een standaardfunctie,
+   * en het maakte de klep zo lek als een mandje zonder dat iemand een tweede
+   * account hoefde aan te maken. Zonder deze regel kan de normalisatie er zo weer
+   * uit zonder dat er iets rood wordt.
+   */
+  const plussed = await post(
+    { ...sample, email: 'klant+2@merk.nl' },
+    { samplePeople: [{ email: 'klant@merk.nl', phone: null }] });
+  ok('plus-adressering is dezelfde inbox', plussed.payments, 0);
+
+  const dotted = await post(
+    { ...sample, email: 'k.l.a.n.t@gmail.com' },
+    { samplePeople: [{ email: 'klant@gmail.com', phone: null }] });
+  ok('gmail negeert puntjes, dus wij ook', dotted.payments, 0);
+
+  /* En de andere kant op, die minstens zo belangrijk is: buiten Gmail zijn puntjes
+   * WEL betekenisvol. `jan.smit@` en `jansmit@` bij een bedrijfsdomein zijn twee
+   * collega's, en de tweede onterecht weigeren kost een klant op het eerste scherm
+   * dat hij ziet. Bij twijfel doorlaten. */
+  const colleague = await post(
+    { ...sample, email: 'jansmit@merk.nl' },
+    { samplePeople: [{ email: 'jan.smit@merk.nl', phone: null }] });
+  ok('buiten gmail blijven puntjes betekenisvol', colleague.payments, 1);
+
+  /*
+   * ── HET TELEFOONNUMMER ALS TWEEDE HERKENNINGSPUNT ──────────────────────────
+   *
+   * Een tweede mailadres is gratis; een tweede telefoonnummer niet. Wie een nieuw
+   * adres pakt maar zijn eigen nummer invult, wordt hier alsnog herkend — en de
+   * drie schrijfwijzen van hetzelfde Nederlandse nummer moeten daarbij op één
+   * hoop vallen.
+   */
+  const samePhone = await post(
+    { ...sample, email: 'heelanders@ander.nl', phone: '+31 6 12 34 56 78' },
+    { samplePeople: [{ email: 'klant@merk.nl', phone: '06-12345678' }] });
+  ok('zelfde nummer, ander adres: herkend', samePhone.payments, 0);
+
+  /*
+   * En de fout die deze controle KAN maken als hij slordig is, want die is erger
+   * dan de misgelopen proef: twee bestellingen zonder telefoonnummer hebben allebei
+   * een leeg genormaliseerd nummer, en leeg is gelijk aan leeg. Zonder de
+   * uitdrukkelijke `!!wantPhone` in de controle weigert de tweede klant die zijn
+   * nummer niet invult ALLE volgende klanten die dat ook niet doen.
+   */
+  const noPhones = await post(
+    { ...sample, email: 'nieuw@ander.nl' },
+    { samplePeople: [{ email: 'klant@merk.nl', phone: null }] });
+  ok('twee lege nummers zijn niet dezelfde persoon', noPhones.payments, 1);
+
+  const shortPhone = await post(
+    { ...sample, email: 'nieuw2@ander.nl', phone: '06' },
+    { samplePeople: [{ email: 'klant@merk.nl', phone: '06' }] });
+  ok('een half nummer matcht op niemand', shortPhone.payments, 1);
 
   /* En de weigering geldt ALLEEN voor de proefvisual: een gewone bestelling van
    * dezelfde klant mag altijd, hoeveel proeven hij ook gehad heeft. */

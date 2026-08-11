@@ -666,7 +666,9 @@ CREATE INDEX IF NOT EXISTS idx_revreq_cust  ON revision_requests(customer_id);
 --   · de tabellen `invoice_series` en `invoices` (0021) — en zonder die twee valt
 --     issueInvoice() meteen om, dus MISLUKT DE FACTUURSTAP BIJ ELKE BETALING;
 --   · `file_assets` (0022), dus geen formaatvarianten;
---   · `origin_country` (0023).
+--   · `origin_country` (0023);
+--   · `payer_hash` en `payer_kind` (0024), dus een tweede
+--     proefvisual op dezelfde bankrekening valt niet meer op.
 --
 -- Dat is geen dringend probleem zolang de database bestaat en bijgewerkt is. Het is
 -- een tijdbom die afgaat op de dag dat je hem het hardst nodig hebt: bij herstel na
@@ -801,3 +803,18 @@ CREATE INDEX IF NOT EXISTS idx_file_assets_file ON file_assets (file_id);
 -- niets — een vpn of een zakenreis levert een verschil op zonder dat er iets mis is.
 -- ────────────────────────────────────────────────────────────────────────────
 ALTER TABLE orders ADD COLUMN origin_country TEXT;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0024 · DE BETALER VAN EEN PROEFVISUAL
+-- Zie migrations/0024-sample-payer.sql. Een gezouten hash van het IBAN (iDEAL) of
+-- van de kaartvingerafdruk, zodat een tweede proefvisual op dezelfde rekening
+-- opvalt zonder dat er ooit een rekeningnummer wordt opgeslagen. Het IBAN bestaat
+-- pas ná de betaling, dus deze controle annuleert achteraf; de weigering vóór de
+-- betaling staat op e-mail en telefoon.
+-- ────────────────────────────────────────────────────────────────────────────
+ALTER TABLE orders ADD COLUMN payer_hash TEXT;
+ALTER TABLE orders ADD COLUMN payer_kind TEXT;
+-- cancel_reason / cancel_payment / cancelled_at staan er al sinds 0014; deze
+-- controle vult ze in plaats van er iets eigens naast te zetten.
+CREATE INDEX IF NOT EXISTS idx_orders_payer
+  ON orders(payer_hash, service) WHERE payer_hash IS NOT NULL;

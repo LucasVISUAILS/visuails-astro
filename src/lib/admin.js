@@ -516,6 +516,13 @@ async function handleOrderCancel(context, orderId) {
   try {
   await env.DB.batch([
     env.DB.prepare(
+      /* 'refund to be issued' stond hier tot 11 augustus 2026 als label bij
+         `cancel_payment = 'refund'`, en dat klopte zolang elke annulering met de
+         hand gebeurde: jij vinkte aan dat je gíng terugbetalen. Sinds vandaag
+         annuleert de webhook een tweede proefvisual zelf en stórt hij de euro ook
+         zelf terug, dus voor die rijen zou "to be issued" je een taak voorspiegelen
+         die al gedaan is. Het label zegt nu alleen nog WAT er geldt en niet
+         WANNEER; de tijdlijn eronder vertelt of het automatisch ging. */
       `UPDATE orders SET status = 'cancelled', cancelled_at = datetime('now'),
                          cancel_reason = ?2, cancel_payment = ?3
         WHERE id = ?1`
@@ -3712,7 +3719,7 @@ function orderCard(o, models, statusFilter = '') {
   ${unannounced}
   ${pendingAnnounce}
   ${o.hidden_at ? `<p class="meta">Hidden since ${esc(when(o.hidden_at))} — it stays out of the lists and the counts.</p>` : ''}
-  ${o.cancel_reason ? `<p class="warnline">Cancelled: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc({ refund: 'refund to be issued', credit: 'credit given', none: 'no refund' }[o.cancel_payment] || o.cancel_payment)}` : ''}</p>` : ''}
+  ${o.cancel_reason ? `<p class="warnline">Cancelled: ${esc(o.cancel_reason)}${o.cancel_payment ? ` · ${esc({ refund: 'refunded', credit: 'credit given', none: 'no refund' }[o.cancel_payment] || o.cancel_payment)}` : ''}</p>` : ''}
   ${modelList}
   ${orderDanger(o)}
   <form class="controls" method="post" action="/admin/orders/${o.id}/models">

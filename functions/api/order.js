@@ -64,6 +64,7 @@ import {
   ORDER_QUESTIONS, isProductQuestionId, productQuestion,
 } from '../../src/data/attributes.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
+import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
@@ -355,18 +356,66 @@ export async function onRequestPost({ request, env, waitUntil }) {
    * één proefvisual; de prijs van dichtvallen is een klant die op het eerste
    * scherm een foutmelding krijgt die nergens op slaat.
    */
+  /*
+   * ── UITGEBREID OP 11 AUGUSTUS 2026, LATER OP DEZELFDE DAG ──────────────────
+   *
+   * Dit vergeleek `lower(email)` en verder niets. Bij het nalopen bleek dat een
+   * gat van vijf seconden: `lucas+2@merk.nl` komt aan in dezelfde inbox als
+   * `lucas@merk.nl`, en telde hier als een ander bedrijf. Geen truc van
+   * fraudeurs — plus-adressering is een standaardfunctie die mensen dagelijks
+   * gebruiken — maar wel precies de bodem eronder.
+   *
+   * Er zijn nu twee herkenningspunten, en het adres wordt genormaliseerd voordat
+   * het vergeleken wordt (normalizeEmail/normalizePhone in src/lib/payer.js, met
+   * de afwegingen erbij). Het telefoonnummer komt erbij omdat mensen hun nummer
+   * veel trouwer hergebruiken dan hun adres: een tweede mailadres is gratis, een
+   * tweede telefoonnummer niet.
+   *
+   * ── WAAROM DE VERGELIJKING IN JS GEBEURT EN NIET IN SQL ────────────────────
+   *
+   * Omdat `lower(email) = ?` de normalisatie niet kan uitvoeren, en de regel in
+   * SQLite nabouwen betekent dat dezelfde afweging op twee plekken moet blijven
+   * kloppen — precies het soort dubbele conventie dat de noot bij `email` hierboven
+   * afraadt. Dus komen de rijen hierheen en beslist één functie.
+   *
+   * Dat kan omdat deze verzameling klein is BY DESIGN: één betaalde proefvisual
+   * per bedrijf, voor altijd. Bij duizend klanten zijn het duizend rijen met twee
+   * korte kolommen, en de vraag draait alleen als er een proef besteld wordt. Zou
+   * dat ooit veranderen, dan is dit de plek waar het opvalt — vandaar de LIMIT, die
+   * er niet is om iets af te kappen maar om er niet stilletjes overheen te groeien.
+   *
+   * ── EN DIT IS DE ZACHTE LAAG ───────────────────────────────────────────────
+   *
+   * Alles hier vult de bezoeker zelf in, dus wie het echt wil omzeilen, omzeilt het.
+   * Dat hoort ook: deze laag bestaat om de eerlijke herhaling een nette melding te
+   * geven VOORDAT er geld is overgemaakt. De harde controle staat in de webhook en
+   * kijkt naar de bankrekening, die niet van dit formulier komt.
+   */
   if (svc === 'test-sample') {
     let used = 0;
     let checked = false;
     await safe(async () => {
       if (!env.DB) return;
-      const row = await env.DB
-        .prepare(`SELECT COUNT(*) AS n FROM orders
+      const wantMail = normalizeEmail(email);
+      const wantPhone = normalizePhone(phone);
+
+      const { results } = await env.DB
+        .prepare(`SELECT email, phone FROM orders
                    WHERE service = 'test-sample'
                      AND payment_status = 'paid'
-                     AND lower(email) = ?1`)
-        .bind(email).first();
-      used = Number(row?.n) || 0;
+                   LIMIT 20000`)
+        .all();
+
+      used = (results || []).filter((r) => {
+        if (wantMail && normalizeEmail(r.email) === wantMail) return true;
+        // Alleen als BEIDE nummers bruikbaar zijn. normalizePhone() geeft leeg
+        // terug bij minder dan acht cijfers, en twee lege waarden zijn gelijk —
+        // zonder deze regel matcht een bestelling zonder nummer op elke andere
+        // bestelling zonder nummer, en wordt iedereen geweigerd.
+        const theirs = normalizePhone(r.phone);
+        return !!wantPhone && theirs === wantPhone;
+      }).length;
+
       checked = true;
     });
 

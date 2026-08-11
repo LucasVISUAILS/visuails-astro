@@ -50,7 +50,11 @@ import { shell, h1, p as mailP, rows as mailRows, quote as mailQuote } from './m
 async function orderFor(env, orderId) {
   try {
     return await env.DB.prepare(
-      `SELECT id, ref, service, email, brand, first_name, last_name, name,
+      /* `phone` staat er sinds 11 aug 2026 bij, voor het bericht over een
+         tegengehouden tweede proefvisual: dat bericht is uitdrukkelijk bedoeld om
+         Lucas te laten BELLEN, en een telefoonnummer dat je er zelf bij moet
+         zoeken is een telefoonnummer dat niet gebeld wordt. */
+      `SELECT id, ref, service, email, phone, brand, first_name, last_name, name,
               product_count, total_cents, vat_cents, country, window_start, window_end
          FROM orders WHERE id = ?1`
     ).bind(orderId).first();
@@ -142,6 +146,48 @@ export async function notifyPaymentFailed(env, orderId, reason = '') {
     ].join(''));
   } catch (err) {
     console.error('[notify] mislukte-betaling-bericht niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/*
+ * ── EEN TWEEDE PROEFVISUAL, TEGENGEHOUDEN OP DE BANKREKENING ────────────────
+ *
+ * Dit bericht bestaat omdat de klep die het tegenhield ONZICHTBAAR is. De klant
+ * heeft betaald, is teruggestuurd naar een pagina die zegt dat het geannuleerd is,
+ * en heeft zijn euro terug — allemaal zonder dat er iemand aan te pas kwam. Zonder
+ * dit bericht is de enige plek waar dat ooit terecht komt het adminoverzicht, en
+ * dan alleen als je ernaar zoekt.
+ *
+ * Het staat er als melding en niet als alarm. Meestal is dit precies wat de bedoeling
+ * is en hoeft er niets te gebeuren. Maar het is ook het enige moment waarop je ziet
+ * dat een merk het nog eens probeerde — en dat is een verkoopsignaal, geen incident:
+ * iemand die twee keer een proef wil, wil eigenlijk iets kopen. Vandaar dat de eerdere
+ * bestelling erbij staat, met adres en al, zodat je hem kunt bellen.
+ */
+export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt, refunded }) {
+  try {
+    const o = await orderFor(env, orderId);
+    const ref = o?.ref || `#${orderId}`;
+    await toStudio(env, `Tweede proefvisual tegengehouden · ${ref}`, [
+      h1('Een tweede proefvisual is geannuleerd', ref),
+      mailRows([
+        ['Nieuwe aanvraag', ref],
+        ['Klant', who(o)],
+        ['E-mail', o?.email || ''],
+        ['Telefoon', o?.phone || ''],
+        ['Eerdere proef', earlierRef || 'onbekend'],
+        ['Toen', earlierAt || 'onbekend'],
+        ['De euro', refunded ? 'automatisch teruggestort' : 'NIET teruggestort — met de hand doen'],
+      ]),
+      mailP('Dezelfde bankrekening als bij de eerdere proefvisual, dus dit is hetzelfde '
+        + 'bedrijf onder een ander e-mailadres. De bestelling staat op geannuleerd en er '
+        + 'hoeft geen werk te beginnen.'),
+      mailP('De moeite waard om zelf even contact op te nemen. Iemand die voor de tweede '
+        + 'keer een proef aanvraagt is aan het twijfelen over een echte bestelling, en dat '
+        + 'is een gesprek dat je met een mailtje kunt openen in plaats van af te wachten.'),
+    ].join(''));
+  } catch (err) {
+    console.error('[notify] bericht over tweede proefvisual niet verstuurd voor', orderId, '—', err?.message || err);
   }
 }
 

@@ -287,6 +287,57 @@ export async function getMolliePayment(env, id) {
   return parsed;
 }
 
+/*
+ * ── HET GELD TERUGSTUREN — 11 AUGUSTUS 2026 ─────────────────────────────────
+ *
+ * Toegevoegd voor één geval: een tweede proefvisual die door de betalerscontrole
+ * in de webhook wordt geannuleerd. De bestelling gaat niet door, dus de € 1 hoort
+ * terug. Geld houden voor werk dat je hebt geweigerd te doen, is niet te
+ * verdedigen — ook niet voor één euro, en juist niet bij iemand die op dat moment
+ * al het gevoel heeft dat hij tegengehouden wordt.
+ *
+ * Het bedrag gaat MEE en wordt niet door Mollie afgeleid. Een refund zonder
+ * bedrag bestaat daar niet, en het expliciet meesturen betekent dat deze functie
+ * ook een deelbetaling terug kan storten als daar ooit reden voor is. De beller
+ * geeft door wat er betaald is — die waarde is op dat moment al uit
+ * `payment.amount` gelezen en gecontroleerd.
+ *
+ * GOOIT, en vangt niet zelf af. De beller in de webhook zit al in een safe() en
+ * moet zelf kunnen beslissen wat een mislukte terugbetaling betekent: daar is het
+ * antwoord "annuleer de bestelling toch, en meld dat de terugbetaling met de hand
+ * moet" — en dat is een afweging die hier niet thuishoort.
+ */
+export async function refundMolliePayment(env, id, { cents, description }) {
+  const key = mollieKey(env);
+  if (!isMolliePaymentId(id)) throw new Error(`mollie: refusing to refund a malformed payment id (${String(id).slice(0, 40)})`);
+  if (!Number.isInteger(cents) || cents <= 0) throw new Error(`mollie: refusing to refund a nonsensical amount (${cents})`);
+
+  const res = await fetch(`${MOLLIE_API}/payments/${encodeURIComponent(id)}/refunds`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      amount: { currency: 'EUR', value: (cents / 100).toFixed(2) },
+      description: String(description || 'Refund').slice(0, 140),
+    }),
+  });
+
+  const raw = await res.text();
+  const parsed = (() => { try { return JSON.parse(raw); } catch { return null; } })();
+  if (!res.ok) {
+    const detail = parsed?.title
+      ? `${parsed.title} — ${parsed.detail || ''}`
+      : raw.slice(0, 300) || '(empty body)';
+    const err = new Error(`Mollie POST refund ${res.status}: ${detail}`);
+    err.status = res.status;
+    throw err;
+  }
+  return parsed;
+}
+
 /**
  * Mollie payment ids are `tr_` + alphanumerics. Checked before the id ever
  * reaches a URL, so a hostile webhook body cannot steer the request path — the

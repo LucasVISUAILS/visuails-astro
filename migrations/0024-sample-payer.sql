@@ -1,0 +1,89 @@
+-- VISUAILS — de betaler herkennen bij een proefvisual, zonder een IBAN te bewaren.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAAROM DEZE KOLOMMEN ER KOMEN
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Lucas, 11 augustus 2026: *"IBAN lijkt het meest betrouwbare, dit was ik al van
+-- plan om handmatig te controleren maar als dit geautomatiseerd kan worden zou
+-- dat perfect zijn."*
+--
+-- De klep die vanochtend gebouwd is, weigert een tweede proefvisual op hetzelfde
+-- e-mailadres. Dat houdt de luie herhaling tegen — twintig producten achter
+-- elkaar op één adres — en verder niets. `lucas+2@merk.nl` is voor die controle
+-- een ander bedrijf terwijl het dezelfde inbox is, en een gratis tweede adres
+-- kost dertig seconden.
+--
+-- Het IBAN is van een andere orde. Een tweede bankrekening openen om een proef
+-- van € 1 te herhalen is niet iets wat iemand doet. Het is bovendien het enige
+-- herkenningspunt in deze hele keten dat de bezoeker niet zelf invult.
+--
+-- ── WAT HIER NIET IN KOMT ────────────────────────────────────────────────────
+--
+-- Geen IBAN. Een rekeningnummer is een persoonsgegeven, en er is geen enkele
+-- vraag in dit systeem die het rauwe nummer nodig heeft — de enige vraag is "is
+-- dit dezelfde betaler als toen", en daar is een hash het antwoord op. Datzelfde
+-- patroon staat al in `rate_limits`: *"The key is a salted hash of the IP plus a
+-- minute stamp — no IP address is stored here."* Dit volgt dat, met hetzelfde
+-- zout uit `app_settings`.
+--
+-- Gezouten en niet kaal, omdat de verzameling IBANs klein en voorspelbaar genoeg
+-- is om een kale SHA-256 terug te rekenen: een Nederlands rekeningnummer heeft
+-- een vaste vorm en een controlegetal, dus wie de tabel in handen krijgt kan ze
+-- er zonder zout gewoon uit raden. Met een zout dat nergens anders ligt dan in
+-- dezelfde database is dat geen bescherming tegen iemand die álles heeft, maar
+-- wel tegen een gelekte export — en dat is het geval dat voorkomt.
+--
+-- ── WAAROM DIT NIET DE VOORDEUR IS ───────────────────────────────────────────
+--
+-- Een IBAN bestaat pas ná de betaling. Deze controle kan dus niet weigeren aan
+-- het formulier; hij draait in de webhook en annuleert achteraf. De melding
+-- vóórdat er betaald wordt, blijft op e-mail en telefoon staan — zie de noot bij
+-- de controle in functions/api/order.js.
+--
+-- Dat is minder erg dan het klinkt, want de twee lagen voeden elkaar. Wie langs
+-- de voordeur glipt met een nieuw adres, betaalt met hetzelfde IBAN en wordt hier
+-- gepakt; het adres en het telefoonnummer van díé poging zijn daarna bekend, dus
+-- de volgende keer valt hij al bij de voordeur af. De klep wordt scherper naarmate
+-- iemand het vaker probeert.
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 1 · De betaler.
+--
+-- NULL voor elke bestelling van vóór vandaag, en voor elke bestelling waar Mollie
+-- geen herkenbare betaler bij teruggeeft. Dat is geen gebrek maar de normale
+-- toestand: bij een creditcard heet het anders dan bij iDEAL, en bij sommige
+-- methodes bestaat het niet. Een lege kolom betekent hier "niets over te zeggen",
+-- en de controle in de webhook slaat dan over.
+ALTER TABLE orders ADD COLUMN payer_hash TEXT;
+
+-- Waar die hash vandaan komt: 'ideal' (het IBAN van de betaler) of 'card' (de
+-- vingerafdruk die Mollie aan een kaart hangt). Vastgelegd omdat de twee niet
+-- vergelijkbaar zijn en een hash zonder herkomst niet te duiden is als er ooit
+-- een derde bijkomt.
+ALTER TABLE orders ADD COLUMN payer_kind TEXT;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 2 · Waarom een bestelling is geannuleerd — BESTAAT AL, en dat is maar goed ook.
+--
+-- Hier stond eerst `ALTER TABLE orders ADD COLUMN cancel_reason TEXT`. Migratie
+-- 0014 heeft die kolom al, samen met `cancel_payment` ('refund' | 'credit' |
+-- 'none' | NULL) en `cancelled_at`. Er is dus een compleet annuleringsvocabulaire,
+-- gebouwd voor de annuleringen die Lucas met de hand doet vanuit het adminscherm.
+--
+-- Deze controle sluit daarop aan in plaats van er iets eigens naast te zetten. Dat
+-- is niet alleen netter: het adminscherm leest die kolommen al, dus een automatische
+-- annulering ziet er daar precies zo uit als een handmatige — met als enige verschil
+-- dat er 'sample-duplicate' in `cancel_reason` staat en 'system' als actor in
+-- order_events. Een tweede vocabulaire zou betekenen dat de helft van de annuleringen
+-- onzichtbaar is in het scherm dat ervoor gemaakt is.
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 3 · De opzoekvraag.
+--
+-- Gedeeltelijk, en op twee kolommen. De enige vraag die hierop gesteld wordt is
+-- "bestaat er een betaalde proefvisual met deze payer_hash", en die draait bij
+-- iedere binnenkomende proefbetaling. Zonder index is dat een scan over alle
+-- bestellingen; met deze index raakt hij alleen de rijen die een betaler hebben.
+CREATE INDEX IF NOT EXISTS idx_orders_payer
+  ON orders(payer_hash, service) WHERE payer_hash IS NOT NULL;

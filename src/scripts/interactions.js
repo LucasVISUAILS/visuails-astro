@@ -1007,6 +1007,65 @@ function initThankYou() {
         + `<a class="btn btn-primary" href="${pay}" rel="noopener">${d.tyPayCta}</a>`
       : '');
   box.style.display = 'block';
+
+  /* Sinds 11 augustus 2026: kijken of deze bestelling niet zojuist is
+     tegengehouden. Zie initCancelled() hieronder voor de wedloop die dit moet
+     opvangen. */
+  checkCancelled(ref);
+}
+
+/*
+ * ── DE ANNULERING NA DE BETALING ZICHTBAAR MAKEN — 11 AUGUSTUS 2026 ─────────
+ *
+ * Een tweede proefvisual wordt herkend aan de bankrekening, en dat kan pas ná de
+ * betaling — het IBAN bestaat eerder niet. De bezoeker landt dus op de
+ * bedankpagina terwijl zijn bestelling misschien net geannuleerd is, en zonder
+ * dit hoort hij dat pas uit een mail, ná een scherm dat hem net bedankt heeft.
+ *
+ * ── DE WEDLOOP, EN WAAROM ER DRIE POGINGEN ZIJN ────────────────────────────
+ *
+ * Twee dingen vertrekken tegelijk als er betaald wordt: Mollie stuurt de bezoeker
+ * terug naar deze pagina, en Mollie roept onze webhook aan. Wie er als eerste
+ * aankomt ligt niet vast. Meestal is de webhook er ruim op tijd, maar bij een
+ * trage aanroep of een koude worker is de bezoeker eerder — en dan zegt dit
+ * eindpunt "niet geannuleerd" terwijl het antwoord een seconde later anders is.
+ *
+ * Vandaar drie pogingen over ongeveer zes seconden. Niet meer, want dit is een
+ * vangnet en geen bewaking: wie er dan nog doorheen glipt, krijgt de mail, en die
+ * had hij toch al gekregen. Een pagina die twintig seconden lang blijft pollen
+ * kost meer dan hij oplevert.
+ *
+ * ── FAALT STIL ────────────────────────────────────────────────────────────
+ *
+ * Elke fout — geen netwerk, kapot antwoord, eindpunt weg — betekent: niets tonen.
+ * Een bezoeker die gewoon besteld heeft mag NOOIT een annuleringsmelding zien
+ * omdat er iets omviel; dat is een veel duurdere fout dan de melding missen.
+ */
+function checkCancelled(ref, attempt = 0) {
+  const DELAYS = [0, 2000, 4000];
+  if (attempt >= DELAYS.length) return;
+
+  window.setTimeout(() => {
+    fetch(`/api/order-status?ref=${encodeURIComponent(ref)}`, { headers: { Accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || !d.cancelled) { checkCancelled(ref, attempt + 1); return; }
+
+        const box = document.querySelector('[data-ty-cancelled]');
+        if (!box) return;
+        box.hidden = false;
+
+        /* De rest van de pagina gaat weg. Dit is het enige geval waarin de
+           bedanktekst ronduit onwaar is — er wordt niets gemaakt en er komt geen
+           levering — en hem laten staan onder een blok dat het tegendeel zegt, is
+           verwarrender dan geen bedanktekst. Het referentievak blijft: dat nummer
+           heeft hij nodig als hij hierover mailt. */
+        document.querySelectorAll('.ty-hide-when-cancelled').forEach((el) => { el.hidden = true; });
+
+        try { box.focus({ preventScroll: false }); } catch { box.scrollIntoView({ block: 'center' }); }
+      })
+      .catch(() => { /* stil, met opzet — zie de noot hierboven */ });
+  }, DELAYS[attempt]);
 }
 
 // REMOVED IN SECTION 10 — initFormPrefill(), and why it is not worth keeping

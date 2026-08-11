@@ -56,11 +56,12 @@
 // status change of the same payment (a refund, a chargeback) — so this is a
 // normal path, not an edge case.
 
-import { getMolliePayment, isMolliePaymentId, mollieAmountToCents } from '../../../src/lib/mollie.js';
+import { getMolliePayment, isMolliePaymentId, mollieAmountToCents, refundMolliePayment } from '../../../src/lib/mollie.js';
 import { paymentMismatch } from '../../../src/data/vat.js';
 import { issueInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
-import { notifyPaid, notifyPaymentFailed } from '../../../src/lib/notify.js';
+import { notifyPaid, notifyPaymentFailed, notifySampleBlocked } from '../../../src/lib/notify.js';
+import { payerHash } from '../../../src/lib/payer.js';
 
 export async function onRequestPost({ request, env }) {
   if (!env.MOLLIE_API_KEY) {
@@ -378,6 +379,150 @@ async function recordPaid(env, payment, mode) {
       'system'
     )
     .run();
+
+  /*
+   * ═══════════════════════════════════════════════════════════════════════════
+   * DE TWEEDE PROEFVISUAL, HERKEND AAN DE BANKREKENING — 11 AUGUSTUS 2026
+   * ═══════════════════════════════════════════════════════════════════════════
+   *
+   * Lucas, vandaag: *"IBAN lijkt het meest betrouwbare, dit was ik al van plan om
+   * handmatig te controleren."* Dit is die handmatige controle.
+   *
+   * De weigering in functions/api/order.js draait vóór de betaling en kijkt naar
+   * e-mail en telefoon. Die vangt de eerlijke herhaling af en zegt het netjes. Wat
+   * hij per definitie niet kan, is iemand herkennen die een nieuw adres en een
+   * nieuw nummer invult — want alles op dat formulier vult de bezoeker zelf in.
+   *
+   * Het IBAN niet. Dat komt van de bank, en het is hier voor het eerst bekend.
+   *
+   * ── WAAROM DIT PAS NA 'PAID' STAAT ────────────────────────────────────────
+   *
+   * De betaling is een feit en wordt als feit weggeschreven, ook als de bestelling
+   * daarna wordt geannuleerd. Anders ontstaat er een geannuleerde order waar geld
+   * bij hoort dat nergens geboekt staat, en dat is precies het soort gat waar de
+   * refundsectie hierboven over gaat.
+   *
+   * ── EN WAAROM VÓÓR notifyPaid EN DE FACTUUR ───────────────────────────────
+   *
+   * Omdat dit allebei dingen zijn die je bij een geannuleerde bestelling niet wilt:
+   * notifyPaid() is het bericht waar het WERK mee begint, en een factuur voor een
+   * teruggestorte euro is een correctie die je daarna weer moet maken. Beide worden
+   * overgeslagen met een `return` onderaan deze tak.
+   *
+   * ── FAALT OPEN, ZOALS ALLES HIER ──────────────────────────────────────────
+   *
+   * Elke stap zit in zijn eigen try. Kan de hash niet gemaakt worden, kan de
+   * database niet gelezen worden, of weigert Mollie de terugbetaling — dan gaat de
+   * bestelling gewoon door als een normale proefvisual. Eén proef te veel maken is
+   * een kleinere fout dan een betalende klant annuleren op grond van een controle
+   * die zelf omviel.
+   */
+  if (order.service === 'test-sample') {
+    let mine = null;
+    try {
+      mine = await payerHash(env, payment);
+    } catch (err) {
+      console.error('[mollie-webhook] betalershash mislukt voor', ref, '—', err?.message || err);
+    }
+
+    if (mine) {
+      /* Eerst vastleggen, dan pas vergelijken. Ook als deze proef gewoon doorgaat
+         moet de hash er staan — anders is er bij de VOLGENDE poging niets om
+         tegen te vergelijken en vangt deze klep structureel alleen de derde. */
+      try {
+        await env.DB.prepare('UPDATE orders SET payer_hash = ?1, payer_kind = ?2 WHERE id = ?3')
+          .bind(mine.hash, mine.kind, order.id).run();
+      } catch (err) {
+        console.error('[mollie-webhook] payer_hash niet opgeslagen voor', ref, '—', err?.message || err);
+      }
+
+      let earlier = null;
+      try {
+        /* `id != order.id` sluit de rij uit die we net zelf hebben bijgewerkt.
+           Zonder dat vindt elke proefvisual zichzelf en wordt er niets ooit nog
+           gemaakt. Oudste eerst, zodat het bericht naar de ECHTE eerste verwijst
+           en niet naar de vorige poging. */
+        earlier = await env.DB.prepare(
+          `SELECT ref, paid_at FROM orders
+            WHERE service = 'test-sample'
+              AND payer_hash = ?1
+              AND payment_status = 'paid'
+              AND id != ?2
+            ORDER BY id ASC LIMIT 1`
+        ).bind(mine.hash, order.id).first();
+      } catch (err) {
+        console.error('[mollie-webhook] betalerscontrole kon niet lezen voor', ref, '—', err?.message || err);
+      }
+
+      if (earlier) {
+        console.log(`[mollie-webhook] ${ref} is een tweede proefvisual op dezelfde ${mine.kind} — eerder: ${earlier.ref}`);
+
+        /* De euro terug. Eerst, want dit is het enige deel dat buiten onze eigen
+           database gebeurt en dus het enige dat echt kan weigeren. Lukt het niet,
+           dan gaat de annulering tóch door en zegt het bericht aan Lucas dat er met
+           de hand teruggestort moet worden — een klant die zijn geld niet terugkreeg
+           én zijn proef niet kreeg is de enige uitkomst die hier onacceptabel is, en
+           die wordt zo in elk geval altijd gezien. */
+        let refunded = false;
+        try {
+          if (cents !== null && cents > 0) {
+            await refundMolliePayment(env, payment.id, {
+              cents,
+              description: `Geannuleerd: tweede proefvisual (eerder ${earlier.ref})`,
+            });
+            refunded = true;
+          }
+        } catch (err) {
+          console.error('[mollie-webhook] terugbetaling mislukt voor', ref, '—', err?.message || err);
+        }
+
+        try {
+          /* Het vocabulaire van migratie 0014, en niet iets eigens ernaast:
+             `cancel_reason`, `cancel_payment` ('refund' | 'credit' | 'none') en
+             `cancelled_at` zijn gebouwd voor de annuleringen die met de hand vanuit
+             het adminscherm gedaan worden. Door ze hier te vullen ziet een
+             automatische annulering er in dat scherm precies zo uit als een
+             handmatige — en dat is het verschil tussen een controle die zichtbaar
+             is en een die alleen in de logs bestaat.
+
+             `cancel_payment` volgt wat er ECHT gebeurd is en niet wat de bedoeling
+             was: mislukte de terugbetaling, dan staat er 'none' en niet 'refund'.
+             Anders zegt de administratie dat het geld terug is terwijl het er nog
+             staat, en dat is precies het soort stille onwaarheid waar je later
+             boekhoudkundig tegenaan loopt. */
+          await env.DB.prepare(
+            `UPDATE orders SET status = 'cancelled',
+                               cancel_reason = 'sample-duplicate',
+                               cancel_payment = ?2,
+                               cancelled_at = datetime('now')
+              WHERE id = ?1`
+          ).bind(order.id, refunded ? 'refund' : 'none').run();
+          await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+            .bind(
+              order.id,
+              'cancelled',
+              `Tweede proefvisual op dezelfde ${mine.kind} als ${earlier.ref} — geannuleerd, `
+                + (refunded ? 'euro teruggestort' : 'TERUGBETALING MISLUKT, met de hand doen'),
+              'system'
+            ).run();
+        } catch (err) {
+          console.error('[mollie-webhook] annulering niet weggeschreven voor', ref, '—', err?.message || err);
+        }
+
+        await notifySampleBlocked(env, {
+          orderId: order.id,
+          earlierRef: earlier.ref,
+          earlierAt: earlier.paid_at,
+          refunded,
+        });
+
+        /* Hier stopt het. Geen notifyPaid (dat is het sein om te beginnen) en geen
+           factuur (die zou meteen gecorrigeerd moeten worden). Wat de bezoeker te
+           zien krijgt, staat op de terugkeerpagina en leest `cancel_reason`. */
+        return;
+      }
+    }
+  }
 
   /*
    * ── EN DE STUDIO HOORT HET OOK, 9 AUGUSTUS 2026 ────────────────────────────

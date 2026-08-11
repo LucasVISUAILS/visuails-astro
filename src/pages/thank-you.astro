@@ -39,25 +39,44 @@ const description =
   <section class="page-hero"><div class="container" style="max-width:720px;text-align:center;margin-inline:auto">
     <span class="eyebrow-page">Request received</span>
     <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Thanks — we've got your request.</h1>
-    <p class="lead" style="margin:1.2rem auto 0">We'll confirm the details by email — usually faster on WhatsApp.</p>
+    <p class="lead ty-hide-when-cancelled" style="margin:1.2rem auto 0">We'll confirm the details by email — usually faster on WhatsApp.</p>
     {/* See the Dutch page for the full note: this page said "request received"
         and the card below promised we were preparing the visuals, while on a
         paid order nothing starts until the payment lands. Worded
         conditionally because the contact form, the checklist and the video
         request land here too and have no payment link. */}
-    <p class="ty-pay"><strong>Is there a payment link in your confirmation email?</strong> Complete that payment — your order is noted, but production only starts once the payment has come through.</p>
+    <p class="ty-pay ty-hide-when-cancelled"><strong>Is there a payment link in your confirmation email?</strong> Complete that payment — your order is noted, but production only starts once the payment has come through.</p>
     {/* The spam line. One sentence, from src/data/mailNote.js, printed on every
         screen that tells a customer to expect an email — this page, the
         "check your email" screen after requesting a sign-in link, and the
         portal's no-link screen. Placed directly under the sentence that makes
         the promise, because that is where the doubt starts. */}
-    <p class="mail-note">{mailNote('en')}</p>
+    {/* ── GEANNULEERD: EEN TWEEDE PROEFVISUAL — 11 augustus 2026 ──────────────
+         Verborgen tot initThankYou() bij /api/order-status hoort dat deze
+         bestelling is tegengehouden. Het staat BOVEN de bedanktekst en niet
+         eronder: wie hier belandt heeft zojuist betaald en moet niet eerst een
+         scherm vol "we gaan aan de slag" doorlezen voordat blijkt dat dat niet
+         gebeurt. interactions.js verbergt de rest van de pagina als dit blok
+         zichtbaar wordt. */}
+    <div class="ty-cancelled" data-ty-cancelled role="status" tabindex="-1" hidden>
+      <h2 class="ty-cancelled-h">This one we had to cancel</h2>
+      <p>Our records show a test sample already went out to your company. There is one
+        per business, so this second request has been cancelled — and the &euro;1 is on
+        its way back to the account you paid from. That usually takes a few working days.</p>
+      <p>If that does not sound right — a colleague ordered without telling you, or the
+        first sample never arrived — reply to the confirmation email and we will sort it
+        out by hand.</p>
+      <p class="ty-cancelled-next">Ready for the real thing? The full services start at
+        the per-product price, with no minimum order.</p>
+      <a class="btn btn-primary" href="/start">See the services</a>
+    </div>
+    <p class="mail-note ty-hide-when-cancelled">{mailNote('en')}</p>
     <!-- Filled client-side with the order reference /api/order redirected here
          with (initThankYou in interactions.js). Ships hidden and stays hidden
          unless there is a valid reference to show — a visitor who reaches this
          page any other way simply doesn't get a summary box. -->
     <div class="card ty-summary" id="ty-summary" style="display:none;text-align:left;margin:2rem auto 0;max-width:520px"></div>
-    <div class="source-ask" data-source-ask>
+    <div class="source-ask ty-hide-when-cancelled" data-source-ask>
       <span class="source-q">One quick thing — how did you find us?</span>
       <div class="source-btns">
         <button type="button" class="source-btn" data-source="Instagram">Instagram</button>
@@ -85,7 +104,7 @@ const description =
     <p class="ty-signin">Sign in with the email address on this order and we&rsquo;ll send you a link — there is no password.</p>
   </div></section>
 
-  <section class="section-tight"><div class="container">
+  <section class="section-tight ty-hide-when-cancelled"><div class="container">
     <div class="grid grid-3 reveal-group">
       <div class="card reveal pending"><h2 class="as-card-h">What happens next</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">Once the payment has come through we read what you sent, prepare your visuals, and a person checks every result before it reaches you.</p></div>
       <div class="card reveal pending"><h2 class="as-card-h">Typical timing</h2><p style="margin-top:.5rem;font-size:.95rem;color:var(--ink-3)">{TIMING} from the moment we have your photos and your notes to your download link. {T0.queue.en}; a brand-new custom style can take a little longer.</p></div>
@@ -143,4 +162,18 @@ const description =
   .ty-upsell { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.2rem; border-color: var(--accent-line); }
   .ty-upsell .btn { flex: 0 0 auto; }
   @media (max-width: 560px) { .ty-upsell .btn { width: 100%; } }
+
+  /* ── HET ANNULERINGSBLOK ──────────────────────────────────────────────────
+     Zwaarder omrand dan een gewone kaart, want dit is het enige op deze pagina
+     dat de bezoeker écht moet lezen. Geen rood: er is niets misgegaan en hij
+     heeft niets fout gedaan — er is een regel toegepast, en zijn geld komt terug.
+     Rood zou zeggen "fout", en dat leest als "jij deed iets fout". */
+  .ty-cancelled {
+    max-width: 560px; margin: 0 auto 2.5rem; padding: 1.6rem 1.7rem;
+    border: 2px solid var(--ink); background: var(--surface); text-align: left;
+  }
+  .ty-cancelled:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .ty-cancelled-h { font-size: var(--t-h4, 1.25rem); margin: 0 0 .7rem; }
+  .ty-cancelled p { margin: 0 0 .8rem; color: var(--ink-2); }
+  .ty-cancelled-next { color: var(--ink) !important; font-weight: 600; }
 </style>
