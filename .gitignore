@@ -16,3 +16,4 @@ stripe-local-test.js
 # Back-ups. Ze horen op je schijf en in je eigen kopie, niet in de
 # geschiedenis van de code — en een database-export bevat klantgegevens.
 backups/
+_herstel/ 
