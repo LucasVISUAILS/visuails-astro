@@ -146,9 +146,16 @@ const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 // The band used to print each service's entry rate and floor as prose — "from
 // €89 per product, down to €33 as the count rises", five times over. That is a
 // rate card written out in sentences, and it cost 360 words to say what a
-// fifteen-cell table says without a verb. Same shape as /pricing's, three
-// columns and five rungs, because a reader who has seen one should recognise
+// twelve-cell table says without a verb. Same shape as /pricing's, three
+// columns and four rungs, because a reader who has seen one should recognise
 // the other.
+//
+// VIJF TREDES WAS VIER OP 12 AUGUSTUS 2026. De onderste — 35+, met €55/€33/€41
+// — is uit LADDER gehaald omdat een order van 35 producten door de
+// capaciteitscheck werd geweigerd; zie de noot bij LADDER in
+// src/data/pricing.js. Deze tabel leest de tredes uit dat bestand, dus hij is
+// vanzelf meegekrompen; alleen de twee getallen in dit commentaar stonden
+// ingetypt.
 const KIND_IDS = ['complete', 'catalog', 'lifestyle'] as const;
 // Two of the three are a pillar page under another name, so the column heading
 // is the link — the brief's internal-linking rule without a row of chips.

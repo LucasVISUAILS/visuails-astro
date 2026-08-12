@@ -647,6 +647,10 @@ const COPY = {
     invPendingNote: 'This invoice has its number and the document is still being made. Refresh in a minute; if it stays like this, send us a line.',
     invVoid: 'Withdrawn',
     invReverse: 'VAT reverse charged',
+    /* Het merkteken naast het nummer. Zonder dit woord is een creditnota in dit
+       overzicht niet van een factuur te onderscheiden, en dan lijkt een terugbetaling
+       op een tweede rekening. */
+    invCredit: 'Credit note',
     invOutside: 'Outside European VAT',
     invKeepNote: 'Invoices stay available here for as long as your account exists. Dutch law requires us to keep them for seven years, so they do not disappear with your files.',
 
@@ -871,6 +875,7 @@ const COPY = {
     invPendingNote: 'Deze factuur heeft zijn nummer, het document wordt nog gemaakt. Vernieuw de pagina over een minuut; blijft het hierbij, laat het ons dan weten.',
     invVoid: 'Ingetrokken',
     invReverse: 'Btw verlegd',
+    invCredit: 'Creditnota',
     invOutside: 'Buiten de Europese btw',
     invKeepNote: 'Je facturen blijven hier staan zolang je account bestaat. Wij moeten ze zeven jaar bewaren, dus ze verdwijnen niet samen met je bestanden.',
 
@@ -968,6 +973,19 @@ export async function accountGet(context) {
     const customer = await currentCustomer(env, request);
     if (!customer) return seeOther('/account/login');
     return serveInvoicePdf(context, customer, Number(invMatch[1]));
+  }
+
+  /* Een creditnota, langs precies dezelfde weg als een factuur: eigen pad omdat het een
+     eigen tabel is, dezelfde limiet, dezelfde eigendomscontrole via `orders`. Eén route
+     voor beide zou betekenen dat het id uit de URL bepaalt in WELKE tabel gezocht wordt,
+     en dan hangt de eigendomscontrole aan een raadspelletje over waar dat getal hoort. */
+  const cnMatch = path.match(/^\/account\/credit-notes\/(\d+)\/pdf$/);
+  if (cnMatch) {
+    const gate = await checkRate(env, { ip: clientIp(request), action: 'account-file', limit: FILE_LIMIT });
+    if (!gate.allowed) return new Response(null, { status: 429, headers: { ...fileHeaders(), 'retry-after': String(Math.max(1, gate.retryAfter || 60)) } });
+    const customer = await currentCustomer(env, request);
+    if (!customer) return seeOther('/account/login');
+    return serveCreditPdf(context, customer, Number(cnMatch[1]));
   }
 
   if (path === '/account/login') {
@@ -3341,6 +3359,53 @@ async function serveInvoicePdf(context, customer, invoiceId) {
   return new Response(object.body, { status: 200, headers });
 }
 
+/*
+ * Een creditnota als pdf.
+ *
+ * Regel voor regel dezelfde vorm als serveInvoicePdf() hierboven, en met opzet een eigen
+ * functie in plaats van een gedeelde met een tabelnaam als parameter: een tabelnaam die
+ * uit een aanroep komt, is een tabelnaam die ooit uit een URL komt.
+ *
+ * DE EIGENDOMSCONTROLE LOOPT OOK HIER VIA `orders`, en dat is hier nog scherper dan bij
+ * een factuur: `credit_notes.customer_id` is ON DELETE SET NULL, dus een verwijderd
+ * klantaccount laat de nota staan met een leeg klantveld. Een controle op die kolom zou
+ * dan van "niet van jou" ongemerkt naar "van niemand, dus van iedereen" schuiven — precies
+ * het lek dat een klant nooit mag kunnen vinden.
+ */
+async function serveCreditPdf(context, customer, creditId) {
+  const { env } = context;
+  if (!env.UPLOADS) return new Response(null, { status: 503, headers: fileHeaders() });
+
+  let note;
+  try {
+    note = await env.DB.prepare(
+      `SELECT c.number, c.status, c.pdf_key
+         FROM credit_notes c JOIN orders o ON o.id = c.order_id
+        WHERE c.id = ?1 AND o.customer_id = ?2`
+    ).bind(creditId, customer.customer_id).first();
+  } catch {
+    /* Geen tabel (migratie 0026 nog niet gedraaid) valt hier samen met een onbereikbare
+       database: in beide gevallen is er niets te leveren en is 503 het eerlijke antwoord. */
+    return new Response(null, { status: 503, headers: fileHeaders() });
+  }
+  if (!note) return new Response(null, { status: 404, headers: fileHeaders() });
+  if (note.status !== 'issued' || !note.pdf_key) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  let object;
+  try {
+    object = await env.UPLOADS.get(note.pdf_key);
+  } catch {
+    return new Response(null, { status: 503, headers: fileHeaders() });
+  }
+  if (!object || !object.body) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  const headers = new Headers(fileHeaders());
+  headers.set('content-type', 'application/pdf');
+  headers.set('content-disposition', `attachment; ${dispositionFilename(`${note.number}.pdf`)}`);
+  if (typeof object.size === 'number') headers.set('content-length', String(object.size));
+  return new Response(object.body, { status: 200, headers });
+}
+
 function fileHeaders() {
   return {
     'cache-control': 'private, max-age=3600',
@@ -4395,6 +4460,61 @@ async function invoicesFor(env, customerId, orders) {
     }
   };
 
+  /*
+   * ── EN DE CREDITNOTA'S ERBIJ — 12 augustus 2026 ────────────────────────────
+   *
+   * Een klant die geld terug heeft gekregen, heeft een document dat dat zegt, en dat
+   * document hoort in hetzelfde overzicht als de factuur die het intrekt. Op twee plekken
+   * kijken is precies wat een klant niet doet: dan mailt hij jou.
+   *
+   * TWEE TABELLEN EN GEEN UNION IN SQL. Dat is de prijs van de keuze voor een eigen tabel
+   * (zie migrations/0026), en het is hier de goedkoopste vorm: twee kleine queries en één
+   * sorteeropdracht in JS zijn leesbaarder dan een UNION met tien kolommen die aan
+   * weerszijden dezelfde naam moeten hebben — en een UNION waarvan één kant een kolom
+   * mist, valt stil om.
+   *
+   * Geen tabel betekent geen nota's en géén waarschuwing in de log: migratie 0026 kan nog
+   * niet gedraaid zijn terwijl 0021 dat wel is, en dan is een leeg antwoord het juiste
+   * antwoord in plaats van een regel die elke paginaweergave herhaalt.
+   */
+  const readCredits = async () => {
+    try {
+      const res = await env.DB.prepare(
+        `SELECT c.id, c.number, c.status, c.pdf_bytes, c.snapshot_json, c.lang, c.issued_at, c.created_at,
+                o.ref, o.service, o.paid_at
+           FROM credit_notes c JOIN orders o ON o.id = c.order_id
+          WHERE o.customer_id = ?1
+          ORDER BY c.year DESC, c.seq DESC
+          LIMIT 200`
+      ).bind(customerId).all();
+      return (res?.results || []).map((r) => ({ ...r, kind: 'credit' }));
+    } catch {
+      return [];
+    }
+  };
+
+  /*
+   * De nota's worden PAS BIJ HET ANTWOORD toegevoegd en niet aan `list`, en dat is niet
+   * willekeurig: de inhaalslag hieronder kijkt met issuedRefs() en catchupOrder() naar
+   * FACTUREN. Zouden de nota's al in `list` zitten, dan zou een bestelling met een nota
+   * als "heeft al een factuur" gelden en zou de inhaalslag hem overslaan.
+   *
+   * BOVENAAN GEDEFINIEERD, VÓÓR ELKE `return` DIE HEM GEBRUIKT. Dit stond eerst onderaan
+   * de functie, en de vroege `return list` bij "niets in te halen" zat daarmee in de
+   * temporal dead zone van deze const — of, wat er feitelijk gebeurde, hij liep om de
+   * toevoeging heen en de creditnota verscheen niet in het overzicht. Dezelfde val als
+   * bij `chain` in src/scripts/pipeline.js, met de noot daar.
+   *
+   * Sorteren op documentnummer en niet op datum: het is één doorlopende reeks, dus het
+   * hoogste nummer is het nieuwste document. Een nota staat daarmee direct boven de
+   * factuur die hij intrekt, wat precies de leesorde is die je wil.
+   */
+  const withCredits = async (invoices) => {
+    const credits = await readCredits();
+    if (!credits.length) return invoices;
+    return [...invoices, ...credits].sort((a, b) => String(b.number).localeCompare(String(a.number)));
+  };
+
   let list = await read();
   if (list === null) return [];
 
@@ -4456,7 +4576,7 @@ async function invoicesFor(env, customerId, orders) {
    * hoe de database die dag toevallig teruggeeft.
    */
   const behind = catchupOrder(orders, have);
-  if (!behind.length) return list;
+  if (!behind.length) return await withCredits(list);
 
   let made = 0;
   for (const o of behind.slice(0, CATCHUP_MAX)) {
@@ -4471,10 +4591,10 @@ async function invoicesFor(env, customerId, orders) {
     console.log('[account] nog', behind.length - CATCHUP_MAX, 'facturen achterstand voor klant', customerId,
       '— volgen bij het volgende bezoek');
   }
-  if (!made) return list;
+  if (!made) return await withCredits(list);
 
   const again = await read();
-  return again === null ? list : again;
+  return await withCredits(again === null ? list : again);
 }
 
 /** '9 aug 2026' / '9 Aug 2026' — als shortDate(), maar met het jaar erbij, want een factuur zonder jaartal is geen factuur. */
@@ -4525,15 +4645,24 @@ function invoicesBody(t, lang, list, orders) {
     // knop — dan leest "Wordt gemaakt" als iets waarop je kunt drukken, precies
     // in het geval dat je niets kunt doen. Vandaar gedempte tekst zonder rand:
     // een mededeling ziet eruit als een mededeling.
+    /* Een creditnota heeft een eigen tabel en dus een eigen pad. Het pad uit de SOORT
+       halen en niet uit het id: één route die zelf moet raden in welke tabel het getal
+       hoort, is een route waar de eigendomscontrole aan een gok hangt. */
+    const isCredit = inv.kind === 'credit';
+    const href = isCredit
+      ? `/account/credit-notes/${inv.id}/pdf`
+      : `/account/invoices/${inv.id}/pdf`;
     const action = inv.status === 'issued'
-      ? `<a class="btn btn-ghost" href="/account/invoices/${inv.id}/pdf">${esc(t.invDownload)}</a>`
+      ? `<a class="btn btn-ghost" href="${href}">${esc(t.invDownload)}</a>`
       : `<span class="invstate">${esc(inv.status === 'void' ? t.invVoid : t.invPending)}</span>`;
 
     // data-label draagt de kolomkop mee naar de cel. Onder 40rem verdwijnt de
     // koprij en wordt elke rij een blok met label-waardeparen — zie account.css.
     // Een cel zonder label zou daar een los getal zijn.
     return `<tr>
-      <td><b>${esc(inv.number)}</b>${flag ? `<span class="invflag">${esc(flag)}</span>` : ''}</td>
+      <td><b>${esc(inv.number)}</b>${isCredit
+        ? `<span class="invflag">${esc(t.invCredit)}</span>`
+        : ''}${flag ? `<span class="invflag">${esc(flag)}</span>` : ''}</td>
       <td data-label="${esc(t.invDate)}">${esc(invoiceDate(snap.date || inv.created_at, lang))}</td>
       <td data-label="${esc(t.invOrder)}">${esc(inv.ref || '')}</td>
       <td class="invamount" data-label="${esc(t.invAmount)}">${esc(money(gross, lang))}</td>

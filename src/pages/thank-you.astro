@@ -37,8 +37,8 @@ const description =
   noindex
 >
   <section class="page-hero"><div class="container" style="max-width:720px;text-align:center;margin-inline:auto">
-    <span class="eyebrow-page">Request received</span>
-    <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Thanks — we've got your request.</h1>
+    <span class="eyebrow-page ty-hide-when-cancelled">Request received</span>
+    <h1 class="display ty-hide-when-cancelled" style="font-size:clamp(2.4rem,5vw,4rem)">Thanks — we've got your request.</h1>
     <p class="lead ty-hide-when-cancelled" style="margin:1.2rem auto 0">We'll confirm the details by email — usually faster on WhatsApp.</p>
     {/* See the Dutch page for the full note: this page said "request received"
         and the card below promised we were preparing the visuals, while on a
@@ -59,7 +59,7 @@ const description =
          gebeurt. interactions.js verbergt de rest van de pagina als dit blok
          zichtbaar wordt. */}
     <div class="ty-cancelled" data-ty-cancelled role="status" tabindex="-1" hidden>
-      <h2 class="ty-cancelled-h">This one we had to cancel</h2>
+      <h1 class="ty-cancelled-h">This one we had to cancel</h1>
       <p>Our records show a test sample already went out to your company. There is one
         per business, so this second request has been cancelled — and the &euro;1 is on
         its way back to the account you paid from. That usually takes a few working days.</p>
@@ -173,7 +173,14 @@ const description =
     border: 2px solid var(--ink); background: var(--surface); text-align: left;
   }
   .ty-cancelled:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
-  .ty-cancelled-h { font-size: var(--t-h4, 1.25rem); margin: 0 0 .7rem; }
+  /* Dit is de kop van de pagina geworden en niet meer een kopje in een kaart —
+     de hero eromheen zei "bedankt, ontvangen" en verdwijnt bij een annulering.
+     Dus ook op koptypografie: dit is het eerste wat iemand leest. */
+  .ty-cancelled-h {
+    font-family: var(--font-heading, inherit);
+    font-size: clamp(1.7rem, 3.2vw, 2.4rem); line-height: 1.1;
+    letter-spacing: -.01em; margin: 0 0 1rem; text-wrap: balance;
+  }
   .ty-cancelled p { margin: 0 0 .8rem; color: var(--ink-2); }
   .ty-cancelled-next { color: var(--ink) !important; font-weight: 600; }
 </style>

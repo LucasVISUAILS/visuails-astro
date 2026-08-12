@@ -58,7 +58,7 @@
 
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents, refundMolliePayment } from '../../../src/lib/mollie.js';
 import { paymentMismatch } from '../../../src/data/vat.js';
-import { issueInvoice } from '../../../src/lib/invoice.js';
+import { issueInvoice, issueCreditNote } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
 import { notifyPaid, notifyPaymentFailed, notifySampleBlocked } from '../../../src/lib/notify.js';
 import { payerHash } from '../../../src/lib/payer.js';
@@ -207,7 +207,7 @@ async function recordPaid(env, payment, mode) {
     return;
   }
 
-  const order = await env.DB.prepare('SELECT id, service, status, payment_status, total_cents, refunded_cents FROM orders WHERE ref = ?1').bind(ref).first();
+  const order = await env.DB.prepare('SELECT id, service, status, payment_status, total_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1').bind(ref).first();
   if (!order) {
     // The order row is written before the payment is ever created, so this is
     // not a race — it means the ref does not exist here. The usual cause is a
@@ -282,6 +282,40 @@ async function recordPaid(env, payment, mode) {
     ).run().catch(() => {});
 
     console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): ${known} -> ${refunded} cents, ${full ? 'full' : 'partial'}`);
+
+    /*
+     * ── EN DE CREDITNOTA — 12 augustus 2026 ──────────────────────────────────
+     *
+     * Hierboven werd de terugbetaling correct geboekt en daar bleef het bij. De
+     * uitgereikte factuur stond nog op het volle bedrag, dus vanaf de eerste
+     * terugbetaling was er een factuur van bijvoorbeeld € 1.101,10 tegenover geld dat
+     * terug was. Een uitgereikte factuur pas je niet aan; je credit hem.
+     *
+     * HET DOORLOPENDE TOTAAL GAAT MEE, niet het verschil. `refunded` is Mollie's
+     * amountRefunded, en dat is een lopend totaal; issueCreditNote() telt zelf op wat er
+     * al gecrediteerd is en geeft alleen het verschil uit. Daarmee is een tweede
+     * aflevering van dezelfde melding vanzelf onschadelijk — dezelfde afspraak als bij
+     * issueInvoice(), en om dezelfde reden.
+     *
+     * BINNEN safe() EN NIET ERBUITEN. Er is op dit punt al geboekt dat er terugbetaald
+     * is, en dat is het deel dat niet verloren mag gaan. Mislukt de nota — R2 niet
+     * bereikbaar, de pdf-renderer die valt — dan blijft de rij op 'pending' met haar
+     * nummer staan en pakt de nachtelijke taak hem op. Deze webhook mag daar niet op
+     * omvallen, want dan komt Mollie hem opnieuw aanbieden en begint alles opnieuw.
+     *
+     * GEEN FACTUUR BETEKENT GEEN NOTA, en dat is de normale gang bij een proefvisual
+     * van € 1: daar wordt niet gefactureerd zolang het fiscale standpunt over die euro
+     * niet genomen is. issueCreditNote() geeft dan null terug en dat is geen fout.
+     */
+    try {
+      const note = await issueCreditNote(env, order.id, {
+        refundedGrossCents: refunded,
+        reason: order.cancel_reason || null,
+      });
+      if (note) console.log(`[mollie-webhook] creditnota ${note.number} voor ${ref} (${note.status})`);
+    } catch (err) {
+      console.error('[mollie-webhook] creditnota niet uitgegeven voor', ref, '—', err?.message || err);
+    }
   }
 
   // The idempotency gate — see the file header. A UNIQUE violation here means

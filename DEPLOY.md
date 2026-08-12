@@ -277,6 +277,134 @@ a product shot would not reach anyone who had already seen the old one. If you
 want headers, they want designing once, deliberately — not guessing at them on
 deploy day.
 
+## 7 · De wekelijkse back-up
+
+*Dit onderdeel staat in het Nederlands, zoals al het nieuwere materiaal in deze
+repository. De secties hierboven blijven Engels; die worden niet omgezet om een
+sectie heen.*
+
+Er is één ding in dit project dat je niet opnieuw kunt maken: de database. De
+bestellingen, de revisiegeschiedenis, de indeling per product, de notities, de
+factuurnummers. R2 heeft geen versiebeheer en D1's point-in-time recovery is
+Cloudflare's kopie op Cloudflare's account — precies het ding dat je niet meer
+kunt gebruiken op de dag dat je dat account kwijt bent.
+
+`npm run backup` maakte die kopie al. Wat eraan ontbrak was dat het gebeurde
+zonder dat je eraan dacht, en dat je hoorde wanneer het stopte.
+
+### Eenmalig instellen
+
+Eén regel in een opdrachtprompt, in de map van het project:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install-backup-task.ps1
+```
+
+Dat is alles. Het script zet de taak neer, leest hem daarna terug uit de
+Taakplanner en drukt af wat er werkelijk staat.
+
+**Hier stond eerst een regel met `schtasks`**, over twee regels met een `^` ertussen
+en met `\"`-escapes in de `/tr`-waarde. Op 12 augustus 2026 ging dat mis op de enige
+manier die je niet ziet: `schtasks` meldde `SUCCESS` en zette een taak neer met het
+pad er twee keer in. Een verkeerd ingestelde back-uptaak die zegt dat hij goed
+staat, is erger dan geen taak — want dan kijk je er niet meer naar. Vandaar een
+script: het pad komt uit het script zelf (`$PSScriptRoot`), dus er valt geen pad met
+spaties en haakjes met de hand te quoten, en aan het einde controleert het of de
+taak precies één pad uitvoert.
+
+Wat het instelt, en waarom:
+
+- **wekelijks, zondag 13:00** — de middag en niet de nacht. Dat komt door het punt
+  hieronder: de taak loopt alleen als je bent aangemeld, en op een middag ben je dat.
+  's Nachts om drie uur staat de machine uit en gebeurt er niets.
+- **alleen wanneer je bent aangemeld** (`LogonType Interactive`) — geen beperking maar
+  een eis: `wrangler` bewaart zijn inloggegevens in jouw Windows-profiel, en een taak
+  die als SYSTEM draait heeft die niet. De variant "uitvoeren ook als de gebruiker
+  niet is aangemeld" vraagt je wachtwoord, en dat is een slechtere ruil dan een taak
+  die op maandag inhaalt.
+- **inhalen na een gemiste start** (`-StartWhenAvailable`) — het belangrijkste van de
+  drie. Staat de PC zondag uit, dan loopt de back-up bij je volgende aanmelding in
+  plaats van pas de week erna. `schtasks` kan dit niet meegeven; daar moest je het
+  met de hand aanvinken.
+- **uit de slaapstand halen** (`-WakeToRun`) — alleen nuttig als de machine slaapt in
+  plaats van uitstaat, en het kost niets als dat niet zo is.
+
+Er hoeft daarna niets meer met de hand aangevinkt te worden.
+
+### Controleren dat het werkt
+
+Draai hem één keer met de hand, en kijk dan op drie plekken:
+
+```
+scripts\backup-weekly.bat
+```
+
+1. **`backups\`** — er staat een `<datum>-d1.sql` en een `<datum>-r2.json`.
+2. **`backups\_log\laatste.txt`** — het volledige verslag van de laatste ronde. Bij
+   een geslaagde ronde eindigt dat bestand op `KLAAR - gelukt`.
+3. **`/admin`** — bovenaan staat een chip **"Back-up ok · \<datum\>"**. Die leest
+   `app_settings.backup_last_run`, en die rij schrijft `scripts/backup.mjs` als de
+   export echt gelukt is (er staan tabellen in, en `orders`, `customers` en `files`
+   zitten erbij).
+
+De Taakplanner zet "Laatste resultaat van uitvoering" op `0x0` als het goed ging.
+Staat er `0x1`, dan staat in `laatste.txt` waarom. Negen van de tien keer is dat
+de wrangler-login: `npx wrangler whoami` in de projectmap zegt het meteen.
+
+### Wat er gebeurt als het stopt
+
+Dit is het stuk dat niet op je PC zit, en met opzet.
+
+`cron/index.js` leest elke nacht `app_settings.backup_last_run`. Is die datum ouder
+dan **tien dagen** — of staat er niets — dan gaat er een mail naar `NOTIFY_EMAIL`,
+en daarna hoogstens één keer per week zolang de toestand duurt. Tien dagen en niet
+zeven: één gemiste zondag is een uitgezette laptop, twee gemiste zondagen is een
+taak die niet meer loopt. En hoogstens één keer per week, omdat een mail die elke
+nacht komt de mail is die je na een week wegveegt.
+
+De alarmbel hangt dus in de cloud en de back-up op je schijf. Dat is de hele
+constructie: **een PC die het probleem is, kan het probleem niet melden.** Dezelfde
+reden waarom `cron_last_run` bestaat, één laag hoger.
+
+Beide wachters staan naast elkaar bovenaan `/admin`, en de drempels staan op twee
+plekken (`WATCH` in `src/lib/admin.js` en `BACKUP_STALE_DAYS` in `cron/index.js`).
+Verander je er één, verander dan de ander mee — `tests/backup-age.test.mjs` houdt
+de rest vast.
+
+### De bestanden zelf
+
+De standaard back-up neemt de database en een *inventaris* van R2 mee, niet de
+beelden. Dat is een keuze: de database is een paar honderd kilobyte en in seconden
+binnen, de bucket is gigabytes en duurt uren, en een wekelijkse kopie van het
+eerste is een gewoonte die je volhoudt. De inventaris is het verschil tussen
+"alles weg" en "ik weet precies welke 340 bestanden weg zijn en bij welke klant ze
+hoorden".
+
+Doe één keer, met de hand, een volledige kopie inclusief beelden — en daarna
+opnieuw wanneer de bibliotheek wezenlijk gegroeid is:
+
+```
+npm run backup -- --files
+```
+
+### Terugzetten
+
+Met opzet handwerk. Op de dag dat je het nodig hebt, wil je kijken naar wat je
+terugzet voordat je het over de echte database heen giet. Op een **lege** database:
+
+```
+npx wrangler d1 execute visuails --remote --file backups/<datum>-d1.sql
+```
+
+### Wat hier niet in staat
+
+Een Cloudflare API-token in een omgevingsvariabele zou de taak onafhankelijk maken
+van je wrangler-login, en dus ook laten lopen als SYSTEM en zonder aanmelding. Dat
+is een betere constructie, maar het is een sleutel met schrijfrechten op je hele
+account die dan op je schijf staat. Dat is een afweging die je één keer bewust
+maakt en niet en passant op een deploy-avond — en het hoort in ieder geval niet in
+een chatvenster of in deze repository.
+
 ---
 
 *Numbers in this file were measured, not remembered. If you change the shape of

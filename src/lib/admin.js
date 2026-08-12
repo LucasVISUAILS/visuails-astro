@@ -39,6 +39,7 @@
 
 import { hashToken, mintToken, portalUrl } from './token.js';
 import { stampDeliveryRetention } from './retention.js';
+import { serviceLabel } from '../data/services.js';
 import { hasProvenanceTag, isScannable } from './provenance.js';
 import { checkRate, clientIp } from './ratelimit.js';
 import {
@@ -113,6 +114,7 @@ export async function adminGet(context) {
 
   if (path === '/admin/log') return renderLog(context);
   if (path === '/admin/vat') return renderVatReview(context);
+  if (path === '/admin/funnel') return renderFunnel(context, url);
 
   if (path === '/admin') {
     // ?status= narrows the order list — Lucas, August 2026: "als je op received
@@ -131,17 +133,18 @@ export async function adminGet(context) {
       ? wantedFilter : '';
     const hidden = url.searchParams.get('hidden') === '1';
 
-    const [revisions, orders, counts, statusCounts, vatHeld] = await Promise.all([
+    const [revisions, orders, counts, statusCounts, vatHeld, watch] = await Promise.all([
       loadRevisionInbox(env),
       loadOrders(env, statusFilter, { q, filter, hidden }),
       loadTodayCounts(env),
       loadStatusCounts(env),
       loadVatHeld(env),
+      loadWatchdogs(env),
     ]);
     const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
-      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld),
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld, watch),
     }));
   }
 
@@ -2246,6 +2249,89 @@ export function redeliveryEmail({ order, link, n, revisions = 0, note = '', prod
  * gedraaid — dan is het antwoord nul en verschijnt de chip niet. Dat is juist: zonder
  * die migratie bestaat de poort niet en is er ook niets vastgehouden.
  */
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DRAAIT DE NACHTELIJKE TAAK? — 10 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * cron/index.js zegt bovenaan: "Geen mail betekent: er was niets te doen en er ging niets
+ * mis." Dat is precies óók wat je krijgt als die Worker nooit gedeployd is, als de trigger
+ * uitstaat, of als RESEND_API_KEY niet op dát project staat. Stilte betekende twee
+ * tegengestelde dingen.
+ *
+ * De taak schrijft daarom elke nacht één rij in app_settings. Deze functie leest hem, en
+ * het dashboard zet hem bovenaan. Ouder dan 48 uur is een waarschuwing: de taak draait
+ * dagelijks, dus twee gemiste nachten is geen toeval meer.
+ *
+ * Geen rij is niet hetzelfde als een oude rij, en dat verschil staat in de tekst: "nog
+ * nooit gedraaid" wijst naar de deploy, "3 dagen stil" wijst naar de trigger.
+ */
+/*
+ * ── EN DE TWEEDE WACHTER: DE BACK-UP — 12 augustus 2026 ────────────────────
+ *
+ * Er staan nu twee datums in app_settings die hetzelfde soort vraag beantwoorden:
+ * `cron_last_run` (draait de nachtelijke Worker?) en `backup_last_run` (draait de
+ * wekelijkse back-up op de PC?). Beide worden ergens ANDERS geschreven dan waar ze
+ * gelezen worden, en dat is precies waarom ze bestaan: stilte betekende bij beide twee
+ * tegengestelde dingen, en de gevaarlijkste van de twee is de stille.
+ *
+ * Eén query voor beide. Het zijn twee rijen in dezelfde tabel; er twee vragen van maken
+ * is een tweede rondje naar D1 voor een dashboard dat toch al op vijf queries wacht.
+ *
+ * DE DREMPELS VERSCHILLEN, EN DAT IS GEEN SLORDIGHEID. De cron draait dagelijks, dus
+ * twee gemiste nachten (48 uur) is geen toeval meer. De back-up draait wekelijks, dus
+ * daar is één gemiste zondag een uitgezette laptop en pas twee gemiste zondagen (tien
+ * dagen) een taak die niet meer loopt. Dezelfde grens staat in cron/index.js, waar de
+ * mail vandaan komt — verandert er één, dan hoort de ander mee.
+ */
+const WATCH = {
+  cron: { key: 'cron_last_run', staleHours: 48, ok: 'Nacht ok', never: 'Nachtelijke taak: nog nooit gedraaid', label: 'Nachtelijke taak' },
+  backup: { key: 'backup_last_run', staleHours: 10 * 24, ok: 'Back-up ok', never: 'Back-up: nog nooit gemaakt', label: 'Back-up' },
+};
+
+async function loadWatchdogs(env) {
+  try {
+    const res = await env.DB.prepare(
+      "SELECT key, value FROM app_settings WHERE key IN ('cron_last_run', 'backup_last_run')"
+    ).all();
+    const rows = new Map((res.results || []).map((r) => [r.key, r.value]));
+    /* DE VORM EERST, DAN PARSEN. `Date.parse('gisteren ergens')` geeft geen NaN maar
+       een datum in 1999 — Date.parse valt bij onbekende tekst terug op een eigen
+       lezing. Dat leverde in cron/index.js een chip op die "9720 dagen stil" zei over
+       een waarde die simpelweg geen datum was. Alleen precies de vorm die
+       scripts/backup.mjs en de hartslag schrijven telt hier als datum. */
+    const SHAPE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+    const read = (spec) => {
+      const value = rows.get(spec.key);
+      if (!value) return { state: 'never' };
+      const text = String(value).slice(0, 16);
+      /* Een onleesbare datum valt bij 'never' en niet bij 'ok': er staat iets, maar we
+         weten niet wat, en dan is "we weten het niet" het eerlijke antwoord. */
+      if (!SHAPE.test(text)) return { state: 'never', value: String(value) };
+      const when = Date.parse(text.replace(' ', 'T') + ':00Z');
+      if (!Number.isFinite(when)) return { state: 'never', value: String(value) };
+      const hours = (Date.now() - when) / 36e5;
+      return { state: hours > spec.staleHours ? 'stale' : 'ok', value: String(value), hours };
+    };
+    return { cron: read(WATCH.cron), backup: read(WATCH.backup) };
+  } catch {
+    /* Geen app_settings betekent een database die niet is opgezet; dat is elders al
+       zichtbaar en hier geen reden om het dashboard te laten omvallen. */
+    return null;
+  }
+}
+
+/** Eén chip per wachter: rood-oranje als hij stilstaat, rustig als hij loopt. */
+function watchChip(spec, w) {
+  if (!w) return '';
+  if (w.state === 'never') return `<span class="fl-chip is-warn">${spec.never}</span>`;
+  if (w.state === 'stale') {
+    const days = Math.floor((w.hours || 0) / 24);
+    return `<span class="fl-chip is-warn">${spec.label}: ${days} ${days === 1 ? 'dag' : 'dagen'} stil</span>`;
+  }
+  return `<span class="fl-chip">${spec.ok} &middot; ${esc(w.value || '')}</span>`;
+}
+
 async function loadVatHeld(env) {
   try {
     const row = await env.DB.prepare(
@@ -3329,6 +3415,151 @@ ${missing
  * de klant kunnen herschrijven, en dat is precies het soort administratie waarvan je
  * later niet meer weet wat de klant zelf heeft gezegd.
  */
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE TRECHTER — WAAR IEMAND HET BESTELFORMULIER VERLAAT
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Het bestelformulier is één pagina met vijf stappen die met JavaScript wisselen, dus
+ * Web Analytics zag er niets van: bekend was wie een bestelling AFMAAKTE, niet wie op
+ * stap 3 wegliep. functions/api/step.js telt sinds 12 augustus 2026 één getal per dag,
+ * dienst, taal en stap; dit scherm zet die getallen naast elkaar.
+ *
+ * ── WAT DIT SCHERM WEL EN NIET BEWEERT ─────────────────────────────────────
+ *
+ * Er staat geen bezoekersaantal. Er staat GEEN bezoeker-id in die tabel — met opzet,
+ * zie de noot in het endpoint — dus wie herlaadt en opnieuw tot stap 3 komt, staat er
+ * twee keer in. De VERHOUDING tussen de stappen is wat bruikbaar is, en dat is precies
+ * de vraag: waar valt het weg. Dat staat er ook zo boven, want een getal met de
+ * verkeerde naam is erger dan geen getal.
+ *
+ * ── DE VOLGORDE IS DALEND EN DAT IS EEN AANNAME ────────────────────────────
+ *
+ * Stap 1 hoort het grootste getal te hebben. Is dat niet zo — meer op stap 2 dan op
+ * stap 1 — dan is er iets met de meting en niet met de trechter, bijvoorbeeld een
+ * directe link naar een halve stap. Het scherm markeert dat in plaats van het te
+ * verbergen: een percentage van een verkeerde noemer is een conclusie waar je een
+ * advertentiebudget op zet.
+ */
+const FUNNEL_DAYS = 30;
+
+/* `url` komt er los bij en zit niet in `context`: adminGet() bouwt hem zelf uit
+   request.url, en de Pages-context heeft geen url-veld. Meegeven in plaats van hier
+   opnieuw parsen, want dan staat dezelfde ontleding twee keer in dit bestand. */
+async function renderFunnel({ env }, url) {
+  const wanted = Number(url?.searchParams?.get('days'));
+  const days = [7, 30, 90].includes(wanted) ? wanted : FUNNEL_DAYS;
+
+  let rows = [];
+  let missing = false;
+  try {
+    const res = await env.DB.prepare(
+      `SELECT flow, lang, step, SUM(hits) AS hits
+         FROM funnel_hits
+        WHERE day >= date('now', ?1)
+        GROUP BY flow, lang, step
+        ORDER BY flow, lang, step`
+    ).bind(`-${days} days`).all();
+    rows = res.results || [];
+  } catch (err) {
+    /* Zonder migratie 0025 bestaat de tabel niet. Dan hoort dit scherm te zeggen wat
+       eraan scheelt in plaats van een lege trechter te tonen die eruitziet als
+       "niemand begint aan een bestelling" — dezelfde terugval als renderVatReview. */
+    missing = String(err?.message || '');
+  }
+
+  /* Per dienst optellen over de talen, en de talen apart houden voor de tweede tabel:
+     een trechter die in één taal veel slechter loopt is een tekstprobleem en geen
+     formulierprobleem, en dat verschil is het halve antwoord. */
+  const byFlow = new Map();
+  const byLang = new Map();
+  let total = 0;
+  for (const r of rows) {
+    const hits = Number(r.hits) || 0;
+    total += hits;
+    const step = Number(r.step) || 0;
+    if (!byFlow.has(r.flow)) byFlow.set(r.flow, new Map());
+    const f = byFlow.get(r.flow);
+    f.set(step, (f.get(step) || 0) + hits);
+    const key = `${r.flow}|${r.lang}`;
+    if (!byLang.has(key)) byLang.set(key, new Map());
+    const l = byLang.get(key);
+    l.set(step, (l.get(step) || 0) + hits);
+  }
+
+  const steps = (m) => [...m.keys()].sort((a, b) => a - b);
+  const pct = (n, of) => (of > 0 ? `${Math.round((n / of) * 100)}%` : '—');
+
+  /** Eén rij per stap, met het verlies ten opzichte van de vorige stap erbij. */
+  const table = (label, m) => {
+    const ks = steps(m);
+    if (!ks.length) return '';
+    const first = m.get(ks[0]) || 0;
+    let prev = null;
+    const body = ks.map((k) => {
+      const n = m.get(k) || 0;
+      /* Het verlies is het interessante getal, niet het aantal: "hier gaat 40% weg" is
+         een taak, "hier waren 62 mensen" is een feit. */
+      const drop = prev === null ? '' : (prev > 0 ? `&minus;${Math.round(((prev - n) / prev) * 100)}%` : '');
+      const stijging = prev !== null && n > prev;
+      const row = `
+    <tr>
+      <th>Stap ${k}</th>
+      <td>${n}</td>
+      <td>${pct(n, first)}</td>
+      <td class="${stijging ? 'warnline' : ''}">${stijging
+        ? 'meer dan de stap ervoor — kijk naar de meting, niet naar de trechter'
+        : drop}</td>
+    </tr>`;
+      prev = n;
+      return row;
+    }).join('');
+    return `
+<h2>${esc(label)}</h2>
+<table class="files">
+  <thead><tr><th>Stap</th><th>Bereikt</th><th>Van stap ${ks[0]}</th><th>Verlies</th></tr></thead>
+  <tbody>${body}</tbody>
+</table>`;
+  };
+
+  const body = `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Trechter</h1>
+<p class="lede">Hoe vaak elke stap van het bestelformulier bereikt is, over de laatste
+${days} dagen. Dit zijn <strong>geen bezoekersaantallen</strong>: er wordt geen bezoeker
+vastgelegd — geen cookie, geen id, geen ip — dus wie het formulier herlaadt en opnieuw
+tot stap 3 komt, staat er twee keer in. Wat je hier leest is de verhouding tussen de
+stappen, en dat is de vraag: waar valt het weg.</p>
+<p class="meta">
+  ${[7, 30, 90].map((d) => d === days
+    ? `<span class="fl-chip is-active">${d} dagen</span>`
+    : `<a class="fl-chip" href="/admin/funnel?days=${d}">${d} dagen</a>`).join(' ')}
+</p>
+${missing
+  ? `<p class="warnline">Dit scherm kan de trechter niet lezen (${esc(missing)}). Draai migratie 0025.</p>`
+  : total === 0
+    ? `<p class="empty">Nog niets gemeten in de laatste ${days} dagen. Dat is bij een nieuwe
+       meting het normale begin — na het eerste bezoek aan /start staat hier een regel.
+       Blijft het leeg terwijl er wél bestellingen binnenkomen, dan komt het bericht van
+       de browser niet aan: kijk in het netwerktabblad naar een POST op <code>/api/step</code>.</p>`
+    : [...byFlow.entries()]
+        .sort((a, b) => (b[1].get(1) || 0) - (a[1].get(1) || 0))
+        .map(([flow, m]) => table(serviceLabel(flow, 'nl') || flow, m))
+        .join('')
+      + `
+<h2>Per taal</h2>
+<p class="meta">Zelfde getallen, gesplitst. Loopt één taal duidelijk slechter, dan zit het
+in de tekst van die stap en niet in het formulier.</p>
+${[...byLang.entries()]
+  .sort((a, b) => (b[1].get(1) || 0) - (a[1].get(1) || 0))
+  .map(([key, m]) => {
+    const [flow, lang] = key.split('|');
+    return table(`${serviceLabel(flow, 'nl') || flow} · ${String(lang).toUpperCase()}`, m);
+  }).join('')}`}`;
+
+  return html(page({ title: 'Trechter', body }));
+}
+
 async function renderVatReview({ env }) {
   let rows = [];
   let missing = false;
@@ -3501,7 +3732,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
   return seeOther(back);
 }
 
-function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0) {
+function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0, watch = null) {
   const { q = '', filter = '', hidden = false } = view;
 
   /* Zoeken en filteren, in één rij boven de lijst.
@@ -3549,7 +3780,10 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
       geen werk en hoort niet elke dag om aandacht te vragen.
    */''}${vatHeld > 0
     ? `<a class="fl-chip is-warn" href="/admin/vat">Btw-controle &middot; ${vatHeld} &rarr;</a>`
+    : ''}${watch ? watchChip(WATCH.cron, watch.cron) : ''}${watch
+    ? watchChip(WATCH.backup, watch.backup)
     : ''}
+  <a class="fl-chip" href="/admin/funnel">Trechter &rarr;</a>
 </div>`;
 
   return `

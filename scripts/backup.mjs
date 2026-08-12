@@ -120,6 +120,49 @@ if (missing.length) {
 }
 console.log(`     ${tables.length} tabellen, waaronder ${MUST_HAVE.join(', ')}`);
 
+/* ── 1b · DE DATUMSTEMPEL ─────────────────────────────────────────────────────
+ *
+ * Eén rij in `app_settings`, en die rij is het hele punt van deze toevoeging.
+ *
+ * DIT SCRIPT DRAAIT OP EEN PC EN DAT IS PRECIES HET PROBLEEM. Zolang de back-up
+ * handwerk was, was het herstelpunt "de laatste keer dat ik eraan dacht". Met de
+ * wekelijkse taak in de Taakplanner (scripts/backup-weekly.cmd, opzet in DEPLOY.md)
+ * draait hij vanzelf — maar áls die taak stilvalt, en dat gebeurt (laptop uit,
+ * wachtwoord verlopen, wrangler-login weg, schijf vol), dan gebeurt er niets. En
+ * niets is onzichtbaar: geen mail, geen melding, geen bestand dat ontbreekt op een
+ * plek waar je kijkt.
+ *
+ * Deze regel legt het bewijs neer op de enige plek die van buiten te lezen is: de
+ * database. cron/index.js kijkt er elke nacht naar en mailt als hij ouder dan tien
+ * dagen is — de alarmbel hangt dus in de cloud en de back-up op de schijf, want een
+ * PC die het probleem is, kan het probleem niet melden.
+ *
+ * WAAROM HIER EN NIET ONDERAAN. Op dit punt staat vast dat de export echt is: er is
+ * een bestand, er staan CREATE TABLEs in, en orders/customers/files zitten erbij. Wat
+ * daarna komt — de R2-inventaris, de objecten, het opruimen — kan mislukken zonder
+ * dat de kopie van de database minder waard wordt. Een stempel ná dat alles zou
+ * uitblijven op een avond dat de database wél veilig staat, en dat is een vals alarm.
+ *
+ * WAAROM DIT NIET FATAAL IS. Lukt de stempel niet, dan is de back-up er nog steeds en
+ * heeft hij zijn werk gedaan. Dan komt er over tien dagen een mail die zegt dat er
+ * geen back-up is terwijl die er wel is — vervelend, maar de goede kant om fout te
+ * gaan: een bewaking die liever te vaak waarschuwt dan te weinig.
+ */
+const stampSql = asCommandArg(
+  `INSERT INTO app_settings (key, value) VALUES ('backup_last_run', '${stamp.replace(/-(\d{4})$/, ' $1').replace(/(\d{2})(\d{2})$/, '$1:$2')}')
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+);
+if (stampSql) {
+  const st = await wrangler(['d1', 'execute', DB, '--remote', '--command', stampSql]);
+  if (st.ok) {
+    console.log('     datum weggeschreven in app_settings — cron/index.js kijkt hiernaar');
+  } else {
+    console.error('  ! de datum kon niet in app_settings — de back-up zelf is in orde.');
+    console.error('    Gevolg: de nachtelijke taak denkt over tien dagen dat er geen back-up is.');
+    console.error('    ' + st.out.trim().split('\n')[0].slice(0, 200));
+  }
+}
+
 /* ── 2 · de inventaris van R2 ─────────────────────────────────────────────────
  *
  * DE QUERY GAAT DOOR asCommandArg() — 10 augustus 2026.

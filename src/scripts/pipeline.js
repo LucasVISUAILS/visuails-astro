@@ -308,6 +308,10 @@ function init(el) {
   uploadsOff = false;
   busy = false;
   gateReq = 0;
+  /* Leeg bij elke init, net als de rest van de toestand hierboven: ClientRouter
+     hergebruikt deze module tussen pagina's, en een verzameling die blijft staan zou
+     de tweede bestelling van dezelfde bezoeker ongemeten laten. */
+  reached.clear();
   // Object URLs from the previous page are already dead with their documents;
   // what matters is that the arrays do not outlive the DOM they point at.
   cards = [];
@@ -424,9 +428,65 @@ function stepNode(n) {
   return q(`[data-pl-step="${n}"]`);
 }
 
+/*
+ * ── DE TRECHTER — 12 augustus 2026 ──────────────────────────────────────────
+ *
+ * Dit formulier is één pagina met vijf stappen die hier gewisseld worden, dus
+ * Cloudflare Web Analytics — dat paginabezoeken meet — zag van vier van de vijf
+ * stappen niets. Van iedereen die aan een bestelling begon, was alleen bekend wie
+ * hem afmaakte. Wie op stap 3 wegliep, liet geen enkel spoor na.
+ *
+ * `show()` is de enige plek in dit bestand die van stap wisselt, dus is het ook de
+ * enige plek waar dit hoort te staan. Elke andere plek zou een tweede lijst van
+ * navigatiepunten worden die je moet onthouden bij te werken.
+ *
+ * ── ÉÉN KEER PER STAP PER PAGINALADING ─────────────────────────────────────
+ *
+ * `reached` houdt bij wat er al gestuurd is. Zonder die verzameling telt heen en
+ * weer klikken tussen stap 2 en 3 als vier bezoeken aan stap 3, en dan meet de
+ * trechter twijfel in plaats van voortgang — precies de vorm van verkeerd die
+ * eruitziet als een antwoord.
+ *
+ * Het is uitdrukkelijk NIET één keer per bezoeker: dat zou een cookie of een
+ * bezoeker-id vragen, en dan is dit een tracker met alles wat daarbij hoort. Zie de
+ * noot in functions/api/step.js over wat dat kost en wat het oplevert.
+ *
+ * ── EN HET MAG NIETS OPHOUDEN ──────────────────────────────────────────────
+ *
+ * `keepalive` zodat het bericht een navigatie overleeft, geen await, en de fout gaat
+ * nergens heen. Een meting die het formulier vertraagt of laat struikelen, kost meer
+ * bestellingen dan het inzicht oplevert. Dit is het ene geval waarin een lege catch
+ * juist is: er hangt niets van de uitkomst af, en het endpoint antwoordt altijd 204.
+ */
+const reached = new Set();
+
+function measure(step) {
+  /* Alleen echte stapnummers. `show()` klemt zijn argument tussen 1 en STEPS, dus dit
+     kan alleen NaN worden als iemand hem ooit met iets anders dan een getal aanroept —
+     en dan hoort er geen rij in de tabel te komen die 'NaN' heet. Het endpoint weigert
+     hem ook, maar een bericht dat je niet stuurt hoeft niet geweigerd te worden. */
+  if (!Number.isInteger(step)) return;
+  if (reached.has(step)) return;
+  reached.add(step);
+  try {
+    /* Uit het formulier en niet uit de config: `service` en `lang` staan er als
+       verborgen velden in (OrderFlow.astro, test-sample.astro) en zijn precies de
+       waarden die straks in orders.service en orders.lang staan. Daarmee is de
+       trechter naast de bestellingen te leggen zonder een tweede naamgeving. */
+    const flow = (q('input[name="service"]') || {}).value || '';
+    const lang = (q('input[name="lang"]') || {}).value || '';
+    if (!flow || !lang) return;
+    const body = new URLSearchParams({ step: String(step), flow, lang });
+    fetch('/api/step', { method: 'POST', body, keepalive: true }).catch(() => {});
+  } catch {
+    /* Een browser zonder fetch of een form dat halverwege verdween. Geen gevolg. */
+  }
+}
+
 function show(n, opts) {
   const to = Math.min(STEPS, Math.max(1, n));
   current = to;
+  measure(to);
 
   for (let i = 1; i <= STEPS; i += 1) {
     const node = stepNode(i);

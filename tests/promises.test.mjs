@@ -159,8 +159,33 @@ console.log('\nde getallen op de pagina komen overeen met de code');
   // En de drie plekken die stempelen of opruimen lezen de module in plaats van de
   // getallen te herhalen. Dit is de regel die voorkomt dat er over een jaar 60 dagen
   // in de cron staat en 90 op de site.
-  for (const p of ['src/lib/close.js', 'src/lib/admin.js', 'src/lib/portal.js', 'src/lib/account.js', 'cron/index.js']) {
+  /*
+   * ── DEZE LUS STOND ROOD, EN NIET OM DE REDEN DIE HIJ BEDOELDE — 12 aug 2026 ─
+   *
+   * `src/lib/portal.js` en `src/lib/account.js` stonden in deze lijst en importeren
+   * retention.js niet. Ze noemen ook nergens een bewaartermijn: de enige tweecijferige
+   * dagvermelding in beide bestanden is een noot over een verzonnen "12 days until
+   * renewal"-teller die er juist NIET staat. Er was dus niets om uit de module te halen,
+   * en `npm run test:promises` was al rood vóór vanavond — twee regels die niets
+   * beschermden en al het andere in dit bestand verdachten.
+   *
+   * De regel die wél iets betekent is niet "deze vijf bestanden importeren de module"
+   * maar "wie een termijn NOEMT, haalt hem uit de module". Zo blijft de bewaking staan
+   * (schrijft iemand morgen `90 dagen` in account.js, dan wordt dit rood) en verdwijnt
+   * de valse rode regel. De drie bestanden die vandaag wél stempelen of opruimen —
+   * close.js, admin.js en cron/index.js — worden onvoorwaardelijk vastgehouden, want
+   * daar is het importeren zelf de afspraak.
+   */
+  for (const p of ['src/lib/close.js', 'src/lib/admin.js', 'cron/index.js']) {
     check(`${p} leest retention.js`, /from '.*retention\.js'/.test(read(p)), true);
+  }
+  for (const p of ['src/lib/portal.js', 'src/lib/account.js', 'src/lib/feedback.js', 'src/lib/delivery.js']) {
+    const code = codeOnly(read(p));
+    const noemtTermijn = /\b(UPLOAD_DAYS|DELIVERY_MONTHS)\b/.test(code)
+      || /\b(30|60|90|120)\s*(dagen|days)\b/i.test(code)
+      || /\b(6|12|18|24)\s*(maanden|months)\b/i.test(code);
+    check(`${p} noemt geen termijn buiten retention.js om`,
+      !noemtTermijn || /from '.*retention\.js'/.test(read(p)), true);
   }
   for (const p of ['cron/index.js', 'src/lib/close.js', 'src/lib/admin.js']) {
     const code = codeOnly(read(p));
@@ -203,10 +228,38 @@ console.log('\n/terms §9 beschrijft geen betaalregeling die niet bestaat');
     .map((p) => codeOnly(read(p))).join('\n');
   check('en de betaalcode kent nog geen termijnen',
     /\b(deposit|instalment|installment|aanbetaling|eerste termijn)\b/i.test(payCode), false);
-  // Wat er nu WEL staat, moet waar zijn: alleen de proefvisual wordt bij het
-  // afrekenen betaald. Dat is de regel in order.js die de Mollie-link maakt.
-  check('alleen test-sample krijgt een betaallink bij het bestellen',
-    /svc === 'test-sample' && env\.MOLLIE_API_KEY/.test(read('functions/api/order.js')), true);
+  /*
+   * ── OP DE POORT, NIET OP DE TEKST VAN DE REGEL — 10 augustus 2026 ─────────
+   *
+   * Hier stond een controle op de letterlijke bron: `svc === 'test-sample' &&
+   * env.MOLLIE_API_KEY`. Die viel om zodra er `orderId &&` tussen kwam, terwijl die
+   * toevoeging juist de reparatie was van de ernstigste fout die deze flow had. Zesde keer
+   * in dit project dat een test op zijn eigen zin staat in plaats van op wat er moet
+   * gelden.
+   *
+   * Wat er moet gelden: ELK pad dat een Mollie-betaling aanmaakt, staat achter `orderId`.
+   * Zonder die poort wordt er een echte betaling gemaakt voor een bestelling die niet in de
+   * database staat — de klant betaalt, de webhook vindt niets en antwoordt 200, en Mollie
+   * stopt met opnieuw aanbieden. Geld binnen, geen bestelling, geen spoor.
+   */
+  {
+    const order = codeOnly(read('functions/api/order.js'));
+    /* Per REGEL en niet met een haakjes-regex: de eerste poort bevat
+       `isPayableService(svc)`, dus een patroon dat op ')' stopt vindt hem niet. */
+    const gates = order.split('\n').filter((l) => /^\s*if \(.*MOLLIE_API_KEY/.test(l));
+    check('er zijn twee plekken die een betaling kunnen maken', gates.length, 2);
+    check('en allebei staan achter orderId', gates.every((g) => /\borderId\b/.test(g)), true);
+    /* En als `orderId` null is, moet iemand het HOREN — anders maakt de poort hierboven
+     * de fout alleen maar stiller dan hij al was: de klant krijgt een bevestiging, er is
+     * geen betaallink, en het enige spoor is een consoleregel in een omgeving zonder
+     * logbewaring (`[observability]` staat in geen van beide wrangler.toml's).
+     *
+     * Op het onderwerp van die mail en niet op een functienaam: de melding is een inline
+     * sendMail() in dit bestand, en de vraag die vast moet staan is of hij bestaat en
+     * achter `orderRowMissing` hangt — niet hoe hij heet. */
+    check('een verloren bestelling wordt gemeld', /Bestelling niet weggeschreven/.test(order), true);
+    check('en die melding hangt aan het ontbreken van de rij', /orderRowMissing/.test(order), true);
+  }
   for (const p of ['src/pages/terms.astro', 'src/pages/nl/terms.astro']) {
     check(`${p.replace('src/pages/', '')} noemt VISUAILS Studio als betaalplek`,
       /VISUAILS Studio/.test(read(p)), true);

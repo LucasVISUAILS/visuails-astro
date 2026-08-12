@@ -78,13 +78,51 @@
 // not a law the prices must obey. Where a derived figure looks like arithmetic
 // showing through, the chosen number wins. Every rung remains strictly falling,
 // which is the property assertLadder() actually enforces.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// DE ONDERSTE TREDE IS WEG — 12 AUGUSTUS 2026, EN DIT IS WAAROM
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Hier stond een vijfde trede: `[35, null, 55]` voor complete, met €33 en €41
+// ernaast. €55 was daarmee `ladderFloor('complete')`, en dat getal stond op de
+// drie plekken die een prospect als eerste leest — de heroregel op de homepage
+// in beide talen, de <meta description> van / en /nl (dus ook in het Google-
+// resultaat), en de rij "35+" in de tarieftabel op /pricing.
+//
+// NIEMAND KON HET BESTELLEN. src/data/capacity.js:
+//
+//   PRODUCTS_PER_DAY = 18 · QUEUE_FLOOR_PER_DAY = 3 → ATTENDED_PER_DAY = 15
+//   WINDOW_DAYS = 2                                 → ATTENDED_PER_WINDOW = 30
+//
+// en `windowsFor()` daar doet `if (products > ATTENDED_PER_WINDOW) return []`.
+// Wie 35 producten invulde om die €55 te halen, kreeg geen enkele leverdatum
+// aangeboden en kon dus niet afrekenen. Het eerste bedrag van dit merk was het
+// enige bedrag dat onbereikbaar was.
+//
+// Dat is geen fout in één regel: het zijn twee kloppende bestanden met een
+// verschillende aanname over hoeveel er in een venster past. Lucas heeft op
+// 12 augustus 2026 gekozen welke van de twee wijkt — de trede, niet het
+// plafond: *"Hero op €65, trede eruit"*. De reden om die kant te kiezen is dat
+// de andere drie uitwegen (WINDOW_DAYS naar 3, PRODUCTS_PER_DAY naar 21, of
+// grote orders over twee vensters verdelen) allemaal een belofte over zijn
+// eigen agenda zijn, en deze niet. Deze is vandaag waar.
+//
+// De bodem is nu €65, bereikbaar vanaf 20 producten, en de bovenste trede
+// staat open: `[20, null, 65]`. Alles wat het bedrag naar buiten brengt leest
+// het hier — ladderFloor(), de tabellen op /pricing en de homepage, de
+// meta-descriptions en faq.js (die ook de GRENS leest, niet alleen het
+// tarief) — dus deze vier regels zijn de hele wijziging.
+//
+// WIL DE TREDE TERUG, dan hoort daar dezelfde dag een wijziging in capacity.js
+// bij die 35 producten daadwerkelijk in een venster laat passen. Anders komt
+// deze fout precies zo terug, en dan zonder deze noot.
 export const LADDER = {
   // Catalog set AND lifestyle carousel — seven finished images per product.
-  complete: [[1, 4, 149], [5, 9, 109], [10, 19, 85], [20, 34, 65], [35, null, 55]],
+  complete: [[1, 4, 149], [5, 9, 109], [10, 19, 85], [20, null, 65]],
   // Catalog set only — four images.
-  catalog: [[1, 4, 89], [5, 9, 65], [10, 19, 51], [20, 34, 39], [35, null, 33]],
+  catalog: [[1, 4, 89], [5, 9, 65], [10, 19, 51], [20, null, 39]],
   // Lifestyle carousel only — three images.
-  lifestyle: [[1, 4, 109], [5, 9, 82], [10, 19, 64], [20, 34, 49], [35, null, 41]],
+  lifestyle: [[1, 4, 109], [5, 9, 82], [10, 19, 64], [20, null, 49]],
 };
 
 /** The per-product rate for a kind at a given product count. */
@@ -471,11 +509,17 @@ export const MAX_OUTFIT_PRODUCTS = 3;
 // THE RUNGS ARE DERIVED, NOT INVENTED. Each is LADDER.catalog's rung as a
 // fraction of its own entry rate, applied to €35 and rounded to whole euros:
 //   89→1.000×35 = 35 · 65→0.730×35 = 25.6 → 26 · 51→0.573×35 = 20.1 → 20
-//   39→0.438×35 = 15.3 → 15 · 33→0.371×35 = 13.0 → 13
+//   39→0.438×35 = 15.3 → 15
 // Written out rather than computed at runtime so the numbers on the page are
 // the numbers in this file, and asserted below so a rounding change cannot
 // quietly break the fall.
-export const EXTRA_PHOTO_LADDER = [[1, 4, 35], [5, 9, 26], [10, 19, 20], [20, 34, 15], [35, null, 13]];
+//
+// DE VIJFDE TREDE (33→13) IS WEG met de vijfde trede van LADDER.catalog op
+// 12 augustus 2026 — zie de noot bij LADDER. Dat is hier geen keuze maar een
+// gevolg: assertExtraLadder() hieronder eist dat deze ladder exact dezelfde
+// grenzen heeft als LADDER.catalog, omdat hij eruit is afgeleid. Eén van de
+// twee inkorten en de andere niet, laat de build vallen — precies zoals bedoeld.
+export const EXTRA_PHOTO_LADDER = [[1, 4, 35], [5, 9, 26], [10, 19, 20], [20, null, 15]];
 
 // Past four extra frames on one product it is no longer "one more angle", it
 // is a second brief — the same reasoning MAX_OUTFIT_PRODUCTS applies to "more

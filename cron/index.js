@@ -15,8 +15,12 @@
  *     week toch al vrij.
  * 2 · OPRUIMEN daarna. Dit is de zwaarste taak en de enige die iets onherroepelijk
  *     verwijdert, dus staat hij niet vóór iets anders dat nog moet gebeuren.
- * 3 · FACTUREN als laatste. Een klant die betaald heeft en nog geen factuur heeft,
- *     wacht al langer dan één nacht; een uur later is hier geen verschil.
+ * 3 · FACTUREN als laatste van de drie die werk doen. Een klant die betaald heeft en
+ *     nog geen factuur heeft, wacht al langer dan één nacht; een uur later is hier
+ *     geen verschil.
+ * 4 · DE BACK-UPWACHT kijkt alleen. Hij verandert niets en staat daarom achteraan: als
+ *     een van de drie hierboven omvalt, is dat het bericht van vannacht, en dan hoort
+ *     daar geen tweede mededeling tussendoor.
  *
  * ── ELKE TAAK VALT APART OM ─────────────────────────────────────────────────
  *
@@ -61,12 +65,31 @@ const PURGE_LIMIT = 400;
 /** Zo lang mag een factuur 'pending' staan voordat we hem als vastgelopen zien. */
 const INVOICE_STUCK_MINUTES = 15;
 
+/**
+ * Zo oud mag de laatste back-up worden voordat deze taak erover mailt.
+ *
+ * Tien dagen en niet zeven, terwijl de taak in de Taakplanner wekelijks draait: één
+ * gemiste zondag is een uitgezette laptop of een vakantie, en dat is geen alarm. Twee
+ * gemiste zondagen is een taak die niet meer loopt, en dat is het wel.
+ */
+const BACKUP_STALE_DAYS = 10;
+
+/**
+ * En zo vaak mag hij erover mailen: één keer per week.
+ *
+ * Zonder deze rem gaat er, vanaf de dag dat de back-up verlopen is, ELKE nacht
+ * dezelfde mail uit. Dat is de snelste manier om de enige mail die dit project
+ * verstuurt in een filter te laten verdwijnen — en dan is de bewaking erger dan
+ * geen bewaking, want je denkt dat je hem hebt.
+ */
+const BACKUP_WARN_EVERY_DAYS = 7;
+
 export default {
   async scheduled(event, env, ctx) {
     const report = [];
     const problems = [];
 
-    for (const task of [releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices]) {
+    for (const task of [releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -76,6 +99,26 @@ export default {
         problems.push(message);
       }
     }
+
+    /*
+     * ── DE HARTSLAG — 10 augustus 2026 ────────────────────────────────────────
+     *
+     * Bovenaan dit bestand staat: "Geen mail betekent: er was niets te doen en er ging
+     * niets mis." Dat is precies óók wat je krijgt als deze Worker nooit gedeployd is, als
+     * de trigger uitstaat, of als RESEND_API_KEY niet op dít tweede project staat — waar
+     * cron/wrangler.toml zelf voor waarschuwt. Stilte betekende dus twee tegengestelde
+     * dingen, en de gevaarlijkste van de twee is de stille.
+     *
+     * Vandaar één rij in app_settings die elke nacht wordt bijgewerkt, met de uitkomst
+     * erin. /admin leest hem bovenaan: staat er een datum van vannacht, dan draait hij.
+     * Staat er niets of iets van vier dagen oud, dan is dat zichtbaar in plaats van
+     * afgeleid uit het ontbreken van een mail.
+     *
+     * Dit gebeurt NA de taken en niet ervoor, want de vraag die je wil beantwoorden is
+     * "heeft hij zijn werk afgemaakt" en niet "is hij begonnen". En het staat buiten de
+     * per-taak try's: dit is geen taak maar het bewijs dat de taken gelopen hebben.
+     */
+    await heartbeat(env, report.length, problems.length);
 
     if (report.length || problems.length) {
       ctx.waitUntil(sendReport(env, report, problems));
@@ -220,6 +263,40 @@ async function purgeExpiredFiles(env) {
 
   if (!rows.length) return null;
 
+  /*
+   * ═══════════════════════════════════════════════════════════════════════════
+   * DE REM: PURGE_ENABLED MOET EXPLICIET AAN — 10 augustus 2026
+   * ═══════════════════════════════════════════════════════════════════════════
+   *
+   * Deze taak is de enige in dit project die iets ONHERROEPELIJK doet. R2 heeft geen
+   * versiebeheer, `npm run backup` pakt de bestanden alleen mee met --files (uren werk,
+   * dus in de praktijk nooit), en PURGE_LIMIT = 400 begrenst de SNELHEID en niet de
+   * JUISTHEID. Eén fout in de vervaldatumlogica verwijdert 400 klantbestanden per nacht,
+   * permanent.
+   *
+   * En deze code heeft nog nooit tegen echte data gedraaid. Dat is geen reden om hem niet
+   * te vertrouwen, maar het is wel een reden om hem eerst te laten vertéllen wat hij zou
+   * doen. Vandaar: zonder `PURGE_ENABLED = "true"` op de Worker rapporteert hij en
+   * verwijdert hij niets.
+   *
+   * DE STANDAARD IS UIT, en dat is een keuze tegen mijn eigen gemak. Een vlag die
+   * standaard aan staat en die je uit moet zetten, beschermt niets — je zet hem uit nadat
+   * het is misgegaan. Zo staat hij aan op het moment dat jij hebt gekeken wat hij van plan
+   * was, en niet eerder.
+   *
+   * DE MELDING IS EXPLICIET. "0 bestanden verwijderd" naast "er stonden 12 klaar" zou
+   * gelezen worden als een geslaagde nacht; de regel hieronder zegt met zoveel woorden dat
+   * de rem erop staat, met het aantal en het commando om hem los te zetten.
+   */
+  if (String(env.PURGE_ENABLED || '') !== 'true') {
+    const perKind = rows.reduce((m, f) => ({ ...m, [f.kind]: (m[f.kind] || 0) + 1 }), {});
+    const spec = Object.entries(perKind).map(([k, n]) => `${n}× ${k}`).join(', ');
+    console.log('[cron] purge staat UIT —', rows.length, 'bestanden zouden weg gaan:', spec);
+    return `VERSLAGMODUS: ${rows.length} bestand${rows.length === 1 ? '' : 'en'} zou${rows.length === 1 ? '' : 'den'} nu verwijderd worden (${spec}). Er is NIETS weggegooid.`
+      + ' Zet de rem los met `npx wrangler secret put PURGE_ENABLED --config cron/wrangler.toml` en de waarde `true`,'
+      + ' maar maak eerst één keer `npm run backup -- --files` — R2 heeft geen versiebeheer.';
+  }
+
   const ids = rows.map((f) => f.id);
   const assets = await variantKeys(env, ids);
 
@@ -346,6 +423,130 @@ function describe(kinds) {
   return parts.join(' ');
 }
 
+/* ══ 4 · DRAAIT DE BACK-UP NOG? ══════════════════════════════════════════════
+ *
+ * `npm run backup` is een handmatig script op Lucas' Windows-machine. Het herstelpunt
+ * was daarmee "de laatste keer dat ik eraan dacht", en de manier waarop je merkt dat je
+ * er niet meer aan dacht, is de dag dat je de back-up nodig hebt.
+ *
+ * De taak in de Taakplanner (scripts/backup-weekly.cmd) lost het draaien op. Wat hij
+ * NIET kan oplossen is het merken: als die taak stilvalt — laptop uit, wachtwoord
+ * verlopen, `wrangler`-login weg, schijf vol — gebeurt er precies niets, en niets is
+ * onzichtbaar. Vandaar dat de back-up bij elke geslaagde ronde een datum in
+ * `app_settings` schrijft (zie het einde van scripts/backup.mjs), en dat deze Worker
+ * die datum leest.
+ *
+ * WAAROM DE ALARMBEL IN DE CLOUD HANGT EN DE BACK-UP OP ZIJN SCHIJF. Als de PC het
+ * probleem is, kan de PC het probleem niet melden. Deze Worker draait ergens anders en
+ * heeft Resend, dus hij is de enige plek waar "de back-up is gestopt" nog uit kan komen.
+ * Dezelfde reden als bij de hartslag hieronder, één laag hoger.
+ *
+ * DEZE TAAK VERANDERT NIETS BEHALVE ZIJN EIGEN WAARSCHUWINGSDATUM. Hij verwijdert niet,
+ * factureert niet en geeft niets vrij; hij leest één rij en schrijft er hoogstens één.
+ * Daarom mag hij ook in de gewone takenlus staan zonder de andere drie te kunnen raken.
+ */
+async function checkBackupAge(env) {
+  if (!env.DB) return null;
+
+  let last;
+  let warned;
+  try {
+    const rows = await env.DB.prepare(
+      "SELECT key, value FROM app_settings WHERE key IN ('backup_last_run', 'backup_warned_at')"
+    ).all();
+    const map = new Map((rows.results || []).map((r) => [r.key, r.value]));
+    last = map.get('backup_last_run') || null;
+    warned = map.get('backup_warned_at') || null;
+  } catch (err) {
+    /* Geen app_settings betekent een database die niet is opgezet. Dat is elders al
+       zichtbaar (de hartslag schrijft in dezelfde tabel en klaagt daar) en hier geen
+       reden om de nacht als mislukt te melden. */
+    if (/no such table/i.test(String(err?.message || ''))) return null;
+    throw err;
+  }
+
+  /*
+   * DE VORM EERST CONTROLEREN, EN DAN PAS PARSEN — en dat is geen netheid.
+   *
+   * Dit stond hier als `Date.parse(waarde.slice(0,16).replace(' ','T') + ':00Z')`, en
+   * de test met 'gisteren ergens' in de kolom kwam terug met "de laatste back-up is
+   * 9720 dagen oud". Date.parse valt bij onbekende tekst terug op een eigen,
+   * niet-gespecificeerde lezing en gaf een datum in 1999 in plaats van NaN. Gevolg: een
+   * onleesbare waarde werd een geloofwaardig getal in een mail aan Lucas.
+   *
+   * Dus: alleen precies de vorm die scripts/backup.mjs schrijft telt als datum. Al het
+   * andere is "ik weet het niet", en dat valt hieronder samen met "er is er nooit een
+   * geweest" — want als het schrijven van de datum stuk is, is dat even dringend als
+   * een back-up die niet loopt.
+   *
+   * De datum is lokale tijd van de machine die hem schreef en wordt hier als UTC
+   * gelezen. Dat is goed genoeg: de vraag is niet hoe oud in uren maar of het tien
+   * dagen geleden is, en dan is twee uur verschil ruis.
+   */
+  const STAMP_SHAPE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+  const days = (stamp) => {
+    const text = String(stamp || '').slice(0, 16);
+    if (!STAMP_SHAPE.test(text)) return null;
+    const t = Date.parse(text.replace(' ', 'T') + ':00Z');
+    return Number.isFinite(t) ? (Date.now() - t) / 864e5 : null;
+  };
+
+  const age = days(last);
+  /* GEEN RIJ IS NIET HETZELFDE ALS EEN OUDE RIJ, en het verschil bepaalt waar je gaat
+     kijken: "nog nooit" wijst naar de Taakplanner, "18 dagen" wijst naar de laatste
+     keer dat hij wél liep. Een onleesbare datum valt hier bij "nog nooit" — dan is er
+     iets met het schrijven, en dat is even dringend. */
+  const stale = age === null || age > BACKUP_STALE_DAYS;
+  if (!stale) return null;
+
+  const sinceWarn = days(warned);
+  if (sinceWarn !== null && sinceWarn < BACKUP_WARN_EVERY_DAYS) return null;
+
+  const stampNow = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  try {
+    await env.DB.prepare(
+      `INSERT INTO app_settings (key, value) VALUES ('backup_warned_at', ?1)
+       ON CONFLICT(key) DO UPDATE SET value = ?1`
+    ).bind(stampNow).run();
+  } catch (err) {
+    /* Lukt dit niet, dan gaat de waarschuwing alsnog uit — liever de mail van morgen er
+       ook bij dan hem vandaag inslikken omdat de rem niet weggeschreven kon worden. */
+    console.error('[cron] waarschuwingsdatum back-up niet weggeschreven —', err?.message || err);
+  }
+
+  return age === null
+    ? 'BACK-UP: er staat geen enkele geslaagde back-up in de database.'
+      + ' Draai `npm run backup` en controleer of de taak in de Taakplanner bestaat'
+      + ' (zie DEPLOY.md). Dit bericht komt hoogstens een keer per week terug.'
+    : `BACK-UP: de laatste is ${Math.floor(age)} dagen oud (${last}),`
+      + ` en ${BACKUP_STALE_DAYS} dagen is de grens. De wekelijkse taak in de Taakplanner`
+      + ' loopt waarschijnlijk niet meer — zie DEPLOY.md. Hoogstens een keer per week.';
+}
+
+/**
+ * Schrijf op dat deze nacht gelopen heeft, en met welke uitkomst.
+ *
+ * `app_settings` bestaat al (schema.sql) en is precies hiervoor bedoeld: één sleutel, één
+ * waarde. De waarde is leesbare tekst en geen JSON, want het enige dat ermee gebeurt is dat
+ * een mens hem bovenaan /admin leest.
+ *
+ * Faalt dit, dan is dat geen reden om de nacht als mislukt te melden — het is een notitie
+ * over werk dat al gedaan is. Wel de log in, want een hartslag die stil wegvalt is precies
+ * het probleem dat hij moet oplossen.
+ */
+async function heartbeat(env, meldingen, problemen) {
+  if (!env.DB) return;
+  const value = `${new Date().toISOString().slice(0, 16).replace('T', ' ')} · ${meldingen} meldingen · ${problemen} problemen`;
+  try {
+    await env.DB.prepare(
+      `INSERT INTO app_settings (key, value) VALUES ('cron_last_run', ?1)
+       ON CONFLICT(key) DO UPDATE SET value = ?1`
+    ).bind(value).run();
+  } catch (err) {
+    console.error('[cron] hartslag niet weggeschreven —', err?.message || err);
+  }
+}
+
 async function variantKeys(env, ids) {
   const map = new Map();
   if (!ids.length) return map;
@@ -413,7 +614,41 @@ async function issuePendingInvoices(env) {
     throw err;
   }
 
-  if (!rows.length) return null;
+  /*
+   * ── EN DE CREDITNOTA'S, OM PRECIES DEZELFDE REDEN — 12 augustus 2026 ───────
+   *
+   * Een creditnota krijgt haar nummer vóór haar pdf, net als een factuur, en om dezelfde
+   * reden: het nummer mag niet verloren gaan als de pdf mislukt, want een gat in de reeks
+   * leest bij een controle als een verdwenen document. Blijft er dus een nota op
+   * 'pending' staan omdat R2 even niet meewerkte, dan hoort die hier opgeraapt te worden
+   * met HETZELFDE nummer.
+   *
+   * Zonder dit stuk was de creditnota het enige document in dit systeem dat wél een
+   * nummer kon krijgen en nooit een pdf — precies het gat dat issuePendingInvoices() voor
+   * facturen al dichtte.
+   *
+   * GEEN TABEL IS HIER GEEN FOUT, anders dan bij invoices. Migratie 0026 kan nog niet
+   * gedraaid zijn terwijl 0021 dat wel is, en dan zijn er domweg geen creditnota's. Dat
+   * is een andere toestand dan een ontbrekende invoices-tabel: zonder facturen kan dit
+   * project niet factureren, zonder creditnota's alleen niet crediteren.
+   */
+  let credits = [];
+  try {
+    const res = await env.DB.prepare(
+      `SELECT id, number, year, order_id, invoice_id, snapshot_json
+         FROM credit_notes
+        WHERE status = 'pending'
+          AND pdf_key IS NULL
+          AND created_at <= datetime('now', '-${INVOICE_STUCK_MINUTES} minutes')
+        ORDER BY id
+        LIMIT 25`
+    ).all();
+    credits = res.results || [];
+  } catch (err) {
+    if (!/no such table/i.test(String(err?.message || err))) throw err;
+  }
+
+  if (!rows.length && !credits.length) return null;
 
   /*
    * De renderer wordt pas hier geladen, en niet bovenaan het bestand.
@@ -447,8 +682,33 @@ async function issuePendingInvoices(env) {
     }
   }
 
-  if (!done.length) return null;
-  return `${done.length} vastgelopen factuur/facturen alsnog uitgegeven: ${done.join(', ')}. De mail hierover is NIET verstuurd — doe dat met de hand vanuit het adminportaal.`;
+  /* De nota's gaan door renderCreditPdf() in src/lib/invoice.js en niet door een kopie
+     van die stappen hier. Dat is precies waarom die functie los staat: de sleutel in R2,
+     de metadata en de UPDATE naar 'issued' horen op één plek te staan, en een tweede
+     versie in dit bestand zou binnen een maand van de eerste afwijken. */
+  const creditsDone = [];
+  if (credits.length) {
+    const { renderCreditPdf } = await import('../src/lib/invoice.js');
+    for (const note of credits) {
+      try {
+        await renderCreditPdf(env, note);
+        creditsDone.push(note.number);
+      } catch (err) {
+        console.error('[cron] creditnota', note.number, 'niet uitgegeven —', err?.message || err);
+      }
+    }
+  }
+
+  if (!done.length && !creditsDone.length) return null;
+  const delen = [];
+  if (done.length) {
+    delen.push(`${done.length} vastgelopen factuur/facturen alsnog uitgegeven: ${done.join(', ')}.`
+      + ' De mail hierover is NIET verstuurd — doe dat met de hand vanuit het adminportaal.');
+  }
+  if (creditsDone.length) {
+    delen.push(`${creditsDone.length} vastgelopen creditnota('s) alsnog uitgegeven: ${creditsDone.join(', ')}.`);
+  }
+  return delen.join(' ');
 }
 
 /* ══ HET VERSLAG ════════════════════════════════════════════════════════════
@@ -495,4 +755,5 @@ async function sendReport(env, report, problems) {
 }
 
 /* Voor de tests: de taken los aanroepbaar, zonder de scheduled-handler. */
-export const tasks = { releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices };
+export const tasks = { releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkBackupAge };
+export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };

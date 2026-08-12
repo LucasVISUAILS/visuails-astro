@@ -7,7 +7,8 @@ import { TEST_SAMPLE } from '../../data/pricing.js';
 // De proefvisualkosten stonden hier ook ingetypt. Het is een tier-feit en komt
 // dus uit pricing.js — zie src/pages/nl/test-sample.astro voor dezelfde fix.
 const SAMPLE = TEST_SAMPLE.nl;
-import Compare from '../../components/Compare.astro';
+/* De Compare-import is weg met het voor/na-blok; zie de noot verderop.
+   CatalogPage.astro gebruikt de component nog wel. */
 
 // Intrinsieke pixelmaten van elke foto in het raster, afgelezen van de
 // bestanden in public/img — NIET de weergavegrootte (.photo-grid legt zelf
@@ -75,24 +76,36 @@ const filters = [
     </div>
   </section>
 
-  <!-- BEFORE / AFTER — PLACEHOLDERS. Grade-mode Compare shows the same photo
-       flattened vs. finished until real raw-photo → final pairs are shot.
-       When they land, replace each item's before/after with the real pair
-       (and drop `grade`). -->
-  <section class="section-tight">
-    <div class="container">
-      <div class="section-head" style="text-align:center;margin-inline:auto">
-        <h2>Voor &amp; na.</h2>
-        <p style="margin-inline:auto">Een vlak beeld wordt een afgewerkte VISUAILS-visual. Het loopt vanzelf, je hoeft niets te slepen.</p>
-      </div>
-      <div class="compare-grid reveal-group" style="margin-top:2rem">
-        <div class="reveal pending"><Compare grade before="/img/lifestyle-glow-01.webp" after="/img/lifestyle-glow-01.webp" beforeAlt="Een vlakke, onbewerkte productscène" afterAlt="De afgewerkte Glow-visual" beforeLabel="Vlak" afterLabel="Glow" /></div>
-        <div class="reveal pending"><Compare grade before="/img/lifestyle-flash-02.webp" after="/img/lifestyle-flash-02.webp" beforeAlt="Een vlakke, onbewerkte productscène" afterAlt="De afgewerkte Flash-visual" beforeLabel="Vlak" afterLabel="Flash" /></div>
-        <div class="reveal pending"><Compare grade before="/img/lifestyle-phone-made-11.webp" after="/img/lifestyle-phone-made-11.webp" beforeAlt="Een vlakke, onbewerkte productscène" afterAlt="De afgewerkte Phone-made-visual" beforeLabel="Vlak" afterLabel="Phone-made" /></div>
-        <div class="reveal pending"><Compare grade before="/img/lifestyle-dunes-01.webp" after="/img/lifestyle-dunes-01.webp" beforeAlt="Een vlakke, onbewerkte productscène" afterAlt="De afgewerkte Dunes-visual" beforeLabel="Vlak" afterLabel="Dunes" /></div>
-      </div>
-    </div>
-  </section>
+  {/*
+    ═══════════════════════════════════════════════════════════════════════════════
+    HET "VOOR & NA"-BLOK IS WEG — 12 augustus 2026
+    ═══════════════════════════════════════════════════════════════════════════════
+
+    Dit is de Nederlandse helft van de ingreep die op 10 augustus op src/pages/gallery.astro
+    is gedaan. Daar ging het blok weg, hier bleef het staan — dus stond het geënsceneerde
+    bewijs precies daar waar bijna niemand het zag niet meer, en bleef het staan waar
+    iedereen het zag. Dezelfde scheefheid als bij de sjabloonnoot in /nl/terms.
+
+    Hier stonden vier Compare-schuivers onder de kop "Voor & na", met de belofte *"Een vlak
+    beeld wordt een afgewerkte VISUAILS-visual"*. Alle vier hadden HETZELFDE bestand als
+    `before` en als `after`, met een CSS-filter op de linkerhelft. Het commentaar erboven
+    gaf dat zelf toe: plaatshouders tot er echte paren geschoten zijn.
+
+    WAAROM DAT NIET KAN BLIJVEN STAAN. Dit is een resultaatclaim met geënsceneerd bewijs, op
+    precies de pagina waar een merk komt om te controleren of het echt is. Het eerste
+    ontwerpprincipe van dit merk luidt "Never borrow credibility we haven't earned", en
+    IMAGES.md:36 zegt zelf dat er "one real before/after pair" bestaat — één, op de hele
+    site. Juridisch is een bewerkt "voor"-beeld naast een "na"-beeld van hetzelfde bestand
+    een misleidende handelspraktijk (art. 6:193c BW). Commercieel is het erger: als iemand
+    het doorheeft, is alles wat er verder staat ook verdacht.
+
+    Een lege plek is eerlijker dan geënsceneerd bewijs. Zodra er vier echte paren zijn —
+    een middag werk, en meer waard dan de rest van deze pagina bij elkaar — komt dit blok
+    terug met de echte bestanden en ZONDER `grade`, in beide talen tegelijk.
+
+    De <Compare>-component blijft bestaan en wordt elders gebruikt; er is niets gesloopt
+    dat straks opnieuw gebouwd moet worden.
+  */}
 
   <!-- CLOSING CTA -->
   <section class="section-tight">

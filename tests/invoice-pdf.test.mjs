@@ -693,6 +693,116 @@ check('and produces the very same bytes',
 check('the module imports nothing but pdf-lib',
   source.match(/^import .*$/gm), ["import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';"]);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DE CREDITNOTA — 12 augustus 2026
+//
+// Dezelfde renderer, dezelfde opmaak, andere woorden. Dat is opzet: een creditnota is
+// geen tweede document maar dezelfde factuur met een omgekeerde bedoeling, en een tweede
+// layoutbestand zou binnen een maand van het eerste afwijken op een plek die niemand
+// ziet. src/lib/invoicePdf.js legt daarom een woordenlijst OVER de gewone.
+//
+// Dat maakt precies één ding gevaarlijk, en dat is wat hieronder wordt vastgehouden: als
+// er één tekst niet meekomt, ziet een creditnota eruit als een factuur. En een creditnota
+// die eruitziet als een factuur is een papier dat iemand doorstuurt als betalingsverzoek.
+//
+// De checks staan HIER en niet in tests/credit-note.test.mjs omdat de lezer bovenaan dit
+// bestand staat — die pakt elke stream uit, leest de tekst-operatoren MET hun coördinaten
+// en weet dus ook of iets werkelijk op het blad valt. Die lezer een tweede keer bouwen is
+// zeventig regels kopie van precies het soort code dat in dit project al twee keer uit
+// elkaar is gelopen. In credit-note.test.mjs staat de administratie: de nummerreeks, de
+// bedragen en het niet-dubbel-crediteren.
+
+function creditOf(over = {}) {
+  // Wat creditSnapshotFrom() oplevert, met de hand nagebouwd: deze test gaat over de
+  // OPMAAK en mag niet omvallen op een wijziging in de administratie. Dat die twee
+  // dezelfde velden gebruiken wordt in credit-note.test.mjs vastgehouden.
+  return base({
+    kind: 'credit',
+    number: 'VIS-2026-0008',
+    date: '2026-08-12',
+    dueDate: null,
+    paidAt: null,
+    creditsNumber: 'VIS-2026-0001',
+    creditsDate: '2026-08-09',
+    reason: 'Bestelling geannuleerd op verzoek van de klant',
+    lines: [{ description: 'Full Drop — 12 productfoto’s — volledig gecrediteerd', qty: 1, unitCents: 154500, totalCents: 154500 }],
+    ...over,
+  });
+}
+
+{
+  const nl = await renderInvoicePdf(creditOf());
+  const nlText = textOf(nl);
+  const en = await renderInvoicePdf(creditOf({ lang: 'en' }));
+  const enText = textOf(en);
+
+  // 1 · HET WOORD DAT ALLES DRAAGT. Zonder dit is het een factuur.
+  check('nl: de titel is CREDITNOTA', nlText.includes('CREDITNOTA'), true);
+  check('nl: en het woord FACTUUR staat er niet als titel',
+    extractRuns(nl).some((r) => r.text === 'FACTUUR'), false);
+  check('en: the title is CREDIT NOTE', enText.includes('CREDIT NOTE'), true);
+  check('en: and INVOICE is not the title',
+    extractRuns(en).some((r) => r.text === 'INVOICE'), false);
+
+  // 2 · DE VERWIJZING. Een creditnota zonder de gecrediteerde factuur erop verwijst
+  //     naar niets, en dan is het een los papier met een bedrag erop.
+  check('nl: de gecrediteerde factuur staat erop', nlText.includes('Crediteert factuur'), true);
+  check('nl: met het nummer van die factuur', nlText.includes('VIS-2026-0001'), true);
+  check('en: the credited invoice is named', enText.includes('Credits invoice'), true);
+
+  // 3 · DE LABELS BIJ HET EIGEN NUMMER. "Factuurnummer" op een creditnota laat een
+  //     lezer raden over welk van de twee nummers het gaat.
+  check('nl: het eigen nummer heet Creditnotanummer', nlText.includes('Creditnotanummer'), true);
+  check('nl: en de datum Creditnotadatum', nlText.includes('Creditnotadatum'), true);
+  check('en: Credit note number', enText.includes('Credit note number'), true);
+
+  // 4 · GEEN BETALINGSVERZOEK. Dit is het verschil dat geld kost als het wegvalt: geen
+  //     vervaldatum, geen "graag overmaken op", en een totaalregel die niet "te betalen"
+  //     zegt. De iban mag in de kop staan — dat is een vast gegeven van de verkoper —
+  //     maar de INSTRUCTIE om over te maken mag er niet staan.
+  check('nl: de totaalregel zegt gecrediteerd', nlText.includes('Totaal gecrediteerd'), true);
+  check('nl: en niet te betalen', nlText.includes('Totaal te betalen'), false);
+  check('en: the total says credited', enText.includes('Total credited'), true);
+  check('nl: er staat geen overmaakinstructie', nlText.includes('Graag overmaken'), false);
+  check('en: no transfer instruction', enText.includes('Please transfer'), false);
+  check('nl: en geen vervaldatum', nlText.includes('Vervaldatum'), false);
+
+  // 5 · DE UITLEG IN EEN HELE ZIN, want het teken van het bedrag doet dat werk niet: de
+  //     bedragen staan positief op het papier, met opzet.
+  check('nl: de uitleg staat eronder', nlText.includes('Deze creditnota'), true);
+  check('en: the explanation is there', enText.includes('This credit note'), true);
+  check('nl: de reden staat erbij', nlText.includes('Reden'), true);
+  check('nl: en de reden zelf ook', nlText.includes('Bestelling geannuleerd'), true);
+
+  // 6 · WAT NIET VERANDERT, en dat is het punt van een overlay in plaats van een tweede
+  //     renderer: de kolomkoppen, de btw-regel en de paginavoet komen uit dezelfde bron.
+  check('nl: de kolomkoppen zijn die van een factuur', nlText.includes('Omschrijving'), true);
+  check('nl: de btw-regel staat er gewoon', nlText.includes('Btw 21%'), true);
+  check('nl: en de klant staat er als Creditnota aan', nlText.includes('CREDITNOTA AAN'), true);
+
+  // 7 · EN EEN VERLEGDE CREDITNOTA DRAAGT DE VERLEGGINGSTEKST, want die is verplicht en
+  //     zit in het gemeenschappelijke deel. Viel die weg, dan is de nota onbruikbaar voor
+  //     de aangifte van de afnemer.
+  const rc = await renderInvoicePdf(creditOf({
+    ...reverseCharge('nl'),
+    kind: 'credit',
+    number: 'VIS-2026-0009',
+    creditsNumber: 'VIS-2026-0002',
+    dueDate: null,
+    paidAt: null,
+    lines: [{ description: 'Full Drop — volledig gecrediteerd', qty: 1, unitCents: 154500, totalCents: 154500 }],
+  }));
+  const rcText = textOf(rc);
+  check('verlegd: de nota zegt nog steeds CREDITNOTA', rcText.includes('CREDITNOTA'), true);
+  check('verlegd: en draagt de verleggingstekst', rcText.includes('Btw verlegd'), true);
+  check('verlegd: met het artikel erbij', rcText.includes('artikel 196'), true);
+
+  // 8 · ALLES BINNEN HET BLAD. Dezelfde assertie die de factuur heeft, en om dezelfde
+  //     reden: tekst die buiten de pagina wordt getekend staat wél in de stream.
+  const buiten = extractRuns(nl).filter((r) => Number.isFinite(r.y) && (r.y < 0 || r.y > 842 || r.x < 0 || r.x > 596));
+  check('nl: geen tekst buiten het blad', buiten.map((r) => `${r.text}@${r.x},${r.y}`), []);
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) {
   console.log(`${fail} FAILED`);

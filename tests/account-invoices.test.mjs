@@ -79,13 +79,27 @@ const INVOICE = {
  * Elke tak kijkt naar de query en niet naar de aanroeporde: dit bestand mag niet
  * omvallen als er ooit een zevende loader bij de Promise.all komt.
  */
-function makeDb({ invoices = [INVOICE], orders = [ORDER], ownerId = CUSTOMER_ID } = {}) {
+function makeDb({ invoices = [INVOICE], orders = [ORDER], ownerId = CUSTOMER_ID, credits = [], noCreditTable = false } = {}) {
   const db = new DatabaseSync(':memory:');
   db.exec(`CREATE TABLE orders (id INTEGER PRIMARY KEY, ref TEXT, customer_id INTEGER, service TEXT, paid_at TEXT);`);
   db.exec(`CREATE TABLE invoices (
     id INTEGER PRIMARY KEY, number TEXT, year INTEGER, seq INTEGER, order_id INTEGER,
     customer_id INTEGER, status TEXT, pdf_key TEXT, pdf_bytes INTEGER,
     snapshot_json TEXT, lang TEXT, issued_at TEXT, created_at TEXT);`);
+  /* De creditnota's uit migratie 0026, om precies dezelfde reden ECHT en niet gestubd:
+     de eigendomscontrole hangt aan de WHERE en niet aan de meegegeven waarden. Zie de
+     noot hierboven over waarom een stub die het eigendom nabouwt de gevaarlijkste fout
+     in dit bestand niet kan zien.
+
+     `noCreditTable` bootst een database na waar 0026 nog niet op gedraaid is: dat mag
+     het overzicht niet slopen, want 0021 kan wél gedraaid zijn. */
+  if (!noCreditTable) {
+    db.exec(`CREATE TABLE credit_notes (
+      id INTEGER PRIMARY KEY, number TEXT, year INTEGER, seq INTEGER, invoice_id INTEGER,
+      order_id INTEGER, customer_id INTEGER, net_cents INTEGER, vat_cents INTEGER,
+      gross_cents INTEGER, reason TEXT, status TEXT, void_reason TEXT, pdf_key TEXT,
+      pdf_bytes INTEGER, snapshot_json TEXT, lang TEXT, issued_at TEXT, created_at TEXT);`);
+  }
 
   for (const o of orders) {
     db.prepare('INSERT INTO orders (id, ref, customer_id, service, paid_at) VALUES (?,?,?,?,?)')
@@ -98,6 +112,18 @@ function makeDb({ invoices = [INVOICE], orders = [ORDER], ownerId = CUSTOMER_ID 
       .run(v.id, v.number, 2026, i + 1, o.id, ownerId, v.status, v.pdf_key, v.pdf_bytes,
         v.snapshot_json, v.lang, v.issued_at, v.created_at);
   });
+
+  if (!noCreditTable) {
+    credits.forEach((c, i) => {
+      const o = orders[0] || { id: 0 };
+      db.prepare(`INSERT INTO credit_notes (id, number, year, seq, invoice_id, order_id, customer_id, net_cents, vat_cents, gross_cents, reason, status, pdf_key, pdf_bytes, snapshot_json, lang, issued_at, created_at)
+                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(c.id, c.number, 2026, 90 + i, invoices[0]?.id ?? 1, o.id, ownerId,
+          c.net_cents ?? 10000, c.vat_cents ?? 2100, c.gross_cents ?? 12100, c.reason ?? null,
+          c.status, c.pdf_key ?? null, c.pdf_bytes ?? null, c.snapshot_json, c.lang ?? 'nl',
+          c.issued_at ?? null, c.created_at ?? '2026-08-12 10:00:00');
+    });
+  }
 
   const real = (sql, args) => db.prepare(sql).all(...args);
   const seen = [];
@@ -116,12 +142,14 @@ function makeDb({ invoices = [INVOICE], orders = [ORDER], ownerId = CUSTOMER_ID 
           }
           // De downloadroute — echt uitgevoerd, zodat de WHERE het werk doet.
           if (sql.includes('FROM invoices i')) return real(sql, st._b)[0] ?? null;
+          if (sql.includes('FROM credit_notes c')) return real(sql, st._b)[0] ?? null;
           if (sql.includes('FROM customers')) return { email: 'studio@voltbrand.nl', name: 'Mara', brand: 'VOLT' };
           return null;
         },
         async all() {
           seen.push(sql);
           if (sql.includes('FROM invoices i')) return { results: real(sql, st._b) };
+          if (sql.includes('FROM credit_notes c')) return { results: real(sql, st._b) };
           if (sql.includes('FROM orders') && sql.includes('LIMIT 200')) return { results: orders };
           return { results: [] };
         },
@@ -373,6 +401,104 @@ console.log('\nde volgorde van de inhaalslag');
   const body = await (await get('/account/invoices', { db: makeDb({ orders: [{ ...ORDER, lang: 'en' }] }) })).text();
   check('een Engelse klant krijgt Invoices', body.includes('>Invoices<') || body.includes('Invoices</'), '');
   check('en geen Nederlandse kop', !body.includes('>Facturen<'));
+}
+
+/* ══ DE CREDITNOTA IN HET OVERZICHT VAN DE KLANT — 12 augustus 2026 ═════════
+ *
+ * Een klant die geld terug heeft gekregen, heeft een document dat dat zegt. Dat document
+ * hoort in hetzelfde overzicht als de factuur die het intrekt, want op twee plekken
+ * kijken is precies wat een klant niet doet — dan mailt hij Lucas.
+ *
+ * DRIE DINGEN, en het derde is het enige dat echt geld kost als het misgaat:
+ *
+ *   1 · hij staat in de lijst, met een eigen merkteken zodat hij niet als een tweede
+ *       rekening leest;
+ *   2 · de downloadknop wijst naar het pad van een creditnota en niet naar dat van een
+ *       factuur — twee tabellen, twee routes, en hetzelfde id bestaat in beide;
+ *   3 · en de nota van iemand anders komt er NIET uit. Die controle draait hier tegen een
+ *       echte SQLite, om precies de reden die bovenaan dit bestand staat: een stub die het
+ *       eigendom zelf nabouwt blijft groen als de WHERE wordt verzwakt.
+ */
+const CREDIT_SNAP = {
+  number: 'VIS-2026-0008', date: '2026-08-12', lang: 'nl', kind: 'credit',
+  netCents: 35600, vatCents: 7476, grossCents: 43076, vatRate: 0.21,
+  treatment: 'nl_standard', creditsNumber: 'VIS-2026-0007', customer: { name: 'Jan Jansen' }, lines: [],
+};
+const CREDIT = {
+  id: 5, number: 'VIS-2026-0008', status: 'issued',
+  pdf_key: 'credit-notes/2026/VIS-2026-0008.pdf', pdf_bytes: 2100,
+  net_cents: 35600, vat_cents: 7476, gross_cents: 43076, reason: 'Bestelling geannuleerd',
+  snapshot_json: JSON.stringify(CREDIT_SNAP), lang: 'nl',
+  issued_at: '2026-08-12 10:00:05', created_at: '2026-08-12 10:00:03',
+};
+
+{
+  const res = await get('/account/invoices', { db: makeDb({ credits: [CREDIT] }) });
+  const body = await res.text();
+  check('de creditnota staat in het overzicht', body.includes('VIS-2026-0008'), '');
+  check('en is gemerkt als creditnota', body.includes('Creditnota'), '');
+  /* Het PAD is het punt: /account/credit-notes/5/pdf en niet /account/invoices/5/pdf.
+     Factuur 3 en nota 5 bestaan naast elkaar, en id 5 zou in de factuurtabel niets zijn —
+     of, erger, ooit iets van een andere klant. */
+  check('met de knop naar het creditnotapad', body.includes('/account/credit-notes/5/pdf'), '');
+  check('en niet naar het factuurpad', !body.includes('/account/invoices/5/pdf'));
+  /* De factuur die hij intrekt staat er nog gewoon: een creditnota vervángt geen factuur. */
+  check('de factuur staat er nog', body.includes('VIS-2026-0007'), '');
+}
+{
+  /* De taal van dit dashboard komt uit de LAATSTE BESTELLING en niet uit de nota of uit
+     Accept-Language — zie de noot bij get() hierboven. Een Engelse creditnota bij een
+     Nederlandse bestelling levert dus een Nederlands overzicht op, en dat is goed: de
+     klant leest één taal, niet één per document. */
+  const en = await get('/account/invoices', {
+    db: makeDb({ orders: [{ ...ORDER, lang: 'en' }], credits: [CREDIT] }),
+    accept: 'en',
+  });
+  const body = await en.text();
+  check('en in het Engels heet het Credit note', body.includes('Credit note'), '');
+}
+{
+  const res = await get('/account/credit-notes/5/pdf', { db: makeDb({ credits: [CREDIT] }) });
+  check('de eigen creditnota komt eruit', res.status === 200, res.status);
+  check('als pdf', res.headers.get('content-type') === 'application/pdf', res.headers.get('content-type'));
+  check('en als download met het nummer als naam',
+    (res.headers.get('content-disposition') || '').includes('VIS-2026-0008.pdf'),
+    res.headers.get('content-disposition'));
+}
+
+/* ── EIGENDOM, DE CREDITNOTA-KANT. Dit is waar het echt om gaat. ───────────── */
+{
+  const other = await get('/account/credit-notes/5/pdf', { db: makeDb({ credits: [CREDIT], ownerId: OTHER_ID }) });
+  check('de creditnota van iemand anders: 404', other.status === 404, other.status);
+
+  const missing = await get('/account/credit-notes/4444/pdf', { db: makeDb({ credits: [CREDIT] }) });
+  check('een creditnota die niet bestaat: 404', missing.status === 404, missing.status);
+
+  const anon = await get('/account/credit-notes/5/pdf', { db: makeDb({ credits: [CREDIT] }), cookie: '' });
+  check('zonder sessie: naar het inloggen', anon.status === 303, anon.status);
+
+  /* Een nota met een nummer maar zonder pdf. Die hoort geen knop te krijgen en geen 500
+     te geven — dezelfde afspraak als bij een factuur op 'pending'. */
+  const pending = await get('/account/credit-notes/5/pdf', {
+    db: makeDb({ credits: [{ ...CREDIT, status: 'pending', pdf_key: null }] }),
+  });
+  check('een nota zonder pdf: 404 en geen 500', pending.status === 404, pending.status);
+
+  const lijst = await get('/account/invoices', {
+    db: makeDb({ credits: [{ ...CREDIT, status: 'pending', pdf_key: null }] }),
+  });
+  const body = await lijst.text();
+  check('en dan staat er geen downloadknop', !body.includes('/account/credit-notes/5/pdf'));
+}
+{
+  /* Migratie 0026 nog niet gedraaid terwijl 0021 dat wel is. Dan zijn er geen nota's, en
+     dat mag het overzicht niet slopen — dezelfde afspraak als bij een ontbrekende
+     invoices-tabel, maar zonder de waarschuwing in de log, want dit is een normale
+     tussentoestand en geen storing. */
+  const res = await get('/account/invoices', { db: makeDb({ noCreditTable: true }) });
+  check('zonder credit_notes-tabel rendert het overzicht gewoon', res.status === 200, res.status);
+  const body = await res.text();
+  check('en de facturen staan er nog', body.includes('VIS-2026-0007'), '');
 }
 
 console.log(fails ? `\n${fails} failed\n` : '\nall passed\n');

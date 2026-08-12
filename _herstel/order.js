@@ -65,7 +65,6 @@ import {
 } from '../../src/data/attributes.js';
 import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
 import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
-import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
@@ -135,47 +134,6 @@ export async function onRequestPost({ request, env, waitUntil }) {
     form = await request.formData();
   } catch {
     return redirect('/thank-you');
-  }
-
-  /*
-   * ═══════════════════════════════════════════════════════════════════════════
-   * EEN RATELIMIET, EINDELIJK — 10 augustus 2026
-   * ═══════════════════════════════════════════════════════════════════════════
-   *
-   * functions/api/upload.js doet dit al sinds dag één; deze route niet, en dit is de
-   * duurdere van de twee. Elke POST hier maakt een bestelling, twee Resend-mails en soms
-   * een Mollie-betaling. Eén script maakt dus duizenden bestellingen, vervuilt de
-   * capaciteitstelling waarop de agenda draait, en verbrandt het Resend-quotum — en dan
-   * kan een echte klant geen bevestiging meer krijgen.
-   *
-   * De honeypot (`company_hp`, een paar regels lager) houdt alleen naïeve bots tegen: die
-   * vult een script dat het formulier één keer heeft bekeken gewoon niet in. Met
-   * advertentieverkeer komt er ook botverkeer; dat is geen aanname maar hoe het internet
-   * werkt.
-   *
-   * ── DE GETALLEN ────────────────────────────────────────────────────────────
-   *
-   * 10 per 10 minuten per IP. Een mens die twijfelt tussen twee diensten en het formulier
-   * twee of drie keer verstuurt, merkt hier niets van; een script dat er honderd wil
-   * plaatsen, komt na tien tot stilstand. Ruimer dan de upload-limiet (40 per minuut) mag
-   * niet: uploaden doe je per bestand en bestellen doe je per bestelling.
-   *
-   * VÓÓR ALLES, ook vóór de honeypot en vóór het lezen van het formulier — nee: ná het
-   * formulier, want `clientIp()` heeft het verzoek nodig en niet de velden, en een 429
-   * hoort niet af te hangen van of het formulier leesbaar was. De plek hier is de eerste
-   * regel na het parsen en vóór élke schrijfactie.
-   *
-   * De sweep ruimt oude vensters op, dezelfde afspraak als in upload.js: één op de zoveel
-   * verzoeken, in waitUntil, zodat de tabel niet oneindig groeit en niemand erop wacht.
-   */
-  const rate = await checkRate(env, { ip: clientIp(request), action: 'order', limit: 10, windowSeconds: 600 });
-  if (shouldSweep() && typeof waitUntil === 'function') waitUntil(sweepRateLimits(env));
-  if (!rate.allowed) {
-    const retry = String(Math.max(1, rate.retryAfter || 60));
-    if (form.get('mode') === 'json') {
-      return json({ ok: false, error: 'rate', retryAfter: rate.retryAfter }, 429, { 'retry-after': retry });
-    }
-    return new Response(null, { status: 429, headers: { 'retry-after': retry } });
   }
 
   // A multipart field is either a string or a File, and toString() on a File
@@ -1158,24 +1116,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // if a test payment created before this change is still being retried by
   // Mollie it will 404 for its 26-hour window and then stop.
   // ───────────────────────────────────────────────────────────────────────────
-  /*
-   * ── `orderId &&` OOK HIER — 12 AUGUSTUS 2026 ───────────────────────────────
-   *
-   * De grote betaalpoort hierboven kreeg deze voorwaarde op 11 augustus; dit pad
-   * niet, en het is dezelfde fout met hetzelfde gevolg. De webhook zoekt óók een
-   * proefbetaling op `ref` en geeft óók 200 terug als hij niets vindt, dus is een
-   * proefvisual zonder rij in `orders` net zo goed geld dat nergens naar verwijst —
-   * alleen € 1 in plaats van € 2.359,50, wat het niet minder verkeerd maakt.
-   *
-   * Erger zelfs op één punt: hier hangt de klep tegen een tweede proefvisual per
-   * bedrijf aan de betaler-hash die de webhook op de bestelling schrijft. Zonder rij
-   * is er niets om die hash op te schrijven, dus ontbreekt de poging in de telling
-   * en is de volgende poging weer de eerste.
-   *
-   * De alarmmail hierboven gaat al af als `orderId` null is, dus deze poort maakt de
-   * fout niet stiller — hij houdt alleen de betaling tegen.
-   */
-  if (svc === 'test-sample' && orderId && env.MOLLIE_API_KEY) {
+  if (svc === 'test-sample' && env.MOLLIE_API_KEY) {
     // createTestSampleMolliePayment() resolves the whole Mollie payment
     // object ({ id, status, _links, ... }), not a URL string —
     // _links.checkout.href is what the browser actually needs to go to. Same
@@ -1860,17 +1801,13 @@ function tierForProducts(products) {
 
 function redirect(location, status = 303) { return new Response(null, { status, headers: { Location: location } }); }
 
-/* `extra` is er sinds 12 augustus 2026 voor één kop: retry-after bij een 429. Een 429
-   zonder die kop is een weigering zonder afspraak — dan probeert een cliënt het meteen
-   opnieuw, en dat is precies het verkeer dat de limiet moet dempen. */
-function json(body, status = 200, extra = {}) {
+function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
       'x-content-type-options': 'nosniff',
-      ...extra,
     },
   });
 }

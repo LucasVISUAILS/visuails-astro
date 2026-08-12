@@ -141,7 +141,7 @@ console.log('de termijn zelf');
   addFile(db, recent, { kind: 'delivery', r2_key: b.seed('delivery/recent/d.jpg') });
   db.prepare("UPDATE files SET announced_at = datetime('now','-1 months') WHERE r2_key = 'delivery/recent/d.jpg'").run();
 
-  const line = await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b });
+  const line = await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b, PURGE_ENABLED: 'true' });
 
   ok('de taak meldt twee bestanden', /^2 verlopen bestanden verwijderd/.test(line), true, line);
   ok('en drie objecten uit R2 voor het ene, één voor het andere', /\(4 objecten uit R2\)/.test(line), true, line);
@@ -186,7 +186,7 @@ console.log('\ndertig bestanden zijn één opruiming');
   db.prepare("UPDATE orders SET closed_at = datetime('now','-200 days') WHERE id = ?").run(id);
   for (let i = 0; i < 30; i++) addFile(db, id, { r2_key: b.seed(`intake/veel/${i}.jpg`) });
 
-  const line = await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b });
+  const line = await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b, PURGE_ENABLED: 'true' });
   const e = events(db, id);
   ok('dertig bestanden verwijderd', /^30 verlopen bestanden verwijderd/.test(line), true, line);
   ok('maar één regel op de tijdlijn', e.length, 1, e.length);
@@ -205,7 +205,7 @@ console.log('\nals het schrijven van de tijdlijn mislukt');
   let line;
   let threw = false;
   try {
-    line = await tasks.purgeExpiredFiles({ DB: d1(db, { failBatch: true }), UPLOADS: b });
+    line = await tasks.purgeExpiredFiles({ DB: d1(db, { failBatch: true }), UPLOADS: b, PURGE_ENABLED: 'true' });
   } catch { threw = true; }
 
   ok('de taak valt niet om', threw, false);
@@ -213,6 +213,36 @@ console.log('\nals het schrijven van de tijdlijn mislukt');
   ok('en R2 is wél geleegd', b.deleted.includes('intake/stuk/a.jpg'));
   ok('het verslag meldt de opruiming', /^1 verlopen bestand verwijderd/.test(line || ''), true, line);
   ok('én dat de tijdlijn niet bijgewerkt is', /tijdlijn.*niet bijgewerkt/.test(line || ''), true, line);
+}
+
+/* ══ 4b · DE REM STAAT STANDAARD OP ════════════════════════════════════════
+ *
+ * Zonder PURGE_ENABLED = "true" mag deze taak niets verwijderen. Dat is de enige
+ * bescherming die er is: R2 heeft geen versiebeheer en de back-up pakt bestanden alleen
+ * mee met --files. Deze test is er omdat een vlag die je niet test, een vlag is waarvan
+ * je aanneemt dat hij werkt.
+ */
+console.log('\nzonder PURGE_ENABLED wordt er niets verwijderd');
+{
+  const db = fresh();
+  const b = bucket();
+  const id = addOrder(db);
+  db.prepare("UPDATE orders SET closed_at = datetime('now','-100 days') WHERE id = ?").run(id);
+  addFile(db, id, { r2_key: b.seed('intake/rem/a.jpg') });
+
+  const line = await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b });
+  ok('R2 is niet aangeraakt', b.deleted.length, 0);
+  ok('de rij staat er nog', db.prepare('SELECT COUNT(*) AS n FROM files').get().n, 1);
+  ok('en er staat geen tijdlijnregel', events(db, id).length, 0);
+  ok('het verslag zegt dat het verslagmodus is', /VERSLAGMODUS/.test(line || ''), true, line);
+  ok('met het aantal erin', /1 bestand /.test(line || ''), true, line);
+  ok('en het commando om de rem los te zetten', /PURGE_ENABLED/.test(line || ''), true, line);
+
+  /* Een lege nacht meldt óók in verslagmodus niets — anders krijg je elke ochtend een
+     mail over nul bestanden. */
+  const leeg = fresh();
+  const lb = bucket();
+  ok('een lege nacht blijft stil', await tasks.purgeExpiredFiles({ DB: d1(leeg), UPLOADS: lb }), null);
 }
 
 /* ══ 5 · niets te doen is geen melding ════════════════════════════════════ */
@@ -224,7 +254,7 @@ console.log('\neen gewone nacht');
   db.prepare("UPDATE orders SET closed_at = datetime('now','-1 days') WHERE id = ?").run(id);
   addFile(db, id, { r2_key: b.seed('intake/vers/a.jpg') });
 
-  const line = await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b });
+  const line = await tasks.purgeExpiredFiles({ DB: d1(db), UPLOADS: b, PURGE_ENABLED: 'true' });
   ok('geen regel in het verslag', line, null, line);
   ok('en niets aangeraakt in R2', b.deleted.length, 0);
   ok('de rij staat er nog', db.prepare('SELECT COUNT(*) AS n FROM files').get().n, 1);

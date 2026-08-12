@@ -97,3 +97,17 @@ FROM_EMAIL = "VISUAILS <orders@visuails.com>"
 # Zonder die sleutel doet de taak nog steeds alles behalve mailen, en zegt hij in
 # zijn verslag dat hij niet kon mailen. Dat is met opzet: opruimen en vrijgeven zijn
 # belangrijker dan het bericht erover.
+
+# ── OBSERVABILITY, AAN — 10 augustus 2026 ────────────────────────────────────
+#
+# Dit blok ontbrak in beide toml-bestanden, en daarmee was élke console.error in dit
+# project alleen te zien in een live `wrangler tail`. Dat zijn de enige foutmeldingen die
+# deze code heeft: een mislukte INSERT, een webhook die zijn bestelling niet vindt, een
+# bestand dat niet opgeruimd kon worden. Om twee uur 's nachts keek daar dus niemand naar,
+# en de dag erna was het weg.
+#
+# Met dit blok bewaart Cloudflare de logs (Workers Logs) en zijn ze achteraf te doorzoeken
+# in het dashboard. Dat is geen monitoring — er komt geen melding van — maar het is het
+# verschil tussen "we kunnen achterhalen wat er gebeurde" en "het is verdampt".
+[observability]
+enabled = true

@@ -131,6 +131,64 @@ const TEXT = {
   },
 };
 
+/*
+ * ── DE CREDITNOTA, ALS OVERLAY OVER DEZELFDE TEKSTTABEL — 12 augustus 2026 ──
+ *
+ * Een creditnota is geen tweede document maar dezelfde factuur met andere woorden en
+ * een omgekeerde bedoeling. Vandaar een overlay en geen tweede renderer: de opmaak, de
+ * kolommen, de btw-mededelingen, het watermerk en de paginanummering zijn regel voor
+ * regel dezelfde, en een tweede layoutbestand zou binnen een maand van het eerste
+ * afwijken op een plek die niemand ziet.
+ *
+ * WELKE WOORDEN WEL VERANDEREN, en waarom precies deze:
+ *
+ *   · de TITEL, want dat is het enige dat een lezer in één oogopslag moet zien;
+ *   · de labels bij het NUMMER en de DATUM, want "Factuurnummer" op een creditnota is
+ *     verwarrend over wélk nummer het gaat;
+ *   · de TOTAALREGEL: "Totaal gecrediteerd" en niet "Totaal te betalen" — dit is geen
+ *     betalingsverzoek en mag daar niet op lijken;
+ *   · en er komt één regel bij die zegt WELKE factuur gecrediteerd wordt. Zonder die
+ *     verwijzing is een creditnota juridisch los zand.
+ *
+ * DE BEDRAGEN BLIJVEN POSITIEF. Een creditnota met minnetjes is ook gangbaar, maar dan
+ * hangt de betekenis aan een tekentje dat wegvalt bij slecht printen of bij overtypen.
+ * Het woord CREDITNOTA bovenaan doet dat werk beter, en de mededeling onderaan zegt het
+ * nog een keer in een hele zin.
+ */
+const CREDIT_TEXT = {
+  nl: {
+    title: 'CREDITNOTA',
+    number: 'Creditnotanummer',
+    date: 'Creditnotadatum',
+    billedTo: 'Creditnota aan',
+    credits: 'Crediteert factuur',
+    creditsDate: 'Factuurdatum',
+    grossPaid: 'Totaal gecrediteerd',
+    grossPayable: 'Totaal gecrediteerd',
+    creditBody: 'Deze creditnota trekt het hierboven vermelde bedrag van de genoemde factuur terug. Dit is geen betalingsverzoek.',
+    refundedNote: (d) => `Terugbetaald op ${d}.`,
+    reasonLabel: 'Reden',
+  },
+  en: {
+    title: 'CREDIT NOTE',
+    number: 'Credit note number',
+    date: 'Credit note date',
+    billedTo: 'Credited to',
+    credits: 'Credits invoice',
+    creditsDate: 'Invoice date',
+    grossPaid: 'Total credited',
+    grossPayable: 'Total credited',
+    creditBody: 'This credit note withdraws the amount above from the invoice named. It is not a request for payment.',
+    refundedNote: (d) => `Refunded on ${d}.`,
+    reasonLabel: 'Reason',
+  },
+};
+
+/** Is dit een creditnota? Eén plek, zodat geen enkele tak hieronder het hoeft te raden. */
+function isCredit(inv) {
+  return Boolean(inv && inv.kind === 'credit');
+}
+
 /** nl unless the caller says en. An unknown language is not a reason to fail. */
 function pickLang(lang) {
   return lang === 'en' ? 'en' : 'nl';
@@ -400,7 +458,12 @@ function makeSheet(pdf, fonts) {
 function prepare(invoice) {
   const inv = invoice && typeof invoice === 'object' ? invoice : {};
   const lang = pickLang(inv.lang);
-  const t = TEXT[lang];
+  /* De overlay ligt OVER de gewone tabel en vervangt hem niet: alles wat een
+     creditnota met een factuur gemeen heeft — de kolomkoppen, de btw-mededelingen, de
+     paginanummering — komt uit dezelfde bron, en alleen de woorden die echt anders
+     moeten zijn, zijn anders. Zo kan er geen tekst ONTBREKEN op een creditnota. */
+  const credit = isCredit(inv);
+  const t = credit ? { ...TEXT[lang], ...CREDIT_TEXT[lang] } : TEXT[lang];
   const seller = inv.seller && typeof inv.seller === 'object' ? inv.seller : {};
   const customer = inv.customer && typeof inv.customer === 'object' ? inv.customer : {};
   const lines = Array.isArray(inv.lines) ? inv.lines.filter((l) => l && typeof l === 'object') : [];
@@ -505,7 +568,11 @@ export async function renderInvoicePdf(invoice) {
   const pdf = await PDFDocument.create();
   const stamp = metadataDate(d.inv);
   // Fixed metadata, fixed dates: this is what keeps two renders byte-identical.
-  pdf.setTitle(`${t.title === 'FACTUUR' ? 'Factuur' : 'Invoice'} ${winAnsi(d.inv.number ?? '')}`.trim());
+  /* De naam die een besturingssysteem toont als iemand het bestand opent. Dezelfde
+     woorden als de titel op het papier, in gewone schrijfwijze — vier gevallen nu, en
+     daarom uit een tabel en niet uit een ternary die je twee keer moet lezen. */
+  const DOC_NAME = { FACTUUR: 'Factuur', INVOICE: 'Invoice', CREDITNOTA: 'Creditnota', 'CREDIT NOTE': 'Credit note' };
+  pdf.setTitle(`${DOC_NAME[t.title] || t.title} ${winAnsi(d.inv.number ?? '')}`.trim());
   pdf.setAuthor(winAnsi(d.seller.name ?? 'VISUAILS'));
   pdf.setSubject(winAnsi(d.inv.number ?? ''));
   pdf.setProducer('VISUAILS invoice renderer');
@@ -751,6 +818,13 @@ function drawMeta(sheet, d, fonts) {
     [t.date, formatDate(d.inv.date, d.lang)],
   ];
   if (d.inv.dueDate) rows.push([t.due, formatDate(d.inv.dueDate, d.lang)]);
+  /* Op een creditnota staat de gecrediteerde factuur DIRECT onder het eigen nummer, en
+     niet verderop bij de mededelingen: het is het tweede ding dat een lezer — en een
+     controleur — zoekt, en zonder die verwijzing verwijst de nota naar niets. */
+  if (isCredit(d.inv) && d.inv.creditsNumber) {
+    rows.push([t.credits, winAnsi(d.inv.creditsNumber)]);
+    if (d.inv.creditsDate) rows.push([t.creditsDate, formatDate(d.inv.creditsDate, d.lang)]);
+  }
   if (d.inv.reference) rows.push([t.reference, winAnsi(d.inv.reference)]);
 
   let y = top;
@@ -858,6 +932,9 @@ function drawTotals(sheet, d, fonts) {
     thickness: 0.6,
     color: RULE,
   });
+  /* Bij een creditnota zijn grossPaid en grossPayable in de overlay dezelfde tekst, dus
+     hangt de totaalregel daar niet meer af van of er een betaaldatum bekend is. Bij een
+     factuur blijft dat verschil bestaan en betekent het wat het altijd betekende. */
   row(d.inv.paidAt ? t.grossPaid : t.grossPayable, formatEuro(d.grossCents, d.lang), true);
 
   sheet.y = y - 6;
@@ -882,7 +959,23 @@ function drawStatements(sheet, d, fonts) {
   if (d.inv.viesConsultation) {
     notes.push({ bold: false, text: `${t.vies}: ${winAnsi(d.inv.viesConsultation)}` });
   }
-  if (d.inv.paidAt) {
+  if (isCredit(d.inv)) {
+    /* GEEN IBAN EN GEEN VERVALDATUM. Dat is het hele verschil met een factuur: hier is
+       niets te betalen, en een rekeningnummer op dit papier is een uitnodiging om
+       nog een keer over te maken. De reden staat erbij als die er is — een
+       terugbetaling heeft altijd een verhaal, en dat verhaal hoort op de nota. */
+    notes.push({ bold: true, text: t.creditBody });
+    if (d.inv.reason) {
+      notes.push({ bold: false, text: `${t.reasonLabel}: ${winAnsi(String(d.inv.reason))}` });
+    }
+    /* GEEN "TERUGBETAALD OP" — en dat is een correctie op de eerste versie hiervan.
+       Die zette `paidAt` uit de FACTUUR onder de nota, dus stond er "Terugbetaald op
+       1 augustus 2026" terwijl dat de datum was waarop de klant BETAALDE. Een datum
+       die er geloofwaardig uitziet en het verkeerde ding zegt, is erger dan geen
+       datum. De echte terugbetaaldatum is de datum van deze nota, en die staat
+       hierboven als Creditnotadatum. Vandaar dat creditSnapshotFrom() `paidAt` op
+       null zet en hier niets extra's staat. */
+  } else if (d.inv.paidAt) {
     notes.push({ bold: false, text: t.paidNote(formatDate(d.inv.paidAt, d.lang)) });
   } else {
     if (d.inv.dueDate) notes.push({ bold: false, text: t.dueNote(formatDate(d.inv.dueDate, d.lang)) });
