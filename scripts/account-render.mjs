@@ -32,6 +32,11 @@ const OUT = path.join(ROOT, '.render');
 fs.mkdirSync(OUT, { recursive: true });
 
 const SECTION = process.argv[2] || '/account';
+
+/* Letterlijk de header uit html() in src/lib/account.js. Verandert die daar, dan
+   hoort hij hier mee te veranderen — en scripts/csp-probe.mjs draagt dezelfde
+   regel, om dezelfde reden. */
+const CSP = "default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
 const WIDTHS = [[1280, 'breed'], [420, 'telefoon']];
 
 /* ── de nepdatabase ──────────────────────────────────────────────────────────
@@ -225,7 +230,25 @@ await context.route('**/*', async (route) => {
     const n = Number(u.pathname.match(/^\/account\/files\/(\d+)\//)[1]);
     return route.fulfill({ contentType: 'image/webp', body: fs.readFileSync(PHOTOS[n % PHOTOS.length]) });
   }
-  if (u.pathname === '/__page') return route.fulfill({ contentType: 'text/html', body: globalThis.__html });
+  if (u.pathname === '/__page') {
+    return route.fulfill({
+      contentType: 'text/html',
+      /* ── MET DE ECHTE CSP EROP — 13 AUGUSTUS 2026 ──────────────────────────
+       *
+       * Dit script rendeerde de pagina ZONDER header, en daardoor was het beeld
+       * dat het opleverde vriendelijker dan de werkelijkheid. De beeldverhouding
+       * in de brand kit werd getekend met `style="aspect-ratio:4 / 5"`: hier
+       * stonden vier keurige vormen, en op Lucas' scherm vier streepjes van één
+       * pixel, want `style-src 'self'` weigert style-ATTRIBUTEN. Ik heb hem een
+       * uitsnede gestuurd waarop het goed stond, van een pagina die stuk was.
+       *
+       * Dezelfde header als in html() in src/lib/account.js, letterlijk. Een
+       * render die iets toont wat de browser weigert, is erger dan geen render:
+       * hij geeft vertrouwen in plaats van zicht. */
+      headers: { 'content-security-policy': CSP },
+      body: globalThis.__html,
+    });
+  }
   return route.fulfill({ status: 204, body: '' });
 });
 

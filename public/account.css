@@ -887,13 +887,20 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
    VASTE HOOGTE, WISSELENDE BREEDTE, om dezelfde reden als bij de videovoorbeelden
    op /video: laat je de breedte vast en de hoogte volgen, dan is de 16:9-tegel een
    streep naast een blok en staat de rij scheef. */
-.bk-ratios { display: flex; flex-wrap: wrap; gap: .6rem; align-items: flex-start; }
+/* `stretch` en niet `flex-start`: elke tegel draagt sinds 13 augustus 2026 een
+   zin over waar zijn verhouding voor is, en die zinnen zijn niet even lang. Met
+   flex-start eindigt de rij op vier verschillende hoogtes en leest hij als vier
+   losse dingen in plaats van één keuze. */
+.bk-ratios { display: flex; flex-wrap: wrap; gap: .6rem; align-items: stretch; }
 .bk-ratio {
   position: relative; display: grid; gap: .28rem; justify-items: center;
-  /* Begrensd, zodat het label van de "geen voorkeur"-tegel de rij niet uit
-     verhouding trekt: die tegel gaat over dezelfde keuze als de vormen ernaast en
-     hoort dus niet twee keer zo breed te zijn. */
-  max-width: 124px;
+  /* VASTE BREEDTE, en dat is de ruimte die de gebruiksregel nodig heeft. Op 124px
+     brak "Marktplaatsen en advertenties" in vijf regels; op 150 in twee. Breder
+     dan dit past er op een telefoon van 420px geen tweede tegel naast, en dan
+     staan de vormen onder elkaar in plaats van naast elkaar — precies de
+     vergelijking die deze tegels moeten maken. */
+  width: 150px; max-width: 100%;
+  align-content: start;
   cursor: pointer; padding: .55rem .6rem .6rem;
   border: 1px solid var(--line); border-radius: var(--r-md);
   background: var(--paper-2); text-align: center;
@@ -912,17 +919,33 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
    breed, en dat verschil van drie pixels tussen de laatste twee is precies te klein
    om de keuze te maken die deze tegels moeten maken. Bij 64 wordt het 64, 51 en 48.
    En een lichtere vulling dan de kaart eronder, want de VORM is hier de boodschap —
-   een vlak dat even donker is als zijn achtergrond, laat alleen zijn rand zien. */
+   een vlak dat even donker is als zijn achtergrond, laat alleen zijn rand zien.
+
+   HIER STAAT GEEN `aspect-ratio`, EN DAT IS DE HELE FIX VAN 13 AUGUSTUS 2026. Het
+   vlak is een <svg> met een viewBox (zie ratioShape() in src/lib/account.js), en
+   dat geeft hem een INTRINSIEKE verhouding — net als een foto. `width: auto` bij
+   een vaste hoogte rekent daar de breedte uit, zonder dat dit stylesheet weet
+   welke verhoudingen bestaan en zonder één inline style, die de CSP van deze
+   pagina toch weigert. Zet er geen `width: 100%` bij: dan overschrijft dat de
+   berekende breedte en staat elke vorm weer even breed. */
 .bk-ratio-box {
-  display: block; height: 64px; width: auto; max-width: 96px;
+  /* `max-width: 100%` en niet 96px. Die 96 was de breedte die 16:9 bij een hoogte
+     van 64 nét niet haalt — hij is er 114 — en een breedbeeldtegel die op 96
+     wordt afgekapt, toont 3:2 en beweert 16:9. Nu begrenst alleen de tegel zelf,
+     en die is met 150px breed genoeg voor alle vier. */
+  display: block; height: 64px; width: auto; max-width: 100%;
   border: 1px solid var(--line-strong); border-radius: var(--r-sm);
   background: var(--paper-3, var(--line));
 }
 /* "Wordt per bestelling gevraagd" heeft geen vorm om te tonen, dus krijgt hij een
-   streepjesrand: overal op deze site het teken voor "hier staat nog niets". */
-.bk-ratio-box.is-none { aspect-ratio: 1 / 1; border-style: dashed; background: transparent; }
+   streepjesrand: overal op deze site het teken voor "hier staat nog niets". Hij is
+   vierkant omdat hij dezelfde viewBox van 1 op 1 krijgt, niet omdat het hier staat. */
+.bk-ratio-box.is-none { border-style: dashed; background: transparent; }
 .bk-ratio-name { font-size: .82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
-.bk-ratio-what { font-size: .7rem; color: var(--ink-3); }
+/* De regel die zegt WAARVOOR de verhouding is — `use` uit src/data/ratios.js.
+   `balance` en niet `pretty`: bij twee of drie regels is een gelijkmatige verdeling
+   wat het blokje rustig houdt, en meer dan drie regels komen hier niet. */
+.bk-ratio-what { font-size: .72rem; line-height: 1.35; color: var(--ink-3); text-wrap: balance; }
 
 .bk-hint {
   margin: .6rem 0 0; max-width: 62ch;

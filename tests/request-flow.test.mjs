@@ -334,43 +334,58 @@ console.log('\n/start/complete vraagt nu ook om een look');
 
 console.log('\nde proefvisual: catalog krijgt de achtergrond, lifestyle de look');
 {
+  /* ── HETZELFDE ANTWOORD, EEN ANDERE PLEK — 13 AUGUSTUS 2026 ────────────────
+   *
+   * Deze sectie toetste de `:has()`-regels op /test-sample, want die pagina had
+   * toen een eigen formulier zonder JavaScript. Lucas, dezelfde dag: *"Ook de
+   * test sample is nog steeds het oude formulier, deze zou al 2 keer aangepast
+   * moeten zijn. Zelfde als lifestyle orderflow maar dan simpel."*
+   *
+   * Hij had gelijk om een reden die groter was dan de opmaak: OrderFlow.astro
+   * had al een complete `mode="sample"` en geen enkele pagina gaf hem mee. De
+   * pagina is nu die stroom, en dan is het schakelen tussen achtergrond en look
+   * geen CSS-regel meer maar syncBackground() en syncStyle() in pipeline.js.
+   *
+   * DE BEWERING BLIJFT DEZELFDE en wordt alleen op de nieuwe plek gedaan:
+   * catalog krijgt de achtergrond, lifestyle de look, en nooit allebei. Wat er
+   * niet meer bij hoeft, is dat het zonder script moet — de proef draait nu op
+   * dezelfde stroom als elke andere bestelling, met dezelfde <noscript>-belofte.
+   */
   for (const [pad, taal] of [['src/pages/test-sample.astro', 'en'], ['src/pages/nl/test-sample.astro', 'nl']]) {
     const src = read(pad);
-    ok(`${taal}: het achtergrondblok bestaat`, /class="field ts-when-catalog"/.test(src), true);
-    ok(`${taal}: en het lookblok is voorwaardelijk`, /class="field ts-when-lifestyle"/.test(src), true);
-    ok(`${taal}: de keuze bovenaan schakelt ze`, /form:has\(#ts-type-catalog:checked\) \.ts-when-catalog/.test(src), true);
-    ok(`${taal}: en de andere kant ook`, /form:has\(#ts-type-lifestyle:checked\) \.ts-when-lifestyle/.test(src), true);
-    /* Beide staan uit tot er gekozen is. Zonder deze regel zou één van de twee
-       standaard aan staan, en dan is er weer een vraag die misschien niet over
-       de bezoeker gaat. */
-    ok(`${taal}: en beide staan uit tot er gekozen is`,
-      /\.ts-when-catalog,\s*\n\s*\.ts-when-lifestyle \{ display: none; \}/.test(src), true);
-
-    /* De zin die niet meer nodig is staat in de GERENDERDE pagina getoetst en niet
-       hier: de kop van dit bestand citeert hem met opzet, want die uitleg is de
-       helft van de reparatie. Een test die zijn eigen verantwoording wegpest,
-       maakt de code slechter. Zie het distblok onderaan. */
-
-    /* Geen JavaScript. Dit is geen puurheid: pipeline.js staat niet op deze
-       pagina, en de €1-stroom is het laatste formulier waar een
-       JS-afhankelijkheid in hoort. */
-    ok(`${taal}: er komt geen script bij kijken`, /<script/.test(src), false);
-
-    /* De looks komen uit de bron in plaats van met de hand ingetypt, en ze posten
-       de slug — net als StylePicker op /start/lifestyle. */
-    ok(`${taal}: de looks komen uit styles`, /import \{ styles as styleData \}/.test(src), true);
-    ok(`${taal}: en posten de slug`, /name="style" value=\{s\.slug\}/.test(src), true);
-    ok(`${taal}: 'custom' zit er niet bij`, /filter\(\(s\) => s\.slug !== 'custom'\)/.test(src), true);
-    /* Een ontbrekende tegelfoto valt luidruchtig om in plaats van stil een tegel
-       minder te tonen. Zelfde afspraak als CARDS in StylePicker.astro. */
-    ok(`${taal}: een onbekende stijl gooit`, /throw new Error\(`test-sample: geen tegelfoto/.test(src), true);
-
-    /* En de hexwaarden komen uit backgrounds.js: een swatch die #F7F5F1 laat zien
-       terwijl er #F5F5F5 uitkomt, is een levering die een klant kan meten. */
-    ok(`${taal}: de swatches komen uit backgrounds.js`, /import \{ RECOMMENDED, CUSTOM_ID, DEFAULT_ID/.test(src), true);
-    ok(`${taal}: geen hexwaarde met de hand ingetypt in de markup`,
-      /style=\{`background:\$\{b\.hex\}`\}/.test(src), true);
+    ok(`${taal}: de pagina gebruikt de gedeelde stroom in proefstand`,
+      /<OrderFlow lang="(en|nl)" service="lifestyle" mode="sample" hero=\{false\}>/.test(src), true);
+    /* BEIDE KIEZERS IN DE SLOT, want de soort wordt hier in het formulier
+       gekozen. Eén ervan weglaten is de helft van de klacht terugzetten. */
+    ok(`${taal}: met de lookkiezer erin`, /<StylePicker lang="(en|nl)" \/>/.test(src), true);
+    ok(`${taal}: en de achtergrondkiezer erin`, /<Step1Options lang="(en|nl)" \/>/.test(src), true);
+    /* En geen eigen formulier meer ernaast. Twee bestelformulieren op één site is
+       hoe de proef de vorige keer achterbleef bij wat /start al kon. */
+    ok(`${taal}: geen eigen bestelformulier meer`, /<form[^>]*action="\/api\/order"/.test(src), false);
+    ok(`${taal}: en geen handgetypte stijltegels meer`, /import \{ styles as styleData \}/.test(src), false);
   }
+
+  const pl = read('src/scripts/pipeline.js');
+  /* De achtergrond verdween al bij lifestyle; de look verdween NIET bij catalog,
+     want op /start slot elke pagina er maar één in en viel er niets te
+     verbergen. Dat is precies de helft die op de proef ontbrak. */
+  ok("styleApplies() kent lifestyle en complete",
+    /function styleApplies\(kind\) \{\s*return kind === 'complete' \|\| kind === 'lifestyle';/.test(pl), true);
+  ok('syncStyle() verbergt de lookvraag', /field\.hidden = !applies;[\s\S]{0,120}field\.disabled = !applies;/.test(pl), true);
+  /* `disabled` en niet alleen `hidden`: CSS houdt geen veld uit een POST. Dit is
+     dezelfde regel die de opschoning hieronder op de server nog eens afdwingt. */
+  ok('  en haalt hem uit de inzending', /function syncStyle\(kind\) \{[\s\S]{0,400}field\.disabled = !applies;/.test(pl), true);
+  ok('StylePicker draagt de haak waar syncStyle op zoekt',
+    /data-pl-look/.test(read('src/components/order/StylePicker.astro')), true);
+
+  /* ── DE BINDING DIE ER NIET WAS ────────────────────────────────────────────
+     kindOf() leest [data-pl-kind] sinds 11 augustus, maar bindOrder() luisterde
+     alleen naar input[name="service"] — en de soortradio van de proef heet
+     `sample_type`. Zonder deze regel bleef de hele stroom op de eerste soort
+     staan, hoe vaak de bezoeker ook omschakelde. */
+  ok('de soortkeuze van de proef is gebonden',
+    /qa\('\[data-pl-kind\]'\)\.forEach\(\(r\) => \{\s*r\.addEventListener\('change', syncOrder\);/.test(pl), true);
+  ok('en syncOrder schakelt beide vragen', /syncStyle\(kind\);\s*\n\s*syncRatio\(kind\);/.test(pl), true);
 }
 
 console.log('\nen wat er verborgen is, komt niet in het record');
@@ -440,30 +455,38 @@ console.log('\nen wat er verborgen is, komt niet in het record');
 
 console.log('\nen de gebouwde pagina laat het ook zien');
 {
-  /* De bron toetsen zegt niet dat Astro het scoped-CSS goed heeft uitgeschreven:
-     `:has()` met een id erin is precies het soort selector waar een bundler een
-     hash op de verkeerde plek kan zetten. Dus wordt de UITVOER bekeken — en
-     overgeslagen als die niet bij de bron hoort, om dezelfde reden als in
-     tests/planning.test.mjs. */
+  /* De bron toetsen zegt niet wat een bezoeker krijgt. Dus wordt de UITVOER
+     bekeken — en overgeslagen als die niet bij de bron hoort, om dezelfde reden
+     als in tests/planning.test.mjs.
+
+     WAT HIER VROEGER STOND was een toets op de uitgeschreven `:has()`-selector,
+     omdat Astro's scoping daar een hash op de verkeerde plek kon zetten. Die
+     regel bestaat niet meer: de pagina is nu de gedeelde stroom en het schakelen
+     zit in pipeline.js. Wat blijft, is de vraag waar het altijd om ging — staat
+     er op de proefpagina hetzelfde formulier als op /start, en niets ernaast? */
   const staat = buildStaat(new URL('../dist/test-sample/index.html', import.meta.url));
   if (!staat.er || staat.oud) {
     console.log(`      (overgeslagen — ${staat.uitleg})`);
   } else {
     for (const p of ['dist/test-sample/index.html', 'dist/nl/test-sample/index.html']) {
       const html = read(p);
-      ok(`${p}: de :has()-regel staat erin`,
-        /:has\(#ts-type-catalog:checked\) \.ts-when-catalog\[data-astro-cid-[a-z0-9]+\]\{display:block\}/.test(html), true);
-      ok('  de id waar hij naar wijst is niet gehasht',
-        /id="ts-type-catalog"/.test(html), true);
-      ok('  het achtergrondblok is gerenderd', /ts-when-catalog/.test(html), true);
-      ok('  de vier achtergrondkeuzes staan er', (html.match(/name="background"/g) || []).length, 4);
-      ok('  en het veld voor een eigen hexwaarde', /name="background_custom"/.test(html), true);
-      ok('  de looks posten slugs en geen namen', /value="phone-made"/.test(html), true);
-      ok('  en niet meer de weergavenaam', /name="style" value="Phone-made"/.test(html), false);
-      /* De zin die de bezoeker vroeg zelf een vraag over te slaan. In de bron mag
-         hij nog als citaat staan; op de pagina niet meer. */
+      /* De stroom staat er echt, met zijn configblok — dat is het teken dat
+         pipeline.js hier iets te doen heeft en niet alleen dat de markup lijkt. */
+      ok(`${p}: de bestelstroom is gerenderd`, /data-pipeline-config/.test(html), true);
+      ok('  in proefstand: het aantal is vast en verborgen',
+        /<select name="products" hidden/.test(html), true);
+      ok('  de soortvraag staat er', (html.match(/name="sample_type"/g) || []).length, 2);
+      ok('  de achtergrondkeuzes staan er', (html.match(/name="background"/g) || []).length >= 4, true);
+      ok('  en de looks posten slugs en geen namen', /value="phone-made"/.test(html), true);
+      ok('  niet meer de weergavenaam', /name="style" value="Phone-made"/.test(html), false);
+      /* De zin die de bezoeker vroeg zelf een vraag over te slaan. Hij hoort
+         nergens meer te staan, ook niet nu het formulier eronder is vervangen. */
       ok('  en de "sla dit over"-zin staat niet meer op de pagina',
         /Skip it if you chose catalog|Sla dit over als je hierboven catalog koos/.test(html), false);
+      /* De beeldverhouding, sinds 13 augustus 2026 op elk bestelformulier. Lucas:
+         *"Ze missen ook nog in de orderflow, ik kan ze niet kiezen bij het maken
+         van een order."* Ook op de proef, want dat is dezelfde stroom. */
+      ok('  de beeldverhouding wordt gevraagd', /name="ratio"/.test(html), true);
     }
   }
 }

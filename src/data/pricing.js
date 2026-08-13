@@ -1391,6 +1391,12 @@ assertShotCounts();
 export const TEST_SAMPLE = {
   en: {
     name: 'Test sample',
+    /* De kop van /test-sample. Hier en niet op die pagina, om dezelfde reden als
+       `line` hieronder: de proef wordt op meer dan één plek aangekondigd, en een
+       kop die per pagina is overgetypt, is de kop die na de volgende
+       herformulering nog het oude zegt. Sinds 13 augustus 2026 leest
+       OrderFlow.astro hem in `mode="sample"`. */
+    h: 'Test VISUAILS with 1 product',
     price: euro(AMOUNT.testSample, 'en'),
     unit: 'one per business',
     feeNote: `${euro(AMOUNT.testSample, 'en')} fee to prevent abuse`,
@@ -1425,6 +1431,7 @@ export const TEST_SAMPLE = {
   },
   nl: {
     name: 'Proefvisual',
+    h: 'Test VISUAILS met 1 product',
     price: euro(AMOUNT.testSample, 'nl'),
     unit: 'één per bedrijf',
     // Geen "vergoeding" of "bijdrage" — dat zijn de woorden waarmee je een bedrag

@@ -58,6 +58,12 @@ import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt } fr
    browser. `background` heet hier backgroundById, want `background` is in dit
    bestand al een woord dat over iets anders gaat. */
 import { background as backgroundById, CUSTOM_ID } from '../../src/data/backgrounds.js';
+/* De verhoudingen die een bestelling kan dragen. LIFESTYLE_RATIOS is de langste
+   lijst en dus de volledige verzameling geldige id's — welke daarvan bij welke
+   dienst hoort, is een vraag met een dienst erbij, en die staat bij
+   effectiveRatio(). Zie vetAnswer() voor het volledige argument. */
+import { LIFESTYLE_RATIOS, parseRatioField } from '../../src/data/ratios.js';
+const RATIO_IDS = new Set(LIFESTYLE_RATIOS.map((r) => r.id));
 import {
   ATTENDED_PER_WINDOW,
   HORIZON_DAYS,
@@ -1715,6 +1721,29 @@ export function tidyTestSampleDetails(details) {
 function vetAnswer(key, value) {
   const orderQ = ORDER_QUESTIONS.find((x) => x.id === key);
   if (orderQ) return capAnswer(value, orderQ.maxLength);
+
+  /* ── DE BEELDVERHOUDING — 13 AUGUSTUS 2026 ─────────────────────────────────
+   *
+   * `ratio` voor de hele bestelling, `ratio_p3_2` voor beeld 2 van product 3. Ze
+   * staan geen van beide in TOP_FIELDS, dus ze landen vanzelf in details_json —
+   * en precies dáárom staan ze hier: wat vanzelf landt, landt ook ongecontroleerd.
+   *
+   * WAAROM DE LIJST VAN DE DIENST HIER NIET WORDT GEBRUIKT. ratioById() wil
+   * weten om welke dienst het gaat, en deze functie krijgt één veld en verder
+   * niets. De dienst is op dit punt bekend maar zou als parameter door drie lagen
+   * moeten reizen voor een controle die de VORM bewaakt en niet het aanbod. Wat
+   * hier wordt tegengehouden is een verzonnen waarde uit een formulier; dat een
+   * catalogbestelling geen 16:9 krijgt, bewaakt syncRatio() in de browser en
+   * effectiveRatio() bij het uitlezen — die laatste kent de dienst wél.
+   *
+   * Een onbekende waarde wordt LEEG en niet de standaard: leeg betekent hier "de
+   * klant heeft niets gezegd", en dat is waar. Er stilzwijgend 'square' van maken
+   * zou een keuze in het dossier zetten die niemand heeft gemaakt.
+   */
+  if (key === 'ratio' || parseRatioField(key)) {
+    const v = String(value).trim();
+    return RATIO_IDS.has(v) ? v : '';
+  }
 
   const m = PRODUCT_ANSWER_KEY.exec(key);
   if (!m || !isProductQuestionId(m[1])) return value;

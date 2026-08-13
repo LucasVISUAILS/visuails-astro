@@ -1,0 +1,184 @@
+---
+/*
+ * VISUAILS — de beeldverhouding, stap 1 van elke bestelling.
+ *
+ * ── WAAROM DEZE VRAAG ER TOT 13 AUGUSTUS 2026 NIET WAS ─────────────────────
+ *
+ * Lucas: *"Ze missen ook nog in de orderflow, ik kan ze niet kiezen bij het
+ * maken van een order."* Klopte. De verhoudingen kregen een datalaag
+ * (src/data/ratios.js), een kolom (migratie 0028) en een plek in de brand kit,
+ * en precies het scherm waar een bestelling ontstaat, kreeg niets. Een merk dat
+ * geen brand kit heeft ingevuld — en dat is elk merk bij zijn eerste bestelling
+ * — kon dus nergens zeggen welke vorm het wilde.
+ *
+ * ── WAAROM DIT IN OrderFlow ZIT EN NIET IN DE SLOT ─────────────────────────
+ *
+ * De slot van OrderFlow is voor het ene blok dat PER DIENST verschilt: catalog
+ * krijgt de achtergrond, lifestyle de look. De verhouding verschilt niet per
+ * dienst — hij wordt op alle drie gevraagd — dus hij hoort in de stroom zelf,
+ * één keer, net als het aantal en de staffel. Zie de kop van OrderFlow.astro.
+ *
+ * ── ALLE VIER DE TEGELS STAAN ER, EN DE BREDE WORDT VERBORGEN ──────────────
+ *
+ * ratiosFor() zegt dat 16:9 bij lifestyle hoort en niet bij catalog, en op
+ * /start/catalog zou je die tegel dus kunnen weglaten bij het bouwen. Dat gaat
+ * op /test-sample stuk: daar kiest de bezoeker de soort ter plekke, en dan moet
+ * de tegel kunnen komen en gaan zonder herladen. Dus: alle vier gerenderd, de
+ * lifestyle-only tegels gemerkt met [data-pl-ratio-only], en syncRatio() in
+ * pipeline.js zet ze aan of uit op dezelfde manier waarop syncBackground() de
+ * achtergrondvraag laat verdwijnen. Eén mechanisme voor twee vragen die
+ * allebei van de soort afhangen.
+ *
+ * ── DE VORM IS EEN viewBox EN GEEN INLINE STYLE ────────────────────────────
+ *
+ * Zie ratioViewBox() in src/data/ratios.js voor het volledige verhaal: een
+ * style-attribuut wordt door de CSP van /account geweigerd, en de tegels stonden
+ * daar als streepjes van één pixel. Deze pagina heeft die CSP niet, maar de
+ * techniek is hier niet slechter en dezelfde vorm hoort niet op twee manieren
+ * getekend te worden. Een <svg> met viewBox heeft een intrinsieke verhouding;
+ * `height` vast en `width: auto` rekent de breedte uit, ook voor een verhouding
+ * die morgen aan ratios.js wordt toegevoegd.
+ *
+ * ── ÉÉN IS VOORGESELECTEERD, EN DAT IS EEN UITZONDERING ────────────────────
+ *
+ * Op dit formulier staat niets voor: een look die is aangevinkt is een look die
+ * niemand koos. Hier wel, en om de reden die in CATALOG_RATIOS staat — het
+ * vierkant is de enige verhouding die ALTIJD werkt, en een bestelling zonder
+ * verhouding bestaat niet. De vraag is dus niet "kies iets" maar "dit wordt het,
+ * tenzij". Wie is ingelogd en het in zijn brand kit heeft staan, ziet zijn eigen
+ * keuze aangevinkt: applyBrandKit() in pipeline.js zet hem over.
+ */
+import { LIFESTYLE_RATIOS, CATALOG_RATIOS, DEFAULT_RATIO_ID, ratioViewBox } from '../../data/ratios.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+
+const COPY = {
+  en: {
+    label: 'Image shape',
+    /* TWEE HINTS EN NIET ÉÉN, want de vraag betekent iets anders per dienst: bij
+       catalog is dit DE keuze, bij lifestyle het startpunt. syncRatio() toont er
+       één. Ze staan allebei in de html zodat een bezoeker zonder JavaScript de
+       algemene zin leest en niet een lege plek. */
+    hintBatch: 'One shape for the whole order. Catalog images sit next to each other in a grid, and a grid only looks right when every image is the same shape.',
+    hintEach: 'The shape every image starts on. On any product below you can set a single image differently — a banner among three square ones, for instance.',
+    recommended: 'Recommended',
+  },
+  nl: {
+    label: 'Beeldverhouding',
+    hintBatch: 'Eén verhouding voor de hele bestelling. Catalogbeelden staan naast elkaar in een grid, en een grid ziet er alleen goed uit als elk beeld dezelfde vorm heeft.',
+    hintEach: 'De verhouding waar elk beeld op begint. Bij elk product hieronder kun je één beeld anders zetten — bijvoorbeeld één banner tussen drie vierkante.',
+    recommended: 'Aanbevolen',
+  },
+};
+const c = COPY[lang];
+
+/* De lijst is de lifestyle-lijst, want dat is de langste; welke tegels bij
+   catalog wegvallen, weet CATALOG_RATIOS en niet dit bestand. Zo blijft
+   src/data/ratios.js de enige plek waar staat wat bij welke dienst hoort. */
+const CATALOG_IDS = CATALOG_RATIOS.map((r) => r.id);
+const tiles = LIFESTYLE_RATIOS.map((r) => ({
+  id: r.id,
+  label: r.label,
+  name: r.name[lang] || r.name.en,
+  use: r.use[lang] || r.use.en,
+  viewBox: ratioViewBox(r),
+  lifestyleOnly: !CATALOG_IDS.includes(r.id),
+}));
+---
+
+<fieldset class="pl-fieldset pl-ratio" data-pl-ratio>
+  <legend class="pl-sr">{c.label}</legend>
+  <h3 class="pl-sub-h" id="pl-ratio-h">{c.label}</h3>
+  <p class="hint pl-ratio-hint" data-pl-ratio-hint-batch>{c.hintBatch}</p>
+  <p class="hint pl-ratio-hint" data-pl-ratio-hint-each hidden>{c.hintEach}</p>
+
+  <div class="ratio-grid" role="radiogroup" aria-labelledby="pl-ratio-h">
+    {tiles.map((r) => (
+      <label class="ratio" data-pl-ratio-tile={r.id} data-pl-ratio-only={r.lifestyleOnly ? 'lifestyle' : undefined}>
+        <input
+          type="radio"
+          name="ratio"
+          value={r.id}
+          checked={r.id === DEFAULT_RATIO_ID}
+          data-pl-ratio-box={r.id}
+          data-pl-ratio-label={r.label}
+        />
+        <svg class="ratio-shape" viewBox={r.viewBox} preserveAspectRatio="none" focusable="false" aria-hidden="true"></svg>
+        <span class="ratio-label">{r.label}</span>
+        <span class="ratio-name">{r.name}</span>
+        <span class="ratio-use">{r.use}</span>
+        {r.id === DEFAULT_RATIO_ID && <span class="ratio-tag">{c.recommended}</span>}
+      </label>
+    ))}
+  </div>
+</fieldset>
+
+<style>
+  [hidden] { display: none !important; }
+
+  .pl-sr {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .pl-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  .pl-ratio { margin-top: clamp(1.6rem, 3vw, 2.2rem); max-width: var(--pl-measure); }
+  .pl-sub-h { font-size: 1.05rem; line-height: 1.3; }
+  .pl-ratio-hint { display: block; max-width: 66ch; margin-top: .35rem; }
+
+  /* auto-fit en niet vier vaste kolommen: als 16:9 bij catalog wegvalt, vullen
+     de overgebleven drie de rij netjes op in plaats van een gat te laten waar de
+     vierde stond. */
+  .ratio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: clamp(.6rem, 1.2vw, .9rem);
+    margin-top: .9rem;
+  }
+  .ratio {
+    position: relative;
+    display: grid; justify-items: center; align-content: start; gap: .3rem;
+    padding: .9rem .7rem 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .ratio:hover { border-color: var(--accent-line); }
+  .ratio:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .ratio:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .ratio:has([aria-invalid='true']) { border-color: var(--warn); }
+
+  /* Verborgen maar bereikbaar: de VORM is het antwoord, en een radiorondje
+     ernaast trekt het oog naar het enige deel van de tegel dat niets zegt. */
+  .ratio input {
+    position: absolute; width: 1px; height: 1px; margin: 0;
+    opacity: 0; pointer-events: none;
+  }
+
+  /* Vaste hoogte, breedte uit de viewBox. Zet hier geen `width` bij: dan is elke
+     vorm even breed en toont de tegelrij niets. 72px omdat het verschil tussen
+     4:5 en 3:4 daaronder in de ruis van een paar pixels valt — bij 72 is het
+     58 tegen 54. */
+  .ratio-shape {
+    display: block; height: 72px; width: auto; max-width: 100%;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface-2);
+  }
+  .ratio:has(input:checked) .ratio-shape { border-color: var(--accent); background: var(--surface); }
+
+  .ratio-label { margin-top: .45rem; font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ratio-name { font-size: .84rem; color: var(--ink-2); }
+  .ratio-use { font-size: .78rem; line-height: 1.4; color: var(--ink-3); text-wrap: balance; }
+  .ratio-tag {
+    margin-top: .2rem; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase;
+    padding: .1rem .4rem; border-radius: var(--r-sm);
+    background: var(--accent-soft); color: var(--ink-2);
+  }
+
+  @media (prefers-reduced-motion: reduce) { .ratio { transition: none; } }
+</style>

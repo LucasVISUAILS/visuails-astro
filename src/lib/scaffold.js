@@ -283,6 +283,23 @@ export function briefingText({ order, product }) {
   if (product.material) regels.push(`Materiaal   ${product.material}`);
   if (product.colour) regels.push(`Kleur       ${product.colour}`);
   if (product.background) regels.push(`Achtergrond ${product.background}`);
+  /* ── DE BEELDVERHOUDING — 13 AUGUSTUS 2026 ────────────────────────────────
+   *
+   * BOVEN DE REGEL "de klant heeft niets opgegeven" en niet eronder, want een
+   * verhouding is altijd gekozen: het formulier begint op het vierkant en er is
+   * geen stroom die de vraag overslaat. Hij hoort dus in het rijtje feiten en
+   * niet in het rijtje ontbrekende antwoorden.
+   *
+   * PER BEELD ALS DE KLANT DAT ZO HEEFT GEZET. Bij lifestyle mag beeld 2 een
+   * banner zijn tussen twee vierkante; dan staat de afwijking hier per nummer,
+   * en de rest volgt de bestelling. Zonder deze regels zou de studio drie keer
+   * dezelfde vorm maken en zou de banner pas bij de revisie boven water komen. */
+  if (product.ratio) regels.push(`Verhouding  ${product.ratio}`);
+  if (Array.isArray(product.imageRatios)) {
+    for (const [i, r] of product.imageRatios.entries()) {
+      if (r) regels.push(`  beeld ${i + 1}    ${r}`);
+    }
+  }
   if (!product.material && !product.colour && !product.background) {
     regels.push('De klant heeft bij dit product geen materiaal, kleur of');
     regels.push('achtergrond opgegeven.');
@@ -409,7 +426,7 @@ export function scaffoldFilename(ref) {
  * De lijst voor zipStream(), inclusief de mappen.
  *
  * @param {object} order    de rij uit `orders`
- * @param {Array}  products [{ index, name, material, colour, background, extras }]
+ * @param {Array}  products [{ index, name, material, colour, background, ratio, imageRatios, extras }]
  * @param {object} opts     { origin, shots }  shots = welke vakjes deze dienst heeft
  */
 export function scaffoldFiles(order, products, opts = {}) {

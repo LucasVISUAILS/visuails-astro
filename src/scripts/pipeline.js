@@ -874,6 +874,25 @@ function bindOrder() {
   qa('input[name="service"]').forEach((r) => {
     r.addEventListener('change', syncOrder);
   });
+  /*
+   * ── DE SOORTKEUZE VAN DE PROEF — 13 AUGUSTUS 2026 ─────────────────────────
+   *
+   * kindOf() leest `[data-pl-kind]:checked` sinds 11 augustus, maar NIEMAND
+   * luisterde naar dat veld: hierboven staat `input[name="service"]`, en op
+   * /test-sample heet de soortradio `sample_type`. Het gevolg was dat de hele
+   * stroom op /test-sample op de soort van het eerste rondje bleef staan —
+   * achtergrond, look, verhouding, prijsregel, alles — hoe vaak de bezoeker ook
+   * omschakelde. Niet opgevallen omdat geen enkele pagina die stand ooit
+   * rendeerde; zie de kop van OrderFlow.astro's `mode`.
+   *
+   * Op de selector en niet op de veldnaam, om precies de reden die kindOf()
+   * geeft: hoe dat veld heet is de zaak van de pagina, wat het BETEKENT staat
+   * in het data-attribuut.
+   */
+  qa('[data-pl-kind]').forEach((r) => {
+    r.addEventListener('change', syncOrder);
+  });
+  bindRatio();
   const count = q('select[name="products"]');
   if (count) count.addEventListener('change', syncOrder);
   // Task #271f.
@@ -951,6 +970,12 @@ function syncOrder() {
 
   syncOutfit(kind);
   syncBackground(kind);
+  // De twee vragen die net als de achtergrond van de SOORT afhangen. Hier en
+  // niet aan de soortradio zelf gehangen, want dit is de plek waar elke
+  // verandering van stap 1 samenkomt — een tweede plek die "als de soort
+  // verandert" zegt, is een plek die ooit één van de drie vergeet.
+  syncStyle(kind);
+  syncRatio(kind);
   syncTotal();
   syncLevel(attended, chosen);
   // Step 2's card list is a function of this count, so it is rebuilt from the
@@ -1291,6 +1316,148 @@ function isLight(hex) {
 /** Catalog work has a background. A lifestyle carousel is a scene. */
 function bgApplies(kind) {
   return kind === 'complete' || kind === 'catalog';
+}
+
+/**
+ * De tegenhanger: heeft deze soort een LOOK te kiezen?
+ *
+ * ── WAAROM DEZE ER NIET WAS, EN WAAROM HIJ NU MOET — 13 AUGUSTUS 2026 ───────
+ *
+ * Op /start ligt de dienst vast voordat de pagina laadt, en die pagina slot
+ * precies één van de twee kiezers in: catalog krijgt de achtergrond, lifestyle
+ * de look. Er viel dus nooit iets te verbergen — syncBackground() bestond alleen
+ * omdat `complete` beide heeft en de achtergrond daar wél weg moet kunnen.
+ *
+ * /test-sample heeft ze allebei op de pagina en laat de bezoeker ter plekke
+ * kiezen. Zonder deze functie zou een catalogproef de vier looks tonen — precies
+ * de klacht die Lucas op 13 augustus over dat formulier had, maar dan andersom:
+ * *"als bezoekers lifestyle kiezen moet deze aangepast worden daarop, dus
+ * achtergrondkleur optie verdwijnt dan."* Eén kant zonder de andere is een halve
+ * regel.
+ */
+function styleApplies(kind) {
+  return kind === 'complete' || kind === 'lifestyle';
+}
+
+/**
+ * De lookkiezer aan of uit, met dezelfde twee schakelaars als syncBackground().
+ *
+ * `disabled` OP DE FIELDSET EN NIET ALLEEN `hidden`, en dat is het hele punt:
+ * CSS houdt geen veld uit een POST. Een verborgen radio die aan staat, reist
+ * gewoon mee, en dan staat er bij een catalogproef een look in details_json bij
+ * werk waar geen look aan te pas komt. Een `disabled` fieldset haalt zijn hele
+ * inhoud uit de inzending — dezelfde regel, dezelfde reden, één regel eronder.
+ */
+function syncStyle(kind) {
+  const field = q('[data-pl-look]');
+  if (!field) return;
+  const applies = styleApplies(kind);
+  field.hidden = !applies;
+  field.disabled = !applies;
+  // De keuze blijft AANGEVINKT staan. Wie van lifestyle naar catalog en terug
+  // gaat, hoort zijn look niet kwijt te zijn — hij post alleen niet zolang de
+  // vraag niet van toepassing is, en syncSummaries() leest ':disabled' en niet
+  // ':checked' om te weten of er een antwoord is.
+  syncSummaries();
+}
+
+/* ── DE BEELDVERHOUDING ─────────────────────────────────────────────────────
+ *
+ * Lucas, 13 augustus 2026: *"Ze missen ook nog in de orderflow, ik kan ze niet
+ * kiezen bij het maken van een order."*
+ *
+ * Twee dingen bewegen hier mee met de soort, en allebei om dezelfde reden als
+ * bij de achtergrond hierboven: op /test-sample kiest de bezoeker de soort in
+ * het formulier zelf, dus wat "bij deze dienst hoort" kan tijdens het invullen
+ * veranderen.
+ *
+ *   · 16:9 is een lifestyleverhouding. Een catalogbestelling krijgt hem niet —
+ *     zie de kop van src/data/ratios.js: een grid met één breed beeld erin is
+ *     precies het scheve grid waar een merk mee bij ons komt.
+ *   · De uitleg eronder verschilt. Bij catalog is dit DE keuze voor de hele
+ *     bestelling; bij lifestyle is het het startpunt waar per beeld van
+ *     afgeweken mag worden.
+ *
+ * DE VERBORGEN TEGEL WORDT OOK UITGEVINKT, en dat is anders dan bij de look
+ * hierboven. Reden: `ratio` is één radiogroep waar altijd precies één antwoord
+ * uit moet komen. Blijft 16:9 aangevinkt terwijl hij onzichtbaar is, dan post
+ * een catalogbestelling een verhouding die catalog niet kent, en dan valt de
+ * controle op de server erop terug — met een stille correctie naar iets wat de
+ * klant niet gekozen heeft. Dus: terug naar de standaard, zichtbaar, in het
+ * formulier waar hij het kan zien.
+ */
+function ratioApplies(kind, id) {
+  const only = (cfg.ratio && cfg.ratio.lifestyleOnly) || [];
+  return only.indexOf(id) === -1 || styleApplies(kind);
+}
+
+function syncRatio(kind) {
+  const field = q('[data-pl-ratio]');
+  if (!field) return;
+
+  let bumped = false;
+  qa('[data-pl-ratio-tile]').forEach((tile) => {
+    const id = tile.dataset.plRatioTile;
+    const on = ratioApplies(kind, id);
+    tile.hidden = !on;
+    const input = q('input[name="ratio"]', tile);
+    if (!input) return;
+    input.disabled = !on;
+    if (!on && input.checked) { input.checked = false; bumped = true; }
+  });
+
+  // Niets meer aangevinkt — of omdat de keuze net verdween, of omdat de pagina
+  // zonder standaard laadde. Terug naar de verhouding die altijd werkt.
+  if (bumped || !q('input[name="ratio"]:checked')) {
+    const fallback = (cfg.ratio && cfg.ratio.fallback) || 'square';
+    const target = qa('input[name="ratio"]').find((r) => r.value === fallback && !r.disabled);
+    if (target) target.checked = true;
+  }
+
+  const each = !!(cfg.ratio && cfg.ratio.perImage) && styleApplies(kind);
+  const batchHint = q('[data-pl-ratio-hint-batch]');
+  const eachHint = q('[data-pl-ratio-hint-each]');
+  if (batchHint) batchHint.hidden = each;
+  if (eachHint) eachHint.hidden = !each;
+
+  // De keuzelijstjes op de kaarten dragen de gekozen verhouding in hun eerste
+  // optie ("Zelfde als de bestelling"), zodat een klant daar niet hoeft te
+  // onthouden wat hij bovenaan koos.
+  paintRatioDefaults();
+  syncSummaries();
+}
+
+/** De naam van de verhouding die nu voor de hele bestelling geldt, of ''. */
+function ratioNow() {
+  const r = q('input[name="ratio"]:checked');
+  return r && !r.matches(':disabled') ? r.value : '';
+}
+
+/**
+ * De eerste optie van elk keuzelijstje op een kaart, bijgewerkt.
+ *
+ * "Zelfde als de bestelling" is waar, maar zegt niet WAT dat is, en een klant
+ * die dertig kaarten open heeft staan, scrollt niet terug naar boven om het te
+ * controleren. Dus staat de gekozen verhouding erachter. De WAARDE van die optie
+ * blijft leeg — dat is wat "volg de standaard" betekent in effectiveRatio(), en
+ * een keuze die de standaard overtypt zou stil blijven staan als de klant
+ * bovenaan iets anders kiest.
+ */
+function ratioSameText() {
+  const id = ratioNow();
+  const label = id ? c(`ratio.name.${id}`) : '';
+  return label ? `${c('pu.ratioSame')} — ${label}` : c('pu.ratioSame');
+}
+
+function paintRatioDefaults() {
+  const text = ratioSameText();
+  qa('[data-pl-ratio-same]').forEach((opt) => { opt.textContent = text; });
+}
+
+function bindRatio() {
+  qa('input[name="ratio"]').forEach((r) => {
+    r.addEventListener('change', () => syncRatio(kindOf()));
+  });
 }
 
 function syncBackground(kind) {
@@ -2058,7 +2225,15 @@ function buildCard(card) {
   const about = buildAbout(card);
   toggle.setAttribute('aria-controls', `${slots.id} ${about.id}`);
 
+  // De afwijking per beeld, als deze stroom hem heeft. In dezelfde uitklap als
+  // de foto's en de vraag — één knop die eerlijk zegt wat hij opent — en dus
+  // ook in aria-controls, of de knop noemt twee van de drie dingen die hij
+  // laat verschijnen.
+  const ratios = buildRatios(card);
+  if (ratios) toggle.setAttribute('aria-controls', `${slots.id} ${about.id} ${ratios.id}`);
+
   li.append(head, slots, about);
+  if (ratios) li.append(ratios);
   card.el = li;
   card.input = input;
   card.stateEl = state;
@@ -2191,6 +2366,110 @@ function buildAbout(card) {
   // and the copy-down has to know the moment there is something to copy.
   ['input', 'change'].forEach((ev) => wrap.addEventListener(ev, () => syncCopyDown(cards[0])));
 
+  return wrap;
+}
+
+/**
+ * De beeldverhouding per beeld, op één kaart. Of null.
+ *
+ * ── DE VRAAG ──────────────────────────────────────────────────────────────
+ *
+ * Lucas, 13 augustus 2026: *"Bij lifestyle moeten deze wel per foto ingesteld
+ * kunnen worden omdat je soms een simpele post en soms een banner lifestyle foto
+ * wil."*
+ *
+ * ── NULL BIJ CATALOG, EN DAT IS DE HELE REGEL ─────────────────────────────
+ *
+ * `cfg.ratio.perImage` is het aantal beelden dat mag afwijken, en het is nul op
+ * elke stroom die dat niet kent. Geen tak hier die naar de dienst kijkt: welke
+ * dienst per beeld mag kiezen, staat in ratiosPerImage() in src/data/ratios.js
+ * en wordt in OrderFlow.astro één keer uitgerekend. Een tweede plek die
+ * 'lifestyle' zou noemen, is de plek die het vergeet als er een dienst bijkomt.
+ *
+ * ── ALLEEN DE LIFESTYLE-BEELDEN, OOK BIJ `complete` ───────────────────────
+ *
+ * Een complete-bestelling heeft vier catalogbeelden en drie lifestylebeelden, en
+ * `perImage` is er drie. De catalogbeelden staan naast elkaar in een grid en
+ * volgen de bestelling — dat is precies de reden dat catalog één verhouding
+ * heeft. Zie de kop van ratios.js.
+ *
+ * ── LEEG IS HET ANTWOORD, NIET DE AFWEZIGHEID ERVAN ───────────────────────
+ *
+ * De eerste optie heeft waarde '' en betekent "volg de bestelling". Zo post een
+ * klant die niets afwijkt ook niets, en effectiveRatio() op de server heeft geen
+ * lijst met dertig keer dezelfde waarde te lezen. Niets hier is verplicht: geen
+ * `required`, geen data-pl-req. Wie er niet naar kijkt, krijgt de verhouding die
+ * hij bovenaan koos, en dat is een compleet antwoord.
+ */
+function buildRatios(card) {
+  const perImage = Number((cfg.ratio && cfg.ratio.perImage) || 0);
+  if (!perImage) return null;
+  const ids = (cfg.ratio && cfg.ratio.ids) || [];
+  if (!ids.length) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'pu-ratios';
+  wrap.id = `pu-ratios-${card.key}`;
+  // Een group met een label en geen fieldset+legend, om dezelfde reden als bij
+  // buildAbout(): een legend zou "Verhouding per beeld" op dertig kaarten
+  // afdrukken, en dat is de muur tekst die deze stap juist opruimt.
+  wrap.setAttribute('role', 'group');
+  wrap.setAttribute('aria-label', `${c('pu.ratioH')} — ${c('pu.product', { n: card.n })}`);
+
+  const head = document.createElement('p');
+  head.className = 'pu-ratios-h';
+  head.textContent = c('pu.ratioH');
+
+  const hint = document.createElement('p');
+  hint.className = 'pu-ratios-hint';
+  hint.id = `pu-ratios-hint-${card.key}`;
+  hint.textContent = c('pu.ratioHint');
+
+  const row = document.createElement('div');
+  row.className = 'pu-ratios-row';
+
+  for (let i = 1; i <= perImage; i += 1) {
+    const field = document.createElement('div');
+    field.className = 'pu-ratio-q';
+    const id = `pu-ratio-${card.key}-${i}`;
+
+    const label = document.createElement('label');
+    label.className = 'pu-ratio-label';
+    label.htmlFor = id;
+    label.textContent = c('pu.ratioImage', { n: i });
+
+    const sel = document.createElement('select');
+    sel.className = 'select pu-ratio-field';
+    sel.id = id;
+    // `ratio_p3_2` — dezelfde sleutel die ratioField() in src/data/ratios.js
+    // maakt en parseRatioField() weer uit elkaar haalt. Niet in TOP_FIELDS, dus
+    // hij landt in details_json naast `product_p3`, op de sleutel `p3` die ze
+    // aan elkaar knoopt.
+    sel.name = `ratio_${card.key}_${i}`;
+    sel.setAttribute('aria-describedby', hint.id);
+
+    const same = document.createElement('option');
+    same.value = '';
+    same.setAttribute('data-pl-ratio-same', '');
+    // Meteen met de gekozen verhouding erachter en niet pas bij de volgende
+    // paintRatioDefaults(): een kaart die net gebouwd is, staat al op het
+    // scherm, en "Zelfde als de bestelling" zonder te zeggen wat dat is, is
+    // precies de regel die deze optie moet uitleggen.
+    same.textContent = ratioSameText();
+    sel.appendChild(same);
+
+    ids.forEach((rid) => {
+      const opt = document.createElement('option');
+      opt.value = rid;
+      opt.textContent = c(`ratio.name.${rid}`);
+      sel.appendChild(opt);
+    });
+
+    field.append(label, sel);
+    row.appendChild(field);
+  }
+
+  wrap.append(head, hint, row);
   return wrap;
 }
 
@@ -3608,6 +3887,34 @@ function applyBrandKit(me) {
     }
   }
 
+  /* ── DE VASTE VERHOUDING UIT DE BRAND KIT (migratie 0028) ─────────────────
+   *
+   * Lucas: *"Formaat kan ook toegevoegd worden aan brand kit in visuails studio
+   * om het proces te versnellen, voornamelijk handig voor catalog omdat dit
+   * bijna altijd zelfde formaat moet krijgen."* Dit is de helft die dat waar
+   * maakt: zonder deze regel stond het antwoord wel in /account en begon elke
+   * bestelling toch weer op het vierkant.
+   *
+   * Op de id gematcht en niet op een naam, want dat is wat de kolom bevat, en
+   * `!target.disabled` erbij: een opgeslagen 16:9 hoort een catalogbestelling
+   * niet stilletjes op breed te zetten. syncRatio() heeft die tegel daar dan al
+   * uitgezet, en een uitgezette radio aanvinken zou een keuze zijn die niemand
+   * kan zien en die niet post.
+   *
+   * DEZELFDE OVERSCHRIJFREGEL als bij de achtergrond hierboven: alleen wat de
+   * pagina zelf heeft voorgeselecteerd (`defaultChecked`) wordt aangeraakt.
+   * Heeft de klant in deze sessie al een verhouding aangeklikt, dan is dat het
+   * antwoord en niet wat er een maand geleden is opgeslagen.
+   */
+  const wantRatio = String(lock.ratio || '');
+  if (wantRatio) {
+    const current = q('input[name="ratio"]:checked');
+    if (!current || current.defaultChecked) {
+      const target = qa('input[name="ratio"]').find((r) => r.value === wantRatio && !r.disabled);
+      if (target) { target.checked = true; syncRatio(kindOf()); }
+    }
+  }
+
   // The face — either one of the ten, or one of this brand's own, which
   // addBrandModels() has just put on the page. Both are radios in the same
   // group by the time this runs, so one lookup covers both.
@@ -3991,8 +4298,21 @@ function renderSummary() {
   // The look, on the lifestyle flow. Same rule as the background above: only
   // when the flow HAS the question. There is no picker on a catalog order, so
   // an empty answer here is the absence of a question rather than a skipped one.
+  // `:disabled` EN NIET ALLEEN `:checked`. syncStyle() laat de gekozen look
+  // aangevinkt staan als de bezoeker op /test-sample naar catalog omschakelt —
+  // zodat hij hem terugvindt — en zet alleen de fieldset uit. Een radio in een
+  // uitgezette fieldset post niet, dus hij hoort ook hier niet te staan; op de
+  // bevestiging zou hij anders een antwoord tonen dat de studio nooit krijgt.
   const look = q('input[name="style"]:checked');
-  if (look) rows.push([c('sum.style'), look.dataset.plStyleName || look.value]);
+  if (look && !look.matches(':disabled')) rows.push([c('sum.style'), look.dataset.plStyleName || look.value]);
+
+  // De verhouding. Altijd, want elke bestelling heeft er een — er is geen
+  // stroom waar deze vraag niet wordt gesteld, en dus geen leeg antwoord dat
+  // "niet gevraagd" zou kunnen betekenen. Wat een enkel beeld afwijkt, staat
+  // niet op deze regel: dertig kaarten × drie beelden is geen bevestigingsscherm
+  // meer, en de afwijking staat op de kaart waar hij gezet is.
+  const ratioId = ratioNow();
+  if (ratioId) rows.push([c('sum.ratio'), c(`ratio.name.${ratioId}`)]);
 
   // Task #271f.
   if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);

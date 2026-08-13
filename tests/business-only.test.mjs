@@ -34,10 +34,15 @@
  *       zegt hetzelfde en mag dus ook niet verdwijnen.
  */
 import { readFileSync } from 'node:fs';
+import { buildStaat } from './lib/build.mjs';
 import {
   businessCheck, regKindFor, looksLikeKvk, normaliseKvk,
   BUSINESS_VERSION, businessText, currentBusiness, REG_KIND,
 } from '../src/data/business.js';
+/* De herroepingsverklaring komt uit haar eigen bestand, en deze toets vergelijkt
+   sinds 13 augustus 2026 de LETTERLIJKE tekst op de gebouwde pagina — dus moet
+   hij hem hier kunnen ophalen in plaats van hem over te typen. */
+import { currentConsent } from '../src/data/consent.js';
 
 let pass = 0;
 let fail = 0;
@@ -207,7 +212,7 @@ console.log('\nen het formulier van de proefvisual vraagt het ook — dat deed h
   /*
    * ── HET GAT DAT HET MEEST KOSTTE ───────────────────────────────────────────
    *
-   * /test-sample heeft zijn EIGEN wizard en gebruikt OrderFlow.astro niet. Toen de
+   * /test-sample HAD zijn eigen wizard en gebruikte OrderFlow.astro niet. Toen de
    * herroepingsverklaring in augustus 2026 werd toegevoegd, is die pagina daarbij
    * overgeslagen — en dat is precies de verkeerde pagina om over te slaan:
    *
@@ -225,28 +230,73 @@ console.log('\nen het formulier van de proefvisual vraagt het ook — dat deed h
    * dit project: op 8 augustus is een zin van de Engelse pagina's gehaald en op de
    * Nederlandse laten staan, in de taal van vrijwel elke klant.
    */
+  /*
+   * ── OP DE GEBOUWDE PAGINA EN NIET MEER OP DE BRON — 13 AUGUSTUS 2026 ──────
+   *
+   * Deze toets las src/pages/test-sample.astro, omdat de verklaringen daar met de
+   * hand in stonden. Sinds vandaag wijst die pagina naar OrderFlow.astro in
+   * `mode="sample"` — de stroom die /start ook gebruikt — en staan ze daar één
+   * keer in plaats van drie keer overgetypt. Dat is precies wat de noot hierboven
+   * wilde, en het zou deze toets rood maken terwijl de pagina beter is geworden.
+   *
+   * Dus verhuist de bewering mee naar waar hij nooit had mogen weggaan: NAAR WAT
+   * DE BEZOEKER KRIJGT. dist/test-sample/index.html is het antwoord op de vraag
+   * die deze sectie stelt — staat de verklaring op de goedkoopste deur van de
+   * site? — en het is een antwoord dat waar blijft, wie hem daar ook zet.
+   *
+   * Een verouderde build wordt overgeslagen en niet afgekeurd; zie
+   * tests/lib/build.mjs voor waarom, en tests/planning.test.mjs voor dezelfde
+   * vorm. De bron wordt daarnaast nog één ding gevraagd: dat de pagina de
+   * gedeelde stroom AANROEPT. Zonder die regel zou een pagina die de verklaring
+   * opnieuw overtypt deze toets alsnog halen.
+   */
   const TS = {
-    en: read('src/pages/test-sample.astro'),
-    nl: read('src/pages/nl/test-sample.astro'),
+    en: { src: read('src/pages/test-sample.astro'), dist: new URL('../dist/test-sample/index.html', import.meta.url) },
+    nl: { src: read('src/pages/nl/test-sample.astro'), dist: new URL('../dist/nl/test-sample/index.html', import.meta.url) },
   };
-  for (const [lang, src] of Object.entries(TS)) {
+  for (const [lang, { src, dist: distPad }] of Object.entries(TS)) {
+    /* DE STROOM EN NIET EEN EIGEN FORMULIER. `mode="sample"` is wat het aantal op
+       één zet en de levertijdstap weglaat; zonder die stand is dit de gewone
+       bestelling met een proefprijs eronder. */
+    ok(`${lang}: de proefvisual gebruikt de gedeelde bestelstroom`,
+      /<OrderFlow[^>]*mode="sample"/.test(src), true);
+    ok(`${lang}: en heeft geen eigen bestelformulier meer`,
+      /<form[^>]*action="\/api\/order"/.test(src), false);
+
+    const staat = buildStaat(distPad);
+    if (!staat.er || staat.oud) {
+      console.log(`      (${lang} overgeslagen — ${staat.uitleg})`);
+      continue;
+    }
+    const html = readFileSync(distPad, 'utf8');
     ok(`${lang}: de proefvisual vraagt de zakelijke verklaring`,
-      /name="business_declaration" value="yes" required/.test(src), true);
-    ok(`${lang}: met de versie ernaast`, /name="business_version"/.test(src), true);
+      /name="business_declaration"[^>]*required/.test(html), true);
+    ok(`${lang}: met de versie ernaast`,
+      new RegExp(`name="business_version" value="${BUSINESS_VERSION}"`).test(html), true);
     ok(`${lang}: en de herroepingsverklaring`,
-      /name="withdrawal_consent" value="yes" required/.test(src), true);
-    ok(`${lang}: met die versie ernaast`, /name="consent_version"/.test(src), true);
+      /name="withdrawal_consent"[^>]*required/.test(html), true);
+    ok(`${lang}: met die versie ernaast`, /name="consent_version" value="/.test(html), true);
     /* UIT DE GEDEELDE BRON en niet als eigen tekst op de pagina. Een tweede kopie
        van een juridische verklaring is hoe de twee uit elkaar gaan lopen — en dan
-       staat er op de goedkoopste deur een andere belofte dan op de duurste. */
-    ok(`${lang}: de tekst komt uit business.js`, /currentBusiness\('(en|nl)'\)/.test(src), true);
-    ok(`${lang}: en uit consent.js`, /currentConsent\('(en|nl)'\)/.test(src), true);
-    ok(`${lang}: met een echte import en niet alleen een verwijzing in commentaar`,
-      /^import \{ BUSINESS_VERSION, currentBusiness \} from '\.\.?\/(\.\.\/)?data\/business\.js';$/m.test(src), true);
-    /* En in de JUISTE taal: een Nederlandse pagina die currentBusiness('en') aanroept
+       staat er op de goedkoopste deur een andere belofte dan op de duurste. Op de
+       gebouwde pagina is dat te toetsen op de TEKST zelf, wat sterker is dan op de
+       aanroep: een overgetypte zin die per ongeluk gelijk is, is geen probleem —
+       een die afwijkt, valt hier om. */
+    ok(`${lang}: de tekst komt letterlijk uit business.js`,
+      html.includes(esc(currentBusiness(lang))), true);
+    ok(`${lang}: en uit consent.js`, html.includes(esc(currentConsent(lang))), true);
+    /* En in de JUISTE taal: een Nederlandse pagina met de Engelse verklaring erop
        is precies de fout die deze sectie hierboven beschrijft, maar dan omgekeerd. */
-    ok(`${lang}: in de eigen taal`, new RegExp(`currentBusiness\\('${lang}'\\)`).test(src), true);
+    const anders = lang === 'nl' ? 'en' : 'nl';
+    ok(`${lang}: en niet in de andere taal`, html.includes(esc(currentBusiness(anders))), false);
   }
+}
+
+/* Astro zet in html-tekst dezelfde drie tekens om als elke andere renderer. Zonder
+   deze omzetting valt een verklaring met een apostrof of een &-teken erin ten
+   onrechte om — en dat is precies het soort toets dat daarna wordt uitgezet. */
+function esc(s) {
+  return String(s).replace(/&/g, '&#38;').replace(/</g, '&#60;').replace(/>/g, '&#62;');
 }
 
 console.log('\nde server legt het vast en houdt de betaallink tegen');

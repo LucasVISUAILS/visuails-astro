@@ -47,6 +47,24 @@
  * belofte op een pagina.
  */
 
+/*
+ * ── TWEE ZINNEN PER VERHOUDING, EN DAT IS GEEN VERDUBBELING ─────────────────
+ *
+ * Lucas, 13 augustus 2026, bij de tegels in de brand kit: *"Wellicht bij elk
+ * formaat aangeven waarvoor het bedoelt is."* Terecht — een vorm laat zien DAT
+ * hij anders is, niet WAARVOOR hij anders is. "3:4" naast "4:5" is voor een merk
+ * dat zijn eerste bestelling plaatst geen keuze maar een quiz.
+ *
+ * `use` is die zin op de tegel: vier tot zes woorden, want een tegel van 150px
+ * naast vier andere is geen plek voor een alinea, en een tegelrij die je moet
+ * LEZEN in plaats van scannen kiest niemand meer op vorm.
+ *
+ * `what` is dezelfde vraag met de ruimte om hem te beantwoorden — waar de keuze
+ * er echt toe doet en er plek is: het bestelformulier, een uitklap, de mail. Ze
+ * spreken elkaar niet tegen, ze zijn dezelfde uitleg op twee lengtes, en ze
+ * staan naast elkaar in dit bestand juist zodat ze dat blijven.
+ */
+
 /**
  * De verhoudingen die een catalogbestelling kan krijgen.
  *
@@ -63,6 +81,10 @@ export const CATALOG_RATIOS = [
     label: '1:1',
     css: '1 / 1',
     name: { en: 'Square', nl: 'Vierkant' },
+    use: {
+      en: 'Marketplaces and ads. The safe one.',
+      nl: 'Marktplaatsen en advertenties. De veilige.',
+    },
     what: {
       en: 'Works everywhere. Amazon, bol and Zalando all accept it on a main image, and it is the safest choice if you are not sure.',
       nl: 'Werkt overal. Amazon, bol en Zalando accepteren hem op een hoofdafbeelding, en het is de veiligste keuze als je twijfelt.',
@@ -74,6 +96,10 @@ export const CATALOG_RATIOS = [
     label: '4:5',
     css: '4 / 5',
     name: { en: 'Portrait 4:5', nl: 'Staand 4:5' },
+    use: {
+      en: 'Shopify and social feeds.',
+      nl: 'Shopify en social feeds.',
+    },
     what: {
       en: 'The Shopify default and the tallest crop a feed will show without cutting. More of the product on the same screen width.',
       nl: 'De standaard van Shopify en de hoogste uitsnede die een feed toont zonder af te snijden. Meer product op dezelfde schermbreedte.',
@@ -85,6 +111,10 @@ export const CATALOG_RATIOS = [
     label: '3:4',
     css: '3 / 4',
     name: { en: 'Portrait 3:4', nl: 'Staand 3:4' },
+    use: {
+      en: 'Classic webshop grids.',
+      nl: 'Klassieke webshop-grids.',
+    },
     what: {
       en: 'The classic webshop portrait. A little squarer than 4:5, and what most older shop themes are built around.',
       nl: 'Het klassieke webshop-portret. Iets vierkanter dan 4:5, en waar de meeste oudere shopthema\'s op gebouwd zijn.',
@@ -108,6 +138,10 @@ export const LIFESTYLE_RATIOS = [
     label: '16:9',
     css: '16 / 9',
     name: { en: 'Wide 16:9', nl: 'Breed 16:9' },
+    use: {
+      en: 'Banners and page headers.',
+      nl: 'Banners en paginakoppen.',
+    },
     what: {
       en: 'A banner. A page header, an email header, a hero on a category page — anything that has to be wider than it is tall.',
       nl: 'Een banner. Een paginakop, een e-mailkop, een hero op een categoriepagina — alles wat breder moet zijn dan hoog.',
@@ -132,6 +166,38 @@ export const DEFAULT_RATIO_ID = 'square';
 export function ratiosPerImage(service) {
   const s = ladderish(service);
   return s === 'lifestyle' || s === 'complete';
+}
+
+/**
+ * De verhouding als viewBox: `'0 0 4 5'`.
+ *
+ * ── DE BUG VAN 13 AUGUSTUS 2026 ────────────────────────────────────────────
+ *
+ * De tegels in de brand kit tekenden hun vorm met `style="aspect-ratio:4 / 5"`,
+ * en op Lucas' scherm stond elke vorm als een streepje van één pixel breed. De
+ * reden staat al in dit project, twee keer: /account draait op `style-src
+ * 'self'`, en `style-src-attr` valt daarop terug — dus een style-ATTRIBUUT wordt
+ * geweigerd. Zie de kop van swatch() in src/lib/account.js, waar exact dezelfde
+ * fout op 7 augustus de kleurvakjes doorzichtig maakte. Twee keer dezelfde val
+ * in één bestand is geen pech maar een ontbrekende afspraak, dus hier is hij:
+ *
+ *   EEN VERHOUDING DIE JE MOET TONEN, TOON JE MET EEN viewBox.
+ *
+ * `viewBox` is een SVG-attribuut en geen CSS. Het gaat niet door style-src, en
+ * een <svg> met viewBox heeft een INTRINSIEKE verhouding — dus `height: 64px;
+ * width: auto` in het stylesheet levert 51px bij 4:5, zonder dat de CSS hoeft te
+ * weten welke verhoudingen bestaan. Nieuwe verhouding erbij in dit bestand?
+ * Tekent zichzelf. Een klasse per verhouding in account.css zou dat niet doen.
+ *
+ * Onbekende invoer wordt '0 0 1 1' en geen lege string: een viewBox die ontbreekt
+ * laat de svg terugvallen op nul breed, en dan staat het streepje er alsnog.
+ */
+export function ratioViewBox(r) {
+  const m = /^([0-9]+)x([0-9]+)$/.exec(String(r?.ratio || ''));
+  if (!m) return '0 0 1 1';
+  const w = Number.parseInt(m[1], 10);
+  const h = Number.parseInt(m[2], 10);
+  return (w > 0 && h > 0) ? `0 0 ${w} ${h}` : '0 0 1 1';
 }
 
 /** De verhoudingen die bij deze dienst horen. */

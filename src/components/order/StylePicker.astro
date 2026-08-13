@@ -92,7 +92,12 @@ const looks = data.map((s) => {
 });
 ---
 
-<fieldset class="pl-fieldset pl-look">
+{/* `data-pl-look` is de haak waar syncStyle() in pipeline.js op zoekt — de
+    tegenhanger van [data-pl-bg] op de achtergrondkiezer. Hij doet niets op
+    /start/lifestyle, waar deze kiezer altijd van toepassing is; hij is er voor
+    /test-sample, waar de bezoeker de soort in het formulier zelf kiest en de
+    lookvraag dus moet kunnen verdwijnen. */}
+<fieldset class="pl-fieldset pl-look" data-pl-look>
   <legend class="pl-sr">{c.label}</legend>
   <h3 class="pl-sub-h" id="pl-look-h">{c.label}</h3>
   <p class="hint pl-look-hint">{c.hint}</p>

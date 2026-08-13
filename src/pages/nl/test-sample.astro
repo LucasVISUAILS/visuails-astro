@@ -1,93 +1,38 @@
 ---
-import { waHref } from '../../data/whatsapp.js';
-// VISUAILS — test sample. Ported from
-// /tmp/visuails-rebuild/src/routes/test-sample/+page.svelte: a 2-step
-// request wizard (style/model/product -> contact) inside one <form>.
-//
-// The Svelte source used $state(step) with class:hidden-step to keep both
-// steps mounted so field values survive stepping back and forth. This is a
-// static Astro page (no client framework state), so the step-switching is
-// reimplemented as vanilla JS below, keeping the exact same markup/fields
-// and the same "both steps stay in the DOM" behavior.
-import Layout from '../../layouts/Layout.astro';
-// De twee juridische verklaringen onder aan het formulier. Uit dezelfde bron als
-// src/components/order/OrderFlow.astro, want twee eigen kopieen van een
-// juridische tekst is hoe ze uit elkaar gaan lopen.
-import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
-import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
-import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../../data/pricing.js';
 /*
- * ── DIT FORMULIER VROEG TWEE DINGEN DIE NIET BIJ ELKAAR HOORDEN — 13 aug 2026 ─
+ * VISUAILS — /nl/test-sample.
  *
- * Lucas: *"Test sample form is nog steeds oude form. Dit zou meer hetzelfde
- * moeten zijn als catalog form en als bezoekers lifestyle kiezen moet deze
- * aangepast worden daarop, dus achtergrondkleur optie verdwijnt dan."*
+ * ── 13 AUGUSTUS 2026: DE PAGINA WIJST NU NAAR DE STROOM DIE ER AL LAG ───────
  *
- * Zie de Engelse pagina voor de volledige afweging. Kort: de lookvraag stond er
- * altijd, met eronder *"Sla dit over als je hierboven catalog koos"* — een
- * formulier dat de bezoeker vraagt zelf een vraag over te slaan. En de
- * tegenhanger ontbrak: wie catalog koos kreeg de achtergrondvraag nergens, terwijl
- * dat op /start de kernvraag van een catalogbestelling is.
+ * Deze pagina had een eigen bestelformulier: twee stappen, een eigen uploader,
+ * een eigen wizard in interactions.js, een eigen stijlkiezer en een eigen
+ * modelkiezer — allemaal naast de stroom die /start al gebruikt. OrderFlow.astro
+ * kreeg op 11 augustus een `mode="sample"` die dat allemaal overbodig maakte, en
+ * die stand werd door geen enkele pagina meegegeven. Het formulier hieronder is
+ * daarom weg en de component staat ervoor in de plaats.
  *
- * Nu volgt de tweede vraag de eerste, met `:has()` en zonder JavaScript. Wat CSS
- * niet kan is een veld uit de POST houden; dat gebeurt in functions/api/order.js.
+ * WAT ER BLIJFT is de verkooppagina eromheen: de kop, wat je krijgt, hoe het
+ * werkt, en het do-en-don'tblok over de foto die je stuurt. Die tekst hoort bij
+ * deze pagina en bij geen andere. Vandaar `hero={false}` op de component: de kop
+ * staat hier al, en twee koppen is er een te veel.
+ *
+ * WAT ER WEG IS, en dat is met opzet geen verhuizing: de handgeschreven
+ * stijltegels, de modelrij, de achtergrondkeuze en de tweestapswizard. Die
+ * vragen staan alle vier in de stroom, in dezelfde woorden als bij een betaalde
+ * bestelling, en dat is precies wat een proef hoort te bewijzen.
  */
-import { styles as styleData } from '../../data/styles.nl.js';
-import { RECOMMENDED, CUSTOM_ID, DEFAULT_ID, copy as bgCopy } from '../../data/backgrounds.js';
+import Layout from '../../layouts/Layout.astro';
+import OrderFlow from '../../components/order/OrderFlow.astro';
+/* Allebei de kiezers, en niet één. Op /start ligt de dienst vast voordat de
+   pagina laadt; hier is hij de eerste vraag van het formulier, dus moeten ze er
+   allebei staan en laat pipeline.js er één zien. Zie syncStyle() daar. */
+import StylePicker from '../../components/order/StylePicker.astro';
+import Step1Options from '../../components/order/Step1Options.astro';
+import { waHref } from '../../data/whatsapp.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../../data/pricing.js';
 
-// De €1 stond op vier plekken ingetypt en de leverstap beloofde
-// "~24 uur" — een cijfer dat de capaciteitspoort nooit heeft goedgekeurd. Het
-// zijn tier-feiten, dus ze komen nu uit pricing.js. "Geen abonnement" ging mee:
-// dat klopt niet meer sinds de maandplannen live gingen, en /faq en /about
-// zijn om precies die reden al gecorrigeerd. De proef loopt via de losse-
-// producten-lane en noemt dus die doorlooptijd, niets snellers.
-// Sinds 9 augustus 2026 geldt hetzelfde voor de OMSCHRIJVING van dat bedrag. Het
-// heette "verificatie", en dat woord beloofde een controle die er niet is — zie de
-// noot bij TEST_SAMPLE in pricing.js. De zin staat nu als `feeNote` in dat bestand,
-// want hij stond op elf plekken los ingetypt.
 const SAMPLE = TEST_SAMPLE.nl;
 const TIMING = turnaround('unattended', 'nl');
-
-// w/h are the intrinsic pixel size of each file in public/img — the .choice
-// tile crops with object-fit, so these only reserve the aspect-ratio box.
-//
-// DE FOTO'S BLIJVEN VAN DEZE PAGINA, de namen niet — zie de Engelse pagina.
-const SAMPLE_LOOK_PHOTO: Record<string, { photo: string; w: number; h: number }> = {
-  'phone-made': { photo: '/img/lifestyle-phone-made-01.webp', w: 2400, h: 1792 },
-  glow: { photo: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400 },
-  flash: { photo: '/img/lifestyle-flash-01.webp', w: 928, h: 1152 },
-  dunes: { photo: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
-};
-/* `custom` valt eruit: dat is ontwerpwerk en een gesprek, en dat is geen belofte
-   die een proef van een euro kan houden. Wie dat wil, komt bij /nl/start/lifestyle
-   uit. Een ontbrekende tegelfoto laat de build luidruchtig omvallen. */
-const looks = styleData
-  .filter((s) => s.slug !== 'custom')
-  .map((s) => {
-    const shot = SAMPLE_LOOK_PHOTO[s.slug];
-    if (!shot) throw new Error(`test-sample: geen tegelfoto voor stijl "${s.slug}". Zet hem in SAMPLE_LOOK_PHOTO of haal hem uit styles.nl.js.`);
-    return { slug: s.slug, name: s.name, ...shot };
-  });
-
-const bgc = bgCopy('nl');
-// Nine of the ten roster headshots were produced at 1195x1600; model-rae.webp
-// is the exception at 800x1071. Assuming one size for the family would have
-// put a wrong box under Rae, so the exception is named.
-const ROSTER_ODD: Record<string, [number, number]> = { Rae: [800, 1071] };
-const roster = ['Aaron', 'Ava', 'Dana', 'Elias', 'Fabi', 'Lisa', 'Maegan', 'Rae', 'Ryan', 'Seme']
-  .map((name) => {
-    const [w, h] = ROSTER_ODD[name] ?? [1195, 1600];
-    return { name, photo: `/img/model-${name.toLowerCase()}.webp`, w, h };
-  });
-
-// Lucas, 2026-07-30: zie de Engelse tak voor de volledige toelichting — deze
-// keuze (catalog of lifestyle, één keer gemaakt) heeft geen eigen backend
-// nodig. /api/order schrijft elk veld dat geen eigen kolom heeft al naar
-// details_json, precies zoals `style` en `model` hieronder al doen.
-const sampleTypes = [
-  { value: 'catalog', label: 'Catalog', photo: '/img/catalog-after.webp', w: 1800, h: 1800, alt: 'Voorbeeld van een catalog-productfoto, op een egale ondergrond' },
-  { value: 'lifestyle', label: 'Lifestyle', photo: '/img/lifestyle-glow-03.webp', w: 768, h: 1376, alt: 'Voorbeeld van een lifestyle-productfoto, gestyled in een scène' },
-];
 ---
 
 <Layout
@@ -177,248 +122,74 @@ const sampleTypes = [
     </div>
   </section>
 
-  <!-- REQUEST WIZARD -->
+  <!-- DE AANVRAAG — SINDS 13 AUGUSTUS 2026 DEZELFDE STROOM ALS /nl/start ─────
+       Lucas: *"Ook de test sample is nog steeds het oude formulier, deze zou al
+       2 keer aangepast moeten zijn. Zelfde als lifestyle orderflow maar dan
+       simpel en 1 product automatisch maar niet zichtbaar geselecteerd."*
+
+       Hij had gelijk, en de oorzaak was niet dat het niet gebouwd was.
+       OrderFlow.astro heeft sinds 11 augustus een complete `mode="sample"` — de
+       soortkeuze, het vaste aantal van één, geen levertijdstap, het vaste bedrag
+       — maar GEEN ENKELE PAGINA GAF DIE MEE. Hier stond nog het oude
+       tweestapsformulier ernaast, met een eigen uploader en een eigen wizard in
+       interactions.js, en dus werd twee keer het verkeerde bestand aangepast.
+
+       Wat de bezoeker hiermee krijgt en op het oude formulier miste: uploads per
+       product met opnieuw-proberen, de modelkiezer, de vier vaste opnamen, de
+       gratis extra referentiefoto's, de beeldverhouding, de foutafhandeling per
+       veld, en de bevestiging voor het versturen.
+
+       BEIDE KIEZERS IN DE SLOT. Op /nl/start staat de dienst vast en slot de
+       pagina er één in; hier kiest de bezoeker in het formulier zelf, dus staan
+       ze er allebei en laten syncBackground() en syncStyle() in pipeline.js er
+       één zien. `service="lifestyle"` is alleen de BEGINSTAND van die keuze —
+       wat er gepost wordt is 'test-sample', en de soort reist in `sample_type`
+       mee. -->
   <section>
     <div class="container narrow">
       <div class="section-head">
         <h2>Vraag je proefvisual aan</h2>
-        <p>Twee snelle stappen. Vertel ons de look die je wilt, daarna waar we die naartoe sturen.</p>
+        <p>Hetzelfde formulier als bij een betaalde bestelling, met het aantal vast op één product.</p>
       </div>
-      <div class="card" style="padding:clamp(1.4rem,3vw,2.4rem)">
-        <!-- Weigeringen komen van /api/order terug als een redirect met ?error=…,
-             omdat dit formulier een gewone POST doet en geen fetch. Deze blokken
-             zijn waar dat landt; initFormRefusal() in interactions.js haalt het
-             `hidden` van het passende blok en zet de focus erop. In de opmaak en
-             niet vanuit JS, zodat de tekst mee vertaald wordt met de rest van de
-             pagina en in een diff te zien is.
 
-             role="status" en niet role="alert": de bezoeker is zojuist genavigeerd,
-             dus dit is de toestand van de pagina waar hij aankomt — niet iets dat
-             hem onderbrak. -->
-        <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
-          <strong>Je hebt je proefvisual al gehad.</strong>
-          Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven —
-          je hebt hier niet voor betaald.
-          Klaar voor het echte werk? De <a href="/nl/start">gewone diensten</a> beginnen bij één
-          product, zonder minimumafname — of <a href="/nl/contact">stuur ons een bericht</a> als die
-          eerste proef nooit is aangekomen, of als een collega hem zonder overleg heeft besteld.
-        </div>
-        <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
-          <strong>Dat e-mailadres kwam er niet doorheen.</strong>
-          Kijk het even na op een typefout en verstuur opnieuw — het is het adres waar de
-          afgewerkte visual naartoe gaat.
-        </div>
-        <form action="/api/order" method="post" data-wizard novalidate>
-          <input type="hidden" name="service" value="test-sample" />
-          <input type="hidden" name="redirect" value="/nl/thank-you" />
-          <input type="hidden" name="lang" value="nl" />
-          <!-- The photographs do NOT travel in this POST. /api/order refuses to
-               read File entries by design, so they are staged into R2 by
-               /api/upload first and this field carries the batch id that ties
-               them to the order. initTestSampleUpload() in interactions.js
-               writes it; empty here is the correct initial state. -->
-          <input type="hidden" name="upload_batch" value="" />
-          <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
-          <div class="progress" aria-hidden="true"><i data-wizard-progress style="transform:scaleX(.5)"></i></div>
+      <!-- Weigeringen komen van /api/order terug als een redirect met ?error=…,
+           omdat het versturen eindigt in een echte navigatie. initFormRefusal()
+           in interactions.js haalt het `hidden` van het passende blok en zet de
+           focus erop. In de opmaak en niet vanuit JS, zodat de tekst mee vertaald
+           wordt met de rest van de pagina en in een diff te zien is.
 
-          <!-- STEP 1 -->
-          <div data-wizard-step="1">
-            <h3 style="margin-bottom:.4rem">Stap 1 &middot; Stijl, model &amp; product</h3>
-            <p class="hint" style="margin-bottom:1.4rem">Kies de look die je zoekt en upload je productfoto.</p>
-
-            <div class="field">
-              <p class="ts-group-h" id="ts-type-h">Wat wil je zien? <span class="req">*</span></p>
-              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-type-h">
-                {sampleTypes.map((t, i) => (
-                  <label class="choice">
-                    {/* De id's zijn niet decoratief: de CSS onderaan hangt met
-                        :has() aan precies deze twee. */}
-                    <input type="radio" id={`ts-type-${t.value}`} name="sample_type" value={t.value} required={i === 0} />
-                    <div class="choice-media"><img src={t.photo} alt={t.alt} loading="lazy" decoding="async" width={t.w} height={t.h} /></div>
-                    <div class="choice-label">{t.label}</div>
-                  </label>
-                ))}
-              </div>
-              <span class="hint" style="margin-top:.3rem">Catalog is een strakke foto van het product op zichzelf. Lifestyle is het product gestyled in een scène, op een model. Wat voor je shop nu het belangrijkst is, is ook wat je zou moeten testen — de volgende vraag volgt je keuze.</span>
-            </div>
-
-            {/* ── CATALOG: DE ACHTERGROND ────────────────────────────────────
-                 Alleen zichtbaar bij catalog. De hexwaarden komen uit
-                 backgrounds.js, want dat is waar de studio tegen rendert. */}
-            <div class="field ts-when-catalog">
-              <p class="ts-group-h" id="ts-bg-h">{bgc.label}</p>
-              <span class="hint" style="margin-bottom:.3rem">{bgc.hint}</span>
-              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-bg-h">
-                {RECOMMENDED.map((b) => (
-                  <label class="choice">
-                    <input type="radio" name="background" value={b.id} checked={b.id === DEFAULT_ID} />
-                    <div class="choice-media ts-swatch" style={`background:${b.hex}`}></div>
-                    <div class="choice-label">{b.name.nl} <span class="ts-hex">{b.hex}</span></div>
-                  </label>
-                ))}
-                <label class="choice">
-                  <input type="radio" name="background" value={CUSTOM_ID} />
-                  <div class="choice-media ts-swatch ts-swatch-own"></div>
-                  <div class="choice-label">{bgc.customH}</div>
-                </label>
-              </div>
-              <div class="ts-own-hex">
-                <label for="ts-bg-custom">Je hexwaarde</label>
-                <input class="input" type="text" id="ts-bg-custom" name="background_custom" placeholder="#F7F5F1" autocomplete="off" spellcheck="false" />
-                {/* Op /start waarschuwt pipeline.js live bij een donkere eigen
-                    kleur. Live kan hier niet, dus staat die waarschuwing als
-                    vaste tekst — weglaten zou betekenen dat de proef stil op een
-                    ondergrond loopt waarmee Amazon hem niet accepteert. */}
-                <span class="hint">{bgc.customHint} {bgc.warn}</span>
-                <span class="hint">{bgc.matchNote}</span>
-              </div>
-            </div>
-
-            {/* ── LIFESTYLE: DE LOOK ─────────────────────────────────────────
-                 Hier stond "Sla dit over als je hierboven catalog koos". Een
-                 formulier dat vraagt een vraag over te slaan, stelt die vraag te
-                 vaak. Nu staat hij er alleen als hij van toepassing is. */}
-            <div class="field ts-when-lifestyle">
-              <p class="ts-group-h" id="ts-style-h">Kies een look</p>
-              <span class="hint" style="margin-bottom:.3rem">De wereld waarin je product komt. Vier vaste stijlen — dezelfde vier als het lifestyle-werk. Niets ligt vast.</span>
-              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-style-h">
-                {looks.map((s) => (
-                  <label class="choice">
-                    <input type="radio" name="style" value={s.slug} />
-                    <div class="choice-media"><img src={s.photo} alt={`${s.name} lifestylestijl`} loading="lazy" decoding="async" width={s.w} height={s.h} /></div>
-                    <div class="choice-label">{s.name}</div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div class="field">
-              <p class="ts-group-h" id="ts-model-h">Kies een model</p>
-              <span class="hint" style="margin-bottom:.3rem">Optioneel voor de meeste producten — handig voor kleding en accessoires.</span>
-              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-model-h">
-                {roster.map((m) => (
-                  <label class="choice">
-                    <input type="radio" name="model" value={m.name} />
-                    <div class="choice-media"><img src={m.photo} alt={m.name} loading="lazy" decoding="async" width={m.w} height={m.h} /></div>
-                    <div class="choice-label">{m.name}</div>
-                  </label>
-                ))}
-                <label class="choice">
-                  <input type="radio" name="model" value="VISUAILS choose" />
-                  <div class="choice-media mono"><div class="mono-av"><svg viewBox="0 0 24 24" class="i" style="width:26px;height:26px;color:var(--accent-bright)" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z" /></svg></div></div>
-                  <div class="choice-label">Laat VISUAILS kiezen</div>
-                </label>
-              </div>
-            </div>
-
-            <div class="field">
-              <label for="ts-upload">Upload productfoto’s <span class="req">*</span></label>
-              <label class="dropzone" for="ts-upload">
-                <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16" /></svg>
-                <div><strong>Klik om te uploaden</strong> of sleep foto’s hierheen</div>
-                <div class="hint" style="margin-top:.4rem">Eén duidelijke foto volstaat — maar voor-, achterkant, een detail en de stof geven het beste resultaat.</div>
-                <!-- No `name`, for the same reason /start's file input has none:
-                     nothing about this control belongs in the form POST.
-                     Visually hidden via .ts-file-input rather than `hidden`:
-                     a display:none input cannot be focused or activated, so the
-                     picker was unreachable by keyboard entirely. -->
-                <input type="file" id="ts-upload" accept="image/*" multiple class="ts-file-input" />
-              </label>
-              <ul class="ts-list" data-ts-list></ul>
-              <p class="ts-count" data-ts-count aria-live="polite"></p>
-              <p class="ts-msg" data-ts-msg role="status"></p>
-              <span class="hint">Meer hoeken helpen ons je product precies te matchen — zie <a href="/nl/upload-guidelines" style="color:var(--accent-bright)">wat je moet sturen</a>.</span>
-            </div>
-
-            <div class="field">
-              <label for="ts-notes">Nog iets wat we moeten weten?</label>
-              <textarea class="textarea" id="ts-notes" name="notes" placeholder="Optioneel — kleuren die kloppend moeten blijven, een hoek die je verkiest, iets specifieks over het product."></textarea>
-            </div>
-
-            <div class="flex" style="justify-content:flex-end;margin-top:.4rem">
-              <button type="button" class="btn btn-primary" data-wizard-next>Volgende
-                <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- STEP 2 -->
-          <div data-wizard-step="2" class="hidden-step">
-            <h3 style="margin-bottom:.4rem">Stap 2 &middot; Details &amp; contact</h3>
-            <p class="hint" style="margin-bottom:1.4rem">Waar zullen we je afgewerkte proef naartoe sturen?</p>
-
-            <div class="row-2">
-              <div class="field">
-                <label for="ts-name">Naam <span class="req">*</span></label>
-                <input class="input" type="text" id="ts-name" name="name" autocomplete="name" required />
-              </div>
-              <div class="field">
-                <label for="ts-brand">Merk- of winkelnaam <span class="req">*</span></label>
-                <input class="input" type="text" id="ts-brand" name="brand" autocomplete="organization" required />
-              </div>
-            </div>
-
-            <h4 style="margin:.6rem 0 1rem">Contact</h4>
-            <div class="row-2">
-              <div class="field">
-                <label for="ts-email">E-mail <span class="req">*</span></label>
-                <input class="input" type="email" id="ts-email" name="email" autocomplete="email" required />
-              </div>
-              <div class="field">
-                <label for="ts-phone">Telefoon <span class="hint" style="font-weight:400">— optioneel</span></label>
-                <input class="input" type="tel" id="ts-phone" name="phone" autocomplete="tel" placeholder="+31 6 &hellip;" />
-                <span class="hint">Voeg het toe als je wilt dat we je op WhatsApp berichten — vermeld je landcode.</span>
-              </div>
-            </div>
-
-            <p class="hint" style="margin:.4rem 0 1.4rem">Je proef wordt geleverd via een downloadlink naar je e-mail. Als we iets moeten navragen, doen we dat via WhatsApp of e-mail.</p>
-
-            {/* ── DE TWEE VERKLARINGEN — 12 AUGUSTUS 2026 ─────────────────────
-                DIT FORMULIER HAD ER GEEN VAN BEIDE, en dat is het gat dat het
-                meest kostte: /test-sample is de goedkoopste deur op de site en
-                dus de plek waar een particulier het eerst binnenkomt, EN het is
-                de enige bestelling die meteen wordt afgerekend. Het uitgebreide
-                bestelformulier (src/components/order/OrderFlow.astro) vroeg de
-                herroepingsverklaring sinds augustus; deze pagina heeft een eigen
-                wizard en is toen overgeslagen.
-
-                Er staat hier geen land- en geen btw-veld, en dat blijft zo: voor
-                een proefvisual van EUR 1 is dat te veel formulier. De VERKLARING
-                is het dragende element van de uitsluiting (art. 6:230g lid 1 sub
-                a BW gaat over de hoedanigheid van de klant en niet over een
-                nummer), en die past in twee vinkjes. Het corroborerende bewijs
-                komt bij de echte bestelling.
-
-                De teksten en hun versies komen uit src/data/business.js en
-                src/data/consent.js -- dezelfde bron als het andere formulier, want
-                twee eigen kopieen van een juridische verklaring is hoe ze uit
-                elkaar gaan lopen. */}
-            <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
-            <label class="pl-consent" style="display:flex;gap:.6rem;align-items:flex-start;margin-bottom:.9rem">
-              <input type="checkbox" name="business_declaration" value="yes" required />
-              <span>{currentBusiness('nl')}</span>
-            </label>
-
-            <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
-            <label class="pl-consent" style="display:flex;gap:.6rem;align-items:flex-start;margin-bottom:1.2rem">
-              <input type="checkbox" name="withdrawal_consent" value="yes" required />
-              <span>{currentConsent('nl')}</span>
-            </label>
-
-            <div class="flex" style="justify-content:space-between;margin-top:.4rem">
-              <button type="button" class="btn btn-ghost" data-wizard-back>
-                <svg viewBox="0 0 24 24" class="i" style="transform:rotate(180deg)" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                Terug
-              </button>
-              <button type="submit" class="btn btn-primary">Proef aanvragen</button>
-            </div>
-          </div>
-                  <p class="form-help">Vast bij een stap, of ergens niet zeker van? <a href={waHref("Hoi VISUAILS, ik ben een bestelling aan het invullen en heb een vraag.")} target="_blank" rel="noopener">Stuur ons een bericht op WhatsApp</a> — meestal binnen een uur antwoord op werkdagen, en we plaatsen de bestelling met je.</p>
-        </form>
+           role="status" en niet role="alert": de bezoeker is zojuist genavigeerd,
+           dus dit is de toestand van de pagina waar hij aankomt — niet iets dat
+           hem onderbrak. -->
+      <div class="ts-refused" data-form-refusal="sample-used" role="status" tabindex="-1" hidden>
+        <strong>Je hebt je proefvisual al gehad.</strong>
+        Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven —
+        je hebt hier niet voor betaald.
+        Klaar voor het echte werk? De <a href="/nl/start">volledige diensten</a> beginnen bij
+        één product, zonder minimumafname — of <a href="/nl/contact">stuur ons een bericht</a>
+        als de eerste proef nooit is aangekomen, of als een collega hem heeft aangevraagd
+        zonder het te zeggen.
       </div>
-      <p class="hint" style="text-align:center;margin-top:1rem">Eén proef per bedrijf &middot; {SAMPLE.feeNote} &middot; meer betaal je niet voor de proef.</p>
+      <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
+        <strong>Dat e-mailadres kwam niet door.</strong>
+        Controleer het even op een typefout en stuur het opnieuw — het is het adres waar de
+        afgeronde visual op binnenkomt.
+      </div>
     </div>
   </section>
+
+  <OrderFlow lang="nl" service="lifestyle" mode="sample" hero={false}>
+    <StylePicker lang="nl" />
+    <Step1Options lang="nl" />
+  </OrderFlow>
+
+  <section class="section-tight">
+    <div class="container narrow">
+      <p class="hint" style="text-align:center">{`Eén proef per bedrijf · ${SAMPLE.feeNote} · meer betaal je niet voor de proef.`}</p>
+      <p class="form-help" style="text-align:center;margin-top:.6rem">Vast bij een stap, of ergens niet zeker van? <a href={waHref("Hoi VISUAILS, ik ben een bestelling aan het invullen en heb een vraag.")} target="_blank" rel="noopener">Stuur ons een bericht op WhatsApp</a> — meestal binnen een uur antwoord op werkdagen, en we plaatsen de bestelling met je.</p>
+    </div>
+  </section>
+
 
   <!-- CTA BAND -->
   <section class="section-tight">

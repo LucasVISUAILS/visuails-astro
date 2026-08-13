@@ -40,6 +40,15 @@
 import { hashToken, mintToken, portalUrl } from './token.js';
 import { stampDeliveryRetention } from './retention.js';
 import { serviceLabel } from '../data/services.js';
+/* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
+   verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
+   zodat de sleutel hier niet wordt overgetypt. Zie src/data/ratios.js. */
+import { ratioById, ratioField } from '../data/ratios.js';
+/* Hoeveel beelden er per product kunnen afwijken. Uit pricing.js zou preciezer
+   zijn, maar dit is een LEESLUS over details_json en geen belofte: hoger dan het
+   echte aantal kost een paar lege lookups, lager zou een gezette afwijking laten
+   vallen. Zeven is het maximum dat een dienst vandaag levert (complete). */
+const RATIO_IMAGES_MAX = 7;
 import { hasProvenanceTag, isScannable } from './provenance.js';
 import { checkRate, clientIp } from './ratelimit.js';
 /* sendLoginLink() komt uit account.js en niet uit een eigen kopie hier — zie de noot
@@ -1158,12 +1167,35 @@ async function serveScaffold(context, orderId) {
     for (let k = 1; k <= n; k++) {
       extras.push(tekst(details[`extra_note_${key}_${k}`]) || '');
     }
+    /* ── DE BEELDVERHOUDING IN DE WERKMAP — 13 AUGUSTUS 2026 ────────────────
+     *
+     * `ratio` geldt voor de hele bestelling; `ratio_p3_2` is de afwijking voor
+     * beeld 2 van product 3. effectiveRatio() lost dat op MET de dienst erbij,
+     * zodat een opgeslagen 16:9 op een catalogbestelling niet alsnog in de map
+     * belandt — de browsercontrole is dan omzeild of de bestelling is oud.
+     *
+     * DE LABEL EN NIET HET ID. In de map staat "4:5" en niet "portrait45": dit
+     * is het bestand dat een mens in de studio leest voordat hij begint, en een
+     * id is een woord dat je moet opzoeken.
+     *
+     * ALLEEN DE ECHTE AFWIJKINGEN. Een leeg veld betekent "volg de bestelling",
+     * en drie regels die alle drie hetzelfde zeggen als de regel erboven, zijn
+     * drie regels die niemand meer leest. */
+    const orderRatio = ratioById(tekst(details.ratio) || '', order.service);
+    const imageRatios = [];
+    for (let k = 1; k <= RATIO_IMAGES_MAX; k++) {
+      const gezet = ratioById(tekst(details[ratioField(key, k)]) || '', order.service);
+      imageRatios.push(gezet && gezet.id !== (orderRatio && orderRatio.id) ? gezet.label : '');
+    }
+
     products.push({
       index: i,
       name: tekst(details[`product_${key}`]),
       material: tekst(details[`material_${key}`]),
       colour: tekst(details[`colour_${key}`]),
       background: tekst(details.background_hex) || tekst(details.background),
+      ratio: orderRatio ? orderRatio.label : null,
+      imageRatios: imageRatios.some(Boolean) ? imageRatios : null,
       extras,
     });
   }

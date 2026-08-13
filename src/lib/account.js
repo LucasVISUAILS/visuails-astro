@@ -97,7 +97,7 @@ import { CHANNELS, CHANNEL_IDS, channelName } from '../data/channels.js';
    gezicht, achtergrond en kanalen. Uit ratios.js en niet hier overgetypt: het
    bestelformulier, deze pagina en de werkmap moeten dezelfde lijst kennen, en
    welke verhoudingen mogen verschilt per dienst — zie ratiosFor(). */
-import { ratiosFor, ratiosPerImage, ratioById } from '../data/ratios.js';
+import { ratiosFor, ratiosPerImage, ratioById, ratioViewBox } from '../data/ratios.js';
 import { mailNote } from '../data/mailNote.js';
 // Afronden staat sinds 8 augustus 2026 in zijn eigen bestand omdat portal.js
 // hem óók nodig heeft — zie de kop van close.js. Hier stond dezelfde functie
@@ -482,6 +482,9 @@ const COPY = {
     bkFaceLede: 'Who wears it',
     bkBgLede: 'What it sits on',
     bkRatioLede: 'Image shape',
+    // Op de lege tegel, waar de andere vier hun `use` uit ratios.js hebben. Een
+    // tegel zonder die regel zou naast vier tegels mét er half afgemaakt uitzien.
+    bkRatioNone: 'We ask per order.',
     bkRatioHint: 'Set it once and every order starts here. Catalog images sit next to each other in a grid, so one shape for the whole range is what keeps that grid straight. On lifestyle this is the starting point — you can still make a single image wide when you need a banner.',
     bkChLede: 'Where you sell it',
     bkChHint: 'Only on catalog for now. Pick a marketplace that requires a pure white main image and every order starts on white — Amazon and bol check that automatically on their side.',
@@ -754,6 +757,7 @@ const COPY = {
     bkFaceLede: 'Wie het draagt',
     bkBgLede: 'Waar het op staat',
     bkRatioLede: 'Beeldverhouding',
+    bkRatioNone: 'We vragen het per bestelling.',
     bkRatioHint: 'Eén keer instellen en elke bestelling begint hier. Catalogbeelden staan naast elkaar in een grid, dus één verhouding voor je hele assortiment is wat dat grid recht houdt. Bij lifestyle is dit het startpunt — je kunt één beeld alsnog breed maken als je een banner wilt.',
     bkChLede: 'Waar je het verkoopt',
     bkChHint: 'Voorlopig alleen bij catalog. Kies je een marktplaats die een zuiver wit hoofdbeeld eist, dan begint elke bestelling op wit — Amazon en bol controleren dat aan hun kant automatisch.',
@@ -2374,6 +2378,38 @@ function swatch(hex, cls) {
   const safe = /^#[0-9A-Fa-f]{6}$/.test(String(hex || '')) ? String(hex).toUpperCase() : null;
   if (!safe) return `<span class="${cls} is-blank" aria-hidden="true"></span>`;
   return `<span class="${cls}" aria-hidden="true"><svg viewBox="0 0 1 1" preserveAspectRatio="none" focusable="false" aria-hidden="true"><rect width="1" height="1" fill="${safe}"/></svg></span>`;
+}
+
+/**
+ * Een leeg vlak in precies één verhouding, zonder één regel inline CSS.
+ *
+ * DE TWEEDE KEER DEZELFDE FOUT, en daarom staat dit hier direct onder swatch().
+ * Die functie bestaat omdat `style="--sw:#C6F100"` door de CSP van deze pagina
+ * werd geweigerd; deze bestaat omdat `style="aspect-ratio:4 / 5"` op 13 augustus
+ * 2026 om exact dezelfde reden werd geweigerd, en elke vorm in de brand kit als
+ * een streepje van één pixel op Lucas' scherm stond. `style-src 'self'` dekt ook
+ * style-ATTRIBUTEN, want `style-src-attr` valt daarop terug.
+ *
+ * DE viewBox DOET HET WERK, niet de CSS. Een <svg> met viewBox heeft een
+ * intrinsieke verhouding, dus `height: 64px; width: auto` in account.css levert
+ * bij 4:5 een vlak van 51 bij 64 zonder dat het stylesheet weet dat 4:5 bestaat.
+ * Daarmee tekent een verhouding die morgen aan src/data/ratios.js wordt
+ * toegevoegd zichzelf, wat een klasse-per-verhouding niet zou doen.
+ *
+ * De svg is LEEG: rand, achtergrond en ronding staan in account.css, want dat is
+ * opmaak en die hoort niet in een attribuut. Alleen de VORM zit hier, en de vorm
+ * is data.
+ *
+ * @param {string} viewBox  Uit ratioViewBox() — nooit uit een formulier.
+ * @param {string} [extra]  Een klasse erbij, bijvoorbeeld 'is-none'.
+ */
+function ratioShape(viewBox, extra) {
+  // Zelfde uitgangscontrole als swatch(): dit is de laatste plek voor het
+  // attribuut, en een viewBox die geen viewBox is, hoort niet in de html te
+  // komen. Vier hele getallen, verder niets.
+  const safe = /^0 0 [0-9]+ [0-9]+$/.test(String(viewBox || '')) ? String(viewBox) : '0 0 1 1';
+  const cls = extra ? `bk-ratio-box ${extra}` : 'bk-ratio-box';
+  return `<svg class="${cls}" viewBox="${safe}" preserveAspectRatio="none" focusable="false" aria-hidden="true"></svg>`;
 }
 
 /** All orders this customer has placed, most recent first. */
@@ -4931,9 +4967,9 @@ function lockSection(t, lang, models, lockByStyle) {
     const ratioTiles = !ratioApplies ? '' : ratiosFor(style).map((r) => `
       <label class="bk-ratio">
         <input type="radio" name="ratio" value="${esc(r.id)}"${ratioNow === r.id ? ' checked' : ''}>
-        <span class="bk-ratio-box" style="aspect-ratio:${esc(r.css)}" aria-hidden="true"></span>
+        ${ratioShape(ratioViewBox(r))}
         <span class="bk-ratio-name">${esc(r.label)}</span>
-        <span class="bk-ratio-what">${esc(r.name[lang] || r.name.en)}</span>
+        <span class="bk-ratio-what">${esc(r.use[lang] || r.use.en)}</span>
       </label>`).join('');
     /* `bkNoPref` op de lege tegel en niet `bkAsk`: dat is het woord dat de
        achtergrondtegel ernaast al gebruikt voor precies dezelfde keuze, en het is
@@ -4951,8 +4987,9 @@ function lockSection(t, lang, models, lockByStyle) {
       <div class="bk-ratios">
         <label class="bk-ratio is-none">
           <input type="radio" name="ratio" value=""${ratioNow ? '' : ' checked'}>
-          <span class="bk-ratio-box is-none" aria-hidden="true"></span>
+          ${ratioShape('0 0 1 1', 'is-none')}
           <span class="bk-ratio-name">${esc(t.bkNoPref)}</span>
+          <span class="bk-ratio-what">${esc(t.bkRatioNone)}</span>
         </label>${ratioTiles}
       </div>
       <p class="bk-hint">${esc(t.bkRatioHint)}</p>

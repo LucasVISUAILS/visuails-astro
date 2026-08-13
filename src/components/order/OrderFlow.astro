@@ -51,6 +51,11 @@ import {
   PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
 } from '../../data/attributes.js';
 import ProductUploader from './ProductUploader.astro';
+/* De beeldverhouding — 13 augustus 2026. Niet in de slot maar hier, want deze
+   vraag verschilt niet per dienst; zie de kop van RatioPicker.astro. */
+import RatioPicker from './RatioPicker.astro';
+import { LIFESTYLE_RATIOS, CATALOG_RATIOS, DEFAULT_RATIO_ID, ratiosPerImage } from '../../data/ratios.js';
+const CATALOG_RATIO_IDS = CATALOG_RATIOS.map((r) => r.id);
 import { localizedPath } from '../../i18n/ui.js';
 import {
   RECOMMENDED as BACKGROUNDS, CUSTOM_ID, LIGHT_THRESHOLD, copy as bgCopy,
@@ -87,8 +92,21 @@ interface Props {
    * is dat dus één van die vier, en nergens anders voor.
    */
   mode?: 'order' | 'sample';
+  /*
+   * ── DE KOP, WEL OF NIET — 13 AUGUSTUS 2026 ────────────────────────────────
+   *
+   * De drie /start-pagina's ZIJN dit formulier: vier imports, een dienstnaam,
+   * klaar. De kop hoort dan hier, want anders staat hij drie keer overgetypt.
+   *
+   * /test-sample is een verkooppagina met een formulier eronder — een eigen kop
+   * met chips, een uitleg van wat je krijgt, vier stappen, een do-en-don'tblok —
+   * en pas dan de aanvraag. Twee koppen op één pagina is er een te veel, en de
+   * onderste zou dan halverwege staan. Dus mag de pagina zeggen dat ze de kop
+   * zelf al heeft.
+   */
+  hero?: boolean;
 }
-const { lang, service, mode = 'order' } = Astro.props;
+const { lang, service, mode = 'order', hero = true } = Astro.props;
 const isSample = mode === 'sample';
 const lp = (p: string) => localizedPath(lang, p);
 
@@ -240,6 +258,7 @@ const PIPE = {
       count: 'Products',
       bg: 'Background',
       style: 'Look',
+      ratio: 'Image shape',
       outfit: 'Complete look',
       outfitN: '{price} extra × {n}',
       net: `Order value (${vatLabel('excl', 'en')})`,
@@ -320,6 +339,7 @@ const PIPE = {
       count: 'Producten',
       bg: 'Achtergrond',
       style: 'Look',
+      ratio: 'Beeldverhouding',
       outfit: 'Compleet setje',
       outfitN: '{price} extra × {n}',
       net: `Orderbedrag (${vatLabel('excl', 'nl')})`,
@@ -436,6 +456,21 @@ for (const l of ['en', 'nl'] as const) {
     placeIn: l === 'nl' ? 'Plaats bij' : 'Place in',
     shot: Object.fromEntries(SHOTS.map((x) => [x.id, x.name[l]])),
 
+    /* ── DE AFWIJKING PER BEELD, ALLEEN BIJ LIFESTYLE ──────────────────────
+     * Lucas: *"Bij lifestyle moeten deze wel per foto ingesteld kunnen worden
+     * omdat je soms een simpele post en soms een banner lifestyle foto wil."*
+     *
+     * Woorden hier, gedrag in pipeline.js — dezelfde splitsing als bij de
+     * vragen hierboven. `ratioSame` is de eerste optie van elk keuzelijstje en
+     * is met opzet de LEGE waarde: wie niets doet, volgt de verhouding van de
+     * bestelling, en dan post het beeld ook niets. Zie effectiveRatio(). */
+    ratioH: l === 'nl' ? 'Verhouding per beeld' : 'Shape per image',
+    ratioHint: l === 'nl'
+      ? 'Alleen invullen als één beeld een andere vorm moet krijgen dan de rest.'
+      : 'Only set this if one image needs a different shape from the rest.',
+    ratioSame: l === 'nl' ? 'Zelfde als de bestelling' : 'Same as the order',
+    ratioImage: l === 'nl' ? 'Beeld {n}' : 'Image {n}',
+
     // ── The per-product questions ────────────────────────────────────────
     // Words only. src/data/attributes.js owns them the way shots.js owns the
     // four angles, and none of them is retyped here. pipeline.js imports the
@@ -469,6 +504,14 @@ for (const l of ['en', 'nl'] as const) {
       ])
     ),
   };
+
+  /* De namen van de verhoudingen, uit src/data/ratios.js en niet overgetypt.
+     pipeline.js tekent er de keuzelijstjes op de kaarten mee en zet er de
+     samenvattingsregel mee; ratios.js blijft de enige plek waar staat hoe een
+     verhouding heet. Zelfde afspraak als bij `pu.shot` hierboven. */
+  (PIPE[l] as Record<string, unknown>).ratio = {
+    name: Object.fromEntries(LIFESTYLE_RATIOS.map((r) => [r.id, `${r.label} · ${r.name[l]}`])),
+  };
 }
 
 // ── The contract, enforced at build time ───────────────────────────────────
@@ -487,7 +530,7 @@ const REQUIRED_COPY = [
   'level.attended', 'level.unattended',
   'kind.complete', 'kind.catalog', 'kind.lifestyle',
   'err.generic',
-  'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.outfit', 'sum.outfitN',
+  'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.ratio', 'sum.outfit', 'sum.outfitN',
   // sum.net and NOTHING ELSE about money — VAT is charged at the rate of the
   // customer's own country, so a gross figure here would be a Dutch rate shown
   // to whoever reads. vatNote() says once how VAT is handled.
@@ -509,6 +552,11 @@ const REQUIRED_COPY = [
   'pu.allDone', 'pu.allDoneOne',
   'pu.product', 'pu.add', 'pu.toggle', 'pu.placeIn',
   ...SHOT_IDS.map((id) => `pu.shot.${id}`),
+  // Ook als deze stroom geen afwijking per beeld heeft. De sleutels staan altijd
+  // in de blob, want een dienst die hem morgen wél krijgt, hoort geen kaart met
+  // een leeg label te tekenen — dat is precies wat deze lijst voorkomt.
+  'pu.ratioH', 'pu.ratioHint', 'pu.ratioSame', 'pu.ratioImage',
+  ...LIFESTYLE_RATIOS.map((r) => `ratio.name.${r.id}`),
   // The product questions, generated from src/data/attributes.js rather than
   // typed, for the reason the shot names are: a second question added there
   // brings its own build-time check instead of shipping a card with a blank
@@ -955,6 +1003,31 @@ const config = {
   maxExtraPerProduct: MAX_EXTRA_PER_PRODUCT,
   maxOutfit: MAX_OUTFIT_PRODUCTS,
   bg: { customId: CUSTOM_ID, lightThreshold: LIGHT_THRESHOLD },
+  /*
+   * ── DE VERHOUDING — 13 augustus 2026 ───────────────────────────────────────
+   *
+   * `ids` is de volgorde waarin de keuzelijstjes op de kaarten hun opties
+   * krijgen; welke daarvan bij welke dienst hoort, beslist syncRatio() op de
+   * tegels en niet dit lijstje — bij de proef verandert de soort tijdens het
+   * invullen, dus een lijst die hier al gefilterd is, klopt daar de helft van
+   * de tijd niet.
+   *
+   * `perImage` is het AANTAL beelden dat per product mag afwijken, en niet een
+   * ja/nee. Reden: bij `complete` mogen alleen de lifestyle-beelden afwijken en
+   * niet de catalogbeelden — die staan naast elkaar in het grid en dat is de
+   * hele reden dat catalog één verhouding heeft. Een vlag zou dat verschil niet
+   * kunnen dragen. Nul betekent: deze stroom vraagt het niet per beeld.
+   *
+   * De proef staat op nul terwijl hij lifestyle KAN zijn: een proefvisual is
+   * één beeld, en "wijk bij beeld 1 af van de standaard" is dezelfde vraag twee
+   * keer stellen.
+   */
+  ratio: {
+    ids: LIFESTYLE_RATIOS.map((r) => r.id),
+    lifestyleOnly: LIFESTYLE_RATIOS.filter((r) => !CATALOG_RATIO_IDS.includes(r.id)).map((r) => r.id),
+    fallback: DEFAULT_RATIO_ID,
+    perImage: isSample || !ratiosPerImage(service) ? 0 : LIFESTYLE_IMAGES,
+  },
   copy: PIPE[lang],
 };
 
@@ -968,11 +1041,18 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 ---
 
 <!-- HERO -->
+{hero && (
 <section class="page-hero"><div class="container">
-  <span class="eyebrow-page">{lang === 'nl' ? 'Bestellen' : 'Order'}</span>
-  <h1 class="display">{svc.title}</h1>
-  <p class="lead" style="margin-top:1.2rem">{svc.gets}. {svc.lead}</p>
+  <span class="eyebrow-page">{isSample ? sample.name : (lang === 'nl' ? 'Bestellen' : 'Order')}</span>
+  {/* DE PROEF HEEFT ZIJN EIGEN KOP, en niet die van de dienst. `svc.lead` is de
+      staffelzin — *"het tarief daalt naarmate het aantal stijgt"* — en die is bij
+      een proef van EEN vast bedrag voor EEN product ronduit onwaar. Bovendien is
+      de dienst hier nog niet gekozen: dat is de eerste vraag van het formulier
+      eronder. `sample.line` zegt wat je krijgt zonder de soort te noemen. */}
+  <h1 class="display">{isSample ? sample.h : svc.title}</h1>
+  <p class="lead" style="margin-top:1.2rem">{isSample ? sample.line : `${svc.gets}. ${svc.lead}`}</p>
 </div></section>
+)}
 
 <!-- THE PIPELINE -->
 <section class="section-tight"><div class="container">
@@ -1003,7 +1083,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     <input type="hidden" name="window_start" value="" />
     <input type="hidden" name="window_end" value="" />
     <input type="hidden" name="upload_batch" value="" />
-    <input type="hidden" name="source" value={`start-${service}`} />
+    {/* Waar de bestelling vandaan komt, en dat is bij een proef niet /start.
+        `source` is wat het adminscherm groepeert; 'start-lifestyle' op een
+        proefvisual zou hem tussen de betaalde lifestyle-bestellingen zetten. */}
+    <input type="hidden" name="source" value={isSample ? 'test-sample' : `start-${service}`} />
     <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
 
     {/* SIGN IN FIRST, IF THERE IS ANYTHING TO SIGN IN TO. August 2026. Lucas:
@@ -1145,8 +1228,14 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       )}
 
       {/* Task #271f — Single Product/Full outfit. Not [data-pl-req]: 0 is
-          always a valid answer, so this field is never required. */}
-      {!isCatalog && (
+          always a valid answer, so this field is never required.
+
+          NIET BIJ DE PROEF — 13 augustus 2026. Lucas over /test-sample:
+          *"Zelfde als lifestyle orderflow maar dan simpel."* Een compleet setje
+          is een TOESLAG per product, en de proef kost één vast bedrag voor één
+          product. De vraag zou dus een meerprijs aanbieden die niet in rekening
+          gebracht kan worden, en dat is erger dan hem niet stellen. */}
+      {!isCatalog && !isSample && (
       <div class="field" data-pl-outfit>
         <label for="pl-outfit">{f.s1.outfitLabel}</label>
         <select id="pl-outfit" class="select" name="outfit_count">
@@ -1227,6 +1316,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           styled scene has no flat ground to choose. Nothing else on this page
           knows which one it got. */}
       <slot />
+
+      {/* DE BEELDVERHOUDING, NA DE SLOT EN NIET ERVOOR. De slot draagt de vraag
+          die deze dienst DEFINIEERT — de achtergrond of de look — en die hoort
+          boven de vraag te staan die hem opmaakt. Dezelfde volgorde als in de
+          brand kit, waar de verhouding onder gezicht en achtergrond staat. */}
+      <RatioPicker lang={lang} />
 
       {/* What the count earns. Not a control: the level FOLLOWS the count
           (tierFor(), WINDOW_THRESHOLD), so this is a statement, and the

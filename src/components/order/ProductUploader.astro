@@ -514,6 +514,24 @@ const hint = lang === 'nl'
      cards each showing a text field is the same mile of boxes the collapse
      exists to prevent. */
   .pu-cards :global(.pu-card.is-collapsed .pu-about) { display: none; }
+  /* De verhouding per beeld vouwt mee met de vraag en de vier vakken: het is
+     dezelfde uitklap, en de knop noemt ze alle drie in aria-controls. Alleen op
+     lifestyle en complete aanwezig — buildRatios() in pipeline.js geeft null
+     terug waar de dienst één verhouding voor de hele bestelling heeft. */
+  .pu-cards :global(.pu-card.is-collapsed .pu-ratios) { display: none; }
+  .pu-cards :global(.pu-ratios) { margin-top: .8rem; }
+  .pu-cards :global(.pu-ratios-h) { margin: 0; font-size: .82rem; font-weight: 600; color: var(--ink-2); }
+  .pu-cards :global(.pu-ratios-hint) { margin: .15rem 0 0; font-size: .76rem; color: var(--ink-3); }
+  /* auto-fit met een ruime minimum: drie beelden passen op een desktop naast
+     elkaar en gaan op een telefoon onder elkaar, zonder mediaquery en zonder
+     dat een lange optienaam de kolom uit loopt. */
+  .pu-cards :global(.pu-ratios-row) {
+    display: grid; gap: .5rem; margin-top: .5rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+  .pu-cards :global(.pu-ratio-q) { display: grid; gap: .2rem; }
+  .pu-cards :global(.pu-ratio-label) { font-size: .76rem; color: var(--ink-3); }
+  .pu-cards :global(.pu-ratio-field) { padding: .45rem .6rem; font-size: .86rem; border-radius: var(--r-md); }
   .pu-cards :global(.pu-card.is-ready) { border-color: var(--signal); }
 
   .pu-cards :global(.pu-head) {
