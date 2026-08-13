@@ -262,6 +262,34 @@ let dragging = ''; // the tray id currently under the cursor, for browsers whose
 // a second page-load event happened to re-run init after evaluation finished.
 let chain = Promise.resolve();
 
+/*
+ * ── EN DEZELFDE VAL, EEN DERDE KEER — 13 AUGUSTUS 2026 ──────────────────────
+ *
+ * `reached` stond bij measure(), zo'n tweehonderd regels lager, als
+ * `const reached = new Set()`. init() maakt hem leeg op zijn achtste regel. Dus:
+ * exact het geval dat hierboven voor `chain` staat opgeschreven, en dat de noot bij
+ * EMPTY_SLOT() nóg een keer opschrijft.
+ *
+ * Wat het deed, gemeten in een echte browser tegen de echte build:
+ *
+ *   [pipeline] ReferenceError: Cannot access 'reached' before initialization
+ *
+ * op /start/catalog, /nl/start/catalog en /start/complete. De eerste boot() viel om
+ * op regel 314, de catch haalde `is-live` weg, en `plBound` — dat pas op regel 324
+ * wordt gezet — bleef leeg. Daardoor liep boot() bij het `astro:page-load`-event
+ * gewoon een tweede keer, nu met een geïnitialiseerde `reached`, en werkte het
+ * formulier alsnog.
+ *
+ * DAT IS GELUK EN GEEN ONTWERP. Het hing volledig aan de ClientRouter die dat event
+ * stuurt: zonder dat tweede event is er geen bestelstroom — geen stapnavigatie, geen
+ * uploader, geen capaciteitspoort — alleen een gestapeld formulier dat zwijgt. En de
+ * bezoeker zag bij elke lading eerst een halve verbetering en dan een hele.
+ *
+ * Vandaar hier, bij de rest van de toestand. De uitleg over WAT `reached` doet blijft
+ * bij measure() staan, waar hij gelezen wordt.
+ */
+const reached = new Set();
+
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────────────────────────
@@ -457,8 +485,12 @@ function stepNode(n) {
  * nergens heen. Een meting die het formulier vertraagt of laat struikelen, kost meer
  * bestellingen dan het inzicht oplevert. Dit is het ene geval waarin een lege catch
  * juist is: er hangt niets van de uitkomst af, en het endpoint antwoordt altijd 204.
+ *
+ * DE DECLARATIE STAAT BOVENAAN, bij `chain`. Hij stond hier, en dat gaf op elke
+ * bestelpagina een ReferenceError bij de eerste boot — zie de noot daar. Wat er over
+ * `reached` te weten valt, staat hierboven; waar hij geboren wordt, is een regel over
+ * de evaluatievolgorde van deze module en hoort dus bij de andere toestand.
  */
-const reached = new Set();
 
 function measure(step) {
   /* Alleen echte stapnummers. `show()` klemt zijn argument tussen 1 en STEPS, dus dit
@@ -1575,7 +1607,7 @@ function syncLevel(attended, chosen) {
  * line and used during init has to follow the same rule.
  */
 function EMPTY_SLOT() {
-  return { status: 'empty', file: null, key: '', url: '', msg: '', pct: 0, thumb: false };
+  return { status: 'empty', file: null, key: '', url: '', msg: '', pct: 0, thumb: false, tries: 0 };
 }
 
 function shotLabel(id) {
@@ -2501,6 +2533,10 @@ function buildSlot(card, id) {
     acts.appendChild(b);
     return b;
   };
+  /* EERST in de rij, want bij een mislukt vakje is dit de handeling die de klant
+     wil: niet vervangen (dan moet hij zoeken) en niet verwijderen (dan is de foto
+     weg), maar hetzelfde bestand nog een keer. Zie het blok bij failSlot(). */
+  const retryBtn = act(c('upload.retry'), () => retrySlot(card, id));
   const replaceBtn = act(c('pu.replace'), () => file.click());
   const removeBtn = act(c('pu.remove'), () => { clearSlot(card, id); refreshUploader(); });
   // THE SKIP IS A CONTROL, NOT AN ABSENCE. The optional shots — detail and worn
@@ -2558,7 +2594,7 @@ function buildSlot(card, id) {
     placeFromTray(trayKey, card.key, id);
   });
 
-  card.slots[id].el = { wrap, btn, dia, img, nameEl, bar, msg, replaceBtn, removeBtn, skipBtn, undoBtn };
+  card.slots[id].el = { wrap, btn, dia, img, nameEl, bar, msg, retryBtn, replaceBtn, removeBtn, skipBtn, undoBtn };
   return wrap;
 }
 
@@ -2586,6 +2622,10 @@ function paintSlot(card, id) {
   el.msg.textContent = s.msg || '';
 
   const filled = !!s.file;
+  /* Alleen als er iets te herhalen IS. Een knop op een vakje dat aan het versturen
+     is, zou een tweede upload van hetzelfde bestand starten; op een geslaagd vakje
+     zou hij suggereren dat er iets mis is. */
+  if (el.retryBtn) el.retryBtn.hidden = !(filled && s.status === 'failed');
   el.replaceBtn.hidden = !filled;
   el.removeBtn.hidden = !filled;
   if (el.skipBtn) el.skipBtn.hidden = filled || s.status === 'skipped';
@@ -2860,10 +2900,156 @@ function removeStaged(key) {
   fetch(url, { method: 'DELETE' }).catch(() => null);
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EEN MISLUKTE UPLOAD KRIJGT EEN TWEEDE KANS — 13 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas' lijst, blok 6: een herhaalpoging na een mislukte upload.
+ *
+ * ── WAT ER GEBEURDE, EN WAAROM DAT DUURDER IS DAN HET LIJKT ─────────────────
+ *
+ * Een wegvallende verbinding zette het vakje op 'failed' met een zin eronder, en
+ * daar bleef het. De klant moest de foto opnieuw KIEZEN — de bestandskiezer weer
+ * open, weer door zijn fotolijst, weer het juiste bestand. Bij één vakje is dat
+ * een ongemak. Bij een bestelling van dertig producten met tweehonderd vakjes op
+ * een telefoon met wisselende ontvangst is het het moment waarop iemand stopt.
+ *
+ * En het was niet nodig: `s.file` bleef de hele tijd staan. clearSlot() wordt bij
+ * een mislukking niet aangeroepen, dus het bestand zat nog in het geheugen van de
+ * pagina. Er ontbrak alleen iets dat het nog een keer probeerde.
+ *
+ * ── NIET ALLES IS HET OPNIEUW PROBEREN WAARD ────────────────────────────────
+ *
+ * Dit is de kern van de afweging. Een bestand van 26 MB drie keer versturen kost
+ * de klant anderhalve minuut om bij precies dezelfde weigering uit te komen, en
+ * een vakje dat "opnieuw proberen (2/3)" zegt over een bestand dat NOOIT wordt
+ * aangenomen, is een leugen met een voortgangsbalk.
+ *
+ * Dus alleen wat aan de VERBINDING of aan ONZE kant kan liggen:
+ *
+ *   network  de verbinding viel weg — het klassieke geval
+ *   rate     te veel tegelijk; over een seconde mag het wel
+ *   5xx      onze fout, en die kan over zijn
+ *
+ * En uitdrukkelijk niet: too-large, bad-type, empty, bad-shot, bad-batch,
+ * bad-request. Die worden bij poging drie precies zo geweigerd als bij poging
+ * één. `unavailable` ook niet automatisch: dat is de bucket die plat ligt, daar
+ * hangt al een eigen melding aan en de wachtrij stopt er met opzet op.
+ *
+ * ── EN EEN KNOP, WANT DRIE POGINGEN IN VIJF SECONDEN IS GEEN TREINTUNNEL ────
+ *
+ * De automatische pogingen dekken een hik. Ze dekken niet de klant die door een
+ * tunnel rijdt of van wifi naar 4G wisselt: die is na vijf seconden nog steeds
+ * offline en na twee minuten weer online. Vandaar op elk mislukt vakje een knop
+ * "Opnieuw", en die doet drie dingen die de automaat niet doet — de teller terug
+ * naar nul, een platte bucket nog één kans (een mens die op opnieuw drukt is een
+ * nieuw besluit, geen herhaling), en de vooraf-controle nog eens, want bij
+ * `batch-full` is de wereld echt veranderd zodra hij een ander bestand weghaalt.
+ */
+const UPLOAD_TRIES = 3;
+
+/** Oplopend, en kort: de klant kijkt naar dit vakje. */
+const RETRY_WAIT_MS = [1200, 3500];
+
+/** Kan dit nog goed komen als we het nog eens proberen? */
+function retryableUpload(code, httpStatus) {
+  if (code === 'network' || code === 'rate') return true;
+  return Number(httpStatus) >= 500;
+}
+
+/**
+ * Eén plek waar een mislukking landt.
+ *
+ * DE STATUS BLIJFT 'sending' TIJDENS HET WACHTEN, en dat is geen cosmetica:
+ * slotOpen(), cardReady() en missingRequired() lezen allemaal 'failed'. Zou het
+ * vakje tussen twee pogingen even op 'failed' staan, dan klapt de kaart open,
+ * springt de statusregel naar "mist nog voorkant" en gaat hij een seconde later
+ * weer terug. Een vakje dat aan het herstellen is, is niet leeg.
+ */
+function failSlot(card, id, s, code, body, httpStatus) {
+  if (retryableUpload(code, httpStatus) && s.tries < UPLOAD_TRIES) {
+    const eigen = RETRY_WAIT_MS[Math.min(Math.max(s.tries - 1, 0), RETRY_WAIT_MS.length - 1)];
+    /* ── ALS DE SERVER ZELF EEN TERMIJN NOEMT, IS DIE VAN HEM ─────────────────
+       /api/upload geeft bij 429 een `retryAfter` in seconden mee (zie checkRate in
+       ratelimit.js). Onze eigen 1,2 seconde is dan te snel: dan komt er nog een
+       verzoek binnen dezelfde telvenster en wordt de bestelling harder afgeknepen
+       dan nodig. Wél begrensd op tien seconden — een vakje dat een minuut zwijgt
+       terwijl er "opnieuw proberen" onder staat, leest als vastgelopen, en dan is
+       de knop ernaast een beter antwoord dan blijven wachten. */
+    const gevraagd = Number(body && body.retryAfter) * 1000;
+    const wait = Number.isFinite(gevraagd) && gevraagd > eigen
+      ? Math.min(gevraagd, 10000)
+      : eigen;
+    s.status = 'sending';
+    s.pct = 0;
+    s.msg = c('upload.retrying', { n: s.tries + 1, max: UPLOAD_TRIES });
+    paintSlot(card, id);
+    /* Terug in de WACHTRIJ en niet los ernaast. Een haperende verbinding raakt
+       zelden één bestand, en tien parallelle herhaalpogingen op een lijn die het
+       al niet trekt is de snelste manier om ook de goede uploads mee te slepen. */
+    chain = chain
+      .then(() => new Promise((res) => {
+        window.setTimeout(() => { sendSlot(card, id).then(res, res); }, wait);
+      }))
+      .catch(() => {});
+    return;
+  }
+
+  s.status = 'failed';
+  s.pct = 0;
+  s.msg = uploadError(code, body);
+  paintSlot(card, id);
+  refreshUploader();
+}
+
+/**
+ * De knop. Een expliciete opdracht van een mens, dus met meer rechten dan een
+ * automatische poging — zie het blok hierboven.
+ */
+function retrySlot(card, id) {
+  const s = card.slots[id];
+  if (!s.file) return;
+
+  s.tries = 0;
+  if (uploadsOff) {
+    uploadsOff = false;
+    const off = q('[data-pl-upload-note="off"]');
+    if (off) off.hidden = true;
+  }
+
+  /* De vooraf-controle nog eens: bij `batch-full` is er misschien net een ander
+     bestand weggehaald, en dan is dit vakje ineens wél te versturen. Bij
+     `too-large` komt dezelfde weigering terug, en dat is het eerlijke antwoord —
+     de knop heeft het geprobeerd. */
+  const bad = preflight(s.file, pendingCount());
+  if (bad) {
+    s.status = 'failed';
+    s.pct = 0;
+    s.msg = uploadError(bad.code, bad);
+    paintSlot(card, id);
+    refreshUploader();
+    return;
+  }
+
+  s.status = 'sending';
+  s.pct = 0;
+  s.msg = c('upload.sending');
+  paintSlot(card, id);
+  chain = chain.then(() => sendSlot(card, id)).catch(() => {});
+  refreshUploader();
+}
+
 function sendSlot(card, id) {
   return new Promise((resolve) => {
     const s = card.slots[id];
     if (!s.file || s.status !== 'sending') return resolve();
+
+    /* Geteld waar hij ECHT vertrekt, en niet bij het plaatsen: een vakje dat
+       tussentijds is vervangen begint met een schone teller (placeFile geeft een
+       verse EMPTY_SLOT), en een poging die nooit de deur uit is gegaan hoort niet
+       mee te tellen. */
+    s.tries += 1;
 
     // IS THIS SLOT STILL THE SLOT IT WAS. A request takes seconds and the
     // customer can spend them changing the count on step 1, which drops cards,
@@ -2903,11 +3089,7 @@ function sendSlot(card, id) {
 
     xhr.addEventListener('error', () => {
       if (!live()) return resolve();
-      s.status = 'failed';
-      s.pct = 0;
-      s.msg = c('upload.err.network');
-      paintSlot(card, id);
-      refreshUploader();
+      failSlot(card, id, s, 'network', null, 0);
       resolve();
     });
     xhr.addEventListener('abort', () => resolve());
@@ -2946,21 +3128,24 @@ function sendSlot(card, id) {
       }
 
       const code = (body && body.error) || 'generic';
-      if (live()) {
-        s.status = 'failed';
-        s.pct = 0;
-        s.msg = uploadError(code, body);
-      }
 
       // A dead bucket is not this file's problem, it is every file's problem.
       // Say so once, stop the queue, and let the order carry on without photos.
+      // BLIJFT VOOR failSlot() STAAN: een 503 komt met code 'unavailable', en die
+      // is niet automatisch te herhalen -- maar de vlag en de melding horen er te
+      // staan voordat er iets anders met dit vakje gebeurt.
       if (code === 'unavailable') {
         uploadsOff = true;
         const off = q('[data-pl-upload-note="off"]');
         if (off) off.hidden = false;
       }
-      paintSlot(card, id);
-      refreshUploader();
+
+      if (live()) {
+        failSlot(card, id, s, code, body, xhr.status);
+      } else {
+        paintSlot(card, id);
+        refreshUploader();
+      }
       resolve();
     });
 

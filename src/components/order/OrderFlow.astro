@@ -254,6 +254,12 @@ const PIPE = {
       sending: 'Sending…',
       done: 'Sent',
       retry: 'Try again',
+      // De tekst tijdens een automatische herhaalpoging. Het nummer staat erbij en
+      // dat is de hele reden dat deze regel bestaat: "Sending…" dat blijft staan
+      // ziet eruit als een vastgelopen upload, en dan grijpt de klant in terwijl er
+      // niets aan de hand is. Wat hij moet zien is dat er iets GEBEURT en hoe lang
+      // dat nog doorgaat.
+      retrying: 'Connection dropped — trying again ({n}/{max})…',
       remove: 'Remove',
       count: '{n} of {max} uploaded',
       err: {
@@ -328,6 +334,9 @@ const PIPE = {
       sending: 'Versturen…',
       done: 'Verstuurd',
       retry: 'Opnieuw',
+      // Zie de Engelse kant: het nummer erbij, zodat een herhaalpoging niet leest
+      // als een vastgelopen upload.
+      retrying: 'Verbinding viel weg — opnieuw proberen ({n}/{max})…',
       remove: 'Verwijderen',
       count: '{n} van {max} geüpload',
       err: {
@@ -484,7 +493,7 @@ const REQUIRED_COPY = [
   // to whoever reads. vatNote() says once how VAT is handled.
   'sum.net',
   'sum.files', 'sum.noFiles', 'sum.window', 'sum.windowLater', 'sum.queue', 'sum.email',
-  'upload.sending', 'upload.done', 'upload.retry', 'upload.remove', 'upload.count',
+  'upload.sending', 'upload.done', 'upload.retry', 'upload.retrying', 'upload.remove', 'upload.count',
   'upload.err.too-large', 'upload.err.batch-full', 'upload.err.rate',
   'upload.err.unavailable', 'upload.err.network', 'upload.err.generic',
   'upload.err.bad-type', 'upload.err.empty', 'upload.err.no-file',
