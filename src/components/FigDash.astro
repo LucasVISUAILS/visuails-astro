@@ -75,7 +75,11 @@ const C = nl
       tabs: [
         ['Overzicht', 'Waar je bestellingen staan'],
         ['Bestellingen', 'Elk beeld, met je eigen upload ernaast'],
-        ['Je vaste look', 'Wie je product draagt, en waar het op staat'],
+        /* De ondertitel noemt sinds 13 augustus 2026 ook de verhouding, want die
+           staat er sinds migratie 0028 bij — zie lockSection() in account.js. Een
+           mockup die twee van de drie antwoorden noemt, is een mockup die het
+           scherm ouder laat lijken dan het is. */
+        ['Je vaste look', 'Wie je product draagt, waar het op staat, en in welke verhouding'],
         ['Je gegevens', 'Eén keer invullen, daarna voorgevuld'],
       ],
       ovH: 'Wat er nu loopt',
@@ -118,7 +122,7 @@ const C = nl
       tabs: [
         ['Overview', 'Where your orders stand'],
         ['Orders', 'Every image, next to the photo you sent'],
-        ['Your look', 'Who wears your product, and what it sits on'],
+        ['Your look', 'Who wears your product, what it sits on, and its shape'],
         ['Your details', 'Fill in once, then prefilled'],
       ],
       ovH: 'What is running now',

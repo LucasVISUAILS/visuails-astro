@@ -93,6 +93,11 @@ import { ROSTER, modelId, TRAITS } from '../data/models.js';
 // en de namen om te tonen — welke kanalen wit eisen is de zaak van
 // syncChannels() in pipeline.js, niet van dit bestand.
 import { CHANNELS, CHANNEL_IDS, channelName } from '../data/channels.js';
+/* De vaste beeldverhouding, sinds 13 augustus 2026 de vierde voorkeur naast
+   gezicht, achtergrond en kanalen. Uit ratios.js en niet hier overgetypt: het
+   bestelformulier, deze pagina en de werkmap moeten dezelfde lijst kennen, en
+   welke verhoudingen mogen verschilt per dienst — zie ratiosFor(). */
+import { ratiosFor, ratiosPerImage, ratioById } from '../data/ratios.js';
 import { mailNote } from '../data/mailNote.js';
 // Afronden staat sinds 8 augustus 2026 in zijn eigen bestand omdat portal.js
 // hem óók nodig heeft — zie de kop van close.js. Hier stond dezelfde functie
@@ -476,6 +481,8 @@ const COPY = {
     bkChange: 'Change',
     bkFaceLede: 'Who wears it',
     bkBgLede: 'What it sits on',
+    bkRatioLede: 'Image shape',
+    bkRatioHint: 'Set it once and every order starts here. Catalog images sit next to each other in a grid, so one shape for the whole range is what keeps that grid straight. On lifestyle this is the starting point — you can still make a single image wide when you need a banner.',
     bkChLede: 'Where you sell it',
     bkChHint: 'Only on catalog for now. Pick a marketplace that requires a pure white main image and every order starts on white — Amazon and bol check that automatically on their side.',
     bkChNone: 'Asked per order',
@@ -746,6 +753,8 @@ const COPY = {
     bkChange: 'Wijzigen',
     bkFaceLede: 'Wie het draagt',
     bkBgLede: 'Waar het op staat',
+    bkRatioLede: 'Beeldverhouding',
+    bkRatioHint: 'Eén keer instellen en elke bestelling begint hier. Catalogbeelden staan naast elkaar in een grid, dus één verhouding voor je hele assortiment is wat dat grid recht houdt. Bij lifestyle is dit het startpunt — je kunt één beeld alsnog breed maken als je een banner wilt.',
     bkChLede: 'Waar je het verkoopt',
     bkChHint: 'Voorlopig alleen bij catalog. Kies je een marktplaats die een zuiver wit hoofdbeeld eist, dan begint elke bestelling op wit — Amazon en bol controleren dat aan hun kant automatisch.',
     bkChNone: 'Wordt per bestelling gevraagd',
@@ -1965,6 +1974,12 @@ async function handleMe({ request, env }) {
         // id dat sinds het opslaan uit channels.js is verdwenen mag geen vinkje
         // worden dat nergens meer bij hoort.
         channels: String(l.channels || '').split(',').map((v) => v.trim()).filter((v) => CHANNEL_IDS.includes(v)),
+        /* Opnieuw getoetst tegen de lijst van DEZE dienst en niet blind
+           doorgegeven: een verhouding die sinds het opslaan uit ratios.js is
+           gehaald — of die bij een andere dienst hoort — mag geen voorselectie
+           worden die het formulier niet kan tonen. Zelfde regel als bij de
+           kanalen hierboven. */
+        ratio: ratioById(l.ratio || '', l.style) ? String(l.ratio) : '',
       };
     }
   } catch { locks = {}; }
@@ -2787,7 +2802,21 @@ async function handleLockUpdate({ request, env }, customer) {
   );
   const channels = CHANNEL_IDS.filter((id) => wanted.has(id)).join(',') || null;
 
-  if (!customModelId && !rosterModel && !background && !channels) {
+  /* ── DE VASTE BEELDVERHOUDING (migratie 0028) ───────────────────────────────
+   *
+   * Lidmaatschapstoets tegen de lijst VAN DEZE DIENST, en dat laatste is het
+   * punt: 'wide' bestaat bij lifestyle en niet bij catalog. Een post die 16:9 op
+   * catalog zet, mag niet opgeslagen worden — dan zou het bestelformulier een
+   * voorkeur voorlezen die het zelf niet aanbiedt, en zou de studio een
+   * verhouding renderen die het merk nergens heeft kunnen kiezen.
+   *
+   * Zelfde soort toets als bij de roster en de kanalen hierboven, en om dezelfde
+   * reden: wat hier binnenkomt is een string uit een formulier en gaat naar de
+   * productie. */
+  const ratioRaw = String(form?.get('ratio') || '').trim();
+  const ratio = ratioById(ratioRaw, style) ? ratioRaw : null;
+
+  if (!customModelId && !rosterModel && !background && !channels && !ratio) {
     // Everything cleared — back to "ask per order, as usual." Deleting rather
     // than storing nulls keeps "no row" as the single meaning of "no
     // preference", so nothing downstream has to test for both.
@@ -2799,21 +2828,27 @@ async function handleLockUpdate({ request, env }, customer) {
 
   try {
     await env.DB.prepare(
-      `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, channels, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now'))
+      `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, channels, ratio, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'))
        ON CONFLICT(customer_id, style) DO UPDATE SET
          custom_model_id = excluded.custom_model_id,
          roster_model    = excluded.roster_model,
          background_hex  = excluded.background_hex,
          channels        = excluded.channels,
+         ratio           = excluded.ratio,
          updated_at      = datetime('now')`
-    ).bind(customer.customer_id, style, customModelId, rosterModel, background, channels).run();
+    ).bind(customer.customer_id, style, customModelId, rosterModel, background, channels, ratio).run();
   } catch (err) {
-    // Terugval voor een database waar 0019 nog niet gedraaid heeft. Zelfde
-    // patroon als de btw-INSERT in functions/api/order.js: een deploy die vóór
-    // zijn migratie landt mag een voorkeur niet weggooien, hij mag alleen dat
-    // ene nieuwe veld nog niet kunnen bewaren.
-    if (!/channels/i.test(String(err && err.message))) throw err;
+    // Terugval voor een database waar 0019 of 0028 nog niet gedraaid heeft.
+    // Zelfde patroon als de btw-INSERT in functions/api/order.js: een deploy die
+    // vóór zijn migratie landt mag een voorkeur niet weggooien, hij mag alleen
+    // dat ene nieuwe veld nog niet kunnen bewaren.
+    //
+    // BEIDE KOLOMNAMEN IN DE TOETS, want anders zou een database zonder `ratio`
+    // hier een echte fout doorgooien en de hele voorkeur laten vallen — precies
+    // wat deze terugval moet voorkomen. De smalle INSERT hieronder laat ze allebei
+    // weg, want hij is de bodem: wat er zeker is sinds migratie 0007.
+    if (!/channels|ratio/i.test(String(err && err.message))) throw err;
     await env.DB.prepare(
       `INSERT INTO customer_style_locks (customer_id, style, custom_model_id, roster_model, background_hex, updated_at)
        VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))
@@ -4875,6 +4910,55 @@ function lockSection(t, lang, models, lockByStyle) {
       <p class="bk-hint">${esc(t.bkChHint)}</p>
     </fieldset>`;
 
+    /* ── DE VASTE BEELDVERHOUDING (migratie 0028) ─────────────────────────────
+     *
+     * Lucas: *"voornamelijk handig voor catalog omdat dit bijna altijd zelfde
+     * formaat moet krijgen."* Precies daarom staat hij hier en niet alleen op het
+     * bestelformulier: het is een antwoord dat een merk één keer geeft.
+     *
+     * NIET BIJ VIDEO, en dat is geen vergetelheid. Een clip wordt in alle drie de
+     * verhoudingen tegelijk geleverd (zie VIDEO_RATIOS in videoExamples.js), dus
+     * daar valt niets te kiezen — een keuzelijst zou suggereren dat je er twee
+     * weggooit. `ratiosFor()` bepaalt wélke verhoudingen een dienst kent, dus
+     * lifestyle krijgt de brede erbij en catalog niet.
+     *
+     * De radio's staan als tegels en niet als <select>, om dezelfde reden als bij
+     * de achtergrond hierboven: dit gaat over een VORM, en een vorm die je moet
+     * lezen in plaats van zien, is een vorm die je verkeerd kiest. Elke tegel is
+     * de verhouding die hij beschrijft. */
+    const ratioApplies = style !== 'video';
+    const ratioNow = ratioById(lock.ratio || '', style) ? String(lock.ratio) : '';
+    const ratioTiles = !ratioApplies ? '' : ratiosFor(style).map((r) => `
+      <label class="bk-ratio">
+        <input type="radio" name="ratio" value="${esc(r.id)}"${ratioNow === r.id ? ' checked' : ''}>
+        <span class="bk-ratio-box" style="aspect-ratio:${esc(r.css)}" aria-hidden="true"></span>
+        <span class="bk-ratio-name">${esc(r.label)}</span>
+        <span class="bk-ratio-what">${esc(r.name[lang] || r.name.en)}</span>
+      </label>`).join('');
+    /* `bkNoPref` op de lege tegel en niet `bkAsk`: dat is het woord dat de
+       achtergrondtegel ernaast al gebruikt voor precies dezelfde keuze, en het is
+       kort genoeg om de tegel niet twee keer zo breed te maken als de vormen
+       ernaast. `bkAsk` blijft de zin in de SAMENVATTING, waar de ruimte er wel is.
+
+       EN DE NOOT STAAT HIER EN NIET IN DE TEMPLATE. Dit bestand bouwt html met
+       gewone template-strings en niet met JSX, dus een JSX-commentaar in accolades
+       is daar geen commentaar maar TEKST — hij verscheen letterlijk op de pagina,
+       in een gele kolom naast de tegels. Gevonden door scripts/account-render.mjs,
+       wat precies is waarvoor dat script bestaat. */
+    const ratioGroup = !ratioApplies ? '' : `
+    <fieldset class="bk-group">
+      <legend>${esc(t.bkRatioLede)}</legend>
+      <div class="bk-ratios">
+        <label class="bk-ratio is-none">
+          <input type="radio" name="ratio" value=""${ratioNow ? '' : ' checked'}>
+          <span class="bk-ratio-box is-none" aria-hidden="true"></span>
+          <span class="bk-ratio-name">${esc(t.bkNoPref)}</span>
+        </label>${ratioTiles}
+      </div>
+      <p class="bk-hint">${esc(t.bkRatioHint)}</p>
+    </fieldset>`;
+    const ratioLabel = ratioNow ? (ratioById(ratioNow, style)?.label || '') : '';
+
     // ── WHAT THE FOLDED CARD SAYS ──────────────────────────────────────────
     // The summary has to answer "what does this service start from" without
     // being opened, or the accordion has hidden the only thing the page is for.
@@ -4900,8 +4984,13 @@ function lockSection(t, lang, models, lockByStyle) {
     const chNames = chApplies && chOn.length
       ? CHANNELS.filter((c) => chOn.includes(c.id)).map((c) => channelName(c, lang)).join(', ')
       : '';
-    const summaryNow = (!face && !bg && !chNames) ? esc(t.bkAsk)
-      : [esc(faceName), esc(bgName)].concat(chNames ? [esc(chNames)] : [])
+    /* De verhouding hoort in de samenvatting, want anders is hij het enige
+       antwoord op deze kaart dat je moet openklappen om te zien — en juist dit is
+       het antwoord dat een merk één keer zet en daarna wil kunnen controleren. */
+    const summaryNow = (!face && !bg && !chNames && !ratioLabel) ? esc(t.bkAsk)
+      : [esc(faceName), esc(bgName)]
+          .concat(ratioLabel ? [esc(ratioLabel)] : [])
+          .concat(chNames ? [esc(chNames)] : [])
           .join(' <span class="bk-sum-dot">·</span> ');
 
     // A radio tile. The <input> is first and visually hidden — the label is the
@@ -4988,7 +5077,7 @@ function lockSection(t, lang, models, lockByStyle) {
     <fieldset class="bk-group">
       <legend>${esc(t.bkBgLede)}</legend>
       <div class="bk-sws">${bgTiles}</div>
-    </fieldset>${chGroup}
+    </fieldset>${ratioGroup}${chGroup}
     <div class="bk-actions">
       <button class="btn btn-primary" type="submit">${esc(t.lockSave)}</button>
     </div>

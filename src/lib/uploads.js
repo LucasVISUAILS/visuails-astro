@@ -39,7 +39,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { isWellFormedToken, mintToken } from './token.js';
-import { SHOTS_PER_PRODUCT, isShotId } from '../data/shots.js';
+import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT, isShotId } from '../data/shots.js';
 import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
 /* De extra foto's hebben sinds 8 augustus 2026 een eigen upload-vakje, dus tellen
    ze mee in het plafond hieronder. Uit pricing.js en niet overgetypt: dat is ook
@@ -96,8 +96,27 @@ export const MAX_FILE_BYTES = 25 * 1024 * 1024;
  * afhankelijkheid staat op de kop en is dezelfde dag omgedraaid: het aantal
  * producten komt uit `cfg.maxProducts`, en het aantal bestanden volgt daaruit.
  * Zie de noot bij maxCards().
+ *
+ * ── EN DE GRATIS REFERENTIEFOTO'S KOMEN ER NOG BIJ ─────────────────────────
+ *
+ * Diezelfde dag, later: een klant kan met een plusje extra foto's van zijn product
+ * meesturen zodat wij het beter zien — gratis, en zonder dat hij er een beeld bij
+ * krijgt. Zie MAX_REF_PER_PRODUCT in shots.js voor het verschil met de BETAALDE
+ * extra's.
+ *
+ * Ze zijn gratis voor de klant en niet voor de opslag: elk vakje is een bestand
+ * dat naar R2 gaat, en het plafond hier is precies de plek waar dat geteld wordt.
+ * Dus telt hij mee, in dezelfde som en uit dezelfde bronnen:
+ *
+ *     30 producten × (4 vaste + 4 betaalde extra's + 4 gratis referenties) = 360
+ *
+ * Dat is een script-stop en geen verwachting: geen enkele echte bestelling zit in
+ * de buurt. Wat het moet dekken is de bestelling die het formulier maximaal kan
+ * TEKENEN, want elk vakje dat een klant kan openen en vullen, moet ook aankomen —
+ * dat was de fout die vanmorgen op 140 tegen 240 stond.
  */
-export const MAX_BATCH_FILES = ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT);
+export const MAX_BATCH_FILES =
+  ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT + MAX_REF_PER_PRODUCT);
 
 /**
  * Extension → the content type we store.

@@ -37,7 +37,7 @@ import { readFileSync } from 'node:fs';
 import { buildStaat } from './lib/build.mjs';
 import { tierFor, isLadderService, LADDER, WINDOW_THRESHOLD, EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT } from '../src/data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../src/data/capacity.js';
-import { SHOTS_PER_PRODUCT } from '../src/data/shots.js';
+import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT } from '../src/data/shots.js';
 import { MAX_BATCH_FILES } from '../src/lib/uploads.js';
 import { PAYABLE_SERVICES, ladderKey } from '../src/lib/quote.js';
 
@@ -180,7 +180,12 @@ console.log('\nde onderste trede van elke staffel is te bestellen');
  */
 console.log('\nelk vakje dat het formulier tekent, kan ook geüpload worden');
 {
-  const vakjes = ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT);
+  /* Sinds 13 augustus 2026 zijn er drie soorten vakjes per product: de vier vaste
+     hoeken, de BETAALDE extra's (een beeld erbij, met een prijs) en de GRATIS
+     referentiefoto's (materiaal erbij, zonder extra beeld). Alle drie tekenen ze een
+     upload-vakje, dus alle drie tellen ze mee in het plafond -- gratis voor de klant
+     is niet gratis voor de opslag. */
+  const vakjes = ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT + MAX_REF_PER_PRODUCT);
   ok(`het formulier kan ${vakjes} vakjes tekenen`, vakjes > 0, true, String(vakjes));
   ok('en het batchplafond dekt ze allemaal', MAX_BATCH_FILES >= vakjes, true,
     `plafond ${MAX_BATCH_FILES} tegen ${vakjes} vakjes`);

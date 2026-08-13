@@ -712,6 +712,15 @@ CREATE INDEX IF NOT EXISTS idx_orders_payment_deadline
 -- ────────────────────────────────────────────────────────────────────────────
 ALTER TABLE customer_style_locks ADD COLUMN channels TEXT;
 
+-- ── De vaste beeldverhouding (migratie 0028, 13 augustus 2026) ───────────────
+-- De vierde vaste voorkeur, naast gezicht, achtergrond en kanalen. Per DIENST,
+-- want catalog wil er één voor het hele assortiment en lifestyle wil er een als
+-- standaard waar per beeld van afgeweken mag worden. Waardes zijn de id's uit
+-- src/data/ratios.js; ze worden daar gecontroleerd en niet met een CHECK hier —
+-- welke verhoudingen mogen, verschilt per dienst en beweegt mee met wat we
+-- verkopen. Zie migrations/0028-vaste-verhouding.sql.
+ALTER TABLE customer_style_locks ADD COLUMN ratio TEXT;
+
 -- ────────────────────────────────────────────────────────────────────────────
 -- 0020 · DE REVIEWVRAAG NA EEN AFGERONDE BESTELLING
 -- Zie migrations/0020-order-feedback.sql. Let op: `testimonial_approved` wordt op

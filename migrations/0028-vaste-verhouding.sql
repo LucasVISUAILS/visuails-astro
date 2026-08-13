@@ -1,0 +1,44 @@
+-- VISUAILS — de beeldverhouding hoort bij je vaste look.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAAROM ÉÉN KOLOM, EN WAAROM OP DEZE TABEL
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Lucas, 13 augustus 2026: *"Formaat kan ook toegevoegd worden aan brand kit in
+-- visuails studio om het proces te versnellen, voornamelijk handig voor catalog
+-- omdat dit bijna altijd zelfde formaat moet krijgen."*
+--
+-- Dat is precies wat `customer_style_locks` al doet voor de andere drie
+-- antwoorden die een merk elke keer hetzelfde geeft: welk gezicht, welke
+-- achtergrond, waar het verkocht wordt. De verhouding is de vierde van dezelfde
+-- soort — een merk dat op 4:5 zit, zit daar bij bestelling twaalf nog steeds op,
+-- en dan is hem elke keer opnieuw vragen geen zorgvuldigheid maar traagheid.
+--
+-- PER DIENST EN NIET PER KLANT, en dat is de reden dat hij op deze tabel staat en
+-- niet op `customers`. De primaire sleutel hier is (customer_id, style), en dat
+-- is precies de fijnmazigheid die dit nodig heeft: catalog wil één verhouding
+-- voor het hele assortiment, lifestyle wil er een als STANDAARD waar per beeld
+-- van afgeweken mag worden. Eén kolom op `customers` zou die twee gelijkstellen.
+--
+-- NULLABLE, zoals elke andere kolom hier. Geen rij en een lege waarde betekenen
+-- allebei "vraag het per bestelling", en dat is de bestaande afspraak van deze
+-- tabel — handleLockUpdate() verwijdert de rij zodra alles leeg is, juist zodat
+-- "geen voorkeur" één betekenis heeft.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAT ER NIET IN GAAT
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Geen pixelmaten en geen 'video'. De verhoudingen die een clip krijgt liggen
+-- vast op alle drie tegelijk (zie VIDEO_RATIOS in src/data/videoExamples.js: elke
+-- clip komt verticaal, vierkant én breed), dus daar valt niets te kiezen. De
+-- kolom staat de waarde 'video' technisch toe omdat `style` dat altijd al deed;
+-- het formulier tekent hem daar niet.
+--
+-- De toegestane waardes zijn de id's uit src/data/ratios.js ('square',
+-- 'portrait45', 'portrait34', 'wide') en worden daar gecontroleerd, niet hier
+-- met een CHECK. Reden: die lijst verschilt per dienst — 'wide' mag bij
+-- lifestyle en niet bij catalog — en dat is een regel die meebeweegt met wat we
+-- verkopen. Een CHECK in het schema zou een migratie vragen bij elke nieuwe
+-- verhouding, en zou de per-dienst-regel toch niet kunnen uitdrukken.
+ALTER TABLE customer_style_locks ADD COLUMN ratio TEXT;

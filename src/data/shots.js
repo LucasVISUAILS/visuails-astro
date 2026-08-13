@@ -172,9 +172,79 @@ export function isExtraShotId(id, max) {
   return n >= 1 && n <= cap;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EN DE GRATIS REFERENTIEFOTO'S — 13 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Ook wil ik dat het mogelijk word voor een bezoeker om meer foto's toe
+ * te voegen van zijn product kosteloos door op een plusje naast de 4 aanbevolen
+ * foto's te klikken. Dit zorgt ervoor dat ze meer details kunnen laten zien maar
+ * wel gewoon 4 foto's in totaal krijgen, wel moet de optie voor een extra foto
+ * behouden worden als apart vak die gewoon de huidige extra prijs behouden."*
+ *
+ * ── TWEE DINGEN DIE ALLEBEI "EXTRA" HEETTEN, EN DAT MOCHT NIET ─────────────
+ *
+ * Er zijn nu twee soorten vakjes die er bij kunnen komen, en ze zijn elkaars
+ * tegenpool:
+ *
+ *   REFERENTIE (`ref1`, `ref2`, …)  Gratis. INVOER. Nog een foto van hetzelfde
+ *     product zodat wij het beter zien — een tweede detail, de binnenkant, het
+ *     label. Levert GEEN extra beeld op: de klant krijgt nog steeds zijn vier.
+ *     Geen notitie verplicht, want er valt niets te beschrijven; het is materiaal.
+ *
+ *   EXTRA (`extra1`, `extra2`, …)   Betaald. UITVOER. Een beeld dat de klant
+ *     erbij BESTELT, met een verplichte notitie omdat wij moeten weten wat het
+ *     moet worden, en met een prijs uit EXTRA_PHOTO_LADDER.
+ *
+ * Als die twee één woord zouden delen, dan is er een dag waarop een gratis vakje
+ * wordt geprijsd of een betaald vakje gratis wordt geleverd. Vandaar een eigen
+ * voorvoegsel, een eigen bovengrens, en een eigen plek voor die grens: de betaalde
+ * staat in pricing.js want hij kost geld, deze staat hier want hij is alleen een
+ * vakje dat het formulier tekent.
+ *
+ * ── VIER, HETZELFDE GETAL ALS DE BETAALDE ──────────────────────────────────
+ *
+ * Niet omdat het moet, maar omdat één getal om te onthouden beter is dan twee. Het
+ * plafond bestaat wél echt: elk vakje is een bestand dat naar R2 gaat, en
+ * MAX_BATCH_FILES in uploads.js rekent hiermee. Onbegrensd zou betekenen dat één
+ * bestelling het plafond van de hele batch kan opeten.
+ */
+export const REF_SHOT_PREFIX = 'ref';
+
+/** Hoeveel gratis referentiefoto's een product erbij mag hebben. */
+export const MAX_REF_PER_PRODUCT = 4;
+
+/** 'ref1', 'ref2', … — het nummer zoals de klant het ziet, dus vanaf 1. */
+export function refShotId(n) {
+  return `${REF_SHOT_PREFIX}${n}`;
+}
+
+export function isRefShotId(id, max) {
+  if (typeof id !== 'string') return false;
+  const m = new RegExp(`^${REF_SHOT_PREFIX}([1-9][0-9]?)$`).exec(id);
+  if (!m) return false;
+  const n = Number.parseInt(m[1], 10);
+  const cap = Number.isFinite(max) && max > 0 ? max : MAX_REF_PER_PRODUCT;
+  return n >= 1 && n <= cap;
+}
+
+/** Het nummer uit 'ref2', of 0 als dit geen referentievakje is. */
+export function refShotNumber(id) {
+  const m = new RegExp(`^${REF_SHOT_PREFIX}([1-9][0-9]?)$`).exec(String(id || ''));
+  return m ? Number.parseInt(m[1], 10) : 0;
+}
+
+/**
+ * Kent /api/upload dit vakje?
+ *
+ * Een gesloten verzameling, en dat hoort zo: alles wat hier niet in staat, komt
+ * terug met 400 bad-shot. Een referentievakje dat hier zou ontbreken, zou dus
+ * precies zo stil mislukken als de extra's dat voor 8 augustus deden.
+ */
 export function isShotId(id) {
   if (typeof id !== 'string') return false;
-  return SHOT_IDS.includes(id) || isExtraShotId(id);
+  return SHOT_IDS.includes(id) || isExtraShotId(id) || isRefShotId(id);
 }
 
 /** One shot by id, or undefined. */

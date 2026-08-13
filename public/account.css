@@ -873,6 +873,57 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
   border: 1px solid var(--line-strong); border-radius: var(--r-sm);
   color: var(--ink-3);
 }
+/* ── DE VASTE BEELDVERHOUDING — 13 augustus 2026 ────────────────────────────
+   Migratie 0028. Lucas: *"voornamelijk handig voor catalog omdat dit bijna altijd
+   zelfde formaat moet krijgen."*
+
+   ELKE TEGEL IS DE VORM DIE HIJ BESCHRIJFT, en dat is de hele reden dat dit geen
+   keuzelijst is. Dezelfde afweging die de kop van brandKitBody() over de modellen
+   en de achtergronden maakt: *"a dropdown reading 'Off-white · #F7F5F1' is a
+   colour you have to imagine, on a page whose entire subject is not having to
+   imagine."* Een verhouding is precies zo'n ding — "3:4" zegt een mens niets tot
+   hij het naast 4:5 ziet staan.
+
+   VASTE HOOGTE, WISSELENDE BREEDTE, om dezelfde reden als bij de videovoorbeelden
+   op /video: laat je de breedte vast en de hoogte volgen, dan is de 16:9-tegel een
+   streep naast een blok en staat de rij scheef. */
+.bk-ratios { display: flex; flex-wrap: wrap; gap: .6rem; align-items: flex-start; }
+.bk-ratio {
+  position: relative; display: grid; gap: .28rem; justify-items: center;
+  /* Begrensd, zodat het label van de "geen voorkeur"-tegel de rij niet uit
+     verhouding trekt: die tegel gaat over dezelfde keuze als de vormen ernaast en
+     hoort dus niet twee keer zo breed te zijn. */
+  max-width: 124px;
+  cursor: pointer; padding: .55rem .6rem .6rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--paper-2); text-align: center;
+  transition: border-color .12s ease;
+}
+.bk-ratio:hover { border-color: var(--line-strong); }
+.bk-ratio:has(input:checked) { border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
+.bk-ratio:has(input:focus-visible) { outline: 2px solid var(--teal); outline-offset: 2px; }
+/* Verborgen maar bereikbaar — zelfde 1px-truc en dezelfde reden als bij .bk-tile:
+   de radio moet met het toetsenbord te halen zijn en zijn waarde posten. */
+.bk-ratio input {
+  position: absolute; width: 1px; height: 1px; margin: 0;
+  opacity: 0; pointer-events: none;
+}
+/* 64 en niet 52: bij 52px zijn 1:1, 4:5 en 3:4 respectievelijk 52, 42 en 39 px
+   breed, en dat verschil van drie pixels tussen de laatste twee is precies te klein
+   om de keuze te maken die deze tegels moeten maken. Bij 64 wordt het 64, 51 en 48.
+   En een lichtere vulling dan de kaart eronder, want de VORM is hier de boodschap —
+   een vlak dat even donker is als zijn achtergrond, laat alleen zijn rand zien. */
+.bk-ratio-box {
+  display: block; height: 64px; width: auto; max-width: 96px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  background: var(--paper-3, var(--line));
+}
+/* "Wordt per bestelling gevraagd" heeft geen vorm om te tonen, dus krijgt hij een
+   streepjesrand: overal op deze site het teken voor "hier staat nog niets". */
+.bk-ratio-box.is-none { aspect-ratio: 1 / 1; border-style: dashed; background: transparent; }
+.bk-ratio-name { font-size: .82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.bk-ratio-what { font-size: .7rem; color: var(--ink-3); }
+
 .bk-hint {
   margin: .6rem 0 0; max-width: 62ch;
   font-size: .82rem; line-height: 1.5; color: var(--ink-2);

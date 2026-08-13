@@ -1,0 +1,274 @@
+---
+/*
+ * VISUAILS — twee videovoorbeelden per stijl, plus wat er geleverd wordt.
+ *
+ * ── POSTER MET KLIK-OM-TE-SPELEN, ZONDER ÉÉN REGEL JAVASCRIPT ───────────────
+ *
+ * Lucas koos "poster met klik-om-te-spelen". Dat is precies wat een `<video>` met
+ * `poster` en `preload="none"` doet: de browser tekent de still, haalt nul bytes
+ * video op, en begint pas te laden als er op play wordt gedrukt. `controls` geeft
+ * de knop, de balk en het volume — allemaal al toegankelijk, allemaal al vertaald
+ * door de browser zelf.
+ *
+ * Een eigen speler eromheen zou een script toevoegen aan pagina's die er nergens
+ * anders een nodig hebben, en zou de vier dingen die de native speler gratis doet
+ * (toetsenbord, schermlezer, volledig scherm, ondertitelknop) opnieuw moeten
+ * bouwen. Dat is de verkeerde ruil voor een play-knop.
+ *
+ * GEEN AUTOPLAY, en dat is een bedrag en niet een smaak: vier stijlen × twee
+ * voorbeelden is acht clips. Automatisch spelen laadt ze alle acht voor een
+ * bezoeker die er misschien één bekijkt.
+ *
+ * ── EN DE LEGE STAAT IS EEN ONDERDEEL, GEEN GEBREK ─────────────────────────
+ *
+ * Het materiaal moet nog gemaakt worden. De lege staat heeft daarom de JUISTE
+ * beeldverhouding, zodat de bladspiegel nu al is wat hij straks is en het invullen
+ * van één pad niets verschuift. Hij zegt ook wat er komt, want een grijs vlak met
+ * "binnenkort" is een gat; een grijs vlak dat vertelt wat je gaat zien, is een
+ * aankondiging.
+ *
+ * Wat hij NIET doet, is een bestaande lifestyle-still als poster gebruiken. Een
+ * poster is de eerste frame van de clip. Een foto die er alleen op lijkt, is een
+ * voorbeeld van werk dat niet bestaat — dezelfde soort belofte die vandaag van
+ * /video is afgehaald.
+ */
+import { examplesFor, isReady, VIDEO_RATIOS, VIDEO_FORMAT, videoFilename } from '../data/videoExamples.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+  slug: string;
+  name: string;
+}
+const { lang, slug, name } = Astro.props;
+const nl = lang === 'nl';
+const items = examplesFor(slug);
+
+const T = nl ? {
+  h: `${name} in beweging`,
+  lead: 'Twee voorbeelden. Klik om te spelen — er wordt niets geladen zolang je dat niet doet.',
+  soonLabel: 'Nog niet opgenomen',
+  soonBody: 'Dit voorbeeld wordt gemaakt. Wat er komt te staan:',
+  deliverH: 'Wat je krijgt, per clip',
+  deliverLead: `Elke clip komt in drie beeldverhoudingen, als ${VIDEO_FORMAT.name}. Eén opname, drie uitsnedes — je hoeft niets zelf te hersnijden.`,
+  fileH: 'Bestand',
+  forH: 'Waarvoor',
+  formatNote: VIDEO_FORMAT.why.nl,
+  folderNote: 'Ze zitten in de map van je bestelling, naast de foto\'s, met een nummer vooraan zodat je verkenner ze in deze volgorde zet. De LEESMIJ in die map legt de rest uit.',
+} : {
+  h: `${name} in motion`,
+  lead: 'Two examples. Click to play — nothing loads until you do.',
+  soonLabel: 'Not filmed yet',
+  soonBody: 'This example is being made. What will be here:',
+  deliverH: 'What you get, per clip',
+  deliverLead: `Every clip comes in three aspect ratios, as ${VIDEO_FORMAT.name}. One take, three crops — you never have to recut it yourself.`,
+  fileH: 'File',
+  forH: 'For',
+  formatNote: VIDEO_FORMAT.why.en,
+  folderNote: 'They sit in your order\'s folder beside the photographs, with a number in front so your file browser puts them in this order. The README in that folder explains the rest.',
+};
+
+const ratioOf = (id: string) => VIDEO_RATIOS.find((r) => r.id === id) || VIDEO_RATIOS[0];
+const ratioCss = (id: string) => ratioOf(id).css;
+
+/** "8 seconden · Verticaal" — zie de noot bij de figcaption voor waarom hier. */
+const metaLine = (e: { seconds: number; ratio: string }) =>
+  `${e.seconds} ${nl ? 'seconden' : 'seconds'} · ${ratioOf(e.ratio).name[lang]}`;
+---
+
+{items.length > 0 && (
+  <section class="section-tight">
+    <div class="container">
+      <h2>{T.h}</h2>
+      <p class="lead" style="margin-top:.8rem;max-width:60ch">{T.lead}</p>
+
+      <div class="vx-grid">
+        {items.map((e) => (
+          <figure class="vx" style={`--vx-ratio:${ratioCss(e.ratio)}`}>
+            {isReady(e) ? (
+              /* preload="none" is het hele punt — zie de kop. playsinline zodat een
+                 iPhone hem in de pagina speelt in plaats van het scherm over te nemen. */
+              <video
+                class="vx-media"
+                controls
+                preload="none"
+                playsinline
+                poster={e.poster}
+                aria-label={e.alt[lang]}
+              >
+                <source src={e.file} type={`video/${VIDEO_FORMAT.ext}`} />
+              </video>
+            ) : (
+              <div class="vx-media vx-soon">
+                <span class="vx-soon-label">{T.soonLabel}</span>
+              </div>
+            )}
+            {/* ── DE OMSCHRIJVING STAAT ONDER HET KADER EN NIET ERIN ──────────
+                 Eerste versie zette "wat er komt te staan" binnen het lege vlak. Bij
+                 een verticaal voorbeeld is dat vlak 270 pixels breed, en dan wordt een
+                 zin van dertig woorden een kolom van vier letters. Onder het kader is
+                 de volle breedte beschikbaar, en het staat daar bovendien op de plek
+                 waar straks de titel van de échte clip staat — dus verschuift er niets
+                 als het materiaal er is.
+
+                 Eén string in de frontmatter en niet drie expressies naast elkaar:
+                 Astro vouwt de witruimte tússen {…}-blokken weg, dus
+                 `{e.seconds} {woord}` kwam er als "8seconds" uit. En het
+                 scheidingsteken staat als teken en niet als `&middot;`, want in een
+                 tekstkind wordt die entiteit hier letterlijk uitgeschreven. */}
+            <figcaption class="vx-cap">
+              <strong>{e.title[lang]}</strong>
+              <span class="vx-meta">{metaLine(e)}</span>
+              <span class="vx-alt">{isReady(e) ? '' : `${T.soonBody} `}{e.alt[lang]}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+
+      {/* ── DE LEVERLIJST ────────────────────────────────────────────────────
+           Exacte bestandsnamen, uit videoFilename() en niet hier getypt: dan kan
+           deze tabel niet iets anders beloven dan de levering aanlevert. Zelfde
+           afspraak als de LEESMIJ bij de foto's, die zijn namen ook uit de code
+           haalt waar ze gemaakt worden. */}
+      <div class="vx-deliver">
+        <h3>{T.deliverH}</h3>
+        <p class="vx-deliver-lead">{T.deliverLead}</p>
+        <table class="vx-table">
+          <thead>
+            <tr><th>{T.fileH}</th><th>{T.forH}</th></tr>
+          </thead>
+          <tbody>
+            {VIDEO_RATIOS.map((r, i) => (
+              <tr>
+                <td><code>{videoFilename(i, r.id)}</code></td>
+                <td>{r.what[lang]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p class="vx-note">{T.formatNote}</p>
+        <p class="vx-note">{T.folderNote}</p>
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  /* ── VASTE HOOGTE, WISSELENDE BREEDTE ─────────────────────────────────────
+     Dit was eerst `width: 100%` met de verhouding erop, en dat gaf op een halve
+     kolom een verticaal voorbeeld van ruim twaalfhonderd pixels hoog naast een
+     vierkant van zeshonderd. Een rij waarin het ene vlak twee keer zo hoog is als
+     het andere leest niet als ontwerp maar als een fout — en het commentaar dat er
+     eerst stond, beweerde nog dat de rij "één hoogte houdt". Dat was niet waar.
+
+     Nu bepaalt de HOOGTE de maat en volgt de breedte uit de verhouding. Een
+     verticale clip wordt dus smaller in plaats van hoger, de rij is recht, en geen
+     enkel voorbeeld wordt vervormd of afgesneden: de echte vorm van de clip blijft
+     te zien, en dat is precies wat een voorbeeld moet doen.
+
+     Op een telefoon gaat de hoogte omlaag en de kolommen naar één. */
+  .vx-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(1rem, 2.2vw, 1.6rem);
+    margin-top: clamp(1.6rem, 3vw, 2.2rem);
+    align-items: start;
+  }
+  .vx { margin: 0; }
+  .vx-media {
+    display: block;
+    height: clamp(300px, 40vh, 440px);
+    width: auto;
+    max-width: 100%;
+    aspect-ratio: var(--vx-ratio, 1 / 1);
+    /* Links uitgelijnd en NIET gecentreerd. Gecentreerd stond het kader van een
+       verticaal voorbeeld tweehonderdtachtig pixels naar binnen terwijl de titel
+       eronder tegen de linkerkant begon — twee linkerranden in één kolom, en dat
+       leest als een verschoven blok. Nu delen kader en tekst één rand. */
+    margin-inline: 0;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-lg);
+    /* contain en niet cover: een clip in zijn eigen kader hoort niet te worden
+       afgesneden. Het kader IS zijn verhouding, dus er valt niets weg te snijden —
+       dit is de vangnetregel voor een bestand dat toch iets anders blijkt. */
+    object-fit: contain;
+  }
+
+  /* ── DE LEGE STAAT ────────────────────────────────────────────────────────
+     Een streepjesrand en niet een dichte: dat is overal op deze site het teken
+     "hier hoort iets te komen" en niet "hier is iets stuk". Zelfde taal als de
+     lege upload-vakjes in het bestelformulier. */
+  .vx-soon {
+    border-style: dashed;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+  }
+  .vx-soon-label {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: .74rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: center;
+  }
+
+  .vx-cap {
+    margin-top: .7rem;
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+  }
+  .vx-cap strong { font-family: var(--font-display); font-size: 1rem; color: var(--ink); }
+  .vx-meta { font-size: .82rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .vx-alt {
+    margin-top: .35rem;
+    font-size: .88rem;
+    color: var(--ink-2);
+    line-height: 1.55;
+    max-width: 44ch;
+  }
+
+  .vx-deliver {
+    margin-top: clamp(2.2rem, 4vw, 3rem);
+    max-width: 62ch;
+  }
+  .vx-deliver h3 { font-size: 1.15rem; }
+  .vx-deliver-lead { margin-top: .6rem; color: var(--ink-2); font-size: .95rem; line-height: 1.6; }
+
+  .vx-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.1rem;
+    font-size: .9rem;
+  }
+  .vx-table th,
+  .vx-table td {
+    text-align: left;
+    padding: .55rem .7rem .55rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .vx-table th {
+    font-family: var(--font-display);
+    font-size: .78rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .vx-table td:first-child { white-space: nowrap; padding-right: 1.2rem; }
+  .vx-table code {
+    font-size: .86rem;
+    color: var(--ink);
+    background: var(--surface-2);
+    padding: .12rem .35rem;
+    border-radius: var(--r-sm, 4px);
+  }
+  .vx-note { margin-top: .8rem; font-size: .86rem; color: var(--ink-3); line-height: 1.6; }
+
+  @media (max-width: 720px) {
+    .vx-grid { grid-template-columns: 1fr; }
+    .vx-media { height: clamp(260px, 52vh, 380px); }
+  }
+</style>

@@ -7,6 +7,7 @@ import Layout from '../../../layouts/Layout.astro';
 import { videoStyles } from '../../../data/videoStyles.nl.js';
 import { reviewClaim, turnaround, TIERS } from '../../../data/pricing.js';
 import { metaDescription } from '../../../data/meta.js';
+import VideoExamples from '../../../components/VideoExamples.astro';
 
 export function getStaticPaths() {
   return videoStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
@@ -144,6 +145,15 @@ const m = media[style.slug] ?? media.motion;
       </div>
     </div>
   </section>
+
+  <!-- ── DE VOORBEELDEN, EN DE LEVERLIJST — 13 augustus 2026 ─────────────────
+       Blok 7. Staat NA de fotostrip en VOOR "wat er in elke frame gaat": de
+       bezoeker heeft dan gezien wat de stijl is en wil weten hoe het beweegt,
+       en pas daarna hoe het gemaakt wordt. Alles eraan -- de twee voorbeelden,
+       de lege staat zolang het materiaal er niet is, en de bestandsnamen die
+       geleverd worden -- zit in het component, zodat de vier stijlen en de twee
+       talen niet uit elkaar kunnen lopen. -->
+  <VideoExamples lang="nl" slug={style.slug} name={style.name} />
 
   <!-- Craft + why choose it, condensed into one section -->
   <section>
