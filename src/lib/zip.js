@@ -136,6 +136,31 @@ function uniqueNames(files) {
       .split('/')
       .map((seg) => seg.trim())
       .filter((seg) => seg !== '' && seg !== '.' && seg !== '..');
+    /*
+     * ── EEN MAP IS EEN NAAM DIE OP / EINDIGT — 12 AUGUSTUS 2026 ──────────────
+     *
+     * Toegevoegd voor de mappenroute op /admin: een zip die alleen de STRUCTUUR
+     * van een bestelling bevat, zodat de studio de foto's er in de goede vakjes
+     * in zet en de server daarna uit het PAD kan lezen welk product en welke shot
+     * het is. Zonder mapvermeldingen zou zo'n zip leeg uitpakken -- een
+     * uitpakker maakt alleen mappen die hij uit een bestandspad kan afleiden, en
+     * er zijn hier per definitie nog geen bestanden.
+     *
+     * `f.dir` is dus geen sier maar de hele functie van dat archief. De schuine
+     * streep wordt na het opschonen weer aangeplakt, want de splitser hierboven
+     * gooit het lege laatste segment eruit -- en dat moet hij ook doen voor een
+     * BESTANDSnaam die per ongeluk op / eindigt.
+     */
+    if (f.dir) {
+      const dirPath = segments.map((seg) => seg.slice(0, 60)).join('/');
+      // Een map zonder segmenten bestaat niet; die slaan we over in pull().
+      const key = dirPath ? `${dirPath}/` : '';
+      // Mappen worden NIET gededupliceerd met een "(2)": twee keer dezelfde map
+      // is dezelfde map, en een tweede vermelding ervan is onschuldig. Een
+      // uitpakker maakt hem één keer aan. `(2)` erachter zou juist een tweede,
+      // verkeerde map opleveren.
+      return key;
+    }
     /* Het laatste segment is de bestandsnaam, de rest zijn mappen. Alleen de
        bestandsnaam wordt op 120 tekens afgekapt: afkappen midden in een mapnaam
        zou twee producten in dezelfde map kunnen laten belanden. */
@@ -212,6 +237,33 @@ export function zipStream(files) {
       const f = files[index];
       const name = enc.encode(names[index]);
       index += 1;
+
+      /*
+       * EEN MAPVERMELDING: nul bytes, crc nul, en de naam eindigt op /. Verder is
+       * het een gewone vermelding -- er is geen aparte structuur voor nodig. De
+       * externe attributen (waar de mapbit van MS-DOS in zou staan) laten we nul:
+       * elke gangbare uitpakker leest de afsluitende schuine streep en maakt de
+       * map, en een attribuutveld verkeerd vullen is een grotere kans op gezeur
+       * dan het leeg laten.
+       *
+       * Een lege naam kan hier voorkomen als iemand `{ dir: true, name: '/' }`
+       * meegeeft; die vermelding zou een archief opleveren met een naamloze
+       * ingang. Overslaan is het juiste antwoord en het is stil, net als een
+       * object dat uit R2 verdwenen is.
+       */
+      if (f.dir) {
+        if (!name.length) return;
+        const localDir = bytes(
+          [0x04034b50, 4], [20, 2], [0x0800, 2], [0, 2],
+          [DOS_TIME, 2], [DOS_DATE, 2], [0, 4], [0, 4], [0, 4],
+          [name.length, 2], [0, 2],
+        );
+        controller.enqueue(localDir);
+        controller.enqueue(name);
+        central.push({ name, crc: 0, size: 0, offset });
+        offset += localDir.length + name.length;
+        return;
+      }
 
       let buf;
       try {

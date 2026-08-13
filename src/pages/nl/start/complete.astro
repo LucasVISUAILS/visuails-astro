@@ -2,14 +2,41 @@
 // VISUAILS — /nl/start/complete.
 // De pagina is vier imports en een servicenaam. De rest — de vijf stappen, de
 // copy in beide talen, het configblok dat pipeline.js leest — staat in
-// OrderFlow.astro. Het énige blok dat verschilt komt binnen via de slot.
+// OrderFlow.astro. Het blok dat verschilt komt binnen via de slot.
+//
+// ── EN DEZE PAGINA HEEFT ER TWEE NODIG — 13 augustus 2026 ────────────────────
+//
+// Hier stond alleen Step1Options, en dat is wat /start/catalog doet. Maar deze
+// dienst is catalog ÉN lifestyle in één bestelling — zeven beelden per product,
+// vier voor de pagina en drie voor de feed — en die lifestyle-helft heeft een
+// vraag die de catalog-helft niet heeft: in welke wereld het product komt.
+//
+// /start/lifestyle stelt die vraag met StylePicker. Deze pagina stelde hem aan
+// niemand. Wie dus de grootste van de twee diensten kocht, voor de hoogste
+// prijs, koos geen look — en dan gokte de studio, of mailde erover. Precies het
+// gat dat StylePicker volgens zijn eigen kop moest dichten.
+//
+// DE LOOK STAAT BOVENAAN. Van de blokken in stap 1 is dit het enige waar niets
+// is voorgeselecteerd — het moet beantwoord worden. De drie in Step1Options
+// hebben allemaal een veilige standaard (zuiver wit, "wij kiezen er een", geen
+// kanaal), dus dat zijn antwoorden die je mag veranderen en geen vragen die je
+// moet doorwerken. Zie de kop van Step1Options: dat is dezelfde afweging waarmee
+// die drie hun eigen volgorde kregen.
+//
+// AAN DE SERVERKANT VERANDERT NIETS. `style` staat niet in TOP_FIELDS en landt
+// dus in details_json bij de rest van de briefing, en het bevestigingsscherm
+// print die regel al zodra de stroom de vraag heeft. bgApplies('complete') was
+// al waar, dus de achtergrond blijft ook staan — deze bestelling heeft ze echt
+// allebei.
 import Layout from '../../../layouts/Layout.astro';
 import OrderFlow from '../../../components/order/OrderFlow.astro';
 import Step1Options from '../../../components/order/Step1Options.astro';
+import StylePicker from '../../../components/order/StylePicker.astro';
 ---
 
-<Layout title="Catalogsets en lifestyle-carousels bestellen — VISUAILS" description="De pagina en de feed in één bestelling: zeven beelden per product. Kies het aantal en de achtergrond.">
+<Layout title="Catalogsets en lifestyle-carousels bestellen — VISUAILS" description="De pagina en de feed in één bestelling: zeven beelden per product. Kies het aantal, de look en de achtergrond.">
   <OrderFlow lang="nl" service="complete">
+    <StylePicker lang="nl" />
     <Step1Options lang="nl" />
   </OrderFlow>
 </Layout>

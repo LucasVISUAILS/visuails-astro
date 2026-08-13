@@ -131,6 +131,7 @@ export const ui = {
     foot_contact: 'Contact',
     foot_privacy: 'Privacy',
     foot_terms: 'Terms of Service',
+    foot_dpa: 'Data processing',
     foot_cookies: 'Cookies',
     // ---- cookie consent (section 19) ---------------------------------------
     // Deliberately plain. A banner that explains itself in one sentence and
@@ -244,6 +245,7 @@ export const ui = {
     foot_contact: 'Contact',
     foot_privacy: 'Privacy',
     foot_terms: 'Algemene voorwaarden',
+    foot_dpa: 'Verwerkersovereenkomst',
     foot_cookies: 'Cookies',
     nav_primary: 'Hoofdnavigatie',
     nav_open: 'Menu openen',

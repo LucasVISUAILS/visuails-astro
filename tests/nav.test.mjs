@@ -22,6 +22,7 @@
  */
 
 import { readFileSync, existsSync } from 'node:fs';
+import { buildStaat } from './lib/build.mjs';
 import { ui } from '../src/i18n/ui.js';
 
 let pass = 0, fail = 0;
@@ -321,12 +322,23 @@ console.log('\nverborgen, maar niet onzichtbaar');
    * Bestaat dist/ niet (een schone kloon zonder build), dan wordt deze controle
    * OVERGESLAGEN in plaats van rood. Hij gaat over de uitvoer van de build; is die er
    * niet, dan is er niets te controleren en zou rood alleen maar wennen aan rood zijn.
+   *
+   * ── EN EEN OUDE BUILD OOK — 13 augustus 2026 ───────────────────────────────
+   *
+   * Zelfde reden als in tests/planning.test.mjs, waar een `dist/` van vóór een
+   * prijswijziging om 02:11 twee rode regels gaf over een prijs die in de bron al
+   * weg was. Hier is het gevaar de andere kant op: een oude sitemap die `hooks`
+   * niet bevat omdat die pagina er tóén niet in stond, geeft GROEN over een vraag
+   * die niemand heeft gesteld. Een stille valse goedkeuring is erger dan een
+   * overgeslagen controle, want je merkt hem nooit.
    */
-  if (existsSync(new URL('../dist/sitemap.xml', import.meta.url))) {
+  const sitemapPad = new URL('../dist/sitemap.xml', import.meta.url);
+  const staat = buildStaat(sitemapPad);
+  if (staat.er && !staat.oud) {
     const sitemap = read('dist/sitemap.xml').replace(/<!--[\s\S]*?-->/g, '');
     check('en hij staat niet in de sitemap', /hooks/.test(sitemap), false);
   } else {
-    console.log(' --   sitemap niet gecontroleerd: er is geen build (npm run build)');
+    console.log(` --   sitemap niet gecontroleerd: ${staat.uitleg}`);
   }
 
   // Het item staat er nog, zonder href, in beide talen.

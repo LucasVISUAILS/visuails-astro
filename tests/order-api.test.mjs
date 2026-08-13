@@ -231,13 +231,43 @@ console.log('\nwanneer er een betaling wordt aangemaakt (echte onRequestPost)');
     };
   };
 
+  /*
+   * ── HET ZAKELIJKE BEWIJS HOORT IN DE FIXTURE — 12 AUGUSTUS 2026 ────────────
+   *
+   * VISUAILS levert uitsluitend zakelijk (zie src/data/business.js), en sinds die
+   * datum krijgt een bestelling zonder dat bewijs geen betaallink: de poort
+   * hieronder in order.js leest `!review.needsReview` naast vatReview.payableNow.
+   *
+   * Deze fixture heette "healthy" en had geen van beide velden -- dat was tot
+   * vandaag een complete bestelling en is het nu niet meer. De velden staan er dus
+   * bij, want een fixture die niet lijkt op wat het formulier post, toetst de code
+   * tegen een wereld die niet bestaat. Dezelfde les als bij vatRate in
+   * tests/invoice-pdf.test.mjs en bij total_cents in tests/account-invoices.test.mjs.
+   *
+   * `reg_number` en niet `vat`: dit is een Nederlandse klant, en een Nederlandse
+   * eenmanszaak laat het btw-veld routineus leeg terwijl hij altijd een KVK-nummer
+   * heeft. Dat is precies het geval waarvoor het veld bestaat.
+   */
   const base = {
     service: 'drop', email: 'klant@merk.nl', name: 'Jan Jansen',
     brand: 'Merk', products: '12', country: 'NL', back: '/thank-you',
+    business_declaration: 'yes', business_version: 'business-v1-2026-08',
+    no_vat: '1', reg_number: '99742993',
   };
 
   const healthy = await post(base);
   ok('een gezonde bestelling krijgt één betaling', healthy.payments, 1);
+
+  /* En de andere kant, want dat is wat de nieuwe poort eigenlijk doet: zonder de
+     verklaring gaat er geen geld lopen. De bestelling zelf gaat NIET verloren --
+     die staat er, met de reden op de beoordelingslijst. */
+  const geenVerklaring = await post({ ...base, business_declaration: '' });
+  ok('zonder de zakelijke verklaring geen betaallink', geenVerklaring.payments, 0);
+  ok('maar de bestelling is wel weggeschreven', geenVerklaring.ordersWritten > 0, true);
+
+  const geenBewijs = await post({ ...base, reg_number: '' });
+  ok('en zonder enig bewijs ook geen betaallink', geenBewijs.payments, 0);
+  ok('ook dan staat de bestelling er', geenBewijs.ordersWritten > 0, true);
 
   const lost = await post(base, { insertThrows: true });
   ok('een bestelling die niet is weggeschreven krijgt er geen', lost.payments, 0);
@@ -476,8 +506,14 @@ console.log('\nen er is een ratelimiet op de bestelroute');
 
   const post = async (opts, fields = {}) => {
     const fd = new FormData();
+    /* Compleet, inclusief het zakelijke bewijs -- zie de noot bij `base` hierboven.
+       Deze sectie gaat over de snelheidslimiet en niet over de uitsluiting, dus
+       moet elke bestelling hier wél door de zakelijke poort komen; anders meet
+       "geen betaling" straks het verkeerde ding. */
     const all = { service: 'drop', email: 'klant@merk.nl', name: 'Jan Jansen',
-      brand: 'Merk', products: '12', country: 'NL', back: '/thank-you', ...fields };
+      brand: 'Merk', products: '12', country: 'NL', back: '/thank-you',
+      business_declaration: 'yes', business_version: 'business-v1-2026-08',
+      no_vat: '1', reg_number: '99742993', ...fields };
     for (const [k, v] of Object.entries(all)) fd.append(k, v);
     calls = [];
     const d = db(opts);

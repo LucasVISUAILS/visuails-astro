@@ -24,6 +24,10 @@ import Layout from '../../layouts/Layout.astro';
 import {
   euro, turnaround, ladderRate, ladderFloor, LADDER, WINDOW_THRESHOLD,
 } from '../../data/pricing.js';
+// §7 leest de bewaartermijnen uit retention.js in plaats van ze in te typen. Zie de
+// noot in de Engelse pagina: een ingetypt getal in een contract is de duurste
+// variant van die drift.
+import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../../lib/retention.js';
 
 const t0 = turnaround('unattended', 'nl').toLowerCase();
 const t1 = turnaround('attended', 'nl').toLowerCase();
@@ -75,6 +79,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       Vaarwerkhorst 17, 7531 HK Enschede, Nederland<br>
       KVK 99742993 &middot; btw NL005407575B96 &middot; <a href="mailto:hello@visuails.com">hello@visuails.com</a></p>
       <p>Dit is ons vestigings- en postadres. Het is <strong>geen bezoekadres</strong>: er is geen ontvangstruimte en wij ontvangen er geen bezoek. Al het contact loopt via e-mail, en post komt aan.</p>
+      <p><strong>Bij deze voorwaarden horen twee documenten, en die maken er deel van uit.</strong> Ons <a href="/nl/privacy">privacybeleid</a> gaat over de gegevens die wij over jou hebben. Onze <a href="/nl/data-processing-agreement">verwerkersovereenkomst</a> gaat over de andere richting: materiaal dat jij aanlevert waarop een persoon staat, waarbij jij verantwoordelijke bent en wij jouw verwerker. Ondertekenen hoeft niet — een bestelling plaatsen is aanvaarden — en je kunt altijd een ondertekend exemplaar opvragen.</p>
 
 
       <h2>2. Definities</h2>
@@ -89,6 +94,10 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>3. De dienst</h2>
       <p>VISUAILS maakt AI-ondersteunde, door mensen gecontroleerde productvisuals — catalogusbeelden, lifestyle-scènes en video — op basis van het bronmateriaal dat je aanlevert. Elke visual wordt via ons proces gegenereerd en door een persoon gecontroleerd vóór levering. We streven naar consistente, publicatieklare resultaten, maar visuals zijn creatief werk en de exacte uitkomsten kunnen variëren.</p>
+
+      <p><strong>VISUAILS levert uitsluitend zakelijk.</strong> Deze dienst is voor merken, retailers en andere ondernemingen, en niet voor particulieren. Bij het bestellen vragen we je te bevestigen dat je voor je bedrijf of beroep bestelt, en we vragen het bewijs dat daarbij hoort: een KVK-nummer in Nederland, elders in de EU een btw-nummer dat wij bij VIES kunnen controleren, en buiten de EU het registratienummer van je eigen register. Ontbreekt dat bewijs, dan weigeren we de bestelling niet — we zetten hem stil, laten weten wat we nodig hebben, en beginnen zodra het er is. Er wordt in de tussentijd niets gemaakt en niets gefactureerd.</p>
+      <p>We vragen een registratienummer en niet specifiek een KVK-nummer, omdat een KVK-nummer alleen in Nederland bestaat: een dienst die daarop staat sluit geen consumenten uit maar buitenlandse ondernemingen. Wat juridisch telt is of je handelt voor je bedrijf — daarom is jouw bevestiging het dragende deel en het nummer de onderbouwing ervan.</p>
+      <p>Bestel je toch als consument, dan zegt paragraaf 10a wat er geldt: dan is het consumentenrecht van toepassing, wat er ook in deze voorwaarden staat, want dat is niet iets wat je met een contract kunt wegschrijven.</p>
 
       <h2>4. Bestellingen &amp; prijzen</h2>
       <p>Visuals worden geprijsd per product, en het tarief daalt naarmate het aantal producten in de bestelling stijgt. Indicatieve tarieven zijn:</p>
@@ -117,14 +126,35 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <h2>7. Je bestanden &amp; hoe lang we ze bewaren</h2>
       <p>Er liggen drie termijnen vast, en die zijn bewust verschillend lang:</p>
       <ul>
-        <li><strong>Bronmateriaal</strong> — de foto’s en bestanden die je uploadt worden 90 dagen na het afsluiten van je bestelling verwijderd. Wil je dat we ze langer bewaren, vraag dat dan schriftelijk vóór die tijd, dan spreken we het met je af.</li>
-        <li><strong>Geleverde visuals</strong> — je afgeronde visuals bewaren we 12 maanden na levering. Een levering gaat langer mee dan het materiaal waaruit die is gemaakt.</li>
-        <li><strong>Je bestellink</strong> — de privélink waarmee je downloadt werkt tot 90 dagen nadat je bestelling is afgesloten, daarna stopt hij. Heb je de bestanden daarna nog nodig, mail ons dan — we sturen je een nieuwe link.</li>
+        <li><strong>Bronmateriaal</strong> — de foto’s en bestanden die je uploadt worden {UPLOAD_DAYS} dagen na het afsluiten van je bestelling verwijderd. Wil je dat we ze langer bewaren, vraag dat dan schriftelijk vóór die tijd, dan spreken we het met je af.</li>
+        <li><strong>Geleverde visuals</strong> — je afgeronde visuals bewaren we {DELIVERY_MONTHS} maanden na levering. Een levering gaat langer mee dan het materiaal waaruit die is gemaakt.</li>
+        <li><strong>Je bestellink</strong> — de privélink waarmee je downloadt werkt tot {UPLOAD_DAYS} dagen nadat je bestelling is afgesloten, daarna stopt hij. Heb je de bestanden daarna nog nodig, mail ons dan — we sturen je een nieuwe link.</li>
       </ul>
-      <p>Bewaar zelf een kopie van alles waar je op vertrouwt: na 12 maanden kunnen we een nieuwe download niet garanderen. Hoe we verder met je persoonsgegevens omgaan, en hoe die privélink beveiligd is, staat in ons <a href="/nl/privacy">Privacybeleid</a>.</p>
+      <p>Bewaar zelf een kopie van alles waar je op vertrouwt: na {DELIVERY_MONTHS} maanden kunnen we een nieuwe download niet garanderen. Hoe we verder met je persoonsgegevens omgaan, en hoe die privélink beveiligd is, staat in ons <a href="/nl/privacy">Privacybeleid</a>.</p>
 
       <h2>8. Intellectueel eigendom &amp; gebruiksrechten</h2>
-      <p>Je behoudt alle rechten op je eigen product- en merkmateriaal — het bronmateriaal dat je aanlevert. Bij volledige betaling ontvang je commerciële gebruiksrechten op de geleverde visuals, zodat je ze kunt gebruiken in je webshop, op marktplaatsen, in advertenties en op social media. We kunnen voorbeelden van ons werk bewaren voor ons portfolio, tenzij je ons schriftelijk vraagt dit niet te doen.</p>
+      <p>Je behoudt alle rechten op je eigen product- en merkmateriaal — het bronmateriaal dat je aanlevert. Daar raakt niets hiervan aan.</p>
+
+      <p><strong>Wat je op de geleverde visuals krijgt, opgesomd en niet samengevat.</strong> Bij volledige betaling ontvang je een <strong>exclusieve, eeuwigdurende, wereldwijde en royaltyvrije licentie</strong> op de visuals die wij leveren, en die is na betaling onherroepelijk. Hij staat met opzet punt voor punt uitgeschreven: het Nederlandse recht leest zo'n licentie beperkt, dus een bevoegdheid die er niet staat is een bevoegdheid die je niet hebt gekregen (art. 2 lid 3 Auteurswet). Je mag:</p>
+      <ul>
+        <li><strong>verveelvoudigen en openbaar maken</strong>, in elk medium, op papier en online, in elk formaat en elke bestandsvorm;</li>
+        <li><strong>bewerken en aanpassen</strong> — uitsnijden, retoucheren, hertinten, tekst erover zetten, een frame uit een video halen, een detail los gebruiken;</li>
+        <li><strong>commercieel gebruiken</strong> op elke plek waar je verkoopt of adverteert: je eigen shop, marktplaatsen, betaalde campagnes, social media, print, verpakking, een beurs, een etalage;</li>
+        <li><strong>sublicentiëren</strong> aan de partijen die voor je werken — je bureau, je fotograaf, je marktplaats, een wederverkoper of distributeur die jouw product verkoopt;</li>
+        <li><strong>overdragen</strong> met je bedrijf of merk als dat wordt verkocht, zonder het ons te vragen.</li>
+      </ul>
+      <p>Niets uit die lijst verloopt, en er is geen limiet op aantallen, geen beperking naar gebied en geen looptijd. Je hoeft ons niet te vermelden.</p>
+
+      <p><strong>En het deel dat de meeste leveranciers je niet vertellen: op een AI-beeld rust misschien helemaal geen auteursrecht.</strong> Naar Nederlands en Europees recht is een werk pas beschermd als het een eigen intellectuele schepping van een mens is. Uitvoer die een machine uit een prompt maakt, zonder creatieve menselijke keuzes erin, haalt die toets niet — een Tsjechische rechter oordeelde zo in 2023 en het Amerikaanse Copyright Office kwam op hetzelfde uit. Onze beelden zijn geen pure machine-uitvoer: ze worden met de hand gecomponeerd, gecorrigeerd en geretoucheerd, en dat menselijke werk levert wél auteursrecht op het resultaat op. Maar wij gaan je niet vertellen dat wij iets houden wat wij misschien niet houden. Deze paragraaf is daarom zo gebouwd dat de uitkomst voor jou hetzelfde is, welke kant het op valt:</p>
+      <ul>
+        <li><strong>Bestaat er auteursrecht</strong> op een geleverde visual, dan krijg je de licentie hierboven — exclusief, dus ook niemand anders mag dat beeld gebruiken.</li>
+        <li><strong>Bestaat het niet</strong>, dan houdt niemand het, en dan kan niemand je iets verbieden. Wij doen geen beroep op een recht dat wij niet hebben, en claimen het later ook niet.</li>
+      </ul>
+      <p><strong>Heb je het auteursrecht overgedragen nodig in plaats van in licentie</strong> — voor een merkregistratie, een IE-lijst voor een investeerder, een due diligence — zeg het dan, dan ondertekenen wij daarvoor een akte van overdracht, kosteloos. Dat is geen formaliteit die wij kunnen overslaan: op grond van art. 2 lid 3 Auteurswet vereist overdracht een ondertekende akte, en <strong>een overdrachtsbeding in algemene voorwaarden is niet rechtsgeldig</strong>. Voorwaarden die beweren het auteursrecht aan je over te dragen doordat je bestelt, doen een belofte die de wet ze niet laat houden. Deze paragraaf doet dat niet: hij geeft je een licentie waarvoor geen akte nodig is, en een akte op verzoek.</p>
+      <p><strong>Wat niemand kan overdragen.</strong> De persoonlijkheidsrechten blijven bij de maker (art. 25 Auteurswet). Wij doen afstand van het recht op naamsvermelding, zodat je ons nooit hoeft te noemen, en van ons bezwaar tegen het wijzigen van het werk — daar is het bewerkingsrecht hierboven voor. Eén recht laat de wet niet wegschrijven en dat doen wij dus ook niet: het recht om zich te verzetten tegen een verminking van het werk die de eer of naam van de maker schaadt. In de praktijk gaat dat over een beeld inzetten om iets te zeggen waarvoor het niet is gemaakt, en niet over jouw normale bewerkingen.</p>
+      <p><strong>De licentie die je ons geeft, en waar die stopt.</strong> Het maken van de visuals betekent: jouw foto kopiëren, uitsnijden, bewerken en aanbieden aan de partijen die in onze <a href="/nl/data-processing-agreement">verwerkersovereenkomst</a> staan. Voor elk van die stappen is jouw toestemming nodig, want het auteursrecht op die foto is van jou en niet van ons. Je geeft VISUAILS daarom een licentie om het aangeleverde bronmateriaal op te slaan, te kopiëren, uit te snijden, te bewerken en aan te passen, en om het aan die partijen aan te bieden, <strong>uitsluitend om jouw bestelling te maken en te leveren</strong>. Die licentie is niet-exclusief, royaltyvrij, en wereldwijd van bereik alleen omdat de infrastructuur dat is; hij duurt niet langer dan wij het materiaal onder §7 bewaren. Er gaat geen eigendom over. Wij gebruiken jouw materiaal niet voor een andere klant, niet om een eigen model of dataset op te bouwen, en niet voor een doel waar je niet om hebt gevraagd. Je kunt de licentie op elk moment schriftelijk intrekken; wij stoppen dan met het werk en verwijderen het materiaal, en wat al geleverd is blijft van jou om te gebruiken onder deze paragraaf.</p>
+      <p><strong>Ons portfolio — het enige dat wij achterhouden, en waarom dat opgeschreven moet staan.</strong> De licentie hierboven is exclusief, en exclusief betekent exclusief: zonder deze alinea zouden wij inbreuk maken op jouw rechten door ons eigen werk te laten zien. Wij houden daarom één smal recht voor onszelf, en dat is de enige uitzondering in deze paragraaf. Wij mogen <em>geleverde visuals</em> — nooit jouw bronmateriaal — in ons portfolio, in een casus en op onze eigen kanalen laten zien, tenzij je ons schriftelijk vraagt dat niet te doen. Wij mogen ze niet verkopen, niet aan iemand anders in licentie geven, en niet gebruiken om een ander product aan te prijzen.</p>
+      <p>Er zitten twee grenzen op, en de eerste is de commercieel belangrijke. <strong>Is het product op het beeld nog niet openbaar te koop, dan publiceren wij niets</strong> voordat jij het hebt gelanceerd of schriftelijk ja hebt gezegd, wat eerder komt — een visual van een product dat nog niet uit is, is eerst jouw bedrijfsgeheim en daarna ons visitekaartje. En je kunt dit op elk moment intrekken, met één regel per e-mail, ook jaren later en ook voor werk dat al op onze site staat; dan halen wij het weg. Wij vragen het liever dan dat wij het aannemen, en een leverancier die een beding nodig heeft om werk te blijven tonen dat een klant hem heeft gevraagd weg te halen, heeft een groter probleem dan een portfolio.</p>
 
       <h2>9. Betaling &amp; btw</h2>
       <p>Betaling verloopt via onze betaalprovider. Facturen worden uitgereikt voor je administratie. Voor zakelijke klanten in de EU met een geldig btw-nummer kan de btw-verleggingsregeling van toepassing zijn wanneer aan de voorwaarden is voldaan; anders gelden de Nederlandse btw-regels. Je bent verantwoordelijk voor het aanleveren van correcte facturatie- en btw-gegevens.</p>
@@ -145,6 +175,14 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>11. Aansprakelijkheidsbeperkingen</h2>
       <p>We leveren de dienst met redelijke vaardigheid en zorg, maar voor zover wettelijk toegestaan zijn we niet aansprakelijk voor indirecte of gevolgschade, gederfde winst of schade die voortvloeit uit je gebruik van de visuals. Onze totale aansprakelijkheid voor een bestelling is beperkt tot het bedrag dat je voor die bestelling hebt betaald. Niets in deze voorwaarden sluit aansprakelijkheid uit die wettelijk niet kan worden uitgesloten.</p>
+      <p><strong>Waarvoor jij ons vrijwaart, en waar dat stopt.</strong> Paragraaf 5 is jouw garantie over het materiaal dat je aanlevert; dit is wat er geldt als die garantie onjuist blijkt. Stelt een derde ons aansprakelijk vanwege het bronmateriaal dat jij hebt aangeleverd, of vanwege de manier waarop jij de geleverde visuals hebt gebruikt of gepubliceerd, dan vrijwaar je ons voor die aanspraak en voor de redelijke kosten van verweer. Dat gaat over drie dingen en niets daarbuiten: materiaal waar je de rechten niet op had, een persoon op dat materiaal zonder grondslag om zijn beeltenis te gebruiken, en een publicatieplicht die bij jou ligt en niet bij ons — de AI-vermelding in <a href="/nl/ai-act">onze AI Act-verklaring</a> is daarvan het duidelijkste voorbeeld.</p>
+      <p>Er horen drie grenzen bij, want een vrijwaring zonder die grenzen is een beding waar niemand iets mee kan:</p>
+      <ul>
+        <li><strong>Wij melden het op tijd.</strong> Komt er een aanspraak, dan laten wij het je zonder onredelijke vertraging weten en geven wij door wat wij hebben ontvangen, zodat je kunt handelen op het moment dat het nog uitmaakt.</li>
+        <li><strong>Jij mag het verweer voeren.</strong> Je mag het overnemen met een advocaat van je eigen keuze, en wij werken daaraan mee. Wij schikken niets en erkennen niets zonder jouw schriftelijke instemming, en jij schikt niet op voorwaarden die ons tot iets verplichten zonder de onze.</li>
+        <li><strong>Het stopt waar ons eigen handelen begint.</strong> Dit dekt geen aanspraak voor zover die het gevolg is van een tekortkoming van ons in deze voorwaarden, van onze eigen nalatigheid, of van iets wat wij op eigen initiatief aan het werk hebben toegevoegd in plaats van uit jouw briefing.</li>
+      </ul>
+      <p>Deze paragraaf geldt voor zakelijke klanten, en dat is volgens paragraaf 3 iedereen aan wie wij leveren. Heb je toch als consument besteld, dan geldt deze paragraaf voor jou helemaal niet — een vrijwaring van deze soort kun je een consument niet opleggen, en een beding dat het tegendeel suggereert zou nietig zijn en niet slechts ongebruikt.</p>
 
       <h2>12. Toepasselijk recht</h2>
       <p>Op deze voorwaarden is Nederlands recht van toepassing. Eventuele geschillen worden voorgelegd aan de bevoegde Nederlandse rechter, tenzij dwingend recht anders bepaalt.</p>

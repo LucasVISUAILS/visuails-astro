@@ -42,6 +42,14 @@ import { stampDeliveryRetention } from './retention.js';
 import { serviceLabel } from '../data/services.js';
 import { hasProvenanceTag, isScannable } from './provenance.js';
 import { checkRate, clientIp } from './ratelimit.js';
+/* sendLoginLink() komt uit account.js en niet uit een eigen kopie hier — zie de noot
+   daar. account.js importeert dit bestand niet, dus er is geen kringverwijzing. */
+import { sendLoginLink } from './account.js';
+import { zipStream, zipDisposition } from './zip.js';
+import {
+  scaffoldFiles, scaffoldFilename, parseScaffoldPath, isSourcePath, isScaffoldDoc,
+  deliveryFilename,
+} from './scaffold.js';
 import {
   adminSessionExpiry,
   hashPassword,
@@ -101,6 +109,14 @@ export async function adminGet(context) {
   // under this prefix rather than widening the cookie's path.
   const filesMatch = path.match(/^\/admin\/orders\/(\d+)\/files$/);
   if (filesMatch) return renderFiles(context, Number(filesMatch[1]));
+
+  /* DE WERKMAP — 12 augustus 2026. Een zip met alleen de mapstructuur van deze
+     bestelling, zodat de studio de beelden in de goede vakjes zet en de server ze
+     daarna uit het PAD kan indelen. Zie src/lib/scaffold.js voor de hele
+     redenering; hier is het een GET zonder bijwerking, dus hij hoort bij de
+     leesroutes en niet bij de POST'ers verderop. */
+  const scaffoldMatch = path.match(/^\/admin\/orders\/(\d+)\/scaffold$/);
+  if (scaffoldMatch) return serveScaffold(context, Number(scaffoldMatch[1]));
 
   if (path === '/admin/customers') return renderCustomers(context);
   const customerMatch = path.match(/^\/admin\/customers\/(\d+)$/);
@@ -203,6 +219,25 @@ export async function adminPost(context) {
   // twee beslissingen — zie het blok boven handleAnnounceRedelivery().
   const announceMatch = path.match(/^\/admin\/orders\/(\d+)\/announce$/);
   if (announceMatch) return handleAnnounceRedelivery(context, Number(announceMatch[1]));
+
+  /* ── BLOK 5, 12 AUGUSTUS 2026 ────────────────────────────────────────────────
+     Vijf routes die het paneel van lezen naar corrigeren brengen. Ze staan bij
+     elkaar omdat ze bij elkaar horen; de redenering per handeling staat bij de
+     handlers zelf, boven renderCustomer(). */
+  const modelManageMatch = path.match(/^\/admin\/models\/(\d+)\/manage$/);
+  if (modelManageMatch) return handleModelManage(context, Number(modelManageMatch[1]));
+
+  const custDetailsMatch = path.match(/^\/admin\/customers\/(\d+)\/details$/);
+  if (custDetailsMatch) return handleCustomerDetails(context, Number(custDetailsMatch[1]));
+
+  const custStatusMatch = path.match(/^\/admin\/customers\/(\d+)\/status$/);
+  if (custStatusMatch) return handleCustomerStatus(context, Number(custStatusMatch[1]));
+
+  const creditMatch = path.match(/^\/admin\/customers\/(\d+)\/credits$/);
+  if (creditMatch) return handleCustomerCredit(context, Number(creditMatch[1]));
+
+  const signinMatch = path.match(/^\/admin\/customers\/(\d+)\/signin-link$/);
+  if (signinMatch) return handleCustomerSigninLink(context, Number(signinMatch[1]));
 
   // Welk beeld hoort bij welk product — de indeling die het klantdashboard in
   // groepen verdeelt in plaats van in twee losse stapels.
@@ -657,10 +692,53 @@ async function handleOrderDelete(context, orderId) {
  * én zonder boekhouding opleveren, en dat is de enige uitkomst hier die je niet
  * meer kunt repareren.
  *
+ * ── DEZE FUNCTIE FAALDE HALVERWEGE, EN DAT IS OP 12 AUGUSTUS 2026 GEREPAREERD ─
+ *
+ * WAT ER MIS WAS. De laatste batch deed `DELETE FROM orders WHERE customer_id = ?`.
+ * Sinds migratie 0021 (facturen, 9 augustus) en 0026 (creditnota's, 12 augustus)
+ * verwijzen `invoices.order_id` en `credit_notes.order_id` naar `orders` met
+ * **ON DELETE RESTRICT** — en schema.sql zegt bij die regel zelf waarom: *"een
+ * uitgereikt document verdwijnt niet omdat"* de bestelling verdwijnt. Met
+ * `PRAGMA foreign_keys = ON` gooit die DELETE dus zodra er ooit één factuur is
+ * uitgereikt.
+ *
+ * En dat gebeurde NA stap 2. De R2-objecten waren op dat moment al onherroepelijk
+ * weg, de rijen stonden er nog, en de logregel werd nooit geschreven. Uitkomst:
+ * de klant houdt zijn account en zijn bestellingen, maar al zijn beelden zijn
+ * verdwenen — en er staat niets over in het logboek. Dat is de slechtst mogelijke
+ * uitkomst van de enige knop op dit paneel die niet half mag falen.
+ *
+ * De test zag het niet: tests/admin.test.mjs gebruikt een neptabel-database die
+ * SQL-strings opslaat en geen foreign keys afdwingt. Een fout die alleen in
+ * productie bestaat, ziet een test met een nepdatabase per definitie niet.
+ *
+ * ── EN WAT DE REPARATIE VERANDERT, INHOUDELIJK ──────────────────────────────
+ *
+ * Die RESTRICT is geen obstakel maar een BESLISSING die al in het schema stond, en
+ * hij klopt: art. 17 lid 3 sub b AVG zegt dat het recht op vergetelheid niet geldt
+ * voor zover verwerking nodig is om een wettelijke verplichting na te komen. De
+ * fiscale bewaarplicht (art. 52 lid 4 AWR) is zo'n verplichting, en die gaat over
+ * de FACTUUR — met de naam en het adres erop, want zonder die gegevens is het geen
+ * geldige factuur.
+ *
+ * Dus wordt er nu onderscheid gemaakt, en dat is het hele verschil:
+ *
+ *   BESTELLINGEN ZONDER FACTUUR   verdwijnen volledig, zoals hiervoor.
+ *   BESTELLINGEN MÉT FACTUUR      blijven bestaan, maar worden UITGEKLEED: naam,
+ *                                 e-mail, telefoon, adres, btw-nummer, merk en
+ *                                 details_json gaan eruit. Wat overblijft is de
+ *                                 rij waar de factuur aan hangt, en de factuur
+ *                                 zelf met zijn momentopname en zijn pdf.
+ *
+ * Dat is minder dan "alles weg" en het is wat de wet toelaat. De klant hoort dat
+ * ook te lezen op het paneel voordat hij op de knop drukt — zie wipePanel.
+ *
  * WAT ER IN HET ARCHIEF KOMT: referentie, dienst, bedrag, btw, datum. Geen
  * naam, geen e-mail, geen merk. Precies genoeg om een aangifte te
- * onderbouwen en te weinig om iemand te herkennen — dat is wat de bewaarplicht
- * vraagt en waar het recht op vergetelheid ruimte voor laat.
+ * onderbouwen en te weinig om iemand te herkennen. Alleen nog voor bestellingen
+ * ZONDER factuur: bij een gefactureerde bestelling is de factuur zelf het
+ * wettelijke bewijsstuk, en dan is een tweede geanonimiseerde regel over hetzelfde
+ * geld dubbele boekhouding.
  *
  * BEVESTIGEN DOOR DE MERKNAAM OVER TE TYPEN. Er is geen ongedaan maken na deze
  * knop; dan hoort er ook geen enkele manier te zijn om hem per ongeluk in te
@@ -700,9 +778,43 @@ async function handleCustomerWipe(context, customerId) {
     throw new Error(`kon de bestellingen niet lezen, dus er is niets verwijderd: ${err?.message || err}`);
   });
   const rows = orders.results || [];
+  const ids = rows.map((o) => o.id);
+
+  /*
+   * 0 · WELKE BESTELLINGEN DRAGEN EEN UITGEREIKT DOCUMENT?
+   *
+   * Dit moet vóór alles gebeuren, want het bepaalt wat er straks mag worden
+   * verwijderd. Een `IN (...)`-lijst met gebonden waarden en niet met samengevoegde
+   * getallen: `ids` komt uit onze eigen query en niet van een formulier, maar dit is
+   * de plek waar iemand later een lijst uit een verzoek doorgeeft.
+   *
+   * Faalt deze query, dan faalt de wipe — net als bij de bestellingen hierboven, en
+   * om dezelfde reden: niet weten wat er beschermd is, is geen grond om te gaan
+   * verwijderen.
+   */
+  const billed = new Set();
+  if (ids.length) {
+    const plaats = ids.map((_, i) => `?${i + 1}`).join(',');
+    for (const tabel of ['invoices', 'credit_notes']) {
+      const res = await env.DB.prepare(
+        `SELECT DISTINCT order_id FROM ${tabel} WHERE order_id IN (${plaats})`
+      ).bind(...ids).all().catch((err) => {
+        throw new Error(`kon ${tabel} niet lezen, dus er is niets verwijderd: ${err?.message || err}`);
+      });
+      for (const r of res.results || []) billed.add(Number(r.order_id));
+    }
+  }
+  const wipeIds = ids.filter((id) => !billed.has(id));
+  const keepIds = ids.filter((id) => billed.has(id));
 
   // 1 · Bewaren wat bewaard moet blijven.
-  const paid = rows.filter((o) => o.payment_status === 'paid' && Number(o.total_cents || 0) > 0);
+  //
+  // ALLEEN de betaalde bestellingen ZONDER factuur. Bij een gefactureerde bestelling
+  // is de factuur zelf het wettelijke bewijsstuk en blijft die staan; een tweede
+  // geanonimiseerde regel over hetzelfde geld zou dubbele boekhouding zijn.
+  const paid = rows.filter((o) => o.payment_status === 'paid'
+    && Number(o.total_cents || 0) > 0
+    && !billed.has(o.id));
   if (paid.length) {
     await env.DB.batch(paid.map((o) => env.DB.prepare(
       `INSERT INTO invoice_archive (ref, service, total_cents, vat_cents, paid_at, created_at)
@@ -728,28 +840,109 @@ async function handleCustomerWipe(context, customerId) {
     }
   }
 
-  // 3 · De rijen, van blad naar wortel zodat er nooit een rij naar een
-  //     verdwenen ouder wijst — ook niet als foreign keys uit staan.
-  const ids = rows.map((o) => o.id);
-  const perOrder = (table) => ids.map((id) =>
+  /*
+   * 3 · DE RIJEN, van blad naar wortel zodat er nooit een rij naar een verdwenen
+   *     ouder wijst — ook niet als foreign keys uit staan.
+   *
+   * VIER TABELLEN ZIJN HIER OP 12 AUGUSTUS 2026 BIJ GEKOMEN, en alle vier stonden
+   * er niet omdat ze op ON DELETE CASCADE leunen. Deze codebase beargumenteert
+   * elders (zie de noot bij de style locks) dat je in D1 niet op cascade moet
+   * vertrouwen, en bij een AVG-verzoek is "het gaat vermoedelijk automatisch" geen
+   * antwoord dat je aan een toezichthouder geeft:
+   *
+   *   file_assets      hangt aan files en draagt de afgeleide varianten
+   *   payments         draagt `raw_payload`: de hele webhookbody van de betaling
+   *   order_feedback   draagt `private_note` en `testimonial_name`
+   *   messages         het contactformulier, met e-mailadres, naam en bericht.
+   *                    Deze hangt aan de KLANT en niet aan een bestelling, en had
+   *                    daarom ook met cascade nooit meegegaan: de FK is SET NULL.
+   *
+   * En `subscribers` heeft helemaal geen koppeling aan een klant — alleen een
+   * e-mailadres — dus die wordt op het adres opgeruimd. Zonder die regel blijft een
+   * verwijderde klant op de nieuwsbrieflijst staan, en dat is precies het geval
+   * waarin een verwijderverzoek zichtbaar niet is uitgevoerd.
+   */
+  const perOrder = (table, list) => list.map((id) =>
     env.DB.prepare(`DELETE FROM ${table} WHERE order_id = ?1`).bind(id));
+
+  /* file_assets kan niet per bestelling: hij hangt aan `files`. Dus eerst de
+     varianten van de bestanden van deze klant, en pas daarna de bestanden zelf. */
+  const assetKills = ids.map((id) => env.DB.prepare(
+    'DELETE FROM file_assets WHERE file_id IN (SELECT id FROM files WHERE order_id = ?1)'
+  ).bind(id));
+
+  /*
+   * DE GEFACTUREERDE BESTELLINGEN BLIJVEN, UITGEKLEED. Alles wat een persoon
+   * aanwijst gaat eruit; wat de factuur nodig heeft om aan iets te hangen blijft.
+   * `customer_id` op NULL zetten doet de foreign key straks zelf, maar hier
+   * expliciet — dezelfde reden als hierboven.
+   */
+  /*
+   * `email` KAN NIET OP NULL. Die kolom is NOT NULL sinds schema.sql, en dat is
+   * terecht: een bestelling zonder adres om iets naartoe te sturen is geen
+   * bestelling. Gevonden door tests/wipe.test.mjs tegen een echte sqlite -- de eerste
+   * versie van deze reparatie zette hem op NULL en liet de hele batch omvallen, wat
+   * exact dezelfde soort halve mislukking zou zijn geweest als de bug die hij moest
+   * verhelpen.
+   *
+   * Dus een adres dat naar niemand wijst en dat ook niet KAN. `.invalid` is daarvoor
+   * bij RFC 2606 gereserveerd: dat topniveaudomein wordt nooit uitgegeven, dus er is
+   * geen toekomst waarin dit adres bij een echt mens uitkomt. Een verzonnen
+   * `gewist@example.com` zou dat niet garanderen.
+   */
+  const WEG = 'gewist@visuails.invalid';
+  const strip = keepIds.map((id) => env.DB.prepare(
+    `UPDATE orders SET customer_id = NULL, name = NULL, brand = NULL, email = ?2,
+            phone = NULL, vat_number = NULL, details_json = NULL, billing_address = NULL,
+            first_name = NULL, last_name = NULL, address_line1 = NULL, address_line2 = NULL,
+            postal_code = NULL, city = NULL, region = NULL, customer_note = NULL,
+            vat_check_name = NULL, vat_check_json = NULL, payer_hash = NULL
+      WHERE id = ?1`
+  ).bind(id, WEG));
+
+  /* En de betaling van zo'n bestelling: de rij blijft staan, want die verbindt de
+     factuur met het geld dat is ontvangen. Alleen de ruwe webhookbody gaat eruit —
+     daar staan de gegevens van de betaler in. */
+  const stripPay = keepIds.map((id) => env.DB.prepare(
+    'UPDATE payments SET raw_payload = NULL WHERE order_id = ?1'
+  ).bind(id));
+
   await env.DB.batch([
-    ...perOrder('revision_requests'),
-    ...perOrder('order_notes'),
-    ...perOrder('order_events'),
-    ...perOrder('order_tokens'),
-    ...perOrder('files'),
+    ...assetKills,
+    ...perOrder('revision_requests', ids),
+    ...perOrder('order_notes', ids),
+    ...perOrder('order_events', ids),
+    ...perOrder('order_tokens', ids),
+    ...perOrder('order_feedback', ids),
+    ...perOrder('files', ids),
+    ...perOrder('payments', wipeIds),
+    ...stripPay,
     env.DB.prepare('DELETE FROM customer_style_locks WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM custom_models WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM account_sessions WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(customerId),
-    env.DB.prepare('DELETE FROM orders WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM messages WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM subscribers WHERE lower(email) = lower(?1)').bind(customer.email || ''),
+    ...strip,
+    /* DE BESTELLINGEN, en nu alleen die zónder uitgereikt document. Dit was de regel
+       die de hele functie halverwege liet omvallen zodra er één factuur bestond. */
+    ...wipeIds.map((id) => env.DB.prepare('DELETE FROM orders WHERE id = ?1').bind(id)),
     env.DB.prepare('DELETE FROM customers WHERE id = ?1').bind(customerId),
   ]).catch((err) => { throw new Error(`wissen mislukt: ${err?.message || err}`); });
 
+  /*
+   * DE LOGREGEL DRAAGT GEEN MERKNAAM MEER. Hier stond `${expected}` erin — de naam
+   * die de klant net had gevraagd te verwijderen — en die overleefde het verzoek dus
+   * in `admin_log`. Wat er nu staat is het klantnummer en de aantallen: genoeg om te
+   * kunnen aantonen DAT het verzoek is uitgevoerd en wanneer, zonder de persoon
+   * opnieuw op te schrijven. Dat is precies wat een verantwoordingslogboek moet doen.
+   */
   await logAdmin(env, admin, 'customer.wipe', {
     customerId: null,
-    detail: `${expected}: ${rows.length} bestelling(en) gewist, ${paid.length} factuurregel(s) bewaard, ${removed} bestand(en) uit R2${failed ? `, ${failed} mislukt` : ''}`,
+    detail: `klant #${customerId}: ${wipeIds.length} bestelling(en) gewist, `
+      + `${keepIds.length} met factuur bewaard en uitgekleed, `
+      + `${paid.length} archiefregel(s), ${removed} bestand(en) uit R2`
+      + `${failed ? `, ${failed} mislukt` : ''}`,
   });
 
   return seeOther('/admin/customers?wiped=1');
@@ -857,7 +1050,15 @@ async function loadOrderFiles(env, orderId) {
   // bij de smalle: valt de brede om omdat 0015 nog niet gedraaid is, dan is de
   // narrow-variant precies wat je wilt — de pagina laadt zonder btw-blok in
   // plaats van helemaal niet te laden. Zelfde patroon als 0011 hierboven.
+  /* `details_json` staat in BEIDE varianten en niet alleen in de brede: het is
+     een kolom van de eerste migratie, dus hij kan niet de reden zijn dat de brede
+     query omvalt. En hij is hier nodig sinds 13 augustus 2026, want een
+     videoaanvraag zet zijn aantal clips daarin (zie HoldingPage.astro) en niet
+     meer in `product_count`. Zonder deze kolom zou het aantal dat de klant
+     opgaf op deze pagina helemaal niet meer te zien zijn — dan was het
+     rechttrekken van dat veld voor jou een verslechtering geweest. */
   const wide = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
+                       details_json,
                        delivery_mailed_at, redelivery_mailed_at, redelivery_count,
                        customer_note, customer_note_at,
                        country, vat_number, vat_treatment, vat_rate, vat_cents, total_cents,
@@ -865,7 +1066,7 @@ async function loadOrderFiles(env, orderId) {
                        icp_reported_at
                   FROM orders WHERE id = ?1`;
   const narrow = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
-                         delivery_mailed_at
+                         details_json, delivery_mailed_at
                     FROM orders WHERE id = ?1`;
   let order = null;
   let migrated = true;
@@ -904,6 +1105,81 @@ async function loadOrderFiles(env, orderId) {
   } catch { notes = []; }
 
   return { order, files: results || [], migrated, notes };
+}
+
+/*
+ * ── DE WERKMAP ALS ZIP — 12 AUGUSTUS 2026 ────────────────────────────────────
+ *
+ * Lucas: *"ik wil het verzenden sneller maken door een soort mappenroute te kunnen
+ * downloaden zodat ik alleen de foto's in de juiste folders moet zetten"* — en op
+ * de vraag hoe ver: *"Heen en terug, hernoemen helemaal weg."*
+ *
+ * Dit is de heenweg. De redenering, de mapnamen en de terugweg staan in
+ * src/lib/scaffold.js; hier staat alleen wat deze route uit de database haalt.
+ *
+ * WAAROM DE PRODUCTNAMEN UIT details_json KOMEN en niet uit `files`. De klant typt
+ * per product een naam in de bestelstroom (`product_p3`), en die is er dus al
+ * voordat er ook maar één beeld bestaat. Uit `files` lezen zou betekenen dat de
+ * werkmap pas bruikbaar is nadat er al geleverd is -- precies omgekeerd aan
+ * waarvoor hij bedoeld is.
+ *
+ * WAAROM DE ZIP GESTREAMD WORDT terwijl er alleen tekst in zit. Omdat het niets
+ * kost: zipStream() doet het al, en de dag dat het bronmateriaal er wel in gaat
+ * (Lucas' derde optie, nu niet gekozen) verandert er hier niets aan.
+ */
+async function serveScaffold(context, orderId) {
+  const { env } = context;
+  if (!Number.isInteger(orderId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad order id.') }), 400);
+  }
+  const order = await env.DB.prepare(
+    `SELECT id, ref, brand, name, service, lang, product_count, window_end, details_json
+       FROM orders WHERE id = ?1`
+  ).bind(orderId).first();
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+
+  let details = {};
+  try { details = JSON.parse(order.details_json || '{}') || {}; } catch { details = {}; }
+
+  /* Het aantal producten komt uit de kolom en niet uit het tellen van sleutels in
+     details_json: een klant die bij product 4 geen naam invulde, hoort nog steeds
+     een map p4 te krijgen. Een gat in de werkmap is een gat in de levering. */
+  const count = Math.max(1, Math.min(Number(order.product_count) || 1, 200));
+  const tekst = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+
+  const products = [];
+  for (let i = 1; i <= count; i++) {
+    const key = `p${i}`;
+    /* De extra foto's van dit product: `extra_p3` is het AANTAL en
+       `extra_note_p3_1..n` zijn de notities. Alleen de notities gaan mee -- het
+       aantal staat in de briefing als de lijst zelf. */
+    const extras = [];
+    const n = Math.max(0, Math.min(Number(details[`extra_${key}`]) || 0, 20));
+    for (let k = 1; k <= n; k++) {
+      extras.push(tekst(details[`extra_note_${key}_${k}`]) || '');
+    }
+    products.push({
+      index: i,
+      name: tekst(details[`product_${key}`]),
+      material: tekst(details[`material_${key}`]),
+      colour: tekst(details[`colour_${key}`]),
+      background: tekst(details.background_hex) || tekst(details.background),
+      extras,
+    });
+  }
+
+  const orderForText = { ...order, notes: tekst(details.message) || tekst(details.notes) };
+  const files = scaffoldFiles(orderForText, products, {
+    origin: new URL(context.request.url).origin,
+  });
+
+  return new Response(zipStream(files), {
+    headers: {
+      'content-type': 'application/zip',
+      'content-disposition': zipDisposition(scaffoldFilename(order.ref)),
+      'cache-control': 'private, no-store',
+    },
+  });
 }
 
 async function renderFiles(context, orderId) {
@@ -1228,10 +1504,32 @@ async function renderFiles(context, orderId) {
       : '<p class="muted">Nothing noted yet.</p>'}
   </div>`;
 
+  /* ── WAT EEN AANVRAAG ZEGT — 13 augustus 2026 ────────────────────────────────
+   *
+   * De drie diensten zonder afrekenstroom (video, merkmodel, abonnement) posten
+   * hun eigen antwoord in details_json: `clips`, `plan`, `request`. Dat kwam tot
+   * nu toe alleen in de studiomail terecht — dus als je die mail kwijt was, was
+   * het aantal clips waar de klant om vroeg alleen nog met SQL te vinden.
+   *
+   * Het staat op dezelfde regel als de dienst en de status, want het is precies
+   * dat soort feit: wat dit is, niet wat ermee gebeurd is. `clips` mag ook een
+   * tekst zijn — de keuzelijst heeft "Weet ik nog niet" als laatste optie, en dat
+   * is een antwoord dat je wil zien staan in plaats van een leeg vakje.
+   */
+  const aanvraagRegel = (() => {
+    let d = {};
+    try { d = JSON.parse(order.details_json || '{}') || {}; } catch { d = {}; }
+    const stukjes = [];
+    if (d.clips) stukjes.push(`${esc(String(d.clips))} clips`);
+    if (d.plan) stukjes.push(`abonnement ${esc(String(d.plan))}`);
+    if (d.request && d.request !== 'video') stukjes.push(`aanvraag: ${esc(String(d.request))}`);
+    return stukjes.length ? ` &middot; ${stukjes.join(' &middot; ')}` : '';
+  })();
+
   const body = `
   <p><a href="/admin">&larr; Dashboard</a></p>
   <h1>${esc(order.ref)}</h1>
-  <p class="muted">${esc(order.brand || order.name || '')} &middot; ${esc(order.service)} &middot; ${esc(order.status)}${order.product_count ? ` &middot; ${order.product_count} products` : ''}</p>
+  <p class="muted">${esc(order.brand || order.name || '')} &middot; ${esc(order.service)} &middot; ${esc(order.status)}${order.product_count ? ` &middot; ${order.product_count} products` : ''}${aanvraagRegel}</p>
   ${flash}
 
   <h2>Client uploads (${intake.length})</h2>
@@ -1243,8 +1541,35 @@ async function renderFiles(context, orderId) {
   <h2>Every delivered file (${delivery.length})</h2>
   ${migrated ? mapForm : table(delivery, 'Nothing delivered yet.', showAnnounced)}
 
+  <!-- ── DE WERKMAP, HEEN EN TERUG — 12 augustus 2026 ────────────────────────
+       Lucas: "hernoemen helemaal weg, het moet zoveel mogelijk tijd schelen."
+
+       Twee knoppen die bij elkaar horen en daarom naast elkaar staan. De eerste
+       geeft de mapstructuur van DEZE bestelling; de tweede neemt dezelfde map
+       gevuld weer aan en leest product en shot uit het PAD. Dat is de reden dat
+       er niets hernoemd hoeft te worden — zie src/lib/scaffold.js. -->
+  <h2>De werkmap</h2>
+  <p class="muted">Download de mappen van deze bestelling, zet je afgewerkte beelden erin
+  &mdash; de bestandsnaam maakt niet uit &mdash; en kies daarna de hele map hieronder.
+  De server leest uit het pad welk product en welke shot het is, hernoemt het bestand
+  naar <code>${esc(order.ref)}-p1-voorkant.jpg</code> en zet het in het juiste vakje.</p>
+  <p><a class="btn" href="/admin/orders/${order.id}/scaffold">Mappen downloaden (.zip)</a></p>
+
+  <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
+    <!-- webkitdirectory is geen standaard maar wel wat Chrome, Edge, Firefox en
+         Safari allemaal doen: de browser post de hele map en zet het relatieve pad
+         in de bestandsnaam. Kent een browser het attribuut niet, dan negeert hij het
+         en krijg je een gewone bestandskiezer — dan werkt het nog steeds, alleen valt
+         de indeling terug op de gok uit de naam. Geen script nodig, en dat is hier
+         een eis: deze pagina draait onder default-src 'none'. -->
+    <label>De hele map in één keer
+      <input type="file" name="files" webkitdirectory directory multiple required />
+    </label>
+    <button type="submit">Map uploaden</button>
+  </form>
+
   <h2>Upload the finished work</h2>
-  <p class="muted">Files land against this order and appear in the client&rsquo;s portal. Setting the status to <strong>delivered</strong> on the dashboard is what emails them the link &mdash; uploading alone does not.</p>
+  <p class="muted">Losse bestanden, zonder mappen. Files land against this order and appear in the client&rsquo;s portal. Setting the status to <strong>delivered</strong> on the dashboard is what emails them the link &mdash; uploading alone does not.</p>
   <form class="controls" method="post" action="/admin/orders/${order.id}/deliver" enctype="multipart/form-data">
     <input type="file" name="files" multiple required />
     <button type="submit">Upload</button>
@@ -1541,16 +1866,68 @@ async function handleDeliveryUpload({ request, env }, orderId) {
      dragen. Geen fout — ze zijn opgeslagen — maar wel iets dat je moet weten
      vóórdat je de levering aankondigt. */
   const untagged = [];
+  /* Bestanden uit `_aangeleverd/` die zijn overgeslagen. Geen fout, maar het hoort
+     op het scherm te komen: "twaalf bestanden opgeslagen" terwijl je er vijftien
+     selecteerde is een verschil dat je wil kunnen verklaren. */
+  let skippedSource = 0;
+  /* En de tekstbestanden die de werkmap zelf uitdeelde. Aparte teller, want het is
+     een ander soort overslaan: bronmateriaal is van de klant, dit is van ons. */
+  let skippedOwn = 0;
 
   for (const file of incoming) {
-    const clean = String(file.name || 'file').split(/[\\/]/).pop().slice(0, 120) || 'file';
+    /*
+     * ── HET PAD GAAT VOOR DE NAAM — 12 AUGUSTUS 2026 ─────────────────────────
+     *
+     * `file.name` is hier niet altijd een bestandsnaam. Kiest de studio een hele
+     * MAP (het veld met `webkitdirectory` op de bestandenpagina), dan stuurt de
+     * browser het RELATIEVE PAD mee als naam: `VIS-2608-4471/p1 - Hoodie/1
+     * voorkant/upscaled_v3.png`. Dat pad is precies de structuur die
+     * /admin/orders/:id/scaffold heeft uitgedeeld, dus staat er al in welk product
+     * en welke shot dit is -- en hoeft er niets hernoemd of ingedeeld te worden.
+     *
+     * Dat is de hele opdracht van 12 augustus: *"Heen en terug, hernoemen
+     * helemaal weg."* Zie src/lib/scaffold.js.
+     *
+     * DE VOLGORDE IS EEN RANGORDE EN GEEN VOORKEUR:
+     *   1  het vakje van het bord   -- de studio heeft het aangewezen
+     *   2  het pad uit de werkmap   -- de structuur die wij zelf uitdeelden
+     *   3  de gok uit de naam       -- beter dan niets, en corrigeerbaar
+     * Elk niveau is harder bewijs dan het volgende, dus mag een lager niveau een
+     * hoger nooit overschrijven.
+     */
+    const relPath = String(file.name || 'file');
+    const clean = relPath.split(/[\\/]/).pop().slice(0, 120) || 'file';
+
+    /* HET BRONMATERIAAL VAN DE KLANT KOMT NIET TERUG ALS LEVERING. Staat de map
+       `_aangeleverd/` per ongeluk in de selectie -- en bij "de hele map kiezen" is
+       dat precies wat er gebeurt zodra die map ooit gevuld raakt -- dan zou de
+       klant zijn eigen telefoonfoto's als afgewerkt beeld terugkrijgen. Stil
+       overslaan is hier het juiste: het is geen fout van de studio, het is een map
+       die niet mee had gemoeten. */
+    if (isSourcePath(relPath)) { skippedSource += 1; continue; }
+
+    /* EN DE WERKBESTANDEN VAN DE WERKMAP ZELF. LEESMIJ.txt en de briefings zijn voor
+       de studio geschreven; als levering zouden ze in het portaal van de klant staan.
+       Gevonden bij het naspelen van de terugweg -- niet bij het bedenken ervan. */
+    if (isScaffoldDoc(relPath)) { skippedOwn += 1; continue; }
+
+    const fromPath = parseScaffoldPath(relPath);
     // De gok gaat meteen mee de rij in. Hij staat daarna als voorselectie in
     // het indeelformulier, dus hij is een voorstel en geen bewering — maar hem
     // hier al opslaan scheelt dertig keuzelijstjes op leeg zetten. Komt de
     // upload uit een vakje van het bord, dan is er niets te raden.
     const guessed = guessProductShot(clean);
-    const product = slotProduct || guessed.product;
-    const shot = slotShot || guessed.shot;
+    const product = slotProduct || fromPath.product || guessed.product;
+    const shot = slotShot || fromPath.shot || guessed.shot;
+    /* En de naam die de KLANT straks ziet. Weten we product en shot, dan maken wij
+       er `VIS-2608-4471-p1-voorkant.png` van in plaats van `upscaled_v3(2).png`.
+       Dat is het tweede stuk van "hernoemen helemaal weg": niet alleen hoeft de
+       studio niet te hernoemen, de uitkomst is ook beter dan wanneer hij het met de
+       hand had gedaan. Zonder product of shot blijft de aangeleverde naam staan --
+       verzinnen wij er dan een, dan liegt hij. */
+    const shown = (product && shot)
+      ? deliveryFilename(order.ref, product, shot, clean, order.lang)
+      : clean;
     // Under delivery/<ref>/ rather than intake/: the two directions are never
     // mixed in the bucket, so a lifecycle rule or a manual clean-up can tell
     // what a customer sent from what we made.
@@ -1605,7 +1982,11 @@ async function handleDeliveryUpload({ request, env }, orderId) {
       await env.DB.prepare(
         `INSERT INTO files (order_id, kind, r2_key, filename, bytes, product_key, shot)
          VALUES (?1, 'delivery', ?2, ?3, ?4, ?5, ?6)`
-      ).bind(orderId, key, clean, file.size ?? null, product, shot).run();
+        /* `shown` en niet `clean`: dit is de naam die de klant in zijn portaal
+           leest en in zijn download terugvindt. De R2-sleutel houdt de ruwe naam
+           erin, dus het spoor terug naar het bestand op de machine van de studio
+           blijft bestaan -- die twee dingen hebben verschillende lezers. */
+      ).bind(orderId, key, shown, file.size ?? null, product, shot).run();
       stored++;
     } catch (err) {
       failed.push(`${clean}: ${err && err.message ? err.message : 'failed'}`);
@@ -1659,18 +2040,45 @@ async function handleDeliveryUpload({ request, env }, orderId) {
         nodig die niet in een Worker draait. <code>npm run deliver</code> maakt hem wel,
         en vult <code>preview_key</code>.</p>` : '';
 
+    /* Het verschil tussen wat hij selecteerde en wat er staat, in één regel. Zonder
+       dit staat er "twaalf bestanden opgeslagen" terwijl hij er vijftien aanwees, en
+       dan gaat hij zoeken naar drie bestanden die met opzet zijn overgeslagen. */
+    const sourceBlock = (skippedSource || skippedOwn) ? `<p class="muted">${
+      [skippedSource ? `${skippedSource} uit <code>_aangeleverd/</code> (materiaal van de klant)` : '',
+       skippedOwn ? `${skippedOwn} werkbestand${skippedOwn === 1 ? '' : 'en'} van de werkmap (leesmij, briefing, licentie)` : '']
+        .filter(Boolean).join(' en ')
+    } overgeslagen — die horen niet als levering bij de klant.</p>` : '';
+
     return html(page({
       title: untagged.length && heavy ? 'Upload — twee dingen om te weten'
         : untagged.length ? 'Upload — geen herkomsttag' : 'Upload — geen beoordeelbeeld',
       body: `<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
         <h1>${stored} bestand${stored === 1 ? '' : 'en'} opgeslagen</h1>
-        ${tagBlock}${weightBlock}
+        ${sourceBlock}${tagBlock}${weightBlock}
         <h2>Zo zet je het recht</h2>
         <p><strong>Lever via het script:</strong> <code>npm run deliver -- ${esc(order.ref)} ./de-map --go</code>
         — dat maakt png, jpg en webp, maakt het beoordeelbeeld, tagt alles en zet het er
         in één keer op.${untagged.length ? `<br><strong>Of tag alleen de map en upload opnieuw:</strong> <code>npm run tag:delivery -- ./de-map</code>` : ''}</p>
         <p>Doorgaan mag: de bestanden staan in R2 en de klant ziet ze. Er is nog geen
         mail uit — dat gebeurt pas bij aankondigen.</p>
+        <p><a class="btn" href="/admin/orders/${orderId}/files">Verder naar de bestanden</a></p>`,
+    }));
+  }
+
+  /* Is er niets te waarschuwen maar wel iets overgeslagen, dan mag dat niet in een
+     redirect verdwijnen. Zonder deze tak zou "vijftien geselecteerd, twaalf
+     opgeslagen" een verschil zijn dat nergens wordt uitgelegd. */
+  if (skippedSource || skippedOwn) {
+    return html(page({
+      title: 'Upload — een paar bestanden overgeslagen',
+      body: `<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+        <h1>${stored} bestand${stored === 1 ? '' : 'en'} opgeslagen</h1>
+        ${skippedSource ? `<p>${skippedSource} bestand${skippedSource === 1 ? '' : 'en'} uit
+        <code>_aangeleverd/</code> ${skippedSource === 1 ? 'is' : 'zijn'} overgeslagen. Die map bevat
+        wat de klant heeft aangeleverd; die hoort niet als levering terug.</p>` : ''}
+        ${skippedOwn ? `<p>${skippedOwn} werkbestand${skippedOwn === 1 ? '' : 'en'} van de werkmap
+        ${skippedOwn === 1 ? 'is' : 'zijn'} overgeslagen: LEESMIJ.txt, de briefings en LICENTIE.txt zijn
+        voor jou geschreven en niet voor het portaal van de klant.</p>` : ''}
         <p><a class="btn" href="/admin/orders/${orderId}/files">Verder naar de bestanden</a></p>`,
     }));
   }
@@ -2364,7 +2772,20 @@ async function loadTodayCounts(env) {
     one("SELECT COUNT(*) AS n FROM orders WHERE status IN ('received','in_production','human_check') AND hidden_at IS NULL"),
     // Only what is actually owed: the test sample and anything with no total
     // priced against it are not debts, they are rows.
-    one("SELECT COUNT(*) AS n FROM orders WHERE payment_status = 'unpaid' AND total_cents > 0 AND hidden_at IS NULL"),
+    //
+    // ── EN DAT MOEST 12 AUGUSTUS 2026 EXPLICIET WORDEN ────────────────────────
+    //
+    // De proefvisual viel hier buiten omdat `total_cents` NULL bleef -- de uitsluiting
+    // stond in de BEDOELING van het commentaar hierboven en nergens in de query. Sinds
+    // de EUR 1 als brutobedrag inclusief btw wordt weggeschreven (zie quoteTestSample())
+    // is dat bedrag 83 cent, en dus > 0. Zonder de regel hieronder zou elke afgebroken
+    // proefvisual-checkout in deze teller belanden -- en dat is elke bezoeker die op de
+    // Mollie-pagina wegklikt, want de rij wordt voor de doorverwijzing geschreven. Dan
+    // telt een strook die zegt "hier moet je geld ophalen" een groeiende stapel van een
+    // euro die niemand gaat bellen. tests/sample-invoice.test.mjs houdt vast dat deze
+    // uitsluiting en die in het filter hieronder hetzelfde zeggen.
+    one("SELECT COUNT(*) AS n FROM orders WHERE payment_status = 'unpaid' AND total_cents > 0"
+      + " AND service != 'test-sample' AND hidden_at IS NULL"),
     // Via orders, want een revisie op een verborgen testbestelling is geen werk.
     one(`SELECT COUNT(*) AS n FROM files f JOIN orders o ON o.id = f.order_id
           WHERE f.review_state = 'revision_requested' AND o.hidden_at IS NULL`),
@@ -2442,6 +2863,453 @@ async function renderCustomers(context) {
   return html(page({ title: 'Customers', body }));
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * BLOK 5 — HET PANEEL KAN NU OOK CORRIGEREN (12 AUGUSTUS 2026)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas' lijst was zes wensen lang en kwam op één ding neer: dit paneel kon LEZEN en
+ * nauwelijks iets rechtzetten. Een model dat per ongeluk was toegevoegd kon er niet
+ * meer uit, een verkeerd btw-nummer bleef fout op elke volgende factuur, en een klant
+ * die zijn inloglink kwijt was moest het publieke formulier gebruiken.
+ *
+ * De kolommen ervoor komen uit migrations/0027-admin-beheer.sql. Wat hier staat is de
+ * bediening, en elke handler houdt zich aan dezelfde drie regels als de rest van dit
+ * bestand: één route per handeling, een logregel bij alles wat een klant merkt, en
+ * terug naar de pagina waar je vandaan kwam.
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Eén model: hernoemen, verbergen, weer zichtbaar maken, of echt verwijderen.
+ *
+ * VIER HANDELINGEN IN ÉÉN ROUTE, en dat is hier de juiste maat: ze gaan alle vier
+ * over hetzelfde model, ze zitten in dezelfde kaart op het scherm, en de knop zegt
+ * welke het is. Vier routes zou vier bijna identieke handlers zijn.
+ *
+ * VERWIJDEREN IS DE ENIGE DIE ONOMKEERBAAR IS, en die vraagt daarom om de naam van
+ * het model in het bevestigingsveld — dezelfde afspraak als bij het AVG-verzoek. En
+ * hij ruimt het R2-object op: een portret dat in de bucket blijft staan terwijl de rij
+ * weg is, is een gezicht dat niemand meer kan vinden en niemand meer kan verwijderen.
+ */
+async function handleModelManage(context, modelId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  if (!Number.isInteger(modelId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad model id.') }), 400);
+  }
+  const model = await env.DB.prepare(
+    'SELECT id, customer_id, label, preview_key, hidden_at FROM custom_models WHERE id = ?1'
+  ).bind(modelId).first();
+  if (!model) return html(page({ title: 'Admin', body: errorBody('No such model.') }), 404);
+
+  const form = await request.formData().catch(() => null);
+  const action = String(form?.get('action') || '');
+  const back = `/admin/customers/${model.customer_id}#model-${modelId}`;
+
+  if (action === 'rename') {
+    /* Leeg is geen naam. Een model zonder label is in het portaal van de klant een
+       kaart met een gezicht en geen woord eronder, en dat is erger dan de oude naam. */
+    const label = String(form?.get('label') || '').trim().slice(0, 80);
+    if (!label) {
+      return html(page({ title: 'Admin', body: errorBody('A model needs a name. Nothing was changed.') }), 400);
+    }
+    await env.DB.prepare('UPDATE custom_models SET label = ?1 WHERE id = ?2').bind(label, modelId).run();
+    await logAdmin(env, admin, 'model.rename', {
+      customerId: model.customer_id,
+      detail: `#${modelId}: "${model.label}" → "${label}"`,
+    });
+    return seeOther(back);
+  }
+
+  if (action === 'hide' || action === 'unhide') {
+    const verbergen = action === 'hide';
+    /* De reden is verplicht bij verbergen en wordt gewist bij terugzetten: een
+       verborgen model zonder reden is over drie maanden een raadsel, en een reden die
+       blijft staan nadat het model weer zichtbaar is, is een onwaarheid. */
+    const reason = String(form?.get('reason') || '').trim().slice(0, 300);
+    if (verbergen && !reason) {
+      return html(page({ title: 'Admin', body: errorBody(
+        'Say why it is being hidden — that line is the only thing that explains it in three months. Nothing was changed.'
+      ) }), 400);
+    }
+    await env.DB.prepare(
+      `UPDATE custom_models SET hidden_at = ?1, hidden_reason = ?2 WHERE id = ?3`
+    ).bind(verbergen ? new Date().toISOString() : null, verbergen ? reason : null, modelId).run();
+    await logAdmin(env, admin, verbergen ? 'model.hide' : 'model.unhide', {
+      customerId: model.customer_id,
+      detail: `#${modelId} ${esc(model.label || '')}${verbergen ? `: ${reason}` : ''}`,
+    });
+    return seeOther(back);
+  }
+
+  if (action === 'delete') {
+    if (String(form?.get('confirm') || '').trim() !== String(model.label || '').trim()) {
+      return html(page({ title: 'Admin', body: errorBody(
+        `To delete this model, type <strong>${esc(model.label || '')}</strong> exactly. Hiding it is reversible; this is not.`
+      ) }), 400);
+    }
+    /*
+     * DE STYLE LOCK EERST. `customer_style_locks.custom_model_id` verwijst hiernaar
+     * met ON DELETE SET NULL, dus strikt genomen zou de database het zelf oplossen.
+     * Deze codebase vertrouwt daar bewust niet op in D1 — zie de noot bij dezelfde
+     * afweging in handleCustomerWipe — en er is hier nog een tweede reden: een lock
+     * die zijn model kwijt is, is een voorkeur die naar niets wijst. Die hoort weg en
+     * niet leeg.
+     */
+    await env.DB.batch([
+      env.DB.prepare('UPDATE customer_style_locks SET custom_model_id = NULL WHERE custom_model_id = ?1').bind(modelId),
+      env.DB.prepare('DELETE FROM custom_models WHERE id = ?1').bind(modelId),
+    ]).catch(() => null);
+    /* Het portret uit R2, ná de rij. Andersom zou een mislukte DELETE een rij
+       achterlaten die naar een verdwenen object wijst — precies de fout die de
+       AVG-knop vandaag had. */
+    if (model.preview_key) {
+      try { await env.UPLOADS?.delete(model.preview_key); } catch { /* een verdwenen object is geen fout */ }
+    }
+    await logAdmin(env, admin, 'model.delete', {
+      customerId: model.customer_id,
+      detail: `#${modelId} ${model.label || ''}`,
+    });
+    return seeOther(`/admin/customers/${model.customer_id}`);
+  }
+
+  return seeOther(back);
+}
+
+/**
+ * De gegevens van de klant rechtzetten.
+ *
+ * WAAROM DIT ONTBRAK EN WAAROM HET UITMAAKT. De klant kan dit zelf in zijn portaal;
+ * de studio kon het niet. Een verkeerd btw-nummer bleef dus fout op elke volgende
+ * factuur, en de btw-reviewpagina helpt daar niet — die beslist de behandeling PER
+ * BESTELLING en raakt het nummer van de klant niet aan.
+ *
+ * LEEG BETEKENT LEEGMAKEN, behalve bij het e-mailadres. Dat is het enige veld waar de
+ * hele toegang aan hangt: het is de inlogsleutel én de plek waar de levering naartoe
+ * gaat. Een leeg e-mailadres is dus geen correctie maar een account dat niemand meer
+ * kan openen, en dat weigert deze handler.
+ */
+async function handleCustomerDetails(context, customerId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  if (!Number.isInteger(customerId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+  }
+  const before = await env.DB.prepare(
+    'SELECT id, email, brand, name, phone, website, vat_number FROM customers WHERE id = ?1'
+  ).bind(customerId).first();
+  if (!before) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+
+  const form = await request.formData().catch(() => null);
+  const veld = (naam, max) => {
+    const v = String(form?.get(naam) ?? '').trim().slice(0, max);
+    return v === '' ? null : v;
+  };
+
+  const email = veld('email', 200);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'That is not an email address, and the email address is what this account signs in with. Nothing was changed.'
+    ) }), 400);
+  }
+  /*
+   * HET ADRES MAG NIET BOTSEN. Er staat een unieke index op lower(email), dus een
+   * botsing zou de UPDATE laten omvallen — en dan staat er een foutpagina waar
+   * "dat adres is al van een ander account" hoort te staan. Zelf kijken geeft het
+   * juiste bericht, en de index blijft de vangrail eronder.
+   */
+  const bezet = await env.DB.prepare(
+    'SELECT id, brand FROM customers WHERE lower(email) = lower(?1) AND id <> ?2'
+  ).bind(email, customerId).first().catch(() => null);
+  if (bezet) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `That address already belongs to <a href="/admin/customers/${bezet.id}">customer #${bezet.id}${bezet.brand ? ` (${esc(bezet.brand)})` : ''}</a>. Nothing was changed — two accounts cannot share a sign-in address.`
+    ) }), 400);
+  }
+
+  const na = {
+    email,
+    brand: veld('brand', 120),
+    name: veld('name', 120),
+    phone: veld('phone', 40),
+    website: veld('website', 200),
+    vat_number: veld('vat_number', 40),
+  };
+
+  /*
+   * DE CATCH IS GEEN SIER. De controle hierboven kijkt of het adres bezet is, en tussen
+   * die controle en deze UPDATE zit een moment waarin een tweede beheerder hetzelfde
+   * adres kan pakken. Dan slaat de unieke index toe en zou de studio een stacktrace op
+   * zijn scherm krijgen waar een leesbare regel hoort te staan.
+   *
+   * Dit is de vangrail onder de controle en niet de vervanging ervan: de controle geeft
+   * het NUTTIGE bericht (met het klantnummer van de ander erin), deze geeft het
+   * BEGRIJPELIJKE bericht als het toch misgaat.
+   */
+  const geschreven = await env.DB.prepare(
+    `UPDATE customers SET email = ?1, brand = ?2, name = ?3, phone = ?4, website = ?5,
+            vat_number = ?6, updated_at = datetime('now')
+      WHERE id = ?7`
+  ).bind(na.email, na.brand, na.name, na.phone, na.website, na.vat_number, customerId).run()
+    .then(() => true)
+    .catch((err) => {
+      console.error('[admin] klantgegevens niet opgeslagen:', err?.message || err);
+      return false;
+    });
+  if (!geschreven) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'Saving failed — most likely that email address was just taken by another account. Nothing was changed.'
+    ) }), 409);
+  }
+
+  /*
+   * WAT ER VERANDERDE, en niet "de gegevens zijn bijgewerkt". Een logregel die alleen
+   * zegt dát er iets is gewijzigd, is bij een vraag over een factuur van drie maanden
+   * terug net zo nuttig als geen logregel.
+   */
+  const wijzigingen = Object.entries(na)
+    .filter(([k, v]) => (before[k] ?? null) !== v)
+    .map(([k, v]) => `${k}: ${before[k] ?? '—'} → ${v ?? '—'}`);
+  if (wijzigingen.length) {
+    await logAdmin(env, admin, 'customer.details', {
+      customerId,
+      detail: wijzigingen.join(' · ').slice(0, 900),
+    });
+  }
+  return seeOther(`/admin/customers/${customerId}`);
+}
+
+/**
+ * Een account op non-actief zetten, of weer aan.
+ *
+ * DIT IS GEEN VERWIJDERING en dat is het punt. De bestellingen, de facturen en de
+ * geschiedenis blijven staan; wat er verdwijnt is de mogelijkheid om in te loggen en
+ * te bestellen. Daarmee dekt het de drie gevallen die er werkelijk zijn: een dubbele
+ * registratie ("gebruik het andere adres"), een klant die zijn account wil sluiten
+ * zonder een AVG-verzoek te doen, en misbruik.
+ *
+ * WAAROM NIET SAMENVOEGEN. Lucas' keuze van 12 augustus 2026, en de juiste: dubbel op
+ * hetzelfde e-mailadres is op databaseniveau al onmogelijk, dus dit gaat alleen over
+ * één merk met twee adressen. Bestellingen en facturen verhangen is een onomkeerbare
+ * operatie op de tabel waar de boekhouding aan hangt, en het probleem is op te lossen
+ * door de klant naar het goede account te sturen. `merged_into` legt daarom alleen de
+ * VERWIJZING vast: dit account hoort bij dat account. Er wordt niets verplaatst.
+ *
+ * DE SESSIES GAAN ERUIT. Zonder dat blijft een klant die al is ingelogd gewoon
+ * doorwerken tot zijn sessie verloopt — en dan is "gedeactiveerd" een woord op een
+ * adminscherm in plaats van een maatregel.
+ */
+async function handleCustomerStatus(context, customerId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  if (!Number.isInteger(customerId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+  }
+  const customer = await env.DB.prepare(
+    'SELECT id, brand, name, email, deactivated_at FROM customers WHERE id = ?1'
+  ).bind(customerId).first();
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+
+  const form = await request.formData().catch(() => null);
+  const action = String(form?.get('action') || '');
+  const back = `/admin/customers/${customerId}`;
+
+  if (action === 'reactivate') {
+    await env.DB.prepare(
+      `UPDATE customers SET deactivated_at = NULL, deactivated_reason = NULL, merged_into = NULL,
+              updated_at = datetime('now') WHERE id = ?1`
+    ).bind(customerId).run();
+    await logAdmin(env, admin, 'customer.reactivate', { customerId, detail: 'weer actief' });
+    return seeOther(back);
+  }
+
+  if (action !== 'deactivate') return seeOther(back);
+
+  const reason = String(form?.get('reason') || '').trim().slice(0, 300);
+  if (!reason) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'Say why. This is the line the customer will be told, so it has to be a sentence you would say out loud. Nothing was changed.'
+    ) }), 400);
+  }
+  /* Een verwijzing naar het account dat wél gebruikt wordt, als het om een dubbele
+     registratie gaat. Optioneel, en gecontroleerd: een verwijzing naar een klant die
+     niet bestaat is erger dan geen verwijzing. Naar zichzelf verwijzen ook. */
+  const rauwMerge = String(form?.get('merged_into') || '').trim();
+  let mergedInto = null;
+  if (rauwMerge) {
+    const kandidaat = Number.parseInt(rauwMerge, 10);
+    if (!Number.isInteger(kandidaat) || kandidaat === customerId) {
+      return html(page({ title: 'Admin', body: errorBody('That is not another customer id. Nothing was changed.') }), 400);
+    }
+    const bestaat = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(kandidaat).first().catch(() => null);
+    if (!bestaat) {
+      return html(page({ title: 'Admin', body: errorBody(`Customer #${kandidaat} does not exist. Nothing was changed.`) }), 400);
+    }
+    mergedInto = kandidaat;
+  }
+
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE customers SET deactivated_at = datetime('now'), deactivated_reason = ?1,
+              merged_into = ?2, updated_at = datetime('now') WHERE id = ?3`
+    ).bind(reason, mergedInto, customerId),
+    /* Sessies én openstaande inloglinks. Een token dat nog geldig is, is een sessie
+       die nog gemaakt kan worden. */
+    env.DB.prepare('DELETE FROM account_sessions WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(customerId),
+  ]).catch((err) => { throw new Error(`deactiveren mislukt: ${err?.message || err}`); });
+
+  await logAdmin(env, admin, 'customer.deactivate', {
+    customerId,
+    detail: `${reason}${mergedInto ? ` · hoort bij #${mergedInto}` : ''}`,
+  });
+  return seeOther(back);
+}
+
+/**
+ * Een boeking in het tegoed van een klant.
+ *
+ * ALLEEN BIJSCHRIJVEN, NOOIT WIJZIGEN. Een verkeerde boeking corrigeer je met een
+ * tegenboeking, zodat er een spoor blijft van wat er is toegezegd en wanneer. Vandaar
+ * dat er geen UPDATE en geen DELETE op deze tabel bestaat en het saldo een SUM is.
+ *
+ * DIT VERREKENT NIETS. Lucas' keuze van 12 augustus: *"alleen een ledger, geen
+ * verrekening."* Het bedrag verschijnt niet automatisch op een volgende factuur —
+ * dat blijft handwerk, precies zoals het nu bij een annulering gaat. Een half
+ * automatisch creditsysteem is erger dan een handmatig, want het rekent stil het
+ * verkeerde bedrag af op de enige plek waar dat geld kost.
+ */
+async function handleCustomerCredit(context, customerId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  if (!Number.isInteger(customerId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+  }
+  const customer = await env.DB.prepare('SELECT id FROM customers WHERE id = ?1').bind(customerId).first();
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+
+  const form = await request.formData().catch(() => null);
+  const back = `/admin/customers/${customerId}#tegoed`;
+
+  /*
+   * HET BEDRAG KOMT IN EURO'S BINNEN EN GAAT IN CENTEN DE TABEL IN. De komma en de
+   * punt zijn hier beide toegestaan: wie op een Nederlands toetsenbord "12,50" typt,
+   * bedoelt twaalf euro vijftig, en dat afwijzen is een formulier dat de gebruiker
+   * uitlegt hoe het toevallig is gebouwd.
+   */
+  const rauw = String(form?.get('amount') || '').trim().replace(',', '.');
+  const euro = Number(rauw);
+  if (!rauw || !Number.isFinite(euro) || euro === 0) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'Fill in an amount other than zero. A negative amount books it off; a positive one books it on.'
+    ) }), 400);
+  }
+  const cents = Math.round(euro * 100);
+  /* Een bovengrens, want dit is een vrij tekstveld dat geld schrijft. Duizend euro per
+     boeking is ruim voor goodwill en houdt een typefout van drie nullen tegen. */
+  if (Math.abs(cents) > 100000) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'That is more than € 1.000 in one booking. If it really has to be that much, book it in parts — the cap is there to catch a typo.'
+    ) }), 400);
+  }
+
+  const reason = String(form?.get('reason') || '').trim().slice(0, 300);
+  if (!reason) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'A booking without a reason is an amount nobody remembers in three months, and then you will not dare to settle it. Nothing was booked.'
+    ) }), 400);
+  }
+
+  /* De bestelling waar het over ging, als het over een bestelling ging. Gecontroleerd
+     tegen DEZE klant: een boeking die naar de bestelling van iemand anders wijst, is
+     een spoor dat de verkeerde kant op wijst. */
+  const rauwOrder = String(form?.get('order_id') || '').trim();
+  let orderId = null;
+  if (rauwOrder) {
+    const kandidaat = Number.parseInt(rauwOrder, 10);
+    const rij = Number.isInteger(kandidaat)
+      ? await env.DB.prepare('SELECT id FROM orders WHERE id = ?1 AND customer_id = ?2')
+        .bind(kandidaat, customerId).first().catch(() => null)
+      : null;
+    if (!rij) {
+      return html(page({ title: 'Admin', body: errorBody(
+        'That order does not belong to this customer. Nothing was booked.'
+      ) }), 400);
+    }
+    orderId = kandidaat;
+  }
+
+  await env.DB.prepare(
+    `INSERT INTO customer_credits (customer_id, delta_cents, reason, order_id, admin_id)
+     VALUES (?1, ?2, ?3, ?4, ?5)`
+  ).bind(customerId, cents, reason, orderId, admin?.admin_id ?? null).run()
+    .catch((err) => { throw new Error(`boeking mislukt: ${err?.message || err}`); });
+
+  await logAdmin(env, admin, 'customer.credit', {
+    customerId,
+    detail: `${cents > 0 ? '+' : ''}${(cents / 100).toFixed(2)} — ${reason}${orderId ? ` (bestelling #${orderId})` : ''}`,
+  });
+  return seeOther(back);
+}
+
+/**
+ * Een nieuwe inloglink sturen, vanuit het paneel.
+ *
+ * DE INFRASTRUCTUUR LAG ER AL: `account_tokens`, sendLoginLink() in
+ * src/lib/account.js, en een werkende mailweg. Er was alleen geen knop, dus een klant
+ * die zijn link kwijt was moest naar het publieke formulier — en als hij daar zijn
+ * eigen adres verkeerd typte, kwam hij in een lus terecht die de studio niet kon
+ * doorbreken.
+ *
+ * DEZELFDE FUNCTIE ALS DE PUBLIEKE KANT en niet een eigen kopie. Een tweede plek die
+ * tokens maakt, is een tweede plek waar de geldigheidsduur, het hashen en de mailtekst
+ * uit elkaar kunnen lopen — en dat is precies het soort verschil dat niemand ziet tot
+ * er een link niet werkt.
+ *
+ * EEN GEDEACTIVEERD ACCOUNT KRIJGT NIETS. Anders is deactiveren een woord op een
+ * scherm: de link zou werken en de klant zou binnen zijn.
+ */
+async function handleCustomerSigninLink(context, customerId) {
+  const { env } = context;
+  const admin = await currentAdmin(context);
+  if (!Number.isInteger(customerId)) {
+    return html(page({ title: 'Admin', body: errorBody('Bad customer id.') }), 400);
+  }
+  const customer = await env.DB.prepare(
+    'SELECT id, email, brand, name, deactivated_at FROM customers WHERE id = ?1'
+  ).bind(customerId).first();
+  if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
+  if (!customer.email) {
+    return html(page({ title: 'Admin', body: errorBody('This customer has no email address on it.') }), 400);
+  }
+  if (customer.deactivated_at) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This account is deactivated, so a sign-in link would let them straight back in. Reactivate it first if that is what you want.'
+    ) }), 400);
+  }
+
+  let verstuurd = false;
+  let fout = '';
+  try {
+    /* De signatuur is (env, request, email, lang) — het adres wordt gebruikt om de
+       klant op te zoeken, dus lowercase erin zoals de publieke kant het ook doet. */
+    verstuurd = await sendLoginLink(env, context.request, String(customer.email).toLowerCase(), 'nl');
+  } catch (err) {
+    fout = err?.message || String(err);
+  }
+
+  await logAdmin(env, admin, 'customer.signin_link', {
+    customerId,
+    detail: verstuurd ? 'inloglink verstuurd' : `inloglink NIET verstuurd${fout ? `: ${fout}` : ''}`,
+  });
+
+  if (!verstuurd) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `The sign-in link did not go out${fout ? `: ${esc(fout)}` : ''}. Nothing is broken on the customer's side — they can still use the sign-in form themselves.`
+    ) }), 502);
+  }
+  return seeOther(`/admin/customers/${customerId}?signin=1`);
+}
+
 async function renderCustomer(context, customerId) {
   const { env } = context;
   if (!Number.isInteger(customerId)) {
@@ -2449,6 +3317,7 @@ async function renderCustomer(context, customerId) {
   }
   const customer = await env.DB.prepare(
     `SELECT id, email, brand, name, phone, website, vat_number, created_at,
+            deactivated_at, deactivated_reason, merged_into,
             revisions_revoked_at, revisions_revoked_note,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id) AS revisions_asked,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = customers.id AND rr.resolved_at IS NULL) AS revisions_open
@@ -2456,18 +3325,38 @@ async function renderCustomer(context, customerId) {
   ).bind(customerId).first();
   if (!customer) return html(page({ title: 'Admin', body: errorBody('No such customer.') }), 404);
 
-  const [orders, models, locks] = await Promise.all([
+  const [orders, models, locks, credits] = await Promise.all([
+    /* `has_invoice` erbij, 12 augustus 2026: het AVG-paneel onderaan moet kunnen
+       zeggen wat er WEL blijft staan, en dat hangt hieraan. Een subselect en geen
+       vierde query — het is één vlag per rij en die past in de query die er al was. */
     env.DB.prepare(
-      `SELECT id, ref, service, status, payment_status, total_cents, product_count, created_at
-         FROM orders WHERE customer_id = ?1 ORDER BY id DESC LIMIT 100`
+      `SELECT o.id, o.ref, o.service, o.status, o.payment_status, o.total_cents,
+              o.product_count, o.created_at,
+              (SELECT COUNT(*) FROM invoices i WHERE i.order_id = o.id)
+              + (SELECT COUNT(*) FROM credit_notes c WHERE c.order_id = o.id) AS has_invoice
+         FROM orders o WHERE o.customer_id = ?1 ORDER BY o.id DESC LIMIT 100`
     ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
     env.DB.prepare(
-      'SELECT id, label, status, preview_key FROM custom_models WHERE customer_id = ?1 ORDER BY id DESC'
+      `SELECT id, label, status, preview_key, hidden_at, hidden_reason
+         FROM custom_models WHERE customer_id = ?1 ORDER BY id DESC`
     ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
     env.DB.prepare(
       `SELECT l.style, l.roster_model, l.background_hex, m.label AS custom_label
          FROM customer_style_locks l LEFT JOIN custom_models m ON m.id = l.custom_model_id
         WHERE l.customer_id = ?1`
+    ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
+    /* HET TEGOED, als lijst en niet als saldo. Het saldo is de som en die wordt
+       hieronder geteld; wat de studio nodig heeft is de reden per boeking, want dat is
+       de vraag die een klant stelt. `.catch(() => [])` omdat migratie 0027 later kan
+       draaien dan deze deploy — dezelfde afspraak als bij elke andere jonge tabel hier:
+       geen tabel betekent geen boekingen en niet een kapotte klantpagina. */
+    env.DB.prepare(
+      `SELECT c.id, c.delta_cents, c.reason, c.created_at, c.order_id, a.email AS admin_email,
+              o.ref AS order_ref
+         FROM customer_credits c
+         LEFT JOIN admin_users a ON a.id = c.admin_id
+         LEFT JOIN orders o ON o.id = c.order_id
+        WHERE c.customer_id = ?1 ORDER BY c.id DESC LIMIT 100`
     ).bind(customerId).all().then((r) => r.results || []).catch(() => []),
   ]);
 
@@ -2491,14 +3380,20 @@ async function renderCustomer(context, customerId) {
   const MODEL_STATUSES = ['in_design', 'approved', 'locked'];
   const modelRows = models.length
     ? models.map((m) => {
-      const live = m.preview_key && m.status !== 'in_design';
-      const missing = !m.preview_key
-        ? 'No picture yet — the customer cannot pick it.'
-        : m.status === 'in_design'
-          ? 'Still in design — the customer cannot pick it.'
-          : 'Live: the customer sees this as a tile when they order.';
-      return `<div class="card modelcard">
-        <div class="row-head"><span class="ref">${esc(m.label)}</span><span class="pill${live ? ' is-delivered' : ''}">${esc(m.status)}</span></div>
+      /* VERBORGEN GAAT VOOR ALLES. Een model dat verborgen is, is voor de klant weg —
+         ongeacht zijn status en of er een foto bij zit. Zou de status hier de
+         bovenhand hebben, dan staat er "Live" bij een model dat niemand ziet. */
+      const hidden = !!m.hidden_at;
+      const live = !hidden && m.preview_key && m.status !== 'in_design';
+      const missing = hidden
+        ? 'Verborgen — de klant ziet dit model niet. Alles blijft bewaard.'
+        : !m.preview_key
+          ? 'No picture yet — the customer cannot pick it.'
+          : m.status === 'in_design'
+            ? 'Still in design — the customer cannot pick it.'
+            : 'Live: the customer sees this as a tile when they order.';
+      return `<div class="card modelcard${hidden ? ' is-superseded' : ''}" id="model-${m.id}">
+        <div class="row-head"><span class="ref">${esc(m.label)}</span><span class="pill${live ? ' is-delivered' : ''}">${hidden ? 'verborgen' : esc(m.status)}</span></div>
         <div class="modelcard-body">
           <!-- THE PICTURE ITSELF, not just the fact that a key exists. Before
                this the studio uploaded a file and got back a sentence saying a
@@ -2535,6 +3430,45 @@ async function renderCustomer(context, customerId) {
             `<option value="${st}"${st === m.status ? ' selected' : ''}>${st}</option>`).join('')}</select>
           <button class="btn btn-ghost" type="submit">Set status</button>
         </form>
+
+        <!-- ── HERNOEMEN, VERBERGEN, VERWIJDEREN — 12 augustus 2026 ────────────
+             Lucas' eigen voorbeeld: "nu kan een per ongeluk toegevoegd model er niet
+             meer uit." Verwijderen kon inderdaad niet, hernoemen kon niet, en
+             verbergen kon alleen door de STATUS op 'in_design' te zetten — wat de
+             klant in zijn eigen portaal leest als "jullie zijn er nog mee bezig".
+             Twee vragen die niets met elkaar te maken hebben, hoorden niet in één
+             veld. Zie migrations/0027 en handleModelManage(). -->
+        <form class="controls" method="post" action="/admin/models/${m.id}/manage">
+          <label class="sr-only" for="mn-${m.id}">Naam</label>
+          <input id="mn-${m.id}" name="label" type="text" maxlength="80" required class="in-grow"
+                 value="${esc(m.label || '')}">
+          <button class="btn btn-ghost" type="submit" name="action" value="rename">Hernoemen</button>
+        </form>
+
+        ${hidden
+          ? `<form class="controls" method="post" action="/admin/models/${m.id}/manage">
+               ${m.hidden_reason ? `<span class="meta">${esc(m.hidden_reason)}</span>` : ''}
+               <button class="btn btn-primary" type="submit" name="action" value="unhide">Weer zichtbaar maken</button>
+             </form>`
+          : `<form class="controls" method="post" action="/admin/models/${m.id}/manage">
+               <label class="sr-only" for="mh-${m.id}">Reden</label>
+               <input id="mh-${m.id}" name="reason" type="text" maxlength="300" required class="in-grow"
+                      placeholder="Waarom verbergen — verplicht, en dit is wat je over drie maanden leest">
+               <button class="btn btn-ghost" type="submit" name="action" value="hide">Verbergen</button>
+             </form>`}
+
+        <details class="danger">
+          <summary>Dit model verwijderen</summary>
+          <div class="danger-body">
+            <p class="meta">Verbergen is omkeerbaar, dit niet: de rij gaat weg en het portret gaat uit R2. Een vaste
+            look die naar dit model wees, wordt losgelaten.</p>
+            <form method="post" action="/admin/models/${m.id}/manage">
+              <input type="text" name="confirm" required autocomplete="off"
+                     placeholder="Type ${esc(m.label || '')} to confirm">
+              <button class="btn btn-ghost btn-sm" type="submit" name="action" value="delete">Verwijderen</button>
+            </form>
+          </div>
+        </details>
       </div>`;
     }).join('')
     : '<p class="empty">No models of their own yet. Every order still includes one of the ten standard faces.</p>';
@@ -2590,25 +3524,49 @@ async function renderCustomer(context, customerId) {
    *
    * Hij staat onderaan, dichtgeklapt, met uitgeschreven wat er weggaat en wat
    * er blijft — want dat laatste is waar de vraag over gaat als de klant later
-   * belt. Betaalde bestellingen laten een geanonimiseerde factuurregel achter:
-   * bedrag, btw, datum, referentie. Geen naam.
+   * belt.
+   *
+   * ── DE TEKST IS OP 12 AUGUSTUS 2026 ONWAAR GEWORDEN EN NU RECHTGEZET ───────
+   *
+   * Er stond "Everything of this brand, gone" met als enige uitzondering een
+   * geanonimiseerde factuurregel. Sinds er echte facturen bestaan (migratie 0021) is
+   * dat niet meer waar: een uitgereikte factuur blijft staan, met de naam en het
+   * adres in zijn momentopname, omdat art. 17 lid 3 sub b AVG daar ruimte voor laat
+   * en de fiscale bewaarplicht dat vraagt. Zie de noot bij handleCustomerWipe().
+   *
+   * Een paneel dat meer belooft dan de knop doet, is het paneel waar je op wordt
+   * afgerekend — precies dezelfde regel als bij de beveiligingsparagraaf van de
+   * verwerkersovereenkomst. Dus staat het er nu apart: wat verdwijnt, en wat blijft.
    */
-  const paidCount = orders.filter((o) => o.payment_status === 'paid' && Number(o.total_cents || 0) > 0).length;
+  const billedCount = orders.filter((o) => Number(o.has_invoice || 0) > 0).length;
+  const paidCount = orders.filter((o) => o.payment_status === 'paid'
+    && Number(o.total_cents || 0) > 0 && !Number(o.has_invoice || 0)).length;
   const wipeName = (customer.brand || customer.name || customer.email || '').trim();
   const wipePanel = `
 <details class="danger">
   <summary>Erase this customer (GDPR request)</summary>
   <div class="danger-body">
     <div class="danger-block is-worst">
-      <h4>Everything of this brand, gone</h4>
-      <p class="meta">
-        Removes ${orders.length} order${orders.length === 1 ? '' : 's'}, every uploaded and delivered file in R2,
-        their brand models and their pictures, their standing preferences, and every sign-in session and token.
-        ${paidCount
-          ? `Keeps ${paidCount} anonymised invoice line${paidCount === 1 ? '' : 's'} — reference, amount, VAT and date, no name — because a paid order has to stay accountable for seven years.`
-          : 'Nothing was ever paid, so there is nothing to keep for the bookkeeping.'}
-        There is no undo.
+      <h4>Alles van dit merk weg, op één uitzondering</h4>
+      <p class="meta"><strong>Wat verdwijnt.</strong>
+        ${orders.length - billedCount} bestelling${orders.length - billedCount === 1 ? '' : 'en'} volledig,
+        elk aangeleverd en geleverd bestand in R2, de merkmodellen en hun portretten, de vaste voorkeuren,
+        elke inlogsessie en elk token, de berichten uit het contactformulier, en de nieuwsbriefaanmelding.
       </p>
+      <p class="meta"><strong>Wat blijft.</strong>
+        ${billedCount
+          ? `${billedCount} bestelling${billedCount === 1 ? '' : 'en'} met een uitgereikte factuur of creditnota.
+             Die bestelling${billedCount === 1 ? '' : 'en'} word${billedCount === 1 ? 't' : 'en'} uitgekleed —
+             naam, e-mail, telefoon, adres en btw-nummer eruit — maar de factuur zelf blijft, met de gegevens
+             die erop staan. Dat is geen keuze: art. 17 lid 3 sub b AVG laat het recht op vergetelheid wijken
+             voor een wettelijke bewaarplicht, en een factuur zonder naam is geen geldige factuur.`
+          : 'Er is nooit een factuur uitgereikt, dus er blijft aan die kant niets staan.'}
+        ${paidCount
+          ? `Plus ${paidCount} geanonimiseerde archiefregel${paidCount === 1 ? '' : 's'} — referentie, bedrag,
+             btw en datum, geen naam — voor betaald geld waar géén factuur bij hoort.`
+          : ''}
+      </p>
+      <p class="meta">Er is geen ongedaan maken.</p>
       <form method="post" action="/admin/customers/${customer.id}/wipe">
         <input type="text" name="confirm" required autocomplete="off" placeholder="Type ${esc(wipeName)} to confirm">
         <button class="btn btn-ghost btn-sm" type="submit">Erase everything</button>
@@ -2617,10 +3575,161 @@ async function renderCustomer(context, customerId) {
   </div>
 </details>`;
 
+
+  /* ── BLOK 5: DE PANELEN, 12 AUGUSTUS 2026 ──────────────────────────────────
+     Vier stukken die het paneel van lezen naar corrigeren brengen. De redenering
+     per handeling staat bij de handlers boven deze functie; hier staat alleen
+     waarom het scherm er zo uitziet. */
+
+  /*
+   * HET AANMELDMOMENT. `customers.created_at` werd op twee plekken netjes
+   * geselecteerd en daarna weggegooid — een dode SELECT. Het staat nu in de lede,
+   * want "sinds wanneer is dit een klant" is de eerste vraag bij elk telefoontje.
+   */
+  const sinds = customer.created_at ? when(customer.created_at) : null;
+
+  /*
+   * GEDEACTIVEERD IS EEN TOESTAND DIE JE BOVENAAN WILT ZIEN en niet onderaan
+   * moet vinden. Zonder deze strook zou je een klant kunnen zitten helpen die al
+   * twee weken niet meer kan inloggen, en dat pas merken als hij het zegt.
+   */
+  const statusPanel = customer.deactivated_at
+    ? `<div class="panel is-warn">
+         <p><strong>Dit account is gedeactiveerd</strong> op ${esc(when(customer.deactivated_at))}. De klant kan niet
+         inloggen en niet bestellen. De bestellingen, facturen en geschiedenis staan er nog.</p>
+         ${customer.deactivated_reason ? `<div class="note">${esc(customer.deactivated_reason)}</div>` : ''}
+         ${customer.merged_into
+           ? `<p class="meta">Hoort bij <a href="/admin/customers/${customer.merged_into}">klant #${customer.merged_into}</a>
+              — er is niets verplaatst, dit is alleen de verwijzing.</p>`
+           : ''}
+         <form method="post" action="/admin/customers/${customer.id}/status">
+           <button class="btn btn-primary" type="submit" name="action" value="reactivate">Weer activeren</button>
+         </form>
+       </div>`
+    : `<details>
+         <summary>Account deactiveren</summary>
+         <div class="danger-body">
+           <p class="meta">Geen verwijdering: alles blijft staan, en het is met één klik terug te draaien. Wat er
+           verdwijnt is inloggen en bestellen — en zijn openstaande sessies en inloglinks gaan er meteen uit,
+           anders werkt hij door tot zijn sessie verloopt.</p>
+           <form class="stack" method="post" action="/admin/customers/${customer.id}/status">
+             <label for="deact-reason">Reden <span class="req">*</span></label>
+             <input id="deact-reason" name="reason" type="text" maxlength="300" required
+                    placeholder="Dubbele registratie — gebruikt het andere adres">
+             <label for="deact-merge">Hoort bij klantnummer <span class="pl-opt">optioneel</span></label>
+             <input id="deact-merge" name="merged_into" type="text" inputmode="numeric" maxlength="9"
+                    placeholder="bijv. 42">
+             <span class="hint">Alleen een verwijzing. Er worden geen bestellingen of facturen verplaatst.</span>
+             <button class="btn btn-ghost" type="submit" name="action" value="deactivate">Deactiveren</button>
+           </form>
+         </div>
+       </details>`;
+
+  /*
+   * DE GEGEVENS, ALS FORMULIER EN NIET ALS TEKST. Dit ontbrak volledig: de twee
+   * UPDATE-statements op `customers` in dit bestand raakten uitsluitend de
+   * revisierechten. Een verkeerd btw-nummer bleef dus fout op elke volgende factuur,
+   * en de btw-reviewpagina helpt daar niet — die beslist per BESTELLING.
+   *
+   * Ingeklapt, want negen van de tien keer kom je hier om te kijken en niet om te
+   * wijzigen. Het e-mailadres staat er als `required` bij: dat is de inlogsleutel.
+   */
+  const detailsPanel = `
+<details>
+  <summary>Gegevens corrigeren</summary>
+  <div class="danger-body">
+    <p class="meta">De klant kan dit zelf in zijn portaal; jij kon het tot vandaag niet. Leeg laten maakt een veld
+    leeg — behalve het e-mailadres, want daarmee logt hij in.</p>
+    <form class="stack" method="post" action="/admin/customers/${customer.id}/details">
+      <label for="cd-email">E-mailadres <span class="req">*</span></label>
+      <input id="cd-email" name="email" type="email" maxlength="200" required value="${esc(customer.email || '')}">
+      <label for="cd-brand">Merknaam</label>
+      <input id="cd-brand" name="brand" type="text" maxlength="120" value="${esc(customer.brand || '')}">
+      <label for="cd-name">Naam</label>
+      <input id="cd-name" name="name" type="text" maxlength="120" value="${esc(customer.name || '')}">
+      <label for="cd-phone">Telefoon</label>
+      <input id="cd-phone" name="phone" type="text" maxlength="40" value="${esc(customer.phone || '')}">
+      <label for="cd-website">Website</label>
+      <input id="cd-website" name="website" type="text" maxlength="200" value="${esc(customer.website || '')}">
+      <label for="cd-vat">Btw-nummer</label>
+      <input id="cd-vat" name="vat_number" type="text" maxlength="40" value="${esc(customer.vat_number || '')}">
+      <span class="hint">Een fout btw-nummer staat op elke volgende factuur. Al uitgereikte facturen blijven zoals
+      ze zijn — die corrigeer je met een creditnota, niet door de klantgegevens te wijzigen.</span>
+      <button class="btn btn-primary" type="submit">Opslaan</button>
+    </form>
+  </div>
+</details>`;
+
+  /*
+   * HET TEGOED. Lucas: *"alleen een ledger, geen verrekening."* Dus staat er een
+   * saldo, een lijst met redenen, en een formulier — en nergens een belofte dat dit
+   * bij het afrekenen automatisch verrekend wordt, want dat gebeurt niet.
+   *
+   * HET SALDO IS EEN SOM en geen kolom. Dat is precies waarom de reden per boeking
+   * bestaat: "waar komt die vijfenveertig euro vandaan" is de vraag die je krijgt, en
+   * een saldokolom kan die niet beantwoorden.
+   */
+  /* Geen `eur()` in dit bestand — de bedragen worden per plek geformatteerd (zie
+     `money()` in renderFiles en de kolommen in de klantenlijst). Hier dus dezelfde
+     vorm, één keer benoemd, in plaats van vier keer dezelfde uitdrukking. */
+  const eur = (c) => `€${((Number(c) || 0) / 100).toFixed(2)}`;
+  const creditTotal = (credits || []).reduce((n, c) => n + Number(c.delta_cents || 0), 0);
+  const creditRows = (credits || []).length
+    ? `<table class="tbl">
+         <thead><tr><th>Wanneer</th><th class="num">Bedrag</th><th>Reden</th><th>Bestelling</th><th>Door</th></tr></thead>
+         <tbody>${credits.map((c) => `
+           <tr>
+             <td>${esc(when(c.created_at))}</td>
+             <td class="num">${Number(c.delta_cents) > 0 ? '+' : ''}${eur(c.delta_cents)}</td>
+             <td>${esc(c.reason || '')}</td>
+             <td>${c.order_ref ? `<a href="/admin/orders/${c.order_id}">${esc(c.order_ref)}</a>` : ''}</td>
+             <td class="meta">${esc(c.admin_email || '')}</td>
+           </tr>`).join('')}
+         </tbody>
+       </table>`
+    : '<p class="meta">Nog geen boekingen.</p>';
+
+  const creditPanel = `
+<div id="tegoed">
+  <p class="lede">Saldo: <strong>${eur(creditTotal)}</strong></p>
+  <p class="meta">Dit wordt <strong>niet</strong> automatisch verrekend bij het afrekenen. Het is een boekhouding van wat
+  je hebt toegezegd; verrekenen doe je met de hand op de factuur, zoals nu bij een annulering. Een verkeerde boeking
+  corrigeer je met een tegenboeking — er is met opzet geen wijzigen en geen verwijderen, zodat het spoor blijft.</p>
+  ${creditRows}
+  <form class="controls" method="post" action="/admin/customers/${customer.id}/credits">
+    <label class="sr-only" for="cr-amount">Bedrag in euro</label>
+    <input id="cr-amount" name="amount" type="text" inputmode="decimal" maxlength="10" required
+           placeholder="50 of -12,50" size="10">
+    <label class="sr-only" for="cr-reason">Reden</label>
+    <input id="cr-reason" name="reason" type="text" maxlength="300" required class="in-grow"
+           placeholder="Reden — verplicht, en dit is wat je over drie maanden leest">
+    <label class="sr-only" for="cr-order">Bestellingnummer</label>
+    <input id="cr-order" name="order_id" type="text" inputmode="numeric" maxlength="9" placeholder="bestelling #" size="12">
+    <button class="btn btn-primary" type="submit">Boeken</button>
+  </form>
+  <p class="meta">Positief is bijboeken, negatief is afboeken. Maximaal € 1.000 per boeking — die grens houdt een
+  typefout van drie nullen tegen.</p>
+</div>`;
   const body = `
   <p><a href="/admin/customers">&larr; Customers</a></p>
   <h1>${esc(customer.brand || customer.name || customer.email)}</h1>
-  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · VAT ${esc(customer.vat_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}</p>
+  <p class="lede">${esc(customer.email)}${customer.vat_number ? ` · VAT ${esc(customer.vat_number)}` : ''}${customer.website ? ` · ${esc(customer.website)}` : ''}${sinds ? ` · klant sinds ${esc(sinds)}` : ''}</p>
+
+  ${statusPanel}
+
+  <h2>Gegevens</h2>
+  ${detailsPanel}
+  <!-- DE INLOGLINK. De infrastructuur lag er al (account_tokens, sendLoginLink, de
+       mailweg); er was geen knop. Een klant die zijn link kwijt was moest het publieke
+       formulier gebruiken, en als hij daar zijn eigen adres verkeerd typte, kwam hij in
+       een lus terecht die de studio niet kon doorbreken. -->
+  <form class="controls" method="post" action="/admin/customers/${customer.id}/signin-link">
+    <button class="btn btn-ghost" type="submit">Nieuwe inloglink mailen</button>
+  </form>
+  <p class="meta">Gaat naar ${esc(customer.email || '')}. Dezelfde link als het publieke formulier maakt — geen tweede soort.</p>
+
+  <h2>Tegoed</h2>
+  ${creditPanel}
 
   <h2>Revisies</h2>
   ${revisionsPanel}
@@ -3056,7 +4165,11 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
   if (filter === 'revisions') {
     clauses.push("EXISTS (SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.review_state = 'revision_requested')");
   } else if (filter === 'unpaid') {
-    clauses.push("payment_status = 'unpaid' AND total_cents > 0");
+    // Dezelfde uitsluiting als in de strook hierboven, en om dezelfde reden: een
+    // afgebroken proefvisual is geen openstaande vordering. Staat de uitsluiting maar
+    // op een van de twee plekken, dan wijst de chip een aantal aan en toont de lijst
+    // erachter een ander -- wat erger is dan beide keuzes.
+    clauses.push("payment_status = 'unpaid' AND total_cents > 0 AND service != 'test-sample'");
   } else if (filter === 'paid_undelivered') {
     // WAAR GELD DOORHEEN LOOPT, deel één: betaald en nog niet geleverd. Dat is
     // een belofte die openstaat, en de enige reden dat die lijst niet bestond

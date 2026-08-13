@@ -33,6 +33,27 @@ import { waHref } from '../data/whatsapp.js';
 //
 // SERVICE LEVEL FOLLOWS SIZE: from WINDOW_THRESHOLD products an order gets the
 // reserved window, below it the standard queue.
+//
+// ── EN VIDEO STAAT NIET OP DIE LADDER — 13 augustus 2026 ────────────────────
+//
+// Die regel hierboven gold voor deze pagina niet, en dat stond er wel. Drie
+// plekken beloofden dat je vanaf tien een leverdatum krijgt die niet meer wijkt:
+// de FAQ "hoe lang duurt het", de regel onder de hero, en de slotalinea.
+//
+// tierFor() in pricing.js geeft voor `service: 'video'` ALTIJD 'unattended',
+// omdat video niet op de prijsladder staat (zie isLadderService). Een aanvraag
+// van twaalf clips kan dus per definitie geen gereserveerd venster krijgen — er
+// is geen bestelstroom, geen capaciteitspoort en geen agenda voor. De pagina
+// beloofde iets dat het systeem niet alleen niet doet, maar niet KAN doen.
+//
+// WAT WEL WAAR IS, en dat is het onderscheid dat de teksten nu maken: clips die
+// MEELIFTEN op een bestelling van tien producten of meer vallen binnen het
+// venster van die bestelling. Niet omdat het clips zijn, maar omdat de
+// BESTELLING de datum draagt. Een losse clipaanvraag draagt niets.
+//
+// Vandaar ook dat de knoppen naar /start/video gaan en niet naar /start: dit is
+// de enige dienst op deze pagina, en de keuzepagina opnieuw laten kiezen wat de
+// bezoeker net gekozen heeft, is een stap die niets oplevert.
 import {
   TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD, PLAN_CLIPS, plans,
   reviewClaim, turnaround,
@@ -113,7 +134,13 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
+    queueNote: `Clips run in the standard queue: ${t0.queue.en.toLowerCase()}. A held delivery date comes with an order of ${WINDOW_THRESHOLD} products or more — clips can ride inside one, but a clip request on its own does not get a date.`,
+    // The qualifier above TierCompare. That component is shared with /catalog,
+    // /lifestyle and /pricing and prints the ladder's two service levels; on
+    // THIS page it needs one sentence of context, because neither column is
+    // reachable by ordering clips. Removing the component instead would take
+    // away information a buyer who also orders photos does want.
+    tierNote: `The two columns below describe the ladder for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request stays in the standard queue — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
     reviewNote: reviewClaim('unattended', 'en'),
     kindsH: 'Ways to add motion.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
@@ -184,7 +211,7 @@ const COPY = {
       },
       {
         q: 'How long does it take?',
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
+        a: `A clip request runs in the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date — and that holds however many clips you ask for. The held delivery date belongs to the price ladder for catalog and lifestyle products, and a clip is not on that ladder, so ordering more clips does not buy a date. What does fall inside a held window is clips added to an order of ${WINDOW_THRESHOLD} products or more: there the order carries the date and the clips ride along with it.`,
       },
       {
         q: 'Can a model appear in the clip?',
@@ -196,7 +223,7 @@ const COPY = {
       },
     ],
     ctaH: 'Give your product<br>a little movement.',
-    ctaP: `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()} under ${WINDOW_THRESHOLD} products.`,
+    ctaP: `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()}, no fixed delivery date.`,
     ctaSecondary: 'Contact us',
   },
   nl: {
@@ -213,7 +240,9 @@ const COPY = {
       ['8s', 'strakke productvideo’s'],
       [clip, `per clip · ${vatLabel('excl', 'nl')}`],
     ],
-    queueNote: `Onder ${WINDOW_THRESHOLD} producten: ${t0.queue.nl.toLowerCase()}. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij en zetten we die vast.`,
+    queueNote: `Clips lopen mee in de normale doorlooptijd: ${t0.queue.nl.toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
+    // Zie de Engelse kant voor waarom deze regel er staat.
+    tierNote: `De twee kolommen hieronder gaan over de ladder voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
     reviewNote: reviewClaim('unattended', 'nl'),
     kindsH: 'Manieren om beweging toe te voegen.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
@@ -277,7 +306,7 @@ const COPY = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo'n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${turnaround('attended', 'nl').toLowerCase()}.`,
+        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijsladder voor catalog- en lifestyleproducten, en een clip staat niet op die ladder; méér clips bestellen koopt dus geen datum. Wat wél binnen een vrijgehouden venster valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
       },
       {
         q: 'Kan er een model in de clip?',
@@ -289,7 +318,7 @@ const COPY = {
       },
     ],
     ctaH: 'Geef je product<br>een beetje beweging.',
-    ctaP: `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()} onder ${WINDOW_THRESHOLD} producten.`,
+    ctaP: `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()}, geen vaste leverdatum.`,
     ctaSecondary: 'Neem contact op',
   },
 };
@@ -309,7 +338,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
     <h1 class="display vid-h1" style="font-size:clamp(2.8rem,6.5vw,5.4rem);margin-top:1rem" set:html={c.h1} />
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
     <div class="flex" style="margin-top:1.8rem">
-      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/video')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
       <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPrices}</a>
       <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
       </a>
@@ -417,7 +446,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
         {/* The button used to print the tier label — "Order individual
             products" — which was a door the buyer picked between. Size picks
             the service level now, so the button is a verb. */}
-        <a href={lp('/start')} class="btn btn-primary">{c.buyCta}</a>
+        <a href={lp('/start/video')} class="btn btn-primary">{c.buyCta}</a>
         <a href={c.waQuote} class="btn btn-wa" target="_blank" rel="noopener">{c.waQuoteLabel}
         </a>
       </div>
@@ -445,6 +474,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
      See TierCompare.astro for why both columns are styled identically. -->
 <section class="section-tight">
   <div class="container">
+    <p class="queue-note" style="margin-bottom:1.4rem">{c.tierNote}</p>
     <TierCompare lang={lang} />
   </div>
 </section>
@@ -468,7 +498,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)" set:html={c.ctaH} />
       <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
       <div class="flex" style="justify-content:center;margin-top:2rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/video')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
         <a href={lp('/contact')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
         <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
         </a>

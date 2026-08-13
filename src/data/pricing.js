@@ -203,8 +203,43 @@ export const WINDOW_THRESHOLD = 10;
 const WINDOW_THRESHOLD_LABEL = 10;
 
 /** 'attended' | 'unattended' — which tier's promises an order of this size gets. */
-export function tierFor(products) {
+export function tierFor(products, service) {
+  /*
+   * ── DE DIENST DOET MEE, SINDS 12 AUGUSTUS 2026 ─────────────────────────────
+   *
+   * Hier stond alleen het aantal, en dat leverde een fout op die je pas ziet in de
+   * mailbox van de klant. Het aanvraagformulier voor video (HoldingPage.astro) post
+   * zijn aantal clips in het veld `products`, met 10 en 12 in de keuzelijst. Tien
+   * clips gaven dus `attended`, en dan belooft de bevestigingsmail *"levering binnen
+   * 48 uur vanaf je leverdatum, vastgezet voordat je betaalt"* — voor een dienst die
+   * met de hand wordt ingepland en waar geen bestelstroom en geen capaciteitspoort
+   * voor bestaat.
+   *
+   * De agenda zelf bleef schoon (`window_start` blijft NULL, en elke query filtert op
+   * `tier='attended' AND window_start IS NOT NULL`), dus dit was geen dubbele
+   * boeking. Het was iets vervelenders: een belofte die niemand had ingepland, plus
+   * een oranje alarm in de studiomail bij elke video-aanvraag van tien clips of meer.
+   *
+   * ALLEEN EEN DIENST DIE OP DE LADDER STAAT KAN EEN VENSTER KRIJGEN, en dat is
+   * precies de verzameling die `LADDER` al definieert. Zo is er één bron: komt er ooit
+   * een vierde ladderdienst bij, dan doet die automatisch mee; blijft video een
+   * aanvraag, dan blijft die er automatisch buiten.
+   *
+   * `service` mag ontbreken. Dan valt hij terug op alleen het aantal, want dat is wat
+   * elke bestaande aanroeper deed en die mogen niet stil van gedrag veranderen.
+   */
+  if (service !== undefined && service !== null && !isLadderService(service)) return 'unattended';
   return (Math.floor(Number(products) || 0) >= WINDOW_THRESHOLD) ? 'attended' : 'unattended';
+}
+
+/**
+ * Staat deze dienst op de prijsladder, en kan hij dus een gereserveerd venster
+ * krijgen? Neemt de wire-waarde ('drop') net zo goed als de laddernaam ('complete').
+ */
+export function isLadderService(service) {
+  const naam = String(service || '').trim();
+  const key = naam === 'drop' ? 'complete' : naam;
+  return Object.prototype.hasOwnProperty.call(LADDER, key);
 }
 
 // ── WIE MAG BEOORDELEN ───────────────────────────────────────────────────────

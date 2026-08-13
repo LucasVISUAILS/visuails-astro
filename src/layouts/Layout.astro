@@ -925,6 +925,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         <span style="display:flex;gap:1.2rem;flex-wrap:wrap">
           <a href={lp('/privacy')}>{t('foot_privacy')}</a>
           <a href={lp('/terms')}>{t('foot_terms')}</a>
+          {/* De verwerkersovereenkomst staat hier en niet alleen onderaan de
+              voorwaarden, om twee redenen. Art. 28 lid 2 AVG laat een algemene
+              toestemming voor subverwerkers alleen toe als er een lijst is die de
+              klant kan vinden; een lijst achter twee klikken is geen lijst. En het
+              is het document waar een merk naar zoekt vóór het uploadt, niet erna. */}
+          <a href={lp('/data-processing-agreement')}>{t('foot_dpa')}</a>
           <a href={lp('/cookie-policy')}>{t('foot_cookies')}</a>
           {/* Withdrawal has to be as easy as consent, so it lives with the
               other legal links and is present on every page. A <button> rather

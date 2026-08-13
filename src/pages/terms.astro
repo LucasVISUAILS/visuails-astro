@@ -114,6 +114,11 @@ import Layout from '../layouts/Layout.astro';
 import {
   euro, turnaround, ladderRate, ladderFloor, LADDER, WINDOW_THRESHOLD,
 } from '../data/pricing.js';
+// §7 READS THE RETENTION PERIODS, it no longer types them. They sat here as 90 and
+// 12 and on four other pages as well; a typed number in a CONTRACT is the most
+// expensive version of that drift, because the client may rely on the text while
+// the nightly task obeys the constant. tests/legal.test.mjs holds this.
+import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
 
 const t0 = turnaround('unattended', 'en').toLowerCase();
 const t1 = turnaround('attended', 'en').toLowerCase();
@@ -146,6 +151,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       Vaarwerkhorst 17, 7531 HK Enschede, the Netherlands<br>
       KVK 99742993 &middot; VAT NL005407575B96 &middot; <a href="mailto:hello@visuails.com">hello@visuails.com</a></p>
       <p>This is our registered and postal address. It is <strong>not a visiting address</strong>: there is no reception and we do not receive visitors there. All contact goes through email, and post arrives.</p>
+      <p><strong>Two documents come with these terms and form part of them.</strong> Our <a href="/privacy">Privacy Policy</a> covers the data we hold about you. Our <a href="/data-processing-agreement">Data Processing Agreement</a> covers the opposite direction: material you supply in which a person appears, where you are the controller and we are your processor. You do not need to sign it — placing an order accepts it — and you can request a signed copy at any time.</p>
 
 
       <h2>2. Definitions</h2>
@@ -160,6 +166,10 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>3. The service</h2>
       <p>VISUAILS produces AI-assisted, human-reviewed product visuals — catalog images, lifestyle scenes, and video — from the source material you supply. Every visual is generated through our production and checked by a person before delivery. We aim for consistent, publish-ready results, but visuals are creative work and exact outcomes can vary.</p>
+
+      <p><strong>VISUAILS supplies businesses only.</strong> This service is for brands, retailers and other businesses, and not for private individuals. When you order we ask you to confirm that you are ordering for a business or profession, and we ask for the evidence that goes with that: a KVK number in the Netherlands, a VAT number we can verify against VIES elsewhere in the EU, and your own registration number outside the EU. Where that evidence is missing we do not refuse the order — we put it on hold, tell you what we need, and start once it is there. Nothing is produced and nothing is invoiced in the meantime.</p>
+      <p>We ask for a registration number rather than a KVK number because a KVK number only exists in the Netherlands, and a service that demands one does not exclude consumers — it excludes foreign businesses. What matters in law is whether you are acting for your business, which is why your confirmation is the part that counts and the number is what corroborates it.</p>
+      <p>If you nevertheless order as a consumer, section 10a says what happens: consumer law then applies regardless of what these terms say, because that is not something a contract can sign away.</p>
 
       <h2>4. Orders &amp; pricing</h2>
       <p>Visuals are priced per product, and the rate falls as the number of products in the order rises. Indicative rates are:</p>
@@ -188,14 +198,35 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <h2>7. Your files &amp; how long we keep them</h2>
       <p>Three periods are fixed, and they are deliberately different lengths:</p>
       <ul>
-        <li><strong>Source material</strong> — the photos and files you upload are deleted 90 days after your order closes. If you need us to keep them longer, ask in writing before then and we will agree it with you.</li>
-        <li><strong>Delivered visuals</strong> — we keep your finished visuals for 12 months from delivery. A delivery outlives the material it was made from.</li>
-        <li><strong>Your order link</strong> — the private link you download from works for 90 days after your order closes, then it stops. If you need the files after that, email us and we will send a new link.</li>
+        <li><strong>Source material</strong> — the photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask in writing before then and we will agree it with you.</li>
+        <li><strong>Delivered visuals</strong> — we keep your finished visuals for {DELIVERY_MONTHS} months from delivery. A delivery outlives the material it was made from.</li>
+        <li><strong>Your order link</strong> — the private link you download from works for {UPLOAD_DAYS} days after your order closes, then it stops. If you need the files after that, email us and we will send a new link.</li>
       </ul>
-      <p>Keep your own copy of anything you rely on: after 12 months we cannot guarantee a re-download. How we handle your personal data more generally, including how that private link is protected, is set out in our <a href="/privacy">Privacy Policy</a>.</p>
+      <p>Keep your own copy of anything you rely on: after {DELIVERY_MONTHS} months we cannot guarantee a re-download. How we handle your personal data more generally, including how that private link is protected, is set out in our <a href="/privacy">Privacy Policy</a>.</p>
 
       <h2>8. Intellectual property &amp; usage rights</h2>
-      <p>You retain all rights to your own product and brand assets — the source material you provide. On full payment, you receive commercial usage rights to the delivered visuals, so you can use them across your webshop, marketplaces, ads and social channels. We may retain examples of our work for our portfolio unless you ask us in writing not to.</p>
+      <p>You retain all rights to your own product and brand assets — the source material you provide. Nothing here touches those.</p>
+
+      <p><strong>What you get on the delivered visuals, listed rather than summarised.</strong> On full payment you receive an <strong>exclusive, perpetual, worldwide and royalty-free licence</strong> to the visuals we deliver, and it is irrevocable once paid. It is listed item by item on purpose: Dutch law reads a licence like this narrowly, so a power that is not written down is a power you did not get (art. 2(3) Copyright Act). You may:</p>
+      <ul>
+        <li><strong>reproduce and publish</strong> them, in any medium, in print and online, in any size and any file format;</li>
+        <li><strong>edit and adapt</strong> them — crop, retouch, recolour, add text, cut a frame out of a video, use a detail on its own;</li>
+        <li><strong>use them commercially</strong> anywhere you sell or advertise: your own shop, marketplaces, paid campaigns, social channels, print, packaging, trade fairs, a physical shop window;</li>
+        <li><strong>sublicense</strong> them to the parties who work for you — your agency, your photographer, your marketplace, a reseller or distributor who sells your product;</li>
+        <li><strong>transfer</strong> the licence with your business or brand if it is sold, without asking us.</li>
+      </ul>
+      <p>Nothing in that list expires, and there is no volume limit, no territory limit and no term. You do not have to credit us.</p>
+
+      <p><strong>And the part most suppliers do not tell you: on an AI-generated image there may be no copyright at all.</strong> Under Dutch and European law a work is protected only if it is a human being's own intellectual creation. Output that a machine produced from a prompt, with no creative human choices in it, does not meet that test — a Czech court said so in 2023, and the US Copyright Office reached the same conclusion. Our images are not purely machine output: they are composed, corrected and retouched by hand, and that human work does create copyright in the result. But we are not going to tell you we hold something we may not hold. So this clause is built to give you the same practical outcome either way:</p>
+      <ul>
+        <li><strong>Where copyright does exist</strong> in a delivered visual, you get the licence above — exclusive, so nobody else may use that image either.</li>
+        <li><strong>Where it does not exist</strong>, nobody holds it, which means nobody can stop you. We will not assert any right we do not have, and we will not claim one later.</li>
+      </ul>
+      <p><strong>If you need the copyright transferred rather than licensed</strong> — for a trademark filing, an investor's IP schedule, a due diligence list — say so and we will sign a deed of transfer for the order, free of charge. That is not a formality we can skip: under art. 2(3) of the Copyright Act a transfer needs a signed deed, and <strong>a transfer clause in general terms is not valid</strong>. Terms that claim to transfer copyright to you by the act of ordering are making a promise the law does not let them keep. This clause does not do that; it gives you a licence that needs no deed, and a deed on request.</p>
+      <p><strong>What cannot be transferred, by anybody.</strong> Moral rights stay with the maker (art. 25 Copyright Act). We waive the right to be named, so you never have to credit us, and we waive our objection to your editing the work — that is what the adaptation right above is for. One thing cannot be waived by law and so is not: the right to object to a distortion of the work that damages the maker's reputation. In practice that is about using an image to say something it was not made to say, and not about your ordinary editing.</p>
+      <p><strong>The licence you give us, and where it stops.</strong> Making the visuals means copying your photo, cropping it, editing it and sending it to the parties named in our <a href="/data-processing-agreement">Data Processing Agreement</a>. Every one of those steps needs your permission, because the copyright in that photo is yours and not ours. So you grant VISUAILS a licence to store, copy, crop, edit and adapt the source material you supply, and to submit it to those parties, <strong>for the single purpose of producing and delivering your order</strong>. That licence is non-exclusive, royalty-free, worldwide in reach only because the infrastructure is, and it lasts no longer than we hold the material under §7. It transfers no ownership. We do not use your material for another client, we do not use it to build a model or a dataset of our own, and we do not use it for a purpose you have not asked for. You may withdraw the licence in writing at any time; we then stop work and delete, and what has already been delivered stays yours to use under this section.</p>
+      <p><strong>Our portfolio — the one thing we keep back, and why it has to be written down.</strong> The licence above is exclusive, and exclusive means exclusive: without this paragraph we would be infringing your rights by showing our own work. So we reserve one narrow right for ourselves, and it is the only carve-out in this section. We may show <em>delivered visuals</em> — never your source material — in our portfolio, in a case study and on our own channels, unless you tell us in writing not to. We may not sell them, licence them to anyone else, or use them to advertise a different product.</p>
+      <p>Two limits, and the first is the one that matters commercially. <strong>If the product in the image is not yet publicly available, we publish nothing</strong> until you have launched it or have said yes in writing, whichever comes first — a visual of an unreleased product is your commercial secret before it is our showpiece. And you can withdraw this at any time, in one line by email, also years later and also for work already on our site; we take it down. We are asking rather than assuming, and a supplier who needs a clause to keep showing work a client has asked him to remove has a bigger problem than a portfolio.</p>
 
       <h2>9. Payment &amp; VAT</h2>
       <p>Payment is handled through our payment provider. Invoices are issued for your records. For EU business customers with a valid VAT number, the reverse-charge mechanism may apply where the conditions are met; otherwise Dutch VAT rules apply. You are responsible for providing accurate billing and VAT details.</p>
@@ -216,6 +247,14 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>11. Liability limitations</h2>
       <p>We provide the service with reasonable skill and care, but to the extent permitted by law we are not liable for indirect or consequential losses, lost profits, or losses arising from your use of the visuals. Our total liability for any order is limited to the amount you paid for that order. Nothing in these terms excludes liability that cannot be excluded by law.</p>
+      <p><strong>What you cover, and its limits.</strong> Section 5 is your warranty about the material you send us; this is what happens if that warranty turns out to be wrong. If a third party brings a claim against us because of the source material you supplied, or because of how you have used or published the delivered visuals, you indemnify us against that claim and against the reasonable costs of defending it. That covers three things and nothing beyond them: material you did not have the rights to, a person shown in the material without a basis for using their image, and a publication obligation that rests on you rather than on us — the AI disclosure in <a href="/ai-act">our AI Act statement</a> being the obvious example.</p>
+      <p>Three limits go with it, because an indemnity without them is a clause nobody can act on:</p>
+      <ul>
+        <li><strong>We tell you promptly.</strong> If a claim arrives we notify you without unreasonable delay and pass on what we received, so you can act while it still matters.</li>
+        <li><strong>You may run the defence.</strong> You may take it over with counsel of your choice, and we will cooperate. We do not settle or admit anything without your written consent, and you do not settle on terms that oblige us to do something without ours.</li>
+        <li><strong>It stops where our own conduct starts.</strong> This does not cover a claim to the extent it results from our breach of these terms, from our own negligence, or from something we added to the work on our own initiative rather than from your brief.</li>
+      </ul>
+      <p>This section applies to business customers, which under section 3 is everybody we supply. If you nevertheless ordered as a consumer, this section does not apply to you at all — an indemnity of this kind cannot be imposed on a consumer, and a clause that pretended otherwise would be void rather than merely unused.</p>
 
       <h2>12. Governing law</h2>
       <p>These terms are governed by the laws of the Netherlands. Any disputes will be subject to the jurisdiction of the competent Dutch courts, unless mandatory law provides otherwise.</p>

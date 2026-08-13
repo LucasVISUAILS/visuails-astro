@@ -10,6 +10,11 @@ import { waHref } from '../../data/whatsapp.js';
 // reimplemented as vanilla JS below, keeping the exact same markup/fields
 // and the same "both steps stay in the DOM" behavior.
 import Layout from '../../layouts/Layout.astro';
+// De twee juridische verklaringen onder aan het formulier. Uit dezelfde bron als
+// src/components/order/OrderFlow.astro, want twee eigen kopieen van een
+// juridische tekst is hoe ze uit elkaar gaan lopen.
+import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
+import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
 import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../../data/pricing.js';
 
 // De €1 stond op vier plekken ingetypt en de leverstap beloofde
@@ -297,6 +302,38 @@ const sampleTypes = [
             </div>
 
             <p class="hint" style="margin:.4rem 0 1.4rem">Je proef wordt geleverd via een downloadlink naar je e-mail. Als we iets moeten navragen, doen we dat via WhatsApp of e-mail.</p>
+
+            {/* ── DE TWEE VERKLARINGEN — 12 AUGUSTUS 2026 ─────────────────────
+                DIT FORMULIER HAD ER GEEN VAN BEIDE, en dat is het gat dat het
+                meest kostte: /test-sample is de goedkoopste deur op de site en
+                dus de plek waar een particulier het eerst binnenkomt, EN het is
+                de enige bestelling die meteen wordt afgerekend. Het uitgebreide
+                bestelformulier (src/components/order/OrderFlow.astro) vroeg de
+                herroepingsverklaring sinds augustus; deze pagina heeft een eigen
+                wizard en is toen overgeslagen.
+
+                Er staat hier geen land- en geen btw-veld, en dat blijft zo: voor
+                een proefvisual van EUR 1 is dat te veel formulier. De VERKLARING
+                is het dragende element van de uitsluiting (art. 6:230g lid 1 sub
+                a BW gaat over de hoedanigheid van de klant en niet over een
+                nummer), en die past in twee vinkjes. Het corroborerende bewijs
+                komt bij de echte bestelling.
+
+                De teksten en hun versies komen uit src/data/business.js en
+                src/data/consent.js -- dezelfde bron als het andere formulier, want
+                twee eigen kopieen van een juridische verklaring is hoe ze uit
+                elkaar gaan lopen. */}
+            <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
+            <label class="pl-consent" style="display:flex;gap:.6rem;align-items:flex-start;margin-bottom:.9rem">
+              <input type="checkbox" name="business_declaration" value="yes" required />
+              <span>{currentBusiness('nl')}</span>
+            </label>
+
+            <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
+            <label class="pl-consent" style="display:flex;gap:.6rem;align-items:flex-start;margin-bottom:1.2rem">
+              <input type="checkbox" name="withdrawal_consent" value="yes" required />
+              <span>{currentConsent('nl')}</span>
+            </label>
 
             <div class="flex" style="justify-content:space-between;margin-top:.4rem">
               <button type="button" class="btn btn-ghost" data-wizard-back>

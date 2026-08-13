@@ -803,6 +803,69 @@ function creditOf(over = {}) {
   check('nl: geen tekst buiten het blad', buiten.map((r) => `${r.text}@${r.x},${r.y}`), []);
 }
 
+// ── DE PROEFVISUAL VAN €1, DIE VAN BOVEN NAAR BENEDEN REKENT ─────────────────
+//
+// Vanaf 12 augustus 2026 krijgt de proefvisual een echte factuur. Het bijzondere
+// eraan is de richting van de berekening: €1 is het BRUTObedrag — dat is wat Mollie
+// afschrijft — en de btw wordt eruit gehaald, niet erop gezet. Dat levert het
+// kleinste geldige factuurtje op dat dit systeem kan maken, €0,83 + €0,17, en juist
+// daar zie je een afrondingsfout meteen.
+//
+// Deze sectie toetst het DOCUMENT en niet de rekenkunde; die staat in
+// tests/sample-invoice.test.mjs, samen met de bedrading eromheen. Het punt hier is
+// dat de drie bedragen op het papier staan en optellen — een factuur van één euro
+// die "€ 0,00" zegt is precies de fout die de webhook tot vandaag vermeed door
+// helemaal geen factuur te maken.
+console.log('\n── de proefvisual van één euro ──');
+
+const sample = base({
+  customer: {
+    name: 'Sanne de Vries',
+    company: 'Atelier Noord',
+    address: ['Voorbeeldstraat 12', '1234 AB Rotterdam'],
+    country: 'NL',
+    vat: null,
+  },
+  lines: [{ description: 'VISUAILS proefvisual — 1 product', qty: 1, unitCents: 83, totalCents: 83 }],
+  netCents: 83,
+  vatRate: 0.21,
+  vatCents: 17,
+  grossCents: 100,
+  treatment: 'nl_standard',
+  paidAt: '2026-08-12',
+});
+
+const sampleBytes = await renderInvoicePdf(sample);
+const sampleText = textOf(sampleBytes);
+check('een factuur van één euro wordt gedrukt', sampleBytes instanceof Uint8Array, true);
+check('het subtotaal staat er als 0,83', sampleText.includes(formatEuro(83)), true);
+check('de btw staat er als 0,17', sampleText.includes(formatEuro(17)), true);
+check('en het totaal als 1,00', sampleText.includes(formatEuro(100)), true);
+/* De som op het papier, niet in de fixture: 0,83 + 0,17 = 1,00 is de hele reden dat
+   de btw als verschil wordt genomen en niet als netto × tarief. */
+check('netto plus btw is precies het totaal', sample.netCents + sample.vatCents, sample.grossCents);
+check('en er staat nergens 0,00 op deze factuur', sampleText.includes(formatEuro(0)), false);
+check('hij past nog steeds op één blad', await pageCount(sampleBytes), 1);
+check('en er valt niets buiten het blad', offPage(sampleBytes).map((r) => r.text).join('|'), '');
+
+/* Bij verlegging schuift de verdeling en niet het bedrag: de klant betaalt nog steeds
+   één euro. Dit is de check die omvalt als iemand ooit besluit de btw erbovenop te
+   zetten in plaats van eruit te halen — dan wordt het €1,21. */
+const sampleRc = await renderInvoicePdf(base({
+  ...sample,
+  customer: { ...sample.customer, country: 'DE', vat: 'DE123456789' },
+  lines: [{ description: 'VISUAILS proefvisual — 1 product', qty: 1, unitCents: 100, totalCents: 100 }],
+  netCents: 100,
+  vatRate: 0,
+  vatCents: 0,
+  grossCents: 100,
+  treatment: 'eu_reverse_charge',
+  viesConsultation: 'VIES 2026-08-12T09:14:00Z ref WAPIAAAAX1234',
+}));
+const rcText = textOf(sampleRc);
+check('bij verlegging betaalt de klant hetzelfde bedrag', rcText.includes(formatEuro(100)), true);
+check('en het is geen 1,21', rcText.includes(formatEuro(121)), false);
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) {
   console.log(`${fail} FAILED`);

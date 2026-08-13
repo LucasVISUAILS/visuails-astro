@@ -914,3 +914,43 @@ ALTER TABLE orders ADD COLUMN payer_kind TEXT;
 -- controle vult ze in plaats van er iets eigens naast te zetten.
 CREATE INDEX IF NOT EXISTS idx_orders_payer
   ON orders(payer_hash, service) WHERE payer_hash IS NOT NULL;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 0027 · HET ADMINPANEEL KAN NU OOK CORRIGEREN
+-- Zie migrations/0027-admin-beheer.sql voor de volledige redenering. Kort:
+--
+--   custom_models.hidden_at/hidden_reason  een model verbergen zonder het weg te
+--       gooien, en zonder de STATUS ervoor te misbruiken — de klant leest dat
+--       statuswoord in zijn eigen portaal, dus "verborgen" las als "nog in ontwerp".
+--
+--   customers.deactivated_at/reason        inloggen en bestellen tegenhouden zonder
+--       iets te verwijderen. Omkeerbaar met één klik.
+--   customers.merged_into                  een verwijzing bij dubbele registratie, en
+--       géén samenvoeging: er wordt niets verhangen. Lucas' keuze, 12 aug 2026.
+--
+--   customer_credits                       een LEDGER van toegezegd tegoed, met een
+--       verplichte reden. Geen saldokolom (die weet niet waar het bedrag vandaan
+--       komt) en geen automatische verrekening bij het afrekenen (die rekent stil
+--       het verkeerde bedrag af). Niet te verwarren met `credit_notes`: dat zijn
+--       creditFACTUREN tegenover een terugbetaling.
+-- ────────────────────────────────────────────────────────────────────────────
+ALTER TABLE custom_models ADD COLUMN hidden_at TEXT;
+ALTER TABLE custom_models ADD COLUMN hidden_reason TEXT;
+CREATE INDEX IF NOT EXISTS idx_models_visible
+  ON custom_models (customer_id, hidden_at);
+
+ALTER TABLE customers ADD COLUMN deactivated_at TEXT;
+ALTER TABLE customers ADD COLUMN deactivated_reason TEXT;
+ALTER TABLE customers ADD COLUMN merged_into INTEGER REFERENCES customers(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS customer_credits (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  delta_cents  INTEGER NOT NULL CHECK (delta_cents <> 0),
+  reason       TEXT NOT NULL,
+  order_id     INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  admin_id     INTEGER REFERENCES admin_users(id) ON DELETE SET NULL,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_credits_customer
+  ON customer_credits (customer_id, created_at DESC);

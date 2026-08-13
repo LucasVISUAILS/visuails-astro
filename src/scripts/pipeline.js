@@ -506,6 +506,11 @@ function show(n, opts) {
   }
 
   syncVatConfirm();
+  /* En het registratienummer, om dezelfde reden als syncVatConfirm() hierboven:
+     wie terugloopt naar stap 3 en zijn vinkje weghaalt, moet het veld ook zien
+     verdwijnen -- anders staat er een verplicht veld op een stap die de bezoeker
+     al voorbij is. */
+  syncReg();
   /* De laatste stap, niet stap 5: bij de proefvisual is dat stap 4. */
   if (to === STEPS) renderSummary();
 
@@ -535,7 +540,7 @@ function reduced() {
  */
 function syncRequired() {
   fields().forEach((f) => {
-    f.required = f.dataset.plReq === '1' && isShown(f) && !waived(f);
+    f.required = f.dataset.plReq === '1' && isShown(f) && !waived(f) && demanded(f);
   });
 }
 
@@ -603,6 +608,50 @@ function waived(f) {
   return !!(box && box.checked);
 }
 
+/**
+ * De spiegel van waived(): `data-pl-req-when="no_vat"` maakt een veld ALLEEN
+ * verplicht zolang dat vinkje aan staat.
+ *
+ * WAAROM DIT ERBIJ MOEST. Het registratienummer (12 augustus 2026, VISUAILS
+ * levert uitsluitend zakelijk) hangt aan hetzelfde vinkje als het btw-veld, maar
+ * de andere kant op: wie een btw-nummer heeft hoeft geen registratienummer, en
+ * wie "ik heb er geen" aanvinkt juist wel. Met alleen data-pl-req-unless zou dat
+ * twee vinkjes vragen die elkaars tegendeel zijn, en dan is er een stand waarin
+ * er geen van de twee is ingevuld.
+ *
+ * Onbekende naam -> niet verplicht. Dat is de andere faalrichting dan bij
+ * waived(), en dat is met opzet: een verwijzing naar een vinkje dat niet bestaat
+ * mag geen veld verplicht maken dat de bezoeker niet te zien krijgt. Hij zou dan
+ * op Verder drukken en niets kunnen vinden.
+ */
+function demanded(f) {
+  const name = f.dataset && f.dataset.plReqWhen;
+  if (!name) return true;
+  const box = q(`input[type="checkbox"][name="${name}"]`);
+  return !!(box && box.checked);
+}
+
+/**
+ * Het registratienummer verschijnt zodra de klant zegt geen btw-nummer te hebben.
+ *
+ * Zelfde vorm als syncVatConfirm() hieronder, en om dezelfde reden: verdwijnt het
+ * blok, dan verdwijnt ook het antwoord. Een nummer dat de klant niet meer kan zien
+ * mag niet meeliften naar de server -- dan staat er straks een registratienummer
+ * op een bestelling met een btw-nummer, en weet niemand meer welk van de twee de
+ * klant bedoelde.
+ */
+function syncReg() {
+  const block = q('[data-pl-reg]');
+  if (!block) return;
+  const noVat = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
+  block.hidden = !noVat;
+  if (!noVat) {
+    const veld = q('input[name=reg_number]');
+    if (veld) veld.value = '';
+  }
+  syncRequired();
+}
+
 function isShown(el) {
   return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
 }
@@ -638,6 +687,9 @@ function bindErrors() {
   const watch = (e) => {
     const n = e.target && e.target.name;
     if (n === 'country' || n === 'vat' || n === 'no_vat') syncVatConfirm();
+    // Het registratienummer hangt alleen aan het vinkje, niet aan het land: de
+    // eis is "geen btw-nummer, dus iets anders", en die geldt overal.
+    if (n === 'no_vat') syncReg();
   };
   form.addEventListener('input', watch);
   form.addEventListener('change', watch);

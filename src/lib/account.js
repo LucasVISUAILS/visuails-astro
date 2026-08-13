@@ -1231,7 +1231,14 @@ function promoteSaveRequest(env, customerId) {
   ).bind(customerId).run().catch(() => {});
 }
 
-async function sendLoginLink(env, request, email, lang) {
+/*
+ * GEËXPORTEERD SINDS 12 AUGUSTUS 2026, voor de knop "nieuwe inloglink" op het
+ * adminpaneel. Dezelfde functie en niet een tweede kopie: een tweede plek die tokens
+ * maakt is een tweede plek waar de geldigheidsduur, het hashen en de mailtekst uit
+ * elkaar kunnen lopen -- en dat is precies het soort verschil dat niemand ziet tot er
+ * een link niet werkt. Zie handleCustomerSigninLink() in src/lib/admin.js.
+ */
+export async function sendLoginLink(env, request, email, lang) {
   // lower(email), not email. `email` is already lowercased by the caller, and
   // every row written since August 2026 is lowercase too (functions/api/order.js
   // normalises on the way in) — but rows written BEFORE that are stored exactly
@@ -1254,9 +1261,40 @@ async function sendLoginLink(env, request, email, lang) {
   // migrations/0008 normalises the historical rows; this line is what makes a
   // database that has run neither still let people in.
   const customer = await env.DB.prepare(
-    'SELECT id FROM customers WHERE lower(email) = ?1'
+    'SELECT id, deactivated_at FROM customers WHERE lower(email) = ?1'
   ).bind(email).first();
-  if (!customer) return;
+  /*
+   * ── DE UITKOMST WORDT NU TERUGGEGEVEN — 12 AUGUSTUS 2026 ────────────────────
+   *
+   * Deze functie gaf niets terug: `undefined` bij een onbekend adres, `undefined` bij
+   * een geslaagde verzending. Voor de publieke kant maakt dat niets uit — die zegt
+   * altijd "kijk in je mail", met opzet, omdat elk ander antwoord een vreemde vertelt
+   * of een bepaald adres een account heeft.
+   *
+   * Voor de knop op het adminpaneel maakt het wél uit: daar staat de studio ernaar te
+   * kijken en die hoort te weten of er iets is uitgegaan. Vandaar `true` als de mail de
+   * deur uit is en `false` als hij met opzet niet is verstuurd. Een echte storing
+   * (Resend weigert) gooit nog steeds — sendMail() gooit bij een niet-ok antwoord — en
+   * dat is de derde uitkomst die de aanroeper apart hoort te kunnen melden.
+   */
+  if (!customer) return false;
+  /*
+   * ── EEN GEDEACTIVEERD ACCOUNT KRIJGT GEEN LINK — 12 AUGUSTUS 2026 ──────────
+   *
+   * Zonder deze regel is deactiveren een woord op een adminscherm: de sessies gaan
+   * eruit, en de klant vraagt tien seconden later een nieuwe inloglink aan en is weer
+   * binnen. Zie handleCustomerStatus() in src/lib/admin.js.
+   *
+   * STIL TERUG EN GEEN FOUTMELDING, precies zoals bij een adres dat niet bestaat. De
+   * publieke kant zegt altijd "kijk in je mail", en dat is met opzet: elk ander antwoord
+   * vertelt een vreemde of een bepaald e-mailadres een account heeft. Dat een
+   * gedeactiveerde klant daardoor op een mail wacht die niet komt, is de prijs — en de
+   * reden dat er bij het deactiveren een reden verplicht is die je hem kunt vertellen.
+   */
+  if (customer.deactivated_at) {
+    console.log('[account] inloglink niet verstuurd: account gedeactiveerd');
+    return false;
+  }
 
   const { token, tokenHash } = await mintCredential();
   const code = mintLoginCode();
@@ -1317,6 +1355,12 @@ async function sendLoginLink(env, request, email, lang) {
     html,
     text,
   });
+  /* De mail is de deur uit. sendMail() gooit bij een niet-ok antwoord van Resend, dus
+     hier komen betekent verstuurd — met één uitzondering die eerlijk benoemd hoort te
+     worden: zonder RESEND_API_KEY slaat sendMail() stil over. Dat is de configuratie
+     van een omgeving die nog geen mail kan sturen, en niet iets waar deze functie een
+     ander antwoord op moet verzinnen. */
+  return true;
 }
 
 /**
@@ -1743,7 +1787,8 @@ async function currentCustomer(env, request) {
   let row;
   try {
     row = await env.DB.prepare(
-      `SELECT s.id AS session_id, s.expires_at, c.id AS customer_id, c.email, c.name, c.brand
+      `SELECT s.id AS session_id, s.expires_at, c.id AS customer_id, c.email, c.name, c.brand,
+              c.deactivated_at
          FROM account_sessions s JOIN customers c ON c.id = s.customer_id
         WHERE s.token_hash = ?1`
     ).bind(hash).first();
@@ -1752,6 +1797,19 @@ async function currentCustomer(env, request) {
   }
   if (!row) return null;
   if (isExpired(row.expires_at, null)) return null;
+  /*
+   * ── GEDEACTIVEERD IS GEDEACTIVEERD, OOK MIDDEN IN EEN SESSIE — 12 AUG 2026 ──
+   *
+   * handleCustomerStatus() gooit de sessies eruit bij het deactiveren, dus dit lijkt
+   * dubbelop. Het is de vangrail eronder, en die is nodig om twee redenen: die DELETE
+   * kan falen (hij zit in een batch met een catch die de fout doorgeeft, maar dan is
+   * de klant al gedeactiveerd), en een sessiecookie die op een ander apparaat in een
+   * bfcache-pagina hangt kan een verzoek doen dat de DELETE net gemist heeft.
+   *
+   * Deze regel maakt de maatregel onafhankelijk van of dat opruimen lukte. Dat is het
+   * verschil tussen een maatregel en een gewoonte.
+   */
+  if (row.deactivated_at) return null;
 
   // Refreshed on use — see the file header on why account_sessions is a
   // separate, sliding-expiry table from the single-use account_tokens. A
@@ -1863,9 +1921,14 @@ async function handleMe({ request, env }) {
       // a customer order against a face that does not exist yet. A picture is
       // required for the same reason a step further on — a tile with no image
       // is a choice nobody can judge.
+      // `hidden_at IS NULL` erbij, 12 augustus 2026: de studio kan een model nu
+      // VERBERGEN in plaats van de status ervoor te misbruiken. Zonder deze regel zou
+      // dat verbergen niets doen op de enige plek waar het om gaat -- de tegels waar
+      // de klant uit kiest.
       `SELECT id, label FROM custom_models
         WHERE customer_id = ?1
           AND status <> 'in_design'
+          AND hidden_at IS NULL
           AND preview_key IS NOT NULL AND preview_key <> ''
         ORDER BY id ASC LIMIT 24`
     ).bind(customer.customer_id).all();
@@ -2518,10 +2581,14 @@ function groupFilesByOrder(files) {
  * checks ownership — see handleModelPreviewImage().
  */
 async function loadCustomModels(env, customerId) {
+  /* Verborgen modellen komen hier niet uit. Dit is de lijst in de brand kit van de
+     klant: staat er een model tussen dat hij niet kan kiezen, dan is dat een tegel die
+     hem laat bellen over iets wat wij bewust hebben weggezet. */
   const res = await env.DB.prepare(
     `SELECT id, label, status,
             (preview_key IS NOT NULL AND preview_key <> '') AS has_preview
-       FROM custom_models WHERE customer_id = ?1 ORDER BY created_at DESC`
+       FROM custom_models WHERE customer_id = ?1 AND hidden_at IS NULL
+       ORDER BY created_at DESC`
   ).bind(customerId).all();
   return res.results || [];
 }
@@ -4434,7 +4501,33 @@ export function issuedRefs(list) {
 
 export function catchupOrder(orders, have) {
   return (orders || [])
-    .filter((o) => o.payment_status === 'paid' && o.paid_at && !have.has(o.ref))
+    .filter((o) => o.payment_status === 'paid' && o.paid_at && !have.has(o.ref)
+      /*
+       * ── EN EEN BEDRAG, WANT ANDERS IS HET GEEN FACTUUR — 12 AUGUSTUS 2026 ──
+       *
+       * Vanaf vandaag krijgt de proefvisual van EUR 1 een echte factuur: het bedrag
+       * staat nu in `total_cents` en de btw is eruit gerekend in plaats van erbovenop
+       * (zie quoteTestSample() in src/lib/quote.js).
+       *
+       * Alleen: de proefvisuals die voor vandaag zijn betaald hebben `total_cents`
+       * NULL, want quoteOrder() gaf null en niemand schreef er iets. Zonder deze regel
+       * maakt de inhaalslag daar bij het eerstvolgende bezoek een genummerde factuur
+       * van die "Subtotaal EUR 0,00 - btw EUR 0,00 - Betaald EUR 0,00" zegt, terwijl er
+       * EUR 1 is afgeschreven, en die verbruikt een nummer in een reeks die geen gaten
+       * mag hebben. Het is dus niet terug te draaien.
+       *
+       * Het is geen uitzondering voor de proefvisual maar een regel over facturen: een
+       * factuur van nul euro is nooit een geldig document. Dezelfde controle staat in de
+       * webhook, en dat is met opzet twee keer -- dit is de tweede weg naar
+       * issueInvoice() en die moet zelfstandig kloppen.
+       *
+       * Wil je voor die oude bestellingen alsnog een factuur, dan is dat handwerk:
+       * `total_cents` en `vat_cents` bijschrijven met de tariefverdeling van de
+       * betaaldatum, en dan opent de klant zijn dashboard. Dat is bewust geen
+       * automatische migratie -- een bedrag achteraf invullen in een boekhouding is iets
+       * wat je zelf wilt hebben gezien.
+       */
+      && Number(o.total_cents) > 0)
     .sort((a, b) => String(a.paid_at).localeCompare(String(b.paid_at)) || (a.id - b.id));
 }
 

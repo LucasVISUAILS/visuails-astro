@@ -329,6 +329,92 @@ export async function warmLogin({ env = process.env, force = false } = {}) {
   return warmed;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * VOLHOUDEN BIJ EEN HAPERING, OOK OP DE SCHRIJFKANT
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT ER OP 13 AUGUSTUS 2026 GEBEURDE ─────────────────────────────────────
+ *
+ * `npm run migrate` liep. Tabel `revision_requests` aangemaakt, `idx_revreq_open`
+ * aangemaakt, `idx_revreq_order` aangemaakt — en toen, op `idx_revreq_cust`:
+ *
+ *   A request to the Cloudflare API (/accounts/…/d1/database/…/query) failed.
+ *   Authentication error [code: 10000]
+ *
+ * Drie opdrachten van exact dezelfde vorm gingen er vlak daarvoor gewoon door, en
+ * `warmLogin()` had aan het begin van de run nog netjes een geldig token laten
+ * zien. Dit is dus geen rechtenprobleem. Het is hetzelfde patroon als 7403: het
+ * OAuth-token verloopt HALVERWEGE een lange reeks aanroepen.
+ *
+ * ── EN DAAR ZAT HET GAT ─────────────────────────────────────────────────────
+ *
+ * migrate.mjs had die reparatie al — maar alleen in query(), de LEESkant. De
+ * schrijfkant, execute(), had geen enkele retry. Dus elke keer dat het token
+ * midden in een run opraakte, viel de migratie om op de eerstvolgende ALTER of
+ * CREATE. Precies het scenario dat migrate.mjs in zijn eigen kop als reden van
+ * bestaan opgeeft: *"Eén migratie die halverwege strandt — een verlopen token,
+ * een verbroken verbinding — laat de database achter met de helft toegepast."* De
+ * oorzaak was benoemd en op de leeskant afgehandeld, en op de schrijfkant niet.
+ *
+ * ── EN DE UITLEG BIJ 10000 IN migrate.mjs WAS TE ZEKER ──────────────────────
+ *
+ * Daar stond dat 10000 hoort bij het /import-endpoint, omdat het token van
+ * `wrangler login` de query-API wél dekt en import niet. Die uitleg is gebouwd op
+ * één waarneming (7 augustus, `--file`, /import) en klopt niet meer: /query geeft
+ * hem ook. Het endpoint is dus niet wat de fout bepaalt. Wat overblijft is de
+ * eenvoudiger verklaring — een auth-fout is een auth-fout, op welk endpoint ook —
+ * en die vraagt om één middel: vernieuwen en opnieuw.
+ *
+ * De tip over een eigen API-token met D1:Edit blijft staan als terugval voor het
+ * geval het vernieuwen niet helpt. Hij is alleen niet meer het eerste antwoord.
+ *
+ * ── DRIE POGINGEN, EN NIET MEER ─────────────────────────────────────────────
+ *
+ * Vernieuwen (dat is de reparatie), dan wachten (voor een echte hapering), dan
+ * opgeven met de originele foutmelding. Een script dat eindeloos blijft proberen
+ * op een database waar iets structureel mis is, is erger dan een script dat
+ * stopt: dan weet je niet meer wat er wel en niet gedraaid heeft.
+ */
+const AUTH_HAPERING = /Authentication error \[code: 10000\]|\b7403\b/i;
+const NET_HAPERING = /fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|timed? ?out/i;
+
+/** Is dit een fout waarvan het zin heeft hem nog eens te proberen? */
+export function isHapering(out) {
+  return AUTH_HAPERING.test(String(out || '')) || NET_HAPERING.test(String(out || ''));
+}
+
+/**
+ * Een wrangler-aanroep die een haperend token overleeft.
+ *
+ * @param {() => Promise<{ok: boolean, out: string}>} doe  de aanroep, opnieuw uitvoerbaar
+ * @param {object} [opts]
+ * @param {number} [opts.pogingen]  hoeveel keer in totaal (standaard 3)
+ * @param {(m: string) => void} [opts.log]
+ * @param {() => Promise<any>} [opts.warm]   het vernieuwen; injecteerbaar voor de test
+ * @param {(ms: number) => Promise<any>} [opts.wacht]
+ */
+export async function volhard(doe, { pogingen = 3, log = console.log, warm, wacht } = {}) {
+  const vernieuw = warm || (() => warmLogin({ force: true }));
+  const pauzeer = wacht || ((ms) => new Promise((res) => setTimeout(res, ms)));
+
+  let r = await doe();
+  for (let n = 1; n < pogingen; n++) {
+    if (r.ok || !isHapering(r.out)) return r;
+
+    if (AUTH_HAPERING.test(r.out)) {
+      const code = /7403/.test(r.out) ? '7403' : '10000';
+      log(`  (${code} — het token is verlopen, vernieuwen en opnieuw · poging ${n + 1}/${pogingen})`);
+      await vernieuw();
+    } else {
+      log(`  (hapering bij Cloudflare — opnieuw over 3 seconden · poging ${n + 1}/${pogingen})`);
+      await pauzeer(3000);
+    }
+    r = await doe();
+  }
+  return r;
+}
+
 /** Zelfde aanroep, maar gooit bij mislukking — voor scripts die door moeten. */
 export async function wranglerOrThrow(argv, opts) {
   const r = await wrangler(argv, opts);

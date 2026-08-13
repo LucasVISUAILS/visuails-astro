@@ -604,28 +604,33 @@ async function recordPaid(env, payment, mode) {
   // over een paar kilobyte en de mail is één fetch. Ruim binnen de tijd, en als
   // het onverhoopt toch niet lukt, zie de alinea hierboven.
   /*
-   * ── GEEN FACTUUR VOOR HET TESTEXEMPLAAR — 10 AUGUSTUS 2026 ─────────────────
+   * ── HET TESTEXEMPLAAR KRIJGT NU WÉL EEN FACTUUR — 12 AUGUSTUS 2026 ─────────
    *
-   * issueInvoice() werd hier onvoorwaardelijk aangeroepen, ook voor een €1-proefbeeld.
-   * En dat leverde een AANTOONBAAR ONJUIST document op: quoteOrder() geeft null voor
-   * 'test-sample' (het staat niet in PAYABLE_SERVICES), dus `orders.total_cents` blijft
-   * NULL en `vat_cents` 0. snapshotFromOrder() leest `Number(order.total_cents) || 0`,
-   * de regelsomcontrole in invoicePdf komt langs met 0 === 0, en de klant krijgt een
-   * genummerde factuur die "Subtotaal € 0,00 · btw € 0,00 · Betaald € 0,00" zegt terwijl
-   * er €1 is afgeschreven. Bovendien verbruikt zo'n factuur een nummer in een reeks die
-   * geen gaten mag hebben.
+   * Hier stond een `return` voor het testexemplaar, en tussen 10 en 12 augustus was
+   * dat het juiste antwoord: `orders.total_cents` bleef NULL, dus de klant zou een
+   * genummerde factuur hebben gekregen die "Subtotaal € 0,00 · btw € 0,00 · Betaald
+   * € 0,00" zei terwijl er €1 was afgeschreven — en die zou ook een nummer verbruiken
+   * in een reeks die geen gaten mag hebben. Een fout document niet uitgeven is
+   * onomstreden; een btw-tarief verzinnen in een webhook is dat niet.
    *
-   * WAAROM OVERSLAAN EN NIET REPAREREN. quote.js:206 heeft `quoteTestSample()` staan,
-   * met nul aanroepers in de hele repo, en die zegt: netCents €1, vatCents 0, "treated
-   * as VAT-inclusive". Die keuze — of dat €1 inclusief 21% is of buiten de btw valt —
-   * is een fiscale beslissing en niet iets om hier stilzwijgend in te bakken. Een fout
-   * document niet uitgeven is onomstreden; een tarief verzinnen is dat niet.
+   * De fiscale vraag is nu beantwoord: €1 is een brutobedrag inclusief btw. De
+   * gevolgen daarvan zitten niet hier maar bij de bron — quoteTestSample() in
+   * src/lib/quote.js haalt de btw uit het bedrag, en functions/api/order.js schrijft
+   * `total_cents` en `vat_cents` weg zoals bij elke andere bestelling. Daarmee is er
+   * niets bijzonders meer aan een proefvisual op dit punt, en verdwijnt de uitzondering
+   * in plaats van dat hij wordt bijgewerkt.
    *
-   * De betaling zelf is niet zoek: hij staat in `payments` en bij Mollie. Wil je hier
-   * wél een factuur, dan is dat één regel zodra de fiscale vraag beantwoord is.
+   * WAT DIT BETEKENT VOOR BESTELLINGEN VAN VÓÓR VANDAAG. Een proefvisual die eerder is
+   * betaald heeft `total_cents` NULL en zou dus alsnog een factuur van €0,00 krijgen.
+   * Vandaar de ondergrens hieronder: geen factuur voor een bestelling zonder bedrag.
+   * Dat is geen uitzondering voor de proefvisual maar een regel over facturen — een
+   * factuur van nul euro is nooit een geldig document, voor welke dienst dan ook.
+   * Dezelfde controle staat in catchupOrder() in src/lib/account.js, want dat is de
+   * tweede weg naar issueInvoice() en die moet zelfstandig kloppen.
    */
-  if (order.service === 'test-sample') {
-    console.log('[mollie-webhook] testexemplaar', ref, '— geen factuur, zie de noot hierboven');
+  if (!(Number(order.total_cents) > 0)) {
+    console.log('[mollie-webhook]', ref, 'heeft geen bedrag (total_cents =',
+      order.total_cents, ') — geen factuur, zie de noot hierboven');
     return;
   }
 

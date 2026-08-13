@@ -3,14 +3,43 @@
 // The page is four imports and a service name. Everything else — the five
 // steps, the copy in both languages, the config blob pipeline.js reads — is
 // OrderFlow.astro, which is the whole reason the split did not turn into five
-// near-identical files. The ONE block that differs is passed in as the slot.
+// near-identical files. The block that differs is passed in as the slot.
+//
+// ── AND THIS PAGE NEEDS BOTH BLOCKS — 13 August 2026 ─────────────────────────
+//
+// It rendered Step1Options alone, which is what /start/catalog does. But this
+// service is catalog AND lifestyle in one order — seven images per product, four
+// for the page and three for the feed — and the lifestyle half has a question
+// the catalog half does not: which world the product goes into.
+//
+// /start/lifestyle asks it with StylePicker. This page asked nobody. So a
+// customer buying the larger of the two services, at the higher price, chose no
+// look — and the studio either guessed, or emailed to ask, which is exactly the
+// gap StylePicker's own header says it was built to close: "the look was
+// something a client had to think to write in the free-text brief or discover by
+// email afterwards."
+//
+// THE LOOK COMES FIRST. Of the blocks on step 1, this is the only one with
+// nothing preselected — it has to be answered. The three inside Step1Options all
+// carry a safe default (pure white, "we choose one", no channel), so they are
+// answers a customer may want to change rather than questions they must work
+// through. Putting the mandatory one above the optional three is the same
+// reasoning Step1Options used to order its own three.
+//
+// NOTHING SERVER-SIDE CHANGES. `style` is not in TOP_FIELDS, so it lands in
+// details_json beside the rest of the brief, and the confirm screen already
+// prints the row whenever the flow has the question (see pipeline.js's summary
+// rows: "only when the flow HAS the question"). bgApplies('complete') is
+// already true, so the background stays too — this order genuinely has both.
 import Layout from '../../layouts/Layout.astro';
 import OrderFlow from '../../components/order/OrderFlow.astro';
 import Step1Options from '../../components/order/Step1Options.astro';
+import StylePicker from '../../components/order/StylePicker.astro';
 ---
 
-<Layout title="Order catalog sets and lifestyle carousels — VISUAILS" description="The page and the feed in one order: seven images per product. Pick the count and the background.">
+<Layout title="Order catalog sets and lifestyle carousels — VISUAILS" description="The page and the feed in one order: seven images per product. Pick the count, the look and the background.">
   <OrderFlow lang="en" service="complete">
+    <StylePicker lang="en" />
     <Step1Options lang="en" />
   </OrderFlow>
 </Layout>

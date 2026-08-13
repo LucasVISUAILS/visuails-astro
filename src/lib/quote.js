@@ -151,6 +151,20 @@ function clamp(n, lo, hi) {
 }
 
 /**
+ * Een btw-tarief dat je in een berekening durft te stoppen.
+ *
+ * Stond inline in quoteOrder() en wordt nu door twee functies gebruikt, dus hier
+ * een keer. Een NaN die hier langs komt maakt vatCents NaN, grossCents NaN, en laat
+ * centsToMollieValue() ergens veel onduidelijker omvallen; een negatief tarief maakt
+ * van een verkoop een teruggave. Alles wat geen zinnige fractie is valt terug op het
+ * Nederlandse tarief -- dezelfde faalrichting als de rest van dit pad.
+ */
+function safeRate(vatRate) {
+  const ok = typeof vatRate === 'number' && isFinite(vatRate) && vatRate >= 0 && vatRate <= 1;
+  return ok ? vatRate : VAT_RATE;
+}
+
+/**
  * What an order costs, net and gross, in cents.
  *
  * Returns null for a service that is not on the ladder — the test sample has
@@ -239,8 +253,7 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
   // sale. Anything that is not a sensible fraction falls back to the Dutch
   // rate, which is the same fail-closed direction as everything else in this
   // path.
-  const rateOk = typeof vatRate === 'number' && isFinite(vatRate) && vatRate >= 0 && vatRate <= 1;
-  const effectiveRate = rateOk ? vatRate : VAT_RATE;
+  const effectiveRate = safeRate(vatRate);
 
   // VAT on the NET TOTAL, not summed per line: rounding each line separately
   // and adding them up drifts from the figure on the invoice by a cent or two
@@ -262,21 +275,52 @@ export function quoteOrder({ service, products, outfits = 0, extras = 0, vatRate
   };
 }
 
-/** The test sample, priced from its own constant so it can share the plumbing. */
-export function quoteTestSample() {
-  const netCents = cents(AMOUNT.testSample);
-  // The €1 sample has always been charged as a flat amount, and it stays
-  // flat: adding 21% to it would make it €1.20, which is not the number on
-  // every page of the site. It is treated as VAT-inclusive.
+/**
+ * De proefvisual, en die rekent van boven naar beneden in plaats van omgekeerd.
+ *
+ * ── DE FISCALE KEUZE, 12 AUGUSTUS 2026 ──────────────────────────────────────
+ *
+ * Deze functie had tot vandaag nul aanroepers en zei `vatCents: 0` met de noot
+ * "treated as VAT-inclusive". Dat was geen behandeling maar een uitgestelde
+ * beslissing: btw nul zetten en het bedrag inclusief noemen zijn twee verschillende
+ * dingen, en de webhook sloeg de factuur daarom over (zie de noot bij de
+ * factuurstap in functions/api/webhook/mollie.js).
+ *
+ * De keuze is nu gemaakt: **€1 is een brutobedrag, inclusief btw.** Dat is de enige
+ * variant die klopt met wat er gebeurt — Mollie schrijft precies €1,00 af, en dat
+ * bedrag is dus per definitie wat de klant totaal betaalt. Er staat op geen enkele
+ * pagina "excl. btw" bij, en dat mag ook niet: bij een prijs die aan een consument
+ * getoond wordt is inclusief de norm, en €1 is juist gekozen omdat het rond is.
+ *
+ * ── WAAROM BRUTO MIN NETTO, EN NIET NETTO MAAL TARIEF ───────────────────────
+ *
+ * Hier zit de enige val in deze functie. Bij 21% is het netto 100 / 1,21 = 82,6446…
+ * cent, dus 83 cent afgerond. Zou de btw dan `round(83 × 0,21) = 17` worden, dan
+ * telt het toevallig op tot 100 — maar dat is toeval. Bij een brutobedrag van 100
+ * cent doen 3068 van de 10.001 tarieven tussen 0% en 100% het anders, en op 21%
+ * lopen 868 van de eerste 5000 bedragen uiteen. Neem je de btw als VERSCHIL
+ * (100 − 83 = 17), dan tellen netto en btw altijd op tot precies het bedrag dat is
+ * afgeschreven. Dat is dezelfde regel die de creditnota's aanhouden, en om dezelfde
+ * reden: een factuur die een cent afwijkt van de betaling is elke keer handwerk.
+ * tests/sample-invoice.test.mjs loopt alle tarieven langs.
+ *
+ * Bij verlegging of buiten de heffing (tarief 0) komt hier netto €1 en btw €0 uit,
+ * en betaalt de klant nog steeds €1. Het brutobedrag verschuift nooit — alleen de
+ * verdeling erbinnen.
+ */
+export function quoteTestSample({ vatRate = VAT_RATE } = {}) {
+  const grossCents = cents(AMOUNT.testSample);
+  const effectiveRate = safeRate(vatRate);
+  const netCents = Math.round(grossCents / (1 + effectiveRate));
   return {
     service: 'test-sample',
     products: 1,
     outfits: 0,
     extras: 0,
     netCents,
-    vatCents: 0,
-    grossCents: netCents,
-    vatRate: 0,
+    vatCents: grossCents - netCents,
+    grossCents,
+    vatRate: effectiveRate,
   };
 }
 

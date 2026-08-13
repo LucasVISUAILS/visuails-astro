@@ -165,5 +165,111 @@ console.log('\ngeen aanroeppunt geeft nog ruwe SQL mee');
   ok('en heeft er geen eigen definitie meer van', /function oneLine\(/.test(migrate), false);
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EEN VERLOPEN TOKEN HALVERWEGE EEN MIGRATIE
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * 13 augustus 2026. `npm run migrate` maakte `revision_requests` aan plus twee
+ * indexen, en viel toen om op de derde:
+ *
+ *   A request to the Cloudflare API (/accounts/…/d1/database/…/query) failed.
+ *   Authentication error [code: 10000]
+ *
+ * Drie identieke CREATE INDEX'en vlak ervoor gingen wél door, en warmLogin() had
+ * aan het begin een geldig token laten zien. Dus geen rechtenprobleem: het token
+ * raakte MIDDEN IN de run op.
+ *
+ * En daar zat het gat. migrate.mjs had de reparatie al — vernieuwen en opnieuw —
+ * maar alleen in query(), de leeskant. execute() probeerde het één keer. Dat is
+ * de kant die de database verandert, dus strandde de migratie precies zoals de
+ * kop van migrate.mjs zegt dat hij niet meer zou moeten stranden.
+ *
+ * Deze sectie test volhard() met een neppe aanroep, zodat er geen enkele echte
+ * API nodig is: dat is de enige manier waarop dit vangnet over een half jaar nog
+ * nagekeken kan worden zonder een verlopen token te moeten fabriceren.
+ */
+console.log('\nvolhard() overleeft een token dat halverwege opraakt');
+{
+  const { volhard, isHapering } = await import(new URL('../scripts/lib/wrangler.mjs', import.meta.url));
+
+  const AUTH = 'A request to the Cloudflare API (/accounts/x/d1/database/y/query) failed.\n\n  Authentication error [code: 10000]';
+
+  ok('10000 telt als hapering', isHapering(AUTH));
+  ok('7403 ook', isHapering('code: 7403 The given account is not valid'));
+  ok('een netwerkhapering ook', isHapering('fetch failed'));
+  /* En het tegendeel, want dít is waar het op aankomt: een echte SQL-fout mag
+     NOOIT opnieuw geprobeerd worden. "duplicate column name" betekent dat de
+     kolom er al staat, en er nog twee keer tegenaan lopen levert alleen drie
+     dezelfde foutmeldingen op in plaats van één begrijpelijke. */
+  ok('maar duplicate column name niet', isHapering('duplicate column name: hidden_at: SQLITE_ERROR [code: 7500]'), false);
+  ok('en no such table niet', isHapering('no such table: orders'), false);
+
+  /* Het gedrag: eerst falen met 10000, dan vernieuwen, dan slagen. */
+  {
+    let keer = 0;
+    let vernieuwd = 0;
+    const r = await volhard(
+      () => { keer++; return Promise.resolve(keer === 1 ? { ok: false, out: AUTH } : { ok: true, out: 'Executed 1 command' }); },
+      { log: () => {}, warm: async () => { vernieuwd++; }, wacht: async () => {} }
+    );
+    ok('de tweede poging slaagt', r.ok);
+    ok('en er is precies één keer vernieuwd', vernieuwd, 1);
+    ok('en precies twee keer aangeroepen', keer, 2);
+  }
+
+  /* Een SQL-fout gaat er in één keer door, zonder vernieuwen en zonder wachten.
+     Dat is niet alleen sneller: `npm run migrate` moet op een echte fout STOPPEN,
+     zodat je weet waar hij stond. */
+  {
+    let keer = 0;
+    let vernieuwd = 0;
+    const r = await volhard(
+      () => { keer++; return Promise.resolve({ ok: false, out: 'duplicate column name: hidden_at' }); },
+      { log: () => {}, warm: async () => { vernieuwd++; }, wacht: async () => {} }
+    );
+    ok('een SQL-fout wordt niet herhaald', keer, 1);
+    ok('en er wordt niet voor vernieuwd', vernieuwd, 0);
+    ok('en de fout komt terug zoals hij was', /duplicate column name/.test(r.out));
+  }
+
+  /* En het houdt op. Een script dat blijft proberen op een database waar iets
+     structureel mis is, laat je niet weten wat er wel en niet gedraaid heeft. */
+  {
+    let keer = 0;
+    const r = await volhard(
+      () => { keer++; return Promise.resolve({ ok: false, out: AUTH }); },
+      { log: () => {}, warm: async () => {}, wacht: async () => {} }
+    );
+    ok('drie pogingen en dan opgeven', keer, 3);
+    ok('met de originele foutmelding', /Authentication error \[code: 10000\]/.test(r.out));
+    ok('en niet ok', r.ok, false);
+  }
+
+  /* Een netwerkhapering wacht wél en vernieuwt niet — een vers token repareert
+     geen verbroken verbinding. */
+  {
+    let vernieuwd = 0;
+    let gewacht = 0;
+    await volhard(
+      () => Promise.resolve({ ok: false, out: 'fetch failed' }),
+      { pogingen: 2, log: () => {}, warm: async () => { vernieuwd++; }, wacht: async () => { gewacht++; } }
+    );
+    ok('bij fetch failed wordt er gewacht', gewacht, 1);
+    ok('en niet vernieuwd', vernieuwd, 0);
+  }
+
+  /* En de koppeling: dat volhard() bestaat, zegt niets zolang de schrijfkant hem
+     niet gebruikt. Dit is de regel die het gat van 13 augustus dichthoudt. */
+  ok('execute() in migrate.mjs gaat door volhard', /return volhard\(\(\) => wrangler\(\['d1', 'execute', DB, scope, '--yes', '--command'/.test(migrateSrc()));
+  ok('de --file-terugval ook', /await volhard\(\(\) => wrangler\(\['d1', 'execute', DB, scope, '--yes', '--file'/.test(migrateSrc()));
+  ok('en de leeskant ook', /await volhard\(\(\) => wrangler\(\['d1', 'execute', DB, scope, '--json'/.test(migrateSrc()));
+  ok('en migrate.mjs heeft geen eigen retry-lus meer', /attempt === 1/.test(migrateSrc()), false);
+}
+
+function migrateSrc() {
+  return readFileSync(new URL('../scripts/migrate.mjs', import.meta.url), 'utf8');
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);

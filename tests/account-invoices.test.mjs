@@ -222,9 +222,14 @@ console.log('\nwelke facturen als "klaar" gelden');
   check('een lege lijst valt niet om', issuedRefs(null).size === 0, issuedRefs(null).size);
 
   // Het gevolg samen met de sortering: de halve wordt opnieuw aangeboden.
+  /* MET total_cents, en dat is sinds 12 augustus 2026 een eis en geen sier:
+     catchupOrder() slaat een bestelling zonder bedrag over, want een factuur van nul
+     euro is nooit een geldig document. Een betaalde rij in D1 heeft altijd een bedrag
+     — ook de proefvisual, sinds die als brutobedrag inclusief btw wordt weggeschreven
+     — dus een fixture zonder bedrag toetste de code tegen een rij die niet bestaat. */
   const orders = [
-    { ref: 'A', id: 1, paid_at: '2026-08-07 08:00:00', payment_status: 'paid' },
-    { ref: 'B', id: 2, paid_at: '2026-08-09 08:00:00', payment_status: 'paid' },
+    { ref: 'A', id: 1, paid_at: '2026-08-07 08:00:00', payment_status: 'paid', total_cents: 8900 },
+    { ref: 'B', id: 2, paid_at: '2026-08-09 08:00:00', payment_status: 'paid', total_cents: 8900 },
   ];
   const again = catchupOrder(orders, set).map((o) => o.ref);
   check('de bestelling met de halve factuur komt terug', again.join('') === 'B', again.join(''));
@@ -232,7 +237,10 @@ console.log('\nwelke facturen als "klaar" gelden');
 
 console.log('\nde volgorde van de inhaalslag');
 {
-  const O = (ref, id, paid_at, payment_status = 'paid') => ({ ref, id, paid_at, payment_status });
+  /* total_cents hoort bij de standaardvorm van een betaalde rij; zie de noot bij
+     `orders` hierboven. Wie hem expliciet op null zet, toetst de ondergrens. */
+  const O = (ref, id, paid_at, payment_status = 'paid', total_cents = 8900) =>
+    ({ ref, id, paid_at, payment_status, total_cents });
 
   // Zoals loadOrders() ze aanlevert: nieuwste eerst.
   const dashboardOrder = [
@@ -258,6 +266,13 @@ console.log('\nde volgorde van de inhaalslag');
     O('onbetaald', 2, null, 'unpaid'),
     O('betaald-zonder-datum', 3, null),
     O('heeft-al-een-factuur', 4, '2026-08-06 08:00:00'),
+    /* En de ondergrens van 12 augustus 2026: geen bedrag, geen factuur. Dit zijn de
+       proefvisuals van voor die datum — betaald, maar met total_cents NULL omdat
+       quoteOrder() null gaf en niemand er iets schreef. Zonder deze regel maakt de
+       inhaalslag daar een genummerde factuur van EUR 0,00 van, en die is niet terug te
+       draaien: het nummer is verbruikt in een reeks die geen gaten mag hebben. */
+    O('betaald-zonder-bedrag', 5, '2026-08-07 09:00:00', 'paid', null),
+    O('betaald-met-nul', 6, '2026-08-07 09:30:00', 'paid', 0),
   ], new Set(['heeft-al-een-factuur']));
   check('alleen betaalde bestellingen', mixed.map((o) => o.ref).join(',') === 'betaald', mixed.map((o) => o.ref).join(','));
   check('een lege lijst valt niet om', catchupOrder(undefined, new Set()).length === 0, catchupOrder(undefined, new Set()).length);

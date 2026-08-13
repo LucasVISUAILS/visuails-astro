@@ -1,0 +1,161 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
+// VISUAILS — Data Processing Agreement (Art. 28 GDPR). New on 12 August 2026.
+//
+// The full reasoning is in src/pages/nl/verwerkersovereenkomst.astro, in Dutch,
+// because that is where it was written. This is its mirror, and the two are kept
+// in step by hand.
+//
+// WHY BOTH LANGUAGES ON DAY ONE, and this is not a style point. Twice in one
+// audit this project shipped a legal change to one locale and not the other: the
+// "this is a general template" line was removed from the English pages on 8
+// August and left standing on the Dutch ones, and the staged before/after block
+// was taken off /gallery and left on /nl/gallery. Both times the text that was
+// still wrong was the one almost every customer actually read. A processor
+// agreement that exists in one language is the same failure with a bigger bill.
+//
+// ── THE ONE THING TO KNOW IF YOU ONLY READ THIS COMMENT ─────────────────────
+//
+// The privacy policy claimed VISUAILS is the controller for everything in it.
+// For the WORN SHOT that is wrong: the person in that photo is the client's data
+// subject, VISUAILS processes it on the client's instruction and for the client's
+// purpose, and is therefore a processor. Art. 28(3) then requires a written
+// agreement with a fixed content. This page is that agreement, and §1 is the
+// clause that puts the two roles side by side.
+const SUBS = [
+  {
+    who: 'Freepik Company, S.L.U.',
+    where: 'Málaga, Spain (EU)',
+    what: 'generating the visuals from your material',
+    basis: 'inside the EU; no transfer at this level',
+  },
+  {
+    who: 'Cloudflare, Inc.',
+    where: 'United States, with storage in the EU',
+    what: 'storing the material you supply and the visuals we deliver, and running the site',
+    basis: 'processor agreement with Standard Contractual Clauses (SCCs)',
+  },
+  {
+    who: 'Resend',
+    where: 'United States',
+    what: 'email; the order notice to the studio carries the supplied material as an attachment',
+    basis: 'processor agreement with Standard Contractual Clauses (SCCs)',
+  },
+];
+---
+
+<Layout
+  title="Data Processing Agreement — VISUAILS"
+  description="VISUAILS's data processing agreement under Article 28 GDPR: what we do with the material you supply, who receives it, and how long we keep it."
+>
+  <section class="page-hero">
+    <div class="container narrow">
+      <span class="eyebrow-page">Legal</span>
+      <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">Data Processing Agreement</h1>
+      <p class="lead" style="margin-top:1.2rem">If there is a person in the material you send us, we are processing personal data that is <em>yours</em> — and the GDPR then requires us to have an agreement about it. This is that agreement.</p>
+      <p class="legal-meta">Last updated: August 2026 &middot; Article 28 GDPR</p>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container narrow legal">
+
+      <h2>1. Two roles, and the difference matters</h2>
+      <p>A single order has us processing two kinds of data, and the GDPR gives us a different role for each. That sounds like paperwork and is not: it decides who makes the call, who reports a breach to the regulator, and who a data subject should turn to.</p>
+      <ul>
+        <li><strong>Your own data</strong> — your name, your company details, your email address, your VAT number, your messages. For those we are the <strong>controller</strong>: we decide why we need them and how long we keep them. That is covered by our <a href="/privacy">Privacy Policy</a>, not by this document.</li>
+        <li><strong>The material you supply, to the extent there are people in it</strong> — in practice mostly the worn shot we ask for so the fit is right. The person in that photo is <em>your</em> data subject: you took the photo, you have the arrangement with them, you decide what the image is for. We process it solely on your instruction. For that we are the <strong>processor</strong> and you are the controller — and that is what this document is about.</li>
+      </ul>
+      <p>This agreement applies automatically as soon as you place an order, as an inseparable part of our <a href="/terms">Terms of Service</a>. There is nothing to sign. If you need a signed copy for your own records, email <a href="mailto:hello@visuails.com">hello@visuails.com</a> and you will get one.</p>
+
+      <h2>2. The parties</h2>
+      <p><strong>Processor:</strong> VISUAILS, trading name of Lucas Snuverink, Vaarwerkhorst 17, 7531 HK Enschede, the Netherlands. KVK 99742993 &middot; VAT NL005407575B96 &middot; <a href="mailto:hello@visuails.com">hello@visuails.com</a>. This is a registered and postal address, not a visiting address.</p>
+      <p><strong>Controller:</strong> you — the business placing the order, as identified at checkout.</p>
+
+      <h2>3. Subject matter, nature, purpose and duration</h2>
+      <p><strong>Subject matter and purpose.</strong> Producing product visuals and video from the material you supply, and delivering them to you. There is no other purpose. We do not use your material for our own portfolio, for advertising, or to learn anything from it, unless you give us separate and demonstrable permission per order.</p>
+      <p><strong>Nature of the processing.</strong> Receiving, storing, passing to the sub-processors in §8, being looked at and reviewed by a person, and deleting. Nothing is profiled and nothing is decided automatically.</p>
+      <p><strong>Duration.</strong> This agreement starts with your first order and ends once the last piece of data it covers has been deleted — see §12. It therefore outlives the order itself, and that is deliberate.</p>
+
+      <h2>4. Type of personal data and categories of data subjects</h2>
+      <p><strong>Type of personal data.</strong> Images of natural persons in the material you supply, plus whatever is visible in it or sits in its file metadata — a face, a body, sometimes a name on a label or a location in the EXIF data.</p>
+      <p><strong>Categories of data subjects.</strong> The people appearing in that material: usually a model, an employee, or you.</p>
+      <p><strong>What does not belong in it.</strong> We never ask for special categories of personal data within the meaning of Art. 9 GDPR, and never for images of children. If you supply material that contains them anyway, we do not process it under this agreement and we will contact you. Note that a face in a photograph is not automatically biometric data: it becomes that only through processing aimed at unique identification, and we do not do that.</p>
+
+      <h2>5. We process only on your instruction</h2>
+      <p>We process the personal data solely on your documented instruction and not for our own purposes. Your order — the form, the brief, and the correspondence about it — is that instruction. There is no other.</p>
+      <p>That includes transfers outside the European Economic Area: we transfer nothing beyond what §8 and §11 set out, unless you instruct us to or Union or Dutch law requires it of us. If the law requires something that departs from this, we tell you before we do it, unless that law forbids us from telling you.</p>
+      <p>If we believe an instruction of yours infringes the GDPR, we say so and we do not carry it out until it is resolved. That is not us refusing to work; it is the last paragraph of Art. 28(3).</p>
+
+      <h2>6. Confidentiality</h2>
+      <p>VISUAILS is a sole trader. In practice that means one person has access, and that person is Lucas Snuverink. If we ever bring someone in — an employee, a freelancer for retouching — it happens only after that person has committed to confidentiality in writing, and that commitment survives the end of the engagement. We keep material confidential without being asked and without a separate NDA.</p>
+
+      <h2>7. Security</h2>
+      <p>What follows is what actually exists, and nothing more. We are not ISO certified, no penetration test has been carried out, and there is no information security management system. A security clause that promises more than is there is the clause that gets used against us when something happens.</p>
+      <ul>
+        <li><strong>Encrypted in transit and at rest.</strong> All traffic runs over TLS. Material sits in Cloudflare R2 and order data in Cloudflare D1, both encrypted at rest.</li>
+        <li><strong>Addresses that cannot be guessed.</strong> Supplied material sits under a key with a random component; there is no sequential numbering anyone could walk to reach someone else's files.</li>
+        <li><strong>Access behind its own lock.</strong> The admin portal uses a hashed password and session tokens that are themselves stored hashed. Your own portal uses a single-use sign-in link or code, with cookies that are <code>HttpOnly</code> and <code>Secure</code> and scoped to your dashboard path.</li>
+        <li><strong>An ownership check on every file.</strong> Every download passes a check tied to the order rather than to the URL. It is built that way on purpose and it is tested on every change by a test that deliberately tries to weaken the check.</li>
+        <li><strong>Rate limits</strong> on ordering, uploading, signing in and fetching files, so a script cannot keep trying.</li>
+        <li><strong>No raw IP addresses.</strong> Where we have to count traffic we store a salted hash, not the address.</li>
+        <li><strong>The retention periods are executed, not just promised.</strong> A nightly task deletes what has expired, from storage and from the database, and records on the order's timeline what went. That is the difference between a period in a document and a period in reality.</li>
+        <li><strong>A weekly copy of the database</strong> on a disk we control ourselves, so losing the platform does not mean losing your order. That copy contains personal data. It does not go to a cloud service, it does not sit in a shared folder, and it is not committed to the source code history. A nightly task checks that this copy is no older than ten days and warns us if it is — a backup nobody notices has stopped is not a backup.</li>
+      </ul>
+      <p>We reassess these measures whenever something material changes in what we process, and in any case once a year.</p>
+
+      <h2>8. Sub-processors</h2>
+      <p>We use other parties. You hereby give us a <strong>general written authorisation</strong> for that, within the meaning of Art. 28(2) GDPR, on three conditions: this list is current, we announce an addition or replacement <strong>at least 30 days in advance</strong> by email, and you may object during that period. If you do, we find an alternative or you may end the engagement free of charge for the part not yet performed.</p>
+      <p>With each party below we have a processor agreement that passes on the same obligations we owe you (Art. 28(4)). We remain liable to you for what they do.</p>
+      <table class="files">
+        <thead><tr><th>Who</th><th>Where</th><th>For what</th><th>Transfer basis</th></tr></thead>
+        <tbody>
+          {SUBS.map((s) => (
+            <tr>
+              <td data-label="Who"><strong>{s.who}</strong></td>
+              <td data-label="Where">{s.where}</td>
+              <td data-label="For what">{s.what}</td>
+              <td data-label="Basis">{s.basis}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p><strong>About the generation itself.</strong> Freepik offers a large number of models on its platform, from different makers. Which one we use at a given moment changes — we work with whatever gives the best result at the time, and that is part of how we do our job. The party that <em>receives</em> your material stays the same and is named above; that is what this clause has to fix. Freepik states expressly in its own terms: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>, and that supplied images are deleted immediately after generation. For transfers to model providers outside the EEA, Freepik concludes Standard Contractual Clauses (Art. 46(2)(c) GDPR).</p>
+      <p><strong>Retouching happens on our own machine.</strong> Retouching and editing are done in Photoshop and in DaVinci Resolve, locally. Those programs do not send your material to a cloud service: the file sits on the disk, is edited there, and leaves there under the periods in §3. Adobe and Blackmagic Design are therefore <strong>not</strong> on the list above — they do not receive your material. Adobe writes about locally stored material in its own terms: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software running on our machine processes nothing on our behalf; a service that receives the file does. That distinction decides who belongs on the list. If we ever move to a cloud service for retouching — Adobe's own cloud storage included — that is an addition to the list, with the 30 days' notice set out above.</p>
+      <p><strong>What is not on this list, and why.</strong> Our payment provider and the review platforms are absent. They do not touch your material; they only process data for which we are ourselves the controller. Those are covered in the <a href="/privacy">Privacy Policy</a>.</p>
+
+      <h2>9. Data subject rights</h2>
+      <p>If the person in the image comes to us with a request — access, erasure, objection — we do not answer it ourselves. That request belongs with you, because you are the controller. We forward it to you within <strong>three working days</strong> and then help with whatever it takes technically: we find where the image is, hand it over or delete it, and confirm in writing what happened. That help is free within normal use of the service.</p>
+
+      <h2>10. Personal data breaches</h2>
+      <p>If we discover a security breach affecting your personal data, we report it <strong>to you</strong> and not to the Dutch DPA. That is not a choice: as a processor that is exactly our role (Art. 33(2) GDPR). You then decide whether a report is due — and the 72-hour clock for <em>your</em> report starts running the moment we put it in front of you. So we put it there quickly: <strong>within 24 hours</strong> of knowing, even if the picture is not yet complete.</p>
+      <p>What that report contains: what happened, when, which kinds of data and which data subjects it likely affects, what we have already done to limit it, and what we do not yet know. That last part is in there too. We add to it as we learn more, and we keep our own record of every incident — including the ones that do not need reporting.</p>
+      <p>We help you further with what Art. 32 to 36 GDPR asks of you, including a data protection impact assessment if your use needs one.</p>
+
+      <h2>11. Transfers outside the European Economic Area</h2>
+      <p>The generation happens with a party in Spain, so inside the EU. Where a sub-processor in §8 is established outside the EEA, the transfer rests on the European Commission's Standard Contractual Clauses (Art. 46(2)(c) GDPR). We do not transfer personal data to a country or party outside that list without informing you first.</p>
+      <p>One thing we write down more plainly than is customary: when the visuals are made, material is placed into the sub-processor's tool by a person, from our environment. So it is not an automatic integration but an act, and it falls under the same arrangements as the rest of this agreement.</p>
+
+      <h2>12. Return and deletion</h2>
+      <p>The periods below are the same ones as in §7 of the <a href="/terms">Terms</a> and §6 of the <a href="/privacy">Privacy Policy</a>. They are executed by a nightly task, not by hand.</p>
+      <ul>
+        <li><strong>The material you supply:</strong> {UPLOAD_DAYS} days after the order, then deleted.</li>
+        <li><strong>The visuals we deliver:</strong> {DELIVERY_MONTHS} months, so you can fetch them again within a year.</li>
+      </ul>
+      <p>Want it gone sooner? Email us and we delete it — unless a statutory retention duty stands in the way, and then we say which one. At the end of this agreement we delete everything it covers, copies included, or return it to you if you prefer. Anything that has to stay for that reason stays only for that reason and is not used again.</p>
+      <p>The data we hold as controller — your invoice, your company details — is not covered here. Those carry the seven-year Dutch tax retention duty, and that is set out in the Privacy Policy.</p>
+
+      <h2>13. Audit, liability and closing</h2>
+      <p><strong>Audit.</strong> Once a year, and additionally after a breach affecting your data, you may request what you need to establish that we keep to this agreement. We answer within two weeks. If you want an inspection by an independent expert we will cooperate; the cost is yours, unless it turns up something we should have fixed.</p>
+      <p><strong>Liability.</strong> For damage arising from processing in breach of the GDPR, Art. 82 GDPR applies. The liability cap in §11 of the Terms does <strong>not</strong> apply to GDPR fines or damages attributable to us. That is a deliberate choice: a privacy clause that caps its own liability at the order value is not an agreement but an exit.</p>
+      <p><strong>Closing.</strong> Where this agreement differs from the Terms of Service, this agreement prevails, but only for the processing of personal data. Dutch law applies; the Overijssel District Court has jurisdiction. If the GDPR changes or binding rules are added, we amend this text and announce it the same way we announce a change to §8.</p>
+
+      <h2>14. Questions</h2>
+      <p>About this agreement, about a data subject request, or to get a signed copy: <a href="mailto:hello@visuails.com">hello@visuails.com</a>. One person reads that inbox, and it is the same person who carries out the processing.</p>
+
+      <p class="legal-meta" style="margin-top:2.4rem">This page was drafted against the text of Article 28 GDPR and covers points (a) to (h) of paragraph 3. It has not yet been reviewed by a lawyer. For your own situation — certainly if you sit in a chain with more than one controller — have your own adviser check it.</p>
+
+    </div>
+  </section>
+</Layout>

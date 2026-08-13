@@ -39,7 +39,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { wrangler, warmLogin, oneLine, CMD_MAX } from './lib/wrangler.mjs';
+import { wrangler, warmLogin, volhard, oneLine, CMD_MAX } from './lib/wrangler.mjs';
 import { statements, stripComments } from './lib/sql.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -88,10 +88,9 @@ const scope = LOCAL ? '--local' : '--remote';
  * Eén regel SQL, dus --command mag. Meerdere regels gaan via een bestand — zie
  * execute() hieronder over waarom.
  */
-async function query(sql, attempt = 1) {
-  const r = await wrangler(['d1', 'execute', DB, scope, '--json', '--command', sql]);
+async function query(sql) {
   /*
-   * ── DE RETRY VERNIEUWT NU HET TOKEN IN PLAATS VAN TE WACHTEN ───────────────
+   * ── DE RETRY VERNIEUWT HET TOKEN IN PLAATS VAN TE WACHTEN ──────────────────
    *
    * Hier stond "7403 komt en gaat", met drie seconden wachten en dan hetzelfde
    * nog een keer. Dat hielp zelden, en 9 augustus 2026 werd duidelijk waarom:
@@ -100,20 +99,13 @@ async function query(sql, attempt = 1) {
    * later is datzelfde token nog even verlopen — de retry probeerde precies wat
    * al niet werkte.
    *
-   * Dus nu: eerst vernieuwen, dan opnieuw. Het wachten blijft staan voor de
-   * gevallen die wél een hapering zijn (fetch failed, ECONNRESET, een timeout),
-   * want daar helpt een adempauze en een vers token niet.
+   * Sinds 13 augustus 2026 staat die afweging in volhard() in lib/wrangler.mjs,
+   * en niet meer hier. Reden: execute() hieronder had hem NIET, en dat is de kant
+   * die de database verandert — dus liep elke migratie waarin het token
+   * halverwege opraakte alsnog vast. Eén regel op twee plekken die maar op één
+   * plek stond; nu is het één functie die ze beide aanroepen.
    */
-  if (!r.ok && attempt === 1 && /7403|fetch failed|ECONNRESET|timed? ?out/i.test(r.out)) {
-    if (/7403/.test(r.out)) {
-      console.log('  (7403 — token vernieuwen en opnieuw)');
-      await warmLogin({ force: true });
-    } else {
-      console.log('  (hapering bij Cloudflare — één keer opnieuw over 3 seconden)');
-      await new Promise((res) => setTimeout(res, 3000));
-    }
-    return query(sql, 2);
-  }
+  const r = await volhard(() => wrangler(['d1', 'execute', DB, scope, '--json', '--command', sql]));
   if (!r.ok) throw new Error(`kon de database niet lezen:\n${r.out.trim()}`);
   try {
     const parsed = JSON.parse(r.stdout.slice(r.stdout.indexOf('[')));
@@ -143,36 +135,48 @@ async function query(sql, attempt = 1) {
  *   Authentication error [code: 10000]
  *
  * Let op het endpoint: /import. `wrangler d1 execute --file` upload het bestand
- * via de D1 IMPORT-API, en die weigert het OAuth-token dat `wrangler login`
- * achterlaat — de scopelijst van dat token (offline_access, account:read,
- * d1:write) dekt de gewone query-API wél en import niet. Vandaar dat de
- * kolomcontrole ervóór, die --command gebruikt, gewoon antwoord gaf en de eerste
- * ALTER meteen omviel. Het token was dus niet stuk; het ging om welk endpoint
- * wrangler koos, en dat koos dít script voor hem.
+ * via de D1 IMPORT-API, en de kolomcontrole ervóór — die --command gebruikt — gaf
+ * wél gewoon antwoord. Dat leek te zeggen dat het aan het endpoint lag: dat het
+ * token van `wrangler login` de query-API dekt en import niet.
  *
- * DUS: --command waar het kan, en dat is overal in migrations/ — elke opdracht
- * hier is één statement dat prima op één regel past zodra je de witruimte die er
- * voor de leesbaarheid in staat weghaalt. Het bestand blijft bestaan als
+ * ── DIE UITLEG IS OP 13 AUGUSTUS 2026 ONHOUDBAAR GEBLEKEN ───────────────────
+ *
+ * Dezelfde 10000 kwam terug op /query, halverwege een `npm run migrate` waarin
+ * drie identieke CREATE INDEX'en er net vóór gewoon door waren gegaan. Het
+ * endpoint bepaalt de fout dus niet. Wat overblijft is de eenvoudiger verklaring:
+ * het OAuth-token verloopt tijdens een lange reeks aanroepen, net als bij 7403,
+ * en dan is 10000 hoe /query daarover klaagt. Zie volhard() in lib/wrangler.mjs.
+ *
+ * Wat blijft staan is de keuze van dit script, en die is nu juist beter
+ * onderbouwd: --command waar het kan, en dat is overal in migrations/ — elke
+ * opdracht hier is één statement dat prima op één regel past zodra je de
+ * witruimte die er voor de leesbaarheid in staat weghaalt. Eén aanroep per
+ * opdracht, geen upload, geen tijdelijk bestand. Het bestand blijft bestaan als
  * terugval voor wat écht niet over een commandoregel kan (een tekstwaarde met
- * een regeleinde, of iets van duizenden tekens). Loopt die terugval op dezelfde
- * 10000 stuk, dan zegt de foutmelding hieronder wat eraan te doen is in plaats
- * van "authentication error" en verder niks.
+ * een regeleinde, of iets van duizenden tekens).
+ *
+ * ALLE TWEE GAAN NU DOOR volhard(). Dat was de echte fout hier: deze functie
+ * probeerde het één keer, terwijl query() hierboven al wist dat een auth-fout
+ * halverwege om vernieuwen vraagt. De tip over een eigen API-token blijft eronder
+ * staan als terugval voor het geval het vernieuwen niet helpt.
  */
 async function execute(stmt) {
   const line = oneLine(stmt);
   if (line && line.length <= CMD_MAX && !line.includes('"')) {
-    return wrangler(['d1', 'execute', DB, scope, '--yes', '--command', line]);
+    return volhard(() => wrangler(['d1', 'execute', DB, scope, '--yes', '--command', line]));
   }
 
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'visuails-migrate-')), 'stmt.sql');
   fs.writeFileSync(file, `${stmt};\n`);
   try {
-    const r = await wrangler(['d1', 'execute', DB, scope, '--yes', '--file', file]);
+    const r = await volhard(() => wrangler(['d1', 'execute', DB, scope, '--yes', '--file', file]));
     if (!r.ok && /\/import[\s\S]*?\b10000\b|Authentication error \[code: 10000\]/.test(r.out)) {
       r.out += '\n\nDeze opdracht moest via de import-API omdat hij niet op één regel past,'
-        + '\nen die weigert het token van `wrangler login`. Maak een API-token aan met'
-        + '\nD1:Edit op https://dash.cloudflare.com/profile/api-tokens en draai opnieuw met'
-        + '\nCLOUDFLARE_API_TOKEN erin gezet.';
+        + '\nen het vernieuwen van het OAuth-token heeft niet geholpen. Dan is een eigen'
+        + '\nAPI-token de volgende stap: maak er een aan met D1:Edit op'
+        + '\nhttps://dash.cloudflare.com/profile/api-tokens en draai opnieuw met'
+        + '\nCLOUDFLARE_API_TOKEN in je omgeving gezet — niet in een bestand in deze'
+        + '\nrepository en niet in een chatvenster (zie DEPLOY.md §7).';
     }
     return r;
   } finally {

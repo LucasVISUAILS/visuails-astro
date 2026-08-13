@@ -71,7 +71,11 @@ import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
 import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
-import { quoteOrder, centsToMollieValue, paymentDescription, PAYABLE_SERVICES, isPayableService } from '../../src/lib/quote.js';
+import {
+  quoteOrder, quoteTestSample, centsToMollieValue, paymentDescription,
+  PAYABLE_SERVICES, isPayableService, ladderKey,
+} from '../../src/lib/quote.js';
+import { businessCheck } from '../../src/data/business.js';
 import {
   vatDecision, VAT_TREATMENT, normaliseVat, viesCode, vatShort, HOME_COUNTRY,
   vatGate, REVIEW, REVIEW_HOURS,
@@ -497,7 +501,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   //
   // Falls to 'unattended' whenever the count is unknown — the tier that
   // reserves nothing is the direction a mistake should fall.
-  const tier = tierForProducts(products);
+  const tier = tierForProducts(products, svc);
 
   // Staged reference material, if the client uploaded any. Read before the
   // insert so the count can go into details_json with everything else; the rows
@@ -659,10 +663,77 @@ export async function onRequestPost({ request, env, waitUntil }) {
     hadNumber: !!vatParts.number,
   });
 
-  const quote = quoteOrder({
-    service: svc, products, outfits: outfitCount, extras: extraCount,
-    vatRate: vatCall.rate,
+  /*
+   * ── UITSLUITEND ZAKELIJK — 12 AUGUSTUS 2026 ────────────────────────────────
+   *
+   * De regel per land staat in src/data/business.js, met de reden waarom een
+   * KVK-veld geen consumenten uitsluit maar buitenlanders. Hier gebeuren twee
+   * dingen, en beide zijn met opzet mild:
+   *
+   *   1  DE UITKOMST WORDT VASTGELEGD, altijd, ook als hij goed is. Bij een
+   *      geschil is de vraag niet "wat weet je nu" maar "wat wist je toen", en
+   *      dan wil je de verklaring, de versie ervan en het bewijs waar wij op
+   *      afgingen bij elkaar hebben staan.
+   *
+   *   2  ONTBREEKT HET BEWIJS, DAN GAAT DE BESTELLING NAAR DE BEOORDELINGSLIJST
+   *      en niet in de prullenbak. Dat is de staande regel van dit bestand:
+   *      nooit een bestelling verliezen om een secundaire stap te beschermen. En
+   *      het is ook inhoudelijk juist -- "hard in de EU" betekent dat er niet
+   *      zonder bewijs geproduceerd en gefactureerd wordt, niet dat een klant die
+   *      een veld vergeet zijn hele briefing kwijt is.
+   *
+   * DE REDENEN WORDEN ALLEEN GEBRUIKT ALS HET NIET IN ORDE IS. businessCheck()
+   * geeft ook bij een goede uitkomst soms een toelichting mee (een Nederlandse
+   * klant met btw-nummer maar zonder KVK-nummer, bijvoorbeeld) en die hoort niet
+   * op de beoordelingslijst te belanden als er niets te beoordelen valt.
+   */
+  const declared = get('business_declaration') === 'yes';
+  const regNumber = get('reg_number').trim().slice(0, 40);
+  const bizCheck = businessCheck({
+    country: effCountry,
+    vat: vatParts.number ? vat : '',
+    viesValid: viesState,
+    noVat,
+    regNumber,
+    declared,
   });
+  details.business_declaration = declared
+    ? (get('business_version') || 'unversioned')
+    : 'MISSING';
+  details.business_kind = bizCheck.kind;
+  details.business_reg = regNumber || null;
+  details.business_ok = bizCheck.ok;
+  if (!bizCheck.ok && bizCheck.reasons.length) details.business_notes = bizCheck.reasons;
+
+  const bizReasons = bizCheck.ok ? [] : bizCheck.reasons;
+  const review = {
+    needsReview: vatReview.needsReview || !bizCheck.ok,
+    reasons: [...vatReview.reasons, ...bizReasons],
+  };
+
+  /*
+   * ── DE PROEFVISUAL KRIJGT NU OOK EEN BEDRAG — 12 AUGUSTUS 2026 ─────────────
+   *
+   * quoteOrder() geeft null voor 'test-sample' (het staat niet in PAYABLE_SERVICES),
+   * en dat betekende: `total_cents` NULL en `vat_cents` 0 op een bestelling waar wel
+   * EUR 1 voor is afgeschreven. De webhook sloeg de factuur daarom over, want een
+   * genummerde factuur die "Betaald EUR 0,00" zegt is erger dan geen factuur.
+   *
+   * Dat is nu opgelost aan de bron in plaats van bij de factuur. quoteTestSample()
+   * rekent de btw uit het brutobedrag van EUR 1 en niet erbovenop -- de fiscale keuze
+   * staat daar uitgeschreven. Vanaf hier is een proefvisual een gewone bestelling met
+   * een bedrag, en de factuur volgt uit de plumbing die er al was.
+   *
+   * HET TARIEF KOMT UIT DEZELFDE vatCall. Een Nederlandse proefvisual is EUR 0,83 +
+   * EUR 0,17; bij verlegging is het EUR 1,00 + EUR 0,00. Niet apart geregeld, want de
+   * btw-behandeling van een klant hangt niet af van hoe groot zijn bestelling is.
+   */
+  const quote = svc === 'test-sample'
+    ? quoteTestSample({ vatRate: vatCall.rate })
+    : quoteOrder({
+      service: svc, products, outfits: outfitCount, extras: extraCount,
+      vatRate: vatCall.rate,
+    });
 
   // ── THE WITHDRAWAL WAIVER, RECORDED ────────────────────────────────────────
   // A customer with no VAT number is a consumer, and a consumer buying at a
@@ -756,13 +827,18 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const nowIso = new Date().toISOString();
   // De deadline is een belofte aan de klant ("binnen 24 uur"), dus wordt hij
   // uitgerekend en opgeslagen, niet elke keer opnieuw op een pagina berekend.
-  const reviewDeadline = vatReview.needsReview
+  /* `review` en niet `vatReview`: sinds 12 augustus 2026 kan ook een ontbrekend
+     zakelijk bewijs een beoordeling opleveren, en die twee redenen horen in
+     hetzelfde veld te komen. Stond hier `vatReview`, dan zou een bestelling
+     zonder registratienummer wél op de lijst staan maar zonder te zeggen waarom
+     -- en dan is de lijst een raadsel in plaats van een werklijst. */
+  const reviewDeadline = review.needsReview
     ? new Date(Date.now() + REVIEW_HOURS * 3600 * 1000).toISOString()
     : null;
   const orderBinds0018 = [
-    vatReview.needsReview ? REVIEW.pending : null,
-    vatReview.reasons.length ? vatReview.reasons.join('; ') : null,
-    vatReview.needsReview ? nowIso : null,
+    review.needsReview ? REVIEW.pending : null,
+    review.reasons.length ? review.reasons.join('; ') : null,
+    review.needsReview ? nowIso : null,
     reviewDeadline,
     vatConfirmed ? 1 : 0,
     vatConfirmed ? nowIso : null,
@@ -1072,7 +1148,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
    * Als `orderId` null is gaat er nu een alarmmail uit (zie hieronder) — zonder
    * die mail zou deze poort de fout alleen maar stiller maken dan hij al was.
    */
-  if (orderId && quote && isPayableService(svc) && env.MOLLIE_API_KEY && vatReview.payableNow) {
+  /* `!review.needsReview` staat NAAST vatReview.payableNow en vervangt hem niet:
+     payableNow is de btw-poort en zegt iets anders dan "er valt niets te
+     beoordelen". Een bestelling die op de lijst staat omdat het zakelijk bewijs
+     ontbreekt, hoort geen betaallink te krijgen -- dat is wat "hard in de EU"
+     betekent op de plek waar het geld begint te lopen. */
+  if (orderId && quote && isPayableService(svc) && env.MOLLIE_API_KEY
+      && vatReview.payableNow && !review.needsReview) {
     const payment = await safe(() => createOrderMolliePayment(env, {
       ref,
       lang,
@@ -1174,6 +1256,26 @@ export async function onRequestPost({ request, env, waitUntil }) {
    *
    * De alarmmail hierboven gaat al af als `orderId` null is, dus deze poort maakt de
    * fout niet stiller — hij houdt alleen de betaling tegen.
+   */
+  /*
+   * ── EN WAAROM DE PROEFVISUAL NIET OP `review` WORDT GEPOORT ────────────────
+   *
+   * De betaalpoort hierboven kreeg op 12 augustus 2026 `!review.needsReview`
+   * erbij, zodat een bestelling zonder zakelijk bewijs geen betaallink krijgt.
+   * Hier staat die voorwaarde met opzet NIET, en dat is een afweging en geen
+   * vergetelheid.
+   *
+   * Het gaat om één euro, en de verklaring — het dragende element van de hele
+   * uitsluiting — is op dit formulier verplicht en dus aanwezig. Wat kan
+   * ontbreken is het CORROBORERENDE bewijs, en de vaakste oorzaak daarvan is
+   * niet een consument maar een VIES-storing: src/data/vat.js beschrijft de
+   * ochtend dat Roemenië eruit lag. Een Duits merk zijn proefvisual weigeren
+   * omdat een overheidsdienst even niet antwoordde, is de duurste manier om
+   * nul euro te beschermen.
+   *
+   * De bestelling verdwijnt niet uit het zicht: hij staat op de
+   * beoordelingslijst met de reden erbij, dus vóórdat er werk in gaat zitten is
+   * het gezien. Dat is waar die lijst voor is.
    */
   if (svc === 'test-sample' && orderId && env.MOLLIE_API_KEY) {
     // createTestSampleMolliePayment() resolves the whole Mollie payment
@@ -1853,8 +1955,26 @@ function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
 // purpose and named here so a grep for WINDOW_THRESHOLD finds both halves.
 // pricing.js: export const WINDOW_THRESHOLD = 10.
 const WINDOW_THRESHOLD = 10;
-function tierForProducts(products) {
+/*
+ * ── DE DIENST DOET MEE, SINDS 12 AUGUSTUS 2026 ───────────────────────────────
+ *
+ * Zie de noot bij tierFor() in src/data/pricing.js voor de fout die dit verhelpt:
+ * het video-aanvraagformulier post zijn aantal clips in `products`, en tien clips
+ * leverden een bestelling op met de belofte van een gereserveerd 48-uursvenster dat
+ * niemand had ingepland.
+ *
+ * PAYABLE_SERVICES is hier de juiste verzameling en niet een eigen lijst: dat is
+ * precies de set diensten die quoteOrder() kan prijzen en waarvoor er dus een
+ * capaciteitspoort en een betaallink bestaan. Video staat er niet in (het is een
+ * aanvraag, geen bestelling) en 'custom' ook niet.
+ *
+ * ladderKey() eromheen omdat de wire-waarde niet de laddernaam is: /start/complete
+ * post `service=drop`. Diezelfde val kostte eerder een bestelling van EUR 2.359,50
+ * die gratis de deur uit ging — zie de noot bij LADDER_KEY in src/lib/quote.js.
+ */
+function tierForProducts(products, service) {
   const n = Number(products);
+  if (service !== undefined && !PAYABLE_SERVICES.has(ladderKey(service))) return 'unattended';
   return Number.isFinite(n) && Math.floor(n) >= WINDOW_THRESHOLD ? 'attended' : 'unattended';
 }
 

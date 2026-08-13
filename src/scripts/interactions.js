@@ -1051,6 +1051,21 @@ function checkCancelled(ref, attempt = 0) {
       .then((d) => {
         if (!d || !d.cancelled) { checkCancelled(ref, attempt + 1); return; }
 
+        /* ── OP `kind` EN NIET ALLEEN OP `cancelled` — 13 augustus 2026 ────────
+           Het blok hieronder zegt letterlijk dat er al een proefvisual naar dit
+           bedrijf is gegaan en dat de euro terugkomt. Bij een annulering MET DE
+           HAND — een andere reden, een ander verhaal, misschien geen
+           terugbetaling — is dat onwaar, en het zou de bezoeker een verkeerde
+           uitleg en een verkeerde verwachting geven.
+
+           /api/order-status geeft de met de hand getypte reden met opzet niet
+           mee (dat is een interne notitie), dus komt hier alleen het
+           machinewoord aan. Precies dat woord opent dit blok en niets anders.
+
+           En dan niet dóórvragen: de bestelling ís geannuleerd, dus het antwoord
+           verandert niet meer binnen zes seconden. Er is alleen niets te tonen. */
+        if (d.kind !== 'sample-duplicate') return;
+
         const box = document.querySelector('[data-ty-cancelled]');
         if (!box) return;
         box.hidden = false;

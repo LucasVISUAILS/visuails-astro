@@ -59,6 +59,7 @@ import {
 import Disclose from '../Disclose.astro';
 
 import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
+import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -638,6 +639,9 @@ const FORM = {
       vatConfirm: 'I confirm that my company is established outside the Netherlands and that this VAT number belongs to it.',
       vatConfirmHint: 'Required before we can invoice at 0%. The tax authority holds us liable for a reverse charge that turns out to be wrong, so this is the one thing we cannot decide for you.',
       vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
+      reg: 'Registration number',
+      regErr: 'Fill in a registration number — a KVK number in the Netherlands, or your local equivalent.',
+      regHint: 'Only needed because you have no VAT number. In the Netherlands that is your 8-digit KVK number; elsewhere it is whatever your own register calls it. We record it as given.',
       message: 'Anything we should know',
       // SHARPENED, AND THE SHARPENING IS THE POINT. attributes.js's
       // ORDER_QUESTIONS comment argues there is ONE new order-level field and
@@ -813,6 +817,9 @@ const FORM = {
       vatConfirm: 'Ik verklaar dat mijn bedrijf buiten Nederland is gevestigd en dat dit btw-nummer van dat bedrijf is.',
       vatConfirmHint: 'Nodig voordat we 0% op je factuur kunnen zetten. Blijkt de btw-verlegging later onjuist, dan krijgen wij de aanslag. Daarom moet je dit zelf aanvinken.',
       vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij dan rekenen we geen Nederlandse btw.',
+      reg: 'Registratienummer',
+      regErr: 'Vul een registratienummer in — in Nederland je KVK-nummer, daarbuiten het nummer van je eigen register.',
+      regHint: 'Alleen nodig omdat je geen btw-nummer hebt. In Nederland is dat je KVK-nummer van acht cijfers; daarbuiten wat je eigen register ervoor gebruikt. We leggen het vast zoals je het opgeeft.',
       message: 'Wat we moeten weten',
       // Zie de Engelse noot hierboven.
       messageHint: 'De look die je zoekt, de datum waarop het echt live moet, een voorbeeld dat je mooi vindt, en wat je merk juist nooit doet.',
@@ -1479,6 +1486,40 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             </label>
             <span class="hint">{f.s3.vatConfirmHint}</span>
           </div>
+
+          {/* ── HET REGISTRATIENUMMER ────────────────────────────────────────
+              12 augustus 2026. VISUAILS levert uitsluitend zakelijk, en dit is
+              het corroborerende bewijs daarvoor. De redenering per land staat in
+              src/data/business.js; hier staat alleen waarom dit veld op DEZE
+              plek en met DEZE eis staat.
+
+              WAAROM ONDER HET BTW-VELD EN AAN HETZELFDE VINKJE. Wie een
+              btw-nummer opgeeft, heeft zijn bewijs al geleverd — daar is niets
+              bij nodig. Wie "ik heb geen btw-nummer" aanvinkt, moet iets anders
+              aandragen, en dat is precies dit veld. Vandaar
+              `data-pl-req-when="no_vat"`: de spiegel van
+              `data-pl-req-unless` dat het btw-veld gebruikt. Twee velden, één
+              vinkje, en nooit beide verplicht.
+
+              WAAROM HET GEEN KVK-VELD HEET. Een veld dat "KVK-nummer" heet
+              sluit geen consumenten uit maar buitenlanders: dat nummer bestaat
+              alleen in Nederland, en Lucas' eigen vraag ging precies daarover.
+              Het label is neutraal en de hint noemt het Nederlandse geval bij
+              naam, zodat een Nederlandse eenmanszaak weet wat er wordt bedoeld
+              zonder dat een Amerikaans bedrijf een leeg veld overhoudt.
+
+              WAAROM ER GEEN CONTROLE OP DE VORM STAAT. Voor NL kan dat (acht
+              cijfers, zie looksLikeKvk) maar voor de rest van de wereld niet, en
+              een validatie die alleen voor één land klopt keurt de rest af. De
+              vorm wordt op de server beoordeeld en de uitkomst is een
+              beoordeling, geen weigering. */}
+          <div class="field pl-reg" data-pl-reg hidden>
+            <label for="pl-reg">{f.s3.reg} <span class="req">*</span></label>
+            <input class="input" type="text" id="pl-reg" name="reg_number" autocomplete="off"
+                   maxlength="40" data-pl-req="1" data-pl-req-when="no_vat"
+                   data-pl-err-msg={f.s3.regErr} />
+            <span class="hint">{f.s3.regHint}</span>
+          </div>
         </div>
       </div>
       </div>{/* /[data-pl-s3-fields] */}
@@ -1638,6 +1679,34 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
             secondary step. What it must never do is record consent that was not
             given, which is why the hidden field carries only the version and the
             checkbox carries the agreement. */}
+        {/* ── DE ZAKELIJKE VERKLARING, BOVEN DE HERROEPINGSVERKLARING ────────
+            12 augustus 2026, en de volgorde is niet willekeurig.
+
+            VISUAILS levert uitsluitend zakelijk. De toets daarvoor staat in
+            art. 6:230g lid 1 sub a BW en gaat over de HOEDANIGHEID van de
+            klant; die vraag komt logisch vóór de vraag of hij zijn bedenktijd
+            opgeeft, want een zakelijke klant heeft die bedenktijd nooit gehad.
+            Twee vinkjes die in de verkeerde orde staan lezen als één vinkje dat
+            twee keer hetzelfde vraagt.
+
+            EN DAAROM BLIJFT DE HERROEPINGSVERKLARING STAAN. Ze is nu de
+            terugval en niet de hoofdregel: blijkt de zakelijke verklaring
+            onjuist — een particulier die hem toch aanvinkt — dan geldt het
+            consumentenrecht alsnog, en dan is dít het vinkje dat de uitzondering
+            van art. 6:230p sub f in werking zet. Twee sloten op één deur, en het
+            tweede kost één regel. §10a van de voorwaarden zegt hetzelfde.
+
+            De versie rijdt mee in een verborgen veld, net als bij de
+            herroepingsverklaring: het bewijs is niet "er is een vinkje gezet",
+            het is "er is een vinkje gezet bij DEZE tekst". Zie
+            src/data/business.js. */}
+        <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
+        <label class="pl-consent">
+          <input type="checkbox" name="business_declaration" value="yes" required
+                 data-pl-err-msg={lang === 'nl' ? "VISUAILS levert uitsluitend zakelijk. Vink dit aan om te bevestigen dat je voor je bedrijf bestelt." : "VISUAILS supplies businesses only. Please tick this to confirm you are ordering for a business."} />
+          <span>{currentBusiness(lang)}</span>
+        </label>
+
         <input type="hidden" name="consent_version" value={CONSENT_VERSION} />
         <label class="pl-consent">
           <input type="checkbox" name="withdrawal_consent" value="yes" required

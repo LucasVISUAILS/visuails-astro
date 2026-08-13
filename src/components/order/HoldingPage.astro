@@ -18,9 +18,11 @@
 //
 // WHAT THEY POST. Nothing new. `service` is one of ORDER_SERVICES in
 // functions/api/order.js — `video` for clips, `custom` for the Brand Model and
-// the plans — and everything that distinguishes them (`request`, `plan`) is an
-// ordinary field that lands in details_json, because it is not in TOP_FIELDS.
-// No server change, no migration, and an order record that still reads.
+// the plans — and everything that distinguishes them (`request`, `plan`,
+// `clips`) is an ordinary field that lands in details_json, because it is not in
+// TOP_FIELDS. No server change, no migration, and an order record that still
+// reads. `clips` joined that list on 13 August 2026; see the long note at the
+// field itself for why it is not `products`.
 //
 // NO CHECKOUT, DELIBERATELY. The Brand Model is a one-time setup that changes
 // every order after it, and the plans are a minimum-term commitment. Both are
@@ -278,11 +280,41 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
         {kind === 'video' && (
           <div class="field">
             <label for="h-clips">{k.askLabel}</label>
-            {/* name="products" so the count lands in the orders table's own
-                column rather than in details_json. The last option is
-                deliberately not parseable as an integer — countOf() in
-                /api/order stores null rather than a number nobody chose. */}
-            <select class="select" id="h-clips" name="products">
+            {/* ── name="clips" EN NIET name="products" — 13 augustus 2026 ──────
+                Dit veld postte in `products`, "so the count lands in the orders
+                table's own column rather than in details_json". Die kolom is
+                `orders.product_count`, en die betekent overal in dit systeem
+                ÉÉN ding: het aantal producten dat door de fotopijplijn gaat.
+                Een aantal clips daarin schrijven laat twintig lezers hetzelfde
+                getal verkeerd uitleggen. Drie daarvan waren echt fout:
+
+                  · tierFor() gaf `attended` bij tien clips, en dan belooft de
+                    bevestigingsmail een vastgezet leveringsvenster voor werk
+                    dat met de hand wordt ingepland. Op 12 augustus in pricing.js
+                    dichtgezet door de dienst mee te wegen — één lezer gerepareerd,
+                    de oorzaak niet.
+
+                  · claimUpgradePrompt() in /api/order telt `product_count` op
+                    over een kwartaal en zegt bij twaalf: "je hebt twaalf losse
+                    producten besteld, dit kost een Full Drop." Twaalf clips
+                    zetten dus een verkoopregel in een mail met een getal dat de
+                    klant weet dat het niet klopt.
+
+                  · Het klantportaal en het adminoverzicht schrijven het getal
+                    letterlijk als "12 producten" naast een aanvraag waarin geen
+                    enkel product zit.
+
+                Dus: `clips`. Het staat niet in TOP_FIELDS, dus het landt in
+                details_json — precies zoals `plan` en `request` op deze zelfde
+                pagina, en dan doet detailRows() in /api/order het automatisch in
+                de studiomail. Geen migratie, en geen kolom die iets anders
+                betekent dan hij zegt.
+
+                De laatste optie is met opzet geen getal. Die tekst blijft nu
+                gewoon staan zoals hij is ("Weet ik nog niet") in plaats van
+                stil null te worden, en dat is een beter antwoord: het is wat de
+                klant koos. */}
+            <select class="select" id="h-clips" name="clips">
               {clipCounts.map((n) => <option value={String(n)}>{n}</option>)}
               <option value={notSure} selected>{notSure}</option>
             </select>
