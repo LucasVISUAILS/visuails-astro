@@ -22,8 +22,11 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from '../src/lib/zip.js';
+import { DELIVERY_MONTHS } from '../src/lib/retention.js';
+import { readmeText as studioReadme } from '../src/lib/scaffold.js';
 import {
-  loadDeliveryFiles, deliveryEntries, deliverySummary, humanBytes,
+  loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles,
+  deliveryReadme, productFolderName, orderProductNames, deliverySummary, humanBytes,
   FORMAT_DIR, SHOT_ORDER,
 } from '../src/lib/delivery.js';
 
@@ -106,21 +109,54 @@ console.log('\nde mappenstructuur');
   addFile(db, { id: 2, product: 'p1', shot: 'back', assets: ALL });
   addFile(db, { id: 3, product: 'p2', shot: 'front', assets: ALL });
   const files = await loadDeliveryFiles({ DB: d1(db) }, 1);
-  const names = deliveryEntries(files, 'nl').map((e) => e.name);
+
+  /*
+   * ── DE NAMEN ZIJN OP 13 AUGUSTUS 2026 VERANDERD ────────────────────────────
+   *
+   * Deze vijf regels stonden op `product-1/PNG/voorkant.png` en zijn niet
+   * "aangepast omdat de test rood werd" -- ze toetsten een structuur die bij tien
+   * producten door de war liep. `product-10` sorteert in elke bestandsverkenner
+   * VOOR `product-2`, en `achterkant` staat alfabetisch voor `voorkant`, dus las een
+   * bestelling van tien producten als 1, 10, 11, 2 met de voorkant onderaan.
+   *
+   * Wat hier nu staat is dus een strengere eis dan wat er stond, niet een lossere:
+   * de nummers moeten er zijn EN ze moeten sorteren.
+   */
+  const opts = { ref: 'VIS-TEST-001', productNames: { p1: 'Zwarte hoodie' } };
+  const names = deliveryEntries(files, 'nl', opts).map((e) => e.name);
+  const R = 'VISUAILS-VIS-TEST-001';
 
   check('drie beelden worden negen bestanden', names.length, 9);
-  check('product eerst, dan formaat', names[0], 'product-1/PNG/voorkant.png');
+  check('alles zit in een map met de referentie', names.every((n) => n.startsWith(`${R}/`)), true);
+  check('product eerst, dan formaat', names[0], `${R}/01 - Zwarte hoodie/PNG/1-voorkant.png`);
   check('de drie formaten van hetzelfde beeld', names.slice(0, 3), [
-    'product-1/PNG/voorkant.png',
-    'product-1/JPG/voorkant.jpg',
-    'product-1/WEBP/voorkant.webp',
+    `${R}/01 - Zwarte hoodie/PNG/1-voorkant.png`,
+    `${R}/01 - Zwarte hoodie/JPG/1-voorkant.jpg`,
+    `${R}/01 - Zwarte hoodie/WEBP/1-voorkant.webp`,
   ]);
   // De shotvolgorde is menselijk en niet alfabetisch: achterkant komt ná voorkant.
-  check('voorkant vóór achterkant', names[3], 'product-1/PNG/achterkant.png');
-  check('en dan product 2', names[6], 'product-2/PNG/voorkant.png');
+  check('voorkant vóór achterkant', names[3], `${R}/01 - Zwarte hoodie/PNG/2-achterkant.png`);
+  // Zonder naam in details_json blijft het nummer over -- nog steeds gesorteerd.
+  check('en dan product 2, zonder naam', names[6], `${R}/02/PNG/1-voorkant.png`);
 
-  const en = deliveryEntries(files, 'en').map((e) => e.name);
-  check('engels', en[0], 'product-1/PNG/front.png');
+  const en = deliveryEntries(files, 'en', opts).map((e) => e.name);
+  check('engels', en[0], `${R}/01 - Zwarte hoodie/PNG/1-front.png`);
+
+  /* ── DE EIGENLIJKE EIS: HET SORTEERT ────────────────────────────────────────
+     Niet "de naam is zo", maar "een verkenner zet ze in deze volgorde". Dat is de
+     bug die dit moest verhelpen, en alleen deze vergelijking meet hem. */
+  const veel = fresh();
+  for (let i = 1; i <= 12; i++) addFile(veel, { id: i, product: `p${i}`, shot: 'front', assets: [['jpg', 10]] });
+  const veelFiles = await loadDeliveryFiles({ DB: d1(veel) }, 1);
+  const mappen = [...new Set(deliveryEntries(veelFiles, 'nl', { ref: 'X' }).map((n) => n.name.split('/')[1]))];
+  check('twaalf producten staan in onze volgorde', mappen.slice(0, 3), ['01', '02', '03']);
+  check('en alfabetisch sorteren geeft dezelfde volgorde',
+    [...mappen].sort().join(','), mappen.join(','));
+  /* De controle op de oude situatie, zodat niemand de nullen weer weghaalt: zonder
+     padding zou dit juist NIET gelijk zijn. */
+  const zonderNul = mappen.map((m) => String(Number(m)));
+  check('zonder de nullen zou het wél door de war lopen',
+    [...zonderNul].sort().join(',') === zonderNul.join(','), false);
 }
 
 /* ══ 2 · WAT ER NIET IN MOET ═════════════════════════════════════════════════ */
@@ -155,6 +191,13 @@ console.log('\neen levering zonder formaten');
   const names = deliveryEntries(files, 'nl').map((e) => e.name);
   check('plat, met de eigen bestandsnaam', names, ['beeld-2.png', 'beeld-1.png']);
   check('geen mappen', deliverySummary(deliveryEntries(files, 'nl')).foldered, false);
+  /* MET een referentie komen ze wél in de wortelmap, en dat is geen tegenspraak met
+     de noot hierboven: er wordt nog steeds geen productmap met drie formaten
+     verzonnen om een bestand heen dat nooit is omgezet -- het bestand ligt alleen in
+     de map van zijn eigen bestelling, zodat één oude levering ertussen de zip niet
+     over iemands Downloads uitstrooit. */
+  const inMap = deliveryEntries(files, 'nl', { ref: 'OUD-1' }).map((e) => e.name);
+  check('maar wel binnen de map van de bestelling', inMap, ['VISUAILS-OUD-1/beeld-2.png', 'VISUAILS-OUD-1/beeld-1.png']);
 }
 
 /* ══ 4 · HET ARCHIEF ECHT UITPAKKEN ═════════════════════════════════════════
@@ -379,6 +422,148 @@ console.log('\nde broncontrole: nergens nog een losse download');
   const zipSrc = readFileSync(new URL('../src/lib/zip.js', import.meta.url));
   const control = [...zipSrc].filter((b) => b < 9 || (b >= 11 && b <= 12) || (b >= 14 && b <= 31));
   check('zip.js is gewone tekst', control.length, 0);
+}
+
+
+/* ══ 6 · WAT DE KLANT IN ZIJN MAP LEEST ══════════════════════════════════════
+ *
+ * Lucas, 13 augustus 2026: *"De read me in de map [...] is in het nederlands en
+ * bedoeld voor mij terwijl dit een readme voor de customer [moet zijn]. [...] In de
+ * read me moet [...] uitgelegd worden waarvoor elk bestand is en de klant oprecht
+ * helpen [...] zodat de klant echt een premium service ontvangt."*
+ *
+ * De verwarring zat in twee mappen die op elkaar leken. De WERKMAP (scaffold.js)
+ * heeft een Nederlandse LEESMIJ voor de studio en die hoort Nederlands te zijn; hij
+ * kwam ook nooit bij een klant, want isScaffoldDoc() houdt hem tegen. Maar de
+ * conclusie was juist, één stap verder: in de LEVERING zat helemaal niets.
+ *
+ * Deze sectie toetst drie dingen, en de derde is de belangrijkste:
+ *   1 · de leesmij staat erin, in de taal van de klant
+ *   2 · hij zegt wat er in de map zit, gemeten en niet aangenomen
+ *   3 · het is NIET de studiotekst, en er zit geen toegangstoken in
+ */
+console.log('\nde leesmij van de klant');
+{
+  const db = fresh();
+  addFile(db, { id: 1, product: 'p1', shot: 'front', assets: ALL });
+  addFile(db, { id: 2, product: 'p1', shot: 'back', assets: ALL });
+  addFile(db, { id: 3, product: 'p2', shot: 'front', assets: [['jpg', 800]] });
+  const files = await loadDeliveryFiles({ DB: d1(db) }, 1);
+
+  const details = JSON.stringify({ product_p1: 'Zwarte hoodie', product_p2: 'Linnen broek', notes: 'iets anders' });
+  const namen = orderProductNames(details);
+  check('de productnamen komen uit details_json', namen, { p1: 'Zwarte hoodie', p2: 'Linnen broek' });
+  check('en niets anders uit dat blob', Object.keys(namen).length, 2);
+  check('onleesbare json is geen fout', orderProductNames('{kapot'), {});
+  check('een leeg veld levert geen naam', orderProductNames('{"product_p1":"   "}'), {});
+
+  const order = { id: 1, ref: 'VIS-2608-4471', lang: 'nl', brand: 'ACME', details_json: details };
+  const entries = deliveryEntries(files, 'nl', { ref: order.ref, productNames: namen });
+  const docs = deliveryDocs({ order, entries, productNames: namen });
+
+  check('er zijn twee documenten', docs.length, 2);
+  check('de leesmij heet LEESMIJ.txt', docs[0].name, 'VISUAILS-VIS-2608-4471/LEESMIJ.txt');
+  check('en de licentie LICENTIE.txt', docs[1].name, 'VISUAILS-VIS-2608-4471/LICENTIE.txt');
+  check('beide in de wortel van de map', docs.every((d) => d.name.split('/').length === 2), true);
+
+  const mij = docs[0].text;
+
+  /* GEMETEN EN NIET AANGENOMEN. Product 2 heeft alleen een jpg, dus "bestanden /
+     formaten" zou hier 7/3 = 2 beelden zeggen terwijl er 3 zijn. Een leesmij die
+     begint met een getal dat niet klopt, wordt de rest niet meer geloofd. */
+  check('het aantal beelden is geteld', /3 beelden/.test(mij), true);
+  check('en het aantal bestanden ook', /7 bestanden/.test(mij), true);
+  check('de productnaam staat in het voorbeeld', mij.includes('01 - Zwarte hoodie/'), true);
+  check('de shotnamen staan erbij', /1-voorkant, 2-achterkant, 3-detail, 4-op-model/.test(mij), true);
+
+  /* Alleen de formaten die er ECHT in zitten. Uitleg over een webp die niet in de
+     map ligt, is een klant laten zoeken naar een bestand dat er niet is. */
+  for (const f of ['JPG/', 'PNG/', 'WEBP/']) check(`uitleg over ${f}`, mij.includes(f), true);
+
+  /* De bewaartermijn komt uit retention.js en staat hier niet los ingetypt: dat is
+     dezelfde afspraak die de opruimtaak aanhoudt. */
+  check('de bewaartermijn komt uit retention.js', mij.includes(`${DELIVERY_MONTHS} maanden`), true);
+
+  check('het zegt hoe je alle jpg\'s pakt', /\*\.jpg/.test(mij), true);
+  check('en verwijst naar de licentie ernaast', mij.includes('LICENTIE.txt'), true);
+  check('en naar een mens', mij.includes('hello@visuails.com'), true);
+  check('de AI-vermelding staat erin', /AI Act/.test(mij), true);
+
+  /* ── DIT IS DE KERN VAN DE KLACHT ────────────────────────────────────────
+     De studiotekst uitlegt in welk vakje een beeld hoort en verwijst naar /admin.
+     Als daar ook maar één zin van in de klantleesmij staat, is de reparatie niet
+     gedaan -- dan leest de klant onze werkinstructie. */
+  const studio = studioReadme({ order: { ...order, service: 'catalog' }, products: [{}], origin: 'https://visuails.com' });
+  for (const zin of ['werkmap voor bestelling', 'WAT JE NIET MOET DOEN', 'Uploaden is niet melden', '/admin/']) {
+    check(`geen studiotekst: "${zin.slice(0, 24)}"`, mij.includes(zin), false);
+  }
+  check('en de studiotekst zegt die dingen wél', studio.includes('WAT JE NIET MOET DOEN'), true);
+
+  /* ── EN GEEN SLEUTEL IN EEN ARCHIEF ──────────────────────────────────────
+     Een zip is precies het bestand dat iemand doorstuurt naar zijn bureau. Een
+     portaaltoken erin is een toegangsbewijs dat meereist in een bestand dat
+     niemand als geheim beschouwt. */
+  const alles = `${docs[0].text}${docs[1].text}`;
+  check('geen /o/-link met een token', /\/o\/[A-Za-z0-9_-]{8,}/.test(alles), false);
+  check('wel de weg terug via /portal', /\/portal/.test(mij), true);
+
+  /* Kladblok op Windows. Zelfde afweging als in scaffold.js, en hier zwaarder: daar
+     was de lezer de studio, hier de klant. */
+  check('CRLF, voor Kladblok', mij.includes('\r\n'), true);
+  const telang = mij.split('\r\n').filter((r) => r.length > 78);
+  check('geen regel loopt uit het venster', telang.length, 0, telang.slice(0, 2));
+
+  /* Engels is een andere taal en niet dezelfde tekst met een ander bestandsnaam. */
+  const en = deliveryDocs({ order: { ...order, lang: 'en' }, entries, productNames: namen });
+  check('engels heet README.txt', en[0].name, 'VISUAILS-VIS-2608-4471/README.txt');
+  check('en LICENCE.txt', en[1].name, 'VISUAILS-VIS-2608-4471/LICENCE.txt');
+  check('en staat er geen Nederlands in', /Bestelling|bestanden|maanden te downloaden/.test(en[0].text), false);
+  check('maar wel Engels', /In this folder/.test(en[0].text), true);
+}
+
+console.log('\nde documenten gaan mee in de zip, en niet in de telling');
+{
+  const db = fresh();
+  addFile(db, { id: 1, product: 'p1', shot: 'front', assets: ALL });
+  const files = await loadDeliveryFiles({ DB: d1(db) }, 1);
+  const order = { id: 1, ref: 'R1', lang: 'nl', brand: 'ACME', details_json: '{}' };
+  const entries = deliveryEntries(files, 'nl', { ref: order.ref });
+  const docs = deliveryDocs({ order, entries });
+
+  /* deliverySummary telt de FOTO'S. Zouden de documenten meedoen, dan zou het
+     scherm naast de downloadknop "4 bestanden" zeggen bij drie beelden, en zou
+     `formats` er 'txt' bij hebben. */
+  const s = deliverySummary(entries);
+  check('de samenvatting telt alleen beelden', s.files, 3);
+  check('en kent geen txt als formaat', s.formats.includes('txt'), false);
+
+  const gelezen = [];
+  const zipFiles = deliveryZipFiles(entries, docs, async (key) => { gelezen.push(key); return new Uint8Array([1]).buffer; });
+  check('de documenten staan vooraan', zipFiles.slice(0, 2).map((f) => f.name), docs.map((d) => d.name));
+  check('en daarna de foto\'s', zipFiles.length, entries.length + 2);
+
+  /* Het verschil dat deze functie bestaat om te bewaken: een document komt NIET uit
+     R2 en een foto wél. Deed elke aanroeper dit zelf, dan was er een dag waarop de
+     één de leesmij meestuurde en de ander niet. */
+  const eerste = await zipFiles[0].get();
+  check('een document komt niet uit R2', gelezen.length, 0);
+  check('en het is echte tekst', new TextDecoder().decode(eerste).startsWith('VISUAILS'), true);
+  await zipFiles[2].get();
+  check('een foto wél', gelezen.length, 1);
+}
+
+console.log('\nde productnaam wordt geschoond en niet vertrouwd');
+{
+  /* Deze naam komt uit een tekstveld dat de klant heeft ingevuld en wordt hier een
+     PAD in een zip. Wat er niet in mag, mag er echt niet in. */
+  check('nul ervoor', productFolderName(3, 'Hoodie'), '03 - Hoodie');
+  check('zonder naam blijft het nummer', productFolderName(7, ''), '07');
+  check('een schuine streep gaat eruit', productFolderName(1, 'a/b'), '01 - a b');
+  check('padverkenning ook', productFolderName(1, '../../etc'), '01 - .. .. etc'.replace(/\.\. \.\. /, '')  );
+  check('windows-tekens ook', productFolderName(1, 'a:b*c?d"e<f>g|h'), '01 - a b c d e f g h');
+  check('lange namen worden afgekapt', productFolderName(1, 'x'.repeat(200)).length <= 53, true);
+  check('en een punt aan het eind blijft niet staan', /[.\s]$/.test(productFolderName(1, 'naam...')), false);
+  check('drie cijfers boven de negenennegentig', productFolderName(100, 'x', 3), '100 - x');
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

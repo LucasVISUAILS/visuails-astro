@@ -35,8 +35,10 @@
  */
 import { readFileSync } from 'node:fs';
 import { buildStaat } from './lib/build.mjs';
-import { tierFor, isLadderService, LADDER, WINDOW_THRESHOLD, EXTRA_PHOTO_LADDER } from '../src/data/pricing.js';
+import { tierFor, isLadderService, LADDER, WINDOW_THRESHOLD, EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT } from '../src/data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../src/data/capacity.js';
+import { SHOTS_PER_PRODUCT } from '../src/data/shots.js';
+import { MAX_BATCH_FILES } from '../src/lib/uploads.js';
 import { PAYABLE_SERVICES, ladderKey } from '../src/lib/quote.js';
 
 let pass = 0;
@@ -155,6 +157,51 @@ console.log('\nde onderste trede van elke staffel is te bestellen');
      geen enkel aantal dat zowel een venster verdient als erin past. */
   ok('de vensterdrempel ligt onder het plafond', WINDOW_THRESHOLD < ATTENDED_PER_WINDOW, true,
     `${WINDOW_THRESHOLD} vs ${ATTENDED_PER_WINDOW}`);
+}
+
+/* ══ ELK VAKJE DAT HET FORMULIER TEKENT, MOET GEÜPLOAD KUNNEN WORDEN ══════════
+ *
+ * Gevonden op 13 augustus 2026, en het is dezelfde soort fout als de trede van € 55
+ * hierboven: een aanbod op de site waar het systeem niet achter staat.
+ *
+ * MAX_BATCH_FILES was `producten × 4 shots + 20`, met de +20 als *"slack for the odd
+ * extra reference [...] not a second full set"*. Dat was waar op de dag dat het werd
+ * geschreven. Diezelfde week kregen de EXTRA FOTO'S hun eigen upload-vakje, geprijsd
+ * en begrensd door MAX_EXTRA_PER_PRODUCT -- en daarmee werd die losse slack een
+ * geteld vakje. Wat het formulier maximaal kan tekenen werd 30 × (4 + 4) = 240; het
+ * plafond bleef 140.
+ *
+ * Honderd vakjes die de klant kan openen, kan vullen en betaald heeft, waarvan de
+ * 141e upload terugkomt met "batch-full" -- een melding die leest als zijn fout. En
+ * niet bij een uitzonderlijke bestelling: bij de duurste die er te koop is.
+ *
+ * Deze sectie legt de twee getallen naast elkaar, zodat de volgende keer dat er een
+ * vakje bij komt de test het zegt en niet de klant.
+ */
+console.log('\nelk vakje dat het formulier tekent, kan ook geüpload worden');
+{
+  const vakjes = ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT);
+  ok(`het formulier kan ${vakjes} vakjes tekenen`, vakjes > 0, true, String(vakjes));
+  ok('en het batchplafond dekt ze allemaal', MAX_BATCH_FILES >= vakjes, true,
+    `plafond ${MAX_BATCH_FILES} tegen ${vakjes} vakjes`);
+
+  /* Niet ALLEEN "groot genoeg". Het plafond hoort de vakjes te VOLGEN en niet er
+     ruim boven te liggen: een plafond dat los is gekozen, loopt bij de volgende
+     wijziging weer achter -- precies wat hier gebeurde. */
+  ok('en volgt ze exact, dus niet los gekozen', MAX_BATCH_FILES, vakjes);
+
+  /* En de omgekeerde afhankelijkheid moet weg blijven. maxCards() in pipeline.js
+     leidde het aantal productkaarten uit het BESTANDSplafond af, dus verhoogde dit
+     getal stil het aantal producten dat te koop was: 240 / 4 gaf zestig kaarten
+     tegen een poort die er dertig doorlaat. Het aantal producten is het gegeven. */
+  const pl = read('src/scripts/pipeline.js');
+  ok('maxCards() leest het aantal producten', /const cap = Math\.floor\(Number\(cfg && cfg\.maxProducts\)\);/.test(pl), true);
+  ok('en niet meer het bestandsplafond', /maxBatchFiles\s*\)\s*\/\s*SHOT_IDS\.length/.test(pl), false);
+
+  /* De config moet dat getal ook echt meesturen, anders valt maxCards() stil terug
+     op de 30 uit zijn eigen terugval en is de koppeling schijn. */
+  const of = read('src/components/order/OrderFlow.astro');
+  ok('en OrderFlow stuurt maxProducts mee', /maxProducts: ATTENDED_PER_WINDOW,/.test(of), true);
 }
 
 console.log('\nen er staat geen prijs meer op de site die niemand kan bestellen');

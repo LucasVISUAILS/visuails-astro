@@ -53,6 +53,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt } from '../../src/data/pricing.js';
+/* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
+   proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
+   browser. `background` heet hier backgroundById, want `background` is in dit
+   bestand al een woord dat over iets anders gaat. */
+import { background as backgroundById, CUSTOM_ID } from '../../src/data/backgrounds.js';
 import {
   ATTENDED_PER_WINDOW,
   HORIZON_DAYS,
@@ -310,6 +315,38 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const cleaned = vetAnswer(k, v);
     if (cleaned) details[k] = cleaned;
   }
+
+  /*
+   * ═══════════════════════════════════════════════════════════════════════════
+   * DE PROEFVISUAL: ÉÉN VRAAG PER SOORT, OOK IN HET RECORD — 13 AUGUSTUS 2026
+   * ═══════════════════════════════════════════════════════════════════════════
+   *
+   * /test-sample vraagt eerst "catalog of lifestyle?" en daarna precies één
+   * vervolgvraag: bij catalog de achtergrond, bij lifestyle de look. Dat schakelen
+   * gebeurt op de pagina met `:has()` en zonder JavaScript — pipeline.js, dat op
+   * /start syncBackground() doet, staat daar niet.
+   *
+   * MAAR CSS HOUDT NIETS UIT EEN POST. `display: none` verbergt een radio voor de
+   * bezoeker; de browser verstuurt hem onverminderd. Zonder deze opschoning zou
+   * elke lifestyle-proef `background: white` meesturen — de voorgeselecteerde
+   * standaard van een vraag die niemand te zien kreeg — en dan staat er in
+   * details_json, in de studiomail en in de werkmap een achtergrondkleur bij werk
+   * dat helemaal geen achtergrond heeft. Dat is geen schoonheidsfoutje: het is een
+   * antwoord dat de klant niet gegeven heeft, en het is niet van een echt antwoord
+   * te onderscheiden.
+   *
+   * DIT IS DE JUISTE PLEK EN NIET DE PAGINA. Wat hier gebeurt, gebeurt ook als er
+   * met de hand wordt gepost, als iemand het formulier met JavaScript aanpast, of
+   * als er ooit een tweede pagina op dit eindpunt gaat posten. De vorm van het
+   * record hoort bij het eindpunt dat hem opslaat.
+   *
+   * `background_hex` WORDT HIER GEZET en niet in de browser. Bij een echte
+   * bestelling schrijft pipeline.js die waarde; hier kan dat niet, dus wordt hij
+   * uit dezelfde bron afgeleid als de swatches — src/data/backgrounds.js. Zo heeft
+   * een proefbestelling dezelfde vorm als een gewone bestelling, en leest de
+   * werkmap in /admin (die `background_hex || background` doet) er hetzelfde.
+   */
+  if (service === 'test-sample') tidyTestSampleDetails(details);
 
   // ---- subscribe (lead magnet) --------------------------------------------
   if (service === 'subscribe') {
@@ -1600,6 +1637,80 @@ function countOf(raw) {
  * field on every other form behaves exactly as it did.
  */
 const PRODUCT_ANSWER_KEY = /^([a-z]+)_(p[0-9]{1,3})$/;
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE PROEFVISUAL: ÉÉN VRAAG PER SOORT, OOK IN HET RECORD — 13 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * /test-sample vraagt eerst "catalog of lifestyle?" en daarna precies één
+ * vervolgvraag: bij catalog de achtergrond, bij lifestyle de look. Dat schakelen
+ * gebeurt op de pagina met `:has()` en zonder JavaScript — pipeline.js, dat op
+ * /start syncBackground() doet, staat daar niet.
+ *
+ * MAAR CSS HOUDT NIETS UIT EEN POST. `display: none` verbergt een radio voor de
+ * bezoeker; de browser verstuurt hem onverminderd. Zonder deze opschoning zou elke
+ * lifestyle-proef `background: white` meesturen — de voorgeselecteerde standaard
+ * van een vraag die niemand te zien kreeg — en dan staat er in details_json, in de
+ * studiomail en in de werkmap een achtergrondkleur bij werk dat geen achtergrond
+ * heeft. Dat is geen schoonheidsfoutje: het is een antwoord dat de klant niet
+ * gegeven heeft, en het is niet van een echt antwoord te onderscheiden.
+ *
+ * DIT IS DE JUISTE PLEK EN NIET DE PAGINA. Wat hier gebeurt, gebeurt ook als er met
+ * de hand wordt gepost, als iemand het formulier met JavaScript aanpast, of als er
+ * ooit een tweede pagina op dit eindpunt gaat posten. De vorm van het record hoort
+ * bij het eindpunt dat hem opslaat.
+ *
+ * `background_hex` WORDT HIER GEZET en niet in de browser. Bij een echte bestelling
+ * schrijft pipeline.js die waarde; hier kan dat niet, dus wordt hij uit dezelfde
+ * bron afgeleid als de swatches — src/data/backgrounds.js. Zo heeft een
+ * proefbestelling dezelfde vorm als een gewone, en leest de werkmap in /admin (die
+ * `background_hex || background` doet) er hetzelfde.
+ *
+ * WIJZIGT `details` OP ZIJN PLEK en geeft hem ook terug, zodat een test hem in één
+ * uitdrukking kan bekijken. Geëxporteerd om precies die reden: een opschoning die
+ * niemand kan nakijken, is er over een half jaar niet meer.
+ */
+export function tidyTestSampleDetails(details) {
+  const soort = String(details.sample_type || '').toLowerCase();
+
+  if (soort === 'lifestyle') {
+    delete details.background;
+    delete details.background_custom;
+    delete details.background_hex;
+    return details;
+  }
+
+  if (soort !== 'catalog') return details;
+
+  delete details.style;
+
+  const gekozen = String(details.background || '');
+  const eigen = String(details.background_custom || '').trim();
+
+  if (gekozen === CUSTOM_ID) {
+    // Alleen een echte hexwaarde. Wat er anders staat is geen kleur, en een half
+    // ingevuld veld mag niet als gekozen kleur de studio in — dan wordt er tegen
+    // niets gerenderd en niemand weet waartegen.
+    const m = /^#?([0-9a-f]{6})$/i.exec(eigen);
+    if (m) {
+      details.background_hex = `#${m[1].toUpperCase()}`;
+    } else {
+      delete details.background;
+      delete details.background_custom;
+      delete details.background_hex;
+    }
+    return details;
+  }
+
+  // Een aanbevolen kleur: het veld voor de eigen waarde hoort er niet bij, ook niet
+  // als er iets in stond voordat de bezoeker van keuze wisselde.
+  delete details.background_custom;
+  const b = backgroundById(gekozen);
+  if (b) details.background_hex = b.hex;
+  else { delete details.background; delete details.background_hex; }
+  return details;
+}
 
 function vetAnswer(key, value) {
   const orderQ = ORDER_QUESTIONS.find((x) => x.id === key);

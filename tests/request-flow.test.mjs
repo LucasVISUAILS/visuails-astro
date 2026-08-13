@@ -50,6 +50,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { d1, verseDb } from './lib/d1sqlite.mjs';
+import { buildStaat } from './lib/build.mjs';
 import { onRequestGet } from '../functions/api/order-status.js';
 import { tierFor } from '../src/data/pricing.js';
 
@@ -312,6 +313,159 @@ console.log('\n/start/complete vraagt nu ook om een look');
   /* En de achtergrond blijft van toepassing op complete — deze bestelling heeft
      echt een catalog-helft, dus die vraag hoort er ook nog bij te staan. */
   ok("bgApplies('complete') blijft waar", /kind === 'complete' \|\| kind === 'catalog'/.test(pl), true);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   5 · DE PROEFVISUAL VRAAGT ÉÉN VRAAG PER SOORT
+   ════════════════════════════════════════════════════════════════════════════
+
+   Lucas, 13 augustus 2026: *"Test sample form is nog steeds oude form. Dit zou
+   meer hetzelfde moeten zijn als catalog form en als bezoekers lifestyle kiezen
+   moet deze aangepast worden daarop, dus achtergrondkleur optie verdwijnt dan."*
+
+   Wat er stond: eerst "catalog of lifestyle?", en daarna ALTIJD de vier
+   lifestyle-looks, met eronder *"Skip it if you chose catalog above."* Een
+   formulier dat de bezoeker vraagt zelf een vraag over te slaan. En de
+   tegenhanger ontbrak helemaal: wie catalog koos kreeg de achtergrondvraag
+   nergens te zien, terwijl dat op /start de kernvraag van een catalogbestelling
+   is — en de reden staat in backgrounds.js: een merk dat al productfoto's heeft
+   moet de nieuwe ernaast kunnen leggen. Een proef op de verkeerde ondergrond
+   toetst een gok en niet ons werk. */
+
+console.log('\nde proefvisual: catalog krijgt de achtergrond, lifestyle de look');
+{
+  for (const [pad, taal] of [['src/pages/test-sample.astro', 'en'], ['src/pages/nl/test-sample.astro', 'nl']]) {
+    const src = read(pad);
+    ok(`${taal}: het achtergrondblok bestaat`, /class="field ts-when-catalog"/.test(src), true);
+    ok(`${taal}: en het lookblok is voorwaardelijk`, /class="field ts-when-lifestyle"/.test(src), true);
+    ok(`${taal}: de keuze bovenaan schakelt ze`, /form:has\(#ts-type-catalog:checked\) \.ts-when-catalog/.test(src), true);
+    ok(`${taal}: en de andere kant ook`, /form:has\(#ts-type-lifestyle:checked\) \.ts-when-lifestyle/.test(src), true);
+    /* Beide staan uit tot er gekozen is. Zonder deze regel zou één van de twee
+       standaard aan staan, en dan is er weer een vraag die misschien niet over
+       de bezoeker gaat. */
+    ok(`${taal}: en beide staan uit tot er gekozen is`,
+      /\.ts-when-catalog,\s*\n\s*\.ts-when-lifestyle \{ display: none; \}/.test(src), true);
+
+    /* De zin die niet meer nodig is staat in de GERENDERDE pagina getoetst en niet
+       hier: de kop van dit bestand citeert hem met opzet, want die uitleg is de
+       helft van de reparatie. Een test die zijn eigen verantwoording wegpest,
+       maakt de code slechter. Zie het distblok onderaan. */
+
+    /* Geen JavaScript. Dit is geen puurheid: pipeline.js staat niet op deze
+       pagina, en de €1-stroom is het laatste formulier waar een
+       JS-afhankelijkheid in hoort. */
+    ok(`${taal}: er komt geen script bij kijken`, /<script/.test(src), false);
+
+    /* De looks komen uit de bron in plaats van met de hand ingetypt, en ze posten
+       de slug — net als StylePicker op /start/lifestyle. */
+    ok(`${taal}: de looks komen uit styles`, /import \{ styles as styleData \}/.test(src), true);
+    ok(`${taal}: en posten de slug`, /name="style" value=\{s\.slug\}/.test(src), true);
+    ok(`${taal}: 'custom' zit er niet bij`, /filter\(\(s\) => s\.slug !== 'custom'\)/.test(src), true);
+    /* Een ontbrekende tegelfoto valt luidruchtig om in plaats van stil een tegel
+       minder te tonen. Zelfde afspraak als CARDS in StylePicker.astro. */
+    ok(`${taal}: een onbekende stijl gooit`, /throw new Error\(`test-sample: geen tegelfoto/.test(src), true);
+
+    /* En de hexwaarden komen uit backgrounds.js: een swatch die #F7F5F1 laat zien
+       terwijl er #F5F5F5 uitkomt, is een levering die een klant kan meten. */
+    ok(`${taal}: de swatches komen uit backgrounds.js`, /import \{ RECOMMENDED, CUSTOM_ID, DEFAULT_ID/.test(src), true);
+    ok(`${taal}: geen hexwaarde met de hand ingetypt in de markup`,
+      /style=\{`background:\$\{b\.hex\}`\}/.test(src), true);
+  }
+}
+
+console.log('\nen wat er verborgen is, komt niet in het record');
+{
+  /* ── WAAROM DIT DE HELFT VAN DE REPARATIE IS ───────────────────────────────
+     `display: none` verbergt een radio voor de bezoeker; de browser verstuurt hem
+     onverminderd. Zonder de opschoning in /api/order zou elke lifestyle-proef
+     `background: white` meesturen — de voorgeselecteerde standaard van een vraag
+     die niemand te zien kreeg. Dan staat er in details_json, in de studiomail en
+     in de werkmap een achtergrondkleur bij werk dat er geen heeft, en die is niet
+     van een echt antwoord te onderscheiden. */
+  const { tidyTestSampleDetails: net } = await import('../functions/api/order.js');
+  const na = (o) => net({ ...o });
+
+  {
+    const r = na({ sample_type: 'lifestyle', style: 'glow', background: 'white', background_hex: '#FFFFFF' });
+    ok('een lifestyle-proef houdt zijn look', r.style, 'glow');
+    ok('  en verliest de achtergrond', 'background' in r, false);
+    ok('  ook de hexwaarde', 'background_hex' in r, false);
+  }
+
+  {
+    const r = na({ sample_type: 'catalog', style: 'glow', background: 'beige' });
+    ok('een catalogproef verliest de look', 'style' in r, false);
+    ok('  houdt de achtergrond', r.background, 'beige');
+    /* De hexwaarde wordt hier afgeleid en niet in de browser gezet, zodat een
+       proef dezelfde vorm heeft als een gewone bestelling — de werkmap in /admin
+       doet `background_hex || background`. */
+    ok('  en krijgt de hexwaarde uit backgrounds.js', r.background_hex, '#EDE4D8');
+  }
+
+  {
+    const r = na({ sample_type: 'catalog', background: 'custom', background_custom: 'f7f5f1' });
+    ok('een eigen kleur wordt genormaliseerd', r.background_hex, '#F7F5F1');
+    ok('  met een hekje ervoor', /^#[0-9A-F]{6}$/.test(r.background_hex), true);
+  }
+
+  {
+    /* Half ingevuld is geen kleur. Er tegen renderen betekent tegen niets
+       renderen, en dan weet niemand meer waartegen. */
+    const r = na({ sample_type: 'catalog', background: 'custom', background_custom: 'donkerblauw graag' });
+    ok('een kleur die geen hex is verdwijnt helemaal', 'background' in r, false);
+    ok('  en laat geen halve waarde achter', 'background_hex' in r, false);
+  }
+
+  {
+    const r = na({ sample_type: 'catalog', background: 'paars' });
+    ok('een onbekende achtergrond-id verdwijnt ook', 'background' in r, false);
+  }
+
+  {
+    /* Zonder soort verandert er niets. Een oud tabblad dat nog geen sample_type
+       post, mag niet stil zijn antwoorden verliezen. */
+    const r = na({ style: 'glow', background: 'white' });
+    ok('zonder sample_type blijft alles staan', `${r.style}|${r.background}`, 'glow|white');
+  }
+
+  /* En de koppeling: dat de functie bestaat zegt niets zolang de route hem niet
+     aanroept. */
+  const api = read('functions/api/order.js');
+  ok('/api/order roept de opschoning aan',
+    /if \(service === 'test-sample'\) tidyTestSampleDetails\(details\);/.test(api), true);
+  /* Ná de details-lus en niet ervoor: de lus is wat details vult. */
+  ok('  en wel nadat details gevuld is',
+    api.indexOf('if (cleaned) details[k] = cleaned;') < api.indexOf("if (service === 'test-sample') tidyTestSampleDetails(details);"), true);
+}
+
+console.log('\nen de gebouwde pagina laat het ook zien');
+{
+  /* De bron toetsen zegt niet dat Astro het scoped-CSS goed heeft uitgeschreven:
+     `:has()` met een id erin is precies het soort selector waar een bundler een
+     hash op de verkeerde plek kan zetten. Dus wordt de UITVOER bekeken — en
+     overgeslagen als die niet bij de bron hoort, om dezelfde reden als in
+     tests/planning.test.mjs. */
+  const staat = buildStaat(new URL('../dist/test-sample/index.html', import.meta.url));
+  if (!staat.er || staat.oud) {
+    console.log(`      (overgeslagen — ${staat.uitleg})`);
+  } else {
+    for (const p of ['dist/test-sample/index.html', 'dist/nl/test-sample/index.html']) {
+      const html = read(p);
+      ok(`${p}: de :has()-regel staat erin`,
+        /:has\(#ts-type-catalog:checked\) \.ts-when-catalog\[data-astro-cid-[a-z0-9]+\]\{display:block\}/.test(html), true);
+      ok('  de id waar hij naar wijst is niet gehasht',
+        /id="ts-type-catalog"/.test(html), true);
+      ok('  het achtergrondblok is gerenderd', /ts-when-catalog/.test(html), true);
+      ok('  de vier achtergrondkeuzes staan er', (html.match(/name="background"/g) || []).length, 4);
+      ok('  en het veld voor een eigen hexwaarde', /name="background_custom"/.test(html), true);
+      ok('  de looks posten slugs en geen namen', /value="phone-made"/.test(html), true);
+      ok('  en niet meer de weergavenaam', /name="style" value="Phone-made"/.test(html), false);
+      /* De zin die de bezoeker vroeg zelf een vraag over te slaan. In de bron mag
+         hij nog als citaat staan; op de pagina niet meer. */
+      ok('  en de "sla dit over"-zin staat niet meer op de pagina',
+        /Skip it if you chose catalog|Sla dit over als je hierboven catalog koos/.test(html), false);
+    }
+  }
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

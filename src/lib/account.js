@@ -116,7 +116,7 @@ import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.j
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
 // deze twee schermen hadden elk hun eigen query over dezelfde levering en die
 // waren al uit elkaar gelopen.
-import { loadDeliveryFiles, deliveryEntries, deliverySummary, humanBytes } from './delivery.js';
+import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames } from './delivery.js';
 // Aliased on import: this file already has `esc`, `note` and a `p` of its own
 // for the account SCREENS, and the mail template exports the same three names
 // for the mail. Two `p`s in one module is a bug waiting for whichever one gets
@@ -3243,8 +3243,13 @@ async function serveOrderZip(context, customer, orderId) {
   let order;
   let files;
   try {
+    /* `brand`, `name` en `details_json` staan er sinds 13 augustus 2026 bij, voor
+       de leesmij en de licentie in het archief: de eerste noemt het merk en de
+       productnamen die de klant zelf heeft ingetypt, de tweede het merk. Zonder
+       deze drie kolommen heten de mappen weer `01` in plaats van
+       `01 - Zwarte hoodie`. */
     order = await env.DB.prepare(
-      'SELECT id, ref, lang FROM orders WHERE id = ?1 AND customer_id = ?2'
+      'SELECT id, ref, lang, brand, name, details_json FROM orders WHERE id = ?1 AND customer_id = ?2'
     ).bind(orderId, customer.customer_id).first();
     if (!order) return new Response(null, { status: 404, headers: fileHeaders() });
 
@@ -3270,8 +3275,16 @@ async function serveOrderZip(context, customer, orderId) {
 
   if (!files.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
-  const entries = deliveryEntries(files, order.lang === 'en' ? 'en' : 'nl');
+  const lang = order.lang === 'en' ? 'en' : 'nl';
+  const productNames = orderProductNames(order.details_json);
+  const entries = deliveryEntries(files, lang, { ref: order.ref, productNames });
   if (!entries.length) return new Response(null, { status: 404, headers: fileHeaders() });
+
+  /* De twee tekstbestanden. Ze tellen niet mee in de maatcontrole hieronder: samen
+     zijn ze een paar kilobyte, en ze buiten de telling houden betekent dat een
+     bestelling die precies op de grens zit niet ineens een 413 geeft omdat er een
+     leesmij bij is gekomen. */
+  const docs = deliveryDocs({ order, entries, productNames });
 
   // De grens van zip.js, hier gehandhaafd omdat hier de maten bekend zijn. Een
   // 413 met een lege body is eerlijker dan een archief dat pas bij de klant
@@ -3281,13 +3294,10 @@ async function serveOrderZip(context, customer, orderId) {
     return new Response(null, { status: 413, headers: fileHeaders() });
   }
 
-  const stream = zipStream(entries.map((e) => ({
-    name: e.name,
-    get: async () => {
-      const obj = await env.UPLOADS.get(e.key);
-      return obj ? obj.arrayBuffer() : null;
-    },
-  })));
+  const stream = zipStream(deliveryZipFiles(entries, docs, async (key) => {
+    const obj = await env.UPLOADS.get(key);
+    return obj ? obj.arrayBuffer() : null;
+  }));
 
   const headers = new Headers(fileHeaders());
   headers.set('content-type', 'application/zip');

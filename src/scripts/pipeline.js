@@ -1610,13 +1610,32 @@ function shotListText(ids) {
 }
 
 /**
- * The ceiling on cards, derived rather than picked: four shots per product
- * against the batch ceiling is the number of products that could ever be
- * uploaded for in one order. Beyond it the cards would be real and the uploads
- * would not.
+ * The ceiling on cards.
+ *
+ * ── DEZE AFLEIDING STOND OP DE KOP — 13 AUGUSTUS 2026 ───────────────────────
+ *
+ * Hier stond `Math.floor(cfg.maxBatchFiles / SHOT_IDS.length)`, met de uitleg dat
+ * vier shots per product tegen het batchplafond "the number of products that could
+ * ever be uploaded for in one order" oplevert. Dat rekende de goede kant op zolang
+ * een product precies vier bestanden had.
+ *
+ * Het staat er verkeerd om. Het aantal PRODUCTEN is het gegeven — dat is wat de
+ * capaciteitspoort per venster aankan (ATTENDED_PER_WINDOW, hier `maxProducts`) —
+ * en het aantal BESTANDEN volgt daaruit. Omgekeerd rekenen betekent dat het
+ * bestandsplafond stil bepaalt hoeveel producten er te koop zijn.
+ *
+ * Wat dat kostte, bleek toen het bestandsplafond vandaag van 140 naar 240 ging om
+ * de extra foto's te dekken: deze regel bood daarmee ineens 60 productkaarten aan,
+ * het dubbele van wat de agenda kan inplannen. Een formulier dat zestig producten
+ * aanneemt en een poort die er dertig doorlaat — precies de belofte-zonder-dekking
+ * waar /video vandaag ook op is nagekeken.
+ *
+ * Dus: `maxProducts` uit de config, die er al in zat en die ATTENDED_PER_WINDOW is.
+ * De terugval blijft 30 en niet een gedeeld getal, want een ontbrekende config mag
+ * geen ander aanbod opleveren dan een aanwezige.
  */
 function maxCards() {
-  const cap = Math.floor(Number(cfg && cfg.maxBatchFiles) / SHOT_IDS.length);
+  const cap = Math.floor(Number(cfg && cfg.maxProducts));
   return cap > 0 ? cap : 30;
 }
 

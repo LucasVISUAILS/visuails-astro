@@ -41,6 +41,11 @@
 import { isWellFormedToken, mintToken } from './token.js';
 import { SHOTS_PER_PRODUCT, isShotId } from '../data/shots.js';
 import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
+/* De extra foto's hebben sinds 8 augustus 2026 een eigen upload-vakje, dus tellen
+   ze mee in het plafond hieronder. Uit pricing.js en niet overgetypt: dat is ook
+   wat de teller in het formulier begrenst en wat er geprijsd wordt. pricing.js
+   importeert zelf niets, dus dit maakt geen cyclus — shots.js leest hem al zo. */
+import { MAX_EXTRA_PER_PRODUCT } from '../data/pricing.js';
 
 /** Everything staged lives under here. Nothing else may. */
 export const UPLOAD_PREFIX = 'intake';
@@ -58,13 +63,41 @@ export const MAX_FILE_BYTES = 25 * 1024 * 1024;
  *
  * The multiplier is the real one from src/data/shots.js and the product cap is
  * the real one from src/data/capacity.js, so the ceiling moves on its own if
- * either does. The +20 is slack for the odd extra reference — a sizing chart, a
- * mood image, a second detail — not a second full set.
+ * either does.
  *
- * It is still a script stop: 140 files at 25 MB each is a lot of patience for
- * an attacker who gets rate-limited at 40 uploads a minute anyway.
+ * ── EN OP 13 AUGUSTUS 2026 WAS HET ALSNOG TE LAAG ───────────────────────────
+ *
+ * Hier stond `+ 20`, met de uitleg: *"slack for the odd extra reference — a
+ * sizing chart, a mood image, a second detail — not a second full set."* Dat was
+ * waar op de dag dat het geschreven werd. Diezelfde week kregen de EXTRA FOTO'S
+ * hun eigen upload-vakje (zie isExtraShotId in shots.js, 8 augustus: *"een extra
+ * foto toevoegen zou een extra upload vak moeten openen"*), en daarmee werd die
+ * losse slack een geteld, geprijsd en door het formulier getekend vakje.
+ *
+ * Wat het formulier maximaal kan tékenen is sindsdien:
+ *
+ *     30 producten × (4 vaste shots + 4 extra's) = 240 vakjes
+ *
+ * en het plafond stond op 140. Honderd vakjes die de klant kan openen, kan
+ * vullen en betaald heeft, en waarvan de 141e upload terugkomt met `batch-full`.
+ * Niet bij een uitzonderlijke bestelling: bij de duurste die we verkopen. En de
+ * melding zegt "je batch is vol", wat leest als een fout van de klant.
+ *
+ * Dus nu ook de extra's erin, uit dezelfde bron die ze prijst en die het
+ * formulier begrenst. Geen losse slack meer: elk vakje dat getekend kan worden is
+ * geteld, en er is geen vakje dat niet getekend kan worden.
+ *
+ * Het blijft een script-stop: 240 bestanden van 25 MB is veel geduld voor een
+ * aanvaller die toch op veertig uploads per minuut wordt afgeknepen.
+ *
+ * LET OP BIJ HET VERHOGEN. maxCards() in pipeline.js leidde het aantal
+ * productkaarten HIERUIT af (`maxBatchFiles / 4`), dus dit getal verhogen
+ * verdubbelde stil het aantal producten dat het formulier aanbood. Die
+ * afhankelijkheid staat op de kop en is dezelfde dag omgedraaid: het aantal
+ * producten komt uit `cfg.maxProducts`, en het aantal bestanden volgt daaruit.
+ * Zie de noot bij maxCards().
  */
-export const MAX_BATCH_FILES = ATTENDED_PER_WINDOW * SHOTS_PER_PRODUCT + 20;
+export const MAX_BATCH_FILES = ATTENDED_PER_WINDOW * (SHOTS_PER_PRODUCT + MAX_EXTRA_PER_PRODUCT);
 
 /**
  * Extension → the content type we store.

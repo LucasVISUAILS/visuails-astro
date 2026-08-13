@@ -16,6 +16,24 @@ import Layout from '../../layouts/Layout.astro';
 import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
 import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
 import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES } from '../../data/pricing.js';
+/*
+ * ── DIT FORMULIER VROEG TWEE DINGEN DIE NIET BIJ ELKAAR HOORDEN — 13 aug 2026 ─
+ *
+ * Lucas: *"Test sample form is nog steeds oude form. Dit zou meer hetzelfde
+ * moeten zijn als catalog form en als bezoekers lifestyle kiezen moet deze
+ * aangepast worden daarop, dus achtergrondkleur optie verdwijnt dan."*
+ *
+ * Zie de Engelse pagina voor de volledige afweging. Kort: de lookvraag stond er
+ * altijd, met eronder *"Sla dit over als je hierboven catalog koos"* — een
+ * formulier dat de bezoeker vraagt zelf een vraag over te slaan. En de
+ * tegenhanger ontbrak: wie catalog koos kreeg de achtergrondvraag nergens, terwijl
+ * dat op /start de kernvraag van een catalogbestelling is.
+ *
+ * Nu volgt de tweede vraag de eerste, met `:has()` en zonder JavaScript. Wat CSS
+ * niet kan is een veld uit de POST houden; dat gebeurt in functions/api/order.js.
+ */
+import { styles as styleData } from '../../data/styles.nl.js';
+import { RECOMMENDED, CUSTOM_ID, DEFAULT_ID, copy as bgCopy } from '../../data/backgrounds.js';
 
 // De €1 stond op vier plekken ingetypt en de leverstap beloofde
 // "~24 uur" — een cijfer dat de capaciteitspoort nooit heeft goedgekeurd. Het
@@ -32,12 +50,26 @@ const TIMING = turnaround('unattended', 'nl');
 
 // w/h are the intrinsic pixel size of each file in public/img — the .choice
 // tile crops with object-fit, so these only reserve the aspect-ratio box.
-const styles = [
-  { value: 'Phone-made', photo: '/img/lifestyle-phone-made-01.webp', w: 2400, h: 1792 },
-  { value: 'Glow', photo: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400 },
-  { value: 'Flash', photo: '/img/lifestyle-flash-01.webp', w: 928, h: 1152 },
-  { value: 'Dunes', photo: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
-];
+//
+// DE FOTO'S BLIJVEN VAN DEZE PAGINA, de namen niet — zie de Engelse pagina.
+const SAMPLE_LOOK_PHOTO: Record<string, { photo: string; w: number; h: number }> = {
+  'phone-made': { photo: '/img/lifestyle-phone-made-01.webp', w: 2400, h: 1792 },
+  glow: { photo: '/img/lifestyle-glow-01.webp', w: 1340, h: 2400 },
+  flash: { photo: '/img/lifestyle-flash-01.webp', w: 928, h: 1152 },
+  dunes: { photo: '/img/lifestyle-dunes-01.webp', w: 928, h: 1152 },
+};
+/* `custom` valt eruit: dat is ontwerpwerk en een gesprek, en dat is geen belofte
+   die een proef van een euro kan houden. Wie dat wil, komt bij /nl/start/lifestyle
+   uit. Een ontbrekende tegelfoto laat de build luidruchtig omvallen. */
+const looks = styleData
+  .filter((s) => s.slug !== 'custom')
+  .map((s) => {
+    const shot = SAMPLE_LOOK_PHOTO[s.slug];
+    if (!shot) throw new Error(`test-sample: geen tegelfoto voor stijl "${s.slug}". Zet hem in SAMPLE_LOOK_PHOTO of haal hem uit styles.nl.js.`);
+    return { slug: s.slug, name: s.name, ...shot };
+  });
+
+const bgc = bgCopy('nl');
 // Nine of the ten roster headshots were produced at 1195x1600; model-rae.webp
 // is the exception at 800x1071. Assuming one size for the family would have
 // put a wrong box under Rae, so the exception is named.
@@ -199,24 +231,62 @@ const sampleTypes = [
               <div class="choice-grid" role="radiogroup" aria-labelledby="ts-type-h">
                 {sampleTypes.map((t, i) => (
                   <label class="choice">
-                    <input type="radio" name="sample_type" value={t.value} required={i === 0} />
+                    {/* De id's zijn niet decoratief: de CSS onderaan hangt met
+                        :has() aan precies deze twee. */}
+                    <input type="radio" id={`ts-type-${t.value}`} name="sample_type" value={t.value} required={i === 0} />
                     <div class="choice-media"><img src={t.photo} alt={t.alt} loading="lazy" decoding="async" width={t.w} height={t.h} /></div>
                     <div class="choice-label">{t.label}</div>
                   </label>
                 ))}
               </div>
-              <span class="hint" style="margin-top:.3rem">Catalog is een strakke foto van het product op zichzelf. Lifestyle is het product gestyled in een scène, op een model. Wat voor je shop nu het belangrijkst is, is ook wat je zou moeten testen.</span>
+              <span class="hint" style="margin-top:.3rem">Catalog is een strakke foto van het product op zichzelf. Lifestyle is het product gestyled in een scène, op een model. Wat voor je shop nu het belangrijkst is, is ook wat je zou moeten testen — de volgende vraag volgt je keuze.</span>
             </div>
 
-            <div class="field">
-              <p class="ts-group-h" id="ts-style-h">Kies een look</p>
-              <span class="hint" style="margin-bottom:.3rem">Voor een lifestyle-proef. Sla dit over als je hierboven catalog koos — een catalogproef loopt op een egale ondergrond, niet op een van deze looks.</span>
-              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-style-h">
-                {styles.map((s) => (
+            {/* ── CATALOG: DE ACHTERGROND ────────────────────────────────────
+                 Alleen zichtbaar bij catalog. De hexwaarden komen uit
+                 backgrounds.js, want dat is waar de studio tegen rendert. */}
+            <div class="field ts-when-catalog">
+              <p class="ts-group-h" id="ts-bg-h">{bgc.label}</p>
+              <span class="hint" style="margin-bottom:.3rem">{bgc.hint}</span>
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-bg-h">
+                {RECOMMENDED.map((b) => (
                   <label class="choice">
-                    <input type="radio" name="style" value={s.value} />
-                    <div class="choice-media"><img src={s.photo} alt={`${s.value} lifestylestijl`} loading="lazy" decoding="async" width={s.w} height={s.h} /></div>
-                    <div class="choice-label">{s.value}</div>
+                    <input type="radio" name="background" value={b.id} checked={b.id === DEFAULT_ID} />
+                    <div class="choice-media ts-swatch" style={`background:${b.hex}`}></div>
+                    <div class="choice-label">{b.name.nl} <span class="ts-hex">{b.hex}</span></div>
+                  </label>
+                ))}
+                <label class="choice">
+                  <input type="radio" name="background" value={CUSTOM_ID} />
+                  <div class="choice-media ts-swatch ts-swatch-own"></div>
+                  <div class="choice-label">{bgc.customH}</div>
+                </label>
+              </div>
+              <div class="ts-own-hex">
+                <label for="ts-bg-custom">Je hexwaarde</label>
+                <input class="input" type="text" id="ts-bg-custom" name="background_custom" placeholder="#F7F5F1" autocomplete="off" spellcheck="false" />
+                {/* Op /start waarschuwt pipeline.js live bij een donkere eigen
+                    kleur. Live kan hier niet, dus staat die waarschuwing als
+                    vaste tekst — weglaten zou betekenen dat de proef stil op een
+                    ondergrond loopt waarmee Amazon hem niet accepteert. */}
+                <span class="hint">{bgc.customHint} {bgc.warn}</span>
+                <span class="hint">{bgc.matchNote}</span>
+              </div>
+            </div>
+
+            {/* ── LIFESTYLE: DE LOOK ─────────────────────────────────────────
+                 Hier stond "Sla dit over als je hierboven catalog koos". Een
+                 formulier dat vraagt een vraag over te slaan, stelt die vraag te
+                 vaak. Nu staat hij er alleen als hij van toepassing is. */}
+            <div class="field ts-when-lifestyle">
+              <p class="ts-group-h" id="ts-style-h">Kies een look</p>
+              <span class="hint" style="margin-bottom:.3rem">De wereld waarin je product komt. Vier vaste stijlen — dezelfde vier als het lifestyle-werk. Niets ligt vast.</span>
+              <div class="choice-grid" role="radiogroup" aria-labelledby="ts-style-h">
+                {looks.map((s) => (
+                  <label class="choice">
+                    <input type="radio" name="style" value={s.slug} />
+                    <div class="choice-media"><img src={s.photo} alt={`${s.name} lifestylestijl`} loading="lazy" decoding="async" width={s.w} height={s.h} /></div>
+                    <div class="choice-label">{s.name}</div>
                   </label>
                 ))}
               </div>
@@ -392,6 +462,30 @@ const sampleTypes = [
   .choice .mono-av small { position: absolute; bottom: 8px; font-size: 0.58rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-family: var(--font-body); font-style: normal; }
   /* .dropzone / :hover are global; the icon inside it is only on this page. */
   .dropzone svg { width: 30px; height: 30px; margin: 0 auto 0.6rem; color: var(--accent-bright); }
+  /* ── DE TWEEDE VRAAG VOLGT DE EERSTE ─────────────────────────────────────
+     Geen JavaScript: pipeline.js staat niet op deze pagina. `:has()` doet dit
+     native, en deze pagina gebruikt het al voor het vinkje op een gekozen kaart.
+     Beide staan uit tot er gekozen is — een achtergrondvraag die er al staat
+     voordat iemand "catalog" zei, is dezelfde fout als de lookvraag bij een
+     catalogproef. */
+  .ts-when-catalog,
+  .ts-when-lifestyle { display: none; }
+  form:has(#ts-type-catalog:checked) .ts-when-catalog { display: block; }
+  form:has(#ts-type-lifestyle:checked) .ts-when-lifestyle { display: block; }
+
+  .ts-own-hex { display: none; margin-top: .9rem; }
+  .ts-own-hex label { display: block; margin-bottom: .35rem; }
+  .ts-own-hex .input { max-width: 12rem; font-variant-numeric: tabular-nums; }
+  .ts-own-hex .hint { display: block; margin-top: .45rem; }
+  .field:has(input[name="background"][value="custom"]:checked) .ts-own-hex { display: block; }
+
+  .ts-swatch { border: 1px solid var(--line-strong); }
+  .ts-swatch-own {
+    background:
+      linear-gradient(135deg, #FFFFFF 0 33%, #EDE4D8 33% 66%, #2A2A2A 66% 100%);
+  }
+  .ts-hex { color: var(--ink-3); font-variant-numeric: tabular-nums; font-weight: 400; }
+
   .progress { height: 3px; background: var(--surface-2); overflow: hidden; margin-bottom: 1.6rem; }
   .progress > i { display: block; height: 100%; width: 100%; transform-origin: left; background: var(--accent); transition: transform var(--dur-1) var(--ease); }
   .chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }

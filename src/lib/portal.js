@@ -75,7 +75,7 @@ import { offsitePage } from './offsite.js';
 // Dezelfde bouwer als VISUAILS Studio gebruikt. Zie de kop van delivery.js: dit
 // portaal had helemaal geen archief, en de query's van de twee schermen waren al
 // uit elkaar gelopen op superseded_at.
-import { loadDeliveryFiles, deliveryEntries, deliverySummary, humanBytes } from './delivery.js';
+import { loadDeliveryFiles, deliveryEntries, deliveryDocs, deliveryZipFiles, deliverySummary, humanBytes, orderProductNames } from './delivery.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
@@ -642,6 +642,12 @@ async function loadOrder(env, token) {
             o.ref, o.service, o.status, o.tier, o.lang,
             o.product_count, o.window_start, o.window_end, o.closed_at,
             o.customer_id,
+            -- brand, name en details_json staan er sinds 13 augustus 2026 bij voor
+            -- de leesmij en de licentie in het archief. Zonder details_json heten de
+            -- productmappen '01' in plaats van '01 - Zwarte hoodie', en dan geeft de
+            -- gemailde link een ANDERE map dan het dashboard -- precies de
+            -- constructie waar de kop van delivery.js over gaat.
+            o.brand, o.name, o.details_json,
             -- Ingetrokken revisierechten hangen aan de KLANT en werden hier niet
             -- gelezen. Zolang dit scherm alleen tier 1 knoppen gaf viel dat niet
             -- op naast account.js, dat er wél op controleert; sinds 7 augustus
@@ -1084,7 +1090,8 @@ async function serveOrderFolder(context, order, lang) {
   }
   if (!files.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
-  const entries = deliveryEntries(files, lang);
+  const productNames = orderProductNames(order.details_json);
+  const entries = deliveryEntries(files, lang, { ref: order.ref, productNames });
   if (!entries.length) return new Response(null, { status: 404, headers: fileHeaders() });
 
   const total = entries.reduce((n, e) => n + (e.bytes || 0), 0);
@@ -1092,13 +1099,20 @@ async function serveOrderFolder(context, order, lang) {
     return new Response(null, { status: 413, headers: fileHeaders() });
   }
 
-  const stream = zipStream(entries.map((e) => ({
-    name: e.name,
-    get: async () => {
-      const obj = await env.UPLOADS.get(e.key);
-      return obj ? obj.arrayBuffer() : null;
-    },
-  })));
+  /* ── GEEN TOKEN IN EEN TEKSTBESTAND ───────────────────────────────────────
+     De eerste versie hiervan zette de portaallink in de leesmij, zodat wie via de
+     mail binnenkomt de revisieknop terugvindt. Dat is een verkeerde ruil: die link
+     IS de sleutel tot deze bestelling, en een zip is precies het soort bestand dat
+     iemand doorstuurt naar zijn bureau of zijn leverancier. Dan reist het
+     toegangsbewijs mee in een bestand dat niemand als geheim beschouwt.
+     De leesmij verwijst dus naar /portal, waar de klant zelf om een verse link
+     vraagt. Eén klik meer, en geen sleutel in een archief. */
+  const docs = deliveryDocs({ order: { ...order, lang }, entries, productNames });
+
+  const stream = zipStream(deliveryZipFiles(entries, docs, async (key) => {
+    const obj = await env.UPLOADS.get(key);
+    return obj ? obj.arrayBuffer() : null;
+  }));
 
   const headers = new Headers(fileHeaders());
   headers.set('content-type', 'application/zip');
