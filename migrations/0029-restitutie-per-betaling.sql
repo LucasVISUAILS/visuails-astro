@@ -1,0 +1,57 @@
+-- VISUAILS — een terugbetaling hoort bij de BETALING waar hij vandaan komt.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAT ER MIS WAS, EN WAAROM HET ALLEEN MET GELD MISGING
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- 14 augustus 2026. `orders.refunded_cents` bestaat sinds migratie 0019 en de noot
+-- daar zegt het met zoveel woorden: *"On the ORDER, not as a second payments row,
+-- so UNIQUE(provider, external_id) keeps doing its job."* Dat was een goede keuze
+-- voor het probleem dat toen speelde — een teruggekomen webhook die als dubbele
+-- betaling werd weggegooid.
+--
+-- Maar de webhook vergelijkt `payment.amountRefunded` — een lopend totaal PER
+-- BETALING bij Mollie — met `orders.refunded_cents`, dat per ORDER is. Zolang er
+-- één betaling per bestelling is, zijn die twee getallen hetzelfde en klopt alles.
+--
+-- ── TWEE BETALINGEN OP ÉÉN BESTELLING IS GEEN ONGELUK ────────────────────────
+--
+-- Het is de normale gang van zaken. De bevestigingsmail draagt een betaallink, en
+-- handleOrderPay() in src/lib/account.js maakt er nog één zodra de klant op "Nu
+-- betalen" drukt — er is geen controle op een al openstaande betaling, alleen op
+-- `payment_status = 'unpaid'`. Twee levende checkoutlinks dus, en een klant die ze
+-- allebei afrondt heeft twee keer betaald.
+--
+-- Wat er dan gebeurde bij het terugstorten van die dubbele:
+--
+--   · `amountRefunded` van betaling B (€ 1101,10) werd vergeleken met
+--     `orders.refunded_cents` (0), was groter, dus geboekt;
+--   · `full` werd getoetst tegen `cents` — het bedrag van BETALING B — en niet
+--     tegen `orders.total_cents`, terwijl die kolom wél werd opgehaald;
+--   · dus: `payment_status = 'refunded'` en een VOLLEDIGE creditnota tegenover de
+--     factuur van betaling A, die niet is teruggestort.
+--
+-- Netto omzet nul op een bestelling die één keer betaald, geleverd en correct
+-- terugbetaald is. En de spiegel is even erg: staat `refunded_cents` eenmaal op
+-- het bedrag van de dubbele, dan komt een échte deelrestitutie op A binnen met
+-- `amountRefunded < known`, slaat het hele blok over, en wordt nooit geboekt.
+--
+-- ══════════════════════════════════════════════════════════════════════════════
+-- WAAROM EEN KOLOM EN NIET EEN SOM UIT raw_payload
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- `payments.raw_payload` draagt de hele webhookbody, dus het getal staat er al in.
+-- Het eruit halen zou betekenen: elke rij van de bestelling parsen, per rij hopen
+-- dat het veld erin staat, en dat bij elke aflevering opnieuw. Een kolom is één
+-- getal op de plek waar het hoort, hij is te sommeren in SQL, en hij is te lezen
+-- zonder JSON. Voor geld is dat het verschil tussen een boeking en een reconstructie.
+--
+-- `orders.refunded_cents` BLIJFT, en wordt vanaf nu de SOM van deze kolom over de
+-- betalingen van die bestelling. Twee plekken met hetzelfde getal is hier geen
+-- duplicatie maar de gebruikelijke boekhoudkundige vorm: de regel en het totaal.
+-- Elke lezer van het totaal — het dashboard, de creditnota, de facturen — blijft
+-- werken zonder één regel te veranderen.
+--
+-- NOT NULL DEFAULT 0, zoals 0019. Elke bestaande rij is een betaling waarvan wij
+-- weten dat er niets van terug is; dat is geen aanname maar wat er staat.
+ALTER TABLE payments ADD COLUMN refunded_cents INTEGER NOT NULL DEFAULT 0;

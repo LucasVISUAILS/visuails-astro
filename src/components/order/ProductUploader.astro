@@ -586,6 +586,39 @@ const hint = lang === 'nl'
     display: flex; flex-direction: column; gap: .3rem;
     min-width: 0;
   }
+
+  /* ── HET PLUSJE: NOG EEN FOTO, GRATIS — 13 augustus 2026 ──────────────────
+     Lucas: *"een plusje naast de 4 aanbevolen foto's"*, en dat is letterlijk waar
+     hij staat: als vijfde cel van hetzelfde raster, in dezelfde maat als de vier
+     ernaast. Een knop erboven of eronder zou een nieuwe vraag lijken; hier leest
+     hij als "en dit vakje mag er ook nog bij".
+
+     ZACHTER DAN EEN UPLOADVAK, want dit is een aanbod en geen verzoek. Dunnere
+     rand, geen streepjes: de streepjesrand betekent op deze kaart "hier hoort een
+     foto en die is er nog niet", en dat is precies wat dit NIET is. */
+  .pu-cards :global(.pu-ref-add) {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .25rem;
+    width: 100%; min-height: 96px;
+    padding: .6rem .4rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: none;
+    color: var(--ink-3);
+    font: inherit; font-size: .78rem; line-height: 1.3; text-align: center;
+    cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  }
+  .pu-cards :global(.pu-ref-add:hover) { border-color: var(--accent-line); color: var(--ink-2); }
+  .pu-cards :global(.pu-ref-add:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .pu-cards :global(.pu-ref-plus) { font-size: 1.4rem; line-height: 1; font-weight: 400; }
+  /* De uitleg loopt over de HELE rij en niet onder het plusje: "je krijgt nog
+     steeds 4 beelden" is de zin die de verwachting recht zet, en in een kolom van
+     een kwart breed wordt hij zes regels die niemand leest. */
+  .pu-cards :global(.pu-ref-hint) {
+    grid-column: 1 / -1;
+    font-size: .74rem; color: var(--ink-3); line-height: 1.4;
+  }
   .pu-cards :global(.pu-slot-btn) {
     position: relative;
     display: flex; flex-direction: column; align-items: center; justify-content: center;

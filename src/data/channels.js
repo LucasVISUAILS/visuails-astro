@@ -32,10 +32,28 @@
 // is — it is specifically the AI-generated model view that is unsettled.
 //
 // FORMAT IS THE QUIET ONE. Zalando accepts JPG only and Amazon does not take
-// webp either. Since we convert to webp routinely — and that conversion is
-// what strips the provenance tag, see scripts/tag-delivery.mjs — a customer
-// selling on a marketplace should be delivered jpg. `formats` carries that so
-// the studio reads it off the order instead of remembering it.
+// webp either, so a customer selling on a marketplace should be delivered jpg.
+// `formats` carries that so the studio reads it off the order instead of
+// remembering it.
+//
+// ── EN DE HERKOMSTTAG IS GEEN REDEN MEER — 14 AUGUSTUS 2026 ──────────────────
+//
+// Hier stond: "and that conversion is what strips the provenance tag", en op
+// grond daarvan stonden er drie zinnen in dit bestand die de klant vertelden dat
+// onze webp geen AI-vermelding draagt. Dat was waar tot 9 augustus 2026 en is het
+// sindsdien niet meer: scripts/deliver.mjs tagt ná de conversie, in alle drie de
+// formaten, en scripts/tag-delivery.mjs draagt de kop "WEBP IS INCLUDED ON
+// PURPOSE" met de meting erbij — een getagde webp krijgt VP8X- en XMP-chunks en
+// decodeert gewoon.
+//
+// De omzetting gooit dus weg wat de MODELLEVERANCIER erin zette, en wij zetten er
+// daarna onze eigen IPTC DigitalSourceType in. Dat is precies wat /ai-act §6 aan
+// de klant belooft, in beide talen. Deze drie zinnen zeiden het omgekeerde, op
+// het scherm waar iemand zijn bestelling plaatst — en dan is de juridische pagina
+// de plek waar hij ontdekt dat wij het zelf niet eens zijn.
+//
+// DEZE NOOT STAAT HIER OMDAT DE COPY UIT DE REDENERING VOLGT. Wie hem opnieuw
+// leest en "de conversie sloopt de tag" ziet staan, schrijft de foute zin terug.
 
 /**
  * Ordered as a Dutch brand meets them: the two big NL marketplaces, the big
@@ -123,8 +141,8 @@ export const CHANNELS = [
     modelShotRisk: false,
     formats: ['jpg', 'png', 'webp'],
     note: {
-      en: 'No background rule, but the AI disclosure has to be in the file: Google requires the IPTC DigitalSourceType property and says not to strip it. Our jpg and png deliveries carry it; a webp does not, because the conversion drops it — so take the jpg for this channel.',
-      nl: 'Geen achtergrondregel, maar de AI-vermelding moet ín het bestand zitten: Google vereist de IPTC-eigenschap DigitalSourceType en zegt die niet te verwijderen. Onze jpg- en png-bestanden dragen hem; een webp niet, omdat de conversie hem weggooit — neem voor dit kanaal dus de jpg.',
+      en: 'No background rule, but the AI disclosure has to be in the file: Google requires the IPTC DigitalSourceType property and says not to strip it. Every format we deliver carries it — jpg, png and webp alike — so whichever one you upload is fine. Keep it in the file when you re-export.',
+      nl: 'Geen achtergrondregel, maar de AI-vermelding moet ín het bestand zitten: Google vereist de IPTC-eigenschap DigitalSourceType en zegt die niet te verwijderen. Elk formaat dat wij leveren draagt hem — jpg, png én webp — dus welke je ook uploadt is goed. Houd hem er wel in als je zelf opnieuw exporteert.',
     },
   },
 ];
@@ -154,7 +172,7 @@ export const COPY = {
     riskH: 'About Zalando and the on-model shot',
     risk: 'Zalando asks for model views photographed with a real person. Our on-model shot is generated, so we cannot promise it will be accepted as a compliant model view — the packshots are a different matter and meet their spec. If Zalando is where this range lives, use our images for the pack views and talk to us before you count on the model one.',
     formatH: 'You will get jpg',
-    format: 'Zalando takes JPG only and Amazon does not accept webp, so a marketplace order is delivered as jpg rather than webp. That also keeps the AI disclosure inside the file, which webp conversion strips.',
+    format: 'Zalando takes JPG only and Amazon does not accept webp, so a marketplace order is delivered as jpg rather than webp. The AI disclosure is in every format we deliver, so that part costs you nothing either way.',
     orderH: 'Which image goes first',
     order: 'bol allows no model on the main image, and Amazon only allows one there for apparel. This costs you nothing: the on-model shot stays in your set, it simply belongs among the additional images. Lead with the front packshot, then the back, the close-up and the on-model shot behind it.',
   },
@@ -169,7 +187,7 @@ export const COPY = {
     riskH: 'Over Zalando en de on-model shot',
     risk: 'Zalando vraagt om modelbeelden die met een echte persoon zijn gefotografeerd. Onze on-model shot is gegenereerd, dus we kunnen niet beloven dat die als geldig modelbeeld wordt geaccepteerd — de packshots zijn een ander verhaal en voldoen wél aan hun eisen. Verkoop je op Zalando, gebruik onze beelden dan voor de packviews en overleg met ons voordat je op de modelfoto rekent.',
     formatH: 'Je krijgt jpg',
-    format: 'Zalando accepteert alleen JPG en Amazon neemt geen webp, dus een marktplaatsbestelling wordt als jpg geleverd in plaats van webp. Daarmee blijft de AI-vermelding ook in het bestand zitten, die webp-omzetting eruit haalt.',
+    format: 'Zalando accepteert alleen JPG en Amazon neemt geen webp, dus een marktplaatsbestelling wordt als jpg geleverd in plaats van webp. De AI-vermelding zit in elk formaat dat wij leveren, dus dát scheelt niets.',
     orderH: 'Welk beeld vooraan hoort',
     order: 'bol staat geen model op de hoofdafbeelding toe, en Amazon alleen bij kleding. Dat kost je niets: de on-model shot blijft gewoon in je set, hij hoort alleen bij de extra afbeeldingen. Zet de voorkant-packshot vooraan, en daarachter de achterkant, de close-up en de on-model shot.',
   },

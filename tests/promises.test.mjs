@@ -300,6 +300,35 @@ console.log('\n/ai-act §6: de twee talen beweren hetzelfde');
     check(`${lang}: en dat de zichtbare vermelding telt`,
       /(disclosure that counts|vermelding die telt)/i.test(part), true);
   }
+
+  /* ── EN HET BESTELFORMULIER ZEGT NIET HET OMGEKEERDE — 14 AUGUSTUS 2026 ────
+   *
+   * Deze sectie bewaakte alleen /ai-act, en dat is de pagina die het GOED had.
+   * src/data/channels.js vertelde ondertussen elke klant die een marktplaats of
+   * Google Shopping aanvinkte dat onze webp de AI-vermelding NIET draagt — op
+   * drie plekken: de Google-note, `COPY.format` in beide talen, en de redenering
+   * in de bestandskop die de foute zin bij de volgende bewerking terugschrijft.
+   *
+   * Die zin was waar tot 9 augustus 2026. Sindsdien tagt scripts/deliver.mjs ná
+   * de conversie, in alle drie de formaten, en tag-delivery.mjs draagt de meting:
+   * een getagde webp krijgt VP8X- en XMP-chunks en decodeert gewoon.
+   *
+   * Wat dat een klant kostte: wie op Google Shopping verkoopt, las in het
+   * bestelformulier dat de webp de eigenschap mist die Google eist, gooide elke
+   * webp weg en uploadde de zwaardere jpg — op advies dat onwaar was. En las
+   * daarna op /ai-act het omgekeerde, op de pagina die er precies voor bestaat
+   * om te zeggen wat wij wel en niet beweren over AI-herkomst.
+   *
+   * De toets kijkt naar de BEWERING en niet naar een formulering: nergens in dat
+   * bestand mag nog staan dat de webp hem niet draagt of dat de omzetting hem
+   * bij ons weghaalt. */
+  const ch = read('src/data/channels.js');
+  check('channels.js beweert nergens dat onze webp de tag mist',
+    /(a webp does not|webp niet, omdat)/i.test(ch), false);
+  check('en nergens dat de omzetting hem bij ons weghaalt',
+    /(which webp conversion strips|die webp-omzetting eruit haalt)/i.test(ch), false);
+  check('de Google-note zegt dat elk formaat hem draagt',
+    /(Every format we deliver carries it|Elk formaat dat wij leveren draagt hem)/.test(ch), true);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -405,6 +434,24 @@ console.log('\neen onbetaalde reservering blokkeert de agenda niet voor altijd')
   const cap = read('functions/api/capacity.js');
   check('de capaciteitsquery leest window_expires_at', /window_expires_at <= datetime\('now'\)/.test(cap), true);
   check('en alleen bij onbetaald', /COALESCE\(payment_status, 'unpaid'\) = 'unpaid'/.test(cap), true);
+
+  /* ── EN DE BOEKINGSPOORT LEEST HEM OOK — 14 AUGUSTUS 2026 ──────────────────
+   *
+   * Deze toets keek alleen naar capacity.js, en dat was precies de helft. De
+   * kop van readCalendar() in functions/api/order.js beloofde de query van
+   * capacity.js "deliberately and exactly" te spiegelen, en deed dat drie van de
+   * vier filters lang: de vervalclausule ontbrak. De pagina bood een dag dus aan
+   * en het endpoint weigerde hem, met een banner die zei dat het venster net weg
+   * was — en de bestelling werd op dat pad niet weggeschreven.
+   *
+   * Twee bestanden en geen gedeelde module, want het zijn twee Functions. Dus is
+   * dit de plek waar ze aan elkaar gehouden worden: allebei dezelfde twee
+   * regels, woordelijk. */
+  const ord = read('functions/api/order.js');
+  check('de boekingspoort leest window_expires_at ook',
+    /window_expires_at <= datetime\('now'\)/.test(ord), true);
+  check('en ook daar alleen bij onbetaald',
+    /COALESCE\(payment_status, 'unpaid'\) = 'unpaid'/.test(ord), true);
 
   const cron = read('cron/index.js');
   check('de cron geeft de reservering ook echt vrij',

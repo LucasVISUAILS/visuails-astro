@@ -40,6 +40,7 @@ import { createServer } from 'node:http';
 import { join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { buildStaat } from './lib/build.mjs';
 
 let pass = 0, fail = 0;
 const check = (name, actual, expected) => {
@@ -48,8 +49,14 @@ const check = (name, actual, expected) => {
   console.log(`${ok ? ' ok  ' : 'FAIL '} ${String(name).padEnd(58)} ${ok ? '' : `expected ${JSON.stringify(expected)} got ${JSON.stringify(actual)}`}`);
 };
 
-if (!existsSync(new URL('../dist/index.html', import.meta.url))) {
-  console.log('geen build gevonden — draai eerst npm run build');
+/* Bestaan is niet hetzelfde als kloppen — zie de noot bij dezelfde reparatie in
+   tests/upload-retry.test.mjs. Een bundel van twee dagen oud draagt de code van
+   twee dagen geleden, en dan gaat deze toets over een pagina die niet meer bestaat.
+   Hier BREEKT hij af in plaats van over te slaan, want een toegankelijkheidstoets
+   die stilletjes niets doet, is een toets waarvan je denkt dat hij groen was. */
+const staat = buildStaat(new URL('../dist/index.html', import.meta.url));
+if (!staat.er || staat.oud) {
+  console.log(`geen bruikbare build — ${staat.uitleg}`);
   process.exit(1);
 }
 

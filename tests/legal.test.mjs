@@ -554,5 +554,77 @@ console.log('\nen er staat geen modelnaam op een juridische pagina');
   ok('NL idem', /Welk model, dat zeggen we niet/i.test(PRIV.nl), true);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE COOKIEVERKLARING NOEMT ZICHZELF VOLLEDIG, DUS DAT MOET HIJ OOK ZIJN
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * /cookie-policy zegt letterlijk *"here they are in full. This is the complete
+ * list"* en sluit af met *"Dat zijn ze alle vier."* Dat is een sterkere belofte
+ * dan de meeste cookieverklaringen doen, en het is de goede keuze — maar hij is
+ * alleen iets waard als hij klopt.
+ *
+ * OP 14 AUGUSTUS 2026 KLOPTE HIJ NIET. `vis_lang` ontbrak: die wordt gezet door
+ * de taalschakelaar in de zijbalk van VISUAILS Studio (account.js), staat een
+ * jaar op het apparaat, en kwam op geen enkele juridische pagina voor. En
+ * `vis_account` stond beschreven als *"verloopt met de sessie"* terwijl
+ * setSessionCookie() een Max-Age van dertig dagen schrijft.
+ *
+ * DEZE TOETS LEEST DE CODE EN NIET EEN LIJSTJE. Elke `naam=` die als Set-Cookie
+ * de deur uit gaat, moet op beide pagina's staan. Een cookie erbij in account.js
+ * of portal.js maakt deze toets rood, en dat is precies het moment waarop de
+ * verklaring bijgewerkt hoort te worden — niet bij de volgende audit.
+ */
+console.log('\nde cookieverklaring noemt elke cookie die de code zet');
+{
+  const bronnen = ['src/lib/account.js', 'src/lib/admin.js', 'src/lib/portal.js', 'src/scripts/consent.js'];
+  const namen = new Set();
+  for (const b of bronnen) {
+    const src = read(b);
+    /* TWEE VORMEN, want de code schrijft ze op twee manieren, en een toets die
+       er maar één kent, is een toets die drie van de vier cookies mist — precies
+       wat de eerste versie hiervan deed.
+
+         · rechtstreeks in de header: `vis_lang=nl; Max-Age=…`
+         · via een constante:         `const SESSION_COOKIE = 'vis_account'`
+
+       Alleen namen die met `vis_` beginnen. Dat is de afspraak van dit project
+       en het houdt de toets uit de buurt van elke andere string. */
+    for (const m of src.matchAll(/(vis_[a-z_]+)=[^;'"`\s]*;\s*(Max-Age|Path|Expires|HttpOnly)/gi)) {
+      namen.add(m[1]);
+    }
+    for (const m of src.matchAll(/['"`](vis_[a-z_]+)['"`]/g)) {
+      namen.add(m[1]);
+    }
+  }
+  ok('er worden cookies gezet om te noemen', namen.size > 0, true, [...namen].join(' '));
+
+  for (const pad of ['src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro']) {
+    const pagina = read(pad);
+    const kort = pad.replace('src/pages/', '');
+    for (const naam of [...namen].sort()) {
+      ok(`${kort} noemt ${naam}`, pagina.includes(naam), true);
+    }
+    /* En het TELWOORD klopt met het aantal. "Dat zijn ze alle drie" onder een
+       lijst van vier is precies de fout die deze sectie ving. */
+    const woord = { 2: '(two|twee)', 3: '(three|drie)', 4: '(four|vier)', 5: '(five|vijf)' }[namen.size];
+    if (woord) {
+      ok(`${kort} telt er ${namen.size}`, new RegExp(`all ${woord}|alle ${woord}`, 'i').test(pagina), true);
+    }
+  }
+
+  /* En de levensduur van de sessiecookie is geen sessie. Het getal komt uit de
+     code, zodat een gewijzigde TTL hier omvalt in plaats van stil te verlopen. */
+  const acc = read('src/lib/account.js');
+  const dagen = Number((acc.match(/const ACCOUNT_SESSION_TTL_DAYS = (\d+)/) || [])[1] || 0);
+  ok('de inlogcookie heeft een echte levensduur in dagen', dagen > 0, true, dagen);
+  for (const pad of ['src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro']) {
+    const pagina = read(pad);
+    ok(`${pad.replace('src/pages/', '')} noemt die ${dagen} dagen bij vis_account`,
+      new RegExp(`vis_account[\\s\\S]{0,400}?${dagen} (days|dagen)`).test(pagina), true);
+    ok('  en noemt hem geen sessiecookie meer',
+      /vis_account[\s\S]{0,400}?(Expires with the session|Verloopt met de sessie)/.test(pagina), false);
+  }
+}
+
 console.log(`\n${pass}/${pass + fail} geslaagd`);
 if (fail) process.exit(1);

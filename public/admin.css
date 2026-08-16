@@ -775,3 +775,19 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 /* De foutpagina heeft geen kaart om zich heen, dus zijn enige ademruimte komt
    van hier. */
 .error.is-page { margin-top: 2rem; }
+
+/* ── DE AANBEVELINGEN — 14 augustus 2026 ──────────────────────────────────────
+   Zie de kop van renderTestimonials() in src/lib/admin.js voor waarom dit scherm
+   er tot vandaag niet was. De tekst van een klant is hier het onderwerp en niet
+   een veldwaarde tussen andere veldwaardes, dus krijgt hij de ruimte van een
+   citaat: een streep ervoor, iets groter, en een regelafstand waarop je vier
+   zinnen achter elkaar leest zonder je plek kwijt te raken. */
+.tm-text {
+  margin: .7rem 0 .9rem;
+  padding: .1rem 0 .1rem .9rem;
+  border-left: 2px solid var(--line-strong);
+  font-size: .96rem; line-height: 1.6; color: var(--ink);
+  white-space: pre-wrap;      /* de klant heeft zijn eigen alinea's gezet */
+  overflow-wrap: anywhere;    /* en soms plakt hij er een url in */
+  max-width: 68ch;
+}

@@ -21,8 +21,9 @@
  * vergeten: de sitemap, en het paar EN/NL.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { buildStaat } from './lib/build.mjs';
+import { buildGraph } from '../src/data/schema.js';
 import { ui } from '../src/i18n/ui.js';
 
 let pass = 0, fail = 0;
@@ -441,6 +442,111 @@ console.log('\nhet vraagteken naast hooks');
   check('beide talen hebben een voetregel', feet.length, 2);
   check('en die zegt dat de prijs nog niet vastligt',
     feet.every((f) => /(not settled|niet vast)/.test(f)), true);
+}
+
+/* ══ DE META-OMSCHRIJVING VAN ELKE PAGINA ══════════════════════════════════════
+ *
+ * Boven ongeveer 160 tekens kapt Google de omschrijving af met een beletselteken.
+ * Dat is geen ramp, maar het betekent wel dat de LAATSTE zin — meestal de zin die
+ * zegt wat je moet doen — nooit gelezen wordt, op precies de plek waar iemand
+ * kiest of hij klikt.
+ *
+ * OP DE GEBOUWDE PAGINA'S EN NIET OP DE BRON, om twee redenen. De bron kent
+ * omschrijvingen die uit een variabele komen (zie /start) en die kan een regexp op
+ * .astro niet meten. En dit is een vraag over wat er in de zoekresultaten
+ * terechtkomt, dus hoort hij gesteld te worden aan wat er wordt uitgeserveerd.
+ *
+ * 160 EN GEEN 155 OF 165. Google publiceert geen grens — hij is in pixels en niet
+ * in tekens — dus elk getal hier is een afspraak en geen wet. 160 is het getal
+ * waar de vakliteratuur op uitkomt en, belangrijker, het getal waar de pagina's
+ * van deze site vandaag onder zitten. Een grens die je vandaag al overtreedt, is
+ * een test die je morgen uitzet.
+ */
+/* ══ HET KRUIMELPAD ════════════════════════════════════════════════════════════
+ *
+ * Zonder BreadcrumbList toont Google het kale pad van de url onder de titel; met,
+ * toont hij de namen die wij geven. Deze site heeft twee niveaus en had er geen.
+ *
+ * WAT HIER BEWAAKT WORDT is niet dat elke pagina er een heeft — een paar hebben
+ * hem met opzet niet — maar dat er nooit een VERZONNEN naam in staat. Zie de kop
+ * bij CRUMBS in src/data/schema.js: een kruimelpad met een gegokt woord erin komt
+ * in het zoekresultaat terecht, en dan is het ons woord dat niet klopt.
+ */
+console.log('\n══ het kruimelpad wijst naar echte pagina\'s met echte namen');
+{
+  const paden = [
+    ['/lifestyle/glow', 'nl', 'https://visuails.com/nl/lifestyle/glow', 3],
+    ['/lifestyle/glow', 'en', 'https://visuails.com/lifestyle/glow', 3],
+    ['/pricing', 'en', 'https://visuails.com/pricing', 2],
+    ['/start/catalog', 'nl', 'https://visuails.com/nl/start/catalog', 3],
+  ];
+  for (const [pad, taal, url, diepte] of paden) {
+    const node = buildGraph({ path: pad, lang: taal, url })['@graph']
+      .find((n) => n['@type'] === 'BreadcrumbList');
+    check(`${taal} ${pad}: er is een spoor`, Boolean(node), true);
+    check(`  met ${diepte} stappen`, node?.itemListElement?.length, diepte);
+    /* De LAATSTE kruimel is de pagina zelf en krijgt geen link — dat schrijft
+       schema.org voor, en een link naar waar je al bent is geen navigatie. */
+    check('  de laatste is geen link', 'item' in (node?.itemListElement?.at(-1) || {}), false);
+    /* En elke andere kruimel wijst naar een pagina die ECHT bestaat in dist.
+       Een kruimelpad naar een 404 is een fout die alleen een zoekmachine ziet. */
+    const dist = new URL('../dist/', import.meta.url);
+    const staat = buildStaat(new URL('index.html', dist));
+    if (staat.er && !staat.oud) {
+      const kapot = node.itemListElement
+        .filter((it) => it.item)
+        .map((it) => String(it.item).replace('https://visuails.com', ''))
+        .filter((rel) => !existsSync(new URL(`.${rel.replace(/\/$/, '')}/index.html`.replace('/./', './'), dist)));
+      check('  en elke stap bestaat als pagina', kapot, []);
+    }
+    /* Het taalvoorvoegsel reist mee. Een Nederlands kruimelpad dat naar de
+       Engelse pagina wijst, stuurt de lezer naar een taal die hij niet koos. */
+    if (taal === 'nl') {
+      check('  en blijft in het Nederlands',
+        node.itemListElement.filter((it) => it.item).every((it) => it.item.includes('/nl')), true);
+    }
+  }
+
+  // De pagina's die er met opzet géén hebben.
+  for (const pad of ['/thank-you', '/portal', '/studio', '/demo']) {
+    const node = buildGraph({ path: pad, lang: 'en', url: `https://visuails.com${pad}` })['@graph']
+      .find((n) => n['@type'] === 'BreadcrumbList');
+    check(`${pad} krijgt er bewust geen`, Boolean(node), false);
+  }
+}
+
+console.log('\n══ elke meta-omschrijving past in een zoekresultaat');
+{
+  const dist = new URL('../dist/index.html', import.meta.url);
+  const staat = buildStaat(dist);
+  if (!staat.er || staat.oud) {
+    console.log(` --   niet gecontroleerd: ${staat.uitleg}`);
+  } else {
+    const root = new URL('../dist/', import.meta.url);
+    const paden = [];
+    const loop = (dir) => {
+      for (const e of readdirSync(new URL(dir, root), { withFileTypes: true })) {
+        if (e.isDirectory()) loop(`${dir}${e.name}/`);
+        else if (e.name === 'index.html') paden.push(`${dir}${e.name}`);
+      }
+    };
+    loop('');
+    const telang = [];
+    for (const pad of paden) {
+      const html = readFileSync(new URL(pad, root), 'utf8');
+      const m = html.match(/<meta name="description" content="([^"]*)"/);
+      if (!m) continue;
+      /* De entiteiten terug naar tekens voordat er geteld wordt: `&#38;` is één
+         teken in een zoekresultaat en vijf in de html. Zonder deze stap keurt de
+         toets een omschrijving af om opmaak die de lezer nooit ziet. */
+      const tekst = m[1]
+        .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+      if (tekst.length > 160) telang.push(`${pad} (${tekst.length})`);
+    }
+    check(`${paden.length} pagina's gemeten, geen enkele boven 160 tekens`,
+      telang.length, 0, telang.join(', '));
+  }
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

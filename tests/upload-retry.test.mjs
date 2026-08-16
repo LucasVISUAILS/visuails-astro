@@ -48,6 +48,7 @@ import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildStaat } from './lib/build.mjs';
 
 let pass = 0;
 let fail = 0;
@@ -62,8 +63,33 @@ console.log('\nVISUAILS — de upload die het nog een keer probeert\n');
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, 'dist');
 
-if (!existsSync(path.join(DIST, 'start', 'catalog', 'index.html'))) {
-  console.log('      (overgeslagen — dist/start/catalog ontbreekt. Draai `npx astro build`.)');
+/*
+ * ── EEN VEROUDERDE BUNDEL WORDT OVERGESLAGEN, NIET AFGEKEURD — 16 aug 2026 ────
+ *
+ * Hier stond een `existsSync`, en dat toetst de verkeerde vraag. Bestaan is niet
+ * hetzelfde als KLOPPEN: een dist/ van tweeënhalve dag oud bestaat prima en draagt
+ * de code van eergisteren.
+ *
+ * Wat dat kostte, op Lucas' scherm: tien FAIL-regels op rij. Vier keer *"logt geen
+ * pipeline-fout — kreeg [pipeline] ReferenceError: Cannot access 'me' before
+ * initialization"*, en zes over een opnieuw-proberen-knop die er niet was, met
+ * `["Replace","Remove"]` als bewijs. Allemaal waar over de bundel die er lag, en
+ * allemaal onwaar over de code in src/: `me` bestaat daar alleen als parameter en
+ * de knop staat er sinds 12 augustus.
+ *
+ * Tien verzonnen defecten zijn erger dan een overgeslagen toets, want ze sturen je
+ * een halve avond een bug zoeken die niet bestaat. En het is de derde keer in dit
+ * project: de €55-melding in planning.test.mjs kwam uit dezelfde bron, en
+ * scripts/flow-walk.mjs riep om dezelfde reden acht keer wolf.
+ *
+ * buildStaat() vergelijkt de mtime van de bundel met het jongste bestand in src/.
+ * Zie tests/lib/build.mjs — daar staat het volledige argument, en planning.test.mjs
+ * en nav.test.mjs gebruiken hem al. Dit bestand hoorde in dat rijtje.
+ */
+const startPagina = new URL('../dist/start/catalog/index.html', import.meta.url);
+const staat = buildStaat(startPagina);
+if (!staat.er || staat.oud) {
+  console.log(`      (overgeslagen — ${staat.uitleg})`);
   process.exit(0);
 }
 

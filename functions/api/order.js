@@ -1437,6 +1437,33 @@ async function clearRequestedWindow(env, { tier, products, asked }) {
  *
  * `beforeId`, when set, counts only orders written before this one. That is the
  * race resolution and nothing else; see loseRaceIfOversold.
+ *
+ * ── DE VIERDE CLAUSULE ONTBRAK HIER — 14 AUGUSTUS 2026 ──────────────────────
+ *
+ * De regel hierboven zei "deliberately and exactly", en dat was drie van de vier
+ * filters lang waar. capacity.js sluit een VERLOPEN ONBETAALDE reservering uit;
+ * deze query telde hem door. De pagina die vensters aanbiedt liet zo'n dag dus
+ * los zodra de betaaltermijn van zeven dagen afliep, en het endpoint dat hem
+ * boekt hield hem bezet tot de nachtelijke opruiming om 03:10 UTC de kolommen
+ * leegmaakte — en permanent als die cron niet draait, want dat is een apart
+ * wrangler-project.
+ *
+ * WAT DAT KOSTTE. Order A, twintig producten, nooit betaald, venster verlopen.
+ * Klant B laadt /start, krijgt 1 september aangeboden omdat /api/capacity A
+ * negeert, vult vijf stappen in, verstuurt — en krijgt hier 409 window-gone,
+ * omdat A hier nog meetelt. De banner zegt *"dat venster ging weg terwijl je dit
+ * invulde"*, wat niet waar is, en de vervangende lijst komt uit dezelfde
+ * verouderde telling, dus daar ontbreken de dagen van A ook. De order wordt op
+ * dat pad NIET weggeschreven: de 409 valt vóór upsertCustomer en de INSERT.
+ *
+ * DE RICHTING WAS GELUKKIG EENZIJDIG. Deze query zag een SUPERSET van wat de
+ * pagina zag, dus hij kon alleen ten onrechte weigeren — nooit dubbelboeken.
+ * Dat is de goede kant om fout te staan, en het is de reden dat dit maanden
+ * onopgemerkt kon blijven: een geweigerde bestelling klaagt niet.
+ *
+ * De twee queries staan nog steeds op twee plekken, want ze zitten in twee
+ * Functions zonder gedeelde module. tests/promises.test.mjs bewaakt daarom
+ * sinds vandaag dat ze woordelijk hetzelfde filter dragen.
  */
 async function readCalendar(env, today, beforeId = null) {
   const horizonEnd = addDays(today, HORIZON_DAYS + 14);
@@ -1446,7 +1473,12 @@ async function readCalendar(env, today, beforeId = null) {
       WHERE tier = 'attended'
         AND window_start IS NOT NULL
         AND status <> 'cancelled'
-        AND COALESCE(window_end, window_start) >= ?1` + (beforeId ? ' AND id < ?2' : '');
+        AND COALESCE(window_end, window_start) >= ?1
+        AND NOT (
+              COALESCE(payment_status, 'unpaid') = 'unpaid'
+          AND window_expires_at IS NOT NULL
+          AND window_expires_at <= datetime('now')
+        )` + (beforeId ? ' AND id < ?2' : '');
 
   const orderStmt = beforeId
     ? env.DB.prepare(orderSql).bind(today, beforeId)

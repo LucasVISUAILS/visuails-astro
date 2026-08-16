@@ -6,6 +6,8 @@ import { waHref } from '../data/whatsapp.js';
 // lifestyle styles) rather than an old catalog/lifestyle/video split, since
 // there's no real catalog photography in the library (see IMAGES.md).
 // Ported from /tmp/visuails-rebuild/src/routes/gallery/+page.svelte.
+import { readdirSync } from 'node:fs';
+import path from 'node:path';
 import Layout from '../layouts/Layout.astro';
 import { TEST_SAMPLE } from '../data/pricing.js';
 
@@ -40,6 +42,59 @@ const photos = [
   ...Array.from({ length: 14 }, (_, i) => ({ src: `/img/lifestyle-phone-made-${String(i + 1).padStart(2, '0')}.webp`, tag: 'phone-made', alt: `Phone-made-style lifestyle visual ${i + 1}` })),
 ].map((p, i) => ({ ...p, wide: i % 7 === 0, w: INTRINSIC[p.src][0], h: INTRINSIC[p.src][1] }));
 
+/*
+ * ── SRCSET, EN WAAROM DE MAAT GEMETEN IS ───────────────────────────────────
+ *
+ * Deze galerij leverde elke foto op zijn volle grootte uit: 2400px in een vakje
+ * van 375. Gemeten met de netwerklaag en niet met een optelsom — Chromium,
+ * /gallery, telefoon van 390px: 3,12 MB aan beeld VOORDAT er gescrold is. Op een
+ * desktop van 1440 was dat 0,79 MB, en dat verschil is precies verkeerd om: de
+ * trager verbonden bezoeker betaalde het meest. Doorgescrold was de pagina 9,03 MB.
+ *
+ * DE MATEN KOMEN UIT DE BROWSER en niet uit de CSS. Elf vensterbreedtes van 360
+ * tot 2560: een gewone cel wordt nooit breder dan 375 CSS px, een `.wide` nooit
+ * breder dan 766. Boven 1280 groeit er niets meer, want het raster zit dan tegen
+ * de max-width van de container. Maal twee voor retina: 760 en 1560. Dezelfde
+ * rekenregel als in scripts/make-thumbs.mjs, dat de bestanden maakt.
+ *
+ * `sizes` STAAT ERBIJ EN IS GEEN DECORATIE. Zonder die regel gaat de browser uit
+ * van de volle vensterbreedte en kiest hij alsnog de grootste kandidaat — dan is
+ * een srcset een langere regel html zonder effect.
+ *
+ * EEN DERIVAAT DAT ER NIET IS, WORDT NIET GENOEMD. Er wordt op schijf gekeken en
+ * niet aangenomen; staat een maat er niet, dan blijft de srcset korter en valt de
+ * browser terug op het origineel. Dat is met opzet geen fout: de 928px-familie
+ * hoort geen 760px-derivaat te hebben (zie de noot in make-thumbs.mjs), en een
+ * srcset die naar een 404 wijst, is erger dan geen srcset.
+ */
+/* Via process.cwd() en niet via import.meta.url: dit bestand wordt tijdens de
+   build vanuit dist/ uitgevoerd, en dan wijst een relatief pad naar
+   dist/public/img — dat bestaat niet en de build viel erop om. De werkmap is de
+   projectmap, bij `astro build` en bij `astro dev` allebei. */
+const OP_SCHIJF = new Set(readdirSync(path.join(process.cwd(), 'public', 'img')));
+
+/** De srcset voor deze foto, of '' als er geen enkele kleinere maat bestaat. */
+function srcset(src: string, breed: boolean, echteBreedte: number) {
+  const basis = src.replace(/^\/img\//, '').replace(/\.webp$/, '');
+  const maten = (breed ? [380, 760, 1560] : [380, 760]).filter((w) => OP_SCHIJF.has(`${basis}-w${w}.webp`));
+  if (!maten.length) return '';
+  return maten
+    .map((w) => `/img/${basis}-w${w}.webp ${w}w`)
+    .concat(`${src} ${echteBreedte}w`)
+    .join(', ');
+}
+
+/* Gemeten CSS-breedtes, als `sizes`. Onder 640px is het raster één kolom en is
+   de cel dus zo breed als het venster min de marge van de container; daarboven
+   staat hij vast op wat hierboven gemeten is. */
+/* Drie stops en niet twee, omdat het raster dat ook heeft. Gemeten in Chromium:
+   een gewone cel is 171 CSS px op een telefoon van 390, 244 op een tablet van 768,
+   en nooit breder dan 375 daarboven. Een brede cel is het dubbele plus de tussen-
+   ruimte. Deze regel is wat de browser laat kiezen; zonder klopt de srcset wel en
+   werkt hij niet. */
+const SIZES_GEWOON = '(max-width: 480px) 45vw, (max-width: 900px) 32vw, 375px';
+const SIZES_BREED = '(max-width: 480px) 92vw, (max-width: 900px) 66vw, 766px';
+
 const filters = [
   { key: 'all', label: 'All' },
   { key: 'campaign', label: 'Campaign' },
@@ -67,7 +122,12 @@ const filters = [
 
   <!-- THE LIBRARY -->
   <section>
-    <div class="container">
+    {/* WIJDER DAN DE REST, en dat is het hele punt van deze pagina: hier gaat het
+        over de foto's en niet over de tekst ernaast. In 1240px is dit raster vier
+        kolommen van 280; in 1600 zijn het er vijf van 300. Zie de ladder bij
+        --container in src/styles/global.css voor waarom er drie maten zijn en
+        niet één. */}
+    <div class="container wide">
       <div class="filter-bar" role="group" aria-label="Filter styles">
         {filters.map((f) => (
           <button type="button" data-filter-key={f.key} aria-pressed={f.key === 'all' ? 'true' : 'false'}>{f.label}</button>
@@ -76,7 +136,18 @@ const filters = [
 
       <div class="photo-grid" data-filterable>
         {photos.map((p) => (
-          <img src={p.src} alt={p.alt} loading="lazy" decoding="async" width={p.w} height={p.h} class={p.wide ? 'wide' : ''} data-tag={p.tag} />
+          <img
+            src={p.src}
+            srcset={srcset(p.src, p.wide, p.w) || undefined}
+            sizes={srcset(p.src, p.wide, p.w) ? (p.wide ? SIZES_BREED : SIZES_GEWOON) : undefined}
+            alt={p.alt}
+            loading="lazy"
+            decoding="async"
+            width={p.w}
+            height={p.h}
+            class={p.wide ? 'wide' : ''}
+            data-tag={p.tag}
+          />
         ))}
       </div>
     </div>

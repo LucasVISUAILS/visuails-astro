@@ -314,10 +314,25 @@ console.log('\nen de afspraken tussen bestanden');
   /* De webhook is de enige plek waar een terugbetaling binnenkomt. Staat de aanroep er
      niet, dan is dit hele bestand dode code en blijft de factuur op het volle bedrag. */
   ok('de webhook geeft een creditnota uit', webhook.includes('issueCreditNote('));
-  /* En met het TOTAAL, niet met het verschil: `refunded` is Mollie's amountRefunded. Zou
-     hier het verschil staan, dan crediteert een tweede aflevering van dezelfde melding
-     dubbel — en dat is precies de bug die deze hele sectie moet uitsluiten. */
-  ok('en geeft het doorlopende totaal mee', /refundedGrossCents: refunded/.test(webhook), true);
+  /* En met het TOTAAL, niet met het verschil: zou hier het verschil staan, dan crediteert
+     een tweede aflevering van dezelfde melding dubbel — precies de bug die deze sectie
+     moet uitsluiten.
+
+     HET TOTAAL VAN DE BESTELLING EN NIET VAN DE BETALING, sinds 14 augustus 2026. Hier
+     stond `refunded`, en dat is Mollie's amountRefunded van ÉÉN betaling. Bij twee
+     betalingen op één bestelling — de bevestigingsmail draagt een betaallink en
+     handleOrderPay() maakt er nog één — zette het terugstorten van de dubbele een
+     VOLLEDIGE creditnota tegenover de factuur van de betaling die niet was
+     teruggestort. Netto omzet nul op een correct afgehandelde bestelling.
+     `orderRefunded` is de som over de betalingen van de bestelling; zie migratie 0029. */
+  ok('en geeft het doorlopende totaal van de BESTELLING mee',
+    /refundedGrossCents: orderRefunded/.test(webhook), true);
+  ok('  en niet dat van één betaling', /refundedGrossCents: refunded\b/.test(webhook), false);
+  /* En "volledig" wordt getoetst tegen wat de bestelling kostte — bruto, want dat is
+     wat er is afgeschreven. Tegen `cents` toetsen is tegen het bedrag van één betaling
+     toetsen, en dat is dezelfde fout één regel hoger. */
+  ok('  "volledig" meet tegen het brutobedrag van de bestelling',
+    /const full = bruto !== null \? orderRefunded >= bruto/.test(webhook), true);
   /* cancel_reason moet in de SELECT staan, anders is de reden op de nota altijd leeg. */
   ok('en leest cancel_reason uit de bestelling', /SELECT id, service.*cancel_reason FROM orders/.test(webhook), true);
 

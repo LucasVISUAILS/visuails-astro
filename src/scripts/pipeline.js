@@ -189,7 +189,17 @@
 // arrive in the config blob like every other string on this page — shots.js's
 // own COPY table is never read from here, and importing it would put half the
 // Dutch for one step in a file no translator opens.
-import { SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromPath, extraShotId } from '../data/shots.js';
+import {
+  SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromPath, extraShotId,
+  /* De GRATIS referentievakken. Lucas, 13 augustus 2026: *"Ook wil ik dat het
+     mogelijk word voor een bezoeker om meer foto's toe te voegen van zijn product
+     kosteloos door op een plusje naast de 4 aanbevolen foto's te klikken. Dit zorgt
+     ervoor dat ze meer details kunnen laten zien maar wel gewoon 4 foto's in totaal
+     krijgen."* Ze hebben met opzet een eigen voorvoegsel en een eigen bovengrens —
+     zie de kop bij REF_SHOT_PREFIX in shots.js voor waarom ze geen woord delen met
+     de betaalde extra's. */
+  refShotId, refShotNumber, MAX_REF_PER_PRODUCT,
+} from '../data/shots.js';
 // Same rule, one line down. PRODUCT_QUESTIONS is read here for its IDS, its
 // types, its maxLength and its option ids — the wire values, which have to be
 // the same ones /api/order validates against, and which would rot the first
@@ -1783,6 +1793,11 @@ function shotLabel(id) {
   // waar een slot zijn woord vandaan haalt.
   const n = extraSlotNumber(id);
   if (n) return c('pu.extraSlot', { n });
+  // Een gratis referentievak draagt zijn nummer op dezelfde manier. Een ANDER
+  // woord dan bij de betaalde, en dat is het hele punt: "Extra foto 2" naast
+  // "Referentie 2" is precies de verwarring waar de eigen prefix voor bestaat.
+  const r = refShotNumber(id);
+  if (r) return c('pu.refSlot', { n: r });
   return c(`pu.shot.${id}`) || id;
 }
 
@@ -2219,6 +2234,10 @@ function buildCard(card) {
   slots.className = 'pu-slots';
   slots.id = `pu-slots-${card.key}`;
   SHOT_IDS.forEach((id) => slots.appendChild(buildSlot(card, id)));
+  // Het plusje staat IN dit raster, achter de vier aanbevolen vakken, want dat is
+  // waar Lucas het beschreef: *"een plusje naast de 4 aanbevolen foto's"*. Het is
+  // dus geen apart blok verderop maar het vijfde vakje van dezelfde rij.
+  buildRefs(card, slots);
 
   // The three optional questions, folded into the SAME disclosure as the four
   // slots — aria-controls takes a list, so one toggle honestly names both.
@@ -2527,6 +2546,124 @@ function buildRatios(card) {
  * nodig heeft — bij dertig producten zou vier sloten per kaart vooruitbouwen
  * honderdtwintig widgets in de pagina zetten die niemand heeft gevraagd.
  */
+/**
+ * Het plusje: nog een foto van hetzelfde product, gratis.
+ *
+ * ── DE VRAAG ──────────────────────────────────────────────────────────────
+ *
+ * Lucas, 13 augustus 2026: *"Ook wil ik dat het mogelijk word voor een bezoeker
+ * om meer foto's toe te voegen van zijn product kosteloos door op een plusje
+ * naast de 4 aanbevolen foto's te klikken. Dit zorgt ervoor dat ze meer details
+ * kunnen laten zien maar wel gewoon 4 foto's in totaal krijgen, wel moet de optie
+ * voor een extra foto behouden worden als apart vak die gewoon de huidige extra
+ * prijs behouden."*
+ *
+ * Twee dingen die op elkaar lijken en niet hetzelfde zijn, en dat is de reden dat
+ * dit een eigen functie is naast buildExtras():
+ *
+ *   DIT (`ref1`…)    is INVOER. Meer materiaal van hetzelfde product zodat wij
+ *                    het beter zien. Gratis, en het levert GEEN beeld op — de
+ *                    klant krijgt nog steeds zijn vier.
+ *   EXTRA (`extra1`…) is UITVOER. Een beeld dat erbij BESTELD wordt, met een
+ *                    verplichte notitie en een tarief uit EXTRA_PHOTO_LADDER.
+ *
+ * Het betaalde vak blijft dus staan waar het stond, met de prijs die het had.
+ * Zie de kop bij REF_SHOT_PREFIX in src/data/shots.js voor waarom ze geen woord
+ * en geen bovengrens delen.
+ *
+ * ── EEN PLUSJE EN GEEN AANTALKEUZE ────────────────────────────────────────
+ *
+ * De betaalde extra's vragen eerst *"hoeveel?"*, want dat aantal is een BEDRAG en
+ * moet in het totaal meelopen voordat er iets geüpload is. Hier valt niets te
+ * begroten. Dus geen keuzelijst maar de handeling zelf: klik, en er staat een vak
+ * bij. Dat is ook eerlijker over wat er gebeurt — een klant die drie kiest en er
+ * twee vult, heeft geen fout gemaakt, en een formulier dat daar iets van vindt,
+ * heeft een vraag gesteld die het niet had moeten stellen.
+ *
+ * ── EN HET TELT NIET MEE VOOR "AF" ────────────────────────────────────────
+ *
+ * cardReady() en de voortgangsregel lopen over SHOT_IDS, niet over card.slots.
+ * Een referentievak kan dus nooit een kaart onvolledig maken. Dat is dezelfde
+ * afspraak die buildExtras() al had, en hier is hij nog belangrijker: gratis
+ * materiaal dat de bestelling zou kunnen blokkeren, is materiaal dat niemand
+ * aandurft te sturen.
+ */
+function buildRefs(card, slots) {
+  const max = Math.max(0, Math.floor(Number(cfg.maxRefPerProduct) || 0));
+  if (!max) return;
+
+  card.refs = 0;
+
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'pu-ref-add';
+  add.dataset.puRefAdd = card.key;
+  // Het plusje is een TEKEN en de zin ernaast is het label. Alleen een + zou een
+  // knop opleveren waarvan je moet raden wat hij toevoegt, op een kaart waar vier
+  // andere vakken ook op een klik reageren.
+  add.innerHTML = '<span class="pu-ref-plus" aria-hidden="true">+</span>';
+  const addLabel = document.createElement('span');
+  addLabel.className = 'pu-ref-add-label';
+  addLabel.textContent = c('pu.refAdd');
+  add.appendChild(addLabel);
+
+  const hint = document.createElement('span');
+  hint.className = 'pu-ref-hint';
+  hint.id = `pu-ref-hint-${card.key}`;
+  hint.textContent = c('pu.refHint');
+  add.setAttribute('aria-describedby', hint.id);
+
+  const paint = () => {
+    const vol = card.refs >= max;
+    add.hidden = vol;
+    // De uitleg verdwijnt met de knop mee: als er niets meer bij kan, is "gratis,
+    // je krijgt nog steeds je vier beelden" een antwoord op een vraag die niemand
+    // meer kan stellen.
+    hint.textContent = vol ? c('pu.refFull', { max }) : c('pu.refHint');
+  };
+
+  /* ── ALLE VAKKEN OPNIEUW, EN NIET ALLEEN HET NIEUWE ────────────────────────
+   *
+   * De weghaalknop staat alleen op het LAATSTE referentievak (zie paintSlot), en
+   * welk vak dat is, verandert bij elke klik op het plusje. Alleen het nieuwe vak
+   * schilderen liet de knop dus op alle vier staan — en dan haalt een klik op
+   * ref2 de teller omlaag terwijl ref3 blijft bestaan, waarna het volgende plusje
+   * een id maakt dat er al is en het bestand van de vorige stilletjes overschrijft.
+   * Gemeten, niet bedacht: vier keer "ja" waar er één hoorde te staan. */
+  const paintAll = () => {
+    paint();
+    for (let i = 1; i <= max; i += 1) {
+      const rid = refShotId(i);
+      if (card.slots[rid] && card.slots[rid].el) paintSlot(card, rid);
+    }
+  };
+
+  add.addEventListener('click', () => {
+    if (card.refs >= max) return;
+    card.refs += 1;
+    const id = refShotId(card.refs);
+    if (!card.slots[id]) card.slots[id] = EMPTY_SLOT();
+    // VÓÓR de knop invoegen, zodat het plusje het laatste vakje van de rij blijft
+    // en niet halverwege komt te staan zodra er één bij is.
+    slots.insertBefore(buildSlot(card, id), add);
+    // buildSlot() bouwt alleen; zonder deze regel staan Vervangen en Verwijderen
+    // onder een leeg vak — precies de fout die buildExtras() hierboven noemt.
+    paintSlot(card, id);
+    paintAll();
+    refreshUploader();
+    // De focus naar het vak dat er net bij kwam. Wie met het toetsenbord werkt,
+    // staat anders op een knop die naar beneden is opgeschoven of verdwenen is.
+    const btn = q(`[data-pu-slot="${id}"] .pu-slot-btn`, slots);
+    if (btn) btn.focus({ preventScroll: false });
+  });
+
+  slots.append(add, hint);
+  /* Naar buiten, want de weghaalknop op een vakje moet de knop en de uitleg weer
+     terug kunnen zetten — die zit in buildSlot() en kan hier niet bij. */
+  card.paintRefs = paintAll;
+  paint();
+}
+
 function buildExtras(card) {
   const wrap = document.createElement('div');
   wrap.className = 'pu-extra';
@@ -2831,7 +2968,14 @@ function buildSlot(card, id) {
   // — het beeld is een voorbeeld dat mag ontbreken, en wat er wél moet staan is
   // de beschrijving in het veld ernaast. Een overslaan-knop zou suggereren dat
   // je een extra die je hebt besteld kunt laten vallen; dat doe je met de teller.
-  const skipBtn = (isRequiredShot(id) || extraSlotNumber(id)) ? null : act(c('pu.skipShot'), () => {
+  //
+  // ── EN GEEN OVERSLAAN OP EEN GRATIS REFERENTIEVAK — 13 augustus 2026 ────────
+  // Om een derde reden, die nog sterker is dan de twee hierboven: dit vakje is er
+  // alleen omdat de klant zelf op het plusje heeft gedrukt. "Deze sla ik over" bij
+  // een vakje dat je zojuist hebt aangevraagd, is geen keuze maar een raadsel — en
+  // de kaart vraagt er ook nooit om, want cardReady() loopt over SHOT_IDS en ziet
+  // referentievakken niet. Wat hier wél hoort, staat een regel lager: weghalen.
+  const skipBtn = (isRequiredShot(id) || extraSlotNumber(id) || refShotNumber(id)) ? null : act(c('pu.skipShot'), () => {
     clearSlot(card, id);
     card.slots[id].status = 'skipped';
     paintSlot(card, id);
@@ -2843,6 +2987,28 @@ function buildSlot(card, id) {
   // it dead. An undo that cannot be undone is worse than no undo.
   const undoBtn = isRequiredShot(id) ? null : act(c('pu.undoSkip'), () => {
     clearSlot(card, id);
+    refreshUploader();
+  });
+
+  /* ── HET VAKJE WEER WEG — alleen bij een gratis referentievak ───────────────
+   *
+   * Een vast vak kun je niet weghalen: het hoort bij de opdracht. Een betaald vak
+   * haal je weg met de teller, want het is een bestelregel. Dit vak bestaat alleen
+   * doordat er op een plusje is gedrukt, en dan hoort er een weg terug te zijn —
+   * anders levert één misklik vier lege vakken op die er blijven staan.
+   *
+   * ALLEEN HET LAATSTE, en dat is geen luiheid maar wat de nummering vraagt: de
+   * vakken heten ref1..refN op volgorde, en er middenuit halen zou ref3 tot ref2
+   * moeten omdopen terwijl er al een bestand aan ref3 hangt in R2. Weghalen van
+   * achteren houdt de reeks heel, en het is ook wat iemand bedoelt die één keer te
+   * vaak heeft geklikt.
+   */
+  const dropBtn = !refShotNumber(id) ? null : act(c('pu.refDrop'), () => {
+    clearSlot(card, id);
+    delete card.slots[id];
+    wrap.remove();
+    card.refs = Math.max(0, (card.refs || 0) - 1);
+    if (card.paintRefs) card.paintRefs();
     refreshUploader();
   });
 
@@ -2873,7 +3039,7 @@ function buildSlot(card, id) {
     placeFromTray(trayKey, card.key, id);
   });
 
-  card.slots[id].el = { wrap, btn, dia, img, nameEl, bar, msg, retryBtn, replaceBtn, removeBtn, skipBtn, undoBtn };
+  card.slots[id].el = { wrap, btn, dia, img, nameEl, bar, msg, retryBtn, replaceBtn, removeBtn, skipBtn, undoBtn, dropBtn };
   return wrap;
 }
 
@@ -2909,6 +3075,13 @@ function paintSlot(card, id) {
   el.removeBtn.hidden = !filled;
   if (el.skipBtn) el.skipBtn.hidden = filled || s.status === 'skipped';
   if (el.undoBtn) el.undoBtn.hidden = s.status !== 'skipped';
+  /* ALLEEN OP HET LAATSTE referentievak, en alleen zolang het leeg is. Leeg,
+     omdat "weghalen" naast een geüploade foto twee knoppen naast elkaar zet die
+     allebei iets weggooien — daar is `removeBtn` voor, en die haalt het bestand
+     weg en laat het vakje staan. Het laatste, omdat de reeks ref1..refN op
+     volgorde ligt en er middenuit halen een hernummering zou vragen van vakken
+     waar al bestanden aan hangen in R2. */
+  if (el.dropBtn) el.dropBtn.hidden = filled || refShotNumber(id) !== (card.refs || 0);
 
   const what = filled ? `${shotLabel(id)} — ${s.file.name}` : shotLabel(id);
   el.btn.setAttribute('aria-label', `${what} · ${cardLabel(card)}`);
@@ -3081,7 +3254,24 @@ function renderTray() {
     cards.forEach((card) => {
       const group = document.createElement('optgroup');
       group.label = cardLabel(card);
-      SHOT_IDS.forEach((id) => {
+      /* De vaste hoeken, plus de gratis referentievakken die op DEZE kaart
+         daadwerkelijk zijn aangevraagd — 13 augustus 2026.
+
+         Zonder die tweede helft is het plusje half af: je kunt een foto in een
+         referentievak slepen, maar wie een map met dertig bestanden ineens
+         binnenlaat en ze daarna uit de bak verdeelt, kon ze nergens anders heen
+         sturen dan naar de vier vaste hoeken. Dan is de gratis mogelijkheid er
+         alleen voor wie één bestand tegelijk kiest.
+
+         Uit card.slots en niet uit een vast lijstje van vier: een vak dat niet is
+         aangevraagd, hoort niet in de keuzelijst — dat zou een bestemming zijn
+         die op de kaart niet bestaat. */
+      const refIds = [];
+      for (let i = 1; i <= (card.refs || 0); i += 1) {
+        const rid = refShotId(i);
+        if (card.slots[rid]) refIds.push(rid);
+      }
+      SHOT_IDS.concat(refIds).forEach((id) => {
         const opt = document.createElement('option');
         opt.value = `${card.key}|${id}`;
         // The product is in the option TEXT as well as in the optgroup label,

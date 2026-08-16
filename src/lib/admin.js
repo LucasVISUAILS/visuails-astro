@@ -139,6 +139,10 @@ export async function adminGet(context) {
 
   if (path === '/admin/log') return renderLog(context);
   if (path === '/admin/vat') return renderVatReview(context);
+  /* De aanbevelingen. Een LEESROUTE, want goedkeuren gebeurt met een POST
+     hieronder — zie de kop van renderTestimonials() voor waarom dit scherm er
+     tot 14 augustus 2026 niet was en wat dat een klant kostte. */
+  if (path === '/admin/testimonials') return renderTestimonials(context);
   if (path === '/admin/funnel') return renderFunnel(context, url);
 
   if (path === '/admin') {
@@ -158,18 +162,19 @@ export async function adminGet(context) {
       ? wantedFilter : '';
     const hidden = url.searchParams.get('hidden') === '1';
 
-    const [revisions, orders, counts, statusCounts, vatHeld, watch] = await Promise.all([
+    const [revisions, orders, counts, statusCounts, vatHeld, watch, tmWaiting] = await Promise.all([
       loadRevisionInbox(env),
       loadOrders(env, statusFilter, { q, filter, hidden }),
       loadTodayCounts(env),
       loadStatusCounts(env),
       loadVatHeld(env),
       loadWatchdogs(env),
+      loadTestimonialsWaiting(env),
     ]);
     const modelsByCustomer = await loadCustomModelsByCustomer(env, orders.map((o) => o.customer_id));
     return html(page({
       title: statusFilter ? `Dashboard · ${STATUS_LABEL[statusFilter] || statusFilter}` : 'Dashboard',
-      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld, watch),
+      body: dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter, { q, filter, hidden }, vatHeld, watch, tmWaiting),
     }));
   }
 
@@ -216,6 +221,14 @@ export async function adminPost(context) {
   // logboek te staan wie erop klikte.
   const vatMatch = path.match(/^\/admin\/orders\/(\d+)\/vat$/);
   if (vatMatch) return handleVatDecision(context, Number(vatMatch[1]), admin);
+
+  /* Het vinkje op een aanbeveling. `admin` gaat mee om dezelfde reden als bij de
+     btw-beslissing hierboven: dit is de handeling die de tekst van een klant tot
+     iets maakt wat wij mogen gebruiken, en dan hoort in het logboek te staan wie
+     erop klikte. De sleutel is order_id — order_feedback heeft er één rij per
+     bestelling, dat is de primaire sleutel van die tabel. */
+  const tmMatch = path.match(/^\/admin\/testimonials\/(\d+)$/);
+  if (tmMatch) return handleTestimonialDecision(context, Number(tmMatch[1]), admin);
 
   const modelMatch = path.match(/^\/admin\/orders\/(\d+)\/models$/);
   if (modelMatch) return handleAddCustomModel(context, Number(modelMatch[1]));
@@ -837,13 +850,47 @@ async function handleCustomerWipe(context, customerId) {
   const fileKeys = await env.DB.prepare(
     'SELECT f.r2_key, f.preview_key FROM files f JOIN orders o ON o.id = f.order_id WHERE o.customer_id = ?1'
   ).bind(customerId).all().catch(() => ({ results: [] }));
+
+  /*
+   * ── DE AFGELEIDE FORMATEN, EN WAAROM ZE HIER ONTBRAKEN — 14 AUGUSTUS 2026 ──
+   *
+   * De query hierboven leest twee kolommen, en sinds migratie 0022 is een
+   * geleverd beeld VIER objecten in R2: `<stem>.png` staat in files.r2_key,
+   * `review/<stem>.webp` in files.preview_key, en `<stem>.jpg` en `<stem>.webp`
+   * staan alleen als rijen in `file_assets` (zie scripts/deliver.mjs).
+   *
+   * Juist die twee zijn de bestanden die de klant publiceert — delivery.js haalt
+   * ze op om zijn zip te bouwen. Bij een wisverzoek verdwenen dus de master en de
+   * reviewkopie, en bleven de jpg en de webp staan. En omdat een paar regels
+   * lager de `file_assets`-rijen wél worden verwijderd, wees er daarna NIETS in
+   * D1 meer naar die objecten: geen tweede wis, geen cron, geen adminscherm kan
+   * ze ooit nog vinden. Het logboek meldde ondertussen "80 bestand(en) uit R2"
+   * en de wissing stond als voltooid geboekt.
+   *
+   * Bij een verzoek onder art. 17 AVG is dat het ergste soort fout: hij ziet er
+   * afgerond uit en laat driekwart van de bytes staan.
+   *
+   * cron/index.js deed het al goed — purgeExpiredFiles() roept variantKeys() aan,
+   * met de noot dat het zonder die stap "er netjes uitziet en drie kwart van de
+   * bytes laat staan". Deze route heeft die reparatie nooit gekregen.
+   *
+   * `no such table` wordt hier verdragen om dezelfde reden als daar: zonder
+   * migratie 0022 bestaat de tabel niet, en dan zijn er ook geen varianten.
+   */
+  const variantKeys = await env.DB.prepare(
+    `SELECT a.r2_key
+       FROM file_assets a
+       JOIN files f ON f.id = a.file_id
+       JOIN orders o ON o.id = f.order_id
+      WHERE o.customer_id = ?1`
+  ).bind(customerId).all().catch(() => ({ results: [] }));
   const modelKeys = await env.DB.prepare(
     'SELECT preview_key FROM custom_models WHERE customer_id = ?1 AND preview_key IS NOT NULL'
   ).bind(customerId).all().catch(() => ({ results: [] }));
 
   let removed = 0;
   let failed = 0;
-  for (const row of [...(fileKeys.results || []), ...(modelKeys.results || [])]) {
+  for (const row of [...(fileKeys.results || []), ...(variantKeys.results || []), ...(modelKeys.results || [])]) {
     for (const key of [row.r2_key, row.preview_key].filter(Boolean)) {
       try { await env.UPLOADS?.delete(key); removed++; } catch { failed++; }
     }
@@ -2031,10 +2078,35 @@ async function handleDeliveryUpload({ request, env }, orderId) {
       body: errorBody(`${stored} stored, ${failed.length} failed:<br>${failed.map(esc).join('<br>')}`),
     }), 500);
   }
-  // Een upload in een gevuld vakje is een vervanging, en dat moet meteen
-  // kloppen — anders staan er tot de volgende keer opslaan twee beelden voor
-  // dezelfde plek in het dashboard van de klant.
-  if (slotProduct && slotShot) await resupersede(env, orderId);
+  /*
+   * ── ELKE UPLOAD, EN NIET ALLEEN DIE UIT EEN VAKJE — 14 AUGUSTUS 2026 ───────
+   *
+   * Een upload in een gevulde plek is een vervanging, en dat moet meteen kloppen:
+   * anders staan er twee beelden voor dezelfde plek in het dashboard van de klant.
+   *
+   * DE CONDITIE HIER WAS `slotProduct && slotShot`, EN DAT IS PRECIES ÉÉN VAN DE
+   * TWEE MANIEREN WAAROP HIER GELEVERD WORDT. Het formulier "Map uploaden" post
+   * geen product en geen shot — die haalt parseScaffoldPath() uit het pad, en de
+   * rijen gaan volledig gemapt de database in. Dus draaide resupersede() niet, en
+   * bleef het AFGEKEURDE beeld naast zijn vervanging staan.
+   *
+   * Wat dat oplevert: de klant ziet beide beelden in het portaal en krijgt ze
+   * beide in zijn zip (alles daar filtert op `superseded_at IS NULL`). Het
+   * revisieverzoek blijft open, want closeReplacedRevisions() heeft juist
+   * `superseded_at IS NOT NULL` nodig. En maybeCloseOrder() eist approved ===
+   * live, dus de bestelling sluit nooit — geen retentiestempel, geen
+   * tevredenheidsvraag. De klant kán het losbreken door zijn revisieverzoek in te
+   * trekken en het beeld goed te keuren dat hij net had afgewezen.
+   *
+   * En de studio ziet er niets van: liveByKey() houdt op het bord alleen de
+   * hoogste id per product+shot over, dus daar staat één beeld waar de klant er
+   * twee ziet.
+   *
+   * resupersede() werkt per BESTELLING en niet per vakje, dus hij kan gewoon
+   * altijd draaien. De enige voorwaarde die overblijft is dat er iets is
+   * weggeschreven om te vervangen.
+   */
+  if (stored) await resupersede(env, orderId);
 
   /*
    * ── DE WAARSCHUWING OVER DE HERKOMSTTAG ─────────────────────────────────────
@@ -2770,6 +2842,32 @@ function watchChip(spec, w) {
     return `<span class="fl-chip is-warn">${spec.label}: ${days} ${days === 1 ? 'dag' : 'dagen'} stil</span>`;
   }
   return `<span class="fl-chip">${spec.ok} &middot; ${esc(w.value || '')}</span>`;
+}
+
+/**
+ * Hoeveel aanbevelingen op een beslissing wachten.
+ *
+ * Zelfde vorm en zelfde reden als loadVatHeld() hieronder: een scherm dat niemand
+ * kan bereiken is hetzelfde probleem als geen scherm, en een link zonder getal
+ * vertelt je niet of je erop moet klikken. Nul betekent geen chip.
+ *
+ * Een tabel die er niet is, geeft nul en geen fout. Dit getal siert het dashboard
+ * op; het mag het niet omver halen.
+ */
+async function loadTestimonialsWaiting(env) {
+  try {
+    const row = await env.DB.prepare(
+      `SELECT COUNT(*) AS n
+         FROM order_feedback
+        WHERE testimonial_consent = 1
+          AND testimonial_approved = 0
+          AND testimonial_text IS NOT NULL
+          AND TRIM(testimonial_text) <> ''`
+    ).first();
+    return Number(row?.n) || 0;
+  } catch {
+    return 0;
+  }
 }
 
 async function loadVatHeld(env) {
@@ -3819,18 +3917,30 @@ async function handleAddCustomModelForCustomer({ request, env }, customerId) {
   const label = String(form?.get('label') || '').trim().slice(0, 80);
   if (!label) return seeOther(`/admin/customers/${customerId}`);
 
-  await env.DB.prepare(
-    "INSERT INTO custom_models (customer_id, label, status) VALUES (?1, ?2, 'in_design')"
-  ).bind(customerId, label).run();
+  /*
+   * ── RETURNING, EN NIET MEER TERUGLEZEN — 14 augustus 2026 ──────────────────
+   *
+   * Hier stond een INSERT, gevolgd door een SELECT ... ORDER BY id DESC LIMIT 1
+   * op (customer, label), met de noot: *"D1 has no RETURNING here."* Dat is niet
+   * waar — src/lib/ratelimit.js en src/lib/invoice.js draaien er allebei al op,
+   * en die laatste doet er zijn factuurnummers mee.
+   *
+   * En het teruglezen was ook echt fout, niet alleen omslachtig. Twee modellen
+   * met DEZELFDE naam voor dezelfde klant zijn toegestaan — er staat geen UNIQUE
+   * op (customer_id, label) — en dan geeft `ORDER BY id DESC LIMIT 1` de nieuwste
+   * terug. Dat is meestal de zojuist ingevoegde rij en niet altijd: staat er nog
+   * een tabblad open, of wordt hetzelfde formulier twee keer verstuurd, dan
+   * krijgt de tweede INSERT de foto van de eerste eroverheen — of preciezer, de
+   * eerste rij blijft zonder afbeelding achter terwijl de tweede er twee sleutels
+   * op ziet. Eén statement heeft dat gat niet.
+   */
+  const nieuw = await env.DB.prepare(
+    "INSERT INTO custom_models (customer_id, label, status) VALUES (?1, ?2, 'in_design') RETURNING id"
+  ).bind(customerId, label).first();
 
-  // The picture, if one came with it. Looked up rather than assumed: D1 has no
-  // RETURNING here, and last_insert_rowid across a fresh prepare is not a
-  // promise worth relying on when a re-read by (customer, label) is exact.
   const file = form && form.get('preview');
   if (file && typeof file === 'object' && file.size && env.UPLOADS) {
-    const row = await env.DB.prepare(
-      'SELECT id FROM custom_models WHERE customer_id = ?1 AND label = ?2 ORDER BY id DESC LIMIT 1'
-    ).bind(customerId, label).first();
+    const row = nieuw;
     if (row?.id) {
       const clean = String(file.name || 'preview').split(/[\\/]/).pop().slice(0, 100) || 'preview';
       const key = `models/${customerId}/${row.id}-${clean}`;
@@ -4705,6 +4815,151 @@ ${[...byLang.entries()]
   return html(page({ title: 'Trechter', body }));
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE AANBEVELINGEN — HET SCHERM DAT ER NIET WAS
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT ER STUK WAS, EN HOE STIL ────────────────────────────────────────────
+ *
+ * `order_feedback.testimonial_approved` bestaat sinds migratie 0020, met een
+ * index erop en een view eroverheen. Het werd in de hele codebase NERGENS op 1
+ * gezet. Niet in feedback.js, niet in admin.js, nergens — en er was ook geen
+ * scherm dat de teksten kón lezen.
+ *
+ * Wat een klant dus deed: een bestelling afronden, de vraag krijgen of hij
+ * tevreden was, een aanbeveling typen, EXPLICIET het vinkje zetten dat wij hem
+ * mogen gebruiken — en dan verdween die tekst in een tabel die niemand opende.
+ * De hele reviewlus liep dood op de laatste stap. Dat is erger dan een ontbrekende
+ * functie: het is toestemming vragen voor iets wat je vervolgens niet doet.
+ *
+ * ── WAT DIT SCHERM WEL EN NIET DOET ─────────────────────────────────────────
+ *
+ * Het toont de aanbevelingen waarvoor toestemming is gegeven, en het zet het
+ * vinkje om. Meer niet. PUBLICEREN IS EEN DERDE STAP en die zit hier bewust niet
+ * in: welke aanbeveling op welke pagina komt te staan, is een redactionele keuze
+ * en geen knop. Wat dit scherm oplost is dat de teksten nu bestaan voor de mens
+ * die erover gaat.
+ *
+ * ── GOEDKEUREN IS OMKEERBAAR, EN DAT IS DE HELE VEILIGHEID ──────────────────
+ *
+ * Eén klik terug, in hetzelfde scherm. Een goedkeuring die je alleen in de
+ * database kunt terugdraaien, is een goedkeuring die je niet durft te geven — en
+ * dan blijft de lijst staan waar hij nu staat.
+ *
+ * WAT ER NIET GETOOND WORDT ZONDER TOESTEMMING. `testimonial_consent = 1` staat
+ * in de WHERE en niet in een filter op het scherm. saveTestimonial() bewaart al
+ * niets zonder vinkje (zie de kop daar: §3 eist expliciete, aparte toestemming),
+ * en deze query is de tweede sluiting op dezelfde deur: een rij die er door een
+ * oude import of een handmatige INSERT tóch in staat, komt hier niet in beeld.
+ */
+async function renderTestimonials({ env }) {
+  let rows = [];
+  let missing = false;
+  try {
+    const res = await env.DB.prepare(
+      `SELECT f.order_id, f.testimonial_text, f.testimonial_name, f.testimonial_approved,
+              f.updated_at, f.asked_at,
+              o.ref, o.brand, o.service, o.lang, o.closed_at,
+              c.email
+         FROM order_feedback f
+         JOIN orders o ON o.id = f.order_id
+         LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE f.testimonial_consent = 1
+          AND f.testimonial_text IS NOT NULL
+          AND TRIM(f.testimonial_text) <> ''
+        ORDER BY f.testimonial_approved ASC, f.updated_at DESC
+        LIMIT 200`
+    ).all();
+    rows = res.results || [];
+  } catch (err) {
+    // Zelfde terugval als renderVatReview en renderLog: zonder migratie 0020 is er
+    // niets te tonen, en dan hoort dit scherm te zeggen wat eraan scheelt.
+    missing = String(err?.message || '');
+  }
+
+  const wachtend = rows.filter((r) => !Number(r.testimonial_approved));
+  const goedgekeurd = rows.filter((r) => Number(r.testimonial_approved));
+
+  const kaart = (r) => {
+    const aan = !!Number(r.testimonial_approved);
+    return `
+<div class="card">
+  <div class="row-head">
+    <span class="ref">${esc(r.ref)}</span>
+    <span class="muted">${esc(r.brand || '—')} · ${esc(serviceLabel(r.service, 'nl') || r.service || '')} · ${esc(String(r.lang || '').toUpperCase())}</span>
+    <span class="muted">${esc(when(r.updated_at || r.asked_at))}</span>
+  </div>
+  <p class="meta">${esc(r.testimonial_name || 'geen naam opgegeven')}${r.email ? ` · ${esc(r.email)}` : ''}</p>
+  <blockquote class="tm-text">${esc(r.testimonial_text)}</blockquote>
+  <form method="post" action="/admin/testimonials/${encodeURIComponent(String(r.order_id))}">
+    <input type="hidden" name="action" value="${aan ? 'unapprove' : 'approve'}">
+    <button type="submit" class="${aan ? '' : 'primary'}">${aan ? 'Goedkeuring intrekken' : 'Goedkeuren'}</button>
+    ${aan ? '<span class="pill">goedgekeurd</span>' : ''}
+  </form>
+</div>`;
+  };
+
+  const body = `
+<p><a href="/admin">&larr; Dashboard</a></p>
+<h1>Aanbevelingen</h1>
+<p class="lede">Wat klanten over ons geschreven hebben, met het vinkje erbij dat wij het
+mogen gebruiken. Goedkeuren zet alleen dat vinkje om — <strong>er wordt niets
+gepubliceerd</strong>. Waar een aanbeveling komt te staan, blijft een keuze die je zelf
+maakt; dit scherm zorgt er alleen voor dat je hem kunt lezen.</p>
+${missing
+  ? `<p class="warnline">Dit scherm kan de aanbevelingen niet lezen (${esc(missing)}). Draai migratie 0020.</p>`
+  : rows.length
+    ? `
+${wachtend.length ? `<h2>Wacht op je (${wachtend.length})</h2>${wachtend.map(kaart).join('')}` : '<p class="empty">Niets wat op je wacht.</p>'}
+${goedgekeurd.length ? `<h2>Goedgekeurd (${goedgekeurd.length})</h2>${goedgekeurd.map(kaart).join('')}` : ''}`
+    : `<p class="empty">Nog geen aanbevelingen met toestemming. Ze verschijnen hier zodra een klant
+       na een afgeronde bestelling iets schrijft <em>en</em> het vinkje zet. Zonder dat vinkje
+       wordt de tekst niet bewaard — zie saveTestimonial() in src/lib/feedback.js.</p>`}`;
+
+  return html(page({ title: 'Aanbevelingen', body }));
+}
+
+/**
+ * Het vinkje om, en verder niets.
+ *
+ * ALLEEN MET TOESTEMMING, ook hier. De WHERE draagt `testimonial_consent = 1`, dus
+ * een POST met een order_id waar geen toestemming aan hangt, raakt nul rijen en
+ * komt zonder mededeling terug op de lijst. Dat is met opzet geen foutmelding: er
+ * is niets aan de hand met het verzoek, er is alleen niets om goed te keuren.
+ *
+ * WIE HET DEED STAAT IN HET LOGBOEK. Een goedkeuring is de handeling die een tekst
+ * van een klant tot iets maakt wat wij mogen gebruiken; dat hoort navolgbaar te
+ * zijn, net als de btw-beslissing. Zelfde reden, zelfde vorm.
+ */
+async function handleTestimonialDecision({ request, env }, orderId, admin) {
+  const back = '/admin/testimonials';
+  if (!Number.isInteger(orderId)) return seeOther(back);
+  const form = await request.formData();
+  const action = String(form.get('action') || '');
+  if (!['approve', 'unapprove'].includes(action)) return seeOther(back);
+
+  const aan = action === 'approve' ? 1 : 0;
+  try {
+    await env.DB.prepare(
+      `UPDATE order_feedback
+          SET testimonial_approved = ?2, updated_at = datetime('now')
+        WHERE order_id = ?1 AND testimonial_consent = 1`
+    ).bind(orderId, aan).run();
+  } catch (err) {
+    console.error('[admin] aanbeveling niet bijgewerkt voor bestelling', orderId, '—', err && err.message);
+    return html(page({ title: 'Aanbevelingen', body: errorBody(
+      `De aanbeveling kon niet bijgewerkt worden (${esc(String(err?.message || err))}). Draai migratie 0020.`
+    ) }), 500);
+  }
+
+  await logAdmin(env, admin, aan ? 'testimonial.approve' : 'testimonial.unapprove', {
+    orderId,
+    detail: `aanbeveling ${aan ? 'goedgekeurd voor gebruik' : 'niet langer goedgekeurd'}`,
+  });
+  return seeOther(back);
+}
+
 async function renderVatReview({ env }) {
   let rows = [];
   let missing = false;
@@ -4877,7 +5132,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
   return seeOther(back);
 }
 
-function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0, watch = null) {
+function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0, watch = null, tmWaiting = 0) {
   const { q = '', filter = '', hidden = false } = view;
 
   /* Zoeken en filteren, in één rij boven de lijst.
@@ -4925,6 +5180,16 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
       geen werk en hoort niet elke dag om aandacht te vragen.
    */''}${vatHeld > 0
     ? `<a class="fl-chip is-warn" href="/admin/vat">Btw-controle &middot; ${vatHeld} &rarr;</a>`
+    : ''}${/*
+      DE AANBEVELINGEN, om precies dezelfde reden als de regel hierboven en met
+      precies dezelfde fout in de voorgeschiedenis: de kolom bestond, de toestand
+      bestond, en er was geen weg ernaartoe. Zie de kop van renderTestimonials().
+
+      GEEN is-warn. Een aanbeveling die nog niet nagekeken is, is geen bestelling
+      die vastzit — er wacht niemand op. Een gewone chip dus, die alleen laat zien
+      dat er iets te lezen valt.
+   */''}${tmWaiting > 0
+    ? `<a class="fl-chip" href="/admin/testimonials">Aanbevelingen &middot; ${tmWaiting} &rarr;</a>`
     : ''}${watch ? watchChip(WATCH.cron, watch.cron) : ''}${watch
     ? watchChip(WATCH.backup, watch.backup)
     : ''}

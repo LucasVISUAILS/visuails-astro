@@ -11,10 +11,10 @@ import Layout from '../../layouts/Layout.astro';
 import StartPage from '../../components/StartPage.astro';
 import { WINDOW_THRESHOLD } from '../../data/pricing.js';
 
+/* Onder de 160 tekens — zie de noot in src/pages/start.astro. */
 const description =
-  `Kies het werk, dan volgt de flow: catalogsets, lifestyle-carousels of ` +
-  `allebei. Het tarief per product daalt naarmate het aantal stijgt, en vanaf ` +
-  `${WINDOW_THRESHOLD} producten is de leverdatum gereserveerd.`;
+  `Catalogsets, lifestyle-carousels of allebei. Het tarief per product daalt als ` +
+  `het aantal stijgt, en vanaf ${WINDOW_THRESHOLD} producten ligt je leverdatum vast.`;
 ---
 
 <Layout

@@ -341,10 +341,28 @@ export function paymentDescription(quote, lang = 'en') {
   const what = nl
     ? { catalog: 'catalogsets', lifestyle: 'lifestyle-carousels', complete: 'catalog + lifestyle' }
     : { catalog: 'catalog sets', lifestyle: 'lifestyle carousels', complete: 'catalog + lifestyle' };
+  /*
+   * ── DEZELFDE VAL, VOOR DE DERDE KEER — 14 AUGUSTUS 2026 ────────────────────
+   *
+   * `what` is gesleuteld op de LADDERNAAM, en `quote.service` draagt de
+   * WIRE-waarde: /start/complete post 'drop'. Zonder deze vertaling gaf deze
+   * functie letterlijk *"VISUAILS — 30 producten, undefined"* terug — gemeten,
+   * niet beredeneerd — en dat is de omschrijving die Mollie op de checkoutpagina
+   * zet en die op het bankafschrift van de klant terechtkomt. Op de duurste deur
+   * van de site, bij elk aantal producten, in elke bevestigingsmail.
+   *
+   * De reparatie stond al ergens: account.js:3233 wikkelde de dienst in
+   * ladderKey() met precies deze uitleg erboven. Alleen het primaire pad —
+   * functions/api/order.js, de link die élke bestelling meekrijgt — was nooit
+   * meegenomen. Vandaar dat de vertaling nu HIER staat en niet bij de aanroeper:
+   * zie de kop van ladderKey() over waarom een vertaling die elke aanroeper zelf
+   * moet kennen, de aanroeper is die hem vergeet.
+   */
+  const kind = ladderKey(quote.service);
   const n = quote.products;
   return nl
-    ? `VISUAILS — ${n} ${n === 1 ? 'product' : 'producten'}, ${what[quote.service]}`
-    : `VISUAILS — ${n} ${n === 1 ? 'product' : 'products'}, ${what[quote.service]}`;
+    ? `VISUAILS — ${n} ${n === 1 ? 'product' : 'producten'}, ${what[kind]}`
+    : `VISUAILS — ${n} ${n === 1 ? 'product' : 'products'}, ${what[kind]}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

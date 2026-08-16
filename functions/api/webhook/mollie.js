@@ -207,7 +207,19 @@ async function recordPaid(env, payment, mode) {
     return;
   }
 
-  const order = await env.DB.prepare('SELECT id, service, status, payment_status, total_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1').bind(ref).first();
+  /* `vat_cents` staat er sinds 14 augustus 2026 bij: een restitutie komt op het
+     BRUTO binnen, en `total_cents` is exclusief btw. Zonder die kolom zou "volledig
+     terugbetaald" op elke btw-plichtige bestelling te vroeg waar worden — zie
+     orderGrossCents(). Migratie 0015 bracht de kolom; draait die niet, dan geeft
+     D1 hier "no such column" en valt de query terug op de oude set. */
+  const order = await env.DB.prepare(
+    'SELECT id, service, status, payment_status, total_cents, vat_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1'
+  ).bind(ref).first().catch(async (err) => {
+    if (!/no such column/i.test(String(err?.message || err))) throw err;
+    return env.DB.prepare(
+      'SELECT id, service, status, payment_status, total_cents, refunded_cents, cancel_reason FROM orders WHERE ref = ?1'
+    ).bind(ref).first();
+  });
   if (!order) {
     // The order row is written before the payment is ever created, so this is
     // not a race — it means the ref does not exist here. The usual cause is a
@@ -223,6 +235,74 @@ async function recordPaid(env, payment, mode) {
   if (cents === null) {
     console.warn('[mollie-webhook] unreadable amount on', payment.id, '—', JSON.stringify(payment.amount));
   }
+
+/**
+ * Het brutobedrag van een bestelling: wat er is afgeschreven en dus wat er terug
+ * kan komen.
+ *
+ * `total_cents` is EXCLUSIEF btw — zie orderMoney() in src/lib/account.js — en
+ * `vat_cents` staat ernaast. Een restitutie komt op het bruto binnen, dus die twee
+ * horen hier opgeteld te worden. Ontbreekt `total_cents`, dan geeft deze functie
+ * null en valt de aanroeper terug op wat hij zeker weet; een verzonnen totaal is
+ * hier erger dan geen totaal, want er hangt een creditnota aan.
+ */
+function orderGrossCents(order) {
+  const net = Number(order?.total_cents);
+  if (!Number.isFinite(net) || net <= 0) return null;
+  const vat = Number(order?.vat_cents);
+  return Math.round(net + (Number.isFinite(vat) && vat > 0 ? vat : 0));
+}
+
+/**
+ * Het restitutietotaal van deze betaling wegschrijven, en het totaal van de hele
+ * bestelling teruggeven.
+ *
+ * ── WAAROM DIT ÉÉN FUNCTIE IS EN GEEN TWEE REGELS TER PLEKKE ────────────────
+ *
+ * Omdat de twee stappen niet los van elkaar kloppen. Schrijf je alleen weg, dan
+ * heeft niemand het totaal; lees je alleen, dan mis je wat deze aflevering meldt.
+ * En de volgorde is dwingend: eerst de eigen regel bijwerken, dan sommeren, anders
+ * telt de som de nieuwe waarde niet mee en boekt de bestelling te weinig terug.
+ *
+ * DE UPDATE IS EEN TOEWIJZING EN GEEN OPTELLING. `amountRefunded` is bij Mollie
+ * een lopend totaal per betaling, dus dezelfde melding twee keer afleveren zet
+ * hetzelfde getal nog een keer neer — en verandert niets. Dat is precies de
+ * eigenschap die deze hele sectie nodig heeft.
+ *
+ * ── EN HIJ VALT NOOIT OM ────────────────────────────────────────────────────
+ *
+ * Zonder migratie 0029 bestaat de kolom niet. Dan geeft deze functie het bedrag
+ * van deze betaling terug, en gedraagt de webhook zich exact zoals hij zich vóór
+ * vandaag gedroeg. Een niet-gedraaide migratie mag een betaling niet laten
+ * mislukken; hij mag alleen de verbetering uitstellen.
+ *
+ * De payments-RIJ bestaat op dit moment misschien nog niet — de INSERT staat
+ * verderop, achter de idempotentiepoort. Bij de allereerste aflevering met een
+ * restitutie erin raakt de UPDATE dus nul rijen, en dan valt de som terug op wat
+ * deze betaling meldt. Ook dat is de oude situatie en nooit slechter.
+ */
+async function recordRefundOnPayment(env, orderId, externalId, refunded) {
+  const eigen = Math.max(0, Math.floor(Number(refunded) || 0));
+  try {
+    await env.DB.prepare(
+      `UPDATE payments SET refunded_cents = ?1
+        WHERE provider = 'mollie' AND external_id = ?2 AND ?1 > refunded_cents`
+    ).bind(eigen, externalId).run();
+
+    const row = await env.DB.prepare(
+      'SELECT COALESCE(SUM(refunded_cents), 0) AS n FROM payments WHERE order_id = ?1'
+    ).bind(orderId).first();
+
+    const som = Math.max(0, Math.floor(Number(row?.n) || 0));
+    // De som telt deze betaling alleen mee als haar rij al bestaat. Zo niet, dan
+    // is het eigen bedrag het beste antwoord dat er is.
+    return Math.max(som, eigen);
+  } catch (err) {
+    if (!/no such column|no such table/i.test(String(err?.message || err))) throw err;
+    console.warn('[mollie-webhook] payments.refunded_cents ontbreekt — draai migratie 0029. Terugval op het bedrag van deze betaling.');
+    return eigen;
+  }
+}
 
   // ── HET BETAALMIDDEL, EN WAAROM HET HIER PAS BEKEND IS ─────────────────────
   //
@@ -261,27 +341,66 @@ async function recordPaid(env, payment, mode) {
   // amountRefunded is a RUNNING TOTAL on Mollie's side. Adding it on every
   // delivery would double-count a retried webhook — the exact bug this whole
   // section exists to fix, reintroduced one line lower down.
+  //
+  // ── PER BETALING GETELD, PER BESTELLING GEBOEKT — 14 AUGUSTUS 2026 ─────────
+  //
+  // Hier stond `refunded` (het lopende totaal van DEZE betaling) rechtstreeks
+  // vergeleken met en weggeschreven naar `orders.refunded_cents` (het totaal van
+  // de BESTELLING), en werd `full` getoetst tegen `cents` — het bedrag van deze
+  // betaling — terwijl `order.total_cents` een paar regels hoger wél wordt
+  // opgehaald en nergens in die vergelijking voorkwam.
+  //
+  // Zolang er één betaling per bestelling is, zijn die twee getallen hetzelfde en
+  // valt er niets op. Twee betalingen op één bestelling is echter de normale gang:
+  // de bevestigingsmail draagt een betaallink en handleOrderPay() maakt er nóg
+  // één zodra de klant op "Nu betalen" drukt — er wordt daar alleen gekeken of de
+  // bestelling nog `unpaid` is, niet of er al een betaling openstaat.
+  //
+  // Wat er dan gebeurde bij het terugstorten van de dubbele: `full` werd waar
+  // tegen het bedrag van díe betaling, de bestelling ging op 'refunded', en
+  // issueCreditNote() zette een VOLLEDIGE creditnota tegenover de factuur van de
+  // betaling die níet is teruggestort. Netto omzet nul op een bestelling die
+  // gewoon betaald, geleverd en correct gecorrigeerd is. En de spiegel: stond
+  // `refunded_cents` eenmaal op dat bedrag, dan kwam een echte deelrestitutie op
+  // de andere betaling binnen met `amountRefunded < known`, sloeg dit hele blok
+  // over, en werd nooit geboekt.
+  //
+  // Nu: elke betaling houdt zijn eigen restitutietotaal bij (migratie 0029), de
+  // bestelling draagt de SOM daarvan, en `full` wordt getoetst tegen wat de
+  // bestelling kostte. Zie de kop van die migratie voor waarom dat een kolom is
+  // en geen som uit `raw_payload`.
   const refunded = mollieAmountToCents(payment.amountRefunded) ?? 0;
+  const orderRefunded = await recordRefundOnPayment(env, order.id, payment.id, refunded);
   const known = Math.max(0, Math.floor(Number(order.refunded_cents) || 0));
-  if (refunded > known) {
-    // Fully refunded when it covers everything that was charged. `paid` with a
-    // partial refund recorded is deliberately NOT downgraded: the work was
-    // bought and part of it was given back, and calling that 'refunded' would
-    // tell the studio to stop on an order that is still running.
-    const full = cents !== null && refunded >= cents;
+
+  if (orderRefunded > known) {
+    /*
+     * VOLLEDIG WANNEER HET DEKT WAT DE BESTELLING KOSTTE, en niet wat deze ene
+     * betaling kostte. `total_cents` is exclusief btw en `orderMoney()` telt de
+     * btw erbij; hier wordt met BRUTO gerekend, want dat is wat er is afgeschreven
+     * en wat er terugkomt. Ontbreekt een van beide getallen, dan valt de toets
+     * terug op het bedrag van deze betaling — dezelfde richting als voorheen, en
+     * nooit strenger dan wat we zeker weten.
+     *
+     * `paid` met een deelrestitutie wordt bewust NIET afgewaardeerd: het werk is
+     * gekocht en er is een deel teruggegeven, en dat 'refunded' noemen zou de
+     * studio vertellen te stoppen met een bestelling die nog loopt.
+     */
+    const bruto = orderGrossCents(order);
+    const full = bruto !== null ? orderRefunded >= bruto : (cents !== null && refunded >= cents);
     await env.DB.prepare(
       `UPDATE orders SET refunded_cents = ?1, payment_status = ?2 WHERE id = ?3`
-    ).bind(refunded, full ? 'refunded' : order.payment_status || 'paid', order.id).run();
+    ).bind(orderRefunded, full ? 'refunded' : order.payment_status || 'paid', order.id).run();
 
     await env.DB.prepare(
       `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'system')`
     ).bind(
       order.id,
       order.status,
-      `Refund recorded: ${(refunded / 100).toFixed(2)} EUR of ${cents === null ? '?' : (cents / 100).toFixed(2)} (Mollie ${payment.id})`
+      `Refund recorded: ${(orderRefunded / 100).toFixed(2)} EUR of ${bruto === null ? '?' : (bruto / 100).toFixed(2)} (Mollie ${payment.id}, this payment ${(refunded / 100).toFixed(2)})`
     ).run().catch(() => {});
 
-    console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): ${known} -> ${refunded} cents, ${full ? 'full' : 'partial'}`);
+    console.log(`[mollie-webhook] refund on ${payment.id} (${mode}): order ${known} -> ${orderRefunded} cents, ${full ? 'full' : 'partial'}`);
 
     /*
      * ── EN DE CREDITNOTA — 12 augustus 2026 ──────────────────────────────────
@@ -309,7 +428,11 @@ async function recordPaid(env, payment, mode) {
      */
     try {
       const note = await issueCreditNote(env, order.id, {
-        refundedGrossCents: refunded,
+        // Het totaal van de BESTELLING en niet van deze ene betaling —
+        // issueCreditNote() telt zelf op wat er al gecrediteerd is en geeft
+        // alleen het verschil uit, dus dit moet het lopende totaal zijn waar de
+        // factuur tegenover staat.
+        refundedGrossCents: orderRefunded,
         reason: order.cancel_reason || null,
       });
       if (note) console.log(`[mollie-webhook] creditnota ${note.number} voor ${ref} (${note.status})`);

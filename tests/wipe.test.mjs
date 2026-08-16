@@ -298,6 +298,25 @@ console.log('\nde bestanden in R2 zijn weg, de factuur-pdf niet');
 {
   ok('het aangeleverde bestand is verwijderd', gewist.includes('intake/VIS-2608-0010/aangeleverd.jpg'), true);
   ok('het geleverde beeld ook', gewist.includes('delivery/VIS-2608-0010/p1-voorkant.png'), true);
+  /* ── EN DE AFGELEIDE FORMATEN — 14 AUGUSTUS 2026 ──────────────────────────
+   *
+   * Deze regel ontbrak, en de wis daarmee ook. Sinds migratie 0022 is een
+   * geleverd beeld vier objecten: de png-master, de reviewkopie, en een jpg en
+   * webp die ALLEEN als rij in `file_assets` bestaan — precies de twee die de
+   * klant publiceert en die in zijn zip zitten.
+   *
+   * De wisquery las twee kolommen uit `files` en kende die tabel niet. Een paar
+   * regels verderop verdwenen de `file_assets`-rijen wél, dus na afloop wees er
+   * niets in D1 meer naar die objecten: onvindbaar, permanent, terwijl het
+   * logboek de wissing als voltooid boekte. Bij een verzoek onder art. 17 AVG is
+   * dat de ergste soort fout — hij ziet er afgerond uit.
+   *
+   * Deze toets kon hem niet zien omdat hij naar de RIJEN keek (regel "file_assets
+   * is leeg") en niet naar de OBJECTEN. Die twee vragen zijn niet hetzelfde, en
+   * dat verschil is precies waar het bestand tussendoor viel. */
+  ok('en de afgeleide webp die alleen in file_assets stond',
+    gewist.includes('delivery/VIS-2608-0010/p1-voorkant.webp'), true,
+    gewist.join(' '));
   ok('en het portret van het merkmodel', gewist.includes('models/7/1-portret.jpg'), true);
   /* DE FACTUUR-PDF BLIJFT. Hij hoort bij het document dat om dezelfde reden blijft
      staan als de rij eromheen; hem weggooien zou de bewaarplicht breken en de

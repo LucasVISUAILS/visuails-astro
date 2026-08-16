@@ -521,6 +521,139 @@ function faqNode(items, lang, url) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// THE TRAIL — 14 augustus 2026
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// WAT ONTBRAK. Deze site heeft 87 pagina's en twee niveaus — /lifestyle/glow,
+// /video/campaign, /start/catalog — en geen enkele pagina vertelde een
+// zoekmachine waar ze hing. Zonder BreadcrumbList toont Google het kale pad van
+// de url onder de titel; met, toont hij de namen. Dat is het hele verschil:
+// "visuails.com › lifestyle › glow" tegenover "Lifestyle › Glow".
+//
+// ── WAAROM DIT EEN TABEL IS EN GEEN AFLEIDING UIT DE URL ───────────────────
+//
+// De verleiding is om 'glow' met een hoofdletter te schrijven en klaar te zijn.
+// Dat gaat op deze site meteen mis: 'phone-made' wordt dan 'Phone-made' (klopt),
+// 'ai-act' wordt 'Ai-act' (fout), 'data-processing-agreement' wordt een zin van
+// vier woorden die nergens zo staat, en 'custom-models' krijgt een naam die van
+// de pagina zelf verschilt. Een kruimelpad met een verzonnen naam erin is erger
+// dan geen kruimelpad: het staat in het zoekresultaat, en het is dan ONS woord
+// dat niet klopt.
+//
+// Dus: alleen wat hier met naam en toenaam staat, krijgt een spoor. Een pagina
+// die er niet in staat, krijgt geen BreadcrumbList — geen gok, geen halve.
+// Vandaar ook dat crumbsFor() null teruggeeft in plaats van een deel: een spoor
+// dat halverwege ophoudt, wijst naar een niveau dat er niet is.
+//
+// ── EN GEEN ITEM VOOR DE PAGINA ZELF ───────────────────────────────────────
+//
+// De laatste kruimel is de pagina waar je op staat, en die krijgt bewust geen
+// `item`-url. Dat is wat de schema.org-documentatie voorschrijft en het is ook
+// logisch: een link naar de pagina waar je al bent, is geen navigatie.
+
+const CRUMB_ROOT = { en: 'Home', nl: 'Home' };
+
+const CRUMBS = {
+  '/about': { en: 'About', nl: 'Over ons' },
+  '/ai-act': { en: 'AI Act', nl: 'AI-verordening' },
+  '/catalog': { en: 'Catalog', nl: 'Catalog' },
+  '/catalog/classic': { en: 'Classic', nl: 'Classic' },
+  '/catalog/custom': { en: 'Custom Brand', nl: 'Custom Brand' },
+  '/compare': { en: 'Compare', nl: 'Vergelijken' },
+  '/contact': { en: 'Contact', nl: 'Contact' },
+  '/cookie-policy': { en: 'Cookie policy', nl: 'Cookiebeleid' },
+  '/custom-models': { en: 'Brand Model', nl: 'Merkmodel' },
+  '/data-processing-agreement': { en: 'Data processing agreement', nl: 'Verwerkersovereenkomst' },
+  '/faq': { en: 'FAQ', nl: 'Veelgestelde vragen' },
+  '/gallery': { en: 'Gallery', nl: 'Galerij' },
+  '/guides': { en: 'Guides', nl: 'Gidsen' },
+  '/how-it-works': { en: 'How it works', nl: 'Hoe het werkt' },
+  '/lifestyle': { en: 'Lifestyle', nl: 'Lifestyle' },
+  '/lifestyle/custom': { en: 'Custom', nl: 'Custom' },
+  '/lifestyle/dunes': { en: 'Dunes', nl: 'Dunes' },
+  '/lifestyle/flash': { en: 'Flash', nl: 'Flash' },
+  '/lifestyle/glow': { en: 'Glow', nl: 'Glow' },
+  '/lifestyle/phone-made': { en: 'Phone-made', nl: 'Phone-made' },
+  '/models': { en: 'Models', nl: 'Modellen' },
+  '/pricing': { en: 'Pricing', nl: 'Tarieven' },
+  '/privacy': { en: 'Privacy', nl: 'Privacy' },
+  '/start': { en: 'Order', nl: 'Bestellen' },
+  '/start/brand-model': { en: 'Brand Model', nl: 'Merkmodel' },
+  '/start/catalog': { en: 'Catalog sets', nl: 'Catalogsets' },
+  '/start/complete': { en: 'Catalog and lifestyle', nl: 'Catalog en lifestyle' },
+  '/start/lifestyle': { en: 'Lifestyle carousels', nl: 'Lifestyle-carousels' },
+  '/start/plan': { en: 'Plan', nl: 'Plan' },
+  '/start/video': { en: 'Video', nl: 'Video' },
+  '/terms': { en: 'Terms', nl: 'Voorwaarden' },
+  '/test-sample': { en: 'Test sample', nl: 'Proefvisual' },
+  '/upload-guidelines': { en: 'Upload guidelines', nl: 'Uploadrichtlijnen' },
+  '/video': { en: 'Video', nl: 'Video' },
+  '/video/campaign': { en: 'Campaign', nl: 'Campaign' },
+  '/video/custom': { en: 'Custom', nl: 'Custom' },
+  '/video/lifestyle': { en: 'Lifestyle', nl: 'Lifestyle' },
+  '/video/motion': { en: 'Motion', nl: 'Motion' },
+};
+
+/*
+ * WAT ER MET OPZET NIET IN STAAT. /portal, /studio, /thank-you en /demo zijn
+ * pagina's waar je terechtkomt en niet naartoe zoekt: een kruimelpad in een
+ * zoekresultaat van een bedankpagina nodigt uit tot een klik die niets oplevert.
+ * En /nl-varianten staan er niet apart in, want buildGraph krijgt het
+ * TAALNEUTRALE pad — zie de `path`-parameter daar — dus /nl/lifestyle/glow en
+ * /lifestyle/glow zijn hier één regel met twee namen.
+ */
+
+/** De kruimels voor dit pad, of null als we niet elke laag bij naam kennen. */
+function crumbsFor(p, lang) {
+  if (p === '/' || !CRUMBS[p]) return null;
+  const delen = p.split('/').filter(Boolean);
+  const trail = [];
+  for (let i = 0; i < delen.length; i += 1) {
+    const sub = `/${delen.slice(0, i + 1).join('/')}`;
+    const naam = CRUMBS[sub];
+    // Een tussenniveau zonder naam betekent geen spoor. Zie de kop hierboven:
+    // liever geen kruimelpad dan een kruimelpad met een verzonnen woord erin.
+    if (!naam) return null;
+    trail.push({ path: sub, name: naam[lang] || naam.en });
+  }
+  return trail;
+}
+
+/**
+ * De BreadcrumbList voor deze pagina, of null.
+ *
+ * `url` is de canonieke url van de pagina zelf en wordt gebruikt om de ANDERE
+ * urls te bouwen, zodat het taalvoorvoegsel klopt zonder dat deze functie iets
+ * over talen hoeft te weten: /nl/lifestyle/glow levert /nl/lifestyle op, en
+ * /lifestyle/glow levert /lifestyle op. Datzelfde argument als bij buildGraph —
+ * één url per pagina, afgeleid en niet opnieuw opgebouwd.
+ */
+function breadcrumbNode(p, lang, url) {
+  const trail = crumbsFor(p, norm(lang));
+  if (!trail) return null;
+
+  // Het voorvoegsel van deze pagina: alles vóór het taalneutrale pad. Voor
+  // https://visuails.com/nl/lifestyle/glow is dat 'https://visuails.com/nl'.
+  const eind = String(url).lastIndexOf(p);
+  const prefix = eind > 0 ? String(url).slice(0, eind) : SITE;
+
+  const items = [{ name: CRUMB_ROOT[norm(lang)] || CRUMB_ROOT.en, url: `${prefix}/` }]
+    .concat(trail.map((t) => ({ name: t.name, url: `${prefix}${t.path}` })));
+
+  return {
+    '@type': 'BreadcrumbList',
+    '@id': `${url}#breadcrumb`,
+    itemListElement: items.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.name,
+      // Geen `item` op de laatste: dat is de pagina zelf. Zie de kop.
+      ...(i === items.length - 1 ? {} : { item: it.url }),
+    })),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // THE GRAPH
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -538,6 +671,13 @@ export function buildGraph({ path = '/', lang = 'en', url = SITE } = {}) {
   const p = normalizePath(path);
   const l = norm(lang);
   const nodes = [organizationNode()];
+
+  /* Het kruimelpad, waar we het pad bij naam kennen. Vóór de dienstknoop, want
+     dit gaat over WAAR de pagina hangt en de rest over wat erop staat — en een
+     graph leest prettiger van plaats naar inhoud. Zie de kop hierboven voor
+     waarom een onbekend pad hier niets oplevert in plaats van een gok. */
+  const crumbs = breadcrumbNode(p, l, url);
+  if (crumbs) nodes.push(crumbs);
 
   if (PILLARS[p]) nodes.push(serviceNode(p, l, url));
   if (p === '/pricing') nodes.push(...pricingProductNodes(l, url));

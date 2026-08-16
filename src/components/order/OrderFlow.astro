@@ -46,7 +46,7 @@ import {
 } from '../../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
-import { SHOTS, SHOT_IDS, copy as shotCopy } from '../../data/shots.js';
+import { SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy } from '../../data/shots.js';
 import {
   PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
 } from '../../data/attributes.js';
@@ -471,6 +471,27 @@ for (const l of ['en', 'nl'] as const) {
     ratioSame: l === 'nl' ? 'Zelfde als de bestelling' : 'Same as the order',
     ratioImage: l === 'nl' ? 'Beeld {n}' : 'Image {n}',
 
+    /* ── HET PLUSJE: NOG EEN FOTO, GRATIS ─────────────────────────────────
+     * Lucas: *"meer foto's toe te voegen van zijn product kosteloos [...] maar
+     * wel gewoon 4 foto's in totaal krijgen."*
+     *
+     * DIE TWEEDE HELFT STAAT IN DE HINT EN NIET IN EEN VOETNOOT. "Gratis" naast
+     * een uploadvak leest anders als "gratis beeld erbij", en dat is precies de
+     * verwachting die je niet wilt wekken op het scherm waar iemand betaalt.
+     * Het aantal komt uit CATALOG_IMAGES en wordt niet overgetypt. */
+    refAdd: l === 'nl' ? 'Nog een foto' : 'Another photo',
+    refHint: l === 'nl'
+      ? `Gratis. Meer foto's van hetzelfde product helpen ons — je krijgt nog steeds ${CATALOG_IMAGES} beelden.`
+      : `Free. More photos of the same product help us — you still receive ${CATALOG_IMAGES} images.`,
+    refSlot: l === 'nl' ? 'Referentie {n}' : 'Reference {n}',
+    refFull: l === 'nl'
+      ? 'Dat zijn er {max} — genoeg om je product goed te zien.'
+      : 'That is {max} — enough to see your product properly.',
+    /* "Weghalen" en niet "Verwijderen": dat tweede woord staat al onder een
+       gevuld vak en betekent daar "gooi mijn foto weg". Dit haalt een LEEG vakje
+       weg dat per ongeluk is aangevraagd, en dat is een andere handeling. */
+    refDrop: l === 'nl' ? 'Weghalen' : 'Remove slot',
+
     // ── The per-product questions ────────────────────────────────────────
     // Words only. src/data/attributes.js owns them the way shots.js owns the
     // four angles, and none of them is retyped here. pipeline.js imports the
@@ -556,6 +577,7 @@ const REQUIRED_COPY = [
   // in de blob, want een dienst die hem morgen wél krijgt, hoort geen kaart met
   // een leeg label te tekenen — dat is precies wat deze lijst voorkomt.
   'pu.ratioH', 'pu.ratioHint', 'pu.ratioSame', 'pu.ratioImage',
+  'pu.refAdd', 'pu.refHint', 'pu.refSlot', 'pu.refFull', 'pu.refDrop',
   ...LIFESTYLE_RATIOS.map((r) => `ratio.name.${r.id}`),
   // The product questions, generated from src/data/attributes.js rather than
   // typed, for the reason the shot names are: a second question added there
@@ -1001,6 +1023,11 @@ const config = {
   // it here would freeze the wrong rung into the page.
   extraPhotoLadder: EXTRA_PHOTO_LADDER,
   maxExtraPerProduct: MAX_EXTRA_PER_PRODUCT,
+  /* De GRATIS referentievakken achter het plusje. Uit shots.js en niet uit
+     pricing.js, en dat verschil is de hele afspraak: de betaalde extra's staan
+     daar omdat ze geld kosten, deze staan daar omdat ze alleen een vakje zijn dat
+     het formulier tekent. Zie de kop bij REF_SHOT_PREFIX. */
+  maxRefPerProduct: MAX_REF_PER_PRODUCT,
   maxOutfit: MAX_OUTFIT_PRODUCTS,
   bg: { customId: CUSTOM_ID, lightThreshold: LIGHT_THRESHOLD },
   /*

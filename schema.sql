@@ -963,3 +963,12 @@ CREATE TABLE IF NOT EXISTS customer_credits (
 );
 CREATE INDEX IF NOT EXISTS idx_credits_customer
   ON customer_credits (customer_id, created_at DESC);
+
+-- ── RESTITUTIE PER BETALING — migratie 0029, 14 augustus 2026 ────────────────
+-- Zie migrations/0029-restitutie-per-betaling.sql voor het volledige argument.
+-- Kort: `orders.refunded_cents` is het TOTAAL van de bestelling en Mollie's
+-- amountRefunded is een lopend totaal PER BETALING. Zolang die twee dezelfde kolom
+-- deelden, zette het terugstorten van een dubbele betaling de hele bestelling op
+-- 'refunded' met een volledige creditnota erbij. Deze kolom is de regel; de kolom
+-- op `orders` blijft het totaal.
+ALTER TABLE payments ADD COLUMN refunded_cents INTEGER NOT NULL DEFAULT 0;

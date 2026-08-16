@@ -376,7 +376,52 @@
   --t-lg:    clamp(1.05rem, 1.35vw, 1.18rem);
   --t-body:  1.0625rem;
 
+  /* ── DE MAATVOERING VAN DE PAGINA — 14 augustus 2026 ──────────────────────
+   *
+   * Lucas: *"de gehele site zit tussen een specifieke breedte en het wijkt daar
+   * nooit van af, bijvoorbeeld dat sommige gedeeltes meer naar links en rechts
+   * uitbreiden. Waardoor komt dit?"*
+   *
+   * Gemeten: `.container` staat 247 keer in src/, en er waren precies TWEE
+   * maten — 1240px, en 760px voor `.narrow` op de juridische pagina's. Elk
+   * ander blok op de site, van de galerij van achtendertig foto's tot een
+   * enkele alinea, deelde dezelfde 1240. Dat is niet iets van Astro en niet
+   * iets van een designsysteem; het is één token dat overal gebruikt is.
+   *
+   * WAAROM DAT LANG GOED VOELDE. Eén maat is de goedkoopste manier om een site
+   * er samenhangend uit te laten zien: niets staat ooit scheef, want er is
+   * niets om scheef tegen te staan. De prijs betaal je pas als de site groeit —
+   * dan leest álles als hetzelfde soort blok, en heeft een fotogalerij evenveel
+   * gewicht als een cookieverklaring.
+   *
+   * DE OPLOSSING IS NIET "DE CONTAINER WEG". Dat levert een pagina op waarvan de
+   * regellengte met het scherm meegroeit, en op 2560px leest niemand een zin van
+   * 200 tekens. Wat er wél moet is een LADDER: een paar maten, elk met een
+   * duidelijke taak, zodat een breder blok breed is omdat het dat verdient en
+   * niet omdat het toevallig mocht.
+   *
+   *   --container-narrow   760  lopende tekst. Voorwaarden, privacy, één kolom
+   *                             proza. Ongeveer 70 tekens per regel, en dat is
+   *                             waar leesonderzoek al vijftig jaar op uitkomt.
+   *   --container         1240  de standaard. Kaarten, formulieren, alles wat
+   *                             tekst en beeld naast elkaar zet.
+   *   --container-wide    1600  rasters van beeld. Een galerij van achtendertig
+   *                             foto's in 1240 is vier kolommen van 280; in 1600
+   *                             zijn het er vijf van 300, en dan gaat de pagina
+   *                             over de foto's in plaats van over de marge.
+   *
+   * En daarboven `.container.bleed`, dat helemaal geen maat heeft: alleen voor
+   * beeld dat de rand mag raken. Nooit voor tekst — een zin die op 2560px begint
+   * bij pixel 0 heeft geen begin.
+   *
+   * WAAROM DRIE EN NIET ZES. Elke maat erbij is een keuze die iemand per blok
+   * moet maken, en een ladder die je moet opzoeken, is een ladder waarop
+   * uiteindelijk alles op de standaard blijft staan. Drie is genoeg om ritme te
+   * maken en weinig genoeg om te onthouden.
+   */
   --container: 1240px;
+  --container-narrow: 760px;
+  --container-wide: 1600px;
   /* ---- radius ----
      The scale lives at the top of this block (--r-lg / --r-md / --r-sm) and
      --radius aliases --r-md for the components that still read the old name.
@@ -952,7 +997,13 @@ p { text-wrap: pretty; margin: 0; }
 .lead { font-size: var(--t-lg); color: var(--ink-2); line-height: 1.6; max-width: 56ch; }
 
 .container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: clamp(1.2rem, 4vw, 2.6rem); }
-.container.narrow { max-width: 760px; }
+.container.narrow { max-width: var(--container-narrow); }
+/* De twee maten die er op 14 augustus 2026 bij kwamen — zie de ladder bij
+   --container hierboven. `wide` houdt zijn zijmarge; `bleed` geeft die op en is
+   daarmee alleen geschikt voor beeld. Geen van beide raakt iets aan tot een
+   pagina hem vraagt: de standaard blijft de standaard. */
+.container.wide { max-width: var(--container-wide); }
+.container.bleed { max-width: none; padding-inline: clamp(.8rem, 2vw, 1.6rem); }
 section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1764,7 +1815,14 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .photo-split-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @media (max-width: 860px) { .photo-split, .photo-split.reverse { grid-template-columns: 1fr; } .photo-split.reverse .photo-split-media { order: 0; } }
 
+/* DRIE KOLOMMEN, EN VIER ZODRA ER RUIMTE VOOR IS — 14 augustus 2026.
+   De galerij staat sinds vandaag in `.container.wide` (1600 in plaats van 1240).
+   Zonder deze regel levert die ruimte grótere foto's op en niet MEER foto's: drie
+   cellen van 495px. Vier van 372 laat een bezoeker in één scherm zien hoeveel werk
+   er staat, en dat is wat een galerij moet doen. Onder 1200px is er geen ruimte
+   voor een vierde en blijven het er drie — zelfde raster als altijd. */
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(.6rem, 1.4vw, 1rem); }
+@media (min-width: 1200px) { .photo-grid { grid-template-columns: repeat(4, 1fr); } }
 .photo-grid img { width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 4/5; }
 .photo-grid .wide { grid-column: span 2; aspect-ratio: unset; }
 @media (max-width: 700px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } .photo-grid .wide { grid-column: span 2; } }
@@ -2561,25 +2619,6 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .ts-msg { margin-top: .5rem; font-size: .85rem; color: var(--ink-3); }
 .ts-msg:empty { display: none; }
 .ts-msg.is-error { color: var(--warn-ink); }
-
-/* De weigering bovenaan het formulier — 11 augustus 2026.
- *
- * Voor de bezoeker die terugkomt met ?error=… omdat de server de bestelling niet
- * heeft aangenomen: een tweede proefvisual op hetzelfde adres, of een e-mailadres
- * dat niet klopt. initFormRefusal() in interactions.js haalt het `hidden` eraf.
- *
- * --warn op de rand en --warn-ink op de kop, niet omgekeerd: --warn is in DESIGN.md
- * de waarde voor vlakken, randen en grote tekst, --warn-ink die voor tekst. De
- * lopende tekst blijft --ink-2, want een hele alinea in een waarschuwingskleur
- * leest als een storing terwijl dit een regel is die gewoon wordt uitgelegd.
- *
- * tabindex="-1" staat in de HTML zodat de melding focus kan krijgen; vandaar hier
- * ook een zichtbare ring, anders springt de pagina ergens heen zonder te tonen
- * waarheen. */
-.ts-refused { margin-bottom: 1.4rem; padding: 1rem 1.15rem; border: 1px solid var(--warn); background: var(--surface); font-size: .92rem; line-height: 1.55; color: var(--ink-2); }
-.ts-refused strong { display: block; margin-bottom: .3rem; color: var(--warn-ink); }
-.ts-refused a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.ts-refused:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 /* DOM order out of tsRow() is name, size, msg; the Remove button is appended
    last, so it is placed explicitly — left to auto-placement it would drop onto

@@ -22,6 +22,7 @@
 // redenen die niets met deze code te maken hebben.
 import { accountPost } from '../src/lib/account.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
+import { paymentDescription } from '../src/lib/quote.js';
 
 let fails = 0;
 const check = (name, cond, got = '') => {
@@ -284,6 +285,42 @@ console.log('\n── als het misgaat ──');
   });
   check('a checkout URL that is not Mollie is refused', !/evil\.example/.test(r.to), r.to);
   check('and lands back on the order', /#order-91$/.test(r.to), r.to);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE OMSCHRIJVING OP HET BANKAFSCHRIFT
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * DEZELFDE VAL DREIGDE VOOR DE DERDE KEER. `paymentDescription()` sleutelt op de
+ * LADDERNAAM en `orders.service` draagt de WIRE-waarde; /start/complete post
+ * 'drop'. Zonder vertaling gaf de functie letterlijk "VISUAILS — 30 producten,
+ * undefined" terug, op de duurste deur van de site, in élke bevestigingsmail.
+ *
+ * Twee keer eerder heeft dezelfde vertaling in dit project geld gekost: één keer
+ * bij PAYABLE_SERVICES (een bestelling van € 2.359,50 zonder betaalknop) en één
+ * keer bij tierFor(). Vandaar dat het hier niet als aanroepercode getoetst wordt
+ * maar als UITKOMST: wat komt eruit, voor elke dienst die de site verkoopt.
+ */
+console.log('\nde betaalomschrijving noemt de dienst bij naam, ook op de wire-waarde');
+{
+  for (const [svc, nlWoord] of [
+    ['drop', 'catalog + lifestyle'],
+    ['complete', 'catalog + lifestyle'],
+    ['catalog', 'catalogsets'],
+    ['lifestyle', 'lifestyle-carousels'],
+  ]) {
+    const nl = paymentDescription({ service: svc, products: 30 }, 'nl');
+    const en = paymentDescription({ service: svc, products: 30 }, 'en');
+    check(`${svc}: NL noemt de dienst`, nl.includes(nlWoord), nl);
+    check(`${svc}: en er staat nergens 'undefined'`, !/undefined/.test(nl + en), `${nl} | ${en}`);
+  }
+  /* De proef heeft zijn eigen zin en geen aantal — die tak stond er al en mag
+     niet meeveranderen. */
+  check('de proefvisual houdt zijn eigen omschrijving',
+    paymentDescription({ service: 'test-sample', products: 1 }, 'nl') === 'VISUAILS proefvisual', true);
+  /* Enkelvoud. Eén product is geen "1 producten" op een bankafschrift. */
+  check('en één product staat in het enkelvoud',
+    paymentDescription({ service: 'catalog', products: 1 }, 'nl').includes('1 product,'), true);
 }
 
 console.log(fails ? `\n${fails} FAILED` : '\nall passed');

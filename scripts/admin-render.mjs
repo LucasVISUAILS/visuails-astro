@@ -42,6 +42,26 @@ FILES.push({ id: fid++, kind: 'delivery', filename: 'VOLT-p2-back.webp', bytes: 
 FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1001.jpg', bytes: 2_400_000, product_key: 'p1', shot: null, created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
 FILES.push({ id: fid++, kind: 'upload', filename: 'IMG_1002.jpg', bytes: 2_500_000, product_key: 'p2', shot: null, created_at: '2026-07-28', review_state: null, announced_at: null, superseded_at: null });
 
+/* Verzonnen, en met opzet niet zoals een echte klant schrijft: één korte en één
+   die over drie alinea's gaat, zodat de opmaak van allebei te beoordelen is. Geen
+   echte bedrijfsnaam en geen echt adres — zie de regel daarover in FigDash.astro. */
+const TESTIMONIALS = [
+  {
+    order_id: 90, ref: 'VIS-2607-9920', brand: 'VOLT', service: 'catalog', lang: 'nl',
+    testimonial_text: 'Binnen vier dagen stonden er twaalf producten online die er eindelijk bij elkaar uitzien.',
+    testimonial_name: 'Mara', testimonial_approved: 0,
+    updated_at: '2026-08-09 11:12', asked_at: '2026-08-08', email: 'studio@voorbeeldmerk.nl',
+    closed_at: '2026-08-08',
+  },
+  {
+    order_id: 89, ref: 'VIS-2607-3312', brand: 'NOORD', service: 'lifestyle', lang: 'nl',
+    testimonial_text: 'We hadden al een fotograaf en die blijven we houden voor de campagnes.\n\nWaar dit het verschil maakte is de lange staart: dertig artikelen die het budget van een shoot nooit gaan halen, en die er nu wel netjes bij staan.\n\nDe achtergrond klopte meteen met wat er al stond, dat scheelde het meeste werk.',
+    testimonial_name: 'Joris', testimonial_approved: 1,
+    updated_at: '2026-08-04 16:40', asked_at: '2026-08-03', email: 'inkoop@voorbeeldmerk.nl',
+    closed_at: '2026-08-03',
+  },
+];
+
 function makeEnv() {
   const pick = (sql) => {
     const s = sql.replace(/\s+/g, ' ');
@@ -49,6 +69,11 @@ function makeEnv() {
       return { admin_id: 1, id: 1, email: 'hello@visuails.com', expires_at: '2099-01-01' };
     }
     if (s.includes('FROM rate_limits')) return null;
+    /* De aanbevelingen — 14 augustus 2026. Twee rijen en niet één: het scherm
+       splitst op "wacht op je" en "goedgekeurd", en met alleen een wachtende rij
+       is de helft van de opmaak op de schermafdruk niet te zien. Zie de kop van
+       renderTestimonials() in src/lib/admin.js. */
+    if (s.includes('FROM order_feedback f')) return TESTIMONIALS;
     if (s.includes('SELECT status, COUNT(*)')) return [{ status: 'delivered', n: 41 }];
     if (s.includes('COUNT(*) AS n')) return { n: 2 };
     if (s.includes('FROM files WHERE order_id')) return FILES;

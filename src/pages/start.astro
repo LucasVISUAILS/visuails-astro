@@ -11,10 +11,14 @@ import Layout from '../layouts/Layout.astro';
 import StartPage from '../components/StartPage.astro';
 import { WINDOW_THRESHOLD } from '../data/pricing.js';
 
+/* ONDER DE 160 TEKENS, en dat is geteld en niet geschat: tests/nav.test.mjs meet
+   elke gebouwde pagina. Google kapt daarboven af met een beletselteken, en dan is
+   het de LAATSTE zin die wegvalt — hier de zin over de gereserveerde leverdatum,
+   precies het argument dat iemand over de streep trekt. Het interpolatiegetal
+   telt mee, dus de marge is niet nul: WINDOW_THRESHOLD kan tweecijferig worden. */
 const description =
-  `Pick the work and the flow follows it: catalog sets, lifestyle carousels, ` +
-  `or both. The rate per product falls as the count rises, and from ` +
-  `${WINDOW_THRESHOLD} products the delivery date is reserved.`;
+  `Catalog sets, lifestyle carousels, or both. The rate per product falls as the ` +
+  `count rises, and from ${WINDOW_THRESHOLD} products your delivery date is reserved.`;
 ---
 
 <Layout
