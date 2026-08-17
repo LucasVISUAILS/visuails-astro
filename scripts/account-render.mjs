@@ -147,15 +147,67 @@ const EVENTS = [
    met score 2 of 5 in om de twee vervolgtoestanden te bekijken. */
 const FEEDBACK = [];
 
+/* ── HET ABONNEMENT ─────────────────────────────────────────────────────────
+ * Zonder deze rijen rendert /account/plan de kaart voor een klant ZONDER
+ * abonnement, en dat is precies het scherm dat je niet hoeft te controleren.
+ * Een lopend Studio-abonnement met een halfvol saldo, drie dingen op de lijst
+ * en twee die al gemaakt zijn — de toestand waarin de pagina het meeste te
+ * tonen heeft.
+ *
+ * De maand is opzettelijk `datum()` en geen vaste string: subscription.js
+ * vergelijkt met de HUIDIGE maand, en een vastgezette '2026-08' zou deze
+ * schermafdruk in september stilletjes op "nog niet betaald" laten vallen. */
+const NU = new Date().toISOString().slice(0, 7);
+const SUBSCRIPTION = {
+  id: 4, ref: 'SUB-4K2P-9XT', customer_id: 7, plan: 'studio', term: 'yearly',
+  status: 'active', window_day: 8,
+  mollie_customer_id: 'cst_voorbeeld', mollie_mandate_id: 'mdt_voorbeeld', mollie_subscription_id: 'sub_voorbeeld',
+  started_at: '2026-05-08', cancelled_at: null, cancel_reason: null,
+  paused_at: null, pause_reason: null, created_at: '2026-05-06',
+};
+/* Twee maanden: de vorige met een overschot dat doorschuift, en deze. Zo staan de
+   drie soorten vakje allemaal op de schermafdruk — verbruikt, open, doorgeschoven
+   — en is de vervalregel te lezen. `VORIGE` is een echte vorige maand en geen
+   vaste string, om dezelfde reden als bij NU. */
+const VORIGE = (() => {
+  const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - 1);
+  return d.toISOString().slice(0, 7);
+})();
+const LOCKS = [
+  { style: 'catalog', custom_model_id: 31, roster_model: null, background_hex: '#F7F5F1', ratio: 'portrait45', channels: 'own,bol' },
+  { style: 'lifestyle', custom_model_id: 31, roster_model: null, background_hex: null, ratio: 'portrait45', channels: null },
+];
+const SUB_MONTHS = [
+  { month: VORIGE, granted: 12, used: 9, clips_granted: 2, clips_used: 2 },
+  { month: NU, granted: 12, used: 7, clips_granted: 2, clips_used: 1 },
+];
+const QUEUE = [
+  { id: 21, position: 0, name: 'Winterjas, zwart', note: 'graag op straat, niet in de studio', upload_batch: null, created_at: '2026-08-14' },
+  { id: 22, position: 1, name: 'Wollen sjaal — drie kleuren', note: null, upload_batch: null, created_at: '2026-08-14' },
+  { id: 23, position: 2, name: 'Handschoenen', note: 'detailopname van de naad', upload_batch: null, created_at: '2026-08-15' },
+];
+const TAKEN = [
+  { id: 19, name: 'Regenjas, olijf', taken_at: '2026-08-08', order_id: 91, order_ref: 'VIS-2608-4471' },
+  { id: 18, name: 'Trui, gebroken wit', taken_at: '2026-07-08', order_id: 90, order_ref: 'VIS-2607-9920' },
+];
+
 function makeDb() {
   const pick = (sql) => {
     const s = sql.replace(/\s+/g, ' ');
+    if (s.includes('FROM subscriptions')) return SUBSCRIPTION;
+    if (s.includes('FROM subscription_months')) return SUB_MONTHS;
+    if (s.includes('FROM plan_queue q')) return TAKEN;
+    if (s.includes('FROM plan_queue')) return QUEUE;
     if (s.includes('FROM account_sessions')) return { ...CUSTOMER, expires_at: '2099-01-01' };
     if (s.includes('FROM rate_limits')) return null;
     if (s.includes('FROM order_events')) return EVENTS;
     if (s.includes('FROM files f JOIN orders')) return FILES;
     if (s.includes('FROM custom_models')) return MODELS;
-    if (s.includes('FROM customer_style_locks')) return [];
+    /* ECHTE VASTGELEGDE VOORKEUREN. Met een lege lijst rendert /account/plan drie
+       keer "nog niet ingesteld" plus de nudge, en dan is precies de kaart die het
+       abonnement draagt de kaart die je niet kunt beoordelen. Catalog en lifestyle
+       staan vast, video niet — zo staan beide toestanden op één schermafdruk. */
+    if (s.includes('FROM customer_style_locks')) return LOCKS;
     if (s.includes('FROM order_feedback')) return FEEDBACK;
     if (s.includes('FROM invoices i')) return INVOICES;
     if (s.includes('FROM customers WHERE id')) return DETAILS;
@@ -187,7 +239,11 @@ async function render(section, lang) {
    * manier waarop het zelf kon liegen. */
   const request = new Request(url, {
     headers: {
-      cookie: `vis_account=${token}; vis_lang=${lang}`,
+      /* Met VISUAILS_NAV=dicht rendert dit script de INGEKLAPTE balk. Dat is de
+         enige manier om die stand te zien: hij komt uit een cookie, want de CSP van
+         dit dashboard laat geen script toe. Zie navCookie() in account.js. */
+      cookie: `vis_account=${token}; vis_lang=${lang}`
+        + (process.env.VISUAILS_NAV === 'dicht' ? '; vis_nav=dicht' : ''),
       'accept-language': lang === 'nl' ? 'nl-NL,nl;q=0.9' : 'en-GB,en;q=0.9',
     },
   });

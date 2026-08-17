@@ -161,5 +161,63 @@ console.log('\nen als er iets omvalt');
   ok('zonder database geen hash', await payerHash({}, ideal('NL91ABNA0417164300')), null);
 }
 
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * DE KLEP LEEST DE BETALING, NIET DE DATABASE — 17 AUGUSTUS 2026
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Op 17 augustus is `payments.raw_payload` uitgekleed: daar stond de hele reactie
+ * van Mollie in, en dus bij iDEAL de naam en het rekeningnummer van de betaler.
+ * Bewaard zonder dat iets het las.
+ *
+ * Bij die wijziging hoort precies één vraag, en Lucas stelde hem: blijft de klep
+ * op één proefvisual per bankrekening dan werken? Ja, en niet bij toeval — de twee
+ * raken elkaar nergens:
+ *
+ *   payerHash() krijgt het LEVENDE paymentobject uit getMolliePayment(), leest
+ *   `details.consumerAccount`, en er belandt alleen een gezouten hash in
+ *   `orders.payer_hash`. `raw_payload` is nooit door iets gelezen.
+ *
+ * Deze sectie zet dat vast. Zonder haar is de volgende wijziging aan het filter een
+ * wijziging waarvan niemand weet dat hij de proefklep raakt — en dan is de eerste
+ * die het merkt iemand die zijn tweede gratis proef krijgt.
+ */
+console.log('\nhet filter op de opgeslagen betaling raakt de klep niet');
+{
+  const { payloadZonderPersoon } = await import('../functions/api/webhook/mollie.js');
+
+  const echt = {
+    id: 'tr_proef', status: 'paid', method: 'ideal',
+    amount: { value: '1.00', currency: 'EUR' },
+    metadata: { order_ref: 'VIS-TEST-001' },
+    details: { consumerName: 'A. Voorbeeld', consumerAccount: 'NL91 ABNA 0417 1643 00', consumerBic: 'ABNANL2A' },
+  };
+
+  /* DE KLEP WERKT NOG, op precies dezelfde betaling. */
+  ok('de betaler is nog te herkennen', payerIdentity(echt)?.kind, 'ideal');
+  const eerste = await payerHash({ DB: fakeDb(), PAYER_SALT: 'zout-voor-deze-sectie' }, echt);
+  ok('en levert een hash', typeof eerste?.hash === 'string' && eerste.hash.length === 64, true);
+  const zelfde = await payerHash({ DB: fakeDb(), PAYER_SALT: 'zout-voor-deze-sectie' }, { ...echt, id: 'tr_2', details: { consumerAccount: 'nl91abna0417164300' } });
+  ok('dezelfde rekening anders getypt geeft dezelfde hash', zelfde.hash, eerste.hash);
+  const ander = await payerHash({ DB: fakeDb(), PAYER_SALT: 'zout-voor-deze-sectie' }, { ...echt, id: 'tr_3', details: { consumerAccount: 'NL02ABNA0123456789' } });
+  ok('en een andere rekening een andere', ander.hash !== eerste.hash, true);
+
+  /* EN WAT ER BEWAARD WORDT, DRAAGT HET NIET MEER. */
+  const bewaard = payloadZonderPersoon(echt);
+  ok('het rekeningnummer staat niet in wat bewaard wordt', /ABNA|0417/.test(bewaard), false);
+  ok('de naam van de betaler ook niet', /Voorbeeld/.test(bewaard), false);
+  ok('en de bic niet', /ABNANL2A/.test(bewaard), false);
+  /* Wél alles wat een boekhouding nodig heeft — anders is het filter te grof en is
+     een betaling straks niet meer te herleiden. */
+  const terug = JSON.parse(bewaard);
+  ok('het betaalkenmerk blijft', terug.id, 'tr_proef');
+  ok('het bedrag blijft', terug.amount?.value, '1.00');
+  ok('de status blijft', terug.status, 'paid');
+  ok('en het bestelkenmerk in de metadata blijft', terug.metadata?.order_ref, 'VIS-TEST-001');
+  /* Een spoor dat er iets is weggelaten, zodat een lezer niet denkt dat Mollie
+     niets stuurde. */
+  ok('er staat dat er iets is weggelaten', typeof terug._details === 'string', true);
+}
+
 console.log(`\n${pass}/${pass + fail} geslaagd`);
 if (fail) process.exit(1);

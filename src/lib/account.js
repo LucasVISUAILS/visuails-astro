@@ -116,6 +116,17 @@ import { WHATSAPP_NUMBER } from '../data/whatsapp.js';
 import { countryOptions, vatShort, VAT_TREATMENT, REVIEW } from '../data/vat.js';
 import { composeName, composeAddress, addressFromFields, ADDRESS_FIELDS } from '../data/address.js';
 import { createOrderMolliePayment } from './mollie.js';
+/*
+ * HET ABONNEMENT. src/data/plans.js is het contract (wat een plan kost en geeft),
+ * src/lib/subscription.js zijn de rijen (wie er een heeft en wat er nog van over
+ * is). Dit dashboard leest ze allebei en schrijft alleen via subscription.js —
+ * er staat hier geen enkele query op subscriptions of plan_queue.
+ */
+import {
+  planState, loadQueue, queueAdd, queueRemove, queueReorder,
+  pauseSubscription, activateSubscription, cancelSubscription, subscriptionShape,
+} from './subscription.js';
+import { planName } from '../data/planNames.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
@@ -507,7 +518,17 @@ const COPY = {
     detEmail: 'Email',
     // Says WHY the field above it is not editable, in the customer's terms.
     // See the file header: this address is the login credential.
-    detEmailNote: 'This is what you sign in with, so it changes only by ordering under a new address. Email us and we will move it.',
+    /* WAS: "it changes only by ordering under a new address. Email us and we will
+       move it." Dat was eerlijk en het was handwerk voor Lucas, elke keer. Sinds
+       17 augustus 2026 kan de klant het zelf, met een bevestiging in het nieuwe
+       postvak en een melding in het oude. */
+    detEmailNote: 'This is what you sign in with. Change it and we will send a confirmation link to the new address — nothing changes until you click it.',
+    detEmailChange: 'Change your email address',
+    detEmailNew: 'New email address',
+    detEmailSubmit: 'Send confirmation link',
+    detEmailSent: 'Check the new address for a confirmation link. Your current address keeps working until you click it.',
+    detEmailFailed: 'We could not start that change. Try again, or email hello@visuails.com.',
+    detEmailSafety: 'We also tell your old address, with a link to undo it. That is what protects your account if someone else ever tries this.',
     detPhone: 'Phone or WhatsApp',
     detWebsite: 'Website or shop link',
     detVat: 'VAT number',
@@ -560,6 +581,8 @@ const COPY = {
     navBrandKit: 'Your look',
     navDetails: 'Your details',
     navPlan: 'Plan & billing',
+    navCollapse: 'Collapse menu',
+    navExpand: 'Expand menu',
 
     // Overview — the landing section. Counts are real, all-time totals, not
     // a monthly figure: there is no billing cycle to anchor "this month" to
@@ -642,6 +665,73 @@ const COPY = {
     planEmailLabel: 'Email',
     planBrandLabel: 'Brand',
     planNote: 'Questions about pricing or an invoice? Reply to any order email, or reach us at hello@visuails.com.',
+
+    // ── The subscription. Only ever rendered for a customer who has one; the
+    // pitch below it is what everyone else sees.
+    planNoneH: 'A month of photography, every month',
+    planNoneBody: 'A plan gives you a fixed number of finished products each month, at a lower rate than ordering them one by one, in a week that is reserved for you. What you do not use rolls over.',
+    planNoneCta: 'See the plans',
+    planBalanceH: 'Your plan',
+    planPerMonth: 'products a month',
+    planNextCharge: 'Next payment',
+    planProductsH: 'Products',
+    planClipsH: 'Video clips',
+    planRequest: 'Request',
+    planOfN: 'of',
+    planLeftShort: 'left',
+    planEachProduct: 'Each product is a catalog set and a lifestyle carousel',
+    planQPhotos: 'photos added',
+    planQNoPhotos: 'no photos yet',
+    planLookUnset: 'not set yet',
+    planOwnModel: 'Your Brand Model',
+    planBuiltDelivered: 'Orders delivered',
+    planBuiltImages: 'Images in your library',
+    planBuiltSince: 'Subscriber since',
+    planBkNudgeH: 'Lock in your look',
+    planBkNudgeBody: 'This is what makes the plan run by itself: with your face, background and format on file, everything on your list is made without us having to ask you anything.',
+    planBkNudgeWhich: 'Still open:',
+    planBkNudgeCta: 'Complete your look',
+    planLeft: 'left this month',
+    planOf: 'of',
+    planUsed: 'used',
+    planRolled: 'rolled over from last month',
+    planClips: 'clips included',
+    planWindowH: 'Your week',
+    planWindowNone: 'No fixed week set yet.',
+    planWindowNote: 'Your products are picked up from your list in this week, in the order you put them in.',
+    planQueueH: 'Your list',
+    planQueueLede: 'Your list, your order. We work from the top down — we never decide what goes on it.',
+    planQueueEmpty: 'Your list is empty. Add what you want photographed next, and it will be picked up in your week without you having to be there.',
+    planQueueAdd: 'Add to the list',
+    planQueueName: 'What is it',
+    planQueueNamePh: 'e.g. winter coat, black',
+    planQueueNote: 'Anything we should know (optional)',
+    planQueueUp: 'Move up',
+    planQueueDown: 'Move down',
+    planQueueRemove: 'Remove',
+    planQueueFull: 'Your list is full. Remove something before adding more.',
+    planBuiltH: 'What you have built',
+    planBuiltEmpty: 'Nothing picked up yet.',
+    planLookH: 'Your look',
+    planLookNote: 'Everything on your list is shot to these settings, so you do not have to say it again each time.',
+    planLookCta: 'Change your look',
+    planBillingH: 'Billing',
+    planBillingTerm: 'Term',
+    planBillingMonthly: 'Monthly',
+    planBillingYearly: '12 months',
+    planBillingAmount: 'Per month',
+    planStatusLabel: 'Status',
+    planStatusActive: 'Running',
+    planStatusPending: 'Waiting for your first payment',
+    planStatusPaused: 'Paused',
+    planStatusFailed: 'Paused — last payment did not go through',
+    planUnpaid: 'This month is not paid yet, so your balance cannot be spent. It unlocks the moment the payment comes in.',
+    planPause: 'Pause my plan',
+    planPauseNote: 'Pausing stops the next payment. Your balance stays where it is.',
+    planResume: 'Resume my plan',
+    planCancel: 'Cancel my plan',
+    planCancelNote: 'Cancelling ends the plan after the month you have paid for. Nothing you have already built is removed.',
+    planCancelConfirm: 'Type CANCEL to confirm',
 
     navInvoices: 'Invoices',
     invHeading: 'Invoices',
@@ -773,7 +863,13 @@ const COPY = {
     detLast: 'Achternaam',
     detBrand: 'Merk- of winkelnaam',
     detEmail: 'E-mail',
-    detEmailNote: 'Hiermee log je in, dus dit verandert alleen door onder een nieuw adres te bestellen. Mail ons en we zetten het om.',
+    detEmailNote: 'Hiermee log je in. Wijzig je het, dan sturen we een bevestigingslink naar het nieuwe adres — tot je daarop klikt verandert er niets.',
+    detEmailChange: 'Je e-mailadres wijzigen',
+    detEmailNew: 'Nieuw e-mailadres',
+    detEmailSubmit: 'Bevestigingslink versturen',
+    detEmailSent: 'Kijk in het nieuwe postvak voor een bevestigingslink. Je huidige adres blijft werken tot je erop klikt.',
+    detEmailFailed: 'We konden die wijziging niet starten. Probeer het opnieuw, of mail hello@visuails.com.',
+    detEmailSafety: 'We laten het ook weten op je oude adres, met een link om het terug te zetten. Dat is wat je account beschermt als iemand anders dit ooit probeert.',
     detPhone: 'Telefoon of WhatsApp',
     detWebsite: 'Website of winkellink',
     detVat: 'Btw-nummer',
@@ -809,6 +905,8 @@ const COPY = {
     navBrandKit: 'Je vaste look',
     navDetails: 'Je gegevens',
     navPlan: 'Abonnement & facturering',
+    navCollapse: 'Menu inklappen',
+    navExpand: 'Menu uitklappen',
 
     ovWelcome: 'Welkom terug',
     ovLede: 'Een snel overzicht van je bestellingen en bestanden.',
@@ -873,6 +971,75 @@ const COPY = {
     planEmailLabel: 'E-mail',
     planBrandLabel: 'Merk',
     planNote: 'Vragen over prijzen of een factuur? Reageer op een bestel-e-mail, of mail hello@visuails.com.',
+
+    planNoneH: 'Elke maand een maand fotografie',
+    planNoneBody: 'Een abonnement geeft je elke maand een vast aantal afgemaakte producten, tegen een lager tarief dan los bestellen, in een week die voor jou gereserveerd is. Wat je niet gebruikt, schuift door.',
+    planNoneCta: 'Bekijk de abonnementen',
+    planBalanceH: 'Je abonnement',
+    planPerMonth: 'producten per maand',
+    planNextCharge: 'Volgende afschrijving',
+    planProductsH: 'Producten',
+    planClipsH: 'Videoclips',
+    planRequest: 'Bestellen',
+    planOfN: 'van de',
+    planLeftShort: 'over',
+    planEachProduct: 'Elk product is een catalogset én een lifestyle-carousel',
+    planQPhotos: "foto's toegevoegd",
+    planQNoPhotos: "nog geen foto's",
+    planLookUnset: 'nog niet ingesteld',
+    planOwnModel: 'Je merkmodel',
+    planBuiltDelivered: 'Bestellingen geleverd',
+    planBuiltImages: 'Beelden in je bibliotheek',
+    planBuiltSince: 'Abonnee sinds',
+    planBkNudgeH: 'Leg je look vast',
+    planBkNudgeBody: 'Dit is wat het abonnement zelfstandig laat lopen: met je gezicht, achtergrond en formaat vastgelegd, wordt alles op je lijst gemaakt zonder dat wij je nog iets hoeven te vragen.',
+    planBkNudgeWhich: 'Nog open:',
+    planBkNudgeCta: 'Je look afmaken',
+    planLeft: 'over deze maand',
+    planOf: 'van',
+    planUsed: 'gebruikt',
+    planRolled: 'doorgeschoven van vorige maand',
+    planClips: 'clips inbegrepen',
+    planWindowH: 'Jouw week',
+    planWindowNone: 'Nog geen vaste week ingesteld.',
+    planWindowNote: 'In deze week worden je producten van je lijst gepakt, in de volgorde die jij hebt gezet.',
+    /* NIET "wat er aan de beurt is". Dat is letterlijk de zin die Lucas op
+       17 augustus afwees — *"Ik wil niet dat VISUAILS zegt wat er aan de beurt
+       is"* — en ook al is dit zijn eigen lijst, een kop die zo klinkt, wekt
+       precies de indruk die er niet mag zijn. "Jouw lijst" zegt van wie hij is. */
+    planQueueH: 'Jouw lijst',
+    planQueueLede: 'Jouw lijst, jouw volgorde. Wij werken hem van boven naar beneden af — wij bepalen nooit wat erop staat.',
+    planQueueEmpty: 'Je lijst is leeg. Zet erop wat je hierna gefotografeerd wilt hebben; het wordt in jouw week opgepakt zonder dat je erbij hoeft te zijn.',
+    planQueueAdd: 'Aan de lijst toevoegen',
+    planQueueName: 'Wat is het',
+    planQueueNamePh: 'bijv. winterjas, zwart',
+    planQueueNote: 'Iets wat we moeten weten (mag leeg)',
+    planQueueUp: 'Omhoog',
+    planQueueDown: 'Omlaag',
+    planQueueRemove: 'Verwijderen',
+    planQueueFull: 'Je lijst is vol. Haal er iets af voordat je meer toevoegt.',
+    planBuiltH: 'Wat je hebt opgebouwd',
+    planBuiltEmpty: 'Nog niets opgepakt.',
+    planLookH: 'Je vaste look',
+    planLookNote: 'Alles op je lijst wordt met deze instellingen gemaakt, zodat je het niet elke keer opnieuw hoeft te zeggen.',
+    planLookCta: 'Je look aanpassen',
+    planBillingH: 'Facturering',
+    planBillingTerm: 'Termijn',
+    planBillingMonthly: 'Maandelijks',
+    planBillingYearly: '12 maanden',
+    planBillingAmount: 'Per maand',
+    planStatusLabel: 'Status',
+    planStatusActive: 'Loopt',
+    planStatusPending: 'Wacht op je eerste betaling',
+    planStatusPaused: 'Gepauzeerd',
+    planStatusFailed: 'Gepauzeerd — de laatste afschrijving lukte niet',
+    planUnpaid: 'Deze maand is nog niet betaald, dus je saldo is nog niet te besteden. Zodra de betaling binnen is, staat het open.',
+    planPause: 'Mijn abonnement pauzeren',
+    planPauseNote: 'Pauzeren stopt de volgende afschrijving. Je saldo blijft staan.',
+    planResume: 'Mijn abonnement hervatten',
+    planCancel: 'Mijn abonnement opzeggen',
+    planCancelNote: 'Opzeggen beëindigt het abonnement na de maand waarvoor je betaald hebt. Wat je al hebt opgebouwd, blijft van jou.',
+    planCancelConfirm: 'Typ OPZEGGEN om te bevestigen',
 
     navInvoices: 'Facturen',
     invHeading: 'Facturen',
@@ -1001,6 +1168,30 @@ export async function accountGet(context) {
     return serveCreditPdf(context, customer, Number(cnMatch[1]));
   }
 
+  /*
+   * DE TWEE LINKS UIT EEN ADRESWIJZIGING, en ze staan met opzet VÓÓR de
+   * sessiecontrole hieronder. Wie op "zet dit terug" klikt, is per definitie
+   * iemand die misschien niet meer kan inloggen — dat is juist het geval dat die
+   * link moet oplossen. Hem achter een inlog zetten zou hem waardeloos maken op het
+   * enige moment dat hij nodig is.
+   *
+   * Het kenmerk zelf is de toegang: 128 bits uit crypto.getRandomValues, gehasht
+   * opgeslagen, één keer te gebruiken, met een houdbaarheid. Dezelfde afweging als
+   * bij /account/verify.
+   */
+  const undoMatch = /^\/account\/email\/undo\/([A-Za-z0-9_-]+)$/.exec(path);
+  if (undoMatch) {
+    const gate2 = await checkRate(env, { ip: clientIp(request), action: 'account-verify', limit: VERIFY_LIMIT });
+    if (!gate2.allowed) return new Response(null, { status: 429, headers: { 'retry-after': '60', 'content-type': 'text/plain' } });
+    return handleEmailUndo(context, undoMatch[1]);
+  }
+  const confirmMatch = /^\/account\/email\/([A-Za-z0-9_-]+)$/.exec(path);
+  if (confirmMatch) {
+    const gate2 = await checkRate(env, { ip: clientIp(request), action: 'account-verify', limit: VERIFY_LIMIT });
+    if (!gate2.allowed) return new Response(null, { status: 429, headers: { 'retry-after': '60', 'content-type': 'text/plain' } });
+    return handleEmailConfirm(context, confirmMatch[1]);
+  }
+
   if (path === '/account/login') {
     const customer = await currentCustomer(env, request);
     if (customer) return seeOther('/account');
@@ -1104,6 +1295,12 @@ export async function accountPost(context) {
   if (path === '/account/lock') return handleLockUpdate(context, customer);
   if (path === '/account/review') return handleFileReview(context, customer);
   if (path === '/account/details') return handleDetails(context, customer, asJson);
+
+  if (path === '/account/email') return handleEmailChangeRequest(context, customer);
+
+  if (path === '/account/plan/queue') return handlePlanQueue(context, customer);
+  if (path === '/account/plan/pause') return handlePlanPause(context, customer);
+  if (path === '/account/plan/cancel') return handlePlanCancel(context, customer);
 
   if (path === '/account/feedback') return handleFeedback(context, customer);
 
@@ -1621,6 +1818,31 @@ function langCookie(request) {
   return m ? m[1] : null;
 }
 
+/*
+ * ── DE BALK IN- EN UITKLAPPEN, EN WAAROM DAT EEN COOKIE IS ──────────────────
+ *
+ * De voor de hand liggende oplossing is een knop met een klikhandler. Die kan
+ * hier niet, en dat is geen keuze maar een meting: de CSP van dit dashboard is
+ * `default-src 'none'` en er staat GEEN `script-src` in. Dat betekent dat de
+ * browser op deze pagina's helemaal geen script uitvoert — niet inline en niet
+ * uit een bestand. Zie html() onderaan dit bestand.
+ *
+ * Er zijn dan twee wegen. Een verborgen checkbox met `:has()` klapt in zonder
+ * herladen, maar vergeet zijn stand zodra je naar de volgende sectie klikt — en
+ * dan moet je hem op elke pagina opnieuw dichtklappen, wat erger is dan geen
+ * knop. Een cookie kost één omleiding en onthoudt het wél.
+ *
+ * Dus een cookie, en precies dezelfde vorm als de taalknop hierboven: een link
+ * met `?nav=`, de keuze vastleggen, en terug naar dezelfde pagina zónder de
+ * parameter. Zonder die omleiding blijft hij in de URL hangen en deelt iemand
+ * straks een link die de balk van de ontvanger dichtklapt.
+ */
+function navCookie(request) {
+  const raw = request.headers.get('cookie') || '';
+  const m = /(?:^|;\s*)vis_nav=(dicht|open)(?:;|$)/.exec(raw);
+  return m ? m[1] : null;
+}
+
 async function sectionGet(context, customer, section) {
   const { env, request } = context;
 
@@ -1635,6 +1857,14 @@ async function sectionGet(context, customer, section) {
       url.searchParams.delete('lang');
       const back = `${url.pathname}${url.search}${url.hash}`;
       return seeOther(back, [`vis_lang=${wanted}; Max-Age=${365 * 86400}; ${COOKIE_FLAGS}`]);
+    }
+    /* Dezelfde vorm voor de zijbalk. Zie navCookie() voor waarom dit een cookie is
+       en geen knop met een klikhandler. */
+    const balk = url.searchParams.get('nav');
+    if (balk === 'dicht' || balk === 'open') {
+      url.searchParams.delete('nav');
+      const back = `${url.pathname}${url.search}${url.hash}`;
+      return seeOther(back, [`vis_nav=${balk}; Max-Age=${365 * 86400}; ${COOKIE_FLAGS}`]);
     }
   } catch { /* geen geldige URL: dan is er ook niets te kiezen */ }
   let orders, files, models, locks, details, events;
@@ -1760,7 +1990,12 @@ async function sectionGet(context, customer, section) {
     inner = brandKitBody(t, lang, models, lockByStyle);
     title = t.navBrandKit;
   } else if (section === 'details') {
-    inner = detailsBody(t, lang, details, justSaved, detailsMissing);
+    /* ?email=gevraagd of ?email=mislukt komt van handleEmailChangeRequest(). Net
+       als `saved` hierboven bepaalt hij één zin en niets anders — het is een
+       waarde die iedereen zelf kan intypen. */
+    const emailStatus = new URL(request.url).searchParams.get('email') || '';
+    inner = detailsBody(t, lang, details, justSaved, detailsMissing,
+      (emailStatus === 'gevraagd' || emailStatus === 'mislukt') ? emailStatus : '');
     title = t.detH;
   } else if (section === 'invoices') {
     /*
@@ -1777,7 +2012,15 @@ async function sectionGet(context, customer, section) {
     inner = invoicesBody(t, lang, list, orders);
     title = t.invHeading;
   } else if (section === 'plan') {
-    inner = planBody(t, customer);
+    /* Net als de facturen NIET in de gezamenlijke Promise.all hierboven, en om
+       dezelfde reden: dit zijn vier queries die alleen deze ene pagina nodig
+       heeft. Ze aan de gedeelde laadstap toevoegen zou het overzicht, de
+       bestellingen en de vaste look ze allemaal laten meedragen. */
+    const state = await planState(env, customer.customer_id);
+    /* models, lockByStyle, orders en files komen uit de gedeelde laadstap
+       hierboven — de kaart "wat er vastligt" en de twee getallen bij "wat je hebt
+       opgebouwd" kosten dus geen enkele extra query. */
+    inner = planBody(t, lang, customer, state, models, lockByStyle, orders, files);
     title = t.planHeading;
   } else {
     inner = overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder);
@@ -1789,7 +2032,7 @@ async function sectionGet(context, customer, section) {
   // stylesheet's own header always said they belonged. style-src is plain 'self'
   // again — one fewer moving part, and no inline <style> to keep in step with a
   // CSP set in a different function.
-  const body = shellBody(t, lang, customer, section, inner);
+  const body = shellBody(t, lang, customer, section, inner, navCookie(request) === 'dicht');
   return html(page({ lang, title, body, full: true }), 200);
 }
 
@@ -3843,6 +4086,11 @@ const ICON_NEW = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d=
 const ICON_ORDERS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
 const ICON_BRAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="12"/><rect x="8" y="8" width="12" height="12"/></svg>';
 const ICON_PLAN = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="13"/><path d="M2 11h20"/></svg>';
+/* Twee pijlen naar de rand: dichtklappen wijst naar links, uitklappen naar
+   rechts. Geen hamburger — die betekent "hier zit een menu", en het menu is in
+   beide standen zichtbaar; alleen de woorden ernaast verdwijnen. */
+const ICON_COLLAPSE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/><path d="M4 4v16"/></svg>';
+const ICON_EXPAND = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/><path d="M20 4v16"/></svg>';
 const ICON_DETAILS = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>';
 // Een blad met regels en een omgeslagen hoek. Bewust géén euroteken: dat staat
 // naast ICON_PLAN ("Abonnement & facturering") en twee geldglyphs onder elkaar
@@ -3880,7 +4128,7 @@ const ICON_TICK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d
  * answering the same question, and the one this project already hardened
  * (capacity gate, blackout days, rate limits) is the one that should run.
  */
-function shellBody(t, lang, customer, active, inner) {
+function shellBody(t, lang, customer, active, inner, navDicht = false) {
   const items = [
     { key: 'overview', href: '/account', label: t.navOverview, icon: ICON_OVERVIEW },
     { key: 'new', href: '/start', label: t.navNewRequest, icon: ICON_NEW },
@@ -3903,13 +4151,28 @@ function shellBody(t, lang, customer, active, inner) {
     return `<a class="navlink${isActive ? ' is-active' : ''}" href="${esc(n.href)}"${isActive ? ' aria-current="page"' : ''}>${n.icon}<span>${esc(n.label)}</span></a>`;
   }).join('');
 
+  /* DE KNOP STAAT ONDER DE MERKNAAM EN NIET ERNAAST. Ernaast zou hij in de
+     ingeklapte stand naast een merknaam staan die er niet meer is; hieronder
+     houdt hij dezelfde plek in beide standen, en dat is wat een knop die je twee
+     keer per dag gebruikt, moet doen.
+
+     `aria-expanded` op een link is niet juist — dat hoort bij een knop die iets
+     ter plekke open- en dichtdoet. Dit is navigatie: een andere toestand van
+     dezelfde pagina, opgehaald met een GET. Vandaar een gewone link met een
+     label dat zegt wat er gaat gebeuren. */
+  const balkKnop = `
+    <a class="navtoggle" href="?nav=${navDicht ? 'open' : 'dicht'}" title="${esc(navDicht ? t.navExpand : t.navCollapse)}">
+      ${navDicht ? ICON_EXPAND : ICON_COLLAPSE}<span>${esc(t.navCollapse)}</span>
+    </a>`;
+
   return `
-<div class="shell">
+<div class="shell${navDicht ? ' nav-dicht' : ''}">
   <aside class="sidebar">
     <div class="sidebrand">
       <a class="mark" href="/">VISUAILS</a>
       <span class="sidebrand-sub">${esc(t.dashSub)}</span>
     </div>
+    ${balkKnop}
     <nav class="sidenav" aria-label="Account">${nav}</nav>
     <div class="sideuser">
       <span class="sideuser-name">${esc(customer.brand || customer.name || customer.email)}</span>
@@ -4284,11 +4547,43 @@ function ownModelsSection(t, lang, models) {
  * handleDetails' redirect targets it and a fragment that resolves to nothing is
  * a scroll position silently lost.
  */
-function detailsBody(t, lang, details, justSaved, missing = false) {
+function detailsBody(t, lang, details, justSaved, missing = false, emailStatus = '') {
   return `
 <h1>${esc(t.detH)}</h1>
 <p class="lede">${esc(t.detLede)}</p>
-${detailsSection(t, lang, details, justSaved, missing)}`;
+${detailsSection(t, lang, details, justSaved, missing)}
+${emailChangeSection(t, details, emailStatus)}`;
+}
+
+/**
+ * ── HET ADRES WIJZIGEN STAAT IN EEN EIGEN FORMULIER ─────────────────────────
+ *
+ * Niet als veld in het gegevensformulier hierboven, en dat is geen opmaakkeuze.
+ * Dat formulier slaat op bij het indrukken van één knop; dit adres kan niet
+ * zomaar opslaan, want er moet eerst iemand in een ander postvak op een link
+ * klikken. Eén knop met twee soorten gevolg — de ene direct, de andere pas na een
+ * mail — is precies de knop waarvan een klant niet weet wat hij gedaan heeft.
+ *
+ * En het is de INLOG. Een veld ertussen zou het net zo belangrijk laten lijken als
+ * het telefoonnummer.
+ */
+function emailChangeSection(t, details, status = '') {
+  const d = details || {};
+  const melding = status === 'gevraagd' ? `<p class="note">${esc(t.detEmailSent)}</p>`
+    : status === 'mislukt' ? `<p class="error" role="alert">${esc(t.detEmailFailed)}</p>`
+      : '';
+  return `
+<div class="card">
+  <h3>${esc(t.detEmailChange)}</h3>
+  ${melding}
+  <form method="post" action="/account/email" class="q-toevoegen">
+    <label for="new-email">${esc(t.detEmailNew)}</label>
+    <input id="new-email" name="new_email" type="email" autocomplete="email"
+           maxlength="254" required placeholder="${esc(d.email || '')}">
+    <button class="btn btn-ghost" type="submit">${esc(t.detEmailSubmit)}</button>
+  </form>
+  <p class="meta">${esc(t.detEmailSafety)}</p>
+</div>`;
 }
 
 /**
@@ -4862,10 +5157,163 @@ function invoicesBody(t, lang, list, orders) {
 </div>`;
 }
 
-function planBody(t, customer) {
-  return `
-<h1>${esc(t.planHeading)}</h1>
-<p class="lede">${esc(t.planLede)}</p>
+/**
+ * ── DE METER IS EEN RIJ VAKJES EN GEEN BALK ─────────────────────────────────
+ *
+ * Eerst stond hier een balk met een percentage erin. Die is vervangen naar het
+ * voorbeeld van de mockup, en om een reden die sterker is dan smaak: vijf lege
+ * vakjes zijn vijf dingen die je nog kunt laten maken. Een balk op 58% is een
+ * getal waar een merk niets mee doet — het moet eerst terugrekenen hoeveel
+ * producten dat zijn, en dat is precies de vraag die de meter hoorde te
+ * beantwoorden.
+ *
+ * Drie soorten vakje, en het derde is het hele punt: `roll` markeert de
+ * producten die uit een vorige maand zijn doorgeschoven. Lucas koos op 17
+ * augustus voor doorschuiven MÉT een zichtbare afloopmaand, en dit is waar dat
+ * zichtbaar wordt — niet in een waarschuwing eronder maar in de meter zelf.
+ *
+ * ── WAAROM GEEN INLINE STIJL, ALWEER ────────────────────────────────────────
+ *
+ * Dit dashboard draait onder `style-src 'self'`, en in CSP3 valt
+ * `style-src-attr` daarop terug: `style="width: 58%"` wordt geweigerd en de
+ * klant ziet een lege doos. Dit jaar al twee keer gebeurd (swatch(), de
+ * beeldverhoudingen). Vakjes hebben dat probleem niet: het zijn <span>s met een
+ * klasse, en hun breedte komt uit de stylesheet. De vorige SVG-oplossing was
+ * goed; deze is beter omdat er niets te berekenen valt.
+ *
+ * ── EN WAAROM ER EEN BOVENGRENS AAN HET AANTAL VAKJES ZIT ───────────────────
+ *
+ * Brand geeft 30 producten per maand en kan er met doorschuiven 120 hebben. 120
+ * vakjes zijn geen meter meer maar een muur. Boven de grens valt hij terug op
+ * getallen, want dan is tellen niet meer wat iemand doet.
+ */
+const PIP_MAX = 40;
+
+function saldoMeter(verbruikt, toegekend, doorgeschoven = 0) {
+  const totaal = Math.max(0, Math.floor(Number(toegekend) || 0));
+  const op = Math.min(totaal, Math.max(0, Math.floor(Number(verbruikt) || 0)));
+  const doorgeschovenN = Math.min(totaal, Math.max(0, Math.floor(Number(doorgeschoven) || 0)));
+  if (!totaal || totaal > PIP_MAX) return '';
+
+  /* De doorgeschoven vakjes staan ACHTERAAN, want ze vervallen het eerst niet —
+   * ze zijn het laatste wat je overhoudt. Wie zijn maand opmaakt, ziet ze als
+   * laatste staan en dat is precies wat er dan waar is. */
+  const vakjes = [];
+  for (let i = 0; i < totaal; i += 1) {
+    const isDoorgeschoven = i >= totaal - doorgeschovenN;
+    const klasse = i < op ? 'pip pip-op' : isDoorgeschoven ? 'pip pip-roll' : 'pip';
+    vakjes.push(`<span class="${klasse}"></span>`);
+  }
+  return `<div class="meter" aria-hidden="true">${vakjes.join('')}</div>`;
+}
+
+/** 'YYYY-MM' als "oktober" / "October" — een maand en geen datum, want een periode is geen moment. */
+function maandNaam(key, lang) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(key || ''));
+  if (!m) return '';
+  const nl = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli',
+    'augustus', 'september', 'oktober', 'november', 'december'];
+  const en = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
+  const i = Number(m[2]) - 1;
+  if (i < 0 || i > 11) return '';
+  return lang === 'nl' ? nl[i] : en[i];
+}
+
+/**
+ * ── WAT ER VASTLIGT, ALS FEITEN EN NIET ALS EEN LINK ────────────────────────
+ *
+ * De eerste versie had hier één knop: "je look aanpassen". Dat is de verkeerde
+ * kant op. Het abonnement wérkt alleen omdat de vaste look een AFSPRAAK is en
+ * geen voorkeur — de wachtrij kan zonder tussenkomst afgewerkt worden precies
+ * omdat er niets meer gevraagd hoeft te worden. Dan moet die afspraak ook te
+ * lezen zijn zonder ergens anders heen te gaan.
+ *
+ * En het doet nog iets: een merk dat leest "gezicht: je merkmodel, achtergrond
+ * gebroken wit, verhouding 4:5" ziet wat het opgeeft door op te zeggen. Een link
+ * naar een andere pagina toont dat niet.
+ *
+ * `leeg` is hier informatie en geen fout: een niet-ingestelde regel is precies
+ * wat de nudge bovenaan aanwijst.
+ */
+function brandKitRegels(t, lang, models, lockByStyle, metClips) {
+  const stijlen = metClips ? ['catalog', 'lifestyle', 'video'] : ['catalog', 'lifestyle'];
+  const naamVan = (lock) => {
+    if (lock.custom_model_id) {
+      /* `label` en niet `name`: zo heet de kolom in custom_models, en `name` zou
+         hier stil undefined opleveren. Nagekeken in loadCustomModels(). */
+      const eigen = models.find((m) => m.id === lock.custom_model_id);
+      return eigen?.label ? `${t.planOwnModel} · ${eigen.label}` : t.planOwnModel;
+    }
+    if (lock.roster_model) {
+      const r = ROSTER.find((m) => modelId(m.name) === lock.roster_model);
+      return r ? r.name : lock.roster_model;
+    }
+    return '';
+  };
+
+  const regels = [];
+  for (const stijl of stijlen) {
+    const lock = lockByStyle[stijl] || {};
+    const gezicht = naamVan(lock);
+    const bg = (lock.background_hex || '').toUpperCase();
+    const bgNaam = bg ? (BACKGROUNDS.find((b) => b.hex.toUpperCase() === bg)?.name?.[lang]
+      || BACKGROUNDS.find((b) => b.hex.toUpperCase() === bg)?.name || bg) : '';
+    /* `label` ("4:5") en niet `ratio` ("4x5"): dat eerste is de vorm die een merk
+       zelf gebruikt, het tweede is hoe het in de database staat. */
+    const ratio = lock.ratio ? ratioById(lock.ratio) : null;
+    const delen = [gezicht, bgNaam, ratio ? ratio.label : ''].filter(Boolean);
+    regels.push({
+      stijl,
+      label: serviceLabel(stijl, lang),
+      waarde: delen.length ? delen.join(' · ') : '',
+      compleet: Boolean(gezicht || bgNaam),
+    });
+  }
+  return regels;
+}
+
+/**
+ * ══════════════════════════════════════════════════════════════════════════════
+ * ABONNEMENT & FACTURERING
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAAROM HIER EN NIET IN EEN EIGEN PORTAAL ────────────────────────────────
+ *
+ * Lucas vroeg het expliciet: dezelfde VISUAILS Studio-portal of een apart
+ * abonnementsportaal. Dit is de portal, en de reden is niet gemak maar
+ * afhankelijkheid — hetzelfde wat het abonnement moet opleveren.
+ *
+ * Alles waar het abonnement op leunt, staat hier al: de vaste look bepaalt hoe
+ * elk product van de lijst eruit komt te zien, de bestellingen laten zien wat
+ * eruit gekomen is, de facturen horen bij dezelfde afschrijvingen. Een tweede
+ * portaal zou die vier dingen uit elkaar trekken en de klant vragen te onthouden
+ * waar wat staat. En het scherm waarop hij ziet wat hij heeft opgebouwd, is
+ * precies het scherm waarop opzeggen een verlies wordt in plaats van een knop.
+ *
+ * ── DE VOLGORDE VAN DE KAARTEN, EN WAAROM DIE ZO IS ─────────────────────────
+ *
+ * Nudge (alleen als de brand kit niet af is) · saldo · lijst · week · vastgelegd
+ * · opgebouwd · facturering · account.
+ *
+ * Van "wat kan ik nu" naar "wat gebeurt er straks" naar "wat heb ik al" naar
+ * "wat kost het". De lijst staat hoog omdat hij de kern is: dit is een
+ * PLANNINGSscherm en geen verbruiksscherm. Een dashboard dat de klant drie keer
+ * per maand laat bestellen, is een strippenkaart; een lijst die in zijn eigen
+ * week leegloopt, is een abonnement. Die keuze staat uitgeschreven in de mockup
+ * van 16 augustus en volgt uit één eis: Lucas werkt alleen.
+ *
+ * ── WAT DEZE PAGINA NIET DOET ───────────────────────────────────────────────
+ *
+ * Ze stelt niets voor. *"Ik wil niet dat VISUAILS zegt wat er aan de beurt is."*
+ * De lijst is leeg tot de klant hem vult, en blijft leeg als hij hem niet vult —
+ * er staat nergens een suggestie, een aanbeveling of een vooringevuld item.
+ */
+function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = []) {
+  const kop = `
+<h1>${esc(t.planHeading)}</h1>`;
+
+  const account = `
 <div class="card">
   <h3>${esc(t.planAccountLabel)}</h3>
   <dl class="facts">
@@ -4874,6 +5322,365 @@ function planBody(t, customer) {
   </dl>
   <p class="meta">${esc(t.planNote)}</p>
 </div>`;
+
+  /* GEEN ABONNEMENT. De oude tekst blijft staan — "je betaalt per bestelling" is
+   * waar en het is geen tekortkoming — met daaronder wat een abonnement wél doet.
+   * Eén kaart, geen banner, geen tweede knop: dit is het dashboard van een klant
+   * die net iets besteld heeft, en dat moment is niet het moment om te duwen. */
+  if (!state?.sub) {
+    return `${kop}
+<p class="lede">${esc(t.planLede)}</p>
+${account}
+<div class="card">
+  <h3>${esc(t.planNoneH)}</h3>
+  <p>${esc(t.planNoneBody)}</p>
+  <!-- NAAR /pricing#plans EN NIET NAAR /abonnement. Die pagina bestaat niet: de
+       drie abonnementen staan in de sectie met id="plans" op de prijspagina, waar
+       PricingPage.astro ze uit plans() rendert. Deze link stond hier eerst naar
+       /nl/abonnement en /plans, en dat waren twee 404's in het dashboard van elke
+       klant zonder abonnement. -->
+  <p><a class="btn" href="${lang === 'nl' ? '/nl/pricing#plans' : '/pricing#plans'}">${esc(t.planNoneCta)}</a></p>
+</div>`;
+  }
+
+  const vorm = subscriptionShape(state.sub);
+  const status = state.sub.status === 'active' ? t.planStatusActive
+    : state.sub.status === 'pending' ? t.planStatusPending
+      : state.sub.pause_reason === 'payment_failed' ? t.planStatusFailed
+        : t.planStatusPaused;
+
+  const bk = brandKitRegels(t, lang, models, lockByStyle, vorm.clips > 0);
+  const bkOnaf = bk.filter((r) => !r.compleet);
+
+  /* ── DE NUDGE ───────────────────────────────────────────────────────────────
+   * Uit de mockup van 17 augustus, en bij een abonnement is dit geen cosmetisch
+   * kaartje: het systeem kan de wachtrij alleen zonder tussenkomst afwerken als
+   * er niets meer gevraagd hoeft te worden. Een abonnee met een lege brand kit
+   * is een abonnee die elke maand een mailtje oplevert — precies wat er niet mag
+   * gebeuren bij iemand die alleen werkt.
+   *
+   * Hij verdwijnt zodra het af is. Een nudge die blijft staan, is een banner. */
+  const nudge = !bkOnaf.length ? '' : `
+<div class="card nudge">
+  <h3>${esc(t.planBkNudgeH)}</h3>
+  <p>${esc(t.planBkNudgeBody)}</p>
+  <p class="meta">${esc(t.planBkNudgeWhich)} ${bkOnaf.map((r) => esc(r.label)).join(', ')}</p>
+  <p><a class="btn" href="/account/brand-kit">${esc(t.planBkNudgeCta)}</a></p>
+</div>`;
+
+  /* ── DE VERVALREGEL ────────────────────────────────────────────────────────
+   * Dit is de keuze van 17 augustus in één zin: doorschuiven mét een zichtbare
+   * afloopmaand. Een maand en geen afteller op de dag — een afteller maakt de
+   * laatste dag de drukste, en 94 producten in drie dagen kan één persoon niet.
+   * Zie rolloverDetail() in plans.js. */
+  const vervalRegel = !state.vervalt.length ? '' : state.vervalt.map((r) => (lang === 'nl'
+    ? `${r.left} doorgeschoven ${r.left === 1 ? 'product' : 'producten'} uit ${maandNaam(r.from, lang)} — te gebruiken tot en met ${maandNaam(r.until, lang)}`
+    : `${r.left} rolled-over ${r.left === 1 ? 'product' : 'products'} from ${maandNaam(r.from, lang)} — usable through ${maandNaam(r.until, lang)}`)).join(' · ');
+
+  /* ── DE BESTELKNOP NAAST HET GETAL ─────────────────────────────────────────
+   * Uit de mockup: het getal roept een vraag op en het antwoord hoort op dezelfde
+   * kaart te staan. Bij mij stond de weg naar een bestelling ergens anders.
+   *
+   * TWEE METERS EN NIET DRIE. De mockup had catalog, lifestyle en video naast
+   * elkaar, en dat zou hier oneerlijk zijn: een plan geeft COMPLETE producten —
+   * elk mét catalogset én lifestyle-carousel — plus clips. Dat zijn twee
+   * budgetten. Drie balken zouden suggereren dat je catalog kunt opmaken en
+   * lifestyle overhoudt, en dat kan niet. Wat elk product bevat, staat eronder in
+   * woorden. */
+  const clipsMeter = !vorm.clips ? '' : `
+  <div class="saldo-rij">
+    <div class="saldo-kop">
+      <span class="eyebrow">${esc(t.planClipsH)}</span>
+      <a class="btn btn-ghost btn-sm" href="${lang === 'nl' ? '/nl/start/video' : '/start/video'}">${esc(t.planRequest)}</a>
+    </div>
+    <p class="plan-getal"><strong>${state.clips.saldo}</strong> <span>${esc(t.planOfN)} ${state.clips.toegekend} ${esc(t.planLeftShort)}</span></p>
+    ${saldoMeter(state.clips.verbruikt, state.clips.toegekend, 0)}
+  </div>`;
+
+  const saldo = `
+<div class="card plan-saldo">
+  <div class="dash-top">
+    <div>
+      <span class="eyebrow">${esc(t.planBalanceH)}</span>
+      <h3>${esc(planName(state.plan, lang))} · ${vorm.products} ${esc(t.planPerMonth)}</h3>
+    </div>
+    ${state.volgendeAfschrijving ? `<div class="dash-right">
+      <span class="eyebrow">${esc(t.planNextCharge)}</span>
+      <strong>${esc(maandNaam(state.volgendeAfschrijving, lang))} · ${money(vorm.monthlyCents, lang)}</strong>
+    </div>` : ''}
+  </div>
+
+  <div class="saldo-rij">
+    <div class="saldo-kop">
+      <span class="eyebrow">${esc(t.planProductsH)}</span>
+      <a class="btn btn-sm" href="${lang === 'nl' ? '/nl/start/complete' : '/start/complete'}">${esc(t.planRequest)}</a>
+    </div>
+    <p class="plan-getal"><strong>${state.saldo}</strong> <span>${esc(t.planOfN)} ${state.toegekend} ${esc(t.planLeftShort)}</span></p>
+    ${saldoMeter(state.verbruikt, state.toegekend, state.doorgeschoven)}
+    <p class="meta">${esc(t.planEachProduct)}${vervalRegel ? ` · ${esc(vervalRegel)}` : ''}</p>
+  </div>
+  ${clipsMeter}
+  ${state.betaald ? '' : `<p class="note">${esc(t.planUnpaid)}</p>`}
+</div>`;
+
+  /* DE LIJST. Omhoog/omlaag als gewone formulierknoppen en niet als sleepbare
+   * elementen: slepen vraagt JavaScript, werkt slecht op een telefoon en heeft
+   * geen toetsenbordpad. Twee knoppen per regel doen hetzelfde werk, werken
+   * zonder script, en zijn met een schermlezer te bedienen. (De mockup zei
+   * "sleep om de volgorde te wijzigen" — dat is de ene mockup-belofte die niet
+   * meekomt.)
+   *
+   * WAT ER PER REGEL BIJ STAAT: of er foto's bij zitten. Een item zonder foto's
+   * kan niet gemaakt worden, en dat moet zichtbaar zijn vóór de week aanbreekt —
+   * niet erna, want dan is het een mail en die schrijft Lucas met de hand. */
+  /* HOEVEEL ER IN DE EERSTVOLGENDE WEEK STARTEN. Het kleinste van "wat er op de
+   * lijst staat" en "wat het saldo toelaat" — een belofte die groter is dan een
+   * van die twee, is een belofte die niet uitkomt. Staat hier en niet lager, want
+   * de regels zelf hebben hem nodig: alleen bij een item dat bijna start, is een
+   * ontbrekende foto dringend. Bij nummer twaalf is het een mededeling. */
+  const startenNu = Math.min(state.wachtrij.length, state.saldo);
+
+  const rijen = state.wachtrij.map((q, i) => `
+  <li class="q-rij${i < startenNu ? ' q-nu' : ''}">
+    <div class="q-tekst">
+      <strong>${esc(q.name)}</strong>
+      ${q.note ? `<span class="meta">${esc(q.note)}</span>` : ''}
+      <span class="q-staat${q.upload_batch ? ' q-ok' : (i < startenNu ? ' q-wacht' : '')}">${esc(q.upload_batch ? t.planQPhotos : t.planQNoPhotos)}</span>
+    </div>
+    <div class="q-knoppen">
+      <form method="post" action="/account/plan/queue">
+        <input type="hidden" name="do" value="up"><input type="hidden" name="id" value="${q.id}">
+        <button class="btn btn-ghost btn-sm" type="submit"${i === 0 ? ' disabled' : ''} aria-label="${esc(t.planQueueUp)}: ${esc(q.name)}">↑</button>
+      </form>
+      <form method="post" action="/account/plan/queue">
+        <input type="hidden" name="do" value="down"><input type="hidden" name="id" value="${q.id}">
+        <button class="btn btn-ghost btn-sm" type="submit"${i === state.wachtrij.length - 1 ? ' disabled' : ''} aria-label="${esc(t.planQueueDown)}: ${esc(q.name)}">↓</button>
+      </form>
+      <form method="post" action="/account/plan/queue">
+        <input type="hidden" name="do" value="remove"><input type="hidden" name="id" value="${q.id}">
+        <button class="btn btn-ghost btn-sm" type="submit">${esc(t.planQueueRemove)}</button>
+      </form>
+    </div>
+  </li>`).join('');
+
+  const lijst = `
+<div class="card">
+  <h3>${esc(t.planQueueH)}</h3>
+  <p class="lede">${esc(t.planQueueLede)}</p>
+  ${state.wachtrij.length
+    ? `<ol class="q-lijst">${rijen}</ol>
+  <p class="meta">${state.sub.window_day
+    ? (lang === 'nl'
+      ? `Op ${dagVanDeMaand(state.sub.window_day, lang)} van de maand starten de bovenste ${startenNu} automatisch. Je hoeft niets te doen.`
+      : `On ${dagVanDeMaand(state.sub.window_day, lang)} of the month the top ${startenNu} start automatically. You do not have to do anything.`)
+    : esc(t.planWindowNone)}</p>`
+    : `<p>${esc(t.planQueueEmpty)}</p>`}
+  <form method="post" action="/account/plan/queue" class="q-toevoegen">
+    <input type="hidden" name="do" value="add">
+    <label for="q-name">${esc(t.planQueueName)}</label>
+    <input id="q-name" name="name" type="text" maxlength="120" required placeholder="${esc(t.planQueueNamePh)}">
+    <label for="q-note">${esc(t.planQueueNote)}</label>
+    <input id="q-note" name="note" type="text" maxlength="500">
+    <button class="btn" type="submit">${esc(t.planQueueAdd)}</button>
+  </form>
+</div>`;
+
+  /* DE WEEK. Een dag van de maand en geen datum: het abonnement loopt door, en
+   * een concrete datum zou elke maand opnieuw geschreven moeten worden op een
+   * plek waar niemand hem bijhoudt. */
+  const week = `
+<div class="card">
+  <h3>${esc(t.planWindowH)}</h3>
+  ${state.sub.window_day
+    ? `<p class="plan-getal"><strong>${dagVanDeMaand(state.sub.window_day, lang)}</strong></p>`
+    : `<p>${esc(t.planWindowNone)}</p>`}
+  <p class="meta">${esc(t.planWindowNote)}</p>
+</div>`;
+
+  const vastgelegd = `
+<div class="card">
+  <h3>${esc(t.planLookH)}</h3>
+  <p>${esc(t.planLookNote)}</p>
+  <dl class="facts facts-kv">
+    ${bk.map((r) => `<div class="fact"><dt>${esc(r.label)}</dt><dd${r.waarde ? '' : ' class="leeg"'}>${esc(r.waarde || t.planLookUnset)}</dd></div>`).join('')}
+  </dl>
+  <p><a class="btn btn-ghost" href="/account/brand-kit">${esc(t.planLookCta)}</a></p>
+</div>`;
+
+  /* WAT JE HEBT OPGEBOUWD. Dit is de kaart die het abonnement vasthoudt, en het
+   * is geen verkooppraatje: het is wat er dankzij het abonnement bestaat. Twee
+   * getallen én de namen — het getal is de omvang, de namen zijn het bewijs.
+   *
+   * De cijfers komen uit `orders` en `files`, die voor élke sectie van dit
+   * dashboard al geladen zijn. Geen extra query. */
+  const geleverd = orders.filter((o) => o.status === 'delivered').length;
+  const beelden = files.length;
+  const opgebouwd = `
+<div class="card">
+  <h3>${esc(t.planBuiltH)}</h3>
+  <dl class="facts">
+    <div class="fact"><dt>${esc(t.planBuiltDelivered)}</dt><dd>${geleverd}</dd></div>
+    <div class="fact"><dt>${esc(t.planBuiltImages)}</dt><dd>${beelden}</dd></div>
+    ${state.sub.started_at ? `<div class="fact"><dt>${esc(t.planBuiltSince)}</dt><dd>${esc(maandNaam(String(state.sub.started_at).slice(0, 7), lang))} ${esc(String(state.sub.started_at).slice(0, 4))}</dd></div>` : ''}
+  </dl>
+  ${state.opgehaald.length
+    ? `<ul class="q-gedaan">${state.opgehaald.map((o) => `
+    <li><strong>${esc(o.name)}</strong>${o.order_ref ? ` <span class="meta">${esc(o.order_ref)}</span>` : ''}</li>`).join('')}</ul>`
+    : `<p class="meta">${esc(t.planBuiltEmpty)}</p>`}
+</div>`;
+
+  /* PAUZEREN EN OPZEGGEN STAAN ER GEWOON. Ze verstoppen zou werken en het zou
+   * het verkeerde soort werken zijn: een klant die niet kan opzeggen, zegt op
+   * bij zijn bank, en dan is er een mislukte incasso in plaats van een
+   * beëindiging. De bevestiging bij opzeggen is er tegen de misklik en niet
+   * tegen het besluit. */
+  const beheer = `
+<div class="card">
+  <h3>${esc(t.planBillingH)}</h3>
+  <dl class="facts">
+    <div class="fact"><dt>${esc(t.planBillingTerm)}</dt><dd>${esc(state.sub.term === 'yearly' ? t.planBillingYearly : t.planBillingMonthly)}</dd></div>
+    <div class="fact"><dt>${esc(t.planBillingAmount)}</dt><dd>${money(vorm.monthlyCents, lang)}</dd></div>
+    <div class="fact"><dt>${esc(t.planStatusLabel)}</dt><dd>${esc(status)}</dd></div>
+  </dl>
+  <div class="controls">
+    ${state.sub.status === 'paused'
+    ? `<form method="post" action="/account/plan/pause"><input type="hidden" name="do" value="resume">
+      <button class="btn btn-ghost" type="submit">${esc(t.planResume)}</button></form>`
+    : `<form method="post" action="/account/plan/pause"><input type="hidden" name="do" value="pause">
+      <button class="btn btn-ghost" type="submit">${esc(t.planPause)}</button></form>`}
+  </div>
+  <p class="meta">${esc(t.planPauseNote)}</p>
+  <form method="post" action="/account/plan/cancel" class="q-opzeggen">
+    <label for="opz">${esc(t.planCancelConfirm)}</label>
+    <input id="opz" name="confirm" type="text" autocomplete="off" required>
+    <button class="btn btn-ghost" type="submit">${esc(t.planCancel)}</button>
+  </form>
+  <p class="meta">${esc(t.planCancelNote)}</p>
+</div>`;
+
+  /* GEEN LEDE. Die stond hier ("Studio — 12 maanden") en zei precies wat de
+   * saldokaart drie regels lager al zegt. Twee keer hetzelfde boven elkaar maakt
+   * een pagina niet duidelijker; het maakt de eerste regel overbodig. */
+  return `${kop}
+${nudge}
+${saldo}
+${lijst}
+${week}
+${vastgelegd}
+${opgebouwd}
+${beheer}
+${account}`;
+}
+
+/** "de 8e" / "the 8th" — een dag van de maand, want het abonnement loopt door en een datum niet. */
+function dagVanDeMaand(dag, lang) {
+  const d = Math.min(28, Math.max(1, Math.floor(Number(dag) || 1)));
+  if (lang === 'nl') return `de ${d}e`;
+  const rest = d % 100;
+  const su = (rest >= 11 && rest <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[d % 10] || 'th');
+  return `the ${d}${su}`;
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * WAT DE KLANT AAN ZIJN ABONNEMENT MAG DOEN
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Drie handlers, en alle drie eindigen ze op dezelfde manier: een 303 terug naar
+ * /account/plan. Geen JSON, geen fetch, geen script. Dat is geen soberheid maar
+ * dezelfde keuze als bij het gegevensformulier — een lijst die je alleen met
+ * werkende JavaScript kunt herschikken, is een lijst die op een trage telefoon
+ * in de trein niet werkt, en dat is precies waar iemand hem invult.
+ *
+ * ELKE HANDLER CONTROLEERT EIGENDOM VIA DE QUERY EN NIET ERVOOR. queueRemove()
+ * en queueReorder() hebben de customer_id in hun WHERE staan; er is dus geen
+ * moment waarop een gecontroleerde id tussen de controle en de actie kan
+ * veranderen. Dezelfde vorm als de eigendomstoets bij custom_models hierboven.
+ */
+
+/** De lijst: toevoegen, verwijderen, een plaats omhoog of omlaag. */
+async function handlePlanQueue({ request, env }, customer) {
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('do') || '');
+  const home = '/account/plan';
+
+  if (doen === 'add') {
+    await queueAdd(env, customer.customer_id, {
+      name: String(form?.get('name') || ''),
+      note: String(form?.get('note') || ''),
+    });
+    return seeOther(home);
+  }
+
+  const id = Number.parseInt(String(form?.get('id') || ''), 10);
+  if (!Number.isInteger(id)) return seeOther(home);
+
+  if (doen === 'remove') {
+    await queueRemove(env, customer.customer_id, id);
+    return seeOther(home);
+  }
+
+  /* OMHOOG EN OMLAAG ZIJN ÉÉN HERSCHIKKING. De hele volgorde wordt opnieuw
+   * weggeschreven in plaats van twee posities om te wisselen, en dat is met
+   * opzet: posities kunnen gaten hebben (er is iets verwijderd, er is iets
+   * opgehaald), en twee rijen ruilen laat die gaten staan tot de volgorde niet
+   * meer klopt. Eén keer 0..n-1 wegschrijven kan niet scheefgroeien. */
+  if (doen === 'up' || doen === 'down') {
+    const huidig = await loadQueue(env, customer.customer_id);
+    const i = huidig.findIndex((q) => q.id === id);
+    const j = doen === 'up' ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= huidig.length) return seeOther(home);
+    const ids = huidig.map((q) => q.id);
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    await queueReorder(env, customer.customer_id, ids);
+  }
+
+  return seeOther(home);
+}
+
+/**
+ * Pauzeren en hervatten.
+ *
+ * WAT PAUZEREN NIET DOET: het saldo weghalen. Er is voor betaald, dus het blijft
+ * staan — en het schuift door volgens dezelfde regel als altijd. Wat het wél
+ * doet, is de volgende afschrijving tegenhouden, en dat gebeurt bij Mollie en
+ * niet hier; deze handler zet alleen de toestand. De Mollie-kant wordt in de
+ * aanmeldstroom aangesloten (cancelMollieSubscription in src/lib/mollie.js).
+ */
+async function handlePlanPause({ request, env }, customer) {
+  const form = await request.formData().catch(() => null);
+  const doen = String(form?.get('do') || '');
+  const home = '/account/plan';
+  const state = await planState(env, customer.customer_id);
+  if (!state.sub) return seeOther(home);
+
+  if (doen === 'resume') await activateSubscription(env, state.sub.id);
+  else if (doen === 'pause') await pauseSubscription(env, state.sub.id, 'customer');
+  return seeOther(home);
+}
+
+/**
+ * Opzeggen.
+ *
+ * HET GETYPTE WOORD IS TEGEN DE MISKLIK EN NIET TEGEN HET BESLUIT. Een klant die
+ * eruit wil, moet eruit kunnen — wie dat moeilijk maakt, krijgt geen klant die
+ * blijft maar een storneringsverzoek bij de bank, en dat is een mislukte incasso
+ * in plaats van een nette beëindiging.
+ *
+ * Beide talen worden geaccepteerd, ongeacht in welke taal het dashboard staat:
+ * iemand die 'CANCEL' typt op een Nederlands scherm, bedoelt precies wat hij
+ * zegt, en hem dat weigeren is een woordspelletje.
+ */
+async function handlePlanCancel({ request, env }, customer) {
+  const form = await request.formData().catch(() => null);
+  const woord = String(form?.get('confirm') || '').trim().toUpperCase();
+  const home = '/account/plan';
+  if (woord !== 'CANCEL' && woord !== 'OPZEGGEN') return seeOther(home);
+
+  const state = await planState(env, customer.customer_id);
+  if (!state.sub) return seeOther(home);
+  await cancelSubscription(env, state.sub.id, 'customer');
+  return seeOther(home);
 }
 
 // One panel, one row per style — was three separate .card+.controls forms
@@ -6161,6 +6968,443 @@ function esc(s) {
  * it stopped being true when the grace window landed, and the honest line is
  * the one that names the hour.
  */
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * HET E-MAILADRES WIJZIGEN
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Drie stappen, en elke stap heeft één taak:
+ *
+ *   1 · handleEmailChangeRequest  het verzoek. Legt niets vast in `customers`;
+ *                                 zet een rij in `email_changes` en stuurt een
+ *                                 bevestiging naar het NIEUWE adres.
+ *   2 · handleEmailConfirm        de klik in dat postvak. Nu pas verandert
+ *                                 `customers.email`, en gaat er een melding met
+ *                                 een terugzetlink naar het OUDE adres.
+ *   3 · handleEmailUndo           de klik in het oude postvak. Zet het terug en
+ *                                 gooit alle sessies eruit.
+ *
+ * ── WAAROM STAP 3 BESTAAT ───────────────────────────────────────────────────
+ *
+ * Omdat dit adres de inlog IS. Er is geen wachtwoord; er is een link in de mail.
+ * Iemand met een gestolen sessiekoekje kan dus stap 1 en 2 allebei zelf doen — het
+ * nieuwe adres is van hem, dus de bevestiging komt bij hem aan. Wat hij niet kan,
+ * is het postvak van de eigenaar leegmaken. Stap 3 is de enige reden dat een
+ * overname niet definitief is, en daarom is de melding aan het oude adres geen
+ * hoffelijkheid maar het slot. Zie ook de kop van migratie 0031.
+ *
+ * ── WAT HIER GEEN 404 GEEFT ─────────────────────────────────────────────────
+ *
+ * Een onbekend of verlopen kenmerk levert een nette pagina op en niet een fout.
+ * Deze links zitten in mail: ze worden dagen later aangeklikt, twee keer
+ * aangeklikt, en door scanners van mailservers vooraf opgehaald. Een 404 op zo'n
+ * klik leest als "jouw account is stuk" terwijl er alleen een link verlopen is.
+ */
+
+/** Even lang als de inloglink: lang genoeg om de mail te vinden, kort genoeg dat een oud postvak niets waard is. */
+const EMAIL_CHANGE_TTL_MINUTES = 60;
+/** En de terugzetlink veertien dagen, want iemand kan een week weg zijn. */
+const EMAIL_UNDO_TTL_DAYS = 14;
+
+function emailChangeExpiry(fromDate = new Date()) {
+  return new Date(fromDate.getTime() + EMAIL_CHANGE_TTL_MINUTES * 60000).toISOString();
+}
+function emailUndoExpiry(fromDate = new Date()) {
+  return new Date(fromDate.getTime() + EMAIL_UNDO_TTL_DAYS * 86400000).toISOString();
+}
+
+/**
+ * Stap 1 — het verzoek.
+ *
+ * DE UITKOMST IS ALTIJD DEZELFDE PAGINA, ongeacht of het adres vrij was. Een
+ * formulier dat "dat adres is al in gebruik" zegt, is een manier om te vragen of
+ * iemand klant is bij VISUAILS — en dat is precies wat de inlogpagina hierboven
+ * ook weigert te verklappen. De klant met een echt probleem merkt het doordat de
+ * mail niet aankomt; wie aan het rondvragen is, leert niets.
+ */
+async function handleEmailChangeRequest(context, customer) {
+  const { env, request } = context;
+  const form = await request.formData().catch(() => null);
+  const lang = langCookie(request) || negotiate(request);
+  const home = '/account/details?email=gevraagd';
+
+  const nieuw = String(form?.get('new_email') || '').trim().toLowerCase();
+  const huidig = String(customer.email || '').trim().toLowerCase();
+
+  /* Vorm eerst, en dan pas de database. Dezelfde volgorde als bij de inlogpagina:
+     een adres dat geen adres is, hoeft geen query te kosten. */
+  if (!isEmail(nieuw) || nieuw === huidig || nieuw.length > 254) return seeOther(home);
+
+  /* EEN EIGEN LIMIET, en strenger dan POST_LIMIT. Elk verzoek stuurt een mail naar
+     een adres dat de aanvrager zelf intypt — dat is precies de vorm waarmee je
+     andermans postvak kunt laten vollopen met post van VISUAILS. */
+  const gate = await checkRate(env, {
+    ip: clientIp(request), action: 'account-email-change', limit: 5,
+  });
+  if (!gate.allowed) return seeOther(home);
+
+  /* Is het adres vrij? Case-ongevoelig, want zo zoekt de inlogpagina hem ook op
+     (`lower(email) = ?1`) en `customers.email UNIQUE` is dat in SQLite níet. Zonder
+     deze toets zou een tweede rij met een andere schrijfwijze kunnen ontstaan, en
+     dan is het onbepaald wie er inlogt. */
+  const bezet = await env.DB.prepare(
+    'SELECT id FROM customers WHERE lower(email) = ?1 AND id <> ?2'
+  ).bind(nieuw, customer.customer_id).first().catch(() => null);
+  if (bezet) return seeOther(home);
+
+  const token = await mintToken();
+  const tokenHash = await hashToken(token);
+
+  try {
+    /* Openstaande verzoeken van deze klant vervallen. Iemand die zich vergist in
+       het adres, typt het opnieuw — en dan mag de oude link niet ook nog werken,
+       want die wijst naar het verkeerde postvak. */
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE email_changes SET confirm_expires = datetime('now')
+          WHERE customer_id = ?1 AND confirmed_at IS NULL`
+      ).bind(customer.customer_id),
+      env.DB.prepare(
+        `INSERT INTO email_changes
+           (customer_id, previous_email, new_email, confirm_hash, confirm_expires, request_ip_hash)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+      ).bind(customer.customer_id, customer.email, nieuw, tokenHash, emailChangeExpiry(),
+        await hashToken(`ip:${clientIp(request) || ''}`)),
+    ]);
+  } catch (err) {
+    console.error('[account] adreswijziging niet vastgelegd —', err?.message || err);
+    return seeOther('/account/details?email=mislukt');
+  }
+
+  const link = `${requestOrigin(request)}/account/email/${token}`;
+  const { html, text } = emailChangeConfirmEmail(lang, link, nieuw, EMAIL_CHANGE_TTL_MINUTES);
+  try {
+    await sendMail(env, {
+      to: nieuw,
+      subject: lang === 'nl' ? 'Bevestig je nieuwe e-mailadres' : 'Confirm your new email address',
+      html,
+      text,
+    });
+  } catch (err) {
+    console.error('[account] bevestigingsmail niet verstuurd —', err?.message || err);
+  }
+
+  return seeOther(home);
+}
+
+/**
+ * Stap 2 — de klik in het nieuwe postvak. Hier verandert het adres echt.
+ *
+ * DE MELDING AAN HET OUDE ADRES GAAT ERUIT VOORDAT DEZE FUNCTIE KLAAR IS, en dat
+ * is de bedoeling: als het versturen mislukt, is de wijziging al doorgevoerd en
+ * staat dat in het log. De andere volgorde — eerst mailen, dan wijzigen — zou
+ * betekenen dat een tijdelijk probleem bij de mailprovider een geldige bevestiging
+ * weggooit, en dan zit de klant met een adres dat hij net heeft bevestigd en dat
+ * niet werkt.
+ */
+async function handleEmailConfirm(context, token) {
+  const { env, request } = context;
+  const lang = langCookie(request) || negotiate(request);
+  const t = COPY[lang];
+
+  if (!isWellFormedToken(token)) return emailChangePage(t, lang, 'onbekend');
+
+  const hash = await hashToken(token);
+  const row = await env.DB.prepare(
+    `SELECT id, customer_id, previous_email, new_email, confirm_expires, confirmed_at
+       FROM email_changes WHERE confirm_hash = ?1`
+  ).bind(hash).first().catch(() => null);
+
+  if (!row) return emailChangePage(t, lang, 'onbekend');
+  if (row.confirmed_at) return emailChangePage(t, lang, 'al-gedaan');
+  if (isExpired(row.confirm_expires)) return emailChangePage(t, lang, 'verlopen');
+
+  /* Nog één keer kijken of het adres vrij is. Tussen het verzoek en deze klik kan
+     een uur liggen, en in dat uur kan iemand anders onder dat adres besteld hebben.
+     Zonder deze tweede toets loopt de UPDATE hieronder op de UNIQUE-index stuk en
+     ziet de klant een foutpagina in plaats van een uitleg. */
+  const bezet = await env.DB.prepare(
+    'SELECT id FROM customers WHERE lower(email) = ?1 AND id <> ?2'
+  ).bind(String(row.new_email).toLowerCase(), row.customer_id).first().catch(() => null);
+  if (bezet) return emailChangePage(t, lang, 'bezet');
+
+  const undoToken = await mintToken();
+
+  try {
+    await env.DB.batch([
+      env.DB.prepare('UPDATE customers SET email = ?2 WHERE id = ?1')
+        .bind(row.customer_id, row.new_email),
+      env.DB.prepare(
+        `UPDATE email_changes
+            SET confirmed_at = datetime('now'), undo_hash = ?2, undo_expires = ?3
+          WHERE id = ?1`
+      ).bind(row.id, await hashToken(undoToken), emailUndoExpiry()),
+      /* DE OPENSTAANDE INLOGLINKS VERVALLEN. Ze zijn aan de klant gehangen en niet
+         aan het adres, dus ze zouden blijven werken — en een link die naar het oude
+         postvak is gestuurd, hoort na een adreswijziging niets meer te openen. */
+      env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(row.customer_id),
+    ]);
+  } catch (err) {
+    console.error('[account] adreswijziging niet doorgevoerd —', err?.message || err);
+    return emailChangePage(t, lang, 'mislukt');
+  }
+
+  const undoLink = `${requestOrigin(request)}/account/email/undo/${undoToken}`;
+  const { html, text } = emailChangedEmail(lang, undoLink, row.new_email, EMAIL_UNDO_TTL_DAYS);
+  try {
+    await sendMail(env, {
+      to: row.previous_email,
+      subject: lang === 'nl'
+        ? 'Het e-mailadres van je VISUAILS-account is gewijzigd'
+        : 'The email address on your VISUAILS account has changed',
+      html,
+      text,
+    });
+  } catch (err) {
+    /* Luidruchtig, want dit is het slot. Een wijziging zonder melding is een
+       wijziging die de eigenaar niet kan terugdraaien. */
+    console.error('[account] MELDING AAN OUD ADRES NIET VERSTUURD voor klant', row.customer_id, '—', err?.message || err);
+  }
+
+  return emailChangePage(t, lang, 'gelukt', row.new_email);
+}
+
+/**
+ * Stap 3 — terugzetten, vanuit het oude postvak.
+ *
+ * EN ALLE SESSIES ERUIT. Dat is het verschil tussen deze link en een gewone
+ * correctie: als dit een overname was, zit de aanvaller op dat moment ingelogd, en
+ * het adres terugzetten zonder zijn sessie te doden zou hem laten proberen het nog
+ * eens te doen.
+ */
+async function handleEmailUndo(context, token) {
+  const { env, request } = context;
+  const lang = langCookie(request) || negotiate(request);
+  const t = COPY[lang];
+
+  if (!isWellFormedToken(token)) return emailChangePage(t, lang, 'onbekend');
+
+  const hash = await hashToken(token);
+  const row = await env.DB.prepare(
+    `SELECT id, customer_id, previous_email, new_email, undo_expires, undone_at
+       FROM email_changes WHERE undo_hash = ?1`
+  ).bind(hash).first().catch(() => null);
+
+  if (!row) return emailChangePage(t, lang, 'onbekend');
+  if (row.undone_at) return emailChangePage(t, lang, 'al-terug');
+  if (isExpired(row.undo_expires)) return emailChangePage(t, lang, 'verlopen');
+
+  try {
+    await env.DB.batch([
+      env.DB.prepare('UPDATE customers SET email = ?2 WHERE id = ?1')
+        .bind(row.customer_id, row.previous_email),
+      env.DB.prepare("UPDATE email_changes SET undone_at = datetime('now') WHERE id = ?1").bind(row.id),
+      env.DB.prepare('DELETE FROM account_sessions WHERE customer_id = ?1').bind(row.customer_id),
+      env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(row.customer_id),
+    ]);
+  } catch (err) {
+    console.error('[account] terugzetten mislukt —', err?.message || err);
+    return emailChangePage(t, lang, 'mislukt');
+  }
+
+  return emailChangePage(t, lang, 'teruggezet', row.previous_email);
+}
+
+/**
+ * De pagina die na een klik uit een mail verschijnt. Zeven uitkomsten, en geen van
+ * ze is een 404 — zie de kop van dit blok voor waarom.
+ *
+ * Hij deelt de opmaak van de inlogpagina en niet van het dashboard: wie hier komt,
+ * is misschien niet ingelogd, en de dashboardschil zou een navigatie tonen die
+ * dan nergens heen kan.
+ */
+function emailChangePage(t, lang, uitkomst, adres = '') {
+  const nl = lang === 'nl';
+  const M = {
+    gelukt: nl
+      ? ['Je nieuwe adres is bevestigd', `Vanaf nu log je in met ${adres}. We hebben je oude adres een bericht gestuurd, zodat je het kunt terugzetten als dit niet jouw bedoeling was.`]
+      : ['Your new address is confirmed', `From now on you sign in with ${adres}. We have sent a message to your old address so you can put it back if this was not you.`],
+    teruggezet: nl
+      ? ['Het adres staat weer terug', `Je logt weer in met ${adres}, en alle apparaten zijn uitgelogd. Weet je niet wie dit heeft geprobeerd? Mail hello@visuails.com — dan kijken we mee.`]
+      : ['The address is back', `You sign in with ${adres} again, and every device has been signed out. Not sure who tried this? Email hello@visuails.com and we will look into it.`],
+    verlopen: nl
+      ? ['Deze link is verlopen', 'Vraag de wijziging opnieuw aan in je accountgegevens. Er is niets veranderd.']
+      : ['This link has expired', 'Request the change again in your account details. Nothing has changed.'],
+    'al-gedaan': nl
+      ? ['Dit was al bevestigd', 'Je nieuwe adres werkt al. Je kunt deze pagina sluiten.']
+      : ['This was already confirmed', 'Your new address already works. You can close this page.'],
+    'al-terug': nl
+      ? ['Dit was al teruggezet', 'Je oude adres werkt weer. Je kunt deze pagina sluiten.']
+      : ['This was already undone', 'Your old address works again. You can close this page.'],
+    bezet: nl
+      ? ['Dat adres is inmiddels in gebruik', 'Er is niets veranderd. Mail hello@visuails.com en we zoeken het uit.']
+      : ['That address is now in use', 'Nothing has changed. Email hello@visuails.com and we will sort it out.'],
+    onbekend: nl
+      ? ['Deze link werkt niet', 'Hij is verlopen, al gebruikt, of niet compleet overgenomen uit de mail. Er is niets veranderd.']
+      : ['This link does not work', 'It has expired, has been used, or was not copied from the email in full. Nothing has changed.'],
+    mislukt: nl
+      ? ['Dit is niet gelukt', 'Er ging iets mis aan onze kant en er is niets veranderd. Probeer het opnieuw, of mail hello@visuails.com.']
+      : ['This did not work', 'Something went wrong on our side and nothing has changed. Try again, or email hello@visuails.com.'],
+  };
+  const [kop, tekst] = M[uitkomst] || M.onbekend;
+  const goed = uitkomst === 'gelukt' || uitkomst === 'teruggezet';
+
+  /* Dezelfde schil als checkEmailBody(): `.bar` met de merknaam en een
+     `.authcard`. Niet de dashboardschil — wie hier komt is misschien niet
+     ingelogd, en dan zou de navigatie ernaast nergens heen kunnen. */
+  const body = `
+<div class="bar"><a class="mark" href="/">VISUAILS</a></div>
+<div class="authcard">
+  <h1>${esc(kop)}</h1>
+  <p class="lede">${esc(tekst)}</p>
+  <p><a class="btn${goed ? '' : ' btn-ghost'}" href="/account">${esc(t.navOverview)}</a></p>
+</div>`;
+  /* ALTIJD 200, ook bij een verlopen link. Deze URL's zitten in mail: ze worden
+     dagen later aangeklikt, twee keer aangeklikt, en door scanners van
+     mailservers vooraf opgehaald. Een 404 leest als "je account is stuk" terwijl
+     er alleen een link verlopen is. */
+  return html(page({ lang, title: kop, body }), 200);
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * DE TWEE MAILS VAN EEN ADRESWIJZIGING
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Ze gaan naar twee verschillende postvakken en ze hebben twee verschillende
+ * taken. Dat verschil is de hele beveiliging van deze functie, dus staat het hier
+ * uitgeschreven en niet alleen in de migratie:
+ *
+ *   NAAR HET NIEUWE ADRES: bevestigen. Zolang daar niet op geklikt is, verandert
+ *   er niets. Dit vangt de typefout — zonder deze stap zet iemand zijn inlog op
+ *   een adres dat niet bestaat en komt hij nooit meer binnen.
+ *
+ *   NAAR HET OUDE ADRES: melden, met een link om het terug te zetten. Dit vangt de
+ *   overname. Iemand met een gestolen sessiekoekje kan een nieuw adres zetten en
+ *   dat vanuit zijn eigen postvak bevestigen — maar hij kan het postvak van de
+ *   eigenaar niet leegmaken, en één klik daar zet alles terug en gooit elke sessie
+ *   eruit.
+ *
+ * DE MELDING IS DUS NIET EEN HOFFELIJKHEID MAAR HET SLOT. Vandaar dat hij wordt
+ * verstuurd vóór de sessies iets merken, en vandaar dat de link veertien dagen
+ * leeft: iemand die een week op vakantie is, moet hem nog kunnen gebruiken.
+ */
+export function emailChangeConfirmEmail(lang, link, newEmail, minutes) {
+  const nl = lang === 'nl';
+  const copy = nl ? {
+    h: 'Bevestig je nieuwe e-mailadres',
+    p: `Je hebt gevraagd om het e-mailadres van je VISUAILS-account te wijzigen naar <strong>${newEmail}</strong>. Klik hieronder om dat te bevestigen. Tot dat moment blijft je huidige adres gewoon werken.`,
+    b: 'Nieuw adres bevestigen',
+    alt: 'Werkt de knop niet? Open deze link:',
+    f: `Deze link is ${minutes} minuten geldig en werkt één keer. Heb je dit niet aangevraagd, dan kun je deze mail negeren — er verandert dan niets.`,
+    pre: 'Eén klik om je nieuwe adres te bevestigen.',
+  } : {
+    h: 'Confirm your new email address',
+    p: `You asked to change the email address on your VISUAILS account to <strong>${newEmail}</strong>. Click below to confirm. Until you do, your current address keeps working.`,
+    b: 'Confirm new address',
+    alt: 'Button not working? Open this link:',
+    f: `This link is valid for ${minutes} minutes and works once. If you did not request this, you can ignore this email — nothing will change.`,
+    pre: 'One click to confirm your new address.',
+  };
+
+  /* De link staat er twee keer: één keer achter de knop en één keer als tekst om
+     te kopiëren. Dezelfde reden als bij magicLinkEmail() — een client die de knop
+     wegstript, of een lezer die van telefoon naar desktop gaat, heeft de tweede
+     nodig. */
+  const html = mailShell({
+    lang,
+    preheader: copy.pre,
+    body: [
+      mailH1(copy.h),
+      mailP(copy.p),
+      mailButton(link, copy.b),
+      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      mailP(`${copy.alt}<br><a href="${link}" style="color:#6B7078;word-break:break-all">${link}</a>`, { muted: true }),
+      mailNote2(copy.f),
+      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
+      mailSpamNote(lang),
+    ].join(''),
+  });
+
+  const text = `${copy.h}
+
+${copy.p.replace(/<[^>]+>/g, '')}
+
+${link}
+
+${copy.f}
+
+VISUAILS · Enschede, NL · hello@visuails.com`;
+
+  return { html, text };
+}
+
+/**
+ * De melding aan het OUDE adres. Dit is het slot, niet de hoffelijkheid.
+ *
+ * HET NIEUWE ADRES STAAT ER GEDEELTELIJK IN. Voluit zou betekenen dat een
+ * aanvaller die dit postvak later alsnog leest, weet welk adres hij te pakken
+ * heeft; helemaal weglaten zou de eigenaar niet laten zien wat er is gebeurd. Het
+ * eerste teken en het domein zijn genoeg om te herkennen of dit van jou was.
+ */
+export function emailChangedEmail(lang, undoLink, newEmail, days) {
+  const nl = lang === 'nl';
+  const gemaskeerd = maskEmail(newEmail);
+  const copy = nl ? {
+    h: 'Het e-mailadres van je account is gewijzigd',
+    p: `Vanaf nu log je in met <strong>${gemaskeerd}</strong>. Dit adres werkt niet meer om in te loggen.`,
+    p2: 'Was dit jij? Dan hoef je niets te doen.',
+    b: 'Nee, zet dit terug',
+    alt: 'Werkt de knop niet? Open deze link:',
+    f: `Deze link zet het adres terug op dit adres en logt alle apparaten uit. Hij is ${days} dagen geldig. Lukt het niet, mail dan direct hello@visuails.com.`,
+    pre: 'Was dit niet jij? Eén klik zet het terug.',
+  } : {
+    h: 'The email address on your account has changed',
+    p: `From now on you sign in with <strong>${gemaskeerd}</strong>. This address no longer works for signing in.`,
+    p2: 'Was this you? Then there is nothing to do.',
+    b: 'No, change it back',
+    alt: 'Button not working? Open this link:',
+    f: `This link restores the address to this one and signs out every device. It is valid for ${days} days. If it does not work, email hello@visuails.com straight away.`,
+    pre: 'Was this not you? One click puts it back.',
+  };
+
+  const html = mailShell({
+    lang,
+    preheader: copy.pre,
+    body: [
+      mailH1(copy.h),
+      mailP(copy.p),
+      mailP(copy.p2),
+      mailButton(undoLink, copy.b),
+      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      mailP(`${copy.alt}<br><a href="${undoLink}" style="color:#6B7078;word-break:break-all">${undoLink}</a>`, { muted: true }),
+      mailNote2(copy.f),
+    ].join(''),
+  });
+
+  const text = `${copy.h}
+
+${copy.p.replace(/<[^>]+>/g, '')}
+
+${copy.p2}
+
+${undoLink}
+
+${copy.f}
+
+VISUAILS · Enschede, NL · hello@visuails.com`;
+
+  return { html, text };
+}
+
+/** `mara@voltbrand.nl` → `m***@voltbrand.nl`. Genoeg om te herkennen, niet genoeg om te gebruiken. */
+export function maskEmail(raw) {
+  const s = String(raw || '');
+  const at = s.lastIndexOf('@');
+  if (at < 1) return '***';
+  return `${s[0]}***${s.slice(at)}`;
+}
+
 export function magicLinkEmail(lang, link, code = null) {
   const mins = LOGIN_TOKEN_TTL_MINUTES;
   const hours = mins % 60 === 0 ? mins / 60 : null;

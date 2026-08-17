@@ -345,6 +345,54 @@ a { color: inherit; }
 }
 .navlink:hover { background: var(--paper-2); color: var(--ink); }
 .navlink.is-active { color: var(--ink); font-weight: 600; background: var(--paper-2); border-left-color: var(--ink-900); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DE BALK IN- EN UITGEKLAPT
+   ═══════════════════════════════════════════════════════════════════════════
+
+   De stand komt uit een cookie en niet uit een klik: de CSP van dit dashboard is
+   `default-src 'none'` zonder `script-src`, dus er draait hier geen enkel script.
+   Zie navCookie() in src/lib/account.js.
+
+   WAT ER VERDWIJNT ZIJN DE WOORDEN, NIET DE NAVIGATIE. Alle zeven items blijven
+   staan als icoon. Een balk die helemaal wegklapt, wint dertig pixel meer en kost
+   de klant zijn plaatsbepaling — en dan moet hij hem uitklappen om te zien waar
+   hij is, wat het tegenovergestelde is van wat de knop belooft.
+   ─────────────────────────────────────────────────────────────────────────── */
+.navtoggle {
+  display: flex; align-items: center; gap: .7rem;
+  margin: -1rem 0 1rem; padding: .5rem .7rem;
+  font-size: .82rem; color: var(--ink-3); text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.navtoggle:hover { color: var(--ink); background: var(--paper-2); }
+
+.nav-dicht .sidebar { flex-basis: 68px; padding-left: .7rem; padding-right: .7rem; }
+
+/* De tekst gaat weg met `display: none` en niet met een breedte van nul: een
+   schermlezer hoort de labels dan ook niet meer, en dat is juist — het `title`-
+   attribuut op de link draagt de naam, en twee keer hetzelfde voorlezen is erger
+   dan één keer. */
+.nav-dicht .sidebrand-sub,
+.nav-dicht .navlink span,
+.nav-dicht .navtoggle span,
+.nav-dicht .sideuser-name,
+.nav-dicht .sideuser-email,
+.nav-dicht .sidelang { display: none; }
+
+/* De merknaam wordt zijn eigen eerste letter. Weglaten zou een balk opleveren die
+   niet meer van VISUAILS is; hem laten staan zou hem laten afbreken. */
+.nav-dicht .sidebrand .mark { font-size: 0; }
+.nav-dicht .sidebrand .mark::before { content: 'V'; font-size: 1.1rem; letter-spacing: 0; }
+
+.nav-dicht .navlink,
+.nav-dicht .navtoggle { justify-content: center; gap: 0; padding-left: .4rem; padding-right: .4rem; }
+
+/* De uitloggen-knop wordt een vierkant. `font-size: 0` op de knop en het icoon in
+   ::before, dezelfde truc als bij de merknaam — een knop zonder inhoud zou
+   inklappen tot niets en niet meer aan te klikken zijn. */
+.nav-dicht .sideuser form .btn { font-size: 0; padding: .55rem 0; min-height: 38px; }
+.nav-dicht .sideuser form .btn::before { content: '\2192'; font-size: 1rem; }
 /* The one deliberate exception to "no side-stripe borders": this is a 2px
    active-tab indicator on a nav item, the same role an underline plays on a
    tab strip, not a decorative accent — it exists on exactly one item at a
@@ -2388,6 +2436,23 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 @media (max-width: 780px) {
   .shell { flex-direction: column; min-height: 0; }
 
+  /* OP EEN TELEFOON BESTAAT DE STAND NIET. De balk is hier geen kolom naast de
+     inhoud maar een raster erboven, dus valt er geen breedte te winnen — en een
+     knop die niets doet is erger dan geen knop. De cookie blijft staan; hij komt
+     terug zodra hetzelfde account op een breed scherm inlogt. */
+  .navtoggle { display: none; }
+  .nav-dicht .sidebar { flex-basis: auto; padding: .85rem 1.1rem 1rem; }
+  .nav-dicht .sidebrand-sub,
+  .nav-dicht .navlink span,
+  .nav-dicht .sideuser-name,
+  .nav-dicht .sideuser-email,
+  .nav-dicht .sidelang { display: revert; }
+  .nav-dicht .sidebrand .mark { font-size: revert; }
+  .nav-dicht .sidebrand .mark::before { content: none; }
+  .nav-dicht .navlink { justify-content: flex-start; gap: .5rem; }
+  .nav-dicht .sideuser form .btn { font-size: revert; }
+  .nav-dicht .sideuser form .btn::before { content: none; }
+
   .sidebar {
     flex: 0 0 auto;
     display: grid;
@@ -2500,3 +2565,104 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
    samengevoegde tekst. */
 .ord-b + .ord-b::before { content: '\00B7'; margin: 0 .34em; color: var(--ink-300); }
 .ord-b { white-space: nowrap; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HET ABONNEMENT
+   ═══════════════════════════════════════════════════════════════════════════
+
+   DE SALDOMETER IS EEN SVG EN GEEN DIV MET EEN BREEDTE. Dit dashboard draait
+   onder `style-src 'self'`, en in CSP3 valt `style-src-attr` daarop terug: een
+   `style="width: 71%"` wordt geweigerd en de balk blijft leeg. Twee keer eerder
+   dit jaar dezelfde val (swatch(), de beeldverhoudingen). De breedte zit nu in
+   het rect-attribuut binnen een viewBox — dat is de tekening en geen opmaak, dus
+   het beleid raakt hem niet. Zie saldoMeter() in src/lib/account.js.
+   ─────────────────────────────────────────────────────────────────────────── */
+/* DE METER IS EEN RIJ VAKJES. Vijf lege vakjes zijn vijf dingen die je nog kunt
+   laten maken; een balk op 58% is een getal waar niemand iets mee doet. En het
+   lost de CSP-val definitief op: er is geen breedte om te berekenen, dus is er
+   ook geen inline stijl nodig. Zie saldoMeter() in src/lib/account.js. */
+.meter { display: flex; flex-wrap: wrap; gap: 4px; margin: .5rem 0 .7rem; }
+.pip {
+  width: 22px; height: 10px; border-radius: 3px;
+  background: var(--paper-2); border: 1px solid var(--line);
+}
+/* Verbruikt is vol, open is leeg, doorgeschoven staat er tussenin: het is er wel,
+   maar niet voor altijd. Vandaar de omlijning en niet de volle vulling. */
+.pip-op   { background: var(--signal-ink, var(--ink-1)); border-color: transparent; }
+.pip-roll { background: transparent; border: 1px dashed var(--signal-ink, var(--ink-2)); }
+
+/* De kop van de balk: het getal links, de bestelknop rechts. Uit de mockup, en om
+   de reden die daar staat — het getal roept een vraag op en het antwoord hoort op
+   dezelfde regel. */
+.saldo-rij + .saldo-rij { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--line); }
+.saldo-kop { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+
+/* Plan links, volgende afschrijving rechts. */
+.dash-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
+.dash-top h3 { margin: .3rem 0 0; }
+.dash-right { text-align: right; flex-shrink: 0; }
+.dash-right strong { display: block; margin-top: .3rem; white-space: nowrap; }
+
+/* Wat nog niet is ingesteld, is informatie en geen fout — maar het mag niet
+   klinken als een waarde. */
+.facts-kv dd.leeg { color: var(--ink-4, var(--ink-3)); font-style: italic; }
+
+/* De nudge verdwijnt zodra de brand kit af is; hij is dus nooit lang zichtbaar en
+   mag opvallen. Een rand en geen vlak: een gevuld blok bovenaan een dashboard
+   leest als een storing. */
+.card.nudge { border-color: var(--signal-ink, var(--ink-2)); }
+
+/* De regels die in de eerstvolgende week starten, staan aangezet. Niet met een
+   label erbij — de tekst onder de lijst zegt hoeveel het zijn, en twee keer
+   hetzelfde zeggen maakt het niet duidelijker. */
+.q-nu { border-left: 2px solid var(--signal-ink, var(--ink-2)); padding-left: .7rem; }
+/* Een klein gat tussen aangezette regels, anders lopen de randjes van drie rijen
+   op een telefoon in elkaar over tot één streep en is niet te zien dat het drie
+   items zijn. */
+.q-nu + .q-nu { margin-top: 3px; }
+.q-staat { font-size: .78rem; letter-spacing: .02em; }
+.q-ok { color: var(--ink-3); }
+.q-wacht { color: var(--signal-ink, var(--ink-1)); }
+
+/* Het getal draagt het antwoord, niet de balk. "12 over deze maand" is te lezen
+   zonder de meter erbij — die is de illustratie en niet de mededeling. */
+.plan-getal { margin: .2rem 0 .1rem; font-size: 1.05rem; }
+.plan-getal strong { font-size: 2rem; line-height: 1.1; letter-spacing: -.02em; }
+.plan-getal span { color: var(--ink-3); }
+
+/* De lijst. Genummerd, want de volgorde ís de betekenis: nummer één is wat er
+   in de eerstvolgende week gemaakt wordt. */
+.q-lijst { list-style: decimal; margin: .8rem 0 1.2rem; padding-left: 1.6rem; }
+.q-rij {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: .8rem; padding: .55rem 0; border-bottom: 1px solid var(--line);
+}
+.q-rij:last-child { border-bottom: 0; }
+.q-tekst { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.q-tekst strong { font-weight: 600; overflow-wrap: anywhere; }
+/* De drie knoppen zijn drie losse formulieren — anders zou één submit alle drie
+   de bedoelingen tegelijk versturen. Ze naast elkaar houden is dus een
+   opmaakvraag en geen structuurvraag. */
+.q-knoppen { display: flex; align-items: center; gap: .3rem; flex-shrink: 0; }
+.q-knoppen form { margin: 0; }
+.q-knoppen button[disabled] { opacity: .35; cursor: default; }
+
+.q-toevoegen { display: grid; gap: .35rem; margin-top: 1rem; max-width: 42rem; }
+.q-toevoegen label { font-size: .86rem; color: var(--ink-3); }
+.q-toevoegen button { justify-self: start; margin-top: .5rem; }
+
+.q-gedaan { list-style: none; margin: .6rem 0 0; padding: 0; }
+.q-gedaan li { padding: .35rem 0; border-bottom: 1px solid var(--line); }
+.q-gedaan li:last-child { border-bottom: 0; }
+
+/* Opzeggen staat er gewoon, en het staat er kleiner. Niet verstopt — wie er niet
+   uit kan, stapt naar zijn bank en dan is het een stornering in plaats van een
+   beëindiging — maar ook niet als eerste knop van de kaart. */
+.q-opzeggen { display: grid; gap: .35rem; margin-top: 1.6rem; max-width: 26rem; }
+.q-opzeggen label { font-size: .86rem; color: var(--ink-3); }
+.q-opzeggen button { justify-self: start; margin-top: .4rem; }
+
+@media (max-width: 560px) {
+  .q-rij { flex-direction: column; align-items: stretch; }
+  .q-knoppen { justify-content: flex-end; }
+}

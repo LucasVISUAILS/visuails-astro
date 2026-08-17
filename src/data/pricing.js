@@ -126,6 +126,8 @@ export const LADDER = {
 };
 
 /** The per-product rate for a kind at a given product count. */
+
+import { planName } from './planNames.js';
 export function ladderRate(kind, products = 1) {
   const rungs = LADDER[kind];
   if (!rungs) throw new Error(`pricing.js: unknown ladder kind "${kind}"`);
@@ -1113,15 +1115,15 @@ export function plans(lang = 'en') {
   const nlx = l === 'nl';
   const meta = {
     starter: {
-      name: 'Starter',
+      name: planName('starter', l),
       line: nlx ? 'Genoeg om elke maand iets nieuws te laten zien.' : 'Enough to have something new to show every month.',
     },
     studio: {
-      name: 'Studio',
+      name: planName('studio', l),
       line: nlx ? 'Voor merken die continu posten, niet alleen bij een lancering.' : 'For brands posting continuously, not only at a launch.',
     },
     brand: {
-      name: nlx ? 'Merk' : 'Brand',
+      name: planName('brand', l),
       line: nlx ? 'Een hele collectie per maand, met je eigen gezicht erbij.' : 'A whole collection a month, with your own face on it.',
     },
   };

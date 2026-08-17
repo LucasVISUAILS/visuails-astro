@@ -192,6 +192,223 @@ export async function createOrderMolliePayment(env, {
  */
 const NON_NL_METHODS = ['creditcard', 'bancontact', 'banktransfer', 'paypal', 'eps', 'giropay', 'sofort'];
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * HERHALING — 16 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas vroeg of een abonnement kan. Het antwoord was: Mollie kan het wel, dit
+ * bestand kon het niet — er stonden negen functies en geen ervan raakte aan een
+ * mandaat, een customer of een subscription. Dit blok is dat gat.
+ *
+ * ── DE KETEN, EN WAAROM ELKE STAP APART STAAT ──────────────────────────────
+ *
+ *   1 · createMollieCustomer()      een klant bij Mollie, één keer per klant
+ *   2 · createFirstPayment()        een ECHTE betaling met sequenceType 'first'
+ *   3 · firstPaymentMandate()       het mandaat dat daaruit rolde, uitlezen
+ *   4 · createMollieSubscription()  Mollie schrijft vanaf nu zelf af
+ *   5 · cancelMollieSubscription()  en stopt weer
+ *
+ * Vier functies en niet één `setUpSubscription()`, omdat de vier stappen op vier
+ * verschillende momenten gebeuren en er tussen 2 en 3 een BEZOEKER zit: hij
+ * moet naar Mollie, betalen, en terugkomen. Een functie die de hele keten in één
+ * aanroep doet, zou die redirect niet kunnen bestaan.
+ *
+ * ── HET MANDAAT KOMT ALLEEN UIT EEN ECHTE BETALING ─────────────────────────
+ *
+ * Dat is de enige harde beperking in het hele verhaal. Volledig gratis beginnen
+ * kan niet; er moet één transactie zijn. Vandaar dat een gratis periode wordt
+ * gebouwd als: een kleine eerste betaling om het mandaat te zetten, en daarna een
+ * subscription met `startDate` in de toekomst. Zie createMollieSubscription().
+ *
+ * ── EN WAAROM MOLLIE ZELF AFSCHRIJFT EN NIET WIJ ───────────────────────────
+ *
+ * Er zijn twee manieren: de Subscriptions API (Mollie schrijft af op een
+ * interval) of zelf betalingen aanmaken met sequenceType 'recurring'. Wij nemen
+ * de eerste, en dat is een besluit over ONDERHOUD en niet over elegantie: de
+ * tweede vraagt een taak die elke maand op tijd moet draaien, moet weten wie er
+ * aan de beurt is, en moet onthouden wat er al gelukt is. Dat is precies het
+ * soort ding dat bij één persoon stilletjes stukgaat. Mollie doet het, en wij
+ * verwerken alleen de melding.
+ */
+
+/**
+ * Een klant bij Mollie. Nodig voordat er een mandaat kan bestaan.
+ *
+ * `metadata.customer_id` gaat mee zodat een rij in het Mollie-dashboard terug te
+ * vinden is in onze eigen database — dezelfde reden als `order_ref` op een
+ * betaling. Zonder dat is een mandaat in hun overzicht een e-mailadres en verder
+ * niets.
+ */
+export async function createMollieCustomer(env, { customerId, email, name }) {
+  return mollieRequest(env, 'POST', '/customers', {
+    name: String(name || email || 'VISUAILS-klant').slice(0, 100),
+    email: String(email || '').slice(0, 200),
+    locale: 'nl_NL',
+    metadata: { customer_id: String(customerId) },
+  });
+}
+
+/**
+ * De eerste betaling: die zet het mandaat.
+ *
+ * `sequenceType: 'first'` is het hele verschil met createOrderMolliePayment().
+ * Wat de klant hier betaalt, is niet noodzakelijk de eerste maand — bij een
+ * gratis periode is het € 1 en niets meer. Wat het WEL doet is een mandaat
+ * opleveren waarmee Mollie daarna mag afschrijven.
+ *
+ * iDEAL BLIJFT AANGEBODEN, en dat is bij een abonnement anders dan bij een
+ * bestelling op 0% btw (zie NON_NL_METHODS hierboven): een eerste betaling via
+ * iDEAL levert een SEPA-incassomandaat op, en dat is precies hoe een Nederlands
+ * zakelijk abonnement normaal loopt. Uitsluiten zou de meest gebruikelijke weg
+ * dichtgooien.
+ *
+ * `ref` reist mee in de metadata onder `sub_ref` en NIET onder `order_ref`. Dat
+ * verschil is opzettelijk en het is de reden dat recordPaid() in de webhook deze
+ * betaling niet als een verdwaalde bestelling behandelt.
+ */
+export async function createFirstPayment(env, {
+  subscriptionRef, mollieCustomerId, valueEuros, description, lang, successUrl, webhookUrl,
+}) {
+  const cents = Math.round(Number(valueEuros) * 100);
+  if (!Number.isFinite(cents) || cents < 1) {
+    throw new Error(`mollie: een eerste betaling van ${valueEuros} kan niet — het mandaat vraagt een echte transactie`);
+  }
+  return mollieRequest(env, 'POST', '/payments', {
+    amount: { currency: 'EUR', value: Number(valueEuros).toFixed(2) },
+    customerId: mollieCustomerId,
+    sequenceType: 'first',
+    description: String(description || 'VISUAILS abonnement').slice(0, 255),
+    redirectUrl: successUrl,
+    webhookUrl,
+    locale: lang === 'nl' ? 'nl_NL' : 'en_GB',
+    metadata: { sub_ref: String(subscriptionRef) },
+  });
+}
+
+/**
+ * Het mandaat dat uit een geslaagde eerste betaling is gerold.
+ *
+ * NIET UIT DE BETALING ZELF, en dat is gemeten gedrag en geen voorkeur: het veld
+ * `mandateId` op een payment is er niet altijd op het moment dat de webhook komt.
+ * De mandaten van de klant opvragen en de nieuwste geldige pakken, werkt altijd —
+ * en het is dezelfde afweging als bij RETURNING in admin.js: vraag het aan de
+ * bron in plaats van te hopen dat een veld al gevuld is.
+ *
+ * `valid` en niet 'pending': een mandaat dat nog niet geldig is, kan niet
+ * afschrijven, en een subscription erop aanmaken levert een abonnement op dat
+ * niets doet.
+ */
+export async function firstPaymentMandate(env, mollieCustomerId) {
+  const list = await mollieRequest(env, 'GET', `/customers/${encodeURIComponent(mollieCustomerId)}/mandates?limit=50`);
+  const mandates = list?._embedded?.mandates || [];
+  const geldig = mandates.filter((m) => m.status === 'valid');
+  if (!geldig.length) return null;
+  // De nieuwste. Mollie geeft ze nieuwste-eerst, maar dat is niet gedocumenteerd
+  // als garantie, dus wordt er op createdAt gesorteerd in plaats van op de
+  // volgorde van de lijst.
+  geldig.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  return geldig[0];
+}
+
+/**
+ * Vanaf hier schrijft Mollie zelf af.
+ *
+ * ── `startDate` IS HOE EEN GRATIS PERIODE WERKT ────────────────────────────
+ *
+ * Nagekeken in de Create-subscription-documentatie: `startDate` (YYYY-MM-DD)
+ * stelt de eerste afschrijving uit. Twee maanden gratis is dus: een eerste
+ * betaling van € 1 voor het mandaat, en deze subscription met `startDate` op
+ * vandaag plus twee maanden. De klant betaalt twee maanden niets en daarna elke
+ * maand het volle bedrag, automatisch.
+ *
+ * ── `times` MAAKT DE JAARVERBINTENIS ZELFSTOPPEND ──────────────────────────
+ *
+ * Ook uit de documentatie: na `times` afschrijvingen is de subscription
+ * voltooid. Bij een termijn van twaalf maanden zetten we hem daarom op 12 in
+ * plaats van te onthouden dat hij ooit opgezegd moet worden. Een verbintenis die
+ * zichzelf beëindigt, is een verbintenis die niet per ongeluk doorloopt — en bij
+ * één persoon is dat het verschil tussen een systeem en een aantekening.
+ *
+ * Bij de maandtermijn blijft `times` weg: die loopt door tot iemand hem stopt.
+ */
+export async function createMollieSubscription(env, {
+  mollieCustomerId, mandateId, valueEuros, description, webhookUrl, startDate, times,
+}) {
+  const cents = Math.round(Number(valueEuros) * 100);
+  if (!Number.isFinite(cents) || cents < 1) {
+    throw new Error(`mollie: een abonnement van ${valueEuros} per maand kan niet`);
+  }
+  const body = {
+    amount: { currency: 'EUR', value: Number(valueEuros).toFixed(2) },
+    interval: '1 month',
+    description: String(description || 'VISUAILS abonnement').slice(0, 255),
+    webhookUrl,
+  };
+  // Alleen meesturen als ze er zijn. Een `startDate` van vandaag is niet
+  // hetzelfde als geen startDate — Mollie mag zelf bepalen wanneer de eerste
+  // termijn valt — en een `times: null` is een veld dat de API niet verwacht.
+  if (mandateId) body.mandateId = mandateId;
+  if (startDate) body.startDate = startDate;
+  if (Number.isInteger(times) && times > 0) body.times = times;
+
+  return mollieRequest(env, 'POST', `/customers/${encodeURIComponent(mollieCustomerId)}/subscriptions`, body);
+}
+
+/**
+ * Stoppen. Onmiddellijk en zonder verdere afschrijving.
+ *
+ * EEN 404 IS HIER GEEN FOUT. Een abonnement dat bij Mollie al voltooid of al
+ * opgezegd is, is precies de toestand die we willen — hem als mislukking
+ * behandelen zou betekenen dat een klant die twee keer op opzeggen drukt een
+ * foutpagina krijgt voor iets dat gelukt is. Zelfde soort afweging als de
+ * `no such column`-terugvallen elders in dit project: verdragen wat al waar is.
+ */
+export async function cancelMollieSubscription(env, { mollieCustomerId, subscriptionId }) {
+  try {
+    return await mollieRequest(
+      env, 'DELETE',
+      `/customers/${encodeURIComponent(mollieCustomerId)}/subscriptions/${encodeURIComponent(subscriptionId)}`
+    );
+  } catch (err) {
+    if (/\b404\b/.test(String(err?.message || ''))) return { status: 'canceled', alreadyGone: true };
+    throw err;
+  }
+}
+
+/**
+ * Eén verzoek aan Mollie, met de foutbehandeling die dit bestand al had.
+ *
+ * WAAROM DIT ER NU IS. De drie bestaande aanroepen hadden elk hun eigen fetch met
+ * hun eigen kopieerde headers en hun eigen foutblok — driemaal dezelfde twintig
+ * regels. Met vijf nieuwe functies erbij zou dat acht keer worden, en dan is de
+ * negende de kopie die één regel mist. De foutmelding hieronder is woordelijk de
+ * melding die createMolliePayment() al maakte, inclusief de lege-body-diagnose:
+ * een 400 zonder inhoud komt niet van Mollie's applicatie maar van iets ervoor,
+ * en dan zijn de headers het enige bewijs van wie dat was.
+ */
+async function mollieRequest(env, method, path, body) {
+  const key = mollieKey(env);
+  const res = await fetch(`${MOLLIE_API}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const raw = await res.text();
+  const parsed = (() => { try { return JSON.parse(raw); } catch { return null; } })();
+  if (!res.ok) {
+    const detail = parsed?.title
+      ? `${parsed.title} (field: ${parsed.field || 'n/a'}) — ${parsed.detail || ''}`
+      : raw.slice(0, 500) || `(EMPTY BODY — not a Mollie application error. Response headers: ${describeHeaders(res)})`;
+    throw new Error(`mollie ${method} ${path} failed (${res.status}): ${detail}`);
+  }
+  return parsed;
+}
+
 /** The one request both creators make. */
 async function createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal }) {
   const key = mollieKey(env);

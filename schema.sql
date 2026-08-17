@@ -972,3 +972,253 @@ CREATE INDEX IF NOT EXISTS idx_credits_customer
 -- 'refunded' met een volledige creditnota erbij. Deze kolom is de regel; de kolom
 -- op `orders` blijft het totaal.
 ALTER TABLE payments ADD COLUMN refunded_cents INTEGER NOT NULL DEFAULT 0;
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- ABONNEMENTEN — migratie 0030, 16 augustus 2026
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Het volledige argument staat in migrations/0030-abonnementen.sql. Kort: drie
+-- tabellen, omdat het saldo een SOM over `subscription_months` is en geen kolom
+-- die bijgewerkt moet worden, en omdat de wachtrij van de KLANT is — hij vult
+-- hem, de nachtelijke taak leegt hem als zijn venster aanbreekt. De UNIQUE index
+-- op (subscription_id, month) is wat de webhook idempotent maakt.
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id       INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+
+  -- Waar de eerste betaling (metadata.sub_ref) op landt; de afschrijvingen
+  -- daarna worden op mollie_subscription_id gevonden.
+  ref               TEXT NOT NULL,
+
+  -- 'starter' | 'studio' | 'brand' — de id's uit PLAN_IDS in src/data/plans.js.
+  -- Geen CHECK, om dezelfde reden als bij customer_style_locks.ratio: welke
+  -- plannen bestaan is een verkoopbesluit dat meebeweegt, en een CHECK zou bij
+  -- elk nieuw plan een migratie vragen.
+  plan              TEXT NOT NULL,
+  -- 'monthly' | 'yearly'. Bepaalt de prijs, het doorschuiven en de extra's —
+  -- allemaal via term() in plans.js en niet via een kolom hier.
+  term              TEXT NOT NULL DEFAULT 'monthly',
+
+  -- 'pending'  aangevraagd, nog niet actief (mandaat ontbreekt of wacht op jou)
+  -- 'active'   loopt, wordt afgeschreven
+  -- 'paused'   staat stil. Ook waar een mislukte afschrijving hem heen zet, en
+  --            dat is met opzet dezelfde toestand als een klant die zelf pauzeert:
+  --            in beide gevallen mag er niets geproduceerd worden en is er niets
+  --            aan de hand met de klant zelf.
+  -- 'cancelled' opgezegd. De rij blijft — een opgezegd abonnement is een feit dat
+  --            je nodig hebt voor de facturen en voor de vraag of iemand ooit
+  --            klant was.
+  status            TEXT NOT NULL DEFAULT 'pending',
+
+  -- ── DE STAANDE WEEK ────────────────────────────────────────────────────────
+  -- De dag van de maand waarop het venster van deze abonnee begint (1–28). Niet
+  -- een datum: een datum is één maand, en de belofte is *"dezelfde dagen, elke
+  -- maand"*. 28 als bovengrens zodat februari geen uitzondering is.
+  window_day        INTEGER,
+
+  -- ── MOLLIE ─────────────────────────────────────────────────────────────────
+  -- `mollie_customer_id` en `mollie_mandate_id` komen uit de eerste betaling;
+  -- `mollie_subscription_id` uit het aanmaken van de subscription daarna. Alle
+  -- drie nullable, want ze ontstaan op drie verschillende momenten en een
+  -- abonnement in 'pending' heeft er nog geen.
+  mollie_customer_id     TEXT,
+  mollie_mandate_id      TEXT,
+  mollie_subscription_id TEXT,
+
+  -- Waar de termijn begint te lopen. Bij 'yearly' is dit waar de twaalf maanden
+  -- vandaan geteld worden, en dus waar de verbintenis afloopt.
+  started_at        TEXT,
+  -- Wanneer de klant heeft opgezegd. De einddatum volgt uit started_at plus de
+  -- termijn en wordt daarom niet apart opgeslagen: één datum die uit twee andere
+  -- volgt, is een datum die ooit met die twee in tegenspraak staat.
+  cancelled_at      TEXT,
+  cancel_reason     TEXT,
+  paused_at         TEXT,
+  -- De reden dat hij stilstaat, in onze eigen woorden. 'customer' of
+  -- 'payment_failed' — dat verschil bepaalt of de klant een link krijgt om zijn
+  -- mandaat te vernieuwen of niet.
+  pause_reason      TEXT,
+
+  created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ÉÉN LOPEND ABONNEMENT PER KLANT. Een tweede erbij is bijna altijd een dubbel
+-- verstuurd formulier, en twee actieve abonnementen op één klant maken elk saldo
+-- dubbelzinnig. Een opgezegd abonnement blokkeert een nieuw abonnement niet, want
+-- de index dekt alleen 'active' en 'pending' — daarom een partiële index en geen
+-- UNIQUE op (customer_id).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subs_one_live
+  ON subscriptions(customer_id)
+  WHERE status IN ('active', 'pending');
+
+CREATE INDEX IF NOT EXISTS idx_subs_status ON subscriptions(status, window_day);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subs_ref ON subscriptions(ref);
+
+-- Waarop de webhook een abonnementsbetaling terugvindt. Zie recordSubscriptionPaid()
+-- in functions/api/webhook/mollie.js: een afschrijving draagt een subscriptionId
+-- en geen order_ref, en dit is de enige weg terug naar de klant.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subs_mollie
+  ON subscriptions(mollie_subscription_id)
+  WHERE mollie_subscription_id IS NOT NULL;
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- DE MAANDEN
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Eén rij per maand per abonnement, aangemaakt op het moment dat er betaald is.
+-- `granted` is wat het plan die maand toekende, `used` wat er verbruikt is.
+--
+-- WAAROM `granted` HIER STAAT EN NIET UIT plans.js WORDT GELEZEN. Omdat het een
+-- HISTORISCH feit is: wie in maart een Studio had en in juni een Brand, heeft in
+-- maart twaalf producten gekregen en niet dertig. Het aantal uit plans.js zegt wat
+-- een plan VANDAAG toekent; deze kolom zegt wat er is toegekend. Dat is hetzelfde
+-- onderscheid als tussen de ladder en `orders.total_cents`.
+--
+-- `month` als 'YYYY-MM' en niet als datum: het is een periode en geen moment, en
+-- als tekst sorteert hij correct en is hij in SQL te groeperen zonder functies.
+CREATE TABLE IF NOT EXISTS subscription_months (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  subscription_id  INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+  month            TEXT NOT NULL,              -- 'YYYY-MM'
+  granted          INTEGER NOT NULL DEFAULT 0,
+  used             INTEGER NOT NULL DEFAULT 0,
+
+  -- ── CLIPS ZIJN EEN TWEEDE BUDGET EN GEEN DEEL VAN HET EERSTE ──────────────
+  --
+  -- Een plan geeft producten EN clips, en het zijn twee dingen die niet in
+  -- elkaar over te maken zijn: een clip is geen product en een product is geen
+  -- clip. Ze in één teller stoppen zou betekenen dat een merk zijn hele plan aan
+  -- video kan opmaken, of dat een ongebruikte clip als product wordt geteld.
+  --
+  -- Twee kolommen en niet een tweede tabel: het is dezelfde maand, dezelfde
+  -- betaling en dezelfde vervaldatum. Een aparte tabel zou die drie dingen
+  -- dubbel bijhouden en de kans geven dat ze uit elkaar lopen.
+  --
+  -- DEFAULT 0 en niet het aantal uit plans.js: Starter heeft geen clips, en een
+  -- kolom die standaard iets toekent wat het plan niet geeft, is een gat.
+  clips_granted    INTEGER NOT NULL DEFAULT 0,
+  clips_used       INTEGER NOT NULL DEFAULT 0,
+
+  -- De betaling waarmee deze maand is toegekend. Nullable: een maand die met de
+  -- hand is toegekend (een goodwill-maand, een correctie) heeft er geen, en dat
+  -- is een geldig geval en geen ontbrekende gegevens.
+  payment_id       TEXT,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ÉÉN RIJ PER MAAND PER ABONNEMENT, en dit is de belangrijkste index in deze
+-- migratie: hij maakt de webhook idempotent. Mollie levert dezelfde melding
+-- desnoods drie keer af, en de tweede keer valt om op deze index in plaats van
+-- de klant twaalf producten extra te geven. Zelfde mechanisme als
+-- UNIQUE(provider, external_id) op `payments`, en om dezelfde reden.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_submonths_unique
+  ON subscription_months(subscription_id, month);
+
+-- Eén rij per afschrijving. Een eigen tabel en niet `payments`, want die heeft
+-- order_id NOT NULL en ombouwen van een financiele tabel is de duurste migratie
+-- die er is. Zie de kop in migrations/0030-abonnementen.sql.
+CREATE TABLE IF NOT EXISTS subscription_payments (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  subscription_id  INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+  external_id      TEXT NOT NULL UNIQUE,
+  status           TEXT NOT NULL,
+  amount_cents     INTEGER NOT NULL,
+  currency         TEXT NOT NULL DEFAULT 'EUR',
+  month            TEXT,
+  raw_payload      TEXT,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_subpay_sub ON subscription_payments(subscription_id, month);
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- DE WACHTRIJ — VAN DE KLANT, EN DAT IS HET HELE ONTWERP
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Het eerste ontwerp liet VISUAILS voorstellen wat er aan de beurt was. Lucas
+-- wees dat af, en terecht: *"Ik wil niet dat visuails zegt wat er aan de beurt
+-- is [...] ik werk alleen dus ik kan overzicht verliezen."* Een blok dat
+-- "klaargezet voor september" heet, vraagt om iemand die het klaarzet — per
+-- abonnee, elke maand. Dat is een plafond en geen systeem.
+--
+-- Dus vult de KLANT deze rijen. Hij zet erin wat hij gemaakt wil hebben op het
+-- moment dat hij eraan denkt; een product bedacht in maart mag in juni gemaakt
+-- worden. Als zijn venster aanbreekt, pakt de nachtelijke taak de bovenste N en
+-- maakt er een bestelling van. Er komt geen mens aan te pas.
+--
+-- En het houdt sterker vast dan een voorstel van ons, want het is zijn eigen
+-- werk: opzeggen betekent zijn eigen lijst weggooien.
+--
+-- `position` en geen created_at-sortering: de klant mag slepen. Gaten in de reeks
+-- zijn toegestaan en worden niet opgeruimd — hernummeren bij elke verplaatsing is
+-- een UPDATE over de hele lijst voor een volgorde die toch alleen relatief telt.
+CREATE TABLE IF NOT EXISTS plan_queue (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id      INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  position         INTEGER NOT NULL DEFAULT 0,
+  -- Hoe de klant het product noemt. Hetzelfde veld als `product_pN` in
+  -- details_json bij een losse bestelling, en het reist bij het aanmaken van de
+  -- bestelling ook naar diezelfde sleutel.
+  name             TEXT NOT NULL,
+  note             TEXT,
+  -- De batch met de foto's die er al bij horen, als de klant ze vooruit heeft
+  -- geüpload. Dezelfde vorm als `orders.upload_batch`. Leeg betekent: nog geen
+  -- foto's, en dan slaat de nachtelijke taak dit item over met een mail naar de
+  -- KLANT — niet naar Lucas. Zie §7 van ABONNEMENT-ONTWERP.md.
+  upload_batch     TEXT,
+  -- Zodra hij is opgepakt: naar welke bestelling. Niet verwijderen maar
+  -- markeren, want een klant hoort te kunnen zien wat er met zijn item gebeurd
+  -- is, en een verdwenen rij is niet te onderscheiden van een rij die er nooit
+  -- was.
+  order_id         INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  taken_at         TEXT,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Wat de nachtelijke taak leest: de open items van één klant, op volgorde.
+CREATE INDEX IF NOT EXISTS idx_queue_open
+  ON plan_queue(customer_id, position)
+  WHERE taken_at IS NULL;
+
+-- ── migratie 0031: het e-mailadres wijzigen ─────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS email_changes (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id     INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+
+  -- Beide adressen, voluit. `previous_email` is wat de ongedaan-maken-link nodig
+  -- heeft; zonder die kolom is een overname niet terug te draaien.
+  previous_email  TEXT NOT NULL,
+  new_email       TEXT NOT NULL,
+
+  -- Gehasht en niet in platte tekst, om dezelfde reden als bij account_tokens: een
+  -- gelekte export mag geen werkende links bevatten. Zie hashToken() in
+  -- src/lib/token.js.
+  confirm_hash    TEXT NOT NULL UNIQUE,
+  confirm_expires TEXT NOT NULL,
+  confirmed_at    TEXT,
+
+  -- Pas gevuld op het moment dat de wijziging doorgaat: vóór de bevestiging is er
+  -- niets om ongedaan te maken.
+  undo_hash       TEXT UNIQUE,
+  undo_expires    TEXT,
+  undone_at       TEXT,
+
+  -- Waar het verzoek vandaan kwam, gehasht. Geen ip-adres in platte tekst — zelfde
+  -- regel als in rate_limits. Dit is er voor het geval Lucas ooit moet nagaan of
+  -- twee verzoeken van dezelfde kant kwamen.
+  request_ip_hash TEXT,
+
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Waarop een klik wordt opgezocht. Beide kenmerken zijn al UNIQUE, dus die dekken
+-- zichzelf; deze index is voor de andere vraag: heeft deze klant een verzoek open
+-- staan? Dat wordt bij elk bezoek aan de gegevenspagina gesteld.
+CREATE INDEX IF NOT EXISTS idx_emailchg_open
+  ON email_changes(customer_id, created_at)
+  WHERE confirmed_at IS NULL;

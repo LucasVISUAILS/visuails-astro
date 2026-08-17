@@ -913,6 +913,11 @@ async function handleCustomerWipe(context, customerId) {
    *                    Deze hangt aan de KLANT en niet aan een bestelling, en had
    *                    daarom ook met cascade nooit meegegaan: de FK is SET NULL.
    *
+   * EN OP 17 AUGUSTUS 2026 VIER MEER, om exact dezelfde reden: het abonnement.
+   * subscriptions, subscription_months, plan_queue en de abonnementsbetalingen —
+   * die laatste hangen aan geen enkele bestelling, dus zag de regel hieronder ze
+   * niet. Zie het blok in de batch zelf.
+   *
    * En `subscribers` heeft helemaal geen koppeling aan een klant — alleen een
    * e-mailadres — dus die wordt op het adres opgeruimd. Zonder die regel blijft een
    * verwijderde klant op de nieuwsbrieflijst staan, en dat is precies het geval
@@ -979,6 +984,45 @@ async function handleCustomerWipe(context, customerId) {
     env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM messages WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM subscribers WHERE lower(email) = lower(?1)').bind(customer.email || ''),
+
+    /*
+     * ── HET ABONNEMENT, EN DE FOUT DIE HET BIJNA WERD — 17 AUGUSTUS 2026 ──────
+     *
+     * Vier rijen die er op 16 augustus bij kwamen en hier ontbraken. Dat is
+     * precies de fout die deze functie op 12 augustus al ÉÉN keer had: vier
+     * tabellen die "vermoedelijk via cascade" mee zouden gaan, en die dat niet
+     * deden. Nu opnieuw, en met zwaarder gewicht, want er staan andere dingen in:
+     *
+     *   plan_queue           vrije tekst die de klant zelf heeft getypt over wat
+     *                        hij gemaakt wil hebben. Zijn plannen, in zijn woorden.
+     *   subscription_months  de boekhouding per maand.
+     *   subscriptions        het mandaat en de Mollie-ids — de sleutels waarmee er
+     *                        van zijn rekening kon worden afgeschreven.
+     *   subscription_payments  de afschrijvingen. Deze hangen aan geen enkele
+     *                        bestelling, dus zag de regel `DELETE FROM payments
+     *                        WHERE order_id = ?` hierboven er geen enkele van —
+     *                        en een abonnee die om verwijdering vroeg, hield zijn
+     *                        betaalrijen. Wat daar niet meer in staat sinds
+     *                        payloadZonderPersoon(): zijn naam en zijn IBAN.
+     *
+     * De volgorde is van blad naar wortel, zoals de rest van deze batch: de
+     * betalingen en de maanden hangen aan het abonnement, dus die eerst.
+     *
+     * `subQuery` in plaats van een opgehaalde id: deze functie hoeft dan niet te
+     * weten óf er een abonnement is, en het werkt ook voor een klant met een
+     * opgezegd abonnement uit vorig jaar naast een lopend.
+     */
+    env.DB.prepare(
+      `DELETE FROM subscription_payments
+        WHERE subscription_id IN (SELECT id FROM subscriptions WHERE customer_id = ?1)`
+    ).bind(customerId),
+    env.DB.prepare(
+      `DELETE FROM subscription_months
+        WHERE subscription_id IN (SELECT id FROM subscriptions WHERE customer_id = ?1)`
+    ).bind(customerId),
+    env.DB.prepare('DELETE FROM plan_queue WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM subscriptions WHERE customer_id = ?1').bind(customerId),
+
     ...strip,
     /* DE BESTELLINGEN, en nu alleen die zónder uitgereikt document. Dit was de regel
        die de hele functie halverwege liet omvallen zodra er één factuur bestond. */

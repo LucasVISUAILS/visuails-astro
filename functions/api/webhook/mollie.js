@@ -58,10 +58,75 @@
 
 import { getMolliePayment, isMolliePaymentId, mollieAmountToCents, refundMolliePayment } from '../../../src/lib/mollie.js';
 import { paymentMismatch } from '../../../src/data/vat.js';
+/* Hoeveel producten een plan per maand toekent. Uit plans.js en niet uit een
+   getal hier: welk plan wat geeft, is een verkoopbesluit dat op één plek hoort te
+   staan — zie de kop van dat bestand. */
+import { productsFor } from '../../../src/data/plans.js';
 import { issueInvoice, issueCreditNote } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
 import { notifyPaid, notifyPaymentFailed, notifySampleBlocked } from '../../../src/lib/notify.js';
 import { payerHash } from '../../../src/lib/payer.js';
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * WAT ER VAN EEN BETALING WORDT BEWAARD — EN WAT NIET
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * GEVONDEN OP 17 AUGUSTUS 2026 door de vraag of het systeem betaalgegevens bevat.
+ * Het antwoord was ja, en meer dan nodig: hier stond `JSON.stringify(payment)`,
+ * dus de hele reactie van Mollie ging de database in. Bij iDEAL en bij een
+ * SEPA-incasso zit daar `details.consumerName`, `details.consumerAccount` — het
+ * IBAN — en `details.consumerBic` in. Bij een kaartbetaling `cardHolder` en de
+ * laatste vier cijfers.
+ *
+ * Dat is bewaard zonder dat iets het ooit las. Eén grep: `raw_payload` wordt in
+ * deze codebase alleen GESCHREVEN, en verder alleen door de AVG-knop op NULL
+ * gezet. Er is dus nooit een reconciliatie geweest die het nodig had.
+ *
+ * En met een abonnement zou het elke maand opnieuw binnenkomen. Twaalf IBANs per
+ * abonnee per jaar, in een kolom die niemand leest.
+ *
+ * ── EEN TOELATINGSLIJST EN GEEN VERBODSLIJST ────────────────────────────────
+ *
+ * `delete payment.details.consumerAccount` zou werken tot Mollie een veld
+ * toevoegt. Een lijst van wat er WEL in mag, blijft kloppen als er iets bij komt:
+ * wat we niet kennen, bewaren we niet. Dat is dezelfde afweging als bij de
+ * kanalen in de brand kit — lidmaatschap toetsen in plaats van uitzonderingen
+ * opsommen.
+ *
+ * ── EN WAT ALS ER EEN GESCHIL KOMT ──────────────────────────────────────────
+ *
+ * De kop van de tabel zei "kept for reconciliation and disputes". Bij een geschil
+ * heb je de naam van de betaler nodig, en die staat in het dashboard van Mollie —
+ * bij de verwerker die er wettelijk voor is ingericht, zeven jaar lang. Een tweede
+ * kopie bij ons voegt geen bewijs toe en wel een risico.
+ *
+ * `payer_hash` op de bestelling blijft wel: dat is een eenrichtingsafdruk om te
+ * zien of twee bestellingen dezelfde betaler hebben, en daar is geen naam uit
+ * terug te halen. Zie src/lib/payer.js.
+ */
+const PAYLOAD_VELDEN = [
+  'id', 'mode', 'status', 'method', 'sequenceType',
+  'amount', 'amountRefunded', 'amountRemaining', 'settlementAmount',
+  'description', 'metadata', 'locale',
+  'createdAt', 'paidAt', 'canceledAt', 'expiredAt', 'failedAt',
+  'customerId', 'mandateId', 'subscriptionId', 'orderId', 'settlementId',
+  'profileId', 'isCancelable',
+];
+
+export function payloadZonderPersoon(payment) {
+  const uit = {};
+  for (const k of PAYLOAD_VELDEN) {
+    if (payment && payment[k] !== undefined) uit[k] = payment[k];
+  }
+  /* `details` gaat er in zijn geheel uit en niet veld voor veld. Daar zit alles in
+     wat een persoon aanwijst, en er is niets in dat wij gebruiken. Wel een spoor
+     dat er iets is weggelaten, zodat een lezer van deze rij niet denkt dat Mollie
+     niets stuurde. */
+  if (payment?.details) uit._details = 'weggelaten — persoonsgegevens, zie payloadZonderPersoon()';
+  return JSON.stringify(uit);
+}
+
 
 export async function onRequestPost({ request, env }) {
   if (!env.MOLLIE_API_KEY) {
@@ -189,6 +254,132 @@ export async function onRequestPost({ request, env }) {
   return new Response('ok', { status: 200 });
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EEN MAANDTERMIJN VAN EEN ABONNEMENT
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Wat hier gebeurt is precies twee dingen: de betaling boeken, en de producten van
+ * die maand toekennen. Wat hier NIET gebeurt is een bestelling aanmaken — dat doet
+ * de nachtelijke taak als het venster van de abonnee aanbreekt, uit zijn eigen
+ * wachtrij. Betalen en produceren zijn twee momenten, en ze in één functie zetten
+ * zou betekenen dat een klant die op de eerste van de maand betaalt, op de eerste
+ * van de maand geproduceerd wil hebben.
+ *
+ * ── DE IDEMPOTENTIE ZIT IN DE DATABASE EN NIET IN EEN VLAG ─────────────────
+ *
+ * Mollie levert dezelfde melding desnoods drie keer af. De UNIQUE index op
+ * (subscription_id, month) in migratie 0030 is wat de tweede aflevering tegenhoudt
+ * — niet een `if (al_verwerkt)`, want die vraag heeft een venster tussen lezen en
+ * schrijven waar de derde aflevering precies in past. `INSERT ... ON CONFLICT DO
+ * NOTHING` heeft dat venster niet.
+ *
+ * ── HET AANTAL WORDT HIER VASTGELEGD EN NIET LATER OPGEZOCHT ───────────────
+ *
+ * `granted` komt uit plans.js op het moment van betalen en gaat de rij in. Wie in
+ * maart Studio had en in juni Brand, heeft in maart twaalf producten gekregen —
+ * dat is een historisch feit en geen huidige eigenschap van zijn plan. Zelfde
+ * onderscheid als tussen de ladder en `orders.total_cents`.
+ *
+ * ── EN EEN ONBEKENDE SUBSCRIPTION IS LUIDRUCHTIG ───────────────────────────
+ *
+ * Dan is er bij Mollie een abonnement dat hier niet bestaat, en dat is geld dat
+ * binnenkomt zonder dat er iemand recht op iets krijgt. Geen 500 — opnieuw
+ * aanbieden verandert niets aan een rij die er niet is — maar wel een foutregel
+ * die de subscription-id noemt, want dat is het enige waarmee je hem terugvindt.
+ */
+async function recordSubscriptionPaid(env, payment, mode) {
+  const subId = String(payment.subscriptionId);
+  const cents = mollieAmountToCents(payment.amount) ?? 0;
+
+  let sub;
+  try {
+    sub = await env.DB.prepare(
+      'SELECT id, customer_id, plan, term, status FROM subscriptions WHERE mollie_subscription_id = ?1'
+    ).bind(subId).first();
+  } catch (err) {
+    // Zonder migratie 0030 bestaat de tabel niet. Dat is geen reden om Mollie een
+    // 500 te geven — hij zou het blijven proberen — maar het is wel een reden om
+    // luid te zijn, want er komt geld binnen dat nergens landt.
+    if (!/no such table|no such column/i.test(String(err?.message || err))) throw err;
+    console.error('[mollie-webhook] abonnementsbetaling maar geen subscriptions-tabel — draai migratie 0030 —', payment.id);
+    return;
+  }
+
+  if (!sub) {
+    console.error('[mollie-webhook] betaling voor onbekend abonnement', subId, '—', payment.id, `(${mode})`);
+    return;
+  }
+
+  /* De maand waar deze termijn bij hoort, uit de betaaldatum van Mollie en niet
+     uit `datetime('now')`. Een melding die een dag later wordt afgeleverd — of
+     opnieuw wordt aangeboden na een storing — hoort bij de maand waarin betaald
+     is en niet bij de maand waarin wij hem verwerkten. */
+  const betaald = String(payment.paidAt || payment.createdAt || '');
+  const month = /^\d{4}-\d{2}/.test(betaald) ? betaald.slice(0, 7) : new Date().toISOString().slice(0, 7);
+
+  const granted = productsFor(sub.plan);
+
+  // De betaling zelf, in dezelfde tabel als elke andere. `order_id` blijft leeg:
+  // deze betaling hoort bij een abonnement en niet bij een bestelling, en er een
+  // bestelling bij verzinnen zou de bestellijst vervuilen met rijen waar geen
+  // werk aan hangt.
+  try {
+    await env.DB.prepare(
+      `INSERT INTO subscription_payments (subscription_id, external_id, status, amount_cents, currency, month, raw_payload)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
+    ).bind(
+      /* EIGEN TABEL EN NIET `payments` — 17 augustus 2026. Die tabel heeft
+         `order_id NOT NULL`, en een abonnementsafschrijving hoort bij geen
+         bestelling. Elke INSERT hier werd dus geweigerd, en de catch hieronder
+         slikte hem in omdat "NOT NULL constraint failed" het woord constraint
+         bevat: saldo toegekend, betaling verdwenen, geen spoor van ontvangen geld.
+         Zie de kop van subscription_payments in migratie 0030. */
+      sub.id,
+      payment.id,
+      payment.status,
+      cents,
+      (payment.amount?.currency || 'EUR').toUpperCase(),
+      month,
+      payloadZonderPersoon(payment)
+    ).run();
+  } catch (err) {
+    /* ALLEEN EEN DUBBELE AFLEVERING MAG HIER STIL AFLOPEN, en dat is nu ook echt
+       alleen dat. Hier stond /UNIQUE|constraint/i, en dat tweede woord maakte van
+       deze catch een doofpot voor élke databasefout — precies waardoor de fout
+       hierboven maandenlang onzichtbaar had kunnen blijven. De maand hieronder
+       wordt alsnog geprobeerd, want de twee kunnen los van elkaar mislukken. */
+    if (!/UNIQUE/i.test(String(err?.message || err))) {
+      console.error('[mollie-webhook] abonnementsbetaling niet vastgelegd —', payment.id, '—', err?.message || err);
+    }
+  }
+
+  const toegekend = await env.DB.prepare(
+    `INSERT INTO subscription_months (subscription_id, month, granted, payment_id)
+     VALUES (?1, ?2, ?3, ?4)
+     ON CONFLICT (subscription_id, month) DO NOTHING
+     RETURNING id`
+  ).bind(sub.id, month, granted, payment.id).first();
+
+  if (!toegekend) {
+    console.log(`[mollie-webhook] abonnement ${sub.id} had ${month} al — niets toegekend (${mode})`);
+    return;
+  }
+
+  /* EEN GESLAAGDE AFSCHRIJVING HEFT EEN PAUZE OP. Dat is de tegenhanger van de
+     zelfherstelregel: een abonnement dat op 'paused' stond wegens een mislukte
+     betaling, hoort weer te lopen zodra er wél betaald is — zonder dat Lucas
+     ergens op hoeft te klikken. Een pauze die de klant zelf heeft gezet, wordt
+     NIET opgeheven: dan is `pause_reason` 'customer' en is dit zijn keuze. */
+  await env.DB.prepare(
+    `UPDATE subscriptions
+        SET status = 'active', paused_at = NULL, pause_reason = NULL, updated_at = datetime('now')
+      WHERE id = ?1 AND (status <> 'paused' OR pause_reason = 'payment_failed')`
+  ).bind(sub.id).run();
+
+  console.log(`[mollie-webhook] abonnement ${sub.id}: ${month} toegekend, ${granted} producten (${mode})`);
+}
+
 async function recordPaid(env, payment, mode) {
   // metadata comes back as whatever was sent. order.js sends an object; a
   // string is accepted too so a payment created by hand in Mollie's dashboard
@@ -197,6 +388,27 @@ async function recordPaid(env, payment, mode) {
     ? (() => { try { return JSON.parse(payment.metadata); } catch { return {}; } })()
     : (payment.metadata || {});
   const ref = meta.order_ref;
+
+  /*
+   * ── EEN ABONNEMENTSAFSCHRIJVING HEEFT GEEN order_ref — 16 AUGUSTUS 2026 ────
+   *
+   * Dit was de belangrijkste regel om te wijzigen voordat er één abonnement kon
+   * bestaan. Mollie hangt aan een subscription-betaling een `subscriptionId` en
+   * GEEN order-metadata — dat staat in hun documentatie en het is logisch: er is
+   * geen bestelling, er is een maandtermijn. De tak hieronder logde dat als
+   * "money arrived that no order will ever show" en gaf `return`. Geld binnen,
+   * foutregel in het log, saldo niet toegekend.
+   *
+   * VÓÓR de !ref-tak en niet erna, want een abonnementsbetaling MAG geen ref
+   * hebben. Hem eerst als verdwaalde bestelling afkeuren en daarna alsnog
+   * behandelen, zou betekenen dat elke geslaagde afschrijving een foutregel
+   * achterlaat — en een logboek dat bij normaal gedrag alarm slaat, is een
+   * logboek dat niemand meer leest.
+   */
+  if (payment.subscriptionId) {
+    await recordSubscriptionPaid(env, payment, mode);
+    return;
+  }
 
   if (!ref) {
     // A payment on our own account with no order attached: possible if one was
@@ -454,7 +666,7 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
         payment.status,
         cents ?? 0,
         (payment.amount?.currency || 'EUR').toUpperCase(),
-        JSON.stringify(payment)
+        payloadZonderPersoon(payment)
       )
       .run();
   } catch (err) {

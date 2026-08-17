@@ -139,6 +139,22 @@ function zaai() {
     INSERT INTO revision_requests (id, order_id, customer_id, file_id, note)
       VALUES (1, 10, 7, 2, 'iets lichter');
 
+    /* ── EEN ABONNEMENT MET ALLES WAT ERAAN HANGT ────────────────────────────
+       Zonder deze rijen slaagde deze test terwijl een abonnee na een AVG-verzoek
+       twaalf betaalrijen met zijn naam en IBAN overhield. De betaling hieronder
+       heeft met opzet order_id NULL: dat is hoe een abonnementsafschrijving
+       eruitziet, en het is precies de reden dat de DELETE op payments-per-bestelling
+       hem niet zag. (Geen backticks in dit blok -- het staat in een template
+       literal, en een backtick hier beeindigt de hele seed.) */
+    INSERT INTO subscriptions (id, customer_id, ref, plan, term, status, mollie_customer_id, mollie_mandate_id, mollie_subscription_id)
+      VALUES (1, 7, 'SUB-TEST-001', 'studio', 'yearly', 'active', 'cst_test', 'mdt_test', 'sub_test');
+    INSERT INTO subscription_months (id, subscription_id, month, granted, used)
+      VALUES (1, 1, '2026-07', 12, 9), (2, 1, '2026-08', 12, 3);
+    INSERT INTO plan_queue (id, customer_id, position, name, note)
+      VALUES (1, 7, 0, 'Winterjas', 'wat zij zelf wilde laten maken');
+    INSERT INTO subscription_payments (id, subscription_id, external_id, status, amount_cents, month, raw_payload)
+      VALUES (1, 1, 'tr_sub_1', 'paid', 79000, '2026-08', '{"weggelaten":true}');
+
     INSERT INTO custom_models (id, customer_id, label, preview_key, status)
       VALUES (1, 7, 'Merkmodel A', 'models/7/1-portret.jpg', 'ready');
     INSERT INTO customer_style_locks (customer_id, style, custom_model_id)
@@ -240,6 +256,17 @@ console.log('\nde vier tabellen die op cascade leunden zijn nu expliciet leeg');
     telling('SELECT COUNT(*) FROM payments WHERE order_id = 10'), 1);
   ok('maar zonder de gegevens van de betaler',
     db.prepare('SELECT raw_payload FROM payments WHERE order_id = 10').get().raw_payload, null);
+
+  /* ── HET ABONNEMENT GAAT MEE ─────────────────────────────────────────────────
+     Vier tabellen die op 16 augustus bestonden en op 17 augustus pas in de
+     wisfunctie stonden. De laatste is de belangrijkste: een abonnementsbetaling
+     hangt aan geen enkele bestelling, dus was hij onvindbaar vanaf de klant. */
+  ok('de wachtrij van de klant is weg', telling('SELECT COUNT(*) FROM plan_queue'), 0);
+  ok('de maandboekhouding is weg', telling('SELECT COUNT(*) FROM subscription_months'), 0);
+  ok('het abonnement zelf is weg — met het mandaat erin',
+    telling('SELECT COUNT(*) FROM subscriptions'), 0);
+  ok('en de afschrijvingen ook, die aan geen bestelling hangen',
+    telling('SELECT COUNT(*) FROM subscription_payments'), 0);
 }
 
 console.log('\nde factuur blijft heel, en de bestelling eronder is uitgekleed');

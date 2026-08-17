@@ -549,5 +549,64 @@ console.log('\n══ elke meta-omschrijving past in een zoekresultaat');
   }
 }
 
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * DE LINKS UIT HET DASHBOARD MOETEN ERGENS UITKOMEN — 17 AUGUSTUS 2026
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * Gevonden door ernaar te kijken: de kaart voor een klant zónder abonnement
+ * verwees naar /plans en /nl/abonnement. Geen van beide bestaat — de drie
+ * abonnementen staan in de sectie met id="plans" op /pricing. Twee 404's in het
+ * dashboard van precies de klant die je iets wilde verkopen.
+ *
+ * src/lib/account.js is een Pages Function en wordt door geen enkele bouwstap
+ * doorgelopen, dus er is niets dat zo'n verwijzing opmerkt. Deze sectie is dat:
+ * elke vaste interne link uit dat bestand moet in `dist` een pagina zijn, of een
+ * route zijn die de Function zelf afhandelt.
+ *
+ * Alleen VASTE links. Wat met een template-expressie is opgebouwd, weet deze test
+ * niet uit te rekenen, en doen alsof is erger dan overslaan.
+ */
+console.log('\nevery fixed internal link in the dashboard resolves');
+{
+  const dist = new URL('../dist/', import.meta.url);
+  /* GEEN buildStaat() HIER, en dat is een correctie op de eerste versie.
+     buildStaat vergelijkt `dist` met het jongste bestand in `src/` — dus zodra je
+     account.js aanraakt, sloeg deze sectie zichzelf over. Precies op het moment dat
+     hij nodig is: de fout die hij moet vinden ONTSTAAT door een wijziging in
+     account.js. Gemeten toen ik de kapotte link terugzette om te controleren of
+     deze toets hem zou vinden: hij vond hem niet, want hij draaide niet.
+     
+     En de vergelijking is hier ook inhoudelijk verkeerd. account.js is een Pages
+     Function; die zit niet in de Astro-bouw. Wat deze sectie leest zijn STATISCHE
+     pagina's, en die worden niet oud doordat een Function verandert. Bestaan is
+     dus de enige eis. */
+  if (!existsSync(new URL('index.html', dist))) {
+    console.log(' --   niet gecontroleerd: dist/index.html ontbreekt — draai `npx astro build`');
+  } else {
+    const src = readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8');
+
+    /* De routes die account.js en portal.js zelf bedienen. Die staan niet in dist,
+       want ze bestaan alleen op het moment dat er iemand ingelogd is. */
+    const eigenRoutes = /^\/(account|api|portal|order)(\/|$)/;
+
+    const gevonden = new Set();
+    for (const m of src.matchAll(/href="(\/[^"$]*?)"/g)) {
+      const href = m[1].split('#')[0].split('?')[0];
+      if (href && !href.includes('${')) gevonden.add(href);
+    }
+    check(`found some to check (${gevonden.size})`, gevonden.size > 0, true);
+
+    for (const href of [...gevonden].sort()) {
+      if (eigenRoutes.test(href)) continue;
+      /* Een pagina in dist is een map met een index.html, of een bestand dat er
+         letterlijk staat (een css- of afbeeldingsbestand). */
+      const alsMap = new URL(`.${href.replace(/\/$/, '')}/index.html`, dist);
+      const alsBestand = new URL(`.${href}`, dist);
+      check(`account.js → ${href}`, existsSync(alsMap) || existsSync(alsBestand), true);
+    }
+  }
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);
