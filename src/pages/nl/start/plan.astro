@@ -1,11 +1,10 @@
 ---
-// VISUAILS — /nl/start/plan. A placeholder that says so.
-// The page body is HoldingPage.astro, shared with the other two services that
-// have no checkout yet, so the three read as one deliberate category.
+// VISUAILS — /nl/start/plan. Zie de Engelse variant en de kop van
+// PlanPicker.astro; alleen de meta verschilt hier.
 import Layout from '../../../layouts/Layout.astro';
-import HoldingPage from '../../../components/order/HoldingPage.astro';
+import PlanPicker from '../../../components/order/PlanPicker.astro';
 ---
 
-<Layout title="Vraag naar een maandplan — VISUAILS" description="Elke maand gereserveerde capaciteit, onder het tarief per product. Plannen worden eerst schriftelijk afgesproken; hier begint dat.">
-  <HoldingPage lang="nl" kind="plan" />
+<Layout title="Een abonnement afsluiten — VISUAILS" description="Elke maand een vast aantal afgemaakte producten, in een week die voor jou gereserveerd is, onder het tarief per product. Hier stel je het in.">
+  <PlanPicker lang="nl" />
 </Layout>

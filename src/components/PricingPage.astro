@@ -674,7 +674,12 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
           <p class="pack-saving">{p.saving} <span class="pack-saving-vat">{`(${vatLabel('excl', lang)})`}</span></p>
         )}
 
-        <a href={lp('/contact')} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
+        {/* NAAR /start/plan EN NIET MEER NAAR /contact — 17 augustus 2026.
+            Die knop wees naar het contactformulier zolang een abonnement met de
+            hand werd omgezet: er was geen mandaat, dus viel er niets af te
+            sluiten. Sinds er een SEPA-machtiging via Mollie is, is het
+            contactformulier de omweg geworden. Zie src/lib/subscribe.js. */}
+        <a href={lp('/start/plan')} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
       </div>
     ))}
   </div>

@@ -1,11 +1,14 @@
 ---
-// VISUAILS — /start/plan. A placeholder that says so.
-// The page body is HoldingPage.astro, shared with the other two services that
-// have no checkout yet, so the three read as one deliberate category.
+// VISUAILS — /start/plan (English). De pagina waar een abonnement begint.
+//
+// Was tot 17 augustus 2026 een HoldingPage: er was geen mandaat, dus was er niets
+// af te sluiten. Nu wel — zie de kop van PlanPicker.astro en van
+// src/lib/subscribe.js. De brand-model- en videopagina houden HoldingPage, want
+// voor die twee klopt de redenering nog: dat zijn gesprekken.
 import Layout from '../../layouts/Layout.astro';
-import HoldingPage from '../../components/order/HoldingPage.astro';
+import PlanPicker from '../../components/order/PlanPicker.astro';
 ---
 
-<Layout title="Ask about a monthly plan — VISUAILS" description="Reserved capacity every month, below the per-product rate. Plans are agreed in writing first; this is where that starts.">
-  <HoldingPage lang="en" kind="plan" />
+<Layout title="Start a plan — VISUAILS" description="A fixed number of finished products every month, in a week reserved for you, below the per-product rate. Set it up here.">
+  <PlanPicker lang="en" />
 </Layout>

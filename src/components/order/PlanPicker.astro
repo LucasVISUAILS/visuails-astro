@@ -1,0 +1,264 @@
+---
+// VISUAILS — /start/plan. De pagina waar een abonnement echt begint.
+//
+// WAT HIER STOND EN WAAROM HET WEG IS
+// HoldingPage.astro, met de regel *"the plans are a minimum-term commitment.
+// Both are conversations. A card form here would be the studio pretending a
+// decision has been made that has not."* Dat was waar zolang er geen mandaat
+// bestond en Lucas elke aanvraag met de hand omzette. Sinds 17 augustus 2026 is
+// er een SEPA-machtiging via Mollie, een maandboekhouding en een dashboard — en
+// dan is de pagina die zegt "dit kan nog niet" zelf het obstakel geworden.
+//
+// De brand-model- en videopagina houden HoldingPage; voor die twee klopt de
+// redenering nog. Deze niet meer.
+//
+// ── GEEN JAVASCRIPT ────────────────────────────────────────────────────────
+//
+// Radio's en een <select>, en een gewone POST. Geen prijsberekening in de
+// browser: de bedragen komen uit plans.js en staan al in de tekst. Wat de klant
+// kiest, wordt op de server opnieuw gecontroleerd — PLAN_IDS en TERM_IDS in
+// handleSubscribeStart(). Een keuze die alleen in de browser bestaat, is geen
+// keuze maar een suggestie.
+//
+// ── WAAROM DE POST NAAR /account/plan/start GAAT ───────────────────────────
+//
+// Een abonnement hangt aan een klant, en accounts ontstaan in dit systeem alleen
+// door te bestellen. De handler zit dus in account.js, achter de sessiecontrole:
+// wie niet is ingelogd, komt op de inlogpagina en niet op een betaalscherm. Zie
+// de kop van src/lib/subscribe.js voor waarom dat de goede kant op is.
+import { plans, euro, vatLabel, PLAN_MIN_MONTHS } from '../../data/pricing.js';
+import { TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel } from '../../data/plans.js';
+import { planName } from '../../data/planNames.js';
+import { localizedPath } from '../../i18n/ui.js';
+
+interface Props {
+  lang: 'en' | 'nl';
+}
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const planList = plans(lang);
+
+// De fout uit de vorige poging, als die er is. Eén zin per reden, en `vol` is de
+// enige die niet over een vergissing gaat maar over capaciteit — zie de
+// capaciteitspoort in handleSubscribeStart().
+const fout = String(Astro.url.searchParams.get('fout') || '');
+const FOUTEN: Record<string, string> = nl ? {
+  plan: 'Kies eerst een abonnement.',
+  termijn: 'Kies eerst een termijn.',
+  vol: 'Er is deze maand geen plek meer voor dit abonnement. Mail hello@visuails.com — dan zetten we je op de lijst voor de eerstvolgende plek.',
+  opslaan: 'We konden je aanvraag niet vastleggen. Probeer het opnieuw, of mail hello@visuails.com.',
+  mollie: 'Het betaalscherm ging niet open. Er is niets afgeschreven. Probeer het opnieuw, of mail hello@visuails.com.',
+} : {
+  plan: 'Choose a plan first.',
+  termijn: 'Choose a term first.',
+  vol: 'There is no room for this plan this month. Email hello@visuails.com and we will put you on the list for the next opening.',
+  opslaan: 'We could not record your request. Try again, or email hello@visuails.com.',
+  mollie: 'The payment screen did not open. Nothing has been charged. Try again, or email hello@visuails.com.',
+};
+const foutTekst = FOUTEN[fout] || '';
+
+const c = nl ? {
+  h: 'Een abonnement afsluiten',
+  lede: `Elke maand een vast aantal afgemaakte producten, in een week die voor jou gereserveerd is. Minimaal ${PLAN_MIN_MONTHS} maanden.`,
+  planH: 'Welk abonnement',
+  termH: 'Welke termijn',
+  weekH: 'Je vaste week',
+  weekHint: 'De dag van de maand waarop wij aan jouw producten beginnen. Elke maand dezelfde. Weet je het nog niet, laat hem dan staan — je kunt hem later wijzigen.',
+  weekLabel: 'Dag van de maand',
+  perMonth: 'per maand',
+  products: 'producten per maand',
+  clips: 'clips per maand',
+  brandModel: 'Je merkmodel inbegrepen',
+  submit: 'Doorgaan naar de machtiging',
+  mandateH: 'Wat er nu gebeurt',
+  mandateBody: 'Je betaalt zo eenmalig € 1. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later.',
+  cancelNote: 'Opzeggen kan zelf, in je eigen dashboard. Wat je hebt laten maken, blijft van jou.',
+  signedOut: 'Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, begin dan met een proefvisual van € 1 — dan weet je wat je koopt.',
+  signIn: 'Inloggen',
+  sample: 'Eerst een proefvisual',
+} : {
+  h: 'Start a plan',
+  lede: `A fixed number of finished products every month, in a week reserved for you. ${PLAN_MIN_MONTHS} months minimum.`,
+  planH: 'Which plan',
+  termH: 'Which term',
+  weekH: 'Your fixed week',
+  weekHint: 'The day of the month we start on your products. The same every month. Not sure yet? Leave it — you can change it later.',
+  weekLabel: 'Day of the month',
+  perMonth: 'per month',
+  products: 'products a month',
+  clips: 'clips a month',
+  brandModel: 'Your Brand Model included',
+  submit: 'Continue to the mandate',
+  mandateH: 'What happens next',
+  mandateBody: 'You pay €1 once. That is not a first month but the transaction your bank needs to issue the mandate — without it nothing can be charged. Your first monthly term falls a month later.',
+  cancelNote: 'You can cancel yourself, in your own dashboard. Whatever you had made stays yours.',
+  signedOut: 'You need to be signed in to start a plan. Never ordered from us? Start with a €1 sample so you know what you are buying.',
+  signIn: 'Sign in',
+  sample: 'Try a sample first',
+};
+
+// De twee termijnen, met wat ze kosten voor het GEKOZEN plan. Omdat er geen
+// script is, staat het bedrag per plan per termijn er gewoon uit — drie plannen
+// maal twee termijnen is zes bedragen, en dat is minder verwarrend dan een
+// prijs die pas verschijnt als je iets aanklikt.
+const termijnen = TERM_IDS.map((id) => ({
+  id,
+  naam: TERMS[id].name[nl ? 'nl' : 'en'],
+  maanden: TERMS[id].months,
+}));
+---
+
+<section class="wrap plan-start">
+  <div class="container container-narrow">
+    <h1>{c.h}</h1>
+    <p class="lede">{c.lede}</p>
+
+    {foutTekst && <p class="error" role="alert">{foutTekst}</p>}
+
+    <form method="post" action="/account/plan/start" class="plan-form">
+      <input type="hidden" name="lang" value={lang} />
+
+      <fieldset class="plan-set">
+        <legend>{c.planH}</legend>
+        {planList.map((p, i) => (
+          <label class="plan-opt">
+            <input type="radio" name="plan" value={p.id} required checked={i === 1} />
+            <span class="plan-opt-body">
+              <strong>{planName(p.id, lang)}</strong>
+              <span class="plan-opt-line">{p.line}</span>
+              <span class="plan-opt-facts">
+                {productsFor(p.id)} {c.products}
+                {clipsFor(p.id) ? ` · ${clipsFor(p.id)} ${c.clips}` : ''}
+                {hasBrandModel(p.id, 'monthly') ? ` · ${c.brandModel}` : ''}
+              </span>
+              {/* TWEE BEDRAGEN ALLEEN ALS ZE VERSCHILLEN, en dat is bij precies
+                  één plan zo. Alleen Starter krijgt jaarkorting; bij Studio en
+                  Merk zit de waarde van de jaartermijn in de vier extra's en niet
+                  in de prijs — zie de rekensom bij TERMS in plans.js. Twee keer
+                  hetzelfde bedrag naast elkaar laat de jaartermijn zinloos lijken
+                  terwijl hij dat niet is, en dat is erger dan één bedrag. */}
+              <span class="plan-opt-prices">
+                {monthlyCents(p.id, 'monthly') === monthlyCents(p.id, 'yearly') ? (
+                  <span class="plan-opt-price">
+                    <strong>{euro(monthlyCents(p.id, 'monthly') / 100, lang)}</strong> {c.perMonth}
+                  </span>
+                ) : termijnen.map((t) => (
+                  <span class="plan-opt-price">
+                    {t.naam}: <strong>{euro(monthlyCents(p.id, t.id) / 100, lang)}</strong> {c.perMonth}
+                  </span>
+                ))}
+              </span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      <fieldset class="plan-set">
+        <legend>{c.termH}</legend>
+        {termijnen.map((t, i) => (
+          <label class="plan-opt plan-opt-row">
+            <input type="radio" name="term" value={t.id} required checked={i === 0} />
+            <span class="plan-opt-body">
+              <strong>{t.naam}</strong>
+              <span class="plan-opt-line">
+                {nl
+                  ? (t.id === 'yearly'
+                    ? `${t.maanden} maanden vast. Een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio.`
+                    : `Maandelijks. Minimaal ${PLAN_MIN_MONTHS} maanden, daarna per maand opzegbaar.`)
+                  : (t.id === 'yearly'
+                    ? `${t.maanden} months fixed. A standing week, three months of rollover, a price lock, and the Brand Model on Studio too.`
+                    : `Monthly. ${PLAN_MIN_MONTHS} months minimum, then cancel any month.`)}
+              </span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      <fieldset class="plan-set">
+        <legend>{c.weekH}</legend>
+        <p class="plan-hint">{c.weekHint}</p>
+        <label class="plan-day">
+          <span>{c.weekLabel}</span>
+          {/* 1 tot 28 en niet 1 tot 31, om dezelfde reden als window_day in
+              migratie 0030: februari mag geen uitzondering worden. */}
+          <select name="window_day">
+            {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+              <option value={d} selected={d === 8}>{d}</option>
+            ))}
+          </select>
+        </label>
+      </fieldset>
+
+      <div class="plan-mandate">
+        <h2>{c.mandateH}</h2>
+        <p>{c.mandateBody}</p>
+        {/* Twee losse feiten, dus twee regels. Aan elkaar geplakt leest het als
+            "blijft van jou excl. btw", en dat is een zin die niets betekent. */}
+        <p class="meta">{c.cancelNote}</p>
+        <p class="meta">{nl ? 'Alle bedragen' : 'All amounts'} {vatLabel('excl', lang)}.</p>
+      </div>
+
+      <button class="btn btn-primary btn-lg" type="submit">{c.submit}</button>
+    </form>
+
+    {/* De uitleg voor wie nog geen account heeft. Geen foutmelding en geen
+        blokkade: de POST stuurt hem vanzelf naar de inlogpagina, en dit is de
+        zin die uitlegt waarom dat gebeurt vóórdat het gebeurt. */}
+    <div class="plan-signedout">
+      <p>{c.signedOut}</p>
+      <p>
+        <a class="btn btn-ghost" href="/account/login">{c.signIn}</a>
+        <a class="btn btn-ghost" href={lp('/test-sample')}>{c.sample}</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .plan-start { padding-block: clamp(2rem, 6vw, 4rem); }
+  .plan-form { margin-top: 2rem; display: grid; gap: 2rem; }
+  .plan-set { border: 0; padding: 0; margin: 0; display: grid; gap: .7rem; }
+  .plan-set legend {
+    padding: 0; margin-bottom: .3rem;
+    font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .plan-opt {
+    display: flex; gap: .8rem; align-items: flex-start;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--line); border-radius: var(--r-lg);
+    cursor: pointer;
+  }
+  /* :has() en niet een :checked + span-truc: de hele kaart moet oplichten, niet
+     alleen het label ernaast. Dezelfde aanpak als bij de stijlkiezer. */
+  .plan-opt:has(input:checked) { border-color: var(--signal-ink, var(--ink-1)); }
+  .plan-opt:has(input:focus-visible) { outline: 2px solid var(--signal-ink, var(--ink-1)); outline-offset: 2px; }
+  .plan-opt-body { display: grid; gap: .3rem; }
+  .plan-opt-line { color: var(--ink-2); }
+  .plan-opt-facts { font-size: .88rem; color: var(--ink-3); }
+  .plan-opt-prices { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; margin-top: .3rem; font-size: .9rem; }
+  .plan-hint { color: var(--ink-3); font-size: .9rem; margin: 0 0 .4rem; }
+  .plan-day { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+  /* EXPLICIETE BREEDTE EN RADIUS. De sitebrede regel geeft elke <select> de
+     pilvorm van een knop, en met 28 korte opties knijpt dat hem samen tot een
+     rondje waar "8" net in past. Gevonden op de schermafdruk; een <select> die
+     eruitziet als een badge, klikt niemand aan. */
+  .plan-day select {
+    min-width: 7rem; padding: .55rem .9rem;
+    border-radius: var(--r-md); border: 1px solid var(--line);
+    background: var(--paper-2); color: inherit; font: inherit;
+  }
+  .plan-mandate {
+    padding: 1.2rem 1.3rem;
+    border: 1px solid var(--line); border-radius: var(--r-lg);
+    background: var(--paper-2);
+  }
+  .plan-mandate h2 { font-size: 1rem; margin: 0 0 .5rem; }
+  .plan-mandate p { margin: 0 0 .5rem; }
+  .plan-signedout { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--ink-3); }
+  .plan-signedout .btn { margin-right: .5rem; }
+  @media (max-width: 560px) {
+    .plan-opt-prices { flex-direction: column; gap: .15rem; }
+  }
+</style>

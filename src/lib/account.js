@@ -122,6 +122,7 @@ import { createOrderMolliePayment } from './mollie.js';
  * is). Dit dashboard leest ze allebei en schrijft alleen via subscription.js —
  * er staat hier geen enkele query op subscriptions of plan_queue.
  */
+import { handleSubscribeStart, handleSubscribeReturn } from './subscribe.js';
 import {
   planState, loadQueue, queueAdd, queueRemove, queueReorder,
   pauseSubscription, activateSubscription, cancelSubscription, subscriptionShape,
@@ -1220,6 +1221,20 @@ export async function accountGet(context) {
   if (path === '/account/details') return sectionGet(context, customer, 'details');
   if (path === '/account/invoices') return sectionGet(context, customer, 'invoices');
   if (path === '/account/plan') return sectionGet(context, customer, 'plan');
+  /* TERUG VAN MOLLIE. Hier wordt het mandaat opgehaald en de subscription
+     aangemaakt — zie handleSubscribeReturn(). Achter de sessiecontrole, want dit
+     kenmerk uit de URL is van iedereen en de eigenaar wordt hier gecontroleerd. */
+  if (path === '/account/plan/return') {
+    const uitkomst = await handleSubscribeReturn(context, customer);
+    const lang2 = langCookie(request) || negotiate(request);
+    return html(page({
+      lang: lang2,
+      title: COPY[lang2].planHeading,
+      body: shellBody(COPY[lang2], lang2, customer, 'plan',
+        subscribeReturnBody(COPY[lang2], lang2, uitkomst), navCookie(request) === 'dicht'),
+      full: true,
+    }), 200);
+  }
 
   const lang = negotiate(request);
   return html(page({ lang, title: COPY[lang].notFound, body: errorBody(COPY[lang], COPY[lang].notFound) }), 404);
@@ -1297,6 +1312,15 @@ export async function accountPost(context) {
   if (path === '/account/details') return handleDetails(context, customer, asJson);
 
   if (path === '/account/email') return handleEmailChangeRequest(context, customer);
+
+  /* STARTEN. Via offsitePage(), zodat de klant weet dat hij VISUAILS verlaat —
+     dezelfde behandeling als een betaallink bij een bestelling. */
+  if (path === '/account/plan/start') {
+    return handleSubscribeStart(context, customer, (url, lang) => {
+      const p = offsitePage({ url, name: 'Mollie', lang, css: '/account.css' });
+      return p ? html(p) : seeOther('/start/plan?fout=mollie');
+    });
+  }
 
   if (path === '/account/plan/queue') return handlePlanQueue(context, customer);
   if (path === '/account/plan/pause') return handlePlanPause(context, customer);
@@ -5570,6 +5594,42 @@ ${vastgelegd}
 ${opgebouwd}
 ${beheer}
 ${account}`;
+}
+
+/**
+ * WAT DE KLANT ZIET ALS HIJ TERUGKOMT VAN MOLLIE.
+ *
+ * Drie uitkomsten, en er zit er GEEN "mislukt" bij. Dat is met opzet:
+ *
+ *   gelukt    het mandaat is er en het abonnement loopt.
+ *   wacht     het mandaat is er nog niet. Bij iDEAL is dat het NORMALE geval —
+ *             de klant is terug voordat zijn bank ons heeft bevestigd. Er is niets
+ *             misgegaan, dus staat er geen foutmelding; de webhook maakt het af en
+ *             de klant krijgt bericht. Een rode melding zou hier liegen, en het
+ *             ergste soort liegen: over geld dat net is afgeschreven.
+ *   onbekend  het kenmerk in de url hoort niet bij deze klant. Dan is er ook niets
+ *             te zeggen over een abonnement.
+ */
+function subscribeReturnBody(t, lang, uitkomst) {
+  const nl = lang === 'nl';
+  const M = {
+    gelukt: nl
+      ? ['Je abonnement loopt', 'Het mandaat is afgegeven en de eerste termijn wordt volgende maand afgeschreven. De euro van zojuist was voor het mandaat.']
+      : ['Your plan is running', 'The mandate is in place and the first term is charged next month. The euro just now was for the mandate.'],
+    wacht: nl
+      ? ['Je betaling wordt verwerkt', 'Je bank heeft het nog niet bevestigd. Dat duurt bij iDEAL soms een paar minuten en er is niets misgegaan — zodra het binnen is, staat je abonnement hier en krijg je bericht.']
+      : ['Your payment is being processed', 'Your bank has not confirmed it yet. With iDEAL that can take a few minutes and nothing has gone wrong — as soon as it arrives your plan appears here and you get an email.'],
+    onbekend: nl
+      ? ['We kunnen dit niet terugvinden', 'De link hoort niet bij dit account. Staat je abonnement er niet, mail dan hello@visuails.com — dan zoeken we het uit.']
+      : ['We cannot find this', 'The link does not belong to this account. If your plan is not here, email hello@visuails.com and we will look into it.'],
+  };
+  const [kop, tekst] = M[uitkomst?.staat] || M.onbekend;
+  return `
+<h1>${esc(kop)}</h1>
+<p class="lede">${esc(tekst)}</p>
+<div class="card">
+  <p><a class="btn" href="/account/plan">${esc(t.navPlan)}</a></p>
+</div>`;
 }
 
 /** "de 8e" / "the 8th" — een dag van de maand, want het abonnement loopt door en een datum niet. */
