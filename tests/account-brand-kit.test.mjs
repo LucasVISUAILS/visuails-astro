@@ -669,5 +669,53 @@ section('§9 · het dashboard is tweetalig, en de klant mag kiezen');
   check('and the toggle then offers the way back', /href="\?lang=en"/.test(html));
 }
 
+/* ══ DE VORM VAN ELKE SECTIE ═══════════════════════════════════════════════
+ *
+ * De portal kreeg in augustus 2026 één bovenbalk per sectie: paginanaam links,
+ * één statuschip, één primaire actie rechts (topBar() in src/lib/account.js).
+ * Deze sectie houdt de vier eigenschappen vast die daarbij horen en die alle
+ * vier stil kunnen breken.
+ *
+ * 1. ÉÉN <h1> PER PAGINA. De balk is opmaak, geen koppenboom. Twee <h1>'s is
+ *    precies wat er op /thank-you stond en waarom die pagina in dezelfde week
+ *    opnieuw is gebouwd; het is geen theoretische fout.
+ *
+ * 2. ÉÉN BOVENBALK. Nul betekent dat een sectie hem bij een herbouw is
+ *    kwijtgeraakt en er weer een kale kop staat; twee betekent dat iemand hem
+ *    binnen de inhoud nog eens heeft aangeroepen.
+ *
+ * 3. GEEN INLINE style-ATTRIBUUT. Dit is de belangrijkste van de vier. De
+ *    portal draait onder `style-src 'self'`, en style-src-attr valt in CSP3
+ *    terug op style-src — een `style=""` wordt dus GEBLOKKEERD. Dat heeft in
+ *    2026 twee keer een leeg vak opgeleverd, en beide keren was het pas op de
+ *    live site te zien. Elke dynamische waarde hoort een SVG-attribuut of een
+ *    vaste klasse te zijn, zoals swatch(), ratioShape() en saldoMeter() doen.
+ *
+ * 4. GEEN <script>. Er staat geen `script-src` in de CSP van dit dashboard;
+ *    de header is `default-src 'none'`. Eén scripttag betekent niet "een klein
+ *    beetje JavaScript" maar "een blok in de console en een dode knop".
+ *
+ * Alle zes secties, want een regel die op één sectie wordt getoetst is een
+ * regel die op de andere vijf niet geldt.
+ */
+console.log('\nde vorm van elke sectie');
+{
+  const secties = [
+    '/account', '/account/orders', '/account/brand-kit',
+    '/account/details', '/account/invoices', '/account/plan',
+  ];
+  for (const pad of secties) {
+    const { status, html } = await get(pad);
+    check(`${pad} geeft 200`, status === 200);
+    const tel = (re) => (html.match(re) || []).length;
+    check(`${pad} heeft precies één <h1>`, tel(/<h1[\s>]/g) === 1);
+    check(`${pad} heeft precies één bovenbalk`, tel(/<header class="topbar"/g) === 1);
+    /* Op het style-ATTRIBUUT en niet op het woord "style": account.css wordt
+       met een <link> geladen en die mag blijven. */
+    check(`${pad} heeft geen inline style-attribuut`, tel(/\sstyle="/g) === 0);
+    check(`${pad} heeft geen script`, tel(/<script/g) === 0);
+  }
+}
+
 console.log(`\n${fails ? `${fails} FAILED` : 'all passed'}`);
 process.exit(fails ? 1 : 0);

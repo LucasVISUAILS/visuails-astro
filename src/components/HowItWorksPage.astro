@@ -183,6 +183,7 @@ import FigWalk from './FigWalk.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
   WINDOW_THRESHOLD, vatLabel, vatNote, TEST_SAMPLE,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -196,6 +197,18 @@ const lp = (p: string) => localizedPath(lang, p);
 // account, and it is not. Both figures are built here rather than in the copy
 // table so neither branch can print one without the other.
 const sample = `${euro(AMOUNT.testSample, lang)} ${vatLabel('excl', lang)}`;
+
+// "WAAR DE BEELDEN LANDEN" — verhuisd van de homepage, augustus 2026.
+// Elk getal hier is AFGELEID en niet getypt. De twee die een lezer kan
+// natellen — 4 catalogbeelden, 3 lifestylebeelden — zijn CATALOG_IMAGES en
+// LIFESTYLE_IMAGES, dezelfde twee constanten die /catalog en /lifestyle stuk
+// voor stuk printen. Zo kan de som in de lede nooit ruzie krijgen met de
+// aantallen die daar staan. Het voorbeeldseizoen van 30 producten is het
+// getal dat op de homepage al werd gebruikt; het is een voorbeeld en geen
+// belofte, en het staat daarom in de zin en niet in een tegel.
+const PER_PRODUCT_VISUALS = CATALOG_IMAGES + LIFESTYLE_IMAGES;
+const EX_FULL = 30;
+const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 
 // No `as const` — see PricingPage.astro for why (union-of-tuples breaks .map).
 const COPY = {
@@ -238,6 +251,22 @@ const COPY = {
       { t: 'Two ways in', b: 'On-site, or WhatsApp — whichever suits you. The same production either way.' },
       { t: 'Your rights', b: 'Full commercial usage rights to everything we deliver.', linkText: 'Read the terms', linkHref: '/terms' },
     ],
+    landH: 'One order, every place it has to go.',
+    landLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} visuals each — ${EX_VISUALS} finished images, cut for where they have to sit.`,
+    // Eight destinations, one line each. The second line was a sentence per
+    // channel until this pass; a list a reader scans does not need one.
+    land: [
+      ['Product page hero', 'On white or in scene'],
+      ['Product page grid', 'Front, back and a fabric detail'],
+      ['On-model shot', 'In every catalog set'],
+      ['Instagram carousel', 'Three styled frames per product'],
+      ['Reels and TikTok', 'Vertical clips, added to any order'],
+      ['Paid social', 'The same look in ad crops'],
+      ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
+      ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
+    ],
+    landNote: 'Downloads arrive sized per channel in the portal.',
+
     faqH: 'Still have a question?',
     // The second inbound link to /guides (brief §1 — it had none in any page
     // body). It sits under the FAQ heading because that is where someone with
@@ -284,6 +313,20 @@ const COPY = {
       { t: 'Twee ingangen', b: 'Via de site of via WhatsApp — wat jou uitkomt. In beide gevallen precies dezelfde productie.' },
       { t: 'Jouw rechten', b: 'Volledige commerciële gebruiksrechten op alles wat we leveren.', linkText: 'Lees de voorwaarden', linkHref: '/terms' },
     ],
+    landH: 'Eén bestelling, overal waar hij heen moet.',
+    landLede: `Een seizoen van ${EX_FULL} producten is ${PER_PRODUCT_VISUALS} beelden per stuk — ${EX_VISUALS} afgewerkte beelden, uitgesneden voor waar ze moeten staan.`,
+    land: [
+      ['Hero op de productpagina', 'Op wit of in scène'],
+      ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail'],
+      ['Beeld op een model', 'In elke catalogset'],
+      ['Instagram-carousel', 'Drie gestylede beelden per product'],
+      ['Reels en TikTok', 'Verticale clips, bij elke bestelling'],
+      ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes'],
+      ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
+      ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
+    ],
+    landNote: 'In VISUAILS Studio staan de downloads per kanaal op maat klaar.',
+
     faqH: 'Nog een vraag?',
     faqGuides: `De FAQ beantwoordt de praktische vragen; de langere stukken — hoe je de foto maakt die je ons stuurt, wat een shootdag echt kost — staan bij de <a href="${lp('/guides')}">gidsen</a>.`,
     faqCta: 'Lees de FAQ',
@@ -389,6 +432,32 @@ const c = COPY[lang];
   </div>
 </div></section>
 
+<!-- WAAR DE BEELDEN LANDEN -->
+{/* Verhuisd van de homepage (sectie 10), augustus 2026. Het staat hier omdat
+    het de enige band was die antwoord gaf op wat je met de beelden DOET — de
+    vraag waar deze pagina over gaat en waar de homepage één stap voor stopte.
+
+    Het rekent de prijs om naar stukskosten zonder korting te geven: een
+    seizoenstotaal is geen bedrag meer maar een bedrag gedeeld door ruwweg
+    tweehonderd plaatsingen. Er staat met opzet geen enkel eurobedrag in — dat
+    is het werk van de prijspagina, en deze band moet niet de zoveelste plek
+    worden waar iets geprijsd wordt. */}
+<section class="section-tight"><div class="container">
+  <div class="section-head">
+    <h2>{c.landH}</h2>
+    <p class="lead" style="margin-top:.8rem">{c.landLede}</p>
+  </div>
+  <ul class="land-grid">
+    {c.land.map(([t, b]) => (
+      <li>
+        <span class="land-t">{t}</span>
+        <span class="land-n">{b}</span>
+      </li>
+    ))}
+  </ul>
+  <p class="land-note">{c.landNote}</p>
+</div></section>
+
 <!-- FAQ -->
 <section class="section-tight"><div class="container">
   <div style="text-align:center;max-width:60ch;margin:0 auto 1.4rem">
@@ -456,11 +525,13 @@ const c = COPY[lang];
      reaches it. */
   .faq-guides { margin-top: .9rem; font-size: .92rem; color: var(--ink-3); line-height: 1.6; }
   .faq-guides :global(a) { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+  /* ── waar de beelden landen (verhuisd van de homepage) ─────────────────
+     Eén pixel raster in --line met cellen in --bg erop: dat tekent acht
+     scheidingslijnen zonder acht randen, en het blijft kloppen als een cel
+     door de auto-fit op een andere rij belandt. */
+  .land-grid { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1px; background: var(--line); }
+  .land-grid > li { background: var(--bg); padding: clamp(1.1rem, 2vw, 1.5rem); display: grid; gap: .35rem; align-content: start; }
+  .land-t { font-size: .95rem; font-weight: 700; color: var(--ink); }
+  .land-n { font-size: .84rem; line-height: 1.5; color: var(--ink-3); }
+  .land-note { margin: 1.4rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
 </style>
-
-{/* No page-local <script> any more. FigFlow's behaviour was imported here; this
-    one imports its own, inside FigWalk.astro, because /demo renders the same
-    component and an import in the page is an import one of the two hosts can be
-    missing — which is exactly what happened on the first build. Astro hoists
-    and de-duplicates component scripts, so it still ships once and still does
-    not reach the other 84 pages. */}

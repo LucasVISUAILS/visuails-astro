@@ -276,6 +276,113 @@ console.log('\nen de weg bestaat echt — geen knop zonder draad');
   ok('en niet meer naar het contactformulier', /pack-cta[^>]*\/contact/.test(prijs), false);
 }
 
+/* ══ OPZEGGEN EN PAUZEREN STOPPEN DE INCASSO ══════════════════════════════
+ *
+ * DE FOUT DIE DIT VANGT, HEEFT BESTAAN EN KOSTTE KLANTEN GELD.
+ * `cancelMollieSubscription()` stond sinds 16 augustus 2026 in mollie.js en
+ * werd door niets aangeroepen. Een klant typte CANCEL, de rij ging op
+ * 'cancelled', zijn dashboard zei dat het opgezegd was, en Mollie schreef de
+ * volgende maand € 390 tot € 1.690 af. Gevonden op 18 augustus 2026 bij het
+ * opzoeken van de feiten voor de abonnementsvoorwaarden.
+ *
+ * WAT HIER WORDT VASTGEHOUDEN, EN DE DERDE IS DE BELANGRIJKSTE:
+ *
+ *   1 · Opzeggen stuurt een DELETE naar Mollie.
+ *   2 · Pauzeren doet dat ook — de Subscriptions API kent geen pauze.
+ *   3 · Lukt dat DELETE niet, dan wordt er NIET opgezegd. De rij blijft
+ *       'active'. Dat is de kern: een scherm dat "opgezegd" zegt terwijl er
+ *       wordt afgeschreven, is de ene toestand die niet mag bestaan, en het is
+ *       precies de toestand waar de code in terechtkwam.
+ *   4 · Pauzeren wist het Mollie-id naar NULL en niet naar ''. Op deze tabel
+ *       staat een partiële UNIQUE index met `WHERE mollie_subscription_id IS
+ *       NOT NULL`; twee gepauzeerde abonnementen met '' zouden op elkaar
+ *       botsen, stil, en er zou een dood id blijven staan waarop de webhook
+ *       betalingen terugzoekt.
+ */
+console.log('\nopzeggen en pauzeren stoppen de incasso');
+{
+  const { stopIncasso, hervatIncasso } = await import('../src/lib/subscribe.js');
+  const { clearMollieSubscriptionId } = await import('../src/lib/subscription.js');
+
+  const lopend = {
+    id: 1, ref: 'ABO-TEST', plan: 'starter', term: 'monthly',
+    mollie_customer_id: 'cst_nep', mollie_subscription_id: 'sub_nep', mollie_mandate_id: 'mdt_nep',
+  };
+
+  // 1 · het DELETE gaat er echt heen, met beide ids in het pad
+  staat.aanroepen.length = 0; staat.stuk = null;
+  ok('stoppen lukt', await stopIncasso(env, lopend), true);
+  ok('en stuurt een DELETE naar Mollie',
+    staat.aanroepen.some((a) => a === 'DELETE /v2/customers/cst_nep/subscriptions/sub_nep'), true);
+
+  // 2 · een abonnement dat bij Mollie nooit bestond, is al stil
+  staat.aanroepen.length = 0;
+  ok('zonder Mollie-id valt er niets te stoppen',
+    await stopIncasso(env, { ...lopend, mollie_subscription_id: null }), true);
+  ok('en dan gaat er ook geen verzoek heen', staat.aanroepen.length, 0);
+
+  // 3 · een storing bij Mollie is GEEN geslaagde opzegging
+  staat.stuk = '/subscriptions/';
+  ok('een storing bij Mollie telt niet als gestopt', await stopIncasso(env, lopend), false);
+  staat.stuk = null;
+
+  // en zonder sleutel al helemaal niet — dat is een configuratiefout, geen succes
+  ok('zonder Mollie-sleutel telt het niet als gestopt',
+    await stopIncasso({ ...env, MOLLIE_API_KEY: '' }, lopend), false);
+
+  // 4 · hervatten bouwt een NIEUWE subscription op het bestaande mandaat
+  staat.aanroepen.length = 0;
+  const sub = db.prepare('SELECT * FROM subscriptions ORDER BY id DESC LIMIT 1').get();
+  if (sub) {
+    ok('hervatten lukt',
+      await hervatIncasso(env, { ...sub, mollie_customer_id: 'cst_nep', mollie_mandate_id: 'mdt_nep' },
+        'https://visuails.com'), true);
+    ok('en maakt een nieuwe subscription aan',
+      staat.aanroepen.some((a) => a === 'POST /v2/customers/cst_nep/subscriptions'), true);
+    ok('zonder opnieuw om een mandaatbetaling te vragen',
+      staat.aanroepen.some((a) => a === 'POST /v2/payments'), false);
+
+    // 5 · wissen gaat naar NULL, want '' botst op de partiële UNIQUE index
+    await clearMollieSubscriptionId(env, sub.id);
+    const na = db.prepare('SELECT mollie_subscription_id AS id FROM subscriptions WHERE id = ?').get(sub.id);
+    ok('het Mollie-id is NULL en niet een lege string', na.id, null);
+  }
+}
+
+/* ══ EN DE HANDLERS ROEPEN DAT OOK ECHT AAN ═══════════════════════════════
+ * De functies hierboven kunnen kloppen terwijl niemand ze aanroept — dat was
+ * letterlijk de fout. Deze controle gaat over de aanroep, en over de VOLGORDE:
+ * de incasso stoppen staat vóór het bijwerken van de toestand, en bij een
+ * mislukking wordt er teruggekeerd zonder de rij aan te raken.
+ */
+console.log('\nde handlers roepen het aan, en in de goede volgorde');
+{
+  const acc = readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8');
+
+  ok('account.js importeert stopIncasso en hervatIncasso',
+    /import \{[^}]*stopIncasso[^}]*hervatIncasso[^}]*\} from '\.\/subscribe\.js'/.test(acc), true);
+
+  const cancel = acc.slice(acc.indexOf('async function handlePlanCancel'));
+  const cancelBody = cancel.slice(0, cancel.indexOf('\n}\n'));
+  ok('opzeggen roept stopIncasso aan', /stopIncasso\(env, state\.sub\)/.test(cancelBody), true);
+  ok('en keert terug zodra dat mislukt',
+    /if \(!await stopIncasso\([^)]*\)\) return seeOther/.test(cancelBody), true);
+  ok('en stopIncasso staat vóór cancelSubscription',
+    cancelBody.indexOf('stopIncasso') < cancelBody.indexOf('cancelSubscription'), true);
+
+  const pause = acc.slice(acc.indexOf('async function handlePlanPause'));
+  const pauseBody = pause.slice(0, pause.indexOf('\n}\n'));
+  ok('pauzeren roept stopIncasso aan', /stopIncasso\(env, state\.sub\)/.test(pauseBody), true);
+  ok('en staat vóór pauseSubscription',
+    pauseBody.indexOf('stopIncasso') < pauseBody.indexOf('pauseSubscription'), true);
+  ok('hervatten roept hervatIncasso aan', /hervatIncasso\(env, state\.sub/.test(pauseBody), true);
+  ok('en staat vóór activateSubscription',
+    pauseBody.indexOf('hervatIncasso') < pauseBody.indexOf('activateSubscription'), true);
+  ok('pauzeren wist het Mollie-id', /clearMollieSubscriptionId\(env, state\.sub\.id\)/.test(pauseBody), true);
+  // Niet via setMollieIds: die schrijft met COALESCE en kan geen NULL zetten.
+  ok('en niet via setMollieIds', /setMollieIds\([^)]*subscriptionId/.test(pauseBody), false);
+}
+
 globalThis.fetch = echteFetch;
 console.log(`\n${ok_}/${totaal} geslaagd`);
 if (ok_ !== totaal) process.exit(1);

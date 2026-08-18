@@ -242,7 +242,39 @@ ok('en de producten daarvan', bez.producten, productsFor('studio'));
 
 console.log('\nopzeggen is het einde, en maakt plaats voor een nieuw');
 ok('opzeggen lukt', (await cancelSubscription(env, gemaakt.row.id, 'customer')).status, 'cancelled');
-ok('en dan is er geen lopend abonnement meer', await loadSubscription(env, 1), null);
+/* ── OPGEZEGD BLIJFT DE BETAALDE MAAND STAAN — 18 augustus 2026 ────────────
+ * Hier stond: na opzeggen geeft loadSubscription() null. Dat was het gedrag én
+ * het probleem. Wie op de twintigste opzegde, verloor per direct de producten
+ * van de maand die hij al betaald had — geld innen voor iets wat je daarna
+ * weghaalt. Lucas koos ervoor dat de betaalde maand blijft staan.
+ *
+ * Deze test is dus omgedraaid en niet weggehaald, en hij toetst nu de VOORWAARDE
+ * in plaats van de uitkomst: het abonnement blijft laadbaar zolang er een rij in
+ * subscription_months voor de HUIDIGE maand bestaat — de rij die de webhook
+ * aanmaakt als het geld binnen is. Verdwijnt die voorwaarde, dan valt hij eruit.
+ */
+ok('een opgezegd abonnement blijft de betaalde maand staan',
+  (await loadSubscription(env, 1))?.status, 'cancelled');
+ok('en het saldo is dan nog te besteden', verbruikToestaan(
+  { actief: false, betaald: true, saldo: 3, sub: { status: 'cancelled' } }, 2).uitSaldo, 2);
+ok('maar een gepauzeerd abonnement niet — dat saldo wacht op hervatten',
+  verbruikToestaan({ actief: false, betaald: true, saldo: 3, sub: { status: 'paused' } }, 2).reden,
+  'geen-abonnement');
+{
+  /* En zodra de betaalde maand weg is, valt hij er wél uit. Bewezen door de
+     maandrijen van dit abonnement te verwijderen in plaats van te wachten tot
+     de maand om is — dat is dezelfde toestand en hij is nu te meten. */
+  const bewaard = db.prepare('SELECT * FROM subscription_months WHERE subscription_id = ?')
+    .all(gemaakt.row.id);
+  db.prepare('DELETE FROM subscription_months WHERE subscription_id = ?').run(gemaakt.row.id);
+  ok('zonder betaalde maand valt hij er wel uit', await loadSubscription(env, 1), null);
+  for (const r of bewaard) {
+    db.prepare(`INSERT INTO subscription_months
+      (subscription_id, month, granted, used, clips_granted, clips_used)
+      VALUES (?, ?, ?, ?, ?, ?)`)
+      .run(r.subscription_id, r.month, r.granted, r.used, r.clips_granted, r.clips_used);
+  }
+}
 /* De partiële index dekt alleen active/pending — een opgezegd abonnement mag een
    nieuw abonnement niet voor altijd blokkeren. */
 const opnieuw = await createSubscriptionRow(env, { customerId: 1, planId: 'starter', termId: 'monthly' });

@@ -75,7 +75,14 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>1. Inleiding &amp; aanvaarding</h2>
       <p>Deze algemene voorwaarden zijn van toepassing op je gebruik van VISUAILS en op elke bestelling die je bij ons plaatst. VISUAILS wordt geëxploiteerd vanuit Enschede, Nederland (KVK 99742993, btw NL005407575B96). Door een bestelling te plaatsen, een proefvisual aan te vragen of anderszins onze dienst te gebruiken, ga je akkoord met deze voorwaarden. Als je niet akkoord gaat, gebruik de dienst dan niet.</p>
-      <p><strong>VISUAILS is de handelsnaam van Lucas Snuverink.</strong><br>
+      {/* id="bedrijfsgegevens" — de contactpagina linkt hierheen met de tekst
+          "Volledige bedrijfsgegevens". Die link wees naar /nl/terms/#top, en
+          #top is geen echt anker: de HTML-standaard laat de browser dan naar
+          het begin van het document springen. Dat werkt, maar het begin van
+          deze pagina is de kop van de voorwaarden en de bedrijfsgegevens
+          staan een derde lager. De lezer klikte op "bedrijfsgegevens" en
+          kreeg een lange juridische pagina zonder ze te zien. */}
+      <p id="bedrijfsgegevens"><strong>VISUAILS is de handelsnaam van Lucas Snuverink.</strong><br>
       Vaarwerkhorst 17, 7531 HK Enschede, Nederland<br>
       KVK 99742993 &middot; btw NL005407575B96 &middot; <a href="mailto:hello@visuails.com">hello@visuails.com</a></p>
       <p>Dit is ons vestigings- en postadres. Het is <strong>geen bezoekadres</strong>: er is geen ontvangstruimte en wij ontvangen er geen bezoek. Al het contact loopt via e-mail, en post komt aan.</p>
@@ -159,6 +166,29 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <h2>9. Betaling &amp; btw</h2>
       <p>Betaling verloopt via onze betaalprovider. Facturen worden uitgereikt voor je administratie. Voor zakelijke klanten in de EU met een geldig btw-nummer kan de btw-verleggingsregeling van toepassing zijn wanneer aan de voorwaarden is voldaan; anders gelden de Nederlandse btw-regels. Je bent verantwoordelijk voor het aanleveren van correcte facturatie- en btw-gegevens.</p>
       <p>Een proefvisual reken je bij het afrekenen af, omdat het een vast bedrag van &euro;1 is. Elke andere bestelling plaats je eerst en krijgt daarna een prijs: jij stuurt de briefing, wij bevestigen de bestelling en het bedrag, en dat bedrag betaal je in één keer via een betaallink in VISUAILS Studio. Er zijn geen termijnen. Wij houden geen productieplek vast en geven geen afgeronde bestanden vrij voordat die betaling binnen is.</p>
+
+      <h2>9a. Abonnementen</h2>
+      <p>Een abonnement is een doorlopende afspraak waarbij je elke maand een vast aantal complete producten krijgt — een catalogset én een lifestyle-carousel per product — in een week die wij voor je vrijhouden. Bij één van de abonnementen horen daarnaast videoclips per maand, en bij het duurste hoort je merkmodel. Wat elk abonnement precies bevat en wat het kost, staat op de <a href="/nl/pricing#plans">prijspagina</a>; die aantallen en bedragen gelden zoals ze daar staan op het moment dat je afsluit.</p>
+
+      <p><strong>Hoe het begint.</strong> Bij het afsluiten betaal je eenmalig &euro;1. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later. Vanaf dat moment schrijft onze betaaldienst het maandbedrag automatisch af op basis van die machtiging.</p>
+
+      <p><strong>Twee termijnen.</strong> De maandelijkse termijn kun je <strong>elke maand opzeggen</strong>; er is geen minimale looptijd. De termijn van twaalf maanden ligt vast: die loopt twaalf termijnen en stopt daarna vanzelf. Daar staat tegenover dat de jaartermijn vier dingen geeft die de maandelijkse niet geeft — dezelfde vaste week elke maand, drie maanden doorschuiven in plaats van één, je tarief dat twaalf maanden lang niet meebeweegt met onze prijslijst, en bij één van de abonnementen het merkmodel erbij.</p>
+
+      <p><strong>Ongebruikte producten.</strong> Wat je in een maand niet besteld hebt, schuift door naar de volgende maand — één maand op de maandelijkse termijn, drie maanden op de jaartermijn. In VISUAILS Studio staat bij doorgeschoven producten tot en met welke maand je ze kunt gebruiken. Daarna vervallen ze. Ze stapelen niet verder op, omdat een abonnement gereserveerde capaciteit in onze agenda is en een maand die voorbij is, voorbij is.</p>
+
+      <p><strong>Opzeggen.</strong> Je zegt zelf op in VISUAILS Studio; je hoeft ons daarvoor niet te mailen en er is geen opzegtermijn. Zodra je opzegt stoppen wij de incasso, en er wordt daarna niets meer afgeschreven. De maand waarvoor je al betaald hebt, blijft gewoon van jou: het saldo van die maand kun je tot het einde ervan nog besteden. Daarna sluit het abonnement. Wij betalen de lopende maand niet terug — die is geleverd in de vorm van beschikbare capaciteit — en je krijgt er ook niets voor in de plaats.</p>
+
+      <p><strong>Pauzeren.</strong> Je kunt je abonnement zelf pauzeren. Dat stopt de volgende afschrijving. Je saldo blijft staan en schuift door volgens dezelfde regel als altijd, en zodra je hervat begint de incasso opnieuw vanaf de eerstvolgende termijn. Je hoeft daarvoor geen nieuwe machtiging af te geven.</p>
+
+      <p><strong>Als een afschrijving mislukt.</strong> Dan zetten wij het abonnement op pauze en laten we het je weten. Je saldo blijft staan maar is niet te besteden zolang de maand niet betaald is. Komt de betaling alsnog binnen, dan loopt het abonnement door alsof er niets gebeurd is.</p>
+
+      <p><strong>Wat er gebeurt met wat al gemaakt is.</strong> Alles wat je tijdens je abonnement hebt laten maken en geleverd hebt gekregen, blijft van jou onder dezelfde gebruiksrechten als elke andere bestelling — zie paragraaf 8. Opzeggen verandert daar niets aan. Voor hoe lang wij je bestanden bewaren geldt paragraaf 7.</p>
+
+      <p><strong>Er is een grens aan het aantal abonnementen.</strong> Een abonnement is gereserveerde capaciteit bij één studio, en die capaciteit is eindig. Wij kunnen daarom een nieuw abonnement weigeren wanneer de agenda vol zit. Dat merk je vóór je betaalt en niet erna: is er geen plek, dan kun je niet afsluiten.</p>
+
+      <p><strong>Prijswijzigingen.</strong> Wij kunnen de prijs van een abonnement wijzigen. Op de jaartermijn geldt je tarief twaalf maanden ongewijzigd. Op de maandelijkse termijn laten we een wijziging minimaal één volledige maand van tevoren weten, zodat je nog vóór de eerstvolgende afschrijving kunt opzeggen. Wij wijzigen nooit met terugwerkende kracht.</p>
+
+      <p><strong>Wat een abonnement niet is.</strong> Het is geen tegoedbon en geen vooruitbetaling op los werk: je koopt elke maand een vast aantal producten en een plek in de agenda, en die plek is er ook in een maand waarin je niets bestelt. Bestel je meer dan je abonnement toekent, dan wordt het meerdere afgerekend op de gewone prijs per product.</p>
 
       <h2>10. Annuleringen, terugbetalingen en herstel</h2>
       <p>Omdat visuals worden gemaakt volgens je specifieke briefing, kan werk dat al is gestart of geleverd doorgaans niet worden geannuleerd voor een terugbetaling.</p>

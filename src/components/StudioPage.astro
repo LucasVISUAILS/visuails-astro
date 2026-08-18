@@ -92,6 +92,23 @@ const COPY = {
     humanNote: 'The log records that review. Every approval and every revision is saved with a date against the image it belongs to. The same record you use to approve the order is the one we can read back to you months later.',
     humanCta: 'Read the AI Act page',
 
+    // ── TERUGREKENEN VANAF DE LANCEERDATUM ──────────────────────────────
+    // Verhuisd van de homepage (sectie 14), augustus 2026. Dit is de enige
+    // eerlijke schaarste-band die hier te maken valt: de krapte is echt — één
+    // persoon en een capaciteitspoort die weken wéigert — en hij staat er als
+    // capaciteit en niet als aftelklok. Geen "nog 3 plekken": dat is een getal
+    // dat de pagina niet kan natrekken tegen de D1-kalender, en een
+    // schaarsteclaim die een bezoeker kan ontkrachten is erger dan geen.
+    plH: 'Work back from your launch date.',
+    plLede: `From ${WINDOW_THRESHOLD} products we take that week out of the calendar for your order. That is why we can put the date in writing, and why a week that is full is offered as full.`,
+    pl: [
+      ['Your launch date', 'The day the collection has to be live. Everything else is counted backwards from here.'],
+      ['48 hours from your date', `The reserved delivery date, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it; below that count an order runs in the normal turnaround.`],
+      ['Minus one folder', 'The day you send the photos. That is your part finished, and the date is already locked.'],
+    ],
+    plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait.',
+    plCta: 'See which weeks are open',
+
     honestH: 'What this does not do.',
     honestLede: 'Worth saying plainly, because a page about a mechanism that only lists what works is a brochure.',
     honest: [
@@ -134,6 +151,16 @@ const COPY = {
     humanLede: 'Er wordt niets automatisch geleverd. Elk beeld in elke bestelling wordt bekeken voordat het weggaat, en dat kijken is een staat waar de order doorheen moet — geen bewering op een pagina.',
     humanNote: 'Die controle is ook wat het logboek vastlegt. Elke goedkeuring en revisie krijgt een tijdstempel en wordt bewaard bij het beeld waar hij bij hoort, dus wat jou de regie geeft over de bestelling is hetzelfde wat de reeks later terug te lezen maakt.',
     humanCta: 'Lees de AI Act-pagina',
+
+    plH: 'Reken terug vanaf de dag dat je live gaat.',
+    plLede: 'Bij een vastgezette leverdatum houden we die dagen in de studio voor je vrij. Daarom kunnen we die datum op papier zetten — en daarom kan een week ook vol zitten.',
+    pl: [
+      ['De dag dat je live gaat', 'De dag waarop de collectie online moet staan. Vanaf daar rekenen we terug.'],
+      ['48 uur vanaf je leverdatum', `De vastgezette leverdatum, vanaf ${WINDOW_THRESHOLD} producten. Zodra die datum vaststaat, gaat geen ander werk in de studio er nog voor. Bestel je minder producten, dan geldt de normale doorlooptijd.`],
+      ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar, en de datum staat al vast.'],
+    ],
+    plNote: 'We boeken de weken één voor één vol. Zit een week vol, dan zeggen we dat gewoon, in plaats van je een langere wachttijd te geven.',
+    plCta: 'Kijk welke weken nog vrij zijn',
 
     honestH: 'Wat dit niet doet.',
     honestLede: 'Dat is het waard om ronduit te zeggen, want een pagina over een werkwijze die alleen opsomt wat er goed gaat, is een folder.',
@@ -218,6 +245,35 @@ const c = COPY[lang];
   </div>
 </section>
 
+{/* ── terugrekenen vanaf de lanceerdatum ──────────────────────────────────
+    Verhuisd van de homepage, augustus 2026. Deze pagina legt uit hoe een
+    bestelling door de studio loopt; de kalender is daar de laatste stap van,
+    en de homepage was de verkeerde plek om hem uit te leggen (HERONTWERP.md
+    §3.3). Het leest als een dienst aan de lezer en niet als druk: een
+    lanceerdatum is de ene datum die hij al in zijn hoofd heeft, en deze band
+    doet de aftrekking voor hem. */}
+<section class="band-tight">
+  <div class="container">
+    <div class="statement statement-left sp-head">
+      <h2>{c.plH}</h2>
+      <p class="lede">{c.plLede}</p>
+    </div>
+    <ol class="sp-pl">
+      {c.pl.map(([t, b], i) => (
+        <li>
+          <span class="sp-pl-dot" aria-hidden="true"></span>
+          <h3 class={['w-blue', 'w-violet', 'w-coral'][i] || ''}>{t}</h3>
+          <p>{b}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="sp-pl-foot">
+      <p>{c.plNote}</p>
+      <a class="btn btn-ghost" href={lp('/start')}>{c.plCta}</a>
+    </div>
+  </div>
+</section>
+
 {/* ── what it does not do, on paper: the part that has to be read ────────── */}
 <section class="band on-paper">
   <div class="container">
@@ -274,4 +330,15 @@ const c = COPY[lang];
   .sp-honest-tiles { margin-top: clamp(2.4rem, 5vw, 3.5rem); }
 
   .sp-close { background: var(--ink-900); }
+  /* ── terugrekenen vanaf de lanceerdatum (verhuisd van de homepage) ──────
+     Een <ol>, want dit is wél een volgorde: de drie data staan in de tijd
+     achter elkaar. De stip zit op de bovenlijn en niet ervoor, zodat de rij
+     ook klopt als een cel door de auto-fit op een tweede regel valt. */
+  .sp-pl { list-style: none; margin: clamp(2.2rem, 4.5vw, 3.2rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: clamp(1.4rem, 3vw, 2.6rem); }
+  .sp-pl > li { position: relative; padding-top: 1.6rem; box-shadow: inset 0 1px 0 var(--line); }
+  .sp-pl-dot { position: absolute; top: -4px; left: 0; width: 9px; height: 9px; background: var(--ink-1); }
+  .sp-pl h3 { margin: 0 0 .45rem; font-size: 1.02rem; font-weight: 700; }
+  .sp-pl p { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--ink-3); }
+  .sp-pl-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .sp-pl-foot p { margin: 0; max-width: 66ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
 </style>

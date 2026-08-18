@@ -28,7 +28,7 @@
 // every order after it, and the plans are a minimum-term commitment. Both are
 // conversations. A card form here would be the studio pretending a decision has
 // been made that has not.
-import { AMOUNT, euro, vatLabel, vatNote, plans, PLAN_MIN_MONTHS, turnaround } from '../../data/pricing.js';
+import { AMOUNT, euro, vatLabel, vatNote, plans, turnaround } from '../../data/pricing.js';
 import { localizedPath } from '../../i18n/ui.js';
 
 interface Props {
@@ -136,7 +136,7 @@ const KIND = {
       facts: [
         ['The plans', planList.map((p) => `${p.name} · ${p.price} ${p.unit}`).join(' · ') + `, ${vatLabel('excl', 'en')}`],
         ['What you get', `${planList[0].products}, ${planList[1].products} or ${planList[2].products} products a month, produced on reserved capacity rather than in the turnaround.`],
-        ['The commitment', `${PLAN_MIN_MONTHS} months minimum. Unused products roll over one month.`],
+        ['The commitment', 'Cancel any month. Unused products roll over one month.'],
       ],
       askLabel: 'Which plan are you looking at?',
       askHint: 'You can change your mind — this is the start of a conversation.',
@@ -183,7 +183,7 @@ const KIND = {
       facts: [
         ['De plannen', planList.map((p) => `${p.name} · ${p.price} ${p.unit}`).join(' · ') + `, ${vatLabel('excl', 'nl')}`],
         ['Wat je krijgt', `${planList[0].products}, ${planList[1].products} of ${planList[2].products} producten per maand. We houden er elke maand ruimte voor vrij, dus ze lopen niet mee in de normale doorlooptijd.`],
-        ['De verplichting', `Minimaal ${PLAN_MIN_MONTHS} maanden. Ongebruikte producten schuiven één maand door.`],
+        ['De verplichting', 'Maandelijks opzegbaar. Ongebruikte producten schuiven één maand door.'],
       ],
       askLabel: 'Naar welk plan kijk je?',
       askHint: 'Je mag je nog bedenken — dit is het begin van een gesprek.',

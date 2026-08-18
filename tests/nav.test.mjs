@@ -178,7 +178,7 @@ for (const lang of LANGS) {
    tegendeel beweren kunnen niet naast elkaar bestaan, dus is deze weg en niet
    uitgezet. */
 
-/* ══ 5 · WAT HET FORMULIER POST ═════════════════════════════════════════════
+/* ══ 5 · WAT ELK FORMULIER POST ALS `service` ══════════════════════════════
  *
  * Dit is de belangrijkste test van het bestand, en de reden staat in
  * functions/api/order.js: een onbekende `service` wordt daar niet geweigerd maar
@@ -186,39 +186,84 @@ for (const lang of LANGS) {
  *
  *   const svc = ORDER_SERVICES.has(service) ? service : 'catalog';
  *
- * Zou dit formulier `service="hooks"` posten, dan komt elke aanvraag binnen als
- * een catalogbestelling — met een referentie, in de bestellijst, tussen het echte
- * werk. Niemand zou het merken tot iemand zich afvraagt waarom er catalogorders
- * zijn die niemand geplaatst heeft.
+ * Post een formulier een waarde die niet in die lijst staat, dan komt elke
+ * aanvraag binnen als een catalogbestelling — met een referentie, in de
+ * bestellijst, tussen het echte werk. Niemand zou het merken tot iemand zich
+ * afvraagt waarom er catalogorders zijn die niemand geplaatst heeft.
+ *
+ * HERSCHREVEN OP 18 AUGUSTUS 2026, EN STERKER GEWORDEN. Deze sectie las
+ * src/components/HooksPage.astro en toetste dat ÉÉN formulier het goed deed.
+ * Dat bestand wordt door niets meer geïmporteerd en gaat van de schijf, en de
+ * makkelijke uitweg — de sectie weghalen — zou de enige bewaking op deze
+ * stille omzetting hebben weggehaald voor ALLE formulieren.
+ *
+ * Dus doet hij nu het omgekeerde van wat hij deed: hij zoekt zelf elk .astro-
+ * bestand dat naar /api/order post en een `service` meestuurt, en eist dat die
+ * waarde bestaat. Er hoeft niemand meer aan te denken bij een nieuw formulier —
+ * en er ligt geen enkele afhankelijkheid meer op een bestand dat weg mag.
+ *
+ * 'contact' IS GELDIG EN STAAT NIET IN ORDER_SERVICES. De contactformulieren
+ * posten `service="contact"` naar hetzelfde eindpunt, en order.js vangt dat af
+ * met een eigen tak (`if (service === 'contact')`) die returnt vóór de regel
+ * hierboven. Dat is nagekeken en niet aangenomen — het zag er bij het schrijven
+ * van deze test precies uit als de bug die hij zoekt. De tak wordt daarom UIT
+ * order.js gelezen en niet hier ingetypt: verdwijnt hij daar, dan wordt
+ * `service="contact"` wél stil een catalogbestelling, en dan hoort deze test
+ * rood te worden.
  */
-/*
- * LET OP: HooksPage.astro bestaat nog wél — het is het concept, maar er is geen
- * pagina meer die hem rendert. Deze sectie blijft daarom staan: zodra de pagina
- * terugkomt, moet het formulier nog steeds `service=video` posten, en dat is
- * precies iets wat je bij het terugzetten vergeet.
- */
-console.log('\nwat het formulier post');
+console.log('\nwat elk formulier post als service');
 {
-  const page = read('src/components/HooksPage.astro');
   const order = read('functions/api/order.js');
 
-  const svc = /name="service" value="([^"]+)"/.exec(page)?.[1];
-  check('service is video en niet hooks', svc, 'video');
-  // En die waarde moet echt in de lijst staan die order.js accepteert.
-  const known = new RegExp(`ORDER_SERVICES = new Set\\(\\[[^\\]]*'${svc}'`).test(order);
-  check('en die waarde staat in ORDER_SERVICES', known, true);
-  check('het onderscheid zit in request=hooks', /name="request" value="hooks"/.test(page), true);
+  // De lijst zoals order.js hem kent, uit order.js gelezen.
+  const lijst = /ORDER_SERVICES = new Set\(\[([^\]]*)\]\)/.exec(order)?.[1] || '';
+  const toegestaan = new Set([...lijst.matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  check('ORDER_SERVICES is gevonden', toegestaan.size > 0, true);
+
+  // De eigen takken die vóór de omzetting returnen. Nu alleen 'contact'.
+  for (const m of order.matchAll(/if \(service === '([^']+)'\)/g)) toegestaan.add(m[1]);
+  check("'contact' heeft een eigen tak in order.js", toegestaan.has('contact'), true);
+
+  // Elk .astro-bestand dat naar /api/order post.
+  const astros = [];
+  (function loop(dir) {
+    for (const e of readdirSync(new URL(`../${dir}/`, import.meta.url), { withFileTypes: true })) {
+      if (e.isDirectory()) loop(`${dir}/${e.name}`);
+      else if (e.name.endsWith('.astro')) astros.push(`${dir}/${e.name}`);
+    }
+  }('src'));
+
+  const posters = [];
+  for (const f of astros) {
+    const src = read(f);
+    if (!src.includes('action="/api/order"')) continue;
+    for (const m of src.matchAll(/name="service"\s+value="([^"]*)"/g)) posters.push([f, m[1]]);
+  }
+  // Als deze lus ooit niets meer vindt, blijft de sectie groen zonder iets te
+  // toetsen. Dat is erger dan geen test, dus staat het aantal er ook in.
+  check('er zijn formulieren gevonden die service posten', posters.length >= 2, true);
+
+  const fout = posters.filter(([, v]) => !toegestaan.has(v)).map(([f, v]) => `${f} → "${v}"`);
+  check('elke geposte service bestaat en wordt niet stil catalog', fout, []);
+
+  /* DE HONEYPOT EN HET VINKJE, op elk formulier dat naar /api/order post.
+     Ook dit stond alleen op HooksPage en gold in werkelijkheid overal. */
+  const zonderHp = posters.filter(([f]) => !read(f).includes('name="company_hp"')).map(([f]) => f);
+  check('elk bestelformulier heeft de honeypot', [...new Set(zonderHp)], []);
+
+  // Het vinkje is toestemming en dus NOOIT verplicht. `required` erop zou het van
+  // een keuze in een voorwaarde veranderen, en dan is het geen toestemming meer.
+  const verplicht = [];
+  for (const f of [...new Set(posters.map(([x]) => x))]) {
+    for (const m of read(f).matchAll(/<input type="checkbox" name="notify"[^>]*>/g)) {
+      if (/required/.test(m[0])) verplicht.push(f);
+    }
+  }
+  check('geen enkel notify-vinkje is verplicht', [...new Set(verplicht)], []);
 
   // video mag niet afgerekend worden, anders is een aanvraag een betaalbare order.
   const quote = read('src/lib/quote.js');
   check('video is niet betaalbaar', /PAYABLE_SERVICES = new Set\(\['catalog', 'lifestyle', 'complete'\]\)/.test(quote), true);
-
-  check('de honeypot zit erin', /name="company_hp"/.test(page), true);
-  // Het vinkje is toestemming en dus NOOIT verplicht. `required` erop zou het van
-  // een keuze in een voorwaarde veranderen, en dan is het geen toestemming meer.
-  const box = /<input type="checkbox" name="notify"[^>]*>/.exec(page)?.[0] || '';
-  check('het notify-vinkje bestaat', box !== '', true);
-  check('en is niet verplicht', /required/.test(box), false);
 }
 
 /* ══ 6 · HET VINKJE HEEFT EEN GRONDSLAG ═════════════════════════════════════
@@ -369,8 +414,10 @@ console.log('\nverborgen, maar niet onzichtbaar');
  *    waaronder *"Eén product en één idee is genoeg"* — twee keer. Lucas had daar
  *    expliciet voor gewaarschuwd: *"dat is eerder op de site fout geweest en
  *    inmiddels gecorrigeerd, dus deze nieuwe pagina moet het meteen goed doen."*
- *    Die tekst staat nog steeds als bestand op de schijf. Een uitklapper op de
- *    homepage is precies de plek waar iemand hem er ooit uit copy-pastet.
+ *    Dat bestand is op 18 augustus 2026 verwijderd, dus er valt niets meer uit
+ *    te copy-pasten — maar de zin staat nog wél geciteerd in
+ *    HOOKS-COPY-CONCEPT.md, en de controle hieronder gaat over de tekst en niet
+ *    over waar hij vandaan zou komen. Hij blijft dus staan.
  *
  * 2. DE PRIJS. De strook staat er juist omdat de dienst nog niet besteld kan
  *    worden en de prijs nog niet vastligt. Eén "vanaf €119" in dit paneel maakt
@@ -389,7 +436,11 @@ console.log('\nhet vraagteken naast hooks');
   check('het rondje is decoratie', /class="hv-q-mark" aria-hidden="true">\?</.test(home), true);
   // De toegankelijke naam staat in de summary en niet in een title-attribuut: een
   // title wordt niet voorgelezen en op een telefoon nooit gezien.
-  check('en er staat een naam voor de handeling in', /class="hv-q-say">\{c\.svcSoonQ\}</.test(home), true);
+  /* Sinds 18 augustus 2026 tekent één lus alle aangekondigde diensten (Hooks
+     en Editions), dus komt het label uit het item en niet meer uit een sleutel
+     met een vaste naam. Zie svcSoonList in HomeV2.astro. */
+  check('en er staat een naam voor de handeling in', /class="hv-q-say">\{soon\.qLabel\}</.test(home), true);
+  check('en de stroken worden uit één lus getekend', /c\.svcSoonList\.map/.test(home), true);
 
   // Het driehoekje, op alle drie de manieren. Los geteld, want één ervan
   // weghalen is de fout die alleen op iemand anders' browser te zien is.
@@ -415,7 +466,16 @@ console.log('\nhet vraagteken naast hooks');
    * controle, en dat is precies het gat waar bij deze strook eerder al iets in
    * verdween.
    */
-  const blocks = [...home.matchAll(/svcSoonQBody: \[([\s\S]*?)\n {4}\],/g)].map((m) => m[1]);
+  /* De panelen heten nu `qBody` en staan binnen svcSoonList, één per
+     aangekondigde dienst per taal. Twee diensten × twee talen = vier blokken.
+     De HOOKS-blokken zijn de eerste van elk paar; die worden hieronder op hun
+     eigen eisen getoetst, en de Editions-blokken daarna op de hunne — want de
+     twee diensten beloven niet hetzelfde en één gedeelde lijst eisen zou de
+     zwakste van de twee worden. */
+  const alle = [...home.matchAll(/qBody: \[([\s\S]*?)\n {8}\],/g)].map((m) => m[1]);
+  check('vier panelen: twee diensten, twee talen', alle.length, 4);
+  const blocks = [alle[0], alle[2]].filter(Boolean);   // Hooks: en, nl
+  const edities = [alle[1], alle[3]].filter(Boolean);  // Editions: en, nl
   check('beide talen hebben een paneeltekst', blocks.length, 2);
   for (const [i, b] of blocks.entries()) {
     const lang = i === 0 ? 'en' : 'nl';
@@ -424,7 +484,18 @@ console.log('\nhet vraagteken naast hooks');
     // Wat er MOET staan.
     check(`${lang}: één foto is niet genoeg`, /(not enough|niet genoeg)/.test(b), true);
     check(`${lang}: een specialist kijkt hem na`, /specialist/.test(b), true);
-    check(`${lang}: 24 tot 48 uur`, /24 (to|tot) 48/.test(b), true);
+    /* ── DE LEVERTIJD KOMT UIT DE BRON — 18 augustus 2026 ────────────────
+       Hier stond `/24 (to|tot) 48/` en die toets hield een FOUTE belofte vast.
+       De homepage zei "binnen 24 tot 48 uur" terwijl elke andere pagina
+       turnaround('unattended') = "2-4 werkdagen" zegt; een bezoeker die
+       doorklikte zag de belofte verdubbelen, en /studio opent uitgerekend met
+       "Anyone can put '48 hours' on a website."
+
+       De nieuwe eis is sterker dan de oude: niet WELK getal er staat, maar dat
+       er geen getal getypt IS. Zolang de regel turnaround() aanroept, kan deze
+       tegenspraak niet terugkomen — ook niet als het getal ooit verandert. */
+    check(`${lang}: de levertijd komt uit turnaround()`, /turnaround\('unattended'/.test(b), true);
+    check(`${lang}: en staat er niet als getypt getal`, /24 (to|tot) 48/.test(b), false);
     check(`${lang}: het scherm heet VISUAILS Studio`, /VISUAILS Studio/.test(b), true);
 
     // Wat er NIET mag staan. "viral" en "scroll" zijn de twee woorden waar Lucas
@@ -438,10 +509,83 @@ console.log('\nhet vraagteken naast hooks');
   }
 
   // En de voetregel zegt waarom de knop dood is, in beide talen.
-  const feet = [...home.matchAll(/svcSoonQFoot: '([^']*)'/g)].map((m) => m[1]);
+  /* De voetregel is gedeeld geworden: hij zei bij elke aangekondigde dienst
+     hetzelfde, en twee kopieën van dezelfde zin is hoe er straks één wordt
+     bijgewerkt en de ander niet. Eén per taal dus. */
+  const feet = [...home.matchAll(/svcSoonFoot: '([^']*)'/g)].map((m) => m[1]);
   check('beide talen hebben een voetregel', feet.length, 2);
   check('en die zegt dat de prijs nog niet vastligt',
     feet.every((f) => /(not settled|niet vast)/.test(f)), true);
+
+  /* ── EDITIONS ─────────────────────────────────────────────────────────────
+   * Aangekondigd op 18 augustus 2026. Het idee staat in STOCK-IDEE.md, en dat
+   * document bevat drie dingen die je bij het schrijven van deze copy verkeerd
+   * kunt doen. Alle drie staan ze hier, want ze zijn alleen bij het aankondigen
+   * te voorkomen en niet meer erna.
+   *
+   * 1. HET WOORD "STOCK" MAG ER NIET IN. Death to Stock positioneert zich
+   *    letterlijk als "made by real creators, not AI", en op hun terrein —
+   *    vijftienduizend beelden voor $20 — win je niet. Jezelf stock noemen is
+   *    de vergelijking opzoeken die je verliest.
+   * 2. DE GEDEELDE SET MOET GEDEELD HETEN. Jouw klanten zijn allemaal
+   *    kledingmerken en dus elkaars concurrenten; twee abonnees die hetzelfde
+   *    beeld posten staan in dezelfde feed voor dezelfde koper. Dat mag geen
+   *    kleine lettertjes worden — de modelkiezer noemt de gedeelde roster ook
+   *    met zoveel woorden gedeeld.
+   * 3. GEEN TWEEDE BIBLIOTHEEK. §6 van dat document is expliciet: één kaart en
+   *    één R2-pad naast het saldo, geen eigen zoekfunctie en eigen mappen. De
+   *    copy hoort dat te zeggen, want een aankondiging die "bibliotheek" belooft
+   *    is een belofte die iemand later moet bouwen.
+   */
+  check('Editions staat in beide talen in het menu',
+    [...read('src/i18n/ui.js').matchAll(/title: 'Editions'/g)].length, 2);
+  check('en met soon: true, dus zonder link',
+    /title: 'Editions'[^}]*soon: true/.test(read('src/i18n/ui.js')), true);
+  check('beide talen hebben een Editions-paneel', edities.length, 2);
+
+  /* DE LABELS DRAGEN HET WOORD HELEMAAL NIET. In het uitlegpaneel mag "stock"
+     ontkend voorkomen; in de naam, de omschrijving en de knop niet, want dat
+     zijn de drie regels die de dienst POSITIONEREN. Een bezoeker die alleen de
+     strook scant, leest die drie en niets anders. */
+  for (const veld of ['name', 'desc', 'cta']) {
+    const waarden = [...home.matchAll(new RegExp(`${veld}: '([^']*)'`, 'g'))].map((m) => m[1]);
+    const metStock = waarden.filter((v) => /stock/i.test(v));
+    check(`geen enkele ${veld} noemt stock`, metStock, []);
+  }
+  for (const [i, b] of edities.entries()) {
+    const lang = i === 0 ? 'en' : 'nl';
+    check(`${lang}: vier regels in het Editions-paneel`, [...b.matchAll(/\n\s*\['/g)].length, 4);
+    /* HET WOORD "STOCK" MAG WEL, MAAR ALLEEN ONTKEND. Eerste versie van deze
+       regel verbood het woord helemaal, en toen viel hij om op de eigen copy:
+       die zegt "the half a stock library structurally cannot do" en "the reason
+       this is not a stock library". Dat is precies de juiste positionering —
+       het is de vergelijking benoemen om hem af te wijzen — en een regel die
+       het goede geval afkeurt, wordt weggehaald in plaats van gevolgd.
+
+       Wat er dus staat: elke keer dat het woord valt, moet er een ontkenning
+       vlak omheen staan. Zo blijft "wij verkopen stockfoto's" verboden en
+       blijft "dit is geen stockbibliotheek" toegestaan.
+
+       Per VOORKOMEN gezocht met een index en niet met matchAll: een globale
+       regexp met context eromheen slikt bij de eerste treffer de aanloop van de
+       tweede op, en dan lijkt een correct ontkende zin plotseling kaal. Dat
+       gebeurde hier ook echt — de tweede vermelding kwam terug als
+       "a stock library." zonder het "this is not" ervoor. */
+    const zonderOntkenning = [];
+    for (let k = b.toLowerCase().indexOf('stock'); k !== -1; k = b.toLowerCase().indexOf('stock', k + 1)) {
+      const rond = b.slice(Math.max(0, k - 60), k + 60);
+      if (!/(not|cannot|no |geen|niet|kán niet|kan niet)/i.test(rond)) zonderOntkenning.push(rond);
+    }
+    check(`${lang}: het woord stock valt alleen ontkend`, zonderOntkenning, []);
+    check(`${lang}: de gedeelde set heet gedeeld`,
+      /(shared|gedeeld)/i.test(b), true);
+    check(`${lang}: en er staat bij dat hij naar andere merken gaat`,
+      /(other brands|andere merken)/i.test(b), true);
+    check(`${lang}: geen tweede bibliotheek beloofd`,
+      /(not a second library|geen tweede bibliotheek)/i.test(b), true);
+    check(`${lang}: geen prijs in het Editions-paneel`, /€/.test(b), false);
+    check(`${lang}: het komt binnen in VISUAILS Studio`, /VISUAILS Studio/.test(b), true);
+  }
 }
 
 /* ══ DE META-OMSCHRIJVING VAN ELKE PAGINA ══════════════════════════════════════
@@ -605,6 +749,63 @@ console.log('\nevery fixed internal link in the dashboard resolves');
       const alsBestand = new URL(`.${href}`, dist);
       check(`account.js → ${href}`, existsSync(alsMap) || existsSync(alsBestand), true);
     }
+  }
+}
+
+/* ══ 11 · /account WORDT NOOIT GELOKALISEERD ═══════════════════════════════
+ *
+ * /account is ÉÉN Cloudflare Pages Function. Hij leest zijn eigen taal uit de
+ * gegevens van de klant — er is nooit een Nederlandse route geweest om naar te
+ * lokaliseren. Wie hem toch door localizedPath() haalt, stuurt elke bezoeker
+ * van /nl/* naar /nl/account, en dat is een 404 op de INLOGLINK.
+ *
+ * DIT IS TWEE KEER GEBEURD, EN DAT IS DE REDEN DAT DEZE SECTIE BESTAAT.
+ *
+ *   · 28 juli 2026 — in Layout.astro, op de inloglink in de navigatie. Gevonden
+ *     door Lucas, gerepareerd, en er staat een noot van tien regels bij die
+ *     precies uitlegt waarom het `href="/account"` moet zijn.
+ *   · 18 augustus 2026 — in ModelPicker.astro en OrderFlow.astro, op de
+ *     "log in"-knop in de bestelstroom. Zeven Nederlandse pagina's linkten naar
+ *     een 404. Die noot van tien regels stond dus al op de site en had deze
+ *     twee niet tegengehouden, want hij stond in een ander bestand.
+ *
+ * Een reparatie op één plek terwijl hetzelfde patroon ergens anders nog staat,
+ * is geen reparatie — het is een noot. Daarom staat de regel nu in een test en
+ * gaat hij over de HELE bron in plaats van over één bestand.
+ */
+console.log('\n/account wordt nooit gelokaliseerd');
+{
+  const bestanden = [];
+  (function loop(dir) {
+    for (const e of readdirSync(new URL(`../${dir}/`, import.meta.url), { withFileTypes: true })) {
+      if (e.isDirectory()) loop(`${dir}/${e.name}`);
+      else if (/\.(astro|js|ts)$/.test(e.name)) bestanden.push(`${dir}/${e.name}`);
+    }
+  }('src'));
+
+  /* Elke vorm waarmee /account door de taalhulp kan lopen. lp() is de lokale
+     alias die bijna elk bestand aanmaakt; localizedPath() is het origineel. */
+  const patroon = /(?:\blp|localizedPath)\(\s*(?:lang\s*,\s*)?['"`]\/account/;
+  const fout = bestanden.filter((f) => patroon.test(codeOnly(read(f))));
+  check('geen enkel bestand haalt /account door lp()', fout, []);
+
+  /* En het resultaat, in de gebouwde site. Eigen `dist` — de andere secties
+     declareren hem binnen hun eigen blok, en die zijn hier niet zichtbaar.
+     Bestaat dist/ niet (een schone kloon zonder build), dan wordt dit deel
+     overgeslagen: de broncontrole hierboven is de harde, deze is de bevestiging. */
+  const distMap = new URL('../dist/', import.meta.url);
+  if (existsSync(distMap)) {
+    const treffers = [];
+    (function loop(u, rel) {
+      for (const e of readdirSync(u, { withFileTypes: true })) {
+        const kind = new URL(`${e.name}${e.isDirectory() ? '/' : ''}`, u);
+        if (e.isDirectory()) loop(kind, `${rel}${e.name}/`);
+        else if (e.name.endsWith('.html') && readFileSync(kind, 'utf8').includes('href="/nl/account"')) {
+          treffers.push(`${rel}${e.name}`);
+        }
+      }
+    }(distMap, ''));
+    check('en geen enkele gebouwde pagina linkt naar /nl/account', treffers, []);
   }
 }
 

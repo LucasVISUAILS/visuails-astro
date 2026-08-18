@@ -16,7 +16,7 @@
     "fetch:order": "node scripts/fetch-order.mjs",
     "test:account": "node tests/account-brand-kit.test.mjs",
     "test:admin": "node tests/admin.test.mjs",
-    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:plans && npm run test:abo && npm run test:email && npm run test:garments && npm run test:subscribe",
+    "test": "npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:plans && npm run test:abo && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue",
     "test:invoice": "node tests/invoice-pdf.test.mjs",
     "test:offsite": "node tests/offsite.test.mjs",
     "check:csp": "node scripts/csp-probe.mjs",
@@ -75,7 +75,9 @@
     "test:abo": "node tests/subscription.test.mjs",
     "test:email": "node tests/email-change.test.mjs",
     "test:garments": "node tests/garments.test.mjs",
-    "test:subscribe": "node tests/subscribe.test.mjs"
+    "test:subscribe": "node tests/subscribe.test.mjs",
+    "placeholders": "node scripts/placeholders.mjs",
+    "test:planqueue": "node tests/plan-queue-cron.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

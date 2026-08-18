@@ -1,7 +1,15 @@
 # Design
 
-> **Status, as of section 18: the COLOUR system AND the radius rule in this file are
-> superseded.** Read this note before you read anything below it.
+> **Status, 18 augustus 2026: de kleurentabel hieronder was nog die van sectie 18
+> en beschreef een accent dat de site niet meer draagt.** Bijgewerkt. Lees deze
+> noot voordat je iets hieronder leest.
+>
+> Dit bestand heeft nu vier paletten beschreven, en drie keer bleef de vorige
+> als tabel staan. Dat is precies hoe iemand een waarde overneemt die nergens
+> meer bestaat: `#90BEFF` stond hier nog op vier plekken terwijl `global.css`
+> al sinds augustus `#C6F100` draagt. De regel die daaruit volgt en die
+> hieronder wordt toegepast: **een vervangen palet wordt uit dit bestand
+> VERWIJDERD, niet doorgestreept.**
 >
 > This file has now described three palettes. Sections 1–14 shipped an OKLCH ink/paper
 > system; section 15 replaced it with **VISUAILS harbor** (warm ink, cool paper,
@@ -39,18 +47,21 @@ allowed on panels and never under body copy.
 | `--ink-4` | white 52% | Faint | 4.62:1 |
 | `--line` | white 12% | Hairline | — |
 | `--line-strong` | white 22% | Rule, control border — **never text** | — |
-| `--accent` | `#90BEFF` | Primary fill, links, the accent word | 10.43:1 both directions |
-| `--accent-ink` | `#08090B` | What sits ON an accent fill | white on the accent is 1.91:1 and is never correct |
-| `--accent-dim` | `#6E9BE0` | Hover / pressed | — |
-| `--grad-1` | `#5B7CFA → #9A6BF5 → #E86BB0` | Panel ground | every stop 5.41–8.75:1 against `--grad-ink` |
-| `--grad-2` | `#9A6BF5 → #E86BB0 → #F2955C` | Panel ground, second | as above |
-| `--grad-ink` | `#08090B` | What sits ON a gradient panel | white on these stops is 2.28–3.68:1 |
+| `--accent` | `#C6F100` | Primary fill, links, the accent word | 15.16:1 both directions |
+| `--accent-ink` | `#08090B` | What sits ON an accent fill | white on the accent is 1.31:1 and is never correct |
+| `--accent-dim` | `#ABD200` | Hover / pressed | — |
 | `--scrim` | `8 9 11` (channels) | Every veil over a photograph | see below |
 
 Two things about this table are counter-intuitive and are the reason it is written down:
 
-**The accent carries near-black, not white.** `#90BEFF` is a light blue. The instinct is
-white text on it; white is 1.91:1. Everything set on an accent fill takes `--accent-ink`.
+**The accent carries near-black, not white.** `#C6F100` is a lime. The instinct is
+white text on it; white is 1.31:1. Everything set on an accent fill takes `--accent-ink`.
+
+*(Tot 18 augustus 2026 stond hier `#90BEFF` met 1.91:1 — het lichtblauw van
+sectie 18. De eigenschap die de regel draagt is dezelfde en zeldzaam: één waarde
+die zowel als tekst op de grond als als vlak onder bijna-zwarte tekst werkt.
+Lucas, over de aanleiding: "ik wil denk ik af van de pastelkleuren die nu veel
+gebruikt worden en een wat serieuzere kleurenschema kiezen".)*
 
 **So do the gradients.** Every stop of both gradients is more legible under near-black
 than under white, by a factor of two. `.panel-grad` in `global.css` is a scope that
@@ -114,14 +125,30 @@ rather than a decision. Every full-width ground is `--bg-0` now; `.on-paper`,
 no-ops in one block. **If a section needs distinguishing, the answer is a tile, a panel, a
 rule or more space — not a second ground.**
 
-**Four bright fills, and they are lighter than the gradient stops they come from.**
+**De vier felle vlakken — HERZIEN, augustus 2026.**
 
-| Token | Value | ink-1 | ink @ .82 | ink @ .68 | on ground |
-|---|---|---|---|---|---|
-| `--fill-blue` | `#7CA2FF` | 8.03 | 6.20 | 4.55 | 8.03 |
-| `--fill-violet` | `#BC8FFF` | 8.07 | 6.23 | 4.57 | 8.07 |
-| `--fill-pink` | `#F678BD` | 7.91 | 6.18 | 4.56 | 7.91 |
-| `--fill-coral` | `#E98D54` | 7.97 | 6.20 | 4.56 | 7.97 |
+Ze waren blauw, violet, roze en koraal, en dat was het probleem: vier
+gelijkwaardige kleuren die niets onderscheidden omdat ze allemaal even hard
+riepen. HERONTWERP.md §2.2 telde het na op de gebouwde site — twee ervan
+renderden als hetzelfde groen en twee als hetzelfde grijs, want de tokens waren
+al herbenoemd zonder dat deze tabel meeging.
+
+De namen zijn gebleven (er hangen tientallen regels aan) en de waarden niet:
+
+| Token | Waarde | Rol |
+|---|---|---|
+| `--fill-blue` | `var(--accent)` | het ene vlak in een raster dat gelezen moet worden |
+| `--fill-violet` | `var(--accent-dim)` | de tweede stap, als er echt twee nodig zijn |
+| `--fill-pink` | wit 66% | een derde onderscheid, zonder tweede kleur |
+| `--fill-coral` | wit 40% | de zwakste; ook de waarschuwingsstreep in lijsten |
+
+Dat volgt het ontwerpprincipe dat PRODUCT.md sinds augustus draagt: *"Colour
+marks the point; the photograph still carries it."* Eén vlak per raster krijgt
+kleur, de rest onderscheidt zich met wittinten — want kleur op alles is kleur op
+niets, en dan concurreert de fotografie met het meubilair.
+
+*(De contrasttabel hieronder hoorde bij de oude vier waarden en staat er nog als
+verantwoording van de meetmethode. De GETALLEN gelden niet meer.)*
 
 The gradient stops themselves (`#5B7CFA` at 5.41, `#9A6BF5` at 5.50) **cannot carry body
 copy**: near-black at the muted step lands at 3.57 and 3.62 against a 4.5 floor. A tile
@@ -214,7 +241,7 @@ What survives harbor, because it is about *method* rather than about warm ink:
    `--line-strong` is white at 22%. Both are rules. Captions and microcopy resolve to
    the muted step, and `--ink-faint` is aliased to it for exactly this reason.
 2. **An accent does not set body text until it has been measured setting body text.**
-   Harbor needed a separate `-text` cut for both accents; `#90BEFF` does not, and that
+   Harbor needed a separate `-text` cut for both accents; `#C6F100` does not, and that
    is a property of the value, not a licence.
 3. **A muted value is measured on the DARKEST ground it lands on.** Harbor's `.62`
    cleared 4.5:1 on paper and failed at 4.36 on the mist tints, which is where half the
@@ -256,7 +283,24 @@ Safari re-rounds `<input type="search">`, `<select>`, `<button>`, and range thum
 independently, and a blanket `* { appearance: none }` does not survive it. Checkboxes,
 radios, range and progress get rebuilt square rather than reset.
 
-### Colour — ink and paper, OKLCH, one accent family scoped to system surfaces
+### Colour — ink and paper, OKLCH ~ **INGETROKKEN, 18 augustus 2026**
+
+> **Alles in deze paragraaf beschrijft het EERSTE palet (secties 1–14) en geen
+> enkel token hieronder bestaat nog.** `--ink-500`, `--paper`, `--paper-lift`,
+> `--signal`, `--warn`: de namen leven deels voort met heel andere waarden, de
+> hexcodes in de tabellen hieronder komen in `global.css` niet meer voor.
+>
+> Het stond hier nog omdat de statusnoot bovenaan dit bestand alleen de HARBOR-tabel
+> heeft opgeruimd en deze oudere over het hoofd zag. Gevonden op 18 augustus door
+> `tests/promises.test.mjs`, die elke hexwaarde in dit bestand tegen `global.css`
+> houdt — twaalf spookkleuren, waarvan `--ink-500` en `--paper` de gevaarlijkste
+> zijn omdat die namen nog bestaan en dus geloofwaardig lezen.
+>
+> **Het geldende palet staat in "The shipped palette" bovenaan dit bestand, en de
+> waarheid staat in het `:root`-blok van `src/styles/global.css`.** Wat hieronder
+> volgt blijft staan als verantwoording van de contrastmethode — de manier waarop
+> hier gemeten wordt, geldt nog steeds — maar geen enkele WAARDE eruit mag worden
+> overgenomen.
 
 The interface is ink on paper so that product photography is the only saturated thing on
 the screen. That is the design principle; the token set is its enforcement.

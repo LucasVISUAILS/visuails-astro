@@ -64,6 +64,14 @@ import {
 import Disclose from '../Disclose.astro';
 
 import { CONSENT_VERSION, currentConsent } from '../../data/consent.js';
+/* Het producttype en de gratis contextstukken. Zie de kop van garments.js: de
+   uitsnede volgt uit het type, en welke plekken er in dat beeld nog vrij zijn
+   volgt uit de uitsnede. Er wordt hier niets van die logica overgetypt —
+   contextSlots() is de bron, ook voor de vraag óf een plek getoond wordt. */
+import {
+  GARMENTS, CONTEXT_SLOTS, CONTEXT_SLOT_IDS, contextSlots, CONTEXT_OURS,
+  copy as garmentCopy,
+} from '../../data/garments.js';
 import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
 
 interface Props {
@@ -628,6 +636,14 @@ const FORM = {
     next: 'Continue',
     back: 'Back',
     optional: 'optional',
+    garment: {
+      label: 'What kind of product is this order about?',
+      blank: 'Pick a type',
+      hint: 'It decides how the on-model frame is cropped, and therefore what else is visible in it.',
+      ours: 'We pick something that fits the style',
+      own: 'I will supply my own — free',
+    },
+
     s1: {
       h: 'How many, and what for?',
       countLabel: 'How many products?',
@@ -805,6 +821,14 @@ const FORM = {
     next: 'Verder',
     back: 'Terug',
     optional: 'optioneel',
+    garment: {
+      label: 'Wat voor soort product gaat deze bestelling over?',
+      blank: 'Kies een soort',
+      hint: 'Dat bepaalt hoe het beeld op een model wordt uitgesneden, en dus wat je er verder in ziet.',
+      ours: 'Wij kiezen iets dat bij de stijl past',
+      own: 'Ik lever zelf iets aan — gratis',
+    },
+
     s1: {
       h: 'Hoeveel, en waarvoor?',
       countLabel: 'Hoeveel producten?',
@@ -967,6 +991,9 @@ const FORM = {
 };
 
 const f = FORM[lang];
+// De vier regels die de € 50-grens uitleggen, uit garments.js. Zie CONTEXT_RULES
+// daar: een belofte hoort op één plek te staan.
+const gc = garmentCopy(lang);
 
 const countLabel = (n: number) => `${n} ${n === 1 ? 'product' : lang === 'nl' ? 'producten' : 'products'}`;
 
@@ -1147,7 +1174,17 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         <p class="pl-signin-h">{f.signInH}</p>
         <p class="pl-signin-body">{f.signInBody}</p>
       </div>
-      <a href={lp('/account')} class="btn btn-primary pl-signin-cta">{f.signInCta}</a>
+      {/* href is de LETTERLIJKE "/account" en niet lp('/account'). /account is één
+          Cloudflare Pages Function die zijn eigen taal uit de klantgegevens leest;
+          er is nooit een Nederlandse route geweest om naar te lokaliseren. lp() liep
+          hier toch, en stuurde elke bezoeker van /nl/* naar /nl/account — een 404.
+      
+          Dit is DEZELFDE fout die op 28 juli 2026 in Layout.astro is gevonden en
+          daar is gerepareerd; zie de noot bij nav-account-link. Hij stond hier nog,
+          op vier Nederlandse pagina's, tot 18 augustus 2026. Een reparatie op één
+          plek terwijl hetzelfde patroon nog ergens anders staat, is geen reparatie.
+          Sectie 10 van tests/nav.test.mjs bewaakt het nu over de hele bron. */}
+      <a href="/account" class="btn btn-primary pl-signin-cta">{f.signInCta}</a>
     </aside>
 
     {/* De vierde rail-ingang is 'Levertijd' / 'Timing', en die stap bestaat niet
@@ -1671,6 +1708,58 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           which costs one line ONCE for the whole order — the reason the
           per-product question cannot do the same thing and points at a guide
           instead. */}
+      {/* ── HET PRODUCTTYPE, EN WAT ER VERDER IN BEELD KOMT ──────────────────
+          Lucas, 17 augustus: *"onderzoek bij welke kledingstukken ook andere
+          kledingstukken licht zichtbaar zijn"* — en later: het type wordt
+          VOORAF gevraagd, per product te overschrijven.
+
+          Dit is de vooraf-helft. Van elk product staat één foto op een model, en
+          in dat beeld zie je altijd iets meer dan het product zelf; wat dat
+          "meer" is, hangt af van de uitsnede, en de uitsnede volgt uit het type.
+          Een broek vraagt een onderlichaam-uitsnede en dan is de vraag welke
+          schoenen en welke top; een sieraad vraagt een detailuitsnede en dan is
+          er niets te vragen.
+
+          ALLE PLEKKEN STAAN IN DE MARKUP, EN pipeline.js VERBERGT WAT NIET PAST.
+          Dat is de vorm die deze hele stroom gebruikt: JavaScript verfijnt, de
+          server beslist. Zonder script ziet de klant alle drie de vragen en
+          gooit /api/order weg wat niet bij zijn type hoort — zie de noot daar.
+          Het alternatief, de vragen pas ná een serverronde tonen, zou van één
+          formulier drie pagina's maken.
+
+          DE € 50-GRENS STAAT ER ALS ANTWOORD EN NIET ALS KLEINE LETTER. De vier
+          regels komen uit CONTEXT_RULES in garments.js, waar ze staan omdat het
+          een belofte is en een belofte die op twee plekken staat, staat er op een
+          dag twee keer anders. */}
+      {!isCatalog && (
+      <div class="field pl-garment">
+        <label for="pl-garment">{f.garment.label}</label>
+        <select class="select" id="pl-garment" name="garment" data-pl-garment>
+          <option value="">{f.garment.blank}</option>
+          {GARMENTS.map((g) => (<option value={g.id}>{g.name[lang]}</option>))}
+        </select>
+        <span class="hint">{f.garment.hint}</span>
+
+        <div class="pl-ctx" data-pl-ctx hidden>
+          <p class="pl-ctx-lead">{gc.lead}</p>
+          {CONTEXT_SLOT_IDS.map((slot) => (
+            <div class="pl-ctx-row" data-pl-ctx-slot={slot} hidden>
+              <label for={`pl-ctx-${slot}`}>
+                {CONTEXT_SLOTS[slot].name[lang]}
+                <span class="pl-ctx-seen">{CONTEXT_SLOTS[slot].seen[lang]}</span>
+              </label>
+              <select class="select" id={`pl-ctx-${slot}`} name={`context_${slot}`}>
+                <option value={CONTEXT_OURS}>{f.garment.ours}</option>
+                <option value="own">{f.garment.own}</option>
+              </select>
+            </div>
+          ))}
+          <p class="hint">{gc.free}</p>
+          <p class="hint">{gc.full}</p>
+        </div>
+      </div>
+      )}
+
       {(isCatalog ? [] : ORDER_QUESTIONS).map((qn) => (
         <div class="field">
           <label for={`pl-${qn.id}`}>{qn.name[lang]} <span class="pl-opt">{f.optional}</span></label>

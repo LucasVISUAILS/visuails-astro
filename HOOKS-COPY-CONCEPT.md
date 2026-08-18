@@ -243,9 +243,40 @@ de veterfiguur is weg. Wat er staat:
   vijfde maakt daar een gat van. Dan leest de nieuwe dienst als een opmaakfout.
 
 De tekst van de conceptversie hierboven staat dus nog nergens op de site — en de
-oude tekst die de toonregels overtrad, staat er ook niet meer. `HooksPage.astro` en
-`FigHook.astro` blijven als bestand bestaan (het is je concept), maar er is geen
-pagina meer die ze rendert.
+oude tekst die de toonregels overtrad, staat er ook niet meer.
+
+**`HooksPage.astro` en `FigHook.astro` zijn op 18 augustus 2026 van de schijf
+gegaan.** Ze werden door niets meer geïmporteerd; `HooksPage` was de enige die
+`FigHook` gebruikte, dus met de een verdween de ander. Wat erin zat en niet in
+dit document stond, staat hieronder — want dát is de reden dat je zo'n bestand
+normaal laat staan, en met de eisen op papier hoeft dat niet meer.
+
+### Wat het formulier moest posten, als Hooks ooit terugkomt
+
+Vier eisen, en alle vier zijn ze een keer fout gegaan of konden ze dat stil
+worden. Ze staan hier omdat het formulier weg is en de eis niet.
+
+1. **`service="video"`, nooit `service="hooks"`.** `functions/api/order.js`
+   weigert een onbekende dienst niet, maar zet hem STIL om naar `catalog`:
+   `const svc = ORDER_SERVICES.has(service) ? service : 'catalog'`. Een
+   Hooks-aanvraag zou dus als catalogbestelling binnenkomen, met referentie,
+   tussen het echte werk, en niemand zou het merken. `hooks` staat niet in
+   `ORDER_SERVICES` en hoort daar ook niet in: Hooks is een videoformat.
+2. **Het onderscheid zit in `request="hooks"`.** Dat is het veld dat een
+   Hooks-aanvraag onderscheidt van een gewone videoaanvraag, en het gaat mee in
+   `details_json` in plaats van in een eigen kolom.
+3. **De honeypot `company_hp` hoort erop.** Elk formulier dat naar `/api/order`
+   post heeft hem.
+4. **Het `notify`-vinkje mag NOOIT `required` zijn.** Het is toestemming; een
+   verplicht toestemmingsvinkje is een voorwaarde en geen toestemming, en
+   daarmee geen geldige grondslag.
+
+Eis 1, 3 en 4 worden sinds 18 augustus bewaakt door sectie 5 van
+`tests/nav.test.mjs` — en niet meer op één bestand, maar op **elk** `.astro`
+dat naar `/api/order` post. Die test las eerst `HooksPage.astro`; hem weghalen
+zou de enige bewaking op die stille omzetting hebben opgeheven, dus is hij
+omgedraaid in plaats van geschrapt. Eis 2 heeft geen test meer, want er is geen
+formulier meer om te toetsen; hij staat hierboven.
 
 Eén ding is bij het verbergen wel meteen opgeruimd: de kop van de diensten­band was
 "Four kinds of visual we make" / "Vier soorten beeld die we maken" — een

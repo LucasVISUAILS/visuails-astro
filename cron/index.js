@@ -89,7 +89,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkBackupAge]) {
+    for (const task of [releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -721,6 +721,193 @@ async function issuePendingInvoices(env) {
  * in de log van de Worker, en dat is beter dan een taak die omvalt omdat hij niet kon
  * mailen.
  */
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE ABONNEMENTSWACHT — 18 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * ABONNEMENT-ONTWERP.md §7, in Lucas' eigen woorden: *"Onthoud ik werk alleen dus
+ * ik kan uiteindelijk overzicht verliezen dus zoveel mogelijk moet
+ * geautomatiseerd zijn."* En de regel die daarbij hoort: **het normale pad mag
+ * hem niet bereiken, alleen uitzonderingen.**
+ *
+ * Deze taak doet twee dingen, en het onderscheid tussen de twee is het hele punt:
+ *
+ *   1 · EEN MAIL NAAR DE KLANT als zijn week eraan komt en zijn wachtrij hem niet
+ *       gaat vullen. Dat is zíjn probleem om op te lossen, en het systeem mag het
+ *       hem zelf vertellen — vijf dagen van tevoren, zodat er nog tijd is.
+ *   2 · EEN REGEL IN HET NACHTVERSLAG voor Lucas, met alleen de uitzonderingen:
+ *       welke wachtrijen leeg zijn, welke abonnementen gepauzeerd staan op een
+ *       mislukte incasso. Loopt alles, dan staat er niets — en dan is er ook geen
+ *       mail, want die gaat alleen uit als er iets te melden is.
+ *
+ * ── WAT DEZE TAAK MET OPZET NIET DOET: BESTELLINGEN AANMAKEN ────────────────
+ *
+ * §7 beschrijft ook "als zijn week aanbreekt, pakt het systeem de bovenste N en
+ * begint". Dat staat hier bewust NIET in, en niet omdat het niet kan.
+ *
+ * Een bestelling aanmaken is de enige handeling in dit project die tegelijk
+ * capaciteit vastlegt, saldo afschrijft, een referentie uitgeeft en een mail naar
+ * een klant stuurt. Vier onomkeerbare dingen, om vier uur 's nachts, zonder dat
+ * er iemand kijkt. De eerste keer dat die code een fout heeft, heeft hij hem bij
+ * elke abonnee tegelijk en is het 's ochtends niet één bestelling maar dertig.
+ * `verbruikBoeken()` heeft daar het slot voor (het plafond in de WHERE), maar een
+ * slot op één van de vier is geen dekking voor de andere drie.
+ *
+ * Dat hoort een eigen bouwstap te zijn met een eigen testronde, en het hoort te
+ * beginnen met een droogloop die alleen zegt wat hij zou doen. Deze taak is de
+ * helft die vandaag veilig is en die het meeste oplevert: de klant weet dat zijn
+ * week eraan komt, en Lucas hoort alleen van de gevallen die vastlopen.
+ *
+ * ── WAAROM VIJF DAGEN ───────────────────────────────────────────────────────
+ *
+ * Kort genoeg dat de week nog concreet voelt, lang genoeg om er nog foto's bij te
+ * kunnen maken. Bij drie dagen is een weekend genoeg om het te missen.
+ *
+ * ── EEN MAIL PER MAAND PER KLANT, EN DAT WORDT AFGEDWONGEN ──────────────────
+ *
+ * Deze taak draait ELKE NACHT. Zonder geheugen zou een klant met een lege
+ * wachtrij vijf nachten achter elkaar dezelfde mail krijgen, en na twee maanden
+ * leest hij ze niet meer — precies op het moment dat het er wél toe doet.
+ *
+ * Het geheugen is een rij in `app_settings`, dezelfde tabel die de hartslag
+ * gebruikt. Sleutel per abonnement en per maand, dus het kan er per maand
+ * hoogstens één zijn, en het overleeft een herstart van de Worker.
+ */
+
+/** Zoveel dagen voor de vaste week gaat de herinnering eruit. */
+const QUEUE_WARN_DAYS = 5;
+
+/**
+ * Valt de vaste week van dit abonnement over precies N dagen?
+ *
+ * `window_day` is een dag van de maand (1 t/m 28 — zie migratie 0030 over
+ * waarom februari geen uitzondering mag worden). We rekenen dus niet met
+ * maandlengtes maar kijken welke datum het over N dagen is en of díé dag het
+ * afgesproken getal draagt. Zo klopt het in elke maand, ook over een maandgrens
+ * heen, zonder één berekening met 28, 30 of 31 erin.
+ */
+function weekBeginntOver(windowDay, dagen, nu = new Date()) {
+  const d = new Date(nu.getTime());
+  d.setUTCDate(d.getUTCDate() + dagen);
+  return d.getUTCDate() === Number(windowDay);
+}
+
+async function checkPlanQueues(env) {
+  if (!env.DB) return '';
+  const nu = new Date();
+  const maand = nu.toISOString().slice(0, 7);
+
+  /* Alleen abonnementen die er iets mee kunnen. 'pending' valt af: dat is
+     iemand die nog niet betaald heeft, en die een mail sturen over een week die
+     nog niet van hem is, is de verkeerde volgorde. */
+  const abos = await env.DB.prepare(
+    `SELECT s.id, s.ref, s.plan, s.status, s.pause_reason, s.window_day,
+            c.email, c.brand, c.name
+       FROM subscriptions s
+       JOIN customers c ON c.id = s.customer_id
+      WHERE s.status IN ('active', 'paused')`
+  ).all().then((r) => r?.results || []).catch(() => []);
+  if (!abos.length) return '';
+
+  const gepauzeerd = [];
+  const leeg = [];
+  let gemaild = 0;
+
+  for (const abo of abos) {
+    /* GEPAUZEERD OP EEN MISLUKTE INCASSO IS EEN UITZONDERING EN GAAT NAAR LUCAS.
+       Zelf pauzeren is dat niet — dat is een klant die precies doet wat de knop
+       belooft, en daar hoeft niemand 's nachts iets van te horen. */
+    if (abo.status === 'paused') {
+      if (abo.pause_reason === 'payment_failed') gepauzeerd.push(abo.ref);
+      continue;
+    }
+    if (!abo.window_day || !weekBeginntOver(abo.window_day, QUEUE_WARN_DAYS, nu)) continue;
+
+    /* Wat er KLAARSTAAT, en niet wat er ooit op de lijst stond. Een item dat al
+       is opgepakt (order_id gezet) telt niet meer mee, en een item zonder foto's
+       kan niet gemaakt worden — dat is voor deze telling hetzelfde als leeg,
+       want beide leiden ertoe dat de week begint zonder werk. */
+    const klaar = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM plan_queue
+        WHERE customer_id = (SELECT customer_id FROM subscriptions WHERE id = ?1)
+          AND order_id IS NULL
+          AND upload_batch IS NOT NULL AND upload_batch <> ''`
+    ).bind(abo.id).first().then((r) => Number(r?.n || 0)).catch(() => -1);
+    if (klaar !== 0) continue;   // -1 = niet te lezen; dan liever niets beweren
+
+    leeg.push(abo.ref);
+
+    /* Al gemaild deze maand? Eén rij per abonnement per maand. INSERT met OR
+       IGNORE op de primaire sleutel is hier het slot: hij slaagt precies één
+       keer, ook als deze taak twee keer in dezelfde nacht draait. */
+    const sleutel = `queue_warn:${abo.id}:${maand}`;
+    /* GEEN `updated_at` IN DEZE INSERT. app_settings heeft die kolom niet —
+       alleen key, value en created_at (zie schema.sql:300). Eerste versie
+       schreef hem wél en zou elke nacht stil zijn gevallen op een SQL-fout,
+       met als zichtbaar gevolg: nul mails en geen enkele melding. Nagekeken in
+       het schema in plaats van aangenomen naar analogie van andere tabellen. */
+    const nieuw = await env.DB.prepare(
+      `INSERT OR IGNORE INTO app_settings (key, value) VALUES (?1, ?2)`
+    ).bind(sleutel, nu.toISOString()).run()
+      .then((r) => Number(r?.meta?.changes || 0) > 0).catch(() => false);
+    if (!nieuw) continue;
+
+    if (await mailLegeWachtrij(env, abo)) gemaild += 1;
+  }
+
+  const delen = [];
+  if (leeg.length) delen.push(`${leeg.length} lege wachtrij${leeg.length === 1 ? '' : 'en'} vlak voor de week (${leeg.join(', ')}), ${gemaild} klant${gemaild === 1 ? '' : 'en'} gemaild`);
+  if (gepauzeerd.length) delen.push(`${gepauzeerd.length} abonnement${gepauzeerd.length === 1 ? '' : 'en'} gepauzeerd op een mislukte incasso (${gepauzeerd.join(', ')})`);
+  return delen.join(' · ');
+}
+
+/**
+ * De mail naar de klant. Nederlands, want er is geen taalkolom op `customers` en
+ * de klantenkring is Nederlands; komt die kolom er, dan hoort deze tekst mee te
+ * splitsen zoals elke andere mail in dit project.
+ *
+ * GEEN VERWIJT EN GEEN AANSPORING. Er staat wat er is (je week begint, je lijst
+ * is leeg) en wat je kunt doen. Wat er NIET staat is een suggestie voor wat hij
+ * zou moeten laten maken — dat is precies het ding dat §7 afwijst.
+ */
+async function mailLegeWachtrij(env, abo) {
+  if (!env.RESEND_API_KEY || !abo.email) return false;
+  const naam = abo.brand || abo.name || '';
+  const text = [
+    naam ? `Hoi ${naam},` : 'Hoi,',
+    '',
+    `Over ${QUEUE_WARN_DAYS} dagen begint jouw vaste week — de dagen die we elke maand voor je vrijhouden.`,
+    '',
+    'Je lijst in VISUAILS Studio is op dit moment leeg, of de items die erop staan hebben nog geen foto’s.',
+    'Zonder foto’s kunnen we niet beginnen, en dan gaat die week voorbij zonder dat er iets gemaakt is.',
+    '',
+    'Je zet er zelf op wat je gemaakt wilt hebben, in je eigen volgorde:',
+    'https://visuails.com/account/plan',
+    '',
+    'Lukt het niet, of weet je even niet wat handig is? Stuur gerust een bericht terug.',
+    '',
+    'VISUAILS',
+  ].join('\n');
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: env.FROM_EMAIL,
+        to: [abo.email],
+        subject: 'Je vaste week begint bijna en je lijst is nog leeg',
+        text,
+      }),
+    });
+    if (!res.ok) throw new Error(`Resend ${res.status}`);
+    return true;
+  } catch (err) {
+    console.error('[cron] wachtrijmail niet verstuurd —', err?.message || err);
+    return false;
+  }
+}
+
 async function sendReport(env, report, problems) {
   const lines = [];
   if (problems.length) {
@@ -755,5 +942,6 @@ async function sendReport(env, report, problems) {
 }
 
 /* Voor de tests: de taken los aanroepbaar, zonder de scheduled-handler. */
-export const tasks = { releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkBackupAge };
+export const tasks = { releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, checkBackupAge };
+export const QUEUE_WATCH = { QUEUE_WARN_DAYS, weekBeginntOver };
 export const BACKUP_WATCH = { BACKUP_STALE_DAYS, BACKUP_WARN_EVERY_DAYS };

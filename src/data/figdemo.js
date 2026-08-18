@@ -3,7 +3,7 @@
 // ── WAAROM DIT BESTAAT ──────────────────────────────────────────────────────
 //
 // Er staan nu vier mock-ups op de site die over dezelfde bestelling gaan:
-// FigDash (VISUAILS Studio), FigStudio (onze kant, op de homepage), FigGallery
+// FigDash (VISUAILS Studio), FigGallery
 // (/portal) en sinds vandaag FigGate en FigBoard (/studio). Elk daarvan had zijn
 // eigen kopie van "VIS-2608-4471 · VOLT · 30 producten · 10 – 14 aug".
 //
@@ -15,7 +15,8 @@
 //
 // ── EN ER STOND ÉÉN VERHAAL DAT NIET KLOPTE ────────────────────────────────
 //
-// FigStudio tekende de agenda als "96 van 100 producten" per WEEK. De poort in
+// FigStudio — verwijderd op 18 augustus 2026 — tekende de agenda als
+// "96 van 100 producten" per WEEK. De poort in
 // src/data/capacity.js telt niet zo:
 //
 //   · PRODUCTS_PER_DAY = 18 — de doorvoer van één studiodag.

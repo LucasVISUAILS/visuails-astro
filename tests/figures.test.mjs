@@ -28,7 +28,7 @@
  * mock-up die een bezoeker kan schaden: dat wat erin staat, waar is.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import {
   ATTENDED_PER_DAY,
   ATTENDED_PER_WINDOW,
@@ -61,6 +61,10 @@ const check = (name, actual, expected) => {
   console.log(`${ok ? ' ok  ' : 'FAIL '} ${String(name).padEnd(60)} ${ok ? '' : `expected ${JSON.stringify(expected)} got ${JSON.stringify(actual)}`}`);
 };
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
+// Alleen voor sectie 8. Aparte namen, zodat het vangnet niet per ongeluk door
+// read() loopt — dat is precies de functie die het moet bewaken.
+const fsReaddir = (u) => readdirSync(u);
+const fsExists = (u) => existsSync(u);
 
 /* Alleen de code, zonder commentaar. Zelfde valkuil en dezelfde oplossing als in
    tests/nav.test.mjs: elke broncontrole die een verwijderde regel opspoort, vindt
@@ -226,7 +230,14 @@ console.log('\nde tabel en de agenda gaan over dezelfde bezetting');
  */
 console.log('\nvier figuren, één bron');
 {
-  const figs = ['FigGate', 'FigBoard', 'FigStudio', 'FigDash'];
+  /* DRIE, NIET VIER. FigStudio.astro is in augustus 2026 van de homepage
+     gehaald en daarna verwijderd: hij tekende dezelfde capaciteitsbalken die
+     FigGate op /studio al tekent — 944 regels voor één figuur, zie
+     HERONTWERP.md §2.6. Zijn naam stond hier en in de adreslijst hieronder, en
+     read() gooit op een bestand dat er niet is, dus dit hele testbestand viel
+     om zodra het bestand weg was. Dat is de reden dat sectie 8 hieronder er nu
+     staat. */
+  const figs = ['FigGate', 'FigBoard', 'FigDash'];
   for (const f of figs) {
     const src = read(`src/components/${f}.astro`);
     check(`${f} leest de fixture`, /from '\.\.\/data\/figdemo\.js'/.test(src), true);
@@ -301,7 +312,6 @@ console.log('\nhet is een voorbeeld, en dat staat erin');
     'src/data/figdemo.js',
     'src/components/FigGate.astro',
     'src/components/FigBoard.astro',
-    'src/components/FigStudio.astro',
     'src/components/FigDash.astro',
     'src/components/FigGallery.astro',
   ];
@@ -320,3 +330,67 @@ console.log('\nhet is een voorbeeld, en dat staat erin');
 
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);
+
+
+/* ══ 8 · ELK BESTAND DAT EEN TEST OPENT, BESTAAT ═══════════════════════════
+ *
+ * WAAROM DEZE SECTIE ER IS. Op 18 augustus 2026 zouden twee componenten van de
+ * schijf gaan die door niets meer geïmporteerd werden: FigStudio.astro en
+ * HooksPage.astro. Geen enkele pagina rendert ze, `astro build` merkt er niets
+ * van — maar twee TESTBESTANDEN lazen ze nog met readFileSync, en die gooit een
+ * ENOENT. Dode code weghalen zou dus de testsuite hebben omgelegd, en pas ná
+ * het verwijderen. De verwijzing zat in het gereedschap en niet in het product,
+ * en dat is precies het soort fout dat je niet ziet aankomen.
+ *
+ * WAT HIJ CONTROLEERT. Elk LETTERLIJK pad dat een test aan zijn eigen read()
+ * geeft. Meer niet, en dat is met opzet:
+ *
+ *   · `new URL(...)` wordt hier NIET meegenomen. Drie tests gebruiken die vorm
+ *     juist met existsSync() om te bewijzen dat een bestand er NIET is —
+ *     tests/nav.test.mjs eist dat /hooks geen pagina is, tests/register.test.mjs
+ *     dat het verwerkingsregister geen pagina is. Die paden horen te ontbreken;
+ *     ze hier afkeuren zou het correcte geval rood maken, en een regel die het
+ *     correcte geval afkeurt wordt weggehaald in plaats van gevolgd.
+ *
+ *   · Een pad telt als gevonden zodra het vanaf de PROJECTWORTEL óf vanaf
+ *     tests/ bestaat. De testbestanden zijn het namelijk niet eens over hun
+ *     basis: de meeste schrijven read('src/...'), maar tests/order-api.test.mjs
+ *     heeft een eigen read() die '../functions/...' verwacht. Beide vormen zijn
+ *     goed; alleen een pad dat langs geen van beide wegen bestaat, is fout.
+ *
+ * WAT HIJ NIET VINDT: paden die uit een variabele zijn samengesteld, zoals de
+ * lus in sectie 5 hierboven. Die faalt vanzelf en met een leesbare fout. Dit
+ * vangnet is voor de letterlijke paden, en dat waren beide gevallen die dit
+ * hebben veroorzaakt.
+ */
+console.log('\nelk pad dat een test opent, bestaat');
+{
+  const testDir = new URL('./', import.meta.url);
+  const bestanden = readdirSync(testDir).filter((n) => n.endsWith('.test.mjs'));
+  let gecontroleerd = 0;
+  const ontbrekend = [];
+  for (const naam of bestanden) {
+    /* codeOnly() EERST, en dat is geen netheid maar een reparatie. Zonder
+       hem vond dit patroon zijn eigen uitleg hierboven — de noot citeert
+       read('src/...') met opzet, want die vorm uitleggen zonder hem te tonen
+       kan niet. Dezelfde valstrik heeft dit project al eens eerder een halve
+       middag gekost: een regex die zijn eigen commentaar leest, meldt een
+       fout die alleen in de uitleg bestaat. */
+    const src = codeOnly(readFileSync(new URL(naam, testDir), 'utf8'));
+    const paden = new Set();
+    // read('...') met een letterlijke string. Backticks en ${} vallen af: die
+    // zijn samengesteld en horen bij de uitzondering hierboven.
+    for (const m of src.matchAll(/\bread\(\s*'([^'\n]+)'\s*\)/g)) paden.add(m[1]);
+    for (const pad of paden) {
+      gecontroleerd += 1;
+      const vanafWortel = existsSync(new URL(`../${pad}`, import.meta.url));
+      const vanafTests = existsSync(new URL(pad, testDir));
+      if (!vanafWortel && !vanafTests) ontbrekend.push(`${naam} → ${pad}`);
+    }
+  }
+  // Als de regex ooit stukgaat, zegt dit dat er niets meer gecontroleerd wordt
+  // in plaats van dat alles goed is. Een vangnet dat nul dingen vangt en groen
+  // blijft, is erger dan geen vangnet.
+  check('er zijn paden gevonden om te controleren', gecontroleerd > 40, true);
+  check('geen enkele test opent een bestand dat niet bestaat', ontbrekend, []);
+}

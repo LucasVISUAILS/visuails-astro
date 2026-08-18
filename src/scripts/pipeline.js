@@ -273,6 +273,64 @@ let dragging = ''; // the tray id currently under the cursor, for browsers whose
 let chain = Promise.resolve();
 
 /*
+ * ── HET PRODUCTTYPE STUURT WELKE CONTEXTVRAGEN ER STAAN ────────────────────
+ *
+ * Van elk product staat één foto op een model, en in dat beeld zie je iets meer
+ * dan het product zelf. Wát je meer ziet, hangt af van de uitsnede: bij een broek
+ * zijn dat de schoenen en de zoom van een top, bij een sieraad is er niets te
+ * vragen, en bij een jurk blijven alleen de schoenen over.
+ *
+ * DE TABEL STAAT HIER EN NIET IN garments.js, EN DAT IS EEN AFWIJKING MET EEN
+ * REDEN. Dit script draait in de browser en importeert niets — het is één bestand
+ * dat via een <script> binnenkomt, met zijn configuratie in een data-attribuut.
+ * garments.js importeren zou een bundelstap vragen voor dit ene formulier.
+ *
+ * DAT MAAKT HET EEN TWEEDE WAARHEID, en dus wordt hij bewaakt in plaats van
+ * vertrouwd: tests/garments.test.mjs vergelijkt deze tabel regel voor regel met
+ * contextSlots() uit garments.js en valt om zodra de twee uit elkaar lopen. En
+ * de SERVER beslist hoe dan ook — /api/order gooit weg wat niet bij het type
+ * hoort, ook als dit script iets anders zou tonen. Dit is comfort, geen controle.
+ *
+ * DEZE TABEL IS GEGENEREERD EN NIET GETYPT, en dat is geen luiheid. De eerste
+ * versie stond er met de hand in en de test hierboven vond er meteen vijf fouten
+ * in: vier keer een andere volgorde dan de beeldvolgorde die contextSlots()
+ * aanhoudt, en één echte — bij `jewellery` stond een lege lijst terwijl de zoom
+ * van de top in een detailuitsnede wél in beeld staat. Een klant met een sieraad
+ * zou dus nooit gevraagd zijn wat er verder in dat beeld hoort.
+ *
+ * ── EN DEZELFDE VAL, EEN VIERDE KEER — 18 AUGUSTUS 2026 ────────────────────
+ *
+ * Deze tabel stond eerst tweehonderd regels lager, bij bindGarment(). boot()
+ * draait op regel 325, midden in dit bestand; een `const` daaronder staat op dat
+ * moment in zijn temporal dead zone. Uitkomst: `ReferenceError: Cannot access
+ * 'CTX_BY_GARMENT' before initialization`, opgeslokt door de catch van boot(),
+ * .is-live eraf, en een gestapeld formulier zonder uploadvakken.
+ *
+ * Precies het geval dat hierboven voor `chain` en `reached` al staat
+ * opgeschreven — twee noten die deze fout beschrijven, en toch een derde keer
+ * gemaakt. De regel is dus niet "let op bij let en const" maar: **alles wat
+ * init() aanraakt, staat boven boot().** Gevonden door tests/funnel.test.mjs,
+ * die de console van de echte pagina leest.
+ */
+const CTX_BY_GARMENT = {
+  trousers: ['shoes', 'top'],
+  shorts: ['shoes', 'top'],
+  skirt: ['shoes', 'top'],
+  top: ['bottom'],
+  outerwear: ['shoes', 'bottom', 'top'],
+  dress: ['shoes'],
+  shoes: ['bottom'],
+  socks: ['shoes', 'bottom'],
+  belt: ['bottom', 'top'],
+  bag: ['shoes', 'bottom', 'top'],
+  headwear: ['top'],
+  jewellery: ['top'],
+  scarf: ['top'],
+  underwear: [],
+  other: ['shoes', 'bottom', 'top'],
+};
+
+/*
  * ── EN DEZELFDE VAL, EEN DERDE KEER — 13 AUGUSTUS 2026 ──────────────────────
  *
  * `reached` stond bij measure(), zo'n tweehonderd regels lager, als
@@ -383,9 +441,42 @@ function init(el) {
   bindGate();
   bindSubmit();
   bindPrefill();
+  bindGarment();
 
   syncOrder();
   show(1, { focus: false });
+}
+
+
+function bindGarment() {
+  const keuze = form.querySelector('[data-pl-garment]');
+  const blok = form.querySelector('[data-pl-ctx]');
+  if (!keuze || !blok) return;
+
+  const teken = () => {
+    const slots = CTX_BY_GARMENT[keuze.value] || null;
+    /* Geen type gekozen: het hele blok blijft dicht. Een lijst met drie vragen
+       tonen voordat er iets gekozen is, vraagt om antwoorden op een beeld dat
+       nog niet bestaat. */
+    if (!slots) { blok.hidden = true; return; }
+    let zichtbaar = 0;
+    for (const rij of blok.querySelectorAll('[data-pl-ctx-slot]')) {
+      const past = slots.includes(rij.getAttribute('data-pl-ctx-slot'));
+      rij.hidden = !past;
+      /* UITGESCHAKELD ÉN VERBORGEN. `hidden` alleen houdt het veld in het
+         formulier, dus een verborgen keuzelijst post nog steeds zijn waarde —
+         en dan komt er een contextstuk mee dat bij dit type niet kan. De server
+         gooit dat weg, maar een veld dat post wat de klant niet ziet, hoort
+         niet te bestaan. `disabled` haalt hem uit de verzending. */
+      const sel = rij.querySelector('select');
+      if (sel) sel.disabled = !past;
+      if (past) zichtbaar += 1;
+    }
+    blok.hidden = zichtbaar === 0;
+  };
+
+  keuze.addEventListener('change', teken);
+  teken();
 }
 
 /** Parse the server-rendered config. Returns null rather than throwing. */

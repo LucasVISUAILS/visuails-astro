@@ -1,5 +1,32 @@
 # Maandelijkse beeldendrop bij het abonnement — een idee voor later
 
+> **De naam is Editions, en hij staat sinds 18 augustus 2026 op de site.**
+> Aangekondigd zoals Hooks: een strook onder de vier diensttegels met een
+> uitgeschakelde knop en het label "nog niet klaar", plus een menu-item zonder
+> link. Er staat geen prijs bij en er wordt niets beloofd wat hieronder nog
+> open is.
+>
+> **Waarom dat woord.** Een editie is een oplage: een set die in één keer
+> gemaakt is, gedateerd, voor deze maand. Dat is per definitie maandelijks, het
+> zegt *gemaakt* in plaats van *geoogst*, en het staat in dezelfde taal als de
+> rest van de site — de drukkerij en de kleurproef. Het woord "stock" komt er
+> met opzet niet in; §2 hieronder legt uit waarom dat de vergelijking is die je
+> verliest. Niet gekozen: *Drops* (botst met de wire-waarde `drop` in
+> `ORDER_SERVICES`), *Library* (precies wat §6 verbiedt) en *Feed* (een
+> platformwoord dat niet zegt wat je krijgt).
+>
+> **Wat de aankondiging al belooft, en dus vastligt.** Vier regels in het
+> uitlegpaneel: dat er elke maand een set landt óók zonder nieuw product; dat
+> hij op jouw kleurenschema, ondergrond en gezichten gemaakt is; dat er een
+> goedkopere GEDEELDE variant is die ook naar andere merken gaat; en dat het
+> één kaart in VISUAILS Studio wordt en geen tweede bibliotheek. Die vier zijn
+> door `tests/nav.test.mjs` vastgezet — inclusief de eis dat het woord "stock"
+> alleen ontkend mag vallen en nooit in de naam, de omschrijving of de knop.
+>
+> **Wat nog open staat, staat hieronder in §5** en is niet aangekondigd: de
+> licentie na opzegging, wat er met de gezichten gebeurt, de herkomstmarkering
+> en bij welk plan het hoort.
+
 Lucas, 17 augustus 2026: *"exclusive subscription stock fotos die elke maand
 toegevoegd worden, het zijn off-brand fotos die klanten zelf kunnen kiezen om te
 posten zonder dat ze een bestelling hoeven te plaatsen. Ze kunnen ook voor

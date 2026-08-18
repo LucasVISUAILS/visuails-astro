@@ -47,12 +47,14 @@ import Compare from './Compare.astro';
 // De doorlooptour van het klantdashboard. Zie FigDash.astro: hij verving een
 // grijs vlak met een productienotitie erin.
 import FigDash from './FigDash.astro';
-// Onze kant van dezelfde bestelling. Zie de kop van FigStudio.astro: hij verving
-// het grijze vlak dat hier stond, op precies de plek waar een bezoeker moet
-// beslissen of hij een datum van ons gelooft.
-import FigStudio from './FigStudio.astro';
+// FigStudio.astro stond hier tot augustus 2026 — onze kant van dezelfde
+// bestelling. Hij is uit deze band gehaald omdat hij dezelfde capaciteitsbalken
+// tekende die FigGate op /studio al tekent (HERONTWERP.md §2.6). Zie de noot bij
+// sectie 12: er is geen feit mee verdwenen, alleen een tweede figuur.
 import { ROSTER, modelId, TRAITS } from '../data/models.js';
-import { faqPageGroups } from '../data/faq.js';
+// faqPageGroups is hier niet meer nodig: de accordeon met vijf vragen uit
+// faq.js is opgegaan in de bezwarenband (sectie 16). Die vijf antwoorden
+// stonden woord voor woord al op /faq, en daar staan ze nog.
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -115,21 +117,21 @@ const CATALOG_IMAGES = 4;
 const LIFESTYLE_IMAGES = 3;
 const PER_PRODUCT_VISUALS = CATALOG_IMAGES + LIFESTYLE_IMAGES;
 
-// THE THREE WORKED EXAMPLES the price band shows, so nobody has to multiply.
-//   5  — the smallest monthly plan's product count. Putting it on the ladder
-//        too is what makes the plan pointer checkable rather than claimed: a
-//        reader can see what five costs order-by-order and what the plan asks.
-//   14 — the count the old packages had no price for at all. A brand with
-//        fourteen products fell between a Pilot of eight and a Full Drop of
-//        twenty-five and paid à la carte: more than a Full Drop of thirty.
-//        Naming it here is the shortest way to show the hole is gone.
-//   30 — a full season, and the size the old Full Drop covered, so a returning
-//        visitor can compare like for like. It is also /pricing's own top
-//        worked example, so the two pages cannot quote different sizes.
-const EX_ENTRY = Math.min(...Object.values(PLAN_PRODUCTS));
+// DE DRIE UITGEWERKTE TOTALEN — 5, 14 en 30 producten — stonden hier als drie
+// tegels onder de prijstabel. Ze staan sinds augustus 2026 alleen nog op
+// /pricing, waar ze uit dezelfde quote() komen; zie de noot in de prijsband.
+//
+// EX_SMALL en Q_SMALL blijven, want firstBody rekent er nog mee: "14 complete
+// producten kosten X, wie je ook bent". Veertien is het aantal waar de oude
+// pakketten geen prijs voor hadden — een merk met veertien producten viel
+// tussen een Pilot van acht en een Full Drop van vijfentwintig en betaalde à
+// la carte méér dan een Full Drop van dertig. Dat getal noemen is de kortste
+// manier om te laten zien dat het gat weg is, en het is precies daarom dat
+// juist déze zin het overleefde.
+//
+// EX_FULL (30, een heel seizoen) staat nog in de dienstenlede.
 const EX_SMALL = 14;
 const EX_FULL = 30;
-const WORKED = [EX_ENTRY, EX_SMALL, EX_FULL];
 const Q_SMALL = quote('complete', EX_SMALL);
 // The bottom rung, for the hero anchor. Named rather than inlined because both
 // language tables read it, and a figure typed twice is a figure that drifts.
@@ -146,16 +148,9 @@ const EX_VISUALS = PER_PRODUCT_VISUALS * EX_FULL;
 // The band used to print each service's entry rate and floor as prose — "from
 // €89 per product, down to €33 as the count rises", five times over. That is a
 // rate card written out in sentences, and it cost 360 words to say what a
-// twelve-cell table says without a verb. Same shape as /pricing's, three
-// columns and four rungs, because a reader who has seen one should recognise
+// fifteen-cell table says without a verb. Same shape as /pricing's, three
+// columns and five rungs, because a reader who has seen one should recognise
 // the other.
-//
-// VIJF TREDES WAS VIER OP 12 AUGUSTUS 2026. De onderste — 35+, met €55/€33/€41
-// — is uit LADDER gehaald omdat een order van 35 producten door de
-// capaciteitscheck werd geweigerd; zie de noot bij LADDER in
-// src/data/pricing.js. Deze tabel leest de tredes uit dat bestand, dus hij is
-// vanzelf meegekrompen; alleen de twee getallen in dit commentaar stonden
-// ingetypt.
 const KIND_IDS = ['complete', 'catalog', 'lifestyle'] as const;
 // Two of the three are a pillar page under another name, so the column heading
 // is the link — the brief's internal-linking rule without a row of chips.
@@ -187,6 +182,18 @@ for (const id of KIND_IDS) {
 const PLAN_FROM = Math.min(...Object.values(PLAN_AMOUNT));
 const PLAN_LOW = Math.min(...Object.values(PLAN_PRODUCTS));
 const PLAN_HIGH = Math.max(...Object.values(PLAN_PRODUCTS));
+
+// ── DE ABONNEMENTSBAND · ÉÉN GETAL, EN DAT GETAL IS AFGELEID ────────────────
+// Het goedkoopste plan bepaalt zowel het bedrag als het aantal producten, en
+// die twee moeten bij ELKAAR horen. Los van elkaar het laagste bedrag en het
+// laagste aantal pakken werkt hier toevallig — starter is allebei — maar het
+// is een som die stilletjes gaat liegen zodra er een vierde plan bij komt met
+// een ander verband. Dus: zoek het goedkoopste plan op, en lees zijn beide
+// getallen daaruit.
+const PLAN_CHEAPEST = Object.keys(PLAN_AMOUNT)
+  .reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
+const PLAN_FROM_PRODUCTS = PLAN_PRODUCTS[PLAN_CHEAPEST];
+const PLAN_COUNT = Object.keys(PLAN_AMOUNT).length;
 
 const COPY = {
   en: {
@@ -272,26 +279,58 @@ const COPY = {
     // rates in one row, so a reader who wants to check that the pair is cheaper
     // than the halves can read across instead of being told the subtraction.
     ladNote: 'Both on the same product is one rate, not the two added together.',
-    workedH: 'What that comes to',
-    workedUnit: 'products',
-    workedEach: 'each',
     // Was "First order: 20% off." The discount is gone; this says why, which
     // is a stronger line than the discount was. See pricing.js.
     firstLead: 'The rate is the rate.',
     firstBody: `No first-order discount and nothing to negotiate — ${EX_SMALL} complete products is ${euro(Q_SMALL.net, 'en')}, whoever you are and whenever you ask.`,
     addOnNote: `A video clip is ${euro(AMOUNT.video, 'en')}, the same rate inside an order or on its own. Your Brand Model is ${euro(AMOUNT.brandModel, 'en')} once, credited back over your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
-    planNote: `Ordering every month rather than every season? Three monthly plans, from ${euro(PLAN_FROM, 'en')} for ${PLAN_LOW}–${PLAN_HIGH} products a month, each priced below the price per product for the same output.`,
-    vatSummary: 'How VAT is handled',
+    // ── DE ABONNEMENTSBAND ─────────────────────────────────────────────────
+    // Eén kop, één zin, ÉÉN getal, drie feiten en twee knoppen. Geen tweede
+    // prijsraster: dat was precies waarom de vorige plannenband eruit ging, en
+    // die reden geldt nog steeds — een tweede raster met prijzen veroudert op
+    // de plek waar niemand het bijhoudt. Het getal komt uit plans.js.
+    //
+    // De drie feiten zijn de drie dingen die een abonnement anders maken dan
+    // hetzelfde volume los bestellen, en geen van de drie is een korting:
+    // een vast aantal per maand, een week die voor jou vrij wordt gehouden, en
+    // een tarief dat onder de prijs per product ligt voor dezelfde output.
+    subH: ['Or run it', 'every month.'],
+    subLede: `A plan is the same work on a standing arrangement: a fixed number of products every month, delivered in a week the calendar keeps free for you.`,
+    subFrom: 'from',
+    subUnit: `a month · ${PLAN_FROM_PRODUCTS} products`,
+    subFacts: [
+      'A fixed number of products each month, yours to spend as the collection needs.',
+      'Your own week in the calendar, booked before anyone else can take it.',
+      `Priced below the per-product rate for the same output — ${PLAN_COUNT} plans, monthly or yearly.`,
+    ],
+    // Niet c.priceVat hier: die zegt "every figure in this section", en in dit
+    // blok staat één bedrag. Een kwalificatie die over een sectie praat waar
+    // maar één getal in staat, leest als een verwijzing naar iets anders.
+    subVat: `${vatLabel('excl', 'en')}`,
+    subCta: 'Start a plan',
+    subCta2: 'Compare the plans',
+
     priceCta: 'Start an order',
     priceCta2: 'The full price list',
 
     tsKicker: 'Before you place an order',
     tsH: ['Your own product, fully pictured', `for ${sample.price}.`],
-    tsLede: `The figures above are what it costs. This is what it looks like — not on a garment we chose, on yours. You send the same photos a normal order needs: front and back at least, and a detail or worn shot if you have them. Back come ${sample.deliverable}. Same production as a paid order, checked by the same specialist.`,
+    // DE LEDE IS INGEKORT, augustus 2026. Hij herhaalde de aanleverspec —
+    // "voorkant en achterkant in elk geval, plus een detail- of draagfoto" —
+    // die woord voor woord op /test-sample staat en uitgebreider op
+    // /upload-guidelines. Wat blijft is het enige wat deze band moet zeggen:
+    // op JOUW product, en door dezelfde productie.
+    tsLede: `Not on a garment we chose — on yours, through the same production as a paid order, checked by the same specialist. Back come ${sample.deliverable}.`,
+    // DE DRIE PUNTEN BLIJVEN, en dat is een afwijking van het plan met een
+    // reden: "geen verplichting" en "geen betaalgegevens op naam" staan
+    // NERGENS anders op de site — niet op /test-sample, niet op /faq. Het zijn
+    // precies de twee geruststellingen die bij een kaartbetaling van €1 tellen,
+    // en een lezer die ze hier niet vindt, vindt ze nergens. Wel korter: één
+    // regel per punt in plaats van twee.
     tsPoints: [
-      ['One per business', 'Not a trial with a card on file. One sample, once, no account, nothing to cancel.'],
-      ['No shortcuts for a sample', 'Same production, same house style, same human check. What comes back is what you would get.'],
-      ['No obligation after', 'If it is not right, that is the end of it. We would rather you found out now than after an order.'],
+      ['One per business', 'No trial, no card kept on file, no account, nothing to cancel.'],
+      ['No shortcuts for a sample', 'Same production and the same human check as a paid order.'],
+      ['No obligation after', 'If it is not right, that is the end of it.'],
     ],
     tsCta: 'Get your test sample',
     tsAlt: 'Or start an order',
@@ -350,21 +389,6 @@ const COPY = {
       ['A person checks it', 'Every visual is looked at before it ships. Nothing is auto-delivered.'],
     ],
 
-    whoH: 'For brands with more products than shoot days.',
-    whoLede: 'Four situations this studio is priced for. If one is yours, the arithmetic already works.',
-    who: [
-      ['The first collection', 'You have the samples and no budget for a shoot, and the range still has to look like it belongs next to labels ten years older.'],
-      ['A launch every season', 'Four to six a year, each one starting with a photographer, a model and a day everyone is free.'],
-      ['Marketplaces to feed', 'Zalando, Amazon and bol want clean images to a fixed spec, and getting them right is nobody’s favourite afternoon.'],
-      ['More SKUs than hours', 'The range grew faster than the production around it, and photography keeps slipping.'],
-    ],
-    notForH: 'Probably not for you if',
-    notFor: [
-      'you want one hero campaign image with contracted talent, rather than a whole range',
-      'the brand direction still moves every few weeks — a house style needs something to be consistent with',
-      'you sell a single product, so a house style has nothing to be consistent across',
-      'you need a signed release for a named face you already work with',
-    ],
 
     baH: ['This is what came in.', 'This is what went out.'],
     baLede: 'One photo, taken on a phone, on a table. Nothing was reshot, restyled, or sent anywhere.',
@@ -387,6 +411,13 @@ const COPY = {
     dreamAlt: 'A VISUAILS lifestyle visual — a styled campaign scene',
 
     weekH: 'The week you get back.',
+    // NIET INGEKORT, en dat is een besluit. Deze opsomming — casting, boeking,
+    // verzending, het uitstel als het regent, de twee avonden schiften — is
+    // geprobeerd weg te halen naar /compare op 18 augustus 2026, met de
+    // redenering dat hij daar naast de kostenkant hoort. Nagekeken op de
+    // gebouwde pagina: hij staat daar NIET, in geen van beide talen. Het is de
+    // enige plek op de site waar staat waaruit een shootweek bestaat, en dat is
+    // precies het argument van deze band. Blijft dus staan.
     weekLede: 'A shoot is not one day. It is the week around it: the casting, the booking, the shipping, the reschedule when it rains, the two evenings culling frames. Here is that week instead.',
     week: [
       ['Monday', 'You drop a folder of product photos into the portal. Twenty minutes, most of it renaming folders to your SKUs.'],
@@ -407,21 +438,6 @@ const COPY = {
     backNote: 'A shoot costs a day as well as a fee, and only one of those two is on the invoice.',
     backNoteLink: 'What an order replaces, counted',
 
-    chH: 'One order, every place it has to go.',
-    chLede: `A season of ${EX_FULL} products is ${PER_PRODUCT_VISUALS} visuals each — ${EX_VISUALS} finished images, cut for where they have to sit.`,
-    // Eight destinations, one line each. The second line was a sentence per
-    // channel until this pass; a list a reader scans does not need one.
-    ch: [
-      ['Product page hero', 'On white or in scene'],
-      ['Product page grid', 'Front, back and a fabric detail'],
-      ['On-model shot', 'In every catalog set'],
-      ['Instagram carousel', 'Three styled frames per product'],
-      ['Reels and TikTok', 'Vertical clips, added to any order'],
-      ['Paid social', 'The same look in ad crops'],
-      ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
-      ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
-    ],
-    chNote: 'Downloads arrive sized per channel in the portal.',
 
     // NO FIGURES IN THIS BAND ANY MORE. The setup price and the credit are in
     // the price band, said once; repeating them here was the fourth and fifth
@@ -432,26 +448,19 @@ const COPY = {
     bmNote: 'A returning face is the cheapest continuity a brand can buy — it is why catalogues have used the same model for years.',
     bmCta: 'How Your Brand Model works',
 
-    plH: 'Work back from your launch date.',
-    plLede: `From ${WINDOW_THRESHOLD} products we take that week out of the calendar for your order. That is why we can put the date in writing, and why a week that is full is offered as full.`,
-    pl: [
-      ['Your launch date', 'The day the collection has to be live. Everything else is counted backwards from here.'],
-      // WINDOW_THRESHOLD moved here from the deleted price tile in the old drop
-      // band. It is the condition on the window, and this is the band about the
-      // window — it had no business being stated beside a per-product rate.
-      ['48 hours from your date', `The reserved delivery date, on orders of ${WINDOW_THRESHOLD} products or more. Once the calendar has cleared it, nothing in the studio may push it; below that count an order runs in the normal turnaround.`],
-      ['Minus one folder', 'The day you send the photos. That is your part finished, and the date is already locked.'],
-    ],
-    plNote: 'Weeks are booked one at a time, and a full week is offered as full rather than as a longer wait.',
-    plCta: 'See which weeks are open',
 
     dashH: ['What happens', 'after you order.'],
-    dashLede: 'Two screens — one you get, one we work in — and both are the reason a date can be promised at all.',
+    // ÉÉN SCHERM IN PLAATS VAN TWEE, augustus 2026. Zie de noot bij de band.
+    // De lede zei "twee schermen"; er staat er nu één, dus dat is hij niet meer
+    // gaan zeggen. Wat het andere scherm liet zien, staat als zin onder de
+    // figuur — met de link naar de pagina waar het wél helemaal getekend is.
+    dashLede: 'The screen you get: where your order stands, and every image in it.',
+    // dashPortalPh en dashPortalNote stonden hier: de bijschriften van het
+    // grijze vlak dat FigDash heeft vervangen. Een figuur die het scherm zelf
+    // tekent, heeft geen onderschrift nodig dat vertelt wat erop zou staan.
     dashPortalK: 'VISUAILS Studio',
     dashPortalN: 'A private link, no password. Status and the delivery date with a countdown, then the full gallery: approve or request a revision image by image, and download sized per channel.',
     dashPortalCta: 'See VISUAILS Studio',
-    dashPortalPh: 'Client portal · delivery gallery',
-    dashPortalNote: 'The approve / request-revision screen, with one image selected.',
     /* ── HOOKS STAAT OP DE PLANK, NIET IN DE ETALAGE — 9 augustus 2026 ────────
        Lucas: *"Verberg de pagina voor nu omdat ik alle ideeën hiervoor nog moet
        bedenken en hoe ik dit ga maken maar post hem voor nu wel alvast tussen de
@@ -467,43 +476,93 @@ const COPY = {
        hardgecodeerd getal in twee talen, dat bij elke vijfde dienst opnieuw fout
        gaat. Een vijfde tegel die niets kost om toe te voegen, hoort niet een
        tekstwijziging in twee bestanden te vragen. */
-    svcSoon: 'Not ready yet',
+    /* ── DE AANGEKONDIGDE DIENSTEN ─────────────────────────────────────────
+       EEN LIJST EN NIET MEER ÉÉN BLOK, 18 augustus 2026. Dit waren negen losse
+       sleutels — svcSoon, svcSoonDesc, svcSoonQ, svcSoonQBody … — voor precies
+       één strook. Bij de tweede aankondiging zou dat achttien sleutels worden
+       met een cijfer erachter, en dan staat de derde er over een maand naast in
+       een derde vorm. Nu kost een aankondiging erbij één object.
+
+       DE NAAM STAAT OP ÉÉN PLEK PER TAAL: `name` hieronder. Hij komt ook in de
+       menu-array in src/i18n/ui.js voor, en dat is de enige andere. Een naam
+       veranderen is dus twee regels, niet zeven.
+
+       GEEN PRIJS IN DEZE PANELEN, en dat is met opzet. Deze diensten kunnen nog
+       niet besteld worden omdat de prijs niet vastligt; "vanaf € 119" erbij
+       zetten is een openbaar aanbod op iets wat niet te kopen is. Eén regel
+       toevoegen kan later in tien seconden. */
+    svcSoonTag: 'Not ready yet',
     svcSoonBody: 'We are still working this one out. It will be available soon; until then there is nothing to click.',
-    svcSoonCta: 'See Hooks',
-    svcSoonDesc: 'Your product in a short video, on a format we have built before.',
-    /* ── HET VRAAGTEKEN NAAST HOOKS — 9 augustus 2026 ─────────────────────────
-       Lucas: *"misschien naast hooks een klein vraagteken logo zetten waar
-       mensen op kunnen klikken waarna ze het concept kunnen zien van wat het
-       precies inhoud."*
+    svcSoonFoot: 'This is the concept as it stands. What it costs and how you order it are not settled yet, which is why the button does not work.',
+    svcSoonList: [
+      {
+        id: 'hooks',
+        name: 'Hooks',
+        desc: 'Your product in a short video, on a format we have built before.',
+        cta: 'See Hooks',
+        qLabel: 'What Hooks is',
+        /* De tekst hieronder komt uit HOOKS-COPY-CONCEPT.md en niet uit de oude
+           HooksPage.astro. Die tekst overtrad de toonregels op acht punten,
+           waaronder de ene die Lucas expliciet had aangewezen ("één product en
+           één idee is genoeg" — dat suggereert dat één foto genoeg is). Die fout
+           mag niet via een uitklapper terug de site op komen; hier staat de
+           gecorrigeerde versie, expliciet dat één foto NIET genoeg is. */
+        qBody: [
+          ['You send photos', 'The same set as a catalog order: front and back at a minimum, plus a detail shot and a worn shot if you have them. One photo is not enough, because the format moves around the product.'],
+          ['We build the video', 'Short, vertical, on a format we have used before. The video continues into the image below it in the feed, so the two read as one picture.'],
+          ['A specialist checks it', `Before it is delivered: the product has to stay recognisable and the join has to line up. It is in VISUAILS Studio in ${turnaround('unattended', 'en').toLowerCase()}, where you approve it or say what is wrong.`],
+          ['What we sell', 'The format and the execution. Not reach — whether a post travels depends on the platform and on timing, and neither of those is ours to promise.'],
+        ],
+      },
+      {
+        id: 'editions',
+        /* ── WAAROM DE NAAM "EDITIONS" IS ───────────────────────────────────
+           Het idee staat in STOCK-IDEE.md: elke maand een set beelden, op het
+           kleurenschema van één merk gemaakt, plus een goedkopere gedeelde set.
 
-       De tekst hieronder komt uit HOOKS-COPY-CONCEPT.md en niet uit de oude
-       HooksPage.astro. Die oude tekst overtrad de toonregels op acht punten,
-       waaronder de ene die je expliciet had aangewezen ("één product en één idee
-       is genoeg" — dat suggereert dat één foto genoeg is). Die fout mag niet via
-       een uitklapper terug de site op komen, dus staat hier de gecorrigeerde
-       versie: geen metafoor, geen beloofd bereik, en expliciet dat één foto NIET
-       genoeg is.
+           HET WOORD "STOCK" KOMT ER NIET IN, en dat is de kern van de keuze.
+           Het onderzoek in dat document wijst twee dingen aan: Death to Stock
+           zet zich met zoveel woorden af tegen AI ("made by real creators, not
+           AI"), en op hun eigen terrein — vijftienduizend beelden voor $20 —
+           win je niet. Jezelf "stock" noemen is de vergelijking opzoeken die je
+           verliest, terwijl de helft die zíj niet kunnen (per merk afgestemd)
+           precies de helft is die jij wel kunt.
 
-       GEEN PRIJS IN DIT PANEEL, en dat is met opzet. De pagina is verborgen
-       omdat de prijs nog niet vastligt (zie noot 4 in HOOKS-COPY-CONCEPT.md:
-       geen maximum aantal varianten, geen doorlooptijd bewezen). "Vanaf €119"
-       op de homepage zetten is een openbaar aanbod op een dienst die nog niet
-       besteld kan worden. Eén regel toevoegen kan later in tien seconden. */
-    svcSoonQ: 'What Hooks is',
-    svcSoonQBody: [
-      ['You send photos', 'The same set as a catalog order: front and back at a minimum, plus a detail shot and a worn shot if you have them. One photo is not enough, because the format moves around the product.'],
-      ['We build the video', 'Short, vertical, on a format we have used before. The video continues into the image below it in the feed, so the two read as one picture.'],
-      ['A specialist checks it', 'Before it is delivered: the product has to stay recognisable and the join has to line up. It is in VISUAILS Studio within 24 to 48 hours, where you approve it or say what is wrong.'],
-      ['What we sell', 'The format and the execution. Not reach — whether a post travels depends on the platform and on timing, and neither of those is ours to promise.'],
+           EN EDITIE IS EEN DRUKWERKWOORD. Een editie is een oplage: een set die
+           in één keer gemaakt is, gedateerd en genummerd. Dat is per definitie
+           maandelijks, het zegt "gemaakt" in plaats van "geoogst", en het staat
+           in dezelfde taal als de rest van deze site — zie de lane bovenaan dit
+           bestand, de drukkerij en de kleurproef. Het blijft in beide talen
+           onvertaald staan, net als Catalog, Lifestyle en Hooks.
+
+           NIET GEKOZEN: "Drops" botst met de wire-waarde 'drop' in
+           ORDER_SERVICES; "Library" is precies wat §6 van STOCK-IDEE.md verbiedt
+           (geen tweede bibliotheek naast de bestelstroom); "Feed" is een
+           platformwoord en zegt niets over wat je krijgt. */
+        name: 'Editions',
+        desc: 'A set of new images every month, made for your brand — whether or not you have something new to photograph.',
+        cta: 'See Editions',
+        qLabel: 'What Editions is',
+        qBody: [
+          ['What lands', 'A set of finished images at the start of every month, in VISUAILS Studio and ready to post. They arrive whether or not you had a new product that month — which is exactly the month a brand runs out of things to show.'],
+          ['Made for your brand', 'Built on your colour scheme, your ground and your faces, so they sit inside your feed rather than beside it. That is the half a stock library structurally cannot do, and the reason this is not a stock library.'],
+          ['Or the shared set', 'A cheaper version that is not made for you alone and goes to other brands too. We say plainly which is which — the same way the shared roster is named on the model picker rather than implied.'],
+          ['Where it arrives', 'One card next to your balance and your list, and downloading works like a delivered order. Not a second library with its own search and its own folders.'],
+        ],
+      },
     ],
-    svcSoonQFoot: 'This is the concept as it stands. The price and the ordering are not settled yet, which is why the button does not work.',
 
-    dashStudioK: 'Our side of it',
-    dashStudioN: 'Every order and the calendar the date picker reads from. A status change writes the timeline you see in the same move, so the portal is never behind the studio.',
-    dashStudioCta: 'See how an order is run',
-    dashLogK: 'The log is the paperwork',
-    dashLogN: 'Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later. Ask and we write it out for you.',
-    dashLogCta: 'Read the AI Act page',
+    // Wat hier stond: twee volledige panelen met een eigen kop, een eigen
+    // alinea en een eigen knop — "Onze kant" en "Het logboek". Beide feiten
+    // staan er nog, in één zin, met de link erin waar ze horen. Drie knoppen
+    // onder één figuur maakten van deze band een menu.
+    dashFoot: [
+      'A status change on our side writes the timeline you see in the same move, so this screen is never behind the studio — ',
+      'see how an order is run',
+      '. Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later; that is what the ',
+      'AI Act page',
+      ' sets out.',
+    ],
 
     promiseH: ['No wall of reviews yet.', 'So we earn your trust the honest way.'],
     promiseQuote: `"I check every visual myself before it reaches you, and I would rather redo one than ship it. Not sure yet? See it on your own product for ${sample.price} first."`,
@@ -544,8 +603,11 @@ const COPY = {
       ['My own photos are bad.', 'A phone photo in daylight on a plain surface is enough to start. The guidelines run to two pages and are mostly about light.', 'What makes a usable photo', '/upload-guidelines'],
     ],
 
-    faqH: 'Still deciding.',
-    faqLede: 'The five that get asked most, and the rest on their own page.',
+    // HERSCHREVEN toen de accordeon eronder verdween. Deze regel zei "de vijf
+    // die het vaakst gesteld worden" en wees naar vijf vragen die er niet meer
+    // staan — een belofte die de pagina zelf tegensprak. Nu wijst hij naar de
+    // pagina waar ze wél staan.
+    faqLede: 'Everything else — delivery, revisions, rights, what we do with your photos — is answered in full on one page.',
     faqCta: 'Every question, answered',
 
     closeH: 'One of your own products, as a catalog set or a carousel, first.',
@@ -581,24 +643,32 @@ const COPY = {
     ],
     ladPer: 'per product',
     ladNote: 'Neem je allebei op hetzelfde product, dan betaal je het complete tarief en niet de twee tarieven bij elkaar.',
-    workedH: 'Wat dat wordt',
-    workedUnit: 'producten',
-    workedEach: 'per stuk',
     firstLead: 'Het tarief is het tarief.',
     firstBody: `Geen kennismakingskorting en niets om over te onderhandelen — ${EX_SMALL} complete producten kosten ${euro(Q_SMALL.net, 'nl')}, wie je ook bent en wanneer je het ook vraagt.`,
     addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')}, verrekend over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
-    planNote: `Bestel je elke maand in plaats van elk seizoen? Drie maandplannen, vanaf ${euro(PLAN_FROM, 'nl')} voor ${PLAN_LOW}–${PLAN_HIGH} producten per maand, en elk goedkoper dan de prijs per product voor dezelfde output.`,
-    vatSummary: 'Hoe de btw werkt',
+    subH: ['Of doe het', 'elke maand.'],
+    subLede: 'Een abonnement is hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, geleverd in een week die de planning voor je vrijhoudt.',
+    subFrom: 'vanaf',
+    subUnit: `per maand · ${PLAN_FROM_PRODUCTS} producten`,
+    subFacts: [
+      'Elke maand een vast aantal producten, te besteden zoals je collectie het vraagt.',
+      'Je eigen week in de planning, vastgezet voordat iemand anders hem kan nemen.',
+      `Onder de prijs per product voor dezelfde output — ${PLAN_COUNT} plannen, per maand of per jaar.`,
+    ],
+    subVat: `${vatLabel('excl', 'nl')}`,
+    subCta: 'Sluit een abonnement af',
+    subCta2: 'Vergelijk de abonnementen',
+
     priceCta: 'Start een bestelling',
     priceCta2: 'De volledige prijslijst',
 
     tsKicker: 'Voordat je een bestelling plaatst',
     tsH: ['Jouw eigen product volledig in beeld', `voor ${sample.price}.`],
-    tsLede: `Hierboven staat wat het kost. Dit is hoe het eruitziet — niet op een kledingstuk dat wij kozen, maar op dat van jou. Je stuurt dezelfde foto’s als bij een gewone bestelling: voorkant en achterkant in elk geval, en een detail- of draagfoto als je die hebt. Je krijgt ${sample.deliverable} terug. Zelfde productie als een betaalde bestelling, door dezelfde specialist nagekeken.`,
+    tsLede: `Niet op een kledingstuk dat wij kozen, maar op dat van jou — door dezelfde productie als een betaalde bestelling, door dezelfde specialist nagekeken. Je krijgt ${sample.deliverable} terug.`,
     tsPoints: [
-      ['Eén per bedrijf', 'Geen proefperiode, en we bewaren je betaalgegevens niet. Eén proefvisual, één keer, geen account, niets op te zeggen.'],
-      ['Geen kortere weg voor een proef', 'Zelfde productie, zelfde stijl, en dezelfde specialist die het nakijkt. Wat terugkomt is wat je zou krijgen.'],
-      ['Daarna geen verplichting', 'Klopt het niet, dan houdt het op. Wij ontdekken dat liever nu dan na een bestelling.'],
+      ['Eén per bedrijf', 'Geen proefperiode, geen betaalgegevens die we bewaren, geen account, niets op te zeggen.'],
+      ['Geen kortere weg voor een proef', 'Zelfde productie en dezelfde menselijke controle als bij een betaalde bestelling.'],
+      ['Daarna geen verplichting', 'Klopt het niet, dan houdt het op.'],
     ],
     tsCta: 'Vraag je proefvisual aan',
     tsAlt: 'Of start een bestelling',
@@ -650,21 +720,6 @@ const COPY = {
       ['Een specialist kijkt ernaar', 'Een specialist bekijkt elk beeld voordat het naar je toe gaat. We leveren niets automatisch.'],
     ],
 
-    whoH: 'Voor merken met meer producten dan shootdagen.',
-    whoLede: 'Vier situaties waar deze prijzen voor gemaakt zijn. Zit die van jou ertussen, dan klopt de rekensom.',
-    who: [
-      ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De beelden moeten wel net zo goed zijn als die van merken die tien jaar ouder zijn.'],
-      ['Elk seizoen een lancering', 'Vier tot zes per jaar, en elke keer begint het met een fotograaf, een model en een dag waarop iedereen kan.'],
-      ['Marktplaatsen bijhouden', 'Zalando, Amazon en bol willen strakke beelden volgens een vaste specificatie, en dat goed krijgen is niemands favoriete middag.'],
-      ['Meer SKU’s dan uren', 'De collectie groeide harder dan de productie eromheen, en de fotografie blijft doorschuiven.'],
-    ],
-    notForH: 'Waarschijnlijk niets voor je als',
-    notFor: [
-      'je één campagnebeeld wilt met een model dat je zelf contracteert, en niet een hele collectie',
-      'de stijl van je merk nog elke paar weken verandert — dan is er nog niets om consistent in te blijven',
-      'je één product verkoopt — dan valt er tussen producten niets consistent te houden',
-      'je een getekende release nodig hebt voor een gezicht waar je al mee werkt',
-    ],
 
     baH: ['Dit kwam binnen.', 'Dit ging eruit.'],
     baLede: 'Links een foto met een telefoon, op een tafel. Rechts wat wij ervan maakten. Er is niets opnieuw gefotografeerd, opnieuw gestyled of ergens heen gestuurd.',
@@ -706,19 +761,6 @@ const COPY = {
     backNote: 'Een shoot kost een dag én een bedrag, en maar één van die twee staat op de factuur.',
     backNoteLink: 'Wat een bestelling vervangt, uitgeteld',
 
-    chH: 'Eén bestelling, overal waar hij heen moet.',
-    chLede: `Een seizoen van ${EX_FULL} producten is ${PER_PRODUCT_VISUALS} beelden per stuk — ${EX_VISUALS} afgewerkte beelden, uitgesneden voor waar ze moeten staan.`,
-    ch: [
-      ['Hero op de productpagina', 'Op wit of in scène'],
-      ['Grid op de productpagina', 'Voorkant, achterkant en een stofdetail'],
-      ['Beeld op een model', 'In elke catalogset'],
-      ['Instagram-carousel', 'Drie gestylede beelden per product'],
-      ['Reels en TikTok', 'Verticale clips, bij elke bestelling'],
-      ['Betaalde social', 'Dezelfde look in advertentie-uitsnedes'],
-      ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
-      ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
-    ],
-    chNote: 'In VISUAILS Studio staan de downloads per kanaal op maat klaar.',
 
     // Geen bedragen meer in deze band — die staan één keer in de prijsband.
     bmH: ['Eén gezicht,', 'en het is alleen van jou.'],
@@ -726,45 +768,51 @@ const COPY = {
     bmNote: 'Hetzelfde gezicht in elke bestelling maakt je beelden herkenbaar — daarom gebruiken catalogi al jaren hetzelfde model.',
     bmCta: 'Zo werkt je merkmodel',
 
-    plH: 'Reken terug vanaf de dag dat je live gaat.',
-    plLede: 'Bij een vastgezette leverdatum houden we die dagen in de studio voor je vrij. Daarom kunnen we die datum op papier zetten — en daarom kan een week ook vol zitten.',
-    pl: [
-      ['De dag dat je live gaat', 'De dag waarop de collectie online moet staan. Vanaf daar rekenen we terug.'],
-      // WINDOW_THRESHOLD staat nu hier, niet meer naast een tarief per product.
-      ['48 uur vanaf je leverdatum', `De vastgezette leverdatum, vanaf ${WINDOW_THRESHOLD} producten. Zodra die datum vaststaat, gaat geen ander werk in de studio er nog voor. Bestel je minder producten, dan geldt de normale doorlooptijd.`],
-      ['Min één map', 'De dag dat jij de foto’s stuurt. Daarmee is jouw deel klaar, en de datum staat al vast.'],
-    ],
-    plNote: 'We boeken de weken één voor één vol. Zit een week vol, dan zeggen we dat gewoon, in plaats van je een langere wachttijd te geven.',
-    plCta: 'Kijk welke weken nog vrij zijn',
 
     dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
-    dashLede: 'Twee schermen: jij ziet de status van je bestelling, wij zien de agenda van de hele studio. Wat wij aanpassen, staat meteen ook bij jou.',
+    dashLede: 'Het scherm dat jij krijgt: waar je bestelling staat, en elk beeld dat erin zit.',
     dashPortalK: 'VISUAILS Studio',
     dashPortalN: 'Je komt binnen via een privélink, zonder wachtwoord. Je ziet de status en de leverdatum met een aftelling, en daarna de hele galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
     dashPortalCta: 'Bekijk VISUAILS Studio',
-    dashPortalPh: 'VISUAILS Studio · leveringsgalerij',
-    dashPortalNote: 'Het scherm voor goedkeuren en revisie aanvragen, met één beeld geselecteerd.',
-    svcSoon: 'Nog niet klaar',
+    svcSoonTag: 'Nog niet klaar',
     svcSoonBody: 'Hier zijn we nog mee bezig. Binnenkort is hij beschikbaar; tot die tijd valt er niets aan te klikken.',
-    svcSoonCta: 'Bekijk Hooks',
-    svcSoonDesc: 'Je product in een korte video, op een format dat we eerder hebben gebouwd.',
-    /* Zie de noot bij de Engelse tegenhanger hierboven: waar deze tekst vandaan
-       komt, en waarom er geen prijs in staat. */
-    svcSoonQ: 'Wat Hooks is',
-    svcSoonQBody: [
-      ['Je stuurt foto’s', 'Dezelfde set als bij een catalogbestelling: minimaal voorkant en achterkant, plus een detailfoto en een draagfoto als je die hebt. Eén foto is niet genoeg, want het format beweegt om het product heen.'],
-      ['Wij bouwen de video', 'Kort, verticaal, op een format dat we eerder hebben gebruikt. De video loopt door in het beeld dat eronder in de feed staat, waardoor de twee als één beeld lezen.'],
-      ['Een specialist kijkt hem na', 'Voordat hij geleverd wordt: het product moet herkenbaar blijven en de naad moet kloppen. Binnen 24 tot 48 uur staat hij in VISUAILS Studio, waar je hem goedkeurt of zegt wat er niet klopt.'],
-      ['Wat wij verkopen', 'Het format en de uitvoering. Geen bereik — of een post ergens terechtkomt hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven.'],
+    svcSoonFoot: 'Dit is het concept zoals het er nu staat. Wat het kost en hoe je het bestelt liggen nog niet vast, en daarom werkt de knop niet.',
+    svcSoonList: [
+      {
+        id: 'hooks',
+        name: 'Hooks',
+        desc: 'Je product in een korte video, op een format dat we eerder hebben gebouwd.',
+        cta: 'Bekijk Hooks',
+        qLabel: 'Wat Hooks is',
+        qBody: [
+          ['Je stuurt foto’s', 'Dezelfde set als bij een catalogbestelling: minimaal voorkant en achterkant, plus een detailfoto en een draagfoto als je die hebt. Eén foto is niet genoeg, want het format beweegt om het product heen.'],
+          ['Wij bouwen de video', 'Kort, verticaal, op een format dat we eerder hebben gebruikt. De video loopt door in het beeld dat eronder in de feed staat, waardoor de twee als één beeld lezen.'],
+          ['Een specialist kijkt hem na', `Voordat hij geleverd wordt: het product moet herkenbaar blijven en de naad moet kloppen. ${turnaround('unattended', 'nl')} staat hij in VISUAILS Studio, waar je hem goedkeurt of zegt wat er niet klopt.`],
+          ['Wat wij verkopen', 'Het format en de uitvoering. Geen bereik — of een post ergens terechtkomt hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven.'],
+        ],
+      },
+      {
+        id: 'editions',
+        name: 'Editions',
+        desc: 'Elke maand een set nieuwe beelden, gemaakt op jouw merk — of je nu iets nieuws te fotograferen hebt of niet.',
+        cta: 'Bekijk Editions',
+        qLabel: 'Wat Editions is',
+        qBody: [
+          ['Wat je krijgt', 'Aan het begin van elke maand een set afgewerkte beelden, klaar om te posten, in VISUAILS Studio. Ze komen binnen of je die maand nu een nieuw product had of niet — en dat is precies de maand waarin een merk niets meer te laten zien heeft.'],
+          ['Gemaakt op jouw merk', 'Op jouw kleurenschema, jouw ondergrond en jouw gezichten, zodat ze ín je feed passen in plaats van ernaast. Dat is de helft die een stockbibliotheek niet kán, en meteen de reden dat dit er geen is.'],
+          ['Of de gedeelde set', 'Een goedkopere variant die niet alleen voor jou gemaakt is en ook naar andere merken gaat. We zeggen gewoon welke welke is — zoals de gedeelde modellen bij de modelkiezer ook met zoveel woorden gedeeld worden genoemd.'],
+          ['Waar hij binnenkomt', 'Eén kaart naast je saldo en je lijst, en downloaden gaat zoals bij een geleverde bestelling. Geen tweede bibliotheek met een eigen zoekfunctie en eigen mappen.'],
+        ],
+      },
     ],
-    svcSoonQFoot: 'Dit is het concept zoals het er nu staat. De prijs en het bestellen liggen nog niet vast, en daarom werkt de knop niet.',
 
-    dashStudioK: 'Onze kant',
-    dashStudioN: 'Hier staat elke bestelling, naast de agenda waaruit de datumkiezer leest. Zetten wij een bestelling op een andere status, dan verandert de tijdlijn die jij ziet meteen mee. Wat in VISUAILS Studio staat, is dus nooit ouder dan wat wij zien.',
-    dashStudioCta: 'Zie hoe een bestelling draait',
-    dashLogK: 'Het logboek legt alles vast',
-    dashLogN: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en blijft bij het beeld staan waar hij bij hoort. Zo kun je later teruglezen wat er wanneer gebeurde. Vraag ernaar en we schrijven het voor je uit.',
-    dashLogCta: 'Lees de AI Act-pagina',
+    dashFoot: [
+      'Zetten wij een bestelling op een andere status, dan verandert de tijdlijn die jij ziet meteen mee — dit scherm is dus nooit ouder dan wat wij zien. ',
+      'Zie hoe een bestelling draait',
+      '. Elke goedkeuring en elke revisie krijgt een tijdstempel en blijft bij het beeld staan waar hij bij hoort, zodat je later kunt teruglezen wat er wanneer gebeurde; dat legt de ',
+      'AI Act-pagina',
+      ' uit.',
+    ],
 
     promiseH: ['We hebben nog weinig reviews.', 'Dus laten we het je eerst zien op je eigen product.'],
     promiseQuote: `"Ik bekijk elk beeld zelf voordat het naar je toe gaat, en ik doe er liever één over dan dat ik hem verstuur. Nog niet zeker? Bekijk het eerst op je eigen product voor ${sample.price}."`,
@@ -787,8 +835,7 @@ const COPY = {
       ['Mijn eigen foto’s zijn slecht.', 'Een telefoonfoto bij daglicht op een egale ondergrond is genoeg om te beginnen. De richtlijnen zijn twee pagina’s en gaan vooral over licht.', 'Wat een bruikbare foto is', '/upload-guidelines'],
     ],
 
-    faqH: 'Nog aan het twijfelen.',
-    faqLede: 'De vijf die het vaakst gesteld worden, en de rest op een eigen pagina.',
+    faqLede: 'Al het andere — levering, revisies, rechten, wat we met je foto’s doen — staat voluit op één pagina.',
     faqCta: 'Alle vragen, beantwoord',
 
     closeH: 'Eerst één product van jezelf, als catalogset of carousel.',
@@ -800,20 +847,11 @@ const COPY = {
 
 const c = COPY[lang];
 
-// The five questions the FAQ band shows, picked one group at a time rather
-// than sliced off the front of the flattened list. Two reasons: the front of
-// the list is all "getting started", which is the one thing a visitor who has
-// scrolled this far no longer needs; and the "rights and usage" group is
-// deliberately left out because the objection band above it already answers
-// those in full — a page that asks the same question twice reads as padding.
-const FAQ_GROUPS = faqPageGroups(lang);
-const FAQ_PICK = [
-  FAQ_GROUPS[0]?.items[0],
-  FAQ_GROUPS[0]?.items[1],
-  FAQ_GROUPS[1]?.items[0],
-  FAQ_GROUPS[2]?.items[0],
-  FAQ_GROUPS[3]?.items[0],
-].filter(Boolean);
+// De vijf FAQ-vragen die hier werden uitgekozen (FAQ_GROUPS / FAQ_PICK) zijn
+// weg met de accordeon die ze toonde — zie de noot bij sectie 16. Ze werden
+// per groep gekozen in plaats van van de voorkant van de platte lijst
+// afgesneden, en die redenering geldt nu op /faq zelf, waar dezelfde objecten
+// staan.
 ---
 
 {/* ═══ SECTION ORDER — CHANGED 2 AUG 2026, AND HERE IS THE ARGUMENT ═══════════
@@ -968,7 +1006,20 @@ const FAQ_PICK = [
     pricing them per product — this one is a shelf, and a shelf is even. */}
 <section class="band hv-svc-band">
   <div class="container">
-    <div class="statement">
+    {/* GECENTREERD OF LINKS — DE REGEL, 18 augustus 2026.
+        Gemeten op de gebouwde pagina: zeven van de veertien koppen stonden
+        gecentreerd. Dat is niet te veel centreren op zichzelf; het probleem is
+        WAAR. Een gecentreerde kop boven een links uitgelijnde tabel, een
+        drie-koloms raster of een rij kaarten laat de bladspiegel twee keer
+        beginnen — je oog gaat naar het midden voor de kop en dan terug naar
+        links voor de inhoud, bij elke sectie opnieuw.
+
+        De regel die hier vanaf nu geldt: CENTREREN ALLEEN ALS WAT ERONDER
+        STAAT OOK GECENTREERD IS. Dat laat twee secties over — de bekentenis
+        over de recensies en het afsluitende paneel — en juist doordat het er
+        nog maar twee zijn, vallen ze op. Zeven keer centreren is geen nadruk
+        meer, het is de standaard. */}
+    <div class="statement statement-left">
       <h2>{c.svcH[0]} <em class="hv-accent">{c.svcH[1]}</em></h2>
       <p class="lede">{c.svcLede}</p>
     </div>
@@ -1040,29 +1091,52 @@ const FAQ_PICK = [
         `id="hooks"` staat erop zodat er ergens naartoe te linken valt zodra dat
         nodig is — het menu-item is nu bewust dood, maar als het ooit een link
         naar deze strook moet worden, hoeft daar alleen een href bij. */}
-    <div class="hv-soon" id="hooks">
-      <div class="hv-soon-copy">
-        <details class="hv-q">
-          <summary class="hv-soon-h hv-q-sum">
-            <span>Hooks</span>
-            {/* Het rondje is decoratie; de toegankelijke naam van de knop is de
-                regel eromheen, en die moet zeggen wat opengaat en niet "?". */}
-            <span class="hv-q-mark" aria-hidden="true">?</span>
-            <span class="hv-q-say">{c.svcSoonQ}</span>
-            <em class="hv-soon-tag">{c.svcSoon}</em>
-          </summary>
-          <div class="hv-q-panel">
-            {c.svcSoonQBody.map(([k, v]) => (
-              <p class="hv-q-row"><b class="hv-q-k">{k}</b><span class="hv-q-v">{v}</span></p>
-            ))}
-            <p class="hv-q-foot">{c.svcSoonQFoot}</p>
-          </div>
-        </details>
-        <p class="hv-soon-desc">{c.svcSoonDesc}</p>
-        <p class="hv-soon-body">{c.svcSoonBody}</p>
+    {/* ── DE AANGEKONDIGDE DIENSTEN ────────────────────────────────────────
+        EEN LUS EN NIET TWEE GEPLAKTE STROKEN, 18 augustus 2026. Hier stond één
+        uitgeschreven blok voor Hooks; Editions kwam erbij. Twee keer hetzelfde
+        markup plakken is hoe de derde er over een maand nét anders uitziet.
+        Alles wat per dienst verschilt staat in svcSoonList; alles wat hetzelfde
+        is — het label, de regel eronder, de voetnoot — staat er één keer.
+
+        EEN ECHTE <button disabled> EN GEEN GRIJZE SPAN. Dat is het verschil
+        tussen een knop die niet werkt en iets dat eruitziet als een knop:
+        `disabled` wordt door elke schermlezer aangekondigd als niet-beschikbaar,
+        is niet met tab te bereiken, en kan niet per ongeluk toch iets doen.
+
+        HET VRAAGTEKEN OPENT EEN NATIVE <details>. Geen JavaScript, staat gratis
+        in de toegankelijkheidsboom, en ctrl+F in Chrome klapt hem open om een
+        woord te vinden dat erin staat. De HELE titelregel is de summary — een
+        vraagteken van 20 pixels is op een telefoon een doelwit dat je twee keer
+        mist, de regel eromheen is 300 breed.
+
+        HET id KOMT UIT DE DATA, zodat er naartoe te linken valt zodra dat nodig
+        is. De menu-items zijn nu bewust dood; als ze ooit een link naar deze
+        strook moeten worden, hoeft daar alleen een href bij. */}
+    {c.svcSoonList.map((soon) => (
+      <div class="hv-soon" id={soon.id}>
+        <div class="hv-soon-copy">
+          <details class="hv-q">
+            <summary class="hv-soon-h hv-q-sum">
+              <span>{soon.name}</span>
+              {/* Het rondje is decoratie; de toegankelijke naam van de knop is de
+                  regel eromheen, en die moet zeggen wat opengaat en niet "?". */}
+              <span class="hv-q-mark" aria-hidden="true">?</span>
+              <span class="hv-q-say">{soon.qLabel}</span>
+              <em class="hv-soon-tag">{c.svcSoonTag}</em>
+            </summary>
+            <div class="hv-q-panel">
+              {soon.qBody.map(([k, v]) => (
+                <p class="hv-q-row"><b class="hv-q-k">{k}</b><span class="hv-q-v">{v}</span></p>
+              ))}
+              <p class="hv-q-foot">{c.svcSoonFoot}</p>
+            </div>
+          </details>
+          <p class="hv-soon-desc">{soon.desc}</p>
+          <p class="hv-soon-body">{c.svcSoonBody}</p>
+        </div>
+        <button class="btn btn-ghost hv-soon-btn" type="button" disabled>{soon.cta}</button>
       </div>
-      <button class="btn btn-ghost hv-soon-btn" type="button" disabled>{c.svcSoonCta}</button>
-    </div>
+    ))}
 
     <div class="hv-svc-foot">
       <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
@@ -1070,53 +1144,26 @@ const FAQ_PICK = [
   </div>
 </section>
 
-{/* ── 4 · WHO IT IS FOR ─────────────────────────────────────────────────
-    Placed directly after the proof rail, which is the first point on the page
-    where a visitor has seen enough to ask "but is this for me". Four
-    situations rather than four personas: a persona ("ambitious founder") is a
-    flattering description a reader agrees with and takes nothing from, a
-    situation is something they either recognise or do not.
+{/* ── 4 · WHO IT IS FOR — VERHUISD NAAR /about, augustus 2026 ───────────
+    Vier situaties plus de "waarschijnlijk niets voor je als"-lijst, 179
+    woorden. Ze stonden hier goed, en ze staan op /about beter: de vraag "is
+    dit voor mij" komt pas op als een bezoeker weet wie dit maakt, en dat is
+    precies de pagina die dat vertelt.
 
-    The disqualification list under it is the part that does the work. It is
-    standard on strong productized-service pages and it is the cheapest
-    credibility a vendor with no testimonials can buy: naming who should not
-    buy is a claim only someone confident of the rest can afford to make. */}
-<section class="band">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.whoH}</h2>
-      <p class="lede">{c.whoLede}</p>
-    </div>
-    <div class="tiles hv-who-tiles">
-      {c.who.map(([t, b], i) => (
-        <div class="tile s-3">
-          <div class="tile-body">
-            <span class={`hv-who-i ${['w-blue', 'w-violet', 'w-pink', 'w-coral'][i] || ''}`}>{String(i + 1).padStart(2, '0')}</span>
-            <p class="tile-h">{t}</p>
-            <p class="tile-n">{b}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-    {/* THE DISQUALIFICATION LIST IS A DISCLOSURE NOW, not a deletion. Naming
-        who should not buy is the cheapest credibility a vendor with no
-        testimonials can buy, and that claim is made by the SUMMARY — it is in
-        plain sight, under four tiles saying who this is for, and a reader who
-        suspects they are the exception opens it. The four cases underneath are
-        four negative sentences that only one reader in several needs, which is
-        what <details> is for and what /faq and /start already use it for.
-        Keep the summary visible if this is ever rebuilt: the admission is the
-        argument, the four cases are only the evidence for it. */}
-    {/* Migrated to the shared Disclose (August 2026). The reasoning above still
-        governs: the SUMMARY carries the admission and stays in plain sight;
-        only the four cases fold. */}
-    <div class="hv-notfor">
-      <Disclose summary={c.notForH} tone="plain">
-        <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
-      </Disclose>
-    </div>
-  </div>
-</section>
+    De redactionele regel voor deze homepage (HERONTWERP.md §3.1) is dat elke
+    sectie iets moet laten ZIEN wat je niet uit een link kunt halen, of anders
+    zelf een link wordt. Vier tekstblokken met een genummerd label lieten niets
+    zien. Ze zijn dus niet ingekort maar verhuisd, woord voor woord, naar
+    src/components/WhoItIsFor.astro — gedeeld tussen /about en /nl/about, zodat
+    de twee niet uit elkaar kunnen lopen zoals de galerij dat wel deed (§2.4).
+
+    De copy-sleutels whoH / whoLede / who / notForH / notFor zijn hier weg en
+    staan in die component. Ze stonden in beide talen; ze zijn in beide talen
+    meegegaan.
+
+    WAT DIT TERUG ZOU DRAAIEN: als /about aantoonbaar geen bezoekers krijgt uit
+    het menu, staat de diskwalificatielijst op de verkeerde pagina en hoort de
+    SAMENVATTING ervan (niet de vier tegels) terug op de homepage. ─────────── */}
 
 {/* ── 5 · THE PRICE, ONCE ───────────────────────────────────────────────
     FOUR BANDS WENT INTO THIS ONE. The page explained what it costs in four
@@ -1150,7 +1197,7 @@ const FAQ_PICK = [
     they need it. That is the same <details> pattern /faq and /start use. */}
 <section class="band hv-price-band">
   <div class="container">
-    <div class="statement">
+    <div class="statement statement-left">
       <h2>{c.priceH[0]} <em class="hv-accent">{c.priceH[1]}</em></h2>
       <p class="lede">{c.priceLede}</p>
     </div>
@@ -1189,43 +1236,98 @@ const FAQ_PICK = [
     </div>
     <p class="hv-lad-note">{c.ladNote}</p>
 
-    {/* The multiplication, done — three counts, so nobody has to reach for a
-        calculator to find out what an order is. The middle one carries this
-        grid's one coloured plate, per the same rule the page follows
-        everywhere: two coloured plates in one grid is a palette, one is an
-        instruction. It is on 14 because 14 is the count the old packages had
-        no price for at all. */}
-    <h3 class="hv-worked-h">{c.workedH}</h3>
-    <div class="tiles hv-worked-tiles">
-      {WORKED.map((n, i) => {
-        const q = quote('complete', n);
-        return (
-          <div class={`tile s-4${i === 1 ? ' on-bright tile-c-blue' : ''}`}>
-            <div class="tile-body">
-              <p class="tile-k">{n} {c.workedUnit}</p>
-              <p class="tile-v">{euro(q.net, lang)}</p>
-              <p class="hv-tile-sub">{euro(q.rate, lang)} {c.workedEach}</p>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+    {/* ── WAT HIER STOND EN WAAROM HET NU OP /pricing STAAT ──────────────────
+        DRIE UITGEWERKTE TOTALEN. Drie tegels die de vermenigvuldiging voordeden
+        voor 10, 14 en 30 producten. Ze staan één op één op /pricing, in
+        dezelfde vorm en uit dezelfde quote() — dat is precies de reden dat ze
+        hier weg konden: de ladder hierboven zegt al wat een product kost, de
+        knop eronder gaat naar de pagina die het uitrekent, en de homepage was
+        de derde plek waar hetzelfde bedrag stond.
 
-    {/* The first-order discount, stated ONCE. It was in the old drop tile's
-        note and again in the plan band's footer, in two different wordings. */}
+        DE BTW-UITKLAPPER. vatNote() in een <details>. Ook die staat op
+        /pricing, waar hij hoort — de regel "excl. btw" boven de tabel blijft
+        hier staan, want die kwalificeert de getallen die hier écht staan. Wat
+        weg is, is de veertig woorden uitleg eronder.
+
+        DE ZIN OVER MAANDPLANNEN (planNote). Die is niet weggehaald maar
+        VERVANGEN: er staat vanaf nu een eigen abonnementsband direct onder deze
+        band. Eén zin in de kleine lettertjes was te weinig voor de tweede
+        manier waarop je kunt betalen.
+
+        WAT BLIJFT: de ladder zelf, de regel over meerprijzen (addOnNote) en de
+        regel dat het tarief het tarief is (firstLead/firstBody). Die laatste
+        is de enige plek op de site waar staat dat er níét onderhandeld wordt,
+        en dat is een uitspraak, geen prijsopgave. ─────────────────────────── */}
     <p class="hv-price-first"><strong>{c.firstLead}</strong> {c.firstBody}</p>
 
     <div class="hv-price-foot">
       <div class="hv-price-notes">
         <p>{c.addOnNote}</p>
-        <p>{c.planNote}</p>
-        <Disclose summary={c.vatSummary} tone="plain" class="hv-vat">
-          <p>{vatNote(lang)}</p>
-        </Disclose>
       </div>
       <div class="hv-price-cta">
         <a class="btn btn-primary" href={lp('/start')}>{c.priceCta}</a>
         <a class="btn btn-ghost" href={lp('/pricing')}>{c.priceCta2}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* ── 5b · HET ABONNEMENT ───────────────────────────────────────────────
+    NIEUW, augustus 2026. HERONTWERP.md §1.4: abonnementen bestonden op de
+    voorkant praktisch niet. Er stond één zin in de kleine lettertjes onder de
+    prijstabel — planNote — voor de tweede manier waarop een klant kan betalen,
+    en de aanmeldstroom die er inmiddels achter zit was vanaf de homepage
+    onvindbaar.
+
+    WAAROM PRECIES HIER. Tussen de prijs en de proefvisual. Een abonnement is
+    geen vijfde dienst maar een andere manier van betalen voor wat je net hebt
+    gelezen, en dat argument werkt alleen als het direct onder de prijs staat.
+    Boven de dienstenband zou het een product suggereren dat het niet is; onder
+    de proefvisual zou het na de afsluitende handeling komen.
+
+    WAT ER NIET STAAT: DRIE TEGELS MET DRIE PRIJZEN. Er heeft hier eerder een
+    volledig plannenraster gestaan, gelezen uit plans(), dat /pricing woord
+    voor woord dupliceerde — 278 woorden. Dat is er destijds uitgehaald en die
+    reden is niet veranderd: een tweede prijsraster veroudert op de plek waar
+    niemand het bijhoudt, en twee rasters die het oneens zijn is erger dan één
+    dat je moet aanklikken. Dus ÉÉN getal, uit plans.js, en de rest op de
+    prijspagina.
+
+    TWEE KNOPPEN EN DE VOLGORDE IS EXPRES. "Sluit een abonnement af" gaat naar
+    /start/plan — de echte kiezer, die sinds deze week bestaat — en staat
+    voorop, want dat is de handeling. "Vergelijk de abonnementen" gaat naar
+    /pricing#plans, waar de drie plannen naast elkaar staan met alles erbij.
+
+    HET GETAL IS AFGELEID. Zie PLAN_CHEAPEST hierboven: bedrag én aantal komen
+    uit hetzelfde plan, zodat "vanaf € 390 · 5 producten" niet twee losse
+    minima kan worden die bij elkaar niet bestaan. */}
+<section class="band hv-sub-band">
+  <div class="container">
+    <div class="hv-sub">
+      <div class="hv-sub-copy">
+        <h2>{c.subH[0]} <em class="hv-accent">{c.subH[1]}</em></h2>
+        <p class="lede">{c.subLede}</p>
+        <ul class="hv-sub-facts">
+          {c.subFacts.map((f) => (
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5" /></svg>
+              <span>{f}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/* Het bedrag is een <p> en geen kop: het is een getal en geen titel, en
+          een derde <h2> in deze band zou de koppenboom van de pagina laten
+          zeggen dat er hier drie onderwerpen staan. */}
+      <div class="hv-sub-plate">
+        <p class="hv-sub-from">{c.subFrom}</p>
+        <p class="hv-sub-fig">{euro(PLAN_FROM, lang)}</p>
+        <p class="hv-sub-unit">{c.subUnit}</p>
+        <p class="hv-sub-vat">{c.subVat}</p>
+        <div class="hv-sub-cta">
+          <a class="btn btn-primary" href={lp('/start/plan')}>{c.subCta}</a>
+          <a class="btn btn-ghost" href={`${lp('/pricing')}#plans`}>{c.subCta2}</a>
+        </div>
       </div>
     </div>
   </div>
@@ -1325,7 +1427,7 @@ const FAQ_PICK = [
     someone else did. */}
 <section class="band">
   <div class="container">
-    <div class="statement">
+    <div class="statement statement-left">
       <h2>{c.weekH}</h2>
       <p class="lede">{c.weekLede}</p>
     </div>
@@ -1371,41 +1473,23 @@ const FAQ_PICK = [
     visual went with it. If a band ever needs distinguishing again, that note
     says the answer is a tile, a rule or space, not a second ground. */}
 
-{/* ── 10 · WHERE THE VISUALS LAND ───────────────────────────────────────
-    This used to sit directly under a "four deliverables" band, which named the
-    same four services the services band at section 3 now names. That band is
-    gone — see the note at section 3 for why one of the two had to be — and
-    this one keeps its place: it is the only band that answers what you DO with
-    the visuals, which is the question the services band stops one short of.
+{/* ── 10 · WHERE THE VISUALS LAND — VERHUISD NAAR /how-it-works ─────────
+    Augustus 2026. Acht bestemmingen met één regel elk, plus de lede die een
+    seizoenstotaal omrekent naar plaatsingen. 101 woorden.
 
-    It also converts the price into unit economics without a discount: a season's
-    total stops being a number and becomes a number divided by roughly two
-    hundred placements. It names no euro figure itself — that is the merged
-    price band's job at section 2, and this band deliberately does not become
-    the fifth place the page prices anything.
+    Het stond hier omdat het de enige band was die antwoord gaf op wat je met
+    de beelden DOET. Precies daarom hoort het op /how-it-works: die pagina gaat
+    over de weg van bestelling tot levering, en dit was er de laatste stap van.
+    Op de homepage was het een lijst — en een lijst is per definitie iets wat
+    je uit een link kunt halen, wat de regel is die deze herbouw hanteert
+    (HERONTWERP.md §3.1).
 
-    Every count here is derived, not typed. The two figures a reader could
-    check — 4 catalog photos, 3 lifestyle photos — are CATALOG_IMAGES and
-    LIFESTYLE_IMAGES, the same two constants the services band prints one by
-    one, so the sum in this lede cannot disagree with the counts stated up
-    there. */}
-<section class="band-tight hv-ch-band">
-  <div class="container">
-    <div class="statement">
-      <h2>{c.chH}</h2>
-      <p class="lede">{c.chLede}</p>
-    </div>
-    <ul class="hv-ch">
-      {c.ch.map(([t, b]) => (
-        <li>
-          <span class="hv-ch-t">{t}</span>
-          <span class="hv-ch-n">{b}</span>
-        </li>
-      ))}
-    </ul>
-    <p class="hv-ch-note">{c.chNote}</p>
-  </div>
-</section>
+    De getallen zijn meeverhuisd zoals ze waren: AFGELEID uit CATALOG_IMAGES en
+    LIFESTYLE_IMAGES, niet getypt. Dat was het punt van de oude noot hier en
+    het blijft het punt daar — de som in de lede kan niet in ruzie komen met de
+    aantallen die de dienstenband noemt. De copy-sleutels heten daar `land*`
+    in plaats van `ch*`, want `ch` betekende "channels" en dat woord staat
+    nergens meer in de tekst. ────────────────────────────────────────────── */}
 
 {/* ── 11 · THE ROSTER AND YOUR BRAND MODEL ──────────────────────────────
     Your Brand Model is the most expensive single line the studio sells and,
@@ -1472,47 +1556,41 @@ const FAQ_PICK = [
 {/* ── 12 · THE DASHBOARD ────────────────────────────────────────────────
     New, and the reason this band exists at all: a drop is bought partly on the
     strength of what happens after it is ordered, and nothing on the site said
-    what that was. Two screens, one of them the client's.
+    what that was.
 
-    Beide slots zijn nu ECHTE figuren: FigDash voor de klantkant, FigStudio voor
-    de onze. Hier stonden grijze placeholders, met de nette redenering erbij dat
-    een neutrale rechthoek eerlijker is dan een nagemaakt scherm. Dat was waar
-    zolang het alternatief een verzonnen screenshot was — maar niet zolang de
-    band iets over PROCES belooft, want een placeholder op de plek van het bewijs
-    laat de belofte onbewezen. Beide figuren zijn getekend uit dezelfde
-    componenten als de echte schermen, met verzonnen gegevens en het woord
-    "voorbeeld" erin. */}
+    ÉÉN SCHERM IN PLAATS VAN TWEE, augustus 2026. Hier stonden FigDash (jouw
+    kant) en FigStudio (onze kant) onder elkaar, elk met een kop, een alinea en
+    een knop, plus een derde blok over het logboek met een derde knop. Dat is
+    709 woorden en drie uitgangen onder één kop — een menu, geen band.
+
+    WAT ER BLIJFT EN WAAROM JUIST DIT SCHERM. FigDash is de kant van de KLANT.
+    Dat is de enige van de twee die een bezoeker straks zelf gebruikt, en het
+    is het scherm waar deze band een belofte over doet. FigStudio tekende
+    dezelfde capaciteitsbalken die FigGate op /studio al tekent — 944 regels
+    voor één figuur, zoals HERONTWERP.md §2.6 het noemde. Die dubbeling is
+    hiermee weg: FigStudio wordt door niets meer geïmporteerd.
+
+    ER IS GEEN FEIT VERDWENEN. De twee dingen die alleen in die panelen stonden
+    — dat een statuswijziging bij ons meteen jouw tijdlijn schrijft, en dat elke
+    goedkeuring een tijdstempel krijgt — staan als één zin onder de figuur, mét
+    de twee links die eronder als knoppen stonden. Eén knop, twee tekstlinks:
+    de knop hoort bij het scherm dat je ziet, de links bij de uitleg.
+
+    De figuur zelf is ongewijzigd: getekend uit dezelfde componenten als het
+    echte scherm, met verzonnen gegevens en het woord "voorbeeld" erin. Nooit
+    een bestaand adres, nooit een echt bedrijf — zie de kop van FigDash.astro. */}
 <section class="band well-deep">
   <div class="container">
-    <div class="statement">
+    <div class="statement statement-left">
       <h2>{c.dashH[0]} <em class="hv-accent">{c.dashH[1]}</em></h2>
       <p class="lede">{c.dashLede}</p>
     </div>
 
     <div class="hv-dash">
-      {/* ── DE TOUR STAAT OVER DE VOLLE BREEDTE, NIET IN EEN HALVE KOLOM ──
-          Lucas: *"een usable voorbeeld van het dashboard met voorbeelden van
-          wat mogelijk is en wat je allemaal kan inzien."* Dat past niet naast
-          een tekstkolom: er staan vier panelen in, en het smalste ervan heeft
-          vier fotokolommen. Dus staat de tekst erboven en de figuur eronder. */}
-      {/* ── DE TWEE SCHERMEN ZWEVEN NAAST HUN TEKST ────────────────────────
-          Lucas, 8 augustus 2026: *"Ik zou het mooi vinden als de dashboard
-          mockup naast de tekst staat en een soort floating effect krijgt en een
-          beetje een kant op buigt als of het 3d is. Zelfde geld voor The studio
-          side."*
-
-          Dit verving de stapeling die hier stond. Die was er om een echte reden
-          — de tour paste niet in een halve kolom omdat zijn zijbalk op
-          vensterbreedte aansprong — en die reden is weggenomen in plaats van
-          genegeerd: FigDash meet sinds vandaag zijn eigen breedte met een
-          container query, dus in een smalle kolom stapelt de zijbalk gewoon.
-          Zonder die wijziging zou dit een afgekapte figuur zijn.
-
-          De twee rijen kantelen NAAR ELKAAR TOE: de eerste staat rechts en
-          draait naar links, de tweede staat links en draait naar rechts. Dat is
-          wat de zigzag maakt die `is-flip` altijd beloofde en nooit waarmaakte —
-          en het richt beide schermen naar de tekst die erover gaat, in plaats
-          van twee keer dezelfde kant op. */}
+      {/* De tour staat over de volle breedte en niet in een halve kolom: er
+          staan vier panelen in en het smalste ervan heeft vier fotokolommen.
+          FigDash meet zijn eigen breedte met een container query, dus hij
+          stapelt netjes zodra de kolom smal wordt. */}
       <div class="hv-dash-row is-showcase">
         <div class="hv-dash-copy">
           <h3>{c.dashPortalK}</h3>
@@ -1526,24 +1604,16 @@ const FAQ_PICK = [
         </div>
       </div>
 
-      <div class="hv-dash-row is-showcase is-flip">
-        <div class="hv-dash-copy">
-          <h3>{c.dashStudioK}</h3>
-          <p>{c.dashStudioN}</p>
-          <a class="btn btn-ghost" href={lp('/studio')}>{c.dashStudioCta}</a>
-        </div>
-        <div class="hv-stage">
-          <div class="hv-float">
-            <FigStudio lang={lang} />
-          </div>
-        </div>
-      </div>
-
-      <div class="hv-dash-log">
-        <h3>{c.dashLogK}</h3>
-        <p>{c.dashLogN}</p>
-        <a class="btn btn-ghost" href={lp('/ai-act')}>{c.dashLogCta}</a>
-      </div>
+      {/* De voetnoot is één alinea met twee links erin en geen derde paneel.
+          De array staat in de copy zodat de zin per taal kan lopen zoals hij
+          moet lopen — in het Nederlands staat de link ergens anders in de zin
+          dan in het Engels, en dat kan niet met een gesplitste vertaling. */}
+      {/* GEEN REGELEINDES TUSSEN DEZE ZES DELEN. Astro maakt van een newline
+          plus inspringing één spatie, en dan komt er een spatie vóór de punt
+          die op de link volgt: "...draait . Elke goedkeuring". Dat stond er
+          één build lang. Alles op één regel is lelijk in de broncode en het
+          enige wat de leestekens laat kloppen. */}
+      <p class="hv-dash-foot">{c.dashFoot[0]}<a href={lp('/studio')}>{c.dashFoot[1]}</a>{c.dashFoot[2]}<a href={lp('/ai-act')}>{c.dashFoot[3]}</a>{c.dashFoot[4]}</p>
     </div>
   </div>
 </section>
@@ -1565,37 +1635,23 @@ const FAQ_PICK = [
     The plans() import went with it. If a plan grid is ever wanted back here,
     import plans() again — do NOT type the figures. */}
 
-{/* ── 14 · PLANNING BACKWARDS ───────────────────────────────────────────
-    The urgency band, and the only honest version of one available here: the
-    scarcity is real (one person, a capacity gate that already refuses weeks)
-    and it is stated as capacity rather than as a countdown. No "3 spots left"
-    — that is a number the page cannot verify against the D1 calendar, and a
-    scarcity claim a visitor can disprove is worse than none.
+{/* ── 14 · PLANNING BACKWARDS — VERHUISD NAAR /studio ───────────────────
+    Augustus 2026. Drie data en een voetnoot over volle weken, 144 woorden.
 
-    It reads as a service to the reader rather than pressure: a launch date is
-    the one date they already have in their head, and this band does the
-    subtraction for them. */}
-<section class="band-tight">
-  <div class="container">
-    <div class="statement statement-left hv-pl-head">
-      <h2>{c.plH}</h2>
-      <p class="lede">{c.plLede}</p>
-    </div>
-    <ol class="hv-pl">
-      {c.pl.map(([t, b], i) => (
-        <li>
-          <span class="hv-pl-dot" aria-hidden="true"></span>
-          <h3 class={['w-blue', 'w-violet', 'w-coral'][i] || ''}>{t}</h3>
-          <p>{b}</p>
-        </li>
-      ))}
-    </ol>
-    <div class="hv-pl-foot">
-      <p>{c.plNote}</p>
-      <a class="btn btn-ghost" href={lp('/start')}>{c.plCta}</a>
-    </div>
-  </div>
-</section>
+    Het was de urgentieband, en de enige eerlijke versie die hier te maken
+    viel: de schaarste is echt (één persoon, een capaciteitspoort die weken
+    weigert) en stond er als capaciteit, niet als aftelklok. Dat argument is
+    niet verzwakt door de verhuizing — het is verplaatst naar de pagina die
+    precies daarover gaat. /studio legt uit hoe een bestelling door de studio
+    loopt; de kalender is daar de laatste stap van, en daar staat hij nu tussen
+    de poort en het "wat dit niet doet".
+
+    WINDOW_THRESHOLD is meeverhuisd en wordt daar nog steeds uit pricing.js
+    gelezen, dus de 48-uursbelofte kan niet uit de pas gaan lopen met de
+    voorwaarde eronder. De klasse heet daar `sp-pl` in plaats van `hv-pl`.
+
+    De homepage verwijst er nog steeds naar: de knop "kijk welke weken nog vrij
+    zijn" hoort bij de kalender en is met de band mee gegaan. ─────────────── */}
 
 {/* ── 15 · "WHAT THE NUMBERS ACTUALLY ARE" — DELETED ────────────────────
     Four coloured figures, and three of them were already on the page:
@@ -1616,18 +1672,30 @@ const FAQ_PICK = [
     not a recap. Nothing here was lost; do not restore it as a fifth pricing
     surface. */}
 
-{/* ── 16 · THE OBJECTIONS ───────────────────────────────────────────────
-    Four risk questions, answered where the risk is felt rather than two clicks
-    away on /faq. The wording is lifted from the answers already in
-    src/data/faq.js rather than rewritten, so the homepage cannot end up
-    promising something the FAQ page contradicts — the rights answer in
-    particular is one a customer could hold the studio to.
+{/* ── 16 · DE BEZWAREN — EN DE FAQ, DIE HIERIN IS OPGEGAAN ─────────────
+    Drie risicovragen, beantwoord op de plek waar het risico gevoeld wordt in
+    plaats van twee klikken verderop. De formuleringen komen uit de antwoorden
+    die al in src/data/faq.js staan en zijn niet herschreven, zodat de homepage
+    niet iets kan beloven wat de FAQ-pagina tegenspreekt — zeker het antwoord
+    over rechten is er een waar een klant ons aan kan houden.
 
-    Risk here, logistics in the accordion below: these four are the ones that
-    stop a purchase, which is why they get cards and not a summary row. */}
+    SECTIE 17 IS HIERIN OPGEGAAN, augustus 2026. Daar stond een accordeon met
+    vijf vragen uit faq.js: 268 woorden die LETTERLIJK al op /faq staan, in
+    dezelfde bewoording, uit dezelfde bron. Dat was de zuiverste vorm van wat
+    deze herbouw wegneemt — een sectie die niets liet zien wat je niet uit een
+    link kunt halen (HERONTWERP.md §3.1). De link staat er nu, en de drie
+    vragen die een aankoop echt tegenhouden staan er nog voluit.
+
+    Er is geen antwoord verdwenen: de vijf die hier openklapten waren dezelfde
+    objecten die /faq rendert. Wat wél weg is, is de kans dat de twee uit
+    elkaar lopen zodra iemand er één bijwerkt.
+
+    WAT DIT ZOU TERUGDRAAIEN: bewijs dat bezoekers de FAQ-link niet volgen en
+    op de homepage afhaken bij een vraag die daar wél beantwoord wordt. Dan
+    hoort díé vraag hier als vierde kaart — niet de accordeon terug. */}
 <section class="band">
   <div class="container">
-    <div class="statement">
+    <div class="statement statement-left">
       <h2>{c.obH}</h2>
       <p class="lede">{c.obLede}</p>
     </div>
@@ -1640,32 +1708,8 @@ const FAQ_PICK = [
         </div>
       ))}
     </div>
-  </div>
-</section>
-
-{/* ── 17 · FAQ ──────────────────────────────────────────────────────────
-    Native <details>/<summary>, so it opens with JavaScript off and is
-    keyboard-operable without a line of script. Five questions read from
-    faq.js — the same objects /faq renders and src/data/schema.js turns into
-    FAQPage JSON-LD. No schema is emitted here on purpose: two pages emitting
-    FAQPage nodes for the same questions is the duplication faq.js's own header
-    warns about. */}
-<section class="band-tight hv-faq-band">
-  <div class="container narrow">
-    <div class="statement">
-      <h2>{c.faqH}</h2>
-      <p class="lede">{c.faqLede}</p>
-    </div>
-    <div class="hv-faq">
-      {FAQ_PICK.map((item) => (
-        <Disclose summary={item.q} tone="panel">
-          {item.html
-            ? (<div class="hv-faq-a" set:html={item.html} />)
-            : (<div class="hv-faq-a"><p>{item.a}</p></div>)}
-        </Disclose>
-      ))}
-    </div>
-    <div class="hv-faq-foot">
+    <div class="hv-ob-foot">
+      <p>{c.faqLede}</p>
       <a class="btn btn-ghost" href={lp('/faq')}>{c.faqCta}</a>
     </div>
   </div>
@@ -1852,8 +1896,10 @@ const FAQ_PICK = [
 
 
   /* ── tiles ─────────────────────────────────────────────────────────────── */
-  .hv-tile-sub { margin: .45rem 0 0; font-size: .9rem; color: var(--ink-2); }
-  .hv-worked-tiles, .hv-svc-tiles { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  /* .hv-tile-sub droeg de regel "€ x per stuk" onder de drie uitgewerkte
+     totalen. Die tegels staan sinds augustus 2026 alleen nog op /pricing, en de
+     regel is met ze meegegaan. */
+  .hv-svc-tiles { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
 
   /* ── the price band ────────────────────────────────────────────────────────
      THE ONE VAT LINE. It is a block qualifier, so it has to read as governing
@@ -1897,25 +1943,47 @@ const FAQ_PICK = [
   .hv-lad-sub { display: block; margin-top: .3rem; font-size: .74rem; font-weight: 400; line-height: 1.4; color: var(--ink-3); }
   .hv-lad tbody th { font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--ink); white-space: nowrap; }
   .hv-lad td { font-family: var(--font-display); font-weight: 800; font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1; letter-spacing: -0.02em; color: var(--ink); }
-  .hv-lad-note { margin: 1rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }
-  .hv-worked-h { margin: clamp(2rem, 4vw, 3rem) 0 0; font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
-  /* The discount, on its own line with a rule above it, because it is a
+  .hv-lad-note { margin: 1rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch; }  /* The discount, on its own line with a rule above it, because it is a
      condition on every figure in the band and not a fourth worked example. */
   .hv-price-first {
     margin: clamp(1.6rem, 3vw, 2.2rem) 0 0;
     padding-top: clamp(1.1rem, 2vw, 1.5rem);
     box-shadow: inset 0 1px 0 var(--line);
-    font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 66ch;
+    font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 62ch;
   }
   .hv-price-first strong { color: var(--ink); font-weight: 700; }
-  .hv-price-foot { margin-top: clamp(1.4rem, 2.6vw, 2rem); display: flex; align-items: flex-start; justify-content: space-between; gap: clamp(1.2rem, 3vw, 2.5rem); flex-wrap: wrap; }
-  .hv-price-notes { flex: 1 1 28rem; display: grid; gap: .7rem; }
+  /* ── DE VOET VAN DE PRIJSBAND — UITGELIJND, 18 augustus 2026 ──────────────
+     Gemeten op de gebouwde pagina: onder de tabel van 940px stonden drie
+     verschillende tekstbreedtes (520, 490 en 400px) en een knoppenrij die op
+     niets uitlijnde. Vier linkerkanten die wel klopten, vier rechterkanten die
+     nergens op eindigden. Dat is wat "rommelige marges" betekent als je het
+     opmeet.
+
+     Nu: één raster met twee kolommen die op de RANDEN VAN DE TABEL eindigen.
+     De noten links, de knoppen rechts uitgelijnd op de rechterrand van de
+     tabel erboven, en beide meten met dezelfde maat als de rest van de band.
+     `align-items: end` zet de knoppen op de onderregel van de noten in plaats
+     van te laten zweven op een hoogte die uit niets volgt. */
+  .hv-price-foot {
+    margin-top: clamp(1.4rem, 2.6vw, 2rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: clamp(1.2rem, 3vw, 2.5rem);
+    align-items: end;
+  }
+  .hv-price-notes { display: grid; gap: .7rem; }
   .hv-price-notes p { margin: 0; max-width: 62ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
+  @media (max-width: 52rem) {
+    /* Onder de 52rem past een knoppenrij niet meer naast tekst zonder dat er
+       één woord per regel overblijft. Dan onder elkaar, en de knoppen links —
+       uitlijnen op rechts heeft geen betekenis meer als er geen tweede kolom is. */
+    .hv-price-foot { grid-template-columns: 1fr; }
+  }
     /* `flex: 0 0 auto` refused to shrink, so at 360px the Dutch ghost button
      ("De volledige prijslijst", 174px against the English 138px) pushed the row
      to 370.8px and the whole page scrolled sideways. It may shrink now; the
      buttons wrap instead. */
-  .hv-price-cta { flex: 1 1 auto; min-width: 0; display: flex; gap: .75rem; flex-wrap: wrap; }
+  .hv-price-cta { min-width: 0; display: flex; gap: .75rem; flex-wrap: wrap; justify-content: flex-end; }
   /* vatNote() as a disclosure rather than as small print. It is forty words
      that matter enormously to the one reader in ten who is about to check
      whether reverse charge applies, and are noise to the other nine — which is
@@ -1923,17 +1991,6 @@ const FAQ_PICK = [
      The label above still says "excl. VAT" in plain sight; this is only the
      mechanism. Do not inline it back: that is how a price band grows a
      paragraph of tax law between the rate card and the button. */
-  .hv-vat > summary {
-    list-style: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: .5rem;
-    font-size: .82rem; font-weight: 700; color: var(--ink-2);
-  }
-  .hv-vat > summary::-webkit-details-marker { display: none; }
-  .hv-vat > summary::before { content: '+'; font-family: var(--font-display); font-weight: 900; color: var(--ink-3); }
-  .hv-vat[open] > summary::before { content: '–'; }
-  .hv-vat > summary:hover { color: var(--accent); }
-  .hv-vat p { margin: .6rem 0 0; max-width: 62ch; font-size: .82rem; line-height: 1.6; color: var(--ink-3); }
-
   /* ── the services ──────────────────────────────────────────────────────────
      A whole-tile link, so the target is the card and not a word inside it.
      Radii are inherited: .tile carries --r-lg and clips its own media, which
@@ -2327,9 +2384,12 @@ const FAQ_PICK = [
   }
   .hv-dash-copy h3 { margin: 0 0 .7rem; font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
   .hv-dash-copy p { margin: 0 0 1.3rem; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 46ch; }
-  .hv-dash-log { background: var(--bg); padding: clamp(1.5rem, 3vw, 2.6rem); }
-  .hv-dash-log h3 { margin: 0 0 .7rem; font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
-  .hv-dash-log p { margin: 0 0 1.3rem; font-size: .95rem; line-height: 1.6; color: var(--ink-2); max-width: 68ch; }
+  /* De voetnoot verving het derde paneel (.hv-dash-log) en zijn derde knop.
+     Zelfde grond, zelfde binnenmaat — alleen één alinea in plaats van een kop,
+     een alinea en een knop. */
+  .hv-dash-foot { background: var(--bg); margin: 0; padding: clamp(1.5rem, 3vw, 2.6rem); font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: none; }
+  .hv-dash-foot a { color: var(--ink); text-decoration: underline; text-underline-offset: .18em; }
+  .hv-dash-foot a:hover, .hv-dash-foot a:focus-visible { color: var(--accent); }
   @media (max-width: 820px) {
     .hv-dash-row { grid-template-columns: 1fr; }
   }
@@ -2365,34 +2425,6 @@ const FAQ_PICK = [
   .hv-checks svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--ink-2); stroke-width: 2; }
   .hv-trust { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; margin: clamp(2.2rem, 4vw, 3rem) 0 0; padding: clamp(1.4rem, 2.5vw, 2rem) 0 0; box-shadow: inset 0 1px 0 var(--line); font-size: .82rem; color: var(--ink-3); }
 
-  /* ── who it is for ─────────────────────────────────────────────────────── */
-  .hv-who-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
-  /* The index is a label, not a step: the four situations are alternatives, so
-     it is set small and coloured rather than drawn as the stroked numerals the
-     pipeline uses — those mean sequence, and reusing them here would promise an
-     order that does not exist. */
-  .hv-who-i { display: block; font-family: var(--font-display); font-weight: 900; font-size: .74rem; letter-spacing: .14em; margin-bottom: 1.1rem; }
-  /* A <details>, so the grid that used to put the label beside the list is
-     gone: a disclosure has to open downwards or the summary stops looking like
-     a control. The rule above it stays — it is what separates the four
-     situations from the admission under them. */
-  .hv-notfor { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
-  .hv-notfor-h {
-    margin: 0; list-style: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: .5rem;
-    font-size: .72rem; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; color: var(--ink-3);
-  }
-  .hv-notfor-h::-webkit-details-marker { display: none; }
-  .hv-notfor-h::after { content: '+'; font-family: var(--font-display); font-weight: 900; letter-spacing: 0; }
-  .hv-notfor[open] .hv-notfor-h::after { content: '–'; }
-  .hv-notfor-h:hover { color: var(--ink-2); }
-  .hv-notfor ul { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .65rem; max-width: 62ch; }
-  .hv-notfor li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
-  /* Coral, not the blue accent: this is the one list on the page that is a
-     warning rather than an offer, and the palette already reserves coral for
-     the figure that is being counted against you. */
-  .hv-notfor li::before { content: ''; position: absolute; left: 0; top: .64em; width: 9px; height: 1px; background: var(--fill-coral); }
 
   /* ── before / after ────────────────────────────────────────────────────── */
   .hv-ba-head { max-width: 44rem; }
@@ -2446,11 +2478,6 @@ const FAQ_PICK = [
   .hv-back-note a:hover { text-decoration-color: var(--accent); }
 
   /* ── where the visuals land ────────────────────────────────────────────── */
-  .hv-ch { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1px; background: var(--line); }
-  .hv-ch > li { background: var(--bg); padding: clamp(1.1rem, 2vw, 1.5rem); display: grid; gap: .35rem; align-content: start; }
-  .hv-ch-t { font-size: .95rem; font-weight: 700; color: var(--ink); }
-  .hv-ch-n { font-size: .84rem; line-height: 1.5; color: var(--ink-3); }
-  .hv-ch-note { margin: 1.4rem 0 0; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
 
   /* ── the roster and your brand model ───────────────────────────────────── */
   .hv-bm-band .statement-left { max-width: 46rem; }
@@ -2473,43 +2500,17 @@ const FAQ_PICK = [
      that band used to be, above section 7c. */
 
   /* ── planning backwards ────────────────────────────────────────────────── */
-  .hv-pl-head { max-width: 42rem; }
-  .hv-pl { list-style: none; margin: clamp(2.2rem, 4.5vw, 3.2rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: clamp(1.4rem, 3vw, 2.6rem); }
-  .hv-pl > li { position: relative; padding-top: 1.6rem; box-shadow: inset 0 1px 0 var(--line); }
-  /* One dot per date, sitting on the rule — the closest this system gets to a
-     timeline without drawing a connector that would be wrong the moment the
-     grid wraps to one column. */
-  .hv-pl-dot { position: absolute; top: -4px; left: 0; width: 9px; height: 9px; background: var(--ink-1); }
-  .hv-pl h3 { margin: 0 0 .45rem; font-size: 1.02rem; font-weight: 700; }
-  .hv-pl p { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--ink-3); }
-  .hv-pl-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
-  .hv-pl-foot p { margin: 0; max-width: 66ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
 
   /* ── the objections ────────────────────────────────────────────────────── */
   .hv-ob { margin-top: clamp(2.4rem, 5vw, 4rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1px; background: var(--line); }
   .hv-ob-item { background: var(--surface); padding: clamp(1.4rem, 2.6vw, 2.1rem); display: flex; flex-direction: column; }
   .hv-ob-item h3 { margin: 0 0 .7rem; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
   .hv-ob-item p { margin: 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
+  .hv-ob-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .hv-ob-foot p { margin: 0; max-width: 60ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
   .hv-ob-link { margin-top: auto; padding-top: 1.2rem; font-size: .85rem; font-weight: 700; color: var(--accent); }
   .hv-ob-link:hover { color: var(--accent-dim); }
 
-  /* ── faq ───────────────────────────────────────────────────────────────── */
-  .hv-faq { margin-top: clamp(2rem, 4vw, 3rem); border-top: 1px solid var(--line); }
-  .hv-faq-item { border-bottom: 1px solid var(--line); }
-  .hv-faq-item summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.1rem 0; font-size: 1rem; font-weight: 700; color: var(--ink); }
-  .hv-faq-item summary::-webkit-details-marker { display: none; }
-  .hv-faq-item summary:hover { color: var(--accent); }
-  .hv-faq-item summary svg { flex: 0 0 auto; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; transition: transform var(--dur-2) var(--ease); }
-  .hv-faq-item[open] summary svg { transform: rotate(45deg); }
-  .hv-faq-a { padding: 0 0 1.3rem; }
-  /* :global — an answer carrying {html} is injected with set:html, so its <p>
-     and <a> never receive this component's scope attribute. */
-  .hv-faq-a :global(p) { margin: 0; font-size: .92rem; line-height: 1.65; color: var(--ink-3); max-width: 64ch; }
-  .hv-faq-a :global(a) { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-  .hv-faq-foot { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
-  @media (prefers-reduced-motion: reduce) {
-    .hv-faq-item summary svg { transition: none; }
-  }
 
   /* ── the test sample ───────────────────────────────────────────────────── */
   .hv-ts { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(1.8rem, 4vw, 3.6rem); align-items: center; }
@@ -2529,60 +2530,23 @@ const FAQ_PICK = [
      statement heeft al een maat, een breedte en een uitlijning. Wat overblijft
      is één regel lucht boven de knoppen. */
   .hv-close .actions { margin-top: clamp(1.4rem, 2.6vw, 2rem); display: flex; gap: .7rem; flex-wrap: wrap; justify-content: center; }
-</style>
-
-<script>
-  // THE RAILS. Both horizontal scrollers on this page — the output rail and the
-  // model roster — are native overflow-x with scroll-snap, so they already work
-  // by drag, wheel and keyboard with no script at all. This adds the arrows.
-  //
-  // WHY IT EXISTS AT ALL: the output rail has shipped with a prev/next pair
-  // since the page was written and nothing was ever bound to them. They were
-  // two dead buttons with aria-labels, which is worse than no buttons — a
-  // screen reader announces a control that does nothing. Adding a second rail
-  // was the point at which that had to be fixed rather than duplicated.
-  //
-  // Buttons are found within the rail's own <section>, not as siblings: the
-  // head and the rail sit in two different .container wrappers so that the rail
-  // can bleed wider than the copy above it.
-  function initRails() {
-    document.querySelectorAll('[data-rail]:not([data-rail-bound])').forEach((rail) => {
-      const scope = rail.closest('section');
-      if (!scope) return;
-      const prev = scope.querySelector('[data-rail-prev]');
-      const next = scope.querySelector('[data-rail-next]');
-      if (!prev && !next) return;
-      rail.setAttribute('data-rail-bound', '');
-
-      // One card plus one gap, measured rather than assumed — every rail on the
-      // site sizes its items in clamp(), so there is no constant to hard-code.
-      const step = () => {
-        const first = rail.firstElementChild;
-        if (!first) return rail.clientWidth * 0.8;
-        const gap = parseFloat(getComputedStyle(rail).columnGap || '0') || 0;
-        return first.getBoundingClientRect().width + gap;
-      };
-
-      // Disable at the ends rather than wrapping around: a rail that jumps back
-      // to the start reads as a carousel, and this is a shelf.
-      const sync = () => {
-        const max = rail.scrollWidth - rail.clientWidth - 2;
-        if (prev) prev.disabled = rail.scrollLeft <= 2;
-        if (next) next.disabled = rail.scrollLeft >= max;
-      };
-
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const go = (dir) => rail.scrollBy({ left: dir * step(), behavior: reduce ? 'auto' : 'smooth' });
-      if (prev) prev.addEventListener('click', () => go(-1));
-      if (next) next.addEventListener('click', () => go(1));
-      rail.addEventListener('scroll', sync, { passive: true });
-      window.addEventListener('resize', sync);
-      sync();
-    });
+  /* ── het abonnement ──────────────────────────────────────────────────────
+     Tekst links, het bedrag op een plaat rechts. Dat is dezelfde tweedeling
+     als de proefvisualband eronder gebruikt, met opzet: de twee banden vragen
+     allebei één beslissing en horen er hetzelfde uit te zien. */
+  .hv-sub { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.8rem, 4vw, 3.6rem); align-items: center; }
+  .hv-sub-copy h2 { margin: 0; }
+  .hv-sub-copy .lede { margin-top: 1rem; }
+  .hv-sub-facts { list-style: none; margin: clamp(1.6rem, 3vw, 2.2rem) 0 0; padding: 0; display: grid; gap: .8rem; }
+  .hv-sub-facts li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
+  .hv-sub-facts svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--accent); stroke-width: 2; }
+  .hv-sub-plate { background: var(--surface); padding: clamp(1.6rem, 3vw, 2.4rem); box-shadow: inset 0 0 0 1px var(--line); }
+  .hv-sub-from { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .hv-sub-fig { margin: .3rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(2.6rem, 6vw, 3.8rem); line-height: 1; color: var(--ink); }
+  .hv-sub-unit { margin: .5rem 0 0; font-size: .9rem; color: var(--ink-2); }
+  .hv-sub-vat { margin: .35rem 0 0; font-size: .78rem; color: var(--ink-3); }
+  .hv-sub-cta { margin-top: clamp(1.4rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .7rem; }
+  @media (max-width: 60rem) {
+    .hv-sub { grid-template-columns: 1fr; }
   }
-
-  initRails();
-  // ClientRouter swaps the document without reloading, so first paint is not
-  // enough — same hook every other init on this site uses.
-  document.addEventListener('astro:page-load', initRails);
-</script>
+</style>

@@ -20,6 +20,7 @@ import { waHref } from '../../data/whatsapp.js';
 // strip of real photography, closing CTA. Ported from the SvelteKit about
 // page — see IMAGES.md for the photo strip and hero.
 import Layout from '../../layouts/Layout.astro';
+import WhoItIsFor from '../../components/WhoItIsFor.astro';
 import { euro, ladderRate, ladderFloor, LADDER, vatLabel, reviewClaim, turnaround } from '../../data/pricing.js';
 
 // Deze pagina bevatte vier losse leverbeloftes — de meta-beschrijving, de
@@ -100,6 +101,13 @@ const strip = [
       <img src={strip[4].src} alt="Campagnefotografie" loading="lazy" decoding="async" width={strip[4].w} height={strip[4].h} class="wide" />
     </div>
   </div></section>
+
+  {/* "Voor wie is dit" stond tot augustus 2026 als sectie 4 op de homepage.
+      Het staat hier omdat een bezoeker die vraag pas stelt als hij weet wie er
+      achter staat — en omdat de homepage elke sectie moest verdienen of een
+      link moest worden (HERONTWERP.md §3.1). Er is niets ingekort bij de
+      verhuizing; de component draagt de copy woord voor woord mee. */}
+  <WhoItIsFor lang="nl" />
 
   <section class="section-tight"><div class="container">
     <div class="cta-band reveal pending">

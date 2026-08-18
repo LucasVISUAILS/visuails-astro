@@ -1,0 +1,260 @@
+---
+/*
+ * VISUAILS — de bevestigingspagina, gedeeld door /thank-you en /nl/thank-you.
+ *
+ * ── WAAROM DIT NU ÉÉN COMPONENT IS — 18 augustus 2026 ─────────────────────
+ *
+ * Het waren twee losse pagina's met dezelfde opbouw in twee talen. Dat is exact
+ * de constructie die op /gallery al stilletjes uit elkaar is gelopen: de
+ * Nederlandse versie kreeg een sectie die de Engelse niet heeft, en niemand die
+ * het merkte. Twee bestanden die identiek moeten blijven, blijven dat niet.
+ *
+ * ── DE HERINDELING, EN WAAR HET MODEL VANDAAN KOMT ────────────────────────
+ *
+ * Lucas wees op Adobe's bestelbevestiging. Wat die goed doet is niet de kleur
+ * maar de INDELING: één balk die zegt dat het gelukt is, links één kaart met de
+ * enige actie die telt, rechts een kolom met de feiten, en verder niets.
+ *
+ * Wat hier stond was één gecentreerde kolom met, onder elkaar: een eyebrow, een
+ * kop, een lede, een betaalregel, een spamregel, een referentievak, een vraag
+ * over hoe je ons vond, drie knoppen, een inlogregel, dan drie kaarten en dan
+ * nog een kaart. Twaalf dingen die om beurten om aandacht vragen op het moment
+ * dat iemand precies één vraag heeft: "en nu?"
+ *
+ * Alles is behouden. Niets is geschrapt — het is opnieuw ingedeeld naar wat het
+ * DOET: de actie links, de feiten rechts, en de twee dingen die een gunst aan
+ * ONS zijn (hoe vond je ons, extra foto's) onderaan, waar een gunst hoort.
+ *
+ * ── ÉÉN <h1>, EN DIE ZIT IN DE BALK ───────────────────────────────────────
+ *
+ * De pagina had er twee: de bedanktekst en de annuleringskop, allebei een <h1>,
+ * waarvan er altijd precies één zichtbaar is. Verdedigbaar en toch fout — een
+ * validator telt ze allebei, en de twee kregen verschillende koptypografie, dus
+ * de geannuleerde toestand had zichtbaar een andere paginatitel.
+ *
+ * Nu draagt de balk de <h1> en wisselt initThankYou() alleen de TEKST. Eén kop,
+ * altijd, en de balk is er ook de natuurlijke plek voor: het is de zin die je
+ * leest voordat je iets anders leest.
+ */
+import { waHref } from '../data/whatsapp.js';
+import { TIERS, turnaround } from '../data/pricing.js';
+import { mailNote } from '../data/mailNote.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p: string) => localizedPath(lang, p);
+
+const T0 = TIERS.unattended;
+const TIMING = turnaround('unattended', lang);
+
+const c = nl ? {
+  title: 'Bedankt — we hebben je aanvraag.',
+  cancelled: 'Deze moesten we annuleren',
+  nowH: 'Wat er nu gebeurt',
+  payQ: 'Staat er een betaallink in je bevestigingsmail?',
+  payA: 'Rond die betaling af — je bestelling staat genoteerd, maar de productie start pas als de betaling binnen is.',
+  flow: 'Daarna lezen we wat je hebt gestuurd, maken we je visuals, en kijkt een mens elk resultaat na voordat het bij jou komt.',
+  cta: 'Bekijk je bestelling',
+  signin: 'Log in met het e-mailadres van deze bestelling — we sturen je een link, er is geen wachtwoord.',
+  sumH: 'Samenvatting',
+  sumRef: 'Kenmerk',
+  sumMail: 'Bevestiging verstuurd naar',
+  sumTiming: 'Levertijd',
+  sumQueue: T0.queue.nl,
+  askH: 'Vragen?',
+  wa: 'Stuur een WhatsApp',
+  mail: 'Mail hello@visuails.com',
+  guide: 'Lees hoe je aanlevert',
+  extraH: 'Meer hoeken, nauwkeuriger resultaat',
+  extraB: 'Hoe meer beeld we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Een detailopname, de stof en een gedragen foto — gratis toe te voegen.',
+  extraCta: 'Extra foto’s sturen',
+  sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
+  cancelP1: 'Uit onze administratie blijkt dat er al een proefvisual naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en de €1 is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.',
+  cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
+  cancelP3: 'Klaar voor het echte werk? De diensten beginnen bij de prijs per product, zonder minimum.',
+  cancelCta: 'Bekijk de diensten',
+} : {
+  title: 'Thanks — we have your request.',
+  cancelled: 'This one we had to cancel',
+  nowH: 'What happens now',
+  payQ: 'Is there a payment link in your confirmation email?',
+  payA: 'Complete that payment — your order is noted, but production only starts once the payment has come through.',
+  flow: 'After that we read what you sent, prepare your visuals, and a person checks every result before it reaches you.',
+  cta: 'See your order',
+  signin: 'Sign in with the email address on this order — we send you a link, there is no password.',
+  sumH: 'Summary',
+  sumRef: 'Reference',
+  sumMail: 'Confirmation sent to',
+  sumTiming: 'Turnaround',
+  sumQueue: T0.queue.en,
+  askH: 'Questions?',
+  wa: 'Message us on WhatsApp',
+  mail: 'Email hello@visuails.com',
+  guide: 'Read the upload guidelines',
+  extraH: 'More angles, a closer match',
+  extraB: 'The more we have, the more accurately we match fit, colour and detail first time. A detail close-up, the fabric and an on-body shot — free to add.',
+  extraCta: 'Send extra photos',
+  sourceQ: 'One quick thing — how did you find us?',
+  cancelP1: 'Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the €1 is on its way back to the account you paid from. That usually takes a few working days.',
+  cancelP2: 'If that does not sound right — a colleague ordered without telling you, or the first sample never arrived — reply to the confirmation email and we will sort it out by hand.',
+  cancelP3: 'Ready for the real thing? The services start at the per-product price, with no minimum order.',
+  cancelCta: 'See the services',
+};
+
+const bronnen = nl
+  ? [['Instagram', 'Instagram'], ['Google', 'Google'], ['Referral', 'Iemand vertelde het'], ['Other', 'Ergens anders']]
+  : [['Instagram', 'Instagram'], ['Google', 'Google'], ['Referral', 'Someone told me'], ['Other', 'Somewhere else']];
+---
+
+{/* ── DE BALK ──────────────────────────────────────────────────────────────
+    Volle breedte, accentvulling, en hij draagt de enige <h1> van de pagina.
+    `data-ty-title` is waar interactions.js de tekst wisselt bij een annulering;
+    `data-ty-title-cancelled` draagt het alternatief, zodat de tekst in dit
+    bestand staat en niet in het script. */}
+<div class="ty-bar" data-ty-bar>
+  <div class="container ty-bar-in">
+    <svg class="ty-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+    <h1 data-ty-title data-ty-title-cancelled={c.cancelled}>{c.title}</h1>
+  </div>
+</div>
+
+<section class="ty-body"><div class="container ty-grid">
+
+  <div class="ty-main">
+    {/* HET ANNULERINGSBLOK. Geen eigen kop meer — die zit in de balk. */}
+    <div class="ty-cancelled" data-ty-cancelled role="status" tabindex="-1" hidden>
+      <p>{c.cancelP1}</p>
+      <p>{c.cancelP2}</p>
+      <p class="ty-cancelled-next">{c.cancelP3}</p>
+      <a class="btn btn-primary" href={lp('/start')}>{c.cancelCta}</a>
+    </div>
+
+    <div class="card ty-now ty-hide-when-cancelled">
+      <h2>{c.nowH}</h2>
+      {/* De betaalregel. Voorwaardelijk geformuleerd, want het contactformulier,
+          de checklist en de video-aanvraag landen hier ook en die hebben geen
+          betaallink. Geen zijstreep meer: een gekleurde rand van 3px links is
+          precies het soort accent dat deze codebase elders verbiedt. Een eigen
+          vlak zegt hetzelfde zonder de streep. */}
+      <p class="ty-pay"><strong>{c.payQ}</strong> {c.payA}</p>
+      <p>{c.flow}</p>
+      <p class="ty-act"><a href="/account" class="btn btn-primary btn-lg">{c.cta}</a></p>
+      <p class="meta">{c.signin}</p>
+    </div>
+  </div>
+
+  <aside class="ty-side ty-hide-when-cancelled">
+    <h2 class="ty-side-h">{c.sumH}</h2>
+    {/* Gevuld door initThankYou() met het kenmerk uit ?ref. Blijft leeg en
+        onzichtbaar als er geen geldig kenmerk is — wie hier op een andere manier
+        belandt, krijgt gewoon geen kenmerkregel. */}
+    <div class="ty-row" id="ty-summary" hidden>
+      <dt>{c.sumRef}</dt><dd data-ty-ref></dd>
+    </div>
+    <div class="ty-row">
+      <dt>{c.sumMail}</dt>
+      <dd>{mailNote(lang)}</dd>
+    </div>
+    <div class="ty-row">
+      <dt>{c.sumTiming}</dt>
+      <dd>{TIMING}. {c.sumQueue}</dd>
+    </div>
+    <div class="ty-row ty-row-ask">
+      <dt>{c.askH}</dt>
+      <dd>
+        <a href={waHref(nl ? 'Hoi VISUAILS, ik heb net een aanvraag gedaan via de site.' : 'Hi VISUAILS, I just sent a request through the site.')} target="_blank" rel="noopener">{c.wa}</a><br />
+        <a href="mailto:hello@visuails.com">{c.mail}</a><br />
+        <a href={lp('/upload-guidelines')}>{c.guide}</a>
+      </dd>
+    </div>
+  </aside>
+
+</div></section>
+
+{/* ── DE TWEE GUNSTEN, ONDERAAN ────────────────────────────────────────────
+    Extra foto's sturen helpt het resultaat, en de vraag hoe iemand ons vond
+    helpt ALLEEN ons. Allebei horen ze na het antwoord op "en nu?" en niet
+    ervoor. */}
+<section class="ty-foot ty-hide-when-cancelled"><div class="container ty-grid">
+  <div class="card ty-extra">
+    <div>
+      <h2>{c.extraH}</h2>
+      <p>{c.extraB}</p>
+    </div>
+    <a href={waHref(nl ? 'Hoi VISUAILS, ik wil extra foto’s sturen voor mijn bestelling.' : 'Hi VISUAILS, I’d like to send extra photos for my order.')}
+       class="btn btn-wa" target="_blank" rel="noopener" data-track="ty-extra-photos">{c.extraCta}</a>
+  </div>
+  <div class="source-ask" data-source-ask>
+    <span class="source-q">{c.sourceQ}</span>
+    <div class="source-btns">
+      {bronnen.map(([waarde, label]) => (
+        <button type="button" class="source-btn" data-source={waarde}>{label}</button>
+      ))}
+    </div>
+  </div>
+</div></section>
+
+<style>
+  /* ── DE BALK ─────────────────────────────────────────────────────────────
+     Accentvulling met --accent-ink erop. Wit op lime is 1.31:1 en nooit juist;
+     dat staat in DESIGN.md en is hier de enige plek op de pagina waar het
+     uitmaakt. */
+  .ty-bar { background: var(--accent); color: var(--accent-ink); padding: clamp(1.1rem, 2.4vw, 1.6rem) 0; }
+  .ty-bar-in { display: flex; align-items: center; justify-content: center; gap: .8rem; text-align: center; }
+  .ty-bar h1 {
+    margin: 0; color: var(--accent-ink);
+    font-size: clamp(1.15rem, 2.6vw, 1.7rem); line-height: 1.25; letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .ty-check { width: 26px; height: 26px; flex: 0 0 auto; fill: none; stroke: var(--accent-ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  /* Bij een annulering is er niets gelukt, dus verdwijnt de vulling en het vinkje.
+     Geen rood: er is niets misgegaan en de klant heeft niets fout gedaan. */
+  .ty-bar[data-ty-cancelled-state] { background: var(--surface); color: var(--ink-1); }
+  .ty-bar[data-ty-cancelled-state] h1 { color: var(--ink-1); }
+  .ty-bar[data-ty-cancelled-state] .ty-check { display: none; }
+
+  .ty-body { padding-block: clamp(2.2rem, 5vw, 3.6rem); }
+  .ty-foot { padding-bottom: clamp(2.5rem, 6vw, 4.5rem); }
+  /* Actie links, feiten rechts — de indeling van Adobe's bevestiging. Onder de
+     880px vallen ze onder elkaar met de actie eerst, want dat is de volgorde
+     waarin ze gelezen moeten worden. */
+  .ty-grid { display: grid; gap: clamp(1.2rem, 3vw, 2.4rem); align-items: start; }
+  @media (min-width: 880px) { .ty-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
+
+  .ty-now h2, .ty-extra h2 { font-size: 1.15rem; margin: 0 0 .7rem; }
+  .ty-now p { margin: 0 0 .8rem; color: var(--ink-2); }
+  .ty-now .meta { margin-top: .9rem; }
+  .ty-pay { padding: .85rem 1rem; background: var(--surface-2); border-radius: var(--r-md); }
+  .ty-pay strong { color: var(--ink-1); }
+  .ty-act { margin: 1.2rem 0 0; }
+
+  .ty-side-h { font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 .3rem; }
+  .ty-row { padding: .9rem 0; border-bottom: 1px solid var(--line); display: grid; gap: .2rem; }
+  .ty-row:last-child { border-bottom: 0; }
+  .ty-row dt { font-size: .82rem; color: var(--ink-3); margin: 0; }
+  .ty-row dd { margin: 0; color: var(--ink-2); font-size: .95rem; }
+  .ty-row dd a { color: var(--accent); }
+  .ty-row [data-ty-ref] { font-family: var(--font-mono, inherit); color: var(--ink-1); letter-spacing: .02em; }
+  /* De betaalknop die initThankYou() bijzet als er nog betaald moet worden. */
+  .ty-pay-cta { display: grid; gap: .6rem; margin: .9rem 0 0; justify-items: start; }
+  .ty-pay-cta span { font-size: .92rem; color: var(--ink-2); }
+
+  .ty-extra { display: flex; align-items: center; justify-content: space-between; gap: 1.4rem; flex-wrap: wrap; }
+  .ty-extra p { margin: 0; color: var(--ink-3); font-size: .95rem; max-width: 52ch; }
+  .ty-extra .btn { flex: 0 0 auto; }
+  @media (max-width: 560px) { .ty-extra .btn { width: 100%; } }
+
+  .source-ask { align-self: center; }
+  .source-q { display: block; font-size: .9rem; color: var(--ink-3); margin-bottom: .7rem; }
+  .source-btns { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .source-btn { padding: .5rem 1rem; border: 1px solid var(--line-strong); border-radius: var(--r-md); background: none; color: var(--ink-2); font-size: .88rem; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease), color var(--dur-1) var(--ease); }
+  .source-btn:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--ink-1); }
+  .source-done { font-size: .95rem; color: var(--ink-1); font-weight: 600; margin: 0; }
+
+  .ty-cancelled { padding: 1.6rem 1.7rem; border: 2px solid var(--ink-1); border-radius: var(--r-lg); background: var(--surface); }
+  .ty-cancelled:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .ty-cancelled p { margin: 0 0 .8rem; color: var(--ink-2); }
+  .ty-cancelled-next { color: var(--ink-1) !important; font-weight: 600; }
+</style>

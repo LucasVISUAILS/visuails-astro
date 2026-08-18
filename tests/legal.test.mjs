@@ -626,5 +626,119 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
   }
 }
 
+/* ══ DE ABONNEMENTSVOORWAARDEN ═════════════════════════════════════════════
+ *
+ * Toegevoegd op 18 augustus 2026. Tot die dag noemden de voorwaarden het woord
+ * "abonnement" NUL keer, in beide talen, terwijl er via Mollie maandelijks
+ * € 390 tot € 1.690 werd geïncasseerd. Dat is de enige openstaande post die
+ * juridisch telt, en hij stond open.
+ *
+ * WAT DEZE SECTIE BEWAAKT, EN WAAROM HET DIT IS EN NIET DE TEKST ZELF. Een
+ * test die de zinnen napluist, toetst of iemand het bestand heeft veranderd.
+ * Wat hier moet worden vastgehouden is iets anders: dat elk BEDING klopt met
+ * wat de code doet. Een voorwaarde die iets belooft wat het systeem niet doet,
+ * is erger dan geen voorwaarde — dat is precies wat er met "minimaal 3
+ * maanden" gebeurde, dat nergens werd afgedwongen.
+ *
+ * Vandaar dat elk punt hieronder een paar is: de belofte in de tekst, en de
+ * plek in de code die hem waarmaakt.
+ */
+console.log('\nde abonnementsvoorwaarden staan er, en kloppen met de code');
+{
+  const bladen = [
+    ['en', read('src/pages/terms.astro')],
+    ['nl', read('src/pages/nl/terms.astro')],
+  ];
+
+  for (const [lang, tekst] of bladen) {
+    ok(`${lang}: er is een paragraaf over abonnementen`,
+      /<h2>9a\. (Subscriptions|Abonnementen)<\/h2>/.test(tekst));
+
+    // 1 · DE MACHTIGING. De €1 is geen eerste maand. Zie MANDATE_EUROS en
+    //     eersteTermijn() in src/lib/subscribe.js.
+    ok(`${lang}: de € 1 wordt uitgelegd als machtiging en niet als eerste maand`,
+      /(not a first month|geen eerste maand)/.test(tekst));
+
+    // 2 · GEEN MINIMALE LOOPTIJD op de maandtermijn. De code dwingt er geen af:
+    //     handlePlanCancel() zegt direct op. Zie de noot bij PLAN_COMPARE_MONTHS.
+    ok(`${lang}: de maandtermijn is elke maand opzegbaar`,
+      /(cancelled in any month|elke maand opzeggen)/.test(tekst));
+    ok(`${lang}: en er wordt geen minimale looptijd meer beloofd`,
+      /(no minimum duration|geen minimale looptijd)/.test(tekst));
+
+    // 3 · DE BETAALDE MAAND BLIJFT. loadSubscription() laadt een opgezegd
+    //     abonnement zolang er een maandrij voor de huidige maand bestaat.
+    ok(`${lang}: de betaalde maand blijft na opzegging te besteden`,
+      /(until the end of it|tot het einde ervan)/.test(tekst));
+
+    // 4 · DOORSCHUIVEN MET EEN ZICHTBARE VERVALMAAND. rolloverDetail() in
+    //     plans.js levert die maand; het dashboard toont hem.
+    ok(`${lang}: doorschuiven staat erin, met een vervalmoment`,
+      /(rolls over|schuift door)/.test(tekst) && /(lapse|vervallen)/.test(tekst));
+
+    // 5 · MISLUKTE AFSCHRIJVING → PAUZE. pauseSubscription(.., 'payment_failed')
+    //     en verbruikToestaan() dat op !betaald blokkeert.
+    ok(`${lang}: een mislukte afschrijving pauzeert en blokkeert het saldo`,
+      /(collection fails|afschrijving mislukt)/.test(tekst));
+
+    // 6 · CAPACITEIT. fitsBudget()/seatsLeft() weigeren vóór de machtiging —
+    //     handleSubscribeStart() heeft de poort vóór Mollie staan.
+    ok(`${lang}: de capaciteitsgrens staat erin, en vóór de betaling`,
+      /(before you pay|vóór je betaalt)/.test(tekst));
+
+    // 7 · GEEN TERUGWERKENDE PRIJSWIJZIGING, en een prijsslot op de jaartermijn
+    //     (TERMS.yearly.perks bevat 'priceLock').
+    ok(`${lang}: prijswijzigingen zijn geregeld en nooit met terugwerkende kracht`,
+      /(retroactively|terugwerkende kracht)/.test(tekst));
+
+    // 8 · WAT GELEVERD IS, BLIJFT. Verwijst naar de rechtenparagraaf in plaats
+    //     van hem over te schrijven — twee plekken die rechten regelen, is één
+    //     te veel.
+    ok(`${lang}: geleverd werk blijft van de klant, met verwijzing naar §8`,
+      /(section 8|paragraaf 8)/.test(tekst));
+  }
+
+  /* ── EN DE CODE MAAKT DIE BELOFTES OOK ECHT WAAR ────────────────────────
+     Zonder dit deel toetst het bovenstaande alleen of er mooie zinnen staan. */
+  const subscription = read('src/lib/subscription.js');
+  const account = read('src/lib/account.js');
+  const pricing = read('src/data/pricing.js');
+
+  ok('opzeggen laat de betaalde maand staan (de query zegt het)',
+    /status = 'cancelled' AND EXISTS/.test(subscription));
+  ok('en dat saldo mag dan besteed worden',
+    /state\?\.sub\?\.status === 'cancelled'/.test(subscription));
+  ok('een gepauzeerd abonnement mag dat niet',
+    /verbruikToestaan/.test(subscription) && !/status === 'paused'\s*\|\|/.test(subscription));
+  /* BINNEN DE HANDLER EN NIET OVER HET HELE BESTAND. Eerste versie hiervan
+     was `account.indexOf('stopIncasso') < account.indexOf('cancelSubscription(')`
+     en die was LEEG: bovenaan account.js staat een importregel met stopIncasso
+     erin, dus stond de eerste treffer altijd vooraan en klopte de volgorde
+     altijd. Bewezen door de volgorde in de handler om te draaien — de test
+     bleef groen. Nu wordt eerst het lichaam van handlePlanCancel gepakt en
+     daarbinnen vergeleken. */
+  const cancelStart = account.indexOf('async function handlePlanCancel');
+  const ruw = account.slice(cancelStart, account.indexOf('\n}\n', cancelStart));
+  /* ZONDER COMMENTAAR, EN DAT IS DE TWEEDE REPARATIE AAN DEZELFDE REGEL. Na
+     het weghalen van de importval bleef hij leeg om een andere reden: boven de
+     twee statements staat een noot die uitlegt waarom stopIncasso() vóór
+     cancelSubscription() hoort, en die noot NOEMT stopIncasso. De eerste
+     treffer zat dus in de uitleg en niet in de code, en de volgorde klopte
+     altijd. Twee keer dezelfde les in één test: meet de code, niet het verhaal
+     eromheen. Beide keren bewezen door de volgorde in de handler om te draaien
+     en te kijken of het rood werd. */
+  const cancelBody = ruw
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  ok('handlePlanCancel is gevonden', cancelStart > 0);
+  ok('opzeggen stopt de incasso vóór het de status verandert',
+    cancelBody.indexOf('stopIncasso') > -1
+    && cancelBody.indexOf('stopIncasso') < cancelBody.indexOf('cancelSubscription('));
+  ok('PLAN_MIN_MONTHS bestaat niet meer als belofte',
+    !/^export const PLAN_MIN_MONTHS/m.test(pricing));
+  ok('en geen enkel bestand belooft nog een minimum',
+    !/(minimaal \$\{?PLAN|PLAN_MIN_MONTHS\}? (months|maanden) minimum)/.test(pricing));
+}
+
 console.log(`\n${pass}/${pass + fail} geslaagd`);
 if (fail) process.exit(1);

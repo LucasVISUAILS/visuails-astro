@@ -93,6 +93,9 @@ import {
 } from '../../src/data/vat.js';
 import { checkVat, viesEvidence } from '../../src/lib/vies.js';
 import { composeName, composeAddress } from '../../src/data/address.js';
+import {
+  isGarmentId, contextAllowed, contextDefault, CONTEXT_SLOT_IDS, CONTEXT_OURS,
+} from '../../src/data/garments.js';
 
 const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
 
@@ -320,6 +323,83 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (typeof v !== 'string') continue;
     const cleaned = vetAnswer(k, v);
     if (cleaned) details[k] = cleaned;
+  }
+
+  /*
+   * ═══════════════════════════════════════════════════════════════════════════
+   * HET PRODUCTTYPE EN DE CONTEXTSTUKKEN — 18 AUGUSTUS 2026
+   * ═══════════════════════════════════════════════════════════════════════════
+   *
+   * src/data/garments.js beschrijft welke uitsnede bij welk producttype hoort en
+   * welke plekken in dat beeld nog vrij zijn voor een gratis contextstuk. Tot
+   * vandaag las NIETS die module: `contextAllowed()` bestond en werd nergens
+   * aangeroepen, dus alles wat een formulier meestuurde, belandde ongecontroleerd
+   * in details_json.
+   *
+   * ── WAAROM DIT SERVERKANT MOET GEBEUREN EN NIET IN HET FORMULIER ──────────
+   *
+   * De vraagjes die de klant ziet, worden door pipeline.js getoond en verborgen
+   * op basis van het gekozen type. Dat is een gemak voor de klant en GEEN
+   * controle: een zelfgebouwde post kan drie schoenen aan een broek hangen, of
+   * een top aan een sieraad. Dan staat er in de werkmap een instructie die niet
+   * uit te voeren is, en dat merkt niemand tot er iemand aan die map begint.
+   *
+   * ── WAT ER GEBEURT MET WAT NIET MAG ───────────────────────────────────────
+   *
+   * Het wordt STIL WEGGELATEN en de bestelling wordt niet geweigerd. Dezelfde
+   * afweging als bij de dienstnaam hierboven: een bezoeker die per ongeluk een
+   * verouderd formulier gebruikt, hoort een bestelling te kunnen plaatsen. Wat
+   * niet mag, komt niet in de werkmap — en dat is precies wat de controle moet
+   * bereiken. De weggelaten waarden worden wél gelogd, zodat een formulier dat
+   * structureel iets onmogelijks post, zichtbaar is.
+   *
+   * ── EEN LEEG SLOT IS EEN ANTWOORD ─────────────────────────────────────────
+   *
+   * Lucas, 17 augustus: als de klant niets bijvoegt, kiezen wij iets dat bij de
+   * stijl past. Dat is een BESLUIT en geen ontbrekend veld, dus staat het als
+   * `ours` in de bestelling. Zie contextDefault() en de noot erboven: "de klant
+   * koos niets" en "de klant koos dat wij kiezen" geven hetzelfde beeld maar een
+   * ander gesprek als er iets misgaat.
+   */
+  {
+    const type = String(details.garment || '').trim();
+    if (type && !isGarmentId(type)) {
+      console.warn('[order] onbekend producttype genegeerd:', type);
+      delete details.garment;
+    }
+    const geldigType = details.garment ? String(details.garment) : '';
+
+    for (const slot of CONTEXT_SLOT_IDS) {
+      const sleutel = `context_${slot}`;
+      const waarde = String(details[sleutel] || '').trim();
+      if (!waarde) continue;
+
+      /* Zonder een geldig type valt er niets te controleren, en dan is er ook
+         niets waar een contextantwoord bij hoort. Weg ermee. */
+      if (!geldigType || !contextAllowed(geldigType, slot)) {
+        console.warn(`[order] contextstuk '${slot}' hoort niet bij type '${geldigType || '—'}', genegeerd`);
+        delete details[sleutel];
+        continue;
+      }
+      /* Twee geldige waarden en verder niets: 'ours' (wij kiezen) of 'own' (de
+         klant levert het aan). Vrije tekst hoort in het opmerkingenveld en niet
+         in een veld waar de werkmap een besluit uit leest. */
+      if (waarde !== CONTEXT_OURS && waarde !== 'own') {
+        console.warn(`[order] contextwaarde '${waarde}' is geen keuze, teruggezet op de standaard`);
+        details[sleutel] = contextDefault();
+      }
+    }
+
+    /* En de plekken die WEL bij dit type horen maar niet zijn ingevuld, krijgen
+       de standaard. Zo staat er in de werkmap voor elke zichtbare plek een
+       besluit, in plaats van een gat waar iemand later over moet nadenken. */
+    if (geldigType) {
+      for (const slot of CONTEXT_SLOT_IDS) {
+        if (!contextAllowed(geldigType, slot)) continue;
+        const sleutel = `context_${slot}`;
+        if (!details[sleutel]) details[sleutel] = contextDefault();
+      }
+    }
   }
 
   /*

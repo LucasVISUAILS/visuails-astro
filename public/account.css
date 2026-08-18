@@ -1374,18 +1374,86 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
 .viewall { font-size: .82rem; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 .viewall:hover { color: var(--ink); }
 
-.statrow { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin: 1.4rem 0 0; }
-.stat, .stat.is-link {
-  border: 1px solid var(--line); border-radius: var(--r-sm, 6px);
-  background: var(--surface-2); padding: .9rem 1rem; display: block;
+/* ── DE BOVENBALK ─────────────────────────────────────────────────────────
+   Zie topBar() in src/lib/account.js voor waarom hij bestaat. Hier alleen de
+   vorm: naam links, chip ertussen, één actie rechts, en een lijn eronder die
+   de balk van de inhoud scheidt zonder er een kaart van te maken.
+
+   `align-items: start` en niet `center`: als er een lede onder de titel staat,
+   hoort de knop op de hoogte van de TITEL te blijven en niet mee te zakken
+   naar het midden van een blok dat op de ene pagina één en op de andere twee
+   regels hoog is. */
+.topbar {
+  display: flex; align-items: flex-start; gap: 1rem 1.2rem; flex-wrap: wrap;
+  padding-bottom: 1.1rem; margin-bottom: 1.6rem;
+  box-shadow: inset 0 -1px 0 var(--line);
 }
-.stat-n { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.7rem;
-  line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.stat-label { display: block; margin-top: .3rem; font-size: .78rem; color: var(--ink-3); }
-@media (hover: hover) {
-  .stat.is-link:hover { border-color: var(--line-strong); background: var(--surface); }
+.topbar-name { flex: 1 1 18rem; min-width: 0; }
+/* KLEINER DAN EEN LOSSE <h1>, en dat is het punt van een balk. Een titel van
+   2,6rem naast een knop van 40 pixels leest als een pagina met een kop erboven;
+   een titel die iets boven de knop uitkomt, leest als een balk waar beide in
+   staan. Het blijft de <h1> — alleen de maat verandert, niet de rang. */
+.topbar h1 { margin: 0; font-size: clamp(1.4rem, 2.4vw, 1.85rem); line-height: 1.15; }
+.topbar .lede { margin: .35rem 0 0; font-size: .92rem; }
+/* De chip staat op de hoogte van de titel en niet van de knop: hij hoort bij
+   wat er staat, niet bij wat je kunt doen. */
+.topchip {
+  align-self: center;
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .34rem .7rem;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-2); white-space: nowrap;
+}
+/* Kleur is NOOIT de enige drager: de chip zegt altijd een woord en een getal,
+   en de kleur bevestigt dat alleen. Zelfde afspraak als de statuspillen. */
+.topchip.is-signal { color: var(--signal-ink); border-color: var(--signal); }
+.topchip.is-warn { color: var(--warn-ink); border-color: var(--warn); }
+.topact { align-self: center; margin: 0; }
+.topact .btn { white-space: nowrap; }
+@media (max-width: 40rem) {
+  .topbar { gap: .8rem; }
+  .topchip, .topact { align-self: flex-start; }
+  .topact, .topact .btn { width: 100%; }
 }
 
+/* ── HET CIJFERBLOK ───────────────────────────────────────────────────────
+   Icoontegel, kleinkapitalen label, groot getal — in die volgorde, altijd.
+   Zie statTegel() in src/lib/account.js.
+
+   Het getal staat ONDER het label en niet erboven. Dat is de omkering ten
+   opzichte van wat hier stond, en het is de reden dat de rij nu te scannen is:
+   je leest vier keer hetzelfde soort regel op dezelfde hoogte, en het getal is
+   het laatste wat je ziet in plaats van het eerste. Een rij van vier getallen
+   zonder label erboven dwingt je elke keer terug naar boven om te weten wat je
+   leest. */
+.statrow { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0; }
+.stat, .stat.is-link {
+  border: 1px solid var(--line); border-radius: var(--r-sm, 6px);
+  background: var(--surface-2); padding: 1rem 1.05rem; display: block;
+}
+.stat-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; margin-bottom: .75rem;
+  border-radius: var(--r-sm, 6px);
+  background: var(--ghost); color: var(--ink-2);
+}
+.stat-i .i { width: 16px; height: 16px; }
+.stat-label {
+  display: block; font-size: .7rem; font-weight: 700;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+}
+.stat-n { display: block; margin-top: .25rem; font-family: var(--font-display); font-weight: 800;
+  font-size: 1.9rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+@media (hover: hover) {
+  .stat.is-link:hover { border-color: var(--line-strong); background: var(--surface); }
+  .stat.is-link:hover .stat-i { color: var(--signal-ink); }
+}
+
+/* .ovhead was de kop van het overzicht: <h1> links, knop rechts. Hij is
+   opgegaan in .topbar hierboven, die hetzelfde doet op ELKE sectie in plaats
+   van alleen hier. De regels blijven staan zolang er nog een sectie is die
+   .ovhead gebruikt; zodra dat er geen meer zijn, kunnen ze weg. */
 .ovhead { display: flex; align-items: flex-start; justify-content: space-between;
   gap: 1.2rem; flex-wrap: wrap; margin-bottom: .4rem; }
 .ovhead h1 { margin: 0; }
@@ -1478,13 +1546,13 @@ input, textarea, select, .pill, .navlink, .field, .chip { border-radius: var(--r
    een vervangend beeld levert — dan valt het oude beeld uit de lijst (zie
    loadCustomerFiles over superseded_at) en is er niets meer om te markeren. */
 .prod.is-revising {
-  border-color: var(--warn, #b8860b);
-  box-shadow: 0 0 0 1px var(--warn, #b8860b), 0 0 22px -8px var(--warn, #b8860b);
+  border-color: var(--warn);
+  box-shadow: 0 0 0 1px var(--warn), 0 0 22px -8px var(--warn);
 }
 .prod-flag {
   align-self: flex-start; margin-top: .15rem;
   font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 700;
-  color: var(--warn-ink, #e0a92b);
+  color: var(--warn-ink);
 }
 
 .prod-inner { display: grid; gap: 1.1rem; padding: .2rem .8rem .9rem; }
@@ -1620,7 +1688,7 @@ details.ask { margin-top: 0; }
   background: rgb(8 9 11 / .78); backdrop-filter: blur(3px);
 }
 .shot-badge.is-approved { color: var(--accent); }
-.shot-badge.is-revision { color: var(--warn-ink, #e0a92b); box-shadow: inset 0 0 0 1px var(--warn, #b8860b); }
+.shot-badge.is-revision { color: var(--warn-ink); box-shadow: inset 0 0 0 1px var(--warn); }
 
 /* De notitie staat onder de knoppen: extra hoogte trekt daar niets meer
    scheef, en hij hoort bij het vlaggetje op de foto, niet tussen de knoppen. */
@@ -1806,7 +1874,7 @@ details.ask { margin-top: 0; }
    alleen nog iets gebeuren — en rood is hier gereserveerd voor een terugbetaling
    en voor het onomkeerbare vak in admin. */
 .paybox.is-unpaid { border-left: 2px solid var(--accent); }
-.paybox.is-refunded { border-left: 2px solid var(--warn, #b8860b); }
+.paybox.is-refunded { border-left: 2px solid var(--warn); }
 
 /* Bedragen rechts uitgelijnd op cijfers die even breed zijn, zodat netto, btw
    en totaal onder elkaar te lezen zijn als een kolom en niet als drie zinnen. */
@@ -1825,7 +1893,7 @@ details.ask { margin-top: 0; }
 /* De melding als het betaalscherm niet openging. Dezelfde kaart als de
    opgeslagen-bevestiging, met een amberrand ervoor omdat dit geen bevestiging
    is maar een tegenvaller. */
-.det-ok.is-warn { border-color: var(--warn, #b8860b); color: var(--ink); }
+.det-ok.is-warn { border-color: var(--warn); color: var(--ink); }
 
 /* ── HET VINKJE NAAST HET BTW-NUMMER — 7 augustus 2026 ───────────────────────
  *
@@ -2666,3 +2734,16 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
   .q-rij { flex-direction: column; align-items: stretch; }
   .q-knoppen { justify-content: flex-end; }
 }
+
+/* ── DRIE ORANJES VOOR ÉÉN TOESTAND — OPGERUIMD 18 AUGUSTUS 2026 ────────────
+   Zes regels hierboven stonden met een terugvalkleur achter hun variabele:
+   `var(--warn, #b8860b)` en `var(--warn-ink, #e0a92b)`. Geen van beide is
+   --clay (#E9963B). Een terugval die iets ANDERS is dan de variabele zelf is
+   geen vangnet maar een tweede en derde waarheid: hij treedt alleen in werking
+   als de variabele ontbreekt, en dan tekent hij "let op" in een kleur die deze
+   site nergens anders gebruikt.
+
+   Ze zijn allemaal weg. --clay staat in :root in dit bestand, in hetzelfde
+   document, dus er is geen scenario waarin de variabele er niet is en de rest
+   van het stylesheet wél. Eén toestand, één kleur, één plek om hem te
+   veranderen. Zie HERONTWERP.md §2.3. */

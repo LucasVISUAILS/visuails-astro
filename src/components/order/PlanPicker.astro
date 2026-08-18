@@ -26,7 +26,7 @@
 // door te bestellen. De handler zit dus in account.js, achter de sessiecontrole:
 // wie niet is ingelogd, komt op de inlogpagina en niet op een betaalscherm. Zie
 // de kop van src/lib/subscribe.js voor waarom dat de goede kant op is.
-import { plans, euro, vatLabel, PLAN_MIN_MONTHS } from '../../data/pricing.js';
+import { plans, euro, vatLabel } from '../../data/pricing.js';
 import { TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel } from '../../data/plans.js';
 import { planName } from '../../data/planNames.js';
 import { localizedPath } from '../../i18n/ui.js';
@@ -61,7 +61,7 @@ const foutTekst = FOUTEN[fout] || '';
 
 const c = nl ? {
   h: 'Een abonnement afsluiten',
-  lede: `Elke maand een vast aantal afgemaakte producten, in een week die voor jou gereserveerd is. Minimaal ${PLAN_MIN_MONTHS} maanden.`,
+  lede: 'Elke maand een vast aantal afgemaakte producten, in een week die voor jou gereserveerd is. Maandelijks opzegbaar.',
   planH: 'Welk abonnement',
   termH: 'Welke termijn',
   weekH: 'Je vaste week',
@@ -80,7 +80,7 @@ const c = nl ? {
   sample: 'Eerst een proefvisual',
 } : {
   h: 'Start a plan',
-  lede: `A fixed number of finished products every month, in a week reserved for you. ${PLAN_MIN_MONTHS} months minimum.`,
+  lede: 'A fixed number of finished products every month, in a week reserved for you. Cancel any month.',
   planH: 'Which plan',
   termH: 'Which term',
   weekH: 'Your fixed week',
@@ -166,10 +166,10 @@ const termijnen = TERM_IDS.map((id) => ({
                 {nl
                   ? (t.id === 'yearly'
                     ? `${t.maanden} maanden vast. Een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio.`
-                    : `Maandelijks. Minimaal ${PLAN_MIN_MONTHS} maanden, daarna per maand opzegbaar.`)
+                    : 'Maandelijks, en elke maand opzegbaar. Je zegt op in je eigen dashboard.')
                   : (t.id === 'yearly'
                     ? `${t.maanden} months fixed. A standing week, three months of rollover, a price lock, and the Brand Model on Studio too.`
-                    : `Monthly. ${PLAN_MIN_MONTHS} months minimum, then cancel any month.`)}
+                    : 'Monthly, and cancellable any month. You cancel it yourself in your dashboard.')}
               </span>
             </span>
           </label>

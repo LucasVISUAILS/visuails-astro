@@ -996,17 +996,34 @@ function initThankYou() {
   if (!/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) return;
   const d = t18();
   const pay = molliePayUrl(params.get('pay'));
-  box.innerHTML = `<h4 style="margin-bottom:.4rem">${d.tyRefTitle}</h4>`
-    + `<p style="margin:0;font-size:1.15rem;letter-spacing:.02em"><strong>${ref.toUpperCase()}</strong></p>`
-    + `<p style="margin:.55rem 0 0;color:var(--ink-3);font-size:.9rem">${d.tyRefNote}</p>`
-    // De betaalknop staat ÍN het referentievak en niet ergens los: dit is het
-    // enige blok op de pagina dat over deze ene bestelling gaat, en de
-    // handeling hoort bij het nummer waar hij bij hoort.
-    + (pay
-      ? `<p style="margin:1rem 0 .5rem;font-size:.92rem;color:var(--ink-2)">${d.tyPayNote}</p>`
-        + `<a class="btn btn-primary" href="${pay}" rel="noopener">${d.tyPayCta}</a>`
-      : '');
-  box.style.display = 'block';
+  /* ── HET KENMERK IS EEN RIJ IN DE SAMENVATTING GEWORDEN — 18 augustus 2026 ──
+     Hier stond een compleet kaartje dat dit script uit een string opbouwde, met
+     de opmaak in inline stijlattributen. Sinds de herindeling staat de rij AL in
+     de HTML (zie ThankYouPage.astro) en hoeft dit script alleen nog het nummer
+     in te vullen en de rij zichtbaar te maken.
+
+     Dat is niet alleen korter: opmaak die in een JavaScript-string staat, is
+     opmaak die geen enkele stylesheet kent en die bij een paletwijziging
+     achterblijft. Nu staat er hier geen enkele kleur meer. */
+  const refCel = box.querySelector('[data-ty-ref]');
+  if (refCel) refCel.textContent = ref.toUpperCase();
+  box.hidden = false;
+
+  /* De betaalknop hoort bij het nummer waar hij bij hoort, dus hij komt in
+     dezelfde rij te staan — maar als een echt element en niet als string-html. */
+  if (pay) {
+    const wrap = document.createElement('p');
+    wrap.className = 'ty-pay-cta';
+    const note = document.createElement('span');
+    note.textContent = d.tyPayNote;
+    const knop = document.createElement('a');
+    knop.className = 'btn btn-primary';
+    knop.href = pay;
+    knop.rel = 'noopener';
+    knop.textContent = d.tyPayCta;
+    wrap.append(note, knop);
+    box.append(wrap);
+  }
 
   /* Sinds 11 augustus 2026: kijken of deze bestelling niet zojuist is
      tegengehouden. Zie initCancelled() hieronder voor de wedloop die dit moet
@@ -1069,6 +1086,22 @@ function checkCancelled(ref, attempt = 0) {
         const box = document.querySelector('[data-ty-cancelled]');
         if (!box) return;
         box.hidden = false;
+
+        /* ── DE KOP WISSELT, HIJ WORDT NIET VERDUBBELD — 18 augustus 2026 ────
+           De pagina had twee <h1>'s: de bedanktekst en de annuleringskop, met
+           altijd precies één zichtbaar. Een validator telt ze allebei, en de
+           twee hadden verschillende koptypografie — dus de geannuleerde
+           toestand had zichtbaar een andere paginatitel.
+
+           Nu is er één kop, in de balk, en die krijgt hier zijn andere tekst.
+           De tekst zelf staat in het component en niet hier: vertalingen horen
+           bij de opmaak, niet in een script. */
+        const titel = document.querySelector('[data-ty-title]');
+        if (titel && titel.dataset.tyTitleCancelled) {
+          titel.textContent = titel.dataset.tyTitleCancelled;
+        }
+        const balk = document.querySelector('[data-ty-bar]');
+        if (balk) balk.setAttribute('data-ty-cancelled-state', '');
 
         /* De rest van de pagina gaat weg. Dit is het enige geval waarin de
            bedanktekst ronduit onwaar is — er wordt niets gemaakt en er komt geen

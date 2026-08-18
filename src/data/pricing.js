@@ -185,9 +185,34 @@ export const PLAN_AMOUNT = { starter: 390, studio: 790, brand: 1690 };
 export const PLAN_PRODUCTS = { starter: 5, studio: 12, brand: 30 };
 /** Video clips included in a plan, per month. */
 export const PLAN_CLIPS = { starter: 0, studio: 2, brand: 0 };
-/** Minimum term, in months, and how long an unused product rolls over. */
-export const PLAN_MIN_MONTHS = 3;
+/* ── GEEN MINIMALE LOOPTIJD MEER — 18 augustus 2026 ────────────────────────
+   PLAN_MIN_MONTHS stond hier op 3 en zes plekken in de copy zeiden "minimaal
+   3 maanden". DE CODE HEEFT DAT NOOIT AFGEDWONGEN: handlePlanCancel() zegt
+   direct op en Mollie schrijft daarna niets meer af, in maand 1 net zo goed
+   als in maand 4. De site beloofde dus een binding die niet bestond, en dat
+   is precies het soort beding waar je bij een geschil op vastloopt.
+
+   Lucas' keuze bij het schrijven van de abonnementsvoorwaarden: de maandelijkse
+   termijn IS maandelijks opzegbaar. Dat is wat de code al deed, het is de
+   eenvoudigste belofte, en bij een dienst zonder recensies is een lage drempel
+   om te beginnen meer waard dan een gebonden klant die weg wil.
+
+   DE JAARTERMIJN BLIJFT VAST. Die is het wél: `TERMS.yearly.fixed === true` en
+   de subscription bij Mollie krijgt `times: 12`, dus hij stopt zichzelf na
+   twaalf termijnen. Dat onderscheid is nu het enige dat de twee termijnen op
+   dit punt scheidt, en het staat in plans.js waar het hoort.
+
+   PLAN_ROLLOVER_MONTHS blijft; doorschuiven is een echt kenmerk en de waarde
+   wordt door plans.js per termijn overschreven (1 maandelijks, 3 jaarlijks).
+
+   EN HET GETAL 3 BLIJFT OOK, MAAR NIET ALS BELOFTE. TERMS.monthly.months
+   gebruikt het om te vergelijken: termTotalCents() rekent er "wat drie maanden
+   kost" mee uit en assertPlans() controleert dat de jaartermijn langer is dan
+   de maandtermijn. Dat is een REKENVENSTER en geen verplichting, en het heet
+   daarom nu ook zo. Een constante die PLAN_MIN_MONTHS heet, komt vroeg of laat
+   weer als "minimaal" in een zin terecht. */
 export const PLAN_ROLLOVER_MONTHS = 1;
+export const PLAN_COMPARE_MONTHS = 3;
 
 // WHICH ORDERS GET THE RESERVED WINDOW.
 //
@@ -851,7 +876,26 @@ export const TIERS = {
       // "48 uur vanaf je leverdatum" — de Nederlandse tekst was dus ook met
       // zichzelf in tegenspraak. Vermoedelijk bijschade van het opruimen van het
       // woord "venster".
-      nl: 'Levering binnen 48 uur vanaf je leverdatum, vastgezet voordat je betaalt',
+      //
+      // ── EN OP 18 AUGUSTUS 2026 BLEEK HIJ NOG STEEDS IETS ANDERS TE ZEGGEN ──
+      //
+      // De reparatie hierboven bracht de Nederlandse regel dichter bij de
+      // Engelse en schoot er overheen. Er stond: "Levering binnen 48 uur vanaf
+      // je leverdatum". De Engelse regel belooft een GERESERVEERD BLOK van 48
+      // uur; de Nederlandse beloofde LEVERING BINNEN 48 uur ná een datum. Dat
+      // is een andere toezegging, en een zwaardere, op veertien pagina's in de
+      // taal van zijn thuismarkt.
+      //
+      // En hij botst met capacity.js, die er expliciet over is: een venster is
+      // twee WERKdagen, een venster dat vrijdag opengaat loopt vrijdag en
+      // maandag, en — letterlijk — *"the client is told the calendar dates,
+      // never the phrase '48 hours' as a countdown"*. Precies een aftelling is
+      // wat "binnen 48 uur vanaf je leverdatum" leest, en in dat vrijdaggeval
+      // is de eigen normale gang van zaken al 72 uur wandklok.
+      //
+      // Nu zegt hij wat de Engelse regel zegt: een blok dat we vrijhouden. Het
+      // aanbod verandert niet; de belofte die er per ongeluk bij stond, gaat weg.
+      nl: 'Een blok van 48 uur dat we voor je vrijhouden, vastgezet voordat je betaalt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
@@ -1145,8 +1189,8 @@ export function plans(lang = 'en') {
         ...(id === 'brand' ? [nlx ? 'Je merkmodel inbegrepen' : 'Your Brand Model included'] : []),
         turnaround('attended', l),
         nlx
-          ? `Minimaal ${PLAN_MIN_MONTHS} maanden, ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door`
-          : `${PLAN_MIN_MONTHS} months minimum, unused products roll over ${PLAN_ROLLOVER_MONTHS} month`,
+          ? `Maandelijks opzegbaar, ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door`
+          : `Cancel any month, unused products roll over ${PLAN_ROLLOVER_MONTHS} month`,
       ],
       saving: saving
         ? (nlx

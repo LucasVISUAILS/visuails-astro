@@ -38,6 +38,10 @@
 
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
+import { TIERS } from '../src/data/pricing.js';
+import { ROSTER } from '../src/data/models.js';
+import { styles } from '../src/data/styles.js';
+import { WINDOW_DAYS } from '../src/data/capacity.js';
 import {
   UPLOAD_DAYS,
   DELIVERY_MONTHS,
@@ -486,6 +490,155 @@ console.log('\nde cron-worker kijkt naar dezelfde database als de site');
   check('R2 gaat vóór de rij', idx.indexOf('UPLOADS.delete') < idx.indexOf('DELETE FROM files'), true);
   check('de varianten uit 0022 gaan mee', /FROM file_assets WHERE file_id IN/.test(idx), true);
   check('facturen worden niet opnieuw genummerd', /issueInvoice\(/.test(codeOnly(idx)), false);
+}
+
+/* ══ DE TWEE TALEN BELOVEN HETZELFDE ═══════════════════════════════════════
+ *
+ * TIERS.attended.turnaround staat op veertien pagina's per taal, en de twee
+ * regels hebben twee keer iets anders gezegd:
+ *
+ *   · vóór 8 augustus 2026 — NL "een leverdatum met 48 uur werk erin". Dat gaat
+ *     over hoeveel uur wij eraan werken en zegt niets over snelheid.
+ *   · daarna, tot 18 augustus — NL "levering binnen 48 uur vanaf je
+ *     leverdatum". De reparatie schoot door: EN belooft een gereserveerd BLOK,
+ *     NL beloofde LEVERING BINNEN. Een zwaardere toezegging, in de taal van de
+ *     thuismarkt, en in strijd met capacity.js — die zegt met zoveel woorden
+ *     dat 48 uur nooit als aftelling aan een klant wordt verteld, omdat een
+ *     venster dat vrijdag opengaat vrijdag en maandag loopt.
+ *
+ * Twee keer dezelfde regel, twee keer mis, en beide keren pas gevonden door hem
+ * naast de Engelse te leggen. Vandaar deze test: niet WELKE woorden er staan,
+ * maar dat geen van beide talen iets belooft wat de ander niet belooft.
+ */
+console.log('\nde levertijdbelofte is in beide talen dezelfde belofte');
+{
+  const en = TIERS.attended.turnaround.en;
+  const nl = TIERS.attended.turnaround.nl;
+
+  /* Geen van beide mag LEVERING BINNEN een termijn beloven. Het aanbod is een
+     blok dat wordt vrijgehouden; wanneer het geleverd wordt, staat als datum in
+     de bevestiging en niet als aftelling in een tariefkaart. */
+  check('en belooft geen levering binnen een termijn', /deliver\w* (with)?in \d/i.test(en), false);
+  check('nl belooft geen levering binnen een termijn', /levering binnen \d|geleverd binnen \d/i.test(nl), false);
+
+  /* Beide noemen wél het getal en beide zeggen dat het vooraf vaststaat — dat
+     is de belofte die er wel is. */
+  check('en noemt de 48 uur', /48/.test(en), true);
+  check('nl noemt de 48 uur', /48/.test(nl), true);
+  check('en zegt dat het vooraf vaststaat', /before you pay/i.test(en), true);
+  check('nl zegt dat het vooraf vaststaat', /voordat je betaalt/i.test(nl), true);
+
+  /* En capacity.js blijft de bron van wat 48 uur betekent. Verandert WINDOW_DAYS,
+     dan klopt de zin niet meer en hoort iemand hier langs te komen. */
+  check('een venster is twee werkdagen', WINDOW_DAYS, 2);
+}
+
+/* ══ GETYPTE AANTALLEN TEGEN DE ECHTE LIJSTEN ══════════════════════════════
+ *
+ * HERONTWERP.md §2.9. Op de gebouwde site staan zinnen als "de tien gezichten"
+ * (88 pagina's), "vier huisstijlen" en "drie diensten". Ze KLOPPEN vandaag
+ * allemaal — nagemeten — en dat is precies waarom ze gevaarlijk zijn: het
+ * eerstvolgende model dat aan de roster wordt toegevoegd, maakt van tweeënnegentig
+ * pagina's een leugen, en niets valt om.
+ *
+ * WAAROM EEN TEST EN GEEN AFGELEIDE ZIN. De copy zou het aantal uit de bron
+ * kunnen halen — `${ROSTER.length} gezichten` — en op sommige plekken gebeurt dat
+ * al. Maar "de tien gezichten" is lopende zin, geen cijfer in een tegel: er staat
+ * een lidwoord voor en een komma achter, en in twee talen met een ander
+ * meervoud. Elke zin met een sjabloon erin zou hem stroever maken om iets te
+ * beschermen dat maar één keer per jaar verandert.
+ *
+ * Deze test doet het omgekeerde: de zin blijft gewoon een zin, en de DAG dat de
+ * lijst verandert, wordt hij rood en zegt hij welk woord waar aangepast moet
+ * worden. Dat is het goedkoopste moment om het te weten.
+ */
+console.log('\ngetypte aantallen kloppen nog met de lijsten waar ze over gaan');
+{
+  const woord = { 3: ['three', 'drie'], 4: ['four', 'vier'], 5: ['five', 'vijf'], 10: ['ten', 'tien'] };
+  const bron = readFileSync(new URL('../src/components/order/ModelPicker.astro', import.meta.url), 'utf8');
+
+  /* De roster. Twee zinnen, één per taal, allebei met het aantal uitgeschreven. */
+  const [enW, nlW] = woord[ROSTER.length] || [];
+  check(`het aantal gezichten (${ROSTER.length}) heeft een woord`, Boolean(enW), true);
+  if (enW) {
+    check(`de Engelse zin zegt "${enW} faces"`, bron.includes(`${enW} faces`), true);
+    check(`de Nederlandse zin zegt "${nlW} gezichten"`, bron.includes(`${nlW} gezichten`), true);
+  }
+
+  /* De huisstijlen. styles.js draagt er vijf, maar Custom is er geen — die heeft
+     geen moodTitle en wél een orderHref, want hij is de bespoke-uitweg en niet
+     een look waaruit je kiest. Het getal in de copy is dus het aantal ECHTE
+     stijlen, en die afleiding staat hier zodat hij niet nog eens geraden wordt. */
+  const echteStijlen = styles.filter((s2) => s2.moodTitle).length;
+  const [enS, nlS] = woord[echteStijlen] || [];
+  check(`het aantal huisstijlen is ${echteStijlen}`, echteStijlen >= 1, true);
+  const start = readFileSync(new URL('../src/components/StartPage.astro', import.meta.url), 'utf8');
+  if (enS) {
+    check(`StartPage zegt "${enS} house styles"`, start.includes(`${enS} house styles`), true);
+    check(`en "${nlS} huisstijlen"`, start.includes(`${nlS} huisstijlen`), true);
+  }
+}
+
+/* ══ DESIGN.md BESCHRIJFT DE GEBOUWDE SITE ═════════════════════════════════
+ *
+ * HERONTWERP.md §2.11. DESIGN.md heeft vier paletten beschreven en liet er drie
+ * als tabel staan. Gevolg: `#90BEFF` — het lichtblauw van sectie 18 — stond er
+ * op vier plekken nog in terwijl global.css al maanden `#C6F100` draagt. Een
+ * ontwerpbestand is het eerste waar iemand een waarde uit overneemt, dus een
+ * verouderde tabel is geen documentatieschuld maar een val.
+ *
+ * Deze test leest de tokens uit global.css en eist dat elke hexwaarde die
+ * DESIGN.md als TOKENWAARDE noemt, ook echt in het stylesheet staat. Niet
+ * andersom: het stylesheet mag kleuren hebben die het ontwerpbestand niet
+ * uitschrijft. Wat verboden is, is het omgekeerde — een waarde documenteren die
+ * nergens bestaat.
+ *
+ * De uitzondering die met zoveel woorden is toegestaan: een hex in een noot die
+ * uitlegt wat er VROEGER stond. Die staat er juist om te voorkomen dat iemand de
+ * oude waarde terugzet, en hij is te herkennen aan het woord "tot" of "was" in
+ * dezelfde regel. Zonder die uitzondering zou deze test de enige goede manier om
+ * een palet af te schrijven, verbieden.
+ */
+console.log('\nDESIGN.md noemt geen kleuren die de site niet heeft');
+{
+  const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8');
+  const design = readFileSync(new URL('../DESIGN.md', import.meta.url), 'utf8');
+  /* ZONDER COMMENTAAR, en dat is de reparatie die deze test pas bruikbaar maakt.
+     Eerste versie las global.css inclusief noten — en daar staat, bij het accent,
+     letterlijk *"Was #90BEFF, a light blue, until August 2026"*. Die ene regel zet
+     de oude waarde in de verzameling van "kleuren die de site heeft", en dus kon
+     DESIGN.md het afgeschreven accent gewoon blijven noemen zonder rood te worden.
+     Bewezen door precies dat te doen: het accent in DESIGN.md terugzetten op
+     #90BEFF liet de test groen. Nu niet meer. */
+  const cssCode = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const inCss = new Set([...cssCode.matchAll(/#([0-9a-fA-F]{6})\b/g)].map((m) => m[1].toUpperCase()));
+
+  /* EEN AFGESCHREVEN PARAGRAAF TELT NIET MEE, en dat is geen achterdeur maar de
+     enige manier waarop een palet netjes afgeschreven KAN worden. Een kop met
+     "INGETROKKEN" erin zet alles eronder buiten deze controle tot de volgende
+     `## `-kop; de tabellen blijven staan als verantwoording van de methode, en
+     de waarden erin gelden aantoonbaar niet meer. Zonder deze uitzondering zou
+     de test eisen dat oude paletten worden gewist, en dan is de reden waarom er
+     iets veranderde ook weg. */
+  let ingetrokken = false;
+  const spook = [];
+  for (const regel of design.split('\n')) {
+    if (/^#{2,3}\s/.test(regel)) ingetrokken = /INGETROKKEN|RETIRED|SUPERSEDED/i.test(regel);
+    // Alleen regels die een hex als WAARDE van een token opvoeren.
+    if (!/`--[a-z0-9-]+`/.test(regel) && !/\| `#/.test(regel)) continue;
+    if (/\b(tot|was|voorheen|until|previously)\b/i.test(regel)) continue;   // een noot over het verleden
+    if (ingetrokken) continue;                                               // een afgeschreven paragraaf
+    for (const m of regel.matchAll(/#([0-9a-fA-F]{6})\b/g)) {
+      if (!inCss.has(m[1].toUpperCase())) spook.push(`#${m[1]} — ${regel.trim().slice(0, 72)}`);
+    }
+  }
+  check('geen tokenwaarde in DESIGN.md die global.css niet kent', spook, []);
+
+  /* En het accent bij name, want dat is de waarde die drie keer is verhuisd en
+     die op elke pagina te zien is. */
+  const accent = /--accent:\s*(#[0-9a-fA-F]{6})/.exec(css)?.[1];
+  check('global.css draagt een accent', Boolean(accent), true);
+  check('en DESIGN.md noemt datzelfde accent', design.includes(accent), true);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

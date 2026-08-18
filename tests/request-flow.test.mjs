@@ -172,11 +172,17 @@ console.log('\nde bedankpagina en het eindpunt sluiten op elkaar aan');
   ok('en opent het blok alleen op het machinewoord',
     /d\.kind !== 'sample-duplicate'/.test(inter), true);
 
-  const ty = read('src/pages/thank-you.astro');
-  ok('het blok staat op de Engelse bedankpagina', ty.includes('data-ty-cancelled'), true);
-  ok('en de rest van de pagina kan weg', ty.includes('ty-hide-when-cancelled'), true);
-  const tyNl = read('src/pages/nl/thank-you.astro');
-  ok('idem op de Nederlandse', tyNl.includes('data-ty-cancelled'), true);
+  /* De bedankpagina staat sinds de herbouw in EEN component, zodat EN en NL
+     niet uit elkaar kunnen lopen. Het blok wordt daar getoetst, en de twee
+     pagina's worden getoetst op het feit dat ze die component gebruiken --
+     anders verhuist de markering ongemerkt en zegt deze test niets meer. */
+  const tyComp = read('src/components/ThankYouPage.astro');
+  ok('het blok staat in de gedeelde bedankcomponent',
+    tyComp.includes('data-ty-cancelled'), true);
+  ok('en de rest van de pagina kan weg', tyComp.includes('ty-hide-when-cancelled'), true);
+  for (const p of ['src/pages/thank-you.astro', 'src/pages/nl/thank-you.astro']) {
+    ok(`${p} gebruikt die component`, /<ThankYouPage\b/.test(read(p)), true);
+  }
 
   /* De webhook is de enige die dit woord zet. Verandert het daar, dan moet het
      hier meeveranderen, en dan zegt deze regel dat. */

@@ -167,5 +167,39 @@ console.log('\nde bouwcontrole houdt tegen wat stil fout zou gaan');
   ok('en die afwijzing staat er nog', /GARMENT CATEGORY\. Try-on pipelines detect/.test(attr), true);
 }
 
+/* ══ DE TWEEDE WAARHEID IN pipeline.js ═════════════════════════════════════
+ *
+ * src/scripts/pipeline.js draait in de browser, importeert niets, en draagt
+ * daarom zijn eigen tabel CTX_BY_GARMENT: welke contextplekken er bij welk
+ * producttype horen. Dat is een kopie van wat contextSlots() hier uitrekent, en
+ * een kopie die niemand bewaakt, loopt uit elkaar.
+ *
+ * WAAROM DIE KOPIE MAG BESTAAN. Dat script komt als één bestand via een <script>
+ * binnen, met zijn configuratie in een data-attribuut; garments.js importeren zou
+ * een bundelstap vragen voor dit ene formulier. En het is comfort en geen
+ * controle — /api/order gooit hoe dan ook weg wat niet bij het type past.
+ *
+ * WAT DEZE TEST DOET. Regel voor regel vergelijken. Loopt de tabel uit de pas met
+ * de bron, dan valt hij hier om en niet op het scherm van een klant die zich
+ * afvraagt waarom hij bij een jurk naar een top wordt gevraagd.
+ */
+console.log('\npipeline.js draagt dezelfde tabel als garments.js');
+{
+  const src = readFileSync(new URL('../src/scripts/pipeline.js', import.meta.url), 'utf8');
+  const blok = /const CTX_BY_GARMENT = \{([\s\S]*?)\n\};/.exec(src);
+  ok('de tabel is gevonden', Boolean(blok), true);
+
+  const inScript = {};
+  for (const m of (blok?.[1] || '').matchAll(/^\s*(\w+):\s*\[([^\]]*)\],/gm)) {
+    inScript[m[1]] = m[2].split(',').map((x) => x.trim().replace(/'/g, '')).filter(Boolean);
+  }
+  ok('en bevat elk producttype', Object.keys(inScript).sort(), [...GARMENT_IDS].sort());
+
+  for (const id of GARMENT_IDS) {
+    const uitBron = contextSlots(id).map((s2) => s2.id);
+    ok(`${id}: dezelfde plekken als contextSlots()`, inScript[id] || null, uitBron);
+  }
+}
+
 console.log(`\n${pass}/${pass + fail} geslaagd`);
 if (fail) process.exit(1);

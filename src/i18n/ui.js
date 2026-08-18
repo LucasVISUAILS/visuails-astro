@@ -103,6 +103,51 @@ export const ui = {
        * onafgemaakt ding dat zegt wat het is.
        */
       { title: 'Hooks', desc: 'Not ready yet — a short video on a proven format, soon', soon: true },
+      /* EDITIONS — aangekondigd op 18 augustus 2026, zelfde behandeling als
+         Hooks: in het menu waar de diensten staan, zonder href, en Layout.astro
+         tekent hem daarom als uitgeschakeld menu-item.
+
+         De naam staat op TWEE plekken: hier, en in svcSoonList in
+         HomeV2.astro. Verandert hij, dan hier ook. Waarom juist dit woord staat
+         voluit bij dat object; kort: het idee komt uit STOCK-IDEE.md, en dat
+         document laat zien dat "stock" de vergelijking opzoekt die je verliest
+         terwijl een editie precies zegt wat het is — een oplage, gedateerd en
+         voor deze maand gemaakt. */
+      { title: 'Editions', desc: 'Not ready yet — a set of images made for your brand, every month', soon: true },
+    ],
+    /*
+     * ── DE TWEEDE LAAG, 18 AUGUSTUS 2026 ──────────────────────────────────
+     *
+     * De site had 36 routes en zes plekken in het menu. Alles wat niet paste,
+     * belandde in de voettekst: vijfentwintig links in vier kolommen, zonder
+     * rangorde. Acht pagina's van gewicht bestonden alléén daar, en twee —
+     * /models en /upload-guidelines — hadden helemaal geen plek en waren alleen
+     * te vinden als zin in een alinea. /demo had nul inkomende links.
+     *
+     * Sorteer je die 36 routes op functie, dan zijn er vier lagen: wat we maken,
+     * HOE HET WERKT, wat het kost, en wie we zijn. De tweede ontbrak in de
+     * navigatie, terwijl het de laag is die het bezwaar wegneemt — en dit
+     * verkoopt aan merken die volgens PRODUCT.md *"sceptisch in plaats van
+     * nieuwsgierig"* aankomen.
+     *
+     * Vandaar één ingang erbij in plaats van tien losse links. Geen enkele URL
+     * verandert, dus er gaat geen enkele vindbaarheid verloren; wat verandert is
+     * dat deze pagina's te vinden zijn zonder naar beneden te scrollen.
+     *
+     * DE VOLGORDE IS DIE VAN EEN BESTELLING en niet alfabetisch: eerst wat er
+     * gebeurt, dan waar je het ziet, dan waarmee het gemaakt wordt, dan de
+     * vergelijking, dan de verantwoording.
+     */
+    nav_how: 'How it works',
+    how: [
+      { href: '/how-it-works', title: 'From order to delivery', desc: 'The four steps, and the two you are in' },
+      { href: '/demo', title: 'See an order run', desc: 'Walk through one, screen by screen' },
+      { href: '/studio', title: 'How an order is run', desc: 'The studio day, the calendar, the capacity' },
+      { href: '/portal', title: 'VISUAILS Studio', desc: 'Where your work lands, and how you approve it' },
+      { href: '/models', title: 'The models', desc: 'The ten faces included in every order' },
+      { href: '/upload-guidelines', title: 'Sending your photos', desc: 'What we need, and what a phone can do' },
+      { href: '/compare', title: 'A shoot day vs VISUAILS', desc: 'What each one costs, in money and in days' },
+      { href: '/ai-act', title: 'AI Act & transparency', desc: 'What is made how, stated plainly' },
     ],
     nav_soon: 'Soon',
     mob_chat: 'Chat on WhatsApp',
@@ -221,6 +266,18 @@ export const ui = {
       { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten' },
       { href: '/video', title: 'Video', desc: 'Korte clips met beweging, op elk product in de bestelling' },
       { title: 'Hooks', desc: 'Nog niet klaar — een korte video op een bewezen format, binnenkort', soon: true },
+      { title: 'Editions', desc: 'Nog niet klaar — elke maand een set beelden op jouw merk, binnenkort', soon: true },
+    ],
+    nav_how: 'Hoe het werkt',
+    how: [
+      { href: '/how-it-works', title: 'Van bestelling tot levering', desc: 'De vier stappen, en de twee waar jij in zit' },
+      { href: '/demo', title: 'Zie een bestelling draaien', desc: 'Loop er \u00e9\u00e9n door, scherm voor scherm' },
+      { href: '/studio', title: 'Hoe een bestelling draait', desc: 'De studiodag, de kalender, de capaciteit' },
+      { href: '/portal', title: 'VISUAILS Studio', desc: 'Waar je werk landt, en hoe je het goedkeurt' },
+      { href: '/models', title: 'De modellen', desc: 'De tien gezichten die bij elke bestelling horen' },
+      { href: '/upload-guidelines', title: 'Je foto\u2019s aanleveren', desc: 'Wat we nodig hebben, en wat een telefoon kan' },
+      { href: '/compare', title: 'Shootdag vs VISUAILS', desc: 'Wat beide kosten, in geld en in dagen' },
+      { href: '/ai-act', title: 'AI Act & transparantie', desc: 'Wat waarmee gemaakt is, gewoon gezegd' },
     ],
     nav_soon: 'Binnenkort',
     mob_chat: 'Chat via WhatsApp',

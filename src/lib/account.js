@@ -122,10 +122,11 @@ import { createOrderMolliePayment } from './mollie.js';
  * is). Dit dashboard leest ze allebei en schrijft alleen via subscription.js —
  * er staat hier geen enkele query op subscriptions of plan_queue.
  */
-import { handleSubscribeStart, handleSubscribeReturn } from './subscribe.js';
+import { handleSubscribeStart, handleSubscribeReturn, stopIncasso, hervatIncasso } from './subscribe.js';
 import {
   planState, loadQueue, queueAdd, queueRemove, queueReorder,
   pauseSubscription, activateSubscription, cancelSubscription, subscriptionShape,
+  clearMollieSubscriptionId,
 } from './subscription.js';
 import { planName } from '../data/planNames.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
@@ -576,6 +577,10 @@ const COPY = {
     flAll: 'All',
     flEmpty: 'No orders with this status.',
     flClear: 'Show all orders',
+    // De chip in de bovenbalk van Bestellingen, alleen zichtbaar als er een
+    // statusfilter aan staat. Hij zegt DAT er gefilterd is; welk filter, dat
+    // staat een regel lager in de filterknoppen zelf.
+    flActive: 'Filtered',
 
     navOverview: 'Overview',
     navNewRequest: 'New request',
@@ -597,6 +602,9 @@ const COPY = {
     ovTotal: 'Orders total',
     ovRecent: 'Recent activity',
     ovViewAll: 'View all orders',
+    // De statuschip in de bovenbalk. Een functie en geen string, want het
+    // getal staat middenin de zin en het meervoud verschilt per taal.
+    ovChipRunning: (n) => (n === 1 ? '1 order running' : `${n} orders running`),
     ovNewCta: 'New request',
 
     ordersLede: 'Every order, start to finish.',
@@ -722,7 +730,17 @@ const COPY = {
     planBillingYearly: '12 months',
     planBillingAmount: 'Per month',
     planStatusLabel: 'Status',
+    // Deze twee verschijnen alleen wanneer de incasso niet stilgezet of niet
+    // hervat kon worden. Ze zeggen wat er WEL en NIET is gebeurd, want de klant
+    // moet weten of er nog geld af gaat — dat is de hele vraag.
+    planStopFail: 'We could not stop the collection at our payment provider just now, so your plan is still running and has NOT been cancelled — we would rather tell you that than let money keep leaving your account for something you thought was closed. Try again in a few minutes, or email hello@visuails.com and we will stop it by hand.',
+    planResumeFail: 'We could not restart the collection just now, so your plan stays paused and nothing is being charged. Try again in a few minutes, or email hello@visuails.com.',
     planStatusActive: 'Running',
+    // Niet "Cancelled" maar "Ending": het abonnement loopt af, en tot dat moment
+    // is het saldo van de betaalde maand gewoon te besteden. "Cancelled" zou
+    // suggereren dat er niets meer kan, en dan blijft er betaald werk liggen.
+    planStatusEnding: 'Ending',
+    planCancelledNote: (maand) => `Your plan is cancelled and nothing more will be collected. The products you have already paid for stay available for the rest of ${maand} — after that this plan closes.`,
     planStatusPending: 'Waiting for your first payment',
     planStatusPaused: 'Paused',
     planStatusFailed: 'Paused — last payment did not go through',
@@ -900,6 +918,7 @@ const COPY = {
     flAll: 'Alle',
     flEmpty: 'Geen bestellingen met deze status.',
     flClear: 'Alle bestellingen tonen',
+    flActive: 'Gefilterd',
 
     navOverview: 'Overzicht',
     navNewRequest: 'Nieuwe aanvraag',
@@ -917,6 +936,7 @@ const COPY = {
     ovTotal: 'Bestellingen totaal',
     ovRecent: 'Recente activiteit',
     ovViewAll: 'Bekijk alle bestellingen',
+    ovChipRunning: (n) => (n === 1 ? '1 bestelling loopt' : `${n} bestellingen lopen`),
     ovNewCta: 'Nieuwe aanvraag',
 
     ordersLede: 'Elke bestelling, van start tot levering.',
@@ -1030,7 +1050,11 @@ const COPY = {
     planBillingYearly: '12 maanden',
     planBillingAmount: 'Per maand',
     planStatusLabel: 'Status',
+    planStopFail: 'Het stopzetten bij onze betaaldienst lukte zojuist niet, dus je abonnement loopt nog en is NIET opgezegd — dat zeggen we liever dan je te laten doorbetalen voor iets waarvan je denkt dat het klaar is. Probeer het over een paar minuten opnieuw, of mail hello@visuails.com en we zetten het met de hand stop.',
+    planResumeFail: 'Het hervatten lukte zojuist niet, dus je abonnement blijft gepauzeerd en er wordt niets afgeschreven. Probeer het over een paar minuten opnieuw, of mail hello@visuails.com.',
     planStatusActive: 'Loopt',
+    planStatusEnding: 'Loopt af',
+    planCancelledNote: (maand) => `Je abonnement is opgezegd en er wordt niets meer afgeschreven. De producten waarvoor je al betaald hebt, blijven de rest van ${maand} gewoon te besteden — daarna sluit dit abonnement.`,
     planStatusPending: 'Wacht op je eerste betaling',
     planStatusPaused: 'Gepauzeerd',
     planStatusFailed: 'Gepauzeerd — de laatste afschrijving lukte niet',
@@ -2044,7 +2068,18 @@ async function sectionGet(context, customer, section) {
     /* models, lockByStyle, orders en files komen uit de gedeelde laadstap
        hierboven — de kaart "wat er vastligt" en de twee getallen bij "wat je hebt
        opgebouwd" kosten dus geen enkele extra query. */
-    inner = planBody(t, lang, customer, state, models, lockByStyle, orders, files);
+    /* ?fout=stoppen / ?fout=hervatten. Die twee komen uit handlePlanCancel en
+       handlePlanPause, en ze bestaan omdat die handlers WEIGEREN de toestand te
+       veranderen als de incasso niet aantoonbaar stil staat. Zonder melding zou
+       een klant op opzeggen drukken, terugkomen op een pagina die zegt dat het
+       abonnement loopt, en denken dat de knop kapot is — terwijl hij precies
+       deed wat hij moest doen. */
+    /* Eigen uitlezing en niet de `url` uit het try-blok hierboven: die staat
+       binnen dat blok en is hier niet in beeld. Een eigen new URL() kost niets
+       en kan niet stukgaan aan een scope die later verschuift. */
+    let fout = '';
+    try { fout = new URL(request.url).searchParams.get('fout') || ''; } catch { /* geen geldige URL */ }
+    inner = planBody(t, lang, customer, state, models, lockByStyle, orders, files, fout);
     title = t.planHeading;
   } else {
     inner = overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder);
@@ -4136,7 +4171,104 @@ const ICON_INVOICE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><pat
  * token notes rule out.
  */
 const ICON_FACE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4.2"/><path d="M4.5 20.5c0-4 3.4-7.2 7.5-7.2s7.5 3.2 7.5 7.2"/></svg>';
+/* De drie tellericonen. Ze bestaan naast ICON_ORDERS (de lijst) omdat de vier
+   tegels op het overzicht alleen uit elkaar te houden zijn als hun icoon over
+   de SOORT werk gaat en niet over "een bestelling". In productie is een cirkel
+   die draait, nagekeken is een oog, geleverd is een doos met een vinkje. */
+const ICON_PROD = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>';
+const ICON_CHECK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg>';
+const ICON_DELIVERED = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l9-4 9 4v8l-9 4-9-4z"/><path d="M8.5 10.5l2.5 2.5 4.5-4.5"/></svg>';
 const ICON_TICK = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>';
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DE BOVENBALK · augustus 2026
+   ════════════════════════════════════════════════════════════════════════════
+   Lucas leverde een dashboardmockup aan met de vraag of daar niet prettiger in
+   te werken viel. HERONTWERP.md §3.6 legt vast wat er wél en niet uit die
+   mockup wordt overgenomen; dit is het eerste stuk: één balk per pagina, met
+   de paginanaam links, één statuschip in het midden en één primaire actie
+   rechts.
+
+   WAT HET VERVANGT. Elke sectie begon met een kale <h1> en soms een lede
+   eronder, en waar er een knop bij hoorde stond die op weer een andere plek.
+   Een klant die tussen twee secties springt, ziet nu op dezelfde hoogte
+   hetzelfde soort informatie: waar ben ik, hoe sta ik ervoor, wat kan ik hier
+   doen.
+
+   DE CHIP IS OPTIONEEL EN IS NOOIT SIER. Hij toont één toestand die de klant
+   aangaat op de pagina waar hij staat — bij een abonnee zijn week, bij een
+   losse klant zijn lopende bestelling. Is er niets te melden, dan is er geen
+   chip. Een balk die altijd iets moet tonen, gaat iets verzinnen.
+
+   DRIE HARDE BEPERKINGEN, EN DIE VERANDEREN NIETS AAN HET BOVENSTAANDE:
+     · Er draait hier GEEN JavaScript. De portal staat onder
+       `default-src 'none'` zonder `script-src`. Alles is <details>, formulieren
+       en links.
+     · `style-src 'self'` blokkeert ook inline stijl-ATTRIBUTEN (style-src-attr
+       valt in CSP3 terug op style-src). Elke dynamische waarde blijft dus uit
+       `style=""` — vaste klassen of SVG-attributen, zoals swatch(),
+       ratioShape() en saldoMeter() al doen. Dit heeft dit jaar twee keer een
+       leeg vak opgeleverd; het is geen theorie.
+     · De <h1> blijft de <h1>. De balk is opmaak, geen koppenboom: precies één
+       <h1> per pagina, en dat is de paginanaam in deze balk.
+
+   @param {string} titel   De paginanaam. Wordt de <h1>.
+   @param {object} opties
+   @param {string} [opties.lede]       Eén regel onder de titel. Mag weg.
+   @param {object} [opties.chip]       { tekst, toon } — toon is '' | 'signal' | 'warn'.
+   @param {object} [opties.actie]      { href, label, method } — één primaire actie.
+   @param {string} [opties.suffix]     Rauwe HTML achter de titel (het aantal bij Bestellingen).
+*/
+function topBar(titel, { lede = '', chip = null, actie = null, suffix = '' } = {}) {
+  const chipHtml = chip && chip.tekst
+    ? `<span class="topchip${chip.toon ? ` is-${chip.toon}` : ''}">${esc(chip.tekst)}</span>`
+    : '';
+  /* Een actie die iets VERANDERT is een formulier met een POST, geen link:
+     een GET die iets wijzigt is door elke prefetcher per ongeluk aan te
+     roepen. Een actie die alleen navigeert, is een link. */
+  const actieHtml = actie
+    ? (actie.method === 'post'
+      ? `<form class="topact" method="post" action="${esc(actie.href)}"><button class="btn btn-primary" type="submit">${esc(actie.label)}</button></form>`
+      : `<a class="btn btn-primary topact" href="${esc(actie.href)}">${esc(actie.label)}</a>`)
+    : '';
+  return `
+<header class="topbar">
+  <div class="topbar-name">
+    <h1>${esc(titel)}${suffix}</h1>
+    ${lede ? `<p class="lede">${esc(lede)}</p>` : ''}
+  </div>
+  ${chipHtml}
+  ${actieHtml}
+</header>`;
+}
+
+/* ── HET CIJFERBLOK · icoontegel, kleinkapitalen label, groot getal ──────────
+   De sterkste vondst in de mockup, en de reden dat de vier tellers op het
+   overzicht in één oogopslag te lezen zijn: het icoon draagt de SOORT, het
+   label draagt het woord en het getal draagt het aantal. Drie dingen, drie
+   plekken, altijd dezelfde volgorde.
+
+   HET ICOON IS DECORATIE EN KRIJGT `aria-hidden`. Het label zegt al wat de
+   teller is; een schermlezer die er "vierkant vierkant vierkant" bij hoort,
+   krijgt ruis in plaats van betekenis. Daarom staan alle iconen hier met
+   aria-hidden, net als in de zijbalk.
+
+   GEEN VIER KLEUREN. De mockup gaf elke teller een eigen felle tegel; dit
+   palet is lime op bijna-zwart en het onderscheid komt van het icoon en het
+   woord. Zie HERONTWERP.md §2.2: die vier felle vlakken waren twee keer groen
+   en twee keer grijs, en dat was precies waarom ze niets onderscheidden. */
+function statTegel(icon, label, getal, href = '') {
+  const inner = `
+    <span class="stat-i" aria-hidden="true">${icon}</span>
+    <span class="stat-label">${esc(label)}</span>
+    <span class="stat-n">${getal}</span>`;
+  /* Een tegel met niets erachter blijft een tegel. "0 geleverd" linken naar een
+     lijst die zegt "geen bestellingen met deze status" is een klik die de klant
+     een paginalading kost om te horen wat die 0 al zei. */
+  return href
+    ? `<a class="stat is-link" href="${esc(href)}">${inner}</a>`
+    : `<div class="stat">${inner}</div>`;
+}
 
 /**
  * The sidebar app shell — task #259's second follow-up. Wraps whichever
@@ -4226,11 +4358,16 @@ function overviewBody(t, lang, customer, orders, filesByOrder, eventsByOrder = n
   // number they have to go and re-find by hand; "3 in production" and "show me
   // those 3" are the same intention one click apart. The total goes to the
   // unfiltered list, which is what "all orders" means.
+  // Elk cijfer krijgt een icoon, een kleinkapitalen label en het getal — zie
+  // statTegel(). Het icoon draagt de SOORT werk, zodat de vier tellers zonder
+  // lezen uit elkaar te houden zijn; de link erachter is dezelfde statusfilter
+  // die de bestellingenpagina in augustus 2026 kreeg. "3 in productie" en "laat
+  // me die 3 zien" zijn dezelfde bedoeling, één klik uit elkaar.
   const stats = [
-    [t.ovInProduction, orders.filter((o) => o.status === 'in_production').length, 'in_production'],
-    [t.ovHumanCheck, orders.filter((o) => o.status === 'human_check').length, 'human_check'],
-    [t.ovDelivered, orders.filter((o) => o.status === 'delivered').length, 'delivered'],
-    [t.ovTotal, orders.length, ''],
+    [ICON_PROD, t.ovInProduction, orders.filter((o) => o.status === 'in_production').length, 'in_production'],
+    [ICON_CHECK, t.ovHumanCheck, orders.filter((o) => o.status === 'human_check').length, 'human_check'],
+    [ICON_DELIVERED, t.ovDelivered, orders.filter((o) => o.status === 'delivered').length, 'delivered'],
+    [ICON_ORDERS, t.ovTotal, orders.length, ''],
   ];
   const recent = orders.slice(0, 5);
 
@@ -4321,25 +4458,25 @@ ${rest.length
   : ''}`
     : '';
 
+  /* DE STATUSCHIP IN DE BOVENBALK. Eén toestand die de klant hier aangaat, en
+     alleen als er iets te melden is. Loopt er een bestelling, dan is dat wat
+     hij wil weten zonder te scrollen; loopt er niets, dan staat er geen chip —
+     een balk die altijd iets moet tonen, gaat iets verzinnen. */
+  const lopend = orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled');
+  const chip = lopend.length ? { tekst: t.ovChipRunning(lopend.length), toon: 'signal' } : null;
+
   return `
-<div class="ovhead">
-  <div>
-    <h1>${esc(t.ovWelcome)}, ${esc(name)}</h1>
-    <p class="lede">${esc(t.ovLede)}</p>
-  </div>
-  <a class="btn btn-primary" href="/start">${esc(t.ovNewCta)}</a>
-</div>
+${topBar(`${t.ovWelcome}, ${name}`, {
+    lede: t.ovLede,
+    chip,
+    actie: { href: '/start', label: t.ovNewCta },
+  })}
 
 <div class="statrow">
-  ${stats.map(([label, n, status]) => {
-    const inner = `<span class="stat-n">${n}</span><span class="stat-label">${esc(label)}</span>`;
-    // A tile with nothing behind it stays a tile. Linking "0 delivered" to a
-    // list that says "no orders with this status" is a click that costs the
-    // customer a page load to be told what the 0 already said.
-    return n
-      ? `<a class="stat is-link" href="/account/orders${status ? `?status=${encodeURIComponent(status)}` : ''}">${inner}</a>`
-      : `<div class="stat">${inner}</div>`;
-  }).join('')}
+  ${stats.map(([icon, label, n, status]) => statTegel(
+    icon, label, n,
+    n ? `/account/orders${status ? `?status=${encodeURIComponent(status)}` : ''}` : '',
+  )).join('')}
 </div>
 
 ${orderBlock}
@@ -4457,8 +4594,15 @@ function ordersBody(t, lang, orders, filesByOrder, eventsByOrder = new Map(), st
     : `<p class="empty">${esc(t.emptyOrders)}</p>`;
 
   return `
-<h1>${esc(t.ordersHeading)}${shown.length ? ` <span class="h2-count">(${shown.length})</span>` : ''}</h1>
-<p class="lede">${esc(t.ordersLede)}</p>
+${topBar(t.ordersHeading, {
+    lede: t.ordersLede,
+    suffix: shown.length ? ` <span class="h2-count">(${shown.length})</span>` : '',
+    /* De chip toont hoeveel er van dit filter open staan, en alleen als er een
+       filter aan staat: zonder filter zegt het aantal in de titel het al, en
+       twee keer hetzelfde getal naast elkaar is één keer te veel. */
+    chip: statusFilter && shown.length ? { tekst: t.flActive, toon: 'signal' } : null,
+    actie: { href: '/start', label: t.ovNewCta },
+  })}
 ${payFailed ? `<p class="det-ok is-warn" role="status">${esc(t.payFailed)}</p>` : ''}
 ${payHeld ? `<p class="det-ok is-warn" role="status">${esc(t.payHeld)}</p>` : ''}
 ${filters}
@@ -4496,8 +4640,7 @@ ${shown.length ? shown.map((o, i) => orderCard(t, lang, o, filesByOrder.get(o.id
  */
 function brandKitBody(t, lang, models, lockByStyle) {
   return `
-<h1>${esc(t.navBrandKit)}</h1>
-<p class="lede">${esc(t.bkLede)}</p>
+${topBar(t.navBrandKit, { lede: t.bkLede })}
 ${ownModelsSection(t, lang, models)}
 <h2 class="bk-h2">${esc(t.lockH)}</h2>
 <p class="lede">${esc(t.lockLede)}</p>
@@ -4573,8 +4716,7 @@ function ownModelsSection(t, lang, models) {
  */
 function detailsBody(t, lang, details, justSaved, missing = false, emailStatus = '') {
   return `
-<h1>${esc(t.detH)}</h1>
-<p class="lede">${esc(t.detLede)}</p>
+${topBar(t.detH, { lede: t.detLede })}
 ${detailsSection(t, lang, details, justSaved, missing)}
 ${emailChangeSection(t, details, emailStatus)}`;
 }
@@ -4823,14 +4965,28 @@ function detailsSection(t, lang, details, justSaved, missing = false) {
 </section>`;
 }
 
-/**
- * Plan & billing — deliberately the thinnest section here. Lucas chose "the
- * shape, not a real credit system" when asked (task #259, second follow-up):
- * there is no subscription model behind this site, orders are billed one at
- * a time, and payments are not even wired up yet (task #258). Rendering a
- * fake "12 days until renewal" counter would be lying to a client with a
- * real invoice question. This shows what is real — the account identity —
- * and points anything else at a human, same as portal.js's own foot note does.
+/*
+ * ── DEZE NOOT WAS ACHTERHAALD — bijgewerkt 18 augustus 2026 ────────────────
+ *
+ * Er stond: *"Plan & billing — deliberately the thinnest section here [...]
+ * there is no subscription model behind this site, orders are billed one at a
+ * time, and payments are not even wired up yet."* Alle drie die zinnen zijn
+ * sinds augustus 2026 onwaar. Er zijn abonnementen (migratie 0030), er wordt
+ * maandelijks geïncasseerd via Mollie, en planBody() hieronder tekent saldo,
+ * wachtrij, vaste week en opzegging.
+ *
+ * Een noot die het tegenovergestelde beweert van wat de functie eronder doet, is
+ * erger dan geen noot: hij is de eerste die iemand leest die zich afvraagt of
+ * hier iets echt is. De oorspronkelijke afweging — *"de vorm, geen verzonnen
+ * teller"* — geldt trouwens nog steeds en is de reden dat er nergens een "nog 12
+ * dagen tot verlenging" staat: elk getal op deze pagina komt uit planState() en
+ * dus uit de database.
+ *
+ * En de `credit`-namen verderop (readCredits, withCredits) gaan over
+ * CREDITNOTA'S — creditfacturen op een bestelling — en niet over credits als
+ * verrekeneenheid van een abonnement. Dat onderscheid stond in HERONTWERP.md
+ * §2.10 als vermoedelijke inconsistentie en is dat niet: het is de juiste
+ * boekhoudterm, en het abonnement gebruikt het woord nergens.
  */
 /*
  * ─────────────────────────────────────────────────────────────────────────────
@@ -5115,8 +5271,7 @@ function invoicesBody(t, lang, list, orders) {
   if (!list.length) {
     const anyPaid = orders.some((o) => o.payment_status === 'paid');
     return `
-<h1>${esc(t.invHeading)}</h1>
-<p class="lede">${esc(t.invLede)}</p>
+${topBar(t.invHeading, { lede: t.invLede })}
 <div class="card"><p class="meta">${esc(anyPaid ? t.invEmptyUnpaid : t.invEmpty)}</p></div>`;
   }
 
@@ -5166,8 +5321,7 @@ function invoicesBody(t, lang, list, orders) {
   const anyPending = list.some((inv) => inv.status === 'pending');
 
   return `
-<h1>${esc(t.invHeading)}</h1>
-<p class="lede">${esc(t.invLede)}</p>
+${topBar(t.invHeading, { lede: t.invLede })}
 <div class="card">
   <table class="invtable">
     <thead><tr>
@@ -5333,9 +5487,43 @@ function brandKitRegels(t, lang, models, lockByStyle, metClips) {
  * De lijst is leeg tot de klant hem vult, en blijft leeg als hij hem niet vult —
  * er staat nergens een suggestie, een aanbeveling of een vooringevuld item.
  */
-function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = []) {
-  const kop = `
-<h1>${esc(t.planHeading)}</h1>`;
+function planBody(t, lang, customer, state, models = [], lockByStyle = {}, orders = [], files = [], fout = '') {
+  /* DE BOVENBALK. Zonder abonnement staat er geen chip en geen actie — er is
+     niets te melden en de enige stap staat verderop in een kaart die het
+     uitlegt. Mét abonnement is de chip de STATUS (loopt, wacht op je eerste
+     betaling, gepauzeerd), want dat is het ene ding dat een abonnee op deze
+     pagina als eerste wil weten, en de actie is een bestelling plaatsen —
+     precies waar het saldo voor is. */
+  const planStatus = !state?.sub ? '' : (state.sub.status === 'active' ? t.planStatusActive
+    : state.sub.status === 'pending' ? t.planStatusPending
+      /* 'cancelled' komt hier sinds 18 augustus 2026 ook langs: een opgezegd
+         abonnement blijft de maand uitzitten waarvoor betaald is, zodat het
+         saldo besteed kan worden. Zonder deze tak viel hij in de laatste en
+         zou er "gepauzeerd" staan bij iemand die net heeft opgezegd — het
+         verkeerde woord op het verkeerde moment. */
+      : state.sub.status === 'cancelled' ? t.planStatusEnding
+        : state.sub.pause_reason === 'payment_failed' ? t.planStatusFailed
+          : t.planStatusPaused);
+  /* De melding staat BOVEN de bovenbalk en niet erin: hij gaat over een
+     handeling die zojuist niet lukte, niet over de toestand van de pagina. Een
+     statuschip die "opzeggen mislukt" zegt, zou blijven staan bij het volgende
+     bezoek. role="alert" omdat het antwoord is op iets wat de klant net deed. */
+  const melding = fout === 'stoppen' ? t.planStopFail
+    : fout === 'hervatten' ? t.planResumeFail
+      : '';
+  const meldingHtml = melding ? `<p class="det-ok is-warn" role="alert">${esc(melding)}</p>` : '';
+
+  const kop = meldingHtml + topBar(t.planHeading, {
+    chip: planStatus
+      ? { tekst: planStatus, toon: state.sub.status === 'active' ? 'signal' : 'warn' }
+      : null,
+    /* Geen bestelknop meer zodra er is opgezegd? Wél — het saldo is betaald en
+       hoort besteed te kunnen worden. Dat is de hele reden dat de rij nog
+       geladen wordt. */
+    actie: state?.actief && state.saldo > 0
+      ? { href: lang === 'nl' ? '/nl/start/complete' : '/start/complete', label: t.planRequest }
+      : null,
+  });
 
   const account = `
 <div class="card">
@@ -5368,10 +5556,10 @@ ${account}
   }
 
   const vorm = subscriptionShape(state.sub);
-  const status = state.sub.status === 'active' ? t.planStatusActive
-    : state.sub.status === 'pending' ? t.planStatusPending
-      : state.sub.pause_reason === 'payment_failed' ? t.planStatusFailed
-        : t.planStatusPaused;
+  // Dezelfde regel als in de bovenbalk hierboven, één keer berekend. Stond hier
+  // twee keer nadat de balk erbij kwam, en twee ketens die hetzelfde afleiden
+  // is hoe een pagina zichzelf gaat tegenspreken.
+  const status = planStatus;
 
   const bk = brandKitRegels(t, lang, models, lockByStyle, vorm.clips > 0);
   const bkOnaf = bk.filter((r) => !r.compleet);
@@ -5566,7 +5754,16 @@ ${account}
     <div class="fact"><dt>${esc(t.planBillingAmount)}</dt><dd>${money(vorm.monthlyCents, lang)}</dd></div>
     <div class="fact"><dt>${esc(t.planStatusLabel)}</dt><dd>${esc(status)}</dd></div>
   </dl>
-  <div class="controls">
+  ${state.sub.status === 'cancelled'
+    /* OPGEZEGD: GEEN KNOPPEN MEER, WEL EEN ZIN. Pauzeren en nogmaals opzeggen
+       doen allebei niets bij een abonnement dat al beëindigd is, en een knop
+       die niets doet is erger dan geen knop. Wat er wél moet staan is tot
+       wanneer het saldo geldig is, want dat is de enige vraag die een klant op
+       dit scherm nog heeft. De maand komt uit state.maand — dezelfde maand
+       waarvoor de betaalrij bestaat die deze rij überhaupt laadt. */
+    ? `<p class="note">${esc(t.planCancelledNote(maandNaam(state.maand, lang)))}</p>
+  <p class="meta"><a href="${lang === 'nl' ? '/nl/pricing#plans' : '/pricing#plans'}">${esc(t.planNoneCta)}</a></p>`
+    : `<div class="controls">
     ${state.sub.status === 'paused'
     ? `<form method="post" action="/account/plan/pause"><input type="hidden" name="do" value="resume">
       <button class="btn btn-ghost" type="submit">${esc(t.planResume)}</button></form>`
@@ -5579,7 +5776,7 @@ ${account}
     <input id="opz" name="confirm" type="text" autocomplete="off" required>
     <button class="btn btn-ghost" type="submit">${esc(t.planCancel)}</button>
   </form>
-  <p class="meta">${esc(t.planCancelNote)}</p>
+  <p class="meta">${esc(t.planCancelNote)}</p>`}
 </div>`;
 
   /* GEEN LEDE. Die stond hier ("Studio — 12 maanden") en zei precies wat de
@@ -5702,10 +5899,23 @@ async function handlePlanQueue({ request, env }, customer) {
  * Pauzeren en hervatten.
  *
  * WAT PAUZEREN NIET DOET: het saldo weghalen. Er is voor betaald, dus het blijft
- * staan — en het schuift door volgens dezelfde regel als altijd. Wat het wél
- * doet, is de volgende afschrijving tegenhouden, en dat gebeurt bij Mollie en
- * niet hier; deze handler zet alleen de toestand. De Mollie-kant wordt in de
- * aanmeldstroom aangesloten (cancelMollieSubscription in src/lib/mollie.js).
+ * staan — en het schuift door volgens dezelfde regel als altijd.
+ *
+ * WAT HET WÉL DOET, EN WAT HET TOT 18 AUGUSTUS 2026 NIET DEED: de afschrijving
+ * tegenhouden. Hier stond dat de Mollie-kant "in de aanmeldstroom wordt
+ * aangesloten". Dat is nooit gebeurd, dus pauzeren zette alleen een woord in de
+ * database terwijl Mollie elke maand bleef afschrijven. Zie de kop van
+ * stopIncasso() in subscribe.js.
+ *
+ * EERST MOLLIE, DAN DE TOESTAND. Lukt het stoppen niet, dan blijft het
+ * abonnement zichtbaar LOPEN en komt er een melding. Een scherm dat
+ * "gepauzeerd" zegt terwijl er wordt afgeschreven, is precies de toestand die
+ * niet mag bestaan — en die was er.
+ *
+ * HERVATTEN MAAKT EEN NIEUWE SUBSCRIPTION. Mollie kent geen pauze; hervatten
+ * bouwt er een op het mandaat dat er al ligt. Lukt dat niet, dan blijft het
+ * gepauzeerd staan in plaats van actief te lijken zonder incasso — dezelfde
+ * regel, de andere kant op.
  */
 async function handlePlanPause({ request, env }, customer) {
   const form = await request.formData().catch(() => null);
@@ -5714,8 +5924,19 @@ async function handlePlanPause({ request, env }, customer) {
   const state = await planState(env, customer.customer_id);
   if (!state.sub) return seeOther(home);
 
-  if (doen === 'resume') await activateSubscription(env, state.sub.id);
-  else if (doen === 'pause') await pauseSubscription(env, state.sub.id, 'customer');
+  if (doen === 'resume') {
+    const origin = new URL(request.url).origin;
+    if (!await hervatIncasso(env, state.sub, origin)) return seeOther(`${home}?fout=hervatten`);
+    await activateSubscription(env, state.sub.id);
+  } else if (doen === 'pause') {
+    if (!await stopIncasso(env, state.sub)) return seeOther(`${home}?fout=stoppen`);
+    /* Het Mollie-id is dood zodra het abonnement daar verwijderd is. Laten
+       staan zou betekenen dat de webhook een latere betaling aan een opgeheven
+       abonnement koppelt. Naar NULL en niet naar '': zie de kop van
+       clearMollieSubscriptionId() over de partiële UNIQUE index. */
+    await clearMollieSubscriptionId(env, state.sub.id);
+    await pauseSubscription(env, state.sub.id, 'customer');
+  }
   return seeOther(home);
 }
 
@@ -5739,6 +5960,16 @@ async function handlePlanCancel({ request, env }, customer) {
 
   const state = await planState(env, customer.customer_id);
   if (!state.sub) return seeOther(home);
+
+  /* DE INCASSO EERST. Tot 18 augustus 2026 stond hier alleen de regel
+     hieronder: de rij ging op 'cancelled', het scherm zei dat het opgezegd was,
+     en Mollie schreef de volgende maand gewoon af. Zie de kop van stopIncasso()
+     in subscribe.js voor waarom de volgorde het hele ontwerp is.
+
+     Lukt het stoppen niet, dan wordt er NIET opgezegd. Dat voelt hard bij een
+     klant die eruit wil, en het alternatief is harder: hij denkt dat hij weg is
+     en betaalt door. De melding zegt wat er aan de hand is. */
+  if (!await stopIncasso(env, state.sub)) return seeOther(`${home}?fout=stoppen`);
   await cancelSubscription(env, state.sub.id, 'customer');
   return seeOther(home);
 }

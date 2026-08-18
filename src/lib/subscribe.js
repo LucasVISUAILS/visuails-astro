@@ -62,6 +62,7 @@ import {
 import { planName } from '../data/planNames.js';
 import {
   createMollieCustomer, createFirstPayment, firstPaymentMandate, createMollieSubscription,
+  cancelMollieSubscription, mollieKeyProblems,
 } from './mollie.js';
 
 /*
@@ -278,6 +279,127 @@ function seeOtherLocal(location) {
     status: 303,
     headers: { Location: location, 'cache-control': 'no-store', 'referrer-policy': 'same-origin' },
   });
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * STOPPEN EN HERVATTEN — 18 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * WAT HIER MIS WAS, EN HET KOSTTE KLANTEN GELD. `cancelMollieSubscription()`
+ * stond sinds 16 augustus in mollie.js en werd door NIETS aangeroepen — niet
+ * door opzeggen, niet door pauzeren. Alleen een importtest noemde hem. Het
+ * commentaar bij handlePlanPause in account.js zei het zelf: "De Mollie-kant
+ * wordt in de aanmeldstroom aangesloten", en dat is blijven staan.
+ *
+ * Gevolg: een klant typte CANCEL, de rij ging op `cancelled`, zijn dashboard
+ * zei dat het opgezegd was — en Mollie schreef de maand daarna gewoon € 390 tot
+ * € 1.690 af. Precies de terugboeking bij de bank die handlePlanCancel's eigen
+ * commentaar als reden noemt om opzeggen juist makkelijk te maken.
+ *
+ * ── DE VOLGORDE IS HET HELE ONTWERP ───────────────────────────────────────
+ *
+ * EERST MOLLIE, DAN DE DATABASE. Beide kanten kunnen falen, en de twee
+ * mislukkingen zijn niet even erg:
+ *
+ *   · Mollie gestopt, database mislukt → er wordt niets meer afgeschreven en de
+ *     klant houdt een saldo waar hij voor betaald heeft. Wij verliezen; hij niet.
+ *   · Database gestopt, Mollie mislukt → zijn scherm zegt "opgezegd" en er gaat
+ *     elke maand geld af. Dat is precies de fout die we repareren.
+ *
+ * Dus wordt de rij pas bijgewerkt als de incasso aantoonbaar stil staat, en bij
+ * een mislukking blijft het abonnement zichtbaar lopen mét een foutmelding. Een
+ * scherm dat "opgezegd" zegt terwijl er wordt afgeschreven, is de ene toestand
+ * die niet mag bestaan.
+ *
+ * ── PAUZEREN IS BIJ MOLLIE OOK STOPPEN ────────────────────────────────────
+ *
+ * De Subscriptions API kent geen pauze: je verwijdert een abonnement en maakt
+ * later een nieuw aan. Pauzeren is hier dus intern een pauze en bij Mollie een
+ * beëindiging, en `mollie_subscription_id` wordt leeggemaakt omdat dat id dood
+ * is. Hervatten bouwt een NIEUWE subscription op het mandaat dat we al hebben —
+ * het mandaat blijft geldig, dus er hoeft niet opnieuw betaald of getekend te
+ * worden.
+ *
+ * ── WAT ER NIET GEBEURT ───────────────────────────────────────────────────
+ *
+ * Geen terugbetaling en geen leeggemaakt saldo. Voor de lopende maand is
+ * betaald; die producten blijven staan tot het eind van de maand waarin ze
+ * vervallen. Zie de noot bij cancelSubscription() in subscription.js — die
+ * afweging is niet veranderd, alleen de incasso stopt er nu echt bij.
+ */
+
+/** Er valt bij Mollie alleen iets te stoppen als er een lopend abonnement is. */
+function heeftMollieAbonnement(sub) {
+  return Boolean(sub?.mollie_customer_id && sub?.mollie_subscription_id);
+}
+
+/**
+ * Zet de incasso stil. Geeft `true` als er daarna zeker niets meer wordt
+ * afgeschreven, en `false` als dat niet vastgesteld kon worden.
+ *
+ * EEN ABONNEMENT ZONDER MOLLIE-ID IS AL STIL. Dat is de normale toestand van een
+ * `pending` abonnement waarvan het mandaat nooit is getekend: er is niets
+ * aangemaakt, dus er is niets te stoppen, en dat telt als geslaagd.
+ *
+ * ONTBREEKT DE SLEUTEL TERWIJL ER WÉL EEN ABONNEMENT IS, dan is dat een
+ * configuratiefout en geen succes. Stil `true` teruggeven zou het scherm laten
+ * liegen op precies de manier die deze reparatie wegneemt.
+ */
+export async function stopIncasso(env, sub) {
+  if (!heeftMollieAbonnement(sub)) return true;
+  if (mollieKeyProblems(env)) {
+    console.error('[abonnement] incasso niet gestopt — Mollie-sleutel:', mollieKeyProblems(env).join(', '));
+    return false;
+  }
+  try {
+    await cancelMollieSubscription(env, {
+      mollieCustomerId: sub.mollie_customer_id,
+      subscriptionId: sub.mollie_subscription_id,
+    });
+    return true;
+  } catch (err) {
+    console.error('[abonnement] incasso niet gestopt —', err?.message || err);
+    return false;
+  }
+}
+
+/**
+ * Hervatten: een nieuwe subscription op het mandaat dat er al ligt.
+ *
+ * GEEN NIEUWE MANDAATBETALING. Het mandaat van € 1 is één keer getekend en
+ * blijft geldig tot de klant het bij zijn bank intrekt; er opnieuw om vragen zou
+ * betekenen dat pauzeren duurder is dan doorbetalen.
+ *
+ * `startDate` op de eerstvolgende termijn, om dezelfde reden als bij het
+ * afsluiten: hervatten op een dag halverwege de maand mag geen extra
+ * afschrijving opleveren in een maand waarvoor al betaald is.
+ *
+ * `times` bij een jaartermijn is BEWUST NIET herberekend op de resterende
+ * maanden — dat zou een tweede plek zijn waar de looptijd wordt geteld, en de
+ * eerste (het aantal maandrijen) is de boekhouding. Wie hier gaat rekenen,
+ * bouwt een tweede waarheid.
+ */
+export async function hervatIncasso(env, sub, origin) {
+  if (!sub?.mollie_customer_id || !sub?.mollie_mandate_id) return false;
+  if (mollieKeyProblems(env)) return false;
+  try {
+    const sc = await createMollieSubscription(env, {
+      mollieCustomerId: sub.mollie_customer_id,
+      mandateId: sub.mollie_mandate_id,
+      valueEuros: monthlyCents(sub.plan, sub.term) / 100,
+      description: `VISUAILS ${sub.plan} — ${sub.ref}`,
+      webhookUrl: `${origin}/api/webhook/mollie`,
+      startDate: eersteTermijn(),
+      times: sub.term === 'yearly' ? 12 : undefined,
+    });
+    if (!sc?.id) throw new Error('Mollie gaf geen abonnements-id terug');
+    await setMollieIds(env, sub.id, { subscriptionId: sc.id });
+    return true;
+  } catch (err) {
+    console.error('[abonnement] incasso niet hervat —', err?.message || err);
+    return false;
+  }
 }
 
 export { PLAN_SERVICE, MANDATE_EUROS };

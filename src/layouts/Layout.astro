@@ -146,6 +146,9 @@ const base = stripLang(path);                        // language-neutral path (f
    NAV_SOON in src/i18n/ui.js. Hier stond een map() die drie parallelle lijsten
    op index aan elkaar reeg, en die kon stil verschuiven. */
 const drops = (ui[lang] || ui.en).drops;
+/* De tweede laag — zie de noot bij `how` in src/i18n/ui.js. Dezelfde vorm als
+   `drops`, dus dezelfde renderlus kan hem tekenen. */
+const how = (ui[lang] || ui.en).how || [];
 
 // ── The signed-in chrome's own copy ─────────────────────────────────────────
 // Everything else in this header comes from t() / src/i18n/ui.js, and these
@@ -593,6 +596,24 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               ))}
             </div>
           </li>
+          {/* ── DE TWEEDE INGANG ─────────────────────────────────────────────
+              Acht pagina's die tot 18 augustus 2026 alleen in de voettekst
+              stonden — of, bij /models, /upload-guidelines en /demo, nergens.
+              Zie de noot bij `how` in src/i18n/ui.js voor waarom dit één menu is
+              en geen tien losse links. Twee kolommen, want acht items onder
+              elkaar is een lijst en geen menu. */}
+          <li class="has-menu">
+            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_how')}
+              <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-menu nav-menu-2col" role="menu">
+              {how.map((s) => (
+                <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                  <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
+                </a>
+              ))}
+            </div>
+          </li>
           <li><a href={lp(brandModelHref)} aria-current={isActive(brandModelHref) ? 'page' : undefined}>{t('nav_brandmodel')}</a></li>
           <li><a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a></li>
           <li><a href={lp('/pricing')} aria-current={isActive('/pricing') ? 'page' : undefined}>{t('nav_pricing')}</a></li>
@@ -675,6 +696,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <a href={lp('/gallery')}>{t('nav_gallery')}</a>
     <a href={lp('/pricing')}>{t('nav_pricing')}</a>
     <a href={lp('/contact')}>{t('nav_contact')}</a>
+    {/* Op een telefoon geen tweede uitklapper maar een groep met een kop: een
+        lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
+    <p class="mobile-group">{t('nav_how')}</p>
+    {how.map((s) => <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>)}
     <div class="mobile-cta">
       <a href={lp('/start')} class="btn btn-primary btn-block btn-lg">{t('nav_start')}</a>
       <a href={waHref(wa.order)} class="btn btn-wa btn-block" target="_blank" rel="noopener">{t('mob_chat')}
@@ -876,21 +901,28 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             <li><a href={lp('/test-sample')}>{t('foot_sample')}</a></li>
           </ul>
         </div>
+        {/* ── DE VOETTEKST IS GEEN TWEEDE NAVIGATIE MEER — 18 augustus 2026 ──
+            Deze kolom had tien links en was daarmee de plek waar de site zijn
+            hele tweede laag verstopte: how-it-works, portal, studio, compare en
+            ai-act stonden hier en nergens anders. Ze staan sinds vandaag in het
+            menu onder "Hoe het werkt", en een link die boven staat, hoort niet
+            ook onderaan — dan is de voettekst weer een inhoudsopgave.
+
+            Wat hier blijft is wat NERGENS anders staat: wie we zijn, de gidsen,
+            de veelgestelde vragen, en contact. Vier in plaats van tien.
+
+            AI Act verhuist en dat is een echte wijziging aan een bewuste keuze:
+            de oude noot zei "footer only — het is een vertrouwensdocument, geen
+            verkooppagina". Dat blijft waar, en daarom staat hij nu onderaan de
+            uitklapper "Hoe het werkt" — bij de verantwoording, niet bij het
+            aanbod. Vindbaar zonder verkocht te worden. */}
         <div class="footer-col">
           <h2 class="footer-h">{t('foot_company')}</h2>
           <ul>
             <li><a href={lp('/about')}>{t('foot_about')}</a></li>
             <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
-            <li><a href={lp('/how-it-works')}>{t('foot_how')}</a></li>
-            <li><a href={lp('/portal')}>{t('foot_portal')}</a></li>
-            <li><a href={lp('/studio')}>{t('foot_studio')}</a></li>
             <li><a href={lp('/guides')}>{t('foot_guides')}</a></li>
-            <li><a href={lp('/compare')}>{t('foot_compare')}</a></li>
             <li><a href={lp('/faq')}>{t('foot_faq')}</a></li>
-            {/* The AI Act page is reachable from the footer only — it is a
-                trust document, not a sales page, and the brief forbids turning
-                it into a fear pitch. Footer placement is deliberate. */}
-            <li><a href={lp('/ai-act')}>{t('foot_aiact')}</a></li>
             <li><a href={lp('/contact')}>{t('foot_contact')}</a></li>
           </ul>
         </div>
@@ -1269,7 +1301,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-signout { margin: 0; }
   .mobile-signout .nav-signout-btn { font-size: .9rem; }
   .has-menu { position: relative; }
-  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg); }
+  .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--menu-surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-lg); }
   .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   /* ── ESCAPE MOET HET PANEEL OOK ECHT DICHT DOEN ─────────────────────────────
      9 augustus 2026, gemeten: na Escape stond `aria-expanded` op false en het paneel
@@ -1283,6 +1315,28 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .has-menu.esc-closed:focus-within .nav-menu { opacity: 0; visibility: hidden; transform: translateY(-6px); }
   .nav-menu a,
   .nav-menu .mi-off { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .85rem; }
+
+  /* ── DE TWEEDE UITKLAPPER ────────────────────────────────────────────────
+     Acht items onder elkaar is een lijst waarin je zoekt; twee kolommen van
+     vier is een menu dat je in één blik overziet. Alleen waar er ruimte is —
+     onder de 900px valt hij terug op één kolom en scrollt de lade. */
+  .nav-menu-2col { min-width: 34rem; }
+  @media (min-width: 900px) {
+    .nav-menu-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .3rem; }
+  }
+  @media (max-width: 899px) { .nav-menu-2col { min-width: 0; } }
+
+  /* De groepskop in de mobiele lade. Geen tweede uitklapper daar: een lade die
+     zelf laden bevat, is een lade waarin je zoekt. */
+  .mobile-group {
+    margin: 1.6rem 0 .2rem; font-family: var(--font-display);
+    font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .mobile-nav > .mobile-sub {
+    display: block; padding: .55rem 0; font-size: 1.05rem;
+    color: var(--ink-2); box-shadow: inset 0 -1px 0 var(--line);
+  }
   .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--surface-2); }
   .nav-menu .mi-title { color: var(--ink); font-weight: 600; font-size: .92rem; }
   .nav-menu .mi-desc { color: var(--ink-3); font-size: .8rem; line-height: 1.4; }

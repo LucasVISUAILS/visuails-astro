@@ -1,0 +1,108 @@
+---
+// VISUAILS — "voor wie is dit" · gedeeld tussen /about en /nl/about.
+//
+// WAAROM DIT HIER STAAT EN NIET MEER OP DE HOMEPAGE. Het blok stond als sectie
+// 4 in HomeV2.astro. De homepage herhaalde daar een vraag die een bezoeker pas
+// stelt als hij weet wie er achter staat, en /about is de pagina die dat
+// vertelt. Er is niets weggegooid: de vier situaties, de lede en de vier
+// diskwalificerende gevallen staan hier woord voor woord zoals ze op de
+// homepage stonden — zie HERONTWERP.md §3.3.
+//
+// WAAROM EEN COMPONENT EN NIET TWEE KEER GEPLAKT. about.astro en
+// nl/about.astro zijn twee losse bestanden. Precies dat patroon is waarom de
+// Nederlandse galerij inmiddels een andere pagina is dan de Engelse
+// (HERONTWERP.md §2.4). Eén component met een `lang` erin kan niet uit elkaar
+// lopen, en de copy hieronder is de copy die uit HomeV2.astro is meegekomen.
+//
+// De vier situaties zijn SITUATIES en geen persona's. Een persona ("ambitieuze
+// oprichter") is een vleiende beschrijving waar een lezer het mee eens is en
+// niets aan heeft; een situatie herkent hij of niet.
+//
+// De lijst eronder doet het echte werk. Zeggen wie er NIET moet kopen is het
+// goedkoopste vertrouwen dat een aanbieder zonder recensies kan kopen — en het
+// is een uitspraak die alleen iemand doet die zeker is van de rest. Daarom is
+// de SAMENVATTING zichtbaar en vouwen alleen de vier gevallen: de bekentenis is
+// het argument, de vier gevallen zijn er slechts het bewijs voor.
+import Disclose from './Disclose.astro';
+
+interface Props { lang: 'en' | 'nl'; }
+const { lang } = Astro.props;
+
+const COPY = {
+  en: {
+    whoH: 'For brands with more products than shoot days.',
+    whoLede: 'Four situations this studio is priced for. If one is yours, the arithmetic already works.',
+    who: [
+      ['The first collection', 'You have the samples and no budget for a shoot, and the range still has to look like it belongs next to labels ten years older.'],
+      ['A launch every season', 'Four to six a year, each one starting with a photographer, a model and a day everyone is free.'],
+      ['Marketplaces to feed', 'Zalando, Amazon and bol want clean images to a fixed spec, and getting them right is nobody’s favourite afternoon.'],
+      ['More SKUs than hours', 'The range grew faster than the production around it, and photography keeps slipping.'],
+    ],
+    notForH: 'Probably not for you if',
+    notFor: [
+      'you want one hero campaign image with contracted talent, rather than a whole range',
+      'the brand direction still moves every few weeks — a house style needs something to be consistent with',
+      'you sell a single product, so a house style has nothing to be consistent across',
+      'you need a signed release for a named face you already work with',
+    ],
+  },
+  nl: {
+    whoH: 'Voor merken met meer producten dan shootdagen.',
+    whoLede: 'Vier situaties waar deze prijzen voor gemaakt zijn. Zit die van jou ertussen, dan klopt de rekensom.',
+    who: [
+      ['De eerste collectie', 'Je hebt de samples en geen budget voor een shoot. De beelden moeten wel net zo goed zijn als die van merken die tien jaar ouder zijn.'],
+      ['Elk seizoen een lancering', 'Vier tot zes per jaar, en elke keer begint het met een fotograaf, een model en een dag waarop iedereen kan.'],
+      ['Marktplaatsen bijhouden', 'Zalando, Amazon en bol willen strakke beelden volgens een vaste specificatie, en dat goed krijgen is niemands favoriete middag.'],
+      ['Meer SKU’s dan uren', 'De collectie groeide harder dan de productie eromheen, en de fotografie blijft doorschuiven.'],
+    ],
+    notForH: 'Waarschijnlijk niets voor je als',
+    notFor: [
+      'je één campagnebeeld wilt met een model dat je zelf contracteert, en niet een hele collectie',
+      'de stijl van je merk nog elke paar weken verandert — dan is er nog niets om consistent in te blijven',
+      'je één product verkoopt — dan valt er tussen producten niets consistent te houden',
+      'je een getekende release nodig hebt voor een gezicht waar je al mee werkt',
+    ],
+  },
+};
+const c = COPY[lang] || COPY.en;
+---
+
+<section class="band wif-band">
+  <div class="container">
+    <div class="statement">
+      <h2>{c.whoH}</h2>
+      <p class="lede">{c.whoLede}</p>
+    </div>
+    <div class="tiles wif-tiles reveal-group">
+      {c.who.map(([t, b], i) => (
+        <div class="tile s-3 reveal">
+          <div class="tile-body">
+            <span class={`wif-i ${['w-blue', 'w-violet', 'w-pink', 'w-coral'][i] || ''}`}>{String(i + 1).padStart(2, '0')}</span>
+            <p class="tile-h">{t}</p>
+            <p class="tile-n">{b}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div class="wif-notfor">
+      <Disclose summary={c.notForH} tone="plain">
+        <ul>{c.notFor.map((x) => (<li>{x}</li>))}</ul>
+      </Disclose>
+    </div>
+  </div>
+</section>
+
+<style>
+  .wif-tiles { margin-top: clamp(2.4rem, 5vw, 4rem); }
+  /* Het nummer is een LABEL en geen stap: de vier situaties zijn alternatieven.
+     Daarom klein en gekleurd, en niet de omlijnde cijfers die de pijplijn
+     gebruikt — die betekenen volgorde, en die volgorde bestaat hier niet. */
+  .wif-i { display: block; font-family: var(--font-display); font-weight: 900; font-size: .74rem; letter-spacing: .14em; margin-bottom: 1.1rem; }
+  .wif-notfor { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
+  .wif-notfor ul { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .65rem; max-width: 62ch; }
+  .wif-notfor li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
+  /* Koraal en niet het accent: dit is de enige lijst op de pagina die een
+     waarschuwing is in plaats van een aanbod, en het palet houdt koraal al
+     apart voor het getal dat tegen je meetelt. */
+  .wif-notfor li::before { content: ''; position: absolute; left: 0; top: .64em; width: 9px; height: 1px; background: var(--fill-coral); }
+</style>

@@ -204,7 +204,17 @@ const c = COPY[lang];
       everyone reaching this form. */}
   <p class="mp-signin" data-acct="out">
     <span>{c.ownSignedOut}</span>
-    <a href={lp('/account')} class="btn btn-ghost mp-signin-btn">{c.ownSignIn}</a>
+    {/* href is de LETTERLIJKE "/account" en niet lp('/account'). /account is één
+        Cloudflare Pages Function die zijn eigen taal uit de klantgegevens leest;
+        er is nooit een Nederlandse route geweest om naar te lokaliseren. lp() liep
+        hier toch, en stuurde elke bezoeker van /nl/* naar /nl/account — een 404.
+    
+        Dit is DEZELFDE fout die op 28 juli 2026 in Layout.astro is gevonden en
+        daar is gerepareerd; zie de noot bij nav-account-link. Hij stond hier nog,
+        op vier Nederlandse pagina's, tot 18 augustus 2026. Een reparatie op één
+        plek terwijl hetzelfde patroon nog ergens anders staat, is geen reparatie.
+        Sectie 10 van tests/nav.test.mjs bewaakt het nu over de hele bron. */}
+    <a href="/account" class="btn btn-ghost mp-signin-btn">{c.ownSignIn}</a>
   </p>
 
   <p class="pl-model-note">{c.anyNote}</p>

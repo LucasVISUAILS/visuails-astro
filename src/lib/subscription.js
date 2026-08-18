@@ -99,9 +99,35 @@ export async function loadSubscription(env, customerId) {
             started_at, cancelled_at, cancel_reason, paused_at, pause_reason,
             created_at
        FROM subscriptions
-      WHERE customer_id = ?1 AND status IN ('active', 'paused', 'pending')
+      WHERE customer_id = ?1
+        AND (status IN ('active', 'paused', 'pending')
+             /* ── EEN OPGEZEGD ABONNEMENT BLIJFT DE BETAALDE MAAND STAAN ─────
+                18 augustus 2026, keuze van Lucas. Hier stond alleen de drie
+                toestanden hierboven, en het gevolg was scherp: wie op de
+                twintigste opzegde, zag zijn abonnement per direct verdwijnen
+                — inclusief de producten van de maand die hij al betaald had.
+                Dat is geld innen voor iets wat je daarna weghaalt.
+
+                DE VOORWAARDE IS DE BETAALRIJ EN NIET EEN DATUM. Er bestaat
+                alleen een rij in subscription_months voor een maand die
+                daadwerkelijk is afgeschreven; de webhook maakt hem aan op het
+                moment dat het geld binnen is. "De maand waarvoor betaald is"
+                heeft dus een feitelijke bron, en er hoeft nergens een
+                einddatum te worden bijgehouden of uitgerekend. Loopt de maand
+                af, dan komt er geen nieuwe rij meer bij en valt het
+                abonnement er vanzelf uit.
+
+                DE STATUS BLIJFT 'cancelled'. Deze rij komt terug zodat het
+                saldo besteed kan worden, niet zodat het abonnement weer lijkt
+                te lopen: verbruikToestaan() laat hem toe, de bovenbalk toont
+                "opgezegd", en de partiële UNIQUE index op ('active','pending')
+                blijft ongemoeid — een klant kan dus meteen een nieuw
+                abonnement afsluiten zonder op de maand te wachten. */
+             OR (status = 'cancelled' AND EXISTS (
+                   SELECT 1 FROM subscription_months m
+                    WHERE m.subscription_id = subscriptions.id AND m.month = ?2)))
       ORDER BY id DESC LIMIT 1`
-  ).bind(customerId).first());
+  ).bind(customerId, monthKey()).first());
 }
 
 /** Het abonnement achter een kenmerk — hoe de eerste betaling terugvindt waar hij hoort. */
@@ -252,7 +278,21 @@ export async function planState(env, customerId) {
  */
 export function verbruikToestaan(state, aantal, soort = 'products') {
   const n = Math.max(0, Math.floor(Number(aantal) || 0));
-  if (!state?.actief || !state.betaald) return { uitSaldo: 0, rest: n, reden: state?.actief ? 'onbetaald' : 'geen-abonnement' };
+  /* MAG DIT SALDO BESTEED WORDEN? Twee gevallen, en het tweede is er sinds
+     18 augustus 2026 bij gekomen:
+
+       · een LOPEND abonnement waarvan deze maand betaald is;
+       · een OPGEZEGD abonnement waarvan deze maand betaald is.
+
+     Het tweede geval bestaat omdat loadSubscription() een opgezegd abonnement
+     de betaalde maand laat uitzitten — zie de noot daar. Zonder deze regel zou
+     die rij wel zichtbaar zijn en niet te besteden, en dat is precies het
+     halve antwoord dat verwarrender is dan geen.
+
+     Een GEPAUZEERD abonnement mag dat niet: pauzeren is de klant die zelf zegt
+     dat het even stil moet, en zijn saldo blijft staan voor als hij hervat. */
+  const mag = state?.actief || state?.sub?.status === 'cancelled';
+  if (!mag || !state.betaald) return { uitSaldo: 0, rest: n, reden: mag ? 'onbetaald' : 'geen-abonnement' };
   const saldo = soort === 'clips' ? (state.clips?.saldo || 0) : state.saldo;
   const uitSaldo = Math.min(saldo, n);
   return { uitSaldo, rest: n - uitSaldo, reden: '' };
@@ -461,6 +501,37 @@ export async function setMollieIds(env, subId, { customerId = null, mandateId = 
       WHERE id = ?1
       RETURNING id`
   ).bind(subId, customerId, mandateId, subscriptionId).first());
+}
+
+/**
+ * Het Mollie-abonnements-id wissen. Naar NULL, en dat kan setMollieIds() niet.
+ *
+ * WAAROM DIT EEN EIGEN FUNCTIE IS. setMollieIds() schrijft met
+ * `COALESCE(?4, mollie_subscription_id)` — precies zodat je één veld kunt zetten
+ * zonder de andere twee te wissen. De keerzijde is dat NULL doorgeven "laat
+ * staan" betekent, dus wissen kan er niet mee.
+ *
+ * EN EEN LEGE STRING IS GEEN OPLOSSING. Op deze tabel staat
+ *
+ *     CREATE UNIQUE INDEX idx_subs_mollie ON subscriptions(mollie_subscription_id)
+ *       WHERE mollie_subscription_id IS NOT NULL
+ *
+ * en '' is NOT NULL. Twee klanten die allebei pauzeren zouden dus allebei ''
+ * krijgen en de tweede zou botsen op die index — stil, want de schrijfactie
+ * loopt door stil(). Dan blijft er een dood id staan bij precies de klant die
+ * net gepauzeerd heeft, en dat is het id waarop de webhook een betaling
+ * terugzoekt.
+ *
+ * Wordt aangeroepen bij pauzeren: het abonnement is bij Mollie verwijderd, dus
+ * het id wijst nergens meer heen. Hervatten zet er een nieuw id voor terug.
+ */
+export async function clearMollieSubscriptionId(env, subId) {
+  return stil(() => env.DB.prepare(
+    `UPDATE subscriptions
+        SET mollie_subscription_id = NULL, updated_at = datetime('now')
+      WHERE id = ?1
+      RETURNING id`
+  ).bind(subId).first());
 }
 
 /**

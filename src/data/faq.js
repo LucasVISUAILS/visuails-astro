@@ -70,7 +70,7 @@ import {
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
   LADDER, ladderRate, ladderFloor, ladderTotal,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
-  PLAN_MIN_MONTHS, PLAN_ROLLOVER_MONTHS,
+  PLAN_ROLLOVER_MONTHS,
   WINDOW_THRESHOLD, vatLabel, vatNote,
 } from './pricing.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -141,7 +141,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Wat gebeurt er met planproducten die ik niet gebruik?',
-        a: `Die schuiven ${PLAN_ROLLOVER_MONTHS} maand door: wat je deze maand niet besteld hebt, kun je volgende maand alsnog bestellen. Verder stapelen ze niet op, want een plan is gereserveerde capaciteit in de agenda en niet-opgevraagde capaciteit is een maand die al voorbij is. Een plan loopt minimaal ${PLAN_MIN_MONTHS} maanden.`,
+        a: `Die schuiven ${PLAN_ROLLOVER_MONTHS} maand door: wat je deze maand niet besteld hebt, kun je volgende maand alsnog bestellen. Verder stapelen ze niet op, want een plan is gereserveerde capaciteit in de agenda en niet-opgevraagde capaciteit is een maand die al voorbij is. Een maandabonnement kun je elke maand opzeggen; de jaartermijn ligt twaalf maanden vast.`,
       },
       {
         q: 'Waarom staat er geen leverdatum bij een kleine bestelling?',
@@ -177,7 +177,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'What happens to plan products I do not use?',
-      a: `They roll over ${PLAN_ROLLOVER_MONTHS} month — what you did not order this month can be ordered next month. They do not stack up beyond that, because a plan is capacity reserved in the calendar and capacity nobody claimed is a month that has already gone by. A plan runs for a minimum of ${PLAN_MIN_MONTHS} months.`,
+      a: `They roll over ${PLAN_ROLLOVER_MONTHS} month — what you did not order this month can be ordered next month. They do not stack up beyond that, because a plan is capacity reserved in the calendar and capacity nobody claimed is a month that has already gone by. A monthly plan can be cancelled any month; the 12-month term is fixed.`,
     },
     {
       q: 'Why is there no delivery date on a small order?',
@@ -311,7 +311,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Is er een abonnement?',
-            a: `Alleen als dezelfde output elke maand terugkomt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan diezelfde output op de prijs per product, loopt minimaal ${PLAN_MIN_MONTHS} maanden, en ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door. Bestel je zonder plan, dan loopt er niets door.`,
+            a: `Alleen als dezelfde output elke maand terugkomt. Er zijn ${planList.length} plannen — ${planNames} — van ${ex(PLAN_AMOUNT.starter, 'nl')} per maand voor ${PLAN_PRODUCTS.starter} producten tot ${ex(PLAN_AMOUNT.brand, 'nl')} per maand voor ${PLAN_PRODUCTS.brand} producten met je merkmodel inbegrepen. Elk plan kost minder dan diezelfde output op de prijs per product, is maandelijks opzegbaar, en ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door. Bestel je zonder plan, dan loopt er niets door.`,
           },
           {
             q: 'Kan ik mijn btw-nummer toevoegen?',
@@ -496,7 +496,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Is there a subscription?',
-          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Every plan costs less than the same output on the price per product, runs for a minimum of ${PLAN_MIN_MONTHS} months, and rolls an unused product over ${PLAN_ROLLOVER_MONTHS} month. Order without one and nothing recurs.`,
+          a: `Only if the same output comes round every month. There are ${planList.length} plans — ${planNames} — from ${ex(PLAN_AMOUNT.starter, 'en')} a month for ${PLAN_PRODUCTS.starter} products up to ${ex(PLAN_AMOUNT.brand, 'en')} a month for ${PLAN_PRODUCTS.brand} with your Brand Model included. Every plan costs less than the same output on the price per product, can be cancelled any month, and rolls an unused product over ${PLAN_ROLLOVER_MONTHS} month. Order without one and nothing recurs.`,
         },
         {
           q: 'Can I add my VAT number?',

@@ -29,7 +29,7 @@
  * 4 · HOE HET SALDO WERKT: toekennen, verbruiken, doorschuiven, vervallen.
  */
 import {
-  PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, PLAN_MIN_MONTHS, PLAN_ROLLOVER_MONTHS,
+  PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, PLAN_COMPARE_MONTHS, PLAN_ROLLOVER_MONTHS,
   AMOUNT, ladderRate, LADDER,
 } from './pricing.js';
 import { ATTENDED_PER_DAY } from './capacity.js';
@@ -80,7 +80,7 @@ export const PLAN_SERVICE = 'complete';
 export const TERMS = {
   monthly: {
     id: 'monthly',
-    months: PLAN_MIN_MONTHS,          // 3 — de minimumtermijn, geen vaste looptijd
+    months: PLAN_COMPARE_MONTHS,      // 3 — het rekenvenster, geen looptijd en geen minimum
     fixed: false,
     discountMonths: {},               // geen enkel plan krijgt korting
     rollover: PLAN_ROLLOVER_MONTHS,   // 1

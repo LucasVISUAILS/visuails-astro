@@ -57,6 +57,16 @@
   --bg-0:        #08090B;   /* page ground                                  */
   --bg-raise:    #101216;   /* a band that lifts off the page               */
   --surface:     #17191E;   /* tiles and panels                             */
+  /* ── DE GROND VAN EEN ZWEVEND PANEEL — 18 augustus 2026 ──────────────────
+     Dezelfde waarde als --surface en met opzet een EIGEN naam. De koptekst
+     heeft een scope voor "balk boven een foto" die --surface op een scrim van
+     44% zet (Layout.astro), bedoeld voor de taalchip. Het uitklapmenu erfde die
+     en werd doorschijnend: gemeten rgba(8,9,11,0.44), met de hero-kop dwars door
+     het menu heen leesbaar. Dat gold al voor het bestaande menu en viel pas op
+     toen er een tweede, breder paneel bij kwam.
+     Een paneel dat over onbekende inhoud zweeft, is de ene plek die ondoorzichtig
+     MOET zijn. Vandaar een token dat door geen enkele scope wordt herschreven. */
+  --menu-surface: #17191E;
   --surface-2:   #1F2229;   /* an inset, or a tile on a tile                */
 
   /* ---- ink: white at four alphas ---------------------------------------
@@ -994,6 +1004,56 @@ h3, .as-h3 { font-family: var(--font-body); color: var(--ink); font-weight: 700;
 }
 .accent-word { color: var(--accent-word); font-style: normal; }
 p { text-wrap: pretty; margin: 0; }
+
+/* ── LUCHT ONDER EEN KOP — 18 augustus 2026 ─────────────────────────────────
+   Dit stylesheet zet `margin: 0` op elke kop en op elke <p>, en laat de ruimte
+   aan het component dat ze plaatst. Dat is een houdbare keuze zolang elk
+   component eraan denkt. Nagemeten op de gebouwde site, 44 Nederlandse
+   pagina's, 439 kop-tekstparen:
+
+     0–6px    109 paren   ← de kop plakt op zijn eigen tekst
+     7–11px   110 paren   ← krap
+     12–19px  172 paren   ← waar het goed staat
+     20–39px   47 paren
+     40+px      0 paren
+
+   De helft stond dus onder de maat die de andere helft aanhoudt. Vijftig van
+   die gevallen zijn één patroon — een <h3> in een kaart met nul marge en een
+   alinea eronder met nul marge — en het is nooit een keuze geweest, het is
+   vergeten.
+
+   ── WAAROM `:where()` EN WAAROM OP HET VOLGENDE ELEMENT ────────────────────
+
+   `:where()` heeft specificiteit NUL. Elk component dat zijn eigen afstand al
+   zet, wint dus zonder dat daar iets voor hoeft te veranderen; dit is alleen
+   een bodem voor wie niets zei. Een gewone selector zou 172 goede paren
+   overschrijven om 219 slechte te repareren.
+
+   En het staat op het VOLGENDE element in plaats van als margin-bottom op de
+   kop, want dan is de maat relatief aan de TEKST — 0,85em van een alinea van
+   15px is bijna 13px, precies de band waar de rest van de site in zit. Als
+   margin-bottom op de kop zou dezelfde 0,85em bij een grote <h2> ineens 30px
+   worden en bij een kleine <h3> 12, en dan is de regel zelf de nieuwe
+   inconsistentie.
+
+   ── EN DE EERSTE VERSIE DEED NIETS, WAT PAS BIJ HET NAMETEN BLEEK ─────────
+
+   Er stond `:where(h1, h2, …) + :where(p, ul, …)`, met beide kanten in
+   `:where()`. Specificiteit nul dus — en `p { margin: 0 }` twintig regels
+   hierboven heeft er één (één typeselector). De reset won, de regel deed
+   letterlijk niets, en de verdeling na de wijziging was tot op het paar
+   identiek aan die ervoor.
+
+   Alleen de KOPKANT staat nu in `:where()`, want daar is de nul gewenst: welke
+   kop het is, mag niets aan het gewicht toevoegen. De doelkant is `:is(...)`,
+   die de hoogste specificiteit van zijn argumenten aanneemt — één — en dus
+   gelijk staat aan de reset en later in het bestand wint. Componenten die hun
+   eigen afstand met een klasse zetten, hebben er twee en winnen nog steeds.
+
+   Nagemeten na invoering: 219 te krappe paren teruggebracht naar de band waar
+   de rest van de site in zit, en de bak van 40+px bleef leeg — er is nergens
+   iets te ruim geworden. Dat is de controle die deze regel verdedigt. */
+:where(h1, h2, h3, h4, h5) + :is(p, ul, ol, dl, dd) { margin-top: .85em; }
 .lead { font-size: var(--t-lg); color: var(--ink-2); line-height: 1.6; max-width: 56ch; }
 
 .container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: clamp(1.2rem, 4vw, 2.6rem); }
@@ -1856,6 +1916,48 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .page-hero .display { max-width: 22ch; }
 .page-hero h1 { font-size: clamp(2.4rem, 5vw, 4rem); }
 
+/* ── DE PAGINAKOP IN TWEE KOLOMMEN — 18 augustus 2026 ───────────────────────
+   Gemeten op /nl/pricing bij 1440px: de <h1> was 460px breed, de lede 420px,
+   in een container van 1240px. Meer dan de helft van de eerste schermvulling
+   was leeg — en dat op de pagina waar de prijs staat. Hetzelfde beeld op elke
+   andere kop met een lede eronder: een smalle kolom links en een leeg vlak
+   rechts, negenendertig keer.
+
+   Kop links, lede rechts, op één onderlijn. Dat is de asymmetrie die dit
+   register vraagt en het is meteen de rustigste manier om die leegte te
+   gebruiken: geen nieuw element, geen decoratie, alleen de twee dingen die er
+   al stonden naast elkaar in plaats van onder elkaar.
+
+   `:has(> .lead)` EN NIET OP ALLE KOPPEN. Dertig van de negenenzestig
+   paginakoppen hebben geen lede — de stijlpagina's, de juridische pagina's,
+   de galerij. Die zouden met een blinde tweekolomsregel een <h1> in de halve
+   breedte krijgen met een leeg vak ernaast: precies het probleem, verplaatst.
+   Een browser zonder `:has()` valt terug op de enkele kolom hierboven, en dat
+   is de opmaak van vandaag — dus dit kan niets stukmaken wat nu werkt.
+
+   `max-width: none` op de kop, want de 22ch hierboven was er om te voorkomen
+   dat een kop over de volle 1240px uitliep. In een kolom van ~640px doet de
+   kolom dat werk al, en de 22ch zou de kop nu binnen zijn eigen kolom nog een
+   keer inperken.
+
+   `align-items: end` zet de twee op dezelfde ONDERregel. Op de bovenregel zou
+   het niet werken: een kop van drie regels en een lede van vijf beginnen dan
+   samen bovenaan en eindigen op verschillende hoogtes, en dan staat er weer
+   een gat — alleen ergens anders. */
+@media (min-width: 62rem) {
+  .page-hero .container:has(> .lead) {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    column-gap: clamp(2.5rem, 6vw, 5rem);
+    align-items: end;
+  }
+  .page-hero .container:has(> .lead) > h1 { grid-column: 1; max-width: none; }
+  .page-hero .container:has(> .lead) > .lead {
+    grid-column: 2; grid-row: 2;
+    max-width: 46ch;
+  }
+}
+
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem,3vw,3rem); }
 @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
 .step { position: relative; border-top: 1px solid var(--line-strong); padding-top: 1.3rem; }
@@ -2079,6 +2181,95 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .reveal { opacity: 1; transform: none; }
 .js .reveal.pending { opacity: 0; transition: opacity var(--dur-3) var(--ease-out-quint); }
 .js .reveal.pending.in { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DE BEWEGING KOMT UIT DE SCROLL ZELF — 18 augustus 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Aanleiding: Lucas wees op adobe.com/nl en vroeg waarom dat zo soepel loopt.
+   Ik heb het in de browser opgemeten in plaats van het na te kijken op gevoel,
+   en het antwoord is één regel CSS:
+
+       animation-timeline: scroll(root);      (hun hero, range 0-735px, ease-out)
+       animation-timeline: view(40% 10%);     (hun kaartenraster, range: entry)
+
+   Vierenvijftig van hun animaties lopen zo. GEEN scroll-listener, GEEN
+   IntersectionObserver, geen bibliotheek. De browser koppelt de animatie aan de
+   scrollpositie en draait hem op de compositor — dus frame-perfect, en hij loopt
+   ACHTERUIT als je terugscrollt. Dat laatste is waarom een class-toggle altijd
+   net iets goedkoper voelt: die kan maar één kant op.
+
+   ── WAAROM DIT HIER BETER IS DAN WAT ER STOND ────────────────────────────
+
+   De regel hierboven zet 203 elementen op `opacity: 0` en laat JavaScript ze
+   weer aanzetten. Dat werkt, en het heeft een VANGNET nodig — zie revealInView()
+   in interactions.js, dat op elke scroll en elke pageload nog eens controleert
+   of er niets onzichtbaar is blijven staan. Een mechanisme dat een vangnet nodig
+   heeft, vertelt je iets.
+
+   Hieronder is er geen gat om in te vallen: de inhoud is standaard zichtbaar,
+   de animatie is een TOEVOEGING, en zonder ondersteuning gebeurt er simpelweg
+   niets. `@supports` is dus geen voorzichtigheid maar de hele constructie.
+
+   `both` als fill-mode is wat het vloeiend maakt: vóór het bereik staat het
+   element op de begintoestand en erna op de eindtoestand, zonder sprong.
+
+   De curve is die van Adobe overgenomen — cubic-bezier(.42,0,0,1), een
+   ease-out die laat uitdempen — omdat hij hier precies doet wat hij daar doet
+   en dit project al ease-out-quint als huisregel heeft. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* De JS-poort gaat uit: hij is niet meer nodig en twee mechanismen op één
+       element is hoe je een element krijgt dat halverwege blijft staan. */
+    .js .reveal.pending { opacity: 1; transition: none; }
+
+    .js .reveal.pending,
+    .reveal-scroll {
+      animation: vis-rise linear both;
+      animation-timeline: view();
+      /* Begint zodra het element de onderrand raakt, klaar op een derde van het
+         scherm. Korter dan Adobe's bereik, want deze secties zijn korter. */
+      animation-range: entry 0% cover 28%;
+    }
+
+    /* Een raster laat zijn kinderen ná elkaar binnenkomen door elk kind zijn
+       eigen tijdlijn te geven — geen delay per kind, want een delay op een
+       scrollTijdlijn is een delay in PIXELS en niet in tijd, en die loopt uit de
+       pas zodra de rij op een telefoon onder elkaar valt. */
+    .js .reveal-group > .reveal.pending {
+      transform: none;
+      animation: vis-rise-far linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+}
+
+@keyframes vis-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes vis-rise-far {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── DE NAAD DIE OVER DE HERO SCHUIFT ──────────────────────────────────────
+   Adobe's `rounded-corners-top`: de eerste sectie na de hero heeft 32px ronde
+   bovenhoeken en schuift eroverheen. Eén sterke naad in plaats van vijf zwakke,
+   en het is precies wat DESIGN.md §19 al wilde — "als een sectie onderscheiden
+   moet worden, is het antwoord een tegel, een paneel, een lijn of meer ruimte,
+   niet een tweede grond".
+
+   Hier 24px, want dat is --r-lg en deze site heeft één radiusschaal. */
+.seam-top {
+  position: relative;
+  z-index: 1;
+  margin-top: calc(var(--r-lg) * -1);
+  border-start-start-radius: var(--r-lg);
+  border-start-end-radius: var(--r-lg);
+  background: var(--bg-0);
+}
 
 /* The one earned rise. interactions.js sets --stagger-i on each direct child
    before observing it, so the delay is DOM order and nothing has to be
@@ -2958,3 +3149,26 @@ body::before {
     /* 3 · the falloff — the far corners sit back */
     radial-gradient(150% 110% at 50% 50%, transparent 38%, rgb(0 0 0 / 0.45) 100%);
 }
+
+/* ── HET PRODUCTTYPE EN DE CONTEXTSTUKKEN (bestelstroom) ────────────────────
+   Zie garments.js en de noot bij .pl-garment in OrderFlow.astro. Het contextblok
+   is INGESPRONGEN en heeft een lijn links: het hoort bij de keuze erboven en is
+   er een gevolg van, niet een tweede vraag op hetzelfde niveau. Zonder die
+   inspringing lezen ze als twee losse velden en is niet te zien dat de tweede
+   verandert door de eerste. */
+.pl-ctx {
+  margin-top: 1rem;
+  padding: 1rem 0 .2rem 1.1rem;
+  border-left: 1px solid var(--line);
+  display: grid;
+  gap: .85rem;
+}
+.pl-ctx-lead { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+.pl-ctx-row { display: grid; gap: .35rem; }
+.pl-ctx-row > label { font-size: .9rem; font-weight: 600; color: var(--ink); display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+/* Wat er van dit stuk in beeld staat. Kleiner en rustiger dan het label, want
+   het is de uitleg bij de vraag en niet de vraag — en het is tegelijk de grens
+   met de outfittoeslag, dus het mag niet weggemoffeld worden. */
+.pl-ctx-seen { font-size: .8rem; font-weight: 400; color: var(--ink-3); }
+.pl-ctx .hint { margin: 0; }
+.pl-ctx-row[hidden] { display: none; }

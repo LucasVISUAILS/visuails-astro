@@ -34,7 +34,7 @@ import {
   planProductBudget, attendedProductsPerMonth, fitsBudget, seatsLeft,
   advisoryAvailable, planShape, PLAN_CAPACITY_SHARE, rolloverDetail, addMonths,
 } from '../src/data/plans.js';
-import { PLAN_AMOUNT, PLAN_MIN_MONTHS } from '../src/data/pricing.js';
+import { PLAN_AMOUNT, PLAN_COMPARE_MONTHS } from '../src/data/pricing.js';
 import { ATTENDED_PER_DAY } from '../src/data/capacity.js';
 
 let pass = 0;
@@ -77,7 +77,7 @@ console.log('geen plan zakt onder de bodem van de ladder');
 console.log('\nde termijnen kloppen met elkaar');
 {
   ok('de maandtermijn geeft geen korting', Object.keys(TERMS.monthly.discountMonths).length, 0);
-  ok('de jaartermijn is langer dan de minimumtermijn', TERMS.yearly.months > PLAN_MIN_MONTHS, true);
+  ok('de jaartermijn is langer dan het rekenvenster', TERMS.yearly.months > PLAN_COMPARE_MONTHS, true);
   ok('en schuift langer door', rolloverMonths('yearly') > rolloverMonths('monthly'), true);
   /* Een onbekende termijn valt op maandelijks terug en niet om. Dit getal komt
      uit een database die ooit een waarde bevat die de code niet meer kent. */
