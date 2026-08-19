@@ -71,6 +71,7 @@ import Disclose from './Disclose.astro';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
 import FigPayback from './FigPayback.astro';
+import Placeholder from './Placeholder.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -345,6 +346,9 @@ const COPY = {
   },
 };
 
+/* Voor de brieftekst op de placeholder hieronder — die is aan de fotograaf
+   gericht en niet aan de bezoeker, dus staat hij niet in COPY. */
+const nl = lang === 'nl';
 const c = { ...COPY[lang], faqs: pricingFaqs(lang) };
 
 // What is true of EVERY order, whatever its size — read from the tier rather
@@ -481,6 +485,36 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
      A net figure set against a gross one is a comparison that flatters us by
      a fifth, and the reader cannot see that it has happened. Saying "excl."
      under both is the only way the two columns are the same kind of number. -->
+{/* ── WAT EEN PRODUCT IS, IN BEELD ─────────────────────────────────────────
+    19 augustus 2026. Gemeten: 1093 woorden en nul beelden op de pagina waar
+    iemand beslist of hij geld uitgeeft. De staffel hierboven zegt wat één
+    product KOST; nergens stond wat één product IS.
+
+    Dat is de zin die de hele prijslijst draagt — "zeven afgewerkte beelden per
+    product" is een getal tot je het ziet. Eén rij van die zeven doet meer dan
+    de alinea eronder, en hij staat daarom tussen het tarief en de vergelijking
+    met een shootdag in: eerst wat het kost, dan wat je krijgt, dan waar het
+    tegen afgezet wordt. */}
+<section class="section-tight"><div class="container">
+  <div class="section-head">
+    <h2>{nl ? 'Dit is één product.' : 'This is one product.'}</h2>
+    <p>{nl
+      ? 'Elk tarief in de tabel hierboven geldt per product. Dit is wat daarvoor terugkomt.'
+      : 'Every rate in the table above is per product. This is what comes back for it.'}</p>
+  </div>
+  <Placeholder
+    lang={lang}
+    space
+    ratio="21 / 9"
+    subject={nl
+      ? 'Eén kledingstuk als volledige set: vier catalogbeelden en drie lifestyle-beelden op één rij'
+      : 'One garment as a full set: four catalog images and three lifestyle images in one row'}
+    message={nl
+      ? 'Moet in één oogopslag laten zien dat "één product" zeven beelden is en geen foto. Zelfde kledingstuk in alle zeven, zichtbaar dezelfde huisstijl, en de vier catalog- en drie lifestyle-beelden herkenbaar als twee groepen. Dit is het beeld dat het tarief rechtvaardigt.'
+      : 'Must show at a glance that "one product" means seven images, not one photo. The same garment in all seven, visibly one house style, and the four catalog and three lifestyle frames readable as two groups. This is the image that justifies the rate.'}
+  />
+</div></section>
+
 <section class="section-tight"><div class="container">
   <div class="section-head"><h2>{c.anchorH}</h2></div>
 
@@ -679,7 +713,19 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
             hand werd omgezet: er was geen mandaat, dus viel er niets af te
             sluiten. Sinds er een SEPA-machtiging via Mollie is, is het
             contactformulier de omweg geworden. Zie src/lib/subscribe.js. */}
-        <a href={lp('/start/plan')} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
+        {/* ── EN MET HET PLAN ERBIJ, 18 augustus 2026 ────────────────────
+            Alle drie de knoppen wezen naar dezelfde kale URL, en PlanPicker
+            zet standaard Studio aan (het middelste van de drie). Wie hier op
+            de Merk-kaart klikte — €1.690, het duurste dat de studio verkoopt —
+            kwam dus op een pagina met Studio aangevinkt, en één keer niet
+            opletten is een machtiging voor het verkeerde bedrag, elke maand
+            opnieuw.
+
+            Een vraag die je al beantwoord hebt, hoort niet nog een keer
+            gesteld te worden. Het script in PlanPicker leest ?plan= en vinkt
+            hem aan; zonder JavaScript verandert er niets en staat Studio er
+            nog, precies zoals eerst. */}
+        <a href={`${lp('/start/plan')}?plan=${p.id}`} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
       </div>
     ))}
   </div>
@@ -714,7 +760,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
 <!-- CLOSING -->
 <section class="section-tight"><div class="container">
   <div class="cta-band reveal pending">
-    <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
+    <h2 class="display" style="font-size:var(--t-page-h2)">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
     <div class="flex" style="justify-content:center;margin-top:2rem">
       <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.ctaSample}</a>
       <a href={lp('/start')} class="btn btn-ghost btn-lg">{c.ctaStart}</a>
@@ -966,7 +1012,10 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
   /* ── In every order ──────────────────────────────────────────────────── */
   .incl-grid {
     list-style: none;
-    margin: clamp(1.6rem, 3vw, 2.4rem) 0 0;
+    /* Was clamp(1.6rem, 3vw, 2.4rem) — 38px, de ruimste kop→blok-afstand van
+       de hele site, tegenover 21px elders voor precies dezelfde relatie. Nu op
+       het token; zie EN DE TWEEDE AFSTAND in global.css. */
+    margin: var(--gap-head-block) 0 0;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

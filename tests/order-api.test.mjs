@@ -564,5 +564,115 @@ console.log('\nen er is een ratelimiet op de bestelroute');
   globalThis.fetch = realFetch;
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * EEN LOOK OP AANVRAAG KOMT NIET ALS BESTELLING BINNEN — 18 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"Een custom stijl moet op aanvraag en er is geen standaard tarief voor,
+ * dit wordt pas berekend wanneer de klant heeft aangegeven wat hij/zij wil."*
+ *
+ * De radio is uit StylePicker.astro gehaald. Dat is de helft: een oud tabblad dat
+ * nog openstaat en een met de hand samengestelde POST sturen `style=custom` nog
+ * steeds mee, en dan ligt er een bestelling voor een op maat ontworpen wereld met
+ * een bedrag van de lifestyle-ladder eronder.
+ *
+ * WAT HIER BEWEZEN WORDT is dat de bestelling doorgaat en de LOOK verdwijnt. Niet
+ * een 400: een bezoeker die om een geldige reden een oud formulier verstuurt, mag
+ * geen foutscherm krijgen voor een veld dat hij niet zelf heeft verzonnen. De
+ * studio ziet dan een lifestyle-bestelling zonder look, komt erop terug, en dat is
+ * hetzelfde gesprek dat de aanvraagpagina ook zou hebben gestart.
+ */
+console.log('\neen stijl op aanvraag haalt de bestelling niet');
+{
+  const { onRequestPost } = await import('../functions/api/order.js');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ id: 'x' }), { status: 200, headers: { 'content-type': 'application/json' } });
+
+  const geplaatst = [];
+  const db = {
+    prepare(sql) {
+      const st = {
+        bind(...args) { if (sql.includes('INSERT INTO orders')) geplaatst.push({ sql, args }); return st; },
+        async first() { return null; },
+        async run() { return { success: true }; },
+        async all() { return { results: [] }; },
+      };
+      return st;
+    },
+  };
+
+  const stuur = async (style) => {
+    geplaatst.length = 0;
+    const fd = new FormData();
+    const all = {
+      service: 'lifestyle', email: 'klant@merk.nl', name: 'Jan Jansen', brand: 'Merk',
+      products: '3', country: 'NL', back: '/thank-you',
+      business_declaration: 'yes', business_version: 'business-v1-2026-08',
+      no_vat: '1', reg_number: '99742993', style,
+    };
+    for (const [k, v] of Object.entries(all)) fd.append(k, v);
+    await onRequestPost({
+      request: new Request('https://visuails.com/api/order', {
+        method: 'POST', body: fd, headers: { 'CF-Connecting-IP': '203.0.113.44' },
+      }),
+      env: { DB: db, RESEND_API_KEY: 're_test', NOTIFY_EMAIL: 'hello@visuails.com',
+             FROM_EMAIL: 'VISUAILS <orders@visuails.com>' },
+      waitUntil: () => {},
+    });
+    // details_json is het argument dat als JSON-object leesbaar is.
+    const rij = geplaatst[0];
+    if (!rij) return { geboekt: false, style: undefined };
+    const details = rij.args
+      .filter((a) => typeof a === 'string' && a.startsWith('{'))
+      .map((a) => { try { return JSON.parse(a); } catch { return null; } })
+      .find((o) => o && typeof o === 'object');
+    return { geboekt: true, style: details ? details.style : undefined };
+  };
+
+  const echt = await stuur('dunes');
+  ok('een huisstijl komt gewoon door', echt.style, 'dunes');
+
+  const opAanvraag = await stuur('custom');
+  ok('de bestelling wordt wél geboekt', opAanvraag.geboekt, true);
+  /* `ok(naam, kreeg, verwacht)` neemt `true` als verwacht ontbreekt, dus de
+     afwezigheid moet als vergelijking worden doorgegeven en niet als undefined. */
+  ok('maar de look op aanvraag staat er niet in', opAanvraag.style === undefined, true, String(opAanvraag.style));
+
+  const verzonnen = await stuur('bestaat-niet');
+  ok('en een verzonnen stijl ook niet', verzonnen.style === undefined, true, String(verzonnen.style));
+
+  globalThis.fetch = realFetch;
+}
+
+/*
+ * En de bron zelf, want de controle hierboven bewijst het gedrag en niet de REGEL.
+ * `priceTrust` is het merkteken dat StylePicker, de stijlpagina en order.js alle
+ * drie lezen — een lijstje slugs zou op drie plekken uit elkaar kunnen lopen.
+ */
+console.log('\nen de drie lezers gebruiken hetzelfde merkteken');
+{
+  const { readFileSync } = await import('node:fs');
+  const src = (r) => readFileSync(new URL(r, import.meta.url), 'utf8');
+  const kaal = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  const orderJs = kaal(src('../functions/api/order.js'));
+  const picker = kaal(src('../src/components/order/StylePicker.astro'));
+
+  ok('order.js weigert op priceTrust', /if \(s\.priceTrust\)/.test(orderJs), true);
+  ok('StylePicker filtert op priceTrust', /filter\(\(s\) => !s\.priceTrust\)/.test(picker), true);
+  ok('en Custom staat niet meer als slug in de kiezer',
+    /'custom'/.test(picker), false);
+
+  const styles = await import('../src/data/styles.js');
+  const stylesNl = await import('../src/data/styles.nl.js');
+  for (const [naam, mod] of [['styles.js', styles], ['styles.nl.js', stylesNl]]) {
+    const c = mod.styles.find((x) => x.slug === 'custom');
+    ok(`${naam}: custom draagt priceTrust`, Boolean(c && c.priceTrust), true);
+    ok(`${naam}: en wijst naar de aanvraagpagina`, /\/start\/custom-look$/.test(c.orderHref || ''), true);
+  }
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);

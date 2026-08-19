@@ -405,6 +405,101 @@ account die dan op je schijf staat. Dat is een afweging die je één keer bewust
 maakt en niet en passant op een deploy-avond — en het hoort in ieder geval niet in
 een chatvenster of in deze repository.
 
+## 8 · De nachtelijke taak — een APART project, en dus een aparte deploy
+
+Dit stond hier niet, en dat is precies één keer misgegaan: `cron/` is een eigen
+Cloudflare Worker met zijn eigen `cron/wrangler.toml`. **Een push naar GitHub
+deployt hem NIET mee.** De Pages-build hierboven bouwt `dist/` en pakt
+`functions/` op; `cron/` valt daar buiten. Verander je iets in `cron/index.js`,
+dan blijft de oude versie draaien tot je hem los uitrolt.
+
+Waarom het een tweede project is: Pages Functions hebben geen `scheduled`
+handler, een Worker wel. Zie de kop van `cron/wrangler.toml`, die de hele
+afweging draagt.
+
+### De twee commando's
+
+Kopieer ze zoals ze staan, elk op een eigen regel:
+
+```
+npm run cron:check
+```
+
+```
+npm run cron:deploy
+```
+
+`cron:check` is `wrangler deploy --dry-run`: hij bouwt en controleert de
+bindings en uploadt niets. Loopt die schoon, dan is `cron:deploy` de echte.
+
+### PLAK GEEN COMMENTAAR ACHTER EEN COMMANDO
+
+Op 18 augustus 2026 ging dit mis en het is de moeite van opschrijven waard,
+want het ziet eruit als een fout in het project en het is er geen. In een
+instructie stond:
+
+```
+npm run cron:check     # droogloop, bouwt schoon
+```
+
+In **PowerShell en cmd.exe is `#` geen commentaarteken.** Windows gaf de hele
+Nederlandse zin door aan wrangler, die antwoordde met
+`Unknown arguments: droogloop,, ik, heb, hem, net, gedraaid:, bouwt, schoon` en
+zijn volledige helptekst. Er was niets kapot: het commando was nooit gedraaid.
+
+In `bash` en `zsh` had het gewerkt. Op Windows hoort de uitleg dus BOVEN het
+blok en niet erin — zoals in dit document.
+
+*(De `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file
+src\win\async.c` die daar soms achteraan komt, is Node die op Windows rommelig
+afsluit nádat wrangler al met een fout is gestopt. Het is de nasleep van het
+afbreken en niet de oorzaak ervan.)*
+
+### De sleutel staat op het TWEEDE project
+
+`RESEND_API_KEY` is een secret en secrets zijn per project. Hij op de
+Pages-site zetten doet niets voor deze Worker. Controleren:
+
+```
+npx wrangler secret list --config cron/wrangler.toml
+```
+
+Zetten als hij er niet staat:
+
+```
+npx wrangler secret put RESEND_API_KEY --config cron/wrangler.toml
+```
+
+Zonder die sleutel valt er niets om — de taak doet alles behalve mailen en zegt
+in de log dat hij niet kon mailen. Dat is met opzet: opruimen, vrijgeven en de
+abonnementswacht zijn belangrijker dan het bericht erover. Maar de herinnering
+naar een klant met een lege wachtrij gaat dan ook niet uit.
+
+### Wat hij doet, in de volgorde waarin hij het doet
+
+Eén trigger om 03:10 UTC, vijf taken, elk met zijn eigen `try` zodat er geen
+één een ander meesleept:
+
+1. vensters vrijgeven die nooit betaald werden
+2. verlopen bestanden opruimen (bewaartermijn uit `/privacy` §6)
+3. vastgelopen facturen alsnog uitgeven
+4. **de abonnementswacht** — een klant mailen wiens vaste week over vijf dagen
+   begint met een lege lijst, en de uitzonderingen in het nachtverslag zetten
+5. de leeftijd van de back-up controleren
+
+Geen mail betekent: er was niets te doen en er ging niets mis. Of de Worker
+draait niet — en dáárvoor bestaat `app_settings.cron_last_run`, die /admin
+bovenaan leest. Staat daar een datum van vannacht, dan loopt hij.
+
+### Lokaal proberen zonder te wachten tot 03:10
+
+```
+npm run cron:run
+```
+
+Dat start `wrangler dev --test-scheduled`; daarna kun je de taak met de hand
+afvuren op het adres dat hij noemt.
+
 ---
 
 *Numbers in this file were measured, not remembered. If you change the shape of

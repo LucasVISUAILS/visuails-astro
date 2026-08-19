@@ -43,6 +43,7 @@ import {
   WINDOW_THRESHOLD,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
+  AMOUNT,
 } from '../../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
@@ -264,7 +265,36 @@ const PIPE = {
     sum: {
       kind: 'What we make',
       count: 'Products',
+      /* ── VIER ANTWOORDEN DIE NIET WERDEN TERUGGELEZEN ─────────────────────
+         18 augustus 2026. Stap 5 heet "Check it over" en toonde acht regels:
+         soort, aantal, achtergrond, verhouding, bedrag, materiaal, levering,
+         e-mail. Twee vragen die de klant beantwoord had, stonden er niet bij,
+         en allebei staan ze op stap 1 met een eigen kiezer en eigen tekst.
+
+         · DE VERKOOPKANALEN. Dit is niet de minst belangrijke vraag maar de
+           meest bepalende: wie Amazon, bol of Zalando aanvinkt, krijgt zijn
+           achtergrond vastgezet op #FFFFFF en zijn bestanden als jpg in plaats
+           van webp. Het scherm toonde vervolgens "Achtergrond · Wit —
+           #FFFFFF" alsof dat een keuze was. Het WAS geen keuze, en het scherm
+           dat je moet laten controleren of alles klopt, hoorde als eerste te
+           zeggen waar die waarde vandaan kwam. Vandaar de kanaalregel, de
+           reden achter de achtergrond, en het formaat als eigen regel — dat
+           laatste is een leveringsfeit dat nergens anders op deze stap stond.
+
+         · HET MODEL. Bij elke catalogset zit één foto op een model en de klant
+           kiest het gezicht. "Wij kiezen er een" telt daarbij als antwoord —
+           ModelPicker zegt het zelf: *"Dit is de standaard, en het is een echt
+           antwoord."* Dus staat hij er in beide gevallen, want een regel die
+           alleen verschijnt als je afwijkt, laat je niet controleren dat je
+           NIET hebt afgeweken. */
+      channels: 'Selling on',
+      channelsNone: 'Not said — we deliver on pure white',
       bg: 'Background',
+      bgLocked: 'fixed by where you sell',
+      format: 'File format',
+      formatJpg: 'jpg (a marketplace order is not delivered as webp)',
+      model: 'The on-model photo',
+      modelAny: 'We pick a face that suits your brand',
       style: 'Look',
       ratio: 'Image shape',
       outfit: 'Complete look',
@@ -345,7 +375,15 @@ const PIPE = {
     sum: {
       kind: 'Wat we maken',
       count: 'Producten',
+      /* Zie de noot bij de Engelse tegenhanger. */
+      channels: 'Waar je verkoopt',
+      channelsNone: 'Niet gezegd — we leveren op zuiver wit',
       bg: 'Achtergrond',
+      bgLocked: 'vastgezet door waar je verkoopt',
+      format: 'Bestandsformaat',
+      formatJpg: 'jpg (een marktplaatsbestelling wordt niet als webp geleverd)',
+      model: 'De foto op een model',
+      modelAny: 'Wij kiezen een gezicht dat bij je merk past',
       style: 'Look',
       ratio: 'Beeldverhouding',
       outfit: 'Compleet setje',
@@ -560,6 +598,8 @@ const REQUIRED_COPY = [
   'kind.complete', 'kind.catalog', 'kind.lifestyle',
   'err.generic',
   'sum.kind', 'sum.count', 'sum.bg', 'sum.style', 'sum.ratio', 'sum.outfit', 'sum.outfitN',
+  'sum.channels', 'sum.channelsNone', 'sum.bgLocked', 'sum.format', 'sum.formatJpg',
+  'sum.model', 'sum.modelAny',
   // sum.net and NOTHING ELSE about money — VAT is charged at the rate of the
   // customer's own country, so a gross figure here would be a Dutch rate shown
   // to whoever reads. vatNote() says once how VAT is handled.
@@ -632,7 +672,26 @@ for (const l of ['en', 'nl'] as const) {
 const FORM = {
   en: {
     railLabel: 'Order steps',
-    rail: ['Order', 'Material', 'Your notes', 'Timing', 'Confirm'],
+    /* ── STAP 3 HEET GEEN "YOUR NOTES" ────────────────────────────────────
+       18 augustus 2026. De rail noemde stap 3 "Your notes" / "Jouw notitie".
+       Stap 3 is in hoofdzaak het factuur- en contactblok: zestien velden —
+       voornaam, achternaam, merknaam, website, e-mail, telefoon, straat,
+       toevoeging, postcode, plaats, land, provincie, btw-nummer, de
+       vestigingsverklaring en het registratienummer.
+
+       Het tekstvak waar de naam naar verwijst, staat onderaan diezelfde stap
+       en bestaat echt — maar alleen bij lifestyle en video. Op catalog is het
+       er bewust niet (zie de noot bij isCatalog hierboven), en daar noemde de
+       rail dus een stap naar het enige onderdeel dat op die dienst ontbreekt.
+
+       Ook waar het vak er wél is, is het één optioneel veld onder zestien
+       verplichte. Wie op stap 2 naar de rail keek, las dat er nog een klein
+       tekstvak aankwam en kreeg een volledig adresformulier met een
+       btw-verklaring. Dat is het punt waarop iemand afhaakt: niet omdat het
+       veel is, maar omdat het meer is dan aangekondigd. De rail is een
+       belofte over wat er nog komt, en hij moet op alle drie de diensten
+       kloppen. */
+    rail: ['Order', 'Material', 'Your details', 'Timing', 'Confirm'],
     next: 'Continue',
     back: 'Back',
     optional: 'optional',
@@ -791,7 +850,27 @@ const FORM = {
       saveHint: 'Your name, brand and contact details — not this order or the notes you wrote about it.',
       saveHintOut: 'Your name, brand and contact details — not this order or the notes you wrote about it. They are kept the moment you first sign in; the link is in your confirmation email.',
     },
-    noscript: 'JavaScript is off, so this page shows all five steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for the material by email, confirm a delivery date in writing, and invoice the per-product rate for the count you pick.',
+    /* ── "ALL FIVE STEPS" WAS NOT TRUE ON THE SAMPLE ──────────────────────
+       18 augustus 2026. Deze zin stond als vaste tekst, en /test-sample heeft
+       er vier: de rail filtert stap 4 eruit, want een proefvisual heeft geen
+       leverdatum om vast te zetten (zie de noot bij de rail hieronder). Wie
+       daar zonder JavaScript kwam, las dus dat er vijf stappen stonden terwijl
+       hij er vier zag, dat de agenda niet gecheckt kon worden terwijl er geen
+       agenda is, en dat we het tarief per product zouden factureren bij het
+       aantal dat hij kiest — op een pagina waar het aantal vaststaat op één en
+       de prijs één euro is.
+
+       Een <noscript> is de enige tekst op deze pagina die alleen gelezen wordt
+       door iemand die al niet krijgt wat wij bedoeld hadden. Dat is de laatste
+       plek waar hij drie dingen mag beloven die niet kloppen.
+
+       Een functie en geen tweede tekstblok: de twee versies verschillen in
+       drie clausules maar delen de kern, en twee losse zinnen die voor
+       driekwart gelijk zijn, lopen bij de eerste wijziging uit elkaar — zie
+       dezelfde afweging bij de rail. */
+    noscript: (n: string, sample: boolean) => sample
+      ? `JavaScript is off, so this page shows all ${n} steps at once. Two things it cannot do that way: take your files, and show you what you picked as you go. Send the form and we will ask for the material by email — the sample is one product and one euro either way.`
+      : `JavaScript is off, so this page shows all ${n} steps at once. Three things it cannot do that way: take your files, check the calendar, and add the total up as you go. Send the form and we will ask for the material by email, confirm a delivery date in writing, and invoice the per-product rate for the count you pick.`,
     sharedH: 'What is identical at every count',
     shared: [
       ['The production', `The same production run at one product and at ${ATTENDED_PER_WINDOW}.`],
@@ -817,7 +896,8 @@ const FORM = {
     railLabel: 'Stappen',
     // 'Timing' stond hier onvertaald tussen vier Nederlandse woorden. pricing.js
     // heeft het juiste woord al: Levertijd. 8 augustus 2026.
-    rail: ['Bestelling', 'Materiaal', 'Jouw notitie', 'Levertijd', 'Bevestigen'],
+    /* Zie de noot bij de Engelse rail: stap 3 is het factuurblok. */
+    rail: ['Bestelling', 'Materiaal', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
     next: 'Verder',
     back: 'Terug',
     optional: 'optioneel',
@@ -972,7 +1052,10 @@ const FORM = {
       saveHint: 'Je naam, merk en contactgegevens — niet deze bestelling of wat je ons erover vertelde.',
       saveHintOut: 'Je naam, merk en contactgegevens — niet deze bestelling of wat je ons erover vertelde. Ze worden bewaard zodra je voor het eerst inlogt; de link staat in je bevestigingsmail.',
     },
-    noscript: 'JavaScript staat uit, dus deze pagina toont alle vijf stappen tegelijk. Drie dingen werken dan niet: je bestanden versturen, de agenda checken en het totaal meerekenen. Verstuur het formulier, dan vragen we het materiaal per e-mail op, bevestigen we een leverdatum op schrift en factureren we het tarief per product bij het aantal dat je kiest.',
+    /* Zie de noot bij de Engelse tegenhanger. */
+    noscript: (n: string, sample: boolean) => sample
+      ? `JavaScript staat uit, dus deze pagina toont alle ${n} stappen tegelijk. Twee dingen werken dan niet: je bestanden versturen en zien wat je gekozen hebt terwijl je bezig bent. Verstuur het formulier, dan vragen we het materiaal per e-mail op — de proef is één product en één euro, hoe dan ook.`
+      : `JavaScript staat uit, dus deze pagina toont alle ${n} stappen tegelijk. Drie dingen werken dan niet: je bestanden versturen, de agenda checken en het totaal meerekenen. Verstuur het formulier, dan vragen we het materiaal per e-mail op, bevestigen we een leverdatum op schrift en factureren we het tarief per product bij het aantal dat je kiest.`,
     sharedH: 'Wat bij elk aantal hetzelfde is',
     shared: [
       ['De productie', `Dezelfde productie bij één product en bij ${ATTENDED_PER_WINDOW}.`],
@@ -991,6 +1074,29 @@ const FORM = {
 };
 
 const f = FORM[lang];
+
+/* De stappen die deze pagina ECHT toont. De vierde rail-ingang is 'Levertijd' /
+   'Timing', en die stap bestaat niet bij een proefvisual — zie de noot bij de
+   <ol class="pl-rail"> hieronder voor waarom er gefilterd wordt in plaats van
+   een tweede lijst aan te houden.
+
+   Het staat hier boven in plaats van in de markup omdat er nu twee dingen uit
+   lezen: de rail zelf en de <noscript>, die het AANTAL noemt. Die twee uit
+   dezelfde bron laten komen is het hele punt — een rail met vier ingangen
+   onder een zin die er vijf belooft, is precies wat hier stond. */
+const RAIL = isSample ? f.rail.filter((_, i) => i !== 3) : f.rail;
+
+/* Het aantal VOLUIT, want dit is een zin en geen tabel. "alle 4 stappen" is
+   wat een sjabloon ervan maakt; "alle vier stappen" is wat er stond voordat
+   het een sjabloon werd, en dat hoort niet slechter te worden van een
+   reparatie. Twee getallen, want de rail is vier of vijf lang en nooit iets
+   anders — komt er ooit een stap bij, dan valt het hier stil terug op het
+   cijfer en niet om. */
+const RAIL_WORD: Record<string, Record<number, string>> = {
+  en: { 4: 'four', 5: 'five' },
+  nl: { 4: 'vier', 5: 'vijf' },
+};
+const railWord = RAIL_WORD[lang][RAIL.length] || String(RAIL.length);
 // De vier regels die de € 50-grens uitleggen, uit garments.js. Zie CONTEXT_RULES
 // daar: een belofte hoort op één plek te staan.
 const gc = garmentCopy(lang);
@@ -1038,6 +1144,27 @@ const config = {
    */
   steps: isSample ? 4 : 5,
   gateStep: isSample ? null : 4,
+  /*
+   * ── WAT DE PROEF KOST, EN WAAROM DAT HIER MOET STAAN ──────────────────────
+   *
+   * 18 augustus 2026. Op /test-sample toonde stap 4 — "Controleer en verstuur",
+   * het laatste scherm voordat iemand op versturen drukt — de regel
+   * "Orderbedrag (excl. btw) · € 89". De proef kost € 1. Overal elders op die
+   * pagina staat € 1: in de kop, in de tegel van stap 1, in de voetnoot over
+   * misbruik. Alleen op het scherm dat je vraagt te controleren of alles klopt,
+   * stond het laddertarief voor één catalogproduct.
+   *
+   * renderSummary() rekende de prijs uit met quoteFor(soort, aantal) — en de
+   * SOORT is op de proef een echte keuze (catalogset of carousel), dus die
+   * functie kreeg 'catalog' en 1 en gaf keurig het goede antwoord op de
+   * verkeerde vraag. Er was niets waaruit ze kon opmaken dat dit een proef was.
+   *
+   * De prijs staat hier en niet in het script, om dezelfde reden als de rest van
+   * dit blok: AMOUNT.testSample staat in pricing.js, en een getal dat in
+   * pipeline.js wordt overgetypt is een getal dat op een dag achterloopt.
+   * `null` op elke andere stroom betekent uitdrukkelijk "hier geldt de ladder".
+   */
+  samplePrice: isSample ? AMOUNT.testSample : null,
   ladder: LADDER,
   windowThreshold: WINDOW_THRESHOLD,
   maxProducts: ATTENDED_PER_WINDOW,
@@ -1194,7 +1321,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
         volgorde van de stappen zelf, dus als die ooit verandert, verandert deze
         regel mee — en dat is precies de bedoeling. */}
     <ol class="pl-rail" aria-label={f.railLabel}>
-      {(isSample ? f.rail.filter((_, i) => i !== 3) : f.rail).map((t, i) => (
+      {RAIL.map((t, i) => (
         <li>
           <button type="button" class="pl-rail-item" data-pl-rail-item={String(i + 1)}>
             <span class="pl-rail-n">{String(i + 1).padStart(2, '0')}</span>
@@ -1204,7 +1331,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
       ))}
     </ol>
 
-    <noscript><p class="pl-noscript">{f.noscript}</p></noscript>
+    <noscript><p class="pl-noscript">{f.noscript(railWord, isSample)}</p></noscript>
 
     <!-- STEP 1 · THE ORDER -->
     <section class="pl-step" data-pl-step="1">

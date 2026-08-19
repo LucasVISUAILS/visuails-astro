@@ -180,8 +180,14 @@ export const styles = [
     cardPhoto: '/img/banners-13.webp',
     cardIcon: 'bag',
     cardDesc: 'Not one of our four moods — a bespoke lifestyle scene designed from your references.',
-    orderHref: '/start',
-    orderLabel: 'Start a custom scene',
+    /* ── NIET MEER NAAR HET BESTELFORMULIER, 18 augustus 2026 ──────────────
+       Lucas: een stijl op maat heeft geen standaardtarief; die prijs volgt pas
+       als de klant heeft gezegd wat hij wil. Deze knop wees naar het formulier
+       dat een prijs uitrekent, terwijl de regel erboven op deze zelfde pagina
+       "On request" zegt. Nu naar de aanvraagpagina — zie
+       StylePicker.astro en het 'custom-look'-blok in HoldingPage.astro. */
+    orderHref: '/start/custom-look',
+    orderLabel: 'Ask for a custom look',
     moodParagraphs: [
       'Not one of our four moods — a scene designed from your references: the setting, styling and light that only your brand would use.',
       'We build the world once, with you, then keep every future visual true to it.',

@@ -35,12 +35,22 @@ const COPY = {
     hint: 'Four house styles, or describe a look of your own and we design it. Your choice here is not final.',
     see: 'See the whole style',
     err: 'Pick a look before you continue.',
+    /* De weg naar de stijl die hierboven niet meer als radio staat. Eén zin die
+       zegt WAAROM hij er niet staat, want "vraag het ons" zonder reden leest als
+       een gesloten deur. */
+    askH: 'Something else entirely?',
+    askBody: 'A world built around your product is designed rather than picked, so it has no per-product rate until we know what it is. It is a request, and it gets a written price before anything runs.',
+    askCta: 'Ask for a custom look',
   },
   nl: {
     label: 'Welke look?',
     hint: 'Vier vaste stijlen, of een stijl die we om jouw product heen bouwen. Niets ligt vast.',
     see: 'Bekijk de hele stijl',
     err: 'Kies eerst een look.',
+    /* Zie de Engelse tegenhanger. */
+    askH: 'Iets heel anders voor ogen?',
+    askBody: 'Een wereld die om jouw product heen gebouwd wordt, ontwerpen we in plaats van dat je hem kiest — en dus heeft hij geen tarief per product zolang we niet weten wat het is. Het is een aanvraag, en je krijgt er een prijs op schrift voor voordat er iets draait.',
+    askCta: 'Vraag een look op maat aan',
   },
 };
 const c = COPY[lang];
@@ -80,7 +90,36 @@ const CARDS = {
   '/img/banners-13.webp': { src: '/img/banners-13-w960.webp', w: 960, h: 717 },
 };
 
-const looks = data.map((s) => {
+/*
+ * ── CUSTOM STAAT HIER NIET MEER TUSSEN, 18 augustus 2026 ────────────────────
+ *
+ * Lucas: *"Een custom stijl moet op aanvraag en er is geen standaard tarief
+ * voor, dit wordt pas berekend wanneer de klant heeft aangegeven wat hij/zij
+ * wil. Dit is een volledig andere optie dan de standaard predefined stijlen."*
+ *
+ * Hij stond als vijfde radio tussen de vier huisstijlen, en de lopende telling
+ * rekende hem af op de lifestyle-ladder: € 109 per product bij 1 tot 4, met een
+ * totaal op het bevestigingsscherm en een factuurbelofte eronder. /lifestyle/custom
+ * zei op datzelfde moment "Op aanvraag". Een formulier dat een prijs uitrekent
+ * voor iets wat geen prijs heeft, is geen keuze aanbieden maar een fout maken
+ * die de klant pas merkt als de factuur anders is.
+ *
+ * DE TEGEL VERDWIJNT NIET UIT styles.js. Die module voedt ook /lifestyle en
+ * /lifestyle/custom, en dáár hoort Custom te staan — het is werk dat de studio
+ * doet. Wat hier weggaat is alleen zijn plek in een RADIOGROEP die een bedrag
+ * aanstuurt. Eronder komt de weg ernaartoe, want een bezoeker die hem zoekt
+ * moet hem kunnen vinden; hij mag hem alleen niet per ongeluk kopen.
+ *
+ * `!s.priceTrust` en niet `s.slug !== 'custom'`: priceTrust is precies het veld
+ * waarmee styles.js zegt "deze stijl heeft geen tarief van de ladder" — zie
+ * priceLine in src/pages/lifestyle/[slug].astro, dat er hetzelfde op leest. Een
+ * tweede stijl die morgen op aanvraag gaat, valt hier dan vanzelf uit in plaats
+ * van in een lijstje met slugs vergeten te worden.
+ */
+const ORDERABLE = data.filter((s) => !s.priceTrust);
+const opAanvraag = data.filter((s) => s.priceTrust);
+
+const looks = ORDERABLE.map((s) => {
   const photo = s.cardPhoto || s.heroPhoto;
   // Deliberately loud. A style whose card photo changes in styles.js and not
   // here would otherwise render at a size taken from thin air, which is
@@ -137,6 +176,16 @@ const looks = data.map((s) => {
   </div>
 
   <p class="pl-panel-note"><a href={lp('/lifestyle')}>{c.see}</a></p>
+
+  {/* Alleen als styles.js daadwerkelijk iets op aanvraag heeft. Een blok dat
+      naar een lege verzameling verwijst, is een dode deur. */}
+  {opAanvraag.length > 0 && (
+    <div class="look-ask">
+      <p class="look-ask-h">{c.askH}</p>
+      <p class="look-ask-body">{c.askBody}</p>
+      <a class="look-ask-cta" href={lp('/start/custom-look')}>{c.askCta}</a>
+    </div>
+  )}
 </fieldset>
 
 <style>
@@ -191,6 +240,27 @@ const looks = data.map((s) => {
   .pl-panel-note { margin-top: .8rem; font-size: .86rem; color: var(--ink-3); }
   .pl-panel-note :global(a),
   .pl-panel-note a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* De weg naar de stijl die geen radio meer is. Een kader en geen tegel: het
+     moet lezen als "en dit is er ook", niet als een vijfde optie in dezelfde
+     rij — dat is precies het verschil dat deze wijziging maakt. */
+  .look-ask {
+    margin-top: 1.4rem;
+    padding: 1rem 1.1rem;
+    border: 1px dashed var(--line-strong, var(--line));
+    border-radius: var(--r-lg);
+    display: grid;
+    gap: .4rem;
+    justify-items: start;
+  }
+  .look-ask-h { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1rem; color: var(--ink); }
+  .look-ask-body { margin: 0; font-size: .86rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
+  .look-ask-cta {
+    margin-top: .3rem;
+    font-size: .88rem; font-weight: 700;
+    color: var(--accent-bright);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
 
   /* The radio pipeline.js marks when the step is submitted unanswered.
      Scoped to this component, so the selector cannot reach for .pl-form —

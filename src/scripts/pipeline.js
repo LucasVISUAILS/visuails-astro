@@ -4564,6 +4564,36 @@ function renderSummary() {
   if (kind) rows.push([c('sum.kind'), c(`kind.${kind}`)]);
   if (count && count.value) rows.push([c('sum.count'), count.textContent.trim()]);
 
+  /*
+   * ── WAAR DE KLANT VERKOOPT, EN WAT DAT VASTZET ────────────────────────────
+   *
+   * 18 augustus 2026. Deze vraag stond niet op het bevestigingsscherm, en het
+   * is de vraag die de meeste andere antwoorden overschrijft: een aangevinkte
+   * marktplaats zet de achtergrond vast op #FFFFFF en verandert het geleverde
+   * formaat van webp naar jpg. De regel eronder toonde vervolgens "Achtergrond
+   * · Wit — #FFFFFF" alsof de klant dat gekozen had.
+   *
+   * Zelfde bron als syncChannels(): de vinkjes zelf en hun eigen labels, niet
+   * een tweede lijst die uit de pas kan lopen. Een kanaal dat morgen aan
+   * channels.js wordt toegevoegd, staat hier vanzelf in.
+   *
+   * ALLEEN ALS DE VRAAG GESTELD IS. [data-pl-ch] bestaat niet op een stroom
+   * zonder kanaalkiezer, en dan is een lege regel de afwezigheid van een vraag
+   * en niet een onbeantwoorde vraag — dezelfde regel als bij de achtergrond en
+   * de look hieronder.
+   */
+  const chField = q('[data-pl-ch]');
+  const chBoxes = qa('[data-pl-ch-box]');
+  const chOn = chBoxes.filter((b) => b.checked);
+  const chWhite = chOn.some((b) => b.dataset.plChWhite === '1');
+  if (chField) {
+    const namen = chOn.map((b) => {
+      const n = b.closest('.ch-opt') && b.closest('.ch-opt').querySelector('.ch-name');
+      return n ? n.textContent.trim() : b.value;
+    });
+    rows.push([c('sum.channels'), namen.length ? namen.join(', ') : c('sum.channelsNone')]);
+  }
+
   // The background, read back as the name AND the value — the two things a
   // client would check on a confirm screen, and the two things the studio is
   // about to be sent. Only when the scope has one: syncBackground() empties the
@@ -4573,8 +4603,15 @@ function renderSummary() {
   if (bgHex) {
     const picked = q('input[name="background"]:checked');
     const bgName = picked ? picked.dataset.plBgName : '';
-    rows.push([c('sum.bg'), bgName ? `${bgName} — ${bgHex}` : bgHex]);
+    const basis = bgName ? `${bgName} — ${bgHex}` : bgHex;
+    // En waar hij vandaan komt, als de klant hem niet zelf heeft gekozen.
+    rows.push([c('sum.bg'), chWhite ? `${basis} · ${c('sum.bgLocked')}` : basis]);
   }
+
+  // Het formaat is een LEVERINGSFEIT en het verandert alleen hier. Het stond op
+  // stap 1 in een uitklapper en nergens meer daarna; op het scherm waar iemand
+  // controleert wat hij krijgt, hoort het gewoon op een regel.
+  if (chWhite) rows.push([c('sum.format'), c('sum.formatJpg')]);
 
   // The look, on the lifestyle flow. Same rule as the background above: only
   // when the flow HAS the question. There is no picker on a catalog order, so
@@ -4598,12 +4635,38 @@ function renderSummary() {
   // Task #271f.
   if (outfitN > 0) rows.push([c('sum.outfit'), c('sum.outfitN', { price: euro(cfg.outfitSurcharge), n: outfitN })]);
 
-  // Computed again — NOT scraped back off step 1. Reading the rendered total
-  // would make the confirm screen a copy of a copy, and a client who changed
-  // the count and came straight here would confirm the old figure. Same rule as
-  // step 1: net, labelled, and never authoritative.
-  const quote = kind ? quoteFor(kind, n, outfitN) : null;
-  if (quote) rows.push([c('sum.net'), euro(quote.net)]);
+  /*
+   * Computed again — NOT scraped back off step 1. Reading the rendered total
+   * would make the confirm screen a copy of a copy, and a client who changed
+   * the count and came straight here would confirm the old figure. Same rule as
+   * step 1: net, labelled, and never authoritative.
+   *
+   * ── BEHALVE OP DE PROEF, EN DAAR STOND HET FOUT ───────────────────────────
+   *
+   * 18 augustus 2026. Op /test-sample gaf deze regel "Orderbedrag (excl. btw) ·
+   * € 89": het laddertarief voor één catalogproduct. De proef kost € 1, en dat
+   * bedrag staat in de kop van die pagina, op de tegel van stap 1 en in de
+   * voetnoot over misbruik. Alleen op het scherm dat vraagt of alles klopt,
+   * stond het verkeerde getal — en dat is de duurste plek van allemaal, op het
+   * product dat er juist is om een eerste klant vertrouwen te geven.
+   *
+   * quoteFor() had ongelijk noch gelijk: de SOORT is op de proef een echte
+   * keuze, dus hij kreeg 'catalog' en 1 en gaf het goede antwoord op de
+   * verkeerde vraag. Er was niets in dit bestand waaruit hij kon opmaken dat
+   * deze stroom één vast bedrag heeft. Nu wel — cfg.samplePrice, uit
+   * AMOUNT.testSample in pricing.js, en null op elke andere stroom.
+   */
+  /* `!= null` EN NIET Number.isFinite(Number(x)) ALLEEN. Number(null) is 0, en 0
+     is eindig — de eerste versie van deze regel zette daarmee "€ 0" op elke
+     gewone bestelling. Gevonden door de andere stromen na te lopen in plaats van
+     alleen de stroom die gerepareerd werd. */
+  const vast = cfg.samplePrice != null ? Number(cfg.samplePrice) : null;
+  if (vast !== null && Number.isFinite(vast)) {
+    rows.push([c('sum.net'), euro(vast)]);
+  } else {
+    const quote = kind ? quoteFor(kind, n, outfitN) : null;
+    if (quote) rows.push([c('sum.net'), euro(quote.net)]);
+  }
 
   // WHAT WAS SENT, IN THE UNIT THE CUSTOMER CARES ABOUT. This row used to read
   // "12 of 140 uploaded", which is a fact about our storage rather than about
@@ -4621,6 +4684,25 @@ function renderSummary() {
   if (attended && ws) rows.push([c('sum.window'), we && we !== ws ? `${day(ws)} – ${day(we)}` : day(ws)]);
   else if (attended) rows.push([c('sum.window'), c('sum.windowLater')]);
   else rows.push([c('sum.window'), c('sum.queue')]);
+
+  /*
+   * HET GEZICHT. Ook als het "wij kiezen er een" is, en dat is met opzet:
+   * ModelPicker noemt de standaard zelf *"een echt antwoord — geen leeg veld
+   * waar we je achteraf over lastigvallen"*, en een regel die alleen verschijnt
+   * zodra je afwijkt, laat je niet controleren dat je NIET bent afgeweken.
+   *
+   * Het eigen merkmodel van een ingelogde klant heeft geen .mp-name in dezelfde
+   * vorm; vandaar de terugval op de waarde, zoals bij de kanalen hierboven.
+   */
+  const mp = q('input[name="model"]:checked');
+  if (mp && !mp.matches(':disabled')) {
+    if (mp.value === 'any') {
+      rows.push([c('sum.model'), c('sum.modelAny')]);
+    } else if (mp.value) {
+      const naam = mp.closest('.mp-opt') && mp.closest('.mp-opt').querySelector('.mp-name');
+      rows.push([c('sum.model'), naam ? naam.textContent.trim() : mp.value]);
+    }
+  }
 
   const email = q('input[name="email"]');
   if (email && email.value) rows.push([c('sum.email'), email.value]);

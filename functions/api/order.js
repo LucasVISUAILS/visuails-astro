@@ -63,6 +63,8 @@ import { background as backgroundById, CUSTOM_ID } from '../../src/data/backgrou
    dienst hoort, is een vraag met een dienst erbij, en die staat bij
    effectiveRatio(). Zie vetAnswer() voor het volledige argument. */
 import { LIFESTYLE_RATIOS, parseRatioField } from '../../src/data/ratios.js';
+/* De stijlen, om te controleren welke er BESTELD mag worden. Zie vetAnswer(). */
+import { styles as STYLES } from '../../src/data/styles.js';
 const RATIO_IDS = new Set(LIFESTYLE_RATIOS.map((r) => r.id));
 import {
   ATTENDED_PER_WINDOW,
@@ -1852,6 +1854,41 @@ function vetAnswer(key, value) {
    * klant heeft niets gezegd", en dat is waar. Er stilzwijgend 'square' van maken
    * zou een keuze in het dossier zetten die niemand heeft gemaakt.
    */
+  /*
+   * ── DE LOOK, EN WELKE ER EEN PRIJS HEEFT — 18 AUGUSTUS 2026 ────────────────
+   *
+   * `style` stond nergens gecontroleerd. Het is geen TOP_FIELD, dus het viel
+   * vanzelf in details_json — en wat vanzelf valt, valt ook ongecontroleerd,
+   * precies de redenering die één blok hoger bij `ratio` staat.
+   *
+   * Vandaag is dat meer dan netheid. Lucas: *"Een custom stijl moet op aanvraag
+   * en er is geen standaard tarief voor."* De radio is uit StylePicker.astro
+   * gehaald, maar een formulier is geen slot: een oud tabblad dat nog openstaat
+   * en een met de hand samengestelde POST sturen `style=custom` gewoon mee, en
+   * dan ligt er een bestelling voor een op maat ontworpen wereld met een bedrag
+   * van de lifestyle-ladder eronder. Dat is de ene fout die deze wijziging moest
+   * voorkomen, dus wordt hij ook hier tegengehouden.
+   *
+   * `priceTrust` is het merkteken en niet een lijstje slugs — dezelfde bron als
+   * StylePicker en als priceLine op de stijlpagina. Een stijl die morgen op
+   * aanvraag gaat, is hier dan meteen ook niet meer bestelbaar.
+   *
+   * LEEG EN NIET DE STANDAARD, om dezelfde reden als bij de verhouding: leeg
+   * betekent "de klant heeft geen geldige look gekozen", en dat is waar. Er
+   * stilzwijgend 'dunes' van maken zou een keuze in het dossier zetten die
+   * niemand gemaakt heeft.
+   */
+  if (key === 'style') {
+    const v = String(value).trim();
+    const s = STYLES.find((x) => x.slug === v);
+    if (!s) return '';
+    if (s.priceTrust) {
+      console.warn(`[order] stijl '${v}' is op aanvraag en heeft geen tarief — genegeerd`);
+      return '';
+    }
+    return v;
+  }
+
   if (key === 'ratio' || parseRatioField(key)) {
     const v = String(value).trim();
     return RATIO_IDS.has(v) ? v : '';

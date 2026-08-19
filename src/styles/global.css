@@ -380,8 +380,68 @@
   --font-editorial: "Anybody Variable", "Anybody", "Archivo Variable", sans-serif;
 
   --t-hero:  clamp(3.2rem, 7.4vw, 6rem);
+  /* ── DE TREDE DIE ONTBRAK — 19 augustus 2026 ──────────────────────────────
+   *
+   * Gemeten op de homepage: er stonden twee koppen van 96px op één pagina — de
+   * <h1> van de hero en de <h2> van het statement ("Je merk wordt op je beelden
+   * beoordeeld"). Allebei op --t-hero. Als het grootste ding op de pagina twee
+   * keer voorkomt, is er geen grootste ding meer, en dan valt het statement niet
+   * op ondanks zijn formaat maar dóór zijn formaat: het leest als een tweede
+   * titel en de lezer zoekt naar het verband.
+   *
+   * Adobe heeft hier precies één trede tussen zitten: `super` op 96 voor de
+   * hero, `heading-1` op 80 voor de zwaarste sectiekop. Dezelfde oplossing.
+   *
+   * De ladder op de homepage is daarmee vier treden, en ze vallen samen met de
+   * ritmeschaal — grote kop waar een hoofdstuk begint, kleine kop in een
+   * `.band-tight`:
+   *
+   *     96  --t-hero       de hero, één keer per pagina
+   *     80  --t-statement  het ene statement dat de pagina onderbreekt
+   *     67  --t-h1         een hoofdstukkop (.band-chapter)
+   *     53  --t-h2         een sectie binnen een hoofdstuk (.band-tight)
+   */
+  --t-statement: clamp(2.8rem, 6vw, 5rem);
   --t-h1:    clamp(2.5rem, 5.2vw, 4.2rem);
   --t-h2:    clamp(2.1rem, 4vw, 3.3rem);
+  /* ── DE PAGINATITEL WAS ZES KEER MET DE HAND GETYPT — 19 augustus 2026 ────
+   *
+   * Gemeten over 43 Nederlandse pagina's: acht verschillende h1-groottes en
+   * zestien h2-groottes. Bij het uitsplitsen bleken de meeste verschillen
+   * TERECHT — 58px is niet een tweede titelmaat maar de sectiekop op diezelfde
+   * pagina's, en een subpagina hoort een kleinere titel te hebben dan /pricing.
+   *
+   * Wat niet terecht was:
+   *
+   *     /nl/video    86px   terwijl /catalog en /lifestyle op 64 staan
+   *     /nl/studio   67px   want die pakte --t-h1 in plaats van de paginamaat
+   *     cookie-policy 54px  } drie waarden voor één soort
+   *     upload-guid.  48px  } hulppagina
+   *
+   * De oorzaak is dat er voor "paginatitel" nooit een token was: iedereen typte
+   * `style="font-size:clamp(...)"` in de markup, drieënvijftig keer, en twee
+   * daarvan typten iets anders. Een maat die je moet overtypen, is een maat die
+   * uiteindelijk uiteenloopt.
+   *
+   * Drie tokens in plaats van zes gegokte clamps.
+   *
+   * ── EN OP 19 AUGUSTUS 2026 ZIJN DE AANROEPEN OOK OM ──────────────────────
+   * De tokens stonden er, maar de 49 met de hand ingetypte clamps die ze
+   * moesten vervangen bleven staan: teken voor teken gelijk, en dus onzichtbaar
+   * fout tot iemand er één zou aanpassen. Ze wijzen nu allemaal hierheen.
+   *
+   * Wat NIET is omgezet: dezelfde waarde als `margin` of `padding` (WhoItIsFor,
+   * HomeV2 .hv-ob, ThankYouPage .ty-body, demo .walk-head). Dat een afstand
+   * toevallig even groot is als een kop, maakt hem nog geen kop.
+   *
+   * Er blijven na deze ronde precies vier paginatitelmaten over, en alle vier
+   * met een reden: --t-h1 (96px) voor de vier `.statement`-pagina's, --t-page-h1
+   * (64px) voor de 75 andere, --t-page-h1-sm (51px) waar de kop het bijschrift
+   * van een figuur is, en 27px in de bevestigingsbalk van /thank-you — dat is
+   * een statusregel en geen paginatitel. */
+  --t-page-h1:    clamp(2.4rem, 5vw, 4rem);
+  --t-page-h1-sm: clamp(2rem, 4.5vw, 3.2rem);
+  --t-page-h2:    clamp(2.2rem, 5vw, 3.6rem);
   --t-h3:    clamp(1.2rem, 1.7vw, 1.45rem);
   --t-lg:    clamp(1.05rem, 1.35vw, 1.18rem);
   --t-body:  1.0625rem;
@@ -429,9 +489,68 @@
    * uiteindelijk alles op de standaard blijft staan. Drie is genoeg om ritme te
    * maken en weinig genoeg om te onthouden.
    */
-  --container: 1240px;
+  /*
+   * ── DE SCHIL GROEIT MEE, DE TEKST NIET — 19 augustus 2026 ─────────────────
+   *
+   * Lucas: *"Adobe website voelt veel breder dan visuails website, hierdoor
+   * voelt visuails soms ook te krap."*
+   *
+   * Opgemeten in plaats van aangenomen, aan beide kanten:
+   *
+   *   scherm    adobe.com/nl inhoud      VISUAILS inhoud (oud)
+   *   1024px    854                      942
+   *   1280px    1067                     1157
+   *   1440px    1200                     1157
+   *   1920px    1600                     1157   ← hier zit het
+   *
+   * Tot ongeveer 1280 was deze site juist RUIMER dan Adobe. Het verschil begint
+   * daarboven en het is geen smaakkwestie: `--container: 1240px` was een harde
+   * bovengrens, en de padding zat op `clamp(…, 4vw, 2.6rem)` — dus vanaf 1600px
+   * scherm stopte élke maat met groeien. Op een 1920-monitor gebruikte Adobe
+   * 1600px en deze site 1157. Dat is een derde minder, en dát is wat "te krap"
+   * voelt. Op een laptop was er nooit iets mis.
+   *
+   * Adobe doet het met procentuele marges (8,333%) tot een cap van 1920. Puur
+   * procentueel overnemen kan hier niet: op 1280 zou dat 1067 geven waar nu 1157
+   * staat, en dan repareer je de grote schermen door de middelste kapot te
+   * maken. Vandaar een clamp met een veel hoger plafond in plaats van een
+   * percentage — dezelfde curve waar hij goed was, en doorgroeien waar hij
+   * ophield.
+   *
+   * ── EN DE TEKST GROEIT NIET MEE ──────────────────────────────────────────
+   *
+   * Dat is de helft die je niet mag vergeten, en het is precies hoe Adobe het
+   * doet: hun SCHIL is 1600 breed, maar hun koppen en alinea's staan in een
+   * smalle kolom binnen dat raster. Een zin van 200 tekens leest niemand.
+   *
+   * De regel op deze site: wat breder mag worden zijn RASTERS en BEELD. Lopende
+   * tekst blijft hangen aan `.section-head { max-width: 62ch }` en aan
+   * --container-narrow. Zie de meetlijst onder MAX-WIDTH OP PROZA verderop —
+   * die is er bijgekomen omdat een bredere schil alleen veilig is als de tekst
+   * er niet in meebeweegt.
+   */
+  /* De zijmarge, als eigen token omdat meer dan één ding hem moet kennen: de
+     container zelf, en elk blok dat tegen de rand van de container wil uitlijnen
+     zonder hem opnieuw uit te rekenen. */
+  /* De HELLING blijft 4vw — precies de oude curve — en alleen het PLAFOND gaat
+     omhoog, van 2.6rem naar 5.5rem. Dat verschil is het hele punt: met 4.4vw
+     werd de site op 768 en 1024 zeven pixels smaller dan hij was, en een
+     reparatie voor brede schermen die laptops iets kost, is geen reparatie.
+     Zo is elke breedte gelijk of ruimer dan voorheen, nooit smaller. */
+  --pad-x: clamp(1.2rem, 4vw, 5.5rem);
+  /* De leesbare regellengte voor kleine noten. Zie MAX-WIDTH OP PROZA verderop
+     voor waarom dit 68ch is en .section-head 62ch. */
+  --measure-note: 68ch;
+  /* De twee afstanden onder een kop. Zie het blok EN DE TWEEDE AFSTAND
+     verderop voor de meting die deze getallen heeft opgeleverd. */
+  --gap-head-block: clamp(1.4rem, 2.4vw, 2rem);
+  --gap-head-lede:  clamp(1.1rem, 1.8vw, 1.6rem);
+  --container: min(1720px, 100%);
   --container-narrow: 760px;
-  --container-wide: 1600px;
+  /* Mee omhoog, anders is `wide` smaller dan de standaard geworden en betekent
+     de klasse het tegenovergestelde van zijn naam. De galerij is de enige
+     gebruiker; die wil elke pixel. */
+  --container-wide: min(1920px, 100%);
   /* ---- radius ----
      The scale lives at the top of this block (--r-lg / --r-md / --r-sm) and
      --radius aliases --r-md for the components that still read the old name.
@@ -1054,9 +1173,78 @@ p { text-wrap: pretty; margin: 0; }
    de rest van de site in zit, en de bak van 40+px bleef leeg — er is nergens
    iets te ruim geworden. Dat is de controle die deze regel verdedigt. */
 :where(h1, h2, h3, h4, h5) + :is(p, ul, ol, dl, dd) { margin-top: .85em; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EN DE TWEEDE AFSTAND, DIE HIER ONTBRAK — 19 augustus 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Lucas: *"zorg dat alle spacing tussen koppen, texten en elementen consistent
+   en ruim is."*
+
+   Nagemeten over twaalf pagina's, 175 kop-en-wat-erop-volgt-paren. De regel
+   hierboven doet zijn werk voor tekst, maar de meting liet ELF verschillende
+   waarden zien onder een <h2> van 53px: 13, 14, 16, 18, 19, 22, 24, 26, 29, 32
+   en 38px. Onder een <h3>: vijf waarden.
+
+   Bij het uitsplitsen bleek het geen willekeur maar TWEE relaties die door
+   elkaar liepen, elk met hun eigen (ongeschreven) maat:
+
+       kop → lopende tekst      6, 7, 11, 13, 26px    — een zin die doorloopt
+       kop → een blok of raster 21, 26, 29, 32, 38px  — iets wat begint
+
+   Die twee horen ook echt niet gelijk te zijn. Een alinea onder een kop is de
+   voortzetting van diezelfde gedachte en hoort dichtbij; een raster van vier
+   kaarten is een nieuw ding en heeft een aanloop nodig. Het probleem was niet
+   dat er twee maten waren, maar dat er elf waren omdat elke component het zelf
+   verzon.
+
+   Dus: de tweede relatie krijgt hier ook één regel. Samen zijn dat twee
+   afspraken in plaats van dertien losse getallen.
+
+   ── WAAROM `div` IN DE LIJST STAAT, EN WAAROM DAT VEILIG IS ──────────────
+
+   De blokken heten .grid, .steps, .faq-stack, .tierc-rows, .incl-grid,
+   .as-card-h… — een open lijst die per pagina groeit, en een regel die klassen
+   opsomt is een regel die de volgende klasse mist. `div` vangt ze allemaal, en
+   het bereik is smaller dan het lijkt: hij vuurt alleen op een <div> die DIRECT
+   op een kop volgt, en dat is per definitie precies het geval dat we bedoelen.
+
+   ── EN DE SPECIFICITEIT IS GELIJK, MET OPZET ─────────────────────────────
+
+   Dezelfde vorm als de regel hierboven: kopkant in `:where()` (nul), doelkant
+   in `:is()` (één). Gelijk aan de reset, later in het bestand, dus hij wint —
+   en een component die er met een klasse overheen wil, heeft er twee en wint
+   nog steeds. Dit is een ondergrens, geen dwangbuis. */
+:where(h1, h2, h3, h4, h5) + :is(div, section, figure, table) { margin-top: var(--gap-head-block); }
+
+/* ── EEN TABEL DIE NIET PAST, SCHUIFT — 19 augustus 2026 ────────────────────
+   Gemeten op 390px: /data-processing-agreement had horizontale scroll over de
+   HELE pagina, 530px breed op een scherm van 390. Eén tabel met vier kolommen
+   (wie · waar · waarvoor · grondslag doorgifte) die niet smaller kán; de
+   grondslag-kolom is een juridische verwijzing en valt niet af te korten.
+
+   De pagina laten schuiven is het slechtste antwoord: dan schuift de tekst mee
+   en raakt de lezer zijn regel kwijt. De tabel zélf laten schuiven houdt de
+   pagina stil en geeft de tabel de ruimte die hij nodig heeft.
+
+   `max-width: 100%` op de wrapper is niet overbodig naast overflow: zonder die
+   regel groeit een blok-element met een brede tabel erin gewoon mee met zijn
+   inhoud, en dan schuift er niets omdat er niets te schuiven valt. */
+.table-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll > table { min-width: 34rem; }
+
+/* De lede is lopende tekst maar hoort bij de KOP en niet bij wat eronder komt,
+   en staat daarom tussen de twee maten in. Gemeten stond hij al op 26px op
+   /nl, /nl/about en /nl/studio — dit schrijft die meerderheid op in plaats van
+   er een derde getal bij te verzinnen. */
+:where(h1, h2, h3) + .lede { margin-top: var(--gap-head-lede); }
 .lead { font-size: var(--t-lg); color: var(--ink-2); line-height: 1.6; max-width: 56ch; }
 
-.container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: clamp(1.2rem, 4vw, 2.6rem); }
+/* De zijmarge groeit door tot 5.5rem in plaats van te stoppen op 2.6rem — zie
+   de noot bij --container. Op een telefoon verandert er niets (1.2rem), op een
+   laptop nauwelijks, en op een breed scherm staat de inhoud eindelijk niet meer
+   in een kolom van 1157px met 380px leegte ernaast. */
+.container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: var(--pad-x); }
 .container.narrow { max-width: var(--container-narrow); }
 /* De twee maten die er op 14 augustus 2026 bij kwamen — zie de ladder bij
    --container hierboven. `wide` houdt zijn zijmarge; `bleed` geeft die op en is
@@ -1488,6 +1676,96 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .band       { padding-block: clamp(4.5rem, 9vw, 9rem); }
 .band-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
 .band-tall  { padding-block: clamp(6.5rem, 13vw, 13rem); }
+
+/* ── 1b · BAND-CHAPTER — waar een nieuw hoofdstuk begint, 19 augustus 2026 ──
+ *
+ * Lucas: de homepage voelt nog identiek, en Adobe voelt ruimer.
+ *
+ * Opgemeten waarom. Van de veertien secties op de homepage stonden er TWAALF op
+ * `.band`, dus op exact 130px boven en 130px onder. De schaal hierboven heeft
+ * drie treden en er werd er één gebruikt. Het gevolg is niet dat de pagina te
+ * krap staat — 260px tussen twee secties is veel — maar dat elke sectie
+ * EVENVEEL WEEGT. Veertien keer hetzelfde interval leest als één lange lijst,
+ * en dan maakt het niet uit hoeveel lucht ertussen zit: er is geen begin van
+ * iets, dus er is ook geen rust.
+ *
+ * Adobe doet het omgekeerd. Hun schaal loopt van 64 tot 240px (spacing-xs t/m
+ * -xl op ≥1280) en ze gebruiken hem ALLEMAAL, op zes secties. De grote sprong
+ * markeert een nieuw onderwerp; binnen een onderwerp staan de delen dicht op
+ * elkaar. Dat is waarom hun pagina rustig aanvoelt terwijl er evenveel op staat.
+ *
+ * ── ASYMMETRISCH, EN DAT IS HET HELE PUNT ────────────────────────────────
+ *
+ * 200px boven, 120px onder. Niet uit smaak: ruimte die boven een kop staat
+ * hoort BIJ die kop — hij kondigt hem aan. Even veel boven als onder maakt van
+ * de ruimte een niemandsland tussen twee secties, en dan moet de lezer zelf
+ * beslissen bij welke van de twee hij hoort. Adobe zet 240 boven en 160 onder,
+ * dezelfde verhouding.
+ *
+ * ── WAAROM DIT DE PAGINA NIET LANGER MAAKT ───────────────────────────────
+ *
+ * Omdat de andere kant meebeweegt. Wat een onderdeel van het vorige onderwerp
+ * is — het abonnement onder de prijs, de proefvisual eronder, de week na het
+ * proces — gaat naar `.band-tight`. Twaalf gelijke intervallen van 260px worden
+ * vijf hoofdstukken van 320px en negen tussenstappen van 144px. Meer verschil,
+ * minder totaal.
+ */
+.band-chapter { padding-block: clamp(5.5rem, 12vw, 12.5rem) clamp(3.5rem, 7vw, 7.5rem); }
+
+/* ── EN DE REST VAN DE SITE KRIJGT HETZELFDE RITME — 19 augustus 2026 ───────
+ *
+ * Gemeten over negen pagina's, ná de homepage-herziening:
+ *
+ *     /nl                14 secties   173/101 · 128/128 · 72/72 · 76/0
+ *     /nl/pricing         9 secties   80/48 · 72/72
+ *     /nl/catalog        11 secties   80/48 · 72/72 · 130/130
+ *     /nl/compare         6 secties   80/48 · 72/72
+ *     /nl/custom-models  11 secties   80/48 · 72/72
+ *
+ * De homepage had ritme gekregen en de rest van de site niet: daar staat vrijwel
+ * elke sectie op 72/72, want `.section-tight` staat in 38 bronbestanden en is de
+ * standaard geworden voor álles. Dat is het spiegelbeeld van wat de homepage had
+ * — daar woog elke sectie even zwaar op 130, hier op 72 — en het is dezelfde
+ * fout: een pagina zonder hoofdstukken leest als één lange lijst.
+ *
+ * ── DE REGEL IS NIET "WELKE KLASSE" MAAR "WAT STAAT ERIN" ────────────────
+ *
+ * Honderd secties met de hand herindelen is honderd oordelen, en negenennegentig
+ * daarvan zijn hetzelfde oordeel: heeft deze sectie een KOP MET EEN LEDE, dan
+ * begint er een onderwerp; heeft hij dat niet, dan is hij een vervolg op het
+ * vorige. Precies dat onderscheid maakt `.section-head:has(> p)` hierboven al
+ * voor de tweekoloms kop. Eén regel, dezelfde voorwaarde, en de twee kunnen niet
+ * uit elkaar lopen.
+ *
+ * `:where()` om de specificiteit op nul te houden: een pagina die een sectie
+ * bewust strak wil houden, zet er een klasse op en wint. Dit is een ondergrond,
+ * geen wet.
+ *
+ * En zonder `:has()`-ondersteuning gebeurt er niets — dan staat de site zoals hij
+ * gisteren stond. Dezelfde constructie als bij de kop zelf. */
+@media (min-width: 48rem) {
+  /* EEN ONGELDIGE SELECTOR MAAKT DE HELE GROEP ONGELDIG. Hier stond eerst een
+     tweede regel met `:have-lede` — die pseudo-klasse bestaat niet, en in een
+     komma-lijst neemt zo'n fout de geldige regel ernaast mee het graf in. De
+     regel deed dus niets, en niets is precies wat je niet ziet gebeuren. */
+  :where(section.section-tight, section.band-tight):has(> .container > .section-head > p) {
+    padding-block: clamp(4.5rem, 8vw, 8rem) clamp(2.75rem, 5vw, 5rem);
+  }
+}
+
+/* ── EN GEEN KORTING ALS ER TWEE OP ELKAAR STAAN ──────────────────────────
+   Hier stond `.band-chapter + .band-chapter { padding-top: … 9rem }`, bedoeld
+   om te voorkomen dat twee hoofdstukken 320px zouden optellen. Meteen gemeten
+   wat dat deed, en het deed het verkeerde: de eerste drie hoofdstukken van de
+   homepage — het bewijs, wat we maken, de prijs — staan direct op elkaar, dus
+   vielen ze alle drie terug op precies de 130px die dit hele blok moest
+   vervangen. De bovenkant van de pagina zag er daarna uit als voorheen.
+
+   Twee hoofdstukken die op elkaar volgen zijn nog steeds twee hoofdstukken.
+   Adobe zet er 240 boven en 160 onder en telt dat gewoon op tot 400px tussen
+   twee secties; dat is geen ongeluk dat je moet dempen, dat is de scheiding.
+   De regel is eruit en de meting staat hierboven zodat niemand hem opnieuw
+   bedenkt. */
 /* Emptiness costs nothing on the dark ground — it reads as air. On a plate it
    is 400px of a DIFFERENT ground with nothing in it, which reads as a mistake.
    A panel keeps the tall band's intent and half its measure.
@@ -1503,6 +1781,9 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .panel-tonal.band-tall { padding-block: clamp(4rem, 7vw, 6.5rem); }
 .panel-tonal .closing { min-height: min(46svh, 26rem); }
 .band + .band, .band-tight + .band-tight { box-shadow: inset 0 1px 0 var(--line); }
+/* De haarlijn hoort niet tussen twee hoofdstukken: daar doet de ruimte het werk
+   al, en een lijn erbij is de scheiding twee keer zeggen. */
+.band-chapter + .band, .band + .band-chapter, .band-chapter + .band-tight { box-shadow: none; }
 
 /* 2 · STATEMENT — centred headline, one accent word, one line of lede. OPP's
    signature move and the one that does most of the work: it gives a fold a
@@ -1547,6 +1828,63 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .statement-left { text-align: left; margin-inline: 0; }
 .statement-left h2, .statement-left h1, .statement-left .lede { margin-inline: 0; }
 .statement-left .actions { justify-content: flex-start; }
+
+/* ── 2b · STATEMENT-SPLIT — de kop die de breedte gebruikt, 19 aug 2026 ─────
+ *
+ * Dit is de andere helft van de verbreding, en zonder deze helft is die
+ * verbreding een verslechtering.
+ *
+ * `.statement` staat op `max-width: 46rem`. Dat is 736px, en het was een goede
+ * maat toen de schil 1157px breed was: kop en lede vulden tweederde. Sinds de
+ * schil op een breed scherm 1566px is, vullen ze 47% en staat er ruim 800px
+ * niets naast — acht keer op de homepage, want alle acht hoofdstukkoppen hebben
+ * exact dezelfde vorm (een <h2> en een `.lede`). Op de schermafdruk is dat het
+ * eerste wat opvalt: niet dat de pagina te vol is, maar dat elke kop in een
+ * smalle linkerkolom hangt met een gat ernaast.
+ *
+ * ── WAAROM NIET CENTREREN, WAT ADOBE WEL DOET ────────────────────────────
+ *
+ * Adobe zet de sectiekop en de lede gecentreerd boven het raster, en dat is
+ * precies waarom hun brede schil werkt. Hier is dat de verkeerde oplossing, om
+ * een reden die uit dit project zelf komt: *"if something feels boring stop
+ * centering everything."* Twee van de veertien secties op deze pagina zijn al
+ * gecentreerd (de reviews en de afsluiter) en die werken juist ómdat de rest
+ * dat niet is.
+ *
+ * Dus dezelfde ruimte, andere oplossing: de kop links, de lede rechts ernaast,
+ * onderlangs uitgelijnd. De breedte wordt gebruikt, er wordt niets gecentreerd,
+ * en het levert een ritme op dat niet op elke andere site staat.
+ *
+ * ── DE TWEE MATEN ZIJN VERSCHILLEND, EN DAT IS HET PUNT ──────────────────
+ *
+ * Een kop wil KORT zijn — 16ch dwingt hem in twee of drie woorden per regel,
+ * wat hem groot laat lezen. Een lede wil de leesbare regellengte, en dat is
+ * ~52ch op deze grootte. Eén kolombreedte voor allebei zou of de kop uitrekken
+ * of de lede afknijpen. Vandaar twee kolommen met eigen maten in plaats van een
+ * 50/50-deling.
+ *
+ * `align-items: end` zet de onderregel van de lede op de onderregel van de kop.
+ * Bovenlangs uitlijnen laat de lede zweven naast een kop van drie regels; dit
+ * legt ze op één lijn, en dat is wat de twee tot één blok maakt in plaats van
+ * twee dingen naast elkaar.
+ */
+.statement-split { max-width: none; }
+
+@media (min-width: 62rem) {
+  .statement-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+  }
+  /* De kop krijgt een KRAPPE maat zodat hij over meerdere regels breekt en
+     groot blijft lezen; zonder dit strekt hij zich over de hele kolom en wordt
+     een grote letter een lange regel. */
+  .statement-split > :is(h1, h2) { max-width: 16ch; }
+  /* margin-top eraf: de lede staat niet meer ónder de kop, dus de verticale
+     afstand die daar hoorde is hier een verkeerde uitlijning. */
+  .statement-split > .lede { max-width: 52ch; margin-top: 0; }
+}
 
 /* 3 · PLATE — a hard-edged media rectangle. Wrapper AND element both take the
    zero radius, because a rounded <img> inside a square box is the single most
@@ -1890,6 +2228,38 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .section-head { max-width: 62ch; margin-bottom: clamp(2rem, 4vw, 3.4rem); }
 .section-head p { margin-top: 1rem; color: var(--ink-2); font-size: var(--t-lg); }
 
+/* ── DEZELFDE BEHANDELING ALS DE HOOFDSTUKKOP — 19 augustus 2026 ────────────
+ *
+ * `.statement-split` hierboven loste dit op voor de acht koppen van de
+ * homepage. `.section-head` is exact dezelfde vorm — een <h2> met een <p>
+ * eronder — en staat op de andere twaalf pagina's, vijf keer op /pricing
+ * alleen al. Zonder deze regel kreeg de homepage een nieuwe indeling en bleef
+ * de rest van de site op de oude staan; dat is geen ontwerp maar een
+ * halve migratie.
+ *
+ * ── :has(> p) IS DE HELE VOORWAARDE ──────────────────────────────────────
+ *
+ * Niet elke section-head heeft een lede. Op /pricing staat er één met alleen
+ * een kop (`{c.anchorH}`). Die in een raster van twee kolommen zetten zou hem
+ * op 16ch afknijpen en er een lege kolom naast leggen — een indeling die iets
+ * belooft wat er niet is. `:has()` maakt de regel afhankelijk van de inhoud in
+ * plaats van van een klasse die iemand moet onthouden mee te geven.
+ *
+ * En zonder :has()-ondersteuning gebeurt er niets: dan blijft de kop staan zoals
+ * hij vandaag staat. Dezelfde constructie als bij de scroll-animaties — de
+ * nieuwe indeling is een toevoeging, geen voorwaarde. */
+@media (min-width: 62rem) {
+  .section-head:has(> p) {
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+  }
+  .section-head:has(> p) > :is(h1, h2) { max-width: 16ch; }
+  .section-head:has(> p) > p { margin-top: 0; max-width: 52ch; }
+}
+
 .grid { display: grid; gap: clamp(1rem, 2vw, 1.5rem); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
@@ -1914,7 +2284,7 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 
 .page-hero { padding-top: clamp(3rem, 6vw, 5rem); padding-bottom: clamp(2rem, 4vw, 3rem); position: relative; }
 .page-hero .display { max-width: 22ch; }
-.page-hero h1 { font-size: clamp(2.4rem, 5vw, 4rem); }
+.page-hero h1 { font-size: var(--t-page-h1); }
 
 /* ── DE PAGINAKOP IN TWEE KOLOMMEN — 18 augustus 2026 ───────────────────────
    Gemeten op /nl/pricing bij 1440px: de <h1> was 460px breed, de lede 420px,
@@ -2262,13 +2632,31 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    niet een tweede grond".
 
    Hier 24px, want dat is --r-lg en deze site heeft één radiusschaal. */
-.seam-top {
-  position: relative;
-  z-index: 1;
-  margin-top: calc(var(--r-lg) * -1);
-  border-start-start-radius: var(--r-lg);
-  border-start-end-radius: var(--r-lg);
-  background: var(--bg-0);
+/* ── DE NAAD KAN OP DEZE SITE NIET ZOALS BIJ ADOBE — 19 augustus 2026 ───────
+ *
+ * `.seam-top` is op 18 augustus uit Adobe's `rounded-corners-top` overgenomen:
+ * de eerste sectie na de hero krijgt ronde bovenhoeken en schuift eroverheen.
+ * Netjes uitgeschreven, en daarna op NUL pagina's gebruikt.
+ *
+ * Bij het alsnog aanzetten bleek waarom hij niet werkt. Ronde hoeken hebben een
+ * ACHTERGROND nodig om te knippen, en de secties op deze site hebben er geen:
+ * `.well-deep` en zijn familie staan uitdrukkelijk op `transparent`, omdat de
+ * grond op paginaniveau wordt geschilderd met een lamp en een vignet eronder.
+ * Zie de lange noot bij die klasse hierboven — een dichte `--bg-0` op een
+ * sectie is daar een DEKSEL over die laag, en dat is al een keer als renderfout
+ * gelezen op precies de drie banden die `.well-deep` dragen.
+ *
+ * Dus geen naad die eroverheen schuift, maar het omgekeerde: de HERO krijgt
+ * ronde onderhoeken. Hetzelfde beeld — een gebogen scheiding tussen de foto en
+ * wat eronder komt — zonder ergens een grond te schilderen die er niet hoort.
+ * De hero heeft al `overflow: hidden` en een eigen achtergrond, dus dit is één
+ * declaratie en geen constructie.
+ *
+ * `.seam-top` zelf is weg. Een klasse die nergens staat en niet kán werken, is
+ * geen gereedschap maar een valstrik voor de volgende die hem probeert. */
+.hv-hero {
+  border-end-start-radius: var(--r-lg);
+  border-end-end-radius: var(--r-lg);
 }
 
 /* The one earned rise. interactions.js sets --stagger-i on each direct child
@@ -2861,6 +3249,48 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
 .bm-choose-inner h3 { font-size: 1rem; margin: 0; }
 .bm-choose-inner p { font-size: .85rem; color: var(--ink-3); margin: 0; }
 .bm-lib-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 1rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAX-WIDTH OP PROZA — 19 augustus 2026
+   ═══════════════════════════════════════════════════════════════════════════
+
+   De schil is breder geworden (zie de noot bij --container). Dat is alleen een
+   verbetering zolang de TEKST niet meegroeit, en dat deed hij op zeven plekken
+   wel: dit zijn de alinea's die als direct kind in een .container hangen en dus
+   de volle schilbreedte pakken.
+
+   Opgemeten op 1920px, ná de verbreding:
+
+       .queue-note   1566px · 281 tekens   →  ~212 tekens per regel
+       .bm-lib-note  1566px · 167 tekens
+       .set-note     1566px · 102 tekens
+
+   Tweehonderd tekens per regel is geen lange regel maar een onleesbare: je oog
+   vindt het begin van de volgende niet terug. Ze waren op 1240 al te lang
+   (~157 tekens); de verbreding maakte een bestaand probleem zichtbaar in plaats
+   van er een te maken.
+
+   ── WAAROM HIER EN NIET IN DE COMPONENTEN ────────────────────────────────
+
+   `.queue-note` staat in ACHT bestanden — drie paginacomponenten, twee
+   [slug]-pagina's per taal. Acht keer dezelfde regel toevoegen is acht kansen
+   om er één te vergeten, en precies dat is hoe deze zeven ontstonden. Eén regel
+   hier dekt ze allemaal, en er is geen strijd over specificiteit: geen van die
+   acht declareert een max-width, dus er valt niets te overschrijven.
+
+   ── 68ch EN NIET 62ch ─────────────────────────────────────────────────────
+
+   .section-head staat op 62ch, want dat is lopende tekst op leesgrootte. Deze
+   noten staan op .85–.88rem, en een kleinere letter mag een iets langere regel
+   hebben omdat de regel in PIXELS korter is. 68ch op .88rem is ongeveer 62ch op
+   1rem — dezelfde optische regellengte, uitgerekend in plaats van gegokt.
+
+   De korte labels (.hv-kicker, .hv-price-vat, .land-note, .pick-more) staan er
+   bewust NIET bij: die wikkelen nooit, en een max-width op iets van 32 tekens
+   verandert niets behalve dat er een regel meer in dit bestand staat. */
+:where(.queue-note, .set-note, .bm-lib-note, .svc-lead, .form-help, .hint) {
+  max-width: var(--measure-note);
+}
 
 /* ============================================================
    THE SCROLL-DRIVEN PHOTO REVEAL IS GONE — August 2026.

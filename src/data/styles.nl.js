@@ -176,8 +176,14 @@ export const styles = [
     cardPhoto: '/img/banners-13.webp',
     cardIcon: 'bag',
     cardDesc: 'Geen van onze vier vaste sferen — een lifestyle-scène op maat, ontworpen vanuit jouw referenties.',
-    orderHref: '/nl/start',
-    orderLabel: 'Start een scène op maat',
+    /* ── NIET MEER NAAR HET BESTELFORMULIER, 18 augustus 2026 ──────────────
+       Lucas: een stijl op maat heeft geen standaardtarief; die prijs volgt pas
+       als de klant heeft gezegd wat hij wil. Deze knop wees naar het formulier
+       dat een prijs uitrekent, terwijl de regel erboven op deze zelfde pagina
+       "Op aanvraag" zegt. Nu naar de aanvraagpagina — zie
+       StylePicker.astro en het 'custom-look'-blok in HoldingPage.astro. */
+    orderHref: '/nl/start/custom-look',
+    orderLabel: 'Vraag een look op maat aan',
     moodParagraphs: [
       'Geen van onze vier vaste sferen — een scène ontworpen vanuit jouw referenties. De setting, de styling en het licht die alleen bij jouw merk passen.',
       'We bouwen de wereld één keer, samen met jou, en houden daarna elke toekomstige visual daaraan trouw.',

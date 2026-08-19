@@ -862,6 +862,45 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <slot />
   </main>
 
+  {/* ══════════════════════════════════════════════════════════════════════════
+      HET WOORDMERK DAT ONDER DE FOOTER VANDAAN KOMT — 19 augustus 2026
+      ══════════════════════════════════════════════════════════════════════════
+
+      Lucas, met een schermafdruk van de onderkant van adobe.com: *"Adobe heeft
+      onder de footer een soort slide in effect voor hun naam ik zou dit boven de
+      footer willen en dat de footer er dan overheen schuift."*
+
+      Bij Adobe staat het woordmerk ONDER de voetnootregel, afgesneden door de
+      onderrand van de pagina. Hier ligt het ervóór en schuift de footer eroverheen
+      — dat is wat hij vroeg, en het is het betere van de twee: het merk komt
+      tevoorschijn, wordt gelezen, en wordt dan afgedekt door de plek waar je
+      daadwerkelijk iets kunt aanklikken.
+
+      ── HOE HET WERKT, EN WAAROM ER GEEN SCRIPT AAN ZIT ────────────────────
+
+      `position: sticky; bottom: 0` op de binnenkant. Zolang deze band in beeld
+      is, blijft het merk aan de onderrand van het venster plakken; de footer
+      komt daarna in de stroom, heeft een dichte achtergrond en een hogere
+      z-index, en schuift er dus overheen. Nul JavaScript, nul scroll-listeners.
+
+      ── DE FLAUWE WATERMERK IN DE FOOTER IS WEG ───────────────────────────
+
+      Die stond op `opacity: .05` achter de kolommen en deed hetzelfde ding
+      zwakker. Twee keer hetzelfde woordmerk binnen één schermhoogte is het
+      merk twee keer zeggen; de gloed blijft, want die hoort bij de footer zelf
+      en niet bij het woordmerk.
+
+      ── EN HET IS aria-hidden ─────────────────────────────────────────────
+
+      Het is een grafisch element. De echte merknaam staat als tekstalternatief
+      in de footer-link eronder; een schermlezer die hier "VISUAILS" hoort en
+      twee tellen later nog eens, leert niets bij. */}
+  <div class="wm-reveal" aria-hidden="true">
+    <div class="wm-reveal-inner">
+      <svg class="wm-reveal-mark" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
+    </div>
+  </div>
+
   <footer class="site-footer">
     {/* Watermark finale — brief §7. The wordmark at page scale, clipped by the
         footer's own bottom edge so it reads as a printed register mark the
@@ -873,9 +912,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         "giant clipped wordmark + a harbor-teal glow" in as many words. Every
         other feathered edge on this site is banned by §8, so this one is
         fenced here rather than made available as a utility class. */}
+    {/* Het <svg class="foot-watermark"> stond hier op opacity .05 achter de
+        kolommen. Sinds .wm-reveal hierboven het woordmerk op ware grootte laat
+        zien, zou dat het merk twee keer binnen één schermhoogte zeggen — een
+        keer groot en een keer bijna onzichtbaar. De gloed blijft: die hoort bij
+        de onderrand van de pagina en niet bij het woordmerk. */}
     <div class="foot-finale" aria-hidden="true">
       <span class="foot-glow"></span>
-      <svg class="foot-watermark" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false" aria-hidden="true"><use href="#wordmark" /></svg>
     </div>
     <div class="container">
       <div class="footer-grid">
@@ -1445,6 +1488,70 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      collapsed bar. */
   @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link, .nav-account-in, .nav-account-in:not([hidden]) { display: none; } .menu-toggle { display: inline-flex; } }
 
+  /* ── DE WOORDMERK-ONTHULLING ───────────────────────────────────────────────
+     Zie de noot bij de markup hierboven. Drie regels doen het werk:
+
+       · de band krijgt hoogte, zodat er iets te scrollen valt;
+       · de binnenkant plakt aan de onderrand van het venster;
+       · de footer heeft een dichte grond en een hogere laag, dus hij dekt af.
+
+     DE BAND IS KORTER DAN HET MERK HOOG IS. 34svh band met een merk dat
+     daaronder doorloopt: je ziet het merk binnenkomen, het staat één tel stil,
+     en dan schuift de footer eroverheen. Een band van een hele schermhoogte zou
+     op elke van de zesentachtig pagina's een lege schermvulling toevoegen, en
+     dat is een prijs die alleen de homepage waard is.
+
+     `overflow: hidden` op de band en niet op de binnenkant: het merk mag onder
+     de onderrand doorlopen, maar niet naast de pagina uitsteken. */
+  .wm-reveal { position: relative; z-index: 0; height: 34svh; min-height: 12rem; overflow: hidden; background: var(--bg-deep); }
+  .wm-reveal-inner { position: sticky; bottom: 0; height: 34svh; min-height: 12rem; display: grid; align-content: end; justify-items: center; }
+  .wm-reveal-mark {
+    width: min(96vw, 2000px);
+    /* Onder de rand door, zodat het merk wordt afgesneden door de pagina en
+       niet netjes past. Dat afsnijden IS het effect — een logo dat helemaal in
+       beeld staat, is een logo; een logo dat de rand raakt, is een drukwerkmerk. */
+    margin-bottom: -6%;
+    fill: var(--paper-on-dark);
+    /* VOL, EN DAT IS HET VERSCHIL MET EEN WATERMERK. De eerste versie stond op
+       .12 — de waarde die het oude watermerk in de footer had — en op de
+       schermafdruk was er letterlijk niets te zien. Dat was de verkeerde
+       gewoonte overnemen: een watermerk hoort weg te vallen, dit hoort het
+       laatste te zijn wat je leest. Bij Adobe is het massief wit op zwart, en
+       daar is geen halve maat voor. */
+    opacity: 1;
+  }
+
+  /* En de beweging. Dezelfde constructie als de rest van de site: een
+     scroll-tijdlijn, geen listener, en zonder ondersteuning gebeurt er niets —
+     dan staat het merk er gewoon, wat ook goed is. Zie DE BEWEGING KOMT UIT DE
+     SCROLL ZELF in global.css. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .wm-reveal-mark {
+        animation: wm-rise linear both;
+        animation-timeline: view();
+        /* KORT BEREIK, want de band is maar 34svh hoog en de footer dekt hem
+           daarna af. Met `cover 62%` was het merk op het moment dat de footer
+           eroverheen kwam pas op 44% doorzichtigheid — gemeten — en dus nooit
+           helemaal wit. Het moet klaar zijn vóórdat het wordt afgedekt. */
+        animation-range: entry 0% entry 90%;
+      }
+    }
+  }
+  @keyframes wm-rise {
+    from { opacity: 0; transform: translateY(38%); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 700px) {
+    .wm-reveal, .wm-reveal-inner { height: 22svh; min-height: 8rem; }
+    .wm-reveal-mark { width: 128vw; }
+  }
+
+  /* De footer dekt de band af. `z-index: 1` en een dichte achtergrond zijn
+     samen het hele mechanisme — zonder één van de twee schuift er niets
+     overheen maar erdoorheen. */
+  .site-footer { z-index: 1; }
   .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   /* The gap above the footer is breathing room after a dark section that ended
      on its own terms. After a panel it is not breathing room, it is a strip of

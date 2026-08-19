@@ -20,7 +20,12 @@ const CFG = {
   ladder: { catalog: [[1,4,89],[5,9,65],[10,19,51],[20,34,39],[35,null,33]], lifestyle: [[1,4,109]], complete: [[1,4,149]] },
   windowThreshold: 10, maxProducts: 30, maxFileBytes: 1e7, maxBatchFiles: 60,
   uploadExt: ['.jpg'], outfitSurcharge: 25, extraPhotoLadder: [[1,null,35]],
-  maxExtraPerProduct: 3, maxOutfit: 3, bg: { customId: 'custom', lightThreshold: 0.5 }, copy: {},
+  maxExtraPerProduct: 3, maxOutfit: 3, bg: { customId: 'custom', lightThreshold: 0.5 },
+  /* Genoeg kopij om renderSummary() echte regels te laten tekenen. Alleen de
+     sleutels die de prijsregel nodig heeft — de rest mag ontbreken, want een
+     regel zonder tekst wordt overgeslagen en dat is precies wat we hier willen:
+     één regel, en dus geen twijfel over welke we lezen. */
+  copy: { sum: { net: 'Order value' } },
 };
 
 const build = (extra) => {
@@ -46,7 +51,12 @@ ${steps.map(n => `
 <script type="module" src="/src/scripts/pipeline.js"><\/script></body>`;
 };
 
-const srv = serve(8732, { '/five': build(), '/four': build({ steps: 4, gateStep: null }) });
+const srv = serve(8732, {
+  '/five': build(),
+  '/four': build({ steps: 4, gateStep: null }),
+  // Dezelfde vier stappen als de proefvisual, mét het vaste bedrag erbij.
+  '/sample': build({ steps: 4, gateStep: null, samplePrice: 1 }),
+});
 const browser = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
 let pass = 0, fail = 0;
 const ok = (n, got, want) => { const g = JSON.stringify(got) === JSON.stringify(want); g ? pass++ : fail++;
@@ -85,6 +95,48 @@ for (const [label, route, last] of [['vijf stappen (catalog, ongewijzigd)', '/fi
     await p.evaluate(() => document.querySelector('[data-pl-summary]').textContent.includes('NIET-GEDRAAID')), false);
   await p.close();
 }
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * HET BEDRAG OP HET CONTROLESCHERM
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * 18 augustus 2026. Op /test-sample zette renderSummary() "Orderbedrag · € 89"
+ * — het laddertarief voor één catalogproduct. De proef kost € 1, en dat staat
+ * op diezelfde pagina drie keer goed. Alleen het scherm dat vraagt of alles
+ * klopt, had het mis.
+ *
+ * En de reparatie brak bijna alles: de eerste versie las
+ * `Number.isFinite(Number(cfg.samplePrice))`, en Number(null) is 0 — dus stond
+ * er "€ 0" op elke gewone bestelling. Vandaar dat hieronder BEIDE kanten staan.
+ * Een test die alleen de gerepareerde stroom bekijkt, had die fout doorgelaten.
+ */
+console.log('\nhet bedrag op het controlescherm');
+{
+  const bedrag = async (route) => {
+    const p = await browser.newPage();
+    await p.goto(`http://127.0.0.1:8732${route}`, { waitUntil: 'networkidle' });
+    const last = route === '/sample' ? 4 : 5;
+    for (let i = 1; i < last; i += 1) {
+      await p.click('[data-pl-step].is-current [data-pl-next]');
+      await p.waitForTimeout(60);
+    }
+    const rij = await p.evaluate(() => {
+      const dl = document.querySelector('[data-pl-summary]');
+      const kids = [...dl.children];
+      const i = kids.findIndex((n) => n.tagName === 'DT' && n.textContent.includes('Order value'));
+      return i === -1 ? null : kids[i + 1].textContent.trim();
+    });
+    await p.close();
+    return rij;
+  };
+
+  // 12 producten × € 51 op de derde sport van de catalogladder.
+  ok('een gewone bestelling houdt het laddertarief', await bedrag('/five'), '€612');
+  // En dat is de regel die brak toen samplePrice null bleek te zijn.
+  ok('en wordt dus niet € 0', (await bedrag('/five')) === '€0', false);
+  ok('de proefvisual toont het vaste bedrag', await bedrag('/sample'), '€1');
+}
+
 await browser.close(); srv.close();
 console.log(`\n${pass}/${pass + fail} geslaagd`);
 process.exit(fail ? 1 : 0);

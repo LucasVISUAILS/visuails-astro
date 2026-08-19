@@ -1342,7 +1342,11 @@ export async function accountPost(context) {
   if (path === '/account/plan/start') {
     return handleSubscribeStart(context, customer, (url, lang) => {
       const p = offsitePage({ url, name: 'Mollie', lang, css: '/account.css' });
-      return p ? html(p) : seeOther('/start/plan?fout=mollie');
+      /* Ook hier de taal mee — zie terug() in subscribe.js. Deze regel valt
+         alleen om als offsitePage() niets teruggeeft, en dat is precies het
+         moment waarop je een klant niet ook nog in de verkeerde taal moet
+         zetten. */
+      return p ? html(p) : seeOther(`${lang === 'en' ? '' : '/nl'}/start/plan?fout=mollie`);
     });
   }
 

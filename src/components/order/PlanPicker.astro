@@ -59,6 +59,47 @@ const FOUTEN: Record<string, string> = nl ? {
 };
 const foutTekst = FOUTEN[fout] || '';
 
+/*
+ * ── DE FOUTMELDING WERD NOOIT GETOOND, 18 augustus 2026 ────────────────────
+ *
+ * astro.config.mjs zegt `output: 'static'`. Deze pagina wordt dus ÉÉN keer
+ * gebouwd, en `Astro.url` is op dat moment de bouw-URL zonder querystring.
+ * `fout` was daarmee altijd leeg en `{foutTekst && ...}` heeft nog nooit iets
+ * gerenderd — op geen enkele bezoeker, in geen van beide talen.
+ *
+ * Wat daar achter wegviel is niet klein. subscribe.js stuurt hier vijf redenen
+ * heen, en drie ervan gaan over geld:
+ *
+ *   · vol      — de agenda zit vol voor dit plan deze maand;
+ *   · mollie   — het betaalscherm ging niet open, er is niets afgeschreven;
+ *   · opslaan  — we konden de aanvraag niet vastleggen.
+ *
+ * Wat de klant zag was: klik op "Doorgaan naar de machtiging", even niets, en
+ * dan hetzelfde formulier terug. Geen zin, geen reden, geen bevestiging dat er
+ * niets is afgeschreven. De kop van handleSubscribeStart() zegt letterlijk dat
+ * een technische fout hier een zin hoort te zijn; die zin bestond, hij kwam
+ * alleen nooit op het scherm.
+ *
+ * ── WAAROM DIT MET EEN SCRIPT MOET EN NIET ANDERS ─────────────────────────
+ *
+ * De pagina statisch houden is de bedoeling — zie de kop van dit bestand: geen
+ * prijsberekening in de browser, gewone POST, alles opnieuw gecontroleerd op de
+ * server. Een SSR-route hiervan maken om één zin te tonen, is de hele stroom
+ * verbouwen voor het uitzonderingsgeval.
+ *
+ * Dus: alle vijf de zinnen staan al in de HTML, elk verborgen en elk met zijn
+ * eigen sleutel. Het script zet er hoogstens één aan.
+ *
+ * ── EN HET ECHOT DE URL NIET ──────────────────────────────────────────────
+ *
+ * Het voor de hand liggende script leest ?fout= en schrijft de waarde in de
+ * pagina. Dat is een reflected-XSS met extra stappen. Hier wordt de parameter
+ * alleen gebruikt om een element OP TE ZOEKEN dat wij zelf hebben gerenderd:
+ * staat er geen element met die sleutel, dan gebeurt er niets. Er gaat geen
+ * enkel teken uit de URL de DOM in.
+ */
+const FOUT_IDS = Object.keys(FOUTEN);
+
 const c = nl ? {
   h: 'Een abonnement afsluiten',
   lede: 'Elke maand een vast aantal afgemaakte producten, in een week die voor jou gereserveerd is. Maandelijks opzegbaar.',
@@ -71,6 +112,7 @@ const c = nl ? {
   products: 'producten per maand',
   clips: 'clips per maand',
   brandModel: 'Je merkmodel inbegrepen',
+  termNote: 'De jaartermijn is op Starter goedkoper per maand. Op Studio en Merk is hij dat niet, en dat is met opzet: die twee zitten met hun maandbedrag al op of onder de laagste prijs per product, en daar gaat niets meer af. Wat de jaartermijn daar geeft, staat hieronder.',
   submit: 'Doorgaan naar de machtiging',
   mandateH: 'Wat er nu gebeurt',
   mandateBody: 'Je betaalt zo eenmalig € 1. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later.',
@@ -90,6 +132,7 @@ const c = nl ? {
   products: 'products a month',
   clips: 'clips a month',
   brandModel: 'Your Brand Model included',
+  termNote: 'The 12-month term is cheaper per month on Starter. On Studio and Brand it is not, and that is deliberate: their monthly price already sits at or below the lowest per-product rate, and there is nothing left to take off. What the 12-month term gives you there is listed below.',
   submit: 'Continue to the mandate',
   mandateH: 'What happens next',
   mandateBody: 'You pay €1 once. That is not a first month but the transaction your bank needs to issue the mandate — without it nothing can be charged. Your first monthly term falls a month later.',
@@ -115,7 +158,16 @@ const termijnen = TERM_IDS.map((id) => ({
     <h1>{c.h}</h1>
     <p class="lede">{c.lede}</p>
 
+    {/* foutTekst blijft staan voor het geval deze pagina ooit wél per verzoek
+        gerenderd wordt; dan wint de server en heeft het script niets te doen.
+        Vandaag is hij altijd leeg — zie de noot hierboven. */}
     {foutTekst && <p class="error" role="alert">{foutTekst}</p>}
+
+    <div class="plan-fouten" data-plan-fouten>
+      {FOUT_IDS.map((id) => (
+        <p class="error" data-plan-fout={id} hidden>{FOUTEN[id]}</p>
+      ))}
+    </div>
 
     <form method="post" action="/account/plan/start" class="plan-form">
       <input type="hidden" name="lang" value={lang} />
@@ -155,8 +207,23 @@ const termijnen = TERM_IDS.map((id) => ({
         ))}
       </fieldset>
 
+      {/* ── WAAROM DE JAARVORM MAAR ÉÉN PLAN GOEDKOPER MAAKT ─────────────────
+          18 augustus 2026. De kaarten hierboven zetten er zes bedragen uit, en
+          bij Studio en Merk staat er twee keer hetzelfde getal. Dat is juist —
+          discountMonths in plans.js geeft alleen Starter korting, en de reden
+          daarvoor staat daar uitgerekend: twee maanden korting duwt Studio en
+          Merk ónder de bodem van de ladder, en dan verkoop je dertig producten
+          per maand goedkoper aan de klant die de meeste capaciteit opeet.
+
+          Maar op deze pagina stond dat nergens. Wie op Studio klikt en dan op
+          "12 maanden", ziet hetzelfde bedrag staan en heeft twee gedachten die
+          allebei slecht zijn: óf de pagina rekent niet goed, óf ik zit twaalf
+          maanden vast voor niets. Het antwoord is beter dan allebei en het is
+          één zin — en het is dezelfde zin die de jaarvorm verkoopt, want wat
+          hij wél geeft staat er direct achter. */}
       <fieldset class="plan-set">
         <legend>{c.termH}</legend>
+        <p class="plan-hint">{c.termNote}</p>
         {termijnen.map((t, i) => (
           <label class="plan-opt plan-opt-row">
             <input type="radio" name="term" value={t.id} required checked={i === 0} />
@@ -205,8 +272,32 @@ const termijnen = TERM_IDS.map((id) => ({
 
     {/* De uitleg voor wie nog geen account heeft. Geen foutmelding en geen
         blokkade: de POST stuurt hem vanzelf naar de inlogpagina, en dit is de
-        zin die uitlegt waarom dat gebeurt vóórdat het gebeurt. */}
-    <div class="plan-signedout">
+        zin die uitlegt waarom dat gebeurt vóórdat het gebeurt.
+
+        ── EN ALLEEN VOOR WIE UITGELOGD IS ────────────────────────────────────
+        18 augustus 2026. Dit blok stond er voor iedereen. Deze pagina is
+        statisch, dus bij het bouwen is er geen sessie en kan Astro het niet
+        weten — maar de site heeft daar al een mechanisme voor, en drie andere
+        formulieren gebruiken het. Layout.astro doet één gememoïseerde
+        /account/me per paginalading en zet elk [data-acct]-blok in één keer
+        aan of uit; zie ModelPicker.astro en .pl-signin in OrderFlow.astro.
+
+        Zonder dat las een klant die net had ingelogd, direct ónder de knop
+        "Doorgaan naar de machtiging", de zin "Je moet ingelogd zijn om een
+        abonnement af te sluiten". Op precies het duurste knopje van de site
+        is dat geen ruis maar twijfel: het leest als een waarschuwing dat de
+        klik niet gaat werken, en de klant die dan tóch klikt is de klant die
+        we net hebben laten aarzelen.
+
+        GEEN `hidden` IN DE MARKUP, en dat is de asymmetrie met
+        [data-acct="in"] in Layout.astro, die hem wél draagt. Zonder
+        JavaScript draait paint() nooit, en dan blijft staan wat er staat.
+        Voor "in" is dat goed (een naam tonen die je niet kunt controleren is
+        erger dan geen naam) en hier is het omgekeerde goed: de fout die we
+        niet willen is een uitgelogde bezoeker die de uitleg mist en op een
+        knop drukt die hem naar een inlogscherm gooit zonder dat hem verteld
+        is waarom. */}
+    <div class="plan-signedout" data-acct="out">
       <p>{c.signedOut}</p>
       <p>
         <a class="btn btn-ghost" href="/account/login">{c.signIn}</a>
@@ -216,8 +307,66 @@ const termijnen = TERM_IDS.map((id) => ({
   </div>
 </section>
 
+<script is:inline>
+  /* Zie de lange noot in de frontmatter. Eén ding: zoek het blok op dat bij de
+     reden in de URL hoort, en zet het aan. `role="alert"` staat al in de markup,
+     maar een alert die er bij het laden al staat wordt door schermlezers niet
+     aangekondigd — vandaar dat hij hier pas zichtbaar wordt, en dat de focus
+     erheen gaat zodat toetsenbord en schermlezer bij de zin uitkomen in plaats
+     van bovenaan een formulier dat ze net hebben ingevuld. */
+  (function () {
+    var reden = new URLSearchParams(location.search).get('fout');
+    if (!reden) return;
+    /* Selector-injectie is hier net zo goed injectie: een reden als "a],[b" zou
+       anders elk foutblok tegelijk aanzetten. Alleen letters, en verder niets. */
+    if (!/^[a-z]+$/.test(reden)) return;
+    var el = document.querySelector('[data-plan-fout="' + reden + '"]');
+    if (!el) return;
+    el.hidden = false;
+    el.setAttribute('tabindex', '-1');
+    el.focus();
+  })();
+
+  /* ── HET PLAN UIT DE URL ───────────────────────────────────────────────────
+   *
+   * De drie kaarten op /pricing wezen alle drie naar dezelfde kale URL, en
+   * hierboven staat Studio standaard aan. Wie op de Merk-kaart klikte, koos
+   * dus €1.690 en kreeg €790 aangevinkt — op een formulier dat eindigt in een
+   * doorlopende machtiging. Zie de noot bij de knop in PricingPage.astro.
+   *
+   * Dezelfde discipline als bij de foutmelding hierboven: de waarde uit de URL
+   * gaat nergens de pagina in. Hij wordt gefilterd op letters en daarna alleen
+   * gebruikt om een radio op te zoeken die wij zelf hebben gerenderd — bestaat
+   * hij niet, dan blijft staan wat er stond. `term` gaat mee omdat de knop hem
+   * ooit mee kan geven en dan hetzelfde hoort te doen.
+   *
+   * GEEN `change`-event. Er hangt geen script aan deze radio's — de bedragen
+   * staan alle zes uitgeschreven, juist omdat er niets te herberekenen valt. */
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    ['plan', 'term'].forEach(function (veld) {
+      var waarde = qs.get(veld);
+      if (!waarde || !/^[a-z]+$/.test(waarde)) return;
+      var radio = document.querySelector(
+        'input[name="' + veld + '"][value="' + waarde + '"]'
+      );
+      if (radio) radio.checked = true;
+    });
+  })();
+</script>
+
 <style>
-  .plan-start { padding-block: clamp(2rem, 6vw, 4rem); }
+  .plan-fouten:empty { display: none; }
+  /* De <h1> viel terug op de standaard h1-maat (67px) terwijl elke andere
+     bestelpagina — /start/catalog, /start/lifestyle, /start/custom-look — op de
+     paginatitelmaat van 64 staat. Zie de noot bij --t-page-h1 in global.css. */
+  .plan-start h1 { font-size: var(--t-page-h1); }
+  /* Gelijk aan `.section-tight` (72/72 op 1440) en niet aan een eigen clamp.
+     Gemeten op 19 augustus 2026: deze pagina stond op 64/64 terwijl
+     /start/catalog, /start/lifestyle en /start/complete allemaal op 72/72
+     stonden — vier stappen van dezelfde flow met drie keer dezelfde en één
+     keer een andere maat. Zie de noot bij --section-tight in global.css. */
+  .plan-start { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
   .plan-form { margin-top: 2rem; display: grid; gap: 2rem; }
   .plan-set { border: 0; padding: 0; margin: 0; display: grid; gap: .7rem; }
   .plan-set legend {

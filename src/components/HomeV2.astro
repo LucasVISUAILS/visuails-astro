@@ -82,6 +82,38 @@ const sample = TEST_SAMPLE[lang];
 // once in the price band. Its photograph (lifestyle-phone-made-09) is off this
 // page rather than reassigned: every tile here shows the service it names, and
 // a stock lifestyle frame over a plan tile was the one that did not.
+/*
+ * ── DE ICONEN OP DE HERO-KAARTJES — 19 augustus 2026 ─────────────────────────
+ *
+ * Nagemeten op adobe.com/nl: hun `.rm-card` is 244 × 94px en bevat een
+ * <img class="rm-card-icon"> met het productlogo, daaronder het label en rechts
+ * een chevron. Dat icoon is precies wat de kaartjes hier misten.
+ *
+ * GETEKEND IN DE TAAL DIE DEZE SITE AL HEEFT en niet als vijf nieuwe plaatjes:
+ * 24×24, `fill: none`, `stroke: currentColor`, dikte 2.6, ronde uiteinden —
+ * dezelfde vorm als de vinkjes in .hv-proof en .checklist. Adobe kan losse
+ * logo's gebruiken omdat elk product er een heeft; hier is er één merk en vijf
+ * diensten, en dan is een consistente lijnstijl het antwoord in plaats van vijf
+ * verzonnen merkjes.
+ *
+ * Elk pictogram zegt wat de dienst OPLEVERT en niet wat hij is: vier vlakken
+ * voor de catalogset, een carousel met randen die eruit lopen, een verticaal
+ * kader met een driehoek voor de clip, een gezicht voor het merkmodel. De
+ * eerste is een stapel — alles in één huisstijl.
+ */
+const SLIDE_ICON = [
+  // stapel · alles in één huisstijl
+  'M12 3 3 8l9 5 9-5-9-5z M3 14l9 5 9-5',
+  // vier vlakken · catalogset
+  'M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z',
+  // carousel · een kader met buren die eruit lopen
+  'M7 5h10v14H7z M3.5 8v8 M20.5 8v8',
+  // verticaal kader met afspeeldriehoek · videoclip
+  'M7 3h10v18H7z M10.8 9.6l4 2.4-4 2.4z',
+  // gezicht · je merkmodel
+  'M12 11.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4.5 20.5a7.5 7.5 0 0 1 15 0',
+];
+
 const SERVICE_IMG = [
   { src: '/img/banners-11.webp', w: 1200, h: 896 },
   { src: '/img/lifestyle-glow-02.webp', w: 2400, h: 1792 },
@@ -256,6 +288,46 @@ const COPY = {
       'Yours to use — shop, marketplaces, ads and feeds',
     ],
 
+    /*
+     * ══════════════════════════════════════════════════════════════════════
+     * DE HERO-CARROUSEL — 19 augustus 2026
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * Lucas, met twee schermafdrukken van adobe.com/nl erbij: *"Ook wel leuk om
+     * op de homepage net als bij adobe die timer diaslide toe te voegen met wat
+     * visuails allemaal maakt."*
+     *
+     * Adobe's hero is vijf dia's die vanzelf doorlopen, met onderaan vijf
+     * kaartjes die de dia kiezen en een pauzeknop ernaast. Hier hetzelfde, met
+     * de inhoud die deze studio heeft: de belofte, en dan de vier dingen die we
+     * maken.
+     *
+     * ── DIA 1 IS DE BESTAANDE HERO EN BLIJFT DAT ─────────────────────────
+     *
+     * "Jij uploadt. Wij leveren de campagne." is de positionering van het merk
+     * en het eerste wat laadt. Die dia houdt zijn twee knoppen en zijn
+     * bewijsregel; de vier dia's erna zijn lichter, precies zoals bij Adobe:
+     * bovenkop, kop, één zin, één knop.
+     *
+     * ── DE KOPPEN ZIJN FEITEN EN GEEN BELOFTES ───────────────────────────
+     *
+     * "Vier beelden per product", niet "meer verkopen". Dezelfde regel als bij
+     * de dienstkaarten verderop, en de toets in promises.test.mjs bewaakt hem
+     * daar al: wat wij leveren mogen we zeggen, wat een platform of een koper
+     * daarna doet niet.
+     */
+    heroSlideLabel: 'What we make',
+    heroCarouselName: 'What VISUAILS makes',
+    heroPause: 'Pause the slideshow',
+    heroPlay: 'Play the slideshow',
+    heroSlides: [
+      { card: 'All in one house style' },
+      { card: 'Catalog set',        eyebrow: 'What we make', h: 'Four images per product.',   lede: 'Front, back, a fabric or logo close-up, and one worn on a model — the same on every product in the range.', cta: 'See Catalog',      href: '/catalog',       img: 0 },
+      { card: 'Lifestyle carousel', eyebrow: 'What we make', h: 'Three images, one scene.',   lede: 'Your product in a styled world instead of on a white background, cut for a carousel and ready to post.',        cta: 'See Lifestyle',    href: '/lifestyle',     img: 1 },
+      { card: 'Video clip',         eyebrow: 'What we make', h: 'The same product, moving.',  lede: 'One short vertical clip, cut for Reels, TikTok and paid — without a second shoot to get it.',                    cta: 'See Video',        href: '/video',         img: 2 },
+      { card: 'Your Brand Model',   eyebrow: 'What we make', h: 'One face, only yours.',      lede: 'Built once for your brand and used on no one else, then in every order you run after it.',                       cta: 'See Brand Models', href: '/custom-models', img: 3 },
+    ],
+
     // ── THE PRICE BAND ────────────────────────────────────────────────────
     // Everything this page says about money is in these keys and nowhere else.
     // The heading is the old drop band's, kept word for word: it was already
@@ -349,32 +421,59 @@ const COPY = {
     svcH: ['What we make,', 'and what lands in your folder.'],
     svcLede: 'Catalog and lifestyle are what a product gets. A video clip and your Brand Model ride on top of an order, or stand on their own.',
     // [name, what it is, what you receive, href]
+    /*
+     * ── DE EERSTE REGEL IS DE BAAT, DE TWEEDE HET FEIT — 18 augustus 2026 ─────
+     *
+     * Twee dingen stonden hier scheef, en ze hangen samen.
+     *
+     * 1 · EN EN NL ZEIDEN IETS ANDERS over dezelfde vier producten. De Engelse
+     *     kaarten hadden op twee van de vier een baat ("make a young range look
+     *     established"); de Nederlandse hadden er nul en beschreven alle vier
+     *     een kenmerk — "niet op een witte achtergrond", "in beweging, in plaats
+     *     van op een stilstaand beeld". Dat is niet één tekst in twee talen maar
+     *     twee teksten, en de zwakste stond in de taal waar de meeste klanten
+     *     in lezen.
+     *
+     * 2 · "LIFTS CLICK-THROUGH" MOCHT ER SOWIESO NIET STAAN. Het Hooks-blok
+     *     verderop op deze pagina zegt met zoveel woorden: *"Wat wij verkopen:
+     *     het format en de uitvoering. Geen bereik — of een post ergens
+     *     terechtkomt hangt af van het platform en van timing, en die twee zijn
+     *     niet aan ons om te beloven."* Een kaart die drie schermen hoger een
+     *     hogere doorklik belooft, breekt die regel op de pagina die hem stelt.
+     *
+     * DE REGEL DIE HIERUIT VOLGT, en waar de vier nieuwe zinnen aan getoetst
+     * zijn: een baat mag alleen iets noemen dat de studio ZELF levert. Een
+     * pagina die er gevestigd uitziet, een scène die een packshot niet geeft,
+     * een vorm waar de feed om vraagt, een gezicht dat van jou blijft — dat
+     * leveren we alle vier. Wat een koper daarna doet, niet.
+     *
+     * De tweede regel van elke kaart blijft het harde feit (aantal beelden,
+     * uitsnede, formaat). Baat boven, feit eronder — zo hoeft niemand te kiezen
+     * tussen overtuigen en nakomen.
+     */
     svc: [
       [
         'Catalog set',
         'Clean, consistent product pages that make a young range look established.',
-        `${CATALOG_IMAGES} images per product: front, back, a fabric or logo close-up, and one worn on a model.`,
         '/catalog',
       ],
       [
         'Lifestyle carousel',
-        'Your product in a styled scene, made for Instagram and ads rather than a product page.',
-        `${LIFESTYLE_IMAGES} images per product: one styled look, cut for a carousel and ready to post.`,
+        'The scene a packshot cannot give you — something to post, not just something to list.',
         '/lifestyle',
       ],
       [
         'Video clip',
-        'Subtle motion that lifts click-through where a still photo plateaus.',
-        'One short vertical clip, cut for Reels, TikTok and paid.',
+        'The same product in the shape a feed asks for, without a second shoot to get it.',
         '/video',
       ],
       [
         'Your Brand Model',
-        'One face, made only for your brand and used by no one else.',
-        'Set up once, then in every order you run.',
+        'A face that becomes yours — the same one in every order, and on nobody else.',
         '/custom-models',
       ],
     ],
+    svcMore: 'See',
     svcCta: 'Start an order',
 
     pipeH: 'From folder to launch.',
@@ -418,18 +517,31 @@ const COPY = {
     // gebouwde pagina: hij staat daar NIET, in geen van beide talen. Het is de
     // enige plek op de site waar staat waaruit een shootweek bestaat, en dat is
     // precies het argument van deze band. Blijft dus staan.
-    weekLede: 'A shoot is not one day. It is the week around it: the casting, the booking, the shipping, the reschedule when it rains, the two evenings culling frames. Here is that week instead.',
+    // Was: "...the casting, the booking, the shipping, the reschedule when it
+    // rains, the two evenings culling frames." Diezelfde opsomming staat vier
+    // regels lager nog een keer als de vier koppen onder "What that frees up".
+    // Eén keer is genoeg (Lucas, 19 augustus 2026).
+    weekLede: 'A shoot is not one day, it is the week around it. Here is that week instead.',
     week: [
       ['Monday', 'You drop a folder of product photos into the portal. Twenty minutes, most of it renaming folders to your SKUs.'],
       ['Wednesday', 'The order lands. You approve what is right in the portal and flag what is not.'],
       ['Friday', 'Product pages are live, carousels scheduled. You were not in a studio once.'],
     ],
     backH: 'What that frees up',
+    /*
+     * ── VIER KOPPEN, GEEN VIER ALINEA'S — 19 augustus 2026 ──────────────────
+     * Dit was een <dl> van vier koppen met elk een uitleg-zin eronder. De
+     * koppen zeggen het zelf al: "No casting, no booking" heeft geen zin nodig
+     * die uitlegt dat er dan geen model en geen fotograaf is. De vier zinnen
+     * zijn geschrapt (−41 woorden op de Nederlandse pagina), de koppen staan er
+     * nog, en de lijst is daarmee een <ul> geworden in plaats van een <dl> —
+     * een beschrijvingslijst zonder beschrijvingen is de verkeerde lijst.
+     */
     back: [
-      ['No casting, no booking', 'No model, no photographer, no studio, no shared free day.'],
-      ['Nothing leaves your stockroom', 'Nothing is shipped and nothing comes back creased.'],
-      ['No day off the business', 'A shoot day is a day you sell nothing.'],
-      ['No cull, no waiting for retouch', 'Finished visuals, not four hundred frames to sort on a Sunday.'],
+      'No casting, no booking',
+      'Nothing leaves your stockroom',
+      'No day off the business',
+      'No cull, no waiting for retouch',
     ],
     // The one sentence left over from the deleted "What an order replaces"
     // band: the euros against a shoot day are /compare's and /pricing's
@@ -630,6 +742,19 @@ const COPY = {
       'De beelden zijn van jou — webshop, marktplaatsen, ads en feeds',
     ],
 
+    /* Zie de noot bij de Engelse tabel. */
+    heroSlideLabel: 'Wat we maken',
+    heroCarouselName: 'Wat VISUAILS maakt',
+    heroPause: 'Pauzeer de diavoorstelling',
+    heroPlay: 'Speel de diavoorstelling af',
+    heroSlides: [
+      { card: 'Alles in één huisstijl' },
+      { card: 'Catalogset',           eyebrow: 'Wat we maken', h: 'Vier beelden per product.',    lede: 'Voorkant, achterkant, een close-up van de stof of het logo, en één op een model — bij elk product in de collectie hetzelfde.', cta: 'Bekijk Catalog',    href: '/catalog',       img: 0 },
+      { card: 'Lifestyle-carousel',   eyebrow: 'Wat we maken', h: 'Drie beelden, één scène.',     lede: 'Je product in een gestylede wereld in plaats van op een witte achtergrond, uitgesneden voor een carousel en klaar om te posten.', cta: 'Bekijk Lifestyle',  href: '/lifestyle',     img: 1 },
+      { card: 'Videoclip',            eyebrow: 'Wat we maken', h: 'Hetzelfde product, in beweging.', lede: 'Eén korte verticale clip, gesneden voor Reels, TikTok en paid — zonder er een tweede shoot voor te doen.',                     cta: 'Bekijk Video',      href: '/video',         img: 2 },
+      { card: 'Je merkmodel',         eyebrow: 'Wat we maken', h: 'Eén gezicht, alleen van jou.', lede: 'Eén keer gebouwd voor jouw merk en bij niemand anders gebruikt, daarna in elke bestelling die je doet.',                          cta: 'Bekijk merkmodellen', href: '/custom-models', img: 3 },
+    ],
+
     // Zie de EN-tabel voor waarom deze band er is: vier prijsbanden zijn er één
     // geworden en alles wat deze pagina over geld zegt, staat in deze keys.
     priceH: ['Eén prijs per product.', 'Die zakt als je er meer doet.'],
@@ -681,32 +806,31 @@ const COPY = {
     // hierboven. Wat blijft is wat een dienst IS en wat je terugkrijgt.
     svcH: ['Wat we maken,', 'en wat er in je map belandt.'],
     svcLede: 'Elk product krijgt catalog- en lifestyle-beelden. Een videoclip en je eigen merkmodel kun je erbij nemen, of los bestellen.',
+    /* Zie de noot bij de Engelse tabel: eerste regel de baat, tweede het feit,
+       en een baat noemt alleen wat de studio zelf levert. */
     svc: [
       [
         'Catalogset',
-        'Strakke productpagina’s waar elk product er hetzelfde uitziet, van het eerste tot het laatste.',
-        `${CATALOG_IMAGES} beelden per product: voorkant, achterkant, een close-up van de stof of het logo, en één gedragen op een model.`,
+        'Strakke, gelijke productpagina’s die een jonge collectie er gevestigd uit laten zien.',
         '/catalog',
       ],
       [
         'Lifestyle-carousel',
-        'Je product in een gestylede scène, niet op een witte achtergrond.',
-        `${LIFESTYLE_IMAGES} beelden per product: één gestylede look, uitgesneden voor een carousel en klaar om te posten.`,
+        'De scène die een packshot je niet geeft — iets om te posten, niet alleen iets om te tonen.',
         '/lifestyle',
       ],
       [
         'Videoclip',
-        'Hetzelfde product in beweging, in plaats van op een stilstaand beeld.',
-        'Eén korte verticale clip, gesneden voor Reels, TikTok en paid.',
+        'Hetzelfde product in de vorm waar een feed om vraagt, zonder er een tweede shoot voor te doen.',
         '/video',
       ],
       [
         'Je merkmodel',
-        'Eén gezicht, alleen voor jouw merk gemaakt en door niemand anders gebruikt.',
-        'Eén keer opgezet, daarna in elke bestelling die je doet.',
+        'Een gezicht dat van jou wordt — hetzelfde in elke bestelling, en bij niemand anders.',
         '/custom-models',
       ],
     ],
+    svcMore: 'Bekijk',
     svcCta: 'Start een bestelling',
 
     pipeH: 'Van map tot lancering.',
@@ -742,18 +866,20 @@ const COPY = {
     dreamAlt: 'Een VISUAILS lifestyle-beeld — een gestylede campagnescène',
 
     weekH: 'De week die je terugkrijgt.',
-    weekLede: 'Een shoot is niet één dag. Het is de week eromheen: de casting, de boeking, het opsturen, het verzetten als het regent, de twee avonden foto’s uitzoeken. Zo ziet die week er nu uit.',
+    // Zie de noot bij de Engelse weekLede.
+    weekLede: 'Een shoot is niet één dag, het is de week eromheen. Zo ziet die week er nu uit.',
     week: [
       ['Maandag', 'Je zet een map met productfoto’s in VISUAILS Studio. Twintig minuten werk, en dat is vooral mappen hernoemen naar je SKU’s.'],
       ['Woensdag', 'De bestelling is klaar. In VISUAILS Studio keur je goed wat klopt en geef je aan wat niet klopt.'],
       ['Vrijdag', 'De productpagina’s staan live, de carousels ingepland. Je bent geen moment in een studio geweest.'],
     ],
     backH: 'Wat dat vrijmaakt',
+    // Zie de noot bij de Engelse `back`.
     back: [
-      ['Geen casting, geen boeking', 'Geen model, geen fotograaf, geen studio, geen gedeelde vrije dag.'],
-      ['Er gaat niets de voorraad uit', 'Je stuurt niets op, en er komt niets gekreukt terug.'],
-      ['Geen dag uit de zaak', 'Een shootdag is een dag waarop je niets verkoopt.'],
-      ['Geen selectie, geen retoucheerlijst', 'Afgewerkte beelden, geen vierhonderd frames voor op zondag.'],
+      'Geen casting, geen boeking',
+      'Er gaat niets de voorraad uit',
+      'Geen dag uit de zaak',
+      'Geen selectie, geen retoucheerlijst',
     ],
     // Wat overblijft van de geschrapte band "Wat een bestelling vervangt": de
     // euro’s tegenover een shootdag staan op /compare en /pricing, deze band
@@ -893,14 +1019,42 @@ const c = COPY[lang];
     Full-bleed, and the photograph is the only lit thing in the frame. On the
     espresso ground that is not a metaphor: everything above and below it is
     near-black, so the garment is the first colour a visitor sees. */}
-<section class="hv-hero">
+<section class="hv-hero" data-hero-carousel
+         role="region"
+         aria-roledescription={c.heroCarouselName}
+         aria-label={c.heroCarouselName}>
+
+  {/* ── DE FOTO'S ────────────────────────────────────────────────────────────
+      Eén <img> per dia, allemaal in de DOM en over elkaar heen. Alleen de
+      eerste krijgt fetchpriority="high" en decoding="sync" — dat is het beeld
+      dat de Largest Contentful Paint bepaalt en het enige dat de bezoeker in de
+      eerste seconde ziet. De andere vier staan op lazy: ze mogen de eerste
+      render niet vertragen voor een dia die pas na zeven seconden komt. */}
   <div class="hv-hero-bg">
-    <img src="/img/hero-dunes.webp" alt={c.heroAlt} width="2200" height="1228" decoding="sync" fetchpriority="high" transition:name="hero-photo" />
+    {c.heroSlides.map((sl, i) => (
+      <img
+        src={i === 0 ? '/img/hero-dunes.webp' : SERVICE_IMG[sl.img].src}
+        alt={i === 0 ? c.heroAlt : `${sl.card} — ${sl.h}`}
+        width={i === 0 ? 2200 : SERVICE_IMG[sl.img].w}
+        height={i === 0 ? 1228 : SERVICE_IMG[sl.img].h}
+        decoding={i === 0 ? 'sync' : 'async'}
+        loading={i === 0 ? undefined : 'lazy'}
+        fetchpriority={i === 0 ? 'high' : undefined}
+        transition:name={i === 0 ? 'hero-photo' : undefined}
+        data-hero-img={String(i)}
+        hidden={i !== 0}
+      />
+    ))}
   </div>
   <div class="hv-hero-scrim" aria-hidden="true"></div>
+
   <div class="container hv-hero-inner">
-    <div class="hv-hero-copy">
-      {/* set:html, want de <em> zit in de copy. Zie de noot bij COPY.en.h1. */}
+    {/* ── DIA 1 · DE BELOFTE ──────────────────────────────────────────────
+        Deze houdt de <h1> van de pagina, twee knoppen en de bewijsregel. De
+        vier dia's erna zijn lichter en gebruiken een <h2>: er hoort één <h1>
+        in een document te staan, en dat is de positionering van het merk en
+        niet "Vier beelden per product". */}
+    <div class="hv-hero-copy" data-hero-panel="0" role="tabpanel" id="hv-slide-0" aria-labelledby="hv-tab-0">
       <h1 class="hv-h1">{c.h1.map((line) => (
         <span class="hv-line" set:html={line} />
       ))}</h1>
@@ -927,6 +1081,55 @@ const c = COPY[lang];
         ))}
       </ul>
     </div>
+
+    {/* ── DIA 2 T/M 5 · WAT WE MAKEN ─────────────────────────────────────── */}
+    {c.heroSlides.slice(1).map((sl, k) => (
+      <div class="hv-hero-copy hv-hero-copy-svc" data-hero-panel={String(k + 1)} role="tabpanel"
+           id={`hv-slide-${k + 1}`} aria-labelledby={`hv-tab-${k + 1}`} hidden>
+        <p class="hv-slide-eyebrow">{sl.eyebrow}</p>
+        <h2 class="hv-h1">{sl.h}</h2>
+        <p class="hv-lede">{sl.lede}</p>
+        <div class="hv-cta">
+          <a href={lp(sl.href)} class="btn btn-primary btn-lg">{sl.cta}</a>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* ── DE KAARTJES ONDERAAN, EN DE PAUZEKNOP ────────────────────────────────
+      Bij Adobe kiezen deze kaartjes de dia. Hier ook — zodra er JavaScript is.
+
+      ZONDER JAVASCRIPT ZIJN HET LINKS, en dat is met opzet. Ze staan in de
+      html als <a href> naar de pagina van die dienst, dus wie geen script
+      heeft, krijgt geen dode knoppen maar vier bruikbare links. Het script
+      hangt er `role="tab"` aan en onderschept de klik. Een <a> mag die rol
+      dragen; een <button> die zonder script niets doet, is een knop die liegt.
+
+      DE PAUZEKNOP IS GEEN LUXE. WCAG 2.2.2 (Pause, Stop, Hide) eist een manier
+      om beweging die vanzelf begint en langer dan vijf seconden duurt, te
+      stoppen. Hij staat in de html — niet door script toegevoegd — zodat hij er
+      is voordat de carrousel begint te lopen. */}
+  <div class="container hv-hero-foot">
+    <div class="hv-slide-cards" data-hero-tabs role="tablist" aria-label={c.heroCarouselName}>
+      {c.heroSlides.map((sl, i) => (
+        <a class="hv-slide-card"
+           id={`hv-tab-${i}`}
+           href={lp(sl.href || '/start')}
+           data-hero-tab={String(i)}
+           aria-controls={`hv-slide-${i}`}>
+          <svg class="hv-slide-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SLIDE_ICON[i]} /></svg>
+          <span class="hv-slide-card-row">
+            <span class="hv-slide-card-t">{sl.card}</span>
+            <span class="hv-slide-card-x" aria-hidden="true">›</span>
+          </span>
+          <span class="hv-slide-card-bar" aria-hidden="true"></span>
+        </a>
+      ))}
+    </div>
+    <button class="hv-hero-toggle" type="button" data-hero-toggle hidden
+            aria-label={c.heroPause} title={c.heroPause} data-play={c.heroPlay}>
+      <span class="hv-hero-toggle-i" aria-hidden="true"></span>
+    </button>
   </div>
 </section>
 
@@ -945,9 +1148,9 @@ const c = COPY[lang];
     and /gallery, it drifts on its own so the comparison is legible without
     interaction, and it throws at build time on an image with no intrinsic
     size on record. */}
-<section class="band well-deep">
+<section class="band-chapter well-deep">
   <div class="container">
-    <div class="statement statement-left hv-ba-head">
+    <div class="statement statement-left statement-split hv-ba-head">
       <h2>{c.baH[0]} <em class="hv-accent">{c.baH[1]}</em></h2>
       <p class="lede">{c.baLede}</p>
     </div>
@@ -1004,7 +1207,7 @@ const c = COPY[lang];
     FOUR TILES, ONE WEIGHT. It was five at two weights, which said catalog and
     lifestyle mattered more than a clip. They do, and the band above says so by
     pricing them per product — this one is a shelf, and a shelf is even. */}
-<section class="band hv-svc-band">
+<section class="band-chapter hv-svc-band">
   <div class="container">
     {/* GECENTREERD OF LINKS — DE REGEL, 18 augustus 2026.
         Gemeten op de gebouwde pagina: zeven van de veertien koppen stonden
@@ -1019,12 +1222,12 @@ const c = COPY[lang];
         over de recensies en het afsluitende paneel — en juist doordat het er
         nog maar twee zijn, vallen ze op. Zeven keer centreren is geen nadruk
         meer, het is de standaard. */}
-    <div class="statement statement-left">
+    <div class="statement statement-left statement-split">
       <h2>{c.svcH[0]} <em class="hv-accent">{c.svcH[1]}</em></h2>
       <p class="lede">{c.svcLede}</p>
     </div>
     <div class="tiles hv-svc-tiles">
-      {c.svc.map(([name, line, get, href], i) => (
+      {c.svc.map(([name, line, href], i) => (
         <a class="tile s-6 hv-svc-tile" href={lp(href)}>
           <span class="tile-media hv-svc-media">
             <img src={SERVICE_IMG[i].src} alt={`${name} — ${line}`} width={SERVICE_IMG[i].w} height={SERVICE_IMG[i].h} loading="lazy" decoding="async" />
@@ -1032,10 +1235,14 @@ const c = COPY[lang];
           <span class="tile-body hv-svc-body">
             <span class="tile-h">{name}</span>
             <span class="hv-svc-line">{line}</span>
-            {/* The inset plate is what you RECEIVE, kept visually separate from
-                what the service is — a reader comparing four services compares
-                this line and nothing else, so it may not read as more prose. */}
-            <span class="hv-svc-get">{get}</span>
+            {/* DE LINK ONDERAAN. De hele tegel is al een <a>, dus dit voegt geen
+                doel toe — het voegt de AANWIJZING toe dat er een doel is. Op de
+                oude kaart was nergens te zien dat je erop kon klikken behalve de
+                cursor, en dat is een aanwijzing die op een telefoon niet bestaat.
+                Adobe zet onder elke kaart een expliciete link; dit is diezelfde
+                regel, in de taal die de Hooks- en Editions-stroken hieronder al
+                gebruiken ("Bekijk Hooks"). */}
+            <span class="hv-svc-more">{c.svcMore} {name}<span class="hv-svc-arrow" aria-hidden="true">→</span></span>
           </span>
         </a>
       ))}
@@ -1112,8 +1319,9 @@ const c = COPY[lang];
         HET id KOMT UIT DE DATA, zodat er naartoe te linken valt zodra dat nodig
         is. De menu-items zijn nu bewust dood; als ze ooit een link naar deze
         strook moeten worden, hoeft daar alleen een href bij. */}
+    <div class="tiles hv-soon-grid">
     {c.svcSoonList.map((soon) => (
-      <div class="hv-soon" id={soon.id}>
+      <div class="tile s-6 hv-soon" id={soon.id}>
         <div class="hv-soon-copy">
           <details class="hv-q">
             <summary class="hv-soon-h hv-q-sum">
@@ -1137,6 +1345,7 @@ const c = COPY[lang];
         <button class="btn btn-ghost hv-soon-btn" type="button" disabled>{soon.cta}</button>
       </div>
     ))}
+    </div>
 
     <div class="hv-svc-foot">
       <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
@@ -1195,9 +1404,9 @@ const c = COPY[lang];
     block qualifier — and vatNote() says how VAT is actually handled, once, in
     a disclosure rather than as forty words of small print nobody reads until
     they need it. That is the same <details> pattern /faq and /start use. */}
-<section class="band hv-price-band">
+<section class="band-chapter hv-price-band">
   <div class="container">
-    <div class="statement statement-left">
+    <div class="statement statement-left statement-split">
       <h2>{c.priceH[0]} <em class="hv-accent">{c.priceH[1]}</em></h2>
       <p class="lede">{c.priceLede}</p>
     </div>
@@ -1301,7 +1510,7 @@ const c = COPY[lang];
     HET GETAL IS AFGELEID. Zie PLAN_CHEAPEST hierboven: bedrag én aantal komen
     uit hetzelfde plan, zodat "vanaf € 390 · 5 producten" niet twee losse
     minima kan worden die bij elkaar niet bestaan. */}
-<section class="band hv-sub-band">
+<section class="band-tight hv-sub-band">
   <div class="container">
     <div class="hv-sub">
       <div class="hv-sub-copy">
@@ -1372,9 +1581,9 @@ const c = COPY[lang];
     A real ordered sequence, so it is the one place on the page numbers are
     allowed — see DESIGN.md on why 01/02/03 above every section is scaffolding
     and above an actual sequence is not. */}
-<section class="band well-deep">
+<section class="band-chapter well-deep">
   <div class="container">
-    <div class="statement statement-left hv-pipe-head">
+    <div class="statement statement-left statement-split hv-pipe-head">
       <h2>{c.pipeH}</h2>
       <p class="lede">{c.pipeLede}</p>
     </div>
@@ -1425,9 +1634,9 @@ const c = COPY[lang];
     hours-saved figure is a claim about the reader's business that this studio
     has no way to know. A named Monday is a story; a saved hour is arithmetic
     someone else did. */}
-<section class="band">
+<section class="band-tight">
   <div class="container">
-    <div class="statement statement-left">
+    <div class="statement statement-left statement-split">
       <h2>{c.weekH}</h2>
       <p class="lede">{c.weekLede}</p>
     </div>
@@ -1441,14 +1650,9 @@ const c = COPY[lang];
     </ol>
     <div class="hv-back">
       <p class="hv-back-h">{c.backH}</p>
-      <dl class="hv-back-list">
-        {c.back.map(([t, b]) => (
-          <div>
-            <dt>{t}</dt>
-            <dd>{b}</dd>
-          </div>
-        ))}
-      </dl>
+      <ul class="hv-back-list">
+        {c.back.map((t) => <li>{t}</li>)}
+      </ul>
       <p class="hv-back-note">{c.backNote} <a href={lp('/compare')}>{c.backNoteLink}</a></p>
     </div>
   </div>
@@ -1500,10 +1704,10 @@ const c = COPY[lang];
     Read straight from ROSTER in src/data/models.js — the same source /models
     and /custom-models use, so the homepage cannot advertise a face that has
     been retired from the roster. */}
-<section class="band-tight hv-bm-band">
+<section class="band-chapter hv-bm-band">
   <div class="container">
     <div class="rail-head">
-      <div class="statement statement-left">
+      <div class="statement statement-left statement-split">
         <h2>{c.bmH[0]} <em class="hv-accent">{c.bmH[1]}</em></h2>
         <p class="lede">{c.bmLede}</p>
       </div>
@@ -1579,9 +1783,9 @@ const c = COPY[lang];
     De figuur zelf is ongewijzigd: getekend uit dezelfde componenten als het
     echte scherm, met verzonnen gegevens en het woord "voorbeeld" erin. Nooit
     een bestaand adres, nooit een echt bedrijf — zie de kop van FigDash.astro. */}
-<section class="band well-deep">
+<section class="band-chapter well-deep">
   <div class="container">
-    <div class="statement statement-left">
+    <div class="statement statement-left statement-split">
       <h2>{c.dashH[0]} <em class="hv-accent">{c.dashH[1]}</em></h2>
       <p class="lede">{c.dashLede}</p>
     </div>
@@ -1693,9 +1897,9 @@ const c = COPY[lang];
     WAT DIT ZOU TERUGDRAAIEN: bewijs dat bezoekers de FAQ-link niet volgen en
     op de homepage afhaken bij een vraag die daar wél beantwoord wordt. Dan
     hoort díé vraag hier als vierde kaart — niet de accordeon terug. */}
-<section class="band">
+<section class="band-tight">
   <div class="container">
-    <div class="statement statement-left">
+    <div class="statement statement-left statement-split">
       <h2>{c.obH}</h2>
       <p class="lede">{c.obLede}</p>
     </div>
@@ -1741,7 +1945,7 @@ const c = COPY[lang];
     OOK WEG: de laadregel voor de shader in Layout.astro en het script zelf. Een
     canvas dat nergens meer staat, kost anders nog steeds een verzoek en een
     WebGL-context op elke pagina. */}
-<section class="band">
+<section class="band-tight">
   <div class="container">
     <div class="statement">
       {/* Elke zin op zijn eigen regel. Laat je dit doorlopen, dan breekt hij
@@ -1776,7 +1980,7 @@ const c = COPY[lang];
     Nu een gewone band op de paginagrond. Wat de afsluiting onderscheidt, is
     niet een andere kleur maar wat er staat: één kop, één zin, twee knoppen, en
     verder niets. Dat is genoeg om te weten dat de pagina hier ophoudt. */}
-<section class="band hv-close">
+<section class="band-chapter hv-close">
   <div class="container">
     <div class="statement">
       <h2>{c.closeH}</h2>
@@ -1789,6 +1993,194 @@ const c = COPY[lang];
   </div>
 </section>
 
+<script is:inline>
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * DE HERO-CARROUSEL — 19 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Vijf dia's, zeven seconden per stuk, met kaartjes eronder die de dia kiezen.
+ * Zie de noot bij heroSlides in de frontmatter voor waarom hij er is.
+ *
+ * ── HET BEGINT MET NIETS DOEN ──────────────────────────────────────────────
+ *
+ * Zonder dit script staat er dia 1, staan de vier andere op `hidden`, zijn de
+ * kaartjes gewone links naar /catalog, /lifestyle, /video en /custom-models, en
+ * is de pauzeknop `hidden`. Dat is een werkende pagina. Alles hieronder is een
+ * toevoeging, en dat is ook de reden dat de pauzeknop pas zichtbaar wordt
+ * gemaakt door het script dat de beweging aanzet: een pauzeknop naast iets dat
+ * niet beweegt, is een knop die liegt.
+ *
+ * ── WAT ER NIET AUTOMATISCH LOOPT ──────────────────────────────────────────
+ *
+ * · prefers-reduced-motion: de kaartjes werken, de carrousel loopt niet vanzelf.
+ * · muis erboven of toetsenbordfocus erin: pauze zolang dat duurt.
+ * · tabblad op de achtergrond: pauze. Anders staat een bezoeker die terugkomt
+ *   op een dia die hij nooit heeft zien langskomen.
+ * · na een klik op een kaartje of de pauzeknop: definitief uit. Wie zelf kiest,
+ *   heeft de bedoeling laten blijken, en dan is doorlopen tegenwerken.
+ *
+ * WCAG 2.2.2 vraagt om een manier om beweging die vanzelf begint en langer dan
+ * vijf seconden duurt te stoppen. Dat is de pauzeknop; de rest hierboven is
+ * omdat het ergerlijk is, niet omdat het moet.
+ */
+(function () {
+  var root = document.querySelector('[data-hero-carousel]');
+  if (!root) return;
+
+  var DUUR = 7000;
+  var tabs   = [].slice.call(root.querySelectorAll('[data-hero-tab]'));
+  var panels = [].slice.call(root.querySelectorAll('[data-hero-panel]'));
+  var imgs   = [].slice.call(root.querySelectorAll('[data-hero-img]'));
+  var toggle = root.querySelector('[data-hero-toggle]');
+  if (tabs.length < 2 || panels.length !== tabs.length) return;
+
+  var rust = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var nu = 0;
+  var timer = null;
+  var gestopt = false;   // door de bezoeker, definitief
+  var geparkeerd = false; // tijdelijk: hover, focus, tabblad weg
+
+  root.style.setProperty('--hv-slide-ms', DUUR + 'ms');
+
+  /* De tabs krijgen hun rol PAS HIER. In de html zijn het links, zodat ze
+     zonder script naar de dienstpagina gaan; vanaf nu zijn het tabs die een
+     dia kiezen, en dan hoort de rol daarbij te veranderen. */
+  tabs.forEach(function (t, i) {
+    t.setAttribute('role', 'tab');
+    t.addEventListener('click', function (e) {
+      e.preventDefault();
+      stop();
+      toon(i, true);
+    });
+    t.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      stop();
+      var v = (i + d + tabs.length) % tabs.length;
+      toon(v, true);
+      tabs[v].focus();
+    });
+  });
+
+  function schilder(i) {
+    tabs.forEach(function (t, k) {
+      var aan = k === i;
+      t.setAttribute('aria-selected', aan ? 'true' : 'false');
+      /* Alleen de actieve tab is met tab bereikbaar; de rest met de pijltjes.
+         Dat is het roving-tabindex-patroon en het scheelt vier tabstops voor
+         iemand die alleen langs de hoofdknoppen wil. */
+      t.setAttribute('tabindex', aan ? '0' : '-1');
+      var bar = t.querySelector('.hv-slide-card-bar');
+      if (!bar) return;
+      /* De balk opnieuw laten beginnen door hem uit en weer aan te zetten. Het
+         lezen van offsetWidth ertussen forceert een reflow — zonder dat voegt
+         de browser beide wijzigingen samen en herstart de animatie niet. */
+      bar.classList.remove('is-running');
+      if (aan && !gestopt && !geparkeerd && !rust.matches) {
+        void bar.offsetWidth;
+        bar.classList.add('is-running');
+      }
+    });
+  }
+
+  function toon(i, meteen) {
+    if (i === nu) { schilder(i); return; }
+    var oud = nu;
+    nu = i;
+
+    imgs.forEach(function (im, k) {
+      if (k === i) { im.hidden = false; requestAnimationFrame(function () { im.classList.add('is-on'); }); }
+      else { im.classList.remove('is-on'); }
+    });
+    /* De oude foto pas verbergen NA de fade, anders knippert er niets weg maar
+       verdwijnt hij ineens. 600ms is de lengte van --dur-4. */
+    if (oud !== i) {
+      var vorige = imgs[oud];
+      window.setTimeout(function () { if (!vorige.classList.contains('is-on')) vorige.hidden = true; }, 700);
+    }
+
+    /* Geen `hidden` meer hier: dat is bij het opstarten van alle panelen
+       gehaald zodat ze samen één rastercel vullen en de hoogte vastligt. Zie
+       de noot bij .hv-hero-inner in de stijl. */
+    panels.forEach(function (pn, k) { pn.classList.toggle('is-off', k !== i); });
+
+    schilder(i);
+    if (meteen) herstart();
+  }
+
+  function tik() { toon((nu + 1) % tabs.length, false); herstart(); }
+
+  function herstart() {
+    window.clearTimeout(timer);
+    if (gestopt || geparkeerd || rust.matches) { schilder(nu); return; }
+    schilder(nu);
+    timer = window.setTimeout(tik, DUUR);
+  }
+
+  function park(aan) {
+    if (geparkeerd === aan) return;
+    geparkeerd = aan;
+    if (aan) { window.clearTimeout(timer); schilder(nu); } else herstart();
+  }
+
+  function stop() {
+    gestopt = true;
+    window.clearTimeout(timer);
+    if (toggle) {
+      toggle.classList.add('is-paused');
+      toggle.setAttribute('aria-label', toggle.dataset.play || toggle.getAttribute('data-play') || toggle.title);
+    }
+    schilder(nu);
+  }
+
+  if (toggle && !rust.matches) {
+    toggle.hidden = false;
+    var labelPauze = toggle.getAttribute('aria-label');
+    var labelPlay = toggle.getAttribute('data-play') || labelPauze;
+    toggle.addEventListener('click', function () {
+      if (gestopt) {
+        gestopt = false;
+        toggle.classList.remove('is-paused');
+        toggle.setAttribute('aria-label', labelPauze);
+        toggle.title = labelPauze;
+        herstart();
+      } else {
+        stop();
+        toggle.setAttribute('aria-label', labelPlay);
+        toggle.title = labelPlay;
+      }
+    });
+  }
+
+  root.addEventListener('mouseenter', function () { park(true); });
+  root.addEventListener('mouseleave', function () { park(false); });
+  root.addEventListener('focusin',  function () { park(true); });
+  root.addEventListener('focusout', function (e) {
+    if (!root.contains(e.relatedTarget)) park(false);
+  });
+  document.addEventListener('visibilitychange', function () { park(document.hidden); });
+
+  /* HET ATTRIBUUT ERAF, DE KLASSE ERAAN. Vanaf hier beheert het script de
+     zichtbaarheid; `hidden` was er alleen voor de bezoeker zonder JavaScript. */
+  /* `is-live` EERST: de klasse die de verbergregels aanzet moet er staan
+     voordat het `hidden`-attribuut eraf gaat, anders is er één frame waarin
+     alle vijf de dia's zichtbaar zijn. */
+  root.classList.add('is-live');
+  panels.forEach(function (pn, k) { pn.hidden = false; pn.classList.toggle('is-off', k !== 0); });
+  /* EN DE EERSTE FOTO AANZETTEN. `is-live` zet elke hero-foto op opacity 0 en
+     alleen `.is-on` haalt hem terug — die klasse wordt gezet in toon(), en
+     toon() draait bij het laden nog niet. Gevolg zonder deze regel: de hero is
+     zwart tot de eerste dia omslaat, zeven seconden lang, op het beeld dat de
+     Largest Contentful Paint bepaalt. Gemeten opacity was 0. */
+  imgs[0].classList.add('is-on');
+
+  schilder(0);
+  if (!rust.matches) herstart();
+})();
+</script>
+
 <style>
   /* ── hero ───────────────────────────────────────────────────────────────
      100svh, not 100vh: on iOS the URL bar makes vh taller than the visible
@@ -1800,7 +2192,35 @@ const c = COPY[lang];
      guessed. A hero is not a band and does not take a band's rhythm. */
   .hv-hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; margin-top: -76px; padding: 76px 0 0; isolation: isolate; background: var(--ink-900); }
   .hv-hero-bg { position: absolute; inset: 0; z-index: -2; }
-  .hv-hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
+  .hv-hero-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
+  /* ── DE OVERGANG TUSSEN DIA'S ─────────────────────────────────────────────
+     Kruislings vervagen en niet schuiven. Schuiven verplaatst een foto van 2200
+     pixels over het scherm en dat is precies het soort beweging waar iemand
+     misselijk van wordt; vervagen is een opacity-animatie op de compositor en
+     kost niets. Adobe schuift wel, maar Adobe heeft ook geen full-bleed foto
+     van een model als achtergrond — daar schuift een illustratie mee met een
+     tekstblok.
+
+     `hidden` gaat er via het script af vlak vóór de fade, zodat het element
+     eerst bestaat en dan pas doorzichtig wordt. Andersom krijg je een sprong. */
+  /* ── `.is-live` EN NIET `.js` ──────────────────────────────────────────
+     Eerste versie hing deze regels aan de `.js`-klasse op <html>. Dat is de
+     verkeerde haak, en op twee manieren gevaarlijk: Layout.astro HAALT die
+     klasse er weer af bij prefers-reduced-motion, en nog eens 600ms na `load`
+     als de reveal-module niet heeft gemeld dat hij leeft. In allebei die
+     gevallen zou hier de verbergregel wegvallen en zouden alle vijf de dia's
+     tegelijk over elkaar heen staan — precies wat er op de schermafdruk
+     gebeurde.
+
+     Een carrousel hoort zijn eigen staat te dragen. `is-live` wordt door het
+     script hieronder gezet, op de carrousel zelf, en door niets anders
+     weggehaald. */
+  .hv-hero-bg img[hidden] { display: none; }
+  .hv-hero.is-live .hv-hero-bg img { opacity: 0; transition: opacity var(--dur-4) var(--ease-out-quint); }
+  .hv-hero.is-live .hv-hero-bg img.is-on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .hv-hero.is-live .hv-hero-bg img { transition: none; }
+  }
   /* Two layers doing two jobs. The radial is the plate under the headline;
      the linear darkens the band the sticky nav stands on and lifts the foot
      so the plinth reads as a solid rail rather than as a floating strip. */
@@ -1809,6 +2229,178 @@ const c = COPY[lang];
     linear-gradient(180deg, rgb(var(--scrim) / 0.76) 0%, rgb(var(--scrim) / 0.50) 13%, rgb(var(--scrim) / 0.14) 27%, transparent 52%, rgb(var(--scrim) / 0.46) 84%, rgb(var(--scrim) / 0.66) 100%); }
   .hv-hero-inner { flex: 1; display: flex; align-items: flex-end; width: 100%; }
   .hv-hero-copy { max-width: 40rem; padding-block: 3rem clamp(2.5rem, 6vh, 4rem); }
+  /* ── DE DIA'S LIGGEN OP ELKAAR, EN DE HOOGTE STAAT VAST ───────────────────
+     Eerste poging was `position: absolute` op de dienstdia's. Dat brak de hero:
+     alleen dia 1 stond nog in de stroom, dus zodra die verborgen werd had
+     .hv-hero-inner geen inhoud meer, klapte hij in en zakte de hele hero tot
+     de kaartrij. Op de schermafdruk liep de kop van dia 2 boven het scherm uit.
+
+     Nu één rastercel waar alle vijf in liggen (`grid-area: 1 / 1`), en de
+     inactieve dia's blijven staan met `visibility: hidden` in plaats van
+     `display: none`. Dan bepaalt de LANGSTE dia de hoogte en beweegt er bij
+     het wisselen niets — precies wat je van een carrousel wilt.
+
+     `visibility: hidden` haalt een element ook uit de toegankelijkheidsboom en
+     uit de tabvolgorde, dus de knoppen van een onzichtbare dia zijn niet te
+     bereiken. Dat is dezelfde bescherming die het `hidden`-attribuut gaf.
+
+     Het `hidden`-ATTRIBUUT blijft in de html staan voor wie geen JavaScript
+     heeft; het script haalt het er bij het opstarten af en neemt het over met
+     deze klasse. Zonder script is er dus één dia en geen stapel. */
+  /* ── DE KAARTRIJ HOORT BINNEN HET EERSTE SCHERM ──────────────────────────
+     Gemeten met de rij erin: hero 965px bij een venster van 900, dus de
+     kaartjes vielen 65px onder de vouw — en op 800 zelfs 156. Dan is het geen
+     carrousel meer maar een rij knoppen die je moet ontdekken.
+
+     Het kopblok is met 808px het zwaarste onderdeel, en dat komt door dia 1:
+     drie regels <h1>, een lede, twee knoppen, de proefvisual-voetnoot én vier
+     bewijsregels. Die inhoud is te belangrijk om voor de opmaak te schrappen,
+     dus komt de ruimte uit de PADDING en niet uit de tekst — boven en onder,
+     en alleen zolang de carrousel echt loopt. Staat er geen script, dan is er
+     ook geen kaartrij en houdt de hero zijn oude, ruimere maatvoering. */
+  .hv-hero.is-live .hv-hero-copy { padding-block: 1.5rem clamp(1rem, 2vh, 1.6rem); }
+  .hv-hero.is-live .hv-hero-foot { padding-bottom: clamp(1rem, 2vh, 1.6rem); }
+
+  /* En op een LAAG venster is de padding niet genoeg. Bij 800px hoog is het
+     kopblok van dia 1 nog altijd 746px: drie regels van 96px zijn samen al 290.
+     Daar moet de letter kleiner, niet de tekst korter — een 13-inch laptop is
+     geen reden om de bewijsregel te schrappen.
+
+     Op hoogte en niet op breedte, want dit gaat over wat er in het eerste
+     scherm past en niet over hoe breed de kolom is. Een breed en laag venster
+     (een 21:9-monitor, een browser met veel balken) heeft precies hetzelfde
+     probleem als een kleine laptop. */
+  @media (max-height: 880px) and (min-width: 48rem) {
+    .hv-hero.is-live .hv-h1 { font-size: clamp(2.6rem, 5.4vw, 4rem); }
+    .hv-hero.is-live .hv-hero-copy-svc .hv-h1 { font-size: clamp(2.2rem, 4.4vw, 3.3rem); }
+    .hv-hero.is-live .hv-proof { gap: .3rem .9rem; }
+    .hv-hero.is-live .hv-cta-note { display: none; }
+  }
+  .hv-hero-inner { display: grid; }
+  .hv-hero-inner > .hv-hero-copy { grid-area: 1 / 1; align-self: end; }
+  .hv-hero-copy[hidden] { display: none; }
+  .hv-hero.is-live .hv-hero-copy { transition: opacity var(--dur-3) var(--ease-out-quint); }
+  .hv-hero.is-live .hv-hero-copy.is-off { visibility: hidden; opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .hv-hero.is-live .hv-hero-copy { transition: none; } }
+
+  .hv-slide-eyebrow {
+    margin: 0 0 .8rem; font-size: .72rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--paper-soft-on-dark);
+  }
+  .hv-hero-copy-svc .hv-h1 { font-size: var(--t-statement); }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     DE KAARTJES ONDER DE HERO, EN DE PAUZEKNOP
+     ══════════════════════════════════════════════════════════════════════════
+     Adobe zet ze als een rij donkere kaartjes op de onderrand van de foto, elk
+     met een label en een chevron. Hier hetzelfde, met de balk erbij die laat
+     zien hoe lang de dia nog duurt — dat is wat de rij van een navigatie een
+     TIMER maakt, en het is de enige plek waar de bezoeker kan zien dat er
+     straks iets vanzelf gaat gebeuren. */
+  .hv-hero-foot {
+    position: relative; z-index: 1;
+    display: flex; align-items: stretch; gap: clamp(.6rem, 1.2vw, 1rem);
+    padding-bottom: clamp(1.2rem, 3vh, 2.2rem);
+  }
+  .hv-slide-cards {
+    flex: 1; display: grid; gap: clamp(.5rem, 1vw, .85rem);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  /* Icoon boven, label en chevron eronder — de indeling van Adobe's `.rm-card`,
+     die daardoor op 94px uitkomt. Een rij van icoon-label-chevron naast elkaar
+     was de eerste versie en bleef op ~50px steken: dat leest als een tab, niet
+     als een kaart. */
+  .hv-slide-card {
+    position: relative; overflow: hidden;
+    display: grid; gap: clamp(.9rem, 1.8vw, 1.4rem);
+    align-content: space-between;
+    min-height: clamp(5rem, 6vw, 5.9rem);
+    padding: clamp(.7rem, 1.4vw, .9rem) clamp(.8rem, 1.5vw, 1.1rem);
+    padding-bottom: calc(clamp(.7rem, 1.4vw, .9rem) + 3px);
+    border: 1px solid rgb(255 255 255 / .16);
+    border-radius: var(--r-md);
+    background: rgb(0 0 0 / .42);
+    color: var(--paper-on-dark);
+    font-size: .82rem; font-weight: 700; line-height: 1.35;
+    text-decoration: none;
+    transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+  }
+  @supports (backdrop-filter: blur(6px)) {
+    .hv-slide-card { background: rgb(0 0 0 / .28); backdrop-filter: blur(8px); }
+  }
+  .hv-slide-card:hover { background: rgb(0 0 0 / .62); border-color: rgb(255 255 255 / .34); }
+  .hv-slide-card[aria-selected='true'] { border-color: var(--accent); background: rgb(0 0 0 / .66); }
+  .hv-slide-card-i {
+    width: 22px; height: 22px; flex: none;
+    fill: none; stroke: currentColor; stroke-width: 2.6;
+    stroke-linecap: round; stroke-linejoin: round;
+    color: var(--accent);
+  }
+  .hv-slide-card-row { display: flex; align-items: flex-end; gap: .5rem; }
+  .hv-slide-card-t { flex: 1; min-width: 0; }
+  .hv-slide-card-x { opacity: .6; font-size: 1rem; line-height: 1.1; }
+
+  /* De voortgangsbalk. Hij zit ONDERIN de kaart en niet eronder, zodat de rij
+     zijn hoogte houdt als hij verschijnt — vandaar de extra 3px padding-bottom
+     hierboven, die de ruimte al vrijhoudt.
+
+     scaleX vanaf links, want dat is een transform en die loopt op de
+     compositor. Een animatie op `width` zou elke frame de rij opnieuw laten
+     berekenen, en dat is zeven seconden lang layout-werk voor een streepje. */
+  .hv-slide-card-bar {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: var(--accent);
+    transform: scaleX(0); transform-origin: left center;
+  }
+  .hv-slide-card[aria-selected='true'] .hv-slide-card-bar.is-running {
+    animation: hv-slide-timer linear forwards;
+    animation-duration: var(--hv-slide-ms, 7000ms);
+  }
+  @keyframes hv-slide-timer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  /* De pauzeknop. Vierkant, zelfde hoogte als de kaartrij ernaast, en hij
+     draagt zijn staat in aria-label én in de vorm van het pictogram — een knop
+     die alleen van kleur verandert, zegt tegen een schermlezer niets. */
+  .hv-hero-toggle {
+    flex: none; width: clamp(2.6rem, 4vw, 3.2rem);
+    display: grid; place-items: center;
+    border: 1px solid rgb(255 255 255 / .16); border-radius: var(--r-md);
+    background: rgb(0 0 0 / .42); color: var(--paper-on-dark);
+    cursor: pointer;
+    transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+  }
+  @supports (backdrop-filter: blur(6px)) {
+    .hv-hero-toggle { background: rgb(0 0 0 / .28); backdrop-filter: blur(8px); }
+  }
+  .hv-hero-toggle:hover { background: rgb(0 0 0 / .62); border-color: rgb(255 255 255 / .34); }
+  /* Pauze = twee streepjes; afspelen = een driehoek. Met border-box getekend in
+     plaats van met een <svg>, zodat de omschakeling één klasse is en er geen
+     tweede pictogram in de html hoeft te staan dat je moet verbergen. */
+  .hv-hero-toggle-i {
+    width: 10px; height: 12px;
+    border-left: 3px solid currentColor; border-right: 3px solid currentColor;
+  }
+  .hv-hero-toggle.is-paused .hv-hero-toggle-i {
+    width: 0; height: 0;
+    border: 6px solid transparent; border-left: 10px solid currentColor; border-right: 0;
+    margin-left: 3px;
+  }
+
+  @media (max-width: 900px) {
+    /* Vijf kaartjes naast elkaar zijn op een telefoon vijf kolommen van
+       zestig pixels: het label past niet en de rij leest als een tabbalk van
+       afkortingen. Horizontaal schuiven houdt ze op leesbare breedte en is het
+       gebaar dat op een telefoon toch al verwacht wordt. */
+    .hv-hero-foot { flex-direction: column; gap: .7rem; }
+    .hv-slide-cards {
+      display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      margin-inline: calc(var(--pad-x) * -1); padding-inline: var(--pad-x);
+    }
+    .hv-slide-cards::-webkit-scrollbar { display: none; }
+    .hv-slide-card { flex: 0 0 auto; min-width: 12rem; scroll-snap-align: start; }
+    .hv-hero-toggle { width: 100%; height: 2.6rem; }
+  }
   /* 900, NOT 800 — Lucas: *"misschien kan je de witte tekst dikgedrukt maken."*
      The complaint underneath it was that "visualized." looks bigger than the
      two lines above. It is not: all three run at the same font-size and their
@@ -2011,13 +2603,52 @@ const c = COPY[lang];
   }
   .hv-svc-body { gap: 0; }
   .hv-svc-line { font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
-  .hv-svc-get {
-    margin-top: 1rem;
-    padding: .7rem .85rem;
-    background: var(--surface-2);
-    border-radius: var(--r-md);
-    font-size: .82rem; line-height: 1.5; color: var(--ink-2);
+  /* ── DE SPECIFICATIEREGEL IS VAN DE KAART GEHAALD — 19 augustus 2026 ──────
+     Hier stond `.hv-svc-get`: eerst een ingelegd vakje, daarna een regel onder
+     een haarlijn. Nu staat er niets meer, want de regel zelf is weg.
+
+     Reden: hij zei hetzelfde als de hero-carrousel, drie schermen hoger, met
+     de foto erbij. Naast elkaar gelegd was het bijna woordelijk —
+
+         carrousel  "Eén korte verticale clip, gesneden voor Reels, TikTok en
+                     paid — zonder er een tweede shoot voor te doen."
+         kaart      "Eén korte verticale clip, gesneden voor Reels, TikTok en
+                     paid."
+
+     — en dat is een duplicatie die ik zelf heb gemaakt toen ik de dia-teksten
+     uit deze specs schreef. Lucas: *"omdat er nu via beeld uitgelegd wordt met
+     de diaslide kan er wellicht minder tekst op de homepage komen."* Precies
+     dit.
+
+     De kaart houdt wat de carrousel NIET zegt: de baat, en de link naar de
+     pagina. Scheelt negentig woorden en maakt de kaarten een stuk korter. */
+
+  /* De link onderaan. `margin-top: auto` duwt hem naar de onderrand zolang de
+     tegel ruimte over heeft — niet om de tegels even hoog te maken (dat doen ze
+     hieronder juist niet meer), maar zodat de link binnen één tegel altijd op
+     dezelfde plek staat als er twee naast elkaar verschillen in tekstlengte. */
+  .hv-svc-more {
+    margin-top: clamp(.9rem, 1.6vw, 1.2rem);
+    display: inline-flex; align-items: baseline; gap: .4rem;
+    font-size: .84rem; font-weight: 700; letter-spacing: .01em;
+    color: var(--accent-bright);
   }
+  .hv-svc-arrow { transition: transform var(--dur-1) var(--ease); }
+  .hv-svc-tile:hover .hv-svc-arrow { transform: translateX(3px); }
+  @media (prefers-reduced-motion: reduce) {
+    .hv-svc-arrow, .hv-svc-tile:hover .hv-svc-arrow { transition: none; transform: none; }
+  }
+
+  /* ── EN DE TEGELS WORDEN NIET MEER UITGEREKT ─────────────────────────────
+     `.tile-body` heeft `flex: 1`, en de rasterrij rekt elke tegel tot de hoogte
+     van de langste. Vier tegels met verschillende tekstlengtes worden zo vier
+     even hoge blokken met verschillend veel lege ruimte onderin — het ziet er
+     netjes uit en het liegt over de inhoud.
+
+     Adobe zet hier expliciet `align-items: start` en laat een kortere kaart
+     korter zijn. Dat is wat een raster van kaarten onderscheidt van een tabel.
+     Alleen op DIT raster; `.tiles` elders op de site verandert niet. */
+  .hv-svc-tiles { align-items: start; }
   /* .hv-svc-price and .hv-svc-get's "figures line up across tiles" rule came
      out with the prices — see the band's own comment. The inset plate above is
      now the last thing in a tile, and it does not need a floor. */
@@ -2061,8 +2692,34 @@ const c = COPY[lang];
      De knop staat er UITGESCHAKELD en niet weggelaten. Weglaten zou de strook een
      mededeling maken; een knop die er is en niet werkt, zegt precies wat er aan de
      hand is — er komt hier iets, en vandaag nog niet. */
+  /* ── DE TWEE DIE NOG NIET KUNNEN, 19 augustus 2026 ────────────────────────
+   *
+   * Dit waren twee STROKEN onder de vier kaarten: volle breedte, een haarlijn
+   * erboven, kleine letter. Dat was de juiste keuze toen de vier kaarten nog
+   * even hoog werden uitgerekt en er van een vijfde tegel een gat rechtsonder
+   * kwam (zie de oude noot bij de markup, die reden staat er nog).
+   *
+   * Sinds de tegels op `align-items: start` staan en hun natuurlijke hoogte
+   * houden, geldt dat argument niet meer — en het contrast werd juist erger van
+   * het opknappen van de kaarten: vier royale kaarten met beeld, en daaronder
+   * twee tabelrijen. Ze horen bij hetzelfde rijtje diensten, dus horen ze
+   * hetzelfde te lezen.
+   *
+   * Nu twee halve kaarten in datzelfde raster. Wat ze ONDERSCHEIDT is niet
+   * langer hun vorm maar hun afwerking: geen beeld, een gedempte grond en een
+   * streepjesrand — dezelfde taal die de lege upload-vakjes in het
+   * bestelformulier gebruiken voor "hier hoort iets te komen". Plus de
+   * BINNENKORT-badge en de uitgeschakelde knop die er al stonden.
+   *
+   * De uitklapper, de id's (#hooks, #editions) en de dode knop blijven precies
+   * zoals ze waren; alleen de omlijsting verandert.
+   */
+  .hv-soon-grid { margin-top: clamp(1rem, 1.7vw, 1.5rem); align-items: start; }
   .hv-soon {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    background: transparent;
+    border: 1px dashed var(--line-strong);
+    padding: clamp(1.25rem, 2.2vw, 1.9rem);
+    display: grid; grid-template-columns: minmax(0, 1fr);
     /* ── START EN NIET CENTER, SINDS DE UITKLAPPER ERIN ZIT ──────────────────
        Was `center`, en dat klopte zolang de strook een vaste hoogte had. Nu de
        uitklapper open kan, groeit de linkerkolom van drie regels naar dertien —
@@ -2073,16 +2730,16 @@ const c = COPY[lang];
        Met `start` staat hij op de titelregel, dicht en open hetzelfde, naast de
        naam waar hij bij hoort. Dat is ook de plek waar hij het duidelijkst zegt
        wat hij is: een knop bij Hooks, die niet werkt. */
-    gap: 1rem 2rem; align-items: start;
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
-    padding-top: clamp(1.4rem, 2.5vw, 2rem);
-    box-shadow: inset 0 1px 0 var(--line);
+    gap: 1rem; align-items: start;
     /* De strook heeft een id (#hooks), dus hoort hij niet onder de vaste balk te
        landen als er ooit naartoe gelinkt wordt. Zelfde waarde als .faq-group. */
     scroll-margin-top: clamp(5rem, 10vw, 7rem);
   }
+  /* De knop staat onder de tekst in plaats van ernaast: in een halve kaart is
+     er geen tweede kolom meer om hem in te zetten, en `justify-self: start`
+     houdt hem op zijn eigen breedte in plaats van de kaart uit te rekken. */
+  .hv-soon-btn { justify-self: start; }
   @media (max-width: 640px) {
-    .hv-soon { grid-template-columns: 1fr; }
     .hv-soon-btn { width: 100%; }
   }
   .hv-soon-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
@@ -2387,7 +3044,12 @@ const c = COPY[lang];
   /* De voetnoot verving het derde paneel (.hv-dash-log) en zijn derde knop.
      Zelfde grond, zelfde binnenmaat — alleen één alinea in plaats van een kop,
      een alinea en een knop. */
-  .hv-dash-foot { background: var(--bg); margin: 0; padding: clamp(1.5rem, 3vw, 2.6rem); font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: none; }
+  /* `max-width: none` stond hier om een geërfde cap af te zetten. Sinds de schil
+     meegroeit met het scherm (zie --container in global.css) betekent "none" op
+     1920px een regel van 212 tekens — de langste van de hele site. De cap komt
+     terug, nu als bewuste maat: 72ch op .95rem is optisch dezelfde regellengte
+     als 68ch op de kleinere noten. */
+  .hv-dash-foot { background: var(--bg); margin: 0; padding: clamp(1.5rem, 3vw, 2.6rem); font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: 72ch; }
   .hv-dash-foot a { color: var(--ink); text-decoration: underline; text-underline-offset: .18em; }
   .hv-dash-foot a:hover, .hv-dash-foot a:focus-visible { color: var(--accent); }
   @media (max-width: 820px) {
@@ -2453,7 +3115,10 @@ const c = COPY[lang];
   .hv-dream-scrim { position: absolute; inset: 0; z-index: -1; background:
     linear-gradient(90deg, rgb(var(--scrim) / 0.94) 0%, rgb(var(--scrim) / 0.78) 44%, rgb(var(--scrim) / 0.24) 100%); }
   .hv-kicker { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fill-blue); }
-  .hv-dream-h { margin: .9rem 0 0; max-width: 15ch; font-size: var(--t-hero); line-height: .98; letter-spacing: -0.04em; color: var(--paper-on-dark); text-wrap: balance; }
+  /* --t-statement en niet --t-hero: op 96px stond deze kop even groot als de
+     <h1> van de hero, en twee grootste dingen zijn geen grootste ding. Zie de
+     noot bij --t-statement in global.css. */
+  .hv-dream-h { margin: .9rem 0 0; max-width: 15ch; font-size: var(--t-statement); line-height: .98; letter-spacing: -0.04em; color: var(--paper-on-dark); text-wrap: balance; }
   .hv-dream-lede { margin: clamp(1.2rem, 2.4vw, 1.8rem) 0 0; max-width: 50ch; font-size: var(--t-lg); line-height: 1.6; color: var(--paper-soft-on-dark); }
   .hv-dream .btn { margin-top: clamp(1.6rem, 3vw, 2.2rem); }
   @media (max-width: 700px) {
@@ -2467,9 +3132,18 @@ const c = COPY[lang];
   .hv-week p { margin: .9rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
   .hv-back { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
   .hv-back-h { margin: 0 0 clamp(1.2rem, 2.4vw, 1.8rem); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-  .hv-back-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: clamp(1.2rem, 3vw, 2.4rem); margin: 0; }
-  .hv-back-list dt { margin: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
-  .hv-back-list dd { margin: .45rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); }
+  /* Vier koppen zonder uitleg eronder — zie de noot bij `back` in de copy.
+     Geen raster meer maar een rij: een kolomraster geeft elke kop een even
+     brede baan, en op 1440 werd dat 320px per baan voor ~200px tekst. Vier
+     losse eilanden dus, waar het één zin in vieren hoort te zijn. Flex laat ze
+     op hun eigen breedte staan en houdt ze bij elkaar; op een telefoon vallen
+     ze vanzelf om. Geen opsommingstekens: het zijn koppen, geen lijstje. */
+  .hv-back-list {
+    display: flex; flex-wrap: wrap;
+    gap: .7rem clamp(1.5rem, 3vw, 2.75rem);
+    margin: 0; padding: 0; list-style: none;
+  }
+  .hv-back-list li { margin: 0; font-size: .95rem; font-weight: 700; line-height: 1.35; color: var(--ink); text-wrap: balance; }
   /* The euro half of the shoot-day argument, in one line, handing off to
      /compare. Same treatment the deleted .hv-vs-note had, because it is the
      same sentence doing the same job in a quarter of the space. */

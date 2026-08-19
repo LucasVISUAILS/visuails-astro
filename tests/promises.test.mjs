@@ -641,5 +641,61 @@ console.log('\nDESIGN.md noemt geen kleuren die de site niet heeft');
   check('en DESIGN.md noemt datzelfde accent', design.includes(accent), true);
 }
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * DE HOMEPAGE BELOOFT GEEN BEREIK, OOK NIET IN EEN BAAT — 18 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Het Hooks-blok op de homepage stelt de regel zelf: *"Wat wij verkopen: het
+ * format en de uitvoering. Geen bereik — of een post ergens terechtkomt hangt af
+ * van het platform en van timing, en die twee zijn niet aan ons om te beloven."*
+ *
+ * Drie schermen hoger stond op de videokaart "Subtle motion that lifts
+ * click-through where a still photo plateaus". Dat is precies wat die regel
+ * verbiedt, in dezelfde talige stroom, op dezelfde pagina — en het viel niet op
+ * omdat het als BAAT geschreven was en niet als belofte. Vandaar dat deze toets
+ * op de baatregels van de dienstkaarten kijkt en niet op de pagina als geheel.
+ *
+ * En de tweede helft: de twee talen beschreven dezelfde vier producten
+ * verschillend. De Engelse kaarten hadden op twee van de vier een baat, de
+ * Nederlandse op nul. Eén tekst in twee talen, niet twee teksten.
+ */
+console.log('\nde dienstkaarten op de homepage beloven niets buiten de studio');
+{
+  const home = read('src/components/HomeV2.astro');
+
+  /* Alleen de svc-tabellen, en zonder commentaar: de noot erboven CITEERT de
+     verwijderde zin, en een toets die zijn eigen toelichting leest, faalt op de
+     reparatie in plaats van op de fout. Dit is in deze repository al vier keer
+     misgegaan. */
+  const tabellen = [...home.matchAll(/svc: \[([\s\S]*?)\n    \],/g)].map((m) => m[1]);
+  check('er staan twee svc-tabellen (en, nl)', tabellen.length, 2);
+
+  const kaarten = tabellen.map((t) =>
+    [...t.matchAll(/\[\s*\n\s*'([^']+)',\s*\n\s*'([^']+)',/g)].map((m) => ({ naam: m[1], baat: m[2] })));
+  check('en elk vier kaarten', kaarten.map((k) => k.length), [4, 4]);
+
+  /* Wat een baat NIET mag noemen: iets waar het platform over gaat. Geen van
+     deze woorden is op zichzelf verboden op de site — ze mogen alleen niet in
+     de zin staan waarin de studio zegt wat je eraan hebt. */
+  const BUITEN = /click-?through|doorklik|bereik\b|reach\b|impressie|engagement|volgers|followers|conversie|conversion|meer verkopen|sell more|viral/i;
+  for (const set of kaarten) {
+    for (const k of set) {
+      check(`"${k.naam}" belooft niets van het platform`, BUITEN.test(k.baat), false);
+    }
+  }
+
+  /* En de talen blijven aan elkaar gekoppeld: even veel kaarten, in dezelfde
+     volgorde van diensten. De TEKST mag verschillen — het zijn twee talen — maar
+     een kaart die in één taal een baat heeft en in de andere niet, is de drift
+     die deze sectie heeft gevonden. Een baat herken je hier aan wat hij NIET is:
+     een opsomming van wat er geleverd wordt. */
+  const FEITELIJK = /^\d|beelden per product|images per product|Eén korte|One short|Eén keer opgezet|Set up once/;
+  for (const [i, set] of kaarten.entries()) {
+    const zonder = set.filter((k) => FEITELIJK.test(k.baat)).map((k) => k.naam);
+    check(`tabel ${i + 1}: geen kaart begint met het feit in plaats van de baat`, zonder, []);
+  }
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail) process.exit(1);

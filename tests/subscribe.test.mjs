@@ -104,10 +104,19 @@ const rij = () => db.prepare('SELECT * FROM subscriptions ORDER BY id DESC LIMIT
 console.log('\nwat er niet eens bij Mollie langs komt');
 {
   const voor = staat.aanroepen.length;
+  /* DE TAAL STAAT NU IN HET PAD. Deze vier verwachtingen noemden allemaal
+     '/start/plan', wat de Engelse pagina is — ze legden vast wat er fout was
+     in plaats van wat er hoorde te gebeuren. Zonder `lang` in het formulier
+     valt de handler terug op Nederlands, zoals hij dat voor de omschrijving
+     bij Mollie al deed. Zie de noot bij terug() in subscribe.js. */
   ok('een onbekend plan wordt geweigerd',
-    (await start({ plan: 'goud', term: 'monthly' })).headers.get('location'), '/start/plan?fout=plan');
+    (await start({ plan: 'goud', term: 'monthly', lang: 'nl' })).headers.get('location'), '/nl/start/plan?fout=plan');
+  ok('en een Engelse klant komt op de Engelse pagina terug',
+    (await start({ plan: 'goud', term: 'monthly', lang: 'en' })).headers.get('location'), '/start/plan?fout=plan');
   ok('een onbekende termijn ook',
-    (await start({ plan: 'studio', term: 'kwartaal' })).headers.get('location'), '/start/plan?fout=termijn');
+    (await start({ plan: 'studio', term: 'kwartaal', lang: 'nl' })).headers.get('location'), '/nl/start/plan?fout=termijn');
+  ok('zonder taal in het formulier is het Nederlands',
+    (await start({ plan: 'goud', term: 'monthly' })).headers.get('location'), '/nl/start/plan?fout=plan');
   /* HET BELANGRIJKSTE VAN DEZE SECTIE: er is geen enkele aanroep naar Mollie
      geweest, en er staat geen rij. Een afgewezen keuze mag geen spoor achterlaten
      bij een betaaldienst. */
@@ -224,7 +233,7 @@ console.log('\nde capaciteitspoort staat vóór de machtiging');
 
   const voor = staat.aanroepen.length;
   const res = await start({ plan: 'starter', term: 'monthly' });
-  ok('een nieuwe aanvraag wordt geweigerd', res.headers.get('location'), '/start/plan?fout=vol');
+  ok('een nieuwe aanvraag wordt geweigerd', res.headers.get('location'), '/nl/start/plan?fout=vol');
   ok('en er is niets naar Mollie gegaan', staat.aanroepen.length, voor);
   ok('en er staat geen nieuwe rij',
     telling(db, "SELECT COUNT(*) FROM subscriptions WHERE customer_id = 7"), 0);
@@ -235,7 +244,7 @@ console.log('\nals Mollie stuk is, gebeurt er niets stils');
   db.exec("DELETE FROM subscriptions");
   staat.stuk = '/v2/payments';
   const res = await start({ plan: 'starter', term: 'monthly' });
-  ok('de klant gaat terug met een reden', res.headers.get('location'), '/start/plan?fout=mollie');
+  ok('de klant gaat terug met een reden', res.headers.get('location'), '/nl/start/plan?fout=mollie');
   /* DE RIJ BLIJFT STAAN, en dat is met opzet: hij staat op 'pending' en blokkeert
      een tweede poging niet stil weg — de volgende poging ziet hem en stuurt de
      klant naar zijn dashboard in plaats van een tweede machtiging te vragen. Wat
@@ -381,6 +390,94 @@ console.log('\nde handlers roepen het aan, en in de goede volgorde');
   ok('pauzeren wist het Mollie-id', /clearMollieSubscriptionId\(env, state\.sub\.id\)/.test(pauseBody), true);
   // Niet via setMollieIds: die schrijft met COALESCE en kan geen NULL zetten.
   ok('en niet via setMollieIds', /setMollieIds\([^)]*subscriptionId/.test(pauseBody), false);
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 11 · DE FOUTMELDING KOMT AAN, EN IN DE JUISTE TAAL
+ * ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * Twee dingen die op 18 augustus 2026 kapot bleken, allebei op de weg terug van
+ * een mislukte poging om te betalen:
+ *
+ *   · terug() gaf altijd '/start/plan' — de Engelse pagina. Een Nederlandse
+ *     klant die op een volle agenda stuitte, kwam in een andere taal terug.
+ *   · /start/plan is statisch gebouwd (astro.config.mjs: output 'static'), dus
+ *     `Astro.url.searchParams` is bij het bouwen leeg. De vijf zinnen die
+ *     subscribe.js hierheen stuurt, zijn nooit door één bezoeker gelezen.
+ *
+ * Deze sectie leest de bron en niet de gebouwde pagina, want dat is waar de
+ * fout in zat: een test tegen build/ zou pas omvallen ná een build, en dit is
+ * precies het soort regel dat in een refactor stilletjes terugkomt.
+ */
+{
+  const sub = readFileSync(new URL('../src/lib/subscribe.js', import.meta.url), 'utf8');
+  const picker = readFileSync(new URL('../src/components/order/PlanPicker.astro', import.meta.url), 'utf8');
+  const acc = readFileSync(new URL('../src/lib/account.js', import.meta.url), 'utf8');
+
+  // ── de taal ───────────────────────────────────────────────────────────────
+  ok('terug() neemt de taal aan', /function terug\(reden, lang\)/.test(sub), true);
+  ok('en kiest /nl/start/plan als het niet Engels is',
+    /lang === 'en' \? '\/start\/plan' : '\/nl\/start\/plan'/.test(sub), true);
+
+  const start = sub.slice(sub.indexOf('export async function handleSubscribeStart'));
+  const startBodyRuw = start.slice(0, start.indexOf('\n}\n'));
+  /* ZONDER COMMENTAAR, en dit is de vierde keer dat dit in deze repository
+     misgaat. De volgordetoets hieronder vond `terug(` niet in de code maar in
+     de zin die uitlegt waarom de taal daarboven wordt gelezen — en die zin
+     staat er per definitie vóór. Een toets die zijn eigen toelichting leest,
+     is geen toets. */
+  const startBody = startBodyRuw
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^[ \t]*\/\/.*$/gm, '');
+  ok('geen enkele aanroep van terug() zonder taal',
+    /terug\('[a-z]+'\s*\)/.test(startBody), false);
+  // De taal moet gelezen zijn vóór de eerste terugval, anders is hij undefined.
+  ok('de taal wordt gelezen vóór de eerste terugval',
+    startBody.indexOf("form?.get('lang')") < startBody.indexOf('terug('), true);
+  /* En de sabotagecontrole op die controle zelf: het commentaar dat hem eerder
+     liet slagen, is er nog, dus als het strippen wegvalt komt de fout terug. */
+  ok('de ruwe tekst noemt terug() inderdaad al in een comment',
+    startBodyRuw.indexOf('terug(') < startBodyRuw.indexOf("form?.get('lang')"), true);
+  ok('en account.js stuurt de mollie-terugval ook gelokaliseerd terug',
+    /lang === 'en' \? '' : '\/nl'\}\/start\/plan\?fout=mollie/.test(acc), true);
+
+  // ── de zinnen staan echt in de pagina ─────────────────────────────────────
+  // Elke reden die subscribe.js kan sturen, moet in PlanPicker een blok hebben.
+  const redenen = [...startBody.matchAll(/terug\('([a-z]+)'/g)].map((m) => m[1]);
+  ok('subscribe.js kent meer dan één reden', redenen.length > 1, true);
+  for (const r of new Set(redenen)) {
+    ok(`de reden "${r}" heeft een blok in PlanPicker`,
+      picker.includes(`data-plan-fout={id}`) && picker.includes(`${r}:`), true);
+  }
+  ok('de blokken worden verborgen gerenderd en niet weggelaten',
+    /data-plan-fout=\{id\} hidden/.test(picker), true);
+  ok('en een script zet er één aan', /data-plan-fout="' \+ reden \+ '"/.test(picker), true);
+
+  // ── en het echot de URL niet ──────────────────────────────────────────────
+  // Dit is de regel die van een foutmelding een lek maakt. Hij moet blijven.
+  ok('de reden uit de URL wordt gefilterd voordat hij een selector wordt',
+    /\/\^\[a-z\]\+\$\/\.test\(reden\)/.test(picker), true);
+  ok('en er wordt niets uit de URL in de pagina geschreven',
+    /innerHTML|insertAdjacentHTML|textContent\s*=\s*reden/.test(picker), false);
+
+  /* ── HET GEKOZEN PLAN GAAT MEE, EN WORDT AANGEVINKT ─────────────────────
+   *
+   * De drie knoppen op /pricing wezen alle drie naar dezelfde kale URL, en
+   * PlanPicker vinkt standaard het middelste plan aan. Klikken op de duurste
+   * kaart leverde dus de middelste keuze op, op een formulier dat eindigt in
+   * een doorlopende machtiging. */
+  const prijs = readFileSync(new URL('../src/components/PricingPage.astro', import.meta.url), 'utf8');
+  ok('de knop op /pricing draagt het plan-id',
+    /\$\{lp\('\/start\/plan'\)\}\?plan=\$\{p\.id\}/.test(prijs), true);
+  ok('en PlanPicker leest plan én term uit de URL',
+    /\['plan', 'term'\]\.forEach/.test(picker), true);
+  ok('en zoekt daarmee een radio op in plaats van iets te schrijven',
+    /input\[name="' \+ veld \+ '"\]\[value="' \+ waarde \+ '"\]/.test(picker), true);
+  /* Dezelfde filter als bij de foutmelding: zonder deze regel zou een waarde
+     als 'a"],[name' elke radio op de pagina tegelijk aanvinken. */
+  ok('met dezelfde filter op de waarde',
+    (picker.match(/\/\^\[a-z\]\+\$\//g) || []).length >= 2, true);
 }
 
 globalThis.fetch = echteFetch;

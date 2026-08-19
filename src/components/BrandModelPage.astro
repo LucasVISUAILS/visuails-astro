@@ -77,6 +77,7 @@ import {
 } from '../data/pricing.js';
 import { ROSTER } from '../data/models.js';
 import { localizedPath } from '../i18n/ui.js';
+import Placeholder from './Placeholder.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -198,7 +199,8 @@ const COPY = {
     fitWhatH: 'What it is',
     fitWhat: [
       'A Brand Model is a signature designed once, exclusively for you — a face, a bearing, a way of standing that no other brand shares. Once it is locked, every visual in every order is made with it, so your catalog and your feed hang together instead of looking assembled from separate sessions.',
-      'Once the model is locked, the same face appears on every product in every order — your catalog sets, your carousels and your clips. Shoppers start recognising your images before they read your name.',
+      // Was three sentences. The image above now shows what they explained.
+      'As above: the same face on your shop, your ads and your socials. Shoppers start recognising your images before they read your name.',
     ],
     fitWhereH: 'Where it lives',
     fitWhere: [
@@ -318,7 +320,8 @@ const COPY = {
     fitWhatH: 'Wat het is',
     fitWhat: [
       'Een merkmodel is één gezicht dat we één keer voor jou ontwerpen — met een eigen houding en een eigen manier van staan, die geen ander merk deelt. Zodra het vastligt, maken we elke visual in elke bestelling met dat gezicht. Zo horen je catalogus en je feed bij elkaar in plaats van dat het losse shoots blijven.',
-      'Met één vast gezicht herkennen mensen je beelden nog voordat ze je naam lezen. Dat werkt alleen als dat gezicht overal hetzelfde is: op je webshop, in je advertenties en op je socials. Dat is wat een eigen model je geeft.',
+      // Was drie zinnen. Het beeld erboven laat nu zien wat ze uitlegden.
+      'Zoals hierboven: hetzelfde gezicht op je shop, in je advertenties en op je socials. Mensen herkennen je beelden dan nog voordat ze je naam lezen.',
     ],
     fitWhereH: 'Waar je het gebruikt',
     fitWhere: [
@@ -431,6 +434,7 @@ const STEPS = {
 };
 
 const c = COPY[lang];
+const nl = lang === 'nl';
 const directions = DIRECTIONS[lang];
 const steps = STEPS[lang];
 const wa = waHref(c.waText);
@@ -531,6 +535,21 @@ const wa = waHref(c.waText);
       <p class="ed-sub">{c.fitSub}</p>
     </div>
   </div>
+  <!-- Deze pagina verkoopt één ding: hetzelfde gezicht, overal. Dat is een
+       claim die je in twee alinea's kunt uitleggen of in één beeld kunt
+       bewijzen — en de tweede alinea van `fitWhat` deed het eerste. Die is
+       ingekort tot één regel; dit vlak doet nu het bewijs. -->
+  <Placeholder
+    lang={lang}
+    space
+    ratio="21 / 9"
+    subject={nl ? 'Zes beelden naast elkaar met hetzelfde merkmodel: twee producten uit de webshop, een advertentie, een e-mailheader, een socialpost en een campagnebeeld'
+                : 'Six frames side by side with the same brand model: two webshop products, an ad, an email header, a social post and a campaign image'}
+    message={nl
+      ? 'Moet bewijzen dat het om één persoon gaat en niet om zes modellen die op elkaar lijken — hetzelfde gezicht moet zó herkenbaar zijn dat je het al ziet voordat je de kaders los bekijkt. Product, kader en kleur mogen per beeld verschillen; alleen het gezicht ligt vast. Dat verschil is de hele boodschap: het merk komt van het gezicht, niet van de set.'
+      : 'Must prove this is one person and not six lookalikes — the same face has to be recognisable before you even look at the frames separately. Product, framing and colour may differ per frame; only the face is fixed. That contrast is the whole message: the brand comes from the face, not from the set.'}
+  />
+
   <div class="svc-explain">
     <div class="svc-explain-main">
       <h3>{c.fitWhatH}</h3>
@@ -576,6 +595,20 @@ const wa = waHref(c.waText);
 <!-- HOW IT COMES TOGETHER -->
 <section class="section-tight"><div class="container">
   <div class="section-head"><h2>{c.procH}</h2></div>
+  <!-- Vijf stappen als tekst vertellen WAT er gebeurt; dit vlak laat zien hoe
+       het eruitziet terwijl het gebeurt. Het staat vóór de stappen en niet
+       erna: wie het proces al herkent hoeft de vijf regels niet meer te
+       lezen. -->
+  <Placeholder
+    lang={lang}
+    space
+    ratio="16 / 9"
+    subject={nl ? 'Een richtingenblad: drie voorgestelde gezichten naast elkaar, met aantekeningen van de klant erbij en één ervan aangekruist'
+                : 'A directions sheet: three proposed faces side by side, the client’s notes beside them and one of them ticked'}
+    message={nl
+      ? 'Moet laten zien dat dit een gesprek is en geen bestelknop — er wordt iets voorgelegd, er wordt op gereageerd, er wordt gekozen. De drie gezichten moeten duidelijk verschillen (leeftijd, houding, styling), anders lijkt het een keuze zonder keuze. De aantekeningen mogen onleesbaar zijn; dat er óp het werk geschreven is, is het punt.'
+      : 'Must show this is a conversation, not a buy button — something is proposed, responded to, chosen. The three faces have to differ clearly (age, posture, styling), or it reads as a choice without a choice. The notes may be illegible; that someone wrote on the work is the point.'}
+  />
   <div class="steps reveal-group">
     {steps.map((s, i) => (
       <div class="step reveal pending">
@@ -685,7 +718,11 @@ const wa = waHref(c.waText);
   .container.narrow { max-width: 760px; }
 
   .bm-hero { align-items: center; }
-  .bm-h1 { font-size: clamp(2.4rem, 5vw, 4rem); max-width: 16ch; }
+  /* Was een met de hand ingetypte clamp, teken voor teken gelijk aan het
+     token. Zie de noot bij --t-page-h1 in global.css: "paginatitel" had geen
+     token en werd daarom 53 keer opnieuw ingetypt, met acht verschillende
+     maten als resultaat. */
+  .bm-h1 { font-size: var(--t-page-h1); max-width: 16ch; }
   /* Editorial accent (task #271b, Lucas's own request) — see global.css's
      --font-editorial comment. Scoped to this page's own h1 em, same reasoning
      as HomePage.astro's equivalent override. */
@@ -694,6 +731,7 @@ const wa = waHref(c.waText);
   .bm-actions { margin-top: 1.8rem; }
   .bm-trust { margin-top: 2.4rem; }
   .bm-props { grid-template-columns: repeat(2, 1fr); margin-top: clamp(2.5rem, 5vw, 4rem); }
+
   @media (max-width: 720px) { .bm-props { grid-template-columns: 1fr; } }
 
   /* COST — the figures band. Two numbers, a hairline between them, then the
@@ -735,7 +773,7 @@ const wa = waHref(c.waText);
 
   /* EXCHANGE */
   .bm-exchange { align-items: start; }
-  .bm-exchange-list { margin-top: 1.2rem; }
+  .bm-exchange-list { margin-top: var(--gap-head-block); }
   .bm-get { border-color: var(--line-strong); }
 
   /* THE ROSTER — .bm-roster/.bm-model/etc. moved to global.css (task #268):
@@ -748,6 +786,6 @@ const wa = waHref(c.waText);
   .bm-gen p { color: var(--ink-2); font-size: 1.02rem; line-height: 1.7; margin: 0 0 1rem; }
   .bm-gen p:last-of-type { margin-bottom: 1.2rem; }
 
-  .bm-cta-h { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+  .bm-cta-h { font-size: var(--t-page-h2); }
   .bm-cta-actions { justify-content: center; margin-top: 2rem; }
 </style>

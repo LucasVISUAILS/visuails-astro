@@ -33,7 +33,7 @@ import { localizedPath } from '../../i18n/ui.js';
 
 interface Props {
   lang: 'en' | 'nl';
-  kind: 'video' | 'brand-model' | 'plan';
+  kind: 'video' | 'brand-model' | 'plan' | 'custom-look';
 }
 const { lang, kind } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -128,6 +128,42 @@ const KIND = {
       more: '/custom-models',
       moreLabel: 'How a Brand Model is built',
     },
+    /*
+     * ── DE CUSTOM LOOK, 18 augustus 2026 ────────────────────────────────────
+     *
+     * Lucas: *"Een custom stijl moet op aanvraag en er is geen standaard tarief
+     * voor, dit wordt pas berekend wanneer de klant heeft aangegeven wat hij/zij
+     * wil. Dit is een volledig andere optie dan de standaard predefined
+     * stijlen."*
+     *
+     * Tot vandaag stond Custom als vijfde radio tussen de vier huisstijlen in
+     * het bestelformulier, en de lopende telling rekende hem af tegen het gewone
+     * lifestyle-tarief — € 109 per product bij 1 tot 4. De stijlpagina zei op
+     * datzelfde moment "Op aanvraag". Eén van de twee loog, en het was de dure
+     * kant: een klant kon een op maat ontworpen wereld bestellen tegen het
+     * tarief van een bestaande, met een totaal op het bevestigingsscherm.
+     *
+     * Dus krijgt hij de behandeling die de andere twee "op aanvraag"-dingen al
+     * hebben: een eigen pagina, een status, drie feiten en een verzoekformulier.
+     * GEEN PRIJS IN DE FEITEN, en dat is hier het hele punt — de andere drie
+     * noemen er wel een, want die hebben er een. Deze regel zegt daarom wat er
+     * gebeurt in plaats van wat het kost.
+     */
+    'custom-look': {
+      h1: 'A custom look',
+      lead: 'A world designed around your product, instead of one of the four house styles.',
+      status: 'Priced per request',
+      statusBody: 'A custom look has no standard rate, and it is not a fifth option next to the four styles — it is a different thing. What it costs depends on the world you want built, so it is worked out once you have told us what that is, and put in writing before anything runs.',
+      facts: [
+        ['Price', 'On request. There is no per-product rate for this until we know what the scene is — the four house styles are the ones that have one.'],
+        ['What you get', 'A setting, styling and light that only your brand would use, designed once with you and then held to on every order after it.'],
+        ['How it starts', 'Send references and describe the world. We come back with a design direction and a price, in writing, before you commit to anything.'],
+      ],
+      askLabel: null,
+      askHint: null,
+      more: '/lifestyle/custom',
+      moreLabel: 'See what a custom look is',
+    },
     plan: {
       h1: 'A monthly plan',
       lead: 'A set number of products every month, at a rate below the price per product.',
@@ -174,6 +210,22 @@ const KIND = {
       askHint: null,
       more: '/custom-models',
       moreLabel: 'Hoe we een merkmodel maken',
+    },
+    /* Zie de noot bij de Engelse tegenhanger. */
+    'custom-look': {
+      h1: 'Een look op maat',
+      lead: 'Een wereld die om jouw product heen ontworpen is, in plaats van één van de vier huisstijlen.',
+      status: 'Prijs op aanvraag',
+      statusBody: 'Een look op maat heeft geen standaardtarief, en het is geen vijfde optie naast de vier stijlen — het is iets anders. Wat het kost, hangt af van de wereld die je gebouwd wilt hebben, dus dat rekenen we uit zodra je ons verteld hebt wat dat is. Op schrift, voordat er iets draait.',
+      facts: [
+        ['Prijs', 'Op aanvraag. Er is geen tarief per product zolang we de scène niet kennen — de vier huisstijlen zijn degene die er wél een hebben.'],
+        ['Wat je krijgt', 'Een setting, styling en licht die alleen jouw merk zou gebruiken, één keer met je ontworpen en daarna vastgehouden in elke bestelling erna.'],
+        ['Hoe het begint', 'Stuur referenties en beschrijf de wereld. Wij komen terug met een richting en een prijs, op schrift, voordat je je ergens aan vastlegt.'],
+      ],
+      askLabel: null,
+      askHint: null,
+      more: '/lifestyle/custom',
+      moreLabel: 'Bekijk wat een look op maat is',
     },
     plan: {
       h1: 'Een maandplan',

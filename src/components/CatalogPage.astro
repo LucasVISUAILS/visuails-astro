@@ -51,6 +51,7 @@ import Disclose from './Disclose.astro';
 import ProductScene from './ProductScene.astro';
 import Compare from './Compare.astro';
 import TierCompare from './TierCompare.astro';
+import Placeholder from './Placeholder.astro';
 import { catalogStyles as catalogStylesEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
 
@@ -159,7 +160,8 @@ const COPY = {
     whatH: 'What it is',
     whatP: [
       "Catalog photography is the straight, clean product imagery a shopper judges the product by — front, back, a detail close-up and one on-model shot, all on a consistent background. It isn't there to set a mood; it's there to show exactly what someone is buying, with nothing left to guess.",
-      'It is also where a small brand quietly starts to look established. When every product in your range is shot the same way — same framing, same light, same colour — the collection reads as one considered line instead of a mix of phone photos. That consistency builds trust, and trust is what lifts conversion.',
+      // Was drie zinnen. Het beeld erboven laat nu zien wat ze uitlegden.
+      'The picture above is the whole argument: shot the same way end to end, a range reads as one considered line instead of a pile of separate photos. That is what makes a small brand look established.',
     ],
     whereH: 'Where it lives',
     where: [
@@ -266,7 +268,8 @@ const COPY = {
     whatH: 'Wat het is',
     whatP: [
       'Catalogfotografie is het strakke, rechttoe rechtaan productbeeld waar een klant het product op beoordeelt — voorkant, achterkant, een close-up van een detail en één foto op een model, allemaal op dezelfde achtergrond. Het is er niet om sfeer te maken, maar om precies te laten zien wat iemand koopt. Niemand hoeft iets te raden.',
-      'Staat elk product op dezelfde manier op de foto — zelfde kader, zelfde licht, zelfde kleur — dan ziet je collectie eruit als één geheel in plaats van als een stapel losse telefoonfoto’s. Die consistentie geeft mensen vertrouwen, en vertrouwen is wat ze laat kopen.',
+      // Was drie zinnen. Het beeld erboven laat nu zien wat ze uitlegden.
+      'Het beeld hierboven is het hele argument: staat alles op dezelfde manier op de foto, dan leest je collectie als één geheel in plaats van als een stapel losse telefoonfoto’s. Dat is wat een klein merk gevestigd laat lijken.',
     ],
     whereH: 'Waar je het gebruikt',
     where: [
@@ -340,6 +343,7 @@ const COPY = {
 
 const c = COPY[lang];
 const shots = SHOTS[lang];
+const nl = lang === 'nl';
 ---
 
 <section class="page-hero">
@@ -352,7 +356,7 @@ const shots = SHOTS[lang];
            where the pages are meant to feel like siblings. The ProductScene
            badge beside it names the IMAGE; this names the page. -->
       <span class="eyebrow-page">{c.eyebrow}</span>
-      <h1 class="display cat-h1" style="font-size:clamp(2.4rem,5vw,4rem);margin-top:1rem" set:html={c.h1} />
+      <h1 class="display cat-h1" set:html={c.h1} />
       <p class="lead" style="margin-top:1.2rem" set:html={c.lead} />
       <div class="flex" style="margin-top:1.8rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -431,6 +435,25 @@ const shots = SHOTS[lang];
         <p class="ed-sub">{c.edSub}</p>
       </div>
     </div>
+    <!-- Het tweede argument van dit blok — "één stijl door je hele assortiment
+         heen laat je collectie als één merk lezen" — is een argument dat je
+         ZIET of niet gelooft. Het stond hier als de tweede alinea van `whatP`
+         en is daar ingekort: het beeld hieronder doet het werk, de tekst wijst
+         er alleen nog naar. Lucas, 19 augustus 2026: *"check waar tekst minder
+         kan worden en er visuele uitleg in de plaats kan komen."*
+         Breed en laag (21/9), omdat het rastereffect alleen te zien is als er
+         genoeg producten náást elkaar passen. -->
+    <Placeholder
+      lang={lang}
+      space
+      ratio="21 / 9"
+      subject={nl ? 'Een productraster zoals een bezoeker het in een webshop ziet — twaalf verschillende producten, allemaal op dezelfde manier gefotografeerd'
+                  : 'A product grid as a shopper sees it in a webshop — twelve different products, every one shot the same way'}
+      message={nl
+        ? 'Moet in één blik het verschil laten zien tussen "losse foto’s" en "één collectie": gelijk kader, gelijk licht, gelijke achtergrond, gelijke schaduw. De producten mogen juist onderling verschillen — een tas naast een fles naast een trui — want dan is het de fotografie die het geheel maakt en niet het assortiment. Geen enkele foto mag eruit springen; staat er één anders, dan is het beeld mislukt.'
+        : 'Must show at a glance the difference between "separate photos" and "one collection": same framing, same light, same background, same shadow. The products themselves should differ — a bag beside a bottle beside a jumper — so it is the photography that makes it whole, not the range. No single shot may stand out; if one sits differently, the image has failed.'}
+    />
+
     <div class="svc-explain">
       <div class="svc-explain-main">
         <h3>{c.whatH}</h3>
@@ -573,7 +596,7 @@ const shots = SHOTS[lang];
 <section class="section-tight">
   <div class="container">
     <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)" set:html={c.ctaH} />
+      <h2 class="display cat-cta-h" set:html={c.ctaH} />
       <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
       <div class="flex" style="justify-content:center;margin-top:2rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -590,6 +613,14 @@ const shots = SHOTS[lang];
      --font-editorial comment. Same closing-word treatment as the other hero
      H1s on the homepage and the model pages. */
   .cat-h1 em { font-family: var(--font-editorial); font-style: italic; font-weight: 700; }
+
+  /* De maten stonden hier als met de hand ingetypte clamps in een style-
+     attribuut, en waren op het teken na gelijk aan de tokens. Dat is precies
+     hoe deze site aan acht verschillende H1-maten kwam: "paginatitel" had geen
+     token, dus werd hij overal opnieuw ingetypt en dreven de kopieën uit
+     elkaar. Nu staat de maat op één plek, in global.css. */
+  .cat-h1 { font-size: var(--t-page-h1); margin-top: 1rem; }
+  .cat-cta-h { font-size: var(--t-page-h2); }
 
   /* The queue disclosure. Section 13 requires the "no fixed delivery date"
      half of the promise to be visible, not hidden — so it is set at body

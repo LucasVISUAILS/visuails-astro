@@ -83,9 +83,26 @@ import {
  */
 const MANDATE_EUROS = 1;
 
-/** Waar de klant heen gaat als er iets niet lukt. Eén plek, zodat de reden in de URL consistent is. */
-function terug(reden) {
-  return `/start/plan?fout=${encodeURIComponent(reden)}`;
+/**
+ * Waar de klant heen gaat als er iets niet lukt. Eén plek, zodat de reden in de
+ * URL consistent is.
+ *
+ * ── DE TAAL GAAT MEE, 18 augustus 2026 ────────────────────────────────────
+ *
+ * Dit gaf altijd `/start/plan`, en dat is de Engelse pagina. Een Nederlandse
+ * klant die op /nl/start/plan een abonnement probeerde af te sluiten en tegen
+ * een volle agenda of een weigerende Mollie aanliep, werd dus naar een Engelse
+ * pagina gestuurd om een fout te lezen die hij niet had verwacht. Dat is de
+ * verkeerde kant om iemand kwijt te raken: hij was op het punt om te betalen.
+ *
+ * De taal staat in het formulier — <input type="hidden" name="lang"> in
+ * PlanPicker.astro. Ze werd alleen pas op de helft van deze functie uitgelezen,
+ * ná drie van de vijf plekken die hier terugvallen. Nu leest hij hem één keer,
+ * bovenaan, en geeft hem door.
+ */
+function terug(reden, lang) {
+  const pad = lang === 'en' ? '/start/plan' : '/nl/start/plan';
+  return `${pad}?fout=${encodeURIComponent(reden)}`;
 }
 
 /**
@@ -103,9 +120,13 @@ export async function handleSubscribeStart(context, customer, offsite) {
   const planId = String(form?.get('plan') || '');
   const termId = String(form?.get('term') || 'monthly');
   const windowDay = Number.parseInt(String(form?.get('window_day') || ''), 10);
+  /* Bovenaan en niet halverwege: terug() heeft hem nodig en die wordt hieronder
+     vijf keer aangeroepen, waarvan drie keer vóór de plek waar deze regel
+     stond. Zie de noot bij terug(). */
+  const lang = String(form?.get('lang') || 'nl') === 'en' ? 'en' : 'nl';
 
-  if (!PLAN_IDS.includes(planId)) return seeOtherLocal(terug('plan'));
-  if (!TERM_IDS.includes(termId)) return seeOtherLocal(terug('termijn'));
+  if (!PLAN_IDS.includes(planId)) return seeOtherLocal(terug('plan', lang));
+  if (!TERM_IDS.includes(termId)) return seeOtherLocal(terug('termijn', lang));
 
   /* AL EEN ABONNEMENT? Dan niet nog een. De partiële UNIQUE index vangt dit ook,
      maar een klant die per ongeluk twee tabbladen open heeft, hoort een uitleg te
@@ -129,7 +150,7 @@ export async function handleSubscribeStart(context, customer, offsite) {
   const vastgelegd = (bezet?.results || []).reduce((n, r) => n + productsFor(r.plan), 0);
   if (!fitsBudget(planId, vastgelegd)) {
     console.error('[abonnement] plek geweigerd —', planId, 'bij', vastgelegd, 'van', planProductBudget());
-    return seeOtherLocal(terug('vol'));
+    return seeOtherLocal(terug('vol', lang));
   }
 
   let rij;
@@ -141,7 +162,7 @@ export async function handleSubscribeStart(context, customer, offsite) {
     rij = gemaakt.row;
   } catch (err) {
     console.error('[abonnement] rij niet aangemaakt —', err?.message || err);
-    return seeOtherLocal(terug('opslaan'));
+    return seeOtherLocal(terug('opslaan', lang));
   }
 
   /* De klant bij Mollie. Eén per abonnement en niet één per betaling: het mandaat
@@ -158,10 +179,9 @@ export async function handleSubscribeStart(context, customer, offsite) {
     await setMollieIds(env, rij.id, { customerId: mollieCustomerId });
   } catch (err) {
     console.error('[abonnement] Mollie-klant niet aangemaakt —', err?.message || err);
-    return seeOtherLocal(terug('mollie'));
+    return seeOtherLocal(terug('mollie', lang));
   }
 
-  const lang = String(form?.get('lang') || 'nl') === 'en' ? 'en' : 'nl';
   const origin = new URL(request.url).origin;
 
   let checkout;
@@ -183,7 +203,7 @@ export async function handleSubscribeStart(context, customer, offsite) {
     if (!checkout) throw new Error('Mollie gaf geen betaallink terug');
   } catch (err) {
     console.error('[abonnement] eerste betaling niet aangemaakt —', err?.message || err);
-    return seeOtherLocal(terug('mollie'));
+    return seeOtherLocal(terug('mollie', lang));
   }
 
   /* Via het tussenscherm dat de site ook voor bestellingen gebruikt, zodat een

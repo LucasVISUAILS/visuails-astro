@@ -113,15 +113,45 @@ const COPY = {
         price: `${euro(AMOUNT.brandModel, 'en')} one-time`,
         line: 'One face made only for you. We build it from what you tell us, so it starts with a conversation.',
       },
+      /* ── DE LOOK OP MAAT, 18 augustus 2026 ────────────────────────────────
+         Hij stond als vijfde radio in het bestelformulier, afgerekend op de
+         lifestyle-ladder, terwijl /lifestyle/custom "Op aanvraag" zei. Lucas:
+         een stijl op maat heeft geen standaardtarief; die prijs volgt pas als
+         de klant heeft gezegd wat hij wil.
+
+         Hier hoort hij dus, en niet daar: dit is de groep voor werk dat de
+         studio doet en waar dit formulier geen prijs voor kan uitrekenen. De
+         `price`-regel is de enige van de drie zonder bedrag, en dat is het
+         eerlijke antwoord in plaats van een gat. */
       {
-        id: 'plan',
-        href: '/start/plan',
-        name: 'A monthly plan',
-        status: 'After a conversation',
-        price: `from ${planFrom.price} ${planFrom.unit}`,
-        line: 'Reserved capacity every month, below the per-product rate. Agreed in writing first.',
+        id: 'custom-look',
+        href: '/start/custom-look',
+        name: 'A custom look',
+        status: 'Priced per request',
+        price: 'No standard rate',
+        line: 'A world designed around your product rather than picked from the four. What it costs follows from what you want built.',
       },
     ],
+    /* ── HET ABONNEMENT STAAT NIET MEER ONDER "OP AANVRAAG" ─────────────────
+       18 augustus 2026. Het stond in de `later`-lijst met status "After a
+       conversation" en de knop "Read where it stands" — drie signalen dat je
+       het niet kunt kopen. De LINK wees al naar /start/plan, en dat is sinds
+       deze week een echte kassa: kiezen, machtigen via Mollie, klaar.
+
+       Een bezoeker leest de status en de knop, niet de href. Dit was dus een
+       werkende kassa met een bordje "gesloten" ervoor, op het duurste product
+       dat de studio verkoopt en het enige dat elke maand terugkomt.
+
+       EN GEEN VIERDE TEGEL BOVEN. Dat is dezelfde afweging als op de homepage:
+       een abonnement is geen vierde dienst maar een andere MANIER VAN BETALEN
+       voor wat er in de drie tegels staat. Ernaast zetten zou een keuze
+       suggereren tussen "catalog" en "abonnement", en dat is de verkeerde
+       vraag. Dus een eigen rij, direct onder de drie, met het getal en de weg
+       naar binnen. */
+    planH: 'Or put it on a monthly plan',
+    planLine: 'The same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you. You arrange it yourself — no conversation needed first.',
+    planCta: 'Start a plan',
+    planCta2: 'Compare the plans',
     footH: 'Not ready to order?',
     footBody: `One product, ${sample.price}, ${sample.unit}. It runs through the same production as a paid order, so what you see is what you would get.`,
     footCta: `Try a test sample · ${sample.price}`,
@@ -186,15 +216,20 @@ const COPY = {
         price: `${euro(AMOUNT.brandModel, 'nl')} eenmalig`,
         line: 'Eén gezicht, alleen voor jou. We bouwen het van wat jij ons vertelt, dus het begint met een gesprek.',
       },
+      /* Zie de noot bij de Engelse tegenhanger. */
       {
-        id: 'plan',
-        href: '/start/plan',
-        name: 'Een maandplan',
-        status: 'Na een gesprek',
-        price: `vanaf ${planFrom.price} ${planFrom.unit}`,
-        line: 'Elke maand houden we ruimte voor je vrij, onder het tarief per product. We spreken het eerst schriftelijk af.',
+        id: 'custom-look',
+        href: '/start/custom-look',
+        name: 'Een look op maat',
+        status: 'Prijs op aanvraag',
+        price: 'Geen standaardtarief',
+        line: 'Een wereld die om jouw product heen ontworpen wordt in plaats van gekozen uit de vier. Wat het kost, volgt uit wat je gebouwd wilt hebben.',
       },
     ],
+    planH: 'Of doe het op een maandabonnement',
+    planLine: 'Hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt. Je regelt het zelf — er hoeft geen gesprek aan vooraf te gaan.',
+    planCta: 'Sluit een abonnement af',
+    planCta2: 'Vergelijk de abonnementen',
     footH: 'Nog niet klaar om te bestellen?',
     footBody: `Eén product, ${sample.price}, ${sample.unit}. Het loopt door dezelfde productie als een betaalde bestelling, dus wat je ziet is wat je zou krijgen.`,
     footCta: `Probeer een proefvisual · ${sample.price}`,
@@ -258,6 +293,27 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
       same thing twice. */}
   <p class="pick-vat">{vatNote(lang)}</p>
   <p class="pick-more"><a href={lp('/pricing')}>{c.ladder}</a></p>
+</div></section>
+
+<!-- HET ABONNEMENT — een andere manier van betalen, geen vierde dienst -->
+<section class="section-tight"><div class="container">
+  <div class="startplan">
+    <div class="startplan-copy">
+      <h2>{c.planH}</h2>
+      <p>{c.planLine}</p>
+    </div>
+    <div class="startplan-side">
+      <p class="startplan-fig">
+        <span class="startplan-from">{c.from}</span>
+        <strong>{planFrom.price}</strong>
+        <span class="startplan-unit">{planFrom.unit}, {vatLabel('excl', lang)}</span>
+      </p>
+      <div class="startplan-cta">
+        <a class="btn btn-primary" href={lp('/start/plan')}>{c.planCta}</a>
+        <a class="btn btn-ghost" href={`${lp('/pricing')}#plans`}>{c.planCta2}</a>
+      </div>
+    </div>
+  </div>
 </div></section>
 
 <!-- THE THREE THAT DO NOT, AND SAY SO -->
@@ -426,5 +482,28 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
   }
   @media (prefers-reduced-motion: reduce) {
     .pick, .ask { transition: none; }
+  }
+  /* ── het abonnement op /start ─────────────────────────────────────────────
+     Tekst links, het bedrag en de twee knoppen rechts. Dezelfde tweedeling als
+     de abonnementsband op de homepage, en om dezelfde reden: het is één
+     beslissing met één getal, en dat getal hoort naast de knop te staan die
+     erop volgt in plaats van erboven in een alinea. */
+  .startplan {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: clamp(1.4rem, 4vw, 3rem);
+    align-items: center;
+    padding: clamp(1.4rem, 3vw, 2.2rem) 0;
+    box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
+  }
+  .startplan-copy h2 { font-size: var(--t-h3); }
+  .startplan-copy p { margin-top: .6rem; max-width: 64ch; font-size: .95rem; line-height: 1.6; color: var(--ink-3); }
+  .startplan-fig { margin: 0; display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+  .startplan-from { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .startplan-fig strong { font-family: var(--font-display); font-weight: 900; font-size: clamp(1.8rem, 3.4vw, 2.4rem); line-height: 1; color: var(--ink); }
+  .startplan-unit { font-size: .85rem; color: var(--ink-3); }
+  .startplan-cta { margin-top: 1rem; display: flex; gap: .7rem; flex-wrap: wrap; }
+  @media (max-width: 52rem) {
+    .startplan { grid-template-columns: 1fr; align-items: start; }
   }
 </style>

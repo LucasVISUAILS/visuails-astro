@@ -227,7 +227,7 @@ const wa = waHref(c.waText);
 <style>
   /* Hard edges, hairlines — same discipline as BrandModelPage. No radius. */
   .mp-hero { align-items: center; }
-  .mp-h1 { font-size: clamp(2.4rem, 5vw, 4rem); max-width: 16ch; }
+  .mp-h1 { font-size: var(--t-page-h1); max-width: 16ch; }
   /* Editorial accent (task #271b, Lucas's own request) — see global.css's
      --font-editorial comment. Same scoped treatment as the h1 em word on
      /custom-models and the homepage. */
@@ -243,6 +243,6 @@ const wa = waHref(c.waText);
   .mp-door p { color: var(--ink-3); font-size: .92rem; margin: 0 0 1rem; }
   @media (max-width: 720px) { .mp-split { grid-template-columns: 1fr; } }
 
-  .mp-cta-h { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+  .mp-cta-h { font-size: var(--t-page-h2); }
   .mp-cta-actions { justify-content: center; margin-top: 2rem; }
 </style>

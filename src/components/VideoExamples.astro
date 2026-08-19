@@ -168,7 +168,22 @@ const metaLine = (e: { seconds: number; ratio: string }) =>
      Op een telefoon gaat de hoogte omlaag en de kolommen naar één. */
   .vx-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    /* ── minmax(0, 1fr) EN NIET 1fr — 19 augustus 2026 ──────────────────────
+       Gemeten op 390px: de pagina had horizontale scroll, 695px breed op een
+       scherm van 390. De veroorzaker was deze regel.
+
+       `1fr` is de korte schrijfwijze van `minmax(auto, 1fr)`, en die `auto` is
+       een MINIMUM: de kolom mag niet smaller worden dan de intrinsieke breedte
+       van wat erin staat. In .vx-media staat `height: clamp(260px, 52vh, 380px)`
+       met een `aspect-ratio`, dus de intrinsieke breedte van een liggende clip
+       is 380 × 16/9 = 676px. Precies de gemeten waarde. De `max-width: 100%`
+       die er al stond, kon niets doen: de kolom groeide mee.
+
+       minmax(0, 1fr) zet dat minimum op nul, en dan bijt max-width wel en volgt
+       de hoogte uit de verhouding. Dit is de standaardval van CSS Grid en hij
+       staat hier genoteerd omdat hij er bij de volgende raster onvermijdelijk
+       weer in sluipt. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(1rem, 2.2vw, 1.6rem);
     margin-top: clamp(1.6rem, 3vw, 2.2rem);
     align-items: start;
@@ -268,7 +283,7 @@ const metaLine = (e: { seconds: number; ratio: string }) =>
   .vx-note { margin-top: .8rem; font-size: .86rem; color: var(--ink-3); line-height: 1.6; }
 
   @media (max-width: 720px) {
-    .vx-grid { grid-template-columns: 1fr; }
+    .vx-grid { grid-template-columns: minmax(0, 1fr); }
     .vx-media { height: clamp(260px, 52vh, 380px); }
   }
 </style>

@@ -16,9 +16,11 @@
  *
  * Deze plek doet drie dingen die een grijze doos niet doet:
  *
- *   1 · HIJ HOUDT DE RUIMTE VAST. `aspect-ratio` staat op de verhouding die het
- *       echte beeld krijgt, dus de pagina verspringt niet als de foto er komt.
- *       Dat is ook de reden dat `ratio` verplicht is en geen standaard heeft.
+ *   1 · HIJ HOUDT DE RUIMTE VAST. De doos binnenin staat op de verhouding die
+ *       het echte beeld krijgt, dus de pagina verspringt niet als de foto er
+ *       komt. Dat is ook de reden dat `ratio` verplicht is en geen standaard
+ *       heeft. De opdracht staat er bewust ONDER en niet in: tekst binnen de
+ *       doos zou de gereserveerde ruimte veranderen, of afgesneden worden.
  *   2 · HIJ ZEGT WAT ER KOMT. `subject` is geen bijschrift maar een briefing aan
  *       jezelf: "wolvest, on-model, onderlichaam". Bij het maken van de foto's is
  *       dat de lijst.
@@ -37,60 +39,131 @@ interface Props {
   ratio: string;
   /** Wat hier komt te staan, in je eigen woorden. Verschijnt op het scherm. */
   subject: string;
+  /*
+   * ── WAT HET BEELD MOET OVERBRENGEN — 19 augustus 2026 ────────────────────
+   *
+   * Lucas: *"laat op placeholders waar de foto moet komen weten wat er voor
+   * beeld te zien moet zijn om de boodschap over te brengen naar de bezoeker."*
+   *
+   * `subject` zegt WAT er op de foto staat ("wolvest, on-model"). Dat is genoeg
+   * om te weten wat je moet fotograferen en te weinig om te weten of de foto
+   * geslaagd is. `message` zegt wat de bezoeker eraan moet OVERHOUDEN — en dat
+   * is de eigenlijke opdracht. Twee foto's van hetzelfde vest kunnen allebei
+   * kloppen op onderwerp en maar één ervan doet zijn werk.
+   *
+   * Hij staat op het scherm en niet alleen in een data-attribuut: wie langs deze
+   * plek scrollt terwijl hij aan het bouwen is, moet de opdracht kunnen lezen
+   * zonder de broncode erbij te halen.
+   */
+  message?: string;
   /** 'foto' of 'video' — bepaalt alleen het icoon en het woord. */
   kind?: 'photo' | 'video';
   /** Extra klassen van de aanroeper, zodat hij in een raster past. */
   class?: string;
+  /*
+   * ── WAAROM DE RUIMTE ERBOVEN EEN PROP IS EN GEEN KLASSE — 19 aug 2026 ────
+   *
+   * Een aanroeper die dit vlak los in de flow zet, wil er afstand boven. De
+   * voor de hand liggende manier is een eigen klasse meegeven en die in de
+   * stijlblok van de pagina zelf opmaken — en die manier werkt NIET. Astro zet
+   * zijn scope-attribuut alleen op elementen die in de component zelf staan;
+   * een klasse die je aan een child-component doorgeeft, krijgt dat attribuut
+   * niet mee. `.sp-human-shot { margin-top: … }` in StudioPage.astro was
+   * daardoor een regel die nooit iets deed, en dat was aan de pagina niet te
+   * zien: er stond gewoon geen ruimte, en niets zei waarom.
+   *
+   * Een prop kan niet stilletjes mislukken. Vandaar deze.
+   * In een raster (ComparePage) laat je hem weg — daar doet de `gap` het al.
+   */
+  space?: boolean;
   lang?: 'en' | 'nl';
 }
-const { ratio, subject, kind = 'photo', class: klasse = '', lang = 'nl' } = Astro.props;
+const { ratio, subject, message, kind = 'photo', class: klasse = '', space: spatie = false, lang = 'nl' } = Astro.props;
 const nl = lang === 'nl';
 const woord = kind === 'video' ? (nl ? 'Video volgt' : 'Video to come') : (nl ? 'Foto volgt' : 'Photo to come');
 ---
 
 <figure
-  class={`ph ${klasse}`}
+  class={`ph ${spatie ? 'ph-spaced ' : ''}${klasse}`}
   data-placeholder={kind}
   data-subject={subject}
-  style={`--ph-ratio: ${ratio}`}
+  data-message={message}
 >
-  <div class="ph-inner">
+  {/* De verhouding zit op DEZE doos en niet op de <figure>. Zie de noot bij
+      .ph-box hieronder: de opdracht eronder mag de gereserveerde ruimte niet
+      veranderen, en kon er niet in blijven staan zonder afgesneden te worden. */}
+  <div class="ph-box" style={`--ph-ratio: ${ratio}`}>
     {/* Het merkteken, sterk gedempt. Geen icoon uit een set: dit is de plek van
         VISUAILS-werk, en het merkteken zegt dat zonder een woord. */}
     <svg class="ph-mark" viewBox="0 0 702 813.25" aria-hidden="true"><use href="#markglyph" /></svg>
-    <figcaption class="ph-cap">
-      <span class="ph-kind">{woord}</span>
-      <span class="ph-subject">{subject}</span>
-    </figcaption>
+    <span class="ph-kind">{woord}</span>
   </div>
+  <figcaption class="ph-cap">
+    <span class="ph-subject">{subject}</span>
+    {message && <span class="ph-message">{message}</span>}
+  </figcaption>
 </figure>
 
 <style>
-  /* De verhouding komt uit de prop en dus uit een custom property — een inline
+  /* ── DE FIGURE HOUDT NIETS VAST ──────────────────────────────────────────
+     Hij is alleen de omhulling. De ruimte zit op .ph-box, de opdracht eronder.
+     Geen `overflow: hidden` meer op dit niveau: dat sneed de opdracht af zodra
+     de doos laag was (21/9 op een telefoon is 150px hoog en de opdracht is zes
+     regels), en een opdracht die je niet kunt lezen is precies het grijze vlak
+     waar de kop van dit bestand tegen waarschuwt. */
+  .ph { margin: 0; }
+  /* Los in de flow — zie de noot bij de `space`-prop. */
+  .ph-spaced { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+
+  /* ── DE GERESERVEERDE RUIMTE ─────────────────────────────────────────────
+     De verhouding komt uit de prop en dus uit een custom property — een inline
      `aspect-ratio` zou hier ook kunnen, maar deze site draait ook onder een CSP
      die stijl-attributen weigert (zie de portal), en één manier is beter dan
-     twee. De custom property is een WAARDE en geen declaratie, dus die mag. */
-  .ph {
-    margin: 0;
+     twee. De custom property is een WAARDE en geen declaratie, dus die mag.
+
+     `width: 100%` staat er niet voor de sier. Zonder die regel leidt een blok
+     met `aspect-ratio` én een ondergrens in hoogte zijn BREEDTE uit de
+     verhouding af: gemeten op 390px werd een 21/9-vlak 523px breed en schoof de
+     hele pagina horizontaal. Met een vaste breedte kan de verhouding alleen nog
+     de hoogte bepalen, wat de bedoeling was. */
+  .ph-box {
+    width: 100%;
     aspect-ratio: var(--ph-ratio, 4 / 5);
     border-radius: var(--r-lg);
     overflow: hidden;
     background: var(--surface);
     border: 1px dashed var(--line-strong);
-  }
-  .ph-inner {
-    height: 100%;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: .9rem; padding: 1.2rem; text-align: center;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: .6rem;
+    padding: 1rem;
+    text-align: center;
   }
   .ph-mark { width: 34px; height: auto; fill: var(--ink-1); opacity: .14; }
-  .ph-cap { display: grid; gap: .2rem; }
   .ph-kind {
     font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
     color: var(--ink-4);
   }
-  /* Het onderwerp is het enige dat je echt moet lezen, dus krijgt het de
-     leesbare inktstap en niet de zwakste. */
-  .ph-subject { color: var(--ink-2); font-size: .92rem; max-width: 28ch; }
+
+  /* ── DE OPDRACHT ─────────────────────────────────────────────────────────
+     Onder de doos, als bijschrift, en links uitgelijnd: dit is leeswerk voor
+     wie de foto gaat maken, geen label onder een plaatje. Buiten de doos kan
+     hij bij elke breedte helemaal worden gelezen, en verandert hij de
+     gereserveerde ruimte niet — die blijft precies de verhouding van het
+     echte bestand. */
+  .ph-cap { margin-top: .75rem; display: grid; gap: .3rem; text-align: start; }
+  /* Het onderwerp is het eerste dat je nodig hebt, dus krijgt het de leesbare
+     inktstap en niet de zwakste. */
+  .ph-subject { color: var(--ink-2); font-size: .92rem; line-height: 1.5; max-width: var(--measure-note, 68ch); }
+  /* Wat er STAAT is het eerste, wat het moet DOEN het tweede — dus een stap
+     zwakker, cursief, en met een lijn ertussen die de twee scheidt zonder er
+     een tweede blokje van te maken. */
+  .ph-message {
+    margin-top: .45rem; padding-top: .45rem;
+    border-top: 1px solid var(--line);
+    color: var(--ink-4); font-size: .8rem; line-height: 1.55;
+    max-width: var(--measure-note, 68ch);
+    font-style: italic;
+  }
 </style>

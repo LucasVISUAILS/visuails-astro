@@ -53,6 +53,7 @@ import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capa
 import { localizedPath } from '../i18n/ui.js';
 import FigGate from './FigGate.astro';
 import FigBoard from './FigBoard.astro';
+import Placeholder from './Placeholder.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -178,20 +179,59 @@ const COPY = {
 };
 
 const c = COPY[lang];
+/* Voor de briefteksten op de placeholders hieronder — die staan niet in COPY
+   omdat ze niet aan de bezoeker gericht zijn maar aan degene die de foto maakt. */
+const nl = lang === 'nl';
 ---
 
+{/* ── DEZE PAGINA HAD 1197 WOORDEN EN GEEN ENKEL BEELD — 19 augustus 2026 ────
+    Gemeten over zeventien pagina's: dit was de tekstrijkste pagina van de site
+    zonder één foto of schermafdruk. De twee SVG-figuren (FigGate, FigBoard)
+    tekenen een agenda en een tabel — schema's, geen product. En de pagina gaat
+    over VISUAILS Studio, dus over een scherm dat je kunt laten zien.
+
+    Lucas: *"check waar tekst minder kan worden en er visuele uitleg in de plaats
+    kan komen."* Hier is het antwoord letterlijk: laat het scherm zien.
+
+    De placeholders dragen een `message` — wat het beeld moet OVERBRENGEN, niet
+    alleen wat erop staat. Zie de noot bij die prop in Placeholder.astro. */}
 <section class="band-tall sp-hero">
   <div class="container">
-    <div class="statement statement-left">
-      <h1>{c.h1[0]} <em class="sp-accent">{c.h1[1]}</em></h1>
-      <p class="lede">{c.lede}</p>
-      <div class="actions">
-        <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
-        <a href={lp('/portal')} class="btn btn-ghost btn-lg">{c.ctaPortal}</a>
+    <div class="sp-hero-split">
+      <div class="statement statement-left">
+        <h1>{c.h1[0]} <em class="sp-accent">{c.h1[1]}</em></h1>
+        <p class="lede">{c.lede}</p>
+        <div class="actions">
+          <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
+          <a href={lp('/portal')} class="btn btn-ghost btn-lg">{c.ctaPortal}</a>
+        </div>
       </div>
+      <Placeholder
+        lang={lang}
+        ratio="4 / 3"
+        subject={nl ? 'Schermafdruk van VISUAILS Studio — het overzicht met één lopende bestelling'
+                    : 'Screenshot of VISUAILS Studio — the overview with one live order'}
+        message={nl
+          ? 'Moet in één blik laten zien dat dit een échte werkomgeving is en geen mailtje met een downloadlink: statusregel, leverdatum, en beelden die op goedkeuring wachten. Liever een halfvolle bestelling dan een lege — een leeg scherm bewijst niets.'
+          : 'Must show at a glance that this is a real workspace and not an email with a download link: status row, delivery date, and images waiting for approval. A half-full order beats an empty one — an empty screen proves nothing.'}
+      />
     </div>
   </div>
 </section>
+
+{/* ── DE EFFECTEN OP DEZE PAGINA — 19 augustus 2026 ───────────────────────
+    Deze pagina had er geen enkele, terwijl /catalog, /pricing, /compare en
+    /video hun blokken allemaal laten inkomen. Dat was geen keuze maar een
+    gat: /studio is in de nieuwere band/statement-taal geschreven en die
+    kwam zonder de `.reveal`-haken mee.
+
+    Het is bewust dezelfde `.reveal pending` + `.reveal-group` als op de
+    andere pagina's en geen eigen variant: één mechanisme betekent één
+    veiligheidsnet (interactions.js zet alles alsnog zichtbaar als het script
+    niet aankomt) en één gedrag onder prefers-reduced-motion.
+
+    De hero doet NIET mee. Wat boven de vouw staat hoort er meteen te staan;
+    een titel die eerst moet inkomen is een titel die je even niet kunt lezen. */}
 
 {/* ── the capacity gate ──────────────────────────────────────────────────── */}
 <section class="band well-deep">
@@ -200,15 +240,15 @@ const c = COPY[lang];
       <h2>{c.gateH}</h2>
       <p class="lede">{c.gateLede}</p>
     </div>
-    <div class="sp-split">
+    <div class="sp-split reveal-group">
       <div class="sp-rules">
         {c.gate.map(([k, v]) => (
-          <div class="tile"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
+          <div class="tile reveal pending"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
         ))}
       </div>
       {/* De agenda zelf, met de dag erin die geweigerd wordt. Het venster dat hij
           "aangeboden" noemt, komt uit offerableWindows() — zie FigGate.astro. */}
-      <FigGate lang={lang} />
+      <div class="reveal pending"><FigGate lang={lang} /></div>
     </div>
   </div>
 </section>
@@ -216,8 +256,8 @@ const c = COPY[lang];
 {/* ── the order board ────────────────────────────────────────────────────── */}
 <section class="band">
   <div class="container">
-    <div class="sp-split is-flip">
-      <div>
+    <div class="sp-split is-flip reveal-group">
+      <div class="reveal pending">
         <h2 class="sp-h2">{c.boardH}</h2>
         <p class="sp-lede">{c.boardLede}</p>
         <dl class="sp-defs">
@@ -226,7 +266,7 @@ const c = COPY[lang];
       </div>
       {/* De tabel, met het revisieverzoek open dat de noot hier eerder alleen
           beschreef. */}
-      <FigBoard lang={lang} />
+      <div class="reveal pending"><FigBoard lang={lang} /></div>
     </div>
   </div>
 </section>
@@ -242,6 +282,19 @@ const c = COPY[lang];
         <a href={lp('/ai-act')} class="btn btn-ghost">{c.humanCta}</a>
       </div>
     </div>
+    {/* "De laatste stap is een specialist" is de belangrijkste belofte op deze
+        pagina en stond er als drie alinea's tekst. Een foto van iemand die
+        daadwerkelijk zit te kijken, doet dat werk in een halve seconde. */}
+    <Placeholder
+      lang={lang}
+      space
+      ratio="16 / 9"
+      subject={nl ? 'Iemand aan het werk: een beeld op het scherm, ernaast de originele telefoonfoto van de klant'
+                  : 'Someone at work: a finished visual on screen, the client\'s original phone photo beside it'}
+      message={nl
+        ? 'Moet bewijzen dat "met de hand gecontroleerd" een handeling is en geen zinnetje. Het vergelijken moet te zien zijn — twee beelden naast elkaar, een blik erop. Geen poserend portret en geen stockfoto van een kantoor.'
+        : 'Must prove that "checked by hand" is an action, not a phrase. The comparing has to be visible — two images side by side, a person looking at them. Not a posed portrait, not a stock office shot.'}
+    />
   </div>
 </section>
 
@@ -258,9 +311,9 @@ const c = COPY[lang];
       <h2>{c.plH}</h2>
       <p class="lede">{c.plLede}</p>
     </div>
-    <ol class="sp-pl">
+    <ol class="sp-pl reveal-group">
       {c.pl.map(([t, b], i) => (
-        <li>
+        <li class="reveal pending">
           <span class="sp-pl-dot" aria-hidden="true"></span>
           <h3 class={['w-blue', 'w-violet', 'w-coral'][i] || ''}>{t}</h3>
           <p>{b}</p>
@@ -281,9 +334,9 @@ const c = COPY[lang];
       <h2>{c.honestH}</h2>
       <p class="lede">{c.honestLede}</p>
     </div>
-    <div class="tiles sp-honest-tiles">
+    <div class="tiles sp-honest-tiles reveal-group">
       {c.honest.map(([k, v]) => (
-        <div class="tile s-4"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
+        <div class="tile s-4 reveal pending"><div class="tile-body"><p class="tile-h">{k}</p><p class="tile-n">{v}</p></div></div>
       ))}
     </div>
   </div>
@@ -303,9 +356,20 @@ const c = COPY[lang];
 </section>
 
 <style>
+  /* ── HERO MET BEELD ERNAAST ────────────────────────────────────────────────
+     Tekst links, het scherm rechts. Onder de 62rem valt het onder elkaar, met
+     het beeld ERONDER en niet erboven: de kop moet als eerste gelezen worden,
+     ook op een telefoon. */
+  .sp-hero-split { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: center; }
+  @media (min-width: 62rem) {
+    .sp-hero-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+
   .sp-hero { background: var(--ink-900); }
   .sp-hero .statement-left { max-width: 46rem; }
-  .sp-hero h1 { font-size: var(--t-h1); line-height: 1.02; letter-spacing: -0.038em; max-width: 20ch; }
+  /* --t-page-h1 en niet --t-h1: dit is een paginatitel en die staat op elke
+     andere dienstpagina op 64px. Zie de noot bij --t-page-h1. */
+  .sp-hero h1 { font-size: var(--t-page-h1); line-height: 1.02; letter-spacing: -0.038em; max-width: 20ch; }
   .sp-accent { font-style: normal; color: var(--ink-3); }
   .on-paper .sp-accent { color: var(--teal-text); }
 

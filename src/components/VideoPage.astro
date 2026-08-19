@@ -335,7 +335,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
          CatalogPage.astro's own note: this and /catalog were the two service
          pages missing it. -->
     <span class="eyebrow-page">{c.eyebrow}</span>
-    <h1 class="display vid-h1" style="font-size:clamp(2.8rem,6.5vw,5.4rem);margin-top:1rem" set:html={c.h1} />
+    <h1 class="display vid-h1" style="font-size:var(--t-page-h1);margin-top:1rem" set:html={c.h1} />
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
     <div class="flex" style="margin-top:1.8rem">
       <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/video')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
@@ -495,7 +495,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 <section class="section-tight">
   <div class="container">
     <div class="cta-band reveal pending">
-      <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)" set:html={c.ctaH} />
+      <h2 class="display" style="font-size:var(--t-page-h2)" set:html={c.ctaH} />
       <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
       <div class="flex" style="justify-content:center;margin-top:2rem">
         <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/video')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>

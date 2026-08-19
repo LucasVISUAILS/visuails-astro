@@ -96,6 +96,7 @@ import {
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigConverge from './FigConverge.astro';
+import Placeholder from './Placeholder.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -378,13 +379,16 @@ const COPY = {
   },
 };
 
+/* Voor de briefteksten op de placeholders — die zijn aan de fotograaf
+   gericht en niet aan de bezoeker, dus staan ze niet in de COPY-tabel. */
+const nl = lang === 'nl';
 const t = COPY[lang];
 ---
 
 <!-- HERO -->
 <section class="page-hero"><div class="container">
   <p class="eyebrow-page">{t.eyebrow}</p>
-  <h1 class="display" style="font-size:clamp(2.4rem,5vw,4rem)">{t.h1a}<em>{t.h1b}</em>{t.h1c}</h1>
+  <h1 class="display" style="font-size:var(--t-page-h1)">{t.h1a}<em>{t.h1b}</em>{t.h1c}</h1>
   <p class="lead" style="margin-top:1.2rem;max-width:62ch">{t.lead}</p>
   <div class="flex" style="margin-top:1.8rem">
     <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg" data-track="compare-start">{t.ctaPrimary}</a></span></span>
@@ -397,7 +401,37 @@ const t = COPY[lang];
      760px each row becomes its own stacked block and the two answers pick up
      their column name from data-col via ::before, so the comparison survives
      the collapse instead of turning into two unlabelled paragraphs. -->
+{/* ── DEZE PAGINA VERGELEEK TWEE DINGEN EN LIET ER GEEN ÉÉN ZIEN ────────────
+    19 augustus 2026. Gemeten over zeventien pagina's: 878 woorden, nul beelden.
+    Op een pagina die letterlijk "een shootdag of een bestelling" heet is dat de
+    duurste lege plek van de site — de hele vergelijking is visueel, en hij stond
+    er als een tabel met woorden.
+
+    Lucas: *"check waar tekst minder kan worden en er visuele uitleg in de plaats
+    kan komen."* Twee foto's naast elkaar doen hier wat vijftien tabelregels
+    proberen te doen. De tabel blijft — die draagt de details — maar hij komt nu
+    ná het beeld in plaats van in plaats daarvan. */}
 <section class="section-tight"><div class="container">
+  <div class="cmp-worlds">
+    <Placeholder
+      lang={lang}
+      ratio="4 / 3"
+      subject={nl ? 'Een shootdag: statieven, lampen, rekken kleding, mensen die wachten'
+                  : 'A shoot day: tripods, lights, clothing rails, people waiting'}
+      message={nl
+        ? 'Moet de DAG laten zien en niet de foto die eruit komt: opbouw, spullen, wachten. De kijker moet denken "dit kost me een dag" voordat hij één woord van de tabel leest. Rommelig mag; geromantiseerd niet.'
+        : 'Must show the DAY, not the photo that comes out of it: setup, gear, waiting. The viewer should think "this costs me a day" before reading a word of the table. Messy is fine; romanticised is not.'}
+    />
+    <Placeholder
+      lang={lang}
+      ratio="4 / 3"
+      subject={nl ? 'Een laptop met VISUAILS Studio open, ernaast één kledingstuk en een telefoon'
+                  : 'A laptop with VISUAILS Studio open, one garment and a phone beside it'}
+      message={nl
+        ? 'Hetzelfde moment, andere wereld: alles wat je nodig hebt past op een tafel. Geen studio, geen team. Dezelfde uitsnede en hetzelfde licht als de foto ernaast, want het verschil moet in de INHOUD zitten en niet in de fotografie.'
+        : 'Same moment, other world: everything you need fits on a table. No studio, no crew. Same crop and same light as the photo beside it — the difference has to be in the content, not in the photography.'}
+    />
+  </div>
   <!-- ARIA table roles rather than aria-hidden on the header: without them a
        screen reader hears the row label and then two unattributed answers,
        which is the one reading of this section that is actively misleading.
@@ -496,7 +530,7 @@ const t = COPY[lang];
 <!-- CTA -->
 <section class="section-tight"><div class="container">
   <div class="cta-band reveal pending">
-    <h2 class="display" style="font-size:clamp(2.2rem,5vw,3.6rem)">{t.ctaHead}<em>{t.ctaHeadEm}</em>.</h2>
+    <h2 class="display" style="font-size:var(--t-page-h2)">{t.ctaHead}<em>{t.ctaHeadEm}</em>.</h2>
     <p style="margin:1rem auto 0;max-width:52ch;color:var(--ink-2)">{t.ctaBody}</p>
     <div class="flex" style="justify-content:center;margin-top:2rem">
       <a href={lp('/test-sample')} class="btn btn-primary btn-lg" data-track="compare-test-bottom">{t.ctaSample}</a>
@@ -508,6 +542,17 @@ const t = COPY[lang];
 </div></section>
 
 <style>
+  /* Twee werelden naast elkaar, met dezelfde verhouding en dezelfde maat: als de
+     ene foto groter is dan de andere, kiest de opmaak al een winnaar voordat de
+     lezer de tabel heeft gezien. Onder 52rem onder elkaar — dan is het geen
+     vergelijking meer maar een volgorde, en dat is op een telefoon het enige dat
+     werkt. */
+  .cmp-worlds {
+    display: grid; gap: clamp(1rem, 2vw, 1.5rem);
+    margin-bottom: clamp(2rem, 4vw, 3.2rem);
+  }
+  @media (min-width: 52rem) { .cmp-worlds { grid-template-columns: 1fr 1fr; } }
+
   /* ── THE MATRIX ────────────────────────────────────────────────────────── */
   .vs { border-top: 1px solid var(--line-strong); }
   .vs-head,
