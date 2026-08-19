@@ -114,6 +114,19 @@ const SLIDE_ICON = [
   'M12 11.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4.5 20.5a7.5 7.5 0 0 1 15 0',
 ];
 
+/*
+ * De twee aangekondigde diensten staan sinds 20 augustus 2026 in dezelfde rij
+ * als de vier die je kunt bestellen, dus hebben ze ook een pictogram nodig.
+ * Apart van SLIDE_ICON gehouden: die rij hoort bij de vijf dia's van de hero en
+ * die vijf zijn niet dezelfde vijf.
+ */
+const SOON_ICON = [
+  // haak · Hooks
+  'M8 4h5a4 4 0 0 1 4 4v9 M17 17l-3-3 M17 17l3-3',
+  // stapel bladen met een kalenderstreep · Editions
+  'M4 8h16v12H4z M8 4h12v12 M8 12h8 M8 16h5',
+];
+
 const SERVICE_IMG = [
   { src: '/img/banners-11.webp', w: 1200, h: 896 },
   { src: '/img/lifestyle-glow-02.webp', w: 2400, h: 1792 },
@@ -473,6 +486,19 @@ const COPY = {
         '/custom-models',
       ],
     ],
+    /*
+     * ── DE KOPREGEL BOVEN ELKE KAART — 20 augustus 2026 ────────────────────
+     * Adobe zet boven elk kaartbeeld een categorie ("Creativiteit en ontwerp",
+     * "Contentcreatie"). Dat is geen versiering: het vertelt je in twee woorden
+     * in welk hokje de kaart hoort, waardoor de titel eronder over het PRODUCT
+     * kan gaan in plaats van over de soort. Gemeten op hun kaart: 14px, vet,
+     * naast een pictogram van 24 bij 24.
+     *
+     * Ze zijn bewust kwalitatief en noemen geen aantallen. Een aantal hoort uit
+     * pricing.js te komen en niet uit een string hier — dat is de regel die de
+     * rest van deze site overal aanhoudt.
+     */
+    svcEyebrow: ['Product photography', 'Editorial', 'Motion', 'Exclusive'],
     svcMore: 'See',
     svcCta: 'Start an order',
 
@@ -604,7 +630,6 @@ const COPY = {
        zetten is een openbaar aanbod op iets wat niet te kopen is. Eén regel
        toevoegen kan later in tien seconden. */
     svcSoonTag: 'Not ready yet',
-    svcSoonBody: 'We are still working this one out. It will be available soon; until then there is nothing to click.',
     svcSoonFoot: 'This is the concept as it stands. What it costs and how you order it are not settled yet, which is why the button does not work.',
     svcSoonList: [
       {
@@ -830,6 +855,8 @@ const COPY = {
         '/custom-models',
       ],
     ],
+    // Zie de noot bij de Engelse svcEyebrow.
+    svcEyebrow: ['Productfotografie', 'Redactioneel', 'Bewegend beeld', 'Exclusief'],
     svcMore: 'Bekijk',
     svcCta: 'Start een bestelling',
 
@@ -901,7 +928,6 @@ const COPY = {
     dashPortalN: 'Je komt binnen via een privélink, zonder wachtwoord. Je ziet de status en de leverdatum met een aftelling, en daarna de hele galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
     dashPortalCta: 'Bekijk VISUAILS Studio',
     svcSoonTag: 'Nog niet klaar',
-    svcSoonBody: 'Hier zijn we nog mee bezig. Binnenkort is hij beschikbaar; tot die tijd valt er niets aan te klikken.',
     svcSoonFoot: 'Dit is het concept zoals het er nu staat. Wat het kost en hoe je het bestelt liggen nog niet vast, en daarom werkt de knop niet.',
     svcSoonList: [
       {
@@ -1155,6 +1181,28 @@ const c = COPY[lang];
       <p class="lede">{c.baLede}</p>
     </div>
     <div class="hv-ba">
+      {/* ── 3/4 EN NIET 4/5 — 20 augustus 2026 ──────────────────────────────
+          Lucas: *"sommige foto's zijn veel te groot."* Gemeten op 1920 was dit
+          vlak 685 bij 857 pixels, terwijl de tekstkolom ernaast op y=1040
+          ophield en het beeld doorliep tot 1320. Bijna 300 pixels beeld naast
+          niets. Het blijft het overtuigendste beeld op de pagina — een echte
+          klantfoto naast wat eruit kwam — dus het gaat niet weg. Het wordt
+          alleen zo hoog als de tekst ernaast.
+
+          TWEE DINGEN DIE IK HIER FOUT DEED, ALLEBEI STIL:
+
+          1 · Deze noot stond eerst TUSSEN de props van <Compare>. Een
+              accolade-commentaar tussen de attributen van een Astro-component
+              is geen commentaar maar een expressie-attribuut.
+          2 · En hij bevatte een genest sterretje-slash. Dat sluit het
+              commentaar vroegtijdig, waarna de rest als gewone TEKST in de
+              pagina belandde — een naamloos tekstblok dat als derde item in
+              dit raster ging staan en er een tweede rij van maakte. Gemeten:
+              `grid-template-rows: 640px 355px`, sectie 1634 hoog in plaats van
+              1050, met het beeld boven de tekst in plaats van ernaast.
+
+          Geen van beide gaf een bouwfout. Allebei alleen te zien door de
+          gebouwde pagina op te meten. */}
       <div class="hv-ba-media">
         <Compare
           before="/img/catalog-before.webp"
@@ -1163,7 +1211,7 @@ const c = COPY[lang];
           afterAlt={c.baAfterAlt}
           beforeLabel={c.baBefore}
           afterLabel={c.baAfter}
-          ratio="4/5"
+          ratio="3/4"
         />
       </div>
       <div class="hv-ba-copy">
@@ -1226,125 +1274,118 @@ const c = COPY[lang];
       <h2>{c.svcH[0]} <em class="hv-accent">{c.svcH[1]}</em></h2>
       <p class="lede">{c.svcLede}</p>
     </div>
-    <div class="tiles hv-svc-tiles">
+    {/* ── DE DIENSTENRIJ — HERBOUWD 20 AUGUSTUS 2026 ─────────────────────────
+        Lucas: *"de services meer als een soort kaarten die net zoals op de adobe
+        website naast elkaar van links naar rechts gaan en een floaty effect
+        hebben"* — en, over wat hier stond: *"sommige foto's zijn veel te groot"*
+        en *"de homepagina is nu een chaos"*.
+
+        Hij had gelijk, en het was te meten. Wat hier stond was een raster van
+        twee bij twee met beelden van 745 bij 410 pixels, gevolgd door twee even
+        brede stroken voor de aangekondigde diensten. Die sectie was op 1920 in
+        totaal 2130 pixels hoog — meer dan twee schermen voor zes items, met per
+        item één foto op halve paginabreedte.
+
+        ── WAT IK BIJ ADOBE HEB OPGEMETEN (adobe.com/nl, 1920px) ──────────────
+
+        Hun rij heet `.elastic-carousel` en zit zo in elkaar:
+
+          · kaart      294 × 583, radius 16px, egale vulling, geen rand, geen schaduw
+          · kop        294 × 72, padding 24px: pictogram 24×24 + categorie 14px/700
+          · beeld      294 × 399  (staand, ongeveer 3:4)
+          · tekst      titel 16px/700, body 16px/400, twee regels
+          · de rij     display:flex, vijf kaarten van 294 = 1510 breed
+          · de houder  overflow-x: clip, transform op de rij, transition .5s
+
+        Vijf kaarten in de breedte waar hier twee stonden. Dat is het hele
+        verschil tussen hun rustige rij en onze muur: NIET minder inhoud, maar
+        inhoud die op zijn eigen maat staat in plaats van op paginabreedte.
+
+        ── EN HET FLOATY-EFFECT IS EEN GEMETEN GETAL ─────────────────────────
+
+        Hun `.parallax-move-up` zet de houder op translateY(100px) zolang het
+        blok ver onder de vouw zit en laat hem naar 0 lopen als het in beeld
+        komt. Gemeten op vier scrollposities: 100 → 75,7 → 6,1 → 0.
+
+        HONDERD PIXELS. Deze site had `vis-rise` (10px) en `vis-rise-far`
+        (18px), en dat is precies waarom het hier nooit "floaty" voelde: bij
+        tien pixels zie je niet dat er iets beweegt. Zie `hv-float` hieronder.
+
+        ── DE ZES STAAN IN ÉÉN RIJ, OOK DE TWEE DIE NOG NIET KUNNEN ──────────
+
+        Hooks en Editions hadden twee eigen stroken op volle breedte, wat ze
+        zwaarder aanzette dan de vier diensten die je wél kunt bestellen. Als
+        kaart in dezelfde rij staan ze er wel bij, in dezelfde maat, en de
+        `NOG NIET KLAAR`-tag plus de uitgeschakelde knop doen hun werk zonder
+        dat ze een halve pagina kosten. De <details> met de uitleg gaat mee de
+        kaart in — een uitklapper hoort onder zijn eigen samenvatting.
+
+        De rij schuift horizontaal zodra de zes niet passen. Dat is geen
+        noodgreep voor smalle schermen maar het gedrag zelf: zes kaarten die net
+        niet passen, vertellen dat er meer naast staat. */}
+    <div class="hv-svc-rail" role="list">
       {c.svc.map(([name, line, href], i) => (
-        <a class="tile s-6 hv-svc-tile" href={lp(href)}>
-          <span class="tile-media hv-svc-media">
-            <img src={SERVICE_IMG[i].src} alt={`${name} — ${line}`} width={SERVICE_IMG[i].w} height={SERVICE_IMG[i].h} loading="lazy" decoding="async" />
+        <a class="hv-svc-card" href={lp(href)} role="listitem">
+          <span class="hv-svc-card-head">
+            <svg class="hv-svc-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SLIDE_ICON[i + 1]} /></svg>
+            <span class="hv-svc-card-eyebrow">{c.svcEyebrow[i]}</span>
           </span>
-          <span class="tile-body hv-svc-body">
-            <span class="tile-h">{name}</span>
-            <span class="hv-svc-line">{line}</span>
-            {/* DE LINK ONDERAAN. De hele tegel is al een <a>, dus dit voegt geen
-                doel toe — het voegt de AANWIJZING toe dat er een doel is. Op de
-                oude kaart was nergens te zien dat je erop kon klikken behalve de
-                cursor, en dat is een aanwijzing die op een telefoon niet bestaat.
-                Adobe zet onder elke kaart een expliciete link; dit is diezelfde
-                regel, in de taal die de Hooks- en Editions-stroken hieronder al
-                gebruiken ("Bekijk Hooks"). */}
-            <span class="hv-svc-more">{c.svcMore} {name}<span class="hv-svc-arrow" aria-hidden="true">→</span></span>
+          <span class="hv-svc-card-media">
+            <img src={SERVICE_IMG[i].src} alt={`${name} — ${line}`}
+                 width={SERVICE_IMG[i].w} height={SERVICE_IMG[i].h}
+                 loading="lazy" decoding="async" />
+          </span>
+          <span class="hv-svc-card-body">
+            <span class="hv-svc-card-t">{name}</span>
+            <span class="hv-svc-card-p">{line}</span>
+            {/* De hele kaart is al een <a>, dus dit voegt geen doel toe — het
+                voegt de AANWIJZING toe dat er een doel is. Op een telefoon
+                bestaat de cursor niet, en dan is dit het enige wat het zegt. */}
+            <span class="hv-svc-card-go">{c.svcMore} {name}<span class="hv-svc-arrow" aria-hidden="true">→</span></span>
           </span>
         </a>
       ))}
-    </div>
-    {/* ── DE VIJFDE, DIE NOG NIET KAN ────────────────────────────────────────
-        Lucas: *"post hem voor nu wel alvast tussen de services als knop die niet
-        werkt met een label erbij dat deze nog niet klaar is."*
 
-        EEN STROOK EN GEEN VIJFDE TEGEL. De vier tegels staan in een raster van
-        twee bij twee; een vijfde maakt daar drie rijen van met een gat rechts
-        onderin, en dan leest de nieuwe dienst als een fout in de opmaak in plaats
-        van als een aankondiging. Onder de vier, met een hairline ertussen, is hij
-        er wel bij en verstoort hij de vergelijking van de vier niet.
-
-        EEN ECHTE <button disabled> EN GEEN GRIJZE SPAN. Dat is het verschil tussen
-        een knop die niet werkt en iets dat eruitziet als een knop: `disabled` wordt
-        door elke schermlezer aangekondigd als niet-beschikbaar, is niet met tab te
-        bereiken, en kan niet per ongeluk toch iets doen. Een <span> met een grijze
-        rand zegt tegen niemand iets, behalve tegen wie hem kan zien. */}
-    {/* ── HET VRAAGTEKEN, EN WAAROM DE HELE REGEL DE KNOP IS ──────────────────
-        Lucas: *"misschien naast hooks een klein vraagteken logo zetten waar
-        mensen op kunnen klikken waarna ze het concept kunnen zien."*
-
-        NATIVE <details>, ZOALS ELKE ANDERE UITKLAPPER OP DEZE SITE. Hij opent
-        zonder JavaScript, staat gratis in de toegankelijkheidsboom, en ctrl+F in
-        Chrome klapt hem open om een woord te vinden dat erin staat. Er zit hier
-        geen enkele regel script aan.
-
-        NIET DE GEDEELDE <Disclose>, EN DAT IS EEN AFWIJKING MET EEN REDEN.
-        Disclose.astro bestaat juist om te voorkomen dat er een zesde uitklapper
-        wordt uitgevonden, dus deze afwijking hoort verantwoord te worden: die
-        component tekent een REGEL OVER DE VOLLE BREEDTE met een plus rechts, en
-        wat hier gevraagd is, is een rondje van twintig pixels dat middenin een
-        tekstregel naast één woord staat. Om Disclose zo te krijgen moet je zijn
-        `padding-right`, zijn flexregel en zijn `::after`-glyph allemaal van
-        buitenaf met `:global()` overschrijven — dan blijft er van "één
-        uitklapper" niets over behalve de naam. De regel in DESIGN.md gaat over
-        de VORM van een uitklapper in een lijst antwoorden; dit is geen lijst.
-
-        DE HELE TITELREGEL IS DE <summary>, NIET ALLEEN HET RONDJE. Een
-        vraagteken van 20px is op een telefoon een doelwit dat je twee keer mist;
-        de regel eromheen is 300px breed. Het rondje blijft de zichtbare
-        aanwijzing dat er iets te openen valt, maar wie op "Hooks" tikt, opent
-        hetzelfde. Dat is dezelfde afspraak als bij elke andere summary op de
-        site: het label is de knop.
-
-        HET PANEEL OPENT BOVEN DE TWEE REGELS TEKST en niet onderaan de strook,
-        omdat een uitklapper direct onder zijn eigen samenvatting hoort te
-        verschijnen. Openen duwt de omschrijving naar beneden — dat is wat een
-        uitklapper doet, en het alternatief (paneel onderaan, ver van het
-        vraagteken) laat de bezoeker zoeken wat er nou veranderde.
-
-        `id="hooks"` staat erop zodat er ergens naartoe te linken valt zodra dat
-        nodig is — het menu-item is nu bewust dood, maar als het ooit een link
-        naar deze strook moet worden, hoeft daar alleen een href bij. */}
-    {/* ── DE AANGEKONDIGDE DIENSTEN ────────────────────────────────────────
-        EEN LUS EN NIET TWEE GEPLAKTE STROKEN, 18 augustus 2026. Hier stond één
-        uitgeschreven blok voor Hooks; Editions kwam erbij. Twee keer hetzelfde
-        markup plakken is hoe de derde er over een maand nét anders uitziet.
-        Alles wat per dienst verschilt staat in svcSoonList; alles wat hetzelfde
-        is — het label, de regel eronder, de voetnoot — staat er één keer.
-
-        EEN ECHTE <button disabled> EN GEEN GRIJZE SPAN. Dat is het verschil
-        tussen een knop die niet werkt en iets dat eruitziet als een knop:
-        `disabled` wordt door elke schermlezer aangekondigd als niet-beschikbaar,
-        is niet met tab te bereiken, en kan niet per ongeluk toch iets doen.
-
-        HET VRAAGTEKEN OPENT EEN NATIVE <details>. Geen JavaScript, staat gratis
-        in de toegankelijkheidsboom, en ctrl+F in Chrome klapt hem open om een
-        woord te vinden dat erin staat. De HELE titelregel is de summary — een
-        vraagteken van 20 pixels is op een telefoon een doelwit dat je twee keer
-        mist, de regel eromheen is 300 breed.
-
-        HET id KOMT UIT DE DATA, zodat er naartoe te linken valt zodra dat nodig
-        is. De menu-items zijn nu bewust dood; als ze ooit een link naar deze
-        strook moeten worden, hoeft daar alleen een href bij. */}
-    <div class="tiles hv-soon-grid">
-    {c.svcSoonList.map((soon) => (
-      <div class="tile s-6 hv-soon" id={soon.id}>
-        <div class="hv-soon-copy">
-          <details class="hv-q">
-            <summary class="hv-soon-h hv-q-sum">
-              <span>{soon.name}</span>
-              {/* Het rondje is decoratie; de toegankelijke naam van de knop is de
-                  regel eromheen, en die moet zeggen wat opengaat en niet "?". */}
-              <span class="hv-q-mark" aria-hidden="true">?</span>
-              <span class="hv-q-say">{soon.qLabel}</span>
-              <em class="hv-soon-tag">{c.svcSoonTag}</em>
-            </summary>
-            <div class="hv-q-panel">
-              {soon.qBody.map(([k, v]) => (
-                <p class="hv-q-row"><b class="hv-q-k">{k}</b><span class="hv-q-v">{v}</span></p>
-              ))}
-              <p class="hv-q-foot">{c.svcSoonFoot}</p>
-            </div>
-          </details>
-          <p class="hv-soon-desc">{soon.desc}</p>
-          <p class="hv-soon-body">{c.svcSoonBody}</p>
+      {c.svcSoonList.map((soon, i) => (
+        <div class="hv-svc-card is-soon" id={soon.id} role="listitem">
+          <span class="hv-svc-card-head">
+            <svg class="hv-svc-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SOON_ICON[i]} /></svg>
+            <em class="hv-soon-tag">{c.svcSoonTag}</em>
+          </span>
+          {/* EEN LEEG BEELDVLAK EN GEEN WEGGELATEN BEELDVLAK. Zonder dit is de
+              kaart 450px korter dan de vier ernaast en leest de rij als een rij
+              met twee gaten erin. Met een leeg vlak staan alle zes op dezelfde
+              maat en zegt de kaart wat hij te zeggen heeft: er is nog niets van
+              te laten zien. Het merkteken erin, sterk gedempt — geen
+              placeholder-opdracht, want dit wacht niet op een foto maar op een
+              dienst. */}
+          <span class="hv-svc-card-media is-empty">
+            <svg class="hv-svc-card-mark" viewBox="0 0 702 813.25" aria-hidden="true" focusable="false"><use href="#markglyph" /></svg>
+          </span>
+          <span class="hv-svc-card-body">
+            <details class="hv-q">
+              <summary class="hv-q-sum hv-svc-card-t">
+                <span>{soon.name}</span>
+                {/* Het rondje is decoratie; de toegankelijke naam van de knop is
+                    de regel eromheen, en die moet zeggen wat opengaat en niet "?". */}
+                <span class="hv-q-mark" aria-hidden="true">?</span>
+                <span class="hv-q-say">{soon.qLabel}</span>
+              </summary>
+              <div class="hv-q-panel">
+                {soon.qBody.map(([k, v]) => (
+                  <p class="hv-q-row"><b class="hv-q-k">{k}</b><span class="hv-q-v">{v}</span></p>
+                ))}
+                <p class="hv-q-foot">{c.svcSoonFoot}</p>
+              </div>
+            </details>
+            <span class="hv-svc-card-p">{soon.desc}</span>
+            {/* EEN ECHTE <button disabled> EN GEEN GRIJZE SPAN: `disabled` wordt
+                door elke schermlezer aangekondigd als niet-beschikbaar, is niet
+                met tab te bereiken, en kan niet per ongeluk toch iets doen. */}
+            <button class="btn btn-ghost hv-soon-btn" type="button" disabled>{soon.cta}</button>
+          </span>
         </div>
-        <button class="btn btn-ghost hv-soon-btn" type="button" disabled>{soon.cta}</button>
-      </div>
-    ))}
+      ))}
     </div>
 
     <div class="hv-svc-foot">
@@ -2299,7 +2340,11 @@ const c = COPY[lang];
      straks iets vanzelf gaat gebeuren. */
   .hv-hero-foot {
     position: relative; z-index: 1;
-    display: flex; align-items: stretch; gap: clamp(.6rem, 1.2vw, 1rem);
+    /* `end` en niet `stretch`: de pauzeknop is geen kaart meer (zie zijn eigen
+       noot) en hoort dus ook niet meer tot kaarthoogte te worden uitgerekt. Hij
+       lijnt onderaan uit met de rij, als een teken naast de rij en niet als een
+       lid ervan. De rij zelf rekt gewoon door, want die is `flex: 1`. */
+    display: flex; align-items: end; gap: clamp(.6rem, 1.2vw, 1rem);
     padding-bottom: clamp(1.2rem, 3vh, 2.2rem);
   }
   .hv-slide-cards {
@@ -2361,18 +2406,32 @@ const c = COPY[lang];
   /* De pauzeknop. Vierkant, zelfde hoogte als de kaartrij ernaast, en hij
      draagt zijn staat in aria-label én in de vorm van het pictogram — een knop
      die alleen van kleur verandert, zegt tegen een schermlezer niets. */
+  /* ── GEEN DOOS EROMHEEN — 20 AUGUSTUS 2026 ───────────────────────────────
+     Lucas: *"de play button voor de slides hoeft geen box omheen, het voelt nu
+     alsof er meer opties zijn die dan weergegeven worden als je erop klikt."*
+
+     Hij had gelijk en de oorzaak stond in mijn eigen noot hierboven: "vierkant,
+     zelfde hoogte als de kaartrij ernaast". Dat maakte hem tot een zesde kaart
+     in een rij van vijf — dezelfde rand, dezelfde radius, dezelfde vulling,
+     dezelfde hoogte. Vijf van die dozen kiezen een dia; de zesde doet iets
+     totaal anders. Gelijk vormgeven is dan geen consistentie maar een leugen
+     over wat het ding is.
+
+     Nu is het alleen het teken: geen rand, geen vulling, geen radius, en een
+     stap smaller dan een kaart. Het treffervlak blijft wél 44px hoog (WCAG
+     2.5.8) — dat zit in de hoogte, niet in een zichtbare doos. */
   .hv-hero-toggle {
-    flex: none; width: clamp(2.6rem, 4vw, 3.2rem);
+    flex: none;
+    width: 2.75rem; min-height: 2.75rem;
     display: grid; place-items: center;
-    border: 1px solid rgb(255 255 255 / .16); border-radius: var(--r-md);
-    background: rgb(0 0 0 / .42); color: var(--paper-on-dark);
+    border: 0; border-radius: var(--r-sm);
+    background: none; color: var(--paper-on-dark);
+    opacity: .62;
     cursor: pointer;
-    transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+    transition: opacity var(--dur-1) var(--ease);
   }
-  @supports (backdrop-filter: blur(6px)) {
-    .hv-hero-toggle { background: rgb(0 0 0 / .28); backdrop-filter: blur(8px); }
-  }
-  .hv-hero-toggle:hover { background: rgb(0 0 0 / .62); border-color: rgb(255 255 255 / .34); }
+  .hv-hero-toggle:hover { opacity: 1; }
+  .hv-hero-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; opacity: 1; }
   /* Pauze = twee streepjes; afspelen = een driehoek. Met border-box getekend in
      plaats van met een <svg>, zodat de omschakeling één klasse is en er geen
      tweede pictogram in de html hoeft te staan dat je moet verbergen. */
@@ -2392,6 +2451,11 @@ const c = COPY[lang];
        afkortingen. Horizontaal schuiven houdt ze op leesbare breedte en is het
        gebaar dat op een telefoon toch al verwacht wordt. */
     .hv-hero-foot { flex-direction: column; gap: .7rem; }
+    /* De knop is geen doos meer en mag dus ook niet als een doos uitrekken.
+       Gemeten op 390: hij werd 352 pixels breed met het tekentje in het midden —
+       een onzichtbaar treffervlak over de halve breedte van het scherm. Op zijn
+       eigen maat, links, onder de rij waar hij bij hoort. */
+    .hv-hero-toggle { align-self: start; }
     .hv-slide-cards {
       display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch; scrollbar-width: none;
@@ -2399,7 +2463,11 @@ const c = COPY[lang];
     }
     .hv-slide-cards::-webkit-scrollbar { display: none; }
     .hv-slide-card { flex: 0 0 auto; min-width: 12rem; scroll-snap-align: start; }
-    .hv-hero-toggle { width: 100%; height: 2.6rem; }
+    /* Was `width: 100%` — dat hoorde bij de doos van vroeger, toen de knop een
+       zesde kaart was en op een telefoon onder de rij een eigen balk kreeg.
+       Zonder doos is een knop van 352 pixels breed alleen nog een groot
+       onzichtbaar vlak. Zijn eigen maat, dus. */
+    .hv-hero-toggle { width: 2.75rem; height: 2.75rem; }
   }
   /* 900, NOT 800 — Lucas: *"misschien kan je de witte tekst dikgedrukt maken."*
      The complaint underneath it was that "visualized." looks bigger than the
@@ -2491,7 +2559,6 @@ const c = COPY[lang];
   /* .hv-tile-sub droeg de regel "€ x per stuk" onder de drie uitgewerkte
      totalen. Die tegels staan sinds augustus 2026 alleen nog op /pricing, en de
      regel is met ze meegegaan. */
-  .hv-svc-tiles { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
 
   /* ── the price band ────────────────────────────────────────────────────────
      THE ONE VAT LINE. It is a block qualifier, so it has to read as governing
@@ -2583,76 +2650,155 @@ const c = COPY[lang];
      The label above still says "excl. VAT" in plain sight; this is only the
      mechanism. Do not inline it back: that is how a price band grows a
      paragraph of tax law between the rate card and the button. */
-  /* ── the services ──────────────────────────────────────────────────────────
-     A whole-tile link, so the target is the card and not a word inside it.
-     Radii are inherited: .tile carries --r-lg and clips its own media, which
-     is why nothing here sets a corner except the inset .hv-svc-get plate —
-     that one is a surface of its own and takes --r-md, the step below the
-     card that contains it. Nothing in this band is allowed a hard corner. */
-  .hv-svc-tile { color: inherit; transition: background var(--dur-1) var(--ease); }
-  .hv-svc-tile:hover { background: var(--bg-raise); }
-  /* One aspect ratio, now that all four tiles are one width. 16/9 rather than
-     the 4/3 the narrow tiles used to take: a 4/3 crop inside a half-row tile
-     is 480px of photograph before a word is read, and on a phone — where the
-     four stack — that was most of what made this band four viewports tall. */
-  .hv-svc-media { aspect-ratio: 16 / 9; }
-  .hv-svc-media img { transition: transform var(--dur-3) var(--ease); }
-  .hv-svc-tile:hover .hv-svc-media img { transform: scale(1.03); }
-  @media (prefers-reduced-motion: reduce) {
-    .hv-svc-media img, .hv-svc-tile:hover .hv-svc-media img { transition: none; transform: none; }
+  /* ══ DE DIENSTENRIJ ══════════════════════════════════════════════════════
+     Zie de lange noot bij de markup voor wat er bij Adobe is opgemeten en
+     waarom het raster van twee bij twee weg is. Hieronder staan de getallen.
+
+     DE RIJ SCHUIFT ZELF, ER ZIT GEEN SCRIPT AAN. `overflow-x: auto` met
+     scroll-snap doet wat hun `.elastic-carousel` met een transform en een
+     transition doet, en het werkt met een muiswiel, een trackpad, een veeg én
+     de pijltjestoetsen zodra de rij focus heeft. Een carrousel die JavaScript
+     nodig heeft om te schuiven, is een carrousel die stukgaat zodra dat script
+     niet aankomt.
+
+     `scroll-padding-inline` en de negatieve marge samen: de kaarten mogen tot
+     tegen de rand van het venster schuiven (anders lijkt de rij op te houden
+     waar de container ophoudt) maar de eerste staat wél op de bladspiegel. */
+  .hv-svc-rail {
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    display: flex;
+    /* STRETCH EN NIET START, en dat is een afwijking van Adobe met een reden.
+       Hun vijf kaarten hebben allemaal dezelfde onderdelen, dus worden ze
+       vanzelf even hoog en mag `start` de kortere korter laten. Hier hebben
+       twee van de zes geen foto en een uitklapper die opengaat; met `start`
+       staan er dan twee kaarten van halve hoogte tussen vier volle, en dat
+       leest als een gat en niet als een verschil. */
+    align-items: stretch;
+    gap: clamp(.75rem, 1.1vw, 1.1rem);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--pad-x);
+    margin-inline: calc(-1 * var(--pad-x));
+    padding-inline: var(--pad-x);
+    padding-block-end: .6rem;         /* ruimte voor de schaduw bij hover */
+    /* De balk zelf weg: de kaarten die half buiten beeld staan zijn de
+       aanwijzing dat er meer naast staat, en die is duidelijker dan een grijs
+       streepje dat op een Mac toch pas verschijnt als je al scrollt. */
+    scrollbar-width: none;
   }
-  .hv-svc-body { gap: 0; }
-  .hv-svc-line { font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
-  /* ── DE SPECIFICATIEREGEL IS VAN DE KAART GEHAALD — 19 augustus 2026 ──────
-     Hier stond `.hv-svc-get`: eerst een ingelegd vakje, daarna een regel onder
-     een haarlijn. Nu staat er niets meer, want de regel zelf is weg.
+  .hv-svc-rail::-webkit-scrollbar { display: none; }
 
-     Reden: hij zei hetzelfde als de hero-carrousel, drie schermen hoger, met
-     de foto erbij. Naast elkaar gelegd was het bijna woordelijk —
+  /* DE KAARTMAAT. Adobe: 294px op een venster van 1905, oftewel 15,4%. Hier
+     staan er zes en niet vijf, en de tekst is Nederlands (langer), dus een
+     tikje ruimer: 17rem tot 21rem. Op 1920 is dat 336px en passen er vijf en
+     een halve in beeld — precies genoeg om te zien dat de rij doorloopt. */
+  .hv-svc-card {
+    flex: 0 0 clamp(15.5rem, 18vw, 21rem);
+    scroll-snap-align: start;
+    display: flex; flex-direction: column;
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    color: inherit;
+    transition: background var(--dur-1) var(--ease),
+                border-color var(--dur-1) var(--ease),
+                transform var(--dur-1) var(--ease);
+  }
+  a.hv-svc-card:hover { background: var(--bg-raise); border-color: var(--line-strong); transform: translateY(-3px); }
 
-         carrousel  "Eén korte verticale clip, gesneden voor Reels, TikTok en
-                     paid — zonder er een tweede shoot voor te doen."
-         kaart      "Eén korte verticale clip, gesneden voor Reels, TikTok en
-                     paid."
+  /* DE KOP. Adobe: 72px hoog, 24px padding, pictogram 24×24, categorie 14/700.
+     Hier iets krapper omdat de kaart smaller is dan de hunne breed is. */
+  .hv-svc-card-head {
+    display: flex; align-items: center; gap: .6rem;
+    padding: clamp(.9rem, 1.4vw, 1.15rem) clamp(1rem, 1.5vw, 1.25rem);
+    min-height: 3.4rem;
+  }
+  .hv-svc-card-i { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--accent-bright); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .hv-svc-card-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .01em; color: var(--ink-3); }
 
-     — en dat is een duplicatie die ik zelf heb gemaakt toen ik de dia-teksten
-     uit deze specs schreef. Lucas: *"omdat er nu via beeld uitgelegd wordt met
-     de diaslide kan er wellicht minder tekst op de homepage komen."* Precies
-     dit.
+  /* HET BEELD. Staand, zoals bij Adobe (294×399 ≈ 3:4). Dat is de kern van de
+     klacht "sommige foto's zijn veel te groot": een 16:9-beeld over een halve
+     paginabreedte is 745 bij 410 pixels, een 3:4 in deze kaart is 336 bij 448.
+     Kleiner in oppervlak, en tegelijk MEER beeld — een staand kader laat van
+     een persoon of een kledingstuk meer zien dan een liggend. */
+  .hv-svc-card-media {
+    display: block; aspect-ratio: 3 / 4; overflow: hidden;
+    margin-inline: clamp(1rem, 1.5vw, 1.25rem);
+    border-radius: var(--r-md);
+    background: var(--bg-0);
+  }
+  .hv-svc-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--dur-3) var(--ease); }
+  a.hv-svc-card:hover .hv-svc-card-media img { transform: scale(1.04); }
 
-     De kaart houdt wat de carrousel NIET zegt: de baat, en de link naar de
-     pagina. Scheelt negentig woorden en maakt de kaarten een stuk korter. */
-
-  /* De link onderaan. `margin-top: auto` duwt hem naar de onderrand zolang de
-     tegel ruimte over heeft — niet om de tegels even hoog te maken (dat doen ze
-     hieronder juist niet meer), maar zodat de link binnen één tegel altijd op
-     dezelfde plek staat als er twee naast elkaar verschillen in tekstlengte. */
-  .hv-svc-more {
-    margin-top: clamp(.9rem, 1.6vw, 1.2rem);
+  .hv-svc-card-body {
+    display: flex; flex-direction: column;
+    padding: clamp(.9rem, 1.4vw, 1.15rem) clamp(1rem, 1.5vw, 1.25rem) clamp(1.1rem, 1.7vw, 1.4rem);
+  }
+  .hv-svc-card-t { font-family: var(--font-body); font-weight: 700; font-size: 1.02rem; line-height: 1.25; color: var(--ink); }
+  .hv-svc-card-p { margin-top: .45rem; font-size: .875rem; line-height: 1.55; color: var(--ink-3); }
+  .hv-svc-card-go {
+    margin-top: clamp(.8rem, 1.4vw, 1.1rem);
     display: inline-flex; align-items: baseline; gap: .4rem;
-    font-size: .84rem; font-weight: 700; letter-spacing: .01em;
+    font-size: .82rem; font-weight: 700;
     color: var(--accent-bright);
   }
   .hv-svc-arrow { transition: transform var(--dur-1) var(--ease); }
-  .hv-svc-tile:hover .hv-svc-arrow { transform: translateX(3px); }
+  a.hv-svc-card:hover .hv-svc-arrow { transform: translateX(3px); }
+
+  /* DE TWEE DIE NOG NIET KUNNEN. Zelfde maat, zelfde vorm, geen beeld — want
+     er is nog niets van te laten zien, en een placeholder zou hier beloven dat
+     er al werk ligt. Gedempte rand en geen hover, zodat de kaart er niet
+     aanklikbaar uitziet. */
+  .hv-svc-card.is-soon { background: transparent; border-style: dashed; }
+  .hv-svc-card-media.is-empty {
+    display: grid; place-items: center;
+    background: color-mix(in srgb, var(--bg-0) 60%, transparent);
+    border: 1px dashed var(--line);
+  }
+  .hv-svc-card-mark { width: 30px; height: auto; fill: var(--ink-1); opacity: .13; }
+  /* De knop naar de onderrand, zodat hij bij alle kaarten op dezelfde hoogte
+     staat ook als de omschrijving één regel korter is. `margin-top: auto` werkt
+     alleen omdat de body een flexkolom is die de kaarthoogte vult. */
+  .hv-soon-btn { margin-top: auto; padding-top: 0; align-self: start; }
+  .hv-svc-card.is-soon .hv-svc-card-body { flex: 1; }
+  .hv-svc-card.is-soon .hv-svc-card-p { margin-bottom: clamp(.9rem, 1.5vw, 1.2rem); }
+
   @media (prefers-reduced-motion: reduce) {
-    .hv-svc-arrow, .hv-svc-tile:hover .hv-svc-arrow { transition: none; transform: none; }
+    .hv-svc-card, .hv-svc-card-media img, .hv-svc-arrow,
+    a.hv-svc-card:hover, a.hv-svc-card:hover .hv-svc-card-media img,
+    a.hv-svc-card:hover .hv-svc-arrow { transition: none; transform: none; }
   }
 
-  /* ── EN DE TEGELS WORDEN NIET MEER UITGEREKT ─────────────────────────────
-     `.tile-body` heeft `flex: 1`, en de rasterrij rekt elke tegel tot de hoogte
-     van de langste. Vier tegels met verschillende tekstlengtes worden zo vier
-     even hoge blokken met verschillend veel lege ruimte onderin — het ziet er
-     netjes uit en het liegt over de inhoud.
+  /* ══ HET FLOATY-EFFECT ═══════════════════════════════════════════════════
+     Adobe's `.parallax-move-up`, opgemeten: translateY(100px) ver onder de
+     vouw, naar 0 als het blok binnenkomt (100 → 75,7 → 6,1 → 0).
 
-     Adobe zet hier expliciet `align-items: start` en laat een kortere kaart
-     korter zijn. Dat is wat een raster van kaarten onderscheidt van een tabel.
-     Alleen op DIT raster; `.tiles` elders op de site verandert niet. */
-  .hv-svc-tiles { align-items: start; }
-  /* .hv-svc-price and .hv-svc-get's "figures line up across tiles" rule came
-     out with the prices — see the band's own comment. The inset plate above is
-     now the last thing in a tile, and it does not need a floor. */
+     Deze site had alleen `vis-rise` (10px) en `vis-rise-far` (18px). Tien
+     pixels is geen beweging die je ziet — het is beweging die je meet. Dat is
+     de hele reden dat het hier nooit "floaty" aanvoelde. Zeventig pixels op de
+     rij als geheel, niet per kaart: de rij drijft omhoog als één vlak, en dat
+     is wat het rustig houdt.
+
+     Zelfde constructie als de rest van de site: een scroll-tijdlijn, geen
+     listener, en zonder ondersteuning gebeurt er niets. Zie DE BEWEGING KOMT
+     UIT DE SCROLL ZELF in global.css. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hv-svc-rail {
+        animation: hv-float linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 30%;
+      }
+    }
+  }
+
   .hv-svc-foot { margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+  @keyframes hv-float {
+    from { opacity: 0; transform: translateY(70px); }
+    to   { opacity: 1; transform: none; }
+  }
 
   @media (max-width: 700px) {
     .rail-nav { display: none; }
@@ -2714,35 +2860,13 @@ const c = COPY[lang];
    * De uitklapper, de id's (#hooks, #editions) en de dode knop blijven precies
    * zoals ze waren; alleen de omlijsting verandert.
    */
-  .hv-soon-grid { margin-top: clamp(1rem, 1.7vw, 1.5rem); align-items: start; }
-  .hv-soon {
-    background: transparent;
-    border: 1px dashed var(--line-strong);
-    padding: clamp(1.25rem, 2.2vw, 1.9rem);
-    display: grid; grid-template-columns: minmax(0, 1fr);
-    /* ── START EN NIET CENTER, SINDS DE UITKLAPPER ERIN ZIT ──────────────────
-       Was `center`, en dat klopte zolang de strook een vaste hoogte had. Nu de
-       uitklapper open kan, groeit de linkerkolom van drie regels naar dertien —
-       en dan zweeft de knop op 360px hoogte in een leeg vlak rechts, ver van
-       alles waar hij bij hoort. Gemeten: de knop stond op y=463 bij een paneel
-       van y=434 tot y=798.
-
-       Met `start` staat hij op de titelregel, dicht en open hetzelfde, naast de
-       naam waar hij bij hoort. Dat is ook de plek waar hij het duidelijkst zegt
-       wat hij is: een knop bij Hooks, die niet werkt. */
-    gap: 1rem; align-items: start;
-    /* De strook heeft een id (#hooks), dus hoort hij niet onder de vaste balk te
-       landen als er ooit naartoe gelinkt wordt. Zelfde waarde als .faq-group. */
-    scroll-margin-top: clamp(5rem, 10vw, 7rem);
-  }
-  /* De knop staat onder de tekst in plaats van ernaast: in een halve kaart is
-     er geen tweede kolom meer om hem in te zetten, en `justify-self: start`
-     houdt hem op zijn eigen breedte in plaats van de kaart uit te rekken. */
-  .hv-soon-btn { justify-self: start; }
-  @media (max-width: 640px) {
-    .hv-soon-btn { width: 100%; }
-  }
-  .hv-soon-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
+  /* De strook is een KAART geworden (20 augustus 2026, zie de noot bij de
+     markup): dezelfde maat als de vier diensten, in dezelfde rij. Wat daarvan
+     over moet blijven is het id-anker — er kan naar #hooks gelinkt worden en
+     dan hoort de kaart niet onder de vaste balk te landen. Zelfde waarde als
+     .faq-group. De vulling, de rand en de streepjesrand staan nu bij
+     `.hv-svc-card.is-soon`; hier stond dat twee keer. */
+  .hv-svc-card.is-soon { scroll-margin-top: clamp(5rem, 10vw, 7rem); }
 
   /* ── DE UITKLAPPER MET HET VRAAGTEKEN ─────────────────────────────────────
      Het driehoekje moet op DRIE manieren weg, want de drie engines zijn het
@@ -2829,8 +2953,6 @@ const c = COPY[lang];
     border: 1px solid var(--line-strong); border-radius: var(--r-pill);
     vertical-align: middle;
   }
-  .hv-soon-desc { margin: .45rem 0 0; font-size: .95rem; line-height: 1.55; color: var(--ink-2); max-width: 56ch; }
-  .hv-soon-body { margin: .35rem 0 0; font-size: .85rem; line-height: 1.55; color: var(--ink-3); max-width: 60ch; }
   /* Uitgeschakeld hoort uitgeschakeld te ZIEN, en de cursor hoort het te zeggen
      voordat iemand klikt. `pointer-events` blijft aan: een cursor die niet
      verandert, is een knop waarvan je pas na de klik weet dat hij dood is. */
@@ -3090,7 +3212,32 @@ const c = COPY[lang];
 
   /* ── before / after ────────────────────────────────────────────────────── */
   .hv-ba-head { max-width: 44rem; }
-  .hv-ba { margin-top: clamp(2.2rem, 4.5vw, 3.4rem); display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(1.6rem, 4vw, 3.4rem); align-items: center; }
+  /* 4fr/6fr sinds het beeld op 30rem is afgetopt: met 5fr bleef er 345 pixels
+     lege kolom naast het beeld staan, en die ruimte kan de tekst beter gebruiken. */
+  .hv-ba { margin-top: clamp(2.2rem, 4.5vw, 3.4rem); display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); gap: clamp(1.6rem, 4vw, 3.4rem); align-items: center; }
+  /* Een bovengrens op de breedte, zodat het vlak op een breed scherm niet door
+     blijft groeien met de kolom mee. Zonder deze regel is 3/4 op 1920 nog
+     altijd ruim 900 pixels hoog.
+
+     `width` + `justify-self` en NIET `max-width` + `margin-inline: auto`. Dat
+     laatste stond er eerst en het klapte de vergelijker dicht tot 2 bij 3
+     pixels: automatische zijmarges op een RASTERITEM zetten het item van
+     `stretch` naar `fit-content`, en `.cmp` heeft geen intrinsieke breedte —
+     zijn twee foto's staan absoluut gepositioneerd, dus de inhoud meet nul. Op
+     een gewoon blok was dezelfde regel onschuldig geweest; in een raster is het
+     een andere regel dan hij lijkt.
+
+     Gemeten op 390, 768 en 1440: overal 2×3 pixels, en op de pagina alleen een
+     gat waar het beeld hoort.
+
+     30rem en niet 40: met 40rem bleef het vlak 640 bij 853 en was er in hoogte
+     niets gewonnen — de verhouding alleen aanpassen loste de klacht dus niet
+     op, want een smaller kader dat even hoog blijft is even groot. Op 30rem is
+     het 480 bij 640, naast een tekstkolom van 693 breed. */
+  /* `start` en niet `center`: gecentreerd in een kolom van 825 begon het beeld
+     op x=280 terwijl de kop erboven op x=176 begint. Twee linkerranden op één
+     scherm is precies het soort scheefheid dat je niet aanwijst maar wel ziet. */
+  .hv-ba-media { width: min(100%, 30rem); justify-self: start; }
   /* :global because .cmp is rendered inside Compare.astro and carries that
      component's scope attribute, not this one's. */
   .hv-ba-media :global(.cmp) { border-radius: var(--r-lg); }

@@ -1503,14 +1503,72 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
      `overflow: hidden` op de band en niet op de binnenkant: het merk mag onder
      de onderrand doorlopen, maar niet naast de pagina uitsteken. */
-  .wm-reveal { position: relative; z-index: 0; height: 34svh; min-height: 12rem; overflow: hidden; background: var(--bg-deep); }
-  .wm-reveal-inner { position: sticky; bottom: 0; height: 34svh; min-height: 12rem; display: grid; align-content: end; justify-items: center; }
+  /* ── EN OP 20 AUGUSTUS 2026 BLEEK HIJ NIET TE PLAKKEN ────────────────────
+     Lucas: *"het scroll effect doet het niet zoals aangegeven, hij moet sticky
+     zijn en onder de footer schuiven waarna je op de footer het nog licht
+     doorzichtig ziet."*
+
+     Opgemeten op visuails.com: `inner.top − band.top = 0` op elke scrollpositie.
+     De plakregel deed letterlijk niets, en de noot hierboven beschreef een
+     werking die de code niet kón hebben. Twee fouten, allebei van mij:
+
+       1 · DE BINNENKANT WAS EVEN HOOG ALS DE BAND. Een `position: sticky` plakt
+           alleen zolang er ruimte is om in te reizen. Vul je de container
+           helemaal, dan is die ruimte nul en staat het element stil. De band is
+           nu ruim twee keer zo hoog als wat erin plakt.
+
+       2 · `overflow: hidden` OP DE BAND DOODT DE PLAKREGEL. Daarmee wordt de
+           band zelf een scrollcontainer, en een sticky kind plakt aan een
+           container die niet scrollt — dus nergens aan. `overflow-x: clip`
+           knipt wél zijwaarts af (nodig, want het merk is op een telefoon
+           128vw breed) zonder een scrollcontainer te maken. Dat is precies wat
+           Adobe op hun `.elastic-carousel` gebruikt, om dezelfde reden.
+
+     Dat de footer er daarna OVERHEEN schuift, is punt drie: zie de negatieve
+     bovenmarge bij `.wm-reveal + .site-footer`. */
+  /* DRIE · EN HIJ MOET ONDERIN ZIJN EIGEN BLOK STAAN.
+     Dit was de fout die overbleef nadat de twee hierboven weg waren, en hij is
+     de minst voor de hand liggende van de drie. Een `position: sticky` mag zijn
+     doos alleen verschuiven BINNEN het bevattende blok. Met `bottom: 0` wordt
+     de doos omhoog getrokken, en stond hij bovenin dat blok, dan zou omhoog
+     betekenen: erbuiten. Dus doet de browser niets — geen fout, geen
+     waarschuwing, alleen een element dat stilstaat.
+
+     Gemeten met een rode testdoos in de band: `travel = 0` op elke
+     scrollpositie, ook toen de doos 362px onder de vouw hing.
+
+     `justify-content: flex-end` zet de binnenkant onderin de band en laat de
+     ruimte erbóven vrij. Precies die vrije ruimte is wat de plakregel te reizen
+     heeft. Gemeten na de wijziging: de onderrand van de binnenkant valt samen
+     met de onderrand van het venster (botGap = 0) en blijft daar. */
+  .wm-reveal {
+    position: relative; z-index: 0;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    /* 78svh en niet 100: de band is op alle zesentachtig pagina's donkere
+       ruimte waar niets in staat behalve het merk onderaan, en een hele
+       schermhoogte daarvan is te veel gevraagd. Met 78svh band en 34svh
+       binnenkant blijft er ruim 40svh over om in te reizen — gemeten was dat
+       genoeg voor een plakfase die je duidelijk voelt. */
+    height: 78svh; min-height: 28rem;
+    overflow-x: clip;
+    background: var(--bg-deep);
+  }
+  .wm-reveal-inner {
+    position: sticky; bottom: 0;
+    height: 34svh; min-height: 12rem;
+    display: grid; align-content: end; justify-items: center;
+  }
   .wm-reveal-mark {
     width: min(96vw, 2000px);
     /* Onder de rand door, zodat het merk wordt afgesneden door de pagina en
        niet netjes past. Dat afsnijden IS het effect — een logo dat helemaal in
-       beeld staat, is een logo; een logo dat de rand raakt, is een drukwerkmerk. */
-    margin-bottom: -6%;
+       beeld staat, is een logo; een logo dat de rand raakt, is een drukwerkmerk.
+
+       MAAR NIET ZO DIEP DAT JE HET NIET MEER LEEST. Gemeten: bij -6% viel 83
+       van de 233 pixels onder de rand, ruim een derde van de letterhoogte, en
+       dan zie je geen woord meer maar een rij grijze vormen. Bij -2% blijft de
+       woordvorm heel en raakt hij nog steeds de rand. */
+    margin-bottom: -2%;
     fill: var(--paper-on-dark);
     /* VOL, EN DAT IS HET VERSCHIL MET EEN WATERMERK. De eerste versie stond op
        .12 — de waarde die het oude watermerk in de footer had — en op de
@@ -1544,13 +1602,40 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   }
 
   @media (max-width: 700px) {
-    .wm-reveal, .wm-reveal-inner { height: 22svh; min-height: 8rem; }
+    /* De band blijft ruim hoger dan wat erin plakt — anders is er weer niets te
+       reizen en staat het merk stil, precies de fout die hierboven beschreven
+       staat. De verhouding blijft ongeveer 2,5 : 1. */
+    .wm-reveal { height: 70svh; min-height: 22rem; }
+    .wm-reveal-inner { height: 26svh; min-height: 8.5rem; }
     .wm-reveal-mark { width: 128vw; }
   }
 
-  /* De footer dekt de band af. `z-index: 1` en een dichte achtergrond zijn
-     samen het hele mechanisme — zonder één van de twee schuift er niets
-     overheen maar erdoorheen. */
+  /* ── DE FOOTER SCHUIFT ERÓVERHEEN, EN JE ZIET HET MERK ERDOORHEEN ────────
+     Twee dingen die hier eerst geen van beide klopten.
+
+     EEN. Hij schoof er niet overheen maar ernaast. De footer stond netjes ná de
+     band in de flow, dus overlapten ze nergens — gemeten was er zelfs 30px
+     tussenruimte. Een negatieve bovenmarge trekt hem over de staart van de
+     band heen, en omdat het merk daar nog steeds aan de onderrand plakt, komt
+     de footer er van onderaf overheen terwijl het merk blijft staan. Dát is de
+     beweging.
+
+     TWEE. Hij was volledig dekkend, dus er was niets doorheen te zien. De
+     vulling is nu 93% — het merk is massief wit, dus wat erdoorheen komt is
+     ongeveer 7% wit: een spookvorm die je ziet als je kijkt en niet als je
+     leest. Meer dan dat en de footertekst gaat eronder lijden; minder en het is
+     er niet.
+
+     `color-mix` en geen tweede kleurwaarde: de vulling blijft --bg-deep, er
+     komt alleen doorzichtigheid bij. Eén bron, zoals overal.
+
+     De selector is `.wm-reveal + .site-footer` en niet `.site-footer`: de
+     negatieve marge hoort bij het PAAR. Staat de footer ooit ergens zonder band
+     erboven, dan trekt hij zichzelf niet over de inhoud heen. */
+  .wm-reveal + .site-footer {
+    margin-top: calc(-1 * clamp(9rem, 30svh, 24rem));
+    background: color-mix(in srgb, var(--bg-deep) 93%, transparent);
+  }
   .site-footer { z-index: 1; }
   .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   /* The gap above the footer is breathing room after a dark section that ended
