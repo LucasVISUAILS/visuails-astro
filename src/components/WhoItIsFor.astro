@@ -77,7 +77,10 @@ const c = COPY[lang] || COPY.en;
       {c.who.map(([t, b], i) => (
         <div class="tile s-3 reveal">
           <div class="tile-body">
-            <span class={`wif-i ${['w-blue', 'w-violet', 'w-pink', 'w-coral'][i] || ''}`}>{String(i + 1).padStart(2, '0')}</span>
+            {/* Geen kleurladder — zie de noot bij .hv-pipe-n in HomeV2.astro.
+                Dit zijn vier situaties naast elkaar, geen ranglijst, dus is er
+                al helemaal geen reden om de vierde het flauwst te zetten. */}
+            <span class="wif-i">{String(i + 1).padStart(2, '0')}</span>
             <p class="tile-h">{t}</p>
             <p class="tile-n">{b}</p>
           </div>
@@ -97,7 +100,7 @@ const c = COPY[lang] || COPY.en;
   /* Het nummer is een LABEL en geen stap: de vier situaties zijn alternatieven.
      Daarom klein en gekleurd, en niet de omlijnde cijfers die de pijplijn
      gebruikt — die betekenen volgorde, en die volgorde bestaat hier niet. */
-  .wif-i { display: block; font-family: var(--font-display); font-weight: 900; font-size: .74rem; letter-spacing: .14em; margin-bottom: 1.1rem; }
+  .wif-i { display: block; font-family: var(--font-display); font-weight: 900; font-size: .74rem; letter-spacing: .14em; margin-bottom: 1.1rem; color: var(--accent-bright); }
   .wif-notfor { margin-top: clamp(2rem, 4vw, 3rem); padding-top: clamp(1.4rem, 2.5vw, 2rem); box-shadow: inset 0 1px 0 var(--line); }
   .wif-notfor ul { list-style: none; margin: 1.1rem 0 0; padding: 0; display: grid; gap: .65rem; max-width: 62ch; }
   .wif-notfor li { position: relative; padding-left: 1.4rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }

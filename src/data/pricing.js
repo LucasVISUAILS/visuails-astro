@@ -214,6 +214,61 @@ export const PLAN_CLIPS = { starter: 0, studio: 2, brand: 0 };
 export const PLAN_ROLLOVER_MONTHS = 1;
 export const PLAN_COMPARE_MONTHS = 3;
 
+/* ── DE BEELDBANK BIJ EEN ABONNEMENT — 20 augustus 2026 ────────────────────
+ *
+ * Lucas, over wat een abonnement straks naast de bestellingen geeft:
+ *
+ *   · elke maand STOCK_OFF_BRAND nieuwe beelden die bij elk merk passen,
+ *     inbegrepen bij elk abonnement;
+ *   · en met Editions erbij STOCK_ON_BRAND beelden per maand die op JOUW merk
+ *     zijn opgezet — stijl, locaties en merkkleuren. Daar zit GEEN product van
+ *     de klant in: ze zijn er om het merk gevoel te geven, niet om iets te
+ *     verkopen. On-brand moet per merk worden opgezet en is dus een aparte
+ *     stap, geen schakelaar.
+ *
+ * ── WAT ER MET OPZET NIET IN ZIT: GEZICHTEN ───────────────────────────────
+ * Hier stond "jouw gezichten" bij, en dat is er op 20 augustus 2026 uitgehaald.
+ * Lucas: het kiezen van modellen per set maakt het controlewerk zo groot dat de
+ * prijs fors omhoog zou moeten, en juist die prijs wil hij laag houden.
+ *
+ * Het staat NERGENS als uitsluiting op de site, en dat is een keuze. "Zonder
+ * modellen" maakt van een afwezigheid een beperking: wie er niet aan dacht,
+ * denkt er daarna wel aan. De copy noemt alleen wat er wél in zit, en belooft
+ * daarmee ook nergens iets dat niet geleverd wordt. Het merkmodel blijft een
+ * eigen product met een eigen prijs.
+ *
+ * WAT DIT ZOU TERUGDRAAIEN: als het opzetten van een gezicht per merk ooit één
+ * handeling wordt in plaats van een controleronde per set, hoort het hier
+ * gewoon bij te komen — en dan als vierde in de opsomming hierboven.
+ *
+ * Ze staan hier en niet in een zin op de homepage om dezelfde reden als elk
+ * ander getal op deze site: een aantal dat in copy staat, verandert op één
+ * plek en blijft op vier andere staan. Editions is nog niet leverbaar — zie
+ * svcSoonList in HomeV2.astro — dus elke zin die deze getallen gebruikt moet
+ * dat er zelf bij zeggen.
+ */
+/* ── WAAROM 20 EN NIET 100 — 20 augustus 2026 ──────────────────────────────
+ * Hier stond 100 off-brand en 40 on-brand. Lucas: *"100 is teveel en klinkt dan
+ * goedkoop."* Dat is een prijsargument en geen voorraadargument, en het klopt:
+ * een aantal dat hoog genoeg is om onmogelijk stuk voor stuk gemaakt te zijn,
+ * leest als een bak in plaats van als werk. Honderd beelden per maand zegt
+ * "gegenereerd"; twintig zegt "gemaakt". Voor een abonnement dat naast een
+ * fotostudio staat is dat het verschil tussen een extraatje en een bijvangst.
+ *
+ * Twintig is ook het aantal dat een merk in een maand kán plaatsen zonder dat
+ * het opvalt dat het steeds hetzelfde bureau is: bij dagelijks posten is dat
+ * tweederde van de kalender, en de rest zijn de eigen bestellingen. Meer dan
+ * dat is voorraad die niemand gebruikt, en ongebruikte voorraad is precies wat
+ * een aanbod goedkoop laat lijken.
+ *
+ * Off-brand en on-brand staan nu op HETZELFDE getal, met opzet. Het verschil
+ * tussen de twee moet in het merk zitten en niet in de hoeveelheid: twintig
+ * beelden die bij elk merk passen tegenover twintig die op jóuw stijl, jouw
+ * locaties en jouw merkkleuren zijn opgezet. Zet je daar ook nog een verschil
+ * in aantal naast, dan gaat het gesprek over hoeveel in plaats van over welke. */
+export const STOCK_OFF_BRAND = 20;
+export const STOCK_ON_BRAND = 20;
+
 // WHICH ORDERS GET THE RESERVED WINDOW.
 //
 // The package model asked the buyer two questions at once: how big is your

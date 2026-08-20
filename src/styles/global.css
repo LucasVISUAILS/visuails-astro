@@ -3602,3 +3602,209 @@ body::before {
 .pl-ctx-seen { font-size: .8rem; font-weight: 400; color: var(--ink-3); }
 .pl-ctx .hint { margin: 0; }
 .pl-ctx-row[hidden] { display: none; }
+
+/* ══ HET MERK GAAT OPEN OP HOVER ═══════════════════════════════════════════
+   Lucas, 20 augustus 2026: *"Ik wil op de bij elk logo op de website eerst de
+   simpele 2d logo hebben en als iemand eroverheen hovert het fade naar het logo
+   met de outlining of een animatie ervan kunnen maken als je dat kan dat het een
+   soort van uit elkaar spat."*
+
+   De markup staat in BrandMark.astro en heeft drie lagen op één symbool: een
+   vulling en twee lijnen. Deze regels staan HIER en niet in dat bestand, omdat
+   de instanties in Layout.astro staan en een scope-attribuut van een component
+   niet meeloopt naar het kind — dezelfde val die eerder .sp-human-shot,
+   .hv-stock-shot en .hv-quote-shot stil doodmaakte.
+
+   IN RUST IS ER NIETS VERANDERD. De lijn staat op dekking 0 én op dashoffset
+   100, dus hij is twee keer onzichtbaar: ook als een browser de dekkingsovergang
+   overslaat, hangt er geen half getekende lijn onder het logo.
+
+   WAT ER OP HOVER GEBEURT: de VULLING BLIJFT STAAN en er schuift een dunne lijn
+   onder vandaan naar linksboven, die zichzelf in 640ms intekent. Meer niet.
+
+   DIT WAS EERST FOUT. De eerste versie liet de vulling wegvallen zodat er alleen
+   een omtrek overbleef — een logo dat op hover verdwijnt. Lucas stuurde het beeld
+   waar het op moet lijken en zei: *"Ik wil dat het logo subtiel veranderd naar
+   dit. Het lijkt nu niet alsof dat gebeurt."* Op dat beeld staat de gevulde V er
+   gewoon, met een verschoven lijn ernaast en een kier ertussen. Dus: niet de
+   vulling vervangen door een omtrek, maar er een tweede rand naast leggen.
+
+   De kier ontstaat uit de verschuiving zelf — zie de noot in BrandMark.astro.
+   Terugbewegen is dezelfde overgang omgekeerd, dus de lijn tekent zich ook weer
+   uit en schuift terug onder de vulling.
+
+   DE LIJNDIKTE IS 1.25 CSS-PIXEL EN NIET 14 GEBRUIKSEENHEDEN. Het tekenvlak is
+   702 x 813 en wordt in de topbalk op 30px hoog gezet; zonder
+   `vector-effect: non-scaling-stroke` zou dezelfde streek in de voettekst een
+   balk zijn en in de balk een haar. Nu is hij overal even dun, wat precies de
+   fijne omtrek is uit de referentie die Lucas stuurde. */
+.mk { overflow: visible; }
+.mk .mk-fill {
+  stroke: none;
+  transition: opacity 180ms var(--ease, ease), transform 520ms cubic-bezier(.22, 1, .36, 1);
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+.mk .mk-line {
+  fill: none;
+  /* DE LIJN HEEFT EEN ANDERE KLEUR DAN DE VULLING, en dat is niet cosmetisch.
+     Op het beeld dat Lucas stuurde is het vlak limoen en de lijn zwart; het
+     kleurverschil is wat de lijn als tweede voorwerp laat lezen. Tekende ik hem
+     in dezelfde kleur, dan werd de kier ertussen een BARST in het logo in plaats
+     van een rand ernaast — dat is precies hoe de eerste versie eruitzag.
+
+     Gemeten welke kleur elke instantie heeft: het teken in de topbalk is wit
+     zolang je op de hero staat en wordt limoen zodra de balk meescrolt; het
+     mobiele teken, het woordmerk in de voettekst en het teken in de cookiebalk
+     zijn altijd limoen. Daarom zet Layout.astro --mk-line-ink per instantie op
+     de andere van die twee, in plaats van dat hier één kleur staat die op de
+     helft van de plekken onzichtbaar is.
+
+     --mk-ink blijft de terugval: een instantie die niets meegeeft krijgt een
+     lijn in zijn eigen kleur, en dat is nog altijd beter dan geen lijn. */
+  stroke: var(--mk-line-ink, var(--mk-ink, currentColor));
+  /* 0.55 CSS-pixel, op verzoek dunner gezet ("kan je de lijnen van het logo hover
+     effect dunner maken"). Van 0.85 af, en de grens ligt net onder deze waarde:
+     0.85, 0.65, 0.5 en 0.4 naast elkaar gerenderd op vijf keer vergroot én op
+     ware grootte, en bij 0.4 wordt de lijn langs de kleine vlag rechtsboven
+     onderbroken — daar liggen de twee zijden van de wig zo dicht bij elkaar dat
+     een halve pixel er niet meer tussen past.
+
+     Waarom 0.6 in de EERSTE ronde nog "valt weg op een gewoon scherm" was en nu
+     niet meer: toen tekende de lijn het merk in dezelfde kleur als de vulling en
+     moest hij het alleen van zijn dikte hebben. Nu is hij limoen naast een wit
+     vlak, en het kleurverschil doet dat werk. Een dunnere lijn kan dus pas sinds
+     die tweede kleur er is; dat is geen smaakverschil maar een gevolg.
+
+     Instanties met andere verhoudingen zetten --mk-sw zelf; het woordmerk staat
+     dunner omdat zijn letters lichter zijn dan de V. */
+  stroke-width: var(--mk-sw, 0.55);
+  stroke-linejoin: round;
+  /* vector-effect staat NIET hier maar als attribuut op de paden in het symbool:
+     het is de enige van deze eigenschappen die niet erft en dus niet door de
+     schaduwboom van <use> heen komt. Zie de noot bij <symbol id="markglyph">. */
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transition:
+    opacity 200ms var(--ease, ease),
+    stroke-dashoffset 640ms cubic-bezier(.22, 1, .36, 1),
+    transform 640ms cubic-bezier(.22, 1, .36, 1);
+}
+
+/* De aanraking. `@media (hover: hover)` houdt hem weg van een telefoon, waar een
+   tik anders de open stand achterlaat tot je ergens anders tikt. :focus-visible
+   op de link zet dezelfde stand voor wie met het toetsenbord langskomt. */
+@media (hover: hover) {
+  /* DE VERSCHUIVING IS UITVERGROOT, EN DAT IS EEN KEUZE. Op Lucas' beeld staat
+     de V op ongeveer 900px en is de kier zo'n 1,5% van de breedte. Op 26px in de
+     topbalk is 1,5% een derde pixel: dan raakt de lijn het vlak, valt de kier
+     dicht en zie je een iets dikkere rand in plaats van een tweede vorm. Op 6%
+     staat er op dit formaat ongeveer anderhalve pixel tussen, en dat is het
+     minimum waarop een kier een kier is. Vier verschuivingen naast elkaar
+     gerenderd (5, 8, 11, 14%): boven de 11% valt het logo uit elkaar in twee
+     losse tekeningen.
+
+     Per instantie bij te stellen met --mk-off. Het woordmerk staat lager: zijn
+     letters zijn smaller dan de V, dus dezelfde 6% zet de lijn daar verder van
+     de vorm af dan bij het teken en gaan de letters uit elkaar lopen.
+
+     Geen `scale` erbij — schalen maakt de afstand aan de vier kanten verschillend
+     en dan klopt de kier alleen linksboven. */
+  :is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk) .mk-line-a {
+    opacity: 1;
+    stroke-dashoffset: 0;
+    transform: translate(calc(var(--mk-off, 6%) * -1), calc(var(--mk-off, 6%) * -1));
+  }
+}
+
+/* Wie beweging heeft uitgezet krijgt de open stand nog steeds, maar in één keer
+   en zonder verplaatsing: de betekenis blijft (je raakt het merk aan en het
+   opent), de beweging verdwijnt. Dat is wat 2.3.3 vraagt en niet het weghalen
+   van het effect. */
+/* Wie beweging heeft uitgezet krijgt dezelfde eindstand, alleen in één keer:
+   de lijn staat er meteen, verschoven, zonder dat je hem ziet intekenen. De
+   betekenis blijft (je raakt het merk aan en het krijgt een rand), de beweging
+   verdwijnt. Dat is wat 2.3.3 vraagt en niet het weghalen van het effect. */
+@media (prefers-reduced-motion: reduce) {
+  .mk .mk-fill, .mk .mk-line { transition-duration: 1ms; transition-delay: 0s; }
+}
+
+/* ══ HET MERK ALS DIEPTE, ACHTER EEN BLOK ══════════════════════════════════
+   Lucas, 20 augustus 2026: *"Ik wil dus voor de andere blokken een soort
+   gelijke oulining hebben om een subtiel 3d effect te creëren."* — na de lijn-V
+   achter het abonnementsblok.
+
+   DIT SCHILDERT GEEN GROND. Dat is de reden dat het een lijn is en geen vlak:
+   DESIGN.md §19 en de noot bij .well-deep hierboven zeggen allebei dat een
+   sectie die zich moet onderscheiden een tegel, een paneel, een lijn of meer
+   ruimte krijgt en nooit een tweede grond — en de banden op deze site staan
+   met opzet op `transparent`, omdat de grond op paginaniveau wordt geschilderd
+   met een lamp en een vignet. Een lijntekening op 5% is een LIJN in die opsomming.
+   Ze legt een tweede vlak achter de tekst zonder er een dekseltje overheen te
+   doen, en dat is waar het diepte-effect vandaan komt.
+
+   `z-index: -1` op de laag plus `isolation: isolate` op het blok: de tekening
+   zakt onder de inhoud van dit blok en kan er niet onderuit zakken naar de
+   pagina eronder. De inhoud hoeft daardoor zelf geen z-index te krijgen, wat
+   het verschil is met de constructie in het abonnementsblok — daar staat de
+   tekening op 0 en de inhoud op 1, omdat dat paneel wél een grond schildert.
+
+   Instellen per plek met --md-w (breedte), --md-r / --md-b (hoe ver hij de rand
+   uit loopt) en --md-o (dekking). Standaard staat hij rechtsonder, half buiten
+   het blok, op 5% — dat is de waarde waarop hij op een 1440-scherm zichtbaar is
+   als vorm en niet als lijn die iets lijkt te betekenen. */
+.mark-depth { position: relative; isolation: isolate; }
+.mark-depth-lay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.mark-depth-v {
+  position: absolute;
+  right: var(--md-r, -6%);
+  bottom: var(--md-b, -14%);
+  width: var(--md-w, min(34%, 26rem));
+  height: auto;
+  fill: none;
+  stroke: var(--md-ink, currentColor);
+  stroke-width: var(--md-sw, 1.1);
+  stroke-linejoin: round;
+  /* 11%, gemeten en niet gegokt. Op 5% is een witte lijn op een bijna-zwarte
+     grond nog geen twee niveaus verschil en zie je hem op geen enkel scherm; op
+     8, 11 en 13 gerenderd staat 11 op het punt waar de V als vorm leest en nog
+     niet als tekening die iets betekent. Papierwit en niet accent: de limoen is
+     op deze site het signaal (een knop, een lijn, één woord in een kop) en een
+     merkteken van 30rem in die kleur maakt elk van die dingen zwakker. */
+  opacity: var(--md-o, .11);
+}
+/* Een tekening van 5% op een bijna-zwarte grond is op een telefoon niet meer dan
+   ruis in de compressie, en hij kost daar wel breedte in een overflow-berekening.
+   Onder 48rem staat hij uit. */
+@media (max-width: 48rem) { .mark-depth-lay { display: none; } }
+/* Hij komt mee omhoog met de sectie, 18px over de doorloop. Dat is dezelfde
+   afstand als vis-rise-far en met opzet te klein om als beweging te lezen: het
+   maakt de laag los van de tekst ervoor, meer niet.
+
+   EIGEN KEYFRAME EN NIET vis-rise-far, want die eindigt op `opacity: 1` en zou
+   de 5% aan het eind van de doorloop op vol zetten — een merkteken dat tijdens
+   het scrollen langzaam door de tekst heen komt staan. Deze eindigt op --md-o,
+   dus op precies de waarde die de plek zelf heeft ingesteld. */
+@keyframes md-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: var(--md-o, .11); transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Het bereik hangt aan het TEKEN en niet aan de sectie: `view()` neemt het
+     element zelf als onderwerp, en `entry 0% entry 100%` is dus af zodra de
+     tekening helemaal in beeld staat. Met `cover 55%` liep hij op een band van
+     1175px nog op 2% terwijl hij al lang zichtbaar was — gemeten op alle drie
+     de banden — en dat is geen diepte maar niets. */
+  .mark-depth-v { animation: md-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+}
+@media (forced-colors: active) { .mark-depth-lay { display: none; } }

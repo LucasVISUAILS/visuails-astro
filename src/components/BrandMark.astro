@@ -1,0 +1,57 @@
+---
+/* ── DE DRIE LAGEN VAN HET MERK ─────────────────────────────────────────────
+   Lucas, 20 augustus 2026: *"Ik wil op de bij elk logo op de website eerst de
+   simpele 2d logo hebben en als iemand eroverheen hovert het fade naar het
+   logo met de outlining of een animatie ervan kunnen maken als je dat kan dat
+   het een soort van uit elkaar spat."*
+
+   In rust is dit exact het logo dat er altijd stond: één gevulde vorm. Wie niet
+   hovert ziet niets nieuws — dat is de eis, en het is de reden dat de gevulde
+   laag hier gewoon de bestaande <use> is en geen nagetekende variant.
+
+   DIT IS EEN FRAGMENT EN GEEN <svg>. Het hoort BINNEN de svg van de aanroeper
+   te staan, want de maatvoering van elk logo (.brand-glyph is 30px hoog,
+   .mobile-mark 26 of 30, .cb-logo rekent zijn breedte uit zijn hoogte) staat in
+   de scoped stijl van Layout.astro. Een class die je aan een kindcomponent
+   meegeeft krijgt géén scope-attribuut van de ouder, dus zodra de <svg> hierheen
+   verhuist matcht geen van die regels meer en staat het merk op 0x0 of op zijn
+   volle 1360x1576. Dat is precies wat er gebeurde bij de eerste poging, en het
+   is dezelfde val die eerder .sp-human-shot, .hv-stock-shot en .hv-quote-shot
+   stil doodmaakte. De <svg> blijft dus bij de aanroeper; alleen de lagen komen
+   hier vandaan.
+
+   TWEE LAGEN OP ÉÉN SYMBOOL, en niet twee tekeningen. <use> zet de inhoud van
+   het symbool in een schaduwboom die van buitenaf niet te selecteren is; wat er
+   wél in doorloopt zijn de overerfbare eigenschappen, en `fill`, `stroke`,
+   `stroke-width`, `stroke-dasharray` en `stroke-dashoffset` zijn dat allemaal.
+   Daarom kan hetzelfde symbool twee keer verschijnen — één keer gevuld en één
+   keer als lijn — zonder dat het padgegeven ook maar één keer wordt herhaald.
+   Het pad staat op precies één plek: de <symbol> in Layout.astro.
+
+   DE VULLING BLIJFT STAAN. Eerste poging liet hem wegvallen zodat alleen de
+   omtrek overbleef. Lucas stuurde daarop het beeld waar het wél op moet lijken
+   en zei: *"Ik wil dat het logo subtiel veranderd naar dit. Het lijkt nu niet
+   alsof dat gebeurt."* Op dat beeld staat de gevulde V er gewoon, met een dunne
+   lijn ERNAAST — verschoven, met een kier ertussen. Dat is iets anders dan een
+   omtrek in plaats van een vlak, en het is de reden dat het merk hier niet meer
+   verdwijnt maar een tweede rand krijgt.
+
+   WAAROM DE KIER VANZELF ONTSTAAT. De lijn tekent exact dezelfde contour als de
+   vulling en ligt eronder. Schuif je hem een paar procent naar linksboven, dan
+   komt de linkerbovenkant van die contour buiten het vlak te liggen — met
+   precies de verschuiving als afstand ertussen — en verdwijnt de rechteronderkant
+   onder de vulling. Eén verschuiving levert dus zowel de losse lijn als de kier
+   als het wegvallen aan de andere kant, en dat is wat het als voorwerp laat lezen.
+   Daarom staat de vulling LAATST: wie de volgorde omdraait, schildert de lijn
+   over het vlak heen en dan is het een dubbele omtrek in plaats van diepte.
+
+   De beweging zelf staat in global.css onder `.mk`, ongescoped, om dezelfde
+   reden als hierboven. */
+const { bron = '#markglyph' } = Astro.props;
+---
+{/* Volgorde is stapelvolgorde: de lijn onder, de vulling bovenop. In rust ligt
+    de lijn exact onder de vulling én staat hij op dekking 0 en dashoffset 100 —
+    twee keer onzichtbaar, zodat er ook geen half getekende lijn onder het logo
+    hangt als een browser de dekkingsovergang overslaat. */}
+<use class="mk-line mk-line-a" href={bron} />
+<use class="mk-fill" href={bron} />

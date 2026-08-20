@@ -69,6 +69,7 @@ import bigShoulders from '@fontsource-variable/big-shoulders-display/files/big-s
 import { ui, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, localizedPath, useTranslations } from '../i18n/ui.js';
 import { graphJson } from '../data/schema.js';
 import CookieConsent from '../components/CookieConsent.astro';
+import BrandMark from '../components/BrandMark.astro';
 
 interface Props {
   title: string;
@@ -498,9 +499,14 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
          The marks are never placed together — see the brand lockup guard in
          scripts/brand-lockup-guard.mjs, which fails the build if they are. -->
     <symbol id="wordmark" viewBox="0 0 1650 278">
-      <g transform="translate(0.000000,278.000000) scale(0.100000,-0.100000)"
- stroke="none">
-<path d="M4675 2750 c-380 -41 -648 -202 -775 -465 -92 -191 -93 -439 -3 -625
+      {/* `stroke="none"` stond hier uit de export. Het is een presentatie-attribuut
+          op de <g> en die wint van een geërfde `stroke` uit de gebruikende <use>,
+          dus met dat attribuut erin kon de lijnlaag van BrandMark.astro hier nooit
+          verschijnen. Elke plek die dit symbool gevuld gebruikt zet zijn `stroke`
+          nu expliciet in CSS (.mk-fill, en .foot-mark-w), dus er verdwijnt geen
+          bescherming — hij verhuist alleen naar waar hij te overschrijven is. */}
+      <g transform="translate(0.000000,278.000000) scale(0.100000,-0.100000)">
+<path pathLength="100" vector-effect="non-scaling-stroke" d="M4675 2750 c-380 -41 -648 -202 -775 -465 -92 -191 -93 -439 -3 -625
 27 -56 56 -94 113 -151 133 -131 283 -194 724 -305 347 -88 434 -117 505 -169
 78 -57 106 -114 106 -210 -1 -92 -31 -161 -97 -220 -102 -92 -220 -129 -413
 -128 -202 0 -327 42 -442 146 -58 54 -108 144 -121 217 l-8 45 -267 3 -267 2
@@ -542,8 +548,28 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       </g>
     </symbol>
     <symbol id="markglyph" viewBox="0 0 702.00 813.25">
-      <path d="M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z" />
-      <path d="M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z" />
+      {/* TWEE ATTRIBUTEN DIE ALLEEN VOOR DE LIJNSTAND BESTAAN, en die hier op het
+          pad moeten staan en niet op de <use> die hem gebruikt.
+
+          `pathLength="100"` normaliseert beide paden naar dezelfde lengte, zodat
+          één stroke-dasharray de lange V en de korte vlag gelijk laat intekenen
+          bij de hoverstand (zie BrandMark.astro).
+
+          `vector-effect="non-scaling-stroke"` staat hier OMDAT VECTOR-EFFECT NIET
+          ERFT. Dat is de val: `fill`, `stroke`, `stroke-width` en de dash-paren
+          lopen wél door de schaduwboom van een <use> heen, maar vector-effect
+          niet. Zet je hem in CSS op de <use>, dan bereikt hij het pad nooit, wordt
+          de streekdikte in gebruikseenheden gelezen en is 2 op een tekenvlak van
+          702 dat op 26px staat nog geen tiende pixel. Precies dat gebeurde: vier
+          gerenderde diktes van 1.25 tot 4 zagen er identiek en even vaag uit,
+          want ze waren allemaal subpixel. Op het pad werkt hij wel, en dan is
+          stroke-width weer gewoon CSS-pixels op elk formaat.
+
+          Beide doen niets aan de gevulde weergave — dash- en streekgegevens
+          bestaan niet voor een vlak — dus alle andere plekken die dit symbool
+          gebruiken veranderen niet. */}
+      <path pathLength="100" vector-effect="non-scaling-stroke" d="M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z" />
+      <path pathLength="100" vector-effect="non-scaling-stroke" d="M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z" />
     </symbol>
   </svg>
 
@@ -567,7 +593,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           graphic needs one for anyone who lands on it directly. Neither is
           redundant with the other, and neither can be inferred from a path. */}
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
-        <svg class="brand-mark brand-glyph" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
+        <svg class="mk brand-mark brand-glyph" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><BrandMark /></svg>
       </a>
       <nav aria-label={t('nav_primary')} class="primary-nav">
         <ul class="nav-links">
@@ -687,7 +713,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <div class="mobile-nav" id="mobile-nav" inert aria-hidden="true">
     <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
-    <svg class="brand-mark mobile-mark" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
+    <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><BrandMark /></svg>
     {drops.map((s) => (s.href
       ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
       : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
@@ -895,13 +921,33 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       Het is een grafisch element. De echte merknaam staat als tekstalternatief
       in de footer-link eronder; een schermlezer die hier "VISUAILS" hoort en
       twee tellen later nog eens, leert niets bij. */}
-  <div class="wm-reveal" aria-hidden="true">
-    <div class="wm-reveal-inner">
-      <svg class="wm-reveal-mark" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
-    </div>
-  </div>
-
   <footer class="site-footer">
+    {/* ── HET WOORDMERK ZIT NU IN DE FOOTER — 20 augustus 2026 ───────────────
+        Lucas: *"het VISUAILS sticky vlak begint niet mooi en is bijna niet te
+        zien en hij mag echt eindigen onderaan de footer en iets minder
+        zichtbaar en het zwarte vlak erboven moet dus ook verdwijnen naarmate
+        je verder scrollt."*
+
+        Vier klachten, één oorzaak: het merk zat in een EIGEN band bóven de
+        footer. Die band moest hoog zijn (78svh) om de plakregel ruimte te geven
+        om in te reizen, en die hoogte was leeg — dat is het zwarte vlak. En
+        omdat de band bij de footer ophield, hield het merk daar ook op in
+        plaats van onderaan de pagina.
+
+        Nu is de footer zelf het bevattende blok. Het merk plakt aan de
+        onderrand van het venster tot de ONDERKANT VAN DE FOOTER die rand
+        raakt — dus tot het einde van de pagina, precies zoals gevraagd — en de
+        footerkolommen schuiven eroverheen omdat ze een laag hoger staan.
+
+        Geen lege band meer, op geen enkele van de zesentachtig pagina's.
+
+        `order` doet het werk: de plakregel heeft ruimte NODIG boven zich om
+        omhoog in te reizen (zie de noot bij .foot-mark). In de bron staat het
+        merk eerst, zodat het achter de kolommen ligt; in de flexvolgorde staat
+        het laatst, zodat alles erboven die ruimte is. */}
+    <div class="foot-mark" aria-hidden="true">
+      <svg class="foot-mark-w" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
+    </div>
     {/* Watermark finale — brief §7. The wordmark at page scale, clipped by the
         footer's own bottom edge so it reads as a printed register mark the
         page runs off, not as a decorative logo. It is aria-hidden: the real
@@ -913,10 +959,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         other feathered edge on this site is banned by §8, so this one is
         fenced here rather than made available as a utility class. */}
     {/* Het <svg class="foot-watermark"> stond hier op opacity .05 achter de
-        kolommen. Sinds .wm-reveal hierboven het woordmerk op ware grootte laat
-        zien, zou dat het merk twee keer binnen één schermhoogte zeggen — een
-        keer groot en een keer bijna onzichtbaar. De gloed blijft: die hoort bij
-        de onderrand van de pagina en niet bij het woordmerk. */}
+        kolommen. Dat is nu `.foot-mark` hierboven: hetzelfde idee, maar
+        plakkend en op ware grootte, zodat het één merk is en geen twee. De
+        gloed blijft los: die hoort bij de onderrand van de pagina en niet bij
+        het woordmerk. */}
     <div class="foot-finale" aria-hidden="true">
       <span class="foot-glow"></span>
     </div>
@@ -924,7 +970,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <div class="footer-grid">
         <div class="footer-brand">
           <a href={lp('/')} class="brand">
-            <svg class="brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><use href="#wordmark" /></svg>
+            <svg class="mk brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><BrandMark bron="#wordmark" /></svg>
           </a>
           <p>{t('foot_tagline')}</p>
         </div>
@@ -1030,7 +1076,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       als het oog. Zie de noot bij cb_note in i18n/ui.js over waarom die zin er
       precies zo staat. */}
   <div class="convbar" role="complementary" aria-label={t('cb_region')}>
-    <svg class="brand-mark cb-logo" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><use href="#markglyph" /></svg>
+    <svg class="mk brand-mark cb-logo" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><BrandMark /></svg>
     <em class="cb-note">{t('cb_note')}</em>
     <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
     <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
@@ -1122,6 +1168,56 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      tuned into agreement; they can only be collapsed into one. So the ground
      switches in the same frame the ink does. */
   .site-header { position: sticky; top: 0; z-index: var(--z-sticky); }
+
+  /* ── DE KOP NEEMT ZIJN EIGEN LEESBAARHEID MEE — 20 augustus 2026 ──────────
+     Lucas: *"check ook of het logo goed zichtbaar is op de homepage met elke
+     slide."*
+
+     Gemeten, contrast van het witte merkteken tegen wat er achter de balk zat,
+     per dia van de hero-carrousel:
+
+       dia 1 · alles in één huisstijl   11,85
+       dia 2 · catalogset                8,59
+       dia 3 · lifestyle                 5,95   ← lichtgrijze studiowand
+       dia 4 · videoclip                19,36
+       dia 5 · merkmodel                 5,99   ← witte achtergrond van het portret
+
+     Alle vijf halen de norm, en dat is precies waarom dit geen toegankelijk-
+     heidsprobleem is maar een MERKprobleem: een spreiding van 3,2 keer betekent
+     dat het logo per dia een andere stevigheid heeft. Het ene moment staat het
+     er, het andere moment hangt het ergens. Het merkteken is het enige element
+     op deze pagina dat er nooit onzeker mag uitzien.
+
+     De oorzaak: de kop is boven een fotohero doorzichtig en leende zijn
+     leesbaarheid van de scrim van de HERO. Die scrim is voor de kop onderin
+     gemaakt (radiaal, linksonder) en de bovenkant is bijzaak — dus hing de
+     leesbaarheid van de balk af van welke foto er die zeven seconden stond.
+
+     Nu heeft de kop zijn eigen val. Geen nieuwe techniek: het is dezelfde
+     scrim-variabele en dezelfde soort verloop die de hero al gebruikt, alleen
+     eigendom van het element dat hem nodig heeft. Daarmee is de balk op elke
+     foto, op elke pagina met een fotohero, hetzelfde leesbaar.
+
+     `:not(.scrolled)` omdat de gescrolde balk al een eigen dichte vulling met
+     blur heeft — twee lagen over elkaar zou hem donkerder maken dan bedoeld.
+     De `body:has(...)`-poort is dezelfde die de inktrichting hierboven al
+     gebruikt, dus staat er geen tweede lijst met hero-klassen. */
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled)::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    /* Anderhalve balkhoogte, zodat de val ONDER de balk uitdempt in plaats van
+       op de rand te stoppen — een scrim met een zichtbare onderkant is een
+       balk, en dan had ik net zo goed een balk kunnen tekenen. */
+    height: 150%;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(180deg,
+      rgb(var(--scrim) / 0.66) 0%,
+      rgb(var(--scrim) / 0.40) 44%,
+      rgb(var(--scrim) / 0.12) 76%,
+      transparent 100%);
+  }
   /* And the ink is instant too, for the same reason: a colour transition on
      the links is a 120ms nicety, and during it the ink is somewhere between
      the two ramps while the ground has already committed to one of them. One
@@ -1266,7 +1362,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      --brand existed already, aliased to --ink-900, reserved and unread until
      now — see global.css for the value, the contrast numbers, and why
      --accent (the actual "no marketing accent" rule) is untouched. */
-  .brand-word { height: 17px; width: auto; display: block; fill: var(--brand); }
+  .brand-word { height: 17px; width: auto; display: block; fill: var(--brand); --mk-ink: var(--brand); }
   .site-footer .brand-word { height: 24px; }
   /* The monogram is the same material as the word, so it is the same mechanism:
      a fill-less symbol taking --brand from whatever ground it lands on. It
@@ -1279,7 +1375,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      grounds directly (5.41:1 on --paper, 3.29:1 on --ink-900 — every dark
      ground on this site, .on-ink's whole point, shares that one background)
      instead of being assumed safe the way --ink's flip guarantees. */
-  .brand-mark { width: auto; display: block; fill: var(--brand); }
+  .brand-mark { width: auto; display: block; fill: var(--brand); --mk-ink: var(--brand); }
   /* 30px in a 76px bar. Sized against the CAP HEIGHT of the nav links beside
      it rather than against the bar: a mark set to the bar's own proportions
      towers over 15px type. 30px puts the glyph's optical weight level with the
@@ -1294,8 +1390,16 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      site's palette entirely and --brand is exactly that. Print stays #000 for
      the same reason it always did: a printer lays down black reliably, and a
      printed page has no dark ground to resolve a footer mark against. */
-  @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; } }
-  @media print { .brand-word, .brand-mark { fill: #000; } }
+  /* De tweede kleur voor de verschoven lijn op hover, per instantie de ANDERE
+     van de twee die het merk hier kan hebben. Gemeten: het teken in de topbalk
+     is wit op de hero en limoen zodra de balk meescrolt; alle andere zijn
+     altijd limoen. Zie de noot bij .mk-line in global.css voor waarom hij niet
+     dezelfde kleur mag hebben als de vulling. */
+  .brand-mark, .brand-word { --mk-line-ink: var(--paper-on-dark); }
+  .brand-word { --mk-off: 3.2%; --mk-sw: 0.45; }
+  .site-header:not(.scrolled) .brand-glyph { --mk-line-ink: var(--accent); }
+  @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; --mk-ink: CanvasText; --mk-line-ink: CanvasText; } }
+  @media print { .brand-word, .brand-mark { fill: #000; --mk-ink: #000; --mk-line-ink: #000; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
   /* Pill, like everything else pressable in this bar. A 14px trigger standing
      next to a fully round Start button is the specific "blokkerig" Lucas
@@ -1488,77 +1592,52 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      collapsed bar. */
   @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link, .nav-account-in, .nav-account-in:not([hidden]) { display: none; } .menu-toggle { display: inline-flex; } }
 
-  /* ── DE WOORDMERK-ONTHULLING ───────────────────────────────────────────────
-     Zie de noot bij de markup hierboven. Drie regels doen het werk:
+  /* ══ HET WOORDMERK ONDERAAN DE PAGINA ═════════════════════════════════════
+     Zie de noot bij de markup voor waarom dit in de footer zit en niet meer in
+     een eigen band erboven. Hieronder staat wat er in drie rondes fout ging,
+     want elk van die drie was onzichtbaar in de code en alleen te meten.
 
-       · de band krijgt hoogte, zodat er iets te scrollen valt;
-       · de binnenkant plakt aan de onderrand van het venster;
-       · de footer heeft een dichte grond en een hogere laag, dus hij dekt af.
+     ── RONDE 1 · DE PLAKREGEL DEED NIETS ────────────────────────────────────
+     Gemeten op visuails.com: `inner.top − band.top = 0` op élke scrollpositie.
+     Drie oorzaken over elkaar:
 
-     DE BAND IS KORTER DAN HET MERK HOOG IS. 34svh band met een merk dat
-     daaronder doorloopt: je ziet het merk binnenkomen, het staat één tel stil,
-     en dan schuift de footer eroverheen. Een band van een hele schermhoogte zou
-     op elke van de zesentachtig pagina's een lege schermvulling toevoegen, en
-     dat is een prijs die alleen de homepage waard is.
+       1 · Het plakkende element was even hoog als zijn container. Een
+           `position: sticky` reist alleen als er ruimte over is; vult hij de
+           container helemaal, dan is die ruimte nul.
+       2 · `overflow: hidden` op de container maakt daar een scrollcontainer
+           van, en dan plakt het kind aan iets dat niet scrollt. `overflow-x:
+           clip` knipt wél zijwaarts af zonder dat te doen — precies wat Adobe
+           op hun `.elastic-carousel` gebruikt, om dezelfde reden.
+       3 · En de minst voor de hand liggende: met `bottom: 0` wordt de doos
+           OMHOOG getrokken, dus moet er ruimte BOVEN hem zijn. Stond hij
+           bovenin zijn blok, dan zou omhoog buiten het blok vallen en doet de
+           browser niets. Geen fout, geen waarschuwing, alleen stilstand.
 
-     `overflow: hidden` op de band en niet op de binnenkant: het merk mag onder
-     de onderrand doorlopen, maar niet naast de pagina uitsteken. */
-  /* ── EN OP 20 AUGUSTUS 2026 BLEEK HIJ NIET TE PLAKKEN ────────────────────
-     Lucas: *"het scroll effect doet het niet zoals aangegeven, hij moet sticky
-     zijn en onder de footer schuiven waarna je op de footer het nog licht
-     doorzichtig ziet."*
+     ── RONDE 2 · HIJ HIELD OP WAAR DE FOOTER BEGON ──────────────────────────
+     Opgelost door de footer zelf het bevattende blok te maken. Nu plakt het
+     merk tot de onderkant van de footer de onderrand van het venster raakt —
+     het einde van de pagina.
 
-     Opgemeten op visuails.com: `inner.top − band.top = 0` op elke scrollpositie.
-     De plakregel deed letterlijk niets, en de noot hierboven beschreef een
-     werking die de code niet kón hebben. Twee fouten, allebei van mij:
-
-       1 · DE BINNENKANT WAS EVEN HOOG ALS DE BAND. Een `position: sticky` plakt
-           alleen zolang er ruimte is om in te reizen. Vul je de container
-           helemaal, dan is die ruimte nul en staat het element stil. De band is
-           nu ruim twee keer zo hoog als wat erin plakt.
-
-       2 · `overflow: hidden` OP DE BAND DOODT DE PLAKREGEL. Daarmee wordt de
-           band zelf een scrollcontainer, en een sticky kind plakt aan een
-           container die niet scrollt — dus nergens aan. `overflow-x: clip`
-           knipt wél zijwaarts af (nodig, want het merk is op een telefoon
-           128vw breed) zonder een scrollcontainer te maken. Dat is precies wat
-           Adobe op hun `.elastic-carousel` gebruikt, om dezelfde reden.
-
-     Dat de footer er daarna OVERHEEN schuift, is punt drie: zie de negatieve
-     bovenmarge bij `.wm-reveal + .site-footer`. */
-  /* DRIE · EN HIJ MOET ONDERIN ZIJN EIGEN BLOK STAAN.
-     Dit was de fout die overbleef nadat de twee hierboven weg waren, en hij is
-     de minst voor de hand liggende van de drie. Een `position: sticky` mag zijn
-     doos alleen verschuiven BINNEN het bevattende blok. Met `bottom: 0` wordt
-     de doos omhoog getrokken, en stond hij bovenin dat blok, dan zou omhoog
-     betekenen: erbuiten. Dus doet de browser niets — geen fout, geen
-     waarschuwing, alleen een element dat stilstaat.
-
-     Gemeten met een rode testdoos in de band: `travel = 0` op elke
-     scrollpositie, ook toen de doos 362px onder de vouw hing.
-
-     `justify-content: flex-end` zet de binnenkant onderin de band en laat de
-     ruimte erbóven vrij. Precies die vrije ruimte is wat de plakregel te reizen
-     heeft. Gemeten na de wijziging: de onderrand van de binnenkant valt samen
-     met de onderrand van het venster (botGap = 0) en blijft daar. */
-  .wm-reveal {
-    position: relative; z-index: 0;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    /* 78svh en niet 100: de band is op alle zesentachtig pagina's donkere
-       ruimte waar niets in staat behalve het merk onderaan, en een hele
-       schermhoogte daarvan is te veel gevraagd. Met 78svh band en 34svh
-       binnenkant blijft er ruim 40svh over om in te reizen — gemeten was dat
-       genoeg voor een plakfase die je duidelijk voelt. */
-    height: 78svh; min-height: 28rem;
-    overflow-x: clip;
-    background: var(--bg-deep);
+     `order: 2` is wat punt 3 hierboven oplost zonder een lege band: in de bron
+     staat het merk vóór de kolommen (zodat het erachter ligt), in de
+     flexvolgorde erna (zodat alles erboven de reisruimte is). */
+  .site-footer {
+    display: flex; flex-direction: column;
+    /* NIET `overflow: hidden` — zie ronde 1, punt 2. */
+    overflow-x: clip; overflow-y: visible;
+    isolation: isolate;
   }
-  .wm-reveal-inner {
-    position: sticky; bottom: 0;
-    height: 34svh; min-height: 12rem;
+  .foot-mark {
+    order: 2;
+    position: sticky; bottom: 0; z-index: 0;
+    margin-top: auto;
     display: grid; align-content: end; justify-items: center;
+    pointer-events: none;
   }
-  .wm-reveal-mark {
+  .foot-mark-w {
+    /* Expliciet, sinds `stroke="none"` van de <g> in #wordmark af is: dit teken
+       is een vlak en geen lijn. */
+    stroke: none;
     width: min(96vw, 2000px);
     /* Onder de rand door, zodat het merk wordt afgesneden door de pagina en
        niet netjes past. Dat afsnijden IS het effect — een logo dat helemaal in
@@ -1566,78 +1645,35 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
        MAAR NIET ZO DIEP DAT JE HET NIET MEER LEEST. Gemeten: bij -6% viel 83
        van de 233 pixels onder de rand, ruim een derde van de letterhoogte, en
-       dan zie je geen woord meer maar een rij grijze vormen. Bij -2% blijft de
-       woordvorm heel en raakt hij nog steeds de rand. */
+       dan zie je geen woord meer maar een rij grijze vormen. */
     margin-bottom: -2%;
     fill: var(--paper-on-dark);
-    /* VOL, EN DAT IS HET VERSCHIL MET EEN WATERMERK. De eerste versie stond op
-       .12 — de waarde die het oude watermerk in de footer had — en op de
-       schermafdruk was er letterlijk niets te zien. Dat was de verkeerde
-       gewoonte overnemen: een watermerk hoort weg te vallen, dit hoort het
-       laatste te zijn wat je leest. Bij Adobe is het massief wit op zwart, en
-       daar is geen halve maat voor. */
-    opacity: 1;
+    /* ── RONDE 3 · "IETS MINDER ZICHTBAAR" ────────────────────────────────
+       Het merk stond op vol wit achter een footer van 93% dekking, dus wat je
+       zag was 7% wit — en dat las Lucas als "bijna niet te zien" zolang hij nog
+       NIET achter de footer zat, want daar stond hij massief.
+
+       Nu andersom: de footer is weer volledig dekkend (leesbaarheid van de
+       links is niet iets om aan te rommelen) en het merk staat zelf op 16%.
+       Eén waarde, overal hetzelfde, of hij nu achter tekst staat of onder de
+       kolommen door loopt. Gemeten contrast van de footerlinks daarboven:
+       ruim boven AA op elk punt van het merk. */
+    opacity: .16;
   }
 
-  /* En de beweging. Dezelfde constructie als de rest van de site: een
-     scroll-tijdlijn, geen listener, en zonder ondersteuning gebeurt er niets —
-     dan staat het merk er gewoon, wat ook goed is. Zie DE BEWEGING KOMT UIT DE
-     SCROLL ZELF in global.css. */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .wm-reveal-mark {
-        animation: wm-rise linear both;
-        animation-timeline: view();
-        /* KORT BEREIK, want de band is maar 34svh hoog en de footer dekt hem
-           daarna af. Met `cover 62%` was het merk op het moment dat de footer
-           eroverheen kwam pas op 44% doorzichtigheid — gemeten — en dus nooit
-           helemaal wit. Het moet klaar zijn vóórdat het wordt afgedekt. */
-        animation-range: entry 0% entry 90%;
-      }
-    }
-  }
-  @keyframes wm-rise {
-    from { opacity: 0; transform: translateY(38%); }
-    to   { opacity: 1; transform: none; }
-  }
+  /* De kolommen liggen een laag hoger en schuiven dus over het merk heen. */
+  .site-footer > .container,
+  .site-footer > .foot-finale { position: relative; z-index: 1; }
 
   @media (max-width: 700px) {
-    /* De band blijft ruim hoger dan wat erin plakt — anders is er weer niets te
-       reizen en staat het merk stil, precies de fout die hierboven beschreven
-       staat. De verhouding blijft ongeveer 2,5 : 1. */
-    .wm-reveal { height: 70svh; min-height: 22rem; }
-    .wm-reveal-inner { height: 26svh; min-height: 8.5rem; }
-    .wm-reveal-mark { width: 128vw; }
+    .foot-mark-w { width: 128vw; }
   }
 
-  /* ── DE FOOTER SCHUIFT ERÓVERHEEN, EN JE ZIET HET MERK ERDOORHEEN ────────
-     Twee dingen die hier eerst geen van beide klopten.
-
-     EEN. Hij schoof er niet overheen maar ernaast. De footer stond netjes ná de
-     band in de flow, dus overlapten ze nergens — gemeten was er zelfs 30px
-     tussenruimte. Een negatieve bovenmarge trekt hem over de staart van de
-     band heen, en omdat het merk daar nog steeds aan de onderrand plakt, komt
-     de footer er van onderaf overheen terwijl het merk blijft staan. Dát is de
-     beweging.
-
-     TWEE. Hij was volledig dekkend, dus er was niets doorheen te zien. De
-     vulling is nu 93% — het merk is massief wit, dus wat erdoorheen komt is
-     ongeveer 7% wit: een spookvorm die je ziet als je kijkt en niet als je
-     leest. Meer dan dat en de footertekst gaat eronder lijden; minder en het is
-     er niet.
-
-     `color-mix` en geen tweede kleurwaarde: de vulling blijft --bg-deep, er
-     komt alleen doorzichtigheid bij. Eén bron, zoals overal.
-
-     De selector is `.wm-reveal + .site-footer` en niet `.site-footer`: de
-     negatieve marge hoort bij het PAAR. Staat de footer ooit ergens zonder band
-     erboven, dan trekt hij zichzelf niet over de inhoud heen. */
-  .wm-reveal + .site-footer {
-    margin-top: calc(-1 * clamp(9rem, 30svh, 24rem));
-    background: color-mix(in srgb, var(--bg-deep) 93%, transparent);
-  }
-  .site-footer { z-index: 1; }
-  .site-footer { position: relative; overflow: hidden; margin-top: clamp(4.5rem, 9vw, 9rem); padding-block: clamp(3.5rem, 6vw, 5rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
+  /* `overflow: hidden` stond hier en is `overflow-x: clip` geworden — zie ronde
+     1, punt 2 hierboven. De bovenmarge is ruimer dan hij was: de lege band die
+     tussen de laatste sectie en de footer stond is weg, en een deel van die
+     lucht hoort hier terug zodat de footer niet tegen de inhoud aan plakt. */
+  .site-footer { position: relative; margin-top: clamp(5.5rem, 11vw, 11rem); padding-block: clamp(4.5rem, 8vw, 7rem) 2.2rem; background: var(--bg-deep); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   /* The gap above the footer is breathing room after a dark section that ended
      on its own terms. After a panel it is not breathing room, it is a strip of
      leftover page between two finished blocks — the panel's bottom edge and

@@ -432,7 +432,14 @@ console.log('\nhet vraagteken naast hooks');
 
   // De uitklapper zelf, en de summary die de hele titelregel is.
   check('er is een <details> bij Hooks', /<details class="hv-q">/.test(home), true);
-  check('de titelregel is de summary', /<summary class="hv-soon-h hv-q-sum">/.test(home), true);
+  /* De klassenaam veranderde toen de dienstenstrook een rail met kaarten werd:
+     `hv-soon-h` heette de titelregel van de oude strook, `hv-svc-card-t` is de
+     titelregel van een kaart. Wat deze test bewaakt is niet die naam maar de
+     constructie: de HELE titelregel is de summary, zodat de klik op de titel
+     valt en niet op een los driehoekje ernaast. Daarom staat de titelklasse er
+     als groep en niet als vaste volgorde — anders breekt hij op de volgende
+     hernoeming opnieuw zonder dat er iets stuk is. */
+  check('de titelregel is de summary', /<summary class="[^"]*\bhv-q-sum\b[^"]*\bhv-svc-card-t\b[^"]*">/.test(home), true);
   check('het rondje is decoratie', /class="hv-q-mark" aria-hidden="true">\?</.test(home), true);
   // De toegankelijke naam staat in de summary en niet in een title-attribuut: een
   // title wordt niet voorgelezen en op een telefoon nooit gezien.

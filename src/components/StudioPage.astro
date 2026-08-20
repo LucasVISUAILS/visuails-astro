@@ -315,7 +315,10 @@ const nl = lang === 'nl';
       {c.pl.map(([t, b], i) => (
         <li class="reveal pending">
           <span class="sp-pl-dot" aria-hidden="true"></span>
-          <h3 class={['w-blue', 'w-violet', 'w-coral'][i] || ''}>{t}</h3>
+          {/* Geen kleurladder — zie de noot bij .hv-pipe-n in HomeV2.astro,
+              20 augustus 2026. Drie stappen die van accent naar 40% wit liepen,
+              terwijl de derde de leverdatum is. */}
+          <h3 class="sp-pl-h">{t}</h3>
           <p>{b}</p>
         </li>
       ))}
@@ -403,6 +406,7 @@ const nl = lang === 'nl';
   .sp-pl-dot { position: absolute; top: -4px; left: 0; width: 9px; height: 9px; background: var(--ink-1); }
   .sp-pl h3 { margin: 0 0 .45rem; font-size: 1.02rem; font-weight: 700; }
   .sp-pl p { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--ink-3); }
+  .sp-pl li h3.sp-pl-h { color: var(--accent-bright); }
   .sp-pl-foot { margin-top: clamp(1.8rem, 3.5vw, 2.6rem); display: flex; gap: clamp(1rem, 3vw, 2.5rem); align-items: center; justify-content: space-between; flex-wrap: wrap; }
   .sp-pl-foot p { margin: 0; max-width: 66ch; font-size: .85rem; line-height: 1.6; color: var(--ink-3); }
 </style>
