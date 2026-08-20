@@ -118,11 +118,11 @@ export const catalogStyles = [
     craft: [
       { title: 'A design session, not a template', body: 'Your brand, references and competitors to avoid — one round, then locked.' },
       { title: 'A written style system', body: 'Backdrop, shadow and prop rules, documented so product 100 matches product 1.' },
-      { title: 'Owned, not rented', body: "The style we build is yours — we don't resell it." },
+      { title: 'Owned, not rented', body: "The style we build is yours — we don’t resell it." },
       { title: 'Fast forever after', body: 'New products flow through it at normal catalog speed and price.' },
     ],
     why: [
-      { title: 'Unmistakably yours', body: "Props, colour and framing competitors can't copy." },
+      { title: 'Unmistakably yours', body: "Props, colour and framing competitors can’t copy." },
       { title: 'Documented, not remembered', body: 'Written down, so it never drifts between orders.' },
       { title: 'Fast after the first order', body: 'Design happens once; every order after runs at normal speed.' },
     ],

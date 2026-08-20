@@ -34,7 +34,7 @@
 // request is in flight, and no local arithmetic on today's date anywhere in
 // this file. When the calendar cannot be reached, the honest answer is that we
 // will confirm the window by email — and the order still goes through undated,
-// because /api/order's own gate returns `reason: 'none'` for exactly that case
+// because /api/order’s own gate returns `reason: 'none'` for exactly that case
 // and writes the order with no window rather than refusing it.
 //
 // Section 13 adds the tighter half of the same rule: Tier 0 gets NO named
@@ -192,9 +192,9 @@
 import {
   SHOT_IDS, REQUIRED_SHOT_IDS, isRequiredShot, guessShot, productKeyFromPath, extraShotId,
   /* De GRATIS referentievakken. Lucas, 13 augustus 2026: *"Ook wil ik dat het
-     mogelijk word voor een bezoeker om meer foto's toe te voegen van zijn product
-     kosteloos door op een plusje naast de 4 aanbevolen foto's te klikken. Dit zorgt
-     ervoor dat ze meer details kunnen laten zien maar wel gewoon 4 foto's in totaal
+     mogelijk word voor een bezoeker om meer foto’s toe te voegen van zijn product
+     kosteloos door op een plusje naast de 4 aanbevolen foto’s te klikken. Dit zorgt
+     ervoor dat ze meer details kunnen laten zien maar wel gewoon 4 foto’s in totaal
      krijgen."* Ze hebben met opzet een eigen voorvoegsel en een eigen bovengrens —
      zie de kop bij REF_SHOT_PREFIX in shots.js voor waarom ze geen woord delen met
      de betaalde extra's. */
@@ -217,7 +217,7 @@ import { isEu, HOME_COUNTRY } from '../data/vat.js';
  *
  * Dit was `const STEPS = 5`, en dat klopte zolang elke bestelling door dezelfde
  * vijf schermen ging. De proefvisual op /test-sample gaat door vier: kiezen,
- * foto's, gegevens, controleren. De levertijd hoort er niet tussen, want een proef
+ * foto’s, gegevens, controleren. De levertijd hoort er niet tussen, want een proef
  * van één product reserveert geen productieweek — tierForProducts(1) maakt er
  * sowieso een onbegeleide bestelling van, dus de capaciteitsagenda zou er ook
  * niets voor vrijgeven.
@@ -333,7 +333,7 @@ const CTX_BY_GARMENT = {
 /*
  * ── EN DEZELFDE VAL, EEN DERDE KEER — 13 AUGUSTUS 2026 ──────────────────────
  *
- * `reached` stond bij measure(), zo'n tweehonderd regels lager, als
+ * `reached` stond bij measure(), zo’n tweehonderd regels lager, als
  * `const reached = new Set()`. init() maakt hem leeg op zijn achtste regel. Dus:
  * exact het geval dat hierboven voor `chain` staat opgeschreven, en dat de noot bij
  * EMPTY_SLOT() nóg een keer opschrijft.
@@ -1018,7 +1018,7 @@ function bindOrder() {
  * the page asks the question (nothing ships that way today, but a page is
  * allowed to), and otherwise `service` out of the config blob, which is what
  * every per-service flow renders. The value on the wire is NOT parsed for it:
- * `drop` is what /api/order's ORDER_SERVICES and the D1 `service` column call a
+ * `drop` is what /api/order’s ORDER_SERVICES and the D1 `service` column call a
  * catalog set plus a lifestyle carousel, and a lookup table in this file would
  * be a third place that has to agree with pricing.js and the server both.
  *
@@ -1253,7 +1253,7 @@ function bindChannels() {
  * en niet opnieuw beginnen. Dat is ook waarom dit `hidden` gebruikt en geen
  * `display:none` in een klasse: één mechanisme, en syncRequired() leest het al.
  *
- * EN DE VERPLICHTING SCHUIFT MEE. De notities bij de extra foto's staan op de
+ * EN DE VERPLICHTING SCHUIFT MEE. De notities bij de extra foto’s staan op de
  * kaarten en zijn verplicht (zie buildExtras). Staat de maproute open, dan zijn
  * die kaarten onzichtbaar en dus niet verplicht — syncRequired() kijkt naar
  * zichtbaarheid, dus dat volgt zonder een tweede regel. Schakelt hij terug, dan
@@ -1738,7 +1738,7 @@ function quoteFor(kind, n, outfits, extras = 0) {
  * THE LABEL CARRIES THE SIDE OF VAT. BRIEF-14's rule is that no price is
  * printed without saying which side of VAT it is on; the page's own label does
  * that (vatLabel('excl')), which is why one honest row is enough and a second
- * row at somebody else's rate would be worse than none.
+ * row at somebody else’s rate would be worse than none.
  *
  * NOTHING HERE IS AUTHORITATIVE. See the note at the top of this file: this is
  * a preview, the invoice is derived server-side, and no amount is ever posted.
@@ -1780,7 +1780,7 @@ function syncTotal() {
   // from the ladder rather than estimated, so a client with a calculator finds
   // exactly the two numbers this sentence names. Net on both sides, and the
   // copy says so — comparing a net figure against a gross one would understate
-  // the saving by 21% and be wrong in the client's favour, which is still wrong.
+  // the saving by 21% and be wrong in the client’s favour, which is still wrong.
   const rung = q('[data-pl-rung]');
   if (rung) {
     const next = kind && quote ? nextRung(kind, n) : null;
@@ -1930,7 +1930,7 @@ function shotListText(ids) {
  * bestandsplafond stil bepaalt hoeveel producten er te koop zijn.
  *
  * Wat dat kostte, bleek toen het bestandsplafond vandaag van 140 naar 240 ging om
- * de extra foto's te dekken: deze regel bood daarmee ineens 60 productkaarten aan,
+ * de extra foto’s te dekken: deze regel bood daarmee ineens 60 productkaarten aan,
  * het dubbele van wat de agenda kan inplannen. Een formulier dat zestig producten
  * aanneemt en een poort die er dertig doorlaat — precies de belofte-zonder-dekking
  * waar /video vandaag ook op is nagekeken.
@@ -2292,7 +2292,7 @@ function buildCard(card) {
   num.className = 'pu-n';
   num.textContent = String(card.n).padStart(2, '0');
 
-  // NAMED, AND THE NAME POSTS. `product_p3` is not in /api/order's TOP_FIELDS,
+  // NAMED, AND THE NAME POSTS. `product_p3` is not in /api/order’s TOP_FIELDS,
   // so it lands in details_json with the rest of the brief and needs no server
   // change at all — while the per-file mapping travels separately in R2's
   // customMetadata and becomes a files row. One fact, one home, joined on `p3`.
@@ -2326,7 +2326,7 @@ function buildCard(card) {
   slots.id = `pu-slots-${card.key}`;
   SHOT_IDS.forEach((id) => slots.appendChild(buildSlot(card, id)));
   // Het plusje staat IN dit raster, achter de vier aanbevolen vakken, want dat is
-  // waar Lucas het beschreef: *"een plusje naast de 4 aanbevolen foto's"*. Het is
+  // waar Lucas het beschreef: *"een plusje naast de 4 aanbevolen foto’s"*. Het is
   // dus geen apart blok verderop maar het vijfde vakje van dezelfde rij.
   buildRefs(card, slots);
 
@@ -2336,7 +2336,7 @@ function buildCard(card) {
   toggle.setAttribute('aria-controls', `${slots.id} ${about.id}`);
 
   // De afwijking per beeld, als deze stroom hem heeft. In dezelfde uitklap als
-  // de foto's en de vraag — één knop die eerlijk zegt wat hij opent — en dus
+  // de foto’s en de vraag — één knop die eerlijk zegt wat hij opent — en dus
   // ook in aria-controls, of de knop noemt twee van de drie dingen die hij
   // laat verschijnen.
   const ratios = buildRatios(card);
@@ -2612,10 +2612,10 @@ function buildRatios(card) {
  * Lucas, 8 augustus 2026: *"een extra foto toevoegen zou een extra upload vak
  * moeten openen maar opent nu een tekstblok. Wanneer je 1 extra foto kiest krijg
  * je 1 upload mogelijkheid erbij met daaronder een verplichte notitie van wat de
- * klant wilt, foto is niet verplicht notitie wel, en 3 extra foto's dus 3 upload
+ * klant wilt, foto is niet verplicht notitie wel, en 3 extra foto’s dus 3 upload
  * mogelijkheden erbij."*
  *
- * Wat er stond was één tekstveld voor alle bijbestelde foto's samen. Bij drie
+ * Wat er stond was één tekstveld voor alle bijbestelde foto’s samen. Bij drie
  * extra's moest de klant dus drie wensen in één regel proppen, en er was geen
  * plek voor het voorbeeld dat de wens uitlegt.
  *
@@ -2643,9 +2643,9 @@ function buildRatios(card) {
  * ── DE VRAAG ──────────────────────────────────────────────────────────────
  *
  * Lucas, 13 augustus 2026: *"Ook wil ik dat het mogelijk word voor een bezoeker
- * om meer foto's toe te voegen van zijn product kosteloos door op een plusje
- * naast de 4 aanbevolen foto's te klikken. Dit zorgt ervoor dat ze meer details
- * kunnen laten zien maar wel gewoon 4 foto's in totaal krijgen, wel moet de optie
+ * om meer foto’s toe te voegen van zijn product kosteloos door op een plusje
+ * naast de 4 aanbevolen foto’s te klikken. Dit zorgt ervoor dat ze meer details
+ * kunnen laten zien maar wel gewoon 4 foto’s in totaal krijgen, wel moet de optie
  * voor een extra foto behouden worden als apart vak die gewoon de huidige extra
  * prijs behouden."*
  *
@@ -2874,7 +2874,7 @@ function buildExtras(card) {
   return wrap;
 }
 
-/** The extra-photo rate at the order's CURRENT product count. */
+/** The extra-photo rate at the order’s CURRENT product count. */
 function extraRateNow() {
   const rungs = cfg.extraPhotoLadder || [];
   const n = Math.max(1, Math.floor(productCount()) || 1);
@@ -3667,7 +3667,7 @@ function sendSlot(card, id) {
         setHidden('upload_batch', batch);
         if (!live()) {
           // Uploaded into a slot that is gone. Take it straight back out —
-          // `staged` is what decides the order's files, and this never joins it.
+          // `staged` is what decides the order’s files, and this never joins it.
           removeStaged(body.file.key);
           return resolve();
         }
@@ -3773,7 +3773,7 @@ function uploadError(code, body) {
 // since Phase 1; nothing ever read it back until now, so a returning,
 // signed-in brand still retyped its own name and VAT number every time —
 // Lucas's own words for this, verbatim: information that should be
-// unnecessary once you're logged in.
+// unnecessary once you’re logged in.
 //
 // Why this is client-side JS and not server-rendered, unlike admin.js's and
 // account.js's own pages: /start is output:'static' (wrangler.toml's own
@@ -3784,7 +3784,7 @@ function uploadError(code, body) {
 // GET /account/me (account.js) answers with the signed-in customer's known
 // fields, or 401 if no one is signed in — see that file for why a GET needs
 // no Origin check (nothing here changes state) and why the account session
-// cookie reaches this call from a page that isn't /account/*: cookies attach
+// cookie reaches this call from a page that isn’t /account/*: cookies attach
 // to the REQUEST's own path against the cookie's Path=/account, not to
 // whichever page's script sent the fetch.
 //

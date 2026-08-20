@@ -342,7 +342,12 @@ console.log('\nde licentie in §8 somt op, en belooft niets wat de wet niet toes
   ok('EN §8 zegt dat er misschien geen auteursrecht op rust',
     /there may be no copyright at all/i.test(TERMS.en), true);
   ok('NL idem', /misschien helemaal geen auteursrecht/i.test(TERMS.nl), true);
-  ok('EN met de menselijke toets erbij', /human being's own intellectual creation/i.test(TERMS.en), true);
+  /* De apostrof is bewust `['’]` en geen vaste ' — op 20 augustus 2026 is de
+     hele site op de typografische apostrof gezet en viel deze test om op één
+     teken, terwijl de zin woord voor woord hetzelfde was gebleven. Wat hier
+     bewaakt hoort te worden is de formulering uit de richtlijn, niet welk
+     apostrofteken de zetter gebruikt. */
+  ok('EN met de menselijke toets erbij', /human being['’]s own intellectual creation/i.test(TERMS.en), true);
   ok('NL idem', /eigen intellectuele schepping van een mens/i.test(TERMS.nl), true);
   ok('EN en het antwoord voor beide gevallen', /nobody holds it, which means nobody can stop you/i.test(TERMS.en), true);
   ok('NL idem', /houdt niemand het, en dan kan niemand je iets verbieden/i.test(TERMS.nl), true);

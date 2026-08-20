@@ -739,7 +739,7 @@ async function handleOrderDelete(context, orderId) {
  * Die RESTRICT is geen obstakel maar een BESLISSING die al in het schema stond, en
  * hij klopt: art. 17 lid 3 sub b AVG zegt dat het recht op vergetelheid niet geldt
  * voor zover verwerking nodig is om een wettelijke verplichting na te komen. De
- * fiscale bewaarplicht (art. 52 lid 4 AWR) is zo'n verplichting, en die gaat over
+ * fiscale bewaarplicht (art. 52 lid 4 AWR) is zo’n verplichting, en die gaat over
  * de FACTUUR — met de naam en het adres erop, want zonder die gegevens is het geen
  * geldige factuur.
  *
@@ -961,7 +961,7 @@ async function handleCustomerWipe(context, customerId) {
       WHERE id = ?1`
   ).bind(id, WEG));
 
-  /* En de betaling van zo'n bestelling: de rij blijft staan, want die verbindt de
+  /* En de betaling van zo’n bestelling: de rij blijft staan, want die verbindt de
      factuur met het geld dat is ontvangen. Alleen de ruwe webhookbody gaat eruit —
      daar staan de gegevens van de betaler in. */
   const stripPay = keepIds.map((id) => env.DB.prepare(
@@ -1066,9 +1066,9 @@ async function handleStatusUpdate(context, orderId) {
 
   // Two writes, not one — orders.status is what every other query in the
   // codebase reads (the capacity gate's idx_orders_status, the notify mail),
-  // order_events is what the client's own portal timeline reads (portal.js,
+  // order_events is what the client’s own portal timeline reads (portal.js,
   // loadEvents()). A status change that only touched one would move Lucas's
-  // view of the order out of step with the client's, silently.
+  // view of the order out of step with the client’s, silently.
   await env.DB.batch([
     env.DB.prepare('UPDATE orders SET status = ?1 WHERE id = ?2').bind(status, orderId),
     env.DB.prepare(
@@ -1211,7 +1211,7 @@ async function loadOrderFiles(env, orderId) {
  * ── DE WERKMAP ALS ZIP — 12 AUGUSTUS 2026 ────────────────────────────────────
  *
  * Lucas: *"ik wil het verzenden sneller maken door een soort mappenroute te kunnen
- * downloaden zodat ik alleen de foto's in de juiste folders moet zetten"* — en op
+ * downloaden zodat ik alleen de foto’s in de juiste folders moet zetten"* — en op
  * de vraag hoe ver: *"Heen en terug, hernoemen helemaal weg."*
  *
  * Dit is de heenweg. De redenering, de mapnamen en de terugweg staan in
@@ -1250,7 +1250,7 @@ async function serveScaffold(context, orderId) {
   const products = [];
   for (let i = 1; i <= count; i++) {
     const key = `p${i}`;
-    /* De extra foto's van dit product: `extra_p3` is het AANTAL en
+    /* De extra foto’s van dit product: `extra_p3` is het AANTAL en
        `extra_note_p3_1..n` zijn de notities. Alleen de notities gaan mee -- het
        aantal staat in de briefing als de lijst zelf. */
     const extras = [];
@@ -1435,7 +1435,7 @@ async function renderFiles(context, orderId) {
    *
    * Lucas: *"ik wil de order eerst visueel invullen op het admin account en dan
    * samen pushen naar de klant in 1 keer per product of order. Dus ik wil de
-   * foto's op kunnen slaan zodat ik er meerdere dagen over kan doen en dan
+   * foto’s op kunnen slaan zodat ik er meerdere dagen over kan doen en dan
    * gelijk zie welke nog missen."*
    *
    * Een rooster van producten × shots. Elk vakje is óf een beeld óf een gat met
@@ -4156,7 +4156,7 @@ async function serveModelPreview({ env }, modelId) {
 // A brand could never have anything to lock a style to, and the portal's own
 // "No custom models on your account yet — ask us to set one up" message had
 // no admin-side action behind the "ask us" it names. This is that action:
-// the smallest thing that unblocks it — a label, tied to the order's
+// the smallest thing that unblocks it — a label, tied to the order’s
 // customer — not a redesign of whatever the eventual "custom-models flow"
 // (the one schema.sql's own comment on this table alludes to, that promotes
 // a row from 'in_design' to 'approved' to 'locked') turns out to need.
@@ -4183,7 +4183,7 @@ async function handleAddCustomModel({ request, env }, orderId) {
     // Real, if rare: upsertCustomer() in functions/api/order.js runs inside a
     // safe() wrapper, so a DB hiccup at order time can leave orders.customer_id
     // NULL without failing the order itself. Nothing to attach a model to
-    // until that's fixed by hand — surfacing it beats a foreign-key 500.
+    // until that’s fixed by hand — surfacing it beats a foreign-key 500.
     return html(page({ title: 'Admin', body: errorBody('This order has no linked customer account (customer_id is empty), so there is no brand to attach a custom model to.') }), 409);
   }
 
@@ -4683,7 +4683,7 @@ ${missing
  * hier tegen te doen of hebben we hier al iets voor gemaakt."*
  *
  * Er was al veel voor gemaakt, en het hield niets tegen. `vatGate()` in
- * src/data/vat.js zet zo'n bestelling op `review_state = 'pending'` en er wordt
+ * src/data/vat.js zet zo’n bestelling op `review_state = 'pending'` en er wordt
  * geen betaallink gemaakt. Maar `orders.review_state` werd door NIETS gelezen —
  * elke treffer op die naam in dit bestand ging over `files.review_state`, een
  * andere kolom met dezelfde naam voor het goedkeuren van beelden. Een
@@ -5351,7 +5351,7 @@ function orderCard(o, models, statusFilter = '') {
     (s) => `<option value="${s}"${s === o.status ? ' selected' : ''}>${STATUS_LABEL[s]}</option>`
   ).join('');
   const window = o.window_start ? `${esc(o.window_start)} → ${esc(o.window_end)}` : '—';
-  // Task #271e: custom_models for this order's customer, read-only, so Lucas
+  // Task #271e: custom_models for this order’s customer, read-only, so Lucas
   // can see what a brand already has before adding another with the same
   // name by accident — see loadCustomModelsByCustomer()'s header.
   const modelList = models.length
@@ -5385,7 +5385,7 @@ function orderCard(o, models, statusFilter = '') {
   <div class="row-head">
     <span class="ref">${esc(o.ref)}</span>
     <span class="pill is-${esc(o.status)}">${STATUS_LABEL[o.status] || esc(o.status)}</span>
-    <!-- The way in to this order's files, both directions. Added August 2026,
+    <!-- The way in to this order’s files, both directions. Added August 2026,
          when the 30-product test order made it clear the notification email is
          a heads-up and not a delivery mechanism. -->
     <a class="files-link" href="/admin/orders/${o.id}/files">Files${o.file_count ? ` (${o.file_count})` : ''}</a>
@@ -5401,7 +5401,7 @@ function orderCard(o, models, statusFilter = '') {
          STATUSES rather than trusting the round trip. -->
     ${statusFilter ? `<input type="hidden" name="back" value="${esc(statusFilter)}">` : ''}
     <select name="status">${options}</select>
-    <input type="text" name="note" placeholder="Note (optional, goes on the client's timeline too)" class="in-grow">
+    <input type="text" name="note" placeholder="Note (optional, goes on the client’s timeline too)" class="in-grow">
     <button class="btn btn-primary" type="submit">Update</button>
   </form>
   ${unannounced}

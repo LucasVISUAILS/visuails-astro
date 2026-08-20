@@ -51,7 +51,7 @@
  * object's customMetadata, so it is a stable key: renaming one is a migration,
  * not a copy edit.
  */
-// De bovengrens van het aantal extra foto's staat in pricing.js, samen met wat
+// De bovengrens van het aantal extra foto’s staat in pricing.js, samen met wat
 // ze kosten. Zie isExtraShotId() onderaan voor waarom hij hier nodig is.
 // pricing.js importeert niets uit dit bestand, dus dit maakt geen cyclus.
 import { MAX_EXTRA_PER_PRODUCT as MAX_EXTRA } from './pricing.js';
@@ -177,10 +177,10 @@ export function isExtraShotId(id, max) {
  * EN DE GRATIS REFERENTIEFOTO'S — 13 AUGUSTUS 2026
  * ═══════════════════════════════════════════════════════════════════════════════
  *
- * Lucas: *"Ook wil ik dat het mogelijk word voor een bezoeker om meer foto's toe
+ * Lucas: *"Ook wil ik dat het mogelijk word voor een bezoeker om meer foto’s toe
  * te voegen van zijn product kosteloos door op een plusje naast de 4 aanbevolen
- * foto's te klikken. Dit zorgt ervoor dat ze meer details kunnen laten zien maar
- * wel gewoon 4 foto's in totaal krijgen, wel moet de optie voor een extra foto
+ * foto’s te klikken. Dit zorgt ervoor dat ze meer details kunnen laten zien maar
+ * wel gewoon 4 foto’s in totaal krijgen, wel moet de optie voor een extra foto
  * behouden worden als apart vak die gewoon de huidige extra prijs behouden."*
  *
  * ── TWEE DINGEN DIE ALLEBEI "EXTRA" HEETTEN, EN DAT MOCHT NIET ─────────────

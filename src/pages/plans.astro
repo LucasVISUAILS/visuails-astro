@@ -1,0 +1,21 @@
+---
+// VISUAILS — /plans (English). De pagina-inhoud staat in PlansPage.astro, zodat
+// /plans en /nl/plans niet uit elkaar kunnen lopen; alleen de meta verschilt.
+//
+// Deze pagina bestaat sinds 20 augustus 2026 en haalde het abonnement weg bij
+// de prijslijst — zie de lange noot bovenin PlansPage.astro.
+import Layout from '../layouts/Layout.astro';
+import PlansPage from '../components/PlansPage.astro';
+import { euro, PLAN_AMOUNT, PLAN_PRODUCTS, vatLabel } from '../data/pricing.js';
+
+const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
+
+const description =
+  `A fixed number of products every month, in a week the calendar keeps free ` +
+  `for you. From ${euro(PLAN_AMOUNT[CHEAPEST], 'en')} a month for ` +
+  `${PLAN_PRODUCTS[CHEAPEST]} products, ${vatLabel('excl', 'en')}.`;
+---
+
+<Layout title="Plans — VISUAILS" description={description}>
+  <PlansPage lang="en" />
+</Layout>

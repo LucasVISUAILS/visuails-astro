@@ -52,7 +52,7 @@ export const ogLocale = { en: 'en_US', nl: 'nl_NL' };
 export const NAV_SOON = 'soon';
 
 // Your Brand Model's live URL. /models used to 301 here (AUDIT-TASK-0.md
-// §H·8); as of task #270 it's a real page of its own again (§H·8's own
+// §H·8); as of task #270 it’s a real page of its own again (§H·8's own
 // 2026-07-29 addendum), reached from this page's #standard block and from the
 // homepage rather than through the nav — see that addendum for why no
 // nav_models slot was added here.
@@ -68,6 +68,10 @@ export const ui = {
     nav_drops: 'What we make',
     nav_brandmodel: 'Your Brand Model',
     nav_pricing: 'Pricing',
+    // Het abonnement kreeg op 20 augustus 2026 een eigen pagina en dus een eigen
+    // ingang. Naast Prijzen en niet erin: het zijn twee manieren om te kopen, en
+    // een menu dat de tweede verstopt onder de eerste zegt dat hij een detail is.
+    nav_plans: 'Plans',
     nav_gallery: 'Gallery',
     nav_contact: 'Contact',
     nav_start: 'Order',
@@ -154,6 +158,9 @@ export const ui = {
     mob_notsure: 'Not sure yet?',
     mob_try: `Try a test sample · ${TEST_SAMPLE.en.price}`,
     foot_tagline: 'The visual studio for clothing brands and modern e-commerce — for founders who would rather grow than book another shoot.',
+    // De knop in de merkkolom van de voettekst. Kort, want hij staat naast drie
+    // kolommen links en moet als handeling lezen en niet als vierde lijst.
+    foot_cta: 'Start an order',
     foot_drops: 'What we make',
     foot_brandmodel: 'Your Brand Model',
     foot_aiact: 'AI Act',
@@ -172,6 +179,7 @@ export const ui = {
     foot_sample: `Test sample · ${TEST_SAMPLE.en.price}`,
     foot_gallery: 'Gallery',
     foot_pricing: 'Pricing',
+    foot_plans: 'Plans',
     foot_faq: 'FAQ',
     foot_contact: 'Contact',
     foot_privacy: 'Privacy',
@@ -257,6 +265,7 @@ export const ui = {
     nav_drops: 'Wat we maken',
     nav_brandmodel: 'Jouw merkmodel',
     nav_pricing: 'Prijzen',
+    nav_plans: 'Abonnementen',
     nav_gallery: 'Galerij',
     nav_contact: 'Contact',
     nav_start: 'Bestellen',
@@ -284,6 +293,7 @@ export const ui = {
     mob_notsure: 'Nog niet zeker?',
     mob_try: `Probeer een proefvisual · ${TEST_SAMPLE.nl.price}`,
     foot_tagline: 'De studio voor productvisuals voor kledingmerken en moderne e-commerce — voor ondernemers die liever groeien dan nóg een fotoshoot boeken.',
+    foot_cta: 'Start een bestelling',
     foot_drops: 'Wat we maken',
     foot_brandmodel: 'Jouw merkmodel',
     foot_aiact: 'AI Act',
@@ -298,6 +308,7 @@ export const ui = {
     foot_sample: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
     foot_gallery: 'Galerij',
     foot_pricing: 'Prijzen',
+    foot_plans: 'Abonnementen',
     foot_faq: 'FAQ',
     foot_contact: 'Contact',
     foot_privacy: 'Privacy',

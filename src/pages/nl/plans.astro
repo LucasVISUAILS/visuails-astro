@@ -1,0 +1,19 @@
+---
+// VISUAILS — /nl/plans (Nederlands). De pagina-inhoud staat in PlansPage.astro,
+// zodat /plans en /nl/plans niet uit elkaar kunnen lopen; alleen de meta
+// verschilt hier.
+import Layout from '../../layouts/Layout.astro';
+import PlansPage from '../../components/PlansPage.astro';
+import { euro, PLAN_AMOUNT, PLAN_PRODUCTS, vatLabel } from '../../data/pricing.js';
+
+const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
+
+const description =
+  `Elke maand een vast aantal producten, in een week die de planning voor je ` +
+  `vrijhoudt. Vanaf ${euro(PLAN_AMOUNT[CHEAPEST], 'nl')} per maand voor ` +
+  `${PLAN_PRODUCTS[CHEAPEST]} producten, ${vatLabel('excl', 'nl')}.`;
+---
+
+<Layout title="Abonnementen — VISUAILS" description={description}>
+  <PlansPage lang="nl" />
+</Layout>

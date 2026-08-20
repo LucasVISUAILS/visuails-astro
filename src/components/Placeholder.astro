@@ -2,7 +2,7 @@
 /*
  * VISUAILS — een lege plek voor beeld dat er nog niet is.
  *
- * Lucas, 18 augustus 2026: *"gebruik ook placeholders voor foto's/video's die ik
+ * Lucas, 18 augustus 2026: *"gebruik ook placeholders voor foto’s/video's die ik
  * nog niet heb."*
  *
  * ── WAAROM DIT GEEN GRIJS VLAK IS ──────────────────────────────────────────
@@ -22,7 +22,7 @@
  *       heeft. De opdracht staat er bewust ONDER en niet in: tekst binnen de
  *       doos zou de gereserveerde ruimte veranderen, of afgesneden worden.
  *   2 · HIJ ZEGT WAT ER KOMT. `subject` is geen bijschrift maar een briefing aan
- *       jezelf: "wolvest, on-model, onderlichaam". Bij het maken van de foto's is
+ *       jezelf: "wolvest, on-model, onderlichaam". Bij het maken van de foto’s is
  *       dat de lijst.
  *   3 · HIJ IS TE TELLEN. Elk exemplaar draagt `data-placeholder`, dus
  *       `npm run placeholders` zegt precies hoeveel er nog open staan en waar.
@@ -37,8 +37,13 @@
 interface Props {
   /** De beeldverhouding die het echte bestand krijgt, bijv. "4/5" of "16/9". */
   ratio: string;
-  /** Wat hier komt te staan, in je eigen woorden. Verschijnt op het scherm. */
+  /** Wat hier komt te staan, in je eigen woorden. Verschijnt op het scherm,
+   *  tenzij `caption` op false staat — dan blijft hij als data-attribuut staan
+   *  voor `npm run placeholders`. */
   subject: string;
+  /** Bijschrift onder het vlak tonen? Uit voor plekken waar de foto zelf het
+   *  onderwerp is en de opdracht dus alleen voor jou bedoeld is. */
+  caption?: boolean;
   /*
    * ── WAT HET BEELD MOET OVERBRENGEN — 19 augustus 2026 ────────────────────
    *
@@ -48,7 +53,7 @@ interface Props {
    * `subject` zegt WAT er op de foto staat ("wolvest, on-model"). Dat is genoeg
    * om te weten wat je moet fotograferen en te weinig om te weten of de foto
    * geslaagd is. `message` zegt wat de bezoeker eraan moet OVERHOUDEN — en dat
-   * is de eigenlijke opdracht. Twee foto's van hetzelfde vest kunnen allebei
+   * is de eigenlijke opdracht. Twee foto’s van hetzelfde vest kunnen allebei
    * kloppen op onderwerp en maar één ervan doet zijn werk.
    *
    * Hij staat op het scherm en niet alleen in een data-attribuut: wie langs deze
@@ -78,7 +83,7 @@ interface Props {
   space?: boolean;
   lang?: 'en' | 'nl';
 }
-const { ratio, subject, message, kind = 'photo', class: klasse = '', space: spatie = false, lang = 'nl' } = Astro.props;
+const { ratio, subject, message, kind = 'photo', class: klasse = '', space: spatie = false, lang = 'nl', caption: bijschrift = true } = Astro.props;
 const nl = lang === 'nl';
 const woord = kind === 'video' ? (nl ? 'Video volgt' : 'Video to come') : (nl ? 'Foto volgt' : 'Photo to come');
 ---
@@ -98,10 +103,26 @@ const woord = kind === 'video' ? (nl ? 'Video volgt' : 'Video to come') : (nl ? 
     <svg class="ph-mark" viewBox="0 0 702 813.25" aria-hidden="true"><use href="#markglyph" /></svg>
     <span class="ph-kind">{woord}</span>
   </div>
-  <figcaption class="ph-cap">
-    <span class="ph-subject">{subject}</span>
-    {message && <span class="ph-message">{message}</span>}
-  </figcaption>
+  {/* ── HET BIJSCHRIFT KAN UIT, DE BRIEFING NOOIT ────────────────────────
+      Lucas, 20 augustus 2026, over het portret bij de recensiesectie: *"Portrait
+      of Lucas at work — not a studio portrait, but sharp and calm mag weg.
+      Boodschap is duidelijk zonder alle extra tekst."*
+
+      Hij heeft gelijk voor die plek: daar is de foto het onderwerp en niet een
+      voorbeeld in een raster, en dan is een opdracht aan mezelf onder het beeld
+      gewoon tekst die de bezoeker moet overslaan.
+
+      MAAR DE BRIEFING VERDWIJNT NIET. `data-subject` en `data-message` blijven
+      op de <figure> staan, dus `npm run placeholders` ziet deze plek nog steeds
+      en noemt hem met opdracht en al. Wat uit gaat is het BIJSCHRIFT op het
+      scherm, niet de informatie — een placeholder die je niet meer kunt tellen,
+      is een placeholder die live gaat. */}
+  {bijschrift && (
+    <figcaption class="ph-cap">
+      <span class="ph-subject">{subject}</span>
+      {message && <span class="ph-message">{message}</span>}
+    </figcaption>
+  )}
 </figure>
 
 <style>

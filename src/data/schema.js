@@ -46,7 +46,7 @@
 //     direction.
 //
 // And the word "drop" is not what this studio sells any more — it means the
-// client's own collection going live. What is sold is an order.
+// client’s own collection going live. What is sold is an order.
 //
 // HOW A PAGE GETS ITS GRAPH
 // From its URL, not from a prop. Layout.astro already derives the
@@ -56,7 +56,7 @@
 //
 // THREE RULES THIS FILE IS HELD TO
 //   · NO INVENTED FACTS. No aggregateRating, no review, no counts, no claims
-//     about anyone's business. The project's standing rule is never to invent
+//     about anyone’s business. The project's standing rule is never to invent
 //     testimonials, client names, logos, metrics or results, and structured
 //     data is the easiest place in a codebase to break it — a rating property
 //     is one line and it would be a lie.
@@ -143,7 +143,7 @@ function htmlToText(html) {
 // which have locale-specific @ids and so can differ honestly.
 //
 // "a whole drop" used to end this sentence. It does not any more: "drop" means
-// the client's collection going live, and using it for a work order is the
+// the client’s collection going live, and using it for a work order is the
 // collision that retired the package model. See section 0 of pricing.js.
 const ORG_DESCRIPTION =
   'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals built from a single product photo — a whole collection in one order, or one product at a time.';

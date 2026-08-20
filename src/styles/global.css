@@ -823,7 +823,7 @@
 
 /* media */
 .photo-band, .photo-split-media, .vis, .cmp, .tile-media, .hv-svc-media,
-.card > img, figure.bm-model, .bm-model {
+.card > img, .card > picture > img, figure.bm-model, .bm-model {
   border-radius: var(--r-lg);
   overflow: hidden;
 }
@@ -867,7 +867,8 @@
 /* Photographs that sit on their own rather than inside a plate. Scoped to
    content contexts on purpose — a blanket `img { border-radius }` would round
    the logotype and every inline icon. */
-figure > img, .card img, .grid img, .reveal > img, img.wide {
+figure > img, figure > picture > img, .card img, .grid img,
+.reveal > img, .reveal > picture > img, img.wide {
   border-radius: var(--r-lg);
 }
 
@@ -962,6 +963,34 @@ body {
      at 1280px and 390px after the move — no page scrolls sideways. */
 }
 img, svg, video { display: block; max-width: 100%; height: auto; }
+/* ── EEN <picture> IS GEEN KADER, EN EEN <source> IS GEEN TEGEL ───────────
+   Sinds scripts/avif-naast-webp.mjs zit er om vrijwel elke <img> op de site een
+   <picture> met een AVIF-bron erin, zodat de browser 9.3 MB kan laden waar
+   19.4 MB aan webp stond. Dat schuift twee elementen tussen de ouder en het
+   beeld, en die twee regels hieronder halen ze allebei weer weg.
+
+   display: contents op de <picture> — anders wordt de <picture> het rasteritem
+   in .photo-grid in plaats van de <img>, blijft er bij het filter op /gallery
+   (dat img.style.display = 'none' zet) een lege cel staan, en krijgt elke
+   absoluut gepositioneerde achtergrond er een lege inline-box bij.
+
+   display: none op de <source> — en dit is de regel die je pas mist als je hem
+   niet hebt. Een <source> is leeg en staat normaal in een <picture> die inline
+   is: hij maakt een inline-box van nul bij nul en niemand merkt hem op. Zodra
+   de <picture> op display: contents staat, wordt de <source> HET RASTERITEM
+   naast de <img> — geblokkeerd, uitgerekt tot de rijhoogte, een volle cel voor
+   een element dat niets toont. In .photo-grid op /video werden vier tegels acht
+   items: het raster kreeg er een rij bij, de smalle foto's zakten van 962 naar
+   474 px en de pagina werd een halve schermhoogte langer. In .fd-strip in de
+   dashboardfiguur hetzelfde: vier beelden in vier kolommen werden acht items in
+   twee rijen, en /portal groeide 130 px.
+
+   De browser doet dit terecht: <source> heeft geen `display: none` in de
+   UA-stijl, want het is nooit nodig geweest. Wij maken het nodig, dus schrijven
+   wij het op. Eén regel, en de 263 meldingen van de vangrail werden er nul —
+   het was de hele tijd één oorzaak, geen elf. */
+picture { display: contents; }
+source { display: none; }
 a { color: inherit; text-decoration: none; }
 /* Selection is a solid block, not a tint. On the harbor palette that block was
    the ink and the text was the paper, and the two grounds needed opposite
@@ -1890,7 +1919,7 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    zero radius, because a rounded <img> inside a square box is the single most
    common way a radius comes back. */
 .plate { position: relative; overflow: hidden; background: var(--surface-2); border-radius: var(--r-lg); }
-.plate > img, .plate > video, .plate > canvas, .plate > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.plate > img, .plate > picture > img, .plate > video, .plate > canvas, .plate > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Stacked and left-aligned, not spread. space-between pushed the note to the
    card's right edge, which reads as belonging to whatever is next to it. */
 .plate-cap {
@@ -1960,7 +1989,7 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 /* A media block that is NOT the whole tile keeps its own corner. */
 /* Superseded by the .tile > .tile-media corner rules in the corners block
    above, which round the OUTER edges and square only the seam. */
-.tile-media > img, .tile-media > video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tile-media > img, .tile-media > picture > img, .tile-media > video { display: block; width: 100%; height: 100%; object-fit: cover; }
 .tile-media-fill { flex: 1; min-height: 12rem; }
 
 /* An overlay caption on a photo tile — the only place a gradient is allowed
@@ -2265,6 +2294,36 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 860px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
+/* ── ELK BLOK LIGT OP DE PAGINA, NIET ERIN — 20 augustus 2026 ───────────────
+   Lucas: *"Ik wil dus voor de andere blokken een soort gelijke oulining hebben
+   om een subtiel 3d effect te creëren"*, en later: *"alle andere pagina's ...
+   consistenter maken met de homepage look ... zodat alles mooi consistent blijft
+   en overloopt op elkaar."*
+
+   Twee schaduwen doen dat werk en ze staan hier één keer voor de hele site:
+
+     · een lichtlijn van één pixel binnenlangs de bovenrand — dat is de kant waar
+       het licht op deze site vandaan komt (zie de lamp in body::before), en het
+       is wat een rand tot een KANT maakt;
+     · een brede zachte val eronder, ruim en op 55 procent zwart, zodat je hem
+       niet als schaduw aanwijst maar als diepte leest.
+
+   Op .card en .tile samen, want dat zijn de twee klassen waar de site zijn
+   blokken mee bouwt. De homepage deed dit al met eigen regels; die konden weg
+   toen dit hier kwam te staan. Eén definitie, of het is over een maand op vier
+   pagina's net iets anders. */
+.card, .tile {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 18px 34px -26px rgb(0 0 0 / 0.55);
+}
+/* Op een heldere grond keert het licht om: daar is de bovenrand de donkere kant
+   en zou een witte lichtlijn een streep zijn die nergens vandaan komt. */
+.on-bright .card, .on-bright .tile, .on-paper .card, .on-paper .tile {
+  box-shadow:
+    inset 0 1px 0 rgb(8 9 11 / 0.06),
+    0 18px 34px -26px rgb(0 0 0 / 0.22);
+}
 .card { background: var(--surface); border: 1px solid var(--line); padding: clamp(1.4rem, 2.5vw, 2rem); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); }
 .card-hover:hover { transform: translateY(-4px); border-color: var(--line-strong); }
 
@@ -3688,10 +3747,55 @@ body::before {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: 50% 50%;
+  translate: 0 0;
   transition:
     opacity 200ms var(--ease, ease),
     stroke-dashoffset 640ms cubic-bezier(.22, 1, .36, 1),
-    transform 640ms cubic-bezier(.22, 1, .36, 1);
+    translate 640ms cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ── DE TRILLING ──────────────────────────────────────────────────────────
+   Lucas: *"Kan het logo animatie ook een soort electro animatie bevatten dan
+   het wat inconsistent shaked wanneer je erover heen hovert."*
+
+   ONREGELMATIG IS HET HELE PUNT, en dat is waarom dit keyframes zijn en geen
+   sinus. De sprongen staan op onronde percentages (6, 7.4, 21, 22.2, 47, …) met
+   ongelijke stiltes ertussen van ongeveer 0,3 tot 0,6 seconde. Een trilling op
+   een vast ritme leest als een defect scherm; een trilling met ongelijke pauzes
+   leest als stroom die overspringt. Bij 2,6 seconden per ronde valt het patroon
+   niet op zolang je hovert.
+
+   `steps(1, end)` en geen soepele overgang: elektriciteit glijdt niet, hij
+   springt. Zonder stappen wordt elke schok een zwaai en is het een wiebelend
+   logo in plaats van een vonk.
+
+   De uitslag is 0,7 tot 2,7 procent van het tekenvlak — tegenover een
+   verschuiving van 6 procent, dus hoogstens een derde daarvan. Genoeg om als
+   sprong te lezen, te weinig om de lijn van zijn plek te halen.
+
+   ELKE KEYFRAME NOEMT ZIJN DEKKING, ook de rustframes. Eerst stond `opacity`
+   alleen op de drie flikkerframes, en dan HOUDT de browser die waarde vast tot
+   het volgende frame dat hem noemt — gemeten stond de lijn daardoor het grootste
+   deel van de ronde op 55 tot 70 procent in plaats van heel even. Een dip die
+   blijft hangen is geen flikkering maar een fout. */
+@keyframes mk-electro {
+  0%,    5.9%  { transform: none;                        opacity: 1; }
+  6%           { transform: translate(2.1%, -1.4%);      opacity: 1; }
+  7.4%         { transform: translate(-1.6%, 1.2%);      opacity: .55; }
+  8%,   20.9%  { transform: none;                        opacity: 1; }
+  21%          { transform: translate(-2.5%, 0.7%);      opacity: 1; }
+  22.2%        { transform: translate(1.4%, 2.1%);       opacity: 1; }
+  23%,  46.9%  { transform: none;                        opacity: 1; }
+  47%          { transform: translate(1.8%, 1.6%);       opacity: .5; }
+  48.4%        { transform: translate(-1.2%, -2.1%);     opacity: 1; }
+  49%,  62.9%  { transform: none;                        opacity: 1; }
+  63%          { transform: translate(2.7%, -0.9%);      opacity: 1; }
+  64.6%        { transform: translate(-2.1%, 1.4%);      opacity: .62; }
+  65.4%        { transform: translate(0.9%, 2.3%);       opacity: 1; }
+  66%,  87.9%  { transform: none;                        opacity: 1; }
+  88%          { transform: translate(-1.4%, -1.8%);     opacity: 1; }
+  89.3%        { transform: translate(1.6%, 0.9%);       opacity: 1; }
+  90%,   100%  { transform: none;                        opacity: 1; }
 }
 
 /* De aanraking. `@media (hover: hover)` houdt hem weg van een telefoon, waar een
@@ -3716,7 +3820,13 @@ body::before {
   :is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk) .mk-line-a {
     opacity: 1;
     stroke-dashoffset: 0;
-    transform: translate(calc(var(--mk-off, 6%) * -1), calc(var(--mk-off, 6%) * -1));
+    /* `translate` EN NIET `transform`, sinds de trilling erbij kwam. Het zijn twee
+       aparte eigenschappen die allebei meetellen — de browser rekent translate,
+       rotate en scale af vóór transform — dus kan de verschuiving hier rustig
+       overlopen terwijl mk-electro hieronder met transform staat te schokken.
+       In één eigenschap zouden ze elkaar overschrijven en won de animatie altijd. */
+    translate: calc(var(--mk-off, 6%) * -1) calc(var(--mk-off, 6%) * -1);
+    animation: mk-electro 2.6s steps(1, end) infinite;
   }
 }
 
@@ -3730,6 +3840,10 @@ body::before {
    verdwijnt. Dat is wat 2.3.3 vraagt en niet het weghalen van het effect. */
 @media (prefers-reduced-motion: reduce) {
   .mk .mk-fill, .mk .mk-line { transition-duration: 1ms; transition-delay: 0s; }
+  /* En de trilling gaat helemaal uit. Een schokkende beweging is precies het
+     soort animatie waar deze voorkeur voor bestaat; hem "rustiger" maken is hier
+     geen optie, want het onregelmatige IS het effect. */
+  .mk .mk-line-a { animation: none !important; }
 }
 
 /* ══ HET MERK ALS DIEPTE, ACHTER EEN BLOK ══════════════════════════════════
@@ -3808,3 +3922,233 @@ body::before {
   .mark-depth-v { animation: md-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
 }
 @media (forced-colors: active) { .mark-depth-lay { display: none; } }
+
+
+/* ══ HET HELDERE PANEEL ════════════════════════════════════════════════════
+ Een los blok in de accentkleur dat op de pagina LIGT: ronde hoeken, een
+ slagschaduw, en de paginagrond die eromheen doorloopt. Het is geen tweede
+ ondergrond — ONE GROUND verbiedt een tweede paginakleur en noemt in dezelfde
+ adem wat het antwoord wél is: *"a tile, a panel, a rule, or more space"*.
+ Dit is dat paneel.
+
+ HIJ STOND EERST ALLEEN IN HomeV2 en is op 20 augustus 2026 hierheen verhuisd,
+ toen Lucas vroeg om de subpagina's *"consistenter maken met de homepage look
+ ... zodat alles mooi consistent blijft en overloopt op elkaar."* Eén blok dat
+ er op vier pagina's hetzelfde uitziet, kan niet op drie ervan verouderen.
+
+ GEBRUIK:
+   <div class="lime-panel">
+     <div class="lime-panel-light" aria-hidden="true"></div>
+     <div class="lime-panel-in on-bright"> … </div>
+   </div>
+
+ De lichtlaag is een ECHT element en geen ::before, omdat er lagen onder
+ kunnen liggen (een merkteken, een beeld) die het licht mee moeten krijgen;
+ een ::before valt vóór alle kinderen en zou daar onder blijven.
+
+ `.on-bright` op de binnenkant en niet op het paneel zelf: die scope
+ herdefinieert --accent naar inkt, en een custom property wordt opgelost waar
+ hij GEBRUIKT wordt. Zet je hem op het element dat `background: var(--accent)`
+ draagt, dan leest de achtergrond zijn eigen omkering en is het paneel zwart.
+ Dat is één keer gebeurd en het is de reden dat dit twee elementen zijn.
+
+ Op dit paneel is het accent de GROND, dus kan een accentwoord er niet in het
+ accent staan — `--fill-blue` en `--accent-word` gaan daarom naar een donkerder
+ groen uit dezelfde familie (#445A00, 5,90 op deze grond tegenover 15,16 voor
+ de zwarte helft van een kop). */
+.lime-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* DE GROND IS BELICHT, NIET VLAK. Lucas keek naar de eerste versie en zei
+     *"wellicht de donkerdere groen gebruiken omdat dit best heftig is"*. Dat
+     is een echte waarneming, maar de oorzaak is oppervlak en niet tint: het
+     paneel is 1325 x 1180 px vol #C6F100 en dat is de grootste lap kleur die
+     de site heeft. Gemeten alternatieven: #9FCA22 haalt 9.93 tegen de
+     paginagrond, #7FB042 haalt 7.43, een diep groen (#1F4217) haalt 1.68 en
+     zweeft dus helemaal niet meer — terwijl #C6F100 op 14.50 zit. Alleen de
+     helderste waarde laat het blok van een bijna-zwarte pagina LOSKOMEN, en
+     loskomen was de opdracht ("het blok moet er echt uit springen").
+
+     Dus blijft de tint en gaat de vlakheid eruit. Twee zachte lagen over de
+     volle kleur: licht van rechtsboven, een heel lichte schaduw linksonder in
+     dezelfde tint (58 76 0, niet zwart — zwart maakt er vuil groen van). Dat
+     is wat een voorwerp van een swatch onderscheidt en het is precies het
+     "product gevoel met subtiele hele lichte spotlights" dat hij vroeg.
+     Zwarte tekst haalt op de lichtste stop 17.1 en op de donkerste 12.9, dus
+     de leesbaarheid verandert nergens. */
+  /* VLAK, EN HET LICHT ZIT IN .lime-panel-light HIERONDER. Dat moet, sinds het
+     merkteken zijn eigen vulling in deze kleur heeft: die vulling is één
+     waarde en kan geen verloop volgen, dus als de grond een verloop had stond
+     er een spookvorm in het paneel. Nu is de grond vlak, de vulling dezelfde
+     vlakke waarde, en gaat het licht over allebei tegelijk. */
+  background: var(--accent);
+  border-radius: var(--r-lg);
+  padding: clamp(1.5rem, 3.2vw, 2.8rem);
+  box-shadow: 0 30px 70px -34px rgb(0 0 0 / 0.55);
+}
+/* ── DE SPOTS EN DE KORREL ────────────────────────────────────────────────
+   Lucas: *"misschien ook mooi om een soort film grain spotlights toe te voegen
+   dus witte lichten met spikkels."*
+
+   TWEE LAGEN, ALLEBEI MET EEN MENGSTAND, en dat is waarom ze op limoen werken
+   terwijl een gewone witte vlek dat niet doet. Wit op #C6F100 met normale
+   dekking maakt de kleur BLEEK — hij schuift naar pastel en dan is het geen
+   licht meer maar verf. `soft-light` laat de tint staan en tilt alleen de
+   helderheid: waar de spot valt wordt het limoen lichter limoen, precies wat
+   een lamp doet.
+
+   De korrel staat op `overlay` en niet op `soft-light`: overlay houdt de
+   spikkels hard genoeg om als filmkorrel te lezen. Op 22 procent zie je ze als
+   textuur en niet als ruis — de paginabrede `.grain` staat op 4 procent, maar
+   die ligt over een bijna zwarte pagina waar veel minder nodig is.
+
+   `isolation: isolate` op het paneel houdt allebei de mengstanden BINNEN het
+   blok. Zonder dat mengen ze met de pagina eronder en kleurt de slagschaduw
+   mee — gemeten op de eerste poging, en het is precies de reden dat die
+   eigenschap er al stond.
+
+   Drie spots en niet één: één lamp midden op een vlak van 1300 bij 1000 is een
+   verloop, geen licht. Drie ongelijke, waarvan twee half buiten de rand, laat
+   het oppervlak bol lijken. */
+.lime-panel-light {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  /* Laag 1 — het voorwerp is BELICHT en niet vlak. Licht van rechtsboven, een
+     heel lichte schaduw linksonder in dezelfde tint (58 76 0, niet zwart —
+     zwart maakt er vuil groen van). Dit is wat een voorwerp van een swatch
+     onderscheidt. */
+  background:
+    radial-gradient(88% 66% at 78% 2%, rgb(255 255 255 / 0.30), transparent 62%),
+    radial-gradient(72% 58% at 8% 102%, rgb(58 76 0 / 0.18), transparent 62%);
+}
+/* Laag 2 — DE SPOTS. Lucas: *"misschien ook mooi om een soort film grain
+   spotlights toe te voegen dus witte lichten met spikkels."*
+
+   `soft-light` en geen gewone dekking: wit op #C6F100 maakt de kleur BLEEK —
+   hij schuift naar pastel en dan is het geen licht meer maar verf. Soft-light
+   laat de tint staan en tilt alleen de helderheid, precies wat een lamp doet.
+
+   Drie ongelijke spots en niet één: één lamp midden op een vlak van 1300 bij
+   1000 is een verloop, geen licht. Twee lopen half buiten de rand, en dat is
+   wat het oppervlak bol laat lijken. */
+.lime-panel-light::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(44% 36% at 20% 2%,   rgb(255 255 255 / 0.62), transparent 70%),
+    radial-gradient(30% 28% at 88% 26%,  rgb(255 255 255 / 0.42), transparent 72%),
+    radial-gradient(50% 40% at 58% 106%, rgb(255 255 255 / 0.26), transparent 70%);
+  mix-blend-mode: soft-light;
+}
+/* ── LAAG 3 · GROVE, VERZADIGDE KORREL, EN ALLEEN IN HET LICHT ────────────
+   Lucas: *"Ik wil de spotlights op dat blok echt als een soort saturated
+   spikkels hebben, grove film grain spotlights."*
+
+   Drie dingen veranderd ten opzichte van de eerste korrel, en alle drie om
+   dezelfde reden — de vorige was fijn, grijs en overal even sterk, en dat is
+   ruis in plaats van korrel:
+
+   GROVER. `baseFrequency` van 1.1 naar 0.55 maakt de vlekken in de bron ruim
+   twee keer zo groot, `numOctaves="2"` geeft ze structuur in plaats van
+   één egale kriebel, en de tegel staat op 340px in plaats van 190. Samen is
+   dat korrel die je als korrel ziet en niet als compressie.
+
+   WIT EN GRIJS, NIET GEKLEURD. `feTurbulence` levert RGBA-ruis en die is van
+   zichzelf bont — een eerste versie stond vol roze en magenta spikkels, en
+   Lucas: *"Spikkels lijken nu gekleurd maar ze moeten of wit of grijs zijn,
+   check altijd volgens het kleurenschema van visuails."* Terecht: dit palet
+   kent één kleur naast de inktladder en dat is het accent, dat hier de grond
+   IS. Een `feColorMatrix` met `saturate 0` haalt de kleur eruit vóór de rest
+   van de keten, dus wat overblijft is licht en donker. Met `overlay` als
+   mengstand betekent dat: spikkels boven het midden lichten het limoen op,
+   eronder zetten ze het weg — dezelfde kleur, alleen de belichting spikkelt.
+   Precies wat filmkorrel doet.
+
+   Wat ontbrak daarnaast was contrast. De `feComponentTransfer` rekt elk
+   kanaal met factor 2,4 en schuift het middelpunt omlaag, waardoor de zachte
+   middentonen wegvallen en er losse, uitgesproken spikkels overblijven.
+   De alfaband wordt daarbij op vol gezet (`feFuncA` met slope 0 en intercept
+   1) — feTurbulence maakt óók ruis in de doorzichtigheid, en die vrat bij een
+   eerdere poging precies de spikkels weg die de kleurbanden net hadden
+   opgebouwd: gemeten was het resultaat een schoon vlak. 
+
+   ALLEEN IN HET LICHT. Het masker gebruikt exact dezelfde drie radialen als de
+   spots hierboven, dus de korrel staat waar de lamp staat en dooft waar het
+   vlak in de schaduw ligt. Dat is wat "film grain spotlights" letterlijk is:
+   bij film zit de korrel in de belichting, niet in het papier. Twee keer
+   dezelfde radialen uitgeschreven is hier goedkoper dan een derde laag met een
+   eigen achtergrond, en ze horen bij elkaar te blijven — verplaatst iemand een
+   spot, dan hoort de korrel mee te gaan. */
+.lime-panel-light::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3Cfilter%20id='g'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.55'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncG%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncB%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncA%20type='linear'%20slope='0'%20intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url%28%23g%29'/%3E%3C/svg%3E");
+  background-size: 340px;
+  opacity: .5;
+  mix-blend-mode: overlay;
+  -webkit-mask-image:
+    radial-gradient(44% 36% at 20% 2%,   #000 0%, transparent 72%),
+    radial-gradient(30% 28% at 88% 26%,  #000 0%, transparent 74%),
+    radial-gradient(50% 40% at 58% 106%, #000 0%, transparent 72%);
+  mask-image:
+    radial-gradient(44% 36% at 20% 2%,   #000 0%, transparent 72%),
+    radial-gradient(30% 28% at 88% 26%,  #000 0%, transparent 74%),
+    radial-gradient(50% 40% at 58% 106%, #000 0%, transparent 72%);
+}
+
+/* Alles wat erin staat, boven de spots, de korrel en het merkteken. */
+.lime-panel-in {
+  position: relative;
+  z-index: 1;
+  /* HET ACCENTWOORD KAN HIER NIET HET ACCENT ZIJN, want het accent is de
+     grond. `.hv-accent` leest `--fill-blue`, dat naar `--accent` wijst, en op
+     een limoen paneel is dat limoen op limoen — in de eerste render stond
+     "every month." praktisch onzichtbaar op 1,0 contrast.
+
+     Een donkerder groen uit dezelfde familie lost het op zonder de tweekleur
+     op te geven: #445A00 haalt 5,90 op deze grond, tegenover 15,16 voor de
+     zwarte helft van de kop. Twee leesbare waarden, en de nadruk ligt nog
+     steeds op het tweede stuk omdat dat de afwijkende kleur is. */
+  --fill-blue: #445A00;
+  --accent-word: #445A00;
+}
+
+
+/* DE PRIJSPLAAT IS HET DONKERE VOORWERP OP DE HELDERE GROND. Dat is precies
+   wat .on-bright's eigen noot voorschrijft: op een helder vlak draagt de
+   donkere vorm de nadruk en niet de felle. Hij houdt daarom zijn eigen
+   donkere vulling terwijl alles eromheen omdraait — --surface wordt door
+   .on-bright bewust niet herschreven. */
+.lime-plate {
+  position: relative;
+  background: var(--bg-0);
+  padding: clamp(1.6rem, 3vw, 2.4rem);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10), 0 18px 40px -24px rgb(0 0 0 / 0.5);
+}
+/* En de inkt binnen de plaat draait TERUG naar de donkere ramp. Zonder deze
+   regel erft hij .on-bright van het paneel eromheen en staat er bijna-zwarte
+   tekst op een bijna-zwarte plaat. */
+.lime-plate {
+  color: var(--paper-on-dark);
+  --ink: #FFFFFF;
+  --ink-2: rgb(255 255 255 / 0.80);
+  --ink-3: rgb(255 255 255 / 0.66);
+  --accent: #C6F100;
+  /* --accent-dim STOND HIER NIET, en dat was een knop die op hover verdween.
+     `.btn-primary:hover` schildert `var(--accent-dim)`, en die kwam uit de
+     .on-bright-scope van het paneel eromheen: daar is hij bijna zwart, want
+     daar staat hij op een heldere grond. Op deze donkere plaat werd de
+     limoenknop dus zwart-op-zwart zodra je hem aanwees. Elke plek die --accent
+     terugdraait, moet zijn hele familie terugdraaien. */
+  --accent-dim: #ABD200;
+  --accent-ink: #08090B;
+  --accent-on: #08090B;
+  --accent-bright: #C6F100;
+  --btn-ghost-fill: rgb(255 255 255 / 0.08);
+  --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
+}

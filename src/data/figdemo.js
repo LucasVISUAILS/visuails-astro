@@ -135,7 +135,7 @@ export const DEMO_OTHERS = [
   { ref: 'VIS-2607-9920', brand: 'Kade 4', products: 4, start: null },
 ];
 
-/** Het venster van zo'n bestelling, als label. Leeg venster → '—'. */
+/** Het venster van zo’n bestelling, als label. Leeg venster → '—'. */
 export function otherWindow(order, lang = 'en') {
   if (!order.start) return '—';
   const days = windowDays(order.start);

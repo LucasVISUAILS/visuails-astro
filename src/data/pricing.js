@@ -518,9 +518,9 @@ export const AMOUNT = {
   // above €49 regardless of the Single Product/Full outfit feature this task
   // also adds ("video moet sowieso duurder worden dan €49"), and the exact
   // figure was explicitly delegated to me ("bedenk een passende prijs"). €69
-  // is that decision, stated here so Lucas can correct it if it's wrong: a
+  // is that decision, stated here so Lucas can correct it if it’s wrong: a
   // clean round number, a ~41% rise, and it keeps the ladder's existing order
-  // — video cheapest, then catalog, then lifestyle — so it doesn't disturb the
+  // — video cheapest, then catalog, then lifestyle — so it doesn’t disturb the
   // "is the drop the better deal" comparison the block above is protecting.
   // Still priced identically inside or outside a drop, on purpose — see
   // PACKAGES below, which quotes this same AMOUNT.video for a drop's add-on.
@@ -644,7 +644,7 @@ export const EXTRA_PHOTO_LADDER = [[1, 4, 35], [5, 9, 26], [10, 19, 20], [20, nu
 export const MAX_EXTRA_PER_PRODUCT = 4;
 
 /**
- * The rate for one extra photo, at the order's product count.
+ * The rate for one extra photo, at the order’s product count.
  *
  * Keyed on PRODUCTS, not on how many extras were ordered: "follows the ladder"
  * means the customer sees one rung for the whole order, which is the
@@ -787,7 +787,7 @@ export function euroRange(low, high, lang = 'en') {
 // ── WHY THERE IS NO REVISION COUNT ──────────────────────────────────────────
 //
 // There used to be: `revisionsIncluded` was 3 on attended and 0 on unattended,
-// and eleven surfaces printed one of those numbers. It is gone on the client's
+// and eleven surfaces printed one of those numbers. It is gone on the client’s
 // instruction, and the reasoning is worth keeping because it will look like an
 // omission to anyone who has read a competitor's pricing page:
 //
@@ -837,6 +837,33 @@ export function euroRange(low, high, lang = 'en') {
 // is, en voor de ene uitzondering.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/* ── DEZELFDE BELOFTE, KORT — 20 augustus 2026 ─────────────────────────────
+ * De hero zet zijn drie bewijsregels sinds vandaag NAAST elkaar in plaats van
+ * onder elkaar (Lucas: *"mogen de 3 vinkjes achter elkaar met genoeg ruimte
+ * ertussen zodat de homepage niet zo lang voelt"*), en dan is 640px kolom voor
+ * drie volle zinnen te weinig — gemeten liepen ze op 976px en dus over de foto.
+ *
+ * DE KORTE VORM STAAT PAL NAAST DE LANGE en niet in een eigen bestand, precies
+ * omdat dit het gevaarlijke soort dubbeling is: twee formuleringen van dezelfde
+ * toezegging die uit elkaar gaan lopen. Wie de lange regel wijzigt, ziet de
+ * korte in beeld staan. tests/promises.test.mjs controleert dat beide bestaan
+ * voor elk niveau en elke taal.
+ *
+ * DE KORTE VORM MAG MINDER ZEGGEN, NOOIT IETS ANDERS. "Human-checked" laat weg
+ * dat het om elke visual gaat; het belooft nergens minder dan de lange regel.
+ * Een korte vorm die een zwaardere toezegging doet dan de lange is een fout,
+ * geen samenvatting. */
+export const REVIEW_CLAIM_SHORT = {
+  full: {
+    en: 'Human-checked',
+    nl: 'Met de hand gecontroleerd',
+  },
+  spot: {
+    en: 'Human-checked on a sample',
+    nl: 'Steekproefsgewijs gecontroleerd',
+  },
+};
+
 export const REVIEW_CLAIM = {
   full: {
     en: 'Human-checked, every visual',
@@ -876,6 +903,13 @@ export const TIERS = {
       en: 'Typically 2–4 working days',
       nl: 'Meestal 2–4 werkdagen',
     },
+    // Al kort genoeg; de korte vorm staat er toch, zodat elke aanroeper van
+    // turnaroundShort() een antwoord krijgt en niet per niveau hoeft te weten
+    // of er een kortere bestaat. Zie de noot bij REVIEW_CLAIM_SHORT.
+    turnaroundShort: {
+      en: '2–4 working days',
+      nl: '2–4 werkdagen',
+    },
     // Stated openly, not buried. Section 13: "The difference must be VISIBLE,
     // not hidden [...] it is also what makes the low price honest rather than
     // a downgrade in disguise."
@@ -889,7 +923,7 @@ export const TIERS = {
     // toegang tot het klantendashboard."* Deze regel zei nog "download link by
     // email or WhatsApp" en zette daarmee het dashboard neer als iets van de
     // hogere trede — terwijl /account elke bestelling van een klant toont,
-    // ongeacht tier, en sinds vandaag met de foto's erbij. De tabel beloofde
+    // ongeacht tier, en sinds vandaag met de foto’s erbij. De tabel beloofde
     // dus minder dan het product doet, en dat is de vervelendste soort fout:
     // hij kost je verkopen zonder dat iemand klaagt.
     //
@@ -923,7 +957,7 @@ export const TIERS = {
     // The site must never print a date the gate has not cleared.
     turnaround: {
       en: 'A reserved 48-hour window, confirmed before you pay',
-      // 8 augustus 2026 — DIT ZEI IETS ANDERS DAN DE ENGELSE REGEL, op zo'n
+      // 8 augustus 2026 — DIT ZEI IETS ANDERS DAN DE ENGELSE REGEL, op zo’n
       // vijftien plekken. Er stond "een leverdatum met 48 uur werk erin": dat
       // gaat over hoeveel uur wij eraan werken en zegt niets over snelheid,
       // terwijl de Engelse regel een levering binnen 48 uur belooft. capacity.js
@@ -951,6 +985,13 @@ export const TIERS = {
       // Nu zegt hij wat de Engelse regel zegt: een blok dat we vrijhouden. Het
       // aanbod verandert niet; de belofte die er per ongeluk bij stond, gaat weg.
       nl: 'Een blok van 48 uur dat we voor je vrijhouden, vastgezet voordat je betaalt',
+    },
+    // De korte vorm laat "dat we voor je vrijhouden" weg en houdt het blok en
+    // het moment: dat zijn de twee dingen die de belofte dragen. Zie de noot bij
+    // REVIEW_CLAIM_SHORT voor waarom hij hier staat en niet elders.
+    turnaroundShort: {
+      en: '48-hour window, fixed before you pay',
+      nl: '48-uursblok, vast voor je betaalt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
@@ -989,6 +1030,24 @@ export function reviewClaim(tierId, lang = 'en') {
 }
 
 /** The sanctioned timing language for a tier. Pages use this, never a literal. */
+/** De korte vorm van turnaround(), voor plekken waar de regel naast andere
+ *  regels staat in plaats van eronder. Zelfde belofte, minder woorden — zie de
+ *  noot bij REVIEW_CLAIM_SHORT. */
+export function turnaroundShort(tierId, lang = 'en') {
+  const tier = TIERS[tierId];
+  if (!tier) throw new Error(`pricing.js: unknown tier "${tierId}"`);
+  const kort = tier.turnaroundShort || tier.turnaround;
+  return kort[lang] || kort.en;
+}
+
+/** De korte vorm van reviewClaim(). Zelfde voorwaarde als hierboven. */
+export function reviewClaimShort(tierId, lang = 'en') {
+  const tier = TIERS[tierId];
+  if (!tier) throw new Error(`pricing.js: unknown tier "${tierId}"`);
+  const kort = REVIEW_CLAIM_SHORT[tier.reviewLevel] || REVIEW_CLAIM[tier.reviewLevel];
+  return kort[lang] || kort.en;
+}
+
 export function turnaround(tierId, lang = 'en') {
   const tier = TIERS[tierId];
   if (!tier) throw new Error(`pricing.js: unknown tier "${tierId}"`);
@@ -1114,7 +1173,7 @@ export function shouldPromptUpgrade(products) {
 }
 
 /**
- * The upgrade prompt itself. One line, in the client's language, or null.
+ * The upgrade prompt itself. One line, in the client’s language, or null.
  *
  * IT IS A COMPARISON, NOT A SAVING CLAIM. Section 13's example reads "You've
  * ordered 14 products this quarter. A Full Drop covers 25 for less." At
@@ -1515,7 +1574,7 @@ export const TEST_SAMPLE = {
      * en waarvan.
      *
      * Beide dingen worden nu bij hun naam genoemd, met hun aantal, en beide keren
-     * met het woord foto's erbij. Dat is de hele regel: geen omschrijving waar een
+     * met het woord foto’s erbij. Dat is de hele regel: geen omschrijving waar een
      * getal hoort, en geen naam zonder aantal.
      *
      * Eén constante en geen zin per pagina, om dezelfde reden als feeNote

@@ -106,7 +106,7 @@ export const videoStyles = [
     steps: [
       { title: 'Build the scene', body: 'Your lifestyle-stills world, brought into motion.' },
       { title: 'Direct light movement', body: 'Natural gesture and light that feels observed.' },
-      { title: 'Cut for the channel', body: "Formatted for wherever it's going to run." },
+      { title: 'Cut for the channel', body: "Formatted for wherever it’s going to run." },
     ],
     grid: grid(
       [],
@@ -159,7 +159,7 @@ export const videoStyles = [
     steps: [
       { title: 'Agree what the campaign covers', body: 'Shots and files agreed on WhatsApp.' },
       { title: 'Shoot the sequence', body: 'A multi-shot film, graded as one story.' },
-      { title: 'Deliver every cut', body: "Every channel's format, from one campaign." },
+      { title: 'Deliver every cut', body: "Every channel’s format, from one campaign." },
     ],
     grid: grid(
       [],
@@ -184,7 +184,7 @@ export const videoStyles = [
     ],
     whatYouGet: [
       'A scoped, multi-shot campaign film',
-      "Cuts for every channel you're on",
+      "Cuts for every channel you’re on",
       'One grade across your whole campaign',
       'A clear, agreed price before work starts',
     ],

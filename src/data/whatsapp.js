@@ -66,7 +66,7 @@ export function waHref(text) {
   if (!text) return base;
   // De apostrof erbij. encodeURIComponent laat ' met rust — het is een
   // toegestaan teken in een query — maar bijna elke zin hier bevat er een
-  // ("I'd like", "foto's"), en een rauwe apostrof in een href betekent dat het
+  // ("I'd like", "foto’s"), en een rauwe apostrof in een href betekent dat het
   // adres niet meer in enkele aanhalingstekens past. Dat is nu nergens een
   // probleem en over een jaar in één sjabloon wel. De vorige, handgecodeerde
   // links schreven allemaal %27; dit houdt de uitvoer daaraan gelijk.

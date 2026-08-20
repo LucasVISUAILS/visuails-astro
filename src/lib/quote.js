@@ -13,7 +13,7 @@
 // An amount that only the browser knows is an amount the customer can change,
 // and a payment link built from a number a form posted is a payment link for
 // whatever the customer decided it should be. So this module exists to be the
-// one place a price is worked out from the ladder and the order's own fields,
+// one place a price is worked out from the ladder and the order’s own fields,
 // on our side, from data the customer cannot rewrite: the service, the product
 // count, and the counts of the two paid add-ons.
 //

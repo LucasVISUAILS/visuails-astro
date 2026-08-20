@@ -100,7 +100,7 @@ interface Props {
 const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper' } = Astro.props;
 
 // Privacy-first analytics — Cloudflare Web Analytics, which is cookieless and
-// sets nothing on the visitor's device.
+// sets nothing on the visitor’s device.
 //
 // TURNING IT ON IS A BUILD SETTING, NOT A CODE EDIT. Set
 // PUBLIC_CF_ANALYTICS_TOKEN in the Pages project (Settings → Variables and
@@ -132,7 +132,7 @@ const lang = getLangFromPath(path);
 const t = useTranslations(lang);
 // The two WhatsApp prefills in this file — the floating launcher and the
 // drawer's chat button — were hardcoded English on all 86 pages, so a Dutch
-// visitor's chat opened in a language they had not chosen, and the launcher's
+// visitor’s chat opened in a language they had not chosen, and the launcher's
 // one still said "a drop", the word the pricing rewrite retired. Every other
 // WhatsApp link on the site was already per-locale; these two were simply
 // missed. A const with exactly this fix already sat here, unused, because the
@@ -643,6 +643,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <li><a href={lp(brandModelHref)} aria-current={isActive(brandModelHref) ? 'page' : undefined}>{t('nav_brandmodel')}</a></li>
           <li><a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a></li>
           <li><a href={lp('/pricing')} aria-current={isActive('/pricing') ? 'page' : undefined}>{t('nav_pricing')}</a></li>
+          <li><a href={lp('/plans')} aria-current={isActive('/plans') ? 'page' : undefined}>{t('nav_plans')}</a></li>
           <li><a href={lp('/contact')} aria-current={isActive('/contact') ? 'page' : undefined}>{t('nav_contact')}</a></li>
         </ul>
       </nav>
@@ -659,7 +660,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             that reads its own language from the customer's data (their most
             recent order), the same "no /nl/o" choice portal.js's header
             explains for the client portal; there never was a Dutch route to
-            localize to. lp() ran anyway and sent every /nl/* visitor's click
+            localize to. lp() ran anyway and sent every /nl/* visitor’s click
             to /nl/account, which no route answers — a site-wide 404 on the
             login link for the entire Dutch site, live since task #259's nav
             entry point shipped. isActive('/account') is unaffected: it
@@ -721,6 +722,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <a href={lp(brandModelHref)} aria-current={isActive(brandModelHref) ? 'page' : undefined}>{t('nav_brandmodel')}</a>
     <a href={lp('/gallery')}>{t('nav_gallery')}</a>
     <a href={lp('/pricing')}>{t('nav_pricing')}</a>
+    <a href={lp('/plans')}>{t('nav_plans')}</a>
     <a href={lp('/contact')}>{t('nav_contact')}</a>
     {/* Op een telefoon geen tweede uitklapper maar een groep met een kop: een
         lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
@@ -973,6 +975,29 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             <svg class="mk brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><BrandMark bron="#wordmark" /></svg>
           </a>
           <p>{t('foot_tagline')}</p>
+          {/* ── DE MERKKOLOM DEED NIETS ─────────────────────────────────────
+              Ze bestond uit een woordmerk en drie regels tekst naast drie
+              kolommen van vijf tot zeven links, en stond daarmee voor twee derde
+              van haar hoogte leeg — het gat dat in de voettekst het meest opvalt,
+              omdat het het breedst is.
+
+              Wat erin hoort is niet MEER links: die staan al rechts en een vierde
+              lijst maakt de voettekst weer een inhoudsopgave (zie de noot bij de
+              bedrijfskolom hieronder). Wat erin hoort is de handeling. Iemand die
+              helemaal tot onderaan is gekomen en niet geklikt heeft, kan hier
+              alsnog beginnen zonder terug te scrollen.
+
+              De sociale iconen verhuizen mee vanuit "Contact": daar stonden ze
+              onder een adres en een telefoonnummer, waar ze als vierde contactweg
+              lazen. Hier zijn ze wat ze zijn — het merk, elders. */}
+          <div class="footer-act">
+            <a class="btn btn-primary btn-sm" href={lp('/start')}>{t('foot_cta')}</a>
+            <ul class="foot-social">
+              <li><a href={waHref()} target="_blank" rel="noopener me" aria-label="WhatsApp"></a></li>
+              <li><a href="https://www.instagram.com/visuails_com/" target="_blank" rel="noopener me" aria-label="Instagram"></a></li>
+              <li><a href="https://www.facebook.com/profile.php?id=61590208333392" target="_blank" rel="noopener me" aria-label="Facebook"></a></li>
+            </ul>
+          </div>
         </div>
         <div class="footer-col">
           <h2 class="footer-h">{t('foot_drops')}</h2>
@@ -1010,6 +1035,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <ul>
             <li><a href={lp('/about')}>{t('foot_about')}</a></li>
             <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
+            <li><a href={lp('/plans')}>{t('foot_plans')}</a></li>
             <li><a href={lp('/guides')}>{t('foot_guides')}</a></li>
             <li><a href={lp('/faq')}>{t('foot_faq')}</a></li>
             <li><a href={lp('/contact')}>{t('foot_contact')}</a></li>
@@ -1023,22 +1049,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             <li style="color:var(--ink-3)">{t('foot_location')}</li>
             {t('support_note') && <li style="color:var(--ink-3);font-size:.82rem;margin-top:.2rem">{t('support_note')}</li>}
           </ul>
-          {/* The social row. Icons only, no labels — three brand marks are
-              read faster than three words, and these are the three marks
-              everyone already knows. The mark itself comes from the
-              [href*="…"] rules in global.css, which is why there is no <svg aria-hidden="true">
-              here: one path per network, in one file, used by every link to
-              that network anywhere on the site.
-
-              aria-label carries the destination, because a link whose entire
-              content is a CSS ::before is a link with no accessible name.
-              rel="me" is the one piece of markup that tells an aggregator
+          {/* De sociale rij stond hier en staat sinds 20 augustus in de
+              merkkolom — zie de noot daar. Icons only, no labels: the mark
+              itself comes from the [href*="…"] rules in global.css, which is why
+              there is no inline <svg>. aria-label carries the destination,
+              because a link whose entire content is a CSS ::before is a link
+              with no accessible name, and rel="me" is what tells an aggregator
               these profiles and this domain are the same publisher. */}
-          <ul class="foot-social">
-            <li><a href={waHref()} target="_blank" rel="noopener me" aria-label="WhatsApp"></a></li>
-            <li><a href="https://www.instagram.com/visuails_com/" target="_blank" rel="noopener me" aria-label="Instagram"></a></li>
-            <li><a href="https://www.facebook.com/profile.php?id=61590208333392" target="_blank" rel="noopener me" aria-label="Facebook"></a></li>
-          </ul>
         </div>
       </div>
       <div class="footer-bottom">
@@ -1084,7 +1101,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   {/* Our own WhatsApp launcher — a square block, not a third-party circular
       bubble widget. No external script, no round corners, no brand-green
-      circle we don't control, and the deep link carries a prefilled opener so
+      circle we don’t control, and the deep link carries a prefilled opener so
       the conversation starts with context. */}
   <a
     class="wa-launcher"
@@ -1202,7 +1219,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      blur heeft — twee lagen over elkaar zou hem donkerder maken dan bedoeld.
      De `body:has(...)`-poort is dezelfde die de inktrichting hierboven al
      gebruikt, dus staat er geen tweede lijst met hero-klassen. */
-  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header:not(.scrolled)::before {
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header::before {
     content: '';
     position: absolute;
     inset: 0 0 auto;
@@ -1243,7 +1260,48 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      a frosted pane is the glassmorphism default this system rejects. A solid
      paper bar with a hairline under it is cheaper, hard-edged, and legible over
      any content, including a photograph. */
-  .site-header.scrolled { background: rgb(8 9 11 / 0.86); backdrop-filter: saturate(140%) blur(14px); box-shadow: 0 1px 0 var(--line); }
+  /* ── DE BALK KOMT OP EN DE SCRIM GAAT WEG, ALLEBEI IN 420ms ──────────────
+     Lucas: *"Ook graag de topbar een smooth scroll animatie te geven zodat het
+     wat rustiger overloopt van transparant naar bar."*
+
+     Waarom dit eerst omklapte en niet kón overlopen: de scrim stond op
+     `:not(.scrolled)::before` en de dichte balk op `.scrolled` zelf. Bij het
+     omslagpunt HIELD het ene pseudo-element op te bestaan en verscheen de
+     andere achtergrond — een element dat er niet meer is, kan niet uitvagen, en
+     een `background`-verkorting heeft geen beginwaarde om vanaf te rekenen.
+
+     Nu bestaan ze allebei altijd en verandert alleen hun DEKKING. De scrim staat
+     op ::before, de dichte balk met zijn blur op ::after, en `.scrolled` draait
+     de twee om. Eén eigenschap die overloopt, geen dubbele lagen op elk moment
+     behalve halverwege de overgang — en daar hoort het ook, want dat is precies
+     wat "overlopen" is.
+
+     480ms met een symmetrische curve, en niet de standaard --ease van de site:
+     die is sterk uitlopend en zette de balk na 120ms al op 75 procent — gemeten.
+     Voor een knop is dat goed (je wilt meteen antwoord), voor een achtergrond die
+     "rustiger moet overlopen" is het precies verkeerd om. Deze begint traag en
+     eindigt traag, dus je ziet de balk komen in plaats van hem aantreffen. */
+  .site-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: rgb(8 9 11 / 0.86);
+    backdrop-filter: saturate(140%) blur(14px);
+    box-shadow: 0 1px 0 var(--line);
+    opacity: 0;
+    transition: opacity 480ms cubic-bezier(.45, 0, .25, 1);
+  }
+  .site-header.scrolled::after { opacity: 1; }
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header::before {
+    transition: opacity 480ms cubic-bezier(.45, 0, .25, 1);
+  }
+  body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header.scrolled::before { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .site-header::after,
+    body:has(.hero-cover, .hero-editorial, .hv-hero) .site-header::before { transition: none; }
+  }
   /* The espresso ground's scrolled bar. This lives HERE, beside the rule it
      overrides, rather than in global.css — Astro adds a data-astro-cid
      attribute to every selector in this block, so a plain
@@ -1252,7 +1310,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      white slab with paper ink on it, invisible for the whole page rather
      than for one frame. Same class of defect as section 16's, in a new
      place, caught the same way — by reading the rendered colour. */
-  :global(body.ground-espresso) .site-header.scrolled { background: rgb(8 9 11 / 0.86); box-shadow: 0 1px 0 var(--line); }
+  :global(body.ground-espresso) .site-header::after { background: rgb(8 9 11 / 0.86); box-shadow: 0 1px 0 var(--line); }
 
   /* ---- the header over a dark hero -------------------------------------
      MEASURED BUG, not a refinement: on every page that opens with a
@@ -1346,7 +1404,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
   .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
   /* The logotype, flat. It was chrome-filled — the same twelve-stop ramp as the
-     hero plane, remapped per ground — and it went to one ink, on the client's
+     hero plane, remapped per ground — and it went to one ink, on the client’s
      call: at logo size the metal read as cheap rather than as expensive, which
      is the opposite of what the material was there to say. Nothing about the
      size reasoning changed with it. 13px was smaller than the cap height of the
@@ -1732,7 +1790,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   /* prefers-reduced-data: the glow is a large composited layer for decoration
      only, so it goes rather than being made cheaper. */
   @media (prefers-reduced-data: reduce) { .foot-glow { display: none; } }
-  .footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr; gap: 2rem; }
+  /* 1.5fr voor het merk en niet 1.6: de kolom draagt sinds 20 augustus een knop
+     en drie iconen in plaats van alleen tekst, en heeft daardoor minder breedte
+     nodig om niet leeg te ogen. De ruimte gaat naar de contactkolom, waar een
+     e-mailadres en een telefoonnummer anders afbreken. */
+  .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.25fr; gap: 2rem clamp(1.5rem, 3vw, 2.6rem); align-items: start; }
+  .footer-act { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); display: flex; flex-direction: column; align-items: flex-start; gap: clamp(1rem, 2vw, 1.4rem); }
   @media (max-width: 860px) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; } }
   @media (max-width: 520px) { .footer-grid { grid-template-columns: 1fr; } }
   .footer-brand p { color: var(--ink-3); font-size: .9rem; margin-top: .8rem; max-width: 34ch; }
@@ -1747,7 +1810,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      bare class in a global stylesheet can outrank two classes plus two
      attributes. Everything else about .foot-social — the 44px targets, the
      ring, the hover — is in global.css beside the icon masks it depends on. */
-  .footer-col ul.foot-social { flex-direction: row; gap: .5rem; }
+  .footer-col ul.foot-social, .footer-act ul.foot-social { flex-direction: row; gap: .5rem; list-style: none; margin: 0; padding: 0; display: flex; }
   .footer-col a,
   .footer-col .mi-off { color: var(--ink-2); font-size: .92rem; }
 
@@ -1773,7 +1836,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      links reads as hidden. */
   .foot-cc { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
   .foot-cc:hover, .foot-cc:focus-visible { color: var(--ink); }
-  .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
+  /* De onderrand houdt sinds 20 augustus ruimte onder zich vrij. Het reuzenwoordmerk
+     plakt aan de onderkant van de voettekst en begon precies op de regel met het
+     KVK-nummer — twee keer VISUAILS binnen één regelhoogte, waarvan één als
+     achtergrond. Nu staat de wettelijke regel eerst en komt het merk eronder op. */
+  .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; padding-bottom: clamp(1.6rem, 3vw, 2.6rem); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
   /* THE LAST ROW OF THE FOOTER WAS UNREACHABLE. .convbar is fixed 20px off the
      bottom and this row is the last thing on the page, so at maximum scroll the
      bar sat on top of it: measured at 360x740 it covered 65% of the "Cookie

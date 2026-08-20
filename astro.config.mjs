@@ -2,13 +2,14 @@
 import { defineConfig } from 'astro/config';
 import brandLockupGuard from './scripts/brand-lockup-guard.mjs';
 import sitemapAnd404 from './scripts/sitemap-and-404.mjs';
+import avifNaastWebp from './scripts/avif-naast-webp.mjs';
 
 // VISUAILS — Astro v2 rebuild. Fully static output (Cloudflare Pages serves
 // the build/ output directly, same deploy shape as the previous SvelteKit
-// site). No integrations needed: motion is vanilla CSS/JS (see
-// src/scripts/interactions.js), images are pre-optimized .webp in public/img
-// rather than routed through astro:assets (they're already sized/compressed
-// — see IMAGES.md for why).
+// site). Motion is vanilla CSS/JS (see src/scripts/interactions.js). Beeld gaat
+// niet door astro:assets: het staat als vooraf geschaalde .webp in public/img en
+// krijgt bij de build een AVIF-bron ernaast — zie IMAGES.md voor waarom, en de
+// drie integraties onderaan voor wat er wél in de build gebeurt.
 export default defineConfig({
   site: 'https://visuails.com',
   output: 'static',
@@ -48,5 +49,10 @@ export default defineConfig({
   // de Nederlandse 404 wordt platgezet zodat Cloudflare Pages hem vindt. Zie de kop
   // van scripts/sitemap-and-404.mjs: het handgeschreven bestand liep veertien
   // pagina's achter, waaronder /demo, waar niets naartoe linkte.
-  integrations: [brandLockupGuard(), sitemapAnd404()],
+  // Elke <img> die naar een /img/*.webp wijst waar een .avif naast ligt, wordt in
+  // een <picture> gezet met de AVIF ervoor. 19.4 MB webp tegen 9.3 MB AVIF, en de
+  // webp blijft als terugval staan. In de build en niet in een component, omdat het
+  // om 73 tags in 38 bestanden gaat en om directives (transition:name) die niet door
+  // een component heen kunnen — zie de kop van scripts/avif-naast-webp.mjs.
+  integrations: [brandLockupGuard(), sitemapAnd404(), avifNaastWebp()],
 });

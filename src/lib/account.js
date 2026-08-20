@@ -479,7 +479,7 @@ const COPY = {
 
     // The brand kit as a picture rather than as two dropdowns, August 2026.
     // Lucas: "ik wil dat de brand kit veel mooier wordt om in te stellen, dus
-    // echt foto's toevoegen bij modellen, het voelt allemaal zo zielloos nu."
+    // echt foto’s toevoegen bij modellen, het voelt allemaal zo zielloos nu."
     bkLede: 'The look your orders start from — who wears your product, and what it sits on.',
     bkOwnH: 'Your own models',
     bkOwnLede: 'Faces made for your brand, and nobody else’s. Pick one below as the default for a service, or choose per order.',
@@ -1005,8 +1005,8 @@ const COPY = {
     planOfN: 'van de',
     planLeftShort: 'over',
     planEachProduct: 'Elk product is een catalogset én een lifestyle-carousel',
-    planQPhotos: "foto's toegevoegd",
-    planQNoPhotos: "nog geen foto's",
+    planQPhotos: "foto’s toegevoegd",
+    planQNoPhotos: "nog geen foto’s",
     planLookUnset: 'nog niet ingesteld',
     planOwnModel: 'Je merkmodel',
     planBuiltDelivered: 'Bestellingen geleverd',
@@ -1157,7 +1157,7 @@ export async function accountGet(context) {
    *
    * Een oude bladwijzer op /d krijgt hierdoor de 404 die onderaan deze functie
    * staat. Dat is de juiste uitkomst en niet een regressie: er is geen enkele
-   * plek meer die zo'n link tekent.
+   * plek meer die zo’n link tekent.
    */
   const fileMatch = path.match(/^\/account\/files\/(\d+)\/f$/);
   if (fileMatch) {
@@ -1660,7 +1660,7 @@ async function handleCodePost({ request, env }) {
    * regel kan een andere site het formulier van buitenaf indienen met een code
    * die de aanvaller zelf heeft aangevraagd, en dan zit het slachtoffer in de
    * browser van zijn eigen computer ingelogd op het account van de aanvaller —
-   * en uploadt hij zijn foto's daarin. Login-CSRF, en het is stil.
+   * en uploadt hij zijn foto’s daarin. Login-CSRF, en het is stil.
    */
   if (!originIsSelf(request, env)) {
     const lang = negotiate(request);
@@ -1969,7 +1969,7 @@ async function sectionGet(context, customer, section) {
   // what would make the background invisible to the renderer.
   const lockByStyle = Object.fromEntries(locks.map((l) => [l.style, l]));
 
-  // Two query strings, read once, in one place. Both are anyone's to type, so
+  // Two query strings, read once, in one place. Both are anyone’s to type, so
   // neither is trusted with more than it can carry: `saved` decides one
   // sentence of confirmation, and `status` is checked against STATUS's own keys
   // before it reaches a query — an unknown value falls back to "no filter"
@@ -2821,8 +2821,8 @@ function reopenable(o) {
 async function loadCustomerFiles(env, customerId) {
   // BEIDE KANTEN, sinds augustus 2026. Deze query las alleen kind='delivery',
   // dus het dashboard kon een klant wél laten zien wat hij terugkreeg en niet
-  // wat hij had aangeleverd. Lucas: *"ze zien dan 2 kanten: de foto's die ze
-  // hebben geüpload en foto's die ze hebben ontvangen."* Dat is niet alleen
+  // wat hij had aangeleverd. Lucas: *"ze zien dan 2 kanten: de foto’s die ze
+  // hebben geüpload en foto’s die ze hebben ontvangen."* Dat is niet alleen
   // symmetrie — het is hoe iemand controleert of zijn upload goed is
   // aangekomen, en waar hij naar wijst als hij een revisie aanvraagt.
   //
@@ -3607,7 +3607,7 @@ async function handleOrderPay({ request, env }, customer, orderId) {
  * jou mailt met de vraag of het ook anders kan.
  *
  * ALLEEN LEVERINGEN. Uploads zitten er niet in, om dezelfde reden dat ze geen
- * downloadknop hebben: het zijn de foto's van de klant.
+ * downloadknop hebben: het zijn de foto’s van de klant.
  *
  * DE VERLOPEN RIJEN VALLEN ERBUITEN in de query, niet in de lus. Een bestand
  * waarvan het downloadvenster dicht is, hoort niet in een archief te zitten dat
@@ -4618,7 +4618,7 @@ ${shown.length ? shown.map((o, i) => orderCard(t, lang, o, filesByOrder.get(o.id
  * brand can look at.
  *
  * WHAT WAS WRONG WITH IT. Lucas, verbatim: "ik wil dat de brand kit veel
- * mooier wordt om in te stellen, dus echt foto's toevoegen bij modellen, het
+ * mooier wordt om in te stellen, dus echt foto’s toevoegen bij modellen, het
  * voelt allemaal zo zielloos nu." He is describing a real defect, not a taste.
  * The page asked a brand to choose the face of their product line from a
  * <select> holding ten first names. Nobody can choose a model from a name —
@@ -5550,12 +5550,12 @@ ${account}
 <div class="card">
   <h3>${esc(t.planNoneH)}</h3>
   <p>${esc(t.planNoneBody)}</p>
-  <!-- NAAR /pricing#plans EN NIET NAAR /abonnement. Die pagina bestaat niet: de
+  <!-- NAAR /plans EN NIET NAAR /abonnement. Die tweede pagina bestaat niet: de
        drie abonnementen staan in de sectie met id="plans" op de prijspagina, waar
        PricingPage.astro ze uit plans() rendert. Deze link stond hier eerst naar
        /nl/abonnement en /plans, en dat waren twee 404's in het dashboard van elke
        klant zonder abonnement. -->
-  <p><a class="btn" href="${lang === 'nl' ? '/nl/pricing#plans' : '/pricing#plans'}">${esc(t.planNoneCta)}</a></p>
+  <p><a class="btn" href="${lang === 'nl' ? '/nl/plans' : '/plans'}">${esc(t.planNoneCta)}</a></p>
 </div>`;
   }
 
@@ -5646,7 +5646,7 @@ ${account}
    * "sleep om de volgorde te wijzigen" — dat is de ene mockup-belofte die niet
    * meekomt.)
    *
-   * WAT ER PER REGEL BIJ STAAT: of er foto's bij zitten. Een item zonder foto's
+   * WAT ER PER REGEL BIJ STAAT: of er foto’s bij zitten. Een item zonder foto’s
    * kan niet gemaakt worden, en dat moet zichtbaar zijn vóór de week aanbreekt —
    * niet erna, want dan is het een mail en die schrijft Lucas met de hand. */
   /* HOEVEEL ER IN DE EERSTVOLGENDE WEEK STARTEN. Het kleinste van "wat er op de
@@ -5766,7 +5766,7 @@ ${account}
        dit scherm nog heeft. De maand komt uit state.maand — dezelfde maand
        waarvoor de betaalrij bestaat die deze rij überhaupt laadt. */
     ? `<p class="note">${esc(t.planCancelledNote(maandNaam(state.maand, lang)))}</p>
-  <p class="meta"><a href="${lang === 'nl' ? '/nl/pricing#plans' : '/pricing#plans'}">${esc(t.planNoneCta)}</a></p>`
+  <p class="meta"><a href="${lang === 'nl' ? '/nl/plans' : '/plans'}">${esc(t.planNoneCta)}</a></p>`
     : `<div class="controls">
     ${state.sub.status === 'paused'
     ? `<form method="post" action="/account/plan/pause"><input type="hidden" name="do" value="resume">
@@ -6404,12 +6404,12 @@ function orderCard(t, lang, o, files, events = [], fb = null, index = 0, openOrd
    * Sinds 9 augustus 2026 is dit archief het ENIGE dat de klant meeneemt, en dan
    * is een klein knopje ernaast de verkeerde maat voor het belangrijkste ding op
    * het scherm. Het staat nu in een eigen kaart, met erin wat hij krijgt (per
-   * product, drie formaten) en de zin die uitlegt waarom de foto's erboven geen
+   * product, drie formaten) en de zin die uitlegt waarom de foto’s erboven geen
    * downloadknop meer hebben.
    *
    * Die tweede zin is niet opsmuk. Zonder uitleg is een galerij zonder
    * downloadknoppen een scherm dat stuk lijkt, en dan mailt iemand ons met de
-   * vraag waar zijn foto's zijn — precies de mail die deze regel voorkomt.
+   * vraag waar zijn foto’s zijn — precies de mail die deze regel voorkomt.
    */
   const folder = delivered.length
     ? `<section class="folder">
@@ -6431,7 +6431,7 @@ function orderCard(t, lang, o, files, events = [], fb = null, index = 0, openOrd
    * waar het uitmaakt."*
    *
    * Dus: één kaart per product, met wat de klant stuurde en wat wij leverden
-   * bij elkaar. Uitklappen laat de losse foto's zien, en pas dáár staan de
+   * bij elkaar. Uitklappen laat de losse foto’s zien, en pas dáár staan de
    * beoordeelknoppen — een revisie vraag je op een foto, niet op een stapel.
    *
    * WAAROM DE OUDE TWEE KOLOMMEN BLIJVEN BESTAAN. Draagt geen enkel bestand een
@@ -6841,7 +6841,7 @@ function productCard(t, lang, o, g) {
     </span>
     <!-- Twee etiketten, waarvan er altijd één verborgen is. Zonder script kan
          de tekst van een <summary> niet veranderen bij het openklappen, en
-         "Bekijk de foto's" laten staan terwijl ze al openstaan is een knop die
+         "Bekijk de foto’s" laten staan terwijl ze al openstaan is een knop die
          iets anders belooft dan hij doet. -->
     <span class="prod-cta"><span class="on-closed">${esc(t.prodOpen)}</span><span class="on-open">${esc(t.prodClose)}</span></span>
   </summary>
@@ -6872,7 +6872,7 @@ function productCard(t, lang, o, g) {
  *
  * DIT WAS EEN REGEL TEKST. `fileRow()` zette een bestandsnaam, een grootte en
  * twee knoppen op een <li> — correct, en onbruikbaar voor waar het scherm voor
- * is. Lucas: *"ik zou willen dat klanten foto's letterlijk qua beeld kunnen
+ * is. Lucas: *"ik zou willen dat klanten foto’s letterlijk qua beeld kunnen
  * zien."* Een klant die twintig producten heeft besteld en wil weten of shot
  * drie klopt, kan dat niet aflezen aan `IMG_4471.jpg`.
  *
@@ -6922,7 +6922,7 @@ function shotTile(t, f, o, inProduct = false) {
    * balans."* Dat kwam hier vandaan. "Goedgekeurd" en "Revisie aangevraagd"
    * stonden als tekstregel tussen het bijschrift en de knoppen, dus een tegel
    * mét toestand duwde zijn knoppen een regel lager dan de tegel ernaast. Vier
-   * foto's naast elkaar en de knoppen stonden op drie verschillende hoogtes —
+   * foto’s naast elkaar en de knoppen stonden op drie verschillende hoogtes —
    * en juist bij vier gelijke dingen ziet een oog elke afwijking meteen.
    *
    * Als vlaggetje op het beeld kost het geen hoogte in de kolom, staat het
@@ -6953,7 +6953,7 @@ function shotTile(t, f, o, inProduct = false) {
   /*
    * ── HIER STOND EEN DOWNLOADKNOP PER BEELD, EN DIE IS WEG ──────────────────
    *
-   * Lucas, 9 augustus 2026: *"de zichtbare foto's zijn dus niet downloadbaar in
+   * Lucas, 9 augustus 2026: *"de zichtbare foto’s zijn dus niet downloadbaar in
    * het portaal en puur voor revisies aanvragen. Alleen de map (het
    * eindresultaat) kan gedownload worden."*
    *
@@ -7053,7 +7053,7 @@ function reviewControls(t, f, o) {
   // óók ongedaan maken. handleFileReview() staat die twee juist wél toe (zie
   // daar: "een klant die zijn revisierechten kwijt is, moet nog steeds kunnen
   // zeggen dat iets goed is"), dus het scherm was strenger dan de regel. Erger:
-  // zonder goedkeurknop kan zo'n bestelling nooit meer afgerond raken.
+  // zonder goedkeurknop kan zo’n bestelling nooit meer afgerond raken.
   const ask = o.revisions_revoked_at
     ? `<p class="meta revoked">${esc(t.revokedNote)}</p>`
     : `<details class="ask">
@@ -7292,7 +7292,7 @@ function esc(s) {
  *
  * Een onbekend of verlopen kenmerk levert een nette pagina op en niet een fout.
  * Deze links zitten in mail: ze worden dagen later aangeklikt, twee keer
- * aangeklikt, en door scanners van mailservers vooraf opgehaald. Een 404 op zo'n
+ * aangeklikt, en door scanners van mailservers vooraf opgehaald. Een 404 op zo’n
  * klik leest als "jouw account is stuk" terwijl er alleen een link verlopen is.
  */
 

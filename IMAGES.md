@@ -38,6 +38,29 @@ real photo.
   garment as a clean catalog flat-lay (after). Use for `.ba` (drag compare)
   or `.spot` (cursor-lens compare, see global.css) wherever this exact
   moment appears.
+
+### The `-w<width>` files are generated, and are not photographs
+
+Thirteen files carry a `-w800` or `-w960` suffix: `model-<name>-w800.webp`
+(nine of the ten roster portraits) and `lifestyle-flash-02-w960.webp`,
+`lifestyle-glow-01-w960.webp`, `lifestyle-phone-made-11-w960.webp`,
+`banners-13-w960.webp`. They are the same photograph as the un-suffixed file
+beside them, resized — nothing above needs re-reading because of them.
+
+They exist because two grids draw those photographs small: the look picker on
+`/start/lifestyle` (~410 CSS px on a desktop) and the roster on `/models`
+(~211 px). Those two pages were shipping 1.3 MB and 1.4 MB of photography so
+the browser could throw most of it away; they now ship 487 kB and 522 kB.
+
+**Do not hand-make one.** `scripts/make-thumbs.mjs` generates all thirteen and
+argues both numbers — each width is ~2× the widest CSS box the image is ever
+drawn in, measured in a browser rather than read off the CSS. The width is in
+the filename so a file always states its own size. Add a source to the JOBS
+table there rather than resizing something by hand, and use the derivative
+only where the tile is small: anything that shows one of these large keeps the
+original. Rae and `lifestyle-dunes-01` have no derivative on purpose — both
+are already at or under the target width, so one would be a re-encode.
+
 ### The three logo rasters — one is generated, two are dead
 
 The live logotype is not a raster at all any more. It is an inline SVG sprite in
@@ -94,3 +117,41 @@ whatever ground it lands on. Do not reintroduce a raster logo into a page.
 svelte-config-style asset warnings don't exist here (this is Astro static
 output) — a typo just breaks the image silently in the browser. Only
 reference filenames listed above.
+
+## AVIF naast elke webp — en waarom de markup er niets van weet
+
+`npm run avif` (scripts/make-avif.mjs) zet naast elke `.webp` in deze map een
+`.avif` van dezelfde afmetingen: 173 bestanden, 19.4 MB aan webp tegen 9.3 MB
+aan AVIF. Per pagina gemeten op de zwaarste: de homepage gaat van 4833 kB naar
+2163 kB, /gallery van 9239 kB naar 4130 kB — allebei 55 procent minder, bij een
+kwaliteit waar op deze foto's met het oog niets aan te zien is.
+
+**De webp blijft staan en wordt niet vervangen.** Een `<picture>` biedt de AVIF
+eerst aan en valt terug op de webp voor wie AVIF niet leest. Er is dus geen
+scherm waarop dit slechter is dan wat het vervangt, en dat is de hele reden dat
+het naast elkaar staat in plaats van in plaats van elkaar.
+
+**Er staat nergens een `<picture>` in de bron.** `scripts/avif-naast-webp.mjs`
+is een build-integratie die na het bouwen door dist/ loopt en elke `<img>` die
+naar een `/img/*.webp` wijst waar een `.avif` naast ligt, inpakt. 740 beelden op
+58 pagina's, uit één regel code. Waarom niet met een component: er staan 73
+`<img>`-tags in 38 bestanden, en de eerste heldieafbeelding draagt
+`transition:name`, een Astro-directive die niet door een component heen kan.
+
+Twee dingen die je moet weten als je hier iets aan verandert:
+
+- **Een ontbrekende AVIF is geen terugval maar een gat.** make-avif schrijft geen
+  AVIF als die groter zou worden dan de webp — bij kleine beelden en bij vlakken
+  met weinig detail wint webp. Een `<source>` die naar een bestand wijst dat er
+  niet is, kiest de browser wél, en dan toont hij niets: geen icoon, geen fout,
+  een leeg vlak. De integratie kijkt daarom per pad op schijf, en laat bij een
+  `srcset` de hele bron vallen zodra er één breedte in ontbreekt.
+- **`picture { display: contents }` en `source { display: none }` staan in
+  global.css en zijn allebei nodig.** Zonder de eerste wordt de `<picture>` het
+  rasteritem in plaats van de `<img>`; zonder de tweede wordt de `<source>` een
+  eigen rastertegel naast het beeld — vier foto's in vier kolommen werden acht
+  items in twee rijen. Het staat daar met de meting erbij.
+
+Beelden die pas in de browser gemaakt worden (de modelkiezer vult zijn
+miniaturen met JS) krijgen geen AVIF. Dat zijn er zes, ze zitten achter een klik,
+en een `img.src` omzetten zonder terugval zou ze op een oudere browser breken.

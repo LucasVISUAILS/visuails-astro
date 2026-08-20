@@ -146,7 +146,7 @@ if (!LADDER[service]) {
 }
 
 // The wire format, which is NOT the ladder's vocabulary. `drop` is what
-// /api/order's ORDER_SERVICES and the D1 `service` column call a catalog set
+// /api/order’s ORDER_SERVICES and the D1 `service` column call a catalog set
 // plus a lifestyle carousel; renaming it is a migration, not a form change.
 const WIRE = { complete: 'drop', catalog: 'catalog', lifestyle: 'lifestyle' } as const;
 
@@ -339,7 +339,7 @@ const PIPE = {
       },
     },
     s3: {
-      prefillNote: "Filled in from your account ({email}) — change anything that's out of date.",
+      prefillNote: "Filled in from your account ({email}) — change anything that’s out of date.",
     },
     gate: { windowSub: 'Dates we can hold' },
     submit: {
@@ -518,8 +518,8 @@ for (const l of ['en', 'nl'] as const) {
     ratioImage: l === 'nl' ? 'Beeld {n}' : 'Image {n}',
 
     /* ── HET PLUSJE: NOG EEN FOTO, GRATIS ─────────────────────────────────
-     * Lucas: *"meer foto's toe te voegen van zijn product kosteloos [...] maar
-     * wel gewoon 4 foto's in totaal krijgen."*
+     * Lucas: *"meer foto’s toe te voegen van zijn product kosteloos [...] maar
+     * wel gewoon 4 foto’s in totaal krijgen."*
      *
      * DIE TWEEDE HELFT STAAT IN DE HINT EN NIET IN EEN VOETNOOT. "Gratis" naast
      * een uploadvak leest anders als "gratis beeld erbij", en dat is precies de
@@ -527,7 +527,7 @@ for (const l of ['en', 'nl'] as const) {
      * Het aantal komt uit CATALOG_IMAGES en wordt niet overgetypt. */
     refAdd: l === 'nl' ? 'Nog een foto' : 'Another photo',
     refHint: l === 'nl'
-      ? `Gratis. Meer foto's van hetzelfde product helpen ons — je krijgt nog steeds ${CATALOG_IMAGES} beelden.`
+      ? `Gratis. Meer foto’s van hetzelfde product helpen ons — je krijgt nog steeds ${CATALOG_IMAGES} beelden.`
       : `Free. More photos of the same product help us — you still receive ${CATALOG_IMAGES} images.`,
     refSlot: l === 'nl' ? 'Referentie {n}' : 'Reference {n}',
     refFull: l === 'nl'
@@ -945,17 +945,17 @@ const FORM = {
       // Hier stond: "Je kunt deze stap overslaan en het materiaal later mailen."
       // Weg op 8 augustus 2026. Lucas: *"Materiaal liever niet achteraf opsturen
       // zodat we zo snel mogelijk met de order aan de slag kunnen, wanneer wij
-      // denken dat we nog extra foto's van het product nodig hebben om kwaliteit
+      // denken dat we nog extra foto’s van het product nodig hebben om kwaliteit
       // te waarborgen nemen wij contact op met de klant."*
       //
-      // Een bestelling zonder foto's is een bestelling die stilstaat tot er een
+      // Een bestelling zonder foto’s is een bestelling die stilstaat tot er een
       // mail komt, en die mail komt bij de studio terecht als werk dat niemand
       // heeft ingepland. De regel gaf toestemming voor precies dat. Wat er in de
       // plaats komt is geen dwang maar een belofte de andere kant op: wij nemen
       // contact op als we meer nodig hebben.
       //
       // Stap 2 blijft technisch géén poort (zie de noot bij de stapknoppen): wie
-      // doorklikt zonder foto's wordt niet tegengehouden. Dat is bewust — een
+      // doorklikt zonder foto’s wordt niet tegengehouden. Dat is bewust — een
       // upload die mislukt mag geen bestelling blokkeren. Maar de tekst nodigt
       // er niet meer toe uit.
       skip: 'Stuur je alles mee, dan kunnen we meteen beginnen. Missen we een foto, dan nemen we zelf contact met je op.',
@@ -2298,7 +2298,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      A returning customer who saved their details gets this instead of six
      filled boxes. It is a PANEL and not a card: --r-lg, a hairline, the lift
      ground — the same vocabulary .pl-gate-panel uses two hundred lines down for
-     the other place this form answers a question on the visitor's behalf.
+     the other place this form answers a question on the visitor’s behalf.
 
      The values are set in a monospace-ish tabular rhythm rather than as prose,
      because they are being READ BACK for checking, not read. Nothing here is

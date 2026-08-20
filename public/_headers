@@ -35,6 +35,36 @@
 /portal.css
   Cache-Control: no-cache
 
+# ══════════════════════════════════════════════════════════════════════════════
+# DE FOTO'S — 20 AUGUSTUS 2026
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Alles wat Astro bouwt heeft een hash in de naam en wordt door Cloudflare Pages
+# vanzelf lang gecachet. public/img valt daarbuiten: die namen zijn vast
+# (banners-11.webp), en voor een vaste naam is de standaard van Pages
+# "max-age=0, must-revalidate" — de browser bewaart het bestand wel, maar vraagt
+# bij ELK paginabezoek na of het nog klopt. Op de homepage zijn dat 23 extra
+# verzoeken, op /gallery 38, elk goed voor een compleet heen-en-weer naar het
+# dichtstbijzijnde datacenter voordat er ook maar één pixel opnieuw getekend
+# wordt. Op glasvezel is dat een rimpeling; op 4G in een winkelstraat is het het
+# verschil tussen een tweede bezoek dat meteen staat en een tweede bezoek dat
+# opnieuw opbouwt.
+#
+# Zeven dagen en niet een jaar, met opzet. De prijs van cachen is dat een
+# VERVANGEN foto onder dezelfde naam bij terugkerende bezoekers blijft hangen —
+# een jaar is dan een jaar. Zeven dagen houdt die schade klein en pakt vrijwel
+# de hele winst: wie deze week terugkomt, laadt niets opnieuw.
+#
+# Moet een nieuwe foto er METEEN staan, geef hem dan een nieuwe naam
+# (banners-11b.webp) en pas de verwijzing aan. Dat is één regel werk en werkt
+# altijd, ook bij een tussenliggende proxy die zich niets van dit bestand
+# aantrekt.
+#
+# Dit dekt de .avif net zo goed als de .webp — zie IMAGES.md voor waarom er van
+# elk beeld twee bestanden zijn.
+/img/*
+  Cache-Control: public, max-age=604800
+
 # Het merkteken in de mail. Wél lang cachen — de naam is vast, maar de inhoud
 # verandert alleen als het logo verandert, en dan is een dag vertraging in een
 # mailclient onschadelijk. Zonder deze regel haalt Gmail's beeldproxy hem bij

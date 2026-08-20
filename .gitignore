@@ -16,4 +16,8 @@ stripe-local-test.js
 # Back-ups. Ze horen op je schijf en in je eigen kopie, niet in de
 # geschiedenis van de code — en een database-export bevat klantgegevens.
 backups/
-_herstel/ 
+
+# De volle schermafdrukken van de visuele vangrail. De vingerafdrukken
+# (visual/referentie.json) gaan WEL mee — die zijn klein en zijn het eigenlijke
+# ijkpunt; deze beelden zijn er alleen om naar te kijken als er iets afwijkt.
+visual/beelden/

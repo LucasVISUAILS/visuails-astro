@@ -23,7 +23,7 @@
 // It is tempting to treat the batch id as a scratch name and not think about its
 // entropy. That is wrong, and the reason is /api/order: whoever presents a batch
 // id at submit gets those objects attached to THEIR order, and the portal then
-// shows an order's files to whoever holds its token. A guessable batch id is
+// shows an order’s files to whoever holds its token. A guessable batch id is
 // therefore a read primitive against another brand's unreleased product photos.
 //
 // So it is minted by exactly the same function as a portal token — 256 bits of
@@ -41,7 +41,7 @@
 import { isWellFormedToken, mintToken } from './token.js';
 import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT, isShotId } from '../data/shots.js';
 import { ATTENDED_PER_WINDOW } from '../data/capacity.js';
-/* De extra foto's hebben sinds 8 augustus 2026 een eigen upload-vakje, dus tellen
+/* De extra foto’s hebben sinds 8 augustus 2026 een eigen upload-vakje, dus tellen
    ze mee in het plafond hieronder. Uit pricing.js en niet overgetypt: dat is ook
    wat de teller in het formulier begrenst en wat er geprijsd wordt. pricing.js
    importeert zelf niets, dus dit maakt geen cyclus — shots.js leest hem al zo. */
@@ -99,7 +99,7 @@ export const MAX_FILE_BYTES = 25 * 1024 * 1024;
  *
  * ── EN DE GRATIS REFERENTIEFOTO'S KOMEN ER NOG BIJ ─────────────────────────
  *
- * Diezelfde dag, later: een klant kan met een plusje extra foto's van zijn product
+ * Diezelfde dag, later: een klant kan met een plusje extra foto’s van zijn product
  * meesturen zodat wij het beter zien — gratis, en zonder dat hij er een beeld bij
  * krijgt. Zie MAX_REF_PER_PRODUCT in shots.js voor het verschil met de BETAALDE
  * extra's.

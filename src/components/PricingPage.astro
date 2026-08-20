@@ -239,9 +239,11 @@ const COPY = {
     gateLead: 'No date is printed until the calendar clears it.',
     gateBody: 'A reserved delivery date is confirmed before you pay, never after. If the week you need cannot be held, you are told that instead of being given an optimistic guess.',
 
-    plansH: 'The plans',
-    plansSub: 'If the same output comes round every month, buying it by the month costs less than buying it order by order. That is all a plan is — not a bigger package, the same products at a lower price for committing to the month. Each card shows the difference against the price per product above.',
-    plansCta: 'Set up a plan',
+    // De plannen staan sinds 20 augustus 2026 op /plans; hier blijft één regel
+    // die zegt dat de andere manier van kopen bestaat.
+    toPlansH: 'Or the same work every month',
+    toPlansB: 'If the same output comes round every month, buying it by the month costs less than buying it order by order — same products, lower rate, a week in the calendar kept free for you.',
+    toPlansCta: 'See the plans',
 
     sampleH: 'Before you place an order',
     sampleBody: `One product, ${sample.price} ${vatLabel('excl', 'en')} — ${sample.unit}. It runs through the same production as a paid order, so what comes back is what you would get.`,
@@ -321,9 +323,9 @@ const COPY = {
     gateLead: 'We noemen geen datum voordat we in de agenda hebben gekeken.',
     gateBody: 'Je vastgezette leverdatum staat vast voordat je betaalt, nooit erna. Kunnen we de week die je nodig hebt niet vrijhouden, dan zeggen we dat meteen. Je krijgt geen optimistische gok.',
 
-    plansH: 'De plannen',
-    plansSub: 'Heb je elke maand hetzelfde nodig, dan is per maand kopen goedkoper dan bestelling voor bestelling. Meer is een plan niet: geen groter pakket, maar dezelfde producten voor een lagere prijs omdat je je per maand vastlegt. Elke kaart laat het verschil met de prijs per product hierboven zien.',
-    plansCta: 'Een plan opzetten',
+    toPlansH: 'Of hetzelfde werk elke maand',
+    toPlansB: 'Heb je elke maand hetzelfde nodig, dan is per maand kopen goedkoper dan bestelling voor bestelling — dezelfde producten, een lager tarief, en een week in de planning die voor je wordt vrijgehouden.',
+    toPlansCta: 'Bekijk de abonnementen',
 
     sampleH: 'Voordat je een bestelling plaatst',
     sampleBody: `Eén product, ${sample.price} ${vatLabel('excl', 'nl')} — ${sample.unit}. Het loopt door dezelfde productie als een betaalde bestelling, dus wat terugkomt is wat je zou krijgen.`,
@@ -477,7 +479,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
      AUDIT-TASK-0.md §H flag 2: the range is the brief's figure and is not
      sourced, so it is presented as a full day with every line counted, the
      lines are named without inventing a euro figure for any of them, and the
-     caveat travels with it. No strikethrough: crossing out someone else's
+     caveat travels with it. No strikethrough: crossing out someone else’s
      price is a discount-site gesture, and the comparison is strong enough
      stated plainly.
 
@@ -495,56 +497,9 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     de alinea eronder, en hij staat daarom tussen het tarief en de vergelijking
     met een shootdag in: eerst wat het kost, dan wat je krijgt, dan waar het
     tegen afgezet wordt. */}
-<section class="section-tight"><div class="container">
-  <div class="section-head">
-    <h2>{nl ? 'Dit is één product.' : 'This is one product.'}</h2>
-    <p>{nl
-      ? 'Elk tarief in de tabel hierboven geldt per product. Dit is wat daarvoor terugkomt.'
-      : 'Every rate in the table above is per product. This is what comes back for it.'}</p>
-  </div>
-  <Placeholder
-    lang={lang}
-    space
-    ratio="21 / 9"
-    subject={nl
-      ? 'Eén kledingstuk als volledige set: vier catalogbeelden en drie lifestyle-beelden op één rij'
-      : 'One garment as a full set: four catalog images and three lifestyle images in one row'}
-    message={nl
-      ? 'Moet in één oogopslag laten zien dat "één product" zeven beelden is en geen foto. Zelfde kledingstuk in alle zeven, zichtbaar dezelfde huisstijl, en de vier catalog- en drie lifestyle-beelden herkenbaar als twee groepen. Dit is het beeld dat het tarief rechtvaardigt.'
-      : 'Must show at a glance that "one product" means seven images, not one photo. The same garment in all seven, visibly one house style, and the four catalog and three lifestyle frames readable as two groups. This is the image that justifies the rate.'}
-  />
-</div></section>
 
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2>{c.anchorH}</h2></div>
 
-  <div class="anchor reveal pending">
-    <div class="anchor-col">
-      <span class="anchor-tag">{c.anchorWasTag}</span>
-      <span class="anchor-price">{shoot.range}</span>
-      <span class="anchor-vat">{vatLabel('excl', lang)}</span>
-      <p class="anchor-meta">{shoot.basis}</p>
-      <ul class="anchor-list">
-        {shoot.items.map((it) => <li>{it}</li>)}
-      </ul>
-    </div>
 
-    <div class="anchor-rule" aria-hidden="true"></div>
-
-    <div class="anchor-col">
-      <span class="anchor-tag">{c.anchorNowTag}</span>
-      <span class="anchor-price">{euro(quote('complete', ANCHOR_PRODUCTS).net, lang)}</span>
-      <span class="anchor-vat">{vatLabel('excl', lang)}</span>
-      <p class="anchor-meta">{c.anchorNowMeta}</p>
-      <ul class="anchor-list">
-        {c.anchorNowList.map((it) => <li>{it}</li>)}
-      </ul>
-      <p class="anchor-per">{c.anchorPerProduct}</p>
-    </div>
-  </div>
-
-  <p class="anchor-note reveal pending" set:html={c.anchorNote} />
-</div></section>
 
 <!-- WHAT RIDES ON TOP OF AN ORDER.
      Two products, two shapes, and the asymmetry is the argument. A Brand Model
@@ -613,57 +568,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
 </div></section>
 
 <!-- WHAT EVERY ORDER INCLUDES, AND WHERE THE RESERVED WINDOW STARTS -->
-<section class="section-tight on-ink"><div class="container">
-  <h2>{c.inclH}</h2>
-  <ul class="incl-grid reveal-group">
-    {included.map((item) => (
-      <li class="incl reveal pending">{item}</li>
-    ))}
-  </ul>
 
-  {/* The old page asked this as a second question — pick a size, then pick a
-      service level — and priced the two axes on one list. Size decides it now,
-      so this block states the line rather than offering a choice, and the
-      three facts that actually change across it are shown side by side. The
-      cheaper side is set at the same size, in the same frame, with the same
-      type: it is a different service model, not a lesser one, and a thinner
-      column would say "lesser" without using any of the words section 13
-      bans. */}
-  <p class="svc-lead"><strong>{c.svcLead}</strong> {c.svcBody}</p>
-
-  <div class="anchor svc reveal pending">
-    <div class="anchor-col">
-      <span class="anchor-tag">{c.svcFromTag}</span>
-      <dl class="svc-facts">
-        {svcRows.map((r, i) => (
-          <div class="svc-row">
-            <dt>{svcLabels[i]}</dt>
-            <dd>{tierRow('attended', r.key, lang)}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-
-    <div class="anchor-rule" aria-hidden="true"></div>
-
-    <div class="anchor-col">
-      <span class="anchor-tag">{c.svcUnderTag}</span>
-      <dl class="svc-facts">
-        {svcRows.map((r, i) => (
-          <div class="svc-row">
-            <dt>{svcLabels[i]}</dt>
-            <dd>{tierRow('unattended', r.key, lang)}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  </div>
-
-  {/* The gate, stated where the money is. The site never prints a date the
-      capacity gate has not cleared — that rule is the reason this note exists
-      on a pricing page at all. */}
-  <p class="gate-note"><strong>{c.gateLead}</strong> {c.gateBody}</p>
-</div></section>
 
 <!-- THE PLANS.
      The bottom of this page used to hold a second price list (Tier 0, per
@@ -675,59 +580,30 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
      asserts at build time that every plan costs less than the same products on
      the ladder, so a reader who does the sum finds what the card says. If that
      assertion ever fails, the fix is the price, not this copy. -->
-<section class="section-tight"><div class="container">
-  <div class="section-head"><h2 id="plans">{c.plansH}</h2><p>{c.plansSub}</p></div>
+{/* ── DE PLANNEN STAAN NIET MEER OP DEZE PAGINA — 20 augustus 2026 ──────────
+    Lucas: *"Abonnementen zou ik wel graag echt een eigen pagina voor hebben dan
+    nu dat het slordig tussen de compare prices lijst staat ... en maak de
+    compare prices lijst dan heel simpel met gewoon de prijzen en niet teveel
+    informatie eromheen."*
 
-  <div class="packs plans-3 reveal-group">
-    {planList.map((p) => (
-      <div class="pack reveal pending">
-        <div class="pack-top">
-          <h3 class="pack-name">{p.name}</h3>
-        </div>
-        <p class="pack-line">{p.line}</p>
+    Hier stonden drie plankaarten met elk zes regels, een bespaarzin en een knop
+    — 278 woorden onder dezelfde kop als een staffel per product. Dat zijn twee
+    MANIEREN OM TE KOPEN en geen twee secties van één onderwerp: wie de tabel
+    hierboven leest, is nog aan het uitrekenen wat één bestelling kost terwijl er
+    al drie maandbedragen onder staan.
 
-        <div class="pack-price">
-          <span class="pp-amount">{p.price}</span>
-          <span class="pp-unit">{p.unit}</span>
-          <span class="pp-vat">{vatLabel('excl', lang)}</span>
-        </div>
+    Ze staan nu op /plans, met de uitleg erbij die hier nooit paste. Wat hier
+    blijft is één regel die zegt dat de andere manier bestaat — want dat is het
+    enige wat een prijslijst daarover hoeft te zeggen.
 
-        <ul class="checklist pack-inc">
-          {p.includes.map((f) => (
-            <li><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
-          ))}
-        </ul>
-
-        {/* The saving sentence comes out of pricing.js with two euro figures in
-            it and no VAT label — it is prose, and prose cannot know which page
-            it lands on. The label is appended here rather than added to the
-            module, because it belongs to the surface that prints the price.
-            Parenthesised so it reads as a qualifier on the sentence rather than
-            as a fragment after it. */}
-        {p.saving && (
-          <p class="pack-saving">{p.saving} <span class="pack-saving-vat">{`(${vatLabel('excl', lang)})`}</span></p>
-        )}
-
-        {/* NAAR /start/plan EN NIET MEER NAAR /contact — 17 augustus 2026.
-            Die knop wees naar het contactformulier zolang een abonnement met de
-            hand werd omgezet: er was geen mandaat, dus viel er niets af te
-            sluiten. Sinds er een SEPA-machtiging via Mollie is, is het
-            contactformulier de omweg geworden. Zie src/lib/subscribe.js. */}
-        {/* ── EN MET HET PLAN ERBIJ, 18 augustus 2026 ────────────────────
-            Alle drie de knoppen wezen naar dezelfde kale URL, en PlanPicker
-            zet standaard Studio aan (het middelste van de drie). Wie hier op
-            de Merk-kaart klikte — €1.690, het duurste dat de studio verkoopt —
-            kwam dus op een pagina met Studio aangevinkt, en één keer niet
-            opletten is een machtiging voor het verkeerde bedrag, elke maand
-            opnieuw.
-
-            Een vraag die je al beantwoord hebt, hoort niet nog een keer
-            gesteld te worden. Het script in PlanPicker leest ?plan= en vinkt
-            hem aan; zonder JavaScript verandert er niets en staat Studio er
-            nog, precies zoals eerst. */}
-        <a href={`${lp('/start/plan')}?plan=${p.id}`} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
-      </div>
-    ))}
+    `id="plans"` blijft op deze strook staan: er wezen zes plekken naar
+    /pricing#plans en die zijn allemaal omgezet, maar een oude link uit een mail
+    of een zoekresultaat hoort niet in het niets te landen. */}
+<section class="section-tight" id="plans"><div class="container narrow">
+  <div class="to-plans">
+    <h2 class="to-plans-h">{c.toPlansH}</h2>
+    <p class="to-plans-b">{c.toPlansB}</p>
+    <a class="btn btn-primary" href={lp('/plans')}>{c.toPlansCta}</a>
   </div>
 </div></section>
 
@@ -746,16 +622,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
 </div></section>
 
 <!-- FAQ -->
-<section class="section-tight"><div class="container narrow">
-  <div class="section-head"><h2>{c.faqH}</h2></div>
-  <div class="acc reveal pending">
-    {c.faqs.map((f) => (
-      <Disclose summary={f.q} tone="panel">
-        <p>{f.a}</p>
-      </Disclose>
-    ))}
-  </div>
-</div></section>
+
 
 <!-- CLOSING -->
 <section class="section-tight"><div class="container">
@@ -1059,60 +926,20 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
   }
   .gate-note strong { color: var(--ink); font-weight: 700; }
 
-  /* ── The plans ───────────────────────────────────────────────────────────
-     Same frame, same dividing rules, same type as the packages this replaced.
-     No shadow, no "most popular" ring: the middle plan is not recommended by a
-     border, and the only thing on this page allowed to say a plan is the
-     better buy is the saving line, which is a subtraction. */
-  .packs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--line-strong);
-    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+  /* ── DE VERWIJZING NAAR /plans ────────────────────────────────────────────
+     Wat er van de plankaarten over is: één blok met een kop, een zin en een
+     knop. Zelfde vorm als de andere blokken die op deze site "op de pagina
+     liggen" — lichtlijn bovenlangs, zachte val eronder. De kaart-CSS is
+     meeverhuisd naar PlansPage.astro. */
+  .to-plans {
+    padding: clamp(1.4rem, 2.6vw, 2rem);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 34px -26px rgb(0 0 0 / 0.5);
   }
-  .plans-3 { grid-template-columns: repeat(3, 1fr); }
-  .pack {
-    display: flex;
-    flex-direction: column;
-    padding: clamp(1.6rem, 3vw, 2.6rem);
-  }
-  .pack + .pack { border-left: 1px solid var(--line-strong); }
-
-  .pack-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
-  .pack-name { font-size: var(--t-h3); line-height: 1.2; }
-  .pack-line {
-    margin-top: .7rem;
-    color: var(--ink-3);
-    font-size: .95rem;
-    line-height: 1.6;
-    max-width: 38ch;
-    min-height: 4.8em;   /* keeps all three price blocks on the same line */
-  }
-
-  .pack-price { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
-  .pp-amount {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(2rem, 3.4vw, 2.7rem);
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-  .pp-unit { font-size: .88rem; color: var(--ink-3); }
-
-  .pack-inc { margin-top: 1.4rem; font-size: .93rem; }
-  /* The saving sits BELOW what the plan contains, not above it. Above the
-     list it would be the card's headline, which turns a subtraction into a
-     sales line; below it, it is the last thing read and it is still a fact. */
-  .pack-saving {
-    margin-top: 1.2rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-    font-size: .9rem;
-    line-height: 1.55;
-    color: var(--ink-2);
-  }
-  .pack-saving-vat { color: var(--ink-3); }
-  .pack-cta { margin-top: 1.8rem; }
+  .to-plans-h { margin: 0; font-size: var(--t-h3); }
+  .to-plans-b { margin: .5rem 0 1.2rem; font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: 62ch; }
 
   /* ── Test sample ─────────────────────────────────────────────────────── */
   .sample {

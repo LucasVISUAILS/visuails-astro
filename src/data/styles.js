@@ -71,7 +71,7 @@ export const styles = [
     moodTitle: 'What Flash feels like.',
     moodParagraphs: [
       'Hard on-camera light, deep shadows, colour that punches. The nightlife look, confrontational by design.',
-      "Done wrong it's just harsh. Done right it's electric. We've made it a discipline.",
+      "Done wrong it’s just harsh. Done right it’s electric. We've made it a discipline.",
     ],
     steps: [
       { title: 'Place hard light', body: 'Flash positioned to carve the product out of the dark, cleanly.' },
@@ -84,7 +84,7 @@ export const styles = [
     ),
     craft: [
       { title: 'Hard light, placed hard', body: 'Flash falloff is controlled so the product stays crisp while the world drops away behind it.' },
-      { title: 'Shadow as composition', body: "The black behind the subject isn't empty — it's drawn, shaping where the eye lands." },
+      { title: 'Shadow as composition', body: "The black behind the subject isn’t empty — it’s drawn, shaping where the eye lands." },
       { title: 'Hard light, no blown-out product', body: 'The scene gets deep shadows and bright highlights, but the product itself keeps its real colour and its fabric detail.' },
       { title: 'Energy that repeats', body: 'The chaos is systematised: your tenth Flash visual hits like your first, and matches it.' },
     ],
@@ -120,7 +120,7 @@ export const styles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'A tuned warmth curve', body: "Our golden tone isn't a filter — it's a calibrated grade that keeps product colour honest while everything around it warms up." },
+      { title: 'A tuned warmth curve', body: "Our golden tone isn’t a filter — it’s a calibrated grade that keeps product colour honest while everything around it warms up." },
       { title: 'Bloom under control', body: 'Highlight softness is dosed per material: glass blooms, fabric doesn\'t smear, metal keeps its edge.' },
       { title: 'Scenes built for dusk', body: 'Sets, surfaces and props are chosen to make low light plausible — balconies, linen, late interiors.' },
       { title: 'Model-light harmony', body: 'When a model carries the product, skin tone and product tone are balanced in the same grade, never fighting.' },
@@ -136,7 +136,7 @@ export const styles = [
   {
     slug: 'phone-made',
     name: 'Phone-made',
-    tagline: "Looks effortless. Isn't.",
+    tagline: "Looks effortless. Isn’t.",
     heroPhoto: '/img/lifestyle-phone-made-01.webp',
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
     beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
@@ -150,7 +150,7 @@ export const styles = [
     steps: [
       { title: 'Cast the light', body: 'One window or lamp, nothing staged — light the way it actually falls at home.' },
       { title: 'Keep it handheld', body: 'Natural angles and a touch of imperfection, without tripod stiffness.' },
-      { title: 'Crop for feed', body: "Framed for the platform it's landing on, from the very first draft." },
+      { title: 'Crop for feed', body: "Framed for the platform it’s landing on, from the very first draft." },
     ],
     grid: grid(
       ['/img/lifestyle-phone-made-02.webp', '/img/lifestyle-phone-made-03.webp', '/img/lifestyle-phone-made-04.webp', '/img/lifestyle-phone-made-05.webp', '/img/lifestyle-phone-made-06.webp', '/img/lifestyle-phone-made-07.webp', '/img/lifestyle-phone-made-08.webp', '/img/lifestyle-phone-made-09.webp', '/img/lifestyle-phone-made-10.webp'],
@@ -158,7 +158,7 @@ export const styles = [
     ),
     craft: [
       { title: 'Looks like a phone shot, on purpose', body: 'A slight tilt, uneven light and a real shadow. Every one of those is placed deliberately, so the photo reads as taken rather than produced.' },
-      { title: 'Daylight logic', body: "Every scene obeys one light source and one time of day. That's what separates believable from uncanny." },
+      { title: 'Daylight logic', body: "Every scene obeys one light source and one time of day. That’s what separates believable from uncanny." },
       { title: 'Props that stay in the background', body: 'Nothing in the scene dates the photo to a season, and nothing pulls your eye off the product.' },
       { title: 'Feed-first framing', body: 'Composed for 4:5 and 9:16 up front, so nothing important dies in the crop.' },
     ],
@@ -167,7 +167,7 @@ export const styles = [
       { title: 'Trust before polish', body: 'The look that performs when audiences are wary of anything too styled.' },
       { title: 'Already the right shape for a feed', body: 'Delivered in the aspect ratio Instagram uses, so you do not have to crop it yourself.' },
     ],
-    bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn't look like ads"],
+    bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn’t look like ads"],
     whatYouGet: ['Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one', TIMING, REVIEW],
   },
   {
@@ -203,7 +203,7 @@ export const styles = [
     ),
     bestFor: [
       'Brands with a specific world in mind',
-      "Concepts our four moods don't cover",
+      "Concepts our four moods don’t cover",
       'Campaigns that need their own signature',
       'Ranges where the scene is the story',
     ],

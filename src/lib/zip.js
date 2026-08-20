@@ -36,7 +36,7 @@ export const ZIP_MAX_FILES = 4096;
  * schouders over op, andere klagen. En de echte tijd is hier de verkeerde
  * keuze: dan levert twee keer dezelfde bestelling downloaden twee verschillende
  * archieven op, wat caching en vergelijken zinloos maakt voor een inhoud die
- * niet veranderd is. De aanmaakdatum van een zip zegt niets over de foto's erin;
+ * niet veranderd is. De aanmaakdatum van een zip zegt niets over de foto’s erin;
  * die staan in het portaal en in de mail. */
 const DOS_DATE = (0 << 9) | (1 << 5) | 1;   // 1980-01-01
 const DOS_TIME = 0;
@@ -140,9 +140,9 @@ function uniqueNames(files) {
      * ── EEN MAP IS EEN NAAM DIE OP / EINDIGT — 12 AUGUSTUS 2026 ──────────────
      *
      * Toegevoegd voor de mappenroute op /admin: een zip die alleen de STRUCTUUR
-     * van een bestelling bevat, zodat de studio de foto's er in de goede vakjes
+     * van een bestelling bevat, zodat de studio de foto’s er in de goede vakjes
      * in zet en de server daarna uit het PAD kan lezen welk product en welke shot
-     * het is. Zonder mapvermeldingen zou zo'n zip leeg uitpakken -- een
+     * het is. Zonder mapvermeldingen zou zo’n zip leeg uitpakken -- een
      * uitpakker maakt alleen mappen die hij uit een bestandspad kan afleiden, en
      * er zijn hier per definitie nog geen bestanden.
      *

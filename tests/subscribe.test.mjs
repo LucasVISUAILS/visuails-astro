@@ -278,11 +278,21 @@ console.log('\nen de weg bestaat echt — geen knop zonder draad');
 
   const pagina = readFileSync(new URL('../src/components/order/PlanPicker.astro', import.meta.url), 'utf8');
   ok('de keuzepagina post naar die route', /action="\/account\/plan\/start"/.test(pagina), true);
+  /* DE PLANKAARTEN STAAN SINDS 20 AUGUSTUS 2026 OP /plans EN NIET MEER OP
+     /pricing — twee manieren om te kopen, twee pagina's. Deze test volgt de
+     kaarten mee: wat hij bewaakt is dat de knop op de plankaart naar de
+     keuzepagina wijst en niet naar het contactformulier, en dat blijft waar
+     ongeacht op welke pagina de kaart staat. */
+  const plan = readFileSync(new URL('../src/components/PlansPage.astro', import.meta.url), 'utf8')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+  ok('en de knop op de abonnementenpagina wijst naar de keuzepagina',
+    /lp\('\/start\/plan'\)/.test(plan), true);
+  ok('en niet meer naar het contactformulier', /pack-cta[^>]*\/contact/.test(plan), false);
+  /* En de prijspagina wijst nog wel naar de abonnementen, zodat de twee manieren
+     om te kopen vindbaar blijven vanaf elkaar. */
   const prijs = readFileSync(new URL('../src/components/PricingPage.astro', import.meta.url), 'utf8')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
-  ok('en de knop op de prijspagina wijst naar de keuzepagina',
-    /lp\('\/start\/plan'\)/.test(prijs), true);
-  ok('en niet meer naar het contactformulier', /pack-cta[^>]*\/contact/.test(prijs), false);
+  ok('en de prijspagina wijst naar de abonnementen', /lp\('\/plans'\)/.test(prijs), true);
 }
 
 /* ══ OPZEGGEN EN PAUZEREN STOPPEN DE INCASSO ══════════════════════════════
@@ -463,13 +473,14 @@ console.log('\nde handlers roepen het aan, en in de goede volgorde');
 
   /* ── HET GEKOZEN PLAN GAAT MEE, EN WORDT AANGEVINKT ─────────────────────
    *
-   * De drie knoppen op /pricing wezen alle drie naar dezelfde kale URL, en
+   * De drie knoppen (destijds op /pricing, sinds 20 augustus op /plans) wezen
+   * alle drie naar dezelfde kale URL, en
    * PlanPicker vinkt standaard het middelste plan aan. Klikken op de duurste
    * kaart leverde dus de middelste keuze op, op een formulier dat eindigt in
    * een doorlopende machtiging. */
-  const prijs = readFileSync(new URL('../src/components/PricingPage.astro', import.meta.url), 'utf8');
-  ok('de knop op /pricing draagt het plan-id',
-    /\$\{lp\('\/start\/plan'\)\}\?plan=\$\{p\.id\}/.test(prijs), true);
+  const plannen = readFileSync(new URL('../src/components/PlansPage.astro', import.meta.url), 'utf8');
+  ok('de knop op /plans draagt het plan-id',
+    /\$\{lp\('\/start\/plan'\)\}\?plan=\$\{p\.id\}/.test(plannen), true);
   ok('en PlanPicker leest plan én term uit de URL',
     /\['plan', 'term'\]\.forEach/.test(picker), true);
   ok('en zoekt daarmee een radio op in plaats van iets te schrijven',

@@ -518,7 +518,7 @@ function tsBytes(n) {
   return `${Math.max(1, Math.round(v / 1024))} kB`;
 }
 
-// Written into textContent, never innerHTML: `name` is whatever the visitor's
+// Written into textContent, never innerHTML: `name` is whatever the visitor’s
 // filesystem hands over, and this is the one place on the page where a string
 // the visitor controls reaches the DOM.
 function tsSay(text, isError) {
@@ -649,7 +649,7 @@ function tsFailed(code, body) {
     return;
   }
   // A dead bucket is not this file's problem, it is every file's problem —
-  // and, unlike on /start, it must not become the visitor's problem either.
+  // and, unlike on /start, it must not become the visitor’s problem either.
   // A test sample is the top of the funnel; refusing the request because the
   // upload failed would cost the lead to save the photographs, which is
   // backwards. The gate stands down and the copy tells them what happens next.
@@ -747,7 +747,7 @@ function tsGate(form, scope) {
   return false;
 }
 
-// Why the gate is standing, in the visitor's terms. "Add at least one product
+// Why the gate is standing, in the visitor’s terms. "Add at least one product
 // photo" is only the right sentence when they have not added one; if they added
 // one and it bounced for something they can fix, the sentence has to be about
 // that instead — the file type, or the size and the ceiling it went over.
@@ -809,7 +809,7 @@ function initTestSampleUpload() {
   if (!input) { ts.form = null; return; }
 
   // Per-element, so a ClientRouter navigation back onto this page starts from a
-  // clean batch rather than appending to the previous visitor's — the module
+  // clean batch rather than appending to the previous visitor’s — the module
   // outlives the DOM, the batch must not.
   if (!input.dataset.tsBound) {
     input.dataset.tsBound = '1';
@@ -908,7 +908,7 @@ function initWizards() {
     const t = e.target;
     if (!(t instanceof Element)) return;
     let el;
-    // "Next" gates on the current step's validity (don't advance past empty required fields).
+    // "Next" gates on the current step's validity (don’t advance past empty required fields).
     if ((el = t.closest('[data-wizard-next]'))) {
       const f = el.closest('form'); if (!f) return;
       const cur = f.querySelector('[data-wizard-step]:not(.hidden-step)');
@@ -950,7 +950,7 @@ function initWizards() {
 // Thank-you page: show the order reference /api/order redirected here with.
 //
 // #ty-summary ships display:none and this is the only thing that ever reveals
-// it, so a page that never reaches the branch below simply doesn't show a
+// it, so a page that never reaches the branch below simply doesn’t show a
 // summary box — which is the correct fallback, not a defect.
 //
 // There used to be a second branch under this one that rebuilt a whole <dl> of
@@ -1237,7 +1237,7 @@ function initCompareDrag() {
     else if (pct >= 100 - SNAP_EDGE) target = 100;
     if (target === null || pct === target) return;
     stopSnap(cmp);
-    // prefers-reduced-motion: the value still snaps, it just doesn't travel.
+    // prefers-reduced-motion: the value still snaps, it just doesn’t travel.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       write(cmp, target);
       return;
@@ -1442,9 +1442,9 @@ export function init() {
 }
 
 // The reveal safety net is bound FIRST and unconditionally, so reveal-gated
-// content can never stay hidden — even if init() throws or doesn't re-run on a
+// content can never stay hidden — even if init() throws or doesn’t re-run on a
 // given ClientRouter navigation. init() itself is guarded so a runtime error in
-// any sub-init can't break the rest of the page.
+// any sub-init can’t break the rest of the page.
 bindRevealNet();
 // Signing in to the gate in Layout.astro's <head>. That script hides 203
 // elements before first paint on the promise that this file will uncover

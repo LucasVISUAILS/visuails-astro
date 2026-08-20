@@ -472,7 +472,7 @@ const START = SERVICES[0].id;
   :global(.js) .wk-layer { grid-area: 1 / 1; }
   .wk-layer { margin: 0; width: 100%; }
 
-  .wk-layer > img {
+  .wk-layer > img, .wk-layer > picture > img {
     display: block;
     width: 100%;
     max-height: min(22rem, 40svh);
@@ -646,7 +646,7 @@ const START = SERVICES[0].id;
        reader is on can never be fully visible under it. */
     :global(.js) .wk-stage { padding-top: 4.4rem; padding-bottom: 1.2rem; }
     .wk-frame { min-height: min(17rem, 32svh); }
-    .wk-layer > img { max-height: 30svh; }
+    .wk-layer > img, .wk-layer > picture > img { max-height: 30svh; }
     .wk-layer.is-panel { min-height: min(15rem, 28svh); }
     .wk-out[data-walk-count="1"] .wk-out-frame img { max-height: 26svh; }
     :global(.js) .wk-step { min-height: 58svh; justify-content: flex-start; padding-top: 1.2rem; }

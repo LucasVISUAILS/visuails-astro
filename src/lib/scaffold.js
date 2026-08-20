@@ -4,7 +4,7 @@
 //
 // Lucas, 12 augustus 2026: *"wanneer iemand een bestelling heeft geplaatst onder
 // een specifieke service dat ik het verzenden sneller wil maken door een soort
-// mappenroute te kunnen downloaden vanuit /admin zodat ik alleen de foto's in de
+// mappenroute te kunnen downloaden vanuit /admin zodat ik alleen de foto’s in de
 // juiste folders moet zetten en een andere naam moet geven"* — en op de vraag hoe
 // ver dit moest gaan: *"Heen en terug, hernoemen helemaal weg, het moet zoveel
 // mogelijk tijd schelen."*
@@ -69,7 +69,7 @@ export const SLOT_FOLDER = {
   worn: '4 op-model',
 };
 
-/** De map voor beeld dat niet in een vakje hoort: extra foto's, losse varianten. */
+/** De map voor beeld dat niet in een vakje hoort: extra foto’s, losse varianten. */
 export const LOOSE_FOLDER = '_los';
 
 /** De map met wat de klant heeft aangeleverd. Wordt niet gevuld door de scaffold. */
@@ -450,7 +450,7 @@ export function scaffoldFiles(order, products, opts = {}) {
     }
   }
 
-  // Eén losse map voor de hele bestelling en niet één per product: extra foto's
+  // Eén losse map voor de hele bestelling en niet één per product: extra foto’s
   // en varianten zijn er per bestelling een handvol, en dertig lege _los-mappen
   // is dertig mappen waar niemand in kijkt.
   files.push({ name: `${root}/${LOOSE_FOLDER}/`, dir: true });

@@ -106,7 +106,7 @@ export const VIDEO_FORMAT = {
 /**
  * Hoe een geleverd clipbestand heet.
  *
- * Dezelfde opbouw als de foto's in src/lib/delivery.js: een nummer vooraan zodat een
+ * Dezelfde opbouw als de foto’s in src/lib/delivery.js: een nummer vooraan zodat een
  * verkenner de drie verhoudingen in ONZE volgorde zet en niet alfabetisch (waar
  * `square` vóór `vertical` komt, terwijl verticaal het formaat is waar de klant
  * meestal naar zoekt). De verhouding staat er met een `x` en niet met een `:` in,

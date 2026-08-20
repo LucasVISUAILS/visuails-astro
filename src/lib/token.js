@@ -21,10 +21,10 @@
 //
 // WHY THE DATABASE NEVER SEES THE TOKEN
 // The token exists in exactly two places: the moment it is minted, and the link
-// in the client's inbox. What is stored is SHA-256 of it. If order_tokens leaks
+// in the client’s inbox. What is stored is SHA-256 of it. If order_tokens leaks
 // in full, the attacker holds digests of 256-bit random strings — there is no
 // dictionary, no structure, and nothing to grind. A plain-text token column
-// would turn one database read into every client's private gallery.
+// would turn one database read into every client’s private gallery.
 //
 // A plain SHA-256 is the right primitive here, and a password hash (bcrypt,
 // scrypt, argon2) would be the wrong one. Those are slow on purpose because
@@ -106,7 +106,7 @@ export function timingSafeEqual(a, b) {
 /**
  * When a token dies: 90 days after the order closed.
  *
- * Takes closed_at, which is null while the order is live — and a live order's
+ * Takes closed_at, which is null while the order is live — and a live order’s
  * token does not expire, because the client is still working in it. Returns null
  * for null, and the caller must read that as "no expiry yet", never as "expired".
  *

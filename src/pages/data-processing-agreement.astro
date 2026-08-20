@@ -18,8 +18,8 @@ import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
 // ── THE ONE THING TO KNOW IF YOU ONLY READ THIS COMMENT ─────────────────────
 //
 // The privacy policy claimed VISUAILS is the controller for everything in it.
-// For the WORN SHOT that is wrong: the person in that photo is the client's data
-// subject, VISUAILS processes it on the client's instruction and for the client's
+// For the WORN SHOT that is wrong: the person in that photo is the client’s data
+// subject, VISUAILS processes it on the client’s instruction and for the client’s
 // purpose, and is therefore a processor. Art. 28(3) then requires a written
 // agreement with a fixed content. This page is that agreement, and §1 is the
 // clause that puts the two roles side by side.
@@ -95,12 +95,12 @@ const SUBS = [
       <p>What follows is what actually exists, and nothing more. We are not ISO certified, no penetration test has been carried out, and there is no information security management system. A security clause that promises more than is there is the clause that gets used against us when something happens.</p>
       <ul>
         <li><strong>Encrypted in transit and at rest.</strong> All traffic runs over TLS. Material sits in Cloudflare R2 and order data in Cloudflare D1, both encrypted at rest.</li>
-        <li><strong>Addresses that cannot be guessed.</strong> Supplied material sits under a key with a random component; there is no sequential numbering anyone could walk to reach someone else's files.</li>
+        <li><strong>Addresses that cannot be guessed.</strong> Supplied material sits under a key with a random component; there is no sequential numbering anyone could walk to reach someone else’s files.</li>
         <li><strong>Access behind its own lock.</strong> The admin portal uses a hashed password and session tokens that are themselves stored hashed. Your own portal uses a single-use sign-in link or code, with cookies that are <code>HttpOnly</code> and <code>Secure</code> and scoped to your dashboard path.</li>
         <li><strong>An ownership check on every file.</strong> Every download passes a check tied to the order rather than to the URL. It is built that way on purpose and it is tested on every change by a test that deliberately tries to weaken the check.</li>
         <li><strong>Rate limits</strong> on ordering, uploading, signing in and fetching files, so a script cannot keep trying.</li>
         <li><strong>No raw IP addresses.</strong> Where we have to count traffic we store a salted hash, not the address.</li>
-        <li><strong>The retention periods are executed, not just promised.</strong> A nightly task deletes what has expired, from storage and from the database, and records on the order's timeline what went. That is the difference between a period in a document and a period in reality.</li>
+        <li><strong>The retention periods are executed, not just promised.</strong> A nightly task deletes what has expired, from storage and from the database, and records on the order’s timeline what went. That is the difference between a period in a document and a period in reality.</li>
         <li><strong>A weekly copy of the database</strong> on a disk we control ourselves, so losing the platform does not mean losing your order. That copy contains personal data. It does not go to a cloud service, it does not sit in a shared folder, and it is not committed to the source code history. A nightly task checks that this copy is no older than ten days and warns us if it is — a backup nobody notices has stopped is not a backup.</li>
       </ul>
       <p>We reassess these measures whenever something material changes in what we process, and in any case once a year.</p>
@@ -124,7 +124,7 @@ const SUBS = [
       </table>
       </div>
       <p><strong>About the generation itself.</strong> Freepik offers a large number of models on its platform, from different makers. Which one we use at a given moment changes — we work with whatever gives the best result at the time, and that is part of how we do our job. The party that <em>receives</em> your material stays the same and is named above; that is what this clause has to fix. Freepik states expressly in its own terms: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em>, and that supplied images are deleted immediately after generation. For transfers to model providers outside the EEA, Freepik concludes Standard Contractual Clauses (Art. 46(2)(c) GDPR).</p>
-      <p><strong>Retouching happens on our own machine.</strong> Retouching and editing are done in Photoshop and in DaVinci Resolve, locally. Those programs do not send your material to a cloud service: the file sits on the disk, is edited there, and leaves there under the periods in §3. Adobe and Blackmagic Design are therefore <strong>not</strong> on the list above — they do not receive your material. Adobe writes about locally stored material in its own terms: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software running on our machine processes nothing on our behalf; a service that receives the file does. That distinction decides who belongs on the list. If we ever move to a cloud service for retouching — Adobe's own cloud storage included — that is an addition to the list, with the 30 days' notice set out above.</p>
+      <p><strong>Retouching happens on our own machine.</strong> Retouching and editing are done in Photoshop and in DaVinci Resolve, locally. Those programs do not send your material to a cloud service: the file sits on the disk, is edited there, and leaves there under the periods in §3. Adobe and Blackmagic Design are therefore <strong>not</strong> on the list above — they do not receive your material. Adobe writes about locally stored material in its own terms: <em>"For Content stored locally on your device, we do not scan or review your Content."</em> Software running on our machine processes nothing on our behalf; a service that receives the file does. That distinction decides who belongs on the list. If we ever move to a cloud service for retouching — Adobe’s own cloud storage included — that is an addition to the list, with the 30 days' notice set out above.</p>
       <p><strong>What is not on this list, and why.</strong> Our payment provider and the review platforms are absent. They do not touch your material; they only process data for which we are ourselves the controller. Those are covered in the <a href="/privacy">Privacy Policy</a>.</p>
 
       <h2>9. Data subject rights</h2>
@@ -136,8 +136,8 @@ const SUBS = [
       <p>We help you further with what Art. 32 to 36 GDPR asks of you, including a data protection impact assessment if your use needs one.</p>
 
       <h2>11. Transfers outside the European Economic Area</h2>
-      <p>The generation happens with a party in Spain, so inside the EU. Where a sub-processor in §8 is established outside the EEA, the transfer rests on the European Commission's Standard Contractual Clauses (Art. 46(2)(c) GDPR). We do not transfer personal data to a country or party outside that list without informing you first.</p>
-      <p>One thing we write down more plainly than is customary: when the visuals are made, material is placed into the sub-processor's tool by a person, from our environment. So it is not an automatic integration but an act, and it falls under the same arrangements as the rest of this agreement.</p>
+      <p>The generation happens with a party in Spain, so inside the EU. Where a sub-processor in §8 is established outside the EEA, the transfer rests on the European Commission’s Standard Contractual Clauses (Art. 46(2)(c) GDPR). We do not transfer personal data to a country or party outside that list without informing you first.</p>
+      <p>One thing we write down more plainly than is customary: when the visuals are made, material is placed into the sub-processor’s tool by a person, from our environment. So it is not an automatic integration but an act, and it falls under the same arrangements as the rest of this agreement.</p>
 
       <h2>12. Return and deletion</h2>
       <p>The periods below are the same ones as in §7 of the <a href="/terms">Terms</a> and §6 of the <a href="/privacy">Privacy Policy</a>. They are executed by a nightly task, not by hand.</p>

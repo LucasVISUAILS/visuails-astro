@@ -8,7 +8,7 @@
 // (Catalog, Lifestyle (1 van de lifestyle stylen kiezen) en Video (1 van de
 // stylen kiezen…)) en dat je dan door het proces word geleidt, dus dat er dan
 // een model word toegevoegd tussendoor etc. en je op het einde bij catalog dus
-// 4 foto's te zien krijgt, lifestyle 3 foto's en video 1 video op het einde
+// 4 foto’s te zien krijgt, lifestyle 3 foto’s en video 1 video op het einde
 // ziet. Ieder apart van elkaar."*
 //
 // Dat is bijna hetzelfde verhaal als het spel — kiezen, stijl, model, resultaat
@@ -50,7 +50,7 @@ const TURN_UNATT_NL_ = turnaround('unattended', 'nl');
 /** Het gezicht dat door alle drie de wegen loopt. Eén model voor drie diensten
  *  in plaats van één per dienst: het maakt van drie voorbeelden één campagne,
  *  en het scheelt twee derde van de fotoproductie — Lucas' eigen argument
- *  ("als ik de klant laat kiezen tussen 10 modellen moet ik 10x zoveel foto's
+ *  ("als ik de klant laat kiezen tussen 10 modellen moet ik 10x zoveel foto’s
  *  gaan maken voor dit concept"). */
 export const DEMO_MODEL = {
   id: 'lisa',

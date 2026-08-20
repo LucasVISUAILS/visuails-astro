@@ -5,7 +5,7 @@
 // No Stripe SDK. mail.js talks to Resend with a bare fetch() rather than
 // pulling in its client library, and this does the same for the same reason:
 // a Cloudflare Pages Function is a small, cold-started thing, and Stripe's
-// REST API needs nothing an SDK adds except types this project doesn't build
+// REST API needs nothing an SDK adds except types this project doesn’t build
 // with. Two fetch-based integrations is also one fewer pattern to hold in
 // your head than "fetch for Resend, an SDK for Stripe".
 //

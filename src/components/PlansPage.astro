@@ -1,0 +1,426 @@
+---
+/*
+ * VISUAILS — /plans en /nl/plans: het abonnement als eigen pagina.
+ *
+ * ── WAAROM DEZE PAGINA BESTAAT — 20 augustus 2026 ──────────────────────────
+ *
+ * Lucas: *"Abonnementen zou ik wel graag echt een eigen pagina voor hebben dan
+ * nu dat het slordig tussen de compare prices lijst staat. Het mag allemaal wel
+ * wat meer gescheiden van elkaar zijn en maak de compare prices lijst dan heel
+ * simpel met gewoon de prijzen en niet teveel informatie eromheen."*
+ *
+ * Hij heeft gelijk, en de reden is scherper dan "het staat er rommelig". Op
+ * /pricing stonden TWEE prijsmodellen door elkaar: een staffel per product en
+ * drie abonnementen. Dat zijn geen twee secties van hetzelfde onderwerp maar
+ * twee manieren om te kopen, en een bezoeker die de tabel leest is nog aan het
+ * uitrekenen wat één bestelling kost terwijl er onder diezelfde kop al drie
+ * maandbedragen staan. Twee vragen tegelijk beantwoorden is geen van beide
+ * beantwoorden.
+ *
+ * Nu: /pricing is de prijslijst en niets anders, /plans is het abonnement en
+ * niets anders, en ze wijzen naar elkaar met één regel.
+ *
+ * ── DE LOOK KOMT VAN DE HOMEPAGE, EN LETTERLIJK ────────────────────────────
+ *
+ * Lucas in dezelfde adem: *"consistenter maken met de homepage look ... zodat
+ * alles mooi consistent blijft en overloopt op elkaar."* Het limoen paneel dat
+ * de homepage voor dit onderwerp gebruikt, staat sinds vandaag in global.css
+ * als `.lime-panel` en wordt hier hergebruikt — niet nagebouwd. Zelfde blok,
+ * zelfde licht, zelfde korrel, één definitie.
+ *
+ * ── GEEN GETAL IN DEZE COPY ────────────────────────────────────────────────
+ *
+ * Elk bedrag, elk aantal producten en elke levertijd komt uit plans() en
+ * pricing.js. Wat hier staat is de zin eromheen. Dat is dezelfde regel als op
+ * elke andere pagina en het is de reden dat een prijswijziging nergens een
+ * vergeten string achterlaat.
+ */
+import Placeholder from './Placeholder.astro';
+import {
+  euro, vatLabel, plans, turnaround,
+  PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_ROLLOVER_MONTHS,
+  STOCK_OFF_BRAND, STOCK_ON_BRAND,
+} from '../data/pricing.js';
+import { localizedPath } from '../i18n/ui.js';
+import { waHref } from '../data/whatsapp.js';
+
+const { lang = 'en' } = Astro.props;
+const nl = lang === 'nl';
+const lp = (p) => localizedPath(lang, p);
+
+/* Het goedkoopste plan levert zowel het bedrag als het aantal producten, en
+   die twee horen bij ELKAAR — los het laagste bedrag en het laagste aantal
+   pakken werkt vandaag toevallig en gaat liegen zodra er een vierde plan komt
+   met een ander verband. Zelfde afleiding als in HomeV2. */
+const CHEAPEST = Object.keys(PLAN_AMOUNT).reduce((a, b) => (PLAN_AMOUNT[b] < PLAN_AMOUNT[a] ? b : a));
+const FROM_AMOUNT = PLAN_AMOUNT[CHEAPEST];
+const FROM_PRODUCTS = PLAN_PRODUCTS[CHEAPEST];
+
+const planList = plans(lang);
+
+const COPY = {
+  en: {
+    eyebrow: 'Subscription',
+    h1a: 'The same studio, ',
+    h1b: 'every month',
+    h1c: '.',
+    lead: 'A plan is not a bigger package. It is the same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you, at a lower rate than ordering it one at a time.',
+
+    panelH: ['What a plan', 'actually is.'],
+    panelLede: 'Three things change when the work comes round every month instead of order by order. Nothing else does — the same studio, the same review, the same files.',
+    facts: [
+      'A fixed number of products each month, yours to spend as the collection needs.',
+      'Your own week in the calendar, booked before anyone else can take it.',
+      'A lower rate per product than the same output ordered separately.',
+    ],
+    from: 'from',
+    unit: `a month · ${FROM_PRODUCTS} products`,
+    cta: 'Start a plan',
+    cta2: 'See the price per product',
+
+    plansH: 'The three plans',
+    plansSub: 'Same service on all three. What changes is how much of the month you book.',
+    plansCta: 'Set up this plan',
+
+    creditH: `${FROM_PRODUCTS} slots, not ${FROM_PRODUCTS} new products.`,
+    creditBody: `A credit is a place in the month, not a demand that you have something new. You decide each month what goes in it: a new item, an item you already sell in a different look for a campaign, or a set made for your socials. What you do not use rolls over ${PLAN_ROLLOVER_MONTHS === 1 ? 'a' : PLAN_ROLLOVER_MONTHS} month${PLAN_ROLLOVER_MONTHS === 1 ? '' : 's'}.`,
+    creditAsk: 'Not sure what to spend the rest on?',
+    creditAskCta: 'Ask us and we will go through it with you',
+    creditWa: 'Hi! I have a plan and I would like to think through what to spend this month’s credits on.',
+
+    stockH: 'And a month that is already filled.',
+    stockNow: [`${STOCK_OFF_BRAND} new stock visuals every month`, 'included with every plan, usable by any brand — something to post on the days you have no new product.'],
+    stockSoon: [`${STOCK_ON_BRAND} on-brand visuals a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. Arrives with Editions and is set up once per brand.'],
+    stockSoonTag: 'With Editions',
+    stockShot: 'A month grid of stock visuals for one brand — twenty frames in the same colours and light, with no product in them',
+    stockShotMsg: 'Mood, texture, hands, light — no garment and no packshot. If it reads as a stock library it has failed; it has to read as one brand.',
+
+    outH: 'Not every month, then.',
+    outBody: 'Order by order works too, and the rate falls as the count rises. The price per product is on the pricing page.',
+    outCta: 'See the price per product',
+
+    ctaH: 'Start with one product',
+    ctaEm: 'for €1.',
+    ctaBody: 'Send the photos you already have and see what comes back before any plan starts.',
+    ctaSample: 'Request a test sample',
+    ctaPlan: 'Start a plan',
+  },
+  nl: {
+    eyebrow: 'Abonnement',
+    h1a: 'Dezelfde studio, ',
+    h1b: 'elke maand',
+    h1c: '.',
+    lead: 'Een abonnement is geen groter pakket. Het is hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt, tegen een lager tarief dan wanneer je het los bestelt.',
+
+    panelH: ['Wat een abonnement', 'eigenlijk is.'],
+    panelLede: 'Er veranderen drie dingen zodra het werk elke maand terugkomt in plaats van bestelling voor bestelling. Verder niets — dezelfde studio, dezelfde controle, dezelfde bestanden.',
+    facts: [
+      'Elke maand een vast aantal producten, te besteden zoals de collectie het vraagt.',
+      'Je eigen week in de planning, vastgezet voordat iemand anders hem kan nemen.',
+      'Een lager tarief per product dan hetzelfde werk los besteld.',
+    ],
+    from: 'vanaf',
+    unit: `per maand · ${FROM_PRODUCTS} producten`,
+    cta: 'Sluit een abonnement af',
+    cta2: 'Bekijk de prijs per product',
+
+    plansH: 'De drie abonnementen',
+    plansSub: 'Dezelfde dienst bij alle drie. Wat verschilt is hoeveel van de maand je vastlegt.',
+    plansCta: 'Dit abonnement opzetten',
+
+    creditH: `${FROM_PRODUCTS} plekken, geen ${FROM_PRODUCTS} nieuwe producten.`,
+    creditBody: `Een credit is een plek in de maand, niet de eis dat je iets nieuws hebt. Jij bepaalt elke maand wat erin gaat: een nieuw item, een item dat je al verkoopt in een andere look voor een campagne, of een set die je voor je socials maakt. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
+    creditAsk: 'Weet je niet waar je de rest aan besteedt?',
+    creditAskCta: 'Vraag het ons, dan lopen we het samen door',
+    creditWa: 'Hoi! Ik heb een abonnement en wil graag even doornemen waar ik de credits van deze maand aan kan besteden.',
+
+    stockH: 'En een maand die al gevuld is.',
+    stockNow: [`${STOCK_OFF_BRAND} nieuwe stockbeelden per maand`, 'inbegrepen bij elk abonnement en bruikbaar voor elk merk — iets om te posten op de dagen dat je niets nieuws hebt.'],
+    stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Komt met Editions en wordt één keer per merk opgezet.'],
+    stockSoonTag: 'Met Editions',
+    stockShot: 'Een maandraster van stockbeelden voor één merk — twintig beelden naast elkaar in dezelfde kleuren en hetzelfde licht, zonder product erin',
+    stockShotMsg: 'Sfeer, textuur, handen, licht — geen kledingstuk en geen packshot. Leest het als een stockbibliotheek, dan is het mislukt; het moet als één merk lezen.',
+
+    outH: 'Toch liever niet elke maand.',
+    outBody: 'Los bestellen kan net zo goed, en het tarief daalt naarmate het aantal stijgt. De prijs per product staat op de prijzenpagina.',
+    outCta: 'Bekijk de prijs per product',
+
+    ctaH: 'Begin met één product',
+    ctaEm: 'voor € 1.',
+    ctaBody: 'Stuur de foto’s die je al hebt en zie wat eruit komt voordat er een abonnement begint.',
+    ctaSample: 'Vraag een proefvisual aan',
+    ctaPlan: 'Sluit een abonnement af',
+  },
+};
+const c = COPY[nl ? 'nl' : 'en'];
+---
+
+<section class="page-hero"><div class="container">
+  <span class="eyebrow-page">{c.eyebrow}</span>
+  <h1 class="display">{c.h1a}<em>{c.h1b}</em>{c.h1c}</h1>
+  <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+</div></section>
+
+{/* ── HET PANEEL ─────────────────────────────────────────────────────────────
+    Hetzelfde blok als op de homepage, uit global.css. Hier draagt het de
+    propositie plus het instapbedrag; de drie plannen staan eronder op de
+    paginagrond, zodat het paneel de UITLEG is en de kaarten de KEUZE. Zet je ze
+    allebei in het paneel, dan is het weer één lange band met twee onderwerpen —
+    precies waar deze pagina voor is opgesplitst. */}
+<section class="section-tight"><div class="container">
+  <div class="lime-panel">
+    <div class="lime-panel-light" aria-hidden="true"></div>
+    <div class="lime-panel-in on-bright">
+      <div class="pl-top">
+        <div>
+          <h2 class="pl-h">{c.panelH[0]} <em class="pl-em">{c.panelH[1]}</em></h2>
+          <p class="pl-lede">{c.panelLede}</p>
+          <ul class="pl-facts">
+            {c.facts.map((f) => (
+              <li>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5" /></svg>
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="lime-plate">
+          <p class="pl-from">{c.from}</p>
+          <p class="pl-fig">{euro(FROM_AMOUNT, lang)}</p>
+          <p class="pl-unit">{c.unit}</p>
+          <p class="pl-vat">{vatLabel('excl', lang)}</p>
+          <div class="pl-cta">
+            <a class="btn btn-primary" href={lp('/start/plan')}>{c.cta}</a>
+            <a class="btn btn-ghost" href={lp('/pricing')}>{c.cta2}</a>
+          </div>
+        </div>
+      </div>
+
+      {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
+      <div class="pl-credit">
+        <p class="pl-credit-h">{c.creditH}</p>
+        <p class="pl-credit-b">{c.creditBody}</p>
+        <p class="pl-credit-ask">
+          <span>{c.creditAsk}</span>
+          <a class="pl-credit-a" href={waHref(c.creditWa)} target="_blank" rel="noopener">{c.creditAskCta}<span class="pl-nb">&#160;<svg viewBox="0 0 24 24" class="i" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+{/* ── DE DRIE KAARTEN ────────────────────────────────────────────────────────
+    Dezelfde `.pack`-opmaak als de rest van de site gebruikt, zodat een kaart
+    hier hetzelfde leest als een kaart elders. De knop draagt ?plan= mee: zonder
+    dat parameter opent /start/plan altijd op Studio, en wie op de Merk-kaart
+    klikte kwam op een machtiging voor het verkeerde bedrag. */}
+<section class="section-tight"><div class="container">
+  <div class="section-head"><h2 id="plans">{c.plansH}</h2><p>{c.plansSub}</p></div>
+
+  <div class="packs plans-3 reveal-group">
+    {planList.map((p) => (
+      <div class="pack reveal pending">
+        <div class="pack-top"><h3 class="pack-name">{p.name}</h3></div>
+        <p class="pack-line">{p.line}</p>
+
+        <div class="pack-price">
+          <span class="pp-amount">{p.price}</span>
+          <span class="pp-unit">{p.unit}</span>
+          <span class="pp-vat">{vatLabel('excl', lang)}</span>
+        </div>
+
+        <ul class="checklist pack-inc">
+          {p.includes.map((f) => (
+            <li><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>{f}</li>
+          ))}
+        </ul>
+
+        {p.saving && (
+          <p class="pack-saving">{p.saving} <span class="pack-saving-vat">{`(${vatLabel('excl', lang)})`}</span></p>
+        )}
+
+        <a href={`${lp('/start/plan')}?plan=${p.id}`} class="btn btn-primary btn-block pack-cta">{c.plansCta}</a>
+      </div>
+    ))}
+  </div>
+</div></section>
+
+{/* ── DE BEELDBANK ───────────────────────────────────────────────────────────
+    Wat er naast de bestellingen in de maand zit. Staat hier en niet in het
+    paneel, omdat het geen eigenschap van het abonnement is maar iets dat
+    ernaast wordt geleverd. */}
+<section class="section-tight"><div class="container">
+  <div class="pl-stock">
+    <div class="pl-stock-shot">
+      <Placeholder
+        lang={lang}
+        ratio="4 / 3"
+        subject={c.stockShot}
+        message={c.stockShotMsg}
+      />
+    </div>
+    <div>
+      <h2 class="pl-stock-h">{c.stockH}</h2>
+      <div class="pl-stock-item">
+        <p class="pl-stock-n">{c.stockNow[0]}</p>
+        <p class="pl-stock-b">{c.stockNow[1]}</p>
+      </div>
+      <div class="pl-stock-item is-soon">
+        <p class="pl-stock-n">{c.stockSoon[0]} <em class="pl-soon">{c.stockSoonTag}</em></p>
+        <p class="pl-stock-b">{c.stockSoon[1]}</p>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+{/* ── DE UITGANG ─────────────────────────────────────────────────────────────
+    Eén regel naar de prijslijst, en dat is de hele verbinding tussen de twee
+    pagina's. Wie hier is en géén abonnement wil, hoort niet doodlopend te
+    eindigen — en wie de staffel zoekt, hoort hem niet op deze pagina te vinden. */}
+<section class="section-tight"><div class="container narrow">
+  <div class="pl-out">
+    <h2 class="pl-out-h">{c.outH}</h2>
+    <p class="pl-out-b">{c.outBody}</p>
+    <a class="link-arrow" href={lp('/pricing')}>{c.outCta}
+      <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </div>
+</div></section>
+
+<section class="section-tight"><div class="container">
+  <div class="cta-band reveal pending">
+    <h2 class="display" style="font-size:var(--t-page-h2)">{c.ctaH}<br /><em>{c.ctaEm}</em></h2>
+    <p style="margin-top:1rem;color:var(--ink-3);max-width:52ch;margin-inline:auto">{c.ctaBody}</p>
+    <div class="flex" style="justify-content:center;margin-top:2rem">
+      <a href={lp('/test-sample')} class="btn btn-primary btn-lg">{c.ctaSample}</a>
+      <a href={lp('/start/plan')} class="btn btn-ghost btn-lg">{c.ctaPlan}</a>
+    </div>
+  </div>
+</div></section>
+
+<style>
+  /* De opmaak binnen het paneel. De paneelvorm zelf, het licht, de korrel en de
+     donkere plaat staan in global.css onder `.lime-panel` — zie de noot daar.
+     Wat hier staat is alleen wat deze pagina in dat blok zet. */
+  .pl-top { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.6rem, 3.2vw, 3rem); align-items: start; }
+  @media (max-width: 60rem) { .pl-top { grid-template-columns: 1fr; } }
+
+  .pl-h { margin: 0; font-size: var(--t-page-h2); }
+  .pl-em { font-style: normal; color: var(--accent-word); }
+  .pl-lede { margin: .7rem 0 0; font-size: 1.02rem; line-height: 1.6; color: var(--ink-2); max-width: 56ch; }
+  .pl-facts { list-style: none; margin: clamp(1.1rem, 2.2vw, 1.6rem) 0 0; padding: 0; display: grid; gap: .6rem; }
+  .pl-facts li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
+  .pl-facts svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--accent); stroke-width: 2; }
+
+  .pl-from { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .pl-fig { margin: .3rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(2.6rem, 6vw, 3.8rem); line-height: 1; color: var(--ink); }
+  .pl-unit { margin: .5rem 0 0; font-size: .9rem; color: var(--ink-2); }
+  .pl-vat { margin: .35rem 0 0; font-size: .78rem; color: var(--ink-3); }
+  .pl-cta { margin-top: clamp(1.4rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .7rem; }
+
+  .pl-credit {
+    margin-top: clamp(1.3rem, 2.4vw, 1.9rem);
+    padding-left: clamp(1rem, 2vw, 1.4rem);
+    border-left: 2px solid var(--accent);
+    max-width: 80ch;
+  }
+  .pl-credit-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
+  .pl-credit-b { margin: .5rem 0 0; font-size: .95rem; line-height: 1.65; color: var(--ink-2); }
+  .pl-credit-ask { margin: .9rem 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; font-size: .9rem; color: var(--ink-3); }
+  .pl-credit-a { display: inline; font-weight: 700; color: var(--accent-bright); }
+  /* `display: inline-block` op het pijltje, want de reset in global.css zet
+     `img, svg, video { display: block }` en een blokdoos in een regel tekst
+     dwingt altijd zijn eigen regel af. Zelfde reparatie als op de homepage. */
+  .pl-nb { white-space: nowrap; }
+  .pl-credit-a .i { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+  /* ── DE DRIE KAARTEN ──────────────────────────────────────────────────────
+     Meeverhuisd van PricingPage.astro toen de plannen deze eigen pagina kregen.
+     Eén frame met scheidingslijnen en geen losse kaarten met schaduw: het
+     middelste plan wordt niet aanbevolen door een rand, en het enige op deze
+     pagina dat mag zeggen welk plan voordeliger is, is de bespaarregel — en dat
+     is een aftreksom. */
+  /* ── The plans ───────────────────────────────────────────────────────────
+     Same frame, same dividing rules, same type as the packages this replaced.
+     No shadow, no "most popular" ring: the middle plan is not recommended by a
+     border, and the only thing on this page allowed to say a plan is the
+     better buy is the saving line, which is a subtraction. */
+  .packs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line-strong);
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+  }
+  .plans-3 { grid-template-columns: repeat(3, 1fr); }
+  .pack {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.6rem, 3vw, 2.6rem);
+  }
+  .pack + .pack { border-left: 1px solid var(--line-strong); }
+
+  .pack-top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .pack-name { font-size: var(--t-h3); line-height: 1.2; }
+  .pack-line {
+    margin-top: .7rem;
+    color: var(--ink-3);
+    font-size: .95rem;
+    line-height: 1.6;
+    max-width: 38ch;
+    min-height: 4.8em;   /* keeps all three price blocks on the same line */
+  }
+
+  .pack-price { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .pp-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2rem, 3.4vw, 2.7rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .pp-unit { font-size: .88rem; color: var(--ink-3); }
+
+  .pack-inc { margin-top: 1.4rem; font-size: .93rem; }
+  /* The saving sits BELOW what the plan contains, not above it. Above the
+     list it would be the card's headline, which turns a subtraction into a
+     sales line; below it, it is the last thing read and it is still a fact. */
+  .pack-saving {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+  .pack-saving-vat { color: var(--ink-3); }
+  .pack-cta { margin-top: 1.8rem; }
+
+  /* Op smal vallen ze onder elkaar en verdwijnt de scheiding naar boven, want
+     een linkerrand tussen twee blokken die onder elkaar staan is een streep in
+     het niets. `min-height` op de regel gaat er ook af: die stond er alleen om
+     drie prijsblokken op één lijn te houden, en dat probleem bestaat niet meer
+     zodra ze onder elkaar staan. */
+  @media (max-width: 62rem) {
+    .plans-3 { grid-template-columns: 1fr; }
+    .plans-3 .pack + .pack { border-left: 0; border-top: 1px solid var(--line-strong); }
+    .plans-3 .pack-line { min-height: 0; }
+  }
+  @media (max-width: 40rem) {
+    .pack-top { flex-direction: column; align-items: flex-start; gap: .6rem; }
+  }
+
+  .pl-stock { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(1.6rem, 3.5vw, 3rem); align-items: center; }
+  @media (max-width: 60rem) { .pl-stock { grid-template-columns: 1fr; } }
+  .pl-stock-shot { width: min(100%, 26rem); }
+  .pl-stock-h { margin: 0 0 clamp(.9rem, 1.8vw, 1.3rem); font-size: var(--t-h3); font-weight: 700; }
+  .pl-stock-item + .pl-stock-item { margin-top: clamp(.9rem, 1.8vw, 1.3rem); padding-top: clamp(.9rem, 1.8vw, 1.3rem); box-shadow: inset 0 1px 0 var(--line); }
+  .pl-stock-n { margin: 0; font-size: 1.02rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .pl-stock-b { margin: .4rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
+  .pl-soon { font-style: normal; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: .18rem .55rem; }
+  .pl-stock-item.is-soon .pl-stock-n { color: var(--ink-2); }
+
+  .pl-out { padding: clamp(1.3rem, 2.4vw, 1.9rem); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 34px -26px rgb(0 0 0 / 0.5); }
+  .pl-out-h { margin: 0; font-size: var(--t-h3); }
+  .pl-out-b { margin: .5rem 0 1rem; font-size: .95rem; line-height: 1.65; color: var(--ink-2); max-width: 60ch; }
+</style>

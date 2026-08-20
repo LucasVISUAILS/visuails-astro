@@ -7,7 +7,7 @@ import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
 //
 // §6 is the one section that is no longer the ported copy. AUDIT-TASK-0.md:171:
 // "Retention (90 days) and portal expiry (90 days) are the same number, so the
-// client's gallery dies with their source files. Deliveries should outlive
+// client’s gallery dies with their source files. Deliveries should outlive
 // sources." The rewritten §6 states its clocks separately — because a single
 // "as long as it is needed" cannot express a promise a client can hold us to.
 // There are three of them now: source material 90 days, delivered visuals 12
@@ -155,8 +155,8 @@ import Layout from '../layouts/Layout.astro';
       <p>To exercise any of these rights, email us at <a href="mailto:hello@visuails.com">hello@visuails.com</a>. You also have the right to lodge a complaint with the Dutch supervisory authority, the Autoriteit Persoonsgegevens (autoriteitpersoonsgegevens.nl).</p>
 
       <h2>8. International transfers</h2>
-      <p>Most of it stays inside the European Economic Area. Generation happens with a party in Spain, and payments with a party in the Netherlands. Two providers are established in the United States — Cloudflare and Resend — and for those the transfer rests on the European Commission's <strong>Standard Contractual Clauses</strong> (Art. 46(2)(c) GDPR), which we have in place with both. Cloudflare stores our files and order data in the EU.</p>
-      <p>Where the generation platform passes material on to a model provider outside the EEA, that platform concludes Standard Contractual Clauses of its own. The full chain, with each party's country and basis, is in §8 of the <a href="/data-processing-agreement">Data Processing Agreement</a> — one list, kept current, because that is what the GDPR asks of us when we change providers.</p>
+      <p>Most of it stays inside the European Economic Area. Generation happens with a party in Spain, and payments with a party in the Netherlands. Two providers are established in the United States — Cloudflare and Resend — and for those the transfer rests on the European Commission’s <strong>Standard Contractual Clauses</strong> (Art. 46(2)(c) GDPR), which we have in place with both. Cloudflare stores our files and order data in the EU.</p>
+      <p>Where the generation platform passes material on to a model provider outside the EEA, that platform concludes Standard Contractual Clauses of its own. The full chain, with each party’s country and basis, is in §8 of the <a href="/data-processing-agreement">Data Processing Agreement</a> — one list, kept current, because that is what the GDPR asks of us when we change providers.</p>
 
       <h2>9. Security</h2>
       <p>We use appropriate technical and organisational measures to protect your data, including access controls, encrypted connections and limiting who can access your files. No system is completely secure, but we work to keep your data safe and to respond quickly if anything goes wrong.</p>
@@ -164,7 +164,7 @@ import Layout from '../layouts/Layout.astro';
       <ul>
         <li><strong>It cannot be guessed.</strong> The address carries 256 bits of randomness from a cryptographic random number generator. It is not a sequence, not your order number, and nothing derived from your details, so there is no next one to count up to.</li>
         <li><strong>We do not store it.</strong> Our database holds only a one-way SHA-256 fingerprint of the address, never the address itself. It cannot be read back out of our systems — not by us, and not by anyone who obtained a copy of the database.</li>
-        <li><strong>It stays out of other people's records.</strong> Pages at that address ask search engines not to index, follow or archive them, send no referrer to any site you click through to, and are not stored by shared caches.</li>
+        <li><strong>It stays out of other people’s records.</strong> Pages at that address ask search engines not to index, follow or archive them, send no referrer to any site you click through to, and are not stored by shared caches.</li>
         <li><strong>It cannot be attacked by volume.</strong> We rate-limit requests to it, so guessing at scale fails before it starts.</li>
         <li><strong>It ends, and it can be replaced.</strong> The address stops working 90 days after your order closes (see §6). If it ever goes somewhere it should not have, tell us: we retire that address and issue you a new one, and the old one stops working immediately.</li>
       </ul>
@@ -179,7 +179,7 @@ import Layout from '../layouts/Layout.astro';
     <div class="container">
       <div class="cta-band">
         <h2 class="display" style="font-size:var(--t-page-h2)">Questions about your data?</h2>
-        <p class="lead" style="margin:1.2rem auto 0;text-align:center">We're happy to explain anything in this policy. Reach out and we'll get back to you.</p>
+        <p class="lead" style="margin:1.2rem auto 0;text-align:center">We’re happy to explain anything in this policy. Reach out and we’ll get back to you.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
           <a href="/contact" class="btn btn-primary btn-lg">Contact us</a>
           <a href={waHref("Hi VISUAILS, I have a question about privacy.")} class="btn btn-wa" target="_blank" rel="noopener">

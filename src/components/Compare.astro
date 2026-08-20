@@ -50,7 +50,7 @@ const {
 } = Astro.props;
 // When before/after have different aspect ratios (e.g. a 3:4 raw phone photo
 // vs a 1:1 finished shot in a square frame), object-position lets the caller
-// re-centre the crop so the product isn't clipped at an edge.
+// re-centre the crop so the product isn’t clipped at an edge.
 const posStyle = objectPosition ? `object-position:${objectPosition}` : undefined;
 
 // Intrinsic pixel size of every photo any caller hands this component, read
@@ -60,8 +60,8 @@ const posStyle = objectPosition ? `object-position:${objectPosition}` : undefine
 // before the bytes land (§12: LCP under 2.5s on 4G, no shift).
 //
 // Deliberately a hard lookup, not a lookup-with-fallback: pass a photo that
-// isn't listed and the build stops, which is the only way a new call site
-// can't quietly reintroduce a width-less <img>. Add the entry, don't soften
+// isn’t listed and the build stops, which is the only way a new call site
+// can’t quietly reintroduce a width-less <img>. Add the entry, don’t soften
 // the throw.
 const INTRINSIC: Record<string, [number, number]> = {
   '/img/banners-13.webp': [2400, 1792],

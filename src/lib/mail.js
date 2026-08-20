@@ -22,7 +22,7 @@
  * `attachments` is omitted from the payload entirely when there are none,
  * rather than sent as []. Every message this project has ever sent through
  * this function was unattached until the order-notification path grew
- * uploads, and an empty array is a new key on every message that doesn't
+ * uploads, and an empty array is a new key on every message that doesn’t
  * carry one — a wire-format difference that buys nothing.
  */
 export async function sendMail(env, { to, subject, html, text, attachments }) {

@@ -35,7 +35,7 @@
 // listed at the top of that band with what became of each line.
 import {
   AMOUNT, euro, TEST_SAMPLE,
-  BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim,
+  BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim, turnaroundShort, reviewClaimShort, plans,
   LADDER, ladderRate, ladderFloor, quote, vatLabel, vatNote,
   WINDOW_THRESHOLD, PLAN_AMOUNT, PLAN_PRODUCTS,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
@@ -265,7 +265,17 @@ const COPY = {
     // only figure above the fold, and a visitor who came to find out what it
     // costs should not have to scroll five bands to learn the studio is not an
     // agency that quotes on request.
-    heroLede: `One folder of product photos becomes a whole collection — catalog, lifestyle and video in a single house style. Priced per product, from ${euro(ladderRate('complete', 1), 'en')} down to ${euro(FLOOR_RATE_EN, 'en')} as the count rises.`,
+    //
+    // 20 AUGUSTUS: DE ZIN ERVOOR IS WEG. Er stond eerst "One folder of product
+    // photos becomes a whole collection — catalog, lifestyle and video in a
+    // single house style." Lucas: *"Verwijder nou eens de onnodige tekst,
+    // hierdoor is het beginscherm zo druk."* Terecht, want die zin zei precies
+    // wat de regel onder de kop al zegt ("One order, every image in the same
+    // house style") en wat de vier kaartjes eronder tonen. Wat hij als ENIGE
+    // deed was het getal inleiden, en een getal heeft geen inleiding nodig.
+    // Wat overblijft is de prijs, want dat is het enige cijfer boven de vouw en
+    // de reden dat deze regel er staat.
+    heroLede: `Per product — from ${euro(ladderRate('complete', 1), 'en')}, down to ${euro(FLOOR_RATE_EN, 'en')} as the count rises.`,
     ctaStart: 'Start an order',
     // KORT, want dit is een knop en geen zin. De hele belofte stond hier in het
     // label en dat maakte de pil breder dan de primaire knop ernaast — een
@@ -276,7 +286,15 @@ const COPY = {
     // Begint met het woord "Test sample", niet met "One product photo": deze
     // regel staat onder BEIDE knoppen en moet zonder twijfel bij de tweede
     // horen. Zonder dat woord lijkt het of een bestelling ook € 1 kost.
-    ctaSampleNote: `Test sample: send the same photos as a normal order — front and back at least — and get back ${sample.deliverable}. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    //
+    // KORTER GEMAAKT OP 20 AUGUSTUS, want dit was met vier regels het grootste
+    // stuk hoogte in de hero dat geen kop, knop of beeld is. Eruit: "send the
+    // same photos as a normal order — front and back at least". Dat is een
+    // INSTRUCTIE en geen aanbod; wie op de knop drukt komt op /test-sample waar
+    // hij voluit staat, en niemand hoeft te weten hoe hij foto’s moet aanleveren
+    // vóórdat hij besloten heeft of hij het wil. Wat blijft staan is wat je
+    // erin stopt, wat je terugkrijgt, en dat het één keer per bedrijf kan.
+    ctaSampleNote: `Test sample: your own photos in, ${sample.deliverable} back. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
     // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
     // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
     // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
@@ -298,10 +316,21 @@ const COPY = {
     // while six other NL pages said "voordat je betaalt". Two promises, two
     // wordings, one studio. The licence line is the one string here that has
     // no helper, and it is quoted from the promise band verbatim.
+    // ── KORT, WANT ZE STAAN NU NAAST ELKAAR ───────────────────────────────
+    // Lucas, 20 augustus: *"mogen de 3 vinkjes achter elkaar met genoeg ruimte
+    // ertussen zodat de homepage niet zo lang voelt."* Onder elkaar was deze
+    // lijst 76px hoog; naast elkaar met de VOLLE zinnen liep hij op 976px en
+    // dus over de foto heen, in een kolom van 640. Dus de korte vormen — zie
+    // turnaroundShort() en reviewClaimShort() in pricing.js, waar ze pal naast
+    // de lange staan zodat ze niet uit elkaar kunnen lopen.
+    //
+    // De licentieregel heeft geen helper en wordt hier ingekort: de opsomming
+    // "shop, marketplaces, ads and feeds" is een voorbeeldenrij en geen extra
+    // toezegging, en staat voluit in de beloftenband verderop op deze pagina.
     proof: [
-      turnaround('attended', 'en'),
-      reviewClaim('attended', 'en'),
-      'Yours to use — shop, marketplaces, ads and feeds',
+      turnaroundShort('attended', 'en'),
+      reviewClaimShort('attended', 'en'),
+      'Yours to use, anywhere',
     ],
 
     /*
@@ -313,7 +342,7 @@ const COPY = {
      * op de homepage net als bij adobe die timer diaslide toe te voegen met wat
      * visuails allemaal maakt."*
      *
-     * Adobe's hero is vijf dia's die vanzelf doorlopen, met onderaan vijf
+     * Adobe’s hero is vijf dia's die vanzelf doorlopen, met onderaan vijf
      * kaartjes die de dia kiezen en een pauzeknop ernaast. Hier hetzelfde, met
      * de inhoud die deze studio heeft: de belofte, en dan de vier dingen die we
      * maken.
@@ -334,6 +363,9 @@ const COPY = {
      */
     heroSlideLabel: 'What we make',
     heroCarouselName: 'What VISUAILS makes',
+    // De naam voor het pijltje rechts in elk kaartje: het kaartje wisselt de dia,
+    // het pijltje gaat naar de pagina.
+    heroGoTo: 'Go to',
     heroPause: 'Pause the slideshow',
     heroPlay: 'Play the slideshow',
     /*
@@ -403,6 +435,7 @@ const COPY = {
     // een tarief dat onder de prijs per product ligt voor dezelfde output.
     subH: ['Or run it', 'every month.'],
     subLede: `A plan is the same work on a standing arrangement: a fixed number of products every month, delivered in a week the calendar keeps free for you.`,
+    subEyebrow: 'Subscription',
     subFrom: 'from',
     subUnit: `a month · ${PLAN_FROM_PRODUCTS} products`,
     subFacts: [
@@ -664,7 +697,7 @@ const COPY = {
     // NO FIGURES IN THIS BAND ANY MORE. The setup price and the credit are in
     // the price band, said once; repeating them here was the fourth and fifth
     // time the page priced the same product. What is left is the argument the
-    // price cannot make — that the face is yours and nobody else's.
+    // price cannot make — that the face is yours and nobody else’s.
     bmH: ['One face,', 'and it is only yours.'],
     bmLede: 'The roster below is who you can pick from today, and any of them can appear in your order. Your Brand Model is the other route: a face made for your brand alone, used by nobody else.',
     bmNote: 'A returning face is the cheapest continuity a brand can buy — it is why catalogues have used the same model for years.',
@@ -840,20 +873,22 @@ const COPY = {
   nl: {
     heroAlt: 'Een VISUAILS campagnebeeld — een model in de duinen bij schemering',
     h1: TAGLINE.nl.lines,
-    heroLede: `Eén map met productfoto’s wordt een hele collectie — catalog, lifestyle en video in één huisstijl. Je betaalt per product: van ${euro(ladderRate('complete', 1), 'nl')} omlaag naar ${euro(FLOOR_RATE_EN, 'nl')} naarmate je er meer bestelt.`,
+    heroLede: `Per product — van ${euro(ladderRate('complete', 1), 'nl')}, omlaag naar ${euro(FLOOR_RATE_EN, 'nl')} bij meer stuks.`,
     ctaStart: 'Start een bestelling',
     ctaSample: `Proefvisual aanvragen · ${sample.price}`,
-    ctaSampleNote: `Proefvisual: stuur dezelfde foto’s als bij een gewone bestelling — voorkant en achterkant in elk geval — en je krijgt ${sample.deliverable} terug. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
-    // Zie de EN-tabel voor waarom dit geen plint meer is.
+    ctaSampleNote: `Proefvisual: je eigen foto’s erin, ${sample.deliverable} terug. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    // Zie de EN-tabel voor waarom dit geen plint meer is, en waarom deze drie
+    // sinds 20 augustus de korte vorm gebruiken.
     proof: [
-      turnaround('attended', 'nl'),
-      reviewClaim('attended', 'nl'),
-      'De beelden zijn van jou — webshop, marktplaatsen, ads en feeds',
+      turnaroundShort('attended', 'nl'),
+      reviewClaimShort('attended', 'nl'),
+      'De beelden zijn van jou',
     ],
 
     /* Zie de noot bij de Engelse tabel. */
     heroSlideLabel: 'Wat we maken',
     heroCarouselName: 'Wat VISUAILS maakt',
+    heroGoTo: 'Ga naar',
     heroPause: 'Pauzeer de diavoorstelling',
     heroPlay: 'Speel de diavoorstelling af',
     // Zie de noot bij de Engelse heroSlides.
@@ -883,6 +918,7 @@ const COPY = {
     addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')}, verrekend over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
     subH: ['Of doe het', 'elke maand.'],
     subLede: 'Een abonnement is hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, geleverd in een week die de planning voor je vrijhoudt.',
+    subEyebrow: 'Abonnement',
     subFrom: 'vanaf',
     subUnit: `per maand · ${PLAN_FROM_PRODUCTS} producten`,
     subFacts: [
@@ -1122,7 +1158,7 @@ const nl = lang === 'nl';
     Flair, ManyPixels, Picjam, DesignJoy). NOT ONE puts price at position 2 —
     the most price-forward of them, DesignJoy, puts it at 10 of 14. And in eight
     of the ten, position 3 is the proof slot: logos, cases, reviews. This studio
-    has none of those, so the before/after — a real client's phone photo beside
+    has none of those, so the before/after — a real client’s phone photo beside
     what was delivered — takes that slot. It is also what DESIGN.md's first
     principle has always demanded: show the work before the claim.
 
@@ -1239,21 +1275,48 @@ const nl = lang === 'nl';
       is voordat de carrousel begint te lopen. */}
   <div class="container hv-hero-foot">
     <div class="hv-slide-cards" data-hero-tabs role="tablist" aria-label={c.heroCarouselName}>
+      {/* ── TWEE HANDELINGEN IN ÉÉN KAARTJE ────────────────────────────────
+          Lucas: *"Deze knoppen zijn niet om naar de desbetreffende pagina te
+          gaan, dat kan alleen met het kleine pijltje, maar als je gewoon op de
+          tile klikt zie je alleen de foto veranderen met de desbetreffende info
+          die erbij hoort."*
+
+          Dat was al half zo: het kaartje wisselde de dia. Maar het pijltje was
+          een span binnen datzelfde kaartje en deed dus precies hetzelfde — een
+          chevron die naar een pagina wijst en er niet heen gaat. Nu zijn het
+          twee links naast elkaar in één doos: de grote wisselt de dia, het
+          pijltje gaat naar de pagina.
+
+          ALLEBEI EEN LINK EN GEEN KNOP, om dezelfde reden als de oude noot
+          hierboven geeft: zonder script moet het kaartje nog steeds ergens heen
+          gaan, en een knop die dan niets doet is een knop die liegt. Het script
+          hangt role=tab en een preventDefault aan de grote link; het pijltje
+          raakt het niet aan en navigeert gewoon.
+
+          DEZE NOOT STAAT BUITEN DE .map(), en dat is geen opmaak maar syntaxis.
+          Een pijlfunctie die `( {...} <div/> )` teruggeeft, geeft twee dingen
+          terug en dat is een fout — de bouw viel om met "Expected )" op een
+          regel honderd hoger, waar niets aan de hand was. Dezelfde val als de
+          Astro-comment tussen de props van <Compare> op 19 augustus. */}
       {c.heroSlides.map((sl, i) => (
-        <a class="hv-slide-card"
-           id={`hv-tab-${i}`}
-           href={lp(sl.href || '/start')}
-           data-hero-tab={String(i)}
-           data-note={sl.note || ''}
-           data-note-cta={sl.cta || ''}
-           aria-controls="hv-slide-0">
-          <svg class="hv-slide-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SLIDE_ICON[i]} /></svg>
-          <span class="hv-slide-card-row">
+        <div class="hv-slide-card">
+          <a class="hv-slide-card-main"
+             id={`hv-tab-${i}`}
+             href={lp(sl.href || '/start')}
+             data-hero-tab={String(i)}
+             data-note={sl.note || ''}
+             data-note-cta={sl.cta || ''}
+             aria-controls="hv-slide-0">
+            <svg class="hv-slide-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SLIDE_ICON[i]} /></svg>
             <span class="hv-slide-card-t">{sl.card}</span>
-            <span class="hv-slide-card-x" aria-hidden="true">›</span>
-          </span>
+          </a>
+          <a class="hv-slide-card-go"
+             href={lp(sl.href || '/start')}
+             aria-label={`${c.heroGoTo} ${sl.card}`}>
+            <span aria-hidden="true">›</span>
+          </a>
           <span class="hv-slide-card-bar" aria-hidden="true"></span>
-        </a>
+        </div>
       ))}
     </div>
     <button class="hv-hero-toggle" type="button" data-hero-toggle hidden
@@ -1286,7 +1349,7 @@ const nl = lang === 'nl';
     </div>
     <div class="hv-ba">
       {/* ── 3/4 EN NIET 4/5 — 20 augustus 2026 ──────────────────────────────
-          Lucas: *"sommige foto's zijn veel te groot."* Gemeten op 1920 was dit
+          Lucas: *"sommige foto’s zijn veel te groot."* Gemeten op 1920 was dit
           vlak 685 bij 857 pixels, terwijl de tekstkolom ernaast op y=1040
           ophield en het beeld doorliep tot 1320. Bijna 300 pixels beeld naast
           niets. Het blijft het overtuigendste beeld op de pagina — een echte
@@ -1403,7 +1466,7 @@ const nl = lang === 'nl';
     {/* ── DE DIENSTENRIJ — HERBOUWD 20 AUGUSTUS 2026 ─────────────────────────
         Lucas: *"de services meer als een soort kaarten die net zoals op de adobe
         website naast elkaar van links naar rechts gaan en een floaty effect
-        hebben"* — en, over wat hier stond: *"sommige foto's zijn veel te groot"*
+        hebben"* — en, over wat hier stond: *"sommige foto’s zijn veel te groot"*
         en *"de homepagina is nu een chaos"*.
 
         Hij had gelijk, en het was te meten. Wat hier stond was een raster van
@@ -1672,12 +1735,39 @@ const nl = lang === 'nl';
     TWEE KNOPPEN EN DE VOLGORDE IS EXPRES. "Sluit een abonnement af" gaat naar
     /start/plan — de echte kiezer, die sinds deze week bestaat — en staat
     voorop, want dat is de handeling. "Vergelijk de abonnementen" gaat naar
-    /pricing#plans, waar de drie plannen naast elkaar staan met alles erbij.
+    /plans, de eigen abonnementenpagina sinds 20 augustus 2026, waar de drie
+    plannen naast elkaar staan met alles erbij.
 
     HET GETAL IS AFGELEID. Zie PLAN_CHEAPEST hierboven: bedrag én aantal komen
     uit hetzelfde plan, zodat "vanaf € 390 · 5 producten" niet twee losse
     minima kan worden die bij elkaar niet bestaan. */}
 <section class="band-tight hv-sub-band">
+  {/* ── WAAR HET BLOK OP LIGT — 20 augustus 2026 ──────────────────────────────
+      Lucas, met de foto erbij: *"Misschien is deze foto wel interessant als
+      achtergrond."*
+
+      Het is een lichtbundel die over een donker vlak strijkt, in precies de tint
+      van het accent. Dat maakt hem hier bruikbaar op een manier die een gewone
+      foto niet zou zijn: hij is GEEN tweede grond maar de reden dat het paneel
+      zweeft. Een blok met een slagschaduw dat nergens op ligt, is een blok in het
+      niets; met deze bundel eronder ligt het ergens op.
+
+      WAAROM HIJ DE HUISREGEL NIET BREEKT. ONE GROUND verbiedt een tweede
+      PAGINAKLEUR, en noemt in dezelfde adem foto’s als het materiaal waar deze
+      site van is. De donkerlaag eroverheen brengt hem terug tot bijna de
+      paginagrond — gemeten blijft er van het beeld vooral de bundel over, en dat
+      is het enige wat hij hoeft te doen.
+
+      `aria-hidden` en een lege alt: dit is sfeer en geen informatie. `lazy`,
+      want deze band staat ver onder de vouw. */}
+  <div class="hv-sub-bg" aria-hidden="true">
+    <img
+      src="/img/sub-light-2400.webp"
+      srcset="/img/sub-light-1400.webp 1400w, /img/sub-light-2400.webp 2400w"
+      sizes="100vw"
+      alt="" width="2400" height="1200" loading="lazy" decoding="async"
+    />
+  </div>
   <div class="container">
     {/* ── ÉÉN ZWEVEND BLOK OP HET ACCENT — 20 augustus 2026 ──────────────────
         Lucas: *"dit moet het logo worden voor bij het abonnement blok dat in de
@@ -1709,12 +1799,21 @@ const nl = lang === 'nl';
         DE SPOTLIGHTS VAN GISTEREN ZIJN WEG. Die waren een lamp op een donkere
         grond; op een limoen paneel is een accentlamp onzichtbaar en een witte
         lamp vuil. Wat het paneel nu doet oplichten is het paneel zelf. */}
-    <div class="hv-sub-panel">
-      {/* Het merkteken, opgegaan in de achtergrond. Geen tweede bestand: dit is
-          hetzelfde `#markglyph` uit de sprite, alleen als LIJN getekend in
-          plaats van als vlak — `fill: none` plus een streek. Precies de tekening
-          die Lucas stuurde, en er komt geen byte extra voor over de lijn. */}
-      <svg class="hv-sub-mark" viewBox="0 0 702 813.25" aria-hidden="true" focusable="false"><use href="#markglyph" /></svg>
+    <div class="lime-panel">
+      {/* HET MERKTEKEN IS HIER WEG. Het stond als tegel rechtsonder, afgesneden
+          en scheef, precies zoals gevraagd — en toen was het er te veel aan:
+          *"Verwijder dat logo maar, het is overkill."* Het paneel draagt nu al
+          een bovenkop, een prijsplaat, drie abonnementen en een beeldbank; een
+          merkteken erbij is de vierde stem in een blok dat er drie heeft.
+
+          Het bestand blijft in public/img/mark-contour-lime.png staan: hetzelfde
+          middel doet elders op deze pagina wél zijn werk (zie .mark-depth in
+          global.css) en het is de tekening die Lucas zelf aanleverde. */}
+
+      {/* Het licht en de korrel, als echte laag en niet als pseudo-element:
+          een ::before valt vóór alle kinderen en zou dus ónder het merkteken
+          liggen. Zie de noot hierboven. */}
+      <div class="lime-panel-light" aria-hidden="true"></div>
 
       {/* TWEE ELEMENTEN, ELK ÉÉN TAAK, EN DAT IS GEEN OMWEG. Eerste poging was
           `.hv-sub-panel.on-bright` met `background: var(--accent)` erop, en dat
@@ -1722,10 +1821,19 @@ const nl = lang === 'nl';
           op het element zelf, dus las de achtergrond zijn eigen omkering. Een
           custom property wordt opgelost waar hij gebruikt wordt, niet waar hij
           gezet is. Het paneel schildert nu, de binnenkant draait de inkt. */}
-      <div class="hv-sub-panel-in on-bright">
+      <div class="lime-panel-in on-bright">
 
     <div class="hv-sub">
       <div class="hv-sub-copy">
+        {/* DE BOVENKOP MAAKT ER EEN SECTIE VAN. Lucas: *"mag echt een titel kop
+            en dergelijke krijgen."* Het blok zweeft los op de pagina en begon
+            met "Or run it every month." — een zin, geen titel, en daardoor las
+            het als een alinea die toevallig groot stond. Eén woord erboven zegt
+            waar je bent voordat je de zin leest. Dezelfde vorm als .eyebrow-page
+            elders op de site; hier los uitgeschreven omdat de inkt op dit paneel
+            omgedraaid is en de bestaande klasse zijn stip in het accent zet, dat
+            hier de grond IS. */}
+        <p class="hv-sub-eyebrow">{c.subEyebrow}</p>
         <h2>{c.subH[0]} <em class="hv-accent">{c.subH[1]}</em></h2>
         <p class="lede">{c.subLede}</p>
         <ul class="hv-sub-facts">
@@ -1740,30 +1848,31 @@ const nl = lang === 'nl';
       {/* Het bedrag is een <p> en geen kop: het is een getal en geen titel, en
           een derde <h2> in deze band zou de koppenboom van de pagina laten
           zeggen dat er hier drie onderwerpen staan. */}
-      <div class="hv-sub-plate">
-        <p class="hv-sub-from">{c.subFrom}</p>
-        <p class="hv-sub-fig">{euro(PLAN_FROM, lang)}</p>
-        <p class="hv-sub-unit">{c.subUnit}</p>
-        <p class="hv-sub-vat">{c.subVat}</p>
-        <div class="hv-sub-cta">
-          <a class="btn btn-primary" href={lp('/start/plan')}>{c.subCta}</a>
-          <a class="btn btn-ghost" href={`${lp('/pricing')}#plans`}>{c.subCta2}</a>
+      <div class="hv-sub-right">
+        <div class="lime-plate">
+          <p class="hv-sub-from">{c.subFrom}</p>
+          <p class="hv-sub-fig">{euro(PLAN_FROM, lang)}</p>
+          <p class="hv-sub-unit">{c.subUnit}</p>
+          <p class="hv-sub-vat">{c.subVat}</p>
+          <div class="hv-sub-cta">
+            <a class="btn btn-primary" href={lp('/start/plan')}>{c.subCta}</a>
+            <a class="btn btn-ghost" href={lp('/plans')}>{c.subCta2}</a>
+          </div>
         </div>
+
       </div>
     </div>
 
-    {/* ── DE BEELDBANK, MET BEELD ─────────────────────────────────────────
-        Lucas: *"subscription pagina mag mooier gemaakt worden door wellicht
-        foto's toe te voegen."* De band verkocht tot nu toe een korting met
-        drie vinkjes en een bedrag — geen enkel beeld, in een sectie die over
-        BEELD gaat. Dat is de reden dat hij niet overtuigde.
-
-        Het vlak links laat zien wat een maand oplevert; de twee kaarten rechts
-        scheiden wat er nu al bij zit van wat met Editions komt. */}
     {/* ── WAT EEN CREDIT IS ──────────────────────────────────────────────
-        Zie de noot bij creditH in de copy. Dit staat vóór de beeldbank en
-        direct onder de plaat, want het is een correctie op het getal dat er in
-        de plaat staat — en een correctie hoort naast wat hij corrigeert. */}
+        Over de VOLLE breedte en niet in de rechterkolom onder de plaat. Dat is
+        geprobeerd — het leek logisch, want dit corrigeert het bedrag erboven —
+        en het maakte het paneel 50px HOGER: de rechterkolom werd langer dan de
+        linker en er kwam een leeg vlak onder de vinkjes voor terug. Een correctie
+        die de volle breedte pakt, leest bovendien als een regel die voor het hele
+        aanbod geldt, en dat is precies wat hij is.
+
+        De tekst loopt tot 80 tekens en niet tot 74: op paneelbreedte scheelt dat
+        een regel, en 80 is nog altijd binnen wat comfortabel leest. */}
     <div class="hv-credit">
       <p class="hv-credit-h">{c.creditH}</p>
       <p class="hv-credit-b">{c.creditBody}</p>
@@ -1772,6 +1881,58 @@ const nl = lang === 'nl';
         <a class="hv-credit-a" href={waHref(c.creditWa)} target="_blank" rel="noopener">{c.creditAskCta}<span class="hv-nb">&#160;<svg viewBox="0 0 24 24" class="i" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
       </p>
     </div>
+
+    {/* ── DE BEELDBANK, MET BEELD ─────────────────────────────────────────
+        Lucas: *"subscription pagina mag mooier gemaakt worden door wellicht
+        foto’s toe te voegen."* De band verkocht tot nu toe een korting met
+        drie vinkjes en een bedrag — geen enkel beeld, in een sectie die over
+        BEELD gaat. Dat is de reden dat hij niet overtuigde.
+
+        Het vlak links laat zien wat een maand oplevert; de twee kaarten rechts
+        scheiden wat er nu al bij zit van wat met Editions komt. */}
+    {/* ── DE DRIE ABONNEMENTEN, KORT ────────────────────────────────────────
+        Lucas: *"Misschien gelijk een vergelijking hier plaatsen van de
+        verschillende abonnementen en wat je krijgt."*
+
+        Hier stond bewust GEEN plannenraster — de oude noot bij subH zegt het met
+        zoveel woorden: één regel en één bedrag op deze pagina, de tabel op
+        /pricing. Die keuze klopte toen dit een band tussen andere banden was.
+        Nu is het een los blok dat het abonnement moet verkopen, en dan is "vanaf
+        € 390" zonder te laten zien wat de trappen zijn precies de vraag die
+        iemand naar de prijspagina stuurt in plaats van naar de knop.
+
+        WAT ER WEL EN NIET IN STAAT. Naam, bedrag, hoeveel producten, en het ENE
+        ding dat dit plan van het vorige onderscheidt. Niet de volle lijst met
+        inbegrepen dingen — die is voor elk plan grotendeels gelijk en zou dit
+        blok weer een tabel maken. De volle vergelijking blijft op /pricing, waar
+        de knop hierboven al heen wijst.
+
+        De gegevens komen uit plans() in pricing.js, dus er staat hier geen
+        tweede lijst met bedragen die uit de pas kan lopen. */}
+    <ul class="hv-plans">
+      {plans(lang).map((pl) => {
+        /* HET ONDERSCHEIDENDE PUNT, AFGELEID EN NIET GETYPT. `includes` eindigt
+           bij elk plan met dezelfde twee regels — de levertijd en de opzegtermijn
+           — en daarvóór staat wat dit plan extra heeft. Die twee eraf halen en
+           de laatste van de rest nemen geeft dus vanzelf het punt dat dit plan
+           van het vorige onderscheidt: voor Starter de set zelf, voor Studio de
+           videoclips, voor Brand het merkmodel.
+
+           Afgeleid en niet overgetypt, want een vierde plan of een extra regel
+           in plans() moet hier gewoon meekomen. */
+        const gedeeld = 2;
+        const eigen = pl.includes.slice(0, -gedeeld);
+        const bijzonder = eigen[eigen.length - 1] || pl.includes[0];
+        return (
+          <li class="hv-plan">
+            <p class="hv-plan-n">{pl.name}</p>
+            <p class="hv-plan-p">{pl.price}<span>{pl.unit}</span></p>
+            <p class="hv-plan-b">{pl.includes[0]}</p>
+            <p class="hv-plan-x">{bijzonder}</p>
+          </li>
+        );
+      })}
+    </ul>
 
     <div class="hv-stock">
       {/* ── IN EEN EIGEN DIV EN NIET MET EEN KLASSE ────────────────────────
@@ -1816,7 +1977,7 @@ const nl = lang === 'nl';
     hung off other sections' CTAs — it had no section of its own on the page,
     which for a studio with no reviews and no client logos was the wrong thing
     to leave implicit: it is the one offer that lets a buyer produce their OWN
-    proof, and their own is worth more than anybody else's.
+    proof, and their own is worth more than anybody else’s.
 
     Directly after the price table on purpose. The moment a reader has just
     absorbed a figure is the moment "see it on your own product first" is worth
@@ -1940,7 +2101,7 @@ const nl = lang === 'nl';
 
 {/* ── 9 · WHAT AN ORDER REPLACES — DELETED, and this note is what it left ───
     The band was a shoot day's cost (SHOOT_DAY, itemised) beside a 30-product
-    order's total, with a link to /compare underneath. 121 words, and every one
+    order’s total, with a link to /compare underneath. 121 words, and every one
     of them is on a page that argues it better: /compare is the whole
     side-by-side, and /pricing carries the same shoot-day anchor with the same
     caveat and the same itemisation. It was the third place on this page that
@@ -2256,44 +2417,59 @@ const nl = lang === 'nl';
           Twee zinnen, twee regels: de knip staat waar de punt staat. */}
       <h2 class="hv-promise-h"><span>{c.promiseH[0]}</span><em class="hv-accent">{c.promiseH[1]}</em></h2>
     </div>
-    {/* ── HET GEZICHT BIJ HET CITAAT — 20 augustus 2026 ──────────────────────
-        Lucas: *"No wall of reviews yet moet nog een foto van mij krijgen dus
-        mag ook wat opgemaakt worden en een placeholder krijgen."*
+    {/* ── HET GEZICHT BIJ HET CITAAT ─────────────────────────────────────────
+        Lucas: *"No wall of reviews yet moet nog een foto van mij krijgen"*, en
+        daarna: *"Bij review sectie wil ik mijn foto rechts plaatsen groot.
+        'Portrait of Lucas at work — not a studio portrait, but sharp and calm'
+        mag weg. Boodschap is duidelijk zonder alle extra tekst."*
 
-        Dit is het enige blok op de pagina waar een PERSOON iets belooft, en tot
-        nu toe stond daar alleen een naam onder een citaat. Een merk zonder
-        recensies dat zegt "vertrouw mij" en er geen gezicht bij zet, vraagt
-        tweemaal om vertrouwen en geeft niets terug.
+        Dit is het enige blok op de pagina waar een PERSOON iets belooft. Het
+        portret stond eerst klein IN de citaatkaart met de opdracht eronder —
+        drie regels briefing aan mezelf, zichtbaar voor iedereen, naast een foto
+        van 13rem. Nu is het een eigen kolom rechts, op ware grootte, en het
+        bijschrift is uit: zie de `caption`-prop in Placeholder.astro, waar de
+        opdracht als data-attribuut blijft staan zodat `npm run placeholders`
+        hem nog steeds telt.
 
-        De foto staat vóór het citaat en niet erachter: je ziet wie het zegt en
-        leest daarna wat hij zegt. Portret (4/5), zodat het een portret is en
-        geen bannertje. */}
+        DE VOLGORDE IN DE BRON IS TEKST-DAN-BEELD en op het scherm andersom.
+        Dat is met opzet: een schermlezer krijgt eerst de belofte en dan pas de
+        mededeling dat er een foto komt, en op een telefoon valt het portret
+        onder het citaat in plaats van erboven — waar het een blokkade zou zijn
+        tussen de kop en wat er beloofd wordt. */}
     <div class="hv-promise">
-      <figure class="hv-quotecard">
-        <div class="hv-quote-shot">
+      <div class="hv-promise-said">
+        <figure class="hv-quotecard">
+          <blockquote>{c.promiseQuote}</blockquote>
+          <figcaption><strong>Lucas</strong> · {c.promiseSign}</figcaption>
+        </figure>
+        <ul class="hv-checks">
+          {c.promiseChecks.map(([t, b]) => (
+            <li>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+              <span><strong>{t}</strong> — {b}</span>
+            </li>
+          ))}
+        </ul>
+        {/* De vertrouwensregel stond onder de hele sectie, over de volle
+            breedte. Hij hoort bij wat er hierboven beloofd wordt, en in deze
+            kolom doet hij twee dingen tegelijk: hij staat waar hij hoort, en hij
+            geeft de tekstkolom de hoogte die het portret ernaast verdient. */}
+        <ul class="hv-trust">{c.trust.map((t) => (<li>{t}</li>))}</ul>
+      </div>
+
+      <div class="hv-promise-face">
         <Placeholder
           lang={lang}
           ratio="4 / 5"
+          caption={false}
           subject={nl ? 'Portret van Lucas in de werkomgeving — geen studioportret, wel scherp en rustig'
                       : 'Portrait of Lucas at work — not a studio portrait, but sharp and calm'}
           message={nl
             ? 'Recht in de lens, iets van de werkplek erbij. Geen zakelijk kopfoto-portret — dan doet het beeld het tegenovergestelde van wat het citaat zegt.'
             : 'Straight into the lens, some of the workspace in frame. Not a corporate headshot — that does the opposite of what the quote says.'}
         />
-        </div>
-        <blockquote>{c.promiseQuote}</blockquote>
-        <figcaption><strong>Lucas</strong> · {c.promiseSign}</figcaption>
-      </figure>
-      <ul class="hv-checks">
-        {c.promiseChecks.map(([t, b]) => (
-          <li>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-            <span><strong>{t}</strong> — {b}</span>
-          </li>
-        ))}
-      </ul>
+      </div>
     </div>
-    <ul class="hv-trust">{c.trust.map((t) => (<li>{t}</li>))}</ul>
   </div>
 </section>
 
@@ -2722,12 +2898,12 @@ const nl = lang === 'nl';
      verdwijnt de beschrijving ook voor wie hem juist nodig heeft. Met de
      klassieke afkniptruc blijft de tekst in de toegankelijkheidsboom en hoort
      een schermlezer nog steeds "Proefvisual aanvragen · € 1 — stuur dezelfde
-     foto's als bij een gewone bestelling…". */
+     foto’s als bij een gewone bestelling…". */
   @media (max-width: 30rem) {
     .hv-hero.is-live .hv-cta-note { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   }
   /* Het raster met vijf overlappende tekstblokken is weg — er is er nog één.
-     `.hv-hero-inner` blijft een grid omdat de foto's er ook in liggen. */
+     `.hv-hero-inner` blijft een grid omdat de foto’s er ook in liggen. */
   .hv-hero-inner { display: grid; }
   .hv-hero-inner > .hv-hero-copy { grid-area: 1 / 1; align-self: end; }
 
@@ -2783,39 +2959,58 @@ const nl = lang === 'nl';
     flex: 1; display: grid; gap: clamp(.5rem, 1vw, .85rem);
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
-  /* Icoon boven, label en chevron eronder — de indeling van Adobe's `.rm-card`,
+  /* Icoon boven, label en chevron eronder — de indeling van Adobe’s `.rm-card`,
      die daardoor op 94px uitkomt. Een rij van icoon-label-chevron naast elkaar
      was de eerste versie en bleef op ~50px steken: dat leest als een tab, niet
      als een kaart. */
+  /* De doos is sinds 20 augustus geen link meer maar een houder voor er twee:
+     de grote wisselt de dia, het pijltje rechts gaat naar de pagina. Zie de noot
+     bij de markup. De opmaak — rand, vulling, hoogte, de balk onderin — blijft
+     bij de doos, zodat het één kaartje blijft om naar te kijken. */
   .hv-slide-card {
     position: relative; overflow: hidden;
-    display: grid; gap: clamp(.9rem, 1.8vw, 1.4rem);
-    align-content: space-between;
+    display: flex; align-items: stretch;
     min-height: clamp(5rem, 6vw, 5.9rem);
-    padding: clamp(.7rem, 1.4vw, .9rem) clamp(.8rem, 1.5vw, 1.1rem);
-    padding-bottom: calc(clamp(.7rem, 1.4vw, .9rem) + 3px);
     border: 1px solid rgb(255 255 255 / .16);
     border-radius: var(--r-md);
     background: rgb(0 0 0 / .42);
     color: var(--paper-on-dark);
     font-size: .82rem; font-weight: 700; line-height: 1.35;
-    text-decoration: none;
     transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
   }
+  .hv-slide-card-main {
+    flex: 1 1 auto; min-width: 0;
+    display: grid; gap: clamp(.9rem, 1.8vw, 1.4rem);
+    align-content: space-between;
+    padding: clamp(.7rem, 1.4vw, .9rem) clamp(.4rem, .8vw, .6rem) calc(clamp(.7rem, 1.4vw, .9rem) + 3px) clamp(.8rem, 1.5vw, 1.1rem);
+    color: inherit; text-decoration: none;
+  }
+  /* Het pijltje is een eigen doelwit en dus een eigen raakvlak: 44px breed en
+     de volle hoogte van het kaartje, wat 2.5.8 als ondergrens noemt. Als span
+     binnen dezelfde link was hij precies zo groot als de chevron zelf. */
+  .hv-slide-card-go {
+    flex: 0 0 auto; width: 44px;
+    display: grid; place-items: center;
+    color: var(--paper-soft-on-dark); text-decoration: none;
+    font-size: 1rem; line-height: 1;
+    transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .hv-slide-card-go:hover, .hv-slide-card-go:focus-visible { color: var(--accent); background: rgb(255 255 255 / .07); }
   @supports (backdrop-filter: blur(6px)) {
     .hv-slide-card { background: rgb(0 0 0 / .28); backdrop-filter: blur(8px); }
   }
-  .hv-slide-card:hover { background: rgb(0 0 0 / .62); border-color: rgb(255 255 255 / .34); }
-  .hv-slide-card[aria-selected='true'] { border-color: var(--accent); background: rgb(0 0 0 / .66); }
+  .hv-slide-card:has(.hv-slide-card-main:hover), .hv-slide-card:has(.hv-slide-card-main:focus-visible) { background: rgb(0 0 0 / .62); border-color: rgb(255 255 255 / .34); }
+  .hv-slide-card:has([aria-selected='true']) { border-color: var(--accent); background: rgb(0 0 0 / .66); }
   .hv-slide-card-i {
     width: 22px; height: 22px; flex: none;
     fill: none; stroke: currentColor; stroke-width: 2.6;
     stroke-linecap: round; stroke-linejoin: round;
     color: var(--accent);
   }
-  .hv-slide-card-row { display: flex; align-items: flex-end; gap: .5rem; }
-  .hv-slide-card-t { flex: 1; min-width: 0; }
-  .hv-slide-card-x { opacity: .6; font-size: 1rem; line-height: 1.1; }
+  /* `.hv-slide-card-row` en `.hv-slide-card-x` zijn weg met het splitsen van
+     het kaartje: de rij bevatte de titel én de chevron, en de chevron is nu een
+     eigen link naast de titel (.hv-slide-card-go hierboven). */
+  .hv-slide-card-t { min-width: 0; }
 
   /* De voortgangsbalk. Hij zit ONDERIN de kaart en niet eronder, zodat de rij
      zijn hoogte houdt als hij verschijnt — vandaar de extra 3px padding-bottom
@@ -2972,10 +3167,24 @@ const nl = lang === 'nl';
     font-size: .8125rem; line-height: 1.5; text-wrap: pretty;
     color: var(--paper-soft-on-dark); }
 
+  /* ── DRIE OP ÉÉN REGEL ────────────────────────────────────────────────────
+     Lucas, 20 augustus: *"mogen de 3 vinkjes achter elkaar met genoeg ruimte
+     ertussen zodat de homepage niet zo lang voelt."* Onder elkaar was dit blok
+     76px; naast elkaar is het 20 en verdwijnen er twee regels uit het eerste
+     scherm.
+
+     `flex-wrap: wrap` en niet `nowrap`: de Nederlandse regels zijn langer dan
+     de Engelse en een taal die net niet past hoort af te breken, niet uit de
+     kolom te lopen. Onder de 48rem valt hij vanzelf terug op één per regel
+     omdat er dan niets meer naast elkaar past.
+
+     De ruimte tussen is 1.6rem en de ruimte eronder .55rem: horizontaal ruimer
+     dan verticaal, want dat is wat drie losse dingen naast elkaar laat lezen in
+     plaats van als één zin met vinkjes erin. */
   .hv-proof { list-style: none; margin: clamp(1.05rem, 2.2vw, 1.5rem) 0 0; padding: 0;
-    display: flex; flex-direction: column; gap: .5rem; }
-  .hv-proof li { display: flex; align-items: flex-start; gap: .5rem;
-    font-size: .9rem; line-height: 1.4; color: var(--paper-soft-on-dark); }
+    display: flex; flex-direction: row; flex-wrap: wrap; gap: .55rem 1.6rem; }
+  .hv-proof li { flex: 0 0 auto; display: flex; align-items: flex-start; gap: .45rem;
+    font-size: .875rem; line-height: 1.4; color: var(--paper-soft-on-dark); }
   .hv-proof svg { flex: 0 0 auto; width: 1.05em; height: 1.05em; margin-top: .16em;
     fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -3190,14 +3399,10 @@ const nl = lang === 'nl';
     border-radius: var(--r-lg);
     background: var(--surface);
     border: 1px solid var(--line);
-    /* HET BLOK LIGT OP DE PAGINA IN PLAATS VAN ERIN. Lucas, 20 augustus:
-       *"Ik wil dus voor de andere blokken een soort gelijke oulining hebben om
-       een subtiel 3d effect te creëren."* Twee schaduwen doen dat werk: een
-       lichtlijn van één pixel binnenlangs de bovenrand — dat is de kant waar het
-       licht op deze pagina vandaan komt, zie de lamp in body::before — en een
-       brede zachte val eronder. Geen tweede rand en geen tweede grond; het is
-       hetzelfde middel als bij de prijsplaat in het abonnementsblok, alleen
-       zwakker afgesteld omdat dit er zes naast elkaar zijn. */
+    /* Dezelfde lichtlijn en val als elke andere kaart op de site. De regel staat
+       sinds 20 augustus in global.css op `.card, .tile`; deze kaart is geen van
+       beide, dus staat hij hier — met dezelfde waarden, en dat is met opzet:
+       één diepte voor de hele site. */
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.06),
       0 18px 34px -26px rgb(0 0 0 / 0.55);
@@ -3220,7 +3425,7 @@ const nl = lang === 'nl';
   .hv-svc-card-eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .01em; color: var(--ink-3); }
 
   /* HET BEELD. Staand, zoals bij Adobe (294×399 ≈ 3:4). Dat is de kern van de
-     klacht "sommige foto's zijn veel te groot": een 16:9-beeld over een halve
+     klacht "sommige foto’s zijn veel te groot": een 16:9-beeld over een halve
      paginabreedte is 745 bij 410 pixels, een 3:4 in deze kaart is 336 bij 448.
      Kleiner in oppervlak, en tegelijk MEER beeld — een staand kader laat van
      een persoon of een kledingstuk meer zien dan een liggend. */
@@ -3273,7 +3478,7 @@ const nl = lang === 'nl';
   }
 
   /* ══ HET FLOATY-EFFECT ═══════════════════════════════════════════════════
-     Adobe's `.parallax-move-up`, opgemeten: translateY(100px) ver onder de
+     Adobe’s `.parallax-move-up`, opgemeten: translateY(100px) ver onder de
      vouw, naar 0 als het blok binnenkomt (100 → 75,7 → 6,1 → 0).
 
      Deze site had alleen `vis-rise` (10px) en `vis-rise-far` (18px). Tien
@@ -3285,9 +3490,28 @@ const nl = lang === 'nl';
      Zelfde constructie als de rest van de site: een scroll-tijdlijn, geen
      listener, en zonder ondersteuning gebeurt er niets. Zie DE BEWEGING KOMT
      UIT DE SCROLL ZELF in global.css. */
+  /* ── EN OP DE ANDERE BLOKKEN OOK — 20 augustus 2026 ───────────────────────
+     Dit stond alleen op de dienstenrail, en dat was de openstaande helft van
+     "soortgelijke effecten waar ze passen". Nu drijven de vijf blokken op deze
+     pagina omhoog die als ÉÉN vlak lezen: de dienstenrail, de gezichtenrail, de
+     drie abonnementen, het overzicht en de vragenstrook.
+
+     WAT ER BEWUST NIET BIJ ZIT. De hero (staat er al voordat je scrolt), het
+     abonnementspaneel zelf (dat is één groot vlak; zeventig pixels drijven maakt
+     daar een schok van in plaats van een beweging) en alles wat al een eigen
+     scroll-effect heeft. Meer dan vijf en de pagina begint te deinen — het effect
+     werkt omdat het opvalt dat het er níet overal is.
+
+     Op de rij als geheel en niet per kaart, precies zoals de noot hierboven
+     zegt: één vlak dat opkomt is rustig, zes kaarten die los opkomen is een
+     etalage. */
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
-      .hv-svc-rail {
+      .hv-svc-rail,
+      .hv-faces,
+      .hv-plans,
+      .hv-dash-row,
+      .hv-ob {
         animation: hv-float linear both;
         animation-timeline: view();
         animation-range: entry 0% cover 30%;
@@ -3708,39 +3932,47 @@ const nl = lang === 'nl';
   /* ── the promise ───────────────────────────────────────────────────────── */
   .hv-promise-h span, .hv-promise-h em { display: block; }
 
-  /* Twee kolommen op breed, onder elkaar op smal — dezelfde verdeling als de
-     andere tweekoloms secties op deze pagina. */
-  .hv-promise { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: clamp(1.6rem, 3.5vw, 2.6rem); align-items: start; margin-top: clamp(2.2rem, 4.5vw, 3.4rem); }
+  /* WAT ER GEZEGD WORDT LINKS, WIE HET ZEGT RECHTS. Het portret was een vakje
+     van 13rem binnen de citaatkaart en is nu een eigen kolom van 7 tegen 5 —
+     groot genoeg om een portret te zijn in plaats van een pasfoto.
+
+     In de BRON staat het portret als laatste; `order` zet het op breed rechts en
+     laat het op smal onder het citaat vallen. Zo hoort een schermlezer eerst de
+     belofte, en staat er op een telefoon geen foto tussen de kop en wat er
+     beloofd wordt. */
+  .hv-promise { display: grid; gap: clamp(1.6rem, 3.5vw, 2.6rem); align-items: start; margin-top: clamp(2.2rem, 4.5vw, 3.4rem); }
+  .hv-promise-said { display: flex; flex-direction: column; gap: clamp(1.4rem, 2.6vw, 2rem); }
+  @media (min-width: 62rem) {
+    .hv-promise { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: stretch; }
+    /* HET PORTRET IS ZO HOOG ALS WAT ERNAAST STAAT. Op de vaste verhouding 4/5
+       werd het in een kolom van 530 breed 662 hoog, naast een citaat plus twee
+       vinkjes van samen 300 — en dan is de helft van de sectie een leeg vlak
+       onder de tekst. Nu rekt het vlak mee met de rij en bepaalt de tekst de
+       hoogte, wat de juiste volgorde is: het portret staat erbij, het draagt de
+       sectie niet.
+
+       `:global()` is nodig en geen luiheid: .ph-box zit IN Placeholder.astro en
+       draagt diens scope-attribuut, niet dat van dit bestand. Een gewone regel
+       hier zou nooit matchen — dezelfde val als .sp-human-shot en .hv-stock-shot,
+       nu met de sanctie-uitweg in plaats van een omhullende div, omdat het hier
+       juist om het binnenwerk gaat. */
+    .hv-promise-face,
+    .hv-promise-face :global(.ph) { height: 100%; }
+    .hv-promise-face :global(.ph-box) { height: 100%; aspect-ratio: auto; min-height: 26rem; }
+  }
 
 
   /* HET CITAAT IS EEN TEGEL, en dat is precies wat de huisregel voorschrijft
      voor een stuk dat eruit moet springen: een paneel, geen tweede ondergrond.
      Een groene streep links en de rand van .hv-ob-item eromheen — dezelfde
      twee middelen die de rest van de pagina ook gebruikt. */
-  /* Het portret staat in de kaart en niet ernaast: op een breed scherm is de
-     kaart al een kolom van het raster, en een tweede kolom ernaast maakt van
-     één belofte twee dingen. Boven het citaat, dus je ziet eerst wie het zegt.
-     Naast elkaar zodra de kaart breed genoeg is voor allebei. */
   .hv-quotecard {
     margin: 0; padding: clamp(1.3rem, 2.4vw, 1.9rem);
     background: var(--surface); border: 1px solid var(--line);
     border-left: 3px solid var(--accent);
-    display: grid; gap: clamp(1.1rem, 2vw, 1.5rem);
-  }
-  .hv-quote-shot { align-self: start; }
-  /* EEN MEDIAQUERY EN GEEN CONTAINERQUERY. Hier stond een `@container`-regel op
-     .hv-quotecard zelf, en die kan per definitie niet werken: een element
-     reageert niet op zijn eigen containerquery — alleen zijn afstammelingen
-     doen dat. Gevolg: de regel deed niets, het portret bleef op volle
-     kaartbreedte staan en werd 698 bij 872 pixels. Die ene placeholder maakte
-     de sectie 1054 pixels hoger dan hij was.
-
-     De kaart is op elk scherm boven de 40rem breed genoeg voor twee kolommen —
-     in het raster erboven staat hij dan of alleen (volle breedte) of naast de
-     vinkjes (ruim 700) — dus is de schermbreedte hier wél de goede maat. */
-  @media (min-width: 40rem) {
-    .hv-quotecard { grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); align-items: start; }
-    .hv-quote-shot { grid-row: 1 / span 2; }
+    /* Dezelfde lichtlijn en val als de dienstenkaarten: één stelsel voor alles
+       wat op deze pagina als blok op de grond ligt. */
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 34px -26px rgb(0 0 0 / 0.5);
   }
   .hv-quotecard blockquote {
     margin: 0; font-family: var(--font-editorial); font-style: italic; font-weight: 500;
@@ -3752,7 +3984,7 @@ const nl = lang === 'nl';
   .hv-checks li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
   .hv-checks strong { color: var(--ink); }
   .hv-checks svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--ink-2); stroke-width: 2; }
-  .hv-trust { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; margin: clamp(2.2rem, 4vw, 3rem) 0 0; padding: clamp(1.4rem, 2.5vw, 2rem) 0 0; box-shadow: inset 0 1px 0 var(--line); font-size: .82rem; color: var(--ink-3); }
+  .hv-trust { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.8rem; margin: auto 0 0; padding: clamp(1.2rem, 2.2vw, 1.7rem) 0 0; box-shadow: inset 0 1px 0 var(--line); font-size: .82rem; color: var(--ink-3); }
 
 
   /* ── before / after ────────────────────────────────────────────────────── */
@@ -3768,7 +4000,7 @@ const nl = lang === 'nl';
      laatste stond er eerst en het klapte de vergelijker dicht tot 2 bij 3
      pixels: automatische zijmarges op een RASTERITEM zetten het item van
      `stretch` naar `fit-content`, en `.cmp` heeft geen intrinsieke breedte —
-     zijn twee foto's staan absoluut gepositioneerd, dus de inhoud meet nul. Op
+     zijn twee foto’s staan absoluut gepositioneerd, dus de inhoud meet nul. Op
      een gewoon blok was dezelfde regel onschuldig geweest; in een raster is het
      een andere regel dan hij lijkt.
 
@@ -3974,13 +4206,14 @@ const nl = lang === 'nl';
      Tekst links, het bedrag op een plaat rechts. Dat is dezelfde tweedeling
      als de proefvisualband eronder gebruikt, met opzet: de twee banden vragen
      allebei één beslissing en horen er hetzelfde uit te zien. */
-  .hv-sub { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.8rem, 4vw, 3.6rem); align-items: center; }
+  .hv-sub { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.6rem, 3.2vw, 3rem); align-items: start; }
+  .hv-sub-right { display: grid; gap: clamp(1.2rem, 2.2vw, 1.8rem); align-content: start; }
   /* De beeldbank onder de plaat en niet ernaast: het bedrag en de beelden zijn
      twee argumenten, geen twee kolommen van één argument. Een haarlijn ertussen
      zegt dat, en verder niets. */
   .hv-stock {
-    margin-top: clamp(2.2rem, 4.5vw, 3.4rem);
-    padding-top: clamp(1.8rem, 3.5vw, 2.8rem);
+    margin-top: clamp(1.6rem, 3vw, 2.4rem);
+    padding-top: clamp(1.4rem, 2.6vw, 2rem);
     box-shadow: inset 0 1px 0 var(--line);
     display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: clamp(1.6rem, 3.5vw, 3rem); align-items: center;
@@ -3988,9 +4221,9 @@ const nl = lang === 'nl';
   /* Afgetopt zodat het vlak niet met de kolom mee blijft groeien: op 1920 was
      het 633 bij 474 naast een tekstkolom van 289 hoog, en dan is het beeld het
      onderwerp geworden in plaats van het bewijs. */
-  .hv-stock-shot { width: min(100%, 30rem); }
-  .hv-stock-h { margin: 0 0 clamp(1.1rem, 2vw, 1.5rem); font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
-  .hv-stock-item + .hv-stock-item { margin-top: clamp(1.1rem, 2vw, 1.5rem); padding-top: clamp(1.1rem, 2vw, 1.5rem); box-shadow: inset 0 1px 0 var(--line); }
+  .hv-stock-shot { width: min(100%, 23rem); }
+  .hv-stock-h { margin: 0 0 clamp(.8rem, 1.6vw, 1.1rem); font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
+  .hv-stock-item + .hv-stock-item { margin-top: clamp(.8rem, 1.6vw, 1.1rem); padding-top: clamp(.8rem, 1.6vw, 1.1rem); box-shadow: inset 0 1px 0 var(--line); }
   .hv-stock-n { margin: 0; font-size: 1.02rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
   .hv-stock-b { margin: .4rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); max-width: 58ch; }
   /* Wat er nog niet is, staat een stap zachter — dezelfde afspraak als bij de
@@ -3998,8 +4231,8 @@ const nl = lang === 'nl';
   .hv-stock-item.is-soon .hv-stock-n { color: var(--ink-2); }
   @media (max-width: 820px) { .hv-stock { grid-template-columns: 1fr; } }
   .hv-sub-copy h2 { margin: 0; }
-  .hv-sub-copy .lede { margin-top: 1rem; }
-  .hv-sub-facts { list-style: none; margin: clamp(1.6rem, 3vw, 2.2rem) 0 0; padding: 0; display: grid; gap: .8rem; }
+  .hv-sub-copy .lede { margin-top: .7rem; }
+  .hv-sub-facts { list-style: none; margin: clamp(1.1rem, 2.2vw, 1.6rem) 0 0; padding: 0; display: grid; gap: .6rem; }
   .hv-sub-facts li { display: grid; grid-template-columns: 20px 1fr; gap: .75rem; font-size: .9rem; line-height: 1.55; color: var(--ink-3); }
   .hv-sub-facts svg { width: 18px; height: 18px; margin-top: .18rem; fill: none; stroke: var(--accent); stroke-width: 2; }
   /* ══ HET ZWEVENDE PANEEL ═════════════════════════════════════════════════
@@ -4015,37 +4248,21 @@ const nl = lang === 'nl';
      De schaduw is ruim en zacht (70px, 55% zwart): een blok dat op de pagina
      ligt heeft er een, en zonder schaduw is limoen op zwart een gat in plaats
      van een voorwerp. */
-  .hv-sub-panel {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    /* DE GROND IS BELICHT, NIET VLAK. Lucas keek naar de eerste versie en zei
-       *"wellicht de donkerdere groen gebruiken omdat dit best heftig is"*. Dat
-       is een echte waarneming, maar de oorzaak is oppervlak en niet tint: het
-       paneel is 1325 x 1180 px vol #C6F100 en dat is de grootste lap kleur die
-       de site heeft. Gemeten alternatieven: #9FCA22 haalt 9.93 tegen de
-       paginagrond, #7FB042 haalt 7.43, een diep groen (#1F4217) haalt 1.68 en
-       zweeft dus helemaal niet meer — terwijl #C6F100 op 14.50 zit. Alleen de
-       helderste waarde laat het blok van een bijna-zwarte pagina LOSKOMEN, en
-       loskomen was de opdracht ("het blok moet er echt uit springen").
+  /* Het paneel, de lichtlaag, de korrel en de prijsplaat staan sinds 20 augustus
+     in global.css als `.lime-panel` — zie de noot daar. Ze zijn hierheen
+     verhuisd omdat de abonnementenpagina hetzelfde blok gebruikt, en één blok
+     dat er op twee plekken hetzelfde uitziet mag niet op twee plekken
+     gedefinieerd staan. Wat hier blijft, is wat alleen deze band doet. */
 
-       Dus blijft de tint en gaat de vlakheid eruit. Twee zachte lagen over de
-       volle kleur: licht van rechtsboven, een heel lichte schaduw linksonder in
-       dezelfde tint (58 76 0, niet zwart — zwart maakt er vuil groen van). Dat
-       is wat een voorwerp van een swatch onderscheidt en het is precies het
-       "product gevoel met subtiele hele lichte spotlights" dat hij vroeg.
-       Zwarte tekst haalt op de lichtste stop 17.1 en op de donkerste 12.9, dus
-       de leesbaarheid verandert nergens. */
-    background:
-      radial-gradient(88% 66% at 78% 2%, rgb(255 255 255 / 0.30), transparent 62%),
-      radial-gradient(72% 58% at 8% 102%, rgb(58 76 0 / 0.18), transparent 62%),
-      var(--accent);
-    border-radius: var(--r-lg);
-    padding: clamp(1.6rem, 4vw, 3.4rem);
-    box-shadow: 0 30px 70px -34px rgb(0 0 0 / 0.55);
+  /* ── DE BOVENKOP ─────────────────────────────────────────────────────────
+     Klein, gespatieerd en in de inkt van het paneel — niet in het accent, want
+     het accent IS hier de grond. Zie de noot bij de markup. */
+  .hv-sub-eyebrow {
+    margin: 0 0 .55rem;
+    font-size: .72rem; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-3);
   }
-  /* Alles wat erin staat, boven het merkteken. */
-  .hv-sub-panel-in { position: relative; z-index: 1; }
 
   /* HET MERKTEKEN, ALS LIJN. `fill: none` op de <use> plus een streek maakt van
      de twee gevulde paden van #markglyph precies de dunne omtrek die Lucas
@@ -4058,59 +4275,76 @@ const nl = lang === 'nl';
      Rechtsonder en half buiten beeld: linksboven zou hij achter de kop komen te
      staan, en een merkteken achter een kop is ruis. Hier staat hij in de hoek
      die anders leeg was. */
-  .hv-sub-mark {
+  /* ── DE BAND WAAR HET PANEEL OP LIGT ──────────────────────────────────────
+     De foto ligt over de volle breedte achter het paneel en wordt door twee
+     dingen teruggebracht tot sfeer: een dekking van 55 procent en een verloop
+     eroverheen dat de boven- en onderrand naar de paginagrond trekt. Zonder dat
+     verloop heeft de band een zichtbare naad met de sectie erboven, en een naad
+     is precies wat een tweede grond verraadt.
+
+     `.hv-sub-band` krijgt hiervoor een stapelcontext (position + isolation), en
+     de container erin staat erboven. */
+  /* Ruimer dan een `band-tight` normaal is, en dat is de hele reden dat de foto
+     erachter iets doet: met de standaardmarges bedekte het paneel bijna de hele
+     band en zag je van het beeld alleen een randje. Nu ligt er licht omheen. */
+  .hv-sub-band { position: relative; isolation: isolate; overflow: hidden; padding-block: clamp(3.5rem, 8vw, 7rem); }
+  .hv-sub-band > .container { position: relative; z-index: 1; }
+  .hv-sub-bg {
     position: absolute;
+    inset: 0;
     z-index: 0;
-    /* HIJ MOET NOG WEL EEN V ZIJN. De eerste plaatsing liep 18% onder de rand
-       door en 6% erbuiten; wat er overbleef was een zigzag in de hoek die als
-       een losse streep las en niet als het merk. Gerenderd naast drie andere
-       plaatsingen (groot in het midden, achter de prijsplaat, klein in de hoek)
-       is dit degene waar de hele letter staat: hij valt in het lege veld rechts
-       naast de voorraadtekst en raakt alleen de rand die hij hoort te raken. */
-    right: -5%;
-    bottom: -2%;
-    width: min(34%, 25rem);
-    height: auto;
-    fill: none;
-    stroke: var(--grad-ink);
-    stroke-width: 5;
-    vector-effect: non-scaling-stroke;
-    opacity: .14;
     pointer-events: none;
+    overflow: hidden;
+  }
+  .hv-sub-bg img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: 50% 42%;
+    opacity: .62;
+  }
+  /* Het verloop dat de randen laat oplossen. Vier stops en niet twee: de bundel
+     loopt schuin, dus een simpele val van boven naar beneden knipt hem er aan
+     één kant af terwijl hij aan de andere kant nog vol staat. */
+  .hv-sub-bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      var(--bg) 0%,
+      rgb(var(--scrim) / 0.35) 22%,
+      rgb(var(--scrim) / 0.30) 68%,
+      var(--bg) 100%);
   }
 
-  /* DE PRIJSPLAAT IS HET DONKERE VOORWERP OP DE HELDERE GROND. Dat is precies
-     wat .on-bright's eigen noot voorschrijft: op een helder vlak draagt de
-     donkere vorm de nadruk en niet de felle. Hij houdt daarom zijn eigen
-     donkere vulling terwijl alles eromheen omdraait — --surface wordt door
-     .on-bright bewust niet herschreven. */
-  .hv-sub-plate {
-    position: relative;
-    background: var(--bg-0);
-    padding: clamp(1.6rem, 3vw, 2.4rem);
-    border-radius: var(--r-md);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10), 0 18px 40px -24px rgb(0 0 0 / 0.5);
-  }
-  /* En de inkt binnen de plaat draait TERUG naar de donkere ramp. Zonder deze
-     regel erft hij .on-bright van het paneel eromheen en staat er bijna-zwarte
-     tekst op een bijna-zwarte plaat. */
-  .hv-sub-plate {
-    color: var(--paper-on-dark);
-    --ink: #FFFFFF;
-    --ink-2: rgb(255 255 255 / 0.80);
-    --ink-3: rgb(255 255 255 / 0.66);
-    --accent: #C6F100;
-    --accent-ink: #08090B;
-    --accent-on: #08090B;
-    --accent-bright: #C6F100;
-    --btn-ghost-fill: rgb(255 255 255 / 0.08);
-    --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
-  }
   .hv-sub-from { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
   .hv-sub-fig { margin: .3rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(2.6rem, 6vw, 3.8rem); line-height: 1; color: var(--ink); }
   .hv-sub-unit { margin: .5rem 0 0; font-size: .9rem; color: var(--ink-2); }
   .hv-sub-vat { margin: .35rem 0 0; font-size: .78rem; color: var(--ink-3); }
   .hv-sub-cta { margin-top: clamp(1.4rem, 3vw, 2rem); display: flex; flex-wrap: wrap; gap: .7rem; }
+
+  /* ── DE DRIE ABONNEMENTEN ────────────────────────────────────────────────
+     Drie tegels op de heldere grond, in de vulling van de plaat maar lichter:
+     ze horen bij het bedrag erboven en mogen er niet mee wedijveren. Vandaar
+     ook geen knoppen erin — er staat er al één in de plaat, en drie kaarten met
+     elk een eigen knop maakt van dit blok een prijspagina. */
+  .hv-plans {
+    list-style: none;
+    margin: clamp(1.3rem, 2.4vw, 1.9rem) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: clamp(.7rem, 1.4vw, 1rem);
+  }
+  .hv-plan {
+    padding: clamp(.85rem, 1.6vw, 1.15rem);
+    border-radius: var(--r-md);
+    background: rgb(8 9 11 / 0.07);
+    box-shadow: inset 0 0 0 1px rgb(8 9 11 / 0.14);
+  }
+  .hv-plan-n { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .hv-plan-p { margin: .3rem 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.5rem, 2.6vw, 1.95rem); line-height: 1; color: var(--ink); display: flex; align-items: baseline; gap: .4rem; flex-wrap: wrap; }
+  .hv-plan-p span { font-family: var(--font-body); font-weight: 400; font-size: .8rem; color: var(--ink-3); }
+  .hv-plan-b { margin: .55rem 0 0; font-size: .88rem; font-weight: 700; color: var(--ink); }
+  .hv-plan-x { margin: .2rem 0 0; font-size: .84rem; line-height: 1.5; color: var(--ink-2); }
 
   /* ── WAT EEN CREDIT IS ───────────────────────────────────────────────────
      Onder de plaat en op zijn eigen breedte, met een lijn links. Die lijn doet
@@ -4119,10 +4353,10 @@ const nl = lang === 'nl';
      onderwerp op hetzelfde niveau. Accentkleur, want dit is de regel die het
      bezwaar wegneemt en niet een voetnoot. */
   .hv-credit {
-    margin-top: clamp(1.8rem, 3.5vw, 2.6rem);
+    margin-top: clamp(1.3rem, 2.4vw, 1.9rem);
     padding-left: clamp(1rem, 2vw, 1.4rem);
     border-left: 2px solid var(--accent);
-    max-width: 74ch;
+    max-width: 80ch;
   }
   .hv-credit-h { margin: 0; font-size: 1.08rem; font-weight: 700; color: var(--ink); }
   .hv-credit-b { margin: .5rem 0 0; font-size: .95rem; line-height: 1.65; color: var(--ink-2); }

@@ -4,7 +4,7 @@
  * ══════════════════════════════════════════════════════════════════════════════
  *
  * Lucas, 17 augustus 2026: *"VISUAILS hanteert standaard regels voor catalog
- * foto's, bijvoorbeeld wanneer je een broek on-model foto krijgt krijg je geen
+ * foto’s, bijvoorbeeld wanneer je een broek on-model foto krijgt krijg je geen
  * model gezicht erbij, wellicht alleen female/male optie. Wel zijn er schoenen en
  * een gedeelte van de top te zien en kan de klant deze toevoegen wanneer hij dat
  * wilt, gratis."*
@@ -59,11 +59,11 @@
  * € 50. Dat is dezelfde soort scheiding als tussen een extra foto (€ 35, één
  * omschreven frame) en een outfitshot: wat er ANDERS aan is, is het werk.
  *
- * Lucas koos ervoor dat de klant van een contextstuk wél foto's aanlevert, tegen
+ * Lucas koos ervoor dat de klant van een contextstuk wél foto’s aanlevert, tegen
  * mijn eerste voorstel in. Dat is voor de kwaliteit de juiste keuze — een generiek
  * gerenderde schoen onder een broek van € 89 verpest het beeld — en het verplaatst
  * de grens niet, want de grens zit in de uitsnede. Wat het WEL doet, is de
- * werkmap: die foto's mogen niet te verwarren zijn met die van het hoofdproduct.
+ * werkmap: die foto’s mogen niet te verwarren zijn met die van het hoofdproduct.
  * Zie CONTEXT_UPLOAD_PREFIX.
  *
  * ── WAT DIT NIET IS ─────────────────────────────────────────────────────────
@@ -335,8 +335,8 @@ export function copy(lang = 'en') {
 /*
  * ── DE WERKMAP MOET HET VERSCHIL WETEN ─────────────────────────────────────
  *
- * De klant levert foto's van een contextstuk aan, en die komen in dezelfde upload
- * terecht als de foto's van het hoofdproduct. Zonder een merkteken staat er in de
+ * De klant levert foto’s van een contextstuk aan, en die komen in dezelfde upload
+ * terecht als de foto’s van het hoofdproduct. Zonder een merkteken staat er in de
  * werkmap een top waarvan niet te zien is of hij het ONDERWERP is of de CONTEXT —
  * en dat is precies het verschil tussen een beeld van € 89 en een beeld van € 139.
  *

@@ -3,9 +3,9 @@
  * DE MAP IS HET EINDRESULTAAT
  * ═══════════════════════════════════════════════════════════════════════════════
  *
- * Lucas, 9 augustus 2026: *"Ik wil dat klanten de foto's apart kunnen zien en een
+ * Lucas, 9 augustus 2026: *"Ik wil dat klanten de foto’s apart kunnen zien en een
  * revisie per foto kunnen aanvragen maar het echte wat ze krijgen is een map met
- * alle bestanden erin, de zichtbare foto's zijn dus niet downloadbaar in het
+ * alle bestanden erin, de zichtbare foto’s zijn dus niet downloadbaar in het
  * portaal en puur voor revisies aanvragen. Alleen de map (het eindresultaat) kan
  * gedownload worden."*
  *
@@ -70,7 +70,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Lucas: *"De read me in de map [...] is in het nederlands en bedoeld voor mij
- * terwijl dit een readme voor de customer [moet zijn]. Ook moeten de foto's
+ * terwijl dit een readme voor de customer [moet zijn]. Ook moeten de foto’s
  * gesorteerd kunnen worden want de klant ontvangt jpg, png en webp bestanden. In
  * de read me moet bijvoorbeeld uitgelegd worden waarvoor elk bestand is en de
  * klant oprecht helpen [...] zodat de klant echt een premium service ontvangt."*
@@ -740,7 +740,7 @@ export function deliveryDocs({ order, entries, productNames = {}, portalUrl } = 
  * kop van dit bestand beschrijft: twee query's over dezelfde levering die uit elkaar
  * liepen. Dus één functie, twee aanroepers.
  *
- * @param {Array} entries  de foto's ({name, key})
+ * @param {Array} entries  de foto’s ({name, key})
  * @param {Array} docs     de tekstbestanden ({name, text})
  * @param {(key: string) => Promise<ArrayBuffer|null>} lees  hoe de aanroeper R2 leest
  */

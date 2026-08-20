@@ -8,7 +8,7 @@
 //
 // That is the right instinct and it inverts a problem the site had. /catalog
 // answered "are the visuals marketplace-compliant?" with "Yes — tell us your
-// platform and we'll match its specs", which put the burden on a conversation
+// platform and we’ll match its specs", which put the burden on a conversation
 // that mostly never happened, and made a promise nothing enforced. Asking the
 // question inside the order turns the promise into a constraint: pick Amazon
 // and the background stops being a free choice, because Amazon's main image is
@@ -155,7 +155,7 @@ export const RISK_CHANNELS = CHANNELS.filter((c) => c.modelShotRisk).map((c) => 
 
 export const CHANNEL_IDS = CHANNELS.map((c) => c.id);
 
-/** A channel's display name in one language — some are brands, some are words. */
+/** A channel’s display name in one language — some are brands, some are words. */
 export function channelName(channel, lang = 'en') {
   return typeof channel.name === 'string' ? channel.name : channel.name[lang];
 }

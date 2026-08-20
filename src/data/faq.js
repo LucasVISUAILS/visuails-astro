@@ -45,7 +45,7 @@
 // TWO RULES A FUTURE EDITOR COULD UNDO BY ACCIDENT, so they are written down:
 //
 //   1 · WE DO NOT SELL A "DROP". In fashion the word means a collection going
-//       live — the client's own launch — and the site used it for a work order
+//       live — the client’s own launch — and the site used it for a work order
 //       at the same time, which is half the reason the model changed at all.
 //       EN says "an order" or "a batch"; NL says "een bestelling". The word
 //       survives in exactly one place below, in the answer that explains the

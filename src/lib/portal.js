@@ -4,14 +4,14 @@
 // orders.tier, not by anything they type:
 //
 //   TIER 1 · attended  → "Your order".  The portal proper: the work so far, with
-//                        per-image approve / request-revision, the order's
+//                        per-image approve / request-revision, the order’s
 //                        timeline, and the reserved window when one exists.
 //   TIER 0 · unattended → "Your files". Dezelfde galerij zonder tijdlijn, zonder
 //                        portaalomlijsting en zonder datum.
 //
 // EN SINDS 9 AUGUSTUS 2026 IS ER MAAR ÉÉN DOWNLOAD, in beide gevallen: de map van
 // de hele bestelling. De beelden op het scherm zijn beoordeelbeelden — Lucas:
-// *"de zichtbare foto's zijn dus niet downloadbaar in het portaal en puur voor
+// *"de zichtbare foto’s zijn dus niet downloadbaar in het portaal en puur voor
 // revisies aanvragen."* Zie de kop van src/lib/delivery.js voor wat daar allemaal
 // bij kwam kijken; de korte versie is dat files.preview_key sinds migratie 0001
 // bestond en door geen enkele regel code ooit was gevuld.
@@ -330,7 +330,7 @@ export async function portalGet(context) {
   }
   if (!order) return plainPage(env, request, 'unknown', 404);
 
-  // The client's own language, from here on. An expired Dutch order gets a Dutch
+  // The client’s own language, from here on. An expired Dutch order gets a Dutch
   // expiry page — the link failing is no reason to switch language on them.
   const lang = order.lang === 'nl' ? 'nl' : 'en';
   if (order.revoked_at) return plainPage(env, request, 'replaced', 410, lang);
@@ -607,7 +607,7 @@ function parseRoute(url) {
   /*
    * ── /d IS VERVALLEN, /zip IS ERBIJ GEKOMEN — 9 augustus 2026 ──────────────
    *
-   * Lucas: *"de zichtbare foto's zijn dus niet downloadbaar in het portaal en
+   * Lucas: *"de zichtbare foto’s zijn dus niet downloadbaar in het portaal en
    * puur voor revisies aanvragen. Alleen de map (het eindresultaat) kan
    * gedownload worden."*
    *
@@ -797,7 +797,7 @@ async function serveFile(context, order, route) {
 
 function fileHeaders() {
   return {
-    // private, so a shared cache never holds one client's photographs; long, so
+    // private, so a shared cache never holds one client’s photographs; long, so
     // a returning client re-downloads nothing. The page itself stays no-store.
     'cache-control': 'private, max-age=3600',
     'referrer-policy': 'same-origin',
@@ -1042,7 +1042,7 @@ ${folder}
  * knop voor het geheel: wie via de gemailde link kwam, haalde zijn levering foto
  * voor foto op — en dat is precies de handeling die er nu niet meer is.
  *
- * De tweede alinea legt uit waarom de foto's erboven geen knop meer hebben. Die
+ * De tweede alinea legt uit waarom de foto’s erboven geen knop meer hebben. Die
  * zin is niet vriendelijkheid: zonder uitleg lijkt een galerij zonder
  * downloadknoppen stuk, en dan mailt iemand ons met de vraag waar zijn bestanden
  * zijn. Dat is de mail die deze regel voorkomt.
@@ -1184,7 +1184,7 @@ function shot(t, lang, f, token, { review, history }) {
   /*
    * ── DE DOWNLOADKNOP PER BEELD IS WEG ──────────────────────────────────────
    *
-   * Lucas, 9 augustus 2026: *"de zichtbare foto's zijn dus niet downloadbaar in
+   * Lucas, 9 augustus 2026: *"de zichtbare foto’s zijn dus niet downloadbaar in
    * het portaal en puur voor revisies aanvragen."* Er stond hier een knop die
    * één formaat van één beeld gaf, met de naam die het bij ons toevallig had.
    * Wat de klant nodig heeft staat in de map: per product een png, een jpg en
@@ -1352,7 +1352,7 @@ ${body}
  *   x-robots-tag + <meta robots>   Belt and braces. A portal URL in an index is
  *                                  a portal URL in a search result.
  *   cache-control: no-store        Shared caches, browser history restores and
- *                                  "back" must not resurrect one client's page.
+ *                                  "back" must not resurrect one client’s page.
  *   content-security-policy        The page has no script, so 'none' is a fact
  *                                  rather than an aspiration. font-src is 'self'
  *                                  and not omitted so that the flagged fix in
@@ -1434,7 +1434,7 @@ function formatDay(iso, lang) {
 
 /**
  * Language for a page with no order behind it. Order pages never call this —
- * they read orders.lang, which is the client's actual choice rather than their
+ * they read orders.lang, which is the client’s actual choice rather than their
  * browser's.
  */
 function negotiate(request) {

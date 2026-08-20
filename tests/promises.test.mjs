@@ -38,7 +38,7 @@
 
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { TIERS } from '../src/data/pricing.js';
+import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, turnaroundShort, reviewClaimShort } from '../src/data/pricing.js';
 import { ROSTER } from '../src/data/models.js';
 import { styles } from '../src/data/styles.js';
 import { WINDOW_DAYS } from '../src/data/capacity.js';
@@ -531,6 +531,51 @@ console.log('\nde levertijdbelofte is in beide talen dezelfde belofte');
   /* En capacity.js blijft de bron van wat 48 uur betekent. Verandert WINDOW_DAYS,
      dan klopt de zin niet meer en hoort iemand hier langs te komen. */
   check('een venster is twee werkdagen', WINDOW_DAYS, 2);
+}
+
+/* ══ DE KORTE VORM BELOOFT NIET MEER DAN DE LANGE ══════════════════════════
+ *
+ * Sinds 20 augustus 2026 zet de hero zijn drie bewijsregels naast elkaar en
+ * gebruikt daarvoor turnaroundShort() en reviewClaimShort(). Dat is dubbeling
+ * van precies het gevaarlijke soort: twee formuleringen van dezelfde toezegging.
+ * Deze test doet er twee dingen mee.
+ *
+ * EERST: hij moet er zijn, voor elk niveau en elke taal. Een ontbrekende korte
+ * vorm valt terug op de lange en dat merkt niemand tot de hero over de foto
+ * loopt — een stille fout in de opmaak in plaats van een luide in de test.
+ *
+ * DAN: hij mag minder zeggen en nooit iets anders. De korte vorm KORTER laten
+ * zijn is de hele reden dat hij bestaat, dus dat wordt geëist. En de zwaarste
+ * woorden uit de lange regel — het getal en het moment waarop het vaststaat —
+ * moeten meekomen, want dat is wat de belofte draagt. Wie ooit de lange regel
+ * herschrijft zonder de korte, komt hier langs.
+ */
+console.log('\nde korte belofte zegt hetzelfde als de lange, met minder woorden');
+{
+  for (const niveau of Object.keys(TIERS)) {
+    for (const taal of ['en', 'nl']) {
+      const lang = TIERS[niveau].turnaround[taal];
+      const kort = turnaroundShort(niveau, taal);
+      check(`${niveau}/${taal}: er is een korte levertijd`, typeof kort === 'string' && kort.length > 0, true);
+      check(`${niveau}/${taal}: en hij is korter`, kort.length < lang.length, true);
+    }
+  }
+  for (const niveau of Object.keys(REVIEW_CLAIM)) {
+    for (const taal of ['en', 'nl']) {
+      check(`${niveau}/${taal}: er is een korte controlebelofte`,
+        typeof (REVIEW_CLAIM_SHORT[niveau] || {})[taal] === 'string', true);
+      check(`${niveau}/${taal}: en hij is niet langer`,
+        REVIEW_CLAIM_SHORT[niveau][taal].length <= REVIEW_CLAIM[niveau][taal].length, true);
+    }
+  }
+  /* De twee woorden die de belofte dragen, blijven staan. */
+  check('kort en noemt de 48 uur', /48/.test(turnaroundShort('attended', 'en')), true);
+  check('kort nl noemt de 48 uur', /48/.test(turnaroundShort('attended', 'nl')), true);
+  check('kort en zegt dat het vooraf vaststaat', /before you pay/i.test(turnaroundShort('attended', 'en')), true);
+  check('kort nl zegt dat het vooraf vaststaat', /voor je betaalt/i.test(turnaroundShort('attended', 'nl')), true);
+  /* En de korte controlebelofte blijft over MENSEN gaan. */
+  check('kort en noemt een mens', /human/i.test(reviewClaimShort('attended', 'en')), true);
+  check('kort nl noemt een mens', /hand/i.test(reviewClaimShort('attended', 'nl')), true);
 }
 
 /* ══ GETYPTE AANTALLEN TEGEN DE ECHTE LIJSTEN ══════════════════════════════

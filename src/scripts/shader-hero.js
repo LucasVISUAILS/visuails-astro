@@ -16,7 +16,7 @@
 // had no signature in it at all. The geometry, the warp, and the timing have
 // survived all three — only the material changes.
 // Hand-written WebGL on a
-// fullscreen triangle — deliberately NOT Three.js: a single 2D field doesn't
+// fullscreen triangle — deliberately NOT Three.js: a single 2D field doesn’t
 // justify ~150KB of scene graph, and raw GL keeps the page fast (Core Web
 // Vitals are part of the design).
 //

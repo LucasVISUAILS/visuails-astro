@@ -14,7 +14,7 @@
 // read whether or not it matches, so an unlimited /o/ is a free query amplifier
 // pointed at the same database the studio runs on. The limiter caps that, and
 // isWellFormedToken() in token.js caps it harder by rejecting anything that
-// isn't token-shaped before this file is even reached.
+// isn’t token-shaped before this file is even reached.
 //
 // This is also why /api/capacity has no limiter and this does. That endpoint is
 // public and identical for everyone, so a 60-second cache removes the load
@@ -141,7 +141,7 @@ async function getSalt(env) {
   if (saltCache) return saltCache;
 
   const fresh = randomHex(32);
-  // Whoever gets there first wins; everyone else's INSERT is ignored and the
+  // Whoever gets there first wins; everyone else’s INSERT is ignored and the
   // SELECT below hands them the winner's value.
   await env.DB.prepare('INSERT OR IGNORE INTO app_settings (key, value) VALUES (?1, ?2)')
     .bind(SALT_KEY, fresh)
