@@ -36,6 +36,7 @@ import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
  */
 import FigDash from './FigDash.astro';
 import FigGallery from './FigGallery.astro';
+import Note from './Note.astro';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -79,7 +80,14 @@ const COPY = {
       ['WebP', 'A third of the size at the same quality. For your site, so a page loads fast.'],
     ],
     dlTree: 'product-1/PNG/front.png  ·  product-1/JPG/front.jpg  ·  product-1/WEBP/front.webp',
-    dlManifest: 'Every delivered file carries a machine-readable IPTC provenance tag that we write ourselves — including the WebP, where converting had discarded whatever the model provider had put in. We add that line and we remove nothing. It is not a guarantee: any tool that re-saves an image can strip it, and providers of systems already on the market have until 2 December 2026 to mark at all. So do not rely on a file identifying itself. The disclosure that counts is the visible one you place, and the AI Act page has the line to use.',
+    // GESPLITST, 21 augustus 2026. Was 96 woorden, de langste alinea van
+    // /portal. Wat je moet DOEN staat er nog voluit — plaats zelf de zichtbare
+    // vermelding, reken niet op het bestand. Waaróm je er niet op kunt rekenen
+    // (de WebP-omzetting, de overgangstermijn tot 2 december 2026) is techniek
+    // en staat achter het vraagteken.
+    dlManifest: 'Every delivered file carries a machine-readable IPTC provenance tag that we write ourselves. We add that line and we remove nothing — but do not rely on a file identifying itself. The disclosure that counts is the visible one you place, and the AI Act page has the line to use.',
+    dlManifestNoteTerm: 'the provenance tag',
+    dlManifestNote: 'We write it into the WebP too, where the conversion discarded whatever the model provider had put there. Even so: any tool that re-saves an image can strip it again, and providers of systems already on the market have until 2 December 2026 to mark at all.',
 
     logH: 'Every approval and revision stays readable afterwards.',
     logLede: 'Every approval and every revision is stamped with a time and kept against the individual image, and you can read the sequence back at any time from your own link. Ask, and we will write it out for you as a summary. There is no button here that generates a document, and we are not going to imply there is.',
@@ -128,14 +136,16 @@ const COPY = {
     ],
 
     dlH: 'Eén map, en alles zit erin.',
-    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan hetzelfde beeld drie keer: PNG, JPG en WebP. Zo krijgt een drukker, een productpagina en een feed elk het bestand dat hij wil, en hoeft niemand nog iets om te zetten.',
+    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan hetzelfde beeld drie keer: PNG, JPG en WebP. Zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, en hoeft niemand nog iets om te zetten.',
     dl: [
       ['PNG', 'Lossless, het grootste bestand. Dit is degene voor druk en voor alles wat nog bewerkt wordt.'],
       ['JPG', 'Het formaat dat elk systeem aanneemt. Voor een productpagina, een lookbook, een mail.'],
       ['WebP', 'Een derde van de grootte bij dezelfde kwaliteit. Voor je eigen site, zodat een pagina snel laadt.'],
     ],
     dlTree: 'product-1/PNG/voorkant.png  ·  product-1/JPG/voorkant.jpg  ·  product-1/WEBP/voorkant.webp',
-    dlManifest: 'Elk geleverd bestand draagt een machine-leesbare IPTC-herkomsttag die wij er zelf in zetten — ook de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Die regel voegen we toe en we halen niets weg. Het is geen garantie: elk programma dat een beeld opnieuw opslaat kan hem verwijderen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare die jij plaatst, en op de AI Act-pagina staat de regel die je daarvoor gebruikt.',
+    dlManifest: 'Elk geleverd bestand draagt een machineleesbare IPTC-herkomsttag die wij er zelf in zetten. Die regel voegen we toe en we halen niets weg — maar reken er niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare die jij plaatst, en op de AI Act-pagina staat de regel die je daarvoor gebruikt.',
+    dlManifestNoteTerm: 'de herkomsttag',
+    dlManifestNote: 'We zetten hem ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Toch: elk programma dat een beeld opnieuw opslaat kan hem er weer uit halen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren.',
 
     logH: 'Elke goedkeuring en revisie blijft terug te lezen.',
     logLede: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en wordt bewaard bij het betreffende beeld, en je kunt de reeks op elk moment teruglezen via je eigen link. Vraag ernaar en we schrijven het voor je uit als overzicht. Er zit hier geen knop die een document genereert, en we doen ook niet alsof.',
@@ -238,7 +248,7 @@ const c = COPY[lang];
     {/* Het pad zelf erbij. Drie tegels zeggen WELKE formaten er zijn; deze regel
         zegt hoe het in de map staat, en dat is de vraag die iemand overhoudt. */}
     <p class="pp-tree">{c.dlTree}</p>
-    <p class="pp-manifest">{c.dlManifest}</p>
+    <p class="pp-manifest">{c.dlManifest} <Note lang={lang} term={c.dlManifestNoteTerm}>{c.dlManifestNote}</Note></p>
   </div>
 </section>
 

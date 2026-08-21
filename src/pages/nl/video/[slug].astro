@@ -9,6 +9,7 @@ import { reviewClaim, turnaround, TIERS } from '../../../data/pricing.js';
 import { metaDescription } from '../../../data/meta.js';
 import VideoExamples from '../../../components/VideoExamples.astro';
 
+import ServiceSwitch from '../../../components/ServiceSwitch.astro';
 export function getStaticPaths() {
   return videoStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
@@ -74,6 +75,17 @@ const m = media[style.slug] ?? media.motion;
 // De description was één template literal, dus de lengte was wat de data er
 // toevallig van maakte. metaDescription laat de tier-clausules vallen in
 // plaats van over de 160 heen te gaan — zie src/data/meta.js.
+
+/* ── DE ZUSTERLOOKS VAN DEZE PAGINA ────────────────────────────────────────
+   Elke stijlpagina had precies één inkomende link — van de eigen hub — en
+   verwees naar geen enkele andere look. Wie op Dunes belandde en wilde weten
+   hoe Flash eruitziet, moest terug naar boven en opnieuw beginnen. Deze rij
+   is dezelfde regel-vorm als de dienstenrij eronder, met de looks erin die
+   deze pagina niet is. Ongelokaliseerde paden: ServiceSwitch doet lp() zelf. */
+const zusters = videoStyles
+  .filter((s) => s.slug !== style.slug)
+  .map((s) => ({ href: `/video/${s.slug}`, naam: s.name }));
+
 ---
 
 <Layout
@@ -105,6 +117,8 @@ const m = media[style.slug] ?? media.motion;
             WhatsApp
           </a>
         </div>
+        <ServiceSwitch lang="nl" label={'Andere looks:'} items={zusters} />
+        <ServiceSwitch current={['video', 'complete']} lang="nl" />
         <div class="trust-row" style="margin-top:2rem">
           <span class="trust-item"><strong>{style.priceTrust}</strong>{style.priceUnit}</span>
           <span class="trust-item"><strong>{TIMING}</strong></span>

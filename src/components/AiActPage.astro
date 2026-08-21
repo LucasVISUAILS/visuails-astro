@@ -113,6 +113,19 @@ import { waHref } from '../data/whatsapp.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigAnatomy from './FigAnatomy.astro';
 import Disclose from './Disclose.astro';
+/*
+ * De modellencontrole komt uit data en niet uit deze tekst — 19 augustus 2026.
+ *
+ * Lucas wil de controle als verkoopargument gebruiken, en dat mag: hij is echt en
+ * hij is controleerbaar. Maar daarmee wordt het een belofte op de site, en de
+ * huisregel daarvoor staat in tests/promises.test.mjs: een belofte in tekst moet
+ * door code worden nagekomen. Vandaar dat de zin hieronder alleen verschijnt als
+ * src/data/modelChecks.js zegt dat élk model in de roster daadwerkelijk door alle
+ * gezichtszoekers is gehaald, zonder treffer. Ontbreekt er één, dan zwijgt de
+ * pagina — geen "de meeste modellen", want een belofte over negen van de tien is
+ * een onware belofte over tien.
+ */
+import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd, oudsteControle } from '../data/modelChecks.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -140,7 +153,7 @@ const COPY = {
     s2P: [
       'It helps to know where this law comes from. The trigger was deep fakes: video of politicians saying things they never said, invented events presented as news, voices cloned to defraud people. That is what Article 50 was written for, and that is where the regulators are looking.',
       'A product photograph of a jacket on a model sits at the other end of that spectrum. Nobody is misled about an event, no public opinion is being steered, and the buyer receives exactly the product they ordered.',
-      'The duty applies anyway, and it is worth being precise about why rather than hoping. The Commission published its final guidance on 20 July 2026 and confirmed the accompanying code of practice as adequate; both have applied since 2 August 2026. That guidance treats marketing imagery that makes a product look different from reality as falling under the disclosure duty, and it reads the exception for evidently creative work narrowly. The duty sits on whoever publishes the image — in practice, you. So we regulate it properly, and it stays a formality of a few seconds rather than a chapter of your operation.',
+      'The duty applies anyway, and it is worth being precise about why rather than hoping. The Commission published its final guidance on 20 July 2026 and confirmed the accompanying code of practice as adequate; both have applied since 2 August 2026. That guidance treats marketing imagery that makes a product look different from reality as falling under the disclosure duty, and it reads the exception for evidently creative work narrowly. The duty sits on whoever publishes the image — in practice, you. So we sort it out properly, and it stays a formality of a few seconds rather than a chapter of your operation.',
       'What has always applied, and still does: the jacket in the photograph has to be the jacket in the box. That is not a new AI rule. That is honest selling, and it was exactly the same with a traditional photoshoot. That is where our attention goes, and where yours should go too.',
     ],
 
@@ -152,6 +165,14 @@ const COPY = {
       ['A written summary on request', 'Source files supplied, visuals produced, dates, and confirmation that a person checked each one before delivery. A person writes that summary. There is no button here that generates one, and we are not going to imply there is.'],
     ],
 
+    mdlH: 'Our models are not people',
+    mdlP: (datum, zoekers) => `Every face in our standard roster was put through ${zoekers.length} face-search engines — ${zoekers.join(', ')} — before it was ever used. None of them matched a findable person. The oldest of those checks is from ${datum}; ask and we will send you the log.`,
+    mdlItems: [
+      ['What that check is.', 'Not a reverse image search, which only finds where a file has been published before. These build a faceprint and look for the same person across different photographs — a different question, and the one that matters here.'],
+      ['What it does not prove.', 'That nobody on earth resembles them. These engines index part of the open web; someone with no photographs online is not found. We say this because a check presented as a guarantee is worth less than one presented honestly.'],
+      ['Why it matters for you.', 'The disclosure duty for deepfakes turns on resemblance to an existing person. A face that is nobody is not a deepfake, so that duty does not reach your campaign. What remains is the ordinary transparency this page is about.'],
+      ['A brand model is checked at delivery.', 'A model made for you does not exist yet when this roster is checked, so its check happens before we hand the images over and is recorded on your order.'],
+    ],
     s4H: 'What this really turns on: the image has to be right',
     s4P: [
       'A disclosure does not make an inaccurate image acceptable. If the colour, the material or the fit in the photograph differs from the product in the box, that is misleading — with or without a label, with or without AI. This rule is as old as mail order. It is what returns and bad reviews come from, and it weighs heavier than any new regulation.',
@@ -178,8 +199,8 @@ const COPY = {
       ['We are not lawyers.', 'This page is information, not legal advice.'],
       ['Our human check does not exempt your images from the disclosure duty.', 'That exemption in the law is for text on matters of public interest, not for images. Anyone claiming otherwise has not read it.'],
       ['Using the EU icon does not make you compliant.', 'It is an aid, not a certification. We supply it because it is recognisable, not because it covers anything.'],
-      ['Every file we deliver carries a machine-readable provenance tag, and one line of it is ours.', 'We write an IPTC DigitalSourceType tag into every delivered file — the value that means "partly made by a model" — including the WebP, where the conversion discarded whatever the model provider had put there. What the provider marked itself we leave alone; we remove nothing. It is not a guarantee: any program that re-saves an image can strip the tag, and providers of systems already on the market have until 2 December 2026 to mark at all. So do not rely on a file to identify itself. The disclosure that counts is the visible one, the one you place.'],
-      ['Marketplaces have their own image rules.', 'Zalando, Amazon, bol and About You sometimes set stricter requirements than the law does, particularly for the main image. You check those for your own channels — we are glad to think along.'],
+      ['Every file we deliver carries a machine-readable provenance tag, and one line of it is ours.', 'We write an IPTC DigitalSourceType tag into every delivered file — the value that means “partly made by a model” — including the WebP, where the conversion discarded whatever the model provider had put there. What the provider marked itself we leave alone; we remove nothing. It is not a guarantee: any program that re-saves an image can strip the tag, and providers of systems already on the market have until 2 December 2026 to mark at all. So do not rely on a file to identify itself. The disclosure that counts is the visible one, the one you place.'],
+      ['Marketplaces have their own image rules.', 'Zalando, Amazon, bol and About You sometimes set stricter requirements than the law does, particularly for the main image. You check those for your own channels — and we are glad to help you work it out.'],
     ],
 
     s7H: 'Who is responsible for what',
@@ -193,14 +214,14 @@ const COPY = {
     ],
     s7Tail: [
       'VISUAILS is not liable for legal consequences arising from the publication or use of delivered images. The information on this page has been compiled to the best of our knowledge, but it is not legal advice and cannot replace it. The full arrangement is in our terms and conditions.',
-      'That is not distance — we are glad to think along, and we correct an image that is wrong without argument. But you know your product and your market, and that responsibility is not ours to take from you.',
+      'That is not us keeping our distance — we are glad to help you work it out, and we correct an image that is wrong without argument. But you know your product and your market, and that responsibility is not ours to take from you.',
     ],
 
     s8H: 'We are in the EU',
     s8P: 'VISUAILS is a Dutch company based in Enschede. Your point of contact sits in the same time zone and under the same regulation as you. No support form twelve hours away.',
 
     ctaH: 'Questions about how this works out for your brand?',
-    ctaP: 'Email us or send a message on WhatsApp. We will think along about where the disclosure should sit, even if you are not a customer yet.',
+    ctaP: 'Email us or send a message on WhatsApp. We will help you work out where the disclosure should sit, even if you are not a customer yet.',
     ctaBtn: 'Contact us',
     wa: 'WhatsApp',
     waText: 'Hi VISUAILS, I have a question about the AI Act and your images.',
@@ -239,6 +260,14 @@ const COPY = {
       ['Op verzoek een schriftelijk overzicht', 'Aangeleverde bronbestanden, geproduceerde visuals, data, en de bevestiging dat een specialist elk beeld vóór levering heeft gecontroleerd. Dat overzicht schrijft een specialist. Er zit hier geen knop die er een genereert, en we doen ook niet alsof.'],
     ],
 
+    mdlH: 'Onze modellen zijn geen mensen',
+    mdlP: (datum, zoekers) => `Elk gezicht in onze vaste roster is door ${zoekers.length} gezichtszoekmachines gehaald — ${zoekers.join(', ')} — voordat het ooit gebruikt is. Geen daarvan legde het naast een vindbaar mens. De oudste van die controles is van ${datum}; vraag erom en je krijgt het logboek.`,
+    mdlItems: [
+      ['Wat die controle is.', 'Geen omgekeerde afbeeldingszoekopdracht, want die vindt alleen waar een bestand eerder gepubliceerd is. Deze maken een faceprint en zoeken dezelfde persóón over verschillende foto\u2019s heen — een andere vraag, en hier de vraag die telt.'],
+      ['Wat het niet bewijst.', 'Dat er niemand op lijkt. Deze machines indexeren een deel van het open web; iemand zonder foto\u2019s online wordt niet gevonden. We zeggen dat erbij, omdat een controle die als garantie wordt gebracht minder waard is dan een die eerlijk wordt gebracht.'],
+      ['Waarom het voor jou uitmaakt.', 'De meldplicht voor deepfakes draait om gelijkenis met een bestaande persoon. Een gezicht dat niemand is, is geen deepfake, dus die plicht raakt jouw campagne niet. Wat overblijft is de gewone transparantie waar deze pagina over gaat.'],
+      ['Een merkmodel wordt bij levering gecontroleerd.', 'Een model dat voor jou gemaakt wordt bestaat nog niet als deze roster gecontroleerd wordt, dus die controle gebeurt vlak voor we de beelden overdragen en wordt op je order vastgelegd.'],
+    ],
     s4H: 'Waar het echt om gaat: het beeld moet kloppen',
     s4P: [
       'Een vermelding maakt een onjuist beeld niet in orde. Als de kleur, het materiaal of de pasvorm op de foto anders is dan het product in de doos, is dat misleidend — met of zonder label, en met of zonder AI. Deze regel is zo oud als postorderverkoop. Daar komen retouren en slechte reviews uit voort, en dat weegt zwaarder dan welke nieuwe regelgeving ook.',
@@ -265,7 +294,7 @@ const COPY = {
       ['Wij zijn geen juristen.', 'Deze pagina is informatie, geen juridisch advies.'],
       ['Onze menselijke controle stelt je beelden niet vrij van de vermeldingsplicht.', 'Die uitzondering in de wet geldt voor tekst over zaken van algemeen belang, niet voor beeld. Wie anders beweert, heeft de tekst niet gelezen.'],
       ['Het EU-icoon gebruiken maakt je niet automatisch compliant.', 'Het is een hulpmiddel, geen keurmerk. Wij leveren het omdat het herkenbaar is, niet omdat het iets afdekt.'],
-      ['Elk bestand dat wij leveren draagt een machine-leesbare herkomsttag, en één regel daarvan is van ons.', 'Wij schrijven in elk geleverd bestand een IPTC DigitalSourceType-tag — de waarde die "deels door een model gemaakt" betekent — ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Wat de aanbieder zelf markeerde laten we staan; wij halen niets weg. Het is geen garantie: elk programma dat een beeld opnieuw opslaat kan de tag verwijderen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare, die jij plaatst.'],
+      ['Elk bestand dat wij leveren draagt een machineleesbare herkomsttag, en één regel daarvan is van ons.', 'Wij schrijven in elk geleverd bestand een IPTC DigitalSourceType-tag — de waarde die "deels door een model gemaakt" betekent — ook in de WebP, waar de omzetting weggooide wat de modelaanbieder erin had gezet. Wat de aanbieder zelf markeerde laten we staan; wij halen niets weg. Het is geen garantie: elk programma dat een beeld opnieuw opslaat kan de tag verwijderen, en aanbieders van systemen die al op de markt waren hebben tot 2 december 2026 om überhaupt te markeren. Reken er dus niet op dat een bestand zichzelf kan aanwijzen. De vermelding die telt is de zichtbare, die jij plaatst.'],
       ['Marktplaatsen hebben eigen beeldregels.', 'Zalando, Amazon, bol en About You stellen soms strengere eisen dan de wet, met name aan de hoofdafbeelding. Die controleer je zelf voor je eigen kanalen — we denken graag mee.'],
     ],
 
@@ -330,6 +359,10 @@ const FIG = {
   },
 };
 
+const modellenGecontroleerd = rosterVolledigGecontroleerd();
+const controleDatum = oudsteControle();
+const zoekers = GEZICHTSZOEKERS.map((e) => e.naam);
+
 const c = COPY[lang];
 const f = FIG[lang];
 const waLink = waHref(c.waText);
@@ -362,6 +395,24 @@ const waLink = waHref(c.waText);
     <dl class="legal-dl">
       {c.s3Items.map(([term, def]) => (<><dt>{term}</dt><dd>{def}</dd></>))}
     </dl>
+
+    {/* DE MODELLENCONTROLE — 19 augustus 2026.
+        Staat hier, direct na "wat je van ons krijgt", omdat het daar een van is:
+        een controle die gedraaid is en waarvan je het logboek kunt opvragen.
+
+        Alles of niets. `modellenGecontroleerd` is pas waar als élk model in de
+        roster door alle gezichtszoekers is gegaan zonder treffer — zie de noot bij
+        de import. Is dat niet zo, dan staat hier niets: liever geen claim dan een
+        claim die op negen van de tien slaat. */}
+    {modellenGecontroleerd && (
+      <>
+        <h2>{c.mdlH}</h2>
+        <p>{c.mdlP(controleDatum, zoekers)}</p>
+        <ul>
+          {c.mdlItems.map(([b, rest]) => (<li><strong>{b}</strong> {rest}</li>))}
+        </ul>
+      </>
+    )}
 
     <h2>{c.s4H}</h2>
     <p>{c.s4P[0]}</p>

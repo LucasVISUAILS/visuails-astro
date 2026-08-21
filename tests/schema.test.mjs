@@ -148,6 +148,12 @@ console.log('\nde kolommen waar de code op rekent, staan erin');
     invoices: ['number', 'status', 'pdf_key', 'snapshot_json', 'issued_at'],
     file_assets: ['file_id', 'format', 'r2_key'],
     order_feedback: ['testimonial_approved', 'testimonial_consent', 'asked_at'],
+    /* Migratie 0032 — de factuur op een abonnementstermijn. De tabel hangt aan
+       `subscription_payments` met een UNIEKE sleutel; dat is de idempotentie waar
+       de webhook op leunt als Mollie dezelfde melding twee keer aflevert. */
+    subscription_invoices: ['number', 'year', 'seq', 'subscription_id',
+                            'subscription_payment_id', 'month', 'status', 'snapshot_json'],
+    subscriptions: ['vat_treatment', 'vat_rate', 'vat_country', 'vat_number', 'status', 'plan'],
   };
   for (const [table, cols] of Object.entries(need)) {
     const have = columns[table] || [];

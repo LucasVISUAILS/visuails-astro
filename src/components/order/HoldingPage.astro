@@ -28,9 +28,10 @@
 // every order after it, and the plans are a minimum-term commitment. Both are
 // conversations. A card form here would be the studio pretending a decision has
 // been made that has not.
-import { AMOUNT, euro, vatLabel, vatNote, plans, turnaround } from '../../data/pricing.js';
+import { AMOUNT, euro, vatLabel, vatLead, vatDetail, plans, turnaround } from '../../data/pricing.js';
 import { localizedPath } from '../../i18n/ui.js';
 
+import Note from '../Note.astro';
 interface Props {
   lang: 'en' | 'nl';
   kind: 'video' | 'brand-model' | 'plan' | 'custom-look';
@@ -61,7 +62,11 @@ const UI = {
     nextH: 'What happens next',
     next: [
       'A written answer from Lucas, not an automated one.',
-      'A quote against the same figures on this page, or a conversation if the work needs one.',
+      // NIET "the same figures on this page": deze drie regels staan onder ELKE
+      // wachtpagina, en /start/custom-look zet er geen bedragen op — die pagina
+      // zegt juist "price on request". Een belofte die op de ene pagina klopt en
+      // op de andere naar niets verwijst, is op die andere pagina een fout.
+      'A quote in writing, or a conversation if the work needs one.',
       'Nothing is charged, and nothing is reserved, until you say yes in writing.',
     ],
     back: 'Back to all services',
@@ -84,7 +89,7 @@ const UI = {
     nextH: 'Wat er daarna gebeurt',
     next: [
       'Een schriftelijk antwoord van Lucas, geen automatisch bericht.',
-      'Een offerte op basis van dezelfde bedragen als op deze pagina, of een gesprek als het werk daarom vraagt.',
+      'Een offerte op schrift, of een gesprek als het werk daarom vraagt.',
       'We brengen niets in rekening en houden niets voor je vrij totdat je schriftelijk ja zegt.',
     ],
     back: 'Terug naar de keuze',
@@ -150,19 +155,25 @@ const KIND = {
      * gebeurt in plaats van wat het kost.
      */
     'custom-look': {
-      h1: 'A custom look',
-      lead: 'A world designed around your product, instead of one of the four house styles.',
+      /* ── DEZE PAGINA DEKT NU OOK CATALOG — 21 augustus 2026 ────────────
+         /catalog/custom stuurde je naar het gewone bestelformulier, en dat
+         beloofde een tarief per product dat er pas is als de look ontworpen is
+         (zie `cardPrice: 'Custom pricing'` in catalogStyles.js). Die knop komt
+         nu hier uit, en dus mag de tekst niet langer alleen over lifestyle gaan:
+         "één van de vier huisstijlen" waren de vier LIFESTYLE-stijlen. */
+      h1: 'A look of your own',
+      lead: 'A world designed around your product, instead of a house style — for a catalog set, a lifestyle scene, or both.',
       status: 'Priced per request',
       statusBody: 'A custom look has no standard rate, and it is not a fifth option next to the four styles — it is a different thing. What it costs depends on the world you want built, so it is worked out once you have told us what that is, and put in writing before anything runs.',
       facts: [
-        ['Price', 'On request. There is no per-product rate for this until we know what the scene is — the four house styles are the ones that have one.'],
+        ['Price', 'On request. There is no per-product rate for this until we know what the scene is — the house styles are the ones that have one. Once the look is designed, every product after it runs at the normal rate for its count.'],
         ['What you get', 'A setting, styling and light that only your brand would use, designed once with you and then held to on every order after it.'],
         ['How it starts', 'Send references and describe the world. We come back with a design direction and a price, in writing, before you commit to anything.'],
       ],
       askLabel: null,
       askHint: null,
       more: '/lifestyle/custom',
-      moreLabel: 'See what a custom look is',
+      moreLabel: 'See what a look of your own is',
     },
     plan: {
       h1: 'A monthly plan',
@@ -213,19 +224,19 @@ const KIND = {
     },
     /* Zie de noot bij de Engelse tegenhanger. */
     'custom-look': {
-      h1: 'Een look op maat',
-      lead: 'Een wereld die om jouw product heen ontworpen is, in plaats van één van de vier huisstijlen.',
+      h1: 'Een eigen look',
+      lead: 'Een wereld die om jouw product heen ontworpen is, in plaats van een huisstijl — voor een catalogset, een lifestylescène, of allebei.',
       status: 'Prijs op aanvraag',
       statusBody: 'Een look op maat heeft geen standaardtarief, en het is geen vijfde optie naast de vier stijlen — het is iets anders. Wat het kost, hangt af van de wereld die je gebouwd wilt hebben, dus dat rekenen we uit zodra je ons verteld hebt wat dat is. Op schrift, voordat er iets draait.',
       facts: [
-        ['Prijs', 'Op aanvraag. Er is geen tarief per product zolang we de scène niet kennen — de vier huisstijlen zijn degene die er wél een hebben.'],
+        ['Prijs', 'Op aanvraag. Er is geen tarief per product zolang we de scène niet kennen — de huisstijlen zijn de enige die er wél een hebben. Zodra de look ontworpen is, loopt elk product daarna tegen het gewone tarief voor dat aantal.'],
         ['Wat je krijgt', 'Een setting, styling en licht die alleen jouw merk zou gebruiken, één keer met je ontworpen en daarna vastgehouden in elke bestelling erna.'],
         ['Hoe het begint', 'Stuur referenties en beschrijf de wereld. Wij komen terug met een richting en een prijs, op schrift, voordat je je ergens aan vastlegt.'],
       ],
       askLabel: null,
       askHint: null,
       more: '/lifestyle/custom',
-      moreLabel: 'Bekijk wat een look op maat is',
+      moreLabel: 'Bekijk wat een eigen look is',
     },
     plan: {
       h1: 'Een maandplan',
@@ -283,7 +294,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
       </dl>
       {/* BRIEF-14: every figure above is net, and this is the one line that
           says once how VAT is handled. */}
-      <p class="hold-vat">{vatNote(lang)}</p>
+      <p class="hold-vat">{vatLead(lang)} <Note lang={lang} term={nl ? 'btw' : 'VAT'} wide>{vatDetail(lang)}</Note></p>
       <p class="hold-more"><a href={lp(k.more)}>{k.moreLabel}</a></p>
     </div>
 

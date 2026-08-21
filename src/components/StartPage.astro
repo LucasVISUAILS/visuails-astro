@@ -29,11 +29,12 @@ import { waHref } from '../data/whatsapp.js';
 // so a repricing in src/data/pricing.js changes this page without anyone
 // opening it. The two placeholder amounts come from AMOUNT for the same reason.
 import {
-  ladderRate, ladderFloor, euro, vatLabel, vatNote, AMOUNT, plans,
+  ladderRate, ladderFloor, euro, vatLabel, vatLead, vatDetail, AMOUNT, plans,
   WINDOW_THRESHOLD, TEST_SAMPLE,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
+import Note from './Note.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -291,7 +292,7 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
       one line per page that says how VAT is actually handled. vatNote() opens
       with "All figures are excl. VAT", so prefixing it with vatLabel() said the
       same thing twice. */}
-  <p class="pick-vat">{vatNote(lang)}</p>
+  <p class="pick-vat">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
   <p class="pick-more"><a href={lp('/pricing')}>{c.ladder}</a></p>
 </div></section>
 

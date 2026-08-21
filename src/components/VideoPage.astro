@@ -64,6 +64,7 @@ import TierCompare from './TierCompare.astro';
 import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
 
+import ServiceSwitch from './ServiceSwitch.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -115,7 +116,7 @@ const COPY = {
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note. Used in the hero and the closing band; the buy block lower
     // down names the tier from TIERS.unattended.label instead.
-    ctaPrimary: 'Start an order',
+    ctaPrimary: 'Ask about a video clip',
     wa: waHref("Hi VISUAILS, I'd like to talk about a product video."),
     waQuote: waHref("Hi VISUAILS, I'd like a quote for a campaign video."),
     waLabel: 'WhatsApp',
@@ -134,7 +135,7 @@ const COPY = {
     // Visible, not buried. Section 13: a visitor must not be able to leave
     // this page believing a delivery date was promised — and now that size
     // decides the service level, the line names the count as well.
-    queueNote: `Clips run in the standard queue: ${t0.queue.en.toLowerCase()}. A held delivery date comes with an order of ${WINDOW_THRESHOLD} products or more — clips can ride inside one, but a clip request on its own does not get a date.`,
+    queueNote: `Clips run in the ${t0.queue.en.toLowerCase()}. A held delivery date comes with an order of ${WINDOW_THRESHOLD} products or more — clips can ride inside one, but a clip request on its own does not get a date.`,
     // The qualifier above TierCompare. That component is shared with /catalog,
     // /lifestyle and /pricing and prints the ladder's two service levels; on
     // THIS page it needs one sentence of context, because neither column is
@@ -188,7 +189,11 @@ const COPY = {
     buyFixed: `<strong>Motion &amp; Lifestyle</strong> — a fixed ${clip} per clip, ${vatLabel('excl', 'en')}, on its own or added to any order.`,
     buyQuote: '<strong>Campaign</strong> — bigger, multi-shot, quoted per project.',
     buyFlat: `Catalog and lifestyle photos are priced per product and the rate falls as the count rises. A clip does not work that way: it is one rate, whatever else is in the order. ${studioPlan ? `${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
-    buyCta: 'Start an order',
+    /* Deze knop wijst naar /start/video en heette "Start an order". Dat is
+       precies de mismatch die op elke dienstpagina is rechtgezet: het label
+       moet zeggen wat er achter de knop gebeurt, niet wat er in het algemeen
+       mogelijk is. Zelfde tekst als de hoofdknop bovenaan deze pagina. */
+    buyCta: 'Ask about a video clip',
     stripAlt: {
       campaign: 'Campaign photography',
       flash: 'Flash-style lifestyle visual',
@@ -230,7 +235,7 @@ const COPY = {
     eyebrow: 'Video',
     h1: 'Korte productvideo’s<br />die <em>bewegen</em>.',
     lead: `8 seconden, subtiele beweging. ${clip} per clip, ${vatLabel('excl', 'nl')} — hetzelfde tarief of het er nu één is of twintig.`,
-    ctaPrimary: 'Start een bestelling',
+    ctaPrimary: 'Vraag een videoclip aan',
     wa: waHref("Hoi VISUAILS, ik wil graag praten over een productvideo."),
     waQuote: waHref("Hoi VISUAILS, ik wil graag een offerte voor een campagnevideo."),
     waLabel: 'WhatsApp',
@@ -240,7 +245,7 @@ const COPY = {
       ['8s', 'strakke productvideo’s'],
       [clip, `per clip · ${vatLabel('excl', 'nl')}`],
     ],
-    queueNote: `Clips lopen mee in de normale doorlooptijd: ${t0.queue.nl.toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
+    queueNote: `Clips lopen mee in de ${t0.queue.nl.toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
     // Zie de Engelse kant voor waarom deze regel er staat.
     tierNote: `De twee kolommen hieronder gaan over de ladder voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
     reviewNote: reviewClaim('unattended', 'nl'),
@@ -283,7 +288,7 @@ const COPY = {
     buyFixed: `<strong>Motion &amp; Lifestyle</strong> — een vaste ${clip} per clip, ${vatLabel('excl', 'nl')}, los te bestellen of mee in een bestelling.`,
     buyQuote: '<strong>Campaign</strong> — groter, meerdere scènes, offerte per project.',
     buyFlat: `Catalog- en lifestylefoto’s hebben een tarief per product, en dat daalt naarmate het aantal stijgt. Bij een clip werkt dat niet zo: het tarief blijft hetzelfde, wat er verder ook in de bestelling zit. ${studioPlan ? `${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
-    buyCta: 'Start een bestelling',
+    buyCta: 'Vraag een videoclip aan',
     stripAlt: {
       campaign: 'Campagnefotografie',
       flash: 'Lifestyle-visual in Flash-stijl',
@@ -343,6 +348,9 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
       <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
       </a>
     </div>
+    {/* "Allebei" gaat over catalog en lifestyle samen en niet over clips, dus
+        die valt hier weg — zie andereDeuren() in src/data/orderDoors.js. */}
+    <ServiceSwitch current={['video', 'complete']} lang={lang} />
     <div class="trust-row" style="margin-top:2.2rem">
       {c.trust.map(([strong, rest]) => (
         <span class="trust-item"><strong>{strong}</strong> {rest}</span>
@@ -475,7 +483,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 <section class="section-tight">
   <div class="container">
     <p class="queue-note" style="margin-bottom:1.4rem">{c.tierNote}</p>
-    <TierCompare lang={lang} />
+    <TierCompare lang={lang} href0="/start/video" label0={c.ctaPrimary} />
   </div>
 </section>
 

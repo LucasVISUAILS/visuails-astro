@@ -2217,6 +2217,37 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .eyebrow-page { display: inline-flex; align-items: center; gap: .5rem; color: var(--ink-3); font-size: .76rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1.2rem; }
 .eyebrow-page::before { content: ""; width: 5px; height: 5px; background: var(--accent); }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+ * RAAKVLAKKEN VAN 24 PIXELS — WCAG 2.2, 2.5.8, NIVEAU AA
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * `npm run keuring` meet op 390px elke link, knop en summary die geen 24 bij 24
+ * CSS-pixels haalt. De eerste meting gaf 799 meldingen; na de kop en de voettekst
+ * bleven deze over. Het zijn stuk voor stuk hoogtes van 20 tot 23 pixels — de
+ * regelhoogte van hun tekst en verder niets — dus ze missen de grens met een paar
+ * pixels. Precies dat is het geval dat niemand ooit ziet zonder te meten, en
+ * precies daarom staat het hier met een getal in plaats van een gevoel.
+ *
+ * VERTICALE OPVULLING EN GEEN HOOGTE. Opvulling op een inline- of flexelement
+ * vergroot het raakvlak zonder de regel te verzetten: de bladzijde ziet er na
+ * deze regel exact zo uit als ervoor, en dat is nagemeten. Een `min-height` zou
+ * bij een enkele regel tekst wél verspringen.
+ *
+ * WAAROM EEN LIJST EN GEEN VANGREGEL. Een blanco `a { min-height: 24px }` raakt
+ * ook elke link midden in een zin, en dáár zondert WCAG 2.5.8 juist expliciet
+ * van uit — een link in lopende tekst kun je niet vergroten zonder de
+ * regelafstand te slopen. De grens tussen "los knopje" en "woord in een zin"
+ * is niet in een selector te vangen zonder ongelukken, dus staat hij hier met
+ * de hand. De zevende die erbij komt, wordt gevonden door de keuring en niet
+ * door een bezoeker.
+ */
+.eyebrow-page a,
+.hv-ob-item > summary,
+.hv-q-sum,
+.standing-name a,
+.pl-svc-change,
+.look-ask-cta { padding-block: .28rem; }
+
 .link-arrow { display: inline-flex; align-items: center; gap: .45rem; color: var(--ink); font-weight: 600; }
 .link-arrow:hover { color: var(--accent-bright); }
 /* Icons terminate square. `stroke-linecap: round` and `stroke-linejoin: round`
@@ -2483,11 +2514,25 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    patches at this tile size. One octave plus the finer 1.1 frequency gives
    smaller, evener particles — the character improves as the quantity drops.
 
-   To take it further down, opacity .03 measures lift 2.67 / amplitude 0.69 and
-   is the next honest step; below that it stops being visible at all. */
+   TURNED DOWN AGAIN, 19 August 2026. Lucas: "ik zou graag wat minder film grain
+   op de achtergrond willen." The step this comment had already measured and
+   recommended, taken: .04 -> .03, lift 3.56 -> 2.67, amplitude 0.88 -> 0.69.
+   Re-measured on the same flat #090909 patch and the old figures reproduced to
+   the hundredth, so the two measurements are comparable.
+
+   BUT THIS LAYER WAS NOT THE MAIN CULPRIT, and that is the finding worth
+   keeping. On empty ground the grain a visitor sees is this overlay PLUS
+   body::before, and that second layer was carrying more than twice as much:
+   lift 7.43 against this one's 3.56. Turning only this one down would have
+   moved about a third of what Lucas was looking at. Both moved; see the note
+   at body::before.
+
+   Below .03 it stops being visible at all, so this is the floor rather than a
+   waypoint. If it still reads as too much, the honest move is to take
+   body::before down further and leave this where it is. */
 .grain {
   position: fixed; inset: 0; z-index: var(--z-grain); pointer-events: none;
-  opacity: .04;
+  opacity: .03;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 170px;
 }
@@ -3613,6 +3658,24 @@ a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
    it can be stronger than the overlay without re-opening the argument the
    overlay's comment settled.
 
+   TURNED DOWN, 19 August 2026, and this is the layer that mattered. Lucas asked
+   for less grain on the background; measured on a flat #090909 patch, the two
+   layers stack like this:
+
+     grond .075 + overlay .04   black 9 -> 19.81   lift 10.81   amplitude 2.30  (was)
+     grond .05  + overlay .03   black 9 -> 16.83   lift  7.83   amplitude 1.65  (is)
+
+   So 28% less lift overall, and this layer supplies most of the drop because it
+   supplied most of the grain: at .075 it was lifting black by 7.43 on its own
+   against the overlay's 3.56. The reasoning above still holds — it sits under
+   the content and never touches a photograph, so it MAY be stronger than the
+   overlay — but "may be stronger" was doing more work than it should. It was
+   nearly double.
+
+   The next step down is .04 (lift 4.14, amplitude 0.88, and 6.30 stacked). That
+   is still visible on a large dark field. Below that the ground goes flat, which
+   is the thing this layer was added to fix.
+
    ONE ELEMENT, THREE BACKGROUND LAYERS, NO JAVASCRIPT AND NO REQUEST. The
    grain is an inline SVG data URI with its alpha baked into the rect, because a
    background layer cannot carry its own opacity. Nothing here animates, so
@@ -3632,7 +3695,7 @@ body::before {
   pointer-events: none;
   background:
     /* 1 · material — ground only, never over an image */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.075'/%3E%3C/svg%3E") 0 0 / 170px repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") 0 0 / 170px repeat,
     /* 2 · the lamp — accent-tinted, top left, very wide, very weak */
     radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%),
     /* 3 · the falloff — the far corners sit back */
@@ -3982,8 +4045,60 @@ body::before {
      waarde en kan geen verloop volgen, dus als de grond een verloop had stond
      er een spookvorm in het paneel. Nu is de grond vlak, de vulling dezelfde
      vlakke waarde, en gaat het licht over allebei tegelijk. */
-  background: var(--accent);
+  /* ── DE GROND IS EEN FOTO GEWORDEN — 20 augustus 2026 ────────────────────
+     Lucas: *"ik wou deze gebruiken als achtergrond van het abonnement blok op
+     de homepage en verwijder de achtergrond foto achter het blok."*
+
+     Alles hierboven beschrijft een VLAK van #C6F100 met zwarte tekst erop. Dat
+     klopt niet meer en het staat er met opzet nog: het is de redenering die
+     verklaart waarom het paneel er zo lang zo uitzag, en waarom deze foto het
+     kán vervangen. De opdracht was destijds "het blok moet er echt uit
+     springen" op een bijna zwarte pagina, en een lap vol accent was daar het
+     botte maar juiste antwoord op. Deze foto doet hetzelfde met één bundel: de
+     bundel zelf is bijna wit limoen, dus het blok komt nog steeds los van de
+     pagina — alleen als een belicht voorwerp in plaats van als een swatch.
+
+     ── DE OMKERING DIE ERBIJ HOORT ───────────────────────────────────────
+     Een vlak van #C6F100 draagt ZWARTE tekst; deze foto is grotendeels donker
+     en draagt dus LICHTE. Daarom is `.on-bright` van `.lime-panel-in` af (zie
+     de markup) en zijn de twee accentwoordkleuren hieronder weer gewoon het
+     accent. Half omdraaien is hier het gevaar: één regel die de oude kant op
+     wijst, geeft zwarte tekst op een zwarte foto.
+
+     ── DE SLUIER, EN WAAROM HIJ OP 90 PROCENT STAAT ─────────────────────
+     Op de bundel is de foto bijna wit: de helderste pixel is rgb(242 245 200).
+     Witte tekst daarop haalt 1,1 en is dus onleesbaar. Dat is geen randgeval —
+     het paneel is 352px breed op een telefoon en 1566 op een breed scherm, en
+     bij `cover` valt de bundel bij elke breedte ergens anders. Waar de tekst
+     landt is dus niet te sturen, en dan moet de GROND overal goed zijn.
+
+     Vandaar één vlakke sluier in plaats van een slim verloop. Reken het na:
+     0,10 × rgb(242 245 200) + 0,90 × rgb(8 9 11) komt uit op ongeveer
+     rgb(31 33 30). Witte tekst daarop haalt ruim 16:1, en de lichtste inkt die
+     dit blok gebruikt (--ink-2, 80 procent wit) ruim 10:1 — tegen een eis van
+     4,5. Op elk ander punt van de foto is de grond nóg donkerder, dus die
+     rekensom is meteen de ondergrens voor het hele paneel.
+
+     Van de foto blijft daarmee de sfeer over en niet het beeld: een limoen
+     schijnsel dat schuin door het blok loopt. Dat is precies wat de vorige
+     achtergrondfoto áchter dit blok deed, nu op de plek waar hij hoort. */
+  background-color: var(--bg-0);
+  background-image:
+    /* VLAK EN NIET VERLOPEND. Er stond hier een schuin verloop van 0,93 naar
+       0,87 — zwaarder waar de kop staat, lichter waar alleen beeld staat. Dat
+       klinkt slim en is het niet: waar de tekst valt verschuift met elke
+       schermbreedte, dus de zwakste plek van de sluier komt vroeg of laat onder
+       een regel terecht. Eén waarde over het hele paneel betekent dat één meting
+       geldt voor het hele blok, en dat is het verschil tussen weten en hopen. */
+    linear-gradient(rgb(8 9 11 / 0.90), rgb(8 9 11 / 0.90)),
+    image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp'));
+  background-size: cover, cover;
+  background-position: center 62%, center 62%;
+  background-repeat: no-repeat, no-repeat;
   border-radius: var(--r-lg);
+  /* Een limoen haarlijn in plaats van een limoen vlak: het blok houdt zijn
+     rand op de pagina zonder dat er nog een lap kleur voor nodig is. */
+  border: 1px solid rgb(198 241 0 / 0.22);
   padding: clamp(1.5rem, 3.2vw, 2.8rem);
   box-shadow: 0 30px 70px -34px rgb(0 0 0 / 0.55);
 }
@@ -4021,9 +4136,11 @@ body::before {
      heel lichte schaduw linksonder in dezelfde tint (58 76 0, niet zwart —
      zwart maakt er vuil groen van). Dit is wat een voorwerp van een swatch
      onderscheidt. */
-  background:
-    radial-gradient(88% 66% at 78% 2%, rgb(255 255 255 / 0.30), transparent 62%),
-    radial-gradient(72% 58% at 8% 102%, rgb(58 76 0 / 0.18), transparent 62%);
+  /* DE TWEE WITTE SPOTS ZIJN WEG. Ze waren er om een VLAK van accent te laten
+     lijken op een belicht voorwerp; de foto eronder is nu zelf het licht, en
+     een tweede lamp erbovenop maakt er mist van. Wat blijft is de korrel
+     hieronder: die hoorde bij het licht en hoort nu bij de foto. */
+  background: none;
 }
 /* Laag 2 — DE SPOTS. Lucas: *"misschien ook mooi om een soort film grain
    spotlights toe te voegen dus witte lichten met spikkels."*
@@ -4088,8 +4205,11 @@ body::before {
   position: absolute; inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3Cfilter%20id='g'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.55'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncG%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncB%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncA%20type='linear'%20slope='0'%20intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url%28%23g%29'/%3E%3C/svg%3E");
   background-size: 340px;
-  opacity: .5;
-  mix-blend-mode: overlay;
+  /* Van .5 naar .34 en van `overlay` naar `soft-light`: overlay op 50 procent
+     was afgesteld op een felle limoen grond, waar veel nodig is voordat je iets
+     ziet. Op een donkere foto is diezelfde stand ruis in plaats van korrel. */
+  opacity: .34;
+  mix-blend-mode: soft-light;
   -webkit-mask-image:
     radial-gradient(44% 36% at 20% 2%,   #000 0%, transparent 72%),
     radial-gradient(30% 28% at 88% 26%,  #000 0%, transparent 74%),
@@ -4113,8 +4233,14 @@ body::before {
      op te geven: #445A00 haalt 5,90 op deze grond, tegenover 15,16 voor de
      zwarte helft van de kop. Twee leesbare waarden, en de nadruk ligt nog
      steeds op het tweede stuk omdat dat de afwijkende kleur is. */
-  --fill-blue: #445A00;
-  --accent-word: #445A00;
+  /* Deze twee wezen naar #445A00 zolang de grond limoen was: accent op accent
+     is 1,0 contrast, dus moest het accentwoord een donkerder groen worden. De
+     grond is nu donker, dus mag het accent weer het accent zijn — en dat is de
+     enige plek in dit blok waar de merkkleur nog als kleur optreedt.
+     Op de lichtste plek van de gesluierde grond (rgb 31 33 30, zie de rekensom
+     bij .lime-panel) haalt #C6F100 ruim 12:1, en elders meer. */
+  --fill-blue: var(--accent);
+  --accent-word: var(--accent);
 }
 
 
@@ -4125,7 +4251,12 @@ body::before {
    .on-bright bewust niet herschreven. */
 .lime-plate {
   position: relative;
-  background: var(--bg-0);
+  /* WAS var(--bg-0), EN DAT WERKTE ALLEEN OP EEN LIMOEN GROND. Daar was de
+     donkere plaat het contrast; op de foto is bijna-zwart op donker een GAT in
+     het paneel. Eén stap omhoog in de grondladder plus een haarlijn maakt er
+     weer een voorwerp van dat op het paneel ligt in plaats van erin. */
+  background: var(--surface-2);
+  border: 1px solid rgb(255 255 255 / 0.10);
   padding: clamp(1.6rem, 3vw, 2.4rem);
   border-radius: var(--r-md);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.10), 0 18px 40px -24px rgb(0 0 0 / 0.5);

@@ -60,8 +60,16 @@ const FIELD = {
 const fl = FIELD[lang];
 ---
 
-<fieldset class="pl-fieldset pl-bg" data-pl-bg>
-  <legend class="pl-sr">{bgc.label}</legend>
+{/* ── DE NAAM STOND ER TWEE KEER ───────────────────────────────────────────
+    Hier stond een verborgen <legend> met dezelfde tekst als de <h3> eronder.
+    Een schermlezer kondigt de groep aan met de legend en leest daarna de kop:
+    "Achtergrond, groep — Achtergrond, kop niveau 3". Twee keer hetzelfde woord
+    achter elkaar, in een formulier waar juist duidelijkheid telt.
+
+    De zichtbare kop IS de naam, dus wordt de fieldset daaraan gehangen met
+    aria-labelledby. Een <legend> is niet verplicht; een toegankelijke naam wel,
+    en die is er nu precies één keer. */}
+<fieldset class="pl-fieldset pl-bg" data-pl-bg aria-labelledby="pl-bg-h">
   <h3 class="pl-sub-h" id="pl-bg-h">{bgc.label}</h3>
 
   <div class="bg-grid" role="radiogroup" aria-labelledby="pl-bg-h">

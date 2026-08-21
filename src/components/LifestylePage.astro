@@ -44,6 +44,7 @@ import TierCompare from './TierCompare.astro';
 import { styles as stylesEn } from '../data/styles.js';
 import { styles as stylesNl } from '../data/styles.nl.js';
 
+import ServiceSwitch from './ServiceSwitch.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -117,7 +118,7 @@ const COPY = {
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." See CatalogPage for
     // the full note — this button carried the tier label verbatim, in the hero,
     // on a link that lands on /start's two-way fork.
-    ctaPrimary: 'Start an order',
+    ctaPrimary: 'Order lifestyle visuals',
     ctaSecondary: 'See the price per product',
     wa: waHref("Hi VISUAILS, I'd like to order lifestyle visuals for my products."),
     waTalk: waHref("Hi VISUAILS, I'd like to talk about lifestyle visuals for my brand."),
@@ -149,7 +150,7 @@ const COPY = {
     // The button under the rung table. /catalog has had one since the ladder
     // landed and this page did not, so the one page that shows a full rate card
     // was also the one that made you scroll past it to act on it.
-    ladderCta: 'Start an order',
+    ladderCta: 'Order lifestyle visuals',
     stepsH: 'Three steps to a carousel.',
     steps: [
       ['Send your photos', 'Front and back at least — more is always welcome.'],
@@ -238,7 +239,7 @@ const COPY = {
     eyebrow: 'Lifestyle',
     h1: 'Jouw product, in scènes <em>die verkopen.</em>',
     lead: `Vier vaste looks. Een carousel van 3 foto’s per product — ${euro(entry, 'nl')} ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
-    ctaPrimary: 'Start een bestelling',
+    ctaPrimary: 'Bestel lifestylebeelden',
     ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag Lifestyle-visuals bestellen voor mijn producten."),
     waTalk: waHref("Hoi VISUAILS, ik wil graag praten over Lifestyle-visuals voor mijn merk."),
@@ -260,7 +261,7 @@ const COPY = {
     ladderProductsCol: 'Producten',
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
     ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
-    ladderCta: 'Start een bestelling',
+    ladderCta: 'Bestel lifestylebeelden',
     stepsH: 'Drie stappen naar een carousel.',
     steps: [
       ['Stuur je foto’s', 'Voorkant en achterkant in elk geval — meer mag altijd.'],
@@ -317,7 +318,7 @@ const COPY = {
       },
       {
         q: 'Welke drie foto’s zijn het?',
-        a: 'Een sfeershot — je product gestyled in een realistische setting. Een on-model shot, zodat mensen het in hun eigen leven zien. En een strakke detail-close-up die de kwaliteit bewijst. Alle drie dragen dezelfde colour grade, en dat is wat ze als één post laat lezen in plaats van als drie losse foto’s.',
+        a: 'Een sfeershot — je product gestyled in een realistische setting. Een on-model shot, zodat mensen het in hun eigen leven zien. En een strakke detail-close-up die de kwaliteit bewijst. Alle drie dragen dezelfde kleurbewerking, en dat is wat ze als één post laat lezen in plaats van als drie losse foto’s.',
       },
       {
         q: 'Kan ik meer dan één look per product krijgen?',
@@ -368,11 +369,12 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
       <h1 class="display ls-h1" style="font-size:var(--t-page-h1);margin-top:1rem" set:html={c.h1} />
       <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
       <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/lifestyle')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
         <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
         <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
         </a>
       </div>
+      <ServiceSwitch current="lifestyle" lang={lang} />
       <div class="trust-row" style="margin-top:2.4rem">
         {c.trust.map(([strong, rest]) => (
           <span class="trust-item"><strong>{strong}</strong> {rest}</span>
@@ -431,7 +433,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
     </div>
 
     <div class="flex" style="justify-content:center;margin-top:1.8rem">
-      <a href={lp('/start')} class="btn btn-primary">{c.ladderCta}</a>
+      <a href={lp('/start/lifestyle')} class="btn btn-primary">{c.ladderCta}</a>
     </div>
   </div>
 </section>
@@ -592,7 +594,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
      See TierCompare.astro for why both columns are styled identically. -->
 <section class="section-tight">
   <div class="container">
-    <TierCompare lang={lang} />
+    <TierCompare lang={lang} href0="/start/lifestyle" label0={c.ctaPrimary} />
   </div>
 </section>
 
@@ -615,7 +617,7 @@ const moodPrice = (slug: string) => (slug === 'custom' ? c.onRequest : c.unitLab
       <h2 class="display" style="font-size:var(--t-page-h2)" set:html={c.ctaH} />
       <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
       <div class="flex" style="justify-content:center;margin-top:2rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/lifestyle')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
         <a href={`${lp('/custom-models')}#standard`} class="btn btn-ghost btn-lg">{c.modelCta}</a>
         <a href={c.waTalk} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
         </a>

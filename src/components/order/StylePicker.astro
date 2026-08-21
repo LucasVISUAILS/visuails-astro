@@ -188,6 +188,39 @@ const looks = ORDERABLE.map((s) => {
   )}
 </fieldset>
 
+<script is:inline data-astro-rerun>
+  /* ── DE STIJL UIT DE URL ────────────────────────────────────────────────────
+   *
+   * Wie op /lifestyle/dunes op "Bestel Dunes" klikt, komt hier binnen met
+   * `?style=dunes`. Zonder deze regels stond er dan niets aangevinkt en moest
+   * hij dezelfde keuze een derde keer maken.
+   *
+   * DEZELFDE DISCIPLINE ALS BIJ PlanPicker.astro. De waarde uit de URL gaat
+   * NERGENS de pagina in. Hij wordt gefilterd op letters en streepjes — anders
+   * is een stijl als "a],[b" een selector die elke radio tegelijk raakt — en
+   * daarna alleen gebruikt om een radio op te zoeken die wij zelf gerenderd
+   * hebben. Bestaat hij niet, dan blijft staan wat er stond: niets.
+   *
+   * EN HIJ RAAKT DE PRIJS NIET. Het tarief hangt aan de ROUTE (/start/lifestyle)
+   * en pipeline.js leest de URL met opzet nooit voor de dienst — zie de noot
+   * daar. Een stijl kost overal hetzelfde, dus dit is een voorkeur en geen bedrag.
+   *
+   * `data-astro-rerun` omdat Astro's ClientRouter een inline script maar één keer
+   * uitvoert; zonder dat attribuut werkt dit precies één keer per bezoek. Zie
+   * tests/zachte-navigatie.test.mjs. */
+  (function () {
+    var waarde = new URLSearchParams(location.search).get('style');
+    if (!waarde || !/^[a-z-]{2,24}$/.test(waarde)) return;
+    var radio = document.querySelector('input[name="style"][value="' + waarde + '"]');
+    if (!radio || radio.checked) return;
+    radio.checked = true;
+    /* WEL EEN change-EVENT, anders dan bij PlanPicker. Aan deze radio's hangt
+       pipeline.js: de samenvatting op de laatste stap leest de gekozen look, en
+       een vinkje dat met de hand gezet is, meldt zichzelf niet. */
+    radio.dispatchEvent(new Event('change', { bubbles: true }));
+  })();
+</script>
+
 <style>
   [hidden] { display: none !important; }
 

@@ -13,6 +13,7 @@ import { catalogStyles } from '../../data/catalogStyles.js';
 import { reviewClaim, turnaround, TIERS } from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
 
+import ServiceSwitch from '../../components/ServiceSwitch.astro';
 export function getStaticPaths() {
   return catalogStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
@@ -30,6 +31,17 @@ const QUEUE = TIERS.unattended.queue.en;
 // The description used to be one template literal, so its length was whatever
 // the data happened to make it. metaDescription drops the trailing tier
 // clauses instead of running past 160 — see src/data/meta.js.
+
+/* ── DE ZUSTERLOOKS VAN DEZE PAGINA ────────────────────────────────────────
+   Elke stijlpagina had precies één inkomende link — van de eigen hub — en
+   verwees naar geen enkele andere look. Wie op Dunes belandde en wilde weten
+   hoe Flash eruitziet, moest terug naar boven en opnieuw beginnen. Deze rij
+   is dezelfde regel-vorm als de dienstenrij eronder, met de looks erin die
+   deze pagina niet is. Ongelokaliseerde paden: ServiceSwitch doet lp() zelf. */
+const zusters = catalogStyles
+  .filter((s) => s.slug !== style.slug)
+  .map((s) => ({ href: `/catalog/${s.slug}`, naam: s.name }));
+
 ---
 
 <Layout
@@ -48,11 +60,13 @@ const QUEUE = TIERS.unattended.queue.en;
         <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
         <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
         <div class="flex" style="margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">Order {style.name}</a></span></span>
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
           <a href={waHref(`Hi VISUAILS, I'd like to talk about the ${style.name} style.`)} class="btn btn-wa" target="_blank" rel="noopener">
             WhatsApp
           </a>
         </div>
+        <ServiceSwitch lang="en" label={'Other looks:'} items={zusters} />
+        <ServiceSwitch current="catalog" lang="en" />
         <div class="trust-row" style="margin-top:2rem">
           <span class="trust-item"><strong>{style.priceTrust}</strong>{style.priceUnit ?? ' / visual'}</span>
           <span class="trust-item"><strong>{TIMING}</strong></span>
@@ -173,7 +187,7 @@ const QUEUE = TIERS.unattended.queue.en;
         <h2 class="display" style="font-size:var(--t-page-h1-sm)">Make {style.name} <em>yours.</em></h2>
         <p class="lead" style="margin:1rem auto 0;text-align:center">Test sample, or place your order today.</p>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">Order {style.name}</a></span></span>
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
           <a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a>
         </div>
       </div>

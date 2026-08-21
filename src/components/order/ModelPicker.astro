@@ -45,6 +45,7 @@ import { localizedPath } from '../../i18n/ui.js';
 
 import Disclose from '../Disclose.astro';
 
+import Note from '../Note.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -67,8 +68,15 @@ for (const m of ROSTER) {
 const COPY = {
   en: {
     label: 'The on-model shot',
+    labelNote: 'One photo of the product being worn, so a shopper can see the fit and the drape instead of guessing at them. It is part of every catalog set at no extra cost, and it is the reason the set is four photos and not three.',
     lead: 'Every catalog set includes one on-model photo at no extra cost. Pick the face that fits your brand, or leave the choice to us.',
-    any: 'Choose one that fits our brand',
+    /* "Choose one that fits OUR brand" stond hier, en dat wisselt halverwege het
+       blok van spreker: de regel erboven zegt "Pick the face that fits YOUR
+       brand, or leave the choice to us" — VISUAILS aan het woord — en de noot
+       eronder zegt "We read the products [...] and pick from the ten faces".
+       Het Nederlands had het altijd al goed: "Wij kiezen er een die bij je merk
+       past". Nu zeggen beide talen hetzelfde. */
+    any: 'We choose one that fits your brand',
     anyNote: 'We read the products and what you told us, and pick from the ten faces. This is the default, and it is a real answer — not a blank we will chase you about.',
     why: 'About these faces',
     whyP: [
@@ -86,6 +94,7 @@ const COPY = {
   },
   nl: {
     label: 'De foto op een model',
+    labelNote: 'Eén foto waarop het product gedragen wordt, zodat een koper de pasvorm en de val ziet in plaats van erover te moeten gokken. Hij zit zonder meerprijs in elke catalogset, en hij is de reden dat die set uit vier foto\u2019s bestaat en niet uit drie.',
     lead: 'Bij elke catalogset zit één foto op een model, zonder extra kosten. Kies het gezicht dat bij je merk past, of laat de keuze aan ons.',
     any: 'Wij kiezen er een die bij je merk past',
     anyNote: 'Wij kijken naar de producten en naar wat je ons vertelde, en kiezen uit de tien gezichten. Dit is de standaard, en het is een echt antwoord — geen leeg veld waar we je achteraf over lastigvallen.',
@@ -101,11 +110,15 @@ const COPY = {
   },
 };
 const c = COPY[lang];
+const nl = lang === 'nl';
 ---
 
 <fieldset class="pl-fieldset pl-model">
   <legend class="pl-sr">{c.label}</legend>
-  <h3 class="pl-sub-h" id="pl-model-h">{c.label}</h3>
+  {/* "On-model" is vakjargon dat op deze site alleen op /catalog wordt
+      uitgelegd, en dan nog binnen een dichtgeklapte vraag. Hier staat het als
+      kop boven een keuze die de klant moet maken. */}
+  <h3 class="pl-sub-h" id="pl-model-h">{c.label} <Note lang={lang} term={nl ? 'de foto op een model' : 'the on-model shot'}>{c.labelNote}</Note></h3>
   <p class="pl-model-lead">{c.lead}</p>
 
   <div class="mp-grid" role="radiogroup" aria-labelledby="pl-model-h">

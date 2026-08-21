@@ -1,0 +1,404 @@
+---
+/*
+ * VISUAILS — HET VRAAGTEKEN MET EEN ZWEVENDE NOTITIE — 21 augustus 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas: *"wanneer een klant over een vraagteken gaat dat het niet uitklapt maar
+ * een floating note blok laat zien om ruimte op de site te besparen."*
+ *
+ * Dat is precies het verschil met <Disclose>. Een uitklapper DUWT de pagina open:
+ * alles eronder schuift naar beneden, en de lezer die alleen even wilde weten wat
+ * een woord betekent, is zijn plek kwijt. Een zwevende notitie legt zich er
+ * bovenop en laat de pagina staan.
+ *
+ * ── DE VERDEELSLEUTEL TUSSEN DE TWEE ────────────────────────────────────────
+ *
+ *   <Note>      één woord of één bewering die uitleg vraagt, maar niet voor
+ *               iedereen. Kort — hooguit een paar zinnen. Verandert niets aan
+ *               de hoogte van de pagina.
+ *   <Disclose>  een blok dat een eigen kop verdient en waar iemand doorheen wil
+ *               kunnen lezen. Zie de huisregel in Disclose.astro: een blok dat
+ *               op de overtuigingsladder staat, wordt nooit weggeklapt.
+ *
+ * ── WAT DIT GEEN TOOLTIP MAAKT, MAAR EEN KNOP ──────────────────────────────
+ *
+ * `title=""` was de makkelijke weg en hij deugt niet: op een aanraakscherm komt
+ * hij nooit tevoorschijn, hij is niet te stylen, hij verschijnt pas na een seconde,
+ * en een schermlezer leest hem lang niet altijd voor. Wat hier staat is een
+ * ECHTE knop met een notitie eraan gekoppeld via `aria-describedby`. Daarmee:
+ *
+ *   · muis         → aanwijzen opent, wegbewegen sluit
+ *   · toetsenbord  → tab erheen opent, Escape sluit, tab verder sluit
+ *   · aanraking    → tikken opent, ergens anders tikken sluit
+ *   · schermlezer  → de tekst hoort bij de knop en wordt voorgelezen, ook als
+ *                    de notitie visueel dicht staat
+ *
+ * ── WAAROM DE NOTITIE `position: fixed` WORDT ZODRA ER JS IS ───────────────
+ *
+ * De banden op deze site knippen af: `overflow: clip` staat op meerdere secties,
+ * en een `position: absolute` notitie binnen zo'n band wordt afgesneden precies
+ * op de rand. Daarom rekent het script hieronder de plek uit vanaf de knop en
+ * zet hem op `fixed`: dan hangt hij aan het VENSTER en niet aan de band, en kan
+ * hij niet worden afgeknipt. Hij wordt ook gespiegeld als hij anders rechts (of
+ * links) buiten beeld zou vallen, en hij springt naar boven als er onder de knop
+ * geen ruimte meer is.
+ *
+ * Zonder JS blijft er een werkende versie staan: `position: absolute` onder de
+ * knop, geopend door `:hover` en `:focus-within`, puur CSS. Dan kan hij op een
+ * enkele plek worden afgeknipt — en dat is nog altijd beter dan niets, en het is
+ * het geval dat vrijwel niemand meemaakt.
+ *
+ * ── ALLEEN LOPENDE INHOUD ERIN, GEEN <p> ──────────────────────────────────
+ *
+ * Deze component is INLINE: hij staat middenin een zin, dus in de praktijk
+ * binnen een <p>. En een <p> binnen een <p> bestaat niet — de HTML-parser sluit
+ * dan de buitenste, en alles wat erna komt valt uit de boom. Dat is precies wat
+ * er op 21 augustus 2026 gebeurde bij de eerste versie van de Hooks-notitie:
+ * de <p>-regels erin duwden de hele notitie uit haar eigen span, de zwevende
+ * notitie kwam LEEG tevoorschijn, en de tekst stond gewoon in de pagina. Niets
+ * viel om, er was geen foutmelding, en het zag er in de bron goed uit.
+ *
+ * Dus: geef er <span>-elementen in mee, niet <p>. Wie regels onder elkaar wil,
+ * gebruikt `class="nt-p"` — dat is een span die zich als blok gedraagt.
+ *
+ * ── DE RAAKVLAKMAAT ────────────────────────────────────────────────────────
+ *
+ * WCAG 2.2 SC 2.5.8 vraagt 24×24 CSS-pixels. De ring die je ZIET is kleiner —
+ * 1.35em, zodat hij meeschaalt met de tekst ernaast en niet als een knop naast
+ * een woord staat te schreeuwen. De knop eromheen is wél 24×24. Dat is precies
+ * de bedoeling van die regel: het doel mag groter zijn dan de tekening.
+ */
+
+interface Props {
+  /** 'nl' of 'en' — bepaalt alleen het onzichtbare label van de knop. */
+  lang?: string;
+  /** Waar de notitie over gaat, voor het onzichtbare label: "Uitleg: btw-nummer". */
+  /*
+   * MOET EEN ZELFSTANDIG NAAMWOORD ZIJN, GEEN ZIN. Het Engelse label wordt
+   * `What ${term} means`, dus alles wat een werkwoord bevat loopt vast:
+   * term='we record' werd "What we record means" en term='the tag cannot be
+   * relied on' werd "What the tag cannot be relied on means". Beide stonden
+   * één build lang in de site en zijn alleen te horen met een schermlezer —
+   * op het scherm zie je enkel het vraagteken. tests/nav.test.mjs weigert
+   * sindsdien elke term die met een voornaamwoord begint of een persoonsvorm
+   * bevat. Goed: 'the provenance tag', 'a credit', 'de tijdstempel'.
+   */
+  term?: string;
+  /** Een bredere notitie, voor de paar gevallen met meer dan een paar zinnen. */
+  wide?: boolean;
+  /** Extra klassen op de buitenkant. */
+  class?: string;
+}
+
+const { lang = 'en', term = '', wide = false, class: extra = '' } = Astro.props;
+
+/* Een id dat uniek is binnen de pagina zonder dat de aanroeper er iets voor hoeft
+   te doen. Astro geeft elke component-instantie een eigen scope; deze teller loopt
+   per render van de pagina. */
+const nr = (globalThis.__vNoteTeller = (globalThis.__vNoteTeller || 0) + 1);
+const id = `nt-${nr}`;
+const label = lang === 'nl'
+  ? (term ? `Uitleg: ${term}` : 'Uitleg')
+  : (term ? `What ${term} means` : 'What this means');
+---
+
+<span class={`nt ${wide ? 'nt-wide' : ''} ${extra}`.trim()}>
+  <button
+    type="button"
+    class="nt-btn"
+    aria-describedby={id}
+    aria-expanded="false"
+    data-note-btn
+  >
+    <span class="nt-mark" aria-hidden="true">?</span>
+    <span class="nt-say">{label}</span>
+  </button>
+  <span class="nt-pop" id={id} role="tooltip" data-note-pop>
+    <slot />
+  </span>
+</span>
+
+<style is:global>
+  /* ── DE KNOP ───────────────────────────────────────────────────────────── */
+  .nt {
+    /* `inline-grid` en geen `inline-block`: de notitie hangt eronder met
+       `position: absolute`, en die heeft een positioneringscontext nodig die
+       niet meeschuift met de regel eromheen. */
+    position: relative;
+    display: inline-grid;
+    vertical-align: middle;
+    line-height: 0;              /* de knop bepaalt de hoogte, niet de regel */
+  }
+  .nt-btn {
+    /* 24×24 en niet 1.35em: zie de noot over SC 2.5.8 hierboven. */
+    inline-size: 24px;
+    block-size: 24px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: help;                /* en niet `pointer`: er gebeurt niets, je leest */
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nt-mark {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.35em;
+    block-size: 1.35em;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    font-family: var(--font-display, inherit);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink-3);
+    transition: color var(--dur-1) ease, border-color var(--dur-1) ease, background-color var(--dur-1) ease;
+  }
+  .nt-btn:hover .nt-mark,
+  .nt-btn:focus-visible .nt-mark,
+  .nt-btn[aria-expanded="true"] .nt-mark {
+    color: var(--accent-bright, var(--accent));
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .nt-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 50%; }
+
+  /* Het label is er voor de schermlezer en voor de zoekfunctie van de browser,
+     en het mag geen enkele pixel innemen. `clip-path` en niet `display:none`:
+     dat laatste haalt hem ook uit de toegankelijkheidsboom. */
+  .nt-say {
+    position: absolute;
+    inline-size: 1px; block-size: 1px;
+    margin: -1px; padding: 0; border: 0;
+    overflow: hidden; white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  /* ── DE NOTITIE ────────────────────────────────────────────────────────── */
+  .nt-pop {
+    position: absolute;
+    inset-block-start: calc(100% + 8px);
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    z-index: 60;
+
+    inline-size: max-content;
+    max-inline-size: min(30ch, calc(100vw - 2rem));
+    padding: .7rem .85rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm, 8px);
+    background: var(--surface-2, #1F2229);
+    box-shadow: 0 18px 40px -20px rgb(0 0 0 / 0.75);
+
+    font-family: var(--font-body, inherit);
+    font-size: .84rem;
+    font-weight: 400;
+    line-height: 1.55;
+    letter-spacing: normal;
+    text-align: start;
+    text-transform: none;
+    color: var(--ink-2);
+    white-space: normal;
+
+    /* Dicht, maar wél in de toegankelijkheidsboom — `visibility` en niet
+       `display:none`, want `aria-describedby` moet hem kunnen voorlezen. */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--dur-1) ease, visibility var(--dur-1) ease;
+  }
+  .nt-wide .nt-pop { max-inline-size: min(46ch, calc(100vw - 2rem)); }
+
+  /* `.nt-p` is de blokregel binnen een notitie — een <span> die zich gedraagt
+     als een alinea. Zie de noot hierboven over waarom er geen <p> in mag. */
+  .nt-pop :is(p, ul, ol, .nt-p) { display: block; margin: 0 0 .55rem; }
+  .nt-pop :is(p, ul, ol, .nt-p):last-child { margin-bottom: 0; }
+  .nt-pop b, .nt-pop strong { color: var(--ink); font-weight: 700; }
+  .nt-pop ul { padding-inline-start: 1.1rem; }
+
+  /* Openen zonder JS: aanwijzen of erin focussen. */
+  .nt:hover .nt-pop,
+  .nt:focus-within .nt-pop,
+  .nt-btn[aria-expanded="true"] + .nt-pop {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ── ZODRA HET SCRIPT ER IS ────────────────────────────────────────────── */
+  /* Het script hangt hem aan het venster en rekent de plek zelf uit, zodat geen
+     enkele `overflow: clip` hem kan afknippen. Vanaf dat moment MOET de
+     CSS-plaatsing eraf, anders vechten de twee om dezelfde eigenschappen. */
+  .js-note .nt-pop {
+    position: fixed;
+    inset-block-start: var(--nt-y, 0);
+    inset-inline-start: var(--nt-x, 0);
+    translate: none;
+    margin: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nt-mark, .nt-pop { transition: none; }
+  }
+
+  /* Op papier heeft zweven geen betekenis: dan staat alles gewoon open. */
+  @media print {
+    .nt-pop {
+      position: static; opacity: 1; visibility: visible;
+      translate: none; box-shadow: none; display: block; margin-block-start: .4rem;
+    }
+  }
+</style>
+
+<script>
+  /* ── HET GEDRAG ───────────────────────────────────────────────────────────
+   *
+   * Eén luisteraar op `document` voor alle notities samen, en niet één per stuk.
+   * Op een pagina met twintig vraagtekens is dat twintig keer minder werk, en het
+   * blijft werken voor een notitie die er bij een zachte navigatie bij komt.
+   *
+   * `astro:page-load` en niet alleen bij het laden: zie de noot in
+   * tests/zachte-navigatie.test.mjs. Een module draait één keer per bezoek; het
+   * OPHANGEN moet één keer, het OPMETEN bij elke pagina.
+   */
+  function noteBoot() {
+    /* DE KLASSE EERST, EN BUITEN DE WACHT. Astro's ClientRouter haalt bij een
+       zachte navigatie ALLE attributen van <html> af en zet die van de nieuwe
+       pagina ervoor in de plaats — klasse inbegrepen. Stond dit achter de
+       `__vNote`-wacht, dan verdween `js-note` bij de eerste navigatie en bleven
+       de notities op `position: absolute` staan terwijl het script ze op
+       `--nt-x/--nt-y` bleef zetten: onzichtbaar kapot. Zelfde valkuil, zelfde
+       reparatie als bij de onthulpoort in Layout.astro. */
+    document.documentElement.classList.add('js-note');
+    if (window.__vNote) return;
+    window.__vNote = true;
+
+    let open = null;         // de knop die nu open staat
+    let sluitTimer = null;
+    /* ── DE KNOP DIE MET ESCAPE IS WEGGESTUURD ─────────────────────────────
+       Escape sluit de notitie en zet de focus terug op de knop. Zonder dit
+       veld deed die focus de notitie meteen weer open: `verberg()` zette
+       aria-expanded op false, `btn.focus()` vuurde `focusin`, en die riep
+       `toon()` aan. De notitie knipperde en stond daarna weer open — gemeten op
+       21 augustus, en precies het gedrag dat Escape onbruikbaar maakt.
+
+       Hij blijft onderdrukt zolang de focus of de muis op diezelfde knop staat,
+       en gaat weer los zodra je ergens anders heen gaat. Dat is ook wat een
+       lezer verwacht: weg is weg, tot je er opnieuw naartoe komt. */
+    let onderdrukt = null;
+
+    /* De notitie hangt aan het venster, dus de plek moet uit de knop komen. Drie
+       dingen worden hier beslist en ze zijn alle drie een geval dat we echt zijn
+       tegengekomen:
+         · te ver naar rechts  → schuif hem naar binnen, hij mag de rand raken
+         · geen ruimte eronder → zet hem erboven
+         · smal scherm         → hij is toch al zo breed als het venster minus marge  */
+    function plaats(btn, pop) {
+      pop.style.setProperty('--nt-x', '0px');
+      pop.style.setProperty('--nt-y', '0px');
+      const b = btn.getBoundingClientRect();
+      const p = pop.getBoundingClientRect();
+      const marge = 12;
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+
+      let x = b.left + b.width / 2 - p.width / 2;
+      x = Math.max(marge, Math.min(x, vw - p.width - marge));
+
+      let y = b.bottom + 8;
+      if (y + p.height > vh - marge) {
+        const boven = b.top - p.height - 8;
+        if (boven > marge) y = boven;
+        else y = Math.max(marge, vh - p.height - marge);
+      }
+      pop.style.setProperty('--nt-x', `${Math.round(x)}px`);
+      pop.style.setProperty('--nt-y', `${Math.round(y)}px`);
+    }
+
+    function toon(btn) {
+      if (onderdrukt === btn) return;
+      window.clearTimeout(sluitTimer);
+      if (open && open !== btn) verberg(open);
+      const pop = btn.nextElementSibling;
+      if (!pop) return;
+      btn.setAttribute('aria-expanded', 'true');
+      plaats(btn, pop);
+      open = btn;
+    }
+
+    function verberg(btn) {
+      if (!btn) return;
+      btn.setAttribute('aria-expanded', 'false');
+      if (open === btn) open = null;
+    }
+
+    /* Een korte adempauze bij het weggaan. Zonder die pauze knippert de notitie
+       weg zodra de muis over de rand van de knop schuift, en dat is precies de
+       beweging die iemand maakt die hem wil lezen. */
+    function traagVerbergen() {
+      window.clearTimeout(sluitTimer);
+      sluitTimer = window.setTimeout(() => verberg(open), 140);
+    }
+
+    const knopVan = (e) => e.target && e.target.closest && e.target.closest('[data-note-btn]');
+
+    document.addEventListener('pointerover', (e) => {
+      const btn = knopVan(e);
+      if (onderdrukt && onderdrukt !== btn) onderdrukt = null;
+      if (btn) return toon(btn);
+      /* Ook binnen de notitie zelf blijft hij staan: iemand die een link erin
+         wil aanklikken, mag er met de muis naartoe. */
+      if (open && e.target.closest && e.target.closest('[data-note-pop]')) {
+        window.clearTimeout(sluitTimer);
+        return;
+      }
+      if (open) traagVerbergen();
+    });
+
+    document.addEventListener('pointerdown', (e) => {
+      const btn = knopVan(e);
+      if (btn) {
+        /* Aanraking: tikken opent en tikken sluit. Zonder dit blijft een
+           aangeraakte notitie hangen tot je ergens anders tikt. */
+        if (open === btn) { verberg(btn); onderdrukt = btn; e.preventDefault(); }
+        else { onderdrukt = null; toon(btn); }
+        return;
+      }
+      if (open && !(e.target.closest && e.target.closest('[data-note-pop]'))) verberg(open);
+    });
+
+    document.addEventListener('focusin', (e) => {
+      const btn = knopVan(e);
+      if (onderdrukt && onderdrukt !== btn) onderdrukt = null;
+      if (btn) toon(btn);
+      else if (open && !(e.target.closest && e.target.closest('[data-note-pop]'))) verberg(open);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !open) return;
+      const btn = open;
+      verberg(btn);
+      onderdrukt = btn;
+      btn.focus();
+    });
+
+    /* Scrollen en draaien verplaatsen de knop; de notitie hangt aan het venster
+       en zou blijven staan waar hij stond. */
+    const herplaats = () => {
+      if (!open) return;
+      const pop = open.nextElementSibling;
+      if (pop) plaats(open, pop);
+    };
+    window.addEventListener('scroll', herplaats, { passive: true });
+    window.addEventListener('resize', herplaats, { passive: true });
+
+    /* Wat er bij een zachte navigatie overblijft, is een open notitie die naar
+       een knop wijst die niet meer bestaat. */
+    document.addEventListener('astro:before-swap', () => { open = null; });
+  }
+
+  noteBoot();
+  document.addEventListener('astro:page-load', noteBoot);
+</script>

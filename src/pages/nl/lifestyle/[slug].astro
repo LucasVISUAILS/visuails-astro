@@ -13,6 +13,7 @@ import {
 } from '../../../data/pricing.js';
 import { metaDescription } from '../../../data/meta.js';
 
+import ServiceSwitch from '../../../components/ServiceSwitch.astro';
 export function getStaticPaths() {
   return styles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
@@ -68,6 +69,17 @@ const priceLine = style.priceTrust
 // De description was één template literal, dus de lengte was wat de data er
 // toevallig van maakte. metaDescription laat de tier-clausules vallen in
 // plaats van over de 160 heen te gaan — zie src/data/meta.js.
+
+/* ── DE ZUSTERLOOKS VAN DEZE PAGINA ────────────────────────────────────────
+   Elke stijlpagina had precies één inkomende link — van de eigen hub — en
+   verwees naar geen enkele andere look. Wie op Dunes belandde en wilde weten
+   hoe Flash eruitziet, moest terug naar boven en opnieuw beginnen. Deze rij
+   is dezelfde regel-vorm als de dienstenrij eronder, met de looks erin die
+   deze pagina niet is. Ongelokaliseerde paden: ServiceSwitch doet lp() zelf. */
+const zusters = styles
+  .filter((s) => s.slug !== style.slug)
+  .map((s) => ({ href: `/lifestyle/${s.slug}`, naam: s.name }));
+
 ---
 
 <Layout
@@ -90,6 +102,8 @@ const priceLine = style.priceTrust
           WhatsApp
         </a>
       </div>
+      <ServiceSwitch lang="nl" label={'Andere looks:'} items={zusters} />
+      <ServiceSwitch current="lifestyle" lang="nl" />
       <div class="trust-row" style="margin-top:2rem">
         {/* Eén bron voor het tarief op deze pagina: priceLine bevat al de
             eigen priceTrust van de stijl of de twee uiteinden van de staffel. */}

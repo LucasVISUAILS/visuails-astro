@@ -62,7 +62,7 @@ import { paymentMismatch } from '../../../src/data/vat.js';
    getal hier: welk plan wat geeft, is een verkoopbesluit dat op één plek hoort te
    staan — zie de kop van dat bestand. */
 import { productsFor } from '../../../src/data/plans.js';
-import { issueInvoice, issueCreditNote } from '../../../src/lib/invoice.js';
+import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
 import { notifyPaid, notifyPaymentFailed, notifySampleBlocked } from '../../../src/lib/notify.js';
 import { payerHash } from '../../../src/lib/payer.js';
@@ -378,6 +378,41 @@ async function recordSubscriptionPaid(env, payment, mode) {
   ).bind(sub.id).run();
 
   console.log(`[mollie-webhook] abonnement ${sub.id}: ${month} toegekend, ${granted} producten (${mode})`);
+
+  /* ── EN DE FACTUUR — 20 AUGUSTUS 2026 ──────────────────────────────────────
+     Tot vandaag hield het hier op: betaling vastgelegd, maand toegekend, klaar.
+     Er ging geen document uit. Voor een terugkerende zakelijke afschrijving hoort
+     daar een factuur tegenover, uit dezelfde doorlopende nummerreeks als een
+     factuur op een bestelling. Zie issueSubscriptionInvoice() in
+     src/lib/invoice.js en de kop van migratie 0032.
+
+     NA de toekenning en niet ervoor. De volgorde is: geld vastleggen, tegoed
+     toekennen, dan pas papier. Valt het papier om, dan heeft de klant nog steeds
+     waar hij voor betaald heeft — andersom zou een factuur bestaan voor een maand
+     die de klant niet gekregen heeft.
+
+     In een try, om dezelfde reden als bij een bestelling: een factuur die niet
+     lukt mag de webhook geen 500 laten geven, want dan komt Mollie terug en wordt
+     alles hierboven opnieuw geprobeerd. De factuur is te herstellen, een dubbele
+     toekenning niet. */
+  try {
+    const rijId = await betalingId(env, payment.id);
+    const factuur = rijId ? await issueSubscriptionInvoice(env, rijId) : null;
+    if (factuur) console.log(`[mollie-webhook] factuur ${factuur.number} voor abonnement ${sub.ref || sub.id} (${mode})`);
+  } catch (e) {
+    console.error('[mollie-webhook] abonnementsfactuur voor', sub.ref || sub.id, 'niet uitgegeven —',
+      e && e.message ? e.message : e);
+  }
+}
+
+/* Het id van de zojuist weggeschreven betaalrij. Apart, omdat de INSERT hierboven
+   in een try zit die een dubbele aflevering stil laat aflopen: dan is er geen
+   nieuwe rij maar bestaat de oude wél, en die is wat de factuur nodig heeft. */
+async function betalingId(env, externalId) {
+  const rij = await env.DB.prepare(
+    'SELECT id FROM subscription_payments WHERE external_id = ?1'
+  ).bind(externalId).first();
+  return rij ? rij.id : null;
 }
 
 async function recordPaid(env, payment, mode) {
@@ -407,6 +442,27 @@ async function recordPaid(env, payment, mode) {
    */
   if (payment.subscriptionId) {
     await recordSubscriptionPaid(env, payment, mode);
+    return;
+  }
+
+  /* ── DE € 1 VAN HET MANDAAT ────────────────────────────────────────────────
+     20 augustus 2026. Deze betaling heeft geen `order_ref` (createFirstPayment()
+     zet `sub_ref`) en ook geen `subscriptionId` — dat veld krijgt Mollie pas bij
+     de termijnen die uit het mandaat volgen. Ze viel dus in de tak hieronder en
+     leverde bij ELKE nieuwe abonnee een rode regel op: "paid payment carries no
+     order_ref". Een logboek dat bij normaal gedrag alarm slaat, is een logboek
+     dat niemand meer leest — precies het argument dat twintig regels hoger staat
+     voor de abonnementstak.
+
+     Wat hier NIET gebeurt en wat opzettelijk een openstaand punt is: er wordt
+     geen rij weggeschreven. Het abonnement wordt niet hier geactiveerd maar op de
+     terugkeerpagina (activeerAbonnement() in src/lib/subscribe.js haalt het
+     mandaat op), dus de keten loopt zonder deze webhook. Maar die euro ís
+     ontvangen en staat nergens — of daar een factuur bij hoort is een vraag over
+     btw en niet over code, en die hoort Lucas te beantwoorden voordat er iets
+     wordt vastgelegd wat later niet meer klopt. */
+  if (!ref && meta && meta.sub_ref) {
+    console.log('[mollie-webhook] mandaatbetaling voor abonnement', String(meta.sub_ref), '—', payment.id, `(${mode})`);
     return;
   }
 

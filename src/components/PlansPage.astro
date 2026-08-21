@@ -44,6 +44,8 @@ import {
 import { localizedPath } from '../i18n/ui.js';
 import { waHref } from '../data/whatsapp.js';
 
+import ServiceSwitch from './ServiceSwitch.astro';
+import Note from './Note.astro';
 const { lang = 'en' } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p) => localizedPath(lang, p);
@@ -83,14 +85,21 @@ const COPY = {
     plansCta: 'Set up this plan',
 
     creditH: `${FROM_PRODUCTS} slots, not ${FROM_PRODUCTS} new products.`,
-    creditBody: `A credit is a place in the month, not a demand that you have something new. You decide each month what goes in it: a new item, an item you already sell in a different look for a campaign, or a set made for your socials. What you do not use rolls over ${PLAN_ROLLOVER_MONTHS === 1 ? 'a' : PLAN_ROLLOVER_MONTHS} month${PLAN_ROLLOVER_MONTHS === 1 ? '' : 's'}.`,
+    // GESPLITST, 21 augustus 2026. Dit was één alinea van 55 woorden — de
+    // langste van /plans. De twee zinnen die twijfel wegnemen ("je hoeft niets
+    // nieuws te hebben" en "wat je niet gebruikt vervalt niet") staan er nog
+    // gewoon; de opsomming van wát je erin kunt stoppen staat achter het
+    // vraagteken, want dat is een voorbeeld en geen voorwaarde.
+    creditBody: `A credit is a place in the month, not a demand that you have something new. What you do not use rolls over ${PLAN_ROLLOVER_MONTHS === 1 ? 'a' : PLAN_ROLLOVER_MONTHS} month${PLAN_ROLLOVER_MONTHS === 1 ? '' : 's'}.`,
+    creditNoteTerm: 'a credit',
+    creditNote: 'You decide each month what goes in it: a new item, an item you already sell in a different look for a campaign, or a set made for your socials.',
     creditAsk: 'Not sure what to spend the rest on?',
     creditAskCta: 'Ask us and we will go through it with you',
     creditWa: 'Hi! I have a plan and I would like to think through what to spend this month’s credits on.',
 
     stockH: 'And a month that is already filled.',
     stockNow: [`${STOCK_OFF_BRAND} new stock visuals every month`, 'included with every plan, usable by any brand — something to post on the days you have no new product.'],
-    stockSoon: [`${STOCK_ON_BRAND} on-brand visuals a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. Arrives with Editions and is set up once per brand.'],
+    stockSoon: [`${STOCK_ON_BRAND} on-brand visuals a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. They arrive with Editions and are set up once per brand.'],
     stockSoonTag: 'With Editions',
     stockShot: 'A month grid of stock visuals for one brand — twenty frames in the same colours and light, with no product in them',
     stockShotMsg: 'Mood, texture, hands, light — no garment and no packshot. If it reads as a stock library it has failed; it has to read as one brand.',
@@ -129,14 +138,16 @@ const COPY = {
     plansCta: 'Dit abonnement opzetten',
 
     creditH: `${FROM_PRODUCTS} plekken, geen ${FROM_PRODUCTS} nieuwe producten.`,
-    creditBody: `Een credit is een plek in de maand, niet de eis dat je iets nieuws hebt. Jij bepaalt elke maand wat erin gaat: een nieuw item, een item dat je al verkoopt in een andere look voor een campagne, of een set die je voor je socials maakt. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
+    creditBody: `Een credit is een plek in de maand, niet de eis dat je iets nieuws hebt. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
+    creditNoteTerm: 'een credit',
+    creditNote: 'Jij bepaalt elke maand wat erin gaat: een nieuw item, een item dat je al verkoopt in een andere look voor een campagne, of een set die je voor je socials maakt.',
     creditAsk: 'Weet je niet waar je de rest aan besteedt?',
     creditAskCta: 'Vraag het ons, dan lopen we het samen door',
     creditWa: 'Hoi! Ik heb een abonnement en wil graag even doornemen waar ik de credits van deze maand aan kan besteden.',
 
     stockH: 'En een maand die al gevuld is.',
     stockNow: [`${STOCK_OFF_BRAND} nieuwe stockbeelden per maand`, 'inbegrepen bij elk abonnement en bruikbaar voor elk merk — iets om te posten op de dagen dat je niets nieuws hebt.'],
-    stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Komt met Editions en wordt één keer per merk opgezet.'],
+    stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Ze komen met Editions en worden één keer per merk opgezet.'],
     stockSoonTag: 'Met Editions',
     stockShot: 'Een maandraster van stockbeelden voor één merk — twintig beelden naast elkaar in dezelfde kleuren en hetzelfde licht, zonder product erin',
     stockShotMsg: 'Sfeer, textuur, handen, licht — geen kledingstuk en geen packshot. Leest het als een stockbibliotheek, dan is het mislukt; het moet als één merk lezen.',
@@ -146,7 +157,7 @@ const COPY = {
     outCta: 'Bekijk de prijs per product',
 
     ctaH: 'Begin met één product',
-    ctaEm: 'voor € 1.',
+    ctaEm: 'voor €1.',
     ctaBody: 'Stuur de foto’s die je al hebt en zie wat eruit komt voordat er een abonnement begint.',
     ctaSample: 'Vraag een proefvisual aan',
     ctaPlan: 'Sluit een abonnement af',
@@ -195,12 +206,17 @@ const c = COPY[nl ? 'nl' : 'en'];
             <a class="btn btn-ghost" href={lp('/pricing')}>{c.cta2}</a>
           </div>
         </div>
+        {/* Ook hier de zijdeur naar de andere diensten: een abonnement is één van
+            de zes manieren om te bestellen, en deze pagina was de enige
+            dienstpagina zonder die rij. Buiten de limoen plaat, want daarbinnen
+            zou een rij grijze links de plaat rommelig maken. */}
+        <ServiceSwitch current={['plan', 'complete']} lang={lang} class="pl-svcsw" />
       </div>
 
       {/* De correctie op het getal, direct onder het getal dat hij corrigeert. */}
       <div class="pl-credit">
         <p class="pl-credit-h">{c.creditH}</p>
-        <p class="pl-credit-b">{c.creditBody}</p>
+        <p class="pl-credit-b">{c.creditBody} <Note lang={lang} term={c.creditNoteTerm}>{c.creditNote}</Note></p>
         <p class="pl-credit-ask">
           <span>{c.creditAsk}</span>
           <a class="pl-credit-a" href={waHref(c.creditWa)} target="_blank" rel="noopener">{c.creditAskCta}<span class="pl-nb">&#160;<svg viewBox="0 0 24 24" class="i" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span></a>
@@ -300,6 +316,7 @@ const c = COPY[nl ? 'nl' : 'en'];
 </div></section>
 
 <style>
+  .pl-svcsw { margin-top: 1.4rem; }
   /* De opmaak binnen het paneel. De paneelvorm zelf, het licht, de korrel en de
      donkere plaat staan in global.css onder `.lime-panel` — zie de noot daar.
      Wat hier staat is alleen wat deze pagina in dat blok zet. */

@@ -1,0 +1,125 @@
+---
+/*
+ * VISUAILS — DE KEUZERIJ ONDER DE HOOFDKNOP. 21 augustus 2026.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Eén regel onder de knop van een dienstpagina, met de andere manieren om te
+ * bestellen erin. Lucas' vraag was *"dat je alle services kan kiezen op die
+ * pagina"* — dit is dat, en het is met opzet een REGEL en geen blok.
+ *
+ * ── WAAROM EEN REGEL EN GEEN KAARTENBLOK ───────────────────────────────────
+ *
+ * Een blok met vier kaarten zou op elke dienstpagina een schermvullende keuze
+ * neerzetten, en dat is precies de fout die /start maakte: de bezoeker die al
+ * weet wat hij wil, opnieuw laten kiezen. De regel doet het omgekeerde. De
+ * hoofdknop is het antwoord voor negen van de tien; de regel eronder is de
+ * zijdeur voor de tiende, en kost vijf regels hoogte in plaats van tweehonderd.
+ *
+ * ── EN HIJ REPAREERT DE WEESKINDEREN ───────────────────────────────────────
+ *
+ * Gemeten op 21 augustus 2026: de tien stijlpagina's — /catalog/classic,
+ * /lifestyle/dunes en de acht andere — hadden elk PRECIES ÉÉN inkomende link,
+ * van hun eigen hubpagina, en verwezen niet naar elkaar. Tien geïndexeerde
+ * pagina's aan één draadje. Deze rij staat ook daar, dus vanaf elke stijlpagina
+ * loopt er nu een weg naar de vijf andere diensten.
+ *
+ * ── WAAROM HET GEEN NAVIGATIE-ELEMENT IS ───────────────────────────────────
+ *
+ * Geen <nav> en geen aria-label. Een <nav>-landmark is een belofte aan een
+ * schermlezergebruiker dat hier de navigatie van de pagina staat, en die staat
+ * boven. Dit is een zin met links erin, en zo hoort hij ook voorgelezen te
+ * worden.
+ */
+
+import { andereDeuren } from '../data/orderDoors.js';
+import { localizedPath } from '../i18n/ui.js';
+
+interface Props {
+  /** De deur waar deze pagina zelf over gaat — die valt uit de rij. */
+  current?: string | string[];
+  lang?: string;
+  /** Extra klassen, voor een pagina die er zijn eigen marge omheen wil. */
+  class?: string;
+  /*
+   * ── EEN EIGEN LIJST, VOOR DE ZUSTERPAGINA'S ──────────────────────────────
+   *
+   * Met `items` rendert deze component niet de zes deuren maar precies wat je
+   * meegeeft, in dezelfde regel-vorm. Dat is er voor de stijlpagina's: op
+   * /lifestyle/dunes is de eerste vraag van een bezoeker niet "kan ik ook
+   * video bestellen" maar "hoe zien de andere looks eruit". Gemeten op
+   * 21 augustus 2026 had elke stijlpagina precies één inkomende link — van
+   * de eigen hub — en verwees geen enkele naar een zusterpagina.
+   *
+   * De hrefs die je meegeeft zijn ONGELOKALISEERD; deze component haalt ze
+   * zelf door localizedPath. Geef je /nl/... mee, dan krijg je /nl/nl/...,
+   * precies zoals bij TierCompare's href0 gebeurde.
+   */
+  items?: { href: string; naam: string }[];
+  /** Eigen aanhef, bijvoorbeeld "Andere looks:". Standaard "Ook mogelijk:". */
+  label?: string;
+}
+
+const { current = [], lang = 'en', class: extra = '', items, label } = Astro.props;
+const nl = lang === 'nl';
+const deuren = items
+  ? items.map((i) => ({ lees: i.href, bestel: i.href, naam: { en: i.naam, nl: i.naam } }))
+  : andereDeuren(current);
+const aanhef = label || (nl ? 'Ook mogelijk:' : 'Also available:');
+const lp = (p: string) => localizedPath(lang, p);
+---
+
+{deuren.length > 0 && (
+  <p class={`svcsw ${extra}`.trim()}>
+    <span class="svcsw-k">{aanhef}</span>
+    {/* ── HET SCHEIDINGSTEKEN ZIT IN HETZELFDE ITEM ALS DE LINK ───────────
+        Eerst was de punt een eigen flex-item, en dan kan hij aan het EIND van
+        een regel belanden: op 390px stond er "… · Video ·" en daarna niets meer.
+        Nu hoort hij bij de naam die erop volgt, dus breekt de regel altijd vóór
+        de punt en nooit erna. */}
+    {deuren.map((d, i) => (
+      <span class="svcsw-i">
+        {i > 0 && <span class="svcsw-dot" aria-hidden="true">·</span>}
+        {/* Naar de LEESpagina waar die bestaat, en anders rechtstreeks naar het
+            formulier. "Allebei" heeft geen hubpagina, en dat is juist: het is
+            geen aparte dienst maar de twee andere samen. */}
+        <a class="svcsw-a" href={lp(d.lees || d.bestel)}>{d.naam[lang] || d.naam.en}</a>
+      </span>
+    ))}
+  </p>
+)}
+
+<style>
+  .svcsw {
+    margin: 1.1rem 0 0;
+    font-size: .86rem;
+    line-height: 1.7;
+    color: var(--ink-4);
+    /* `flex` met `wrap` en niet één lange regel: op 390px passen er twee namen
+       naast elkaar en de rest hoort netjes door te lopen in plaats van de pagina
+       breder te maken. Gemeten met npm run keuring — een rij die niet afbreekt,
+       is een pagina die horizontaal scrolt. */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 .5rem;
+  }
+  .svcsw-k { color: var(--ink-4); }
+  .svcsw-i { display: inline-flex; align-items: baseline; gap: .5rem; }
+  .svcsw-dot { color: var(--line-strong); }
+  .svcsw-a {
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 3px;
+    /* 24px raakvlak zonder de regelhoogte te verstoren: de link is inline en
+       krijgt zijn hoogte van de padding, die binnen de regelafstand van 1.7
+       past. Zie de gelijkluidende reparatie in global.css. */
+    padding-block: .3rem;
+    transition: color var(--dur-1) ease, text-decoration-color var(--dur-1) ease;
+  }
+  .svcsw-a:hover,
+  .svcsw-a:focus-visible {
+    color: var(--accent-bright, var(--accent));
+    text-decoration-color: currentColor;
+  }
+</style>

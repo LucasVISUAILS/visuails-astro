@@ -71,6 +71,13 @@ const SESSION_COOKIE = 'vis_admin';
 
 /** orders.status, in the order the studio actually moves through them. */
 import { sendMail } from './mail.js';
+import { createOrderMolliePayment, refundMolliePayment } from './mollie.js';
+import { issueInvoice } from './invoice.js';
+import { mailInvoice } from './invoiceMail.js';
+/* De twee bedragen van de merkmodel-credit komen uit de prijslijst en niet uit een
+   getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
+   kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
+import { AMOUNT, BRAND_MODEL_CREDIT_DROPS } from '../data/pricing.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
 // and page-level helpers, and the mail template exports overlapping names.
 import {
@@ -81,6 +88,8 @@ import {
   note as mailNote,
   quote as mailQuote,
   spamNote as mailSpamNote,
+  payPanel as mailPayPanel,
+  linkLine as mailLinkLine,
 } from './mailTemplate.js';
 
 const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'cancelled'];
@@ -289,7 +298,9 @@ export async function adminPost(context) {
   const wipeMatch = path.match(/^\/admin\/customers\/(\d+)\/wipe$/);
   if (wipeMatch) return handleCustomerWipe(context, Number(wipeMatch[1]));
 
+  const invoiceMatch = path.match(/^\/admin\/orders\/(\d+)\/invoice$/);
   const previewMatch = path.match(/^\/admin\/models\/(\d+)\/preview$/);
+  if (invoiceMatch) return handleInvoiceRepair(context, Number(invoiceMatch[1]));
   if (previewMatch) return handleModelPreview(context, Number(previewMatch[1]));
 
   const modelStatusMatch = path.match(/^\/admin\/models\/(\d+)\/status$/);
@@ -539,7 +550,7 @@ async function handleOrderCancel(context, orderId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
   const order = await env.DB.prepare(
-    'SELECT id, ref, status, payment_status, total_cents FROM orders WHERE id = ?1'
+    'SELECT id, ref, status, payment_status, total_cents, vat_cents, refunded_cents, payment_ref, customer_id FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
   if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
 
@@ -602,6 +613,110 @@ async function handleOrderCancel(context, orderId) {
   await logAdmin(env, admin, 'order.cancel', {
     orderId, detail: `${order.ref}: ${reason} (${moneyLine})`,
   });
+
+  /* ── "CREDIT FOR A FUTURE ORDER" MOET OOK ECHT EEN TEGOED ZIJN ─────────────
+     20 augustus 2026. De keuze "tegoed" schreef alleen `cancel_payment` en zette
+     de regel *"Credit for a future order"* op de tijdlijn — die de klant leest.
+     Er kwam geen rij in `customer_credits`. De klant had dus schriftelijk een
+     tegoed en het bestond nergens: niet op zijn klantpagina, niet in het
+     grootboek, en nergens waar iemand er over een half jaar aan zou denken.
+
+     Twee dingen bewust zo:
+     · HET BEDRAG IS WAT ER NOG OPENSTAAT, dus bruto min wat al terug is —
+       dezelfde rekensom als bij een restitutie hierboven, en om dezelfde reden.
+     · DE BESTELLING STAAT ER ALS KOLOM ÉN IN DE REDEN. `customer_credits` heeft
+       een `order_id` — daar hoort hij, zodat de herkomst opzoekbaar is. In de
+       reden staat de referentie er nóg een keer, want die kolom is SET NULL: gaat
+       de bestelling ooit weg, dan blijft in tekst staan waar het tegoed vandaan
+       kwam.
+
+     Mislukt de boeking, dan valt de annulering niet om — die is al gedaan en
+     vastgelegd — maar hij gaat wel luidruchtig naar `admin_log`, want dit is
+     geld dat iemand beloofd is. */
+  if (paid && payment === 'credit' && order.customer_id) {
+    const openstaand = Math.max(0,
+      (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0) - Math.max(0, Number(order.refunded_cents) || 0));
+    if (openstaand > 0) {
+      const geboekt = await env.DB.prepare(
+        `INSERT INTO customer_credits (customer_id, delta_cents, reason, order_id, admin_id)
+         VALUES (?1, ?2, ?3, ?4, ?5)`
+      ).bind(order.customer_id, openstaand, `Tegoed na annulering van ${order.ref}`, orderId, admin?.id || null)
+        .run().then(() => true).catch((e) => {
+          console.error('[admin] tegoed na annulering niet geboekt —', e?.message || e);
+          return false;
+        });
+      await logAdmin(env, admin, geboekt ? 'order.credit' : 'order.credit.failed', {
+        orderId,
+        detail: `${order.ref}: ${openstaand} cent ${geboekt ? 'als tegoed geboekt' : 'NIET geboekt — doe het met de hand'}`,
+      }).catch(() => {});
+    }
+  }
+
+  /* ── EN HET GELD OOK ECHT TERUG — 20 AUGUSTUS 2026 ─────────────────────────
+     Tot vandaag legde dit scherm alleen je BESLUIT vast: "Refund to be issued"
+     op de tijdlijn, en daarna moest je zelf naar het Mollie-dashboard. De functie
+     om het hier te doen bestond al — refundMolliePayment() in src/lib/mollie.js,
+     geschreven voor de tweede proefvisual die de webhook zelf terugstort — maar
+     dit scherm riep hem niet aan.
+
+     De keten erna klopt al helemaal: Mollie stuurt de restitutie als webhook
+     terug, die schrijft `refunded_cents` en geeft de creditnota uit. Er hoefde
+     dus alleen een aanroep bij.
+
+     NA de annulering en niet ervoor, en met een eigen foutafhandeling. Zo staat
+     het ook in de noot bij refundMolliePayment(): mislukt de terugbetaling, dan
+     is het antwoord "annuleer de bestelling toch, en meld dat het met de hand
+     moet". Een annulering die niet doorgaat omdat Mollie even hikt, is de
+     verkeerde uitkomst — de klant is dan afgewezen én niet geannuleerd. */
+  if (paid && payment === 'refund') {
+    /* ── HET RESTBEDRAG, NIET HET HELE BEDRAG ────────────────────────────────
+       Hier stond het brutobedrag van de bestelling, zonder te kijken naar wat er
+       al terug was. Een bestelling van € 1.210 waarop eerder € 200 coulance is
+       teruggeboekt, blijft `payment_status = 'paid'` staan — de webhook zet die
+       bij een gedeeltelijke restitutie bewust niet om — dus vraagt deze code
+       Mollie om € 1.210 terwijl er nog € 1.010 openstaat. Mollie weigert dat,
+       de catch schrijft "doe het met de hand", en de tijdlijn heeft de klant
+       twee regels eerder al beloofd dat het geld terugkomt.
+
+       `orders.refunded_cents` is precies het totaal dat al terug is (zie de noot
+       bij de kolom in schema.sql: het totaal van de BESTELLING, en niet van één
+       Mollie-betaling). Wat overblijft is wat we vragen; blijft er niets over,
+       dan valt het hieronder in dezelfde tak als "geen betaal-id" en zegt de
+       tijdlijn dat er niets te starten viel. */
+    const betaald = (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0);
+    const alTerug = Math.max(0, Number(order.refunded_cents) || 0);
+    const bruto = Math.max(0, betaald - alTerug);
+    const betaalId = order.payment_ref || (await env.DB.prepare(
+      `SELECT external_id FROM payments
+        WHERE order_id = ?1 AND status IN ('paid', 'refunded') AND provider = 'mollie'
+        ORDER BY id DESC LIMIT 1`
+    ).bind(orderId).first().catch(() => null))?.external_id || null;
+
+    if (!betaalId || !env.MOLLIE_API_KEY || !(bruto > 0)) {
+      await env.DB.prepare(
+        "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+      ).bind(orderId, 'De terugbetaling kon hier niet gestart worden — die moet met de hand in Mollie.').run().catch(() => {});
+      console.error('[admin] restitutie voor', order.ref, 'niet gestart — geen betaal-id of geen sleutel');
+    } else {
+      try {
+        await refundMolliePayment(env, betaalId, {
+          cents: bruto,
+          description: `VISUAILS ${order.ref} — geannuleerd`,
+        });
+        await env.DB.prepare(
+          "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+        ).bind(orderId, `Terugbetaling van € ${(bruto / 100).toFixed(2).replace('.', ',')} in gang gezet bij Mollie. De creditnota volgt zodra die bevestigd is.`).run().catch(() => {});
+        await logAdmin(env, admin, 'order.refund', { orderId, detail: `${order.ref}: ${bruto} cent teruggestort` });
+        console.log('[admin] restitutie gestart voor', order.ref, bruto, 'cent');
+      } catch (e) {
+        await env.DB.prepare(
+          "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, 'cancelled', ?2, 'system')"
+        ).bind(orderId, 'De terugbetaling is niet gelukt en moet met de hand in Mollie gedaan worden.').run().catch(() => {});
+        console.error('[admin] restitutie voor', order.ref, 'mislukt —', e && e.message ? e.message : e);
+      }
+    }
+  }
+
   return seeOther('/admin');
 }
 
@@ -1022,6 +1137,14 @@ async function handleCustomerWipe(context, customerId) {
     ).bind(customerId),
     env.DB.prepare('DELETE FROM plan_queue WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM subscriptions WHERE customer_id = ?1').bind(customerId),
+    /* HET GROOTBOEK VAN DE KLANT. Ontbrak hier, en dat is dezelfde soort omissie
+       als het abonnement hierboven: een tabel die er later bij kwam (migratie
+       0027) en die niet mee is opgenomen in de opsomming. `reason` is vrije
+       tekst die een beheerder zelf typt — "coulance na de mislukte levering van
+       maart" — dus het is niet alleen een bedrag maar ook een aantekening over
+       deze persoon. En hij hangt aan `customers` met SET NULL, dus zonder deze
+       regel blijft hij als wees achter met de aantekening er nog in. */
+    env.DB.prepare('DELETE FROM customer_credits WHERE customer_id = ?1').bind(customerId),
 
     ...strip,
     /* DE BESTELLINGEN, en nu alleen die zónder uitgereikt document. Dit was de regel
@@ -1314,6 +1437,33 @@ async function renderFiles(context, orderId) {
   if (!data) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
 
   const { order, files, migrated, notes } = data;
+
+  /* ── DE FACTUUR, MET TWEE KNOPPEN ─────────────────────────────────────────
+     Staat er geen factuur, dan staat hier ook niets: een factuur hoort bij de
+     betaling en wordt niet vanaf dit scherm uit het niets gemaakt. Zie de noot
+     bij handleInvoiceRepair(). */
+  const factuur = await env.DB.prepare(
+    'SELECT number, status, issued_at, pdf_bytes FROM invoices WHERE order_id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  const factuurBlok = !factuur ? '' : `
+  <h2>Invoice</h2>
+  <p class="muted">
+    <strong>${esc(factuur.number)}</strong> &mdash; ${esc(factuur.status)}${
+      factuur.issued_at ? ` on ${esc(when(factuur.issued_at))}` : ''
+    }${factuur.pdf_bytes ? ` &middot; ${Math.round(factuur.pdf_bytes / 1024)} kB` : ''}
+  </p>
+  ${factuur.status === 'issued'
+    ? `<form class="controls" method="post" action="/admin/orders/${order.id}/invoice">
+         <input type="hidden" name="action" value="resend">
+         <button class="btn btn-ghost btn-sm" type="submit">Send it again</button>
+         <span class="meta">Same document, same attachment &mdash; for a mail that got stuck in a filter.</span>
+       </form>`
+    : `<form class="controls" method="post" action="/admin/orders/${order.id}/invoice">
+         <input type="hidden" name="action" value="render">
+         <button class="btn btn-primary btn-sm" type="submit">Finish this invoice</button>
+         <span class="meta">The number exists, the pdf does not. This renders it from the stored snapshot &mdash; same number, no gap in the series.</span>
+       </form>`}`;
+
   const intake = files.filter((f) => f.kind === 'upload');
   const delivery = files.filter((f) => f.kind === 'delivery');
 
@@ -1704,6 +1854,8 @@ async function renderFiles(context, orderId) {
   ${noteBlocks}
 
   ${vatRow}
+
+  ${factuurBlok}
   `;
   return html(page({ title: order.ref, body }));
 }
@@ -2601,6 +2753,85 @@ export function deliveryEmail({ order, link, n }) {
 
 /** Langste toelichting die meegaat in de herleveringsmail. Een alinea, geen brief. */
 const ANNOUNCE_NOTE_MAX = 400;
+
+/*
+ * ── EEN FACTUUR AFMAKEN OF NOG EENS VERSTUREN — 20 AUGUSTUS 2026 ────────────
+ *
+ * Twee handelingen die tot vandaag geen knop hadden.
+ *
+ * AFMAKEN. issueInvoice() doet drie dingen op een rij: een nummer uitgeven, de
+ * pdf renderen, de pdf in R2 zetten. Breekt het halverwege, dan blijft de rij op
+ * `pending` staan: nummer wel, pdf niet. Er waren twee vangnetten — het bezoek
+ * van de klant aan VISUAILS Studio en de nachtelijke cron — en allebei hangen ze
+ * ervan af dat er iemand of iets langskomt. Dit is de derde weg, en het is de
+ * enige die JIJ zelf in gang kunt zetten op het moment dat je het ziet.
+ *
+ * Het is veilig omdat issueInvoice() erop gebouwd is: bestaat er al een nummer,
+ * dan wordt DAT nummer opnieuw gebruikt en wordt de pdf uit de bewaarde
+ * momentopname gerenderd. Geen tweede nummer, geen gat in de reeks.
+ *
+ * NOG EENS VERSTUREN. Een factuurmail die in een spamfilter is blijven hangen, of
+ * een klant die zegt hem niet te hebben. Dezelfde mail, dezelfde bijlage, geen
+ * nieuw document.
+ *
+ * Allebei alleen op een bestelling die er al een heeft. Er wordt hier geen factuur
+ * uit het niets gemaakt: dat hoort bij de betaling en nergens anders, en een knop
+ * die dat wél kan is een knop waarmee je een factuur uitgeeft voor geld dat niet
+ * binnen is (zie betalingGedekt in src/lib/invoice.js).
+ */
+async function handleInvoiceRepair(context, orderId) {
+  const { request, env } = context;
+  const admin = await currentAdmin(context);
+  const form = await request.formData().catch(() => null);
+  const actie = String(form?.get('action') || '');
+  const back = `/admin/orders/${orderId}/files`;
+
+  const order = await env.DB.prepare(
+    'SELECT id, ref, email, lang FROM orders WHERE id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+
+  const bestaand = await env.DB.prepare(
+    'SELECT * FROM invoices WHERE order_id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  if (!bestaand) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This order has no invoice yet. An invoice is issued when the payment comes in — there is deliberately no button that makes one out of nothing.'
+    ) }), 400);
+  }
+
+  if (actie === 'render') {
+    try {
+      const factuur = await issueInvoice(env, orderId);
+      await logAdmin(env, admin, 'invoice.render', { orderId, detail: `${order.ref}: ${factuur?.number || bestaand.number}` });
+    } catch (e) {
+      return html(page({ title: 'Admin', body: errorBody(
+        `Rendering that invoice failed: ${esc(e?.message || String(e))}. The number is unchanged.`
+      ) }), 500);
+    }
+    return seeOther(back);
+  }
+
+  if (actie === 'resend') {
+    if (bestaand.status !== 'issued') {
+      return html(page({ title: 'Admin', body: errorBody(
+        'That invoice has no pdf yet — finish it first, then send it.'
+      ) }), 400);
+    }
+    const ok = await mailInvoice(env, { order, invoice: bestaand });
+    await logAdmin(env, admin, 'invoice.resend', {
+      orderId, detail: `${order.ref}: ${bestaand.number}${ok ? '' : ' (mislukt)'}`,
+    });
+    if (!ok) {
+      return html(page({ title: 'Admin', body: errorBody(
+        'Sending that invoice failed. Check the mail key and try again.'
+      ) }), 500);
+    }
+    return seeOther(back);
+  }
+
+  return seeOther(back);
+}
 
 async function handleAnnounceRedelivery(context, orderId) {
   const { request, env } = context;
@@ -3982,6 +4213,75 @@ async function handleAddCustomModelForCustomer({ request, env }, customerId) {
     "INSERT INTO custom_models (customer_id, label, status) VALUES (?1, ?2, 'in_design') RETURNING id"
   ).bind(customerId, label).first();
 
+  /* ── DE MERKMODEL-CREDIT KRIJGT EEN PLEK IN HET GROOTBOEK — 20 AUG 2026 ────
+     /pricing en /custom-models beloven het in twee talen: de setup van € 1.250
+     komt terug als € 250 op elk van je eerste vijf bestellingen. Tot vandaag
+     bestond die belofte alleen in tekst. `quote.js` kent het begrip niet, en dat
+     is met opzet — de noot bij `customer_credits` in schema.sql zegt in zoveel
+     woorden dat er GEEN automatische verrekening bij het afrekenen komt, "die
+     rekent stil het verkeerde bedrag af". Dat besluit blijft staan.
+
+     Wat er wél moest gebeuren is dat het tegoed BESTAAT zodra het verdiend is,
+     in plaats van dat het vijf bestellingen lang van jouw geheugen afhangt. Eén
+     regel in het grootboek, met de regel zelf in de reden, op het moment dat het
+     model wordt aangemaakt. Verrekenen doe jij, zoals je elk ander tegoed
+     verrekent — maar je kunt het niet meer vergeten, want het staat op de
+     klantpagina.
+
+     Alleen bij het EERSTE model van een klant. Een tweede merkmodel is een
+     tweede setup met een eigen afspraak, en die hoort niet automatisch nog eens
+     € 1.250 aan tegoed op te leveren. */
+  if (nieuw?.id) await boekMerkmodelTegoed(env, customerId);
+
+
+/* ── HET MERKMODEL-TEGOED, OP ÉÉN PLEK ──────────────────────────────────────
+ * Twee dingen gingen hier mis, en allebei kostten geld.
+ *
+ *   1 · DE EENHEID. Hier stond `AMOUNT.brandModelCredit * BRAND_MODEL_CREDIT_DROPS`
+ *       rechtstreeks in `delta_cents`. AMOUNT is in EURO'S — quote.js rekent
+ *       hem met cents(AMOUNT.testSample) om, en euro(AMOUNT.brandModelCredit)
+ *       schrijft "€ 250". 250 × 5 = 1250, en 1250 cent is € 12,50. De klant
+ *       kreeg dus een honderdste van zijn tegoed, met een reden ernaast die
+ *       € 1.250 beloofde. De handmatige boeking twee schermen verderop doet het
+ *       wél goed: `Math.round(euro * 100)`.
+ *
+ *   2 · DE POORT. De vraag was "hoeveel modellen heeft deze klant?" en die
+ *       vraag is de verkeerde: handleModelManage verwijdert modellen echt, dus
+ *       na één verwijderde tikfout staat de teller weer op nul en wordt het
+ *       tegoed een tweede keer geboekt. Wat we willen weten is of het tegoed AL
+ *       geboekt is, en dat staat in het grootboek zelf. Die rij verdwijnt niet
+ *       als een model verdwijnt, en dat is precies de eigenschap die we nodig
+ *       hebben.
+ *
+ * En hij staat nu in één functie omdat er twee plekken zijn waar een eerste
+ * model ontstaat: dit scherm en handleAddCustomModel() op de bestelkaart. Alleen
+ * de eerste boekte iets, dus wie zijn eerste model via een bestelling kreeg,
+ * kreeg nooit een tegoed — en daarna zag de oude teller er twee staan en sloeg
+ * hij ook de volgende over. */
+const MERKMODEL_TEGOED_REDEN = 'Merkmodel-setup';
+
+async function boekMerkmodelTegoed(env, customerId) {
+  if (!Number.isInteger(Number(customerId))) return;
+  const al = await env.DB.prepare(
+    `SELECT id FROM customer_credits
+      WHERE customer_id = ?1 AND reason LIKE ?2 LIMIT 1`
+  ).bind(customerId, `${MERKMODEL_TEGOED_REDEN}%`).first().catch(() => ({ id: -1 }));
+  if (al) return;   // al geboekt, of de vraag kon niet gesteld worden — dan liever niets
+
+  await env.DB.prepare(
+    `INSERT INTO customer_credits (customer_id, delta_cents, reason, admin_id)
+     VALUES (?1, ?2, ?3, ?4)`
+  ).bind(
+    customerId,
+    Math.round(AMOUNT.brandModelCredit * BRAND_MODEL_CREDIT_DROPS * 100),
+    `${MERKMODEL_TEGOED_REDEN} — € ${AMOUNT.brandModelCredit} verrekenbaar op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
+    /* Geen admin_id: deze functie krijgt de ingelogde beheerder niet mee, en
+       een verkeerde naam bij een grootboekregel is erger dan geen naam. De
+       reden hierboven zegt precies waar de regel vandaan komt. */
+    null
+  ).run().catch((e) => console.error('[admin] merkmodel-tegoed niet vastgelegd —', e?.message || e));
+}
+
   const file = form && form.get('preview');
   if (file && typeof file === 'object' && file.size && env.UPLOADS) {
     const row = nieuw;
@@ -4190,6 +4490,10 @@ async function handleAddCustomModel({ request, env }, orderId) {
   await env.DB.prepare(
     "INSERT INTO custom_models (customer_id, label, status) VALUES (?1, ?2, 'in_design')"
   ).bind(order.customer_id, label).run();
+  /* Hetzelfde tegoed als op het klantscherm. Dit is de tweede plek waar een
+     eerste merkmodel ontstaat en hij boekte niets — zie de noot bij
+     boekMerkmodelTegoed(). De functie bepaalt zelf of er al geboekt is. */
+  await boekMerkmodelTegoed(env, order.customer_id);
 
   return seeOther('/admin');
 }
@@ -5151,7 +5455,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
     statements.push(env.DB.prepare(
       `UPDATE orders
           SET review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?2,
-              vat_treatment = 'standard', vat_rate = 0.21, vat_cents = ?3
+              vat_treatment = 'nl_standard', vat_rate = 0.21, vat_cents = ?3
         WHERE id = ?1 AND review_state = 'pending'`
     ).bind(orderId, admin?.email || 'admin', vat));
     note = 'Btw-gegevens nagekeken. Op deze bestelling wordt Nederlandse btw gerekend; het bedrag exclusief btw is niet veranderd.';
@@ -5173,7 +5477,136 @@ async function handleVatDecision({ request, env }, orderId, admin) {
 
   await env.DB.batch(statements);
   await logAdmin(env, admin, `vat:${action}`, { orderId, detail });
+
+  /* ── EN DAN DE BETAALLINK — 20 AUGUSTUS 2026 ───────────────────────────────
+     Tot vandaag hield het hier op. De poort in functions/api/order.js houdt een
+     bestelling met een twijfelachtige btw-opgave of van buiten de EU tegen: geen
+     betaling aangemaakt, geen checkout, netjes op deze lijst. Jij keurde hem hier
+     goed, er kwam een regel in de tijdlijn — en verder gebeurde er niets. De klant
+     zat te wachten op een betaallink die jij met de hand moest maken, terwijl de
+     bevestigingsmail hem belooft dat die binnen 24 uur komt.
+
+     Alleen bij goedkeuring, en alleen als er iets te betalen is. Een afgewezen
+     opgave krijgt geen link: daar hoort een gesprek bij en geen incasso. */
+  if (action === 'approve' || action === 'charge_vat') {
+    /* ── EN ALS DE LINK NIET WEGGAAT, MOET DAT ERGENS STAAN ─────────────────
+       Dit was een `catch` met alleen een console.error erin, en stuurBetaallink()
+       heeft daarnaast vier stille `return null`-uitgangen: geen sleutel, geen
+       e-mailadres, al betaald, of een brutobedrag van nul. Op het scherm zag
+       alle vijf er hetzelfde uit: de bestelling verdwijnt van de lijst en het
+       lijkt gelukt. De klant wacht op een link die nooit komt, en zeven dagen
+       later verviel zijn bestelling ook nog eens — zie cancelStaleApprovals().
+
+       De uitkomst gaat nu naar `admin_log` en niet naar `order_events`: dit is
+       een mededeling voor de beheerder over een verzending die niet lukte, en
+       order_events is wat de KLANT te zien krijgt. */
+    const uitkomst = await stuurBetaallink({ request, env }, orderId)
+      .catch((e) => ({ mislukt: e && e.message ? e.message : String(e) }));
+    if (!uitkomst || uitkomst.mislukt) {
+      await logAdmin(env, admin, 'payment-link.failed', {
+        orderId,
+        detail: `${order.ref}: geen betaallink verstuurd — ${uitkomst?.mislukt || 'geen link aangemaakt (geen sleutel, geen e-mailadres, al betaald, of niets te betalen)'}`,
+      }).catch(() => {});
+      console.error('[admin] betaallink voor bestelling', orderId, 'niet verstuurd —', uitkomst?.mislukt || 'stille uitgang');
+    }
+  }
   return seeOther(back);
+}
+
+/*
+ * ── DE BETAALLINK NA EEN GOEDKEURING ────────────────────────────────────────
+ *
+ * Dezelfde route als functions/api/order.js gebruikt bij een bestelling die
+ * meteen door de poort komt: createOrderMolliePayment() met het BRUTO bedrag, en
+ * een mail met de link erin. Eén verschil, en dat is het belangrijke: het bedrag
+ * wordt hier opnieuw uit de bestelling gelezen en niet uit iets dat bij het
+ * bestellen is uitgerekend. Bij `charge_vat` is `vat_cents` net veranderd, en een
+ * link voor het oude bedrag zou het verschil stil laten verdwijnen.
+ *
+ * Er wordt niets weggeschreven over deze link. De webhook van Mollie is de enige
+ * die `payment_status` aanraakt (zie de noot daar), en een tweede plek die dat
+ * doet is precies hoe een betaalde bestelling onbetaald blijft staan.
+ */
+async function stuurBetaallink({ request, env }, orderId) {
+  if (!env.MOLLIE_API_KEY) {
+    console.warn('[admin] geen MOLLIE_API_KEY — geen betaallink voor bestelling', orderId);
+    return null;
+  }
+  const o = await env.DB.prepare(
+    `SELECT id, ref, email, lang, service, product_count, total_cents, vat_cents, vat_rate, payment_status
+       FROM orders WHERE id = ?1`
+  ).bind(orderId).first();
+  if (!o || !o.email) return null;
+  /* Al betaald? Dan is er niets te sturen. Kan gebeuren als iemand twee tabbladen
+     open heeft, of als de klant in de tussentijd via een eerdere link betaald heeft. */
+  if (String(o.payment_status || '') === 'paid') return null;
+
+  const bruto = (Number(o.total_cents) || 0) + (Number(o.vat_cents) || 0);
+  if (!(bruto > 0)) return null;
+
+  const lang = o.lang === 'en' ? 'en' : 'nl';
+  const origin = new URL(request.url).origin;
+  const svcNaam = serviceLabel(o.service, lang) || o.service;
+
+  const payment = await createOrderMolliePayment(env, {
+    ref: o.ref,
+    lang,
+    valueEuros: (bruto / 100).toFixed(2),
+    grossCents: bruto,
+    description: `VISUAILS ${o.ref}`,
+    /* IN DE TAAL VAN DE KLANT. Hier stond het Engelse pad vast ingebakken,
+       terwijl `lang` drie regels hoger al bepaald is: een Nederlandse klant die
+       op deze link betaalde, landde op de Engelse bedankpagina. De gewone
+       bestelroute doet het wél goed (die neemt het pad uit het formulier). */
+    successUrl: `${origin}${lang === 'nl' ? '/nl' : ''}/thank-you?paid=${encodeURIComponent(o.ref)}`,
+    webhookUrl: `${origin}/api/webhook/mollie`,
+    /* Bij 0% geen iDEAL, om dezelfde reden als bij een gewone bestelling: een
+       Nederlandse bankrekening onder een buitenlandse claim is precies wat je
+       niet achteraf wilt uitzoeken. Zie de toelichting in src/lib/mollie.js. */
+    excludeIdeal: Number(o.vat_rate) === 0,
+  });
+  const url = payment?._links?.checkout?.href || null;
+  if (!url) {
+    console.error('[admin] Mollie gaf geen betaallink voor', o.ref);
+    return null;
+  }
+
+  const bedrag = `€ ${(bruto / 100).toFixed(2).replace('.', ',')}`;
+  await sendMail(env, {
+    to: o.email,
+    subject: lang === 'nl'
+      ? `Je bestelling is nagekeken — ${o.ref}`
+      : `Your order has been checked — ${o.ref}`,
+    html: mailShell({
+      lang,
+      preheader: lang === 'nl' ? 'De betaallink staat erin.' : 'The payment link is inside.',
+      body: [
+        mailH1(lang === 'nl' ? 'Nagekeken en akkoord' : 'Checked and cleared'),
+        mailP(lang === 'nl'
+          ? `We hebben de gegevens bij <strong>${esc(o.ref)}</strong> nagekeken. Alles klopt, dus je kunt nu betalen — daarna begint de productie meteen.`
+          : `We have checked the details on <strong>${esc(o.ref)}</strong>. Everything is in order, so you can pay now — production starts straight after.`),
+        mailPayPanel({
+          label: lang === 'nl' ? 'Te betalen' : 'To pay',
+          amount: bedrag,
+          sub: `${esc(svcNaam)}${o.product_count ? ` · ${o.product_count}` : ''}`,
+          href: url,
+          cta: lang === 'nl' ? 'Betalen' : 'Pay now',
+        }),
+        mailLinkLine(url, lang === 'nl' ? 'Werkt de knop niet? Gebruik deze link:' : 'Button not working? Use this link:'),
+        mailSpamNote(lang),
+      ].join(''),
+    }),
+  });
+
+  await env.DB.prepare(
+    `INSERT INTO order_events (order_id, status, note, actor)
+     VALUES (?1, 'pending', ?2, 'studio')`
+  ).bind(orderId, lang === 'nl'
+    ? `Betaallink verstuurd naar ${o.email} voor ${bedrag}.`
+    : `Payment link sent to ${o.email} for ${bedrag}.`).run();
+
+  console.log('[admin] betaallink verstuurd voor', o.ref);
+  return url;
 }
 
 function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts, statusFilter = '', view = {}, vatHeld = 0, watch = null, tmWaiting = 0) {
@@ -5451,7 +5884,7 @@ function orderDanger(o) {
                     <option value="none">Nothing, keep it</option>
                   </select>
                 </label>
-                <p class="meta">This records the decision; the refund itself still happens in Mollie.</p>`
+                <p class="meta">Choosing <strong>Refund it</strong> sends the money back through Mollie right here. The credit note follows by itself once Mollie confirms.</p>`
              : '<p class="meta">Nothing was paid, so there is nothing to decide about money.</p>'}
            <button class="btn btn-ghost btn-sm" type="submit">Cancel this order</button>
          </form>`}

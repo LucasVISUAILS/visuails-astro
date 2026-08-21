@@ -94,7 +94,7 @@ import {
   vatGate, REVIEW, REVIEW_HOURS,
 } from '../../src/data/vat.js';
 import { checkVat, viesEvidence } from '../../src/lib/vies.js';
-import { composeName, composeAddress } from '../../src/data/address.js';
+import { composeName, composeAddress, normalisePostal } from '../../src/data/address.js';
 import {
   isGarmentId, contextAllowed, contextDefault, CONTEXT_SLOT_IDS, CONTEXT_OURS,
 } from '../../src/data/garments.js';
@@ -287,7 +287,17 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const addressParts = {
     line1: get('address_line1'),
     line2: get('address_line2'),
-    postal: get('postal_code'),
+    /* ── DE POSTCODE ÉÉN KEER NETJES, HIER ────────────────────────────────
+       Wat iemand typt komt zo op de factuur. Op de eerste testfactuur stond
+       "7531HK" zonder spatie: niet fout, wel slordig, en het is het soort ding
+       dat je op een document dat naar een boekhouder gaat één keer regelt in
+       plaats van per geval.
+
+       BIJ HET OPSLAAN en niet bij het tonen. Dan staat het goed in de database,
+       op de factuur, in de mail en in de scaffold-briefing — vier plekken die
+       anders elk hun eigen opmaakregel zouden krijgen. Buitenlandse postcodes
+       blijven ongemoeid; zie normalisePostal() in src/data/address.js. */
+    postal: normalisePostal(get('postal_code'), get('country')),
     city: get('city'),
     region: get('region'),
   };
@@ -736,7 +746,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
         if (!addressParts.line1) {
           addressParts.line1 = saved.address_line1 || '';
           addressParts.line2 = saved.address_line2 || '';
-          addressParts.postal = saved.postal_code || '';
+          /* Ook hier langs de normalisatie: dit is een adres dat eerder is
+             opgeslagen, en dat kan van vóór 20 augustus 2026 zijn. */
+          addressParts.postal = normalisePostal(saved.postal_code || '', saved.country || get('country'));
           addressParts.city = saved.city || '';
           addressParts.region = saved.region || '';
         }
@@ -1300,7 +1312,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
     to: email,
     subject: lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We've got your request — ${ref}`,
     html: customerEmail(lang, ref, svc, name,
-      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink, pay: payUrl, quote, vat: vatCall }),
+      { tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink, pay: payUrl, quote, vat: vatCall,
+        inReview: !!review.needsReview }),
   }));
 
   /*
@@ -2521,7 +2534,8 @@ function notifyEmail(ref, service, top, details, gate = {}) {
  * is placement, which is the one thing the copy cannot carry itself.
  */
 export function customerEmail(lang, ref, service, name,
-  { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null } = {}) {
+  { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
+    inReview = false } = {}) {
   const nl = lang === 'nl';
   const hi = name ? `Hi ${esc(name)},` : 'Hi,';
   const attended = tier === 'attended';
@@ -2701,6 +2715,23 @@ export function customerEmail(lang, ref, service, name,
       p(timing, { top: summary ? 8 : 0 }),
       payBlock,
       payBlock ? '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>' : '',
+      /* ── WAAROM ER GEEN BETAALKNOP STAAT — 20 augustus 2026 ─────────────────
+         Een bestelling die de btw-poort tegenhoudt (buiten de EU, of een
+         btw-nummer dat VIES niet bevestigt) krijgt geen betaallink. Tot vandaag
+         zei deze mail daar NIETS over: de klant kreeg "Je bestelling staat
+         genoteerd", geen knop, en geen enkele aanwijzing of hij nog iets moest
+         doen. Dat is precies het moment waarop iemand gaat mailen om te vragen
+         of het gelukt is.
+
+         Sinds vandaag stuurt het adminscherm de betaallink automatisch zodra de
+         beoordeling rond is (zie stuurBetaallink in src/lib/admin.js), dus deze
+         zin belooft niets wat er niet achter zit. */
+      (!payBlock && inReview)
+        ? p(nl
+            ? 'Er staat nog geen betaalknop in deze mail, en dat klopt: we kijken je gegevens eerst even na. Zodra dat rond is — meestal binnen een werkdag — sturen we je de betaallink. Je hoeft zelf niets te doen.'
+            : 'There is no payment button in this email yet, and that is on purpose: we check your details first. As soon as that is done — usually within one working day — we send you the payment link. Nothing is needed from you.',
+            { top: 4 })
+        : '',
       portalNote,
       p(care, { top: 20 }),
       upgradeNote,

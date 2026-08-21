@@ -55,6 +55,7 @@ import Placeholder from './Placeholder.astro';
 import { catalogStyles as catalogStylesEn } from '../data/catalogStyles.js';
 import { catalogStyles as catalogStylesNl } from '../data/catalogStyles.nl.js';
 
+import ServiceSwitch from './ServiceSwitch.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -122,7 +123,7 @@ const COPY = {
     // to prejudge — size decides the service level now — so the neutral verb
     // is simply correct rather than diplomatic, and where the line falls is
     // stated further down, on the queue note and in the TierCompare block.
-    ctaPrimary: 'Start an order',
+    ctaPrimary: 'Order catalog visuals',
     ctaSecondary: 'See the price per product',
     wa: waHref("Hi VISUAILS, I'd like to order catalog visuals for my products."),
     waLabel: 'WhatsApp',
@@ -153,7 +154,7 @@ const COPY = {
     // is a consequence of size now rather than a thing you pick, and one rate
     // is not what a catalog set costs. The rung list sits directly above this
     // button, so the button only has to be a verb.
-    packCta: 'Start an order',
+    packCta: 'Order catalog visuals',
     edMeta: '( Where it fits )',
     edH: 'Catalog photography: clarity that closes the sale.',
     edSub: 'The clean product pages your shop and marketplaces run on.',
@@ -166,7 +167,7 @@ const COPY = {
     whereH: 'Where it lives',
     where: [
       ['Your webshop', 'the product pages people decide on.'],
-      ['Marketplaces', 'Bol, Amazon and listings that demand clean, consistent shots.'],
+      ['Marketplaces', 'bol, Amazon and listings that demand clean, consistent shots.'],
       ['Shopping feeds', 'Google Shopping and comparison sites.'],
       ['Wholesale & linesheets', 'where buyers need to see the product plainly.'],
     ],
@@ -246,7 +247,7 @@ const COPY = {
     eyebrow: 'Catalog',
     h1: 'Strakke, consistente productvisuals — <em>ook bij dertig producten.</em>',
     lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer beelden per product kan altijd. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
-    ctaPrimary: 'Start een bestelling',
+    ctaPrimary: 'Bestel catalogusbeelden',
     ctaSecondary: 'Bekijk de prijs per product',
     wa: waHref("Hoi VISUAILS, ik wil graag Catalog-visuals bestellen voor mijn producten."),
     waLabel: 'WhatsApp',
@@ -261,7 +262,7 @@ const COPY = {
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
     ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
     packP: `Elk product komt terug als een complete set — met een echte foto op een model, niet alleen het product plat op een ondergrond. Op die foto staat een gezicht uit de standaardbibliotheek, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
-    packCta: 'Start een bestelling',
+    packCta: 'Bestel catalogusbeelden',
     edMeta: '( Waar het past )',
     edH: 'Catalogfotografie: zo duidelijk dat er niets te vragen overblijft.',
     edSub: 'De strakke productpagina’s waar je shop en marktplaatsen op draaien.',
@@ -274,7 +275,7 @@ const COPY = {
     whereH: 'Waar je het gebruikt',
     where: [
       ['Je webshop', 'de productpagina’s waar mensen beslissen.'],
-      ['Marktplaatsen', 'Bol, Amazon en andere platforms die strakke, consistente foto’s eisen.'],
+      ['Marktplaatsen', 'bol, Amazon en andere platforms die strakke, consistente foto’s eisen.'],
       ['Shopping-feeds', 'Google Shopping en vergelijkingssites.'],
       ['Wholesale & linesheets', 'waar inkopers het product helder moeten zien.'],
     ],
@@ -359,11 +360,12 @@ const nl = lang === 'nl';
       <h1 class="display cat-h1" set:html={c.h1} />
       <p class="lead" style="margin-top:1.2rem" set:html={c.lead} />
       <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/catalog')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
         <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
         <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
         </a>
       </div>
+      <ServiceSwitch current="catalog" lang={lang} />
       <div class="trust-row" style="margin-top:2.4rem">
         {c.trust.map(([strong, rest]) => (
           <span class="trust-item"><strong>{strong}</strong> {rest}</span>
@@ -421,7 +423,7 @@ const nl = lang === 'nl';
     </div>
 
     <div class="flex" style="justify-content:center;margin-top:1.8rem">
-      <a href={lp('/start')} class="btn btn-primary">{c.packCta}</a>
+      <a href={lp('/start/catalog')} class="btn btn-primary">{c.packCta}</a>
     </div>
   </div>
 </section>
@@ -576,7 +578,7 @@ const nl = lang === 'nl';
      See TierCompare.astro for why both columns are styled identically. -->
 <section class="section-tight">
   <div class="container">
-    <TierCompare lang={lang} />
+    <TierCompare lang={lang} href0="/start/catalog" label0={c.ctaPrimary} />
   </div>
 </section>
 
@@ -599,7 +601,7 @@ const nl = lang === 'nl';
       <h2 class="display cat-cta-h" set:html={c.ctaH} />
       <p class="lead" style="margin:1.2rem auto 0;text-align:center">{c.ctaP}</p>
       <div class="flex" style="justify-content:center;margin-top:2rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/catalog')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
         <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaSecondary}</a>
         <a href={c.wa} class="btn btn-wa" target="_blank" rel="noopener">{c.waLabel}
         </a>

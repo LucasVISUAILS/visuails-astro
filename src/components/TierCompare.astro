@@ -61,17 +61,28 @@ import {
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
+import Note from './Note.astro';
 interface Props {
   lang: 'en' | 'nl';
-  /** Where the under-threshold column points. /start takes any size. */
+  /** Where the under-threshold column points. Defaults to /start, the chooser;
+   *  a SERVICE page passes its own order route — see src/data/orderDoors.js.
+   *
+   *  ZONDER TAALVOORVOEGSEL. Deze component draait `lp()` er zelf overheen (zie
+   *  `href` in de kolomopbouw hieronder), dus een aanroeper die `lp('/start/…')`
+   *  meegeeft, krijgt `/nl/nl/start/…` — precies wat er op 21 augustus gebeurde
+   *  en wat `npm run keuring` als dode link terugmeldde. */
   href0?: string;
+  /** The label on that column's link. Defaults to the generic "Start an order";
+   *  a service page passes the same wording as its own hero button, so the page
+   *  does not offer two differently-named routes to one form. */
+  label0?: string;
   /** Where the at-threshold column points. Defaults to /pricing; pass another path on /pricing itself. */
   href1?: string;
   /** Drop the heading block when the host section already has one. */
   compact?: boolean;
 }
 
-const { lang, href0 = '/start', href1 = '/pricing', compact = false } = Astro.props;
+const { lang, href0 = '/start', href1 = '/pricing', label0 = '', compact = false } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 
 // The column headings are NOT TIERS[id].label any more. Those two strings still
@@ -95,13 +106,22 @@ const label = lang === 'nl'
 const t = lang === 'nl'
   ? {
       h: `Wat er verandert bij ${WINDOW_THRESHOLD} producten`,
-      p: `Je kiest geen serviceniveau — de omvang van je bestelling bepaalt het. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij de vastgezette leverdatum; daaronder loopt hij in de normale doorlooptijd. Dat is ook precies het aantal waarbij het tarief per product een stap zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
+      /* ── ÉÉN ZIN OPEN, DE REST IN EEN NOTITIE — 21 augustus 2026 ────────
+         Deze alinea stond op /catalog, /lifestyle én /video open in beeld:
+         zestig woorden over serviceniveaus, boven een tabel die het daarna nog
+         eens uitlegt. Wat er ECHT toe doet is de eerste zin — je kiest niets, de
+         omvang beslist. De rest is voor wie zich afvraagt waarom. */
+      p: 'Je kiest geen serviceniveau — de omvang van je bestelling bepaalt het.',
+      pNote: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij de vastgezette leverdatum; daaronder loopt hij in de normale doorlooptijd. Dat is ook precies het aantal waarbij het tarief per product een stap zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
+      pTerm: 'serviceniveau',
       cta0: 'Start een bestelling',
       cta1: 'Bekijk de prijs per product',
     }
   : {
       h: `What changes at ${WINDOW_THRESHOLD} products`,
-      p: `You do not pick a service level — the size of your order sets it. From ${WINDOW_THRESHOLD} products we hold a delivery date for the order and confirm it in writing; below that count the normal turnaround applies. That is also the count at which the rate per product drops a step, so there is one line to cross rather than two. Both run through the same production and the same check.`,
+      p: 'You do not pick a service level — the size of your order sets it.',
+      pNote: `From ${WINDOW_THRESHOLD} products we hold a delivery date for the order and confirm it in writing; below that count the normal turnaround applies. That is also the count at which the rate per product drops a step, so there is one line to cross rather than two. Both run through the same production and the same check.`,
+      pTerm: 'service level',
       cta0: 'Start an order',
       cta1: 'See the price per product',
     };
@@ -126,7 +146,7 @@ const columns = (['unattended', 'attended'] as const).map((id) => ({
   id,
   label: label[id],
   href: id === 'unattended' ? lp(href0) : lp(href1),
-  cta: id === 'unattended' ? t.cta0 : t.cta1,
+  cta: id === 'unattended' ? (label0 || t.cta0) : t.cta1,
   cells: TIER_ROWS.map((r) => tierRow(id, r.key, lang)),
 }));
 ---
@@ -135,7 +155,7 @@ const columns = (['unattended', 'attended'] as const).map((id) => ({
   {!compact && (
     <div class="tierc-head">
       <h2>{t.h}</h2>
-      <p>{t.p}</p>
+      <p>{t.p} <Note lang={lang} term={t.pTerm} wide>{t.pNote}</Note></p>
     </div>
   )}
 

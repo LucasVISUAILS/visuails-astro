@@ -27,6 +27,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { issueInvoice, formatNumber, snapshotFromOrder } from '../src/lib/invoice.js';
 import { renderInvoicePdf } from '../src/lib/invoicePdf.js';
+import { normalisePostal } from '../src/data/address.js';
 
 let pass = 0, fail = 0;
 function ok(name, cond, expected = '', got = '') {
@@ -97,6 +98,37 @@ function fresh() {
   // Het echte migratiebestand, niet een kopie ervan. Wijkt het schema af van wat
   // deze test aanneemt, dan valt dat hier om en niet in productie.
   db.exec(readFileSync(new URL('../migrations/0021-invoices.sql', import.meta.url), 'utf8'));
+  /* ── payments HOORT ERBIJ, EN DAT WAS EERST NIET ZO ──────────────────────
+     issueInvoice() telt sinds 20 augustus 2026 op wat er binnengekomen is en
+     weigert een factuur die daar bovenuit gaat (zie FACTUUR_SPELING_CENT in
+     src/lib/invoice.js). Deze opzet had geen payments-tabel, dus liep de eerste
+     aanroep meteen tegen "no such table: payments".
+
+     Dat was de opzet die fout was en niet de controle: in de echte database kan
+     een bestelling niet op `paid` staan zonder betaalrij — alleen de twee
+     webhooks zetten dat veld, en allebei schrijven ze eerst die rij. Een opzet
+     die dat niet nabootst, test een toestand die niet bestaat.
+
+     De DDL komt uit het echte migratiebestand en niet uit een kopie, om dezelfde
+     reden als de regel hierboven. */
+  db.exec(readFileSync(new URL('../migrations/0003-admin-accounts-payments.sql', import.meta.url), 'utf8')
+    .split('CREATE TABLE IF NOT EXISTS payments')[1]
+    .split(';')[0]
+    .replace(/^/, 'CREATE TABLE IF NOT EXISTS payments') + ';');
+  db.exec(`CREATE TABLE IF NOT EXISTS admin_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    admin_id INTEGER, admin_email TEXT, action TEXT NOT NULL,
+    order_id INTEGER, customer_id INTEGER, detail TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS order_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    note TEXT,
+    actor TEXT NOT NULL DEFAULT 'system',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );`);
   db.prepare('INSERT INTO customers (id, email) VALUES (1, ?)').run('klant@example.com');
   return db;
 }
@@ -111,9 +143,23 @@ function addOrder(db, over = {}) {
     address_line1: 'Teststraat 1', address_line2: null, postal_code: '1234 AB', city: 'Amsterdam', region: null,
     ...over,
   };
+  delete o.betaald;
   const keys = Object.keys(o);
   db.prepare(`INSERT INTO orders (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`).run(...keys.map((k) => o[k]));
-  return db.prepare('SELECT id FROM orders WHERE ref = ?').get(o.ref).id;
+  const id = db.prepare('SELECT id FROM orders WHERE ref = ?').get(o.ref).id;
+  /* En de betaling erbij, want een betaalde bestelling heeft er een. `betaald`
+     op null zetten laat hem weg — dat is hoe de test hieronder een bestelling
+     zonder dekking maakt. */
+  const betaald = over.betaald === undefined
+    ? Number(o.total_cents || 0) + Number(o.vat_cents || 0)
+    : over.betaald;
+  if (betaald !== null) {
+    db.prepare(
+      `INSERT INTO payments (order_id, provider, external_id, status, amount_cents, currency)
+       VALUES (?, 'mollie', ?, 'paid', ?, 'EUR')`
+    ).run(id, `tr_${o.ref}_${betaald}`, betaald);
+  }
+  return id;
 }
 
 const env = (db, b = bucket()) => ({ DB: d1(db), UPLOADS: b, VISUAILS_IBAN: 'NL00 TEST 0000 0000 00' });
@@ -367,6 +413,119 @@ console.log('\nsnapshotFromOrder');
   ok('bruto is netto plus btw', one.grossCents === 121, 121, one.grossCents);
   ok('naam uit voor- en achternaam', snapshotFromOrder({ ...base, first_name: 'A', last_name: 'B' }, {}, { number: 'N', date: 'x' }).customer.name === 'A B', 'A B', snapshotFromOrder({ ...base, first_name: 'A', last_name: 'B' }, {}, { number: 'N', date: 'x' }).customer.name);
   ok('valt terug op het losse naamveld', snapshotFromOrder({ ...base, name: 'C' }, {}, { number: 'N', date: 'x' }).customer.name === 'C', 'C', snapshotFromOrder({ ...base, name: 'C' }, {}, { number: 'N', date: 'x' }).customer.name);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * NIET MEER FACTUREREN DAN ER BINNEN IS — 20 augustus 2026
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * De einde-tot-eindeversie hiervan staat in tests/geldroute.test.mjs, met een echte
+ * webhook ervoor. Wat hier getest wordt is de REGEL zelf, los van de aanleiding:
+ * issueInvoice() deelt geen nummer uit als de som van wat er in euro's binnenkwam
+ * kleiner is dan het bruto bedrag van de bestelling.
+ *
+ * De aanleiding was een gemeten geval: een bestelling van 123.420 cent kreeg een
+ * melding van 100 cent en er ging een factuur uit voor het volle bedrag.
+ */
+console.log('\nfactureren kan niet meer dan er binnen is');
+{
+  const db = fresh();
+  const good = bucket();
+
+  // Niets betaald.
+  const zonder = addOrder(db, { ref: 'VIS-DEK-000', betaald: null });
+  const f0 = await issueInvoice(env(db, good), zonder);
+  ok('geen betaling → geen factuur', f0 === null, null, f0);
+
+  // Honderd cent op een bestelling van 43.076.
+  const teWeinig = addOrder(db, { ref: 'VIS-DEK-001', betaald: 100 });
+  const f1 = await issueInvoice(env(db, good), teWeinig);
+  ok('te weinig betaald → geen factuur', f1 === null, null, f1);
+  ok('en geen enkel nummer verbruikt', db.prepare('SELECT COUNT(*) c FROM invoices').get().c === 0,
+     0, db.prepare('SELECT COUNT(*) c FROM invoices').get().c);
+  /* TWEE LEZERS, TWEE TEKSTEN. De tijdlijn is ook de klantentijdlijn (portal.js en
+     account.js lezen dezelfde tabel), dus daar staat het in gewone taal zonder
+     bedragen; de getallen staan in admin_log, waar alleen Lucas kijkt. */
+  const ev = db.prepare("SELECT * FROM order_events WHERE order_id = ? AND note LIKE '%wacht nog%'").all(teWeinig);
+  ok('de klant leest dat de factuur nog wacht', ev.length === 1, 1, ev.length);
+  ok('en zonder bedragen erin', !/\d{3,}/.test(ev[0]?.note || ''), 'geen getallen', ev[0]?.note);
+  const log = db.prepare("SELECT * FROM admin_log WHERE order_id = ? AND action = 'invoice.blocked'").all(teWeinig);
+  ok('en jij leest de twee bedragen', /100 cent op een bestelling van 43076 cent/.test(log[0]?.detail || ''), true, log[0]?.detail);
+
+  // Twee cent te weinig valt binnen de speling — zie de noot bij
+  // FACTUUR_SPELING_CENT: te ruim kost niemand iets, te streng houdt een geldige
+  // factuur tegen.
+  const netAan = addOrder(db, { ref: 'VIS-DEK-002', betaald: 43076 - 2 });
+  const f2 = await issueInvoice(env(db, good), netAan);
+  ok('twee cent speling gaat er nog doorheen', f2 && f2.status === 'issued', 'issued', f2 && f2.status);
+
+  // Drie cent te weinig niet meer. De grens moet ergens liggen en dit is waar.
+  const netNiet = addOrder(db, { ref: 'VIS-DEK-003', betaald: 43076 - 3 });
+  const f3 = await issueInvoice(env(db, good), netNiet);
+  ok('drie cent te weinig niet', f3 === null, null, f3);
+
+  // Meer dan genoeg mag altijd: te veel betaald is geen reden om een factuur op
+  // te houden, dat is een reden voor een terugbetaling.
+  const teVeel = addOrder(db, { ref: 'VIS-DEK-004', betaald: 50000 });
+  const f4 = await issueInvoice(env(db, good), teVeel);
+  ok('meer dan genoeg → gewoon een factuur', f4 && f4.status === 'issued', 'issued', f4 && f4.status);
+
+  // Twee betalingen die SAMEN dekken. Dit is het geval waar een controle per
+  // betaling op stukloopt en een controle op het totaal niet.
+  const samen = addOrder(db, { ref: 'VIS-DEK-005', betaald: 20000 });
+  db.prepare(
+    `INSERT INTO payments (order_id, provider, external_id, status, amount_cents, currency)
+     VALUES (?, 'mollie', 'tr_bijbetaling', 'paid', ?, 'EUR')`
+  ).run(samen, 23076);
+  const f5 = await issueInvoice(env(db, good), samen);
+  ok('twee betalingen die samen dekken → factuur', f5 && f5.status === 'issued', 'issued', f5 && f5.status);
+
+  // Een andere munt telt niet mee: cent van een andere munt is niet dezelfde cent.
+  const vreemd = addOrder(db, { ref: 'VIS-DEK-006', betaald: null });
+  db.prepare(
+    `INSERT INTO payments (order_id, provider, external_id, status, amount_cents, currency)
+     VALUES (?, 'mollie', 'tr_vreemde_munt', 'paid', ?, 'USD')`
+  ).run(vreemd, 43076);
+  const f6 = await issueInvoice(env(db, good), vreemd);
+  ok('een bedrag in een andere munt dekt niets', f6 === null, null, f6);
+
+  // Terugbetaald geld IS binnengekomen. De weg terug is de creditnota, en die moet
+  // naar een factuur kunnen verwijzen.
+  const terug = addOrder(db, { ref: 'VIS-DEK-007', betaald: null });
+  db.prepare(
+    `INSERT INTO payments (order_id, provider, external_id, status, amount_cents, currency)
+     VALUES (?, 'mollie', 'tr_terugbetaald', 'refunded', ?, 'EUR')`
+  ).run(terug, 43076);
+  const f7 = await issueInvoice(env(db, good), terug);
+  ok('een terugbetaalde betaling telt als binnengekomen', f7 && f7.status === 'issued', 'issued', f7 && f7.status);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE POSTCODE OP HET PAPIER — 20 augustus 2026
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Op de eerste testfactuur stond "7531HK" zonder spatie: wat iemand typt, komt zo
+ * op het document terecht. Genormaliseerd bij het OPSLAAN (zie de noot in
+ * functions/api/order.js), zodat het meteen goed staat in de database, op de
+ * factuur, in de mail en in de briefing — vier plekken die anders elk hun eigen
+ * opmaakregel zouden krijgen.
+ *
+ * De grens is de Nederlandse vorm en niet "een postcode": een Britse, Ierse of
+ * Duitse postcode heeft eigen regels, en die hier raden zou betekenen dat een
+ * buitenlands adres wordt herschreven door iemand die die regels niet kent.
+ */
+console.log('\nde postcode wordt netjes opgeschreven');
+{
+  ok('kleine letters worden hoofdletters', normalisePostal('7531hk', 'NL') === '7531 HK', '7531 HK', normalisePostal('7531hk', 'NL'));
+  ok('een ontbrekende spatie komt erbij', normalisePostal('7531HK', 'NL') === '7531 HK', '7531 HK', normalisePostal('7531HK', 'NL'));
+  ok('te veel spaties gaan eruit', normalisePostal('  7531   hk ', 'NL') === '7531 HK', '7531 HK', normalisePostal('  7531   hk ', 'NL'));
+  ok('wat al goed staat, blijft staan', normalisePostal('1234 AB', 'NL') === '1234 AB', '1234 AB', normalisePostal('1234 AB', 'NL'));
+  ok('zonder land telt de vorm', normalisePostal('1234AB', '') === '1234 AB', '1234 AB', normalisePostal('1234AB', ''));
+  ok('een Britse postcode blijft met rust', normalisePostal('SW1A 1AA', 'GB') === 'SW1A 1AA', 'SW1A 1AA', normalisePostal('SW1A 1AA', 'GB'));
+  ok('een Duitse ook', normalisePostal('10115', 'DE') === '10115', '10115', normalisePostal('10115', 'DE'));
+  ok('en de Nederlandse vorm in een ander land wordt niet herschreven', normalisePostal('1234ab', 'DE') === '1234ab', '1234ab', normalisePostal('1234ab', 'DE'));
+  ok('leeg blijft leeg', normalisePostal('', 'NL') === '', '', normalisePostal('', 'NL'));
+  ok('null valt niet om', normalisePostal(null, 'NL') === '', '', normalisePostal(null, 'NL'));
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

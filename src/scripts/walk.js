@@ -42,6 +42,9 @@
  *  skim-scrolling should still see that there is more below. */
 const MIN_OPACITY = 0.22;
 
+/** De scroll/resize-luisteraar van de vorige initWalk(), zodat hij eraf kan. */
+let vensterGebonden = null;
+
 function initWalk() {
   const root = document.querySelector('[data-walk]');
   if (!root || root.dataset.walkBound === '1') return;
@@ -208,6 +211,15 @@ function initWalk() {
       sync(visibleBody());
     });
   }
+  /* Dezelfde reparatie als in consent.js: `onScroll` hangt aan de stappen van
+     DEZE pagina, en `root.dataset.walkBound` staat op een element dat bij elke
+     zachte navigatie vervangen wordt — dus houdt die vlag niets tegen zodra de
+     lezer /demo een tweede keer bezoekt. De vorige twee gaan er nu eerst af. */
+  if (vensterGebonden) {
+    window.removeEventListener('scroll', vensterGebonden);
+    window.removeEventListener('resize', vensterGebonden);
+  }
+  vensterGebonden = onScroll;
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
 

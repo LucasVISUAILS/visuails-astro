@@ -33,7 +33,12 @@ export const catalogStyles = [
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
     metaPrice: `${CAT_FROM} / product — vanaf 4 foto’s`,
-    orderHref: '/nl/start',
+    /* ── WAAR DEZE KNOP HEEN GAAT — 21 augustus 2026 ──────────────────────
+       Hier stond `/start`, de keuzepagina. Een knop die "Order Classic" zegt en
+       je vervolgens vraagt WAT we gaan maken, heeft de vraag gesteld die je net
+       beantwoord hebt. Classic IS de standaard catalogset, dus gaat hij naar het
+       formulier zelf. Zie src/data/orderDoors.js voor de hele redenering. */
+    orderHref: '/nl/start/catalog',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
@@ -57,10 +62,10 @@ export const catalogStyles = [
       { title: 'Een vastgezet lichtrecept', body: 'Eén softbox-opstelling, vastgelegd — geen keuze die per shot opnieuw wordt gemaakt.' },
       { title: 'Een hoeksysteem, geen losse hoek', body: 'Vaste camerageometrie, zodat een nieuw product precies naast een oud past.' },
       { title: 'Kleur trouw aan het product', body: 'Wit blijft wit, je merkkleur blijft kloppen.' },
-      { title: 'Uitsnedes voor elk kanaal', body: 'Eén set uitsnedes werkt voor je shop, Amazon, Bol en advertenties.' },
+      { title: 'Uitsnedes voor elk kanaal', body: 'Eén set uitsnedes werkt voor je shop, Amazon, bol en advertenties.' },
     ],
     why: [
-      { title: 'Marktplaats-proof', body: 'Voldoet aan de strikte beeldregels van Amazon, Bol, Zalando en meer.' },
+      { title: 'Marktplaats-proof', body: 'Voldoet aan de strikte beeldregels van Amazon, bol, Zalando en meer.' },
       { title: 'Klaar voor bijbestellen', body: 'Een nieuw product schuift zo in de bestaande set, zonder zichtbare naad.' },
       { title: 'Geen art direction nodig', body: 'Stuur een foto, ontvang hetzelfde doordachte kader terug.' },
     ],
@@ -71,7 +76,7 @@ export const catalogStyles = [
       'Bijbestellingen — nieuwe producten die perfect bij oude sets passen',
     ],
     whatYouGet: [
-      'Vanaf vier foto\'s per product: voorkant, achterkant, detail & on-model',
+      'Vanaf vier foto’s per product: voorkant, achterkant, detail & on-model',
       'Consistente belichting, hoek en achtergrond',
       'Hogeresolutiebestanden, klaar voor de marktplaatsen',
       TIMING,
@@ -85,13 +90,14 @@ export const catalogStyles = [
     priceTrust: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
     priceUnit: '',
     metaPrice: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
-    orderHref: '/nl/start',
+    orderHref: '/nl/start/custom-look',
+    orderLabel: 'Vraag een eigen catalogus-look aan',
     heroIcon: 'bag',
     heroWidth: '26%',
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Prijs op maat',
-    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product voor ${CAT_FROM} per set van vier foto’s.`,
+    cardDesc: `Een catalogus-look ontworpen rond jouw merk — daarna elk product ${CAT_FROM} per set van vier foto’s.`,
     moodTitle: 'Hoe Eigen merk eruitziet.',
     moodParagraphs: [
       'Een kenmerkende achtergrond, schaduw en propstijl die zeggen: dit zijn wij — nog voordat het logo dat doet.',

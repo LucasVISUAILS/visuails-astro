@@ -73,6 +73,7 @@ import ProductScene from './ProductScene.astro';
 import FigPayback from './FigPayback.astro';
 import Placeholder from './Placeholder.astro';
 
+import Note from './Note.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -187,6 +188,7 @@ const COPY = {
     firstLead: 'The rate on this page is the rate.',
     firstBody: `No first-order discount, no volume negotiation, no package you have to fit your line into. The price per product above is the whole of it, and it applies to every product in the order. If you want to see the work before you commit, that is what the ${TEST_SAMPLE.en.price} test sample is for.`,
     ladderCta: 'Start an order',
+    compareCta: 'A shoot day, priced against an order',
 
     anchorH: 'What this replaces',
     anchorWasTag: 'A production day',
@@ -219,6 +221,7 @@ const COPY = {
     // The credit cells print a price too, so the run label carries the label
     // for them — the plate's own says nothing about the five figures beside it.
     pbRunLabel: `Credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} orders · ${vatLabel('excl', 'en')}`,
+    brandModelNote: `You pay ${euro(AMOUNT.brandModel, 'en')} once, when the model is designed. After that ${euro(AMOUNT.brandModelCredit, 'en')} comes off each of your next ${BRAND_MODEL_CREDIT_DROPS} orders — so it is not a discount on the setup and not money back, it is the setup fee returning to you as order credit. Order ${BRAND_MODEL_CREDIT_DROPS} times and you have had all of it back.`,
     pbEndLabel: 'Setup repaid',
     videoName: 'Video clip',
     videoLine: 'One short clip. The same rate on its own or added to any order.',
@@ -282,6 +285,7 @@ const COPY = {
     firstLead: 'Het tarief op deze pagina is het tarief.',
     firstBody: `Geen kennismakingskorting, geen onderhandeling over volume, geen pakket waar je collectie in moet passen. De prijs per product hierboven is het hele verhaal, en hij geldt voor elk product in de bestelling. Wil je het werk eerst zien, bestel dan de proefvisual van ${TEST_SAMPLE.nl.price}.`,
     ladderCta: 'Start een bestelling',
+    compareCta: 'Een shootdag, afgezet tegen een bestelling',
 
     anchorH: 'Wat dit vervangt',
     anchorWasTag: 'Een productiedag',
@@ -303,6 +307,7 @@ const COPY = {
     brandModelCta: 'Bekijk Jouw merkmodel',
     pbTotalLabel: `Setup, ${vatLabel('excl', 'nl')}`,
     pbRunLabel: `Verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen · ${vatLabel('excl', 'nl')}`,
+    brandModelNote: `Je betaalt ${euro(AMOUNT.brandModel, 'nl')} één keer, als het model ontworpen wordt. Daarna gaat er ${euro(AMOUNT.brandModelCredit, 'nl')} af van elk van je volgende ${BRAND_MODEL_CREDIT_DROPS} bestellingen — het is dus geen korting op de setup en geen geld terug, maar het setupbedrag dat als bestellingstegoed bij je terugkomt. Bestel je ${BRAND_MODEL_CREDIT_DROPS} keer, dan heb je het helemaal terug.`,
     pbEndLabel: 'Setup terugverdiend',
     videoName: 'Videoclip',
     videoLine: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
@@ -472,6 +477,16 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
 
   <div class="flex ladder-cta">
     <a href={lp('/start')} class="btn btn-primary">{c.ladderCta}</a>
+    {/* ── /compare KOMT HIERHEEN — 21 augustus 2026 ────────────────────────
+        Die pagina stond in de uitklapper "Hoe het werkt", tussen de
+        processtappen, en had drie inkomende links op de hele site. Het is een
+        vergelijking van GELD — een shootdag tegen een bestelling — en die
+        overtuigt naast een prijslijst, niet naast een uitleg over hoe een
+        bestelling loopt. Als tekstlink en niet als tweede knop: er staat hier al
+        één ding dat je moet doen. */}
+    <a href={lp('/compare')} class="link-arrow ladder-compare">{c.compareCta}
+      <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
   </div>
 </div></section>
 
@@ -527,6 +542,10 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
       <span class="ap-amount">{euro(AMOUNT.brandModel, lang)}</span>
       <span class="ap-unit">{c.brandModelUnit}</span>
       <span class="ap-vat">{vatLabel('excl', lang)}</span>
+      {/* "Verrekend met je eerste 5 bestellingen" leest als korting én als
+          terugbetaling, en dat verschil is 1.250 euro waard. De uitleg staat
+          alleen op /custom-models; hier stond alleen het bijschrift. */}
+      <Note lang={lang} term={c.brandModelName} wide>{c.brandModelNote}</Note>
     </p>
 
     <div class="addon-fig">
@@ -825,6 +844,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
      the claim rather than the claim itself. */
   .addon-fig { grid-column: 1 / -1; }
   .addon-cta { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: .4rem; }
+  .ladder-compare { display: inline-flex; align-items: center; gap: .4rem; }
 
   /* Two panels inside one frame, split by a border rather than a gap: the
      clip's rate and where that rate holds are one offer, and a gap between

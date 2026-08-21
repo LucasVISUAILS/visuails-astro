@@ -20,6 +20,16 @@ function grid(photos, icons) {
 export const styles = [
   {
     slug: 'dunes',
+    /* ── DE STIJL REIST MEE — 21 augustus 2026 ────────────────────────────
+       Deze knop ging naar `/start`, de keuzepagina. Wie op /lifestyle/dunes op
+       "Bestel Dunes" klikte, moest daar Lifestyle aanwijzen en vervolgens in het
+       formulier zelf Dunes nóg een keer. Drie keer dezelfde keuze.
+
+       `?style=` is veilig op de manier die /start/plan?plan= al gebruikt: de
+       waarde wordt gefilterd en dient alleen om een radio aan te vinken die de
+       pagina zelf heeft gerenderd. Hij raakt de PRIJS niet — die hangt aan de
+       route, en pipeline.js leest de URL met opzet nooit voor de dienst. */
+    orderHref: '/nl/start/lifestyle?style=dunes',
     name: 'Dunes',
     tagline: 'Zon, zand en ingetogen luxe.',
     heroPhoto: '/img/lifestyle-dunes-01.webp',
@@ -57,6 +67,7 @@ export const styles = [
   },
   {
     slug: 'flash',
+    orderHref: '/nl/start/lifestyle?style=flash',
     name: 'Flash',
     tagline: 'Directe flits. Geen excuses.',
     heroPhoto: '/img/lifestyle-flash-01.webp',
@@ -94,6 +105,7 @@ export const styles = [
   },
   {
     slug: 'glow',
+    orderHref: '/nl/start/lifestyle?style=glow',
     name: 'Glow',
     tagline: 'Golden hour, op afroep.',
     heroPhoto: '/img/lifestyle-glow-01.webp',
@@ -131,6 +143,7 @@ export const styles = [
   },
   {
     slug: 'phone-made',
+    orderHref: '/nl/start/lifestyle?style=phone-made',
     name: 'Phone-made',
     tagline: 'Ziet eruit alsof het zo gemaakt is. Dat is het niet.',
     heroPhoto: '/img/lifestyle-phone-made-01.webp',

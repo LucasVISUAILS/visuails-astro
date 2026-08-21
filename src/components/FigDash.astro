@@ -50,7 +50,7 @@
  * referentie VIS-2608-4471. Dezelfde die in scripts/account-render.mjs staan,
  * zodat de mock en de renders van het échte dashboard over hetzelfde merk gaan.
  */
-import { euro } from '../data/pricing.js';
+import { euro, quote } from '../data/pricing.js';
 import { DEMO_ORDER, demoWindow, windowLabel } from '../data/figdemo.js';
 
 interface Props { lang?: 'en' | 'nl' }
@@ -104,10 +104,16 @@ const C = nl
       bkOwn: 'Alleen van jou',
       /* Het eerste gezicht is een EIGEN merkmodel, met het label dat het echte
          scherm eraan hangt. Zie de noot bij bkFaces in de layout hieronder. */
+      /* De kenmerken horen bij de naam die ernaast staat. Hier stond Aaron met
+         "Editorial · Elegant" — de kenmerken van Ava — en een verzonnen Tomas
+         met die van Aaron. Wie van /models hierheen komt, ziet dan hetzelfde
+         gezicht met twee verschillende omschrijvingen. Nadia blijft verzonnen,
+         want die stelt het EIGEN merkmodel voor en staat dus per definitie niet
+         op de lijst; de twee andere komen nu letterlijk uit src/data/models.js. */
       bkFaces: [
         { name: 'Nadia', own: true },
-        { name: 'Tomas', sub: 'Warm · Toegankelijk' },
-        { name: 'Aaron', sub: 'Editorial · Elegant' },
+        { name: 'Aaron', sub: 'Warm · Toegankelijk' },
+        { name: 'Ava', sub: 'Editorial · Elegant' },
       ],
       bkColours: [['#FFFFFF', 'Wit'], ['#F7F5F1', 'Gebroken wit'], ['#EDE4D8', 'Beige']],
       bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Onze eigen webshop', null], ['Social en advertenties', null]],
@@ -147,8 +153,8 @@ const C = nl
       bkOwn: 'Yours only',
       bkFaces: [
         { name: 'Nadia', own: true },
-        { name: 'Tomas', sub: 'Warm · Approachable' },
-        { name: 'Aaron', sub: 'Editorial · Elegant' },
+        { name: 'Aaron', sub: 'Warm · Approachable' },
+        { name: 'Ava', sub: 'Editorial · Elegant' },
       ],
       bkColours: [['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white'], ['#EDE4D8', 'Beige']],
       bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Our own webshop', null], ['Social and ads', null]],
@@ -159,9 +165,20 @@ const C = nl
       detNote: 'These go on your invoice. The country decides whether VAT is added.',
     };
 
-/* Bedragen uit euro() in pricing.js, niet met de hand ingetypt — dan staat er
-   in het voorbeeld hetzelfde soort bedrag als op de prijspagina. */
-const money = { net: euro(630, lang), vat: euro(132.3, lang), total: euro(762.3, lang) };
+/* ── HET BEDRAG KOMT UIT DE LADDER, NIET UIT MIJN HOOFD ─────────────────────
+   Hier stond `euro(630)` met `euro(132.3)` en `euro(762.3)` eronder. De btw en
+   het totaal klopten keurig bij die 630 — en 630 klopte bij niets. Het
+   voorbeeldscherm zegt "Catalog · 30 producten", en 30 catalogproducten kosten
+   volgens de eigen staffel € 39 per stuk: € 1.170. € 630 komt neer op € 21 per
+   product, een tarief dat nergens op deze site bestaat.
+
+   Dat het om verzonnen voorbeeldgegevens gaat, is geen verdediging: de lezer
+   die het narekent vindt een prijslijst die zichzelf tegenspreekt, en die
+   twijfel gaat niet over dit ene scherm. euro() haalde de OPMAAK al uit
+   pricing.js; nu haalt quote() ook het GETAL daar vandaan, zodat het voorbeeld
+   meebeweegt als de staffel ooit verandert. */
+const demoQuote = quote('catalog', DEMO_ORDER.products);
+const money = { net: euro(demoQuote.net, lang), vat: euro(demoQuote.vat, lang), total: euro(demoQuote.gross, lang) };
 
 const PHOTOS = [
   '/img/lifestyle-flash-01.webp',
@@ -394,6 +411,14 @@ const UPLOAD = '/img/catalog-before.webp';
      omhullende doos van de gedraaide vorm terug en die is breder dan het element.
      Deel de breedte van .hv-stage door --k. */
   .fd {
+    /* position: relative omdat dit blok afknipt (overflow: hidden) én absoluut
+       geplaatste kinderen heeft. Zonder deze regel hangen die kinderen aan een
+       voorouder BUITEN dit blok en worden ze dus niet mee afgeknipt — dezelfde
+       constructie die op 20 augustus de homepage 946px zijwaarts liet schuiven
+       (zie de noot bij .hv-svc-rail). Hier is er nu geen schade van, want de
+       ontsnappers zijn onzichtbaar en staan op hun eigen plek; de regel staat er
+       zodat het zo blijft. `npm run keuring` bewaakt dit patroon. */
+    position: relative;
     container-type: inline-size;
     container-name: fd;
     margin: 0;

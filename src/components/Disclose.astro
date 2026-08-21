@@ -93,6 +93,12 @@ const {
     display: flex;
     align-items: baseline;
     gap: .75rem;
+    /* 24px is de ondergrens van WCAG 2.5.8 (AA) voor een raakvlak. Deze rij
+       kwam op 23,5px uit — net eronder, en juist net eronder is het soort ding
+       dat niemand ooit ziet zonder te meten. Een minimum en geen opvulling: de
+       rij is bijna altijd al hoger, dus dit verandert niets aan hoe het eruit
+       ziet en vangt alleen het geval van één korte regel op. */
+    min-height: 24px;
     /* The glyph is a grid column rather than a float: a floated ::after drops
        out of flow, so a two-line summary wraps UNDER it and the plus ends up
        beside the first line with the second line running past it. */

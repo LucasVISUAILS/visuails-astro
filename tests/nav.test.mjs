@@ -22,6 +22,7 @@
  */
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { parse } from 'parse5';
 import { buildStaat } from './lib/build.mjs';
 import { buildGraph } from '../src/data/schema.js';
 import { ui } from '../src/i18n/ui.js';
@@ -423,46 +424,126 @@ console.log('\nverborgen, maar niet onzichtbaar');
  *    worden en de prijs nog niet vastligt. Eén "vanaf €119" in dit paneel maakt
  *    van een aankondiging een openbaar aanbod.
  *
- * 3. HET DRIEHOEKJE. Drie engines, drie manieren om de marker te verbergen. Wie
- *    er één weghaalt bij het opschonen, ziet dat op zijn eigen browser niet.
+ * 3. DE CONSTRUCTIE. Die is op 21 augustus 2026 veranderd en de eisen eronder
+ *    zijn meeveranderd — zie het blok hieronder voor wat er nu wordt bewaakt.
  */
 console.log('\nhet vraagteken naast hooks');
 {
   const home = read('src/components/HomeV2.astro');
 
-  // De uitklapper zelf, en de summary die de hele titelregel is.
-  check('er is een <details> bij Hooks', /<details class="hv-q">/.test(home), true);
-  /* De klassenaam veranderde toen de dienstenstrook een rail met kaarten werd:
-     `hv-soon-h` heette de titelregel van de oude strook, `hv-svc-card-t` is de
-     titelregel van een kaart. Wat deze test bewaakt is niet die naam maar de
-     constructie: de HELE titelregel is de summary, zodat de klik op de titel
-     valt en niet op een los driehoekje ernaast. Daarom staat de titelklasse er
-     als groep en niet als vaste volgorde — anders breekt hij op de volgende
-     hernoeming opnieuw zonder dat er iets stuk is. */
-  check('de titelregel is de summary', /<summary class="[^"]*\bhv-q-sum\b[^"]*\bhv-svc-card-t\b[^"]*">/.test(home), true);
-  check('het rondje is decoratie', /class="hv-q-mark" aria-hidden="true">\?</.test(home), true);
-  // De toegankelijke naam staat in de summary en niet in een title-attribuut: een
-  // title wordt niet voorgelezen en op een telefoon nooit gezien.
-  /* Sinds 18 augustus 2026 tekent één lus alle aangekondigde diensten (Hooks
-     en Editions), dus komt het label uit het item en niet meer uit een sleutel
-     met een vaste naam. Zie svcSoonList in HomeV2.astro. */
-  check('en er staat een naam voor de handeling in', /class="hv-q-say">\{soon\.qLabel\}</.test(home), true);
+  /* ── DE CONSTRUCTIE IS OP 21 AUGUSTUS 2026 VERVANGEN ────────────────────
+     Hier stond een <details> met het driehoekje op drie manieren verborgen, en
+     die eisen stonden hieronder één voor één. Lucas: *"wanneer een klant over
+     een vraagteken gaat dat het niet uitklapt maar een floating note blok laat
+     zien om ruimte op de site te besparen."* Dat is nu <Note>, en die staat op
+     één plek voor de hele site in plaats van hier nog een keer.
+
+     WAT DEZE TOETS BEWAAKT IS DAAROM VERANDERD, EN DAT IS GEEN VERZWAKKING. De
+     drie oude eisen waren allemaal gevolgen van "het is een <details>". Wat er
+     onder lag — het vraagteken is decoratie, de knop heeft een naam voor wie
+     hem niet ziet, en de tekst staat er in beide talen — geldt onverkort, en
+     staat hieronder. */
+  check('Hooks krijgt een zwevende notitie', /<Note lang=\{lang\} term=\{soon\.name\} wide>/.test(home), true);
+  check('de titelregel is de naam plus het vraagteken', /<span class="hv-svc-card-t hv-q-t">/.test(home), true);
   check('en de stroken worden uit één lus getekend', /c\.svcSoonList\.map/.test(home), true);
 
-  // Het driehoekje, op alle drie de manieren. Los geteld, want één ervan
-  // weghalen is de fout die alleen op iemand anders' browser te zien is.
-  const css = home.replace(/\/\*[\s\S]*?\*\//g, '');
-  for (const rule of [
-    '.hv-q > .hv-q-sum { list-style: none',
-    '.hv-q > .hv-q-sum::marker',
-    '.hv-q > .hv-q-sum::-webkit-details-marker',
-  ]) {
-    check(`de marker is weg via ${rule.split('.hv-q-sum').pop() || 'list-style'}`, css.includes(rule), true);
+  /* ── GEEN <p> IN EEN NOTITIE, EN DIT IS EEN GEMETEN FOUT ────────────────
+     <Note> is inline en staat dus binnen een <p>. Een <p> daarbinnen sluit de
+     buitenste — dat is geen mening maar hoe elke HTML-parser werkt — en dan valt
+     de hele notitie uit haar eigen span. Gevolg op 21 augustus: de zwevende
+     notitie kwam LEEG tevoorschijn en de 168 woorden stonden gewoon in de kaart.
+     Niets viel om, er was geen foutmelding, en in de bron zag het er goed uit.
+
+     Vandaar deze toets op de GEBOUWDE pagina en niet op de bron: in de bron is
+     het correct, en pas de parser laat zien wat ervan wordt. */
+  /* Met parse5 en niet met een reguliere expressie, en dat is precies het punt:
+     de fout die dit moet vangen is een fout in de BOOM, niet in de tekst. In de
+     platte html stond alles op de goede plek; pas een parser laat zien dat het
+     <p> de omhullende span had gesloten. Een regexp zou hier dus altijd groen
+     zijn geweest. */
+  const gebouwd = read('dist/index.html');
+  const doc = parse(gebouwd);
+  const loop = (n, f) => { f(n); for (const c of n.childNodes || []) loop(c, f); };
+  const woordenIn = (n) => n.nodeName === '#text'
+    ? n.value.split(/\s+/).filter(Boolean).length
+    : (n.childNodes || []).reduce((a, c) => a + woordenIn(c), 0);
+  const popjes = [];
+  loop(doc, (n) => {
+    const cl = (n.attrs || []).find((a) => a.name === 'class');
+    if (cl && /\bnt-pop\b/.test(cl.value)) popjes.push(n);
+  });
+  check('er staan minstens twee zwevende notities op de homepage', popjes.length >= 2, true);
+  check('en geen enkele is leeg', popjes.filter((n) => woordenIn(n) === 0).length, 0);
+  check('de Hooks-notitie draagt haar hele paneel', Math.max(...popjes.map(woordenIn)) > 150, true);
+  check('het rondje is decoratie', /class="nt-mark" aria-hidden="true">\?</.test(gebouwd), true);
+  check('en de knop draagt een naam voor wie hem niet ziet', /class="nt-say">What Hooks means</.test(gebouwd), true);
+  check('de notitie hangt aan de knop via aria-describedby', /aria-describedby="nt-\d+"/.test(gebouwd), true);
+
+  /*
+   * ── HET KNOPLABEL MOET EEN ZELFSTANDIG NAAMWOORD BEVATTEN ────────────────
+   *
+   * Note.astro maakt van `term` het onzichtbare knoplabel: in het Engels
+   * `What ${term} means`, in het Nederlands `Uitleg: ${term}`. Dat werkt
+   * alleen als term een DING is. Op 21 augustus 2026 stonden er drie labels
+   * in de gebouwde site die dat niet waren:
+   *
+   *     "What we record means"
+   *     "What goes in a credit means"
+   *     "What the tag cannot be relied on means"
+   *
+   * Alle drie onzichtbaar op het scherm — je ziet enkel het vraagteken — en
+   * alle drie onverstaanbaar voor precies de bezoeker die op het label is
+   * aangewezen. Geen enkele bestaande controle kon ze zien, want de opmaak
+   * was correct; alleen de TAAL was fout.
+   *
+   * Deze controle leest de gebouwde labels van alle pagina's met notities en
+   * weigert er twee soorten: labels die met een voornaamwoord beginnen, en
+   * labels met een persoonsvorm erin. Een zelfstandig naamwoord heeft geen
+   * van beide. Het is een grove zeef, en dat is de bedoeling: hij hoeft geen
+   * Nederlands te kunnen, hij hoeft alleen te merken dat er een ZIN staat
+   * waar een ding hoort te staan.
+   */
+  {
+    const paden = [];
+    (function zoek(u, rel) {
+      for (const e of readdirSync(u, { withFileTypes: true })) {
+        const kind = new URL(`${e.name}${e.isDirectory() ? '/' : ''}`, u);
+        if (e.isDirectory()) zoek(kind, `${rel}${e.name}/`);
+        else if (e.name === 'index.html') paden.push([`${rel}${e.name}`, kind]);
+      }
+    }(new URL('../dist/', import.meta.url), ''));
+
+    const platte = (n, o = []) => {
+      if (n.nodeName === '#text') { o.push(n.value); return o; }
+      for (const c of n.childNodes || []) platte(c, o);
+      return o;
+    };
+    const labels = new Set();
+    for (const [, u] of paden) {
+      const h = readFileSync(u, 'utf8');
+      if (!h.includes('nt-say')) continue;
+      loop(parse(h), (n) => {
+        const cl = (n.attrs || []).find((a) => a.name === 'class');
+        if (cl && /\bnt-say\b/.test(cl.value)) labels.add(platte(n).join('').replace(/\s+/g, ' ').trim());
+      });
+    }
+    // De term staat tussen de vaste omhulsels; die halen we eraf.
+    const termen = [...labels]
+      .map((l) => l.replace(/^What /, '').replace(/ means$/, '').replace(/^Uitleg: ?/, ''))
+      .filter((t) => t && t !== 'this' && t !== 'Uitleg');
+
+    /* ALLEEN ONDERWERPSVOORNAAMWOORDEN, en met opzet niet je/jouw/your/uw.
+       "Je vaste week" is een prima zelfstandig naamwoord — "je" is daar een
+       bezittelijk voornaamwoord en geen onderwerp. De eerste versie van deze
+       controle sloeg daarop aan; dat is een valse melding en die kost meer dan
+       hij oplevert. De persoonsvorm hieronder is de echte zeef. */
+    const voornaamwoord = /^(we|i|they|he|she|it|wij|ik|hij)\b/i;
+    const persoonsvorm = /\b(means?|is|are|was|were|cannot|can|does|do|goes|go|record|records|gives?|kunt|kun|kan|wordt|worden|past|staat|gaat|hebt|heeft|zijn|vastleggen|rekenen)\b/i;
+
+    const slecht = termen.filter((t) => voornaamwoord.test(t) || persoonsvorm.test(t));
+    check('elk notitielabel gaat over een ding en niet over een zin', slecht, []);
+    check('en er zijn er genoeg om iets te controleren', termen.length >= 8, true);
   }
-  // En de verborgen naam is écht verborgen, niet met display:none (dan valt hij
-  // ook uit de toegankelijkheidsboom en is de knop weer "?").
-  check('de naam is visueel verborgen, niet weggehaald', /\.hv-q-say \{[^}]*clip-path: inset\(50%\)/.test(css), true);
-  check('en niet met display: none', /\.hv-q-say \{[^}]*display: none/.test(css), false);
 
   /*
    * DE PANEELTEKST, per taal uit de bron gehaald.
@@ -814,6 +895,84 @@ console.log('\n/account wordt nooit gelokaliseerd');
     }(distMap, ''));
     check('en geen enkele gebouwde pagina linkt naar /nl/account', treffers, []);
   }
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════
+ * DE KNOP ZEGT WAT ER ACHTER DE KNOP GEBEURT
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 21 augustus 2026: *"als je op /catalog zit en je klikt op start an
+ * order kom je weer bij het keuzemenu van catalog, lifestyle en complete …
+ * ik wil dat er niet start an order staat maar iets van Get Catalog visuals."*
+ *
+ * Twee fouten zaten daarin, en ze zijn elkaars spiegelbeeld:
+ *
+ *   1. Een dienstpagina die naar /start wijst. Die stuurt iemand die al
+ *      gekozen heeft terug naar het keuzescherm — drie klikken waar er twee
+ *      nodig zijn, en de derde is een vraag die hij al beantwoord had.
+ *
+ *   2. Een knop die "Start an order" heet maar naar /start/video gaat. Die
+ *      belooft een keuze en levert een formulier. Dit stond tot 21 augustus
+ *      onderaan /video, en het is dezelfde fout van de andere kant.
+ *
+ * Deze controle houdt allebei tegen, in de GEBOUWDE site en in beide talen.
+ * Ze staat hier en niet in wandel.mjs omdat er geen browser voor nodig is en
+ * `npm test` altijd draait.
+ */
+{
+  console.log('\nde knop zegt wat er achter de knop gebeurt');
+  const DIENSTEN = ['/catalog', '/lifestyle', '/video', '/custom-models', '/plans'];
+  const ALGEMEEN = /^(start an order|start een bestelling|order now|bestel nu)$/i;
+
+  const paginas = [];
+  (function zoek(u, rel) {
+    for (const e of readdirSync(u, { withFileTypes: true })) {
+      const kind = new URL(`${e.name}${e.isDirectory() ? '/' : ''}`, u);
+      if (e.isDirectory()) zoek(kind, `${rel}${e.name}/`);
+      else if (e.name === 'index.html') paginas.push([`/${rel}`, kind]);
+    }
+  }(new URL('../dist/', import.meta.url), ''));
+
+  const lus = (n, f) => { f(n); for (const c of n.childNodes || []) lus(c, f); };
+  const plat = (n, o = []) => {
+    if (n.nodeName === '#text') { o.push(n.value); return o; }
+    if (n.nodeName === 'script' || n.nodeName === 'style' || n.nodeName === 'svg') return o;
+    for (const c of n.childNodes || []) plat(c, o);
+    return o;
+  };
+  const kaal = (p) => p.replace(/^\/nl/, '').replace(/\/$/, '') || '/';
+
+  const terugNaarKiezen = [];
+  const beloofdeKeuze = [];
+
+  for (const [pad, u] of paginas) {
+    const html = readFileSync(u, 'utf8');
+    if (!html.includes('/start')) continue;
+    const doc = parse(html);
+    let main = null;
+    lus(doc, (n) => { if (n.nodeName === 'main' && !main) main = n; });
+    if (!main) continue;
+    const opDienstpagina = DIENSTEN.includes(kaal(pad));
+    lus(main, (n) => {
+      if (n.nodeName !== 'a') return;
+      const href = (n.attrs || []).find((a) => a.name === 'href')?.value || '';
+      const kl = (n.attrs || []).find((a) => a.name === 'class')?.value || '';
+      if (!/\bbtn\b/.test(kl)) return;              // alleen knoppen, geen lopende tekst
+      const tekst = plat(n).join(' ').replace(/\s+/g, ' ').trim();
+      const doel = href.split('?')[0].replace(/\/$/, '');
+      if (opDienstpagina && /^(\/nl)?\/start$/.test(doel)) {
+        terugNaarKiezen.push(`${kaal(pad)}: "${tekst}"`);
+      }
+      if (/^(\/nl)?\/start\/.+/.test(doel) && ALGEMEEN.test(tekst)) {
+        beloofdeKeuze.push(`${pad}: "${tekst}" -> ${href}`);
+      }
+    });
+  }
+
+  check('geen knop op een dienstpagina wijst terug naar /start', terugNaarKiezen, []);
+  check('en geen knop belooft een keuze maar levert een formulier', beloofdeKeuze, []);
+  check('er zijn genoeg pagina\'s doorzocht om iets te betekenen', paginas.length > 80, true);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

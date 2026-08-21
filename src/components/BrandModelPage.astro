@@ -79,6 +79,7 @@ import { ROSTER } from '../data/models.js';
 import { localizedPath } from '../i18n/ui.js';
 import Placeholder from './Placeholder.astro';
 
+import ServiceSwitch from './ServiceSwitch.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -94,7 +95,13 @@ const lp = (p: string) => localizedPath(lang, p);
 // than an empty price band on a page whose whole job is a number.
 const brandModel = {
   price: euro(AMOUNT.brandModel, lang),
-  unit: lang === 'nl' ? 'eenmalig ontwerp' : 'one-time setup',
+  /* DE EENHEID ZEGT IETS ANDERS DAN HET LABEL ERBOVEN. Hier stond
+     "one-time setup" — precies het woord dat `costSetupLabel` er twee regels
+     hoger al zet, dus las het blok als "One-time setup · €1.250 · one-time
+     setup · excl. VAT". De rechterkolom doet het wél goed ("Back to you ·
+     −€250 · on each of your first 5 orders"): de eenheid vertelt daar waar het
+     bedrag over gaat. Dat doet hij hier nu ook. */
+  unit: lang === 'nl' ? 'per merk' : 'per brand',
   includes: lang === 'nl'
     ? [
         'Eén of meer modellen gebouwd voor jouw merk, door niemand anders gebruikt',
@@ -150,7 +157,7 @@ const COPY = {
     h1a: 'Faces of your own.',
     h1b: 'Only yours.',
     lead: 'A model designed once for your brand and booked by nobody else, ever. Have one, or build a small cast — and choose per order which of them runs, yours or one of the ten standard faces. What stays constant is that a face carries a whole order, so your range reads as one line instead of a folder of separate shoots.',
-    ctaPrimary: 'Start an order',
+    ctaPrimary: 'Start your Brand Model',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hi VISUAILS, I\'d like to discuss a brand model.',
     heroAlt: 'A VISUAILS brand model portrait',
@@ -265,7 +272,7 @@ const COPY = {
     // CTA
     ctaH1: 'Design the face of',
     ctaEm: 'your brand.',
-    ctaStart: 'Start an order',
+    ctaStart: 'Start your Brand Model',
     ctaPricing: 'See the price per product',
     ctaWaShort: 'WhatsApp',
   },
@@ -278,7 +285,7 @@ const COPY = {
     h1a: 'Eigen gezichten.',
     h1b: 'Alleen van jou.',
     lead: 'Een model dat we één keer voor jouw merk ontwerpen, en dat geen ander merk kan boeken. Neem er één, of laat een klein groepje maken. Per bestelling kies je wie erop staat: je eigen gezicht, of een van de tien standaardmodellen. Eén gezicht draagt de hele bestelling, dus je collectie ziet eruit als één geheel in plaats van als een map met losse fotoshoots.',
-    ctaPrimary: 'Start een bestelling',
+    ctaPrimary: 'Start je merkmodel',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hoi VISUAILS, ik wil graag een merkmodel bespreken.',
     heroAlt: 'Een portret van een VISUAILS merkmodel',
@@ -379,7 +386,7 @@ const COPY = {
 
     ctaH1: 'Ontwerp het gezicht van',
     ctaEm: 'jouw merk.',
-    ctaStart: 'Start een bestelling',
+    ctaStart: 'Start je merkmodel',
     ctaPricing: 'Bekijk de prijs per product',
     ctaWaShort: 'WhatsApp',
   },
@@ -447,10 +454,11 @@ const wa = waHref(c.waText);
     <h1 class="display bm-h1">{c.h1a}<br /><em>{c.h1b}</em></h1>
     <p class="lead bm-lead">{c.lead}</p>
     <div class="flex bm-actions">
-      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
+      <span class="magnet-wrap"><span class="magnet-inner"><a href={lp('/start/brand-model')} class="btn btn-primary btn-lg">{c.ctaPrimary}</a></span></span>
       <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWa}
       </a>
     </div>
+    <ServiceSwitch current={['brand-model', 'complete']} lang={lang} />
     <div class="trust-row bm-trust">
       {c.trust.map((t) => (
         <span class="trust-item"><strong>{t[0]}</strong> {t[1]}</span>
@@ -671,7 +679,7 @@ const wa = waHref(c.waText);
       <div class="bm-choose-inner">
         <h3>{c.libChooseH}</h3>
         <p>{c.libChooseBody}</p>
-        <a href={lp('/start')} class="link-arrow">{c.ctaPrimary}
+        <a href={lp('/start/brand-model')} class="link-arrow">{c.ctaPrimary}
           <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
       </div>
@@ -702,7 +710,7 @@ const wa = waHref(c.waText);
   <div class="cta-band reveal pending">
     <h2 class="display bm-cta-h">{c.ctaH1}<br /><em>{c.ctaEm}</em></h2>
     <div class="flex bm-cta-actions">
-      <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
+      <a href={lp('/start/brand-model')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
       <a href={lp('/pricing')} class="btn btn-ghost btn-lg">{c.ctaPricing}</a>
       <a href={wa} class="btn btn-wa" target="_blank" rel="noopener">{c.ctaWaShort}
       </a>

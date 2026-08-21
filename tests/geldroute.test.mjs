@@ -101,6 +101,20 @@ function maakOmgeving() {
   return {
     gezien,
     betalingen,
+    /* Een TWEEDE betaling op dezelfde bestelling, zoals Lucas er met de hand een
+       aanmaakt in het Mollie-dashboard als iemand moet bijbetalen. Dezelfde vorm
+       als wat de echte API teruggeeft: een id, een bedrag, en `order_ref` in de
+       metadata — dat laatste is waar de webhook de bestelling aan herkent. */
+    maakBetaling(orderRef, bedrag) {
+      const id = `tr_${String(++volgnummer).padStart(10, '0')}`;
+      betalingen.set(id, {
+        id, status: 'open', amount: bedrag,
+        description: 'bijbetaling',
+        metadata: { order_ref: String(orderRef) },
+        _links: { checkout: { href: `https://www.mollie.com/checkout/${id}` } },
+      });
+      return id;
+    },
     /** Zet een betaling op betaald, zoals Mollie dat zou doen vóór hij de webhook stuurt. */
     zetBetaald(id, bedrag = null) {
       const rec = betalingen.get(id);
@@ -447,6 +461,7 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
     });
     const order = db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 1').get();
     const id = [...omg.betalingen.keys()][0];
+    const { issueInvoice } = await import('../src/lib/invoice.js');
 
     // Mollie meldt één euro op een bestelling van ruim twaalfhonderd.
     omg.zetBetaald(id, { currency: 'EUR', value: '1.00' });
@@ -460,32 +475,72 @@ console.log('\nals het bedrag afwijkt, wint Mollie en blijft het verschil zichtb
        reconstrueren en heb je alleen twee getallen die elkaar tegenspreken. */
     ok('de ruwe melding is bewaard voor reconciliatie', !!(rij && rij.raw_payload));
 
-    /* EN DIT IS DE VRAAG DIE ERTOE DOET: wordt er op zo'n betaling een factuur
-       uitgereikt voor het VOLLE bedrag? Wat hier uitkomt, is wat er gebeurt —
-       deze regel is er om het zichtbaar te maken en vast te zetten, niet om een
-       oordeel te verstoppen. */
+    /* ── EN DIT IS DE VRAAG DIE ERTOE DOET ─────────────────────────────────
+       Tot 20 augustus 2026 ging hier een factuur uit voor het VOLLE bedrag, met
+       status `issued`, op een betaling van één euro. De vorige versie van deze
+       test legde dat gedrag vast met de aantekening: "besluit iemand er een
+       controle op te zetten — factureer niet meer dan er binnen is — dan valt
+       deze test om en weet hij precies wat hij verandert."
+
+       Dat is gebeurd. issueInvoice() telt nu op wat er in EUR is binnengekomen en
+       weigert een factuur die daar bovenuit gaat; zie de noot bij
+       FACTUUR_SPELING_CENT in src/lib/invoice.js. Wat hieronder staat is de
+       nieuwe afspraak, en ze is scherper dan de oude: er wordt niets uitgegeven
+       dat later teruggedraaid moet worden. */
     const f = db.prepare('SELECT * FROM invoices WHERE order_id = ?').get(order.id);
-    /* ── EN HIER STAAT WAT ER DAADWERKELIJK GEBEURT ────────────────────────
-       Gemeten op 20 augustus 2026, met een bestelling van 123.420 cent en een
-       melding van 100 cent: er wordt een factuur uitgereikt voor het VOLLE
-       bedrag, met status `issued`, en nergens staat dat er iets anders binnenkwam.
+    ok('er gaat GEEN factuur uit op een bedrag dat niet binnen is', !f, true);
 
-       DAT IS GEEN ALARM, EN OOK GEEN VRIJBRIEF. In de praktijk is een Mollie-
-       betaallink een vast bedrag: gedeeltelijk betalen kan niet, dus dit scenario
-       ontstaat niet uit een gewone klant. Het ontstaat als er een VREEMD betaal-id
-       aan onze webhook wordt gevoerd dat toevallig bij onze sleutel hoort, of als
-       er ergens in de keten een id wordt hergebruikt.
+    /* Geen nummer verbruikt. Dat is de helft van de reden dat de controle vóór
+       nextNumber() staat: de factuurreeks mag geen gaten hebben, en een gat is
+       precies wat een teruggedraaide factuur achterlaat. */
+    const reeks = db.prepare('SELECT COUNT(*) AS n FROM invoices').get();
+    ok('en er is dus ook geen nummer verbruikt', reeks.n, 0);
 
-       Deze regels leggen het huidige gedrag vast in plaats van het te verstoppen.
-       Besluit iemand er een controle op te zetten — "factureer niet meer dan er
-       binnen is" — dan valt deze test om en weet hij precies wat hij verandert.
-       Dat is de bedoeling. */
-    const snap = f ? JSON.parse(f.snapshot_json || '{}') : {};
-    ok('er wordt een factuur uitgereikt', f && f.status, 'issued');
-    ok('en die staat op het bedrag van de BESTELLING, niet op wat er binnenkwam',
-       snap.grossCents, order.total_cents + order.vat_cents);
-    ok('het verschil is alleen terug te vinden via de betaalrij',
+    /* De tweede helft: het moet wél ergens staan. Een console.error leest niemand
+       terug; de tijdlijn van de bestelling wel, want die staat in het adminportaal. */
+    const gebeurtenissen = db.prepare(
+      "SELECT * FROM order_events WHERE order_id = ? AND note LIKE '%wacht nog%'"
+    ).all(order.id);
+    ok('de klant leest in zijn tijdlijn dat de factuur wacht', gebeurtenissen.length, 1);
+    /* Zonder bedragen: order_events is óók de klantentijdlijn (portal.js en
+       account.js lezen dezelfde tabel, zonder filter op actor). De getallen staan
+       in admin_log, waar alleen Lucas kijkt. */
+    ok('en zonder bedragen erin', /\d{3,}/.test(gebeurtenissen[0].note), false);
+    const logregel = db.prepare(
+      "SELECT * FROM admin_log WHERE order_id = ? AND action = 'invoice.blocked'"
+    ).get(order.id);
+    ok('en jij leest de twee bedragen in het adminlog',
+       /binnengekomen 100 cent op een bestelling van 123420 cent/.test(logregel?.detail || ''), true);
+
+    /* Nog een keer proberen — dat doet de inhaalslag in VISUAILS Studio bij ELK
+       bezoek aan /account/invoices. Er mag geen tweede regel bij komen, anders is
+       de tijdlijn na een week onleesbaar. */
+    await issueInvoice(env, order.id);
+    const nogmaals = db.prepare(
+      "SELECT COUNT(*) AS n FROM order_events WHERE order_id = ? AND note LIKE '%wacht nog%'"
+    ).get(order.id);
+    ok('en een tweede poging schrijft geen tweede regel', nogmaals.n, 1);
+
+    ok('het verschil is terug te vinden via de betaalrij',
        (order.total_cents + order.vat_cents) - (rij ? rij.amount_cents : 0), 123320);
+
+    /* ── EN ALS ER ALSNOG WORDT BIJBETAALD ─────────────────────────────────
+       De weigering is geen eindstation. Komt het bedrag alsnog binnen — een
+       tweede betaling, met de hand aangemaakt in het Mollie-dashboard — dan telt
+       issueInvoice() de rijen op en gaat de factuur alsnog uit, zonder dat er
+       iemand iets hoeft te herstellen. Dat is wat een controle op het TOTAAL
+       oplevert boven een controle per betaling. */
+    const bij = omg.maakBetaling(order.ref, { currency: 'EUR', value: '1233.20' });
+    omg.zetBetaald(bij);
+    await webhook(env, bij);
+
+    const na = db.prepare('SELECT COALESCE(SUM(amount_cents),0) AS n FROM payments WHERE order_id = ?').get(order.id);
+    ok('er staan nu twee betalingen die samen het bruto dekken', na.n, order.total_cents + order.vat_cents);
+
+    const f2 = await issueInvoice(env, order.id);
+    ok('en dan gaat de factuur alsnog uit', f2 && f2.status, 'issued');
+    const snap2 = f2 ? JSON.parse(f2.snapshot_json || '{}') : {};
+    ok('op het volledige bedrag van de bestelling', snap2.grossCents, order.total_cents + order.vat_cents);
   } finally {
     omg.herstel();
   }
@@ -532,6 +587,94 @@ console.log('\nde proefvisual van € 1');
     ok('en Mollie is om precies één euro gevraagd', gevraagdCents, offerte.grossCents);
     ok('die één euro is inclusief btw', offerte.netCents + offerte.vatCents, offerte.grossCents);
     ok('en het is echt honderd cent', offerte.grossCents, 100);
+  } finally {
+    omg.herstel();
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * 4 · DE ABONNEMENTSTERMIJN KRIJGT EEN FACTUUR
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Tot 20 augustus 2026 landde een maandelijkse incasso in `subscription_payments`
+ * en verder nergens: geen document, geen nummer, niets in de boekhouding. Voor een
+ * terugkerende zakelijke afschrijving hoort daar een factuur tegenover, uit
+ * DEZELFDE doorlopende reeks als een factuur op een bestelling — want dat is wat
+ * de Belastingdienst vraagt en wat de vraag "waar is factuur 8" beantwoordbaar
+ * houdt.
+ *
+ * Wat hier gecontroleerd wordt is precies dat: één incasso, één factuur, één
+ * nummer uit de gedeelde reeks, en de btw uit het bruto gerekend zodat netto plus
+ * btw optelt tot exact wat er geïncasseerd is.
+ */
+console.log('\neen abonnementstermijn levert een factuur op');
+{
+  const omg = maakOmgeving();
+  try {
+    const { db, env } = verseOmgeving(omg);
+    const { issueSubscriptionInvoice, formatNumber } = await import('../src/lib/invoice.js');
+
+    db.prepare("INSERT INTO customers (id, email, name, brand, country) VALUES (1, 'abo@voorbeeld.nl', 'Jan Jansen', 'Voorbeeld Merk', 'NL')").run();
+    db.prepare(
+      `INSERT INTO subscriptions (id, customer_id, ref, plan, term, status, vat_treatment, vat_rate, vat_country)
+       VALUES (1, 1, 'ABO-0001', 'starter', 'monthly', 'active', 'nl_standard', 0.21, 'NL')`
+    ).run();
+    db.prepare(
+      `INSERT INTO subscription_payments (id, subscription_id, external_id, status, amount_cents, currency, month)
+       VALUES (1, 1, 'tr_abo_0001', 'paid', 39000, 'EUR', '2026-08')`
+    ).run();
+
+    const f = await issueSubscriptionInvoice(env, 1, { today: '2026-08-20' });
+    ok('er komt een factuur', f && f.status, 'issued');
+    ok('met een nummer uit de gedeelde reeks', f && f.number, formatNumber(2026, 1));
+    ok('en een pdf in R2', !!(f && f.pdf_key), true);
+
+    const snap = JSON.parse(f.snapshot_json);
+    ok('het bruto is exact wat er geïncasseerd is', snap.grossCents, 39000);
+    ok('netto plus btw telt daar precies naar op', snap.netCents + snap.vatCents, 39000);
+    ok('de btw is uit het bruto gerekend, niet erbovenop', snap.netCents < 39000, true);
+    ok('de maand staat op de regel', /augustus 2026/.test(snap.lines[0].description), true);
+    ok('en de plannaam ook', /Starter/i.test(snap.lines[0].description), true);
+
+    /* IDEMPOTENT. Mollie levert dezelfde melding meer dan één keer af, en dan mag
+       er geen tweede nummer uit de reeks verdwijnen. */
+    const nogmaals = await issueSubscriptionInvoice(env, 1, { today: '2026-08-20' });
+    ok('twee keer aanroepen geeft dezelfde factuur', nogmaals && nogmaals.number, f.number);
+    ok('en er is maar één rij', db.prepare('SELECT COUNT(*) AS n FROM subscription_invoices').get().n, 1);
+
+    /* DE REEKS IS ÉÉN REEKS. Een factuur op een bestelling die hierna wordt
+       uitgegeven, pakt het volgende nummer — niet opnieuw 0001. Dat is het hele
+       argument om beide tabellen uit `invoice_series` te laten putten. */
+    db.prepare(
+      `INSERT INTO subscription_payments (id, subscription_id, external_id, status, amount_cents, currency, month)
+       VALUES (2, 1, 'tr_abo_0002', 'paid', 39000, 'EUR', '2026-09')`
+    ).run();
+    const tweede = await issueSubscriptionInvoice(env, 2, { today: '2026-09-20' });
+    ok('de volgende termijn krijgt 0002', tweede && tweede.number, formatNumber(2026, 2));
+
+    /* Verlegd naar een EU-klant met een geldig nummer: 0% en geen btw-regel. */
+    db.prepare("INSERT INTO customers (id, email, name, brand, country, vat_number) VALUES (2, 'de@voorbeeld.de', 'Klaus', 'Marke GmbH', 'DE', 'DE123456789')").run();
+    db.prepare(
+      `INSERT INTO subscriptions (id, customer_id, ref, plan, term, status, vat_treatment, vat_rate, vat_country, vat_number)
+       VALUES (2, 2, 'ABO-0002', 'studio', 'monthly', 'active', 'eu_reverse_charge', 0, 'DE', 'DE123456789')`
+    ).run();
+    db.prepare(
+      `INSERT INTO subscription_payments (id, subscription_id, external_id, status, amount_cents, currency, month)
+       VALUES (3, 2, 'tr_abo_0003', 'paid', 79000, 'EUR', '2026-08')`
+    ).run();
+    const verlegd = await issueSubscriptionInvoice(env, 3, { today: '2026-08-20' });
+    const vsnap = JSON.parse(verlegd.snapshot_json);
+    ok('bij verlegging is er geen btw', vsnap.vatCents, 0);
+    ok('en is netto gelijk aan bruto', vsnap.netCents, vsnap.grossCents);
+    ok('het btw-nummer van de klant staat erop', vsnap.customer.vat, 'DE123456789');
+
+    /* Een mislukte incasso levert geen factuur op — er is niets binnengekomen. */
+    db.prepare(
+      `INSERT INTO subscription_payments (id, subscription_id, external_id, status, amount_cents, currency, month)
+       VALUES (4, 1, 'tr_abo_mislukt', 'failed', 39000, 'EUR', '2026-10')`
+    ).run();
+    const mislukt = await issueSubscriptionInvoice(env, 4, { today: '2026-10-20' });
+    ok('een mislukte incasso geeft geen factuur', mislukt, null);
   } finally {
     omg.herstel();
   }

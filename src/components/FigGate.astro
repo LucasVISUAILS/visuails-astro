@@ -134,7 +134,7 @@ const C = nl
       floorNote: `The last ${QUEUE_FLOOR_PER_DAY} of every day cannot be booked as a window. They stay for orders running in the normal turnaround.`,
       leadNote: `The first ${LEAD_DAYS} working days are not production time: the products have to arrive and be looked at before a date means anything.`,
       verdictL: 'Offered',
-      verdictWhy: `${DEMO_ORDER.products} products ask for ${perDay} on each day of the window, so two days that are completely free. Thursday and Friday have room, but not enough — and then that window is not offered.`,
+      verdictWhy: `${DEMO_ORDER.products} products ask for ${perDay} on each day of the window, so it needs two days that are completely free. Thursday and Friday have room, but not enough — so that window is not offered.`,
       cmpL: 'Same calendar, smaller order',
       cmpV: `${DEMO_SMALL_PRODUCTS} products · ${windowLabel(small, lang)}`,
       cmpWhy: 'This is why it is counted in products and not in orders: the answer depends on what has to be made, not on how many rows are in the table.',

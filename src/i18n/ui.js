@@ -89,6 +89,18 @@ export const ui = {
       { href: '/catalog', title: 'Catalog', desc: 'Front, back, detail and on-model, for every product' },
       { href: '/lifestyle', title: 'Lifestyle', desc: 'Your product in a styled scene, ready to post' },
       { href: '/video', title: 'Video', desc: 'Short clips that move, on any product in the order' },
+      /* ── MERKMODEL EN ABONNEMENT STAAN NU HIER — 21 augustus 2026 ────────
+       *
+       * Allebei stonden ze als los item bovenin, naast Prijzen, Galerij en
+       * Contact. Dat maakte de bovenbalk zeven items lang en het zei iets wat
+       * niet klopt: dat "Wat we maken" niet alles is wat we maken. Een merkmodel
+       * en een abonnement zijn precies dat — dingen die je koopt. Ze horen in de
+       * lijst met dingen die je koopt.
+       *
+       * Wat het oplevert: twee items minder in de balk, en één plek waar de
+       * vraag "wat kan ik hier bestellen" volledig beantwoord wordt. */
+      { href: '/custom-models', title: 'Your Brand Model', desc: 'One face, made for your brand and used by nobody else' },
+      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of products every month, below the per-product rate' },
       /*
        * HOOKS HEEFT GEEN href, EN DAT IS HET HELE PUNT — 9 augustus 2026.
        *
@@ -150,8 +162,22 @@ export const ui = {
       { href: '/portal', title: 'VISUAILS Studio', desc: 'Where your work lands, and how you approve it' },
       { href: '/models', title: 'The models', desc: 'The ten faces included in every order' },
       { href: '/upload-guidelines', title: 'Sending your photos', desc: 'What we need, and what a phone can do' },
-      { href: '/compare', title: 'A shoot day vs VISUAILS', desc: 'What each one costs, in money and in days' },
-      { href: '/ai-act', title: 'AI Act & transparency', desc: 'What is made how, stated plainly' },
+      /* ── TWEE ERAF, EN ALLEBEI NAAR EEN BETERE PLEK — 21 augustus 2026 ────
+       *
+       * Acht items in één lade is een lijst waarin je zoekt, en twee ervan
+       * hoorden hier inhoudelijk niet:
+       *
+       *   /compare  is een vergelijking van GELD — een shootdag tegen een
+       *             bestelling. Die overtuigt naast de prijzen en niet naast
+       *             "hoe het werkt", dus staat hij nu op /pricing én in de
+       *             voettekst.
+       *   /ai-act   is een verantwoording, geen processtap. Die staat nu in de
+       *             juridische regel onderaan, bij privacy en voorwaarden,
+       *             waar een lezer dat soort verklaringen zoekt.
+       *
+       * Geen enkele URL verandert en geen van beide raakt een link kwijt — ze
+       * verhuizen naar de plek waar iemand ze zoekt in plaats van naar de plek
+       * waar ze toevallig pasten. */
     ],
     nav_soon: 'Soon',
     mob_chat: 'Chat on WhatsApp',
@@ -199,6 +225,9 @@ export const ui = {
     cb_dismiss: 'Dismiss',
     cmp_drag: 'Drag to compare before and after',
     nav_close: 'Close menu',
+    /* Het merkteken in de mobiele lade is sinds 21 augustus een link naar huis;
+       dit is het label dat een schermlezer voorleest. */
+    nav_home: 'VISUAILS home',
     nav_skip: 'Skip to content',
     cc_title: 'Cookies on this site',
     cc_body: 'We use only what the site needs to work. Nothing that measures you is switched on unless you say so.',
@@ -274,6 +303,10 @@ export const ui = {
       { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en on-model, voor elk product' },
       { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten' },
       { href: '/video', title: 'Video', desc: 'Korte clips met beweging, op elk product in de bestelling' },
+      /* Zie de noot bij de Engelse lijst hierboven: alles wat je koopt, staat
+         in het menu waar staat wat we maken. */
+      { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt' },
+      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, onder het tarief per product' },
       { title: 'Hooks', desc: 'Nog niet klaar — een korte video op een bewezen format, binnenkort', soon: true },
       { title: 'Editions', desc: 'Nog niet klaar — elke maand een set beelden op jouw merk, binnenkort', soon: true },
     ],
@@ -285,8 +318,8 @@ export const ui = {
       { href: '/portal', title: 'VISUAILS Studio', desc: 'Waar je werk landt, en hoe je het goedkeurt' },
       { href: '/models', title: 'De modellen', desc: 'De tien gezichten die bij elke bestelling horen' },
       { href: '/upload-guidelines', title: 'Je foto\u2019s aanleveren', desc: 'Wat we nodig hebben, en wat een telefoon kan' },
-      { href: '/compare', title: 'Shootdag vs VISUAILS', desc: 'Wat beide kosten, in geld en in dagen' },
-      { href: '/ai-act', title: 'AI Act & transparantie', desc: 'Wat waarmee gemaakt is, gewoon gezegd' },
+      /* /compare staat nu op de prijzenpagina en /ai-act in de juridische regel
+         onderaan — zie de noot bij de Engelse lijst. */
     ],
     nav_soon: 'Binnenkort',
     mob_chat: 'Chat via WhatsApp',
@@ -321,6 +354,7 @@ export const ui = {
     cb_dismiss: 'Sluiten',
     cmp_drag: 'Sleep om voor en na te vergelijken',
     nav_close: 'Menu sluiten',
+    nav_home: 'VISUAILS home',
     nav_skip: 'Naar de inhoud',
     cc_title: 'Cookies op deze site',
     cc_body: 'We gebruiken alleen wat de site nodig heeft om te werken. Niets dat jou meet staat aan, tenzij je dat zelf zegt.',

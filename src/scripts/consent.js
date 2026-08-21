@@ -87,6 +87,9 @@ export function loadAnalytics(token) {
  * elements that exist at that moment; the guard flag stops the beacon being
  * appended twice.
  */
+/** De resize-luisteraar van de vorige initConsent(), zodat hij eraf kan. */
+let resizeGebonden = null;
+
 export function initConsent(token) {
   const bar = document.getElementById('cc-bar');
   const dialog = document.getElementById('cc-prefs');
@@ -141,5 +144,17 @@ export function initConsent(token) {
     });
   }
 
+  /* ── DE VORIGE `measure` ERAF VOORDAT DEZE ERBIJ KOMT — 21 augustus 2026 ───
+     init() draait bij elke zachte navigatie opnieuw (zie de kop hierboven), en
+     `measure` is elke keer een NIEUWE functie die de balk van DIE pagina
+     vasthoudt. Zonder deze regel groeit het aantal resize-luisteraars dus met
+     één per klik: gemeten over vier keer heen en weer stonden er negen, en de
+     acht oudste wezen naar een balk die allang uit de pagina was gehaald.
+
+     Een vlag zoals `revealNetBound` in interactions.js kan hier niet: die zou de
+     luisteraar van de eerste pagina laten staan, en die meet het verkeerde
+     element. Vervangen is wat er moet gebeuren, niet overslaan. */
+  if (resizeGebonden) window.removeEventListener('resize', resizeGebonden);
+  resizeGebonden = measure;
   window.addEventListener('resize', measure, { passive: true });
 }

@@ -39,7 +39,7 @@ import { countryOptions } from '../../data/vat.js';
 import {
   TIERS, reviewClaim, euro, TEST_SAMPLE, CATALOG_IMAGES, LIFESTYLE_IMAGES,
   TIER_ROWS, tierRow, tierRowLabels, turnaround,
-  ladderRate, ladderFloor, LADDER, vatLabel, vatNote,
+  ladderRate, ladderFloor, LADDER, vatLabel, vatLead, vatDetail,
   WINDOW_THRESHOLD,
   OUTFIT_SURCHARGE, MAX_OUTFIT_PRODUCTS, OUTFIT_COPY,
   EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT, EXTRA_PHOTO_COPY, extraPhotoRate,
@@ -75,6 +75,7 @@ import {
 } from '../../data/garments.js';
 import { BUSINESS_VERSION, currentBusiness } from '../../data/business.js';
 
+import Note from '../Note.astro';
 interface Props {
   lang: 'en' | 'nl';
   /** The ladder kind. Also what the config blob calls the service. */
@@ -724,7 +725,8 @@ const FORM = {
       more: `More than ${ATTENDED_PER_WINDOW} products`,
       totalLabel: 'Running total',
       netLabel: `Order value (${vatLabel('excl', 'en')})`,
-      vatNote: vatNote('en'),
+      vatLead: vatLead('en'),
+      vatDetail: vatDetail('en'),
       displayNote: 'A preview, worked out in your browser. The invoice is calculated again on our side, from the same price per product.',
       outfitLabel: 'Any complete outfits in here? (trousers, top and shoes together)',
       outfitCatalogNote: 'A catalog set is priced and shot per product, so complete looks are not part of this order. Need one because it matters to the brand? Ask us and we will look at it with you.',
@@ -926,7 +928,8 @@ const FORM = {
       more: `Meer dan ${ATTENDED_PER_WINDOW} producten`,
       totalLabel: 'Totaal tot nu toe',
       netLabel: `Orderbedrag (${vatLabel('excl', 'nl')})`,
-      vatNote: vatNote('nl'),
+      vatLead: vatLead('nl'),
+      vatDetail: vatDetail('nl'),
       displayNote: 'Dit rekent je browser uit. Op de factuur rekenen wij het opnieuw uit, met dezelfde prijs per product.',
       outfitLabel: 'Zitten er complete setjes bij? (broek, top en schoenen samen)',
       outfitCatalogNote: 'Bij een catalogset betaal je per product, dus een compleet setje — broek, top en schoenen samen — kan in deze bestelling niet. Toch nodig voor je merk? Vraag het ons, dan kijken we er samen naar.',
@@ -934,7 +937,10 @@ const FORM = {
       outfitWhy: 'Waarom een compleet setje meer kost',
       outfitWhyBody: OUTFIT_COPY.nl,
       outfitNone: 'Geen — los product',
-      outfitCount: (n: number) => `${n} compleet${n === 1 ? '' : 'e'} setje${n === 1 ? '' : 's'}`,
+      // "compleete" — het bijvoeglijk naamwoord is `complete`, met één e, en dat
+      // valt niet af te leiden uit `compleet` + `e`. Daarom staan beide vormen er
+      // voluit, in plaats van dat er een uitgang achter een stam wordt geplakt.
+      outfitCount: (n: number) => `${n} ${n === 1 ? 'compleet setje' : 'complete setjes'}`,
       levelsH: 'Normale doorlooptijd en vaste leverdatum, naast elkaar',
       levelAttended: ['Vaste leverdatum', `Vanaf ${WINDOW_THRESHOLD} producten`],
       levelUnattended: ['Normale doorlooptijd', `Tot en met ${WINDOW_THRESHOLD - 1} producten`],
@@ -1480,7 +1486,11 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           <p class="pl-total-note" data-pl-total-note></p>
         </div>
         <p class="pl-total-rung" data-pl-rung hidden></p>
-        <p class="pl-total-vatnote">{f.s1.vatNote}</p>
+        {/* De wettelijke helft blijft staan, de uitleg gaat de notitie in — zie
+            vatLead()/vatDetail() in pricing.js. Juist hier telt dat: dit staat
+            recht onder het bedrag, en een lezer die naar zijn totaal kijkt, moet
+            niet eerst door vier zinnen belastingrecht heen. */}
+        <p class="pl-total-vatnote">{f.s1.vatLead} <Note lang={lang} term={vatLabel('excl', lang)} wide>{f.s1.vatDetail}</Note></p>
         <p class="pl-total-display">{f.s1.displayNote}</p>
       </div>
       )}

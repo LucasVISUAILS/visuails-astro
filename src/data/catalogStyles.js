@@ -43,7 +43,12 @@ export const catalogStyles = [
     priceTrust: CAT_FROM,
     priceUnit: ' / product',
     metaPrice: `${CAT_FROM} / product ${CAT_VAT} — 4 photos`,
-    orderHref: '/start',
+    /* ── WAAR DEZE KNOP HEEN GAAT — 21 augustus 2026 ──────────────────────
+       Hier stond `/start`, de keuzepagina. Een knop die "Order Classic" zegt en
+       je vervolgens vraagt WAT we gaan maken, heeft de vraag gesteld die je net
+       beantwoord hebt. Classic IS de standaard catalogset, dus gaat hij naar het
+       formulier zelf. Zie src/data/orderDoors.js voor de hele redenering. */
+    orderHref: '/start/catalog',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
@@ -67,10 +72,10 @@ export const catalogStyles = [
       { title: 'A locked lighting recipe', body: 'One softbox setup, codified — not a call made shot by shot.' },
       { title: 'An angle system, not an angle', body: 'Fixed camera geometry, so new products sit flush beside old ones.' },
       { title: 'Colour held to the product', body: 'Whites stay white, your brand colour stays true.' },
-      { title: 'Crops for every channel', body: 'One set of crops works for shop, Amazon, Bol and ads.' },
+      { title: 'Crops for every channel', body: 'One set of crops works for shop, Amazon, bol and ads.' },
     ],
     why: [
-      { title: 'Marketplace-proof', body: 'Meets the strict image rules of Amazon, Bol, Zalando and more.' },
+      { title: 'Marketplace-proof', body: 'Meets the strict image rules of Amazon, bol, Zalando and more.' },
       { title: 'Restock-ready', body: 'New products slot into the set without a visible seam.' },
       { title: 'Zero art direction needed', body: 'Send a photo, get back the same considered frame.' },
     ],
@@ -95,13 +100,18 @@ export const catalogStyles = [
     priceTrust: `Designed once — then ${CAT_FROM} / product`,
     priceUnit: '',
     metaPrice: `Designed once — then ${CAT_FROM} / product`,
-    orderHref: '/start',
+    /* Custom Brand heeft geen tarief per product tot de look ontworpen is —
+       zie `cardPrice: 'Custom pricing'` hierboven. Een knop naar het gewone
+       bestelformulier zou een prijs beloven die er nog niet is, dus gaat hij
+       naar dezelfde aanvraag als een look op maat bij Lifestyle. */
+    orderHref: '/start/custom-look',
+    orderLabel: 'Ask for a Custom Brand look',
     heroIcon: 'bag',
     heroWidth: '26%',
     cardIcon: 'bag',
     cardWidth: '46%',
     cardPrice: 'Custom pricing',
-    cardDesc: `A catalog look designed around your brand — then every product at ${CAT_FROM} for a four-photo set.`,
+    cardDesc: `A catalog look designed around your brand — then every product ${CAT_FROM} for a four-photo set.`,
     moodTitle: 'What Custom Brand feels like.',
     moodParagraphs: [
       'A signature backdrop, shadow and prop language that says this is us — before the logo does.',

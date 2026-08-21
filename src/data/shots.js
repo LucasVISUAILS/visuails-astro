@@ -78,9 +78,14 @@ export const SHOTS = [
       en: 'Same distance and angle as the front, turned over.',
       nl: 'Zelfde afstand en hoek als de voorkant, omgedraaid.',
     },
+    /* NIET "één van de vier die je krijgt". Deze lijst staat op ELKE
+       bestelpagina, en een lifestyle-carousel levert er drie, geen vier. Het
+       argument voor deze foto heeft dat getal ook niet nodig: de achterkant is
+       de enige kant die we niet kunnen afleiden uit de voorkant, en dat geldt
+       bij elk aantal. */
     buys: {
-      en: 'A back image is one of the four you get, so this is the one we cannot invent. Anything that exists only on the back — a print, a yoke seam, a logo — would otherwise be a guess we shipped to you.',
-      nl: 'Een achterkantbeeld is één van de vier die je krijgt, dus dit is de foto die we niet kunnen verzinnen. Alles wat alléén achterop zit — een print, een pasnaad, een logo — zou anders gokwerk zijn dat we je toesturen.',
+      en: 'The back is the one side we cannot work out from the front. Anything that exists only there — a print, a yoke seam, a logo — would otherwise be a guess we shipped to you.',
+      nl: 'De achterkant is de enige kant die we niet uit de voorkant kunnen afleiden. Alles wat alléén daar zit — een print, een pasnaad, een logo — zou anders gokwerk zijn dat we je toesturen.',
     },
   },
   {
@@ -376,7 +381,7 @@ export const COPY = {
     manualH: 'Vul ze per product in',
     // Zie de EN-tabel voor waarom deze twee wegen niet meer gelijkwaardig zijn.
     toFolder: 'Liever één hele map sturen?',
-    toFolderWhy: 'Sneller, minder precies: we lezen de mapnaam als het product, en meestal moeten we daarna bij je terugkomen om te vragen wat wat is.',
+    toFolderWhy: 'Sneller, minder precies: we lezen de mapnaam als het product, en meestal moeten we daarna bij je terugkomen om te vragen welke foto bij welk product hoort.',
     toCards: 'Toch per product invullen',
     toCardsWhy: 'Kost meer tijd en daarna niets meer van ons — elke foto staat dan al bij het juiste product en de juiste hoek.',
     required: 'Verplicht',

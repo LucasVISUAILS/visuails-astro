@@ -182,11 +182,12 @@ import Compare from './Compare.astro';
 import FigWalk from './FigWalk.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
-  WINDOW_THRESHOLD, vatLabel, vatNote, TEST_SAMPLE,
+  WINDOW_THRESHOLD, vatLabel, vatLead, vatDetail, TEST_SAMPLE,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
+import Note from './Note.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
@@ -238,9 +239,13 @@ const COPY = {
     afterAlt: 'The same scene, finished and human-checked by VISUAILS',
 
     portalH: 'You approve it, image by image.',
-    portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}`,
+    portalBody: `An order of ${WINDOW_THRESHOLD} products or more does not arrive as a zip file and a hope. ${TIERS.attended.delivery.en}.`,
     portalNote: `Smaller orders work differently and more simply. ${TIERS.unattended.delivery.en}.`,
 
+    verderH: 'Want more of the working?',
+    verderDemo: 'Walk through an order',
+    verderStudio: 'The studio day and the calendar',
+    verderAbout: 'Who is behind it',
     detailsH: 'The details that matter',
     details: [
       { t: 'Turnaround', b: `From ${WINDOW_THRESHOLD} products: ${turnaround('attended', 'en').toLowerCase()}. Below that: ${turnaround('unattended', 'en').toLowerCase()}, ${TIERS.unattended.queue.en.toLowerCase()}.` },
@@ -301,9 +306,13 @@ const COPY = {
     afterAlt: 'Dezelfde scène, afgewerkt en met de hand gecontroleerd door VISUAILS',
 
     portalH: 'Jij keurt goed, beeld voor beeld.',
-    portalBody: `Een bestelling van ${WINDOW_THRESHOLD} producten of meer komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}`,
+    portalBody: `Een bestelling van ${WINDOW_THRESHOLD} producten of meer komt niet aan als een zipbestand en een goede hoop. ${TIERS.attended.delivery.nl}.`,
     portalNote: `Kleinere bestellingen werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
 
+    verderH: 'Wil je meer van het binnenwerk zien?',
+    verderDemo: 'Loop een bestelling door',
+    verderStudio: 'De studiodag en de kalender',
+    verderAbout: 'Wie erachter zit',
     detailsH: 'De details die ertoe doen',
     details: [
       { t: 'Levertijd', b: `Vanaf ${WINDOW_THRESHOLD} producten: ${turnaround('attended', 'nl').toLowerCase()}. Daaronder: ${turnaround('unattended', 'nl').toLowerCase()}, ${TIERS.unattended.queue.nl.toLowerCase()}.` },
@@ -413,6 +422,18 @@ const c = COPY[lang];
     <h2>{c.portalH}</h2>
     <p class="lead" style="margin-top:1.1rem">{c.portalBody}</p>
     <p class="portal-note">{c.portalNote}</p>
+    {/* ── DRIE PAGINA'S DIE NERGENS VANDAAN BEREIKBAAR WAREN — 21 aug 2026 ──
+        Gemeten op de gebouwde site: /demo had NUL inkomende links vanuit welke
+        paginatekst dan ook — je hele doorloop van een bestelling, alleen te
+        vinden door een uitklapmenu te openen. /about idem. /studio had er één.
+        Alle drie horen bij deze pagina: dit is waar iemand is die wil weten hoe
+        het werkt, en dit zijn de drie plekken waar dat verder wordt uitgelegd. */}
+    <p class="hiw-verder">
+      {c.verderH}{' '}
+      <a href={lp('/demo')}>{c.verderDemo}</a>{' · '}
+      <a href={lp('/studio')}>{c.verderStudio}</a>{' · '}
+      <a href={lp('/about')}>{c.verderAbout}</a>
+    </p>
   </div>
 </div></section>
 
@@ -483,7 +504,7 @@ const c = COPY[lang];
         StartPage do. It sits here rather than under the walkthrough because
         this is where the page's one price is; a VAT line under a figure that
         quotes nothing is a footnote to nothing. */}
-    <p class="cta-vat">{vatNote(lang)}</p>
+    <p class="cta-vat">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
   </div>
 </div></section>
 
@@ -516,6 +537,9 @@ const c = COPY[lang];
   .chip .dot { width: 5px; height: 5px; background: var(--accent); }
 
   .portal-note { margin-top: 1.1rem; font-size: .9rem; color: var(--ink-3); max-width: 60ch; }
+  .hiw-verder { margin-top: 1.6rem; font-size: .9rem; color: var(--ink-4); max-width: 60ch; line-height: 1.9; }
+  .hiw-verder a { color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; padding-block: .3rem; }
+  .hiw-verder a:hover, .hiw-verder a:focus-visible { color: var(--accent-bright); text-decoration-color: currentColor; }
 
   .grid-auto { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
   .card p a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }

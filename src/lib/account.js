@@ -5102,7 +5102,43 @@ async function invoicesFor(env, customerId, orders) {
           ORDER BY i.year DESC, i.seq DESC
           LIMIT 200`
       ).bind(customerId).all();
-      return res?.results || [];
+      const uitBestellingen = res?.results || [];
+
+      /* ── EN DE ABONNEMENTSTERMIJNEN ERBIJ — 20 augustus 2026 ───────────────
+         Een factuur op een abonnementstermijn staat in een eigen tabel met een
+         nummer uit dezelfde reeks (zie migratie 0032 voor waarom dat een eigen
+         tabel is). Voor de klant is er geen verschil — het is één lijst, één
+         nummerreeks — dus worden ze hier samengevoegd en op nummer gesorteerd.
+
+         Een eigen try eromheen: draait migratie 0032 nog niet, dan hoort dat de
+         facturen op bestellingen niet mee te nemen. Dezelfde afspraak als de
+         catch hierboven, één laag dieper. */
+      let uitAbonnementen = [];
+      try {
+        const sub = await env.DB.prepare(
+          `SELECT s.id, s.number, s.status, s.pdf_bytes, s.snapshot_json, s.lang, s.issued_at, s.created_at,
+                  s.month, a.ref AS ref
+             FROM subscription_invoices s JOIN subscriptions a ON a.id = s.subscription_id
+            WHERE s.customer_id = ?1
+            ORDER BY s.year DESC, s.seq DESC
+            LIMIT 200`
+        ).bind(customerId).all();
+        uitAbonnementen = (sub?.results || []).map((r) => ({
+          ...r,
+          /* `service` en `paid_at` zijn wat het overzicht van een factuurrij
+             verwacht. Bij een abonnement is de dienst het abonnement zelf en is
+             de betaaldatum de datum van de incasso. */
+          service: 'plan',
+          paid_at: r.issued_at || r.created_at,
+          isSubscription: true,
+        }));
+      } catch (err) {
+        console.warn('[account] abonnementsfacturen niet te lezen —', err && err.message,
+          '— migratie 0032 gedraaid?');
+      }
+
+      return [...uitBestellingen, ...uitAbonnementen]
+        .sort((a, b) => String(b.number || '').localeCompare(String(a.number || '')));
     } catch (err) {
       // Migratie 0021 nog niet gedraaid: "no such table: invoices". Dezelfde
       // afspraak als loadOrders() met de kolommen uit 0013 en 0015 — geen tabel
@@ -5234,8 +5270,14 @@ async function invoicesFor(env, customerId, orders) {
   let made = 0;
   for (const o of behind.slice(0, CATCHUP_MAX)) {
     try {
-      await issueInvoice(env, o.id, { today: o.paid_at });
-      made++;
+      /* `made` alleen ophogen als er ook echt iets is uitgegeven. issueInvoice()
+         geeft sinds 20 augustus 2026 `null` terug als er minder is binnengekomen
+         dan het bruto bedrag van de bestelling (zie FACTUUR_SPELING_CENT in
+         src/lib/invoice.js) — dan is er niets bijgekomen en heeft de lijst
+         opnieuw lezen geen zin. Zonder deze regel telde een tegengehouden
+         factuur mee als gemaakt. */
+      const uit = await issueInvoice(env, o.id, { today: o.paid_at });
+      if (uit) made++;
     } catch (err) {
       console.error('[account] factuur voor', o.ref, 'niet uitgegeven —', err && err.message ? err.message : err);
     }

@@ -93,6 +93,17 @@ async function paidOrderWithInvoice(env, db, { net = 61200, vatRate = 0.21, trea
              'Jan', 'Jansen', 'Merk', 'Teststraat 1', '9999 ZZ', 'Teststad')`
   ).run(ref, service, net, vatCents, vatRate, treatment, country, vat);
   const id = db.prepare('SELECT id FROM orders WHERE ref = ?').get(ref).id;
+  /* ── EN DE BETALING ERBIJ ────────────────────────────────────────────────
+     issueInvoice() weigert sinds 20 augustus 2026 een factuur die hoger is dan
+     wat er in EUR is binnengekomen (zie FACTUUR_SPELING_CENT in
+     src/lib/invoice.js). Deze helper zette een bestelling op `paid` zonder
+     betaalrij — een toestand die in de echte database niet kan ontstaan, want
+     alleen de twee webhooks schrijven dat veld en allebei leggen ze eerst de
+     betaling vast. De rij hoort er dus gewoon bij. */
+  db.prepare(
+    `INSERT INTO payments (order_id, provider, external_id, status, amount_cents, currency)
+     VALUES (?, 'mollie', ?, 'paid', ?, 'EUR')`
+  ).run(id, `tr_${ref}`, net + vatCents);
   const invoice = await issueInvoice(env, id, { today: '2026-08-01' });
   return { orderId: id, ref, invoice, net, vatCents, gross: net + vatCents };
 }

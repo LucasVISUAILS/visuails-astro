@@ -431,10 +431,34 @@ export const withVat = (net) => Math.round(net * (1 + VAT_RATE) * 100) / 100;
  * een verandering daar verandert deze regel mee; dat is één plek, en dat is de
  * reden dat deze functie bestaat in plaats van een string per pagina.
  */
-export function vatNote(lang = 'en') {
+/* ── DE BTW-REGEL IN TWEEËN — 21 augustus 2026 ──────────────────────────────
+ *
+ * Lucas wees deze alinea aan als voorbeeld van te veel tekst: vierenveertig
+ * woorden, open, op acht pagina's. Wat er WETTELIJK moet staan is dat de
+ * bedragen exclusief btw zijn — dat is `vatLead()` en dat blijft altijd zichtbaar.
+ * De rest is een uitleg voor de lezer die zich afvraagt wat er bij hém gebeurt,
+ * en die hoort in een zwevende notitie: hij verandert dan niets aan de hoogte van
+ * de pagina en staat er wel als je hem nodig hebt.
+ *
+ * vatNote() blijft bestaan en is nog steeds de twee helften achter elkaar, voor
+ * de plekken waar geen notitie past — een e-mail bijvoorbeeld, waar hover niet
+ * bestaat. */
+export function vatLead(lang = 'en') {
+  return lang === 'nl' ? 'Alle bedragen zijn excl. btw.' : 'All figures are excl. VAT.';
+}
+
+/** De uitleg achter vatLead(): wat er per land gebeurt. */
+export function vatDetail(lang = 'en') {
   return lang === 'nl'
-    ? 'Alle bedragen zijn excl. btw. Nederlandse klanten betalen 21% btw bij het afrekenen. Ben je een EU-bedrijf buiten Nederland, vul dan je btw-nummer in: klopt het volgens VIES, dan betaal je 0% en is de btw verlegd. Buiten de EU valt de levering buiten de Europese btw.'
-    : 'All figures are excl. VAT. Dutch customers pay 21% VAT at checkout. If you are an EU business outside the Netherlands, enter your VAT number: if VIES confirms it, you pay 0% and the VAT is reverse charged. Outside the EU the supply falls outside European VAT.';
+    ? 'Nederlandse klanten betalen 21% btw bij het afrekenen. Ben je een EU-bedrijf buiten Nederland, vul dan je btw-nummer in: klopt het volgens VIES, dan betaal je 0% en is de btw verlegd. Buiten de EU valt de levering buiten de Europese btw.'
+    : 'Dutch customers pay 21% VAT at checkout. If you are an EU business outside the Netherlands, enter your VAT number: if VIES confirms it, you pay 0% and the VAT is reverse charged. Outside the EU the supply falls outside European VAT.';
+}
+
+export function vatNote(lang = 'en') {
+  // Uit de twee helften opgebouwd en niet nog eens uitgetypt: twee kopieën van
+  // dezelfde btw-zin lopen uit elkaar, en dan staat er ergens iets onwaars over
+  // belasting.
+  return `${vatLead(lang)} ${vatDetail(lang)}`;
 }
 
 /** "excl. VAT" / "incl. VAT", in the reader's language. Never typed on a page. */

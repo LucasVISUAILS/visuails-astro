@@ -42,6 +42,14 @@ import {
   productsFor, clipsFor, monthlyCents, available, rolloverMonths, rolloverDetail,
   addMonths, planShape,
 } from '../data/plans.js';
+/* DE CONSTANTE EN NOOIT DE LETTERLIJKE TEKST. `VAT_TREATMENT.standard` is
+   'nl_standard' en niet 'standard' — zie de noot bij dezelfde reparatie in
+   src/lib/invoice.js. Hieronder stond de letterlijke 'standard', en het gevolg
+   was onzichtbaar en duur: snapshotFromSubscription() vergelijkt met de
+   constante, die vergelijking werd false, en elke abonnementsfactuur van een
+   Nederlandse klant ging de deur uit met 0% btw. */
+import { VAT_TREATMENT } from '../data/vat.js';
+import { VAT_RATE } from './quote.js';   // 0.21 — vat.js draagt de behandelingen, quote.js het tarief
 
 /* De maanden die meetellen voor het saldo: deze plus het venster dat mag
  * doorschuiven. Drie bij een jaartermijn, één bij een maandtermijn — en dus
@@ -471,17 +479,63 @@ export async function queueLinkOrder(env, ids, orderId) {
  * werk als iemand twee keer op de knop drukt: de tweede INSERT faalt en we geven
  * `{ bestaat: true }` terug in plaats van een tweede abonnement.
  */
+/*
+ * ── DE BTW-BEHANDELING VAN EEN ABONNEMENT — 20 AUGUSTUS 2026 ───────────────
+ *
+ * Elke termijn krijgt sinds vandaag een factuur (zie issueSubscriptionInvoice in
+ * src/lib/invoice.js), en dan is de vraag: 21% of verlegd? Die vraag wordt hier
+ * één keer beantwoord en op de abonnementsrij gezet, niet elke maand opnieuw.
+ *
+ * WAAROM NIET ELKE MAAND OPNIEUW LANGS VIES. Dat zou een netwerkaanroep binnen
+ * een webhook betekenen, twaalf keer per jaar per abonnee, met een factuur die
+ * niet uitgaat als Europa traag is. En het is ook het verkeerde moment: een
+ * btw-nummer dat vandaag vervalt maakt de factuur van vorige maand niet onjuist.
+ *
+ * WAAROM HET BEWIJS EN NIET HET VELD. Er wordt niet gekeken naar wat er in
+ * `customers.vat_number` staat, maar naar de laatste BETAALDE bestelling van deze
+ * klant met een VIES-consultatienummer erop. Dat nummer is het bewijs dat de
+ * controle daadwerkelijk heeft plaatsgevonden, en het is het enige in deze keten
+ * dat niet door de klant zelf is ingetypt. Zonder dat bewijs: 21%.
+ *
+ * Dat is met opzet de strenge kant. Te veel btw rekenen is een correctie op één
+ * factuur; ten onrechte verleggen is een naheffing over alles wat je verlegd hebt.
+ */
+export async function vatVoorAbonnement(env, customerId) {
+  const bron = await env.DB.prepare(
+    `SELECT vat_treatment, vat_rate, country, vat_number
+       FROM orders
+      WHERE customer_id = ?1
+        AND payment_status = 'paid'
+        AND vat_treatment IS NOT NULL
+        AND vat_consultation IS NOT NULL
+        AND TRIM(COALESCE(vat_consultation, '')) <> ''
+      ORDER BY paid_at DESC, id DESC
+      LIMIT 1`
+  ).bind(customerId).first().catch(() => null);
+
+  if (!bron) return { treatment: VAT_TREATMENT.standard, rate: VAT_RATE, country: null, number: null };
+  return {
+    treatment: bron.vat_treatment,
+    rate: Number(bron.vat_rate) || 0,
+    country: bron.country || null,
+    number: bron.vat_number || null,
+  };
+}
+
 export async function createSubscriptionRow(env, { customerId, planId, termId, windowDay = null }) {
   if (!PLAN_IDS.includes(planId)) throw new Error(`abonnement: onbekend plan ${planId}`);
   if (!TERM_IDS.includes(termId)) throw new Error(`abonnement: onbekende termijn ${termId}`);
   const ref = makeSubRef();
   const dag = Number.isFinite(Number(windowDay)) ? Math.min(28, Math.max(1, Math.floor(Number(windowDay)))) : null;
   try {
+    const btw = await vatVoorAbonnement(env, customerId);
     const row = await env.DB.prepare(
-      `INSERT INTO subscriptions (customer_id, ref, plan, term, status, window_day)
-       VALUES (?1, ?2, ?3, ?4, 'pending', ?5)
+      `INSERT INTO subscriptions (customer_id, ref, plan, term, status, window_day,
+                                  vat_treatment, vat_rate, vat_country, vat_number)
+       VALUES (?1, ?2, ?3, ?4, 'pending', ?5, ?6, ?7, ?8, ?9)
        RETURNING id, ref, plan, term, status, window_day`
-    ).bind(customerId, ref, planId, termId, dag).first();
+    ).bind(customerId, ref, planId, termId, dag,
+           btw.treatment, btw.rate, btw.country, btw.number).first();
     return { row, bestaat: false };
   } catch (e) {
     const bestaand = await loadSubscription(env, customerId);

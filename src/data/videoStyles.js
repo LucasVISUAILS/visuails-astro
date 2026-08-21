@@ -33,12 +33,20 @@ function grid(photos, icons) {
 export const videoStyles = [
   {
     slug: 'motion',
+    /* Naar het aanvraagformulier van Video en niet naar de keuzepagina.
+       Video staat nog op 'in aanbouw' — er is dus geen bestelformulier maar
+       een aanvraag, en dát is waar deze knop hoort te landen. Zie
+       src/data/orderDoors.js. */
     name: 'Motion',
     tagline: 'Eight seconds of undivided attention.',
     priceTrust: VID.price,
     priceUnit: ' / clip',
-    ctaLabel: 'Order Motion',
-    ctaHref: '/start',
+    /* Naar het aanvraagformulier van Video en niet naar de keuzepagina.
+       Video staat nog op 'in aanbouw' — er is geen bestelformulier maar een
+       aanvraag, en dát is waar deze knop hoort te landen. "Order" beloofde
+       bovendien iets wat deze dienst nog niet doet. Zie src/data/orderDoors.js. */
+    ctaLabel: 'Ask about Motion',
+    ctaHref: '/start/video',
     ctaExternal: false,
     heroIcon: 'bottle',
     heroWidth: '26%',
@@ -90,8 +98,8 @@ export const videoStyles = [
     tagline: 'The scene, set in motion.',
     priceTrust: VID.price,
     priceUnit: ' / clip',
-    ctaLabel: 'Order Lifestyle Video',
-    ctaHref: '/start',
+    ctaLabel: 'Ask about Lifestyle Video',
+    ctaHref: '/start/video',
     ctaExternal: false,
     heroIcon: 'jar',
     heroWidth: '26%',
@@ -225,7 +233,7 @@ export const videoStyles = [
       { title: 'Priced before you commit', body: 'A clear quote, agreed before any work starts.' },
     ],
     bestFor: [
-      'Ideas the three formats don\'t cover',
+      'Ideas the three formats don’t cover',
       'Launches with a specific story to tell',
       'Brands that want a signature motion style',
       'Anything agreed and quoted per project',

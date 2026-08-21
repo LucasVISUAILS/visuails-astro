@@ -129,6 +129,20 @@ const orderNet = `${euro(q.net, lang)} ${vatLabel('excl', lang)}`;
 const orderRate = euro(q.rate, lang);
 const shootNet = `${shoot.range} ${vatLabel('excl', lang)}`;
 const floorRate = euro(ladderFloor('complete'), lang);
+/* ── "AFLOPEND TOT €65" TERWIJL HET AL €65 IS ────────────────────────────────
+   20 augustus 2026. De kostenrij zei: "€1.950 excl. btw bij 30 producten —
+   €65 per product, aflopend tot €65 bij het hoogste aantal producten." Twee
+   keer hetzelfde bedrag in één zin, en de lezer die het opmerkt gaat aan de
+   hele pagina twijfelen.
+
+   Geen tikfout: ANCHOR_PRODUCTS staat op 30 en de ladder is bij 20 al op zijn
+   bodem, dus `orderRate` en `floorRate` ZIJN hetzelfde getal. De zin ging er
+   stilzwijgend van uit dat het ankeraantal ergens halverwege de ladder ligt.
+
+   Daarom vergelijken we de twee nu voordat we ze naast elkaar zetten. Wie
+   ANCHOR_PRODUCTS ooit op 8 zet, krijgt de "aflopend tot"-zin vanzelf weer
+   terug — de regel klopt dan namelijk wél. */
+const opDeBodem = orderRate === floorRate;
 
 // No `as const`: COPY[lang] would otherwise widen to a union of readonly tuple
 // types and .map() below would stop type-checking (project convention, see
@@ -162,7 +176,7 @@ const COPY = {
         // one row where an unlabelled figure would make the whole page a
         // comparison of two things that were never the same kind of number.
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product, falling to ${floorRate} at the highest product count.`,
+        b: `${orderNet} at ${ANCHOR_PRODUCTS} products — ${orderRate} per product${opDeBodem ? ', the lowest rate on the ladder' : `, falling to ${floorRate} at the highest product count`}.`,
       },
       {
         label: 'When it lands',
@@ -290,7 +304,7 @@ const COPY = {
       {
         label: 'Wat het kost',
         a: `${shootNet} · ${shoot.basis.toLowerCase()}.`,
-        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product, aflopend tot ${floorRate} bij het hoogste aantal producten.`,
+        b: `${orderNet} bij ${ANCHOR_PRODUCTS} producten — ${orderRate} per product${opDeBodem ? ', het laagste tarief op de ladder' : `, aflopend tot ${floorRate} bij het hoogste aantal producten`}.`,
       },
       {
         label: 'Wanneer het er is',

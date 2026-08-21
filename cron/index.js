@@ -89,7 +89,7 @@ export default {
     const report = [];
     const problems = [];
 
-    for (const task of [releaseExpiredWindows, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, checkBackupAge]) {
+    for (const task of [releaseExpiredWindows, cancelStaleApprovals, purgeExpiredFiles, issuePendingInvoices, checkPlanQueues, checkBackupAge]) {
       try {
         const line = await task(env);
         if (line) report.push(line);
@@ -212,6 +212,164 @@ async function releaseAll(env, rows) {
   }
 
   return `${rows.length} vervallen reservering${rows.length === 1 ? '' : 'en'} vrijgegeven: ${rows.map((o) => o.ref).join(', ')}.`;
+}
+
+/* ══ 1b · GOEDGEKEURD, NOOIT BETAALD ════════════════════════════════════════
+ *
+ * De btw-poort in functions/api/order.js houdt een bestelling met een twijfelachtige
+ * opgave of van buiten de EU tegen: geen betaallink, wél een rij. Keurt Lucas hem in
+ * het adminscherm goed, dan gaat er sinds 20 augustus 2026 automatisch een betaallink
+ * uit (zie stuurBetaallink in src/lib/admin.js).
+ *
+ * En dan? Dan kan er niets meer gebeuren. Zonder deze taak blijft zo'n bestelling
+ * eeuwig op 'received' staan met een betaallink die niemand gebruikt heeft — in de
+ * lijst, in de tellingen, en in de capaciteitsagenda als er een venster aan hangt.
+ *
+ * ZEVEN DAGEN, en dat getal komt uit wat de bevestigingsmail zelf belooft. Het is
+ * dezelfde termijn als `window_expires_at` bij een gereserveerde leverdatum, en dat
+ * is geen toeval: het is dezelfde vraag — hoe lang houden we iets vast voor iemand
+ * die niet betaalt.
+ *
+ * ── WAT ER NIET GEBEURT ────────────────────────────────────────────────────
+ *
+ * Het e-mailadres van de klant wordt NIET verwijderd, hoewel de oorspronkelijke
+ * schets dat wel zei. Een adres wissen op een timer is onomkeerbaar en het zou de
+ * enige manier weghalen om iemand te bereiken die zich morgen meldt met "ik wilde
+ * net betalen". Een verwijderverzoek is een handeling met een mens erachter, en
+ * daar bestaat een knop voor in het adminportaal (/admin/customers/:id/wipe).
+ *
+ * De bestelling zelf blijft ook staan. `status = 'cancelled'` is een toestand en
+ * geen verwijdering: de rij, de tijdlijn en de reden blijven leesbaar, want de
+ * vraag "wat is er met VIS-XXXX gebeurd" moet over een half jaar nog een antwoord
+ * hebben.
+ */
+async function cancelStaleApprovals(env) {
+  let results;
+  try {
+    ({ results } = await env.DB.prepare(
+      /* ── EN ALLEEN EEN BESTELLING DIE ECHT TE BETALEN VIEL ─────────────
+         `COALESCE(total_cents, 0) > 0` is geen extra voorzichtigheid maar de
+         kern van de regel. Een aanvraag voor een merkmodel, een video, een
+         look op maat of een abonnement gaat via hetzelfde formulier de
+         orders-tabel in, en die diensten hebben geen prijs per product:
+         quoteOrder() geeft null terug voor alles buiten catalog/lifestyle/
+         complete, dus `total_cents` blijft NULL. Zo'n aanvraag gaat WEL door de
+         btw-beoordeling — er is geen zakelijke verklaring in dat formulier — en
+         staat dus na goedkeuring op `review_state = 'approved'` met
+         `payment_status = 'unpaid'`, precies de twee voorwaarden hieronder.
+
+         Zeven dagen later kreeg de aanvrager dan een mail dat zijn bestelling
+         was vervallen omdat hij niet betaald had. Er was nooit iets te betalen:
+         stuurBetaallink() stopt zelf al bij een brutobedrag van nul, dus er is
+         ook nooit een link verstuurd. Een lead van € 1.250 die te horen krijgt
+         dat hij een rekening heeft laten verlopen die niet bestond. */
+      `SELECT id, ref, email, lang, reviewed_at
+         FROM orders
+        WHERE review_state = 'approved'
+          AND COALESCE(payment_status, 'unpaid') = 'unpaid'
+          AND COALESCE(total_cents, 0) > 0
+          AND reviewed_at IS NOT NULL
+          AND reviewed_at <= datetime('now', '-7 days')
+          AND status NOT IN ('cancelled', 'delivered')
+        ORDER BY id
+        LIMIT 50`
+    ).all());
+  } catch (err) {
+    if (/no such column/i.test(String(err?.message || ''))) {
+      /* `review_state` komt uit migratie 0018. Zelfde afspraak als de andere taken:
+         een ontbrekende migratie is een mededeling en geen ruwe databasefout. */
+      throw new Error(`${err.message} — is migratie 0018 (btw-beoordeling) gedraaid?`);
+    }
+    throw err;
+  }
+
+  const rows = results || [];
+  if (!rows.length) return null;
+
+  /* ── EERST DE UPDATE, EN PAS DAARNA DE TIJDLIJN EN DE MAIL ────────────────
+     De UPDATE controleert nog één keer of er echt niet betaald is, want tussen
+     de SELECT hierboven en dit moment kan de betaling binnen zijn gekomen. Die
+     hercontrole deed haar werk, maar de twee dingen die eráchter hoorden te
+     hangen deden hem niet mee: de tijdlijnregel zat in dezelfde batch en de
+     mail stond erachter, allebei onvoorwaardelijk. Wie op precies dat moment
+     betaalde, hield terecht zijn bestelling — en kreeg er een tijdlijnregel
+     "vervallen wegens niet betalen" en een mail overheen.
+
+     `meta.changes` van de UPDATE zegt of de rij echt geraakt is. Nul betekent
+     dat de hercontrole hem heeft tegengehouden, en dan gebeurt er verder niets. */
+  const vervallen = [];
+  for (const o of rows) {
+    const [uit] = await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE orders
+            SET status = 'cancelled', cancel_reason = ?2, window_start = NULL, window_end = NULL,
+                window_expires_at = NULL
+          WHERE id = ?1 AND COALESCE(payment_status, 'unpaid') = 'unpaid'`
+      ).bind(o.id, 'niet betaald binnen zeven dagen na goedkeuring'),
+    ]);
+    if (!(Number(uit?.meta?.changes) > 0)) {
+      console.log('[cron] bestelling', o.ref, 'is inmiddels betaald — niet vervallen');
+      continue;
+    }
+    vervallen.push(o);
+
+    await env.DB.prepare(
+      `INSERT INTO order_events (order_id, status, note, actor)
+       VALUES (?1, 'cancelled', ?2, 'system')`
+    ).bind(o.id, 'Vervallen: zeven dagen na de goedkeuring was er niet betaald. De bestelling blijft leesbaar; opnieuw bestellen kan altijd.').run();
+
+    /* De mail is een mededeling en geen aansporing. Wie na zeven dagen niet betaald
+       heeft, heeft meestal iets anders besloten; het enige wat hier hoort is dat hij
+       weet dat de reservering weg is en dat opnieuw bestellen gewoon kan. */
+    if (o.email) {
+      const nl = o.lang !== 'en';
+      await mailVervallen(env, o, nl);
+    }
+  }
+
+  if (!vervallen.length) return null;
+  return `${vervallen.length} goedgekeurde bestelling${vervallen.length === 1 ? '' : 'en'} vervallen wegens niet betalen: ${vervallen.map((o) => o.ref).join(', ')}.`;
+}
+
+/* Zonder RESEND_API_KEY gaat de mail niet en gaat de taak wél door — dezelfde
+   afspraak als bij de wachtrijmail hieronder. Het vervallen is het werk; de
+   mededeling is een gunst, en een gunst mag geen taak laten omvallen. */
+async function mailVervallen(env, o, nl) {
+  if (!env.RESEND_API_KEY || !o.email) return false;
+  const text = nl
+    ? [
+        `Je bestelling ${o.ref} is vervallen omdat er binnen zeven dagen na de goedkeuring niet betaald is.`,
+        '',
+        'Er is niets in rekening gebracht. Wil je het alsnog, dan kun je gewoon opnieuw bestellen op',
+        'https://visuails.com/start — je gegevens staan er nog.',
+        '',
+        'VISUAILS',
+      ].join('\n')
+    : [
+        `Your order ${o.ref} has expired because it was not paid within seven days of being cleared.`,
+        '',
+        'Nothing has been charged. If you still want it, you can simply order again at',
+        'https://visuails.com/start — your details are still there.',
+        '',
+        'VISUAILS',
+      ].join('\n');
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: env.FROM_EMAIL,
+        to: [o.email],
+        subject: nl ? `Bestelling ${o.ref} is vervallen` : `Order ${o.ref} has expired`,
+        text,
+      }),
+    });
+    if (!res.ok) throw new Error(`Resend ${res.status}`);
+    return true;
+  } catch (err) {
+    console.error('[cron] vervalbericht voor', o.ref, 'niet verstuurd —', err?.message || err);
+    return false;
+  }
 }
 
 /* ══ 2 · DE BEWAARTERMIJN UITVOEREN ═════════════════════════════════════════
@@ -648,7 +806,43 @@ async function issuePendingInvoices(env) {
     if (!/no such table/i.test(String(err?.message || err))) throw err;
   }
 
-  if (!rows.length && !credits.length) return null;
+  /*
+   * ── EN DE ABONNEMENTSFACTUREN, OM EXACT DEZELFDE REDEN — 20 augustus 2026 ──
+   *
+   * Migratie 0032 maakt `idx_subinv_pending` aan met de opmerking *"voor de
+   * hersteltaak, net als idx_invoices_pending"* — en die hersteltaak bestond
+   * niet. Alleen `invoices` en `credit_notes` werden opgeraapt.
+   *
+   * Bij een abonnementsfactuur is dat gat ERGER dan bij een bestelling, want er
+   * is geen tweede kans. De webhook van Mollie roept issueSubscriptionInvoice()
+   * pas aan nadat de maand is toegekend, en een tweede aflevering van dezelfde
+   * melding stopt daarvóór — `subscription_months` heeft de maand dan al, dus de
+   * functie keert terug vóór het factuurblok. Mislukt de pdf één keer, dan blijft
+   * de rij eeuwig op 'pending' staan met een verbruikt nummer en zonder document,
+   * terwijl het geld wél geïncasseerd is.
+   *
+   * Nummerveilig op dezelfde manier: het nummer staat al in de rij, hier wordt
+   * alleen de pdf gemaakt en de status omgezet. Er wordt niets genummerd.
+   *
+   * Geen tabel is geen fout — 0032 kan nog niet gedraaid zijn.
+   */
+  let abo = [];
+  try {
+    const res = await env.DB.prepare(
+      `SELECT id, number, year, snapshot_json
+         FROM subscription_invoices
+        WHERE status = 'pending'
+          AND pdf_key IS NULL
+          AND created_at <= datetime('now', '-${INVOICE_STUCK_MINUTES} minutes')
+        ORDER BY id
+        LIMIT 25`
+    ).all();
+    abo = res.results || [];
+  } catch (err) {
+    if (!/no such table/i.test(String(err?.message || err))) throw err;
+  }
+
+  if (!rows.length && !credits.length && !abo.length) return null;
 
   /*
    * De renderer wordt pas hier geladen, en niet bovenaan het bestand.
@@ -699,7 +893,29 @@ async function issuePendingInvoices(env) {
     }
   }
 
-  if (!done.length && !creditsDone.length) return null;
+  /* Dezelfde stappen als bij een gewone factuur, met de sleutel uit
+     issueSubscriptionInvoice(): `invoices/<jaar>/<nummer>.pdf`. Die vorm staat
+     daar en niet hier, dus wordt hij hier letterlijk overgenomen — wijkt hij ooit
+     af, dan wijst de rij naar een object dat niet bestaat. */
+  const aboDone = [];
+  for (const inv of abo) {
+    try {
+      const snap = JSON.parse(inv.snapshot_json || '{}');
+      const pdf = await renderInvoicePdf(snap);
+      const key = `invoices/${inv.year}/${inv.number}.pdf`;
+      await env.UPLOADS.put(key, pdf, { httpMetadata: { contentType: 'application/pdf' } });
+      await env.DB.prepare(
+        `UPDATE subscription_invoices
+            SET status = 'issued', pdf_key = ?2, pdf_bytes = ?3, issued_at = datetime('now')
+          WHERE id = ?1 AND status = 'pending'`
+      ).bind(inv.id, key, pdf.byteLength ?? pdf.length ?? null).run();
+      aboDone.push(inv.number);
+    } catch (err) {
+      console.error('[cron] abonnementsfactuur', inv.number, 'niet uitgegeven —', err?.message || err);
+    }
+  }
+
+  if (!done.length && !creditsDone.length && !aboDone.length) return null;
   const delen = [];
   if (done.length) {
     delen.push(`${done.length} vastgelopen factuur/facturen alsnog uitgegeven: ${done.join(', ')}.`
@@ -707,6 +923,9 @@ async function issuePendingInvoices(env) {
   }
   if (creditsDone.length) {
     delen.push(`${creditsDone.length} vastgelopen creditnota('s) alsnog uitgegeven: ${creditsDone.join(', ')}.`);
+  }
+  if (aboDone.length) {
+    delen.push(`${aboDone.length} vastgelopen abonnementsfactuur/facturen alsnog uitgegeven: ${aboDone.join(', ')}.`);
   }
   return delen.join(' ');
 }

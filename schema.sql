@@ -1222,3 +1222,80 @@ CREATE TABLE IF NOT EXISTS email_changes (
 CREATE INDEX IF NOT EXISTS idx_emailchg_open
   ON email_changes(customer_id, created_at)
   WHERE confirmed_at IS NULL;
+
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- ABONNEMENTSFACTUREN (migratie 0032, 20 augustus 2026)
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Een maandelijkse incasso landde in `subscription_payments` en verder nergens:
+-- geen document, geen nummer, niets in de boekhouding. `invoices.order_id` is
+-- NOT NULL en verwijst naar `orders`, dus daar kon een abonnementstermijn niet
+-- in. Eigen tabel, nummer uit dezelfde `invoice_series` — precies zoals
+-- `credit_notes` dat doet. De volledige afweging staat in de kop van
+-- migrations/0032-abonnementsfacturen.sql.
+--
+-- De vier kolommen op `subscriptions` leggen de btw-behandeling vast op het
+-- moment dat het abonnement wordt afgesloten, zodat elke termijn daarna dezelfde
+-- behandeling krijgt zonder elke maand opnieuw langs VIES te moeten.
+
+ALTER TABLE subscriptions ADD COLUMN vat_treatment TEXT;
+ALTER TABLE subscriptions ADD COLUMN vat_rate      REAL;
+ALTER TABLE subscriptions ADD COLUMN vat_country   TEXT;
+ALTER TABLE subscriptions ADD COLUMN vat_number    TEXT;
+
+CREATE TABLE IF NOT EXISTS subscription_invoices (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+
+  -- Uit invoice_series, dezelfde vorm en dezelfde reeks als een factuur op een
+  -- bestelling: 'VIS-2026-0009'. Eén doorlopende nummering over alle documenten,
+  -- want dat is wat de Belastingdienst vraagt en wat de vraag "waar is factuur 8"
+  -- beantwoordbaar houdt.
+  number      TEXT    NOT NULL UNIQUE,
+  year        INTEGER NOT NULL,
+  seq         INTEGER NOT NULL,
+
+  -- SET NULL en niet RESTRICT: subscriptions.customer_id is ON DELETE CASCADE, dus
+  -- een abonnement overleeft een AVG-verwijdering niet. Met RESTRICT viel de hele
+  -- wisknop om. De factuur draagt zichzelf in snapshot_json en pdf_key — zie de
+  -- uitleg in migrations/0032-abonnementsfacturen.sql.
+  subscription_id INTEGER REFERENCES subscriptions(id) ON DELETE SET NULL,
+
+  -- DE AFSCHRIJVING WAAR DEZE FACTUUR VOOR STAAT. UNIQUE, want twee facturen op
+  -- één incasso is precies de fout die dit hele bestand moet voorkomen — en het
+  -- is ook de idempotentie: de webhook van Mollie levert dezelfde melding meer
+  -- dan één keer af, en dan valt de tweede hierop stuk in plaats van een tweede
+  -- nummer te verbruiken.
+  subscription_payment_id INTEGER UNIQUE
+                REFERENCES subscription_payments(id) ON DELETE SET NULL,
+
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+
+  -- 'YYYY-MM' — de maand waar de termijn voor staat. Staat ook op het papier, want
+  -- "Starter, augustus 2026" is wat een boekhouder zoekt en 'VIS-2026-0009' niet.
+  month       TEXT,
+
+  status      TEXT    NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'issued', 'void')),
+  void_reason TEXT,
+
+  pdf_key     TEXT,
+  pdf_bytes   INTEGER,
+
+  -- Dezelfde vorm als invoices.snapshot_json: de volledige invoer van
+  -- renderInvoicePdf(), zodat dezelfde factuur later byte-identiek opnieuw te
+  -- maken is zonder de prijslijst van vandaag te raadplegen.
+  snapshot_json TEXT NOT NULL,
+
+  lang        TEXT    NOT NULL DEFAULT 'nl',
+  issued_at   TEXT,
+  created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+
+  CHECK (status <> 'issued' OR pdf_key IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_subinv_sub      ON subscription_invoices(subscription_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_subinv_customer ON subscription_invoices(customer_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_subinv_series   ON subscription_invoices(year, seq);
+-- Voor de hersteltaak, net als idx_invoices_pending: welke nummers wachten op een pdf.
+CREATE INDEX IF NOT EXISTS idx_subinv_pending  ON subscription_invoices(created_at) WHERE status = 'pending';

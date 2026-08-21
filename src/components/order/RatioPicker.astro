@@ -87,8 +87,10 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
 }));
 ---
 
-<fieldset class="pl-fieldset pl-ratio" data-pl-ratio>
-  <legend class="pl-sr">{c.label}</legend>
+{/* Zelfde reden als bij de achtergrondkiezer: de verborgen <legend> zei
+    hetzelfde als de zichtbare kop eronder, dus hoorde je de naam twee keer.
+    De kop is nu de naam van de groep. */}
+<fieldset class="pl-fieldset pl-ratio" data-pl-ratio aria-labelledby="pl-ratio-h">
   <h3 class="pl-sub-h" id="pl-ratio-h">{c.label}</h3>
   <p class="hint pl-ratio-hint" data-pl-ratio-hint-batch>{c.hintBatch}</p>
   <p class="hint pl-ratio-hint" data-pl-ratio-hint-each hidden>{c.hintEach}</p>

@@ -191,6 +191,18 @@ export async function mailInvoice(env, { order, invoice }) {
     const { subject, html } = invoiceEmail({ lang, order, invoice, snap, attached: !!attachment });
     await sendMail(env, {
       to: order.email,
+      /* ── EN EEN KOPIE VOOR DE EIGEN ADMINISTRATIE — 20 augustus 2026 ───────
+         De factuur ging alleen naar de klant. De bron blijft `invoices` plus de
+         pdf in R2 — dat is de administratie en dat verandert niet — maar een
+         factuur die langskomt in de mailbox is wat je bij een kwartaalaangifte
+         terugvindt zonder ergens in te loggen, en het is de snelste manier om te
+         zien dát er een uitgegaan is.
+
+         Uit `INVOICE_BCC` en niet uit een adres hier: de eigen administratie kan
+         morgen een boekhouder zijn en dat is een instelling, geen code. Staat de
+         variabele niet, dan gaat de mail gewoon alleen naar de klant — een
+         ontbrekende kopie mag een factuur nooit tegenhouden. */
+      bcc: env.INVOICE_BCC || undefined,
       subject,
       html,
       attachments: attachment ? [attachment] : undefined,

@@ -640,10 +640,15 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               ))}
             </div>
           </li>
-          <li><a href={lp(brandModelHref)} aria-current={isActive(brandModelHref) ? 'page' : undefined}>{t('nav_brandmodel')}</a></li>
-          <li><a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a></li>
+          {/* ── ZEVEN ITEMS WERDEN ER VIJF — 21 augustus 2026 ────────────────
+              Hier stonden Jouw merkmodel en Abonnementen als losse ingangen,
+              naast twee uitklappers en drie andere links. Allebei zijn het
+              dingen die je KOOPT, en die staan nu in het menu dat "Wat we maken"
+              heet — zie de noot bij `drops` in src/i18n/ui.js. Wat overblijft is
+              waar je heen gaat als je NIET aan het kiezen bent: wat het kost,
+              hoe het eruitziet, en hoe je ons bereikt. */}
           <li><a href={lp('/pricing')} aria-current={isActive('/pricing') ? 'page' : undefined}>{t('nav_pricing')}</a></li>
-          <li><a href={lp('/plans')} aria-current={isActive('/plans') ? 'page' : undefined}>{t('nav_plans')}</a></li>
+          <li><a href={lp('/gallery')} aria-current={isActive('/gallery') ? 'page' : undefined}>{t('nav_gallery')}</a></li>
           <li><a href={lp('/contact')} aria-current={isActive('/contact') ? 'page' : undefined}>{t('nav_contact')}</a></li>
         </ul>
       </nav>
@@ -714,15 +719,21 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   <div class="mobile-nav" id="mobile-nav" inert aria-hidden="true">
     <button class="mobile-close" aria-label={t('nav_close')}>&times;</button>
-    <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><BrandMark /></svg>
+    {/* ── HET MERK IS EEN LINK NAAR HUIS — 21 augustus 2026 ────────────────
+        Op desktop is hij dat al; in de lade stond hij als kale <svg>. Wie op een
+        telefoon het menu opende, had geen enkele weg terug naar de homepage
+        behalve de terugknop van de browser. */}
+    <a href={lp('/')} class="mobile-home" aria-label={t('nav_home')}>
+      <svg class="mk brand-mark mobile-mark" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
+    </a>
     {drops.map((s) => (s.href
       ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
       : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
     ))}
-    <a href={lp(brandModelHref)} aria-current={isActive(brandModelHref) ? 'page' : undefined}>{t('nav_brandmodel')}</a>
-    <a href={lp('/gallery')}>{t('nav_gallery')}</a>
+    {/* Merkmodel en Abonnement stonden hier ook los; ze zitten nu in `drops`
+        hierboven en zouden dus twee keer in de lade staan. */}
     <a href={lp('/pricing')}>{t('nav_pricing')}</a>
-    <a href={lp('/plans')}>{t('nav_plans')}</a>
+    <a href={lp('/gallery')}>{t('nav_gallery')}</a>
     <a href={lp('/contact')}>{t('nav_contact')}</a>
     {/* Op een telefoon geen tweede uitklapper maar een groep met een kop: een
         lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
@@ -924,50 +935,6 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       in de footer-link eronder; een schermlezer die hier "VISUAILS" hoort en
       twee tellen later nog eens, leert niets bij. */}
   <footer class="site-footer">
-    {/* ── HET WOORDMERK ZIT NU IN DE FOOTER — 20 augustus 2026 ───────────────
-        Lucas: *"het VISUAILS sticky vlak begint niet mooi en is bijna niet te
-        zien en hij mag echt eindigen onderaan de footer en iets minder
-        zichtbaar en het zwarte vlak erboven moet dus ook verdwijnen naarmate
-        je verder scrollt."*
-
-        Vier klachten, één oorzaak: het merk zat in een EIGEN band bóven de
-        footer. Die band moest hoog zijn (78svh) om de plakregel ruimte te geven
-        om in te reizen, en die hoogte was leeg — dat is het zwarte vlak. En
-        omdat de band bij de footer ophield, hield het merk daar ook op in
-        plaats van onderaan de pagina.
-
-        Nu is de footer zelf het bevattende blok. Het merk plakt aan de
-        onderrand van het venster tot de ONDERKANT VAN DE FOOTER die rand
-        raakt — dus tot het einde van de pagina, precies zoals gevraagd — en de
-        footerkolommen schuiven eroverheen omdat ze een laag hoger staan.
-
-        Geen lege band meer, op geen enkele van de zesentachtig pagina's.
-
-        `order` doet het werk: de plakregel heeft ruimte NODIG boven zich om
-        omhoog in te reizen (zie de noot bij .foot-mark). In de bron staat het
-        merk eerst, zodat het achter de kolommen ligt; in de flexvolgorde staat
-        het laatst, zodat alles erboven die ruimte is. */}
-    <div class="foot-mark" aria-hidden="true">
-      <svg class="foot-mark-w" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
-    </div>
-    {/* Watermark finale — brief §7. The wordmark at page scale, clipped by the
-        footer's own bottom edge so it reads as a printed register mark the
-        page runs off, not as a decorative logo. It is aria-hidden: the real
-        wordmark is the linked one in the brand column above, and a screen
-        reader hearing "VISUAILS" twice in a footer learns nothing.
-
-        The teal glow is the ONE place §7 sanctions a soft edge — it says
-        "giant clipped wordmark + a harbor-teal glow" in as many words. Every
-        other feathered edge on this site is banned by §8, so this one is
-        fenced here rather than made available as a utility class. */}
-    {/* Het <svg class="foot-watermark"> stond hier op opacity .05 achter de
-        kolommen. Dat is nu `.foot-mark` hierboven: hetzelfde idee, maar
-        plakkend en op ware grootte, zodat het één merk is en geen twee. De
-        gloed blijft los: die hoort bij de onderrand van de pagina en niet bij
-        het woordmerk. */}
-    <div class="foot-finale" aria-hidden="true">
-      <span class="foot-glow"></span>
-    </div>
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
@@ -1005,7 +972,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             {drops.map((s) => <li>{s.href
               ? <a href={lp(s.href)}>{s.title}</a>
               : <span class="mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>}</li>)}
-            <li><a href={lp(brandModelHref)}>{t('foot_brandmodel')}</a></li>
+            {/* Jouw merkmodel staat sinds 21 augustus in `drops` hierboven en
+                stond hier dus twee keer in dezelfde kolom. */}
             <li><a href={lp('/gallery')}>{t('foot_gallery')}</a></li>
             {/* The €1 sample was in neither the header nor the footer — its
                 only way in was an inline CTA on whichever page you happened to
@@ -1035,7 +1003,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           <ul>
             <li><a href={lp('/about')}>{t('foot_about')}</a></li>
             <li><a href={lp('/pricing')}>{t('foot_pricing')}</a></li>
-            <li><a href={lp('/plans')}>{t('foot_plans')}</a></li>
+            {/* /compare en /studio stonden tot 21 augustus in de uitklapper "Hoe
+                het werkt". Die lade had acht items en dat is er te veel om te
+                scannen; deze twee zijn bovendien geen processtap maar een
+                onderbouwing. /compare staat nu ook prominent op /pricing, want
+                het is een vergelijking van geld. */}
+            <li><a href={lp('/compare')}>{t('foot_compare')}</a></li>
+            <li><a href={lp('/studio')}>{t('foot_studio')}</a></li>
             <li><a href={lp('/guides')}>{t('foot_guides')}</a></li>
             <li><a href={lp('/faq')}>{t('foot_faq')}</a></li>
             <li><a href={lp('/contact')}>{t('foot_contact')}</a></li>
@@ -1070,12 +1044,51 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               is het document waar een merk naar zoekt vóór het uploadt, niet erna. */}
           <a href={lp('/data-processing-agreement')}>{t('foot_dpa')}</a>
           <a href={lp('/cookie-policy')}>{t('foot_cookies')}</a>
+          {/* AI Act stond in de uitklapper "Hoe het werkt", tussen de
+              processtappen. Het is een verantwoording en geen stap, en een lezer
+              zoekt dat soort verklaringen hier — naast privacy en voorwaarden. */}
+          <a href={lp('/ai-act')}>{t('foot_aiact')}</a>
           {/* Withdrawal has to be as easy as consent, so it lives with the
               other legal links and is present on every page. A <button> rather
               than a link because it opens a panel and goes nowhere. */}
           <button type="button" class="foot-cc" data-cc-reopen>{t('cc_reopen')}</button>
         </span>
       </div>
+    </div>
+    {/* ── HET WOORDMERK STAAT ONDER DE FOOTER — 20 augustus 2026, ronde 4 ────
+        Lucas: *"de visuails tekst achter de footer laten verschijnen en eronder
+        plaatsen, nu gaat die tekst over alle footer info heen wat niet handig
+        is. VISUAILS hoeft dan ook niet meer transparant omdat het niet verstopt
+        wordt, maak de animatie wel wat trager met wat delay en maak het
+        satisfying."*
+
+        Het merk plakte hiervóór aan de onderrand van het VENSTER en reisde
+        omhoog achter de kolommen langs. Dat was het antwoord op een eerdere
+        vraag ("hij mag echt eindigen onderaan de footer"), maar het betaalde
+        die eindstand met een halve pagina waarin het merk dwars door de links,
+        de knop en de juridische regel liep. Een watermerk mag onder tekst door
+        lopen; dit is er te groot voor.
+
+        Dus staat het nu waar het hoort: als laatste blok, ONDER alles, en niets
+        overlapt meer. Het is daarmee ook niet langer iets dat zich verstopt, en
+        dan hoeft het ook niet meer half doorzichtig te zijn — de vulling is nu
+        één vaste waarde (zie .foot-mark-w).
+
+        HET LICHT ZIT ERIN EN NIET ERBOVEN. Er stond een aparte `.foot-finale`
+        met een gloed, en die is verwijderd omdat hij nooit gestaan heeft waar
+        het commentaar beweerde: de regel `.site-footer > .foot-finale` verderop
+        zette hem van `absolute` terug naar `relative`, waarna zijn hoogte 0 werd
+        en de gloed met zijn heldere kern bovenaan de footer uitkwam in plaats
+        van onderaan. Dat is de vieze groene veeg boven de kolommen die op elke
+        schermafdruk staat. Nu hoort de gloed bij het merk zelf en licht hem van
+        onderen bij.
+
+        aria-hidden: de echte merknaam staat als gelinkte tekst in de merkkolom
+        hierboven; een schermlezer die hier nog eens "VISUAILS" hoort, leert
+        niets bij. */}
+    <div class="foot-mark reveal pending" aria-hidden="true">
+      <span class="foot-mark-light"></span>
+      <svg class="foot-mark-w" viewBox="0 0 1650 278" preserveAspectRatio="xMidYMax meet" focusable="false"><use href="#wordmark" /></svg>
     </div>
   </footer>
 
@@ -1402,7 +1415,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     .site-header { background: var(--paper); box-shadow: 0 1px 0 var(--line-strong); }
   }
   .nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; height: 76px; }
-  .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; gap: .5rem; }
+  /* min-width/min-height 24px: op een telefoon was de merklink 22 bij 26 px en
+     daarmee 2 pixels te smal voor de ondergrens van WCAG 2.5.8. Een minimum en
+     geen opvulling, zodat er niets verschuift — het teken staat al ruim binnen
+     die 24. */
+  .brand { font-family: var(--font-body); font-weight: 800; font-size: 1.26rem; color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-width: 24px; min-height: 24px; }
   /* The logotype, flat. It was chrome-filled — the same twelve-stop ramp as the
      hero plane, remapped per ground — and it went to one ink, on the client’s
      call: at logo size the metal read as cheap rather than as expensive, which
@@ -1620,6 +1637,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      forced to 30x30 — a 2.4% horizontal squash nobody would name but the eye
      reads as "slightly off". The SVG keeps its own ratio. */
   .mobile-mark { height: 30px; margin-bottom: 1.6rem; }
+  /* Het merkteken zit sinds 21 augustus in een <a> naar de homepage. De link
+     moet zelf een blok zijn, anders is het raakvlak de regelhoogte van een lege
+     inline en niet de tekening. */
+  .mobile-home { display: block; width: fit-content; }
+  .mobile-home:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
   /* Only the plain nav links get the large display styling. Scoped to direct
      children so it never hijacks the CTA buttons (which live in .mobile-cta)
      — that override was flattening "Order now" to a left-aligned block. */
@@ -1685,17 +1707,92 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     overflow-x: clip; overflow-y: visible;
     isolation: isolate;
   }
+  /* ── HET MERK IS EEN BLOK GEWORDEN, GEEN PLAKREGEL ────────────────────────
+     `position: sticky; bottom: 0` stond hier, met `order: 2` en
+     `margin-top: auto` om het merk ruimte te geven omhoog te reizen achter de
+     kolommen langs. Alle drie zijn weg: het merk is nu gewoon het laatste blok
+     in de footer en overlapt daardoor niets meer. Zie de noot bij de markup.
+
+     `overflow: clip` doet het afsnijden. Dat gebeurde eerst per ongeluk — het
+     merk stak onder de pagina uit en je zag wat je zag — en dat betekende ook
+     dat de paginahoogte meebewoog met een decoratie. Nu is het een keuze met
+     een getal: de negatieve ondermarge van de <svg> hieronder bepaalt hoeveel
+     letterhoogte eronder verdwijnt, en dit blok knipt het af. */
   .foot-mark {
-    order: 2;
-    position: sticky; bottom: 0; z-index: 0;
-    margin-top: auto;
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+    overflow: clip;
+    margin-top: clamp(2.6rem, 5vw, 4.4rem);
+    /* Tot aan de onderrand van de pagina: de footer heeft 2.2rem ondervulling
+       en die wordt hier teruggenomen, zodat het merk de rand écht raakt. */
+    margin-bottom: -2.2rem;
     display: grid; align-content: end; justify-items: center;
+    pointer-events: none;
+  }
+
+  /* ── HET LICHT ────────────────────────────────────────────────────────────
+     Dit was `.foot-glow` in een eigen `.foot-finale`, en het stond fout — zie
+     de markupnoot. Nu ligt het in het merk zelf, met zijn heldere kern ONDER de
+     onderrand, zodat het door de letters heen omhoog schijnt en door de
+     `overflow: clip` hierboven netjes bij de paginarand ophoudt. Dat is het
+     verschil tussen licht dat ergens vandaan komt en een vlek.
+
+     De waarden zijn met de hand als rgb() geschreven omdat een gradiëntstop
+     geen token met losse alpha aankan. Het zijn de kanalen van --accent
+     (#C6F100). Verandert het accent, dan verandert deze regel mee — en dat is
+     precies wat de vorige keer NIET gebeurde: er stond nog blauw-naar-violet
+     van het vorige palet in, wat de roze gloed was die op elke schermafdruk
+     terugkwam. */
+  .foot-mark-light {
+    position: absolute;
+    /* GEEN CENTRERING NODIG, EN DAT IS DE HELE TRUC. De eerste twee versies
+       waren een doos die BREDER was dan de footer, en die moest dan gecentreerd
+       worden — eerst met `translateX(-50%)`, wat botste met de vangrail (die zet
+       `transform: none` om animaties stil te leggen, en dan is het centreren
+       óók weg), daarna met `margin-inline: auto`, wat een absoluut gepositioneerd
+       vak dat BREDER is dan zijn ouder helemaal niet centreert — Chromium legt
+       hem dan gewoon tegen de linkerrand. Gemeten: 2160px breed op links 0 in
+       een venster van 1440, dus 360px scheef.
+
+       De doos is nu precies zo breed als de footer en de ELLIPS is groter dan de
+       doos: `ellipse 120% 100%` maakt de horizontale straal anderhalf keer de
+       halve breedte. Zelfde brede strijklicht, niets om te centreren, en
+       `transform` is weer vrij voor alleen de animatie. */
+    inset-inline: 0; bottom: -28%;
+    height: clamp(180px, 26vw, 380px);
+    /* De stops: fel genoeg om te zien dat er licht is, uit op 72% van de straal
+       zodat het ruim onder de juridische regel ophoudt. De waarden zijn met de
+       hand als rgb() geschreven omdat een gradiëntstop geen token met losse
+       alpha aankan; het zijn de kanalen van --accent (#C6F100).
+
+       ALS HET ACCENT VERSCHUIFT, VERSCHUIFT DEZE REGEL MEE. Dat is de vorige
+       keer NIET gebeurd: hier stond nog 91 124 250 en 154 107 245 van het
+       vorige palet, een blauw-naar-violette bloem onder een limoenen site. Dat
+       was de roze gloed op elke schermafdruk van de onderkant van de pagina. */
+    background: radial-gradient(ellipse 120% 100% at 50% 100%,
+      rgb(198 241 0 / 0.14) 0%,
+      rgb(198 241 0 / 0.055) 42%,
+      rgb(198 241 0 / 0) 72%);
     pointer-events: none;
   }
   .foot-mark-w {
     /* Expliciet, sinds `stroke="none"` van de <g> in #wordmark af is: dit teken
        is een vlak en geen lijn. */
     stroke: none;
+    /* ── max-width: none, EN DAAROM ──────────────────────────────────────────
+       De beeldreset in global.css zet `img, svg, video { max-width: 100% }`, en
+       die regel heeft hier jarenlang stil een breedte weggegooid. Op een breed
+       scherm valt dat niet op: 96vw past ruim binnen de 100%. Op een telefoon
+       stond hier `width: 128vw` en werd daar `100%` van gemaakt — 390px in
+       plaats van 499 — dus was het merk 66px hoog waar het er 84 had moeten
+       zijn, en na het afsnijden bleef er een streepje over. Gemeten en niet
+       geraden: .foot-mark was 57px hoog terwijl de rekensom 90 gaf.
+
+       Dit teken MOET breder zijn dan zijn ouder — dat is het hele idee van een
+       merk dat de pagina afloopt. Dus wordt de reset hier expliciet losgelaten,
+       op één element, met de reden erbij. */
+    max-width: none;
     width: min(96vw, 2000px);
     /* Onder de rand door, zodat het merk wordt afgesneden door de pagina en
        niet netjes past. Dat afsnijden IS het effect — een logo dat helemaal in
@@ -1704,27 +1801,131 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        MAAR NIET ZO DIEP DAT JE HET NIET MEER LEEST. Gemeten: bij -6% viel 83
        van de 233 pixels onder de rand, ruim een derde van de letterhoogte, en
        dan zie je geen woord meer maar een rij grijze vormen. */
-    margin-bottom: -2%;
-    fill: var(--paper-on-dark);
-    /* ── RONDE 3 · "IETS MINDER ZICHTBAAR" ────────────────────────────────
-       Het merk stond op vol wit achter een footer van 93% dekking, dus wat je
-       zag was 7% wit — en dat las Lucas als "bijna niet te zien" zolang hij nog
-       NIET achter de footer zat, want daar stond hij massief.
+    margin-bottom: -3.5%;
+    position: relative;
+    /* ── RONDE 4 · NIET MEER DOORZICHTIG ──────────────────────────────────
+       Het merk stond op wit met `opacity: .16`, en die 16 procent had één taak:
+       de footerlinks leesbaar houden waar het merk erachter doorliep. Nu loopt
+       het nergens meer achter, dus is die taak weg en de doorzichtigheid met
+       hem — precies wat Lucas vroeg.
 
-       Nu andersom: de footer is weer volledig dekkend (leesbaarheid van de
-       links is niet iets om aan te rommelen) en het merk staat zelf op 16%.
-       Eén waarde, overal hetzelfde, of hij nu achter tekst staat of onder de
-       kolommen door loopt. Gemeten contrast van de footerlinks daarboven:
-       ruim boven AA op elk punt van het merk. */
-    opacity: .16;
+       Wat ervoor terugkomt is een VASTE waarde in plaats van een berekende. Op
+       de footergrond (#08090B) kwam 16% wit uit op ongeveer #303236; #34383F
+       ligt daar net boven, zodat het merk iets meer aanwezig is nu er niets
+       meer overheen valt, zonder te gaan concurreren met de limoenen knop
+       erboven. Eén hex, één plek, geen dekking meer om over na te denken. */
+    fill: #34383F;
   }
 
-  /* De kolommen liggen een laag hoger en schuiven dus over het merk heen. */
-  .site-footer > .container,
-  .site-footer > .foot-finale { position: relative; z-index: 1; }
+  /* ── DEZE REGEL HEEFT DE GLOED VERPLAATST, EN NIEMAND ZAG HET ────────────
+     Er stond `.site-footer > .container, .site-footer > .foot-finale` hier, met
+     `position: relative`. Dat was bedoeld voor de container, maar het gold ook
+     voor `.foot-finale` — en die was elders `position: absolute` met twee
+     klassen minder specificiteit. Dus won deze regel, werd de finale relatief,
+     zakte zijn hoogte naar 0, en kwam de gloed met zijn heldere kern BOVENAAN
+     de footer uit in plaats van onderaan. Gemeten: de gloed liep van y=-638 tot
+     y=+112 ten opzichte van de footerrand, dus grotendeels over de sectie
+     erboven. Dat is de groene veeg die Lucas vier keer heeft aangewezen.
+
+     De finale bestaat niet meer en de kolommen hebben de laag niet meer nodig,
+     want het merk staat er niet langer achter. Wat overblijft is één regel voor
+     één element, en die kan niet meer per ongeluk iets anders raken. */
+  .site-footer > .container { position: relative; z-index: 1; }
 
   @media (max-width: 700px) {
-    .foot-mark-w { width: 128vw; }
+    /* Groter en minder diep afgesneden dan op een breed scherm, en dat is geen
+       inconsistentie maar dezelfde bedoeling op een andere maat. Op 390px was
+       128vw goed voor een merk van 84px hoog waarvan er na het afsnijden 42
+       overbleef: dat leest niet als een drukwerkmerk maar als een streepje. Op
+       150vw is het 99px hoog en blijft er 89 staan — dezelfde verhouding tot het
+       scherm als de 233px op een breed venster. */
+    .foot-mark-w { width: 150vw; margin-bottom: -2.2%; }
+    /* En het licht mee omlaag: 180px hoog boven een merk van 90 liep tot boven
+       de juridische regel uit. */
+    .foot-mark-light { height: 120px; }
+  }
+
+  /* ── DE ONTHULLING — TRAGER, MET VERTRAGING, IN TWEE SLAGEN ───────────────
+     Lucas: *"maak de animatie wel wat trager met wat delay en maak het
+     satisfying."*
+
+     Wat het satisfying maakt is dat er TWEE dingen gebeuren en niet één, kort
+     na elkaar, met de tweede langzamer dan de eerste. Het merk komt eerst
+     omhoog — 24 procent van zijn eigen hoogte, wat op deze letterhoogte
+     ongeveer 55 pixels is: genoeg om als beweging te lezen, te weinig om als
+     schuiven te lezen. Het duurt 1,8 seconde en begint pas na 0,35. Bijna een
+     halve tel daarna zwelt het licht eronder aan, over 2,3 seconden, met zijn
+     oorsprong op de onderrand zodat het van achter de paginarand omhoog groeit
+     in plaats van ter plekke aan te gaan.
+
+     Het oog leest dat als oorzaak en gevolg: het merk komt binnen, en dan gaat
+     het licht aan. Twee gelijktijdige fades op dezelfde duur zouden dezelfde
+     eigenschappen animeren en niets vertellen.
+
+     De tijden staan hier voluit en niet in --dur-3/--dur-4. Die tokens zijn 450
+     en 900 ms en dat is precies de snelheid die te snel was; dit is één
+     decoratie aan het eind van de pagina waar traag mag, en een token
+     oprekken zou de rest van de site meenemen.
+
+     ── EN WAAROM DE GENERIEKE .reveal HIER NIET KAN ──────────────────────
+     De site heeft een scrollgestuurde onthulling: `.js .reveal.pending` krijgt
+     in global.css `animation: vis-rise` op `animation-timeline: view()` met
+     `animation-range: entry 0% cover 28%`. Dat werkt overal, behalve op het
+     ALLERLAATSTE element van de pagina — want "cover 28%" wordt daar nooit
+     gehaald. De pagina houdt op met scrollen voordat het bereik vol is, de
+     animatie bevriest halverwege, en het merk blijft staan op opacity 0,61 met
+     4 pixels translate eronder. Precies gemeten, en het is niet zichtbaar als
+     een fout: het ziet eruit als een merk dat nu eenmaal wat vaag is.
+
+     Dus wordt die animatie hier uitgezet en doen de twee lagen binnenin het
+     werk met gewone overgangen, aangezet door de `.in` die dezelfde reveal-JS
+     eraan hangt. Tijdgestuurd, dus het eindigt altijd. Zet hier nooit een
+     scrolltijdlijn op terug — er is geen scrollruimte meer onder dit blok. */
+  .js .foot-mark.reveal.pending {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .js .foot-mark.reveal.pending .foot-mark-w {
+    opacity: 0;
+    transform: translateY(24%);
+    /* NIET --ease-out-expo, en dat is een meting en geen smaak. Die curve
+       (0.16, 1, 0.30, 1) is zo voorop geladen dat het merk na 700 ms al 92
+       procent van zijn weg had afgelegd — de opdracht was "wat trager", en een
+       lange duur met een steile curve is niet traag, die is kort met een staart.
+       easeOutCubic (0.33, 1, 0.68, 1) verdeelt het eerlijker: op hetzelfde
+       moment staat het merk op 47 procent en zie je het dus daadwerkelijk
+       reizen. */
+    transition: opacity 1.3s cubic-bezier(0.33, 1, 0.68, 1) .35s,
+                transform 1.8s cubic-bezier(0.33, 1, 0.68, 1) .35s;
+  }
+  .js .foot-mark.reveal.pending.in .foot-mark-w {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .js .foot-mark.reveal.pending .foot-mark-light {
+    opacity: 0;
+    transform: scaleY(.55);
+    transform-origin: 50% 100%;
+    transition: opacity 1.9s cubic-bezier(0.33, 1, 0.68, 1) .75s,
+                transform 2.3s cubic-bezier(0.33, 1, 0.68, 1) .75s;
+  }
+  .js .foot-mark.reveal.pending.in .foot-mark-light {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
+  /* Wie beweging uitzet, krijgt de eindstand en verder niets. */
+  @media (prefers-reduced-motion: reduce) {
+    .js .foot-mark.reveal.pending .foot-mark-w {
+      opacity: 1; transform: none; transition: none;
+    }
+    .js .foot-mark.reveal.pending .foot-mark-light {
+      opacity: 1; transform: none; transition: none;
+    }
   }
 
   /* `overflow: hidden` stond hier en is `overflow-x: clip` geworden — zie ronde
@@ -1754,42 +1955,18 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      itself from a section that ended on its own terms; these two do not end,
      the plate runs into it. */
   main:has(> .panel-tonal) + .site-footer { margin-top: 0; box-shadow: none; }
-  .site-footer > .container { position: relative; z-index: 1; }
+  /* ── .foot-watermark EN .foot-glow ZIJN HIER WEGGEHAALD ──────────────────
+     `.foot-watermark` was al dode code: het <svg> dat hem droeg is bij een
+     eerdere ronde vervangen door `.foot-mark`, de opmaakregel bleef staan, en
+     een regel die niets meer aankleedt is een regel die de volgende lezer laat
+     denken dat er twee watermerken zijn. `.foot-glow` is verhuisd naar
+     `.foot-mark-light` hierboven, waar hij bij het merk hoort en waar hij dus
+     ook niet meer stil kan verschuiven.
 
-  /* The finale sits behind the columns and is clipped by the footer, so the
-     wordmark's baseline is cut by the page edge rather than by a mask. */
-  .foot-finale { position: absolute; inset: auto 0 0 0; height: 100%; pointer-events: none; }
-  .foot-watermark {
-    position: absolute; left: 50%; bottom: -8%;
-    width: min(150%, 2100px); transform: translateX(-50%);
-    fill: var(--paper-on-dark); opacity: .05;
-  }
-  .foot-glow {
-    position: absolute; left: 50%; bottom: -34%;
-    width: min(120%, 1500px); aspect-ratio: 2 / 1; transform: translateX(-50%);
-    /* Hand-written as rgb() because a gradient stop cannot take a token with a
-       separate alpha. It still cannot — so this is the accent's channels,
-       quoted once, with a comment saying where they come from.
-
-       THE COMMENT SAID "if --accent moves, these three stops move with it by
-       hand" AND THEN THEY DID NOT. The accent went from harbor blue to the
-       green and this rule kept 91 124 250 and 154 107 245 — a blue-to-violet
-       bloom under the footer, which is the pink glow Lucas is looking at in
-       every screenshot of the bottom of the page. An instruction to a future
-       reader is not a mechanism; this is the second thing in this palette
-       change to be found by looking rather than by anything failing.
-
-       Also quieter: 0.30 → 0.20. A bloom in the accent hue is a much stronger
-       signal than one in a colour that appears nowhere else, so the same alpha
-       reads as roughly twice the light. */
-    background: radial-gradient(ellipse at 50% 100%, rgb(198 241 0 / 0.20) 0%, rgb(198 241 0 / 0.09) 38%, rgb(198 241 0 / 0) 70%);
-  }
-  @media (max-width: 700px) {
-    .foot-watermark { width: 190%; bottom: -4%; opacity: .045; }
-  }
-  /* prefers-reduced-data: the glow is a large composited layer for decoration
-     only, so it goes rather than being made cheaper. */
-  @media (prefers-reduced-data: reduce) { .foot-glow { display: none; } }
+     De regel voor prefers-reduced-data gaat mee: het licht is een grote
+     samengestelde laag voor alleen sier, dus die gaat weg in plaats van
+     goedkoper gemaakt te worden. */
+  @media (prefers-reduced-data: reduce) { .foot-mark-light { display: none; } }
   /* 1.5fr voor het merk en niet 1.6: de kolom draagt sinds 20 augustus een knop
      en drie iconen in plaats van alleen tekst, en heeft daardoor minder breedte
      nodig om niet leeg te ogen. De ruimte gaat naar de contactkolom, waar een
@@ -1841,6 +2018,18 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      KVK-nummer — twee keer VISUAILS binnen één regelhoogte, waarvan één als
      achtergrond. Nu staat de wettelijke regel eerst en komt het merk eronder op. */
   .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1.5rem; padding-bottom: clamp(1.6rem, 3vw, 2.6rem); box-shadow: inset 0 1px 0 var(--line); color: var(--ink-faint); font-size: .82rem; }
+  /* ── 24 PIXELS, WANT DAT IS DE ONDERGRENS ────────────────────────────────
+     Deze links waren 21px hoog: op .82rem tekst is dat de regelhoogte en verder
+     niets. WCAG 2.2 vraagt in 2.5.8 (niveau AA) om een raakvlak van minstens 24
+     bij 24 CSS-pixels, en de uitzondering voor "een link midden in een zin"
+     geldt hier niet — dit is een RIJ van losse links, geen lopende tekst.
+
+     De verticale opvulling doet het werk en niet een hoogte: opvulling op een
+     inline-element vergroot wél het raakvlak maar niet de regel, dus de rij
+     blijft er precies zo uitzien als hij eruitzag. Gemeten na de ingreep: 21 →
+     27px, en de rij is geen pixel opgeschoven. `npm run keuring` bewaakt het. */
+  .footer-bottom a,
+  .footer-bottom .foot-cc { padding-block: .3rem; }
   /* THE LAST ROW OF THE FOOTER WAS UNREACHABLE. .convbar is fixed 20px off the
      bottom and this row is the last thing on the page, so at maximum scroll the
      bar sat on top of it: measured at 360x740 it covered 65% of the "Cookie

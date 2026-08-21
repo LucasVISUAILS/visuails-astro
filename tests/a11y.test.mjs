@@ -335,6 +335,28 @@ console.log('\ngeen pagina slaat een kopniveau over');
  * 572 svg-tags zonder `aria-hidden` en zonder naam, over 87 pagina's. Alle 123 in de
  * bron bleken decoratief — geteld, en gecontroleerd dat er geen enkele de ENIGE inhoud
  * van een link of knop was, want zo'n icoon heeft juist wél een naam nodig.
+ *
+ * ── DE MEETFOUT DIE HIER OP 20 AUGUSTUS 2026 UITKWAM ────────────────────────
+ *
+ * Deze toets keek naar `s.hasAttribute('aria-hidden')` — op de svg ZELF. En dat is
+ * niet wat de browser doet. `aria-hidden` op een voorouder haalt de hele tak uit de
+ * toegankelijkheidsboom; een svg daarbinnen bestaat voor een schermlezer niet, met of
+ * zonder eigen attribuut. Twee patronen die al in deze site zaten werden daardoor
+ * afgekeurd terwijl ze precies goed waren:
+ *
+ *     <div class="mark-depth-lay" aria-hidden="true">   <div class="foot-mark" aria-hidden="true">
+ *       <svg class="mark-depth-v">…                       <svg class="foot-mark-w">…
+ *
+ * Het attribuut staat daar op de laag, niet op de tekening — want het is de LAAG die
+ * decoratie is, en de svg is toevallig wat erin ligt. Het attribuut nog een keer op
+ * de svg zetten zou de toets groen maken zonder dat er iets aan de site verandert:
+ * de meting zou dan kloppen omdat de site zich naar de meting heeft gevoegd, en dat
+ * is precies de verkeerde volgorde. Dus is de meting aangepast, met `closest()`, naar
+ * wat de browser werkelijk doet.
+ *
+ * De tegentoets hieronder — een icoon dat de enige inhoud van een knop of link is
+ * MOET een naam hebben — bleef ongewijzigd, en die is de reden dat deze versoepeling
+ * geen gat maakt: "zet er aria-hidden omheen" blijft daar een afkeuring.
  */
 console.log('\nelke svg is of decoratief gemarkeerd of heeft een naam');
 {
@@ -343,7 +365,8 @@ console.log('\nelke svg is of decoratief gemarkeerd of heeft een naam');
   for (const path of ['/', '/pricing/', '/catalog/', '/compare/', '/faq/', '/test-sample/', '/studio/', '/nl/', '/nl/pricing/']) {
     await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
     const n = await page.evaluate(() => [...document.querySelectorAll('svg')].filter((s) => {
-      if (s.hasAttribute('aria-hidden')) return false;
+      // closest() en niet hasAttribute(): aria-hidden werkt op de hele tak eronder.
+      if (s.closest('[aria-hidden="true"]')) return false;
       if (s.hasAttribute('aria-label') || s.getAttribute('role') === 'img') return false;
       return !s.querySelector('title');
     }).length);

@@ -25,7 +25,7 @@
  * uploads, and an empty array is a new key on every message that doesn’t
  * carry one — a wire-format difference that buys nothing.
  */
-export async function sendMail(env, { to, subject, html, text, attachments }) {
+export async function sendMail(env, { to, bcc, subject, html, text, attachments }) {
   if (!env.RESEND_API_KEY) return;                 // not configured yet → skip quietly
   const from = env.FROM_EMAIL || 'VISUAILS <orders@visuails.com>';
   // EVERY MESSAGE GOES OUT AS BOTH PARTS, August 2026 — a customer's sign-in
@@ -52,6 +52,11 @@ export async function sendMail(env, { to, subject, html, text, attachments }) {
     text: text || htmlToText(html),
     reply_to: 'hello@visuails.com',
   };
+  /* BCC EN NIET CC. Een kopie voor de eigen administratie hoort de klant niet te
+     zien: zijn factuur is een bericht aan hém, en een tweede adres in de kop
+     roept de vraag op wie dat is. Alleen meegestuurd als er ook echt een adres
+     is — een lege bcc laat Resend de hele verzending weigeren. */
+  if (bcc) payload.bcc = Array.isArray(bcc) ? bcc.filter(Boolean) : [bcc];
   if (attachments && attachments.length) payload.attachments = attachments;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',

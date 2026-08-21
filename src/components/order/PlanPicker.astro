@@ -31,6 +31,7 @@ import { TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel } f
 import { planName } from '../../data/planNames.js';
 import { localizedPath } from '../../i18n/ui.js';
 
+import Note from '../Note.astro';
 interface Props {
   lang: 'en' | 'nl';
 }
@@ -107,6 +108,13 @@ const c = nl ? {
   termH: 'Welke termijn',
   weekH: 'Je vaste week',
   weekHint: 'De dag van de maand waarop wij aan jouw producten beginnen. Elke maand dezelfde. Weet je het nog niet, laat hem dan staan — je kunt hem later wijzigen.',
+  /* ── DRIE BEGRIPPEN DIE NERGENS UITGELEGD STONDEN — 21 augustus 2026 ──
+     "Machtiging", "vaste week" en "prijsslot" stonden alle drie als bekend
+     verondersteld op het duurste formulier van de site — een doorlopende
+     incasso. Ze staan nu in een zwevende notitie: de pagina wordt er niet langer
+     van, en wie het woord niet kent, hoeft er niet meer omheen te lezen. */
+  weekNote: 'Wij reserveren die week in de planning voor jou, elke maand opnieuw, vóórdat er andere bestellingen in mogen. Heb je die maand niets klaarstaan, dan vervalt de week niet: je producten schuiven door. Je kunt de dag altijd wijzigen in je dashboard.',
+  mandateNote: 'Een machtiging is de toestemming die je bank nodig heeft om ons maandelijks te laten incasseren — een SEPA-incasso, dezelfde vorm als bij een energieleverancier. Je geeft hem één keer af en je kunt hem altijd intrekken. De €1 is de transactie waarmee je bank hem uitgeeft.',
   weekLabel: 'Dag van de maand',
   perMonth: 'per maand',
   products: 'producten per maand',
@@ -115,9 +123,9 @@ const c = nl ? {
   termNote: 'De jaartermijn is op Starter goedkoper per maand. Op Studio en Merk is hij dat niet, en dat is met opzet: die twee zitten met hun maandbedrag al op of onder de laagste prijs per product, en daar gaat niets meer af. Wat de jaartermijn daar geeft, staat hieronder.',
   submit: 'Doorgaan naar de machtiging',
   mandateH: 'Wat er nu gebeurt',
-  mandateBody: 'Je betaalt zo eenmalig € 1. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later.',
+  mandateBody: 'Je betaalt zo eenmalig €1. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later.',
   cancelNote: 'Opzeggen kan zelf, in je eigen dashboard. Wat je hebt laten maken, blijft van jou.',
-  signedOut: 'Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, begin dan met een proefvisual van € 1 — dan weet je wat je koopt.',
+  signedOut: 'Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, begin dan met een proefvisual van €1 — dan weet je wat je koopt.',
   signIn: 'Inloggen',
   sample: 'Eerst een proefvisual',
 } : {
@@ -127,6 +135,8 @@ const c = nl ? {
   termH: 'Which term',
   weekH: 'Your fixed week',
   weekHint: 'The day of the month we start on your products. The same every month. Not sure yet? Leave it — you can change it later.',
+  weekNote: 'We reserve that week in the calendar for you, every month, before any other order can take it. If you have nothing ready that month the week is not lost: your products roll over. You can change the day at any time in your dashboard.',
+  mandateNote: 'A mandate is the permission your bank needs to let us collect monthly — a SEPA direct debit, the same shape as an energy supplier uses. You give it once and you can withdraw it at any time. The €1 is the transaction that makes your bank issue it.',
   weekLabel: 'Day of the month',
   perMonth: 'per month',
   products: 'products a month',
@@ -229,14 +239,22 @@ const termijnen = TERM_IDS.map((id) => ({
             <input type="radio" name="term" value={t.id} required checked={i === 0} />
             <span class="plan-opt-body">
               <strong>{t.naam}</strong>
+              {/* DE REGEL BEGINT NIET MET HET LABEL. Er stond hier
+                  "Maandelijks, en elke maand opzegbaar" ónder een vetgedrukt
+                  "Maandelijks", en bij de jaarvorm "12 maanden vast" onder
+                  "12 maanden". In de bron valt dat niet op, want label en regel
+                  staan tien tekens uit elkaar; op het scherm staan ze recht
+                  boven elkaar en lees je het woord twee keer achter elkaar.
+                  Het getal komt nog steeds uit TERMS.months — alleen niet meer
+                  als eerste woord van de zin. */}
               <span class="plan-opt-line">
                 {nl
                   ? (t.id === 'yearly'
-                    ? `${t.maanden} maanden vast. Een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio.`
-                    : 'Maandelijks, en elke maand opzegbaar. Je zegt op in je eigen dashboard.')
+                    ? `Een vaste looptijd van ${t.maanden} maanden. Daarvoor terug: een staande week, drie maanden doorschuiven, een prijsslot, en het merkmodel ook op Studio.`
+                    : 'Elke maand opzegbaar. Je zegt op in je eigen dashboard.')
                   : (t.id === 'yearly'
-                    ? `${t.maanden} months fixed. A standing week, three months of rollover, a price lock, and the Brand Model on Studio too.`
-                    : 'Monthly, and cancellable any month. You cancel it yourself in your dashboard.')}
+                    ? `A fixed term of ${t.maanden} months. In return: a standing week, three months of rollover, a price lock, and the Brand Model on Studio too.`
+                    : 'Cancellable any month. You cancel it yourself in your dashboard.')}
               </span>
             </span>
           </label>
@@ -244,7 +262,7 @@ const termijnen = TERM_IDS.map((id) => ({
       </fieldset>
 
       <fieldset class="plan-set">
-        <legend>{c.weekH}</legend>
+        <legend>{c.weekH} <Note lang={lang} term={nl ? 'je vaste week' : 'your fixed week'}>{c.weekNote}</Note></legend>
         <p class="plan-hint">{c.weekHint}</p>
         <label class="plan-day">
           <span>{c.weekLabel}</span>
@@ -259,7 +277,7 @@ const termijnen = TERM_IDS.map((id) => ({
       </fieldset>
 
       <div class="plan-mandate">
-        <h2>{c.mandateH}</h2>
+        <h2>{c.mandateH} <Note lang={lang} term={nl ? 'machtiging' : 'mandate'}>{c.mandateNote}</Note></h2>
         <p>{c.mandateBody}</p>
         {/* Twee losse feiten, dus twee regels. Aan elkaar geplakt leest het als
             "blijft van jou excl. btw", en dat is een zin die niets betekent. */}
@@ -307,7 +325,22 @@ const termijnen = TERM_IDS.map((id) => ({
   </div>
 </section>
 
-<script is:inline>
+<script is:inline data-astro-rerun>
+  /* ── `data-astro-rerun`, OM DEZELFDE REDEN ALS IN HomeV2.astro ─────────────
+     Astro voert een inline script bij een zachte navigatie maar één keer uit:
+     de eerste keer dat de router hem tegenkomt. Zonder dit attribuut werkt alles
+     hieronder dus precies één keer per bezoek.
+     
+     Dat is hier niet cosmetisch. Wie op /plans op de Merk-kaart klikt, komt via
+     een zachte navigatie op /start/plan?plan=brand — en het aanvinken van het
+     juiste plan gebeurt hieronder. Draait dit niet, dan staat Studio (€ 790)
+     aangevinkt terwijl de bezoeker net op Merk (€ 1.690) heeft geklikt, op een
+     formulier dat eindigt in een doorlopende machtiging. De noot bij "HET PLAN
+     UIT DE URL" verderop beschrijft precies die fout; hij was gerepareerd voor
+     de eerste klik en niet voor de tweede.
+
+     Hier hoeft niets opgeruimd te worden: dit blok zet alleen iets in de opmaak
+     en laat geen timer of luisteraar achter. */
   /* Zie de lange noot in de frontmatter. Eén ding: zoek het blok op dat bij de
      reden in de URL hoort, en zet het aan. `role="alert"` staat al in de markup,
      maar een alert die er bij het laden al staat wordt door schermlezers niet

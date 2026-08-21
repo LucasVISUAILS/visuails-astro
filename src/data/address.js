@@ -65,6 +65,39 @@ export function composeAddress({ line1, line2, postal, city, region } = {}) {
 export const ADDRESS_FIELDS = ['address_line1', 'address_line2', 'postal_code', 'city', 'region'];
 
 /**
+ * Een Nederlandse postcode netjes opschrijven: '7531hk' → '7531 HK'.
+ *
+ * ── WAAROM DIT ER IS — 20 augustus 2026 ─────────────────────────────────────
+ *
+ * Wat iemand typt komt zo op de factuur terecht, en op de eerste testfactuur
+ * stond "7531HK" zonder spatie. Niet fout, wel slordig — en het is precies het
+ * soort ding dat je op een document dat naar een boekhouder gaat één keer wilt
+ * regelen in plaats van per geval.
+ *
+ * ── ALLEEN NEDERLAND, EN ALLEEN ALS HET PAST ────────────────────────────────
+ *
+ * De vorm 'vier cijfers, twee letters' is de Nederlandse en niet de universele.
+ * Een Britse postcode (SW1A 1AA), een Ierse Eircode en een Duitse van vijf
+ * cijfers hebben allemaal hun eigen regels, en die hier proberen te raden zou
+ * betekenen dat een buitenlands adres wordt herschreven door iemand die die
+ * regels niet kent. Past de tekst niet op het Nederlandse patroon, dan gaat hij
+ * ongewijzigd terug — alleen met de spaties eraf.
+ *
+ * `country` mag leeg zijn: dan wordt er op de VORM gekeken en niet op het land,
+ * want '1234 AB' is in de praktijk altijd een Nederlandse postcode. Staat er wél
+ * een ander land, dan blijft de tekst met rust.
+ */
+export function normalisePostal(value, country = '') {
+  const raw = String(value ?? '').trim().replace(/\s+/g, ' ');
+  if (!raw) return raw;
+  const land = String(country || '').trim().toUpperCase();
+  if (land && land !== 'NL') return raw;
+  const m = /^(\d{4})\s*([A-Za-z]{2})$/.exec(raw.replace(/\s+/g, ''));
+  if (!m) return raw;
+  return `${m[1]} ${m[2].toUpperCase()}`;
+}
+
+/**
  * De formuliernamen → de vorm die composeAddress() wil.
  *
  * Het formulier gebruikt dezelfde namen als de kolommen, zodat er nergens een

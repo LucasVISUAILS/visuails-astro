@@ -66,6 +66,7 @@
  */
 
 import { chromium } from 'playwright';
+import { browserPad } from './lib/browserpad.mjs';
 import { PNG } from 'pngjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -176,7 +177,7 @@ async function verzamel(ijken) {
   const paden = allePaden();
   const srv = await serveer(4402);
   const browser = await chromium.launch({
-    executablePath: process.env.PW_CHROME || undefined,
+    executablePath: browserPad(),
   });
 
   /* ── EEN WERKRIJ MET ACHT WERKERS ─────────────────────────────────────────
@@ -188,6 +189,7 @@ async function verzamel(ijken) {
      Acht en niet zestien: elke werker is een eigen browsercontext met een eigen
      rendervlak, en boven de acht wordt de machine de rem in plaats van de motor. */
   const nu = {};
+  const mislukt = [];
   let teller = 0;
   const WERKERS = 8;
   const rij = [];
@@ -199,7 +201,7 @@ async function verzamel(ijken) {
     /* Alles wat vanzelf beweegt uitzetten, anders is elke opname een andere dia
        van de carrousel en meldt deze vangrail elke keer iets. */
     const STIL = `*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}
-        .reveal,[class*="float"],[class*="rise"]{opacity:1!important;transform:none!important}`;
+        .reveal,[class*="float"],[class*="rise"],[class*="foot-mark"]{opacity:1!important;transform:none!important}`;
     for (;;) {
       const i = volgende++;
       if (i >= rij.length) break;
@@ -209,11 +211,101 @@ async function verzamel(ijken) {
       if (breedte !== huidigeBreedte) {
         if (ctx) await ctx.close();
         ctx = await browser.newContext({ viewport: { width: breedte, height: 1000 }, deviceScaleFactor: 1 });
+        /* ── DE STILLE CSS MOET ER AL ZIJN VOORDAT DE PAGINA IETS DOET ───────
+           /demo kwam in twee hoogtes uit die 3400px uit elkaar lagen, en in
+           zes losse metingen — ook met de processor zes keer vertraagd — kwam
+           altijd dezelfde eruit. Alleen ONDER BELASTING, met acht werkers
+           tegelijk, dook af en toe de andere op.
+
+           Dat is de handtekening van een race: `addStyleTag` na `goto` valt de
+           ene keer vóór en de andere keer ná het script van de pagina, en dit
+           blad zet `animation: none` op alles. Wat er van de site aan een
+           animatie hangt, gedraagt zich dus verschillend al naar gelang wie er
+           eerst was.
+
+           Met `addInitScript` staat het blad er vóór elk script op elke pagina,
+           altijd. Geen race meer, en de meting gaat weer over de site in plaats
+           van over de volgorde van de meting zelf. */
+        await ctx.addInitScript((css) => {
+          const zet = () => {
+            const st = document.createElement('style');
+            st.id = 'vangrail-stil';
+            st.textContent = css;
+            (document.head || document.documentElement).appendChild(st);
+          };
+          if (document.head) zet();
+          else document.addEventListener('readystatechange', zet, { once: true });
+        }, STIL);
+        /* ── EN DE ONTHULPOORT DETERMINISTISCH MAKEN ─────────────────────────
+           Wachten was niet genoeg. In Layout.astro haalt een wachthond de klasse
+           `js` van <html> af als interactions.js zich 600ms na `load` nog niet
+           gemeld heeft met `__vRevealLive`. En `.wk-step` in FigWalk.astro hangt
+           met `min-height: 66svh` aan diezelfde klasse, dus /demo is ruim 8500px
+           mét die klasse en 5500px zonder. Met vier werkers op één machine haalt
+           de module die 600ms de ene ronde wel en de andere niet — gemeten, twee
+           keer, met precies hetzelfde verschil van 3091px.
+
+           Wachten kan dat niet oplossen: op het moment dat je merkt dat het te
+           laat is, is de klasse al weg. Dus wordt de vlag hier vóór het laden
+           gezet. De wachthond keert dan meteen terug en de pagina wordt altijd
+           gemeten zoals een browser hem toont die zijn scripts gewoon draait —
+           wat elke echte bezoeker met JavaScript is.
+
+           DIT VERBERGT GEEN FOUT. De vangrail vergelijkt bouwsels met elkaar; hij
+           is er niet om te meten hoe traag deze machine vandaag is. Wat hij moet
+           zien is of ONZE wijziging iets verschuift, en daarvoor moet de toestand
+           aan beide kanten dezelfde zijn. */
+        await ctx.addInitScript(() => { window.__vRevealLive = 1; });
         p = await ctx.newPage();
         huidigeBreedte = breedte;
       }
       await p.goto(`http://127.0.0.1:4402${u}`, { waitUntil: 'load' });
       await p.addStyleTag({ content: STIL });
+
+      /* ── EERST DE LETTERS, DAN PAS METEN ─────────────────────────────────
+         Dit was de oorzaak van tachtig valse meldingen op 20 augustus 2026, en
+         het is de vervelendste soort: ze zagen er allemaal echt uit. Tientallen
+         secties op tientallen pagina's, in beide richtingen, steeds ongeveer
+         één tekstregel — 439 → 473, 542 → 515, 446 → 504 — terwijl er aan die
+         pagina's niets veranderd was.
+
+         De site laadt twaalf @font-face-regels met `font-display: swap`. Swap
+         betekent letterlijk: teken de tekst nu maar met de terugvalletter, en
+         wissel om zodra de echte binnen is. `waitUntil: 'load'` wacht daar niet
+         op — het gaat over de subresources van het document, niet over wat de
+         letterlader daarna nog binnenhaalt. Twee van de twaalf staan in een
+         <link rel=preload>, de tien andere niet. De opname viel dus soms vóór
+         en soms ná de omwisseling, en de terugvalletter is niet even breed als
+         Archivo: één woord meer of minder op een regel, en de sectie is een
+         regelhoogte langer of korter.
+
+         `document.fonts.ready` is precies de belofte die daarop wacht. Hij is
+         al vervuld als er niets meer te laden valt, dus hij kost niets op een
+         pagina die al klaar is — en op een pagina die nog wacht, kost hij exact
+         de tijd die het verschil tussen een echte en een valse melding is. */
+      await p.evaluate(() => document.fonts.ready.then(() => undefined)).catch(() => {});
+
+      /* ── EN WACHTEN TOT DE ONTHULPOORT UITGEPRAAT IS ──────────────────────
+         /demo mat de ene ronde 8663px en de andere 5572px — een verschil van
+         drieduizend pixels op één pagina, en de opmerking bij de hoogtelus
+         hieronder beschrijft precies datzelfde gedrag. De oorzaak is niet
+         traagheid maar een POORT die twee kanten op kan vallen.
+
+         In Layout.astro staat een inline script dat `js` op <html> zet en dat
+         er 600ms ná `load` weer afhaalt als de onthulmodule tegen die tijd
+         `window.__vRevealLive` niet heeft gezet. Dat is goed gedrag voor een
+         bezoeker: staat de module er niet, dan hoort niets verborgen te blijven.
+         Maar `.wk-step` in FigWalk.astro hangt aan diezelfde klasse met
+         `min-height: 66svh`, dus de tien stappen van de walkthrough zijn samen
+         ruim 7000px mét `js` en een fractie daarvan zonder. Met acht werkers op
+         één machine haalt de module die 600ms de ene keer wel en de andere keer
+         niet, en dan meet je twee verschillende pagina's.
+
+         Dus eerst wachten tot de poort uitgepraat is: óf de module meldt zich,
+         óf de wachthond heeft zijn 600ms gehad. Allebei zijn het bepaalde
+         toestanden — het gokje ertussenin is dat niet. */
+      await p.waitForFunction(() => window.__vRevealLive === 1, { timeout: 3000 }).catch(() => {});
+      await p.waitForTimeout(750);
       /* ── DE CARROUSEL OP DIA ÉÉN ZETTEN ──────────────────────────────────
          De hero wisselt vanzelf van dia, en dat is een JS-timer — de stille CSS
          hierboven raakt hem niet. Twee opnamen van dezelfde build vingen daardoor
@@ -261,7 +353,58 @@ async function verzamel(ijken) {
       }));
       await p.waitForTimeout(60);
 
-      const buf = await p.screenshot({ fullPage: true });
+      /* ── WACHTEN TOT DE PAGINA UITGEGROEID IS ────────────────────────────
+         /demo en /nl/demo wisselden tussen twee hoogtes die ruim drieduizend
+         pixels uit elkaar lagen — en ze wisselden ONDERLING: in de ene ronde was
+         de Engelse pagina de lange en de Nederlandse de korte, in de volgende
+         andersom. De HTML is bij elke build byte voor byte gelijk en vier losse
+         metingen achter elkaar gaven vier keer hetzelfde getal, dus het is geen
+         verschil in de site maar een verschil in TIMING: acht werkers op één
+         machine, en dan is een pagina die na het laden nog iets opbouwt de ene
+         keer wel en de andere keer niet klaar op het moment van de opname.
+
+         Vandaar deze lus: pas meten als de hoogte twee keer achter elkaar
+         hetzelfde is. Kost bij een rustige pagina één extra kwart seconde en bij
+         een drukke een halve; het alternatief is een vangrail die af en toe iets
+         meldt wat er niet is, en dat is precies hoe je een vangrail kwijtraakt. */
+      await p.evaluate(() => new Promise((klaar) => {
+        let vorige = -1, gelijk = 0, rondes = 0;
+        const kijk = () => {
+          const h = document.body.scrollHeight;
+          if (h === vorige) gelijk++; else { gelijk = 0; vorige = h; }
+          if (gelijk >= 2 || ++rondes > 16) return klaar();
+          setTimeout(kijk, 250);
+        };
+        kijk();
+      }));
+
+      /* ── DE OPNAME MAG ÉÉN KEER MISLUKKEN ───────────────────────────────
+         Twee volle runs zijn hier gesneuveld, allebei op dezelfde regel:
+         `page.screenshot: Timeout 30000ms exceeded`. Geen kapotte pagina — een
+         volle-paginaopname van 13.000 pixels hoog, met acht werkers tegelijk op
+         dezelfde machine, haalt de standaardtijd van 30 seconden af en toe niet.
+
+         Wat er dan gebeurde was het echte probleem: de uitzondering liep door
+         tot boven, de hele run stopte, en 363 geslaagde opnamen gingen mee de
+         prullenbak in. Elf minuten weg door één trage seconde.
+
+         Dus: ruimer de tijd (90s, want de mislukking is traagheid en geen
+         hangen), en één herkansing met een adempauze ertussen zodat de andere
+         werkers hun piek voorbij zijn. Lukt het dan nog niet, dan wordt het een
+         MELDING in het verslag in plaats van een crash — de vangrail zegt welke
+         pagina hij niet heeft kunnen vastleggen, en de rest van het werk blijft
+         staan. Een controle die bij de eerste tegenslag alles weggooit, wordt
+         door niemand een tweede keer gedraaid. */
+      let buf = null;
+      for (let poging = 0; poging < 2 && !buf; poging++) {
+        try {
+          buf = await p.screenshot({ fullPage: true, timeout: 90000 });
+        } catch (fout) {
+          if (poging === 0) { await p.waitForTimeout(1500); continue; }
+          mislukt.push({ sleutel: `${breedte}${u}`, reden: String(fout.message || fout).split('\n')[0] });
+        }
+      }
+      if (!buf) continue;
       const sleutel = `${breedte}${u}`;
       nu[sleutel] = { vorm: await vormVan(p), kleur: kleurraster(buf) };
 
@@ -276,7 +419,7 @@ async function verzamel(ijken) {
   const browserVersie = browser.version();
   await browser.close();
   srv.close();
-  return { nu, paden, teller, browserVersie };
+  return { nu, paden, teller, browserVersie, mislukt };
 }
 
 function vergelijk(oud, nu) {
@@ -338,7 +481,15 @@ const ijken = process.argv.includes('--ijk');
 
 if (ijken) {
   console.log('\nVISUAILS — referentie vastleggen\n');
-  const { nu, paden, teller, browserVersie } = await verzamel(true);
+  const { nu, paden, teller, browserVersie, mislukt } = await verzamel(true);
+  /* Een referentie met gaten erin is geen referentie: de volgende vergelijking
+     meldt die pagina's als "nieuw" en je weet niet meer of dat klopt. */
+  if (mislukt.length) {
+    console.error(`\n${mislukt.length} opname(n) mislukt — de referentie wordt NIET weggeschreven:`);
+    for (const m of mislukt) console.error(`  ${m.sleutel}  ${m.reden}`);
+    console.error('\nDraai `npm run visueel:ijk` opnieuw.');
+    process.exit(1);
+  }
   nu[META] = { browser: browserVersie, gemaakt: new Date().toISOString().slice(0, 16).replace('T', ' ') };
   fs.writeFileSync(IJKBESTAND, JSON.stringify(nu));
   const kb = Math.round(fs.statSync(IJKBESTAND).size / 1024);
@@ -352,8 +503,9 @@ if (ijken) {
   }
   console.log('\nVISUAILS — visuele vangrail\n');
   const oud = JSON.parse(fs.readFileSync(IJKBESTAND, 'utf8'));
-  const { nu, teller, browserVersie } = await verzamel(false);
+  const { nu, teller, browserVersie, mislukt } = await verzamel(false);
   const meldingen = vergelijk(oud, nu);
+  for (const m of mislukt) meldingen.push({ sleutel: m.sleutel, soort: 'geen opname', tekst: m.reden });
 
   /* ── EERST DE BROWSER, DAN PAS DE PAGINA'S ───────────────────────────────
      Dit koste op 20 augustus 2026 een uur. De referentie was gemaakt met de ene

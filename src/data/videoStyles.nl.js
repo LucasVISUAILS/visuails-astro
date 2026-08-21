@@ -28,12 +28,20 @@ function grid(photos, icons) {
 export const videoStyles = [
   {
     slug: 'motion',
+    /* Naar het aanvraagformulier van Video en niet naar de keuzepagina.
+       Video staat nog op 'in aanbouw' — er is dus geen bestelformulier maar
+       een aanvraag, en dát is waar deze knop hoort te landen. Zie
+       src/data/orderDoors.js. */
     name: 'Motion',
     tagline: 'Acht seconden onverdeelde aandacht.',
     priceTrust: VID.price,
     priceUnit: ' / clip',
-    ctaLabel: 'Bestel Motion',
-    ctaHref: '/nl/start',
+    /* Naar het aanvraagformulier van Video en niet naar de keuzepagina.
+       Video staat nog op 'in aanbouw' — er is geen bestelformulier maar een
+       aanvraag, en dát is waar deze knop hoort te landen. "Order" beloofde
+       bovendien iets wat deze dienst nog niet doet. Zie src/data/orderDoors.js. */
+    ctaLabel: 'Vraag Motion aan',
+    ctaHref: '/nl/start/video',
     ctaExternal: false,
     heroIcon: 'bottle',
     heroWidth: '26%',
@@ -66,7 +74,7 @@ export const videoStyles = [
       { title: 'De juiste lengte voor een feed', body: '8 seconden, in de verhouding die Instagram en TikTok gebruiken.' },
     ],
     bestFor: [
-      'Productpagina\'s die leven nodig hebben',
+      'Productpagina’s die leven nodig hebben',
       'Social feeds en eenvoudige advertenties',
       'E-mailheaders en launch-teasers',
       'Marktplaatsen die video ondersteunen',
@@ -85,8 +93,8 @@ export const videoStyles = [
     tagline: 'De scène, in beweging gezet.',
     priceTrust: VID.price,
     priceUnit: ' / clip',
-    ctaLabel: 'Bestel Lifestyle Video',
-    ctaHref: '/nl/start',
+    ctaLabel: 'Vraag Lifestyle Video aan',
+    ctaHref: '/nl/start/video',
     ctaExternal: false,
     heroIcon: 'jar',
     heroWidth: '26%',
