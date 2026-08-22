@@ -53,7 +53,7 @@ const zusters = catalogStyles
   <section class="page-hero">
     <div class="container two-col" style="align-items:center">
       <div class="reveal pending">
-        <span class="eyebrow-page"><a href="/nl/catalog" style="color:inherit">Catalog-stijlen</a></span>
+        <span class="eyebrow-page"><a href="/nl/catalog/" style="color:inherit">Catalog-stijlen</a></span>
         <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
         <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
         <div class="flex" style="margin-top:1.8rem">
@@ -137,7 +137,7 @@ const zusters = catalogStyles
   <section>
     <div class="container">
       <h2 style="margin-bottom:2rem">Wat er in elk kader gaat.</h2>
-      <div class="arrow-rows" style="grid-template-columns:repeat(2,1fr)">
+      <div class="arrow-rows arrow-rows-2">
         {style.craft.map((c) => (
           <div class="reveal pending"><h3>{c.title}</h3><p>{c.body}</p></div>
         ))}
@@ -170,7 +170,7 @@ const zusters = catalogStyles
         </ul>
         {/* Brief §1 — elke drop-contentpagina linkt naar /custom-models. Eén
             regel in de template bedient beide catalog-stijlen. */}
-        <p class="model-note">De on-model shot in elke {style.name}-set kan een gezicht uit de standaardbibliotheek gebruiken — of <a href="/nl/custom-models">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.</p>
+        <p class="model-note">De on-model shot in elke {style.name}-set kan een gezicht uit de standaardbibliotheek gebruiken — of <a href="/nl/custom-models/">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.</p>
       </div>
     </div>
   </section>
@@ -183,7 +183,7 @@ const zusters = catalogStyles
         <p class="lead" style="margin:1rem auto 0;text-align:center">Vraag een proefvisual aan, of plaats vandaag je bestelling.</p>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
           <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">{style.orderLabel ?? `Bestel ${style.name}`}</a></span></span>
-          <a href="/nl/test-sample" class="btn btn-ghost btn-lg">Proefvisual</a>
+          <a href="/nl/test-sample/" class="btn btn-ghost btn-lg">Proefvisual</a>
         </div>
       </div>
     </div>

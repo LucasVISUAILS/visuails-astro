@@ -1317,7 +1317,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
           op vier Nederlandse pagina's, tot 18 augustus 2026. Een reparatie op één
           plek terwijl hetzelfde patroon nog ergens anders staat, is geen reparatie.
           Sectie 10 van tests/nav.test.mjs bewaakt het nu over de hele bron. */}
-      <a href="/account" class="btn btn-primary pl-signin-cta">{f.signInCta}</a>
+      <a href={`/account?lang=${lang}`} class="btn btn-primary pl-signin-cta">{f.signInCta}</a>
     </aside>
 
     {/* De vierde rail-ingang is 'Levertijd' / 'Timing', en die stap bestaat niet
@@ -2634,7 +2634,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
   .pl-windows {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
     gap: .8rem;
     margin-top: 1.2rem;
   }
@@ -2792,7 +2792,7 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
 
   .shared-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
     gap: clamp(1.5rem, 3vw, 3rem);
     margin-top: clamp(1.8rem, 3vw, 2.6rem);
   }
@@ -2817,7 +2817,10 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
      buttons grow to share it; two rows and each fills its own. Either way the
      edges line up. Same principle global.css:386–391 applies sitewide at ≤560px,
      applied here at the width where this particular row actually breaks. */
-  .start-foot-cta > .btn { flex: 1 0 auto; }
+  /* Zelfde correctie als in StartPage.astro: `flex: 1 0 auto` liet een knop
+     groeien maar niet krimpen, dus stak een lang Nederlands label bij 150 %
+     tekstgrootte buiten het scherm in plaats van af te breken. */
+  .start-foot-cta > .btn { flex: 1 1 auto; min-width: 0; }
 
   /* ── Breakpoints ─────────────────────────────────────────────────────────*/
   @media (max-width: 900px) {
@@ -2834,11 +2837,24 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
   /* The rail keeps all five numerals at every width — dropping steps would hide
      how long the form is, which is the one thing it exists to say. The labels
      go instead, and the current step keeps its own. */
-  @media (max-width: 680px) {
+  /* 42.5em = 680px bij de standaardlettergrootte, dus voor wie niets aan zijn
+     tekstinstelling verandert is dit dezelfde grens als hiervoor. In `em` en
+     niet in `px` om dezelfde reden als bij de bovenbalk, de voettekst en de
+     knoppen: een balk van vijf stappen heeft bij grotere tekst evenveel last
+     van vijf labels als bij een smal venster, en moet dan net zo goed
+     vereenvoudigen. */
+  @media (max-width: 42.5em) {
     .pl-form.is-live .pl-rail { grid-template-columns: repeat(5, auto); }
     .pl-rail-item { padding: .7rem .8rem; }
     .pl-rail-item .pl-rail-t { display: none; }
     .pl-rail-item.is-current .pl-rail-t { display: block; }
+    /* Een `auto`-baan zakt niet onder de min-content van zijn inhoud zolang de
+       ondergrens `auto` is. Bij 150 % tekstgrootte op een telefoon duwde het
+       label van de huidige stap de balk daarmee 41 px buiten beeld. Nu mogen de
+       banen krimpen en breekt het label af in plaats van de balk. */
+    .pl-rail > li,
+    .pl-rail-item { min-width: 0; }
+    .pl-rail-t { overflow-wrap: anywhere; }
   }
 
   /* .row-2's 620px collapse is in global.css with the rule it collapses. */
@@ -2990,5 +3006,23 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
     .pl-form.is-live .pl-step.is-current .pl-total-bar .pl-total-net { font-size: 1.35rem; }
     /* Room for the bar, so it never covers the Continue button it sits above. */
     .pl-form.is-live .pl-step[data-pl-step='1'].is-current { padding-bottom: 5.5rem; }
+    /* ── EN OOK RUIMTE ONDERAAN DE PAGINA — 21 augustus 2026 ────────────────
+       De regel hierboven houdt de balk van de Doorgaan-knop af, en dat was de
+       enige plek waar hij toen tegenaan kon komen. Maar hij is `fixed`, dus hij
+       blijft onderaan het VENSTER hangen — ook als je doorscrollt tot de
+       voettekst. Gemeten op 390px: de balk lag over de bestelknop in de
+       voettekst en over de eerste rij links eronder.
+
+       Gevonden door de leesbaarheidsmeting: die las voor «Start an order» in de
+       voettekst 1,13 : 1, en de reden bleek niet de kleur maar een doos die
+       eroverheen lag. `elementFromPoint` op het midden van die knop gaf
+       `div.pl-total-bar` terug.
+
+       `:has()` op body en niet een klasse op de voettekst, want de voorwaarde
+       hoort bij het formulier: alleen zolang stap 1 in beeld is, is de balk
+       vast. Op elke andere pagina en in elke andere stap verandert er niets. */
+    body:has(.pl-form.is-live .pl-step[data-pl-step='1'].is-current) :global(.site-footer) {
+      padding-bottom: 5.5rem;
+    }
   }
 </style>

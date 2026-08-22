@@ -98,7 +98,7 @@ export const SHOTS = [
     },
     buys: {
       en: 'This is what keeps the material honest — the weave, the wash, the sheen. It is the difference between your garment and a garment. If the product has no logo or hardware to close in on, the close-up you get back is a fabric shot instead, and this is the photo it is read from.',
-      nl: 'Dit houdt het materiaal eerlijk — de weving, de wassing, de glans. Het verschil tussen jouw kledingstuk en een kledingstuk. Heeft het product geen logo of fournituren om op in te zoomen, dan wordt de close-up die je terugkrijgt een stoffoto, en dit is de foto waar die van gelezen wordt.',
+      nl: 'Dit houdt het materiaal eerlijk — de weefselstructuur, de wassing, de glans. Het verschil tussen jouw kledingstuk en een kledingstuk. Heeft het product geen logo of fournituren om op in te zoomen, dan wordt de close-up die je terugkrijgt een stoffoto, en dit is de foto waar die van gelezen wordt.',
     },
   },
   {
@@ -312,6 +312,12 @@ export const COPY = {
     bulkLead: 'Drop the whole lot in and we will sort them. A folder per product works best — we read the folder name as the product.',
     bulkCta: 'Drop files or folders',
     manualH: 'Fill them in per product',
+    /* DE KNOP STOND LEEG IN DE MARKUP. pipeline.js zette er tekst in, maar tot
+       dat script gedraaid had — en als het nooit draait — rendert er een lege
+       spookknop die een schermlezer als "knop" aankondigt, zonder te zeggen
+       wat hij doet. De tekst staat nu in de pagina; het script schrijft er
+       daarna dezelfde tekst overheen. */
+    addProduct: 'Add another product',
     // ── DE TWEE MANIEREN ZIJN NIET GELIJKWAARDIG MEER ────────────────────────
     // Lucas, 8 augustus 2026: *"Laat de klant kiezen om een hele map op te sturen
     // of via het invoerscherm in te vullen met invulscherm als voorkeur omdat map
@@ -379,6 +385,7 @@ export const COPY = {
     bulkLead: 'Sleep de hele hoop erin, dan sorteren wij. Een map per product werkt het best — we lezen de mapnaam als het product.',
     bulkCta: 'Sleep bestanden of mappen',
     manualH: 'Vul ze per product in',
+    addProduct: 'Nog een product toevoegen',
     // Zie de EN-tabel voor waarom deze twee wegen niet meer gelijkwaardig zijn.
     toFolder: 'Liever één hele map sturen?',
     toFolderWhy: 'Sneller, minder precies: we lezen de mapnaam als het product, en meestal moeten we daarna bij je terugkomen om te vragen welke foto bij welk product hoort.',

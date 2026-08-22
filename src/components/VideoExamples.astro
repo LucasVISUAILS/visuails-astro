@@ -273,6 +273,26 @@ const metaLine = (e: { seconds: number; ratio: string }) =>
     color: var(--ink-3);
   }
   .vx-table td:first-child { white-space: nowrap; padding-right: 1.2rem; }
+  /* ── OP 320px PASTE DEZE TABEL NIET, EN DAT SCHOOF DE HELE PAGINA ────────
+     Gemeten 21 augustus 2026: vier Nederlandse videopagina's schoven 9px
+     zijwaarts, en het was elke keer deze tabel — 310px inhoud in een kolom van
+     282. De oorzaak is de regel hierboven: `nowrap` op de bestandsnaam, zodat
+     "1-vertical-9x16" nooit afbreekt.
+
+     Op de smalste telefoons mag hij afbreken, en `anywhere` en niet `break-word`
+     omdat een bestandsnaam geen woordgrenzen heeft waar een browser iets mee
+     kan. De code-achtergrond loopt dan over twee regels door, wat bij een
+     bestandsnaam precies goed leest. */
+  /* 28.75em = 460px bij de standaardlettergrootte, dus voor wie niets aan zijn
+     tekstinstelling verandert verandert er niets. In `em` en niet in `px`,
+     dezelfde reden als bij de knoppen en de stappenbalk: `nowrap` in de eerste
+     kolom hindert een tabel bij grotere tekst net zo hard als bij een smal
+     venster. Gemeten op 22 augustus 2026: op 640 px met de tekst op 200 procent
+     liep deze tabel 18 px buiten de pagina, en de pagina schoof zijwaarts. */
+  @media (max-width: 28.75em) {
+    .vx-table { font-size: .84rem; }
+    .vx-table td:first-child { white-space: normal; overflow-wrap: anywhere; padding-right: .7rem; }
+  }
   .vx-table code {
     font-size: .86rem;
     color: var(--ink);

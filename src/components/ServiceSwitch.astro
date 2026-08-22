@@ -103,7 +103,11 @@ const lp = (p: string) => localizedPath(lang, p);
     align-items: baseline;
     gap: 0 .5rem;
   }
-  .svcsw-k { color: var(--ink-4); }
+  /* --ink-3 en niet --ink-4: op een pagina met een lichte hero-foto haalde de
+     aanhef 4,39 : 1 op een eis van 4,5 (gemeten op /video, 390px). Eén trede
+     sterker en hij staat overal ruim boven de streep, zonder dat de rij zwaarder
+     gaat wegen dan de knop erboven. */
+  .svcsw-k { color: var(--ink-3); }
   .svcsw-i { display: inline-flex; align-items: baseline; gap: .5rem; }
   .svcsw-dot { color: var(--line-strong); }
   .svcsw-a {

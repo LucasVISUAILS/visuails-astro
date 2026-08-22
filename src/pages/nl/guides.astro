@@ -27,11 +27,11 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 const SAMPLE = TEST_SAMPLE.nl;
 
 const guides = [
-  { title: 'Zo fotografeer je je product met je telefoon', desc: 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', href: '/nl/upload-guidelines', tag: 'Checklist' },
-  { title: 'Van foto naar publicatie — hoe het werkt', desc: 'Wat er precies gebeurt tussen het sturen van één foto en het terugkrijgen van een afgewerkte, met de hand gecontroleerde visual.', href: '/nl/how-it-works', tag: 'Proces' },
-  { title: 'AI-tools vs een done-for-you studio', desc: 'Wanneer een AI-tool die je zelf bedient echt genoeg is — en waar hij je stilletjes uren kost aan overdoen en kleur die niet bij je merk past.', href: '/nl/compare', tag: 'Vergelijk' },
-  { title: 'Wat productvisuals echt kosten', desc: `Catalog vanaf ${CAT_ENTRY} per set van vier foto’s en lifestyle vanaf ${LIFE_ENTRY}, dalend tot ${CAT_FLOOR} en ${LIFE_FLOOR} vanaf ${FLOOR_FROM} producten; video een vaste ${VID} per clip. Alles ${vatLabel('excl', 'nl')}.`, href: '/nl/pricing', tag: 'Prijzen' },
-  { title: 'Vragen, beantwoord', desc: 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', href: '/nl/faq', tag: 'FAQ' },
+  { title: 'Zo fotografeer je je product met je telefoon', desc: 'De vier hoeken, het licht, de achtergrond — alles wat een telefoonfoto omzet in een campagneklaar resultaat. Het nuttigste om te lezen voordat je bestelt.', href: '/nl/upload-guidelines/', tag: 'Checklist' },
+  { title: 'Van foto naar publicatie — hoe het werkt', desc: 'Wat er precies gebeurt tussen het sturen van één foto en het terugkrijgen van een afgewerkte, met de hand gecontroleerde visual.', href: '/nl/how-it-works/', tag: 'Proces' },
+  { title: 'AI-tools vs een done-for-you studio', desc: 'Wanneer een AI-tool die je zelf bedient echt genoeg is — en waar hij je stilletjes uren kost aan overdoen en kleur die niet bij je merk past.', href: '/nl/compare/', tag: 'Vergelijk' },
+  { title: 'Wat productvisuals echt kosten', desc: `Catalog vanaf ${CAT_ENTRY} per set van vier foto’s en lifestyle vanaf ${LIFE_ENTRY}, dalend tot ${CAT_FLOOR} en ${LIFE_FLOOR} vanaf ${FLOOR_FROM} producten; video een vaste ${VID} per clip. Alles ${vatLabel('excl', 'nl')}.`, href: '/nl/pricing/', tag: 'Prijzen' },
+  { title: 'Vragen, beantwoord', desc: 'Betaling, btw, modellen, levering, wat als iets niet klopt — de praktische dingen die merken vragen vóór hun eerste bestelling.', href: '/nl/faq/', tag: 'FAQ' },
 ];
 ---
 
@@ -62,15 +62,15 @@ const guides = [
     <div class="cta-band reveal pending">
       <h2 class="display" style="font-size:var(--t-page-h2)">Klaar wanneer jij dat bent.</h2>
       <div class="flex" style="justify-content:center;margin-top:2rem">
-        <a href="/nl/test-sample" class="btn btn-primary btn-lg">Probeer een proefvisual van {SAMPLE.price}</a>
-        <a href="/nl/start" class="btn btn-ghost btn-lg">Start een bestelling</a>
+        <a href="/nl/test-sample/" class="btn btn-primary btn-lg">Probeer een proefvisual van {SAMPLE.price}</a>
+        <a href="/nl/start/" class="btn btn-ghost btn-lg">Start een bestelling</a>
       </div>
     </div>
   </div></section>
 </Layout>
 
 <style>
-  .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
+  .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 1.2rem; }
     /* A card, so it takes the card treatment: the site radius and .lift from
      global.css (a lit top edge, a contact shadow, a 1.2% rise on hover)
      instead of a 1px grey rectangle. The local transition is gone with it —

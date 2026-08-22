@@ -593,7 +593,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           graphic needs one for anyone who lands on it directly. Neither is
           redundant with the other, and neither can be inferred from a path. */}
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
-        <svg class="mk brand-mark brand-glyph" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><BrandMark /></svg>
+        <svg class="mk brand-mark brand-glyph" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
       </a>
       <nav aria-label={t('nav_primary')} class="primary-nav">
         <ul class="nav-links">
@@ -688,7 +688,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             created in JS carries no scope attribute and gets none of them. */}
         <a href={`/account?lang=${lang}`} class="nav-account-link" data-acct="out" aria-current={isActive('/account') ? 'page' : undefined}>{t('nav_account')}</a>
         <span class="nav-account-in" data-acct="in" hidden>
-          <a href="/account" class="nav-account-link nav-account-name" data-acct-label aria-label={acct.aria} aria-current={isActive('/account') ? 'page' : undefined}></a>
+          <a href={`/account?lang=${lang}`} class="nav-account-link nav-account-name" data-acct-label aria-label={acct.aria} aria-current={isActive('/account') ? 'page' : undefined}></a>
           {/* A form, not a link: signing out is a state change and it has to be
               a POST — /account/logout deletes the session row, and account.js
               checks Origin on every POST behind a session. The cookie is
@@ -754,7 +754,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           toggles every [data-acct] on the page in one pass, so the drawer and
           the desktop bar cannot end up disagreeing about who is signed in. */}
       <div class="mobile-account-in" data-acct="in" hidden>
-        <a href="/account" class="mobile-account-link" data-acct-label aria-label={acct.aria}></a>
+        <a href={`/account?lang=${lang}`} class="mobile-account-link" data-acct-label aria-label={acct.aria}></a>
         <form method="post" action="/account/logout" class="mobile-signout" data-acct-signout>
           <button type="submit" class="nav-signout-btn">{acct.signout}</button>
         </form>
@@ -938,8 +938,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a href={lp('/')} class="brand">
-            <svg class="mk brand-word" viewBox="0 0 1650 278" role="img" aria-label="VISUAILS"><BrandMark bron="#wordmark" /></svg>
+          <a href={lp('/')} class="brand" aria-label="VISUAILS home">
+            <svg class="mk brand-word" viewBox="0 0 1650 278" aria-hidden="true"><BrandMark bron="#wordmark" /></svg>
           </a>
           <p>{t('foot_tagline')}</p>
           {/* ── DE MERKKOLOM DEED NIETS ─────────────────────────────────────
@@ -1106,7 +1106,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       als het oog. Zie de noot bij cb_note in i18n/ui.js over waarom die zin er
       precies zo staat. */}
   <div class="convbar" role="complementary" aria-label={t('cb_region')}>
-    <svg class="mk brand-mark cb-logo" viewBox="0 0 702.00 813.25" role="img" aria-label="VISUAILS"><BrandMark /></svg>
+    <svg class="mk brand-mark cb-logo" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>
     <em class="cb-note">{t('cb_note')}</em>
     <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
     <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
@@ -1627,7 +1627,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       var(--bg); }
   @media (max-height: 820px) {
     .mobile-nav { padding-top: 74px; }
-    .mobile-nav > a,
+    .mobile-nav > a:not(.mobile-home),
     .mobile-nav > .mi-off { font-size: 1.35rem; padding: .62rem 0; }
     .mobile-mark { height: 26px; margin-bottom: 1rem; }
     .mobile-cta { margin-top: 1.2rem; }
@@ -1657,12 +1657,32 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      wijziging van deze rij achterblijft, en dan staat Hooks er over een maand
      opnieuw raar in. Nu is er letterlijk één regel die de maat van een ingang in
      deze lade bepaalt, en of hij aanklikbaar is verandert daar niets aan. */
-  .mobile-nav > a,
+  /* ── EN DE MERKLINK VALT ERBUITEN ────────────────────────────────────────
+     `:not(.mobile-home)` is er sinds 21 augustus 2026, en het is een fout die
+     ik zelf de dag ervoor heb gemaakt: toen het merkteken in de lade een link
+     werd, werd het óók een `.mobile-nav > a` en erfde het alles wat een ingang
+     hoort te krijgen. Gemeten op 320px: een doos van 26 bij 84 pixels om een
+     tekening van 26 bij 30, met een streepje van 26 pixels eronder — het
+     onderrandje dat elke ingang in deze rij draagt, maar dan zo breed als het
+     logo. Op een schermafdruk las dat als een tekening die half was afgesneden.
+
+     Het merkteken is geen ingang in de lijst; het is de weg terug naar huis.
+     Het hoort er dus boven te staan en niet in te staan. */
+  .mobile-nav > a:not(.mobile-home),
   .mobile-nav > .mi-off { display: block; padding: .9rem 0; font-family: var(--font-display); font-size: 1.7rem; color: var(--ink); box-shadow: inset 0 -1px 0 var(--line); }
   .mobile-cta { display: flex; flex-direction: column; gap: var(--gap-actions); margin-top: 1.8rem; }
   .mobile-cta .btn { font-size: 1.05rem; }
   .mobile-cta-hint { margin-top: .3rem; text-align: center; font-size: .9rem; color: var(--ink-3); }
-  .mobile-cta-hint a { color: var(--accent-bright); font-weight: 600; }
+  /* ── 138×16 WAS HET RAAKVLAK, EN 24×24 IS DE ONDERGRENS ──────────────────
+     Gemeten 21 augustus 2026 op elke mobiele breedte: deze link — "Probeer een
+     proefvisual · €1", de goedkoopste manier om ja te zeggen — was zestien
+     pixels hoog. Dat is de regelhoogte van de tekst en verder niets, want een
+     inline <a> zonder padding is precies zo groot als zijn letters.
+
+     inline-block plus verticale padding maakt er een doos van die het raakvlak
+     wél meeneemt. De regelafstand eromheen vangt de extra hoogte op, dus er
+     schuift niets. WCAG 2.2 SC 2.5.8. */
+  .mobile-cta-hint a { display: inline-block; padding-block: .45rem; color: var(--accent-bright); font-weight: 600; }
   .mobile-account-link { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: .9rem; font-size: .95rem; font-weight: 600; color: var(--ink-2); }
   .mobile-close { border-radius: 50%; position: fixed; top: 22px; right: clamp(1.2rem,5vw,2.5rem); width: 44px; height: 44px; color: var(--ink); font-size: 1.4rem; border: 1px solid var(--line-strong); background: none; cursor: pointer; }
   /* The signed-in pair goes with the link it replaces — the drawer carries its
@@ -1670,7 +1690,24 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      reason it exists above: without it, the rule that shows the signed-in state
      would out-specify this one and leave a sign-out button floating in a
      collapsed bar. */
-  @media (max-width: 940px) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link, .nav-account-in, .nav-account-in:not([hidden]) { display: none; } .menu-toggle { display: inline-flex; } }
+  /* ── 58.75em EN NIET 940px, EN DAT SCHEELT EEN HELE KLASSE FOUTEN ────────
+     58,75 × 16 = 940, dus voor iedereen met de standaard lettergrootte
+     verandert er niets. Het verschil zit bij wie die lettergrootte HOOGER heeft
+     staan — de meest gebruikte toegankelijkheidsinstelling die er is, en in
+     een mediaquery telt `em` mee met precies die instelling terwijl `px` dat
+     niet doet.
+
+     Gemeten op 21 augustus 2026, een venster van 1280 met de tekst op 200
+     procent: de bovenbalk stak 83 pixels buiten het scherm op ELKE pagina van
+     de site. De links, de taalwissel en de bestelknop pasten niet meer naast
+     elkaar, maar de burgerknop kwam niet tevoorschijn — die keek naar de
+     vensterbreedte, en die was niet veranderd.
+
+     Met `em` klapt de balk nu wél in zodra de letters te groot worden voor de
+     ruimte, precies zoals hij dat doet als het venster te smal wordt. Dat is
+     WCAG 1.4.4 (tekst tot 200 procent zonder verlies van inhoud), en het is
+     tegelijk gewoon het juiste gedrag. */
+  @media (max-width: 58.75em) { .nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link, .nav-account-in, .nav-account-in:not([hidden]) { display: none; } .menu-toggle { display: inline-flex; } }
 
   /* ══ HET WOORDMERK ONDERAAN DE PAGINA ═════════════════════════════════════
      Zie de noot bij de markup voor waarom dit in de footer zit en niet meer in
@@ -1973,8 +2010,20 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      e-mailadres en een telefoonnummer anders afbreken. */
   .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.25fr; gap: 2rem clamp(1.5rem, 3vw, 2.6rem); align-items: start; }
   .footer-act { margin-top: clamp(1.2rem, 2.4vw, 1.8rem); display: flex; flex-direction: column; align-items: flex-start; gap: clamp(1rem, 2vw, 1.4rem); }
-  @media (max-width: 860px) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; } }
-  @media (max-width: 520px) { .footer-grid { grid-template-columns: 1fr; } }
+  /* ── IN `em`, ZODAT DE VOETTEKST OOK INKLAPT ALS DE LETTERS GROEIEN ──────
+     53.75em = 860px en 32.5em = 520px bij de standaard lettergrootte, dus voor
+     bijna iedereen verandert er niets. Voor wie zijn lettergrootte omhoog heeft
+     staan wél, en dat was nodig: gemeten op 21 augustus 2026 bij een venster
+     van 640 met de tekst op 200 procent stond de voettekst nog in twee kolommen
+     en werd de rechterkolom afgesneden door `overflow-x: clip` — "WAT WE MAKEN"
+     eindigde op "WAT WE MAKE" en "Jouw merkmodel" op "Jouw merkmo".
+
+     Dezelfde reden als bij de bovenbalk hierboven: `px` in een mediaquery kijkt
+     alleen naar het venster, `em` kijkt naar de lettergrootte die de bezoeker
+     heeft gekozen. Een raster dat op tekst is gedimensioneerd hoort naar tekst
+     te luisteren. */
+  @media (max-width: 53.75em) { .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; } }
+  @media (max-width: 32.5em) { .footer-grid { grid-template-columns: 1fr; } }
   .footer-brand p { color: var(--ink-3); font-size: .9rem; margin-top: .8rem; max-width: 34ch; }
   /* WAS h5, on every page, which made all 84 skip h2→h5 (and /404 skip h1→h5).
      The styling never depended on the level — it is applied by class now, so

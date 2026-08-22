@@ -773,7 +773,7 @@ const wa = waHref(c.waText);
   @media (max-width: 860px) { .bmcost-notes { grid-template-columns: 1fr; } }
 
   /* DIRECTIONS */
-  .bm-dirs { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .bm-dirs { grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); }
   .bm-dir { display: flex; flex-direction: column; gap: .9rem; }
   .bm-dir h3 { font-size: 1.05rem; margin: 0; }
   .bm-dir p { font-size: .9rem; color: var(--ink-3); margin: 0; }

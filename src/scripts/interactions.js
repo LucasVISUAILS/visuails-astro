@@ -251,6 +251,9 @@ function initMobileNav() {
   const setOpen = (open) => {
     const nav = document.querySelector('.mobile-nav');
     if (!nav) return;
+    // Vóór de klasse wisselt, anders is de vraag "stond hij open" niet meer te
+    // stellen — en die vraag bepaalt onderaan of de focus verplaatst mag worden.
+    const wasOpen = nav.classList.contains('open');
     nav.classList.toggle('open', open);
     // THE DRAWER IS OFF SCREEN, NOT ABSENT. It is translated 100% to the right,
     // which hides it from the eye and from nobody else: an audit counted the
@@ -317,11 +320,39 @@ function initMobileNav() {
     }
 
     /*
-     * Sluiten brengt de focus terug naar de knop. Zonder dit staat de focus na
-     * Escape op een element in een lade die net inert is geworden, en dan begint de
-     * volgende tab weer bovenaan de pagina — de bezoeker is zijn plek kwijt.
+     * ── DE FOCUS, EN WAAROM DE VORIGE VERSIE HEM KWIJTRAAKTE ──────────────────
+     *
+     * Hier stond: `if (!open && toggle && nav.contains(document.activeElement))
+     * toggle.focus();` — de focus terugbrengen als hij in de lade stond. Die
+     * voorwaarde werd nooit waar, en de reden staat twintig regels hierboven.
+     *
+     * Openen zet `inert` op alle broers en zussen van de lade, en de menuknop zit
+     * in de header, dus in zo'n broer. Het element dat de focus had — de knop die
+     * je net indrukte — wordt op dat moment inert, en de browser gooit de focus
+     * dan terug naar <body>. Bij Escape stond de focus dus niet IN de lade maar
+     * op niets, de voorwaarde was false, en er werd niets hersteld.
+     *
+     * Gemeten op 21 augustus 2026, zes breedtes × vier pagina's: 24 van de 24
+     * keer eindigde de focus op BODY of op de achtergrondlaag. Voor wie met een
+     * toetsenbord werkt betekent dat: menu openen, Escape, en de volgende Tab
+     * begint weer bovenaan de pagina.
+     *
+     * Nu doet dit wat elke dialoog hoort te doen:
+     *   openen  → de focus gaat naar de sluitknop, het eerste ding in de lade;
+     *   sluiten → de focus gaat terug naar de knop die hem opende, maar alleen
+     *             als de lade ook echt openstond. Zonder die laatste voorwaarde
+     *             kaapt elke Escape op de pagina — bijvoorbeeld eentje die een
+     *             zwevende notitie sluit — de focus naar de burgerknop.
+     *
+     * preventScroll omdat de lade `position: fixed` is: zonder dat springt de
+     * pagina eronder naar de top zodra de sluitknop focus krijgt.
      */
-    if (!open && toggle && nav.contains(document.activeElement)) toggle.focus();
+    if (open) {
+      const sluit = nav.querySelector('.mobile-close');
+      if (sluit) sluit.focus({ preventScroll: true });
+    } else if (wasOpen && toggle) {
+      toggle.focus({ preventScroll: true });
+    }
   };
   document.addEventListener('click', (e) => {
     const t = e.target;

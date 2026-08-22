@@ -29,7 +29,7 @@ export const styles = [
        waarde wordt gefilterd en dient alleen om een radio aan te vinken die de
        pagina zelf heeft gerenderd. Hij raakt de PRIJS niet — die hangt aan de
        route, en pipeline.js leest de URL met opzet nooit voor de dienst. */
-    orderHref: '/nl/start/lifestyle?style=dunes',
+    orderHref: '/nl/start/lifestyle/?style=dunes',
     name: 'Dunes',
     tagline: 'Zon, zand en ingetogen luxe.',
     heroPhoto: '/img/lifestyle-dunes-01.webp',
@@ -67,7 +67,7 @@ export const styles = [
   },
   {
     slug: 'flash',
-    orderHref: '/nl/start/lifestyle?style=flash',
+    orderHref: '/nl/start/lifestyle/?style=flash',
     name: 'Flash',
     tagline: 'Directe flits. Geen excuses.',
     heroPhoto: '/img/lifestyle-flash-01.webp',
@@ -105,7 +105,7 @@ export const styles = [
   },
   {
     slug: 'glow',
-    orderHref: '/nl/start/lifestyle?style=glow',
+    orderHref: '/nl/start/lifestyle/?style=glow',
     name: 'Glow',
     tagline: 'Golden hour, op afroep.',
     heroPhoto: '/img/lifestyle-glow-01.webp',
@@ -120,7 +120,7 @@ export const styles = [
     ],
     steps: [
       { title: 'Jaag op golden hour', body: 'Warm, laaghoekig licht op elk kader, zonder uitzondering.' },
-      { title: 'Style de scène', body: 'Kleding, props en setting afgestemd om aspirationeel te voelen, niet geënsceneerd.' },
+      { title: 'Style de scène', body: 'Kleding, props en setting die aantrekkelijk aanvoelen, niet in scène gezet.' },
       { title: 'Grade voor warmte', body: 'Een consistente, editorial kleurafwerking over de hele set.' },
     ],
     grid: grid(
@@ -143,7 +143,7 @@ export const styles = [
   },
   {
     slug: 'phone-made',
-    orderHref: '/nl/start/lifestyle?style=phone-made',
+    orderHref: '/nl/start/lifestyle/?style=phone-made',
     name: 'Phone-made',
     tagline: 'Ziet eruit alsof het zo gemaakt is. Dat is het niet.',
     heroPhoto: '/img/lifestyle-phone-made-01.webp',
@@ -195,7 +195,7 @@ export const styles = [
        dat een prijs uitrekent, terwijl de regel erboven op deze zelfde pagina
        "Op aanvraag" zegt. Nu naar de aanvraagpagina — zie
        StylePicker.astro en het 'custom-look'-blok in HoldingPage.astro. */
-    orderHref: '/nl/start/custom-look',
+    orderHref: '/nl/start/custom-look/',
     orderLabel: 'Vraag een look op maat aan',
     moodParagraphs: [
       'Geen van onze vier vaste sferen — een scène ontworpen vanuit jouw referenties. De setting, de styling en het licht die alleen bij jouw merk passen.',

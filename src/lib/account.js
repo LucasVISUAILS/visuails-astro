@@ -4291,7 +4291,7 @@ function statTegel(icon, label, getal, href = '') {
 function shellBody(t, lang, customer, active, inner, navDicht = false) {
   const items = [
     { key: 'overview', href: '/account', label: t.navOverview, icon: ICON_OVERVIEW },
-    { key: 'new', href: '/start', label: t.navNewRequest, icon: ICON_NEW },
+    { key: 'new', href: '/start/', label: t.navNewRequest, icon: ICON_NEW },
     { key: 'orders', href: '/account/orders', label: t.ordersHeading, icon: ICON_ORDERS },
     { key: 'brand', href: '/account/brand-kit', label: t.navBrandKit, icon: ICON_BRAND },
     // Six now, not five. "Your details" left the brand kit page in August 2026
@@ -4473,7 +4473,7 @@ ${rest.length
 ${topBar(`${t.ovWelcome}, ${name}`, {
     lede: t.ovLede,
     chip,
-    actie: { href: '/start', label: t.ovNewCta },
+    actie: { href: '/start/', label: t.ovNewCta },
   })}
 
 <div class="statrow">
@@ -4605,7 +4605,7 @@ ${topBar(t.ordersHeading, {
        filter aan staat: zonder filter zegt het aantal in de titel het al, en
        twee keer hetzelfde getal naast elkaar is één keer te veel. */
     chip: statusFilter && shown.length ? { tekst: t.flActive, toon: 'signal' } : null,
-    actie: { href: '/start', label: t.ovNewCta },
+    actie: { href: '/start/', label: t.ovNewCta },
   })}
 ${payFailed ? `<p class="det-ok is-warn" role="status">${esc(t.payFailed)}</p>` : ''}
 ${payHeld ? `<p class="det-ok is-warn" role="status">${esc(t.payHeld)}</p>` : ''}

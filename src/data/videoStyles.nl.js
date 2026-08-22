@@ -63,7 +63,7 @@ export const videoStyles = [
       ['bottle', 'sneaker', 'jar', 'bag', 'bottle', 'sneaker', 'jar', 'bag', 'bottle']
     ),
     craft: [
-      { title: 'Eén beweging per film', body: 'Eén doelbewuste camera- of lichtbeweging. Ingehoudenheid is de stijl.' },
+      { title: 'Eén beweging per film', body: 'Eén doelbewuste camera- of lichtbeweging. Ingetogenheid is de stijl.' },
       { title: 'Een einde dat op het begin past', body: 'Begin- en eindbeeld op elkaar afgestemd, zodat de loop niet hapert.' },
       { title: 'Materiaalbewuste beweging', body: 'Snelheid en licht afgestemd op waar het product van gemaakt is.' },
       { title: 'Grading afgestemd op stills', body: 'Krijgt dezelfde kleurbewerking als je catalogset.' },

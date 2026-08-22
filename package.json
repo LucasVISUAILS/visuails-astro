@@ -86,7 +86,19 @@
     "placeholders": "node scripts/placeholders.mjs",
     "test:zacht": "node tests/zachte-navigatie.test.mjs",
     "test:nazicht": "node tests/nazicht.test.mjs",
-    "test:planqueue": "node tests/plan-queue-cron.test.mjs"
+    "test:planqueue": "node tests/plan-queue-cron.test.mjs",
+    "audit:bouw": "node audit-bouw.mjs",
+    "audit:links": "node audit-links.mjs",
+    "audit:tekst": "node audit-tekst.mjs",
+    "audit:paar": "node audit-paar.mjs",
+    "audit:feiten": "node audit-feiten.mjs",
+    "audit:jsonld": "node audit-jsonld.mjs",
+    "audit": "npm run audit:bouw && npm run audit:links && npm run audit:tekst && npm run audit:paar && npm run audit:feiten && npm run audit:jsonld",
+    "leesbaar": "node leesbaar.mjs",
+    "mobiel": "node mobiel.mjs",
+    "zoom": "node zoom.mjs",
+    "spelling": "node spelling.mjs",
+    "variant": "node variant.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

@@ -134,7 +134,7 @@ const tiles = LIFESTYLE_RATIOS.map((r) => ({
      vierde stond. */
   .ratio-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
     gap: clamp(.6rem, 1.2vw, .9rem);
     margin-top: .9rem;
   }

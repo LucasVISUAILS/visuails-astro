@@ -56,7 +56,7 @@ const zusters = catalogStyles
   <section class="page-hero">
     <div class="container two-col" style="align-items:center">
       <div class="reveal pending">
-        <span class="eyebrow-page"><a href="/catalog" style="color:inherit">Catalog styles</a></span>
+        <span class="eyebrow-page"><a href="/catalog/" style="color:inherit">Catalog styles</a></span>
         <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
         <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
         <div class="flex" style="margin-top:1.8rem">
@@ -140,7 +140,7 @@ const zusters = catalogStyles
   <section>
     <div class="container">
       <h2 style="margin-bottom:2rem">What goes into every frame.</h2>
-      <div class="arrow-rows" style="grid-template-columns:repeat(2,1fr)">
+      <div class="arrow-rows arrow-rows-2">
         {style.craft.map((c) => (
           <div class="reveal pending"><h3>{c.title}</h3><p>{c.body}</p></div>
         ))}
@@ -175,7 +175,7 @@ const zusters = catalogStyles
             line in the template reaches both catalog styles, and it sits
             under "What you get" because the model is part of what you get:
             every catalog set includes an on-model shot. */}
-        <p class="model-note">The on-model shot in every {style.name} set can use a face from the standard roster — or <a href="/custom-models">a Brand Model made only for you</a>, so the same person carries your whole range.</p>
+        <p class="model-note">The on-model shot in every {style.name} set can use a face from the standard roster — or <a href="/custom-models/">a Brand Model made only for you</a>, so the same person carries your whole range.</p>
       </div>
     </div>
   </section>
@@ -188,7 +188,7 @@ const zusters = catalogStyles
         <p class="lead" style="margin:1rem auto 0;text-align:center">Test sample, or place your order today.</p>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
           <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
-          <a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a>
+          <a href="/test-sample/" class="btn btn-ghost btn-lg">Test sample</a>
         </div>
       </div>
     </div>

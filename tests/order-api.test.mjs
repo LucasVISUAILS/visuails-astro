@@ -670,7 +670,7 @@ console.log('\nen de drie lezers gebruiken hetzelfde merkteken');
   for (const [naam, mod] of [['styles.js', styles], ['styles.nl.js', stylesNl]]) {
     const c = mod.styles.find((x) => x.slug === 'custom');
     ok(`${naam}: custom draagt priceTrust`, Boolean(c && c.priceTrust), true);
-    ok(`${naam}: en wijst naar de aanvraagpagina`, /\/start\/custom-look$/.test(c.orderHref || ''), true);
+    ok(`${naam}: en wijst naar de aanvraagpagina`, /\/start\/custom-look\/$/.test(c.orderHref || ''), true);
   }
 }
 

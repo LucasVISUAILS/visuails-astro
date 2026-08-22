@@ -165,8 +165,8 @@ const TIMING = turnaround('unattended', 'nl');
         <strong>Je hebt je proefvisual al gehad.</strong>
         Het is er één per bedrijf, dus er is niets besteld en er is niets afgeschreven —
         je hebt hier niet voor betaald.
-        Klaar voor het echte werk? De <a href="/nl/start">volledige diensten</a> beginnen bij
-        één product, zonder minimumafname — of <a href="/nl/contact">stuur ons een bericht</a>
+        Klaar voor het echte werk? De <a href="/nl/start/">volledige diensten</a> beginnen bij
+        één product, zonder minimumafname — of <a href="/nl/contact/">stuur ons een bericht</a>
         als de eerste proef nooit is aangekomen, of als een collega hem heeft aangevraagd
         zonder het te zeggen.
       </div>
@@ -198,7 +198,7 @@ const TIMING = turnaround('unattended', 'nl');
         <h2 class="display" style="font-size:var(--t-page-h2)">Liever gewoon even overleggen?</h2>
         <p class="lead" style="margin:1.2rem auto 0;text-align:center">Stuur ons je product op WhatsApp en we helpen je een stijl kiezen.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
-          <a href="/nl/start" class="btn btn-ghost btn-lg">Plaats een volledige bestelling</a>
+          <a href="/nl/start/" class="btn btn-ghost btn-lg">Plaats een volledige bestelling</a>
           <a href={waHref("Hoi VISUAILS, ik wil graag een proefvisual proberen.")} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
             WhatsApp
           </a>
@@ -219,7 +219,7 @@ const TIMING = turnaround('unattended', 'nl');
      move; the textarea is 10px taller here than it was. */
   .narrow { max-width: 820px; }
   .hidden-step { display: none; }
-  .choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; }
+  .choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 0.8rem; }
   .choice { position: relative; overflow: hidden; cursor: pointer; border: 1px solid var(--line-strong); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); background: var(--surface); display: block; }
   .choice:hover { transform: translateY(-2px); border-color: var(--accent-line); }
   .choice input { position: absolute; opacity: 0; pointer-events: none; }

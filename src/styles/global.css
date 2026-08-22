@@ -1121,6 +1121,29 @@ h1, h2, h3, h4, h5, .display, .cover-title, .ch-title {
   hyphens: auto;
 }
 
+/* ── EN DE LOPENDE TEKST OOK — 21 augustus 2026 ───────────────────────────
+   De regel hierboven staat er sinds "Aansprakelijkheidsbeperkingen" in een
+   <h2>, en hij dekte alleen KOPPEN. Nederlands maakt die woorden ook midden in
+   een zin: gemeten op 320px liep /nl/data-processing-agreement 30 pixels buiten
+   zijn kolom bij "verwerkingsverantwoordelijke" en nog eens bij twee andere
+   samenstellingen. Dat is geen zichtbare schuifbalk — body knipt zijwaarts af —
+   maar wel een pagina waarvan de rechterrand buiten bereik ligt.
+
+   Dezelfde twee eigenschappen, dezelfde reden: `hyphens: auto` breekt op echte
+   lettergrepen omdat elke pagina een `lang` draagt, en `overflow-wrap` is de
+   vloer eronder voor wat het woordenboek niet kent.
+
+   NIET op knoppen, labels, code en tabelkoppen: dat zijn korte etiketten waar
+   een afbreekstreepje midden in een woord als een fout leest, en ze staan
+   nergens onder druk. */
+p, li, dd, dt, figcaption, blockquote, .lead, .hint {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.btn, label, code, kbd, th, .eyebrow, .eyebrow-page, [class*="-pill"], [class*="-tag"] {
+  hyphens: manual;
+}
+
 h1, h2, .display { font-family: var(--font-heading); color: var(--ink); font-weight: 800; line-height: 1.0; letter-spacing: -0.012em; text-wrap: balance; margin: 0; }
 h1 { font-size: var(--t-h1); }
 h2 { font-size: var(--t-h2); }
@@ -1259,7 +1282,15 @@ p { text-wrap: pretty; margin: 0; }
    `max-width: 100%` op de wrapper is niet overbodig naast overflow: zonder die
    regel groeit een blok-element met een brede tabel erin gewoon mee met zijn
    inhoud, en dan schuift er niets omdat er niets te schuiven valt. */
-.table-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* `min-width: 0` is hier de hele reparatie en het is de minst voor de hand
+   liggende regel in dit bestand. Een kind van een flex- of grid-container krijgt
+   standaard `min-width: auto`, en dat betekent: word nooit smaller dan je
+   MIN-CONTENT. De tabel hierbinnen staat op `min-width: 34rem`, dus was de
+   min-content van deze doos 544px — en dan negeert de container de `max-width:
+   100%` en wordt de kolom 544 breed, hoe smal het scherm ook is.
+   Gemeten 21 augustus 2026: /nl/data-processing-agreement schoof daardoor 11px
+   zijwaarts op 320px, terwijl de scroller er juist was om dat te voorkomen. */
+.table-scroll { min-width: 0; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .table-scroll > table { min-width: 34rem; }
 
 /* De lede is lopende tekst maar hoort bij de KOP en niet bij wat eronder komt,
@@ -2037,7 +2068,7 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    SEQUENCE, where the items are steps in one thing rather than objects beside
    each other. OPP uses both too. Keeping the two named apart is what stops
    the next page picking one by accident. */
-.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1px; background: var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: 1px; background: var(--line); border-radius: var(--r-lg); overflow: hidden; }
 .sheet > * { background: var(--bg); padding: clamp(1.2rem, 2.2vw, 1.8rem); }
 
 /* 6 · RAIL — a row you push sideways. Snap points so it always lands on a
@@ -2152,12 +2183,48 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
      page and a thumb picks up on none of them individually. Two pixels is
      free; being under the line on 84 pages is not. */
   min-height: 40px; padding: 0 1.35rem;
+  /* ── NOWRAP IS EEN BELOFTE DIE OP 320px NIET TE HOUDEN IS ────────────────
+     Gemeten 21 augustus 2026 op een venster van 320px, twaalf pagina's die
+     zijwaarts schoven. De oorzaak was elke keer dezelfde: een knop mag van
+     `nowrap` niet smaller worden dan zijn label, dus duwt hij zijn hele
+     kolom breder dan het scherm. "Vraag een eigen catalogus-look aan" heeft
+     225px nodig in een kolom van 184 — daar schoof /nl/catalog/custom 27px
+     van opzij, en het is niet één pagina maar een klasse.
+
+     `white-space: nowrap` blijft staan tot 460px, want daar is hij goed: een
+     knop hoort één regel te zijn zolang dat past, en een label dat op een
+     laptop over twee regels valt ziet er slordig uit. Daaronder mag hij
+     afbreken. `text-wrap: balance` verdeelt de woorden dan gelijk over de
+     regels in plaats van er één achter te laten, en `min-height` doet de rest
+     — een knop van twee regels wordt gewoon hoger.
+
+     Waarom niet gewoon overal `normal`: dan gaan bestaande rijen van twee
+     knoppen naast elkaar op middelgrote schermen wisselend hoog worden, en dat
+     is een zichtbare verslechtering om een probleem op te lossen dat alleen
+     op de smalste telefoons bestaat. */
   cursor: pointer; white-space: nowrap; line-height: 1.15; text-align: center;
   background: var(--ghost); color: var(--ink); border: 0; border-radius: var(--r-pill);
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
               border-color var(--dur-1) var(--ease), filter var(--dur-1) var(--ease);
 }
 .btn-lg { min-height: 58px; font-size: 1.0625rem; padding: 0 1.9rem; }
+
+/* Zie de noot in `.btn`: onder 460px mag een label afbreken. Ook de zijmarge
+   krimpt, want op 320px is 1,9rem aan weerskanten een derde van de knop. */
+/* 28.75em = 460px bij de standaard lettergrootte, dus voor bijna iedereen
+   verandert er niets. In `em` en niet in `px` om dezelfde reden als bij de
+   bovenbalk en de voettekst: bij een grotere lettergrootte heeft een knop
+   evenveel last van `nowrap` als bij een smal venster, en hij moet dan net zo
+   goed mogen afbreken. Gemeten op 22 augustus 2026 bij een venster van 640 met
+   de tekst op 200 procent: twee knoppen met `nowrap` in het abonnementspaneel
+   duwden de hele inhoud van dat paneel 59 pixels breder dan het paneel zelf,
+   en `overflow: hidden` sneed de rechterkant van elke regel eraf. */
+@media (max-width: 28.75em) {
+  /* `min-width: 0` hoort bij `white-space: normal`: afbreken helpt niets zolang
+     de knop als flexitem niet onder zijn min-content mag zakken. */
+  .btn { white-space: normal; text-wrap: balance; padding-inline: 1.1rem; min-width: 0; }
+  .btn-lg { padding-inline: 1.35rem; }
+}
 
 /* Flat accent fill, near-black label. Measured 10.43:1 — the accent is the
    rare colour that works as a fill AND as text, so the primary button needs no
@@ -2199,6 +2266,11 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
   .flex > .magnet-wrap .btn { display: flex; width: 100%; }
 }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem,5vw,4.5rem); align-items: center; }
+/* Dezelfde ondergrens als bij .arrow-rows: een 1fr-baan zakt niet onder de
+   min-content van zijn inhoud zolang `min-width` op `auto` staat. Op
+   /nl/models liep de heldiekolom daardoor 34 px buiten zijn eigen container
+   bij 150 % tekstgrootte. */
+.two-col > * { min-width: 0; }
 @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
 /* THE SERVICE HERO, which is a .two-col that leans toward its text.
@@ -2211,6 +2283,21 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    the panel beside it is already a fixed-ratio box rather than a photo that
    wants every pixel. Collapses to one column with .two-col at 900px. */
 .two-col.hero-split { grid-template-columns: 1.15fr .85fr; }
+/* ── EN DEZE REGEL MOET DE INKLAP OVERSCHRIJVEN, NIET ANDERSOM ─────────────
+   Dit is een specificiteitsval, en hij heeft maanden onopgemerkt gestaan.
+   `.two-col` klapt op 900px in naar één kolom (regel hierboven). `.two-col
+   .hero-split` heeft een hogere specificiteit (0,2,0 tegen 0,1,0) én staat
+   later in het bestand, dus won hij op ELKE breedte — ook op een telefoon.
+
+   Gemeten op 21 augustus 2026: de fotoband in de hero van /lifestyle was 136px
+   breed op een venster van 390 en 71px op 320. Dat is geen foto meer maar een
+   streep, en het onderschrift "Lifestyle · Dunes" stak er 27 pixels buiten.
+   Hetzelfde geldt voor de hero van /catalog, /video en /custom-models — het is
+   één regel die vier pagina's raakt.
+
+   De reparatie moet dezelfde specificiteit hebben als de regel die hij
+   terugdraait, vandaar `.two-col.hero-split` en niet alleen `.two-col`. */
+@media (max-width: 900px) { .two-col.hero-split { grid-template-columns: 1fr; } }
 
 .kicker { display: inline-flex; align-items: center; gap: .5rem; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .kicker::before { content: ""; width: 5px; height: 5px; background: var(--accent); }
@@ -2443,7 +2530,26 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
 .steps-stacked .step p { font-size: .9rem; }
 
 .arrow-rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem, 3vw, 3rem); }
+/* ── EEN 1fr-BAAN KRIMPT NIET VANZELF — 22 augustus 2026 ────────────────────
+   `1fr` is `minmax(auto, 1fr)`, en die `auto` als ONDERgrens betekent: nooit
+   smaller dan de min-content van wat erin staat. Eén lang Nederlands woord
+   (catalogtarieven, kleurbewerking) zet die ondergrens dus hoger dan het
+   aandeel dat de baan zou krijgen, en het raster loopt de container uit —
+   alleen in het Nederlands, en alleen als de tekst groter gezet is. Op
+   /nl/catalog/custom liep het 74 px buiten beeld bij 150 % tekstgrootte,
+   op /nl/video/motion 87 px. `min-width: 0` haalt die ondergrens weg, waarna
+   de regel afbreekt zoals hij hoort. Zelfde valstrik als bij .table-scroll. */
+.arrow-rows > * { min-width: 0; }
 @media (max-width: 860px) { .arrow-rows { grid-template-columns: 1fr; } }
+/* ── DE VARIANT MET TWEE KOLOMMEN ───────────────────────────────────────────
+   Deze stond op vier pagina's als `style="grid-template-columns:repeat(2,1fr)"`
+   IN de markup, en een stijl in het element wint van elke mediaquery. Die twee
+   kolommen klapten dus op geen enkele breedte samen — dezelfde valstrik als
+   `.two-col.hero-split` van gisteren, alleen met een inline stijl in plaats van
+   een specificiteitsverschil. Als klasse doet de regel hieronder wat de
+   mediaquery al bedoelde. */
+.arrow-rows-2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 860px) { .arrow-rows-2 { grid-template-columns: 1fr; } }
 .arow { border-top: 1px solid var(--line-strong); padding-top: 1.2rem; }
 .arow h3 { display: flex; align-items: baseline; gap: .6rem; font-size: 1.15rem; }
 .arow h3::before { content: "\2192"; color: var(--accent-bright); font-family: var(--font-body); font-size: .95rem; }
@@ -2545,6 +2651,51 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    0.44 and 1.0 stops are unchanged — only the band the header occupies
    moved. */
 .hero-editorial .fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(var(--scrim) / 0.74) 0%, rgb(var(--scrim) / 0.46) 14%, rgb(var(--scrim) / 0.40) 30%, rgb(var(--scrim) / 0.48) 44%, rgb(var(--scrim) / 0.84) 100%); }
+/* ── EN ÉÉN HERO DRAAGT EEN LICHTE FOTO ───────────────────────────────────
+   De sluier hierboven is afgesteld op de foto's van /how-it-works en /about:
+   een donkere studio en een donkere straat. /video draagt een man in een wit
+   overhemd tegen lichte beton — het lichtste hero-beeld van de site — en
+   daar viel dezelfde sluier tekort, ook op een breed scherm:
+
+     · de inleidende alinea            3,90 : 1
+     · "Also available:"               4,26 : 1
+     · het label van de WhatsApp-knop  4,27 : 1
+     · "Meestal 2–4 werkdagen"         3,45 : 1
+
+   Dit is met opzet een APARTE klasse en geen zwaardere basissluier. De andere
+   twee hero's halen het ruim en zouden er alleen donkerder van worden — en een
+   foto die je toch niet ziet, kun je net zo goed weglaten. Wie hier een nieuwe
+   hero met een lichte foto neerzet, zet `hero-bright` erbij; de meting zegt
+   daarna of het genoeg was. */
+.hero-editorial.hero-bright .fade {
+  background: linear-gradient(180deg,
+    rgb(var(--scrim) / 0.82) 0%,
+    rgb(var(--scrim) / 0.70) 14%,
+    rgb(var(--scrim) / 0.66) 30%,
+    rgb(var(--scrim) / 0.72) 44%,
+    rgb(var(--scrim) / 0.90) 100%);
+}
+
+/* ── OP EEN TELEFOON LIGT DE TEKST OP DE FOTO, NIET ERNAAST ────────────────
+   Op een breed scherm staat de kop links en houdt de foto de rechterhelft; de
+   sluier hierboven is daarop afgestemd en klopt daar. Op 390px staat dezelfde
+   kolom over de VOLLE breedte en ligt elke regel dus midden op het beeld.
+
+   Gemeten op /video, 21 augustus 2026 — de foto daar is een man in een wit
+   overhemd tegen lichte beton, het lichtste hero-beeld van de site:
+     · de inleidende alinea            2,82 : 1
+     · "Also available:"               3,58 : 1
+     · het label van de WhatsApp-knop  3,74 : 1
+   allemaal onder de eis van 4,5. Op /how-it-works en /about, met donkerder
+   foto's, haalde dezelfde opmaak het net wel — dus het was geen fout van die
+   ene pagina maar van de sluier die op één foto was afgesteld.
+
+   De middenband gaat daarom omhoog zodra de tekst de foto bedekt. De boven- en
+   onderrand blijven staan: die dragen de koptekstbalk en de voet, en die waren
+   goed. Nagemeten met leesbaar.mjs: alles boven de 4,5. */
+@media (max-width: 700px) {
+  .hero-editorial .fade { background: linear-gradient(180deg, rgb(var(--scrim) / 0.80) 0%, rgb(var(--scrim) / 0.72) 14%, rgb(var(--scrim) / 0.72) 30%, rgb(var(--scrim) / 0.78) 44%, rgb(var(--scrim) / 0.90) 100%); }
+}
 .hero-editorial-content { position: relative; z-index: 2; }
 .hero-editorial-content h1 { font-size: clamp(3.2rem, 7.4vw, 6rem); max-width: 15ch; }
 .hero-editorial-content .lead { color: var(--ink-2); max-width: 46ch; }
@@ -2609,7 +2760,25 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    middle of the most visible animation on the site. Both halves now brake
    together, which is also why the line reads as one movement rather than a
    rise with a separate fade riding on it. */
-.split-line { overflow: hidden; display: block; }
+/* ── DE KNIPDOOS MAG NIET PRECIES DE REGEL ZIJN ───────────────────────────
+   `overflow: hidden` staat hier om het woord te verbergen zolang het nog op
+   `translateY(110%)` staat. Maar de doos was exact de regelhoogte, en dan snijdt
+   hij bij een grotere letter de staarten van de letters af — gemeten bij een
+   venster van 640 met de tekst op 200 procent: "Great visuals," en "One folder
+   in." kwamen met een afgesneden onderkant uit de kop van /about en
+   /how-it-works.
+
+   De padding maakt de knipdoos ruimer, de negatieve marge haalt die ruimte weer
+   uit de opmaak, dus er verschuift niets. In `em`, zodat het meegroeit met de
+   letter in plaats van bij één lettergrootte te kloppen. Horizontaal om dezelfde
+   reden: een `inline-block` woord kan een haar breder zijn dan zijn regel, en de
+   beweging is verticaal dus zijwaartse ruimte verraadt niets. */
+.split-line {
+  overflow: hidden;
+  display: block;
+  padding: 0.06em 0.08em 0.16em;
+  margin: -0.06em -0.08em -0.16em;
+}
 .split-word { display: inline-block; transform: translateY(110%); opacity: 0; transition: transform var(--dur-4) var(--ease-out-expo), opacity var(--dur-4) var(--ease-out-expo); }
 .split-line.in .split-word { transform: translateY(0); opacity: 1; }
 
@@ -3342,7 +3511,13 @@ h1 em.ital, h2 em.ital, .display em.ital { font-style: italic; }
    /custom-models renders a four-model taste of it under #standard, so the
    rules need to reach both instead of living inside one component.
    ============================================================ */
-.bm-roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: clamp(.8rem, 1.8vw, 1.4rem); margin-top: clamp(1.8rem, 4vw, 2.8rem); }
+/* De ondergrens staat in `em` en niet in `px`, want hoeveel gezichten er naast
+   elkaar passen hangt af van de TEKST in het kaartje en niet van het scherm.
+   Met 190px bleven er bij 200 procent tekstgrootte evenveel kolommen staan
+   terwijl de kop erin twee keer zo groot werd, en die kop werd 12 px buiten het
+   kaartje afgesneden door de `overflow: hidden` van .bm-model. 11.875em is bij
+   de standaardlettergrootte precies dezelfde 190 px. */
+.bm-roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(11.875em, 100%), 1fr)); gap: clamp(.8rem, 1.8vw, 1.4rem); margin-top: clamp(1.8rem, 4vw, 2.8rem); }
 .bm-model { margin: 0; border: 1px solid var(--line); }
 .bm-model img { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; }
 .bm-model figcaption { display: flex; flex-direction: column; gap: .25rem; padding: .85rem 1rem 1rem; border-top: 1px solid var(--line); }
@@ -3700,6 +3875,89 @@ body::before {
     radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%),
     /* 3 · the falloff — the far corners sit back */
     radial-gradient(150% 110% at 50% 50%, transparent 38%, rgb(0 0 0 / 0.45) 100%);
+}
+
+/* ══ .beam — DE LICHTBUNDEL, ALS MERKTAAL ══════════════════════════════════
+   21 augustus 2026. Lucas leverde een reeks beelden aan met de vraag ze
+   *"subtiel op de website toe te passen om het meer een brand feeling te
+   geven"*. Wat die acht beelden delen is niet een onderwerp maar een LICHT:
+   een bijna zwarte ruimte met precies één zuurgroene bron erin, die een vorm
+   met een harde rand op de vloer legt. Een leren jas, een kabeltrui, laarzen
+   op nat asfalt, een silhouet — steeds hetzelfde recept.
+
+   Dat recept is hier nagebouwd in CSS in plaats van als foto, om drie redenen:
+   het kost geen enkel verzoek, het schaalt naar elke bandhoogte zonder bij te
+   snijden, en het kan de accentkleur van het designsysteem gebruiken in plaats
+   van een kleur die er ongeveer op lijkt.
+
+   ── DE HARDE RAND IS HET HELE PUNT ────────────────────────────────────────
+   Een `radial-gradient` geeft een wolk en dat is precies wat het NIET moet
+   worden — de site heeft al een zachte lamp op body::before, en nog een wolk
+   erbij is mist. Een projectorbundel heeft een harde rand en een zachte kern.
+   Vandaar `clip-path` voor de vorm (hard) met een verloop erbinnen (zacht),
+   plus een masker dat kop en staart laat uitdoven zodat de bundel de band in
+   komt en er weer uit gaat in plaats van tegen de rand te stoppen.
+
+   ── HET LICHTBUDGET, EN WAAROM 0,055 ──────────────────────────────────────
+   De grond is #08090B, luminantie 0,0075. Het accent op 5,5 procent tilt dat
+   naar ongeveer 0,0175. Witte tekst gaat daarmee van 19,4 : 1 naar 15,4 : 1 en
+   --ink-3 van 6,3 naar 5,4 — allebei ruim boven de eis van 4,5. Dat is met
+   opzet zo gekozen: een bundel die tekst in gevaar brengt is geen sfeer maar
+   een fout, en deze mag daarom nooit sterker worden gezet dan hier staat.
+   Gecontroleerd met leesbaar.mjs, dat de pagina twee keer afdrukt en het
+   werkelijke contrast per tekstregel meet.
+
+   ── GEBRUIK ───────────────────────────────────────────────────────────────
+   `class="beam"` op een <section>. Twee varianten: `.beam-left` (de bundel
+   valt van linksboven naar rechtsonder) en standaard van rechtsboven naar
+   linksonder. Zet hem NIET op een band die al een foto draagt — twee
+   lichtbronnen over elkaar is precies de troebelheid die het
+   abonnementspaneel eerder had.
+
+   z-index -1 binnen een eigen stapelcontext: boven de grond van de band, onder
+   alles wat erin staat. `overflow: clip` en niet `hidden`, zodat een plakkend
+   kind in de band blijft werken. */
+.beam { position: relative; isolation: isolate; overflow: clip; }
+.beam::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* De vorm: een wig die van rechtsboven de band in valt en linksonder weer
+     uit. Vier punten, want een bundel is een vlak en geen streep. */
+  clip-path: polygon(100% 2%, 100% 30%, 0% 92%, 0% 58%);
+  background: linear-gradient(
+    255deg,
+    rgb(198 241 0 / 0.055) 0%,
+    rgb(198 241 0 / 0.030) 46%,
+    rgb(198 241 0 / 0.008) 78%,
+    transparent 100%);
+  -webkit-mask-image: linear-gradient(255deg, #000 0%, #000 62%, transparent 100%);
+  mask-image: linear-gradient(255deg, #000 0%, #000 62%, transparent 100%);
+}
+.beam-left::before {
+  clip-path: polygon(0% 2%, 0% 30%, 100% 92%, 100% 58%);
+  background: linear-gradient(
+    105deg,
+    rgb(198 241 0 / 0.055) 0%,
+    rgb(198 241 0 / 0.030) 46%,
+    rgb(198 241 0 / 0.008) 78%,
+    transparent 100%);
+  -webkit-mask-image: linear-gradient(105deg, #000 0%, #000 62%, transparent 100%);
+  mask-image: linear-gradient(105deg, #000 0%, #000 62%, transparent 100%);
+}
+/* Op een telefoon staat de band rechtop in plaats van breed, en dan snijdt een
+   wig van 28 procent hoogte er als een streepje doorheen. Steiler en breder,
+   zodat hij ook daar als één val licht leest. */
+@media (max-width: 700px) {
+  .beam::before { clip-path: polygon(100% 0%, 100% 34%, 0% 78%, 0% 30%); }
+  .beam-left::before { clip-path: polygon(0% 0%, 0% 34%, 100% 78%, 100% 30%); }
+}
+/* Wie beweging en effecten uitzet, krijgt hem niet. Dit is geen beweging, maar
+   het is wel de categorie waarin een bezoeker met lichtgevoeligheid hem zoekt. */
+@media (prefers-contrast: more) {
+  .beam::before, .beam-left::before { display: none; }
 }
 
 /* ── HET PRODUCTTYPE EN DE CONTEXTSTUKKEN (bestelstroom) ────────────────────
@@ -4082,142 +4340,137 @@ body::before {
      Van de foto blijft daarmee de sfeer over en niet het beeld: een limoen
      schijnsel dat schuin door het blok loopt. Dat is precies wat de vorige
      achtergrondfoto áchter dit blok deed, nu op de plek waar hij hoort. */
-  background-color: var(--bg-0);
+  /* ── DE SLUIER IS VERVANGEN DOOR EEN PLAFOND — 21 augustus 2026 ──────────
+     Lucas: *"ik zou de gekozen achtergrond voor het abonnement blok beter
+     zichtbaar willen hebben en meer gevoel willen geven, maar zorg wel dat
+     alles goed leesbaar is."*
+
+     WAT ER STOND. Eén vlakke sluier van 90 procent bijna-zwart over de foto.
+     Die maakte de tekst overal leesbaar, en dat was de bedoeling — maar reken
+     na wat hij met het BEELD doet: van elke pixel blijft een tiende over, dus
+     de hele foto wordt in het onderste tiende van de schaal geperst. De bundel
+     van rgb(255 254 240) komt uit op rgb(33 34 35). Wat je dan ziet is geen
+     licht meer maar een grijze veeg.
+
+     WAT ER NU STAAT. Geen sluier maar een PLAFOND: de foto wordt met
+     `multiply` tegen een donkergroen gelegd. Vermenigvuldigen betekent dat de
+     helderste pixel precies die kleur wordt en al het andere donkerder — de
+     bovengrens ligt dus vast, en dat is te controleren in plaats van te hopen.
+
+     Reken het na met #2A3412 als plafond:
+       · de bundel (255 254 240) wordt (42 52 17), luminantie 0,0306
+       · witte tekst daarop:            13,0 : 1
+       · --ink-2 (80 procent wit):       8,1 : 1
+       · --ink-3 (66 procent):           5,5 : 1
+       · het accent #C6F100:            13,5 : 1
+     en op ELKE andere plek van de foto is de grond donkerder, dus dit is meteen
+     de ondergrens voor het hele paneel. De eis is 4,5.
+
+     Wat het oplevert is precies wat er gevraagd werd: de foto houdt zijn volle
+     vorm — de harde rand van de bundel, de kegel, het verloop naar de hoeken —
+     in plaats van samengeknepen te worden tot een veeg. Het is dezelfde
+     lichttaal als in de beelden die Lucas aanleverde: één zure lichtbundel in
+     een verder zwarte ruimte.
+
+     DE VIGNETTERING EROVERHEEN doet twee dingen tegelijk. Ze duwt de hoeken
+     terug naar de paginagrond, zodat het paneel geen naad heeft; en ze legt
+     precies daar extra donker waar de tekstkolommen het breedst zijn. Dat is
+     de omgekeerde volgorde van de oude schuine sluier: die maakte het licht
+     waar de tekst stond, deze maakt het donker.
+
+     --ink-4 (52 procent wit) haalt op dit plafond 3,5 en mag hier dus niet
+     gebruikt worden; op dit paneel staat hij nergens. */
+  /* ── DE FOTO LIGT ER TWEE KEER, EN DAT IS DE HELE TRUC ───────────────────
+     Eén keer vermenigvuldigen zet het plafond, maar laat de middentonen staan:
+     de vloer om de bundel heen bleef een egale olijfgroene waas en het geheel
+     werd troebel in plaats van gericht. Dezelfde foto er nog een keer op, ook
+     op `multiply`, kwadrateert elke pixel — 0,9 blijft 0,81 maar 0,3 wordt
+     0,09. De bundel houdt dus zijn kracht en alles eromheen zakt naar zwart.
+
+     Dat is precies wat een lichtbundel in een donkere ruimte doet, en het is de
+     lichttaal uit de beelden die Lucas aanleverde: één harde vorm, verder niets.
+
+     Het plafond verandert er niet door — bij p = 1 blijft de uitkomst de
+     achtergrondkleur — dus alle contrastberekeningen hierboven blijven staan.
+     En het kost geen tweede download: dezelfde URL, dus dezelfde cache. */
+  background-color: #2A3412;
   background-image:
-    /* VLAK EN NIET VERLOPEND. Er stond hier een schuin verloop van 0,93 naar
-       0,87 — zwaarder waar de kop staat, lichter waar alleen beeld staat. Dat
-       klinkt slim en is het niet: waar de tekst valt verschuift met elke
-       schermbreedte, dus de zwakste plek van de sluier komt vroeg of laat onder
-       een regel terecht. Eén waarde over het hele paneel betekent dat één meting
-       geldt voor het hele blok, en dat is het verschil tussen weten en hopen. */
-    linear-gradient(rgb(8 9 11 / 0.90), rgb(8 9 11 / 0.90)),
+    radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(8 9 11 / 0.28) 62%, rgb(8 9 11 / 0.70) 100%),
+    image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp')),
     image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp'));
-  background-size: cover, cover;
-  background-position: center 62%, center 62%;
-  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover, cover;
+  background-position: center 62%, center 62%, center 62%;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  /* De eerste laag (de vignettering) gewoon eroverheen; de twee foto's op
+     `multiply`. De laatste waarde in deze lijst hoort bij de menging tussen de
+     onderste laag en de achtergrondkleur, en dát is de regel die het plafond
+     zet. */
+  background-blend-mode: normal, multiply, multiply;
   border-radius: var(--r-lg);
   /* Een limoen haarlijn in plaats van een limoen vlak: het blok houdt zijn
      rand op de pagina zonder dat er nog een lap kleur voor nodig is. */
-  border: 1px solid rgb(198 241 0 / 0.22);
+  /* Iets sterker dan de 0,22 die hier stond: de grond is nu lichter, dus een
+     rand van 22 procent verdween erin. */
+  border: 1px solid rgb(198 241 0 / 0.30);
   padding: clamp(1.5rem, 3.2vw, 2.8rem);
   box-shadow: 0 30px 70px -34px rgb(0 0 0 / 0.55);
 }
-/* ── DE SPOTS EN DE KORREL ────────────────────────────────────────────────
-   Lucas: *"misschien ook mooi om een soort film grain spotlights toe te voegen
-   dus witte lichten met spikkels."*
+/* ── DE KLEINE VARIANT OP EEN TELEFOON — 22 augustus 2026 ─────────────────
+   `background-image` kent geen `sizes`, dus een telefoon van 390 px breed
+   haalde dezelfde 2400-brede foto op als een breedbeeldscherm: 122 kB webp of
+   29 kB avif voor een blok dat nooit breder dan 390 px wordt. De 1400-variant
+   lag er al (hij werd naast de grote gemaakt en daarna nooit aangeroepen) en
+   is op die breedte niet van de grote te onderscheiden.
 
-   TWEE LAGEN, ALLEBEI MET EEN MENGSTAND, en dat is waarom ze op limoen werken
-   terwijl een gewone witte vlek dat niet doet. Wit op #C6F100 met normale
-   dekking maakt de kleur BLEEK — hij schuift naar pastel en dan is het geen
-   licht meer maar verf. `soft-light` laat de tint staan en tilt alleen de
-   helderheid: waar de spot valt wordt het limoen lichter limoen, precies wat
-   een lamp doet.
+   De mediaquery staat op 900 px omdat het paneel daaronder één kolom is en
+   dus hooguit de vensterbreedte haalt; 1400 px dekt daar ook een scherm met
+   drie keer de pixeldichtheid. Alle drie de lagen moeten mee — laat je er één
+   op 2400 staan, dan haalt de browser beide bestanden op en is de winst weg. */
+@media (max-width: 900px) {
+  .lime-panel {
+    background-image:
+      radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(8 9 11 / 0.28) 62%, rgb(8 9 11 / 0.70) 100%),
+      image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp')),
+      image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp'));
+  }
+}
+/* ── DE WITTE SPOTS EN DE KORREL ZIJN WEG — 21 augustus 2026 ──────────────
+   Lucas: *"verwijder ook de witte film grain spotlights op dat blok."*
 
-   De korrel staat op `overlay` en niet op `soft-light`: overlay houdt de
-   spikkels hard genoeg om als filmkorrel te lezen. Op 22 procent zie je ze als
-   textuur en niet als ruis — de paginabrede `.grain` staat op 4 procent, maar
-   die ligt over een bijna zwarte pagina waar veel minder nodig is.
+   Hier stonden drie lagen: witte radialen op `soft-light`, en daarbovenop een
+   grove korrel die exact door diezelfde drie radialen werd gemaskeerd. Ze
+   waren ooit terecht — ze moesten een VLAK van #C6F100 op een belicht voorwerp
+   laten lijken, en op een vlakke lap kleur is dat het juiste middel.
 
-   `isolation: isolate` op het paneel houdt allebei de mengstanden BINNEN het
-   blok. Zonder dat mengen ze met de pagina eronder en kleurt de slagschaduw
-   mee — gemeten op de eerste poging, en het is precies de reden dat die
-   eigenschap er al stond.
+   Sinds de grond een foto van een echte lichtbundel is, is dat middel de
+   fout geworden. Twee lampen over elkaar — een gefotografeerde en drie
+   geschilderde — maken het beeld troebel in plaats van sfeervol, en op een
+   donkere grond leest witte soft-light als mist. Ook de korrel: een foto heeft
+   zijn eigen korrel, dus lag er een tweede overheen die er niet bij hoorde.
 
-   Drie spots en niet één: één lamp midden op een vlak van 1300 bij 1000 is een
-   verloop, geen licht. Drie ongelijke, waarvan twee half buiten de rand, laat
-   het oppervlak bol lijken. */
+   WAT DE PLEK VAN DIE DRIE INNEEMT staat nu in `.lime-panel` zelf: de foto op
+   een plafond in plaats van onder een sluier, plus één vignettering. Dat is
+   één lichtbron in plaats van vier, en dat is wat een belicht voorwerp van een
+   verlichte etalage onderscheidt.
+
+   HET ELEMENT BLIJFT STAAN, leeg. Het is aria-hidden en kost niets, en het
+   staat in de markup van vier pagina's; weghalen zou vier bestanden raken voor
+   nul winst. Wie hier ooit weer licht wil, heeft de laag klaarstaan.
+
+   ── EN DE RANDGLOED, DIE ER WÉL BIJ IS GEKOMEN ─────────────────────────────
+   Eén ding dat de oude spots goed deden, is behouden en verplaatst: het gevoel
+   dat het licht van BUITEN het paneel komt. Dat zit nu in een smalle veeg
+   accentlicht langs de bovenrand, op `screen` zodat hij alleen optelt en nooit
+   iets bleker maakt. Hij is 0,10 sterk en raakt geen tekst: hij dooft op 34
+   procent van de hoogte, ruim boven de eerste regel. */
 .lime-panel-light {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  /* Laag 1 — het voorwerp is BELICHT en niet vlak. Licht van rechtsboven, een
-     heel lichte schaduw linksonder in dezelfde tint (58 76 0, niet zwart —
-     zwart maakt er vuil groen van). Dit is wat een voorwerp van een swatch
-     onderscheidt. */
-  /* DE TWEE WITTE SPOTS ZIJN WEG. Ze waren er om een VLAK van accent te laten
-     lijken op een belicht voorwerp; de foto eronder is nu zelf het licht, en
-     een tweede lamp erbovenop maakt er mist van. Wat blijft is de korrel
-     hieronder: die hoorde bij het licht en hoort nu bij de foto. */
-  background: none;
-}
-/* Laag 2 — DE SPOTS. Lucas: *"misschien ook mooi om een soort film grain
-   spotlights toe te voegen dus witte lichten met spikkels."*
-
-   `soft-light` en geen gewone dekking: wit op #C6F100 maakt de kleur BLEEK —
-   hij schuift naar pastel en dan is het geen licht meer maar verf. Soft-light
-   laat de tint staan en tilt alleen de helderheid, precies wat een lamp doet.
-
-   Drie ongelijke spots en niet één: één lamp midden op een vlak van 1300 bij
-   1000 is een verloop, geen licht. Twee lopen half buiten de rand, en dat is
-   wat het oppervlak bol laat lijken. */
-.lime-panel-light::before {
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(44% 36% at 20% 2%,   rgb(255 255 255 / 0.62), transparent 70%),
-    radial-gradient(30% 28% at 88% 26%,  rgb(255 255 255 / 0.42), transparent 72%),
-    radial-gradient(50% 40% at 58% 106%, rgb(255 255 255 / 0.26), transparent 70%);
-  mix-blend-mode: soft-light;
-}
-/* ── LAAG 3 · GROVE, VERZADIGDE KORREL, EN ALLEEN IN HET LICHT ────────────
-   Lucas: *"Ik wil de spotlights op dat blok echt als een soort saturated
-   spikkels hebben, grove film grain spotlights."*
-
-   Drie dingen veranderd ten opzichte van de eerste korrel, en alle drie om
-   dezelfde reden — de vorige was fijn, grijs en overal even sterk, en dat is
-   ruis in plaats van korrel:
-
-   GROVER. `baseFrequency` van 1.1 naar 0.55 maakt de vlekken in de bron ruim
-   twee keer zo groot, `numOctaves="2"` geeft ze structuur in plaats van
-   één egale kriebel, en de tegel staat op 340px in plaats van 190. Samen is
-   dat korrel die je als korrel ziet en niet als compressie.
-
-   WIT EN GRIJS, NIET GEKLEURD. `feTurbulence` levert RGBA-ruis en die is van
-   zichzelf bont — een eerste versie stond vol roze en magenta spikkels, en
-   Lucas: *"Spikkels lijken nu gekleurd maar ze moeten of wit of grijs zijn,
-   check altijd volgens het kleurenschema van visuails."* Terecht: dit palet
-   kent één kleur naast de inktladder en dat is het accent, dat hier de grond
-   IS. Een `feColorMatrix` met `saturate 0` haalt de kleur eruit vóór de rest
-   van de keten, dus wat overblijft is licht en donker. Met `overlay` als
-   mengstand betekent dat: spikkels boven het midden lichten het limoen op,
-   eronder zetten ze het weg — dezelfde kleur, alleen de belichting spikkelt.
-   Precies wat filmkorrel doet.
-
-   Wat ontbrak daarnaast was contrast. De `feComponentTransfer` rekt elk
-   kanaal met factor 2,4 en schuift het middelpunt omlaag, waardoor de zachte
-   middentonen wegvallen en er losse, uitgesproken spikkels overblijven.
-   De alfaband wordt daarbij op vol gezet (`feFuncA` met slope 0 en intercept
-   1) — feTurbulence maakt óók ruis in de doorzichtigheid, en die vrat bij een
-   eerdere poging precies de spikkels weg die de kleurbanden net hadden
-   opgebouwd: gemeten was het resultaat een schoon vlak. 
-
-   ALLEEN IN HET LICHT. Het masker gebruikt exact dezelfde drie radialen als de
-   spots hierboven, dus de korrel staat waar de lamp staat en dooft waar het
-   vlak in de schaduw ligt. Dat is wat "film grain spotlights" letterlijk is:
-   bij film zit de korrel in de belichting, niet in het papier. Twee keer
-   dezelfde radialen uitgeschreven is hier goedkoper dan een derde laag met een
-   eigen achtergrond, en ze horen bij elkaar te blijven — verplaatst iemand een
-   spot, dan hoort de korrel mee te gaan. */
-.lime-panel-light::after {
-  content: '';
-  position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3Cfilter%20id='g'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.55'%20numOctaves='2'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncG%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncB%20type='linear'%20slope='2.4'%20intercept='-0.7'/%3E%3CfeFuncA%20type='linear'%20slope='0'%20intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect%20width='100%25'%20height='100%25'%20filter='url%28%23g%29'/%3E%3C/svg%3E");
-  background-size: 340px;
-  /* Van .5 naar .34 en van `overlay` naar `soft-light`: overlay op 50 procent
-     was afgesteld op een felle limoen grond, waar veel nodig is voordat je iets
-     ziet. Op een donkere foto is diezelfde stand ruis in plaats van korrel. */
-  opacity: .34;
-  mix-blend-mode: soft-light;
-  -webkit-mask-image:
-    radial-gradient(44% 36% at 20% 2%,   #000 0%, transparent 72%),
-    radial-gradient(30% 28% at 88% 26%,  #000 0%, transparent 74%),
-    radial-gradient(50% 40% at 58% 106%, #000 0%, transparent 72%);
-  mask-image:
-    radial-gradient(44% 36% at 20% 2%,   #000 0%, transparent 72%),
-    radial-gradient(30% 28% at 88% 26%,  #000 0%, transparent 74%),
-    radial-gradient(50% 40% at 58% 106%, #000 0%, transparent 72%);
+  background: linear-gradient(to bottom, rgb(198 241 0 / 0.10), transparent 34%);
+  mix-blend-mode: screen;
 }
 
 /* Alles wat erin staat, boven de spots, de korrel en het merkteken. */

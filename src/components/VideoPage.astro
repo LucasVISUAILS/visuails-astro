@@ -332,7 +332,10 @@ const c = COPY[lang];
 const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 ---
 
-<section class="hero-editorial compact">
+{/* `hero-bright` — deze foto is de lichtste van de site (wit overhemd tegen
+    licht beton) en heeft een zwaardere sluier nodig dan de andere twee hero's.
+    Zie de noot bij .hero-bright in global.css voor de gemeten waarden. */}
+<section class="hero-editorial compact hero-bright">
   <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
   <div class="fade"></div>
   <div class="hero-editorial-content container">
@@ -483,7 +486,7 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
 <section class="section-tight">
   <div class="container">
     <p class="queue-note" style="margin-bottom:1.4rem">{c.tierNote}</p>
-    <TierCompare lang={lang} href0="/start/video" label0={c.ctaPrimary} />
+    <TierCompare lang={lang} href0="/start/video/" label0={c.ctaPrimary} />
   </div>
 </section>
 

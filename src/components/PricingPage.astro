@@ -397,7 +397,10 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
 ---
 
 <!-- HERO -->
-<section class="page-hero"><div class="container">
+{/* De lichtbundel uit de merktaal — zie .beam in global.css. Op een
+    paginakop en niet op een band met een foto: twee lichtbronnen over elkaar
+    maken het beeld troebel. */}
+<section class="page-hero beam beam-left"><div class="container">
   <span class="eyebrow-page">{c.eyebrow}</span>
   <h1 class="display">{c.h1}</h1>
   <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
@@ -905,7 +908,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     margin: var(--gap-head-block) 0 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
     gap: 0 clamp(1.5rem, 3vw, 3rem);
   }
   .incl {

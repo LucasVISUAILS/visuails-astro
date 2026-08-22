@@ -164,8 +164,8 @@ const TIMING = turnaround('unattended', 'en');
         <strong>You’ve already had your test sample.</strong>
         It is one per business, so nothing has been ordered and nothing has been charged —
         you have not paid for this.
-        Ready for the real thing? The <a href="/start">full services</a> start at a single
-        product, with no minimum order — or <a href="/contact">send us a message</a> if the
+        Ready for the real thing? The <a href="/start/">full services</a> start at a single
+        product, with no minimum order — or <a href="/contact/">send us a message</a> if the
         first sample never arrived, or a colleague ordered it without telling you.
       </div>
       <div class="ts-refused" data-form-refusal="email" role="status" tabindex="-1" hidden>
@@ -195,7 +195,7 @@ const TIMING = turnaround('unattended', 'en');
         <h2 class="display" style="font-size:var(--t-page-h2)">Rather just talk it through?</h2>
         <p class="lead" style="margin:1.2rem auto 0;text-align:center">Send us your product on WhatsApp and we’ll help you pick a style.</p>
         <div class="flex" style="justify-content:center;margin-top:2rem">
-          <a href="/start" class="btn btn-ghost btn-lg">Place a full order</a>
+          <a href="/start/" class="btn btn-ghost btn-lg">Place a full order</a>
           <a href={waHref("Hi VISUAILS, I'd like to try a test sample.")} class="btn btn-wa btn-lg" target="_blank" rel="noopener">
             WhatsApp
           </a>
@@ -216,7 +216,7 @@ const TIMING = turnaround('unattended', 'en');
      move; the textarea is 10px taller here than it was. */
   .narrow { max-width: 820px; }
   .hidden-step { display: none; }
-  .choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; }
+  .choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 0.8rem; }
   .choice { position: relative; overflow: hidden; cursor: pointer; border: 1px solid var(--line-strong); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); background: var(--surface); display: block; }
   .choice:hover { transform: translateY(-2px); border-color: var(--accent-line); }
   .choice input { position: absolute; opacity: 0; pointer-events: none; }

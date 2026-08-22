@@ -395,10 +395,10 @@ const COPY = {
      */
     heroSlides: [
       { card: 'All in one house style', note: 'One order, every image in the same house style.' },
-      { card: 'Catalog set',        note: 'Four images per product: front, back, detail, on-model.', cta: 'See Catalog',      href: '/catalog',       img: 0 },
-      { card: 'Lifestyle carousel', note: 'Three images in one styled scene, ready to post.',        cta: 'See Lifestyle',    href: '/lifestyle',     img: 1 },
-      { card: 'Video clip',         note: 'One vertical clip, cut for Reels and TikTok.',            cta: 'See Video',        href: '/video',         img: 2 },
-      { card: 'Your Brand Model',   note: 'One face, only yours, in every order you run.',           cta: 'See Brand Models', href: '/custom-models', img: 3 },
+      { card: 'Catalog set',        note: 'Four images per product: front, back, detail, on-model.', cta: 'See Catalog',      href: '/catalog/',       img: 0 },
+      { card: 'Lifestyle carousel', note: 'Three images in one styled scene, ready to post.',        cta: 'See Lifestyle',    href: '/lifestyle/',     img: 1 },
+      { card: 'Video clip',         note: 'One vertical clip, cut for Reels and TikTok.',            cta: 'See Video',        href: '/video/',         img: 2 },
+      { card: 'Your Brand Model',   note: 'One face, only yours, in every order you run.',           cta: 'See Brand Models', href: '/custom-models/', img: 3 },
     ],
 
     // ── THE PRICE BAND ────────────────────────────────────────────────────
@@ -491,6 +491,7 @@ const COPY = {
        aan het merk vastklikt. */
     stockSoon: [`${STOCK_ON_BRAND} on-brand visuals a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. They arrive with Editions and are set up once per brand.'],
     stockSoonTag: 'With Editions',
+    moodCap: 'Mood, texture, light — no product in frame, and one brand across all four.',
     /* ── EEN CREDIT IS EEN PLEK, GEEN VERPLICHTING — 20 augustus 2026 ───────
        Lucas: *"laten weten dat de product credits gebruikt kunnen worden voor
        andere dingen omdat het nu lijkt dat een klant telkens 5 nieuwe producten
@@ -656,7 +657,7 @@ const COPY = {
     dreamH: 'A small label that never looked small.',
     dreamLede: 'A shopper cannot see how big your team is. They see whether every product photo matches the last one. That is what an order gives you across your whole range: the same lighting, the same framing, the same model on every product.',
     dreamCta: 'See an order in full',
-    dreamAlt: 'A VISUAILS lifestyle visual — a styled campaign scene',
+    dreamAlt: 'A figure on a stairwell landing, lit by a single acid-green beam',
 
     weekH: 'The week you get back.',
     // NIET INGEKORT, en dat is een besluit. Deze opsomming — casting, boeking,
@@ -907,10 +908,10 @@ const COPY = {
     // Zie de noot bij de Engelse heroSlides.
     heroSlides: [
       { card: 'Alles in één huisstijl', note: 'Eén bestelling, alle beelden in dezelfde huisstijl.' },
-      { card: 'Catalogset',         note: 'Vier beelden per product: voor, achter, detail, op model.', cta: 'Bekijk Catalog',      href: '/catalog',       img: 0 },
-      { card: 'Lifestyle-carousel', note: 'Drie beelden in één gestylede scène, klaar om te posten.',  cta: 'Bekijk Lifestyle',    href: '/lifestyle',     img: 1 },
-      { card: 'Videoclip',          note: 'Eén verticale clip, gesneden voor Reels en TikTok.',        cta: 'Bekijk Video',        href: '/video',         img: 2 },
-      { card: 'Je merkmodel',       note: 'Eén gezicht, alleen van jou, in elke bestelling.',          cta: 'Bekijk merkmodellen', href: '/custom-models', img: 3 },
+      { card: 'Catalogset',         note: 'Vier beelden per product: voor, achter, detail, op model.', cta: 'Bekijk Catalog',      href: '/catalog/',       img: 0 },
+      { card: 'Lifestyle-carousel', note: 'Drie beelden in één gestylede scène, klaar om te posten.',  cta: 'Bekijk Lifestyle',    href: '/lifestyle/',     img: 1 },
+      { card: 'Videoclip',          note: 'Eén verticale clip, gesneden voor Reels en TikTok.',        cta: 'Bekijk Video',        href: '/video/',         img: 2 },
+      { card: 'Je merkmodel',       note: 'Eén gezicht, alleen van jou, in elke bestelling.',          cta: 'Bekijk merkmodellen', href: '/custom-models/', img: 3 },
     ],
 
     // Zie de EN-tabel voor waarom deze band er is: vier prijsbanden zijn er één
@@ -948,6 +949,7 @@ const COPY = {
     // Zie de noot bij de Engelse stockSoon.
     stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Ze komen met Editions en worden één keer per merk opgezet.'],
     stockSoonTag: 'Met Editions',
+    moodCap: 'Sfeer, textuur, licht — geen product in beeld, en één merk over alle vier.',
     // Zie de noot bij de Engelse creditH.
     creditH: `${PLAN_FROM_PRODUCTS} plekken, geen ${PLAN_FROM_PRODUCTS} nieuwe producten.`,
     creditBody: `Een credit is een plek in de maand, niet de eis dat je iets nieuws hebt. Jij bepaalt elke maand wat erin gaat: een nieuw item, een item dat je al verkoopt in een andere look voor een campagne, of een set die je voor je socials maakt. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
@@ -1036,7 +1038,7 @@ const COPY = {
     dreamH: 'Je merk wordt op je beelden beoordeeld.',
     dreamLede: 'Niemand die je pagina bekijkt weet hoeveel mensen er bij je werken. Ze zien de beelden, en binnen twee seconden hebben ze een oordeel. Dat is precies het stuk dat je zelf in de hand hebt.',
     dreamCta: 'Bekijk een hele bestelling',
-    dreamAlt: 'Een VISUAILS lifestyle-beeld — een gestylede campagnescène',
+    dreamAlt: 'Een figuur op een trapportaal, belicht door één zuurgroene lichtbundel',
 
     weekH: 'De week die je terugkrijgt.',
     // Zie de noot bij de Engelse weekLede.
@@ -1976,16 +1978,48 @@ const nl = lang === 'nl';
           30rem (480) zei. Ik heb voor precies dit probleem op 19 augustus de
           `space`-prop gemaakt en er twee dagen later opnieuw in gelopen — een
           omhullende div die ik zelf bezit, kan niet stilletjes mislukken. */}
+      {/* ── DE PLAATSHOUDER IS INGEVULD — 22 augustus 2026 ─────────────────
+          Hier stond een "foto volgt"-vlak met deze opdracht erin: *"Sfeer,
+          textuur, handen, licht — geen kledingstuk en geen packshot. Leest het
+          als een stockbibliotheek, dan is het mislukt; het moet als één merk
+          lezen."*
+
+          Dat is woord voor woord wat de beelden zijn die Lucas op 22 augustus
+          aanleverde, dus staan ze hier. Vier stuks in een raster: een kabeltrui
+          in een lichtbundel, een silhouet tegen zuurgroen, laarzen op nat
+          asfalt, en iemand in rust op een achterbank. Geen product te zien, één
+          lichtbron per beeld, en samen lezen ze als één merk in plaats van als
+          een verzameling.
+
+          VIER EN NIET TWINTIG. Het onderschrift belooft twintig beelden per
+          maand; vier laten zien wat voor soort beelden dat zijn, is genoeg en
+          houdt de band kort. Twintig miniaturen zou de belofte illustreren en
+          het blok verdubbelen.
+
+          `aria-hidden` op het raster: de kop en de twee regels ernaast zeggen
+          al wat dit is, en vier alt-teksten die "sfeerbeeld" betekenen voegen
+          voor een schermlezer niets toe behalve lengte. Het onderschrift
+          eronder draagt de betekenis en is wél leesbaar. */}
       <div class="hv-stock-shot">
-      <Placeholder
-        lang={lang}
-        ratio="4 / 3"
-        subject={nl ? 'Een maandraster van stockbeelden voor één merk — twintig beelden naast elkaar in dezelfde kleuren en hetzelfde licht, zonder product erin'
-                    : 'A month grid of stock visuals for one brand — twenty frames in the same colours and light, with no product in them'}
-        message={nl
-          ? 'Sfeer, textuur, handen, licht — geen kledingstuk en geen packshot. Leest het als een stockbibliotheek, dan is het mislukt; het moet als één merk lezen.'
-          : 'Mood, texture, hands, light — no garment and no packshot. If it reads as a stock library it has failed; it has to read as one brand.'}
-      />
+        {/* ── 760 EN NIET 1600 — 22 augustus 2026 ────────────────────────────
+            De keuring mat wat deze vier tegels op het scherm halen: 183 px, en
+            dat is de breedste van alle vijf de gemeten vensterbreedtes. Er ging
+            een bestand van 1600 px overheen — 8,7 keer te groot voor brand-knit
+            en 6,6 keer voor brand-boots, samen 242 kB avif voor vier duimnagels.
+            760 px dekt diezelfde 183 px nog bij vier keer de pixeldichtheid.
+            De verhouding in width/height blijft gelijk, dus het raster springt
+            niet. De vier bestanden zijn ONDER DEZELFDE NAAM verkleind en er
+            staat geen -w760-variant naast: een tweede bestand dat nergens meer
+            heen wijst is precies het soort wees dat public/img/ al 60 keer
+            heeft. De grote bestanden blijven wél liggen voor brand-stair en
+            brand-pool, die schermbreed staan. */}
+        <div class="hv-mood" aria-hidden="true">
+          <img src="/img/brand-knit.webp" alt="" width="760" height="428" loading="lazy" decoding="async" />
+          <img src="/img/brand-silhouet.webp" alt="" width="760" height="760" loading="lazy" decoding="async" />
+          <img src="/img/brand-boots.webp" alt="" width="760" height="1140" loading="lazy" decoding="async" />
+          <img src="/img/brand-rest.webp" alt="" width="760" height="760" loading="lazy" decoding="async" />
+        </div>
+        <p class="hv-mood-cap">{c.moodCap}</p>
       </div>
       <div class="hv-stock-copy">
         <h3 class="hv-stock-h">{c.stockH}</h3>
@@ -2083,8 +2117,23 @@ const nl = lang === 'nl';
 {/* .ground-blend sits at z-index -1, which is the same layer as .hv-dream-scrim
     and later in the DOM, so it paints over the scrim and under the copy. The
     photograph is at -2 and stays below both. */}
+{/* ── DE FOTO IS EEN MERKBEELD GEWORDEN — 22 augustus 2026 ────────────────
+    Hier stond /img/lifestyle-glow-06.webp: een gestylede lifestyle-scène uit de
+    Glow-stijl. Prima beeld, verkeerde band. Deze band is de enige op de pagina
+    die niets vergelijkt en niets telt — hij gaat niet over wat je krijgt maar
+    over waar het naartoe leidt, en dan is een voorbeeld van het PRODUCT precies
+    het argument dat hier niet hoort.
+
+    Lucas leverde daar een reeks voor aan: donkere ruimtes met één zuurgroene
+    bron. Deze is de sterkste van de acht om schermvullend te staan — een figuur
+    in een trappenhuis, half in het licht, met de harde rand van de bundel over
+    de vloer. Het is dezelfde lichttaal als de bundel achter het abonnementsblok
+    en als `.beam` in global.css, nu als foto in plaats van als CSS.
+
+    De sluier eroverheen (.hv-dream-scrim) staat er al en is niet aangepast; de
+    leesbaarheidsmeting bevestigt dat de kop en de knop erop blijven kloppen. */}
 <section class="hv-dream ground-blend">
-  <img class="hv-dream-bg" src="/img/lifestyle-glow-06.webp" alt={c.dreamAlt} width="2400" height="1792" loading="lazy" decoding="async" />
+  <img class="hv-dream-bg" src="/img/brand-stair.webp" alt={c.dreamAlt} width="1872" height="1248" loading="lazy" decoding="async" />
   <div class="hv-dream-scrim" aria-hidden="true"></div>
   <div class="container hv-dream-inner">
     <p class="hv-kicker">{c.dreamKicker}</p>
@@ -2515,7 +2564,25 @@ const nl = lang === 'nl';
     Nu een gewone band op de paginagrond. Wat de afsluiting onderscheidt, is
     niet een andere kleur maar wat er staat: één kop, één zin, twee knoppen, en
     verder niets. Dat is genoeg om te weten dat de pagina hier ophoudt. */}
-<section class="band-chapter hv-close mark-depth" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%;">
+{/* ── DE CSS-BUNDEL IS EEN FOTO GEWORDEN — 22 augustus 2026 ──────────────
+    Hier stond `beam`: de lichtbundel uit de merktaal, in CSS nagebouwd. Dat was
+    de juiste keuze zolang er geen beeld voor was. Lucas leverde er op 22
+    augustus een aan — een lichtplas op een vloer, zonder onderwerp — en dat is
+    hetzelfde idee maar dan echt: korrel, onscherpte aan de randen, een vorm die
+    geen CSS-verloop kan maken.
+
+    HIJ STAAT LAAG EN DAT IS DE HELE OPZET. Deze band is één kop, één zin en
+    twee knoppen; als het beeld hier de aandacht pakt, is de afsluiting stuk.
+    Vandaar `opacity` en een sluier eroverheen in plaats van een schermvullende
+    foto — het leest als licht op de vloer onder de laatste zin, niet als een
+    tweede onderwerp. De leesbaarheidsmeting bevestigt dat de kop en beide
+    knoppen erop kloppen.
+
+    `.beam` blijft bestaan en staat nog op de paginakoppen van /pricing en
+    /start, waar geen foto ligt. */}
+<section class="band-chapter hv-close mark-depth hv-close-lit" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%;">
+  <img class="hv-close-bg" src="/img/brand-pool.webp" alt="" aria-hidden="true" width="1600" height="900" loading="lazy" decoding="async" />
+  <div class="hv-close-scrim" aria-hidden="true"></div>
   {/* Het merk als diepte achter deze band — zie .mark-depth in global.css. Een
       lijntekening op 12%, geen grond. */}
   <div class="mark-depth-lay" aria-hidden="true">
@@ -2543,7 +2610,7 @@ const nl = lang === 'nl';
  * Lucas: *"als ik wissel van taal of ik ga naar een andere pagina en ik ga terug
  * naar de homepage en ik klik op een service knop [...] ga ik naar die service
  * toe."* De kaartjes onder de hero waren dan geen tabs meer maar weer gewone
- * links, en dat is precies wat er in de html staat: `<a href="/catalog">`. Het
+ * links, en dat is precies wat er in de html staat: `<a href="/catalog/">`. Het
  * script hieronder maakt er tabs van, en het script had niet gedraaid.
  *
  * DE OORZAAK IS EEN REGEL VAN DE CLIENTROUTER EN GEEN FOUT IN DIT BESTAND.
@@ -2938,6 +3005,25 @@ var vOpruim = (function () {
   .hv-hero-scrim { position: absolute; inset: 0; z-index: -1; background:
     radial-gradient(92% 82% at 16% 84%, rgb(var(--scrim) / 0.90) 0%, rgb(var(--scrim) / 0.42) 54%, transparent 78%),
     linear-gradient(180deg, rgb(var(--scrim) / 0.76) 0%, rgb(var(--scrim) / 0.50) 13%, rgb(var(--scrim) / 0.14) 27%, transparent 52%, rgb(var(--scrim) / 0.46) 84%, rgb(var(--scrim) / 0.66) 100%); }
+  /* ── OP EEN TELEFOON MOET DE PLAAT BREDER ZIJN ───────────────────────────
+     De radiaal hierboven is een plaat ONDER de kop, gemikt op 16% van links —
+     goed op een breed scherm, waar de kop in de linkerhelft staat en de foto
+     rechts vrij blijft. Op 390px staat diezelfde kop over de volle breedte en
+     valt het rechteruiteinde ("You upload." eindigt op 92% van de breedte)
+     buiten de plaat, precies waar de foto het lichtst is.
+
+     Gemeten met leesbaar.mjs, dat de pagina twee keer afdrukt en de werkelijke
+     achtergrond onder elke regel afleest: 2,86 : 1 op een eis van 3. Niet
+     dramatisch, wel onder de streep, en het is de grootste kop van de site.
+
+     De reparatie is de plaat centreren en breder maken zodra de kop de volle
+     breedte inneemt. Alleen de RADIAAL verandert; de lineaire laag eronder
+     (de balk waar de koptekst op staat) blijft precies zoals hij is. */
+  @media (max-width: 700px) {
+    .hv-hero-scrim { background:
+      radial-gradient(120% 74% at 50% 88%, rgb(var(--scrim) / 0.92) 0%, rgb(var(--scrim) / 0.60) 52%, transparent 88%),
+      linear-gradient(180deg, rgb(var(--scrim) / 0.76) 0%, rgb(var(--scrim) / 0.50) 13%, rgb(var(--scrim) / 0.14) 27%, transparent 52%, rgb(var(--scrim) / 0.46) 84%, rgb(var(--scrim) / 0.66) 100%); }
+  }
   .hv-hero-inner { flex: 1; display: flex; align-items: flex-end; width: 100%; }
   .hv-hero-copy { max-width: 40rem; padding-block: 3rem clamp(2.5rem, 6vh, 4rem); }
   /* ── DE DIA'S LIGGEN OP ELKAAR, EN DE HOOGTE STAAT VAST ───────────────────
@@ -3282,7 +3368,13 @@ var vOpruim = (function () {
      plaats van als één zin met vinkjes erin. */
   .hv-proof { list-style: none; margin: clamp(1.05rem, 2.2vw, 1.5rem) 0 0; padding: 0;
     display: flex; flex-direction: row; flex-wrap: wrap; gap: .55rem 1.6rem; }
-  .hv-proof li { flex: 0 0 auto; display: flex; align-items: flex-start; gap: .45rem;
+  /* `flex: 0 1 auto` en niet `0 0 auto`: een vinkje mag krimpen als de regel
+     te smal wordt. Met `0 0` kan het item alleen nog buiten de rij vallen, en
+     dat gebeurde bij een grotere lettergrootte — gemeten op 390px met de tekst
+     op 150 procent liep "Yours to use, anywhere" de rechterrand uit en werd
+     door de `overflow: hidden` van de hero afgesneden. Met krimpruimte breekt
+     de tekst binnen het item af en blijft alles staan waar het hoort. */
+  .hv-proof li { flex: 0 1 auto; min-width: 0; display: flex; align-items: flex-start; gap: .45rem;
     font-size: .875rem; line-height: 1.4; color: var(--paper-soft-on-dark); }
   .hv-proof svg { flex: 0 0 auto; width: 1.05em; height: 1.05em; margin-top: .16em;
     fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -3683,7 +3775,7 @@ var vOpruim = (function () {
      andere die op 562 staan. `.statement-split` verdeelt de volle breedte al;
      een tweede maat eroverheen maakt hem alleen smaller. */
   .hv-pipe-head { max-width: none; }
-  .hv-pipe { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1px; background: var(--line); }
+  .hv-pipe { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); gap: 1px; background: var(--line); }
   .hv-pipe > li { background: var(--bg); padding: clamp(1.25rem, 2.2vw, 1.9rem); }
   /* Outlined numerals: the colour is the STROKE, because a filled 2.4rem 900
      numeral in four hues would out-shout the step it labels. The four are
@@ -4142,7 +4234,15 @@ var vOpruim = (function () {
   }
 
   /* ── the week you get back ─────────────────────────────────────────────── */
-  .hv-week { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1px; background: var(--line); }
+  /* ── minmax(min(16rem, 100%), 1fr) EN NIET minmax(16rem, 1fr) ────────────
+     Een ondergrens in `rem` groeit mee met de tekstinstelling van de bezoeker.
+     Bij 150 % is 16rem 384 px, en dat is breder dan de 332 px die deze lijst op
+     een telefoon van 390 px krijgt: de baan werd 384 px, de lijst liep buiten
+     beeld en er was niets om naartoe te scrollen, dus de rechterkant van elke
+     regel viel gewoon weg. `min(…, 100%)` zegt: deze ondergrens, tenzij de
+     container smaller is. Bij normale tekst verandert er niets. Deze correctie
+     staat op alle 23 rasters van dit type op de site. */
+  .hv-week { list-style: none; margin: clamp(2.4rem, 5vw, 3.5rem) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); gap: 1px; background: var(--line); }
   .hv-week > li { background: var(--bg); padding: clamp(1.3rem, 2.4vw, 2rem); }
   .hv-week-d { display: block; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.5rem, 2.4vw, 1.9rem); line-height: 1; letter-spacing: -0.03em; color: var(--accent-bright); }
   .hv-week p { margin: .9rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-3); }
@@ -4241,7 +4341,7 @@ var vOpruim = (function () {
   /* ── planning backwards ────────────────────────────────────────────────── */
 
   /* ── the objections ────────────────────────────────────────────────────── */
-  .hv-ob { margin-top: clamp(2.4rem, 5vw, 4rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1px; background: var(--line); }
+  .hv-ob { margin-top: clamp(2.4rem, 5vw, 4rem); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr)); gap: 1px; background: var(--line); }
   .hv-ob-item { background: var(--surface); padding: clamp(1.4rem, 2.6vw, 2.1rem); display: flex; flex-direction: column; }
   /* De <summary> is de vraag. Het driehoekje moet op DRIE manieren weg, want de
      engines zijn het oneens — zie dezelfde drie regels bij .hv-q hierboven. */
@@ -4294,6 +4394,34 @@ var vOpruim = (function () {
      statement heeft al een maat, een breedte en een uitlijning. Wat overblijft
      is één regel lucht boven de knoppen. */
   .hv-close .actions { margin-top: clamp(1.4rem, 2.6vw, 2rem); display: flex; gap: .7rem; flex-wrap: wrap; justify-content: center; }
+  /* ── DE LICHTPLAS ONDER DE AFSLUITING ────────────────────────────────────
+     Zie de noot bij de markup. Drie lagen die elk één ding doen:
+
+       de foto      ligt op z-index -2, schermvullend, en is met `object-fit`
+                    bijgesneden zodat hij bij elke bandhoogte klopt;
+       de sluier    op -1 haalt hem terug tot sfeer en trekt de boven- en
+                    onderrand naar de paginagrond, zodat er geen naad ontstaat
+                    met de banden ernaast;
+       de inhoud    staat er op z-index 1 gewoon bovenop.
+
+     `.hv-close-lit` en niet `.hv-close`: die tweede klasse draagt al de
+     opmaak van de band zelf en wordt elders gelezen. Een aparte klasse voor de
+     verlichting maakt het weghalen ervan één regel werk. */
+  .hv-close-lit { position: relative; isolation: isolate; overflow: clip; }
+  .hv-close-lit > .container { position: relative; z-index: 1; }
+  .hv-close-bg {
+    position: absolute; inset: 0; z-index: -2;
+    width: 100%; height: 100%; object-fit: cover; object-position: center 62%;
+    opacity: .55;
+    pointer-events: none;
+  }
+  .hv-close-scrim {
+    position: absolute; inset: 0; z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, var(--bg-0) 0%, rgb(8 9 11 / 0.45) 26%, rgb(8 9 11 / 0.45) 74%, var(--bg-0) 100%),
+      radial-gradient(72% 62% at 50% 52%, rgb(8 9 11 / 0.62), rgb(8 9 11 / 0.30) 70%, transparent 100%);
+  }
   /* ── het abonnement ──────────────────────────────────────────────────────
      Tekst links, het bedrag op een plaat rechts. Dat is dezelfde tweedeling
      als de proefvisualband eronder gebruikt, met opzet: de twee banden vragen
@@ -4314,6 +4442,30 @@ var vOpruim = (function () {
      het 633 bij 474 naast een tekstkolom van 289 hoog, en dan is het beeld het
      onderwerp geworden in plaats van het bewijs. */
   .hv-stock-shot { width: min(100%, 23rem); }
+  /* ── HET SFEERRASTER ─────────────────────────────────────────────────────
+     Vier beelden in een vierkant raster, met de verhouding van de doos vast op
+     4/3 zodat het blok geen sprong maakt terwijl de foto's laden — dezelfde
+     maat als de plaatshouder die hier stond.
+
+     `object-fit: cover` op elk beeld: de vier hebben verschillende
+     verhoudingen (een liggende trui, twee vierkanten, een staand paar laarzen)
+     en in een raster horen ze even groot te zijn. Bijsnijden is hier goed —
+     het zijn sfeerbeelden, er is geen onderwerp dat je niet mag afsnijden.
+
+     De hairline tussen de cellen komt uit `gap` op de paginagrond en niet uit
+     een rand: vier randen naast elkaar geven een dubbele lijn in het midden. */
+  .hv-mood {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background: var(--bg-0);
+  }
+  .hv-mood img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hv-mood-cap { margin: .6rem 0 0; font-size: .78rem; line-height: 1.5; color: var(--ink-3); }
   .hv-stock-h { margin: 0 0 clamp(.8rem, 1.6vw, 1.1rem); font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
   .hv-stock-item + .hv-stock-item { margin-top: clamp(.8rem, 1.6vw, 1.1rem); padding-top: clamp(.8rem, 1.6vw, 1.1rem); box-shadow: inset 0 1px 0 var(--line); }
   .hv-stock-n { margin: 0; font-size: 1.02rem; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
@@ -4401,7 +4553,7 @@ var vOpruim = (function () {
     margin: clamp(1.3rem, 2.4vw, 1.9rem) 0 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
     gap: clamp(.7rem, 1.4vw, 1rem);
   }
   .hv-plan {

@@ -290,7 +290,7 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Wat als de visuals niet kloppen?',
-            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. Bij een bestelling met een vastgezette leverdatum: ${aftercare('attended', 'nl').toLowerCase()}, per beeld in het portaal, zodat één beeld dat terugmoet de rest niet ophoudt.`,
+            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. Bij een bestelling met een vastgezette leverdatum: ${aftercare('attended', 'nl').toLowerCase()}, per beeld in het portaal, zodat één beeld dat terug moet de rest niet ophoudt.`,
           },
           {
             q: 'Hoe krijg ik de bestanden precies?',

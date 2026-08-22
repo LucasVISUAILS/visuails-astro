@@ -93,11 +93,11 @@ const zusters = styles
 >
   <section class="page-hero">
     <div class="container">
-      <p class="eyebrow-page"><a href="/nl/lifestyle" style="color:inherit">&larr; Lifestyle-stijlen</a></p>
+      <p class="eyebrow-page"><a href="/nl/lifestyle/" style="color:inherit">&larr; Lifestyle-stijlen</a></p>
       <h1 class="display">{style.name}.</h1>
       <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
       <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/nl/start'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Bestel ${style.name}`}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/nl/start/'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Bestel ${style.name}`}</a></span></span>
         <a href={waHref(`Hoi VISUAILS, ik wil graag praten over de ${style.name}-stijl.`)} class="btn btn-wa" target="_blank" rel="noopener">
           WhatsApp
         </a>
@@ -151,7 +151,7 @@ const zusters = styles
           grade
           before={style.heroPhoto}
           after={style.heroPhoto}
-          beforeAlt={`Een vlakke, ongegradede ${style.name}-scène`}
+          beforeAlt={`Een vlakke, ongegradeerde ${style.name}-scène`}
           afterAlt={`Dezelfde scène afgewerkt in de ${style.name} lifestyle-look`}
           beforeLabel="Vlak"
           afterLabel={style.name}
@@ -214,7 +214,7 @@ const zusters = styles
         </ul>
         {/* Brief §1 — elke drop-contentpagina linkt naar /custom-models. Eén
             regel in de template bedient alle vijf lifestyle-stijlen. */}
-        <p class="model-note">Wordt een {style.name}-scène gedragen in plaats van geplaatst, dan kan het model uit de standaardbibliotheek komen — of <a href="/nl/custom-models">een merkmodel dat alleen voor jou gemaakt is</a>, zodat hetzelfde gezicht elke bestelling draagt.</p>
+        <p class="model-note">Wordt een {style.name}-scène gedragen in plaats van geplaatst, dan kan het model uit de standaardbibliotheek komen — of <a href="/nl/custom-models/">een merkmodel dat alleen voor jou gemaakt is</a>, zodat hetzelfde gezicht elke bestelling draagt.</p>
       </div>
     </div>
   </section>
@@ -225,8 +225,8 @@ const zusters = styles
       <div class="cta-band reveal pending">
         <h2 class="display" style="font-size:var(--t-page-h1-sm)">Maak {style.name} <em>van jou.</em></h2>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/nl/start'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Bestel ${style.name}`}</a></span></span>
-          <a href="/nl/test-sample" class="btn btn-ghost btn-lg">Proefvisual</a>
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/nl/start/'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Bestel ${style.name}`}</a></span></span>
+          <a href="/nl/test-sample/" class="btn btn-ghost btn-lg">Proefvisual</a>
         </div>
       </div>
     </div>

@@ -306,12 +306,27 @@ const floorAt = pct(ATTENDED_PER_DAY);
     .fgt-row .fgt-s { order: 3; }
     .fgt-row .fgt-track { grid-column: 1 / -1; order: 4; }
   }
-  .fgt-day { color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .fgt-day b { color: var(--ink-2); font-weight: 600; }
-  .fgt-n { font-size: .62rem; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* ── EEN TREDE STERKERE INKT, EN DAT IS EEN REKENSOM ─────────────────────
+     Deze drie regels stonden op --ink-3 (66 procent wit). Op de paginagrond is
+     dat ruim voldoende, maar dit rooster ligt op een lichter paneel — gemeten
+     op 21 augustus 2026 tegen de werkelijk gerenderde achtergrond:
+
+       "3 Aug" (11px)      3,37 : 1
+       "11 / 15" (10px)    3,37 : 1
+       "Too soon" (9px)    3,37 : 1
+       "Mon" (11px, vet)   4,34 : 1
+
+     De eis voor tekst van deze grootte is 4,5. Met --ink-2 (80 procent) komt de
+     eerste groep op 4,97 en met --ink (wit) komt "Mon" op 6,97. Niets
+     verschuift: alleen de inkt gaat een trede omhoog, en op deze maten is dat
+     precies wat het verschil maakt tussen een cijfer dat je leest en een cijfer
+     dat je vermoedt. */
+  .fgt-day { color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .fgt-day b { color: var(--ink); font-weight: 600; }
+  .fgt-n { font-size: .62rem; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .fgt-s {
     font-size: .56rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
-    color: var(--ink-3); text-align: right; white-space: nowrap;
+    color: var(--ink-2); text-align: right; white-space: nowrap;
   }
 
   .fgt-track {
@@ -337,7 +352,18 @@ const floorAt = pct(ATTENDED_PER_DAY);
   /* Te vroeg: de dag heeft werk, maar hij doet niet mee. Gedimd en niet
      doorgestreept — er is niets fout met die dag, hij is alleen al bezet met de
      briefing van wat er nu binnenkomt. */
-  .fgt-row.is-early { opacity: .55; }
+  /* ── .68 EN NIET .55, EN DAT IS EEN CONTRASTGRENS ─────────────────────────
+     Een dag die nog te vroeg is, staat gedimd — dat is de bedoeling en dat
+     blijft zo. Maar dimmen vermenigvuldigt met de inkt: --ink-2 is 80 procent
+     wit, en op .55 zag de lezer daar 44 procent van, wat neerkomt op 4,34 : 1
+     tegen de grond van het rooster. De eis voor tekst van deze grootte is 4,5.
+
+     Op .68 komt dezelfde regel op ruim 5 : 1 en blijft het verschil met een
+     dag die wél kan bestellen goed te zien — het gaat om de VERHOUDING tussen
+     de rijen, niet om hoe zwak de zwakste mag zijn. Gemeten met leesbaar.mjs,
+     dat de dekking van alle voorouders meerekent voordat het contrast bepaald
+     wordt; zonder die optelsom is dit soort fout onzichtbaar. */
+  .fgt-row.is-early { opacity: .68; }
 
   /* Vol is de enige toestand met een waarschuwingskleur, en niet rood: er is
      niets stuk, de dag is bezet. Een rode balk op een verkooppagina leest als

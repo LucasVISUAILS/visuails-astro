@@ -100,11 +100,11 @@ const zusters = styles
 >
   <section class="page-hero">
     <div class="container">
-      <p class="eyebrow-page"><a href="/lifestyle" style="color:inherit">&larr; Lifestyle styles</a></p>
+      <p class="eyebrow-page"><a href="/lifestyle/" style="color:inherit">&larr; Lifestyle styles</a></p>
       <h1 class="display">{style.name}.</h1>
       <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
       <div class="flex" style="margin-top:1.8rem">
-        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
+        <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start/'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
         <a href={waHref(`Hi VISUAILS, I'd like to talk about the ${style.name} style.`)} class="btn btn-wa" target="_blank" rel="noopener">
           WhatsApp
         </a>
@@ -224,7 +224,7 @@ const zusters = styles
             line in the template reaches all five lifestyle styles. Written as
             a conditional ("worn rather than placed") because not every
             lifestyle scene has a person in it. */}
-        <p class="model-note">When a {style.name} scene is worn rather than placed, the model can come from the standard roster — or be <a href="/custom-models">a Brand Model made only for you</a>, so the same face carries every order.</p>
+        <p class="model-note">When a {style.name} scene is worn rather than placed, the model can come from the standard roster — or be <a href="/custom-models/">a Brand Model made only for you</a>, so the same face carries every order.</p>
       </div>
     </div>
   </section>
@@ -235,8 +235,8 @@ const zusters = styles
       <div class="cta-band reveal pending">
         <h2 class="display" style="font-size:var(--t-page-h1-sm)">Make {style.name} <em>yours.</em></h2>
         <div class="flex" style="justify-content:center;margin-top:1.8rem">
-          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
-          <a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a>
+          <span class="magnet-wrap"><span class="magnet-inner"><a href={style.orderHref ?? '/start/'} class="btn btn-primary btn-lg">{style.orderLabel ?? `Order ${style.name}`}</a></span></span>
+          <a href="/test-sample/" class="btn btn-ghost btn-lg">Test sample</a>
         </div>
       </div>
     </div>

@@ -398,10 +398,43 @@ export function stripLang(pathname) {
 }
 
 // Build a localized URL for a language-neutral base path.
+//
+// ── DE SLASH AAN HET EIND, 22 AUGUSTUS 2026 ──────────────────────────────────
+// De site bouwt met build.format: 'directory', dus /about staat op schijf als
+// /about/index.html. Cloudflare Pages serveert dan /about niet: het antwoordt
+// met een 308 naar /about/. Elke interne klik kostte daarmee een extra
+// heen-en-weer naar het netwerk voordat er ook maar één byte pagina kwam, en
+// dat gold voor 5.911 links — praktisch iedere link op de site, want de
+// letterlijke paden in de kopij ('/pricing', '/catalog/classic') zijn allemaal
+// zonder slash geschreven.
+//
+// Erger dan de vertraging was dat de site zichzelf tegensprak: de canonical en
+// de hreflang-paren stonden er wél mét slash in (die worden uit Astro's eigen
+// pathname gebouwd), dus elke pagina wees een zoekmachine naar /about/ terwijl
+// elke link op diezelfde pagina naar /about ging.
+//
+// Het antwoord hoort hier en niet in de kopij: dit is de enige plek waar een
+// intern pad wordt samengesteld, dus één regel dekt alle 5.911. Een pad dat al
+// een slash heeft blijft ongemoeid (Astro's eigen base komt zo binnen), en een
+// pad dat naar een bestand wijst krijgt er geen — /favicon.ico blijft
+// /favicon.ico. Een #anker of een ?vraag wordt eerst afgeknipt en er daarna
+// weer achter gezet, zodat lp('/compare#ai-tools') /compare/#ai-tools wordt en
+// niet /compare#ai-tools/.
+//
+// NIET voor de functieroutes: /account, /api, /o en /admin zijn Pages
+// Functions en geen mappen op schijf. Die staan overal als letterlijke string
+// in de markup en komen hier niet langs — zie de noten bij de accountlink in
+// Layout.astro.
 export function localizedPath(lang, path) {
   const clean = path === '' ? '/' : path;
-  if (lang === 'en') return clean;
-  return clean === '/' ? `/${lang}` : `/${lang}${clean}`;
+  const voorvoegsel = lang === 'en' ? '' : `/${lang}`;
+  const staart = clean.search(/[#?]/);
+  const kaal = staart === -1 ? clean : clean.slice(0, staart);
+  const rest = staart === -1 ? '' : clean.slice(staart);
+  const bestand = /\.[a-z0-9]{2,5}$/i.test(kaal.split('/').pop() || '');
+  const metSlash = kaal === '' || kaal === '/' ? '/' : (kaal.endsWith('/') || bestand ? kaal : `${kaal}/`);
+  if (metSlash === '/') return `${voorvoegsel}/${rest}`;
+  return `${voorvoegsel}${metSlash}${rest}`;
 }
 
 export function useTranslations(lang) {

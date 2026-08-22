@@ -33,7 +33,7 @@ export const styles = [
        waarde wordt gefilterd en dient alleen om een radio aan te vinken die de
        pagina zelf heeft gerenderd. Hij raakt de PRIJS niet — die hangt aan de
        route, en pipeline.js leest de URL met opzet nooit voor de dienst. */
-    orderHref: '/start/lifestyle?style=dunes',
+    orderHref: '/start/lifestyle/?style=dunes',
     name: 'Dunes',
     tagline: 'Sun, sand and quiet luxury.',
     heroPhoto: '/img/lifestyle-dunes-01.webp',
@@ -71,7 +71,7 @@ export const styles = [
   },
   {
     slug: 'flash',
-    orderHref: '/start/lifestyle?style=flash',
+    orderHref: '/start/lifestyle/?style=flash',
     name: 'Flash',
     tagline: 'Direct flash. No apologies.',
     heroPhoto: '/img/lifestyle-flash-01.webp',
@@ -109,7 +109,7 @@ export const styles = [
   },
   {
     slug: 'glow',
-    orderHref: '/start/lifestyle?style=glow',
+    orderHref: '/start/lifestyle/?style=glow',
     name: 'Glow',
     tagline: 'Golden hour, on demand.',
     heroPhoto: '/img/lifestyle-glow-01.webp',
@@ -147,7 +147,7 @@ export const styles = [
   },
   {
     slug: 'phone-made',
-    orderHref: '/start/lifestyle?style=phone-made',
+    orderHref: '/start/lifestyle/?style=phone-made',
     name: 'Phone-made',
     tagline: "Looks effortless. Isn’t.",
     heroPhoto: '/img/lifestyle-phone-made-01.webp',
@@ -199,7 +199,7 @@ export const styles = [
        dat een prijs uitrekent, terwijl de regel erboven op deze zelfde pagina
        "On request" zegt. Nu naar de aanvraagpagina — zie
        StylePicker.astro en het 'custom-look'-blok in HoldingPage.astro. */
-    orderHref: '/start/custom-look',
+    orderHref: '/start/custom-look/',
     orderLabel: 'Ask for a custom look',
     moodParagraphs: [
       'Not one of our four moods — a scene designed from your references: the setting, styling and light that only your brand would use.',

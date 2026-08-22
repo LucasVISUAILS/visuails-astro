@@ -48,7 +48,7 @@ export const catalogStyles = [
        je vervolgens vraagt WAT we gaan maken, heeft de vraag gesteld die je net
        beantwoord hebt. Classic IS de standaard catalogset, dus gaat hij naar het
        formulier zelf. Zie src/data/orderDoors.js voor de hele redenering. */
-    orderHref: '/start/catalog',
+    orderHref: '/start/catalog/',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
@@ -104,7 +104,7 @@ export const catalogStyles = [
        zie `cardPrice: 'Custom pricing'` hierboven. Een knop naar het gewone
        bestelformulier zou een prijs beloven die er nog niet is, dus gaat hij
        naar dezelfde aanvraag als een look op maat bij Lifestyle. */
-    orderHref: '/start/custom-look',
+    orderHref: '/start/custom-look/',
     orderLabel: 'Ask for a Custom Brand look',
     heroIcon: 'bag',
     heroWidth: '26%',

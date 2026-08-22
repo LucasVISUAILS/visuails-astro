@@ -104,7 +104,7 @@ const zusters = videoStyles
   <section class="page-hero">
     <div class="container two-col" style="align-items:center">
       <div class="reveal pending">
-        <span class="eyebrow-page"><a href="/video" style="color:inherit">Video styles</a></span>
+        <span class="eyebrow-page"><a href="/video/" style="color:inherit">Video styles</a></span>
         <h1 class="display" style="margin-top:1rem">{style.name}.</h1>
         <p style="margin-top:1rem;font-family:var(--font-display);font-size:clamp(1.35rem,2.3vw,1.9rem);color:var(--ink);max-width:34ch;line-height:1.25">{style.tagline}</p>
         <div class="flex" style="margin-top:1.8rem">
@@ -177,7 +177,7 @@ const zusters = videoStyles
   <section>
     <div class="container">
       <h2 style="margin-bottom:2rem">What goes into every frame.</h2>
-      <div class="arrow-rows" style="grid-template-columns:repeat(2,1fr)">
+      <div class="arrow-rows arrow-rows-2">
         {style.craft.map((c) => (
           <div class="reveal pending"><h3>{c.title}</h3><p>{c.body}</p></div>
         ))}
@@ -210,7 +210,7 @@ const zusters = videoStyles
         </ul>
         {/* Brief §1 — every drop-content page links to /custom-models. One
             line in the template reaches all four video styles. */}
-        <p class="model-note">If a {style.name} clip has someone in it, it can be the same face as your photos — <a href="/custom-models">a Brand Model</a> is built once and used across stills and video alike.</p>
+        <p class="model-note">If a {style.name} clip has someone in it, it can be the same face as your photos — <a href="/custom-models/">a Brand Model</a> is built once and used across stills and video alike.</p>
       </div>
     </div>
   </section>
@@ -231,7 +231,7 @@ const zusters = videoStyles
               )}
             </span>
           </span>
-          <a href="/test-sample" class="btn btn-ghost btn-lg">Test sample</a>
+          <a href="/test-sample/" class="btn btn-ghost btn-lg">Test sample</a>
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@
  *
  * ── WAAROM DIT NIET IN DE BRON TE LEZEN IS ─────────────────────────────────
  *
- * De html was al die tijd goed: `<a href="/catalog">` met een script dat er een
+ * De html was al die tijd goed: `<a href="/catalog/">` met een script dat er een
  * tab van maakt. Beide helften klopten los van elkaar. Wat er misging, ging mis
  * in de VOLGORDE waarin een router ze uitvoert, en dat is alleen in een echte
  * browser te zien — net als bij de twee fouten in tests/a11y.test.mjs.
@@ -118,7 +118,7 @@ console.log('\nde dienstkaartjes onder de hero blijven tabs');
   ok('en ook daar blijft een klik op de homepage', await klikGeeftDia(), true);
 
   // En de weg waarop het misging: wég van de homepage en terug.
-  await page.click('a[href="/pricing"]');
+  await page.click('a[href="/pricing/"]');
   await page.waitForTimeout(900);
   await page.click('a[href="/"]');
   await page.waitForTimeout(1100);
@@ -167,10 +167,10 @@ console.log('\nhet plan uit de URL wordt aangevinkt, ook na een sprong');
      het de tweede keer oversloeg. */
   await page.goto(`${BASE}/plans`, { waitUntil: 'load' });
   await page.waitForTimeout(700);
-  await page.click('a[href="/start/plan?plan=brand"]');
+  await page.click('a[href="/start/plan/?plan=brand"]');
   await page.waitForTimeout(1100);
   ok('en na een zachte sprong vanaf /plans ook', await gekozen(), 'brand');
-  ok('op de goede pagina', new URL(page.url()).pathname, '/start/plan');
+  ok('op de goede pagina', new URL(page.url()).pathname, '/start/plan/');
 
   await page.close();
 }
@@ -217,9 +217,9 @@ console.log('\nde zwevende notitie overleeft een zachte navigatie');
   ok('en bij de knop', vers && vers.bijDeKnop, true);
 
   /* Weg en terug: dat is het moment waarop <html> zijn klasse verliest. */
-  await page.$eval('a[href="/pricing"]', (e) => e.click());
+  await page.$eval('a[href="/pricing/"]', (e) => e.click());
   await page.waitForTimeout(1000);
-  await page.$eval('a[href="/how-it-works"]', (e) => e.click()).catch(async () => {
+  await page.$eval('a[href="/how-it-works/"]', (e) => e.click()).catch(async () => {
     await page.goto(`${BASE}/how-it-works`, { waitUntil: 'load' });
   });
   await page.waitForTimeout(1100);
@@ -275,7 +275,7 @@ console.log('\nde luisteraars op window en document stapelen zich niet op');
   const eerste = await tel();
 
   for (let i = 0; i < 3; i++) {
-    await page.click('a[href="/pricing"]');
+    await page.click('a[href="/pricing/"]');
     await page.waitForTimeout(800);
     await page.click('a[href="/"]');
     await page.waitForTimeout(1000);

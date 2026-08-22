@@ -247,7 +247,7 @@ console.log('\nde licentie die de klant ons geeft staat in de voorwaarden, met z
        zocht "staan in onze" en ging rood op een pagina die in orde was — dezelfde
        misgreep als eerder in dit bestand, en de reden dat elke mutatie hieronder ook
        de andere kant op getest wordt. */
-    ['de aanlevering aan de subverwerkers is benoemd', /named in our <a href="\/data-processing-agreement">/, /in onze <a href="\/nl\/data-processing-agreement">verwerkersovereenkomst<\/a> staan/],
+    ['de aanlevering aan de subverwerkers is benoemd', /named in our <a href="\/data-processing-agreement\/">/, /in onze <a href="\/nl\/data-processing-agreement\/">verwerkersovereenkomst<\/a> staan/],
   ];
   for (const [naam, reEn, reNl] of LICENTIE) {
     ok(`EN ${naam}`, reEn.test(TERMS.en), true);
@@ -438,10 +438,12 @@ console.log('\nde vrijwaring in §11 heeft de drie grenzen die haar bruikbaar ma
     /limited to the amount you paid for that order/i.test(TERMS.en), true);
   ok('NL idem', /beperkt tot het bedrag dat je voor die bestelling hebt betaald/i.test(TERMS.nl), true);
 
-  /* De vrijwaring wijst naar /ai-act voor de publicatieplicht. Die link moet bestaan
-     en per taal de juiste zijn — localizedPath() kent geen slugtabel. */
-  ok('EN de vrijwaring wijst naar de AI Act-verklaring', TERMS.en.includes('href="/ai-act"'), true);
-  ok('NL idem', TERMS.nl.includes('href="/nl/ai-act"'), true);
+  /* De vrijwaring wijst naar /ai-act/ voor de publicatieplicht. Die link moet bestaan
+     en per taal de juiste zijn — localizedPath() kent geen slugtabel.
+     De slash aan het eind hoort erbij sinds 22 augustus 2026; zie de noot bij
+     localizedPath() in src/i18n/ui.js voor waarom elke interne link er een heeft. */
+  ok('EN de vrijwaring wijst naar de AI Act-verklaring', TERMS.en.includes('href="/ai-act/"'), true);
+  ok('NL idem', TERMS.nl.includes('href="/nl/ai-act/"'), true);
 }
 
 console.log('\nde beveiligingsparagraaf belooft niets wat niet gemeten is');

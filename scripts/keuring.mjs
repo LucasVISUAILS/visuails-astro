@@ -80,7 +80,14 @@ import { fileURLToPath } from 'node:url';
 const WORTEL = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(WORTEL, 'dist');
 
-const BREEDTES = [390, 768, 1440, 1920];
+/* 320 staat erbij sinds 21 augustus 2026. Het is de smalste breedte die nog
+   echt gebruikt wordt (iPhone SE 1e generatie, kleine Androids, en elke
+   telefoon met de tekstgrootte omhoog), en het is precies de breedte waarop
+   een raster dat op 390 nog net past alsnog omvalt. Met KEURING_BREEDTES kun
+   je er tijdelijk één uitlichten: KEURING_BREEDTES=320 npm run keuring. */
+const BREEDTES = process.env.KEURING_BREEDTES
+  ? process.env.KEURING_BREEDTES.split(',').map(Number)
+  : [320, 390, 768, 1440, 1920];
 const WERKERS = 6;
 const ALS_JSON = process.argv.includes('--json');
 
@@ -168,7 +175,23 @@ function padBestaat(href) {
   return ja;
 }
 
+/* ── EN GEEN KLASSIEKE SCHUIFBALK, WANT DIE MEET EEN TELEFOON VERKEERD ─────
+   Een venster van 320px in een desktopbrowser heeft een schuifbalk van elf
+   pixels: `innerWidth` is dan 320 maar de inhoudsbreedte 309. Elk element dat
+   `position: fixed; inset: 0` is — de korrel, de cookiebalk, de mobiele lade —
+   wordt op de VOLLE 320 gelegd en steekt dus elf pixels buiten de inhoud uit.
+   `html { overflow-x: hidden }` verbergt dat voor het oog maar niet voor
+   `scrollTo`, dus meldde de overloopcontrole op /nl/data-processing-agreement
+   "11px zijwaarts, geen enkel element aanwijsbaar" — een schuifbalk die zichzelf
+   aangaf.
+
+   Een telefoon heeft geen klassieke schuifbalk; hij legt hem óver de inhoud.
+   Deze twee regels doen hetzelfde in de meting, en daarmee meet 320 wat 320 op
+   een telefoon werkelijk is. Gecontroleerd: met deze regel is `scrollTo(9999)`
+   op die pagina een nulmeting, precies zoals in een echte mobiele context. */
 const STIL = `*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}
+  html{scrollbar-width:none}
+  ::-webkit-scrollbar{width:0;height:0}
   .reveal,[class*="float"],[class*="rise"],[class*="foot-mark"]{opacity:1!important;transform:none!important}`;
 
 /* ── WAT ER IN DE BROWSER GEMETEN WORDT ─────────────────────────────────────
@@ -177,7 +200,7 @@ const STIL = `*,*::before,*::after{animation:none!important;transition:none!impo
    nergens heen gaan. */
 async function keurPagina(p, breedte) {
   return p.evaluate(({ breedte }) => {
-    const uit = { overloop: [], raakvlak: [], afgekapt: [], kop: [], alt: [], links: [], beeld: [], bevatting: [] };
+    const uit = { overloop: [], raakvlak: [], afgekapt: [], kop: [], alt: [], links: [], beeld: [], bevatting: [], splinter: [], deel: [] };
     const naam = (el) => {
       const t = el.tagName.toLowerCase();
       const k = typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
@@ -198,13 +221,41 @@ async function keurPagina(p, breedte) {
     if (kanNaar > 2) {
       /* Welk element steekt uit? Alleen het BUITENSTE per tak melden, anders
          staat er tien keer hetzelfde omdat de kinderen mee uitsteken. */
+      /* ── DRIE SOORTEN VALS ALARM, EN WAAROM ZE ERUIT MOETEN ───────────────
+         Op 320px meldde deze controle twaalf pagina's, en op elf ervan stonden
+         de eerste vier regels vol met dingen die niets fout doen:
+
+           · de GESLOTEN mobiele lade. Die staat met opzet op translateX(100%),
+             dus rechts buiten beeld. Elke ingang erin meldt zich netjes op
+             x=339..621 en geen daarvan is zichtbaar.
+           · alles binnen een <svg>. Een <svg> knipt zijn eigen inhoud af bij de
+             viewBox; een <use> die in gebruikersruimte 479 breed is, is op het
+             scherm gewoon 26 pixels.
+           · alles binnen een doos die ZELF zijwaarts scrollt. Een brede tabel
+             in `.table-scroll` hoort breder te zijn dan het scherm — dat is de
+             oplossing, niet het probleem.
+
+         Wat overblijft is wat een bezoeker daadwerkelijk voorbij de rand ziet
+         staan. De meting of de pagina kán schuiven (`kanNaar`) blijft er
+         onafhankelijk naast staan, dus als deze filters ooit te veel wegnemen,
+         zegt die regel nog steeds dat er iets mis is. */
+      const inScroller = (el) => {
+        for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+          const o = getComputedStyle(n).overflowX;
+          if (o === 'auto' || o === 'scroll') return true;
+        }
+        return false;
+      };
       const schuldig = [];
       for (const el of document.querySelectorAll('body *')) {
         const cs = getComputedStyle(el);
         if (cs.position === 'fixed' || cs.display === 'none' || cs.visibility === 'hidden') continue;
+        if (el.closest('.mobile-nav')) continue;
+        if (el.closest('svg')) continue;
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) continue;
         if (r.right <= breedte + 2 && r.left >= -2) continue;
+        if (inScroller(el)) continue;
         if (schuldig.some((s) => s.el.contains(el))) continue;
         schuldig.push({ el, r });
       }
@@ -213,6 +264,34 @@ async function keurPagina(p, breedte) {
       }
       if (!schuldig.length) uit.overloop.push(`pagina schuift ${kanNaar}px zijwaarts (${docBreed}px breed bij een venster van ${breedte}px), geen enkel element aanwijsbaar`);
       else uit.overloop.unshift(`pagina schuift ${kanNaar}px zijwaarts`);
+    }
+
+    /* ── HOE BREED STAAT ELKE FOTO, ALS DEEL VAN HET SCHERM ────────────────
+       Hier wordt niets beoordeeld; hier wordt alleen geteld. Het oordeel valt
+       na afloop, want daarvoor zijn TWEE breedtes nodig — zie de noot bij
+       `kolomVal` onderaan dit bestand. */
+    /* De sleutel telt mee HOEVEELSTE voorkomen van dit bestand het is. Zonder
+       dat nummer overschrijft een tweede gebruik van dezelfde foto op dezelfde
+       pagina de eerste — en dat is precies wat er gebeurde: de hero-foto van
+       /lifestyle staat verderop nog een keer op volle breedte, dus las de
+       controle 350px waar de hero er 136 was, en zag niets. */
+    const gebruikt = new Map();
+    for (const el of document.querySelectorAll('img')) {
+      if (el.closest('.mobile-nav') || el.closest('[aria-hidden="true"]')) continue;
+      const nat = el.naturalWidth || Number(el.getAttribute('width')) || 0;
+      if (nat < 400) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      let inScroller = false;
+      for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+        const o = getComputedStyle(n).overflowX;
+        if (o === 'auto' || o === 'scroll') { inScroller = true; break; }
+      }
+      if (inScroller) continue;
+      const src = (el.getAttribute('src') || '').split('?')[0];
+      const nr = (gebruikt.get(src) || 0) + 1;
+      gebruikt.set(src, nr);
+      uit.deel.push({ src, nr, px: Math.round(r.width), deel: r.width / breedte });
     }
 
     /* ── raakvlakken, alleen op de telefoonmaat ──────────────────────────── */
@@ -367,6 +446,7 @@ async function main() {
   const bevindingen = [];
   const beeldMax = new Map();   // src → grootste getoonde breedte over de hele site
   const beeldNat = new Map();   // src → natuurlijke breedte
+  const beeldDeel = new Map();  // `${pad}|${src}` → { [breedte]: aandeel van het venster }
 
   if (!ALS_JSON) console.log(`\nVISUAILS — keuring van ${paden.length} pagina's × ${BREEDTES.length} breedtes\n`);
 
@@ -466,8 +546,13 @@ async function main() {
       if (html !== wil) bevindingen.push({ pad: u, breedte, soort: 'taal', tekst: `lang="${html}" waar "${wil}" hoort` });
 
       const r = await keurPagina(p, breedte);
-      for (const soort of ['overloop', 'raakvlak', 'afgekapt', 'kop', 'alt', 'bevatting']) {
+      for (const soort of ['overloop', 'raakvlak', 'afgekapt', 'kop', 'alt', 'bevatting', 'splinter']) {
         for (const t of r[soort]) bevindingen.push({ pad: u, breedte, soort, tekst: t });
+      }
+      for (const d of r.deel) {
+        const k = `${u}|${d.src}|${d.nr}`;
+        if (!beeldDeel.has(k)) beeldDeel.set(k, {});
+        beeldDeel.get(k)[breedte] = d;
       }
       for (const b of r.beeld) {
         const nu = beeldMax.get(b.src) || 0;
@@ -488,6 +573,46 @@ async function main() {
   await Promise.all(Array.from({ length: WERKERS }, werker));
   await browser.close();
   srv.close();
+
+  /* ── KOLOMVAL: EEN FOTO DIE OP EEN TELEFOON ZIJN KOLOM KWIJT IS ──────────
+     Dit is de controle die de bug van 21 augustus 2026 zou hebben gevonden, en
+     hij kon alleen ná afloop worden gedaan omdat er twee breedtes voor nodig
+     zijn.
+
+     De bug: `.two-col.hero-split` overschreef door hogere specificiteit de
+     inklap naar één kolom, dus de fotoband in de hero van vier dienstpagina's
+     bleef ook op een telefoon een halve kolom — 136px op 390, 71px op 320.
+
+     WAAROM ÉÉN BREEDTE NIET GENOEG IS. Een eerste versie meldde elke foto onder
+     de 130px op een telefoon: 180 stuks, en vrijwel allemaal met opzet klein —
+     een strook van 47px duimnagels, een roosterrij van 38px gezichten, twee
+     vergelijkingsfoto's naast elkaar. Klein op een telefoon is geen fout.
+
+     Wat wél een fout is: klein op een telefoon en GROOT op een breed scherm.
+     Een duimnagel is op beide smal; een kolom die niet inklapt krimpt gewoon
+     mee met het venster en verraadt zich daarmee. Vandaar de vergelijking:
+     minder dan 22 procent van het scherm op 390, meer dan 30 procent op 1440.
+     Alles wat op allebei klein is, valt er vanzelf buiten. */
+  if (BREEDTES.includes(390) && BREEDTES.includes(1440)) {
+    for (const [k, perBreedte] of beeldDeel) {
+      const tel = perBreedte[390], breed = perBreedte[1440];
+      if (!tel || !breed) continue;
+      /* ── DE TWEE GRENZEN, EN WAAROM ZE ZO LIGGEN ────────────────────────
+         Een gezonde kolom wordt op een telefoon bijna schermbreed: gemeten op
+         deze site staan de goede gevallen op 72 tot 90 procent. Een kolom die
+         niet inklapt houdt ongeveer HETZELFDE aandeel als op een breed scherm —
+         de hero-fotoband stond op 35 procent bij 390 en 33 procent bij 1440.
+
+         Dus: minder dan 55 procent van het scherm op een telefoon (hij is niet
+         opengeklapt) én meer dan 25 procent op 1440 (hij is daar wel een echte
+         kolom en dus geen duimnagel). Een strook duimnagels haalt die tweede
+         eis nooit en valt er vanzelf buiten. */
+      if (tel.deel >= 0.55 || breed.deel <= 0.25 || breed.px < 200) continue;
+      const [pad, src] = k.split('|');
+      bevindingen.push({ pad, breedte: 390, soort: 'kolomval',
+        tekst: `${src.split('/').pop()} is ${tel.px}px breed op 390 (${Math.round(tel.deel * 100)}% van het scherm) maar ${breed.px}px op 1440 (${Math.round(breed.deel * 100)}%) — de kolom klapt niet in` });
+    }
+  }
 
   /* Beeldverspilling pas NA afloop beoordelen: een bestand mag groot zijn zolang
      het ergens op de site ook groot getoond wordt. De vraag is dus niet "is hij
@@ -520,7 +645,7 @@ async function main() {
     if (!perSoort.has(b.soort)) perSoort.set(b.soort, []);
     perSoort.get(b.soort).push(b);
   }
-  const volgorde = ['laden', 'console', 'link', 'taal', 'overloop', 'bevatting', 'afgekapt', 'kop', 'alt', 'raakvlak'];
+  const volgorde = ['laden', 'console', 'link', 'taal', 'overloop', 'kolomval', 'bevatting', 'afgekapt', 'kop', 'alt', 'raakvlak'];
   console.log(`\n${teller} pagina-metingen gedaan\n`);
   let totaal = 0;
   for (const soort of volgorde) {

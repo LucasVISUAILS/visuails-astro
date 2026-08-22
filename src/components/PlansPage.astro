@@ -181,7 +181,28 @@ const c = COPY[nl ? 'nl' : 'en'];
 <section class="section-tight"><div class="container">
   <div class="lime-panel">
     <div class="lime-panel-light" aria-hidden="true"></div>
-    <div class="lime-panel-in on-bright">
+    {/* ── `.on-bright` IS ERAF — 21 augustus 2026 ─────────────────────────
+        En dit was geen schoonheidsfoutje. `.on-bright` is de scope die zegt
+        "de grond onder mij is HELDER, draai de hele inktladder om naar
+        bijna-zwart". Dat klopte zolang dit paneel een vlak van #C6F100 was.
+
+        Op 20 augustus werd de grond een donkere foto met een limoen bundel.
+        In HomeV2.astro is `.on-bright` toen weggehaald — met een noot erbij
+        dat half omdraaien hier het gevaar is — maar deze pagina gebruikt
+        hetzelfde blok en is vergeten. Sindsdien stond het hele
+        abonnementspaneel op /plans en /nl/plans in bijna-zwarte letters op een
+        bijna-zwarte foto.
+
+        Gemeten op 21 augustus: vijftien tekstregels op 1,0 tot 1,04 : 1, waar
+        4,5 de eis is. Dat is niet moeilijk leesbaar maar ONZICHTBAAR — de kop
+        "What a plan actually is." was op een schermafdruk alleen te vinden door
+        te weten waar hij stond.
+
+        Gevonden door de leesbaarheidsmeting die de pagina twee keer afdrukt,
+        één keer met alle tekstkleuren op doorzichtig, en de twee vergelijkt.
+        Geen enkele controle die naar de STYLESHEET kijkt kon dit zien: daar
+        stond keurig een kleur, alleen de grond eronder was een foto. */}
+    <div class="lime-panel-in">
       <div class="pl-top">
         <div>
           <h2 class="pl-h">{c.panelH[0]} <em class="pl-em">{c.panelH[1]}</em></h2>

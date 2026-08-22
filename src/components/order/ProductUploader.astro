@@ -183,7 +183,11 @@ const hint = lang === 'nl'
           count changes. Empty in the markup on purpose: a card list rendered
           here would be a guess at a number the visitor has already answered. */}
       <ol class="pu-cards" data-pl-cards></ol>
-      <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-pl-add></button></p>
+      {/* Verborgen tot pipeline.js beslist heeft of hij nodig is — hij bestaat
+          alleen voor de keuze "meer dan 30", waar het aantal onbekend is. Zonder
+          dit stond er een lege ghost-knop in beeld zolang het script nog niet
+          gedraaid had. */}
+      <p class="pu-add-row"><button type="button" class="btn btn-ghost pu-add" data-pl-add hidden>{k.addProduct}</button></p>
 
       <p class="pu-swap">
         <button type="button" class="pu-link" data-pu-switch="folder">{k.toFolder}</button>
@@ -341,7 +345,7 @@ const hint = lang === 'nl'
     /* Two by two at the form's 880px measure, one column on a phone. Four
        across fits arithmetically and reads badly: `buys` is a sentence, and a
        sentence in a 200px column is eight lines of two words. */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   }
   .pu-guide-item {
     display: grid;
@@ -397,7 +401,7 @@ const hint = lang === 'nl'
        3×250 + 51 = 801 and still fit if a second or third question is ever
        added back in attributes.js. At 260 the third track missed by half a
        pixel, which is why it is not 260. */
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
   }
   .pu-about-item {
     min-width: 0;
@@ -527,7 +531,7 @@ const hint = lang === 'nl'
      dat een lange optienaam de kolom uit loopt. */
   .pu-cards :global(.pu-ratios-row) {
     display: grid; gap: .5rem; margin-top: .5rem;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
   }
   .pu-cards :global(.pu-ratio-q) { display: grid; gap: .2rem; }
   .pu-cards :global(.pu-ratio-label) { font-size: .76rem; color: var(--ink-3); }
@@ -713,7 +717,7 @@ const hint = lang === 'nl'
      is where the material placeholder stops wrapping mid-word. */
   .pu-cards :global(.pu-about) {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
     gap: .55rem .7rem;
     margin-top: .85rem;
     padding-top: .8rem;

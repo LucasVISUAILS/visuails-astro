@@ -318,7 +318,7 @@ const termijnen = TERM_IDS.map((id) => ({
     <div class="plan-signedout" data-acct="out">
       <p>{c.signedOut}</p>
       <p>
-        <a class="btn btn-ghost" href="/account/login">{c.signIn}</a>
+        <a class="btn btn-ghost" href={`/account/login?lang=${lang}`}>{c.signIn}</a>
         <a class="btn btn-ghost" href={lp('/test-sample')}>{c.sample}</a>
       </p>
     </div>

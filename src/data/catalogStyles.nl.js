@@ -38,7 +38,7 @@ export const catalogStyles = [
        je vervolgens vraagt WAT we gaan maken, heeft de vraag gesteld die je net
        beantwoord hebt. Classic IS de standaard catalogset, dus gaat hij naar het
        formulier zelf. Zie src/data/orderDoors.js voor de hele redenering. */
-    orderHref: '/nl/start/catalog',
+    orderHref: '/nl/start/catalog/',
     heroIcon: 'bottle',
     heroWidth: '26%',
     cardIcon: 'bottle',
@@ -90,7 +90,7 @@ export const catalogStyles = [
     priceTrust: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
     priceUnit: '',
     metaPrice: `Eén keer ontworpen — daarna ${CAT_FROM} / product`,
-    orderHref: '/nl/start/custom-look',
+    orderHref: '/nl/start/custom-look/',
     orderLabel: 'Vraag een eigen catalogus-look aan',
     heroIcon: 'bag',
     heroWidth: '26%',

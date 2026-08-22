@@ -75,7 +75,7 @@ const COPY = {
       {
         id: 'catalog',
         kind: 'catalog',
-        href: '/start/catalog',
+        href: '/start/catalog/',
         name: 'Catalog sets',
         gets: 'From 4 images per product — front, back, detail, on model',
         line: 'The product page shots. Clean ground, consistent across a whole range.',
@@ -83,7 +83,7 @@ const COPY = {
       {
         id: 'lifestyle',
         kind: 'lifestyle',
-        href: '/start/lifestyle',
+        href: '/start/lifestyle/',
         name: 'Lifestyle carousels',
         gets: '3 images per product — one styled look',
         line: 'The same product in a scene, in one of four house styles.',
@@ -91,7 +91,7 @@ const COPY = {
       {
         id: 'complete',
         kind: 'complete',
-        href: '/start/complete',
+        href: '/start/complete/',
         name: 'Both together',
         gets: '7 images per product — 4 catalog, 3 lifestyle',
         line: 'A whole range shot once: the page and the feed, in one order.',
@@ -100,7 +100,7 @@ const COPY = {
     later: [
       {
         id: 'video',
-        href: '/start/video',
+        href: '/start/video/',
         name: 'Video clips',
         status: 'No order form yet',
         price: `${euro(AMOUNT.video, 'en')} a clip`,
@@ -108,7 +108,7 @@ const COPY = {
       },
       {
         id: 'brand-model',
-        href: '/start/brand-model',
+        href: '/start/brand-model/',
         name: 'A Brand Model',
         status: 'By conversation',
         price: `${euro(AMOUNT.brandModel, 'en')} one-time`,
@@ -126,7 +126,7 @@ const COPY = {
          eerlijke antwoord in plaats van een gat. */
       {
         id: 'custom-look',
-        href: '/start/custom-look',
+        href: '/start/custom-look/',
         name: 'A custom look',
         status: 'Priced per request',
         price: 'No standard rate',
@@ -178,7 +178,7 @@ const COPY = {
       {
         id: 'catalog',
         kind: 'catalog',
-        href: '/start/catalog',
+        href: '/start/catalog/',
         name: 'Catalogsets',
         gets: 'Vanaf 4 beelden per product — voor, achter, detail, op model',
         line: 'De beelden voor je productpagina. Egale ondergrond, en elk product ziet er hetzelfde uit.',
@@ -186,7 +186,7 @@ const COPY = {
       {
         id: 'lifestyle',
         kind: 'lifestyle',
-        href: '/start/lifestyle',
+        href: '/start/lifestyle/',
         name: 'Lifestyle-carousels',
         gets: '3 beelden per product — één gestylede look',
         line: 'Hetzelfde product in een scène, in een van vier huisstijlen.',
@@ -194,7 +194,7 @@ const COPY = {
       {
         id: 'complete',
         kind: 'complete',
-        href: '/start/complete',
+        href: '/start/complete/',
         name: 'Allebei samen',
         gets: '7 beelden per product — 4 catalog, 3 lifestyle',
         line: 'Een hele reeks in één keer: de pagina en de feed, in één bestelling.',
@@ -203,7 +203,7 @@ const COPY = {
     later: [
       {
         id: 'video',
-        href: '/start/video',
+        href: '/start/video/',
         name: 'Videoclips',
         status: 'In aanbouw',
         price: `${euro(AMOUNT.video, 'nl')} per clip`,
@@ -211,7 +211,7 @@ const COPY = {
       },
       {
         id: 'brand-model',
-        href: '/start/brand-model',
+        href: '/start/brand-model/',
         name: 'Een merkmodel',
         status: 'In gesprek',
         price: `${euro(AMOUNT.brandModel, 'nl')} eenmalig`,
@@ -220,7 +220,7 @@ const COPY = {
       /* Zie de noot bij de Engelse tegenhanger. */
       {
         id: 'custom-look',
-        href: '/start/custom-look',
+        href: '/start/custom-look/',
         name: 'Een look op maat',
         status: 'Prijs op aanvraag',
         price: 'Geen standaardtarief',
@@ -248,7 +248,10 @@ const c = COPY[lang];
 const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro(ladderFloor(kind), lang)}`;
 ---
 
-<section class="page-hero"><div class="container">
+{/* De lichtbundel uit de merktaal — zie .beam in global.css. Op een
+    paginakop en niet op een band met een foto: twee lichtbronnen over elkaar
+    maken het beeld troebel. */}
+<section class="page-hero beam beam-left"><div class="container">
   <span class="eyebrow-page">{c.eyebrow}</span>
   <h1 class="display">{c.h1}</h1>
   <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
@@ -472,7 +475,14 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
   }
   .start-foot-body { margin-top: .9rem; color: var(--ink-3); max-width: 52ch; }
   .start-foot-cta { display: flex; flex-wrap: wrap; gap: .8rem; }
-  .start-foot-cta > .btn { flex: 1 0 auto; }
+  /* `flex: 1 0 auto` betekende: groeien mag, KRIMPEN NIET. Met `flex-wrap`
+     eronder ging elke knop die te breed werd naar een eigen regel, maar bleef
+     daar even breed — en bij 150 % tekstgrootte op een telefoon stak
+     "Probeer een proefvisual · €1" daarmee 16 px buiten het scherm. Krimpen mag
+     nu wel, en `min-width: 0` haalt de ondergrens weg die een flexitem anders
+     op zijn min-content houdt. Het label breekt dan af; dat is precies wat de
+     regel bij .btn onder 28.75em al toestaat. */
+  .start-foot-cta > .btn { flex: 1 1 auto; min-width: 0; }
 
   @media (max-width: 900px) {
     .pick-grid, .ask-grid { grid-template-columns: 1fr 1fr; }

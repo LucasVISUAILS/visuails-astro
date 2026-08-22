@@ -154,7 +154,19 @@ for (const lang of LANGS) {
   for (const [naam, link, off] of pairs) {
     // Selectorlijsten die de link opmaken. `a,` of `a {` — niet `a:hover`, want een
     // hovertoestand hoort een uitgeschakeld item juist niet te krijgen.
-    const rules = selectors.filter((sel) => new RegExp(`${link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(,|$)`, 'm').test(sel));
+    /* ── EN EEN `:not()` ERACHTER TELT NOG STEEDS ALS DEZELFDE REGEL ────────
+       Op 21 augustus 2026 werd `.mobile-nav > a` verfijnd tot
+       `.mobile-nav > a:not(.mobile-home)`, omdat het merkteken in de lade een
+       link werd en daardoor per ongeluk alles erfde wat een ingang hoort te
+       krijgen — inclusief een onderrandje van 26 pixels breed.
+
+       Deze controle zocht letterlijk naar `.mobile-nav > a` gevolgd door een
+       komma of het regeleinde, en vond dus niets meer. Dat is precies het
+       omgekeerde van wat hij moet doen: hij bestaat om te merken dat de link
+       en het uitgeschakelde item uit elkaar lopen, niet om te eisen dat de
+       selector nooit verandert. Een verfijning met `:not()` is nog steeds
+       dezelfde regel, dus die wordt hier toegestaan. */
+    const rules = selectors.filter((sel) => new RegExp(`${link.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(:not\\([^)]*\\))*\\s*(,|$)`, 'm').test(sel));
     check(`${naam}: er is een regel die de link opmaakt`, rules.length > 0, true);
     const missing = rules.filter((sel) => !sel.includes(off));
     check(`${naam}: elke regel noemt ook .mi-off`, missing, []);

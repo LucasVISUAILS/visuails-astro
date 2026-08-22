@@ -80,7 +80,7 @@ const COPY = {
     anyNote: 'We read the products and what you told us, and pick from the ten faces. This is the default, and it is a real answer — not a blank we will chase you about.',
     why: 'About these faces',
     whyP: [
-      'These ten are our standard roster and it is shared. A face you pick here can appear on another brand next month, in the same way a stock model can. For most catalogs that is fine — a shopper is judging the garment.',
+      'These ten are our standard roster and it is shared. A face you pick here can appear on another brand next month, in the same way a stock model can. For most catalogues that is fine — a shopper is judging the garment.',
       'If you would rather the face were yours alone, a Brand Model is designed once, for you, and is used nowhere else. That is a separate product with its own price, and you do not have to decide it now: a standard face today does not stop you moving to your own later.',
     ],
     brandCta: 'What a Brand Model is',
@@ -227,7 +227,7 @@ const nl = lang === 'nl';
         op vier Nederlandse pagina's, tot 18 augustus 2026. Een reparatie op één
         plek terwijl hetzelfde patroon nog ergens anders staat, is geen reparatie.
         Sectie 10 van tests/nav.test.mjs bewaakt het nu over de hele bron. */}
-    <a href="/account" class="btn btn-ghost mp-signin-btn">{c.ownSignIn}</a>
+    <a href={`/account?lang=${lang}`} class="btn btn-ghost mp-signin-btn">{c.ownSignIn}</a>
   </p>
 
   <p class="pl-model-note">{c.anyNote}</p>
@@ -257,6 +257,12 @@ const nl = lang === 'nl';
     display: flex;
     flex-direction: column;
     gap: .4rem;
+    /* Een rasteritem krimpt niet onder zijn min-content zolang de ondergrens
+       `auto` is, en die min-content is hier de langste eigenschapsnaam. Bij
+       150 % tekstgrootte op een telefoon liep het raster van drie daardoor
+       48 px buiten beeld. Met `min-width: 0` mag de baan wél smaller worden en
+       breekt de tekst eronder af in plaats van het raster. */
+    min-width: 0;
     padding: .5rem;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-md);
@@ -394,5 +400,6 @@ const nl = lang === 'nl';
      on the last row is the price of not stretching a face. */
   @media (max-width: 1100px) { .mp-grid { grid-template-columns: repeat(4, 1fr); } }
   @media (max-width: 700px)  { .mp-grid { grid-template-columns: repeat(3, 1fr); } }
+  .mp-traits { overflow-wrap: anywhere; }
   @media (prefers-reduced-motion: reduce) { .mp-opt { transition: none; } }
 </style>
