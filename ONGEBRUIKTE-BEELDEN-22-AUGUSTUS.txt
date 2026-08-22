@@ -1,4 +1,4 @@
-58 bestanden, samen 5.3 MB
+60 bestanden, samen 5.3 MB
      109 kB  public/img/banners-09.avif
       35 kB  public/img/banners-10.avif
       65 kB  public/img/banners-10.webp
@@ -9,6 +9,8 @@
      180 kB  public/img/banners-15.webp
      281 kB  public/img/banners-17.avif
      553 kB  public/img/banners-17.webp
+      19 kB  public/img/hero-dunes.avif
+      52 kB  public/img/hero-dunes.webp
       55 kB  public/img/lifestyle-flash-04-w1560.avif
      103 kB  public/img/lifestyle-flash-04-w1560.webp
       70 kB  public/img/lifestyle-flash-06-w1560.avif

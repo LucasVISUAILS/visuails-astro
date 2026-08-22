@@ -1542,6 +1542,81 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    korrellaag van ±3 ziet niemand. */
 :root { --bg-seam: #0F1011; }
 
+/* ---- .foto-licht — een fotoband die licht op de pagina werpt --------------
+   Lucas, 22 augustus 2026: *"Zorg dat de foto's echt verwerkt zijn in de
+   website door subtiele blur en reflections te gebruiken waardoor het lijkt
+   alsof ze er horen te zijn en er niet ingeplakt zijn."*
+
+   Het antwoord zit in drie stukken, en dit is het derde:
+
+     1 · SCHERPTEDIEPTE, in het BESTAND en niet in CSS. Zie
+         scripts/beeld-inbedden.mjs. Wat een ingeplakte foto verraadt is dat hij
+         van rand tot rand even scherp is; geen enkele lens doet dat. In CSS zou
+         het `filter: blur()` op een schermbrede foto zijn en dus GPU-tijd bij
+         elke frame, op precies de beelden die als eerste in beeld komen.
+     2 · DE NAAD, en die stond er al: `.ground-blend` hierboven legt de
+         paginakleur terug over de boven- en onderrand van een band, zodat hij
+         uit de pagina komt in plaats van erop te beginnen.
+     3 · HET LICHT, hier. Een echte lamp in een foto verlicht ook wat ernaast
+         staat. Zonder dat blijft een fotoband een venster naar een andere
+         kamer: de naad klopt, maar het licht houdt op bij de rand.
+
+   HOE. Twee zeer zachte limoen ellipsen tegen de boven- en onderrand van de
+   band, op z-index -1 — dus boven de eigen grond van de band en onder alle
+   tekst, nooit erover. Waar `.ground-blend` de rand in de paginakleur laat
+   weglopen, loopt nu een GLOEIENDE rand weg, en dat is wat het oog als
+   doorlopen leest. De ellipsen zijn breder dan de band en hangen half buiten
+   het kader, zodat er geen begin of eind van de vorm te zien is.
+
+   WAT DIT NIET IS: een gespiegelde kopie onder het beeld. Die vloerspiegeling
+   is het klassieke "reflection"-recept en hij zou hier precies het verkeerde
+   doen — op een redactionele pagina zonder glanzende vlakken leest hij als
+   effect, en een effect is het tegenovergestelde van erbij horen. De
+   weerspiegelingen op deze site zitten IN de foto's: het natte asfalt, de
+   lichtplas op de vloer, de lak van de jas.
+
+   NIET OP HET ABONNEMENTSBLOK. Lucas in dezelfde regel: *"Dit geldt overigens
+   niet voor het abonnementen blok, die hoort eruit te poppen."* Dat blok is het
+   enige op de site dat naar VOREN moet komen in plaats van in de pagina weg te
+   zakken, en het heeft daarvoor zijn eigen behandeling (zie .lime-panel).
+
+   `--fl-o` regelt de sterkte (standaard 1), `--fl-h` de hoogte van de gloed. */
+/* ── EEN EIGEN ELEMENT EN GEEN ::after ──────────────────────────────────────
+   Eerste versie zette de gloed op `::before` en `::after` van de band zelf. Dat
+   werkte precies één keer: `.ground-blend` hierboven gebruikt óók `::after` —
+   allebei de naden zitten daar in één pseudo-element — en omdat `.foto-licht`
+   later in dit bestand staat, WON die en verdween de naadvervaging. Het gevolg
+   was zichtbaar op /studio: een kaarsrechte lijn dwars over de slotband, op de
+   plek waar de vervaging had moeten zitten. Twee klassen die allebei een
+   pseudo-element van hetzelfde element claimen is een botsing die je niet ziet
+   aankomen en die op elke nieuwe combinatie terugkomt.
+
+   Een echt kindelement kan niet botsen. Het staat vóór de inhoud in de DOM en
+   `::after` (de naad) komt er per definitie ná, dus de naad schildert eróver:
+   de gloed hangt aan de rand en wordt daar door de naadvervaging in de
+   paginakleur getrokken. Precies de volgorde die je wilt. */
+.foto-licht { position: relative; isolation: isolate; }
+.foto-licht-laag {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(56% var(--fl-h, 34%) at 50% 0%,
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.10)) 0%,
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.04)) 46%,
+      transparent 78%),
+    radial-gradient(56% var(--fl-h, 34%) at 50% 100%,
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.12)) 0%,
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.05)) 46%,
+      transparent 78%);
+}
+/* Wie meer contrast vraagt krijgt geen sfeer maar leesbaarheid. Zelfde regel
+   als bij .beam en .mark-depth. */
+@media (prefers-contrast: more) {
+  .foto-licht-laag { display: none; }
+}
+
 .ground-blend, .panel-tonal { position: relative; isolation: isolate; }
 .ground-blend::after, .panel-tonal::after {
   content: '';

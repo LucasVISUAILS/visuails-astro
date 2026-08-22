@@ -195,7 +195,25 @@ const nl = lang === 'nl';
 
     De placeholders dragen een `message` — wat het beeld moet OVERBRENGEN, niet
     alleen wat erop staat. Zie de noot bij die prop in Placeholder.astro. */}
-<section class="band-tall sp-hero">
+{/* ── SFEER OP DEZE PAGINA — 22 augustus 2026 ─────────────────────────────
+    Lucas: *"Ook graag wat van die simpele alleen groen zonder model foto's
+    gebruiken om de VISUAILS studio pagina wat meer gevoel en sfeer te geven."*
+
+    Twee lichtstudies uit dezelfde reeks als de merkbeelden op de homepage: een
+    lichtkegel op een vloer hier, en een strakke uitsnede van een lichtplas op
+    de slotband. Ze staan er als GROND en niet als inhoud — er valt niets op te
+    zien behalve licht, en dat is precies waarom ze hier passen. De plekken waar
+    deze pagina nog een echte foto MIST (iemand die zit te controleren, een
+    schermafdruk van Studio) houden hun plaatshouder: een lichtkegel bewijst
+    niet dat er met de hand gekeken wordt.
+
+    De behandeling is dezelfde als op de homepage — zie .foto-licht en
+    scripts/beeld-inbedden.mjs — zodat de twee pagina's van dezelfde lamp
+    lijken te komen. */}
+<section class="band-tall sp-hero ground-blend foto-licht" style="--fl-o: .85;">
+  <div class="foto-licht-laag" aria-hidden="true"></div>
+  <img class="sp-sfeer" src="/img/brand-beam.webp" alt="" aria-hidden="true" width="1600" height="900" fetchpriority="low" decoding="async" />
+  <div class="sp-sfeer-scrim" aria-hidden="true"></div>
   <div class="container">
     <div class="sp-hero-split">
       <div class="statement statement-left">
@@ -345,7 +363,10 @@ const nl = lang === 'nl';
   </div>
 </section>
 
-<section class="band-tall sp-close">
+<section class="band-tall sp-close ground-blend foto-licht" style="--fl-o: .7;">
+  <div class="foto-licht-laag" aria-hidden="true"></div>
+  <img class="sp-sfeer sp-sfeer-slot" src="/img/brand-glow.webp" alt="" aria-hidden="true" width="1400" height="788" loading="lazy" decoding="async" />
+  <div class="sp-sfeer-scrim" aria-hidden="true"></div>
   <div class="container closing">
     <div>
       <h2>{c.closeH}</h2>
@@ -369,6 +390,63 @@ const nl = lang === 'nl';
   }
 
   .sp-hero { background: var(--ink-900); }
+  /* ── DE LICHTSTUDIE ALS GROND ──────────────────────────────────────────────
+     z-index -2 voor de foto en -1 voor de sluier, want `.ground-blend` legt
+     zijn naadvervaging óók op -1 en moet daar overheen kunnen; zie de noot bij
+     .ground-blend in global.css, en .hv-dream op de homepage die hetzelfde
+     doet.
+
+     `object-position` mikt het heldere deel van de kegel naar rechtsonder, weg
+     van de kop en de knoppen die linksboven staan. De sluier eroverheen is een
+     strijklicht van links, precies zoals bij de hero op de homepage: donker
+     waar de tekst staat, weg waar de foto mag spreken. Gemeten met
+     leesbaar.mjs, niet geschat. */
+  .sp-sfeer {
+    position: absolute; inset: 0; z-index: -2;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    /* De kegel LAAG in het kader, en niet rechts. Rechts staat de plaatshouder
+       voor de schermafdruk en die is ondoorzichtig: daar was van het licht
+       niets te zien behalve een harde rand langs de doos. Onderaan ligt het
+       licht op de vloer van de band, onder de kop en onder de knoppen door, en
+       loopt het via .foto-licht door in de sectie eronder. */
+    object-position: 50% 92%;
+    opacity: .62;
+    pointer-events: none;
+  }
+  /* De uitsnede wordt nog eens opgetrokken zodat de rand van de lichtplas
+     BUITEN het kader valt. Zonder dat liep de bovenrand van die plas als een
+     rechte streep over 1440 pixels — gemeten een overgang van maar twaalf
+     waarden over vijf pixels, dus geen harde lijn, maar wel kaarsrecht en
+     schermbreed, en dat leest als een sectiegrens. `transform` en geen grotere
+     `inset`: dit blijft daarmee een compositorlaag zonder herberekening. */
+  .sp-sfeer-slot { object-position: 50% 62%; opacity: .4; transform: scale(1.28); transform-origin: 50% 64%; }
+  .sp-sfeer-scrim {
+    position: absolute; inset: 0; z-index: -1;
+    pointer-events: none;
+    /* Van boven zwaar naar onder open: de kop en de inleiding staan bovenin en
+       hebben een rustige grond nodig, het licht hoort onderin. */
+    background:
+      /* Onder de rechterkolom staat de plaatshouder met zijn briefing in
+         --ink-4, het lichtste grijs dat de site heeft. Op een vlakke grond
+         haalde dat 4,5 : 1; met het licht eronder zakte het naar 3,85 — gemeten
+         met leesbaar.mjs. Daar hoort dus geen licht: die kolom is een panelen-
+         doos en geen foto. Het licht blijft waar het iets doet, linksonder. */
+      radial-gradient(58% 54% at 78% 80%, rgb(var(--scrim) / 0.66) 0%, rgb(var(--scrim) / 0.32) 48%, transparent 78%),
+      linear-gradient(180deg, rgb(var(--scrim) / 0.90) 0%, rgb(var(--scrim) / 0.74) 28%, rgb(var(--scrim) / 0.34) 56%, rgb(var(--scrim) / 0.10) 78%, transparent 100%),
+      linear-gradient(96deg, rgb(var(--scrim) / 0.52) 0%, rgb(var(--scrim) / 0.22) 34%, transparent 62%);
+  }
+  .sp-close { position: relative; overflow: clip; }
+  .sp-close > .container { position: relative; z-index: 1; }
+  .sp-hero > .container { position: relative; z-index: 1; }
+  /* Op een smal scherm staat de kop over de volle breedte en is er geen
+     rechterhelft meer om de foto aan over te laten. De sluier wordt dan een
+     verticale in plaats van een strijklicht. */
+  @media (max-width: 62rem) {
+    .sp-sfeer { opacity: .44; }
+    .sp-sfeer-scrim { background:
+      linear-gradient(180deg, rgb(var(--scrim) / 0.92) 0%, rgb(var(--scrim) / 0.80) 34%, rgb(var(--scrim) / 0.46) 64%, rgb(var(--scrim) / 0.16) 86%, transparent 100%); }
+  }
   .sp-hero .statement-left { max-width: 46rem; }
   /* --t-page-h1 en niet --t-h1: dit is een paginatitel en die staat op elke
      andere dienstpagina op 64px. Zie de noot bij --t-page-h1. */

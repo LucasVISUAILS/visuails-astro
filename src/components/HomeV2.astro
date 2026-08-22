@@ -252,7 +252,7 @@ const PLAN_COUNT = Object.keys(PLAN_AMOUNT).length;
 
 const COPY = {
   en: {
-    heroAlt: 'A VISUAILS campaign visual — a model in the dunes at dusk',
+    heroAlt: 'A VISUAILS campaign visual — a figure in a puffer jacket on a back seat, lit acid green',
     // THE HEADLINE CARRIES ITS OWN EMPHASIS as of 6 August 2026 — the <em> is in
     // the copy instead of being applied to whatever line happens to be last.
     // Lucas, looking at the old behaviour: *"de hele zin toxic groen maken vind
@@ -886,7 +886,7 @@ const COPY = {
   },
 
   nl: {
-    heroAlt: 'Een VISUAILS campagnebeeld — een model in de duinen bij schemering',
+    heroAlt: 'Een VISUAILS campagnebeeld — een figuur in een pufferjas op een achterbank, zuurgroen belicht',
     h1: TAGLINE.nl.lines,
     ctaStart: 'Start een bestelling',
     ctaSample: `Proefvisual aanvragen · ${sample.price}`,
@@ -1210,10 +1210,10 @@ const nl = lang === 'nl';
   <div class="hv-hero-bg">
     {c.heroSlides.map((sl, i) => (
       <img
-        src={i === 0 ? '/img/hero-dunes.webp' : SERVICE_IMG[sl.img].src}
+        src={i === 0 ? '/img/brand-car.webp' : SERVICE_IMG[sl.img].src}
         alt={i === 0 ? c.heroAlt : `${sl.card} — ${sl.h}`}
-        width={i === 0 ? 2200 : SERVICE_IMG[sl.img].w}
-        height={i === 0 ? 1228 : SERVICE_IMG[sl.img].h}
+        width={i === 0 ? 2048 : SERVICE_IMG[sl.img].w}
+        height={i === 0 ? 1152 : SERVICE_IMG[sl.img].h}
         decoding={i === 0 ? 'sync' : 'async'}
         loading={i === 0 ? undefined : 'lazy'}
         fetchpriority={i === 0 ? 'high' : undefined}
@@ -1364,7 +1364,11 @@ const nl = lang === 'nl';
     and /gallery, it drifts on its own so the comparison is legible without
     interaction, and it throws at build time on an image with no intrinsic
     size on record. */}
-<section class="band-chapter well-deep">
+{/* De band die de hero opvangt. `--fl-h` klein en alleen de bovenrand telt:
+    wat hier moet gebeuren is dat het licht van de foto hierboven niet stopt bij
+    de onderrand van de hero. Zie .foto-licht in global.css. */}
+<section class="band-chapter well-deep foto-licht" style="--fl-o: .7; --fl-h: 22%;">
+  <div class="foto-licht-laag" aria-hidden="true"></div>
   <div class="container">
     <div class="statement statement-left statement-split hv-ba-head">
       <h2>{c.baH[0]} <em class="hv-accent">{c.baH[1]}</em></h2>
@@ -2000,6 +2004,12 @@ const nl = lang === 'nl';
           al wat dit is, en vier alt-teksten die "sfeerbeeld" betekenen voegen
           voor een schermlezer niets toe behalve lengte. Het onderschrift
           eronder draagt de betekenis en is wél leesbaar. */}
+      {/* GEEN .foto-inbed hier, en dat is met opzet: dit raster staat BINNEN het
+          abonnementspaneel, en dat is het enige blok op de pagina dat naar voren
+          hoort te komen in plaats van in de pagina weg te zakken. Lucas, 22
+          augustus 2026: *"Dit geldt overigens niet voor het abonnementen blok,
+          die hoort eruit te poppen."* Zie de noot bij .foto-inbed in
+          global.css. */}
       <div class="hv-stock-shot">
         {/* ── 760 EN NIET 1600 — 22 augustus 2026 ────────────────────────────
             De keuring mat wat deze vier tegels op het scherm halen: 183 px, en
@@ -2132,7 +2142,8 @@ const nl = lang === 'nl';
 
     De sluier eroverheen (.hv-dream-scrim) staat er al en is niet aangepast; de
     leesbaarheidsmeting bevestigt dat de kop en de knop erop blijven kloppen. */}
-<section class="hv-dream ground-blend">
+<section class="hv-dream ground-blend foto-licht" style="--fl-o: .9;">
+  <div class="foto-licht-laag" aria-hidden="true"></div>
   <img class="hv-dream-bg" src="/img/brand-stair.webp" alt={c.dreamAlt} width="1872" height="1248" loading="lazy" decoding="async" />
   <div class="hv-dream-scrim" aria-hidden="true"></div>
   <div class="container hv-dream-inner">
@@ -2580,7 +2591,8 @@ const nl = lang === 'nl';
 
     `.beam` blijft bestaan en staat nog op de paginakoppen van /pricing en
     /start, waar geen foto ligt. */}
-<section class="band-chapter hv-close mark-depth hv-close-lit" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%;">
+<section class="band-chapter hv-close mark-depth hv-close-lit foto-licht" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%; --fl-o: .8;">
+  <div class="foto-licht-laag" aria-hidden="true"></div>
   <img class="hv-close-bg" src="/img/brand-pool.webp" alt="" aria-hidden="true" width="1600" height="900" loading="lazy" decoding="async" />
   <div class="hv-close-scrim" aria-hidden="true"></div>
   {/* Het merk als diepte achter deze band — zie .mark-depth in global.css. Een
@@ -3002,7 +3014,18 @@ var vOpruim = (function () {
   /* Two layers doing two jobs. The radial is the plate under the headline;
      the linear darkens the band the sticky nav stands on and lifts the foot
      so the plinth reads as a solid rail rather than as a floating strip. */
+  /* ── EN EEN DERDE LAAG SINDS DE FOTO IN DE AUTO — 22 augustus 2026 ──────
+     De duinfoto was links donker; deze is dat niet. Het onderwerp — een felle
+     pufferjas — staat precies waar de kop staat, en leesbaar.mjs las de witte
+     "You upload." af op 2,53 : 1 waar 3 de eis is. De radiaal hierboven mikt op
+     16% van links en 84% van boven, dus die is bij de kop (op 40% hoogte) al
+     bijna uitgewerkt.
+     Deze laag is een strijklicht van links: donker aan de rand waar de tekst
+     staat, weg op de helft, en de rechterkant van de foto — het raam, de
+     donkere hoedenplank — blijft onaangeroerd. Een lineaire loop leest als
+     natuurlijke afval van licht en niet als een vlek eroverheen. */
   .hv-hero-scrim { position: absolute; inset: 0; z-index: -1; background:
+    linear-gradient(96deg, rgb(var(--scrim) / 0.80) 0%, rgb(var(--scrim) / 0.54) 26%, rgb(var(--scrim) / 0.14) 52%, transparent 68%),
     radial-gradient(92% 82% at 16% 84%, rgb(var(--scrim) / 0.90) 0%, rgb(var(--scrim) / 0.42) 54%, transparent 78%),
     linear-gradient(180deg, rgb(var(--scrim) / 0.76) 0%, rgb(var(--scrim) / 0.50) 13%, rgb(var(--scrim) / 0.14) 27%, transparent 52%, rgb(var(--scrim) / 0.46) 84%, rgb(var(--scrim) / 0.66) 100%); }
   /* ── OP EEN TELEFOON MOET DE PLAAT BREDER ZIJN ───────────────────────────
@@ -3020,8 +3043,12 @@ var vOpruim = (function () {
      breedte inneemt. Alleen de RADIAAL verandert; de lineaire laag eronder
      (de balk waar de koptekst op staat) blijft precies zoals hij is. */
   @media (max-width: 700px) {
+    /* Ook hier moest de plaat mee omhoog toen de foto wisselde: op 390px staat
+       de kop midden in het kader en daar zit nu de jas. Gemeten op /nl/ met de
+       duinfoto 2,86 en met deze 2,40 — dus de radiaal begint hoger en houdt
+       zijn dekking langer vast. */
     .hv-hero-scrim { background:
-      radial-gradient(120% 74% at 50% 88%, rgb(var(--scrim) / 0.92) 0%, rgb(var(--scrim) / 0.60) 52%, transparent 88%),
+      radial-gradient(128% 88% at 50% 78%, rgb(var(--scrim) / 0.94) 0%, rgb(var(--scrim) / 0.72) 46%, rgb(var(--scrim) / 0.22) 76%, transparent 94%),
       linear-gradient(180deg, rgb(var(--scrim) / 0.76) 0%, rgb(var(--scrim) / 0.50) 13%, rgb(var(--scrim) / 0.14) 27%, transparent 52%, rgb(var(--scrim) / 0.46) 84%, rgb(var(--scrim) / 0.66) 100%); }
   }
   .hv-hero-inner { flex: 1; display: flex; align-items: flex-end; width: 100%; }
