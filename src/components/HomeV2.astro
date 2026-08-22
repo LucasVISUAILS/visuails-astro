@@ -252,7 +252,7 @@ const PLAN_COUNT = Object.keys(PLAN_AMOUNT).length;
 
 const COPY = {
   en: {
-    heroAlt: 'A VISUAILS campaign visual — a figure in a puffer jacket on a back seat, lit acid green',
+    heroAlt: 'A VISUAILS campaign visual — a figure in a puffer jacket on a back seat, looking into the lens, lit acid green',
     // THE HEADLINE CARRIES ITS OWN EMPHASIS as of 6 August 2026 — the <em> is in
     // the copy instead of being applied to whatever line happens to be last.
     // Lucas, looking at the old behaviour: *"de hele zin toxic groen maken vind
@@ -886,7 +886,7 @@ const COPY = {
   },
 
   nl: {
-    heroAlt: 'Een VISUAILS campagnebeeld — een figuur in een pufferjas op een achterbank, zuurgroen belicht',
+    heroAlt: 'Een VISUAILS campagnebeeld — een figuur in een pufferjas op een achterbank die in de lens kijkt, zuurgroen belicht',
     h1: TAGLINE.nl.lines,
     ctaStart: 'Start een bestelling',
     ctaSample: `Proefvisual aanvragen · ${sample.price}`,
@@ -1367,7 +1367,7 @@ const nl = lang === 'nl';
 {/* De band die de hero opvangt. `--fl-h` klein en alleen de bovenrand telt:
     wat hier moet gebeuren is dat het licht van de foto hierboven niet stopt bij
     de onderrand van de hero. Zie .foto-licht in global.css. */}
-<section class="band-chapter well-deep foto-licht" style="--fl-o: .7; --fl-h: 22%;">
+<section class="band-chapter well-deep foto-licht" style="--fl-o: .7; --fl-h: 22%; --fl-x: 46%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
   <div class="container">
     <div class="statement statement-left statement-split hv-ba-head">
@@ -2142,7 +2142,7 @@ const nl = lang === 'nl';
 
     De sluier eroverheen (.hv-dream-scrim) staat er al en is niet aangepast; de
     leesbaarheidsmeting bevestigt dat de kop en de knop erop blijven kloppen. */}
-<section class="hv-dream ground-blend foto-licht" style="--fl-o: .9;">
+<section class="hv-dream ground-blend foto-licht" style="--fl-o: .9; --fl-x: 58%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
   <img class="hv-dream-bg" src="/img/brand-stair.webp" alt={c.dreamAlt} width="1872" height="1248" loading="lazy" decoding="async" />
   <div class="hv-dream-scrim" aria-hidden="true"></div>
@@ -2591,7 +2591,7 @@ const nl = lang === 'nl';
 
     `.beam` blijft bestaan en staat nog op de paginakoppen van /pricing en
     /start, waar geen foto ligt. */}
-<section class="band-chapter hv-close mark-depth hv-close-lit foto-licht" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%; --fl-o: .8;">
+<section class="band-chapter hv-close mark-depth hv-close-lit foto-licht" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%; --fl-o: .8; --fl-x: 44%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
   <img class="hv-close-bg" src="/img/brand-pool.webp" alt="" aria-hidden="true" width="1600" height="900" loading="lazy" decoding="async" />
   <div class="hv-close-scrim" aria-hidden="true"></div>

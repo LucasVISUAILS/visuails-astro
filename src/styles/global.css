@@ -1595,21 +1595,44 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    `::after` (de naad) komt er per definitie ná, dus de naad schildert eróver:
    de gloed hangt aan de rand en wordt daar door de naadvervaging in de
    paginakleur getrokken. Precies de volgorde die je wilt. */
-.foto-licht { position: relative; isolation: isolate; }
+/* ── EN DE GLOED MOET BINNEN DE BAND STERVEN ─────────────────────────────
+   De eerste versie zette de twee ellipsen met hun MIDDELPUNT op de rand van de
+   band: `at 50% 0%` en `at 50% 100%`. Daardoor stond de gloed op de rand op
+   volle sterkte en hield hij daar op — de bovenste helft van de ellips werd
+   simpelweg afgeknipt. Het middel dat de naad moest verbergen tekende hem dus
+   juist na, en dat is precies wat Lucas zag: *"sommige spotlights op de website
+   die harde randen van secties laten zien"*.
+
+   Nu liggen beide middelpunten BINNEN de band en is de ellips klein genoeg dat
+   hij op nul staat vóór de rand: middelpunt op 22 procent, verticale straal 18
+   procent, en `transparent` op 70 procent van die straal. De gloed loopt dus van
+   ongeveer 9 tot 35 procent en raakt de rand nergens. Wat er niet is, kan niet
+   worden afgeknipt.
+
+   Dat de gloed daarmee niet meer over de naad heen loopt is geen verlies: de
+   naad zelf is nu opgelost (zie de noot bij .ground-blend), dus er is niets meer
+   om overheen te leggen. Deze laag doet nog één ding, en dat is het enige wat
+   hij ooit had moeten doen — de band van binnenuit laten opgloeien. */
 .foto-licht-laag {
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* `--fl-x` zet de gloed HORIZONTAAL waar het licht in de foto van die band
+     ook staat. Op 50 procent voor alles ziet er netjes uit en klopt niet: het
+     licht komt dan overal uit het midden, terwijl de lichtbundel op de
+     droomband rechts van het midden valt en de lichtplas op de slotband links.
+     Eén variabele per band, en de gloed hoort ineens bij de foto in plaats van
+     bij het raster. */
   background:
-    radial-gradient(56% var(--fl-h, 34%) at 50% 0%,
+    radial-gradient(60% var(--fl-h, 18%) at var(--fl-x, 50%) 22%,
       rgb(198 241 0 / calc(var(--fl-o, 1) * 0.10)) 0%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.04)) 46%,
-      transparent 78%),
-    radial-gradient(56% var(--fl-h, 34%) at 50% 100%,
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.04)) 42%,
+      transparent 70%),
+    radial-gradient(60% var(--fl-h, 18%) at var(--fl-x, 50%) 78%,
       rgb(198 241 0 / calc(var(--fl-o, 1) * 0.12)) 0%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.05)) 46%,
-      transparent 78%);
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.05)) 42%,
+      transparent 70%);
 }
 /* Wie meer contrast vraagt krijgt geen sfeer maar leesbaarheid. Zelfde regel
    als bij .beam en .mark-depth. */
@@ -1617,8 +1640,28 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   .foto-licht-laag { display: none; }
 }
 
-.ground-blend, .panel-tonal { position: relative; isolation: isolate; }
-.ground-blend::after, .panel-tonal::after {
+/* ── WIE ISOLEERT, MOET VERVAGEN — 22 augustus 2026 ────────────────────────
+   Lucas, met vier schermafdrukken: *"De randen zijn nog steeds veel te hard en
+   niet volledig in de website geïntegreerd."*
+
+   De uitleg hierboven klopte en de dekking niet. `.ground-blend` stond op vier
+   secties, maar `isolation: isolate` staat op véél meer: `.mark-depth` zet het
+   (drie banden op de homepage), `.beam` zet het, en `.foto-licht` van gisteren
+   zette het er nog eens bij. Elke sectie die isoleert valt buiten de verlichting
+   van `body::before` en leest dus als #08090B terwijl de pagina eromheen op
+   #0F1011 zit — en zonder vervaging is dat een kaarsrechte lijn over de volle
+   breedte.
+
+   Gemeten met naden.mjs, dat elke opname rij voor rij afgaat en meldt waar twee
+   buurrijen over minstens 90 procent van de breedte in dezelfde richting
+   springen. Boven de slotband: rgb 15,16,18 aan de ene kant en 9,10,12 aan de
+   andere. Exact het vingerafdrukje uit de noot hierboven, vier banden verderop.
+
+   De reparatie is niet "er nog een klasse bij zetten" maar de vervaging koppelen
+   aan de OORZAAK: elke klasse die een stapelcontext maakt, krijgt hem. Dan kan
+   de volgende band die `.mark-depth` gebruikt het niet meer vergeten. */
+.ground-blend, .panel-tonal, .mark-depth, .foto-licht { position: relative; isolation: isolate; }
+.ground-blend::after, .panel-tonal::after, .mark-depth::after, .foto-licht::after {
   content: '';
   position: absolute;
   inset: 0;

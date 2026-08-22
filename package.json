@@ -98,7 +98,8 @@
     "mobiel": "node mobiel.mjs",
     "zoom": "node zoom.mjs",
     "spelling": "node spelling.mjs",
-    "variant": "node variant.mjs"
+    "variant": "node variant.mjs",
+    "naden": "node naden.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

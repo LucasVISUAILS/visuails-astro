@@ -180,6 +180,33 @@ async function buildSet(v, out) {
   // Corner radius is 20% of the edge — at 32px that is 6px, small enough to
   // still read as a square with soft corners and large enough not to vanish
   // into the antialiasing. It is NOT --r-lg: 16px on a 32px icon is a circle.
+  //
+  // ── 0.60 -> 0.76 -> WEER 0.60, 22 augustus 2026 ──────────────────────────
+  //
+  // Lucas zag in een zoekresultaat een kleine V in een donker rondje en vroeg om
+  // "degene die hem volledig opvult". Die stond op 0.76 gezet, en dat was te
+  // groot. Terug naar 0.60, met de reden erbij zodat niemand deze rondgang nog
+  // eens maakt.
+  //
+  // WAT DE METING LIET ZIEN. Het logo dat Lucas als doel aanleverde is 2048 px
+  // en de inkt daarin is 1183 px hoog: inset 0.578. De bestanden die op dat
+  // moment in public/ stonden, gemeten op dezelfde manier:
+  //
+  //     doelbeeld van Lucas       0.578
+  //     public/favicon-512.png    0.592
+  //     public/favicon-192.png    0.589
+  //     public/apple-touch-icon   0.550
+  //
+  // Die zijn dus al gelijk aan het doel; het verschil van 2% is onzichtbaar. De
+  // maat was nooit het probleem. Wat een zoekresultaat klein maakt is dat Google
+  // het icoon rond uitsnijdt en op ~28 px toont — de hoeken van de tegel gaan
+  // eraf, en daardoor oogt dezelfde V kleiner dan op een vierkant.
+  //
+  // ALS HET IN DIE KLEINE WEERGAVE ALSNOG LEEG OOGT, is de knop niet deze ene
+  // waarde maar optisch schalen: 16/32/48 een grotere inset geven dan 192/512,
+  // omdat een klein icoon minder ruimte heeft om gelezen te worden. Elke maat
+  // wordt hier los gerenderd, dus dat kan zonder dat het grote icoon verandert.
+  // Niet gedaan zonder dat Lucas het gezien heeft.
   await shoot(v, out, 'favicon-32.png', 32, 6, 0.60);
   await shoot(v, out, 'favicon-48.png', 48, 10, 0.60);
   await shoot(v, out, 'favicon-192.png', 192, 38, 0.60);
