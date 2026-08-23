@@ -1,5 +1,8 @@
 ---
 // VISUAILS — Cookiebeleid (Nederlands). Vertaling van src/pages/cookie-policy.astro.
+// De levensduren komen uit src/data/cookies.js — zie de noot in dat bestand en in
+// de Engelse versie van deze pagina.
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, cookieDuur } from '../../data/cookies.js';
 import Layout from '../../layouts/Layout.astro';
 ---
 
@@ -23,11 +26,11 @@ import Layout from '../../layouts/Layout.astro';
     </ul></div>
     <div><h2>Wat we vandaag daadwerkelijk plaatsen</h2><p style="margin-top:.6rem">Ze bij naam noemen zegt meer dan categorieën beschrijven, dus hier staan ze voluit. Dit is de volledige lijst.</p>
     <ul class="checklist" style="margin-top:1rem">
-      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_account</code></strong> — houdt je ingelogd in VISUAILS Studio nadat je op de inloglink in je mail hebt geklikt. Noodzakelijk. Verloopt na 30 dagen, of wanneer je uitlogt.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_account</code></strong> — houdt je ingelogd in VISUAILS Studio nadat je op de inloglink in je mail hebt geklikt. Noodzakelijk. Verloopt na {cookieDuur(SESSION_COOKIE_DAYS, 'nl')}, of wanneer je uitlogt.</span></li>
       <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_admin</code></strong> — de login van het adminportaal zelf. Noodzakelijk. Wordt nooit op het apparaat van een bezoeker gezet.</span></li>
-      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — onthoudt je keuze uit de cookiebanner, zodat we ophouden met vragen. Noodzakelijk, en de reden dat een weigering blijft staan. Verloopt na 12 maanden, waarna we het opnieuw vragen.</span></li>
-      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_lang</code></strong> — onthoudt of je VISUAILS Studio in het Nederlands of het Engels leest, en wordt alleen gezet als je daar de taalschakelaar gebruikt. Noodzakelijk. Verloopt na 12 maanden.</span></li>
-      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_nav</code></strong> — onthoudt of je het menu in VISUAILS Studio hebt ingeklapt, en wordt alleen gezet als je op die knop klikt. Noodzakelijk. Verloopt na 12 maanden.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_consent</code></strong> — onthoudt je keuze uit de cookiebanner, zodat we ophouden met vragen. Noodzakelijk, en de reden dat een weigering blijft staan. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}, waarna we het opnieuw vragen.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_lang</code></strong> — onthoudt of je VISUAILS Studio in het Nederlands of het Engels leest, en wordt alleen gezet als je daar de taalschakelaar gebruikt. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
+      <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span><strong><code>vis_nav</code></strong> — onthoudt of je het menu in VISUAILS Studio hebt ingeklapt, en wordt alleen gezet als je op die knop klikt. Noodzakelijk. Verloopt na {cookieDuur(PREFERENCE_COOKIE_DAYS, 'nl')}.</span></li>
     </ul>
     <p style="margin-top:1rem">Dat zijn ze alle vijf. Geen advertentiecookies, geen trackingpixels, geen embeds van derden, en geen analytics tenzij jij die aanzet — en dan is het Cloudflare Web Analytics, dat zelf cookieloos is en niets op je apparaat plaatst. We delen met niemand iets.</p></div>
     <div><h2>Cookies beheren</h2><p style="margin-top:.6rem">Gebruik de link <button type="button" class="legal-cc" data-cc-reopen>cookievoorkeuren</button> — die staat in de voettekst van elke pagina — om je antwoord op elk moment te wijzigen, inclusief het intrekken van een ja. Weigeren is precies zo makkelijk als accepteren en kost je niets: de site werkt in beide gevallen identiek. Je kunt cookies ook wissen of blokkeren in je browserinstellingen, al zorgt het blokkeren van de noodzakelijke ervoor dat het klantenportaal je niet meer onthoudt.</p></div>

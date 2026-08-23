@@ -130,6 +130,7 @@ import {
 } from './subscription.js';
 import { planName } from '../data/planNames.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey, VAT_RATE } from './quote.js';
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
 import { zipStream, zipDisposition, ZIP_MAX_BYTES, ZIP_MAX_FILES } from './zip.js';
 // Eén bouwer voor het archief, gedeeld met portal.js. Zie de kop van delivery.js:
 // deze twee schermen hadden elk hun eigen query over dezelfde levering en die
@@ -215,8 +216,10 @@ const LOGIN_CODE_MAX_ATTEMPTS = 5;
 /** Losser dan LOGIN_LIMIT: een verkeerd overgetypte code is normaal, een mail versturen niet. */
 const CODE_LIMIT = 30;
 
-/** account_sessions.expires_at — refreshed on every authenticated request; see the header. */
-const ACCOUNT_SESSION_TTL_DAYS = 30;
+/** account_sessions.expires_at — refreshed on every authenticated request; see the header.
+ *  De waarde staat in src/data/cookies.js, want het cookiebeleid noemt hem met
+ *  zoveel woorden en die twee mogen niet uit elkaar lopen. */
+const ACCOUNT_SESSION_TTL_DAYS = SESSION_COOKIE_DAYS;
 
 const SESSION_COOKIE = 'vis_account';
 
@@ -1908,7 +1911,7 @@ async function sectionGet(context, customer, section) {
     if (wanted === 'nl' || wanted === 'en') {
       url.searchParams.delete('lang');
       const back = `${url.pathname}${url.search}${url.hash}`;
-      return seeOther(back, [`vis_lang=${wanted}; Max-Age=${365 * 86400}; ${COOKIE_FLAGS}`]);
+      return seeOther(back, [`vis_lang=${wanted}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`]);
     }
     /* Dezelfde vorm voor de zijbalk. Zie navCookie() voor waarom dit een cookie is
        en geen knop met een klikhandler. */
@@ -1916,7 +1919,7 @@ async function sectionGet(context, customer, section) {
     if (balk === 'dicht' || balk === 'open') {
       url.searchParams.delete('nav');
       const back = `${url.pathname}${url.search}${url.hash}`;
-      return seeOther(back, [`vis_nav=${balk}; Max-Age=${365 * 86400}; ${COOKIE_FLAGS}`]);
+      return seeOther(back, [`vis_nav=${balk}; Max-Age=${maxAge(PREFERENCE_COOKIE_DAYS)}; ${COOKIE_FLAGS}`]);
     }
   } catch { /* geen geldige URL: dan is er ook niets te kiezen */ }
   let orders, files, models, locks, details, events;

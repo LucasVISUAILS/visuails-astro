@@ -64,16 +64,60 @@ function addressFrom(value) {
     .filter(Boolean);
 }
 
-/** Ons eigen adres en onze nummers. Uit env waar dat kan, met een vaste terugval. */
+/*
+ * ── DE TERUGVAL WAS VOOR TWEE VELDEN ECHT, EN DAT BREKT DE REGEL HIERBOVEN ──
+ * 23 augustus 2026.
+ *
+ * De noot bij SELLER_ADDRESS legt precies uit waarom een terugval NEP hoort te
+ * zijn: *"Een factuur met 'Voorbeeldstraat 12' erop valt op; een die per ongeluk
+ * klopt, niet."* Het adres volgde die regel; `VISUAILS_VAT` en `VISUAILS_KVK`
+ * deden het omgekeerde en droegen het ECHTE nummer als terugval.
+ *
+ * Daarmee was het effect precies wat de noot beschrijft. Staat het secret niet
+ * ingesteld, dan rolt er een factuur uit die er goed uitziet, klopt zolang de
+ * nummers niet veranderen, en op de dag dat ze wél veranderen stil onjuist wordt
+ * — op een belastingdocument, jaren nadat iemand vergat het secret te zetten.
+ *
+ * Nu staat er een nummer dat niet kán kloppen. `NL000000000B00` heeft de goede
+ * VORM (zodat niets erop stukloopt) en is onmiskenbaar geen echt nummer, zoals
+ * ook `Voorbeeldstraat 12` dat is.
+ *
+ * EN HET WORDT ÉÉN KEER HARDOP GEZEGD. Een nepwaarde valt alleen op als iemand
+ * naar de factuur kijkt; de melding hieronder staat in het Workers-logboek bij de
+ * eerste bestelling na een deploy, met de naam van het ontbrekende secret erbij.
+ * `console.error` en niet `warn`, want dit is geen opmerking maar een fout die
+ * nog niet is opgemerkt.
+ */
+const NEP = {
+  address: 'Voorbeeldstraat 12\n1234 AB Rotterdam',
+  vat: 'NL000000000B00',
+  kvk: '00000000',
+};
+
+/** Ons eigen adres en onze nummers. Uit env, met een ZICHTBAAR onjuiste terugval. */
 function sellerOf(env) {
-  return {
+  const ontbreekt = [];
+  const uitEnv = (naam, terugval) => {
+    const v = env?.[naam];
+    if (v) return v;
+    ontbreekt.push(naam);
+    return terugval;
+  };
+  const seller = {
     name: 'VISUAILS',
-    address: addressFrom(env?.SELLER_ADDRESS || 'Voorbeeldstraat 12\n1234 AB Rotterdam'),
-    vat: env?.VISUAILS_VAT || 'NL005407575B96',
-    kvk: env?.VISUAILS_KVK || '99742993',
+    address: addressFrom(uitEnv('SELLER_ADDRESS', NEP.address)),
+    vat: uitEnv('VISUAILS_VAT', NEP.vat),
+    kvk: uitEnv('VISUAILS_KVK', NEP.kvk),
     email: env?.FROM_EMAIL_ADDRESS || 'hello@visuails.com',
     iban: env?.VISUAILS_IBAN || null,
   };
+  if (ontbreekt.length) {
+    console.error(
+      `[factuur] deze factuur draagt plaatshoudergegevens: ${ontbreekt.join(', ')} `
+      + 'is niet ingesteld als Pages-secret. Zet het en stuur de factuur opnieuw.'
+    );
+  }
+  return seller;
 }
 
 /*

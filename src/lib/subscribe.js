@@ -60,6 +60,7 @@ import {
   PLAN_IDS, TERM_IDS, PLAN_SERVICE, monthlyCents, productsFor, planProductBudget, fitsBudget,
 } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
+import { MANDATE_AMOUNT } from '../data/pricing.js';
 import {
   createMollieCustomer, createFirstPayment, firstPaymentMandate, createMollieSubscription,
   cancelMollieSubscription, mollieKeyProblems,
@@ -81,7 +82,9 @@ import {
  * `startDate` hieronder. Wat de klant betaalt is dus één euro nu en zijn
  * maandbedrag vanaf de eerstvolgende termijn.
  */
-const MANDATE_EUROS = 1;
+/* Uit src/data/pricing.js: elk bedrag op de site komt daarvandaan, en de copy op
+   /plans en in PlanPicker leest hem inmiddels ook. */
+const MANDATE_EUROS = MANDATE_AMOUNT;
 
 /**
  * Waar de klant heen gaat als er iets niet lukt. Eén plek, zodat de reden in de

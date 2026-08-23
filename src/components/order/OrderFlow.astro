@@ -3021,8 +3021,12 @@ const outfitCounts = Array.from({ length: MAX_OUTFIT_PRODUCTS + 1 }, (_, i) => i
        `:has()` op body en niet een klasse op de voettekst, want de voorwaarde
        hoort bij het formulier: alleen zolang stap 1 in beeld is, is de balk
        vast. Op elke andere pagina en in elke andere stap verandert er niets. */
+    /* --voet-onder en niet padding-bottom rechtstreeks: het merk onderin de
+       voet neemt dezelfde variabele terug als negatieve marge, zodat het de
+       paginarand blijft raken in plaats van 53 px erboven te worden
+       afgesneden. Zie de noot bij .foot-mark in Layout.astro. */
     body:has(.pl-form.is-live .pl-step[data-pl-step='1'].is-current) :global(.site-footer) {
-      padding-bottom: 5.5rem;
+      --voet-onder: 5.5rem;
     }
   }
 </style>

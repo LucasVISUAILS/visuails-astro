@@ -26,7 +26,12 @@
 // door te bestellen. De handler zit dus in account.js, achter de sessiecontrole:
 // wie niet is ingelogd, komt op de inlogpagina en niet op een betaalscherm. Zie
 // de kop van src/lib/subscribe.js voor waarom dat de goede kant op is.
-import { plans, euro, vatLabel } from '../../data/pricing.js';
+/* MANDATE_AMOUNT en AMOUNT staan erbij omdat de teksten hieronder twee
+   verschillende bedragen van één euro noemen: de MACHTIGING (de transactie
+   waarmee de bank de incasso afgeeft) en de PROEFVISUAL (een product). Ze
+   kostten allebei €1 en werden allebei als "€1" ingetypt, dus ze waren niet uit
+   elkaar te houden — en dan verandert er bij een prijswijziging één te veel. */
+import { plans, euro, vatLabel, AMOUNT, MANDATE_AMOUNT } from '../../data/pricing.js';
 import { TERMS, TERM_IDS, monthlyCents, productsFor, clipsFor, hasBrandModel } from '../../data/plans.js';
 import { planName } from '../../data/planNames.js';
 import { localizedPath } from '../../i18n/ui.js';
@@ -114,7 +119,7 @@ const c = nl ? {
      incasso. Ze staan nu in een zwevende notitie: de pagina wordt er niet langer
      van, en wie het woord niet kent, hoeft er niet meer omheen te lezen. */
   weekNote: 'Wij reserveren die week in de planning voor jou, elke maand opnieuw, vóórdat er andere bestellingen in mogen. Heb je die maand niets klaarstaan, dan vervalt de week niet: je producten schuiven door. Je kunt de dag altijd wijzigen in je dashboard.',
-  mandateNote: 'Een machtiging is de toestemming die je bank nodig heeft om ons maandelijks te laten incasseren — een SEPA-incasso, dezelfde vorm als bij een energieleverancier. Je geeft hem één keer af en je kunt hem altijd intrekken. De €1 is de transactie waarmee je bank hem uitgeeft.',
+  mandateNote: `Een machtiging is de toestemming die je bank nodig heeft om ons maandelijks te laten incasseren — een SEPA-incasso, dezelfde vorm als bij een energieleverancier. Je geeft hem één keer af en je kunt hem altijd intrekken. De ${euro(MANDATE_AMOUNT, "nl")} is de transactie waarmee je bank hem uitgeeft.`,
   weekLabel: 'Dag van de maand',
   perMonth: 'per maand',
   products: 'producten per maand',
@@ -123,9 +128,9 @@ const c = nl ? {
   termNote: 'De jaartermijn is op Starter goedkoper per maand. Op Studio en Merk is hij dat niet, en dat is met opzet: die twee zitten met hun maandbedrag al op of onder de laagste prijs per product, en daar gaat niets meer af. Wat de jaartermijn daar geeft, staat hieronder.',
   submit: 'Doorgaan naar de machtiging',
   mandateH: 'Wat er nu gebeurt',
-  mandateBody: 'Je betaalt zo eenmalig €1. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later.',
+  mandateBody: `Je betaalt zo eenmalig ${euro(MANDATE_AMOUNT, "nl")}. Dat is geen eerste maand maar de transactie waarmee je bank de machtiging afgeeft — zonder die betaling kan er niets worden afgeschreven. Je eerste maandtermijn valt een maand later.`,
   cancelNote: 'Opzeggen kan zelf, in je eigen dashboard. Wat je hebt laten maken, blijft van jou.',
-  signedOut: 'Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, begin dan met een proefvisual van €1 — dan weet je wat je koopt.',
+  signedOut: `Je moet ingelogd zijn om een abonnement af te sluiten. Heb je nog nooit bij ons besteld, begin dan met een proefvisual van ${euro(AMOUNT.testSample, "nl")} — dan weet je wat je koopt.`,
   signIn: 'Inloggen',
   sample: 'Eerst een proefvisual',
 } : {
@@ -136,7 +141,7 @@ const c = nl ? {
   weekH: 'Your fixed week',
   weekHint: 'The day of the month we start on your products. The same every month. Not sure yet? Leave it — you can change it later.',
   weekNote: 'We reserve that week in the calendar for you, every month, before any other order can take it. If you have nothing ready that month the week is not lost: your products roll over. You can change the day at any time in your dashboard.',
-  mandateNote: 'A mandate is the permission your bank needs to let us collect monthly — a SEPA direct debit, the same shape as an energy supplier uses. You give it once and you can withdraw it at any time. The €1 is the transaction that makes your bank issue it.',
+  mandateNote: `A mandate is the permission your bank needs to let us collect monthly — a SEPA direct debit, the same shape as an energy supplier uses. You give it once and you can withdraw it at any time. The ${euro(MANDATE_AMOUNT, "en")} is the transaction that makes your bank issue it.`,
   weekLabel: 'Day of the month',
   perMonth: 'per month',
   products: 'products a month',
@@ -145,9 +150,9 @@ const c = nl ? {
   termNote: 'The 12-month term is cheaper per month on Starter. On Studio and Brand it is not, and that is deliberate: their monthly price already sits at or below the lowest per-product rate, and there is nothing left to take off. What the 12-month term gives you there is listed below.',
   submit: 'Continue to the mandate',
   mandateH: 'What happens next',
-  mandateBody: 'You pay €1 once. That is not a first month but the transaction your bank needs to issue the mandate — without it nothing can be charged. Your first monthly term falls a month later.',
+  mandateBody: `You pay ${euro(MANDATE_AMOUNT, "en")} once. That is not a first month but the transaction your bank needs to issue the mandate — without it nothing can be charged. Your first monthly term falls a month later.`,
   cancelNote: 'You can cancel yourself, in your own dashboard. Whatever you had made stays yours.',
-  signedOut: 'You need to be signed in to start a plan. Never ordered from us? Start with a €1 sample so you know what you are buying.',
+  signedOut: `You need to be signed in to start a plan. Never ordered from us? Start with a ${euro(AMOUNT.testSample, "en")} sample so you know what you are buying.`,
   signIn: 'Sign in',
   sample: 'Try a sample first',
 };

@@ -1761,9 +1761,24 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     isolation: isolate;
     overflow: clip;
     margin-top: clamp(2.6rem, 5vw, 4.4rem);
-    /* Tot aan de onderrand van de pagina: de footer heeft 2.2rem ondervulling
-       en die wordt hier teruggenomen, zodat het merk de rand écht raakt. */
-    margin-bottom: -2.2rem;
+    /* ── TOT AAN DE ONDERRAND, EN NU OOK ECHT — 23 augustus 2026 ───────────
+       Hier stond `-2.2rem`, met de uitleg "de footer heeft 2.2rem ondervulling
+       en die wordt hier teruggenomen". Dat klopte, tot de bestelstroom een
+       tweede waarde invoerde: zolang stap 1 in beeld staat zet OrderFlow de
+       ondervulling van de voet op 5.5rem, zodat de vaste totaalbalk niet over
+       de voetlinks valt. Deze regel bleef op 2.2rem.
+
+       Gevolg: op /test-sample en de drie /start-pagina's (en hun NL-tweelingen)
+       eindigde het merk 53 px BOVEN de paginarand, en werd het daar door
+       `overflow: clip` doormidden gesneden — met een sprong van 100
+       grijswaarden over de volle breedte, midden in het niets. Dat leest niet
+       als een drukwerkmerk dat de rand raakt maar als een renderfout, en het
+       was op negen pagina's de hardste lijn van de site (gemeten met naden.mjs).
+
+       Nu leest deze regel dezelfde variabele als de vulling zelf, dus ze kunnen
+       niet meer uit elkaar lopen — ook niet als er ooit een derde waarde
+       bijkomt. */
+    margin-bottom: calc(-1 * var(--voet-onder, 2.2rem));
     display: grid; align-content: end; justify-items: center;
     pointer-events: none;
   }
@@ -1858,8 +1873,24 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        staat niets meer onder om mee te concurreren, en het merk wordt door de
        onderrand afgesneden, dus het leest als drukwerk en niet als een knop.
        De gloed eronder (.foot-mark-light) licht de letters nu van onderen bij
-       in plaats van ze te moeten dragen. */
+       in plaats van ze te moeten dragen.
+
+       ── RONDE 6 · DE SNEE MOEST ZACHTER — 23 augustus 2026 ───────────────
+       Wit maakte één ding stuk dat bij #34383F niemand zag: de onderrand. Het
+       merk wordt met opzet door de paginarand afgesneden, en met een donkergrijs
+       teken was dat een overgang van een paar grijswaarden. Wit tegen #08090B is
+       een sprong van 142 over de volle breedte — gemeten met naden.mjs op negen
+       pagina's, en daarmee de hardste lijn van de hele site. Precies waar Lucas
+       deze ronde vanaf wilde.
+
+       Niet de snee weghalen (die IS het drukwerkmerk), maar het CONTRAST erop.
+       Een masker haalt de letters over hun laatste 38 procent terug naar 40
+       procent dekking, dus de rand snijdt door iets wat daar al half verdwenen
+       is. Naar NUL vervagen was de andere optie en is fout: dan zweeft het merk
+       en raakt het de rand niet meer, en dat is nu juist het idee. */
     fill: #FFFFFF;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 62%, rgb(0 0 0 / .40) 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 62%, rgb(0 0 0 / .40) 100%);
   }
 
   /* ── DEZE REGEL HEEFT DE GLOED VERPLAATST, EN NIEMAND ZAG HET ────────────
@@ -1985,11 +2016,24 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      kleurstap eronder leest als een afgesneden rand; een haarlijn met een grond
      die eronder wegzakt leest als een oppervlak dat begint.
 
-     Als GRADIËNTLAAG boven de eigen kleur, niet als extra element of pseudo:
-     de inhoud van de voet schildert per definitie boven de achtergrond, dus er
-     is niets te stapelen en niets dat kan botsen. Zie de noot bij --bg-seam. */
-  .site-footer { position: relative; margin-top: clamp(5.5rem, 11vw, 11rem); padding-block: clamp(4.5rem, 8vw, 7rem) 2.2rem;
-    background: linear-gradient(to bottom, var(--bg-seam) 0, rgb(0 0 0 / 0) clamp(4rem, 9vw, 9rem)), var(--bg-deep);
+     ── 23 AUGUSTUS 2026: DE HELE GROND IS WEG, EN DAT IS DE ECHTE OPLOSSING ──
+     De diagnose hierboven klopte, de reparatie was een pleister. Er stond een
+     gradiëntlaag naar #0F1011 bovenop `--bg-deep`, die in deze scope naar
+     --ink-900 (#08090B) wijst. Dat is de PAGINAKLEUR en niet de zichtbare grond:
+     de voet schilderde de verlichting van body::before dus dicht en stond op 9
+     terwijl de pagina erboven op 15 tot 20 staat, met een verloopje eroverheen
+     om de eerste 9rem van die stap te verbergen.
+
+     Nu schildert de voet niets. Daarmee is er geen stap meer om te verbergen —
+     de grond van de voet Ís de grond van de pagina, op elke scrolpositie en op
+     elk scherm. De haarlijn blijft: die zegt "hier begint de voet", en dat was
+     volgens de noot hierboven ook precies de bedoeling. Een haarlijn op een
+     doorlopende grond leest als een scheiding; een haarlijn met een kleurstap
+     eronder leest als een afgesneden rand. */
+  /* --voet-onder EN NIET EEN GETAL, want twee regels moeten hier hetzelfde
+     getal gebruiken en deden dat niet — zie de noot bij .foot-mark. */
+  .site-footer { position: relative; --voet-onder: 2.2rem;
+    margin-top: clamp(5.5rem, 11vw, 11rem); padding-block: clamp(4.5rem, 8vw, 7rem) var(--voet-onder);
     box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); }
   /* The gap above the footer is breathing room after a dark section that ended
      on its own terms. After a panel it is not breathing room, it is a strip of

@@ -19,6 +19,10 @@
 // are the honest state of it anyway.
 import { localizedPath } from '../i18n/ui.js';
 import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
+/* De 90 dagen in de statusregel hieronder is de levensduur van de privélink, en
+   die staat in token.js. Hij stond hier twee keer als tekst — één keer per taal —
+   wat betekent dat een wijziging aan de token de pagina stil onwaar maakt. */
+import { PORTAL_TTL_DAYS } from '../lib/token.js';
 /*
  * TWEE ECHTE FIGUREN, WAAR TWEE GRIJZE VLAKKEN STONDEN — 9 augustus 2026.
  *
@@ -57,7 +61,7 @@ const COPY = {
       ['In review', 'A person is looking at every visual before it goes out.'],
       ['Delivered', 'The gallery is open and the downloads are live.'],
       ['Revision', 'You asked for a change and it is being made.'],
-      ['Closed', 'Signed off. Files stay available for 90 days.'],
+      ['Closed', `Signed off. Files stay available for ${PORTAL_TTL_DAYS} days.`],
     ],
     stateNote: 'Each change is written into a timeline you can read, with the date it happened. Nothing about your order is only in our heads.',
 
@@ -123,7 +127,7 @@ const COPY = {
       ['In controle', 'Een mens bekijkt elk beeld voordat het weggaat.'],
       ['Geleverd', 'De galerij is open en de downloads staan klaar.'],
       ['Revisie', 'Je vroeg om een wijziging en die wordt gemaakt.'],
-      ['Afgesloten', 'Afgetekend. Bestanden blijven 90 dagen beschikbaar.'],
+      ['Afgesloten', `Afgetekend. Bestanden blijven ${PORTAL_TTL_DAYS} dagen beschikbaar.`],
     ],
     stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je order zit alleen in ons hoofd.',
 
@@ -171,7 +175,7 @@ const COPY = {
 const c = COPY[lang];
 ---
 
-<section class="band-tall pp-hero ground-blend">
+<section class="band-tall pp-hero">
   <div class="container">
     {/* ── DE KOP EN HET SCHERM NAAST ELKAAR ──────────────────────────────────
         Hier stond alleen tekst, en dan is de eerste schermvulling van een pagina
@@ -286,7 +290,7 @@ const c = COPY[lang];
   </div>
 </section>
 
-<section class="band-tall pp-close ground-blend">
+<section class="band-tall pp-close">
   <div class="container closing">
     <div>
       <h2>{c.closeH}</h2>
@@ -300,7 +304,21 @@ const c = COPY[lang];
 </section>
 
 <style>
-  .pp-hero { background: var(--ink-900); }
+  /* ── GEEN EIGEN GROND, EN DAT IS DE HELE REPARATIE — 23 augustus 2026 ────
+     Hier stond `background: var(--ink-900)` plus `.ground-blend`. Lucas stuurde
+     twee afdrukken van deze pagina: *"deze rare gloed ook met een harde lijn dat
+     er wat ongemakkelijk uitziet"*.
+
+     Beide waren van deze twee regels. `--ink-900` is #08090B — de PAGINAKLEUR,
+     niet de zichtbare grond. De zichtbare grond ligt hoger doordat body::before
+     er korrel, een lamp en een vignet op legt. Deze sectie schilderde die laag
+     dus dicht en stond op 10,7 terwijl de pagina eromheen op 15 tot 20 stond;
+     `.ground-blend` legde daar een rand van #0F1011 (17,1) omheen om de sprong
+     te verbergen. Het resultaat is precies wat er op de afdruk staat: een
+     donkere plaat met een lichte rand eromheen.
+
+     Deze sectie toont geen foto en geen verloop. Ze heeft dus geen grond nodig,
+     en zonder grond is er niets te verbergen: ze IS de pagina. */
   .pp-hero .statement-left { max-width: 44rem; }
   .pp-hero h1 { font-size: var(--t-hero); line-height: 1.0; letter-spacing: -0.04em; max-width: 15ch; }
   .pp-accent { font-style: normal; color: var(--ink-3); }
@@ -366,5 +384,5 @@ const c = COPY[lang];
   .pp-manifest { margin: 1.6rem 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-2); max-width: 68ch; }
 
 
-  .pp-close { background: var(--ink-900); }
+  /* Geen eigen grond — zie de noot bij .pp-hero hierboven. */
 </style>

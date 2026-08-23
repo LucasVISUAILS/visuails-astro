@@ -49,7 +49,10 @@ import {
    constante, die vergelijking werd false, en elke abonnementsfactuur van een
    Nederlandse klant ging de deur uit met 0% btw. */
 import { VAT_TREATMENT } from '../data/vat.js';
-import { VAT_RATE } from './quote.js';   // 0.21 — vat.js draagt de behandelingen, quote.js het tarief
+// vat.js draagt de BEHANDELINGEN (standaard, verlegd, buiten bereik), quote.js
+// geeft het TARIEF door uit pricing.js. Het getal staat hier met opzet niet: een
+// noot die het tarief herhaalt, is de vierde plek waar het kan verouderen.
+import { VAT_RATE } from './quote.js';
 
 /* De maanden die meetellen voor het saldo: deze plus het venster dat mag
  * doorschuiven. Drie bij een jaartermijn, één bij een maandtermijn — en dus

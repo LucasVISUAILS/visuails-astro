@@ -787,10 +787,18 @@
   --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
 }
 
-/* Only the generic utility paints itself. The named components above already
-   set their own ground (a photo, a scrim, or --bg-deep) and would be clobbered
-   by a background declaration here. */
-.on-ink { background: var(--ink-900); color: var(--ink-2); }
+/* DE LAATSTE DEKSEL, 23 augustus 2026. Hier stond `background: var(--ink-900)`
+   met de uitleg dat alleen de generieke hulpklasse zichzelf schildert. Dat is
+   precies dezelfde fout die `.on-paper` en `.well-deep` hierboven al hebben
+   opgelost en die daar in detail staat beschreven: een dekkende --bg-0 op een
+   schermbrede sectie is een DEKSEL over de verlichting van body::before, dus de
+   sectie staat op 9 terwijl de pagina eromheen op 15 tot 20 staat.
+
+   `.on-ink` staat op één schermbrede sectie in de bestelstroom, en die had
+   daardoor aan beide kanten een rand. De klasse doet nog steeds wat ze moet
+   doen — de hele inktladder omdraaien — en schildert alleen geen grond meer.
+   body draagt --bg-0 al, dus de kleur eronder is tot op de pixel dezelfde. */
+.on-ink { background: transparent; color: var(--ink-2); }
 
 /* ── CORNERS — ONE PLACE, BECAUSE THEY WERE EVERYWHERE ───────────────────────
    HISTORY, so this block is not undone by someone reading an old comment. The
@@ -1479,9 +1487,8 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    A lamp that is entirely inside the seam is not a lamp. Dropping it a quarter
    of the way down puts the highlight where the heading is, which is where a
    studio would have aimed it anyway. */
-.panel-tonal {
-  background: radial-gradient(115% 130% at 16% 26%, #262A33 0%, #15171C 46%, #0A0B0E 100%);
-}
+/* De grond van dit paneel staat verderop, op een eigen laag met een masker —
+   zoek op `.panel-tonal::before`. */
 
 /* ---- .ground-blend — how a section with its own ground joins the page ------
    Lucas: *"alle secties die veranderen van achtergrond wat meer op elkaar
@@ -1514,7 +1521,14 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    The height is a proportion of the viewport, not a fixed value: a 60px fade
    under a 900px band is a gradient, the same 60px under a 200px band is most
    of the section. */
-/* ---- --bg-seam — de kleur waar een naad naartoe hoort te vervagen ----------
+/* ---- --bg-seam — de ZICHTBARE grond, als één getal --------------------------
+   LET OP, 23 augustus 2026: dit token heette naar zijn oude taak en die is
+   vervallen. De noot hieronder legt uit hoe een naad naar deze kleur vervaagde;
+   dat gebeurt nergens meer (zie `.rand-los` verderop). Wat overblijft is de
+   waarneming zelf, en die is nog steeds waar en nog steeds nuttig: de grond die
+   een bezoeker ziet is niet --bg-0 maar ongeveer #0F1011. FigWalk tekent daarop.
+
+   De oorspronkelijke noot: ------------------------------------------------
    Lucas, 7 augustus 2026, met twee schermafdrukken: *"het gaat voornamelijk om
    de rand, dat niet mooi overloopt naar deze sectie"* en *"zelfde met homepage
    overloop"*.
@@ -1613,6 +1627,26 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    naad zelf is nu opgelost (zie de noot bij .ground-blend), dus er is niets meer
    om overheen te leggen. Deze laag doet nog één ding, en dat is het enige wat
    hij ooit had moeten doen — de band van binnenuit laten opgloeien. */
+/* ── TWEE ELLIPSEN BOVEN ELKAAR IS GEEN LICHT, DAT IS EEN PATROON ─────────
+   Lucas, 23 augustus 2026: *"Ik vind de spotlights bij de eerstvolgende sectie
+   in het midden niet zo mooi en wat generiek, deze kunnen wat subtieler
+   geplaatst worden."*
+
+   Hij heeft gelijk en de oorzaak is niet de sterkte maar de SYMMETRIE. Er
+   stonden twee even grote ellipsen op dezelfde x, op 22 en 78 procent hoogte —
+   dus precies even ver van boven- als van onderrand. Zoiets komt in geen enkele
+   ruimte voor. Het oog leest de spiegeling in een fractie van een seconde en
+   noemt het decoratie; dat is wat "generiek" betekent als je het opmeet.
+
+   Wat een echte lichtbron wél doet: één plas waar het licht valt, en verderop
+   een veel zwakkere terugkaatsing die NIET recht erboven of eronder ligt. Dus
+   staat er nu één hoofdplas (--fl-x / --fl-y) en één terugkaatsing die
+   standaard 16 procent naar opzij en naar de andere hoogte schuift. Beide zijn
+   zachter dan de twee die er stonden: 0,085 en 0,04 tegenover 0,10 en 0,12.
+
+   `.foto-licht-enkel` laat de terugkaatsing weg. Dat is voor banden zonder foto:
+   daar heeft de gloed geen bron in beeld, en dan is één zwakke doorloop van het
+   licht van de band erboven eerlijker dan een tweede plas uit het niets. */
 .foto-licht-laag {
   position: absolute;
   inset: 0;
@@ -1625,14 +1659,60 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      Eén variabele per band, en de gloed hoort ineens bij de foto in plaats van
      bij het raster. */
   background:
-    radial-gradient(60% var(--fl-h, 18%) at var(--fl-x, 50%) 22%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.10)) 0%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.04)) 42%,
-      transparent 70%),
-    radial-gradient(60% var(--fl-h, 18%) at var(--fl-x, 50%) 78%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.12)) 0%,
-      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.05)) 42%,
-      transparent 70%);
+    /* de plas */
+    radial-gradient(var(--fl-w, 72%) var(--fl-h, 24%) at var(--fl-x, 50%) var(--fl-y, 76%),
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.085)) 0%,
+      rgb(198 241 0 / calc(var(--fl-o, 1) * 0.032)) 40%,
+      transparent 74%),
+    /* de terugkaatsing — kleiner, zwakker, en met opzet uit het lood */
+    radial-gradient(calc(var(--fl-w, 72%) * .58) calc(var(--fl-h, 24%) * .66)
+      at var(--fl-x2, calc(var(--fl-x, 50%) + 16%)) var(--fl-y2, 24%),
+      rgb(198 241 0 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.040)) 0%,
+      rgb(198 241 0 / calc(var(--fl-o, 1) * var(--fl-o2, 1) * 0.014)) 44%,
+      transparent 76%);
+}
+.foto-licht-enkel .foto-licht-laag { --fl-o2: 0; }
+/* ══ .korrel-mee — DE KORREL LOOPT DOOR OVER DE FOTO ══════════════════════
+   Lucas, 23 augustus 2026: *"dit komt wellicht door de film grain op de
+   achtergrond die dit contrast niet goed maakt, kijk wat hier mogelijk is,
+   misschien de grain deels of helemaal op de foto ook zetten om het meer 1 te
+   laten lijken."*
+
+   Zijn vermoeden klopt, en het is te meten. De korrel komt uit twee lagen:
+
+     .grain        vast, z-index 300, dekking .03 — ligt OVER alles, ook foto's
+     body::before  vast, z-index -1,  dekking .05 — ligt ONDER alles
+
+   Een dekkende foto blokkeert de tweede. Op lege grond ziet een bezoeker dus
+   .03 + .05 aan textuur en op een fotoband alleen .03 — bijna drie keer minder.
+   Twee vlakken naast elkaar met dezelfde kleur maar verschillende ruis leest
+   het oog niet als "dezelfde kleur", maar als twee MATERIALEN. Dat is de reden
+   dat een band als ingeplakt aanvoelt, ook nadat de kleurstap is opgelost.
+
+   Deze laag legt de ontbrekende .05 terug over de foto, met precies dezelfde
+   tegel (170px), frequentie (1.1) en octaaf (1) als de grondlaag, zodat het
+   dezelfde korrel is en geen tweede soort ruis.
+
+   HIJ DRAAGT HETZELFDE MASKER ALS DE FOTO, en dat is niet cosmetisch maar
+   rekenkundig. Op een punt waar de foto dekking α heeft, laat hij (1 − α) van
+   de grondkorrel door; deze laag vult α aan. Samen is dat α + (1 − α) = 1 keer
+   .05, op elke rij, ook midden in de uitdoving aan de rand. Zonder het masker
+   zou de rand juist een korrelpiek krijgen — het omgekeerde van de bedoeling.
+
+   ALLEEN OP SFEERBEELDEN, nooit op geleverd werk. De galerij en de
+   productvoorbeelden laten zien wat deze studio maakt; daar een korrellaag
+   overheen leggen is het werk vervuilen om de pagina mooier te maken. Dat is
+   ook precies waarom .grain in augustus van .07 naar .03 ging (zie die noot).
+   De merkbeelden zijn geen geleverd werk maar decor, en decor hoort bij de
+   pagina te horen. */
+.korrel-mee {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px;
 }
 /* Wie meer contrast vraagt krijgt geen sfeer maar leesbaarheid. Zelfde regel
    als bij .beam en .mark-depth. */
@@ -1661,30 +1741,82 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    aan de OORZAAK: elke klasse die een stapelcontext maakt, krijgt hem. Dan kan
    de volgende band die `.mark-depth` gebruikt het niet meer vergeten. */
 .ground-blend, .panel-tonal, .mark-depth, .foto-licht { position: relative; isolation: isolate; }
-.ground-blend::after, .panel-tonal::after, .mark-depth::after, .foto-licht::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(to bottom, var(--seam-color, var(--bg-seam)) 0, rgb(8 9 11 / 0) var(--seam,        clamp(3.5rem, 8vw, 8rem))),
-    linear-gradient(to top,    var(--seam-color-bottom, var(--seam-color, var(--bg-seam))) 0, rgb(8 9 11 / 0) var(--seam-bottom, var(--seam, clamp(3.5rem, 8vw, 8rem))));
-}
-/* The two edges are separately adjustable because they meet different things.
-   A section that runs into the footer wants a shorter bottom fade than one
-   that runs into 9rem of empty page. --seam sets both; --seam-bottom overrides
-   the lower one. */
-.ground-blend.blend-top-only::after {
-  background: linear-gradient(to bottom, var(--seam-color, var(--bg-seam)) 0, rgb(8 9 11 / 0) var(--seam, clamp(3.5rem, 8vw, 8rem)));
-}
 
-/* DE ONDERSTE NAAD VAN DE AFSLUITPLAAT IS DE UITZONDERING, en het is de enige.
-   Daaronder ligt de voet, en die schildert zijn eigen ondergrond — vlak
-   #08090B, zonder de verlichting erdoorheen (gemeten: 8,9,11, kaarsrecht). Naar
-   #0F1011 vervagen zou daar een lichte band tussen twee donkere vlakken zetten:
-   een nieuwe naad op de plek waar we er net een weghaalden. */
-main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
+/* ══ DE NAAD IS OMGEDRAAID — 23 augustus 2026 ═════════════════════════
+ *
+ * Lucas, met schermafdrukken van /portal: *"heb je deze rare gloed ook met een
+ * harde lijn dat er wat ongemakkelijk uitziet"* en *"hier zijn ook nog van die
+ * harde lijnen te zien"*.
+ *
+ * ── WAT ER HIERBOVEN STOND, EN WAAROM HET NIET KON WERKEN ──────────────
+ *
+ * De oude aanpak was: schilder de PAGINAKLEUR terug over de rand van een sectie
+ * en vervaag hem uit. Dat vereist dat de paginakleur één getal is. Dat is ze
+ * niet. `body::before` staat op het VENSTER en draagt een lamp linksboven èn een
+ * vignet; de zichtbare grond loopt daardoor van ongeveer 20 bovenin het scherm
+ * naar 15 onderin. Een naad vervaagt naar één vaste #0F1011 (≈ 17) en is dus
+ * bijna nergens goed:
+ *
+ *   gemeten op /portal, dezelfde naad op drie vensterhoogtes, linkerkantlijn:
+ *     naad op 150 px  —  grond erboven 19,9  · naadrij 18,3  · sectie 10,7
+ *     naad op 400 px  —  grond erboven 15,8  · naadrij 17,0  · sectie 10,7
+ *     naad op 700 px  —  grond erboven 14,9  · naadrij 17,1  · sectie 10,7
+ *
+ * Onderin het scherm is de naadrij dus 2,2 waarden LICHTER dan de grond ernaast:
+ * een lichte streep dwars over de pagina, op precies de plek waar de streep weg
+ * moest. Dat is de “harde lijn” op de schermafdruk, en hij is door de reparatie
+ * gemaakt en niet erdoor weggehaald.
+ *
+ * En de tweede helft is erger: de sectie zelf staat op 10,7 terwijl de pagina
+ * eromheen op 15 tot 20 staat. Dat komt niet van `isolation` — een doorzichtige
+ * stapelcontext laat `body::before` gewoon door — maar van één declaratie:
+ * `background: var(--ink-900)` op de sectie. Dat is een DEKSEL over de
+ * verlichting. Vier secties droegen er een zonder ook maar iets te tonen wat
+ * een eigen grond nodig had (.pp-hero, .pp-close, .sp-hero, .sp-close). De
+ * “rare gloed” is die deksel: een donkere plaat met een lichte rand eromheen.
+ *
+ * ── WAT ER NU STAAT ──────────────────────────────────────────
+ *
+ * Niet de pagina over de sectie leggen, maar de SECTIE laten oplossen.
+ *
+ *   1 · Een sectie zonder eigen grond krijgt er geen. Geen deksel, geen naad.
+ *       Dan is er niets om te matchen: het Ís de pagina, op elke scrolpositie.
+ *   2 · Een sectie die wél een eigen grond heeft (een foto, een verloop) laat
+ *       die grond aan zijn randen naar TRANSPARANT lopen met `mask-image`, zodat
+ *       de echte verlichting eronder gewoon doorloopt.
+ *
+ * Het verschil is dat (2) geen enkel getal van de pagina hoeft te raden. Er is
+ * geen kleur die kan afwijken, want er wordt geen kleur geschilderd.
+ *
+ * De oude noot zei dat een masker hier slechter was omdat het de tekst
+ * meemaskert. Dat klopt — en daarom staat het masker niet op de sectie maar op
+ * de LAAG met de grond erin (de <img>, de sluier, het verloop), die geen tekst
+ * bevat. Dat bezwaar gold voor een constructie die we niet gebruiken.
+ *
+ * `--seam`, `--seam-color`, `--seam-bottom` en `.blend-top-only` zijn hiermee
+ * weg. Een variabele die niets meer instelt is een valstrik voor de volgende.
+ *
+ * `--bg-seam` blijft wél bestaan, maar niet meer als naadkleur: FigWalk gebruikt
+ * hem om een tekening op de ZICHTBARE grond te laten staan in plaats van op de
+ * paginakleur. Dat is de enige plek waar één getal voor die grond nog klopt,
+ * want die tekening staat altijd midden in beeld. */
+.rand-los {
+  --los: clamp(4rem, 9vw, 9rem);
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0, #000 var(--los-boven, var(--los)),
+    #000 calc(100% - var(--los-onder, var(--los))), transparent 100%);
+  mask-image: linear-gradient(to bottom,
+    transparent 0, #000 var(--los-boven, var(--los)),
+    #000 calc(100% - var(--los-onder, var(--los))), transparent 100%);
+}
+/* Alleen de onderrand. Een hero schuift onder de plakkende kop door en raakt
+   bovenaan niets; daar uitdoven zou de lucht uit elke hero halen om een naad op
+   te lossen die er niet is. */
+.rand-los-voet {
+  --los: clamp(5rem, 14vh, 11rem);
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #000 var(--los));
+  mask-image: linear-gradient(to top, transparent 0, #000 var(--los));
+}
 
 /* ---- the heroes, bottom edge only -----------------------------------------
    Lucas: *"ook het vervagen toevoegen op hero image."*
@@ -1706,61 +1838,57 @@ main > .panel-tonal:last-child { --seam-color-bottom: var(--bg-0); }
    thing it is fading, which is the only measure that holds from a phone to an
    ultrawide.
 
-   NOT the LCP image's problem: this paints a gradient over the photograph, it
-   does not touch the <img>, so nothing here changes what the browser measures
-   as the largest paint or when it decodes it. */
+   ── 23 AUGUSTUS 2026: DE GRADIENT IS EEN MASKER GEWORDEN ────────────────
+   Alles hierboven beschrijft nog de oude aanpak — een `::after` die de
+   paginakleur van onderaf over de foto legt. Zie de lange noot bij `.rand-los`
+   hierboven voor waarom dat niet kón kloppen: er is geen één paginakleur, want
+   de verlichting staat op het venster. De hoogte (14vh) en de redenering
+   waarom een hero een diepere uitdoving krijgt dan een band, blijven precies
+   zoals ze hier staan; alleen het middel verandert.
+
+   Nu dooft de FOTO zelf uit in plaats van dat er iets overheen wordt gelegd.
+   Daarmee vervalt ook de hele z-index-puzzel die hieronder stond: er is geen
+   extra laag meer die tussen de sluier en de kopregel moet zien te landen.
+
+   `.hero-editorial` kan zijn `.bg` niet zelf maskeren — die laag schuift met de
+   parallax (`translateY`) en het masker zou meeschuiven, zodat de uitdoving
+   naast de onderrand komt te liggen. Daar zit de foto en de sluier daarom in
+   `<div class="hero-vloer rand-los-voet">`: een omhulsel dat stil staat, met de
+   bewegende laag erin. `.hv-hero` heeft dat probleem niet — die lagen staan
+   stil — en draagt het masker rechtstreeks. */
 .hv-hero,
 .hero-cover,
 .hero-editorial {
   position: relative;
   isolation: isolate;
-  --seam: clamp(5rem, 14vh, 11rem);
 }
-.hv-hero::after,
-.hero-cover::after,
-.hero-editorial::after {
+/* De stille vloer onder een hero-editorial: hij houdt de bewegende .bg vast
+   zodat het masker aan de SECTIE hangt en niet aan de parallax. */
+.hero-editorial .hero-vloer { position: absolute; inset: 0; pointer-events: none; }
+/* Binnen die vloer staat geen tekst, dus mag de korrel gewoon bovenop: .bg en
+   .fade staan daar op z-index auto en een laag op -1 zou eronder verdwijnen. */
+.hero-editorial .hero-vloer .korrel-mee { z-index: 1; }
+/* `.panel-tonal` is de enige sectie op deze site waarvan de grond puur CSS is.
+   Hij staat op dit moment in geen enkele markup — alleen de voetregel
+   `main:has(> .panel-tonal) + .site-footer` in Layout.astro verwijst er nog
+   naar. Zijn verloop is daarom naar een eigen laag verhuisd die WEL kan
+   uitdoven, zodat wie hem terugzet meteen de goede constructie krijgt en niet
+   de naad van vroeger. */
+.panel-tonal { background: none; }
+.panel-tonal::before {
   content: '';
   position: absolute;
   inset: 0;
+  z-index: -1;
   pointer-events: none;
-  background: linear-gradient(to top, var(--seam-color, var(--bg-seam)) 0, rgb(8 9 11 / 0) var(--seam));
+  background: radial-gradient(115% 130% at 16% 26%, #262A33 0%, #15171C 46%, #0A0B0E 100%);
+  --los: clamp(4rem, 9vw, 9rem);
+  --los-onder: clamp(3rem, 6vw, 5rem);
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0, #000 var(--los), #000 calc(100% - var(--los-onder)), transparent 100%);
+  mask-image: linear-gradient(to bottom,
+    transparent 0, #000 var(--los), #000 calc(100% - var(--los-onder)), transparent 100%);
 }
-
-/* THE TWO HEROES STACK DIFFERENTLY AND THE FADE HAS TO SIT IN A DIFFERENT
-   LAYER IN EACH. One z-index for both looked right and was invisible on one of
-   them — caught by sampling a pixel column across each hero's bottom edge, not
-   by looking, because a fade that never paints looks exactly like a hero that
-   has none.
-
-   .hv-hero stacks NEGATIVELY: its photograph is at -2 and its scrim at -1, and
-   its copy is in normal flow. -1 puts the fade above the scrim (later in the
-   DOM at equal z-index) and below the copy, which is what a negatively-stacked
-   positioned element does by definition.
-
-   .hero-editorial does not: .bg and .fade are positioned with z-index auto,
-   which is 0, and .hero-editorial-content and -cue are at 2. A fade at -1 goes
-   underneath the photograph and does nothing at all. 1 is the only free layer
-   between them. */
-.hv-hero::after,
-.hero-cover::after { z-index: -1; }
-.hero-editorial::after { z-index: 1; }
-/* The closing plate blends at BOTH edges, and both of them fade to --bg-0.
-   That is worth one sentence because the obvious guess is wrong: the footer's
-   background is declared `var(--bg-deep)`, which is #000 at :root — but
-   .site-footer is in the .on-ink list above and that scope re-points --bg-deep
-   to --ink-900. Its rendered ground is #08090B, the same value as the page.
-   Fading the plate's bottom edge to literal black would have put a band of
-   #000 between two #08090B surfaces: a new seam, in the place we were removing
-   one. Sampled the column at x=1200 to confirm rather than trusting the token
-   name. */
-.panel-tonal { --seam-bottom: clamp(3rem, 6vw, 5rem); }
-
-/* The closing plate wears it by default; it is the one section whose ground is
-   pure CSS, so there is no markup to change. Top seam only, because it sits
-   directly on the footer. The rounded top corners came off with it (see
-   .hv-close in HomeV2.astro): a 24px radius and a 100px fade are two different
-   answers to the same question, and the fade is the one Lucas asked for. */
-.panel-tonal { --seam: clamp(4rem, 9vw, 9rem); }
 
 /* ---- the coloured tiles ----------------------------------------------------
    A tile with a heading and a paragraph, on one of the four bright fills. It
@@ -4653,4 +4781,83 @@ body::before {
   --accent-bright: #C6F100;
   --btn-ghost-fill: rgb(255 255 255 / 0.08);
   --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
+}
+
+/* ══ .plaat-vol — DE PRIJSPLAAT OP EEN DONKERE GROND ══════════════════════
+ *
+ * Lucas, 23 augustus 2026: *"Is het denk je ook mooi om voor het blok: from
+ * €390 a month · 5 products excl. VAT [Start a plan][Compare the plans] ook een
+ * wat betere kleur te kiezen dan deze om het minder generiek eruit te laten
+ * zien, ik weet niet zeker maar misschien een andere kleur dan toxic green om
+ * wat variatie te forceren."*
+ *
+ * ── DE WAARNEMING KLOPT EN DE OORZAAK STOND IN DE KLASSENAAM ──────────────
+ *
+ * `.lime-plate` heet zo omdat hij ooit op een LIMOEN paneel lag. Daar was hij
+ * de donkere plaat op een heldere grond, en dat is waarom hij donker is: de
+ * noot hierboven zegt letterlijk *"Daar was de donkere plaat het contrast"*.
+ *
+ * Dat paneel is er niet meer. Op de homepage én op /plans ligt hij inmiddels op
+ * een bijna-zwarte band met een lichtbundel erachter. Donker op donker, dus de
+ * plaat heeft niets meer om zich tegen af te zetten en valt terug op wat hij
+ * dan nog is: een grijze doos met een groot getal en twee knoppen erin. Dat is
+ * het meest nagemaakte voorwerp van het commerciële web — vandaar "generiek".
+ * Het is dus geen kleurprobleem maar een KOSTUUM VAN HET VERKEERDE TONEEL.
+ *
+ * ── WAAROM ER GEEN TWEEDE KLEUR KOMT ──────────────────────────────────────
+ *
+ * De vraag was of er een andere kleur dan het toxic green op moest. Nee, en dat
+ * is te controleren in dit bestand: `--fill-blue`, `--fill-violet`, `--teal` en
+ * `--teal-text` wijzen allemaal naar `--accent`, en `--fill-pink` en
+ * `--fill-coral` zijn wit met een alfa. Deze site heeft ÉÉN tint, en dat is
+ * geen toeval — het is de opruiming van augustus, op Lucas' eigen vraag *"ik wil
+ * denk ik af van de pastelkleuren"*. Een tweede tint zou op 92 pagina's precies
+ * één keer voorkomen, op deze plaat. Zoiets leest niet als variatie maar als een
+ * vergissing, en het maakt de ene kleur die wél iets betekent zwakker.
+ *
+ * De regel die het ontwerp al had, is genoeg: EEN PLAAT IS HET TEGENDEEL VAN
+ * ZIJN GROND. Op de limoen was hij donker; op een donkere band hoort hij
+ * helder. Dus wordt hij vol accent, met bijna-zwarte inkt erop (15,16 : 1) en
+ * een bijna-zwarte knop met een limoen opschrift. Dat is de variatie die Lucas
+ * vraagt — de plaat is het enige vlak op de homepage dat vol in de accentkleur
+ * staat — zonder er een kleur bij te verzinnen die nergens anders bestaat.
+ *
+ * ── DE VAL DIE HIER AL EEN KEER IS INGESTAPT ──────────────────────────────
+ *
+ * `background: #C6F100` staat er LETTERLIJK en niet als `var(--accent)`. Dit
+ * blok zet `--accent` zelf om naar bijna-zwart (zodat de knop erin klopt), en
+ * een achtergrond die `var(--accent)` leest, leest dan zijn eigen omkering en
+ * wordt zwart. Dat is precies wat er bij `.lime-panel` staat beschreven, en het
+ * is bij het bouwen van deze klasse nog een keer gebeurd. */
+.plaat-vol.lime-plate {
+  background: #C6F100;
+  border: 1px solid rgb(8 9 11 / 0.18);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 18px 40px -20px rgb(0 0 0 / 0.7);
+  color: #08090B;
+  --ink: #08090B;
+  --ink-1: #08090B;
+  --ink-2: rgb(8 9 11 / 0.82);
+  --ink-3: rgb(8 9 11 / 0.66);
+  --ink-4: rgb(8 9 11 / 0.56);
+  --line: rgb(8 9 11 / 0.16);
+  --line-strong: rgb(8 9 11 / 0.30);
+  --line-ui: rgb(8 9 11 / 0.52);
+  /* De hele accentfamilie draait om, niet alleen --accent — zie de noot bij
+     .lime-plate hierboven: wie er één vergeet, krijgt een knop die op hover
+     verdwijnt. */
+  --accent: #08090B;
+  --accent-dim: #23262C;
+  --accent-ink: #C6F100;
+  --accent-on: #C6F100;
+  --accent-bright: #08090B;
+  --accent-word: #08090B;
+  --fill-blue: #08090B;
+  --focus-ring: #08090B;
+  --btn-ghost-fill: rgb(8 9 11 / 0.10);
+  --btn-ghost-fill-hover: rgb(8 9 11 / 0.20);
+  --btn-2nd-fill: rgb(8 9 11 / 0.08);
+  --btn-2nd-fill-hover: rgb(8 9 11 / 0.16);
+  --btn-2nd-ink: #08090B;
+  --btn-2nd-border: rgb(8 9 11 / 0.42);
+  --btn-2nd-border-hover: rgb(8 9 11 / 0.70);
 }

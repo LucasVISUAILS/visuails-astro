@@ -25,6 +25,17 @@
 // this — the second INSERT for the same session id throws, and that throw IS
 // the "already handled" signal, not a failure. See the comment on the
 // payments table there.
+//
+// ── AND WHY EVERY OTHER FAILURE *IS* ONE — 23 August 2026 ───────────────────
+// The paragraph above was true and the code did not implement it: the catch
+// around that INSERT caught EVERYTHING, and the handler answered 200 either
+// way. A duplicate and a broken database were indistinguishable, and the
+// broken one was the one that got told "handled, don't come back".
+//
+// The rule, matching functions/api/webhook/mollie.js: only a unique-constraint
+// violation may pass silently. Anything else is answered with a 500 so Stripe
+// re-delivers — that retry schedule is the only thing standing between a D1
+// hiccup and a paid order that is never recorded.
 
 import { verifyStripeSignature } from '../../../src/lib/stripe.js';
 
@@ -59,7 +70,26 @@ export async function onRequestPost({ request, env }) {
   // src/lib/stripe.js — but handling it now costs nothing and means nobody
   // has to remember to add it later if that changes).
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-    await safe(() => handlePaid(env, event.data.object));
+    /*
+     * ── EN safe() STOND HIER, WAT DE DOORGEGOOIDE FOUT ALSNOG OPAT ─────────
+     *
+     * De catch hieronder repareren is de helft van het werk. Zolang de aanroep
+     * in `safe()` zit, wordt een doorgegooide schrijffout alsnog gelogd,
+     * ingeslikt, en beantwoord met de 200 op de laatste regel — precies het
+     * gedrag dat weg moest.
+     *
+     * Dit volgt nu de vorm die mollie.js al heeft: een schrijffout is het ENE
+     * ding dat een retry echt waard is, want de klant heeft betaald en de
+     * bestelling weet het niet. Alles wat na de idempotentiepoort staat, staat
+     * bewust binnen dezelfde try — een half geschreven betaling is óók iets om
+     * opnieuw te laten leveren.
+     */
+    try {
+      await handlePaid(env, event.data.object);
+    } catch (e) {
+      console.error('[stripe-webhook] write failed for', event?.data?.object?.id, '—', e && e.message ? e.message : e);
+      return new Response('write failed', { status: 500 });
+    }
   }
   // Every other event type — checkout.session.expired,
   // async_payment_failed, and anything else Stripe ever adds — is
@@ -99,6 +129,38 @@ async function handlePaid(env, session) {
       )
       .run();
   } catch (e) {
+    /*
+     * ── ALLEEN EEN DUBBELE AFLEVERING MAG HIER STIL AFLOPEN ────────────────
+     *
+     * Hier stond een kale `catch` die ELKE fout opving, `return` gaf, en de
+     * handler antwoordde daarna 200 — waarmee Stripe te horen krijgt dat het
+     * gelukt is en niet meer terugkomt.
+     *
+     * WAT DAT KOST. Eén hapering van D1 op deze INSERT en de bestelling wordt
+     * nooit op betaald gezet, er komt geen order_events-regel, en Stripe's
+     * retryschema is met die 200 afgezegd. De klant heeft betaald en het
+     * systeem weet het nooit.
+     *
+     * Dit is exact dezelfde fout die op 10 augustus 2026 aan de Mollie-kant is
+     * gevonden en gerepareerd; die reparatie is hier nooit gekomen. Zie de
+     * lange noot bij dezelfde catch in functions/api/webhook/mollie.js.
+     *
+     * Nu wordt er gekeken naar WELKE fout het is. Een UNIQUE-overtreding op
+     * (provider, external_id) betekent inderdaad dat een eerdere aflevering dit
+     * al deed: stil aflopen is dan juist. Alles anders gaat omhoog naar
+     * onRequestPost, dat 500 antwoordt, en Stripe komt terug.
+     *
+     * De tekst van D1 bij een schending is "UNIQUE constraint failed:
+     * payments.provider, payments.external_id". Er wordt op beide woorden
+     * gematcht en niet op de volledige zin, want die zin is van Cloudflare en
+     * niet van ons — dezelfde match als aan de Mollie-kant.
+     */
+    const text = String(e && e.message ? e.message : e || '');
+    const duplicate = /unique/i.test(text) && /constraint/i.test(text);
+    if (!duplicate) {
+      console.error('[stripe-webhook] payment', session.id, 'not recorded —', text);
+      throw e;
+    }
     console.log('[stripe-webhook] duplicate delivery for', session.id, '— already processed, skipping');
     return;
   }
@@ -122,10 +184,6 @@ async function handlePaid(env, session) {
     .run();
 }
 
-async function safe(fn) {
-  try {
-    return await fn();
-  } catch (e) {
-    console.error('[stripe-webhook]', e && e.message ? e.message : e);
-  }
-}
+/* `safe()` stond hier en is weg met de enige aanroeper. Een helper die een
+   fout opeet, naast een handler die op een fout juist 500 moet antwoorden, is
+   een val voor de volgende die er een tweede aanroep bij zet. */

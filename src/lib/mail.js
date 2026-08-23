@@ -26,7 +26,34 @@
  * carry one — a wire-format difference that buys nothing.
  */
 export async function sendMail(env, { to, bcc, subject, html, text, attachments }) {
-  if (!env.RESEND_API_KEY) return;                 // not configured yet → skip quietly
+  /* ── EEN MISLUKTE MAIL WAS ONZICHTBAAR — 23 augustus 2026 ─────────────────
+   *
+   * Twee halve maatregelen die samen niets deden. Hierboven stond
+   * `if (!env.RESEND_API_KEY) return;` met de opmerking "skip quietly", en
+   * onderaan `throw` bij een antwoord dat geen 2xx is. Dat gooien lijkt streng,
+   * maar ELKE aanroeper wikkelt sendMail in `safe()` — en dat moet ook, want een
+   * bestelling mag niet omvallen omdat een mailserver hikt.
+   *
+   * Netto: een verkeerde sleutel (Resend antwoordt 401) betekende dat
+   * orderbevestigingen, facturen en INLOGLINKS stil nooit aankwamen. Niets in de
+   * applicatie merkte het, en de klant die geen inloglink krijgt, mailt niet —
+   * die gaat weg.
+   *
+   * De reparatie is niet harder falen maar ZICHTBAAR falen. Beide paden schrijven
+   * nu één regel in het Workers-logboek met het onderwerp en de ontvanger erbij,
+   * zodat je kunt zien wát er niet is aangekomen in plaats van alleen dát er iets
+   * mis is. Het gooien onderaan blijft: aanroepers die er wél iets mee kunnen
+   * (de beheerkant toont een mislukte verzending) blijven werken zoals ze deden.
+   *
+   * NOOIT DE SLEUTEL ZELF IN HET LOGBOEK. Alleen of hij er is, en wat Resend
+   * ervan vond. */
+  if (!env.RESEND_API_KEY) {
+    console.error(
+      `[mail] RESEND_API_KEY is niet ingesteld — "${subject}" is niet verstuurd `
+      + `naar ${Array.isArray(to) ? to.join(', ') : to}.`
+    );
+    return;
+  }
   const from = env.FROM_EMAIL || 'VISUAILS <orders@visuails.com>';
   // EVERY MESSAGE GOES OUT AS BOTH PARTS, August 2026 — a customer's sign-in
   // link landed in spam and this was one of the reasons.
@@ -63,7 +90,21 @@ export async function sendMail(env, { to, bcc, subject, html, text, attachments 
     headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const lichaam = await res.text();
+    /* Eerst loggen, dan gooien: de aanroeper vangt de fout in `safe()` en dan is
+       deze regel het enige spoor dat er iets niet is aangekomen. 401 krijgt een
+       eigen zin, want dat is bijna altijd dezelfde oorzaak en dan hoort de
+       oplossing erbij te staan. */
+    const uitleg = res.status === 401
+      ? ' — RESEND_API_KEY wordt door Resend geweigerd; zet het secret opnieuw.'
+      : '';
+    console.error(
+      `[mail] Resend ${res.status} bij "${subject}" naar `
+      + `${Array.isArray(to) ? to.join(', ') : to}${uitleg} ${lichaam}`
+    );
+    throw new Error(`Resend ${res.status}: ${lichaam}`);
+  }
 }
 
 /**

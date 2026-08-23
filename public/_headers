@@ -62,6 +62,17 @@
 #
 # Dit dekt de .avif net zo goed als de .webp — zie IMAGES.md voor waarom er van
 # elk beeld twee bestanden zijn.
+# ── EN DAARMEE IS DE NAAM EEN BELOFTE ────────────────────────────────────────
+# Zeven dagen cache op een vaste naam werkt zolang die naam ook vaste INHOUD
+# heeft. Op 22 augustus 2026 is dat één keer misgegaan: het heldbeeld werd door
+# een andere opname vervangen en hield zijn naam (brand-car.webp). De deploy was
+# goed en de HTML klopte, maar iedereen die de pagina al eens had geladen — de
+# eigenaar voorop — kreeg zeven dagen lang de oude foto uit zijn eigen browser
+# en van de rand van Cloudflare.
+#
+# De regel die daaruit volgt: een beeld dat door een ANDER beeld wordt vervangen
+# krijgt een andere bestandsnaam. Opnieuw uitsnijden of anders comprimeren van
+# dezelfde opname mag onder de oude naam; een andere opname niet.
 /img/*
   Cache-Control: public, max-age=604800
 

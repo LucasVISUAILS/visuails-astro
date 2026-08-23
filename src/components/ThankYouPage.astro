@@ -37,7 +37,9 @@
  * leest voordat je iets anders leest.
  */
 import { waHref } from '../data/whatsapp.js';
-import { TIERS, turnaround } from '../data/pricing.js';
+/* AMOUNT erbij: de annuleringstekst noemt het teruggestorte bedrag van de
+   proefvisual, en dat is een prijs — die hoort uit pricing.js te komen. */
+import { TIERS, turnaround, AMOUNT, euro } from '../data/pricing.js';
 import { mailNote } from '../data/mailNote.js';
 import { localizedPath } from '../i18n/ui.js';
 
@@ -71,7 +73,7 @@ const c = nl ? {
   extraB: 'Hoe meer beeld we hebben, hoe preciezer we pasvorm, kleur en detail de eerste keer raken. Een detailopname, de stof en een gedragen foto — gratis toe te voegen.',
   extraCta: 'Extra foto’s sturen',
   sourceQ: 'Nog één ding — hoe heb je ons gevonden?',
-  cancelP1: 'Uit onze administratie blijkt dat er al een proefvisual naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en de €1 is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.',
+  cancelP1: `Uit onze administratie blijkt dat er al een proefvisual naar je bedrijf is gegaan. Er is er één per bedrijf, dus deze tweede aanvraag is geannuleerd — en de ${euro(AMOUNT.testSample, "nl")} is onderweg terug naar de rekening waarvandaan je betaalde. Dat duurt meestal een paar werkdagen.`,
   cancelP2: 'Klopt dat niet — een collega bestelde zonder het te zeggen, of de eerste proef kwam nooit aan — reageer dan op de bevestigingsmail en we lossen het met de hand op.',
   cancelP3: 'Klaar voor het echte werk? De diensten beginnen bij de prijs per product, zonder minimum.',
   cancelCta: 'Bekijk de diensten',
@@ -97,7 +99,7 @@ const c = nl ? {
   extraB: 'The more we have, the more accurately we match fit, colour and detail first time. A detail close-up, the fabric and an on-body shot — free to add.',
   extraCta: 'Send extra photos',
   sourceQ: 'One quick thing — how did you find us?',
-  cancelP1: 'Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the €1 is on its way back to the account you paid from. That usually takes a few working days.',
+  cancelP1: `Our records show a test sample already went out to your company. There is one per business, so this second request has been cancelled — and the ${euro(AMOUNT.testSample, "en")} is on its way back to the account you paid from. That usually takes a few working days.`,
   cancelP2: 'If that does not sound right — a colleague ordered without telling you, or the first sample never arrived — reply to the confirmation email and we will sort it out by hand.',
   cancelP3: 'Ready for the real thing? The services start at the per-product price, with no minimum order.',
   cancelCta: 'See the services',

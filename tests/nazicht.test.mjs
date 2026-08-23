@@ -28,10 +28,11 @@
  * database iets weigert, en een database die nooit iets weigert vindt ze niet.
  */
 
+import { readFileSync } from 'node:fs';
 import { d1, verseDb, telling } from './lib/d1sqlite.mjs';
-import { VAT_TREATMENT } from '../src/data/vat.js';
+import { VAT_TREATMENT, vatShort, vatDecision } from '../src/data/vat.js';
 import { VAT_RATE } from '../src/lib/quote.js';
-import { AMOUNT, BRAND_MODEL_CREDIT_DROPS } from '../src/data/pricing.js';
+import { AMOUNT, BRAND_MODEL_CREDIT_DROPS, MANDATE_AMOUNT, vatLabel } from '../src/data/pricing.js';
 import { vatVoorAbonnement, createSubscriptionRow } from '../src/lib/subscription.js';
 import { snapshotFromSubscription } from '../src/lib/invoice.js';
 
@@ -327,6 +328,97 @@ console.log('\n7 · een klant met een abonnementsfactuur is te wissen');
   ok('met haar pdf', telling(db, 'SELECT pdf_key FROM subscription_invoices'), 'invoices/2026/VIS-2026-0001.pdf');
   ok('zonder klant erachter', telling(db, 'SELECT customer_id FROM subscription_invoices'), null);
   ok('en zonder abonnement erachter', telling(db, 'SELECT subscription_id FROM subscription_invoices'), null);
+}
+
+/* ══ HET BTW-TARIEF STAAT OP ÉÉN PLEK ══════════════════════════════════════
+ *
+ * 23 augustus 2026. Het tarief stond op vier plekken: pricing.js (de site),
+ * quote.js (wat er werkelijk wordt afgerekend), vat.js (twee keer, in
+ * vatDecision) en admin.js (drie keer, in de "btw alsnog rekenen"-knop). Alleen
+ * de eerste werd ergens gecontroleerd.
+ *
+ * De kop van src/lib/quote.js beweerde dat de twee helften bij het bouwen tegen
+ * elkaar werden gehouden door assertQuoteMatches(). Die functie bestaat, draait
+ * bij het laden van de module, en de string VAT_RATE kwam er niet in voor. Het
+ * gevolg: pricing.js op 0,19 zetten leverde een site op die overal "19%" toonde
+ * terwijl de kassa 21 rekende, met alle tests groen.
+ *
+ * ER ZIJN NU TWEE VANGRAILS EN ZE DOEN IETS ANDERS. quote.js controleert bij het
+ * laden of het tarief nog uit pricing.js komt en of het bedrag dat een klant
+ * betaalt er echt uit volgt. Dit blok controleert de BRONBESTANDEN: staat er
+ * ergens weer een tweede tarief ingetypt? Dat is de fout die terugkomt, want
+ * `Math.round(net * 0.21)` typt sneller dan een import erbij zoeken.
+ */
+console.log('\nhet btw-tarief staat op één plek');
+{
+  const lees = (pad) => readFileSync(new URL('../' + pad, import.meta.url), 'utf8');
+  /* Commentaar eruit voordat er naar getallen wordt gezocht, anders meldt de
+     controle elke noot die het oude getal uitlegt. Drie soorten: blokcommentaar,
+     regelcommentaar (met de `[^:]`-wacht zodat `https://` blijft staan), en
+     `--` binnen de SQL-strings — die staan in een sjabloonstring en zijn voor JS
+     dus gewoon tekst. */
+  const zonderCommentaar = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    .replace(/--.*$/gm, '')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+
+  /* De ENIGE plek waar het getal mag staan. Elk ander bestand moet importeren. */
+  const BRON = 'src/data/pricing.js';
+  ok(`${BRON} declareert het tarief`, /export const VAT_RATE = [\d.]+;/.test(lees(BRON)));
+
+  const VERDACHT = [
+    'src/lib/quote.js', 'src/data/vat.js', 'src/lib/admin.js', 'src/lib/invoice.js',
+    'src/lib/subscription.js', 'src/lib/account.js', 'functions/api/order.js',
+    'functions/api/webhook/mollie.js', 'cron/index.js', 'src/scripts/pipeline.js',
+  ];
+  const alsGetal = new RegExp(`\\b${String(VAT_RATE).replace('.', '\\.')}\\b`);
+  const alsTekst = new RegExp(`\\b${Math.round(VAT_RATE * 100)}\\s*%`);
+  for (const pad of VERDACHT) {
+    const code = zonderCommentaar(lees(pad));
+    ok(`${pad} typt het tarief niet als getal`, alsGetal.test(code), false);
+    ok(`${pad} typt het percentage niet als tekst`, alsTekst.test(code), false);
+  }
+
+  /* En het percentage in de copy volgt het tarief, in beide talen. */
+  ok('vatLabel volgt het tarief (en)', vatLabel('rate', 'en'), `${Math.round(VAT_RATE * 100)}% VAT`);
+  ok('vatLabel volgt het tarief (nl)', vatLabel('rate', 'nl'), `${Math.round(VAT_RATE * 100)}% btw`);
+  ok('vatShort volgt hetzelfde tarief', vatShort(VAT_TREATMENT.standard, 'nl'), `${Math.round(VAT_RATE * 100)}% btw`);
+  ok('en vatDecision rekent er ook mee', vatDecision({ country: 'NL' }).rate, VAT_RATE);
+}
+
+/* ══ ELK BEDRAG KOMT UIT pricing.js ════════════════════════════════════════
+ *
+ * De kop van src/data/pricing.js zegt het al: *"Every euro figure on the site
+ * now comes from here. Nothing else may hardcode a price."* Dat gold niet voor
+ * de euro van de machtiging (een eigen constante in subscribe.js) en niet voor
+ * de zes plekken die "€1" in de copy typten — waarvan er twee de PROEFVISUAL
+ * bedoelden en vier de MACHTIGING. Twee verschillende bedragen die toevallig
+ * gelijk zijn, allebei met de hand geschreven, dus niet uit elkaar te houden. */
+console.log('\nelk bedrag van één euro komt uit pricing.js');
+{
+  const lees = (pad) => readFileSync(new URL('../' + pad, import.meta.url), 'utf8');
+  /* Commentaar eruit voordat er naar getallen wordt gezocht, anders meldt de
+     controle elke noot die het oude getal uitlegt. Drie soorten: blokcommentaar,
+     regelcommentaar (met de `[^:]`-wacht zodat `https://` blijft staan), en
+     `--` binnen de SQL-strings — die staan in een sjabloonstring en zijn voor JS
+     dus gewoon tekst. */
+  const zonderCommentaar = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    .replace(/--.*$/gm, '')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+
+  ok('de machtiging heeft een eigen constante', typeof MANDATE_AMOUNT, 'number');
+  ok('en die is niet dezelfde naam als de proefvisual',
+    MANDATE_AMOUNT === AMOUNT.testSample && MANDATE_AMOUNT !== undefined, true,
+    'ze mogen gelijk ZIJN, maar het moeten twee namen blijven');
+
+  for (const pad of ['src/lib/subscribe.js', 'src/components/order/PlanPicker.astro',
+                     'src/components/PlansPage.astro', 'src/components/ThankYouPage.astro']) {
+    const code = zonderCommentaar(lees(pad));
+    ok(`${pad.replace('src/', '')} typt geen los eurobedrag`, /€\s?1\b(?!\d)/.test(code), false);
+  }
 }
 
 /* ── WAT HIER NIET IN ZIT, EN WAAROM ────────────────────────────────────────

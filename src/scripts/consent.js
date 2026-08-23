@@ -24,9 +24,14 @@
  * consent that never expires is consent nobody remembers giving.
  */
 
+import { PREFERENCE_COOKIE_DAYS } from '../data/cookies.js';
+
 const COOKIE = 'vis_consent';
 const CONSENT_VERSION = 1;
-const MAX_AGE_DAYS = 365;
+/* De termijn stond hier als eigen constante en staat nu in src/data/cookies.js,
+   samen met de drie andere cookies — omdat het cookiebeleid hem als tekst
+   opschrijft en die twee niet uit elkaar mogen lopen. */
+const MAX_AGE_DAYS = PREFERENCE_COOKIE_DAYS;
 
 /** @returns {{version:number, analytics:boolean, at:string}|null} */
 export function readConsent() {

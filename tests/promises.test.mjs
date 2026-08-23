@@ -50,6 +50,11 @@ import {
   clearUploadRetention,
   stampDeliveryRetention,
 } from '../src/lib/retention.js';
+/* De privélink en de cookies zijn andere klokken dan de bewaartermijnen, en de
+   pagina's die ze noemen horen ze uit hun eigen bron te halen. */
+import { PORTAL_TTL_DAYS } from '../src/lib/token.js';
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS } from '../src/data/cookies.js';
+import { buildStaat } from './lib/build.mjs';
 import { COMPOSITE, MARKER } from '../src/lib/iptc.js';
 import { hasProvenanceTag, isScannable, MAX_SCAN_BYTES } from '../src/lib/provenance.js';
 
@@ -151,14 +156,74 @@ console.log('\nde bewaartermijn doet wat /privacy §6 belooft');
 /* ══ 1b · DE TERMIJNEN IN DE CODE ZIJN DE TERMIJNEN OP DE PAGINA ═══════════ */
 console.log('\nde getallen op de pagina komen overeen met de code');
 {
-  for (const p of ['src/pages/privacy.astro', 'src/pages/nl/privacy.astro', 'src/pages/terms.astro', 'src/pages/nl/terms.astro']) {
-    const body = read(p);
-    check(`${p.replace('src/pages/', '')} noemt ${UPLOAD_DAYS} dagen`,
-      new RegExp(`${UPLOAD_DAYS} (days|dagen)`).test(body), true);
+  /*
+   * ── DEZE CONTROLE STOND TEGENOVER legal.test.mjs — 23 augustus 2026 ────────
+   *
+   * Hier stond: de BRON van deze vier pagina's moet de tekst "90 dagen" bevatten.
+   * In tests/legal.test.mjs stond het omgekeerde over precies twee van diezelfde
+   * bestanden: de bron mag die tekst NIET bevatten, want de termijn hoort uit
+   * retention.js te komen.
+   *
+   * Allebei tegelijk groen kon alleen omdat het getal in terms.astro toevallig in
+   * een kopcommentaar bleef staan. Zet iemand UPLOAD_DAYS op 60, dan valt deze
+   * controle om op een bestand dat juist goed is geparametriseerd — en de enige
+   * manier om hem tevreden te stellen, is het getal opnieuw intypen.
+   *
+   * DE BEDOELING WAS GOED EN DE MEETPLEK FOUT. Wat je wilt weten is niet of het
+   * getal in de BRON staat, maar of de BEZOEKER het leest. Dus wordt hier de
+   * gebouwde pagina gelezen, en gaat de "niet meer intypen"-kant naar
+   * legal.test.mjs waar hij thuishoort. De twee spreken elkaar niet meer tegen:
+   * de een zegt "sta het niet in de bron", de ander "toon het op de pagina".
+   */
+  const PAGINAS = [
+    ['dist/privacy/index.html', 'en'], ['dist/nl/privacy/index.html', 'nl'],
+    ['dist/terms/index.html', 'en'], ['dist/nl/terms/index.html', 'nl'],
+  ];
+  const versGebouwd = buildStaat(new URL('../dist/privacy/index.html', import.meta.url));
+  if (!versGebouwd.er || versGebouwd.oud) {
+    console.log(`      (overgeslagen — ${versGebouwd.uitleg})`);
+  } else {
+    for (const [pad, taal] of PAGINAS) {
+      const html = read(pad);
+      const eenheid = taal === 'nl' ? 'dagen' : 'days';
+      check(`${pad.replace('dist/', '')} toont ${UPLOAD_DAYS} ${eenheid}`,
+        new RegExp(`${UPLOAD_DAYS} ${eenheid}`).test(html), true);
+    }
+    for (const [pad, taal] of PAGINAS.slice(0, 2)) {
+      const eenheid = taal === 'nl' ? 'maanden' : 'months';
+      check(`${pad.replace('dist/', '')} toont ${DELIVERY_MONTHS} ${eenheid}`,
+        new RegExp(`${DELIVERY_MONTHS} ${eenheid}`).test(read(pad)), true);
+    }
+    /* En de privélink is een ANDERE klok die toevallig even lang loopt. Als die
+       twee ooit uit elkaar gaan, moet de pagina de goede van de twee noemen. */
+    check(`privacy toont de looptijd van de privélink (${PORTAL_TTL_DAYS} dagen)`,
+      new RegExp(`works for ${PORTAL_TTL_DAYS} days`).test(read('dist/privacy/index.html')), true);
+    check('en het portaal noemt dezelfde looptijd',
+      new RegExp(`Files stay available for ${PORTAL_TTL_DAYS} days`).test(read('dist/portal/index.html')), true);
+    /* De cookietermijnen horen bij hetzelfde principe: het cookiebeleid is de
+       plek waar wij opschrijven hoe lang een cookie leeft. */
+    check(`het cookiebeleid toont de sessieduur (${SESSION_COOKIE_DAYS} dagen)`,
+      new RegExp(`Expires after ${SESSION_COOKIE_DAYS} days`).test(read('dist/cookie-policy/index.html')), true);
+    check(`en de voorkeursduur (${PREFERENCE_COOKIE_DAYS / 365 * 12} maanden)`,
+      new RegExp(`Expires after ${PREFERENCE_COOKIE_DAYS / 365 * 12} months`).test(read('dist/cookie-policy/index.html')), true);
   }
-  for (const p of ['src/pages/privacy.astro', 'src/pages/nl/privacy.astro']) {
-    check(`${p.replace('src/pages/', '')} noemt ${DELIVERY_MONTHS} maanden`,
-      new RegExp(`${DELIVERY_MONTHS} (months|maanden)`).test(read(p)), true);
+
+  /* EN DE BRON MAG HET GETAL NIET MEER DRAGEN. Dit is de kant die tot vandaag
+     alleen voor terms.astro werd gecontroleerd; de privacyverklaring en het
+     cookiebeleid — juist de plekken waar de literalen zaten — werden overgeslagen. */
+  const zonderCommentaar = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+  for (const p of ['src/pages/privacy.astro', 'src/pages/nl/privacy.astro',
+                   'src/pages/terms.astro', 'src/pages/nl/terms.astro',
+                   'src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro',
+                   'src/components/PortalPage.astro']) {
+    const code = zonderCommentaar(read(p));
+    check(`${p.replace('src/', '')} typt ${UPLOAD_DAYS} dagen niet meer`,
+      new RegExp(`${UPLOAD_DAYS} (days|dagen)`).test(code), false);
+    check(`${p.replace('src/', '')} typt ${DELIVERY_MONTHS} maanden niet meer`,
+      new RegExp(`${DELIVERY_MONTHS} (months|maanden)`).test(code), false);
   }
   // En de drie plekken die stempelen of opruimen lezen de module in plaats van de
   // getallen te herhalen. Dit is de regel die voorkomt dat er over een jaar 60 dagen

@@ -71,13 +71,13 @@ const SESSION_COOKIE = 'vis_admin';
 
 /** orders.status, in the order the studio actually moves through them. */
 import { sendMail } from './mail.js';
-import { createOrderMolliePayment, refundMolliePayment } from './mollie.js';
+import { createOrderMolliePayment, refundMolliePayment, mollieKey, mollieKeyProblems, describeHeaders } from './mollie.js';
 import { issueInvoice } from './invoice.js';
 import { mailInvoice } from './invoiceMail.js';
 /* De twee bedragen van de merkmodel-credit komen uit de prijslijst en niet uit een
    getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
    kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
-import { AMOUNT, BRAND_MODEL_CREDIT_DROPS } from '../data/pricing.js';
+import { AMOUNT, BRAND_MODEL_CREDIT_DROPS, VAT_RATE, vatPercent, ladderTotal } from '../data/pricing.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
 // and page-level helpers, and the mail template exports overlapping names.
 import {
@@ -148,6 +148,10 @@ export async function adminGet(context) {
 
   if (path === '/admin/log') return renderLog(context);
   if (path === '/admin/vat') return renderVatReview(context);
+  /* De diagnose. LEESROUTE: alleen vormen van secrets en een methodelijst — geen
+     enkele bijwerking. Wat wél iets aanmaakt bij Mollie zit achter de POST
+     hieronder. Zie de kop van renderDiagnose(). */
+  if (path === '/admin/diagnose') return renderDiagnose(context);
   /* De aanbevelingen. Een LEESROUTE, want goedkeuren gebeurt met een POST
      hieronder — zie de kop van renderTestimonials() voor waarom dit scherm er
      tot 14 augustus 2026 niet was en wat dat een klant kostte. */
@@ -215,6 +219,13 @@ export async function adminPost(context) {
   }
 
   if (path === '/admin/logout') return handleLogout(context, admin);
+
+  /* De vier probes. Dit staat bij de POST'ers en niet bij de leesroutes omdat
+     twee ervan een ECHTE betaling bij Mollie aanmaken — met een live sleutel
+     zijn dat echte, onbetaalde regels van één euro in het dashboard. Iets dat
+     aanmaakt, hoort geen GET te zijn, en achter deze poort staat bovendien de
+     originIsSelf()-controle die een statisch routebestand niet krijgt. */
+  if (path === '/admin/diagnose/probe') return handleDiagnoseProbe(context);
 
   const resolveMatch = path.match(/^\/admin\/revisions\/(\d+)\/resolve$/);
   if (resolveMatch) return handleRevisionResolve(context, Number(resolveMatch[1]));
@@ -4840,6 +4851,307 @@ function readSessionCookie(request) {
 // see no session, and will tell a visibly-signed-in browser to sign in. That
 // happened once already (functions/admin/debug-mollie.js, which started life at
 // /api/debug-mollie). Move the route; do not widen the path.
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DIAGNOSE — /admin/diagnose
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * VERHUISD UIT functions/admin/debug-mollie.js — 23 augustus 2026.
+ *
+ * ── WAAROM HET WEG MOEST DAAR ─────────────────────────────────────────────
+ *
+ * Dat bestand was een STATISCHE route in functions/admin/, en een statische
+ * route wint in Pages Functions van de catch-all `[[path]].js`. Daarmee viel
+ * hij buiten de padtabel hierboven — en dus buiten de ene centrale
+ * `originIsSelf()`-controle die in adminPost() vóór de hele tabel staat. Het
+ * bestand documenteerde die voorrang zelfs, als handigheid.
+ *
+ * Er was een sessiecontrole (`hasAdminSession`), en die deed zijn werk. Maar
+ * het sessiecookie is `SameSite=Lax`, en dat wordt bij een gewone navigatie van
+ * buitenaf WEL meegestuurd. Eén link naar /admin/debug-mollie die Lucas
+ * aanklikt terwijl hij is ingelogd, en de GET vuurde twee betalingsaanmaken af
+ * bij Mollie. Met een `live_`-sleutel zijn dat twee echte, onbetaalde regels
+ * van één euro in het dashboard, plus een webhook-aanroep voor bestelling
+ * `VIS-DIAG-000` die niet bestaat.
+ *
+ * ── WAT ER IS VERANDERD, EN WAT NIET ──────────────────────────────────────
+ *
+ * De probes zelf, de leesregels en de vormcontrole van de secrets zijn
+ * ongewijzigd overgenomen; dit is een verhuizing en geen herontwerp. Twee
+ * dingen zijn wél anders, en allebei omdat ze de reden waren dat het weg moest:
+ *
+ *   1 · De route staat in de padtabel, dus hij erft wat elke andere adminroute
+ *       erft: de sessiecontrole in adminGet()/adminPost() en, voor de POST, de
+ *       originIsSelf()-poort.
+ *
+ *   2 · HET IS GESPLITST NAAR WERKWOORD. Wat alleen kijkt — de vorm van elk
+ *       secret, de problemen met de sleutel — is een GET. Wat bij Mollie iets
+ *       AANMAAKT is een POST. Dat onderscheid stond er niet en had er altijd
+ *       moeten staan: een GET die betalingen aanmaakt is een GET die een
+ *       preloader, een linkchecker of een geopend tabblad kan afvuren.
+ *
+ * ── OF DIT NOG NODIG IS ───────────────────────────────────────────────────
+ *
+ * De aanleiding — de lege 400 — is opgehelderd: MOLLIE_API_KEY stond opgeslagen
+ * als één U+0016, het SYN-teken dat cmd.exe invoegt bij Ctrl+V. Dat deel heeft
+ * zijn werk gedaan. Wat is gebleven is de VORMCONTROLE VAN ELK SECRET, en die
+ * is sindsdien pas echt nuttig geworden: twee secrets falen stil. Er is dus één
+ * scherm dat "staat dit secret er, en is het een sleutel of een toetsaanslag"
+ * beantwoordt zonder één waarde te tonen. Daarom blijft het, en daarom is de
+ * GET-helft de helft die ertoe doet.
+ */
+
+const MOLLIE_API = 'https://api.mollie.com/v2';
+
+/** Leesroute: wat er van de secrets te zeggen valt zonder er één te lezen. */
+async function renderDiagnose(context) {
+  const { env } = context;
+  const namen = ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
+  const vormen = namen.map((naam) => [naam, secretShape(env?.[naam])]);
+  const problemen = mollieKeyProblems(env);
+
+  const rij = ([naam, v]) => {
+    const staat = !v.set
+      ? '<span class="pill is-warn">niet ingesteld</span>'
+      : v.verdict
+        ? `<span class="pill is-warn">${esc(v.verdict)}</span>`
+        : '<span class="pill">in orde</span>';
+    const detail = v.set
+      ? `${v.length} tekens${v.prefix ? ` &middot; voorvoegsel <code>${esc(v.prefix)}</code>` : ''}`
+        + `${v.controlChars ? ` &middot; bevat ${esc(v.controlChars.join(', '))}` : ''}`
+      : '&mdash;';
+    return `<tr><td><code>${esc(naam)}</code></td><td>${staat}</td><td class="meta">${detail}</td></tr>`;
+  };
+
+  const body = `
+    <h1>Diagnose</h1>
+    <p class="meta">De vorm van elk secret &mdash; nooit de waarde. Lengte, of elk teken afdrukbaar is, en
+    het voorvoegsel alleen waar dat een openbaar merkteken is (<code>test_</code>, <code>live_</code>,
+    <code>re_</code>). Dat is precies genoeg om "goed ingesteld" van "een losse toetsaanslag" te scheiden.</p>
+    <table class="tbl">
+      <thead><tr><th>Secret</th><th>Staat</th><th>Vorm</th></tr></thead>
+      <tbody>${vormen.map(rij).join('')}</tbody>
+    </table>
+    ${problemen ? `<p class="meta is-warn">De Mollie-sleutel heeft een probleem vóór er iets wordt verstuurd: ${esc(problemen.join('; '))}</p>` : ''}
+    <h2>De vier probes</h2>
+    <p class="meta">Vier verzoeken aan Mollie, goedkoopste eerst, elk met één variabele erin: transport met een
+    bewust verkeerde sleutel, dan de echte sleutel zonder body, dan de kleinste betaling, dan precies wat
+    <code>functions/api/order.js</code> verstuurt. De eerste die zich misdraagt is het antwoord.</p>
+    <p class="meta is-warn"><strong>Let op:</strong> de laatste twee MAKEN EEN BETALING AAN. Met een
+    <code>test_</code>-sleutel zijn die gratis en verlopen ze vanzelf; met een <code>live_</code>-sleutel zijn het
+    twee echte, onbetaalde betalingen van &euro;${esc(String(AMOUNT.testSample))} die niemand ooit voldoet. Daarom is dit een knop en geen pagina die
+    vanzelf laadt.</p>
+    <form method="post" action="/admin/diagnose/probe">
+      <button class="btn" type="submit">Draai de vier probes</button>
+    </form>`;
+  return html(page({ title: 'Diagnose', body }));
+}
+
+/** De probes. POST, want twee ervan maken een echte betaling aan. */
+async function handleDiagnoseProbe(context) {
+  const { request, env } = context;
+  const raw = env?.MOLLIE_API_KEY;
+  const out = {
+    when: new Date().toISOString(),
+    origin: new URL(request.url).origin,
+    key: {
+      set: !!raw,
+      rawLength: raw ? String(raw).length : 0,
+      usableLength: raw ? String(raw).replace(/[^\x21-\x7E]/g, '').length : 0,
+      prefix: raw ? String(raw).replace(/[^\x21-\x7E]/g, '').slice(0, 5) : null,
+      mode: raw ? (String(raw).trim().startsWith('live_') ? 'LIVE' : String(raw).trim().startsWith('test_') ? 'test' : 'unrecognised') : null,
+      problems: mollieKeyProblems(env),
+    },
+    secrets: Object.fromEntries(
+      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
+        .map((naam) => [naam, secretShape(env?.[naam])])
+    ),
+    probes: {},
+    reading: null,
+  };
+
+  if (!raw) {
+    out.reading = 'MOLLIE_API_KEY is not set on this deployment. That is the whole problem — nothing else below ran.';
+    return diagnoseJson(out);
+  }
+
+  let key;
+  try {
+    key = mollieKey(env);
+  } catch (e) {
+    out.reading = `The stored key is not usable: ${e.message}`;
+    return diagnoseJson(out);
+  }
+
+  // A · transport. A syntactically valid key that is not ours.
+  out.probes.A_transport = await mollieProbe('GET', '/methods', 'test_0000000000000000000000000000000000');
+  // B · auth, no body.
+  out.probes.B_auth = await mollieProbe('GET', '/methods', key);
+
+  const origin = new URL(request.url).origin;
+  // C · the smallest payment Mollie accepts.
+  out.probes.C_minimalPayment = await mollieProbe('POST', '/payments', key, {
+    amount: { currency: 'EUR', value: AMOUNT.testSample.toFixed(2) },
+    description: 'VISUAILS DIAGNOSTIC — ignore',
+    redirectUrl: `${origin}/thank-you`,
+  });
+
+  // D · exactly what order.js sends, including the three fields C leaves out.
+  const fullBody = {
+    amount: { currency: 'EUR', value: AMOUNT.testSample.toFixed(2) },
+    description: 'VISUAILS DIAGNOSTIC — ignore',
+    redirectUrl: `${origin}/thank-you?ref=VIS-DIAG-000`,
+    webhookUrl: `${origin}/api/webhook/mollie`,
+    locale: 'en_US',
+    metadata: { order_ref: 'VIS-DIAG-000' },
+  };
+  out.probes.D_realPayment = await mollieProbe('POST', '/payments', key, fullBody);
+  out.probes.D_realPayment.urlsSent = { redirectUrl: fullBody.redirectUrl, webhookUrl: fullBody.webhookUrl };
+
+  out.methods = {
+    note: 'Mollie filters methods by amount. The test sample is the smallest payment the site makes, so this is the shortest the list ever gets.',
+    at_smallest: await mollieMethodList(key, AMOUNT.testSample.toFixed(2)),
+    at_large_order: await mollieMethodList(key, ladderTotal('complete', 30).toFixed(2)),
+  };
+
+  out.reading = readDiagnose(out);
+  return diagnoseJson(out);
+}
+
+/** The methods Mollie would actually offer for a payment of this size. */
+async function mollieMethodList(key, value) {
+  const res = await mollieProbe('GET', `/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, key);
+  if (res.threw || res.status !== 200) return { amount: value, error: res.error || `HTTP ${res.status}` };
+  const full = await fetch(`${MOLLIE_API}/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, {
+    headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+  }).then((r) => r.json()).catch(() => null);
+  const list = full?._embedded?.methods || [];
+  return {
+    amount: `€${value}`,
+    count: list.length,
+    methods: list.map((m) => `${m.description} (${m.id})`),
+  };
+}
+
+async function mollieProbe(method, path, key, body) {
+  const started = Date.now();
+  try {
+    const res = await fetch(MOLLIE_API + path, {
+      method,
+      headers: {
+        Authorization: `Bearer ${key}`,
+        Accept: 'application/json',
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+    const text = await res.text();
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch { /* not JSON — that is itself the finding */ }
+    return {
+      status: res.status,
+      ms: Date.now() - started,
+      bodyBytes: text.length,
+      isJson: parsed !== null,
+      body: parsed
+        ? (parsed.title
+          ? { title: parsed.title, detail: parsed.detail, field: parsed.field }
+          : { id: parsed.id, status: parsed.status, mode: parsed.mode, count: parsed.count })
+        : text.slice(0, 200),
+      headers: describeHeaders(res),
+    };
+  } catch (e) {
+    // A throw is a different finding from a 400 and must not be flattened into
+    // one: it means the request never completed at all.
+    return { threw: true, error: String(e && e.message ? e.message : e), ms: Date.now() - started };
+  }
+}
+
+/** Turn the four probes into the one sentence that says what to do next. */
+function readDiagnose(out) {
+  const { A_transport: A, B_auth: B, C_minimalPayment: C, D_realPayment: D } = out.probes;
+
+  if (out.key.problems) {
+    const s = out.secrets?.MOLLIE_API_KEY;
+    // The specific case, called by name, because the generic advice
+    // ("re-paste it") is what put the wrong value there in the first place.
+    if (s?.set && s.length <= 3 && s.controlChars?.length) {
+      return `MOLLIE_API_KEY is ${s.length} character(s) long and contains ${s.controlChars.join(', ')}. ` +
+        `That is not a truncated key — U+0016 is the SYN control character Windows cmd.exe inserts when Ctrl+V ` +
+        `is pressed and the console is not set to treat it as paste. The key was never pasted; a control code was. ` +
+        `Set it again from the Cloudflare dashboard (Settings → Variables and Secrets), where paste works normally, ` +
+        `then redeploy. Check the other secrets in this response too — they were probably set the same way.`;
+    }
+    return `The stored key has a problem before anything is sent: ${out.key.problems.join('; ')}. ` +
+      `Set it again — preferably from the Cloudflare dashboard rather than a terminal — then redeploy and reload this.`;
+  }
+
+  // WHAT MAKES A PROBE "GOOD" IS A STRUCTURED ANSWER, NOT A PARTICULAR STATUS.
+  // Mollie answers a syntactically unacceptable key with 400 "Invalid
+  // Authorization header" in JSON, not 401 — so the question is not the status
+  // but WHETHER MOLLIE'S APPLICATION ANSWERED AT ALL. `isJson` is that question.
+  const refused = (p) => p && !p.threw && !p.isJson;
+
+  if (A && A.threw) return `Could not reach api.mollie.com from this Function at all (${A.error}). This is a connectivity problem, not a payment one.`;
+  if (refused(A)) {
+    return `Probe A was refused with a ${A.status} and no JSON, using a key that is deliberately wrong — so it is neither our key nor our payload. ` +
+      `Requests from this Pages Function are being rejected before Mollie's application sees them. Headers: ${A.headers}. ` +
+      `That is the same shape as the old Stripe failure; take the cf-ray to Cloudflare.`;
+  }
+
+  if (refused(B)) return `Transport is fine — A got a structured ${A.status} back — but the real key is refused with a ${B.status} and no JSON. The key is carrying a character the wire will not accept. Re-set it from the Cloudflare dashboard and redeploy.`;
+  if (B && B.status === 401) return 'Mollie reached, but the key is not valid for this account. Check you copied the right one and that the account is activated.';
+  if (B && B.status >= 400) return `Mollie refused the key: ${JSON.stringify(B.body)}.`;
+  if (B && B.status !== 200) return `Unexpected ${B.status} on a plain authenticated read. Body: ${JSON.stringify(B.body)}.`;
+
+  if (refused(C)) return 'Auth works, but even a minimal payment is refused with no JSON — the POST itself is the problem, not the key.';
+  if (C && C.status >= 400) return `A minimal payment was refused: ${JSON.stringify(C.body)}. That is Mollie telling us what is wrong — read the field.`;
+  if (refused(D)) return 'A minimal payment works; the real one is refused with no JSON. So it is one of the three fields the real one adds: webhookUrl, locale or metadata. The URLs actually sent are in D.urlsSent.';
+  if (D && D.status >= 400) return `The real payload was refused: ${JSON.stringify(D.body)}. Field to look at: ${D.body?.field || 'see detail'}.`;
+
+  if (C?.status === 201 && D?.status === 201) {
+    return `All four probes pass and Mollie created both test payments (${C.body?.id}, ${D.body?.id}, mode ${D.body?.mode}). ` +
+      `Payment creation works from this deployment. Those two are diagnostic payments — they sit "open" in your Mollie dashboard, ` +
+      `nobody will pay them, and they expire on their own.`;
+  }
+
+  return 'Inconclusive — send the whole of this JSON over and I will read it.';
+}
+
+/**
+ * A secret's shape, never its value. The verdict is the specific tell this
+ * whole screen was built to catch: a value one or two characters long, made of
+ * control characters, is not a truncated key — it is a terminal that typed a
+ * control code instead of pasting.
+ */
+function secretShape(value) {
+  if (value === undefined || value === null || value === '') return { set: false };
+  const s = String(value);
+  const control = [...s].filter((c) => c.charCodeAt(0) < 0x20 || c.charCodeAt(0) === 0x7f);
+  const out = {
+    set: true,
+    length: s.length,
+    allPrintable: control.length === 0 && s === s.trim(),
+  };
+  if (control.length) {
+    out.controlChars = control.map((c) => 'U+' + c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0'));
+  }
+  // Public prefixes only. Mollie and Resend both put the environment in the
+  // clear at the front of the key precisely so it can be read at a glance.
+  const m = s.match(/^(test_|live_|re_|sk_test_|sk_live_|whsec_)/);
+  if (m) out.prefix = m[1];
+  if (s.length <= 3) out.verdict = 'FAR too short — this is a stray keystroke, not a key';
+  else if (control.length) out.verdict = 'contains control characters — re-set it';
+  else if (s !== s.trim()) out.verdict = 'has leading or trailing whitespace';
+  return out;
+}
+
+function diagnoseJson(obj, status = 200) {
+  return new Response(JSON.stringify(obj, null, 2), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+  });
+}
+
 function setSessionCookie(token) {
   const maxAge = 14 * 86400; // ADMIN_SESSION_TTL_DAYS, in seconds — kept in step by hand, see adminAuth.js
   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/admin; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
@@ -5353,7 +5665,9 @@ ${missing
            fraude" is een conclusie die dit scherm niet mag trekken. */
         const mismatch = from && claim !== '—' && from !== claim;
         const net = Number(o.total_cents) || 0;
-        const withVat = Math.round(net * 0.21);
+        /* VAT_RATE en niet 0.21: dit scherm rekende het tarief zelf uit en zou
+           bij een tariefwijziging als enige op het oude blijven staan. */
+        const withVat = Math.round(net * VAT_RATE);
         return `
 <div class="card">
   <div class="row-head">
@@ -5387,7 +5701,7 @@ ${missing
       <button class="btn btn-ghost" type="submit">Afwijzen, ik neem contact op</button>
     </form>
   </div>
-  <p class="meta">De nettoprijs verandert bij geen van de drie. "Btw alsnog rekenen" zet er 21% bovenop en laat ${esc(cents(net))} staan.</p>
+  <p class="meta">De nettoprijs verandert bij geen van de drie. "Btw alsnog rekenen" zet er ${vatPercent()} bovenop en laat ${esc(cents(net))} staan.</p>
 </div>`;
       }).join('')
     : '<p class="empty">Niets in behandeling. Elke bestelling met een btw-opgave die we konden nakijken, is gewoon doorgegaan.</p>'}`;
@@ -5451,15 +5765,15 @@ async function handleVatDecision({ request, env }, orderId, admin) {
      * Het land dat de klant opgaf blijft staan. Zie de kop hierboven: dit scherm
      * herschrijft de opgave van de klant niet.
      */
-    const vat = Math.round(net * 0.21);
+    const vat = Math.round(net * VAT_RATE);
     statements.push(env.DB.prepare(
       `UPDATE orders
           SET review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?2,
-              vat_treatment = 'nl_standard', vat_rate = 0.21, vat_cents = ?3
+              vat_treatment = 'nl_standard', vat_rate = ?4, vat_cents = ?3
         WHERE id = ?1 AND review_state = 'pending'`
-    ).bind(orderId, admin?.email || 'admin', vat));
+    ).bind(orderId, admin?.email || 'admin', vat, VAT_RATE));
     note = 'Btw-gegevens nagekeken. Op deze bestelling wordt Nederlandse btw gerekend; het bedrag exclusief btw is niet veranderd.';
-    detail = `${order.ref}: 21% btw alsnog gerekend (${vat} cent over ${net} cent)`;
+    detail = `${order.ref}: ${vatPercent()} btw alsnog gerekend (${vat} cent over ${net} cent)`;
   } else {
     statements.push(env.DB.prepare(
       `UPDATE orders

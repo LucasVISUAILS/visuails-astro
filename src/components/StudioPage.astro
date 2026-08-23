@@ -210,10 +210,11 @@ const nl = lang === 'nl';
     De behandeling is dezelfde als op de homepage — zie .foto-licht en
     scripts/beeld-inbedden.mjs — zodat de twee pagina's van dezelfde lamp
     lijken te komen. */}
-<section class="band-tall sp-hero ground-blend foto-licht" style="--fl-o: .85; --fl-x: 50%;">
+<section class="band-tall sp-hero foto-licht" style="--fl-o: .85; --fl-x: 50%; --fl-y: 80%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
-  <img class="sp-sfeer" src="/img/brand-beam.webp" alt="" aria-hidden="true" width="1600" height="900" fetchpriority="low" decoding="async" />
-  <div class="sp-sfeer-scrim" aria-hidden="true"></div>
+  <img class="sp-sfeer rand-los" src="/img/brand-beam.webp" alt="" aria-hidden="true" width="1600" height="900" fetchpriority="low" decoding="async" />
+  <div class="sp-sfeer-scrim rand-los" aria-hidden="true"></div>
+  <div class="korrel-mee rand-los" aria-hidden="true"></div>
   <div class="container">
     <div class="sp-hero-split">
       <div class="statement statement-left">
@@ -363,10 +364,11 @@ const nl = lang === 'nl';
   </div>
 </section>
 
-<section class="band-tall sp-close ground-blend foto-licht" style="--fl-o: .7; --fl-x: 45%;">
+<section class="band-tall sp-close foto-licht" style="--fl-o: .7; --fl-x: 45%; --fl-y: 70%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
-  <img class="sp-sfeer sp-sfeer-slot" src="/img/brand-glow.webp" alt="" aria-hidden="true" width="1400" height="788" loading="lazy" decoding="async" />
-  <div class="sp-sfeer-scrim" aria-hidden="true"></div>
+  <img class="sp-sfeer sp-sfeer-slot rand-los" src="/img/brand-glow.webp" alt="" aria-hidden="true" width="1400" height="788" loading="lazy" decoding="async" />
+  <div class="sp-sfeer-scrim rand-los" aria-hidden="true"></div>
+  <div class="korrel-mee rand-los" aria-hidden="true"></div>
   <div class="container closing">
     <div>
       <h2>{c.closeH}</h2>
@@ -389,12 +391,20 @@ const nl = lang === 'nl';
     .sp-hero-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
 
-  .sp-hero { background: var(--ink-900); }
+  /* ── GEEN EIGEN GROND — 23 augustus 2026 ──────────────────────────────────
+     `background: var(--ink-900)` stond hier en is weg, samen met
+     `.ground-blend` in de markup. Zie de noot bij .pp-hero in PortalPage.astro
+     en bij `.rand-los` in global.css: een dekkende --bg-0 op een sectie is een
+     deksel over de verlichting van body::before, en de naadvervaging die dat
+     moest verbergen was zelf de lichte lijn op Lucas' schermafdruk.
+
+     Wat deze sectie WEL heeft is een sfeerbeeld, en dat is een echte eigen
+     grond. Die dooft nu aan zijn eigen boven- en onderrand uit (`.rand-los` op
+     de foto én op de sluier, met hetzelfde masker zodat hun verhouding gelijk
+     blijft). Daaronder loopt de paginagrond gewoon door — er is dus geen kleur
+     meer die kan afwijken, want er wordt geen kleur meer geschilderd. */
   /* ── DE LICHTSTUDIE ALS GROND ──────────────────────────────────────────────
-     z-index -2 voor de foto en -1 voor de sluier, want `.ground-blend` legt
-     zijn naadvervaging óók op -1 en moet daar overheen kunnen; zie de noot bij
-     .ground-blend in global.css, en .hv-dream op de homepage die hetzelfde
-     doet.
+     z-index -2 voor de foto en -1 voor de sluier.
 
      `object-position` mikt het heldere deel van de kegel naar rechtsonder, weg
      van de kop en de knoppen die linksboven staan. De sluier eroverheen is een
@@ -414,13 +424,17 @@ const nl = lang === 'nl';
     opacity: .62;
     pointer-events: none;
   }
-  /* De uitsnede wordt nog eens opgetrokken zodat de rand van de lichtplas
-     BUITEN het kader valt. Zonder dat liep de bovenrand van die plas als een
-     rechte streep over 1440 pixels — gemeten een overgang van maar twaalf
-     waarden over vijf pixels, dus geen harde lijn, maar wel kaarsrecht en
-     schermbreed, en dat leest als een sectiegrens. `transform` en geen grotere
-     `inset`: dit blijft daarmee een compositorlaag zonder herberekening. */
-  .sp-sfeer-slot { object-position: 50% 62%; opacity: .4; transform: scale(1.28); transform-origin: 50% 64%; }
+  /* Hier stond `transform: scale(1.28)`, om de rand van de lichtplas BUITEN het
+     kader te duwen — die rand liep anders als een kaarsrechte streep over 1440
+     pixels en las als een sectiegrens.
+
+     23 augustus 2026 weggehaald, en dat is geen verlies maar een opruiming: de
+     laag draagt nu `.rand-los`, dus hij dooft aan zijn eigen randen uit en die
+     streep kan niet meer bestaan. Twee middelen voor één probleem is één te
+     veel — en erger, ze werkten tegen elkaar: een masker hangt aan de lokale
+     assen van een element, dus met een schaal van 1,28 eromheen viel de
+     uitdoving 28 procent buiten de sectie en raakte ze de rand niet meer. */
+  .sp-sfeer-slot { object-position: 50% 62%; opacity: .4; }
   .sp-sfeer-scrim {
     position: absolute; inset: 0; z-index: -1;
     pointer-events: none;
@@ -474,7 +488,7 @@ const nl = lang === 'nl';
 
   .sp-honest-tiles { margin-top: clamp(2.4rem, 5vw, 3.5rem); }
 
-  .sp-close { background: var(--ink-900); }
+  /* Geen eigen grond — zie de noot bij .sp-hero hierboven. */
   /* ── terugrekenen vanaf de lanceerdatum (verhuisd van de homepage) ──────
      Een <ol>, want dit is wél een volgorde: de drie data staan in de tijd
      achter elkaar. De stip zit op de bovenlijn en niet ervoor, zodat de rij

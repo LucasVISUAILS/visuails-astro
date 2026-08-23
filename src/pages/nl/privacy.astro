@@ -1,5 +1,11 @@
 ---
 import { WHATSAPP_DISPLAY, waHref } from '../../data/whatsapp.js';
+// De bewaartermijnen komen uit de constanten en worden hier niet meer getypt —
+// zie de noot in src/pages/privacy.astro. Drie constanten en niet één: UPLOAD_DAYS
+// en PORTAL_TTL_DAYS zijn allebei toevallig 90 en betekenen iets anders.
+import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../../lib/retention.js';
+import { PORTAL_TTL_DAYS } from '../../lib/token.js';
+
 // VISUAILS — Privacybeleid (Nederlands). Vertaling van src/pages/privacy.astro.
 // De redenering achter §6 (bronmateriaal 90 dagen, geleverde visuals 12
 // maanden, portaallink 90 dagen) en achter §9's portaalclausule staat in dat
@@ -96,9 +102,9 @@ import Layout from '../../layouts/Layout.astro';
       <h2>6. Hoe lang we je gegevens bewaren</h2>
       <p>We bewaren je gegevens alleen zolang dat nodig is. Drie van die termijnen liggen vast, omdat die je direct raken:</p>
       <ul>
-        <li><strong>Bronmateriaal</strong> — de productfoto’s en bestanden die je uploadt worden 90 dagen na het afsluiten van je bestelling verwijderd. Wil je dat we ze langer bewaren, vraag dat dan schriftelijk vóór die tijd, dan spreken we het met je af.</li>
-        <li><strong>Geleverde visuals</strong> — je afgeronde visuals bewaren we 12 maanden na levering, zodat een levering langer meegaat dan het materiaal waaruit die is gemaakt. Bewaar zelf een kopie: na 12 maanden kunnen we een nieuwe download niet garanderen.</li>
-        <li><strong>Je bestellink</strong> — de privélink waarmee je downloadt werkt tot 90 dagen nadat je bestelling is afgesloten, daarna stopt hij. Dat is bewust korter dan die 12 maanden: een link die je bestanden opent, hoort niet eindeloos actief in een mailbox te blijven staan. Heb je de bestanden daarna nog nodig, mail ons dan — we sturen je een nieuwe link.</li>
+        <li><strong>Bronmateriaal</strong> — de productfoto’s en bestanden die je uploadt worden {UPLOAD_DAYS} dagen na het afsluiten van je bestelling verwijderd. Wil je dat we ze langer bewaren, vraag dat dan schriftelijk vóór die tijd, dan spreken we het met je af.</li>
+        <li><strong>Geleverde visuals</strong> — je afgeronde visuals bewaren we {DELIVERY_MONTHS} maanden na levering, zodat een levering langer meegaat dan het materiaal waaruit die is gemaakt. Bewaar zelf een kopie: na {DELIVERY_MONTHS} maanden kunnen we een nieuwe download niet garanderen.</li>
+        <li><strong>Je bestellink</strong> — de privélink waarmee je downloadt werkt tot {PORTAL_TTL_DAYS} dagen nadat je bestelling is afgesloten, daarna stopt hij. Dat is bewust korter dan die {DELIVERY_MONTHS} maanden: een link die je bestanden opent, hoort niet eindeloos actief in een mailbox te blijven staan. Heb je de bestanden daarna nog nodig, mail ons dan — we sturen je een nieuwe link.</li>
       </ul>
       <p>Correspondentie over een bestelling bewaren we zolang die nuttig is voor die bestelling en de opvolging daarvan. Facturatie- en belastinggegevens bewaren we zolang de Nederlandse en EU-wetgeving dat vereist. Wanneer gegevens niet langer nodig zijn, verwijderen of anonimiseren we ze.</p>
 
@@ -126,7 +132,7 @@ import Layout from '../../layouts/Layout.astro';
         <li><strong>We slaan het niet op.</strong> In onze database staat alleen een eenrichtings-SHA-256-vingerafdruk van het adres, nooit het adres zelf. Het is niet terug te lezen uit onze systemen — niet door ons, en niet door wie een kopie van de database in handen krijgt.</li>
         <li><strong>Het blijft buiten andermans administratie.</strong> Pagina’s op dat adres vragen zoekmachines om ze niet te indexeren, te volgen of te archiveren, sturen geen referrer mee naar sites die je vanaf daar opent, en worden niet bewaard door gedeelde caches.</li>
         <li><strong>Het is niet met volume aan te vallen.</strong> We limiteren het aantal verzoeken naar dat adres, zodat raden op schaal stukloopt voordat het begint.</li>
-        <li><strong>Het loopt af, en het is te vervangen.</strong> Het adres stopt 90 dagen nadat je bestelling is afgesloten (zie §6). Komt het ooit ergens terecht waar het niet hoort, laat het ons weten: we trekken dat adres in en geven je een nieuw adres, waarna het oude direct niet meer werkt.</li>
+        <li><strong>Het loopt af, en het is te vervangen.</strong> Het adres stopt {PORTAL_TTL_DAYS} dagen nadat je bestelling is afgesloten (zie §6). Komt het ooit ergens terecht waar het niet hoort, laat het ons weten: we trekken dat adres in en geven je een nieuw adres, waarna het oude direct niet meer werkt.</li>
       </ul>
 
       <h2>10. Hoe je contact met ons opneemt</h2>

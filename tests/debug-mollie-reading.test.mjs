@@ -2,8 +2,13 @@
  * supposed to name. The bug this catches: a verdict of "Inconclusive" when
  * every probe is green. */
 import fs from 'node:fs/promises';
-const src = await fs.readFile(new URL('../functions/admin/debug-mollie.js', import.meta.url), 'utf8');
-const read = new Function('return ' + src.match(/function read\(out\) \{[\s\S]*?\n\}/)[0])();
+/* De diagnose is 23 augustus 2026 verhuisd van functions/admin/debug-mollie.js
+   naar de padtabel in src/lib/admin.js — zie de noot bij renderDiagnose() daar
+   voor waarom een statisch routebestand onder functions/admin/ de centrale
+   originIsSelf()-controle omzeilde. De leesregels zijn ongewijzigd meegegaan;
+   deze test volgt ze mee, met de nieuwe naam readDiagnose(). */
+const src = await fs.readFile(new URL('../src/lib/admin.js', import.meta.url), 'utf8');
+const read = new Function('return ' + src.match(/function readDiagnose\(out\) \{[\s\S]*?\n\}/)[0])();
 
 const REAL = {
   key: { problems: null },

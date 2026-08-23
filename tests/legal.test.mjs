@@ -39,6 +39,10 @@
  */
 import { readFileSync } from 'node:fs';
 import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../src/lib/retention.js';
+/* De cookietermijnen staan sinds 23 augustus 2026 in src/data/cookies.js — één
+   plek voor het getal dat de code zet én de pagina opschrijft. */
+import { SESSION_COOKIE_DAYS, PREFERENCE_COOKIE_DAYS } from '../src/data/cookies.js';
+import { buildStaat } from './lib/build.mjs';
 
 let pass = 0;
 let fail = 0;
@@ -619,17 +623,44 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
     }
   }
 
-  /* En de levensduur van de sessiecookie is geen sessie. Het getal komt uit de
-     code, zodat een gewijzigde TTL hier omvalt in plaats van stil te verlopen. */
-  const acc = read('src/lib/account.js');
-  const dagen = Number((acc.match(/const ACCOUNT_SESSION_TTL_DAYS = (\d+)/) || [])[1] || 0);
-  ok('de inlogcookie heeft een echte levensduur in dagen', dagen > 0, true, dagen);
+  /* ── DEZE CONTROLE LAS DE BRON, EN DAT WERD ZIJN EIGEN VAL — 23 aug 2026 ──
+     Hier stond een regex die `const ACCOUNT_SESSION_TTL_DAYS = (\d+)` uit
+     account.js viste. Toen die constante de waarde uit src/data/cookies.js ging
+     lezen — precies de opruiming die deze test aanmoedigt — vond de regex geen
+     cijfer meer en werd de levensduur 0. De test ging rood op de verbetering.
+
+     Een test die een BRONREGEL napluist, toetst de schrijfwijze en niet het
+     feit. Dus wordt de constante nu geïmporteerd, en gaat de controle over wat
+     hij hoort te zijn: staat de levensduur op de pagina, en staat er niet meer
+     dat het een sessiecookie is.
+
+     De GEBOUWDE pagina en niet de bron, om dezelfde reden: of het getal er als
+     tekst of als interpolatie staat, gaat de lezer niets aan. */
+  const versGebouwd = buildStaat(new URL('../dist/cookie-policy/index.html', import.meta.url));
+  if (!versGebouwd.er || versGebouwd.oud) {
+    console.log(`      (overgeslagen — ${versGebouwd.uitleg})`);
+  } else {
+    const dagen = SESSION_COOKIE_DAYS;
+    ok('de inlogcookie heeft een echte levensduur in dagen', dagen > 0, true, dagen);
+    for (const pad of ['dist/cookie-policy/index.html', 'dist/nl/cookie-policy/index.html']) {
+      const pagina = read(pad);
+      ok(`${pad.replace('dist/', '')} toont die ${dagen} dagen bij vis_account`,
+        new RegExp(`vis_account[\\s\\S]{0,600}?${dagen} (days|dagen)`).test(pagina), true);
+      ok('  en noemt hem geen sessiecookie meer',
+        /vis_account[\s\S]{0,600}?(Expires with the session|Verloopt met de sessie)/.test(pagina), false);
+    }
+    /* En de drie voorkeurscookies delen één termijn, die ook uit cookies.js komt. */
+    const maanden = (PREFERENCE_COOKIE_DAYS / 365) * 12;
+    ok('het cookiebeleid toont de voorkeurstermijn',
+      new RegExp(`vis_consent[\\s\\S]{0,600}?${maanden} months`).test(read('dist/cookie-policy/index.html')), true);
+  }
+  /* En de bron typt geen van beide getallen meer met de hand. */
   for (const pad of ['src/pages/cookie-policy.astro', 'src/pages/nl/cookie-policy.astro']) {
-    const pagina = read(pad);
-    ok(`${pad.replace('src/pages/', '')} noemt die ${dagen} dagen bij vis_account`,
-      new RegExp(`vis_account[\\s\\S]{0,400}?${dagen} (days|dagen)`).test(pagina), true);
-    ok('  en noemt hem geen sessiecookie meer',
-      /vis_account[\s\S]{0,400}?(Expires with the session|Verloopt met de sessie)/.test(pagina), false);
+    const code = body(read(pad));
+    ok(`${pad.replace('src/pages/', '')} typt de sessieduur niet meer`,
+      new RegExp(`${SESSION_COOKIE_DAYS} (days|dagen)`).test(code), false);
+    ok(`${pad.replace('src/pages/', '')} typt de voorkeurstermijn niet meer`,
+      new RegExp(`${(PREFERENCE_COOKIE_DAYS / 365) * 12} (months|maanden)`).test(code), false);
   }
 }
 

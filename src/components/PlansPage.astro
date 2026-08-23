@@ -37,7 +37,7 @@
  */
 import Placeholder from './Placeholder.astro';
 import {
-  euro, vatLabel, plans, turnaround,
+  euro, vatLabel, plans, turnaround, AMOUNT,
   PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_ROLLOVER_MONTHS,
   STOCK_OFF_BRAND, STOCK_ON_BRAND,
 } from '../data/pricing.js';
@@ -109,7 +109,7 @@ const COPY = {
     outCta: 'See the price per product',
 
     ctaH: 'Start with one product',
-    ctaEm: 'for €1.',
+    ctaEm: `for ${euro(AMOUNT.testSample, "en")}.`,
     ctaBody: 'Send the photos you already have and see what comes back before any plan starts.',
     ctaSample: 'Request a test sample',
     ctaPlan: 'Start a plan',
@@ -157,7 +157,7 @@ const COPY = {
     outCta: 'Bekijk de prijs per product',
 
     ctaH: 'Begin met één product',
-    ctaEm: 'voor €1.',
+    ctaEm: `voor ${euro(AMOUNT.testSample, "nl")}.`,
     ctaBody: 'Stuur de foto’s die je al hebt en zie wat eruit komt voordat er een abonnement begint.',
     ctaSample: 'Vraag een proefvisual aan',
     ctaPlan: 'Sluit een abonnement af',
@@ -217,7 +217,7 @@ const c = COPY[nl ? 'nl' : 'en'];
           </ul>
         </div>
 
-        <div class="lime-plate">
+        <div class="lime-plate plaat-vol">
           <p class="pl-from">{c.from}</p>
           <p class="pl-fig">{euro(FROM_AMOUNT, lang)}</p>
           <p class="pl-unit">{c.unit}</p>

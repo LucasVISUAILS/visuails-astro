@@ -1,0 +1,1227 @@
+VISUAILS — twee acute punten uit ARCHITECTURE.md §13
+====================================================
+§13.4  functions/admin/debug-mollie.js omzeilt de originIsSelf()-controle
+§13.1  functions/api/webhook/stripe.js leest een schrijffout als dubbele levering
+
+Toepassen vanaf de projectroot (E:\Claude (VISUAILS)\visuails-astro):
+
+    git apply --stat  visuails-acuut.patch     # eerst kijken
+    git apply --check visuails-acuut.patch     # dan droogdraaien
+    git apply         visuails-acuut.patch     # dan pas toepassen
+
+Zonder git:
+
+    patch -p1 < visuails-acuut.patch
+
+Daarna:
+
+    npm run test:stripe      # 23 controles
+    npm run test:diagnose    # 22 controles
+    npm test                 # de hele keten
+
+Geen nieuwe afhankelijkheden. Zeven bestanden: één verwijderd, twee nieuw,
+vier gewijzigd.
+
+────────────────────────────────────────────────────────────────────────────
+diff -ruN a/functions/admin/debug-mollie.js b/functions/admin/debug-mollie.js
+--- a/functions/admin/debug-mollie.js	2026-08-23 14:20:22.228669192 +0000
++++ b/functions/admin/debug-mollie.js	1970-01-01 00:00:00.000000000 +0000
+@@ -1,332 +0,0 @@
+-// TEMPORARY DIAGNOSTIC — delete this file once the empty 400 is understood.
+-//
+-// GET /admin/debug-mollie   (requires a live /admin session)
+-//
+-// ── WHY IT LIVES UNDER /admin AND NOT UNDER /api ────────────────────────────
+-// It was at /api/debug-mollie first and answered "Sign in at /admin first" to
+-// a browser that was, visibly, signed in at /admin. Not a bug in the session
+-// check — the session cookie is set with `Path=/admin` (see setSessionCookie
+-// in src/lib/admin.js), so the browser correctly declines to attach it to
+-// anything outside that path. The endpoint never saw a cookie because it was
+-// never sent one.
+-//
+-// The fix is to move the endpoint, NOT to widen the cookie. `Path=/admin` is
+-// a deliberate narrowing of where an ambient credential travels, and trading a
+-// standing security property for the convenience of a file that is meant to be
+-// deleted next week is the wrong way round.
+-//
+-// A static route beats a catch-all in Pages Functions, so this file wins over
+-// functions/admin/[[path]].js for this one path. If you ever see the admin's
+-// own "Not found" page here instead of JSON, that precedence is what changed.
+-//
+-// WHY IT EXISTS
+-// `/api/order` failed with:
+-//
+-//     (error) [order] Mollie 400: (empty body)
+-//
+-// and that message contains almost no information. Worse, it is the same
+-// symptom that killed the Stripe integration on this project — "blank HTTP
+-// 400s when called from Cloudflare, never from the CLI, never from local
+-// Node" — which was chased for a while and never resolved. Two different
+-// payment providers failing the same way from the same Pages Function is not
+-// a coincidence about the providers.
+-//
+-// The one fact worth holding on to: **Mollie answers every application-level
+-// error with a JSON body** ({status, title, detail, field}). A 400 with an
+-// EMPTY body therefore did not come from Mollie's application. It came from
+-// something in front of it refusing the request before Mollie ever parsed it —
+-// a load balancer or a WAF — which happens when the request is malformed at
+-// the HTTP layer rather than wrong at the API layer.
+-//
+-// So rather than guess which part is malformed, this bisects it. Four probes,
+-// cheapest first, each isolating one variable:
+-//
+-//   A · transport      a well-formed but WRONG key. If Mollie's edge is
+-//                      reachable and our requests are well-formed, this must
+-//                      come back as a clean JSON 401. If THIS is an empty 400,
+-//                      the problem is not our key and not our payload — it is
+-//                      the connection itself, and that is a Cloudflare↔Mollie
+-//                      question, not a code question.
+-//   B · auth           the real key, on a GET with no body at all. Isolates
+-//                      the Authorization header from everything else. If A
+-//                      passes and B is an empty 400, the key is carrying
+-//                      something the wire will not accept.
+-//   C · minimal POST   amount + description + redirectUrl, nothing else. If B
+-//                      passes and C fails, the problem is the body.
+-//   D · the real POST  byte-for-byte what functions/api/order.js sends. If C
+-//                      passes and D fails, it is one of the three fields D
+-//                      adds: webhookUrl, locale, or metadata.
+-//
+-// The first probe that misbehaves is the answer. Every probe reports the
+-// response headers as well as the status, because `server` and `cf-ray`
+-// together say WHO answered — Mollie, a WAF, or Cloudflare's own edge.
+-//
+-// C and D create real payments. With a `test_` key those are free, fake, and
+-// expire on their own; they are described as "DIAGNOSTIC" so they are obvious
+-// in the Mollie dashboard. With a `live_` key they are real but unpaid
+-// payments for €1, which nobody will ever complete.
+-//
+-// It reveals no secret: the key's length, its five-character prefix and a list
+-// of any invisible characters in it, never the key.
+-
+-import { hasAdminSession } from '../../src/lib/admin.js';
+-import { mollieKey, mollieKeyProblems, describeHeaders } from '../../src/lib/mollie.js';
+-import { AMOUNT, ladderTotal } from '../../src/data/pricing.js';
+-
+-const MOLLIE_API = 'https://api.mollie.com/v2';
+-
+-export async function onRequestGet(context) {
+-  const { request, env } = context;
+-
+-  // Behind the same login as the dashboard — see hasAdminSession's own note.
+-  if (!(await hasAdminSession(context))) {
+-    return json({
+-      error: 'No admin session on this request.',
+-      hint: 'Sign in at /admin, then reload THIS url — it must be /admin/debug-mollie, not /api/debug-mollie. '
+-        + 'The session cookie is scoped Path=/admin, so anything outside that path never receives it.',
+-    }, 403);
+-  }
+-
+-  const raw = env?.MOLLIE_API_KEY;
+-  const out = {
+-    when: new Date().toISOString(),
+-    origin: new URL(request.url).origin,
+-    key: {
+-      set: !!raw,
+-      rawLength: raw ? String(raw).length : 0,
+-      usableLength: raw ? String(raw).replace(/[^\x21-\x7E]/g, '').length : 0,
+-      prefix: raw ? String(raw).replace(/[^\x21-\x7E]/g, '').slice(0, 5) : null,
+-      mode: raw ? (String(raw).trim().startsWith('live_') ? 'LIVE' : String(raw).trim().startsWith('test_') ? 'test' : 'unrecognised') : null,
+-      problems: mollieKeyProblems(env),
+-    },
+-    // ── EVERY OTHER SECRET, SHAPE ONLY ────────────────────────────────────
+-    // Added after MOLLIE_API_KEY turned out to be a single U+0016 — the SYN
+-    // character Windows cmd.exe inserts when you press Ctrl+V and it is not
+-    // configured to treat that as paste. Whoever set that secret that way
+-    // probably set the others in the same sitting, the same way. Two of them
+-    // fail SILENTLY if they are corrupt: sendMail() is wrapped in safe(), so a
+-    // broken RESEND_API_KEY means order confirmations simply never arrive and
+-    // nothing anywhere says so.
+-    //
+-    // Values are never read. Length, whether every character is printable
+-    // ASCII, and a prefix ONLY where that prefix is a documented public marker
+-    // (test_ / live_ / re_) — which is exactly the information that
+-    // distinguishes "set correctly" from "set to a control character".
+-    secrets: Object.fromEntries(
+-      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
+-        .map((name) => [name, shapeOf(env?.[name])])
+-    ),
+-    probes: {},
+-    reading: null,
+-  };
+-
+-  if (!raw) {
+-    out.reading = 'MOLLIE_API_KEY is not set on this deployment. That is the whole problem — nothing else below ran.';
+-    return json(out);
+-  }
+-
+-  let key;
+-  try {
+-    key = mollieKey(env);
+-  } catch (e) {
+-    out.reading = `The stored key is not usable: ${e.message}`;
+-    return json(out);
+-  }
+-
+-  // A · transport. A syntactically valid key that is not ours.
+-  out.probes.A_transport = await probe('GET', '/methods', 'test_0000000000000000000000000000000000');
+-
+-  // B · auth, no body.
+-  out.probes.B_auth = await probe('GET', '/methods', key);
+-
+-  // C · the smallest payment Mollie accepts.
+-  const origin = new URL(request.url).origin;
+-  out.probes.C_minimalPayment = await probe('POST', '/payments', key, {
+-    amount: { currency: 'EUR', value: AMOUNT.testSample.toFixed(2) },
+-    description: 'VISUAILS DIAGNOSTIC — ignore',
+-    redirectUrl: `${origin}/thank-you`,
+-  });
+-
+-  // D · exactly what order.js sends, including the three fields C leaves out.
+-  const fullBody = {
+-    amount: { currency: 'EUR', value: AMOUNT.testSample.toFixed(2) },
+-    description: 'VISUAILS DIAGNOSTIC — ignore',
+-    redirectUrl: `${origin}/thank-you?ref=VIS-DIAG-000`,
+-    webhookUrl: `${origin}/api/webhook/mollie`,
+-    locale: 'en_US',
+-    metadata: { order_ref: 'VIS-DIAG-000' },
+-  };
+-  out.probes.D_realPayment = await probe('POST', '/payments', key, fullBody);
+-  out.probes.D_realPayment.urlsSent = { redirectUrl: fullBody.redirectUrl, webhookUrl: fullBody.webhookUrl };
+-
+-  // ── WHICH METHODS, AND AT WHICH AMOUNT ────────────────────────────────────
+-  // Added because the checkout showed two rows and that looked thin. It is a
+-  // fair worry and the answer is not a guess, it is a query: Mollie filters the
+-  // method list BY AMOUNT, because most methods have a minimum. €1 is the
+-  // smallest payment the site ever makes, so the test sample is the worst case
+-  // the list will ever look — a €1,850 drop is a different question entirely.
+-  //
+-  // Asking it both ways turns "are there too few methods?" into a comparison
+-  // Lucas can read off his own account instead of taking my word for it.
+-  out.methods = {
+-    note: 'Mollie filters methods by amount. The test sample is the smallest payment the site makes, so this is the shortest the list ever gets.',
+-    at_0_99: await methodList(key, AMOUNT.testSample.toFixed(2)),
+-    // WAS AMOUNT.fullDrop, the €1,950 package price. That constant is gone with
+-    // the package model; what this probe needs is simply a large amount, so it
+-    // asks the ladder for a full season instead of a retired package.
+-    at_large_order: await methodList(key, ladderTotal('complete', 30).toFixed(2)),
+-  };
+-
+-  out.reading = read(out);
+-  return json(out);
+-}
+-
+-/** The methods Mollie would actually offer for a payment of this size. */
+-async function methodList(key, value) {
+-  const res = await probe('GET', `/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, key);
+-  if (res.threw || res.status !== 200) return { amount: value, error: res.error || `HTTP ${res.status}` };
+-  // probe() summarises the body; ask again for the names, which is the only
+-  // thing worth reading here.
+-  const full = await fetch(`${MOLLIE_API}/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, {
+-    headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+-  }).then((r) => r.json()).catch(() => null);
+-  const list = full?._embedded?.methods || [];
+-  return {
+-    amount: `€${value}`,
+-    count: list.length,
+-    methods: list.map((m) => `${m.description} (${m.id})`),
+-  };
+-}
+-
+-async function probe(method, path, key, body) {
+-  const started = Date.now();
+-  try {
+-    const res = await fetch(MOLLIE_API + path, {
+-      method,
+-      headers: {
+-        Authorization: `Bearer ${key}`,
+-        Accept: 'application/json',
+-        ...(body ? { 'Content-Type': 'application/json' } : {}),
+-      },
+-      ...(body ? { body: JSON.stringify(body) } : {}),
+-    });
+-    const text = await res.text();
+-    let parsed = null;
+-    try { parsed = JSON.parse(text); } catch { /* not JSON — that is itself the finding */ }
+-    return {
+-      status: res.status,
+-      ms: Date.now() - started,
+-      bodyBytes: text.length,
+-      isJson: parsed !== null,
+-      // Mollie's own error shape, when there is one. For a success, just the
+-      // identifying bits — never a full payment object in a debug response.
+-      body: parsed
+-        ? (parsed.title
+-          ? { title: parsed.title, detail: parsed.detail, field: parsed.field }
+-          : { id: parsed.id, status: parsed.status, mode: parsed.mode, count: parsed.count })
+-        : text.slice(0, 200),
+-      headers: describeHeaders(res),
+-    };
+-  } catch (e) {
+-    // A throw is a different finding from a 400 and must not be flattened into
+-    // one: it means the request never completed at all.
+-    return { threw: true, error: String(e && e.message ? e.message : e), ms: Date.now() - started };
+-  }
+-}
+-
+-/** Turn the four probes into the one sentence that says what to do next. */
+-function read(out) {
+-  const { A_transport: A, B_auth: B, C_minimalPayment: C, D_realPayment: D } = out.probes;
+-  const empty400 = (p) => p && !p.threw && p.status === 400 && p.bodyBytes === 0;
+-
+-  if (out.key.problems) {
+-    const s = out.secrets?.MOLLIE_API_KEY;
+-    // The specific case, called by name, because the generic advice
+-    // ("re-paste it") is what put the wrong value there in the first place.
+-    if (s?.set && s.length <= 3 && s.controlChars?.length) {
+-      return `MOLLIE_API_KEY is ${s.length} character(s) long and contains ${s.controlChars.join(', ')}. ` +
+-        `That is not a truncated key — U+0016 is the SYN control character Windows cmd.exe inserts when Ctrl+V ` +
+-        `is pressed and the console is not set to treat it as paste. The key was never pasted; a control code was. ` +
+-        `Set it again from the Cloudflare dashboard (Settings → Variables and Secrets), where paste works normally, ` +
+-        `then redeploy. Check the other secrets in this response too — they were probably set the same way.`;
+-    }
+-    return `The stored key has a problem before anything is sent: ${out.key.problems.join('; ')}. ` +
+-      `Set it again — preferably from the Cloudflare dashboard rather than a terminal — then redeploy and reload this.`;
+-  }
+-  // WHAT MAKES A PROBE "GOOD" IS A STRUCTURED ANSWER, NOT A PARTICULAR STATUS.
+-  // This first read on `A` keyed on 401, on the assumption that a wrong key
+-  // gets you "Unauthorized". It does not: Mollie answers a syntactically
+-  // unacceptable key with **400 "Invalid Authorization header"** in JSON. So
+-  // the real check came back with every probe green and the verdict
+-  // "Inconclusive", which is the least useful thing a diagnostic can do.
+-  //
+-  // The distinction that actually matters here is not 400-vs-401. It is
+-  // WHETHER MOLLIE'S APPLICATION ANSWERED AT ALL — a JSON body means the
+-  // request got through the front door and was judged on its merits; an empty
+-  // body means it was refused before that. `isJson` is that question, and the
+-  // logic below asks it instead.
+-  const reached = (p) => p && !p.threw && p.isJson;
+-  const refused = (p) => p && !p.threw && !p.isJson;
+-
+-  if (A && A.threw) return `Could not reach api.mollie.com from this Function at all (${A.error}). This is a connectivity problem, not a payment one.`;
+-  if (refused(A)) {
+-    return `Probe A was refused with a ${A.status} and no JSON, using a key that is deliberately wrong — so it is neither our key nor our payload. ` +
+-      `Requests from this Pages Function are being rejected before Mollie's application sees them. Headers: ${A.headers}. ` +
+-      `That is the same shape as the old Stripe failure; take the cf-ray to Cloudflare.`;
+-  }
+-
+-  // A reached Mollie. Everything from here is about our own key and payload.
+-  if (refused(B)) return `Transport is fine — A got a structured ${A.status} back — but the real key is refused with a ${B.status} and no JSON. The key is carrying a character the wire will not accept. Re-set it from the Cloudflare dashboard and redeploy.`;
+-  if (B && B.status === 401) return 'Mollie reached, but the key is not valid for this account. Check you copied the right one and that the account is activated.';
+-  if (B && B.status >= 400) return `Mollie refused the key: ${JSON.stringify(B.body)}.`;
+-  if (B && B.status !== 200) return `Unexpected ${B.status} on a plain authenticated read. Body: ${JSON.stringify(B.body)}.`;
+-
+-  if (refused(C)) return 'Auth works, but even a minimal payment is refused with no JSON — the POST itself is the problem, not the key.';
+-  if (C && C.status >= 400) return `A minimal payment was refused: ${JSON.stringify(C.body)}. That is Mollie telling us what is wrong — read the field.`;
+-  if (refused(D)) return 'A minimal payment works; the real one is refused with no JSON. So it is one of the three fields the real one adds: webhookUrl, locale or metadata. The URLs actually sent are in D.urlsSent.';
+-  if (D && D.status >= 400) return `The real payload was refused: ${JSON.stringify(D.body)}. Field to look at: ${D.body?.field || 'see detail'}.`;
+-
+-  if (C?.status === 201 && D?.status === 201) {
+-    return `All four probes pass and Mollie created both test payments (${C.body?.id}, ${D.body?.id}, mode ${D.body?.mode}). ` +
+-      `Payment creation works from this deployment. Those two are diagnostic payments — they sit "open" in your Mollie dashboard, ` +
+-      `nobody will pay them, and they expire on their own. Next step is a real run through /test-sample; this endpoint has done its job ` +
+-      `and can be deleted.`;
+-  }
+-
+-  return 'Inconclusive — send the whole of this JSON over and I will read it.';
+-}
+-
+-/**
+- * A secret's shape, never its value. `looksPasted` is the specific tell this
+- * whole endpoint was built to catch: a value one or two characters long, made
+- * of control characters, is not a truncated key — it is a terminal that typed
+- * a control code instead of pasting.
+- */
+-function shapeOf(value) {
+-  if (value === undefined || value === null || value === '') return { set: false };
+-  const s = String(value);
+-  const control = [...s].filter((c) => c.charCodeAt(0) < 0x20 || c.charCodeAt(0) === 0x7f);
+-  const out = {
+-    set: true,
+-    length: s.length,
+-    allPrintable: control.length === 0 && s === s.trim(),
+-  };
+-  if (control.length) {
+-    out.controlChars = control.map((c) => 'U+' + c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0'));
+-  }
+-  // Public prefixes only. Mollie and Resend both put the environment in the
+-  // clear at the front of the key precisely so it can be read at a glance.
+-  const m = s.match(/^(test_|live_|re_|sk_test_|sk_live_|whsec_)/);
+-  if (m) out.prefix = m[1];
+-  if (s.length <= 3) out.verdict = 'FAR too short — this is a stray keystroke, not a key';
+-  else if (control.length) out.verdict = 'contains control characters — re-set it';
+-  else if (s !== s.trim()) out.verdict = 'has leading or trailing whitespace';
+-  return out;
+-}
+-
+-function json(obj, status = 200) {
+-  return new Response(JSON.stringify(obj, null, 2), {
+-    status,
+-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+-  });
+-}
+diff -ruN a/functions/api/webhook/stripe.js b/functions/api/webhook/stripe.js
+--- a/functions/api/webhook/stripe.js	2026-08-23 14:20:22.234182204 +0000
++++ b/functions/api/webhook/stripe.js	2026-08-23 14:20:22.257162768 +0000
+@@ -25,6 +25,17 @@
+ // this — the second INSERT for the same session id throws, and that throw IS
+ // the "already handled" signal, not a failure. See the comment on the
+ // payments table there.
++//
++// ── AND WHY EVERY OTHER FAILURE *IS* ONE — 23 August 2026 ───────────────────
++// The paragraph above was true and the code did not implement it: the catch
++// around that INSERT caught EVERYTHING, and the handler answered 200 either
++// way. A duplicate and a broken database were indistinguishable, and the
++// broken one was the one that got told "handled, don't come back".
++//
++// The rule, matching functions/api/webhook/mollie.js: only a unique-constraint
++// violation may pass silently. Anything else is answered with a 500 so Stripe
++// re-delivers — that retry schedule is the only thing standing between a D1
++// hiccup and a paid order that is never recorded.
+ 
+ import { verifyStripeSignature } from '../../../src/lib/stripe.js';
+ 
+@@ -59,7 +70,26 @@
+   // src/lib/stripe.js — but handling it now costs nothing and means nobody
+   // has to remember to add it later if that changes).
+   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+-    await safe(() => handlePaid(env, event.data.object));
++    /*
++     * ── EN safe() STOND HIER, WAT DE DOORGEGOOIDE FOUT ALSNOG OPAT ─────────
++     *
++     * De catch hieronder repareren is de helft van het werk. Zolang de aanroep
++     * in `safe()` zit, wordt een doorgegooide schrijffout alsnog gelogd,
++     * ingeslikt, en beantwoord met de 200 op de laatste regel — precies het
++     * gedrag dat weg moest.
++     *
++     * Dit volgt nu de vorm die mollie.js al heeft: een schrijffout is het ENE
++     * ding dat een retry echt waard is, want de klant heeft betaald en de
++     * bestelling weet het niet. Alles wat na de idempotentiepoort staat, staat
++     * bewust binnen dezelfde try — een half geschreven betaling is óók iets om
++     * opnieuw te laten leveren.
++     */
++    try {
++      await handlePaid(env, event.data.object);
++    } catch (e) {
++      console.error('[stripe-webhook] write failed for', event?.data?.object?.id, '—', e && e.message ? e.message : e);
++      return new Response('write failed', { status: 500 });
++    }
+   }
+   // Every other event type — checkout.session.expired,
+   // async_payment_failed, and anything else Stripe ever adds — is
+@@ -99,6 +129,38 @@
+       )
+       .run();
+   } catch (e) {
++    /*
++     * ── ALLEEN EEN DUBBELE AFLEVERING MAG HIER STIL AFLOPEN ────────────────
++     *
++     * Hier stond een kale `catch` die ELKE fout opving, `return` gaf, en de
++     * handler antwoordde daarna 200 — waarmee Stripe te horen krijgt dat het
++     * gelukt is en niet meer terugkomt.
++     *
++     * WAT DAT KOST. Eén hapering van D1 op deze INSERT en de bestelling wordt
++     * nooit op betaald gezet, er komt geen order_events-regel, en Stripe's
++     * retryschema is met die 200 afgezegd. De klant heeft betaald en het
++     * systeem weet het nooit.
++     *
++     * Dit is exact dezelfde fout die op 10 augustus 2026 aan de Mollie-kant is
++     * gevonden en gerepareerd; die reparatie is hier nooit gekomen. Zie de
++     * lange noot bij dezelfde catch in functions/api/webhook/mollie.js.
++     *
++     * Nu wordt er gekeken naar WELKE fout het is. Een UNIQUE-overtreding op
++     * (provider, external_id) betekent inderdaad dat een eerdere aflevering dit
++     * al deed: stil aflopen is dan juist. Alles anders gaat omhoog naar
++     * onRequestPost, dat 500 antwoordt, en Stripe komt terug.
++     *
++     * De tekst van D1 bij een schending is "UNIQUE constraint failed:
++     * payments.provider, payments.external_id". Er wordt op beide woorden
++     * gematcht en niet op de volledige zin, want die zin is van Cloudflare en
++     * niet van ons — dezelfde match als aan de Mollie-kant.
++     */
++    const text = String(e && e.message ? e.message : e || '');
++    const duplicate = /unique/i.test(text) && /constraint/i.test(text);
++    if (!duplicate) {
++      console.error('[stripe-webhook] payment', session.id, 'not recorded —', text);
++      throw e;
++    }
+     console.log('[stripe-webhook] duplicate delivery for', session.id, '— already processed, skipping');
+     return;
+   }
+@@ -122,10 +184,6 @@
+     .run();
+ }
+ 
+-async function safe(fn) {
+-  try {
+-    return await fn();
+-  } catch (e) {
+-    console.error('[stripe-webhook]', e && e.message ? e.message : e);
+-  }
+-}
++/* `safe()` stond hier en is weg met de enige aanroeper. Een helper die een
++   fout opeet, naast een handler die op een fout juist 500 moet antwoorden, is
++   een val voor de volgende die er een tweede aanroep bij zet. */
+diff -ruN a/package.json b/package.json
+--- a/package.json	2026-08-23 14:20:22.251581489 +0000
++++ b/package.json	2026-08-23 14:20:22.274257850 +0000
+@@ -10,13 +10,15 @@
+     "preview": "astro preview",
+     "favicons": "node scripts/make-favicons.mjs",
+     "test:mollie": "node tests/mollie-webhook.test.mjs && node tests/debug-mollie-reading.test.mjs",
++    "test:stripe": "node tests/stripe-webhook.test.mjs",
++    "test:diagnose": "node tests/admin-diagnose-route.test.mjs",
+     "audit:nav": "node pixnav.mjs",
+     "test:consent": "node tests/cookie-consent.test.mjs",
+     "tag:delivery": "node scripts/tag-delivery.mjs",
+     "fetch:order": "node scripts/fetch-order.mjs",
+     "test:account": "node tests/account-brand-kit.test.mjs",
+     "test:admin": "node tests/admin.test.mjs",
+-    "test": "npm run test:paths && npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:geld && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:plans && npm run test:abo && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue && npm run test:nazicht && npm run test:steps && npm run test:a11y && npm run test:zacht",
++    "test": "npm run test:paths && npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:geld && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:stripe && npm run test:diagnose && npm run test:plans && npm run test:abo && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue && npm run test:nazicht && npm run test:steps && npm run test:a11y && npm run test:zacht",
+     "test:invoice": "node tests/invoice-pdf.test.mjs",
+     "test:offsite": "node tests/offsite.test.mjs",
+     "check:csp": "node scripts/csp-probe.mjs",
+diff -ruN a/src/lib/admin.js b/src/lib/admin.js
+--- a/src/lib/admin.js	2026-08-23 14:20:22.240173197 +0000
++++ b/src/lib/admin.js	2026-08-23 14:20:22.262655679 +0000
+@@ -71,13 +71,13 @@
+ 
+ /** orders.status, in the order the studio actually moves through them. */
+ import { sendMail } from './mail.js';
+-import { createOrderMolliePayment, refundMolliePayment } from './mollie.js';
++import { createOrderMolliePayment, refundMolliePayment, mollieKey, mollieKeyProblems, describeHeaders } from './mollie.js';
+ import { issueInvoice } from './invoice.js';
+ import { mailInvoice } from './invoiceMail.js';
+ /* De twee bedragen van de merkmodel-credit komen uit de prijslijst en niet uit een
+    getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
+    kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
+-import { AMOUNT, BRAND_MODEL_CREDIT_DROPS, VAT_RATE, vatPercent } from '../data/pricing.js';
++import { AMOUNT, BRAND_MODEL_CREDIT_DROPS, VAT_RATE, vatPercent, ladderTotal } from '../data/pricing.js';
+ // Aliased for the same reason as in account.js: this module has its own `esc`
+ // and page-level helpers, and the mail template exports overlapping names.
+ import {
+@@ -148,6 +148,10 @@
+ 
+   if (path === '/admin/log') return renderLog(context);
+   if (path === '/admin/vat') return renderVatReview(context);
++  /* De diagnose. LEESROUTE: alleen vormen van secrets en een methodelijst — geen
++     enkele bijwerking. Wat wél iets aanmaakt bij Mollie zit achter de POST
++     hieronder. Zie de kop van renderDiagnose(). */
++  if (path === '/admin/diagnose') return renderDiagnose(context);
+   /* De aanbevelingen. Een LEESROUTE, want goedkeuren gebeurt met een POST
+      hieronder — zie de kop van renderTestimonials() voor waarom dit scherm er
+      tot 14 augustus 2026 niet was en wat dat een klant kostte. */
+@@ -216,6 +220,13 @@
+ 
+   if (path === '/admin/logout') return handleLogout(context, admin);
+ 
++  /* De vier probes. Dit staat bij de POST'ers en niet bij de leesroutes omdat
++     twee ervan een ECHTE betaling bij Mollie aanmaken — met een live sleutel
++     zijn dat echte, onbetaalde regels van één euro in het dashboard. Iets dat
++     aanmaakt, hoort geen GET te zijn, en achter deze poort staat bovendien de
++     originIsSelf()-controle die een statisch routebestand niet krijgt. */
++  if (path === '/admin/diagnose/probe') return handleDiagnoseProbe(context);
++
+   const resolveMatch = path.match(/^\/admin\/revisions\/(\d+)\/resolve$/);
+   if (resolveMatch) return handleRevisionResolve(context, Number(resolveMatch[1]));
+ 
+@@ -4840,6 +4851,307 @@
+ // see no session, and will tell a visibly-signed-in browser to sign in. That
+ // happened once already (functions/admin/debug-mollie.js, which started life at
+ // /api/debug-mollie). Move the route; do not widen the path.
++/* ═══════════════════════════════════════════════════════════════════════════
++ * DIAGNOSE — /admin/diagnose
++ * ═══════════════════════════════════════════════════════════════════════════
++ *
++ * VERHUISD UIT functions/admin/debug-mollie.js — 23 augustus 2026.
++ *
++ * ── WAAROM HET WEG MOEST DAAR ─────────────────────────────────────────────
++ *
++ * Dat bestand was een STATISCHE route in functions/admin/, en een statische
++ * route wint in Pages Functions van de catch-all `[[path]].js`. Daarmee viel
++ * hij buiten de padtabel hierboven — en dus buiten de ene centrale
++ * `originIsSelf()`-controle die in adminPost() vóór de hele tabel staat. Het
++ * bestand documenteerde die voorrang zelfs, als handigheid.
++ *
++ * Er was een sessiecontrole (`hasAdminSession`), en die deed zijn werk. Maar
++ * het sessiecookie is `SameSite=Lax`, en dat wordt bij een gewone navigatie van
++ * buitenaf WEL meegestuurd. Eén link naar /admin/debug-mollie die Lucas
++ * aanklikt terwijl hij is ingelogd, en de GET vuurde twee betalingsaanmaken af
++ * bij Mollie. Met een `live_`-sleutel zijn dat twee echte, onbetaalde regels
++ * van één euro in het dashboard, plus een webhook-aanroep voor bestelling
++ * `VIS-DIAG-000` die niet bestaat.
++ *
++ * ── WAT ER IS VERANDERD, EN WAT NIET ──────────────────────────────────────
++ *
++ * De probes zelf, de leesregels en de vormcontrole van de secrets zijn
++ * ongewijzigd overgenomen; dit is een verhuizing en geen herontwerp. Twee
++ * dingen zijn wél anders, en allebei omdat ze de reden waren dat het weg moest:
++ *
++ *   1 · De route staat in de padtabel, dus hij erft wat elke andere adminroute
++ *       erft: de sessiecontrole in adminGet()/adminPost() en, voor de POST, de
++ *       originIsSelf()-poort.
++ *
++ *   2 · HET IS GESPLITST NAAR WERKWOORD. Wat alleen kijkt — de vorm van elk
++ *       secret, de problemen met de sleutel — is een GET. Wat bij Mollie iets
++ *       AANMAAKT is een POST. Dat onderscheid stond er niet en had er altijd
++ *       moeten staan: een GET die betalingen aanmaakt is een GET die een
++ *       preloader, een linkchecker of een geopend tabblad kan afvuren.
++ *
++ * ── OF DIT NOG NODIG IS ───────────────────────────────────────────────────
++ *
++ * De aanleiding — de lege 400 — is opgehelderd: MOLLIE_API_KEY stond opgeslagen
++ * als één U+0016, het SYN-teken dat cmd.exe invoegt bij Ctrl+V. Dat deel heeft
++ * zijn werk gedaan. Wat is gebleven is de VORMCONTROLE VAN ELK SECRET, en die
++ * is sindsdien pas echt nuttig geworden: twee secrets falen stil. Er is dus één
++ * scherm dat "staat dit secret er, en is het een sleutel of een toetsaanslag"
++ * beantwoordt zonder één waarde te tonen. Daarom blijft het, en daarom is de
++ * GET-helft de helft die ertoe doet.
++ */
++
++const MOLLIE_API = 'https://api.mollie.com/v2';
++
++/** Leesroute: wat er van de secrets te zeggen valt zonder er één te lezen. */
++async function renderDiagnose(context) {
++  const { env } = context;
++  const namen = ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
++  const vormen = namen.map((naam) => [naam, secretShape(env?.[naam])]);
++  const problemen = mollieKeyProblems(env);
++
++  const rij = ([naam, v]) => {
++    const staat = !v.set
++      ? '<span class="pill is-warn">niet ingesteld</span>'
++      : v.verdict
++        ? `<span class="pill is-warn">${esc(v.verdict)}</span>`
++        : '<span class="pill">in orde</span>';
++    const detail = v.set
++      ? `${v.length} tekens${v.prefix ? ` &middot; voorvoegsel <code>${esc(v.prefix)}</code>` : ''}`
++        + `${v.controlChars ? ` &middot; bevat ${esc(v.controlChars.join(', '))}` : ''}`
++      : '&mdash;';
++    return `<tr><td><code>${esc(naam)}</code></td><td>${staat}</td><td class="meta">${detail}</td></tr>`;
++  };
++
++  const body = `
++    <h1>Diagnose</h1>
++    <p class="meta">De vorm van elk secret &mdash; nooit de waarde. Lengte, of elk teken afdrukbaar is, en
++    het voorvoegsel alleen waar dat een openbaar merkteken is (<code>test_</code>, <code>live_</code>,
++    <code>re_</code>). Dat is precies genoeg om "goed ingesteld" van "een losse toetsaanslag" te scheiden.</p>
++    <table class="tbl">
++      <thead><tr><th>Secret</th><th>Staat</th><th>Vorm</th></tr></thead>
++      <tbody>${vormen.map(rij).join('')}</tbody>
++    </table>
++    ${problemen ? `<p class="meta is-warn">De Mollie-sleutel heeft een probleem vóór er iets wordt verstuurd: ${esc(problemen.join('; '))}</p>` : ''}
++    <h2>De vier probes</h2>
++    <p class="meta">Vier verzoeken aan Mollie, goedkoopste eerst, elk met één variabele erin: transport met een
++    bewust verkeerde sleutel, dan de echte sleutel zonder body, dan de kleinste betaling, dan precies wat
++    <code>functions/api/order.js</code> verstuurt. De eerste die zich misdraagt is het antwoord.</p>
++    <p class="meta is-warn"><strong>Let op:</strong> de laatste twee MAKEN EEN BETALING AAN. Met een
++    <code>test_</code>-sleutel zijn die gratis en verlopen ze vanzelf; met een <code>live_</code>-sleutel zijn het
++    twee echte, onbetaalde betalingen van &euro;${esc(String(AMOUNT.testSample))} die niemand ooit voldoet. Daarom is dit een knop en geen pagina die
++    vanzelf laadt.</p>
++    <form method="post" action="/admin/diagnose/probe">
++      <button class="btn" type="submit">Draai de vier probes</button>
++    </form>`;
++  return html(page({ title: 'Diagnose', body }));
++}
++
++/** De probes. POST, want twee ervan maken een echte betaling aan. */
++async function handleDiagnoseProbe(context) {
++  const { request, env } = context;
++  const raw = env?.MOLLIE_API_KEY;
++  const out = {
++    when: new Date().toISOString(),
++    origin: new URL(request.url).origin,
++    key: {
++      set: !!raw,
++      rawLength: raw ? String(raw).length : 0,
++      usableLength: raw ? String(raw).replace(/[^\x21-\x7E]/g, '').length : 0,
++      prefix: raw ? String(raw).replace(/[^\x21-\x7E]/g, '').slice(0, 5) : null,
++      mode: raw ? (String(raw).trim().startsWith('live_') ? 'LIVE' : String(raw).trim().startsWith('test_') ? 'test' : 'unrecognised') : null,
++      problems: mollieKeyProblems(env),
++    },
++    secrets: Object.fromEntries(
++      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
++        .map((naam) => [naam, secretShape(env?.[naam])])
++    ),
++    probes: {},
++    reading: null,
++  };
++
++  if (!raw) {
++    out.reading = 'MOLLIE_API_KEY is not set on this deployment. That is the whole problem — nothing else below ran.';
++    return diagnoseJson(out);
++  }
++
++  let key;
++  try {
++    key = mollieKey(env);
++  } catch (e) {
++    out.reading = `The stored key is not usable: ${e.message}`;
++    return diagnoseJson(out);
++  }
++
++  // A · transport. A syntactically valid key that is not ours.
++  out.probes.A_transport = await mollieProbe('GET', '/methods', 'test_0000000000000000000000000000000000');
++  // B · auth, no body.
++  out.probes.B_auth = await mollieProbe('GET', '/methods', key);
++
++  const origin = new URL(request.url).origin;
++  // C · the smallest payment Mollie accepts.
++  out.probes.C_minimalPayment = await mollieProbe('POST', '/payments', key, {
++    amount: { currency: 'EUR', value: AMOUNT.testSample.toFixed(2) },
++    description: 'VISUAILS DIAGNOSTIC — ignore',
++    redirectUrl: `${origin}/thank-you`,
++  });
++
++  // D · exactly what order.js sends, including the three fields C leaves out.
++  const fullBody = {
++    amount: { currency: 'EUR', value: AMOUNT.testSample.toFixed(2) },
++    description: 'VISUAILS DIAGNOSTIC — ignore',
++    redirectUrl: `${origin}/thank-you?ref=VIS-DIAG-000`,
++    webhookUrl: `${origin}/api/webhook/mollie`,
++    locale: 'en_US',
++    metadata: { order_ref: 'VIS-DIAG-000' },
++  };
++  out.probes.D_realPayment = await mollieProbe('POST', '/payments', key, fullBody);
++  out.probes.D_realPayment.urlsSent = { redirectUrl: fullBody.redirectUrl, webhookUrl: fullBody.webhookUrl };
++
++  out.methods = {
++    note: 'Mollie filters methods by amount. The test sample is the smallest payment the site makes, so this is the shortest the list ever gets.',
++    at_smallest: await mollieMethodList(key, AMOUNT.testSample.toFixed(2)),
++    at_large_order: await mollieMethodList(key, ladderTotal('complete', 30).toFixed(2)),
++  };
++
++  out.reading = readDiagnose(out);
++  return diagnoseJson(out);
++}
++
++/** The methods Mollie would actually offer for a payment of this size. */
++async function mollieMethodList(key, value) {
++  const res = await mollieProbe('GET', `/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, key);
++  if (res.threw || res.status !== 200) return { amount: value, error: res.error || `HTTP ${res.status}` };
++  const full = await fetch(`${MOLLIE_API}/methods?amount%5Bvalue%5D=${value}&amount%5Bcurrency%5D=EUR`, {
++    headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
++  }).then((r) => r.json()).catch(() => null);
++  const list = full?._embedded?.methods || [];
++  return {
++    amount: `€${value}`,
++    count: list.length,
++    methods: list.map((m) => `${m.description} (${m.id})`),
++  };
++}
++
++async function mollieProbe(method, path, key, body) {
++  const started = Date.now();
++  try {
++    const res = await fetch(MOLLIE_API + path, {
++      method,
++      headers: {
++        Authorization: `Bearer ${key}`,
++        Accept: 'application/json',
++        ...(body ? { 'Content-Type': 'application/json' } : {}),
++      },
++      ...(body ? { body: JSON.stringify(body) } : {}),
++    });
++    const text = await res.text();
++    let parsed = null;
++    try { parsed = JSON.parse(text); } catch { /* not JSON — that is itself the finding */ }
++    return {
++      status: res.status,
++      ms: Date.now() - started,
++      bodyBytes: text.length,
++      isJson: parsed !== null,
++      body: parsed
++        ? (parsed.title
++          ? { title: parsed.title, detail: parsed.detail, field: parsed.field }
++          : { id: parsed.id, status: parsed.status, mode: parsed.mode, count: parsed.count })
++        : text.slice(0, 200),
++      headers: describeHeaders(res),
++    };
++  } catch (e) {
++    // A throw is a different finding from a 400 and must not be flattened into
++    // one: it means the request never completed at all.
++    return { threw: true, error: String(e && e.message ? e.message : e), ms: Date.now() - started };
++  }
++}
++
++/** Turn the four probes into the one sentence that says what to do next. */
++function readDiagnose(out) {
++  const { A_transport: A, B_auth: B, C_minimalPayment: C, D_realPayment: D } = out.probes;
++
++  if (out.key.problems) {
++    const s = out.secrets?.MOLLIE_API_KEY;
++    // The specific case, called by name, because the generic advice
++    // ("re-paste it") is what put the wrong value there in the first place.
++    if (s?.set && s.length <= 3 && s.controlChars?.length) {
++      return `MOLLIE_API_KEY is ${s.length} character(s) long and contains ${s.controlChars.join(', ')}. ` +
++        `That is not a truncated key — U+0016 is the SYN control character Windows cmd.exe inserts when Ctrl+V ` +
++        `is pressed and the console is not set to treat it as paste. The key was never pasted; a control code was. ` +
++        `Set it again from the Cloudflare dashboard (Settings → Variables and Secrets), where paste works normally, ` +
++        `then redeploy. Check the other secrets in this response too — they were probably set the same way.`;
++    }
++    return `The stored key has a problem before anything is sent: ${out.key.problems.join('; ')}. ` +
++      `Set it again — preferably from the Cloudflare dashboard rather than a terminal — then redeploy and reload this.`;
++  }
++
++  // WHAT MAKES A PROBE "GOOD" IS A STRUCTURED ANSWER, NOT A PARTICULAR STATUS.
++  // Mollie answers a syntactically unacceptable key with 400 "Invalid
++  // Authorization header" in JSON, not 401 — so the question is not the status
++  // but WHETHER MOLLIE'S APPLICATION ANSWERED AT ALL. `isJson` is that question.
++  const refused = (p) => p && !p.threw && !p.isJson;
++
++  if (A && A.threw) return `Could not reach api.mollie.com from this Function at all (${A.error}). This is a connectivity problem, not a payment one.`;
++  if (refused(A)) {
++    return `Probe A was refused with a ${A.status} and no JSON, using a key that is deliberately wrong — so it is neither our key nor our payload. ` +
++      `Requests from this Pages Function are being rejected before Mollie's application sees them. Headers: ${A.headers}. ` +
++      `That is the same shape as the old Stripe failure; take the cf-ray to Cloudflare.`;
++  }
++
++  if (refused(B)) return `Transport is fine — A got a structured ${A.status} back — but the real key is refused with a ${B.status} and no JSON. The key is carrying a character the wire will not accept. Re-set it from the Cloudflare dashboard and redeploy.`;
++  if (B && B.status === 401) return 'Mollie reached, but the key is not valid for this account. Check you copied the right one and that the account is activated.';
++  if (B && B.status >= 400) return `Mollie refused the key: ${JSON.stringify(B.body)}.`;
++  if (B && B.status !== 200) return `Unexpected ${B.status} on a plain authenticated read. Body: ${JSON.stringify(B.body)}.`;
++
++  if (refused(C)) return 'Auth works, but even a minimal payment is refused with no JSON — the POST itself is the problem, not the key.';
++  if (C && C.status >= 400) return `A minimal payment was refused: ${JSON.stringify(C.body)}. That is Mollie telling us what is wrong — read the field.`;
++  if (refused(D)) return 'A minimal payment works; the real one is refused with no JSON. So it is one of the three fields the real one adds: webhookUrl, locale or metadata. The URLs actually sent are in D.urlsSent.';
++  if (D && D.status >= 400) return `The real payload was refused: ${JSON.stringify(D.body)}. Field to look at: ${D.body?.field || 'see detail'}.`;
++
++  if (C?.status === 201 && D?.status === 201) {
++    return `All four probes pass and Mollie created both test payments (${C.body?.id}, ${D.body?.id}, mode ${D.body?.mode}). ` +
++      `Payment creation works from this deployment. Those two are diagnostic payments — they sit "open" in your Mollie dashboard, ` +
++      `nobody will pay them, and they expire on their own.`;
++  }
++
++  return 'Inconclusive — send the whole of this JSON over and I will read it.';
++}
++
++/**
++ * A secret's shape, never its value. The verdict is the specific tell this
++ * whole screen was built to catch: a value one or two characters long, made of
++ * control characters, is not a truncated key — it is a terminal that typed a
++ * control code instead of pasting.
++ */
++function secretShape(value) {
++  if (value === undefined || value === null || value === '') return { set: false };
++  const s = String(value);
++  const control = [...s].filter((c) => c.charCodeAt(0) < 0x20 || c.charCodeAt(0) === 0x7f);
++  const out = {
++    set: true,
++    length: s.length,
++    allPrintable: control.length === 0 && s === s.trim(),
++  };
++  if (control.length) {
++    out.controlChars = control.map((c) => 'U+' + c.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0'));
++  }
++  // Public prefixes only. Mollie and Resend both put the environment in the
++  // clear at the front of the key precisely so it can be read at a glance.
++  const m = s.match(/^(test_|live_|re_|sk_test_|sk_live_|whsec_)/);
++  if (m) out.prefix = m[1];
++  if (s.length <= 3) out.verdict = 'FAR too short — this is a stray keystroke, not a key';
++  else if (control.length) out.verdict = 'contains control characters — re-set it';
++  else if (s !== s.trim()) out.verdict = 'has leading or trailing whitespace';
++  return out;
++}
++
++function diagnoseJson(obj, status = 200) {
++  return new Response(JSON.stringify(obj, null, 2), {
++    status,
++    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
++  });
++}
++
+ function setSessionCookie(token) {
+   const maxAge = 14 * 86400; // ADMIN_SESSION_TTL_DAYS, in seconds — kept in step by hand, see adminAuth.js
+   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/admin; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+diff -ruN a/tests/admin-diagnose-route.test.mjs b/tests/admin-diagnose-route.test.mjs
+--- a/tests/admin-diagnose-route.test.mjs	1970-01-01 00:00:00.000000000 +0000
++++ b/tests/admin-diagnose-route.test.mjs	2026-08-23 14:20:22.284953670 +0000
+@@ -0,0 +1,167 @@
++/*
++ * ═══════════════════════════════════════════════════════════════════════════
++ * DE DIAGNOSE ZIT IN DE PADTABEL, EN NIET ERNAAST
++ * ═══════════════════════════════════════════════════════════════════════════
++ *
++ * 23 augustus 2026. `functions/admin/debug-mollie.js` was een STATISCH
++ * routebestand, en dat wint in Pages Functions van de catch-all `[[path]].js`.
++ * Daarmee viel het buiten de padtabel in src/lib/admin.js — en dus buiten de
++ * ene centrale originIsSelf()-controle die daar vóór de hele POST-tabel staat.
++ *
++ * Het had wél een sessiecontrole. Maar het sessiecookie is `SameSite=Lax`, en
++ * dat wordt bij een gewone navigatie van buitenaf meegestuurd: één aangeklikte
++ * link naar /admin/debug-mollie terwijl je ingelogd bent, en de GET maakte twee
++ * echte betalingen aan bij Mollie.
++ *
++ * Deze test bewaakt drie dingen, en de eerste is de belangrijkste omdat hij
++ * over de hele MAP gaat en niet over dit ene bestand:
++ *
++ *   1 · er staat geen enkel los routebestand in functions/admin of
++ *       functions/account — alleen de catch-all en de index;
++ *   2 · de leesroute hangt achter de sessiecontrole;
++ *   3 · de route die iets AANMAAKT is een POST en hangt achter originIsSelf().
++ */
++import { readdirSync } from 'node:fs';
++import { adminGet, adminPost } from '../src/lib/admin.js';
++import { mintToken } from '../src/lib/token.js';
++
++let geslaagd = 0, gezakt = 0;
++function ok(naam, waarde, verwacht = true, extra = '') {
++  const goed = JSON.stringify(waarde) === JSON.stringify(verwacht);
++  if (goed) geslaagd++; else gezakt++;
++  console.log(`${goed ? ' ok ' : 'FAIL'}   ${naam.padEnd(60)} ${goed ? '' : `verwacht ${JSON.stringify(verwacht)} kreeg ${JSON.stringify(waarde)}`} ${extra}`);
++}
++
++/* ══ 1 · GEEN LOS ROUTEBESTAND NAAST DE PADTABEL ═══════════════════════════
++ *
++ * Dit is de regel, niet de uitzondering. Elk bestand hier dat geen `[[path]].js`
++ * of `index.js` is, wint van de catch-all en krijgt daarmee de centrale
++ * controles NIET. Wie er een neerzet, hoort hier tegenaan te lopen.
++ */
++console.log('\nin functions/admin en functions/account staat niets naast de padtabel');
++{
++  const TOEGESTAAN = new Set(['[[path]].js', 'index.js']);
++  for (const map of ['functions/admin', 'functions/account']) {
++    const inhoud = readdirSync(new URL('../' + map, import.meta.url));
++    const los = inhoud.filter((n) => !TOEGESTAAN.has(n));
++    ok(`${map} bevat alleen de padtabel`, los, [], los.length ? `los: ${los.join(', ')}` : '');
++  }
++  /* En het bestand dat dit veroorzaakte is echt weg, niet hernoemd. */
++  const admin = readdirSync(new URL('../functions/admin', import.meta.url));
++  ok('debug-mollie.js bestaat niet meer', admin.includes('debug-mollie.js'), false);
++}
++
++/* ══ 2 · DE TWEE ROUTES ZITTEN IN DE GOEDE HELFT VAN DE TABEL ══════════════ */
++console.log('\nde routes staan in de padtabel, aan de goede kant van de poort');
++{
++  const bron = await (await import('node:fs/promises')).readFile(
++    new URL('../src/lib/admin.js', import.meta.url), 'utf8'
++  );
++  const iGet = bron.indexOf('export async function adminGet');
++  const iPost = bron.indexOf('export async function adminPost');
++  const iPoort = bron.indexOf('if (!originIsSelf(request, env))');
++  const iLees = bron.indexOf("if (path === '/admin/diagnose') return renderDiagnose");
++  const iProbe = bron.indexOf("if (path === '/admin/diagnose/probe') return handleDiagnoseProbe");
++
++  ok('de leesroute staat in adminGet', iLees > iGet && iLees < iPost);
++  ok('de proberoute staat in adminPost', iProbe > iPost);
++  ok('en NA de originIsSelf-poort', iProbe > iPoort);
++  /* De volgorde is het hele punt: staat hij ervóór, dan is hij even onbeschermd
++     als het losse bestand was. */
++  ok('de poort staat dus tussen adminPost en de proberoute', iPost < iPoort && iPoort < iProbe);
++}
++
++/* ══ 3 · EN HET GEDRAG, DOOR DE ECHTE HANDLERS HEEN ════════════════════════ */
++
++/** Een omgeving met een geldige adminsessie, en verder zo min mogelijk. */
++function omgeving() {
++  const db = {
++    prepare(sql) {
++      const s = sql.replace(/\s+/g, ' ');
++      const st = {
++        bind() { return st; },
++        async first() {
++          if (s.includes('FROM admin_sessions') || s.includes('FROM admin_users')) {
++            return { admin_id: 1, id: 1, email: 'hello@visuails.com', expires_at: '2099-01-01' };
++          }
++          return null;
++        },
++        async all() { return { results: [] }; },
++        async run() { return { success: true, meta: { changes: 0 } }; },
++      };
++      return st;
++    },
++    async batch() { return []; },
++  };
++  return { DB: db, MOLLIE_API_KEY: 'test_0123456789abcdefghijklmnopqrstuv', RESEND_API_KEY: 're_nep' };
++}
++
++async function verzoek(method, pad, { cookie = true, origin = 'https://visuails.com' } = {}) {
++  const token = await mintToken();
++  const headers = {};
++  if (cookie) headers.cookie = `vis_admin=${token}`;
++  if (method === 'POST' && origin) headers.origin = origin;
++  const request = new Request(`https://visuails.com${pad}`, { method, headers });
++  const context = { request, env: omgeving(), waitUntil() {} };
++  return method === 'POST' ? adminPost(context) : adminGet(context);
++}
++
++console.log('\nde leesroute vraagt een sessie en raakt Mollie niet aan');
++{
++  const zonder = await verzoek('GET', '/admin/diagnose', { cookie: false });
++  ok('zonder sessie: doorverwijzing naar de inlogpagina', zonder.status, 303);
++  ok('en wel naar /admin/login', zonder.headers.get('location'), '/admin/login');
++
++  /* GEEN ENKELE FETCH. Dat is de kern van de splitsing: de GET kijkt alleen naar
++     de vorm van de secrets en praat met niemand. Zou iemand de probes ooit
++     terugzetten in de leesroute, dan telt deze regel ze. */
++  const echt = globalThis.fetch;
++  let geteld = 0;
++  globalThis.fetch = async (...a) => { geteld++; return echt(...a); };
++  const met = await verzoek('GET', '/admin/diagnose');
++  globalThis.fetch = echt;
++
++  ok('met sessie: 200', met.status, 200);
++  ok('en er is geen enkel extern verzoek gedaan', geteld, 0);
++  const html = await met.text();
++  ok('de pagina noemt de secrets bij naam', /MOLLIE_API_KEY/.test(html) && /RESEND_API_KEY/.test(html));
++  ok('en toont geen enkele waarde', /test_0123456789/.test(html), false);
++  ok('er staat een knop naar de POST', /action="\/admin\/diagnose\/probe"/.test(html));
++}
++
++console.log('\nde proberoute hangt achter sessie én origin');
++{
++  const zonder = await verzoek('POST', '/admin/diagnose/probe', { cookie: false });
++  ok('zonder sessie: doorverwijzing', zonder.status, 303);
++
++  const vreemd = await verzoek('POST', '/admin/diagnose/probe', { origin: 'https://kwaadaardig.example' });
++  ok('met sessie maar een vreemde origin: 403', vreemd.status, 403);
++  const tekst = await vreemd.text();
++  ok('en er is niets uitgevoerd', /Request origin did not match/.test(tekst));
++
++  const geen = await verzoek('POST', '/admin/diagnose/probe', { origin: null });
++  ok('zonder origin-kop: ook 403', geen.status, 403);
++
++  /* En met een goede origin loopt hij wél — met een gestubde fetch, zodat deze
++     test nooit een echte betaling bij Mollie aanmaakt. */
++  const echt = globalThis.fetch;
++  const geraakt = [];
++  globalThis.fetch = async (url) => {
++    geraakt.push(String(url));
++    return new Response(JSON.stringify({ count: 0, _embedded: { methods: [] } }), {
++      status: 200, headers: { 'content-type': 'application/json' },
++    });
++  };
++  const goed = await verzoek('POST', '/admin/diagnose/probe');
++  globalThis.fetch = echt;
++
++  ok('met een goede origin: 200', goed.status, 200);
++  ok('en hij praat met Mollie', geraakt.some((u) => u.startsWith('https://api.mollie.com/v2')));
++  const json = JSON.parse(await goed.text());
++  ok('het antwoord draagt de vier probes',
++    Object.keys(json.probes || {}).sort(), ['A_transport', 'B_auth', 'C_minimalPayment', 'D_realPayment']);
++  ok('en geen enkele secretwaarde', /test_0123456789abcdefghijklmnopqrstuv/.test(JSON.stringify(json)), false);
++}
++
++console.log(`\n${geslaagd}/${geslaagd + gezakt} geslaagd`);
++if (gezakt) process.exitCode = 1;
+diff -ruN a/tests/debug-mollie-reading.test.mjs b/tests/debug-mollie-reading.test.mjs
+--- a/tests/debug-mollie-reading.test.mjs	2026-08-23 14:20:22.246153084 +0000
++++ b/tests/debug-mollie-reading.test.mjs	2026-08-23 14:20:22.268835903 +0000
+@@ -2,8 +2,13 @@
+  * supposed to name. The bug this catches: a verdict of "Inconclusive" when
+  * every probe is green. */
+ import fs from 'node:fs/promises';
+-const src = await fs.readFile(new URL('../functions/admin/debug-mollie.js', import.meta.url), 'utf8');
+-const read = new Function('return ' + src.match(/function read\(out\) \{[\s\S]*?\n\}/)[0])();
++/* De diagnose is 23 augustus 2026 verhuisd van functions/admin/debug-mollie.js
++   naar de padtabel in src/lib/admin.js — zie de noot bij renderDiagnose() daar
++   voor waarom een statisch routebestand onder functions/admin/ de centrale
++   originIsSelf()-controle omzeilde. De leesregels zijn ongewijzigd meegegaan;
++   deze test volgt ze mee, met de nieuwe naam readDiagnose(). */
++const src = await fs.readFile(new URL('../src/lib/admin.js', import.meta.url), 'utf8');
++const read = new Function('return ' + src.match(/function readDiagnose\(out\) \{[\s\S]*?\n\}/)[0])();
+ 
+ const REAL = {
+   key: { problems: null },
+diff -ruN a/tests/stripe-webhook.test.mjs b/tests/stripe-webhook.test.mjs
+--- a/tests/stripe-webhook.test.mjs	1970-01-01 00:00:00.000000000 +0000
++++ b/tests/stripe-webhook.test.mjs	2026-08-23 14:20:22.279487595 +0000
+@@ -0,0 +1,198 @@
++/*
++ * ═══════════════════════════════════════════════════════════════════════════
++ * DE STRIPE-WEBHOOK MAG EEN SCHRIJFFOUT NIET ALS "DUBBELE LEVERING" LEZEN
++ * ═══════════════════════════════════════════════════════════════════════════
++ *
++ * 23 augustus 2026. Er stond een kale `catch` rond de idempotentie-INSERT die
++ * ELKE fout opving, `return` gaf, en de handler antwoordde daarna 200 — waarmee
++ * Stripe te horen kreeg dat het gelukt was en niet meer terugkwam. Eén hapering
++ * van D1 en een betaalde bestelling werd permanent niet vastgelegd.
++ *
++ * Wat deze test bewaakt is de SCHEIDING, niet de tekst van een logregel:
++ *
++ *   dubbele levering  →  200, geen tweede rij, geen tweede gebeurtenis
++ *   schrijffout       →  500, zodat Stripe opnieuw levert
++ *   eerste levering   →  200, bestelling op betaald
++ *
++ * En één ding erboven: dat de idempotentie ECHT op de database staat en niet op
++ * een vlag in de code — UNIQUE(provider, external_id), met provider='stripe'.
++ * Dat is de aanname waar de hele catch op rust, dus die wordt hier gemeten en
++ * niet geloofd.
++ *
++ * De handtekening wordt echt berekend met WebCrypto, met dezelfde HMAC als
++ * verifyStripeSignature() verwacht. Een test die de verificatie omzeilt, toetst
++ * een handler die in productie nooit zo wordt aangeroepen.
++ */
++import { DatabaseSync } from 'node:sqlite';
++import { d1, verseDb } from './lib/d1sqlite.mjs';
++import { onRequestPost } from '../functions/api/webhook/stripe.js';
++
++let geslaagd = 0, gezakt = 0;
++function ok(naam, waarde, verwacht = true, extra = '') {
++  const goed = JSON.stringify(waarde) === JSON.stringify(verwacht);
++  if (goed) geslaagd++; else gezakt++;
++  console.log(`${goed ? ' ok ' : 'FAIL'}   ${naam.padEnd(58)} ${goed ? '' : `verwacht ${JSON.stringify(verwacht)} kreeg ${JSON.stringify(waarde)}`} ${extra}`);
++}
++
++const SECRET = 'whsec_testtesttesttesttesttesttest';
++
++/** Een echt ondertekend verzoek, zoals Stripe het aflevert. */
++async function tekenen(body) {
++  const t = Math.floor(Date.now() / 1000);
++  const key = await crypto.subtle.importKey(
++    'raw', new TextEncoder().encode(SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
++  );
++  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${t}.${body}`));
++  const v1 = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, '0')).join('');
++  return new Request('https://visuails.com/api/webhook/stripe', {
++    method: 'POST',
++    headers: { 'stripe-signature': `t=${t},v1=${v1}`, 'content-type': 'application/json' },
++    body,
++  });
++}
++
++const sessie = (id, ref) => ({
++  id, client_reference_id: ref, payment_status: 'paid',
++  amount_total: 100, currency: 'eur',
++});
++const gebeurtenis = (s) => JSON.stringify({ type: 'checkout.session.completed', data: { object: s } });
++
++function db_met_bestelling() {
++  const { db, mislukt } = verseDb(new URL('../schema.sql', import.meta.url));
++  if (mislukt.length) throw new Error('schema.sql laadt niet:\n' + mislukt.join('\n'));
++  /* Verzonnen gegevens, nooit een bestaand adres — zelfde afspraak als in de
++     andere tests en in FigDash. */
++  db.exec(`INSERT INTO orders (id, ref, service, status, email, payment_status, lang)
++           VALUES (1, 'VIS-2608-0001', 'test-sample', 'received', 'klant@voorbeeld.nl', 'unpaid', 'nl')`);
++  return db;
++}
++
++/* ══ 1 · DE CONSTRAINT WAAR DE HELE CATCH OP RUST ═══════════════════════════ */
++console.log('\nde idempotentie staat op de database, en geldt ook voor stripe');
++{
++  const db = db_met_bestelling();
++
++  const index = db.prepare(
++    "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_payments_external'"
++  ).get();
++  ok('idx_payments_external bestaat', !!index?.sql);
++  ok('en hij is UNIEK', /unique/i.test(index?.sql || ''));
++  ok('op (provider, external_id)', /\(\s*provider\s*,\s*external_id\s*\)/i.test(index?.sql || ''));
++
++  const insert = (provider, ext) => db.prepare(
++    `INSERT INTO payments (order_id, provider, external_id, status, amount_cents, currency)
++     VALUES (1, ?, ?, 'paid', 100, 'EUR')`
++  ).run(provider, ext);
++
++  insert('stripe', 'cs_test_A');
++  let fout = null;
++  try { insert('stripe', 'cs_test_A'); } catch (e) { fout = String(e.message || e); }
++  ok('een tweede stripe-rij met hetzelfde id wordt geweigerd', fout !== null);
++  /* Dit is de match die de handler gebruikt. Wijzigt SQLite of D1 ooit zijn
++     bewoording, dan valt deze regel om vóór de productie het merkt. */
++  ok('en de fouttekst bevat "unique" en "constraint"',
++    /unique/i.test(fout || '') && /constraint/i.test(fout || ''), true, fout || '');
++
++  /* En de constraint is niet per ongeluk mollie-specifiek: hetzelfde externe id
++     onder een andere provider hoort gewoon te mogen. */
++  let mollieOk = true;
++  try { insert('mollie', 'cs_test_A'); } catch { mollieOk = false; }
++  ok('hetzelfde id onder een andere provider mag wel', mollieOk);
++  db.close();
++}
++
++/* ══ 2 · DE EERSTE LEVERING ════════════════════════════════════════════════ */
++console.log('\neen eerste levering wordt gewoon vastgelegd');
++{
++  const db = db_met_bestelling();
++  const env = { DB: d1(db), STRIPE_WEBHOOK_SECRET: SECRET };
++  const res = await onRequestPost({ request: await tekenen(gebeurtenis(sessie('cs_1', 'VIS-2608-0001'))), env });
++
++  ok('antwoordt 200', res.status, 200);
++  ok('de bestelling staat op betaald',
++    db.prepare('SELECT payment_status FROM orders WHERE id = 1').get().payment_status, 'paid');
++  ok('er staat één betaalregel', db.prepare("SELECT COUNT(*) c FROM payments WHERE provider='stripe'").get().c, 1);
++  ok('en één gebeurtenis', db.prepare('SELECT COUNT(*) c FROM order_events').get().c, 1);
++  db.close();
++}
++
++/* ══ 3 · DE DUBBELE LEVERING ═══════════════════════════════════════════════ */
++console.log('\neen tweede levering van hetzelfde event loopt stil af');
++{
++  const db = db_met_bestelling();
++  const env = { DB: d1(db), STRIPE_WEBHOOK_SECRET: SECRET };
++  const body = gebeurtenis(sessie('cs_2', 'VIS-2608-0001'));
++
++  const eerste = await onRequestPost({ request: await tekenen(body), env });
++  const tweede = await onRequestPost({ request: await tekenen(body), env });
++
++  ok('de eerste antwoordt 200', eerste.status, 200);
++  ok('de tweede óók 200 — dit is geen fout', tweede.status, 200);
++  ok('er staat nog steeds één betaalregel',
++    db.prepare("SELECT COUNT(*) c FROM payments WHERE provider='stripe'").get().c, 1);
++  ok('en nog steeds één gebeurtenis', db.prepare('SELECT COUNT(*) c FROM order_events').get().c, 1);
++  db.close();
++}
++
++/* ══ 4 · DE SCHRIJFFOUT — WAAR HET OM BEGONNEN IS ══════════════════════════ */
++console.log('\neen echte schrijffout levert 500 op, zodat stripe terugkomt');
++{
++  const db = db_met_bestelling();
++  const echt = d1(db);
++  /* Een D1 die op de INSERT INTO payments struikelt met iets anders dan een
++     unique-overtreding. Dat is precies het geval dat vóór deze reparatie als
++     "dubbele levering" werd gelezen en met 200 werd afgedaan. */
++  const env = {
++    STRIPE_WEBHOOK_SECRET: SECRET,
++    DB: {
++      prepare(sql) {
++        if (/INSERT INTO payments/i.test(sql)) {
++          return { bind: () => ({ run: async () => { throw new Error('D1_ERROR: no such column: raw_payload'); } }) };
++        }
++        return echt.prepare(sql);
++      },
++      batch: echt.batch,
++    },
++  };
++
++  const res = await onRequestPost({ request: await tekenen(gebeurtenis(sessie('cs_3', 'VIS-2608-0001'))), env });
++
++  ok('antwoordt 500 en niet 200', res.status, 500);
++  ok('de bestelling blijft onbetaald staan',
++    db.prepare('SELECT payment_status FROM orders WHERE id = 1').get().payment_status, 'unpaid');
++  ok('er is geen gebeurtenis geschreven', db.prepare('SELECT COUNT(*) c FROM order_events').get().c, 0);
++  db.close();
++}
++
++/* ══ 5 · EN DE POORT ERVOOR BLIJFT DICHT ═══════════════════════════════════ */
++console.log('\nde handtekening blijft de eerste poort');
++{
++  const db = db_met_bestelling();
++  const env = { DB: d1(db), STRIPE_WEBHOOK_SECRET: SECRET };
++  const body = gebeurtenis(sessie('cs_4', 'VIS-2608-0001'));
++  const req = new Request('https://visuails.com/api/webhook/stripe', {
++    method: 'POST', headers: { 'stripe-signature': 't=1,v1=deadbeef' }, body,
++  });
++  const res = await onRequestPost({ request: req, env });
++  ok('een verkeerde handtekening geeft 400', res.status, 400);
++  ok('en er is niets geschreven', db.prepare('SELECT COUNT(*) c FROM payments').get().c, 0);
++  db.close();
++}
++
++/* ══ 6 · DE VORM VAN DE CATCH ══════════════════════════════════════════════ */
++console.log('\nde catch onderscheidt, en safe() is weg');
++{
++  const bron = await (await import('node:fs/promises')).readFile(
++    new URL('../functions/api/webhook/stripe.js', import.meta.url), 'utf8'
++  );
++  const code = bron.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
++  ok('de catch toetst op unique én constraint',
++    /\/unique\/i\.test\([\s\S]{0,40}\)\s*&&\s*\/constraint\/i\.test\(/.test(code), true);
++  ok('en gooit door als het dat niet is', /if \(!duplicate\)[\s\S]{0,200}throw e;/.test(code), true);
++  ok('safe() bestaat niet meer', /function safe\(/.test(code), false);
++  ok('en de handler antwoordt 500 op een schrijffout',
++    /new Response\('write failed', \{ status: 500 \}\)/.test(code), true);
++}
++
++console.log(`\n${geslaagd}/${geslaagd + gezakt} geslaagd`);
++if (gezakt) process.exitCode = 1;

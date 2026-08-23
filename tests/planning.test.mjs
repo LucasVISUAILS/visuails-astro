@@ -35,7 +35,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { buildStaat } from './lib/build.mjs';
-import { tierFor, isLadderService, LADDER, WINDOW_THRESHOLD, EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT } from '../src/data/pricing.js';
+import { tierFor, isLadderService, LADDER, WINDOW_THRESHOLD, TIERS, EXTRA_PHOTO_LADDER, MAX_EXTRA_PER_PRODUCT } from '../src/data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../src/data/capacity.js';
 import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT } from '../src/data/shots.js';
 import { MAX_BATCH_FILES } from '../src/lib/uploads.js';
@@ -92,25 +92,36 @@ console.log('alleen een dienst van de prijsladder kan een venster krijgen');
 console.log('\nde server denkt hetzelfde als de browser');
 {
   /*
-   * functions/api/order.js heeft een EIGEN copie van deze beslissing, met een eigen
-   * WINDOW_THRESHOLD — en dat is met opzet: die functie draait in een Worker en het
-   * hele prijsmodule inladen voor één vergelijking is veel module voor één getal. De
-   * prijs daarvan is dat de twee helften uit elkaar kunnen lopen, en dat is precies
-   * wat er hier gebeurde: de browserhelft is niet de helft die de bestelling in de
-   * database zet.
+   * functions/api/order.js HAD een eigen copie van deze beslissing, met een eigen
+   * WINDOW_THRESHOLD. Die is 23 augustus 2026 weggehaald: het bestand importeerde
+   * pricing.js toch al, dus de motivering ("veel module voor één getal") klopte niet,
+   * en de twee helften beslisten bij `service === null` verschillend.
+   *
+   * DEZE TEST TOETST DAAROM NU HET OMGEKEERDE. Niet "staat de kopie er nog en klopt
+   * hij", maar "is er geen kopie meer en gebruikt de server dezelfde functie". Een
+   * test die op de aanwezigheid van een duplicaat staat, houdt dat duplicaat in leven.
    */
   const ORDER = read('functions/api/order.js');
   const code = ORDER.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-  ok('de servercopie neemt de dienst mee', /function tierForProducts\(products, service\)/.test(code), true);
-  ok('en wordt met de dienst aangeroepen', /tierForProducts\(products, svc\)/.test(code), true);
-  ok('hij toetst tegen PAYABLE_SERVICES', /PAYABLE_SERVICES\.has\(ladderKey\(service\)\)/.test(code), true);
-  /* ladderKey() eromheen, niet de ruwe waarde: anders valt 'drop' erbuiten en verliest
-     de duurste deur op de site zijn venster. */
-  ok('met ladderKey eromheen en niet de ruwe waarde',
-    /PAYABLE_SERVICES\.has\(service\)/.test(code), false);
-  ok('de drempel staat er nog als constante', /const WINDOW_THRESHOLD = 10;/.test(code), true);
-  ok('en die is dezelfde als in pricing.js', WINDOW_THRESHOLD, 10);
+  ok('de server heeft geen eigen tierForProducts meer', /function tierForProducts\(/.test(code), false);
+  ok('en geen eigen WINDOW_THRESHOLD', /const WINDOW_THRESHOLD\s*=/.test(code), false);
+  ok('hij importeert tierFor uit pricing.js', /import \{[^}]*\btierFor\b[^}]*\} from '\.\.\/\.\.\/src\/data\/pricing\.js'/.test(code), true);
+  ok('en roept hem met de dienst aan', /tierFor\(products, svc\)/.test(code), true);
+
+  /* En de gedeelde functie moet nog steeds doen waar hij voor is: alleen een
+     ladderdienst krijgt een venster, 'drop' hoort erbij, en video niet. Dit is de
+     inhoud van de oude servercopie-toets, nu op de functie zelf. */
+  ok('drop krijgt een venster vanaf de drempel', tierFor(WINDOW_THRESHOLD, 'drop'), 'attended');
+  ok('complete ook', tierFor(WINDOW_THRESHOLD, 'complete'), 'attended');
+  ok('video nooit', tierFor(WINDOW_THRESHOLD, 'video'), 'unattended');
+  ok('en onder de drempel niemand', tierFor(WINDOW_THRESHOLD - 1, 'catalog'), 'unattended');
+  ok('de drempel komt uit pricing.js', WINDOW_THRESHOLD, 10);
+
+  /* De labels in TIERS lezen de export en niet een tweede getal — de alias
+     WINDOW_THRESHOLD_LABEL is weg. */
+  ok('het onder-label noemt de drempel', TIERS.unattended.label.en, `Under ${WINDOW_THRESHOLD} products`);
+  ok('het vanaf-label ook', TIERS.attended.label.en, `From ${WINDOW_THRESHOLD} products`);
 
   /* En de verzameling waar de servercopie op toetst moet dezelfde diensten dekken als
      de ladder. Lopen die uit elkaar, dan krijgt een ladderdienst geen venster of een

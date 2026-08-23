@@ -211,6 +211,23 @@ export const PLAN_CLIPS = { starter: 0, studio: 2, brand: 0 };
    de maandtermijn. Dat is een REKENVENSTER en geen verplichting, en het heet
    daarom nu ook zo. Een constante die PLAN_MIN_MONTHS heet, komt vroeg of laat
    weer als "minimaal" in een zin terecht. */
+/* ── HET MACHTIGINGSBEDRAG — 23 augustus 2026 ──────────────────────────────
+ *
+ * Stond als `const MANDATE_EUROS = 1` in src/lib/subscribe.js en zes keer als
+ * "€1" in de copy van PlanPicker en PlansPage. Dat is precies wat de kop van dit
+ * bestand verbiedt: *"Every euro figure on the site now comes from here. Nothing
+ * else may hardcode a price."*
+ *
+ * EEN EIGEN CONSTANTE EN NIET AMOUNT.testSample, ook al zijn ze allebei één euro.
+ * Het zijn twee verschillende dingen die toevallig hetzelfde kosten: de proefvisual
+ * is een PRODUCT dat je koopt, en dit is de TRANSACTIE waarmee je bank een
+ * SEPA-machtiging afgeeft. Ze samenvoegen betekent dat de proefvisual op €2 zetten
+ * stilzwijgend ook de machtiging verandert — en de machtiging is bewust het
+ * kleinst mogelijke bedrag, want hij wordt niet verrekend maar is puur de prikkel
+ * die de bank nodig heeft.
+ */
+export const MANDATE_AMOUNT = 1;
+
 export const PLAN_ROLLOVER_MONTHS = 1;
 export const PLAN_COMPARE_MONTHS = 3;
 
@@ -279,10 +296,18 @@ export const STOCK_ON_BRAND = 20;
 // 2–4 working days. Ten because that is where the ladder's third rung starts,
 // so the buyer crosses one line, not two.
 export const WINDOW_THRESHOLD = 10;
-// TIERS' labels below are template strings evaluated at module load, before the
-// export above is in scope from their point of view — so the two read the same
-// literal through this one alias rather than a typed 10 in three places.
-const WINDOW_THRESHOLD_LABEL = 10;
+/* ── DE ALIAS IS WEG, EN DE REDEN ERVOOR KLOPTE NIET — 23 augustus 2026 ─────
+   Hier stond `const WINDOW_THRESHOLD_LABEL = 10` met als motivering dat de
+   labels in TIERS sjabloonstrings zijn die bij het laden van de module worden
+   uitgerekend, "voordat de export hierboven vanuit hun gezichtspunt in beeld
+   is". Dat is de tijdelijke-dode-zone-regel, en die geldt hier niet: TIERS
+   staat op regel 920 en deze export op 281. Er was geen TDZ, alleen een tweede
+   getal dat bij een wijziging kon achterblijven — in hetzelfde bestand nog wel,
+   wat het juist makkelijker maakt om over het hoofd te zien.
+
+   Beide labels lezen nu de export zelf. Als TIERS ooit boven deze regel
+   terechtkomt valt de module bij het laden om met een ReferenceError, en dat is
+   precies de goede faalrichting: luid, meteen, en in elke test. */
 
 /** 'attended' | 'unattended' — which tier's promises an order of this size gets. */
 export function tierFor(products, service) {
@@ -397,6 +422,24 @@ export const VAT_RATE = 0.21;
 export const vatOf = (net) => Math.round(net * VAT_RATE * 100) / 100;
 export const withVat = (net) => Math.round(net * (1 + VAT_RATE) * 100) / 100;
 
+/* ── HET PERCENTAGE ALS TEKST, AFGELEID EN NIET GETYPT — 23 augustus 2026 ───
+ *
+ * "21%" stond op acht plekken als losse tekst: in vatLabel(), in vatDetail(),
+ * nog een keer in src/data/vat.js, in twee redenen die op het beheerscherm
+ * komen, en in twee mailregels in functions/api/order.js. Geen van die acht
+ * keek naar VAT_RATE. Het tarief hierboven op 0.19 zetten zou dus een site
+ * opleveren die overal "21%" blijft zeggen terwijl de kassa 19 rekent — en dat
+ * is precies de soort fout waar niemand een klacht over indient tot de
+ * boekhouder belt.
+ *
+ * Eén functie, en elke zin die het percentage noemt haalt het hier op.
+ *
+ * `Math.round(VAT_RATE * 100)` en geen decimalen: elk EU-tarief dat wij ooit
+ * zullen rekenen is een heel getal, en "21,00%" leest als een berekening in
+ * plaats van als een tarief. Komt er ooit een tarief met een halve procent,
+ * dan is dat één regel hier en niet acht plekken opnieuw zoeken. */
+export const vatPercent = () => `${Math.round(VAT_RATE * 100)}%`;
+
 // PAGES PRINT NET ONLY. There was a gross figure beside every net one until
 // Lucas pointed out the flaw: VAT is not one rate. A French or German buyer is
 // charged their own country's rate, so "€1,190 excl. VAT — €1,439.90 incl.
@@ -450,8 +493,8 @@ export function vatLead(lang = 'en') {
 /** De uitleg achter vatLead(): wat er per land gebeurt. */
 export function vatDetail(lang = 'en') {
   return lang === 'nl'
-    ? 'Nederlandse klanten betalen 21% btw bij het afrekenen. Ben je een EU-bedrijf buiten Nederland, vul dan je btw-nummer in: klopt het volgens VIES, dan betaal je 0% en is de btw verlegd. Buiten de EU valt de levering buiten de Europese btw.'
-    : 'Dutch customers pay 21% VAT at checkout. If you are an EU business outside the Netherlands, enter your VAT number: if VIES confirms it, you pay 0% and the VAT is reverse charged. Outside the EU the supply falls outside European VAT.';
+    ? `Nederlandse klanten betalen ${vatPercent()} btw bij het afrekenen. Ben je een EU-bedrijf buiten Nederland, vul dan je btw-nummer in: klopt het volgens VIES, dan betaal je 0% en is de btw verlegd. Buiten de EU valt de levering buiten de Europese btw.`
+    : `Dutch customers pay ${vatPercent()} VAT at checkout. If you are an EU business outside the Netherlands, enter your VAT number: if VIES confirms it, you pay 0% and the VAT is reverse charged. Outside the EU the supply falls outside European VAT.`;
 }
 
 export function vatNote(lang = 'en') {
@@ -465,7 +508,7 @@ export function vatNote(lang = 'en') {
 export function vatLabel(kind = 'excl', lang = 'en') {
   const nl = lang === 'nl';
   if (kind === 'incl') return nl ? 'incl. btw' : 'incl. VAT';
-  if (kind === 'rate') return nl ? '21% btw' : '21% VAT';
+  if (kind === 'rate') return nl ? `${vatPercent()} btw` : `${vatPercent()} VAT`;
   return nl ? 'excl. btw' : 'excl. VAT';
 }
 
@@ -920,7 +963,7 @@ export const TIERS = {
     // reconstruct which direction it protects. Flipping it changes nothing —
     // if you came here to change how the gate behaves, change the floor.
     yieldsToAttended: true,
-    label: { en: `Under ${WINDOW_THRESHOLD_LABEL} products`, nl: `Onder ${WINDOW_THRESHOLD_LABEL} producten` },
+    label: { en: `Under ${WINDOW_THRESHOLD} products`, nl: `Onder ${WINDOW_THRESHOLD} producten` },
     // The ONLY sanctioned timing language for this tier. No date, no "24
     // hours", no "next day" — section 13 supplies this exact substitute.
     turnaround: {
@@ -976,7 +1019,7 @@ export const TIERS = {
     portal: true,
     // Also unread. See the note on unattended.yieldsToAttended above.
     yieldsToAttended: false,
-    label: { en: `From ${WINDOW_THRESHOLD_LABEL} products`, nl: `Vanaf ${WINDOW_THRESHOLD_LABEL} producten` },
+    label: { en: `From ${WINDOW_THRESHOLD} products`, nl: `Vanaf ${WINDOW_THRESHOLD} producten` },
     // A committed window, cleared by the capacity gate before it is offered.
     // The site must never print a date the gate has not cleared.
     turnaround: {

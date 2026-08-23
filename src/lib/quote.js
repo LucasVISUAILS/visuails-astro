@@ -42,8 +42,13 @@
 // finds at exactly the wrong moment.
 import {
   LADDER, ladderRate, OUTFIT_SURCHARGE, extraPhotoRate, MAX_EXTRA_PER_PRODUCT,
-  MAX_OUTFIT_PRODUCTS, AMOUNT,
+  MAX_OUTFIT_PRODUCTS, AMOUNT, VAT_RATE,
 } from '../data/pricing.js';
+/* Twee namen voor dezelfde import, met opzet: de controle onderaan vergelijkt
+   ze en dat leest alleen als een controle wanneer er twee namen staan. Zou
+   iemand de export hierboven ooit terugzetten naar een eigen constante, dan
+   valt deze tweede naam er niet mee terug en slaat de controle aan. */
+import { VAT_RATE as PRICING_VAT_RATE } from '../data/pricing.js';
 
 /**
  * The DUTCH rate. Not "the rate everyone pays" any more.
@@ -54,12 +59,27 @@ import {
  * decides which one, and this is only the default — the answer for a Dutch
  * customer, and for every case where we could not prove otherwise.
  *
- * It stays a duplicate of pricing.js's VAT_RATE rather than an import, for the
- * reason pricing.js:192 gives: this module is loaded by a Cloudflare Worker and
- * the two halves are checked against each other at build time by
- * assertQuoteMatches() instead.
+ * ── HET WAS EEN KOPIE, EN DE MOTIVERING KLOPTE NIET — 23 augustus 2026 ────
+ *
+ * Hier stond `export const VAT_RATE = 0.21`, met als reden dat deze module door
+ * een Cloudflare Worker wordt geladen en dat de twee helften bij het bouwen
+ * tegen elkaar worden gecontroleerd door assertQuoteMatches().
+ *
+ * Allebei die halve waarheden gaven samen een gat. Deze module IMPORTEERT AL uit
+ * ../data/pricing.js — de ladder, de toeslagen, AMOUNT — dus de Worker-reden
+ * bestond niet: er was geen enkele grens die één extra naam niet ook kon
+ * oversteken. En assertQuoteMatches() controleerde het tarief NIET: die functie
+ * loopt diensten en laddertreden af en toetst netCents. De string VAT_RATE kwam
+ * er niet in voor.
+ *
+ * Netto-effect: `pricing.js` op 0.19 zetten liet de kassa 21 procent rekenen,
+ * met alle tests groen. Dit is dus geen opruiming maar een reparatie.
+ *
+ * Doorgegeven en niet opnieuw geschreven, zodat elke lezer die
+ * `import { VAT_RATE } from './quote.js'` doet — subscription.js, account.js,
+ * invoice.js en vier tests — ongewijzigd de ENE waarde krijgt.
  */
-export const VAT_RATE = 0.21;
+export { VAT_RATE };
 
 /** Services that can be priced from the ladder. Anything else is not payable. */
 export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle', 'complete']);
@@ -380,6 +400,36 @@ export function paymentDescription(quote, lang = 'en') {
 // throws at import time — which is at build time, because order.js imports it.
 // ─────────────────────────────────────────────────────────────────────────────
 (function assertQuoteMatches() {
+  /* ── EERST HET TARIEF, WANT DAT WAS HET GAT — 23 augustus 2026 ────────────
+     Deze controle liep diensten en laddertreden af en toetste netCents. Het
+     BTW-TARIEF kwam er niet in voor, terwijl de kop van dit bestand beweerde
+     dat "de twee helften tegen elkaar worden gecontroleerd". Het tarief is nu
+     één waarde (zie de noot bij de export bovenaan), dus uit elkaar lopen kan
+     niet meer — maar deze regels blijven staan als vangnet voor de volgende die
+     hem toch weer overtypt, en ze toetsen meteen of het bedrag dat een klant
+     betaalt echt uit dat tarief volgt.
+
+     De rekensom en niet alleen de gelijkheid: `quoteOrder` mag het tarief
+     onderweg niet kwijtraken, afronden op de verkeerde plek of op safeRate()
+     terugvallen. Eén order doorrekenen bewijst dat in één regel. */
+  if (VAT_RATE !== PRICING_VAT_RATE) {
+    throw new Error(
+      `quote.js: het btw-tarief is ${VAT_RATE} en pricing.js zegt ${PRICING_VAT_RATE}. `
+      + 'Er hoort er maar één te zijn — zie de noot bij de export van VAT_RATE.'
+    );
+  }
+  {
+    const q = quoteOrder({ service: 'catalog', products: 10 });
+    const verwacht = Math.round(q.netCents * VAT_RATE);
+    if (q.vatCents !== verwacht || q.grossCents !== q.netCents + verwacht) {
+      throw new Error(
+        `quote.js: over ${q.netCents} cent netto werd ${q.vatCents} cent btw gerekend, `
+        + `verwacht ${verwacht} bij een tarief van ${VAT_RATE}. Het bedrag dat de klant `
+        + 'betaalt volgt niet meer uit het tarief.'
+      );
+    }
+  }
+
   for (const service of PAYABLE_SERVICES) {
     for (const [lo] of LADDER[service]) {
       for (const [o, x] of [[0, 0], [1, 0], [0, 3], [2, 5]]) {

@@ -1,61 +1,67 @@
-60 bestanden, samen 5.3 MB
-     109 kB  public/img/banners-09.avif
-      35 kB  public/img/banners-10.avif
-      65 kB  public/img/banners-10.webp
-      39 kB  public/img/banners-12.avif
-     121 kB  public/img/banners-12.webp
-      25 kB  public/img/banners-13-w960.avif
-      78 kB  public/img/banners-15.avif
-     180 kB  public/img/banners-15.webp
-     281 kB  public/img/banners-17.avif
-     553 kB  public/img/banners-17.webp
-      19 kB  public/img/hero-dunes.avif
-      52 kB  public/img/hero-dunes.webp
-      55 kB  public/img/lifestyle-flash-04-w1560.avif
-     103 kB  public/img/lifestyle-flash-04-w1560.webp
-      70 kB  public/img/lifestyle-flash-06-w1560.avif
-     143 kB  public/img/lifestyle-flash-06-w1560.webp
-     111 kB  public/img/lifestyle-flash-07-w1560.avif
-     175 kB  public/img/lifestyle-flash-07-w1560.webp
-      69 kB  public/img/lifestyle-flash-08-w1560.avif
-     126 kB  public/img/lifestyle-flash-08-w1560.webp
-      70 kB  public/img/lifestyle-glow-02-w1560.avif
-     115 kB  public/img/lifestyle-glow-02-w1560.webp
-      16 kB  public/img/lifestyle-glow-05-w1560.avif
-      35 kB  public/img/lifestyle-glow-05-w1560.webp
-      65 kB  public/img/lifestyle-glow-06-w1560.avif
-     112 kB  public/img/lifestyle-glow-06-w1560.webp
-      39 kB  public/img/lifestyle-phone-made-01-w1560.avif
-      71 kB  public/img/lifestyle-phone-made-01-w1560.webp
-      51 kB  public/img/lifestyle-phone-made-02-w1560.avif
-     108 kB  public/img/lifestyle-phone-made-02-w1560.webp
-      38 kB  public/img/lifestyle-phone-made-03-w1560.avif
-      72 kB  public/img/lifestyle-phone-made-03-w1560.webp
-      30 kB  public/img/lifestyle-phone-made-04-w1560.avif
-      65 kB  public/img/lifestyle-phone-made-04-w1560.webp
-      56 kB  public/img/lifestyle-phone-made-06-w1560.avif
-     105 kB  public/img/lifestyle-phone-made-06-w1560.webp
-      99 kB  public/img/lifestyle-phone-made-07-w1560.avif
-     168 kB  public/img/lifestyle-phone-made-07-w1560.webp
-      51 kB  public/img/lifestyle-phone-made-08-w1560.avif
-     100 kB  public/img/lifestyle-phone-made-08-w1560.webp
-      54 kB  public/img/lifestyle-phone-made-09-w1560.avif
-     104 kB  public/img/lifestyle-phone-made-09-w1560.webp
-     138 kB  public/img/lifestyle-phone-made-10-w1560.avif
-     219 kB  public/img/lifestyle-phone-made-10-w1560.webp
-      76 kB  public/img/lifestyle-phone-made-11-w1560.avif
-     140 kB  public/img/lifestyle-phone-made-11-w1560.webp
-      63 kB  public/img/lifestyle-phone-made-13-w1560.avif
-     118 kB  public/img/lifestyle-phone-made-13-w1560.webp
-      63 kB  public/img/lifestyle-phone-made-14-w1560.avif
-     121 kB  public/img/lifestyle-phone-made-14-w1560.webp
+62 bestanden
+       2 kB  public/img/mail/mark-wit.png
        3 kB  public/img/logo-mark.avif
        5 kB  public/img/logo-wordmark-light.avif
-       8 kB  public/img/logo-wordmark-light.webp
-      16 kB  public/img/logo-wordmark.avif
-      40 kB  public/img/logo-wordmark.webp
-       2 kB  public/img/mail/mark-wit.png
        5 kB  public/img/sub-light-1400.avif
+       8 kB  public/img/logo-wordmark-light.webp
+      16 kB  public/img/lifestyle-glow-05-w1560.avif
+      16 kB  public/img/logo-wordmark.avif
+      19 kB  public/img/hero-dunes.avif
+      25 kB  public/img/banners-13-w960.avif
       27 kB  public/img/sub-light-1400.webp
       27 kB  public/img/sub-light-2400.avif
+      30 kB  public/img/lifestyle-phone-made-04-w1560.avif
+      35 kB  public/img/banners-10.avif
+      35 kB  public/img/lifestyle-glow-05-w1560.webp
+      38 kB  public/img/lifestyle-phone-made-03-w1560.avif
+      39 kB  public/img/banners-12.avif
+      39 kB  public/img/lifestyle-phone-made-01-w1560.avif
+      40 kB  public/img/logo-wordmark.webp
+      51 kB  public/img/lifestyle-phone-made-02-w1560.avif
+      51 kB  public/img/lifestyle-phone-made-08-w1560.avif
+      52 kB  public/img/hero-dunes.webp
+      54 kB  public/img/lifestyle-phone-made-09-w1560.avif
+      55 kB  public/img/lifestyle-flash-04-w1560.avif
+      56 kB  public/img/lifestyle-phone-made-06-w1560.avif
+      63 kB  public/img/lifestyle-phone-made-13-w1560.avif
+      63 kB  public/img/lifestyle-phone-made-14-w1560.avif
+      65 kB  public/img/banners-10.webp
+      65 kB  public/img/lifestyle-glow-06-w1560.avif
+      65 kB  public/img/lifestyle-phone-made-04-w1560.webp
+      69 kB  public/img/lifestyle-flash-08-w1560.avif
+      70 kB  public/img/lifestyle-flash-06-w1560.avif
+      70 kB  public/img/lifestyle-glow-02-w1560.avif
+      71 kB  public/img/lifestyle-phone-made-01-w1560.webp
+      72 kB  public/img/lifestyle-phone-made-03-w1560.webp
+      76 kB  public/img/lifestyle-phone-made-11-w1560.avif
+      78 kB  public/img/banners-15.avif
+      99 kB  public/img/lifestyle-phone-made-07-w1560.avif
+     100 kB  public/img/lifestyle-phone-made-08-w1560.webp
+     103 kB  public/img/lifestyle-flash-04-w1560.webp
+     104 kB  public/img/lifestyle-phone-made-09-w1560.webp
+     105 kB  public/img/lifestyle-phone-made-06-w1560.webp
+     108 kB  public/img/lifestyle-phone-made-02-w1560.webp
+     109 kB  public/img/banners-09.avif
+     111 kB  public/img/lifestyle-flash-07-w1560.avif
+     112 kB  public/img/lifestyle-glow-06-w1560.webp
+     115 kB  public/img/lifestyle-glow-02-w1560.webp
      117 kB  public/img/sub-light-2400.webp
+     118 kB  public/img/lifestyle-phone-made-13-w1560.webp
+     121 kB  public/img/banners-12.webp
+     121 kB  public/img/lifestyle-phone-made-14-w1560.webp
+     126 kB  public/img/lifestyle-flash-08-w1560.webp
+     138 kB  public/img/lifestyle-phone-made-10-w1560.avif
+     140 kB  public/img/lifestyle-phone-made-11-w1560.webp
+     143 kB  public/img/lifestyle-flash-06-w1560.webp
+     168 kB  public/img/lifestyle-phone-made-07-w1560.webp
+     175 kB  public/img/lifestyle-flash-07-w1560.webp
+     180 kB  public/img/banners-15.webp
+     219 kB  public/img/lifestyle-phone-made-10-w1560.webp
+     281 kB  public/img/banners-17.avif
+     553 kB  public/img/banners-17.webp
+
+De twee hieronder staan alleen nog op jouw schijf en op de server, niet meer
+in de bouw. Ze zijn hernoemd omdat er een ANDERE foto onder die naam kwam en
+een vaste naam zeven dagen gecachet wordt — zie de noot in public/_headers.
+  (op E:) public/img/brand-car.avif   — vervangen door brand-car-lens.avif
+  (op E:) public/img/brand-car.webp   — vervangen door brand-car-lens.webp

@@ -52,7 +52,7 @@
 //     order to protect a calendar would be the wrong thing to protect.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt } from '../../src/data/pricing.js';
+import { aftercare, turnaround, tierRow, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor } from '../../src/data/pricing.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
    proefvisual verderop voor waarom de hexwaarde hier wordt afgeleid en niet in de
    browser. `background` heet hier backgroundById, want `background` is in dit
@@ -84,9 +84,14 @@ import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
 import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
+/* PAYABLE_SERVICES en ladderKey stonden hier ook en zijn 23 augustus 2026
+   weggehaald: ze werden alleen nog door de servercopie van tierFor() gebruikt,
+   en die is weg (zie de noot verderop). isPayableService blijft — zie de lange
+   noot bij die aanroep over waarom het de wire-waarde moet zijn en niet de
+   laddernaam. */
 import {
   quoteOrder, quoteTestSample, centsToMollieValue, paymentDescription,
-  PAYABLE_SERVICES, isPayableService, ladderKey,
+  isPayableService,
 } from '../../src/lib/quote.js';
 import { businessCheck } from '../../src/data/business.js';
 import {
@@ -636,7 +641,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   //
   // Falls to 'unattended' whenever the count is unknown — the tier that
   // reserves nothing is the direction a mistake should fall.
-  const tier = tierForProducts(products, svc);
+  const tier = tierFor(products, svc);
 
   // Staged reference material, if the client uploaded any. Read before the
   // insert so the count can go into details_json with everything else; the rows
@@ -771,11 +776,35 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const vatCc = viesCode(effCountry);
   let vies = null;
   if (vatCc && effCountry !== HOME_COUNTRY && vatParts.number) {
-    // The requester pair is what earns the consultation number — the only thing
-    // that later proves the check happened. Without it the reply's identifier
-    // field comes back empty.
-    const own = normaliseVat(env.VISUAILS_VAT || 'NL005407575B96');
-    vies = await checkVat(vatCc, vatParts.number, { country: own.country || 'NL', number: own.number });
+    /* ── HET EIGEN NUMMER KOMT UIT ENV, ZONDER TERUGVAL — 23 augustus 2026 ──
+     *
+     * Het aanvragerspaar is wat het raadplegingsnummer oplevert: het enige dat
+     * later bewijst dát de controle heeft plaatsgevonden. Zonder paar komt dat
+     * veld leeg terug, maar het antwoord geldig/ongeldig komt gewoon — zie de
+     * noot bij checkVat() in src/lib/vies.js.
+     *
+     * Hier stond `env.VISUAILS_VAT || 'NL005407575B96'`, ons echte btw-nummer als
+     * terugval. Twee dingen mis. Ten eerste hoort een echt nummer niet als
+     * terugval in de repo te staan, om dezelfde reden als bij het adres op de
+     * factuur: een ontbrekend secret gaat dan onopgemerkt goed. Ten tweede — en
+     * dat is erger — zou een terugval op een verzonnen nummer betekenen dat we
+     * ONS VOORDOEN ALS EEN ANDER bij een Europese dienst, en het bewijsstuk dat
+     * eruit komt draagt dan die verzonnen aanvrager.
+     *
+     * Dus: is het secret er, dan vragen we met ons paar en krijgen we bewijs.
+     * Is het er niet, dan vragen we zonder paar — hetzelfde antwoord, geen
+     * bewijsnummer, en één regel in het logboek die zegt waarom. */
+    const eigenVat = env.VISUAILS_VAT;
+    if (!eigenVat) {
+      console.error(
+        '[vies] VISUAILS_VAT is niet ingesteld als Pages-secret. De controle loopt door, '
+        + 'maar zonder aanvragerspaar en dus zonder raadplegingsnummer — dat is het bewijs '
+        + 'dat bij een controle wordt gevraagd.'
+      );
+    }
+    const own = eigenVat ? normaliseVat(eigenVat) : null;
+    vies = await checkVat(vatCc, vatParts.number,
+      own && own.number ? { country: own.country || HOME_COUNTRY, number: own.number } : null);
   }
   const vatCall = vatDecision({ country: effCountry, vatValid: !!(vies && vies.valid) });
 
@@ -2250,35 +2279,29 @@ function makeRef() {
 
 function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
 
-// The server's copy of pricing.js's tierFor(). NOT an import: this file runs as
-// a Cloudflare Pages Function and pulling in the whole pricing module — with its
-// build-time assertions and its bilingual copy tables — to read one threshold
-// would be a lot of module for one comparison. The threshold is duplicated on
-// purpose and named here so a grep for WINDOW_THRESHOLD finds both halves.
-// pricing.js: export const WINDOW_THRESHOLD = 10.
-const WINDOW_THRESHOLD = 10;
-/*
- * ── DE DIENST DOET MEE, SINDS 12 AUGUSTUS 2026 ───────────────────────────────
+/* ── DE SERVERCOPIE IS WEG — 23 augustus 2026 ────────────────────────────────
  *
- * Zie de noot bij tierFor() in src/data/pricing.js voor de fout die dit verhelpt:
- * het video-aanvraagformulier post zijn aantal clips in `products`, en tien clips
- * leverden een bestelling op met de belofte van een gereserveerd 48-uursvenster dat
- * niemand had ingepland.
+ * Hier stonden `const WINDOW_THRESHOLD = 10` en `tierForProducts()`, een eigen
+ * uitvoering van pricing.js's `tierFor()`. De motivering erbij: dit bestand
+ * draait als Cloudflare Pages Function en "de hele prijsmodule inladen voor één
+ * vergelijking is veel module voor één getal".
  *
- * PAYABLE_SERVICES is hier de juiste verzameling en niet een eigen lijst: dat is
- * precies de set diensten die quoteOrder() kan prijzen en waarvoor er dus een
- * capaciteitspoort en een betaallink bestaan. Video staat er niet in (het is een
- * aanvraag, geen bestelling) en 'custom' ook niet.
+ * Die reden bestond al niet meer toen hij werd opgeschreven. Dit bestand
+ * IMPORTEERT pricing.js al — regel 55 haalt er aftercare, turnaround, tierRow,
+ * shouldPromptUpgrade en upgradePrompt uit. De module wordt dus sowieso geladen,
+ * inclusief de controles bij het laden. De kopie kostte alleen maar het risico.
  *
- * ladderKey() eromheen omdat de wire-waarde niet de laddernaam is: /start/complete
- * post `service=drop`. Diezelfde val kostte eerder een bestelling van EUR 2.359,50
- * die gratis de deur uit ging — zie de noot bij LADDER_KEY in src/lib/quote.js.
- */
-function tierForProducts(products, service) {
-  const n = Number(products);
-  if (service !== undefined && !PAYABLE_SERVICES.has(ladderKey(service))) return 'unattended';
-  return Number.isFinite(n) && Math.floor(n) >= WINDOW_THRESHOLD ? 'attended' : 'unattended';
-}
+ * En dat risico was echt, al was het nog niet bereikbaar: de twee helften
+ * beslisten verschillend. Bij `service === null` viel `tierFor()` terug op het
+ * aantal (dus 'attended' vanaf tien) en gaf deze kopie 'unattended'. Vandaag
+ * kan dat niet gebeuren omdat `svc` hierboven altijd een waarde krijgt, maar
+ * "onbereikbaar" is geen eigenschap van deze functie — het is een eigenschap van
+ * de enige aanroeper die er nu is.
+ *
+ * De redenen die in de oude noot stonden en nog steeds gelden — dat alleen een
+ * ladderdienst een venster kan krijgen, en dat 'drop' via ladderKey() mee moet
+ * doen omdat /start/complete die wire-waarde post — staan nu op één plek, bij
+ * `tierFor()` in src/data/pricing.js. */
 
 function redirect(location, status = 303) { return new Response(null, { status, headers: { Location: location } }); }
 
@@ -2412,7 +2435,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
          <strong>VAT: ${esc(v.treatment)}</strong> at ${Math.round(v.rate * 100)}%${gate.quote ? ` — net ${(gate.quote.netCents / 100).toFixed(2)}, VAT ${(gate.quote.vatCents / 100).toFixed(2)}, charged ${(gate.quote.grossCents / 100).toFixed(2)}` : ''}<br>
          Reason: ${esc(v.reason)}${top.country ? ` · country ${esc(top.country)}` : ''}
          ${vies ? `<br>VIES: ${vies.ok ? (vies.valid ? 'valid' : 'INVALID') : `unreachable (${esc(vies.error || '?')})`}${vies.consultation ? ` · consultation ${esc(vies.consultation)}` : ''}${vies.name ? ` · ${esc(vies.name)}` : ''}` : ''}
-         ${v.reason === 'eu-unconfirmed' ? '<br><strong>Charged 21% to an EU customer who gave a number we could not confirm. Worth a look before the invoice.</strong>' : ''}
+         ${v.reason === 'eu-unconfirmed' ? `<br><strong>Charged ${vatPercent()} to an EU customer who gave a number we could not confirm. Worth a look before the invoice.</strong>` : ''}
        </p>`
     : '';
 
@@ -2669,8 +2692,8 @@ export function customerEmail(lang, ref, service, name,
         : `${net} excl. VAT &middot; no European VAT<br>You are outside the EU, so this supply falls outside European VAT.`;
     }
     return nl
-      ? `${net} excl. btw &middot; incl. 21% btw`
-      : `${net} excl. VAT &middot; incl. 21% VAT`;
+      ? `${net} excl. btw &middot; incl. ${vatPercent()} btw`
+      : `${net} excl. VAT &middot; incl. ${vatPercent()} VAT`;
   };
 
   const payBlock = (pay && quote)

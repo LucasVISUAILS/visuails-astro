@@ -354,8 +354,15 @@ const c = COPY[lang];
 
 <!-- HERO -->
 <section class="hero-editorial compact">
-  <div class="bg" style="background-image:url('/img/banners-04.webp')"></div>
-  <div class="fade"></div>
+  {/* De foto en de sluier zitten in een STILLE vloer. Het masker dat de
+      onderrand laat oplossen hangt daaraan en niet aan .bg zelf: die laag
+      schuift met de parallax, en een masker schuift met zijn element mee —
+      dan valt de uitdoving naast de rand die ze moet oplossen. */}
+  <div class="hero-vloer rand-los-voet" aria-hidden="true">
+    <div class="bg" style="background-image:url('/img/banners-04.webp')"></div>
+    <div class="fade"></div>
+  <div class="korrel-mee" aria-hidden="true"></div>
+  </div>
   <div class="hero-editorial-content container">
     <h1 class="display" data-split-lines>{c.h1a}<br />{c.h1b}<em>{c.h1em}</em>{c.h1c}</h1>
     <p class="lead" style="margin-top:1.2rem;max-width:60ch">{c.lead}</p>

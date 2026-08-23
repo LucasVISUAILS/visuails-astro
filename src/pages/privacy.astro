@@ -1,5 +1,18 @@
 ---
 import { WHATSAPP_DISPLAY, waHref } from '../data/whatsapp.js';
+// ── DE BEWAARTERMIJNEN ZIJN CONSTANTEN GEWORDEN — 23 augustus 2026 ─────────
+// §6 en §9 typten 90 en 12 met de hand. terms.astro en de verwerkersovereenkomst
+// waren hier al van af; deze pagina en cookie-policy zijn toen overgeslagen, en
+// dat is juist de verkeerde volgorde — de privacyverklaring is de tekst waar een
+// bezoeker de termijn opzoekt.
+//
+// DRIE CONSTANTEN EN NIET ÉÉN, want twee ervan zijn toevallig allebei 90 en
+// betekenen iets anders: UPLOAD_DAYS is hoe lang het bronmateriaal blijft staan
+// en PORTAL_TTL_DAYS is hoe lang de privélink werkt. Wie ze door elkaar haalt,
+// schrijft de ene termijn op de plek van de andere zodra er één verschuift.
+import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
+import { PORTAL_TTL_DAYS } from '../lib/token.js';
+
 // VISUAILS — Privacy Policy. Ported from the SvelteKit privacy page (itself
 // ported from static /privacy.html). Legal pages are deliberately
 // plain/scannable, not "designed" — no reveal animations or kickers, per the
@@ -136,9 +149,9 @@ import Layout from '../layouts/Layout.astro';
       <h2>6. How long we keep your data</h2>
       <p>We keep your data only as long as it is needed. Three of those periods are fixed, because they are the three that affect you directly:</p>
       <ul>
-        <li><strong>Source material</strong> — the product photos and files you upload are deleted 90 days after your order closes. If you need us to keep them longer, ask us in writing before then and we will agree it with you.</li>
-        <li><strong>Delivered visuals</strong> — we keep your finished visuals for 12 months from delivery, so a delivery outlives the material it was made from. Keep your own copy: after 12 months we cannot guarantee a re-download.</li>
-        <li><strong>Your order link</strong> — the private link you download from works for 90 days after your order closes, then it stops. That is shorter than the 12 months on purpose: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
+        <li><strong>Source material</strong> — the product photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask us in writing before then and we will agree it with you.</li>
+        <li><strong>Delivered visuals</strong> — we keep your finished visuals for {DELIVERY_MONTHS} months from delivery, so a delivery outlives the material it was made from. Keep your own copy: after {DELIVERY_MONTHS} months we cannot guarantee a re-download.</li>
+        <li><strong>Your order link</strong> — the private link you download from works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. That is shorter than the {DELIVERY_MONTHS} months on purpose: a link that opens your files should not sit live in an inbox forever. If you need the files after it expires, email us and we will send a new link.</li>
       </ul>
       <p>Correspondence about an order is kept for as long as it is useful for that order and any follow-up. Invoicing and tax records are kept for as long as Dutch and EU law requires. When data is no longer needed, we delete or anonymise it.</p>
 
@@ -166,7 +179,7 @@ import Layout from '../layouts/Layout.astro';
         <li><strong>We do not store it.</strong> Our database holds only a one-way SHA-256 fingerprint of the address, never the address itself. It cannot be read back out of our systems — not by us, and not by anyone who obtained a copy of the database.</li>
         <li><strong>It stays out of other people’s records.</strong> Pages at that address ask search engines not to index, follow or archive them, send no referrer to any site you click through to, and are not stored by shared caches.</li>
         <li><strong>It cannot be attacked by volume.</strong> We rate-limit requests to it, so guessing at scale fails before it starts.</li>
-        <li><strong>It ends, and it can be replaced.</strong> The address stops working 90 days after your order closes (see §6). If it ever goes somewhere it should not have, tell us: we retire that address and issue you a new one, and the old one stops working immediately.</li>
+        <li><strong>It ends, and it can be replaced.</strong> The address stops working {PORTAL_TTL_DAYS} days after your order closes (see §6). If it ever goes somewhere it should not have, tell us: we retire that address and issue you a new one, and the old one stops working immediately.</li>
       </ul>
 
       <h2>10. How to contact us</h2>

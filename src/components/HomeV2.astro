@@ -1201,16 +1201,30 @@ const nl = lang === 'nl';
          aria-roledescription={c.heroCarouselName}
          aria-label={c.heroCarouselName}>
 
-  {/* ── DE FOTO'S ────────────────────────────────────────────────────────────
+  {/* ── EEN ANDERE FOTO KRIJGT EEN ANDERE NAAM — 22 augustus 2026 ───────────
+      Dit beeld heette `brand-car`. Toen het door een andere opname uit dezelfde
+      reeks werd vervangen bleef die naam staan, en dat is precies één keer te
+      doen: `public/_headers` geeft /img/* zeven dagen cache omdat een vaste naam
+      dáár vaste inhoud betekent. Na de deploy stond de HTML goed — de alt-tekst
+      klopte — en kwam de foto uit de cache van de browser en de rand van
+      Cloudflare. Lucas zag de oude achtergrond op een site die volgens elke
+      meting in orde was.
+
+      Dus: vervang je een beeld door een ANDER beeld, geef het dan een andere
+      naam. Zelfde foto opnieuw uitgesneden of anders gecomprimeerd mag onder de
+      oude naam blijven; een andere opname niet. `-lens` staat voor waar deze
+      zich van de vorige onderscheidt: hij kijkt in de lens.
+
+      ── DE FOTO'S ────────────────────────────────────────────────────────────
       Eén <img> per dia, allemaal in de DOM en over elkaar heen. Alleen de
       eerste krijgt fetchpriority="high" en decoding="sync" — dat is het beeld
       dat de Largest Contentful Paint bepaalt en het enige dat de bezoeker in de
       eerste seconde ziet. De andere vier staan op lazy: ze mogen de eerste
       render niet vertragen voor een dia die pas na zeven seconden komt. */}
-  <div class="hv-hero-bg">
+  <div class="hv-hero-bg rand-los-voet">
     {c.heroSlides.map((sl, i) => (
       <img
-        src={i === 0 ? '/img/brand-car.webp' : SERVICE_IMG[sl.img].src}
+        src={i === 0 ? '/img/brand-car-lens.webp' : SERVICE_IMG[sl.img].src}
         alt={i === 0 ? c.heroAlt : `${sl.card} — ${sl.h}`}
         width={i === 0 ? 2048 : SERVICE_IMG[sl.img].w}
         height={i === 0 ? 1152 : SERVICE_IMG[sl.img].h}
@@ -1223,7 +1237,9 @@ const nl = lang === 'nl';
       />
     ))}
   </div>
-  <div class="hv-hero-scrim" aria-hidden="true"></div>
+  <div class="hv-hero-scrim rand-los-voet" aria-hidden="true"></div>
+  {/* De korrel van de paginagrond loopt door over de foto — zie .korrel-mee. */}
+  <div class="korrel-mee rand-los-voet" aria-hidden="true"></div>
 
   <div class="container hv-hero-inner">
     {/* ── DIA 1 · DE BELOFTE ──────────────────────────────────────────────
@@ -1367,7 +1383,17 @@ const nl = lang === 'nl';
 {/* De band die de hero opvangt. `--fl-h` klein en alleen de bovenrand telt:
     wat hier moet gebeuren is dat het licht van de foto hierboven niet stopt bij
     de onderrand van de hero. Zie .foto-licht in global.css. */}
-<section class="band-chapter well-deep foto-licht" style="--fl-o: .7; --fl-h: 22%; --fl-x: 46%;">
+{/* ── DE GLOED HIER IS ÉÉN PLAS EN GEEN TWEE SPOTS — 23 augustus 2026 ────
+    Lucas: *"Ik vind de spotlights bij de eerstvolgende sectie in het midden
+    niet zo mooi en wat generiek, deze kunnen wat subtieler geplaatst worden."*
+
+    Deze band heeft als enige met `.foto-licht` GEEN foto. De gloed had hier dus
+    ook geen bron in beeld, en twee gespiegelde ellipsen recht boven elkaar op
+    46 procent breedte lazen daardoor als raster in plaats van als licht.
+    `.foto-licht-enkel` haalt de tweede weg; wat overblijft is één brede, zwakke
+    plas rechts van het midden, laag in de band. Zie de noot bij .foto-licht-laag
+    in global.css. */}
+<section class="band-chapter well-deep foto-licht foto-licht-enkel" style="--fl-o: .45; --fl-w: 88%; --fl-h: 30%; --fl-x: 63%; --fl-y: 66%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
   <div class="container">
     <div class="statement statement-left statement-split hv-ba-head">
@@ -1882,7 +1908,7 @@ const nl = lang === 'nl';
           een derde <h2> in deze band zou de koppenboom van de pagina laten
           zeggen dat er hier drie onderwerpen staan. */}
       <div class="hv-sub-right">
-        <div class="lime-plate">
+        <div class="lime-plate plaat-vol">
           <p class="hv-sub-from">{c.subFrom}</p>
           <p class="hv-sub-fig">{euro(PLAN_FROM, lang)}</p>
           <p class="hv-sub-unit">{c.subUnit}</p>
@@ -2124,9 +2150,6 @@ const nl = lang === 'nl';
     The claim is deliberately about perception rather than results ("looks like
     a brand that has its act together", not "sells more"), because a conversion
     claim here would be a number this studio cannot yet evidence. */}
-{/* .ground-blend sits at z-index -1, which is the same layer as .hv-dream-scrim
-    and later in the DOM, so it paints over the scrim and under the copy. The
-    photograph is at -2 and stays below both. */}
 {/* ── DE FOTO IS EEN MERKBEELD GEWORDEN — 22 augustus 2026 ────────────────
     Hier stond /img/lifestyle-glow-06.webp: een gestylede lifestyle-scène uit de
     Glow-stijl. Prima beeld, verkeerde band. Deze band is de enige op de pagina
@@ -2142,10 +2165,11 @@ const nl = lang === 'nl';
 
     De sluier eroverheen (.hv-dream-scrim) staat er al en is niet aangepast; de
     leesbaarheidsmeting bevestigt dat de kop en de knop erop blijven kloppen. */}
-<section class="hv-dream ground-blend foto-licht" style="--fl-o: .9; --fl-x: 58%;">
+<section class="hv-dream foto-licht" style="--fl-o: .9; --fl-x: 58%; --fl-y: 74%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
-  <img class="hv-dream-bg" src="/img/brand-stair.webp" alt={c.dreamAlt} width="1872" height="1248" loading="lazy" decoding="async" />
-  <div class="hv-dream-scrim" aria-hidden="true"></div>
+  <img class="hv-dream-bg rand-los" src="/img/brand-stair.webp" alt={c.dreamAlt} width="1872" height="1248" loading="lazy" decoding="async" />
+  <div class="hv-dream-scrim rand-los" aria-hidden="true"></div>
+  <div class="korrel-mee rand-los" aria-hidden="true"></div>
   <div class="container hv-dream-inner">
     <p class="hv-kicker">{c.dreamKicker}</p>
     <h2 class="hv-dream-h">{c.dreamH}</h2>
@@ -2324,6 +2348,28 @@ const nl = lang === 'nl';
     De figuur zelf is ongewijzigd: getekend uit dezelfde componenten als het
     echte scherm, met verzonnen gegevens en het woord "voorbeeld" erin. Nooit
     een bestaand adres, nooit een echt bedrijf — zie de kop van FigDash.astro. */}
+{/* ── EEN HEEL ZACHTE KLEUR ONDER HET SCHERM — 23 augustus 2026 ──────────
+    Lucas: *"Ook zou ik een hele subtiele achtergrond kleur willen bij het
+    VISUAILS dashboard blok, kies hiervoor ook een sfeer beeld dat in de
+    bestanden staat."*
+
+    Het beeld is de staart van de lichtbundel uit de aangeleverde reeks, laag
+    uitgesneden en zwaar verzacht (`--straal -1`, dus nergens scherp) — er is
+    geen onderwerp meer in te herkennen, alleen richting. Dat is met opzet: dit
+    moet een KLEUR worden en geen tweede foto op de pagina.
+
+    Hij ligt IN het blok en niet in de band eromheen. Dat is wat Lucas vraagt —
+    het blok krijgt de kleur — en het is ook het enige wat werkt: `.hv-dash-row`
+    schildert `var(--bg)` en dekt dus alles af wat de band eronder zou doen. Een
+    sfeerbeeld achter een dekkend paneel is een sfeerbeeld dat niemand ziet.
+
+    Hij loopt van linksonder naar rechtsboven, dus het licht komt aan waar het
+    scherm staat en de kolom met tekst blijft in het donker. Dekking .28 met een
+    strijksluier eroverheen; leesbaar.mjs meet of dat klopt en niet mijn oog.
+
+    Zelfde constructie als elke andere fotoband sinds vandaag: de laag dooft aan
+    zijn eigen randen uit (`.rand-los`) en de korrel van de grond loopt eroverheen
+    door (`.korrel-mee`), zodat de band nergens als een aparte plaat begint. */}
 <section class="band-chapter well-deep">
   <div class="container">
     <div class="statement statement-left statement-split">
@@ -2336,7 +2382,10 @@ const nl = lang === 'nl';
           staan vier panelen in en het smalste ervan heeft vier fotokolommen.
           FigDash meet zijn eigen breedte met een container query, dus hij
           stapelt netjes zodra de kolom smal wordt. */}
-      <div class="hv-dash-row is-showcase">
+      <div class="hv-dash-row is-showcase hv-dash-band">
+        <img class="hv-dash-bg rand-los" src="/img/brand-desk.webp" alt="" aria-hidden="true" width="1280" height="720" loading="lazy" decoding="async" />
+        <div class="hv-dash-scrim rand-los" aria-hidden="true"></div>
+        <div class="korrel-mee rand-los" aria-hidden="true"></div>
         <div class="hv-dash-copy">
           <h3>{c.dashPortalK}</h3>
           <p>{c.dashPortalN}</p>
@@ -2591,10 +2640,11 @@ const nl = lang === 'nl';
 
     `.beam` blijft bestaan en staat nog op de paginakoppen van /pricing en
     /start, waar geen foto ligt. */}
-<section class="band-chapter hv-close mark-depth hv-close-lit foto-licht" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%; --fl-o: .8; --fl-x: 44%;">
+<section class="band-chapter hv-close mark-depth hv-close-lit foto-licht" style="--md-o: .12; --md-w: min(38%, 30rem); --md-r: -8%; --md-b: -20%; --fl-o: .8; --fl-x: 44%; --fl-y: 72%;">
   <div class="foto-licht-laag" aria-hidden="true"></div>
-  <img class="hv-close-bg" src="/img/brand-pool.webp" alt="" aria-hidden="true" width="1600" height="900" loading="lazy" decoding="async" />
-  <div class="hv-close-scrim" aria-hidden="true"></div>
+  <img class="hv-close-bg rand-los" src="/img/brand-pool.webp" alt="" aria-hidden="true" width="1600" height="900" loading="lazy" decoding="async" />
+  <div class="hv-close-scrim rand-los" aria-hidden="true"></div>
+  <div class="korrel-mee rand-los" aria-hidden="true"></div>
   {/* Het merk als diepte achter deze band — zie .mark-depth in global.css. Een
       lijntekening op 12%, geen grond. */}
   <div class="mark-depth-lay" aria-hidden="true">
@@ -2980,8 +3030,19 @@ var vOpruim = (function () {
      clamp(4.5rem, 9vw, 9rem) block padding, and on a full-bleed hero that
      lands as 130px of dead photograph under the plinth — measured, not
      guessed. A hero is not a band and does not take a band's rhythm. */
-  .hv-hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; margin-top: -76px; padding: 76px 0 0; isolation: isolate; background: var(--ink-900); }
+  /* `background: var(--ink-900)` stond hier en is 23 augustus 2026 weggehaald:
+     een dekkende --bg-0 is een deksel over de verlichting van body::before, en
+     de onderrand van deze hero dooft nu uit naar de ECHTE paginagrond in plaats
+     van naar een geschilderde benadering ervan. Zie `.rand-los` in global.css. */
+  .hv-hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; margin-top: -76px; padding: 76px 0 0; isolation: isolate; }
   .hv-hero-bg { position: absolute; inset: 0; z-index: -2; }
+  /* DE FOTO DOOFT DIEP UIT, DE SLUIER PAS LAAT. Twee verschillende hoogtes en
+     dat is met opzet: in de band waar de foto wegvalt blijft de sluier op volle
+     sterkte staan, zodat de grond onder de laatste regel tekst alleen maar
+     donkerder wordt en nooit lichter. Andersom — sluier eerst weg — zou de foto
+     daar onverzacht komen bloot te liggen, precies onder de knoppen. */
+  .hv-hero-bg   { --los: clamp(5rem, 14vh, 11rem); }
+  .hv-hero-scrim { --los: clamp(1.6rem, 4vh, 3.2rem); }
   .hv-hero-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 26%; }
   /* ── DE OVERGANG TUSSEN DIA'S ─────────────────────────────────────────────
      Kruislings vervagen en niet schuiven. Schuiven verplaatst een foto van 2200
@@ -4245,8 +4306,12 @@ var vOpruim = (function () {
      count. The scrim is horizontal rather than the hero's vertical one so the
      photograph stays open on the right where there is no copy over it — the
      picture is the argument, the text just names it. */
-  .hv-dream { position: relative; isolation: isolate; overflow: hidden; display: grid; align-items: center; min-height: min(84svh, 44rem); padding-block: clamp(4.5rem, 10vw, 8rem); background: var(--ink-900); }
-  .hv-dream-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+  /* Geen `background: var(--ink-900)` meer, en geen `.ground-blend`: de foto
+     dooft aan zijn eigen boven- en onderrand uit en de paginagrond loopt
+     eronder gewoon door. Zie `.rand-los` in global.css. */
+  .hv-dream { position: relative; isolation: isolate; overflow: hidden; display: grid; align-items: center; min-height: min(84svh, 44rem); padding-block: clamp(4.5rem, 10vw, 8rem); }
+  .hv-dream-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; --los: clamp(4rem, 9vw, 9rem); }
+  .hv-dream-scrim { --los: clamp(1.4rem, 3vw, 2.6rem); }
   .hv-dream-scrim { position: absolute; inset: 0; z-index: -1; background:
     linear-gradient(90deg, rgb(var(--scrim) / 0.94) 0%, rgb(var(--scrim) / 0.78) 44%, rgb(var(--scrim) / 0.24) 100%); }
   .hv-kicker { margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fill-blue); }
@@ -4442,13 +4507,54 @@ var vOpruim = (function () {
     opacity: .55;
     pointer-events: none;
   }
+  /* DE BOVEN- EN ONDERSTOP GINGEN NAAR DEKKEND --bg-0, en dat was een naad in
+     vermomming: een rij dekkend #08090B (9) op een pagina die daar 15 tot 20
+     staat. De sluier trekt zijn randen nu naar TRANSPARANT en de foto eronder
+     dooft mee uit — dan is de rand van deze band de paginagrond zelf en niet
+     een kleur die erop lijkt. */
   .hv-close-scrim {
     position: absolute; inset: 0; z-index: -1;
     pointer-events: none;
+    --los: clamp(1.4rem, 3vw, 2.6rem);
     background:
-      linear-gradient(to bottom, var(--bg-0) 0%, rgb(8 9 11 / 0.45) 26%, rgb(8 9 11 / 0.45) 74%, var(--bg-0) 100%),
+      linear-gradient(to bottom, rgb(8 9 11 / 0.72) 0%, rgb(8 9 11 / 0.45) 26%, rgb(8 9 11 / 0.45) 74%, rgb(8 9 11 / 0.72) 100%),
       radial-gradient(72% 62% at 50% 52%, rgb(8 9 11 / 0.62), rgb(8 9 11 / 0.30) 70%, transparent 100%);
   }
+  .hv-close-bg { --los: clamp(4rem, 9vw, 9rem); }
+  /* ── DE ZACHTE KLEUR ONDER DE DASHBOARDBAND ──────────────────────────────
+     Zie de noot bij de markup. Drie lagen, dezelfde volgorde als bij de andere
+     fotobanden: beeld op -2, sluier op -1, korrel er als laatste overheen. De
+     inhoud staat in de normale stroom en komt daar vanzelf bovenop, want de
+     band isoleert. */
+  .hv-dash-band { position: relative; isolation: isolate; overflow: hidden; }
+  /* De uitdoving is hier korter dan bij een schermbrede band: dit blok is
+     ongeveer 500px hoog en 9rem uitdoving zou er bijna het hele blok van maken. */
+  .hv-dash-band .rand-los { --los: clamp(2rem, 4vw, 3.5rem); }
+  .hv-dash-bg {
+    position: absolute; inset: 0; z-index: -2;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    /* De bundel komt laag links binnen en eindigt rechts, onder het scherm. */
+    object-position: 58% 64%;
+    opacity: .28;
+    pointer-events: none;
+  }
+  .hv-dash-scrim {
+    position: absolute; inset: 0; z-index: -1;
+    pointer-events: none;
+    /* Strijklicht van links: donker waar de kop en de alinea staan, open waar
+       het scherm staat. Dezelfde vorm als de sluier op de hero. */
+    background:
+      linear-gradient(96deg, rgb(var(--scrim) / 0.88) 0%, rgb(var(--scrim) / 0.66) 30%, rgb(var(--scrim) / 0.34) 58%, rgb(var(--scrim) / 0.16) 100%),
+      linear-gradient(180deg, rgb(var(--scrim) / 0.30) 0%, transparent 34%, transparent 66%, rgb(var(--scrim) / 0.30) 100%);
+  }
+  /* Op een telefoon staat de tekst over de volle breedte en is een strijklicht
+     van links niet genoeg: daar gaat de sluier over de hele band. */
+  @media (max-width: 900px) {
+    .hv-dash-scrim { background: linear-gradient(180deg, rgb(var(--scrim) / 0.72) 0%, rgb(var(--scrim) / 0.58) 52%, rgb(var(--scrim) / 0.72) 100%); }
+    .hv-dash-bg { opacity: .22; }
+  }
+
   /* ── het abonnement ──────────────────────────────────────────────────────
      Tekst links, het bedrag op een plaat rechts. Dat is dezelfde tweedeling
      als de proefvisualband eronder gebruikt, met opzet: de twee banden vragen

@@ -336,8 +336,15 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
     licht beton) en heeft een zwaardere sluier nodig dan de andere twee hero's.
     Zie de noot bij .hero-bright in global.css voor de gemeten waarden. */}
 <section class="hero-editorial compact hero-bright">
-  <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
-  <div class="fade"></div>
+  {/* De foto en de sluier zitten in een STILLE vloer. Het masker dat de
+      onderrand laat oplossen hangt daaraan en niet aan .bg zelf: die laag
+      schuift met de parallax, en een masker schuift met zijn element mee —
+      dan valt de uitdoving naast de rand die ze moet oplossen. */}
+  <div class="hero-vloer rand-los-voet" aria-hidden="true">
+    <div class="bg" style="background-image:url('/img/banners-03.webp')"></div>
+    <div class="fade"></div>
+  <div class="korrel-mee" aria-hidden="true"></div>
+  </div>
   <div class="hero-editorial-content container">
     <!-- The page label every other page component already prints. See
          CatalogPage.astro's own note: this and /catalog were the two service

@@ -46,6 +46,13 @@
 
 /** Het land waar VISUAILS gevestigd is. Alles draait om "is de klant hier of
  *  niet", dus dat staat als constante en niet als losse vergelijking. */
+/* ── HET TARIEF KOMT UIT PRICING.JS — 23 augustus 2026 ─────────────────────
+ * Dit bestand beslist WELKE BEHANDELING een bestelling krijgt (standaard,
+ * verlegd, buiten bereik). Het HOOGTE-getal hoort daar niet bij: dat staat in
+ * src/data/pricing.js en werd hier twee keer als 0.21 overgetypt, plus nog eens
+ * drie keer als "21%" in een zin. Vijf plekken die het tarief niet kenden. */
+import { VAT_RATE, vatPercent } from './pricing.js';
+
 export const HOME_COUNTRY = 'NL';
 
 /**
@@ -201,7 +208,7 @@ export function vatDecision({ country, vatValid }) {
   // 1 · Home. The closed-list rule: no domestic reverse charge for this trade,
   //     whatever the customer typed in the VAT box.
   if (!up || up === HOME_COUNTRY) {
-    return { treatment: VAT_TREATMENT.standard, rate: 0.21, reason: up ? 'domestic' : 'no-country' };
+    return { treatment: VAT_TREATMENT.standard, rate: VAT_RATE, reason: up ? 'domestic' : 'no-country' };
   }
 
   // 2 · Outside the EU. No Dutch VAT, and no reverse charge either.
@@ -213,7 +220,7 @@ export function vatDecision({ country, vatValid }) {
   if (vatValid === true) {
     return { treatment: VAT_TREATMENT.reverseCharge, rate: 0, reason: 'vies-valid' };
   }
-  return { treatment: VAT_TREATMENT.standard, rate: 0.21, reason: 'eu-unconfirmed' };
+  return { treatment: VAT_TREATMENT.standard, rate: VAT_RATE, reason: 'eu-unconfirmed' };
 }
 
 /**
@@ -245,7 +252,7 @@ export function vatShort(treatment, lang) {
   const nl = lang === 'nl';
   if (treatment === VAT_TREATMENT.reverseCharge) return nl ? 'Btw verlegd' : 'Reverse charge';
   if (treatment === VAT_TREATMENT.outsideScope) return nl ? 'Geen Nederlandse btw' : 'No Dutch VAT';
-  return nl ? '21% btw' : '21% VAT';
+  return nl ? `${vatPercent()} btw` : `${vatPercent()} VAT`;
 }
 
 /**
@@ -335,13 +342,13 @@ export function vatGate({ country, treatment, vatValid, vatError, confirmed, had
   //     krijgt een rekening met btw die hij misschien niet verwachtte, en dat
   //     wil je weten voordat hij mailt.
   if (vatValid === null && hadNumber && up && up !== HOME_COUNTRY && isEu(up)) {
-    reasons.push(`VIES gaf geen antwoord (${vatError || 'onbekend'}) — 21% gerekend op een nummer dat misschien klopt`);
+    reasons.push(`VIES gaf geen antwoord (${vatError || 'onbekend'}) — ${vatPercent()} gerekend op een nummer dat misschien klopt`);
   }
 
   // 3 · Een EU-nummer dat VIES afkeurde. Zelfde bedrag, andere oorzaak: hier
   //     heeft de klant iets verkeerd ingevuld, en één mailtje lost het op.
   if (vatValid === false && hadNumber) {
-    reasons.push('VIES keurde het btw-nummer af — 21% gerekend');
+    reasons.push(`VIES keurde het btw-nummer af — ${vatPercent()} gerekend`);
   }
 
   // 4 · Verlegging zonder verklaring van de klant. Dit hoort niet te kunnen: het
