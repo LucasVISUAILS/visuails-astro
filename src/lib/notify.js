@@ -241,3 +241,61 @@ export async function notifyRevision(env, { orderId, fileId, note }) {
     console.error('[notify] revisiebericht niet verstuurd voor', orderId, '—', err?.message || err);
   }
 }
+
+/*
+ * ── EEN INCASSO DIE NIET DOORGING — 23 AUGUSTUS 2026 ────────────────────────
+ *
+ * Dit bericht bestond niet, en het gat eromheen was groter dan één mail. De
+ * webhook kende alleen het geslaagde pad voor een abonnement: een afschrijving die
+ * mislukte, viel door dezelfde poort als een mislukte bestelbetaling, zocht daar
+ * naar `metadata.order_ref` — die een abonnementsbetaling niet heeft — vond niets,
+ * en gaf Mollie een 200. Niets vastgelegd, niemand op de hoogte.
+ *
+ * De gevolgen zaten verderop: `cron/index.js` meldt gepauzeerde abonnementen aan
+ * Lucas en `src/lib/account.js` heeft een klanttekst voor "de laatste incasso
+ * mislukte", maar niets in de hele codebase schreef ooit `pause_reason =
+ * 'payment_failed'`. Twee schermen die wachtten op een toestand die niet kon
+ * ontstaan.
+ *
+ * ── WAAROM ER TWEE SOORTEN BERICHT ZIJN ─────────────────────────────────────
+ *
+ * `gestopt` is het verschil tussen "Mollie probeert het morgen weer" en "Mollie is
+ * ermee gestopt". Alleen het tweede is een ding waar jij iets mee moet, en dat
+ * staat dan ook in de onderwerpregel — anders leest de derde herhaling van een
+ * poging die vanzelf goed komt als een noodgeval.
+ */
+export async function notifySubscriptionFailed(env, {
+  subRef, plan, brand, email, reason = '', bedragCents = 0, gestopt = false, molliestatus = '',
+}) {
+  try {
+    const ref = subRef || '(zonder kenmerk)';
+    await toStudio(
+      env,
+      gestopt
+        ? `Abonnement gepauzeerd · ${ref} · incasso mislukt`
+        : `Incasso niet gelukt · ${ref}`,
+      [
+        h1(gestopt ? 'Een abonnement staat stil' : 'Een incasso ging niet door', ref),
+        mailRows([
+          ['Abonnement', ref],
+          ['Klant', brand || email || '—'],
+          ['E-mail', email || ''],
+          ['Plan', plan || ''],
+          ['Bedrag', cents(bedragCents)],
+          ['Wat Mollie zei', reason || 'onbekend'],
+          ['Status bij Mollie', molliestatus || 'onbekend'],
+        ]),
+        gestopt
+          ? mailP('Mollie probeert het niet meer, dus het abonnement is hier op pauze gezet. '
+            + 'De klant kan zolang niets van zijn saldo besteden. Zodra er wél een afschrijving '
+            + 'lukt, loopt het vanzelf weer — daar hoef jij niets voor te doen. Wat wél helpt: '
+            + 'één bericht aan de klant dat zijn rekening het niet deed.')
+          : mailP('Mollie probeert het binnenkort opnieuw. Het abonnement loopt gewoon door en '
+            + 'de klant merkt hier niets van. Dit bericht is er zodat je het ziet aankomen — '
+            + 'komt hij nog een keer, dan is er iets met de rekening van de klant.'),
+      ].join('')
+    );
+  } catch (err) {
+    console.error('[notify] incassobericht niet verstuurd voor', subRef, '—', err?.message || err);
+  }
+}

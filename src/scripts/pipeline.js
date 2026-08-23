@@ -207,6 +207,10 @@ import {
 // off this import reaches the screen: every label, placeholder and option name
 // is read out of the config blob like everything else on this page.
 import { PRODUCT_QUESTIONS } from '../data/attributes.js';
+/* Het oordeel over een aangeleverde foto staat naast de drempels in shots.js,
+   zodat het te toetsen is zonder een browser. Het METEN staat hier, want daar
+   zijn de pixels — zie meetBeeld(). */
+import { keurBeeld } from '../data/shots.js';
 // De EU-lijst staat op één plek. Hem hier overtypen zou betekenen dat het
 // formulier en de server het ooit oneens worden over of een land in de EU zit,
 // en dan biedt het formulier 0% aan waar de server 21% rekent.
@@ -1875,7 +1879,11 @@ function syncLevel(attended, chosen) {
  * line and used during init has to follow the same rule.
  */
 function EMPTY_SLOT() {
-  return { status: 'empty', file: null, key: '', url: '', msg: '', pct: 0, thumb: false, tries: 0 };
+  /* `let` is de beeldkeuring: een zin die naast het vakje komt te staan zonder
+     de upload tegen te houden. Apart van `msg`, want die wordt overschreven
+     door elke voortgangsstap en de melding hoort te blijven staan als het
+     bestand allang binnen is. Zie keurBeeld(). */
+  return { status: 'empty', file: null, key: '', url: '', msg: '', let: '', pct: 0, thumb: false, tries: 0 };
 }
 
 function shotLabel(id) {
@@ -3155,7 +3163,13 @@ function paintSlot(card, id) {
   const fill = el.bar.querySelector('i');
   if (fill) fill.style.transform = `scaleX(${Math.max(0, Math.min(100, s.pct)) / 100})`;
   el.bar.hidden = !s.file;
-  el.msg.textContent = s.msg || '';
+  /* De voortgangsmelding en de beeldkeuring samen op één regel, met de keuring
+     achteraan: `msg` gaat over wat er NU gebeurt ("versturen…") en verdwijnt,
+     de keuring gaat over de foto zelf en blijft. Een tweede regel eronder zou
+     elk vakje in de kaart een regel hoger maken, ook de vakjes waar niets aan
+     de hand is. */
+  el.msg.textContent = [s.msg, s.let].filter(Boolean).join(' · ');
+  el.wrap.dataset.let = s.let ? '1' : '';
 
   const filled = !!s.file;
   /* Alleen als er iets te herhalen IS. Een knop op een vakje dat aan het versturen
@@ -3432,6 +3446,40 @@ function placeFile(card, id, file) {
   s.status = 'sending';
   s.msg = c('upload.sending');
   paintSlot(card, id);
+
+  /* ── DE BEELDKEURING LOOPT NAAST DE UPLOAD EN NIET ERVOOR ──────────────────
+   *
+   * Meten kost op een telefoon een fractie van een seconde, en die fractie voor
+   * élk bestand vóór het versturen is bij dertig producten een merkbare pauze op
+   * de stap waar de klant al het langst zit. De upload begint dus meteen; de
+   * meting landt erna en zet zijn zin erbij.
+   *
+   * TE KLEIN IS DE UITZONDERING, want dat weigert. Dan wordt de upload die net
+   * begon afgebroken — en dat is precies de reden dat het vakje op `failed`
+   * wordt gezet en `live()` in sendSlot() het antwoord daarna laat vallen: een
+   * bestand dat onderweg was toen de meting binnenkwam, mag niet alsnog als
+   * geslaagd verschijnen.
+   *
+   * Alles in een `catch` die niets doet. Een meting die omvalt, mag een upload
+   * die loopt niet raken. */
+  meetBeeld(file).then((maat) => {
+    if (card.slots[id] !== s || s.file !== file) return;
+    const oordeel = keurBeeld(maat, extOf(file.name), file.size);
+    if (!oordeel) return;
+    if (oordeel.hard) {
+      s.status = 'failed';
+      s.let = '';
+      s.msg = c('upload.err.te-klein', { min: oordeel.min, lang: oordeel.lang });
+      if (s.key) removeStaged(s.key);
+      s.key = '';
+      paintSlot(card, id);
+      refreshUploader();
+      return;
+    }
+    s.let = c(`upload.let.${oordeel.code}`);
+    paintSlot(card, id);
+  }).catch(() => {});
+
   chain = chain.then(() => sendSlot(card, id)).catch(() => {});
 }
 
@@ -3752,6 +3800,86 @@ function preflight(file, queued) {
     return { code: 'batch-full', max: Number(cfg.maxBatchFiles) };
   }
   return null;
+}
+
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * DE BEELDKEURING — 23 AUGUSTUS 2026
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * preflight() hierboven controleert het BESTAND: type, leeg, te groot, vakje vol.
+ * Geen van die vier zegt iets over de FOTO. Een screenshot van 40 kB van een
+ * webshop komt er zonder klacht doorheen, en dat wordt pas een gesprek als het
+ * werk terugkomt — precies het gesprek dat deze functie moet voorkomen.
+ *
+ * ── WAAROM DIT IN DE BROWSER GEBEURT EN NIET IN DE WORKER ───────────────────
+ *
+ * Omdat de pixels hier zijn. Een Cloudflare Worker krijgt bytes en zou een
+ * decoder nodig hebben om er een afbeelding van te maken — een afhankelijkheid,
+ * voor een controle die hier gratis is omdat de browser het beeld tóch al
+ * decodeert voor de miniatuur. En het is ook de goede plek: de klant hoort het
+ * op het moment dat hij nog een andere foto kan kiezen.
+ *
+ * DE SERVER BLIJFT DE POORT. Alles wat hier gebeurt is advies en weigering aan
+ * de voorkant; functions/api/upload.js blijft type, grootte en vakje bewaken,
+ * want een controle in de browser is een controle die uit te zetten is.
+ *
+ * ── ÉÉN WEIGERING EN TWEE MELDINGEN ─────────────────────────────────────────
+ *
+ * Te klein weigert; te donker en te ver gecomprimeerd melden alleen. Waarom dat
+ * onderscheid er is, staat bij de constanten in src/data/shots.js: een klep op
+ * een heuristiek is een klep die op een dinsdag een echte klant tegenhoudt.
+ *
+ * ── EN ALS HET METEN NIET LUKT, GAAT DE FOTO GEWOON MEE ─────────────────────
+ *
+ * createImageBitmap kent HEIC niet in elke browser, een canvas kan geweigerd
+ * worden, en een oude browser heeft de API helemaal niet. In al die gevallen
+ * geeft dit null terug en verandert er niets aan wat er gebeurt. Een klant
+ * buitensluiten omdat ONZE meting niet werkte, is de verkeerde kant om te
+ * falen — zelfde afweging als bij de mislukte incasso in de Mollie-webhook.
+ */
+async function meetBeeld(file) {
+  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return null;
+  let bm = null;
+  try {
+    bm = await createImageBitmap(file);
+  } catch (e) {
+    return null;
+  }
+  try {
+    const w = bm.width;
+    const h = bm.height;
+    if (!w || !h) return null;
+
+    /* VERKLEIND METEN, en niet op ware grootte. Een foto van 24 megapixel op een
+       canvas zetten om het gemiddelde uit te rekenen is honderd megabyte en een
+       merkbare hapering op een telefoon, voor een getal dat op 64 bij 64 tot drie
+       decimalen hetzelfde is. Het gemiddelde van een beeld verandert niet door
+       het te verkleinen — dat is precies wat verkleinen doet. */
+    const zij = 64;
+    const cv = document.createElement('canvas');
+    cv.width = zij;
+    cv.height = zij;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return { w, h, mean: null };
+    ctx.drawImage(bm, 0, 0, zij, zij);
+    const d = ctx.getImageData(0, 0, zij, zij).data;
+
+    /* Relatieve luminantie en niet het gemiddelde van R, G en B. Groen weegt
+       zeven keer zwaarder dan blauw in wat een oog helder noemt, en een blauw
+       vlak zou anders als donker wegkomen terwijl je het prima ziet. Dezelfde
+       coëfficiënten als luminance() in src/data/backgrounds.js. */
+    let som = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      som += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+    }
+    return { w, h, mean: som / (d.length / 4) };
+  } catch (e) {
+    return null;
+  } finally {
+    if (bm && typeof bm.close === 'function') bm.close();
+  }
 }
 
 function uploadError(code, body) {

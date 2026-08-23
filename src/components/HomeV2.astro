@@ -468,6 +468,22 @@ const COPY = {
        zin noemen zou het tweede laten klinken als iets dat vandaag meekomt, en
        dat is precies het soort belofte dat deze site nergens doet. */
     stockH: 'And a month that is already filled.',
+    /* ── DEZE REGEL DROEG GEEN LABEL EN DE REGEL ERONDER WEL — 23 AUG 2026 ──
+     *
+     * `stockSoon` staat er netjes bij met "With Editions"; `stockNow` stond er
+     * kaal, alsof de gedeelde bibliotheek vandaag meekomt met elk abonnement.
+     * Die bibliotheek bestaat niet: geen tabel in schema.sql, geen R2-map, geen
+     * route, en niets in de code leest STOCK_OFF_BRAND buiten deze band.
+     *
+     * Dat is een andere fout dan een pagina die te veel belooft. Dit staat in
+     * het blok waarmee een abonnement wordt verkocht, dus het is een toezegging
+     * binnen iets waarvoor betaald wordt — en de klant merkt pas dat het er niet
+     * is nadat hij de eerste maand heeft afgeschreven gekregen.
+     *
+     * Het label is de kleine ingreep, en de juiste: de belofte mag blijven staan
+     * als plan, hij mag alleen niet klinken als iets dat al loopt. Zie ook
+     * STOCK-IDEE.md, waar dit als onafgemaakt staat beschreven. */
+    stockNowTag: 'Not running yet',
     stockNow: [`${STOCK_OFF_BRAND} new stock visuals every month`, 'included with every plan, usable by any brand — something to post on the days you have no new product.'],
     /* ── GEEN GEZICHTEN IN EDITIONS — 20 augustus 2026 ─────────────────────
        Lucas: *"haal bij Editions weg dat de klant ook modellen kan kiezen, dat
@@ -945,6 +961,8 @@ const COPY = {
     subCta2: 'Vergelijk de abonnementen',
     // Zie de noot bij de Engelse stockH.
     stockH: 'En een maand die al gevuld is.',
+    // Zie de noot bij de Engelse stockNowTag.
+    stockNowTag: 'Nog niet actief',
     stockNow: [`${STOCK_OFF_BRAND} nieuwe stockbeelden per maand`, 'inbegrepen bij elk abonnement en bruikbaar voor elk merk — iets om te posten op de dagen dat je niets nieuws hebt.'],
     // Zie de noot bij de Engelse stockSoon.
     stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Ze komen met Editions en worden één keer per merk opgezet.'],
@@ -2063,8 +2081,8 @@ const nl = lang === 'nl';
             negentig woorden op een plek waar de lezer een aanbod aan het
             afwegen is. In een notitie blijft het staan zonder de band te
             verlengen — dezelfde afweging als bij de credit hierboven. */}
-        <div class="hv-stock-item">
-          <p class="hv-stock-n">{c.stockNow[0]} <Note lang={lang} term={c.stockNow[0]} wide>{c.stockNow[1]}</Note></p>
+        <div class="hv-stock-item is-soon">
+          <p class="hv-stock-n">{c.stockNow[0]} <em class="hv-soon-tag">{c.stockNowTag}</em> <Note lang={lang} term={c.stockNow[0]} wide>{c.stockNow[1]}</Note></p>
         </div>
         <div class="hv-stock-item is-soon">
           <p class="hv-stock-n">{c.stockSoon[0]} <em class="hv-soon-tag">{c.stockSoonTag}</em> <Note lang={lang} term={c.stockSoon[0]} wide>{c.stockSoon[1]}</Note></p>

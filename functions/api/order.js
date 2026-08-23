@@ -82,7 +82,7 @@ import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
-import { shell, h1, p, rows, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
+import { shell, h1, p, rows, quote, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
 /* PAYABLE_SERVICES en ladderKey stonden hier ook en zijn 23 augustus 2026
    weggehaald: ze werden alleen nog door de servercopie van tierFor() gebruikt,
@@ -461,10 +461,18 @@ export async function onRequestPost({ request, env, waitUntil }) {
       subject: lang === 'nl' ? 'Zo maak je de productfoto’s die wij nodig hebben' : 'How to shoot the product photos we need',
       html: subscriberEmail(lang),
     }));
+    /* Ook dit bericht zit sinds 23 augustus 2026 in het gedeelde briefhoofd —
+       zie de noot bij notifyEmail(). Twee regels HTML zijn te weinig om op te
+       vallen en precies genoeg om, als enige mail zonder afzenderherkenning,
+       in een spamfilter anders te scoren dan de rest. */
     await safe(() => sendMail(env, {
       to: env.NOTIFY_EMAIL || 'hello@visuails.com',
-      subject: `Checklist signup — ${email}`,
-      html: `<p>New checklist signup:</p><p><strong>${esc(email)}</strong></p>`,
+      subject: `Checklist-aanmelding — ${email}`,
+      html: shell({
+        lang: 'nl',
+        preheader: `Nieuwe checklist-aanmelding · ${email}`,
+        body: h1('Nieuwe checklist-aanmelding') + rows([['E-mail', esc(email)], ['Taal', lang === 'nl' ? 'Nederlands' : 'Engels']]),
+      }),
     }));
     const okUrl = back + (back.includes('?') ? '&' : '?') + 'ok=1';
     return wantsJson ? json({ ok: true, redirect: okUrl }) : redirect(okUrl);
@@ -481,7 +489,18 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await safe(() => sendMail(env, {
       to: env.NOTIFY_EMAIL || 'hello@visuails.com',
       subject: `Contact — ${name || email}`,
-      html: `<p>Contact message from <strong>${esc(name || email)}</strong> (${esc(email)}):</p><p>${esc(body).replace(/\n/g, '<br>')}</p>`,
+      html: shell({
+        lang: 'nl',
+        preheader: `Bericht van ${name || email}`,
+        body: h1('Een bericht via het contactformulier', esc(get('subject') || 'Contactformulier'))
+          + rows([
+            ['Van', esc(name || '—')],
+            ['E-mail', esc(email)],
+            ['Bedrijf', esc(brand || '')],
+            ['Telefoon', esc(phone || '')],
+          ])
+          + (body ? quote(esc(body).replace(/\n/g, '<br>')) : p('Er stond geen bericht bij.', { muted: true })),
+      }),
     }));
     const okUrl = back + (back.includes('?') ? '&' : '?') + 'ok=1';
     return wantsJson ? json({ ok: true, redirect: okUrl }) : redirect(okUrl);
@@ -2417,6 +2436,27 @@ function eventNote({ tier, window, raced, uploads, upgrade }) {
 /**
  * The studio's copy. This one is allowed to say things the client's must not —
  * what was asked for versus what was cleared, and loudly when those differ.
+ *
+ * ── EN HIJ ZIT SINDS 23 AUGUSTUS 2026 IN HETZELFDE BRIEFHOOFD ───────────────
+ *
+ * Dit was de laatste mail die als kale HTML de deur uit ging: een `<div>` met
+ * `font-family:system-ui` en verder niets. Elke andere mail in dit project —
+ * de bevestiging aan de klant, de factuur, de drie studioberichten in
+ * notify.js, het feedbackbericht — gaat door shell() in mailTemplate.js.
+ *
+ * DAT IS GEEN COSMETICA, EN DAAROM IS HET GEDAAN. De onderdelen van dit bericht
+ * werden hier met de hand nagebouwd: een eigen tabelopmaak, een eigen kop, een
+ * eigen kleur grijs. Elke keer dat er iets aan de opmaak veranderde, veranderde
+ * het overal behalve hier — en dat merk je niet, want dit is de mail die je
+ * zelf leest en waarvan je denkt dat hij zo hoort.
+ *
+ * De INHOUD blijft precies wat hij was. De banner, het btw-blok, de bestand-
+ * tabel en de tegenspraak-melding zijn eigen bouwsels die niets in de gedeelde
+ * onderdelen hebben zitten, en die blijven staan zoals ze waren; wat er
+ * omheen zit, is nu hetzelfde papier als de rest.
+ *
+ * `lang: 'nl'` staat vast en volgt niet de taal van de bestelling. Zelfde regel
+ * als toStudio() in notify.js: dit bericht heeft één lezer en die is Nederlands.
  */
 function notifyEmail(ref, service, top, details, gate = {}) {
   const rows = detailRows({ ...top, ...details });
@@ -2520,18 +2560,19 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     uploads ? `${esc(uploads)} uploaded file${uploads === 1 ? '' : 's'}` : null,
   ].filter(Boolean).join(' · ');
 
-  return `<div style="font-family:system-ui,Arial,sans-serif;color:#111">
-    ${banner}
+  return shell({
+    lang: 'nl',
+    preheader: `Nieuwe ${service}-bestelling · ${ref}${meta ? ` · ${products || ''}` : ''}`.trim(),
+    body: `${banner}
     ${vatBlock}
-    <h2 style="margin:0 0 8px">New ${esc(service)} order</h2>
-    <p style="margin:0 0 4px">Reference <strong>${esc(ref)}</strong></p>
-    ${meta ? `<p style="margin:0 0 12px;color:#666;font-size:13px">${meta}</p>` : ''}
+    ${h1(`Nieuwe ${service}-bestelling`, `Referentie ${esc(ref)}`)}
+    ${meta ? `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;color:#6B7078;font-size:13px">${meta}</p>` : ''}
     ${reserved}
     ${portalNote}
     ${upgradeNote}
-    <table style="border-collapse:collapse;font-size:14px">${rows}</table>
-    ${fileTable}
-  </div>`;
+    <table style="border-collapse:collapse;font-size:14px;font-family:Arial,Helvetica,sans-serif;color:#2D3138">${rows}</table>
+    ${fileTable}`,
+  });
 }
 
 /**

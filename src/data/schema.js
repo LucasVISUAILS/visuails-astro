@@ -25,7 +25,9 @@
 //   Product/Offer — what /pricing sells: the three ladder scopes, the three
 //                   monthly plans and the two add-ons; plus the test sample on
 //                   /test-sample. EN and NL (4 pages).
-//   FAQPage       — /faq and /pricing, EN and NL (4 pages).
+//   FAQPage       — /faq, /pricing, /catalog, /lifestyle en /video, EN en NL
+//                   (10 pagina's). De laatste drie sinds 23 augustus 2026; zie
+//                   de noot bij dienstVragen in buildGraph().
 //
 // MIGRATED TO THE LADDER AND THE PLANS (August 2026). This file used to build
 // its Offers out of PACKAGES and PER_PRODUCT — a Drop Pilot at a fixed count, a
@@ -76,7 +78,7 @@ import {
   plans, PLAN_AMOUNT,
   BRAND_MODEL_CREDIT_DROPS, euro,
 } from './pricing.js';
-import { pricingFaqs, faqPageItems } from './faq.js';
+import { pricingFaqs, faqPageItems, serviceFaqs } from './faq.js';
 import { WHATSAPP_NUMBER, waHref } from './whatsapp.js';
 
 export const SITE = 'https://visuails.com';
@@ -684,6 +686,21 @@ export function buildGraph({ path = '/', lang = 'en', url = SITE } = {}) {
   if (p === '/test-sample') nodes.push(testSampleNode(l, url));
   if (p === '/faq') nodes.push(faqNode(faqPageItems(l), l, url));
   if (p === '/pricing') nodes.push(faqNode(pricingFaqs(l), l, url));
+
+  /* ── DE DIENSTPAGINA'S HADDEN HUN VRAGEN NIET IN DE GRAPH — 23 AUG 2026 ────
+   *
+   * /catalog, /lifestyle en /video hebben samen twintig <summary>-vragen staan,
+   * en geen ervan was als FAQPage gemarkeerd: de kop van dit bestand zei
+   * "FAQPage — /faq and /pricing, EN and NL (4 pages)" en dat klopte. De reden
+   * was mechanisch en niet inhoudelijk — die vragen stonden in het COPY-object
+   * van de componenten, en dit bestand leest het pad en geen props.
+   *
+   * Nu ze in faq.js staan, is het één regel. serviceFaqs() geeft een lege lijst
+   * terug voor een pad dat geen vragen heeft, en een lege mainEntity is precies
+   * wat je niet wilt publiceren — vandaar de lengtecontrole en niet alleen de
+   * padvergelijking. */
+  const dienstVragen = serviceFaqs(p.replace(/^\//, ''), l);
+  if (dienstVragen.length) nodes.push(faqNode(dienstVragen, l, url));
 
   return { '@context': 'https://schema.org', '@graph': nodes };
 }

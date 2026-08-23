@@ -540,3 +540,249 @@ export function faqPageGroups(lang = 'en') {
 export function faqPageItems(lang = 'en') {
   return faqPageGroups(lang).flatMap((g) => g.items);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DE DIENSTVRAGEN — /catalog, /lifestyle en /video, EN en NL.
+//
+// ── WAAROM ZE HIERHEEN ZIJN VERHUISD, 23 AUGUSTUS 2026 ──────────────────────
+//
+// Ze stonden in het COPY-object van elk van de drie componenten. Daar deden ze
+// het prima als tekst en niets als gegeven: schema.js bouwt zijn graph uit het
+// PAD en niet uit een prop — met opzet, zodat geen enkel paginabestand kan
+// vergeten iets door te geven — en kan de frontmatter van een .astro-component
+// niet lezen. Netto stonden er twintig vragen op de site die Google niet als
+// FAQ zag, terwijl /faq en /pricing hun FAQPage-knoop wél hadden.
+//
+// De regel die hier al gold, staat boven faqNode() in schema.js: een Question
+// en de <summary> die een bezoeker leest zijn dezelfde string, zodat ze niet
+// uit elkaar kunnen lopen. Dat kan alleen als ze uit één module komen — deze.
+//
+// ── DE BEDRAGEN WORDEN HIER OPNIEUW UITGEREKEND EN NIET OVERGETYPT ──────────
+//
+// De componenten hadden `entry`, `floor`, `floorFrom`, `clip` en `t0` als
+// lokale constanten. Ze staan hieronder als dezelfde afleiding uit dezelfde
+// bron — ladderRate(), ladderFloor(), LADDER, AMOUNT.video, TIERS — en niet als
+// een getal dat toevallig hetzelfde is.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function serviceFaqs(service, lang = 'en') {
+  const l = norm(lang);
+  const t0 = TIERS.unattended;
+
+  if (service === 'catalog' || service === 'lifestyle') {
+    const entry = ladderRate(service, 1);
+    const floor = ladderFloor(service);
+    const rungs = LADDER[service];
+    const floorFrom = rungs[rungs.length - 1][0];
+    return l === 'nl'
+      ? CATALOG_LIFESTYLE_FAQ[service].nl({ entry, floor, floorFrom, t0 })
+      : CATALOG_LIFESTYLE_FAQ[service].en({ entry, floor, floorFrom, t0 });
+  }
+
+  if (service === 'video') {
+    const clip = euro(AMOUNT.video, l);
+    const studioPlan = plans(l).find((pl) => pl.id === 'studio');
+    return l === 'nl' ? VIDEO_FAQ.nl({ clip, studioPlan, t0 }) : VIDEO_FAQ.en({ clip, studioPlan, t0 });
+  }
+
+  /* Een onbekende dienst geeft een lege lijst en geen fout. buildGraph() roept
+     dit aan voor elk pad dat het herkent; een lege lijst betekent daar "geen
+     FAQPage-knoop", en dat is precies het juiste antwoord voor een pagina zonder
+     vragen. Gooien zou het bouwen laten omvallen op een pagina die niets mis
+     heeft. */
+  return [];
+}
+
+const CATALOG_LIFESTYLE_FAQ = {
+  catalog: {
+    en:
+    ({ entry, floor, floorFrom, t0 }) => [
+      {
+        q: 'What does a catalog set cost?',
+        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a step at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a set is four photos — front, back, a close-up of the logo or fabric, and one on-model shot.`,
+      },
+      {
+        q: 'Is the on-model shot really included?',
+        a: 'Yes — one on-model photo is part of every product set, at no extra cost. Pick a model when you order, or let us choose one that fits your brand.',
+      },
+      {
+        q: 'Do I have to use all four?',
+        a: 'No. The set is what you get; what you publish from it is your call. Use two now and keep the others for a seasonal campaign, a new marketplace or a different banner size — there is no time limit and nothing extra to pay for putting one to work later.',
+      },
+      {
+        q: 'How long does it take?',
+        // Both halves of the timing promise, in the order a buyer needs them:
+        // the typical span first, then the fact that it is not a date.
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
+      },
+      {
+        q: 'Can I choose the background colour?',
+        a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send. If you pick Amazon, bol or Zalando in the order, the background locks to white because those platforms require it; if you want your own colour as well, order the product twice and it is simply charged at the per-product rate.',
+      },
+      {
+        q: 'Can I use these on Amazon, bol and Zalando?',
+        a: 'You tell us where the product will be sold as part of the order, and we deliver to that spec. All three require a pure white main image, so picking one locks the background to #FFFFFF and the set comes as jpg rather than webp. Two rules stay theirs and are worth knowing: bol allows no model on the main image, and Zalando asks for model views photographed with a real person — so use our on-model shot there as an additional image. We match the specifications; the platform still decides on the listing.',
+      },
+      {
+        q: 'What if I need changes?',
+        // This answer used to read "Three revision rounds are included."
+        // That was a package's guarantee and not this one — and there is no
+        // count on either tier now. What we would agree instead is in
+        // /terms §10 and stays there; see src/data/pricing.js for why.
+        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+      },
+    ],
+    nl:
+    ({ entry, floor, floorFrom, t0 }) => [
+      {
+        q: 'Wat kost een catalogset?',
+        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een set vier foto’s — voorkant, achterkant, een close-up van het logo of de stof, en één foto op een model.`,
+      },
+      {
+        q: 'Zit de on-model shot echt inbegrepen?',
+        a: 'Ja — één on-model foto hoort bij elke productset, zonder extra kosten. Kies een model bij je bestelling, of laat ons er een kiezen die bij je merk past.',
+      },
+      {
+        q: 'Moet ik alle vier de foto’s gebruiken?',
+        a: 'Nee. De set is wat je krijgt; wat je ervan publiceert bepaal jij. Gebruik er nu twee en houd de rest voor een seizoenscampagne, een nieuwe marktplaats of een ander bannerformaat — er zit geen termijn op en het kost niets extra om er later alsnog een in te zetten.',
+      },
+      {
+        q: 'Hoe lang duurt het?',
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${turnaround('attended', 'nl').toLowerCase()}.`,
+      },
+      {
+        q: 'Kan ik de achtergrondkleur kiezen?',
+        a: 'Standaard is puur wit (#FFFFFF). Je kunt ook elke hexcode invoeren — een lichte, neutrale kleur werkt het best — toegepast achter elk product dat je opstuurt. Kies je bij je bestelling Amazon, bol of Zalando, dan staat de achtergrond vast op wit omdat die platforms dat eisen; wil je daarnaast je eigen kleur, bestel het product dan twee keer en je betaalt gewoon het tarief per product.',
+      },
+      {
+        q: 'Kan ik deze op Amazon, bol en Zalando gebruiken?',
+        a: 'Je geeft bij je bestelling aan waar het product verkocht wordt, en we leveren op die specificatie. Alle drie eisen ze een zuiver witte hoofdafbeelding, dus die keuze zet de achtergrond vast op #FFFFFF en je krijgt de set als jpg in plaats van webp. Twee regels blijven van het platform zelf, en die zijn goed om te weten: bol staat geen model op de hoofdafbeelding toe, en Zalando vraagt modelbeelden die met een echte persoon zijn gefotografeerd — gebruik onze on-model shot daar dus als extra afbeelding. Wij matchen de specificaties; het platform beslist over de listing.',
+      },
+      {
+        q: 'Wat als ik wijzigingen nodig heb?',
+        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+      },
+    ],
+  },
+  lifestyle: {
+    en:
+    ({ entry, floor, floorFrom, t0 }) => [
+      {
+        q: 'What does a lifestyle carousel cost?',
+        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a step at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a carousel is three photos of one product in one styled look.`,
+      },
+      {
+        q: 'What are the three photos?',
+        a: 'A scene shot — your product styled in a real-world setting. An on-model shot, so people can picture it in their own life. And a tight detail close-up that proves the quality. All three carry the same colour grade, which is what makes them read as one post rather than three photos.',
+      },
+      {
+        q: 'Can I have more than one look per product?',
+        a: 'One styled look per order. A second scene for the same product is simply a second order at the per-product rate — which also means the two sets stay distinct rather than being blended into a mood that is neither.',
+      },
+      {
+        q: 'Can I get a mood that is not one of the four?',
+        a: 'Yes. Most brands pick one of the four because they are ready to run today. For anything else, tell us what you have in mind and we send you a price before we start.',
+      },
+      {
+        q: 'Can the same model appear across my whole collection?',
+        a: 'Yes. Pick a face from the standard roster and reuse it, or have a Brand Model made only for you — the same person then carries your catalog sets, your carousels and your clips, which is what makes a range look like one brand rather than a series of shoots.',
+      },
+      {
+        q: 'How long does it take?',
+        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
+      },
+      {
+        q: 'What if I need changes?',
+        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+      },
+    ],
+    nl:
+    ({ entry, floor, floorFrom, t0 }) => [
+      {
+        q: 'Wat kost een lifestyle-carousel?',
+        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een carousel drie foto’s van één product in één gestylede look.`,
+      },
+      {
+        q: 'Welke drie foto’s zijn het?',
+        a: 'Een sfeershot — je product gestyled in een realistische setting. Een on-model shot, zodat mensen het in hun eigen leven zien. En een strakke detail-close-up die de kwaliteit bewijst. Alle drie dragen dezelfde kleurbewerking, en dat is wat ze als één post laat lezen in plaats van als drie losse foto’s.',
+      },
+      {
+        q: 'Kan ik meer dan één look per product krijgen?',
+        a: 'Eén gestylede look per bestelling. Een tweede scène voor hetzelfde product is gewoon een tweede bestelling tegen het tarief per product — en zo blijven de twee sets ook echt verschillend, in plaats van dat ze naar elkaar toe kruipen.',
+      },
+      {
+        q: 'Kan ik een sfeer krijgen die niet bij de vier hoort?',
+        a: 'Ja. De vier vaste looks zijn wat de meeste merken kiezen omdat ze al afgesteld zijn; alles daarbuiten spreken we eerst met je af en zetten we op een offerte, dus laat weten wat je in gedachten hebt, dan krijg je een prijs van ons in plaats van een gok.',
+      },
+      {
+        q: 'Kan hetzelfde model in mijn hele collectie terugkomen?',
+        a: 'Ja. Kies een gezicht uit de standaardbibliotheek en gebruik dat steeds opnieuw, of laat een merkmodel maken dat alleen van jou is — dezelfde persoon draagt dan je catalogsets, je carousels en je clips, en dan hoort je hele assortiment bij elkaar in plaats van dat het een reeks losse fotoshoots is.',
+      },
+      {
+        q: 'Hoe lang duurt het?',
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${turnaround('attended', 'nl').toLowerCase()}.`,
+      },
+      {
+        q: 'Wat als ik wijzigingen nodig heb?',
+        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+      },
+    ],
+  },
+};
+
+const VIDEO_FAQ = {
+  en:
+  ({ clip, studioPlan, t0 }) => [
+      {
+        q: 'What does a clip cost?',
+        a: `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
+      },
+      {
+        q: 'Why does the clip rate not fall with volume?',
+        a: 'Catalog and lifestyle photos are priced per product, and that rate falls a step at a time as the count rises. A clip is not part of that price per product — the work per clip is the same whether it arrives alone or with fifty products, so the rate stays put. It is the same figure on its own as it is inside a larger order.',
+      },
+      {
+        q: 'How long is a clip, and what do I get?',
+        a: 'Eight seconds of subtle motion, exported at sizes that fit a product page, a feed and an ad — the same style held across your whole range, so clips ordered months apart still look like they belong together.',
+      },
+      {
+        q: 'How long does it take?',
+        a: `A clip request runs in the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date — and that holds however many clips you ask for. The held delivery date belongs to the price ladder for catalog and lifestyle products, and a clip is not on that ladder, so ordering more clips does not buy a date. What does fall inside a held window is clips added to an order of ${WINDOW_THRESHOLD} products or more: there the order carries the date and the clips ride along with it.`,
+      },
+      {
+        q: 'Can a model appear in the clip?',
+        a: 'Yes. Where a person appears, that person can come from the standard roster or be a Brand Model made only for you — the same face your catalog and lifestyle sets already run on, so a shopper sees one person across stills and motion alike.',
+      },
+      {
+        q: 'What if I need changes?',
+        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+      },
+  ],
+  nl:
+  ({ clip, studioPlan, t0 }) => [
+      {
+        q: 'Wat kost een clip?',
+        a: `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
+      },
+      {
+        q: 'Waarom daalt het cliptarief niet bij grotere aantallen?',
+        a: 'Catalog- en lifestylefoto’s hebben een tarief per product, en dat zakt stap voor stap naarmate het aantal stijgt. Bij een clip werkt dat niet zo — het werk per clip is hetzelfde, of hij nu alleen komt of met vijftig producten. Daarom blijft het tarief staan. Los is het hetzelfde bedrag als binnen een grotere bestelling.',
+      },
+      {
+        q: 'Hoe lang is een clip, en wat krijg ik?',
+        a: 'Je krijgt acht seconden subtiele beweging, in de formaten voor een productpagina, een feed en een advertentie. De stijl blijft hetzelfde door je hele assortiment, dus clips die maanden na elkaar besteld zijn horen nog bij elkaar.',
+      },
+      {
+        q: 'Hoe lang duurt het?',
+        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijsladder voor catalog- en lifestyleproducten, en een clip staat niet op die ladder; méér clips bestellen koopt dus geen datum. Wat wél binnen een vrijgehouden venster valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
+      },
+      {
+        q: 'Kan er een model in de clip?',
+        a: 'Ja. Waar een persoon in beeld komt, kan die uit de standaardbibliotheek komen of een merkmodel zijn dat alleen voor jou gemaakt is — hetzelfde gezicht waar je catalog- en lifestylesets al op draaien, zodat een klant één persoon ziet in stills én in beweging.',
+      },
+      {
+        q: 'Wat als ik wijzigingen nodig heb?',
+        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+      },
+  ],
+};

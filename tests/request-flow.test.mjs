@@ -61,6 +61,7 @@ function ok(name, got, want = true, shown) {
   if (good) pass++; else fail++;
   console.log(`${good ? ' ok  ' : ' FAIL'} ${String(name).padEnd(64)}${good ? '' : `verwacht ${JSON.stringify(want)} kreeg ${JSON.stringify(shown ?? got)}`}`);
 }
+import { serviceFaqs } from '../src/data/faq.js';
 const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 
 console.log('\nVISUAILS — de aanvraagkant\n');
@@ -254,14 +255,37 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
     /houden we een leverdatum voor je vrij en zetten we die vast/.test(vid), false);
 
   /* En wat er nu staat: dat een clipaanvraag in de normale doorlooptijd loopt, en
-     dat een venster bij de BESTELLING hoort en niet bij het aantal clips. */
+     dat een venster bij de BESTELLING hoort en niet bij het aantal clips.
+
+     ── GEMETEN AAN HET ANTWOORD EN NIET AAN HET BESTAND — 23 AUGUSTUS 2026 ────
+
+     Deze vier stonden als grep op VideoPage.astro. Op 23 augustus verhuisden de
+     dienstvragen naar src/data/faq.js — nodig om ze als FAQPage in de graph te
+     krijgen, want schema.js kan de frontmatter van een component niet lezen — en
+     toen vielen ze om, terwijl er aan de BELOFTE niets veranderd was.
+
+     Dat is dezelfde soort test-fout die planning.test.mjs en legal.test.mjs
+     eerder deze maand hadden: een toets die de spelling van een regel vastpint
+     in plaats van het feit. Nu leest hij het antwoord dat de bezoeker krijgt,
+     via dezelfde functie als de pagina. Verhuist die tekst nog eens, dan
+     verhuist de toets mee; verdwijnt de belofte, dan valt hij om. */
+  const videoVragenEn = serviceFaqs('video', 'en').map((f) => f.a).join(' ');
+  const videoVragenNl = serviceFaqs('video', 'nl').map((f) => f.a).join(' ');
   ok('het zegt dat een clipaanvraag in de wachtrij loopt',
-    /clip request runs in the standard queue/.test(vid), true);
+    /clip request runs in the standard queue/.test(videoVragenEn), true);
   ok('en in het Nederlands hetzelfde',
-    /clipaanvraag loopt mee in de normale doorlooptijd/.test(vid), true);
+    /clipaanvraag loopt mee in de normale doorlooptijd/.test(videoVragenNl), true);
   ok('het zegt waar het venster dan wél bij hoort (EN)',
-    /the order carries the date/.test(vid), true);
-  ok('en (NL)', /draagt de bestelling de datum/.test(vid), true);
+    /the order carries the date/.test(videoVragenEn), true);
+  ok('en (NL)', /draagt de bestelling de datum/.test(videoVragenNl), true);
+
+  /* En dat ze ook echt op de gebouwde pagina staan. De regel hierboven bewijst
+     dat de tekst bestaat; deze bewijst dat de pagina hem afdrukt. Zonder dit
+     paar zou een component die serviceFaqs() niet meer aanroept, groen blijven. */
+  ok('en de gebouwde /video drukt ze af',
+    /clip request runs in the standard queue/.test(read('dist/video/index.html')), true);
+  ok('  ook in het Nederlands',
+    /clipaanvraag loopt mee in de normale doorlooptijd/.test(read('dist/nl/video/index.html')), true);
 
   /* TierCompare staat op deze pagina en print de twee tredes van de ladder.
      Weghalen zou informatie kosten aan wie ook foto's koopt; er staat dus één

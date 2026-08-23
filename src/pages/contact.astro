@@ -84,11 +84,11 @@ const SAMPLE = TEST_SAMPLE.en;
             <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
             <div class="field">
               <label for="c-name">Name <span class="req">*</span></label>
-              <input class="input" type="text" id="c-name" name="name" required autocomplete="name" placeholder="Your name" />
+              <input class="input" type="text" id="c-name" name="name" required data-melding="Add your name, so we know who is writing." autocomplete="name" placeholder="Your name" />
             </div>
             <div class="field">
               <label for="c-email">Email <span class="req">*</span></label>
-              <input class="input" type="email" id="c-email" name="email" required autocomplete="email" placeholder="you@yourbrand.com" />
+              <input class="input" type="email" id="c-email" name="email" required data-melding="Add a full email address, like you@yourbrand.com — otherwise we cannot reply." autocomplete="email" placeholder="you@yourbrand.com" />
             </div>
             <div class="field">
               <label for="c-topic">Topic</label>
@@ -101,7 +101,7 @@ const SAMPLE = TEST_SAMPLE.en;
             </div>
             <div class="field">
               <label for="c-message">Message <span class="req">*</span></label>
-              <textarea class="textarea" id="c-message" name="message" rows="5" required placeholder="How can we help?"></textarea>
+              <textarea class="textarea" id="c-message" name="message" rows="5" required data-melding="Tell us what it is about, so we can answer properly the first time." placeholder="How can we help?"></textarea>
             </div>
             <div class="field">
               <span id="preferred-label">Preferred contact method</span>

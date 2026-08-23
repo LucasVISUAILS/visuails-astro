@@ -120,6 +120,30 @@ import {
 // the nightly task obeys the constant. tests/legal.test.mjs holds this.
 import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../lib/retention.js';
 
+/* ── §4 TYPT GEEN PRIJZEN MEER DIE WEL BESTAAN — 23 AUGUSTUS 2026 ───────────
+ *
+ * De regel hieronder zei "Video, custom work and monthly plans — quoted
+ * individually before you commit". Voor maatwerk klopt dat. Voor de andere twee
+ * niet, en dat is een tegenspraak met de site zelf: /pricing, /video en de
+ * JSON-LD publiceren een vaste prijs per clip, en /plans publiceert drie vaste
+ * maandbedragen. Een klant die op de voorwaarden afgaat, leest dat hij eerst een
+ * offerte krijgt voor iets waar een prijskaart bij staat.
+ *
+ * Nu leest §4 diezelfde bronnen: AMOUNT.video en monthlyCents(). Zoals de
+ * catalog- en lifestyleregels de ladder al lazen, en om dezelfde reden — een
+ * prijs die op twee plekken staat, staat er over een half jaar verschillend.
+ */
+import { AMOUNT } from '../data/pricing.js';
+import { PLAN_IDS, monthlyCents } from '../data/plans.js';
+import { planName } from '../data/planNames.js';
+
+/* Van–tot over de drie plannen, op de maandtermijn: dat is het bedrag dat op
+   /plans het grootst wordt afgedrukt. De jaartermijn is goedkoper en zou hier
+   een lagere ondergrens geven dan wat iemand op de plannenpagina ziet staan. */
+const planLo = Math.min(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
+const planHi = Math.max(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
+const planLoNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planLo), 'en');
+const planHiNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planHi), 'en');
 const t0 = turnaround('unattended', 'en').toLowerCase();
 const t1 = turnaround('attended', 'en').toLowerCase();
 
@@ -180,7 +204,9 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
         <li><strong>Catalog</strong> — {euro(ladderRate('catalog', 1), 'en')} per product, falling to {euro(ladderFloor('catalog'), 'en')} from {FLOOR_FROM} products up. A set of four photos (front, back, a detail close-up and one on-model shot).</li>
         <li><strong>Lifestyle visuals</strong> — {euro(ladderRate('lifestyle', 1), 'en')} per product, falling to {euro(ladderFloor('lifestyle'), 'en')} from {FLOOR_FROM} products up. A three-photo carousel.</li>
         <li><strong>The rate between those ends</strong> — set out in full on our <a href="/pricing/">pricing page</a>. The rate that applies is the one for the total number of products in your order, and it applies to every product in it.</li>
-        <li><strong>Video, custom work and monthly plans</strong> — quoted individually before you commit.</li>
+        <li><strong>Video</strong> — {euro(AMOUNT.video, 'en')} per clip, the same rate whether it is one clip or twenty. A clip is not on the ladder above.</li>
+        <li><strong>Monthly plans</strong> — {euro(planLo / 100, 'en')} to {euro(planHi / 100, 'en')} per month on the monthly term ({planLoNaam} to {planHiNaam}), set out in full on our <a href="/plans/">plans page</a>. The yearly term is priced there too.</li>
+        <li><strong>Custom work</strong> — quoted individually before you commit.</li>
         <li><strong>Brand Model</strong> — added on top of an order and quoted in advance. It is not sold at checkout.</li>
       </ul>
       <p>New businesses can request one test sample per business, so you can judge our quality before ordering. Prices are confirmed at the time of order. Unless stated otherwise, prices are exclusive of VAT where applicable.</p>

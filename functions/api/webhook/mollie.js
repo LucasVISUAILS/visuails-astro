@@ -64,7 +64,12 @@ import { paymentMismatch } from '../../../src/data/vat.js';
 import { productsFor } from '../../../src/data/plans.js';
 import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../../src/lib/invoice.js';
 import { mailInvoice } from '../../../src/lib/invoiceMail.js';
-import { notifyPaid, notifyPaymentFailed, notifySampleBlocked } from '../../../src/lib/notify.js';
+import { notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed } from '../../../src/lib/notify.js';
+/* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
+   hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
+   Mollie te komen en niet uit een teller van mij. */
+import { getMollieSubscription, abonnementGestopt } from '../../../src/lib/mollie.js';
+import { pauseSubscription } from '../../../src/lib/subscription.js';
 import { payerHash } from '../../../src/lib/payer.js';
 
 /*
@@ -206,6 +211,27 @@ export async function onRequestPost({ request, env }) {
      * Een markering zetten zou een tweede poging in de weg staan.
      */
     if (['failed', 'canceled', 'expired'].includes(payment.status) && env.DB) {
+      /*
+       * ── EERST DE VRAAG WIENS BETALING DIT IS — 23 AUGUSTUS 2026 ─────────────
+       *
+       * Een abonnementsafschrijving heeft geen `metadata.order_ref`; die sleutel
+       * zet src/lib/mollie.js alleen op een betaling voor een bestelling. De
+       * SELECT hieronder kon dus nooit iets vinden voor een mislukte incasso, en
+       * de hele mislukking eindigde in een 200 zonder spoor.
+       *
+       * `payment.subscriptionId` is wat het onderscheid maakt, precies zoals op
+       * het geslaagde pad — zie recordPaid(). Deze tak komt eerst, want anders
+       * gaat een incasso alsnog de bestelroute in en valt hij daar stil.
+       */
+      if (payment.subscriptionId) {
+        try {
+          await recordSubscriptionFailed(env, payment, mode);
+        } catch (err) {
+          console.error('[mollie-webhook] mislukte incasso niet verwerkt —', payment.id, '—', err?.message || err);
+        }
+        return new Response('ok', { status: 200 });
+      }
+
       /*
        * `metadata.order_ref`, NIET `metadata.ref` — GECORRIGEERD 10 AUGUSTUS 2026.
        *
@@ -403,6 +429,134 @@ async function recordSubscriptionPaid(env, payment, mode) {
     console.error('[mollie-webhook] abonnementsfactuur voor', sub.ref || sub.id, 'niet uitgegeven —',
       e && e.message ? e.message : e);
   }
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * EEN INCASSO DIE NIET DOORGING
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT HIER MIS WAS ────────────────────────────────────────────────────────
+ *
+ * Er stond niets. Het geslaagde pad had recordSubscriptionPaid(); het mislukte pad
+ * had niets, en viel daarom door de bestelroute — die op `metadata.order_ref`
+ * zoekt, wat een abonnementsbetaling niet heeft. Netto: geen rij, geen mail, geen
+ * pauze. En verderop stonden twee schermen te wachten op een toestand die niet kon
+ * ontstaan: cron/index.js meldt abonnementen met `pause_reason = 'payment_failed'`
+ * aan Lucas, en account.js heeft er een klanttekst voor. Niets in de codebase
+ * schreef die waarde ooit.
+ *
+ * ── EEN MISLUKKING IS NOG GEEN EINDE ────────────────────────────────────────
+ *
+ * Dit is de kern van deze functie, en het is de reden dat hij niet gewoon
+ * pauseSubscription() aanroept. Mollie int niet één keer: mislukt een termijn, dan
+ * probeert hij het opnieuw volgens zijn eigen schema, en pas als die pogingen op
+ * zijn zet hij het abonnement op `suspended`.
+ *
+ * Meteen pauzeren zou dus fout zijn, en niet een beetje: verbruikToestaan() in
+ * subscription.js laat een GEPAUZEERD abonnement niets besteden. Een klant wiens
+ * rekening één dag leeg stond, zou daarmee het saldo kwijtraken waar hij vorige
+ * maand voor betaald heeft — terwijl Mollie het bedrag de dag erna alsnog int.
+ *
+ * Dus vragen we het aan Mollie in plaats van het te tellen. Zie de kop van
+ * getMollieSubscription() voor waarom een eigen drempel ("drie keer en dan
+ * pauzeren") de verkeerde vorm is.
+ *
+ * ── EN ALS MOLLIE NIET ANTWOORDT, PAUZEREN WE NIET ──────────────────────────
+ *
+ * Faalt die navraag, dan leggen we de mislukking wél vast en mailen we wél, maar
+ * blijft het abonnement lopen. Van de twee fouten die je hier kunt maken, is een
+ * klant buitensluiten die gewoon betaald heeft de dure, en een dag te laat
+ * pauzeren de goedkope: de volgende mislukte incasso komt hier toch weer langs.
+ */
+async function recordSubscriptionFailed(env, payment, mode) {
+  const subId = String(payment.subscriptionId);
+  const cents = mollieAmountToCents(payment.amount) ?? 0;
+
+  let sub;
+  try {
+    sub = await env.DB.prepare(
+      `SELECT s.id, s.ref, s.plan, s.status, s.mollie_customer_id, s.mollie_subscription_id,
+              c.email, c.brand
+         FROM subscriptions s
+         LEFT JOIN customers c ON c.id = s.customer_id
+        WHERE s.mollie_subscription_id = ?1`
+    ).bind(subId).first();
+  } catch (err) {
+    // Zonder migratie 0030 bestaat de tabel niet. Zelfde afweging als op het
+    // geslaagde pad: geen 500, want opnieuw aanbieden verandert er niets aan.
+    if (!/no such table|no such column/i.test(String(err?.message || err))) throw err;
+    console.error('[mollie-webhook] mislukte incasso maar geen subscriptions-tabel — draai migratie 0030 —', payment.id);
+    return;
+  }
+
+  if (!sub) {
+    console.error('[mollie-webhook] mislukte incasso voor onbekend abonnement', subId, '—', payment.id, `(${mode})`);
+    return;
+  }
+
+  /* DE MISLUKKING ZELF, IN DEZELFDE TABEL ALS DE GESLAAGDE. Met `month` uit de
+     datum van Mollie en niet uit `datetime('now')`, om dezelfde reden als hierboven.
+     `ON CONFLICT DO NOTHING` op external_id: Mollie levert dezelfde melding gerust
+     twee keer af, en dan hoort er één rij te staan.
+
+     Dit is de rij waarmee je later kunt zien dát het gebeurd is. Zonder hem is de
+     enige plek waar een mislukte incasso bestaat het Cloudflare-log. */
+  const wanneer = String(payment.failedAt || payment.createdAt || '');
+  const month = /^\d{4}-\d{2}/.test(wanneer) ? wanneer.slice(0, 7) : new Date().toISOString().slice(0, 7);
+  try {
+    await env.DB.prepare(
+      `INSERT INTO subscription_payments (subscription_id, external_id, status, amount_cents, currency, month, raw_payload)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+       ON CONFLICT (external_id) DO NOTHING`
+    ).bind(
+      sub.id, payment.id, payment.status, cents,
+      (payment.amount?.currency || 'EUR').toUpperCase(), month, payloadZonderPersoon(payment)
+    ).run();
+  } catch (err) {
+    console.error('[mollie-webhook] mislukte incasso niet vastgelegd —', payment.id, '—', err?.message || err);
+  }
+
+  /* VRAAG HET MOLLIE. Alleen als we hem kunnen bereiken — zonder klant-id valt er
+     niets op te vragen, en dan is niet-pauzeren de juiste kant op falen. */
+  let molliestatus = '';
+  let gestopt = false;
+  if (sub.mollie_customer_id) {
+    try {
+      const abo = await getMollieSubscription(env, {
+        mollieCustomerId: sub.mollie_customer_id,
+        subscriptionId: sub.mollie_subscription_id || subId,
+      });
+      molliestatus = String(abo?.status || '');
+      gestopt = abonnementGestopt(molliestatus);
+    } catch (err) {
+      console.error('[mollie-webhook] status van abonnement', sub.ref || sub.id, 'niet op te vragen —', err?.message || err);
+    }
+  } else {
+    console.error('[mollie-webhook] abonnement', sub.ref || sub.id, 'heeft geen mollie_customer_id — status niet op te vragen');
+  }
+
+  if (gestopt) {
+    /* pauseSubscription() raakt alleen 'active' en 'pending' aan, dus een klant
+       die zelf al gepauzeerd had, houdt zijn eigen reden — en die wordt door de
+       volgende geslaagde afschrijving NIET opgeheven. Dat is precies het
+       onderscheid waar `pause_reason` voor bestaat. */
+    await pauseSubscription(env, sub.id, 'payment_failed');
+    console.log(`[mollie-webhook] abonnement ${sub.ref || sub.id} gepauzeerd — Mollie zegt "${molliestatus}" (${mode})`);
+  } else {
+    console.log(`[mollie-webhook] incasso ${payment.id} mislukt voor ${sub.ref || sub.id} — Mollie probeert het opnieuw (${mode})`);
+  }
+
+  await notifySubscriptionFailed(env, {
+    subRef: sub.ref,
+    plan: sub.plan,
+    brand: sub.brand,
+    email: sub.email,
+    reason: payment.status,
+    bedragCents: cents,
+    gestopt,
+    molliestatus,
+  });
 }
 
 /* Het id van de zojuist weggeschreven betaalrij. Apart, omdat de INSERT hierboven

@@ -694,6 +694,17 @@ const hint = lang === 'nl'
   .pu-cards :global(.pu-slot[data-state="filled"] .pu-slot-bar > i) { background: var(--signal); }
   .pu-cards :global(.pu-slot-msg) { font-size: .7rem; color: var(--ink-3); line-height: 1.35; overflow-wrap: anywhere; }
   .pu-cards :global(.pu-slot[data-state="failed"] .pu-slot-msg) { color: var(--warn-ink); }
+  /* ── DE BEELDKEURING LEEST ALS EEN OPMERKING EN NIET ALS EEN FOUT ──────────
+     `data-let` staat op een vakje waarvan de foto DOOR is en waar alleen iets
+     over te zeggen valt: te donker, of ver gecomprimeerd. Zie keurBeeld() in
+     src/data/shots.js voor waarom die twee melden en niet weigeren.
+
+     Vandaar --ink-2 en niet --warn-ink: een klant die een donkere foto stuurt
+     heeft niets fout gedaan, en een waarschuwingskleur op een geslaagde upload
+     zet hem aan het zoeken naar een probleem dat er niet is. Wat het wél doet is
+     iets meer contrast dan de gewone --ink-3, zodat de zin niet wegvalt tussen
+     "geüpload" en de bestandsnaam. */
+  .pu-cards :global(.pu-slot[data-let="1"] .pu-slot-msg) { color: var(--ink-2); }
 
   .pu-cards :global(.pu-acts) { display: flex; flex-wrap: wrap; gap: .1rem .6rem; }
   .pu-cards :global(.pu-act) {

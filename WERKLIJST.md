@@ -15,6 +15,9 @@ staat, staat er op bewijs: elk afgevinkt punt heeft een bestand en een regelnumm
 achter zich, en waar ik het niet kon aanwijzen is het niet afgevinkt — ook niet als
 er iets stond dat erop leek.
 
+*Bijgewerkt 23 augustus, later op de dag: er zijn er sindsdien dertien bij
+gekomen — zie "Wat er op 23 augustus is gebouwd" hieronder.*
+
 Van de 124 open punten zijn er **46 aantoonbaar af** en doorgestreept, waaronder
 vier van de vijf knopen onderaan die volgens de lijst nog moesten vallen — die
 zijn allang gevallen, alleen nooit opgeschreven. **29 punten zijn half af**; die
@@ -38,7 +41,56 @@ Drie dingen die het nalopen aan het licht bracht en die niet op de lijst stonden
    open faalt. Zie “Wat de site belooft maar niet doet”.
 
 Eén punt heb ik onderweg moeten terugdraaien: de interne meldingsmail (§12) leek
-af, maar `notifyEmail()` gebruikt het nieuwe briefhoofd niet. Die staat weer open.
+af, maar `notifyEmail()` gebruikte het nieuwe briefhoofd niet. Die staat inmiddels
+alsnog af — zie hieronder.
+
+---
+
+## Wat er op 23 augustus is gebouwd
+
+Na het nalopen hierboven zijn dertien punten opgepakt en afgevinkt. Ze staan elk
+op hun eigen plek in de lijst met wat er precies gebeurd is; dit is het overzicht.
+
+**Eerst een correctie op mijn eigen werk.** Ik meldde bij het nalopen dat migratie
+`0024-sample-payer.sql` ontbrak en dat de bankrekeningcontrole op de proefvisual
+daardoor stil open faalde. Dat was fout: de migratie staat gewoon in je map, en er
+staat een test bij die in de keten zit. Mijn werkkopie liep zes bestanden achter op
+jouw map — je had ook de acute Stripe-patch al toegepast — en ik heb die kopie voor
+de waarheid aangezien in plaats van eerst jouw map te lezen. Alles is nu
+gelijkgetrokken. Het enige dat over die migratie overblijft, is de vraag of hij
+tegen remote D1 gedraaid is; `npm run migrate` is idempotent, dus één keer draaien
+is het antwoord.
+
+**Wat er is gebouwd, in volgorde van wat het je kost als het niet gebeurt:**
+
+*Een mislukte incasso wordt afgehandeld.* Dit was een echt gat: niets in de
+codebase schreef ooit `pause_reason = 'payment_failed'`, terwijl de webhook, de
+nachtelijke cron én een klanttekst alle drie op die toestand rekenden. Een
+afschrijving die niet doorging, viel door de poort voor mislukte BESTELbetalingen,
+vond daar niets, en gaf Mollie een 200. Nu wordt hij vastgelegd, gemeld, en op het
+juiste moment gepauzeerd — dat laatste is het scharnier, want te vroeg pauzeren
+neemt een klant het saldo af waarvoor hij vorige maand betaald heeft.
+
+*Drie onjuiste beweringen van de site af.* /video schreef stilstaande foto's aan
+als filmstills uit clips die niet bestaan; /terms §4 zei dat video en maandplannen
+individueel geoffreerd worden terwijl je er prijskaarten van publiceert; en de
+gedeelde stockbibliotheek stond in het abonnementsblok zonder het "nog niet
+klaar"-label dat de merkeigen laag wél had.
+
+*Uploadkwaliteit wordt bewaakt.* Te klein weigert, te donker en te ver
+gecomprimeerd melden. Waarom dat onderscheid er is, staat bij het punt zelf.
+
+*En het kleine werk:* twintig vragen die Google niet als FAQ zag staan nu in de
+graph, de drie interne meldingsmails zitten in het gedeelde briefhoofd, de
+contactformulieren hebben hun eigen foutmeldingen in beide talen, en `INVOICE_BCC`
+staat in de config zodat de factuurkopie naar jezelf daadwerkelijk vertrekt.
+
+**Twee nieuwe testbestanden**, `tests/abo-incasso.test.mjs` (33) en
+`tests/beeldkeuring.test.mjs` (29), allebei in `npm test`. De tweede vond onderweg
+een echte fout in mijn eigen code. De hele keten is groen.
+
+**Voor je volgende deploy:** `INVOICE_BCC` werkt pas na een deploy, en migratie
+`0024` wil je één keer draaien om zeker te weten dat hij er staat.
 
 ---
 
@@ -106,7 +158,7 @@ Wat er nog niet is, en bewust niet:
 
 - [x] ~~**Creditnota's.** Een refund wordt wel geboekt (`refunded_cents`) maar er komt geen document tegenover. Dat is een eigen nummerreeks en een eigen rij die naar de factuur verwijst — geen tweede factuur op dezelfde bestelling, want dat weigert het schema met opzet.~~ — migratie `0026-credit-notes.sql` maakt `credit_notes` met een eigen uniek nummer uit dezelfde `invoice_series` en een `invoice_id` terug naar de factuur; `issueCreditNote()` staat in `src/lib/invoice.js:819` en wordt aangeroepen vanuit de Mollie-webhook (`functions/api/webhook/mollie.js:698`).
 - [ ] 🟡 **De factuur naar de studio.** Nu gaat hij alleen naar de klant. Voor je eigen administratie is de bron `invoices` + R2, en dat is genoeg zolang je erbij kunt; een maandoverzicht in het adminscherm zou hier de logische volgende stap zijn.
-  — *Deels, nagekeken 23 augustus:* de factuurmail gaat sinds 20 augustus in bcc naar de studio (`src/lib/invoiceMail.js:204`), maar `INVOICE_BCC` staat in geen enkele config — dus die kopie is nu stil uit. Een maandoverzicht bestaat niet: er is geen `/admin/invoices`-route.
+  — *Deels — de helft is gedicht (23 augustus).* De factuurmail ging sinds 20 augustus in bcc naar de studio (`src/lib/invoiceMail.js:204`), maar `INVOICE_BCC` stond in geen enkele config, dus die kopie ging stil nergens heen. Hij staat nu in `wrangler.toml` en werkt vanaf je volgende deploy. Een maandoverzicht bestaat nog steeds niet: er is geen `/admin/invoices`-route.
 - [x] ~~**Een herstelroute voor `pending` in het adminscherm.** Blijft een factuur op 'pending' staan, dan repareert het klantbezoek hem al. Er is nog geen knop om dat vanaf jouw kant te forceren; de index `idx_invoices_pending` staat er wel voor klaar.~~ — `handleInvoiceRepair()` in `src/lib/admin.js:2782` draait `issueInvoice()` opnieuw voor een rij die op `pending` blijft staan, met behoud van het nummer; twee knoppen op de bestelpagina (`admin.js:1457` en `:1462`).
 - [ ] 🟢 **`SELLER_ADDRESS` als secret zetten.** Zonder die variabele valt `sellerOf()` terug op een voorbeeldadres. Zet hem in de Pages-omgeving vóór de eerste echte factuur, samen met `VISUAILS_IBAN` als je wilt dat het rekeningnummer erop staat.
   — *Niet uit code vast te stellen:* zie hierboven — zelfde secret, zelfde handeling.
@@ -118,8 +170,9 @@ Wat er nog niet is, en bewust niet:
 Elk punt hieronder is met bestandsverwijzingen bewezen, niet vermoed. Gesorteerd op ernst.
 
 - [x] ~~**De bewaartermijnen worden door niets uitgevoerd.** /terms en /privacy beloven dat aangeleverde foto's 90 dagen na afronding worden verwijderd en visuals 12 maanden bewaard blijven; /portal zegt zelfs dat de bronbestanden "op dezelfde klok" verdwijnen. Er is geen enkele geplande taak (geen `[triggers]` in wrangler.toml, geen `scheduled`-handler), en `files.expires_at` wordt nergens geschreven. De foto's van elke klant staan er na 90 dagen nog. Dit klemt twee kanten op: contractbreuk én een AVG-bewaartermijn die je zelf op twee juridische pagina's hebt vastgelegd. De 90-dagen-*linkexpiry* werkt wél.~~ — `cron/wrangler.toml` is een echte Worker met `[triggers] crons = ["10 3 * * *"]`; `purgeExpiredFiles` (`cron/index.js:403`) draait elke nacht en gooit eerst de R2-objecten weg. De klokken komen uit `src/lib/retention.js` (`UPLOAD_DAYS = 90`, `DELIVERY_MONTHS = 12`) en worden gestempeld bij afronden en bij aankondigen. Dit dekt ook §9 “bewaartermijn en opruimen van uploads in R2”.
-- [ ] 🔴 **"Eén proefvisual per bedrijf" wordt niet gehandhaafd.** `functions/api/order.js` gaat bij `test-sample` rechtstreeks naar de betaling zonder ooit op een eerdere proef te controleren. Eén merk kan zijn hele collectie voor €1 per product laten maken. Het enige punt op deze lijst dat direct geld kost.
-  — *Deels, nagekeken 23 augustus:* de zachte laag leeft en werkt: `functions/api/order.js:580` weigert een tweede proef op hetzelfde e-mailadres of telefoonnummer. De harde laag niet — de webhook schrijft `orders.payer_hash` en `payer_kind` (`functions/api/webhook/mollie.js:858`), maar migratie `0024-sample-payer.sql` ontbreekt terwijl `schema.sql:913` hem beschrijft, en beide statements zitten in een eigen `try`, dus de bankrekeningcontrole faalt stil open. **Die migratie schrijven en draaien is het hele werk dat hier nog ligt.**
+- [x] ~~**"Eén proefvisual per bedrijf" wordt niet gehandhaafd.** `functions/api/order.js` gaat bij `test-sample` rechtstreeks naar de betaling zonder ooit op een eerdere proef te controleren. Eén merk kan zijn hele collectie voor €1 per product laten maken. Het enige punt op deze lijst dat direct geld kost.~~
+  — *Af — en mijn eerdere noot hierbij was fout.* Twee lagen, allebei aanwezig. De zachte weigert een tweede proef op hetzelfde e-mailadres of telefoonnummer (`functions/api/order.js:580`); de harde herkent de betaler aan een gezouten hash van zijn IBAN en annuleert achteraf (`functions/api/webhook/mollie.js:858`), met `tests/sample-payer.test.mjs` in de testketen.
+  Ik meldde eerst dat migratie `0024-sample-payer.sql` ontbrak. **Hij staat gewoon in je map** — 6120 bytes, 10 augustus. Mijn werkkopie miste hem, en ik heb mijn eigen verouderde kopie voor de waarheid aangezien in plaats van eerst jouw map te lezen. Het enige dat overblijft is de vraag óf `0024` tegen remote D1 gedraaid is; dat kan ik van hier niet zien, en `npm run migrate` is idempotent, dus één keer draaien is meteen het antwoord.
 - [x] ~~**De bevestigingsmail zegt "incl. 21% btw" ook bij 0%.** `customerEmail()` krijgt de btw-uitkomst wél mee maar leest die parameter nergens; "21%" staat hard in de regel. Een verleggingsklant krijgt twee keer hetzelfde bedrag te zien met "excl." en "incl. 21%" ernaast — in de enige mail die zijn bestelling bevestigt.~~ — `vatSub()` in `functions/api/order.js:2682` vertakt op de btw-behandeling: verlegging leest “0% btw, verlegd”, buiten de EU “geen Europese btw”, en alleen de standaardtak noemt 21%.
 - [x] ~~**"De verlegging wordt achteraf op je factuur rechtgezet" is sinds migratie 0015 onwaar.** De verlegging wordt bij het afrekenen toegepast. Staat op /pricing, /how-it-works, /start, in de FAQ én in de bevestigingsmail. Een Duitse klant betaalt al 0% maar leest dat hij 21% betaalt en een correctie krijgt die niet komt.~~ — de belofte staat nergens meer in klantteksten — hij leeft alleen nog als commentaar dat uitlegt waarom hij weg is (`src/data/pricing.js:466`, `functions/api/order.js:2652`). /pricing, /how-it-works, /start, de FAQ (`src/data/faq.js:318` en `:503`) en de bevestigingsmail zeggen nu dat de 0% bij het afrekenen gebeurt.
 - [x] ~~**De tevredenheidsvraag wordt nooit gesteld.**~~ — gebouwd 9 augustus 2026, fase 1 van de specificatie (§2 stap 1 en 2). Zie "Reviews" hieronder.
@@ -140,7 +193,7 @@ Niet vast te stellen uit code, wel na te gaan: de verwerkersovereenkomsten met R
   — *Niet uit code vast te stellen:* een jurist die de teksten leest, laat geen sporen na in de repo.
 - [x] ~~**/terms §9 spreekt zichzelf en de site tegen over betalen.** De voorwaarden zeggen "kleine bestellingen en proefvisuals worden bij het afrekenen volledig betaald" en "een gereserveerde bestelling in twee delen: 50% bij bevestiging, 50% voor oplevering". De bestelstroom, /pricing, /faq en /how-it-works zeggen alle vier iets anders: kleine bestellingen op levering, gereserveerde bestellingen ineens vóór productie, met zeven dagen betaaltermijn. Er bestaat nergens een 50/50-splitsing. Welke kant waar is, is een bedrijfsbeslissing — niet iets om in stilte gelijk te trekken.~~ — §9 leest nu “je betaalt dat bedrag in één keer via één betaallink — er zijn geen termijnen” (`src/pages/terms.astro:236`, NL `:168`). De 50/50-tekst staat alleen nog in het wijzigingscommentaar.
 - [ ] 🟡 **/terms §4 noemt video, maandplannen en merkmodel "op aanvraag geprijsd"** terwijl /pricing, /video, /custom-models en de JSON-LD €69 per clip, €390/€790/€1.690 per maand en €1.250 setup als vaste prijzen publiceren.
-  — *Deels, nagekeken 23 augustus:* §4 leest de prijzen van catalog en lifestyle nu uit de prijsladder (`src/pages/terms.astro:179`), dus die kunnen niet meer uit de pas lopen. De regel “video, custom work en maandplannen — individueel geoffreerd” (`:184`) spreekt de vaste €69 per clip en de drie maandbedragen nog steeds tegen.
+  — *Af sinds 23 augustus.* §4 las de prijzen van catalog en lifestyle al uit de prijsladder. De regel “video, custom work en maandplannen — individueel geoffreerd” is nu gesplitst: video noemt het vaste cliptarief uit `AMOUNT.video`, de maandplannen noemen hun van–tot uit `monthlyCents()`, en alleen maatwerk staat er nog als geoffreerd — want dát klopt wel. Beide talen, en beide lezen dezelfde bron als de pagina's die de prijzen publiceren.
 - [ ] 🔴 `npm run build` draaien en deployen. Alles van vandaag staat nog alleen op je schijf: het nieuwe logo in de topbar, de favicon, het mail-briefhoofd, en de drie servicepagina's
   — *Niet uit code vast te stellen:* `npm run build` en deployen zijn handelingen op jouw machine.
 - [ ] 🔴 Na de deploy: `https://visuails.com/favicon.ico` en `/img/mail/mark-groen.png` openen in je browser om te zien dat ze laden
@@ -178,7 +231,7 @@ Niet vast te stellen uit code, wel na te gaan: de verwerkersovereenkomsten met R
 - [ ] De mails in het Nederlands nalopen — die zijn vandaag nieuw en met dezelfde methode geschreven, dus met dezelfde stijfheid
   — *Deels, nagekeken 23 augustus:* de teksten zelf zijn per taal apart geschreven, maar de aanhef is in élke mail hardgecodeerd Engels: `const hi = name ? ‘Hi …,’ : ‘Hi,’` in `order.js:2563`, `admin.js:2695` en `:2951`, en de checklistmail opent met `Hi,` boven een Nederlandse tekst (`order.js:2791`).
 - [ ] Foutmeldingen en formulierteksten nalopen; die worden altijd vergeten en worden juist gelezen op het moment dat iemand geïrriteerd is
-  — *Deels, nagekeken 23 augustus:* het bestelformulier is helemaal nagelopen (`OrderFlow.astro:409` en `:927`), en de account- en portaalfoutpagina's zijn tweetalig. `/nl/contact` heeft op zijn drie verplichte velden geen eigen melding (`src/pages/nl/contact.astro:86`), dus daar komt de browsertekst — in een Engelse browser “Please fill out this field” op een Nederlandse pagina.
+  — *Deels, en het gat dat ik vond is gedicht (23 augustus).* Het bestelformulier was al helemaal nagelopen (`OrderFlow.astro:409` en `:927`), de account- en portaalfoutpagina's zijn tweetalig, en `/contact` en `/nl/contact` hebben sinds vandaag hun eigen meldingen op alle drie de verplichte velden — via `data-melding` en `initVeldmeldingen()` in `interactions.js`, dus één plek voor elk formulier dat er nog bij komt. Wat nog niet is nagelopen: de losse formulieren buiten deze twee.
 
 > **Waarom het NL stijf leest.** Het ligt niet aan de taal maar aan de volgorde waarin het gemaakt is: elke pagina is eerst in het Engels geschreven en daarna zin voor zin naar het Nederlands gezet, met een structuurcontrole die de twee versies tag-voor-tag identiek houdt. Die controle is goed voor de opmaak en slecht voor het proza — het Nederlands erft de Engelse zinsbouw. Vandaar dingen als *"Het is ook waar een klein merk stilletjes gevestigd begint te ogen"*, wat een letterlijke afdruk is van *"It is also where a small brand quietly starts to look established"*. Geen Nederlander zegt dat zo.
 >
@@ -195,8 +248,9 @@ Ja. Mollie heeft een Subscriptions API bovenop mandaten: je laat de klant één 
 - [ ] Nagaan of Recurring op jouw Mollie-account is vrijgegeven (het moet apart aangezet worden)
   — *Niet uit code vast te stellen:* iets nagaan in je Mollie-dashboard.
 - [x] ~~Eerste betaling met `sequenceType: "first"` inbouwen, klant-record aanmaken, mandaat opslaan~~ — `src/lib/mollie.js:280` stuurt `sequenceType: 'first'`, `createMollieCustomer()` (`:243`) maakt het klant-record, en het mandaat wordt opgehaald met `firstPaymentMandate()` (`:302`) en opgeslagen via `setMollieIds()` (`src/lib/subscription.js:551`).
-- [ ] Webhook afhandelen voor mislukte incasso's — Mollie probeert tot vijf keer opnieuw en zet de boel daarna stil, en jouw kant moet weten dat dat gebeurd is
-  — *Open, nagekeken 23 augustus:* en scherper dan het punt zegt: **niets schrijft ooit `pause_reason = 'payment_failed'`.** De webhook kent alleen het geslaagde pad; een gelukte afschrijving héft een pauze wel op (`functions/api/webhook/mollie.js:377`), en de cron meldt gepauzeerde abonnementen aan jou (`cron/index.js:1041`), maar de toestand die die twee verwachten kan niet ontstaan. Ook de klanttekst `planStatusFailed` (`src/lib/account.js:5554`) is daardoor onbereikbaar.
+- [x] ~~Webhook afhandelen voor mislukte incasso's — Mollie probeert tot vijf keer opnieuw en zet de boel daarna stil, en jouw kant moet weten dat dat gebeurd is~~
+  — *Gebouwd 23 augustus.* `recordSubscriptionFailed()` in `functions/api/webhook/mollie.js`: een mislukte afschrijving wordt vastgelegd in `subscription_payments`, jij krijgt bericht, en het abonnement gaat op pauze met `pause_reason = 'payment_failed'` — waarmee de cron-melding en de klanttekst die daarop wachtten eindelijk bereikbaar zijn.
+  **Het scharnier zit in het moment, niet in de pauze.** Mollie int niet één keer: mislukt een termijn, dan probeert hij het opnieuw en pas als die pogingen op zijn zet hij het abonnement op `suspended`. Meteen pauzeren zou de klant het saldo afnemen waarvoor hij vorige maand betaald heeft, terwijl Mollie het bedrag morgen alsnog int. Dus vragen we het aan Mollie (`getMollieSubscription()`) in plaats van zelf te tellen, en als Mollie niet antwoordt pauzeren we niet. 33 toetsen in `tests/abo-incasso.test.mjs` (`npm run test:incasso`).
 - [x] ~~Opzeggen en pauzeren inbouwen, plus wat er met resterende credits gebeurt bij opzegging~~ — pauzeren en hervatten op `/account/plan/pause` (`src/lib/account.js:5969`, stopt eerst de incasso bij Mollie), opzeggen op `:6004`, en het besluit over resterende credits staat in `src/lib/subscription.js:627`: het saldo blijft staan en verloopt vanzelf.
 
 > **De belangrijkste beperking:** de Subscriptions API is voor **vaste bedragen**. Variabel per maand kan er niet op. Dat is voor jou geen probleem maar juist het antwoord: het abonnement is een vast maandbedrag, en de credits zijn een tabel in je eigen database. Mollie int, jij telt.
@@ -277,7 +331,8 @@ Het model: een abonnement is een vast maandbedrag bij Mollie, en de credits zijn
 ## 7 · Content en voorbeelden
 
 - [ ] 🔴 Videovoorbeelden maken — `/video` en de vier subpagina's verkopen nu iets wat nergens te zien is. Dit is het grootste gat op de site
-  — *Deels, nagekeken 23 augustus:* de speler en de gegevenslaag staan klaar, de beelden niet: nul `.mp4`/`.webm` in het project en alle acht items in `src/data/videoExamples.js` hebben `file: null`, dus overal rendert het lege vakje. **En er is een fout die zwaarder weegt dan de leegte:** `/video` toont nu vier stilstaande foto's als videovoorbeeld, met `/img/banners-04.webp` bijgeschreven als “a product video still from a VISUAILS Motion clip” (`VideoPage.astro:176`). Dat is geen gat maar een onjuiste bewering.
+  — *Deels, en de onjuiste bewering is weg (23 augustus).* De speler en de gegevenslaag staan klaar, de beelden niet: nul `.mp4`/`.webm` in het project en alle acht items in `src/data/videoExamples.js` hebben `file: null`, dus overal rendert het lege vakje. Dat blijft het werk — en het is maakwerk, geen code.
+  Wat wél is rechtgezet: `/video` schreef vier stilstaande foto's aan als videovoorbeeld, waarvan er één in de alt-tekst “a product video still from a VISUAILS Motion clip” heette terwijl er geen enkele Motion-clip bestaat. Die teksten beschrijven nu wat er te zien is — een productfoto. Voor het stappenbeeld is dat bovendien betere copy: stap 1 daar is letterlijk “Stuur een productfoto”.
 - [ ] Per videosoort minstens twee voorbeelden: Motion, Lifestyle Video, Campaign, Custom
   — *Deels, nagekeken 23 augustus:* precies twee per soort zijn ingericht — met verhouding, duur, titel en alt-tekst (`videoExamples.js:139-238`). Nul zijn gevuld: Motion 0, Lifestyle 0, Campaign 0, Custom 0.
 - [x] ~~Beslissen hoe je ze toont: autoplay-loop zonder geluid, of poster met klik-om-te-spelen (autoplay kost laadtijd, dus niet vijf op één pagina)~~ — besluit gemaakt én gebouwd: poster met klik-om-te-spelen, zonder autoplay en zonder JavaScript (`src/components/VideoExamples.astro:89`), met de reden vastgelegd in `src/data/videoExamples.js:26`. De tak heeft alleen nog nooit gerenderd, want er is geen beeld — zie het eerste punt van deze sectie.
@@ -293,7 +348,8 @@ Het model: een abonnement is een vast maandbedrag bij Mollie, en de credits zijn
 Je noemt twee modellen. Ze sluiten elkaar niet uit, maar ze vragen wel een ander bouwwerk, dus kies er één om mee te beginnen.
 
 - [ ] 🟡 **Besluit:** gedeelde bibliotheek (Death to the Stock Photo-model) óf per merk exclusief
-  — *Deels, nagekeken 23 augustus:* het besluit is genomen en staat in de code: `STOCK_OFF_BRAND` (gedeeld, bij elk plan) naast `STOCK_ON_BRAND` (per merk), `src/data/pricing.js:286`. Gebouwd is er niets — geen tabel, geen R2-map, geen route, en de knop is `disabled`. **Wel iets om na te lopen:** de gedeelde regel op de homepage staat er zónder het “nog niet klaar”-label dat de merkeigen regel wél krijgt (`HomeV2.astro:2067`).
+  — *Deels, en het ontbrekende label staat er nu (23 augustus).* Het besluit is genomen en staat in de code: `STOCK_OFF_BRAND` (gedeeld, bij elk plan) naast `STOCK_ON_BRAND` (per merk), `src/data/pricing.js:286`. Gebouwd is er niets — geen tabel, geen R2-map, geen route, en de knop is `disabled`.
+  De gedeelde regel stond op de homepage én op /plans zónder het “nog niet klaar”-label dat de merkeigen regel wél kreeg. Dat is een andere fout dan een pagina die te veel belooft: het staat in het blok waarmee een abonnement wordt verkocht, dus het was een toezegging binnen iets waarvoor betaald wordt. Beide dragen nu “Nog niet actief”.
   - Gedeelde bibliotheek: één keer maken, alle abonnees kunnen kiezen en downloaden. Schaalt goed, maar het beeld is niet van hen alleen — en dat botst met "meer merkgevoel", want een concurrent kan hetzelfde beeld gebruiken
   - Per merk exclusief: zelfde bestelformulier-principe, klant kan eigen model of kledingstuk toevoegen. Meer werk per klant, hogere prijs te vragen, en het past beter bij wat je nu verkoopt
   - Tussenvorm die het overwegen waard is: een gedeelde basisbibliotheek in neutrale merkkleuren, plus een exclusieve laag per merk. Abonnees krijgen de basis, de exclusieve laag is een bestelling
@@ -313,13 +369,16 @@ Je noemt twee modellen. Ze sluiten elkaar niet uit, maar ze vragen wel een ander
 ## 9 · Uploaden en kwaliteit
 
 - [ ] Uploadschema ontwerpen: welke soorten foto's, hoeveel, welke hoeken, welk minimumformaat
-  — *Deels, nagekeken 23 augustus:* er is een opnameschema: vier opnamen per product (voor en achter verplicht, detail en gedragen optioneel), elk met een instructie over hoek en afstand (`src/data/shots.js:59`), plus 25 MB per bestand. Wat ontbreekt is een **minimum**formaat — er is alleen een plafond — en een onderscheid per dienst: `SHOTS` is één lijst voor alles.
+  — *Deels — het minimum is er nu wel (23 augustus).* Het opnameschema stond er al: vier opnamen per product (voor en achter verplicht, detail en gedragen optioneel), elk met een instructie over hoek en afstand (`src/data/shots.js:59`), plus 25 MB per bestand. Daar is `MIN_LANGE_ZIJDE` bij gekomen, met de redenering waarom hij op 1000 ligt en niet hoger. Wat nog ontbreekt is het onderscheid **per dienst**: `SHOTS` is nog één lijst voor catalog, lifestyle en video samen.
 - [ ] Onderzoeken wat er per soort echt nodig is om consistent resultaat te halen — meten aan echte bestellingen, niet aan aannames
   — *Open, nagekeken 23 augustus:* `files` bewaart wel `bytes` maar geen afmetingen — nul treffers op `width`/`height` in `schema.sql` en `migrations/` — dus er valt vandaag niets te meten.
 - [ ] Uploadrichtlijnen-pagina bijwerken naar dat schema
-  — *Deels, nagekeken 23 augustus:* de pagina bestaat in beide talen maar importeert `src/data/shots.js` niet, dus het vierluik, de verplicht/optioneel-splitsing en de 25 MB staan er niet op. De maatgeving is “stuur de hoogste resolutie die je hebt”, en de twee “slecht vs. goed”-voorbeelden zijn nog `<Placeholder>` — de pagina die het verschil moet laten zien, laat het niet zien.
-- [ ] Validatie bij het uploaden: te klein, te donker, te veel compressie — meteen zeggen in plaats van na levering
-  — *Deels, nagekeken 23 augustus:* de server weigert een verkeerd type, een leeg bestand, meer dan 25 MB en een onbekende opnamesoort, en de klant krijgt daar per bestand een nette melding op. Maar van de drie dingen die dit punt noemt is er núl gebouwd: **te klein** (geen pixelcontrole, geen ondergrens), **te donker** (`luminance()` bestaat maar wordt alleen op gekozen achtergrondkleuren gebruikt) en **te veel compressie** (nergens).
+  — *Deels — en mijn eerste noot was hier te streng.* Het vierluik en de verplicht/optioneel-splitsing stáán wel op de pagina (regel 109–114), alleen ingetypt in plaats van uit `shots.js` gelezen. Wat er echt ontbrak was de ondergrens, en die is er sinds 23 augustus: de pagina leest `MIN_LANGE_ZIJDE` en noemt het getal, in beide talen. Dat was ook noodzakelijk geworden — het formulier wéigert nu onder die grens, en een weigering die nergens is aangekondigd, kom je op stap 2 tegen zonder te weten wat je dan moet.
+  Wat nog staat: de twee “slecht vs. goed”-voorbeelden zijn nog `<Placeholder>`, dus de pagina die het verschil moet laten zien, laat het niet zien. Dat is fotowerk, geen code.
+- [x] ~~Validatie bij het uploaden: te klein, te donker, te veel compressie — meteen zeggen in plaats van na levering~~
+  — *Gebouwd 23 augustus, alle drie.* `meetBeeld()` in `pipeline.js` meet in de browser — daar zijn de pixels, en daar kan de klant nog een andere foto kiezen — en `keurBeeld()` in `src/data/shots.js` oordeelt.
+  **Eén weigering en twee meldingen, en dat onderscheid is het ontwerp.** Te klein weigert: onder 1000 pixels op de lange zijde zit in de praktijk alleen een screenshot of een van een website geplukt plaatje, en dat is objectief. Te donker en te ver gecomprimeerd zijn vermóédens — een bewust donkere productfoto bestaat, en een flatlay op wit comprimeert nu eenmaal ver — dus die melden alleen, en de foto gaat gewoon mee. Een klep op een heuristiek is een klep die op een dinsdag een echte klant tegenhoudt, en die klant belt niet.
+  Lukt het meten niet (HEIC in de verkeerde browser, een geweigerd canvas), dan gebeurt er niets en gaat de foto door. 29 toetsen in `tests/beeldkeuring.test.mjs` (`npm run test:keuring`); die vonden onderweg een echte fout — `Number(null)` is 0, dus een meting zónder helderheid las als pikzwart en zou "te donker" op álles hebben gemeld.
 - [ ] Afwijsprocedure: wat doe je als de aangeleverde foto's het gewoon niet halen
   — *Open, nagekeken 23 augustus:* de enige “afwijzen” in de code zijn het btw-nummer en revisieverzoeken op ál geleverd werk. Er is geen status, geen adminactie en geen mailsjabloon voor “je bronmateriaal haalt het niet, stuur nieuwe foto's”.
 - [x] ~~Bewaartermijn en opruimen van uploads in R2 vastleggen~~ — gedekt door de bewaartermijnen hierboven: `UPLOAD_DAYS = 90` in `src/lib/retention.js:65`, `EXPIRED_FILES_SQL` (`:147`) dat ook onbestempelde rijen opruimt, en `purgeExpiredFiles` in de nachtelijke cron-Worker (`cron/index.js:403`) dat eerst R2 leegt en dan pas de rijen.
@@ -354,8 +413,8 @@ Je noemt twee modellen. Ze sluiten elkaar niet uit, maar ze vragen wel een ander
 
 ## 12 · Techniek en onderhoud
 
-- [ ] FAQPage-structured-data voor `/catalog`, `/lifestyle` en `/video` — er staan nu twintig vragen op die Google niet als FAQ ziet
-  — *Open, nagekeken 23 augustus:* FAQPage staat op /faq en /pricing in beide talen (`src/data/schema.js:28`). De drie servicepagina's hebben samen twintig `<summary>`-vragen zonder FAQ-markering — de twintig uit dit punt, exact.
+- [x] ~~FAQPage-structured-data voor `/catalog`, `/lifestyle` en `/video` — er staan nu twintig vragen op die Google niet als FAQ ziet~~
+  — *Gedaan 23 augustus.* Alle twintig staan nu als FAQPage in de graph (7 + 7 + 6). De reden dat ze er niet in zaten was mechanisch: ze stonden in het COPY-object van de drie componenten, en `schema.js` bouwt zijn graph uit het PAD en kan de frontmatter van een component niet lezen. Ze zijn verhuisd naar `serviceFaqs()` in `src/data/faq.js`, waar de pagina en de graph dezelfde string lezen — dezelfde regel die al boven `faqNode()` stond.
 - [x] ~~`DESIGN.md` bijwerken: die documenteert nog het blauwe `#90BEFF`-accent en de oude pastelvlakken als geldend~~ — `DESIGN.md:50` noemt `--accent | #C6F100`, en de noot bovenaan legt de regel vast dat een vervangen palet verwijderd wordt in plaats van blijft staan.
 - [x] ~~D1-aanroepen zonder guard die een 500 geven in plaats van een nette foutmelding~~ — elke ingang controleert de binding vóór de eerste query en geeft een nette foutmelding: `src/lib/admin.js:113`, `src/lib/account.js:1129` en `:2196`, `src/lib/portal.js:323`, `functions/api/order-status.js:128`, `functions/api/step.js:97`.
 - [x] ~~Het woord "drop" staat nog in klantteksten op ongeveer vijf pagina's terwijl het intern is afgeschaft~~ — het zelfstandig naamwoord is uit de klantteksten; wat er nog staat is het werkwoord (“you drop a folder”) en een klassenaam. Als wire-waarde leeft `drop` nog in `src/data/pricing.js:348`, en daar hoort hij.
@@ -364,8 +423,8 @@ Je noemt twee modellen. Ze sluiten elkaar niet uit, maar ze vragen wel een ander
   — *Niet uit code vast te stellen:* een prijsbesluit.
 - [ ] Beslissen wat er met `orders@visuails.com` gebeurt: echte gebruiker aanmaken, of mail versturen vanaf `hello@` en die profielfoto meteen goed hebben
   — *Open, nagekeken 23 augustus:* nog geen besluit: `FROM_EMAIL` is nog `VISUAILS <orders@visuails.com>` (`src/lib/mail.js:57`, `wrangler.toml:56`) met `reply_to` op `hello@`.
-- [ ] Interne meldingsmail (die jij krijgt bij een bestelling) ook in het nieuwe briefhoofd, als je dat wilt
-  — *Open, nagekeken 23 augustus:* en anders dan ik eerst dacht: de bestelmelding is nog kále HTML — `notifyEmail()` (`functions/api/order.js:2523`) gebruikt geen `shell()`. De látere studiomails hebben het briefhoofd wél (`src/lib/notify.js:84`, `src/lib/feedback.js:542`). De checklist- en contactmeldingen op `order.js:467` en `:484` zijn ook kaal.
+- [x] ~~Interne meldingsmail (die jij krijgt bij een bestelling) ook in het nieuwe briefhoofd, als je dat wilt~~
+  — *Gedaan 23 augustus.* Alle drie: de bestelmelding (`notifyEmail()`), de checklist-aanmelding en het contactbericht gaan nu door `shell()`, met `h1()`, `rows()` en `quote()` in plaats van met de hand nagebouwde tabellen. De inhoud is niet veranderd — de banner, het btw-blok en de bestandstabel zijn eigen bouwsels en die staan er nog precies zo.
 - [ ] Back-up van D1 en R2 regelen — er is er nu geen
   — *Deels, nagekeken 23 augustus:* er is een dump van heel D1 plus een R2-sleutellijst (`scripts/backup.mjs`), met een bewaking op de ouderdom in de cron (`checkBackupAge`, `cron/index.js:606`). Wat er niet is: de R2-bestanden zélf gaan alleen mee met `--files`, en het draait als geplande taak op één Windows-machine — er is geen automatische kopie buiten de deur.
 - [x] ~~Meten wat er gebeurt: hoeveel mensen starten een bestelling en hoeveel maken hem af~~ — `funnel_hits` (migratie `0025-funnel.sql`), `src/scripts/pipeline.js:613` meldt elke stap aan `/api/step`, en `/admin/funnel` (`src/lib/admin.js:5061`) toont de trechter van start tot afronding.

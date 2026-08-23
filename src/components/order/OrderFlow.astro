@@ -47,6 +47,10 @@ import {
 } from '../../data/pricing.js';
 import { ATTENDED_PER_WINDOW } from '../../data/capacity.js';
 import { MAX_BATCH_FILES, MAX_FILE_BYTES, UPLOAD_TYPES } from '../../lib/uploads.js';
+/* De beeldkeuring reist NIET mee in cfg. pipeline.js importeert keurBeeld()
+   rechtstreeks uit shots.js en leest de drempels daar; ze hier ook nog eens
+   doorgeven zou een tweede weg naar dezelfde getallen zijn, en de tweede weg
+   is altijd degene die achterloopt. Zie de kop bij MIN_LANGE_ZIJDE. */
 import { SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy } from '../../data/shots.js';
 import {
   PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
@@ -337,6 +341,18 @@ const PIPE = {
         // gets a sentence: a slot that fails silently is a photograph the
         // studio never receives and nobody ever missed.
         'bad-shot': 'We could not tell which photo this was meant to be. Try that slot again.',
+        /* De enige weigering die over het BEELD gaat en niet over het bestand.
+           Het getal staat erbij omdat "te klein" zonder maat een klant laat
+           gokken welke foto hij dan wél moet zoeken. */
+        'te-klein': 'Too small — {lang} pixels on the long side, and we need at least {min}. This is usually a screenshot or a photo pulled from a website; send the original from your camera roll instead.',
+      },
+      /* ── DE TWEE MELDINGEN DIE NIETS TEGENHOUDEN ────────────────────────────
+         Ze staan bewust niet onder `err`: het zijn geen fouten, de foto gaat
+         gewoon mee, en ze horen niet als rood te lezen. Waarom deze twee melden
+         en niet weigeren, staat bij de constanten in src/data/shots.js. */
+      let: {
+        'te-donker': 'This one is quite dark. We can work with it, but a brighter shot comes back better.',
+        'te-dun': 'Heavily compressed — you may see blocking in the flat areas. If you have the original, that one is better.',
       },
     },
     s3: {
@@ -419,6 +435,13 @@ const PIPE = {
         'bad-batch': 'Deze upload is de verbinding met je bestelling kwijt. Herlaad de pagina en kies de bestanden opnieuw.',
         'bad-request': 'Deze upload werd geweigerd. Herlaad de pagina en voeg het bestand opnieuw toe — je bestelling staat er nog.',
         'bad-shot': 'We konden niet zien welke foto dit moest zijn. Probeer dat vakje opnieuw.',
+        // Zie de noot bij de Engelse te-klein.
+        'te-klein': 'Te klein — {lang} pixels op de lange zijde, en we hebben er minstens {min} nodig. Dit is meestal een screenshot of een foto van een website; stuur het origineel uit je fotolijst.',
+      },
+      // Zie de noot bij het Engelse let-blok.
+      let: {
+        'te-donker': 'Deze is behoorlijk donker. We kunnen ermee werken, maar een lichtere foto komt beter terug.',
+        'te-dun': 'Ver gecomprimeerd — je ziet mogelijk blokjes in de vlakken. Heb je het origineel, dan is dat beter.',
       },
     },
     s3: {

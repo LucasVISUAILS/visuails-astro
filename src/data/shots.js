@@ -430,3 +430,142 @@ export const COPY = {
 export function copy(lang = 'en') {
   return COPY[lang === 'nl' ? 'nl' : 'en'];
 }
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * WANNEER EEN AANGELEVERDE FOTO HET NIET HAALT
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT ER TOT 23 AUGUSTUS 2026 GECONTROLEERD WERD ──────────────────────────
+ *
+ * Het type, of het bestand leeg was, of het boven de 25 MB uitkwam, en of het
+ * vakje bestond. Alle vier gaan over het BESTAND. Geen ervan gaat over de FOTO,
+ * en dat is precies het verschil dat de klant merkt: een screenshot van 40 kB
+ * van een productpagina komt er zonder klacht doorheen en wordt pas een
+ * probleem als het werk terugkomt en niet goed is.
+ *
+ * De werklijst noemt er drie — te klein, te donker, te veel compressie — met de
+ * toevoeging *"meteen zeggen in plaats van na levering"*. Dat laatste is de hele
+ * opdracht: het gaat er niet om dat we het weten, het gaat erom dat de klant het
+ * hoort op het moment dat hij nog een andere foto kan kiezen.
+ *
+ * ── ÉÉN WEIGERING EN TWEE WAARSCHUWINGEN, EN DAT ONDERSCHEID IS HET ONTWERP ──
+ *
+ * TE KLEIN IS OBJECTIEF. Onder een bepaald aantal pixels is er domweg te weinig
+ * beeld om een catalogset uit te halen — dat is geen smaak en geen inschatting,
+ * dus dat mag weigeren.
+ *
+ * TE DONKER EN TE VEEL COMPRESSIE ZIJN VERMOEDENS. Een bewust donkere productfoto
+ * bestaat, en een strakke flatlay op wit comprimeert nu eenmaal ver zonder dat
+ * er iets mis is. Een vermoeden mag geen deur dichtdoen: die twee melden we, en
+ * de foto gaat gewoon mee. Een klep op een heuristiek is een klep die op een
+ * dinsdag een echte klant tegenhoudt, en die klant belt niet — die gaat weg.
+ *
+ * ── DE GETALLEN, EN WAAR ZE VANDAAN KOMEN ───────────────────────────────────
+ */
+
+/**
+ * De lange zijde in pixels, en de enige harde ondergrens.
+ *
+ * 1000 is gekozen als de grens waar niets échts onder zit. Een telefoon van tien
+ * jaar oud schiet 3000 pixels; wat hieronder binnenkomt is in de praktijk een
+ * screenshot, een e-mailbijlage die onderweg is verkleind, of een plaatje dat van
+ * een webshop is geplukt. Een échte foto die per ongeluk onder de 1000 valt,
+ * bestaat bijna niet — en de zeldzame keer dat het toch gebeurt, is het antwoord
+ * "stuur het origineel" hoe dan ook het goede antwoord.
+ *
+ * NIET HOGER, en dat is een bewuste rem. Elke pixel die we hier extra eisen, is
+ * een klant die zijn bestelling niet af krijgt op een foto waar wij wél iets mee
+ * kunnen. De ondergrens hoort te vangen wat onbruikbaar is, niet te bepalen wat
+ * ideaal is — dat laatste staat als advies op /upload-guidelines.
+ */
+export const MIN_LANGE_ZIJDE = 1000;
+
+/**
+ * Gemiddelde helderheid (0–1) waaronder we het donker noemen.
+ *
+ * Gemeten als de gemiddelde relatieve luminantie over een verkleinde versie van
+ * het beeld. 0,12 ligt onder wat een normaal belichte foto op een normale
+ * achtergrond ooit haalt, ook een foto op een donkere ondergrond: die heeft nog
+ * altijd een verlicht product in het midden. Wat hieronder zakt, is onderbelicht
+ * of in het donker geschoten.
+ *
+ * Het is en blijft een vermoeden — zie hierboven. Een product op een zwarte
+ * achtergrond, van dichtbij, in een studio, kan hier terecht onder komen en is
+ * dan gewoon een goede foto. Vandaar dat dit meldt en niet weigert.
+ */
+export const DONKER_ONDER = 0.12;
+
+/**
+ * Bits per pixel waaronder we het te ver gecomprimeerd noemen.
+ *
+ * bestandsgrootte in bits gedeeld door het aantal pixels. Een JPEG die er goed
+ * uitziet zit ruwweg tussen 0,5 en 2; onder de 0,15 zie je blokken in de
+ * vlakken en randen om het product heen. Dat is het soort schade die niet te
+ * repareren is: wat weg is, is weg, en het wordt zichtbaar juist op de gladde
+ * vlakken waar een productfoto uit bestaat.
+ *
+ * PNG EN AVIF TELLEN NIET MEE. Een PNG van een flatlay op wit is verliesloos en
+ * kan alsnog een lage bits-per-pixel halen; AVIF haalt bij gelijke kwaliteit
+ * routineus een derde van JPEG. Deze maat zegt alleen iets binnen één
+ * compressiefamilie, en de enige waar hij betrouwbaar iets zegt is JPEG — zie
+ * de lijst hieronder.
+ */
+export const DUN_ONDER_BPP = 0.15;
+
+/** De formaten waarvoor de bits-per-pixel-maat betekenis heeft. */
+export const BPP_FORMATEN = ['jpg', 'jpeg'];
+
+/**
+ * Wat een meting betekent: één code, of niets.
+ *
+ * ── WAAROM DIT HIER STAAT EN NIET IN pipeline.js ────────────────────────────
+ *
+ * Het meten zelf hoort in de browser — daar zijn de pixels, zie meetBeeld() in
+ * src/scripts/pipeline.js. Het OORDEEL hoort naast de drempels, en wel om een
+ * praktische reden: pipeline.js draait alleen in een browser en is dus alleen te
+ * toetsen met een echte browser eromheen. Deze functie is pure rekenkunde op
+ * drie getallen, en die hoort toetsbaar te zijn zonder er een Chromium bij op te
+ * starten. Zie tests/beeldkeuring.test.mjs.
+ *
+ * Het is ook de plek waar het antwoord hoort: wie DONKER_ONDER hierboven
+ * verandert, ziet in dezelfde blik wat dat doet.
+ *
+ * @param maat  {{ w, h, mean }} of null als er niet gemeten kon worden
+ * @param ext   de extensie in kleine letters, zonder punt
+ * @param bytes de bestandsgrootte
+ * @returns {{ code, hard, ... }} of null als er niets te melden is
+ */
+export function keurBeeld(maat, ext, bytes) {
+  if (!maat) return null;
+
+  const lang = Math.max(Number(maat.w) || 0, Number(maat.h) || 0);
+  if (lang > 0 && lang < MIN_LANGE_ZIJDE) {
+    return { code: 'te-klein', hard: true, min: MIN_LANGE_ZIJDE, lang };
+  }
+
+  /* VOLGORDE IS BETEKENIS. Te klein wint van de andere twee: een screenshot van
+     300 pixels is meestal óók donker en óók dun, en drie meldingen over hetzelfde
+     bestand zeggen minder dan één. De klant moet weten wat hij moet doen, en dat
+     is hier "stuur het origineel" — de rest volgt daaruit vanzelf. */
+  /* `maat.mean == null` EERST, en dat is geen stijl. `Number(null)` is 0 en
+     `Number.isFinite(0)` is waar, dus een meting waarin de helderheid ONTBREEKT
+     leest als pikzwart en zou elke foto als te donker melden. Dat is geen
+     verzonnen geval: meetBeeld() geeft precies die vorm terug — afmetingen wél,
+     `mean: null` — als de browser het canvas weigert. De melding zou dan afgaan
+     op álles, wat erger is dan hem niet hebben. */
+  const gem = maat.mean == null ? NaN : Number(maat.mean);
+  if (Number.isFinite(gem) && gem < DONKER_ONDER) {
+    return { code: 'te-donker', hard: false, mean: gem };
+  }
+
+  /* Alleen op de formaten waar bits-per-pixel iets zegt. Een verliesloze PNG
+     haalt op een flatlay op wit routineus een lagere waarde dan een matige JPEG,
+     en die als "te ver gecomprimeerd" melden zou de melding waardeloos maken. */
+  const px = (Number(maat.w) || 0) * (Number(maat.h) || 0);
+  if (px > 0 && Number(bytes) > 0 && BPP_FORMATEN.includes(String(ext || '').toLowerCase())) {
+    const bpp = (Number(bytes) * 8) / px;
+    if (bpp < DUN_ONDER_BPP) return { code: 'te-dun', hard: false, bpp };
+  }
+  return null;
+}

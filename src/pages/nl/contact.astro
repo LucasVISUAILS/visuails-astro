@@ -83,11 +83,11 @@ const SAMPLE = TEST_SAMPLE.nl;
             <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
             <div class="field">
               <label for="c-name">Naam <span class="req">*</span></label>
-              <input class="input" type="text" id="c-name" name="name" required autocomplete="name" placeholder="Je naam" />
+              <input class="input" type="text" id="c-name" name="name" required data-melding="Vul je naam in, dan weten we wie er schrijft." autocomplete="name" placeholder="Je naam" />
             </div>
             <div class="field">
               <label for="c-email">E-mail <span class="req">*</span></label>
-              <input class="input" type="email" id="c-email" name="email" required autocomplete="email" placeholder="jij@jouwmerk.nl" />
+              <input class="input" type="email" id="c-email" name="email" required data-melding="Vul een volledig e-mailadres in, zoals jij@jouwmerk.nl — anders kunnen we niet antwoorden." autocomplete="email" placeholder="jij@jouwmerk.nl" />
             </div>
             <div class="field">
               <label for="c-topic">Onderwerp</label>
@@ -100,7 +100,7 @@ const SAMPLE = TEST_SAMPLE.nl;
             </div>
             <div class="field">
               <label for="c-message">Bericht <span class="req">*</span></label>
-              <textarea class="textarea" id="c-message" name="message" rows="5" required placeholder="Hoe kunnen we helpen?"></textarea>
+              <textarea class="textarea" id="c-message" name="message" rows="5" required data-melding="Schrijf even waar het over gaat, dan kunnen we meteen inhoudelijk reageren." placeholder="Hoe kunnen we helpen?"></textarea>
             </div>
             <div class="field">
               <span id="preferred-label">Voorkeurskanaal</span>

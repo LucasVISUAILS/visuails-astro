@@ -58,6 +58,10 @@ import {
   TIERS, AMOUNT, euro, vatLabel, WINDOW_THRESHOLD, PLAN_CLIPS, plans,
   reviewClaim, turnaround,
 } from '../data/pricing.js';
+/* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
+   schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
+   een component niet lezen — zie de kop boven serviceFaqs(). */
+import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
 import TierCompare from './TierCompare.astro';
@@ -91,6 +95,29 @@ const QUOTED = new Set(['campaign', 'custom']);
 // the real photo, not the .photo-band / .photo-grid box it crops into. They
 // are attributes, not layout: the browser needs the aspect ratio before the
 // bytes arrive or the grid reflows under the reader (§12).
+// ── DE ALT-TEKST OP DEZE PAGINA IS GEEN DECORATIE — 23 AUGUSTUS 2026 ────────
+//
+// Hier stond `stepsAlt: 'A product video still from a VISUAILS Motion clip'` op
+// /img/banners-04.webp, en `exampleAlt: (n) => `${n} example`` op de vier
+// posters hierboven. Allebei onwaar, en niet op een manier die je ziet: er
+// bestaat geen enkele Motion-clip. `src/data/videoExamples.js` heeft acht
+// ingangen die allemaal `file: null` dragen, er staat geen .mp4 of .webm in het
+// project, en VideoExamples.astro rendert daarom overal het lege vakje.
+//
+// Een foto die zichzelf een filmstill noemt, is precies het soort claim dat
+// tests/promises.test.mjs moet tegenhouden: een belofte in tekst die door niets
+// wordt nagekomen. Dat het in een alt-tekst stond in plaats van in een kop,
+// maakt het niet kleiner — een schermlezer krijgt hem als het enige wat er over
+// dat beeld gezegd wordt, en Google leest hem als een beschrijving van de
+// pagina-inhoud.
+//
+// De nieuwe teksten beschrijven wat er te ZIEN is: een productfoto. Voor de
+// stappenafbeelding is dat bovendien betere copy, want stap 1 op die plek is
+// letterlijk "Stuur een productfoto".
+//
+// De echte videovoorbeelden komen in VideoExamples.astro te staan zodra er
+// bestanden zijn. Zolang die er niet zijn, staat er een leeg vakje dat dat
+// zegt, en dat is de eerlijke vorm.
 const posters: Record<string, { src: string; w: number; h: number }> = {
   motion: { src: '/img/banners-04.webp', w: 928, h: 1152 },
   lifestyle: { src: '/img/lifestyle-glow-03.webp', w: 768, h: 1376 },
@@ -146,7 +173,7 @@ const COPY = {
     kindsH: 'Ways to add motion.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
     quoted: 'Quoted per project',
-    exampleAlt: (n: string) => `${n} example`,
+    exampleAlt: (n: string) => `A product photo in the ${n} style`,
     edMeta: '( Where it fits )',
     edH: 'Product video: a short clip, made from one of your product photos.',
     edSub: 'A few seconds of movement, made for feeds and ads.',
@@ -173,7 +200,7 @@ const COPY = {
       ['We add the motion', 'A slow turn, a drape, a catch of light — held subtle.'],
       [turnaround('unattended', 'en'), 'Sized for pages, social and ads.'],
     ],
-    stepsAlt: 'A product video still from a VISUAILS Motion clip',
+    stepsAlt: 'A product photo of the kind a clip starts from',
     cleanH: 'Clean motion, ready to publish.',
     clean: [
       '8-second video with subtle motion',
@@ -201,32 +228,7 @@ const COPY = {
       dunes: 'Dunes-style lifestyle visual',
     },
     faqH: 'Video questions, answered',
-    faqs: [
-      {
-        q: 'What does a clip cost?',
-        a: `${clip} ${vatLabel('excl', 'en')} per clip for Motion and Lifestyle Video, whether you order one or twenty. Campaign is bigger and multi-shot, so it is quoted per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips a month are included in the ${studioPlan.name} plan.` : ''}`,
-      },
-      {
-        q: 'Why does the clip rate not fall with volume?',
-        a: 'Catalog and lifestyle photos are priced per product, and that rate falls a step at a time as the count rises. A clip is not part of that price per product — the work per clip is the same whether it arrives alone or with fifty products, so the rate stays put. It is the same figure on its own as it is inside a larger order.',
-      },
-      {
-        q: 'How long is a clip, and what do I get?',
-        a: 'Eight seconds of subtle motion, exported at sizes that fit a product page, a feed and an ad — the same style held across your whole range, so clips ordered months apart still look like they belong together.',
-      },
-      {
-        q: 'How long does it take?',
-        a: `A clip request runs in the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date — and that holds however many clips you ask for. The held delivery date belongs to the price ladder for catalog and lifestyle products, and a clip is not on that ladder, so ordering more clips does not buy a date. What does fall inside a held window is clips added to an order of ${WINDOW_THRESHOLD} products or more: there the order carries the date and the clips ride along with it.`,
-      },
-      {
-        q: 'Can a model appear in the clip?',
-        a: 'Yes. Where a person appears, that person can come from the standard roster or be a Brand Model made only for you — the same face your catalog and lifestyle sets already run on, so a shopper sees one person across stills and motion alike.',
-      },
-      {
-        q: 'What if I need changes?',
-        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
-      },
-    ],
+    faqs: serviceFaqs('video', 'en'),
     ctaH: 'Give your product<br>a little movement.',
     ctaP: `${clip} per clip, ${vatLabel('excl', 'en')} — ${turnaround('unattended', 'en').toLowerCase()}, no fixed delivery date.`,
     ctaSecondary: 'Contact us',
@@ -252,7 +254,7 @@ const COPY = {
     kindsH: 'Manieren om beweging toe te voegen.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
     quoted: 'Offerte per project',
-    exampleAlt: (n: string) => `${n} voorbeeld`,
+    exampleAlt: (n: string) => `Een productfoto in de stijl ${n}`,
     edMeta: '( Waar het past )',
     edH: 'Productvideo: beweging waar een foto niet verder komt.',
     edSub: 'Een paar seconden beweging, gemaakt voor je feed en je advertenties.',
@@ -276,7 +278,7 @@ const COPY = {
       ['Wij brengen het in beweging', 'Een langzame draai, stof die valt, licht dat over het materiaal trekt — subtiel gehouden.'],
       [turnaround('unattended', 'nl'), 'Op maat voor pagina’s, social en advertenties.'],
     ],
-    stepsAlt: 'Een still uit een VISUAILS Motion-clip',
+    stepsAlt: 'Een productfoto zoals een clip er een als vertrekpunt neemt',
     cleanH: 'Strakke beweging, klaar om te publiceren.',
     clean: [
       'Video van 8 seconden met subtiele beweging',
@@ -296,32 +298,7 @@ const COPY = {
       dunes: 'Lifestyle-visual in Dunes-stijl',
     },
     faqH: 'Video-vragen, beantwoord',
-    faqs: [
-      {
-        q: 'Wat kost een clip?',
-        a: `${clip} ${vatLabel('excl', 'nl')} per clip voor Motion en Lifestyle Video, of je er nu één bestelt of twintig. Campaign is groter en bestaat uit meerdere shots, dus die gaat op offerte per project.${studioPlan ? ` ${PLAN_CLIPS.studio} clips per maand zitten in het ${studioPlan.name}-plan.` : ''}`,
-      },
-      {
-        q: 'Waarom daalt het cliptarief niet bij grotere aantallen?',
-        a: 'Catalog- en lifestylefoto’s hebben een tarief per product, en dat zakt stap voor stap naarmate het aantal stijgt. Bij een clip werkt dat niet zo — het werk per clip is hetzelfde, of hij nu alleen komt of met vijftig producten. Daarom blijft het tarief staan. Los is het hetzelfde bedrag als binnen een grotere bestelling.',
-      },
-      {
-        q: 'Hoe lang is een clip, en wat krijg ik?',
-        a: 'Je krijgt acht seconden subtiele beweging, in de formaten voor een productpagina, een feed en een advertentie. De stijl blijft hetzelfde door je hele assortiment, dus clips die maanden na elkaar besteld zijn horen nog bij elkaar.',
-      },
-      {
-        q: 'Hoe lang duurt het?',
-        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijsladder voor catalog- en lifestyleproducten, en een clip staat niet op die ladder; méér clips bestellen koopt dus geen datum. Wat wél binnen een vrijgehouden venster valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
-      },
-      {
-        q: 'Kan er een model in de clip?',
-        a: 'Ja. Waar een persoon in beeld komt, kan die uit de standaardbibliotheek komen of een merkmodel zijn dat alleen voor jou gemaakt is — hetzelfde gezicht waar je catalog- en lifestylesets al op draaien, zodat een klant één persoon ziet in stills én in beweging.',
-      },
-      {
-        q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
-      },
-    ],
+    faqs: serviceFaqs('video', 'nl'),
     ctaH: 'Geef je product<br>een beetje beweging.',
     ctaP: `${clip} per clip, ${vatLabel('excl', 'nl')} — ${turnaround('unattended', 'nl').toLowerCase()}, geen vaste leverdatum.`,
     ctaSecondary: 'Neem contact op',

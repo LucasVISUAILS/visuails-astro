@@ -37,6 +37,10 @@ import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
   WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
+/* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
+   schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
+   een component niet lezen — zie de kop boven serviceFaqs(). */
+import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Compare from './Compare.astro';
 import Disclose from './Disclose.astro';
@@ -202,36 +206,7 @@ const COPY = {
     exampleAlt: (n: string) => `${n} lifestyle example`,
     reviewNote: reviewClaim('unattended', 'en'),
     faqH: 'Lifestyle questions, answered',
-    faqs: [
-      {
-        q: 'What does a lifestyle carousel cost?',
-        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a step at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a carousel is three photos of one product in one styled look.`,
-      },
-      {
-        q: 'What are the three photos?',
-        a: 'A scene shot — your product styled in a real-world setting. An on-model shot, so people can picture it in their own life. And a tight detail close-up that proves the quality. All three carry the same colour grade, which is what makes them read as one post rather than three photos.',
-      },
-      {
-        q: 'Can I have more than one look per product?',
-        a: 'One styled look per order. A second scene for the same product is simply a second order at the per-product rate — which also means the two sets stay distinct rather than being blended into a mood that is neither.',
-      },
-      {
-        q: 'Can I get a mood that is not one of the four?',
-        a: 'Yes. Most brands pick one of the four because they are ready to run today. For anything else, tell us what you have in mind and we send you a price before we start.',
-      },
-      {
-        q: 'Can the same model appear across my whole collection?',
-        a: 'Yes. Pick a face from the standard roster and reuse it, or have a Brand Model made only for you — the same person then carries your catalog sets, your carousels and your clips, which is what makes a range look like one brand rather than a series of shoots.',
-      },
-      {
-        q: 'How long does it take?',
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
-      },
-      {
-        q: 'What if I need changes?',
-        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
-      },
-    ],
+    faqs: serviceFaqs('lifestyle', 'en'),
     ctaH: 'Put your product<br>in a scene that sells.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
   },
@@ -311,36 +286,7 @@ const COPY = {
     exampleAlt: (n: string) => `${n} lifestyle-voorbeeld`,
     reviewNote: reviewClaim('unattended', 'nl'),
     faqH: 'Lifestyle-vragen, beantwoord',
-    faqs: [
-      {
-        q: 'Wat kost een lifestyle-carousel?',
-        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een carousel drie foto’s van één product in één gestylede look.`,
-      },
-      {
-        q: 'Welke drie foto’s zijn het?',
-        a: 'Een sfeershot — je product gestyled in een realistische setting. Een on-model shot, zodat mensen het in hun eigen leven zien. En een strakke detail-close-up die de kwaliteit bewijst. Alle drie dragen dezelfde kleurbewerking, en dat is wat ze als één post laat lezen in plaats van als drie losse foto’s.',
-      },
-      {
-        q: 'Kan ik meer dan één look per product krijgen?',
-        a: 'Eén gestylede look per bestelling. Een tweede scène voor hetzelfde product is gewoon een tweede bestelling tegen het tarief per product — en zo blijven de twee sets ook echt verschillend, in plaats van dat ze naar elkaar toe kruipen.',
-      },
-      {
-        q: 'Kan ik een sfeer krijgen die niet bij de vier hoort?',
-        a: 'Ja. De vier vaste looks zijn wat de meeste merken kiezen omdat ze al afgesteld zijn; alles daarbuiten spreken we eerst met je af en zetten we op een offerte, dus laat weten wat je in gedachten hebt, dan krijg je een prijs van ons in plaats van een gok.',
-      },
-      {
-        q: 'Kan hetzelfde model in mijn hele collectie terugkomen?',
-        a: 'Ja. Kies een gezicht uit de standaardbibliotheek en gebruik dat steeds opnieuw, of laat een merkmodel maken dat alleen van jou is — dezelfde persoon draagt dan je catalogsets, je carousels en je clips, en dan hoort je hele assortiment bij elkaar in plaats van dat het een reeks losse fotoshoots is.',
-      },
-      {
-        q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${turnaround('attended', 'nl').toLowerCase()}.`,
-      },
-      {
-        q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
-      },
-    ],
+    faqs: serviceFaqs('lifestyle', 'nl'),
     ctaH: 'Zet je product<br>in een scène die verkoopt.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
   },

@@ -29,6 +29,30 @@ import {
 // variant van die drift.
 import { UPLOAD_DAYS, DELIVERY_MONTHS } from '../../lib/retention.js';
 
+/* ── §4 TYPT GEEN PRIJZEN MEER DIE WEL BESTAAN — 23 AUGUSTUS 2026 ───────────
+ *
+ * De regel hieronder zei "Video, custom work and monthly plans — quoted
+ * individually before you commit". Voor maatwerk klopt dat. Voor de andere twee
+ * niet, en dat is een tegenspraak met de site zelf: /pricing, /video en de
+ * JSON-LD publiceren een vaste prijs per clip, en /plans publiceert drie vaste
+ * maandbedragen. Een klant die op de voorwaarden afgaat, leest dat hij eerst een
+ * offerte krijgt voor iets waar een prijskaart bij staat.
+ *
+ * Nu leest §4 diezelfde bronnen: AMOUNT.video en monthlyCents(). Zoals de
+ * catalog- en lifestyleregels de ladder al lazen, en om dezelfde reden — een
+ * prijs die op twee plekken staat, staat er over een half jaar verschillend.
+ */
+import { AMOUNT } from '../../data/pricing.js';
+import { PLAN_IDS, monthlyCents } from '../../data/plans.js';
+import { planName } from '../../data/planNames.js';
+
+/* Van–tot over de drie plannen, op de maandtermijn: dat is het bedrag dat op
+   /plans het grootst wordt afgedrukt. De jaartermijn is goedkoper en zou hier
+   een lagere ondergrens geven dan wat iemand op de plannenpagina ziet staan. */
+const planLo = Math.min(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
+const planHi = Math.max(...PLAN_IDS.map((p) => monthlyCents(p, 'monthly')));
+const planLoNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planLo), 'nl');
+const planHiNaam = planName(PLAN_IDS.find((p) => monthlyCents(p, 'monthly') === planHi), 'nl');
 const t0 = turnaround('unattended', 'nl').toLowerCase();
 const t1 = turnaround('attended', 'nl').toLowerCase();
 
@@ -112,7 +136,9 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
         <li><strong>Catalog</strong> — {euro(ladderRate('catalog', 1), 'nl')} per product, dalend tot {euro(ladderFloor('catalog'), 'nl')} vanaf {FLOOR_FROM} producten. Een set van vier foto’s (voorkant, achterkant, een detail-close-up en één on-model shot).</li>
         <li><strong>Lifestyle-visuals</strong> — {euro(ladderRate('lifestyle', 1), 'nl')} per product, dalend tot {euro(ladderFloor('lifestyle'), 'nl')} vanaf {FLOOR_FROM} producten. Een carousel van drie foto’s.</li>
         <li><strong>Het tarief daartussen</strong> — volledig uitgeschreven op onze <a href="/nl/pricing/">prijzenpagina</a>. Het tarief dat geldt, is dat van het totale aantal producten in je bestelling, en het geldt voor elk product daarin.</li>
-        <li><strong>Video, maatwerk en maandplannen</strong> — individueel geoffreerd voordat je je verbindt.</li>
+        <li><strong>Video</strong> — {euro(AMOUNT.video, 'nl')} per clip, hetzelfde tarief of het er nu één is of twintig. Een clip staat niet op de ladder hierboven.</li>
+        <li><strong>Maandplannen</strong> — {euro(planLo / 100, 'nl')} tot {euro(planHi / 100, 'nl')} per maand op de maandtermijn ({planLoNaam} tot {planHiNaam}), volledig uitgeschreven op onze <a href="/nl/plans/">plannenpagina</a>. De jaartermijn staat daar ook.</li>
+        <li><strong>Maatwerk</strong> — individueel geoffreerd voordat je je verbindt.</li>
         <li><strong>Brand Model</strong> — komt bovenop een bestelling en wordt vooraf geoffreerd. Het is bij het afrekenen niet te koop.</li>
       </ul>
       <p>Nieuwe bedrijven kunnen één proefvisual per bedrijf aanvragen, zodat je onze kwaliteit kunt beoordelen voordat je bestelt. Prijzen worden bevestigd op het moment van bestellen. Tenzij anders vermeld, zijn prijzen exclusief btw waar van toepassing.</p>

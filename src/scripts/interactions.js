@@ -1452,6 +1452,47 @@ function initTierToggle() {
   });
 }
 
+
+/*
+ * ── DE BUBBEL VAN DE BROWSER SPREEKT DE TAAL VAN DE BROWSER ─────────────────
+ *
+ * Op /nl/contact staan drie verplichte velden zonder eigen melding. Wie een
+ * Engelse browser heeft, leest daar "Please fill out this field" op een
+ * Nederlandse pagina — en aan `lang="nl"` op het document heeft die bubbel
+ * niets, want reportValidity() rendert in de UI-taal van de browser.
+ *
+ * Dat is precies de fout die de bestelstroom op 8 augustus 2026 heeft
+ * rechtgezet met setCustomValidity() (zie validateStep() in pipeline.js). De
+ * bestelstroom heeft daar een eigen machinerie voor omdat hij stappen valideert;
+ * de losse formulieren op de site hebben die niet, en drie regels JavaScript
+ * per pagina zou dezelfde fout op vier plekken zetten.
+ *
+ * Vandaar één plek en een attribuut. `data-melding` op het veld is de tekst, en
+ * hij staat in de pagina — bij het label, in dezelfde taal als de rest van die
+ * pagina, geschreven door wie de pagina schrijft.
+ *
+ * WEER LEEGMAKEN IS DE HELFT VAN DE FUNCTIE. Een custom-validity blijft gelden
+ * tot je hem opheft, en zolang hij geldt is het veld ongeldig — ook nadat de
+ * bezoeker het heeft ingevuld. Zonder de `input`-regel hieronder zit iemand
+ * vast op een volledig ingevuld formulier, en dat is erger dan een bubbel in de
+ * verkeerde taal.
+ */
+function initVeldmeldingen() {
+  const velden = document.querySelectorAll('[data-melding]');
+  for (const v of velden) {
+    if (v.__meldingGebonden) continue;
+    v.__meldingGebonden = 1;
+    v.addEventListener('invalid', () => {
+      /* Alleen als het veld écht leeg of fout is. `valid` is hier altijd false —
+         we zitten in het invalid-event — maar `customError` zou betekenen dat we
+         onze eigen melding opnieuw zetten bovenop zichzelf. */
+      if (!v.validity.customError) v.setCustomValidity(v.dataset.melding);
+    });
+    v.addEventListener('input', () => v.setCustomValidity(''));
+    v.addEventListener('change', () => v.setCustomValidity(''));
+  }
+}
+
 export function init() {
   initReveal();
   initSplitLines();
@@ -1470,6 +1511,7 @@ export function init() {
   initTestSampleUpload();
   initFormRefusal();
   initWizards();
+  initVeldmeldingen();
 }
 
 // The reveal safety net is bound FIRST and unconditionally, so reveal-gated

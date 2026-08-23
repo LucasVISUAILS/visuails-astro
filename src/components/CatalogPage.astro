@@ -46,6 +46,10 @@ import {
   TIERS, LADDER, ladderRate, ladderFloor, euro, vatLabel,
   WINDOW_THRESHOLD, reviewClaim, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
+/* De vragen onderaan deze pagina staan in faq.js en niet meer hier. Reden:
+   schema.js bouwt zijn FAQPage-knoop uit het pad en kan de frontmatter van
+   een component niet lezen — zie de kop boven serviceFaqs(). */
+import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import Disclose from './Disclose.astro';
 import ProductScene from './ProductScene.astro';
@@ -204,42 +208,7 @@ const COPY = {
     reviewNote: reviewClaim('unattended', 'en'),
     reviewAlt: 'A clean, marketplace-ready catalog visual by VISUAILS',
     faqH: 'Catalog questions, answered',
-    faqs: [
-      {
-        q: 'What does a catalog set cost?',
-        a: `${euro(entry, 'en')} ${vatLabel('excl', 'en')} for one product, and the rate falls a step at a time to ${euro(floor, 'en')} from ${floorFrom} products up. Whatever the count, a set is four photos — front, back, a close-up of the logo or fabric, and one on-model shot.`,
-      },
-      {
-        q: 'Is the on-model shot really included?',
-        a: 'Yes — one on-model photo is part of every product set, at no extra cost. Pick a model when you order, or let us choose one that fits your brand.',
-      },
-      {
-        q: 'Do I have to use all four?',
-        a: 'No. The set is what you get; what you publish from it is your call. Use two now and keep the others for a seasonal campaign, a new marketplace or a different banner size — there is no time limit and nothing extra to pay for putting one to work later.',
-      },
-      {
-        q: 'How long does it take?',
-        // Both halves of the timing promise, in the order a buyer needs them:
-        // the typical span first, then the fact that it is not a date.
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
-      },
-      {
-        q: 'Can I choose the background colour?',
-        a: 'Standard is pure white (#FFFFFF). You can also enter any hex code — a light, neutral colour works best — applied behind every product you send. If you pick Amazon, bol or Zalando in the order, the background locks to white because those platforms require it; if you want your own colour as well, order the product twice and it is simply charged at the per-product rate.',
-      },
-      {
-        q: 'Can I use these on Amazon, bol and Zalando?',
-        a: 'You tell us where the product will be sold as part of the order, and we deliver to that spec. All three require a pure white main image, so picking one locks the background to #FFFFFF and the set comes as jpg rather than webp. Two rules stay theirs and are worth knowing: bol allows no model on the main image, and Zalando asks for model views photographed with a real person — so use our on-model shot there as an additional image. We match the specifications; the platform still decides on the listing.',
-      },
-      {
-        q: 'What if I need changes?',
-        // This answer used to read "Three revision rounds are included."
-        // That was a package's guarantee and not this one — and there is no
-        // count on either tier now. What we would agree instead is in
-        // /terms §10 and stays there; see src/data/pricing.js for why.
-        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
-      },
-    ],
+    faqs: serviceFaqs('catalog', 'en'),
     ctaH: 'Build a catalog that<br>looks like one brand.',
     ctaP: `${euro(entry, 'en')} per product, down to ${euro(floor, 'en')} from ${floorFrom} up — ${vatLabel('excl', 'en')}.`,
   },
@@ -307,36 +276,7 @@ const COPY = {
     reviewNote: reviewClaim('unattended', 'nl'),
     reviewAlt: 'Een strakke, voor marktplaatsen klare Catalog-visual van VISUAILS',
     faqH: 'Catalog-vragen, beantwoord',
-    faqs: [
-      {
-        q: 'Wat kost een catalogset?',
-        a: `${euro(entry, 'nl')} ${vatLabel('excl', 'nl')} voor één product, en dat tarief zakt stap voor stap naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten. Bij elk aantal is een set vier foto’s — voorkant, achterkant, een close-up van het logo of de stof, en één foto op een model.`,
-      },
-      {
-        q: 'Zit de on-model shot echt inbegrepen?',
-        a: 'Ja — één on-model foto hoort bij elke productset, zonder extra kosten. Kies een model bij je bestelling, of laat ons er een kiezen die bij je merk past.',
-      },
-      {
-        q: 'Moet ik alle vier de foto’s gebruiken?',
-        a: 'Nee. De set is wat je krijgt; wat je ervan publiceert bepaal jij. Gebruik er nu twee en houd de rest voor een seizoenscampagne, een nieuwe marktplaats of een ander bannerformaat — er zit geen termijn op en het kost niets extra om er later alsnog een in te zetten.',
-      },
-      {
-        q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${turnaround('attended', 'nl').toLowerCase()}.`,
-      },
-      {
-        q: 'Kan ik de achtergrondkleur kiezen?',
-        a: 'Standaard is puur wit (#FFFFFF). Je kunt ook elke hexcode invoeren — een lichte, neutrale kleur werkt het best — toegepast achter elk product dat je opstuurt. Kies je bij je bestelling Amazon, bol of Zalando, dan staat de achtergrond vast op wit omdat die platforms dat eisen; wil je daarnaast je eigen kleur, bestel het product dan twee keer en je betaalt gewoon het tarief per product.',
-      },
-      {
-        q: 'Kan ik deze op Amazon, bol en Zalando gebruiken?',
-        a: 'Je geeft bij je bestelling aan waar het product verkocht wordt, en we leveren op die specificatie. Alle drie eisen ze een zuiver witte hoofdafbeelding, dus die keuze zet de achtergrond vast op #FFFFFF en je krijgt de set als jpg in plaats van webp. Twee regels blijven van het platform zelf, en die zijn goed om te weten: bol staat geen model op de hoofdafbeelding toe, en Zalando vraagt modelbeelden die met een echte persoon zijn gefotografeerd — gebruik onze on-model shot daar dus als extra afbeelding. Wij matchen de specificaties; het platform beslist over de listing.',
-      },
-      {
-        q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
-      },
-    ],
+    faqs: serviceFaqs('catalog', 'nl'),
     ctaH: 'Bouw een catalogus die<br>eruitziet als één merk.',
     ctaP: `${euro(entry, 'nl')} per product, tot ${euro(floor, 'nl')} vanaf ${floorFrom} — ${vatLabel('excl', 'nl')}.`,
   },

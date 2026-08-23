@@ -100,6 +100,10 @@ const COPY = {
     stockH: 'And a month that is already filled.',
     stockNow: [`${STOCK_OFF_BRAND} new stock visuals every month`, 'included with every plan, usable by any brand — something to post on the days you have no new product.'],
     stockSoon: [`${STOCK_ON_BRAND} on-brand visuals a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. They arrive with Editions and are set up once per brand.'],
+    /* Zie de noot bij stockNowTag in HomeV2.astro: de gedeelde bibliotheek
+       bestaat nog niet, en de regel stond hier net als daar zonder label
+       tussen dingen die wél meekomen met een abonnement. */
+    stockNowTag: 'Not running yet',
     stockSoonTag: 'With Editions',
     stockShot: 'A month grid of stock visuals for one brand — twenty frames in the same colours and light, with no product in them',
     stockShotMsg: 'Mood, texture, hands, light — no garment and no packshot. If it reads as a stock library it has failed; it has to read as one brand.',
@@ -148,6 +152,7 @@ const COPY = {
     stockH: 'En een maand die al gevuld is.',
     stockNow: [`${STOCK_OFF_BRAND} nieuwe stockbeelden per maand`, 'inbegrepen bij elk abonnement en bruikbaar voor elk merk — iets om te posten op de dagen dat je niets nieuws hebt.'],
     stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Ze komen met Editions en worden één keer per merk opgezet.'],
+    stockNowTag: 'Nog niet actief',
     stockSoonTag: 'Met Editions',
     stockShot: 'Een maandraster van stockbeelden voor één merk — twintig beelden naast elkaar in dezelfde kleuren en hetzelfde licht, zonder product erin',
     stockShotMsg: 'Sfeer, textuur, handen, licht — geen kledingstuk en geen packshot. Leest het als een stockbibliotheek, dan is het mislukt; het moet als één merk lezen.',
@@ -300,7 +305,7 @@ const c = COPY[nl ? 'nl' : 'en'];
     <div>
       <h2 class="pl-stock-h">{c.stockH}</h2>
       <div class="pl-stock-item">
-        <p class="pl-stock-n">{c.stockNow[0]}</p>
+        <p class="pl-stock-n">{c.stockNow[0]} <em class="pl-soon">{c.stockNowTag}</em></p>
         <p class="pl-stock-b">{c.stockNow[1]}</p>
       </div>
       <div class="pl-stock-item is-soon">

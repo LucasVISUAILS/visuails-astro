@@ -6,6 +6,18 @@ import { TEST_SAMPLE } from '../../data/pricing.js';
 // De proefvisualkosten stonden hier ook ingetypt. Het is een tier-feit en komt
 // dus uit pricing.js — zie src/pages/nl/test-sample.astro voor dezelfde fix.
 const SAMPLE = TEST_SAMPLE.nl;
+/* ── DE ONDERGRENS STAAT NU OP DE PAGINA DIE HEM VRAAGT — 23 augustus 2026 ──
+ *
+ * Hier stond "Send the highest resolution you have" en verder niets over
+ * formaat. Sinds vandaag WEIGERT het bestelformulier een foto onder een
+ * ondergrens (zie keurBeeld() in src/data/shots.js), en een weigering die
+ * nergens is aangekondigd, is een weigering die iemand op stap 2 tegenkomt
+ * zonder te weten wat hij dan moet.
+ *
+ * Uit de constante en niet ingetypt, om dezelfde reden als de bewaartermijnen in
+ * terms.astro: dit is een getal dat de code afdwingt, en een pagina die er zijn
+ * eigen versie van bijhoudt, belooft op een dag iets anders dan er gebeurt. */
+import { MIN_LANGE_ZIJDE } from '../../data/shots.js';
 import Placeholder from '../../components/Placeholder.astro';
 import ProductScene from '../../components/ProductScene.astro';
 ---
@@ -37,7 +49,7 @@ import ProductScene from '../../components/ProductScene.astro';
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Gebruik een neutrale, rustige achtergrond.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Belicht het goed en gelijkmatig — daglicht werkt uitstekend.</span></li>
           <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Toon het volledige product, plus een paar close-ups van belangrijke details.</span></li>
-          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Stuur de hoogste resolutie die je hebt.</span></li>
+          <li><svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg><span>Stuur de hoogste resolutie die je hebt — minstens {MIN_LANGE_ZIJDE} pixels op de lange zijde, en dat haalt elke telefoon van de afgelopen tien jaar. Daaronder moeten we je om een andere foto vragen.</span></li>
         </ul>
       </div>
       {/* Zie de Engelse pagina voor de volledige toelichting. Kort: de rode

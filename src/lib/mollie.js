@@ -356,6 +356,47 @@ export async function createMollieSubscription(env, {
 }
 
 /**
+ * Wat Mollie zelf van dit abonnement vindt.
+ *
+ * ── WAAROM DEZE FUNCTIE ER IS, 23 AUGUSTUS 2026 ─────────────────────────────
+ *
+ * Een mislukte incasso is bijna nooit het einde. Mollie probeert het opnieuw, en
+ * pas als die pogingen op zijn zet hij het abonnement zelf op `suspended`. Het
+ * verschil tussen die twee is precies het verschil tussen "de klant had even geen
+ * saldo" en "dit abonnement wordt niet meer betaald", en alleen Mollie weet welke
+ * van de twee het is.
+ *
+ * DAT VERSCHIL MOET UIT MOLLIE KOMEN EN NIET UIT EEN TELLER HIER. Een drempel van
+ * "drie mislukkingen en dan pauzeren" is een getal dat ik verzin, en het zou naast
+ * Mollie's eigen schema liggen zodra Mollie dat schema aanpast. Erger nog: het zou
+ * een klant kunnen buitensluiten terwijl Mollie het morgen alsnog int, en dan is
+ * hij zijn saldo kwijt dat hij vorige maand betaald heeft — zie verbruikToestaan()
+ * in subscription.js, waar een gepauzeerd abonnement niet besteed mag worden.
+ *
+ * Statussen die Mollie teruggeeft: `pending`, `active`, `suspended`, `canceled`,
+ * `completed`. Alleen de laatste drie betekenen dat er geen geld meer komt.
+ *
+ * EEN 404 IS EEN ANTWOORD EN GEEN FOUT — net als bij het opzeggen hieronder. Een
+ * abonnement dat bij Mollie niet meer bestaat, komt terug als `canceled`.
+ */
+export async function getMollieSubscription(env, { mollieCustomerId, subscriptionId }) {
+  try {
+    return await mollieRequest(
+      env, 'GET',
+      `/customers/${encodeURIComponent(mollieCustomerId)}/subscriptions/${encodeURIComponent(subscriptionId)}`
+    );
+  } catch (err) {
+    if (/\b404\b/.test(String(err?.message || ''))) return { status: 'canceled', alreadyGone: true };
+    throw err;
+  }
+}
+
+/** Betekent deze Mollie-abonnementsstatus dat er geen geld meer binnenkomt? */
+export function abonnementGestopt(status) {
+  return ['suspended', 'canceled', 'cancelled', 'completed'].includes(String(status || '').toLowerCase());
+}
+
+/**
  * Stoppen. Onmiddellijk en zonder verdere afschrijving.
  *
  * EEN 404 IS HIER GEEN FOUT. Een abonnement dat bij Mollie al voltooid of al

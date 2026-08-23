@@ -54,6 +54,17 @@ bucket_name = "visuails-uploads"
 [vars]
 NOTIFY_EMAIL = "hello@visuails.com"
 FROM_EMAIL = "VISUAILS <orders@visuails.com>"
+# ── DE KOPIE VAN ELKE FACTUUR — 23 augustus 2026 ─────────────────────────────
+#
+# src/lib/invoiceMail.js zet `bcc: env.INVOICE_BCC` op elke uitgaande factuur, en
+# die variabele stond in geen enkele config. Netto: de code was er sinds
+# 20 augustus, de kopie ging nooit ergens heen, en dat is precies het soort stille
+# uitschakeling dat je niet ziet — er komt geen fout, er komt alleen niets.
+#
+# Hetzelfde adres als NOTIFY_EMAIL, en dat is een keuze en geen gemak: de kopie
+# hoort te landen waar je de andere studioberichten ook leest. Wordt het ooit een
+# boekhouder, dan is dit de regel die verandert en verder niets.
+INVOICE_BCC = "hello@visuails.com"
 # RESEND_API_KEY is intentionally NOT here -- it is a secret, set it separately
 # (see the note at the top of this file).
 
