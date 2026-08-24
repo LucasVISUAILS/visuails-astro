@@ -38,7 +38,7 @@
 
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, turnaroundShort, reviewClaimShort } from '../src/data/pricing.js';
+import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, AFTERCARE, turnaroundShort, reviewClaimShort, aftercare } from '../src/data/pricing.js';
 import { ROSTER } from '../src/data/models.js';
 import { styles } from '../src/data/styles.js';
 import { WINDOW_DAYS } from '../src/data/capacity.js';
@@ -198,8 +198,19 @@ console.log('\nde getallen op de pagina komen overeen met de code');
        twee ooit uit elkaar gaan, moet de pagina de goede van de twee noemen. */
     check(`privacy toont de looptijd van de privélink (${PORTAL_TTL_DAYS} dagen)`,
       new RegExp(`works for ${PORTAL_TTL_DAYS} days`).test(read('dist/privacy/index.html')), true);
+    /* HET GETAL EN DE ZAAK, NIET DE ZIN — 23 augustus 2026.
+
+       Hier stond de hele zin als patroon: `Files stay available for N days`. Die
+       viel om toen /portal werd herschreven omdat "Revision" en "Closed" daar als
+       statussen stonden terwijl de kolom er vijf heeft — een tekstwijziging waar
+       aan deze belofte niets veranderde.
+
+       Wat bewezen moet worden is dat het portaal DEZELFDE looptijd noemt als
+       /privacy, en dat het getal uit PORTAL_TTL_DAYS komt. Dus: het getal met
+       "days" erachter, in de buurt van het woord waar het over gaat. Dezelfde
+       correctie als in planning.test.mjs en legal.test.mjs eerder deze maand. */
     check('en het portaal noemt dezelfde looptijd',
-      new RegExp(`Files stay available for ${PORTAL_TTL_DAYS} days`).test(read('dist/portal/index.html')), true);
+      new RegExp(`(available|beschikbaar)[^<]{0,40}${PORTAL_TTL_DAYS} days`).test(read('dist/portal/index.html')), true);
     /* De cookietermijnen horen bij hetzelfde principe: het cookiebeleid is de
        plek waar wij opschrijven hoe lang een cookie leeft. */
     check(`het cookiebeleid toont de sessieduur (${SESSION_COOKIE_DAYS} dagen)`,
@@ -489,10 +500,20 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
     check(`${p.split('/').pop()} belooft geen twee werkdagen`,
       /(binnen twee werkdagen|within two working days|twee werkdagen,)/i.test(body), false);
   }
-  // En de gesanctioneerde tekst staat er nog wel, want die MOET blijven.
+  /* ── OP DE TERMIJN EN NIET OP DE FORMULERING — 24 AUGUSTUS 2026 ─────────
+     Hier stond /Meestal 2–4 werkdagen/ en /Typically 2–4 working days/, en dat
+     ging om op de tekstronde: Lucas veranderde de Engelse regel naar "Estimated
+     delivery: 2–4 working days". Dezelfde termijn, andere woorden — en de toets
+     viel om op iets wat geen belofte veranderde.
+
+     Wat hier bewaakt hoort te worden is dat pricing.js een termijn van twee tot
+     vier werkdagen NOEMT (en dus de enige plek blijft die dat mag), niet met
+     welke woorden eromheen. Het getallenpaar is het feit; "meestal",
+     "typically" of "estimated delivery" is stijl. */
   const pricing = read('src/data/pricing.js');
-  check('pricing.js houdt de enige toegestane termijn', /Meestal 2–4 werkdagen/.test(pricing), true);
-  check('en de Engelse tegenhanger', /Typically 2–4 working days/.test(pricing), true);
+  check('pricing.js noemt de enige toegestane termijn, in het Nederlands',
+    /2–4 werkdagen/.test(pricing), true);
+  check('en in het Engels', /2–4 working days/.test(pricing), true);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -805,6 +826,62 @@ console.log('\nde dienstkaarten op de homepage beloven niets buiten de studio');
     const zonder = set.filter((k) => FEITELIJK.test(k.baat)).map((k) => k.naam);
     check(`tabel ${i + 1}: geen kaart begint met het feit in plaats van de baat`, zonder, []);
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE NAZORGBELOFTE IS ÉÉN BELOFTE, OOK OVER DE TREDEN HEEN
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * DIT IS EEN GEMETEN FOUT EN GEEN VOORZORG. Op 20 augustus 2026 kreeg de nazorg
+ * een nieuwe formulering — één revisieronde per bestelling — en die ging in de
+ * kolom van `unattended` staan. `attended` hield de oude:
+ *
+ *     "Anything you flag, we'll review together until it's right."
+ *
+ * Vier dagen lang stond op /pricing en /start naast elkaar dat een kleine
+ * bestelling één ronde krijgt en een grote net zolang tot het goed is. De
+ * ongelimiteerde helft stond in de kolom waar het meeste geld staat, en het is
+ * precies de toezegging die volgens Lucas *"simpelweg niet haalbaar"* is.
+ *
+ * ER STOND AL EEN COMMENTAAR DAT ZEI DAT ZE GELIJK WAREN. Letterlijk: *"The
+ * promise is identical to attended's."* Dat hield niets tegen — een noot is geen
+ * grendel. Sinds 24 augustus is het één constante (AFTERCARE) waar beide treden
+ * naar wijzen, en dit is de toets die merkt wanneer iemand er weer tekst van
+ * maakt.
+ *
+ * TWEE KANTEN, want één is niet genoeg: de accessor moet voor elke trede en elke
+ * taal dezelfde tekst geven, ÉN de bron mag de zin niet meer letterlijk bevatten
+ * op een tweede plek. Alleen het eerste zou groen blijven bij twee identieke
+ * letterlijke kopieën — en dat is de toestand waar dit uit voortkomt.
+ */
+console.log('\nde nazorgbelofte is er één, voor elke trede en elke taal');
+{
+  for (const taal of ['en', 'nl']) {
+    check(`${taal}: unattended en attended zeggen hetzelfde`,
+      aftercare('unattended', taal), aftercare('attended', taal));
+    check(`${taal}: en dat is de gedeelde constante`,
+      aftercare('attended', taal), AFTERCARE[taal]);
+  }
+
+  /* Beide treden wijzen naar het OBJECT, niet naar een kopie ervan. Dit is de
+     controle die twee identieke letterlijke teksten wél afkeurt. */
+  check('beide treden delen één object', TIERS.unattended.aftercare === TIERS.attended.aftercare, true);
+  check('en dat object is AFTERCARE', TIERS.attended.aftercare === AFTERCARE, true);
+
+  /* DE OUDE BELOFTE STAAT NERGENS MEER ALS TEKST. Zonder deze regel zou een
+     teruggezette zin ergens in een component ongemerkt naast de nieuwe blijven
+     staan — de fout hierboven, maar dan in markup in plaats van in data. */
+  const OUD = /(review together until it|bekijken we samen totdat het klopt|happy with them, and put right)/i;
+  const bronnen = [
+    'src/data/pricing.js', 'src/data/faq.js',
+    'src/components/PricingPage.astro', 'src/components/StartPage.astro',
+    'src/components/CatalogPage.astro', 'src/components/LifestylePage.astro',
+    'src/components/VideoPage.astro', 'src/components/HowItWorksPage.astro',
+    'src/components/BrandModelPage.astro', 'src/components/PlansPage.astro',
+    'src/components/TierCompare.astro', 'src/components/PortalPage.astro',
+  ];
+  const rest = bronnen.filter((b) => OUD.test(codeOnly(read(b))));
+  check('de oude ongelimiteerde belofte staat nergens meer in de code', rest, []);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

@@ -220,12 +220,18 @@ discrimineren** — alleen `no such column` opvangen en de rest doorgooien.
 Genummerd `migrations/0001…`, uitgevoerd door `scripts/migrate.mjs`.
 
 **Waar het vandaag wringt, en dat hoort hier te staan:** `migrate.mjs` houdt geen
-register van uitgevoerde migraties bij maar beslist op schema-introspectie, en
-`migrations/0024-sample-payer.sql` ontbreekt terwijl `schema.sql` hem documenteert.
-Een bestaande database krijgt `orders.payer_hash` dus nooit, en de
-"één proefvisual per betaler"-controle staat daar stil uit. Er staan bovendien
-vier `MIGRATIE-*-PLAKKEN.sql` in de root voor handmatige uitvoering, zonder
-vastlegging van wat er werkelijk is gedraaid.
+register van uitgevoerde migraties bij maar beslist op schema-introspectie — hij
+kijkt of een kolom bestaat en slaat over als dat zo is. Er staan bovendien vier
+`MIGRATIE-*-PLAKKEN.sql` in de root voor handmatige uitvoering, zonder vastlegging
+van wat er werkelijk is gedraaid.
+
+*Hier stond tot 24 augustus 2026 bij dat `migrations/0024-sample-payer.sql`
+ontbrak en dat een bestaande database `orders.payer_hash` dus nooit zou krijgen.
+Dat klopt niet: het bestand staat er (6.120 bytes) en `npm run migrate` meldt
+`0024-sample-payer.sql → overgeslagen — orders.payer_hash bestaat al`. De kolom
+is er dus, en de "één proefvisual per betaler"-controle draait. Wat wél blijft
+staan is de eerste helft van de zin — er is geen register — en dat is ook de
+reden dat zo'n bewering hier zo lang onweersproken kon blijven.*
 
 ---
 
@@ -415,16 +421,99 @@ Handig om te weten voordat je het "mist":
 ## 13 · Wat er open staat
 
 Geen taken, maar dingen die je moet weten voordat je iets aanraakt in de buurt.
-De volledige onderbouwing staat in `ARCHITECTUURAUDIT-23-AUGUSTUS.md`.
+De onderbouwing van de ronde van 23 augustus staat in
+`ARCHITECTUURAUDIT-23-AUGUSTUS.md`; `WERKLIJST.md` houdt bij wat er sindsdien is
+gebeurd.
 
-1. **`functions/api/webhook/stripe.js`** slikt een schrijffout in als "dubbele
-   levering" en antwoordt 200 — zie §6.
-2. **`migrations/0024-sample-payer.sql` ontbreekt** en `migrate.mjs` heeft geen
-   register — zie §4.4.
-3. **De wachtrij van het abonnement start niets.** `src/lib/account.js` belooft de
+**Deze lijst is op 24 augustus 2026 punt voor punt tegen de code gelegd.** Van de
+zes punten die er stonden, bleven er vier over: twee waren al gerepareerd zonder
+dat deze lijst het meekreeg, en van een derde was de helft nooit waar. Dat laatste
+is op zichzelf het punt dat hier het langst is blijven liggen: een lijst met
+bekende openstaande punten veroudert sneller dan hij wordt bijgehouden, en dit is
+uitgerekend de lijst waarvan een nieuwe lezer aanneemt dat hij klopt. Wat
+hieronder staat is gemeten, met de datum erbij. Wie er iets aan toevoegt, zet erbij hoe het is vastgesteld.
+
+1. **De wachtrij van het abonnement start niets.** `src/lib/account.js` belooft de
    abonnee dat de bovenste N automatisch starten; `queueTake()` en
    `queueLinkOrder()` in `subscription.js` hebben geen productie-aanroeper.
-4. **`functions/admin/debug-mollie.js`** is een zelfverklaard tijdelijk bestand dat
-   op een GET twee echte betalingen aanmaakt — zie §5.2.
-5. **Er is geen kanaaltoken voor het accent** — zie §8.
-6. **Geen pariteitstest voor EN/NL-sleutels** — zie §11.
+   *Nagemeten 24 augustus 2026 — klopt nog steeds, en het is groter dan het lijkt.*
+   `verbruikToestaan()` en `verbruikBoeken()` staan er om dezelfde reden ongebruikt
+   bij: alle vier horen ze bij één ontbrekende handeling, namelijk een wachtrij-item
+   van een abonnee omzetten in een bestelling. Dat is géén ontbrekende aanroep in
+   `/api/order` — dat eindpunt is anoniem en de sessiecookie staat op
+   `Path=/account` (zie `account.js`, `COOKIE_FLAGS`), dus daar is niet vast te
+   stellen wíé er bestelt. Saldo afschrijven op een getypt e-mailadres zou iedereen
+   het saldo van een ander laten uitgeven. De plek is een adminhandeling of een
+   scherm onder `/account`, waar de sessie al bestaat.
+
+2. **`migrate.mjs` houdt geen register** van wat er gedraaid is en beslist op
+   schema-introspectie — zie §4.4. Voor de genummerde reeks werkt dat; voor de vier
+   `MIGRATIE-*-PLAKKEN.sql` bestaat helemaal geen spoor.
+   *Nagemeten 24 augustus 2026 — klopt.*
+
+3. **Er is geen kanaaltoken voor het accent** — zie §8.
+   *Nagemeten 24 augustus 2026 — klopt.*
+
+4. **Geen pariteitstest voor EN/NL-sleutels** — zie §11. Er is geen enkele suite
+   die de twee talen naast elkaar legt op ontbrekende sleutels.
+   *Nagemeten 24 augustus 2026 — klopt, en er is inmiddels bewijs dat het nodig is:
+   op 24 augustus stond in de tredetabel Nederlands "Normale doorlooptijd" en Engels
+   "Standard queue" — twee cellen naast elkaar die niet hetzelfde beloofden, in een
+   tabel die er juist is om het verschil zichtbaar te maken. Niets ving dat af.*
+
+5. **De revisieronde is gebouwd, en dit is wat er nog niet in zit.**
+   De belofte (*"1 revision round included per order"*) heeft sinds 24 augustus
+   2026 gedrag: migratie 0034 zet `revision_round_at/_note/_count` op `orders`,
+   `revisionRoundState()` in `src/data/pricing.js` is de enige poort, en beide
+   klantschermen — het gemailde portaal en het ingelogde dashboard — laten de
+   klant in één keer aanvinken wat niet goed is en dat als één ronde versturen.
+   Daarna verdwijnt het formulier en verschijnt er een WhatsApp-link. In het
+   beheer komt de ronde binnen als één kaart in plaats van als losse meldingen.
+   `tests/revisieronde.test.mjs` draait dat tegen een echte SQLite met de echte
+   `schema.sql`.
+   *Gebouwd en nagemeten 24 augustus 2026.*
+
+   **Wat er bewust NIET in zit, en waar je dus op moet letten:**
+
+   - **De grendel is de kolom, niet de poort.** De UPDATE draagt
+     `WHERE revision_round_at IS NULL` en er wordt gekeken of hij een rij raakte.
+     Twee tabbladen die tegelijk versturen komen allebei door de poort — de
+     database beslist wie de eerste was. Wie die WHERE weghaalt, haalt de enige
+     echte bescherming weg; de toets zegt het.
+   - **Bestaande bestellingen beginnen leeg en houden dus hun ronde.** Ook die
+     waar onder de oude, onbeperkte belofte al revisies op zijn aangevraagd. Dat
+     is met opzet de ruimhartige kant — zie de noot in migratie 0034.
+   - **`customers.revisions_revoked_at` blijft een ander ding.** Dat is de
+     noodrem van de studio over alle bestellingen van één klant heen; de nieuwe
+     kolommen zijn een feit over één bestelling. Ze door elkaar halen zou een
+     klant die twee keer bestelt één ronde in totaal geven.
+   - **Er is geen weg terug voor de klant en wel voor de studio.** Een ingediende
+     ronde kan alleen ongedaan worden gemaakt door `revision_round_at` in de
+     database op NULL te zetten. Er is bewust geen knop voor: een knop die de
+     ronde teruggeeft, is de ronde niet begrenzen.
+   - **De ronde en het afronden van een bestelling raken elkaar niet.** Beelden
+     die niet zijn aangevinkt blijven `pending` en kunnen gewoon goedgekeurd
+     worden; `maybeCloseOrder()` is ongewijzigd.
+
+### Wat hier stond en niet meer waar is
+
+Bewaard en niet weggehaald, want een punt dat stilletjes verdwijnt laat de vraag
+open of het is opgelost of vergeten.
+
+- ~~`functions/api/webhook/stripe.js` slikt een schrijffout in als "dubbele
+  levering" en antwoordt 200.~~ **Gerepareerd op 23 augustus 2026.** De handler
+  onderscheidt nu een unique-constraint van elke andere fout en antwoordt 500 op
+  al het andere, zodat Stripe opnieuw aanbiedt; de redenering staat in de kop van
+  dat bestand.
+- ~~`migrations/0024-sample-payer.sql` ontbreekt.~~ **Was onjuist.** Het bestand
+  staat er en `npm run migrate` meldt zelf `overgeslagen — orders.payer_hash
+  bestaat al`. De kolom is er dus en de "één proefvisual per betaler"-controle
+  draait. Alleen de eerste helft van die zin — er is geen register — bleef staan,
+  en is nu punt 2.
+- ~~`functions/admin/debug-mollie.js` is een tijdelijk bestand dat op een GET twee
+  echte betalingen aanmaakt.~~ **Opgelost op 23 augustus 2026.** Dat bestand
+  bestaat niet meer; de route is `/admin/diagnose` geworden, staat in de padtabel
+  (en erft dus de sessiecontrole en `originIsSelf()`), en is gesplitst naar
+  werkwoord — wat alleen kijkt is een GET, wat bij Mollie iets aanmaakt is een
+  POST. De vormcontrole van de secrets is gebleven, want die bleek het nuttigste
+  deel.

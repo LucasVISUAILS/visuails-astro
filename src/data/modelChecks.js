@@ -47,12 +47,25 @@
 // van het open web; iemand zonder foto's online wordt niet gevonden. Dat verschil
 // staat ook in de klanttekst, want het weglaten ervan maakt de rest ongeloofwaardig.
 //
-// ── MERKMODELLEN VALLEN HIER BUITEN ───────────────────────────────────────
+// ── MERKMODELLEN VALLEN HIER BUITEN, MAAR NIET BUITEN DE CONTROLE ─────────
 //
 // Dit logboek gaat over de vaste roster in models.js. Een merkmodel wordt per
 // klant gemaakt en bestaat op het moment van deze controle nog niet, dus die
 // hoort bij de levering gecontroleerd te worden en op de order te worden
 // vastgelegd — niet hier.
+//
+// Sinds 23 augustus 2026 gebeurt dat ook echt: migratie 0033 zet vijf kolommen
+// op `orders` (model_check_at, _engines, _result, _by, _note) en het adminscherm
+// schrijft ze. De WOORDENSCHAT blijft hier staan — ENGINES hierboven,
+// UITKOMSTEN hieronder — zodat de vaste roster en een merkmodel met dezelfde
+// woorden worden vastgelegd en er niet twee lijstjes zoekmachines ontstaan die
+// uit elkaar lopen.
+//
+// Waarom het ertoe doet dat dit gebeurt: op een merkmodel staat een prijs en
+// een garantie. Blijkt een gezicht toch op een bestaand mens te lijken, dan
+// wisselen wij de bestelde content om op onze kosten. Bij zo'n claim is de vraag
+// niet wat je nu weet maar wat je toen wist, en dat is exact wat die vijf
+// kolommen bewaren.
 
 import { ROSTER, modelId } from './models.js';
 
@@ -71,6 +84,37 @@ export const ENGINES = [
   { id: 'pimeyes',   naam: 'PimEyes',       soort: 'gezicht' },
   { id: 'facecheck', naam: 'FaceCheck.ID',  soort: 'gezicht' },
 ];
+
+/**
+ * De twee uitkomsten die een controle kan hebben — voor de roster hieronder én
+ * voor de kolom `orders.model_check_result` van een merkmodel.
+ *
+ * Er staat GEEN CHECK-constraint op die kolom (zie migratie 0033 voor waarom
+ * niet), dus deze lijst is de enige plek waar de toegestane waarden staan. Wie
+ * hem uitbreidt, moet weten dat er rijen in de database staan met de oude
+ * waarden erin: toevoegen mag, hernoemen niet.
+ */
+export const UITKOMSTEN = ['geen-treffer', 'treffer'];
+
+/**
+ * Is deze vastlegging compleet genoeg om de garantie te dragen?
+ *
+ * Dezelfde eis als rosterVolledigGecontroleerd() verderop stelt aan een model
+ * uit de vaste roster, en dat is met opzet: een merkmodel kost € 450 en draagt
+ * een omruilbelofte, dus het zou raar zijn om er mínder van te vragen dan van
+ * een gezicht dat gratis in de catalogus staat.
+ *
+ * Een `treffer` is compleet en NIET goed — dat verschil hoort niet in één
+ * boolean te verdwijnen. Deze functie zegt of de vastlegging deugt; wat de
+ * uitslag was, staat ernaast.
+ */
+export function merkmodelControleCompleet({ datum, engines, uitkomst } = {}) {
+  if (!datum || !UITKOMSTEN.includes(uitkomst)) return false;
+  const gedaan = Array.isArray(engines)
+    ? engines
+    : String(engines || '').split(',').map((x) => x.trim()).filter(Boolean);
+  return GEZICHTSZOEKERS.every((e) => gedaan.includes(e.id));
+}
 
 /** De gezichtszoekers apart: dat is de controle die de vraag beantwoordt. */
 export const GEZICHTSZOEKERS = ENGINES.filter((e) => e.soort === 'gezicht');

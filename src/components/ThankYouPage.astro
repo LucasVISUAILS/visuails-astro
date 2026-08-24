@@ -239,9 +239,24 @@ const bronnen = nl
   .ty-row dd { margin: 0; color: var(--ink-2); font-size: .95rem; }
   .ty-row dd a { color: var(--accent); }
   .ty-row [data-ty-ref] { font-family: var(--font-mono, inherit); color: var(--ink-1); letter-spacing: .02em; }
-  /* De betaalknop die initThankYou() bijzet als er nog betaald moet worden. */
-  .ty-pay-cta { display: grid; gap: .6rem; margin: .9rem 0 0; justify-items: start; }
-  .ty-pay-cta span { font-size: .92rem; color: var(--ink-2); }
+  /* ── WAT initThankYou() BIJZET, EN WAAROM DIT `:global` MOET ──────────────
+     Deze twee regels stonden hier gewoon als `.ty-pay-cta`, en dat werkte niet.
+     Astro maakt van een scoped selector `.ty-pay-cta[data-astro-cid-…]`, en dat
+     attribuut zet hij op elementen die IN DEZE TEMPLATE staan. Dit blok wordt
+     door src/scripts/interactions.js met createElement() gemaakt en draagt dat
+     attribuut dus niet — de regels golden nooit ergens voor.
+
+     Zichtbaar was dat nauwelijks, en dat is precies waarom het zo lang stond:
+     de knop erin is `.btn .btn-primary` en die klassen staan in global.css, dus
+     hij zag er goed uit. Alleen de indeling eromheen en de kleinere zin erboven
+     ontbraken. Gemeten in de gebouwde CSS op 23 augustus 2026.
+
+     `:global()` en niet de klasse ergens anders neerzetten: hij hoort bij deze
+     pagina en nergens anders, en dan is dit de plek waar hij te vinden is. */
+  :global(.ty-pay-cta) { display: grid; gap: .6rem; margin: .9rem 0 0; justify-items: start; }
+  :global(.ty-pay-cta span) { font-size: .92rem; color: var(--ink-2); }
+  /* De bevestiging na een geslaagde betaling — zelfde herkomst, zelfde reden. */
+  :global(.ty-paid-note) { margin: .9rem 0 0; font-size: .92rem; color: var(--ink-2); }
 
   .ty-extra { display: flex; align-items: center; justify-content: space-between; gap: 1.4rem; flex-wrap: wrap; }
   .ty-extra p { margin: 0; color: var(--ink-3); font-size: .95rem; max-width: 52ch; }

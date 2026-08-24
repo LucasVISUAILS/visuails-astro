@@ -59,7 +59,6 @@ import {
   reviewClaim, aftercare, euro, AMOUNT,
   TIER_ROWS, tierRow, tierRowLabels,
   WINDOW_THRESHOLD, vatLabel, vatNote,
-  BRAND_MODEL_CREDIT_DROPS,
 } from '../data/pricing.js';
 // The six pricing questions are NOT in this file. They live in
 // src/data/faq.js, because src/data/schema.js emits them a second time as this
@@ -70,7 +69,6 @@ import { pricingFaqs } from '../data/faq.js';
 import Disclose from './Disclose.astro';
 import { localizedPath } from '../i18n/ui.js';
 import ProductScene from './ProductScene.astro';
-import FigPayback from './FigPayback.astro';
 import Placeholder from './Placeholder.astro';
 
 import Note from './Note.astro';
@@ -212,17 +210,15 @@ const COPY = {
     brandModelLine: 'One face. Every order. Only yours.',
     brandModelUnit: 'one-time setup',
     brandModelCta: 'See Your Brand Model',
-    // FigPayback's three labels. They are copy, so they live in the COPY table
-    // and travel through check_lang_parity like every other string; the drawing
-    // itself holds no language and no number. The VAT label rides on the plate
-    // label because the plate is where the figure is: the drawing prints a
-    // price, so the drawing says which price it is.
-    pbTotalLabel: `Setup, ${vatLabel('excl', 'en')}`,
-    // The credit cells print a price too, so the run label carries the label
-    // for them — the plate's own says nothing about the five figures beside it.
-    pbRunLabel: `Credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} orders · ${vatLabel('excl', 'en')}`,
-    brandModelNote: `You pay ${euro(AMOUNT.brandModel, 'en')} once, when the model is designed. After that ${euro(AMOUNT.brandModelCredit, 'en')} comes off each of your next ${BRAND_MODEL_CREDIT_DROPS} orders — so it is not a discount on the setup and not money back, it is the setup fee returning to you as order credit. Order ${BRAND_MODEL_CREDIT_DROPS} times and you have had all of it back.`,
-    pbEndLabel: 'Setup repaid',
+    /* De drie FigPayback-labels stonden hier, en zijn weg met de terugverdien-
+       rekening zelf. Zie de noot bij AMOUNT.brandModel in pricing.js: er valt
+       niets meer terug te verdienen, want er wordt niets meer verrekend.
+
+       WAT ERVOOR IN DE PLAATS KOMT IS KORTER DAN WAT ERAF GING, en dat is het
+       punt. Een prijs die uitleg nodig heeft over hoe hij bij je terugkomt, is
+       een prijs die zich verontschuldigt. Deze zegt wat voor soort bedrag het
+       is en houdt op. */
+    brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once, when the model is designed. Not per image, not per order, not per year — from then on every order you place with us carries the same face, at the normal per-product rate for its size.`,
     videoName: 'Video clip',
     videoLine: 'One short clip. The same rate on its own or added to any order.',
     videoUnit: 'per clip',
@@ -305,10 +301,8 @@ const COPY = {
     brandModelLine: 'Eén gezicht. Elke bestelling. Alleen van jou.',
     brandModelUnit: 'eenmalige setup',
     brandModelCta: 'Bekijk Jouw merkmodel',
-    pbTotalLabel: `Setup, ${vatLabel('excl', 'nl')}`,
-    pbRunLabel: `Verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen · ${vatLabel('excl', 'nl')}`,
-    brandModelNote: `Je betaalt ${euro(AMOUNT.brandModel, 'nl')} één keer, als het model ontworpen wordt. Daarna gaat er ${euro(AMOUNT.brandModelCredit, 'nl')} af van elk van je volgende ${BRAND_MODEL_CREDIT_DROPS} bestellingen — het is dus geen korting op de setup en geen geld terug, maar het setupbedrag dat als bestellingstegoed bij je terugkomt. Bestel je ${BRAND_MODEL_CREDIT_DROPS} keer, dan heb je het helemaal terug.`,
-    pbEndLabel: 'Setup terugverdiend',
+    // Zie de noot bij de Engelse brandModelNote.
+    brandModelNote: `${euro(AMOUNT.brandModel, 'nl')}, één keer, als het model ontworpen wordt. Niet per beeld, niet per bestelling, niet per jaar — vanaf dat moment draagt elke bestelling die je bij ons doet hetzelfde gezicht, tegen het gewone tarief per product voor die grootte.`,
     videoName: 'Videoclip',
     videoLine: 'Eén korte clip. Dezelfde prijs los of toegevoegd aan elke bestelling.',
     videoUnit: 'per clip',
@@ -550,17 +544,6 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
           alleen op /custom-models; hier stond alleen het bijschrift. */}
       <Note lang={lang} term={c.brandModelName} wide>{c.brandModelNote}</Note>
     </p>
-
-    <div class="addon-fig">
-      <FigPayback
-        totalLabel={c.pbTotalLabel}
-        total={euro(AMOUNT.brandModel, lang)}
-        credit={euro(AMOUNT.brandModelCredit, lang)}
-        steps={BRAND_MODEL_CREDIT_DROPS}
-        runLabel={c.pbRunLabel}
-        endLabel={c.pbEndLabel}
-      />
-    </div>
 
     <a href={lp('/custom-models')} class="link-arrow addon-cta">{c.brandModelCta}
       <svg viewBox="0 0 24 24" class="i" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>

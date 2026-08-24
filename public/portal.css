@@ -584,6 +584,44 @@ details.ask > summary { cursor: pointer; font-size: .86rem; font-weight: 600; co
 details.ask > summary::-webkit-details-marker { display: none; }
 details.ask > summary:hover { color: var(--ink-700); }
 
+/* ---- de ene revisieronde -------------------------------------------------
+   Sinds 24 augustus 2026 vraagt een klant niet meer per beeld een revisie maar
+   één ronde voor de hele bestelling: aanvinken wat niet klopt, één notitie, één
+   keer versturen. Zie roundBlock() in src/lib/portal.js.
+
+   HET VINKJE IS EEN ECHT VINKJE. Verleidelijk om er een knop van te maken die
+   met JavaScript omschakelt, en fout om dezelfde reden als de rest van dit
+   scherm: zonder script moet het werken, en een <input type="checkbox"> in een
+   <label> werkt overal — ook met een schermlezer, ook met de spatiebalk. */
+.pick {
+  display: inline-flex; align-items: center; gap: .5rem;
+  margin-top: .7rem; cursor: pointer;
+  font-size: .86rem; color: var(--ink-2);
+  /* Een raakvlak dat een duim kan halen. .86rem tekst met een vinkje ernaast is
+     op een telefoon anders een doel van elf pixels. */
+  padding: .35rem 0; min-height: 2.2rem;
+}
+.pick input { inline-size: 1.05rem; block-size: 1.05rem; accent-color: var(--accent-bright, #c8f31d); cursor: pointer; margin: 0; }
+.pick:hover span { color: var(--ink); }
+/* Aangevinkt hoort te zien te zijn zonder dat je het vinkje zelf bekijkt: op een
+   raster van vijfentwintig tegels is dat het verschil tussen overzicht en tellen. */
+.pick:has(input:checked) span { color: var(--ink); font-weight: 600; }
+.shots li:has(.pick input:checked) { box-shadow: inset 0 0 0 2px var(--accent-bright, #c8f31d); }
+
+.rr { margin-top: 2.2rem; padding-top: 1.6rem; box-shadow: inset 0 1px 0 var(--line); }
+.rr h2 { font-size: 1.05rem; margin: 0 0 .5rem; }
+.rr p { margin: 0 0 .9rem; color: var(--ink-2); font-size: .92rem; line-height: 1.6; }
+.rr textarea {
+  inline-size: 100%; box-sizing: border-box; resize: vertical;
+  padding: .7rem .8rem; border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--surface-2, #1F2229); color: var(--ink); font: inherit; font-size: .92rem;
+}
+.rr textarea:focus-visible { outline: 2px solid var(--accent-bright, #c8f31d); outline-offset: 2px; }
+.rr-count { margin: .6rem 0 0; font-size: .84rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+/* De gebruikte en de ingetrokken ronde zijn geen formulier meer maar een bericht,
+   en horen dus niet als een invulveld te lezen. */
+.rr-used, .rr-off { color: var(--ink-2); }
+
 /* ---- the order's timeline -----------------------------------------------
    Date in one column, what happened in the other, and the note underneath it
    when there is one. Rules between the rows rather than around them: this is a

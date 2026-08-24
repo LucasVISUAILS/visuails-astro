@@ -75,7 +75,7 @@ import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib
  * bestelroute hoort te laden om één woord te controleren. tests/funnel.test.mjs
  * legt de twee naast elkaar, dus uit elkaar lopen wordt rood.
  */
-const FLOWS = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
+const FLOWS = new Set(['catalog', 'lifestyle', 'video', 'custom', 'brand-model', 'test-sample', 'drop']);
 const LANGS = new Set(['en', 'nl']);
 const MAX_STEP = 8;
 

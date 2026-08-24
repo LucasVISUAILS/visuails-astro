@@ -38,8 +38,15 @@
 // different relationships to the site, not an inconsistency.
 
 import { hashToken, mintToken, portalUrl } from './token.js';
-import { stampDeliveryRetention } from './retention.js';
+/* DELIVERY_MONTHS staat in de mail bij een nieuwe portaallink: die mail zegt hoe
+   lang de klant er nog bij kan, en dat getal hoort uit dezelfde constante te
+   komen als de nachtelijke opruiming en de juridische pagina's. */
+import { stampDeliveryRetention, DELIVERY_MONTHS } from './retention.js';
 import { serviceLabel } from '../data/services.js';
+/* Alleen voor de voorbeeldweergave op /admin/diagnose — zie de noot bij
+   invoiceHeaderPreview() onderaan. Dezelfde functie als de echte factuur. */
+import { sellerOf } from './invoice.js';
+import { ENGINES, GEZICHTSZOEKERS, UITKOMSTEN, merkmodelControleCompleet } from '../data/modelChecks.js';
 /* De beeldverhouding, voor de werkmap. `ratioById` met de dienst erbij, zodat een
    verhouding die deze dienst niet kent ook niet in de briefing komt; `ratioField`
    zodat de sleutel hier niet wordt overgetypt. Zie src/data/ratios.js. */
@@ -77,7 +84,7 @@ import { mailInvoice } from './invoiceMail.js';
 /* De twee bedragen van de merkmodel-credit komen uit de prijslijst en niet uit een
    getal hier: /pricing en /custom-models rekenen met dezelfde bron, en een tweede
    kopie is hoe het scherm en de belofte uit elkaar gaan lopen. */
-import { AMOUNT, BRAND_MODEL_CREDIT_DROPS, VAT_RATE, vatPercent, ladderTotal } from '../data/pricing.js';
+import { AMOUNT, VAT_RATE, vatPercent, ladderTotal } from '../data/pricing.js';
 // Aliased for the same reason as in account.js: this module has its own `esc`
 // and page-level helpers, and the mail template exports overlapping names.
 import {
@@ -90,6 +97,7 @@ import {
   spamNote as mailSpamNote,
   payPanel as mailPayPanel,
   linkLine as mailLinkLine,
+  greeting as mailGreeting,
 } from './mailTemplate.js';
 
 const STATUSES = ['received', 'in_production', 'human_check', 'delivered', 'cancelled'];
@@ -261,6 +269,18 @@ export async function adminPost(context) {
   // twee beslissingen — zie het blok boven handleAnnounceRedelivery().
   const announceMatch = path.match(/^\/admin\/orders\/(\d+)\/announce$/);
   if (announceMatch) return handleAnnounceRedelivery(context, Number(announceMatch[1]));
+
+  /* Een nieuwe portaallink, zonder aankondiging. Een eigen route en niet een
+     tweede knop op /announce, want die stopt bij "niets nieuws" — en dat is
+     precies de situatie waarin deze knop nodig is. Zie de kop van
+     handleFreshLink() voor de belofte die hij nakomt. */
+  const freshLinkMatch = path.match(/^\/admin\/orders\/(\d+)\/fresh-link$/);
+  if (freshLinkMatch) return handleFreshLink(context, Number(freshLinkMatch[1]));
+
+  /* Het uniciteitslogboek van een merkmodel. Zie handleModelCheck() voor de
+     belofte die hier wordt vastgelegd en migratie 0033 voor de kolommen. */
+  const modelCheckMatch = path.match(/^\/admin\/orders\/(\d+)\/model-check$/);
+  if (modelCheckMatch) return handleModelCheck(context, Number(modelCheckMatch[1]));
 
   /* ── BLOK 5, 12 AUGUSTUS 2026 ────────────────────────────────────────────────
      Vijf routes die het paneel van lezen naar corrigeren brengen. Ze staan bij
@@ -1475,6 +1495,79 @@ async function renderFiles(context, orderId) {
          <span class="meta">The number exists, the pdf does not. This renders it from the stored snapshot &mdash; same number, no gap in the series.</span>
        </form>`}`;
 
+  /* ── HET UNICITEITSLOGBOEK ────────────────────────────────────────────────
+     Alleen op een merkmodel, en met een eigen query in plaats van vijf kolommen
+     erbij in loadOrderFiles(). Dat is met opzet: die functie valt bij een
+     onbekende kolom terug op een smallere query, en dan zou een database zonder
+     migratie 0033 ineens ook het btw-blok kwijt zijn. Zo is de prijs van een
+     ontbrekende migratie precies dit ene paneel. Zelfde patroon als bij de
+     factuur hierboven. */
+  const controle = order.service !== 'brand-model' ? null : await env.DB.prepare(
+    `SELECT model_check_at, model_check_engines, model_check_result,
+            model_check_by, model_check_note FROM orders WHERE id = ?1`
+  ).bind(orderId).first().catch(() => null);
+
+  const controleBlok = !controle ? '' : (() => {
+    const gedaan = String(controle.model_check_engines || '')
+      .split(',').map((x) => x.trim()).filter(Boolean);
+    const compleet = merkmodelControleCompleet({
+      datum: controle.model_check_at,
+      engines: gedaan,
+      uitkomst: controle.model_check_result,
+    });
+    const opgeslagen = new URL(request.url).searchParams.get('check') === 'saved';
+    const treffer = controle.model_check_result === 'treffer';
+
+    /* De stand bovenaan, in één zin, en die zin verschilt echt van geval tot
+       geval. "Nog niet gecontroleerd" en "gecontroleerd, treffer gevonden" zijn
+       twee heel verschillende dingen om als eerste te lezen, en een gedeelde
+       formulering met een vinkje ernaast zou ze op elkaar laten lijken. */
+    const stand = !controle.model_check_at
+      ? '<p class="muted">Not checked yet. Nothing here has been run against the search engines, '
+        + 'and the guarantee on /custom-models has nothing behind it until it has.</p>'
+      : `<p class="${treffer ? 'okline' : 'muted'}">
+           Checked ${esc(controle.model_check_at)} by ${esc(controle.model_check_by || '&mdash;')}
+           &middot; ${gedaan.length} ${gedaan.length === 1 ? 'search' : 'searches'}
+           &middot; <strong>${treffer ? 'a match was found' : 'no match'}</strong>${
+             compleet ? '' : ' &middot; <strong>incomplete</strong> &mdash; not every face search was run'}
+         </p>${controle.model_check_note
+           ? `<p class="muted">${esc(controle.model_check_note)}</p>` : ''}`;
+
+    return `
+  <h2>Uniqueness check</h2>
+  ${opgeslagen ? '<p class="okline">Recorded.</p>' : ''}
+  ${stand}
+  <p class="muted">Run the searches on the source file at full resolution, not on a thumbnail.
+    The face searches answer the question; the file searches catch a generator that handed back
+    an existing photograph. See <code>src/data/modelChecks.js</code>.</p>
+  <form method="post" action="/admin/orders/${order.id}/model-check">
+    <label>Date it was run
+      <input type="date" name="checked_at" value="${esc(controle.model_check_at || '')}" required />
+    </label>
+    <fieldset>
+      <legend>Searches run</legend>
+      ${ENGINES.map((e) => `<label><input type="checkbox" name="engines" value="${esc(e.id)}"${
+        gedaan.includes(e.id) ? ' checked' : ''}> ${esc(e.naam)} <span class="meta">(${
+        e.soort === 'gezicht' ? 'face &mdash; required' : 'file'})</span></label>`).join('\n      ')}
+    </fieldset>
+    <fieldset>
+      <legend>Outcome</legend>
+      ${UITKOMSTEN.map((u) => `<label><input type="radio" name="result" value="${esc(u)}"${
+        controle.model_check_result === u ? ' checked' : ''} required> ${
+        u === 'treffer' ? 'A match was found' : 'No match'}</label>`).join('\n      ')}
+    </fieldset>
+    <label>Who ran it
+      <input type="text" name="by" maxlength="80" value="${esc(controle.model_check_by || '')}" required />
+    </label>
+    <label>Note <span class="meta">On a match: what you found and what you did about it.</span>
+      <textarea name="note" maxlength="1000" rows="3">${esc(controle.model_check_note || '')}</textarea>
+    </label>
+    <button class="btn btn-primary" type="submit">Record this check</button>
+  </form>
+  <p class="muted">This goes on the customer&rsquo;s timeline as well &mdash; there is nothing about a check
+    that was run that needs hiding, and it is exactly what was promised.</p>`;
+  })();
+
   const intake = files.filter((f) => f.kind === 'upload');
   const delivery = files.filter((f) => f.kind === 'delivery');
 
@@ -1742,7 +1835,14 @@ async function renderFiles(context, orderId) {
          <button class="btn btn-primary" type="submit">Announce ${pending.length} new ${pending.length === 1 ? 'image' : 'images'}</button>
        </form>
        <p class="muted">One mail for everything that is still unannounced — upload all of it first, then press once.</p>`
-    : '<p class="muted">Everything delivered here has been announced.</p>'}`;
+    : '<p class="muted">Everything delivered here has been announced.</p>'}
+  ${order.delivery_mailed_at ? `
+  <hr style="border:0;border-top:1px solid var(--line);margin:1.4rem 0">
+  <form method="post" action="/admin/orders/${order.id}/fresh-link" class="controls">
+    <button class="btn" type="submit">Mail a fresh portal link</button>
+    <span class="muted">For "my link stopped working" — /terms and /privacy promise this. It issues a new link,
+      revokes the old one, and announces nothing.</span>
+  </form>` : ''}`;
 
   /* ── TWEE SOORTEN NOTITIES, ZICHTBAAR VERSCHILLEND ──────────────────────────
    *
@@ -1867,6 +1967,8 @@ async function renderFiles(context, orderId) {
   ${vatRow}
 
   ${factuurBlok}
+
+  ${controleBlok}
   `;
   return html(page({ title: order.ref, body }));
 }
@@ -2569,6 +2671,286 @@ async function freshPortalLink(env, orderId, origin) {
   return portalUrl(token, origin);
 }
 
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * "MAIL ONS EN WE STUREN EEN NIEUWE LINK" — 23 AUGUSTUS 2026
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * ── DE BELOFTE, EN WAAROM NIEMAND HEM KON NAKOMEN ───────────────────────────
+ *
+ * /privacy en /terms zeggen het allebei, in beide talen: *"is je link verlopen,
+ * mail ons dan — we sturen je een nieuwe."* De link leeft 90 dagen; het
+ * opgeleverde werk twaalf maanden. Precies in dat gat van negen maanden is de
+ * klant aangewezen op deze belofte.
+ *
+ * `freshPortalLink()` bestond en deed precies het goede — oude token intrekken,
+ * nieuwe uitgeven, in één batch. Maar hij had twee aanroepers, en allebei zitten
+ * ze achter een poort die NIEUWE BESTANDEN vereist: sendDeliveryMail() draait bij
+ * een statuswissel, en de herleveringsknop stopt bij `if (!tally.files) return`.
+ * Een klant die na vier maanden mailt, heeft per definitie geen nieuwe bestanden
+ * — dus was er geen enkele route, en het antwoord op zijn mail was handwerk in
+ * de database of niets.
+ *
+ * De knop op de klantpagina die er wél was, stuurt een ACCOUNT-inloglink. Dat is
+ * iets anders: die geeft toegang tot VISUAILS Studio en niet tot het portaal van
+ * één bestelling, en een klant die nooit een account heeft aangemaakt heeft er
+ * niets aan.
+ *
+ * ── WAT DEZE KNOP NIET DOET ─────────────────────────────────────────────────
+ *
+ * Hij kondigt niets aan. `redelivery_count` gaat niet omhoog, `announced_at`
+ * wordt niet gestempeld, en de mail zegt niet dat er iets nieuws is — want er is
+ * niets nieuws. Dat onderscheid is de hele reden dat dit een eigen route is en
+ * geen tweede knop op /announce: een mail die "nieuwe beelden" zegt terwijl er
+ * niets nieuws is, is precies het soort bericht dat een klant één keer opent en
+ * daarna niet meer vertrouwt.
+ *
+ * Hij trekt de oude link WEL in, en dat staat in de mail. Eén levend token per
+ * bestelling is de regel van het schema; dat stilzwijgend laten gebeuren is hoe
+ * je iemand laat denken dat er iets stuk is.
+ */
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * HET UNICITEITSLOGBOEK VAN EEN MERKMODEL — 23 AUGUSTUS 2026
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ── WAT HIER WORDT VASTGELEGD, EN WAAROM DAT GEEN ADMINISTRATIE IS ─────────
+ *
+ * Op /custom-models en in de voorwaarden staat een belofte: blijkt een merkmodel
+ * toch op een bestaand mens te lijken, dan wisselen wij alle bestelde content om
+ * op onze kosten. Dat is een garantie, en een garantie zonder logboek is een
+ * zin. Bij een claim — over een half jaar, met een advocaat erbij — is de vraag
+ * niet wat we nu weten maar wat we tóen wisten: welke zoekmachines zijn er
+ * gedraaid, op welke dag, met welke uitslag, en wie heeft dat gedaan.
+ *
+ * src/data/modelChecks.js houdt precies dat bij voor de tien gezichten van de
+ * vaste roster, en zegt in zijn eigen kop dat een merkmodel "bij de levering
+ * gecontroleerd hoort te worden en op de order te worden vastgelegd". Dit is
+ * die vastlegging. De WOORDEN — welke machines er zijn, welke uitkomsten er
+ * bestaan, wanneer een vastlegging compleet is — komen daarvandaan en worden
+ * hier niet opnieuw bedacht.
+ *
+ * ── DRIE WEIGERINGEN, EN ALLE DRIE OM DEZELFDE REDEN ──────────────────────
+ *
+ * Dit is het enige adminscherm in dit bestand dat WEIGERT op onvolledigheid in
+ * plaats van op te slaan wat er staat. Elders is dat verkeerd: een halve notitie
+ * is beter dan geen notitie. Hier niet, want dit is geen notitie maar bewijs, en
+ * een half bewijsstuk is in een geschil erger dan een leeg veld — het suggereert
+ * dat er iets gecontroleerd is.
+ *
+ *   1  Zonder DATUM is er geen moment waarop het gebeurd is.
+ *   2  Zonder alle GEZICHTSZOEKERS is de vraag niet beantwoord. Dat is dezelfde
+ *      eis die rosterVolledigGecontroleerd() aan een gratis catalogusgezicht
+ *      stelt; van een merkmodel van € 450 met een omruilbelofte eromheen minder
+ *      vragen zou de verkeerde kant op zijn.
+ *   3  Zonder NAAM is het een gerucht. Die formulering komt uit modelChecks.js
+ *      en geldt hier woord voor woord.
+ *
+ * ── EN EEN TREFFER WORDT OPGESLAGEN, NIET TEGENGEHOUDEN ───────────────────
+ *
+ * `treffer` is een geldige uitkomst. Het is het geval waarvoor dit logboek
+ * bestaat: er is iets gevonden, en dan wil je juist dat het opgeschreven staat —
+ * met in de notitie wat er gevonden is en wat ermee gedaan is. Een scherm dat
+ * alleen goed nieuws aanneemt, is een scherm dat je bij slecht nieuws omzeilt.
+ */
+async function handleModelCheck(context, orderId) {
+  const { request, env } = context;
+
+  const order = await env.DB.prepare(
+    'SELECT id, ref, service, status FROM orders WHERE id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+
+  /* Alleen op een merkmodel. Op een catalogusbestelling zou dit veld iets
+     vastleggen over een gezicht dat uit de vaste roster komt en daar zijn eigen
+     regel al heeft — twee logboeken over hetzelfde gezicht is precies hoe er
+     later twee verschillende antwoorden op één vraag bestaan. */
+  if (order.service !== 'brand-model') {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This is not a Brand Model order. The uniqueness log for the standard roster lives in '
+      + '<code>src/data/modelChecks.js</code>, not on an order.'
+    ) }), 400);
+  }
+
+  const form = await request.formData().catch(() => null);
+  const datum = String(form?.get('checked_at') || '').trim().slice(0, 10);
+  const uitkomst = String(form?.get('result') || '').trim();
+  const door = String(form?.get('by') || '').trim().slice(0, 80);
+  const notitie = String(form?.get('note') || '').trim().slice(0, 1000);
+  /* Alleen id's die ENGINES kent. Een naam die daar niet in staat, staat straks
+     in een kolom die zegt dat er iets gedraaid is wat niet bestaat. */
+  const gekozen = form
+    ? form.getAll('engines').map((x) => String(x)).filter((id) => ENGINES.some((e) => e.id === id))
+    : [];
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'A check needs the date it was run on, as YYYY-MM-DD. Without a date there is no moment to point at.'
+    ) }), 400);
+  }
+  if (!UITKOMSTEN.includes(uitkomst)) {
+    return html(page({ title: 'Admin', body: errorBody('Pick an outcome: no match, or a match.') }), 400);
+  }
+  if (!door) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'Put a name on it. A log without a name is hearsay &mdash; the wording is from '
+      + '<code>src/data/modelChecks.js</code> and it means it.'
+    ) }), 400);
+  }
+  const ontbreekt = GEZICHTSZOEKERS.filter((e) => !gekozen.includes(e.id));
+  if (ontbreekt.length) {
+    return html(page({ title: 'Admin', body: errorBody(
+      `Every face search has to be run before this can be recorded: ${
+        esc(ontbreekt.map((e) => e.naam).join(', '))} ${ontbreekt.length === 1 ? 'is' : 'are'} missing. `
+      + 'The file searches are optional; the face searches are the question.'
+    ) }), 400);
+  }
+
+  const engines = gekozen.join(',');
+  const geschreven = await env.DB.prepare(
+    `UPDATE orders SET model_check_at = ?2, model_check_engines = ?3,
+            model_check_result = ?4, model_check_by = ?5, model_check_note = ?6
+       WHERE id = ?1`
+  ).bind(orderId, datum, engines, uitkomst, door, notitie || null).run().catch((err) => {
+    console.error('[admin] uniciteitslogboek niet weggeschreven —', order.ref, '—', err?.message || err);
+    return null;
+  });
+
+  /* GEEN STILLE MISLUKKING. Draait migratie 0033 nog niet, dan gooit D1 hier
+     "no such column" — en dan hoort er een foutmelding op het scherm te komen en
+     niet een bevestiging dat het bewijsstuk vastligt. Dat is de fout die dit
+     bestand op 7 augustus op drie andere plekken heeft rechtgezet. */
+  if (!geschreven) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'That did not save. If this database has not had migration 0033 yet, the columns do not exist here.'
+    ) }), 500);
+  }
+
+  /* Op de tijdlijn, want een hercontrole overschrijft de kolommen en dan is dit
+     het enige spoor dat er een eerdere ronde was. `order_events` is bovendien de
+     tijdlijn die de klant ziet: dat is met opzet — er valt aan een gedraaide
+     controle niets te verbergen, en dit is precies wat er beloofd is. */
+  await env.DB.prepare(
+    "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
+  ).bind(orderId, order.status || 'in-progress',
+    uitkomst === 'treffer'
+      ? `Uniqueness check run on ${datum}: a match was found. See the note on the order.`
+      : `Uniqueness check run on ${datum}: no match across ${gekozen.length} searches.`)
+    .run().catch(() => {});
+
+  await logAdmin(env, await currentAdmin(context), 'order.model_check', { orderId, detail: `${order.ref} — ${uitkomst}` });
+
+  return seeOther(`/admin/orders/${orderId}/files?check=saved`);
+}
+
+async function handleFreshLink(context, orderId) {
+  const { request, env } = context;
+
+  const order = await env.DB.prepare(
+    'SELECT id, ref, email, name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1'
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('That order does not exist.') }), 404);
+
+  if (!order.email) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This order has no email address on it, so there is nowhere to send a link.'
+    ) }), 400);
+  }
+
+  /* NOOIT AANGEKONDIGD IS GEEN GELDIG GEVAL. Het portaal van een bestelling die
+     de klant nog nooit gezien heeft, is leeg — en een link ernaartoe sturen zonder
+     dat er ooit een "je bestelling staat klaar" is geweest, is een mail over iets
+     waarvan de klant het bestaan niet kent. Zelfde controle en dezelfde reden als
+     bij de herleveringsknop. */
+  if (!order.delivery_mailed_at) {
+    return html(page({ title: 'Admin', body: errorBody(
+      'This order has never been announced, so its portal is empty. Set its status to '
+      + '<strong>delivered</strong> first — that sends the "your order is ready" mail and its link.'
+    ) }), 400);
+  }
+
+  const origin = (() => {
+    try { return new URL(request.url).origin; } catch { return 'https://visuails.com'; }
+  })();
+  const link = await freshPortalLink(env, orderId, origin);
+
+  const nl = order.lang === 'nl';
+  try {
+    await sendMail(env, {
+      to: order.email,
+      subject: nl ? `Je nieuwe link — ${order.ref}` : `Your new link — ${order.ref}`,
+      html: freshLinkEmail({ order, link }),
+    });
+  } catch (err) {
+    /* HIER WORDT WÉL GEWACHT EN WÉL GETOOND, om dezelfde reden als bij de
+       herleveringsknop: deze knop doet niets ánders dan mailen. Faalt de mail,
+       dan is er niets gebeurd, en dat hoort op het scherm te staan in plaats van
+       in een console die niemand opent.
+
+       Het oude token is dan al ingetrokken. Dat is geen ongeluk maar de veilige
+       kant: een klant die zijn oude link nog had, kan hem hierna niet meer
+       gebruiken, en dat is beter dan twee levende links waarvan er één per mail
+       is rondgestuurd die niet aankwam. Nog een keer drukken maakt gewoon een
+       nieuwe. */
+    return html(page({ title: 'Admin', body: errorBody(
+      `The link was issued but the mail did not go out: ${esc(err && err.message ? err.message : String(err))}. `
+      + 'The previous link is no longer valid. Press again to issue and send another.'
+    ) }), 502);
+  }
+
+  /* OP DE TIJDLIJN DIE DE KLANT ZIET, en dat is met opzet. Hij heeft erom
+     gevraagd en hij krijgt hem: dat mag hij terugzien, en het is meteen het
+     antwoord op "heb ik die mail nou gekregen of niet". Geen aparte
+     admin-notitie, want er valt niets te verbergen. */
+  await env.DB.prepare(
+    "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'admin')"
+  ).bind(orderId, order.status || 'delivered', nl
+    ? 'Nieuwe link naar je bestelling gemaild. De vorige link werkt niet meer.'
+    : 'A new link to your order was emailed. The previous link no longer works.')
+    .run().catch(() => {});
+
+  await logAdmin(env, await currentAdmin(context), 'order.fresh_link', { orderId, detail: order.ref });
+
+  return seeOther(`/admin/orders/${orderId}/files?link=sent`);
+}
+
+/**
+ * De mail bij die knop.
+ *
+ * KORT, EN HIJ BELOOFT NIETS NIEUWS. Dit is het antwoord op "mijn link doet het
+ * niet meer" en verder niets: hier is je link, hij vervangt de vorige, en dit is
+ * hoe lang je erbij kunt. Dat laatste komt uit retention.js en wordt niet
+ * ingetypt — zie de noot bij UPLOAD_DAYS daar, en dezelfde afspraak als in
+ * terms.astro.
+ */
+export function freshLinkEmail({ order, link }) {
+  const nl = order.lang === 'nl';
+  const hi = mailGreeting(order.name, order.lang);
+  return mailShell({
+    lang: nl ? 'nl' : 'en',
+    preheader: nl
+      ? `Je nieuwe link naar bestelling ${order.ref}.`
+      : `Your new link to order ${order.ref}.`,
+    body: [
+      mailH1(
+        nl ? 'Hier is je nieuwe link' : 'Here is your new link',
+        nl ? `Referentie ${esc(order.ref)}` : `Reference ${esc(order.ref)}`,
+      ),
+      mailP(hi),
+      mailP(nl
+        ? 'Je vroeg om een nieuwe link naar je bestelling. Hieronder staat hij. Er is niets veranderd aan je beelden — dit is dezelfde bestelling, met een werkende ingang.'
+        : 'You asked for a new link to your order. Here it is. Nothing about your images has changed — this is the same order, with a working way in.'),
+      mailButton(link, nl ? 'Open je bestelling' : 'Open your order'),
+      '<div style="height:22px;font-size:0;line-height:0">&nbsp;</div>',
+      mailNote(nl
+        ? `Deze link vervangt de vorige — gebruik vanaf nu deze. Je opgeleverde beelden blijven ${DELIVERY_MONTHS} maanden bij ons staan; download ze gerust nog een keer.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`
+        : `This link replaces the previous one — use this from now on. Your delivered images stay with us for ${DELIVERY_MONTHS} months; download them again whenever you like.<br><span style="color:#8A8F98;word-break:break-all">${esc(link)}</span>`),
+      '<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>',
+      mailSpamNote(nl ? 'nl' : 'en'),
+    ].join(''),
+  });
+}
+
 /**
  * Stempel elk nog niet aangekondigd geleverd bestand van deze bestelling.
  *
@@ -2703,7 +3085,7 @@ async function unannouncedTally(env, orderId, product = null) {
  */
 export function deliveryEmail({ order, link, n }) {
   const nl = order.lang === 'nl';
-  const hi = order.name ? `Hi ${esc(order.name)},` : 'Hi,';
+  const hi = mailGreeting(order.name, order.lang);
   return mailShell({
     lang: nl ? 'nl' : 'en',
     preheader: nl
@@ -2959,7 +3341,7 @@ async function handleAnnounceRedelivery(context, orderId) {
  */
 export function redeliveryEmail({ order, link, n, revisions = 0, note = '', product = null }) {
   const nl = order.lang === 'nl';
-  const hi = order.name ? `Hi ${esc(order.name)},` : 'Hi,';
+  const hi = mailGreeting(order.name, order.lang);
   const isRevision = revisions > 0;
   // Gaat het over één product, dan staat dat in de zin. "3 nieuwe beelden" bij
   // een bestelling van dertig producten is waar en nutteloos; "3 nieuwe beelden
@@ -4224,74 +4606,25 @@ async function handleAddCustomModelForCustomer({ request, env }, customerId) {
     "INSERT INTO custom_models (customer_id, label, status) VALUES (?1, ?2, 'in_design') RETURNING id"
   ).bind(customerId, label).first();
 
-  /* ── DE MERKMODEL-CREDIT KRIJGT EEN PLEK IN HET GROOTBOEK — 20 AUG 2026 ────
-     /pricing en /custom-models beloven het in twee talen: de setup van € 1.250
-     komt terug als € 250 op elk van je eerste vijf bestellingen. Tot vandaag
-     bestond die belofte alleen in tekst. `quote.js` kent het begrip niet, en dat
-     is met opzet — de noot bij `customer_credits` in schema.sql zegt in zoveel
-     woorden dat er GEEN automatische verrekening bij het afrekenen komt, "die
-     rekent stil het verkeerde bedrag af". Dat besluit blijft staan.
+  /* ── HET MERKMODEL-TEGOED IS WEG MET DE CREDIT — 23 AUGUSTUS 2026 ─────────
+     Hier stond boekMerkmodelTegoed(): één regel van € 1.250 in het grootboek op
+     het moment dat het eerste merkmodel ontstond, zodat de belofte "€ 250 terug
+     op elk van je eerste vijf bestellingen" niet van Lucas' geheugen afhing.
 
-     Wat er wél moest gebeuren is dat het tegoed BESTAAT zodra het verdiend is,
-     in plaats van dat het vijf bestellingen lang van jouw geheugen afhangt. Eén
-     regel in het grootboek, met de regel zelf in de reden, op het moment dat het
-     model wordt aangemaakt. Verrekenen doe jij, zoals je elk ander tegoed
-     verrekent — maar je kunt het niet meer vergeten, want het staat op de
-     klantpagina.
+     Die belofte bestaat niet meer. Het merkmodel is sinds vandaag één bedrag van
+     € 450 dat je één keer betaalt — zie de noot bij AMOUNT.brandModel in
+     pricing.js. Een tegoed boeken voor iets wat niet verrekend wordt, is een
+     grootboekregel die niemand kan verklaren.
 
-     Alleen bij het EERSTE model van een klant. Een tweede merkmodel is een
-     tweede setup met een eigen afspraak, en die hoort niet automatisch nog eens
-     € 1.250 aan tegoed op te leveren. */
-  if (nieuw?.id) await boekMerkmodelTegoed(env, customerId);
+     DE FUNCTIE IS VERWIJDERD EN NIET UITGESCHAKELD, om dezelfde reden als de
+     export in pricing.js: code die blijft bestaan onder zijn oude naam, is code
+     die over een half jaar per ongeluk weer wordt aangeroepen. Wie hem terug wil,
+     vindt hem in git.
 
-
-/* ── HET MERKMODEL-TEGOED, OP ÉÉN PLEK ──────────────────────────────────────
- * Twee dingen gingen hier mis, en allebei kostten geld.
- *
- *   1 · DE EENHEID. Hier stond `AMOUNT.brandModelCredit * BRAND_MODEL_CREDIT_DROPS`
- *       rechtstreeks in `delta_cents`. AMOUNT is in EURO'S — quote.js rekent
- *       hem met cents(AMOUNT.testSample) om, en euro(AMOUNT.brandModelCredit)
- *       schrijft "€ 250". 250 × 5 = 1250, en 1250 cent is € 12,50. De klant
- *       kreeg dus een honderdste van zijn tegoed, met een reden ernaast die
- *       € 1.250 beloofde. De handmatige boeking twee schermen verderop doet het
- *       wél goed: `Math.round(euro * 100)`.
- *
- *   2 · DE POORT. De vraag was "hoeveel modellen heeft deze klant?" en die
- *       vraag is de verkeerde: handleModelManage verwijdert modellen echt, dus
- *       na één verwijderde tikfout staat de teller weer op nul en wordt het
- *       tegoed een tweede keer geboekt. Wat we willen weten is of het tegoed AL
- *       geboekt is, en dat staat in het grootboek zelf. Die rij verdwijnt niet
- *       als een model verdwijnt, en dat is precies de eigenschap die we nodig
- *       hebben.
- *
- * En hij staat nu in één functie omdat er twee plekken zijn waar een eerste
- * model ontstaat: dit scherm en handleAddCustomModel() op de bestelkaart. Alleen
- * de eerste boekte iets, dus wie zijn eerste model via een bestelling kreeg,
- * kreeg nooit een tegoed — en daarna zag de oude teller er twee staan en sloeg
- * hij ook de volgende over. */
-const MERKMODEL_TEGOED_REDEN = 'Merkmodel-setup';
-
-async function boekMerkmodelTegoed(env, customerId) {
-  if (!Number.isInteger(Number(customerId))) return;
-  const al = await env.DB.prepare(
-    `SELECT id FROM customer_credits
-      WHERE customer_id = ?1 AND reason LIKE ?2 LIMIT 1`
-  ).bind(customerId, `${MERKMODEL_TEGOED_REDEN}%`).first().catch(() => ({ id: -1 }));
-  if (al) return;   // al geboekt, of de vraag kon niet gesteld worden — dan liever niets
-
-  await env.DB.prepare(
-    `INSERT INTO customer_credits (customer_id, delta_cents, reason, admin_id)
-     VALUES (?1, ?2, ?3, ?4)`
-  ).bind(
-    customerId,
-    Math.round(AMOUNT.brandModelCredit * BRAND_MODEL_CREDIT_DROPS * 100),
-    `${MERKMODEL_TEGOED_REDEN} — € ${AMOUNT.brandModelCredit} verrekenbaar op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
-    /* Geen admin_id: deze functie krijgt de ingelogde beheerder niet mee, en
-       een verkeerde naam bij een grootboekregel is erger dan geen naam. De
-       reden hierboven zegt precies waar de regel vandaan komt. */
-    null
-  ).run().catch((e) => console.error('[admin] merkmodel-tegoed niet vastgelegd —', e?.message || e));
-}
+     BESTAANDE RIJEN BLIJVEN STAAN. Klanten die het tegoed al geboekt kregen,
+     hebben het — het is een toezegging die is gedaan, en die intrekken omdat het
+     aanbod veranderd is, is niet hoe dat werkt. Ze staan gewoon in
+     customer_credits en verreken je met de hand, zoals elk ander tegoed. */
 
   const file = form && form.get('preview');
   if (file && typeof file === 'object' && file.size && env.UPLOADS) {
@@ -4501,11 +4834,9 @@ async function handleAddCustomModel({ request, env }, orderId) {
   await env.DB.prepare(
     "INSERT INTO custom_models (customer_id, label, status) VALUES (?1, ?2, 'in_design')"
   ).bind(order.customer_id, label).run();
-  /* Hetzelfde tegoed als op het klantscherm. Dit is de tweede plek waar een
-     eerste merkmodel ontstaat en hij boekte niets — zie de noot bij
-     boekMerkmodelTegoed(). De functie bepaalt zelf of er al geboekt is. */
-  await boekMerkmodelTegoed(env, order.customer_id);
-
+  /* Hier stond de tweede aanroep van boekMerkmodelTegoed() — dit is de tweede
+     plek waar een eerste merkmodel ontstaat. Weg met de credit zelf; zie de noot
+     op de eerste plek, in handleAddCustomModel hierboven. */
   return seeOther('/admin');
 }
 
@@ -4601,6 +4932,10 @@ async function loadRevisionInbox(env) {
             f.product_key, f.shot,
             o.id AS order_id, o.ref, o.brand, o.email, o.lang,
             o.customer_id,
+            -- De ene revisieronde (migratie 0034). Hiermee weet dit overzicht of
+            -- deze regels bij ÉÉN aanvraag horen of losse aanvragen van voor
+            -- 24 augustus 2026 zijn -- zie revisionRoundCard() verderop.
+            o.revision_round_at, o.revision_round_note, o.revision_round_count,
             c.revisions_revoked_at,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = o.customer_id) AS asked,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.file_id = f.id) AS asked_here
@@ -4961,10 +5296,27 @@ async function handleDiagnoseProbe(context) {
       mode: raw ? (String(raw).trim().startsWith('live_') ? 'LIVE' : String(raw).trim().startsWith('test_') ? 'test' : 'unrecognised') : null,
       problems: mollieKeyProblems(env),
     },
+    /* SELLER_ADDRESS, VISUAILS_VAT en VISUAILS_KVK staan hier sinds 24 augustus
+       2026 bij. Ze zijn geen sleutel en er gaat niets mee stuk als ze ontbreken —
+       en dat is precies waarom ze hier horen. sellerOf() in src/lib/invoice.js
+       valt bij een ontbrekend secret terug op zichtbaar onjuiste waarden
+       ("Voorbeeldstraat 12", "NL000000000B00") en schrijft één regel naar het
+       Workers-logboek. Wie dat logboek niet leest, verstuurt een factuur met
+       plaatshouders erop — een belastingdocument met een verzonnen btw-nummer.
+
+       Deze pagina is de plek waar je dat kunt ZIEN in plaats van erover te
+       moeten worden ingelicht. `secretShape` toont nooit de waarde zelf, alleen
+       of hij er is en hoe hij eruitziet. */
     secrets: Object.fromEntries(
-      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET']
+      ['MOLLIE_API_KEY', 'RESEND_API_KEY', 'PORTAL_SALT', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET',
+       'SELLER_ADDRESS', 'VISUAILS_VAT', 'VISUAILS_KVK']
         .map((naam) => [naam, secretShape(env?.[naam])])
     ),
+    /* En de factuurkop zoals hij er straks op komt te staan, opgebouwd uit
+       precies dezelfde functie die de echte factuur gebruikt. Een lijst met
+       "gezet: ja" bewijst dat er iets stáát; dit laat zien WAT er staat, en dat
+       is de enige manier om een adres met een typefout erin te betrappen. */
+    invoiceHeader: null,
     probes: {},
     reading: null,
   };
@@ -5013,6 +5365,34 @@ async function handleDiagnoseProbe(context) {
     at_large_order: await mollieMethodList(key, ladderTotal('complete', 30).toFixed(2)),
   };
 
+  /*
+   * ── STAAT RECURRING AAN? — 24 augustus 2026 ────────────────────────────────
+   *
+   * De abonnementen op deze site draaien op Mollie Recurring: een eerste
+   * betaling met `sequenceType: 'first'` die een mandaat oplevert, en daarna
+   * incasso's op dat mandaat (zie src/lib/mollie.js en subscribe.js). Dat werkt
+   * alleen als SEPA-incasso of creditcard op het Mollie-profiel geactiveerd is,
+   * en dat is een instelling bij MOLLIE — niet iets wat in deze code staat.
+   *
+   * ER WAS GEEN MANIER OM HET TE ZIEN. Je merkte het pas bij de eerste echte
+   * abonnee, op de stap waar het mandaat gemaakt moet worden, met een klant die
+   * al betaald heeft. Dat is de duurst mogelijke plek om erachter te komen.
+   *
+   * `/methods?sequenceType=…` is Mollie's eigen antwoord op deze vraag —
+   * `first` geeft de methodes waarmee een mandaat mag beginnen, `recurring` de
+   * methodes waarmee er daarna afgeschreven mag worden. Staat Recurring niet
+   * aan, dan is die tweede lijst leeg. Eén verzoek, geen betaling, niets
+   * onomkeerbaars.
+   */
+  out.recurring = {
+    note: 'Abonnementen draaien op deze twee lijsten. `first` is waarmee een mandaat kan beginnen; `recurring` is waarmee er daarna afgeschreven wordt. Is `recurring` leeg, dan staat Mollie Recurring (SEPA-incasso of creditcard) niet aan op dit profiel.',
+    first: await mollieSequenceMethods(key, 'first'),
+    recurring: await mollieSequenceMethods(key, 'recurring'),
+  };
+
+  /* De factuurkop, uit dezelfde functie als de echte factuur. */
+  out.invoiceHeader = invoiceHeaderPreview(env);
+
   out.reading = readDiagnose(out);
   return diagnoseJson(out);
 }
@@ -5030,6 +5410,70 @@ async function mollieMethodList(key, value) {
     count: list.length,
     methods: list.map((m) => `${m.description} (${m.id})`),
   };
+}
+
+/*
+ * De methodes die Mollie voor één stap van een terugkerende reeks aanbiedt.
+ *
+ * `sequenceType` staat in Mollie's eigen API-referentie bij "List payment
+ * methods" en kent drie waarden: `oneoff`, `first` en `recurring`. Wij vragen de
+ * laatste twee, want dat zijn de twee stappen die een abonnement zet.
+ *
+ * DE LEGE LIJST IS HET ANTWOORD en niet een fout. Mollie geeft netjes 200 met
+ * nul methodes terug wanneer er voor die stap niets geactiveerd is; dat is
+ * precies wat "Recurring staat niet aan" eruit ziet. Vandaar dat een leeg
+ * resultaat hier geen `error` krijgt maar een telling van nul — een fout zou
+ * suggereren dat de vraag niet beantwoord is, terwijl hij dat wel is.
+ */
+async function mollieSequenceMethods(key, sequenceType) {
+  const pad = `/methods?sequenceType=${encodeURIComponent(sequenceType)}`;
+  const res = await mollieProbe('GET', pad, key);
+  if (res.threw || res.status !== 200) {
+    return { sequenceType, error: res.error || `HTTP ${res.status}`, body: res.body };
+  }
+  const full = await fetch(MOLLIE_API + pad, {
+    headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+  }).then((r) => r.json()).catch(() => null);
+  const list = full?._embedded?.methods || [];
+  return {
+    sequenceType,
+    count: list.length,
+    methods: list.map((m) => `${m.description} (${m.id})`),
+  };
+}
+
+/*
+ * De kop van een factuur zoals hij er nu uit zou komen.
+ *
+ * WAAROM DIT ER STAAT. sellerOf() valt bij een ontbrekend secret terug op
+ * waarden die zichtbaar onjuist zijn — "Voorbeeldstraat 12", "NL000000000B00",
+ * KVK "00000000" — juist zodat een fout opvalt. Alleen valt hij pas op als
+ * iemand naar een verstuurde factuur kijkt, en dan is hij al verstuurd.
+ *
+ * Hier staat hij vóór die tijd, en naast de vlag `placeholders` die zegt of er
+ * iets terugvalt. Geen enkel secret wordt getoond: dit ZIJN de waarden die
+ * sowieso op de factuur van de klant komen te staan.
+ */
+function invoiceHeaderPreview(env) {
+  try {
+    const s = sellerOf(env);
+    const nep = {
+      address: s.address.join(' ').includes('Voorbeeldstraat 12'),
+      vat: s.vat === 'NL000000000B00',
+      kvk: s.kvk === '00000000',
+    };
+    return {
+      name: s.name,
+      address: s.address,
+      vat: s.vat,
+      kvk: s.kvk,
+      email: s.email,
+      iban: s.iban,
+      placeholders: Object.entries(nep).filter(([, v]) => v).map(([k]) => k),
+    };
+  } catch (e) {
+    return { error: String(e && e.message ? e.message : e) };
+  }
 }
 
 async function mollieProbe(method, path, key, body) {
@@ -5109,9 +5553,44 @@ function readDiagnose(out) {
   if (D && D.status >= 400) return `The real payload was refused: ${JSON.stringify(D.body)}. Field to look at: ${D.body?.field || 'see detail'}.`;
 
   if (C?.status === 201 && D?.status === 201) {
+    /* ── EN DE TWEE VRAGEN DIE GEEN BETALING ZIJN — 24 augustus 2026 ────────
+       Losse betalingen kunnen werken terwijl abonnementen dat niet doen, en een
+       factuur kan verstuurd worden met plaatshouders erop. Allebei stil, allebei
+       pas zichtbaar bij de eerste echte klant. Ze horen dus in dezelfde
+       samenvatting als de rest, en niet ergens onderin de JSON. */
+    const staarten = [];
+
+    const r = out.recurring;
+    if (r?.recurring?.error) {
+      staarten.push(`De controle op terugkerende methodes liep vast (${r.recurring.error}) — abonnementen zijn hiermee NIET bevestigd.`);
+    } else if (r && r.recurring?.count === 0) {
+      staarten.push(
+        'LET OP — Mollie biedt NUL methodes aan voor terugkerende betalingen, dus Recurring staat niet aan op dit profiel. '
+        + 'Losse bestellingen werken gewoon; een abonnement loopt vast op het moment dat het mandaat gemaakt moet worden, '
+        + 'bij een klant die dan al betaald heeft. Vraag SEPA-incasso aan in je Mollie-dashboard en herhaal deze probe.'
+      );
+    } else if (r?.recurring?.count > 0) {
+      staarten.push(
+        `Recurring staat AAN: Mollie accepteert ${r.first?.count ?? '?'} methode(s) om een mandaat mee te beginnen `
+        + `en ${r.recurring.count} om daarna mee af te schrijven (${r.recurring.methods.join(', ')}). Abonnementen kunnen dus draaien.`
+      );
+    }
+
+    const h = out.invoiceHeader;
+    if (h?.placeholders?.length) {
+      staarten.push(
+        `LET OP — de factuurkop draagt plaatshouders voor: ${h.placeholders.join(', ')}. `
+        + 'Elke factuur die nu uitgaat is een belastingdocument met verzonnen gegevens erop. '
+        + 'Zet SELLER_ADDRESS, VISUAILS_VAT en/of VISUAILS_KVK als Pages-secret en deploy opnieuw.'
+      );
+    } else if (h && !h.error) {
+      staarten.push(`De factuurkop staat goed: ${h.name}, ${h.address.join(', ')}, btw ${h.vat}, KVK ${h.kvk}.`);
+    }
+
     return `All four probes pass and Mollie created both test payments (${C.body?.id}, ${D.body?.id}, mode ${D.body?.mode}). ` +
       `Payment creation works from this deployment. Those two are diagnostic payments — they sit "open" in your Mollie dashboard, ` +
-      `nobody will pay them, and they expire on their own.`;
+      `nobody will pay them, and they expire on their own.` +
+      (staarten.length ? `\n\n${staarten.join('\n\n')}` : '');
   }
 
   return 'Inconclusive — send the whole of this JSON over and I will read it.';
@@ -6000,7 +6479,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
 ${counts ? todayStrip(counts) : ''}
 
 <h2>Revision requests</h2>
-${revisions.length ? revisions.map(revisionCard).join('') : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
+${revisions.length ? revisionInbox(revisions) : '<p class="empty">Nothing waiting. A client\'s "request a revision" in their portal lands here, with their note.</p>'}
 
 <h2>Orders${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
 ${searchRow}
@@ -6040,6 +6519,108 @@ function statusFilterRow(statusCounts, statusFilter) {
       statusFilter === s,
     )).join('')}
   </nav>`;
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * DE INBOX: ÉÉN RONDE IS ÉÉN KAART
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 24 augustus 2026: de klant *"moet alle foto's selecteren/doorgeven wat
+ * niet goed is waarna ik ze bekijk en beoordeel."* Vier beelden in één ronde
+ * hoorden dus als één stapel op dit scherm te komen, en niet als vier losse
+ * kaarten met vier keer dezelfde notitie eronder.
+ *
+ * ── EN DE OUDE LOSSE AANVRAGEN BLIJVEN LOSSE KAARTEN ───────────────────────
+ *
+ * Elke revisie van vóór 24 augustus is er één per beeld, met een eigen notitie
+ * per beeld — dat waren echt losse aanvragen. Die alsnog per bestelling op één
+ * hoop gooien zou een verband suggereren dat er niet was, en de notitie van beeld
+ * A onder beeld B zetten. Dus beslist `revision_round_at` het: is die er, dan
+ * hoort deze stapel bij één ronde; is die er niet, dan is het wat het was.
+ *
+ * Dat is meteen de reden dat er niet op `reviewed_at` gegroepeerd wordt. Twee
+ * losse aanvragen binnen dezelfde minuut zouden dan één ronde worden, en dat is
+ * raden in plaats van weten.
+ */
+function revisionInbox(rows) {
+  /* Volgorde bewaren: de query levert nieuwste eerst, en een Map houdt de
+     invoegvolgorde vast. Sorteren op bestelnummer zou de nieuwste ronde
+     ergens in het midden laten belanden. */
+  const perOrder = new Map();
+  for (const r of rows) {
+    if (!perOrder.has(r.order_id)) perOrder.set(r.order_id, []);
+    perOrder.get(r.order_id).push(r);
+  }
+
+  const uit = [];
+  for (const [, groep] of perOrder) {
+    const eerste = groep[0];
+    /* Eén ronde: één kaart. Ook bij één beeld — dan is het nog steeds DE ronde
+       van die bestelling, en dat de klant er geen tweede kan indienen is precies
+       wat op deze kaart hoort te staan. */
+    if (eerste.revision_round_at) uit.push(revisionRoundCard(eerste, groep));
+    else uit.push(...groep.map(revisionCard));
+  }
+  return uit.join('');
+}
+
+/*
+ * Eén ronde, met alle beelden erin en de notitie één keer bovenaan.
+ *
+ * DE NOTITIE STAAT BOVEN DE BEELDEN EN NIET ERONDER PER STUK. De klant schrijft
+ * één toelichting voor de hele ronde ("de kleur van het jasje klopt op geen van
+ * deze"), en die hoort te lezen als wat hij is: één opmerking over deze stapel.
+ *
+ * ELK BEELD HOUDT ZIJN EIGEN "OPGELOST"-KNOP. Verleidelijk om er één knop van te
+ * maken voor de hele ronde, en fout: de beelden worden één voor één opnieuw
+ * gemaakt, en de regel die naar de klant gaat ("wat heb je aangepast") verschilt
+ * per beeld. Eén knop zou dwingen om vier aanpassingen in één zin te persen, of
+ * om te wachten tot alles klaar is voordat er iets terug kan.
+ */
+function revisionRoundCard(o, rows) {
+  const often = o.asked > rows.length ? `<span class="meta">${o.asked}× door dit merk</span>` : '';
+  const revoked = o.revisions_revoked_at ? '<span class="pill">revisierechten ingetrokken</span>' : '';
+  const aantal = o.revision_round_count || rows.length;
+
+  const beelden = rows.map((r) => `
+    <div class="rev-body" id="rev-${r.file_id}">
+      <a class="rev-shot" href="/admin/files/${r.file_id}" target="_blank" rel="noopener">
+        <img src="/admin/files/${r.file_id}" alt="${esc(r.filename || 'beeld ' + r.file_id)}" loading="lazy" decoding="async">
+      </a>
+      <div class="rev-text">
+        <p class="rev-what">${r.product_key
+          ? `<strong>Product ${esc(r.product_key.replace(/^p/, ''))}${r.shot ? ` &middot; ${esc(r.shot)}` : ''}</strong>`
+          : '<strong class="muted">niet aan een product gekoppeld</strong>'}</p>
+        <p class="meta">${esc(r.filename || 'bestand #' + r.file_id)}</p>
+        <form method="post" action="/admin/revisions/${r.file_id}/resolve" class="rev-actions">
+          <input type="text" name="fixed" maxlength="${ANNOUNCE_NOTE_MAX}" required
+                 placeholder="Wat heb je aangepast? Deze regel gaat naar de klant."
+                 class="in-grow">
+          <button class="btn btn-primary" type="submit">Opgelost — terug naar de klant</button>
+        </form>
+      </div>
+    </div>`).join('');
+
+  return `
+<div class="card is-attention" id="round-${o.order_id}">
+  <div class="row-head">
+    <span class="ref"><a href="/admin/orders/${o.order_id}/files">${esc(o.ref)}</a></span>
+    <span class="meta">${esc(o.brand || o.email)} · ${esc(when(o.revision_round_at))}</span>
+  </div>
+  <p class="meta">
+    <span class="pill is-attention">revisieronde · ${aantal} beeld${aantal === 1 ? '' : 'en'}</span>
+    ${often} ${revoked}
+  </p>
+  <!-- DE ENE RONDE, EN DAT STAAT ER OOK. Zonder deze regel is niet te zien dat
+       er geen tweede aanvraag meer kan komen, en dat is nu juist wat bepaalt hoe
+       je hiernaar kijkt: dit is alles wat deze klant over deze levering te
+       zeggen heeft. -->
+  <p class="meta">Dit is de ene ronde die bij deze bestelling hoort. De klant kan er geen tweede indienen; hij ziet nu een WhatsApp-link.</p>
+  ${o.revision_round_note ? `<div class="note">${esc(o.revision_round_note)}</div>` : '<p class="meta">Geen toelichting achtergelaten.</p>'}
+  ${beelden}
+  <p class="meta"><a href="/admin/customers/${o.customer_id}">Klant bekijken</a></p>
+</div>`;
 }
 
 /*

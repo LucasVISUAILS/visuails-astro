@@ -29,6 +29,9 @@
 // tests/account-brand-kit.test.mjs's header for why that is the right shape.
 import { adminGet, adminPost, guessProductShot } from '../src/lib/admin.js';
 import { mintToken } from '../src/lib/token.js';
+/* De bewaartermijn wordt geïmporteerd en niet ingetypt: een toets die 12
+   intypt, bewijst dat 12 nog steeds 12 is. */
+import { DELIVERY_MONTHS } from '../src/lib/retention.js';
 
 const ORDERS = [
   { id: 91, customer_id: 7, ref: 'VIS-8K2-QQ1', service: 'catalog', status: 'received', tier: 'attended', brand: 'VOLT', email: 'studio@voltbrand.nl', product_count: 30, window_start: '2026-08-10', window_end: '2026-08-14', payment_status: 'paid', total_cents: 102000, vat_cents: 21420, paid_at: '2026-08-01', created_at: '2026-08-01', delivered_at: null, delivery_mailed_at: null, file_count: 0, lang: 'nl', name: 'Mara' },
@@ -907,6 +910,78 @@ section('§10 · de fouten van de nachtelijke controle, vastgezet');
   const chips = env.DB.prepared.find((q) => /GROUP BY status/.test(q));
   check('the revision counter skips hidden orders', /hidden_at IS NULL/.test(revisionCount || ''));
   check('and so do the status chips', /hidden_at IS NULL/.test(chips || ''));
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('§5 · "mail ons en we sturen een nieuwe link" — 23 augustus 2026');
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// /terms en /privacy beloven dit in beide talen, en tot vandaag kon niemand het
+// uitvoeren. freshPortalLink() bestond, maar zijn twee aanroepers zaten allebei
+// achter een poort die NIEUWE BESTANDEN vereist — en een klant die na vier
+// maanden mailt omdat zijn link is verlopen, heeft per definitie niets nieuws.
+//
+// De toetsen hieronder gaan over dat "niets nieuws": de knop moet werken juist
+// als er niets aan te kondigen valt, en hij mag tegelijk niet doen alsof er wél
+// iets is.
+
+{
+  sentMail = [];
+  // unannounced: 0 — precies het geval waarin de herleveringsknop niets doet.
+  const env = makeEnv({ unannounced: 0 });
+  const order = ORDERS.find((o) => o.id === 90);
+  const was = order.delivery_mailed_at;
+  order.delivery_mailed_at = '2026-04-02';   // vier maanden geleden aangekondigd
+
+  const res = await adminReq('POST', '/admin/orders/90/fresh-link', { env });
+
+  const revokeAt = indexOfWrite(env.DB.writes, /UPDATE order_tokens SET revoked_at/);
+  const insertAt = indexOfWrite(env.DB.writes, /INSERT INTO order_tokens/);
+
+  check('a fresh link works when there is nothing to announce', res.status === 303, res.status);
+  check('the old token is revoked first', revokeAt >= 0 && insertAt >= 0 && revokeAt < insertAt,
+    `revoke@${revokeAt} insert@${insertAt}`);
+  check('exactly one new token is minted',
+    env.DB.writes.filter((w) => /INSERT INTO order_tokens/.test(w.sql)).length === 1);
+  check('the customer is mailed', sentMail.length === 1, `${sentMail.length} mails`);
+
+  /* DE MAIL MAG NIET DOEN ALSOF ER IETS NIEUWS IS. Dat is het hele verschil met
+     de herleveringsknop, en het is precies het soort bericht dat een klant één
+     keer opent en daarna niet meer vertrouwt. */
+  const m = sentMail[0] || {};
+  check('the subject says "new link", not "new images"',
+    /new link/i.test(m.subject || '') && !/new images|nieuwe beelden/i.test(m.subject || ''), m.subject);
+  check('and the body promises nothing new',
+    /nothing about your images has changed/i.test(m.html || ''));
+  check('it says the previous link is dead',
+    /replaces the previous one/i.test(m.html || ''));
+  check('and it names the retention period from the constant',
+    new RegExp(`${DELIVERY_MONTHS} months`).test(m.html || ''));
+
+  /* NIETS AANGEKONDIGD. redelivery_count omhoog zetten of announced_at stempelen
+     zou de volgende echte herlevering laten denken dat die beelden al gemeld
+     zijn — en dan komt de mail die er wél toe doet nooit aan. */
+  check('redelivery_count is NOT bumped', !has(env.DB.writes, /redelivery_count/));
+  check('nothing is stamped as announced', !has(env.DB.writes, /SET announced_at/));
+
+  check('the customer timeline records it',
+    has(env.DB.writes, /INSERT INTO order_events/));
+
+  order.delivery_mailed_at = was;
+}
+
+{
+  // Een bestelling die de klant nooit heeft gezien, heeft een leeg portaal.
+  // Een link daarheen sturen is een mail over iets waarvan hij het bestaan niet
+  // kent — zelfde weigering en dezelfde reden als bij de herleveringsknop.
+  sentMail = [];
+  const env = makeEnv();
+  const order = ORDERS.find((o) => o.id === 91);
+  const res = await adminReq('POST', '/admin/orders/91/fresh-link', { env });
+  check('never announced → refused', res.status === 400, res.status);
+  check('  and no token is issued', !has(env.DB.writes, /INSERT INTO order_tokens/));
+  check('  and no mail goes out', sentMail.length === 0, `${sentMail.length} mails`);
 }
 
 globalThis.fetch = realFetch;

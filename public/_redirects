@@ -98,3 +98,20 @@
 # so there is no 301 to write here any more. Left as a comment, not deleted
 # outright, so the next person who greps "models" for a stale redirect finds
 # the reasoning instead of nothing.
+
+# ── de doorloop, opgeheven (24 augustus 2026) ──────────────────────────────
+# /demo toonde FigWalk: de bestelling van telefoonfoto tot bestanden, scherm
+# voor scherm. Datzelfde onderdeel stond en staat op /how-it-works, en dat is
+# de reden dat /demo weg is — één uitleg op twee adressen is geen tweede
+# uitleg maar een tweede versie die uit de pas kan gaan lopen.
+#
+# WAAROM DIT HIER STAAT EN DE PAGINA NIET GEWOON VERDWIJNT. /demo stond op
+# `index, follow` en zat in de gegenereerde sitemap, dus hij is gecrawld. Een
+# route die uit de build verdwijnt zonder regel hier, wordt een 404 voor elke
+# zoekmachine die hem nog kent en voor elke link die iemand ooit deelde. De
+# doorloop bestaat nog steeds — alleen op een ander adres — en dat is precies
+# wat een 301 betekent en een 404 niet.
+/demo                   /how-it-works       301
+/demo/                  /how-it-works       301
+/nl/demo                /nl/how-it-works    301
+/nl/demo/               /nl/how-it-works    301

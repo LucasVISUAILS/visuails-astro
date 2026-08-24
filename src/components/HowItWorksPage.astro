@@ -177,8 +177,10 @@ import Compare from './Compare.astro';
 // the opposite — ONE service followed from the phone photo to the files, the
 // other two not on screen at all ("Ieder apart van elkaar") — and for the
 // slider and the gate to go: the gate is stated in prose below and the prices
-// live on /pricing. FigWalk is that, and /demo shows the same component, so
+// live on /pricing. FigWalk is that, and /demo showed the same component, so
 // there is one walkthrough and one set of photographs to shoot for it.
+// (/demo was retired on 24 August 2026. This page is now the only host — the
+// walkthrough itself is unchanged, and so is the shoot list behind it.)
 import FigWalk from './FigWalk.astro';
 import {
   TIERS, reviewClaim, turnaround, aftercare, euro, AMOUNT,
@@ -226,8 +228,12 @@ const COPY = {
     // Two keys, where FigFlow needed eighteen. Everything the walkthrough says
     // — step headings, style names, the model line, the caption admitting the
     // images are stand-ins — lives in WALK_COPY in src/data/demo.js, because
-    // /demo renders the same component and copy kept in two page files is copy
+    // /demo rendered the same component and copy kept in two page files is copy
     // that drifts. These two are this page's own framing of it.
+    //
+    // /demo is gone since 24 August 2026 and WALK_COPY stays where it is: copy
+    // belongs with the component that renders it, not with whichever page
+    // happens to be its only host this month. See the note in src/data/demo.js.
     flowH: 'Your order, end to end.',
     flowLede: 'One service at a time, from the phone photo you send to the files that come back. Pick one and scroll: the frame holds still and shows what exists at that moment.',
     gateLead: 'No date is printed until the calendar clears it.',
@@ -243,7 +249,6 @@ const COPY = {
     portalNote: `Smaller orders work differently and more simply. ${TIERS.unattended.delivery.en}.`,
 
     verderH: 'Want more of the working?',
-    verderDemo: 'Walk through an order',
     verderStudio: 'The studio day and the calendar',
     verderAbout: 'Who is behind it',
     detailsH: 'The details that matter',
@@ -270,7 +275,10 @@ const COPY = {
       ['Marketplaces', 'For the likes of Zalando, Amazon and bol'],
       ['Email and linesheets', 'Wide crops for newsletters and wholesale'],
     ],
-    landNote: 'Downloads arrive sized per channel in the portal.',
+    /* Zie de noot bij dashPortalN in HomeV2.astro: er wordt niets per kanaal
+       gesneden. Je kiest de verhouding bij het bestellen — deze lijst met
+       kanalen is precies waar die keuze over gaat — en krijgt alle formaten. */
+    landNote: 'You pick the aspect ratio for these when you order, and every image arrives in all three formats.',
 
     faqH: 'Still have a question?',
     // The second inbound link to /guides (brief §1 — it had none in any page
@@ -310,7 +318,6 @@ const COPY = {
     portalNote: `Kleinere bestellingen werken anders en simpeler. ${TIERS.unattended.delivery.nl}.`,
 
     verderH: 'Wil je meer van het binnenwerk zien?',
-    verderDemo: 'Loop een bestelling door',
     verderStudio: 'De studiodag en de kalender',
     verderAbout: 'Wie erachter zit',
     detailsH: 'De details die ertoe doen',
@@ -334,7 +341,8 @@ const COPY = {
       ['Marktplaatsen', 'Voor partijen als Zalando, Amazon en bol'],
       ['E-mail en linesheets', 'Brede uitsnedes voor nieuwsbrieven en wholesale'],
     ],
-    landNote: 'In VISUAILS Studio staan de downloads per kanaal op maat klaar.',
+    // Zie de noot bij de Engelse landNote.
+    landNote: 'De beeldverhouding hiervoor kies je bij het bestellen, en elk beeld komt in alle drie de formaten.',
 
     faqH: 'Nog een vraag?',
     faqGuides: `De FAQ beantwoordt de praktische vragen; de langere stukken — hoe je de foto maakt die je ons stuurt, wat een shootdag echt kost — staan bij de <a href="${lp('/guides')}">gidsen</a>.`,
@@ -434,10 +442,19 @@ const c = COPY[lang];
         paginatekst dan ook — je hele doorloop van een bestelling, alleen te
         vinden door een uitklapmenu te openen. /about idem. /studio had er één.
         Alle drie horen bij deze pagina: dit is waar iemand is die wil weten hoe
-        het werkt, en dit zijn de drie plekken waar dat verder wordt uitgelegd. */}
+        het werkt, en dit zijn de drie plekken waar dat verder wordt uitgelegd.
+
+        ── EN TOEN WAREN HET ER TWEE — 24 augustus 2026 ──────────────────────
+        /demo is weg. Niet omdat de doorloop niet deugde, maar omdat hij hetzelfde
+        vertelde als deze pagina en de zes pagina's eromheen: de walkthrough die
+        daar stond, is FigWalk, en die staat hier al. Eén uitleg op twee adressen
+        is geen extra uitleg — het is een tweede versie die uit de pas kan gaan
+        lopen, en die er nu niet meer is.
+
+        DE LINK IS DUS OOK WEG en niet vervangen: er is geen derde plek meer om
+        naartoe te sturen, en `verderDemo` is uit beide taalblokken verdwenen. */}
     <p class="hiw-verder">
       {c.verderH}{' '}
-      <a href={lp('/demo')}>{c.verderDemo}</a>{' · '}
       <a href={lp('/studio')}>{c.verderStudio}</a>{' · '}
       <a href={lp('/about')}>{c.verderAbout}</a>
     </p>

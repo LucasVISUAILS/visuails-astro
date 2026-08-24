@@ -96,8 +96,11 @@ const C = nl
       ordFacts: '4 beelden geleverd · 4 goedgekeurd',
       ordMade: 'Wat wij leverden', ordSent: 'Wat jij stuurde',
       shots: ['Voorkant', 'Achterkant', 'Detail', 'Op een model'],
-      bApprove: 'Goedkeuren', bAsk: 'Er klopt iets niet', bDown: 'Downloaden',
-      ordNote: 'Per beeld, niet per stapel. Een revisie vraag je op de foto waar het over gaat.',
+      bApprove: 'Goedkeuren', bAsk: 'Niet goed', bDown: 'Downloaden',
+      rrH: 'Eén revisieronde',
+      rrBody: 'Vink aan wat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde.',
+      rrBtn: 'Verstuur deze revisieronde',
+      ordNote: 'Goedkeuren doe je per beeld. Aanmerken ook — maar je verstuurt ze samen, als de ene revisieronde die bij de bestelling hoort. Daarna verschijnt er een WhatsApp-link in plaats van de knop.',
       bkH: 'Standaard per dienst',
       bkFace: 'Wie het draagt', bkBg: 'Waar het op staat', bkCh: 'Waar je het verkoopt',
       bkAsk: 'Geen voorkeur', bkAskSub: 'Vraag het per bestelling',
@@ -145,8 +148,11 @@ const C = nl
       ordFacts: '4 images delivered · 4 approved',
       ordMade: 'What we delivered', ordSent: 'What you sent',
       shots: ['Front', 'Back', 'Detail', 'On a model'],
-      bApprove: 'Approve', bAsk: 'Something is not right', bDown: 'Download',
-      ordNote: 'Image by image, not by the pile. You ask for a revision on the photo it is about.',
+      bApprove: 'Approve', bAsk: 'Not right', bDown: 'Download',
+      rrH: 'One revision round',
+      rrBody: 'Tick what is not right, tell us what is wrong, and send it as one round.',
+      rrBtn: 'Send this revision round',
+      ordNote: 'You approve image by image. You tick image by image too — but you send them together, as the one revision round that comes with the order. After that a WhatsApp link takes the button\u2019s place.',
       bkH: 'Default per service',
       bkFace: 'Who wears it', bkBg: 'What it stands on', bkCh: 'Where you sell it',
       bkAsk: 'No preference', bkAskSub: 'Ask me per order',
@@ -276,10 +282,29 @@ const UPLOAD = '/img/catalog-before.webp';
                       <img src={PHOTOS[i]} alt="" loading="lazy" decoding="async" width="200" height="250" />
                       <span class="fd-cap">{cap}</span>
                       <span class="fd-fakebtn is-sm">{C.bApprove}</span>
-                      <span class="fd-fakebtn is-sm is-line">{C.bAsk}</span>
+                      {/* ── EEN VINKJE EN GEEN TWEEDE KNOP — 24 augustus 2026 ──
+                          Hier stonden drie knoppen per foto, waarvan er één
+                          "Er klopt iets niet" heette en meteen een revisie
+                          verstuurde. Zo werkt het echte scherm sinds vandaag
+                          niet meer: er is één revisieronde per bestelling, dus
+                          je vinkt aan en verstuurt onderaan in één keer.
+
+                          De mockup hoort het echte scherm te laten zien en niet
+                          een vorige versie ervan — dat is het hele punt van deze
+                          figuur. Zie roundBlock() in src/lib/account.js. */}
+                      <span class="fd-pick"><span class="fd-box" aria-hidden="true"></span>{C.bAsk}</span>
                       <span class="fd-fakebtn is-sm is-quiet">{C.bDown}</span>
                     </div>
                   ))}
+                </div>
+                {/* De ene ronde, onder het raster — precies waar hij op het
+                    echte scherm staat: de handeling is langslopen, aanvinken,
+                    opschrijven, versturen, en de knop hoort aan het eind. */}
+                <div class="fd-rr">
+                  <p class="fd-h4">{C.rrH}</p>
+                  <p class="fd-sub">{C.rrBody}</p>
+                  <span class="fd-fakefield">&nbsp;</span>
+                  <span class="fd-fakebtn is-sm">{C.rrBtn}</span>
                 </div>
               </div>
               <div class="fd-ref-col">
@@ -565,6 +590,30 @@ const UPLOAD = '/img/catalog-before.webp';
   .fd-fakebtn.is-sm { width: 100%; padding: .28rem .4rem; font-size: .62rem; border-radius: var(--r-sm); }
   .fd-fakebtn.is-line { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-strong); }
   .fd-fakebtn.is-quiet { background: none; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line); }
+
+  /* ── HET VINKJE EN DE RONDE — 24 augustus 2026 ────────────────────────────
+     De tegenhanger van .pick en .rr in public/account.css. Hier getekend en niet
+     interactief: dit is een figuur van een scherm, geen scherm. Wat het wél moet
+     doen is er hetzelfde UITZIEN als het echte, want dat is waar deze hele
+     component voor bestaat — zie de kop van dit bestand. */
+  .fd-pick {
+    display: inline-flex; align-items: center; gap: .3rem; width: 100%;
+    padding: .28rem .1rem; font-size: .62rem; color: var(--ink-2);
+    letter-spacing: .04em; text-transform: uppercase; font-weight: 700;
+  }
+  .fd-box {
+    inline-size: .68rem; block-size: .68rem; flex: 0 0 auto;
+    border-radius: 2px; box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+  .fd-rr {
+    margin-top: .9rem; padding-top: .7rem;
+    box-shadow: inset 0 1px 0 var(--line);
+    display: grid; gap: .35rem; justify-items: start;
+  }
+  .fd-fakefield {
+    display: block; inline-size: 100%; block-size: 2.1rem;
+    border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
 
   .fd-now { margin: .8rem 0 0; font-size: .82rem; color: var(--ink-2); }
   .fd-win { color: var(--ink-3); }

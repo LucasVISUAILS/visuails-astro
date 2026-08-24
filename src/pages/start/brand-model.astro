@@ -1,15 +1,15 @@
 ---
-// VISUAILS — /start/brand-model.astro. The Brand Model brief.
+// VISUAILS — /start/brand-model.astro. Ordering a Brand Model.
 //
-// This was a HoldingPage saying "no checkout yet". It is a real order now, and
-// the reason it is a BRIEF rather than a checkout is Lucas's own: a Brand Model
-// is commissioned, not configured, so the first step is eight questions and the
-// second is a conversation. The body lives in BrandModelBrief.astro so the two
-// locales cannot drift; only the meta differs here.
+// This was a HoldingPage, then a brief with no price on it, and since
+// 23 August 2026 it is an order with one amount and a payment step. The body
+// lives in BrandModelBrief.astro so the two locales cannot drift; only the meta
+// differs here. See MERKMODEL-ONTWERP.md for the decision and that component's
+// header for the shape.
 import Layout from '../../layouts/Layout.astro';
 import BrandModelBrief from '../../components/BrandModelBrief.astro';
 ---
 
-<Layout title="Request a Brand Model — VISUAILS" description="One face, made only for you. It starts with a few short questions and a conversation about who should wear it — not a checkout button.">
+<Layout title="Order a Brand Model — VISUAILS" description="One face, designed once for your brand and used nowhere else. One payment, and two ways to work: describe it yourself, or let us design it.">
   <BrandModelBrief lang="en" />
 </Layout>

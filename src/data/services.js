@@ -32,7 +32,24 @@ export const SERVICE = {
   catalog: { en: 'Catalog', nl: 'Catalog' },
   lifestyle: { en: 'Lifestyle', nl: 'Lifestyle' },
   video: { en: 'Video', nl: 'Video' },
-  custom: { en: 'Your Brand Model', nl: 'Jouw merkmodel' },
+  /*
+   * 'custom' IS DE AANVRAAG ZONDER PRIJS, EN HEETTE TOT 23 AUGUSTUS 2026 IETS
+   * ANDERS. Er stond 'Your Brand Model' / 'Jouw merkmodel', uit de tijd dat het
+   * merkmodel het enige was dat deze wire-waarde postte. Inmiddels post
+   * HoldingPage.astro hem ook voor een custom look en voor een abonnement op
+   * maat (`wire = kind === 'video' ? 'video' : 'custom'`), en heeft het merkmodel
+   * zijn eigen dienst met zijn eigen bedrag gekregen. De oude naam zette dus
+   * "Jouw merkmodel" op de bevestiging van iemand die om een custom look vroeg.
+   *
+   * DE SLEUTEL BLIJFT 'custom', om dezelfde reden als bij 'drop' hieronder: het
+   * is een wire-waarde die in orders.service staat op elke rij die er al is.
+   * Alleen het LABEL verandert, en dat is precies wat dit bestand mag doen.
+   */
+  custom: { en: 'Custom request', nl: 'Aanvraag op maat' },
+  // Het merkmodel als product: één bedrag, één keer. Dit is de dienstnaam die op
+  // de factuurregel komt (invoice.js leest serviceLabel(), niet de kolom) en in
+  // de bevestigingsmail. Zie FIXED_PRICE_SERVICES in src/lib/quote.js.
+  'brand-model': { en: 'Brand Model', nl: 'Merkmodel' },
   'test-sample': { en: TEST_SAMPLE.en.name, nl: TEST_SAMPLE.nl.name },
   // ORDER_SERVICES in functions/api/order.js has always included 'drop' — the
   // value StartPage.astro's attended-tier door posts. THE KEY STAYS 'drop'

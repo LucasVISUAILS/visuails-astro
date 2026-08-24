@@ -751,8 +751,10 @@ console.log('\n══ het kruimelpad wijst naar echte pagina\'s met echte namen'
     }
   }
 
-  // De pagina's die er met opzet géén hebben.
-  for (const pad of ['/thank-you', '/portal', '/studio', '/demo']) {
+  // De pagina's die er met opzet géén hebben. (/demo stond hier tot 24 augustus
+  // 2026 bij; die route bestaat niet meer, en een uitzondering toetsen op een
+  // pagina die niet gebouwd wordt, bewijst niets meer.)
+  for (const pad of ['/thank-you', '/portal', '/studio']) {
     const node = buildGraph({ path: pad, lang: 'en', url: `https://visuails.com${pad}` })['@graph']
       .find((n) => n['@type'] === 'BreadcrumbList');
     check(`${pad} krijgt er bewust geen`, Boolean(node), false);

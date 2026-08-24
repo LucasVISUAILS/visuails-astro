@@ -21,3 +21,7 @@ backups/
 # (visual/referentie.json) gaan WEL mee — die zijn klein en zijn het eigenlijke
 # ijkpunt; deze beelden zijn er alleen om naar te kijken als er iets afwijkt.
 visual/beelden/
+
+# Uitvoer van `npm run tekstronde` — werkbestanden voor de tekstronde,
+# geen bron. De wijzigingen die eruit komen landen in src/.
+tekstronde/

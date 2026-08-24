@@ -300,9 +300,19 @@ console.log('\nEscape sluit het dienstenmenu, ook visueel');
 console.log('\ngeen pagina slaat een kopniveau over');
 {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  const paths = ['/', '/thank-you/', '/upload-guidelines/', '/lifestyle/', '/compare/', '/demo/',
+  /* ── /demo → /how-it-works, 24 augustus 2026 ────────────────────────────────
+     /demo stond hier omdat FigWalk daarop de eerste kop na de <h1> zette — zie de
+     noot bij .wk-pick-h in FigWalk.astro, waar precies dat kopniveau om die reden
+     op h2 staat. Die pagina is opgeheven, maar het onderdeel niet: het staat nu
+     alleen nog op /how-it-works.
+
+     Dus wordt de controle daarheen verplaatst en niet geschrapt. Een pagina uit
+     deze lijst halen omdat hij weg is, is juist; de MEETING kwijtraken die erop
+     stond terwijl het gemeten onderdeel er nog is, is hoe een vangrail stilletjes
+     kleiner wordt. */
+  const paths = ['/', '/thank-you/', '/upload-guidelines/', '/lifestyle/', '/compare/', '/how-it-works/',
                  '/pricing/', '/studio/', '/portal/', '/faq/', '/about/', '/ai-act/',
-                 '/nl/', '/nl/upload-guidelines/', '/nl/lifestyle/', '/nl/compare/', '/nl/demo/'];
+                 '/nl/', '/nl/upload-guidelines/', '/nl/lifestyle/', '/nl/compare/', '/nl/how-it-works/'];
   const skips = [];
   for (const path of paths) {
     await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
@@ -408,6 +418,87 @@ console.log('\nde browser weet dat de site donker is');
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   const scheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
   check('color-scheme staat op dark, ook bij een lichte systeemvoorkeur', scheme, 'dark');
+  await page.close();
+}
+
+/* ══ 6 · GEEN TEKST DIE OVER ANDERE TEKST HEEN LIGT ═════════════════════════
+ *
+ * Lucas stuurde op 24 augustus 2026 een schermafdruk van /nl/ai-act waarop twee
+ * alinea's letterlijk over elkaar heen gedrukt stonden. Dat is geen smaakkwestie
+ * en geen kleine schoonheidsfout: onder elkaar door lopende tekst is onleesbaar
+ * voor iedereen, en voor een schermvergroter of een lezer met dyslexie is het
+ * onbruikbaar. Het hoort in dit bestand.
+ *
+ * ── DE OORZAAK, EN WAAROM EEN MENS HEM MOEST VINDEN ────────────────────────
+ *
+ * De tweekolomsregel voor paginakoppen (global.css, `.page-hero .container:has(>
+ * .lead)`) zette ELKE `.lead` op `grid-column: 2; grid-row: 2`. Bij één lede
+ * klopt dat; /ai-act heeft er twee, en die kwamen dus in hetzelfde vak terecht.
+ *
+ * Niets ving dat af. De bouw slaagt, de HTML is geldig, elke afzonderlijke regel
+ * CSS doet precies wat er staat. Het is alleen zichtbaar als je kijkt — en dat
+ * is nu precies wat een toets wél kan en een bouwstap niet.
+ *
+ * ── WAT ER GEMETEN WORDT ───────────────────────────────────────────────────
+ *
+ * Per pagina de koptekstblokken, en of hun rechthoeken elkaar overlappen. Alleen
+ * ELEMENTEN MET EIGEN TEKST, en geen ouders: een <p> ligt per definitie over zijn
+ * eigen <strong> heen, en een toets die dat meldt, meldt op elke pagina iets.
+ *
+ * Er wordt een marge van twee pixels genomen. Randen die elkaar op een halve
+ * pixel raken door afronding zijn geen overlap, en een toets die daarop rood gaat
+ * wordt uitgezet in plaats van gerepareerd.
+ */
+console.log('\ngeen tekst ligt over andere tekst heen');
+{
+  /* ── IN RUST GEMETEN, EN DAT IS EEN KEUZE ─────────────────────────────────
+     De eerste versie mat direct na `load` en meldde /about — waar de h1 een
+     regel-voor-regel binnenkomanimatie heeft (`data-split-lines`). Nagemeten
+     met een pauze erbij: de kop eindigt daar op 391 en de lede begint op 395.
+     Vier pixels ruimte, geen overlap. De toets keek naar een tussenstand van
+     een animatie en noemde die een fout.
+
+     `reducedMotion: 'reduce'` zet die binnenkomsten uit, zodat er gemeten wordt
+     waar de tekst UITEINDELIJK staat. Dat is ook precies het soort fout waar
+     deze sectie voor bestaat: de overlap op /ai-act zat in de opmaak zelf en
+     stond er ook stil. Een animatie die onderweg twee dingen kruist, is een
+     andere vraag — en een die je niet met een rechthoekvergelijking stelt. */
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  const stuk = [];
+  for (const path of ['/', '/ai-act/', '/privacy/', '/terms/', '/cookie-policy/',
+                      '/data-processing-agreement/', '/pricing/', '/about/', '/portal/',
+                      '/nl/', '/nl/ai-act/', '/nl/privacy/', '/nl/terms/',
+                      '/nl/cookie-policy/', '/nl/data-processing-agreement/']) {
+    await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
+    await page.waitForTimeout(250);
+    const botsingen = await page.evaluate(() => {
+      const hero = document.querySelector('.page-hero') || document.querySelector('main section');
+      if (!hero) return [];
+      /* Elementen die zelf tekst dragen: geen enkel kind-element dat ook tekst
+         heeft. Zo blijft een <p> met een <strong> erin buiten beschouwing en
+         wordt de <strong> zelf gemeten. */
+      const draagtTekst = (el) => el.textContent.trim().length > 8
+        && ![...el.children].some((k) => k.textContent.trim().length > 8);
+      const els = [...hero.querySelectorAll('h1, h2, p, span, strong, li, dt, dd')]
+        .filter(draagtTekst)
+        .map((el) => ({ r: el.getBoundingClientRect(), t: el.textContent.trim().slice(0, 30) }))
+        .filter((x) => x.r.width > 0 && x.r.height > 0);
+      const uit = [];
+      const M = 2;
+      for (let i = 0; i < els.length; i++) {
+        for (let j = i + 1; j < els.length; j++) {
+          const a = els[i].r, b = els[j].r;
+          if (a.left + M < b.right && b.left + M < a.right
+           && a.top + M < b.bottom && b.top + M < a.bottom) {
+            uit.push(`"${els[i].t}" × "${els[j].t}"`);
+          }
+        }
+      }
+      return uit;
+    });
+    if (botsingen.length) stuk.push(`${path}: ${botsingen.join(', ')}`);
+  }
+  check('geen enkele paginakop legt tekst over tekst', stuk, []);
   await page.close();
 }
 

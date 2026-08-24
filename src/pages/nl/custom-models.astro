@@ -14,7 +14,7 @@
 // pagina overleeft.
 import Layout from '../../layouts/Layout.astro';
 import BrandModelPage from '../../components/BrandModelPage.astro';
-import { euro, AMOUNT, vatLabel, BRAND_MODEL_CREDIT_DROPS } from '../../data/pricing.js';
+import { euro, AMOUNT, vatLabel } from '../../data/pricing.js';
 
 // Onder de 152 tekens (META_LIMIT) zodat Google hem heel toont. De vorige
 // description was 171 tekens en werd afgekapt.
@@ -24,9 +24,7 @@ import { euro, AMOUNT, vatLabel, BRAND_MODEL_CREDIT_DROPS } from '../../data/pri
 // en wij gebruikten het voor een werkopdracht. Dat is een bestelling.
 const description =
   `Eén gezicht, alleen voor jouw merk — op elk product, elke bestelling. ` +
-  `${euro(AMOUNT.brandModel, 'nl')} setup ${vatLabel('excl', 'nl')}, ` +
-  `${euro(AMOUNT.brandModelCredit, 'nl')} terug op je eerste ` +
-  `${BRAND_MODEL_CREDIT_DROPS} bestellingen.`;
+  `${euro(AMOUNT.brandModel, 'nl')} ${vatLabel('excl', 'nl')}, één keer betaald als het model ontworpen wordt.`;
 ---
 
 <Layout

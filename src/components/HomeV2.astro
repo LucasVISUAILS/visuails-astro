@@ -35,7 +35,7 @@
 // listed at the top of that band with what became of each line.
 import {
   AMOUNT, euro, TEST_SAMPLE,
-  BRAND_MODEL_CREDIT_DROPS, turnaround, reviewClaim, turnaroundShort, reviewClaimShort, plans,
+  turnaround, reviewClaim, turnaroundShort, reviewClaimShort, plans,
   LADDER, ladderRate, quote, vatLabel, vatNote,
   WINDOW_THRESHOLD, PLAN_AMOUNT, PLAN_PRODUCTS,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
@@ -116,6 +116,14 @@ const SLIDE_ICON = [
   'M7 3h10v18H7z M10.8 9.6l4 2.4-4 2.4z',
   // gezicht · je merkmodel
   'M12 11.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4.5 20.5a7.5 7.5 0 0 1 15 0',
+  /* Twee iconen erbij, 23 augustus 2026, voor de twee diensten die nog niet
+     klaar zijn. Ze staan in dezelfde rij als de vijf die het wel zijn, want de
+     vraag van een bezoeker is "wat maken jullie" en niet "wat kan ik vandaag
+     afrekenen" — dat tweede zegt het label op de kaart. */
+  // haak · een kort beeld dat doorloopt in het volgende
+  'M8 4h8v9a4 4 0 0 1-8 0z M5 20h14',
+  // stapel platen · edities, een set per maand
+  'M4 7.5 12 4l8 3.5-8 3.5-8-3.5z M4 12l8 3.5 8-3.5 M4 16.5 12 20l8-3.5',
 ];
 
 /*
@@ -136,6 +144,43 @@ const SERVICE_IMG = [
   { src: '/img/lifestyle-glow-02.webp', w: 2400, h: 1792 },
   { src: '/img/banners-16.webp', w: 2400, h: 1792 },
   { src: '/img/custom-models-04.webp', w: 1200, h: 1200 },
+  /* Twee erbij voor Hooks en Editions — 23 augustus 2026. Ze staan hier en niet
+     in een eigen lijst, zodat de kaartrij en de hero uit dezelfde bron putten en
+     een kaart niet iets anders kan tonen dan de dia die eronder hangt. */
+  { src: '/img/lifestyle-phone-made-09-w1560.webp', w: 1560, h: 1165 },
+  { src: '/img/lifestyle-glow-05-w1560.webp', w: 1560, h: 1165 },
+];
+
+/*
+ * ── DE FOTO IN HET KAARTJE ZELF — 23 AUGUSTUS 2026 ──────────────────────────
+ *
+ * Lucas: *"wellicht foto's subtiel erin verwerkt om gelijk te laten zien wat het
+ * is voordat je er op klikt."*
+ *
+ * Een rij van zeven kaartjes met alleen een pictogram en een woord vraagt van de
+ * bezoeker dat hij "Lifestyle carousel" leest en zich er iets bij voorstelt. Een
+ * foto op de achtergrond doet dat werk zonder woorden, en hij is er al — het is
+ * dezelfde foto die de hero toont zodra je erop klikt. Dat is precies de belofte
+ * die het kaartje hoort te doen: dít krijg je te zien.
+ *
+ * 380 PIXELS BREED EN NIET DE VOLLE FOTO. Een kaartje is ongeveer 300 bij 95, en
+ * de volle bestanden zijn 1200 tot 2400 breed. Zeven daarvan als achtergrond
+ * laden is een megabyte voor iets wat op 18% dekking staat. De vier die nog geen
+ * kleine variant hadden, zijn er op 23 augustus bij gemaakt; samen wegen deze
+ * zeven ongeveer 50 kB.
+ *
+ * `background-image` en geen <img>: het is decoratie met een alt die al in de
+ * titel van het kaartje staat, en een achtergrond laadt met lagere prioriteit
+ * dan het beeld dat de Largest Contentful Paint bepaalt.
+ */
+const KAART_FOTO = [
+  '/img/brand-car-lens-w380.webp',
+  '/img/banners-11-w380.webp',
+  '/img/lifestyle-glow-02-w380.webp',
+  '/img/banners-16-w380.webp',
+  '/img/custom-models-04-w380.webp',
+  '/img/lifestyle-phone-made-09-w380.webp',
+  '/img/lifestyle-glow-05-w380.webp',
 ];
 
 // The roster rail in the Brand Model band. Every face here is a real entry in
@@ -399,6 +444,19 @@ const COPY = {
       { card: 'Lifestyle carousel', note: 'Three images in one styled scene, ready to post.',        cta: 'See Lifestyle',    href: '/lifestyle/',     img: 1 },
       { card: 'Video clip',         note: 'One vertical clip, cut for Reels and TikTok.',            cta: 'See Video',        href: '/video/',         img: 2 },
       { card: 'Your Brand Model',   note: 'One face, only yours, in every order you run.',           cta: 'See Brand Models', href: '/custom-models/', img: 3 },
+      /* ── DE TWEE DIE NOG NIET KLAAR ZIJN — 23 AUGUSTUS 2026 ───────────────
+         Lucas: *"de andere services ook nog erbij zetten die nu nog niet actief
+         zijn (hooks en editions), consistent met hoe de andere werken."*
+
+         Consistent in VORM, niet in belofte. Ze zijn een dia als de andere vijf
+         en tonen hun eigen beeld, want de vraag van een bezoeker is wat VISUAILS
+         maakt en niet wat er vandaag af te rekenen valt. Maar ze dragen het
+         label dat de rest van deze pagina ze ook geeft (`svcSoonTag`), en het
+         pijltje springt naar het blok verderop waar staat wat het wordt — niet
+         naar een bestelpagina die niet bestaat. Een kaartje dat naar een dode
+         deur wijst, is erger dan geen kaartje. */
+      { card: 'Hooks',    note: 'Your product in a short video that runs on into the post below it.', cta: 'What Hooks is',    href: '#hooks',    img: 4, soon: true },
+      { card: 'Editions', note: 'A set of visuals in your brand colours every month, made for your feed.', cta: 'What Editions is', href: '#editions', img: 5, soon: true },
     ],
 
     // ── THE PRICE BAND ────────────────────────────────────────────────────
@@ -428,7 +486,7 @@ const COPY = {
     // is a stronger line than the discount was. See pricing.js.
     firstLead: 'The rate is the rate.',
     firstBody: `No first-order discount and nothing to negotiate — ${EX_SMALL} complete products is ${euro(Q_SMALL.net, 'en')}, whoever you are and whenever you ask.`,
-    addOnNote: `A video clip is ${euro(AMOUNT.video, 'en')}, the same rate inside an order or on its own. Your Brand Model is ${euro(AMOUNT.brandModel, 'en')} once, credited back over your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
+    addOnNote: `A video clip is ${euro(AMOUNT.video, 'en')}, the same rate inside an order or on its own. Your Brand Model is ${euro(AMOUNT.brandModel, 'en')} once — not per image, not per order, not per year.`,
     // ── DE ABONNEMENTSBAND ─────────────────────────────────────────────────
     // Eén kop, één zin, ÉÉN getal, drie feiten en twee knoppen. Geen tweede
     // prijsraster: dat was precies waarom de vorige plannenband eruit ging, en
@@ -737,7 +795,34 @@ const COPY = {
     // grijze vlak dat FigDash heeft vervangen. Een figuur die het scherm zelf
     // tekent, heeft geen onderschrift nodig dat vertelt wat erop zou staan.
     dashPortalK: 'VISUAILS Studio',
-    dashPortalN: 'A private link, no password. Status and the delivery date with a countdown, then the full gallery: approve or request a revision image by image, and download sized per channel.',
+    /* ── TWEE BELOFTES DIE DE CODE MET OPZET NIET DOET — 23 AUGUSTUS 2026 ─────
+     *
+     * Hier stond: *"Status and the delivery date with a countdown, then the full
+     * gallery: [...] and download sized per channel."* Twee dingen, allebei niet
+     * waar, en allebei op een manier die alleen naast de code te zien is.
+     *
+     *   1 · DE AFTELLING is niet vergeten maar afgewezen, en op drie plekken
+     *       opgeschreven. src/data/capacity.js:68: *"the client is told the
+     *       calendar dates, never the phrase '48 hours' as a countdown."*
+     *       src/lib/portal.js:992 zegt hetzelfde voor het portaal, en
+     *       src/lib/account.js:5634 kiest voor de doorrol dezelfde vorm — *"een
+     *       maand en geen afteller op de dag."* Het portaal drukt een
+     *       datumbereik af, en dat is wat hier hoort te staan.
+     *
+     *   2 · DOWNLOADEN OP MAAT PER KANAAL bestaat niet. schema.sql:161 sluit de
+     *       vorm bij naam uit: preview_key is *"a smaller rendition of the same
+     *       photograph — not a separate file row, not a crop, not a different
+     *       image."* file_assets (migratie 0022) is één rij per FORMAAT, niet per
+     *       kanaal, en scripts/deliver.mjs snijdt nergens.
+     *
+     *       Wat er WÉL is, is beter dan wat er stond en het staat er nu ook: de
+     *       beeldverhouding kies je bij het bestellen — één voor een hele
+     *       catalogbestelling, per beeld bij lifestyle (zie ratios.js) — en je
+     *       krijgt elk beeld in alle drie de formaten. Het verschil is dat de
+     *       keuze vóór de productie valt in plaats van erna, en dat is precies
+     *       waarom er niets te snijden valt.
+     */
+    dashPortalN: 'A private link, no password. Status and your delivery dates, then the full gallery: approve image by image, tick anything that is not right and send it as one revision round, and download every image in all three formats, in the aspect ratio you picked when you ordered.',
     dashPortalCta: 'See VISUAILS Studio',
     /* ── HOOKS STAAT OP DE PLANK, NIET IN DE ETALAGE — 9 augustus 2026 ────────
        Lucas: *"Verberg de pagina voor nu omdat ik alle ideeën hiervoor nog moet
@@ -883,7 +968,7 @@ const COPY = {
     // checks below, where it sits beside the other things the studio commits
     // to rather than as a risk to be talked down. It is not said twice.
     ob: [
-      ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve or request a revision image by image.', 'See VISUAILS Studio', '/portal'],
+      ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve image by image and tick anything that is off — one revision round comes with every order.', 'See VISUAILS Studio', '/portal'],
       ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is made from photographs of your real product and finished by hand, and you get the line of text to publish them with.', 'Read the AI Act page', '/ai-act'],
       ['My own photos are bad.', 'A phone photo in daylight on a plain surface is enough to start. The guidelines run to two pages and are mostly about light.', 'What makes a usable photo', '/upload-guidelines'],
     ],
@@ -928,6 +1013,9 @@ const COPY = {
       { card: 'Lifestyle-carousel', note: 'Drie beelden in één gestylede scène, klaar om te posten.',  cta: 'Bekijk Lifestyle',    href: '/lifestyle/',     img: 1 },
       { card: 'Videoclip',          note: 'Eén verticale clip, gesneden voor Reels en TikTok.',        cta: 'Bekijk Video',        href: '/video/',         img: 2 },
       { card: 'Je merkmodel',       note: 'Eén gezicht, alleen van jou, in elke bestelling.',          cta: 'Bekijk merkmodellen', href: '/custom-models/', img: 3 },
+      // Zie de noot bij de Engelse heroSlides.
+      { card: 'Hooks',    note: 'Jouw product in een korte video die doorloopt in de post eronder.',     cta: 'Wat Hooks is',    href: '#hooks', img: 4, soon: true },
+      { card: 'Editions', note: 'Elke maand een set beelden in jouw merkkleuren, gemaakt voor je feed.', cta: 'Wat Editions is', href: '#editions', img: 5, soon: true },
     ],
 
     // Zie de EN-tabel voor waarom deze band er is: vier prijsbanden zijn er één
@@ -945,7 +1033,7 @@ const COPY = {
     ladNote: 'Neem je allebei op hetzelfde product, dan betaal je het complete tarief en niet de twee tarieven bij elkaar.',
     firstLead: 'Het tarief is het tarief.',
     firstBody: `Geen kennismakingskorting en niets om over te onderhandelen — ${EX_SMALL} complete producten kosten ${euro(Q_SMALL.net, 'nl')}, wie je ook bent en wanneer je het ook vraagt.`,
-    addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')}, verrekend over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
+    addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')} — niet per beeld, niet per bestelling, niet per jaar.`,
     subH: ['Of doe het', 'elke maand.'],
     subLede: 'Een abonnement is hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, geleverd in een week die de planning voor je vrijhoudt.',
     subEyebrow: 'Abonnement',
@@ -1091,7 +1179,8 @@ const COPY = {
     dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
     dashLede: 'Het scherm dat jij krijgt: waar je bestelling staat, en elk beeld dat erin zit.',
     dashPortalK: 'VISUAILS Studio',
-    dashPortalN: 'Je komt binnen via een privélink, zonder wachtwoord. Je ziet de status en de leverdatum met een aftelling, en daarna de hele galerij: per beeld goedkeuren of een revisie aanvragen, en downloaden op maat per kanaal.',
+    // Zie de noot bij de Engelse dashPortalN.
+    dashPortalN: 'Je komt binnen via een privélink, zonder wachtwoord. Je ziet de status en je leverdata, en daarna de hele galerij: per beeld goedkeuren, aanvinken wat niet goed is en dat als één revisieronde versturen, en elk beeld downloaden in alle drie de formaten, in de beeldverhouding die je bij het bestellen koos.',
     dashPortalCta: 'Bekijk VISUAILS Studio',
     svcSoonTag: 'Nog niet klaar',
     svcSoonFoot: 'Dit is het concept zoals het er nu staat. Wat het kost en hoe je het bestelt liggen nog niet vast, en daarom werkt de knop niet.',
@@ -1243,7 +1332,16 @@ const nl = lang === 'nl';
     {c.heroSlides.map((sl, i) => (
       <img
         src={i === 0 ? '/img/brand-car-lens.webp' : SERVICE_IMG[sl.img].src}
-        alt={i === 0 ? c.heroAlt : `${sl.card} — ${sl.h}`}
+        {/* ── "undefined" STOND HIER IN DE ALT — 23 AUGUSTUS 2026 ────────────
+            `sl.h` bestaat niet meer. De dia's zijn op 20 augustus teruggebracht
+            tot `card` en `note` (zie de noot bij heroSlides), en deze regel bleef
+            staan. Gevolg, gemeten in dist/index.html: vier herobeelden met
+            alt="Catalog set — undefined", in beide talen. Dat is wat een
+            schermlezer voorleest en wat Google indexeert.
+
+            `note` is de zin die de dia beschrijft, dus dat is ook de zin die de
+            foto beschrijft. */}
+        alt={i === 0 ? c.heroAlt : `${sl.card} — ${sl.note}`}
         width={i === 0 ? 2048 : SERVICE_IMG[sl.img].w}
         height={i === 0 ? 1152 : SERVICE_IMG[sl.img].h}
         decoding={i === 0 ? 'sync' : 'async'}
@@ -1356,7 +1454,11 @@ const nl = lang === 'nl';
           regel honderd hoger, waar niets aan de hand was. Dezelfde val als de
           Astro-comment tussen de props van <Compare> op 19 augustus. */}
       {c.heroSlides.map((sl, i) => (
-        <div class="hv-slide-card">
+        /* De foto reist als custom property mee en niet als <img>: hij is
+           decoratie, de naam van het kaartje zegt al wat erop staat, en een
+           achtergrond laadt met lagere prioriteit dan het herobeeld. Zie de kop
+           bij KAART_FOTO. */
+        <div class={`hv-slide-card${sl.soon ? ' is-soon' : ''}`} style={`--kaart-foto:url('${KAART_FOTO[i]}')`}>
           <a class="hv-slide-card-main"
              id={`hv-tab-${i}`}
              href={lp(sl.href || '/start')}
@@ -1365,10 +1467,16 @@ const nl = lang === 'nl';
              data-note-cta={sl.cta || ''}
              aria-controls="hv-slide-0">
             <svg class="hv-slide-card-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={SLIDE_ICON[i]} /></svg>
-            <span class="hv-slide-card-t">{sl.card}</span>
+            <span class="hv-slide-card-t">
+              {sl.card}
+              {sl.soon && <em class="hv-slide-card-soon">{c.svcSoonTag}</em>}
+            </span>
           </a>
+          {/* Een anker op deze pagina mag NIET door lp(): dat maakt er
+              /nl/#hooks van, en dat is een navigatie naar een andere pagina in
+              plaats van een sprong binnen deze. */}
           <a class="hv-slide-card-go"
-             href={lp(sl.href || '/start')}
+             href={sl.href && sl.href.charAt(0) === '#' ? sl.href : lp(sl.href || '/start')}
              aria-label={`${c.heroGoTo} ${sl.card}`}>
             <span aria-hidden="true">›</span>
           </a>
@@ -1443,13 +1551,13 @@ const nl = lang === 'nl';
           gebouwde pagina op te meten. */}
       <div class="hv-ba-media">
         <Compare
-          before="/img/catalog-before.webp"
+          before="/img/catalog-before-1x1.webp"
           after="/img/catalog-after.webp"
           beforeAlt={c.baBeforeAlt}
           afterAlt={c.baAfterAlt}
           beforeLabel={c.baBefore}
           afterLabel={c.baAfter}
-          ratio="3/4"
+          ratio="1/1"
         />
       </div>
       <div class="hv-ba-copy">
@@ -1583,6 +1691,46 @@ const nl = lang === 'nl';
         De rij schuift horizontaal zodra de zes niet passen. Dat is geen
         noodgreep voor smalle schermen maar het gedrag zelf: zes kaarten die net
         niet passen, vertellen dat er meer naast staat. */}
+    {/* ── WAAROM HIER EEN OMHULSEL OMHEEN STAAT — 24 augustus 2026 ─────────
+        Lucas, op zijn telefoon: *"dat je op telefoon de services omhoog en
+        omlaag kan scrollen ... het maakt het scrollen wat onprettig en heeft
+        geen meerwaarde."* Nagemeten met Playwright op 390px: deze rij was
+        29 pixels VERTICAAL scrollbaar (556 zichtbaar, 585 inhoud). Op 768 ook
+        29, op 1440 nog 7. Van de vier rijen op deze pagina was dit de enige.
+
+        DE KETEN, want het is niet wat het lijkt. `overflow-x: auto` hieronder
+        maakt van `overflow-y` óók `auto` — dat is geen bug maar de CSS-regel:
+        zodra één as niet `visible` is, kan de andere dat niet blijven. Op
+        zichzelf onschuldig, want kaarten van 546px passen in een vak van 556.
+
+        Wat er wél uitstak was de zwevende notitie bij Hooks en Editions. Die
+        staat op `position: fixed` — Note.astro zet hem daar met opzet neer,
+        letterlijk *"zodat geen enkele overflow: clip hem kan afknippen"*. Maar
+        een `fixed` element hangt aan het VENSTER behalve wanneer een voorouder
+        een transform heeft, en dan hangt het aan die voorouder. `hv-float` zet
+        precies zo'n transform op deze rij (translateY(70px), gemeten). Dus:
+
+          · de notitie werd een kind van de rij in plaats van van het venster,
+          · stak er 29px onderuit,
+          · en die 29px werden scrollbare hoogte.
+
+        Twee dingen tegelijk stuk, en het tweede erger dan het eerste: de
+        notitie kón weer afgeknipt worden door precies de `overflow` waar
+        Note.astro tegen beloofde te beschermen. Dat het niet opviel, komt
+        doordat het onder `prefers-reduced-motion: reduce` verdwijnt — geen
+        animatie, geen transform, geen probleem. De meting gaf daar 0.
+
+        DE TRANSFORM VERHUIST DUS NAAR EEN OMHULSEL en gaat er niet af. Het
+        zweefeffect is hetzelfde (zelfde keyframes, zelfde tijdlijn, zelfde
+        vak); wat verandert is dat het bevattend blok van de notitie nu BOVEN
+        de scrollende rij ligt. Een absoluut of vast geplaatst element wordt
+        alleen afgeknipt door een voorouder die zelf onder zijn bevattend blok
+        zit — daarom ontsnapt hij nu weer, en telt hij niet meer mee voor de
+        hoogte van de rij.
+
+        `overflow-y: clip` op de rij zou de scroll ook weghalen en was fout
+        geweest: dan is de scroll weg en de notitie afgeknipt. */}
+    <div class="hv-svc-float">
     <div class="hv-svc-rail" data-rail="svc" role="list">
       {c.svc.map(([name, line, href], i) => (
         <a class="hv-svc-card" href={lp(href)} role="listitem">
@@ -1661,6 +1809,7 @@ const nl = lang === 'nl';
         </div>
       ))}
     </div>
+    </div>{/* /.hv-svc-float */}
 
     <div class="hv-svc-foot">
       <a class="btn btn-ghost" href={lp('/start')}>{c.svcCta}</a>
@@ -2792,7 +2941,16 @@ var vOpruim = (function () {
   var nu = 0;
   var timer = null;
   var gestopt = false;   // door de bezoeker, definitief
-  var geparkeerd = false; // tijdelijk: hover, focus, tabblad weg
+  var geparkeerd = false; // tijdelijk: beweging, hover op de rij, focus, tabblad weg
+  /* Wanneer de huidige dia is gaan lopen, en hoeveel er van zijn zeven seconden
+     over is. Twee getallen in plaats van één timeout, omdat een setTimeout niet
+     te pauzeren is: bij het parkeren wordt hij weggegooid en bij het hervatten
+     opnieuw gezet — en dan moet je weten voor hoe lang. Zonder dit begon elke
+     pauze de dia overnieuw. */
+  var loopSinds = 0;
+  var resterend = DUUR;
+  /* De rusttimer van de muisbeweging. Zie de noot bij de mousemove-luisteraar. */
+  var stilte = null;
 
   root.style.setProperty('--hv-slide-ms', DUUR + 'ms');
 
@@ -2804,7 +2962,7 @@ var vOpruim = (function () {
     t.addEventListener('click', function (e) {
       e.preventDefault();
       stop();
-      toon(i, true);
+      toon(i);
     });
     t.addEventListener('keydown', function (e) {
       var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
@@ -2812,7 +2970,7 @@ var vOpruim = (function () {
       e.preventDefault();
       stop();
       var v = (i + d + tabs.length) % tabs.length;
-      toon(v, true);
+      toon(v);
       tabs[v].focus();
     });
   });
@@ -2833,6 +2991,62 @@ var vOpruim = (function () {
     noot.hidden = false;
   }
 
+  /* ── DE BALK IS EEN BROER VAN DE TAB, GEEN KIND — 23 AUGUSTUS 2026 ────────
+   *
+   * Hier stond `t.querySelector('.hv-slide-card-bar')`, met `t` de tab. Dat gaf
+   * `null`, elke keer, op elk kaartje — en daarmee is dit de reden dat er nooit
+   * een voortgangsbalk te zien is geweest.
+   *
+   * Op 20 augustus is het kaartje gesplitst: de doos `.hv-slide-card` werd een
+   * houder voor twee links, de grote (`.hv-slide-card-main`, dát is de tab) en
+   * het pijltje. De balk bleef waar hij was, in de doos. Vanaf dat moment was
+   * hij geen afstammeling meer van de tab maar een broer, en deze regel bleef
+   * ongewijzigd staan.
+   *
+   * Het viel niet op omdat er niets stukging: `if (!bar) return` sloeg de hele
+   * animatie stil over. Een verdwenen streepje geeft geen foutmelding.
+   *
+   * Vanaf de DOOS opzoeken en niet vanaf de tab, want de doos is waar de balk
+   * hoort — hij gaat over het kaartje en niet over de link erin. */
+  function balk(i) {
+    var t = tabs[i];
+    var doos = t && t.closest ? t.closest('.hv-slide-card') : null;
+    return doos ? doos.querySelector('.hv-slide-card-bar') : null;
+  }
+
+  /* ── EEN PAUZE DIE DE BALK BEVRIEST IN PLAATS VAN HEM TE WISSEN ────────────
+   *
+   * Hier stond `bar.classList.remove('is-running')` bij élke herteken-beurt, en
+   * dat zette de balk terug op scaleX(0). Bij een pauze verdween hij dus, en bij
+   * het hervatten begon hij overnieuw — terwijl er misschien nog maar een
+   * seconde van de zeven over was. Een voortgangsbalk die bij een pauze op nul
+   * springt, liegt over hoeveel tijd er nog is, en dat is erger dan geen balk.
+   *
+   * `animation-play-state` bevriest hem waar hij staat en laat hem verdergaan
+   * waar hij gebleven was. De JS-timer moet dat volgen, en dat is waar
+   * `resterend` voor is: bij het parkeren wordt afgetrokken wat er verstreken
+   * is, bij het hervatten loopt de timeout nog precies zo lang als de balk. */
+  function balkStand(staat) {
+    var b = balk(nu);
+    if (b) b.style.animationPlayState = staat;
+  }
+
+  /* Een verse balk voor een nieuwe dia. De reflow ertussen is nodig: zonder het
+     lezen van offsetWidth voegt de browser het weghalen en terugzetten samen en
+     herstart de animatie niet. */
+  function balkOpnieuw(i) {
+    tabs.forEach(function (t, k) {
+      var b = balk(k);
+      if (!b) return;
+      b.classList.remove('is-running');
+      b.style.animationPlayState = '';
+      if (k === i && !gestopt && !geparkeerd && !rust.matches) {
+        void b.offsetWidth;
+        b.classList.add('is-running');
+      }
+    });
+  }
+
   function schilder(i) {
     tabs.forEach(function (t, k) {
       var aan = k === i;
@@ -2841,20 +3055,10 @@ var vOpruim = (function () {
          Dat is het roving-tabindex-patroon en het scheelt vier tabstops voor
          iemand die alleen langs de hoofdknoppen wil. */
       t.setAttribute('tabindex', aan ? '0' : '-1');
-      var bar = t.querySelector('.hv-slide-card-bar');
-      if (!bar) return;
-      /* De balk opnieuw laten beginnen door hem uit en weer aan te zetten. Het
-         lezen van offsetWidth ertussen forceert een reflow — zonder dat voegt
-         de browser beide wijzigingen samen en herstart de animatie niet. */
-      bar.classList.remove('is-running');
-      if (aan && !gestopt && !geparkeerd && !rust.matches) {
-        void bar.offsetWidth;
-        bar.classList.add('is-running');
-      }
     });
   }
 
-  function toon(i, meteen) {
+  function toon(i) {
     if (i === nu) { schilder(i); return; }
     var oud = nu;
     nu = i;
@@ -2872,28 +3076,60 @@ var vOpruim = (function () {
 
     zetNoot(i);
 
-    schilder(i);
-    if (meteen) herstart();
+    /* ELKE DIAWISSEL IS EEN VERSE BALK, ook als de bezoeker hem zelf koos. De
+       oude code startte de timer alleen bij `meteen`, waardoor de balk na een
+       automatische wissel op de nieuwe kaart bleef staan waar hij op de oude
+       geëindigd was. */
+    herstart();
   }
 
-  function tik() { toon((nu + 1) % tabs.length, false); herstart(); }
+  function tik() { toon((nu + 1) % tabs.length); }
 
+  /* Vanaf het begin: een verse dia, een verse balk, zeven volle seconden. */
   function herstart() {
     window.clearTimeout(timer);
-    if (gestopt || geparkeerd || rust.matches) { schilder(nu); return; }
+    resterend = DUUR;
     schilder(nu);
-    timer = window.setTimeout(tik, DUUR);
+    balkOpnieuw(nu);
+    if (gestopt || rust.matches) return;
+    if (geparkeerd) { balkStand('paused'); return; }
+    loopSinds = Date.now();
+    timer = window.setTimeout(tik, resterend);
+  }
+
+  /* Verder waar hij gebleven was. Alleen de resterende tijd, en de balk pakt de
+     draad op waar hij bevroor. */
+  function verder() {
+    window.clearTimeout(timer);
+    if (gestopt || rust.matches || resterend <= 0) return;
+    loopSinds = Date.now();
+    balkStand('running');
+    timer = window.setTimeout(tik, resterend);
   }
 
   function park(aan) {
     if (geparkeerd === aan) return;
     geparkeerd = aan;
-    if (aan) { window.clearTimeout(timer); schilder(nu); } else herstart();
+    if (aan) {
+      window.clearTimeout(timer);
+      if (loopSinds) resterend = Math.max(0, resterend - (Date.now() - loopSinds));
+      loopSinds = 0;
+      balkStand('paused');
+    } else {
+      verder();
+    }
   }
 
   function stop() {
     gestopt = true;
     window.clearTimeout(timer);
+    /* Bevriezen en niet wissen, om dezelfde reden als bij het parkeren: wie op
+       pauze drukt en daarna op play, hoort verder te gaan waar hij was. Klikt
+       hij daarna op een kaartje, dan wist balkOpnieuw() hem alsnog — dan is er
+       gekozen en heeft een timer geen betekenis meer. */
+    if (loopSinds) resterend = Math.max(0, resterend - (Date.now() - loopSinds));
+    loopSinds = 0;
+    balkStand('paused');
     if (toggle) {
       toggle.classList.add('is-paused');
       toggle.setAttribute('aria-label', toggle.dataset.play || toggle.getAttribute('data-play') || toggle.title);
@@ -2920,11 +3156,58 @@ var vOpruim = (function () {
     });
   }
 
-  root.addEventListener('mouseenter', function () { park(true); });
-  root.addEventListener('mouseleave', function () { park(false); });
-  root.addEventListener('focusin',  function () { park(true); });
+  /* ── BEWEGING PAUZEERT, AANWEZIGHEID NIET — 23 AUGUSTUS 2026 ──────────────
+   *
+   * Lucas: *"stop hem alleen wanneer de bezoeker de muis beweegt."*
+   *
+   * Hier stond `root.addEventListener('mouseenter', …)`, en `root` is de hele
+   * hero — dat is op vrijwel elk scherm de volledige eerste schermvulling. Een
+   * muis die daar toevallig stilstaat, zette de carrousel stil, en dus ook de
+   * voortgangsbalk. Netto: op de meeste bezoeken liep er nooit een balk en
+   * wisselde er nooit een dia, terwijl er niets aan de hand was. Dat is waarom
+   * de balk leek te ontbreken: hij was er, hij kreeg alleen nooit de kans.
+   *
+   * Aanwezigheid van een cursor is geen signaal. BEWEGING wel: wie de muis
+   * beweegt, is aan het kijken en gaat zo iets aanwijzen, en dan is het
+   * vervelend als het beeld onder je hand vandaan wisselt.
+   *
+   * En de pauze is tijdelijk, want anders wisselt er op een gewoon bezoek nooit
+   * meer iets — iedereen beweegt binnen zeven seconden zijn muis. Anderhalve
+   * seconde stil is het teken dat de aandacht ergens anders is; dan pakt hij de
+   * draad op waar hij bevroor, niet bij nul.
+   *
+   * `passive` omdat deze luisteraar niets annuleert en mousemove op een trackpad
+   * tientallen keren per seconde afgaat. Het werk erin is één timeout resetten. */
+  var beweegt = false;
+  var hoveRij = false;
+  var focusIn = false;
+  function bijBeweging() {
+    if (!beweegt) { beweegt = true; park(true); }
+    window.clearTimeout(stilte);
+    stilte = window.setTimeout(function () {
+      beweegt = false;
+      if (!hoveRij && !focusIn) park(false);
+    }, 1500);
+  }
+  root.addEventListener('mousemove', bijBeweging, { passive: true });
+
+  /* De kaartrij zelf is wél een plek waar stilstaan iets betekent: daar staat de
+     cursor omdat de bezoeker de kaartjes leest. Dit is de enige hover die nog
+     parkeert, en hij gaat over de rij en niet over de halve pagina. */
+  var rij = root.querySelector('[data-hero-tabs]');
+  if (rij) {
+    rij.addEventListener('mouseenter', function () { hoveRij = true; park(true); });
+    rij.addEventListener('mouseleave', function () {
+      hoveRij = false;
+      if (!beweegt && !focusIn) park(false);
+    });
+  }
+
+  root.addEventListener('focusin', function () { focusIn = true; park(true); });
   root.addEventListener('focusout', function (e) {
-    if (!root.contains(e.relatedTarget)) park(false);
+    if (root.contains(e.relatedTarget)) return;
+    focusIn = false;
+    if (!beweegt && !hoveRij) park(false);
   });
   function bijZichtbaarheid() { park(document.hidden); }
   document.addEventListener('visibilitychange', bijZichtbaarheid);
@@ -2932,6 +3215,7 @@ var vOpruim = (function () {
      zachte navigatie. Zie de noot bij vOpruim() bovenaan dit blok. */
   vOpruim(function () {
     window.clearTimeout(timer);
+    window.clearTimeout(stilte);
     document.removeEventListener('visibilitychange', bijZichtbaarheid);
   });
 
@@ -3248,8 +3532,30 @@ var vOpruim = (function () {
     padding-bottom: clamp(1.2rem, 3vh, 2.2rem);
   }
   .hv-slide-cards {
-    flex: 1; display: grid; gap: clamp(.5rem, 1vw, .85rem);
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    flex: 1; display: grid; gap: clamp(.4rem, .8vw, .7rem);
+    /* ZEVEN SINDS 23 AUGUSTUS, en dat getal is precies de reden dat hier geen
+       `auto-fit` staat. Zeven deelt door niets: laat je de rij zelf afbreken,
+       dan wordt het op 1180px zes plus één en staat "Editions" in zijn eentje
+       op een tweede regel, wat leest als een fout in plaats van als een rij.
+
+       Dus: zeven naast elkaar zolang ze passen, en daaronder schuiven in plaats
+       van afbreken — hetzelfde gedrag dat deze rij op een telefoon al had, en
+       dat .hv-svc-rail verderop op deze pagina ook gebruikt. Een rij die net
+       niet past en schuift, vertelt dat er meer naast staat; een rij die
+       afbreekt met één kaartje eronder vertelt niets. */
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  /* De grens ligt op 1200px omdat een kaartje daaronder smaller wordt dan de
+     12rem waarop "Lifestyle carousel" op twee regels past zonder het label uit
+     zijn kaart te duwen. Gemeten, niet gegokt. */
+  @media (max-width: 1200px) and (min-width: 901px) {
+    .hv-slide-cards {
+      display: flex; min-width: 0;
+      overflow-x: auto; scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+    .hv-slide-cards::-webkit-scrollbar { display: none; }
+    .hv-slide-cards > .hv-slide-card { flex: 0 0 auto; min-width: 11rem; scroll-snap-align: start; }
   }
   /* Icoon boven, label en chevron eronder — de indeling van Adobe’s `.rm-card`,
      die daardoor op 94px uitkomt. Een rij van icoon-label-chevron naast elkaar
@@ -3262,14 +3568,45 @@ var vOpruim = (function () {
   .hv-slide-card {
     position: relative; overflow: hidden;
     display: flex; align-items: stretch;
-    min-height: clamp(5rem, 6vw, 5.9rem);
-    border: 1px solid rgb(255 255 255 / .16);
+    min-height: clamp(4.6rem, 5.4vw, 5.4rem);
+    border: 1px solid rgb(255 255 255 / .12);
     border-radius: var(--r-md);
-    background: rgb(0 0 0 / .42);
+    background: rgb(0 0 0 / .46);
     color: var(--paper-on-dark);
-    font-size: .82rem; font-weight: 700; line-height: 1.35;
+    font-size: .78rem; font-weight: 700; line-height: 1.3;
     transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
   }
+  /* ── DE FOTO, EN DE SLUIER EROVER ────────────────────────────────────────
+     De foto staat op een eigen laag onder de inhoud, met een verloop erover dat
+     naar links donkerder wordt: daar staat de tekst. Rechts, waar alleen het
+     pijltje staat, mag hij lichter zijn — dan zie je waar het over gaat zonder
+     dat de titel eronder lijdt.
+
+     18% is de bovengrens die npm run test:a11y toelaat op deze kaart: met de
+     donkere sluier erboven houdt "Lifestyle carousel" ruim 7:1, en dat is waar
+     hij vóór deze wijziging ook stond. Zichtbaar genoeg om iets te herkennen,
+     te zwak om te lezen als een plaatje met tekst erop. */
+  .hv-slide-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: var(--kaart-foto);
+    background-size: cover; background-position: center;
+    opacity: .18;
+    pointer-events: none;
+    transition: opacity var(--dur-2) var(--ease);
+  }
+  /* ALLEEN DE TWEE LINKS, en niet `> *`. Die bredere selector raakte ook de
+     voortgangsbalk, en `position: relative` maakt van een absoluut geplaatst
+     streepje een gewoon flex-item van nul breed — zichtbaar nergens. Gemeten:
+     de balk stond op scaleX(0.6) en was niet te zien. */
+  .hv-slide-card > a { position: relative; z-index: 1; }
+  .hv-slide-card-main::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(100deg, rgb(0 0 0 / .78) 0%, rgb(0 0 0 / .58) 55%, rgb(0 0 0 / .30) 100%);
+    pointer-events: none;
+  }
+  .hv-slide-card-main > * { position: relative; }
   .hv-slide-card-main {
     flex: 1 1 auto; min-width: 0;
     display: grid; gap: clamp(.9rem, 1.8vw, 1.4rem);
@@ -3291,14 +3628,47 @@ var vOpruim = (function () {
   @supports (backdrop-filter: blur(6px)) {
     .hv-slide-card { background: rgb(0 0 0 / .28); backdrop-filter: blur(8px); }
   }
-  .hv-slide-card:has(.hv-slide-card-main:hover), .hv-slide-card:has(.hv-slide-card-main:focus-visible) { background: rgb(0 0 0 / .62); border-color: rgb(255 255 255 / .34); }
-  .hv-slide-card:has([aria-selected='true']) { border-color: var(--accent); background: rgb(0 0 0 / .66); }
-  .hv-slide-card-i {
-    width: 22px; height: 22px; flex: none;
-    fill: none; stroke: currentColor; stroke-width: 2.6;
-    stroke-linecap: round; stroke-linejoin: round;
-    color: var(--accent);
+  .hv-slide-card:has(.hv-slide-card-main:hover), .hv-slide-card:has(.hv-slide-card-main:focus-visible) { background: rgb(0 0 0 / .60); border-color: rgb(255 255 255 / .28); }
+  .hv-slide-card:has(.hv-slide-card-main:hover)::before { opacity: .30; }
+  /* ── DE ACTIEVE KAART, ZONDER DE SCHREEUW — 23 AUGUSTUS 2026 ─────────────
+     Lucas: *"misschien ook de knoppen iets subtieler en minder heftig maken."*
+
+     Hier stond `border-color: var(--accent)` — een volle limoen rand rondom, op
+     een rij waar ook nog eens elk pictogram limoen was. Zeven limoen iconen plus
+     één limoen kader is meer signaal dan er te geven valt, en dan valt het echte
+     signaal juist weg.
+
+     Wat er nu gebeurt: de rand wordt een gedempte limoen hairline, de foto komt
+     een stap naar voren, en het enige dat vol limoen is, is de balk onderin die
+     de tijd wegtelt. Eén ding schreeuwt, en dat is het ding dat iets zegt. */
+  .hv-slide-card:has([aria-selected='true']) {
+    border-color: rgb(198 241 0 / .42);
+    background: rgb(0 0 0 / .58);
   }
+  .hv-slide-card:has([aria-selected='true'])::before { opacity: .34; }
+  .hv-slide-card-i {
+    width: 20px; height: 20px; flex: none;
+    fill: none; stroke: currentColor; stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round;
+    /* Gedempt op de kaarten die niet aan de beurt zijn. Zie de noot hierboven:
+       zeven limoen iconen naast elkaar maken de rij druk zonder iets aan te
+       wijzen. */
+    color: rgb(255 255 255 / .55);
+    transition: color var(--dur-1) var(--ease);
+  }
+  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-i,
+  .hv-slide-card:has(.hv-slide-card-main:hover) .hv-slide-card-i { color: var(--accent); }
+
+  /* Het label op de twee die nog niet klaar zijn. Zelfde woord als op de kaarten
+     verderop op deze pagina (`svcSoonTag`), en met opzet gedempt: het is een
+     mededeling en geen waarschuwing. */
+  .hv-slide-card-soon {
+    display: block; margin-top: .2rem;
+    font-size: .66rem; font-weight: 600; font-style: normal;
+    letter-spacing: .04em; text-transform: uppercase;
+    color: rgb(255 255 255 / .52);
+  }
+  .hv-slide-card.is-soon .hv-slide-card-t { font-weight: 700; }
   /* `.hv-slide-card-row` en `.hv-slide-card-x` zijn weg met het splitsen van
      het kaartje: de rij bevatte de titel én de chevron, en de chevron is nu een
      eigen link naast de titel (.hv-slide-card-go hierboven). */
@@ -3311,12 +3681,37 @@ var vOpruim = (function () {
      scaleX vanaf links, want dat is een transform en die loopt op de
      compositor. Een animatie op `width` zou elke frame de rij opnieuw laten
      berekenen, en dat is zeven seconden lang layout-werk voor een streepje. */
+  /* ── EN HIJ HEEFT EEN BAAN NODIG — 23 AUGUSTUS 2026 ──────────────────────
+     De balk was limoen op een kaart die in actieve toestand een limoen RAND
+     krijgt (`:has([aria-selected='true'])` hierboven). Drie pixel limoen tegen
+     een limoen rand van één pixel leest niet als voortgang maar als een iets
+     dikkere onderrand — en dan zie je niet dát hij loopt, laat staan hoe ver.
+
+     Een voortgangsbalk heeft twee delen nodig: wat al voorbij is en wat er nog
+     komt. De baan is dat tweede deel. Hij staat alleen op de actieve kaart,
+     want op de vier andere loopt er niets en zou hij een streep zijn die niets
+     betekent. */
+  .hv-slide-card:has([aria-selected='true'])::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: rgb(255 255 255 / .18);
+    pointer-events: none;
+  }
   .hv-slide-card-bar {
     position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    /* Bóven de baan én boven de twee links. Zonder dit tekent ::after hem over,
+       want een pseudo-element staat later in de boom dan een span die ervoor
+       komt. */
+    z-index: 2;
     background: var(--accent);
     transform: scaleX(0); transform-origin: left center;
   }
-  .hv-slide-card[aria-selected='true'] .hv-slide-card-bar.is-running {
+  /* `:has()` en geen attribuut op de doos zelf: `aria-selected` staat op de
+     LINK erin (.hv-slide-card-main), niet op .hv-slide-card. De oude selector
+     `.hv-slide-card[aria-selected='true']` kon dus nooit raak zijn — dezelfde
+     splitsing van 20 augustus die de regel hierboven in JavaScript brak. De
+     rest van dit blok gebruikt `:has()` al; deze regel was de uitzondering. */
+  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-bar.is-running {
     animation: hv-slide-timer linear forwards;
     animation-duration: var(--hv-slide-ms, 7000ms);
   }
@@ -3714,6 +4109,23 @@ var vOpruim = (function () {
        aanwijzing dat er meer naast staat, en die is duidelijker dan een grijs
        streepje dat op een Mac toch pas verschijnt als je al scrollt. */
     scrollbar-width: none;
+    /* ── EN VERTICAAL NOOIT — 24 augustus 2026 ─────────────────────────────
+       `overflow-x: auto` maakt van `overflow-y` automatisch `auto`; dat is de
+       CSS-regel en niet te omzeilen met `visible`. Zolang er niets uitsteekt
+       merkt niemand het, en dat is precies waarom het zo lang goed ging.
+
+       `clip` en niet `hidden`: `hidden` maakt hier alsnog een scrollcontainer
+       (met scrollTop en al) en `clip` niet. En de marge erbij, want de kaarten
+       hebben een schaduw bij hover die anders op de rand wordt afgesneden — de
+       `padding-block-end` hierboven dekt de onderkant, deze regel de rest.
+
+       Dit is de GORDEL en de bretels staan in de markup: het omhulsel
+       `.hv-svc-float` haalt de oorzaak weg, deze regel zorgt dat een volgende
+       oorzaak geen scrollbalk meer kan worden. Ze vervangen elkaar niet — met
+       alleen deze regel zou de notitie afgeknipt zijn in plaats van scrollbaar,
+       en dat is geen verbetering. */
+    overflow-y: clip;
+    overflow-clip-margin: 1.5rem;
   }
   .hv-svc-rail::-webkit-scrollbar { display: none; }
 
@@ -3844,7 +4256,17 @@ var vOpruim = (function () {
      etalage. */
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
-      .hv-svc-rail,
+      /* `.hv-svc-float` en NIET `.hv-svc-rail` — zie de lange noot bij dat
+         omhulsel in de markup. Kort: de transform die deze animatie zet, maakt
+         van zijn element het bevattend blok voor elk `position: fixed` kind, en
+         in de dienstenrij zit zo'n kind (de zwevende notitie). Stond die
+         transform op de scrollende rij zelf, dan werd de notitie erin gevangen
+         en werd de rij 29px verticaal scrollbaar.
+
+         `.hv-faces` staat hier nog wél rechtstreeks bij en dat kan: die rij
+         bevat geen notitie. Komt daar er ooit een in, dan hoort hij dezelfde
+         behandeling te krijgen — tests/homerail.test.mjs zegt het wanneer. */
+      .hv-svc-float,
       .hv-faces,
       .hv-plans,
       .hv-dash-row,

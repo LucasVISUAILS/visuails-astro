@@ -49,6 +49,9 @@
 // prijsschuif en de poort zijn er op verzoek uitgehaald; de poort staat als
 // belofte in de tekst boven de doorloop en de prijzen staan op /pricing.
 //
+// (/demo zelf is op 24 augustus 2026 opgeheven; deze doorloop staat nu alleen
+// nog op /how-it-works. Zie de noot onderaan bij het script.)
+//
 // ── ALLES WORDT SERVERSIDE GERENDERD, NIETS WORDT GEMAAKT ────────────────────
 // Elke laag van het kader, voor elke dienst, voor elke keuze, staat als markup
 // in de pagina met `hidden` erop. Het script zet `hidden` om, zet een class, en
@@ -150,9 +153,15 @@ const START = SERVICES[0].id;
       Radios, not buttons: one of three, mutually exclusive, arrow-key
       navigable for free, and it survives with no script. */}
   <div class="wk-pick">
-    {/* Een h2 en geen h3: op /demo is de <h1> de paginakop en was dit de eerstvolgende
-        kop, dus sprong het niveau van 1 naar 3. De maat blijft die van .wk-pick-h en
-        verandert dus niet. */}
+    {/* Een h2 en geen h3: op de pagina die dit onderdeel plaatst is de <h1> de
+        paginakop en is dit de eerstvolgende kop, dus sprong het niveau van 1 naar 3.
+        De maat blijft die van .wk-pick-h en verandert dus niet.
+
+        Dit werd gemeten op /demo, en die pagina bestaat sinds 24 augustus 2026 niet
+        meer. De meting is daarom meeverhuisd: tests/a11y.test.mjs loopt nu langs
+        /how-it-works in plaats van /demo, want dat is de pagina waar dit onderdeel
+        nog staat. Een controle laten vervallen omdat de pagina waar hij op stond
+        verdween, is de fout die deze regel juist moest voorkomen. */}
     <h2 class="wk-pick-h">{t.pickH}</h2>
     <div class="wk-pick-row" role="radiogroup" aria-label={t.pickH}>
       {SERVICES.map((svc) => (
@@ -358,13 +367,17 @@ const START = SERVICES[0].id;
 </section>
 
 <script>
-  // THE BEHAVIOUR LIVES WITH THE COMPONENT, not with the page. Two pages host
-  // this — /demo and /how-it-works — and an import in each of them is an import
-  // one of the two can be missing, which is exactly what happened on the first
-  // build: /demo rendered a perfect static walkthrough that responded to
+  // THE BEHAVIOUR LIVES WITH THE COMPONENT, not with the page. Two pages used to
+  // host this — /demo and /how-it-works — and an import in each of them is an
+  // import one of the two can be missing, which is exactly what happened on the
+  // first build: /demo rendered a perfect static walkthrough that responded to
   // nothing. Astro hoists and de-duplicates component scripts, so it ships once
-  // even when the component appears twice, and it does not reach the other 84
-  // pages.
+  // even when the component appears twice, and it does not reach the other pages.
+  //
+  // SINCE 24 AUGUST 2026 THERE IS ONLY ONE HOST (/how-it-works), and the import
+  // stays here anyway. Moving it up to the page now would re-create the exact
+  // trap described above the moment a second host appears — and it would move
+  // the behaviour away from the markup it drives, which is the actual reason.
   import '../scripts/walk.js';
 </script>
 

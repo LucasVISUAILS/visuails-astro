@@ -1,0 +1,413 @@
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+index d42a6e4..7678179 100644
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -367,19 +367,19 @@ ontwerpbewering in een comment hoort een meting naast zich te hebben.
+ | `npm run naden` | naden en randen, 91 pagina's × 390/1920 px |
+ | `npm run naad` | dezelfde naad op drie vensterhoogtes — voor als een rand per scrolpositie verschilt |
+ | `npm run vlakken` | het NIVEAU van elk vlak, voor een sectie die overal een paar waarden afwijkt |
+-| `node leesbaar.mjs` | het werkelijke contrast per tekstregel, twee breedtes |
++| `node scripts/leesbaar.mjs` | het werkelijke contrast per tekstregel, twee breedtes |
+ | `npm run keuring` | beeldmaten en gewicht per pagina |
+-| `node mobiel.mjs` / `zoom.mjs` / `wandel.mjs` | de lade, tekstvergroting, en een doorloop met consolefouten |
++| `node scripts/mobiel.mjs` / `scripts/zoom.mjs` / `scripts/wandel.mjs` | de lade, tekstvergroting, en een doorloop met consolefouten |
+ | `npm run visueel` | 364 opnamen tegen een referentie |
+ 
+-**`naden.mjs` onderscheidt een RAND van een NAAD op een objectieve toets:**
++**`scripts/naden.mjs` onderscheidt een RAND van een NAAD op een objectieve toets:**
+ schildert er op die rij of kolom iets zijn eigen grond — een achtergrond, een
+ beeld, een rand, een schaduw — of ligt de rij binnen zoiets, dan hoort die
+ overgang er te zijn. Schildert er niets, dan is het een naad.
+ 
+-Twee scripts zijn **rapport en geen vangrail**: `audit-feiten.mjs` en
+-`audit-paar.mjs` eindigen nooit met een foutcode en kunnen dus geen build laten
+-falen. `audit-paar.mjs` vergelijkt bovendien alleen de twee talen ten opzichte van
++Twee scripts zijn **rapport en geen vangrail**: `scripts/audit-feiten.mjs` en
++`scripts/audit-paar.mjs` eindigen nooit met een foutcode en kunnen dus geen build
++laten falen. `audit-paar.mjs` vergelijkt bovendien alleen de twee talen ten opzichte van
+ elkaar — staan ze allebei fout, dan blijft het stil.
+ 
+ ---
+diff --git a/migrations/archief/LEESMIJ.md b/migrations/archief/LEESMIJ.md
+new file mode 100644
+index 0000000..e9dc08a
+--- /dev/null
++++ b/migrations/archief/LEESMIJ.md
+@@ -0,0 +1,42 @@
++# Archief — handmatig geplakte migraties
++
++De vier `MIGRATIE-*-PLAKKEN.sql` in deze map stonden tot 24 augustus 2026 los in
++de projectroot. Ze zijn hierheen verplaatst en verder onaangeroerd gelaten.
++
++## Wat ze zijn
++
++Losse stukken SQL die met de hand in de D1-console zijn geplakt, in de dagen dat
++`scripts/migrate.mjs` een migratie nog niet aankon of dat het sneller ging om het
++zelf te doen. Ze horen **niet** in de genummerde reeks in `migrations/`: die
++wordt door `migrate.mjs` afgelopen, en een bestand dat daar per ongeluk tussen
++komt te staan wordt een tweede keer uitgevoerd op een database waar hij al
++overheen is gegaan.
++
++Hun inhoud overlapt bovendien met de genummerde migraties waar hun naam naar
++verwijst — `MIGRATIE-0019-0021-PLAKKEN.sql` is niet iets ánders dan `0019` tot en
++met `0021`, het is dezelfde inhoud in de vorm waarin hij is geplakt.
++
++## De waarschuwing die erbij hoort
++
++**Er is geen register van wat er werkelijk gedraaid is.** `ARCHITECTURE.md` §4.4
++zegt het zo: `migrate.mjs` houdt geen lijst van uitgevoerde migraties bij maar
++beslist op schema-introspectie — hij kijkt of een kolom bestaat en slaat over als
++dat zo is. Voor de genummerde reeks werkt dat; voor deze vier bestaat er
++helemaal geen spoor. Welke van deze plakken op welke database is uitgevoerd, is
++uit niets in deze repo af te leiden.
++
++Dat betekent twee dingen voor wie hier iets mee wil:
++
++1. **Voer ze niet opnieuw uit** om er zeker van te zijn. Dat is precies de
++   verkeerde reflex: sommige zijn niet idempotent, en op een database met echte
++   bestellingen is de tweede uitvoering het probleem en niet de eerste.
++2. **De waarheid staat in de database, niet hier.** Wil je weten of iets er al
++   in zit, kijk dan naar het schema van de database zelf — `PRAGMA table_info`
++   op de tabel in kwestie — en niet naar deze bestanden.
++
++## Waarom ze niet weg zijn
++
++Ze zijn bewaard en niet verwijderd, om dezelfde reden dat een regel in het
++controlelogboek blijft staan nadat hij is opgelost: bij een vraag over hoe de
++database aan zijn huidige vorm komt, zijn dit de enige stukken tekst die het
++antwoord dragen. Ze zijn alleen geen instructie meer — ze zijn geschiedenis.
+diff --git a/MIGRATIE-0019-0020-PLAKKEN.sql b/migrations/archief/MIGRATIE-0019-0020-PLAKKEN.sql
+similarity index 100%
+rename from MIGRATIE-0019-0020-PLAKKEN.sql
+rename to migrations/archief/MIGRATIE-0019-0020-PLAKKEN.sql
+diff --git a/MIGRATIE-0019-0021-PLAKKEN.sql b/migrations/archief/MIGRATIE-0019-0021-PLAKKEN.sql
+similarity index 100%
+rename from MIGRATIE-0019-0021-PLAKKEN.sql
+rename to migrations/archief/MIGRATIE-0019-0021-PLAKKEN.sql
+diff --git a/MIGRATIE-0021-PLAKKEN.sql b/migrations/archief/MIGRATIE-0021-PLAKKEN.sql
+similarity index 100%
+rename from MIGRATIE-0021-PLAKKEN.sql
+rename to migrations/archief/MIGRATIE-0021-PLAKKEN.sql
+diff --git a/MIGRATIE-0022-PLAKKEN.sql b/migrations/archief/MIGRATIE-0022-PLAKKEN.sql
+similarity index 100%
+rename from MIGRATIE-0022-PLAKKEN.sql
+rename to migrations/archief/MIGRATIE-0022-PLAKKEN.sql
+diff --git a/package.json b/package.json
+index 5504f0a..991c211 100644
+--- a/package.json
++++ b/package.json
+@@ -12,13 +12,13 @@
+     "test:mollie": "node tests/mollie-webhook.test.mjs && node tests/debug-mollie-reading.test.mjs",
+     "test:stripe": "node tests/stripe-webhook.test.mjs",
+     "test:diagnose": "node tests/admin-diagnose-route.test.mjs",
+-    "audit:nav": "node pixnav.mjs",
++    "audit:nav": "node scripts/pixnav.mjs",
+     "test:consent": "node tests/cookie-consent.test.mjs",
+     "tag:delivery": "node scripts/tag-delivery.mjs",
+     "fetch:order": "node scripts/fetch-order.mjs",
+     "test:account": "node tests/account-brand-kit.test.mjs",
+     "test:admin": "node tests/admin.test.mjs",
+-    "test": "npm run test:paths && npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:geld && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:keuring && npm run test:merkmodel && npm run test:aanhef && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:stripe && npm run test:diagnose && npm run test:plans && npm run test:abo && npm run test:incasso && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue && npm run test:nazicht && npm run test:steps && npm run test:a11y && npm run test:zacht",
++    "test": "node scripts/run-tests.mjs",
+     "test:invoice": "node tests/invoice-pdf.test.mjs",
+     "test:offsite": "node tests/offsite.test.mjs",
+     "check:csp": "node scripts/csp-probe.mjs",
+@@ -93,21 +93,21 @@
+     "test:zacht": "node tests/zachte-navigatie.test.mjs",
+     "test:nazicht": "node tests/nazicht.test.mjs",
+     "test:planqueue": "node tests/plan-queue-cron.test.mjs",
+-    "audit:bouw": "node audit-bouw.mjs",
+-    "audit:links": "node audit-links.mjs",
+-    "audit:tekst": "node audit-tekst.mjs",
+-    "audit:paar": "node audit-paar.mjs",
+-    "audit:feiten": "node audit-feiten.mjs",
+-    "audit:jsonld": "node audit-jsonld.mjs",
++    "audit:bouw": "node scripts/audit-bouw.mjs",
++    "audit:links": "node scripts/audit-links.mjs",
++    "audit:tekst": "node scripts/audit-tekst.mjs",
++    "audit:paar": "node scripts/audit-paar.mjs",
++    "audit:feiten": "node scripts/audit-feiten.mjs",
++    "audit:jsonld": "node scripts/audit-jsonld.mjs",
+     "audit": "npm run audit:bouw && npm run audit:links && npm run audit:tekst && npm run audit:paar && npm run audit:feiten && npm run audit:jsonld",
+-    "leesbaar": "node leesbaar.mjs",
+-    "mobiel": "node mobiel.mjs",
+-    "zoom": "node zoom.mjs",
+-    "spelling": "node spelling.mjs",
+-    "variant": "node variant.mjs",
+-    "naden": "node naden.mjs",
+-    "naad": "node naad-in-venster.mjs",
+-    "vlakken": "node vlak-per-sectie.mjs"
++    "leesbaar": "node scripts/leesbaar.mjs",
++    "mobiel": "node scripts/mobiel.mjs",
++    "zoom": "node scripts/zoom.mjs",
++    "spelling": "node scripts/spelling.mjs",
++    "variant": "node scripts/variant.mjs",
++    "naden": "node scripts/naden.mjs",
++    "naad": "node scripts/naad-in-venster.mjs",
++    "vlakken": "node scripts/vlak-per-sectie.mjs"
+   },
+   "dependencies": {
+     "@fontsource-variable/anybody": "^5.3.0",
+diff --git a/audit-bouw.mjs b/scripts/audit-bouw.mjs
+similarity index 100%
+rename from audit-bouw.mjs
+rename to scripts/audit-bouw.mjs
+diff --git a/audit-feiten.mjs b/scripts/audit-feiten.mjs
+similarity index 100%
+rename from audit-feiten.mjs
+rename to scripts/audit-feiten.mjs
+diff --git a/audit-jsonld.mjs b/scripts/audit-jsonld.mjs
+similarity index 100%
+rename from audit-jsonld.mjs
+rename to scripts/audit-jsonld.mjs
+diff --git a/audit-links.mjs b/scripts/audit-links.mjs
+similarity index 100%
+rename from audit-links.mjs
+rename to scripts/audit-links.mjs
+diff --git a/audit-paar.mjs b/scripts/audit-paar.mjs
+similarity index 100%
+rename from audit-paar.mjs
+rename to scripts/audit-paar.mjs
+diff --git a/audit-tekst.mjs b/scripts/audit-tekst.mjs
+similarity index 100%
+rename from audit-tekst.mjs
+rename to scripts/audit-tekst.mjs
+diff --git a/leesbaar.mjs b/scripts/leesbaar.mjs
+similarity index 99%
+rename from leesbaar.mjs
+rename to scripts/leesbaar.mjs
+index cd1da3a..040c8f5 100644
+--- a/leesbaar.mjs
++++ b/scripts/leesbaar.mjs
+@@ -28,7 +28,7 @@ import { readFile, stat } from 'node:fs/promises';
+ import { extname, join } from 'node:path';
+ import { readdirSync } from 'node:fs';
+ import { PNG } from 'pngjs';
+-import { browserPad } from './scripts/lib/browserpad.mjs';
++import { browserPad } from './lib/browserpad.mjs';
+ 
+ const MIME={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.webp':'image/webp','.avif':'image/avif','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.woff2':'font/woff2','.ico':'image/x-icon','.mp4':'video/mp4'};
+ const srv=createServer(async(req,res)=>{let p=decodeURIComponent(req.url.split('?')[0]);let f=join('dist',p);try{if((await stat(f)).isDirectory())f=join(f,'index.html');}catch{if(!extname(f))f=join('dist',p,'index.html');}try{const b=await readFile(f);res.writeHead(200,{'content-type':MIME[extname(f)]||'application/octet-stream'});res.end(b);}catch{res.writeHead(404);res.end('nee');}});
+diff --git a/mobiel.mjs b/scripts/mobiel.mjs
+similarity index 99%
+rename from mobiel.mjs
+rename to scripts/mobiel.mjs
+index d85b76c..c186336 100644
+--- a/mobiel.mjs
++++ b/scripts/mobiel.mjs
+@@ -23,7 +23,7 @@ import { chromium } from 'playwright';
+ import { createServer } from 'node:http';
+ import { readFile, stat } from 'node:fs/promises';
+ import { extname, join } from 'node:path';
+-import { browserPad } from './scripts/lib/browserpad.mjs';
++import { browserPad } from './lib/browserpad.mjs';
+ 
+ const MIME = { '.html':'text/html', '.css':'text/css', '.js':'text/javascript', '.mjs':'text/javascript',
+   '.json':'application/json', '.webp':'image/webp', '.avif':'image/avif', '.png':'image/png',
+diff --git a/naad-in-venster.mjs b/scripts/naad-in-venster.mjs
+similarity index 98%
+rename from naad-in-venster.mjs
+rename to scripts/naad-in-venster.mjs
+index 72e31ee..3ebf939 100644
+--- a/naad-in-venster.mjs
++++ b/scripts/naad-in-venster.mjs
+@@ -39,7 +39,7 @@ import { createServer } from 'node:http';
+ import { readFile, stat } from 'node:fs/promises';
+ import { extname, join } from 'node:path';
+ import { PNG } from 'pngjs';
+-import { browserPad } from './scripts/lib/browserpad.mjs';
++import { browserPad } from './lib/browserpad.mjs';
+ const MIME={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.webp':'image/webp','.avif':'image/avif','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.woff2':'font/woff2','.ico':'image/x-icon','.mp4':'video/mp4'};
+ const srv=createServer(async(req,res)=>{let p=decodeURIComponent(req.url.split('?')[0]);let f=join('dist',p);
+  try{if((await stat(f)).isDirectory())f=join(f,'index.html');}catch{if(!extname(f))f=join('dist',p,'index.html');}
+diff --git a/naden.mjs b/scripts/naden.mjs
+similarity index 99%
+rename from naden.mjs
+rename to scripts/naden.mjs
+index 488340a..ce4da35 100644
+--- a/naden.mjs
++++ b/scripts/naden.mjs
+@@ -47,7 +47,7 @@ import { createServer } from 'node:http';
+ import { readFile, stat } from 'node:fs/promises';
+ import { extname, join } from 'node:path';
+ import { readdirSync } from 'node:fs';
+-import { browserPad } from './scripts/lib/browserpad.mjs';
++import { browserPad } from './lib/browserpad.mjs';
+ 
+ /* WORTEL — welke bouw wordt gemeten. Standaard `dist`, maar met
+    `WORTEL=dist-verify npm run naden` kun je een oudere bouw meten en zo
+diff --git a/pixnav.mjs b/scripts/pixnav.mjs
+similarity index 100%
+rename from pixnav.mjs
+rename to scripts/pixnav.mjs
+diff --git a/scripts/run-tests.mjs b/scripts/run-tests.mjs
+new file mode 100644
+index 0000000..2855e7a
+--- /dev/null
++++ b/scripts/run-tests.mjs
+@@ -0,0 +1,121 @@
++/*
++ * VISUAILS — de testketen, als lijst in plaats van als één regel.
++ *
++ * ── WAAROM DIT BESTAAT ──────────────────────────────────────────────────────
++ *
++ * De `test`-regel in package.json was vijfenvijftig `npm run test:x`-aanroepen
++ * aan elkaar geknoopt met `&&`, op één regel van ruim tweeduizend tekens. Dat
++ * werkt prima en leest niet: er valt niet aan te zien welke suites er zijn, in
++ * welke volgorde ze lopen, of er per ongeluk één twee keer in staat, en of er
++ * één ontbreekt. Een verschil van één woord in die regel is in een diff niet te
++ * vinden.
++ *
++ * Hier staat dezelfde keten als lijst. Meer doet dit bestand niet.
++ *
++ * ── DE VOLGORDE IS DE VOLGORDE ──────────────────────────────────────────────
++ *
++ * Regel voor regel dezelfde als de oude `&&`-keten, en dat is geen netheid maar
++ * een eis: sommige suites bouwen op wat een eerdere heeft neergezet, en
++ * `test:paths` staat vooraan omdat die het goedkoopst faalt. Wie hier iets
++ * verplaatst, verandert wat er getest wordt — niet alleen wanneer.
++ *
++ * ── EN HET GEDRAG IS HET GEDRAG ─────────────────────────────────────────────
++ *
++ * `&&` stopt bij de eerste die faalt en geeft diens afsluitcode door. Dat doet
++ * deze lus ook, en om dezelfde reden: een keten die doorloopt na een rode suite
++ * levert een muur uitvoer op waarin de eerste fout — de enige die je nodig hebt —
++ * naar boven is weggescrold.
++ *
++ * De suites worden aangeroepen als `npm run test:x` en niet als `node
++ * tests/x.test.mjs`. Dat is met opzet: `test:mollie` draait er twee achter
++ * elkaar, en het scheelt één plek waar de lijst met bestandsnamen zou moeten
++ * kloppen. package.json blijft de plek waar staat wat een suite is; dit bestand
++ * zegt alleen welke er lopen en in welke volgorde.
++ *
++ * `shell: true` omdat dit op Windows draait en `npm` daar `npm.cmd` is;
++ * `stdio: 'inherit'` zodat de uitvoer van elke suite direct doorloopt in plaats
++ * van pas aan het eind te verschijnen.
++ */
++import { spawnSync } from 'node:child_process';
++
++/** De keten, in volgorde. Eén naam per regel, zodat een diff één regel is. */
++const SUITES = [
++  'test:paths',
++  'test:vat',
++  'test:gate',
++  'test:invoice',
++  'test:invoicing',
++  'test:credit',
++  'test:invoices',
++  'test:feedback',
++  'test:offsite',
++  'test:delivery',
++  'test:nav',
++  'test:figures',
++  'test:promises',
++  'test:schema',
++  'test:retention',
++  'test:backup',
++  'test:funnel',
++  'test:legal',
++  'test:register',
++  'test:scaffold',
++  'test:planning',
++  'test:wipe',
++  'test:beheer',
++  'test:wrangler',
++  'test:order',
++  'test:geld',
++  'test:sample',
++  'test:sampleinv',
++  'test:business',
++  'test:request',
++  'test:upload',
++  'test:keuring',
++  'test:merkmodel',
++  'test:aanhef',
++  'test:video',
++  'test:ratio',
++  'test:refs',
++  'test:pay',
++  'test:code',
++  'test:account',
++  'test:signin',
++  'test:admin',
++  'test:mollie',
++  'test:stripe',
++  'test:diagnose',
++  'test:plans',
++  'test:abo',
++  'test:incasso',
++  'test:email',
++  'test:garments',
++  'test:subscribe',
++  'test:planqueue',
++  'test:nazicht',
++  'test:steps',
++  'test:a11y',
++  'test:zacht',
++];
++
++/* Twee keer dezelfde naam is geen dubbele controle maar een suite die twee keer
++   draait, en dat kost minuten zonder iets te bewijzen. Hier gevonden in plaats
++   van in een keten waar je hem niet ziet staan. */
++const dubbel = SUITES.filter((naam, i) => SUITES.indexOf(naam) !== i);
++if (dubbel.length) {
++  console.error(`run-tests: deze staan er twee keer in — ${[...new Set(dubbel)].join(', ')}`);
++  process.exit(1);
++}
++
++for (const suite of SUITES) {
++  const uit = spawnSync(`npm run ${suite}`, { shell: true, stdio: 'inherit' });
++  /* `status` is null als het proces door een signaal is gestopt (Ctrl-C). Dan is
++     0 teruggeven onwaar: er is niet gepasseerd, er is afgebroken. */
++  const code = uit.status === null ? 1 : uit.status;
++  if (code !== 0) {
++    console.error(`\nrun-tests: gestopt bij ${suite} (afsluitcode ${code}).`);
++    process.exit(code);
++  }
++}
++
++console.log(`\nrun-tests: ${SUITES.length} suites, allemaal groen.`);
+diff --git a/spelling.mjs b/scripts/spelling.mjs
+similarity index 100%
+rename from spelling.mjs
+rename to scripts/spelling.mjs
+diff --git a/variant.mjs b/scripts/variant.mjs
+similarity index 100%
+rename from variant.mjs
+rename to scripts/variant.mjs
+diff --git a/vlak-per-sectie.mjs b/scripts/vlak-per-sectie.mjs
+similarity index 98%
+rename from vlak-per-sectie.mjs
+rename to scripts/vlak-per-sectie.mjs
+index 1f8fdf8..ee6fce6 100644
+--- a/vlak-per-sectie.mjs
++++ b/scripts/vlak-per-sectie.mjs
+@@ -32,7 +32,7 @@ import { createServer } from 'node:http';
+ import { readFile, stat } from 'node:fs/promises';
+ import { extname, join } from 'node:path';
+ import { PNG } from 'pngjs';
+-import { browserPad } from './scripts/lib/browserpad.mjs';
++import { browserPad } from './lib/browserpad.mjs';
+ const MIME = { '.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.webp':'image/webp','.avif':'image/avif','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.woff2':'font/woff2','.ico':'image/x-icon','.mp4':'video/mp4' };
+ const srv = createServer(async (req,res)=>{ let p=decodeURIComponent(req.url.split('?')[0]); let f=join('dist',p);
+   try{ if((await stat(f)).isDirectory()) f=join(f,'index.html'); }catch{ if(!extname(f)) f=join('dist',p,'index.html'); }
+diff --git a/wandel.mjs b/scripts/wandel.mjs
+similarity index 100%
+rename from wandel.mjs
+rename to scripts/wandel.mjs
+diff --git a/zoom.mjs b/scripts/zoom.mjs
+similarity index 99%
+rename from zoom.mjs
+rename to scripts/zoom.mjs
+index 00f504d..82279a9 100644
+--- a/zoom.mjs
++++ b/scripts/zoom.mjs
+@@ -22,7 +22,7 @@ import { createServer } from 'node:http';
+ import { readFile, stat } from 'node:fs/promises';
+ import { extname, join } from 'node:path';
+ import { readdirSync } from 'node:fs';
+-import { browserPad } from './scripts/lib/browserpad.mjs';
++import { browserPad } from './lib/browserpad.mjs';
+ const MIME={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.webp':'image/webp','.avif':'image/avif','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.woff2':'font/woff2','.ico':'image/x-icon','.mp4':'video/mp4'};
+ const srv=createServer(async(req,res)=>{let p=decodeURIComponent(req.url.split('?')[0]);let f=join('dist',p);try{if((await stat(f)).isDirectory())f=join(f,'index.html');}catch{if(!extname(f))f=join('dist',p,'index.html');}try{const b=await readFile(f);res.writeHead(200,{'content-type':MIME[extname(f)]||'application/octet-stream'});res.end(b);}catch{res.writeHead(404);res.end('nee');}});
+ const P=Number(process.env.POORT||4438);

@@ -86,9 +86,9 @@ export const ui = {
     // /pricing, /catalog, /lifestyle and /video only — never in the nav — so
     // these descriptions say what the work is, not what one product costs.
     drops: [
-      { href: '/catalog', title: 'Catalog', desc: 'Front, back, detail and on-model, for every product' },
-      { href: '/lifestyle', title: 'Lifestyle', desc: 'Your product in a styled scene, ready to post' },
-      { href: '/video', title: 'Video', desc: 'Short clips that move, on any product in the order' },
+      { href: '/catalog', title: 'Catalog', desc: 'Front, back, detail, and on-model catalog photos for every product.' },
+      { href: '/lifestyle', title: 'Lifestyle', desc: 'Get your product in a styled scene — ready to post.' },
+      { href: '/video', title: 'Video', desc: 'Short video clips for each product, made at your own pace.' },
       /* ── MERKMODEL EN ABONNEMENT STAAN NU HIER — 21 augustus 2026 ────────
        *
        * Allebei stonden ze als los item bovenin, naast Prijzen, Galerij en
@@ -99,8 +99,8 @@ export const ui = {
        *
        * Wat het oplevert: twee items minder in de balk, en één plek waar de
        * vraag "wat kan ik hier bestellen" volledig beantwoord wordt. */
-      { href: '/custom-models', title: 'Your Brand Model', desc: 'One face, made for your brand and used by nobody else' },
-      { href: '/plans', title: 'Monthly plan', desc: 'A fixed number of products every month, below the per-product rate' },
+      { href: '/custom-models', title: 'Your Brand Model', desc: 'A dedicated face tailored specifically for your brand—completely exclusive to you.' },
+      { href: '/plans', title: 'Monthly plan', desc: 'A fixed monthly product volume, priced below our standard rate.' },
       /*
        * HOOKS HEEFT GEEN href, EN DAT IS HET HELE PUNT — 9 augustus 2026.
        *
@@ -118,7 +118,7 @@ export const ui = {
        * HoldingPage.astro: een gat dat een bezoeker kan zien, is erger dan een
        * onafgemaakt ding dat zegt wat het is.
        */
-      { title: 'Hooks', desc: 'Not ready yet — a short video on a proven format, soon', soon: true },
+      { title: 'Hooks', desc: 'Coming up soon — short videos created in an eye-catching, high-performing format.', soon: true },
       /* EDITIONS — aangekondigd op 18 augustus 2026, zelfde behandeling als
          Hooks: in het menu waar de diensten staan, zonder href, en Layout.astro
          tekent hem daarom als uitgeschakeld menu-item.
@@ -129,7 +129,7 @@ export const ui = {
          document laat zien dat "stock" de vergelijking opzoekt die je verliest
          terwijl een editie precies zegt wat het is — een oplage, gedateerd en
          voor deze maand gemaakt. */
-      { title: 'Editions', desc: 'Not ready yet — a set of images made for your brand, every month', soon: true },
+      { title: 'Editions', desc: 'Coming up soon — a dedicated set of custom images for your brand, delivered every month.', soon: true },
     ],
     /*
      * ── DE TWEEDE LAAG, 18 AUGUSTUS 2026 ──────────────────────────────────
@@ -139,6 +139,11 @@ export const ui = {
      * rangorde. Acht pagina's van gewicht bestonden alléén daar, en twee —
      * /models en /upload-guidelines — hadden helemaal geen plek en waren alleen
      * te vinden als zin in een alinea. /demo had nul inkomende links.
+     *
+     * (/demo bestaat sinds 24 augustus 2026 niet meer — de doorloop die daar
+     * stond, staat nu alleen nog op /how-it-works, waar hij altijd al stond.
+     * Zie de noot boven FigWalk.astro. Deze alinea blijft staan omdat hij
+     * beschrijft waaróm deze laag er is, en dat argument is niet veranderd.)
      *
      * Sorteer je die 36 routes op functie, dan zijn er vier lagen: wat we maken,
      * HOE HET WERKT, wat het kost, en wie we zijn. De tweede ontbrak in de
@@ -156,12 +161,11 @@ export const ui = {
      */
     nav_how: 'How it works',
     how: [
-      { href: '/how-it-works', title: 'From order to delivery', desc: 'The four steps, and the two you are in' },
-      { href: '/demo', title: 'See an order run', desc: 'Walk through one, screen by screen' },
-      { href: '/studio', title: 'How an order is run', desc: 'The studio day, the calendar, the capacity' },
-      { href: '/portal', title: 'VISUAILS Studio', desc: 'Where your work lands, and how you approve it' },
-      { href: '/models', title: 'The models', desc: 'The ten faces included in every order' },
-      { href: '/upload-guidelines', title: 'Sending your photos', desc: 'What we need, and what a phone can do' },
+      { href: '/how-it-works', title: 'From order to delivery', desc: 'Four steps total, and only two require your input.' },
+      { href: '/studio', title: 'How we process your order', desc: 'The studio day, the calendar, the capacity' },
+      { href: '/portal', title: 'VISUAILS Studio', desc: 'How to access your deliverables and give final approval.' },
+      { href: '/models', title: 'The models', desc: 'Every order includes ten different models.' },
+      { href: '/upload-guidelines', title: 'Sending your photos', desc: 'The photos we need for the best result – which you can already take with your phone.' },
       /* ── TWEE ERAF, EN ALLEBEI NAAR EEN BETERE PLEK — 21 augustus 2026 ────
        *
        * Acht items in één lade is een lijst waarin je zoekt, en twee ervan
@@ -183,7 +187,7 @@ export const ui = {
     mob_chat: 'Chat on WhatsApp',
     mob_notsure: 'Not sure yet?',
     mob_try: `Try a test sample · ${TEST_SAMPLE.en.price}`,
-    foot_tagline: 'The visual studio for clothing brands and modern e-commerce — for founders who would rather grow than book another shoot.',
+    foot_tagline: 'The visual studio built for fashion and e-commerce founders who\'d rather focus on growing than booking another shoot.',
     // De knop in de merkkolom van de voettekst. Kort, want hij staat naast drie
     // kolommen links en moet als handeling lezen en niet als vierde lijst.
     foot_cta: 'Start an order',
@@ -195,7 +199,7 @@ export const ui = {
     foot_about: 'About',
     foot_how: 'How it works',
     foot_portal: 'VISUAILS Studio',
-    foot_studio: 'How an order is run',
+    foot_studio: 'How we process your order',
     foot_guides: 'Guides',
     // /compare is now "a shoot day, or a drop" (AUDIT §F). The AI-tools
     // argument still lives on that page at #ai-tools and in its <title>, so
@@ -230,17 +234,17 @@ export const ui = {
     nav_home: 'VISUAILS home',
     nav_skip: 'Skip to content',
     cc_title: 'Cookies on this site',
-    cc_body: 'We use only what the site needs to work. Nothing that measures you is switched on unless you say so.',
+    cc_body: 'We only use necessary cookies. Analytics and tracking stay turned off until you say so.',
     cc_accept: 'Accept analytics',
     cc_reject: 'Only what is necessary',
     cc_manage: 'Choose per purpose',
     cc_policy: 'Cookie Policy',
     cc_prefs_title: 'Cookie preferences',
-    cc_prefs_intro: 'Necessary cookies keep you signed in and remember this choice. They cannot be switched off, and they are all the site sets today.',
+    cc_prefs_intro: 'Essential cookies keep you signed in and remember your preferences. They can\'t be turned off, and they\'re the only cookies we set today.',
     cc_nec_h: 'Necessary',
-    cc_nec_n: 'Sign-in sessions for VISUAILS Studio and for the admin side, and this preference itself. Always on.',
+    cc_nec_n: 'Sign-in sessions for VISUAILS Studio, and this preference itself. Always on.',
     cc_ana_h: 'Analytics',
-    cc_ana_n: 'Anonymous, cookieless page counts so we can see which pages are read. Off unless you turn it on, and nothing loads until you do.',
+    cc_ana_n: 'Anonymous, cookieless page counts help us see which pages are read. This is off by default, and nothing loads until you enable it.',
     cc_always: 'Always on',
     cc_save: 'Save my choice',
     cc_cancel: 'Back',
@@ -283,7 +287,14 @@ export const ui = {
     // daar af, en "a carousel of" met de 3 op de volgende regel leest als een
     // onafgemaakte zin. Een harde spatie houdt ze bij elkaar zonder de balans
     // uit te zetten.
-    cb_note: `Your own product as ${TEST_SAMPLE.en.deliverable}.`,
+    /* ── KORT OP DE BALK, DE REST ACHTER HET VRAAGTEKEN — 23 AUGUSTUS 2026 ──
+       Hier stond de volle zin, en die liep tot onder de bundel op de balk: witte
+       tekst op limoen leest niet. Korter maken is de helft van de oplossing en
+       weglaten de andere helft — dus staat de rest nu achter `cb_why`, waar hij
+       te lezen is zonder dat hij er altijd staat. */
+    cb_note: `Your product — ${TEST_SAMPLE.en.deliverableShort}.`,
+    cb_why: 'What a test sample is',
+    cb_detail: `${TEST_SAMPLE.en.line} ${TEST_SAMPLE.en.unit.charAt(0).toUpperCase()}${TEST_SAMPLE.en.unit.slice(1)}.`,
     cb_cta: `Request a test sample · ${TEST_SAMPLE.en.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Message VISUAILS on WhatsApp — opens in a new tab',
@@ -300,24 +311,23 @@ export const ui = {
     nav_start: 'Bestellen',
     nav_account: 'Inloggen',
     drops: [
-      { href: '/catalog', title: 'Catalog', desc: 'Voorkant, achterkant, detail en on-model, voor elk product' },
-      { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een gestylede scène, klaar om te posten' },
-      { href: '/video', title: 'Video', desc: 'Korte clips met beweging, op elk product in de bestelling' },
+      { href: '/catalog', title: 'Catalog', desc: 'Catalogusfoto\'s per product: voorkant, achterkant, details en on-model.' },
+      { href: '/lifestyle', title: 'Lifestyle', desc: 'Je product in een sfeervolle setting, direct klaar om te posten.' },
+      { href: '/video', title: 'Video', desc: 'Korte videoclips van elk product, wanneer het jou uitkomt.' },
       /* Zie de noot bij de Engelse lijst hierboven: alles wat je koopt, staat
          in het menu waar staat wat we maken. */
-      { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, voor jouw merk gemaakt en door niemand anders gebruikt' },
-      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, onder het tarief per product' },
-      { title: 'Hooks', desc: 'Nog niet klaar — een korte video op een bewezen format, binnenkort', soon: true },
-      { title: 'Editions', desc: 'Nog niet klaar — elke maand een set beelden op jouw merk, binnenkort', soon: true },
+      { href: '/custom-models', title: 'Jouw merkmodel', desc: 'Eén gezicht, speciaal gemaakt voor jouw merk en voor niemand anders.' },
+      { href: '/plans', title: 'Abonnement', desc: 'Elke maand een vast aantal producten, voor een scherpere prijs per product.' },
+      { title: 'Hooks', desc: 'Binnenkort lanceren we korte video\'s in een opvallend en goed presterend format.', soon: true },
+      { title: 'Editions', desc: 'Binnenkort lanceren we een vaste set beelden op maat voor jouw merk, die we elke maand bij je aanleveren.', soon: true },
     ],
     nav_how: 'Hoe het werkt',
     how: [
-      { href: '/how-it-works', title: 'Van bestelling tot levering', desc: 'De vier stappen, en de twee waar jij in zit' },
-      { href: '/demo', title: 'Zie een bestelling draaien', desc: 'Loop er \u00e9\u00e9n door, scherm voor scherm' },
-      { href: '/studio', title: 'Hoe een bestelling draait', desc: 'De studiodag, de kalender, de capaciteit' },
-      { href: '/portal', title: 'VISUAILS Studio', desc: 'Waar je werk landt, en hoe je het goedkeurt' },
-      { href: '/models', title: 'De modellen', desc: 'De tien gezichten die bij elke bestelling horen' },
-      { href: '/upload-guidelines', title: 'Je foto\u2019s aanleveren', desc: 'Wat we nodig hebben, en wat een telefoon kan' },
+      { href: '/how-it-works', title: 'Van bestelling tot levering', desc: 'Vier stappen in totaal — en maar twee vragen jouw input.' },
+      { href: '/studio', title: 'Het bestelproces', desc: 'De studiodag, de kalender, de capaciteit' },
+      { href: '/portal', title: 'VISUAILS Studio', desc: 'Zo krijg je toegang tot de resultaten en geef je je akkoord.' },
+      { href: '/models', title: 'De modellen', desc: 'Elke bestelling bevat tien verschillende modellen.' },
+      { href: '/upload-guidelines', title: 'Je foto\u2019s aanleveren', desc: 'De foto\'s die we nodig hebben voor het beste resultaat – die je al met je telefoon kunt maken.' },
       /* /compare staat nu op de prijzenpagina en /ai-act in de juridische regel
          onderaan — zie de noot bij de Engelse lijst. */
     ],
@@ -325,7 +335,7 @@ export const ui = {
     mob_chat: 'Chat via WhatsApp',
     mob_notsure: 'Nog niet zeker?',
     mob_try: `Probeer een proefvisual · ${TEST_SAMPLE.nl.price}`,
-    foot_tagline: 'De studio voor productvisuals voor kledingmerken en moderne e-commerce — voor ondernemers die liever groeien dan nóg een fotoshoot boeken.',
+    foot_tagline: 'Dé visual studio voor kleding- en e-commercemerken — speciaal voor ondernemers die liever schalen dan wéér een fotoshoot regelen.',
     foot_cta: 'Start een bestelling',
     foot_drops: 'Wat we maken',
     foot_brandmodel: 'Jouw merkmodel',
@@ -335,7 +345,7 @@ export const ui = {
     foot_about: 'Over ons',
     foot_how: 'Hoe het werkt',
     foot_portal: 'VISUAILS Studio',
-    foot_studio: 'Hoe een bestelling draait',
+    foot_studio: 'Het bestelproces',
     foot_guides: 'Gidsen',
     foot_compare: 'Shootdag vs VISUAILS',
     foot_sample: `Proefvisual · ${TEST_SAMPLE.nl.price}`,
@@ -357,23 +367,26 @@ export const ui = {
     nav_home: 'VISUAILS home',
     nav_skip: 'Naar de inhoud',
     cc_title: 'Cookies op deze site',
-    cc_body: 'We gebruiken alleen wat de site nodig heeft om te werken. Niets dat jou meet staat aan, tenzij je dat zelf zegt.',
+    cc_body: 'We gebruiken alleen functionele cookies. Analyse- en trackingcookies staan uit, tenzij je ze zelf inschakelt.',
     cc_accept: 'Analytics accepteren',
-    cc_reject: 'Alleen het noodzakelijke',
+    cc_reject: 'Alleen wat noodzakelijk is',
     cc_manage: 'Kies per doel',
     cc_policy: 'Cookiebeleid',
     cc_prefs_title: 'Cookievoorkeuren',
-    cc_prefs_intro: 'Noodzakelijke cookies houden je ingelogd en onthouden deze keuze. Ze kunnen niet uit, en meer plaatst de site vandaag niet.',
+    cc_prefs_intro: 'Essentiële cookies houden je ingelogd en onthouden je voorkeuren. Ze kunnen niet worden uitgeschakeld en zijn de enige cookies die we momenteel plaatsen.',
     cc_nec_h: 'Noodzakelijk',
-    cc_nec_n: 'Inlogsessies voor VISUAILS Studio en voor het adminportaal, en deze voorkeur zelf. Staat altijd aan.',
+    cc_nec_n: 'Inlogsessies voor VISUAILS Studio en deze voorkeur zelf. Staat altijd aan.',
     cc_ana_h: 'Analytics',
-    cc_ana_n: 'Anonieme, cookieloze paginatellingen zodat we zien welke pagina\u2019s gelezen worden. Staat uit tenzij jij hem aanzet, en er laadt niets voordat je dat doet.',
+    cc_ana_n: 'Anonieme, cookieloze paginatellingen laten ons zien welke pagina\u2019s gelezen worden. Dit staat standaard uit; er wordt niets geladen totdat je het inschakelt.',
     cc_always: 'Staat altijd aan',
     cc_save: 'Keuze opslaan',
     cc_cancel: 'Terug',
     cc_reopen: 'Cookievoorkeuren',
     foot_location: 'Enschede, Nederland',
-    cb_note: `Je eigen product als ${TEST_SAMPLE.nl.deliverable}.`,
+    // Zie de noot bij de Engelse cb_note.
+    cb_note: `Jouw product — ${TEST_SAMPLE.nl.deliverableShort}.`,
+    cb_why: 'Wat een proefvisual is',
+    cb_detail: `${TEST_SAMPLE.nl.line} ${TEST_SAMPLE.nl.unit.charAt(0).toUpperCase()}${TEST_SAMPLE.nl.unit.slice(1)}.`,
     cb_cta: `Vraag een proefvisual aan · ${TEST_SAMPLE.nl.price}`,
     wa_launcher_label: 'WhatsApp',
     wa_launcher_aria: 'Stuur VISUAILS een bericht via WhatsApp — opent in een nieuw tabblad',

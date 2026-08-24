@@ -67,6 +67,13 @@ const INTRINSIC: Record<string, [number, number]> = {
   '/img/banners-13.webp': [2400, 1792],
   '/img/catalog-after.webp': [1800, 1800],
   '/img/catalog-before.webp': [1350, 1800],
+  /* De vierkante uitsnede van diezelfde telefoonfoto — 23 augustus 2026.
+     `catalog-after` is 1800x1800; de bron van de before is 1350x1800. Zolang die
+     twee verschilden, moest elke aanroeper met `objectPosition` bijsturen, en op
+     de homepage stond de vergelijking daarom in 3:4 — waardoor het EINDRESULTAAT
+     niet volledig in beeld stond, terwijl dat het beeld is dat het argument moet
+     maken. Nu dragen beide kanten dezelfde verhouding en valt het bijsturen weg. */
+  '/img/catalog-before-1x1.webp': [1350, 1350],
   '/img/lifestyle-dunes-01.webp': [928, 1152],
   '/img/lifestyle-flash-01.webp': [928, 1152],
   '/img/lifestyle-flash-02.webp': [1340, 2400],

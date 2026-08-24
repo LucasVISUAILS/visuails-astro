@@ -94,8 +94,16 @@ const NEP = {
   kvk: '00000000',
 };
 
-/** Ons eigen adres en onze nummers. Uit env, met een ZICHTBAAR onjuiste terugval. */
-function sellerOf(env) {
+/**
+ * Ons eigen adres en onze nummers. Uit env, met een ZICHTBAAR onjuiste terugval.
+ *
+ * GE-EXPORTEERD SINDS 24 AUGUSTUS 2026, voor /admin/diagnose. Die pagina toont
+ * de factuurkop zoals hij eruit komt te zien, en dat is alleen iets waard als
+ * het DEZELFDE functie is die de echte factuur gebruikt. Een voorbeeld dat langs
+ * een eigen kopie wordt opgebouwd, bewijst niets over de factuur die de klant
+ * krijgt — het bewijst iets over de kopie.
+ */
+export function sellerOf(env) {
   const ontbreekt = [];
   const uitEnv = (naam, terugval) => {
     const v = env?.[naam];

@@ -1299,3 +1299,50 @@ CREATE INDEX IF NOT EXISTS idx_subinv_customer ON subscription_invoices(customer
 CREATE INDEX IF NOT EXISTS idx_subinv_series   ON subscription_invoices(year, seq);
 -- Voor de hersteltaak, net als idx_invoices_pending: welke nummers wachten op een pdf.
 CREATE INDEX IF NOT EXISTS idx_subinv_pending  ON subscription_invoices(created_at) WHERE status = 'pending';
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0033 · HET UNICITEITSLOGBOEK VAN EEN MERKMODEL
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- Vijf kolommen die vastleggen dat het gezicht van een merkmodel door de
+-- zoekmachines is gehaald: wanneer, met welke, met welke uitslag en door wie.
+-- Sinds er een prijs en een omruilgarantie op een merkmodel staat, is dit het
+-- bewijsstuk onder die garantie — bij een claim is de vraag niet wat je nu weet
+-- maar wat je toen wist. De volledige afweging staat in
+-- migrations/0033-merkmodel-controle.sql; de toegestane waarden en de lijst met
+-- zoekmachines staan in src/data/modelChecks.js.
+
+ALTER TABLE orders ADD COLUMN model_check_at TEXT;
+ALTER TABLE orders ADD COLUMN model_check_engines TEXT;
+ALTER TABLE orders ADD COLUMN model_check_result TEXT;
+ALTER TABLE orders ADD COLUMN model_check_by TEXT;
+ALTER TABLE orders ADD COLUMN model_check_note TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_orders_modelcheck
+  ON orders(created_at) WHERE service = 'brand-model' AND model_check_at IS NULL;
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0034 · ÉÉN REVISIERONDE PER BESTELLING
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- De site belooft sinds 20 augustus 2026 één revisieronde per bestelling en er
+-- was niets dat dat afdwong: de klant kon per beeld, onbeperkt vaak, een revisie
+-- vragen. Deze drie kolommen leggen vast dát de ronde is gebruikt, wanneer, en
+-- wat de klant er als geheel over schreef.
+--
+-- NIET TE VERWARREN MET `customers.revisions_revoked_at` HIERBOVEN. Dat is de
+-- noodrem van de studio en geldt voor een klant over al zijn bestellingen heen;
+-- dit is een feit over één bestelling en ontstaat doordat de klant zijn ronde
+-- indient. Zou dit op de klant staan, dan zou één ingediende ronde elke volgende
+-- bestelling meteen zonder revisie laten beginnen. De volledige afweging staat
+-- in migrations/0034-revisieronde.sql.
+--
+-- Bestaande bestellingen beginnen op NULL en houden dus hun ronde: zij hebben
+-- besteld onder de oude, onbeperkte belofte.
+
+ALTER TABLE orders ADD COLUMN revision_round_at TEXT;
+ALTER TABLE orders ADD COLUMN revision_round_note TEXT;
+ALTER TABLE orders ADD COLUMN revision_round_count INTEGER;
+
+CREATE INDEX IF NOT EXISTS idx_orders_revision_round
+  ON orders (revision_round_at) WHERE revision_round_at IS NOT NULL;

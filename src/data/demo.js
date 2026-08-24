@@ -15,6 +15,8 @@
 // — en twee bijna gelijke dingen naast elkaar betekent twee fotoseries schieten
 // en twee machines onderhouden. Gevraagd, en het antwoord was één ding. Dus het
 // spel is weg en de walkthrough staat op zijn plek, op /demo én in /how-it-works.
+// (/demo is er sinds 24 augustus 2026 niet meer; /how-it-works is de enige plek
+// waar deze doorloop nog staat.)
 // Wat overleeft is precies dit bestand: dezelfde beeldtabel, dezelfde
 // placeholders, dus dezelfde schietlijst.
 //
@@ -228,9 +230,15 @@ export function walkResult(service, look) {
  *
  * Ze staan hier en niet in de aanroepende pagina's, anders dan bij de figuren
  * op /how-it-works — en dat is een bewuste uitzondering op die regel. TWEE
- * pagina's tonen deze walkthrough (/demo en /how-it-works), en copy die op twee
+ * pagina's toonden deze walkthrough (/demo en /how-it-works), en copy die op twee
  * plekken staat is copy die uit elkaar gaat lopen. Eén tabel, twee talen, één
  * plek om te controleren.
+ *
+ * SINDS 24 AUGUSTUS 2026 IS HET ER ÉÉN — /demo is opgeheven — EN DE TEKST BLIJFT
+ * HIER STAAN. Niet uit gemakzucht: de reden dat copy bij het onderdeel hoort en
+ * niet bij de pagina, is dat het onderdeel hem gebruikt. Terugverhuizen naar
+ * HowItWorksPage.astro zou de tekst weghalen bij de markup die hem toont, en de
+ * volgende pagina die deze doorloop plaatst begint dan weer met een kopie.
  */
 export const WALK_COPY = {
   en: {
@@ -284,10 +292,22 @@ export const WALK_COPY = {
         h: 'Produced together, then finished by hand',
         b: 'Every product in the order runs through as one batch, which is what makes the lighting, the angle and the grade match across all of them — run separately they would not. Then it is hand-finished in professional editing tools, colour-graded to your brand, and a person checks fit, colour against your own photo, and framing before anything leaves.',
       },
+      /* ── DE DREMPEL STOND HIER NOG, EN HIJ IS ER SINDS 7 AUGUSTUS AF ────────
+         Deze twee zinnen zeiden dat per beeld goedkeuren pas vanaf
+         WINDOW_THRESHOLD producten geldt en dat je er daaronder een downloadlink
+         voor krijgt. canReviewOrder() in pricing.js kijkt niet naar een aantal:
+         hij weigert alleen de proefvisual en een al afgesloten bestelling. Elke
+         betaalde bestelling mag het, hoe klein ook.
+
+         Het BELOOFDE dus minder dan het levert, en dat is een zeldzame richting
+         voor een fout — maar het is er wel een: een merk dat drie producten wil
+         proberen, leest hier dat het dan een zip krijgt in plaats van het scherm
+         waar deze hele pagina over gaat, en dat is precies het merk dat je binnen
+         wilt halen. De drempel blijft staan waar hij wél geldt: de leverdatum. */
       portal: {
         n: 'You, in your account',
         h: 'It arrives image by image, and you approve it',
-        b: `From ${WINDOW_THRESHOLD_} products the order lands in a portal grouped by product. Each image is approved on its own, and a revision is requested on its own — with a note saying what is wrong — while the rest of the order keeps moving. Nothing waits on anything else, and nothing is final until you say so. Below ${WINDOW_THRESHOLD_} products it arrives as a download link instead, with the same production and the same check behind it.`,
+        b: 'Every paid order lands in a portal grouped by product — three products or three hundred. Each image is approved on its own, and a revision is requested on its own, with a note saying what is wrong, while the rest of the order keeps moving. Nothing waits on anything else, and nothing is final until you say so.',
       },
       result: {
         n: 'You, at the end',
@@ -371,10 +391,11 @@ export const WALK_COPY = {
         h: 'Samen geproduceerd, daarna met de hand afgewerkt',
         b: 'Elk product in de bestelling gaat als één batch door de productie, en daardoor kloppen de belichting, de hoek en de kleur over alle producten met elkaar. Los gedraaid lukt dat niet. Daarna wordt het met de hand afgewerkt in professionele editingtools, kleurgecorrigeerd naar je merk, en controleert een specialist de pasvorm, de kleur tegen je eigen foto en de kadrering voordat er iets weggaat.',
       },
+      // Zie de noot bij de Engelse portal-tekst hierboven.
       portal: {
         n: 'Jij, in je account',
         h: 'Het komt beeld voor beeld binnen, en jij keurt goed',
-        b: `Vanaf ${WINDOW_THRESHOLD_} producten komt de bestelling in een portaal, gegroepeerd per product. Elk beeld keur je apart goed, en een revisie vraag je apart aan — met een notitie waarin staat wat er mis is — terwijl de rest van de bestelling gewoon doorloopt. Niets wacht op iets anders, en niets is definitief tot jij dat zegt. Onder ${WINDOW_THRESHOLD_} producten komt hij als downloadlink, met dezelfde productie en dezelfde controle erachter.`,
+        b: 'Elke betaalde bestelling komt in een portaal, gegroepeerd per product — of het er nu drie zijn of driehonderd. Elk beeld keur je apart goed. Wat niet goed is vink je aan en stuur je in één keer op als de ene revisieronde die bij de bestelling hoort, met een notitie waarin staat wat er mis is, terwijl de rest van de bestelling gewoon doorloopt. Niets wacht op iets anders, en niets is definitief tot jij dat zegt.',
       },
       result: {
         n: 'Jij, aan het eind',

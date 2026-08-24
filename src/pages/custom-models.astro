@@ -13,7 +13,7 @@
 // body gets corrected and the search result keeps quoting the old number.
 import Layout from '../layouts/Layout.astro';
 import BrandModelPage from '../components/BrandModelPage.astro';
-import { euro, AMOUNT, vatLabel, BRAND_MODEL_CREDIT_DROPS } from '../data/pricing.js';
+import { euro, AMOUNT, vatLabel } from '../data/pricing.js';
 
 // Under 152 characters (META_LIMIT) so Google shows all of it. The description
 // this replaces ran to 167 and lost its last clause.
@@ -24,9 +24,7 @@ import { euro, AMOUNT, vatLabel, BRAND_MODEL_CREDIT_DROPS } from '../data/pricin
 // for a work order. An order is an order.
 const description =
   `One face, designed for your brand alone — on every product, every order. ` +
-  `${euro(AMOUNT.brandModel, 'en')} setup ${vatLabel('excl', 'en')}, ` +
-  `${euro(AMOUNT.brandModelCredit, 'en')} back on your first ` +
-  `${BRAND_MODEL_CREDIT_DROPS} orders.`;
+  `${euro(AMOUNT.brandModel, 'en')} ${vatLabel('excl', 'en')}, paid once when the model is designed.`;
 ---
 
 <Layout

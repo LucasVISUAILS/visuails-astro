@@ -54,10 +54,14 @@ import { waHref } from '../data/whatsapp.js';
 // WHAT THE AUGUST 2026 MODEL CHANGED HERE, AND WHAT IT DID NOT (section 0 of
 // src/data/pricing.js is the governing document):
 //
-//   · THE PRODUCT IS UNCHANGED. A Brand Model is still a one-time setup at
-//     AMOUNT.brandModel with AMOUNT.brandModelCredit coming back on each of
-//     your first BRAND_MODEL_CREDIT_DROPS orders, and it still cancels itself
-//     exactly. None of the argument on this page is retired by the ladder.
+//   · THE PRODUCT IS UNCHANGED BY THE LADDER. A Brand Model is a one-time setup
+//     at AMOUNT.brandModel; none of the argument on this page is retired by the
+//     move from packages to a per-product rate.
+//     ── EN OP 23 AUGUSTUS 2026 IS DE CREDIT WÉL VERDWENEN. Hier stond dat de
+//     setup zichzelf precies aflost via AMOUNT.brandModelCredit over
+//     BRAND_MODEL_CREDIT_DROPS bestellingen. Dat klopt niet meer: het merkmodel
+//     is één bedrag van € 450 dat je één keer betaalt, en er komt niets terug.
+//     Zie de noot bij AMOUNT.brandModel in pricing.js en MERKMODEL-ONTWERP.md.
 //   · WHERE THE NUMBERS CAME FROM IS NOT. They were read out of PACKAGES —
 //     the two drop packages and the retainer — via a byId lookup, and PACKAGES
 //     describes a price list we no longer sell. The setup fee, its unit and
@@ -72,7 +76,7 @@ import { waHref } from '../data/whatsapp.js';
 //     order eleven times over — including in the H1. What we sell is an order;
 //     in Dutch, een bestelling. The client’s own launch keeps the word.
 import {
-  AMOUNT, euro, vatLabel, BRAND_MODEL_CREDIT_DROPS,
+  AMOUNT, euro, vatLabel,
   WINDOW_THRESHOLD,
 } from '../data/pricing.js';
 import { ROSTER } from '../data/models.js';
@@ -97,22 +101,23 @@ const brandModel = {
   price: euro(AMOUNT.brandModel, lang),
   /* DE EENHEID ZEGT IETS ANDERS DAN HET LABEL ERBOVEN. Hier stond
      "one-time setup" — precies het woord dat `costSetupLabel` er twee regels
-     hoger al zet, dus las het blok als "One-time setup · €1.250 · one-time
-     setup · excl. VAT". De rechterkolom doet het wél goed ("Back to you ·
-     −€250 · on each of your first 5 orders"): de eenheid vertelt daar waar het
-     bedrag over gaat. Dat doet hij hier nu ook. */
+     hoger al zet, dus las het blok als "One-time setup · € 450 · one-time setup
+     · excl. VAT". De eenheid vertelt nu waar het bedrag over gáát: per merk, en
+     niet per bestelling of per beeld. Dat is sinds 23 augustus het enige dat de
+     lezer nog hoeft te weten — de tweede kolom die het terugverdienen uitlegde,
+     is met de credit verdwenen. */
   unit: lang === 'nl' ? 'per merk' : 'per brand',
   includes: lang === 'nl'
     ? [
         'Eén of meer modellen gebouwd voor jouw merk, door niemand anders gebruikt',
         'Hetzelfde gezicht door een hele bestelling heen — en jij kiest per bestelling welk gezicht erop staat',
-        `${euro(AMOUNT.brandModelCredit, 'nl')} terug op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
+        'De uniekheidscontrole voordat je het gezicht ooit ziet, en de garantie erachter',
         'Blijft meegaan als je collectie verandert',
       ]
     : [
         'One or more models built for your brand, used by no one else',
         'The same face across a whole order — and you pick per order which face runs',
-        `${euro(AMOUNT.brandModelCredit, 'en')} back on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders`,
+        'The uniqueness check before you ever see the face, and the guarantee behind it',
         'Kept current as your line changes',
       ],
 };
@@ -164,7 +169,7 @@ const COPY = {
     trust: [
       ['One-time', 'setup, then it is yours'],
       ['Exclusive', 'to your brand, permanently'],
-      ['Credited back', `across your first ${BRAND_MODEL_CREDIT_DROPS} orders`],
+      ['Once', 'and then never again'],
     ],
 
     // NOT A MODEL
@@ -179,10 +184,21 @@ const COPY = {
     ],
 
     // COST
-    costH: 'What it costs, and what comes back',
-    costSetupLabel: 'One-time setup',
-    costCreditLabel: 'Back to you',
-    costCreditUnit: `on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders`,
+    /* ── DE TERUGVERDIENREKENING IS WEG — 23 AUGUSTUS 2026 ──────────────────
+       Dit blok heette "What it costs, and what comes back" en had twee cijfers:
+       de setup en de credit die er over vijf bestellingen weer af ging. Die
+       credit bestaat niet meer (zie AMOUNT.brandModel in pricing.js), en daarmee
+       is er niets meer dat "terugkomt".
+
+       Er blijft één cijfer over, en dat is precies de bedoeling van het besluit.
+       Wat de tweede kolom deed — uitleggen dat je het terugkrijgt — doet de zin
+       eronder nu in negen woorden: niet per beeld, niet per bestelling, niet per
+       jaar. Dat beantwoordt de vraag die de lezer echt heeft (komt dit elke keer
+       terug?) zonder de prijs te verdedigen. */
+    costH: 'What it costs',
+    costSetupLabel: 'One-time',
+    costCreditLabel: '',
+    costCreditUnit: '',
     // Both figures on this block are net, like every figure in pricing.js, and
     // both say so. The setup is the one a brand will put in a spreadsheet, so
     // it carries the gross figure beside it as well.
@@ -194,9 +210,14 @@ const COPY = {
     // from pricing.js, so a written-out ordinal would go stale the moment the
     // setup or the credit moves and nobody would notice, because it reads as
     // prose rather than as a figure.
-    costMath: `${euro(AMOUNT.brandModelCredit, 'en')} ${vatLabel('excl', 'en')} comes off each of your first ${BRAND_MODEL_CREDIT_DROPS} orders, so once you have run ${BRAND_MODEL_CREDIT_DROPS} orders the setup has returned in full and the face is still yours. Before that point you are paying for exclusivity, which is the honest way to describe it.`,
+    costMath: 'Not per image, not per order, not per year. From then on every order you place with us carries the same face, at the normal per-product rate for its size.',
     costFree: `You do not need a Brand Model to place an order. Every order already includes a model from the standard library at no extra cost — this is a decision about owning a face, not about getting one.`,
-    costCta: 'See the price per product',
+    /* De Engelse tegenhanger van "Bekijk alle prijzen per aantal". Tot 24
+       augustus 2026 stond hier hetzelfde als bij `ctaPricing` verderop — twee knoppen
+       met dezelfde tekst naar dezelfde pagina — terwijl het Nederlands die twee
+       al uit elkaar hield. Dat was geen smaakverschil maar een halve ronde: de
+       tekstronde raakte de Nederlandse regel wel en de Engelse niet. */
+    costCta: 'See all prices by quantity',
     costSequence: `The model is designed and locked before your first order is scheduled, so setup never eats into the reserved delivery date an order of ${WINDOW_THRESHOLD} products or more is given.`,
 
     // WHERE IT FITS
@@ -241,7 +262,7 @@ const COPY = {
       ['locked', 'A <strong>locked model</strong>, exclusive to you, reused at no extra cost.'],
       ['every', 'The same face across <strong>a whole order</strong> &mdash; and you choose per order which face runs, one of yours or one of the ten.'],
       ['current', '<strong>Kept current</strong> as your line and your styling change.'],
-      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'en')} back</strong> ${vatLabel('excl', 'en')} on each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`],
+      ['credit', `<strong>${euro(AMOUNT.brandModel, 'en')} once</strong> ${vatLabel('excl', 'en')}, and nothing after that.`],
     ],
 
     // STANDARD LIBRARY
@@ -273,7 +294,7 @@ const COPY = {
     ctaH1: 'Design the face of',
     ctaEm: 'your brand.',
     ctaStart: 'Start your Brand Model',
-    ctaPricing: 'See the price per product',
+    ctaPricing: 'See pricing per product',
     ctaWaShort: 'WhatsApp',
   },
 
@@ -292,7 +313,7 @@ const COPY = {
     trust: [
       ['Eén keer betalen', 'daarna is het gezicht van jou'],
       ['Exclusief', 'voor jouw merk, permanent'],
-      ['Terugverdiend', `over je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`],
+      ['Eén keer', 'en daarna nooit meer'],
     ],
 
     notAH: 'Jouw model, niet <em>een</em> model.',
@@ -305,10 +326,11 @@ const COPY = {
       ['Van jou, en het blijft van jou', 'Je betaalt één keer voor het ontwerp. Elke bestelling daarna kost gewoon de prijs per product die bij dat aantal hoort.'],
     ],
 
-    costH: 'Wat het kost, en wat er terugkomt',
-    costSetupLabel: 'Eenmalig ontwerp',
-    costCreditLabel: 'Terug naar jou',
-    costCreditUnit: `op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen`,
+    // Zie de noot bij het Engelse kostblok.
+    costH: 'Wat het kost',
+    costSetupLabel: 'Eenmalig',
+    costCreditLabel: '',
+    costCreditUnit: '',
     costSetupVat: vatLabel('excl', 'nl'),
     costCreditVat: vatLabel('excl', 'nl'),
     costIncludes: 'Wat het ontwerp dekt',
@@ -316,7 +338,7 @@ const COPY = {
     // Geen rangtelwoord ("bij de vijfde bestelling"): het aantal komt uit pricing.js,
     // dus een uitgeschreven rangtelwoord veroudert stil zodra de setup of het
     // krediet verandert.
-    costMath: `${euro(AMOUNT.brandModelCredit, 'nl')} ${vatLabel('excl', 'nl')} gaat er af bij elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen, dus na ${BRAND_MODEL_CREDIT_DROPS} bestellingen is het ontwerp volledig terugverdiend en is het gezicht nog steeds van jou. Tot dat punt betaal je voor exclusiviteit, en dat is de eerlijke omschrijving.`,
+    costMath: 'Niet per beeld, niet per bestelling, niet per jaar. Vanaf dat moment draagt elke bestelling die je bij ons doet hetzelfde gezicht, tegen het gewone tarief per product voor die grootte.',
     costFree: `Je hebt geen merkmodel nodig om te bestellen. Elke bestelling bevat al een model uit de standaardbibliotheek, zonder extra kosten — je kiest hier of een gezicht alleen van jou is, niet of je er een krijgt.`,
     costCta: 'Bekijk alle prijzen per aantal',
     costSequence: `We ontwerpen het model en zetten het vast voordat we je eerste bestelling inplannen. Zo gaat het ontwerp nooit ten koste van de leverdatum die we vrijhouden voor een bestelling vanaf ${WINDOW_THRESHOLD} producten.`,
@@ -358,7 +380,7 @@ const COPY = {
       ['locked', 'Een <strong>vastgezet model</strong>, exclusief van jou, hergebruikt zonder extra kosten.'],
       ['every', 'Hetzelfde gezicht door een hele bestelling heen &mdash; en <strong>jij kiest per bestelling</strong> welk gezicht erop staat, dat van jou of een van de tien.'],
       ['current', '<strong>Blijft meegaan</strong> als je collectie en je styling veranderen.'],
-      ['credit', `<strong>${euro(AMOUNT.brandModelCredit, 'nl')} terug</strong> ${vatLabel('excl', 'nl')} op elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`],
+      ['credit', `<strong>${euro(AMOUNT.brandModel, 'nl')} eenmalig</strong> ${vatLabel('excl', 'nl')}, en daarna niets meer.`],
     ],
 
     libMeta: '( Of begin hier )',
@@ -499,13 +521,6 @@ const wa = waHref(c.waText);
         <span class="bmcost-amount">{brandModel.price}</span>
         <span class="bmcost-unit">{brandModel.unit}</span>
         <span class="bmcost-vat">{c.costSetupVat}</span>
-      </div>
-      <div class="bmcost-rule" aria-hidden="true"></div>
-      <div class="bmcost-fig">
-        <span class="bmcost-key">{c.costCreditLabel}</span>
-        <span class="bmcost-amount">&minus;{euro(AMOUNT.brandModelCredit, lang)}</span>
-        <span class="bmcost-unit">{c.costCreditUnit}</span>
-        <span class="bmcost-vat">{c.costCreditVat}</span>
       </div>
     </div>
 

@@ -747,7 +747,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'How long does it take?',
-        a: `A clip request runs in the standard queue: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date — and that holds however many clips you ask for. The held delivery date belongs to the price ladder for catalog and lifestyle products, and a clip is not on that ladder, so ordering more clips does not buy a date. What does fall inside a held window is clips added to an order of ${WINDOW_THRESHOLD} products or more: there the order carries the date and the clips ride along with it.`,
+        a: `A clip request runs at the standard turnaround: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date — and that holds however many clips you ask for. A held delivery date belongs to the price per quantity for catalog and lifestyle products, and a clip does not count towards it, so ordering more clips does not buy a date. What does fall under such a held date is clips added to an order of ${WINDOW_THRESHOLD} products or more: there the order carries the date and the clips ride along with it.`,
       },
       {
         q: 'Can a model appear in the clip?',
@@ -774,7 +774,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijsladder voor catalog- en lifestyleproducten, en een clip staat niet op die ladder; méér clips bestellen koopt dus geen datum. Wat wél binnen een vrijgehouden venster valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
+        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijs per aantal voor catalog- en lifestyleproducten, en een clip telt daar niet in mee; méér clips bestellen koopt dus geen datum. Wat er wél onder zo'n vrijgehouden datum valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
       },
       {
         q: 'Kan er een model in de clip?',

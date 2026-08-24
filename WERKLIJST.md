@@ -46,6 +46,83 @@ alsnog af — zie hieronder.
 
 ---
 
+## En de avond van 23 augustus
+
+**Het merkmodel is één product van € 450 geworden.** Het besluit staat in
+MERKMODEL-ONTWERP.md; dit is wat er in de code veranderde. `AMOUNT.brandModel`
+ging van 1250 naar 450, en de credit van € 250 die over vijf bestellingen
+terugkwam is helemaal verdwenen — met `BRAND_MODEL_CREDIT_DROPS`, met
+`boekMerkmodelTegoed()` in admin.js, met de terugverdienfiguur op /pricing en met
+de tweede cijferkolom op /custom-models. Op zeven plekken stond een rekensom die
+niet meer bestaat.
+
+Wat ervoor in de plaats kwam is korter dan wat eraf ging, en dat is het punt:
+*niet per beeld, niet per bestelling, niet per jaar.* Er staat één invariant voor
+terug die het besluit zelf bewaakt: het merkmodel mag niet meer kosten dan een
+bestelling van tien complete producten, want dat was de fout op € 1.250 — een
+toevoeging die tweeënhalf keer de bestelling kost, is geen toevoeging meer. De
+build valt om als dat weer gebeurt.
+
+**Bestaande tegoeden blijven staan.** Klanten die de € 1.250 al geboekt kregen,
+houden hem in `customer_credits`. Een toezegging intrekken omdat het aanbod
+veranderd is, is niet hoe dat werkt.
+
+**De before/after staat op 1:1.** `catalog-after` was al vierkant, `catalog-before`
+was 3:4, en op de homepage stond de vergelijking daarom in 3:4 — waardoor het
+eindresultaat, het beeld dat het hele argument moet maken, niet volledig in beeld
+stond. Er is nu een vierkante uitsnede van dezelfde telefoonfoto waarin het
+kledingstuk helemaal past, en de vier aanroepers hebben hun `objectPosition`-
+correctie niet meer nodig.
+
+**De proefvisual-balk is het sfeerbeeld geworden.** Volledig, en donker als het
+beeld zelf. Eerst stond er een lifestyle-productfoto in, en dat is het verkeerde
+soort beeld op 60 pixels hoog: een productfoto wordt daar een vlek. `brand-beam` —
+de limoen lichtbundel — is op elke maat herkenbaar als VISUAILS.
+
+**De beelden zijn nagelopen op centrering.** Over acht pagina's verliezen 53
+beelden een kwart of meer van hun kader aan `object-fit: cover`. Daarvan viel er
+precies één echt om: `lifestyle-phone-made-09` op /video stond half buiten beeld
+met twee derde lege bestrating ernaast, omdat een liggende foto in een staande
+strook staat en het onderwerp links zit. De rest is centraal gecomponeerd en
+overleeft de uitsnede. Het percentage is dus niet het signaal — waar het onderwerp
+staat, is dat wel.
+
+**En de timerbalk op de kaartrij heeft nooit gewerkt** — twee misgrepen uit de
+splitsing van 20 augustus, allebei zonder foutmelding. Zie de noten in HomeV2.astro.
+
+---
+
+## Wat er volgens de laatste controle nog écht ligt
+
+Op volgorde van wat het kost als het niet gebeurt.
+
+**Het abonnementstegoed is gebouwd maar nergens aangesloten.** Dit is één gat en
+geen vier: `verbruikToestaan()` en `verbruikBoeken()` in `subscription.js` zijn af
+en getoetst, maar hebben buiten de tests geen enkele aanroeper. Daardoor staan vier
+punten van §3 tegelijk stil — aftrekken bij het bestellen, bijbetalen boven het
+saldo, handmatig bijstellen in admin, en terugboeken bij annulering. Eén aanroep in
+de bestelstroom maakt ze alle vier levend.
+
+**Het testimonialblok op de homepage.** Het adminscherm is af — je kunt een
+aanbeveling goedkeuren — maar de homepage leest `order_feedback` nergens en zegt nog
+steeds "we hebben nog weinig reviews". Je keurt dus goed en er gebeurt niets.
+
+**De mailonderwerpen leiden nergens vandaan.** Vijftien plekken typen er zelf een.
+Dat is precies de drift die §1 wilde voorkomen, en het is de enige helft van dat
+punt die nog open staat — de `<title>` staat er bewust buiten.
+
+**De Nederlandse aanhef is in élke klantmail Engels.** `Hi ,` boven een Nederlandse
+tekst, op vijf plekken. Alleen de cron doet het goed.
+
+**Twee formulieren missen nog hun eigen foutmeldingen:** de merkmodel-brief en de
+wachtpagina's. `/contact` en `/nl/contact` hebben ze sinds vanmiddag wel.
+
+**De galerij is niet aangevuld.** De elf nieuwste merkbeelden op schijf staan er nul
+keer in.
+
+
+---
+
 ## Wat er op 23 augustus is gebouwd
 
 Na het nalopen hierboven zijn dertien punten opgepakt en afgevinkt. Ze staan elk
@@ -177,15 +254,22 @@ Elk punt hieronder is met bestandsverwijzingen bewezen, niet vermoed. Gesorteerd
 - [x] ~~**"De verlegging wordt achteraf op je factuur rechtgezet" is sinds migratie 0015 onwaar.** De verlegging wordt bij het afrekenen toegepast. Staat op /pricing, /how-it-works, /start, in de FAQ én in de bevestigingsmail. Een Duitse klant betaalt al 0% maar leest dat hij 21% betaalt en een correctie krijgt die niet komt.~~ — de belofte staat nergens meer in klantteksten — hij leeft alleen nog als commentaar dat uitlegt waarom hij weg is (`src/data/pricing.js:466`, `functions/api/order.js:2652`). /pricing, /how-it-works, /start, de FAQ (`src/data/faq.js:318` en `:503`) en de bevestigingsmail zeggen nu dat de 0% bij het afrekenen gebeurt.
 - [x] ~~**De tevredenheidsvraag wordt nooit gesteld.**~~ — gebouwd 9 augustus 2026, fase 1 van de specificatie (§2 stap 1 en 2). Zie "Reviews" hieronder.
 - [x] ~~**Een order die de btw-poort tegenhoudt komt er niet meer uit.** Geen betaallink, en er is geen adminscherm dat de beoordeling afrondt: `orders.review_state` wordt één keer geschreven en nergens gelezen. Een klant buiten de EU krijgt een bevestiging zonder bedrag en zonder betaalknop.~~ — `/admin/vat` → `renderVatReview()` (`src/lib/admin.js:5311`) toont alles op `review_state = 'pending'`, en `handleVatDecision()` (`:5417`) sluit af met `approve`, `charge_vat` of `reject`.
-- [ ] 🟡 **De €250 merkmodel-credit wordt niet verrekend.** Alle treffers zijn presentatie in .astro-bestanden; `quote.js` kent het begrip niet en er is geen kolom om de teller bij te houden. Een geldbelofte met een rekensom die de pagina zelf uitschrijft.
-  — *Deels, nagekeken 23 augustus:* het bedrag staat vast en wordt gepubliceerd (`AMOUNT.brandModelCredit: 250` in `src/data/pricing.js:607`, met een controle dat 5 × €250 de setup van €1.250 precies aflost). `src/lib/quote.js` kent het begrip nog steeds niet, en er is geen kolom om de teller bij te houden.
-- [ ] 🟡 **"Downloads per kanaal gesneden" bestaat niet.** Eén rij in `files` is één bestand; `preview_key` is expliciet géén uitsnede. De klant downloadt wat de studio uploadde en schaalt alles zelf bij — precies het werk waarvan /portal zegt dat het niet meer nodig is.
+- [x] ~~🟡 **De €250 merkmodel-credit wordt niet verrekend.** Alle treffers zijn presentatie in .astro-bestanden; `quote.js` kent het begrip niet en er is geen kolom om de teller bij te houden. Een geldbelofte met een rekensom die de pagina zelf uitschrijft.~~
+  — *Af — en ook hier was mijn noot fout.* Ik zocht in `quote.js` naar een verrekening en naar een tellerkolom, en vond ze niet. Ze horen daar ook niet te zijn: `boekMerkmodelTegoed()` in `src/lib/admin.js:4437` boekt de volledige € 1.250 in het grootboek op het moment dat het eerste merkmodel ontstaat — vanuit beide plekken waar dat kan — met de regel zelf in de reden. Getoetst in `tests/nazicht.test.mjs`, dat ook de twee fouten vastpint die hier ooit in zaten: euro's die als centen werden geboekt, en een teller die na één verwijderd model opnieuw uitkeerde.
+  Dat er géén automatische verrekening bij het afrekenen is, is jouw besluit en staat zo in `schema.sql` opgeschreven: *"alleen een ledger, geen verrekening"*, want die rekent stil het verkeerde bedrag af. De belofte hangt dus niet meer van je geheugen af — het tegoed staat op de klantpagina zodra het verdiend is.
+- [x] ~~🟡 **"Downloads per kanaal gesneden" bestaat niet.** Eén rij in `files` is één bestand; `preview_key` is expliciet géén uitsnede. De klant downloadt wat de studio uploadde en schaalt alles zelf bij — precies het werk waarvan /portal zegt dat het niet meer nodig is.~~
+  — *De belofte is van de site af, 23 augustus.* Er wordt inderdaad nergens gesneden, en het schema sluit die vorm bij naam uit. De claim stond op de homepage en op /how-it-works, in beide talen, en is vervangen door wat er wél gebeurt: je kiest de beeldverhouding bij het bestellen — één voor een hele catalogbestelling, per beeld bij lifestyle — en krijgt elk beeld in alle drie de formaten. De keuze valt vóór de productie in plaats van erna, en dát is precies waarom er niets te snijden valt.
+  Snijden per kanaal alsnog bouwen is een aparte beslissing, geen reparatie.
 - [x] ~~**De Engelse /ai-act-lead spreekt §6 van dezelfde pagina tegen.** "We say so on the file" tegenover "We add nothing […] do not rely on a file identifying itself". De Nederlandse lead klopt. Dit is de pagina waarmee je je zorgvuldigheid verkoopt.~~ — er blijkt geen aparte /ai-act-lead-pagina te bestaan — het ging om EN §6 tegenover NL §6 in `src/components/AiActPage.astro`. Die zeggen nu hetzelfde (`:181` en `:268`), en `tests/promises.test.mjs:345` houdt de twee talen tegen elkaar.
 - [x] ~~**Niet-betaalde leverdata worden nooit vrijgegeven.** `window_expires_at` wordt gezet, maar `functions/api/capacity.js` filtert er niet op. Wie niet betaalt houdt zijn week voor altijd bezet, en de volgende klant ziet "vol" voor een vrije week.~~ — `functions/api/capacity.js:164` sluit onbetaalde reserveringen met een verlopen `window_expires_at` uit de bezette dagen, dus de week komt vrij zonder op de nachtelijke taak te wachten.
-- [ ] 🟡 **"Mail ons en we sturen een nieuwe link" kan niemand uitvoeren.** `freshPortalLink()` bestaat, maar beide aanroepen zitten achter een poort die nieuwe bestanden vereist. Na 90 dagen — precies wanneer de klant volgens de voorwaarden mag mailen — is er geen route.
-  — *Deels, nagekeken 23 augustus:* `freshPortalLink()` bestaat en trekt het oude token netjes in binnen één batch (`src/lib/admin.js:2549`), maar er is nog geen knop om hem los aan te roepen: de herleveringsknop stopt bij `if (!tally.files) return` (`:2871`). De knop op de klantpagina (`:4132`) stuurt een account-inloglink, geen portaaltoken.
-- [ ] 🟡 **Geen aftelling bij de leverdatum**, terwijl de homepage die beschrijft. En /portal noemt zes statussen; de code heeft er vijf, waarvan "Revision" en "Closed" niet als status bestaan.
-- [ ] 🟢 **/demo belooft te weinig**: zegt dat per beeld goedkeuren vanaf 10 producten geldt, terwijl elke betaalde bestelling het sinds 7 augustus mag.
+- [x] ~~🟡 **"Mail ons en we sturen een nieuwe link" kan niemand uitvoeren.** `freshPortalLink()` bestaat, maar beide aanroepen zitten achter een poort die nieuwe bestanden vereist. Na 90 dagen — precies wanneer de klant volgens de voorwaarden mag mailen — is er geen route.~~
+  — *Gebouwd 23 augustus.* `handleFreshLink()` op `/admin/orders/:id/fresh-link`, met de knop op de bestandenpagina. Hij werkt juist wél als er niets aan te kondigen valt — dat was het hele probleem: de herleveringsknop stopt bij "niets nieuws", en een klant die na vier maanden mailt heeft per definitie niets nieuws.
+  **En hij doet niet alsof er iets nieuws is.** `redelivery_count` gaat niet omhoog, niets wordt als aangekondigd gestempeld, en de mail zegt letterlijk dat er niets aan je beelden is veranderd. Dat onderscheid is de reden dat het een eigen route is: een mail die "nieuwe beelden" zegt terwijl er niets nieuws is, is het soort bericht dat een klant één keer opent en daarna niet meer vertrouwt. De oude link wordt ingetrokken en dát staat er wel bij. Elf toetsen in `tests/admin.test.mjs` §5.
+- [x] ~~🟡 **Geen aftelling bij de leverdatum**, terwijl de homepage die beschrijft. En /portal noemt zes statussen; de code heeft er vijf, waarvan "Revision" en "Closed" niet als status bestaan.~~
+  — *Allebei rechtgezet op 23 augustus, en de aftelling is niet gebouwd.* Dat laatste is met opzet: de aftelling is op drie plekken in de code uitdrukkelijk afgewezen (`capacity.js:68`, `portal.js:992`, `account.js:5634` — *"de klant krijgt de kalenderdata, nooit een aftelling"*). Het portaal drukt een datumbereik af, en dat is wat de homepage nu ook zegt.
+  De zes statussen zijn vier stappen plus twee dingen die onderweg kunnen gebeuren. "Revisie" en "Afgesloten" zijn echt — alleen komen ze ergens anders vandaan: een revisie is een toestand van één BEELD, en afgesloten is `orders.closed_at`. Dat verschil staat er nu bij, en het is niet cosmetisch: een klant die leest dat een revisie per beeld loopt, snapt meteen waarom de rest van zijn bestelling doorgaat.
+- [x] ~~🟢 **/demo belooft te weinig**: zegt dat per beeld goedkeuren vanaf 10 producten geldt, terwijl elke betaalde bestelling het sinds 7 augustus mag.~~
+  — *Rechtgezet 23 augustus.* `canReviewOrder()` kijkt niet naar een aantal: hij weigert alleen de proefvisual en een al afgesloten bestelling. /demo zei dat je onder tien producten "een downloadlink" krijgt in plaats van het scherm waar die hele pagina over gaat — en dat is precies het merk dat je binnen wilt halen, drie producten aan het proberen. De drempel blijft staan waar hij wél geldt: de leverdatum.
 
 Niet vast te stellen uit code, wel na te gaan: de verwerkersovereenkomsten met Resend, Mollie, Cloudflare en de modelaanbieder (/privacy §5 en §8 beloven die), en hoe de ICP-opgaaf feitelijk gedaan wordt — `icp_reported_at` en `needsIcp()` bestaan, maar er wordt nooit naar geschreven.
 
@@ -193,7 +277,8 @@ Niet vast te stellen uit code, wel na te gaan: de verwerkersovereenkomsten met R
   — *Niet uit code vast te stellen:* een jurist die de teksten leest, laat geen sporen na in de repo.
 - [x] ~~**/terms §9 spreekt zichzelf en de site tegen over betalen.** De voorwaarden zeggen "kleine bestellingen en proefvisuals worden bij het afrekenen volledig betaald" en "een gereserveerde bestelling in twee delen: 50% bij bevestiging, 50% voor oplevering". De bestelstroom, /pricing, /faq en /how-it-works zeggen alle vier iets anders: kleine bestellingen op levering, gereserveerde bestellingen ineens vóór productie, met zeven dagen betaaltermijn. Er bestaat nergens een 50/50-splitsing. Welke kant waar is, is een bedrijfsbeslissing — niet iets om in stilte gelijk te trekken.~~ — §9 leest nu “je betaalt dat bedrag in één keer via één betaallink — er zijn geen termijnen” (`src/pages/terms.astro:236`, NL `:168`). De 50/50-tekst staat alleen nog in het wijzigingscommentaar.
 - [ ] 🟡 **/terms §4 noemt video, maandplannen en merkmodel "op aanvraag geprijsd"** terwijl /pricing, /video, /custom-models en de JSON-LD €69 per clip, €390/€790/€1.690 per maand en €1.250 setup als vaste prijzen publiceren.
-  — *Af sinds 23 augustus.* §4 las de prijzen van catalog en lifestyle al uit de prijsladder. De regel “video, custom work en maandplannen — individueel geoffreerd” is nu gesplitst: video noemt het vaste cliptarief uit `AMOUNT.video`, de maandplannen noemen hun van–tot uit `monthlyCents()`, en alleen maatwerk staat er nog als geoffreerd — want dát klopt wel. Beide talen, en beide lezen dezelfde bron als de pagina's die de prijzen publiceren.
+  — *Af sinds 23 augustus, in twee rondes.* §4 las de prijzen van catalog en lifestyle al uit de prijsladder. De regel “video, custom work en maandplannen — individueel geoffreerd” is gesplitst: video noemt het vaste cliptarief uit `AMOUNT.video`, de maandplannen hun van–tot uit `monthlyCents()`, en alleen maatwerk staat er nog als geoffreerd.
+  **De derde tegenspraak zat er 's avonds nog in en is nu ook weg:** §4 zei dat het merkmodel *"vooraf geoffreerd"* wordt, terwijl er een vaste prijs voor gepubliceerd stond op /pricing, /custom-models, /start, de homepage én in de JSON-LD. Precies dezelfde fout als de twee die ik 's middags repareerde, één regel lager. Hij leest nu `AMOUNT.brandModel`.
 - [ ] 🔴 `npm run build` draaien en deployen. Alles van vandaag staat nog alleen op je schijf: het nieuwe logo in de topbar, de favicon, het mail-briefhoofd, en de drie servicepagina's
   — *Niet uit code vast te stellen:* `npm run build` en deployen zijn handelingen op jouw machine.
 - [ ] 🔴 Na de deploy: `https://visuails.com/favicon.ico` en `/img/mail/mark-groen.png` openen in je browser om te zien dat ze laden
@@ -468,3 +553,90 @@ Alles op deze lijst is meer dan een dag. Als je vandaag echt wilt afronden in pl
 2. Eén besluit nemen uit het rijtje hierboven — het liefst Mollie of Stripe, want daar hangt het meeste aan
 3. Videovoorbeelden maken (§7) — het grootste gat, en het is maakwerk in plaats van denkwerk
 4. Eén tekstronde op één pagina, met het tone-of-voice-document als eerste stap
+
+---
+
+## De nacht van 23 op 24 augustus — het merkmodel werd een product
+
+Alles hieronder is gebouwd, getest en in de map van Lucas gezet. De volledige
+keten was groen: `npm test` (55 suites), `npm run audit`, `npx astro build`.
+
+### Wat er af is
+
+- [x] ~~`/start/brand-model` heeft een afrekenstap~~
+  — De pagina publiceerde € 450 in de voorwaarden terwijl het formulier eronder een briefing zonder knop was. Het is nu de tweesporen-bestelstroom uit `MERKMODEL-ONTWERP.md` §5: stap 1 kiest de route (zelf beschrijven of aan ons overlaten), stap 2 vraagt het merk uit, stap 3 vertakt (vijf vragen of één), stap 4 is het factuurblok en stap 5 rekent af. Zonder JavaScript staat alles onder elkaar en werkt het formulier gewoon.
+- [x] ~~Het merkmodel is een eigen dienst met een eigen bedrag~~
+  — `service=brand-model` in `ORDER_SERVICES` en in `FLOWS`, `quoteBrandModel()` in `quote.js` (netto € 450, btw eróver — niet eruit, zoals bij de proefvisual), `FIXED_PRICE_SERVICES` zodat `isPayableService()` hem kent zonder dat `quoteOrder()` op de ladder struikelt, en een eigen regel in `paymentDescription()` zodat er geen “1 producten, undefined” op een bankafschrift komt.
+- [x] ~~Na het betalen gaat de klant naar de kassa en niet naar een bedankpagina~~
+  — De grote betaalpoort in `order.js` maakt de betaling (met alle controles die daaraan hangen: bestaat de bestelling, is de btw beslist, staat hij niet op de beoordelingslijst) en het merkmodel wordt daarna doorgestuurd naar Mollie. Is er geen link, dan is de bedankpagina de terugval — de bestelling is dan gewoon geplaatst.
+- [x] ~~Een eigen herroepingsverklaring~~
+  — v1 eindigt op “uit foto's die ik aanlever” en bij een merkmodel levert de klant niets aan. `CONSENT_VERSION_BRAND_MODEL` is een nieuwe versie met dezelfde twee dragende elementen en een kloppende laatste zin. De oude versie blijft opzoekbaar.
+- [x] ~~Het uniciteitslogboek per merkmodel~~
+  — Migratie `0033-merkmodel-controle.sql` zet vijf kolommen op `orders`, `modelChecks.js` draagt de woordenschat (`UITKOMSTEN`, `merkmodelControleCompleet()`), en `/admin/orders/:id/model-check` legt vast wanneer, met welke zoekmachines, met welke uitslag en door wie. Het scherm **weigert** een halve vastlegging — het enige adminscherm in dat bestand dat dat doet, en de reden staat erbij: dit is bewijs en geen notitie. Elke vastlegging komt ook op de tijdlijn die de klant ziet.
+- [x] ~~De twee formulieren zonder `data-melding`~~
+  — `BrandModelBrief.astro` (nu op elk verplicht veld) en `order/HoldingPage.astro` (naam, merk, e-mail, in beide talen).
+- [x] ~~De stale € 1.250-tekst~~
+  — Weg uit de kop van `BrandModelBrief.astro` én uit twee dode blokken in `HoldingPage.astro` die nog zeiden dat het bedrag “verrekend wordt met je eerste bestellingen” en dat er “hier niet af te rekenen” valt.
+- [x] ~~De trechter meet het merkmodel mee~~
+  — Vijf stappen op één pagina zijn vier stappen die Web Analytics niet ziet. Het formulier meldt elke stap aan `/api/step`, één keer per stap per bezoek.
+
+### Drie dingen die bij het nakijken zijn gevonden
+
+- [x] ~~De bedankpagina liet na een geslaagde betaling niets zien~~
+  — `initThankYou()` las alleen `?ref=`, en Mollie stuurt terug naar `?paid=`. Niemand las die parameter. Gevolg: wie betaald had kwam terug op een pagina met een lege, verborgen samenvatting — geen kenmerk, geen bevestiging. Dat gold voor **elke** betaalde bestelling, niet alleen voor het merkmodel. De pagina leest `paid` nu ook, en zet er één zin bij in plaats van een betaalknop.
+- [x] ~~De betaalknop op de bedankpagina was nooit opgemaakt~~
+  — `.ty-pay-cta` stond als scoped selector in `ThankYouPage.astro`, maar het element wordt door `interactions.js` met `createElement()` gemaakt en draagt het `data-astro-cid`-attribuut dus niet. Gemeten in de gebouwde CSS. Nu `:global()`, met de uitleg erbij.
+- [x] ~~`HoldingPage` droeg twee soorten die niemand meer rendert~~
+  — `brand-model` (heeft een eigen pagina) en `plan` (`/start/plan` is sinds 17 augustus `PlanPicker`). Allebei stonden ze vol met tekst die niet meer klopte — het plan-blok zei letterlijk dat je een abonnement niet zelf kunt afsluiten.
+
+### Wat er van het merkmodel nog ligt
+
+- [ ] De klant ziet het uniciteitslogboek nog niet
+  — Het wordt vastgelegd en het komt op de tijdlijn, maar er staat geen apart blok in het portaal dat zegt “gecontroleerd op *datum* met *n* zoekmachines, geen treffer”. Dat is de sterkste vorm van de garantie: niet dat wij het kunnen laten zien, maar dat het er staat.
+- [ ] `src/data/billing.js` en de `FORM`-tabel van `OrderFlow.astro` dragen dezelfde vijftien labels
+  — Dezelfde wóórden op twee plekken, nul régels op twee plekken (de voorwaarde wanneer een btw-nummer verplicht is, komt bij beide uit `business.js` en `vat.js`). Bewust zo gelaten: OrderFlow ombouwen op de dag dat er een nieuw betaalpad bij komt, is twee veranderingen in één pad. De kop van `billing.js` zegt hoe je ze later samenvoegt.
+- [ ] De tweesporen-vorm geldt ook voor custom lifestyle en custom video
+  — `MERKMODEL-ONTWERP.md` §6 beschrijft hem, inclusief de zichtbare haalbaarheidscheck. `/start/custom-look` is nog een `HoldingPage`.
+
+---
+
+## 24 augustus — de ronde terwijl Lucas weg was
+
+Alles hieronder is gebouwd, getest en overgezet. `npm test` (56 suites),
+`npm run audit` en `npx astro build` alle drie schoon.
+
+### Wat er af is
+
+- [x] ~~De aanhef in klantmails stond hardgecodeerd in het Engels~~
+  — Vier plekken (`order.js` en drie in `admin.js`) hadden ``const hi = order.name ? `Hi ${esc(order.name)},` : 'Hi,';`` met één regel erbóven de vlag `nl` waar de héle rest van diezelfde brief op splitste. Elke Nederlandse klant kreeg dus "Hi Mara," boven een verder volledig Nederlandse mail — bij zijn bestelbevestiging, zijn levering, een herlevering en een nieuwe portaallink. De vijfde klantmail (`mailLegeWachtrij` in cron) deed het wél goed, wat het niet minder maar juist meer een fout maakt. Er is nu één `greeting(name, lang)` in `mailTemplate.js`, met de `esc()` erin zodat een aanroeper hem niet kan vergeten, en `tests/aanhef.test.mjs` rendert alle vier de mails in beide talen.
+- [x] ~~Jargon uit STIJL.md §3 op de klantzijde~~
+  — Gemeten op de *zichtbare* tekst van de gebouwde pagina's (tekstknopen, geen commentaar, scripts of attributen): 41 treffers in het Nederlands. Er staan er nu 22. Weg zijn: `prijsladder`, `venster` en `queue` uit het video-antwoord in `faq.js` (beide talen), `ladder` uit de voorbehoudsregel boven de tredevergelijking (beide talen), `Queue`/`Wachtrij` als rijlabel in `TIER_ROWS`, `Standard queue` als celwaarde aan de Engelse kant, `ladder` en `scope` op `/terms` (beide talen), `ladder` op `/compare` (beide talen), en `scope` + `deliverables` uit de campagnestap in `videoStyles.nl.js`. Aan de Engelse kant staat nu geen enkele treffer meer.
+- [x] ~~Mijn eigen overtreding van gisteren~~
+  — De herroepingsverklaring voor het merkmodel zei "op mijn eigen briefing ontworpen" / "designed to my own brief". Uitgerekend in een verklaring die de klant moet begrijpen vóórdat hij hem aanvinkt. In plaats bijgesteld en niet als v2, met de reden erbij: die versie is dezelfde dag gemaakt, nooit gedeployed en staat op geen enkele bestelling. Vanaf de eerste deploy geldt de gewone regel weer.
+- [x] ~~Twee celwaarden die in EN en NL iets anders beloofden~~
+  — De tredetabel zei Nederlands "Normale doorlooptijd, geen vaste leverdatum" en Engels "Standard queue, no fixed delivery date". Twee cellen naast elkaar in een tabel die er juist is om het verschil zichtbaar te maken.
+- [x] ~~`ARCHITECTURE.md` §4.4 en §13 zeiden dat migratie 0024 ontbrak~~
+  — Het bestand staat er (6.120 bytes) en `npm run migrate` meldt zelf `overgeslagen — orders.payer_hash bestaat al`. De kolom is er dus en de "één proefvisual per betaler"-controle draait. De eerste helft van dezelfde zin — er is geen register van uitgevoerde migraties — blijft staan, en dat is meteen de reden dat zo'n bewering zo lang onweersproken kon blijven.
+
+### Vier toetsen die op een woord stonden in plaats van op een belofte
+
+`tests/request-flow.test.mjs` viel om op de jargonronde: vier `ok()`-regels pinden
+de spelling van een zin waarvan de belófte niet veranderd was. Precies de fout die
+de noot erbóven al beschrijft, één laag dieper — de toets was verhuisd van het
+bestand naar het antwoord, maar bleef de spelling van dat antwoord vastpinnen.
+Ze toetsen nu het feit: dat een clip geen vaste leverdatum krijgt, en dat het
+voorbehoud noemt welke producten de twee kolommen beschrijven.
+
+### Drie punten die ik heb uitgezocht en NIET gebouwd
+
+- [ ] **De tegoedlaag — en mijn eerdere antwoord hierover was fout.**
+  Ik schreef dat `verbruikBoeken()` "één aanroep in de bestelstroom" verwijderd is. Dat klopt niet. `/api/order` is anoniem: de sessiecookie staat op `Path=/account` (`account.js:3952`, met de reden erbij — "a narrower path is a smaller surface") en wordt dus nooit naar `/api/order` gestuurd. Saldo afschrijven op een getypt e-mailadres zou iedereen het saldo van een ander laten uitgeven. `verbruikToestaan`, `verbruikBoeken`, `queueTake` en `queueLinkOrder` hebben alle vier geen aanroeper omdat ze bij één en dezelfde ontbrekende functie horen: **een wachtrij-item van een abonnee omzetten in een bestelling.** De plek daarvoor is een adminhandeling ("pak de bovenste N van deze abonnee en maak er een bestelling van"), waar de vier functies in die volgorde achter elkaar staan. Dat is een nieuw geldpad en geen ontbrekende regel.
+- [ ] **Reviews op de homepage.** De regel "We hebben nog weinig reviews" is op dit moment wáár, en een leeg blok eronder zou slechter zijn dan de regel. Belangrijker: `ARCHITECTURE.md` §1 verbiedt met zoveel woorden client-side ophalen van paginainhoud, dus dit blok kan niet met een fetch. De vorm die wél past is een bouwstapscript dat de goedgekeurde set uit D1 in `src/data/` schrijft (zoals `visual/referentie.json` er ook staat), dat jij lokaal draait en meecommit. De index `idx_feedback_live` in migratie 0020 staat er al voor klaar.
+- [ ] **De galerij bijvullen.** De elf `brand-*.webp` worden alle elf gebruikt (HomeV2, StudioPage, Layout) — alleen niet in `gallery.astro`. Ze erin zetten vraagt drie keuzes die van jou zijn: een nieuwe filtercategorie naast campaign/dunes/flash/glow/phone-made, in twee talen, en nieuwe `-w380`/`-w760`-derivaten. Zonder die derivaten serveert de galerij ze op volle grootte in een cel van 375 px — precies het gemeten probleem van 3,12 MB dat daar is opgelost.
+
+### En wat er van de jargonronde nog ligt
+
+22 treffers, allemaal Nederlands, in twee hoopjes:
+
+- **`/studio`, 13× `venster`.** Die pagina staat in de sitemap en in de voettekst als "Hoe een bestelling draait", dus §3 geldt er. Maar het is de pagina die uitlegt hóé de agenda werkt, en daar is "venster" het onderwerp. Dertien vervangingen op één pagina is een tekstronde, met precies de valkuil die §3 zelf noemt: "het venster" wordt "de leverdatum" en dan moeten het lidwoord en het verwijswoord mee.
+- **`briefing`, 9× op `/terms`, `/privacy`, `/data-processing-agreement` en `/contact`.** Op de juridische pagina's is het bijna een gedefinieerde term. Dat is jouw en de jurist zijn keuze, niet de mijne.

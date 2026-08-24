@@ -75,6 +75,36 @@ export function esc(s) {
   ));
 }
 
+/**
+ * DE AANHEF, EN WAAROM DIE HIER STAAT EN NIET VIER KEER APART.
+ *
+ * Tot 24 augustus 2026 stond op vier plekken deze regel:
+ *
+ *   const hi = order.name ? `Hi ${esc(order.name)},` : 'Hi,';
+ *
+ * met daar één regel bóven `const nl = order.lang === 'nl';` — de vlag waar de
+ * hele rest van diezelfde mail op splitst. Elke Nederlandse klant kreeg dus
+ * "Hi Mara," boven een verder volledig Nederlandse brief: de bevestiging van een
+ * bestelling, de levering, de herlevering en de nieuwe portaallink. Vier van de
+ * vijf klantmails van dit project, en de vijfde (mailLegeWachtrij in cron) deed
+ * het wél goed — wat het niet minder maar juist meer een fout maakt, want de
+ * goede versie stond er al.
+ *
+ * Waarom nu hier: vier kopieën van één regel zijn vier kansen om hem opnieuw
+ * verkeerd te krijgen, en de volgende mail die erbij komt is de vijfde. De
+ * `esc()` zit erin en niet bij de aanroeper, om dezelfde reden — een aanroeper
+ * die hem vergeet, zet de naam van de klant ongefilterd in de HTML.
+ *
+ * GEEN NAAM IS EEN GELDIG GEVAL. Een proefvisual vraagt niet altijd om een naam,
+ * en "Hoi ," met een spatie voor de komma leest als een sjabloon dat is
+ * omgevallen. Dan alleen de aanhef.
+ */
+export const greeting = (name, lang = 'en') => {
+  const hoi = lang === 'nl' ? 'Hoi' : 'Hi';
+  const naam = String(name ?? '').trim();
+  return naam ? `${hoi} ${esc(naam)},` : `${hoi},`;
+};
+
 /* ── blocks ──────────────────────────────────────────────────────────────── */
 
 /** A paragraph of body copy. */

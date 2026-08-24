@@ -587,7 +587,25 @@ console.log('\nen er staat geen modelnaam op een juridische pagina');
  */
 console.log('\nde cookieverklaring noemt elke cookie die de code zet');
 {
-  const bronnen = ['src/lib/account.js', 'src/lib/admin.js', 'src/lib/portal.js', 'src/scripts/consent.js'];
+  /* ── src/lib/admin.js STAAT HIER MET OPZET NIET BIJ — 24 augustus 2026 ────
+     Die zet er precies één: `vis_admin`, en die komt per definitie nooit op het
+     apparaat van een bezoeker terecht. Hem tóch op de cookieverklaring zetten
+     was geen extra openheid maar een gratis aanwijzing dat er een adminkant is
+     en hoe het cookie ervan heet — zie de noot boven src/pages/cookie-policy.astro.
+
+     De uitzondering is dus BEPERKT TOT DIE ENE NAAM, en dat wordt hieronder
+     apart bewezen. Zonder die grendel zou een tweede admincookie ongemerkt
+     buiten de verklaring vallen, en dan is dit geen weloverwogen uitzondering
+     meer maar een gat. */
+  {
+    const adminNamen = new Set();
+    const adminSrc = read('src/lib/admin.js');
+    for (const m of adminSrc.matchAll(/(vis_[a-z_]+)=[^;'"`\s]*;\s*(Max-Age|Path|Expires|HttpOnly)/gi)) adminNamen.add(m[1]);
+    for (const m of adminSrc.matchAll(/['"`](vis_[a-z_]+)['"`]/g)) adminNamen.add(m[1]);
+    ok('admin.js zet nog steeds alleen vis_admin', [...adminNamen].sort().join(' '), 'vis_admin');
+  }
+
+  const bronnen = ['src/lib/account.js', 'src/lib/portal.js', 'src/scripts/consent.js'];
   const namen = new Set();
   for (const b of bronnen) {
     const src = read(b);

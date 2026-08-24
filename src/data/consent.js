@@ -48,6 +48,41 @@
 /** The version stored on the order. Add a new one; never edit an old one. */
 export const CONSENT_VERSION = 'withdrawal-v1-2026-08';
 
+/*
+ * ── EEN TWEEDE VERSIE, VOOR HET MERKMODEL — 23 AUGUSTUS 2026 ────────────────
+ *
+ * Niet omdat de wet anders is, maar omdat de ZIN anders is. v1 eindigt met "De
+ * visuals worden op mijn eigen specificatie gemaakt uit foto's die ik aanlever",
+ * en dat is bij een merkmodel niet waar: de klant levert geen foto's aan, hij
+ * beschrijft een gezicht of laat dat aan ons over. Een verklaring ondertekenen
+ * die iets zegt wat feitelijk niet gebeurd is, is precies het soort bewijsstuk
+ * dat in een geschil tegen je werkt in plaats van vóór je.
+ *
+ * De twee dragende elementen blijven woord voor woord staan — uitdrukkelijk
+ * vragen om te beginnen, en begrijpen dat het herroepingsrecht daarmee vervalt —
+ * want dát is wat art. 6:230p sub f verlangt en niet de zin erachter.
+ *
+ * EN HET IS EEN NIEUWE VERSIE EN GEEN AANPASSING. De kop van dit bestand zegt
+ * waarom: een bestelling van vorige maand moet kunnen laten zien waar de klant
+ * toen ja tegen zei. Beide ids blijven bestaan, consentText() kent ze allebei,
+ * en welke er getoond wordt hangt af van het formulier waar de klant op stond.
+ *
+ * ── DE TEKST HIERONDER IS OP 24 AUGUSTUS NOG ÉÉN KEER BIJGESTELD ───────────
+ *
+ * Er stond "op mijn eigen briefing ontworpen" / "designed to my own brief", en
+ * "briefing" staat in STIJL.md §3 op de lijst met woorden die nooit op de
+ * klantzijde horen. Uitgerekend in een verklaring die de klant moet BEGRIJPEN
+ * voordat hij hem aanvinkt, is dat het verkeerde woord.
+ *
+ * Dat is IN PLAATS bijgesteld en niet als v2, en dat is geen uitzondering op de
+ * regel hierboven maar de regel zelf: die beschermt tekst waar al een
+ * bestelling naar verwijst. Deze versie is dezelfde dag gemaakt, is nooit
+ * gedeployed en staat op geen enkele bestelling. Een v2 aanmaken zou een dood id
+ * achterlaten dat niemand ooit heeft gezien. Vanaf de eerste deploy geldt de
+ * gewone regel weer: toevoegen, nooit wijzigen.
+ */
+export const CONSENT_VERSION_BRAND_MODEL = 'withdrawal-brandmodel-v1-2026-08';
+
 export const CONSENT_TEXT = {
   'withdrawal-v1-2026-08': {
     en: 'I expressly ask VISUAILS to begin work on this order now, and I understand '
@@ -57,6 +92,14 @@ export const CONSENT_TEXT = {
       + 'begrijp dat ik mijn herroepingsrecht verlies zodra de bestelling geleverd is. '
       + 'De visuals worden op mijn eigen specificatie gemaakt uit foto’s die ik aanlever.',
   },
+  'withdrawal-brandmodel-v1-2026-08': {
+    en: 'I expressly ask VISUAILS to begin work on this Brand Model now, and I '
+      + 'understand that once it has been delivered I lose my right of withdrawal. '
+      + 'The model is designed from what I described myself and used for no other brand.',
+    nl: 'Ik vraag VISUAILS uitdrukkelijk om nu met dit merkmodel te beginnen, en ik '
+      + 'begrijp dat ik mijn herroepingsrecht verlies zodra het geleverd is. Het '
+      + 'model wordt ontworpen op wat ik zelf heb opgegeven en bij geen ander merk gebruikt.',
+  },
 };
 
 /** The wording for a stored version id, or null if we no longer know it. */
@@ -65,7 +108,12 @@ export function consentText(version, lang = 'en') {
   return entry ? entry[lang === 'nl' ? 'nl' : 'en'] : null;
 }
 
-/** What the form shows today. */
+/** What the order form shows today. */
 export function currentConsent(lang = 'en') {
   return consentText(CONSENT_VERSION, lang);
+}
+
+/** What the Brand Model form shows today. */
+export function currentBrandModelConsent(lang = 'en') {
+  return consentText(CONSENT_VERSION_BRAND_MODEL, lang);
 }

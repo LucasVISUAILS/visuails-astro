@@ -238,7 +238,11 @@ console.log('\nde afspraken tussen bestanden');
   const services = setOf(order, 'ORDER_SERVICES');
   ok('FLOWS is te lezen uit step.js', typeof flows === 'string' && flows.length > 0, true, flows);
   ok('ORDER_SERVICES is te lezen uit order.js', typeof services === 'string' && services.length > 0, true, services);
-  ok('en het zijn er zes', (flows || '').split(',').length, 6, flows);
+  /* Zeven sinds 23 augustus 2026: 'brand-model' erbij, omdat het merkmodel een
+     eigen dienst met een eigen bedrag is geworden. Het getal staat er nog steeds
+     met de hand bij en dat is de bedoeling — het dwingt af dat wie een dienst
+     toevoegt, langs deze toets komt en dus ziet dat er twee lijsten zijn. */
+  ok('en het zijn er zeven', (flows || '').split(',').length, 7, flows);
   ok('en ze zijn dezelfde verzameling', flows, services);
 
   /* De meting hangt aan show() en aan niets anders. Staat de aanroep er niet meer, dan

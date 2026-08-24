@@ -46,7 +46,7 @@
 // in English on a Dutch page.
 //
 // THIRD, THE CONSTRAINT THAT OUTRANKS EVERYTHING ELSE HERE: the unattended
-// column's timing row reads "Typically 2–4 working days" and its queue row
+// column's timing row reads "Estimated delivery: 2–4 working days" and its queue row
 // reads "Standard queue, no fixed delivery date". It never shows a date, and
 // there is no prop on this component that could make it show one. Section 13
 // calls that "the single most important constraint in this section", and the
@@ -123,7 +123,7 @@ const t = lang === 'nl'
       pNote: `From ${WINDOW_THRESHOLD} products we hold a delivery date for the order and confirm it in writing; below that count the normal turnaround applies. That is also the count at which the rate per product drops a step, so there is one line to cross rather than two. Both run through the same production and the same check.`,
       pTerm: 'service level',
       cta0: 'Start an order',
-      cta1: 'See the price per product',
+      cta1: 'See pricing per product',
     };
 
 // The row labels are NOT typed in `t` above with the rest of the copy. They

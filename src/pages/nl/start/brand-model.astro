@@ -1,15 +1,15 @@
 ---
-// VISUAILS — /nl/start/brand-model.astro. The Brand Model brief.
+// VISUAILS — /nl/start/brand-model.astro. Een merkmodel bestellen.
 //
-// This was a HoldingPage saying "no checkout yet". It is a real order now, and
-// the reason it is a BRIEF rather than a checkout is Lucas's own: a Brand Model
-// is commissioned, not configured, so the first step is eight questions and the
-// second is a conversation. The body lives in BrandModelBrief.astro so the two
-// locales cannot drift; only the meta differs here.
+// Dit was een HoldingPage, daarna een briefing zonder bedrag, en sinds
+// 23 augustus 2026 een bestelling met één bedrag en een afrekenstap. De inhoud
+// staat in BrandModelBrief.astro zodat de twee talen niet uit elkaar kunnen
+// lopen; alleen de meta verschilt hier. Zie MERKMODEL-ONTWERP.md voor het
+// besluit en de kop van dat component voor de vorm.
 import Layout from '../../../layouts/Layout.astro';
 import BrandModelBrief from '../../../components/BrandModelBrief.astro';
 ---
 
-<Layout title="Een merkmodel aanvragen — VISUAILS" description="Eén gezicht, alleen voor jou. Het begint met een paar korte vragen en een gesprek over wie het moet dragen — niet met een afrekenknop.">
+<Layout title="Een merkmodel bestellen — VISUAILS" description="Eén gezicht, één keer ontworpen voor jouw merk en nergens anders gebruikt. Eén bedrag, en twee manieren: beschrijf het zelf, of laat ons het bedenken.">
   <BrandModelBrief lang="nl" />
 </Layout>

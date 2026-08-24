@@ -76,7 +76,7 @@ import {
   AMOUNT, TEST_SAMPLE, perProduct,
   LADDER, ladderRate,
   plans, PLAN_AMOUNT,
-  BRAND_MODEL_CREDIT_DROPS, euro,
+  euro,
 } from './pricing.js';
 import { pricingFaqs, faqPageItems, serviceFaqs } from './faq.js';
 import { WHATSAPP_NUMBER, waHref } from './whatsapp.js';
@@ -347,12 +347,16 @@ const LADDER_SCOPES = [
 // plan's `includes` list — and that list is not usable here, because it also
 // contains the reserved-window promise this file is forbidden to quote. So the
 // credit is restated as one sentence per language, with BOTH numbers read from
-// pricing.js: change the credit or the number of orders it covers and this
-// sentence changes with them. ("drops" was the word here until the ladder
-// replaced the packages; it is orders now, everywhere.)
-const BRAND_MODEL_CREDIT = {
-  en: `${euro(AMOUNT.brandModelCredit, 'en')} is credited against each of your first ${BRAND_MODEL_CREDIT_DROPS} orders.`,
-  nl: `${euro(AMOUNT.brandModelCredit, 'nl')} wordt verrekend met elk van je eerste ${BRAND_MODEL_CREDIT_DROPS} bestellingen.`,
+/* BRAND_MODEL_CREDIT stond hier — de zin over de € 250 die over vijf bestellingen
+   terugkwam. Die credit bestaat sinds 23 augustus 2026 niet meer; zie de noot bij
+   AMOUNT.brandModel in pricing.js. Wat in de plaats komt, is de zin die de prijs
+   nu draagt, en die zegt hetzelfde als de pagina: één keer, en verder niets.
+
+   HIER STAAT DEZELFDE ZIN ALS OP HET SCHERM, en dat is de regel van dit bestand:
+   geen prijs in de graph die de zichtbare pagina niet ook toont. */
+const BRAND_MODEL_ONCE = {
+  en: 'Paid once, when the model is designed. Not per image, not per order, not per year.',
+  nl: 'Eén keer betaald, als het model ontworpen wordt. Niet per beeld, niet per bestelling, niet per jaar.',
 };
 
 function productNode({ slug, name, description, amount, unitText, url, lang, quantity, reference, rungs }) {
@@ -443,7 +447,7 @@ function pricingProductNodes(lang, url) {
   nodes.push(productNode({
     slug: 'brand-model',
     name: BRAND_MODEL_NAME[l],
-    description: `${BRAND_MODEL_LINE[l]} ${BRAND_MODEL_CREDIT[l]}`,
+    description: `${BRAND_MODEL_LINE[l]} ${BRAND_MODEL_ONCE[l]}`,
     amount: AMOUNT.brandModel,
     unitText: BRAND_MODEL_UNIT[l],
     url,
@@ -597,9 +601,13 @@ const CRUMBS = {
 };
 
 /*
- * WAT ER MET OPZET NIET IN STAAT. /portal, /studio, /thank-you en /demo zijn
- * pagina's waar je terechtkomt en niet naartoe zoekt: een kruimelpad in een
- * zoekresultaat van een bedankpagina nodigt uit tot een klik die niets oplevert.
+ * WAT ER MET OPZET NIET IN STAAT. /portal, /studio en /thank-you zijn pagina's
+ * waar je terechtkomt en niet naartoe zoekt: een kruimelpad in een zoekresultaat
+ * van een bedankpagina nodigt uit tot een klik die niets oplevert.
+ *
+ * (/demo stond hier tot 24 augustus 2026 als vierde bij. Die pagina bestaat niet
+ * meer, dus hij hoort hier niet meer thuis als uitzondering — een uitzondering op
+ * een route die niet bestaat, is een regel die niemand meer kan nalopen.)
  * En /nl-varianten staan er niet apart in, want buildGraph krijgt het
  * TAALNEUTRALE pad — zie de `path`-parameter daar — dus /nl/lifestyle/glow en
  * /lifestyle/glow zijn hier één regel met twee namen.

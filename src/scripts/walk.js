@@ -214,7 +214,9 @@ function initWalk() {
   /* Dezelfde reparatie als in consent.js: `onScroll` hangt aan de stappen van
      DEZE pagina, en `root.dataset.walkBound` staat op een element dat bij elke
      zachte navigatie vervangen wordt — dus houdt die vlag niets tegen zodra de
-     lezer /demo een tweede keer bezoekt. De vorige twee gaan er nu eerst af. */
+     lezer de pagina met de doorloop een tweede keer bezoekt. De vorige twee gaan
+     er nu eerst af. (Gevonden op /demo, dat sinds 24 augustus 2026 niet meer
+     bestaat; /how-it-works plaatst dezelfde doorloop en heeft hetzelfde nodig.) */
   if (vensterGebonden) {
     window.removeEventListener('scroll', vensterGebonden);
     window.removeEventListener('resize', vensterGebonden);

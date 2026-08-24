@@ -1979,6 +1979,70 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    is how a system stops being one. New markup should use .band-tight. */
 .section-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE JURIDISCHE PAGINA'S, ÉÉN KEER
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 24 augustus 2026: *"Verwerkersovereenkomst consistent maken met privacy
+ * en algemene voorwaarden qua indeling omdat het nogal krap voelt en
+ * onoverzichtelijk."*
+ *
+ * ── WAT ER AAN DE HAND WAS, GEMETEN OP DE GEBOUWDE SITE ────────────────────
+ *
+ * Vier juridische pagina's, en dit stond er:
+ *
+ *   pagina                       kolom   tekens/regel   h2
+ *   /nl/privacy                  820     85             24px
+ *   /nl/terms                    820     85             24px
+ *   /nl/data-processing-…        760     78             52,8px   ← de klacht
+ *   /nl/cookie-policy            760     78             20,8px
+ *
+ * DE VERWERKERSOVEREENKOMST HAD HELEMAAL GEEN STIJLBLOK. Zijn markup gebruikt
+ * `.legal` net als de andere drie, maar de opmaak daarvoor stond in een SCOPED
+ * <style> in elk van die drie afzonderlijk — en scoped is scoped. Dus viel deze
+ * pagina terug op de globale koptekstmaat: 52,8 pixels, meer dan het dubbele van
+ * de buurpagina's. Dat is wat "onoverzichtelijk" is. Niet de kolom; de koppen.
+ *
+ * ── EN DE KOLOM WAS OOK NIET CONSISTENT ────────────────────────────────────
+ *
+ * Twee van de vier zetten `.narrow { max-width: 820px }` in hun eigen blok en
+ * overschreven daarmee --container-narrow. Die override is weg. Niet uit
+ * netheid: de ladder hierboven zegt dat lopende tekst op 760 hoort, met de
+ * onderbouwing erbij, en een pagina die daar zonder reden van afwijkt is precies
+ * hoe zo'n ladder stilletjes ophoudt te bestaan.
+ *
+ * BREDER MAKEN WAS DUS NIET HET ANTWOORD, en dat is de vraag die Lucas erbij
+ * stelde. Op 820 staan er 85 tekens op een regel en op 760 nog 78; leesonderzoek
+ * komt al vijftig jaar uit tussen de 45 en 75. Deze pagina's waren al te breed,
+ * niet te smal — het gevoel van krapte kwam van de koppen die de tekst
+ * platdrukten.
+ *
+ * ── WAAROM DIT NU HIER STAAT EN NIET ZES KEER ──────────────────────────────
+ *
+ * Het stond zes keer: privacy, terms en cookie-policy, elk in twee talen, met
+ * exact dezelfde regels — op de cookieverklaring na, die zijn eigen h2-maat had.
+ * Zes kopieën van dezelfde opmaak zijn zes plekken die uit elkaar gaan lopen, en
+ * dat was ook precies gebeurd. Eén blok hier, en een nieuwe juridische pagina
+ * krijgt de indeling door `.legal` te schrijven in plaats van door hem over te
+ * typen. */
+.legal h2 { margin-top: 2.6rem; font-size: 1.5rem; }
+.legal h3 { margin-top: 1.6rem; font-size: 1.1rem; color: var(--ink); }
+.legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
+.legal p { margin-top: 0.9rem; }
+.legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.legal ul li { list-style: disc; }
+.legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+.legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
+.legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
+/* De cookieverklaring zet zijn secties in losse <div>'s met een vaste tussenruimte
+   in plaats van op de h2-marge hierboven. Dat mag blijven — het is een korte
+   pagina die vooral uit lijstjes bestaat — maar de kopmaat is nu wel dezelfde,
+   en die maat was het verschil dat je zag. In de eerste sectie van zo'n stapel
+   hoort de kopmarge eraf, anders begint de pagina met een gat. */
+.stack-lg { display: flex; flex-direction: column; gap: 2.2rem; }
+.stack-lg > div > h2:first-child { margin-top: 0; }
+
+
 .band       { padding-block: clamp(4.5rem, 9vw, 9rem); }
 .band-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
 .band-tall  { padding-block: clamp(6.5rem, 13vw, 13rem); }
@@ -2749,6 +2813,23 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
     grid-column: 2; grid-row: 2;
     max-width: 46ch;
   }
+  /* ── EN EEN TWEEDE LEDE GAAT ERONDER, NIET EROVERHEEN — 24 aug 2026 ──────
+     Deze regel zette ELKE `.lead` op rij 2 van kolom 2. Dat werkt zolang er
+     één is, en dat was de aanname toen hij geschreven werd. /ai-act heeft er
+     twee — een vette openingszin en een alinea eronder — en die kwamen dus
+     allebei in hetzelfde vak terecht: letterlijk over elkaar heen gedrukt,
+     twee stukken tekst op dezelfde pixels. Zichtbaar op elk scherm vanaf 62rem,
+     op beide talen, en gevonden op een schermafdruk van Lucas.
+
+     `grid-row: auto` op alles na de eerste laat ze onder elkaar vallen in
+     dezelfde kolom. De pagina's met één lede — de overige achtenzestig —
+     merken er niets van: deze selector heeft daar niets om op te passen.
+
+     WAAROM NIET GEWOON DE TWEEDE LEDE OP /ai-act HERNOEMEN. Dat repareert de
+     pagina en laat de val liggen. De volgende kop met twee alinea's valt er
+     opnieuw in, zonder foutmelding en zonder dat de bouw iets zegt — je ziet
+     het alleen als je toevallig naar die pagina kijkt. */
+  .page-hero .container:has(> .lead) > .lead ~ .lead { grid-row: auto; }
 }
 
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem,3vw,3rem); }

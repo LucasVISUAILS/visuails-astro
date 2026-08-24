@@ -57,7 +57,9 @@
 import {
   TEST_SAMPLE, TIERS, aftercare, turnaround,
   canReviewOrder, canSeeReviewHistory, SAMPLE_SERVICE,
+  revisionRoundState, canRequestRevisionRound,
 } from '../data/pricing.js';
+import { waHref } from '../data/whatsapp.js';
 import { serviceLabel } from '../data/services.js';
 import { PORTAL_TTL_DAYS, hashToken, isExpired, isWellFormedToken } from './token.js';
 import { notifyRevision } from './notify.js';
@@ -163,6 +165,27 @@ const COPY = {
     askLabel: 'What should change?',
     askHint: 'In your own words. The more specific, the faster we get it right.',
 
+    /* ── DE ENE REVISIERONDE ──────────────────────────────────────────────
+       Zie revisionRoundState() in src/data/pricing.js. De teksten hieronder
+       zijn de vier toestanden die een klant kan aantreffen, en ze zeggen
+       alle vier iets ANDERS — een knop die weg is omdat je hem gebruikt hebt
+       en een knop die weg is omdat de bestelling dicht is, zijn niet
+       hetzelfde bericht. */
+    rrTitle: 'One revision round',
+    rrIntro: 'Tick every image that is not right, tell us what is wrong, and send it as one round. We look at all of them together and put them right.',
+    rrLabel: 'What is wrong with the ones you ticked?',
+    rrHint: 'One note for the whole round. Mention which image if it differs per image.',
+    rrPick: 'Not right',
+    rrSend: 'Send this revision round',
+    rrNoneChosen: 'Tick at least one image first.',
+    rrChosen: (n) => (n === 1 ? '1 image ticked' : `${n} images ticked`),
+    rrUsedTitle: 'Your revision round is with us',
+    rrUsedBody: (day, n) => `You sent ${n === 1 ? '1 image' : `${n} images`} on ${day}. That is the round that comes with this order, so the form is closed — but we are not. Anything else about this order, message us and we will sort it out.`,
+    rrUsedWa: 'Message us on WhatsApp',
+    rrWaText: (ref) => `Hi VISUAILS, about order ${ref} — I have a question after my revision round.`,
+    rrRevokedTitle: 'Revisions are paused on your account',
+    rrRevokedBody: 'Message us and we will pick it up with you directly.',
+
     emptyAttended: 'Nothing to review yet. The first visuals appear here the moment they are finished, and we email you when they do.',
     emptyUnattended: (timing) => `Your files are not ready yet. They appear here as soon as they are finished, and we email you when they do. ${timing}.`,
     fileGone: 'No longer available here — ask us and we will send it again.',
@@ -231,6 +254,22 @@ const COPY = {
     askSummary: 'Er klopt iets niet',
     askLabel: 'Wat moet er anders?',
     askHint: 'In je eigen woorden. Hoe specifieker, hoe sneller het klopt.',
+
+    /* Zie de noot bij de Engelse tegenhangers hierboven. */
+    rrTitle: 'Eén revisieronde',
+    rrIntro: 'Vink elk beeld aan dat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde. We kijken er in één keer naar en zetten het recht.',
+    rrLabel: 'Wat klopt er niet aan wat je hebt aangevinkt?',
+    rrHint: 'Eén notitie voor de hele ronde. Noem het beeld erbij als het per beeld verschilt.',
+    rrPick: 'Niet goed',
+    rrSend: 'Verstuur deze revisieronde',
+    rrNoneChosen: 'Vink eerst minstens één beeld aan.',
+    rrChosen: (n) => (n === 1 ? '1 beeld aangevinkt' : `${n} beelden aangevinkt`),
+    rrUsedTitle: 'Je revisieronde ligt bij ons',
+    rrUsedBody: (day, n) => `Je hebt op ${day} ${n === 1 ? '1 beeld' : `${n} beelden`} doorgegeven. Dat is de ronde die bij deze bestelling hoort, dus het formulier is dicht — wij niet. Is er verder iets met deze bestelling, stuur ons een bericht en we lossen het op.`,
+    rrUsedWa: 'Stuur een WhatsApp-bericht',
+    rrWaText: (ref) => `Hoi VISUAILS, over bestelling ${ref} — ik heb een vraag na mijn revisieronde.`,
+    rrRevokedTitle: 'Revisies staan op je account op pauze',
+    rrRevokedBody: 'Stuur ons een bericht, dan pakken we het rechtstreeks met je op.',
 
     emptyAttended: 'Nog niets te beoordelen. De eerste visuals verschijnen hier zodra ze af zijn, en we mailen je als het zover is.',
     emptyUnattended: (timing) => `Je bestanden zijn nog niet klaar. Ze verschijnen hier zodra ze af zijn, en we mailen je als het zover is. ${timing}.`,
@@ -432,8 +471,23 @@ export async function portalPost(context) {
   }
 
   const action = String(form.get('action') || '');
+
+  /*
+   * ── DE ENE REVISIERONDE — 24 augustus 2026 ────────────────────────────────
+   *
+   * VÓÓR het uitlezen van `file`, want een ronde heeft er geen. Hij draagt een
+   * lijst `bad` met nul of meer bestandsnummers en één notitie voor het geheel.
+   * Stond deze tak eronder, dan zou de `Number.isInteger(fileId)`-wacht hem
+   * afwijzen op een veld dat hij niet hoort te hebben.
+   */
+  if (action === 'round') return handleRevisionRound(env, context, { order, form, home, lang, request });
+
   const fileId = Number.parseInt(String(form.get('file') || ''), 10);
-  if (!Number.isInteger(fileId) || !['approve', 'revise', 'undo'].includes(action)) return seeOther(home);
+  /* 'revise' staat er niet meer bij: de per-beeld revisieknop is op 24 augustus
+     2026 vervangen door de ronde hierboven. De waarde blijft geweigerd worden en
+     dat is het punt — een oud formulier uit een openstaand tabblad, of een POST
+     met de hand, hoort niet alsnog de oude, ongelimiteerde weg te vinden. */
+  if (!Number.isInteger(fileId) || !['approve', 'undo'].includes(action)) return seeOther(home);
 
   // Afgerond: geen nieuwe besluiten, terugdraaien wél. Zelfde regel als in
   // account.js's handleFileReview, en om dezelfde reden — de knop die dan nog op
@@ -513,64 +567,6 @@ export async function portalPost(context) {
         );
       }
       await env.DB.batch(undo);
-    } else {
-      // Ingetrokken rechten worden op de server gehandhaafd en niet in de
-      // opmaak — een POST die het formulier omzeilt hoort dezelfde muur te
-      // vinden. Goedkeuren en terugdraaien blijven wél kunnen; zie dezelfde
-      // afweging in account.js's handleFileReview.
-      if (order.revisions_revoked_at) return seeOther(anchor);
-
-      const note = String(form.get('note') || '').trim().slice(0, NOTE_MAX);
-      if (!note) return seeOther(anchor); // nothing said, nothing changed
-
-      /*
-       * TWEE SCHRIJFACTIES, NIET ÉÉN — 7 augustus 2026.
-       *
-       * Dit schreef alleen `files.review_state`. account.js's kant van dezelfde
-       * handeling schrijft daarnaast een rij in `revision_requests`, en dat is
-       * niet dubbelop: files houdt de HUIDIGE toestand van één beeld bij, en
-       * revision_requests is de geschiedenis waar het adminscherm op stuurt —
-       * de openstaande-revisieteller, de lijst en het afhandelen komen daar
-       * allemaal uit. Een revisie die via de gemailde link binnenkwam, kwam
-       * daardoor in die lijst nooit voor.
-       *
-       * Zolang alleen tier 1 hier knoppen had was dat een klein gat. Sinds
-       * elke bestelling ze heeft, is het de helft van de verzoeken.
-       */
-      await env.DB.batch([
-        env.DB.prepare(
-          `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
-        ).bind(fileId, note),
-        env.DB.prepare(
-          `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
-        ).bind(fileId, order.order_id, order.customer_id, note),
-      ]);
-      /*
-       * ── EN DE STUDIO KRIJGT ER BERICHT VAN, 9 AUGUSTUS 2026 ─────────────────
-       *
-       * Deze route schreef netjes naar de database en zweeg. Een klant die om elf uur
-       * 's avonds een revisie aanvroeg, produceerde geen enkel signaal — je moest het
-       * zelf gaan zoeken in het dashboard.
-       *
-       * De notitie gaat mee IN de mail. /studio belooft dat een revisieverzoek
-       * binnenkomt "met de notitie die de klant schreef, in diens eigen woorden", en
-       * een bericht dat alleen zegt "er is een revisie" dwingt je alsnog het dashboard
-       * te openen om te weten of het dringend is.
-       *
-       * NA de batch, en de fouten blijven binnen notifyRevision(): het verzoek van de
-       * klant mag niet omvallen omdat Resend even niet bereikbaar is.
-       */
-      await notifyRevision(env, {
-        orderId: order.order_id,
-        fileId,
-        note,
-        /* Geen bestandsgegevens meegegeven: notifyRevision() zoekt ze zelf op.
-           Hier stond eerst `f?.filename`, met geen enkele `f` in deze scope — en
-           optional chaining vángt een niet-bestaande variabele niet, die gooit een
-           ReferenceError. Precies de fout die een revisieverzoek van een klant zou
-           laten mislukken op het versturen van een mail erover. */
-      });
-
     }
   } catch {
     return plainPage(env, request, 'down', 503);
@@ -578,6 +574,149 @@ export async function portalPost(context) {
 
   later(context, bumpUse(env, order.token_id));
   return seeOther(anchor);
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * ÉÉN REVISIERONDE INDIENEN
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * De klant vinkt in het raster aan wat niet goed is, schrijft er één notitie bij,
+ * en verstuurt. Dat is de hele ronde, en er komt er geen tweede.
+ *
+ * ── DE POORT STAAT HIER EN NIET IN DE OPMAAK ───────────────────────────────
+ *
+ * roundBlock() laat het formulier weg zodra de ronde op is. Dat is de opmaak, en
+ * opmaak is geen beveiliging: een openstaand tabblad van gisteren, een terugknop,
+ * of een POST met de hand komen hier alsnog binnen. De vraag wordt daarom nog een
+ * keer gesteld aan revisionRoundState(), tegen de rij zoals die NU in de database
+ * staat.
+ *
+ * ── EN DE KOLOM IS DE GRENDEL, NIET DEZE FUNCTIE ───────────────────────────
+ *
+ * Twee tabbladen die tegelijk versturen, zijn twee verzoeken die allebei door de
+ * poort hierboven komen — de tweede leest de rij voordat de eerste hem heeft
+ * geschreven. Daarom staat in de UPDATE onderaan `WHERE revision_round_at IS
+ * NULL`, en daarom wordt gekeken of die UPDATE werkelijk een rij heeft geraakt.
+ * De database beslist wie er als eerste was, niet de volgorde waarin twee
+ * verzoeken toevallig binnenkomen.
+ *
+ * ── WAT ER GEBEURT MET WAT ER NIET IS AANGEVINKT ───────────────────────────
+ *
+ * Niets. Die beelden blijven `pending` en kunnen gewoon goedgekeurd worden — de
+ * ronde gaat over wat er mis is, niet over de rest. Dat is ook waarom een lege
+ * ronde geweigerd wordt in plaats van "alles is goed" te betekenen: goedkeuren
+ * is een andere knop, met een ander gevolg.
+ */
+async function handleRevisionRound(env, context, { order, form, home, lang, request }) {
+  const terug = `${home}#rr`;
+
+  /* De poort, tegen de rij zoals hij nu is. */
+  if (!canRequestRevisionRound(order)) return seeOther(terug);
+
+  const note = String(form.get('note') || '').trim().slice(0, NOTE_MAX);
+  if (!note) return seeOther(terug);
+
+  /*
+   * De aangevinkte nummers, ontdaan van alles wat geen nummer is en van
+   * dubbelen. `getAll` omdat een vinkjeslijst één veldnaam met meerdere waarden
+   * is; `Number.parseInt` per stuk omdat één rare waarde de hele ronde niet mag
+   * laten omvallen — hij hoort eruit te vallen en de rest hoort door te gaan.
+   */
+  const gekozen = [...new Set(
+    form.getAll('bad')
+      .map((v) => Number.parseInt(String(v), 10))
+      .filter((n) => Number.isInteger(n) && n > 0)
+  )];
+  if (!gekozen.length) return seeOther(terug);
+
+  /*
+   * ── ELK NUMMER MOET BIJ DÍT BESTELLING HOREN ──────────────────────────────
+   *
+   * Zonder deze stap kan een geldige link voor bestelling A de beelden van
+   * bestelling B aanmerken door één getal in het formulier te wijzigen — dezelfde
+   * reden als bij de losse goedkeuring hierboven, alleen nu voor een lijst.
+   *
+   * En alleen wat nog `pending` is. Een beeld dat al is goedgekeurd, opnieuw als
+   * "niet goed" laten indienen zou het besluit van de klant stilletjes omdraaien;
+   * wie daarop terug wil komen, drukt eerst op Ongedaan maken. Dat is zichtbaar
+   * en dit zou het niet zijn.
+   */
+  let eigen = [];
+  try {
+    const plaatsen = gekozen.map((_, i) => `?${i + 2}`).join(', ');
+    /* DE NUMMERS LEIDEN, EN DAT IS NIET ALLEEN VOLGORDE. Dit is geen tweede
+       lijst van de levering — die komt uit loadDeliveryFiles() en nergens anders,
+       zie de kop van delivery.js. Dit is een CONTROLE op een verzameling nummers
+       die de klant heeft ingestuurd: welke daarvan horen echt bij deze bestelling
+       en staan nog open. `id IN (...)` vooraan zegt dat; `order_id = ?1` vooraan
+       zou het laten lezen als "geef mij de bestanden van deze bestelling", en dat
+       is precies de query die hier niet meer hoort te staan. */
+    const res = await env.DB.prepare(
+      `SELECT id FROM files
+        WHERE id IN (${plaatsen})
+          AND order_id = ?1
+          AND kind = 'delivery'
+          AND review_state = 'pending'
+          AND superseded_at IS NULL`
+    ).bind(order.order_id, ...gekozen).all();
+    eigen = (res.results || []).map((r) => r.id);
+  } catch {
+    return plainPage(env, request, 'down', 503, lang);
+  }
+  if (!eigen.length) return seeOther(terug);
+
+  try {
+    /*
+     * TWEE SCHRIJFACTIES PER BEELD, EN ÉÉN VOOR DE RONDE — zie de noot die hier
+     * stond bij de oude per-beeld weg: `files` houdt de huidige toestand bij en
+     * `revision_requests` is de geschiedenis waar het beheerscherm op stuurt. Een
+     * revisie die alleen in files stond, kwam in de revisielijst nooit voor.
+     */
+    const stappen = [];
+    for (const id of eigen) {
+      stappen.push(env.DB.prepare(
+        `UPDATE files SET review_state = 'revision_requested', review_note = ?2, reviewed_at = datetime('now') WHERE id = ?1`
+      ).bind(id, note));
+      stappen.push(env.DB.prepare(
+        `INSERT INTO revision_requests (file_id, order_id, customer_id, note) VALUES (?1, ?2, ?3, ?4)`
+      ).bind(id, order.order_id, order.customer_id, note));
+    }
+    stappen.push(env.DB.prepare(
+      `UPDATE orders
+          SET revision_round_at = datetime('now'),
+              revision_round_note = ?2,
+              revision_round_count = ?3
+        WHERE id = ?1 AND revision_round_at IS NULL`
+    ).bind(order.order_id, note, eigen.length));
+    stappen.push(env.DB.prepare(
+      `INSERT INTO order_events (order_id, status, note, actor)
+       VALUES (?1, 'delivered', ?2, 'customer')`
+    ).bind(order.order_id, `Revisieronde ingediend — ${eigen.length} beeld(en).`));
+
+    await env.DB.batch(stappen);
+  } catch {
+    return plainPage(env, request, 'down', 503, lang);
+  }
+
+  /*
+   * ── ÉÉN BERICHT VOOR DE HELE RONDE ────────────────────────────────────────
+   *
+   * En niet één per beeld. Dat is het verschil dat Lucas vroeg: *"waarna ik ze
+   * bekijk en beoordeel"* — één keer kijken naar wat er binnenkomt, niet vier
+   * losse meldingen die je zelf weer bij elkaar moet zoeken. De fouten blijven
+   * binnen notifyRevision(): de ronde van de klant staat al in de database en mag
+   * niet alsnog mislukken omdat de mail eruit niet weg kan.
+   */
+  await notifyRevision(env, {
+    orderId: order.order_id,
+    fileIds: eigen,
+    note,
+    round: true,
+  });
+
+  later(context, bumpUse(env, order.token_id));
+  return seeOther(terug);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -642,6 +781,10 @@ async function loadOrder(env, token) {
             o.ref, o.service, o.status, o.tier, o.lang,
             o.product_count, o.window_start, o.window_end, o.closed_at,
             o.customer_id,
+            -- De ene revisieronde (migratie 0034). Deze drie horen bij de order en
+            -- niet bij de klant -- zie de noot in die migratie over waarom dat het
+            -- verschil is met revisions_revoked_at hieronder.
+            o.revision_round_at, o.revision_round_note, o.revision_round_count,
             -- brand, name en details_json staan er sinds 13 augustus 2026 bij voor
             -- de leesmij en de licentie in het archief. Zonder details_json heten de
             -- productmappen '01' in plaats van '01 - Zwarte hoodie', en dan geeft de
@@ -904,6 +1047,102 @@ function foot(t) {
 </footer>`;
 }
 
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * DE ENE REVISIERONDE, ONDER HET RASTER
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Vier toestanden, vier verschillende schermen — zie revisionRoundState() in
+ * src/data/pricing.js voor waarom het een toestand is en geen ja/nee.
+ *
+ * ── WAAROM ONDER HET RASTER EN NIET ERBOVEN ────────────────────────────────
+ *
+ * De handeling is: kijk ze langs, vink aan wat niet klopt, schrijf het op,
+ * verstuur. De knop hoort aan het eind van die handeling te staan en niet aan
+ * het begin. Erboven zou hij vragen om een beslissing voordat er iets bekeken is.
+ *
+ * ── EN ZONDER JAVASCRIPT WERKT HIJ ─────────────────────────────────────────
+ *
+ * Het is een gewoon formulier met gewone vinkjes. De teller onderaan ("3 beelden
+ * aangevinkt") is de enige regel script en hij is versiering: de server telt zelf
+ * en weigert een lege ronde. Dat is dezelfde afspraak als overal in dit project —
+ * zie de kop van FigWalk.astro.
+ */
+function roundBlock(t, lang, order, files) {
+  const staat = revisionRoundState(order);
+
+  if (staat === 'nvt') return '';
+
+  if (staat === 'gebruikt') {
+    const n = order.revision_round_count || files.filter((f) => f.review_state === 'revision_requested').length;
+    const dag = formatDay(String(order.revision_round_at).slice(0, 10), lang);
+    /*
+     * DE WHATSAPP-LINK IS HET HELE PUNT VAN DIT BLOK. Lucas: *"kan de klant
+     * wanneer ze problemen ervaren op een link klikken die naar whatsapp
+     * verwijst die verschijnt wanneer de revisie is aangevraagd, dus revisie
+     * optie verwijderd en whatsapp verschijnt."*
+     *
+     * Een dichte deur zonder tweede deur ernaast is niet wat er beloofd wordt.
+     * Het formulier is op; het gesprek niet.
+     */
+    return `<section class="rr rr-used">
+  <h2>${esc(t.rrUsedTitle)}</h2>
+  <p>${esc(t.rrUsedBody(dag, n))}</p>
+  ${order.revision_round_note ? `<p class="said">${esc(order.revision_round_note)}</p>` : ''}
+  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}</a></p>
+</section>`;
+  }
+
+  if (staat === 'ingetrokken') {
+    return `<section class="rr rr-off">
+  <h2>${esc(t.rrRevokedTitle)}</h2>
+  <p>${esc(t.rrRevokedBody)}</p>
+  <p><a class="btn btn-wa" href="${esc(waHref(t.rrWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.rrUsedWa)}</a></p>
+</section>`;
+  }
+
+  /* 'gesloten' — geen formulier en geen uitleg over een ronde. De bestaande
+     `t.closed`-regel zegt al dat de knoppen weg zijn omdat de bestelling dicht
+     is; daar een tweede blok naast zetten dat over revisies gaat, verklaart
+     hetzelfde twee keer. */
+  if (staat === 'gesloten') return '';
+
+  /* 'beschikbaar' — en alleen als er iets te beoordelen ís. Een rondeformulier
+     boven een leeg raster vraagt om beelden aan te vinken die er niet zijn. */
+  const teBeoordelen = files.filter((f) => f.review_state === 'pending' && !(f.expires_at && isExpired(f.expires_at, null)));
+  if (!teBeoordelen.length) return '';
+
+  return `<section class="rr">
+  <h2>${esc(t.rrTitle)}</h2>
+  <p>${esc(t.rrIntro)}</p>
+  <form method="post" action="" id="rr">
+    <label class="sr-only" for="rrnote">${esc(t.rrLabel)}</label>
+    <textarea id="rrnote" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.rrHint)}" required></textarea>
+    <p class="rr-count" data-rr-count hidden></p>
+    <div class="acts"><button class="btn btn-primary" type="submit" name="action" value="round">${esc(t.rrSend)}</button></div>
+  </form>
+</section>
+<script>
+  /* Alleen de teller. Zie de noot boven roundBlock(): zonder dit script werkt
+     het formulier ongewijzigd, en de server telt zelf. */
+  (function () {
+    var f = document.getElementById('rr');
+    if (!f) return;
+    var uit = f.querySelector('[data-rr-count]');
+    var woord = ${JSON.stringify(lang === 'nl' ? ['1 beeld aangevinkt', ' beelden aangevinkt'] : ['1 image ticked', ' images ticked'])};
+    function tel() {
+      var n = document.querySelectorAll('input[name="bad"]:checked').length;
+      uit.hidden = n === 0;
+      uit.textContent = n === 1 ? woord[0] : n + woord[1];
+    }
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.name === 'bad') tel();
+    });
+    tel();
+  })();
+</script>`;
+}
+
 // ---- Tier 1 · the portal ----------------------------------------------------
 
 /*
@@ -930,12 +1169,17 @@ function attendedBody(t, lang, order, token, files, events, fb = null, folder = 
       }</span>`
     : '';
 
+  /* Eén vraag, één antwoord, en beide tegels lezen hetzelfde: mag deze
+     bestelling nog een ronde indienen? Zie revisionRoundState() in pricing.js. */
+  const ronde = canRequestRevisionRound(order);
   const work = files.length
     ? `<ul class="shots">${files.map((f) => shot(t, lang, f, token, {
         review: canReviewOrder(order),
         history: canSeeReviewHistory(order),
+        round: ronde,
       })).join('')}</ul>`
     : `<p class="note">${esc(t.emptyAttended)}</p>`;
+  const rr = files.length ? roundBlock(t, lang, order, files) : '';
 
   /*
    * ── DE TEVREDENHEIDSVRAAG, EN WANNEER HIJ VERSCHIJNT ──────────────────────
@@ -965,6 +1209,7 @@ ${factList(facts)}
   <h2>${esc(t.workTitle)}${tally}</h2>
   ${work}
 </section>
+${rr}
 ${folder}
 ${feedback}
 ${timeline(t, lang, events)}
@@ -1006,14 +1251,20 @@ function unattendedBody(t, lang, order, token, files, folder = '') {
   // bij de hogere trede hoorde. Nu beslist canReviewOrder() het, net als op het
   // dashboard, zodat dezelfde bestelling niet twee antwoorden geeft afhankelijk
   // van of de klant via de mail of via /account binnenkwam.
+  /* Dezelfde ronde als bij de grotere bestellingen: AFTERCARE is één waarde
+     voor beide treden (zie de noot daar), dus de belofte verschilt niet met de
+     bestelgrootte en dit scherm dus ook niet. */
+  const ronde = canRequestRevisionRound(order);
   const work = files.length
     ? `<ul class="shots">${files
         .map((f) => shot(t, lang, f, token, {
           review: canReviewOrder(order),
           history: canSeeReviewHistory(order),
+          round: ronde,
         }))
         .join('')}</ul>`
     : `<p class="note">${esc(t.emptyUnattended(timing))}</p>`;
+  const rr = files.length ? roundBlock(t, lang, order, files) : '';
 
   // De proefvisual heeft geen beoordeelknoppen (zie canReviewOrder), dus hij
   // hoort ook niet aangekondigd te worden met een zin die zegt dat je kunt
@@ -1030,6 +1281,7 @@ ${factList(facts)}
   <h2>${esc(t.filesHeading)}</h2>
   ${work}
 </section>
+${rr}
 ${folder}
 </main>`;
 }
@@ -1151,7 +1403,7 @@ function factList(pairs) {
  * type, same spacing — which is section 13's point: a different service model,
  * not a worse one.
  */
-function shot(t, lang, f, token, { review, history }) {
+function shot(t, lang, f, token, { review, history, round = false }) {
   const gone = f.expires_at && isExpired(f.expires_at, null);
   const name = f.filename || `#${f.id}`;
   /*
@@ -1211,20 +1463,38 @@ function shot(t, lang, f, token, { review, history }) {
   <div class="acts"><button class="btn btn-quiet" type="submit" name="action" value="undo">${esc(label)}</button></div>
 </form>`;
     } else {
-      // One form, two submits. formnovalidate on Approve so the required note in
-      // the <details> below cannot block it — they are alternatives, not steps.
+      /*
+       * ── VAN EEN UITKLAPPER PER BEELD NAAR ÉÉN RONDE — 24 augustus 2026 ────
+       *
+       * Hier stond een <details> met een verplichte notitie en een eigen
+       * verstuurknop, per tegel. Dat pastte bij de oude belofte: zoveel
+       * revisies als je wilt, één beeld tegelijk. De belofte is nu één ronde
+       * per bestelling (zie AFTERCARE in src/data/pricing.js), en dan is een
+       * knop per beeld het verkeerde gebaar — hij nodigt uit om er één te
+       * versturen en daarna te merken dat de rest niet meer kan.
+       *
+       * Wat ervoor in de plaats komt is een VINKJE. De klant loopt de serie
+       * langs, vinkt aan wat niet klopt, en verstuurt onderaan één keer.
+       *
+       * `form="rr"` EN GEEN GENESTE <form>. Deze tegel staat al in een
+       * formulier voor goedkeuren, en een <form> in een <form> is geen HTML —
+       * de browser gooit de binnenste weg en dan verdwijnt het vinkje zonder
+       * foutmelding. Het `form`-attribuut hangt een veld aan een formulier
+       * verderop in het document; dat is precies waarvoor het bestaat. Het
+       * rondeformulier zelf staat onder het raster, in roundBlock().
+       */
+      const tik = round
+        ? `<label class="pick">
+    <input type="checkbox" form="rr" name="bad" value="${f.id}">
+    <span>${esc(t.rrPick)}</span>
+  </label>`
+        : '';
       controls = `<form method="post" action="">
   <input type="hidden" name="file" value="${f.id}">
   <div class="acts">
-    <button class="btn btn-primary" type="submit" name="action" value="approve" formnovalidate>${esc(t.bApprove)}</button>
+    <button class="btn btn-primary" type="submit" name="action" value="approve">${esc(t.bApprove)}</button>
   </div>
-  <details class="ask">
-    <summary>${esc(t.askSummary)}</summary>
-    <label class="sr-only" for="n${f.id}">${esc(t.askLabel)}</label>
-    <textarea id="n${f.id}" name="note" rows="3" maxlength="${NOTE_MAX}" placeholder="${esc(t.askHint)}" required></textarea>
-    <div class="acts"><button class="btn btn-ghost" type="submit" name="action" value="revise">${esc(t.bSend)}</button></div>
-  </details>
-</form>`;
+</form>${tik}`;
     }
   }
 

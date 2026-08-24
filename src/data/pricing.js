@@ -392,6 +392,76 @@ export function canReviewOrder(order) {
   return !order.closed_at;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE ENE REVISIERONDE
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * `AFTERCARE` hierboven belooft *"1 revision round included per order"*. Deze
+ * functie is die belofte als code, en hij staat hier om dezelfde reden als
+ * canReviewOrder() erboven: het is een PRODUCTREGEL en niet een schermdetail.
+ * Drie plekken stellen dezelfde vraag — het klantportaal uit de mail
+ * (portal.js), het ingelogde dashboard (account.js) en het beheerscherm
+ * (admin.js) — en de vorige keer dat zo'n regel op drie plekken stond, liepen
+ * er twee uit elkaar.
+ *
+ * ── VIER REDENEN OM NEE TE ZEGGEN, EN ZE BETEKENEN NIET HETZELFDE ──────────
+ *
+ * Vandaar een toestand en niet een boolean. Het scherm moet ze uit elkaar
+ * kunnen houden, want wat de klant te zien krijgt verschilt per geval:
+ *
+ *   'beschikbaar'  → de knop staat er.
+ *   'gebruikt'     → de ronde is ingediend. De knop is weg en er staat een
+ *                    WhatsApp-link voor in de plaats: het gesprek gaat door,
+ *                    alleen niet meer via een formulier. Dit is de enige
+ *                    toestand die de klant zelf veroorzaakt.
+ *   'ingetrokken'  → de studio heeft het recht ingetrokken voor deze KLANT
+ *                    (customers.revisions_revoked_at, migratie 0010). Een
+ *                    andere zaak dan 'gebruikt' en met een andere uitleg: hier
+ *                    is geen ronde opgebruikt, hier is er een afgenomen.
+ *   'gesloten'     → de bestelling is afgerond. Er valt niets meer te herzien
+ *                    omdat er niets meer open staat.
+ *   'nvt'          → de proefvisual. Zie de lange noot bij canReviewOrder():
+ *                    één beeld voor negenennegentig cent draagt geen ronde.
+ *
+ * ── DE VOLGORDE IS DE VOLGORDE VAN DE UITLEG ───────────────────────────────
+ *
+ * Een afgesloten bestelling waarvan de ronde ook gebruikt is, meldt 'gebruikt'
+ * en niet 'gesloten'. Dat is met opzet: de klant heeft zijn ronde gehad, en dat
+ * is het antwoord op de vraag die hij stelt. "Deze bestelling is afgerond" leest
+ * als een deur die je zelf niet dicht hebt gedaan.
+ */
+export const REVISION_ROUND_STATES = ['beschikbaar', 'gebruikt', 'ingetrokken', 'gesloten', 'nvt'];
+
+/**
+ * In welke toestand verkeert de ene revisieronde van deze bestelling?
+ *
+ * @param {{service?: string, closed_at?: string|null,
+ *          revision_round_at?: string|null,
+ *          revisions_revoked_at?: string|null}} order
+ *   Een orderrij, of genoeg ervan. `revisions_revoked_at` hangt aan de KLANT en
+ *   niet aan de bestelling; portal.js en account.js halen hem met een subquery
+ *   op de order binnen, precies zoals ze dat voor de bestaande controle al doen.
+ * @returns {'beschikbaar'|'gebruikt'|'ingetrokken'|'gesloten'|'nvt'}
+ */
+export function revisionRoundState(order) {
+  if (!order) return 'nvt';
+  if (order.service === SAMPLE_SERVICE) return 'nvt';
+  if (order.revision_round_at) return 'gebruikt';
+  if (order.revisions_revoked_at) return 'ingetrokken';
+  if (order.closed_at) return 'gesloten';
+  return 'beschikbaar';
+}
+
+/**
+ * Mag deze bestelling nu een revisieronde indienen?
+ *
+ * Eén regel, en met opzet afgeleid van revisionRoundState() in plaats van de
+ * vier controles nog een keer op te schrijven. Zo kan het antwoord op "mag het"
+ * niet uit de pas lopen met het antwoord op "waarom niet", en dat is precies het
+ * paar dat in een scherm naast elkaar staat.
+ */
+export const canRequestRevisionRound = (order) => revisionRoundState(order) === 'beschikbaar';
+
 /**
  * Mag getóónd worden wat er eerder besloten is — "goedgekeurd op 12 juli", de
  * notitie onder een aangemerkt beeld?
@@ -493,8 +563,8 @@ export function vatLead(lang = 'en') {
 /** De uitleg achter vatLead(): wat er per land gebeurt. */
 export function vatDetail(lang = 'en') {
   return lang === 'nl'
-    ? `Nederlandse klanten betalen ${vatPercent()} btw bij het afrekenen. Ben je een EU-bedrijf buiten Nederland, vul dan je btw-nummer in: klopt het volgens VIES, dan betaal je 0% en is de btw verlegd. Buiten de EU valt de levering buiten de Europese btw.`
-    : `Dutch customers pay ${vatPercent()} VAT at checkout. If you are an EU business outside the Netherlands, enter your VAT number: if VIES confirms it, you pay 0% and the VAT is reverse charged. Outside the EU the supply falls outside European VAT.`;
+    ? `Nederlandse klanten betalen ${vatPercent()} btw bij het afrekenen. EU-bedrijven buiten Nederland voeren hun btw-nummer in: na VIES-verificatie geldt 0% btw (btw verlegd). Bestellingen van buiten de EU zijn vrijgesteld van EU-btw.`
+    : `We charge ${vatPercent()} VAT for orders within the Netherlands. If you're an EU business based elsewhere, enter a valid VIES VAT number to receive 0% reverse-charged VAT. Non-EU customers won't be charged EU VAT.`;
 }
 
 export function vatNote(lang = 'en') {
@@ -603,8 +673,25 @@ export const AMOUNT = {
   // every one of those pages has since moved, and the last two consumers
   // (functions/admin/debug-mollie.js, src/data/capacity.js) now read the
   // ladder and WINDOW_THRESHOLD directly.
-  brandModel: 1250, // one-time setup
-  brandModelCredit: 250, // credited against each of your first five drops
+  /* ── € 450, ÉÉN KEER — 23 AUGUSTUS 2026 ────────────────────────────────
+   *
+   * Was € 1.250 met een credit van € 250 die over vijf bestellingen terugkwam.
+   * Lucas, 23 augustus: *"ik wil brand model gewoon 1 bedrag en 1 product maken.
+   * Simpel."* En daarna, over het bedrag: *"ik wil dat bedrag verlagen."*
+   *
+   * DE VERHOUDING WAS HET PROBLEEM EN NIET HET GETAL. Een gewone bestelling hier
+   * is € 510 (tien catalogproducten) tot € 850 (tien complete). Op € 1.250 kostte
+   * de toevoeging tweeënhalf keer de bestelling waar hij bij hoorde, en dan is het
+   * geen bijbestelling meer maar een tweede, groter besluit — en een tweede
+   * besluit aan het begin van een relatie wordt uitgesteld.
+   *
+   * DE CREDIT IS WEG, en dat is de andere helft van "één bedrag". Hij deed iets
+   * dat niet te controleren viel: het merkmodel was feitelijk gratis voor wie vijf
+   * keer bestelde en € 1.250 voor wie drie keer bestelde, en welke van de twee je
+   * was, wist niemand tot achteraf. Zie MERKMODEL-ONTWERP.md voor de volledige
+   * afweging, inclusief wat die credit als terugkeerreden waard was.
+   */
+  brandModel: 450, // eenmalig, en dat is alles
   retainer: PLAN_AMOUNT.brand,  // the top monthly plan
 
   // The anchor VISUAILS is measured against.
@@ -853,6 +940,11 @@ export function euroRange(low, high, lang = 'en') {
 //
 // ── WHY THERE IS NO REVISION COUNT ──────────────────────────────────────────
 //
+// LEES EERST DE NOOT ERONDER: op 24 augustus 2026 staat er wél weer een aantal,
+// en om een reden die deze alinea niet kende. Wat hier volgt is hoe het tot dan
+// stond en waarom — het is niet meer het beleid, en het is bewaard omdat het
+// uitlegt waaróm het beleid twee keer is verschoven.
+//
 // There used to be: `revisionsIncluded` was 3 on attended and 0 on unattended,
 // and eleven surfaces printed one of those numbers. It is gone on the client’s
 // instruction, and the reasoning is worth keeping because it will look like an
@@ -904,6 +996,33 @@ export function euroRange(low, high, lang = 'en') {
 // is, en voor de ene uitzondering.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── EN OP 24 AUGUSTUS 2026 STAAT ER WEER EEN AANTAL ─────────────────────────
+//
+// Eén revisieronde per bestelling, en dan is die op. De formulering is die van
+// Lucas zelf: *"Satisfaction check: 1 revision round included per order to
+// adjust any details."*
+//
+// DAT IS EEN OMKERING VAN HET BLOK HIERBOVEN, en niet omdat het argument daar
+// niet deugde. De grond is een andere: *"Klanten kunnen niet meer zoveel
+// revisies aanvragen als ze willen omdat dit simpelweg niet haalbaar is voor
+// me."* Eén persoon, ongelimiteerd herwerk, en een toezegging die alleen houdbaar
+// is zolang niemand er gebruik van maakt.
+//
+// EEN BELOFTE DIE JE NIET KUNT WAARMAKEN IS ERGER DAN EEN GETAL. Het blok
+// hierboven zegt dat een geteld recht de klant vertelt dat je verwacht het fout
+// te doen. Dat klopt nog steeds. Maar *"until it's right"* tegen iemand die er
+// vier keer op terugkomt, betekent dat je het vierde verzoek afwijst met een
+// zin die op de site het tegendeel beloofde — en dát vertelt een klant iets
+// ergers dan een getal.
+//
+// WAT ER PRAKTISCH VERANDERT, en waar het gebouwd moet worden: de klant vraagt
+// de ronde één keer aan en geeft dán in één keer door welke beelden niet goed
+// zijn. Daarna verdwijnt de revisieknop voor die bestelling en komt er een
+// WhatsApp-link voor in de plaats. Zie ARCHITECTURE.md §13 — de knop, het
+// intrekken en de mockup-dashboards zijn op 24 augustus nog niet gebouwd; deze
+// zin staat er wel al.
+// ─────────────────────────────────────────────────────────────────────────────
+
 /* ── DEZELFDE BELOFTE, KORT — 20 augustus 2026 ─────────────────────────────
  * De hero zet zijn drie bewijsregels sinds vandaag NAAST elkaar in plaats van
  * onder elkaar (Lucas: *"mogen de 3 vinkjes achter elkaar met genoeg ruimte
@@ -931,10 +1050,33 @@ export const REVIEW_CLAIM_SHORT = {
   },
 };
 
+/* ── DE NAZORG STAAT ÉÉN KEER — 24 augustus 2026 ───────────────────────────
+ *
+ * Hij stond twee keer: als `aftercare` op elke trede, met erboven de zin *"The
+ * promise is identical to attended's"*. Die zin was waar toen hij geschreven
+ * werd en op 24 augustus niet meer: de nieuwe formulering ging in de ene kolom
+ * staan en de andere hield de oude. Vier dagen lang beloofde /pricing aan een
+ * kleine bestelling één revisieronde en aan een grote *"until it's right"* —
+ * ongelimiteerd, in de kolom waar het meeste geld staat.
+ *
+ * EEN COMMENTAAR DAT ZEGT DAT TWEE WAARDEN GELIJK ZIJN, HOUDT ZE NIET GELIJK.
+ * Dus is het één waarde, en verwijzen beide treden ernaar. Wie hem verandert,
+ * verandert hem overal — en tests/promises.test.mjs staat erop dat de treden
+ * hier identiek blijven, zodat een teruggezette letterlijke tekst opvalt.
+ *
+ * DE BELOFTE VERSCHILT NIET PER BESTELGROOTTE en dat is geen tekortkoming van
+ * de tabel. Het venster en de voorrang verschillen wél; dit niet. Een rij die
+ * in beide kolommen hetzelfde zegt, zegt precies dat.
+ */
+export const AFTERCARE = {
+  en: 'Satisfaction check: 1 revision round included per order to adjust any details.',
+  nl: 'Tevredenheidscheck: 1 revisieronde per bestelling om aanpassingen door te voeren.',
+};
+
 export const REVIEW_CLAIM = {
   full: {
-    en: 'Human-checked, every visual',
-    nl: 'Met de hand gecontroleerd, elke visual',
+    en: 'Human-checked quality on every single visual.',
+    nl: 'Elke visual wordt handmatig gecontroleerd.',
   },
   spot: {
     en: 'Human-checked on a sample of every order',
@@ -967,7 +1109,7 @@ export const TIERS = {
     // The ONLY sanctioned timing language for this tier. No date, no "24
     // hours", no "next day" — section 13 supplies this exact substitute.
     turnaround: {
-      en: 'Typically 2–4 working days',
+      en: 'Estimated delivery: 2–4 working days',
       nl: 'Meestal 2–4 werkdagen',
     },
     // Al kort genoeg; de korte vorm staat er toch, zodat elke aanroeper van
@@ -980,9 +1122,16 @@ export const TIERS = {
     // Stated openly, not buried. Section 13: "The difference must be VISIBLE,
     // not hidden [...] it is also what makes the low price honest rather than
     // a downgrade in disguise."
+    /* 'Standard queue' STOND HIER AAN DE ENGELSE KANT — 24 augustus 2026, en het
+       was ook een scheefstand tussen de twee talen. De Nederlandse cel zegt al
+       "normale doorlooptijd" (het woord dat STIJL.md §3 als vervanging voor
+       "wachtrij / queue" voorschrijft) en de Engelse zei nog "queue", dat op
+       diezelfde lijst staat. Twee cellen naast elkaar die niet hetzelfde
+       beloofden, in een tabel die er is om precies dat verschil zichtbaar te
+       maken. */
     queue: {
-      en: 'Standard queue, no fixed delivery date',
-      nl: 'Normale doorlooptijd, geen vaste leverdatum',
+      en: 'Standard turnaround — estimated delivery, no fixed date.',
+      nl: 'Standaard levertijd, geen vaste opleverdatum',
     },
     // ELKE BESTELLING GEEFT TOEGANG TOT HET DASHBOARD, sinds augustus 2026.
     //
@@ -1000,15 +1149,11 @@ export const TIERS = {
     // er ook echt gebeurt, en het verschil met de trede hiernaast staat in de
     // regels erboven — het venster en de voorrang — waar het thuishoort.
     delivery: {
-      en: 'In your dashboard to view, download and approve, plus a link by email or WhatsApp',
-      nl: 'In je dashboard om te bekijken, downloaden en goed te keuren, plus een link via e-mail of WhatsApp',
+      en: 'View, download, and approve everything right in your dashboard, or use the direct link sent via email or WhatsApp.',
+      nl: 'Bekijk, download en keur alles goed in je dashboard — of gebruik de rechtstreekse link via e-mail of WhatsApp.',
     },
-    // The promise is identical to attended's — see the block comment above for
-    // why it is a standard rather than a counted entitlement.
-    aftercare: {
-      en: 'We ask if you are happy with them, and put right anything that is not',
-      nl: 'We vragen of je tevreden bent, en zetten recht wat dat niet is',
-    },
+    // Eén waarde voor beide treden — zie de noot bij AFTERCARE hierboven.
+    aftercare: AFTERCARE,
   },
 
   // TIER 1 — ATTENDED.
@@ -1023,7 +1168,7 @@ export const TIERS = {
     // A committed window, cleared by the capacity gate before it is offered.
     // The site must never print a date the gate has not cleared.
     turnaround: {
-      en: 'A reserved 48-hour window, confirmed before you pay',
+      en: 'A reserved 48-hour window—fully confirmed before you pay.',
       // 8 augustus 2026 — DIT ZEI IETS ANDERS DAN DE ENGELSE REGEL, op zo’n
       // vijftien plekken. Er stond "een leverdatum met 48 uur werk erin": dat
       // gaat over hoeveel uur wij eraan werken en zegt niets over snelheid,
@@ -1051,7 +1196,7 @@ export const TIERS = {
       //
       // Nu zegt hij wat de Engelse regel zegt: een blok dat we vrijhouden. Het
       // aanbod verandert niet; de belofte die er per ongeluk bij stond, gaat weg.
-      nl: 'Een blok van 48 uur dat we voor je vrijhouden, vastgezet voordat je betaalt',
+      nl: 'Een gereserveerd tijdvak van 48 uur, bevestigd voordat je betaalt.',
     },
     // De korte vorm laat "dat we voor je vrijhouden" weg en houdt het blok en
     // het moment: dat zijn de twee dingen die de belofte dragen. Zie de noot bij
@@ -1065,8 +1210,8 @@ export const TIERS = {
       // about a product the buyer picked: an order past WINDOW_THRESHOLD holds
       // its slot against anything smaller arriving after it. Same guarantee,
       // stated in the terms the ladder actually uses.
-      en: 'Priority over other orders — a booked delivery date is never given up for a later, smaller order',
-      nl: 'Voorrang boven andere bestellingen — een geboekte leverdatum wijkt nooit voor een latere, kleinere bestelling',
+      en: 'Priority processing — your booked delivery date is locked in and never bumped for other orders.',
+      nl: 'Prioriteit boven andere bestellingen — een bevestigde opleverdatum verschuift nooit.',
     },
     // NIET MEER "plus per-image approve or request-revision" — dat kan de trede
     // hieronder sinds 7 augustus ook. Wat hier wél overblijft en nergens anders
@@ -1075,17 +1220,13 @@ export const TIERS = {
     // unattendedBody rendert geen tijdlijn). Dat is een echt verschil, geen
     // herschreven versie van hetzelfde.
     delivery: {
-      en: 'Same dashboard, plus an order page showing every step with its date',
-      nl: 'Zelfde dashboard, plus een bestelpagina met elke stap en zijn datum',
+      en: 'The same dashboard, plus a dedicated order page tracking every step with key dates.',
+      nl: 'Hetzelfde dashboard, plus een bestelpagina die elke stap met bijbehorende datum toont.',
     },
-    // Same promise as unattended, different instrument: `delivery` above says
-    // where flagging happens, this says what flagging gets you. The two rows
-    // sit next to each other in the /start and /pricing tables, so they must
-    // not restate one another.
-    aftercare: {
-      en: 'Anything you flag, we look at with you until it is right',
-      nl: 'Alles wat je markeert bekijken we samen tot het klopt',
-    },
+    // Dezelfde waarde als hierboven, en dat is nu ook letterlijk zo: hier stond
+    // tot 24 augustus 2026 de oude belofte ("Anything you flag, we'll review
+    // together until it's right"), die ongelimiteerde revisies toezegde.
+    aftercare: AFTERCARE,
   },
 };
 
@@ -1158,7 +1299,20 @@ export function aftercare(tierId, lang = 'en') {
  */
 export const TIER_ROWS = [
   { key: 'turnaround', label: { en: 'Timing', nl: 'Levertijd' } },
-  { key: 'queue', label: { en: 'Queue', nl: 'Wachtrij' } },
+  /* ── 'Queue' / 'Wachtrij' STOND HIER, EN STAAT IN STIJL.md §3 ────────────
+     Die tabel noemt "wachtrij / queue" bij naam als woord dat nooit op de
+     klantzijde hoort, met als vervanging "de normale doorlooptijd". Die
+     vervanging kan hier niet: dat ís al wat er in de cel ernaast staat
+     ("Standaard levertijd, geen vaste opleverdatum"), en een label dat zijn
+     eigen waarde herhaalt zegt niets.
+
+     Wat deze rij werkelijk beantwoordt is waar je in de agenda staat — de ene
+     kolom zegt "normale doorlooptijd, geen vaste datum", de andere "voorrang,
+     met een geboekte datum". "Planning" dekt allebei en is een woord dat een
+     bezoeker kent zonder te weten hoe het hier achter de schermen werkt, wat
+     precies de regel van §3 is. Sta je een beter woord voor: het staat op één
+     plek en twee surfaces lezen het. */
+  { key: 'queue', label: { en: 'Scheduling', nl: 'Planning' } },
   { key: 'delivery', label: { en: 'Delivery', nl: 'Levering' } },
   { key: 'review', label: { en: 'Review', nl: 'Controle' } },
   { key: 'aftercare', label: { en: 'After delivery', nl: 'Na levering' } },
@@ -1382,8 +1536,11 @@ export function plans(lang = 'en') {
   });
 }
 
-/** Brand Model setup is fully creditable across five drops: 5 × €250 = €1,250. */
-export const BRAND_MODEL_CREDIT_DROPS = AMOUNT.brandModel / AMOUNT.brandModelCredit;
+/* BRAND_MODEL_CREDIT_DROPS stond hier, en is weg met de credit zelf — zie de noot
+   bij AMOUNT.brandModel. Bewust VERWIJDERD en niet op 1 gezet: een export die
+   blijft antwoorden onder zijn oude naam, is hoe een pagina over een half jaar nog
+   steeds een terugverdienrekening afdrukt die niet meer bestaat. Dezelfde regel
+   als bij REQUIRED_SHOT in shots.js en bij WINDOW_THRESHOLD_LABEL. */
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 5 · BUILD-TIME ASSERTIONS.
@@ -1403,12 +1560,19 @@ function assertLadder() {
   // this function instead, per kind, which is the same guarantee applied to the
   // thing that actually sets prices now.
 
-  // The Brand Model credit must retire the setup fee in a whole number of
-  // drops, or "credited against each of your first five drops" is untrue.
-  if (!Number.isInteger(BRAND_MODEL_CREDIT_DROPS)) {
+  /* De controle op de merkmodel-credit stond hier en is weg met de credit. Wat
+     ervoor in de plaats komt is de verhouding die het besluit van 23 augustus
+     droeg: het merkmodel mag niet meer kosten dan een gewone bestelling waar hij
+     bij hoort. Zodra dat weer zo is, is het opnieuw een tweede besluit in plaats
+     van een keuze binnen hetzelfde gesprek — en dat is precies de fout die op
+     € 1.250 gemaakt werd. Tien producten is de maat, want dat is de drempel
+     waarop een bestelling een datum krijgt. */
+  const tienCompleet = ladderTotal('complete', WINDOW_THRESHOLD);
+  if (AMOUNT.brandModel > tienCompleet) {
     throw new Error(
-      `pricing.js: the Brand Model credit (${AMOUNT.brandModelCredit}) does not ` +
-      `divide the setup fee (${AMOUNT.brandModel}) into whole drops.`
+      `pricing.js: het merkmodel kost € ${AMOUNT.brandModel} en een bestelling van `
+      + `${WINDOW_THRESHOLD} complete producten € ${tienCompleet}. Een toevoeging die meer `
+      + 'kost dan de bestelling waar hij bij hoort, is geen toevoeging meer.'
     );
   }
 
@@ -1649,6 +1813,13 @@ export const TEST_SAMPLE = {
      * verduidelijking weer half blijft steken.
      */
     deliverable: `${CATALOG_IMAGES} catalog photos or a lifestyle carousel of ${LIFESTYLE_IMAGES} photos`,
+    /* ── DE KORTE VORM, VOOR DE BALK ONDERAAN — 23 AUGUSTUS 2026 ────────────
+       Dezelfde afspraak als bij reviewClaimShort hierboven: de korte vorm mag
+       MINDER zeggen, nooit iets anders. Wat eruit gaat is het woord "lifestyle"
+       en het tweede "photos"; wat erin blijft zijn de twee aantallen en het feit
+       dat het jóuw product is — precies de drie dingen waarvoor iemand op die
+       knop drukt. De rest staat achter het vraagteken ernaast. */
+    deliverableShort: `${CATALOG_IMAGES} catalog photos or a carousel of ${LIFESTYLE_IMAGES}`,
     // Niet "one image". Eén product, volledig geleverd — precies wat een betaalde
     // bestelling per product oplevert, en dat is de hele reden dat de proef iets
     // bewijst.
@@ -1666,6 +1837,8 @@ export const TEST_SAMPLE = {
     // "verificatie". Je betaalt €1, en dat houdt misbruik tegen. Meer is het niet.
     feeNote: `${euro(AMOUNT.testSample, 'nl')} om misbruik te voorkomen`,
     deliverable: `${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s`,
+    // Zie de noot bij de Engelse deliverableShort.
+    deliverableShort: `${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}`,
     line: `${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest, afgewerkt zoals bij een betaalde bestelling.`,
     catalogLine: `${CATALOG_IMAGES} beelden — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
     lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,

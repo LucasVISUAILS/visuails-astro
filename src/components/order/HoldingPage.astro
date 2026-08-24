@@ -28,19 +28,31 @@
 // every order after it, and the plans are a minimum-term commitment. Both are
 // conversations. A card form here would be the studio pretending a decision has
 // been made that has not.
-import { AMOUNT, euro, vatLabel, vatLead, vatDetail, plans, turnaround } from '../../data/pricing.js';
+import { AMOUNT, euro, vatLabel, vatLead, vatDetail, turnaround } from '../../data/pricing.js';
 import { localizedPath } from '../../i18n/ui.js';
 
 import Note from '../Note.astro';
 interface Props {
   lang: 'en' | 'nl';
-  kind: 'video' | 'brand-model' | 'plan' | 'custom-look';
+  /* 'brand-model' STOND HIER, EN IS WEG — 23 augustus 2026.
+     Sinds /start/brand-model een echte bestelstroom met een afrekenstap is
+     (BrandModelBrief.astro), rendert niets deze soort meer. De twee blokken die
+     erbij hoorden zeiden bovendien twee dingen die niet meer waar zijn: "er is
+     hier geen afrekenstap en die komt voorlopig ook niet", en dat het bedrag
+     wordt verrekend met de eerste bestellingen — de terugverdienconstructie die
+     met de prijswijziging is vervallen. Dode tekst is vervelend; dode tekst die
+     iets belooft, is een rekening.
+
+     'plan' is om dezelfde reden meegegaan. /start/plan is sinds 17 augustus
+     PlanPicker.astro — je kunt daar wél zelf een abonnement afsluiten — terwijl
+     het blok hier bleef zeggen dat dat niet kan en dat we de eerste maand pas
+     factureren als we het eens zijn. Twee soorten over, en allebei renderen ze
+     echt: video en custom-look. */
+  kind: 'video' | 'custom-look';
 }
 const { lang, kind } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 const nl = lang === 'nl';
-
-const planList = plans(lang);
 
 // Common chrome. The status word is the only thing that changes size on the
 // page, and it is the one thing a visitor needs before anything else.
@@ -58,6 +70,15 @@ const UI = {
     website: 'Website or shop link',
     optional: 'optional',
     message: 'What do you have in mind?',
+    /* ── DRIE MELDINGEN, EN WAAROM ZE HIER STAAN ────────────────────────
+       Zonder `data-melding` toont de browser zijn eigen zin ("Please fill out
+       this field") in de UI-taal van de bezoeker, en niet in de taal van de
+       pagina — een Engelse bubbel op een Nederlands formulier. De machinerie
+       staat in initVeldmeldingen() in src/scripts/interactions.js; hier staat
+       alleen de tekst, in de taal van de pagina waar hij op verschijnt. */
+    nameErr: 'Add your name, so we know who is asking.',
+    brandErr: 'Add the brand or shop name — it tells us what this is for.',
+    emailErr: 'Add a full email address, like you@yourbrand.com — otherwise we cannot reply.',
     submit: 'Send this request',
     nextH: 'What happens next',
     next: [
@@ -85,6 +106,10 @@ const UI = {
     website: 'Website of shoplink',
     optional: 'optioneel',
     message: 'Wat heb je in gedachten?',
+    /* Zie de noot bij de Engelse tegenhanger. */
+    nameErr: 'Vul je naam in, dan weten we wie er vraagt.',
+    brandErr: 'Vul de merk- of shopnaam in — daaraan zien we waar dit over gaat.',
+    emailErr: 'Vul een volledig e-mailadres in, zoals jij@jouwmerk.nl — anders kunnen we niet antwoorden.',
     submit: 'Verstuur deze aanvraag',
     nextH: 'Wat er daarna gebeurt',
     next: [
@@ -117,21 +142,6 @@ const KIND = {
       askHint: 'A rough number is fine — it is a request, not an order.',
       more: '/video',
       moreLabel: 'See the video work',
-    },
-    'brand-model': {
-      h1: 'A Brand Model',
-      lead: 'One face, made only for you, that every order after it can run on.',
-      status: 'By conversation',
-      statusBody: 'There is no checkout for this and there is not going to be one soon. A Brand Model is built once, from what you tell us about who your customer is — the useful version of that starts with a conversation, not a form field.',
-      facts: [
-        ['Price', `${euro(AMOUNT.brandModel, 'en')} one-time, ${vatLabel('excl', 'en')}. Credited back against your first orders.`],
-        ['What you get', 'A model that exists nowhere else, consistent across every set you order afterwards, with the rights to use it.'],
-        ['Before you commit', 'You see test frames of the face before anything is invoiced. If it is not right, it is not built.'],
-      ],
-      askLabel: null,
-      askHint: null,
-      more: '/custom-models',
-      moreLabel: 'How a Brand Model is built',
     },
     /*
      * ── DE CUSTOM LOOK, 18 augustus 2026 ────────────────────────────────────
@@ -175,21 +185,6 @@ const KIND = {
       more: '/lifestyle/custom',
       moreLabel: 'See what a look of your own is',
     },
-    plan: {
-      h1: 'A monthly plan',
-      lead: 'A set number of products every month, at a rate below the price per product.',
-      status: 'After a conversation',
-      statusBody: 'Subscriptions are not self-serve yet. A plan is a minimum-term commitment against reserved studio capacity, so it is agreed in writing first — this form starts that conversation, and the first month is invoiced only once both sides have signed off.',
-      facts: [
-        ['The plans', planList.map((p) => `${p.name} · ${p.price} ${p.unit}`).join(' · ') + `, ${vatLabel('excl', 'en')}`],
-        ['What you get', `${planList[0].products}, ${planList[1].products} or ${planList[2].products} products a month, produced on reserved capacity rather than in the turnaround.`],
-        ['The commitment', 'Cancel any month. Unused products roll over one month.'],
-      ],
-      askLabel: 'Which plan are you looking at?',
-      askHint: 'You can change your mind — this is the start of a conversation.',
-      more: '/pricing',
-      moreLabel: 'The plans on /pricing',
-    },
   },
   nl: {
     video: {
@@ -207,21 +202,6 @@ const KIND = {
       more: '/video',
       moreLabel: 'Bekijk het videowerk',
     },
-    'brand-model': {
-      h1: 'Een merkmodel',
-      lead: 'Eén gezicht, alleen voor jou gemaakt, waar elke bestelling daarna op kan draaien.',
-      status: 'In gesprek',
-      statusBody: 'Je kunt dit hier niet afrekenen, en dat komt voorlopig ook niet. We maken een merkmodel één keer, op basis van wat jij ons vertelt over je klant. Dat lukt in een gesprek en niet in een formulierveld.',
-      facts: [
-        ['Prijs', `${euro(AMOUNT.brandModel, 'nl')} eenmalig, ${vatLabel('excl', 'nl')}. Wordt verrekend met je eerste bestellingen.`],
-        ['Wat je krijgt', 'Een model dat nergens anders bestaat, consistent over elke set die je daarna bestelt, met de rechten om het te gebruiken.'],
-        ['Voordat je iets vastlegt', 'Je ziet testbeelden van het gezicht voordat we iets factureren. Klopt het niet, dan maken we het niet.'],
-      ],
-      askLabel: null,
-      askHint: null,
-      more: '/custom-models',
-      moreLabel: 'Hoe we een merkmodel maken',
-    },
     /* Zie de noot bij de Engelse tegenhanger. */
     'custom-look': {
       h1: 'Een eigen look',
@@ -237,21 +217,6 @@ const KIND = {
       askHint: null,
       more: '/lifestyle/custom',
       moreLabel: 'Bekijk wat een eigen look is',
-    },
-    plan: {
-      h1: 'Een maandplan',
-      lead: 'Een vast aantal producten per maand, tegen een tarief onder de prijs per product.',
-      status: 'Na een gesprek',
-      statusBody: 'Abonnementen kun je nog niet zelf afsluiten. Bij een plan leg je je voor een minimumtermijn vast en houden wij elke maand ruimte voor je vrij, dus dat spreken we eerst schriftelijk af. Dit formulier begint dat gesprek, en we factureren de eerste maand pas als we het allebei eens zijn.',
-      facts: [
-        ['De plannen', planList.map((p) => `${p.name} · ${p.price} ${p.unit}`).join(' · ') + `, ${vatLabel('excl', 'nl')}`],
-        ['Wat je krijgt', `${planList[0].products}, ${planList[1].products} of ${planList[2].products} producten per maand. We houden er elke maand ruimte voor vrij, dus ze lopen niet mee in de normale doorlooptijd.`],
-        ['De verplichting', 'Maandelijks opzegbaar. Ongebruikte producten schuiven één maand door.'],
-      ],
-      askLabel: 'Naar welk plan kijk je?',
-      askHint: 'Je mag je nog bedenken — dit is het begin van een gesprek.',
-      more: '/pricing',
-      moreLabel: 'De plannen op de prijzenpagina',
     },
   },
 };
@@ -316,18 +281,18 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
         <div class="row-2">
           <div class="field">
             <label for="h-name">{ui.name} <span class="req">*</span></label>
-            <input class="input" type="text" id="h-name" name="name" autocomplete="name" required />
+            <input class="input" type="text" id="h-name" name="name" autocomplete="name" required data-melding={ui.nameErr} />
           </div>
           <div class="field">
             <label for="h-brand">{ui.brand} <span class="req">*</span></label>
-            <input class="input" type="text" id="h-brand" name="brand" autocomplete="organization" required />
+            <input class="input" type="text" id="h-brand" name="brand" autocomplete="organization" required data-melding={ui.brandErr} />
           </div>
         </div>
 
         <div class="row-2">
           <div class="field">
             <label for="h-email">{ui.email} <span class="req">*</span></label>
-            <input class="input" type="email" id="h-email" name="email" autocomplete="email" required />
+            <input class="input" type="email" id="h-email" name="email" autocomplete="email" required data-melding={ui.emailErr} />
           </div>
           <div class="field">
             <label for="h-phone">{ui.phone} <span class="hold-opt">{ui.optional}</span></label>
@@ -380,17 +345,6 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
             <select class="select" id="h-clips" name="clips">
               {clipCounts.map((n) => <option value={String(n)}>{n}</option>)}
               <option value={notSure} selected>{notSure}</option>
-            </select>
-            <span class="hint">{k.askHint}</span>
-          </div>
-        )}
-
-        {kind === 'plan' && (
-          <div class="field">
-            <label for="h-plan">{k.askLabel}</label>
-            <select class="select" id="h-plan" name="plan">
-              <option value="">{notSure}</option>
-              {planList.map((p) => <option value={p.id}>{`${p.name} — ${p.price} ${p.unit}`}</option>)}
             </select>
             <span class="hint">{k.askHint}</span>
           </div>

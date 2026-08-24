@@ -154,5 +154,70 @@ const gefilterd = nepBestand
 ok('de wacht vindt de fout nog wél als hij er echt staat',
   /import\.meta\.url/.test(gefilterd) && /\.pathname/.test(gefilterd), true);
 
+/* ── 3 · _redirects MAG GEEN BESTAANDE ROUTE OVERSCHADUWEN ──────────────────
+ *
+ * public/_redirects schrijft het zelf op, in zijn eigen regel 2:
+ *
+ *   "Redirects are always followed, regardless of whether or not an asset
+ *    matches the incoming request." Een regel daar OVERTREFT een echte pagina.
+ *
+ * Met de instructie erbij: *"Check the left column against `src/pages/` before
+ * adding a line."* Dat is een handmatige controle op een bestand waarvan de
+ * eigen kop zegt dat de fout `no build error and no 404 to notice it by`
+ * oplevert — een typefout in de linkerkolom haalt een pagina van de lucht en
+ * niets zegt er iets van. Een handmatige controle die zo faalt, hoort een test
+ * te zijn; op 24 augustus 2026 kwamen er vier regels bij (/demo → /how-it-works)
+ * en dat was het moment om hem te schrijven.
+ *
+ * DE BRON IS src/pages/ EN NIET dist/, zodat deze suite zonder build kan blijven
+ * draaien — hij staat vooraan in de keten omdat hij het goedkoopst faalt.
+ */
+console.log('\ngeen enkele redirect-bron is een pagina die de site echt serveert');
+{
+  const regels = fs.readFileSync(path.join(ROOT, 'public/_redirects'), 'utf8')
+    .split('\n')
+    .map((r) => r.trim())
+    .filter((r) => r && !r.startsWith('#'));
+
+  /* Elke .astro onder src/pages/ als route, in beide vormen (met en zonder
+     slash) omdat _redirects die als losse bronnen ziet. `index.astro` is de map
+     zelf; `[param].astro` is dynamisch en heeft geen vast pad. */
+  const routes = new Set();
+  (function loop(dir, voorvoegsel = '') {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) { loop(path.join(dir, e.name), `${voorvoegsel}/${e.name}`); continue; }
+      if (!e.name.endsWith('.astro')) continue;
+      if (e.name.includes('[')) continue;
+      const stam = e.name.replace(/\.astro$/, '');
+      const pad = stam === 'index' ? (voorvoegsel || '/') : `${voorvoegsel}/${stam}`;
+      routes.add(pad);
+      routes.add(pad.endsWith('/') ? pad : `${pad}/`);
+    }
+  })(path.join(ROOT, 'src/pages'));
+
+  ok('er zijn routes gevonden om tegenaan te houden', routes.size > 20, true, routes.size);
+  ok('er staan regels in _redirects', regels.length > 0, true, regels.length);
+
+  const botsingen = regels
+    .map((r) => r.split(/\s+/)[0])
+    .filter((bron) => routes.has(bron));
+  ok('geen bron overschaduwt een echte pagina', botsingen.join(', '), '');
+
+  /* En de andere kant op: een controle die niets vindt omdat hij verkeerd kijkt,
+     is geen controle. /pricing IS een pagina, dus als hij als bron zou worden
+     opgevoerd, moet dit hem zien. */
+  ok('en de controle zou een botsing wél zien', routes.has('/pricing'), true);
+
+  /* DE BESTEMMINGEN MOETEN BESTAAN, anders is een 301 een omweg naar een 404.
+     Alleen de interne, en niet de paden die door een Function beantwoord worden
+     (/o, /account, /api) — die staan niet in src/pages en horen daar ook niet. */
+  const functieRoutes = /^\/(o|account|api|admin)(\/|$)/;
+  const dood = regels
+    .map((r) => r.split(/\s+/)[1])
+    .filter((doel) => doel && doel.startsWith('/') && !functieRoutes.test(doel))
+    .filter((doel) => !routes.has(doel));
+  ok('elke bestemming is een pagina die bestaat', [...new Set(dood)].join(', '), '');
+}
+
 console.log(`\n${pass}/${pass + fail} geslaagd`);
 if (fail) process.exit(1);

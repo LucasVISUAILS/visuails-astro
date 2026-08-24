@@ -128,7 +128,19 @@ const posters: Record<string, { src: string; w: number; h: number }> = {
 const strip = [
   { src: '/img/banners-01.webp', wide: true, key: 'campaign', w: 928, h: 1152 },
   { src: '/img/lifestyle-flash-02.webp', wide: false, key: 'flash', w: 1340, h: 2400 },
-  { src: '/img/lifestyle-phone-made-09.webp', wide: false, key: 'phone', w: 2400, h: 1792 },
+  /* ── HET ONDERWERP STOND HALF BUITEN BEELD — 23 AUGUSTUS 2026 ────────────
+     Deze foto is liggend (2400x1792) en staat in een staande strook. Bij
+     `object-fit: cover` valt daar 71% van de breedte weg, en met de standaard
+     `50% 50%` wordt dat de MIDDELSTE 29% — terwijl het onderwerp in deze opname
+     links staat. Resultaat op /video: een halve persoon tegen de linkerrand en
+     twee derde lege bestrating ernaast, met het kledingstuk — het product — er
+     bijna helemaal uit.
+
+     Gemeten over acht pagina's viel dit als enige echt om. De andere beelden die
+     evenveel of meer verliezen (de galerijtegels, de stroken op /lifestyle) zijn
+     centraal gecomponeerd en overleven de uitsnede gewoon. Het percentage is dus
+     niet het signaal — waar het onderwerp staat, is dat wel. */
+  { src: '/img/lifestyle-phone-made-09.webp', wide: false, key: 'phone', w: 2400, h: 1792, pos: '26% 50%' },
   { src: '/img/lifestyle-dunes-02.webp', wide: false, key: 'dunes', w: 928, h: 1152 },
   { src: '/img/banners-06.webp', wide: true, key: 'campaign', w: 928, h: 1152 },
 ];
@@ -168,7 +180,7 @@ const COPY = {
     // THIS page it needs one sentence of context, because neither column is
     // reachable by ordering clips. Removing the component instead would take
     // away information a buyer who also orders photos does want.
-    tierNote: `The two columns below describe the ladder for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request stays in the standard queue — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
+    tierNote: `The two columns below describe the price per quantity for catalog and lifestyle products. A clip is ${clip} however many you order, and a clip request runs at the standard turnaround — the right-hand column reaches your clips only when they are added to an order of ${WINDOW_THRESHOLD} products or more.`,
     reviewNote: reviewClaim('unattended', 'en'),
     kindsH: 'Ways to add motion.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'en')}`,
@@ -249,7 +261,7 @@ const COPY = {
     ],
     queueNote: `Clips lopen mee in de ${t0.queue.nl.toLowerCase()}. Een vrijgehouden leverdatum hoort bij een bestelling van ${WINDOW_THRESHOLD} producten of meer — clips kunnen daarin meegaan, maar een losse clipaanvraag krijgt geen datum.`,
     // Zie de Engelse kant voor waarom deze regel er staat.
-    tierNote: `De twee kolommen hieronder gaan over de ladder voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
+    tierNote: `De twee kolommen hieronder gaan over de prijs per aantal voor catalog- en lifestyleproducten. Een clip is ${clip}, hoeveel je er ook bestelt, en een clipaanvraag blijft in de normale doorlooptijd — de rechterkolom raakt je clips alleen als ze meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer.`,
     reviewNote: reviewClaim('unattended', 'nl'),
     kindsH: 'Manieren om beweging toe te voegen.',
     perClip: `${clip} / clip · ${vatLabel('excl', 'nl')}`,
@@ -453,7 +465,8 @@ const kindPrice = (slug: string) => (QUOTED.has(slug) ? c.quoted : c.perClip);
   <div class="container">
     <div class="photo-grid reveal pending">
       {strip.map((s) => (
-        <img src={s.src} alt={c.stripAlt[s.key]} loading="lazy" decoding="async" width={s.w} height={s.h} class={s.wide ? 'wide' : undefined} />
+        <img src={s.src} alt={c.stripAlt[s.key]} loading="lazy" decoding="async" width={s.w} height={s.h}
+             class={s.wide ? 'wide' : undefined} style={s.pos ? `object-position:${s.pos}` : undefined} />
       ))}
     </div>
   </div>

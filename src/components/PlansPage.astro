@@ -78,7 +78,7 @@ const COPY = {
     from: 'from',
     unit: `a month · ${FROM_PRODUCTS} products`,
     cta: 'Start a plan',
-    cta2: 'See the price per product',
+    cta2: 'See pricing per product',
 
     plansH: 'The three plans',
     plansSub: 'Same service on all three. What changes is how much of the month you book.',
@@ -110,7 +110,19 @@ const COPY = {
 
     outH: 'Not every month, then.',
     outBody: 'Order by order works too, and the rate falls as the count rises. The price per product is on the pricing page.',
-    outCta: 'See the price per product',
+    /* ── TWEE KNOPPEN MET DEZELFDE TEKST NAAR DEZELFDE PAGINA — 24 aug 2026 ──
+       Deze pagina had `cta2` in de hero en `outCta` hieronder, allebei "Bekijk
+       de prijs per product" en allebei naar /pricing. Twee keer hetzelfde
+       woord voor twee keer dezelfde bestemming leest als een fout, en hier was
+       het erger dan dat: de zin er direct boven zégt al "De prijs per product
+       staat op de prijzenpagina", dus de link herhaalde de regel erboven.
+
+       DE HERO-KNOP BLIJFT ZOALS HIJ WAS. Daar is "de prijs per product" precies
+       het alternatief voor "sluit een abonnement af", en dat is wat iemand daar
+       afweegt. Deze knop staat onder een kop die iets ánders vraagt — niet elke
+       maand, dus dan? — en hoort dat antwoord te geven en niet het prijskaartje
+       nog een keer. */
+    outCta: 'See what it costs without a plan',
 
     ctaH: 'Start with one product',
     ctaEm: `for ${euro(AMOUNT.testSample, "en")}.`,
@@ -159,7 +171,7 @@ const COPY = {
 
     outH: 'Toch liever niet elke maand.',
     outBody: 'Los bestellen kan net zo goed, en het tarief daalt naarmate het aantal stijgt. De prijs per product staat op de prijzenpagina.',
-    outCta: 'Bekijk de prijs per product',
+    outCta: 'Kijk wat het kost zonder abonnement',
 
     ctaH: 'Begin met één product',
     ctaEm: `voor ${euro(AMOUNT.testSample, "nl")}.`,

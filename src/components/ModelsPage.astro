@@ -71,7 +71,12 @@ const COPY = {
     incMeta: '( What it costs )',
     incH: 'Included, not upsold.',
     incBody: 'Every order already includes a model from this roster. There is no per-model fee and no upgrade to unlock one — the price on /pricing is the whole price.',
-    incCta: 'See the price per product',
+    /* De Engelse tegenhanger van "Bekijk alle prijzen per aantal". Tot 24
+       augustus 2026 stond hier hetzelfde als bij `ctaPricing` verderop — twee knoppen
+       met dezelfde tekst naar dezelfde pagina — terwijl het Nederlands die twee
+       al uit elkaar hield. Dat was geen smaakverschil maar een halve ronde: de
+       tekstronde raakte de Nederlandse regel wel en de Engelse niet. */
+    incCta: 'See all prices by quantity',
 
     doorH: 'Want a face that’s only yours?',
     doorBody: 'A Brand Model is designed once, exclusively for your brand, and never appears anywhere else — the ten above are shared; that one would not be.',
@@ -80,7 +85,7 @@ const COPY = {
     ctaH1: 'Pick a face,',
     ctaEm: 'start an order.',
     ctaStart: 'Start an order',
-    ctaPricing: 'See the price per product',
+    ctaPricing: 'See pricing per product',
     ctaWaShort: 'WhatsApp',
   },
   nl: {

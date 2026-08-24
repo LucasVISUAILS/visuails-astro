@@ -47,6 +47,7 @@ const I18N = {
     tyRefTitle: 'Your reference', tyRefNote: 'Keep this handy — quote it if you message us about this order.',
     tyPayNote: 'This order is not paid yet. Production starts once the payment comes through.',
     tyPayCta: 'Complete the payment',
+    tyPaidNote: 'The payment came through. You will get a confirmation and the invoice by email.',
     tsSending: 'Uploading…',
     tsDone: 'Uploaded',
     tsRemove: 'Remove',
@@ -82,6 +83,7 @@ const I18N = {
     tyRefTitle: 'Je referentie', tyRefNote: 'Bewaar deze — vermeld hem als je ons over deze bestelling appt of mailt.',
     tyPayNote: 'Deze bestelling is nog niet betaald. Zodra de betaling binnen is, gaan we aan de slag.',
     tyPayCta: 'Rond de betaling af',
+    tyPaidNote: 'De betaling is binnengekomen. Je krijgt de bevestiging en de factuur per mail.',
     tsSending: 'Uploaden…',
     tsDone: 'Geüpload',
     tsRemove: 'Verwijderen',
@@ -476,11 +478,43 @@ function initConvbar() {
   window.addEventListener('scroll', sync, { passive: true });
   document.addEventListener('astro:page-load', sync);
   document.addEventListener('click', (e) => {
-    if (e.target instanceof Element && e.target.closest('.cb-close')) {
+    if (!(e.target instanceof Element)) return;
+    if (e.target.closest('.cb-close')) {
       convbarDismissed = true;
       const bar = document.querySelector('.convbar');
       if (bar) bar.classList.remove('show');
+      return;
     }
+    /* ── HET VRAAGTEKEN ─────────────────────────────────────────────────────
+       Gedelegeerd, net als het kruisje, omdat de balk per pagina opnieuw wordt
+       gerenderd en een luisteraar op het element zelf een zachte navigatie niet
+       overleeft. */
+    const why = e.target.closest('.cb-why');
+    if (why) {
+      const uitleg = document.getElementById('cb-detail');
+      if (!uitleg) return;
+      const open = uitleg.hidden;
+      uitleg.hidden = !open;
+      why.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+  });
+  /* DICHT BIJ HET OPSTARTEN, EN NIET IN DE HTML. In de opmaak staat de uitleg
+     open met `aria-expanded="true"`: zonder JavaScript is er geen knop die hem
+     ooit opent, en dan hoort de tekst er gewoon te staan. Dit script neemt de
+     bediening over en klapt hem dicht — dezelfde afspraak als bij de pauzeknop
+     van de hero-carrousel, die pas zichtbaar wordt gemaakt door het script dat
+     de beweging aanzet. */
+  const uitlegStart = document.getElementById('cb-detail');
+  if (uitlegStart) {
+    uitlegStart.hidden = true;
+    const knop = document.querySelector('.cb-why');
+    if (knop) knop.setAttribute('aria-expanded', 'false');
+  }
+  document.addEventListener('astro:page-load', () => {
+    const u = document.getElementById('cb-detail');
+    if (u) u.hidden = true;
+    const k = document.querySelector('.cb-why');
+    if (k) k.setAttribute('aria-expanded', 'false');
   });
 }
 
@@ -1023,7 +1057,23 @@ function initThankYou() {
   const box = document.querySelector('#ty-summary');
   if (!box) return;
   const params = new URLSearchParams(location.search);
-  const ref = (params.get('ref') || '').trim();
+  /* ── OOK `?paid=`, EN NIET ALLEEN `?ref=` — 23 augustus 2026 ───────────────
+   *
+   * Deze functie las uitsluitend `ref`. Mollie stuurt na een geslaagde betaling
+   * terug naar de successUrl, en die draagt `paid=` (functions/api/order.js en
+   * src/lib/admin.js zetten hem allebei zo). Er was niemand die `paid` las.
+   *
+   * Gevolg: wie betaald had, kwam terug op een bedankpagina waar de hele
+   * samenvatting VERBORGEN bleef — geen kenmerk, geen enkele bevestiging dat de
+   * betaling ergens is aangekomen. Precies het scherm waarop je dat wél wilt
+   * lezen. Gevonden bij het nalopen van het merkmodelpad, dat na het betalen op
+   * ditzelfde scherm uitkomt, maar het gold voor élke betaalde bestelling.
+   *
+   * `ref` gaat voor: die staat op de doorstuur ná het formulier, met de
+   * betaallink erbij. `paid` is de terugkeer daarna, en dan hoort er geen
+   * betaalknop meer te staan maar een bevestiging. */
+  const betaald = (params.get('paid') || '').trim();
+  const ref = ((params.get('ref') || '').trim() || betaald);
   if (!/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) return;
   const d = t18();
   const pay = molliePayUrl(params.get('pay'));
@@ -1042,6 +1092,16 @@ function initThankYou() {
 
   /* De betaalknop hoort bij het nummer waar hij bij hoort, dus hij komt in
      dezelfde rij te staan — maar als een echt element en niet als string-html. */
+  /* Terug van Mollie: één zin, geen knop. De betaling is binnen — een knop
+     "Rond de betaling af" eronder zou de bezoeker laten twijfelen of er iets
+     misging. */
+  if (betaald && !params.get('ref')) {
+    const klaar = document.createElement('p');
+    klaar.className = 'ty-paid-note';
+    klaar.textContent = d.tyPaidNote;
+    box.append(klaar);
+  }
+
   if (pay) {
     const wrap = document.createElement('p');
     wrap.className = 'ty-pay-cta';

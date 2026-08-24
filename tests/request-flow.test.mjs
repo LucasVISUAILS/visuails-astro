@@ -271,10 +271,21 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
      verhuist de toets mee; verdwijnt de belofte, dan valt hij om. */
   const videoVragenEn = serviceFaqs('video', 'en').map((f) => f.a).join(' ');
   const videoVragenNl = serviceFaqs('video', 'nl').map((f) => f.a).join(' ');
-  ok('het zegt dat een clipaanvraag in de wachtrij loopt',
-    /clip request runs in the standard queue/.test(videoVragenEn), true);
-  ok('en in het Nederlands hetzelfde',
-    /clipaanvraag loopt mee in de normale doorlooptijd/.test(videoVragenNl), true);
+  /* ── OP DE BELOFTE EN NIET OP HET WOORD — 24 AUGUSTUS 2026 ────────────────
+     Hier stond /clip request runs in the standard queue/. Dat woord is op
+     24 augustus uit de tekst gehaald: "queue" staat in STIJL.md §3 op de lijst
+     met woorden die nooit op de klantzijde horen, en de Nederlandse tweeling van
+     diezelfde zin zei allang "normale doorlooptijd". De toets viel dus om op een
+     REPARATIE, terwijl aan de belofte niets veranderde.
+
+     Dat is precies de fout die de noot hierboven beschrijft, één laag dieper: de
+     toets was verhuisd van het bestand naar het antwoord, maar bleef de
+     SPELLING van dat antwoord vastpinnen. Wat een clipbesteller moet lezen is
+     dat er geen datum aan vastzit — niet met welk woord we dat zeggen. */
+  ok('het antwoord zegt dat een clip geen vaste leverdatum krijgt (EN)',
+    /no fixed delivery date/.test(videoVragenEn), true);
+  ok('  en in het Nederlands hetzelfde',
+    /zonder vaste leverdatum/.test(videoVragenNl), true);
   ok('het zegt waar het venster dan wél bij hoort (EN)',
     /the order carries the date/.test(videoVragenEn), true);
   ok('en (NL)', /draagt de bestelling de datum/.test(videoVragenNl), true);
@@ -283,16 +294,22 @@ console.log('\n/video belooft geen vastgezette leverdatum meer');
      dat de tekst bestaat; deze bewijst dat de pagina hem afdrukt. Zonder dit
      paar zou een component die serviceFaqs() niet meer aanroept, groen blijven. */
   ok('en de gebouwde /video drukt ze af',
-    /clip request runs in the standard queue/.test(read('dist/video/index.html')), true);
+    /no fixed delivery date/.test(read('dist/video/index.html')), true);
   ok('  ook in het Nederlands',
-    /clipaanvraag loopt mee in de normale doorlooptijd/.test(read('dist/nl/video/index.html')), true);
+    /zonder vaste leverdatum/.test(read('dist/nl/video/index.html')), true);
 
   /* TierCompare staat op deze pagina en print de twee tredes van de ladder.
      Weghalen zou informatie kosten aan wie ook foto's koopt; er staat dus één
      regel context boven. */
-  ok('en er staat een voorbehoud boven de laddervergelijking', /c\.tierNote/.test(vid), true);
-  ok('  in het Engels', /The two columns below describe the ladder/.test(vid), true);
-  ok('  en in het Nederlands', /De twee kolommen hieronder gaan over de ladder/.test(vid), true);
+  ok('en er staat een voorbehoud boven de tredevergelijking', /c\.tierNote/.test(vid), true);
+  /* Ook deze twee pinden een woord dat STIJL.md §3 verbiedt ("ladder"). Wat het
+     voorbehoud moet zeggen is WELKE producten die twee kolommen beschrijven —
+     catalog en lifestyle, en dus niet clips. Dat is het feit; de formulering
+     eromheen mag veranderen. */
+  ok('  in het Engels, en het noemt waar de kolommen over gaan',
+    /two columns below/.test(vid) && /catalog and lifestyle products/.test(vid), true);
+  ok('  en in het Nederlands',
+    /twee kolommen hieronder/.test(vid) && /catalog- en lifestyleproducten/.test(vid), true);
 
   /* De knoppen. Drie stuks, en ze gingen alle drie naar de keuzepagina waar de
      bezoeker net vandaan kwam. */

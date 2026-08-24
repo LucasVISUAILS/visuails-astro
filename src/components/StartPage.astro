@@ -18,8 +18,23 @@ import { waHref } from '../data/whatsapp.js';
 //   /start/lifestyle    real flow      carousels, with the look picker
 //   /start/complete     real flow      both, with the background picker
 //   /start/video        placeholder    the flow is not built; register interest
-//   /start/brand-model  placeholder    one-time setup, agreed in conversation
-//   /start/plan         placeholder    monthly plans, agreed by intake
+//   /start/brand-model  real flow      the brief, at a fixed one-time price
+//   /start/plan         real flow      choose, authorise by Mollie, done
+//
+// DIE LAATSTE TWEE STONDEN HIER TOT 24 AUGUSTUS 2026 ALS "placeholder", en dat
+// was op allebei achterhaald. Het abonnement is op 18 augustus rechtgezet in de
+// tekst verderop maar niet in deze lijst; het merkmodel is nooit rechtgezet.
+//
+// /start/brand-model rendert BrandModelBrief: een <form action="/api/order">
+// met service=brand-model. ORDER_SERVICES accepteert die waarde en
+// FIXED_PRICE_SERVICES in src/lib/quote.js bevat hem, dus isPayableService()
+// geeft true en er komt een betaling uit. Het is geen aanvraag maar een
+// bestelling met een vaste prijs.
+//
+// Waarom dat hier met zoveel woorden staat: deze lijst is wat een lezer als
+// eerste ziet, en op grond hiervan is het merkmodel maandenlang in de groep
+// "op aanvraag" blijven staan, met een knop "lees hoe het ervoor staat" voor
+// een formulier dat gewoon werkt.
 //
 // A link can now point at the flow it means. Nothing on this page is a form:
 // six doors, what is behind each one, and what state each one is in.
@@ -66,7 +81,7 @@ const COPY = {
     lead: `Pick what you want made and we only ask the questions that service needs. The rate per product falls as the count rises, and from ${WINDOW_THRESHOLD} products an order gets a reserved delivery date instead of the normal turnaround.`,
     readyH: 'Order it now',
     laterH: 'Ask for it',
-    laterLead: 'Three services the studio does that a form cannot price on its own yet. Each has a page saying where it stands and how to get in line.',
+    laterLead: 'Two services the studio does that a form cannot price on its own yet. Each has a page saying where it stands and how to get in line.',
     from: 'from',
     perProduct: 'a product',
     go: 'Start this order',
@@ -106,14 +121,6 @@ const COPY = {
         price: `${euro(AMOUNT.video, 'en')} a clip`,
         line: 'Clips are being made today; the order flow for them is not finished.',
       },
-      {
-        id: 'brand-model',
-        href: '/start/brand-model/',
-        name: 'A Brand Model',
-        status: 'By conversation',
-        price: `${euro(AMOUNT.brandModel, 'en')} one-time`,
-        line: 'One face made only for you. We build it from what you tell us, so it starts with a conversation.',
-      },
       /* ── DE LOOK OP MAAT, 18 augustus 2026 ────────────────────────────────
          Hij stond als vijfde radio in het bestelformulier, afgerekend op de
          lifestyle-ladder, terwijl /lifestyle/custom "Op aanvraag" zei. Lucas:
@@ -149,6 +156,27 @@ const COPY = {
        suggereren tussen "catalog" en "abonnement", en dat is de verkeerde
        vraag. Dus een eigen rij, direct onder de drie, met het getal en de weg
        naar binnen. */
+    /* ── HET MERKMODEL KRIJGT EEN EIGEN RIJ — 24 augustus 2026 ─────────────
+       Het stond in `later`, tussen video en de look op maat, met status "By
+       conversation" en de knop "Read where this stands". Alle drie de signalen
+       zeiden: dit kun je nog niet kopen.
+
+       Dat klopt niet. FIXED_PRICE_SERVICES in src/lib/quote.js bevat
+       'brand-model', dus het heeft een vaste prijs en isPayableService() geeft
+       true; /start/brand-model rendert een echt formulier dat naar /api/order
+       post. Dit is precies wat op 18 augustus met het abonnement gebeurde — een
+       werkende kassa met een bordje "gesloten" ervoor — nu op het duurste
+       eenmalige product dat de studio verkoopt.
+
+       EN GEEN VIERDE TEGEL BOVEN, om dezelfde reden als het abonnement: de drie
+       tegels zijn per product geprijsd en dit is een eenmalig bedrag. Ernaast
+       zetten zou een keuze suggereren tussen "catalog" en "merkmodel", en dat is
+       de verkeerde vraag — een merkmodel komt bij het werk, niet in plaats van. */
+    bmH: 'Or give the work your own face',
+    bmLine: 'One model, built for your brand and yours alone, that carries across every campaign after this one. A fixed one-time fee, and it starts with a short brief rather than a conversation.',
+    bmCta: 'Fill in the brief',
+    bmCta2: 'See what a Brand Model is',
+    bmOnce: 'one-time',
     planH: 'Or put it on a monthly plan',
     planLine: 'The same work on a standing arrangement: a fixed number of products every month, in a week the calendar keeps free for you. You arrange it yourself — no conversation needed first.',
     planCta: 'Start a plan',
@@ -169,7 +197,7 @@ const COPY = {
     lead: `Kies wat je wilt laten maken, daarna volgen de stappen. Het tarief per product daalt naarmate het aantal stijgt, en vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling een vastgezette leverdatum in plaats van de normale doorlooptijd.`,
     readyH: 'Nu te bestellen',
     laterH: 'Op aanvraag',
-    laterLead: 'Drie dingen die we maken en waar dit formulier nog geen prijs voor kan uitrekenen. Bij elk staat een pagina met hoe het ervoor staat en hoe je je aanmeldt.',
+    laterLead: 'Twee dingen die we maken en waar dit formulier nog geen prijs voor kan uitrekenen. Bij elk staat een pagina met hoe het ervoor staat en hoe je je aanmeldt.',
     from: 'vanaf',
     perProduct: 'per product',
     go: 'Start deze bestelling',
@@ -209,14 +237,6 @@ const COPY = {
         price: `${euro(AMOUNT.video, 'nl')} per clip`,
         line: 'Clips maken we al, maar je kunt ze hier nog niet zelf bestellen.',
       },
-      {
-        id: 'brand-model',
-        href: '/start/brand-model/',
-        name: 'Een merkmodel',
-        status: 'In gesprek',
-        price: `${euro(AMOUNT.brandModel, 'nl')} eenmalig`,
-        line: 'Eén gezicht, alleen voor jou. We bouwen het van wat jij ons vertelt, dus het begint met een gesprek.',
-      },
       /* Zie de noot bij de Engelse tegenhanger. */
       {
         id: 'custom-look',
@@ -227,6 +247,12 @@ const COPY = {
         line: 'Een wereld die om jouw product heen ontworpen wordt in plaats van gekozen uit de vier. Wat het kost, volgt uit wat je gebouwd wilt hebben.',
       },
     ],
+    /* Zie de noot bij de Engelse tegenhanger. */
+    bmH: 'Of geef het werk je eigen gezicht',
+    bmLine: 'Eén model, alleen voor jouw merk gebouwd, dat meegaat in elke campagne hierna. Een vast eenmalig bedrag, en het begint met een korte brief in plaats van met een gesprek.',
+    bmCta: 'Vul de brief in',
+    bmCta2: 'Bekijk wat een merkmodel is',
+    bmOnce: 'eenmalig',
     planH: 'Of doe het op een maandabonnement',
     planLine: 'Hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, in een week die de planning voor je vrijhoudt. Je regelt het zelf — er hoeft geen gesprek aan vooraf te gaan.',
     planCta: 'Sluit een abonnement af',
@@ -297,6 +323,26 @@ const rateRange = (kind: string) => `${euro(ladderRate(kind, 1), lang)}–${euro
       same thing twice. */}
   <p class="pick-vat">{vatLead(lang)} <Note lang={lang} term={vatLabel('excl', lang)} wide>{vatDetail(lang)}</Note></p>
   <p class="pick-more"><a href={lp('/pricing')}>{c.ladder}</a></p>
+</div></section>
+
+<!-- HET MERKMODEL — een eenmalig bedrag, geen vierde tegel. Zie de noot bij bmH. -->
+<section class="section-tight"><div class="container">
+  <div class="startplan">
+    <div class="startplan-copy">
+      <h2>{c.bmH}</h2>
+      <p>{c.bmLine}</p>
+    </div>
+    <div class="startplan-side">
+      <p class="startplan-fig">
+        <strong>{euro(AMOUNT.brandModel, lang)}</strong>
+        <span class="startplan-unit">{c.bmOnce}, {vatLabel('excl', lang)}</span>
+      </p>
+      <div class="startplan-cta">
+        <a class="btn btn-primary" href={lp('/start/brand-model')}>{c.bmCta}</a>
+        <a class="btn btn-ghost" href={lp('/custom-models')}>{c.bmCta2}</a>
+      </div>
+    </div>
+  </div>
 </div></section>
 
 <!-- HET ABONNEMENT — een andere manier van betalen, geen vierde dienst -->

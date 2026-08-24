@@ -51,25 +51,48 @@ const COPY = {
     h1: ['One link.', 'Your whole order.'],
     lede: `Every order comes with a private link. No account to make, no password to lose. Everything about that order lives behind it: where it stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it that we hold for you.`,
     ctaStart: 'Start an order',
-    ctaHow: 'How an order is run',
+    ctaHow: 'How we process your order',
 
     stateH: 'Where it is, without asking.',
-    stateLede: 'The portal opens on the state of your order. There are six, and the one you are in is the first thing on the page.',
+    /* ── ZES DINGEN, MAAR GEEN ZES STATUSSEN — 23 AUGUSTUS 2026 ───────────────
+     *
+     * Hier stond *"There are six"*, en de kolom heeft er vijf: received,
+     * in_production, human_check, delivered, cancelled (schema.sql:103, en
+     * dezelfde vijf in portal.js:273 en admin.js:98). "Revision" en "Closed"
+     * stonden ertussen alsof ze in datzelfde rijtje zaten.
+     *
+     * ZE ZIJN WEL ECHT, en dat is waarom ze blijven staan. Ze komen alleen
+     * ergens anders vandaan: een revisie is een toestand van één BEELD
+     * (files.review_state = 'revision_requested'), en afgesloten is
+     * orders.closed_at — het veld waar canReviewOrder() op kijkt. Twee dingen
+     * die de klant ziet en die geen orderstatus zijn.
+     *
+     * Dat verschil is niet cosmetisch. Een klant die "zes statussen" leest en er
+     * vijf ziet, denkt dat er iets mist; een klant die leest dat een revisie
+     * per beeld loopt, snapt meteen waarom de rest van zijn bestelling ondertussen
+     * doorgaat. En "In review" heette hier anders dan in het portaal zelf, waar
+     * human_check als "Being checked" op het scherm komt.
+     *
+     * 'Cancelled' staat er bewust niet bij: dat is een status, maar het is niet
+     * iets waar een bestelling doorheen LOOPT, en hem in dit rijtje zetten leest
+     * als een stap die iedereen passeert.
+     */
+    stateLede: 'The portal opens on the state of your order. Four steps it moves through, plus two things that can happen along the way — and where you are is the first thing on the page.',
     states: [
       ['Received', 'The order is in and the delivery date is held.'],
       ['In production', 'The studio is working through the folder.'],
-      ['In review', 'A person is looking at every visual before it goes out.'],
+      ['Being checked', 'A person is looking at every visual before it goes out.'],
       ['Delivered', 'The gallery is open and the downloads are live.'],
-      ['Revision', 'You asked for a change and it is being made.'],
-      ['Closed', `Signed off. Files stay available for ${PORTAL_TTL_DAYS} days.`],
+      ['Revision — per image', 'You sent your revision round and these images are being redone. It stays a state of those images and not of the order: the rest keeps moving.'],
+      ['Closed', `Every image approved. Nothing left to decide, and the files stay available for ${PORTAL_TTL_DAYS} days.`],
     ],
     stateNote: 'Each change is written into a timeline you can read, with the date it happened. Nothing about your order is only in our heads.',
 
     galleryH: 'Approve it image by image.',
-    galleryLede: 'On delivery the whole order opens as a gallery. Every visual has two buttons and there is no accept-all — an order you approved in one click is an order nobody looked at. Ask for a revision on one image and the rest of the order keeps moving.',
+    galleryLede: 'On delivery the whole order opens as a gallery. You approve image by image and there is no accept-all — an order you approved in one click is an order nobody looked at. Anything that is not right you tick, and you send all of it at once as the one revision round that comes with the order. The rest of the order keeps moving while we put those right.',
     galleryList: [
       ['Approve', 'Marks that image done. The count at the top moves.'],
-      ['Request a revision', 'Opens a note field. Say what is wrong in your own words — it goes straight to the person who made it.'],
+      ['Tick what is not right', 'One revision round comes with every order. Tick the ones that are off, write in your own words what is wrong, and send them together — it goes straight to the person who made them.'],
       // Nieuw op 9 augustus 2026, en het hoort hier omdat de figuur ernaast het
       // laat zien: bij de foto’s staat geen downloadknop meer. Dat verzint een
       // bezoeker niet zelf, en ongezegd leest het als een scherm dat stuk is.
@@ -117,25 +140,26 @@ const COPY = {
     h1: ['Eén link.', 'Je hele bestelling.'],
     lede: `Bij elke bestelling krijg je een privélink. Geen account om aan te maken, geen wachtwoord om kwijt te raken. Alles over die bestelling zit erachter: waar hij staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om hem goed te keuren of te zeggen wat er niet klopt. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast die we voor je vrijhouden.`,
     ctaStart: 'Start een bestelling',
-    ctaHow: 'Hoe een bestelling loopt',
+    ctaHow: 'Het bestelproces',
 
     stateH: 'Waar hij staat, zonder te vragen.',
-    stateLede: 'Het portaal begint bij de status van je bestelling. Er zijn er zes, en waar jij staat is het eerste dat je ziet.',
+    // Zie de noot bij de Engelse stateLede.
+    stateLede: 'Het portaal begint bij de status van je bestelling. Vier stappen die hij doorloopt, plus twee dingen die onderweg kunnen gebeuren — en waar jij staat is het eerste dat je ziet.',
     states: [
       ['Ontvangen', 'Je bestelling is binnen en de leverdatum staat vast.'],
       ['In productie', 'De studio werkt de map door.'],
-      ['In controle', 'Een mens bekijkt elk beeld voordat het weggaat.'],
+      ['Wordt nagekeken', 'Een mens bekijkt elk beeld voordat het weggaat.'],
       ['Geleverd', 'De galerij is open en de downloads staan klaar.'],
-      ['Revisie', 'Je vroeg om een wijziging en die wordt gemaakt.'],
-      ['Afgesloten', `Afgetekend. Bestanden blijven ${PORTAL_TTL_DAYS} dagen beschikbaar.`],
+      ['Revisie — per beeld', 'Je hebt je revisieronde verstuurd en deze beelden worden opnieuw gemaakt. Het blijft een toestand van díé beelden en niet van de bestelling: de rest loopt gewoon door.'],
+      ['Afgesloten', `Elk beeld goedgekeurd. Er valt niets meer te beslissen, en de bestanden blijven ${PORTAL_TTL_DAYS} dagen beschikbaar.`],
     ],
     stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je order zit alleen in ons hoofd.',
 
     galleryH: 'Beeld voor beeld goedkeuren.',
-    galleryLede: 'Bij levering opent de hele bestelling als galerij. Elk beeld heeft twee knoppen en er is geen alles-accepteren — een bestelling die je in één klik goedkeurde, is een bestelling waar niemand naar gekeken heeft. Vraag je op één beeld een revisie aan, dan loopt de rest van de bestelling gewoon door.',
+    galleryLede: 'Bij levering opent de hele bestelling als galerij. Je keurt per beeld goed en er is geen alles-accepteren — een bestelling die je in één klik goedkeurde, is een bestelling waar niemand naar gekeken heeft. Wat niet goed is vink je aan, en dat stuur je in één keer op als de ene revisieronde die bij de bestelling hoort. De rest van de bestelling loopt ondertussen gewoon door.',
     galleryList: [
       ['Goedkeuren', 'Daarmee staat dat beeld op afgerond. De teller bovenaan loopt mee.'],
-      ['Revisie aanvragen', 'Opent een notitieveld. Zeg in je eigen woorden wat er niet klopt — het gaat rechtstreeks naar degene die het gemaakt heeft.'],
+      ['Aanvinken wat niet goed is', 'Bij elke bestelling zit één revisieronde. Vink aan wat niet klopt, schrijf in je eigen woorden wat eraan schort, en stuur ze samen op — het gaat rechtstreeks naar degene die ze gemaakt heeft.'],
       ['De beelden hier zijn op schermformaat', 'Ze staan er om te beoordelen, niet om te gebruiken. Wat je meeneemt is één map — de volgende sectie is wat daarin zit.'],
     ],
 

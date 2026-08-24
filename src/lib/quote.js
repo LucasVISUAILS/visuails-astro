@@ -85,6 +85,31 @@ export { VAT_RATE };
 export const PAYABLE_SERVICES = new Set(['catalog', 'lifestyle', 'complete']);
 
 /**
+ * DIENSTEN MET ÉÉN VAST BEDRAG, EN WAAROM DIE NIET IN PAYABLE_SERVICES STAAN.
+ *
+ * PAYABLE_SERVICES betekent iets preciezers dan "hier valt voor te betalen": het
+ * betekent *deze dienst is uit de ladder te prijzen*. quoteOrder() leest die
+ * verzameling en gaat daarna meteen naar ladderRate(), en ladderRate() GOOIT bij
+ * een onbekende sleutel in plaats van terug te vallen — met opzet, zie
+ * pricing.js. Een merkmodel op die lijst zetten zou dus geen prijs opleveren maar
+ * een uitzondering, op het pad dat een betaling aanmaakt.
+ *
+ * Een merkmodel heeft geen aantal en geen trede. Het is één bedrag, één keer, en
+ * dat staat in AMOUNT.brandModel. Vandaar een tweede verzameling met een eigen
+ * offertefunctie ernaast (quoteBrandModel), precies zoals de proefvisual dat al
+ * deed — alleen stond die als los `svc === 'test-sample'` in de aanroeper en
+ * daarmee nergens bij naam.
+ *
+ * DE PROEFVISUAL STAAT HIER BEWUST NIET IN. isPayableService() hieronder wordt
+ * óók gelezen door het klantdashboard, dat er een knop "Nu betalen" van maakt,
+ * en account.js zet daar `|| order.service === SAMPLE_SERVICE` naast omdat de
+ * proef zijn eigen pad heeft (betalen gebeurt meteen, of helemaal niet). Die
+ * uitzondering hier binnentrekken verandert bestaand gedrag op een pad waar niets
+ * mis mee is; tests/order-api.test.mjs legt dat ook vast.
+ */
+export const FIXED_PRICE_SERVICES = new Set(['brand-model']);
+
+/**
  * THE WIRE VALUE IS NOT THE LADDER KEY, AND THAT COST REAL MONEY.
  *
  * /start/complete — "Both together", the most expensive door on the site — posts
@@ -146,7 +171,8 @@ export function ladderKey(service) {
 
 /** Is deze dienst uit orders.service te prijzen — en dus te betalen? */
 export function isPayableService(service) {
-  return PAYABLE_SERVICES.has(ladderKey(service));
+  const kind = ladderKey(service);
+  return PAYABLE_SERVICES.has(kind) || FIXED_PRICE_SERVICES.has(kind);
 }
 
 /** Round to whole cents the way money has to be rounded: half away from zero. */
@@ -344,6 +370,46 @@ export function quoteTestSample({ vatRate = VAT_RATE } = {}) {
   };
 }
 
+/**
+ * Het merkmodel: één bedrag, één keer, en de btw gaat eróver.
+ *
+ * ── WAAROM DIT DE ANDERE KANT OP REKENT DAN quoteTestSample() ──────────────
+ *
+ * De proefvisual rekent van bruto naar netto: € 1 is wat er van de kaart gaat en
+ * de btw zit erin. Dat is daar de goede keuze omdat "één euro" de belofte is die
+ * op de pagina staat.
+ *
+ * Hier is de belofte een andere. Elk bedrag op deze site is exclusief btw — dat
+ * is niet een detail maar een regel met een eigen functie eromheen (vatLead() in
+ * pricing.js, zichtbaar op elke pagina met een prijs). € 450 is dus het NETTO
+ * bedrag, en een zakelijke klant met een geldig btw-nummer in een ander EU-land
+ * betaalt precies die € 450 doordat het tarief 0 is. Zou dit van bruto naar netto
+ * rekenen, dan kreeg diezelfde klant € 371,90 + € 0 op zijn factuur en betaalde
+ * hij minder dan de prijs die er stond.
+ *
+ * ── EN HET AANTAL IS 1, NIET 0 ────────────────────────────────────────────
+ *
+ * invoice.js maakt van een offerte één factuurregel met qty 1 (zie regel ~237),
+ * en de bevestigingsmail drukt `quote.products` af als er een getal staat. Nul
+ * zou daar "0 producten" van maken op een factuur van € 544,50. Eén merkmodel is
+ * één stuk, en dat is ook wat het is.
+ */
+export function quoteBrandModel({ vatRate = VAT_RATE } = {}) {
+  const netCents = cents(AMOUNT.brandModel);
+  const effectiveRate = safeRate(vatRate);
+  const vatCents = Math.round(netCents * effectiveRate);
+  return {
+    service: 'brand-model',
+    products: 1,
+    outfits: 0,
+    extras: 0,
+    netCents,
+    vatCents,
+    grossCents: netCents + vatCents,
+    vatRate: effectiveRate,
+  };
+}
+
 /** "12,50" — Mollie wants a decimal string with exactly two places. */
 export function centsToMollieValue(c) {
   return (Math.round(Number(c) || 0) / 100).toFixed(2);
@@ -358,6 +424,12 @@ export function centsToMollieValue(c) {
 export function paymentDescription(quote, lang = 'en') {
   const nl = lang === 'nl';
   if (quote.service === 'test-sample') return nl ? 'VISUAILS proefvisual' : 'VISUAILS test sample';
+  /* Zonder deze regel viel een merkmodel door naar de `what`-tabel hieronder,
+     die op laddernamen is gesleuteld, en werd de omschrijving op de
+     checkoutpagina én op het bankafschrift *"VISUAILS — 1 producten,
+     undefined"*. Precies de fout die drie regels lager in vijfentwintig regels
+     staat beschreven; hier voorkomen in plaats van herhaald. */
+  if (quote.service === 'brand-model') return nl ? 'VISUAILS merkmodel' : 'VISUAILS Brand Model';
   const what = nl
     ? { catalog: 'catalogsets', lifestyle: 'lifestyle-carousels', complete: 'catalog + lifestyle' }
     : { catalog: 'catalog sets', lifestyle: 'lifestyle carousels', complete: 'catalog + lifestyle' };

@@ -32,7 +32,7 @@ import { readFileSync } from 'node:fs';
 import { d1, verseDb, telling } from './lib/d1sqlite.mjs';
 import { VAT_TREATMENT, vatShort, vatDecision } from '../src/data/vat.js';
 import { VAT_RATE } from '../src/lib/quote.js';
-import { AMOUNT, BRAND_MODEL_CREDIT_DROPS, MANDATE_AMOUNT, vatLabel } from '../src/data/pricing.js';
+import { AMOUNT, MANDATE_AMOUNT, vatLabel, ladderTotal, WINDOW_THRESHOLD } from '../src/data/pricing.js';
 import { vatVoorAbonnement, createSubscriptionRow } from '../src/lib/subscription.js';
 import { snapshotFromSubscription } from '../src/lib/invoice.js';
 
@@ -167,43 +167,35 @@ console.log('\n3 · de taal komt van buiten en niet uit een kolom die niet besta
   ok('en in het Nederlands ook', nl.lines[0].description.includes('augustus'), true);
 }
 
-/* ═══ 4 · HET MERKMODEL-TEGOED, IN CENTEN EN ÉÉN KEER ═════════════════════════
+/* ═══ 4 · HET MERKMODEL IS ÉÉN BEDRAG ════════════════════════════════════════
  *
- * `AMOUNT.brandModelCredit * BRAND_MODEL_CREDIT_DROPS` ging rechtstreeks in
- * `delta_cents`. AMOUNT is in EURO'S: 250 × 5 = 1250, en 1250 cent is € 12,50 —
- * een honderdste van het tegoed, met een reden ernaast die € 1.250 belooft.
+ * Hier stond de controle op het merkmodel-tegoed: dat `AMOUNT.brandModelCredit ×
+ * BRAND_MODEL_CREDIT_DROPS` in CENTEN het hele setupbedrag was, en dat het maar
+ * één keer geboekt werd. Die twee fouten waren echt en kostten geld — maar ze
+ * kunnen niet meer terugkomen, want de credit bestaat sinds 23 augustus 2026
+ * niet meer. Zie de noot bij AMOUNT.brandModel in pricing.js.
  *
- * Deze controle rekent de eenheid uit de kolom zelf terug in plaats van 125000
- * over te typen: zou AMOUNT.brandModel ooit veranderen, dan verandert de
- * verwachting mee en blijft de bewering "het tegoed is het hele setupbedrag".
+ * WAT ERVOOR IN DE PLAATS KOMT, BEWAAKT HET BESLUIT ZELF. Lucas' vraag was "één
+ * bedrag, één product", en de reden dat het van € 1.250 naar € 450 ging was een
+ * VERHOUDING: een toevoeging mag niet meer kosten dan de bestelling waar hij bij
+ * hoort. Dat is het ding dat stil kan verschuiven zodra iemand aan de ladder of
+ * aan dit bedrag komt, dus dat is het ding dat een toets verdient.
+ *
+ * pricing.js gooit er bij het bouwen al op (assertLadder), en deze toets zorgt
+ * dat die controle zelf niet stilletjes verdwijnt — een invariant zonder toets is
+ * een invariant die iemand weghaalt om een build groen te krijgen.
  */
-console.log('\n4 · het merkmodel-tegoed staat in centen');
+console.log('\n4 · het merkmodel is één bedrag, en blijft onder een bestelling');
 {
-  ok('AMOUNT is in euro\'s en niet in centen', AMOUNT.brandModelCredit, 250);
-  const verwacht = Math.round(AMOUNT.brandModelCredit * BRAND_MODEL_CREDIT_DROPS * 100);
-  ok('het tegoed is het hele setupbedrag, in centen', verwacht, Math.round(AMOUNT.brandModel * 100));
-  ok('en dus niet 1250', verwacht === 1250, false);
-
-  /* De poort zit op het grootboek en niet op het aantal modellen — want modellen
-     worden echt verwijderd (handleModelManage doet een DELETE) en dan staat de
-     teller weer op nul. Deze controle bootst dat na op de echte tabellen. */
-  const { db } = verseOmgeving();
-  const id = klant(db);
-  const boek = () => {
-    const al = db.prepare("SELECT id FROM customer_credits WHERE customer_id = ? AND reason LIKE 'Merkmodel-setup%' LIMIT 1").get(id);
-    if (al) return false;
-    db.prepare('INSERT INTO customer_credits (customer_id, delta_cents, reason) VALUES (?, ?, ?)')
-      .run(id, verwacht, 'Merkmodel-setup — € 250 verrekenbaar op elk van je eerste 5 bestellingen');
-    return true;
-  };
-  db.prepare("INSERT INTO custom_models (customer_id, label, status) VALUES (?, 'Nova', 'in_design')").run(id);
-  ok('het eerste model boekt het tegoed', boek(), true);
-  db.prepare('DELETE FROM custom_models WHERE customer_id = ?').run(id);
-  db.prepare("INSERT INTO custom_models (customer_id, label, status) VALUES (?, 'Nova', 'in_design')").run(id);
-  ok('opnieuw toevoegen na een verwijderde tikfout boekt niets extra', boek(), false);
-  ok('één regel in het grootboek', telling(db, 'SELECT COUNT(*) FROM customer_credits WHERE customer_id = ?', id), 1);
-  ok('en het saldo is het hele setupbedrag',
-    telling(db, 'SELECT SUM(delta_cents) FROM customer_credits WHERE customer_id = ?', id), Math.round(AMOUNT.brandModel * 100));
+  ok('er is geen credit meer', AMOUNT.brandModelCredit === undefined, true);
+  ok('en het bedrag is één getal', typeof AMOUNT.brandModel, 'number');
+  /* Tien complete producten is de maat: dat is de drempel waarop een bestelling
+     een leverdatum krijgt, en dus de kleinste bestelling waar een merkmodel
+     realistisch bij hoort. */
+  const tien = ladderTotal('complete', WINDOW_THRESHOLD);
+  ok('het merkmodel kost minder dan een bestelling van tien complete producten',
+    AMOUNT.brandModel < tien, true);
+  ok('  en dat is een echte vergelijking, geen nul', tien > 0, true);
 }
 
 /* ═══ 5 · DE NACHTTAAK LAAT AANVRAGEN MET RUST ════════════════════════════════
@@ -423,8 +415,9 @@ console.log('\nelk bedrag van één euro komt uit pricing.js');
 
 /* ── WAT HIER NIET IN ZIT, EN WAAROM ────────────────────────────────────────
  *
- * De aanroepende functies zelf — handleOrderCancel(), boekMerkmodelTegoed() en
- * cancelStaleApprovals() — worden hierboven niet aangeroepen maar nagebouwd: hun
+ * De aanroepende functies zelf — handleOrderCancel() en cancelStaleApprovals();
+ * boekMerkmodelTegoed() stond hier ook en bestaat sinds 23 augustus 2026 niet
+ * meer — worden hierboven niet aangeroepen maar nagebouwd: hun
  * SQL en hun rekensom staan er letterlijk in. Dat is bewust en het is een
  * ZWAKKERE bewering dan een aanroep, dus het hoort erbij te staan. Alle drie
  * hangen aan een Request, een adminsessie of een cron-omgeving, en een stub

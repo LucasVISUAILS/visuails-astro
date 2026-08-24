@@ -415,6 +415,16 @@ console.log('\nde broncontrole: nergens nog een losse download');
   // houdt; ging die ooit uit elkaar, dan waren het twee leveringen.
   check('account.js gebruikt de gedeelde bouwer', account.includes('loadDeliveryFiles('), true);
   check('portal.js gebruikt de gedeelde bouwer', portal.includes('loadDeliveryFiles('), true);
+  /* ── EEN CONTROLE IS GEEN LIJST — noot van 24 augustus 2026 ──────────────
+     Deze regel bewaakt dat portal.js niet zijn eigen LIJST van de levering
+     opbouwt; dat was de bug waardoor het portaal vervangen beelden liet zien.
+
+     Sinds de revisieronde staat er in handleRevisionRound() wél een query op
+     `files`, en die is iets anders: hij krijgt een rijtje bestandsnummers van de
+     klant en vraagt welke daarvan bij déze bestelling horen en nog open staan.
+     Hij toont niets. Daarom leidt daar `id IN (...)` en niet `order_id`, en
+     daarom blijft deze wacht staan zoals hij is — wie hem laat matchen, heeft
+     hoogstwaarschijnlijk alsnog een tweede lijst geschreven. */
   check('portal.js heeft geen eigen bestandsquery meer', /FROM files\s+WHERE order_id = \?1 AND kind = 'delivery'/.test(portal), false);
 
   // zip.js moet leesbare tekst blijven. Stonden de controletekens er letterlijk in,

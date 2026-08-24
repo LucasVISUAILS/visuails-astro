@@ -300,6 +300,34 @@ const label = lang === 'nl'
       pop.style.setProperty('--nt-y', '0px');
       const b = btn.getBoundingClientRect();
       const p = pop.getBoundingClientRect();
+
+      /* ── WAAR `0px` VOOR DIT ELEMENT UITKOMT — 24 augustus 2026 ──────────
+         Alles hieronder rekent in VENSTERCOÖRDINATEN, want dat is wat
+         `position: fixed` hoort te betekenen. Er is één uitzondering en die
+         staat niet in deze code: een `fixed` element hangt aan het venster
+         BEHALVE wanneer een voorouder een transform heeft, en dan hangt het aan
+         die voorouder. Elke uitgerekende x en y komt er dan naast te liggen,
+         precies zo ver als die voorouder van de vensterrand af staat.
+
+         GEMETEN OP DE HOMEPAGE, 24 augustus 2026. De dienstenrij krijgt een
+         zweefanimatie (`hv-float`, een translateY) en die transform maakte de
+         rij het bevattend blok van deze notitie. Op 390px lag de notitie 19px
+         te ver naar rechts en 11px te laag; op 1440px 58px te ver naar rechts,
+         waardoor hij 43px BUITEN het venster hing — terwijl de klemregel
+         hieronder juist bestaat om dat te voorkomen. Die klem rekende goed en
+         mat in de verkeerde ruimte.
+
+         DE OMREKENING KOST NIETS EN VRAAGT NIETS. Hierboven staan --nt-x en
+         --nt-y al op 0, dus `p` is op dit moment het element op de oorsprong
+         van zijn eigen bevattend blok — in venstercoördinaten. Zonder
+         getransformeerde voorouder is dat (0,0) en verandert er niets; mét
+         een voorouder is dit precies de verschuiving die eraf moet.
+
+         Zo hoeft niemand die ergens een animatie toevoegt te weten dat er
+         verderop een notitie in staat. */
+      const oorsprongX = p.left;
+      const oorsprongY = p.top;
+
       const marge = 12;
       const vw = document.documentElement.clientWidth;
       const vh = document.documentElement.clientHeight;
@@ -313,8 +341,8 @@ const label = lang === 'nl'
         if (boven > marge) y = boven;
         else y = Math.max(marge, vh - p.height - marge);
       }
-      pop.style.setProperty('--nt-x', `${Math.round(x)}px`);
-      pop.style.setProperty('--nt-y', `${Math.round(y)}px`);
+      pop.style.setProperty('--nt-x', `${Math.round(x - oorsprongX)}px`);
+      pop.style.setProperty('--nt-y', `${Math.round(y - oorsprongY)}px`);
     }
 
     function toon(btn) {

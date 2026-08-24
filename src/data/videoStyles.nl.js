@@ -160,7 +160,7 @@ export const videoStyles = [
       'De volledige productie: meerdere shots, een verhaallijn, montages gesneden om een launch te laten landen.',
     ],
     steps: [
-      { title: 'Bepaal de scope van de campagne', body: 'Shots en deliverables afgesproken via WhatsApp.' },
+      { title: 'Bepaal wat de campagne omvat', body: 'Shots en bestanden afgesproken via WhatsApp.' },
       { title: 'Film de hele reeks', body: 'Meerdere shots in één film, met dezelfde kleurzetting, zodat het één verhaal is.' },
       { title: 'Lever elke versie', body: 'Het formaat van elk kanaal, uit één campagne.' },
     ],

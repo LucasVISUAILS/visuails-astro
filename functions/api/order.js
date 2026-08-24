@@ -82,7 +82,7 @@ import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib
 import { mintToken, hashToken, portalUrl } from '../../src/lib/token.js';
 import { sendMail, toBase64 } from '../../src/lib/mail.js';
 import { serviceLabel } from '../../src/data/services.js';
-import { shell, h1, p, rows, quote, payPanel, note, spamNote, linkLine } from '../../src/lib/mailTemplate.js';
+import { shell, h1, p, rows, quote, payPanel, note, spamNote, linkLine, greeting } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../src/lib/mollie.js';
 /* PAYABLE_SERVICES en ladderKey stonden hier ook en zijn 23 augustus 2026
    weggehaald: ze werden alleen nog door de servercopie van tierFor() gebruikt,
@@ -90,7 +90,7 @@ import { createTestSampleMolliePayment, createOrderMolliePayment } from '../../s
    noot bij die aanroep over waarom het de wire-waarde moet zijn en niet de
    laddernaam. */
 import {
-  quoteOrder, quoteTestSample, centsToMollieValue, paymentDescription,
+  quoteOrder, quoteTestSample, quoteBrandModel, centsToMollieValue, paymentDescription,
   isPayableService,
 } from '../../src/lib/quote.js';
 import { businessCheck } from '../../src/data/business.js';
@@ -104,7 +104,22 @@ import {
   isGarmentId, contextAllowed, contextDefault, CONTEXT_SLOT_IDS, CONTEXT_OURS,
 } from '../../src/data/garments.js';
 
-const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'test-sample', 'drop']);
+/*
+ * 'brand-model' STAAT NAAST 'custom' EN VERVANGT HEM NIET — 23 augustus 2026.
+ *
+ * Tot vandaag postte het merkmodelformulier `service=custom`, want het was een
+ * briefing en er viel niets af te rekenen. Nu er één bedrag op staat, is het een
+ * bestelling met een prijs, en dan moet de dienstnaam iets waard zijn: de
+ * factuurregel, de omschrijving bij Mollie en de knop "Nu betalen" op het
+ * dashboard hangen er alle drie aan.
+ *
+ * 'custom' blijft bestaan omdat HoldingPage.astro hem nog post voor de twee
+ * deuren die géén vaste prijs hebben (een custom look en een abonnement op maat)
+ * — en omdat er rijen in D1 staan die zo geschreven zijn. Een wire-waarde
+ * hernoemen kost een migratie en levert niets op; zie de noot bij 'drop' in
+ * src/data/services.js.
+ */
+const ORDER_SERVICES = new Set(['catalog', 'lifestyle', 'video', 'custom', 'brand-model', 'test-sample', 'drop']);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HOW MUCH OF THE CLIENT'S UPLOAD RIDES ALONG IN THE STUDIO'S EMAIL
@@ -913,12 +928,19 @@ export async function onRequestPost({ request, env, waitUntil }) {
    * EUR 0,17; bij verlegging is het EUR 1,00 + EUR 0,00. Niet apart geregeld, want de
    * btw-behandeling van een klant hangt niet af van hoe groot zijn bestelling is.
    */
+  /* Drie takken en niet twee. Een merkmodel heeft geen aantal en geen
+     laddertrede, dus quoteOrder() geeft er null voor terug — en null betekent op
+     dit pad "maak geen betaling aan". Zie FIXED_PRICE_SERVICES in
+     src/lib/quote.js voor waarom het daar een eigen functie is en niet een
+     zesde naam in PAYABLE_SERVICES. */
   const quote = svc === 'test-sample'
     ? quoteTestSample({ vatRate: vatCall.rate })
-    : quoteOrder({
-      service: svc, products, outfits: outfitCount, extras: extraCount,
-      vatRate: vatCall.rate,
-    });
+    : svc === 'brand-model'
+      ? quoteBrandModel({ vatRate: vatCall.rate })
+      : quoteOrder({
+        service: svc, products, outfits: outfitCount, extras: extraCount,
+        vatRate: vatCall.rate,
+      });
 
   // ── THE WITHDRAWAL WAIVER, RECORDED ────────────────────────────────────────
   // A customer with no VAT number is a consumer, and a consumer buying at a
@@ -1482,6 +1504,43 @@ export async function onRequestPost({ request, env, waitUntil }) {
       }
       return redirect(checkoutUrl);
     }
+  }
+
+  /*
+   * ── HET MERKMODEL GAAT WÉL METEEN DOOR NAAR DE KASSA ───────────────────────
+   *
+   * De grote betaalpoort hierboven maakt de betaling aan en zet hem in de mail en
+   * op de bedankpagina; voor een catalogusbestelling is dát het goede gedrag, en
+   * de reden staat er in twintig regels boven: wie net vijf stappen heeft
+   * ingevuld en dan tegen een betaalmuur aanloopt, sluit het tabblad.
+   *
+   * Hier ligt het andersom, en om een reden die op het scherm staat. De laatste
+   * stap van dit formulier HEET "Nakijken en betalen" en de knop eronder zegt
+   * betalen. Iemand op een bedankpagina zetten met daar de knop die hij dacht
+   * net ingedrukt te hebben, is geen voorzichtigheid maar een stap die niemand
+   * gevraagd heeft. Bovendien is er hier niets om op te wachten: geen
+   * capaciteitsvenster dat bevestigd moet worden, geen upload die nog verwerkt
+   * wordt. De proefvisual doet het hierboven al zo, en om precies dezelfde reden.
+   *
+   * `payUrl` EN NIET EEN TWEEDE BETALING. De proeftak hierboven roept
+   * createTestSampleMolliePayment() opnieuw aan omdat de grote poort voor die
+   * dienst niets aanmaakt; hier maakte diezelfde poort de betaling al, mét alle
+   * controles die eraan hangen — bestaat de bestelling, is de btw beslist, staat
+   * de bestelling niet op de beoordelingslijst. Nog een keer aanmaken zou twee
+   * openstaande betalingen op één bestelling zetten, en dat is precies het soort
+   * dubbelboeking dat de webhook daarna moet zien op te lossen.
+   *
+   * EN HET VALT OPEN. Is `payUrl` null — Mollie onbereikbaar, of de bestelling
+   * staat op de beoordelingslijst — dan gebeurt hier niets en gaat de klant naar
+   * de bedankpagina met zijn bevestiging. Dat is de bestaande route, niet een
+   * foutpad: de bestelling bestaat, de mail is verstuurd, en de betaallink volgt
+   * zodra er iemand naar gekeken heeft.
+   */
+  if (svc === 'brand-model' && payUrl) {
+    if (wantsJson) {
+      return json({ ok: true, ref, tier, window: finalWindow, windowLost: raced, redirect: payUrl });
+    }
+    return redirect(payUrl);
   }
 
   if (wantsJson) {
@@ -2601,7 +2660,7 @@ export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
     inReview = false } = {}) {
   const nl = lang === 'nl';
-  const hi = name ? `Hi ${esc(name)},` : 'Hi,';
+  const hi = greeting(name, lang);
   const attended = tier === 'attended';
   const dated = attended && window && window.start && window.end;
 

@@ -1,59 +1,104 @@
 ---
-// VISUAILS — /start/brand-model. The Brand Model briefing, both locales.
+// VISUAILS — /start/brand-model. Het merkmodel bestellen, beide talen.
 //
-// This replaces a HoldingPage that said "not built yet". Lucas asked for the
-// Brand Model to become its own order: a short brief, then a conversation about
-// which face fits the brand, rather than a €1,250 button.
+// ── WAT DIT WAS, EN WAT HET NU IS ───────────────────────────────────────────
 //
-// WHY IT IS ONE SCREEN AND NOT A FIVE-STEP FLOW. /start's flow exists because a
-// catalog order has a count, a capacity window, an upload and a price, and each
-// of those gates the next. A Brand Model has none of them: there is nothing to
-// count, no window to reserve, nothing to upload, and the price is settled in
-// the conversation this form starts. Reusing the stepper here would be five
-// screens of ceremony around eight questions.
+// Dit was een briefingformulier: acht vragen, geen bedrag, geen knop die iets
+// afrekende. De kop droeg toen een noot die uitlegde waarom er geen prijs op
+// stond, met een open vraag erbij over een terugverdienconstructie van € 1.250
+// over vijf bestellingen. Die constructie bestaat niet meer — het merkmodel is
+// één bedrag, één keer — en die noot stond daarmee onwaar op de plek waar een
+// klant hem leest. Zie MERKMODEL-ONTWERP.md voor het besluit.
 //
-// NO PRICE ON THIS PAGE, DELIBERATELY. The setup fee is quoted on
-// /custom-models, which is the page a buyer reads before they get here. Putting
-// it on the brief would turn a conversation-starter into a checkout, which is
-// the thing Lucas was moving away from. FLAGGED: he asked why a customer would
-// pay off €1,250 and the honest answer is that under the current construction
-// they do not — they pre-pay and earn it back over five orders, and lose the
-// remainder if they stop at three. That structural question is still open; this
-// page is written so that whatever it becomes, nothing here has to change.
+// DE BESTANDSNAAM BLIJFT. "Brief" dekt de lading niet meer, maar hernoemen kost
+// twee paginabestanden én laat op de machine waar dit vandaan komt een
+// verweesde kopie achter (die brug kan geen bestanden verwijderen). Een naam die
+// een half woord scheef staat is goedkoper dan een dood bestand dat over een
+// maand iemand aan het twijfelen brengt.
 //
-// IT POSTS TO /api/order WITH service=custom. That service id already existed
-// in ORDER_SERVICES. None of these fields are in TOP_FIELDS, so the whole brief
-// lands in details_json and arrives in the studio notification email — no
-// endpoint change was needed, which is why there is none.
+// ── WAAROM HET NU WÉL STAPPEN HEEFT ─────────────────────────────────────────
+//
+// De vorige versie was één scherm, en de noot daarbij had gelijk: vijf stappen
+// om acht vragen heen is ceremonie. Wat er sindsdien bij is gekomen, is niet
+// méér vragen maar een VERTAKKING. Stap 1 bepaalt of stap 3 uit vijf vragen
+// bestaat of uit één, en een vertakking op één lang scherm betekent dat de helft
+// van het formulier zichtbaar is voor iemand die er niets mee te maken heeft.
+// Daar komt het factuurblok bij, dat er vroeger niet was omdat er niets te
+// factureren viel.
+//
+// ── EN ZONDER JAVASCRIPT WERKT HET ──────────────────────────────────────────
+//
+// De stappen zijn alleen verborgen als het script draait: `is-live` wordt door
+// het script zelf op het formulier gezet. Gebeurt dat niet, dan staat alles
+// onder elkaar, is elk veld zichtbaar, en post de knop onderaan hetzelfde
+// formulier naar dezelfde plek. Beide takken van stap 3 zijn dan zichtbaar en
+// beide zijn optioneel — dat is de goede kant om op te falen: liever een vraag
+// te veel dan een formulier dat niet te verzenden is.
+//
+// ── DE POST ─────────────────────────────────────────────────────────────────
+//
+// service=brand-model, en dat is nieuw sinds 23 augustus 2026. Het postte
+// `custom`, de wire-waarde voor een aanvraag zonder prijs. Nu er een bedrag aan
+// hangt moet de dienstnaam iets waard zijn: de factuurregel, de omschrijving bij
+// Mollie en de knop "Nu betalen" op het dashboard hangen er alle drie aan. Zie
+// FIXED_PRICE_SERVICES in src/lib/quote.js en de noot bij ORDER_SERVICES in
+// functions/api/order.js.
+//
+// Geen enkel bm_-veld staat in TOP_FIELDS, dus de hele briefing landt in
+// details_json en komt zo in de studiomail — daar hoefde niets voor te wijzigen.
 import {
-  PRESENTATION, AGE_BANDS, BUILDS, USAGE, REGISTER, copy as briefCopy, label,
+  PRESENTATION, AGE_BANDS, BUILDS, USAGE, TRACKS, copy as briefCopy, label,
 } from '../data/brandModelBrief.js';
-import { TRAITS } from '../data/models.js';
+import { billingCopy } from '../data/billing.js';
+import { countryOptions } from '../data/vat.js';
+import { AMOUNT, euro, vatLabel, vatLead } from '../data/pricing.js';
+import { BUSINESS_VERSION, currentBusiness } from '../data/business.js';
+import { CONSENT_VERSION_BRAND_MODEL, currentBrandModelConsent } from '../data/consent.js';
 import { localizedPath } from '../i18n/ui.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
 const c = briefCopy(lang);
-const t = TRAITS[lang];
+const b = billingCopy(lang);
+const COUNTRIES = countryOptions(lang);
 
-// Every register word has to exist in the roster's own trait labels, or this
-// form would offer a vocabulary the ten standard faces are not described in —
-// and a brand that ticked it would mean something we have no word for.
-for (const k of REGISTER) {
-  if (!t[k]) {
+/*
+ * DE TWEE KAARTEN BELOVEN EEN AANTAL VRAGEN, EN DIT TELT NA OF DAT KLOPT.
+ *
+ * `trackOwnB` eindigt op "Acht korte vragen" en `trackOursB` op "Vier korte
+ * vragen", in twee talen. Die getallen komen uit TRACKS, en de vragen staan
+ * hieronder in de markup — twee plekken die uit elkaar kunnen lopen zodra iemand
+ * een veld toevoegt. Dan staat er een belofte op de kaart die het formulier
+ * eronder niet nakomt, en niets zegt er iets van.
+ *
+ * Vandaar deze telling, bij het BOUWEN en niet bij het bezoeken. Stap 2 stelt
+ * drie vragen aan iedereen; stap 3a vijf en stap 3b één. Klopt de som niet met
+ * TRACKS, dan faalt `npm run build` met de reden erbij — dezelfde aanpak als de
+ * copy-controle in OrderFlow.astro.
+ */
+const VRAGEN_STAP2 = 3;   // audience · link · usage
+const VRAGEN_STAP3A = 5;  // presentation · age · build · features · avoid
+const VRAGEN_STAP3B = 1;  // avoid
+for (const t of TRACKS) {
+  const som = VRAGEN_STAP2 + (t.id === 'own' ? VRAGEN_STAP3A : VRAGEN_STAP3B);
+  if (som !== t.questions) {
     throw new Error(
-      `BrandModelBrief.astro: register word "${k}" has no label in TRAITS.${lang} `
-      + '— see src/data/models.js.'
+      `BrandModelBrief.astro: route "${t.id}" belooft ${t.questions} vragen en het `
+      + `formulier stelt er ${som}. Pas TRACKS in src/data/brandModelBrief.js aan, `
+      + 'of de telling hierboven — maar laat ze niet uiteenlopen.'
     );
   }
 }
 
-const rows = [
+const gezichtRijen = [
   { name: 'bm_presentation', legend: c.presentation, options: PRESENTATION },
   { name: 'bm_age', legend: c.age, options: AGE_BANDS },
   { name: 'bm_build', legend: c.build, options: BUILDS },
 ];
+
+const prijs = euro(AMOUNT.brandModel, lang);
+const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
 ---
 
 <section class="page-hero">
@@ -61,130 +106,408 @@ const rows = [
     <span class="eyebrow-page">{c.eyebrow}</span>
     <h1 class="display">{c.h1}</h1>
     <p class="lead" style="margin-top:1.2rem">{c.lead}</p>
+    <p class="bm-price-hero">
+      <strong>{prijs}</strong> <span>{vatLabel('excl', lang)}</span>
+    </p>
   </div>
 </section>
 
 <section class="section-tight">
   <div class="container narrow">
-    <h2 class="bm-h">{c.formH}</h2>
-    <p class="bm-lead">{c.formLead}</p>
 
-    <form action="/api/order" method="post" class="bm-form">
-      <input type="hidden" name="service" value="custom" />
+    {/* De stappenbalk is puur oriëntatie en geen navigatie: er valt niet op te
+        klikken. Wie stap 4 aanklikt zonder stap 2 in te vullen, zou langs de
+        validatie heen zijn — en een balk die dat toelaat is een balk die iets
+        anders doet dan hij laat zien. Terug gaat met de knop onderaan. */}
+    <ol class="bm-rail" aria-label={c.stepsLabel} data-bm-rail>
+      {stappen.map((naam, i) => (
+        <li class="bm-rail-item" data-bm-rail-step={i + 1} aria-current={i === 0 ? 'step' : undefined}>
+          <span class="bm-rail-n">{i + 1}</span>
+          <span class="bm-rail-t">{naam}</span>
+        </li>
+      ))}
+    </ol>
+
+    <form action="/api/order" method="post" class="bm-form" data-bm-form novalidate>
+      <input type="hidden" name="service" value="brand-model" />
       <input type="hidden" name="redirect" value={lp('/thank-you')} />
       <input type="hidden" name="lang" value={lang} />
+      <input type="hidden" name="source" value="start-brand-model" />
       {/* Same honeypot every other form on this site carries. Off-screen rather
           than display:none, because a bot that reads computed styles skips the
           second and fills the first. */}
       <input type="text" name="company_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px" />
 
-      {rows.map((row) => (
+      {/* ── STAP 1 · DE ROUTE ────────────────────────────────────────────── */}
+      <section class="bm-step" data-bm-step="1">
+        <h2 class="bm-h">{c.s1H}</h2>
+        <p class="bm-lead">{c.s1Lead}</p>
+
+        <div class="bm-tracks" role="radiogroup" aria-label={c.s1H}>
+          <label class="bm-track">
+            <input type="radio" name="bm_track" value="own" required
+                   data-melding={c.trackErr} />
+            <span class="bm-track-body">
+              <span class="bm-track-h">{c.trackOwnH}</span>
+              <span class="bm-track-p">{c.trackOwnB}</span>
+            </span>
+          </label>
+          <label class="bm-track">
+            <input type="radio" name="bm_track" value="ours" required
+                   data-melding={c.trackErr} />
+            <span class="bm-track-body">
+              <span class="bm-track-h">{c.trackOursH}</span>
+              <span class="bm-track-p">{c.trackOursB}</span>
+            </span>
+          </label>
+        </div>
+
+        {/* Dit staat er letterlijk, en niet als voetnoot. Zonder deze zin gaat
+            een deel van de bezoekers de goedkope route zoeken, en die is er
+            niet — dan kiest iemand op prijs waar geen prijsverschil is. */}
+        <p class="bm-same">{c.trackSame}</p>
+      </section>
+
+      {/* ── STAP 2 · HET MERK ────────────────────────────────────────────── */}
+      <section class="bm-step" data-bm-step="2">
+        <h2 class="bm-h">{c.s2H}</h2>
+        <p class="bm-lead">{c.s2Lead}</p>
+
+        <div class="field">
+          <label for="bm-audience">{c.audience} <span class="req">*</span></label>
+          <p class="bm-hint">{c.audienceHint}</p>
+          <input class="input" type="text" id="bm-audience" name="bm_audience" maxlength="200"
+                 placeholder={c.audiencePh} autocomplete="off" required data-melding={c.audienceErr} />
+        </div>
+
+        <div class="field">
+          <label for="bm-link">{c.link} <span class="req">*</span></label>
+          <p class="bm-hint">{c.linkHint}</p>
+          {/* type="text" en niet type="url": een browser eist bij `url` een
+              schema, en de helft van de mensen typt "merk.nl". Dat afkeuren op
+              een verplicht veld kost een bestelling om een dubbele punt en twee
+              schuine strepen. De link wordt door een mens geopend, niet door
+              code — er valt hier niets te parsen. */}
+          <input class="input" type="text" id="bm-link" name="bm_link" maxlength="200"
+                 placeholder={c.linkPh} autocomplete="url" required data-melding={c.linkErr} />
+        </div>
+
         <fieldset class="bm-set">
-          <legend class="bm-legend">{row.legend}</legend>
+          <legend class="bm-legend">{c.usage}</legend>
           <div class="bm-chips">
-            {row.options.map((o, i) => (
+            {USAGE.map((o, i) => (
               <label class="bm-chip">
-                <input type="radio" name={row.name} value={o.id} checked={i === row.options.length - 1} />
+                <input type="radio" name="bm_usage" value={o.id} checked={i === USAGE.length - 1} />
                 <span>{label(o, lang)}</span>
               </label>
             ))}
           </div>
         </fieldset>
-      ))}
+      </section>
 
-      {/* Checkboxes, capped at two by the note rather than by script: a form
-          that silently refuses a third tick is a form arguing with somebody who
-          is trying to tell us something. Three answers is information, not an
-          error. */}
-      <fieldset class="bm-set">
-        <legend class="bm-legend">{c.register}</legend>
-        <div class="bm-chips">
-          {REGISTER.map((k) => (
-            <label class="bm-chip">
-              <input type="checkbox" name="bm_register" value={k} />
-              <span>{t[k]}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {/* ── STAP 3A · HET GEZICHT (alleen route "own") ───────────────────── */}
+      <section class="bm-step" data-bm-step="3" data-bm-track="own">
+        <h2 class="bm-h">{c.s3aH}</h2>
+        <p class="bm-lead">{c.s3aLead}</p>
 
-      <div class="field">
-        <label for="bm-features">{c.features}</label>
-        <p class="bm-hint">{c.featuresHint}</p>
-        <input class="input" type="text" id="bm-features" name="bm_features" maxlength="200" placeholder={c.featuresPh} autocomplete="off" />
-      </div>
+        {gezichtRijen.map((row) => (
+          <fieldset class="bm-set">
+            <legend class="bm-legend">{row.legend}</legend>
+            <div class="bm-chips">
+              {row.options.map((o, i) => (
+                <label class="bm-chip">
+                  <input type="radio" name={row.name} value={o.id} checked={i === row.options.length - 1} />
+                  <span>{label(o, lang)}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
 
-      <div class="field">
-        <label for="bm-avoid">{c.avoid}</label>
-        <p class="bm-hint">{c.avoidHint}</p>
-        <input class="input" type="text" id="bm-avoid" name="bm_avoid" maxlength="200" placeholder={c.avoidPh} autocomplete="off" />
-      </div>
-
-      <fieldset class="bm-set">
-        <legend class="bm-legend">{c.usage}</legend>
-        <div class="bm-chips">
-          {USAGE.map((o, i) => (
-            <label class="bm-chip">
-              <input type="radio" name="bm_usage" value={o.id} checked={i === USAGE.length - 1} />
-              <span>{label(o, lang)}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div class="field">
-        <label for="bm-ref">{c.reference}</label>
-        <input class="input" type="text" id="bm-ref" name="bm_reference" maxlength="200" placeholder={c.referencePh} autocomplete="off" />
-      </div>
-
-      <h3 class="bm-h3">{c.you}</h3>
-      <div class="bm-two">
         <div class="field">
-          <label for="bm-name">{c.name} <span class="req">*</span></label>
-          <input class="input" type="text" id="bm-name" name="name" autocomplete="name" required />
+          <label for="bm-features">{c.features}</label>
+          <p class="bm-hint">{c.featuresHint}</p>
+          <input class="input" type="text" id="bm-features" name="bm_features" maxlength="200" placeholder={c.featuresPh} autocomplete="off" />
         </div>
-        <div class="field">
-          <label for="bm-brand">{c.brand} <span class="req">*</span></label>
-          <input class="input" type="text" id="bm-brand" name="brand" autocomplete="organization" required />
-        </div>
-      </div>
-      <div class="field">
-        <label for="bm-email">{c.email} <span class="req">*</span></label>
-        <input class="input" type="email" id="bm-email" name="email" autocomplete="email" required />
-      </div>
-      <div class="field">
-        <label for="bm-notes">{c.notes}</label>
-        <textarea class="textarea" id="bm-notes" name="message" maxlength="1000"></textarea>
-      </div>
 
-      <button type="submit" class="btn btn-primary btn-lg">{c.submit}</button>
-      {/* Same line, same reasoning, as the order form's — see OrderFlow.astro.
-          No withdrawal waiver here on purpose: this form buys nothing and
-          starts nothing, it opens a conversation, so there is no performance to
-          consent to yet. That consent belongs on whatever order follows. */}
-      <p class="bm-legal">
-        {c.legal[0]}<a href={lp('/terms')}>{c.legalTerms}</a>{c.legal[1]}
-        <a href={lp('/privacy')}>{c.legalPrivacy}</a>{c.legal[2]}
-      </p>
-      <p class="bm-price">{c.priceNote}</p>
+        <div class="field">
+          <label for="bm-avoid-own">{c.avoid}</label>
+          <p class="bm-hint">{c.avoidHint}</p>
+          <input class="input" type="text" id="bm-avoid-own" name="bm_avoid" maxlength="200" placeholder={c.avoidPh} autocomplete="off" />
+        </div>
+      </section>
+
+      {/* ── STAP 3B · ÉÉN VRAAG (alleen route "ours") ────────────────────── */}
+      {/* TWEE `bm_avoid`-VELDEN, EN NOOIT ALLEBEI AAN. Het script zet
+          `disabled` op de tak die niet gekozen is, en een disabled veld wordt
+          door de browser niet meegestuurd — dus er komt er precies één aan op de
+          server, met dezelfde naam, en /api/order hoeft niets van deze splitsing
+          te weten. Zonder JavaScript zijn beide velden actief en optioneel; dan
+          krijgt de studio in het slechtste geval twee regels in plaats van één,
+          en dat is een leesbaar probleem in plaats van een stil. */}
+      <section class="bm-step" data-bm-step="3" data-bm-track="ours">
+        <h2 class="bm-h">{c.s3bH}</h2>
+        <p class="bm-lead">{c.s3bLead}</p>
+
+        <div class="field">
+          <label for="bm-avoid-ours">{c.avoid}</label>
+          <p class="bm-hint">{c.avoidHint}</p>
+          <input class="input" type="text" id="bm-avoid-ours" name="bm_avoid" maxlength="200" placeholder={c.avoidPh} autocomplete="off" />
+        </div>
+      </section>
+
+      {/* ── STAP 4 · JIJ EN DE FACTUUR ───────────────────────────────────── */}
+      {/* DIT BLOK STOND NIET IN HET ONTWERP, EN HET HOORT ER WEL.
+          MERKMODEL-ONTWERP.md §5 zegt bij stap 4 "Naam, merk, e-mail", en dat
+          was juist zolang dit formulier niets afrekende. Een bestelling van
+          € 450 levert een factuur op, en een factuur zonder adres en zonder land
+          is geen factuur: het land beslist bovendien de btw (zie vatDecision in
+          src/data/vat.js) en het registratienummer is het bewijs dat VISUAILS
+          uitsluitend zakelijk levert (src/data/business.js).
+
+          De labels komen uit src/data/billing.js, en de kop daar legt uit waarom
+          ze daar staan en niet in de tabel van OrderFlow. */}
+      <section class="bm-step" data-bm-step="4">
+        <h2 class="bm-h">{b.heading}</h2>
+
+        <div class="bm-two">
+          <div class="field">
+            <label for="bm-first">{b.firstName} <span class="req">*</span></label>
+            <input class="input" type="text" id="bm-first" name="first_name" autocomplete="given-name" required data-melding={b.firstErr} />
+          </div>
+          <div class="field">
+            <label for="bm-last">{b.lastName} <span class="req">*</span></label>
+            <input class="input" type="text" id="bm-last" name="last_name" autocomplete="family-name" required data-melding={b.lastErr} />
+          </div>
+        </div>
+
+        <div class="bm-two">
+          <div class="field">
+            <label for="bm-brand">{b.brand} <span class="req">*</span></label>
+            <input class="input" type="text" id="bm-brand" name="brand" autocomplete="organization" required data-melding={b.brandErr} />
+          </div>
+          <div class="field">
+            <label for="bm-phone">{b.phone} <span class="bm-opt">{b.optional}</span></label>
+            <input class="input" type="tel" id="bm-phone" name="phone" autocomplete="tel" placeholder="+31 6 …" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="bm-email">{b.email} <span class="req">*</span></label>
+          <input class="input" type="email" id="bm-email" name="email" autocomplete="email" required data-melding={b.emailErr} />
+          <span class="bm-hint">{b.emailHint}</span>
+        </div>
+
+        <div class="bm-two">
+          <div class="field">
+            <label for="bm-street">{b.street} <span class="req">*</span></label>
+            <input class="input" type="text" id="bm-street" name="address_line1" autocomplete="address-line1" required data-melding={b.streetErr} placeholder={b.streetPh} />
+          </div>
+          <div class="field">
+            <label for="bm-street2">{b.street2} <span class="bm-opt">{b.optional}</span></label>
+            <input class="input" type="text" id="bm-street2" name="address_line2" autocomplete="address-line2" placeholder={b.street2Ph} />
+          </div>
+        </div>
+
+        <div class="bm-two">
+          <div class="field">
+            <label for="bm-postal">{b.postal} <span class="req">*</span></label>
+            <input class="input" type="text" id="bm-postal" name="postal_code" autocomplete="postal-code" required data-melding={b.postalErr} placeholder={b.postalPh} />
+          </div>
+          <div class="field">
+            <label for="bm-city">{b.city} <span class="req">*</span></label>
+            <input class="input" type="text" id="bm-city" name="city" autocomplete="address-level2" required data-melding={b.cityErr} />
+          </div>
+        </div>
+
+        <div class="bm-two">
+          <div class="field">
+            <label for="bm-country">{b.country} <span class="req">*</span></label>
+            <select class="input" id="bm-country" name="country" autocomplete="country" required data-melding={b.countryErr} data-bm-country>
+              <option value="">{b.countryPick}</option>
+              {COUNTRIES.home.map((ct) => (<option value={ct.id}>{ct.name}</option>))}
+              <optgroup label={b.countryEu}>
+                {COUNTRIES.eu.map((ct) => (<option value={ct.id}>{ct.name}</option>))}
+              </optgroup>
+              <optgroup label={b.countryOther}>
+                {COUNTRIES.other.map((ct) => (<option value={ct.id}>{ct.name}</option>))}
+              </optgroup>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bm-region">{b.region} <span class="bm-opt">{b.optional}</span></label>
+            <input class="input" type="text" id="bm-region" name="region" autocomplete="address-level1" />
+            <span class="bm-hint">{b.regionHint}</span>
+          </div>
+        </div>
+
+        {/* HET BTW-NUMMER IS VERPLICHT, TENZIJ HET VINKJE AANSTAAT — en dan is
+            het registratienummer het verplichte veld. Beide `required` worden
+            door het script gezet en niet in de markup vastgelegd, want een
+            attribuut dat door een vinkje aan en uit gaat is een tweede plek waar
+            dezelfde regel staat. Zonder script: allebei optioneel, en de
+            bestelling komt op de beoordelingslijst in plaats van niet aan. */}
+        <div class="field">
+          <label for="bm-vat">{b.vat} <span class="req">*</span></label>
+          <input class="input" type="text" id="bm-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" data-bm-vat data-melding={b.vatErr} />
+          <label class="bm-check" for="bm-no-vat">
+            <input type="checkbox" id="bm-no-vat" name="no_vat" value="1" data-bm-novat />
+            <span>{b.noVat}</span>
+          </label>
+          <span class="bm-hint">{b.vatHint}</span>
+        </div>
+
+        {/* De verklaring bij 0%. Verborgen tot verlegging überhaupt mogelijk is
+            — een ander EU-land dan Nederland, mét een ingevuld btw-nummer — en
+            dan verplicht. De voorwaarde is niet overgetypt: het script leest
+            isEu() en HOME_COUNTRY uit src/data/vat.js, dezelfde bron als
+            syncVatConfirm() in pipeline.js.
+
+            Blijft het blok verborgen omdat er geen script draait, dan is er ook
+            geen 0% zonder verklaring: vatGate() in vat.js houdt de betaling
+            tegen en de bestelling komt op de beoordelingslijst. Degraderen naar
+            veilig, niet naar gratis. */}
+        <div class="field bm-vatconfirm" data-bm-vatconfirm hidden>
+          <label class="bm-check" for="bm-vat-confirmed">
+            <input type="checkbox" id="bm-vat-confirmed" name="vat_confirmed" value="yes" data-melding={b.vatConfirm} />
+            <span>{b.vatConfirm}</span>
+          </label>
+          <span class="bm-hint">{b.vatConfirmHint}</span>
+        </div>
+
+        <div class="field bm-reg" data-bm-reg hidden>
+          <label for="bm-reg">{b.reg} <span class="req">*</span></label>
+          <input class="input" type="text" id="bm-reg" name="reg_number" autocomplete="off" maxlength="40" data-bm-regfield data-melding={b.regErr} />
+          <span class="bm-hint">{b.regHint}</span>
+        </div>
+
+        <div class="field">
+          <label for="bm-notes">{c.notes} <span class="bm-opt">{b.optional}</span></label>
+          <textarea class="textarea" id="bm-notes" name="message" maxlength="1000"></textarea>
+        </div>
+      </section>
+
+      {/* ── STAP 5 · NAKIJKEN EN BETALEN ─────────────────────────────────── */}
+      <section class="bm-step" data-bm-step="5">
+        <h2 class="bm-h">{c.s5H}</h2>
+        <p class="bm-lead">{c.s5Lead}</p>
+
+        <div class="bm-total">
+          <span class="bm-total-l">{c.eyebrow}</span>
+          <span class="bm-total-a">{prijs}</span>
+          <span class="bm-total-v">{vatLead(lang)}</span>
+        </div>
+
+        {/* Gevuld door het script uit het formulier zelf. Zonder script blijft
+            het blok verborgen en staan alle antwoorden gewoon nog op het scherm,
+            want dan is er niets ingeklapt om na te kijken. */}
+        <div class="bm-summary" data-bm-summary data-bm-empty={c.summaryEmpty} hidden>
+          <h3 class="bm-h3">{c.summaryH}</h3>
+          <dl class="bm-sum-list" data-bm-sum-list></dl>
+        </div>
+
+        <div class="bm-after">
+          <h3 class="bm-h3">{c.afterH}</h3>
+          <ol class="bm-steps">
+            {c.after.map((p) => (<li>{p}</li>))}
+          </ol>
+        </div>
+
+        {/* De twee verklaringen, allebei versioneerd, allebei verplicht. De
+            herroepingsverklaring is hier een ANDERE versie dan in de
+            bestelstroom: die van de bestelstroom eindigt op "uit foto's die ik
+            aanlever", en bij een merkmodel levert de klant geen foto's aan. Zie
+            de noot bij CONSENT_VERSION_BRAND_MODEL in src/data/consent.js. */}
+        <div class="bm-consents">
+          <input type="hidden" name="business_version" value={BUSINESS_VERSION} />
+          <label class="bm-check">
+            <input type="checkbox" name="business_declaration" value="yes" required data-melding={c.businessErr} />
+            <span>{currentBusiness(lang)}</span>
+          </label>
+
+          <input type="hidden" name="consent_version" value={CONSENT_VERSION_BRAND_MODEL} />
+          <label class="bm-check">
+            <input type="checkbox" name="withdrawal_consent" value="yes" required data-melding={c.consentErr} />
+            <span>{currentBrandModelConsent(lang)}</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg bm-submit">{c.submit}</button>
+        <p class="bm-legal">
+          {c.legal[0]}<a href={lp('/terms')}>{c.legalTerms}</a>{c.legal[1]}
+          <a href={lp('/privacy')}>{c.legalPrivacy}</a>{c.legal[2]}
+        </p>
+        <p class="bm-paynote">{c.payNote}</p>
+      </section>
+
+      {/* De navigatie staat BUITEN de stappen, zodat er één knoppenrij is die
+          meeschuift in plaats van vijf die elk hun eigen versie zouden krijgen.
+          Verborgen tot het script draait: zonder script staat alles onder elkaar
+          en is de verzendknop in stap 5 de enige knop die iets moet doen. */}
+      <div class="bm-nav" data-bm-nav hidden>
+        <button type="button" class="btn btn-ghost" data-bm-back hidden>{c.back}</button>
+        <button type="button" class="btn btn-primary" data-bm-next>{c.next}</button>
+      </div>
     </form>
-
-    <div class="bm-after">
-      <h2 class="bm-h">{c.afterH}</h2>
-      <ol class="bm-steps">
-        {c.after.map((p) => (<li>{p}</li>))}
-      </ol>
-    </div>
   </div>
 </section>
 
 <style>
   .bm-h { font-size: 1.5rem; margin-top: 0; }
-  .bm-h3 { font-size: 1.05rem; margin-top: 2rem; }
+  .bm-h3 { font-size: 1.05rem; margin-top: 0; margin-bottom: .8rem; }
   .bm-lead { color: var(--ink-2); line-height: 1.7; max-width: 66ch; margin-top: .6rem; }
   .bm-form { margin-top: 2rem; max-width: 44rem; }
 
-  .bm-set { border: 0; padding: 0; margin: 0 0 1.6rem; min-width: 0; }
+  .bm-price-hero { margin-top: 1.4rem; display: flex; align-items: baseline; gap: .5rem; }
+  .bm-price-hero strong { font-size: clamp(1.6rem, 3vw, 2.1rem); color: var(--ink); letter-spacing: -.01em; }
+  .bm-price-hero span { font-size: .82rem; color: var(--ink-3); }
+
+  /* ── DE STAPPENBALK ──────────────────────────────────────────────────────
+     Alleen zichtbaar als het script draait: zonder script is er geen stap om
+     op te staan, en een balk die "1 van 5" zegt boven een formulier dat er in
+     één keer staat, liegt over hoe lang het duurt. */
+  .bm-rail { display: none; }
+  :global(html.js-bm) .bm-rail {
+    display: flex; flex-wrap: wrap; gap: .3rem 1.1rem;
+    list-style: none; padding: 0; margin: 0 0 1.6rem;
+  }
+  .bm-rail-item { display: inline-flex; align-items: center; gap: .45rem; font-size: .82rem; color: var(--ink-3); }
+  .bm-rail-n {
+    display: inline-grid; place-items: center;
+    width: 1.35rem; height: 1.35rem; border-radius: 50%;
+    border: 1px solid var(--line-strong); font-size: .72rem; line-height: 1;
+  }
+  .bm-rail-item[aria-current='step'] { color: var(--ink); }
+  .bm-rail-item[aria-current='step'] .bm-rail-n { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+  .bm-rail-item[data-bm-done] .bm-rail-n { border-color: var(--accent-line); }
+
+  /* Alleen wegstoppen als het script het formulier heeft overgenomen. */
+  .bm-form.is-live .bm-step { display: none; }
+  .bm-form.is-live .bm-step.is-on { display: block; }
+  .bm-step + .bm-step { margin-top: 2.6rem; }
+
+  /* ── DE TWEE KAARTEN VAN STAP 1 ─────────────────────────────────────────
+     Geen knoppen maar echte radio's in een label: dat werkt met het toetsenbord,
+     met een schermlezer en zonder script, en het is precies wat het is — een
+     keuze uit twee. */
+  .bm-tracks { display: grid; gap: .8rem; margin-top: 1.4rem; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); }
+  .bm-track {
+    display: flex; gap: .7rem; align-items: flex-start;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-md);
+    background: var(--surface); cursor: pointer;
+    transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  }
+  .bm-track:hover { border-color: var(--accent-line); }
+  .bm-track:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .bm-track:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .bm-track input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; margin-top: .18rem; }
+  .bm-track-body { display: flex; flex-direction: column; gap: .3rem; }
+  .bm-track-h { font-weight: 700; color: var(--ink); font-size: .98rem; }
+  .bm-track-p { color: var(--ink-2); font-size: .86rem; line-height: 1.55; }
+  .bm-same { margin-top: 1rem; font-size: .84rem; color: var(--ink-2); line-height: 1.6; max-width: 62ch; }
+
+  .bm-set { border: 0; padding: 0; margin: 1.6rem 0 0; min-width: 0; }
   .bm-legend { font-size: .92rem; font-weight: 700; color: var(--ink); padding: 0; margin-bottom: .6rem; }
 
   /* Chips rather than a <select>: every option here is one or two words, and a
@@ -207,18 +530,343 @@ const rows = [
   .bm-chip:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
   .bm-chip input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; }
 
-  .bm-hint { font-size: .8rem; color: var(--ink-3); line-height: 1.55; max-width: 62ch; margin: .15rem 0 .45rem; }
+  .bm-hint { font-size: .8rem; color: var(--ink-3); line-height: 1.55; max-width: 62ch; margin: .15rem 0 .45rem; display: block; }
   .bm-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 0 1rem; }
   .req { color: var(--accent-bright); }
+  .bm-opt { font-size: .74rem; color: var(--ink-3); font-weight: 400; letter-spacing: .02em; }
+
+  .bm-check { display: flex; gap: .55rem; align-items: flex-start; margin-top: .6rem; font-size: .84rem; color: var(--ink-2); line-height: 1.55; cursor: pointer; }
+  .bm-check input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; margin-top: .18rem; }
+  .field:has(.bm-check input:checked) input[data-bm-vat] { opacity: .45; }
+
+  .bm-total {
+    display: grid; grid-template-columns: 1fr auto; gap: .2rem 1rem;
+    padding: 1rem 1.2rem; margin-top: 1.4rem;
+    border: 1px solid var(--line-strong); border-radius: var(--r-md); background: var(--surface);
+  }
+  .bm-total-l { font-weight: 700; color: var(--ink); }
+  .bm-total-a { font-weight: 700; color: var(--ink); font-size: 1.15rem; text-align: right; }
+  .bm-total-v { grid-column: 1 / -1; font-size: .78rem; color: var(--ink-3); }
+
+  .bm-summary { margin-top: 1.8rem; }
+  .bm-sum-list { display: grid; grid-template-columns: minmax(9rem, auto) 1fr; gap: .5rem 1.1rem; margin: 0; }
+  .bm-sum-list dt { font-size: .8rem; color: var(--ink-3); }
+  .bm-sum-list dd { margin: 0; font-size: .86rem; color: var(--ink-2); line-height: 1.55; }
+  .bm-sum-list dd[data-empty] { color: var(--ink-3); font-style: italic; }
+
+  .bm-after { margin-top: 2rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
+  .bm-steps { margin-top: .6rem; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .7rem; max-width: 68ch; }
+  .bm-steps li { list-style: decimal; color: var(--ink-2); line-height: 1.7; }
+
+  .bm-consents { margin-top: 2rem; display: flex; flex-direction: column; gap: .8rem; }
+  .bm-submit { margin-top: 1.6rem; }
 
   .bm-legal { margin-top: .9rem; font-size: .8rem; color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
   .bm-legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+  .bm-paynote { margin-top: .6rem; font-size: .8rem; color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
 
-  .bm-price { margin-top: 1rem; font-size: .82rem; color: var(--ink-3); line-height: 1.6; max-width: 66ch; }
+  .bm-nav { display: flex; gap: .7rem; margin-top: 2.2rem; flex-wrap: wrap; }
 
-  .bm-after { margin-top: clamp(3rem, 6vw, 4.5rem); padding-top: clamp(1.6rem, 3vw, 2.2rem); border-top: 1px solid var(--line); }
-  .bm-steps { margin-top: 1rem; padding-left: 1.3rem; display: flex; flex-direction: column; gap: .7rem; max-width: 68ch; }
-  .bm-steps li { list-style: decimal; color: var(--ink-2); line-height: 1.7; }
-
-  @media (prefers-reduced-motion: reduce) { .bm-chip { transition: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .bm-chip, .bm-track { transition: none; }
+  }
 </style>
+
+<script>
+  /* ── HET GEDRAG VAN HET MERKMODELFORMULIER ────────────────────────────────
+   *
+   * Vijf stappen, één vertakking, en twee velden die verplicht worden door een
+   * vinkje. Meer doet dit script niet, en dat is met opzet: alles wat het niet
+   * doet, doet het formulier zelf al.
+   *
+   * `astro:page-load` en niet alleen bij het laden: een module draait één keer
+   * per bezoek, maar ClientRouter wisselt de DOM bij elke zachte navigatie. Zie
+   * de noot in Note.astro en tests/zachte-navigatie.test.mjs.
+   *
+   * DE EU-REGEL WORDT NIET OVERGETYPT. `isEu` en `HOME_COUNTRY` komen uit
+   * src/data/vat.js — dezelfde bron als syncVatConfirm() in pipeline.js en als
+   * vatDecision() op de server. Astro bundelt dit script, dus die import kost
+   * niets extra's en houdt de lijst met EU-landen op één plek.
+   */
+  import { isEu, HOME_COUNTRY } from '../data/vat.js';
+
+  function bmBoot() {
+    const form = document.querySelector('form[data-bm-form]');
+    if (!form) return;
+    if (form.dataset.bmBound === '1') return;
+    form.dataset.bmBound = '1';
+
+    try { bind(form); } catch (e) {
+      /* Een kapotte verbetering mag het formulier niet meenemen. Zonder
+         `is-live` staan alle stappen weer onder elkaar en post de knop in stap 5
+         gewoon naar /api/order — precies de toestand zonder JavaScript. */
+      form.classList.remove('is-live');
+      document.documentElement.classList.remove('js-bm');
+      if (typeof console !== 'undefined') console.warn('[merkmodel]', e);
+    }
+  }
+
+  function bind(form) {
+    const stappen = [...form.querySelectorAll('[data-bm-step]')];
+    const nav = form.querySelector('[data-bm-nav]');
+    const knopVerder = form.querySelector('[data-bm-next]');
+    const knopTerug = form.querySelector('[data-bm-back]');
+    const railItems = [...document.querySelectorAll('[data-bm-rail-step]')];
+    const LAATSTE = 5;
+
+    form.classList.add('is-live');
+    document.documentElement.classList.add('js-bm');
+    if (nav) nav.hidden = false;
+
+    let stap = 1;
+
+    /* ── DE TRECHTER ────────────────────────────────────────────────────────
+     * Vijf stappen op één pagina, dus Cloudflare Web Analytics ziet er vier niet
+     * — precies het gat dat /api/step voor de bestelstroom dicht. Bij een
+     * formulier van € 450 is "waar loopt iemand weg" geen luxe.
+     *
+     * Eén keer per stap per paginalading: `gemeten` houdt bij wat er al gestuurd
+     * is, anders telt heen en weer klikken als voortgang en meet de trechter
+     * twijfel. Uitdrukkelijk NIET per bezoeker — dat zou een cookie vragen en dan
+     * is dit een tracker. Zie de noot bij measure() in pipeline.js, waar
+     * dezelfde afweging staat.
+     *
+     * `keepalive`, geen await, en de fout gaat nergens heen: een meting die dit
+     * formulier vertraagt kost meer dan ze oplevert, en het endpoint antwoordt
+     * altijd 204. */
+    const gemeten = new Set();
+    const meet = (n) => {
+      if (!Number.isInteger(n) || gemeten.has(n)) return;
+      gemeten.add(n);
+      try {
+        const dienst = form.querySelector('input[name="service"]');
+        const taal = form.querySelector('input[name="lang"]');
+        const flow = dienst ? dienst.value : '';
+        const lang = taal ? taal.value : '';
+        if (!flow || !lang) return;
+        const body = new URLSearchParams({ step: String(n), flow, lang });
+        fetch('/api/step', { method: 'POST', body, keepalive: true }).catch(() => {});
+      } catch { /* geen fetch, of het formulier is halverwege verdwenen. Geen gevolg. */ }
+    };
+
+    /* Welke tak van stap 3 telt op dit moment mee. Leeg tot er gekozen is, en
+       dan is stap 3 nog niet bereikbaar — stap 1 is verplicht. */
+    const gekozenRoute = () => {
+      const aan = form.querySelector('input[name="bm_track"]:checked');
+      return aan ? aan.value : '';
+    };
+
+    /* De tak die niet gekozen is, gaat op `disabled`. Dat doet twee dingen
+       tegelijk en allebei zijn ze nodig: een disabled veld wordt niet
+       meegestuurd (dus komt `bm_avoid` één keer aan in plaats van twee) en het
+       telt niet mee in checkValidity() (dus houdt een onzichtbaar verplicht veld
+       de verzending niet tegen zonder dat iemand ziet waarom). */
+    const syncTak = () => {
+      const route = gekozenRoute();
+      for (const s of stappen) {
+        const tak = s.dataset.bmTrack;
+        if (!tak) continue;
+        const uit = !!route && tak !== route;
+        for (const veld of s.querySelectorAll('input, select, textarea')) veld.disabled = uit;
+      }
+    };
+
+    /* Het btw-nummer en het registratienummer hangen aan hetzelfde vinkje, de
+       ene kant op en de andere. `required` wordt hier gezet en nergens anders,
+       zodat er geen tweede plek is waar dezelfde regel kan gaan afwijken. */
+    const vat = form.querySelector('[data-bm-vat]');
+    const noVat = form.querySelector('[data-bm-novat]');
+    const regBlok = form.querySelector('[data-bm-reg]');
+    const regVeld = form.querySelector('[data-bm-regfield]');
+    const vcBlok = form.querySelector('[data-bm-vatconfirm]');
+    const vcVeld = vcBlok ? vcBlok.querySelector('input[name="vat_confirmed"]') : null;
+    const land = form.querySelector('[data-bm-country]');
+
+    const syncBtw = () => {
+      const geen = !!(noVat && noVat.checked);
+      if (vat) vat.required = !geen;
+      if (regBlok) regBlok.hidden = !geen;
+      if (regVeld) regVeld.required = geen;
+
+      /* De verklaring bij 0%: een ander EU-land dan Nederland, mét een ingevuld
+         btw-nummer. Precies de voorwaarde van artikel 196, en dezelfde die
+         pipeline.js aanhoudt. Verdwijnt het blok, dan verdwijnt ook het
+         antwoord — een aangevinkte verklaring die de klant niet meer kan zien,
+         is geen verklaring, en hij zou meeliften naar een land waar hij niet
+         over gaat. */
+      const up = String((land && land.value) || '').trim().toUpperCase();
+      const geldt = !!up && up !== HOME_COUNTRY && isEu(up) && !!(vat && vat.value.trim()) && !geen;
+      if (vcBlok) vcBlok.hidden = !geldt;
+      if (vcVeld) {
+        vcVeld.required = geldt;
+        if (!geldt) vcVeld.checked = false;
+      }
+    };
+
+    /* Een stap is pas geldig als alles erin geldig is. `checkValidity()` op de
+       losse velden en niet op het formulier: dat laatste kijkt naar álle
+       stappen, ook de stappen die de bezoeker nog niet gezien heeft, en dan
+       blijft Verder hangen op een veld drie schermen verderop. */
+    const eersteFout = (blok) => {
+      for (const veld of blok.querySelectorAll('input, select, textarea')) {
+        if (veld.disabled || !veld.willValidate) continue;
+        if (!veld.checkValidity()) return veld;
+      }
+      return null;
+    };
+
+    const zichtbaar = (n) => stappen.filter((s) => {
+      if (Number(s.dataset.bmStep) !== n) return false;
+      const tak = s.dataset.bmTrack;
+      return !tak || tak === gekozenRoute();
+    });
+
+    const toon = (n) => {
+      stap = Math.max(1, Math.min(LAATSTE, n));
+      syncTak();
+      for (const s of stappen) {
+        const hoort = Number(s.dataset.bmStep) === stap
+          && (!s.dataset.bmTrack || s.dataset.bmTrack === gekozenRoute());
+        s.classList.toggle('is-on', hoort);
+      }
+      for (const item of railItems) {
+        const i = Number(item.dataset.bmRailStep);
+        if (i === stap) item.setAttribute('aria-current', 'step');
+        else item.removeAttribute('aria-current');
+        if (i < stap) item.setAttribute('data-bm-done', '1');
+        else item.removeAttribute('data-bm-done');
+      }
+      if (knopTerug) knopTerug.hidden = stap === 1;
+      if (knopVerder) knopVerder.hidden = stap === LAATSTE;
+      if (stap === LAATSTE) vulSamenvatting();
+      meet(stap);
+    };
+
+    /* Zachtjes naar boven, en `auto` bij minder beweging. Een sprong van
+       enkele honderden pixels is precies de beweging die die voorkeur bedoelt
+       tegen te houden; pipeline.js en initWizards() maken allebei dezelfde
+       uitzondering. */
+    const naarBoven = () => {
+      const zacht = !window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const y = form.getBoundingClientRect().top + window.scrollY - 90;
+      window.scrollTo({ top: y, behavior: zacht ? 'smooth' : 'auto' });
+    };
+
+    const verder = () => {
+      for (const blok of zichtbaar(stap)) {
+        const fout = eersteFout(blok);
+        if (fout) { fout.reportValidity(); if (fout.focus) fout.focus(); return; }
+      }
+      toon(stap + 1);
+      naarBoven();
+    };
+
+    if (knopVerder) knopVerder.addEventListener('click', verder);
+    if (knopTerug) knopTerug.addEventListener('click', () => { toon(stap - 1); naarBoven(); });
+
+    /* Enter in een tekstveld hoort "verder" te betekenen en niet "verzenden".
+       Het formulier is `novalidate`, dus zonder dit zou Enter op stap 2 de hele
+       bestelling posten met een leeg factuurblok. */
+    form.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.tagName === 'TEXTAREA' || t.tagName === 'BUTTON') return;
+      if (stap === LAATSTE) return;
+      e.preventDefault();
+      verder();
+    });
+
+    form.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.getAttribute('name') === 'bm_track') { syncTak(); toon(stap); }
+      syncBtw();
+    });
+    form.addEventListener('input', syncBtw);
+
+    /* Bij verzenden nog één keer alles, en de stap waar de fout zit erbij.
+       Zonder deze regel meldt de browser een fout op een veld dat niet in beeld
+       staat — en dat is de doodlopende weg waar `novalidate` juist voor bedoeld
+       is om te vermijden. */
+    form.addEventListener('submit', (e) => {
+      syncTak();
+      const fout = eersteFout(form);
+      if (!fout) return;
+      e.preventDefault();
+      const blok = fout.closest('[data-bm-step]');
+      if (blok) { toon(Number(blok.dataset.bmStep)); naarBoven(); }
+      fout.reportValidity();
+      if (fout.focus) fout.focus();
+    });
+
+    /* ── DE SAMENVATTING ────────────────────────────────────────────────────
+     * Stap 5 heet "Nakijken en betalen", en zonder deze lijst zou daar alleen
+     * "betalen" staan. Hij wordt bij elke opbouw opnieuw gemaakt en niet
+     * bijgewerkt: bijwerken vraagt om een tweede administratie van welk veld bij
+     * welke regel hoort, en er is geen enkel moment waarop dit duur is.
+     *
+     * De labels komen uit de <label> die al bij het veld staat, dus er is geen
+     * tweede tekst die kan gaan afwijken van wat de bezoeker heeft gelezen.
+     */
+    const lijst = form.querySelector('[data-bm-sum-list]');
+    const doos = form.querySelector('[data-bm-summary]');
+    const leeg = (doos && doos.dataset.bmEmpty) || '';
+
+    function tekstVan(veld) {
+      if (veld.type === 'radio') {
+        const aan = form.querySelector(`input[name="${veld.name}"]:checked`);
+        if (!aan) return '';
+        const l = aan.closest('label');
+        return l ? l.textContent.trim() : aan.value;
+      }
+      if (veld.tagName === 'SELECT') {
+        const opt = veld.selectedOptions && veld.selectedOptions[0];
+        return opt && opt.value ? opt.textContent.trim() : '';
+      }
+      return String(veld.value || '').trim();
+    }
+
+    function labelVan(veld) {
+      const set = veld.closest('fieldset');
+      if (veld.type === 'radio' && set) {
+        const lg = set.querySelector('legend');
+        if (lg) return lg.textContent.trim();
+      }
+      if (veld.id) {
+        const l = form.querySelector(`label[for="${veld.id}"]`);
+        if (l) return l.textContent.replace('*', '').trim();
+      }
+      return veld.name;
+    }
+
+    function vulSamenvatting() {
+      if (!lijst || !doos) return;
+      lijst.textContent = '';
+      const gezien = new Set();
+      /* Alleen de vragen over het merk en het gezicht. Het factuurblok staat er
+         met opzet niet in: dat is geen antwoord om na te kijken maar een adres,
+         en het staat één stap terug voor wie het wil zien. */
+      for (const veld of form.querySelectorAll('[name^="bm_"]')) {
+        if (veld.disabled) continue;
+        if (gezien.has(veld.name)) continue;
+        gezien.add(veld.name);
+        const dt = document.createElement('dt');
+        dt.textContent = labelVan(veld);
+        const dd = document.createElement('dd');
+        const waarde = tekstVan(veld);
+        if (waarde) dd.textContent = waarde;
+        else { dd.textContent = leeg; dd.setAttribute('data-empty', '1'); }
+        lijst.append(dt, dd);
+      }
+      doos.hidden = lijst.childElementCount === 0;
+    }
+
+    syncTak();
+    syncBtw();
+    toon(1);
+  }
+
+  bmBoot();
+  document.addEventListener('astro:page-load', bmBoot);
+</script>

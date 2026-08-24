@@ -200,7 +200,24 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
  * is een revisie" dwingt je alsnog het dashboard te openen om te weten of het dringend
  * is, en dan had de mail niets opgelost.
  */
-export async function notifyRevision(env, { orderId, fileId, note }) {
+/*
+ * ── ÉÉN BEELD OF ÉÉN RONDE — 24 augustus 2026 ───────────────────────────────
+ *
+ * Deze functie kende alleen `fileId`, uit de tijd dat een klant per beeld een
+ * revisie vroeg. Sinds de belofte één ronde per bestelling is (zie AFTERCARE in
+ * src/data/pricing.js), komt er één verzoek binnen met een lijst beelden eraan.
+ *
+ * `fileIds` is dus de nieuwe vorm en `fileId` blijft werken. Niet uit
+ * vriendelijkheid voor oude aanroepers — die zijn er niet meer — maar omdat het
+ * de functie op één plek laat beslissen hoe een verzoek eruitziet in de mail,
+ * en dat is precies wat er misging toen portal.js en account.js allebei hun
+ * eigen versie hadden.
+ *
+ * WAAROM ÉÉN MAIL EN NIET VIER. Lucas vroeg om de ronde als één partij te
+ * kunnen bekijken: *"waarna ik ze bekijk en beoordeel"*. Vier losse mails over
+ * één beslissing zijn vier keer dezelfde bestelling opzoeken.
+ */
+export async function notifyRevision(env, { orderId, fileId, fileIds, note, round = false }) {
   try {
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
@@ -217,25 +234,44 @@ export async function notifyRevision(env, { orderId, fileId, note }) {
      * Eén query hier is dus niet alleen korter maar ook de veilige kant: het opzoeken
      * zit binnen de try van deze functie, waar een fout niets kan raken.
      */
-    let f = null;
-    try {
-      f = await env.DB.prepare(
-        'SELECT filename, product_key, shot FROM files WHERE id = ?1'
-      ).bind(fileId).first();
-    } catch { /* dan zonder — het bestandsnummer is genoeg om het terug te vinden */ }
+    const ids = (Array.isArray(fileIds) && fileIds.length ? fileIds : [fileId])
+      .filter((n) => Number.isInteger(n));
 
-    const what = [f?.product_key, f?.shot].filter(Boolean).join(' · ')
-      || f?.filename
-      || `bestand ${fileId}`;
-    await toStudio(env, `Revisie gevraagd · ${ref} · ${what}`, [
-      h1('Een klant vraagt een revisie', ref),
+    let rijen = [];
+    try {
+      const plaatsen = ids.map((_, i) => `?${i + 1}`).join(', ');
+      const res = await env.DB.prepare(
+        `SELECT id, filename, product_key, shot FROM files WHERE id IN (${plaatsen})`
+      ).bind(...ids).all();
+      rijen = res.results || [];
+    } catch { /* dan zonder — de bestandsnummers zijn genoeg om ze terug te vinden */ }
+
+    const naam = (id) => {
+      const f = rijen.find((r) => r.id === id);
+      return [f?.product_key, f?.shot].filter(Boolean).join(' · ')
+        || f?.filename
+        || `bestand ${id}`;
+    };
+    const namen = ids.map(naam);
+
+    /* Het onderwerp draagt het AANTAL en niet de hele lijst: vier beelden in een
+       onderwerpregel is een regel die in elke mailclient wordt afgekapt, en dan
+       staat er nog steeds niet in hoeveel het er waren. */
+    const kop = round
+      ? `Revisieronde · ${ref} · ${ids.length} beeld${ids.length === 1 ? '' : 'en'}`
+      : `Revisie gevraagd · ${ref} · ${namen[0] || ''}`;
+
+    await toStudio(env, kop, [
+      h1(round ? 'Een klant heeft zijn revisieronde ingediend' : 'Een klant vraagt een revisie', ref),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
-        ['Beeld', what],
+        [ids.length === 1 ? 'Beeld' : 'Beelden', namen.join(' · ')],
       ]),
       note ? mailQuote(note) : mailP('De klant heeft er geen toelichting bij gezet.'),
-      mailP('Het verzoek staat bovenaan in het adminportaal, bij de bestelling.'),
+      round
+        ? mailP('Dit is de ene ronde die bij deze bestelling hoort — de klant kan er geen tweede indienen. Alles staat als één partij bij de bestelling in het adminportaal.')
+        : mailP('Het verzoek staat bovenaan in het adminportaal, bij de bestelling.'),
     ].join(''));
   } catch (err) {
     console.error('[notify] revisiebericht niet verstuurd voor', orderId, '—', err?.message || err);
