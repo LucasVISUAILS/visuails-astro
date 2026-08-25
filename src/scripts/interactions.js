@@ -120,6 +120,72 @@ function t18() { return I18N[pageLang()] || I18N.en; }
 // not have to remember the media string.
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * HET LOGO OP DE PAGINA WAAR JE AL BENT
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 24 augustus 2026: *"Als klant op klikbaar logo klikt op de home page
+ * gaat hij soepel naar de bovenkant van de website."*
+ *
+ * Het merkteken linksboven is een `<a href="/">`. Sta je al op de homepage, dan
+ * doet die link niets zichtbaars: de ClientRouter wisselt dezelfde pagina voor
+ * dezelfde pagina en je blijft staan waar je stond. Voor een bezoeker die
+ * halverwege de pagina op het logo drukt — de standaardhandeling om "terug naar
+ * boven" te gaan — gebeurt er dus niets, en dat leest als een kapotte knop.
+ *
+ * ── HET BLIJFT EEN ECHTE LINK ─────────────────────────────────────────────
+ *
+ * De `href` blijft staan en wordt alleen tegengehouden wanneer hij toch nergens
+ * heen zou gaan. Zonder JavaScript, in een nieuw tabblad, met ctrl of cmd
+ * ingedrukt, met de middelste muisknop: allemaal gewoon navigeren. Een knop die
+ * "terug naar boven" doet, hoort geen link te vervangen die iemand bewust in een
+ * tweede tabblad wil openen.
+ *
+ * ── EN HET SCROLLT MET EEN EXPLICIETE `behavior` ──────────────────────────
+ *
+ * `scroll-behavior: smooth` staat met opzet NIET op deze site — zie de lange
+ * noot bij `html` in global.css: het destabiliseerde de enige vastgepinde
+ * sectie. Elke bedoelde scroll geeft zijn eigen `behavior` mee, en deze dus ook.
+ *
+ * `reduced()` erbij, om dezelfde reden als bij scrollToForm() verderop: wie om
+ * minder beweging vraagt, wil geen pagina die onder hem vandaan glijdt. Die
+ * springt.
+ *
+ * ── ÉÉN LUISTERAAR OP document, EN NIET ÉÉN PER LOGO ─────────────────────
+ *
+ * Gedelegeerd, zodat hij een zachte navigatie overleeft zonder opnieuw gebonden
+ * te worden — het merkteken zelf wordt bij elke paginawissel vervangen. Zelfde
+ * afweging als in Note.astro: het OPHANGEN gebeurt één keer, het werk elke keer.
+ */
+let logoGebonden = false;
+function logoNaarBoven() {
+  if (logoGebonden) return;
+  logoGebonden = true;
+  document.addEventListener('click', (e) => {
+    /* Alles wat een bewuste tweede-tabblad-klik is, blijft navigeren. */
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest && e.target.closest('a.brand');
+    if (!a) return;
+
+    /* Alleen als de link naar de pagina wijst waar je al staat. `new URL` lost
+       het taalvoorvoegsel op zonder dat hier iets over /nl/ hoeft te weten: op
+       /nl/ wijst het logo naar /nl/, en dan zijn de twee paden gelijk. */
+    let doel;
+    try { doel = new URL(a.href, location.href); } catch { return; }
+    if (doel.origin !== location.origin) return;
+    const gelijk = doel.pathname.replace(/\/+$/, '') === location.pathname.replace(/\/+$/, '');
+    if (!gelijk) return;
+
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
+    /* De adresbalk mag geen `#` overhouden: er is niets om naartoe te linken en
+       een lege fragmentverwijzing blijft bij de volgende klik in de historie
+       staan. */
+  }, { passive: false });
+}
+logoNaarBoven();
+
 function revealInView() {
   const vh = window.innerHeight || document.documentElement.clientHeight;
   document.querySelectorAll('.reveal.pending:not(.in), .reveal-mask:not(.in)').forEach((el) => {

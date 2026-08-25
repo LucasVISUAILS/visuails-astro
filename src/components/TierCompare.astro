@@ -103,6 +103,18 @@ const label = lang === 'nl'
 // order size was the comparison. Now order size IS the comparison, and it is
 // already in both column headings; a third statement of it would be the only
 // row in the table that says the same thing twice.
+/* ── DEZE LINK ZEI DRIE KEER HETZELFDE OP ÉÉN PAGINA ─ 25 augustus 2026 ───
+   `cta1` luidde "Bekijk de prijs per product" / "See pricing per product", en
+   dat is LETTERLIJK dezelfde regel als de knop in de kop van /catalog en die in
+   de afsluitende band onderaan — op /nl/catalog stond hij drie keer, op
+   /nl/lifestyle twee keer. Lucas, 24 augustus: *"Bedenk alternatief voor:
+   Bekijk de prijs per product."*
+
+   De kop- en voettekstknop mogen elkaar herhalen; dat is dezelfde knop boven en
+   onder. Deze niet: hij staat onder de KOLOM "vanaf N producten" en hoort te
+   zeggen wat er op de prijspagina staat voor juist die kolom — dat het tarief
+   daar een trede zakt. Hetzelfde getal als de kop erboven, uit dezelfde
+   constante, zodat de twee niet uit de pas kunnen lopen. */
 const t = lang === 'nl'
   ? {
       h: `Wat er verandert bij ${WINDOW_THRESHOLD} producten`,
@@ -115,7 +127,7 @@ const t = lang === 'nl'
       pNote: `Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij de vastgezette leverdatum; daaronder loopt hij in de normale doorlooptijd. Dat is ook precies het aantal waarbij het tarief per product een stap zakt, dus er is één grens, geen twee. Beide lopen door dezelfde productie en dezelfde controle.`,
       pTerm: 'serviceniveau',
       cta0: 'Start een bestelling',
-      cta1: 'Bekijk de prijs per product',
+      cta1: `Bekijk het tarief vanaf ${WINDOW_THRESHOLD} producten`,
     }
   : {
       h: `What changes at ${WINDOW_THRESHOLD} products`,
@@ -123,7 +135,7 @@ const t = lang === 'nl'
       pNote: `From ${WINDOW_THRESHOLD} products we hold a delivery date for the order and confirm it in writing; below that count the normal turnaround applies. That is also the count at which the rate per product drops a step, so there is one line to cross rather than two. Both run through the same production and the same check.`,
       pTerm: 'service level',
       cta0: 'Start an order',
-      cta1: 'See pricing per product',
+      cta1: `See the rate from ${WINDOW_THRESHOLD} products`,
     };
 
 // The row labels are NOT typed in `t` above with the rest of the copy. They

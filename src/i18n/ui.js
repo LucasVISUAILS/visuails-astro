@@ -99,7 +99,7 @@ export const ui = {
        *
        * Wat het oplevert: twee items minder in de balk, en één plek waar de
        * vraag "wat kan ik hier bestellen" volledig beantwoord wordt. */
-      { href: '/custom-models', title: 'Your Brand Model', desc: 'A dedicated face tailored specifically for your brand—completely exclusive to you.' },
+      { href: '/custom-models', title: 'Your Brand Model', desc: 'A dedicated face tailored specifically for your brand — completely exclusive to you.' },
       { href: '/plans', title: 'Monthly plan', desc: 'A fixed monthly product volume, priced below our standard rate.' },
       /*
        * HOOKS HEEFT GEEN href, EN DAT IS HET HELE PUNT — 9 augustus 2026.

@@ -582,7 +582,10 @@ console.log('\nhet vraagteken naast hooks');
     check(`${lang}: vier regels in het paneel`, [...b.matchAll(/\n\s*\['/g)].length, 4);
 
     // Wat er MOET staan.
-    check(`${lang}: één foto is niet genoeg`, /(not enough|niet genoeg)/.test(b), true);
+    /* De CLAIM: met één foto lukt het niet. Lucas schreef "Met één foto red je
+       het niet" en "One photo alone won't work" — hetzelfde, anders gezegd. */
+    check(`${lang}: één foto is niet genoeg`,
+      /(not enough|niet genoeg|red je het niet|won.t work|isn.t (enough|sufficient)|is not (enough|sufficient))/i.test(b), true);
     check(`${lang}: een specialist kijkt hem na`, /specialist/.test(b), true);
     /* ── DE LEVERTIJD KOMT UIT DE BRON — 18 augustus 2026 ────────────────
        Hier stond `/24 (to|tot) 48/` en die toets hield een FOUTE belofte vast.
@@ -593,8 +596,22 @@ console.log('\nhet vraagteken naast hooks');
 
        De nieuwe eis is sterker dan de oude: niet WELK getal er staat, maar dat
        er geen getal getypt IS. Zolang de regel turnaround() aanroept, kan deze
-       tegenspraak niet terugkomen — ook niet als het getal ooit verandert. */
-    check(`${lang}: de levertijd komt uit turnaround()`, /turnaround\('unattended'/.test(b), true);
+       tegenspraak niet terugkomen — ook niet als het getal ooit verandert.
+
+       ── EN turnaroundShort() TELT MEE — 25 augustus 2026 ─────────────────
+       Dit patroon eiste letterlijk `turnaround(`, en daarmee pinde het de NAAM
+       van de functie in plaats van waar het om gaat. In de precisieronde van
+       25 augustus ging deze regel over op `turnaroundShort('unattended')`, om
+       een echte fout te repareren: `turnaround('unattended', 'nl')` geeft
+       "Meestal 2–4 werkdagen", en de zin zette daar "Binnen " voor. Op de
+       Nederlandse homepage stond dus "Binnen Meestal 2–4 werkdagen", en in het
+       Engels "in estimated delivery: 2–4 working days" — het LABEL lekte de zin
+       in. turnaroundShort() geeft "2–4 werkdagen" zonder dat label.
+
+       Allebei lezen hetzelfde getal uit src/data/pricing.js, dus de belofte die
+       deze toets bewaakt is onveranderd: geen getypt getal. Het patroon staat
+       er nu naar die belofte en niet naar één functienaam. */
+    check(`${lang}: de levertijd komt uit turnaround()`, /turnaround(Short)?\('unattended'/.test(b), true);
     check(`${lang}: en staat er niet als getypt getal`, /24 (to|tot) 48/.test(b), false);
     check(`${lang}: het scherm heet VISUAILS Studio`, /VISUAILS Studio/.test(b), true);
 
@@ -603,9 +620,49 @@ console.log('\nhet vraagteken naast hooks');
     // vastligt; "genoeg" zonder "niet" ervoor is de fout van de oude pagina.
     check(`${lang}: geen prijs in het paneel`, /€/.test(b), false);
     check(`${lang}: het woord viral staat er niet`, /viral/i.test(b), false);
-    check(`${lang}: de scroll wordt niet genoemd`, /scroll/i.test(b), false);
-    check(`${lang}: geen belofte van bereik`,
-      /(guarantee|gegarandeerd|meer volgers|more followers|gaat viraal)/i.test(b), false);
+    /* ── HET SCROLL-VERBOD IS VERVALLEN — 24 augustus 2026 ────────────────
+       Hier stond `check(... /scroll/i.test(b), false)`, omdat Lucas in augustus
+       vroeg de woorden "viral" en "scroll" van de site te houden. In de
+       tekstronde van 24 augustus schreef hij zelf "Scroll-stopping", en op de
+       vraag of dat een vergissing was: *"Mijn nieuwe zin wint, haal het verbod
+       weg."*
+
+       Bewust teruggedraaid dus, en niet vergeten. Het verbod op "viral" hierboven
+       BLIJFT staan — dat is een belofte over de uitkomst en iets anders dan een
+       woord dat beschrijft hoe iets eruitziet. */
+    /* ── WAT HIER VERBODEN IS, IS EEN BELOFTE OVER DE UITKOMST ────────────
+       Niet het woord "guarantee". Deze regel ving op 24 augustus 2026 de zin
+       "We guarantee the format and the execution — not the reach" — de zin die
+       precies doet wat dit blok WIL, namelijk het bereik uitdrukkelijk buiten de
+       belofte zetten. Een verbod op het woord keurt dus de goede formulering af.
+
+       Tegelijk mistte hij "grow your following", wat wél een belofte over bereik
+       is. Te bot en te smal in één regel.
+
+       Wat er nu staat: verboden is een toezegging over wat een post DOET —
+       volgers, bereik, betrokkenheid, viraal gaan. Garanderen mag, zolang het
+       over het werk gaat en niet over de uitkomst ervan. */
+    /* ── EEN KANS MAG, EEN TOEZEGGING NIET — 24 augustus 2026 ─────────────
+       Lucas, gevraagd of de regel "boost engagement and grow your following"
+       eruit moest: *"Kan je dit ook niet framen als in dat het kan dat je
+       betrokkenheid kan vergroten en meer volgers kan aantrekken."*
+
+       Dat is de juiste uitweg en hij is scherper dan het woord verbieden. Een
+       video die de beste KANS geeft op meer volgers, is waar; een video die
+       volgers OPLEVERT, hangt af van het platform en de timing — precies wat de
+       regel eronder in dit paneel zegt.
+
+       Dus dezelfde constructie als bij het woord "stock" verderop: het woord mag
+       vallen, maar er moet een mogelijkheidswoord vlak omheen staan. Zonder
+       hedge is het een toezegging, en die blijft verboden. */
+    const bereikTermen = /(more followers|meer volgers|nieuwe volgers|grow your (following|audience)|meer bereik|gaat viraal|goes viral|engagement|betrokkenheid)/gi;
+    const hedge = /(chance|kans|can |kan |could|kunnen|mogelijk|helps?|helpt)/i;
+    const zonderHedge = [];
+    for (const m of b.matchAll(bereikTermen)) {
+      const rond = b.slice(Math.max(0, m.index - 80), m.index + 80);
+      if (!hedge.test(rond)) zonderHedge.push(rond.replace(/\s+/g, ' ').trim());
+    }
+    check(`${lang}: bereik alleen als kans, nooit als toezegging`, zonderHedge, []);
   }
 
   // En de voetregel zegt waarom de knop dood is, in beide talen.
@@ -614,8 +671,16 @@ console.log('\nhet vraagteken naast hooks');
      bijgewerkt en de ander niet. Eén per taal dus. */
   const feet = [...home.matchAll(/svcSoonFoot: '([^']*)'/g)].map((m) => m[1]);
   check('beide talen hebben een voetregel', feet.length, 2);
+  /* ── DE CLAIM EN NIET DE WOORDEN — 24 augustus 2026 ────────────────────
+     Hier stond `/(not settled|niet vast)/`. Lucas herschreef de regel naar
+     "Pricing and ordering details are still being finalized" / "Omdat we de
+     tarieven en het bestelproces nog afronden" — precies dezelfde mededeling,
+     andere woorden, en de toets ging rood op een verbetering.
+     Dat is de derde keer in dit project dat een toets de SPELLING van een regel
+     vasthield in plaats van wat hij belooft. Wat er moet staan is: er is nog
+     geen prijs, en daarom kun je nog niet bestellen. */
   check('en die zegt dat de prijs nog niet vastligt',
-    feet.every((f) => /(not settled|niet vast)/.test(f)), true);
+    feet.every((f) => /(not settled|niet vast|being finalized|nog afronden|still being|nog niet)/i.test(f)), true);
 
   /* ── EDITIONS ─────────────────────────────────────────────────────────────
    * Aangekondigd op 18 augustus 2026. Het idee staat in STOCK-IDEE.md, en dat
@@ -674,15 +739,22 @@ console.log('\nhet vraagteken naast hooks');
     const zonderOntkenning = [];
     for (let k = b.toLowerCase().indexOf('stock'); k !== -1; k = b.toLowerCase().indexOf('stock', k + 1)) {
       const rond = b.slice(Math.max(0, k - 60), k + 60);
-      if (!/(not|cannot|no |geen|niet|kán niet|kan niet)/i.test(rond)) zonderOntkenning.push(rond);
+      /* `nooit` en `never` stonden hier niet bij, en dat kostte een ronde: de
+         copy zei "wat een stockbibliotheek nooit kan bieden" — zo ontkennend als
+         het maar kan — en deze regel las hem als een kale vermelding. Een lijst
+         ontkenningen die de sterkste ontkenning niet kent, keurt de beste zin af. */
+      if (!/(not|never|cannot|no |geen|niet|nooit|kán niet|kan niet)/i.test(rond)) zonderOntkenning.push(rond);
     }
     check(`${lang}: het woord stock valt alleen ontkend`, zonderOntkenning, []);
     check(`${lang}: de gedeelde set heet gedeeld`,
       /(shared|gedeeld)/i.test(b), true);
     check(`${lang}: en er staat bij dat hij naar andere merken gaat`,
       /(other brands|andere merken)/i.test(b), true);
+    /* Ook hier de claim en niet de formulering: "no second library" zegt
+       hetzelfde als "not a second library", en een toets die op het lidwoord
+       staat, keurt de kortere zin af. */
     check(`${lang}: geen tweede bibliotheek beloofd`,
-      /(not a second library|geen tweede bibliotheek)/i.test(b), true);
+      /((not|no) a? ?second library|geen tweede \w*bibliotheek)/i.test(b), true);
     check(`${lang}: geen prijs in het Editions-paneel`, /€/.test(b), false);
     check(`${lang}: het komt binnen in VISUAILS Studio`, /VISUAILS Studio/.test(b), true);
   }

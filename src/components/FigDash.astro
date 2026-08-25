@@ -71,16 +71,16 @@ const win = windowLabel(demoWindow(DEMO_ORDER.products), lang);
 
 const C = nl
   ? {
-      note: 'Voorbeeld met verzonnen gegevens — hier valt niets in te vullen.',
+      note: 'Interactieve preview met voorbeelddata — velden zijn uitsluitend ter illustratie.',
       tabs: [
         ['Overzicht', 'Waar je bestellingen staan'],
-        ['Bestellingen', 'Elk beeld, met je eigen upload ernaast'],
+        ['Bestellingen', 'Elk beeld direct naast je originele upload'],
         /* De ondertitel noemt sinds 13 augustus 2026 ook de verhouding, want die
            staat er sinds migratie 0028 bij — zie lockSection() in account.js. Een
            mockup die twee van de drie antwoorden noemt, is een mockup die het
            scherm ouder laat lijken dan het is. */
-        ['Je vaste look', 'Wie je product draagt, waar het op staat, en in welke verhouding'],
-        ['Je gegevens', 'Eén keer invullen, daarna voorgevuld'],
+        ['Jouw look', 'Modellen, ondergrond en beeldformaat'],
+        ['Accountgegevens', 'Eén keer instellen, daarna automatisch ingevuld'],
       ],
       ovH: 'Wat er nu loopt',
       ovTiles: [['1', 'in productie'], ['1', 'wordt nagekeken'], ['2', 'geleverd'], ['1', 'onbetaald']],
@@ -98,7 +98,7 @@ const C = nl
       shots: ['Voorkant', 'Achterkant', 'Detail', 'Op een model'],
       bApprove: 'Goedkeuren', bAsk: 'Niet goed', bDown: 'Downloaden',
       rrH: 'Eén revisieronde',
-      rrBody: 'Vink aan wat niet goed is, schrijf erbij wat eraan schort, en stuur het als één ronde.',
+      rrBody: 'Markeer de afbeeldingen die beter kunnen, geef je specifieke opmerkingen mee en laat de specialist het beeld perfect afwerken.',
       rrBtn: 'Verstuur deze revisieronde',
       ordNote: 'Goedkeuren doe je per beeld. Aanmerken ook — maar je verstuurt ze samen, als de ene revisieronde die bij de bestelling hoort. Daarna verschijnt er een WhatsApp-link in plaats van de knop.',
       bkH: 'Standaard per dienst',
@@ -120,19 +120,19 @@ const C = nl
       ],
       bkColours: [['#FFFFFF', 'Wit'], ['#F7F5F1', 'Gebroken wit'], ['#EDE4D8', 'Beige']],
       bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Onze eigen webshop', null], ['Social en advertenties', null]],
-      bkChNote: 'Kies je een marktplaats die een zuiver wit hoofdbeeld eist, dan begint elke bestelling op wit.',
-      bkNote: 'Wat hier staat, staat bij je volgende bestelling al ingevuld.',
+      bkChNote: 'Verkoop je via Amazon of Bol? Elke bestelling begint automatisch op zuiver wit (#FFFFFF).',
+      bkNote: 'Wat je hier instelt, wordt automatisch vooraf ingevuld bij je volgende bestelling.',
       detH: 'Je gegevens',
       detFields: [['Voornaam', 'Mara'], ['Achternaam', 'de Groot'], ['Merk', 'VOLT'], ['Land', 'Nederland'], ['Straat en huisnummer', 'Voorbeeldstraat 12'], ['Postcode', '1234 AB'], ['Plaats', 'Rotterdam'], ['Btw-nummer', 'NL001234567B01']],
-      detNote: 'Deze gegevens komen op je factuur. Het land bepaalt of er btw bij komt.',
+      detNote: 'Deze gegevens komen op je factuur. Het gekozen land bepaalt of er btw wordt berekend.',
     }
   : {
-      note: 'Example with made-up data — nothing here can be filled in.',
+      note: 'Interactive preview with sample data — fields are for demonstration only.',
       tabs: [
         ['Overview', 'Where your orders stand'],
-        ['Orders', 'Every image, next to the photo you sent'],
-        ['Your look', 'Who wears your product, what it sits on, and its shape'],
-        ['Your details', 'Fill in once, then prefilled'],
+        ['Orders', 'Every visual side-by-side with your original upload'],
+        ['Your look', 'Models, surface styling, and image formats'],
+        ['Account details', 'Set up once, auto-filled on every order'],
       ],
       ovH: 'What is running now',
       ovTiles: [['1', 'in production'], ['1', 'being checked'], ['2', 'delivered'], ['1', 'unpaid']],
@@ -150,7 +150,7 @@ const C = nl
       shots: ['Front', 'Back', 'Detail', 'On a model'],
       bApprove: 'Approve', bAsk: 'Not right', bDown: 'Download',
       rrH: 'One revision round',
-      rrBody: 'Tick what is not right, tell us what is wrong, and send it as one round.',
+      rrBody: 'Flag the visuals you want updated, describe the specific changes needed, and return the set for specialist fine-tuning.',
       rrBtn: 'Send this revision round',
       ordNote: 'You approve image by image. You tick image by image too — but you send them together, as the one revision round that comes with the order. After that a WhatsApp link takes the button\u2019s place.',
       bkH: 'Default per service',
@@ -164,11 +164,11 @@ const C = nl
       ],
       bkColours: [['#FFFFFF', 'White'], ['#F7F5F1', 'Off-white'], ['#EDE4D8', 'Beige']],
       bkChannels: [['Amazon', '#FFFFFF'], ['bol', '#FFFFFF'], ['Our own webshop', null], ['Social and ads', null]],
-      bkChNote: 'Pick a marketplace that requires a pure white main image and every order starts on white.',
-      bkNote: 'Whatever is set here arrives prefilled on your next order.',
+      bkChNote: 'Selling on marketplaces like Amazon or Bol? Every order defaults to pure white (#FFFFFF).',
+      bkNote: 'Settings saved here will automatically prefill on your next order.',
       detH: 'Your details',
       detFields: [['First name', 'Mara'], ['Last name', 'de Groot'], ['Brand', 'VOLT'], ['Country', 'Netherlands'], ['Street and number', 'Voorbeeldstraat 12'], ['Postcode', '1234 AB'], ['City', 'Rotterdam'], ['VAT number', 'NL001234567B01']],
-      detNote: 'These go on your invoice. The country decides whether VAT is added.',
+      detNote: 'These details appear on your invoice. VAT is calculated based on your selected country.',
     };
 
 /* ── HET BEDRAG KOMT UIT DE LADDER, NIET UIT MIJN HOOFD ─────────────────────

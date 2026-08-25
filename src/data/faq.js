@@ -774,7 +774,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijs per aantal voor catalog- en lifestyleproducten, en een clip telt daar niet in mee; méér clips bestellen koopt dus geen datum. Wat er wél onder zo'n vrijgehouden datum valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
+        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijs per aantal voor catalog- en lifestyleproducten, en een clip telt daar niet in mee; méér clips bestellen koopt dus geen datum. Wat er wél onder zo’n vrijgehouden datum valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
       },
       {
         q: 'Kan er een model in de clip?',

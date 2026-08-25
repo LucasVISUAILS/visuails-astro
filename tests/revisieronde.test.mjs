@@ -45,6 +45,7 @@
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { accountGet, accountPost } from '../src/lib/account.js';
+import { portalGet } from '../src/lib/portal.js';
 import { mintToken, hashToken } from '../src/lib/token.js';
 import {
   revisionRoundState, canRequestRevisionRound, REVISION_ROUND_STATES,
@@ -177,12 +178,22 @@ function d1(db, hash) {
               ? { session_id: 1, expires_at: inAnHour, customer_id: KLANT, email: 'studio@voorbeeld.nl', name: 'Mara', brand: 'VOLT' }
               : null;
           }
-          try { return uitvoeren(sql, st._b)[0] ?? null; } catch { return null; }
+          /* ── DEZE SCHIL WERPT, ZOALS D1 WERPT — 24 augustus 2026 ──────────
+             Hier stond `catch { return null }` op alle drie. Dat leek onschuldig
+             en maakte deel 6 hieronder waardeloos: de terugval in loadOrder()
+             hangt aan een worp, en een schil die worpen opeet laat elke
+             foutafhandeling groen staan zonder hem ooit te draaien. Gemeten:
+             /o/<token> gaf 404 in plaats van de 200 die de echte code geeft,
+             omdat de query stilletjes null teruggaf in plaats van te klagen.
+
+             Een testschil mag simpeler zijn dan het echte ding. Hij mag niet
+             VRIENDELIJKER zijn — dan toetst hij een wereld die niet bestaat. */
+          return uitvoeren(sql, st._b)[0] ?? null;
         },
         async all() {
-          try { return { results: uitvoeren(sql, st._b) }; } catch { return { results: [] }; }
+          return { results: uitvoeren(sql, st._b) };
         },
-        async run() { try { uitvoeren(sql, st._b); } catch { /* zoals D1: stil */ } return {}; },
+        async run() { uitvoeren(sql, st._b); return {}; },
       };
       return st;
     },
@@ -384,6 +395,88 @@ console.log('\nhet portaal en het dashboard doen hetzelfde');
     check(`${naam} meldt de ronde als één partij`, /notifyRevision\([\s\S]{0,160}?round:\s*true/.test(bron), true);
     /* En de oude, onbeperkte weg staat op geen van beide nog open. */
     check(`${naam} accepteert 'revise' niet meer`, /'approve',\s*'revise'/.test(bron), false);
+  }
+}
+
+/* ══ 6 · EN ZONDER MIGRATIE 0034 BLIJFT DE SITE OVEREIND ═══════════════════
+ *
+ * DIT IS EEN GEMETEN STORING EN GEEN VOORZORG. Op 24 augustus 2026 werd deze
+ * ronde uitgerold zonder `npm run migrate` te draaien. Wat er toen gebeurde,
+ * nagemeten op een database zonder de drie kolommen:
+ *
+ *   /account/orders   HTTP 200 — de terugval uit 0013/0015 ving het op
+ *   /o/<token>        HTTP 503 — de gemailde klantlink gaf een storingspagina
+ *   /admin            viel om op de revisie-inbox, die vooraan in de Promise.all
+ *                     staat die het hele dashboard opbouwt
+ *
+ * De vergeten migratie is niet de fout die hier getoetst wordt. Die hoort een
+ * keer te gebeuren — dat is precies waarom account.js die terugval al drie
+ * migraties lang heeft. De fout is dat dezelfde bescherming op de ene plek stond
+ * en op de andere niet, en uitgerekend niet op het enige adres dat een klant
+ * ZONDER account heeft.
+ *
+ * ── WAT ER GEMETEN WORDT ───────────────────────────────────────────────────
+ *
+ * Het schema van vandaag MINUS het 0034-blok, en dan de echte handlers erop. Niet
+ * "staat er een try/catch in het bestand" — dat toetst de schrijfwijze en zou
+ * groen blijven bij een catch die het verkeerde opvangt.
+ *
+ * De splitsing gebeurt op de kop van het blok in schema.sql. Wordt die hernoemd,
+ * dan valt deze toets om op zijn eigen aanname in plaats van stilletjes het hele
+ * schema te draaien en niets te bewijzen — vandaar de controle op nul kolommen.
+ */
+console.log('\nzonder migratie 0034 blijft elk scherm overeind');
+{
+  const vol = read('schema.sql');
+  const merk = '-- 0034 · ÉÉN REVISIERONDE PER BESTELLING';
+  check('het 0034-blok is te vinden in schema.sql', vol.includes(merk), true);
+
+  const db = new DatabaseSync(':memory:');
+  db.exec(vol.split(merk)[0].replace(/-- ═+\n$/, ''));
+  const kolommen = db.prepare('PRAGMA table_info(orders)').all()
+    .filter((c) => c.name.startsWith('revision_round')).length;
+  check('en die database heeft de drie kolommen dus niet', kolommen, 0);
+
+  db.prepare('INSERT INTO customers (id, email, name, brand) VALUES (?,?,?,?)')
+    .run(KLANT, 'studio@voorbeeld.nl', 'Mara', 'VOLT');
+  db.prepare(`INSERT INTO orders (id, ref, email, customer_id, service, status, tier, product_count, lang, created_at)
+              VALUES (?,?,?,?,?,?,?,?,?,?)`)
+    .run(91, 'VIS-2026-0091', 'studio@voorbeeld.nl', KLANT, 'catalog', 'delivered', 'attended', 3, 'nl', '2026-08-01');
+  db.prepare(`INSERT INTO files (id, order_id, kind, r2_key, filename, bytes, review_state, product_key, shot)
+              VALUES (1, 91, 'delivery', 'k1', 'b1.jpg', 1000, 'pending', 'p1', 'front')`).run();
+
+  const token = await mintToken();
+  const hash = await hashToken(token);
+  const ptok = await mintToken();
+  db.prepare('INSERT INTO order_tokens (id, order_id, token_hash, expires_at) VALUES (1, 91, ?, ?)')
+    .run(await hashToken(ptok), '2099-01-01');
+
+  const env = { DB: d1(db, hash) };
+
+  const dash = await accountGet({
+    request: new Request('https://visuails.com/account/orders', {
+      headers: { cookie: `vis_account=${token}`, 'accept-language': 'nl' },
+    }),
+    env, waitUntil() {},
+  });
+  check('/account/orders geeft nog steeds 200', dash.status, 200);
+
+  const poort = await portalGet({
+    request: new Request(`https://visuails.com/o/${ptok}`, { headers: { 'accept-language': 'nl' } }),
+    env, waitUntil() {},
+  });
+  check('/o/<token> geeft 200 en geen 503', poort.status, 200);
+  const html = await poort.text();
+  check('  en toont echt de bestelling', html.includes('VIS-2026-0091'), true);
+
+  /* De inbox van het beheerscherm, rechtstreeks: hij staat vooraan in de
+     Promise.all die /admin opbouwt, dus een worp hier neemt het hele dashboard
+     mee. Een lege lijst is het goede antwoord; een worp niet. */
+  const { loadRevisionInboxVoorTest } = await import('../src/lib/admin.js').catch(() => ({}));
+  if (typeof loadRevisionInboxVoorTest === 'function') {
+    let wierp = false;
+    try { await loadRevisionInboxVoorTest(env); } catch { wierp = true; }
+    check('de revisie-inbox werpt niet', wierp, false);
   }
 }
 

@@ -771,9 +771,46 @@ function parseRoute(url) {
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
+/*
+ * ── DEZE QUERY MAG NIET OMVALLEN OP EEN ONTBREKENDE MIGRATIE — 24 aug 2026 ──
+ *
+ * Op de dag dat migratie 0034 werd uitgerold zonder `npm run migrate` te draaien,
+ * gaf dit scherm HTTP 503. Niet het dashboard — dat had de terugval al, van 0013
+ * en 0015 — maar dit: de link uit de levermail, het enige adres dat een klant
+ * ZONDER account heeft. Elke klant die op zijn eigen bestelling klikte, kreeg een
+ * storingspagina, en het enige wat er werkelijk aan de hand was, waren drie
+ * kolommen die nog niet bestonden.
+ *
+ * DE FOUT WAS NIET DE VERGETEN MIGRATIE. Die hoort een keer te gebeuren; dat is
+ * waarom account.js die terugval al drie migraties lang heeft. De fout was dat
+ * dezelfde bescherming op de ene plek stond en op de andere niet — en uitgerekend
+ * op de plek waar de klant komt en niet de eigenaar.
+ *
+ * De terugval laat de drie kolommen weg. Dan is `revision_round_at` undefined,
+ * meldt revisionRoundState() 'beschikbaar' en staat het rondeformulier er — dat
+ * is te ruim, maar de server weigert de POST alsnog en het scherm werkt. Een
+ * pagina die te veel aanbiedt is beter dan een pagina die er niet is.
+ */
+const RONDE_KOLOMMEN = 'o.revision_round_at, o.revision_round_note, o.revision_round_count,';
+
 async function loadOrder(env, token) {
   const hash = await hashToken(token);
-  const row = await env.DB.prepare(
+  const bouw = (metRonde) => ORDER_SQL.replace(RONDE_KOLOMMEN, metRonde ? RONDE_KOLOMMEN : '');
+  let row;
+  try {
+    row = await env.DB.prepare(bouw(true)).bind(hash).first();
+  } catch (err) {
+    if (!/no such column|revision_round/i.test(String(err?.message || err))) throw err;
+    console.error(
+      '[portaal] orders.revision_round_* ontbreekt — draai `npm run migrate`. '
+      + 'Het portaal draait door zonder de revisieronde.'
+    );
+    row = await env.DB.prepare(bouw(false)).bind(hash).first();
+  }
+  return row || null;
+}
+
+const ORDER_SQL =
     `SELECT t.id           AS token_id,
             t.expires_at   AS expires_at,
             t.revoked_at   AS revoked_at,
@@ -799,12 +836,7 @@ async function loadOrder(env, token) {
             (SELECT c.revisions_revoked_at FROM customers c WHERE c.id = o.customer_id) AS revisions_revoked_at
        FROM order_tokens t
        JOIN orders o ON o.id = t.order_id
-      WHERE t.token_hash = ?1`
-  )
-    .bind(hash)
-    .first();
-  return row || null;
-}
+      WHERE t.token_hash = ?1`;
 
 /*
  * ── DIT SCHERM LIET VERVANGEN BEELDEN ZIEN, EN DAT WAS DE ERGSTE PLEK ───────

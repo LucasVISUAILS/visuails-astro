@@ -219,6 +219,22 @@ discrimineren** — alleen `no such column` opvangen en de rest doorgooien.
 
 Genummerd `migrations/0001…`, uitgevoerd door `scripts/migrate.mjs`.
 
+**DE REGEL DIE OP 24 AUGUSTUS 2026 IS GELEERD, EN HIJ IS NIET "VERGEET DE
+MIGRATIE NIET".** Migratie 0034 ging live zonder dat `npm run migrate` was
+gedraaid. Gemeten gevolg: `/account` bleef staan — dat had de terugval uit 0013
+en 0015 al — maar `/o/<token>`, de gemailde klantlink, gaf HTTP 503, en `/admin`
+viel om omdat de revisie-inbox vooraan staat in de `Promise.all` die het hele
+dashboard opbouwt.
+
+Een vergeten migratie is een normale gebeurtenis en hoort geen storing te zijn.
+De regel is dus: **elke query die een nieuwe kolom leest, krijgt een terugval die
+`no such column` opvangt en zonder die kolom verder gaat, met één `console.error`
+die de migratie bij naam noemt.** Dat patroon stond er al drie migraties lang in
+`account.js`; het ontbrak in `portal.js` en `admin.js`, en juist het eerste is het
+enige adres dat een klant zónder account heeft. Sinds vandaag hebben alle drie
+hem, en `tests/revisieronde.test.mjs` §6 draait de echte handlers tegen het
+schema mínus het 0034-blok om te bewijzen dat elk scherm blijft staan.
+
 **Waar het vandaag wringt, en dat hoort hier te staan:** `migrate.mjs` houdt geen
 register van uitgevoerde migraties bij maar beslist op schema-introspectie — hij
 kijkt of een kolom bestaat en slaat over als dat zo is. Er staan bovendien vier

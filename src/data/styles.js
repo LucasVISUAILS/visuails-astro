@@ -82,7 +82,7 @@ export const styles = [
     moodTitle: 'What Flash feels like.',
     moodParagraphs: [
       'Hard on-camera light, deep shadows, colour that punches. The nightlife look, confrontational by design.',
-      "Done wrong it’s just harsh. Done right it’s electric. We've made it a discipline.",
+      "Done wrong it’s just harsh. Done right it’s electric. We’ve made it a discipline.",
     ],
     steps: [
       { title: 'Place hard light', body: 'Flash positioned to carve the product out of the dark, cleanly.' },
@@ -158,7 +158,7 @@ export const styles = [
     moodTitle: 'What Phone-made feels like.',
     moodParagraphs: [
       'Daylight through a window, a product on a kitchen counter, a slightly imperfect frame. It reads as real.',
-      "It's the style that makes feeds trust you. No studio gloss, no hard sell. Just your product living a believable life.",
+      "It’s the style that makes feeds trust you. No studio gloss, no hard sell. Just your product living a believable life.",
     ],
     steps: [
       { title: 'Cast the light', body: 'One window or lamp, nothing staged — light the way it actually falls at home.' },

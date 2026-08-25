@@ -1681,22 +1681,30 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    Zijn vermoeden klopt, en het is te meten. De korrel komt uit twee lagen:
 
      .grain        vast, z-index 300, dekking .03 — ligt OVER alles, ook foto's
-     body::before  vast, z-index -1,  dekking .05 — ligt ONDER alles
+     body::before  vast, z-index -1,  dekking .04 — ligt ONDER alles
 
    Een dekkende foto blokkeert de tweede. Op lege grond ziet een bezoeker dus
-   .03 + .05 aan textuur en op een fotoband alleen .03 — bijna drie keer minder.
+   .03 + .04 aan textuur en op een fotoband alleen .03 — meer dan twee keer minder.
+
+   ── DIT GETAL IS OP 24 AUGUSTUS .05 GEWEEST — 25 augustus 2026 ─────────────
+   Lucas vroeg om *"iets minder film grain op achtergrond"*, en de grondlaag ging
+   van .05 naar .04. Deze laag ging NIET mee, en dat was een fout die je alleen
+   ziet als je de rekensom hieronder erbij houdt: hij vult de grondkorrel aan tot
+   precies één keer die dekking, dus met .05 hier en .04 daar droeg een fotoband
+   ineens MEER korrel dan de grond eromheen — exact de omkering van waar deze
+   laag voor bestaat. De twee getallen horen gelijk te zijn en zijn dat weer.
    Twee vlakken naast elkaar met dezelfde kleur maar verschillende ruis leest
    het oog niet als "dezelfde kleur", maar als twee MATERIALEN. Dat is de reden
    dat een band als ingeplakt aanvoelt, ook nadat de kleurstap is opgelost.
 
-   Deze laag legt de ontbrekende .05 terug over de foto, met precies dezelfde
+   Deze laag legt de ontbrekende .04 terug over de foto, met precies dezelfde
    tegel (170px), frequentie (1.1) en octaaf (1) als de grondlaag, zodat het
    dezelfde korrel is en geen tweede soort ruis.
 
    HIJ DRAAGT HETZELFDE MASKER ALS DE FOTO, en dat is niet cosmetisch maar
    rekenkundig. Op een punt waar de foto dekking α heeft, laat hij (1 − α) van
    de grondkorrel door; deze laag vult α aan. Samen is dat α + (1 − α) = 1 keer
-   .05, op elke rij, ook midden in de uitdoving aan de rand. Zonder het masker
+   .04, op elke rij, ook midden in de uitdoving aan de rand. Zonder het masker
    zou de rand juist een korrelpiek krijgen — het omgekeerde van de bedoeling.
 
    ALLEEN OP SFEERBEELDEN, nooit op geleverd werk. De galerij en de
@@ -1710,7 +1718,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: .05;
+  /* GELIJK AAN DE GRONDLAAG IN body::before — zie de rekensom in de noot
+     hierboven. Verandert die, dan verandert deze mee. */
+  opacity: .04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 170px;
 }
@@ -4178,6 +4188,30 @@ a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
    is still visible on a large dark field. Below that the ground goes flat, which
    is the thing this layer was added to fix.
 
+   TURNED DOWN AGAIN, 24 augustus 2026 — de stap hierboven, genomen. Lucas: *"Iets
+   minder film grain op achtergrond."* Dus .05 -> .04, en `.grain` blijft op .03:
+   die noot noemt .03 zijn bodem en dat is nog steeds waar.
+
+   OPNIEUW GEMETEN EN NIET OVERGENOMEN, met scripts/korrelmeting.mjs — dezelfde
+   methode (vlak #090909, de twee lagen erover, gemiddelde en spreiding over elke
+   pixel) maar een eigen opstelling, dus de absolute getallen liggen lager dan die
+   van 19 augustus hierboven. Ze zijn onderling vergelijkbaar en NIET met de reeks
+   erboven; wie ze naast elkaar legt, vergelijkt twee meetlatten.
+
+     grond .05 + overlay .03   zwart 9 -> 15,05   lift 6,05   spreiding 1,84  (was)
+     grond .04 + overlay .03   zwart 9 -> 13,96   lift 4,96   spreiding 1,56  (is)
+
+   Achttien procent minder lift en vijftien procent minder spikkel. Dat is met
+   opzet "iets": de twee stappen daaronder stonden ook in de meting (.035 gaf lift
+   4,60 en .03 gaf 4,21) en die halen dertig procent eraf, wat meer is dan er
+   gevraagd werd — en .03 is de waarde waaronder deze laag volgens de alinea
+   hierboven zijn eigen reden kwijtraakt.
+
+   De meting staat als script in de repo en niet alleen als getal in deze noot,
+   want dit is nu de derde keer dat deze laag omlaag gaat en elke keer werd de
+   vorige meting met de hand nagebouwd. `node scripts/korrelmeting.mjs` draait hem
+   opnieuw.
+
    ONE ELEMENT, THREE BACKGROUND LAYERS, NO JAVASCRIPT AND NO REQUEST. The
    grain is an inline SVG data URI with its alpha baked into the rect, because a
    background layer cannot carry its own opacity. Nothing here animates, so
@@ -4197,7 +4231,7 @@ body::before {
   pointer-events: none;
   background:
     /* 1 · material — ground only, never over an image */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") 0 0 / 170px repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E") 0 0 / 170px repeat,
     /* 2 · the lamp — accent-tinted, top left, very wide, very weak */
     radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%),
     /* 3 · the falloff — the far corners sit back */

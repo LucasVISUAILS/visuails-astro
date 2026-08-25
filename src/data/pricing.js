@@ -564,7 +564,7 @@ export function vatLead(lang = 'en') {
 export function vatDetail(lang = 'en') {
   return lang === 'nl'
     ? `Nederlandse klanten betalen ${vatPercent()} btw bij het afrekenen. EU-bedrijven buiten Nederland voeren hun btw-nummer in: na VIES-verificatie geldt 0% btw (btw verlegd). Bestellingen van buiten de EU zijn vrijgesteld van EU-btw.`
-    : `We charge ${vatPercent()} VAT for orders within the Netherlands. If you're an EU business based elsewhere, enter a valid VIES VAT number to receive 0% reverse-charged VAT. Non-EU customers won't be charged EU VAT.`;
+    : `We charge ${vatPercent()} VAT for orders within the Netherlands. If you’re an EU business based elsewhere, enter a valid VIES VAT number to receive 0% reverse-charged VAT. Non-EU customers won’t be charged EU VAT.`;
 }
 
 export function vatNote(lang = 'en') {
@@ -1168,7 +1168,7 @@ export const TIERS = {
     // A committed window, cleared by the capacity gate before it is offered.
     // The site must never print a date the gate has not cleared.
     turnaround: {
-      en: 'A reserved 48-hour window—fully confirmed before you pay.',
+      en: 'A reserved 48-hour window — fully confirmed before you pay.',
       // 8 augustus 2026 — DIT ZEI IETS ANDERS DAN DE ENGELSE REGEL, op zo’n
       // vijftien plekken. Er stond "een leverdatum met 48 uur werk erin": dat
       // gaat over hoeveel uur wij eraan werken en zegt niets over snelheid,
@@ -1432,7 +1432,7 @@ export function upgradePrompt(products, lang = 'en') {
   const price = euro(PLAN_AMOUNT[id], lang);
   return lang === 'nl'
     ? `Je hebt dit kwartaal ${products} producten besteld — ongeveer ${perMonth} per maand. Het ${name}-plan dekt ${PLAN_PRODUCTS[id]} producten per maand voor ${price}; op losse bestellingen is dat ${euro(s.onLadder, lang)}.`
-    : `You've ordered ${products} products this quarter — about ${perMonth} a month. The ${name} plan covers ${PLAN_PRODUCTS[id]} products a month for ${price}; the same output ordered one at a time is ${euro(s.onLadder, lang)}.`;
+    : `You’ve ordered ${products} products this quarter — about ${perMonth} a month. The ${name} plan covers ${PLAN_PRODUCTS[id]} products a month for ${price}; the same output ordered one at a time is ${euro(s.onLadder, lang)}.`;
 }
 
 /**
@@ -1519,9 +1519,9 @@ export function plans(lang = 'en') {
       products,
       includes: [
         nlx ? `${products} producten per maand` : `${products} products a month`,
-        nlx ? 'Catalogset en lifestyle-carousel voor elk' : 'A catalog set and a lifestyle carousel for each',
+        nlx ? 'Een complete catalogusset en een lifestyle-carrousel voor elk product.' : 'A complete catalog set and a lifestyle carousel for every product.',
         ...(clips ? [nlx ? `${clips} videoclips per maand` : `${clips} video clips a month`] : []),
-        ...(id === 'brand' ? [nlx ? 'Je merkmodel inbegrepen' : 'Your Brand Model included'] : []),
+        ...(id === 'brand' ? [nlx ? 'Inclusief jouw eigen dedicated Merkmodel — volledig afgestemd op jouw merkesthetiek.' : 'Includes a dedicated Brand Model tailored to your brand — no separate casting or usage fees.'] : []),
         turnaround('attended', l),
         nlx
           ? `Maandelijks opzegbaar, ongebruikte producten schuiven ${PLAN_ROLLOVER_MONTHS} maand door`
@@ -1592,7 +1592,7 @@ function assertLadder() {
         `pricing.js: the ${id} plan costs ${PLAN_AMOUNT[id]} for ` +
         `${PLAN_PRODUCTS[id]} products, which is ${onLadder} on the ladder — a ` +
         `plan that does not beat the ladder is a worse deal wearing a ` +
-        `subscription's clothes, and upgradePrompt() would be lying.`
+        `subscription’s clothes, and upgradePrompt() would be lying.`
       );
     }
   }
@@ -1636,7 +1636,7 @@ function assertLadder() {
         `pricing.js: the ${id} plan costs ${PLAN_AMOUNT[id]} for ` +
         `${PLAN_PRODUCTS[id]} products, which is ${onLadder} on the ladder — a ` +
         `plan that does not beat the ladder is a worse deal wearing a ` +
-        `subscription's clothes, and upgradePrompt() would be lying.`
+        `subscription’s clothes, and upgradePrompt() would be lying.`
       );
     }
   }

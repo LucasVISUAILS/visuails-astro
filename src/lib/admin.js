@@ -4922,8 +4922,37 @@ function later(waitUntil, promise) {
  * het verschil tussen "normale klant met een terecht punt" en "deze belt elke
  * levering" is af te lezen zonder ergens anders te gaan kijken.
  */
+/*
+ * ── EN DEZE VALT NIET OM OP EEN ONTBREKENDE MIGRATIE — 24 augustus 2026 ─────
+ *
+ * Zelfde reparatie als in portal.js, op dezelfde dag en om dezelfde reden: 0034
+ * werd uitgerold zonder `npm run migrate`, en deze query staat vooraan in de
+ * Promise.all die het hele dashboard opbouwt. Eén ontbrekende kolom in de
+ * revisie-inbox nam dus /admin in zijn geheel mee — de bestellingen, de tellers,
+ * de btw-wachtrij, alles.
+ *
+ * Dat is de verkeerde verhouding tussen oorzaak en gevolg. De inbox mag leeg
+ * zijn; het dashboard hoort te blijven staan.
+ */
+const RONDE_IN_INBOX = 'o.revision_round_at, o.revision_round_note, o.revision_round_count,';
+
 async function loadRevisionInbox(env) {
-  const res = await env.DB.prepare(
+  const bouw = (metRonde) => INBOX_SQL.replace('$RONDE$', metRonde ? RONDE_IN_INBOX : '');
+  try {
+    const res = await env.DB.prepare(bouw(true)).all();
+    return res.results || [];
+  } catch (err) {
+    if (!/no such column|revision_round/i.test(String(err?.message || err))) throw err;
+    console.error(
+      '[admin] orders.revision_round_* ontbreekt — draai `npm run migrate`. '
+      + 'De revisie-inbox toont losse aanvragen in plaats van rondes.'
+    );
+    const res = await env.DB.prepare(bouw(false)).all();
+    return res.results || [];
+  }
+}
+
+const INBOX_SQL =
     // product_key en shot komen sinds augustus 2026 mee: een revisie op
     // "IMG_8841.webp" is een zoekopdracht, een revisie op "product 3 ·
     // achterkant" is een opdracht. Dat is precies wat Lucas vroeg — meteen
@@ -4932,10 +4961,7 @@ async function loadRevisionInbox(env) {
             f.product_key, f.shot,
             o.id AS order_id, o.ref, o.brand, o.email, o.lang,
             o.customer_id,
-            -- De ene revisieronde (migratie 0034). Hiermee weet dit overzicht of
-            -- deze regels bij ÉÉN aanvraag horen of losse aanvragen van voor
-            -- 24 augustus 2026 zijn -- zie revisionRoundCard() verderop.
-            o.revision_round_at, o.revision_round_note, o.revision_round_count,
+            $RONDE$
             c.revisions_revoked_at,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.customer_id = o.customer_id) AS asked,
             (SELECT COUNT(*) FROM revision_requests rr WHERE rr.file_id = f.id) AS asked_here
@@ -4945,10 +4971,7 @@ async function loadRevisionInbox(env) {
       WHERE f.review_state = 'revision_requested'
         AND o.hidden_at IS NULL AND f.superseded_at IS NULL
       ORDER BY f.reviewed_at DESC
-      LIMIT 100`
-  ).all();
-  return res.results || [];
-}
+      LIMIT 100`;
 
 /**
  * Recent orders, active ones first — "duidelijk overzicht van wat er gedaan

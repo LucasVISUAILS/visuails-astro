@@ -18,7 +18,7 @@
     "fetch:order": "node scripts/fetch-order.mjs",
     "test:account": "node tests/account-brand-kit.test.mjs",
     "test:admin": "node tests/admin.test.mjs",
-    "test": "npm run test:paths && npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:geld && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:keuring && npm run test:merkmodel && npm run test:revisieronde && npm run test:aanhef && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:stripe && npm run test:diagnose && npm run test:plans && npm run test:abo && npm run test:incasso && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue && npm run test:nazicht && npm run test:steps && npm run test:a11y && npm run test:homerail && npm run test:zacht",
+    "test": "npm run test:paths && npm run test:vat && npm run test:gate && npm run test:invoice && npm run test:invoicing && npm run test:credit && npm run test:invoices && npm run test:feedback && npm run test:offsite && npm run test:delivery && npm run test:nav && npm run test:figures && npm run test:promises && npm run test:schrijfwijze && npm run test:korrel && npm run test:schema && npm run test:retention && npm run test:backup && npm run test:funnel && npm run test:legal && npm run test:register && npm run test:scaffold && npm run test:planning && npm run test:wipe && npm run test:beheer && npm run test:wrangler && npm run test:order && npm run test:geld && npm run test:sample && npm run test:sampleinv && npm run test:business && npm run test:request && npm run test:upload && npm run test:keuring && npm run test:merkmodel && npm run test:revisieronde && npm run test:aanhef && npm run test:video && npm run test:ratio && npm run test:refs && npm run test:pay && npm run test:code && npm run test:account && npm run test:signin && npm run test:admin && npm run test:mollie && npm run test:stripe && npm run test:diagnose && npm run test:plans && npm run test:abo && npm run test:incasso && npm run test:email && npm run test:garments && npm run test:subscribe && npm run test:planqueue && npm run test:nazicht && npm run test:steps && npm run test:a11y && npm run test:homerail && npm run test:zacht",
     "test:invoice": "node tests/invoice-pdf.test.mjs",
     "test:offsite": "node tests/offsite.test.mjs",
     "check:csp": "node scripts/csp-probe.mjs",
@@ -69,6 +69,8 @@
     "test:beheer": "node tests/admin-beheer.test.mjs",
     "test:credit": "node tests/credit-note.test.mjs",
     "test:a11y": "node tests/a11y.test.mjs",
+    "korrelmeting": "node scripts/korrelmeting.mjs",
+    "test:schrijfwijze": "node tests/schrijfwijze.test.mjs",
     "test:homerail": "node tests/homerail.test.mjs",
     "test:revisieronde": "node tests/revisieronde.test.mjs",
     "test:wrangler": "node tests/wrangler-args.test.mjs",
@@ -110,7 +112,8 @@
     "variant": "node variant.mjs",
     "naden": "node naden.mjs",
     "naad": "node naad-in-venster.mjs",
-    "vlakken": "node vlak-per-sectie.mjs"
+    "vlakken": "node vlak-per-sectie.mjs",
+    "test:korrel": "node tests/korrel.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

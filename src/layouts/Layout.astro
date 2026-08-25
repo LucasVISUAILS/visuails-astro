@@ -2185,7 +2185,36 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      erin liepen die twee rondingen langs elkaar heen: de buitenboog was vlakker
      dan de binnenboog en dat is precies wat "niet strak" oplevert. Twee volledig
      ronde vormen, de een in de ander, lopen per definitie evenwijdig. */
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto auto auto; align-items: center; column-gap: 14px; padding: 9px 9px 9px 18px; background: #08090B; border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-pill); }
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto auto auto; align-items: center; column-gap: 14px; padding: 9px 9px 9px 18px; background: #08090B; border: 1px solid var(--line-strong); box-shadow:
+      /* ── SUBTIEL 3D — 24 augustus 2026 ─────────────────────────────────
+         Lucas: *"Kan het design wellicht ook subtiel 3d gemaakt worden, design
+         dit zorgvuldig en geef het een strakke moderne look."*
+
+         Wat een vlak vlak maakt is niet het ontbreken van schaduw maar het
+         ontbreken van een LICHTRICHTING. Er stond één brede waas onder de pil,
+         en een waas is mist: hij zegt dat er iets zweeft, niet waar het licht
+         vandaan komt.
+
+         Vier lagen, en elke laag heeft een taak:
+           · een haarlijn licht op de BOVENrand — daar valt het licht op;
+           · een haarlijn zwart op de ONDERrand — daar valt het weg;
+           · een strakke contactschaduw, kort en dichtbij, die zegt hoe hoog
+             de pil boven de pagina hangt;
+           · twee zachte omgevingsschaduwen die de diepte dragen.
+
+         De eerste twee doen het meeste werk en zijn het minst zichtbaar. Een
+         rand die boven lichter is dan onder, leest als een fysiek object; het
+         is precies het verschil tussen een uitgesneden vorm en een ding.
+
+         GEEN `filter: drop-shadow` en geen extra laag: de pil heeft al
+         `overflow: hidden` voor het beeld, en een filter zou daar een nieuwe
+         stapelcontext bij maken — zie wat een transform in de dienstenrij
+         aanrichtte. Dit is puur box-shadow en kost geen enkele extra laag. */
+      inset 0 1px 0 rgb(255 255 255 / 0.10),
+      inset 0 -1px 0 rgb(0 0 0 / 0.55),
+      0 2px 4px -2px rgb(0 0 0 / 0.65),
+      0 12px 28px -10px rgb(0 0 0 / 0.55),
+      0 32px 64px -28px rgb(0 0 0 / 0.5); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-pill); }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
 
   /* ── EEN SFEERFOTO IN DE PIL — 23 AUGUSTUS 2026 ──────────────────────────
@@ -2227,22 +2256,57 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
    * zwaarst zijn. npm run test:a11y meet wat er overblijft; de zin haalde 8,9:1 en
    * houdt dat.
    */
-  .convbar { position: relative; overflow: hidden; }
+  /* ── `position: relative` STOND HIER EN HIJ SLOOPTE DE BALK — 24 aug 2026 ──
+   *
+   * Lucas: *"De test sample blok staat volledig onderaan vast."* Dat was
+   * letterlijk waar, en het is deze regel.
+   *
+   * De regel hierboven zet `.convbar` op `position: fixed` met `bottom: 20px`.
+   * Deze regel — er in augustus bijgezet toen de sfeerfoto erin kwam — zette
+   * hem daarna op `relative`. Zelfde specificiteit, later in het bestand, dus
+   * deze won: de balk werd een gewoon blok onderaan het document. Hij zweefde
+   * niet meer mee, hij stond aan het EINDE van de pagina, en je zag hem alleen
+   * als je helemaal naar beneden scrolde. Gemeten op de gebouwde site: op een
+   * venster van 900 hoog stond hij op documentpositie 11853.
+   *
+   * WAAROM HIJ ER STOND EN WAAROM HIJ WEG KAN. Het beeld in `::before` is
+   * absoluut geplaatst en heeft dus een geplaatste voorouder nodig. `fixed` IS
+   * een geplaatste voorouder — die maakt net zo goed een bevattend blok als
+   * `relative`. De regel was overbodig op de dag dat hij werd geschreven en
+   * heeft sindsdien de hele balk van zijn plek gehaald.
+   *
+   * Dat het niet opviel, komt doordat de balk pas bij het scrollen verschijnt:
+   * onderaan de pagina stond hij precies waar je hem ook zou verwachten. */
+  .convbar { overflow: hidden; }
   .convbar::before {
     content: '';
     position: absolute; inset: 0;
     background-image: url('/img/sfeer-balk-w760.webp');
     background-size: cover; background-position: center;
-    opacity: 1;
+    /* ── IETS MINDER HEFTIG — 24 augustus 2026 ────────────────────────────
+       Lucas: *"Ook mag de afbeelding iets minder heftig en donkerder."* Stond
+       op 1. De sluier eronder doet de rest van het werk; dit haalt de piek van
+       de bundel eraf zonder hem uit te zetten. */
+    opacity: .82;
     pointer-events: none;
   }
   /* Eén dunne sluier over de linkerhelft, en verder niets. Hij is er alleen voor
      de leesbaarheid van de zin op het moment dat de bundel op een smal scherm
      verder naar links kruipt; rechts blijft de foto onaangeraakt. */
+  /* ── DE SLUIER LIEP RECHTS NAAR NUL, EN DAAR ZAT DE HEFTIGHEID ──────────
+     Hij ging van .55 links naar 0 op 72%, dus de laatste kwart van de pil droeg
+     de bundel op volle sterkte — precies het stuk dat in beeld springt. Nu
+     eindigt hij op .30 in plaats van op 0: het licht blijft, de piek is eraf.
+
+     En er ligt een tweede, verticale sluier overheen die bovenin lichter is dan
+     onderin. Dat is dezelfde lichtrichting als de randen in de box-shadow
+     hierboven, en zonder die overeenstemming vecht het beeld met de vorm. */
   .convbar::after {
     content: '';
     position: absolute; inset: 0;
-    background: linear-gradient(90deg, rgb(0 0 0 / .55) 0%, rgb(0 0 0 / .34) 44%, rgb(0 0 0 / 0) 72%);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / .045) 0%, rgb(255 255 255 / 0) 42%, rgb(0 0 0 / .22) 100%),
+      linear-gradient(90deg, rgb(0 0 0 / .62) 0%, rgb(0 0 0 / .44) 44%, rgb(0 0 0 / .30) 100%);
     pointer-events: none;
   }
   /* De inhoud boven allebei de lagen. Alleen de vier echte kinderen — de twee

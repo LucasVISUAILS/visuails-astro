@@ -35,7 +35,7 @@
 // listed at the top of that band with what became of each line.
 import {
   AMOUNT, euro, TEST_SAMPLE,
-  turnaround, reviewClaim, turnaroundShort, reviewClaimShort, plans,
+  turnaround, reviewClaim, turnaroundShort, plans,
   LADDER, ladderRate, quote, vatLabel, vatNote,
   WINDOW_THRESHOLD, PLAN_AMOUNT, PLAN_PRODUCTS,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
@@ -95,7 +95,7 @@ const sample = TEST_SAMPLE[lang];
  *
  * GETEKEND IN DE TAAL DIE DEZE SITE AL HEEFT en niet als vijf nieuwe plaatjes:
  * 24×24, `fill: none`, `stroke: currentColor`, dikte 2.6, ronde uiteinden —
- * dezelfde vorm als de vinkjes in .hv-proof en .checklist. Adobe kan losse
+ * dezelfde vorm als de vinkjes in .checklist. Adobe kan losse
  * logo's gebruiken omdat elk product er een heeft; hier is er één merk en vijf
  * diensten, en dan is een consistente lijnstijl het antwoord in plaats van vijf
  * verzonnen merkjes.
@@ -345,7 +345,7 @@ const COPY = {
     // hij voluit staat, en niemand hoeft te weten hoe hij foto’s moet aanleveren
     // vóórdat hij besloten heeft of hij het wil. Wat blijft staan is wat je
     // erin stopt, wat je terugkrijgt, en dat het één keer per bedrijf kan.
-    ctaSampleNote: `Test sample: your own photos in, ${sample.deliverable} back. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    ctaSampleNote: `Test sample: Upload your own product and receive ${sample.deliverable} in return. Limit: ${sample.unit}.`,
     // ── THE PROOF LINE, and it used to be a plinth ────────────────────────
     // Lucas: *"ik wil de rand onder de hero wat meer conversiegericht maken
     // omdat deze nu een beetje saai oogt, en eigenlijk geen rand ervan maken,
@@ -367,22 +367,20 @@ const COPY = {
     // while six other NL pages said "voordat je betaalt". Two promises, two
     // wordings, one studio. The licence line is the one string here that has
     // no helper, and it is quoted from the promise band verbatim.
-    // ── KORT, WANT ZE STAAN NU NAAST ELKAAR ───────────────────────────────
-    // Lucas, 20 augustus: *"mogen de 3 vinkjes achter elkaar met genoeg ruimte
-    // ertussen zodat de homepage niet zo lang voelt."* Onder elkaar was deze
-    // lijst 76px hoog; naast elkaar met de VOLLE zinnen liep hij op 976px en
-    // dus over de foto heen, in een kolom van 640. Dus de korte vormen — zie
-    // turnaroundShort() en reviewClaimShort() in pricing.js, waar ze pal naast
-    // de lange staan zodat ze niet uit elkaar kunnen lopen.
-    //
-    // De licentieregel heeft geen helper en wordt hier ingekort: de opsomming
-    // "shop, marketplaces, ads and feeds" is een voorbeeldenrij en geen extra
-    // toezegging, en staat voluit in de beloftenband verderop op deze pagina.
-    proof: [
-      turnaroundShort('attended', 'en'),
-      reviewClaimShort('attended', 'en'),
-      'Yours to use, anywhere',
-    ],
+    // ── DE DRIE VINKJES ZIJN ER NOG ÉÉN — 25 augustus 2026 ────────────────
+    // Hier stond de motivering voor drie vinkjes naast elkaar (Lucas, 20
+    // augustus: *"mogen de 3 vinkjes achter elkaar... zodat de homepage niet zo
+    // lang voelt"*). Dat was een oplossing voor de HOOGTE van het blok, en het
+    // blok zelf is nu weg — zie de noot bij `hv-cta-claim` in de markup. Van de
+    // drie was er één die niet verderop op deze pagina al stond, en die staat
+    // hieronder.
+    /* ── WAT ER VAN DE DRIE VINKJES OVER IS — 25 AUGUSTUS 2026 ────────────
+       Zie de noot bij `hv-cta-claim` in de markup: van de drie stonden er twee
+       verderop op deze pagina al voluit, en die zijn daar gebleven. Deze ene
+       niet, en die is ook de enige die iets belooft dat je vóór de klik moet
+       weten. Nog steeds de KORTE vorm uit pricing.js, zodat hij niet uit de
+       lange kan lopen. */
+    heroClaim: turnaroundShort('attended', 'en'),
 
     /*
      * ══════════════════════════════════════════════════════════════════════
@@ -465,7 +463,7 @@ const COPY = {
     // the shortest true statement of the model, and a merged band that renamed
     // itself would read to a returning visitor as a new offer.
     priceH: ['One price per product.', 'It falls as you add.'],
-    priceLede: `A product is the unit — a catalog set and a lifestyle carousel, ${PER_PRODUCT_VISUALS} finished images. Take the pair or either half, and the rate comes down as the count goes up.`,
+    priceLede: `Each product unit includes ${PER_PRODUCT_VISUALS} finished images: a complete catalog set plus a lifestyle carousel. Order the full package or select either set individually — with rates dropping automatically as your order count grows.`,
     // The ONE VAT statement for this band. Block level, above everything it
     // qualifies, rather than appended to each of the fifteen rates and three
     // totals below it — which is what "excl. VAT" ×8 in one band looked like.
@@ -481,12 +479,12 @@ const COPY = {
     // The bundle argument, without the arithmetic: the table prints all three
     // rates in one row, so a reader who wants to check that the pair is cheaper
     // than the halves can read across instead of being told the subtraction.
-    ladNote: 'Both on the same product is one rate, not the two added together.',
+    ladNote: 'Combine both sets for a single bundled rate — not two separate fees added together.',
     // Was "First order: 20% off." The discount is gone; this says why, which
     // is a stronger line than the discount was. See pricing.js.
-    firstLead: 'The rate is the rate.',
-    firstBody: `No first-order discount and nothing to negotiate — ${EX_SMALL} complete products is ${euro(Q_SMALL.net, 'en')}, whoever you are and whenever you ask.`,
-    addOnNote: `A video clip is ${euro(AMOUNT.video, 'en')}, the same rate inside an order or on its own. Your Brand Model is ${euro(AMOUNT.brandModel, 'en')} once — not per image, not per order, not per year.`,
+    firstLead: 'Our pricing is fixed and transparent.',
+    firstBody: `No introductory discounts, no negotiations — ${EX_SMALL} complete products come to ${euro(Q_SMALL.net, 'en')}, flat, for every brand.`,
+    addOnNote: `Video clips are ${euro(AMOUNT.video, 'en')}, whether added to an order or booked standalone. Your Brand Model is a one-time ${euro(AMOUNT.brandModel, 'en')} fee — not per image, not per order, and not per year.`,
     // ── DE ABONNEMENTSBAND ─────────────────────────────────────────────────
     // Eén kop, één zin, ÉÉN getal, drie feiten en twee knoppen. Geen tweede
     // prijsraster: dat was precies waarom de vorige plannenband eruit ging, en
@@ -498,14 +496,14 @@ const COPY = {
     // een vast aantal per maand, een week die voor jou vrij wordt gehouden, en
     // een tarief dat onder de prijs per product ligt voor dezelfde output.
     subH: ['Or run it', 'every month.'],
-    subLede: `A plan is the same work on a standing arrangement: a fixed number of products every month, delivered in a week the calendar keeps free for you.`,
+    subLede: `Lock in dedicated production capacity with a monthly plan. Receive a set number of finished products every month — delivered like clockwork during a week reserved exclusively for your brand.`,
     subEyebrow: 'Subscription',
     subFrom: 'from',
     subUnit: `a month · ${PLAN_FROM_PRODUCTS} products`,
     subFacts: [
-      'A fixed number of products each month, yours to spend as the collection needs.',
-      'Your own week in the calendar, booked before anyone else can take it.',
-      `Priced below the per-product rate for the same output — ${PLAN_COUNT} plans, monthly or yearly.`,
+      'A fixed monthly product quota, flexibly allocated whenever your collection requires.',
+      'Your own dedicated week in our calendar, locked in before anyone else can claim it.',
+      `Discounted below our single-order rates for the exact same deliverables — choose from ${PLAN_COUNT} flexible plans, billed monthly or yearly.`,
     ],
     // Niet c.priceVat hier: die zegt "every figure in this section", en in dit
     // blok staat één bedrag. Een kwalificatie die over een sectie praat waar
@@ -525,7 +523,7 @@ const COPY = {
        on-brand komt met Editions en moet per merk worden opgezet. Ze in één
        zin noemen zou het tweede laten klinken als iets dat vandaag meekomt, en
        dat is precies het soort belofte dat deze site nergens doet. */
-    stockH: 'And a month that is already filled.',
+    stockH: 'No new product drop this month?',
     /* ── DEZE REGEL DROEG GEEN LABEL EN DE REGEL ERONDER WEL — 23 AUG 2026 ──
      *
      * `stockSoon` staat er netjes bij met "With Editions"; `stockNow` stond er
@@ -542,7 +540,7 @@ const COPY = {
      * als plan, hij mag alleen niet klinken als iets dat al loopt. Zie ook
      * STOCK-IDEE.md, waar dit als onafgemaakt staat beschreven. */
     stockNowTag: 'Not running yet',
-    stockNow: [`${STOCK_OFF_BRAND} new stock visuals every month`, 'included with every plan, usable by any brand — something to post on the days you have no new product.'],
+    stockNow: [`${STOCK_OFF_BRAND} universal stock visuals delivered monthly`, 'Included with every plan: brand-neutral visual assets, ready to post on days without new product releases.'],
     /* ── GEEN GEZICHTEN IN EDITIONS — 20 augustus 2026 ─────────────────────
        Lucas: *"haal bij Editions weg dat de klant ook modellen kan kiezen, dat
        kan niet omdat dit teveel controlewerk gaat worden waardoor de prijs een
@@ -563,9 +561,9 @@ const COPY = {
        DE DRIE DIE ER WEL STAAN, STAAN ER MET OPZET IN DIE VOLGORDE. Stijl is
        wat je herkent, locatie is waar het speelt, kleur is het detail dat het
        aan het merk vastklikt. */
-    stockSoon: [`${STOCK_ON_BRAND} on-brand visuals a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. They arrive with Editions and are set up once per brand.'],
+    stockSoon: [`${STOCK_ON_BRAND} custom on-brand visuals delivered monthly`, 'Custom-built around your visual identity: specific locations, color palettes, and styling guidelines without direct product placement. Included exclusively with Editions after a one-time brand setup.'],
     stockSoonTag: 'With Editions',
-    moodCap: 'Mood, texture, light — no product in frame, and one brand across all four.',
+    moodCap: 'Mood, texture, and light — designed to evoke pure brand identity without featuring products. Atmospheric visuals of nature, spaces, and moments your target audience easily connects with.',
     /* ── EEN CREDIT IS EEN PLEK, GEEN VERPLICHTING — 20 augustus 2026 ───────
        Lucas: *"laten weten dat de product credits gebruikt kunnen worden voor
        andere dingen omdat het nu lijkt dat een klant telkens 5 nieuwe producten
@@ -587,23 +585,23 @@ const COPY = {
        hij met de rest moet, kan het vragen. Dat is precies het soort ding dat
        een studio van drie mensen kan en een platform niet, dus hoort het op de
        voorkant en niet in de FAQ. */
-    creditH: `${PLAN_FROM_PRODUCTS} slots, not ${PLAN_FROM_PRODUCTS} new products.`,
-    creditBody: `A credit is a place in the month, not a demand that you have something new. You decide each month what goes in it: a new item, an item you already sell in a different look for a campaign, or a set made for your socials. What you do not use rolls over ${PLAN_ROLLOVER_MONTHS === 1 ? 'a' : PLAN_ROLLOVER_MONTHS} month${PLAN_ROLLOVER_MONTHS === 1 ? '' : 's'}.`,
-    creditAsk: 'Not sure what to spend the rest on?',
-    creditAskCta: 'Ask us and we will go through it with you',
+    creditH: `${PLAN_FROM_PRODUCTS} production slots, not ${PLAN_FROM_PRODUCTS} new products.`,
+    creditBody: `A credit guarantees your studio capacity — no new inventory required. Choose each month how to deploy it: a new product release, a campaign re-style for existing items, or dedicated social content. Unused credits roll over ${PLAN_ROLLOVER_MONTHS === 1 ? 'to the next month' : `for the next ${PLAN_ROLLOVER_MONTHS} months`}.`,
+    creditAsk: 'Unsure how to allocate your remaining credits?',
+    creditAskCta: 'Reach out — we’ll walk through the best options for your brand together',
     creditWa: 'Hi! I have a plan and I would like to think through what to spend this month\u2019s credits on.',
 
     priceCta: 'Start an order',
     priceCta2: 'The full price list',
 
     tsKicker: 'Before you place an order',
-    tsH: ['Your own product, fully pictured', `for ${sample.price}.`],
+    tsH: ['See your product fully captured', `for ${sample.price}.`],
     // DE LEDE IS INGEKORT, augustus 2026. Hij herhaalde de aanleverspec —
     // "voorkant en achterkant in elk geval, plus een detail- of draagfoto" —
     // die woord voor woord op /test-sample staat en uitgebreider op
     // /upload-guidelines. Wat blijft is het enige wat deze band moet zeggen:
     // op JOUW product, en door dezelfde productie.
-    tsLede: `Not on a garment we chose — on yours, through the same production as a paid order, checked by the same specialist. Back come ${sample.deliverable}.`,
+    tsLede: `Shot on your actual product — never a stock sample. Processed through our standard studio pipeline and quality checks. You’ll receive ${sample.deliverable}.`,
     // DE DRIE PUNTEN BLIJVEN, en dat is een afwijking van het plan met een
     // reden: "geen verplichting" en "geen betaalgegevens op naam" staan
     // NERGENS anders op de site — niet op /test-sample, niet op /faq. Het zijn
@@ -611,9 +609,9 @@ const COPY = {
     // en een lezer die ze hier niet vindt, vindt ze nergens. Wel korter: één
     // regel per punt in plaats van twee.
     tsPoints: [
-      ['One per business', 'No trial, no card kept on file, no account, nothing to cancel.'],
-      ['No shortcuts for a sample', 'Same production and the same human check as a paid order.'],
-      ['No obligation after', 'If it is not right, that is the end of it.'],
+      ['One per business', 'No auto-renewing trial, no card kept on file, no account required — nothing to cancel.'],
+      ['Zero shortcuts for sample shoots — full studio quality every time.', 'Processed on our standard production pipeline and verified by the exact same quality control team.'],
+      ['No obligation after', 'If it’s not right, that’s the end of it — no questions asked.'],
     ],
     tsCta: 'Get your test sample',
     tsAlt: 'Or start an order',
@@ -629,8 +627,8 @@ const COPY = {
     // prices all four in one table. What is left is the half a reader cannot
     // get anywhere else on this page — what each service IS and what lands in
     // the folder — next to a photograph of it.
-    svcH: ['What we make,', 'and what lands in your folder.'],
-    svcLede: 'Catalog and lifestyle are what a product gets. A video clip and your Brand Model ride on top of an order, or stand on their own.',
+    svcH: ['From source photo', 'to ready-to-publish assets.'],
+    svcLede: 'Commercial product visuals, editorial scenes, and short-form video engineered for modern e-commerce.',
     // [name, what it is, what you receive, href]
     /*
      * ── DE EERSTE REGEL IS DE BAAT, DE TWEEDE HET FEIT — 18 augustus 2026 ─────
@@ -665,22 +663,22 @@ const COPY = {
     svc: [
       [
         'Catalog set',
-        'Clean, consistent product pages that make a young range look established.',
+        'Clean, consistent product shots that make a new collection look instantly established.',
         '/catalog',
       ],
       [
         'Lifestyle carousel',
-        'The scene a packshot cannot give you — something to post, not just something to list.',
+        'The atmosphere a standard product shot lacks — imagery made to engage your feed, not just fill a listing.',
         '/lifestyle',
       ],
       [
         'Video clip',
-        'The same product in the shape a feed asks for, without a second shoot to get it.',
+        'Native video clips of your product, created directly alongside your static shots with zero extra shoots.',
         '/video',
       ],
       [
         'Your Brand Model',
-        'A face that becomes yours — the same one in every order, and on nobody else.',
+        'A dedicated model tailored to your target audience — consistent across every order and completely exclusive to your brand.',
         '/custom-models',
       ],
     ],
@@ -701,36 +699,36 @@ const COPY = {
     svcCta: 'Start an order',
 
     pipeH: 'From folder to launch.',
-    pipeLede: 'Four steps, and you are only in two of them.',
+    pipeLede: 'A 4-step workflow designed for speed: you send and approve, we handle everything in between.',
     pipe: [
-      ['You send a folder', 'One folder per product, folder name is the SKU. A phone photo is enough to start.'],
-      ['The date is cleared', 'The calendar is checked against real capacity. If the week is full you are offered the next one that is not.'],
+      ['You send a folder', 'One folder per product, named by SKU. A quick smartphone photo is all we need to get started.'],
+      ['The date is cleared', 'Our calendar syncs with real studio capacity. If your preferred week is full, you’ll instantly get the next open slot.'],
       // The four house styles are named HERE now. They were a stat in the
       // "What the numbers actually are" band, which went with the price merge;
       // this is the step they describe, so it is where they belong anyway.
-      ['The studio runs', 'Catalog, lifestyle and video in one house style — Glow, Dunes, Flash or Phone-made — with the editing and grading finished.'],
-      ['A person checks it', 'Every visual is looked at before it ships. Nothing is auto-delivered.'],
+      ['The studio runs', 'Catalog, lifestyle, and video produced in your preferred style — preset or custom — fully edited and color-graded.'],
+      ['A person checks it', 'Human oversight on every frame. Every asset is thoroughly reviewed by a quality specialist before it ships; nothing is ever auto-delivered.'],
     ],
 
 
-    baH: ['This is what came in.', 'This is what went out.'],
-    baLede: 'One photo, taken on a phone, on a table. Nothing was reshot, restyled, or sent anywhere.',
+    baH: ['Your raw image →', 'Our final studio visual'],
+    baLede: 'Product photos, taken on a table with a phone. Nothing was reshot, restyled, or shipped anywhere.',
     baBefore: 'Sent in',
     baAfter: 'Delivered',
     baBeforeAlt: 'The raw phone photo a client sent in',
     baAfterAlt: 'The finished VISUAILS catalog visual made from it',
     baPoints: [
-      ['The garment is unchanged', 'Cut, colour, print and hardware stay exactly as they are on the sample. That is the one part of the image not up for negotiation.'],
-      ['The rest is built', 'Light, background, model and crop are made around it, to whichever house style the order is running.'],
-      ['A person signs it off', 'The finished frame is put next to your original photo and checked against it before it reaches you.'],
+      ['The garment is unchanged', 'Guaranteed product accuracy: Cut, color, print & details remain unchanged.'],
+      ['The rest is built', 'Lighting, background, model, and cropping are built around your product to match your brand’s house style.'],
+      ['A person signs it off', 'We review the final visual side-by-side with your original photo, verifying every detail before delivery.'],
     ],
-    baNote: 'A phone photo in daylight is enough to start. If yours are worse than this one, send them anyway for an honest answer.',
-    baNoteLink: 'What makes a usable photo',
+    baNote: 'A well-lit phone photo is all you need to get started. Unsure about your photos? Send them over via WhatsApp or email — we’ll give you an honest assessment.',
+    baNoteLink: 'What makes a usable photo?',
 
-    dreamKicker: 'What it is all actually for',
-    dreamH: 'A small label that never looked small.',
-    dreamLede: 'A shopper cannot see how big your team is. They see whether every product photo matches the last one. That is what an order gives you across your whole range: the same lighting, the same framing, the same model on every product.',
-    dreamCta: 'See an order in full',
+    dreamKicker: 'What it all comes down to',
+    dreamH: 'Effortless visual content designed to keep your brand in constant motion.',
+    dreamLede: 'Shoppers don’t see the friction behind a shoot — they see a brand that never stops moving. Get a continuous stream of studio-ready visuals without the production fatigue, keeping your storefront, feeds, and ads effortlessly active.',
+    dreamCta: 'Browse the gallery',
     dreamAlt: 'A figure on a stairwell landing, lit by a single acid-green beam',
 
     weekH: 'The week you get back.',
@@ -745,11 +743,11 @@ const COPY = {
     // rains, the two evenings culling frames." Diezelfde opsomming staat vier
     // regels lager nog een keer als de vier koppen onder "What that frees up".
     // Eén keer is genoeg (Lucas, 19 augustus 2026).
-    weekLede: 'A shoot is not one day, it is the week around it. Here is that week instead.',
+    weekLede: 'A shoot isn’t just one day — it’s the entire week of setup and stress around it. Here’s how you get that week back.',
     week: [
-      ['Monday', 'You drop a folder of product photos into the portal. Twenty minutes, most of it renaming folders to your SKUs.'],
-      ['Wednesday', 'The order lands. You approve what is right in the portal and flag what is not.'],
-      ['Friday', 'Product pages are live, carousels scheduled. You were not in a studio once.'],
+      ['Monday', 'Your entire input takes 20 minutes flat: organize by SKU, drop into the portal, and hand off the rest.'],
+      ['Wednesday', 'Review your complete deliverable in one place. Instant approval for ready assets, effortless flagging for anything needing a touch-up.'],
+      ['Friday', 'Your store is updated and social carousels scheduled. Complete visual execution without ever leaving your desk.'],
     ],
     backH: 'What that frees up',
     /*
@@ -763,34 +761,34 @@ const COPY = {
      */
     back: [
       'No casting, no booking',
-      'Nothing leaves your stockroom',
+      'Zero stock disruption — keep your inventory selling while content gets made.',
       'No day off the business',
-      'No cull, no waiting for retouch',
+      'Zero image culling, zero retouch delays — publication-ready assets right out of the box.',
     ],
     // The one sentence left over from the deleted "What an order replaces"
     // band: the euros against a shoot day are /compare's and /pricing's
     // argument, and this band is the same argument in hours. The link is the
     // handover.
-    backNote: 'A shoot costs a day as well as a fee, and only one of those two is on the invoice.',
-    backNoteLink: 'What an order replaces, counted',
+    backNote: 'A shoot costs a full day of your time on top of the studio fee — and only one of those shows up on the invoice.',
+    backNoteLink: 'What an order replaces',
 
 
     // NO FIGURES IN THIS BAND ANY MORE. The setup price and the credit are in
     // the price band, said once; repeating them here was the fourth and fifth
     // time the page priced the same product. What is left is the argument the
     // price cannot make — that the face is yours and nobody else’s.
-    bmH: ['One face,', 'and it is only yours.'],
-    bmLede: 'The roster below is who you can pick from today, and any of them can appear in your order. Your Brand Model is the other route: a face made for your brand alone, used by nobody else.',
-    bmNote: 'A returning face is the cheapest continuity a brand can buy — it is why catalogues have used the same model for years.',
+    bmH: ['Pick a face from our roster —', 'or build one that’s exclusively yours.'],
+    bmLede: 'Pick from our curated roster today, or claim your own Brand Model: a signature face tailored to your brand identity and used by no one else.',
+    bmNote: 'A returning face is the most cost-effective way to build visual continuity — it’s why top brands stick with the same models for years.',
     bmCta: 'How Your Brand Model works',
 
 
-    dashH: ['What happens', 'after you order.'],
+    dashH: ['What to expect', 'after you order.'],
     // ÉÉN SCHERM IN PLAATS VAN TWEE, augustus 2026. Zie de noot bij de band.
     // De lede zei "twee schermen"; er staat er nu één, dus dat is hij niet meer
     // gaan zeggen. Wat het andere scherm liet zien, staat als zin onder de
     // figuur — met de link naar de pagina waar het wél helemaal getekend is.
-    dashLede: 'The screen you get: where your order stands, and every image in it.',
+    dashLede: 'Track your order status and review every image in real time.',
     // dashPortalPh en dashPortalNote stonden hier: de bijschriften van het
     // grijze vlak dat FigDash heeft vervangen. Een figuur die het scherm zelf
     // tekent, heeft geen onderschrift nodig dat vertelt wat erop zou staan.
@@ -822,7 +820,7 @@ const COPY = {
      *       keuze vóór de productie valt in plaats van erna, en dat is precies
      *       waarom er niets te snijden valt.
      */
-    dashPortalN: 'A private link, no password. Status and your delivery dates, then the full gallery: approve image by image, tick anything that is not right and send it as one revision round, and download every image in all three formats, in the aspect ratio you picked when you ordered.',
+    dashPortalN: 'One private link gives you full control: view delivery timelines, approve image by image, tick anything that is not right and send it as one revision round, and download every asset in all three formats and your selected aspect ratio.',
     dashPortalCta: 'See VISUAILS Studio',
     /* ── HOOKS STAAT OP DE PLANK, NIET IN DE ETALAGE — 9 augustus 2026 ────────
        Lucas: *"Verberg de pagina voor nu omdat ik alle ideeën hiervoor nog moet
@@ -855,12 +853,12 @@ const COPY = {
        zetten is een openbaar aanbod op iets wat niet te kopen is. Eén regel
        toevoegen kan later in tien seconden. */
     svcSoonTag: 'Not ready yet',
-    svcSoonFoot: 'This is the concept as it stands. What it costs and how you order it are not settled yet, which is why the button does not work.',
+    svcSoonFoot: 'This is a preview of the concept as it stands. Pricing and ordering details are still being finalized, which is why booking is currently inactive.',
     svcSoonList: [
       {
         id: 'hooks',
         name: 'Hooks',
-        desc: 'Your product in a short video, on a format we have built before.',
+        desc: 'Short-form product video, designed around eye-catching, high-performing social formats.',
         cta: 'See Hooks',
         qLabel: 'What Hooks is',
         /* De tekst hieronder komt uit HOOKS-COPY-CONCEPT.md en niet uit de oude
@@ -870,10 +868,10 @@ const COPY = {
            mag niet via een uitklapper terug de site op komen; hier staat de
            gecorrigeerde versie, expliciet dat één foto NIET genoeg is. */
         qBody: [
-          ['You send photos', 'The same set as a catalog order: front and back at a minimum, plus a detail shot and a worn shot if you have them. One photo is not enough, because the format moves around the product.'],
-          ['We build the video', 'Short, vertical, on a format we have used before. The video continues into the image below it in the feed, so the two read as one picture.'],
-          ['A specialist checks it', `Before it is delivered: the product has to stay recognisable and the join has to line up. It is in VISUAILS Studio in ${turnaround('unattended', 'en').toLowerCase()}, where you approve it or say what is wrong.`],
-          ['What we sell', 'The format and the execution. Not reach — whether a post travels depends on the platform and on timing, and neither of those is ours to promise.'],
+          ['You send photos', 'We require a full visual set: at least a clear front and back view, along with detail or fit photos if you have them. One photo alone isn’t sufficient because our formats build scene depth around the entire product.'],
+          ['We build the video', 'Scroll-stopping, short-form vertical video, built to give a post its best chance at more engagement and new followers.'],
+          ['A specialist checks it', `Before final delivery, we verify product accuracy and ensure every image transition aligns seamlessly. Your assets land in VISUAILS Studio within ${turnaroundShort('unattended', 'en')} for your review, feedback, or instant approval.`],
+          ['What we sell', 'We guarantee the format and the execution — not the reach. How far a post travels depends on timing and algorithms, and those aren’t ours to promise.'],
         ],
       },
       {
@@ -902,14 +900,14 @@ const COPY = {
            (geen tweede bibliotheek naast de bestelstroom); "Feed" is een
            platformwoord en zegt niets over wat je krijgt. */
         name: 'Editions',
-        desc: 'A set of new images every month, made for your brand — whether or not you have something new to photograph.',
+        desc: 'Monthly visual drops tailored to your brand identity. Keep your channels active and consistent, even between collection releases.',
         cta: 'See Editions',
         qLabel: 'What Editions is',
         qBody: [
-          ['What lands', 'A set of finished images at the start of every month, in VISUAILS Studio and ready to post. They arrive whether or not you had a new product that month — which is exactly the month a brand runs out of things to show.'],
-          ['Made for your brand', 'Set up on your style, your locations and your brand colours, so they sit inside your feed rather than beside it. That is the half a stock library structurally cannot do, and the reason this is not a stock library.'],
-          ['Or the shared set', 'A cheaper version that is not made for you alone and goes to other brands too. We say plainly which is which — the same way the shared roster is named on the model picker rather than implied.'],
-          ['Where it arrives', 'One card next to your balance and your list, and downloading works like a delivered order. Not a second library with its own search and its own folders.'],
+          ['What lands', 'A fresh set of finished images delivered to VISUAILS Studio at the start of every month — ready to post. They arrive whether you launched a new product or not, right when brands usually run out of content.'],
+          ['Made for your brand', 'Built around your style, locations, and brand colors so they fit seamlessly into your feed. That’s what a stock library structurally cannot do — and why this is anything but stock.'],
+          ['Or the shared set', 'A more accessible option that is not exclusive to your brand — the same set also goes to other brands. We state exclusivity clearly, just like shared rosters are explicitly labeled on our model picker.'],
+          ['Where it arrives', 'Integrated right alongside your balance and order history. Downloading works exactly like a regular order — no second library, complex search tools, or extra folders to manage.'],
         ],
       },
     ],
@@ -925,17 +923,17 @@ const COPY = {
     // achter het vraagteken. Wie hem wil lezen, leest hem; de rest leest 27
     // woorden in plaats van 65.
     dashFoot: [
-      'Change a status on our side and the timeline you see moves with it — ',
+      'Live status sync: changes on our end instantly update your timeline — ',
       'see how an order is run',
-      '. What we record, and why, is set out on the ',
+      'What we record, and why, is detailed on our ',
       'AI Act page',
       '.',
     ],
     dashFootNoteTerm: 'the time stamp',
-    dashFootNote: 'Every approval and revision is stamped with a time and kept against the image it belongs to, so the sequence can be read back later.',
+    dashFootNote: 'Every approval and revision is timestamped and linked directly to its image for a full audit trail.',
 
-    promiseH: ['No wall of reviews yet.', 'So we earn your trust the honest way.'],
-    promiseQuote: `"I check every visual myself before it reaches you, and I would rather redo one than ship it. Not sure yet? See it on your own product for ${sample.price} first."`,
+    promiseH: ['No wall of reviews yet —', 'so we earn your trust the honest way.'],
+    promiseQuote: `"Every single visual is personally checked before it reaches your portal. Not convinced? See the quality on your actual product for only ${sample.price}."`,
     promiseSign: 'founder, VISUAILS',
     // The test sample was the first check as well as the last line of the
     // quote directly above it — the same offer twice inside one panel. The
@@ -957,31 +955,31 @@ const COPY = {
     // the note above this one exists to prevent. Two true promises beat three
     // where one is an echo.
     promiseChecks: [
-      ['We ask before we call it done', 'every order ends with the same question: are these right? If not, we go through it with you.'],
-      ['You own what you get', 'commercial use across your shop, marketplaces, ads and feeds. No licence per use.'],
+      ['Complete satisfaction before final sign-off', 'if anything misses the mark, we review and adjust it with you step by step.'],
+      ['Full commercial rights included', 'use your images across your shop, marketplaces, ads and social feeds, with zero recurring licensing fees.'],
     ],
     trust: ['Made in Enschede, NL', 'KVK-registered business', reviewClaim('attended', 'en'), 'Direct line on WhatsApp'],
 
-    obH: 'The things you would ask on a call.',
-    obLede: 'Three answers that usually take a phone call to get out of a supplier.',
+    obH: 'Direct answers to your questions.',
+    obLede: 'Three answers suppliers usually make you book a call to get.',
     // THREE, not four. "Who owns the visuals?" is now one of the promise
     // checks below, where it sits beside the other things the studio commits
     // to rather than as a risk to be talked down. It is not said twice.
     ob: [
-      ['What if they are not right?', 'Nothing is delivered automatically. A person looks at every visual first, and in the portal you approve image by image and tick anything that is off — one revision round comes with every order.', 'See VISUAILS Studio', '/portal'],
-      ['Will a customer see it is AI?', 'They are AI-generated and we say so plainly. Each one is made from photographs of your real product and finished by hand, and you get the line of text to publish them with.', 'Read the AI Act page', '/ai-act'],
-      ['My own photos are bad.', 'A phone photo in daylight on a plain surface is enough to start. The guidelines run to two pages and are mostly about light.', 'What makes a usable photo', '/upload-guidelines'],
+      ['What if they aren’t right?', 'Zero automated handoffs. Every image is manually inspected before it reaches your portal, where you approve image by image and tick anything that is off — one revision round comes with every order.', 'See VISUAILS Studio', '/portal'],
+      ['Will customers notice it’s AI?', 'We generate every visual with AI, and we state that upfront. Our workflows and hand-finished edits ensure your visuals look natural and lifelike — keeping a genuine connection with your audience while providing the exact disclosure text you need to publish.', 'Read the AI Act page', '/ai-act'],
+      ['My photos are low quality.', 'A well-lit phone photo on a plain background is all you need to start. Detailed two-page guidelines on lighting are available if you want to dive deeper.', 'What makes a usable photo?', '/upload-guidelines'],
     ],
 
     // HERSCHREVEN toen de accordeon eronder verdween. Deze regel zei "de vijf
     // die het vaakst gesteld worden" en wees naar vijf vragen die er niet meer
     // staan — een belofte die de pagina zelf tegensprak. Nu wijst hij naar de
     // pagina waar ze wél staan.
-    faqLede: 'Everything else — delivery, revisions, rights, what we do with your photos — is answered in full on one page.',
+    faqLede: 'Everything else — delivery, revisions, rights, and photo usage — is covered in full on a single page.',
     faqCta: 'Every question, answered',
 
-    closeH: 'One of your own products, as a catalog set or a carousel, first.',
-    closeLede: `${sample.deliverable}, made from your own photo and checked by a specialist — for a ${sample.feeNote}. One per business.`,
+    closeH: 'Start with one of your own products — delivered as a catalog set or a lifestyle carousel.',
+    closeLede: `${sample.deliverable} · Built from your original image · Specialist quality check · ${sample.feeNote} (${sample.unit})`,
     closeCta: 'Get your test sample',
     closeAlt: 'Start an order instead',
   },
@@ -991,14 +989,11 @@ const COPY = {
     h1: TAGLINE.nl.lines,
     ctaStart: 'Start een bestelling',
     ctaSample: `Proefvisual aanvragen · ${sample.price}`,
-    ctaSampleNote: `Proefvisual: je eigen foto’s erin, ${sample.deliverable} terug. ${sample.unit.charAt(0).toUpperCase() + sample.unit.slice(1)}.`,
+    ctaSampleNote: `Proefvisual: Upload je eigen product en ontvang ${sample.deliverable} terug. Maximaal: ${sample.unit}.`,
     // Zie de EN-tabel voor waarom dit geen plint meer is, en waarom deze drie
     // sinds 20 augustus de korte vorm gebruiken.
-    proof: [
-      turnaroundShort('attended', 'nl'),
-      reviewClaimShort('attended', 'nl'),
-      'De beelden zijn van jou',
-    ],
+    /* Zie de noot bij de Engelse heroClaim. */
+    heroClaim: turnaroundShort('attended', 'nl'),
 
     /* Zie de noot bij de Engelse tabel. */
     heroSlideLabel: 'Wat we maken',
@@ -1020,8 +1015,8 @@ const COPY = {
 
     // Zie de EN-tabel voor waarom deze band er is: vier prijsbanden zijn er één
     // geworden en alles wat deze pagina over geld zegt, staat in deze keys.
-    priceH: ['Eén prijs per product.', 'Die zakt als je er meer doet.'],
-    priceLede: `Je betaalt per product. Bij een compleet product horen een catalogset en een lifestyle-carousel: ${PER_PRODUCT_VISUALS} afgewerkte beelden. Je kunt ook alleen catalog of alleen lifestyle nemen, en hoe meer producten je bestelt, hoe lager het tarief.`,
+    priceH: ['Heldere tarieven', 'met ingebouwde volumekorting.'],
+    priceLede: `Eén productunit bevat ${PER_PRODUCT_VISUALS} afgewerkte beelden: een complete catalogset én een lifestyle-carousel. Bestel het volledige pakket of kies een van beide sets los — waarbij de prijs per product automatisch daalt naarmate je volume groeit.`,
     priceVat: `Alle bedragen in dit blok zijn ${vatLabel('excl', 'nl')}.`,
     ladCountCol: 'Producten',
     ladKinds: [
@@ -1030,49 +1025,49 @@ const COPY = {
       ['Lifestyle', `${LIFESTYLE_IMAGES} beelden`],
     ],
     ladPer: 'per product',
-    ladNote: 'Neem je allebei op hetzelfde product, dan betaal je het complete tarief en niet de twee tarieven bij elkaar.',
-    firstLead: 'Het tarief is het tarief.',
-    firstBody: `Geen kennismakingskorting en niets om over te onderhandelen — ${EX_SMALL} complete producten kosten ${euro(Q_SMALL.net, 'nl')}, wie je ook bent en wanneer je het ook vraagt.`,
-    addOnNote: `Een videoclip is ${euro(AMOUNT.video, 'nl')}, hetzelfde tarief binnen een bestelling of los. Je merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')} — niet per beeld, niet per bestelling, niet per jaar.`,
+    ladNote: 'Voor beide sets op hetzelfde product geldt één gebundeld tarief — niet twee losse prijzen bij elkaar opgeteld.',
+    firstLead: 'Onze tarieven staan vast.',
+    firstBody: `Geen welkomstkortingen en geen onderhandelingen — ${EX_SMALL} complete producten kosten ${euro(Q_SMALL.net, 'nl')}, voor iedereen en op elk moment.`,
+    addOnNote: `Een videoclip kost ${euro(AMOUNT.video, 'nl')}, zowel los te boeken als toegevoegd aan een bestelling. Jouw merkmodel is eenmalig ${euro(AMOUNT.brandModel, 'nl')} — niet per foto, niet per order en niet per jaar.`,
     subH: ['Of doe het', 'elke maand.'],
-    subLede: 'Een abonnement is hetzelfde werk op een vaste afspraak: elke maand een vast aantal producten, geleverd in een week die de planning voor je vrijhoudt.',
+    subLede: 'Kies voor vastigheid met ons maandplan. Elke maand een vaste hoeveelheid afgewerkte producten, stipt opgeleverd tijdens jouw vaste, gereserveerde week op de kalender.',
     subEyebrow: 'Abonnement',
     subFrom: 'vanaf',
     subUnit: `per maand · ${PLAN_FROM_PRODUCTS} producten`,
     subFacts: [
-      'Elke maand een vast aantal producten, te besteden zoals je collectie het vraagt.',
-      'Je eigen week in de planning, vastgezet voordat iemand anders hem kan nemen.',
-      `Onder de prijs per product voor dezelfde output — ${PLAN_COUNT} plannen, per maand of per jaar.`,
+      'Een vast aantal producten per maand, flexibel in te zetten naar de behoeften van jouw collecties.',
+      'Jouw eigen gereserveerde week in de kalender, vastgelegd voordat iemand anders hem kan claimen.',
+      `Scherper geprijsd dan ons losse producttarief voor exact dezelfde visuals — keuze uit ${PLAN_COUNT} abonnementen, maandelijks of jaarlijks gefactureerd.`,
     ],
     subVat: `${vatLabel('excl', 'nl')}`,
     subCta: 'Sluit een abonnement af',
     subCta2: 'Vergelijk de abonnementen',
     // Zie de noot bij de Engelse stockH.
-    stockH: 'En een maand die al gevuld is.',
+    stockH: 'Geen nieuwe drop? Vul je maand met merkcontent.',
     // Zie de noot bij de Engelse stockNowTag.
     stockNowTag: 'Nog niet actief',
-    stockNow: [`${STOCK_OFF_BRAND} nieuwe stockbeelden per maand`, 'inbegrepen bij elk abonnement en bruikbaar voor elk merk — iets om te posten op de dagen dat je niets nieuws hebt.'],
+    stockNow: [`${STOCK_OFF_BRAND} universele sfeer-visuals per maand`, 'Standaard bij elk abonnement: merk-neutrale sfeerbeelden, direct inzetbaar op dagen zonder nieuwe productlanceringen.'],
     // Zie de noot bij de Engelse stockSoon.
-    stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Ze komen met Editions en worden één keer per merk opgezet.'],
+    stockSoon: [`${STOCK_ON_BRAND} op maat gemaakte merk-visuals per maand`, 'Volledig ingericht op jouw merkidentiteit: jouw eigen locaties, kleurenpalet en esthetiek. Puur sfeerbeeld dat je merk lading geeft. Eenmalig ingesteld bij het Editions-pakket.'],
     stockSoonTag: 'Met Editions',
-    moodCap: 'Sfeer, textuur, licht — geen product in beeld, en één merk over alle vier.',
+    moodCap: 'Sfeer, textuur en licht — bedoeld om je merk lading te geven zonder direct producten te tonen. Denk aan natuur, locaties en herkenbare momenten waarin jouw doelgroep zich direct herkent.',
     // Zie de noot bij de Engelse creditH.
-    creditH: `${PLAN_FROM_PRODUCTS} plekken, geen ${PLAN_FROM_PRODUCTS} nieuwe producten.`,
-    creditBody: `Een credit is een plek in de maand, niet de eis dat je iets nieuws hebt. Jij bepaalt elke maand wat erin gaat: een nieuw item, een item dat je al verkoopt in een andere look voor een campagne, of een set die je voor je socials maakt. Wat je niet gebruikt schuift ${PLAN_ROLLOVER_MONTHS === 1 ? 'een' : PLAN_ROLLOVER_MONTHS} maand door.`,
-    creditAsk: 'Weet je niet waar je de rest aan besteedt?',
-    creditAskCta: 'Vraag het ons, dan lopen we het samen door',
+    creditH: `${PLAN_FROM_PRODUCTS} flexibele slots, niet ${PLAN_FROM_PRODUCTS} nieuwe producten.`,
+    creditBody: `Een credit garandeert jouw plek in de maand, zonder de verplichting dat je een nieuw product moet aanleveren. Jij bepaalt elke maand de invulling: een nieuw artikel, een nieuwe campagneshoot van een bestaand item, of een set voor je socials. Niet-gebruikte credits neem je mee naar ${PLAN_ROLLOVER_MONTHS === 1 ? 'de volgende maand' : `de volgende ${PLAN_ROLLOVER_MONTHS} maanden`}.`,
+    creditAsk: 'Twijfel je hoe je je resterende credits het beste inzet?',
+    creditAskCta: 'Neem contact op — we lopen de opties graag samen met je door',
     creditWa: 'Hoi! Ik heb een abonnement en wil graag even doornemen waar ik de credits van deze maand aan kan besteden.',
 
     priceCta: 'Start een bestelling',
     priceCta2: 'De volledige prijslijst',
 
     tsKicker: 'Voordat je een bestelling plaatst',
-    tsH: ['Jouw eigen product volledig in beeld', `voor ${sample.price}.`],
-    tsLede: `Niet op een kledingstuk dat wij kozen, maar op dat van jou — door dezelfde productie als een betaalde bestelling, door dezelfde specialist nagekeken. Je krijgt ${sample.deliverable} terug.`,
+    tsH: ['Ervaar de studiokwaliteit:', `jouw product compleet in beeld voor ${sample.price}.`],
+    tsLede: `Gemaakt met jouw echte artikel — geen willekeurige sample. Verwerkt via onze standaard productielijn en kwaliteitscontrole. Je ontvangt ${sample.deliverable}.`,
     tsPoints: [
-      ['Eén per bedrijf', 'Geen proefperiode, geen betaalgegevens die we bewaren, geen account, niets op te zeggen.'],
-      ['Geen kortere weg voor een proef', 'Zelfde productie en dezelfde menselijke controle als bij een betaalde bestelling.'],
-      ['Daarna geen verplichting', 'Klopt het niet, dan houdt het op.'],
+      ['Eén per bedrijf', 'Geen stilzwijgende verlenging, geen opgeslagen betaalgegevens, geen account nodig — niks om op te zeggen.'],
+      ['Geen concessies bij een proefshoot — exact dezelfde kwaliteit als bij een vaste order.', 'Exact dezelfde studio - workflow en menselijke kwaliteitscheck als bij elke betaalde order.'],
+      ['Daarna geen verplichting', 'Is het niet naar wens? Dan stopt het daar — zonder verdere verplichtingen.'],
     ],
     tsCta: 'Vraag je proefvisual aan',
     tsAlt: 'Of start een bestelling',
@@ -1083,178 +1078,205 @@ const COPY = {
 
     // De prijzen zijn uit deze band gehaald — die staan één keer in de band
     // hierboven. Wat blijft is wat een dienst IS en wat je terugkrijgt.
-    svcH: ['Wat we maken,', 'en wat er in je map belandt.'],
-    svcLede: 'Elk product krijgt catalog- en lifestyle-beelden. Een videoclip en je eigen merkmodel kun je erbij nemen, of los bestellen.',
+    svcH: ['Wat wij maken.', 'Wat jij ontvangt.'],
+    svcLede: 'Commerciële productfoto’s, sfeerbeelden en korte video’s, speciaal gebouwd voor moderne e-commerce.',
     /* Zie de noot bij de Engelse tabel: eerste regel de baat, tweede het feit,
        en een baat noemt alleen wat de studio zelf levert. */
     svc: [
       [
         'Catalogset',
-        'Strakke, gelijke productpagina’s die een jonge collectie er gevestigd uit laten zien.',
+        'Strakke, consistente productfoto’s die een nieuwe collectie direct een gevestigde uitstraling geven.',
         '/catalog',
       ],
       [
         'Lifestyle-carousel',
-        'De scène die een packshot je niet geeft — iets om te posten, niet alleen iets om te tonen.',
+        'De sfeer en beleving die een packshot mist — gemaakt om te delen op socials, niet alleen om te tonen in je shop.',
         '/lifestyle',
       ],
       [
         'Videoclip',
-        'Hetzelfde product in de vorm waar een feed om vraagt, zonder er een tweede shoot voor te doen.',
+        'Korte videocontent voor je social feeds, direct meegeproduceerd met je static shots zonder extra opnamedag.',
         '/video',
       ],
       [
         'Je merkmodel',
-        'Een gezicht dat van jou wordt — hetzelfde in elke bestelling, en bij niemand anders.',
+        'Een exclusief model afgestemd op jouw doelgroep — consequent bij elke bestelling en nooit gedeeld met een ander merk.',
         '/custom-models',
       ],
     ],
     // Zie de noot bij de Engelse svcEyebrow.
-    svcEyebrow: ['Productfotografie', 'Redactioneel', 'Bewegend beeld', 'Exclusief'],
+    svcEyebrow: ['Productfotografie', 'Editorial', 'Motion', 'Exclusief'],
     svcMore: 'Bekijk',
     svcCta: 'Start een bestelling',
 
     pipeH: 'Van map tot lancering.',
-    pipeLede: 'Vier stappen, en bij twee daarvan doe jij iets.',
+    pipeLede: 'Een proces van 4 stappen waarin jij maar 2 dingen doet: versturen en goedkeuren. Wij regelen de rest.',
     pipe: [
-      ['Jij stuurt een map', 'Eén map per product, de mapnaam is de SKU. Een telefoonfoto is genoeg om te beginnen.'],
-      ['Je leverdatum komt vast te staan', 'Wij kijken of die week nog plek heeft. Zit hij vol, dan krijg je de eerste week die nog ruimte heeft.'],
+      ['Jij stuurt een map', 'Eén map per product, genoemd naar de SKU. Een simpele telefoonfoto is al genoeg om te beginnen.'],
+      ['Je leverdatum komt vast te staan', 'Onze kalender is gekoppeld aan onze echte studiocapaciteit. Is een week vol? Dan krijg je direct de eerstvolgende beschikbare week te zien.'],
       // De vier huisstijlen staan nu hier — ze waren een cijfer in de band
       // "Wat de getallen werkelijk zijn", die met de prijsfusie is vervallen.
-      ['De studio draait', 'Catalog, lifestyle en video in één huisstijl — Glow, Dunes, Flash of Phone-made — bewerking en kleurcorrectie afgewerkt.'],
-      ['Een specialist kijkt ernaar', 'Een specialist bekijkt elk beeld voordat het naar je toe gaat. We leveren niets automatisch.'],
+      ['De studio draait', 'Catalogus, lifestyle en video geproduceerd in jouw voorkeursstijl — vast format of op maat — volledig bewerkt en color-graded.'],
+      ['Een specialist kijkt ernaar', 'Menselijke kwaliteitscontrole op elk beeld. We inspecteren elke foto en video grondig voordat deze de deur uitgaat — geen geautomatiseerde opleveringen.'],
     ],
 
 
-    baH: ['Dit kwam binnen.', 'Dit ging eruit.'],
-    baLede: 'Links een foto met een telefoon, op een tafel. Rechts wat wij ervan maakten. Er is niets opnieuw gefotografeerd, opnieuw gestyled of ergens heen gestuurd.',
+    baH: ['Jouw ruwe foto →', 'Onze studioproductie'],
+    baLede: 'Productfoto’s, gemaakt op tafel met een telefoon. Niets is opnieuw gefotografeerd, gestyled of opgestuurd.',
     baBefore: 'Ingestuurd',
     baAfter: 'Geleverd',
     baBeforeAlt: 'De ruwe telefoonfoto die een klant instuurde',
     baAfterAlt: 'Het afgewerkte VISUAILS-catalogbeeld dat daaruit is gemaakt',
     baPoints: [
-      ['Het kledingstuk blijft zoals het is', 'Snit, kleur, print en fournituren blijven precies zoals ze op het sample zitten. Daar wijken we nooit van af.'],
-      ['De rest maken wij eromheen', 'Licht, achtergrond, model en uitsnede maken wij eromheen, in de stijl die je voor de bestelling hebt gekozen.'],
-      ['Een specialist keurt het goed', 'We leggen het eindbeeld naast je eigen foto. Pas als het klopt, gaat het naar je toe.'],
+      ['Het kledingstuk blijft zoals het is', 'Productnauwkeurigheid: pasvorm, kleur en details blijven ongewijzigd.'],
+      ['De rest maken wij eromheen', 'Belichting, achtergrond, model en uitsnede worden om jouw product heen gebouwd, afgestemd op jouw huisstijl.'],
+      ['Een specialist keurt het goed', 'We leggen het eindresultaat naast jouw originele foto en checken alle details handmatig voordat we opleveren.'],
     ],
-    baNote: 'Een telefoonfoto bij daglicht is genoeg om te beginnen. Twijfel je of jouw foto goed genoeg is? Stuur er één, dan zeggen we eerlijk wat we ervan kunnen maken.',
-    baNoteLink: 'Wat een bruikbare foto is',
+    baNote: 'Een goed belichte telefoonfoto is al genoeg om te beginnen. Twijfel je over je foto’s? Stuur ze door via WhatsApp of e-mail — we geven je een eerlijk advies.',
+    baNoteLink: 'Wat maakt een foto bruikbaar?',
 
-    dreamKicker: 'Waarom de beelden zo zwaar wegen',
-    dreamH: 'Je merk wordt op je beelden beoordeeld.',
-    dreamLede: 'Niemand die je pagina bekijkt weet hoeveel mensen er bij je werken. Ze zien de beelden, en binnen twee seconden hebben ze een oordeel. Dat is precies het stuk dat je zelf in de hand hebt.',
-    dreamCta: 'Bekijk een hele bestelling',
+    dreamKicker: 'Waar het uiteindelijk allemaal om draait',
+    dreamH: 'Zorgeloze merkcontent die zorgt voor constante visuele dynamiek en groei.',
+    dreamLede: 'Klanten zien niet hoeveel tijd en moeite een shoot kost — ze zien een merk dat nooit stilstaat. Met een continue stroom van studiobeelden zonder de productiestress blijven je catalogus, feeds en campagnes moeiteloos in beweging.',
+    dreamCta: 'Blader door de galerij',
     dreamAlt: 'Een figuur op een trapportaal, belicht door één zuurgroene lichtbundel',
 
     weekH: 'De week die je terugkrijgt.',
     // Zie de noot bij de Engelse weekLede.
-    weekLede: 'Een shoot is niet één dag, het is de week eromheen. Zo ziet die week er nu uit.',
+    weekLede: 'Een shoot kost je nooit alleen die ene draaidag — het is de hele week aan regelwerk eromheen. Wij nemen die week van je over.',
     week: [
-      ['Maandag', 'Je zet een map met productfoto’s in VISUAILS Studio. Twintig minuten werk, en dat is vooral mappen hernoemen naar je SKU’s.'],
-      ['Woensdag', 'De bestelling is klaar. In VISUAILS Studio keur je goed wat klopt en geef je aan wat niet klopt.'],
-      ['Vrijdag', 'De productpagina’s staan live, de carousels ingepland. Je bent geen moment in een studio geweest.'],
+      ['Maandag', 'Je sleept de mappen simpelweg het portaal in. 20 minuten werk — waarvan het meeste het instellen van de SKU-namen is.'],
+      ['Woensdag', 'Je beelden staan klaar in het portaal. Keur goedgekeurde foto’s direct goed en markeer eenvoudig wat aangepast moet worden.'],
+      ['Vrijdag', 'Je webshop is up-to-date en je social-content staat klaar. Een complete launch zonder dat je ook maar één voet in een studio hoeft te zetten.'],
     ],
     backH: 'Wat dat vrijmaakt',
     // Zie de noot bij de Engelse `back`.
     back: [
       'Geen casting, geen boeking',
-      'Er gaat niets de voorraad uit',
+      'Geen gedoe met je voorraad — jouw voorraad blijft beschikbaar voor verkoop terwijl de content wordt gemaakt.',
       'Geen dag uit de zaak',
-      'Geen selectie, geen retoucheerlijst',
+      'Geen urenlang foto’s selecteren, geen wachttijden voor retouche — volledig bewerkt opgeleverd.',
     ],
     // Wat overblijft van de geschrapte band "Wat een bestelling vervangt": de
     // euro’s tegenover een shootdag staan op /compare en /pricing, deze band
     // voert hetzelfde argument in uren. De link is de overdracht.
-    backNote: 'Een shoot kost een dag én een bedrag, en maar één van die twee staat op de factuur.',
+    backNote: 'De echte kosten van een shoot zitten in je eigen uren. Wij rekenen af met het verborgen regelwerk en nemen het complete proces over.',
     backNoteLink: 'Wat een bestelling vervangt, uitgeteld',
 
 
     // Geen bedragen meer in deze band — die staan één keer in de prijsband.
-    bmH: ['Eén gezicht,', 'en het is alleen van jou.'],
-    bmLede: 'Uit deze gezichten kun je vandaag kiezen, en ze kunnen allemaal in jouw bestelling staan. Je merkmodel is de andere route: een gezicht dat alleen voor jouw merk gemaakt is en dat wij bij niemand anders gebruiken.',
-    bmNote: 'Hetzelfde gezicht in elke bestelling maakt je beelden herkenbaar — daarom gebruiken catalogi al jaren hetzelfde model.',
-    bmCta: 'Zo werkt je merkmodel',
+    bmH: ['Kies een model uit onze roster —', 'of claim een gezicht dat uniek is voor jouw merk.'],
+    bmLede: 'Kies direct uit ons actuele model-roster, of ga voor een Brand Model: een exclusief gezicht dat speciaal voor jouw merk is ontwikkeld en door niemand anders wordt gebruikt.',
+    bmNote: 'Een vast gezicht is de slimste manier om visuele herkenbaarheid te bouwen — dat is waarom topmerken al jaren met vaste modellen werken.',
+    bmCta: 'Hoe een eigen merkmodel werkt',
 
 
-    dashH: ['Wat er gebeurt', 'nadat je bestelt.'],
-    dashLede: 'Het scherm dat jij krijgt: waar je bestelling staat, en elk beeld dat erin zit.',
+    dashH: ['Wat kun je verwachten', 'na je bestelling.'],
+    dashLede: 'Volg je orderstatus en bekijk al je beelden direct in de portal.',
     dashPortalK: 'VISUAILS Studio',
     // Zie de noot bij de Engelse dashPortalN.
-    dashPortalN: 'Je komt binnen via een privélink, zonder wachtwoord. Je ziet de status en je leverdata, en daarna de hele galerij: per beeld goedkeuren, aanvinken wat niet goed is en dat als één revisieronde versturen, en elk beeld downloaden in alle drie de formaten, in de beeldverhouding die je bij het bestellen koos.',
+    dashPortalN: 'Eén privélink voor het complete overzicht: live status, beeld voor beeld goedkeuren, aanvinken wat niet klopt en dat als één revisieronde versturen, en downloaden in alle drie de formaten en de beeldverhouding die je koos.',
     dashPortalCta: 'Bekijk VISUAILS Studio',
     svcSoonTag: 'Nog niet klaar',
-    svcSoonFoot: 'Dit is het concept zoals het er nu staat. Wat het kost en hoe je het bestelt liggen nog niet vast, en daarom werkt de knop niet.',
+    svcSoonFoot: 'Dit is het concept zoals het er nu voorstaat. Omdat we de tarieven en het bestelproces nog afronden, is deze service tijdelijk niet actief.',
     svcSoonList: [
       {
         id: 'hooks',
         name: 'Hooks',
-        desc: 'Je product in een korte video, op een format dat we eerder hebben gebouwd.',
+        desc: 'Korte productvideo’s, vormgegeven in een opvallend format dat direct de aandacht trekt in de feed.',
         cta: 'Bekijk Hooks',
         qLabel: 'Wat Hooks is',
         qBody: [
-          ['Je stuurt foto’s', 'Dezelfde set als bij een catalogbestelling: minimaal voorkant en achterkant, plus een detailfoto en een draagfoto als je die hebt. Eén foto is niet genoeg, want het format beweegt om het product heen.'],
-          ['Wij bouwen de video', 'Kort, verticaal, op een format dat we eerder hebben gebruikt. De video loopt door in het beeld dat eronder in de feed staat, waardoor de twee als één beeld lezen.'],
-          ['Een specialist kijkt hem na', `Voordat hij geleverd wordt: het product moet herkenbaar blijven en de naad moet kloppen. Binnen ${turnaround('unattended', 'nl')} staat hij in VISUAILS Studio, waar je hem goedkeurt of zegt wat er niet klopt.`],
-          ['Wat wij verkopen', 'Het format en de uitvoering. Geen bereik — of een post ergens terechtkomt hangt af van het platform en van timing, en die twee zijn niet aan ons om te beloven.'],
+          ['Je stuurt foto’s', 'We hebben een complete set nodig: sowieso voor- en achterkant, plus eventueel een detail- of pasfoto. Met één foto red je het niet, omdat de uiteindelijke weergave om het product heen beweegt.'],
+          ['Wij bouwen de video', 'Korte, verticale video’s die opvallen — gebouwd om je post de beste kans te geven op meer betrokkenheid en nieuwe volgers.'],
+          ['Een specialist kijkt hem na', `Vóór oplevering garanderen we dat het product waarheidsgetrouw is en alle aansluitingen naadloos overlopen. Binnen ${turnaroundShort('unattended', 'nl')} staat het resultaat klaar in VISUAILS Studio voor jouw goedkeuring of feedback.`],
+          ['Wat wij verkopen', 'Wij garanderen het format en de uitvoering — niet het bereik. Of een post viraal gaat hangt af van het platform en de timing, en dat is iets wat we nooit valselijk zullen beloven.'],
         ],
       },
       {
         id: 'editions',
         name: 'Editions',
-        desc: 'Elke maand een set nieuwe beelden, gemaakt op jouw merk — of je nu iets nieuws te fotograferen hebt of niet.',
+        desc: 'Maandelijkse contentdrops afgestemd op jouw merk. Zo blijven je kanalen altijd actief, juist in de periodes tussen nieuwe collecties door.',
         cta: 'Bekijk Editions',
         qLabel: 'Wat Editions is',
         qBody: [
-          ['Wat je krijgt', 'Aan het begin van elke maand een set afgewerkte beelden, klaar om te posten, in VISUAILS Studio. Ze komen binnen of je die maand nu een nieuw product had of niet — en dat is precies de maand waarin een merk niets meer te laten zien heeft.'],
-          ['Gemaakt op jouw merk', 'Opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zodat ze ín je feed passen in plaats van ernaast. Dat is de helft die een stockbibliotheek niet kán, en meteen de reden dat dit er geen is.'],
-          ['Of de gedeelde set', 'Een goedkopere variant die niet alleen voor jou gemaakt is en ook naar andere merken gaat. We zeggen gewoon welke set je krijgt — zoals de gedeelde modellen bij de modelkiezer ook met zoveel woorden gedeeld worden genoemd.'],
-          ['Waar hij binnenkomt', 'Eén kaart naast je saldo en je lijst, en downloaden gaat zoals bij een geleverde bestelling. Geen tweede bibliotheek met een eigen zoekfunctie en eigen mappen.'],
+          ['Wat je krijgt', 'Elke eerste van de maand een nieuwe set beelden in VISUAILS Studio, direct klaar om te posten. Ze arriveren ook als je die maand geen nieuw product hebt — precies op het moment dat de meeste merken door hun content heen zijn.'],
+          ['Gemaakt voor jouw merk', 'Afgestemd op jouw stijl, locaties en merkkleuren, zodat ze naadloos aansluiten op je feed. Dat is precies wat een stockbibliotheek nooit kan bieden — en waarom dit absoluut geen stock is.'],
+          ['Of de gedeelde set', 'Een toegankelijkere optie die niet exclusief voor jouw merk is — dezelfde set gaat ook naar andere merken. We zijn helder over wat gedeeld is, net zoals het gedeelde bestand expliciet vermeld staat bij de modelkiezer.'],
+          ['Waar hij binnenkomt', 'Overzichtelijk geplaatst naast je saldo en besteloverzicht. Downloaden werkt exact zoals je gewend bent van een reguliere order — geen tweede mediabibliotheek met een eigen zoekfunctie of losse mappen.'],
         ],
       },
     ],
 
     dashFoot: [
-      'Zetten wij een bestelling op een andere status, dan schuift jouw tijdlijn meteen mee — ',
+      'Live status-sync: verandert er iets aan onze kant, dan beweegt jouw tijdlijn direct mee — ',
       'zie hoe een bestelling draait',
-      '. Wat we vastleggen en waarom, staat op de ',
+      'Wat we opslaan en waarom, lees je op onze ',
       'AI Act-pagina',
       '.',
     ],
     dashFootNoteTerm: 'de tijdstempel',
-    dashFootNote: 'Elke goedkeuring en elke revisie krijgt een tijdstempel en blijft bij het beeld staan waar hij bij hoort, zodat je later kunt teruglezen wat er wanneer gebeurde.',
+    dashFootNote: 'Elke goedkeuring en revisie krijgt een tijdstempel en blijft gekoppeld aan de foto voor een heldere historie.',
 
-    promiseH: ['We hebben nog weinig reviews.', 'Dus laten we het je eerst zien op je eigen product.'],
-    promiseQuote: `"Ik bekijk elk beeld zelf voordat het naar je toe gaat, en ik doe er liever één over dan dat ik hem verstuur. Nog niet zeker? Bekijk het eerst op je eigen product voor ${sample.price}."`,
+    promiseH: ['Nog geen muur vol reviews —', 'dus verdienen we je vertrouwen op de eerlijke manier.'],
+    promiseQuote: `"Elk beeld krijgt een persoonlijke check voordat het in je portal staat. Niet overtuigd? Bekijk het resultaat op je eigen product voor slechts ${sample.price}."`,
     promiseSign: 'oprichter, VISUAILS',
     // De proefvisual stond hier én in het citaat erboven — hetzelfde aanbod
     // twee keer in één paneel. Drie beloftes, drie verschillende dingen.
     promiseChecks: [
-      ['We vragen het voordat we klaar zeggen', 'Elke bestelling eindigt met dezelfde vraag: kloppen de beelden? Zo niet, dan kijken we er samen naar.'],
-      ['De beelden zijn van jou', 'commercieel te gebruiken in je shop, op marktplaatsen, in advertenties en feeds. Geen licentie per gebruik.'],
+      ['Geen definitieve oplevering zonder jouw check', 'klopt er iets niet? Dan gaan we er samen doorheen tot het perfect is.'],
+      ['Volledige commerciële rechten inbegrepen', 'gebruik je beelden in je webshop, op marktplaatsen, in ads en op social feeds, zonder extra licentiekosten.'],
     ],
     trust: ['Gemaakt in Enschede, NL', 'Ingeschreven bij de KVK', reviewClaim('attended', 'nl'), 'Directe lijn via WhatsApp'],
 
-    obH: 'De dingen die je aan de telefoon zou vragen.',
-    obLede: 'Drie antwoorden waar je bij een leverancier meestal een belletje voor nodig hebt.',
+    obH: 'Direct antwoord op al je vragen.',
+    obLede: 'Drie antwoorden die je normaal gesproken pas in een telefoongesprek krijgt.',
     // DRIE, niet vier: "Van wie zijn de beelden?" staat nu bij de beloftes
     // hierboven, en dus niet twee keer op één pagina.
     ob: [
-      ['En als ze niet goed zijn?', 'We leveren niets automatisch. Een specialist bekijkt eerst elk beeld, en in VISUAILS Studio keur je ze per stuk goed of vraag je een revisie aan.', 'Bekijk VISUAILS Studio', '/portal'],
-      ['Ziet een klant dat het AI is?', 'Ze zijn met AI gemaakt en dat zeggen we gewoon. We maken elk beeld uit foto’s van jouw echte product en werken het met de hand af. Je krijgt van ons het regeltje tekst dat je erbij zet als je ze publiceert.', 'Lees de AI Act-pagina', '/ai-act'],
-      ['Mijn eigen foto’s zijn slecht.', 'Een telefoonfoto bij daglicht op een egale ondergrond is genoeg om te beginnen. De richtlijnen zijn twee pagina’s en gaan vooral over licht.', 'Wat een bruikbare foto is', '/upload-guidelines'],
+      ['Wat als ze niet goed zijn?', 'Altijd handmatig gecontroleerd. Bekijk, keur goed of vraag revisies aan per individuele afbeelding direct in jouw portaal.', 'Bekijk VISUAILS Studio', '/portal'],
+      ['Ziet een klant dat het AI is?', 'We maken elk beeld met AI en daar zijn we gewoon eerlijk over. Dankzij onze specifieke workflows en handmatige verfijning blijven je beelden volledig realistisch en natuurgetrouw. Zo behoud je de binding met je klant en krijg je direct het juiste tekst mee voor publicatie.', 'Lees de AI Act-pagina', '/ai-act'],
+      ['Mijn foto’s zijn van lage kwaliteit.', 'Een goed belichte telefoonfoto op een neutrale ondergrond is al genoeg om te beginnen. Onze uitgebreide richtlijnen van twee pagina’s focussen op de ideale belichting.', 'Wat maakt een foto bruikbaar?', '/upload-guidelines'],
     ],
 
-    faqLede: 'Al het andere — levering, revisies, rechten, wat we met je foto’s doen — staat voluit op één pagina.',
+    faqLede: 'Al het andere — levering, revisies, rechten en verwerking van je foto’s — staat overzichtelijk op één pagina.',
     faqCta: 'Alle vragen, beantwoord',
 
-    closeH: 'Eerst één product van jezelf, als catalogset of carousel.',
-    closeLede: `${sample.deliverable}, gemaakt van je eigen foto’s en door een specialist nagekeken — voor ${sample.feeNote}. Eén per bedrijf.`,
+    closeH: 'Begin met een van je eigen producten — geleverd als catalogset of lifestyle-carousel.',
+    closeLede: `${sample.deliverable} · Gemaakt op basis van jouw eigen foto · Gecontroleerd door een specialist · ${sample.feeNote} (${sample.unit})`,
     closeCta: 'Vraag je proefvisual aan',
     closeAlt: 'Of start meteen een bestelling',
   },
 };
 
 const c = COPY[lang];
+
+/* ── DE HERO TOONT ALLEEN WAT JE KUNT BESTELLEN — 25 AUGUSTUS 2026 ──────────
+   Lucas, met een schermafdruk van het eerste scherm erbij: *"misschien kan deze
+   homepage nu te heftig voelen."*
+
+   `heroSlides` had zeven ingangen: vijf diensten die te bestellen zijn, plus
+   Hooks en Editions met `soon: true`. In de kaartrij onder de hero stonden die
+   twee dus in het EERSTE scherm, allebei met NOG NIET KLAAR erop. Twee van de
+   zeven kaarten vertelden een nieuwe bezoeker dat iets er niet is, voordat hij
+   één ding had gezien dat er wel is.
+
+   ZE VERDWIJNEN NIET VAN DE PAGINA, en dat is de hele reden dat dit mag. Ze
+   staan verderop in `hv-svc-rail`, uit `svcSoonList`, met hun eigen uitleg, hun
+   eigen tag en de uitgeschakelde knop — de plek die voor ze gemaakt is en die
+   ongemoeid blijft. Wat hier weggaat is hun TWEEDE optreden, bovenaan.
+
+   FILTEREN EN NIET SCHRAPPEN uit de tabel. `heroSlides` voedt drie dingen: de
+   <img>-stapel, de kaartrij, en via `data-note` de wisselende regel. De twee
+   staan achteraan, dus na dit filter lopen de indexen 0 t/m 4 ongewijzigd door
+   naar KAART_FOTO[i] en SLIDE_ICON[i]. Het carrouselscript telt zijn dia's met
+   querySelectorAll en gaat vanzelf van zeven naar vijf.
+
+   ⚠ DIE INDEX-KOPPELING IS DE ZWAKKE PLEK, niet dit filter. Zet iemand ooit een
+   `soon`-dia ergens in het MIDDEN van de tabel, dan blijft dit filter goed en
+   verschuiven KAART_FOTO en SLIDE_ICON stil één op. Komt dat voor, dan hoort de
+   foto en het icoon in de dia zelf te gaan staan — niet in een lijst ernaast. */
+const heroSlides = c.heroSlides.filter((sl) => !sl.soon);
 const nl = lang === 'nl';
 
 // De vijf FAQ-vragen die hier werden uitgekozen (FAQ_GROUPS / FAQ_PICK) zijn
@@ -1329,7 +1351,7 @@ const nl = lang === 'nl';
       eerste seconde ziet. De andere vier staan op lazy: ze mogen de eerste
       render niet vertragen voor een dia die pas na zeven seconden komt. */}
   <div class="hv-hero-bg rand-los-voet">
-    {c.heroSlides.map((sl, i) => (
+    {heroSlides.map((sl, i) => (
       <img
         src={i === 0 ? '/img/brand-car-lens.webp' : SERVICE_IMG[sl.img].src}
         {/* ── "undefined" STOND HIER IN DE ALT — 23 AUGUSTUS 2026 ────────────
@@ -1377,8 +1399,12 @@ const nl = lang === 'nl';
           van er middenin. De carrousel loopt vanzelf door, dus onderbreken zou
           hier elke zeven seconden gebeuren.
 
-          Hij staat er `hidden` in: dia 1 heeft geen regel, en zonder script
-          verandert er niets aan deze hero — dan is er ook niets te zeggen. */}
+          ── "DIA 1 HEEFT GEEN REGEL" KLOPTE NIET — rechtgezet 25 augustus 2026.
+          `heroSlides[0]` heeft wél een `note` ("Eén bestelling, alle beelden in
+          dezelfde huisstijl.") en die staat ook op het scherm. De reden dat dit
+          element `hidden` in de bron staat is een andere, en de enige die telt:
+          zonder script wisselt er niets, en dan zet zetNoot() hem ook nooit —
+          een lege <p> tonen zou dan een gat onder de kop zijn. */}
       <p class="hv-slide-note" data-hero-note aria-live="polite" hidden>
         <span data-hero-note-t></span>
         {/* GEEN href="#" IN DE BRON. Deze link krijgt zijn adres en zijn tekst
@@ -1394,23 +1420,36 @@ const nl = lang === 'nl';
         <a href={lp('/start')} class="btn btn-primary btn-lg">{c.ctaStart}</a>
         <a href={lp('/test-sample')} class="btn btn-ghost btn-lg" aria-describedby="hv-cta-note">{c.ctaSample}</a>
       </div>
-      {/* aria-describedby en niet in het label: een schermlezer krijgt "Proefvisual
-          aanvragen · € 1" als naam — kort en bruikbaar in een linklijst — en de
-          voorwaarden erachteraan als beschrijving. Alles in het label proppen
-          maakt de naam onbruikbaar; het weglaten maakt de voorwaarden onhoorbaar. */}
-      <p class="hv-cta-note" id="hv-cta-note">{c.ctaSampleNote}</p>
-      {/* The proof line sits INSIDE the hero copy, under the buttons, on the
-          photograph — no bar behind it. It is the last thing read before the
-          click and it is placed where the eye already is, rather than in a
-          rail at the foot of the fold that has to be found. */}
-      <ul class="hv-proof">
-        {c.proof.map((p) => (
-          <li>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5" /></svg>
-            <span>{p}</span>
-          </li>
-        ))}
-      </ul>
+      {/* ── ÉÉN REGEL WAAR ER TWEE BLOKKEN STONDEN — 25 AUGUSTUS 2026 ────────
+          Hier stonden de voorwaardenregel van de proefvisual (twee regels) en
+          daaronder `hv-proof`: drie vinkjes op een rij. Samen waren dat twee van
+          de vijf blokken in deze kolom, en de kolom was met 808px het zwaarste
+          onderdeel van een hero die binnen het eerste scherm moet passen.
+
+          ── WAAROM DE VINKJES WEG KONDEN ────────────────────────────────────
+          Twee van de drie stonden verderop op DEZELFDE pagina al voluit.
+          `reviewClaim` komt terug in `trust`, en de licentieregel staat in
+          `promiseChecks` als "commercieel te gebruiken in je shop, op
+          marktplaatsen, in advertenties en feeds". Een bezoeker die doorscrolt
+          las ze dus twee keer; een bezoeker die dat niet doet, leest ze één keer
+          in de kortste vorm die er is. Alleen de leverbelofte was uniek voor de
+          hero — en dat is meteen de sterkste van de drie, dus die blijft, als
+          gewone regel in plaats van als vinkjesrij.
+
+          Dit is ook wat de noot bij de sectievolgorde bovenaan dit bestand al
+          vroeg: *"the hero carries a one-line anchor with a real figure."* Eén
+          regel. Dat was het ontwerp; het waren er vijf geworden.
+
+          ── DE VOORWAARDEN ZIJN NIET WEG, ALLEEN NIET MEER IN BEELD ─────────
+          Ze werden op smalle én op lage vensters al weggeknipt door twee aparte
+          media-queries — de site had ze daar dus al optioneel verklaard. Nu
+          altijd, en met dezelfde afkniptruc die daar stond: `aria-describedby`
+          op de knop wijst hiernaar, dus hij MOET in de toegankelijkheidsboom
+          blijven. `display: none` zou de beschrijving weghalen bij precies de
+          bezoeker die hem nodig heeft. Voluit staan ze op /test-sample, en de
+          knop noemt het bedrag zelf. */}
+      <p class="hv-cta-claim">{c.heroClaim}</p>
+      <span class="hv-sr" id="hv-cta-note">{c.ctaSampleNote}</span>
     </div>
 
   </div>
@@ -1453,12 +1492,13 @@ const nl = lang === 'nl';
           terug en dat is een fout — de bouw viel om met "Expected )" op een
           regel honderd hoger, waar niets aan de hand was. Dezelfde val als de
           Astro-comment tussen de props van <Compare> op 19 augustus. */}
-      {c.heroSlides.map((sl, i) => (
+      {heroSlides.map((sl, i) => (
         /* De foto reist als custom property mee en niet als <img>: hij is
            decoratie, de naam van het kaartje zegt al wat erop staat, en een
            achtergrond laadt met lagere prioriteit dan het herobeeld. Zie de kop
            bij KAART_FOTO. */
-        <div class={`hv-slide-card${sl.soon ? ' is-soon' : ''}`} style={`--kaart-foto:url('${KAART_FOTO[i]}')`}>
+        <div class={`hv-slide-card${sl.soon ? ' is-soon' : ''}`}
+             style={`--kaart-foto:url('${KAART_FOTO[i]}'); --stap:${i}`}>
           <a class="hv-slide-card-main"
              id={`hv-tab-${i}`}
              href={lp(sl.href || '/start')}
@@ -1843,7 +1883,7 @@ const nl = lang === 'nl';
     places that were not next to each other, and a reader who wanted the number
     had to assemble it from all four:
 
-      · "One price per product. It falls as you add." (was here, 123 words) —
+      · "Simple product pricing with built-in volume discounts: the more assets you add, the lower your unit cost." (was here, 123 words) —
         its heading and its lede SURVIVE as this band's. The 14-product tile is
         one of the three worked totals below. The 48-hour tile moved to the
         planning band at 7c, which is the band about the window; it was stating
@@ -3448,35 +3488,31 @@ var vOpruim = (function () {
   .hv-hero.is-live .hv-hero-copy { padding-block: 1.5rem clamp(1rem, 2vh, 1.6rem); }
   .hv-hero.is-live .hv-hero-foot { padding-bottom: clamp(1rem, 2vh, 1.6rem); }
 
-  /* En op een LAAG venster is de padding niet genoeg. Bij 800px hoog is het
-     kopblok van dia 1 nog altijd 746px: drie regels van 96px zijn samen al 290.
-     Daar moet de letter kleiner, niet de tekst korter — een 13-inch laptop is
-     geen reden om de bewijsregel te schrappen.
+  /* ── TWEE VAN DE VIER REDDINGEN ZIJN WEG — 25 AUGUSTUS 2026 ─────────────
+     Hier stonden twee media-queries die allebei hetzelfde deden: de
+     voorwaardenregel wegknippen, één keer op een laag venster en één keer op
+     een telefoon. Plus een derde in `.hv-proof li` voor 150% tekstgrootte. Drie
+     voorwaardelijke ontsnappingen voor één blok dat te groot was.
 
-     Op hoogte en niet op breedte, want dit gaat over wat er in het eerste
-     scherm past en niet over hoe breed de kolom is. Een breed en laag venster
-     (een 21:9-monitor, een browser met veel balken) heeft precies hetzelfde
-     probleem als een kleine laptop. */
+     Dat blok is nu weg — zie de noot bij `hv-cta-claim` in de markup — dus de
+     regels die het wegknipten hebben geen doel meer. `.hv-sr` doet permanent
+     wat zij per venster deden, en doet het voor iedereen hetzelfde.
+
+     ── WAT WEL BLIJFT, EN WAAROM DAT GEEN REDDING IS ──────────────────────
+     De <h1> wordt op een laag venster nog steeds kleiner. Dat is geen noodgreep
+     voor een te vol blok maar gewone responsieve typografie: drie regels van
+     96px zijn samen 290px, en op een 13-inch laptop hoort een display-letter
+     mee te schalen met de hoogte die er is. Hij zou hier ook staan als deze
+     kolom altijd al vier blokken had gehad.
+
+     ⚠ EERLIJK OVER WAT DE INGREEP OPLEVERT. De voorwaardenregel en de vinkjes
+     waren samen circa 92px; de claimregel die ervoor terugkomt is er circa 34.
+     De kolom wordt dus zo'n 58px korter, niet 200. Op 800px hoog is dat niet
+     genoeg om deze query overbodig te maken, en daarom staat hij er nog. Wie
+     hem écht weg wil, moet aan de <h1> of aan de wisselende regel — en dat zijn
+     allebei grotere beslissingen dan opruimwerk. */
   @media (max-height: 880px) and (min-width: 48rem) {
     .hv-hero.is-live .hv-h1 { font-size: clamp(2.6rem, 5.4vw, 4rem); }
-    .hv-hero.is-live .hv-proof { gap: .3rem .9rem; }
-    .hv-hero.is-live .hv-cta-note { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  }
-  /* ── EN OP EEN TELEFOON OOK ──────────────────────────────────────────────
-     Lucas: *"ook de telefoon site even fixen, niet alles ziet proportioneel
-     goed uit."* Op 390 was deze voorwaardenregel vier regels hoog, tussen de
-     knop en de drie vinkjes in, en daarmee het grootste stuk hoogte van de
-     hero dat geen kop, knop of beeld is. Hij staat voluit op /test-sample en
-     de knop zegt het bedrag er zelf bij.
-
-     WEGGEHAALD VAN HET SCHERM, NIET UIT DE PAGINA. Hier stond `display: none`,
-     en dat is fout bij een element waar een `aria-describedby` naar wijst: dan
-     verdwijnt de beschrijving ook voor wie hem juist nodig heeft. Met de
-     klassieke afkniptruc blijft de tekst in de toegankelijkheidsboom en hoort
-     een schermlezer nog steeds "Proefvisual aanvragen · € 1 — stuur dezelfde
-     foto’s als bij een gewone bestelling…". */
-  @media (max-width: 30rem) {
-    .hv-hero.is-live .hv-cta-note { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   }
   /* Het raster met vijf overlappende tekstblokken is weg — er is er nog één.
      `.hv-hero-inner` blijft een grid omdat de foto’s er ook in liggen. */
@@ -3486,9 +3522,10 @@ var vOpruim = (function () {
   /* ── DE REGEL DIE MEEWISSELT ────────────────────────────────────────────
      Eén regel, onder de kop, in de zachtere inktstap zodat hij een bijschrift
      is en geen tweede belofte. Vaste minimumhoogte: zonder dat springt de hele
-     hero op en neer bij elke dia, want dia 1 heeft geen regel en de andere
-     wel — en een kop die om de zeven seconden 28 pixels verschuift, is het
-     tegenovergestelde van rustig. */
+     hero op en neer bij elke dia, want de regels verschillen per dia in lengte
+     — en een kop die om de zeven seconden 28 pixels verschuift, is het
+     tegenovergestelde van rustig. (Hier stond "dia 1 heeft geen regel"; dat is
+     op 25 augustus 2026 rechtgezet — hij heeft er wel een.) */
   .hv-slide-note {
     margin: .9rem 0 0;
     /* Twee regels gereserveerd, ook als er één staat. Gemeten zonder deze
@@ -3571,7 +3608,27 @@ var vOpruim = (function () {
     min-height: clamp(4.6rem, 5.4vw, 5.4rem);
     border: 1px solid rgb(255 255 255 / .12);
     border-radius: var(--r-md);
-    background: rgb(0 0 0 / .46);
+    /* ── NIET DONKERDER MAAR DOORZICHTIGER — 25 AUGUSTUS 2026 ─────────────
+       Lucas: *"niet alleen donkerder maken maar ook doorzichtiger maar wel
+       leesbaar."*
+
+       De eerste poging dimde de kaart met `opacity`. Die werkte niet, en om
+       twee redenen die allebei de moeite van het onthouden waard zijn. Ten
+       eerste animeert de binnenkomst hieronder `opacity` met `fill-mode: both`,
+       en een ANIMATIE WINT IN DE CASCADE VAN EEN GEWONE DECLARATIE — de kaart
+       bleef na afloop op 1 staan en de dimregel kwam er nooit doorheen. Ten
+       tweede zou het ook te zwak zijn geweest: opacity blendt naar de
+       achtergrond, en die is hier bijna even zwart als de kaart zelf.
+
+       Dus is het nu een verschil in MATERIAAL en niet in tint. Niet aan de
+       beurt is glas — deze waarde, met de blur uit het @supports-blok verderop
+       en het miniatuur bijna weg. Aan de beurt is een dicht paneel. Dat leest
+       in één blik, ook zonder twee kaarten naast elkaar te leggen.
+
+       DEZE WAARDE IS DE VARIANT ZONDER BLUR en staat daarom hoger dan de
+       waarde in het @supports-blok. Zonder blur is er niets dat de foto
+       eronder verzacht, dus moet het zwart dat werk doen. */
+    background: rgb(0 0 0 / .30);
     color: var(--paper-on-dark);
     font-size: .78rem; font-weight: 700; line-height: 1.3;
     transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
@@ -3591,9 +3648,15 @@ var vOpruim = (function () {
     position: absolute; inset: 0;
     background-image: var(--kaart-foto);
     background-size: cover; background-position: center;
-    opacity: .18;
+    opacity: .07;
+    /* De kleur is het sterkste onderscheid dat deze rij te geven heeft, en het
+       kost niets: alleen de kaart die aan de beurt is, staat in kleur. Op een
+       fotogedreven site hoort de foto dat te zeggen en niet een randtint.
+       `--sat` staat op de kaart zodat hover en de actieve staat hem allebei
+       met één waarde terugzetten. */
+    filter: saturate(var(--sat, .15));
     pointer-events: none;
-    transition: opacity var(--dur-2) var(--ease);
+    transition: opacity var(--dur-2) var(--ease), filter var(--dur-2) var(--ease);
   }
   /* ALLEEN DE TWEE LINKS, en niet `> *`. Die bredere selector raakte ook de
      voortgangsbalk, en `position: relative` maakt van een absoluut geplaatst
@@ -3625,11 +3688,38 @@ var vOpruim = (function () {
     transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
   }
   .hv-slide-card-go:hover, .hv-slide-card-go:focus-visible { color: var(--accent); background: rgb(255 255 255 / .07); }
+  /* ── HET PIJLTJE SCHUIFT, EN DAT IS GEEN VERSIERING ─────────────────────
+     Dit is een EIGEN link naast de grote: de kaart wisselt de dia, het pijltje
+     gaat naar de dienstpagina. Dat onderscheid is bewust gebouwd — zie de noot
+     bij de markup — en het was tot nu toe onzichtbaar tot je er al op stond.
+     Een pijl die naar rechts schuift, zegt precies wat hij doet.
+
+     De span binnenin en niet de link zelf, want de link draagt de achtergrond
+     en die moet blijven staan waar hij staat. */
+  .hv-slide-card-go > span { display: block; transition: transform var(--dur-1) var(--ease); }
+  .hv-slide-card-go:hover > span, .hv-slide-card-go:focus-visible > span { transform: translateX(3px); }
   @supports (backdrop-filter: blur(6px)) {
-    .hv-slide-card { background: rgb(0 0 0 / .28); backdrop-filter: blur(8px); }
+    /* Met blur mag het glas veel dunner: de blur doet het werk dat het zwart
+       anders moet doen, en dan zie je door de kaart heen DAT er iets ligt
+       zonder te gaan lezen wat. */
+    .hv-slide-card { background: rgb(0 0 0 / .13); backdrop-filter: blur(8px); }
   }
-  .hv-slide-card:has(.hv-slide-card-main:hover), .hv-slide-card:has(.hv-slide-card-main:focus-visible) { background: rgb(0 0 0 / .60); border-color: rgb(255 255 255 / .28); }
-  .hv-slide-card:has(.hv-slide-card-main:hover)::before { opacity: .30; }
+  /* ── HOVER HEEFT VOORTAAN EEN EIGEN TAAL — 25 AUGUSTUS 2026 ─────────────
+     Hier zat een echte verwarring in. Hover gaf achtergrond .60, foto .30 én
+     een limoen pictogram; de actieve kaart gaf .58, foto .34 en een limoen
+     pictogram. Het verschil was een randtint en het balkje — dus een kaart
+     AANWIJZEN liet hem eruitzien alsof hij AAN stond.
+
+     Nu heeft elke toestand één eigen middel: het glas zegt "deze niet", het
+     limoen zegt "deze wel", en hover geeft alleen de kleur en de titel terug.
+     Het limoen blijft gereserveerd voor de kaart die echt aan de beurt is. */
+  .hv-slide-card:has(.hv-slide-card-main:hover), .hv-slide-card:has(.hv-slide-card-main:focus-visible) {
+    background: rgb(0 0 0 / .58); border-color: rgb(255 255 255 / .28); --sat: 1;
+  }
+  .hv-slide-card:has(.hv-slide-card-main:hover)::before,
+  .hv-slide-card:has(.hv-slide-card-main:focus-visible)::before { opacity: .30; }
+  .hv-slide-card:has(.hv-slide-card-main:hover) .hv-slide-card-t,
+  .hv-slide-card:has(.hv-slide-card-main:focus-visible) .hv-slide-card-t { color: var(--paper-on-dark); }
   /* ── DE ACTIEVE KAART, ZONDER DE SCHREEUW — 23 AUGUSTUS 2026 ─────────────
      Lucas: *"misschien ook de knoppen iets subtieler en minder heftig maken."*
 
@@ -3643,7 +3733,10 @@ var vOpruim = (function () {
      de tijd wegtelt. Eén ding schreeuwt, en dat is het ding dat iets zegt. */
   .hv-slide-card:has([aria-selected='true']) {
     border-color: rgb(198 241 0 / .42);
-    background: rgb(0 0 0 / .58);
+    /* Dicht, waar de andere glas zijn. Zie de noot bij de achtergrond van
+       .hv-slide-card: het onderscheid zit in het materiaal. */
+    background: rgb(0 0 0 / .62);
+    --sat: 1;
   }
   .hv-slide-card:has([aria-selected='true'])::before { opacity: .34; }
   .hv-slide-card-i {
@@ -3656,8 +3749,10 @@ var vOpruim = (function () {
     color: rgb(255 255 255 / .55);
     transition: color var(--dur-1) var(--ease);
   }
-  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-i,
-  .hv-slide-card:has(.hv-slide-card-main:hover) .hv-slide-card-i { color: var(--accent); }
+  /* Alleen de kaart die aan de beurt is. Hover stond hier ook en is eruit —
+     zie de noot bij hover hierboven: het limoen is het teken van "deze wel" en
+     dat mag hover niet lenen. */
+  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-i { color: var(--accent); }
 
   /* Het label op de twee die nog niet klaar zijn. Zelfde woord als op de kaarten
      verderop op deze pagina (`svcSoonTag`), en met opzet gedempt: het is een
@@ -3672,7 +3767,20 @@ var vOpruim = (function () {
   /* `.hv-slide-card-row` en `.hv-slide-card-x` zijn weg met het splitsen van
      het kaartje: de rij bevatte de titel én de chevron, en de chevron is nu een
      eigen link naast de titel (.hv-slide-card-go hierboven). */
-  .hv-slide-card-t { min-width: 0; }
+  /* ── DE TITEL DIMT ÉÉN STAP EN NOOIT TWEE ──────────────────────────────
+     Dit is de grens van "doorzichtiger maar wel leesbaar". --paper-on-dark
+     tegenover --paper-soft-on-dark is één inktstap en blijft ruim boven de
+     contrasteis; de stap daaronder zakt erdoorheen bij tekst van deze grootte
+     en dit is tekst van .78rem.
+
+     Wil de rij ooit nóg verder naar de achtergrond, dan gaat dat in de
+     achtergrond van de kaart en in de dekking van het miniatuur — in het glas
+     dus, niet in de letter. Dat is de regel die npm run test:a11y bewaakt en
+     die deze band al eerder heeft moeten leren: zie de noot bij ::before over
+     waarom het miniatuur op 18% stond. */
+  .hv-slide-card-t { min-width: 0; color: var(--paper-soft-on-dark);
+    transition: color var(--dur-2) var(--ease); }
+  .hv-slide-card:has([aria-selected='true']) .hv-slide-card-t { color: var(--paper-on-dark); }
 
   /* De voortgangsbalk. Hij zit ONDERIN de kaart en niet eronder, zodat de rij
      zijn hoogte houdt als hij verschijnt — vandaar de extra 3px padding-bottom
@@ -3820,72 +3928,120 @@ var vOpruim = (function () {
   .hv-cta { display: flex; gap: var(--gap-actions); flex-wrap: wrap; margin-top: clamp(1.6rem, 3vw, 2.2rem); }
   @media (max-width: 560px) { .hv-cta > .btn { width: 100%; } }
 
-  /* The proof line. No ground of its own — it sits on the photograph, lit by
-     the hero scrim that was already there for the headline.
+  /* ── DE ENE REGEL ONDER DE KNOPPEN ───────────────────────────────────────
+     Was `.hv-cta-note`, een voetnoot met de voorwaarden van de proefvisual.
+     Draagt nu de leverbelofte — het enige van de drie vinkjes dat niet verderop
+     op deze pagina al staat. Zie de noot in de markup.
 
-     The two coloured underscores went with the bar. They were doing a job the
-     bar created: three columns of identical grey needed something to say which
-     fact mattered, so a delivery window got an amber rule and a review claim a
-     green one. A checked list needs neither — the tick IS the emphasis, and
-     three of them in the accent is one signal repeated rather than two signals
-     competing. Colour spent on a decoration is colour not available for the
-     button six pixels above it.
+     KLEUR ONVERANDERD. --paper-soft-on-dark is de tint die op deze foto met het
+     bestaande scrim door de contrasteis komt. Een tint dimmer "omdat het klein
+     is" zakt daar onmiddellijk doorheen, en kleine tekst op een foto is precies
+     waar dat niet mag.
 
-     align-items: flex-start on the row, not center: the third line wraps to
-     two on a laptop and a centred tick would then float beside the gap between
-     them instead of marking the first word. */
-  /* STACKED, not a wrapping row, at every width. Laid out as a row it fell
-     2 + 1 on a 1440px screen — the copy column is capped at 40rem and the
-     three lines total wider than that — and a list that wraps unevenly reads
-     as an accident rather than as a list. Three ticks down the left margin is
-     also the shape a reader already knows: it is a checklist, which is exactly
-     the claim being made. */
-  /* De notitie onder de knoppen. Kleiner dan de prooflijst, maar in DEZELFDE
-     kleur — --paper-soft-on-dark is de tint die op deze foto met het bestaande
-     scrim gemeten door de contrasteis komt. Een tint dimmer "omdat het een
-     voetnoot is" zakt daar onmiddellijk door, en kleine tekst op een foto is
-     precies waar dat niet mag.
+     GROTER DAN DE OUDE VOETNOOT: .875rem in plaats van .8125rem, de maat die de
+     vinkjes hadden. Dit is geen kleine lettertjes meer maar een belofte, en het
+     is het laatste wat er gelezen wordt voor de klik.
 
-     De marge is klein aan de bovenkant en ruim aan de onderkant: dat is wat de
-     regel aan de knoppen vastplakt en van de prooflijst losmaakt. Nabijheid doet
-     hier het groeperingswerk, geen lijn en geen kader. */
-  .hv-cta-note { margin: .8rem 0 0; max-width: 52ch;
-    font-size: .8125rem; line-height: 1.5; text-wrap: pretty;
+     De marge is klein aan de bovenkant: dat is wat de regel aan de knoppen
+     vastplakt in plaats van hem een eigen blok te laten worden. Nabijheid doet
+     het groeperingswerk, geen lijn en geen kader. */
+  .hv-cta-claim { margin: .85rem 0 0; max-width: 52ch;
+    font-size: .875rem; line-height: 1.5; text-wrap: pretty;
     color: var(--paper-soft-on-dark); }
 
-  /* ── DRIE OP ÉÉN REGEL ────────────────────────────────────────────────────
-     Lucas, 20 augustus: *"mogen de 3 vinkjes achter elkaar met genoeg ruimte
-     ertussen zodat de homepage niet zo lang voelt."* Onder elkaar was dit blok
-     76px; naast elkaar is het 20 en verdwijnen er twee regels uit het eerste
-     scherm.
+  /* ── ALLEEN VOOR EEN SCHERMLEZER ─────────────────────────────────────────
+     De klassieke afkniptruc, en met opzet niet `display: none`: `aria-describedby`
+     op de proefvisualknop wijst naar dit element, en `display: none` haalt het
+     uit de toegankelijkheidsboom. Dan hoort juist de bezoeker die de voorwaarden
+     nodig heeft, ze niet.
 
-     `flex-wrap: wrap` en niet `nowrap`: de Nederlandse regels zijn langer dan
-     de Engelse en een taal die net niet past hoort af te breken, niet uit de
-     kolom te lopen. Onder de 48rem valt hij vanzelf terug op één per regel
-     omdat er dan niets meer naast elkaar past.
+     `white-space: nowrap` hoort erbij: zonder dat kan een lange tekst in een
+     doos van 1px per WOORD afbreken, en sommige schermlezers lezen dat dan als
+     losse regels voor. */
+  .hv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; }
 
-     De ruimte tussen is 1.6rem en de ruimte eronder .55rem: horizontaal ruimer
-     dan verticaal, want dat is wat drie losse dingen naast elkaar laat lezen in
-     plaats van als één zin met vinkjes erin. */
-  .hv-proof { list-style: none; margin: clamp(1.05rem, 2.2vw, 1.5rem) 0 0; padding: 0;
-    display: flex; flex-direction: row; flex-wrap: wrap; gap: .55rem 1.6rem; }
-  /* `flex: 0 1 auto` en niet `0 0 auto`: een vinkje mag krimpen als de regel
-     te smal wordt. Met `0 0` kan het item alleen nog buiten de rij vallen, en
-     dat gebeurde bij een grotere lettergrootte — gemeten op 390px met de tekst
-     op 150 procent liep "Yours to use, anywhere" de rechterrand uit en werd
-     door de `overflow: hidden` van de hero afgesneden. Met krimpruimte breekt
-     de tekst binnen het item af en blijft alles staan waar het hoort. */
-  .hv-proof li { flex: 0 1 auto; min-width: 0; display: flex; align-items: flex-start; gap: .45rem;
-    font-size: .875rem; line-height: 1.4; color: var(--paper-soft-on-dark); }
-  .hv-proof svg { flex: 0 0 auto; width: 1.05em; height: 1.05em; margin-top: .16em;
-    fill: none; stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  /* Hier stonden `.hv-proof`, `.hv-proof li` en `.hv-proof svg` — de drie
+     vinkjes onder de knoppen, met de motivering om ze naast elkaar te zetten en
+     de krimpregel die ze bij 150% tekstgrootte binnen de kolom hield. Het blok
+     is op 25 augustus 2026 uit de hero gehaald; zie de noot bij `hv-cta-claim`
+     in de markup voor waarom twee van de drie claims konden vervallen. */
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     DE HERO KOMT OP VOLGORDE BINNEN — 25 AUGUSTUS 2026
+     ═══════════════════════════════════════════════════════════════════════
+
+     Lucas: *"misschien een animatie bedenken voor de knoppen zodat ze niet
+     allemaal tegelijk zichtbaar zijn."*
+
+     ── DE KOP EN DE FOTO BEWEGEN NIET MEE, EN DAT IS DE KERN ────────────────
+
+     Die twee bepalen samen de Largest Contentful Paint, en een element op
+     `opacity: 0` telt NIET als geverfd. De kop laten infaden verschuift die
+     meting dus met de volle lengte van de animatie — op precies het beeld
+     waarvoor `fetchpriority="high"` en `decoding="sync"` in de markup staan.
+     Hier iets aan toevoegen is de duurste animatie op de hele site.
+
+     Het is bovendien beter ontwerp: de belofte hoort er in beeld één te staan,
+     en de rest bouwt zich eronder op.
+
+     ── WAAROM `.js` EN NIET `.is-live` ─────────────────────────────────────
+
+     `.js` staat er vóór de eerste verf (het inline-script in de <head> van
+     Layout.astro) en gaat er weer AF als interactions.js niet komt opdagen.
+     Geen script, geen verbergen, gewoon een zichtbare hero — dat is dezelfde
+     poort die de scrollonthulling in global.css gebruikt, en om dezelfde reden.
+
+     `.is-live` zou hier fout zijn, twee keer. Die klasse komt pas als de
+     carrousel initialiseert, dus de knoppen zouden eerst te ZIEN zijn en dan
+     wegspringen om alsnog binnen te komen. En bij een zachte navigatie terug
+     naar de homepage komt hij soms helemaal niet — dat staat als gemeten
+     gedrag in de noot bij het carrouselscript.
+
+     ── DE WISSELENDE REGEL DOET NIET MEE ───────────────────────────────────
+
+     `.hv-slide-note` staat `hidden` in de bron en wordt door zetNoot() zichtbaar
+     gemaakt. Een animatie op een element met `display: none` draait niet, dus
+     die zou pas starten op het moment dat het script hem toont — een ander
+     moment dan de rest, en niet te voorspellen. Hij blijft daarom zoals hij was.
+
+     ── DE TIJDEN ───────────────────────────────────────────────────────────
+
+     Kolom 80ms per stap, rij 55ms. De rij loopt sneller met opzet: vijf kaarten
+     op 80ms duren in hun eentje al 400ms en dan wordt het een optocht. Op 55ms
+     leest de rij als één veeg, en dat klopt ook — de rij is één ding en de twee
+     knoppen zijn twee beslissingen. Alles staat binnen 680ms stil.
+
+     De stap per kaart komt uit `--stap` op de kaart zelf, gezet in de map. Niet
+     uit nth-child: dan krijgt een zesde dienst stil geen vertraging. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* EIGEN KEYFRAMES EN NIET `vis-rise` UIT global.css. Die bestaan daar en
+       doen exact dit, maar dit is een SCOPED <style> van Astro: een naam die
+       hier alleen wordt aangeroepen en niet gedefinieerd, is precies het soort
+       verwijzing dat door de scoping kan glippen. Twee regels dupliceren is
+       goedkoper dan een animatie die in de build stil niets doet. */
+    .js .hv-hero .hv-cta > .btn,
+    .js .hv-hero .hv-cta-claim { animation: hv-in var(--dur-2) var(--ease-out-expo) both; }
+    .js .hv-hero .hv-cta > .btn:nth-child(1) { animation-delay: 0ms; }
+    .js .hv-hero .hv-cta > .btn:nth-child(2) { animation-delay: 80ms; }
+    .js .hv-hero .hv-cta-claim { animation-delay: 160ms; }
+
+    .js .hv-hero .hv-slide-card {
+      animation: hv-in-far var(--dur-2) var(--ease-out-expo) both;
+      animation-delay: calc(220ms + var(--stap, 0) * 55ms);
+    }
+  }
+  @keyframes hv-in     { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes hv-in-far { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
   @media (max-width: 760px) {
     /* The WhatsApp launcher is position: fixed at bottom-left and the hero is
        100svh, so on a phone the launcher and the foot of the hero occupy the
        same pixels on first paint — it used to sit on top of the third fact in
-       the plinth and it would sit on the third proof line now. 48px launcher +
-       its 12px inset + air. Measured, not padded by feel. */
+       the plinth, and after that on the third proof line. Both are gone since
+       25 August 2026; what sits there now is the claim line under the buttons,
+       and it needs the same clearance. 48px launcher + its 12px inset + air.
+       Measured, not padded by feel. */
     .hv-hero-copy { padding-bottom: 5.25rem; }
   }
 
