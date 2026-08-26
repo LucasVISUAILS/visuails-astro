@@ -15,10 +15,17 @@
  *     separately with a token configured — 0 requests before an answer, 0
  *     after a refusal, 1 after a yes. */
 import { chromium } from 'playwright';
+import { existsSync } from 'node:fs';
 
 /* Needs a preview server on :4321 —  npm run build && npm run preview
    and a browser once —              npx playwright install chromium */
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+/* ── ZIE scripts/lib/browserpad.mjs — 26 augustus 2026 ──────────────────────
+   Dit was een hard pad zonder controle, en dus een toets die op Lucas' machine
+   omvalt op de browser in plaats van op de site. De andere browsertoetsen
+   (a11y, homerail, pipeline-steps, upload-retry, zachte-navigatie) hebben
+   allemaal al een existsSync-vangnet; deze was de enige zonder. */
+const EXECUTABLE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const b = await chromium.launch(existsSync(EXECUTABLE) ? { executablePath: EXECUTABLE } : {});
 
 const results = [];
 const check = (name, got, expect) => {

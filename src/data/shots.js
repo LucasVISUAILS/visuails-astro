@@ -111,7 +111,7 @@ export const SHOTS = [
     },
     buys: {
       en: 'How it actually hangs on a body — the drop of the shoulder, where the hem lands, how oversized oversized really is. Without it the on-model shot is our best reading of a flat photo.',
-      nl: 'Hoe het echt op een lichaam valt — de val van de schouder, waar de zoom eindigt, hoe oversized oversized werkelijk is. Zonder deze is het on-model beeld onze beste inschatting van een platte foto.',
+      nl: 'Hoe het echt op een lichaam valt — de val van de schouder, waar de zoom eindigt, hoe oversized oversized werkelijk is. Zonder deze is de on-model foto onze beste inschatting van een platte foto.',
     },
   },
 ];
@@ -380,7 +380,7 @@ export const COPY = {
   },
   nl: {
     h: 'Je productfoto’s',
-    lead: 'Eén product tegelijk. De voorkant en de achterkant zijn allebei verplicht — je krijgt ze allebei terug als geleverd beeld, dus geen van beide is aan ons om te raden. De andere twee zijn optioneel en maken elk één ding nauwkeuriger.',
+    lead: 'Eén product tegelijk. De voorkant en de achterkant zijn allebei verplicht — je krijgt ze allebei terug als geleverde foto, dus geen van beide is aan ons om te raden. De andere twee zijn optioneel en maken elk één ding nauwkeuriger.',
     bulkH: 'Heb je ze allemaal klaar?',
     bulkLead: 'Sleep de hele hoop erin, dan sorteren wij. Een map per product werkt het best — we lezen de mapnaam als het product.',
     bulkCta: 'Sleep bestanden of mappen',

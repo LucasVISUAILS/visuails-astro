@@ -120,72 +120,6 @@ function t18() { return I18N[pageLang()] || I18N.en; }
 // not have to remember the media string.
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/*
- * ══════════════════════════════════════════════════════════════════════════════
- * HET LOGO OP DE PAGINA WAAR JE AL BENT
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * Lucas, 24 augustus 2026: *"Als klant op klikbaar logo klikt op de home page
- * gaat hij soepel naar de bovenkant van de website."*
- *
- * Het merkteken linksboven is een `<a href="/">`. Sta je al op de homepage, dan
- * doet die link niets zichtbaars: de ClientRouter wisselt dezelfde pagina voor
- * dezelfde pagina en je blijft staan waar je stond. Voor een bezoeker die
- * halverwege de pagina op het logo drukt — de standaardhandeling om "terug naar
- * boven" te gaan — gebeurt er dus niets, en dat leest als een kapotte knop.
- *
- * ── HET BLIJFT EEN ECHTE LINK ─────────────────────────────────────────────
- *
- * De `href` blijft staan en wordt alleen tegengehouden wanneer hij toch nergens
- * heen zou gaan. Zonder JavaScript, in een nieuw tabblad, met ctrl of cmd
- * ingedrukt, met de middelste muisknop: allemaal gewoon navigeren. Een knop die
- * "terug naar boven" doet, hoort geen link te vervangen die iemand bewust in een
- * tweede tabblad wil openen.
- *
- * ── EN HET SCROLLT MET EEN EXPLICIETE `behavior` ──────────────────────────
- *
- * `scroll-behavior: smooth` staat met opzet NIET op deze site — zie de lange
- * noot bij `html` in global.css: het destabiliseerde de enige vastgepinde
- * sectie. Elke bedoelde scroll geeft zijn eigen `behavior` mee, en deze dus ook.
- *
- * `reduced()` erbij, om dezelfde reden als bij scrollToForm() verderop: wie om
- * minder beweging vraagt, wil geen pagina die onder hem vandaan glijdt. Die
- * springt.
- *
- * ── ÉÉN LUISTERAAR OP document, EN NIET ÉÉN PER LOGO ─────────────────────
- *
- * Gedelegeerd, zodat hij een zachte navigatie overleeft zonder opnieuw gebonden
- * te worden — het merkteken zelf wordt bij elke paginawissel vervangen. Zelfde
- * afweging als in Note.astro: het OPHANGEN gebeurt één keer, het werk elke keer.
- */
-let logoGebonden = false;
-function logoNaarBoven() {
-  if (logoGebonden) return;
-  logoGebonden = true;
-  document.addEventListener('click', (e) => {
-    /* Alles wat een bewuste tweede-tabblad-klik is, blijft navigeren. */
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const a = e.target.closest && e.target.closest('a.brand');
-    if (!a) return;
-
-    /* Alleen als de link naar de pagina wijst waar je al staat. `new URL` lost
-       het taalvoorvoegsel op zonder dat hier iets over /nl/ hoeft te weten: op
-       /nl/ wijst het logo naar /nl/, en dan zijn de twee paden gelijk. */
-    let doel;
-    try { doel = new URL(a.href, location.href); } catch { return; }
-    if (doel.origin !== location.origin) return;
-    const gelijk = doel.pathname.replace(/\/+$/, '') === location.pathname.replace(/\/+$/, '');
-    if (!gelijk) return;
-
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
-    /* De adresbalk mag geen `#` overhouden: er is niets om naartoe te linken en
-       een lege fragmentverwijzing blijft bij de volgende klik in de historie
-       staan. */
-  }, { passive: false });
-}
-logoNaarBoven();
-
 function revealInView() {
   const vh = window.innerHeight || document.documentElement.clientHeight;
   document.querySelectorAll('.reveal.pending:not(.in), .reveal-mask:not(.in)').forEach((el) => {
@@ -532,16 +466,45 @@ function initConvbar() {
     if (p.startsWith('/nl')) p = p.slice(3) || '/';
     return p.startsWith('/test-sample') || p.startsWith('/start') || p.startsWith('/thank-you');
   };
+  /* ── DE HOOGTE VAN DE BALK, ALS EIGENSCHAP ────────────────────────────────
+     De WhatsApp-knop moet boven de balk uitkomen, en die afstand stond als
+     `142px` in de opmaak met een noot erbij dat de balk 110 hoog was. Gemeten op
+     25 augustus 2026: de balk was 161, dus de knop zat 19px BINNEN de balk.
+     Precies de overlap die Lucas op zijn schermafdruk zag.
+
+     Een tweede met de hand gemeten getal zou over een maand weer verlopen. Dus
+     schrijft dit de ECHTE hoogte weg als `--cb-h` en rekent de opmaak ermee.
+
+     ALLEEN SCHRIJVEN ALS HIJ VERANDERT. sync() hangt aan de scroll, dus dit
+     draait vaak; een style-schrijfactie per scrollframe dwingt de browser tot
+     werk dat nergens toe leidt. De vergelijking is één getal en kost niets.
+
+     NUL ALS HIJ NIET STAAT, zodat de knop terugvalt op zijn gewone plek zodra de
+     balk weg is — dat was ook de fout in de oude situatie: bij het wegklikken
+     bleef de knop op 142px hangen, zwevend boven niets. */
+  let laatsteHoogte = -1;
+  const meetHoogte = (bar) => {
+    const h = bar.classList.contains('show') ? Math.round(bar.getBoundingClientRect().height) : 0;
+    if (h === laatsteHoogte) return;
+    laatsteHoogte = h;
+    document.documentElement.style.setProperty('--cb-h', `${h}px`);
+  };
+
   const sync = () => {
     const bar = document.querySelector('.convbar');
     if (!bar) return;
-    if (convbarDismissed || suppressed()) { bar.classList.remove('show'); return; }
+    if (convbarDismissed || suppressed()) { bar.classList.remove('show'); meetHoogte(bar); return; }
     bar.classList.toggle('show', window.scrollY > 640);
+    meetHoogte(bar);
   };
   sync();
   if (convbarBound) return;
   convbarBound = true;
   window.addEventListener('scroll', sync, { passive: true });
+  /* Bij het draaien van een telefoon of het slepen van een venster wisselt de
+     balk van vorm — één rij op een telefoon, een pil op een breed scherm — en
+     dan klopt de gemeten hoogte niet meer. */
+  window.addEventListener('resize', () => { laatsteHoogte = -1; sync(); }, { passive: true });
   document.addEventListener('astro:page-load', sync);
   document.addEventListener('click', (e) => {
     if (!(e.target instanceof Element)) return;
@@ -562,6 +525,10 @@ function initConvbar() {
       const open = uitleg.hidden;
       uitleg.hidden = !open;
       why.setAttribute('aria-expanded', open ? 'true' : 'false');
+      /* De balk wordt een rij hoger of lager, dus de knop ernaast moet mee.
+         Zie de noot bij meetHoogte() hierboven. */
+      const bar = why.closest('.convbar');
+      if (bar) meetHoogte(bar);
     }
   });
   /* DICHT BIJ HET OPSTARTEN, EN NIET IN DE HTML. In de opmaak staat de uitleg

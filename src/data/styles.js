@@ -78,7 +78,7 @@ export const styles = [
     cardPhoto: '/img/lifestyle-flash-02.webp',
     beforeAfter: { before: '/img/lifestyle-flash-07.webp', after: '/img/lifestyle-flash-01.webp' },
     cardIcon: 'sneaker',
-    cardDesc: 'High-energy flash-lit visuals with a nightlife / editorial feel — punchy, contrasty, trend-driven.',
+    cardDesc: 'High-energy flash-lit lifestyle images with a nightlife / editorial feel — punchy, contrasty, trend-driven.',
     moodTitle: 'What Flash feels like.',
     moodParagraphs: [
       'Hard on-camera light, deep shadows, colour that punches. The nightlife look, confrontational by design.',
@@ -97,11 +97,11 @@ export const styles = [
       { title: 'Hard light, placed hard', body: 'Flash falloff is controlled so the product stays crisp while the world drops away behind it.' },
       { title: 'Shadow as composition', body: "The black behind the subject isn’t empty — it’s drawn, shaping where the eye lands." },
       { title: 'Hard light, no blown-out product', body: 'The scene gets deep shadows and bright highlights, but the product itself keeps its real colour and its fabric detail.' },
-      { title: 'Energy that repeats', body: 'The chaos is systematised: your tenth Flash visual hits like your first, and matches it.' },
+      { title: 'Energy that repeats', body: 'The chaos is systematised: your tenth Flash image hits like your first, and matches it.' },
     ],
     why: [
       { title: 'Stands out in a feed', body: 'Hard light and deep shadow read at thumbnail size, where soft even light goes unnoticed.' },
-      { title: 'An edge that repeats', body: 'The same intensity on visual one and visual one hundred.' },
+      { title: 'An edge that repeats', body: 'The same intensity on lifestyle image one and lifestyle image one hundred.' },
       { title: 'Made for a launch', body: 'The look suits a release, a restock or a limited run.' },
     ],
     bestFor: ['Streetwear, sneakers and accessories', 'Drops, launches and hype moments', 'Brands with an edge to keep', 'Social ads that need to stop thumbs'],
@@ -116,7 +116,7 @@ export const styles = [
     cardPhoto: '/img/lifestyle-glow-01.webp',
     beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
     cardIcon: 'jar',
-    cardDesc: 'Bold visuals inspired by fashion editorial — direct on-camera flash, sharp contrast, strong shadows, modern campaign aesthetic.',
+    cardDesc: 'Bold lifestyle images inspired by fashion editorial — direct on-camera flash, sharp contrast, strong shadows, modern campaign aesthetic.',
     moodTitle: 'What Glow feels like.',
     moodParagraphs: [
       'Low sun, soft bloom, skin and product wrapped in the same amber light. The look of an evening that went well.',
@@ -154,7 +154,7 @@ export const styles = [
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
     beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
     cardIcon: 'bottle',
-    cardDesc: 'Minimal visuals that look like an everyday photo — natural and unpolished, like something someone just took.',
+    cardDesc: 'Minimal lifestyle images that look like an everyday photo — natural and unpolished, like something someone just took.',
     moodTitle: 'What Phone-made feels like.',
     moodParagraphs: [
       'Daylight through a window, a product on a kitchen counter, a slightly imperfect frame. It reads as real.',
@@ -203,12 +203,12 @@ export const styles = [
     orderLabel: 'Ask for a custom look',
     moodParagraphs: [
       'Not one of our four moods — a scene designed from your references: the setting, styling and light that only your brand would use.',
-      'We build the world once, with you, then keep every future visual true to it.',
+      'We build the world once, with you, then keep every future lifestyle image true to it.',
     ],
     steps: [
       { title: 'Brief', body: 'Share references and the world you want your product to live in.' },
       { title: 'Design', body: 'We shape a bespoke scene and styling direction, checked with you.' },
-      { title: 'Produce', body: 'Your custom lifestyle visuals, consistent from order to order.' },
+      { title: 'Produce', body: 'Your custom lifestyle images, consistent from order to order.' },
     ],
     grid: grid(
       ['/img/banners-14.webp'],

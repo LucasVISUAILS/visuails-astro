@@ -1,96 +1,64 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 0034 · ÉÉN REVISIERONDE PER BESTELLING
+-- 0034 · DE ENE REVISIERONDE, ALS FEIT IN PLAATS VAN ALS ZIN
 -- ═══════════════════════════════════════════════════════════════════════════════
 --
--- ── DE BELOFTE STOND ER AL EN HET GEDRAG NIET ───────────────────────────────
+-- ── DE BELOFTE BESTOND, DE KOLOM NIET ───────────────────────────────────────
 --
--- Sinds 20 augustus 2026 zegt `AFTERCARE` in src/data/pricing.js, en daarmee
--- /pricing, /start en elke tredetabel:
+-- `AFTERCARE` in src/data/pricing.js belooft *"1 revision round included per
+-- order"*. Die belofte staat op /faq, op /pricing, op elke dienstpagina, in de
+-- vergelijking met een fotoshoot, en sinds 25 augustus 2026 ook in de claimregel
+-- onder de knoppen op de homepage.
 --
---   "Satisfaction check: 1 revision round included per order to adjust any
---    details."
+-- `revisionRoundState()` in datzelfde bestand is die belofte als code, met vijf
+-- toestanden en een zorgvuldige noot erboven over waarom het geen boolean is.
+-- Die functie leest `order.revision_round_at`.
 --
--- Er was geen enkele kolom die dat afdwong. De klant kon per beeld, onbeperkt
--- vaak, een revisie aanvragen — precies het gedrag dat de oude zin beloofde en
--- dat volgens Lucas *"simpelweg niet haalbaar"* is voor één persoon. Tussen de
--- zin en de code zat dus een gat waarin een klant iets kan vragen wat de site
--- hem toezegt en wat op geen enkele vastlegging te weigeren valt.
+-- DIE KOLOM BESTOND NERGENS. Niet in schema.sql, niet in drieëndertig migraties.
+-- Gevolg: `revisionRoundState()` gaf voor élke bestelling 'beschikbaar' terug
+-- zolang hij niet gesloten was, `canRequestRevisionRound()` zei altijd ja, en
+-- allebei werden ze door geen enkel scherm aangeroepen. Een klant kon in het
+-- dashboard onbeperkt beelden aanmerken; er werd nooit iets afgeschreven.
 --
--- ── WAAROM DIT NIET OP `customers` KAN, WAAR AL IETS STAAT ──────────────────
+-- Deze migratie is de kolom waar die functie al die tijd naar zocht.
 --
--- `customers.revisions_revoked_at` bestaat sinds migratie 0010 en lijkt hetzelfde.
--- Dat is het niet, en ze door elkaar halen zou allebei kapotmaken:
+-- ── ÉÉN KOLOM OP `orders` EN GEEN EIGEN TABEL ───────────────────────────────
 --
---   · revisions_revoked_at is een HANDELING VAN DE STUDIO. Lucas zet hem, met
---     een notitie erbij, en hij geldt voor die klant over al zijn bestellingen
---     heen. Het is de noodrem voor iemand die het recht misbruikt, en hij is met
---     één klik terug te draaien vanuit het beheerscherm.
---   · Wat hier bijkomt is een FEIT OVER ÉÉN BESTELLING: de ronde die erbij zat,
---     is gebruikt. Niemand zet hem; hij ontstaat doordat de klant hem indient.
---     Hij geldt niet voor de volgende bestelling, want die heeft zijn eigen
---     ronde.
+-- Wat hier bewaard wordt is precies één feit: WANNEER de ronde is ingediend. De
+-- inhoud van die ronde staat al ergens — `revision_requests` bewaart per beeld
+-- een notitie met `file_id`, `order_id`, `customer_id` en `created_at`, en
+-- `files.review_note` draagt dezelfde tekst als toestand van dat ene beeld.
 --
--- Zou dit op de klant staan, dan zou één ingediende ronde elke toekomstige
--- bestelling van diezelfde klant meteen zonder revisie laten beginnen — een
--- klant die twee keer bestelt, betaalt dan twee keer voor een belofte die hij
--- één keer krijgt. Vandaar `orders` en niet `customers`, en vandaar dat de
--- bestaande kolom onaangeroerd blijft.
+-- Een eigen tabel `revision_rounds` zou meerdere rondes per bestelling toelaten,
+-- en dat is nu juist het ding dat niet mag. De belofte is ÉÉN ronde. Een schema
+-- dat er twee toestaat, nodigt uit tot een tweede — en dan is de vraag "hoeveel
+-- heeft deze klant er gehad" ineens een telling in plaats van een blik.
 --
--- ── DRIE KOLOMMEN, EN GEEN EIGEN TABEL ──────────────────────────────────────
+-- Wil de studio ooit een tweede ronde weggeven, dan is dat een uitzondering die
+-- iemand met de hand maakt: `UPDATE orders SET revision_round_at = NULL`. Dat is
+-- zichtbaar, opzettelijk, en het laat geen spoor achter dat op beleid lijkt.
 --
--- Er is per bestelling precies één ronde. Een tabel `revision_rounds` zou er
--- meerdere toelaten en daarmee in het schema de mogelijkheid openzetten die deze
--- migratie juist dichtdoet — en dan is de regel weer alleen een regel JavaScript.
--- Eén rij op de bestelling zegt wat er is: gebruikt of niet.
+-- ── NULL BETEKENT "NOG NIET", EN DAT IS DE NORMALE TOESTAND ─────────────────
 --
--- WAT ER NIET VERLOREN GAAT. De inhoud van de ronde staat al ergens: elk
--- aangemerkt beeld krijgt `files.review_state = 'revision_requested'` met zijn
--- eigen notitie, en `revision_requests` houdt de geschiedenis per beeld bij
--- (migratie 0010). Deze drie kolommen zeggen alleen dát er een ronde was, wanneer,
--- en wat de klant er als geheel over schreef. De beelden zelf blijven waar ze
--- horen.
+-- Elke bestaande bestelling krijgt NULL, en dat klopt: er is nooit een ronde
+-- ingediend, want er was niets om hem in te dienen. Klanten die vóór vandaag
+-- beelden hebben aangemerkt, houden hun aanmerkingen — die staan in
+-- `revision_requests` en in `files.review_state` — en hun ronde staat vanaf nu
+-- open. Dat is de vriendelijke kant om fout te gaan: niemand raakt met
+-- terugwerkende kracht iets kwijt dat hij niet wist te hebben.
 --
--- ── EN DE OUDE BESTELLINGEN BEGINNEN LEEG ───────────────────────────────────
+-- ── GEEN INDEX ──────────────────────────────────────────────────────────────
 --
--- NULL op alles, ook op bestellingen die al geleverd zijn en waar al revisies op
--- zijn aangevraagd. Dat is met opzet de RUIMHARTIGE kant: die klanten hebben
--- besteld onder de oude belofte, en met terugwerkende kracht een ronde afpakken
--- die zij toen onbeperkt hadden, is de belofte breken op de dag dat je hem
--- aanscherpt. Ze houden hun ronde. Het zijn er weinig en het is de goedkoopste
--- manier om aan de goede kant van je eigen voorwaarden te blijven.
+-- Bewust. De enige vraag die op deze kolom gesteld wordt is "wat staat er op DEZE
+-- bestelling", en die komt altijd binnen via `orders.id` of `orders.ref` — beide
+-- al geïndexeerd. Er wordt nooit gezocht op "alle bestellingen met een gebruikte
+-- ronde"; het beheerscherm toont de revisies uit `revision_requests`, dat zijn
+-- eigen indexen heeft. Een index die niemand raakt, kost alleen schrijfsnelheid.
+--
+-- ── WAT ER BUITEN DEZE MIGRATIE OM MEEKOMT ──────────────────────────────────
+--
+-- src/lib/account.js krijgt de indienvorm: aanvinken per beeld, een notitie per
+-- aangevinkt beeld, één knop onderaan die de hele ronde tegelijk verstuurt, en
+-- daarboven het blok dat zegt wat er gebeurt als je erop drukt. Goedkeuren blijft
+-- per beeld en direct — dat verbruikt niets en hoort geen drempel te krijgen.
 
--- Wanneer de ronde is ingediend. Volledige tijdstempel en niet alleen de dag:
--- hier hangt een recht aan, en bij een vraag achteraf is "op 12 september" een
--- slechter antwoord dan het moment zelf. NULL betekent: nog beschikbaar.
 ALTER TABLE orders ADD COLUMN revision_round_at TEXT;
-
--- Wat de klant over de ronde ALS GEHEEL schreef, in zijn eigen woorden.
---
--- Naast de notitie per beeld en niet in plaats daarvan. De stroom vraagt de klant
--- om in één keer alle beelden aan te wijzen die niet goed zijn; wat er dan mis is
--- staat vaak niet per beeld maar over de serie ("de kleur van het jasje klopt op
--- geen van deze"). Dwing je dat in een veld per beeld, dan krijg je vijf keer
--- dezelfde zin en is niet meer te zien dat het één opmerking was.
-ALTER TABLE orders ADD COLUMN revision_round_note TEXT;
-
--- Hoeveel beelden er in de ronde zaten.
---
--- AFLEIDBAAR UIT files, EN TOCH HIER. Dat is de uitzondering die dit project
--- normaal niet maakt, dus de reden hoort erbij: de admin-lijst toont tientallen
--- bestellingen naast elkaar met per regel "revisieronde: 4 beelden", en dat uit
--- files halen is een subquery per rij op de enige tabel die per bestelling
--- tientallen rijen heeft. Het getal verandert bovendien nooit meer — de ronde is
--- na indienen dicht — dus het kan niet uit de pas gaan lopen met wat het telt.
---
--- Dat laatste is de voorwaarde. Een afgeleid getal dat nog kan veranderen hoort
--- niet opgeslagen te worden; een afgeleid getal dat bevroren is, is een feit.
-ALTER TABLE orders ADD COLUMN revision_round_count INTEGER;
-
--- ── DE INDEX ────────────────────────────────────────────────────────────────
---
--- Het beheerscherm vraagt "welke bestellingen hebben een openstaande ronde" en
--- dat is een zoektocht naar rijen waar deze kolom NIET leeg is. Een partiële
--- index kost bijna niets, want hij bevat alleen de bestellingen mét een ronde —
--- de grote meerderheid staat er niet in.
-CREATE INDEX IF NOT EXISTS idx_orders_revision_round
-  ON orders (revision_round_at) WHERE revision_round_at IS NOT NULL;

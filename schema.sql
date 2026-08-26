@@ -1326,9 +1326,10 @@ CREATE INDEX IF NOT EXISTS idx_orders_modelcheck
 -- ══════════════════════════════════════════════════════════════════════════════
 --
 -- De site belooft sinds 20 augustus 2026 één revisieronde per bestelling en er
--- was niets dat dat afdwong: de klant kon per beeld, onbeperkt vaak, een revisie
--- vragen. Deze drie kolommen leggen vast dát de ronde is gebruikt, wanneer, en
--- wat de klant er als geheel over schreef.
+-- was niets dat dat afdwong: revisionRoundState() in src/data/pricing.js las deze
+-- kolommen al voordat ze bestonden, de belofte stond op zes pagina's, en er werd
+-- nooit iets afgeschreven. De klant kon per beeld, onbeperkt vaak, een revisie
+-- vragen.
 --
 -- NIET TE VERWARREN MET `customers.revisions_revoked_at` HIERBOVEN. Dat is de
 -- noodrem van de studio en geldt voor een klant over al zijn bestellingen heen;
@@ -1336,6 +1337,19 @@ CREATE INDEX IF NOT EXISTS idx_orders_modelcheck
 -- indient. Zou dit op de klant staan, dan zou één ingediende ronde elke volgende
 -- bestelling meteen zonder revisie laten beginnen. De volledige afweging staat
 -- in migrations/0034-revisieronde.sql.
+--
+-- DRIE KOLOMMEN EN GEEN TABEL, want er is precies één ronde per bestelling; een
+-- schema dat er twee toelaat, nodigt uit tot een tweede. De INHOUD van de ronde
+-- staat in revision_requests (per beeld een notitie) en in files.review_note.
+--
+-- ── DEZE DRIE STONDEN OP 26 AUGUSTUS 2026 EVEN TERUG OP ÉÉN ─────────────────
+-- Dit blok was uit de staart gehaald en `revision_round_at` was in de CREATE
+-- TABLE hierboven gezet — de andere twee kolommen en de index gingen daarbij
+-- verloren. `npm run test:revisieronde` viel daarop om met "no such column:
+-- revision_round_note" en test:schema zakte naar 16 van de 18. Vandaar dat het
+-- hier weer staat en niet daar: 0019 tot en met 0033 staan óók in deze staart,
+-- en een kolom die op twee plekken staat laat een verse database niet eens
+-- opbouwen ("duplicate column name").
 --
 -- Bestaande bestellingen beginnen op NULL en houden dus hun ronde: zij hebben
 -- besteld onder de oude, onbeperkte belofte.

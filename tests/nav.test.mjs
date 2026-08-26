@@ -327,8 +327,26 @@ console.log('\nde balk onderaan houdt zijn uitleg');
   const hidesLogo = /\.cb-logo[^{}]*\{[^}]*display:\s*none/.test(css);
   check('de tekst wordt nergens verborgen', hidesNote, false);
   check('het teken ook niet', hidesLogo, false);
-  // En de knop van WhatsApp moet boven de balk uit blijven; die staat op één plek.
-  check('de whatsapp-knop wijkt voor de balk', /--wa-bottom: 142px/.test(css), true);
+  /* ── DE WHATSAPP-KNOP WIJKT VOOR DE BALK — 26 augustus 2026 ──────────────
+     Hier stond `/--wa-bottom: 142px/`, en 142 was met de hand gemeten toen de
+     balk 110 hoog was. Elke keer dat die balk van vorm verandert, is dat getal
+     stil fout: te klein en de knop zit ín de balk, te groot en hij zweeft.
+     Vanavond ging de balk van 161 naar 86 en het getal bleef 142.
+
+     Wat er nu staat leest de ECHTE hoogte. `initConvbar()` in interactions.js
+     schrijft `--cb-h` op <html> zodra de balk verschijnt en bij elke resize, en
+     de knop rekent daarmee. Nagemeten op 360px: balk 86 hoog, twaalf pixels
+     lucht tussen de knop en de balk.
+
+     De toets controleert daarom twee dingen die samen de belofte dragen — dat
+     de afstand wordt afgeleid, en dat er iets is dat hem afleidt. Eén van de
+     twee alleen is een halve garantie: een berekening met een variabele die
+     niemand vult, is nul. */
+  check('de whatsapp-knop rekent met de hoogte van de balk',
+    /--wa-bottom:\s*calc\(var\(--cb-h/.test(css), true);
+  const js = read('src/scripts/interactions.js');
+  check('en interactions.js vult die hoogte',
+    /setProperty\(\s*['"]--cb-h['"]/.test(js), true);
 }
 
 console.log('\nde prijsvorm');

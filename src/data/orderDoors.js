@@ -45,7 +45,7 @@ export const DOORS = [
     lees: '/catalog',
     bestel: '/start/catalog',
     naam: { en: 'Catalog', nl: 'Catalog' },
-    cta: { en: 'Order catalog visuals', nl: 'Bestel catalogusbeelden' },
+    cta: { en: 'Order catalog images', nl: 'Bestel catalogfoto’s' },
     kort: { en: 'Front, back, detail and on-model', nl: 'Voorkant, achterkant, detail en on-model' },
   },
   {
@@ -53,7 +53,7 @@ export const DOORS = [
     lees: '/lifestyle',
     bestel: '/start/lifestyle',
     naam: { en: 'Lifestyle', nl: 'Lifestyle' },
-    cta: { en: 'Order lifestyle visuals', nl: 'Bestel lifestylebeelden' },
+    cta: { en: 'Order lifestyle images', nl: 'Bestel lifestylefoto’s' },
     kort: { en: 'Your product in a styled scene', nl: 'Je product in een gestylede scène' },
   },
   {

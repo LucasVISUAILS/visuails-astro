@@ -152,6 +152,88 @@ export function ladderFloor(kind) {
   return rungs[rungs.length - 1][2];
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DE BUNDELKORTING, DIE BESTOND MAAR NERGENS STOND
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Lucas, 25 augustus 2026: *"Bezoekers vinden het complete pakket verwarrend.
+ * Bepaal of we het schrappen of verbeteren."*
+ *
+ * Schrappen kon niet, want de korting is echt en hij is fors. Op elke trede is
+ * `complete` ongeveer een kwart goedkoper dan catalog en lifestyle los naast
+ * elkaar — €49 per product op de eerste trede, €23 op de laatste. Bij tien
+ * complete producten scheelt dat €300 op één bestelling.
+ *
+ * DAT GETAL STOND NERGENS OP DE SITE. De tabel drukte alledrie de tarieven af
+ * en de noot eronder zei: *"Combine both sets for a single bundled rate — not
+ * two separate fees added together."* Dat is waar, en het laat de aftrekking
+ * aan de lezer. Wie €149 naast €89 en €109 ziet staan en niet gaat rekenen,
+ * ziet alleen dat de complete kolom de DUURSTE is. Precies de verwarring die
+ * Lucas meldde: de kolom die het meeste bespaart, ziet er het duurst uit.
+ *
+ * ── WAAROM HIER EN NIET IN DE PAGINA ───────────────────────────────────────
+ *
+ * Omdat het een afgeleide is van LADDER en geen tweede waarheid mag worden.
+ * Zet iemand "bespaar €49" als tekst op de homepage en verandert LADDER, dan
+ * staat er een leugen die niets kapotmaakt. `assertBundleSaving()` hieronder
+ * draait bij de bouw en valt luid om zodra dat gebeurt.
+ */
+
+/**
+ * Wat het bundelen van catalog en lifestyle scheelt bij `products` producten.
+ *
+ * @returns {{apart: number, together: number, saved: number, pct: number}}
+ *   `apart` de twee losse tarieven opgeteld, `together` het bundeltarief,
+ *   `saved` het verschil per product, `pct` datzelfde verschil als percentage.
+ */
+export function completeSaving(products = 1) {
+  const apart = ladderRate('catalog', products) + ladderRate('lifestyle', products);
+  const together = ladderRate('complete', products);
+  const saved = apart - together;
+  return { apart, together, saved, pct: (saved / apart) * 100 };
+}
+
+/*
+ * DE GRENZEN WAARBINNEN "ONGEVEER EEN KWART" WAAR IS.
+ *
+ * De pagina’s zeggen het in woorden en niet in een percentage, en dat is met
+ * opzet: op de eerste trede is het 24,7% en op de laatste 26,1%. Eén getal zou
+ * op drie van de vier treden nét niet kloppen, en afronden naar boven is een
+ * hardere belofte dan de code waarmaakt. "Ongeveer een kwart" klopt op alle
+ * vier — zolang de treden binnen deze marge blijven, en dat is wat de controle
+ * hieronder afdwingt.
+ */
+export const BUNDLE_CLAIM = { min: 20, max: 32 };
+
+/**
+ * Faalt bij de bouw zodra de bundel niet meer doet wat de site erover zegt.
+ *
+ * Drie dingen, en ze zijn alledrie een belofte die ergens op een pagina staat:
+ * de bundel is goedkoper dan de delen, dat geldt op ELKE trede, en het scheelt
+ * genoeg om "ongeveer een kwart" te mogen zeggen.
+ */
+export function assertBundleSaving() {
+  for (const [lo, hi] of LADDER.complete) {
+    const { apart, together, saved, pct } = completeSaving(lo);
+    const waar = `${lo}–${hi === null ? '∞'  : hi} producten`;
+    if (saved <= 0) {
+      throw new Error(
+        `pricing.js: het complete pakket is bij ${waar} niet goedkoper dan de delen `
+        + `(samen ${together}, los ${apart}). De hele bundel heeft dan geen reden om te bestaan.`,
+      );
+    }
+    if (pct < BUNDLE_CLAIM.min || pct > BUNDLE_CLAIM.max) {
+      throw new Error(
+        `pricing.js: de bundelkorting is bij ${waar} ${pct.toFixed(1)}%, buiten `
+        + `${BUNDLE_CLAIM.min}–${BUNDLE_CLAIM.max}%. De pagina’s zeggen "ongeveer een kwart" / `
+        + `"about a quarter"; pas die tekst aan óf pas LADDER aan, maar niet één van de twee alleen.`,
+      );
+    }
+  }
+}
+
+assertBundleSaving();
+
 // FIRST_ORDER_DISCOUNT WAS HERE — 20% off a first order, once per brand, and it
 // is gone. Lucas: *"Verwijder hierna ook de 20% korting omdat we zelfverzekerd
 // willen zijn over de prijzen die we hanteren, een sample van 0,99 cent is al
@@ -1073,10 +1155,28 @@ export const AFTERCARE = {
   nl: 'Tevredenheidscheck: 1 revisieronde per bestelling om aanpassingen door te voeren.',
 };
 
+/* ── "HANDMATIG" → "ZORGVULDIG" — 25 augustus 2026, besluit van Lucas ───────
+ *
+ * De NL-regel zei *"Elke visual wordt handmatig gecontroleerd."* Ik heb hem
+ * aangeraden te laten staan: "handmatig" betekent hier DOOR EEN MENS EN NIET
+ * AUTOMATISCH, wat precies is wat het Engels ernaast zegt met "human-checked",
+ * en "zorgvuldig" is een kwaliteitswoord dat niets garandeert. Lucas koos
+ * bewust anders — het is zijn merk en zijn toon, en dit staat hier zodat de
+ * volgende die het leest weet dat het een keuze was en geen slordigheid.
+ *
+ * ⚠ DE ENGELSE KANT IS NIET MEEGEGAAN. Daar staat nog steeds "human-checked",
+ * en dat is de sterkere belofte van de twee. Wil je ze gelijk trekken, dan is
+ * dat een aparte beslissing over WELKE kant meebeweegt.
+ *
+ * ⚠ NIET DOORVOEREN BIJ `payHeld` in src/lib/account.js. Daar staat "een
+ * handmatige stap" en dat draagt de hele uitleg waarom een btw-controle buiten
+ * de EU een werkdag kost — er is geen register. Lucas heeft die op 25 augustus
+ * expliciet laten staan.
+ */
 export const REVIEW_CLAIM = {
   full: {
     en: 'Human-checked quality on every single visual.',
-    nl: 'Elke visual wordt handmatig gecontroleerd.',
+    nl: 'Elke visual wordt zorgvuldig gecontroleerd.',
   },
   spot: {
     en: 'Human-checked on a sample of every order',
@@ -1271,6 +1371,49 @@ export function turnaround(tierId, lang = 'en') {
  * be found and rewritten by hand when the count went away, and the next change
  * to this promise should cost one edit instead of eleven.
  */
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * EEN VOLZIN MIDDEN IN EEN ANDERE ZIN — 25 augustus 2026
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * `turnaround()`, `aftercare()` en `reviewClaim()` geven een AFGERONDE ZIN terug,
+ * met een punt erachter. Tientallen plekken plakken ze middenin een andere zin,
+ * met `.toLowerCase()` ervoor en een punt of komma erna. Wat de bezoeker dan
+ * leest, gemeten op 25 augustus 2026 over alle FAQ-antwoorden:
+ *
+ *   "…gets a reserved 48-hour window — fully confirmed before you pay.. Below…"
+ *   "…met bijbehorende datum toont., vanaf 10 producten…"
+ *   "Satisfaction check: 1 revision round included per order to adjust any
+ *    details.. Tell us what is wrong…"
+ *
+ * Zeventien antwoorden, in beide talen, op /faq, /pricing, /catalog, /lifestyle
+ * en /video — en in de FAQPage-JSON-LD die Google uitleest.
+ *
+ * ── WAAROM DIT KON GEBEUREN ─────────────────────────────────────────────────
+ *
+ * Deze strings waren FRAGMENTEN toen de aanroepplekken werden geschreven
+ * ("2–4 working days", "1 revision round included per order"). Een tekstronde
+ * heeft er zinnen van gemaakt, mét een label ervoor en een punt erachter, en de
+ * aanroepplekken zijn niet meegegaan. Dat is geen slordigheid van één van beide
+ * kanten: het is wat er gebeurt als een string twee vormen moet dienen.
+ *
+ * ── WAAROM EEN FUNCTIE EN GEEN ZOEK-EN-VERVANG ──────────────────────────────
+ *
+ * Omdat de volgende tekstronde hetzelfde weer doet. Deze functie maakt van een
+ * zin een clausule, en zolang de aanroepplekken hem gebruiken kan de vorm van de
+ * bron veranderen zonder dat de punctuatie omvalt. `tests/leestekens.test.mjs`
+ * rendert elke FAQ-string en valt om op een dubbele punt — dus de volgende keer
+ * is het een bouwfout in plaats van iets wat een klant leest.
+ *
+ * LAAT HOOFDLETTERS STAAN. Aanroepers die willen kleinschrijven doen dat zelf;
+ * hier gebeurt het niet, omdat sommige van deze zinnen een merknaam bevatten —
+ * de noot bij "How do I actually receive the files?" in faq.js waarschuwt daar
+ * al voor: er staat "WhatsApp" in een van deze strings.
+ */
+export function clause(sentence) {
+  return String(sentence == null ? '' : sentence).trim().replace(/[.\u3002]+$/, '');
+}
+
 export function aftercare(tierId, lang = 'en') {
   const tier = TIERS[tierId];
   if (!tier) throw new Error(`pricing.js: unknown tier "${tierId}"`);
@@ -1812,20 +1955,20 @@ export const TEST_SAMPLE = {
      * hierboven: acht formuleringen zijn acht plekken waar de volgende
      * verduidelijking weer half blijft steken.
      */
-    deliverable: `${CATALOG_IMAGES} catalog photos or a lifestyle carousel of ${LIFESTYLE_IMAGES} photos`,
+    deliverable: `${CATALOG_IMAGES} catalog images or a lifestyle carousel of ${LIFESTYLE_IMAGES} images`,
     /* ── DE KORTE VORM, VOOR DE BALK ONDERAAN — 23 AUGUSTUS 2026 ────────────
        Dezelfde afspraak als bij reviewClaimShort hierboven: de korte vorm mag
        MINDER zeggen, nooit iets anders. Wat eruit gaat is het woord "lifestyle"
        en het tweede "photos"; wat erin blijft zijn de twee aantallen en het feit
        dat het jóuw product is — precies de drie dingen waarvoor iemand op die
        knop drukt. De rest staat achter het vraagteken ernaast. */
-    deliverableShort: `${CATALOG_IMAGES} catalog photos or a carousel of ${LIFESTYLE_IMAGES}`,
+    deliverableShort: `${CATALOG_IMAGES} catalog images or a carousel of ${LIFESTYLE_IMAGES}`,
     // Niet "one image". Eén product, volledig geleverd — precies wat een betaalde
     // bestelling per product oplevert, en dat is de hele reden dat de proef iets
     // bewijst.
-    line: `${CATALOG_IMAGES} catalog photos or a lifestyle carousel of ${LIFESTYLE_IMAGES} photos, your choice, finished the way a paid order is.`,
+    line: `${CATALOG_IMAGES} catalog images or a lifestyle carousel of ${LIFESTYLE_IMAGES} images, your choice, finished the way a paid order is.`,
     catalogLine: `${CATALOG_IMAGES} images — front, back, a fabric or logo detail, and one on a model.`,
-    lifestyleLine: `${LIFESTYLE_IMAGES} photos in one styled look — a scene, one on a model, and a detail close-up.`,
+    lifestyleLine: `${LIFESTYLE_IMAGES} images in one styled look — a scene, one on a model, and a detail close-up.`,
   },
   nl: {
     name: 'Proefvisual',
@@ -1836,11 +1979,11 @@ export const TEST_SAMPLE = {
     // mooier maakt dan het is, en dan ben je terug bij het probleem met
     // "verificatie". Je betaalt €1, en dat houdt misbruik tegen. Meer is het niet.
     feeNote: `${euro(AMOUNT.testSample, 'nl')} om misbruik te voorkomen`,
-    deliverable: `${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s`,
+    deliverable: `${CATALOG_IMAGES} catalogfoto’s of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s`,
     // Zie de noot bij de Engelse deliverableShort.
-    deliverableShort: `${CATALOG_IMAGES} catalogbeelden of een carousel van ${LIFESTYLE_IMAGES}`,
-    line: `${CATALOG_IMAGES} catalogbeelden of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest, afgewerkt zoals bij een betaalde bestelling.`,
-    catalogLine: `${CATALOG_IMAGES} beelden — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
+    deliverableShort: `${CATALOG_IMAGES} catalogfoto’s of een carousel van ${LIFESTYLE_IMAGES}`,
+    line: `${CATALOG_IMAGES} catalogfoto’s of een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, jij kiest, afgewerkt zoals bij een betaalde bestelling.`,
+    catalogLine: `${CATALOG_IMAGES} foto’s — voorkant, achterkant, een stof- of logodetail, en één op een model.`,
     lifestyleLine: `${LIFESTYLE_IMAGES} foto’s in één gestylede look — een scène, één op een model, en een detailclose-up.`,
   },
 };

@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { accountGet } from '../src/lib/account.js';
 import { mintToken } from '../src/lib/token.js';
+import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, '.render');
@@ -273,7 +274,13 @@ const PHOTOS = fs.readdirSync(path.join(ROOT, 'public/img'))
   .map((f) => path.join(ROOT, 'public/img', f));
 if (!PHOTOS.length) throw new Error('account-render: geen voorbeeldfotos in public/img');
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium' });
+/* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────
+   Hier stond een hard pad naar /opt/pw-browsers. Dat is de map van de
+   Linux-container waarin dit project ook wordt gebouwd, en op Lucas' machine
+   bestaat /opt niet eens: dit script viel daar dus om nog voordat het iets deed.
+   scripts/lib/browserpad.mjs bestaat precies hiervoor en waarschuwt er in zijn
+   eigen noot voor — hij werd alleen door één script gebruikt. */
+const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
 const context = await browser.newContext();
 
 await context.route('**/*', async (route) => {

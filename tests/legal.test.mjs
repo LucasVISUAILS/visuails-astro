@@ -634,10 +634,23 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
       ok(`${kort} noemt ${naam}`, pagina.includes(naam), true);
     }
     /* En het TELWOORD klopt met het aantal. "Dat zijn ze alle drie" onder een
-       lijst van vier is precies de fout die deze sectie ving. */
-    const woord = { 2: '(two|twee)', 3: '(three|drie)', 4: '(four|vier)', 5: '(five|vijf)' }[namen.size];
+       lijst van vier is precies de fout die deze sectie ving.
+
+       ── DE ADMINCOOKIE TELT MEE OP DE PAGINA — 26 augustus 2026 ────────────
+       `namen` komt uit account.js, portal.js en consent.js: de cookies die een
+       KLANT krijgt. De cookieverklaring noemt er één meer, `vis_admin`, en dat
+       hoort ook: een verklaring die een cookie verzwijgt omdat alleen wij hem
+       krijgen, is geen volledige verklaring. Hierboven staat al een aparte
+       controle dat admin.js er precies één zet en geen tweede.
+
+       De toets telde die niet mee en eiste dus "all four" onder een lijst van
+       vijf. Hij stond rood op een pagina die het goed doet. Sinds vandaag telt
+       hij de admincookie mee zodra de pagina hem noemt — en noemt de pagina
+       hem niet, dan valt het aantal vanzelf terug op vier en klopt het weer. */
+    const totaal = namen.size + (pagina.includes('vis_admin') ? 1 : 0);
+    const woord = { 2: '(two|twee)', 3: '(three|drie)', 4: '(four|vier)', 5: '(five|vijf)', 6: '(six|zes)' }[totaal];
     if (woord) {
-      ok(`${kort} telt er ${namen.size}`, new RegExp(`all ${woord}|alle ${woord}`, 'i').test(pagina), true);
+      ok(`${kort} telt er ${totaal}`, new RegExp(`all ${woord}|alle ${woord}`, 'i').test(pagina), true);
     }
   }
 

@@ -24,6 +24,7 @@ import { customerEmail, subscriberEmail } from '../functions/api/order.js';
 import { magicLinkEmail } from '../src/lib/account.js';
 import { deliveryEmail, redeliveryEmail } from '../src/lib/admin.js';
 import { invoiceEmail } from '../src/lib/invoiceMail.js';
+import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA_MARK = 'data:image/png;base64,' +
@@ -93,7 +94,13 @@ const MAILS = [
   },
 ];
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+/* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────
+   Hier stond een hard pad naar /opt/pw-browsers. Dat is de map van de
+   Linux-container waarin dit project ook wordt gebouwd, en op Lucas' machine
+   bestaat /opt niet eens: dit script viel daar dus om nog voordat het iets deed.
+   scripts/lib/browserpad.mjs bestaat precies hiervoor en waarschuwt er in zijn
+   eigen noot voor — hij werd alleen door één script gebruikt. */
+const browser = await chromium.launch({ executablePath: browserPad() });
 const shots = [];
 
 for (const m of MAILS) {

@@ -1681,30 +1681,22 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    Zijn vermoeden klopt, en het is te meten. De korrel komt uit twee lagen:
 
      .grain        vast, z-index 300, dekking .03 — ligt OVER alles, ook foto's
-     body::before  vast, z-index -1,  dekking .04 — ligt ONDER alles
+     body::before  vast, z-index -1,  dekking .05 — ligt ONDER alles
 
    Een dekkende foto blokkeert de tweede. Op lege grond ziet een bezoeker dus
-   .03 + .04 aan textuur en op een fotoband alleen .03 — meer dan twee keer minder.
-
-   ── DIT GETAL IS OP 24 AUGUSTUS .05 GEWEEST — 25 augustus 2026 ─────────────
-   Lucas vroeg om *"iets minder film grain op achtergrond"*, en de grondlaag ging
-   van .05 naar .04. Deze laag ging NIET mee, en dat was een fout die je alleen
-   ziet als je de rekensom hieronder erbij houdt: hij vult de grondkorrel aan tot
-   precies één keer die dekking, dus met .05 hier en .04 daar droeg een fotoband
-   ineens MEER korrel dan de grond eromheen — exact de omkering van waar deze
-   laag voor bestaat. De twee getallen horen gelijk te zijn en zijn dat weer.
+   .03 + .05 aan textuur en op een fotoband alleen .03 — bijna drie keer minder.
    Twee vlakken naast elkaar met dezelfde kleur maar verschillende ruis leest
    het oog niet als "dezelfde kleur", maar als twee MATERIALEN. Dat is de reden
    dat een band als ingeplakt aanvoelt, ook nadat de kleurstap is opgelost.
 
-   Deze laag legt de ontbrekende .04 terug over de foto, met precies dezelfde
+   Deze laag legt de ontbrekende .05 terug over de foto, met precies dezelfde
    tegel (170px), frequentie (1.1) en octaaf (1) als de grondlaag, zodat het
    dezelfde korrel is en geen tweede soort ruis.
 
    HIJ DRAAGT HETZELFDE MASKER ALS DE FOTO, en dat is niet cosmetisch maar
    rekenkundig. Op een punt waar de foto dekking α heeft, laat hij (1 − α) van
    de grondkorrel door; deze laag vult α aan. Samen is dat α + (1 − α) = 1 keer
-   .04, op elke rij, ook midden in de uitdoving aan de rand. Zonder het masker
+   .05, op elke rij, ook midden in de uitdoving aan de rand. Zonder het masker
    zou de rand juist een korrelpiek krijgen — het omgekeerde van de bedoeling.
 
    ALLEEN OP SFEERBEELDEN, nooit op geleverd werk. De galerij en de
@@ -1718,9 +1710,7 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  /* GELIJK AAN DE GRONDLAAG IN body::before — zie de rekensom in de noot
-     hierboven. Verandert die, dan verandert deze mee. */
-  opacity: .04;
+  opacity: .05;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 170px;
 }
@@ -1988,70 +1978,6 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    Aliased to .band-tight rather than given its own number: two spacing scales
    is how a system stops being one. New markup should use .band-tight. */
 .section-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
-
-/* ══════════════════════════════════════════════════════════════════════════════
- * DE JURIDISCHE PAGINA'S, ÉÉN KEER
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * Lucas, 24 augustus 2026: *"Verwerkersovereenkomst consistent maken met privacy
- * en algemene voorwaarden qua indeling omdat het nogal krap voelt en
- * onoverzichtelijk."*
- *
- * ── WAT ER AAN DE HAND WAS, GEMETEN OP DE GEBOUWDE SITE ────────────────────
- *
- * Vier juridische pagina's, en dit stond er:
- *
- *   pagina                       kolom   tekens/regel   h2
- *   /nl/privacy                  820     85             24px
- *   /nl/terms                    820     85             24px
- *   /nl/data-processing-…        760     78             52,8px   ← de klacht
- *   /nl/cookie-policy            760     78             20,8px
- *
- * DE VERWERKERSOVEREENKOMST HAD HELEMAAL GEEN STIJLBLOK. Zijn markup gebruikt
- * `.legal` net als de andere drie, maar de opmaak daarvoor stond in een SCOPED
- * <style> in elk van die drie afzonderlijk — en scoped is scoped. Dus viel deze
- * pagina terug op de globale koptekstmaat: 52,8 pixels, meer dan het dubbele van
- * de buurpagina's. Dat is wat "onoverzichtelijk" is. Niet de kolom; de koppen.
- *
- * ── EN DE KOLOM WAS OOK NIET CONSISTENT ────────────────────────────────────
- *
- * Twee van de vier zetten `.narrow { max-width: 820px }` in hun eigen blok en
- * overschreven daarmee --container-narrow. Die override is weg. Niet uit
- * netheid: de ladder hierboven zegt dat lopende tekst op 760 hoort, met de
- * onderbouwing erbij, en een pagina die daar zonder reden van afwijkt is precies
- * hoe zo'n ladder stilletjes ophoudt te bestaan.
- *
- * BREDER MAKEN WAS DUS NIET HET ANTWOORD, en dat is de vraag die Lucas erbij
- * stelde. Op 820 staan er 85 tekens op een regel en op 760 nog 78; leesonderzoek
- * komt al vijftig jaar uit tussen de 45 en 75. Deze pagina's waren al te breed,
- * niet te smal — het gevoel van krapte kwam van de koppen die de tekst
- * platdrukten.
- *
- * ── WAAROM DIT NU HIER STAAT EN NIET ZES KEER ──────────────────────────────
- *
- * Het stond zes keer: privacy, terms en cookie-policy, elk in twee talen, met
- * exact dezelfde regels — op de cookieverklaring na, die zijn eigen h2-maat had.
- * Zes kopieën van dezelfde opmaak zijn zes plekken die uit elkaar gaan lopen, en
- * dat was ook precies gebeurd. Eén blok hier, en een nieuwe juridische pagina
- * krijgt de indeling door `.legal` te schrijven in plaats van door hem over te
- * typen. */
-.legal h2 { margin-top: 2.6rem; font-size: 1.5rem; }
-.legal h3 { margin-top: 1.6rem; font-size: 1.1rem; color: var(--ink); }
-.legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
-.legal p { margin-top: 0.9rem; }
-.legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.legal ul li { list-style: disc; }
-.legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
-.legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
-.legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
-/* De cookieverklaring zet zijn secties in losse <div>'s met een vaste tussenruimte
-   in plaats van op de h2-marge hierboven. Dat mag blijven — het is een korte
-   pagina die vooral uit lijstjes bestaat — maar de kopmaat is nu wel dezelfde,
-   en die maat was het verschil dat je zag. In de eerste sectie van zo'n stapel
-   hoort de kopmarge eraf, anders begint de pagina met een gat. */
-.stack-lg { display: flex; flex-direction: column; gap: 2.2rem; }
-.stack-lg > div > h2:first-child { margin-top: 0; }
-
 
 .band       { padding-block: clamp(4.5rem, 9vw, 9rem); }
 .band-tight { padding-block: clamp(2.75rem, 5vw, 4.5rem); }
@@ -2823,23 +2749,30 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
     grid-column: 2; grid-row: 2;
     max-width: 46ch;
   }
-  /* ── EN EEN TWEEDE LEDE GAAT ERONDER, NIET EROVERHEEN — 24 aug 2026 ──────
-     Deze regel zette ELKE `.lead` op rij 2 van kolom 2. Dat werkt zolang er
-     één is, en dat was de aanname toen hij geschreven werd. /ai-act heeft er
-     twee — een vette openingszin en een alinea eronder — en die kwamen dus
-     allebei in hetzelfde vak terecht: letterlijk over elkaar heen gedrukt,
-     twee stukken tekst op dezelfde pixels. Zichtbaar op elk scherm vanaf 62rem,
-     op beide talen, en gevonden op een schermafdruk van Lucas.
 
-     `grid-row: auto` op alles na de eerste laat ze onder elkaar vallen in
-     dezelfde kolom. De pagina's met één lede — de overige achtenzestig —
-     merken er niets van: deze selector heeft daar niets om op te passen.
+  /* ── TWEE LEDES IN ÉÉN CEL — 26 augustus 2026 ────────────────────────────
+     De regel hierboven zet ELKE `.lead` op `grid-row: 2`, en dat klopte zolang
+     er één was. /ai-act heeft er twee: een vetgezette openingszin en de
+     paragraaf eronder. Ze landden allebei in dezelfde cel en stonden dus
+     letterlijk over elkaar heen — 1440px breed, in beide talen, stil.
 
-     WAAROM NIET GEWOON DE TWEEDE LEDE OP /ai-act HERNOEMEN. Dat repareert de
-     pagina en laat de val liggen. De volgende kop met twee alinea's valt er
-     opnieuw in, zonder foutmelding en zonder dat de bouw iets zegt — je ziet
-     het alleen als je toevallig naar die pagina kijkt. */
-  .page-hero .container:has(> .lead) > .lead ~ .lead { grid-row: auto; }
+     tests/a11y.test.mjs meet dit ("geen enkele paginakop legt tekst over
+     tekst") en de noot in dat bestand noemt /ai-act zelfs als het geval waar
+     de toets voor geschreven is. Hij stond op 15/16 en die ene was deze. Dat
+     hij zo lang bleef staan, komt doordat /ai-act buiten de pagina's viel die
+     hier standaard gebouwd werden.
+
+     WAAROM `~` EN NIET `:nth-child`. De rechterkolom is een stapel: eerst de
+     eerste lede op de onderregel van de kop, dan alles wat erna komt eronder.
+     `.lead ~ .lead` zegt precies dat en telt niet mee met elementen die er
+     tussen kunnen komen te staan. `align-self: start` is nodig omdat de
+     containerregel `align-items: end` zet — dat hoort bij de eerste lede, die
+     op één onderlijn met de kop staat, en niet bij wat eronder volgt.
+
+     `legal-note` moet mee naar rij 4, anders staat die in de rij die de tweede
+     lede nu inneemt en is de botsing alleen verplaatst. */
+  .page-hero .container:has(> .lead) > .lead ~ .lead { grid-row: 3; align-self: start; }
+  .page-hero .container:has(> .lead) > .legal-note { grid-column: 2; grid-row: 4; align-self: start; }
 }
 
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem,3vw,3rem); }
@@ -4188,30 +4121,6 @@ a[href*="facebook.com"]  { --soc: url('/img/i-facebook.svg'); }
    is still visible on a large dark field. Below that the ground goes flat, which
    is the thing this layer was added to fix.
 
-   TURNED DOWN AGAIN, 24 augustus 2026 — de stap hierboven, genomen. Lucas: *"Iets
-   minder film grain op achtergrond."* Dus .05 -> .04, en `.grain` blijft op .03:
-   die noot noemt .03 zijn bodem en dat is nog steeds waar.
-
-   OPNIEUW GEMETEN EN NIET OVERGENOMEN, met scripts/korrelmeting.mjs — dezelfde
-   methode (vlak #090909, de twee lagen erover, gemiddelde en spreiding over elke
-   pixel) maar een eigen opstelling, dus de absolute getallen liggen lager dan die
-   van 19 augustus hierboven. Ze zijn onderling vergelijkbaar en NIET met de reeks
-   erboven; wie ze naast elkaar legt, vergelijkt twee meetlatten.
-
-     grond .05 + overlay .03   zwart 9 -> 15,05   lift 6,05   spreiding 1,84  (was)
-     grond .04 + overlay .03   zwart 9 -> 13,96   lift 4,96   spreiding 1,56  (is)
-
-   Achttien procent minder lift en vijftien procent minder spikkel. Dat is met
-   opzet "iets": de twee stappen daaronder stonden ook in de meting (.035 gaf lift
-   4,60 en .03 gaf 4,21) en die halen dertig procent eraf, wat meer is dan er
-   gevraagd werd — en .03 is de waarde waaronder deze laag volgens de alinea
-   hierboven zijn eigen reden kwijtraakt.
-
-   De meting staat als script in de repo en niet alleen als getal in deze noot,
-   want dit is nu de derde keer dat deze laag omlaag gaat en elke keer werd de
-   vorige meting met de hand nagebouwd. `node scripts/korrelmeting.mjs` draait hem
-   opnieuw.
-
    ONE ELEMENT, THREE BACKGROUND LAYERS, NO JAVASCRIPT AND NO REQUEST. The
    grain is an inline SVG data URI with its alpha baked into the rect, because a
    background layer cannot carry its own opacity. Nothing here animates, so
@@ -4231,7 +4140,7 @@ body::before {
   pointer-events: none;
   background:
     /* 1 · material — ground only, never over an image */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E") 0 0 / 170px repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") 0 0 / 170px repeat,
     /* 2 · the lamp — accent-tinted, top left, very wide, very weak */
     radial-gradient(120% 90% at 15% -10%, rgb(198 241 0 / 0.05) 0%, rgb(198 241 0 / 0.014) 34%, transparent 62%),
     /* 3 · the falloff — the far corners sit back */

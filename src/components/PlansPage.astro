@@ -41,6 +41,8 @@ import {
   PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_ROLLOVER_MONTHS,
   STOCK_OFF_BRAND, STOCK_ON_BRAND,
 } from '../data/pricing.js';
+// Het juiste woord per soort beeld — zie de kop van lexicon.js.
+import { noun } from '../data/lexicon.js';
 import { localizedPath } from '../i18n/ui.js';
 import { waHref } from '../data/whatsapp.js';
 
@@ -71,14 +73,14 @@ const COPY = {
     panelH: ['What a plan', 'actually is.'],
     panelLede: 'Three things change when the work comes round every month instead of order by order. Nothing else does — the same studio, the same review, the same files.',
     facts: [
-      'A fixed monthly product quota, flexibly allocated whenever your collection requires.',
-      'Your own dedicated week in our calendar, locked in before anyone else can claim it.',
+      'A fixed number of products each month, yours to spend as the collection needs.',
+      'Your own week in the calendar, booked before anyone else can take it.',
       'A lower rate per product than the same output ordered separately.',
     ],
     from: 'from',
     unit: `a month · ${FROM_PRODUCTS} products`,
     cta: 'Start a plan',
-    cta2: 'See pricing per product',
+    cta2: 'See the price per product',
 
     plansH: 'The three plans',
     plansSub: 'Same service on all three. What changes is how much of the month you book.',
@@ -97,32 +99,20 @@ const COPY = {
     creditAskCta: 'Ask us and we will go through it with you',
     creditWa: 'Hi! I have a plan and I would like to think through what to spend this month’s credits on.',
 
-    stockH: 'No new product drop this month?',
-    stockNow: [`${STOCK_OFF_BRAND} new stock visuals every month`, 'Included with every plan: brand-neutral visual assets, ready to post on days without new product releases.'],
-    stockSoon: [`${STOCK_ON_BRAND} on-brand visuals a month`, 'Custom-built around your visual identity: specific locations, color palettes, and styling guidelines without direct product placement. Included exclusively with Editions after a one-time brand setup.'],
+    stockH: 'And a month that is already filled.',
+    stockNow: [`${STOCK_OFF_BRAND} new ${noun('stock', 'en')} every month`, 'included with every plan, usable by any brand — something to post on the days you have no new product.'],
+    stockSoon: [`${STOCK_ON_BRAND} on-brand ${noun('visual', 'en')} a month`, 'set up on your style, your locations and your brand colours, with no product in them — they give the brand a feeling rather than sell an item. They arrive with Editions and are set up once per brand.'],
     /* Zie de noot bij stockNowTag in HomeV2.astro: de gedeelde bibliotheek
        bestaat nog niet, en de regel stond hier net als daar zonder label
        tussen dingen die wél meekomen met een abonnement. */
     stockNowTag: 'Not running yet',
     stockSoonTag: 'With Editions',
-    stockShot: 'A month grid of stock visuals for one brand — twenty frames in the same colours and light, with no product in them',
+    stockShot: 'A month grid of visuals for one brand — twenty frames in the same colours and light, with no product in them',
     stockShotMsg: 'Mood, texture, hands, light — no garment and no packshot. If it reads as a stock library it has failed; it has to read as one brand.',
 
     outH: 'Not every month, then.',
     outBody: 'Order by order works too, and the rate falls as the count rises. The price per product is on the pricing page.',
-    /* ── TWEE KNOPPEN MET DEZELFDE TEKST NAAR DEZELFDE PAGINA — 24 aug 2026 ──
-       Deze pagina had `cta2` in de hero en `outCta` hieronder, allebei "Bekijk
-       de prijs per product" en allebei naar /pricing. Twee keer hetzelfde
-       woord voor twee keer dezelfde bestemming leest als een fout, en hier was
-       het erger dan dat: de zin er direct boven zégt al "De prijs per product
-       staat op de prijzenpagina", dus de link herhaalde de regel erboven.
-
-       DE HERO-KNOP BLIJFT ZOALS HIJ WAS. Daar is "de prijs per product" precies
-       het alternatief voor "sluit een abonnement af", en dat is wat iemand daar
-       afweegt. Deze knop staat onder een kop die iets ánders vraagt — niet elke
-       maand, dus dan? — en hoort dat antwoord te geven en niet het prijskaartje
-       nog een keer. */
-    outCta: 'See what it costs without a plan',
+    outCta: 'See the price per product',
 
     ctaH: 'Start with one product',
     ctaEm: `for ${euro(AMOUNT.testSample, "en")}.`,
@@ -141,7 +131,7 @@ const COPY = {
     panelLede: 'Er veranderen drie dingen zodra het werk elke maand terugkomt in plaats van bestelling voor bestelling. Verder niets — dezelfde studio, dezelfde controle, dezelfde bestanden.',
     facts: [
       'Elke maand een vast aantal producten, te besteden zoals de collectie het vraagt.',
-      'Jouw eigen gereserveerde week in de kalender, vastgelegd voordat iemand anders hem kan claimen.',
+      'Je eigen week in de planning, vastgezet voordat iemand anders hem kan nemen.',
       'Een lager tarief per product dan hetzelfde werk los besteld.',
     ],
     from: 'vanaf',
@@ -161,17 +151,17 @@ const COPY = {
     creditAskCta: 'Vraag het ons, dan lopen we het samen door',
     creditWa: 'Hoi! Ik heb een abonnement en wil graag even doornemen waar ik de credits van deze maand aan kan besteden.',
 
-    stockH: 'Geen nieuwe drop? Vul je maand met merkcontent.',
-    stockNow: [`${STOCK_OFF_BRAND} nieuwe stockbeelden per maand`, 'Standaard bij elk abonnement: merk-neutrale sfeerbeelden, direct inzetbaar op dagen zonder nieuwe productlanceringen.'],
-    stockSoon: [`${STOCK_ON_BRAND} on-brand beelden per maand`, 'Volledig ingericht op jouw merkidentiteit: jouw eigen locaties, kleurenpalet en esthetiek. Puur sfeerbeeld dat je merk lading geeft. Eenmalig ingesteld bij het Editions-pakket.'],
+    stockH: 'En een maand die al gevuld is.',
+    stockNow: [`${STOCK_OFF_BRAND} nieuwe ${noun('stock', 'nl')} per maand`, 'inbegrepen bij elk abonnement en bruikbaar voor elk merk — iets om te posten op de dagen dat je niets nieuws hebt.'],
+    stockSoon: [`${STOCK_ON_BRAND} on-brand ${noun('visual', 'nl')} per maand`, 'opgezet op jouw stijl, jouw locaties en jouw merkkleuren, zonder product erin — ze geven het merk een gevoel in plaats van dat ze iets verkopen. Ze komen met Editions en worden één keer per merk opgezet.'],
     stockNowTag: 'Nog niet actief',
     stockSoonTag: 'Met Editions',
-    stockShot: 'Een maandraster van stockbeelden voor één merk — twintig beelden naast elkaar in dezelfde kleuren en hetzelfde licht, zonder product erin',
+    stockShot: 'Een maandraster van beelden voor één merk — twintig foto’s naast elkaar in dezelfde kleuren en hetzelfde licht, zonder product erin',
     stockShotMsg: 'Sfeer, textuur, handen, licht — geen kledingstuk en geen packshot. Leest het als een stockbibliotheek, dan is het mislukt; het moet als één merk lezen.',
 
     outH: 'Toch liever niet elke maand.',
     outBody: 'Los bestellen kan net zo goed, en het tarief daalt naarmate het aantal stijgt. De prijs per product staat op de prijzenpagina.',
-    outCta: 'Kijk wat het kost zonder abonnement',
+    outCta: 'Bekijk de prijs per product',
 
     ctaH: 'Begin met één product',
     ctaEm: `voor ${euro(AMOUNT.testSample, "nl")}.`,

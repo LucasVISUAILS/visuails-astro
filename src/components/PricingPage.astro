@@ -53,13 +53,16 @@ import { waHref } from '../data/whatsapp.js';
 // it still carries the retired 24-hour claim (task #190) and /compare is the
 // page that argument belongs on. The shoot-day anchor does that job here.
 import {
-  LADDER, ladderRate, quote,
+  LADDER, ladderRate, completeSaving, quote,
   plans, PLAN_AMOUNT, PLAN_CLIPS,
   SHOOT_DAY, TEST_SAMPLE,
   reviewClaim, aftercare, euro, AMOUNT,
   TIER_ROWS, tierRow, tierRowLabels,
   WINDOW_THRESHOLD, vatLabel, vatNote,
+  CATALOG_IMAGES, LIFESTYLE_IMAGES, COMPLETE_IMAGES,
 } from '../data/pricing.js';
+// Het juiste woord per dienst — zie de kop van lexicon.js.
+import { counted, countedShort } from '../data/lexicon.js';
 // The six pricing questions are NOT in this file. They live in
 // src/data/faq.js, because src/data/schema.js emits them a second time as this
 // page's FAQPage JSON-LD, and an answer written twice is an answer that will
@@ -168,9 +171,24 @@ const COPY = {
       // 'per product' stond hier ÉN werd door de rendering nog een keer
       // aangeplakt, dus de kolomkoppen lazen "…per product / per product · excl.
       // VAT". Hier eruit; de regel eronder plakt hem al. 8 augustus 2026.
-      complete: { name: 'Complete', sub: 'Catalog set and lifestyle carousel — seven images' },
-      catalog: { name: 'Catalog set', sub: 'From four images' },
-      lifestyle: { name: 'Lifestyle carousel', sub: 'Three images' },
+      /* ── DE AANTALLEN STONDEN HIER UITGESCHREVEN — 25 AUGUSTUS 2026 ──────
+         "seven images", "From four images", "Three images". Drie getallen als
+         WOORD, terwijl CATALOG_IMAGES, LIFESTYLE_IMAGES en COMPLETE_IMAGES pal
+         ernaast in pricing.js staan. assertShotCounts() daar bewaakt dat de
+         opmerkingen bij LADDER kloppen met die constanten, maar niet deze drie
+         regels — die stonden buiten elk vangnet.
+
+         Nu afgeleid, en in cijfers in plaats van letters, want dat is wat de
+         kolomkop op de homepage ook doet ("4 images · per product") en twee
+         tabellen over hetzelfde horen niet in twee schrijfwijzen te staan.
+
+         counted() zet er meteen het juiste woord achter — zie lexicon.js. */
+      complete: { name: 'Complete', sub: `Catalog set and lifestyle carousel — ${counted('complete', COMPLETE_IMAGES, 'en')}` },
+      /* countedShort() en niet counted(): de kop ernaast NOEMT de categorie al.
+         "Catalog set — 4 catalog images" zet het woord twee keer neer. Zie de
+         noot bij SHORTER in lexicon.js. */
+      catalog: { name: 'Catalog set', sub: `From ${countedShort('catalog', CATALOG_IMAGES, 'en')}` },
+      lifestyle: { name: 'Lifestyle carousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'en') },
     },
 
     workedH: 'What that comes to',
@@ -218,7 +236,7 @@ const COPY = {
        punt. Een prijs die uitleg nodig heeft over hoe hij bij je terugkomt, is
        een prijs die zich verontschuldigt. Deze zegt wat voor soort bedrag het
        is en houdt op. */
-    brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once, when the model is designed. Not per image, not per order, not per year — from then on every order you place with us carries the same face, at the normal per-product rate for its size.`,
+    brandModelNote: `${euro(AMOUNT.brandModel, 'en')}, once, when the model is designed. Not per visual, not per order, not per year — from then on every order you place with us carries the same face, at the normal per-product rate for its size.`,
     videoName: 'Video clip',
     videoLine: 'One short clip. The same rate on its own or added to any order.',
     videoUnit: 'per clip',
@@ -268,9 +286,11 @@ const COPY = {
     ladderProductsCol: 'Producten',
     kinds: {
       // Zie de EN-tabel: 'per product' werd twee keer geprint.
-      complete: { name: 'Compleet', sub: 'Catalogset en lifestyle-carousel — zeven beelden' },
-      catalog: { name: 'Catalogset', sub: 'Vanaf vier beelden' },
-      lifestyle: { name: 'Lifestyle-carousel', sub: 'Drie beelden' },
+      /* Zie de noot bij de Engelse tabel. Hier stond bovendien "beelden" waar
+         het over catalog en lifestyle gaat; dat hoort "foto's" te zijn. */
+      complete: { name: 'Compleet', sub: `Catalogset en lifestyle-carousel — ${counted('complete', COMPLETE_IMAGES, 'nl')}` },
+      catalog: { name: 'Catalogset', sub: `Vanaf ${countedShort('catalog', CATALOG_IMAGES, 'nl')}` },
+      lifestyle: { name: 'Lifestyle-carousel', sub: countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl') },
     },
 
     workedH: 'Wat dat wordt',
@@ -438,6 +458,13 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
             {KIND_IDS.map((id) => (
               <td>
                 <span class="lad-rate">{euro(ladderRate(id, r.at), lang)}</span>
+                {/* Zie de noot bij dezelfde regel in HomeV2: de complete kolom
+                    is de duurste om naar te kijken en de goedkoopste om te
+                    kopen, en zonder dit getal doet de lezer die aftrekking
+                    zelf of niet. Per trede uitgerekend uit LADDER. */}
+                {id === 'complete' && (
+                  <span class="lad-save">−{euro(completeSaving(r.at).saved, lang)}</span>
+                )}
               </td>
             ))}
           </tr>
@@ -727,6 +754,7 @@ const svcRows = TIER_ROWS.filter((r) => SVC_KEYS.includes(r.key));
     line-height: 1;
     letter-spacing: -0.02em;
   }
+  .lad-save { display: block; margin-top: .2rem; font-size: .74rem; font-weight: 600; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .lad-incl { display: block; margin-top: .3rem; font-size: .75rem; color: var(--ink-3); white-space: nowrap; }
 
   /* ── The worked totals ───────────────────────────────────────────────── */

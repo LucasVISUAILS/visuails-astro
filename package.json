@@ -113,7 +113,8 @@
     "naden": "node naden.mjs",
     "naad": "node naad-in-venster.mjs",
     "vlakken": "node vlak-per-sectie.mjs",
-    "test:korrel": "node tests/korrel.test.mjs"
+    "test:korrel": "node tests/korrel.test.mjs",
+    "tekstblad": "node scripts/tekstblad.mjs && python3 scripts/tekstblad-xlsx.py"
   },
   "dependencies": {
     "@fontsource-variable/anybody": "^5.3.0",

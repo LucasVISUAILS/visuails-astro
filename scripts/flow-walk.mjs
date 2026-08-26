@@ -42,6 +42,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -82,7 +83,13 @@ const FLOWS = process.argv[2]
     '/nl/start/catalog', '/nl/start/lifestyle', '/nl/start/complete', '/nl/test-sample',
   ];
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium' });
+/* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────
+   Hier stond een hard pad naar /opt/pw-browsers. Dat is de map van de
+   Linux-container waarin dit project ook wordt gebouwd, en op Lucas' machine
+   bestaat /opt niet eens: dit script viel daar dus om nog voordat het iets deed.
+   scripts/lib/browserpad.mjs bestaat precies hiervoor en waarschuwt er in zijn
+   eigen noot voor — hij werd alleen door één script gebruikt. */
+const browser = await chromium.launch({ executablePath: process.env.CHROME || browserPad() });
 const bevindingen = [];
 const meld = (flow, wat) => { bevindingen.push(`${flow}: ${wat}`); console.log(`   ✗ ${wat}`); };
 

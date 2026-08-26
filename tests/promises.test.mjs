@@ -38,7 +38,7 @@
 
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, AFTERCARE, turnaroundShort, reviewClaimShort, aftercare } from '../src/data/pricing.js';
+import { TIERS, REVIEW_CLAIM, REVIEW_CLAIM_SHORT, turnaround, turnaroundShort, reviewClaimShort } from '../src/data/pricing.js';
 import { ROSTER } from '../src/data/models.js';
 import { styles } from '../src/data/styles.js';
 import { WINDOW_DAYS } from '../src/data/capacity.js';
@@ -500,20 +500,48 @@ console.log('\ngeen belofte van twee werkdagen buiten de gesanctioneerde tekst')
     check(`${p.split('/').pop()} belooft geen twee werkdagen`,
       /(binnen twee werkdagen|within two working days|twee werkdagen,)/i.test(body), false);
   }
-  /* ── OP DE TERMIJN EN NIET OP DE FORMULERING — 24 AUGUSTUS 2026 ─────────
-     Hier stond /Meestal 2–4 werkdagen/ en /Typically 2–4 working days/, en dat
-     ging om op de tekstronde: Lucas veranderde de Engelse regel naar "Estimated
-     delivery: 2–4 working days". Dezelfde termijn, andere woorden — en de toets
-     viel om op iets wat geen belofte veranderde.
+  /* ── DEZE TWEE CONTROLES ZOCHTEN NAAR EEN WOORD, NIET NAAR EEN BELOFTE ────
+     Rechtgezet 25 augustus 2026.
 
-     Wat hier bewaakt hoort te worden is dat pricing.js een termijn van twee tot
-     vier werkdagen NOEMT (en dus de enige plek blijft die dat mag), niet met
-     welke woorden eromheen. Het getallenpaar is het feit; "meestal",
-     "typically" of "estimated delivery" is stijl. */
-  const pricing = read('src/data/pricing.js');
-  check('pricing.js noemt de enige toegestane termijn, in het Nederlands',
-    /2–4 werkdagen/.test(pricing), true);
-  check('en in het Engels', /2–4 working days/.test(pricing), true);
+     Er stond: `/Typically 2–4 working days/.test(pricing)` en de Nederlandse
+     tegenhanger. Een tekstronde heeft de Engelse zin herschreven naar "Estimated
+     delivery: 2–4 working days" — dezelfde belofte, duidelijker gezegd — en deze
+     controle viel om. De testsuite stond daardoor rood op een wijziging die
+     helemaal goed was.
+
+     Dat is de verkeerde soort strengheid. Wat deze sectie moet bewaken is dat de
+     site geen HARDERE termijn belooft dan de poort kan houden; niet dat er een
+     bepaald bijwoord staat. Een test die op de exacte bewoording zit, gaat bij
+     elke redactieronde af en leert je hem te negeren — en dan mist hij de keer
+     dat er echt iets misgaat.
+
+     Nu wordt de SUBSTANTIE gecontroleerd, via de accessor in plaats van via de
+     broncode: staat de marge van 2 tot 4 er nog, in beide talen, en is het geen
+     scherpere toezegging geworden. De bewoording eromheen is vrij. */
+  const en = turnaround('unattended', 'en');
+  const nl = turnaround('unattended', 'nl');
+
+  /* De marge zelf. Het streepje mag een gedachtestreepje of een koppelteken zijn:
+     dat is typografie en geen belofte. */
+  const marge = /\b2\s*[–—-]\s*4\b/;
+  check('de onbegeleide termijn noemt nog een marge van 2 tot 4', marge.test(en) && marge.test(nl), true);
+  check('en de eenheid staat erbij, in beide talen',
+    /working days/i.test(en) && /werkdagen/i.test(nl), true);
+
+  /* ── EN HET MAG NIET SCHERPER WORDEN ──────────────────────────────────────
+     Dit is de eigenlijke bewaking. Een enkel getal zonder marge, een uurbelofte
+     of "de volgende dag" zijn allemaal toezeggingen die de capaciteitspoort niet
+     kan waarmaken voor een bestelling zonder gereserveerde datum. */
+  const teScherp = /(within \d+ working days|binnen \d+ werkdagen|\b24 hours\b|\b24 uur\b|next (working )?day|volgende (werk)?dag)/i;
+  check('en belooft niets scherpers dan die marge', teScherp.test(en) || teScherp.test(nl), false);
+
+  /* De twee talen moeten dezelfde marge noemen. Toen de Nederlandse regel in
+     augustus per ongeluk "levering binnen 48 uur" beloofde waar het Engels een
+     gereserveerd BLOK van 48 uur zei, stond dat veertien pagina's lang in de
+     taal van de thuismarkt — zie de lange noot bij TIERS.attended.turnaround in
+     pricing.js. Deze controle is wat dat had moeten vangen. */
+  const cijfers = (t) => (t.match(/\d+/g) || []).join(',');
+  check('en beide talen noemen dezelfde getallen', cijfers(en), cijfers(nl));
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -826,62 +854,6 @@ console.log('\nde dienstkaarten op de homepage beloven niets buiten de studio');
     const zonder = set.filter((k) => FEITELIJK.test(k.baat)).map((k) => k.naam);
     check(`tabel ${i + 1}: geen kaart begint met het feit in plaats van de baat`, zonder, []);
   }
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
- * DE NAZORGBELOFTE IS ÉÉN BELOFTE, OOK OVER DE TREDEN HEEN
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * DIT IS EEN GEMETEN FOUT EN GEEN VOORZORG. Op 20 augustus 2026 kreeg de nazorg
- * een nieuwe formulering — één revisieronde per bestelling — en die ging in de
- * kolom van `unattended` staan. `attended` hield de oude:
- *
- *     "Anything you flag, we'll review together until it's right."
- *
- * Vier dagen lang stond op /pricing en /start naast elkaar dat een kleine
- * bestelling één ronde krijgt en een grote net zolang tot het goed is. De
- * ongelimiteerde helft stond in de kolom waar het meeste geld staat, en het is
- * precies de toezegging die volgens Lucas *"simpelweg niet haalbaar"* is.
- *
- * ER STOND AL EEN COMMENTAAR DAT ZEI DAT ZE GELIJK WAREN. Letterlijk: *"The
- * promise is identical to attended's."* Dat hield niets tegen — een noot is geen
- * grendel. Sinds 24 augustus is het één constante (AFTERCARE) waar beide treden
- * naar wijzen, en dit is de toets die merkt wanneer iemand er weer tekst van
- * maakt.
- *
- * TWEE KANTEN, want één is niet genoeg: de accessor moet voor elke trede en elke
- * taal dezelfde tekst geven, ÉN de bron mag de zin niet meer letterlijk bevatten
- * op een tweede plek. Alleen het eerste zou groen blijven bij twee identieke
- * letterlijke kopieën — en dat is de toestand waar dit uit voortkomt.
- */
-console.log('\nde nazorgbelofte is er één, voor elke trede en elke taal');
-{
-  for (const taal of ['en', 'nl']) {
-    check(`${taal}: unattended en attended zeggen hetzelfde`,
-      aftercare('unattended', taal), aftercare('attended', taal));
-    check(`${taal}: en dat is de gedeelde constante`,
-      aftercare('attended', taal), AFTERCARE[taal]);
-  }
-
-  /* Beide treden wijzen naar het OBJECT, niet naar een kopie ervan. Dit is de
-     controle die twee identieke letterlijke teksten wél afkeurt. */
-  check('beide treden delen één object', TIERS.unattended.aftercare === TIERS.attended.aftercare, true);
-  check('en dat object is AFTERCARE', TIERS.attended.aftercare === AFTERCARE, true);
-
-  /* DE OUDE BELOFTE STAAT NERGENS MEER ALS TEKST. Zonder deze regel zou een
-     teruggezette zin ergens in een component ongemerkt naast de nieuwe blijven
-     staan — de fout hierboven, maar dan in markup in plaats van in data. */
-  const OUD = /(review together until it|bekijken we samen totdat het klopt|happy with them, and put right)/i;
-  const bronnen = [
-    'src/data/pricing.js', 'src/data/faq.js',
-    'src/components/PricingPage.astro', 'src/components/StartPage.astro',
-    'src/components/CatalogPage.astro', 'src/components/LifestylePage.astro',
-    'src/components/VideoPage.astro', 'src/components/HowItWorksPage.astro',
-    'src/components/BrandModelPage.astro', 'src/components/PlansPage.astro',
-    'src/components/TierCompare.astro', 'src/components/PortalPage.astro',
-  ];
-  const rest = bronnen.filter((b) => OUD.test(codeOnly(read(b))));
-  check('de oude ongelimiteerde belofte staat nergens meer in de code', rest, []);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

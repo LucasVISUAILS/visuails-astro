@@ -117,7 +117,7 @@ const COPY = {
     // <em> added task #271b (Lucas's own request, editorial accent) — same
     // closing-word-emphasis convention already used on the other hero H1s
     // (homepage's "visualized.", custom-models' "Only yours.").
-    h1: `Product-page photos, ${CATALOG_IMAGES} per product — <em>the same on every product.</em>`,
+    h1: `Product-page images, ${CATALOG_IMAGES} per product — <em>the same on every product.</em>`,
     lead: `A full set per product, from 4 photos — front, back, a fabric or logo close-up and one on-model shot, with more available per product. <strong>${euro(entry, 'en')} per product</strong> ${vatLabel('excl', 'en')}, falling to ${euro(floor, 'en')} from ${floorFrom} products up.`,
     // SECTION 13: Tier 0 "must NOT appear ... in any hero." This button used to
     // read the tier label verbatim ("Order individual products"), which put the
@@ -127,9 +127,9 @@ const COPY = {
     // to prejudge — size decides the service level now — so the neutral verb
     // is simply correct rather than diplomatic, and where the line falls is
     // stated further down, on the queue note and in the TierCompare block.
-    ctaPrimary: 'Order catalog visuals',
-    ctaSecondary: 'See pricing per product',
-    wa: waHref("Hi VISUAILS, I'd like to order catalog visuals for my products."),
+    ctaPrimary: 'Order catalog images',
+    ctaSecondary: 'See the price per product',
+    wa: waHref("Hi VISUAILS, I'd like to order catalog images for my products."),
     waLabel: 'WhatsApp',
     // Two figures, not one. A single rate in a trust row is the exact claim
     // the ladder retired — see the note at the top of this file.
@@ -143,7 +143,7 @@ const COPY = {
     // — so this line names the count as well as the promise. A visitor should
     // not be able to leave this page believing a date was promised.
     queueNote: `Under ${WINDOW_THRESHOLD} products: ${t0.queue.en.toLowerCase()}. From ${WINDOW_THRESHOLD}, we hold a delivery date for the order and confirm it in writing.`,
-    packH: 'One product. Four photos, or more. The rate falls as the count rises.',
+    packH: 'One product. Four images, or more. The rate falls as the count rises.',
     ladderH: 'What a catalog set costs',
     ladderProductsCol: 'Products',
     ladderRateCol: `Per product · ${vatLabel('excl', 'en')}`,
@@ -158,7 +158,7 @@ const COPY = {
     // is a consequence of size now rather than a thing you pick, and one rate
     // is not what a catalog set costs. The rung list sits directly above this
     // button, so the button only has to be a verb.
-    packCta: 'Order catalog visuals',
+    packCta: 'Order catalog images',
     edMeta: '( Where it fits )',
     edH: 'Catalog photography: clarity that closes the sale.',
     edSub: 'The clean product pages your shop and marketplaces run on.',
@@ -194,19 +194,19 @@ const COPY = {
       reviewClaim('unattended', 'en'),
     ],
     chipsBg: ['White — standard', 'Custom colour — any hex code'],
-    baH: 'One photo in. A clean visual out.',
+    baH: 'One photo in. A clean catalog image out.',
     baP: 'The exact raw phone photo a customer sent — and what came back.',
     baBefore: 'Your photo',
     baBeforeAlt: 'A raw phone photo of a t-shirt on a table before VISUAILS',
-    baAfterAlt: 'The same t-shirt as a clean catalog visual after VISUAILS',
+    baAfterAlt: 'The same t-shirt as a clean catalog image after VISUAILS',
     reviewH: "Fast means nothing if it isn’t right.",
-    reviewP: 'Every visual is generated, then reviewed by a person before it reaches you — colour and detail held true, not left to chance.',
+    reviewP: 'Every catalog image is generated, then reviewed by a person before it reaches you — colour and detail held true, not left to chance.',
     reviewChips: ['Consistent lighting & framing', 'Marketplace-ready', reviewClaim('unattended', 'en')],
     // The trust row carried the turnaround flag but not the review claim, while
     // /lifestyle and /video carried both. Three service pages making two
     // different promises above the fold is the inconsistency, not the wording.
     reviewNote: reviewClaim('unattended', 'en'),
-    reviewAlt: 'A clean, marketplace-ready catalog visual by VISUAILS',
+    reviewAlt: 'A clean, marketplace-ready catalog image by VISUAILS',
     faqH: 'Catalog questions, answered',
     faqs: serviceFaqs('catalog', 'en'),
     ctaH: 'Build a catalog that<br>looks like one brand.',
@@ -214,11 +214,11 @@ const COPY = {
   },
   nl: {
     eyebrow: 'Catalog',
-    h1: 'Strakke, consistente productvisuals — <em>ook bij dertig producten.</em>',
-    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer beelden per product kan altijd. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
-    ctaPrimary: 'Bestel catalogusbeelden',
+    h1: 'Strakke, consistente catalogfoto’s — <em>ook bij dertig producten.</em>',
+    lead: `Een complete set per product, vanaf 4 foto’s — voorkant, achterkant, een close-up van de stof of het logo, en één foto op een model. Meer catalogfoto’s per product kan altijd. <strong>${euro(entry, 'nl')} per product</strong> ${vatLabel('excl', 'nl')}, en dat daalt naar ${euro(floor, 'nl')} vanaf ${floorFrom} producten.`,
+    ctaPrimary: 'Bestel catalogfoto’s',
     ctaSecondary: 'Bekijk de prijs per product',
-    wa: waHref("Hoi VISUAILS, ik wil graag Catalog-visuals bestellen voor mijn producten."),
+    wa: waHref("Hoi VISUAILS, ik wil graag catalogfoto’s bestellen voor mijn producten."),
     waLabel: 'WhatsApp',
     trust: [
       [`${euro(entry, 'nl')} – ${euro(floor, 'nl')}`, `per product · ${vatLabel('excl', 'nl')}`],
@@ -231,15 +231,15 @@ const COPY = {
     ladderRateCol: `Per product · ${vatLabel('excl', 'nl')}`,
     ladderNote: `Het tarief geldt voor elk product in de bestelling, niet alleen voor de producten boven die grens — ${floorFrom} producten kosten dus allemaal ${euro(floor, 'nl')}.`,
     packP: `Elk product komt terug als een complete set — met een echte foto op een model, niet alleen het product plat op een ondergrond. Op die foto staat een gezicht uit de standaardbibliotheek, of <a href="${lp('/custom-models')}">een merkmodel dat alleen voor jou gemaakt is</a>, zodat dezelfde persoon je hele assortiment draagt.`,
-    packCta: 'Bestel catalogusbeelden',
+    packCta: 'Bestel catalogfoto’s',
     edMeta: '( Waar het past )',
     edH: 'Catalogfotografie: zo duidelijk dat er niets te vragen overblijft.',
     edSub: 'De strakke productpagina’s waar je shop en marktplaatsen op draaien.',
     whatH: 'Wat het is',
     whatP: [
-      'Catalogfotografie is het strakke, rechttoe rechtaan productbeeld waar een klant het product op beoordeelt — voorkant, achterkant, een close-up van een detail en één foto op een model, allemaal op dezelfde achtergrond. Het is er niet om sfeer te maken, maar om precies te laten zien wat iemand koopt. Niemand hoeft iets te raden.',
+      'Catalogfotografie is de strakke, rechttoe rechtaan foto waar een klant het product op beoordeelt — voorkant, achterkant, een close-up van een detail en één foto op een model, allemaal op dezelfde achtergrond. Het is er niet om sfeer te maken, maar om precies te laten zien wat iemand koopt. Niemand hoeft iets te raden.',
       // Was drie zinnen. Het beeld erboven laat nu zien wat ze uitlegden.
-      'Het beeld hierboven is het hele argument: staat alles op dezelfde manier op de foto, dan leest je collectie als één geheel in plaats van als een stapel losse telefoonfoto’s. Dat is wat een klein merk gevestigd laat lijken.',
+      'De foto hierboven is het hele argument: staat alles op dezelfde manier op de foto, dan leest je collectie als één geheel in plaats van als een stapel losse telefoonfoto’s. Dat is wat een klein merk gevestigd laat lijken.',
     ],
     whereH: 'Waar je het gebruikt',
     where: [
@@ -269,12 +269,12 @@ const COPY = {
     baP: 'Precies de ruwe telefoonfoto die een klant stuurde — en wat er terugkwam.',
     baBefore: 'Jouw foto',
     baBeforeAlt: 'Een ruwe telefoonfoto van een t-shirt op een tafel vóór VISUAILS',
-    baAfterAlt: 'Hetzelfde t-shirt als een strakke Catalog-visual na VISUAILS',
+    baAfterAlt: 'Hetzelfde t-shirt als een strakke catalogfoto na VISUAILS',
     reviewH: 'Snel betekent niets als het niet klopt.',
-    reviewP: 'We maken elke visual, en daarna controleert een specialist hem voordat je hem krijgt — kleur en detail moeten kloppen, en dat laten we niet aan het toeval over.',
+    reviewP: 'We maken elke catalogfoto, en daarna controleert een specialist hem voordat je hem krijgt — kleur en detail moeten kloppen, en dat laten we niet aan het toeval over.',
     reviewChips: ['Consistente belichting & uitsnede', 'Klaar voor marktplaatsen', reviewClaim('unattended', 'nl')],
     reviewNote: reviewClaim('unattended', 'nl'),
-    reviewAlt: 'Een strakke, voor marktplaatsen klare Catalog-visual van VISUAILS',
+    reviewAlt: 'Een strakke, voor marktplaatsen klare catalogfoto van VISUAILS',
     faqH: 'Catalog-vragen, beantwoord',
     faqs: serviceFaqs('catalog', 'nl'),
     ctaH: 'Bouw een catalogus die<br>eruitziet als één merk.',

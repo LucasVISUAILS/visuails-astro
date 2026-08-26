@@ -607,12 +607,22 @@ h3 { margin: 1.2rem 0 .5rem; font-size: .92rem; font-weight: 700; color: var(--i
    as portal.css), so it has to come AFTER .btn in the cascade or .btn's own
    padding/text-decoration would win back. */
 
-details.ask { flex-basis: 100%; margin-top: .3rem; }
-details.ask > summary { cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--ink-3); list-style: none; text-decoration: underline; text-underline-offset: 3px; }
-details.ask > summary::-webkit-details-marker { display: none; }
-details.ask > summary:hover { color: var(--ink); }
-details.ask textarea { display: block; width: 100%; max-width: 32rem; margin-top: .6rem; }
-details.ask .btn { margin-top: .6rem; }
+/* Een aangevinkt beeld krijgt zijn notitieveld nadrukkelijker, zodat je in één
+   blik ziet waar je nog iets moet schrijven. `:has()` en geen script — dit
+   dashboard draait onder `default-src 'none'`. */
+
+/* ── HET FORMULIER DAT DE HELE RONDE VERSTUURT ──────────────────────────────
+   Staat onder de productkaarten, buiten elke kaart, want het gaat over de
+   bestelling en niet over één beeld. De vinkjes erboven horen erbij via
+   `form="ronde-<id>"`. */
+.ronde { margin: 1.2rem 0 0; padding: 1rem 1.1rem; border: 1px solid var(--line, rgb(0 0 0 / .12)); border-radius: 10px; background: var(--surface-2, rgb(0 0 0 / .02)); }
+.ronde h3 { margin: 0 0 .5rem; font-size: 1rem; font-weight: 700; color: var(--ink); }
+.ronde p { margin: 0 0 .6rem; font-size: .88rem; line-height: 1.55; color: var(--ink-3); max-width: 62ch; }
+/* De waarschuwing is het enige dat de klant vóór de klik moet begrijpen, dus hij
+   krijgt de amberkleur die dit dashboard al gebruikt voor "let op" en niet voor
+   "er ging iets mis". */
+.ronde-warn { color: var(--ink-2, #444); border-left: 3px solid #E5B45C; padding-left: .75rem; }
+.ronde.is-done { border-color: rgb(143 209 79 / .5); }
 
 textarea {
   font: inherit; padding: .7rem .8rem; background: var(--surface); color: var(--ink);
@@ -2748,6 +2758,18 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
    van het stylesheet wél. Eén toestand, één kleur, één plek om hem te
    veranderen. Zie HERONTWERP.md §2.3. */
 
+/* ── DE DODE `.ask-*`-REGELS ZIJN HIER WEGGEHAALD — 26 AUGUSTUS 2026 ─────────
+   `.ask-mark`, `.ask-tick` en `.ask-mark:has(input:checked)` stonden hier voor
+   de uitklapper met een notitieveld per beeld. Die is op 25 augustus vervangen
+   door de ene revisieronde, en sindsdien zendt geen enkele regel in
+   src/lib/account.js of src/lib/portal.js die klassen nog uit — gecontroleerd
+   met een grep over allebei.
+
+   ── EN HET BLOK DAT ER WÉL BIJ HOORT ONTBRAK ────────────────────────────────
+   Omgekeerd stond `.pick` — het vinkje dat de klant nu aanklikt, uitgezonden op
+   account.js:7242 en portal.js:1519 — in dit bestand NIET. De knop stond dus
+   ongestyled op het dashboard terwijl de opmaak voor zijn voorganger er nog
+   volop in stond. Beide helften zijn hieronder rechtgezet. */
 /* ---- de ene revisieronde -------------------------------------------------
    Sinds 24 augustus 2026 vraagt een klant niet meer per beeld een revisie maar
    één ronde per bestelling: aanvinken wat niet klopt, één notitie, één keer

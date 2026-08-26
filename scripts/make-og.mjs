@@ -26,6 +26,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { TAGLINE } from '../src/data/brand.js';
+import { browserPad } from './lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'public/img');
@@ -65,7 +66,13 @@ function pick(candidates, what) {
 const photo = pick(['img/hero-dunes.webp', 'img/banners-05.webp'], 'achtergrondfoto');
 const mark = pick(['img/mail/mark-groen.png'], 'merkteken');
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+/* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────
+   Hier stond een hard pad naar /opt/pw-browsers. Dat is de map van de
+   Linux-container waarin dit project ook wordt gebouwd, en op Lucas' machine
+   bestaat /opt niet eens: dit script viel daar dus om nog voordat het iets deed.
+   scripts/lib/browserpad.mjs bestaat precies hiervoor en waarschuwt er in zijn
+   eigen noot voor — hij werd alleen door één script gebruikt. */
+const browser = await chromium.launch({ executablePath: browserPad() });
 
 for (const [lang, t] of Object.entries(TAGLINE)) {
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });

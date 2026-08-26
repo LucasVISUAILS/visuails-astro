@@ -200,24 +200,7 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
  * is een revisie" dwingt je alsnog het dashboard te openen om te weten of het dringend
  * is, en dan had de mail niets opgelost.
  */
-/*
- * ── ÉÉN BEELD OF ÉÉN RONDE — 24 augustus 2026 ───────────────────────────────
- *
- * Deze functie kende alleen `fileId`, uit de tijd dat een klant per beeld een
- * revisie vroeg. Sinds de belofte één ronde per bestelling is (zie AFTERCARE in
- * src/data/pricing.js), komt er één verzoek binnen met een lijst beelden eraan.
- *
- * `fileIds` is dus de nieuwe vorm en `fileId` blijft werken. Niet uit
- * vriendelijkheid voor oude aanroepers — die zijn er niet meer — maar omdat het
- * de functie op één plek laat beslissen hoe een verzoek eruitziet in de mail,
- * en dat is precies wat er misging toen portal.js en account.js allebei hun
- * eigen versie hadden.
- *
- * WAAROM ÉÉN MAIL EN NIET VIER. Lucas vroeg om de ronde als één partij te
- * kunnen bekijken: *"waarna ik ze bekijk en beoordeel"*. Vier losse mails over
- * één beslissing zijn vier keer dezelfde bestelling opzoeken.
- */
-export async function notifyRevision(env, { orderId, fileId, fileIds, note, round = false }) {
+export async function notifyRevision(env, { orderId, fileId, note }) {
   try {
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
@@ -234,47 +217,103 @@ export async function notifyRevision(env, { orderId, fileId, fileIds, note, roun
      * Eén query hier is dus niet alleen korter maar ook de veilige kant: het opzoeken
      * zit binnen de try van deze functie, waar een fout niets kan raken.
      */
-    const ids = (Array.isArray(fileIds) && fileIds.length ? fileIds : [fileId])
-      .filter((n) => Number.isInteger(n));
-
-    let rijen = [];
+    let f = null;
     try {
-      const plaatsen = ids.map((_, i) => `?${i + 1}`).join(', ');
-      const res = await env.DB.prepare(
-        `SELECT id, filename, product_key, shot FROM files WHERE id IN (${plaatsen})`
-      ).bind(...ids).all();
-      rijen = res.results || [];
-    } catch { /* dan zonder — de bestandsnummers zijn genoeg om ze terug te vinden */ }
+      f = await env.DB.prepare(
+        'SELECT filename, product_key, shot FROM files WHERE id = ?1'
+      ).bind(fileId).first();
+    } catch { /* dan zonder — het bestandsnummer is genoeg om het terug te vinden */ }
 
-    const naam = (id) => {
-      const f = rijen.find((r) => r.id === id);
-      return [f?.product_key, f?.shot].filter(Boolean).join(' · ')
-        || f?.filename
-        || `bestand ${id}`;
-    };
-    const namen = ids.map(naam);
-
-    /* Het onderwerp draagt het AANTAL en niet de hele lijst: vier beelden in een
-       onderwerpregel is een regel die in elke mailclient wordt afgekapt, en dan
-       staat er nog steeds niet in hoeveel het er waren. */
-    const kop = round
-      ? `Revisieronde · ${ref} · ${ids.length} beeld${ids.length === 1 ? '' : 'en'}`
-      : `Revisie gevraagd · ${ref} · ${namen[0] || ''}`;
-
-    await toStudio(env, kop, [
-      h1(round ? 'Een klant heeft zijn revisieronde ingediend' : 'Een klant vraagt een revisie', ref),
+    const what = [f?.product_key, f?.shot].filter(Boolean).join(' · ')
+      || f?.filename
+      || `bestand ${fileId}`;
+    await toStudio(env, `Revisie gevraagd · ${ref} · ${what}`, [
+      h1('Een klant vraagt een revisie', ref),
       mailRows([
         ['Bestelling', ref],
         ['Klant', who(o)],
-        [ids.length === 1 ? 'Beeld' : 'Beelden', namen.join(' · ')],
+        ['Beeld', what],
       ]),
       note ? mailQuote(note) : mailP('De klant heeft er geen toelichting bij gezet.'),
-      round
-        ? mailP('Dit is de ene ronde die bij deze bestelling hoort — de klant kan er geen tweede indienen. Alles staat als één partij bij de bestelling in het adminportaal.')
-        : mailP('Het verzoek staat bovenaan in het adminportaal, bij de bestelling.'),
+      mailP('Het verzoek staat bovenaan in het adminportaal, bij de bestelling.'),
     ].join(''));
   } catch (err) {
     console.error('[notify] revisiebericht niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/*
+ * ── DE HELE RONDE IN ÉÉN BERICHT — 25 AUGUSTUS 2026 ─────────────────────────
+ *
+ * notifyRevision() hierboven gaat over ÉÉN beeld, want zo werkte het scherm: elk
+ * beeld was een eigen formulier dat meteen verzond. Sinds vandaag dient de klant
+ * zijn revisieronde in één keer in — aanvinken wat er mis is, per beeld
+ * opschrijven wat, en dan één knop.
+ *
+ * WAAROM NIET GEWOON notifyRevision() IN EEN LUS. Omdat vijf aangemerkte beelden
+ * dan vijf mails geven, en dat is precies het tegenovergestelde van wat de
+ * verandering oplevert. Erger: ze komen los binnen, dus de studio kan niet zien
+ * of dit één ronde is of vijf losse klachten — terwijl dat nu juist het verschil
+ * is dat ertoe doet, want een ronde is er één per bestelling.
+ *
+ * DE NOTITIES STAAN VOLUIT EN NIET GETELD. "Drie beelden aangemerkt" dwingt je
+ * het dashboard te openen om te weten of het om een kleurzweem of om een
+ * verkeerd product gaat. /studio belooft dat een revisieverzoek binnenkomt "met
+ * de notitie die de klant schreef, in diens eigen woorden"; bij vijf beelden
+ * geldt dat vijf keer.
+ *
+ * FOUTEN BLIJVEN BINNEN, net als bij notifyRevision(): de ronde van de klant is
+ * al weggeschreven als dit draait, en die mag niet omvallen omdat de mail eruit
+ * ligt.
+ */
+export async function notifyRevisionRound(env, { orderId, items = [] }) {
+  try {
+    const o = await orderFor(env, orderId);
+    const ref = o?.ref || `#${orderId}`;
+
+    /* De namen erbij zoeken, in één query in plaats van één per beeld. Lukt het
+       niet, dan draagt elke regel nog altijd zijn bestandsnummer — genoeg om het
+       terug te vinden, en dat is waarom dit de mail niet mag tegenhouden. */
+    let namen = new Map();
+    try {
+      const ids = items.map((x) => Number(x.fileId)).filter(Number.isInteger);
+      if (ids.length) {
+        const gaten = ids.map((_, i) => `?${i + 1}`).join(', ');
+        const res = await env.DB
+          .prepare(`SELECT id, filename, product_key, shot FROM files WHERE id IN (${gaten})`)
+          .bind(...ids).all();
+        for (const r of res.results || []) {
+          namen.set(Number(r.id), [r.product_key, r.shot].filter(Boolean).join(' · ') || r.filename || '');
+        }
+      }
+    } catch { /* dan zonder namen */ }
+
+    const regels = items.map(({ fileId, note }) => {
+      const wat = namen.get(Number(fileId)) || `bestand ${fileId}`;
+      return mailRows([['Beeld', wat]]) + (note ? mailQuote(note) : mailP('Geen toelichting.'));
+    }).join('');
+
+    const aantal = items.length;
+    await toStudio(
+      env,
+      `Revisieronde · ${ref} · ${aantal} ${aantal === 1 ? 'beeld' : 'beelden'}`,
+      [
+        h1('Een klant heeft zijn revisieronde ingediend', ref),
+        mailRows([
+          ['Bestelling', ref],
+          ['Klant', who(o)],
+          ['Aangemerkt', `${aantal} ${aantal === 1 ? 'beeld' : 'beelden'}`],
+        ]),
+        /* Dit staat er met opzet bij. Het is de ENE ronde van deze bestelling:
+           er komt geen tweede via het scherm, dus wat hier niet in staat, komt
+           via WhatsApp of e-mail binnen en niet als verzoek. */
+        mailP('Dit was de revisieronde van deze bestelling. Verdere opmerkingen komen via WhatsApp of e-mail binnen.'),
+        regels,
+        mailP('De verzoeken staan bovenaan in het adminportaal, bij de bestelling.'),
+      ].join(''),
+    );
+  } catch (err) {
+    console.error('[notify] revisieronde niet verstuurd voor', orderId, '—', err?.message || err);
   }
 }
 

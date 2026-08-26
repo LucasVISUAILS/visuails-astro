@@ -221,6 +221,68 @@ mag §7 van de verwerkersovereenkomst het weer beweren. Een openstaand punt in
 een register is verantwoording; een dichtgeschreven punt dat niet waar is, is
 een verklaring waar je op afgerekend wordt.
 
+### 3.7 Abonnementen, doorlopende machtiging en het verzoek per maand
+
+> **Bijgeschreven op 26 augustus 2026 na een controle van de map, en de juridische
+> formulering hieronder is nog niet door een jurist nagekeken.** Wat er staat is
+> afgeleid uit `schema.sql` en de code; doel en grondslag zijn ingevuld naar wat de
+> verwerking feitelijk doet. De aanleiding: tussen 12 en 20 augustus kwamen er acht
+> tabellen met persoonsgegevens bij en dit register bleef ongewijzigd, terwijl §8
+> beloofde dat een toets daarop rood zou gaan. Die toets keek maar één kant op — van
+> het register naar het schema — en is op 26 augustus aangevuld met de andere kant.
+
+| Veld | Inhoud |
+|---|---|
+| **Doel** | een maandelijks abonnement uitvoeren: de machtiging opzetten, elke maand afschrijven, het saldo bijhouden en de klant laten zeggen wat hij dat maand gemaakt wil hebben |
+| **Grondslag** | art. 6 lid 1 sub b (uitvoering van de overeenkomst); voor de abonnementsfacturen art. 6 lid 1 sub c (fiscale bewaarplicht) |
+| **Betrokkenen** | de abonnee |
+| **Gegevens** | klantverwijzing, het klant- en mandaatkenmerk bij Mollie, btw-nummer, een eventuele opzegreden, per maand het saldo en wat ervan is gebruikt, en de vrije tekst waarin de klant zijn wens beschrijft |
+| **Waar** | Cloudflare D1, tabellen `subscriptions`, `subscription_months`, `subscription_payments`, `plan_queue`, `subscription_invoices` |
+| **Ontvangers** | Mollie, voor de machtiging en de afschrijving — zie §5 |
+| **Bewaartermijn** | de abonnementsfacturen: **7 jaar** na het boekjaar, net als de gewone facturen. De rest: zolang het abonnement loopt en de klantrelatie daarna |
+| **Doorgifte** | zie §6 |
+
+**Twee dingen die hier expliciet horen te staan.**
+
+`subscription_invoices.customer_id` is `ON DELETE SET NULL` en niet `CASCADE`, en dat
+is met opzet: een abonnementsfactuur draagt naam, adres en btw-nummer in
+`snapshot_json` en moet de fiscale zeven jaar uitzitten. Een AVG-wisverzoek haalt
+dus de klant weg en laat die factuur staan — de wettelijke bewaarplicht gaat hier
+vóór het recht op verwijdering (art. 17 lid 3 sub b). Dat is de juiste uitkomst, maar
+het hoort een genoteerde keuze te zijn en geen bijwerking van een schemaregel.
+
+`plan_queue.note` is vrije tekst die de klant zelf typt. Daar kan alles in staan wat
+hij erin typt, en dat is de reden dat deze tabel in de wisknop staat.
+
+### 3.8 Het adreswijzigingsspoor
+
+| Veld | Inhoud |
+|---|---|
+| **Doel** | een verandering van e-mailadres kunnen terugdraaien als hij niet van de klant kwam |
+| **Grondslag** | art. 6 lid 1 sub f (gerechtvaardigd belang: rekeningovername tegengaan), en art. 32 (passende beveiliging) |
+| **Betrokkenen** | de klant |
+| **Gegevens** | het oude en het nieuwe e-mailadres, **allebei voluit**, en een gezouten hash van het ip-adres van het verzoek |
+| **Waar** | Cloudflare D1, tabel `email_changes` |
+| **Bewaartermijn** | verdwijnt met de klant mee (`ON DELETE CASCADE` op `customers`) |
+
+Dat de twee adressen onversleuteld in deze tabel staan, is nodig voor de
+ongedaan-maken-link en hoort daarom genoemd te worden in plaats van weggelaten.
+
+### 3.9 Wat er per klant vastligt over zijn beeld
+
+| Veld | Inhoud |
+|---|---|
+| **Doel** | een klant zijn eigen vaste look, zijn eigen model en zijn revisieverzoeken laten houden over bestellingen heen |
+| **Grondslag** | art. 6 lid 1 sub b |
+| **Betrokkenen** | de klant |
+| **Gegevens** | de vastgezette look en beeldverhouding, een verwijzing naar het merkmodel en het voorbeeldbeeld daarvan in R2, de tekst van elk revisieverzoek, en het saldo met de aantekening waarom het is bijgeschreven |
+| **Waar** | Cloudflare D1, tabellen `customer_style_locks`, `custom_models`, `revision_requests`, `customer_credits`; Cloudflare R2 voor `custom_models.preview_key` |
+| **Bewaartermijn** | zolang de klantrelatie loopt; alle vier staan in de wisknop |
+
+**Let op bij `custom_models.preview_key`:** dat is een R2-object met een gezicht erop
+dat buiten `files` valt en dus niet door de nachtelijke opruimtaak wordt gezien. De
+wisknop haalt hem wél op. Er zit dus geen klok op, alleen een wisverzoek.
+
 ## 8 · Waar dit document van afhangt
 
 Wijzigt een van deze dingen, dan wijzigt dit register mee — en `npm run
@@ -228,7 +290,14 @@ test:register` gaat rood als dat niet gebeurt:
 
 - `src/lib/retention.js` — de twee bewaartermijnen
 - `src/pages/nl/data-processing-agreement.astro` — de lijst subverwerkers
-- `schema.sql` — de tabellen waarin persoonsgegevens staan
+- `schema.sql` — de tabellen waarin persoonsgegevens staan. **Dit werkt sinds
+  26 augustus 2026 twee kanten op.** Tot die dag keek de toets alleen of een in dit
+  register genoemde tabel nog bestond; hij keek niet of een bestaande tabel met
+  persoonsgegevens hier genoemd wordt. Acht tabellen zijn daardoor stilletjes buiten
+  dit register gebleven. Welke tabellen meetellen wordt bepaald aan de KOLOMMEN — een
+  `customer_id`, een e-mailadres, een naam, een adres, een btw-nummer, een gezouten ip
+  of een `snapshot_json` — en niet aan een lijst die iemand met de hand bijhoudt, want
+  dat is precies wat hier stukging
 
 Beoordelen: bij elke wezenlijke wijziging in wat er wordt verwerkt, en in ieder
 geval één keer per jaar.

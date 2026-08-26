@@ -71,8 +71,7 @@ import {
   LADDER, ladderRate, ladderFloor, ladderTotal,
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS,
   PLAN_ROLLOVER_MONTHS,
-  WINDOW_THRESHOLD, vatLabel, vatNote,
-} from './pricing.js';
+  WINDOW_THRESHOLD, vatLabel, vatNote, clause,} from './pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 
 const norm = (lang) => (lang === 'nl' ? 'nl' : 'en');
@@ -145,7 +144,7 @@ export function pricingFaqs(lang = 'en') {
       },
       {
         q: 'Waarom staat er geen leverdatum bij een kleine bestelling?',
-        a: `Omdat het serviceniveau de omvang volgt. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${turnaround('attended', 'nl').toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, gezegd als gebruikelijk en nooit als datum. Een datum noemen die we zouden moeten breken is erger dan geen datum noemen, en een bestelling die al in de agenda staat wijkt nooit voor een bestelling die er niet in staat.`,
+        a: `Omdat het serviceniveau de omvang volgt. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, gezegd als gebruikelijk en nooit als datum. Een datum noemen die we zouden moeten breken is erger dan geen datum noemen, en een bestelling die al in de agenda staat wijkt nooit voor een bestelling die er niet in staat.`,
       },
       {
         q: 'Kost een video meer binnen een bestelling?',
@@ -181,7 +180,7 @@ export function pricingFaqs(lang = 'en') {
     },
     {
       q: 'Why is there no delivery date on a small order?',
-      a: `Because the service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${turnaround('attended', 'en').toLowerCase()}. Below that it runs in the normal turnaround: ${turnaround('unattended', 'en').toLowerCase()}, stated as typical and never as a date. Quoting a date we would have to break is worse than not quoting one, and an order already in the calendar is never pushed for one that is not.`,
+      a: `Because the service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that it runs in the normal turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, stated as typical and never as a date. Quoting a date we would have to break is worse than not quoting one, and an order already in the calendar is never pushed for one that is not.`,
     },
     {
       q: 'Does a video cost more inside an order?',
@@ -226,11 +225,11 @@ export function faqPageGroups(lang = 'en') {
             // over de lancering van de KLANT — precies de botsing die het
             // prijsmodel heeft veranderd. Zie de kop van dit bestand.
             q: 'Wat is een bestelling?',
-            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} beelden, een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
+            a: `Een bestelling is alles wat je in één keer aanlevert: één keer uploaden, één tarief, één factuur. Per product kies je een catalogset van ${CATALOG_IMAGES} foto’s, een lifestyle-carousel van ${LIFESTYLE_IMAGES} foto’s, of allebei. Er is geen minimum en geen pakket waar je collectie in moet passen — hoe meer producten, hoe lager het tarief per product.`,
           },
           {
             q: 'Wat moet ik opsturen?',
-            a: 'Per product een duidelijke foto van de voorkant en één van de achterkant, plus een korte notitie over de look die je wilt. Allebei die kanten krijg je terug als geleverd beeld, dus vragen we ze allebei in plaats van te gokken naar wat er achterop zit. Een close-up en een draagfoto mogen erbij en maken het nauwkeuriger, maar hoeven niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de bestelling.',
+            a: 'Per product een duidelijke foto van de voorkant en één van de achterkant, plus een korte notitie over de look die je wilt. Allebei die kanten krijg je terug als geleverde foto, dus vragen we ze allebei in plaats van te gokken naar wat er achterop zit. Een close-up en een draagfoto mogen erbij en maken het nauwkeuriger, maar hoeven niet. Vijf minuten, of het nu één product is of dertig — de moeite groeit niet mee met de omvang van de bestelling.',
           },
           {
             q: 'Kan ik het proberen voordat ik een hele collectie bestel?',
@@ -243,16 +242,16 @@ export function faqPageGroups(lang = 'en') {
         items: [
           {
             q: 'Wat is het verschil tussen catalog en lifestyle?',
-            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je allebei op hetzelfde product, dan heet dat een compleet product: ${CATALOG_IMAGES + LIFESTYLE_IMAGES} beelden tegen één tarief, voor elk product in de bestelling.`,
+            a: `${cat.name}. ${cat.line} Strak, consistent, gemaakt voor shoplistings en marktplaatsen. ${life.name}. ${life.line} Een gestylede scène in plaats van een product op een achtergrond. Neem je allebei op hetzelfde product, dan heet dat een compleet product: ${CATALOG_IMAGES + LIFESTYLE_IMAGES} foto’s tegen één tarief, voor elk product in de bestelling.`,
             photos: [
               {
                 src: '/img/catalog-after.webp',
-                alt: 'Een catalogbeeld: één kledingstuk, vierkant, op een egale achtergrond.',
+                alt: 'Een catalogfoto: één kledingstuk, vierkant, op een egale achtergrond.',
                 cap: cat.name,
               },
               {
                 src: '/img/lifestyle-glow-06.webp',
-                alt: 'Een lifestylevisual: een kledingstuk gedragen door een model op een gestylede locatie.',
+                alt: 'Een lifestylefoto: een kledingstuk gedragen door een model op een gestylede locatie.',
                 cap: life.name,
               },
             ],
@@ -278,7 +277,7 @@ export function faqPageGroups(lang = 'en') {
         items: [
           {
             q: 'Hoe snel is het?',
-            a: `Het serviceniveau volgt de omvang. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${turnaround('attended', 'nl').toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum.`,
+            a: `Het serviceniveau volgt de omvang. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, zonder vaste leverdatum.`,
           },
           {
             q: 'Wat als de week die ik nodig heb niet kan?',
@@ -286,15 +285,17 @@ export function faqPageGroups(lang = 'en') {
           },
           {
             q: 'Wordt elk beeld echt door een specialist gecontroleerd?',
-            a: `${reviewClaim('attended', 'nl')} — een specialist bekijkt elk beeld en controleert het op juistheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
+            a: `${clause(reviewClaim('attended', 'nl'))} — een specialist bekijkt elk beeld en controleert het op juistheid, consistentie en artefacten voordat het wordt geleverd. Er gaat niets ongecontroleerd weg, via welke ingang dan ook.`,
           },
           {
             q: 'Wat als de visuals niet kloppen?',
-            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. Bij een bestelling met een vastgezette leverdatum: ${aftercare('attended', 'nl').toLowerCase()}, per beeld in het portaal, zodat één beeld dat terug moet de rest niet ophoudt.`,
+            /* Zie de noot bij de Engelse tegenhanger: dezelfde kapotte
+               interpolatie en dezelfde onterechte kwalificatie. */
+            a: `Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door — wat we afspreken hangt af van het probleem. ${aftercare('attended', 'nl')} Je markeert het per beeld in het portaal, zodat één beeld dat terug moet de rest niet ophoudt.`,
           },
           {
             q: 'Hoe krijg ik de bestanden precies?',
-            a: `${TIERS.attended.delivery.nl}, vanaf ${WINDOW_THRESHOLD} producten. ${TIERS.unattended.delivery.nl}, daaronder. Hoe dan ook zijn ze hoge resolutie en e-commerce-klaar, op maat voor shoplistings, marktplaatsen en advertenties.`,
+            a: `${clause(TIERS.attended.delivery.nl)}, vanaf ${WINDOW_THRESHOLD} producten. ${clause(TIERS.unattended.delivery.nl)}, daaronder. Hoe dan ook zijn ze hoge resolutie en e-commerce-klaar, op maat voor shoplistings, marktplaatsen en advertenties.`,
           },
         ],
       },
@@ -419,12 +420,12 @@ export function faqPageGroups(lang = 'en') {
           photos: [
             {
               src: '/img/catalog-after.webp',
-              alt: 'A catalog visual: one garment, square, on a plain even ground.',
+              alt: 'A catalog image: one garment, square, on a plain even ground.',
               cap: cat.name,
             },
             {
               src: '/img/lifestyle-glow-06.webp',
-              alt: 'A lifestyle visual: a garment worn by a model in a styled location.',
+              alt: 'A lifestyle image: a garment worn by a model in a styled location.',
               cap: life.name,
             },
           ],
@@ -453,7 +454,7 @@ export function faqPageGroups(lang = 'en') {
           // Service level FOLLOWS size now — it is not a second question the
           // buyer answers, and this answer must not put it back into their
           // hands by describing two things to choose between.
-          a: `The service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${turnaround('attended', 'en').toLowerCase()}. Below that it runs in the normal turnaround: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date.`,
+          a: `The service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that it runs in the normal turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, with no fixed delivery date.`,
         },
         {
           q: 'What if the week I need cannot be held?',
@@ -461,7 +462,7 @@ export function faqPageGroups(lang = 'en') {
         },
         {
           q: 'Is every image really checked by a person?',
-          a: `${reviewClaim('attended', 'en')} — a person selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, on either route in.`,
+          a: `${clause(reviewClaim('attended', 'en'))} — a person selects and inspects each one for accuracy, consistency and artefacts before it is delivered. Nothing leaves unchecked, on either route in.`,
         },
         {
           q: 'What if the visuals are not right?',
@@ -470,16 +471,45 @@ export function faqPageGroups(lang = 'en') {
           // putting the number back in the reader's mouth is the same
           // insecurity one step removed. The remedies — revision, refund,
           // credit — are named once, in /terms §10, deliberately not here.
-          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you — what we agree depends on the problem. On an order with a reserved delivery date: ${aftercare('attended', 'en').toLowerCase()}, per image in the portal, so one image going back does not hold up the rest.`,
+          /* ── DEZE ZIN WAS STUK, EN OP TWEE MANIEREN — 25 augustus 2026 ─────
+             Er stond: *"…reserved delivery date: ${clause(aftercare(…)).toLowerCase()},
+             per image in the portal…"*. `aftercare()` geeft een VOLLEDIGE ZIN
+             terug met een label ervoor en een punt erachter — "Satisfaction
+             check: 1 revision round included per order to adjust any details."
+             — en die werd middenin een andere zin geplakt. Wat de bezoeker las:
+
+               "…reserved delivery date: satisfaction check: 1 revision round
+                included per order to adjust any details., per image in the
+                portal, so one image going back does not hold up the rest."
+
+             Dubbele dubbele punt, en een punt vlak voor een komma. Dit stond zo
+             op /faq én in de FAQPage-JSON-LD die Google uitleest, in beide talen.
+
+             De interpolatie was ooit geschreven voor een FRAGMENT; AFTERCARE is
+             sindsdien een hele zin geworden en de aanroepplek is niet meegegaan.
+
+             ── EN DE KWALIFICATIE KLOPTE OOK NIET ──────────────────────────
+             "On an order with a reserved delivery date" suggereert dat de
+             revisieronde alleen bij grote bestellingen hoort. AFTERCARE is één
+             gedeeld object voor beide treden — aftercare('unattended') geeft
+             exact dezelfde zin — dus de ronde geldt voor ELKE bestelling. De
+             kwalificatie beloofde minder dan de studio doet.
+
+             Nu staat de zin op zichzelf, zoals hij geschreven is. */
+          a: `We ask on every order whether you are happy with what you got. If you are not, tell us what is wrong and we go through it with you — what we agree depends on the problem. ${aftercare('attended', 'en')} You mark it per image in the portal, so one image going back does not hold up the rest.`,
         },
         {
           q: 'How do I actually receive the files?',
-          // The tier strings are noun phrases. Bare-appending a qualifier
-          // garden-paths ("…or request-revision from 10 products"); the comma
-          // plus a size clause keeps it unambiguous. The strings themselves
-          // are never lowercased — one of them contains "WhatsApp", which
-          // .toLowerCase() would mangle.
-          a: `${TIERS.attended.delivery.en}, from ${WINDOW_THRESHOLD} products. ${TIERS.unattended.delivery.en}, below that. Either way they are high-resolution and e-commerce-ready, sized for shop listings, marketplaces and ads.`,
+          // The tier strings WERE noun phrases when this was written; een
+          // tekstronde heeft er zinnen met een punt van gemaakt, en toen las dit
+          // antwoord "…tracking every step with key dates., from 10 products".
+          // Vandaar clause() — zie de noot bij die functie in pricing.js.
+          //
+          // De komma plus de omvangsclausule blijft: kaal aanplakken leidt de
+          // lezer het verkeerde pad op ("…or request-revision from 10 products").
+          // En nog steeds NIET kleinschrijven: in een van deze strings staat
+          // "WhatsApp", en .toLowerCase() maakt daar "whatsapp" van.
+          a: `${clause(TIERS.attended.delivery.en)}, from ${WINDOW_THRESHOLD} products. ${clause(TIERS.unattended.delivery.en)}, below that. Either way they are high-resolution and e-commerce-ready, sized for shop listings, marketplaces and ads.`,
         },
       ],
     },
@@ -613,7 +643,7 @@ const CATALOG_LIFESTYLE_FAQ = {
         q: 'How long does it take?',
         // Both halves of the timing promise, in the order a buyer needs them:
         // the typical span first, then the fact that it is not a date.
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
+        a: `Under ${WINDOW_THRESHOLD} products: ${clause(turnaround('unattended', 'en')).toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${clause(turnaround('attended', 'en')).toLowerCase()}.`,
       },
       {
         q: 'Can I choose the background colour?',
@@ -629,7 +659,7 @@ const CATALOG_LIFESTYLE_FAQ = {
         // That was a package's guarantee and not this one — and there is no
         // count on either tier now. What we would agree instead is in
         // /terms §10 and stays there; see src/data/pricing.js for why.
-        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+        a: `${clause(t0.aftercare.en)}. Tell us what is wrong and we go through it with you.`,
       },
     ],
     nl:
@@ -648,7 +678,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${turnaround('attended', 'nl').toLowerCase()}.`,
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${clause(turnaround('unattended', 'nl')).toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${clause(turnaround('attended', 'nl')).toLowerCase()}.`,
       },
       {
         q: 'Kan ik de achtergrondkleur kiezen?',
@@ -660,7 +690,7 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+        a: `${clause(t0.aftercare.nl)}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
       },
     ],
   },
@@ -689,11 +719,11 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'How long does it take?',
-        a: `Under ${WINDOW_THRESHOLD} products: ${turnaround('unattended', 'en').toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${turnaround('attended', 'en').toLowerCase()}.`,
+        a: `Under ${WINDOW_THRESHOLD} products: ${clause(turnaround('unattended', 'en')).toLowerCase()}. ${t0.queue.en} — an order of ${WINDOW_THRESHOLD} products or more already has a date held for it, so a busy week can move a smaller order. From ${WINDOW_THRESHOLD} products your own order is the one with the date: ${clause(turnaround('attended', 'en')).toLowerCase()}.`,
       },
       {
         q: 'What if I need changes?',
-        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+        a: `${clause(t0.aftercare.en)}. Tell us what is wrong and we go through it with you.`,
       },
     ],
     nl:
@@ -720,11 +750,11 @@ const CATALOG_LIFESTYLE_FAQ = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Onder ${WINDOW_THRESHOLD} producten: ${turnaround('unattended', 'nl').toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${turnaround('attended', 'nl').toLowerCase()}.`,
+        a: `Onder ${WINDOW_THRESHOLD} producten: ${clause(turnaround('unattended', 'nl')).toLowerCase()}. ${t0.queue.nl} — een drukke week kan zo’n bestelling dus verschuiven. Vanaf ${WINDOW_THRESHOLD} producten houden we een leverdatum voor je vrij, en die wijkt niet meer voor een latere bestelling: ${clause(turnaround('attended', 'nl')).toLowerCase()}.`,
       },
       {
         q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+        a: `${clause(t0.aftercare.nl)}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
       },
     ],
   },
@@ -739,7 +769,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'Why does the clip rate not fall with volume?',
-        a: 'Catalog and lifestyle photos are priced per product, and that rate falls a step at a time as the count rises. A clip is not part of that price per product — the work per clip is the same whether it arrives alone or with fifty products, so the rate stays put. It is the same figure on its own as it is inside a larger order.',
+        a: 'Catalog and lifestyle images are priced per product, and that rate falls a step at a time as the count rises. A clip is not part of that price per product — the work per clip is the same whether it arrives alone or with fifty products, so the rate stays put. It is the same figure on its own as it is inside a larger order.',
       },
       {
         q: 'How long is a clip, and what do I get?',
@@ -747,7 +777,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'How long does it take?',
-        a: `A clip request runs at the standard turnaround: ${turnaround('unattended', 'en').toLowerCase()}, with no fixed delivery date — and that holds however many clips you ask for. A held delivery date belongs to the price per quantity for catalog and lifestyle products, and a clip does not count towards it, so ordering more clips does not buy a date. What does fall under such a held date is clips added to an order of ${WINDOW_THRESHOLD} products or more: there the order carries the date and the clips ride along with it.`,
+        a: `A clip request runs at the standard turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, with no fixed delivery date — and that holds however many clips you ask for. A held delivery date belongs to the price per quantity for catalog and lifestyle products, and a clip does not count towards it, so ordering more clips does not buy a date. What does fall under such a held date is clips added to an order of ${WINDOW_THRESHOLD} products or more: there the order carries the date and the clips ride along with it.`,
       },
       {
         q: 'Can a model appear in the clip?',
@@ -755,7 +785,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'What if I need changes?',
-        a: `${t0.aftercare.en}. Tell us what is wrong and we go through it with you.`,
+        a: `${clause(t0.aftercare.en)}. Tell us what is wrong and we go through it with you.`,
       },
   ],
   nl:
@@ -774,7 +804,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'Hoe lang duurt het?',
-        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${turnaround('unattended', 'nl').toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijs per aantal voor catalog- en lifestyleproducten, en een clip telt daar niet in mee; méér clips bestellen koopt dus geen datum. Wat er wél onder zo’n vrijgehouden datum valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
+        a: `Een clipaanvraag loopt mee in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, zonder vaste leverdatum — en dat geldt bij één clip net zo goed als bij twaalf. Een vrijgehouden leverdatum hoort bij de prijs per aantal voor catalog- en lifestyleproducten, en een clip telt daar niet in mee; méér clips bestellen koopt dus geen datum. Wat er wél onder zo’n vrijgehouden datum valt, zijn clips die meegaan met een bestelling van ${WINDOW_THRESHOLD} producten of meer: daar draagt de bestelling de datum en liften de clips mee.`,
       },
       {
         q: 'Kan er een model in de clip?',
@@ -782,7 +812,7 @@ const VIDEO_FAQ = {
       },
       {
         q: 'Wat als ik wijzigingen nodig heb?',
-        a: `${t0.aftercare.nl}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
+        a: `${clause(t0.aftercare.nl)}. Laat weten wat er niet klopt, dan nemen we het samen door.`,
       },
   ],
 };

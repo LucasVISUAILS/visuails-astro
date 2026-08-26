@@ -28,6 +28,7 @@
    zijn met wat er in het bestand staat. */
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
+import { browserPad } from './lib/browserpad.mjs';
 
 const KORREL = (o) => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='${o}'/%3E%3C/svg%3E") 0 0 / 170px repeat`;
 
@@ -52,7 +53,13 @@ function pagina({ grond, overlay }) {
   </style></head><body>${overlay > 0 ? '<div class="ov"></div>' : ''}</body></html>`;
 }
 
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+/* ── WELKE CHROME — 26 augustus 2026 ─────────────────────────────────────────
+   Hier stond een hard pad naar /opt/pw-browsers. Dat is de map van de
+   Linux-container waarin dit project ook wordt gebouwd, en op Lucas' machine
+   bestaat /opt niet eens: dit script viel daar dus om nog voordat het iets deed.
+   scripts/lib/browserpad.mjs bestaat precies hiervoor en waarschuwt er in zijn
+   eigen noot voor — hij werd alleen door één script gebruikt. */
+const b = await chromium.launch({ executablePath: browserPad() });
 const p = await b.newPage({ viewport: { width: 400, height: 400 } });
 
 async function meet(opzet) {

@@ -117,14 +117,14 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <ul>
         <li><strong>"Wij", "ons", "VISUAILS"</strong> — de aanbieder van de dienst.</li>
         <li><strong>"Jij", "klant"</strong> — de persoon of het bedrijf dat visuals bestelt.</li>
-        <li><strong>"Visual"</strong> — een afbeelding of video die we voor je maken.</li>
+        <li><strong>"Visual"</strong> — een foto of video die we voor je maken.</li>
         <li><strong>"Bronmateriaal"</strong> — de productfoto’s, afbeeldingen en informatie die je aanlevert.</li>
         <li><strong>"Bestelling"</strong> — een aanvraag voor een of meer visuals onder deze voorwaarden.</li>
         <li><strong>"Gereserveerde bestelling"</strong> — een bestelling van {WINDOW_THRESHOLD} producten of meer, die in onze agenda wordt ingepland en een vastgezette leverdatum krijgt.</li>
       </ul>
 
       <h2>3. De dienst</h2>
-      <p>VISUAILS maakt AI-ondersteunde, door mensen gecontroleerde productvisuals — catalogusbeelden, lifestyle-scènes en video — op basis van het bronmateriaal dat je aanlevert. Elke visual wordt via ons proces gegenereerd en door een persoon gecontroleerd vóór levering. We streven naar consistente, publicatieklare resultaten, maar visuals zijn creatief werk en de exacte uitkomsten kunnen variëren.</p>
+      <p>VISUAILS maakt AI-ondersteunde, door mensen gecontroleerde productvisuals — catalogfoto’s, lifestyle-scènes en video — op basis van het bronmateriaal dat je aanlevert. Elke visual wordt via ons proces gegenereerd en door een persoon gecontroleerd vóór levering. We streven naar consistente, publicatieklare resultaten, maar visuals zijn creatief werk en de exacte uitkomsten kunnen variëren.</p>
 
       <p><strong>VISUAILS levert uitsluitend zakelijk.</strong> Deze dienst is voor merken, retailers en andere ondernemingen, en niet voor particulieren. Bij het bestellen vragen we je te bevestigen dat je voor je bedrijf of beroep bestelt, en we vragen het bewijs dat daarbij hoort: een KVK-nummer in Nederland, elders in de EU een btw-nummer dat wij bij VIES kunnen controleren, en buiten de EU het registratienummer van je eigen register. Ontbreekt dat bewijs, dan weigeren we de bestelling niet — we zetten hem stil, laten weten wat we nodig hebben, en beginnen zodra het er is. Er wordt in de tussentijd niets gemaakt en niets gefactureerd.</p>
       <p>We vragen een registratienummer en niet specifiek een KVK-nummer, omdat een KVK-nummer alleen in Nederland bestaat: een dienst die daarop staat sluit geen consumenten uit maar buitenlandse ondernemingen. Wat juridisch telt is of je handelt voor je bedrijf — daarom is jouw bevestiging het dragende deel en het nummer de onderbouwing ervan.</p>
@@ -134,7 +134,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>Visuals worden geprijsd per product, en het tarief daalt naarmate het aantal producten in de bestelling stijgt. Indicatieve tarieven zijn:</p>
       <ul>
         <li><strong>Catalog</strong> — {euro(ladderRate('catalog', 1), 'nl')} per product, dalend tot {euro(ladderFloor('catalog'), 'nl')} vanaf {FLOOR_FROM} producten. Een set van vier foto’s (voorkant, achterkant, een detail-close-up en één on-model shot).</li>
-        <li><strong>Lifestyle-visuals</strong> — {euro(ladderRate('lifestyle', 1), 'nl')} per product, dalend tot {euro(ladderFloor('lifestyle'), 'nl')} vanaf {FLOOR_FROM} producten. Een carousel van drie foto’s.</li>
+        <li><strong>Lifestylefoto’s</strong> — {euro(ladderRate('lifestyle', 1), 'nl')} per product, dalend tot {euro(ladderFloor('lifestyle'), 'nl')} vanaf {FLOOR_FROM} producten. Een carousel van drie foto’s.</li>
         <li><strong>Het tarief daartussen</strong> — volledig uitgeschreven op onze <a href="/nl/pricing/">prijzenpagina</a>. Het tarief dat geldt, is dat van het totale aantal producten in je bestelling, en het geldt voor elk product daarin.</li>
         <li><strong>Video</strong> — {euro(AMOUNT.video, 'nl')} per clip, hetzelfde tarief of het er nu één is of twintig. Een clip staat niet in de lijst hierboven.</li>
         <li><strong>Maandplannen</strong> — {euro(planLo / 100, 'nl')} tot {euro(planHi / 100, 'nl')} per maand op de maandtermijn ({planLoNaam} tot {planHiNaam}), volledig uitgeschreven op onze <a href="/nl/plans/">plannenpagina</a>. De jaartermijn staat daar ook.</li>
@@ -218,9 +218,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <h2>10. Annuleringen, terugbetalingen en herstel</h2>
       <p>Omdat visuals worden gemaakt volgens je specifieke briefing, kan werk dat al is gestart of geleverd doorgaans niet worden geannuleerd voor een terugbetaling.</p>
-      <p><strong>Eén revisieronde per bestelling.</strong> Bij elke bestelling zit één revisieronde inbegrepen. Je vraagt die één keer aan en geeft daarbij in één keer door welke beelden niet goed zijn en wat eraan schort. Wij bekijken ze samen en zetten ze recht. Daarna is de ronde van die bestelling gebruikt en verdwijnt de knop; je kunt ons uiteraard nog steeds bereiken, en in je portaal staat daarvoor een directe link.</p>
-      <p>Waarom één en niet onbeperkt: VISUAILS is één persoon, en een toezegging die alleen houdbaar is zolang niemand er gebruik van maakt, is geen toezegging. Eén ronde is wat wij bij elke bestelling waar kunnen maken.</p>
-      <p><strong>En daarnaast blijft gelden wat de wet zegt.</strong> Deze ronde is een service en geen beperking van je rechten. Voldoet wat je hebt gekregen niet aan wat je op grond van de overeenkomst mocht verwachten, dan is dat een gebrek, en dan blijven herstel, een terugbetaling of tegoed op je volgende bestelling gewoon aan de orde — ook als je revisieronde al gebruikt is. Wat we in zo'n geval afspreken, hangt af van het probleem en beoordelen we per geval.</p>
+      <p>Bij elke bestelling vragen we of je tevreden bent met wat je hebt gekregen. Ben je dat niet, laat dan weten wat er niet klopt, dan nemen we het samen door. Wat we vervolgens afspreken hangt af van het probleem, en kan een revisie zijn, een terugbetaling, of tegoed op je volgende bestelling. We begrijpen liever wat je echt voor ogen had dan dat we een vast aantal rondes afwerken.</p>
       <p>Wat we afspreken heeft betrekking op de briefing waarmee we hebben gewerkt; een substantieel nieuwe richting is een nieuwe bestelling en geen correctie. Terugbetalingen zijn naar onze redelijke beoordeling en worden per geval beoordeeld.</p>
 
 
@@ -269,9 +267,15 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 </Layout>
 
 <style>
-  /* De opmaak van een juridische pagina staat sinds 24 augustus 2026 één keer in
-     src/styles/global.css, bij `.legal`. Hij stond hier, en in vijf andere
-     bestanden, met exact dezelfde regels — en de verwerkersovereenkomst had hem
-     helemaal niet, waardoor die pagina koppen van 52,8px kreeg waar deze er 24
-     heeft. Zie de noot daar voor de meting. */
+  /* Legal-text typography — page-scoped, plain and scannable by design. */
+  .narrow { max-width: 820px; }
+  .legal h2 { margin-top: 2.6rem; font-size: 1.5rem; }
+  .legal h3 { margin-top: 1.6rem; font-size: 1.1rem; color: var(--ink); }
+  .legal p, .legal li { color: var(--ink-2); line-height: 1.7; }
+  .legal p { margin-top: 0.9rem; }
+  .legal ul { margin-top: 0.9rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .legal ul li { list-style: disc; }
+  .legal a { color: var(--accent-bright); text-decoration: underline; text-underline-offset: 2px; }
+  .legal-note { margin-top: 1.6rem; padding: 0.9rem 1.1rem; border: 1px solid var(--line-strong); font-size: 0.86rem; color: var(--ink-3); }
+  .legal-meta { font-size: 0.85rem; color: var(--ink-3); margin-top: 0.4rem; }
 </style>

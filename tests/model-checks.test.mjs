@@ -14,8 +14,17 @@
  * logboek hem niet draagt, en de claim vertelt er zelf bij waar hij ophoudt.
  */
 import { readFileSync } from 'node:fs';
-import { ROSTER, modelId } from './models.js';
-import { CHECKS, ENGINES, GEZICHTSZOEKERS, checkFor, rosterVolledigGecontroleerd, oudsteControle } from './modelChecks.js';
+/* ── DE PADEN WAREN FOUT EN DAAROM DRAAIDE DEZE SUITE NOOIT — 25 aug 2026 ────
+   Er stond `./models.js` en `./modelChecks.js`, alsof die naast dit bestand in
+   tests/ liggen. Ze liggen in src/data/. Node gaf ERR_MODULE_NOT_FOUND, de
+   suite stond niet in de keten van `npm test`, en dus is dat drie weken lang
+   niemand opgevallen: een test die nergens wordt aangeroepen, faalt nergens.
+
+   Hij staat nu wél in de keten (package.json → test:modellen). Dat is de helft
+   die telt — een gerepareerde import in een bestand dat niemand start, is nog
+   steeds geen controle. */
+import { ROSTER, modelId } from '../src/data/models.js';
+import { CHECKS, ENGINES, GEZICHTSZOEKERS, checkFor, rosterVolledigGecontroleerd, oudsteControle } from '../src/data/modelChecks.js';
 
 let pass = 0, fail = 0;
 const check = (naam, actual, expected) => {

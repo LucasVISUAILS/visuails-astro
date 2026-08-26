@@ -626,22 +626,32 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               Acht pagina's die tot 18 augustus 2026 alleen in de voettekst
               stonden — of, bij /models, /upload-guidelines en /demo, nergens.
               Zie de noot bij `how` in src/i18n/ui.js voor waarom dit één menu is
-              en geen tien losse links.
-
-              HET ZIJN ER NU VIJF: /compare en /ai-act verhuisden op 21 augustus
-              2026 naar een betere plek, en /demo is op 24 augustus opgeheven. Het
-              blijven twee kolommen — de lade wordt door zijn eigen CSS gevuld en
-              een kolomtelling die per aantal items meebeweegt, is een tweede plek
-              waar dit menu kan gaan verschillen van wat erin staat. */}
+              en geen tien losse links. Twee kolommen, want acht items onder
+              elkaar is een lijst en geen menu. */}
           <li class="has-menu">
             <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_how')}
               <svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="nav-menu nav-menu-2col" role="menu">
-              {how.map((s) => (
-                <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
-                  <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
-                </a>
+              {/* ── DEZELFDE UITGESCHAKELDE VORM ALS BIJ `drops` — 26 aug 2026 ──
+                  Deze lijst rendeerde ALTIJD een `<a href>`, ook voor een item
+                  zonder pagina. `/demo` stond zo op elke pagina van de site: 90
+                  links naar een adres dat niet bestaat, gevonden door
+                  audit-links.mjs. De noot bij `drops` hierboven zegt precies wat
+                  daar mis mee is — *"een link die naar niets wijst is een klik
+                  die niets doet en waar de bezoeker zelf moet raden waarom"* —
+                  en het mechanisme stond er al; deze lijst had het alleen niet.
+
+                  Een item zonder `href` is nu een grijs label met "binnenkort",
+                  net als Editions en Hooks. Komt /demo er (zie
+                  PLAN-DEMO-SPEL.md), dan is het één `href` terugzetten. */}
+              {how.map((s) => (s.href
+                ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                    <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
+                  </a>
+                : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
+                    <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
+                  </span>
               ))}
             </div>
           </li>
@@ -715,8 +725,26 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
             (AUDIT-TASK-0.md §E). Those pages are deleted and all five URLs are
             301s to /start (public/_redirects), so this is now the only route
             into an order from the chrome — in both languages, since nav_start
-            is deliberately "Start" in EN and NL alike. */}
-        <a href={lp('/start')} class="btn btn-primary">{t('nav_start')}</a>
+            is deliberately "Start" in EN and NL alike.
+
+            ── OP DE HOMEPAGE IS HIJ STIL — 25 AUGUSTUS 2026 ──────────────────
+            Lucas, over het eerste scherm: *"misschien kan deze homepage nu te
+            heftig voelen."* Deze knop en "Start een bestelling" in de hero gaan
+            allebei naar /start en waren allebei `btn-primary`. Dat is dezelfde
+            limoen pil, twee keer, op zo'n zeshonderd pixels van elkaar — en twee
+            keer maximaal aandacht vragen voor hetzelfde is precies één keer te
+            veel.
+
+            De HERO-knop wint, want die staat in de leesvolgorde: kop, belofte,
+            knop. Deze staat in de chrome en is er voor wie al gescrold heeft of
+            van een andere pagina komt.
+
+            ALLEEN OP DE HOMEPAGE, en dat is de hele voorwaarde. Op /pricing,
+            /catalog en de rest is dit de ENIGE bestelknop in beeld — daar
+            stilzetten zou geen rust maken maar de deur dichtdoen. `base` is het
+            taalneutrale pad, dus dit klopt in beide talen zonder een tweede
+            controle. */}
+        <a href={lp('/start')} class:list={['btn', 'nav-cta', base === '/' ? 'btn-ghost' : 'btn-primary']}>{t('nav_start')}</a>
         <button class="menu-toggle" aria-label={t('nav_open')} aria-expanded="false" aria-controls="mobile-nav"><span></span></button>
       </div>
     </div>
@@ -743,7 +771,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     {/* Op een telefoon geen tweede uitklapper maar een groep met een kop: een
         lade die zelf weer laden bevat, is een lade waarin je zoekt. */}
     <p class="mobile-group">{t('nav_how')}</p>
-    {how.map((s) => <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>)}
+    {how.map((s) => (s.href
+      ? <a class="mobile-sub" href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>{s.title}</a>
+      : <span class="mobile-sub mi-off" aria-disabled="true">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span>
+    ))}
     <div class="mobile-cta">
       <a href={lp('/start')} class="btn btn-primary btn-block btn-lg">{t('nav_start')}</a>
       <a href={waHref(wa.order)} class="btn btn-wa btn-block" target="_blank" rel="noopener">{t('mob_chat')}
@@ -1127,7 +1158,15 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     <button class="cb-why" type="button" aria-label={t('cb_why')} aria-expanded="true" aria-controls="cb-detail">
       <span aria-hidden="true">?</span>
     </button>
-    <a class="cb-cta" href={lp('/test-sample')}>{t('cb_cta')}</a>
+    {/* TWEE LABELS, ÉÉN LINK. Op een telefoon staat de balk op één rij (zie de
+        noot bij de media-query hieronder) en past de lange vorm niet. `display:
+        none` haalt de ongebruikte helft uit de toegankelijkheidsboom, dus een
+        schermlezer hoort op elke breedte precies één naam — dat zou niet zo zijn
+        met een afgeknipte string of met `visibility`. */}
+    <a class="cb-cta" href={lp('/test-sample')}>
+      <span class="cb-cta-vol">{t('cb_cta')}</span>
+      <span class="cb-cta-kort">{t('cb_cta_kort')}</span>
+    </a>
     <button class="cb-close" type="button" aria-label={t('cb_dismiss')}>&times;</button>
     <p class="cb-detail" id="cb-detail">{t('cb_detail')}</p>
   </div>
@@ -1287,6 +1326,38 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      at 8px while every button beside it went round — found by walking the
      cascade in a browser, not by reading. Anything in this bar that can be
      pressed now shares one shape. */
+  /* ── DE STILLE BESTELKNOP MOET OP DE FOTO NOG WEL LEESBAAR ZIJN ──────────
+     Hoort bij de wissel naar `btn-ghost` op de homepage; zie de noot bij de
+     knop zelf.
+
+     WAAROM DIT NIET VANZELF GOED GING. `.btn-ghost` is `color: var(--ink)` op
+     een 6%-inktvulling: gemaakt voor een papieren ondergrond. Boven de hero is
+     de balk doorzichtig en is de ondergrond een donkere foto, en dan is dat
+     donkere inkt op vrijwel niets — een knop die er wel is en niet te zien.
+
+     `.btn-lg.btn-ghost` heeft dit probleem niet: die pakt de --btn-2nd-tokens
+     en dat is precies de omgekeerde variant. Maar die tokens worden alleen op
+     een donkere SECTIE omgezet, en deze balk hangt erboven en niet erin. Dus
+     staan de waarden hier voluit, in dezelfde verhoudingen als de donkere
+     scope ze geeft (8% vulling, 42% rand, papieren inkt) — zo ziet deze knop
+     eruit als de proefvisualknop in de hero eronder, wat hij ook hoort te
+     doen: het is dezelfde soort knop op dezelfde soort ondergrond.
+
+     ALLEEN ZOLANG DE BALK DOORZICHTIG IS. Zodra `.scrolled` erop staat is de
+     ondergrond weer papier en pakt de knop zijn gewone lichte variant. En
+     alleen bij `.btn-ghost`, dus op elke andere pagina — waar hij `btn-primary`
+     blijft — raakt deze regel niets. */
+  body:has(.hv-hero) .site-header:not(.scrolled) .nav-cta.btn-ghost {
+    background: rgb(255 255 255 / 0.08);
+    color: var(--paper-on-dark);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.42);
+  }
+  body:has(.hv-hero) .site-header:not(.scrolled) .nav-cta.btn-ghost:hover,
+  body:has(.hv-hero) .site-header:not(.scrolled) .nav-cta.btn-ghost:focus-visible {
+    background: rgb(255 255 255 / 0.16);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.70);
+  }
+
   /* The scrolled bar was a translucent dark pane with backdrop-filter: blur(10).
      Both are gone. The blur re-rendered its backdrop every frame while the page
      moved under it — the single most expensive thing in the sticky header — and
@@ -2185,36 +2256,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      erin liepen die twee rondingen langs elkaar heen: de buitenboog was vlakker
      dan de binnenboog en dat is precies wat "niet strak" oplevert. Twee volledig
      ronde vormen, de een in de ander, lopen per definitie evenwijdig. */
-  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto auto auto; align-items: center; column-gap: 14px; padding: 9px 9px 9px 18px; background: #08090B; border: 1px solid var(--line-strong); box-shadow:
-      /* ── SUBTIEL 3D — 24 augustus 2026 ─────────────────────────────────
-         Lucas: *"Kan het design wellicht ook subtiel 3d gemaakt worden, design
-         dit zorgvuldig en geef het een strakke moderne look."*
-
-         Wat een vlak vlak maakt is niet het ontbreken van schaduw maar het
-         ontbreken van een LICHTRICHTING. Er stond één brede waas onder de pil,
-         en een waas is mist: hij zegt dat er iets zweeft, niet waar het licht
-         vandaan komt.
-
-         Vier lagen, en elke laag heeft een taak:
-           · een haarlijn licht op de BOVENrand — daar valt het licht op;
-           · een haarlijn zwart op de ONDERrand — daar valt het weg;
-           · een strakke contactschaduw, kort en dichtbij, die zegt hoe hoog
-             de pil boven de pagina hangt;
-           · twee zachte omgevingsschaduwen die de diepte dragen.
-
-         De eerste twee doen het meeste werk en zijn het minst zichtbaar. Een
-         rand die boven lichter is dan onder, leest als een fysiek object; het
-         is precies het verschil tussen een uitgesneden vorm en een ding.
-
-         GEEN `filter: drop-shadow` en geen extra laag: de pil heeft al
-         `overflow: hidden` voor het beeld, en een filter zou daar een nieuwe
-         stapelcontext bij maken — zie wat een transform in de dienstenrij
-         aanrichtte. Dit is puur box-shadow en kost geen enkele extra laag. */
-      inset 0 1px 0 rgb(255 255 255 / 0.10),
-      inset 0 -1px 0 rgb(0 0 0 / 0.55),
-      0 2px 4px -2px rgb(0 0 0 / 0.65),
-      0 12px 28px -10px rgb(0 0 0 / 0.55),
-      0 32px 64px -28px rgb(0 0 0 / 0.5); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-pill); }
+  .convbar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0; z-index: var(--z-bar); display: inline-grid; grid-template-columns: auto auto auto auto auto; align-items: center; column-gap: 14px; padding: 9px 9px 9px 18px; background: #08090B; border: 1px solid var(--line-strong); box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.75); max-width: calc(100vw - 24px); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); pointer-events: none; border-radius: var(--r-pill); }
   .convbar.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
 
   /* ── EEN SFEERFOTO IN DE PIL — 23 AUGUSTUS 2026 ──────────────────────────
@@ -2256,57 +2298,48 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
    * zwaarst zijn. npm run test:a11y meet wat er overblijft; de zin haalde 8,9:1 en
    * houdt dat.
    */
-  /* ── `position: relative` STOND HIER EN HIJ SLOOPTE DE BALK — 24 aug 2026 ──
-   *
-   * Lucas: *"De test sample blok staat volledig onderaan vast."* Dat was
-   * letterlijk waar, en het is deze regel.
-   *
-   * De regel hierboven zet `.convbar` op `position: fixed` met `bottom: 20px`.
-   * Deze regel — er in augustus bijgezet toen de sfeerfoto erin kwam — zette
-   * hem daarna op `relative`. Zelfde specificiteit, later in het bestand, dus
-   * deze won: de balk werd een gewoon blok onderaan het document. Hij zweefde
-   * niet meer mee, hij stond aan het EINDE van de pagina, en je zag hem alleen
-   * als je helemaal naar beneden scrolde. Gemeten op de gebouwde site: op een
-   * venster van 900 hoog stond hij op documentpositie 11853.
-   *
-   * WAAROM HIJ ER STOND EN WAAROM HIJ WEG KAN. Het beeld in `::before` is
-   * absoluut geplaatst en heeft dus een geplaatste voorouder nodig. `fixed` IS
-   * een geplaatste voorouder — die maakt net zo goed een bevattend blok als
-   * `relative`. De regel was overbodig op de dag dat hij werd geschreven en
-   * heeft sindsdien de hele balk van zijn plek gehaald.
-   *
-   * Dat het niet opviel, komt doordat de balk pas bij het scrollen verschijnt:
-   * onderaan de pagina stond hij precies waar je hem ook zou verwachten. */
+  /* ── `position: relative` STOND HIER, EN ZETTE DE BALK VAST OP DE PAGINA ──
+     Rechtgezet 25 augustus 2026, gevonden bij het compacter maken.
+
+     Twee regels hierboven staat `.convbar { position: fixed; bottom: 20px; … }`.
+     Deze regel had dezelfde specificiteit en kwam later, dus WON HIJ: de
+     conversiebalk stond op `position: relative` en zweefde dus niet. Gemeten op
+     390×844 met de pagina 2600px gescrold: `getComputedStyle(.convbar).position`
+     gaf `relative` en zijn bovenkant lag op 14.461px — onderaan het document, in
+     de gewone stroom, in plaats van 20px boven de onderrand van het scherm.
+
+     ── WAAROM HIJ ER STOND, EN WAAROM DAT NIET NODIG WAS ────────────────────
+
+     De noot hierboven legt uit dat `::before` en `::after` absoluut geplaatst
+     zijn zodat ze geen vijfde en zesde grid-item worden. Dat klopt, en daarvoor
+     is een bevattend blok nodig. Alleen: `position: fixed` IS al een bevattend
+     blok voor absoluut geplaatste kinderen. `relative` voegde niets toe en nam
+     het zweven weg.
+
+     ── WAT DIT VERKLAART ────────────────────────────────────────────────────
+
+     Vrijwel alles wat er aan die balk mis leek. Hij oogde als een blok onderaan
+     de pagina in plaats van als een pil, de `translateY(120%)`-animatie van
+     `.show` deed niets zichtbaars, en `--wa-bottom` was een met de hand gemeten
+     getal dat een afstand probeerde te bewaren tot een element dat er niet lag.
+
+     `overflow: hidden` blijft: dat is wat de foto de pilvorm laat aannemen. */
   .convbar { overflow: hidden; }
   .convbar::before {
     content: '';
     position: absolute; inset: 0;
     background-image: url('/img/sfeer-balk-w760.webp');
     background-size: cover; background-position: center;
-    /* ── IETS MINDER HEFTIG — 24 augustus 2026 ────────────────────────────
-       Lucas: *"Ook mag de afbeelding iets minder heftig en donkerder."* Stond
-       op 1. De sluier eronder doet de rest van het werk; dit haalt de piek van
-       de bundel eraf zonder hem uit te zetten. */
-    opacity: .82;
+    opacity: 1;
     pointer-events: none;
   }
   /* Eén dunne sluier over de linkerhelft, en verder niets. Hij is er alleen voor
      de leesbaarheid van de zin op het moment dat de bundel op een smal scherm
      verder naar links kruipt; rechts blijft de foto onaangeraakt. */
-  /* ── DE SLUIER LIEP RECHTS NAAR NUL, EN DAAR ZAT DE HEFTIGHEID ──────────
-     Hij ging van .55 links naar 0 op 72%, dus de laatste kwart van de pil droeg
-     de bundel op volle sterkte — precies het stuk dat in beeld springt. Nu
-     eindigt hij op .30 in plaats van op 0: het licht blijft, de piek is eraf.
-
-     En er ligt een tweede, verticale sluier overheen die bovenin lichter is dan
-     onderin. Dat is dezelfde lichtrichting als de randen in de box-shadow
-     hierboven, en zonder die overeenstemming vecht het beeld met de vorm. */
   .convbar::after {
     content: '';
     position: absolute; inset: 0;
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / .045) 0%, rgb(255 255 255 / 0) 42%, rgb(0 0 0 / .22) 100%),
-      linear-gradient(90deg, rgb(0 0 0 / .62) 0%, rgb(0 0 0 / .44) 44%, rgb(0 0 0 / .30) 100%);
+    background: linear-gradient(90deg, rgb(0 0 0 / .55) 0%, rgb(0 0 0 / .34) 44%, rgb(0 0 0 / 0) 72%);
     pointer-events: none;
   }
   /* De inhoud boven allebei de lagen. Alleen de vier echte kinderen — de twee
@@ -2402,6 +2435,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
 
   /* De knop houdt de pilvorm van elke andere knop op de site. Hij is de reden dat
      de balk zelf ook een pil is — zie de noot bij .convbar. */
+  /* Standaard de lange vorm; de media-query onderaan draait het om. */
+  .convbar .cb-cta-kort { display: none; }
   .convbar .cb-cta { display: inline-flex; align-items: center; min-height: var(--cb-row); padding: 0 22px; background: var(--accent); color: var(--accent-on); font-size: .88rem; font-weight: 600; letter-spacing: .01em; white-space: nowrap; border-radius: var(--r-pill); }
 
   /* Rond en even hoog als de knop, zodat de rij één lijn heeft in plaats van drie
@@ -2434,21 +2469,74 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      Geen pilvorm meer maar een gewone ronding: een pil om een blok van twee regels
      leest als een fout, en een strook van rand tot rand met 14px ronding is wat
      elke andere strook op een telefoon doet. */
+  /* ── OP EEN TELEFOON ÉÉN RIJ — 25 AUGUSTUS 2026 ─────────────────────────
+     Lucas: *"de test sample pop-up ziet er niet meer zo goed uit en wat groot,
+     maak deze compacter."* Gemeten op 390×844: de balk was 161px, oftewel
+     negentien procent van het scherm, permanent.
+
+     ── DRIE DINGEN WAREN STUK, EN ÉÉN VERKLAARDE DE SCHERMAFDRUK ───────────
+
+     1 · HET VRAAGTEKEN STOND NERGENS. Het merkteken, de zin, het kruisje en de
+     knop kregen hier alle vier een plek toegewezen; `.cb-why` niet. Gemeten
+     stond hij op `grid-row: auto` en viel dus door naar een DERDE rij, waar hij
+     40px plus 10px rijruimte helemaal voor zichzelf kreeg. Vijftig van de
+     honderdeenenzestig pixels, voor één rond knopje.
+
+     2 · DE WHATSAPP-KNOP REKENDE MET EEN OUDE MAAT. Zie de noot daar: `142px`
+     was gemeten toen de balk 110 hoog was. Hij zat dus 19px BINNEN de balk. Die
+     afstand wordt nu afgeleid uit de werkelijke hoogte — zie `--cb-h`.
+
+     3 · DE ZIN LIEP OVER TWEE REGELS. 35px voor tekst die voluit achter het
+     vraagteken staat én op /test-sample, waar de knop toch al heen gaat.
+
+     ── DE VORM DIE ERVOOR IN DE PLAATS KOMT ────────────────────────────────
+
+     Eén rij: merkteken, korte knop, vraagteken, kruisje. Dezelfde pilvorm als
+     op een breed scherm, dus dit is niet langer een tweede component met een
+     eigen indeling en een eigen fout — het is dezelfde balk, smaller. `.cb-note`
+     gaat van het scherm en niet uit de pagina: hij blijft in de opmaak staan
+     voor bredere schermen, en zijn inhoud staat op een telefoon achter het
+     vraagteken. Een balk die permanent onderin staat is een duwtje, geen alinea.
+
+     De uitleg mag nog steeds uitklappen; die krijgt dan een tweede rij over de
+     volle breedte, en dat is precies het moment waarop hij ruimte verdient. */
   @media (max-width: 700px) {
     .convbar {
       left: 12px; right: 12px; max-width: none;
       transform: translateY(120%);
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      column-gap: 10px; row-gap: 10px;
-      padding: 12px; border-radius: 14px;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      column-gap: 8px; row-gap: 10px;
+      padding: 8px 8px 8px 14px; border-radius: var(--r-pill);
     }
     .convbar.show { transform: translateY(0); }
-    /* Het teken en de tekst op de bovenste rij, het kruisje ernaast. */
-    .convbar .cb-logo { grid-column: 1; grid-row: 1; --cb-mark-h: 20px; }
-    .convbar .cb-note { grid-column: 2; grid-row: 1; }
-    .convbar .cb-close { grid-column: 3; grid-row: 1; align-self: start; }
-    /* En de knop over de volle breedte eronder. */
-    .convbar .cb-cta { grid-column: 1 / -1; grid-row: 2; justify-content: center; padding: 0 14px; font-size: .88rem; }
+    /* ── DE ZIN BLIJFT STAAN — 26 augustus 2026 ────────────────────────────
+       Hier stond `.cb-note { display: none }`, gezet in de ronde waarin deze
+       balk van 161px naar 58px moest. Dat is precies de wijziging waar Lucas
+       eerder over schreef — *"ook mist hier tekst en logo bij de pop up"* —
+       en waar tests/nav.test.mjs sindsdien een VERBOD op is. Ik heb hem
+       opnieuw gemaakt zonder die toets te kunnen draaien; hij stond niet in
+       deze werkkopie. Nu wel, en hij vond het.
+
+       Wat er nu staat is de kortste vorm die de zin houdt: twee rijen in
+       plaats van vier. Rij 1 is merkteken plus zin, rij 2 is de knop met het
+       vraagteken en het kruisje ernaast. De zin mag over twee regels lopen
+       op .78rem — dat is wat hem leesbaar houdt op 360px.
+
+       DE KNOP ZONDER ZIN IS GEEN DUWTJE MAAR EEN ADVERTENTIE. Dat is het
+       hele argument: "Test sample · €1" alleen zegt niet wat je krijgt, en
+       dat was ook Lucas' bezwaar. Liever 40px hoger dan betekenisloos. */
+    .convbar .cb-logo  { grid-column: 1; grid-row: 1; --cb-mark-h: 18px; align-self: center; }
+    .convbar .cb-note  { grid-column: 2 / -1; grid-row: 1; white-space: normal; font-size: .78rem; line-height: 1.3; align-self: center; }
+    .convbar .cb-cta   { grid-column: 1 / 3; grid-row: 2; justify-content: center; padding: 0 14px; font-size: .82rem; }
+    .convbar .cb-why   { grid-column: 3; grid-row: 2; }
+    .convbar .cb-close { grid-column: 4; grid-row: 2; }
+    /* De korte naam wint hier van de lange. */
+    .convbar .cb-cta-vol  { display: none; }
+    .convbar .cb-cta-kort { display: inline; }
+    /* Klapt de uitleg open, dan mag hij de hele breedte hebben en wordt de
+       pilvorm een blok — een pil om twee regels leest als een fout. */
+    .convbar .cb-detail { grid-column: 1 / -1; grid-row: 3; }
+    .convbar:has(.cb-detail:not([hidden])) { border-radius: 14px; padding-bottom: 12px; }
   }
 
 
@@ -2520,6 +2608,17 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      waar de balk onderdrukt is — zakt de knop terug naar de hoek, en de
      bottom-transitie hierboven maakt daar een beweging van in plaats van een
      sprong. */
-  @media (max-width: 700px) { .convbar.show ~ .wa-launcher { --wa-bottom: 142px; } }
+  /* ── AFGELEID IN PLAATS VAN GEMETEN — 25 AUGUSTUS 2026 ──────────────────
+     Hier stond `142px`, met een noot erbij dat de balk 110px hoog is. Op de dag
+     dat dit werd nagemeten was de balk 161 en zat deze knop dus 19px binnen de
+     balk. Dat is het lot van elk met de hand gemeten getal naast een element dat
+     nog verandert.
+
+     `--cb-h` wordt door initConvbar() in interactions.js gezet uit de ECHTE
+     hoogte van de balk, elke keer dat hij verschijnt of van vorm verandert. De
+     32px eronder is lucht plus de eigen inzet van de knop. Zonder script blijft
+     de terugval 0px staan en gedraagt de knop zich als voorheen — er is dan ook
+     geen balk om overheen te vallen. */
+  @media (max-width: 700px) { .convbar.show ~ .wa-launcher { --wa-bottom: calc(var(--cb-h, 0px) + 32px); } }
   @media (max-width: 600px) { .wa-launcher-label { display: none; } }
 </style>

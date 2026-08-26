@@ -51,7 +51,7 @@ const COPY = {
     h1: ['One link.', 'Your whole order.'],
     lede: `Every order comes with a private link. No account to make, no password to lose. Everything about that order lives behind it: where it stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it that we hold for you.`,
     ctaStart: 'Start an order',
-    ctaHow: 'How we process your order',
+    ctaHow: 'How an order is run',
 
     stateH: 'Where it is, without asking.',
     /* ── ZES DINGEN, MAAR GEEN ZES STATUSSEN — 23 AUGUSTUS 2026 ───────────────
@@ -83,16 +83,16 @@ const COPY = {
       ['In production', 'The studio is working through the folder.'],
       ['Being checked', 'A person is looking at every visual before it goes out.'],
       ['Delivered', 'The gallery is open and the downloads are live.'],
-      ['Revision — per image', 'You sent your revision round and these images are being redone. It stays a state of those images and not of the order: the rest keeps moving.'],
+      ['Revision — per image', 'You asked for a change on one visual and it is being made. It is a state of that image, not of the order: the rest keeps moving.'],
       ['Closed', `Every image approved. Nothing left to decide, and the files stay available for ${PORTAL_TTL_DAYS} days.`],
     ],
     stateNote: 'Each change is written into a timeline you can read, with the date it happened. Nothing about your order is only in our heads.',
 
     galleryH: 'Approve it image by image.',
-    galleryLede: 'On delivery the whole order opens as a gallery. You approve image by image and there is no accept-all — an order you approved in one click is an order nobody looked at. Anything that is not right you tick, and you send all of it at once as the one revision round that comes with the order. The rest of the order keeps moving while we put those right.',
+    galleryLede: 'On delivery the whole order opens as a gallery. Every visual has two buttons and there is no accept-all — an order you approved in one click is an order nobody looked at. Ask for a revision on one image and the rest of the order keeps moving.',
     galleryList: [
       ['Approve', 'Marks that image done. The count at the top moves.'],
-      ['Tick what is not right', 'One revision round comes with every order. Tick the ones that are off, write in your own words what is wrong, and send them together — it goes straight to the person who made them.'],
+      ['Request a revision', 'Opens a note field. Say what is wrong in your own words — it goes straight to the person who made it.'],
       // Nieuw op 9 augustus 2026, en het hoort hier omdat de figuur ernaast het
       // laat zien: bij de foto’s staat geen downloadknop meer. Dat verzint een
       // bezoeker niet zelf, en ongezegd leest het als een scherm dat stuk is.
@@ -100,7 +100,7 @@ const COPY = {
     ],
 
     dlH: 'One folder, and everything is in it.',
-    dlLede: 'When the order is approved you download one folder. Inside it is a folder per product, and in each of those the same visual three times: PNG, JPG and WebP. So a print shop, a product page and a feed each get the file they want, and nobody has to convert anything.',
+    dlLede: 'When the order is approved you download one folder. Inside it is a folder per product, and in each of those the same image three times: PNG, JPG and WebP. So a print shop, a product page and a feed each get the file they want, and nobody has to convert anything.',
     dl: [
       ['PNG', 'Lossless, the biggest file. This is the one for print and for anything that gets edited again.'],
       ['JPG', 'The format every system accepts. For a product page, a lookbook, an email.'],
@@ -130,7 +130,7 @@ const COPY = {
     ],
     secNote: 'Treat the link the way you would treat a key: anyone who has it can see the order. Send it on if a colleague needs it, and ask us for a new one if it goes somewhere it should not.',
 
-    closeH: 'Start with one of your own products — delivered as a catalog set or a lifestyle carousel.',
+    closeH: 'One of your own products, as a catalog set or a carousel, first.',
     closeLede: `${TEST_SAMPLE.en.deliverable}, made from your own photo and checked by a specialist. The portal comes with every paid order.`,
     closeCta: 'Get a test sample',
     closeAlt: 'Start an order',
@@ -140,7 +140,7 @@ const COPY = {
     h1: ['Eén link.', 'Je hele bestelling.'],
     lede: `Bij elke bestelling krijg je een privélink. Geen account om aan te maken, geen wachtwoord om kwijt te raken. Alles over die bestelling zit erachter: waar hij staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om hem goed te keuren of te zeggen wat er niet klopt. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast die we voor je vrijhouden.`,
     ctaStart: 'Start een bestelling',
-    ctaHow: 'Het bestelproces',
+    ctaHow: 'Hoe een bestelling loopt',
 
     stateH: 'Waar hij staat, zonder te vragen.',
     // Zie de noot bij de Engelse stateLede.
@@ -150,21 +150,21 @@ const COPY = {
       ['In productie', 'De studio werkt de map door.'],
       ['Wordt nagekeken', 'Een mens bekijkt elk beeld voordat het weggaat.'],
       ['Geleverd', 'De galerij is open en de downloads staan klaar.'],
-      ['Revisie — per beeld', 'Je hebt je revisieronde verstuurd en deze beelden worden opnieuw gemaakt. Het blijft een toestand van díé beelden en niet van de bestelling: de rest loopt gewoon door.'],
+      ['Revisie — per beeld', 'Je vroeg op één beeld om een wijziging en die wordt gemaakt. Het is een toestand van dat beeld en niet van de bestelling: de rest loopt gewoon door.'],
       ['Afgesloten', `Elk beeld goedgekeurd. Er valt niets meer te beslissen, en de bestanden blijven ${PORTAL_TTL_DAYS} dagen beschikbaar.`],
     ],
     stateNote: 'Elke wijziging wordt in een tijdlijn geschreven die je kunt lezen, met de datum erbij. Niets over je order zit alleen in ons hoofd.',
 
     galleryH: 'Beeld voor beeld goedkeuren.',
-    galleryLede: 'Bij levering opent de hele bestelling als galerij. Je keurt per beeld goed en er is geen alles-accepteren — een bestelling die je in één klik goedkeurde, is een bestelling waar niemand naar gekeken heeft. Wat niet goed is vink je aan, en dat stuur je in één keer op als de ene revisieronde die bij de bestelling hoort. De rest van de bestelling loopt ondertussen gewoon door.',
+    galleryLede: 'Bij levering opent de hele bestelling als galerij. Elk beeld heeft twee knoppen en er is geen alles-accepteren — een bestelling die je in één klik goedkeurde, is een bestelling waar niemand naar gekeken heeft. Vraag je op één beeld een revisie aan, dan loopt de rest van de bestelling gewoon door.',
     galleryList: [
       ['Goedkeuren', 'Daarmee staat dat beeld op afgerond. De teller bovenaan loopt mee.'],
-      ['Aanvinken wat niet goed is', 'Bij elke bestelling zit één revisieronde. Vink aan wat niet klopt, schrijf in je eigen woorden wat eraan schort, en stuur ze samen op — het gaat rechtstreeks naar degene die ze gemaakt heeft.'],
+      ['Revisie aanvragen', 'Opent een notitieveld. Zeg in je eigen woorden wat er niet klopt — het gaat rechtstreeks naar degene die het gemaakt heeft.'],
       ['De beelden hier zijn op schermformaat', 'Ze staan er om te beoordelen, niet om te gebruiken. Wat je meeneemt is één map — de volgende sectie is wat daarin zit.'],
     ],
 
     dlH: 'Eén map, en alles zit erin.',
-    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan hetzelfde beeld drie keer: PNG, JPG en WebP. Zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, en hoeft niemand nog iets om te zetten.',
+    dlLede: 'Is de bestelling goedgekeurd, dan download je één map. Daarin zit een map per product, en in elk daarvan dezelfde foto drie keer: PNG, JPG en WebP. Zo krijgen een drukker, een productpagina en een feed elk het bestand dat ze willen, en hoeft niemand nog iets om te zetten.',
     dl: [
       ['PNG', 'Lossless, het grootste bestand. Dit is degene voor druk en voor alles wat nog bewerkt wordt.'],
       ['JPG', 'Het formaat dat elk systeem aanneemt. Voor een productpagina, een lookbook, een mail.'],
@@ -189,7 +189,7 @@ const COPY = {
     ],
     secNote: 'Behandel de link zoals je een sleutel behandelt: wie hem heeft, kan de bestelling zien. Stuur hem gerust door als een collega hem nodig heeft, en vraag ons om een nieuwe als hij ergens belandt waar hij niet hoort.',
 
-    closeH: 'Begin met een van je eigen producten — geleverd als catalogset of lifestyle-carousel.',
+    closeH: 'Eerst één product van jezelf, als catalogset of carousel.',
     closeLede: `${TEST_SAMPLE.nl.deliverable}, gemaakt van je eigen foto en door een specialist nagekeken. Het portaal krijg je bij elke betaalde bestelling.`,
     closeCta: 'Vraag een proefvisual aan',
     closeAlt: 'Start een bestelling',

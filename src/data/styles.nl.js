@@ -93,11 +93,11 @@ export const styles = [
       { title: 'Hard licht, strak geplaatst', body: 'De flits valt precies af waar hij moet: het product blijft scherp en de achtergrond zakt weg.' },
       { title: 'Schaduw als compositie', body: 'Het zwart achter het onderwerp is niet leeg — het is getekend en bepaalt waar het oog landt.' },
       { title: 'Hard, maar niets brandt uit', body: 'We zetten het contrast hoog en houden tegelijk de kleur en de structuur van je product heel.' },
-      { title: 'Energie die zich herhaalt', body: 'De chaos is gesystematiseerd: je tiende Flash-visual raakt net zo hard als je eerste, en matcht hem.' },
+      { title: 'Energie die zich herhaalt', body: 'De chaos is gesystematiseerd: je tiende Flash-foto raakt net zo hard als je eerste, en matcht hem.' },
     ],
     why: [
       { title: 'Valt op in een feed', body: 'Hard licht en diepe schaduw zijn ook op thumbnailformaat te zien, waar zacht gelijkmatig licht wegvalt.' },
-      { title: 'Een edge die zich herhaalt', body: 'Dezelfde intensiteit op visual één en visual honderd.' },
+      { title: 'Een edge die zich herhaalt', body: 'Dezelfde intensiteit op lifestylefoto één en lifestylefoto honderd.' },
       { title: 'Gemaakt voor een lancering', body: 'De look past bij een release, een bijbestelling of een beperkte oplage.' },
     ],
     bestFor: ['Streetwear, sneakers en accessoires', 'Lanceringen en beperkte oplages', 'Merken met een harde, herkenbare stijl', 'Social-advertenties die tussen de rest moeten opvallen'],
@@ -112,7 +112,7 @@ export const styles = [
     cardPhoto: '/img/lifestyle-glow-01.webp',
     beforeAfter: { before: '/img/lifestyle-glow-03.webp', after: '/img/lifestyle-glow-01.webp' },
     cardIcon: 'jar',
-    cardDesc: 'Gedurfde visuals geïnspireerd op fashion-editorial — directe on-camera flits, scherp contrast, sterke schaduwen, moderne campagne-esthetiek.',
+    cardDesc: 'Gedurfde lifestylefoto’s geïnspireerd op fashion-editorial — directe on-camera flits, scherp contrast, sterke schaduwen, moderne campagne-esthetiek.',
     moodTitle: 'Hoe Glow eruitziet.',
     moodParagraphs: [
       'Laagstaande zon, zachte gloed, huid en product gehuld in hetzelfde amberkleurige licht. De look van een avond die goed verliep.',
@@ -139,7 +139,7 @@ export const styles = [
       { title: 'Eén consistente gloed', body: 'Dezelfde warmte over je hele feed, launch na launch.' },
     ],
     bestFor: ['Beauty, skincare en parfum', 'Fashion die een gevoel verkoopt', 'Campagnes en launches die sfeer nodig hebben', 'Merken die een feed bouwen waar mensen bij willen horen'],
-    whatYouGet: ['Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elk beeld', TIMING, REVIEW],
+    whatYouGet: ['Warme, editorial golden-hour scènes', 'Consistente modellen, vastgezet op je merk', 'Campagnekwaliteit-afwerking op elke lifestylefoto', TIMING, REVIEW],
   },
   {
     slug: 'phone-made',
@@ -150,7 +150,7 @@ export const styles = [
     cardPhoto: '/img/lifestyle-phone-made-11.webp',
     beforeAfter: { before: '/img/lifestyle-phone-made-05.webp', after: '/img/lifestyle-phone-made-01.webp' },
     cardIcon: 'bottle',
-    cardDesc: 'Minimalistische visuals die lijken op authentieke, alledaagse fotografie — natuurlijk en ongepolijst, als een foto die iemand net even maakte.',
+    cardDesc: 'Minimalistische lifestylefoto’s die lijken op authentieke, alledaagse fotografie — natuurlijk en ongepolijst, als een foto die iemand net even maakte.',
     moodTitle: 'Hoe Phone-made eruitziet.',
     moodParagraphs: [
       'Daglicht door een raam, een product op een aanrecht, een licht imperfect kader. Het leest als echt.',
@@ -199,12 +199,12 @@ export const styles = [
     orderLabel: 'Vraag een look op maat aan',
     moodParagraphs: [
       'Geen van onze vier vaste sferen — een scène ontworpen vanuit jouw referenties. De setting, de styling en het licht die alleen bij jouw merk passen.',
-      'We bouwen de wereld één keer, samen met jou, en houden daarna elke toekomstige visual daaraan trouw.',
+      'We bouwen de wereld één keer, samen met jou, en houden daarna elke toekomstige lifestylefoto daaraan trouw.',
     ],
     steps: [
       { title: 'Brief', body: 'Deel referenties en de wereld waarin je je product wilt laten leven.' },
       { title: 'Ontwerp', body: 'We vormen een scène op maat en een stylingrichting, samen met jou gecontroleerd.' },
-      { title: 'Produceer', body: 'Je lifestyle-visuals op maat, consistent van bestelling tot bestelling.' },
+      { title: 'Produceer', body: 'Je lifestylefoto’s op maat, consistent van bestelling tot bestelling.' },
     ],
     grid: grid(
       ['/img/banners-14.webp'],

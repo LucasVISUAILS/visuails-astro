@@ -92,8 +92,7 @@ import { waHref } from '../data/whatsapp.js';
 import {
   SHOOT_DAY, euro, quote, ladderFloor, tierFor,
   reviewClaim, turnaround, aftercare,
-  vatLabel,
-} from '../data/pricing.js';
+  vatLabel, clause} from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
 import FigConverge from './FigConverge.astro';
 import Placeholder from './Placeholder.astro';
@@ -155,7 +154,7 @@ const COPY = {
     h1c: '.',
     lead: 'Both get a season of product images made. They cost different money, different hours, and they fail in different ways. Here is the comparison with nothing hidden on either side.',
     ctaPrimary: 'Start an order',
-    ctaGhost: 'See pricing per product',
+    ctaGhost: 'See the price per product',
 
     matrixLabel: 'A production day compared with a VISUAILS order',
     colLabel: 'What',
@@ -200,7 +199,10 @@ const COPY = {
         // figure's own outcome line reads "A reshoot is the same four things,
         // agreeing again", which is this sentence's second half drawn.
         a: 'A reshoot is another day, booked from scratch.',
-        b: `${aftercare(tier, 'en')} — one image at a time, in the portal. Nobody has to be rebooked.`,
+        /* clause(): aftercare() eindigt op een punt, en een punt vlak voor
+           een gedachtestreepje leest als een afgebroken zin. Zie de noot bij
+           clause() in pricing.js. */
+        b: `${clause(aftercare(tier, 'en'))} — one image at a time, in the portal. Nobody has to be rebooked.`,
       },
       {
         label: 'What you organise',
@@ -319,7 +321,8 @@ const COPY = {
       {
         label: 'Als er iets mis is',
         a: 'Opnieuw fotograferen is opnieuw een dag, en die boek je vanaf nul.',
-        b: `${aftercare(tier, 'nl')} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
+        /* Zie de noot bij de Engelse tegenhanger. */
+        b: `${clause(aftercare(tier, 'nl'))} — beeld voor beeld, in het portaal. Niemand hoeft opnieuw geboekt te worden.`,
       },
       {
         label: 'Wat jij regelt',

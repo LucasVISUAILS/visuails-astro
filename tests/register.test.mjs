@@ -168,9 +168,21 @@ console.log('\nde tabellen die het register noemt bestaan echt');
   /* De tabelnamen staan in het register tussen backticks. Alles wat op een
      tabelnaam lijkt en niet bestaat, is een verwijzing naar iets wat er niet meer
      is -- en dat is precies de manier waarop een register stilletjes onwaar wordt. */
+  /* ── EEN KOLOMNAAM IS GEEN SPOOKTABEL — 26 augustus 2026 ─────────────────
+     Het register noemt sinds vandaag ook kolommen tussen backticks, omdat §3.7 t/m
+     §3.9 uitleggen wat er ín een tabel staat: `snapshot_json`, `customer_id`,
+     `preview_key`. Die zijn hier onder de oude regel als "genoemde tabel die niet
+     bestaat" gelezen. Alles wat een KOLOM is in schema.sql valt daarom af — dat is
+     preciezer dan de namen één voor één op de uitzonderingslijst zetten, en het
+     blijft kloppen als het register morgen een andere kolom noemt. */
+  const kolommen = new Set([
+    ...[...SCHEMA.matchAll(/^\s*([a-z_]{3,})\s+(?:TEXT|INTEGER|REAL|BLOB|NUMERIC)/gm)].map((m) => m[1]),
+    ...[...SCHEMA.matchAll(/ADD COLUMN ([a-z_]+)/g)].map((m) => m[1]),
+  ]);
   const genoemd = [...REG.matchAll(/`([a-z_]{4,})`/g)].map((m) => m[1]);
   const tabelachtig = [...new Set(genoemd)].filter((n) => n.includes('_') || bestaand.has(n));
   const spook = tabelachtig.filter((n) => !bestaand.has(n)
+    && !kolommen.has(n)
     // niet elke naam met een liggend streepje is een tabel: dit zijn de
     // uitzonderingen die het register om andere redenen noemt.
     && !['payer_hash', 'manage-bde', 'SELLER_ADDRESS', 'NOTIFY_EMAIL', 'test_register'].includes(n));
@@ -179,6 +191,63 @@ console.log('\nde tabellen die het register noemt bestaan echt');
      anders meet bovenstaande niets. */
   ok('en het register noemt er meer dan tien', tabelachtig.filter((n) => bestaand.has(n)).length > 10, true,
     String(tabelachtig.filter((n) => bestaand.has(n)).length));
+}
+
+/*
+ * ── EN DE ANDERE KANT OP — 26 AUGUSTUS 2026 ─────────────────────────────────
+ *
+ * De controle hierboven loopt van het REGISTER naar het SCHEMA: noemt het register
+ * een tabel die niet bestaat? Dat vangt een verwijderde tabel.
+ *
+ * Het vangt niet wat er werkelijk gebeurde. Tussen 12 en 20 augustus kwamen er acht
+ * tabellen bij met persoonsgegevens erin — `subscriptions`, `plan_queue`,
+ * `email_changes`, `subscription_invoices` en vier oudere — en het register bleef
+ * ongewijzigd. Deze toets bleef groen, want elke naam die er WEL in stond bestond
+ * nog steeds. §8 van het register belooft intussen letterlijk: *"`npm run
+ * test:register` gaat rood als dat niet gebeurt"*. Dat was de gevaarlijkste zin van
+ * de twee documenten, want hij is de reden dat niemand het register nakijkt.
+ *
+ * ── HOE "BEVAT PERSOONSGEGEVENS" HIER WORDT BEPAALD ────────────────────────
+ *
+ * Aan de KOLOMMEN en niet aan een lijst die iemand bijhoudt — een lijst die je met
+ * de hand bijwerkt, is precies het ding dat hier stuk ging. Een tabel telt mee als
+ * hij een kolom heeft die naar een mens wijst: `customer_id`, een e-mailadres, een
+ * naam, een adres, een btw-nummer, een gezouten IP, of een `snapshot_json` (daar
+ * staat een factuuradres in).
+ *
+ * Dat is met opzet RUIM. Een valse melding kost één regel in het register; een
+ * gemiste tabel is een register dat de verwerking niet beschrijft, en dat is art. 30
+ * lid 1 sub b en c. Vind je een tabel die er echt niet in hoort, zet hem dan in
+ * GEEN_PERSOON hieronder mét de reden — niet in stilte.
+ */
+console.log('\nelke tabel met persoonsgegevens staat in het register');
+{
+  const SCHEMA = read('schema.sql');
+  const PERSOON = /\b(customer_id|email|previous_email|new_email|full_name|ip_hash|request_ip_hash|payer_hash|snapshot_json|vat_number|vat_check_name|address|phone)\b/;
+
+  /* Tabellen die een persoonskolom hebben en er tóch niet in hoeven, met de reden.
+     Leeg zolang er geen is: elke uitzondering hier is een stukje register dat niet
+     meer door deze toets wordt gedekt. */
+  const GEEN_PERSOON = {};
+
+  const blokken = [...SCHEMA.matchAll(/CREATE TABLE (?:IF NOT EXISTS )?([a-z_]+)\s*\(([\s\S]*?)\n\);/g)];
+  ok('schema.sql levert tabellen op om te wegen', blokken.length > 20, true, String(blokken.length));
+
+  const metPersoon = blokken
+    .map(([, naam, body]) => [naam, body.replace(/--[^\n]*/g, '')])
+    .filter(([, kaal]) => PERSOON.test(kaal))
+    .map(([naam]) => naam)
+    .filter((naam) => !(naam in GEEN_PERSOON));
+
+  /* De controle op de controle: vindt hij er werkelijk een stel, of meet hij niets? */
+  ok('en er zijn tabellen met persoonsgegevens gevonden', metPersoon.length > 8, true, String(metPersoon.length));
+
+  const ongenoemd = metPersoon.filter((naam) => !new RegExp('`' + naam + '`').test(REG));
+  /* ok() vergelijkt met ===, dus een array moet als tekst worden aangeboden —
+     anders is hij nooit gelijk aan [] en gaat deze regel altijd rood, óók als er
+     niets ontbreekt. */
+  ok('elke tabel met persoonsgegevens wordt in het register genoemd',
+     ongenoemd.join(', '), '', ongenoemd.join(', ') || '(geen)');
 }
 
 console.log('\nde datalekprocedure houdt de rollen gescheiden');
