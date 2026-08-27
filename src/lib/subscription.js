@@ -199,23 +199,34 @@ export async function loadTaken(env, customerId, limit = 20) {
  * met een saldo van nul. Een pagina hoeft dan niet op null te controleren voor
  * hij een getal kan laten zien.
  */
-export async function planState(env, customerId) {
+/**
+ * HET SALDO EN VERDER NIETS — de goedkope helft van planState(), 26 augustus 2026.
+ *
+ * Aanleiding: de statuskolom van het dashboard laat op ELKE route zien hoeveel
+ * producten er deze maand nog over zijn. Daar planState() voor aanroepen kost
+ * vier queries op zes pagina's, waarvan er twee — de wachtrij en wat eruit
+ * gehaald is — alleen op /account/plan zelf gelezen worden.
+ *
+ * Deze functie doet er één zonder abonnement (loadSubscription geeft null en het
+ * stopt daar) en twee met. De rekensom staat nog steeds op één plek: planState()
+ * hieronder roept déze aan en vult alleen de twee lijsten aan. Wie het saldo
+ * anders zou willen uitrekenen, moet het hier doen — er is geen tweede plek.
+ *
+ * Geeft dezelfde vorm terug als planState(), op `wachtrij` en `opgehaald` na.
+ */
+export async function planSaldo(env, customerId) {
   const sub = await loadSubscription(env, customerId);
   if (!sub) {
     return {
       actief: false, sub: null, plan: null, term: null,
       saldo: 0, toegekend: 0, verbruikt: 0, doorgeschoven: 0, vervalt: [],
       clips: { saldo: 0, toegekend: 0, verbruikt: 0 },
-      maanden: [], wachtrij: [], opgehaald: [],
+      maanden: [],
       maand: monthKey(), betaald: false, volgendeAfschrijving: '',
     };
   }
 
-  const [maanden, wachtrij, opgehaald] = await Promise.all([
-    loadMonths(env, sub.id, sub.term),
-    loadQueue(env, sub.customer_id),
-    loadTaken(env, sub.customer_id),
-  ]);
+  const maanden = await loadMonths(env, sub.id, sub.term);
 
   const maand = monthKey();
   const deze = maanden.find((m) => m.month === maand) || null;
@@ -267,8 +278,6 @@ export async function planState(env, customerId) {
      * de eerste betaling. Bij een gepauzeerd abonnement is er niets te noemen. */
     volgendeAfschrijving: sub.status === 'active' ? addMonths(maand, 1) : '',
     maanden,
-    wachtrij,
-    opgehaald,
     maand,
     /* Is er voor DEZE maand betaald? De webhook maakt de maandrij aan op het
      * moment dat de afschrijving binnen is, dus het bestaan van de rij ís het
@@ -276,6 +285,45 @@ export async function planState(env, customerId) {
      * kan er niets mee — zie verbruikToestaan() hieronder. */
     betaald: Boolean(deze),
   };
+}
+
+/**
+ * ALLES WAT /account/plan MOET WETEN: het saldo uit planSaldo(), plus de
+ * wachtrij en wat er dit jaar uit gehaald is.
+ *
+ * Van buiten gezien onveranderd — dezelfde sleutels, dezelfde waarden, ook
+ * zonder abonnement. De splitsing zit binnenin en bestaat zodat de statuskolom
+ * niet vier queries hoeft te doen voor twee getallen; zie de noot bij
+ * planSaldo().
+ */
+export async function planState(env, customerId) {
+  return planAanvullen(env, await planSaldo(env, customerId));
+}
+
+/**
+ * DE TWEEDE HELFT, LOS AANROEPBAAR — 27 augustus 2026.
+ *
+ * `sectionGet()` in account.js haalt het saldo al op voor de statuskolom, op elke
+ * route. Zou /account/plan daarna gewoon planState() aanroepen, dan deed die
+ * pagina `loadSubscription` en `loadMonths` een tweede keer: zes queries voor wat
+ * er in vier past. Vandaar deze ingang — geef hem wat planSaldo() al teruggaf en
+ * hij vult alleen de twee lijsten aan.
+ *
+ * Het samenstellen staat hiermee nog steeds op één plek. Dat is het hele punt:
+ * planState() is niets anders meer dan deze twee achter elkaar, dus een pagina
+ * die de losse helften gebruikt, kan niet iets anders krijgen dan een pagina die
+ * de hele functie gebruikt.
+ */
+export async function planAanvullen(env, kort) {
+  /* Geen abonnement, geen wachtrij: loadQueue en loadTaken zouden allebei een
+     lege lijst teruggeven en dat is twee queries voor niets. */
+  if (!kort?.sub) return { ...kort, wachtrij: [], opgehaald: [] };
+
+  const [wachtrij, opgehaald] = await Promise.all([
+    loadQueue(env, kort.sub.customer_id),
+    loadTaken(env, kort.sub.customer_id),
+  ]);
+  return { ...kort, wachtrij, opgehaald };
 }
 
 /**

@@ -1,0 +1,648 @@
+---
+/* ── DE STIJLLAAG VAN DE HOMEPAGE ───────────────────────────────────────────
+   Alles hieronder staat achter `body.huid-kantig`, en die klasse zet
+   Layout.astro alleen wanneer een pagina er om vraagt. Op dit moment vragen
+   alleen / en /nl erom; elke andere pagina is onaangeroerd, tot Lucas zegt dat
+   de stijl mee mag.
+
+   HET IS EEN LAAG EN GEEN VERBOUWING. HomeV2.astro is niet aangeraakt. Wat hier
+   staat zijn tokens die anders worden ingevuld plus een handvol aanvullende
+   regels; haal dit bestand weg en de homepage staat er weer bij zoals hij was.
+   Dat is met opzet: in Layout.astro staan contrastverhoudingen die tegen de
+   echte pixels van elke herofoto zijn gemeten, een WCAG-doelgrootte op de
+   merklink, gedrag voor forced-colours en voor print, en het merk op hover is
+   een eigen component met twee <use>-lagen. Dat is geen vormgeving maar
+   geheugen, en een laag laat het allemaal staan.
+
+   ── HET IDEE ───────────────────────────────────────────────────────────────
+   Op de poster die Lucas aanleverde staat het product in een selectiekader met
+   grepen, alsof het net is aangeklikt in een ontwerpprogramma. Dat gebaar is
+   precies wat een muis doet, en het is precies wat hij verkoopt: beelden die
+   worden gemaakt, gekozen en geleverd. Het muiseffect en de infographic-taal
+   zijn hier dus hetzelfde ding.
+
+   ── GEEN ENKEL GETAL EN GEEN ENKEL WOORD IS HIER GETYPT ────────────────────
+   De aantallen bij het selectiekader en onder de prijskoppen worden bij het
+   laden uit de pagina zelf gelezen — de prijstabel weet dat een catalogset vier
+   beelden is en lifestyle er drie. Een specificatie die verzonnen is, is
+   decoratie die doet alsof, en dat is het tegenovergestelde van wat deze taal
+   moet uitstralen. Het is meteen de reden dat het niet kan verouderen.
+
+   ── DE HOEKWOORDEN ZIJN WEG ────────────────────────────────────────────────
+   Er stonden vier woorden in de hoeken van de hero, zoals HARDER/FASTER op de
+   poster. Lucas, 27 augustus 2026: *"Ik vind deze op de homepage wat raar en
+   misplaatst, dus haal deze weg. Ik zou de zoekerhoeken wel op de beginpagina
+   willen hebben bij de slides."* Er staat nu een zoekerkader om het herobeeld
+   in plaats van woorden ernaast.
+
+   ── DRIE AFWIJKINGEN VAN DESIGN.md, EN ZE ZIJN BEWUST ──────────────────────
+   1 · "Radius — a three-step scale, and one place it is written": de hoeken
+       gaan hier naar 0, behalve pillen. Sectie 18 zette ze juist rond op
+       Lucas' eigen instructie; bij deze opdracht vroeg hij het omgekeerde —
+       *"De knoppen op de site zijn pilvormig terwijl de rest van de website erg
+       hoekig is."* Een nieuwere instructie wint van een oudere.
+   2 · "Mono never appears for decoration, texture, or an eyebrow" en "No
+       uppercase tracked eyebrow above sections". De labels tussen blokhaken
+       zijn precies dat, en ze zijn de handtekening van de stijl die hij koos.
+   3 · De site laadt geen monospace: --font-data uit DESIGN.md is nooit gebouwd.
+       Ik hang er ook geen lettertype voor aan de bundel — de labels pakken de
+       monospace van het systeem. Wordt de stijl definitief, dan kiezen we één
+       snit en hosten we die zelf, net als Archivo.
+   tests/huid.test.mjs zet deze drie vast, zodat ze bewust blijven.
+
+   ── DE AANWIJZER FAALT NAAR EEN GEWONE MUISPIJL ────────────────────────────
+   `cursor: none` staat NIET in dit stijlblad. Het wordt door het script gezet,
+   pas nadat het eigen element leeft. Staat JavaScript uit, of gaat het script
+   stuk, dan houdt de bezoeker zijn systeemcursor. Dezelfde regel als boven de
+   onthullingen in Layout.astro — "a reveal that fails should degrade to no
+   animation, never to no page" — en hier is de inzet hoger, want een pagina
+   zonder muisaanwijzer is niet lelijk maar onbedienbaar. */
+
+/* Overgetrokken uit het bestand dat Lucas aanleverde (186 x 251), met een
+   contourvolger op vier keer de resolutie. Niet nagetekend: de omtrek is
+   letterlijk die van zijn afbeelding. */
+const AANWIJZER = [
+  'M 47.00 224.88 L 46.62 224.25 L 47.12 222.75 L 57.88 196.25 L 128.50 33.62 L 128.88 174.25 L 127.88 174.25 L 109.12 144.00 L 108.50 143.38 L 107.75 143.62 L 47.00 224.88 Z',
+  'M 36.00 223.38 L 35.88 222.00 L 48.12 191.75 L 117.25 32.38 L 117.62 42.00 L 110.62 58.75 L 107.88 64.00 L 94.62 95.75 L 90.88 103.25 L 87.62 112.00 L 83.88 119.50 L 71.62 149.00 L 59.88 175.00 L 46.62 207.50 L 43.38 213.75 L 36.00 223.38 Z',
+  'M 117.50 176.12 L 102.12 152.25 L 104.00 148.88 L 105.12 149.50 L 117.62 169.25 L 117.50 176.12 Z',
+];
+---
+
+<div class="aw" id="aw" aria-hidden="true"><div class="aw-i">
+  <svg viewBox="35.88 32.38 93 192.5" overflow="visible" fill="var(--aw-kleur)">
+    {AANWIJZER.map((d) => <path d={d} />)}
+  </svg>
+</div></div>
+
+<style is:global>
+  /* ══ DE MAAT VAN DE PAGINA ═════════════════════════════════════════════════
+     Rand tot rand met een vaste inzet, zoals de referentie: geen max-width en
+     geen gecentreerde kolom.
+
+     GEEN STERRETJESRESET voor de hoeken. DESIGN.md waarschuwt daar met zoveel
+     woorden voor ("how a radius ends up on a table cell and a horizontal
+     rule"), en het zou de pillen platslaan die juist het punt zijn. De site
+     past hoeken al via deze drie tokens toe. --r-pill blijft ongemoeid. */
+  body.huid-kantig {
+    --container: 100%;
+    --container-wide: 100%;
+    --pad-x: 20px;
+    --r-lg: 0px;
+    --r-md: 0px;
+    --r-sm: 0px;
+
+    /* De annotatielaag heeft ÉÉN tint en ÉÉN lettergrootte. Dat is wat het als
+       instrumentatie laat lezen: een technische tekening heeft geen drie diktes
+       lijn en geen twee kleuren inkt. */
+    --sch-lijn: rgb(255 255 255 / .24);
+    --sch-ink:  rgb(255 255 255 / .48);
+    --sch-fel:  rgb(255 255 255 / .88);
+    --sch-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    /* In de semantische schaal uit global.css en niet erbuiten: --z-toast (500)
+       is de skip-link en dat was het hoogste dat er was. */
+    --z-cursor: 700;
+  }
+
+  body.huid-kantig .sch {
+    font-family: var(--sch-mono); font-size: 10px; line-height: 1.25;
+    letter-spacing: .02em; text-transform: uppercase; color: var(--sch-ink);
+    font-weight: 400; font-variant-numeric: tabular-nums;
+  }
+
+  /* Op volle breedte valt de ruimte tussen de letters op. Eén stap strakker;
+     de ondergrens uit DESIGN.md is -0.035em en die wordt niet gepasseerd. */
+  body.huid-kantig :is(h1, h2, .display, .statement) { letter-spacing: -.03em; }
+
+  /* ══ DE KORREL ═════════════════════════════════════════════════════════════
+     Stond op .03 en dat is over een donkere grond zichtbaar als ruis. Op .011
+     is hij er wél — hij breekt de banding in de verlopen, wat het enige is waar
+     hij voor nodig is — maar je ziet hem niet meer als textuur. De tegel is ook
+     grover: minder korrels per vlak leest rustiger dan dezelfde dekking fijn
+     verdeeld. */
+  body.huid-kantig .grain { opacity: .011; background-size: 220px; }
+
+  /* ══ GLAS ══════════════════════════════════════════════════════════════════
+     Lucas, 27 augustus 2026: *"heel smooth met lichte doorzichtigheid en
+     wazigheid voor contrast."* Dat laatste woord is de hele truc, en het is
+     ook waarom dit één recept is en geen los lijstje kleuren.
+
+     ── WAAROM brightness(.55) IN DE FILTER STAAT ─────────────────────────────
+     Een glazen vlak met een LICHTE vulling over een donkere grond leest prima:
+     de vulling tekent de vorm af. Maar dezelfde vulling over een felle foto
+     TILT de grond op, en dan verliest de witte tekst erop zijn contrast — en
+     dit zijn precies de elementen die over de hero zweven, waar de grond een
+     foto is die de studio niet in de hand heeft.
+
+     De filter lost dat op vóór de vulling eroverheen gaat: hij vervaagt en
+     DEMPT wat erachter zit. Over de paginagrond, die al bijna zwart is,
+     verandert dat niets — daar doet de lichte vulling het werk. Over een felle
+     foto haalt hij de piek eruit, zodat de tekst zijn contrast houdt in plaats
+     van het aan de doorzichtigheid te verliezen. Het is dus letterlijk
+     wazigheid vóór contrast, en niet ondanks.
+
+     Wat het NIET is: een rand. Wat de vorm aftekent is het verschil in
+     helderheid plus een glansrand bovenin — licht dat op een glazen rand valt.
+     Een omtrek eromheen zou precies de strakheid weghalen waar het om gaat. */
+  body.huid-kantig {
+    --glas-vul:   rgb(255 255 255 / .05);
+    /* brightness(.35) EN NIET .55, en dat is een gemeten waarde. Met .55 kwam
+       de witte tekst op de glazen knop in de hero uit op 2,9:1 tegen de
+       helderste pixel van de herofoto — onder de norm van 4,5. De som: na de
+       filter is de grond 0,35xB, daar compositeert de vulling op 6% wit
+       overheen, dus 15,3 + 0,329xB. Bij een uitgebrande hooglicht (B=255) is
+       dat 99, en wit daarop is 5,9:1. Bij de paginagrond (B=14) is het 20 —
+       net genoeg lichter dan de grond om de vorm af te tekenen zonder dat er
+       een rand omheen hoeft.
+
+       Nagemeten kwam .35 er nog niet: de ORDER-knop rechtsboven ligt op de
+       balk, dus daar liggen TWEE glazen lagen op elkaar en telt de demping
+       maar één keer voor de bovenste. Die knop kwam uit op 4,23 tegen de norm
+       van 4,5 — net eronder, en net eronder is eronder. Op .28 haalt hij het
+       met marge en verandert er aan de rest niets zichtbaars. */
+    --glas-waas:  blur(24px) saturate(1.35) brightness(.28);
+    --glas-glans: inset 0 1px 0 rgb(255 255 255 / .16);
+    --glas-rand:  inset 0 0 0 1px rgb(255 255 255 / .07);
+  }
+
+  /* Eén regel, en daaronder de lijst plekken waar hij geldt. Zo blijft het één
+     materiaal in plaats van acht keer bijna hetzelfde. */
+  /* DE KOP KRIJGT ZIJN EIGEN REGEL, EN DAT IS GEEN NETHEID.
+     Layout.astro zet over een hero een eigen vulling én een witte ring van 42%
+     op de ORDER-knop: `.site-header .nav-cta.btn-ghost` weegt zwaarder dan de
+     lijst hieronder, dus die won. Gemeten kwam die ring uit op grijs 123 tegen
+     de foto — en het is bovendien precies de lijn eromheen die weg moest. */
+  body.huid-kantig:has(.hv-hero) .site-header:not(.scrolled) :is(.btn-ghost, .nav-cta, .lang-switch),
+  body.huid-kantig .site-header :is(.btn-ghost, .nav-cta, .lang-switch),
+  body.huid-kantig :is(
+    .btn-ghost, .btn-2nd, .cc-btn,
+    .convbar,
+    .hv-slide-card-main,
+    .nav-menu,
+    .lang-switch,
+    .wa-launcher
+  ) {
+    background: var(--glas-vul);
+    border: 0;
+    -webkit-backdrop-filter: var(--glas-waas);
+            backdrop-filter: var(--glas-waas);
+    box-shadow: var(--glas-glans), var(--glas-rand);
+    transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+  }
+  body.huid-kantig :is(.btn-ghost, .btn-2nd, .cc-btn, .wa-launcher, .hv-slide-card-main):hover {
+    background: rgb(255 255 255 / .12);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .24), inset 0 0 0 1px rgb(255 255 255 / .11);
+  }
+
+  /* DE ORDER-KNOP, EN WAAROM HIER WEL !important STAAT.
+     Layout.astro geeft de kop over een hero een eigen vulling van 8% wit en een
+     inset ring van 42% wit. Ik heb er drie selectors tegenover gezet die op
+     papier zwaarder wegen en geen ervan won; verder zoeken kost meer dan het
+     oplevert, en de uitkomst is hoe dan ook dat deze twee waarden weg moeten —
+     de ring is precies de lijn eromheen die Lucas niet wilde, en gemeten kwam
+     hij op grijs 119 tegen de herofoto, wat de witte tekst op 4,47 zette tegen
+     een norm van 4,5.
+
+     Het is dus geen luiheid maar een gerichte overschrijving van twee
+     eigenschappen op één element, met de meting erbij. Verandert die scope in
+     Layout.astro ooit, dan mag dit blok weg. */
+  body.huid-kantig .site-header .nav-cta.btn-ghost {
+    background: var(--glas-vul) !important;
+    box-shadow: var(--glas-glans), var(--glas-rand) !important;
+  }
+
+  /* De balk bovenin is een pseudo-element, en die kan hetzelfde materiaal
+     dragen. Hij stond op rgb(8 9 11 / .86) — bijna dicht — en wordt nu glas,
+     zodat de pagina eronder doorschemert zoals bij de referentie. */
+  body.huid-kantig .site-header::after {
+    background: var(--glas-vul);
+    -webkit-backdrop-filter: var(--glas-waas);
+            backdrop-filter: var(--glas-waas);
+    box-shadow: var(--glas-glans);
+  }
+
+  /* De tabrij onder de hero: Lucas wees deze met zoveel woorden aan. De kaarten
+     hadden een vol vlak met een harde rand; nu is het glas, en wat een kaart
+     als gekozen aanwijst is de limestreep die er al onder stond — die blijft
+     ongemoeid, want dat is het enige signaal dat kleur mag gebruiken. */
+  body.huid-kantig .hv-slide-card { border: 0; background: none; }
+
+  /* De hoofdknop blijft de hoofdknop: lime, maar met glas erin. Op .9 dekking
+     over de donkere grond blijft het contrast van de zwarte letters ruim boven
+     de norm, en de blur eronder geeft hem diepte in plaats van dat hij als een
+     sticker op de pagina ligt. Hier GEEN brightness in de filter: het vlak is
+     zelf bijna dekkend, dus er is geen grond die door de tekst heen werkt. */
+  body.huid-kantig .btn-primary {
+    background: rgb(198 241 0 / .9);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+            backdrop-filter: blur(20px) saturate(1.3);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .3);
+  }
+  body.huid-kantig .btn-primary:hover { background: rgb(198 241 0 / 1); }
+
+  /* ══ DE PROEFBALK ══════════════════════════════════════════════════════════
+     Zonder lijn eromheen, en zonder de foto die erin zat. Die foto deed het
+     werk dat het glas nu doet, maar met een vast plaatje achter een balk die
+     over een veranderende pagina zweeft. Glas neemt de pagina zelf mee en klopt
+     daardoor altijd. De slagschaduw blijft: die tilt de balk van de pagina af
+     en is het enige wat hem als zwevend laat lezen nu de rand weg is. */
+  body.huid-kantig .convbar {
+    box-shadow: var(--glas-glans), var(--glas-rand), 0 18px 50px -16px rgb(0 0 0 / .7);
+  }
+  body.huid-kantig .convbar::before { display: none; }
+  body.huid-kantig .convbar::after {
+    background: linear-gradient(90deg, rgb(0 0 0 / .28), rgb(0 0 0 / .10) 60%, transparent);
+  }
+  body.huid-kantig .convbar .cb-cta { box-shadow: inset 0 1px 0 rgb(255 255 255 / .3); }
+
+  /* ══ DE NAAD TUSSEN TWEE SECTIES ═══════════════════════════════════════════
+     Er liep eerst een liniaal langs de hele linkerrand. Lucas: *"Die zijkant
+     infographics mogen weg. Die vind ik niet mooi, wellicht kan je ze tussen
+     secties licht plaatsen maar niet zo continu."* Dus dezelfde maatverdeling,
+     maar alleen op de plek waar iets overgaat. */
+  body.huid-kantig section + section { position: relative; }
+  body.huid-kantig .sch-naad {
+    position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: var(--sch-lijn); pointer-events: none; z-index: 2;
+  }
+  body.huid-kantig .sch-naad::before {
+    content: ""; position: absolute; left: var(--pad-x); top: -3px;
+    width: 96px; height: 7px;
+    background: repeating-linear-gradient(to right, var(--sch-lijn) 0 1px, transparent 1px 8px);
+  }
+  /* het langere streepje halverwege, zoals op een liniaal */
+  body.huid-kantig .sch-naad::after {
+    content: ""; position: absolute; left: calc(var(--pad-x) + 48px); top: -5px;
+    width: 1px; height: 11px; background: var(--sch-lijn);
+  }
+
+  /* ══ HET ZOEKERKADER ═══════════════════════════════════════════════════════
+     Vier haakjes in plaats van een kader: een kader sluit iets op, vier hoeken
+     zeggen "dit is de uitsnede". Op de hero staat het om het beeld zelf, op de
+     dienstenkaarten om elke foto.
+
+     BINNEN DE RAND EN NIET EROMHEEN. .hv-svc-card-media staat op
+     overflow:hidden — het moet wel, want het beeld staat op scale(1.04) binnen
+     een 3:4-kader — dus wat buiten valt wordt weggeknipt. Eerste poging zette
+     ze op inset:-6px en dan zie je er geen één.
+
+     De schaduw is er omdat een haarlijn over een foto loopt: op een lichte plek
+     in het beeld verdwijnt wit, en dan staat er een halve haak. */
+  body.huid-kantig .sel { position: relative; }
+  body.huid-kantig .sel-laag {
+    position: absolute; inset: 9px; pointer-events: none; z-index: 3;
+    filter: drop-shadow(0 0 1px rgb(0 0 0 / .6));
+  }
+  body.huid-kantig .sel-hoek {
+    position: absolute; inset: 0; --l: var(--sch-lijn);
+    transition: opacity var(--dur-1) var(--ease);
+    background:
+      linear-gradient(var(--l), var(--l)) 0 0 / 9px 1px no-repeat,
+      linear-gradient(var(--l), var(--l)) 0 0 / 1px 9px no-repeat,
+      linear-gradient(var(--l), var(--l)) 100% 0 / 9px 1px no-repeat,
+      linear-gradient(var(--l), var(--l)) 100% 0 / 1px 9px no-repeat,
+      linear-gradient(var(--l), var(--l)) 0 100% / 9px 1px no-repeat,
+      linear-gradient(var(--l), var(--l)) 0 100% / 1px 9px no-repeat,
+      linear-gradient(var(--l), var(--l)) 100% 100% / 9px 1px no-repeat,
+      linear-gradient(var(--l), var(--l)) 100% 100% / 1px 9px no-repeat;
+  }
+  /* De hero krijgt hetzelfde kader, maar ruimer ingezet — het beeld loopt daar
+     tot de rand van het venster, dus de haken staan op de paginamarge en niet
+     op de beeldrand. Geen selectie hier: de hero is geen voorwerp dat je
+     aanwijst, hij is de achtergrond. */
+  /* NIET position:relative HIER. .hv-hero-bg staat al op `absolute` en spant
+     daarmee het hele herovlak op; hem op `relative` zetten haalt hem uit die
+     opspanning en dan valt de foto weg — de hele hero werd zwart. Gemeten:
+     zonder deze regel toont de hero het beeld, met deze regel niet. Een
+     absoluut geplaatst element is al een houder voor absolute kinderen, dus
+     het zoekerkader hieronder heeft er niets voor nodig. */
+  /* De bovenkant vrij van de kop. Op inset:20px rondom vielen de twee bovenste
+     haken achter de balk, en een zoekerkader waarvan je de helft niet ziet is
+     geen kader. 92px is de balk (76) plus dezelfde marge als aan de zijkanten. */
+  body.huid-kantig .sel-laag.hero { inset: 92px var(--pad-x) var(--pad-x); z-index: 1; }
+  @media (max-width: 700px) { body.huid-kantig .sel-laag.hero { display: none; } }
+
+  /* ══ DE SELECTIE ═══════════════════════════════════════════════════════════
+     Zodra de muis een kaartbeeld raakt wordt het zoekerkader een selectie: een
+     kader met acht grepen, de naam van de laag, en een aanhaallijn naar wat de
+     set bevat — precies de opbouw van "CARBON CASE" op de poster. */
+  body.huid-kantig .sel-kader {
+    position: absolute; inset: 0; border: 1px solid var(--sch-fel); opacity: 0;
+    transition: opacity var(--dur-1) var(--ease);
+  }
+  body.huid-kantig .sel-greep {
+    position: absolute; width: 5px; height: 5px; background: #fff;
+    box-shadow: 0 0 0 1px rgb(8 9 11 / .55); opacity: 0;
+    transition: opacity var(--dur-1) var(--ease);
+  }
+  body.huid-kantig .sel-greep.a { left: -3px; top: -3px; }
+  body.huid-kantig .sel-greep.b { left: calc(50% - 2.5px); top: -3px; }
+  body.huid-kantig .sel-greep.c { right: -3px; top: -3px; }
+  body.huid-kantig .sel-greep.d { right: -3px; top: calc(50% - 2.5px); }
+  body.huid-kantig .sel-greep.e { right: -3px; bottom: -3px; }
+  body.huid-kantig .sel-greep.f { left: calc(50% - 2.5px); bottom: -3px; }
+  body.huid-kantig .sel-greep.g { left: -3px; bottom: -3px; }
+  body.huid-kantig .sel-greep.h { left: -3px; top: calc(50% - 2.5px); }
+
+  /* LIME EN NIET WIT. Eerste versie zette deze twee labels in wit op 88%, en op
+     een lichte productfoto verdwenen ze allebei — precies op de kaarten waar de
+     selectie het meest te vertellen heeft. Een vol vlak in de accentkleur leest
+     op elke grond, en het is meteen het ene accentmoment per selectie. Zwarte
+     letters, want wit op deze lime is 1,31:1.
+
+     BINNEN HET KADER EN NIET EROP: hij stond op top:-17px en werd door de
+     overflow:hidden van de mediahouder half afgesneden — je las "PRODUCT
+     PHOTOGRAPH". Binnen de linkerbovenhoek is bovendien waar een
+     ontwerpprogramma hem zet als er boven geen ruimte is. */
+  body.huid-kantig .sel-naam {
+    position: absolute; left: 1px; top: 1px; padding: 2px 5px;
+    background: var(--accent); color: var(--accent-ink); opacity: 0;
+    white-space: nowrap; transition: opacity var(--dur-1) var(--ease);
+  }
+  body.huid-kantig .sel-haal {
+    position: absolute; left: 0; top: 44%; display: flex; align-items: center;
+    opacity: 0; transition: opacity var(--dur-1) var(--ease);
+  }
+  body.huid-kantig .sel-haal i {
+    width: 4px; height: 4px; background: var(--accent); border-radius: 50%;
+    flex: none; margin-right: -1px;
+  }
+  body.huid-kantig .sel-haal s {
+    width: 22px; height: 1px; background: var(--accent); text-decoration: none; flex: none;
+  }
+  body.huid-kantig .sel-haal em {
+    font-style: normal; margin-left: 6px; padding: 2px 5px; white-space: nowrap;
+    background: var(--accent); color: var(--accent-ink);
+  }
+
+  body.huid-kantig .sel:hover .sel-hoek { opacity: 0; }
+  body.huid-kantig .sel:hover :is(.sel-kader, .sel-greep, .sel-naam, .sel-haal) { opacity: 1; }
+  @media (hover: none), (pointer: coarse) {
+    body.huid-kantig .sel-laag { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.huid-kantig :is(.sel-hoek, .sel-kader, .sel-greep, .sel-naam, .sel-haal) { transition: none; }
+  }
+
+  /* ══ DE SPECIFICATIELABELS ═════════════════════════════════════════════════
+     De bovenkopjes die er al staan worden specificaties. De haken staan in
+     `content` en niet in de opmaak, zodat er geen nieuwe tekst bijkomt die
+     vertaald en gekeurd zou moeten worden. `"[ " / ""` zet de toegankelijke
+     naam op leeg — een schermlezer leest het label en niet de haak. Kan een
+     browser die syntaxis nog niet, dan leest hij de haak voor: hinderlijk, niet
+     kapot, en de reden dat de haken nooit betekenis dragen.
+
+     De spatiëring is .02em en niet de .14em die ik eerst aannam. Nagemeten bij
+     de referentie: 0,22px op 11px. Juist die strakheid laat het als een
+     specificatie lezen in plaats van als een modieuze bovenkop. */
+  body.huid-kantig :is(.hv-kicker, .hv-svc-card-eyebrow, .hv-sub-eyebrow) {
+    font-family: var(--sch-mono); font-size: 10px; font-weight: 400;
+    letter-spacing: .02em; text-transform: uppercase;
+    color: var(--sch-ink); line-height: 1.3;
+  }
+  body.huid-kantig :is(.hv-kicker, .hv-svc-card-eyebrow, .hv-sub-eyebrow)::before { content: "[ " / ""; }
+  body.huid-kantig :is(.hv-kicker, .hv-svc-card-eyebrow, .hv-sub-eyebrow)::after  { content: " ]" / ""; }
+
+  /* ══ DE MAATLIJN ═══════════════════════════════════════════════════════════
+     De streep met een tik aan elk uiteinde die een afstand aangeeft — hier wat
+     een set BEVAT, want dat is de maat die de klant koopt. */
+  body.huid-kantig .sch-maatlijn { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  body.huid-kantig .sch-maatlijn::before,
+  body.huid-kantig .sch-maatlijn::after {
+    content: ""; width: 1px; height: 7px; background: var(--sch-lijn); flex: none;
+  }
+  body.huid-kantig .sch-maatlijn s { flex: 1; height: 1px; background: var(--sch-lijn); text-decoration: none; }
+  body.huid-kantig .sch-maatlijn em { font-style: normal; flex: none; padding: 0 2px; }
+
+  /* ══ DE DATABLADSLEUTEL ════════════════════════════════════════════════════
+     Naam links, haarlijn tot de rand. Je oog volgt de lijn in plaats van te
+     moeten gokken welke regel bij welke naam hoort. */
+  body.huid-kantig .sch-sleutel { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+  body.huid-kantig .sch-sleutel s { flex: 1; height: 1px; background: var(--sch-lijn); text-decoration: none; }
+
+  /* ══ DE AANWIJZER ══════════════════════════════════════════════════════════
+     mix-blend-mode: difference. Wit dat met difference over de pagina ligt is
+     precies "keer de grond om": over zwart wordt hij wit, over wit zwart, over
+     een foto volgt hij elke pixel.
+
+     IK HAD DIT EERST ANDERS OPGELOST EN DAT WAS FOUT. Ik rekende uit dat
+     difference van lime met wit blauwviolet geeft en besloot daarom de omkering
+     te BENOEMEN per sectie in plaats van te berekenen. Verkeerde conclusie uit
+     een juiste som: een lijst kleuren klopt alleen op de plekken die je van
+     tevoren kent, en het effect is juist dat hij zich overal vanzelf omkeert.
+
+     TWEE UITZONDERINGEN, EN MEER NIET. Op lime moet hij zwart zijn, en boven
+     iets aanklikbaars lime. In beide gevallen gaat de menging uit. Een handvol
+     elementen uitzonderen is de goede prijs voor een effect dat op de rest van
+     de pagina vanzelf klopt.
+
+     `isolation: isolate` mag hier nergens boven staan, anders mengt hij alleen
+     binnen dat blokje en zie je niets. Daarom hangt hij direct onder <body>. */
+  body.huid-kantig .aw {
+    position: fixed; top: 0; left: 0; width: 11.6px; height: 24px;
+    z-index: var(--z-cursor, 700); pointer-events: none; opacity: 0;
+    will-change: transform; --aw-kleur: #fff; mix-blend-mode: difference;
+  }
+  body.huid-kantig .aw.wakker { opacity: 1; }
+  /* De punt van het pad ligt op deze breuk van het kader — daar wordt hij
+     naartoe geschoven en daar staat de oorsprong van de schaal, zodat hij bij
+     het groeien blijft aanwijzen in plaats van weg te wandelen. */
+  body.huid-kantig .aw-i {
+    width: 100%; height: 100%; translate: -99.4% -.6%; transform-origin: 99.4% .6%;
+    transition: scale .22s var(--ease);
+  }
+  body.huid-kantig .aw-i svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  body.huid-kantig .aw.raakt { mix-blend-mode: normal; --aw-kleur: var(--accent); }
+  body.huid-kantig .aw.raakt .aw-i { scale: 1.55; }
+  body.huid-kantig .aw.oplime { mix-blend-mode: normal; --aw-kleur: var(--accent-ink); }
+
+  /* Het script zet deze klasse, nooit dit stijlblad — zie de kop van dit
+     bestand. Alleen op een echte muis. */
+  html.aw-aan body.huid-kantig,
+  html.aw-aan body.huid-kantig :is(a, button, summary, label, [role="button"]) { cursor: none; }
+  /* Formuliervelden houden hun eigen aanwijzer: een tekstcursor vertelt waar je
+     kunt typen, en dat is informatie die deze pijl niet kan vervangen. */
+  html.aw-aan body.huid-kantig :is(input, textarea, select, [contenteditable]) { cursor: auto; }
+
+  @media (hover: none), (pointer: coarse) { body.huid-kantig .aw { display: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    body.huid-kantig .aw-i { transition: none; }
+    body.huid-kantig .aw.raakt .aw-i { scale: 1; }
+  }
+</style>
+
+<script>
+  // Eén module, opnieuw gestart bij elke ClientRouter-navigatie — hetzelfde
+  // patroon als consent.js en interactions.js in Layout.astro. Een pagina-lokaal
+  // script overleeft een zachte navigatie niet.
+  const start = () => {
+    if (!document.body || !document.body.classList.contains('huid-kantig')) return;
+
+    // ── de maat per dienst, uit de prijstabel ────────────────────────────────
+    // Niets wordt getypt. De tabel weet dat een catalogset vier beelden is en
+    // lifestyle er drie; die koppeling wordt hier gelegd, niet verzonnen.
+    const maten = {};
+    document.querySelectorAll('.hv-lad thead th').forEach((th) => {
+      const k = th.querySelector('.hv-lad-kind');
+      const s = th.querySelector('.hv-lad-sub');
+      if (!k || !s) return;
+      const naam = k.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
+      const maat = s.textContent.split('·')[0].trim();
+      if (naam && maat) maten[naam] = maat;
+    });
+    const maatVoor = (titel) => {
+      const t = titel.toLowerCase();
+      for (const k in maten) {
+        if (t.startsWith(k) || k.startsWith(t) || t.startsWith(k.split(' ')[0])) return maten[k];
+      }
+      return '';
+    };
+
+    const grepen = () =>
+      ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => '<i class="sel-greep ' + k + '"></i>').join('');
+
+    // ── het zoekerkader om de hero ───────────────────────────────────────────
+    const heroBg = document.querySelector('.hv-hero-bg');
+    if (heroBg && !heroBg.querySelector('.sel-laag')) {
+      const l = document.createElement('div');
+      l.className = 'sel-laag hero';
+      l.setAttribute('aria-hidden', 'true');
+      l.innerHTML = '<i class="sel-hoek"></i>';
+      heroBg.appendChild(l);
+    }
+
+    // ── het selectiekader op de dienstenkaarten ──────────────────────────────
+    document.querySelectorAll('.hv-svc-card-media').forEach((h) => {
+      if (h.querySelector('.sel-laag')) return;
+      h.classList.add('sel');
+      const kaart = h.closest('.hv-svc-card');
+      const eb = kaart && kaart.querySelector('.hv-svc-card-eyebrow');
+      const ti = kaart && kaart.querySelector('.hv-svc-card-t');
+      const naam = eb ? eb.textContent.replace(/\s+/g, ' ').trim() : '';
+      const maat = ti ? maatVoor(ti.textContent.replace(/\s+/g, ' ').trim()) : '';
+      const l = document.createElement('div');
+      l.className = 'sel-laag';
+      l.setAttribute('aria-hidden', 'true');
+      l.innerHTML = '<i class="sel-hoek"></i><i class="sel-kader"></i>' + grepen()
+        + (naam ? '<i class="sch sel-naam">' + naam + '</i>' : '')
+        + (maat ? '<span class="sch sel-haal"><i></i><s></s><em>' + maat + '</em></span>' : '');
+      h.appendChild(l);
+    });
+
+    // ── de naad tussen twee secties ──────────────────────────────────────────
+    document.querySelectorAll('section + section').forEach((sec) => {
+      if (sec.querySelector(':scope > .sch-naad')) return;
+      const n = document.createElement('div');
+      n.className = 'sch-naad';
+      n.setAttribute('aria-hidden', 'true');
+      sec.appendChild(n);
+    });
+
+    // ── de maatlijnen onder de prijskoppen ───────────────────────────────────
+    document.querySelectorAll('.hv-lad thead th').forEach((th) => {
+      const sub = th.querySelector('.hv-lad-sub');
+      if (!sub || th.querySelector('.sch-maatlijn')) return;
+      const deel = sub.textContent.split('·');
+      const maat = deel[0].trim();
+      const rest = deel.slice(1).join('·').trim();
+      if (!maat) return;
+      // De maatlijn NEEMT het aantal over in plaats van het ernaast te herhalen;
+      // wat overblijft is de eenheid, en die hoort daar ook.
+      sub.textContent = rest;
+      if (!rest) sub.style.display = 'none';
+      const d = document.createElement('div');
+      d.className = 'sch sch-maatlijn';
+      d.setAttribute('aria-hidden', 'true');
+      d.innerHTML = '<s></s><em>' + maat + '</em><s></s>';
+      th.appendChild(d);
+    });
+
+    // ── de databladsleutels ──────────────────────────────────────────────────
+    document.querySelectorAll('.hv-q-k').forEach((k) => {
+      if (k.querySelector('s')) return;
+      k.classList.add('sch', 'sch-sleutel');
+      k.appendChild(document.createElement('s'));
+    });
+
+    // ── de aanwijzer ─────────────────────────────────────────────────────────
+    const c = document.getElementById('aw');
+    if (!c) return;
+    if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    document.documentElement.classList.add('aw-aan');
+    const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // WELKE PLEKKEN DE MENGING UITZETTEN — GELEZEN, NIET OPGESOMD.
+    // Eerste poging was een lijst klassen, en die miste meteen het
+    // belangrijkste geval: het accentwoord in de hero is een kale <em> zonder
+    // klasse. Een opsomming vangt alleen de gevallen die je van tevoren kent.
+    const acc = (() => {
+      const d = document.createElement('span');
+      d.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      document.body.appendChild(d);
+      const v = getComputedStyle(d).color;
+      d.remove();
+      const m = v.match(/[\d.]+/g);
+      return m ? m.slice(0, 3).map(Number) : [198, 241, 0];
+    })();
+    // [\d.]+ en niet \d+ : op "rgba(198, 241, 0, 0.9)" splitst \d+ de alpha in
+    // "0" en "9", en dan valt elke half-doorzichtige limeknop af op dekking nul.
+    const bijna = (v) => {
+      const m = String(v).match(/[\d.]+/g);
+      if (!m) return false;
+      const a = m[3] !== undefined ? parseFloat(m[3]) : 1;
+      if (a < 0.5) return false;
+      return Math.abs(+m[0] - acc[0]) < 44 && Math.abs(+m[1] - acc[1]) < 44 && Math.abs(+m[2] - acc[2]) < 44;
+    };
+    const opAccent = (t) => {
+      for (let i = 0, el = t; el && i < 4; el = el.parentElement, i += 1) {
+        const s = getComputedStyle(el);
+        if (bijna(s.color) || bijna(s.backgroundColor)) return true;
+      }
+      return false;
+    };
+
+    let x = 0, y = 0, cx = 0, cy = 0, eerst = true, draait = false;
+    const lus = () => {
+      const f = rustig ? 1 : 0.26;
+      cx += (x - cx) * f;
+      cy += (y - cy) * f;
+      c.style.transform = 'translate(' + cx + 'px, ' + cy + 'px)';
+      if (draait) requestAnimationFrame(lus);
+    };
+    const beweeg = (e) => {
+      x = e.clientX; y = e.clientY;
+      if (eerst) { cx = x; cy = y; eerst = false; draait = true; c.classList.add('wakker'); lus(); }
+    };
+    const overheen = (e) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      // Volgorde telt: accent wint van aanklikbaar, want een limeknop is allebei
+      // en daar moet hij zwart zijn en niet lime-op-lime.
+      const lime = opAccent(t);
+      c.classList.toggle('oplime', lime);
+      c.classList.toggle('raakt', !lime && !!t.closest('a, button, summary, label, [role="button"], .btn, .sel'));
+    };
+    const weg = () => c.classList.remove('wakker');
+    const terug = () => c.classList.add('wakker');
+
+    addEventListener('mousemove', beweeg, { passive: true });
+    document.addEventListener('mouseover', overheen, { passive: true });
+    document.addEventListener('mouseleave', weg);
+    document.addEventListener('mouseenter', terug);
+
+    // Opruimen vóór een zachte navigatie, anders stapelen de luisteraars zich op
+    // bij elke pagina die de bezoeker aandoet — en blijft de lus draaien.
+    const stop = () => {
+      draait = false;
+      removeEventListener('mousemove', beweeg);
+      document.removeEventListener('mouseover', overheen);
+      document.removeEventListener('mouseleave', weg);
+      document.removeEventListener('mouseenter', terug);
+      document.documentElement.classList.remove('aw-aan');
+      document.removeEventListener('astro:before-swap', stop);
+    };
+    document.addEventListener('astro:before-swap', stop);
+  };
+
+  start();
+  document.addEventListener('astro:page-load', start);
+</script>

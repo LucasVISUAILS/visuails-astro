@@ -53,10 +53,33 @@
      brown by simultaneous contrast; a couple of points of the accent's own
      hue in the ground stops that without being visible as colour. */
 
-  /* ---- grounds: cool near-black, four steps ---------------------------- */
-  --bg-0:        #08090B;   /* page ground                                  */
-  --bg-raise:    #101216;   /* a band that lifts off the page               */
-  --surface:     #17191E;   /* tiles and panels                             */
+  /* ---- grounds: cool near-black, four steps ----------------------------
+     DE HELE TRAP IS ÉÉN STAP OMLAAG GEGAAN — 27 augustus 2026, op verzoek van
+     Lucas: *"Ik wil de achtergrond kleur van de website denk ik een stuk
+     donkerder hebben. Pas dit niet alleen aan op de website maar ook in het
+     kleurenschema."* Dus hier, in de trap zelf, en niet met een overschrijving
+     op één pagina.
+
+     De ONDERLINGE afstanden blijven staan: er zat 8, 7 en 8 punten tussen de
+     vier treden en dat is nu 7, 6 en 7. Dat is met opzet — de trap is wat een
+     paneel van de grond onderscheidt, en die alleen maar naar beneden schuiven
+     zonder de afstanden te bewaken maakt van vier treden één vlak. De grond
+     zakt het hardst (5 punten), de bovenste trede het minst (8), zodat het
+     verschil dat je zíét tussen een tegel en de pagina eerder groter dan
+     kleiner wordt.
+
+     De 'whisper of blue' uit sectie 18 blijft: elke trede houdt 2 tot 8 punten
+     meer blauw dan rood, om te voorkomen dat neutraal bijna-zwart naast het
+     accent bruinig gaat lezen.
+
+     VOOR LICHTE TEKST KAN DIT ALLEEN GUNSTIG ZIJN. Een donkerder grond verhoogt
+     elke verhouding die in Layout.astro tegen deze waarden is gemeten; die
+     cijfers hoeven dus niet opnieuw, ze worden alleen ruimer. Wat wél opnieuw
+     moet als er ooit iets DONKERS op een van deze treden komt te staan, is dat
+     ene geval — en dat staat er nu niet. */
+  --bg-0:        #030406;   /* page ground                                  */
+  --bg-raise:    #0A0C10;   /* a band that lifts off the page               */
+  --surface:     #101318;   /* tiles and panels                             */
   /* ── DE GROND VAN EEN ZWEVEND PANEEL — 18 augustus 2026 ──────────────────
      Dezelfde waarde als --surface en met opzet een EIGEN naam. De koptekst
      heeft een scope voor "balk boven een foto" die --surface op een scrim van
@@ -67,7 +90,7 @@
      Een paneel dat over onbekende inhoud zweeft, is de ene plek die ondoorzichtig
      MOET zijn. Vandaar een token dat door geen enkele scope wordt herschreven. */
   --menu-surface: #17191E;
-  --surface-2:   #1F2229;   /* an inset, or a tile on a tile                */
+  --surface-2:   #171A20;   /* an inset, or a tile on a tile                */
 
   /* ---- ink: white at four alphas ---------------------------------------
      Alphas rather than solids so the ramp composites correctly on any of the

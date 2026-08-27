@@ -37,10 +37,10 @@ allowed on panels and never under body copy.
 
 | Token | Value | Role | Measured |
 |---|---|---|---|
-| `--bg-0` | `#08090B` | The page ground | — |
-| `--bg-raise` | `#101216` | Raised band, recessed panel | — |
-| `--surface` | `#17191E` | A card off the ground | — |
-| `--surface-2` | `#1F2229` | The step above that | — |
+| `--bg-0` | `#030406` | The page ground | one step down, 27 aug 2026 — see the note below the table |
+| `--bg-raise` | `#0A0C10` | Raised band, recessed panel | — |
+| `--surface` | `#101318` | A card off the ground | — |
+| `--surface-2` | `#171A20` | The step above that | — |
 | `--ink-1` | `#FFFFFF` | Headings and primary text | 16.75:1 on `--surface` |
 | `--ink-2` | white 80% | Body / secondary | 10.94:1 |
 | `--ink-3` | white 66% | Muted, captions | 7.53:1 |
@@ -48,9 +48,27 @@ allowed on panels and never under body copy.
 | `--line` | white 12% | Hairline | — |
 | `--line-strong` | white 22% | Rule, control border — **never text** | — |
 | `--accent` | `#C6F100` | Primary fill, links, the accent word | 15.16:1 both directions |
-| `--accent-ink` | `#08090B` | What sits ON an accent fill | white on the accent is 1.31:1 and is never correct |
+| `--accent-ink` | `#08090B` | What sits ON an accent fill (was equal to `--bg-0`; since 27 aug 2026 it is not, and that is correct — this is ink, not ground) | white on the accent is 1.31:1 and is never correct |
 | `--accent-dim` | `#ABD200` | Hover / pressed | — |
 | `--scrim` | `8 9 11` (channels) | Every veil over a photograph | see below |
+
+**De grondtrap ging één stap omlaag, 27 augustus 2026.** Lucas: *"Ik wil de
+achtergrond kleur van de website denk ik een stuk donkerder hebben. Pas dit niet
+alleen aan op de website maar ook in het kleurenschema."* Vandaar hier en niet
+met een overschrijving op één pagina.
+
+De ONDERLINGE afstanden zijn bewaakt: er zat 8, 7 en 8 punten tussen de vier
+treden en dat is nu 7, 6 en 7. De trap is wat een paneel van de grond
+onderscheidt; alleen naar beneden schuiven zonder die afstanden te bewaken maakt
+van vier treden één vlak. De grond zakt het hardst (5 punten), de bovenste trede
+het minst (8), zodat het zichtbare verschil tussen een tegel en de pagina eerder
+groter dan kleiner wordt. De 'whisper of blue' uit sectie 18 blijft: elke trede
+houdt 3 tot 9 punten meer blauw dan rood.
+
+Voor lichte tekst kan dit alleen gunstig zijn — elke verhouding die in
+Layout.astro tegen deze waarden is gemeten wordt ruimer, niet krapper. Wat wél
+opnieuw gemeten moet worden is het moment dat er iets DONKERS op een van deze
+treden komt te staan; dat geval bestaat op dit moment niet.
 
 Two things about this table are counter-intuitive and are the reason it is written down:
 

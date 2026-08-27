@@ -26,7 +26,7 @@ import {
   monthKey, makeSubRef, verbruikToestaan, verbruikBoeken,
   createSubscriptionRow, loadSubscription, subscriptionByRef,
   setMollieIds, activateSubscription, pauseSubscription, cancelSubscription,
-  loadMonths, loadQueue, loadTaken, planState,
+  loadMonths, loadQueue, loadTaken, planState, planSaldo,
   queueAdd, queueRemove, queueReorder, queueTake, queueLinkOrder,
   bezetting, subscriptionShape,
 } from '../src/lib/subscription.js';
@@ -355,6 +355,63 @@ console.log('\nhet dashboard zegt niet wat er aan de beurt is, en tekent zijn me
   /* En de nudge verdwijnt zodra het af is — een nudge die blijft staan, is een
      banner. */
   ok('de nudge hangt aan wat er nog open is', /bkOnaf\.length/.test(acc), true);
+}
+
+
+/* ══ PLANSALDO — DEZELFDE GETALLEN, MINDER QUERIES ═════════════════════════════
+ *
+ * planSaldo() is op 26 augustus 2026 uit planState() gehaald omdat de
+ * statuskolom van het dashboard het saldo op ELKE route laat zien, en
+ * planState() daar vier queries voor doet waarvan er twee alleen op
+ * /account/plan gelezen worden.
+ *
+ * Wat hier bewezen moet worden is precies één ding, en het is het ding dat bij
+ * een splitsing stuk gaat: de twee functies mogen niet uit elkaar lopen. Niet
+ * "planSaldo geeft plausibele getallen" — planSaldo geeft VOOR ELKE GEDEELDE
+ * SLEUTEL exact wat planState geeft. Zodra iemand de rekensom in één van de twee
+ * aanpast, is dit rood.
+ *
+ * En het tweede: dat de splitsing daadwerkelijk iets bespaart. Een refactor die
+ * evenveel queries doet als daarvoor, is alleen maar een extra functie. */
+console.log('\nplanSaldo geeft hetzelfde als planState, met minder queries');
+{
+  /* Een env die telt hoe vaak er een statement wordt klaargezet. Meer heeft deze
+     meting niet nodig: elke query in subscription.js gaat via prepare(). */
+  const tellend = () => {
+    const echt = d1(db);
+    let n = 0;
+    return { env: { DB: { prepare(sql) { n += 1; return echt.prepare(sql); }, batch: echt.batch?.bind(echt) } }, tel: () => n };
+  };
+
+  for (const [wie, klant] of [['met een abonnement', 1], ['zonder abonnement', 2]]) {
+    const vol = await planState(env, klant);
+    const kort = await planSaldo(env, klant);
+
+    /* Elke sleutel die planSaldo teruggeeft, moet in planState dezelfde waarde
+       hebben. Andersom niet: wachtrij en opgehaald horen er juist niet in. */
+    const anders = Object.keys(kort).filter((k) => JSON.stringify(kort[k]) !== JSON.stringify(vol[k]));
+    ok(`${wie} — elke gedeelde sleutel is gelijk`, anders, []);
+
+    /* En planState houdt de twee lijsten die hij altijd had, ook als er niets in
+       zit: een pagina die op .length rekent, mag niet op undefined stuiten. */
+    ok(`${wie} — planState houdt wachtrij en opgehaald`,
+      [Array.isArray(vol.wachtrij), Array.isArray(vol.opgehaald)], [true, true]);
+    ok(`${wie} — en planSaldo draagt ze niet`,
+      ['wachtrij' in kort, 'opgehaald' in kort], [false, false]);
+
+    /* DE AANTALLEN STAAN ER UITGESCHREVEN EN NIET ALS "MINDER DAN". Zonder
+       abonnement doen ze allebei één query — planState stopt na loadSubscription
+       omdat er niets te laden valt — dus "minder" zou daar terecht rood worden
+       voor iets wat goed is. Met een abonnement is het 2 tegen 4, en dat is de
+       hele reden dat deze splitsing bestaat. Een getal dat je opschrijft, kan
+       niet stilletjes oplopen: zet iemand loadQueue terug in planSaldo, dan is
+       dit rood en niet pas de rekening van Cloudflare. */
+    const a = tellend(); await planState(a.env, klant);
+    const b = tellend(); await planSaldo(b.env, klant);
+    ok(`${wie} — planState doet ${klant === 1 ? 4 : 1} queries`, a.tel(), klant === 1 ? 4 : 1);
+    ok(`${wie} — planSaldo doet er ${klant === 1 ? 2 : 1}`, b.tel(), klant === 1 ? 2 : 1);
+    ok(`${wie} — en dus nooit meer dan planState`, b.tel() <= a.tel(), true);
+  }
 }
 
 console.log(`\n${ok_}/${totaal} geslaagd`);

@@ -28,11 +28,19 @@ const description =
   `${vatLabel('excl', 'nl')}. Eerst zien voor ${euro(AMOUNT.testSample, 'nl')}.`;
 ---
 
+  {/* DE STIJLLAAG. Zet body.huid-kantig, en dat is het enige wat er verandert:
+      HuidKantig.astro vult een handvol tokens anders in en legt er wat regels
+      onder. HomeV2.astro is niet aangeraakt, dus deze pagina toont exact
+      dezelfde inhoud als voorheen — alleen anders gezet.
+
+      Alléén hier en op /nl. De rest van de site blijft staan zoals hij stond,
+      tot Lucas zegt dat de stijl mee mag; tests/huid.test.mjs bewaakt dat. */}
 <Layout
   title="Productbeelden zonder fotoshoot | VISUAILS"
   description={description}
   ogImage="/img/og-nl.png"
   ground="espresso"
+  huid="kantig"
 >
   <HomeV2 lang="nl" />
 </Layout>

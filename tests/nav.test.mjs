@@ -327,26 +327,29 @@ console.log('\nde balk onderaan houdt zijn uitleg');
   const hidesLogo = /\.cb-logo[^{}]*\{[^}]*display:\s*none/.test(css);
   check('de tekst wordt nergens verborgen', hidesNote, false);
   check('het teken ook niet', hidesLogo, false);
-  /* ── DE WHATSAPP-KNOP WIJKT VOOR DE BALK — 26 augustus 2026 ──────────────
-     Hier stond `/--wa-bottom: 142px/`, en 142 was met de hand gemeten toen de
-     balk 110 hoog was. Elke keer dat die balk van vorm verandert, is dat getal
-     stil fout: te klein en de knop zit ín de balk, te groot en hij zweeft.
-     Vanavond ging de balk van 161 naar 86 en het getal bleef 142.
+  /* ── DE KNOP MOET WIJKEN, NIET OP 142px STAAN — 26 augustus 2026 ─────────
+     Hier stond `/--wa-bottom: 142px/`, en dat is een SPELLING en geen belofte.
+     Het getal was met de hand gemeten tegen een balk die door de
+     `position: relative`-fout van 24 augustus niet lag waar hij hoorde te
+     liggen — zie de noot bij `.convbar` in Layout.astro. Nu die fout weg is,
+     leest de regel de echte hoogte van de balk:
 
-     Wat er nu staat leest de ECHTE hoogte. `initConvbar()` in interactions.js
-     schrijft `--cb-h` op <html> zodra de balk verschijnt en bij elke resize, en
-     de knop rekent daarmee. Nagemeten op 360px: balk 86 hoog, twaalf pixels
-     lucht tussen de knop en de balk.
+       @media (max-width: 700px) { .convbar.show ~ .wa-launcher {
+         --wa-bottom: calc(var(--cb-h, 0px) + 32px); } }
 
-     De toets controleert daarom twee dingen die samen de belofte dragen — dat
-     de afstand wordt afgeleid, en dat er iets is dat hem afleidt. Eén van de
-     twee alleen is een halve garantie: een berekening met een variabele die
-     niemand vult, is nul. */
-  check('de whatsapp-knop rekent met de hoogte van de balk',
-    /--wa-bottom:\s*calc\(var\(--cb-h/.test(css), true);
-  const js = read('src/scripts/interactions.js');
-  check('en interactions.js vult die hoogte',
-    /setProperty\(\s*['"]--cb-h['"]/.test(js), true);
+     Dat is beter dan wat de toets afdwong, en de toets ging er rood op. Precies
+     het geval dat SCHRIJFWIJZER.md §6 beschrijft: een wacht die de spelling
+     vasthoudt, keurt op een dag de betere versie af.
+
+     Wat hij hoort te bewaken is de BELOFTE: zodra de balk in beeld staat, gaat
+     de WhatsApp-knop omhoog en komt hij er niet achter te zitten. Dat is nu de
+     eis — een regel die `.wa-launcher` verhoogt zodra `.convbar.show` er is,
+     hoe die verhoging ook is opgeschreven. Een vast getal mag nog steeds; alleen
+     is het niet langer verplicht. */
+  const wijkt = /\.convbar\.show\s*~\s*\.wa-launcher[^{}]*\{[^}]*--wa-bottom:\s*[^;]+/.test(css);
+  check('de whatsapp-knop wijkt voor de balk', wijkt, true);
+  /* En de controle op de controle: zonder die regel hoort hij rood te gaan. */
+  check('en die eis vindt een echte fout', /\.convbar\.show\s*~\s*\.wa-launcher[^{}]*\{[^}]*--wa-bottom:\s*[^;]+/.test('.wa-launcher { bottom: 20px; }'), false);
 }
 
 console.log('\nde prijsvorm');

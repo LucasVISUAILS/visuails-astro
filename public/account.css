@@ -208,7 +208,18 @@
   --ink:        var(--ink-900);
   --ink-2:      var(--ink-700);
   --ink-3:      var(--ink-500);
-  --ink-4:      var(--ink-300);
+  /* ── DEZELFDE NAAM, TWEE BETEKENISSEN — RECHTGEZET 27 augustus 2026 ──────
+     Dit stond op `var(--ink-300)`, en --ink-300 draagt twee regels hoger het
+     bijschrift "rules, never text". In src/styles/global.css — waar dit blok een
+     handkopie van is — betekent --ink-4 iets anders: de vierde INKTTREDE, wit op
+     52%, gemeten op 5,30:1. Hier was het de randwaarde, wit op 22%.
+     Gevolg: `.facts-kv dd.leeg` zette "nog niet ingesteld" op 2,03:1. Gemeten op
+     /account/plan in beide talen. Eén lezer in dit bestand, dus de alias
+     rechtzetten is de kleinste reparatie én de enige die de naam weer laat
+     kloppen met de site.
+     public/portal.css en public/admin.css dragen dezelfde alias; daar staat hij
+     nog. */
+  --ink-4:      rgb(255 255 255 / 0.52);
   /* Captions and microcopy resolve to MUTED, not faint: --ink-300 is the rule
      value and it is 2.4:1 here — a hairline, not a sentence. */
   --ink-faint:  var(--ink-500);
@@ -835,7 +846,10 @@ select { min-height: 38px; padding: 0 2.2rem 0 .65rem; }
 .bk-sum-text { display: grid; gap: .15rem; min-width: 0; flex: 1 1 auto; }
 .bk-sum-h { font-size: 1rem; font-weight: 700; color: var(--ink); }
 .bk-sum-now { font-size: .82rem; color: var(--ink-3); overflow-wrap: anywhere; }
-.bk-sum-dot { color: var(--ink-300); }
+/* Een scheidingsteken in een tekstregel is tekst en geen streep: --ink-300 is de
+   randwaarde (2,03:1) en stond hier als kleur van een zichtbaar punt tussen twee
+   woorden. Zie de noot bij --ink-4 hierboven — dezelfde verwisseling. */
+.bk-sum-dot { color: var(--ink-3); }
 .bk-sum-cta {
   flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35rem;
   font-size: .78rem; letter-spacing: .05em; text-transform: uppercase;
@@ -2799,3 +2813,434 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .rr textarea:focus-visible { outline: 2px solid var(--accent-bright, #c8f31d); outline-offset: 2px; }
 .rr .acts { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .7rem; }
 .rr-used { color: var(--ink-2); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE STATUSKOLOM — 27 augustus 2026
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * De derde kolom. Links waar je heen kunt, midden waar je bent, rechts wat er van
+ * je toestand te zeggen valt — en die rechterkolom is op elke route dezelfde. Zie
+ * de noot bij statusKolom() in src/lib/account.js voor waarom hij bestaat.
+ *
+ * `.shell` blijft flex en wordt geen grid. Een grid zou hier nettere code geven en
+ * elke bestaande regel in dit bestand die op de flexverdeling rekent opnieuw laten
+ * bewijzen — de ingeklapte zijbalk, de telefoonbalk, de drie doorbraakpunten. Een
+ * derde flexitem met een vaste basis doet hetzelfde werk en raakt niets.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+.status {
+  /* Meebewegend en niet vast op 300. Op 1280 — zijbalk 232 plus deze kolom — bleef
+     er 646 over voor de middenkolom en had de tabel er 649 nodig: drie pixels, en
+     dus een schuifbalk op precies de meest voorkomende laptopbreedte. Liever een
+     kolom die een paar procent meegeeft dan een tabel die krapper moet. Onder de
+     272 wordt hij zelf onleesbaar, boven de 300 wint hij niets meer. */
+  flex: 0 0 clamp(272px, 21vw, 300px);
+  border-left: 1px solid var(--line);
+  /* Dezelfde grond als de zijbalk: de twee randkolommen horen bij elkaar en de
+     middenkolom is waar het werk staat. Zonder dit leest de kolom als inhoud. */
+  background: var(--paper-lift);
+  align-self: stretch;
+}
+/* De binnenlaag plakt, de buitenlaag vult. Zie de noot bij statusKolom(): sticky
+   op de <aside> zelf zou `align-self: flex-start` vragen, en dan houdt de
+   scheidingslijn halverwege een lange pagina op. */
+.status-in {
+  position: sticky; top: 0;
+  display: flex; flex-direction: column; gap: .8rem;
+  padding: 1.6rem 1.2rem 2rem;
+  max-height: 100vh; overflow-y: auto; overscroll-behavior: contain;
+}
+
+.st-kaart {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  padding: .85rem .95rem;
+  display: block; text-decoration: none; color: inherit;
+}
+/* De enige kaart met kleur is de kaart die iets van je wil. Eén per kolom, en
+   alleen als er echt iets openstaat — een kolom die altijd oranje is, is geen
+   melding meer maar een lijst. */
+.st-kaart.let { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 6%, var(--paper)); }
+
+.st-k {
+  margin: 0 0 .55rem;
+  font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+  font-weight: 700; color: var(--ink-3);
+}
+.st-kaart.let .st-k { color: var(--warn-ink); }
+.st-zin { margin: 0; font-size: .9rem; line-height: 1.45; font-weight: 600; color: var(--ink); }
+.st-sub { margin: .4rem 0 0; font-size: .79rem; line-height: 1.45; color: var(--ink-2); }
+.st-kaart .btn { margin-top: .75rem; }
+
+/* Het saldogetal. Tabellarisch, want het verandert en mag niet verspringen. */
+.st-groot {
+  /* `var(--font)` en niet `var(--font-display)`. Dat tweede token bestaat in
+     global.css maar NIET in dit bestand, en `.stat-n` hierboven gebruikt het al
+     — die regel valt dus stil terug op de body-letter zonder dat iemand het
+     ziet. Eén zo'n regel is genoeg; zie de noot boven --font in :root. */
+  margin: 0; font-family: var(--font); font-weight: 900;
+  font-size: 1.85rem; line-height: 1; letter-spacing: -.035em; color: var(--ink);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.st-groot span { font-size: .8rem; font-weight: 600; color: var(--ink-3); letter-spacing: 0; }
+/* De meter erft .meter/.pip uit het abonnementsblok hierboven — één tekening,
+   twee plekken. Alleen wat kleiner, want deze kolom is smaller dan die pagina. */
+.status .meter { gap: 3px; margin-top: .7rem; }
+.status .pip { width: 12px; height: 18px; }
+
+.st-lijst { display: flex; flex-direction: column; gap: .5rem; }
+.st-rij { display: flex; align-items: baseline; gap: .55rem; margin: 0; font-size: .82rem; min-width: 0; }
+.st-rij b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.st-rij .r { margin-left: auto; color: var(--ink-3); white-space: nowrap; }
+.st-rij .r.is-vast { color: var(--signal-ink); }
+.st-rij .r.is-open { color: var(--warn-ink); }
+
+.st-kaart-link { transition: border-color var(--dur-1) var(--ease); }
+.st-kaart-link:hover { border-color: var(--line-strong); }
+
+/* Twee pilvarianten erbij, in dezelfde `is-`-familie als de vijf statuslabels:
+   ze zeggen niet WAT er met een bestelling gebeurt maar bij WIE hij ligt. Dat is
+   de enige vraag die deze kolom beantwoordt en hij staat nergens anders. */
+.pill.is-jij { border-color: var(--warn); color: var(--warn-ink); }
+.pill.is-wij { border-color: var(--line-strong); color: var(--ink-3); }
+
+/* De navigatiegroepen. Twee koppen, en ze zijn klein genoeg om te negeren
+   zolang je weet waar je heen wilt — dat is wat een groepskop hoort te doen. */
+.sidenav { flex: 0 0 auto; }
+.sidenav + .sidenav { margin-top: 1.1rem; }
+.sidenav-kop {
+  margin: 0 0 .3rem .7rem;
+  font-size: .63rem; letter-spacing: .13em; text-transform: uppercase;
+  font-weight: 700; color: var(--ink-3);
+}
+/* De aanvraagknop staat nu bovenin het gebruikersblok en niet meer in de
+   navigatie: het is een handeling en geen pagina. */
+.sideuser > .btn:first-child { margin-bottom: 1rem; }
+.nav-dicht .sidenav-kop { display: none; }
+
+/* ── SMALLER DAN 1180px: DE KOLOM GAAT ONDER DE INHOUD ──────────────────────
+   Niet weg. Wat erin staat is precies wat iemand op een telefoon óók wil weten,
+   en de eerste kaart is er de belangrijkste van. Onder de inhoud in plaats van
+   ernaast, als een rij kaarten die meebeweegt. */
+/* ── WRAP ALLEEN ZOLANG DE SCHIL EEN RIJ IS — 27 augustus 2026 ──────────────
+ *
+ * `flex-wrap: wrap` stond hier zonder ondergrens, en onder 780px zet de regel
+ * verderop `.shell { flex-direction: column }`. Wrappen in een KOLOM maakt geen
+ * tweede rij maar een tweede KOLOM: op 390px werd de schil 783 breed — twee
+ * kolommen van 390 naast elkaar — en schoof de hele pagina zijwaarts. Gemeten op
+ * de bestellingenpagina, waar de inhoud lang genoeg is om de omslag te halen; op
+ * een kort scherm viel het niet op, wat precies is waarom dit met een meting
+ * boven water kwam en niet met een schermafdruk.
+ *
+ * Tussen 781 en 1180 is de schil nog een rij en hoort de statuskolom onder de
+ * inhoud te wrappen. Daaronder stapelt de kolomrichting alles al. */
+@media (min-width: 781px) and (max-width: 1180px) {
+  .shell.shell-3 { flex-wrap: wrap; }
+}
+@media (max-width: 1180px) {
+  .status { flex: 1 1 100%; border-left: 0; box-shadow: inset 0 1px 0 var(--line); }
+  /* Onder de inhoud plakt er niets meer: er is geen kolom om naast te blijven staan. */
+  .status-in {
+    position: static; max-height: none; overflow: visible;
+    flex-direction: row; flex-wrap: wrap;
+    padding: 1.4rem clamp(1.4rem, 4vw, 3.2rem) 3rem;
+    gap: 1rem;
+  }
+  .st-kaart { flex: 1 1 260px; }
+}
+@media (max-width: 720px) {
+  .status-in { flex-direction: column; }
+  .st-kaart { flex: 1 1 auto; }
+}
+
+/* ── DE TWEE NAVIGATIEGROEPEN OP DE TELEFOON ────────────────────────────────
+ *
+ * Onder 780px is de zijbalk een bovenbalk en een raster, en de regel daarvoor
+ * (`.sidenav { grid-row: 3 }`) was geschreven toen er precies één .sidenav was.
+ * Met twee groepen landen ze allebei in rij 3 en tekenen ze over elkaar heen —
+ * zichtbaar in een render als "WORK" dwars door "Overview".
+ *
+ * De koppen gaan hier weg en de twee groepen krijgen elk een eigen rij. Wat je
+ * dan ziet is precies wat er stond: zes links in twee kolommen. Een groepskop
+ * verdient op een telefoon geen regel — de zes links passen in één blik, en dan
+ * groepeert het oog vanzelf.
+ * ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 780px) {
+  .sidenav-kop { display: none; }
+  .sidenav:nth-of-type(1) { grid-row: 3; margin-top: .5rem; }
+  .sidenav:nth-of-type(2) { grid-row: 4; margin-top: .25rem; }
+  .sidenav + .sidenav { margin-top: 0; }
+
+  /* De aanvraagknop staat op elke pagina al in de bovenbalk van de inhoud zelf.
+     Twee keer dezelfde knop binnen één schermhoogte is geen nadruk maar ruis, en
+     op een telefoon is die schermhoogte het schaarse goed. */
+  .sideuser > .btn:first-child { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE BESTELLINGENTABEL, HET VINKJE EN DE NAKIJKSTAP — 27 augustus 2026
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+.ordtab {
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--paper-lift); overflow-x: auto; margin-bottom: 1.6rem;
+}
+.ordtab table { width: 100%; border-collapse: collapse; min-width: 620px; }
+.ordtab th[scope="col"] {
+  text-align: left; font-size: .66rem; letter-spacing: .11em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 700; padding: .7rem .9rem;
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.ordtab td, .ordtab th[scope="row"] {
+  padding: .7rem .9rem; border-bottom: 1px solid var(--line);
+  font-size: .88rem; color: var(--ink-2); vertical-align: middle; text-align: left; font-weight: 400;
+}
+.ordtab tr:last-child td, .ordtab tr:last-child th { border-bottom: 0; }
+.ordtab .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ordtab .acties { text-align: right; white-space: nowrap; }
+.ordtab .ref { font-weight: 700; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.ordtab .ref:hover { text-decoration: underline; }
+.ordtab tbody tr:hover td, .ordtab tbody tr:hover th { background: rgb(255 255 255 / .03); }
+/* De open rij en de rij die iets van je wil. Allebei een vulling en geen streep
+   opzij: dit is een tabel, en een gekleurde rand aan één kant van een rij leest
+   als een defect in de lijnen. */
+.ordtab tr.is-open td, .ordtab tr.is-open th { background: rgb(255 255 255 / .05); }
+.ordtab tr.let td, .ordtab tr.let th { background: color-mix(in srgb, var(--warn) 7%, transparent); }
+.ordtab tr.let:hover td, .ordtab tr.let:hover th { background: color-mix(in srgb, var(--warn) 11%, transparent); }
+.ordtab .is-gone { color: var(--ink-3); text-decoration: line-through; }
+
+/* ── HET VINKJE ALS RIJ ─────────────────────────────────────────────────────
+ * Het notitieveld is uit de tegel (zie shotTile), dus wat er overblijft is één
+ * keuze: dit beeld klopt niet. Een rij over de volle breedte onder de
+ * goedkeurknop, even hoog en even breed — de twee zijn alternatieven en horen
+ * er ook zo uit te zien. Aangevinkt kleurt hij amber, want vanaf dat moment
+ * hangt er iets aan dit beeld. */
+.ask-tick {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .45rem .6rem; margin-top: .3rem;
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  font-size: .78rem; font-weight: 600; color: var(--ink-2); cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
+}
+.ask-tick:hover { border-color: var(--line-strong); color: var(--ink); }
+.ask-tick input { accent-color: var(--warn); margin: 0; flex: none; }
+.ask-tick:has(input:checked) {
+  border-color: var(--warn); color: var(--warn-ink);
+  background: color-mix(in srgb, var(--warn) 8%, transparent);
+}
+
+/* ── DE AMBERBAND OM DE WAARSCHUWING ────────────────────────────────────────
+ * Stond als `border-left: 3px solid #E5B45C` — een streep opzij, en een hex die
+ * in geen enkel palet van dit project voorkomt. De site heeft één attentiekleur
+ * (--warn) en dit is er een gebruik van, geen tweede. Een hele rand plus een
+ * vulling zegt hetzelfde zonder de streep. */
+.ronde { background: color-mix(in srgb, var(--warn) 5%, var(--paper-lift)); border-color: color-mix(in srgb, var(--warn) 38%, var(--line)); }
+.ronde-warn {
+  border-left: 0; padding-left: 0;
+  color: var(--warn-ink); font-weight: 600;
+}
+.ronde-warn.is-los { margin-bottom: 1.2rem; max-width: 74ch; }
+
+/* ── DE NAKIJKSTAP ──────────────────────────────────────────────────────────
+ * Eén beeld per rij, groot genoeg om te herkennen en klein genoeg om er zes
+ * boven elkaar te zien. Het notitieveld staat ernaast en niet eronder: je
+ * schrijft over wat je links ziet. */
+.nakijk { max-width: 62rem; }
+.nk-lijst { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-lift); }
+.nk { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 1.1rem; padding: 1.1rem 1.2rem; align-items: start; }
+.nk + .nk { border-top: 1px solid var(--line); }
+.nk-beeld { display: block; aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
+.nk-beeld img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nk-kop { margin: 0 0 .5rem; font-size: .9rem; }
+.nk-kop b { color: var(--ink); font-weight: 700; }
+.nk-tekst label { display: block; font-size: .78rem; font-weight: 700; color: var(--ink-3); margin-bottom: .3rem; }
+.nk-tekst textarea {
+  width: 100%; background: var(--paper); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: .55rem .7rem; font: inherit; font-size: .88rem;
+  line-height: 1.55; color: var(--ink); resize: vertical; min-height: 4.6rem;
+}
+.nk-tekst textarea:focus-visible { border-color: var(--signal); }
+/* Een leeg verplicht veld wijst zichzelf aan zodra de browser het afkeurt — dat
+   is precies de aanwijzing die de oude `?ronde=notitie#f<id>` niet kon geven. */
+.nk-tekst textarea:invalid:not(:placeholder-shown) { border-color: var(--warn); }
+.nk-slot { margin-top: 1.3rem; padding: 1.1rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-lift); }
+.nk-slot p { margin: 0; font-size: .88rem; line-height: 1.6; color: var(--ink-2); max-width: 72ch; }
+.nk-knoppen { margin-top: 1.1rem; display: flex; gap: .55rem; flex-wrap: wrap; }
+
+@media (max-width: 560px) {
+  .nk { grid-template-columns: 64px minmax(0, 1fr); gap: .8rem; padding: .9rem; }
+}
+
+/* ── TWEE STREPEN OPZIJ, VERVANGEN — 27 augustus 2026 ───────────────────────
+ * `.paybox` markeerde onbetaald en terugbetaald met een `border-left` van 2px in
+ * de accent- en de attentiekleur. Dat is dezelfde vorm die hierboven bij
+ * `.ronde-warn` al weg is, en om dezelfde reden: op een kaart leest een gekleurde
+ * rand aan één kant als een tekenfout in het kader, niet als een signaal. Een
+ * hele rand plus een lichte vulling zegt het onmiskenbaar en blijft een kader. */
+.paybox.is-unpaid {
+  border-left-width: 1px;
+  border-color: color-mix(in srgb, var(--signal) 42%, var(--line));
+  background: color-mix(in srgb, var(--signal) 5%, transparent);
+}
+.paybox.is-refunded {
+  border-left-width: 1px;
+  border-color: color-mix(in srgb, var(--warn) 42%, var(--line));
+  background: color-mix(in srgb, var(--warn) 5%, transparent);
+}
+
+/* ── DE TEGEL: TWEE ACTIES ONDER ELKAAR, ALTIJD ─────────────────────────────
+ * Dit stond al zo onder een doorbraakpunt, maar het is geen telefoonkwestie:
+ * "Goedkeuren" naast "Er klopt iets niet" past op geen enkele tegelbreedte, en
+ * juist die tweede zin afkappen zou de verzachting die Lucas vroeg ongedaan
+ * maken. Onder elkaar is bovendien eerlijker — goedkeuren is wat de meeste
+ * mensen doen en dat hoort niet even breed te zijn als de uitzondering. */
+.shot-actions { flex-direction: column; align-items: stretch; gap: .3rem; }
+.shot-actions .btn { width: 100%; }
+.shots { grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); }
+.shot-cap { font-size: .74rem; color: var(--ink-3); }
+
+/* ── DE ACCENTKLEUR IS NIET VOOR ACHTTIEN DINGEN TEGELIJK ───────────────────
+ * "Goedkeuren" was een gevulde accentknop, en op een levering van achttien
+ * beelden staan er dan achttien op één scherm. PRODUCT.md zegt het zelf:
+ * *"Applied to everything it would be applied to nothing."* Binnen een tegel is
+ * de knop bovendien niet de belangrijkste keuze van de pagina maar de gewone —
+ * de verzendknop van de ronde eronder is dat wel, en die verliest zijn nadruk
+ * als er achttien even luide knoppen boven staan.
+ *
+ * De vorm blijft, de vulling gaat eraf. Bij aanwijzen komt de accentkleur terug,
+ * zodat het nog steeds de bevestigende handeling is. Buiten de tegel — de
+ * betaalknop, de verzendknop, de aanvraagknop — verandert er niets. */
+.shot-actions .btn-primary {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.shot-actions .btn-primary:hover,
+.shot-actions .btn-primary:focus-visible {
+  background: var(--signal);
+  color: var(--accent-ink, #08090B);
+  box-shadow: none;
+}
+.nk-kop { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; }
+.nk-weg {
+  margin-left: auto; background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-size: .78rem; color: var(--ink-3);
+  border-bottom: 1px solid var(--line-strong);
+}
+.nk-weg:hover { color: var(--ink); }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * DE BESTELLINGENTABEL OP EEN TELEFOON — 27 augustus 2026
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * Zeven kolommen achter een zijwaartse schuif is op 390px geen tabel maar een
+ * kijkgaatje: je ziet drie kolommen en moet schuiven om te weten of je de goede
+ * regel leest. En `min-width: 620px` binnen `overflow-x: auto` bleek de pagina
+ * hier bovendien écht zijwaarts te laten schuiven — gemeten met
+ * `window.scrollTo(300,0)`, en `window.scrollX` bleef op 300 staan. Geen enkele
+ * clip op een voorouder hielp daartegen; alleen de tabelopmaak zelf.
+ *
+ * Allebei die problemen verdwijnen door onder 780px geen tabel te tekenen. Elke
+ * regel wordt een blok met het kenmerk bovenaan, de status ernaast en de rest
+ * als etiket-en-waarde. De kolomkoppen gaan weg — ze staan nu voor de waarden —
+ * en `<th scope="row">` blijft staan, zodat een schermlezer de rij nog steeds
+ * bij zijn kenmerk noemt.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 780px) {
+  .ordtab { overflow-x: visible; }
+  .ordtab table { min-width: 0; display: block; }
+  .ordtab thead { display: none; }
+  .ordtab tbody { display: block; }
+  .ordtab tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: .3rem .8rem; padding: .8rem .9rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .ordtab tr:last-child { border-bottom: 0; }
+  /* De vulling hoort op de RIJ en niet op elke cel. Op breed scherm is een rij
+     een tabelrij en kan hij zelf geen achtergrond dragen die de celranden vult;
+     hier is hij een grid en kan dat wél. Per cel gaf strepen: elke waarde een
+     eigen bandje, met de gaten ertussen open. */
+  .ordtab tr.is-open td, .ordtab tr.is-open th,
+  .ordtab tr.let td, .ordtab tr.let th,
+  .ordtab tbody tr:hover td, .ordtab tbody tr:hover th { background: none; }
+  .ordtab tr.is-open { background: rgb(255 255 255 / .05); }
+  .ordtab tr.let { background: color-mix(in srgb, var(--warn) 7%, transparent); }
+  .ordtab td, .ordtab th[scope="row"] { display: block; border: 0; padding: 0; }
+  .ordtab th[scope="row"] { grid-column: 1; font-size: .95rem; }
+  /* De status hoort naast het kenmerk: dat zijn de twee dingen waarop je scant. */
+  .ordtab td:nth-of-type(4) { grid-column: 2; grid-row: 1; justify-self: end; }
+  .ordtab td:nth-of-type(1),
+  .ordtab td:nth-of-type(2),
+  .ordtab td:nth-of-type(3),
+  .ordtab td:nth-of-type(5) { grid-column: 1; font-size: .8rem; color: var(--ink-3); text-align: left; }
+  /* Etiketten erbij, want zonder kolomkop zegt "18" niets. `data-etiket` wordt in
+     account.js op de cel gezet; staat het er niet, dan komt er ook geen streepje. */
+  .ordtab td[data-etiket]::before { content: attr(data-etiket) ": "; color: var(--ink-3); }
+  .ordtab .num { text-align: left; }
+}
+
+/* Een raakvlak van 24 bij 24 (WCAG 2.2, 2.5.8). De kenmerklink in de tabel was
+   105×15: breed genoeg, twee pixels te laag. De celvulling maakt de RIJ hoog
+   genoeg maar niet de link zelf, en het is de link die je raakt. */
+.ordtab .ref { display: inline-block; padding-block: .28rem; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * RAAKVLAKKEN VAN 24 BIJ 24 — WCAG 2.2, 2.5.8, NIVEAU AA — 27 augustus 2026
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * src/styles/global.css draagt deze regel al voor de publieke site, met een eigen
+ * kop en een meting erbij. Het dashboard heeft die ronde nooit gehad: vijf
+ * raakvlakken zaten tussen de 15 en 22 pixels hoog — twee tot negen pixels te
+ * kort, stuk voor stuk de regelhoogte van hun tekst en verder niets.
+ *
+ * Gemeten op /account, /account/orders en /account/details in beide talen. Het
+ * zijn geen brede knoppen: ze zijn ALLEMAAL breed genoeg en alleen te laag, dus
+ * verticale vulling is genoeg en er verschuift verder niets in de opmaak.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+.sidelang { display: inline-block; padding-block: .15rem; }
+.tl > summary { padding-block: .15rem; }
+/* 15 px: de WhatsApp-link in de producthulp was de kortste van allemaal. */
+.prod-help a { display: inline-block; padding-block: .28rem; }
+.viewall { display: inline-block; padding-block: .12rem; }
+/* Het vinkje zelf is 18×18 en het etiket eromheen was 22 hoog. Het etiket is het
+   raakvlak — een label dat zijn vinkje omsluit, schakelt hem ook — dus dat is
+   waar de twee pixels bij horen. */
+.det-check { display: flex; align-items: center; min-height: 24px; }
+
+/* ── DE TABEL MOET PASSEN NAAST DE STATUSKOLOM ──────────────────────────────
+ * Op 1280 is de middenkolom ongeveer 700 breed: zijbalk 232, statuskolom 300.
+ * Daar liep de tabel overheen, en `overflow-x: auto` verstopte dat netjes — met
+ * als gevolg dat de laatste kolom, de knop naar de map, onzichtbaar was. Een
+ * knop die je alleen vindt door te schuiven in iets wat niet als schuifbaar
+ * leest, is een knop die er niet is.
+ *
+ * Drie maten kleiner in plaats van een schuifbalk: de statuspil breekt niet meer
+ * over twee regels (dat maakte de rijen hoog én de kolom breder dan nodig), de
+ * celvulling gaat van .9 naar .7rem, en de dienstnaam mag afbreken. De
+ * schuifbalk blijft als vangnet staan voor smalle vensters tussen 780 en 900. */
+.ordtab .pill { white-space: nowrap; }
+.ordtab th[scope="col"], .ordtab td, .ordtab th[scope="row"] { padding-inline: .7rem; }
+.ordtab td:nth-of-type(1) { overflow-wrap: anywhere; }
+/* Aan de BREEDTE gehangen en niet aan de volgorde in dit bestand. Deze regel
+   stond eerst kaal, ná het telefoonblok dat `min-width: 0` zet, en won daardoor
+   terug: op 390px was de tabel weer 560 breed en schoof de Engelse pagina
+   zijwaarts. In een stylesheet van bijna drieduizend regels is "later in het
+   bestand" geen betrouwbare afspraak. */
+@media (min-width: 781px) { .ordtab table { min-width: 560px; } }
+
+/* Een bestelkenmerk breekt niet af. "VIS-2608-" op de ene regel en "4471" op de
+   volgende is geen kenmerk meer maar twee stukken tekst; het statuswoord ernaast
+   mag wél inschikken, want dat lees je als woord en niet als code. */
+.st-rij b { white-space: nowrap; }
+/* Het statuswoord gaat onder het kenmerk staan in plaats van ernaast. In een
+   kolom van 272 bleef er naast "VIS-2607-3312" te weinig over: "Wordt" en
+   "nagekeken" kwamen op twee regels rechts uitgelijnd, en dat leest als twee
+   losse woorden. Eronder is het één regel en één zin. */
+.st-rij { flex-wrap: wrap; }
+.st-rij .r { flex-basis: 100%; margin-left: 0; padding-left: 2.6rem; white-space: normal; }
+/* Iets kleinere vakjes in deze kolom: bij vijftien producten plus doorgeschoven
+   liep de meter anders om naar een tweede regel met twee vakjes erop. */
+.status .pip { width: 11px; height: 17px; }
+.status .meter { gap: 2px; }

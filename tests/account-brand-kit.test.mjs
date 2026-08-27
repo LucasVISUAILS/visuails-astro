@@ -418,9 +418,25 @@ section('§4 · the status filter on the order list');
 // ─────────────────────────────────────────────────────────────────────────────
 
 {
+  /* ── READ THE LIST, NOT THE PAGE — 27 August 2026 ─────────────────────────
+   *
+   * These checks used to search the whole document for an order reference. That
+   * worked while the page was a sidebar and a list; it stopped working the day
+   * the status column arrived, because that column names what is RUNNING on
+   * every route and does not care what the list is filtered to. "In production"
+   * showing up beside a delivered-only list is the column doing its job, and a
+   * test that reads the whole page calls it a bug.
+   *
+   * Same lesson, same shape as the note in tests/revisieronde.test.mjs about
+   * counting checkboxes per order instead of per page: when a page grows a
+   * second place that can mention the same thing, a test has to say WHICH place
+   * it means. Here that is the middle column — <main class="main">, which
+   * shellBody() draws around whatever the section rendered. */
+  const lijst = (html) => (html.split('<main class="main">')[1] || html).split('</main>')[0];
+
   const all = await get('/account/orders');
   check('unfiltered, every order is listed',
-    ['VIS-8K2-QQ1', 'VIS-7F4-M3A', 'VIS-5D1-XX8'].every((r) => all.html.includes(r)));
+    ['VIS-8K2-QQ1', 'VIS-7F4-M3A', 'VIS-5D1-XX8'].every((r) => lijst(all.html).includes(r)));
   check('a chip is offered per status this customer actually has',
     all.html.includes('status=in_production') && all.html.includes('status=delivered'));
   // No chip for a status with no orders — a filter that resolves to nothing
@@ -430,14 +446,14 @@ section('§4 · the status filter on the order list');
 
   const one = await get('/account/orders?status=delivered');
   check('filtered, the two delivered orders are listed',
-    one.html.includes('VIS-7F4-M3A') && one.html.includes('VIS-5D1-XX8'));
-  check('and the in-production one is not', !one.html.includes('VIS-8K2-QQ1'));
+    lijst(one.html).includes('VIS-7F4-M3A') && lijst(one.html).includes('VIS-5D1-XX8'));
+  check('and the in-production one is not', !lijst(one.html).includes('VIS-8K2-QQ1'));
   check('the heading counts the filtered set', /Orders <span class="h2-count">\(2\)/.test(one.html));
   check('the active chip is the one asked for', /fl-chip is-active" aria-current="true">Delivered/.test(one.html));
 
   // A status nobody can see the name of must not look like an empty account.
   const bogus = await get('/account/orders?status=not_a_status');
-  check('an unknown status falls back to no filter', bogus.html.includes('VIS-8K2-QQ1'));
+  check('an unknown status falls back to no filter', lijst(bogus.html).includes('VIS-8K2-QQ1'));
 
   const empty = await get('/account/orders?status=cancelled');
   check('a real but empty status explains itself and offers a way back',
@@ -561,16 +577,30 @@ const EVENTS = [
 }
 
 {
-  // Order 88 is the unattended one in this fixture. The portal would show it no
-  // timeline at all; the dashboard must not care about the tier.
-  const r = await get('/account/orders', { events: EVENTS });
-  const boxes = (r.html.match(/class="flowbox/g) || []).length;
-  check('every order card carries a timeline, unattended included',
-    boxes === ORDERS.length, `${boxes} of ${ORDERS.length}`);
+  /* ── ONE CARD AT A TIME — 27 August 2026 ─────────────────────────────────
+   *
+   * /account/orders used to render every order as a card. It now renders a table
+   * of all of them plus the ONE that is open, so "count the flowboxes on the
+   * page" answers a question the page no longer asks.
+   *
+   * Opening each order in turn is the same check and a sharper one: it proves
+   * every order gets a timeline, including the unattended one, rather than
+   * proving that three of something exist somewhere. Order 88 is the unattended
+   * one in this fixture; the portal would show it no timeline at all, and the
+   * dashboard must not care about the tier. */
+  for (const o of ORDERS) {
+    const r = await get(`/account/orders?order=${o.id}`, { events: EVENTS });
+    check(`order ${o.id} carries a timeline`, /class="flowbox/.test(r.html));
+  }
+  const delivered = await get('/account/orders?order=90', { events: EVENTS });
   check('the delivered one says the images are ready',
-    r.html.includes('Your images are ready'));
+    delivered.html.includes('Your images are ready'));
+  /* The hand-typed note lives on order 88's timeline, not 90's — so ask for 88.
+     Reading it off whichever card happened to render was the same page-wide
+     shortcut this block just stopped taking. */
+  const unattended = await get('/account/orders?order=88', { events: EVENTS });
   check('and a note typed by hand travels to the customer',
-    r.html.includes('Alles in één keer geleverd.'));
+    unattended.html.includes('Alles in één keer geleverd.'));
 }
 
 // De mededeling die admin schrijft, aan de kant waar hij gelezen wordt.

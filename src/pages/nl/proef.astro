@@ -1,0 +1,30 @@
+---
+// VISUAILS — /nl/proef (Nederlands). DE PAGINA ZONDER DE STIJLLAAG.
+//
+// Deze route stond er eerst andersom: de homepage was onaangeroerd en /proef
+// droeg de stijl. Sinds 27 augustus 2026 is het omgekeerd — de stijl staat op
+// / en /nl, en dit is wat eronder zit. Lucas: *"Begin met de dingen die er nu
+// staan toe te passen aan de echte homepage."*
+//
+// Hij blijft bestaan omdat het vergelijken zonder hem alleen nog kan door een
+// bestand weg te halen. Dezelfde HomeV2.astro, dezelfde teksten, dezelfde
+// prijzen — het enige verschil met de homepage is dat `huid` hier ontbreekt.
+// Zo zie je op je eigen site precies wat de laag doet, en niets anders.
+//
+// GEEN TWEEDE KOPIE VAN DE DESCRIPTION. / bouwt zijn description uit
+// pricing.js omdat een prijs in een <meta>-tag anders stil veroudert.
+// Diezelfde regel hier herhalen zou precies die tweede plek maken. Deze pagina
+// staat op noindex, dus deze tekst komt nooit in een zoekresultaat.
+import Layout from '../../layouts/Layout.astro';
+import HomeV2 from '../../components/HomeV2.astro';
+---
+
+<Layout
+  title="Zonder de stijllaag | VISUAILS"
+  description="De VISUAILS-homepage zonder de stijllaag, om te vergelijken. Niet om te indexeren."
+  ogImage="/img/og-nl.png"
+  ground="espresso"
+  noindex
+>
+  <HomeV2 lang="nl" />
+</Layout>

@@ -70,6 +70,7 @@ import { ui, brandModelHref, ogLocale, localeNames, getLangFromPath, stripLang, 
 import { graphJson } from '../data/schema.js';
 import CookieConsent from '../components/CookieConsent.astro';
 import BrandMark from '../components/BrandMark.astro';
+import HuidKantig from '../components/HuidKantig.astro';
 
 interface Props {
   title: string;
@@ -83,6 +84,17 @@ interface Props {
    *  the last one is over, .ground-espresso's contents become :root and this
    *  prop is deleted. The migration lives in the markup, not in a head. */
   ground?: 'paper' | 'espresso';
+  /** Zet een PROEFHUID op deze pagina. 'kantig' is de hoekige variant met de
+   *  pilvormige knoppen en de eigen muisaanwijzer — zie HuidKantig.astro voor
+   *  wat hij doet en waarom hij een huid is en geen verbouwing.
+   *
+   *  DIT IS EEN SCHAKELAAR EN GEEN MIGRATIE. Hij staat alleen op /proef en
+   *  /nl/proef. De homepage geeft hem niet mee en verandert dus niet: geen
+   *  token, geen regel en geen script uit die huid bereikt een pagina die er
+   *  niet om vraagt, en tests/huid.test.mjs zet dat vast. Bevalt de huid, dan
+   *  is het overzetten deze prop op index.astro en niets anders; bevalt hij
+   *  niet, dan is het de twee proefpagina's weggooien. */
+  huid?: 'geen' | 'kantig';
 }
 
 // noindex is for the pages that exist to be arrived at, not found. Two use it:
@@ -97,7 +109,7 @@ interface Props {
 // `noindex, nofollow, noarchive` as a meta tag AND an x-robots-tag response
 // header, because a portal URL contains a token and a meta tag alone is only
 // read by something that parses HTML. See src/lib/portal.js.
-const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper' } = Astro.props;
+const { title, description, ogImage = '/img/banners-05.webp', noindex = false, ground = 'paper', huid = 'geen' } = Astro.props;
 
 // Privacy-first analytics — Cloudflare Web Analytics, which is cookieless and
 // sets nothing on the visitor’s device.
@@ -340,7 +352,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical });
   </noscript>
   <ClientRouter />
 </head>
-<body class={ground === "espresso" ? "ground-espresso" : undefined}>
+<body class={[ground === "espresso" && "ground-espresso", huid === "kantig" && "huid-kantig"].filter(Boolean).join(" ") || undefined}>
 {/* THE FIRST TAB STOP. It has to be the first child of <body>, not merely
     before <main>: placed after the header it is the twelfth stop, which is
     eleven stops too late to be a skip link. Even with the drawer inert, the header is a handful of
@@ -1242,6 +1254,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     boot();
     document.addEventListener('astro:page-load', boot);
   </script>
+  {huid === 'kantig' && <HuidKantig />}
 </body>
 </html>
 
